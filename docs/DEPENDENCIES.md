@@ -11,16 +11,18 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `1_sqx/export/export_trades.py` | 68 | Export one databank's trades, and the bars those trades were taken on, into the data root. | core | — |
 | `1_sqx/inspect/dump_project.py` | 66 | Render a project.cfx as a readable Markdown pipeline map. Reading never touches SQX state. | core, project_map | — |
 | `1_sqx/inspect/index_sqx.py` | 58 | Index every .sqx on this machine by the hash of its inner strategy XML. | core | — |
+| `1_sqx/inspect/instruments.py` | 85 | List the trading costs every project has configured, per instrument. | core | — |
 | `1_sqx/inspect/keep_tasks.py` | 91 | Produce a variant of a project.cfx keeping only tasks of the given types. | — | — |
 | `1_sqx/inspect/project_map.py` | 206 | Turn a parsed project.cfx into the sections of its Markdown pipeline map. | project_parts | — |
 | `1_sqx/inspect/project_parts.py` | 229 | Read the pieces of one task's XML: databanks, conditions, rankings, cross-checks. | — | — |
-| `core/assets.py` | 82 | Per-asset trading-cost overrides. Run as a module for the preflight every project needs. | core | yaml |
+| `core/assets.py` | 109 | Per-asset trading-cost overrides. Run as a module for the preflight every project needs. | core | yaml |
 | `core/cfx.py` | 125 | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | core | — |
 | `core/exportdrv.py` | 128 | The three ways data leaves SQX: trades, databank metrics, and bars. | core | — |
 | `core/manifest.py` | 54 | Every export writes one of these. Without it an export cannot be reproduced or trusted. | core | — |
 | `core/paths.py` | 88 | Every path and port in the project. The only module allowed to know where things live. | — | yaml |
 | `core/sqxfile.py` | 71 | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | — | — |
 | `core/worker.py` | 52 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
+| `tests/test_cfx.py` | 47 | Golden-file test for core.cfx: a parser that breaks silently poisons every analysis. | core | — |
 | `tools/checks.py` | 164 | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | depmap | — |
 | `tools/depmap.py` | 127 | Generate docs/DEPENDENCIES.md from the imports actually present in the project's Python files. | — | — |
 
@@ -28,7 +30,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 
 | project module | imported by |
 |---|---|
-| `core` | `1_sqx/export/export_metrics.py`, `1_sqx/export/export_trades.py`, `1_sqx/inspect/dump_project.py`, `1_sqx/inspect/index_sqx.py`, `core/assets.py`, `core/cfx.py`, `core/exportdrv.py`, `core/manifest.py`, `core/worker.py` |
+| `core` | `1_sqx/export/export_metrics.py`, `1_sqx/export/export_trades.py`, `1_sqx/inspect/dump_project.py`, `1_sqx/inspect/index_sqx.py`, `1_sqx/inspect/instruments.py`, `core/assets.py`, `core/cfx.py`, `core/exportdrv.py`, `core/manifest.py`, `core/worker.py`, `tests/test_cfx.py` |
 | `depmap` | `tools/checks.py` |
 | `project_map` | `1_sqx/inspect/dump_project.py` |
 | `project_parts` | `1_sqx/inspect/project_map.py` |

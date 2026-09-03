@@ -143,3 +143,19 @@ History before 18 Aug is gone. Consider archiving `user/log/StrategyQuant/` on a
   while SQX is not running.
 - `project.cfx` is a plain ZIP: `config.xml` + one `<Type>-Task<N>.xml` per task. Safe to *read*
   at any time.
+
+## 7. 🟡 `core.sqxfile` has no golden test
+
+`tests/test_cfx.py` protects the project parser; the `.sqx` parser has nothing. A fixture needs a real
+strategy file, and those are ~6 MB and git-ignored. Decide between committing one small `.sqx` as an
+explicit exception, or pointing the test at a path declared in `config/machine.yaml`.
+
+Until then, a silent change in how symbols, hashes or parameters are read would surface only as
+strange analysis results, weeks later.
+
+## 8. 🟡 Migrated analyses are parked, not converted
+
+`archive/studies/` holds eight scripts from the previous project: the ATR-stop studies, the IS→OOS
+predictor study, the databank scan, the trade validator and their plotting code. They were written
+against the old data layout, so reusing one means rewriting it over `core/` and the data root. Their
+findings are already in `knowhow/`; the code is kept only so a result can be reproduced.

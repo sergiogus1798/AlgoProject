@@ -10,6 +10,10 @@ running instance, so these are safe at any time, including while the owner's GUI
 | `project_parts.py` | Reads one task's XML: databanks, conditions, rankings, cross-checks | imported |
 | `index_sqx.py` | Index every `.sqx` in the configured pools by inner-XML hash | `python3 1_sqx/inspect/index_sqx.py out.json` |
 | `keep_tasks.py` | Emit a variant of a `.cfx` keeping only the chosen task types | `python3 1_sqx/inspect/keep_tasks.py in.cfx out.cfx --types Build` |
+| `instruments.py` | List the spread, commission, point value and swap every project has configured | `python3 1_sqx/inspect/instruments.py [--json]` |
+
+`instruments.py` is what keeps `assets/*.yaml` honest: it reports what SQX carries today, which is
+the `sqx_default` side of every override.
 
 A project whose `config.xml` references a task file its archive lacks makes `dump_project.py` raise
 `KeyError`. That is not a bug here — it is how a project corrupted in the way `OPEN.md` issue 3

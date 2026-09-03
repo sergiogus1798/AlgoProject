@@ -1,0 +1,137 @@
+{
+  "tasks": [
+    {
+      "n": 1,
+      "type": "Optimize",
+      "name": "Optimize",
+      "title": null,
+      "active": true,
+      "file": "Optimize-Task1.xml"
+    }
+  ],
+  "detail": [
+    {
+      "n": 1,
+      "output": "Results",
+      "conditions": [
+        {
+          "used": true,
+          "left": {
+            "column": "NetProfit",
+            "result": "WalkForwardMatrix",
+            "subresult": "30",
+            "sample": "OOS"
+          },
+          "op": ">",
+          "right": {
+            "value": "0"
+          }
+        },
+        {
+          "used": true,
+          "left": {
+            "column": "NetProfit",
+            "result": "WalkForwardOptimization",
+            "subresult": "31",
+            "sample": "IS"
+          },
+          "op": ">",
+          "right": {
+            "value": "60"
+          }
+        },
+        {
+          "used": true,
+          "left": {
+            "column": "WFPctOfProfitableRuns",
+            "result": "WalkForwardOptimization",
+            "subresult": "33",
+            "sample": "IS"
+          },
+          "op": ">",
+          "right": {
+            "value": "70"
+          }
+        },
+        {
+          "used": true,
+          "left": {
+            "column": "WFMaxProfitByRunInPct",
+            "result": "WalkForwardOptimization",
+            "subresult": "33",
+            "sample": "IS"
+          },
+          "op": "<",
+          "right": {
+            "value": "50"
+          }
+        },
+        {
+          "used": true,
+          "left": {
+            "column": "WFMinTradesInRun",
+            "result": "WalkForwardOptimization",
+            "subresult": "33",
+            "sample": "IS"
+          },
+          "op": ">",
+          "right": {
+            "value": "20"
+          }
+        },
+        {
+          "used": true,
+          "left": {
+            "column": "WFMaxPctDDbyRun",
+            "result": "WalkForwardOptimization",
+            "subresult": "33",
+            "sample": "IS"
+          },
+          "op": "<=",
+          "right": {
+            "value": "25"
+          }
+        },
+        {
+          "used": false,
+          "left": {
+            "column": "Drawdown",
+            "result": "WalkForwardOptimization",
+            "subresult": "31",
+            "sample": "IS"
+          },
+          "op": "<",
+          "right": {
+            "value": "130"
+          }
+        },
+        {
+          "used": false,
+          "left": {
+            "column": "ReturnDDRatio",
+            "result": "WalkForwardOptimization",
+            "subresult": "31",
+            "sample": "IS"
+          },
+          "op": ">",
+          "right": {
+            "value": "60"
+          }
+        },
+        {
+          "used": false,
+          "left": {
+            "column": "StagnationPct",
+            "result": "WalkForwardMatrix",
+            "subresult": "30",
+            "sample": "OOS"
+          },
+          "op": "<",
+          "right": {
+            "value": "30"
+          }
+        }
+      ]
+    }
+  ]
+}
