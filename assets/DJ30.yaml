@@ -1,0 +1,36 @@
+# DJ30 — trading-cost overrides. Read before authoring any project or task for it.
+symbol: DJ30
+sqx_symbol: DJ30_DukasM1_Infinox
+broker: Infinox
+feeds:
+  - DJ30_DukasM1_Infinox
+verified: 2026-09-03
+
+spread:
+  sqx_default: 165.0
+  use: null            # what to actually use. null = undecided, and that BLOCKS authoring
+  unit: points
+  why: ""
+
+commission:
+  sqx_default: "SizeBased 1"
+  use: null
+  unit: $ per lot per side
+  why: ""
+
+point_value:
+  sqx_default: 1.0
+  use: null
+  unit: $ per 1.0 of price per 1.0 lot
+  why: ""
+
+tick_size: 0.01
+min_distance: 0.0
+slippage_sqx_default: 0.0
+swap_enabled_in_sqx: true
+
+projects_using_it:
+  - SP500_H1
+  - XAUUSD
+
+notes: []

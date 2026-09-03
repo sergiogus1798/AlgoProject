@@ -1,0 +1,35 @@
+# DAX40 — trading-cost overrides. Read before authoring any project or task for it.
+symbol: DAX40
+sqx_symbol: DAX40_DukasM1_Infinox
+broker: Infinox
+feeds:
+  - DAX40_DukasM1_Infinox
+verified: 2026-09-03
+
+spread:
+  sqx_default: 100.0
+  use: null            # what to actually use. null = undecided, and that BLOCKS authoring
+  unit: points
+  why: ""
+
+commission:
+  sqx_default: "SizeBased 1"
+  use: null
+  unit: $ per lot per side
+  why: ""
+
+point_value:
+  sqx_default: 1.157798
+  use: null
+  unit: $ per 1.0 of price per 1.0 lot
+  why: ""
+
+tick_size: 0.01
+min_distance: 0.0
+slippage_sqx_default: 0.0
+swap_enabled_in_sqx: true
+
+projects_using_it:
+  - XAUUSD
+
+notes: []

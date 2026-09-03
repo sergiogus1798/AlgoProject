@@ -1,0 +1,10 @@
+{
+  "name": "sqx-lab",
+  "displayName": "SQX Authoring Toolkit",
+  "version": "1.2.0",
+  "description": "Author the reusable vocabulary the SQX strategy builder samples from — custom blocks, random groups, strategy templates, and build projects — each derived from your own StrategyQuant install.",
+  "author": {
+    "name": "ihudec"
+  },
+  "keywords": ["strategyquant", "sqx", "algowizard", "custom-blocks", "random-groups", "templates", "authoring"]
+}

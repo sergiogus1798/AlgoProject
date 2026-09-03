@@ -1,0 +1,8 @@
+# Pinned so the project runs the same on another machine.
+# Install: python3 -m pip install -r requirements.txt
+PyYAML==5.4.1
+numpy==2.2.6
+scipy==1.15.3
+matplotlib==3.10.9
+pandas==2.3.3
+pyarrow==25.0.1

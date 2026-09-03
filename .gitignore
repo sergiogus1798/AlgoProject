@@ -1,0 +1,17 @@
+# Machine-specific. The template is versioned; this file is not.
+config/machine.yaml
+
+# Data never lives in the repo.
+*.csv
+*.parquet
+*.sqx
+*.cfx.bak
+
+# Throwaway work.
+scratch/
+__pycache__/
+*.pyc
+.venv/
+
+# Editor noise.
+.DS_Store

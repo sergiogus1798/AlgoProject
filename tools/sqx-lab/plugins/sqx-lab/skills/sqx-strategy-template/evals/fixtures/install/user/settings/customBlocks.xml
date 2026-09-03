@@ -1,0 +1,6 @@
+<!-- GENERATED TEST FIXTURE — not a real install. Synthetic groups over stock
+     indicator rules, used by evals/run_evals.py so the structure harness runs
+     on any machine. Do not point SQX at this. -->
+<CustomBlocks>
+  <Item key="CBlock_FixtureSignal" name="FixtureSignal" display="Close &gt; HighD[1]" returnType="boolean" type="Condition" category="Fixtures" oppositeBlockKey="CBlock_null" categoryType="customBlock" />
+</CustomBlocks>

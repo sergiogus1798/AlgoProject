@@ -1,0 +1,12 @@
+# Per-install artifact — derived by discover.py on the target machine, never committed
+catalog.json
+catalog.md
+
+# Generated templates / scratch output
+out/
+engine/out/
+*.sqx.tmp
+
+# Python
+__pycache__/
+*.pyc

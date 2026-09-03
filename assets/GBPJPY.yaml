@@ -1,0 +1,37 @@
+# GBPJPY — trading-cost overrides. Read before authoring any project or task for it.
+symbol: GBPJPY
+sqx_symbol: GBPJPY_DukasM1_the5ers
+broker: the5ers
+feeds:
+  - GBPJPY_DukasM1_the5ers
+verified: 2026-09-03
+
+spread:
+  sqx_default: 1.2
+  use: null            # what to actually use. null = undecided, and that BLOCKS authoring
+  unit: points
+  why: ""
+
+commission:
+  sqx_default: "SizeBased 0.00"
+  use: null
+  unit: $ per lot per side
+  why: ""
+
+point_value:
+  sqx_default: 653.92387
+  use: null
+  unit: $ per 1.0 of price per 1.0 lot
+  why: ""
+
+tick_size: 0.01
+min_distance: 10.0
+slippage_sqx_default: 0.0
+swap_enabled_in_sqx: true
+
+projects_using_it:
+  - AUDJPY
+  - GBPJPY_H1
+  - USDJPY
+
+notes: []

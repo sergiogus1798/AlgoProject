@@ -1,0 +1,27 @@
+# Machine-specific settings. Copy to machine.yaml and edit for this machine.
+# machine.yaml is NOT in git: it is the only file that may differ between computers.
+# core/paths.py is the only code allowed to read it.
+
+# Top-level StrategyQuant X folders (the ones containing internal/ and user/).
+sqx_master: ~/Desktop/SQX        # the GUI the owner works in
+sqx_worker: ~/Desktop/SQX_w1     # headless install used for exports and authoring
+
+# Worker command API. The master's CLI does not answer while its GUI is up.
+worker_port: 5060
+
+# Where exported data lives. Never inside the repo.
+data_root: ~/Desktop/AlgoData
+
+# Read-only archive of the previous project. Optional; omit if absent.
+archive: ~/Desktop/AlgoProject_Old
+
+# Folders that hold .sqx files worth indexing, by short name. Trash is deliberately
+# excluded: the owner has asked that it never appear in strategy searches.
+strategy_pools:
+  master: ~/Desktop/SQX/user/projects
+  june_tree: ~/Desktop/user
+  wfm_dump: ~/Desktop/StrategiesWFM
+  banquillo: ~/Desktop/BanquilloEstrategias
+  worksqx: ~/Desktop/WorkSQX
+  addons: ~/Desktop/AddonsSQX
+  problem: ~/Desktop/StratsProblem

@@ -1,0 +1,6 @@
+{
+  "extraPaths": [".", "engine"],
+  "reportMissingImports": "none",
+  "reportArgumentType": "none",
+  "reportOptionalMemberAccess": "none"
+}

@@ -1,0 +1,42 @@
+# USATEC — trading-cost overrides. Read before authoring any project or task for it.
+symbol: USATEC
+sqx_symbol: USATEC_DukasM1_Infinox
+broker: Infinox
+feeds:
+  - USATEC_DukasM1_Infinox
+verified: 2026-09-03
+
+spread:
+  sqx_default: 85.0
+  use: null            # what to actually use. null = undecided, and that BLOCKS authoring
+  unit: points
+  why: ""
+
+commission:
+  sqx_default: "SizeBased 1"
+  use: null
+  unit: $ per lot per side
+  why: ""
+
+point_value:
+  sqx_default: 1.0
+  use: null
+  unit: $ per 1.0 of price per 1.0 lot
+  why: ""
+
+tick_size: 0.01
+min_distance: 0.0
+slippage_sqx_default: 0.0
+swap_enabled_in_sqx: true
+
+projects_using_it:
+  - AUDJPY
+  - EURUSD
+  - USDJPY
+  - XAUUSD
+
+notes:
+  - "USATEC is the Nasdaq 100 (US Tech index) at Infinox. The owner said the Nasdaq should
+     use 80 points of spread rather than 40, but what SQX actually carries here is 85 and
+     the 40 belongs to USA500. Confirm which instrument and which number before filling
+     `use`, rather than assuming either."

@@ -1,0 +1,7 @@
+catalog.json
+engine/out/
+engine/__pycache__/
+__pycache__/
+*.pyc
+*.bak
+*.bak-*

@@ -1,0 +1,14 @@
+{
+  "name": "sqx-lab",
+  "owner": {
+    "name": "ihudec"
+  },
+  "description": "Dev home + local marketplace for the SQX authoring toolkit (custom blocks, random groups, strategy templates, projects).",
+  "plugins": [
+    {
+      "name": "sqx-lab",
+      "source": "./plugins/sqx-lab",
+      "description": "Author reusable SQX AlgoWizard artifacts: custom blocks, random groups, strategy templates, build projects."
+    }
+  ]
+}

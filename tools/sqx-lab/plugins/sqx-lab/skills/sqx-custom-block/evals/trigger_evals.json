@@ -1,0 +1,22 @@
+[
+  {"query": "ok I want to build a custom block for AlgoWizard - RSI(14) crossing back above 30 as a long entry, plus the mirror short. put sensible optimizer ranges on the period and the level", "should_trigger": true},
+  {"query": "here's a blog idea: go long when the 20-period Donchian high breaks on the close. can you turn it into an SQX block I can import?", "should_trigger": true},
+  {"query": "I need a trailing stop level that sits 2.5x ATR below the Hull moving average - make that for my strategyquant install", "should_trigger": true},
+  {"query": "make a signal that fires when today's close is above the previous day's high, for my FX algowizard project", "should_trigger": true},
+  {"query": "yo can u whip up a few blocks for keltner channel breakouts for algowizard, long n short", "should_trigger": true},
+  {"query": "add an ADX trend filter (ADX above 25) as a confirmation rule to my StrategyQuant strategy - author it as an importable block", "should_trigger": true},
+  {"query": "build me an upper and lower band pair, 2 stddev around the 50 EMA, to use as price targets in SQX", "should_trigger": true},
+  {"query": "what custom blocks should I build for a mean-reversion theme on indices? give me a shortlist I can actually build in my 144 install", "should_trigger": true},
+  {"query": "create a block: long when Stochastic %K crosses above %D below 20, opposite for short, and let me tune the periods", "should_trigger": true},
+  {"query": "make an SQX block that uses my own CSSAMarketRegime indicator to gate entries to the bull regime only", "should_trigger": true},
+  {"query": "make me a random group of breakout entry filters that the strategy builder can sample from", "should_trigger": false},
+  {"query": "I've got 7 clean groups in my install - wire them into a trend-filtered breakout strategy template (.sqx) I can build", "should_trigger": false},
+  {"query": "my SQX build keeps crashing with Strategy.Stockpicker is null - what's causing that?", "should_trigger": false},
+  {"query": "explain how the DeMarker indicator is calculated and what a good overbought level is", "should_trigger": false},
+  {"query": "read my customBlocksExport.xml and tell me how many blocks I have and which families they're in", "should_trigger": false},
+  {"query": "analyze the backtest results of my breakout strategy and tell me whether it's overfit", "should_trigger": false},
+  {"query": "pool my existing trend blocks into a Condition group", "should_trigger": false},
+  {"query": "convert this MT4 .mq4 indicator into a StrategyQuant Java snippet", "should_trigger": false},
+  {"query": "set up a walk-forward optimization task in StrategyQuant to test my strategy", "should_trigger": false},
+  {"query": "write me a Python script to download EURUSD data from dukascopy", "should_trigger": false}
+]

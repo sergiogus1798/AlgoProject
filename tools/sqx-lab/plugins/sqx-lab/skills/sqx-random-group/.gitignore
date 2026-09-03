@@ -1,0 +1,13 @@
+# Per-install artifacts — derived by bootstrap on the target machine, never committed
+catalog.json
+catalog.md
+
+# Generated sets / scratch output
+out.xml
+*_groups.xml
+blockGroups_*.xml
+specs.json
+
+# Python
+__pycache__/
+*.pyc
