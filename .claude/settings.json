@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 tools/checks.py)",
+      "Bash(python3 tools/depmap.py)",
+      "Bash(python3 tools/daily_audit.py)",
+      "Bash(python3 tests/test_cfx.py)",
+      "Bash(python3 -m core.assets:*)",
+      "Bash(python3 1_sqx/inspect/dump_project.py:*)",
+      "Bash(python3 1_sqx/inspect/instruments.py:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  }
+}
