@@ -1,7 +1,8 @@
 # Open Issues
 
 Tracked issues for the AlgoProject / StrategyQuant X pipeline.
-Split out of `CLAUDE.md` on 2026-09-02 so the always-loaded project instructions stay lean.
+Split out of `CLAUDE.md` on 2026-09-02 so the always-loaded instructions stay lean.
+Migrated into the rebuilt project on 2026-09-03; paths updated to this tree.
 
 Status: 🔴 open · 🟡 in progress · 🟢 resolved · ⚪ closed / won't fix
 
@@ -68,7 +69,7 @@ from the chain.
 ## 2. ⚪ ~1,208 `SPP OOS` + ~1,142 `WFM` XAUUSD strategies lost — CLOSED, accepted
 
 Investigated 2026-09-02. Indexed every `.sqx` on the machine by the SHA-256 of its inner
-`strategy_Portfolio.xml` (see `tools/recovery/index_sqx.py`): **17,754 files → 13,288 unique
+`strategy_Portfolio.xml` (see `1_sqx/inspect/index_sqx.py`): **17,754 files → 13,288 unique
 strategies**, 5 unreadable.
 
 The lost strategies are **not recoverable**. Every archived XAUUSD copy on disk dates from
@@ -133,17 +134,6 @@ today (the template is embedded in `Build-Task3.xml`) but it makes the field unr
 
 History before 18 Aug is gone. Consider archiving `user/log/StrategyQuant/` on a schedule.
 
----
-
-## Constraints discovered while investigating
-
-- **SQX rewrites every `project.cfx` on save/exit.** All 14 project files were restamped within the
-  same second (`14:33:43`, 2026-09-02). Editing a `project.cfx` on disk while the GUI holds that
-  project **will be silently overwritten**. Config edits must be made in the GUI, or on disk only
-  while SQX is not running.
-- `project.cfx` is a plain ZIP: `config.xml` + one `<Type>-Task<N>.xml` per task. Safe to *read*
-  at any time.
-
 ## 7. 🟡 `core.sqxfile` has no golden test
 
 `tests/test_cfx.py` protects the project parser; the `.sqx` parser has nothing. A fixture needs a real
@@ -159,3 +149,30 @@ strange analysis results, weeks later.
 predictor study, the databank scan, the trade validator and their plotting code. They were written
 against the old data layout, so reusing one means rewriting it over `core/` and the data root. Their
 findings are already in `knowhow/`; the code is kept only so a result can be reproduced.
+
+## 9. 🔴 Nine projects may be ignoring their strategy templates
+
+🔬 Measured 2026-09-03 across every project on the master: **AUDJPY, CADJPY_H1, EURJPY_H1, EURUSD,
+GBPJPY_H1, SP500_H1, USDCHF, USDJPY and XAUUSD** all declare `<StrategyType type="simple">` in their
+Build task while also naming a real `templateFile` — `DoubleROCLong`, `CCIPercShort`,
+`DoubleVortexLong` and others. Only the breakout projects declare `type="template"`.
+
+🤔 The reported consequence is that SQX ignores the template entirely and builds generic strategies.
+That is **not yet confirmed against a real build**, and it is the single cheapest thing to confirm
+here, because if it holds then nine projects have been generating something other than what the
+owner designed.
+
+**How to settle it without running anything destructive:** take one strategy from a databank those
+projects wrote and check whether its rules use the blocks the named template declares. If they do
+not, the template was never applied. `core/sqxfile.py` reads both.
+
+---
+
+## Constraints discovered while investigating
+
+- **SQX rewrites every `project.cfx` on save/exit.** All 14 project files were restamped within the
+  same second (`14:33:43`, 2026-09-02). Editing a `project.cfx` on disk while the GUI holds that
+  project **will be silently overwritten**. Config edits must be made in the GUI, or on disk only
+  while SQX is not running.
+- `project.cfx` is a plain ZIP: `config.xml` + one `<Type>-Task<N>.xml` per task. Safe to *read*
+  at any time.

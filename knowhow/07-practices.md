@@ -18,7 +18,7 @@
 ## Research lessons
 
 - 🔬 **A stop-fill assumption can dominate a stop study's conclusion.** In the ATR-stop study
-  (`3_strategies/analysis/atr_stop_study.py`), filling exactly at the stop made tight stops look
+  (`archive/studies/atr_stop_study.py`), filling exactly at the stop made tight stops look
   excellent (PF 2.09 at 0.5×ATR); allowing 0.25×ATR of slippage erased it (PF 1.49, net −37%), while a
   3×ATR stop lost only 11%. **Never present an MAE-threshold stop simulation without a slippage
   sensitivity — the tighter the stop, the more of the answer is the assumption.**

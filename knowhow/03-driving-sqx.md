@@ -80,11 +80,16 @@ Not "which agent has permission". The boundary is **whether a running instance h
   **dangling `GoToTask`** pointing at a task name that no longer existed. For a builder-only project,
   strip it: `python3 1_sqx/inspect/keep_tasks.py in.cfx out.cfx --types Build`. That also drops
   databank registrations nothing references, while keeping the 5 system ones.
-- 🔬 **`<StrategyType type="simple">` makes SQX IGNORE the attached `templateFile`** and build generic
-  strategies instead. The engine flags and corrects this when cloning. **The live master XAUUSD build
-  task is still `type="simple"` while carrying `templateFile=".../DoubleVortexLong_Template.sqx"`** —
-  so that template is very likely not being used at all. 🤔 Not confirmed against a real build; worth
-  checking, and it would explain a lot.
+- **`<StrategyType type="simple">` and an attached `templateFile` are contradictory.** 🤔 The
+  reported behaviour is that SQX ignores the template and builds generic strategies; the engine flags
+  and corrects it when cloning. Still **not confirmed against a real build**, and it would explain a
+  lot if true.
+
+  🔬 Measured across every project on the master, 2026-09-03: **nine projects are in exactly that
+  state** — AUDJPY, CADJPY_H1, EURJPY_H1, EURUSD, GBPJPY_H1, SP500_H1, USDCHF, USDJPY and XAUUSD all
+  declare `type="simple"` while naming a real template file. Only the breakout projects declare
+  `type="template"`. Grep it from the generated maps:
+  `grep -l "'type': 'simple'" docs/*-pipeline.md`. Tracked as `OPEN.md` issue 9.
 - `templateFile` paths are **absolute** (build 144 has no relative form) and resolve against the
   **target** install. Copy templates into `<install>/user/settings/StrategyTemplates/<set>/` first.
 - 🔬 `uSymbol` is the field SQX actually binds against, not `symbol`. The engine blanks it and SQX heals

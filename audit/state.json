@@ -1,0 +1,37 @@
+{
+  "last_audit": "2026-09-03",
+  "findings": {
+    "sqx.template_simple_mismatch": {
+      "severity": "red",
+      "status": "open",
+      "count": 9
+    },
+    "sqx.sp500ft_missing_task_members": {
+      "severity": "orange",
+      "status": "open"
+    },
+    "docs.condition_third_schema": {
+      "severity": "orange",
+      "status": "fixed"
+    },
+    "code.sqxfile_no_golden_test": {
+      "severity": "yellow",
+      "status": "open"
+    },
+    "code.archived_analyses_unconverted": {
+      "severity": "yellow",
+      "status": "open"
+    },
+    "sqx.template_catalog_install_mismatch": {
+      "severity": "yellow",
+      "status": "open"
+    }
+  },
+  "mechanical": {
+    "checks_py": 0,
+    "tests": "ok",
+    "root_claude_lines": 52,
+    "projects_rendering": "15/16",
+    "exports_with_manifest": "4/4"
+  }
+}

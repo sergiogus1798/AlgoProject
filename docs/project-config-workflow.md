@@ -52,7 +52,7 @@ curl -g "$W?cmd=-project%20action=remove%20name=MyProject"
 Verify what SQX actually stored by reading the project back — never trust the load message alone:
 
 ```bash
-python3 tools/sqx-inspect/dump_project.py \
+python3 1_sqx/inspect/dump_project.py \
     ~/Desktop/SQX_w1/user/projects/MyProject/project.cfx | head -40
 ```
 
