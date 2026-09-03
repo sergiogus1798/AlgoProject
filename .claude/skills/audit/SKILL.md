@@ -17,3 +17,14 @@ argument it does all four.
 
 The auditor never starts or stops SQX and never fixes what it finds. Fixing is a separate decision,
 and it is the owner's.
+
+## The mechanical half runs without a model
+
+```bash
+python3 tools/daily_audit.py
+```
+
+Rule checks, tests, projects that fail to render, exports missing a manifest, and assets a live
+project uses whose real cost is still undecided. It writes `audit/YYYY-MM-DD-mechanical.md` and exits
+non-zero on a regression, so it can sit in cron unattended — `tools/README.md` has the line. Read its
+report first; the agent should spend its effort on what a script cannot see.

@@ -24,13 +24,14 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/worker.py` | 52 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
 | `tests/test_cfx.py` | 47 | Golden-file test for core.cfx: a parser that breaks silently poisons every analysis. | core | — |
 | `tools/checks.py` | 164 | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | depmap | — |
+| `tools/daily_audit.py` | 108 | The half of the daily audit a machine can do alone. Judgement stays with the /audit agent. | core | — |
 | `tools/depmap.py` | 127 | Generate docs/DEPENDENCIES.md from the imports actually present in the project's Python files. | — | — |
 
 ## Who depends on what
 
 | project module | imported by |
 |---|---|
-| `core` | `1_sqx/export/export_metrics.py`, `1_sqx/export/export_trades.py`, `1_sqx/inspect/dump_project.py`, `1_sqx/inspect/index_sqx.py`, `1_sqx/inspect/instruments.py`, `core/assets.py`, `core/cfx.py`, `core/exportdrv.py`, `core/manifest.py`, `core/worker.py`, `tests/test_cfx.py` |
+| `core` | `1_sqx/export/export_metrics.py`, `1_sqx/export/export_trades.py`, `1_sqx/inspect/dump_project.py`, `1_sqx/inspect/index_sqx.py`, `1_sqx/inspect/instruments.py`, `core/assets.py`, `core/cfx.py`, `core/exportdrv.py`, `core/manifest.py`, `core/worker.py`, `tests/test_cfx.py`, `tools/daily_audit.py` |
 | `depmap` | `tools/checks.py` |
 | `project_map` | `1_sqx/inspect/dump_project.py` |
 | `project_parts` | `1_sqx/inspect/project_map.py` |
