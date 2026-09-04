@@ -120,8 +120,10 @@ Not "which agent has permission". The boundary is **whether a running instance h
   `SQ3StrategyTemplateExample.sq4`, which does not exist on this install — so 10 hits, 9 with a real
   template file.
 
-  Tracked as `OPEN.md` issue 9. The fix — flipping the nine to `type="template"` — changes what those
-  projects generate, so it is the owner's decision, and it needs the GUI closed.
+  Tracked as `OPEN.md` issue 9. Flipping the nine to `type="template"` would change what those
+  projects generate — that is the owner's call, not a bug to fix (hard rule 3). **Owner's decision,
+  2026-09-04: leave all nine as they are.** The finding stands only as a fact about what these
+  populations are: generic strategies, whatever their `templateFile` implies.
 - `templateFile` paths are **absolute** (build 144 has no relative form) and resolve against the
   **target** install. Copy templates into `<install>/user/settings/StrategyTemplates/<set>/` first.
 - 🔬 `uSymbol` is the field SQX actually binds against, not `symbol`. The engine blanks it and SQX heals

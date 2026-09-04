@@ -1,143 +1,129 @@
 {
   "last_audit": "2026-09-04",
+  "scope_note": "SQX scope narrowed 2026-09-04: report only broken exports, oversized logs, corrupt blocks/archives. Project configuration (inactive tasks, template usage, databanks a task clears, loops, GoToTask targets, which templates a project names) is the owner's decision and is never a finding, never tracked here.",
   "findings": {
-    "sqx.template_simple_mismatch": {
-      "severity": "red",
-      "status": "open",
-      "count": 9,
-      "first_seen": "2026-09-03",
-      "note": "2026-09-04: escalated from inferred to measured. 0 of ~200 sampled strategies across 8 of the 9 projects carry the template's fixed block; positive control passes. CADJPY_H1 unmeasured, 0 .sqx on disk. Independently reproduced by the parallel session: 0 of 642 over 8 projects and 33 databanks. OPEN.md 9 now carries it. CADJPY_H1 also unsettleable because its template is made entirely of RandomCondition blocks and fixes nothing."
-    },
-    "sqx.tldr_ignores_inactive_tasks": {
-      "severity": "red",
+    "code.tldr_ignores_task_active": {
+      "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "project_map.databank_flow and tldr never read Task@active. Active unconditional loops: AUDJPY, GBPJPY_H1, SP500_H1, XAUUSD only. At-risk databanks EURUSD 8->2, GBPJPY_H1 3->1, CADJPY_H1 7->6.",
-      "open_md": 10
-    },
-    "sqx.breakout_templates_on_worker_only": {
-      "severity": "orange",
-      "status": "open",
-      "first_seen": "2026-09-04",
-      "supersedes": "sqx.template_catalog_install_mismatch",
-      "note": "XAUUSD_Breakout_H1 on the master names 5 templateFiles under ~/Desktop/SQX_w1/.../breakout_xau/. Master has no breakout_xau/.",
-      "open_md": 11
-    },
-    "stats.atr_stop_in_sample_grid_selected": {
-      "severity": "orange",
-      "status": "open",
-      "first_seen": "2026-09-04",
-      "note": "knowhow/07 quotes PF 2.09 at 0.5xATR: in-sample, pool selected by search over the same window, argmax of an 11-point grid on the grid edge, single slippage point.",
-      "open_md": 13
-    },
-    "stats.two_population_split_underpowered": {
-      "severity": "orange",
-      "status": "open",
-      "first_seen": "2026-09-04",
-      "note": "knowhow/06 ~129 + ~11 of 231 = 140; 91 unclassified, threshold unstated, n=11 subgroup median, denominator not deduplicated on trade lists, windows mixed.",
-      "open_md": 13
-    },
-    "data.knowhow_results_not_reproducible": {
-      "severity": "orange",
-      "status": "open",
-      "first_seen": "2026-09-04",
-      "note": "knowhow/06 and 07 cite the old project's 231-strategy corpus; data root holds 36. Generating scripts parked in archive/studies against the old layout.",
-      "open_md": 12
+      "note": "Reclassified from sqx.tldr_ignores_inactive_tasks under the narrowed scope: the SQX-wiring content (which loops are active, databank exposure) is out of scope, but 1_sqx/inspect/project_map.py databank_flow() and tldr() still never read Task@active -- a bug in our own code, core/cfx.py already exposes it. Unfixed as of 2026-09-04 08:36 snapshot."
     },
     "sqx.sp500ft_missing_task_members": {
       "severity": "orange",
       "status": "open",
       "first_seen": "2026-09-03",
-      "note": "2026-09-04: repair built and dry-run verified (1_sqx/repair/graft_tasks.py grafts the five absent members instead of swapping the backup, which would have regressed the project name, a databank registration and one task's input). Blocked on the master GUI being closed."
+      "note": "In scope: corrupt archive. config.xml references Retest-Task4/6/8/9/10.xml, absent from the live archive (backup holds them). dump_project.py reproduces KeyError: There is no item named 'Retest-Task8.xml'. Repair (1_sqx/repair/graft_tasks.py) built and dry-run verified 2026-09-04, blocked on the master GUI being closed. Unchanged today."
+    },
+    "data.export_missing_manifest": {
+      "severity": "orange",
+      "status": "open",
+      "first_seen": "2026-09-04",
+      "note": "raw/XAUUSD/OOS/2026-09-03/export_data_view.csv (10823 bytes, 36 rows) has no manifest.json. Filename matches no current export script's output (export_metrics.py writes metrics.csv, export_trades.py writes per-strategy files). Only unmanifested export under raw/ today; tools/daily_audit.py's exports_without_manifest() now flags it."
+    },
+    "stats.is_oos_10k_no_trade_dedup": {
+      "severity": "orange",
+      "status": "open",
+      "first_seen": "2026-09-04",
+      "note": "New 2_tasks/reports/is_oos.py report over XAUUSD/OOS (10,000 strategies, metrics.csv) computes every correlation/p-value with no trade-list dedup, the exact trap 2_tasks/CLAUDE.md names first. Checked inner-XML identity hash across all 10,000 .sqx on disk: 0 duplicates -- reassuring but insufficient, since the documented old-corpus duplicates (45/231) had different hashes and identical trades. Rest of the report is methodologically careful (BH correction, heavy-tail caveats, weak-effect framing)."
+    },
+    "docs.subresult31_format_claim_unsupported": {
+      "severity": "yellow",
+      "status": "open",
+      "first_seen": "2026-09-04",
+      "note": "knowhow/05's 🤔 'subresult=31 is a percentage, inferred from pairing with format (Decimal2 vs Decimal2Pct)' does not hold: no .vw file carries a format attribute at all. Cheap test run (grep subresult= across user/settings/views/databanks/*.vw): subresult=31/32 appear only under resultType=WalkForwardMatrix, on both percentage and non-percentage metrics (NumberOfTrades, NetProfit, SharpeRatio, AvgWin). The split tracks resultType, not raw-vs-percentage. Inference should be retagged/corrected, not just left 🤔."
     },
     "code.two_cfx_parsers": {
       "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "core/cfx.py (tested, iter) vs 1_sqx/inspect/project_parts.py (untested, findall). core.cfx.conditions imported by nothing but its own test."
-    },
-    "docs.open1_table_covers_6_of_9": {
-      "severity": "yellow",
-      "status": "open",
-      "first_seen": "2026-09-04",
-      "note": "OPEN.md 1 omits CADJPY_H1, EURJPY_H1, USDCHF; all three clear a WFM databank while auto-sync is on."
-    },
-    "docs.export_py_renamed": {
-      "severity": "yellow",
-      "status": "open",
-      "first_seen": "2026-09-04",
-      "note": "knowhow/06 names 1_sqx/export/export.py; file is export_trades.py. Only broken path in the tree."
-    },
-    "docs.template_grep_offbyone": {
-      "severity": "yellow",
-      "status": "fixed",
-      "first_seen": "2026-09-04",
-      "note": "Found and removed the same day by the parallel session rewriting knowhow/03. Never opened."
+      "note": "core/cfx.py (tested, iter) vs 1_sqx/inspect/project_parts.py (untested, findall). core.cfx.conditions imported by nothing but its own test. Unchanged today."
     },
     "code.manifest_check_blind_spots": {
       "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "daily_audit.exports_without_manifest skips dirs holding subdirs and never leaves raw/; reports/XAUUSD_OOS_explorer.html is invisible. Stale DEPENDENCIES.md excluded from the exit code."
-    },
-    "code.sqxfile_no_golden_test": {
-      "severity": "yellow",
-      "status": "fixed",
-      "first_seen": "2026-09-03",
-      "note": "2026-09-04: tests/test_sqxfile.py + a 28 KB fixture retaining its Results/Main entry, so sqxfile.symbol is exercised. Uncommitted at audit time."
+      "note": "daily_audit.exports_without_manifest skips dirs holding subdirs and never leaves raw/; reports/XAUUSD_OOS_explorer.html-class outputs invisible. Stale DEPENDENCIES.md computed (dirty) but excluded from the exit code. Unchanged today -- confirmed by reading tools/daily_audit.py main()."
     },
     "code.archived_analyses_unconverted": {
       "severity": "yellow",
       "status": "open",
-      "first_seen": "2026-09-03"
-    },
-    "sqx.template_catalog_install_mismatch": {
-      "severity": "yellow",
-      "status": "superseded",
       "first_seen": "2026-09-03",
-      "superseded_by": "sqx.breakout_templates_on_worker_only"
-    },
-    "docs.condition_third_schema": {
-      "severity": "orange",
-      "status": "fixed",
-      "first_seen": "2026-09-03",
-      "note": "2026-09-04: reverified. 138 conditions / 101 active / Build 49 / 24 reproduce exactly."
+      "note": "archive/studies/ still holds atr_stop.py, atr_stop_study.py, scan_strategies.py, validate_trades.py, plots.py unconverted. is_oos_analysis.py was converted (2_tasks/analysis + 2_tasks/reports); plots_is_oos.py/scatter_page.py superseded in purpose but kept."
     },
     "docs.phase_claude_over_budget": {
       "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "1_sqx/CLAUDE.md grew from 35 to 41 lines during this run; limit is 40."
+      "note": "1_sqx/CLAUDE.md still 41 lines, limit 40. 2_tasks/CLAUDE.md is now exactly 40/40 (grew from 23, still within budget)."
+    },
+    "stats.atr_stop_in_sample_grid_selected": {
+      "severity": "orange",
+      "status": "open",
+      "first_seen": "2026-09-04",
+      "note": "knowhow/07 still quotes PF 2.09 at 0.5xATR without requalifying as in-sample/grid-selected. Unchanged today."
+    },
+    "stats.two_population_split_underpowered": {
+      "severity": "orange",
+      "status": "open",
+      "first_seen": "2026-09-04",
+      "note": "knowhow/06 still states ~129 + ~11 of 231 = 140 (91 unclassified, threshold unstated, n=11 subgroup) without requalifying. Unchanged today."
+    },
+    "data.knowhow_results_not_reproducible": {
+      "severity": "orange",
+      "status": "open",
+      "first_seen": "2026-09-04",
+      "note": "knowhow/06 and 07 cite the old project's 231-strategy corpus; generating scripts parked in archive/studies against the old layout. Widened 2026-09-04: metrics/XAUUSD/OOS/metrics.csv (10,000 rows, code_version 'migrated from AlgoProject_Old, pre-git') now also feeds a live, current report (2_tasks/reports/is_oos.py), so the non-reproducibility is no longer purely a knowhow-prose concern."
+    },
+    "docs.export_py_renamed": {
+      "severity": "yellow",
+      "status": "fixed",
+      "first_seen": "2026-09-04",
+      "note": "2026-09-04: knowhow/06 now correctly names export_trades.py and export_metrics.py. Resolved."
+    },
+    "code.sqxfile_no_golden_test": {
+      "severity": "yellow",
+      "status": "fixed",
+      "first_seen": "2026-09-03",
+      "note": "tests/test_sqxfile.py + fixture still passes today."
+    },
+    "docs.condition_third_schema": {
+      "severity": "orange",
+      "status": "fixed",
+      "first_seen": "2026-09-03",
+      "note": "Not rechecked this run (out of the narrowed SQX-conditions territory); no reason to believe it regressed."
     }
   },
+  "dropped_scope_narrowed_2026_09_04": [
+    "sqx.template_simple_mismatch",
+    "sqx.breakout_templates_on_worker_only",
+    "sqx.template_catalog_install_mismatch",
+    "docs.open1_table_covers_6_of_9",
+    "docs.template_grep_offbyone"
+  ],
   "mechanical": {
     "exit_code": 1,
-    "exit_driver": "Infinox_SP500ft_H4_HighPrecision fails to render",
+    "exit_drivers": ["Infinox_SP500ft_H4_HighPrecision fails to render", "raw/XAUUSD/OOS/2026-09-03 has no manifest"],
     "checks_py": 0,
-    "tests": "ok",
-    "depmap": "current",
-    "root_claude_lines": 52,
+    "depmap": "current, 28 files",
+    "root_claude_lines": 53,
     "phase_claude_lines": {
       "1_sqx": 41,
-      "2_tasks": 23,
+      "2_tasks": 40,
       "3_strategies": 24,
       "4_portfolio": 14
     },
-    "projects_rendering": "15/16",
-    "maps_identical_to_docs": "15/15",
-    "exports_with_manifest": "2/2 under raw/",
     "assets_undecided": 17
   },
   "snapshot": {
-    "head": "c110087",
-    "working_tree": "dirty at audit time; the parallel session landed project_health.py, 1_sqx/repair/, tests/test_sqxfile.py, archive_logs.py, template_check.py and rewrote OPEN.md 3-9 plus knowhow/01,03,06 mid-run"
+    "head": "08174a7",
+    "working_tree": "dirty at audit time; a documenter session is rewriting OPEN.md, CLAUDE.md, knowhow/03 concurrently; a second session landed 2_tasks/analysis/ and 2_tasks/reports/ uncommitted"
   },
   "next_audit_should_check": [
-    "whether project_map.py now filters on Task@active and the 15 maps were regenerated",
-    "whether OPEN.md 1's table was rewritten for all 9 build projects",
-    "whether breakout_xau/ was copied to the master and the 5 templateFile fields repointed",
-    "whether the nine type=simple projects were flipped, and if so that XAUUSD_Breakout_H1 now has strategies on disk as the positive control",
-    "whether knowhow/06 still names 1_sqx/export/export.py",
-    "whether the ATR-stop and two-population claims were requalified"
+    "whether raw/XAUUSD/OOS/2026-09-03 got a manifest or was removed",
+    "whether is_oos.py or its report gained a trade-dedup check or caveat",
+    "whether knowhow/05's subresult=31 claim was corrected",
+    "whether project_map.py now filters on Task@active (code bug, independent of the SQX-wiring scope it used to feed)",
+    "whether the ATR-stop and two-population claims were requalified",
+    "whether Infinox_SP500ft_H4_HighPrecision was repaired (needs the master GUI closed)"
   ]
 }

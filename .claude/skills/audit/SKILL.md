@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Run the daily project audit — documentation against reality, SQX health, code and data integrity, statistical rigour. Use when the owner asks for an audit, a health check, or what is broken.
+description: Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks). Use when the owner asks for an audit, a health check, or what is broken.
 ---
 
 # /audit
@@ -16,7 +16,8 @@ Pass an area name as an argument (`docs`, `sqx`, `code`, `stats`) to audit only 
 argument it does all four.
 
 The auditor never starts or stops SQX and never fixes what it finds. Fixing is a separate decision,
-and it is the owner's.
+and it is the owner's. `sqx` means only the export path, log sizes and corrupt blocks or archives —
+how a project is configured is the owner's choice and is never audited unless he asks for it.
 
 ## The mechanical half runs without a model
 

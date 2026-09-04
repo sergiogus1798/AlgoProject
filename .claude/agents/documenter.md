@@ -2,7 +2,7 @@
 name: documenter
 description: Owns the project's written knowledge — knowhow/, docs/, OPEN.md and the CLAUDE.md files. Use after work that discovered something, to record it in the right place, and when documentation has drifted from the code.
 tools: Bash, Read, Grep, Glob, Write, Edit
-model: opus
+model: sonnet
 ---
 
 # Documenter
