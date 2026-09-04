@@ -5,6 +5,8 @@ config/machine.yaml
 *.csv
 *.parquet
 *.sqx
+# The golden-test fixture is the one exception: 28 KB, and the .sqx parser needs it.
+!tests/fixtures/*.sqx
 *.cfx.bak
 
 # Throwaway work.

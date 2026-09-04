@@ -1,0 +1,45 @@
+{
+  "identity": "5268b7cdef6419c9334640107d1282a7be5c9773fbcace56324e685ee53511f7",
+  "symbol": [
+    "USDCHF",
+    "DarwTick_the5ers_LOM_H1"
+  ],
+  "parameters": {
+    "#Chart#": "0",
+    "#Period#": "AroonCrossesPeriod1",
+    "#Shift#": "1",
+    "#Identification#": "EnterAtMarket1",
+    "#KPeriod#": "StochasticKPeriod1",
+    "#DPeriod#": "StochasticDPeriod1",
+    "#Slowing#": "StochasticSlowing1",
+    "#MAMethod#": "3",
+    "#PriceField#": "1",
+    "#Line#": "0",
+    "#Bars#": "2",
+    "#NotStrict#": "false",
+    "#Variable#": "33333333-2222-1111-3333-333333333333",
+    "#Symbol#": "Current",
+    "#Direction#": "-1",
+    "#Size#": "0.1",
+    "#MagicNumber#": "11111111-1111-1111-1111-111111111111",
+    "#Comment#": "",
+    "#AllowDuplicateTrades#": "false",
+    "#ExitAfterBars.ExitAfterBars#": "0",
+    "#MoveSL2BE.MoveSL2BE#": "",
+    "#MoveSL2BE.SL2BEAddPips#": "",
+    "#ProfitTarget.ProfitTarget#": "",
+    "#Value#": "TrailingStop1",
+    "#AtrPeriod#": "20",
+    "#StopLoss.StopLoss#": "",
+    "#TrailingStop.TrailingStop#": "",
+    "#TrailingStop.TrailingActivation#": ""
+  },
+  "blocks": {
+    "indicator/Stochastic": 1,
+    "operators/IsFalling": 1,
+    "other/BooleanVariable": 1,
+    "other/EnterAtMarket": 1,
+    "simpleRules/AroonCrossesBelow": 1,
+    "None/AND": 1
+  }
+}

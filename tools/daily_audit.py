@@ -76,6 +76,7 @@ def main() -> None:
     """Write today's mechanical audit and exit non-zero if anything regressed."""
     checks_code, checks_out = run("python3", "tools/checks.py")
     tests_code, tests_out = run("python3", "tests/test_cfx.py")
+    sqx_code, sqx_out = run("python3", "tests/test_sqxfile.py")
     depmap_code, _ = run("python3", "tools/depmap.py")
     dirty = run("git", "status", "--porcelain", "docs/DEPENDENCIES.md")[1]
 
@@ -89,19 +90,22 @@ def main() -> None:
              "| check | result |", "|---|---|",
              f"| `tools/checks.py` | {'ok' if not checks_code else 'FAILED'} |",
              f"| `tests/test_cfx.py` | {'ok' if not tests_code else 'FAILED'} |",
+             f"| `tests/test_sqxfile.py` | {'ok' if not sqx_code else 'FAILED'} |",
              f"| `docs/DEPENDENCIES.md` | {'stale, regenerated' if dirty else 'current'} |",
              f"| projects that fail to render | {', '.join(bad) or 'none'} |",
              f"| exports without a manifest | {', '.join(no_manifest) or 'none'} |",
              f"| assets in use, cost still undecided | {', '.join(undecided) or 'none'} |"]
     if checks_code:
         lines += ["", "## checks.py output", "", "```", checks_out, "```"]
-    if tests_code:
-        lines += ["", "## test output", "", "```", tests_out, "```"]
+    if tests_code or sqx_code:
+        lines += ["", "## test output", "", "```",
+                  "\n".join(filter(None, [tests_out, sqx_out])), "```"]
 
     out = ROOT / "audit" / f"{date.today().isoformat()}-mechanical.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {out.relative_to(ROOT)}")
-    sys.exit(1 if (checks_code or tests_code or depmap_code or bad or no_manifest) else 0)
+    sys.exit(1 if (checks_code or tests_code or sqx_code or depmap_code
+                   or bad or no_manifest) else 0)
 
 
 if __name__ == "__main__":

@@ -52,8 +52,17 @@ listing** rather than assuming the list is complete.
 
 🔬 **The cause of that class of failure is a `config.xml` that references task XML members the
 archive does not contain** (found 2026-09-03). That project declares 8 tasks and ships only 3 task
-files. Detect it cheaply across every project by running `1_sqx/inspect/dump_project.py` on each: a
-corrupt one raises `KeyError: There is no item named '<Task>.xml'`, and a healthy one renders.
+files. `1_sqx/inspect/project_health.py` scans every project for it in one pass; it is the only
+broken one on this install.
+
+🔬 **Repair it by grafting, not by swapping in the backup** (2026-09-04). Diffing the two archives
+member by member: `project_backup.cfx` is from 2025-10-13 and its `config.xml` still carries the old
+name `Infinox - SP500ft - H4 (High Precision)` **with spaces** — which breaks the HTTP API, hard rule
+6 — plus an `OOS` databank registration that was since removed and a `Retest-Task2.xml` whose input
+databank is the stale `Complete Data Uncorrelated` instead of `Results`. Restoring the whole archive
+undoes all three. `1_sqx/repair/graft_tasks.py` keeps every live member and copies in only the five
+absent ones, then verifies that nothing is still missing and that every databank the grafted tasks
+name is registered.
 
 ## Projects built on the worker are invisible on the master
 
@@ -80,16 +89,39 @@ Not "which agent has permission". The boundary is **whether a running instance h
   **dangling `GoToTask`** pointing at a task name that no longer existed. For a builder-only project,
   strip it: `python3 1_sqx/inspect/keep_tasks.py in.cfx out.cfx --types Build`. That also drops
   databank registrations nothing references, while keeping the 5 system ones.
-- **`<StrategyType type="simple">` and an attached `templateFile` are contradictory.** 🤔 The
-  reported behaviour is that SQX ignores the template and builds generic strategies; the engine flags
-  and corrects it when cloning. Still **not confirmed against a real build**, and it would explain a
-  lot if true.
+- 🔬 **`<StrategyType type="simple">` wins over an attached `templateFile`: the template is not
+  applied.** Confirmed against real built strategies 2026-09-04, no longer an inference.
 
-  🔬 Measured across every project on the master, 2026-09-03: **nine projects are in exactly that
-  state** — AUDJPY, CADJPY_H1, EURJPY_H1, EURUSD, GBPJPY_H1, SP500_H1, USDCHF, USDJPY and XAUUSD all
-  declare `type="simple"` while naming a real template file. Only the breakout projects declare
-  `type="template"`. Grep it from the generated maps:
-  `grep -l "'type': 'simple'" docs/*-pipeline.md`. Tracked as `OPEN.md` issue 9.
+  Method, in `1_sqx/inspect/template_check.py`: take the blocks a template *fixes* — every `Item`
+  under its `Rules` whose `categoryType` is `indicator`, `simpleRules`, `priceValue` or `priceRange`,
+  **skipping the subtree of any `categoryType="randomBlock"`**, because those are the holes the
+  builder fills and say nothing about the template. Then open strategies the project actually wrote
+  and check the signature is present.
+
+  Result over 8 projects and 33 databanks, sampling 25 per databank, seed 0:
+  **0 of 642 strategies from built databanks carry their project's template block.** XAUUSD names
+  `DoubleVortexLong_Template.sqx`, whose only fixed block is `Vortex`, and not one of its 10,231
+  strategies contains a Vortex; each uses a different random indicator instead. Same for
+  `ROCAboveLevel` (AUDJPY, EURUSD, USDJPY), `AroonCrossesAbove` (GBPJPY_H1), `CCI` (USDCHF),
+  `HurstExponent` (SP500_H1) and `BBWidthRatio` (EURJPY_H1).
+
+  Positive control: the detector *does* fire. Of 53 strategies sampled from `Existing portfolio`
+  databanks, **2 carry the block** — one in SP500_H1 with `HurstExponent`, one in EURJPY_H1. Those
+  databanks hold strategies built elsewhere and imported, so they are neither evidence for the
+  template nor against it; they only prove the check is not blind.
+
+  ⚠️ Two of the nine cannot be settled this way. **CADJPY_H1**'s `AcceleratorEMALong_Template.sqx` is
+  made of nothing but `RandomCondition` blocks, so it fixes no block to look for — a template that
+  constrains only which random groups are sampled. **XAUUSD_Breakout_H1**, the one project declaring
+  `type="template"`, has no strategies on disk, so it gives no positive control from a real build.
+
+  Reproduce the shortlist with `grep -l "'type': 'simple'" docs/*-pipeline.md`: it returns **10**
+  files, not 9. The tenth is `Builder`, whose `templateFile` is the stock relative
+  `SQ3StrategyTemplateExample.sq4`, which does not exist on this install — so 10 hits, 9 with a real
+  template file.
+
+  Tracked as `OPEN.md` issue 9. The fix — flipping the nine to `type="template"` — changes what those
+  projects generate, so it is the owner's decision, and it needs the GUI closed.
 - `templateFile` paths are **absolute** (build 144 has no relative form) and resolve against the
   **target** install. Copy templates into `<install>/user/settings/StrategyTemplates/<set>/` first.
 - 🔬 `uSymbol` is the field SQX actually binds against, not `symbol`. The engine blanks it and SQX heals

@@ -9,8 +9,9 @@ top. **Files in English. Talk to the owner in Spanish.**
    anything that restarts SQX. → `knowhow/02-databanks.md`
 2. **Never run `sqcli` on the master while its GUI is up** — use the worker on 5060. Never
    `pkill -f StrategyQuantX`: the pattern matches your own shell. Kill by PID.
-3. **Never start a build.** The master GUI is the owner's. Start the worker only for one job, then
-   `bin/sqx-worker.sh stop`.
+3. **Never start a build, and never change what a project builds.** The master GUI and its projects
+   are the owner's. Generic versus template generation is his decision, not a bug to fix — touch a
+   project's config only when he names the project. Worker: one job, then `bin/sqx-worker.sh stop`.
 4. **Never edit a `project.cfx` a running instance holds** — SQX rewrites the file on save and exit,
    and the change is silently lost. Use the `-project` API on the worker.
 5. **Before authoring or modifying any project, task or template:** run
