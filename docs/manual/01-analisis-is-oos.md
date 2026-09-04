@@ -110,15 +110,16 @@ No esperes 0,8: en este negocio no existe.
 
 | control | qué hace |
 |---|---|
-| **Y axis** | cambia la métrica de resultado OOS que estás intentando predecir |
-| **Points drawn per panel** | cuántos puntos se **dibujan**, por defecto 100. Dibujar 10.000 puntos tapa el gráfico entero. **Los números no cambian**: ρ, la línea y el histograma siempre usan todas las estrategias. Esto solo afecta a lo que ves |
-| **Axis range** | por defecto recorta el 1% de cada extremo, porque cuatro estrategias absurdas te aplastan el gráfico. `full` enseña todo |
-| **Re-draw sample** | otros 100 puntos al azar, por si te ha tocado una muestra rara |
+| **Eje Y** | cambia la métrica de resultado OOS que estás intentando predecir |
+| **Puntos dibujados por gráfico** | cuántos puntos se **dibujan**, por defecto 100. Dibujar 10.000 puntos tapa el gráfico entero. **Los números no cambian**: ρ, la línea y el histograma siempre usan todas las estrategias. Esto solo afecta a lo que ves |
+| **Rango de los ejes** | por defecto recorta el 1% de cada extremo, porque cuatro estrategias absurdas te aplastan el gráfico. `completo` enseña todo |
+| **Otra muestra** | otros 100 puntos al azar, por si te ha tocado una muestra rara |
 
 ### Filtrar
 
-Aquí es donde el panel deja de describir y empieza a servir para decidir. `+ add clause` añade una
-condición: por ejemplo *quédate solo con el 20% de mejor Sharpe en el IS*.
+Aquí es donde el panel deja de describir y empieza a servir para decidir. `+ añadir condición`
+añade una regla: por ejemplo *quédate solo con el 20% de mejor Sharpe en el IS*. Las opciones
+`% mejores` y `% peores` cortan por percentil; `>`, `≥`, `<` y `≤` cortan por un valor que escribes tú.
 
 ![El panel con un filtro aplicado](assets/panel-filtrado.png)
 
@@ -173,8 +174,8 @@ Abres el panel, dejas `Profit factor (OOS)` en el eje Y y miras el primer gráfi
 
 Añades el filtro *Sharpe Ratio (IS) — top % — 20*. Arriba aparece:
 
-> **2.034** of 10,000 survive the filter (**20.3%**) · median Profit factor (OOS): **0.990**
-> filtered vs 0.950 unfiltered
+> **2034** de 10.000 pasan el filtro (**20.3%**) · mediana de Profit factor (OOS): **0.990**
+> filtrado vs 0.950 sin filtrar
 
 Respuesta: **sí, pero poco.** Descartando el 80% de las estrategias, la mediana del profit factor
 OOS pasa de 0,950 a 0,990 — sigue por debajo de 1. Sirve como un filtro más, no como *el* filtro.

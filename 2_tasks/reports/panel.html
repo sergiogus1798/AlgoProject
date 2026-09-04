@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>IS vs OOS</title>
+<title>IS frente a OOS</title>
 <style>
   :root {
     --blue:#2a78d6; --orange:#eb6834; --aqua:#1baf7a;
@@ -40,33 +40,33 @@
 <body>
 
 <header>
-  <h1 id="title">In-sample against out-of-sample</h1>
+  <h1 id="title">IS frente a OOS</h1>
   <div class="src" id="src"></div>
 
   <div class="row">
-    <div><label for="y">Y axis — out-of-sample outcome</label>
+    <div><label for="y">Eje Y — resultado fuera de muestra</label>
          <select id="y"></select></div>
-    <div><label for="points">Points drawn per panel</label>
+    <div><label for="points">Puntos dibujados por gráfico</label>
          <select id="points">
            <option value="50">50</option>
            <option value="100" selected>100</option>
            <option value="500">500</option>
            <option value="2000">2000</option>
-           <option value="0">all</option>
+           <option value="0">todos</option>
          </select></div>
-    <div><label for="clip">Axis range</label>
+    <div><label for="clip">Rango de los ejes</label>
          <select id="clip">
            <option value="0.01">p1 – p99</option>
            <option value="0.05">p5 – p95</option>
-           <option value="0">full</option>
+           <option value="0">completo</option>
          </select></div>
-    <div><label>&nbsp;</label><button id="reroll">Re-draw sample</button></div>
+    <div><label>&nbsp;</label><button id="reroll">Otra muestra</button></div>
   </div>
 
-  <div><label>Filter — every clause is evaluated against the full population, then ANDed</label>
+  <div><label>Filtro — cada condición se evalúa contra la población completa, y se acumulan</label>
        <div id="clauses"></div>
-       <button class="link" id="add">+ add clause</button>
-       <button class="link" id="clear">clear</button></div>
+       <button class="link" id="add">+ añadir condición</button>
+       <button class="link" id="clear">quitar todas</button></div>
 
   <div id="status"></div>
 </header>
@@ -74,11 +74,11 @@
 <main id="grid"></main>
 
 <footer>
-  Statistics — correlation, regression and the histogram — are computed on every strategy that
-  passes the filter, never on the drawn sample. The sample only limits how many dots are painted,
-  and it is the same set of strategies in every panel. When a filter is active the whole population
-  stays behind in grey so the subset can be read against it. Points outside the axis range are not
-  drawn but are still in the statistics.
+  Las estadísticas — correlación, regresión e histograma — se calculan sobre todas las estrategias
+  que pasan el filtro, nunca sobre la muestra dibujada. La muestra solo limita cuántos puntos se
+  pintan, y son las mismas estrategias en todos los gráficos. Con un filtro puesto, la población
+  entera se queda detrás en gris para poder comparar. Los puntos que caen fuera del rango de los
+  ejes no se dibujan, pero sí cuentan en las estadísticas.
 </footer>
 
 <script>const PAYLOAD = __PAYLOAD__;</script>
@@ -309,7 +309,7 @@ function drawPanel(canvas, xname) {
   g.fillText(fmt(y1, yw), PAD.l - 6, PAD.t + 8);
   g.fillText(fmt(y0, yw), PAD.l - 6, h - PAD.b);
   g.textAlign = 'center';
-  g.fillText('histogram: share of the population per bin of ' + xname, w / 2, h - 8);
+  g.fillText('histograma: % de la población por tramo de ' + xname, w / 2, h - 8);
   return rho;
 }
 
@@ -319,12 +319,14 @@ function render() {
   state.idx = survivors(state.clauses);
   const n = state.idx.length;
   const yf = take(D[state.y], state.idx);
+  const miles = v => v.toLocaleString('es-ES');
   const line = n === N
-    ? `<b>${N.toLocaleString()}</b> strategies, no filter · median ${state.y}: <b>${fmt(median(yf))}</b>`
-    : `<b>${n.toLocaleString()}</b> of ${N.toLocaleString()} survive the filter `
-      + `(<b>${(100 * n / N).toFixed(1)}%</b>) · median ${state.y}: `
-      + `<b>${fmt(median(yf))}</b> filtered vs ${fmt(median(D[state.y]))} unfiltered`;
-  document.getElementById('status').innerHTML = n === 0 ? '<b>no strategy passes the filter</b>' : line;
+    ? `<b>${miles(N)}</b> estrategias, sin filtro · mediana de ${state.y}: <b>${fmt(median(yf))}</b>`
+    : `<b>${miles(n)}</b> de ${miles(N)} pasan el filtro `
+      + `(<b>${(100 * n / N).toFixed(1)}%</b>) · mediana de ${state.y}: `
+      + `<b>${fmt(median(yf))}</b> filtrado vs ${fmt(median(D[state.y]))} sin filtrar`;
+  document.getElementById('status').innerHTML =
+    n === 0 ? '<b>ninguna estrategia pasa el filtro</b>' : line;
 
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
@@ -353,13 +355,13 @@ function clauseRow(clause) {
   row.innerHTML =
     `<select class="col">${NUMERIC.map(c => `<option${c === clause.col ? ' selected' : ''}>${c}</option>`).join('')}</select>
      <select class="op">
-       <option value="top">top % (highest)</option>
-       <option value="bottom">bottom % (lowest)</option>
+       <option value="top">% mejores (más alto)</option>
+       <option value="bottom">% peores (más bajo)</option>
        <option value="&gt;">&gt;</option><option value="&gt;=">&ge;</option>
        <option value="&lt;">&lt;</option><option value="&lt;=">&le;</option>
      </select>
      <input class="val" type="number" step="any" value="${clause.value}" style="width:90px">
-     <button class="x" title="remove">&times;</button>`;
+     <button class="x" title="quitar">&times;</button>`;
   row.querySelector('.op').value = clause.op;
   const read = () => {
     clause.col = row.querySelector('.col').value;
@@ -378,10 +380,10 @@ function clauseRow(clause) {
 
 function boot() {
   document.getElementById('title').textContent =
-    `${P.source.project} / ${P.source.databank} — in-sample against out-of-sample`;
+    `${P.source.project} / ${P.source.databank} — IS frente a OOS`;
   document.getElementById('src').textContent =
-    `${N.toLocaleString()} strategies · view "${P.source.view}" · exported ${P.source.exported} `
-    + `· report ${P.source.reported} · code ${P.source.code_version}`;
+    `${N.toLocaleString('es-ES')} estrategias · vista "${P.source.view}" · exportado `
+    + `${P.source.exported} · informe ${P.source.reported} · código ${P.source.code_version}`;
 
   const y = document.getElementById('y');
   y.innerHTML = P.oos.map(m => `<option>${m}</option>`).join('');
