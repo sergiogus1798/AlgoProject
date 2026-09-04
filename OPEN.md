@@ -87,7 +87,7 @@ from the chain.
 ## 2. ⚪ ~1,208 `SPP OOS` + ~1,142 `WFM` XAUUSD strategies lost — CLOSED, accepted
 
 Investigated 2026-09-02. Indexed every `.sqx` on the machine by the SHA-256 of its inner
-`strategy_Portfolio.xml` (see `1_sqx/inspect/index_sqx.py`): **17,754 files → 13,288 unique
+`strategy_Portfolio.xml` (see `sqx/inspect/index_sqx.py`): **17,754 files → 13,288 unique
 strategies**, 5 unreadable.
 
 The lost strategies are **not recoverable**. Every archived XAUUSD copy on disk dates from
@@ -119,7 +119,7 @@ Two pools were undocumented in `CLAUDE.md`: `~/Desktop/WorkSQX` (635 `.sqx`) and
 
 **Cause (🔬):** `config.xml` references 8 task files; five — `Retest-Task4/6/8/9/10.xml` — are absent
 from the live archive, and the backup holds exactly those five. The GUI cannot resolve a declared
-task, so it drops the project. `1_sqx/inspect/project_health.py` scans every project for this in one
+task, so it drops the project. `sqx/inspect/project_health.py` scans every project for this in one
 pass; it is still the only broken one.
 
 **The repair OPEN.md first proposed was wrong (🔬 2026-09-04).** Swapping `project.cfx` for
@@ -132,7 +132,7 @@ member:
 | databanks | 10 registered | also registers `OOS`, since removed |
 | `Retest-Task2.xml` | input `Results` | input `Complete Data Uncorrelated` |
 
-**The repair, built and verified 2026-09-04:** `1_sqx/repair/graft_tasks.py` keeps every live member
+**The repair, built and verified 2026-09-04:** `sqx/repair/graft_tasks.py` keeps every live member
 and copies in only the five absent ones. Rehearsed on a copy in the scratchpad: the result is a valid
 9-member archive, nothing still missing, the underscore name kept, and every databank the five
 grafted tasks name (`SPP`, `WFM LaCity`, `MC Trades`) already registered in the live `config.xml`.
@@ -141,8 +141,8 @@ grafted tasks name (`SPP`, `WFM LaCity`, `MC Trades`) already registered in the 
 process runs out of the install; it currently exits on that guard. When the lifecycle lane is free:
 
 ```bash
-python3 1_sqx/repair/graft_tasks.py Infinox_SP500ft_H4_HighPrecision           # dry run
-python3 1_sqx/repair/graft_tasks.py Infinox_SP500ft_H4_HighPrecision --apply   # then reopen SQX
+python3 -m sqx.repair.graft_tasks Infinox_SP500ft_H4_HighPrecision           # dry run
+python3 -m sqx.repair.graft_tasks Infinox_SP500ft_H4_HighPrecision --apply   # then reopen SQX
 ```
 
 It backs the old archive up to `AlgoData/backups/projects/` first. Confirm afterwards that the
@@ -150,7 +150,7 @@ master's project list returns 15.
 
 ## 4. 🟡 Projects are older than the app — measured, restamping is GUI work
 
-🔬 Measured across all 16 projects 2026-09-04 with `1_sqx/inspect/project_health.py`. The newest
+🔬 Measured across all 16 projects 2026-09-04 with `sqx/inspect/project_health.py`. The newest
 stamp any project carries is **144.2953**, and only the four the current install has saved carry it —
 `Builder`, `Optimizer`, `Retester`, `PortfolioComposer`. The other twelve are older:
 
@@ -188,7 +188,7 @@ prints any such field, so the value is legible on demand and no longer costs any
 
 ## 6. 🟢 SQX logs pruned to 14 days — archived
 
-🔬 Confirmed and fixed 2026-09-04. `1_sqx/export/archive_logs.py` copies both installs' logs to
+🔬 Confirmed and fixed 2026-09-04. `sqx/export/archive_logs.py` copies both installs' logs to
 `AlgoData/logs/<install>/` as `.gz`, skipping anything already archived and unchanged, and leaves a
 `manifest.json`. First full archive taken the same day: **58 files, 4.4 GB → 102 MB**, master back to
 2026-06-13 and worker to 2026-09-02.
@@ -199,10 +199,11 @@ in issue 1 was recorded — is **4.66 GB** on its own, and compresses to 105 MB.
 
 It is safe while the GUI is up: it reads files and drives no instance.
 
-**Scheduled 2026-09-04**, daily at 08:00, as the machine's only crontab entry:
+**Scheduled 2026-09-04**, daily at 08:00, as the machine's only crontab entry. Updated the same day
+when the layout refactor moved invocation to `python3 -m`:
 
 ```cron
-0 8 * * * /usr/bin/python3 /home/sergioguslw/Desktop/AlgoProject/1_sqx/export/archive_logs.py \
+0 8 * * * cd /home/sergioguslw/Desktop/AlgoProject && /usr/bin/python3 -m sqx.export.archive_logs \
           >> /home/sergioguslw/Desktop/AlgoData/logs/cron.log 2>&1
 ```
 
@@ -234,8 +235,8 @@ and makes `tests/fixtures/` the single exception.
 `archive/studies/` held eight scripts from the previous project. They were written against the old
 data layout, so reusing one means rewriting it over `core/` and the data root.
 
-**Converted 2026-09-04:** the IS→OOS predictor study is now `2_tasks/analysis/` plus
-`2_tasks/reports/is_oos.py`. It is a rewrite, not a port — the old `is_oos_analysis.py` would crash on
+**Converted 2026-09-04:** the IS→OOS predictor study is now `tasks/analysis/` plus
+`tasks/reports/is_oos.py`. It is a rewrite, not a port — the old `is_oos_analysis.py` would crash on
 the current export, because its hard-coded `PAIRED` list names columns this view does not have. The
 new code derives the pairs from the header, deduplicates nothing (this export is one databank, so the
 cross-databank duplicate trap does not apply) and adds a Benjamini-Hochberg correction the old study
@@ -257,7 +258,7 @@ and XAUUSD** all declare `<StrategyType type="simple">` in their Build task whil
 `templateFile`. Only `XAUUSD_Breakout_H1` declares `type="template"`.
 
 **🔬 Confirmed against real built strategies 2026-09-04. It is no longer an inference: the template
-is not applied.** `1_sqx/inspect/template_check.py` settles it, read-only.
+is not applied.** `sqx/inspect/template_check.py` settles it, read-only.
 
 Method: take the blocks a template *fixes* — every `Item` under its `Rules` with `categoryType` of
 `indicator`, `simpleRules`, `priceValue` or `priceRange`, **skipping the subtree of any
@@ -297,7 +298,7 @@ not as work waiting to be done:
 > The nine projects listed above build generic strategies. Their `templateFile` is inert. Anything
 > read out of their databanks was **not** generated from the template its project names.
 
-That matters when interpreting those populations — `2_tasks/` analysis over XAUUSD/OOS is analysis of
+That matters when interpreting those populations — `tasks/` analysis over XAUUSD/OOS is analysis of
 generic strategies, whatever `DoubleVortexLong_Template.sqx` implies. Rerun `template_check.py` after
 any deliberate change to confirm the new setting took.
 
@@ -305,7 +306,7 @@ any deliberate change to confirm the new setting took.
 
 ## 10. 🔴 The pipeline maps count disabled tasks as live — issue 1's table is overstated
 
-🔬 Found 2026-09-04 by the auditor. `1_sqx/inspect/project_map.py` never reads a task's `active`
+🔬 Found 2026-09-04 by the auditor. `sqx/inspect/project_map.py` never reads a task's `active`
 attribute: `databank_flow()` records reads/writes/clears for every task, and `tldr()` walks every
 `GoToTask`, whether or not SQX will run it. `core/cfx.py:51` already exposes `active` correctly — the
 map generator simply does not use it. Same class of mistake as `use="false"` on a condition
@@ -346,7 +347,7 @@ four projects do it.
 The 15 per-project pipeline maps under `docs/` were deleted in the layout refactor (2026-09-04): they were
 hand-triggered, drifted from `project.cfx` between runs, and issue 10 found their generator has a
 real bug. `dump_project.py` is unchanged and is still the source — run it on demand
-(`1_sqx/inspect/dump_project.py <PROJECT>`) instead of reading a stale file in `docs/`.
+(`sqx/inspect/dump_project.py <PROJECT>`) instead of reading a stale file in `docs/`.
 `tools/daily_audit.py` already runs it that way, to `/dev/null`, purely as a health check (it raises
 on a corrupted project archive). A persisted, regenerable format may return later; not designed yet.
 
@@ -401,7 +402,7 @@ old project, not reproducible here", so nobody builds on them assuming they can.
   140, leaving **91 strategies (39%) unclassified**, with the classification threshold unstated. The
   median-MAE comparison (1.37 vs 0.95 ×ATR) rests on **n=11**. The denominator is the raw 231, which
   `knowhow/04` says contains **45 byte-identical trade lists**, so the proportions violate
-  `2_tasks/CLAUDE.md`'s own first trap; and the pool mixes retest windows (46 of 231 cover only
+  `tasks/CLAUDE.md`'s own first trap; and the pool mixes retest windows (46 of 231 cover only
   2018–2023). It carries a 🔬 tag.
 
 **Fix:** restate the ATR lesson as the slippage delta only, and retag the population split 🤔 with its

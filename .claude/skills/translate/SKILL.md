@@ -16,7 +16,7 @@ is a real and easily missed property.
 
 ## 2. Python
 
-Under `3_strategies/translate/`, following `CODESTYLE.md`. It reads bars from the data root and emits
+Under `strategies/translate/`, following `CODESTYLE.md`. It reads bars from the data root and emits
 a trade list in the same shape as SQX's `orderstocsv` export: open time, open price, size, close time,
 close price, profit, MAE, MFE.
 

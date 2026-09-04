@@ -7,11 +7,11 @@ Python does the mathematics that decides which of them are real.
 
 | folder | what happens there |
 |---|---|
-| `1_sqx/` | Everything touching StrategyQuant X: reading projects, authoring blocks, groups, templates and build projects, and getting data out |
-| `2_tasks/` | Whole databanks at once — the maths on a population of thousands of generated strategies |
-| `3_strategies/` | One promising strategy in depth, including translating it into Python and reconciling that against SQX |
-| `4_portfolio/` | Combining strategies, separately for funded accounts and for real capital |
-| `5_mt5/` | Deployment and live-versus-backtest. Reserved, not built |
+| `sqx/` | Everything touching StrategyQuant X: reading projects, authoring blocks, groups, templates and build projects, and getting data out |
+| `tasks/` | Whole databanks at once — the maths on a population of thousands of generated strategies |
+| `strategies/` | One promising strategy in depth, including translating it into Python and reconciling that against SQX |
+| `portfolio/` | Combining strategies, separately for funded accounts and for real capital |
+| `mt5/` | Deployment and live-versus-backtest. Reserved, not built |
 
 Supporting them: `core/` shared library · `assets/` per-asset cost overrides that must be read before
 authoring anything · `knowhow/` the facts that cost time to discover · `docs/` generated reference ·

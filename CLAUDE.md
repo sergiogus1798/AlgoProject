@@ -34,12 +34,12 @@ Talk to the owner in Spanish.**
 |---|---|
 | a fact about formats, the API, exports, conditions | `knowhow/INDEX.md`, then that one file |
 | writing or changing Python | `CODESTYLE.md`, then the folder's own `README.md` |
-| authoring blocks, groups, templates, projects | `1_sqx/CLAUDE.md` |
-| mass export and population maths | `2_tasks/CLAUDE.md` |
-| one strategy in depth, or translating it to Python | `3_strategies/CLAUDE.md` |
-| portfolios | `4_portfolio/CLAUDE.md` |
+| authoring blocks, groups, templates, projects | `sqx/CLAUDE.md` |
+| mass export and population maths | `tasks/CLAUDE.md` |
+| one strategy in depth, or translating it to Python | `strategies/CLAUDE.md` |
+| portfolios | `portfolio/CLAUDE.md` |
 | running something, or explaining to a human how to | `docs/manual/` — `00-empezar.md`, then that module's page |
-| what one SQX project actually does | regenerate on demand: `1_sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
+| what one SQX project actually does | regenerate on demand: `sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
 | what is broken or pending | `OPEN.md` |
 | what data already exists | `~/Desktop/AlgoData/INDEX.md` |
 | what the code imports | `docs/DEPENDENCIES.md` |
@@ -52,8 +52,8 @@ contradicts this file, fix this file too.
 
 ## Layout
 
-`core/` shared library · `1_sqx/` SQX surface · `2_tasks/` population analysis ·
-`3_strategies/` single-strategy analysis · `4_portfolio/` portfolios · `5_mt5/` reserved ·
+`core/` shared library · `sqx/` SQX surface · `tasks/` population analysis ·
+`strategies/` single-strategy analysis · `portfolio/` portfolios · `mt5/` reserved ·
 `assets/` cost overrides · `knowhow/` facts · `audit/` daily reports · `archive/` finished work,
 unmaintained.
 

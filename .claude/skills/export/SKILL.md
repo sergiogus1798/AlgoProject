@@ -11,7 +11,7 @@ these commands; the traps in it are the reason they look the way they do.
 ## Metrics — one row per strategy
 
 ```bash
-python3 1_sqx/export/export_metrics.py --project XAUUSD --databank OOS --view "Export Data View"
+python3 -m sqx.export.export_metrics --project XAUUSD --databank OOS --view "Export Data View"
 ```
 
 The view decides the columns and their sample types; the script tags each header (IS)/(OOS)/(Full).
@@ -20,7 +20,7 @@ It stages the strategies into the worker, starts it, waits for `Records:`, expor
 ## Trades, and the bars they were taken on
 
 ```bash
-python3 1_sqx/export/export_trades.py --project XAUUSD --databank OOS \
+python3 -m sqx.export.export_trades --project XAUUSD --databank OOS \
     --symbol XAUUSD_DukasM1_Infinox
 ```
 
@@ -32,7 +32,7 @@ The symbol carries no timeframe suffix. A folder of `.sqx` exports in one JVM st
    minutes of compute and a second copy of the same rows.
 2. **Check the databank is on disk.** A databank set to "Auto-sync never" can hold records in memory
    and have an empty directory; a file-based export then silently sees nothing. Look downstream for a
-   synced copy — run `1_sqx/inspect/dump_project.py <PROJECT>` to see which task writes where.
+   synced copy — run `sqx/inspect/dump_project.py <PROJECT>` to see which task writes where.
 3. **The worker must end stopped.** If a run fails halfway, stop it: `bin/sqx-worker.sh stop`.
 
 ## After

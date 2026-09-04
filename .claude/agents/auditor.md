@@ -32,7 +32,7 @@ exists, which databanks a task clears, task order, unconditional loops, `GoToTas
 templates a project names. Do not report any of it, do not rank it, do not open an `OPEN.md` entry
 for it. He knows, and it is deliberate. On SQX you report only these three things:
 
-- **The export path is not working.** The route data takes out of SQX: `1_sqx/export/*` run against
+- **The export path is not working.** The route data takes out of SQX: `sqx/export/*` run against
   a real databank, the worker's HTTP API on 5060, exports written truncated or empty, columns
   missing or renamed, a row count that does not match the databank, an export the analyses read as
   current that is in fact stale or unreadable.
@@ -40,7 +40,7 @@ for it. He knows, and it is deliberate. On SQX you report only these three thing
   largest files, anything growing fast enough to matter. Give the size and the path, nothing else.
 - **A custom block or a project archive is corrupt.** Blocks and groups under the install that fail
   to parse, name an indicator or parameter the install does not have, or whose code cannot do what
-  its name claims. Same for archives: run `python3 1_sqx/inspect/dump_project.py <P>` for each
+  its name claims. Same for archives: run `python3 -m sqx.inspect.dump_project <P>` for each
   project directory and report only hard failures — a `KeyError` means `config.xml` references a
   task file the archive lacks, the failure mode that makes the GUI drop a project silently
   (`OPEN.md` issue 3).
@@ -55,7 +55,7 @@ Anything else about SQX is out of scope unless the owner asks for it by name.
 - Data: every export directory under the data root must carry a `manifest.json`. Report the ones that
   do not, and any manifest whose `code_version` names a commit that no longer exists.
 - Results cited in `knowhow/` or `docs/` whose generating script has since changed.
-- **Asset overrides**: compare `assets/*.yaml` against `python3 1_sqx/inspect/instruments.py`.
+- **Asset overrides**: compare `assets/*.yaml` against `python3 -m sqx.inspect.instruments`.
   Report where SQX changed under a recorded `sqx_default`, and every asset still carrying
   `use: null` that a live project uses. This is repo data, not an SQX setting.
 

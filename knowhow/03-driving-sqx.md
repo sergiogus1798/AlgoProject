@@ -52,7 +52,7 @@ listing** rather than assuming the list is complete.
 
 🔬 **The cause of that class of failure is a `config.xml` that references task XML members the
 archive does not contain** (found 2026-09-03). That project declares 8 tasks and ships only 3 task
-files. `1_sqx/inspect/project_health.py` scans every project for it in one pass; it is the only
+files. `sqx/inspect/project_health.py` scans every project for it in one pass; it is the only
 broken one on this install.
 
 🔬 **Repair it by grafting, not by swapping in the backup** (2026-09-04). Diffing the two archives
@@ -60,7 +60,7 @@ member by member: `project_backup.cfx` is from 2025-10-13 and its `config.xml` s
 name `Infinox - SP500ft - H4 (High Precision)` **with spaces** — which breaks the HTTP API, hard rule
 6 — plus an `OOS` databank registration that was since removed and a `Retest-Task2.xml` whose input
 databank is the stale `Complete Data Uncorrelated` instead of `Results`. Restoring the whole archive
-undoes all three. `1_sqx/repair/graft_tasks.py` keeps every live member and copies in only the five
+undoes all three. `sqx/repair/graft_tasks.py` keeps every live member and copies in only the five
 absent ones, then verifies that nothing is still missing and that every databank the grafted tasks
 name is registered.
 
@@ -87,12 +87,12 @@ Not "which agent has permission". The boundary is **whether a running instance h
 - **It carries the donor's entire task chain.** Cloning XAUUSD's build task ×5 produced an **18-task**
   project: the 5 new build tasks plus all 13 donor retest/MC/SPP/WFM/Clear/GoTo tasks, including a
   **dangling `GoToTask`** pointing at a task name that no longer existed. For a builder-only project,
-  strip it: `python3 1_sqx/inspect/keep_tasks.py in.cfx out.cfx --types Build`. That also drops
+  strip it: `python3 -m sqx.inspect.keep_tasks in.cfx out.cfx --types Build`. That also drops
   databank registrations nothing references, while keeping the 5 system ones.
 - 🔬 **`<StrategyType type="simple">` wins over an attached `templateFile`: the template is not
   applied.** Confirmed against real built strategies 2026-09-04, no longer an inference.
 
-  Method, in `1_sqx/inspect/template_check.py`: take the blocks a template *fixes* — every `Item`
+  Method, in `sqx/inspect/template_check.py`: take the blocks a template *fixes* — every `Item`
   under its `Rules` whose `categoryType` is `indicator`, `simpleRules`, `priceValue` or `priceRange`,
   **skipping the subtree of any `categoryType="randomBlock"`**, because those are the holes the
   builder fills and say nothing about the template. Then open strategies the project actually wrote

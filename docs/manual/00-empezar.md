@@ -13,12 +13,12 @@ El trabajo está partido en fases. Cada una tiene su carpeta:
 
 | carpeta | de qué va | ejemplo |
 |---|---|---|
-| `1_sqx/` | hablar con SQX: sacar datos, inspeccionar proyectos, repararlos | exportar las métricas de un databank |
-| `2_tasks/` | analizar **poblaciones enteras**: miles de estrategias a la vez | ¿qué métrica del histórico predice el futuro? |
-| `3_strategies/` | analizar **una** estrategia a fondo | traducir una estrategia a Python |
-| `4_portfolio/` | carteras | — |
+| `sqx/` | hablar con SQX: sacar datos, inspeccionar proyectos, repararlos | exportar las métricas de un databank |
+| `tasks/` | analizar **poblaciones enteras**: miles de estrategias a la vez | ¿qué métrica del histórico predice el futuro? |
+| `strategies/` | analizar **una** estrategia a fondo | traducir una estrategia a Python |
+| `portfolio/` | carteras | — |
 
-Si tu pregunta es sobre miles de estrategias, es `2_tasks/`. Si es sobre una, es `3_strategies/`.
+Si tu pregunta es sobre miles de estrategias, es `tasks/`. Si es sobre una, es `strategies/`.
 
 ## La primera vez, en esta máquina
 
@@ -35,17 +35,17 @@ dónde van los datos y dónde está el navegador. Ningún otro archivo tiene rut
 
 ## Cómo se ejecuta cualquier cosa
 
-Siempre igual, y siempre desde la raíz del proyecto:
+Siempre igual, y siempre desde la raíz del proyecto, como módulo (`-m`), nunca por ruta:
 
 ```bash
 cd ~/Desktop/AlgoProject
-python3 ruta/del/script.py --unos --flags
+python3 -m paquete.modulo --unos --flags
 ```
 
 Todos los comandos aceptan `--help`, que te lista los flags sin ejecutar nada:
 
 ```bash
-python3 2_tasks/reports/is_oos.py --help
+python3 -m tasks.reports.is_oos --help
 ```
 
 ## Dónde acaban las cosas

@@ -20,14 +20,14 @@
   namelist; do not open the 5.8 MB `settings.xml`.
 - `strategy_Portfolio.xml` is plain XML, readable with no SQX running.
 - 🔬 Indexing all 17,754 `.sqx` on this box takes **1.5 s** with 48 processes. It is cheap; do it
-  rather than guessing. Tool: `1_sqx/inspect/index_sqx.py`.
+  rather than guessing. Tool: `sqx/inspect/index_sqx.py`.
 - 📓 Do **not** try to parse `orders.bin` — private versioned format inside Java serialization. SQX
   exports the same data natively (`-tools action=orderstocsv`, see `04-export.md`).
 
 ## `project.cfx` — a project
 
 🔬 Also a **ZIP**: `config.xml` + one `<TaskType>-Task<N>.xml` per task. Reading is safe at any time —
-no SQX process needed, no state touched. `1_sqx/inspect/dump_project.py` renders one as Markdown.
+no SQX process needed, no state touched. `sqx/inspect/dump_project.py` renders one as Markdown.
 
 - 🔬 **SQX rewrites the whole `project.cfx` on save and on exit.** All 14 project files were restamped
   within the same second (`14:33:43`, 2026-09-02). **Any on-disk edit to a project a running instance
@@ -41,7 +41,7 @@ no SQX process needed, no state touched. `1_sqx/inspect/dump_project.py` renders
   `~/Desktop/Benchmark.cfx` and anything `saveconfig` produces are single-file and rejected.
 - 🔬 **The opposite failure exists too: a `config.xml` declaring task files the archive does not
   hold.** The GUI then drops the project with no error at all. Scan every project for it with
-  `1_sqx/inspect/project_health.py`; heal one with `1_sqx/repair/graft_tasks.py`.
+  `sqx/inspect/project_health.py`; heal one with `sqx/repair/graft_tasks.py`.
 - 🔬 **`<Project templateFile=>` in `config.xml` is dead metadata, and is not the strategy template.**
   It records the `.cfx` the project was imported from. On this install it is a Windows path on every
   project imported off Windows, re-encoded UTF-8-as-CP1252 **seven times over**; decoded it reads

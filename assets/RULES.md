@@ -25,7 +25,7 @@ One YAML per asset, named after the instrument (`XAUUSD.yaml`, `USATEC.yaml`). E
 - `why` — one line on why it differs. This is the part that stops the same discussion recurring.
 
 The rest (tick size, minimum distance, point value, which projects use it) is context, read from the
-same source. Regenerate the `sqx_default` side with `python3 1_sqx/inspect/instruments.py`, which
+same source. Regenerate the `sqx_default` side with `python3 -m sqx.inspect.instruments`, which
 lists every instrument configured across the master's projects.
 
 ## Special cases

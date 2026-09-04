@@ -39,10 +39,10 @@ Son dos comandos. El primero saca los datos de SQX; el segundo los analiza.
 cd ~/Desktop/AlgoProject
 
 # 1. refrescar el CSV desde SQX  (minutos: arranca el worker, exporta y lo para)
-python3 1_sqx/export/export_metrics.py --project XAUUSD --databank OOS
+python3 -m sqx.export.export_metrics --project XAUUSD --databank OOS
 
 # 2. analizar y generar el reporte  (~1 segundo, no toca SQX)
-python3 2_tasks/reports/is_oos.py --project XAUUSD --databank OOS
+python3 -m tasks.reports.is_oos --project XAUUSD --databank OOS
 ```
 
 **El paso 1 solo cuando quieras datos nuevos.** El paso 2 lo puedes repetir las veces que quieras.
@@ -160,7 +160,7 @@ Pregunta: **¿me sirve el Sharpe del histórico para elegir estrategias de oro?*
 
 ```bash
 cd ~/Desktop/AlgoProject
-python3 2_tasks/reports/is_oos.py --project XAUUSD --databank OOS
+python3 -m tasks.reports.is_oos --project XAUUSD --databank OOS
 ```
 
 ```
@@ -194,7 +194,7 @@ números.
   los índices. Hay que repetirlo por activo.
 - **No te dice si el filtro merece la pena.** Ves que la mediana sube y cuántas estrategias pierdes,
   pero no si esa subida aguanta o es ruido de haber probado muchos filtros. Eso es el módulo
-  *improvement*, descrito en `2_tasks/TODO.md` y todavía sin programar.
+  *improvement*, descrito en `tasks/TODO.md` y todavía sin programar.
 - **No hay costes reales metidos.** Son los números que da SQX con su configuración de comisiones.
 
 ## Si algo falla

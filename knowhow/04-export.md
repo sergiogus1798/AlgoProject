@@ -58,7 +58,7 @@ sample-independent ones (Symbol, TimeFrame, indicators).
 `user/settings/views/databanks/<Name>.vw` and pass `view=<Name>`; column `name=` is free text, so
 `name="ProfitFactor (IS)"` at `sampleType="10"` and `name="ProfitFactor (OOS)"` at `20` give paired
 columns on one row per strategy. 46 metric classes exist. The export also prepends `Strategy Name` and
-`Filters result` (PASSED/FAILED) automatically. Project copies of the views live in `1_sqx/views/`.
+`Filters result` (PASSED/FAILED) automatically. Project copies of the views live in `sqx/views/`.
 
 ### The route, and why it is convoluted
 
@@ -79,7 +79,7 @@ or its next sync fights the copy.
 **Therefore: do not use `sqx-worker.sh run` for a databank export.** Start the worker as a daemon and
 poll `-databank action=count` over HTTP until the reply contains `Records:` — the port opens and
 answers `Error: CLI not ready.` for ~20 s before commands work, and strategy loading finishes later
-still. `1_sqx/export/export_metrics.py` does exactly this.
+still. `sqx/export/export_metrics.py` does exactly this.
 
 🔬 A databank created with `-databank action=create` is **not** picked up by the startup
 sync-from-files — only databanks already registered in the project are. Staging into an existing

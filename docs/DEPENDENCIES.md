@@ -7,22 +7,6 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 
 | file | lines | what it is | imports from project | external |
 |---|---|---|---|---|
-| `1_sqx/export/archive_logs.py` | 77 | Copy SQX's logs into the data root before it prunes them. SQX keeps only 14 days. | core | — |
-| `1_sqx/export/export_metrics.py` | 44 | Refresh one databank's metrics export: one row per strategy, paired IS/OOS columns. | core | — |
-| `1_sqx/export/export_trades.py` | 68 | Export one databank's trades, and the bars those trades were taken on, into the data root. | core | — |
-| `1_sqx/inspect/dump_project.py` | 66 | Render a project.cfx as a readable Markdown pipeline map. Reading never touches SQX state. | core, project_map | — |
-| `1_sqx/inspect/index_sqx.py` | 58 | Index every .sqx on this machine by the hash of its inner strategy XML. | core | — |
-| `1_sqx/inspect/instruments.py` | 85 | List the trading costs every project has configured, per instrument. | core | — |
-| `1_sqx/inspect/keep_tasks.py` | 91 | Produce a variant of a project.cfx keeping only tasks of the given types. | — | — |
-| `1_sqx/inspect/project_health.py` | 145 | Report what is wrong with every project on an install: broken archives, drift, mojibake. | core | — |
-| `1_sqx/inspect/project_map.py` | 206 | Turn a parsed project.cfx into the sections of its Markdown pipeline map. | project_parts | — |
-| `1_sqx/inspect/project_parts.py` | 229 | Read the pieces of one task's XML: databanks, conditions, rankings, cross-checks. | — | — |
-| `1_sqx/inspect/template_check.py` | 164 | Check whether the strategies a project built really use the blocks its template declares. | core | — |
-| `1_sqx/repair/graft_tasks.py` | 157 | Heal a project.cfx that declares task files its archive lacks, grafting them from a donor. | core | — |
-| `2_tasks/analysis/correlations.py` | 93 | Correlate in-sample metrics against out-of-sample outcomes, and say which results survive. | — | numpy, scipy |
-| `2_tasks/analysis/metrics.py` | 57 | Load a metrics export and work out which of its columns pair in-sample against out-of-sample. | — | numpy |
-| `2_tasks/reports/is_oos.py` | 84 | Build the interactive IS/OOS panel and its written summary for one databank. | core, correlations, metrics, summary | — |
-| `2_tasks/reports/summary.py` | 122 | Write the conclusions of one IS/OOS study as summary.md. Pure text: it computes nothing. | — | — |
 | `core/assets.py` | 109 | Per-asset trading-cost overrides. Run as a module for the preflight every project needs. | core | yaml |
 | `core/cfx.py` | 125 | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | core | — |
 | `core/exportdrv.py` | 128 | The three ways data leaves SQX: trades, databank metrics, and bars. | core | — |
@@ -30,6 +14,22 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/paths.py` | 120 | Every path and port in the project. The only module allowed to know where things live. | — | yaml |
 | `core/sqxfile.py` | 71 | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | — | — |
 | `core/worker.py` | 52 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
+| `sqx/export/archive_logs.py` | 74 | Copy SQX's logs into the data root before it prunes them. SQX keeps only 14 days. | core | — |
+| `sqx/export/export_metrics.py` | 40 | Refresh one databank's metrics export: one row per strategy, paired IS/OOS columns. | core | — |
+| `sqx/export/export_trades.py` | 65 | Export one databank's trades, and the bars those trades were taken on, into the data root. | core | — |
+| `sqx/inspect/dump_project.py` | 63 | Render a project.cfx as a readable Markdown pipeline map. Reading never touches SQX state. | core, sqx | — |
+| `sqx/inspect/index_sqx.py` | 56 | Index every .sqx on this machine by the hash of its inner strategy XML. | core | — |
+| `sqx/inspect/instruments.py` | 82 | List the trading costs every project has configured, per instrument. | core | — |
+| `sqx/inspect/keep_tasks.py` | 91 | Produce a variant of a project.cfx keeping only tasks of the given types. | — | — |
+| `sqx/inspect/project_health.py` | 142 | Report what is wrong with every project on an install: broken archives, drift, mojibake. | core | — |
+| `sqx/inspect/project_map.py` | 206 | Turn a parsed project.cfx into the sections of its Markdown pipeline map. | sqx | — |
+| `sqx/inspect/project_parts.py` | 229 | Read the pieces of one task's XML: databanks, conditions, rankings, cross-checks. | — | — |
+| `sqx/inspect/template_check.py` | 161 | Check whether the strategies a project built really use the blocks its template declares. | core | — |
+| `sqx/repair/graft_tasks.py` | 155 | Heal a project.cfx that declares task files its archive lacks, grafting them from a donor. | core | — |
+| `tasks/analysis/correlations.py` | 93 | Correlate in-sample metrics against out-of-sample outcomes, and say which results survive. | — | numpy, scipy |
+| `tasks/analysis/metrics.py` | 57 | Load a metrics export and work out which of its columns pair in-sample against out-of-sample. | — | numpy |
+| `tasks/reports/is_oos.py` | 78 | Build the interactive IS/OOS panel and its written summary for one databank. | core, tasks | — |
+| `tasks/reports/summary.py` | 122 | Write the conclusions of one IS/OOS study as summary.md. Pure text: it computes nothing. | — | — |
 | `tests/test_cfx.py` | 47 | Golden-file test for core.cfx: a parser that breaks silently poisons every analysis. | core | — |
 | `tests/test_sqxfile.py` | 49 | Golden-file test for core.sqxfile: a parser that breaks silently poisons every analysis. | core | — |
 | `tools/checks.py` | 192 | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | depmap | — |
@@ -41,19 +41,16 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 
 | project module | imported by |
 |---|---|
-| `core` | `1_sqx/export/archive_logs.py`, `1_sqx/export/export_metrics.py`, `1_sqx/export/export_trades.py`, `1_sqx/inspect/dump_project.py`, `1_sqx/inspect/index_sqx.py`, `1_sqx/inspect/instruments.py`, `1_sqx/inspect/project_health.py`, `1_sqx/inspect/template_check.py`, `1_sqx/repair/graft_tasks.py`, `2_tasks/reports/is_oos.py`, `core/assets.py`, `core/cfx.py`, `core/exportdrv.py`, `core/manifest.py`, `core/worker.py`, `tests/test_cfx.py`, `tests/test_sqxfile.py`, `tools/daily_audit.py`, `tools/manual.py` |
-| `correlations` | `2_tasks/reports/is_oos.py` |
+| `core` | `core/assets.py`, `core/cfx.py`, `core/exportdrv.py`, `core/manifest.py`, `core/worker.py`, `sqx/export/archive_logs.py`, `sqx/export/export_metrics.py`, `sqx/export/export_trades.py`, `sqx/inspect/dump_project.py`, `sqx/inspect/index_sqx.py`, `sqx/inspect/instruments.py`, `sqx/inspect/project_health.py`, `sqx/inspect/template_check.py`, `sqx/repair/graft_tasks.py`, `tasks/reports/is_oos.py`, `tests/test_cfx.py`, `tests/test_sqxfile.py`, `tools/daily_audit.py`, `tools/manual.py` |
 | `depmap` | `tools/checks.py` |
-| `metrics` | `2_tasks/reports/is_oos.py` |
-| `project_map` | `1_sqx/inspect/dump_project.py` |
-| `project_parts` | `1_sqx/inspect/project_map.py` |
-| `summary` | `2_tasks/reports/is_oos.py` |
+| `sqx` | `sqx/inspect/dump_project.py`, `sqx/inspect/project_map.py` |
+| `tasks` | `tasks/reports/is_oos.py` |
 
 ## External libraries
 
 | library | used in |
 |---|---|
 | `markdown` | `tools/manual.py` |
-| `numpy` | `2_tasks/analysis/correlations.py`, `2_tasks/analysis/metrics.py` |
-| `scipy` | `2_tasks/analysis/correlations.py` |
+| `numpy` | `tasks/analysis/correlations.py`, `tasks/analysis/metrics.py` |
+| `scipy` | `tasks/analysis/correlations.py` |
 | `yaml` | `core/assets.py`, `core/paths.py` |

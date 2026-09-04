@@ -36,7 +36,7 @@ def corrupt_projects() -> list[str]:
     for d in sorted((MASTER / "user/projects").iterdir()):
         if not (d / "project.cfx").exists():
             continue
-        code, _ = run("python3", "1_sqx/inspect/dump_project.py", d.name, "-o", "/dev/null")
+        code, _ = run("python3", "-m", "sqx.inspect.dump_project", d.name, "-o", "/dev/null")
         if code:
             bad.append(d.name)
     return bad
