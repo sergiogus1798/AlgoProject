@@ -11,6 +11,8 @@ import depmap
 ROOT = depmap.ROOT
 MAX_LINES = 250
 PATHS_MODULE = ROOT / "core" / "paths.py"
+MANUAL = ROOT / "docs" / "manual"
+DEVELOPER_ONLY = {"tools", "tests"}
 ABSOLUTE = re.compile(r"""["'](?:/home/|/root/|~/)""")
 PIP_NAME = {"yaml": "PyYAML", "sklearn": "scikit-learn", "PIL": "Pillow"}
 
@@ -127,6 +129,28 @@ def unlisted_in_readme(files: list[Path]) -> list[str]:
     return out
 
 
+def no_manual_page(files: list[Path]) -> list[str]:
+    """User-facing commands the manual neither documents nor lists as pending.
+
+    Args:
+        files: Project Python files.
+
+    Returns:
+        One message per command with no page. A command is any file with a __main__ block;
+        tools/ and tests/ are developer-only and are deliberately outside the manual.
+    """
+    written = "".join(p.read_text(encoding="utf-8") for p in MANUAL.glob("*.md"))
+    out = []
+    for f in files:
+        rel = f.relative_to(ROOT).as_posix()
+        if rel.split("/")[0] in DEVELOPER_ONLY or rel in written:
+            continue
+        if "__main__" in f.read_text(encoding="utf-8"):
+            out.append(f"{rel}: no manual page — copy docs/manual/_PLANTILLA.md, "
+                       f"or add it to docs/manual/PENDIENTE.md if it is inherited backlog")
+    return out
+
+
 def stale_depmap(files: list[Path]) -> list[str]:
     """Whether docs/DEPENDENCIES.md matches the code as it stands now.
 
@@ -148,7 +172,8 @@ def main() -> None:
     files = depmap.py_files()
     checks = [("file length", too_long), ("documentation", undocumented),
               ("hardcoded paths", hardcoded_paths), ("requirements", missing_requirements),
-              ("folder READMEs", unlisted_in_readme), ("dependency map", stale_depmap)]
+              ("folder READMEs", unlisted_in_readme), ("manual pages", no_manual_page),
+              ("dependency map", stale_depmap)]
     total = 0
     for name, check in checks:
         problems = check(files)

@@ -11,11 +11,13 @@ MASTER = Path(_CFG["sqx_master"]).expanduser()
 WORKER = Path(_CFG["sqx_worker"]).expanduser()
 DATA = Path(_CFG["data_root"]).expanduser()
 ARCHIVE = Path(_CFG["archive"]).expanduser()
+BROWSER = Path(_CFG["browser"]).expanduser()
 WORKER_PORT = _CFG["worker_port"]
 STRATEGY_POOLS = {name: Path(p).expanduser() for name, p in _CFG["strategy_pools"].items()}
 
 WORKER_SH = ROOT / "bin" / "sqx-worker.sh"
 ASSETS = ROOT / "assets"
+MANUAL = ROOT / "docs" / "manual"
 VIEWS_REL = "user/settings/views/databanks"
 STAGING = WORKER / "user/projects/Retester/databanks/Results"
 
@@ -73,6 +75,36 @@ def export_dir(project: str, databank: str, day: str) -> Path:
         Path under the data root. Created by the caller, never by this module.
     """
     return DATA / "raw" / project / databank.replace(" ", "_") / day
+
+
+def metrics_export(project: str, databank: str) -> Path:
+    """Directory holding the CURRENT metrics export of one databank.
+
+    Args:
+        project: Project name.
+        databank: Databank name as SQX shows it, e.g. "SPP OOS".
+
+    Returns:
+        Path under the data root. There is exactly one metrics export per databank and
+        refreshing it replaces what is there, so "which CSV is the real one" cannot arise.
+        It is deliberately outside raw/, where exports are dated and immutable.
+    """
+    return DATA / "metrics" / project / databank.replace(" ", "_")
+
+
+def report_dir(project: str, databank: str, day: str) -> Path:
+    """Where one day's rendered analysis of a databank lands.
+
+    Args:
+        project: Project name.
+        databank: Databank name.
+        day: Report date as YYYY-MM-DD.
+
+    Returns:
+        Path under the data root. Reports accumulate so the history of what was concluded
+        survives; the CSV they were built from does not.
+    """
+    return DATA / "reports" / project / databank.replace(" ", "_") / day
 
 
 def bars_file(symbol: str, timeframe: str) -> Path:

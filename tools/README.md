@@ -4,7 +4,10 @@
 |---|---|---|
 | `checks.py` | Verify every mechanical rule in `CODESTYLE.md` and list what breaks them | `python3 tools/checks.py` |
 | `depmap.py` | Read the real imports and regenerate `docs/DEPENDENCIES.md` | `python3 tools/depmap.py` |
+| `manual.py` | Build the whole user manual as one PDF from the markdown pages in `docs/manual/` | `python3 tools/manual.py` |
 | `daily_audit.py` | The half of the audit a machine can do alone: checks, tests, corrupt projects, missing manifests, undecided asset costs | `python3 tools/daily_audit.py` |
+
+`manual.py` renders the markdown to `docs/manual/AlgoProject-Manual.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. Neither the PDF nor the intermediate HTML is in git: both are products of the `.md` files, which are the original.
 
 `daily_audit.py` writes `audit/YYYY-MM-DD-mechanical.md` and exits non-zero when something regressed.
 It involves no model, so it can run unattended. Enable it with:

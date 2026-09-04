@@ -228,12 +228,26 @@ daily equity curve — how much *result* a strategy carries — not its complexi
 committed, and it still exercises everything the parser reads. `.gitignore` keeps `*.sqx` excluded
 and makes `tests/fixtures/` the single exception.
 
-## 8. 🟡 Migrated analyses are parked, not converted
+## 8. 🟡 Migrated analyses are parked, not converted — partly done
 
-`archive/studies/` holds eight scripts from the previous project: the ATR-stop studies, the IS→OOS
-predictor study, the databank scan, the trade validator and their plotting code. They were written
-against the old data layout, so reusing one means rewriting it over `core/` and the data root. Their
-findings are already in `knowhow/`; the code is kept only so a result can be reproduced.
+`archive/studies/` held eight scripts from the previous project. They were written against the old
+data layout, so reusing one means rewriting it over `core/` and the data root.
+
+**Converted 2026-09-04:** the IS→OOS predictor study is now `2_tasks/analysis/` plus
+`2_tasks/reports/is_oos.py`. It is a rewrite, not a port — the old `is_oos_analysis.py` would crash on
+the current export, because its hard-coded `PAIRED` list names columns this view does not have. The
+new code derives the pairs from the header, deduplicates nothing (this export is one databank, so the
+cross-databank duplicate trap does not apply) and adds a Benjamini-Hochberg correction the old study
+lacked. The interactive panel is a fresh `panel.html`, not the old `scatter_page.html`.
+
+**Still parked:** `atr_stop.py`, `atr_stop_study.py`, `scan_strategies.py`, `validate_trades.py`,
+`plots.py`. `plots_is_oos.py` and `scatter_page.py` are superseded in purpose but kept, because the
+new panel draws to canvas and produces no static PNG figures — if a report ever needs those, the
+matplotlib styling in `plots_is_oos.py` is the starting point.
+
+`scan_strategies.py` is the one worth converting next: it reads exit configuration straight out of
+each `.sqx` with no SQX process, which is how the "two structurally different populations in one
+databank" trap gets detected before anything is pooled.
 
 ## 9. 🟡 Nine projects ARE ignoring their strategy templates — confirmed, fix is the owner's call
 

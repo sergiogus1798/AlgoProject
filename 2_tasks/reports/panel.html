@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IS vs OOS</title>
+<style>
+  :root {
+    --blue:#2a78d6; --orange:#eb6834; --aqua:#1baf7a;
+    --ink:#0b0b0b; --muted:#52514e; --rule:#e4e3df; --paper:#fcfcfb; --grey:#b9b8b4;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  header { position:sticky; top:0; z-index:5; background:var(--paper);
+           border-bottom:1px solid var(--rule); padding:14px 20px 12px; }
+  h1 { margin:0 0 2px; font-size:15px; font-weight:600; }
+  .src { color:var(--muted); font-size:11.5px; margin-bottom:10px; }
+  .row { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; margin-bottom:8px; }
+  label { display:block; font-size:10.5px; color:var(--muted); text-transform:uppercase;
+          letter-spacing:.04em; margin-bottom:3px; }
+  select, input, button { font:inherit; font-size:12.5px; padding:4px 7px;
+          border:1px solid var(--rule); border-radius:4px; background:#fff; color:var(--ink); }
+  button { cursor:pointer; }
+  button:hover { border-color:var(--muted); }
+  button.link { border:none; background:none; color:var(--blue); padding:2px 0;
+                text-decoration:underline; font-size:12px; }
+  .clause { display:flex; gap:6px; align-items:center; margin-bottom:5px; }
+  .clause .x { border:none; background:none; color:var(--muted); cursor:pointer;
+               font-size:15px; padding:0 4px; }
+  #status { font-size:12px; color:var(--muted); padding-top:2px; }
+  #status b { color:var(--ink); font-weight:600; }
+  main { display:grid; gap:14px; padding:16px 20px 40px;
+         grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); }
+  .panel { border:1px solid var(--rule); border-radius:5px; background:#fff; }
+  canvas { display:block; width:100%; height:248px; }
+  footer { padding:0 20px 30px; color:var(--muted); font-size:11.5px; max-width:70ch; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="title">In-sample against out-of-sample</h1>
+  <div class="src" id="src"></div>
+
+  <div class="row">
+    <div><label for="y">Y axis — out-of-sample outcome</label>
+         <select id="y"></select></div>
+    <div><label for="points">Points drawn per panel</label>
+         <select id="points">
+           <option value="50">50</option>
+           <option value="100" selected>100</option>
+           <option value="500">500</option>
+           <option value="2000">2000</option>
+           <option value="0">all</option>
+         </select></div>
+    <div><label for="clip">Axis range</label>
+         <select id="clip">
+           <option value="0.01">p1 – p99</option>
+           <option value="0.05">p5 – p95</option>
+           <option value="0">full</option>
+         </select></div>
+    <div><label>&nbsp;</label><button id="reroll">Re-draw sample</button></div>
+  </div>
+
+  <div><label>Filter — every clause is evaluated against the full population, then ANDed</label>
+       <div id="clauses"></div>
+       <button class="link" id="add">+ add clause</button>
+       <button class="link" id="clear">clear</button></div>
+
+  <div id="status"></div>
+</header>
+
+<main id="grid"></main>
+
+<footer>
+  Statistics — correlation, regression and the histogram — are computed on every strategy that
+  passes the filter, never on the drawn sample. The sample only limits how many dots are painted,
+  and it is the same set of strategies in every panel. When a filter is active the whole population
+  stays behind in grey so the subset can be read against it. Points outside the axis range are not
+  drawn but are still in the statistics.
+</footer>
+
+<script>const PAYLOAD = __PAYLOAD__;</script>
+<script>
+const P = PAYLOAD, D = P.data, N = P.names.length;
+const ALL = Int32Array.from({length: N}, (_, i) => i);
+const NUMERIC = Object.keys(D).sort();
+const SORTED = new Map();
+const state = {y: null, points: 100, clip: 0.01, seed: 1, clauses: [], idx: ALL};
+
+// ---------------------------------------------------------------- statistics
+
+function take(col, idx) {
+  const out = new Float64Array(idx.length);
+  for (let k = 0; k < idx.length; k++) out[k] = col[idx[k]];
+  return out;
+}
+
+function sorted(name) {
+  if (!SORTED.has(name)) SORTED.set(name, Float64Array.from(D[name]).sort());
+  return SORTED.get(name);
+}
+
+function quantile(name, q) {
+  const s = sorted(name);
+  return s[Math.min(s.length - 1, Math.max(0, Math.round(q * (s.length - 1))))];
+}
+
+function pearson(a, b) {
+  const n = a.length;
+  let sa = 0, sb = 0;
+  for (let i = 0; i < n; i++) { sa += a[i]; sb += b[i]; }
+  const ma = sa / n, mb = sb / n;
+  let sab = 0, saa = 0, sbb = 0;
+  for (let i = 0; i < n; i++) {
+    const u = a[i] - ma, v = b[i] - mb;
+    sab += u * v; saa += u * u; sbb += v * v;
+  }
+  return sab / Math.sqrt(saa * sbb);
+}
+
+// Average ranks, so ties do not bias Spearman towards whichever came first.
+function ranks(a) {
+  const order = Array.from(a.keys()).sort((i, j) => a[i] - a[j]);
+  const out = new Float64Array(a.length);
+  let i = 0;
+  while (i < order.length) {
+    let j = i;
+    while (j + 1 < order.length && a[order[j + 1]] === a[order[i]]) j++;
+    const mean = (i + j) / 2 + 1;
+    for (let k = i; k <= j; k++) out[order[k]] = mean;
+    i = j + 1;
+  }
+  return out;
+}
+
+function erf(x) {
+  const s = Math.sign(x); x = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t
+                - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return s * y;
+}
+
+// Fisher z. Exact enough from about n=20 up, and n never gets near that unfiltered.
+function pvalue(r, n) {
+  if (n < 5 || !isFinite(r)) return 1;
+  const z = Math.atanh(Math.max(-0.999999, Math.min(0.999999, r))) * Math.sqrt(n - 3);
+  return 2 * (1 - 0.5 * (1 + erf(Math.abs(z) / Math.SQRT2)));
+}
+
+function fit(a, b) {
+  const n = a.length;
+  let sa = 0, sb = 0;
+  for (let i = 0; i < n; i++) { sa += a[i]; sb += b[i]; }
+  const ma = sa / n, mb = sb / n;
+  let sab = 0, saa = 0;
+  for (let i = 0; i < n; i++) { sab += (a[i] - ma) * (b[i] - mb); saa += (a[i] - ma) ** 2; }
+  const slope = sab / saa;
+  return {slope, intercept: mb - slope * ma};
+}
+
+function histogram(a, lo, hi, bins) {
+  const counts = new Float64Array(bins);
+  const width = (hi - lo) / bins;
+  for (let i = 0; i < a.length; i++) {
+    const b = Math.floor((a[i] - lo) / width);
+    if (b >= 0 && b < bins) counts[b]++;
+  }
+  for (let b = 0; b < bins; b++) counts[b] /= a.length;
+  return counts;
+}
+
+function median(a) {
+  const s = Float64Array.from(a).sort();
+  return s[Math.floor(s.length / 2)];
+}
+
+// ------------------------------------------------------------------ sampling
+
+function rng(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function sample(idx, k, seed) {
+  if (!k || k >= idx.length) return idx;
+  const pool = Int32Array.from(idx), next = rng(seed);
+  for (let i = 0; i < k; i++) {
+    const j = i + Math.floor(next() * (pool.length - i));
+    const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+  }
+  return pool.subarray(0, k);
+}
+
+// ------------------------------------------------------------------- filters
+
+function survivors(clauses) {
+  let idx = ALL;
+  for (const c of clauses) {
+    const col = D[c.col];
+    let keep;
+    if (c.op === 'top') { const t = quantile(c.col, 1 - c.value / 100); keep = v => v >= t; }
+    else if (c.op === 'bottom') { const t = quantile(c.col, c.value / 100); keep = v => v <= t; }
+    else if (c.op === '>') keep = v => v > c.value;
+    else if (c.op === '>=') keep = v => v >= c.value;
+    else if (c.op === '<') keep = v => v < c.value;
+    else keep = v => v <= c.value;
+    idx = Int32Array.from(idx).filter(i => keep(col[i]));
+  }
+  return idx;
+}
+
+// ------------------------------------------------------------------- drawing
+
+const PAD = {l: 48, r: 12, t: 26, b: 38}, BINS = 34, HIST = 0.30;
+const CSS = getComputedStyle(document.documentElement);
+const COLOR = name => CSS.getPropertyValue('--' + name).trim();
+
+// Both ends of an axis share one notation, chosen by the wider of the two.
+function fmt(v, scale) {
+  const a = Math.abs(scale === undefined ? v : scale);
+  if (a >= 100000) return v.toExponential(1);
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 1) return v.toFixed(2);
+  return v.toFixed(3);
+}
+
+function fmtp(p) {
+  if (p < 1e-15) return 'p < 1e-15';
+  return p < 1e-4 ? 'p ' + p.toExponential(1) : 'p ' + p.toFixed(4);
+}
+
+function drawPanel(canvas, xname) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+
+  const q = state.clip;
+  const x0 = quantile(xname, q), x1 = quantile(xname, 1 - q);
+  const y0 = quantile(state.y, q), y1 = quantile(state.y, 1 - q);
+  const xs = v => PAD.l + (v - x0) / (x1 - x0 || 1) * (w - PAD.l - PAD.r);
+  const ys = v => (h - PAD.b) - (v - y0) / (y1 - y0 || 1) * (h - PAD.t - PAD.b);
+  const plotH = h - PAD.t - PAD.b;
+
+  g.strokeStyle = COLOR('rule'); g.lineWidth = 1;
+  g.strokeRect(PAD.l + .5, PAD.t + .5, w - PAD.l - PAD.r - 1, plotH - 1);
+
+  const xa = take(D[xname], state.idx), ya = take(D[state.y], state.idx);
+  const filtered = state.idx.length !== N;
+
+  // Histogram of the X metric: where the mass actually is, on a shared density scale.
+  const hf = histogram(xa, x0, x1, BINS);
+  const hb = filtered ? histogram(take(D[xname], ALL), x0, x1, BINS) : null;
+  const top = Math.max(...hf, ...(hb || [0]));
+  const bw = (w - PAD.l - PAD.r) / BINS;
+  const bar = (counts, fill) => {
+    g.fillStyle = fill;
+    for (let b = 0; b < BINS; b++) {
+      const bh = counts[b] / top * plotH * HIST;
+      g.fillRect(PAD.l + b * bw, h - PAD.b - bh, Math.max(1, bw - 1), bh);
+    }
+  };
+  if (hb) bar(hb, 'rgba(185,184,180,0.45)');
+  bar(hf, filtered ? 'rgba(42,120,214,0.22)' : 'rgba(42,120,214,0.16)');
+
+  const dot = (idx, fill, r) => {
+    g.fillStyle = fill;
+    const cx = D[xname], cy = D[state.y];
+    for (let k = 0; k < idx.length; k++) {
+      const i = idx[k], px = xs(cx[i]), py = ys(cy[i]);
+      if (px < PAD.l || px > w - PAD.r || py < PAD.t || py > h - PAD.b) continue;
+      g.beginPath(); g.arc(px, py, r, 0, 6.2832); g.fill();
+    }
+  };
+  if (filtered) dot(sample(ALL, state.points, state.seed), 'rgba(185,184,180,0.55)', 1.7);
+  dot(sample(state.idx, state.points, state.seed), 'rgba(42,120,214,0.72)', 2);
+
+  const line = fit(xa, ya);
+  g.strokeStyle = COLOR('orange'); g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(xs(x0), Math.max(PAD.t, Math.min(h - PAD.b, ys(line.slope * x0 + line.intercept))));
+  g.lineTo(xs(x1), Math.max(PAD.t, Math.min(h - PAD.b, ys(line.slope * x1 + line.intercept))));
+  g.stroke();
+
+  const rho = pearson(ranks(xa), ranks(ya)), r = pearson(xa, ya);
+  const p = pvalue(rho, xa.length);
+
+  g.fillStyle = COLOR('ink'); g.font = '600 11.5px sans-serif'; g.textAlign = 'left';
+  g.fillText(xname, PAD.l, 15);
+  g.font = '10.5px sans-serif'; g.textAlign = 'right';
+  g.fillStyle = Math.abs(rho) > 0.05 ? COLOR('ink') : COLOR('muted');
+  g.fillText(`ρ ${rho >= 0 ? '+' : ''}${rho.toFixed(3)}   r ${r >= 0 ? '+' : ''}${r.toFixed(3)}   ${fmtp(p)}`,
+             w - PAD.r, 15);
+
+  const xw = Math.max(Math.abs(x0), Math.abs(x1)), yw = Math.max(Math.abs(y0), Math.abs(y1));
+  g.fillStyle = COLOR('muted'); g.font = '9.5px sans-serif';
+  g.textAlign = 'left';  g.fillText(fmt(x0, xw), PAD.l, h - PAD.b + 13);
+  g.textAlign = 'right'; g.fillText(fmt(x1, xw), w - PAD.r, h - PAD.b + 13);
+  g.textAlign = 'right';
+  g.fillText(fmt(y1, yw), PAD.l - 6, PAD.t + 8);
+  g.fillText(fmt(y0, yw), PAD.l - 6, h - PAD.b);
+  g.textAlign = 'center';
+  g.fillText('histogram: share of the population per bin of ' + xname, w / 2, h - 8);
+  return rho;
+}
+
+// --------------------------------------------------------------------- render
+
+function render() {
+  state.idx = survivors(state.clauses);
+  const n = state.idx.length;
+  const yf = take(D[state.y], state.idx);
+  const line = n === N
+    ? `<b>${N.toLocaleString()}</b> strategies, no filter · median ${state.y}: <b>${fmt(median(yf))}</b>`
+    : `<b>${n.toLocaleString()}</b> of ${N.toLocaleString()} survive the filter `
+      + `(<b>${(100 * n / N).toFixed(1)}%</b>) · median ${state.y}: `
+      + `<b>${fmt(median(yf))}</b> filtered vs ${fmt(median(D[state.y]))} unfiltered`;
+  document.getElementById('status').innerHTML = n === 0 ? '<b>no strategy passes the filter</b>' : line;
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  if (n < 5) return;
+
+  const order = P.is.map(m => {
+    const a = take(D[m], state.idx), b = take(D[state.y], state.idx);
+    return {m, rho: Math.abs(pearson(ranks(a), ranks(b)))};
+  }).sort((u, v) => v.rho - u.rho);
+
+  for (const {m} of order) {
+    const box = document.createElement('div');
+    box.className = 'panel';
+    const canvas = document.createElement('canvas');
+    box.appendChild(canvas);
+    grid.appendChild(box);
+    drawPanel(canvas, m);
+  }
+}
+
+// ----------------------------------------------------------------------- ui
+
+function clauseRow(clause) {
+  const row = document.createElement('div');
+  row.className = 'clause';
+  row.innerHTML =
+    `<select class="col">${NUMERIC.map(c => `<option${c === clause.col ? ' selected' : ''}>${c}</option>`).join('')}</select>
+     <select class="op">
+       <option value="top">top % (highest)</option>
+       <option value="bottom">bottom % (lowest)</option>
+       <option value="&gt;">&gt;</option><option value="&gt;=">&ge;</option>
+       <option value="&lt;">&lt;</option><option value="&lt;=">&le;</option>
+     </select>
+     <input class="val" type="number" step="any" value="${clause.value}" style="width:90px">
+     <button class="x" title="remove">&times;</button>`;
+  row.querySelector('.op').value = clause.op;
+  const read = () => {
+    clause.col = row.querySelector('.col').value;
+    clause.op = row.querySelector('.op').value;
+    clause.value = parseFloat(row.querySelector('.val').value);
+    render();
+  };
+  row.querySelectorAll('select, input').forEach(el => el.addEventListener('change', read));
+  row.querySelector('.x').addEventListener('click', () => {
+    state.clauses.splice(state.clauses.indexOf(clause), 1);
+    row.remove();
+    render();
+  });
+  return row;
+}
+
+function boot() {
+  document.getElementById('title').textContent =
+    `${P.source.project} / ${P.source.databank} — in-sample against out-of-sample`;
+  document.getElementById('src').textContent =
+    `${N.toLocaleString()} strategies · view "${P.source.view}" · exported ${P.source.exported} `
+    + `· report ${P.source.reported} · code ${P.source.code_version}`;
+
+  const y = document.getElementById('y');
+  y.innerHTML = P.oos.map(m => `<option>${m}</option>`).join('');
+  y.value = P.oos.includes('Profit factor (OOS)') ? 'Profit factor (OOS)' : P.oos[0];
+  state.y = y.value;
+  y.addEventListener('change', () => { state.y = y.value; render(); });
+
+  document.getElementById('points').addEventListener('change', e => {
+    state.points = parseInt(e.target.value, 10); render();
+  });
+  document.getElementById('clip').addEventListener('change', e => {
+    state.clip = parseFloat(e.target.value); render();
+  });
+  document.getElementById('reroll').addEventListener('click', () => {
+    state.seed = (state.seed * 1103515245 + 12345) | 0; render();
+  });
+  document.getElementById('add').addEventListener('click', () => {
+    const clause = {col: P.is[0], op: 'top', value: 20};
+    state.clauses.push(clause);
+    document.getElementById('clauses').appendChild(clauseRow(clause));
+    render();
+  });
+  document.getElementById('clear').addEventListener('click', () => {
+    state.clauses = [];
+    document.getElementById('clauses').innerHTML = '';
+    render();
+  });
+
+  let pending;
+  window.addEventListener('resize', () => { clearTimeout(pending); pending = setTimeout(render, 150); });
+  render();
+}
+
+boot();
+</script>
+</body>
+</html>

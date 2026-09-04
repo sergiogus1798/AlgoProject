@@ -12,6 +12,11 @@ worker_port: 5060
 # Where exported data lives. Never inside the repo.
 data_root: ~/Desktop/AlgoData
 
+# Browser used to render the manual to PDF. Chromium works too:
+# /usr/bin/chromium, /usr/bin/chromium-browser, or on macOS
+# "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome".
+browser: /usr/bin/google-chrome
+
 # Read-only archive of the previous project. Optional; omit if absent.
 archive: ~/Desktop/AlgoProject_Old
 

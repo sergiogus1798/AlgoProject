@@ -3,9 +3,26 @@
 Everything about a whole databank or a whole build: thousands of strategies at once. One strategy at
 a time belongs in `3_strategies/`.
 
-`extract/` pulls data into the data root, `analysis/` does the maths, `reports/` renders it.
-Extraction never re-runs by accident: an export is dated, immutable, and carries a `manifest.json`.
-Check `~/Desktop/AlgoData/INDEX.md` for what already exists before exporting anything again.
+Pulling data out of SQX lives in `1_sqx/export/`, since it needs the SQX driving code in
+`core/exportdrv.py`; `extract/` here is reserved and empty (corrected 2026-09-04, it never held
+code). `analysis/` does the maths, `reports/` renders it. Check `~/Desktop/AlgoData/INDEX.md` for
+what already exists before exporting anything again.
+
+## Two lifecycles, deliberately in separate trees
+
+**`metrics/<project>/<databank>/metrics.csv` is the current export and there is only ever one.**
+Refreshing it deletes what was there first, so "which CSV is the real one" cannot arise. Trade and
+bar exports keep the old rule — `raw/<project>/<databank>/<date>/`, dated and immutable — because
+they are large and slow and are cited by strategy-level work. The two must not share a directory:
+one is overwritten and the other must never be.
+
+**Reports accumulate.** `reports/<project>/<databank>/<date>/` holds the conclusions and nothing
+deletes them — the CSV is reproducible from SQX, the reasoning is not.
+
+```
+python3 1_sqx/export/export_metrics.py --project XAUUSD --databank OOS   # refresh the CSV
+python3 2_tasks/reports/is_oos.py      --project XAUUSD --databank OOS   # analyse it
+```
 
 ## Traps that have already produced wrong answers
 

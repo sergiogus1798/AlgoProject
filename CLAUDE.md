@@ -1,7 +1,8 @@
 # AlgoProject
 
 StrategyQuant X generates and robustness-tests strategies for MetaTrader 5; Python does the maths on
-top. **Files in English. Talk to the owner in Spanish.**
+top. **Files in English — except `docs/manual/`, whose reader is the owner and which is in Spanish.
+Talk to the owner in Spanish.**
 
 ## HARD RULES — ignoring one of these destroys work
 
@@ -10,15 +11,20 @@ top. **Files in English. Talk to the owner in Spanish.**
 2. **Never run `sqcli` on the master while its GUI is up** — use the worker on 5060. Never
    `pkill -f StrategyQuantX`: the pattern matches your own shell. Kill by PID.
 3. **Never start a build, and never change what a project builds.** The master GUI and its projects
-   are the owner's. Generic versus template generation is his decision, not a bug to fix — touch a
-   project's config only when he names the project. Worker: one job, then `bin/sqx-worker.sh stop`.
+   are the owner's. Generic versus template generation, an inactive task, what a task clears: his
+   decisions — not bugs to fix, and **not findings to report**. Touch a project's config only when he
+   names the project. Worker: one job, then `bin/sqx-worker.sh stop`.
 4. **Never edit a `project.cfx` a running instance holds** — SQX rewrites the file on save and exit,
    and the change is silently lost. Use the `-project` API on the worker.
 5. **Before authoring or modifying any project, task or template:** run
    `python3 -m core.assets <SYMBOL>`, report the overrides applied, and stop if it exits non-zero.
 6. **Project names: underscores only.** The HTTP API splits its command on whitespace.
 7. **Heavy data goes to the data root** (`~/Desktop/AlgoData`). Never write data into the repo.
-8. **Writing Python? Read `CODESTYLE.md` first.** No absolute path outside `core/paths.py`. When
+8. **A new command ships with its manual page, in the same task.** Copy
+   `docs/manual/_PLANTILLA.md` to `docs/manual/NN-<name>.md`, in Spanish, with screenshots of
+   real output. `checks.py` fails on a `__main__` that no manual page names.
+   `docs/manual/PENDIENTE.md` is inherited backlog only — nothing new goes in it.
+9. **Writing Python? Read `CODESTYLE.md` first.** No absolute path outside `core/paths.py`. When
    done: `python3 tools/depmap.py && python3 tools/checks.py`.
 
 ## ROUTER — read only what the task needs
@@ -31,6 +37,7 @@ top. **Files in English. Talk to the owner in Spanish.**
 | mass export and population maths | `2_tasks/CLAUDE.md` |
 | one strategy in depth, or translating it to Python | `3_strategies/CLAUDE.md` |
 | portfolios | `4_portfolio/CLAUDE.md` |
+| running something, or explaining to a human how to | `docs/manual/` — `00-empezar.md`, then that module's page |
 | what one SQX project actually does | `docs/<PROJECT>-pipeline.md`, TL;DR section only |
 | what is broken or pending | `OPEN.md` |
 | what data already exists | `~/Desktop/AlgoData/INDEX.md` |

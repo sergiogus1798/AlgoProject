@@ -15,5 +15,9 @@ __pycache__/
 *.pyc
 .venv/
 
+# The manual's PDF and its intermediate HTML are built from the .md pages.
+docs/manual/AlgoProject-Manual.pdf
+docs/manual/AlgoProject-Manual.html
+
 # Editor noise.
 .DS_Store

@@ -1,11 +1,13 @@
 # 1_sqx/export — get data out of SQX
 
-Both scripts write into the data root (`~/Desktop/AlgoData/raw/...`) and leave a `manifest.json`
-next to what they wrote. Nothing here writes into the repo.
+Both scripts write into the data root and leave a `manifest.json` next to what they wrote. Nothing
+here writes into the repo. **They have different lifecycles**: `export_metrics.py` keeps one current
+CSV per databank and deletes the previous one before writing, while `export_trades.py` writes a dated,
+immutable directory. See `2_tasks/CLAUDE.md` for why.
 
 | file | what it does | run it |
 |---|---|---|
-| `export_metrics.py` | One row per strategy, columns tagged (IS)/(OOS)/(Full) from the view's sample types | `python3 1_sqx/export/export_metrics.py --project XAUUSD --databank OOS` |
+| `export_metrics.py` | One row per strategy, columns tagged (IS)/(OOS)/(Full) from the view's sample types. Replaces the databank's previous export | `python3 1_sqx/export/export_metrics.py --project XAUUSD --databank OOS` |
 | `export_trades.py` | Every trade of every strategy in a databank, plus the bars for each timeframe used | `python3 1_sqx/export/export_trades.py --project XAUUSD --databank OOS --symbol XAUUSD_DukasM1_Infinox` |
 | `archive_logs.py` | Copy both installs' logs to `AlgoData/logs/` as `.gz` before SQX prunes them | `python3 1_sqx/export/archive_logs.py` |
 

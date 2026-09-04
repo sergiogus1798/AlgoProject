@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Export one databank's metrics as one row per strategy, with paired IS/OOS columns."""
+"""Refresh one databank's metrics export: one row per strategy, paired IS/OOS columns."""
 
 import argparse
 import sys
-from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from core import exportdrv, manifest
-from core.paths import MASTER, export_dir
+from core.paths import MASTER, metrics_export
 
 
 def main() -> None:
-    """Export a databank through a view and record what produced the file."""
+    """Discard the databank's previous export, write a new one, and record what made it."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
@@ -21,7 +20,12 @@ def main() -> None:
                     help="databank view on the master; its sampleTypes become (IS)/(OOS) columns")
     a = ap.parse_args()
 
-    out = export_dir(a.project, a.databank, date.today().isoformat())
+    out = metrics_export(a.project, a.databank)
+    out.mkdir(parents=True, exist_ok=True)
+    for stale in sorted(out.iterdir()):
+        stale.unlink()
+        print(f"removed {stale.name}")
+
     csv = out / "metrics.csv"
     seen = exportdrv.metrics(a.project, a.databank, a.view, csv)
 
