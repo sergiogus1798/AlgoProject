@@ -342,15 +342,6 @@ are now 15 projects to map. `CADJPY_H1`, `EURJPY_H1` and `USDCHF` belong in it, 
 `WFM` databank while auto-sync is on, so "SP500 H1 clears its `WFM` outright" reads as unique when
 four projects do it.
 
-## 11. ⚪ The per-project pipeline maps are retired, format undecided
-
-The 15 per-project pipeline maps under `docs/` were deleted in the layout refactor (2026-09-04): they were
-hand-triggered, drifted from `project.cfx` between runs, and issue 10 found their generator has a
-real bug. `dump_project.py` is unchanged and is still the source — run it on demand
-(`sqx/inspect/dump_project.py <PROJECT>`) instead of reading a stale file in `docs/`.
-`tools/daily_audit.py` already runs it that way, to `/dev/null`, purely as a health check (it raises
-on a corrupted project archive). A persisted, regenerable format may return later; not designed yet.
-
 ## 11. 🔴 `XAUUSD_Breakout_H1` depends on the worker's template directory
 
 🔬 Found 2026-09-04. The project is registered on the **master** and is the only one declaring
@@ -407,6 +398,28 @@ old project, not reproducible here", so nobody builds on them assuming they can.
 
 **Fix:** restate the ATR lesson as the slippage delta only, and retag the population split 🤔 with its
 threshold, denominator and window — or redo it on deduplicated trade lists over one window.
+
+## 14. ⚪ The per-project pipeline maps are retired, format undecided
+
+The 15 per-project pipeline maps under `docs/` were deleted in the layout refactor (2026-09-04): they
+were hand-triggered, drifted from `project.cfx` between runs, and issue 10 found their generator has
+a real bug. `dump_project.py` is unchanged and is still the source — run it on demand
+(`sqx/inspect/dump_project.py <PROJECT>`) instead of reading a stale file in `docs/`.
+`tools/daily_audit.py` already runs it that way, to `/dev/null`, purely as a health check (it raises
+on a corrupted project archive). A persisted, regenerable format may return later; not designed yet.
+
+## 15. ⚪ Layout renamed — `1_sqx/` etc. are now `sqx/` etc. — CLOSED
+
+Renamed 2026-09-04: `1_sqx/` → `sqx/`, `2_tasks/` → `tasks/`, `3_strategies/` → `strategies/`,
+`4_portfolio/` → `portfolio/`, `5_mt5/` → `mt5/`. The digit prefix made the folders invalid Python
+package names, forcing 12 `sys.path.insert` hacks; every documented command now runs as
+`python3 -m package.module` from the repo root instead of by path. Full plan and verification ladder
+in `scratch/refactor-plan.md`.
+
+**Everything under `audit/` and `archive/` from before this date keeps the old numbered names on
+purpose and is not rewritten** — those are dated records of a tree that, on that date, really was
+named that way. `mt5/README.md` lost the `5_` in its own title; it is still a reserved, empty
+directory, just now a valid package name for whenever it is built.
 
 ---
 
