@@ -198,8 +198,20 @@ in issue 1 was recorded — is **4.66 GB** on its own, and compresses to 105 MB.
 
 It is safe while the GUI is up: it reads files and drives no instance.
 
-**What remains:** schedule it. There is no crontab on this machine yet, and it has to run more often
-than every 14 days. The natural home is beside `tools/daily_audit.py`, which is also unscheduled.
+**Scheduled 2026-09-04**, daily at 08:00, as the machine's only crontab entry:
+
+```cron
+0 8 * * * /usr/bin/python3 /home/sergioguslw/Desktop/AlgoProject/1_sqx/export/archive_logs.py \
+          >> /home/sergioguslw/Desktop/AlgoData/logs/cron.log 2>&1
+```
+
+Verified under a bare `env -i` shell from `$HOME`, which is how cron will run it. Daily against a
+14-day window leaves ample margin. Cost measured: **0.07 s** once everything is archived, and a normal
+day adds 4–120 KB compressed (17 days totalled 394 KB). The 4.66 GB day was an anomaly.
+
+`tools/daily_audit.py` is deliberately **not** scheduled. It renders all 16 projects, so if it reads
+a `project.cfx` while SQX is rewriting it on save or exit it reports a spurious "fails to render" —
+harmless, but noise in a report nobody asked for. Run it with `/audit`.
 
 ## 7. 🟢 `core.sqxfile` has a golden test
 
