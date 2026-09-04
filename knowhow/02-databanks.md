@@ -17,8 +17,9 @@ Log format (`user/log/StrategyQuant/log_YYYY_MM_DD.log`):
 - 🔬 **Every project on this install has that shape.** GBPJPY is not the safe counter-example the old
   notes claimed — it clears `OOS`, `RetestPairs`, `WFM Performance`, all auto-syncing. It had merely
   not reached its clear task when observed. SP500 H1 clears its `WFM` outright.
-- 🔬 `docs/<PROJECT>-pipeline.md` has a **Databank flow** table marking exactly which databanks are at
-  risk in each project. Read it before running anything.
+- 🔬 `dump_project.py <PROJECT>` renders a **Databank flow** table marking exactly which databanks are
+  at risk in each project. Read it before running anything (the old per-project docs under `docs/`
+  are retired — regenerate instead, `OPEN.md`).
 - 📓 Large databanks are slow to sync — XAUUSD `WFM` took **826 s**. A databank only partially loaded
   in memory gets pruned down to that partial set. This is a second, separate shrink mechanism, and it
   hits databanks no `ClearDatabanks` touches.
@@ -38,7 +39,7 @@ GUI shows a full databank.
   code-only route to a never-synced databank's strategies.
 - 🔬 **Look for the same strategies downstream instead.** XAUUSD task 4 retests `Results` → `OOS`, and
   `OOS` auto-syncs hourly: its 36 on-disk `.sqx` were the *identical* strategy set (verified by
-  name-set equality against `list_strategies` on `Results`). Check `docs/<PROJECT>-pipeline.md` for
+  name-set equality against `list_strategies` on `Results`). Run `dump_project.py <PROJECT>` to see
   which downstream databank carries a synced copy.
 - ⚠️ The downstream copy is the **retested** strategy, so its stored main result covers whatever window
   that retest used — here 2008–2022 with an IS/OOS split, not the builder's 2008–2017.

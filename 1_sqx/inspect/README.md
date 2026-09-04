@@ -5,7 +5,7 @@ running instance, so these are safe at any time, including while the owner's GUI
 
 | file | what it does | run it |
 |---|---|---|
-| `dump_project.py` | Render one project as a Markdown pipeline map | `python3 1_sqx/inspect/dump_project.py <PROJECT> -o docs/<PROJECT>-pipeline.md` |
+| `dump_project.py` | Render one project as a Markdown pipeline map | `python3 1_sqx/inspect/dump_project.py <PROJECT> -o /tmp/<PROJECT>.md` |
 | `project_map.py` | Builds each section of that map: databanks, TL;DR, flow, task order, task detail | imported |
 | `project_parts.py` | Reads one task's XML: databanks, conditions, rankings, cross-checks | imported |
 | `index_sqx.py` | Index every `.sqx` in the configured pools by inner-XML hash | `python3 1_sqx/inspect/index_sqx.py out.json` |

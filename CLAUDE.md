@@ -38,7 +38,7 @@ Talk to the owner in Spanish.**
 | one strategy in depth, or translating it to Python | `3_strategies/CLAUDE.md` |
 | portfolios | `4_portfolio/CLAUDE.md` |
 | running something, or explaining to a human how to | `docs/manual/` — `00-empezar.md`, then that module's page |
-| what one SQX project actually does | `docs/<PROJECT>-pipeline.md`, TL;DR section only |
+| what one SQX project actually does | regenerate on demand: `1_sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
 | what is broken or pending | `OPEN.md` |
 | what data already exists | `~/Desktop/AlgoData/INDEX.md` |
 | what the code imports | `docs/DEPENDENCIES.md` |

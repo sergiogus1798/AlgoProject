@@ -115,7 +115,8 @@ Not "which agent has permission". The boundary is **whether a running instance h
   constrains only which random groups are sampled. **XAUUSD_Breakout_H1**, the one project declaring
   `type="template"`, has no strategies on disk, so it gives no positive control from a real build.
 
-  Reproduce the shortlist with `grep -l "'type': 'simple'" docs/*-pipeline.md`: it returns **10**
+  📓 Counted 2026-09-04 with `grep -l "'type': 'simple'"` over the per-project pipeline docs, before
+  those maps were retired (`OPEN.md`); no longer reproducible from a live command. It returned **10**
   files, not 9. The tenth is `Builder`, whose `templateFile` is the stock relative
   `SQ3StrategyTemplateExample.sq4`, which does not exist on this install — so 10 hits, 9 with a real
   template file.

@@ -19,7 +19,7 @@ you do not write code, do not touch StrategyQuant X, and do not change `~/Deskto
 | a rule a session must follow to avoid damage | `CLAUDE.md`, hard rules |
 | how to work inside one phase | that phase's `CLAUDE.md` |
 | what a folder's code does | that folder's `README.md` |
-| what one SQX project does | regenerate `docs/<PROJECT>-pipeline.md`, never hand-edit it |
+| what one SQX project does | run `1_sqx/inspect/dump_project.py <PROJECT>`; no file lives in `docs/` (retired, `OPEN.md`) |
 
 **Nothing lands in the root `CLAUDE.md` that is not a hard rule or a router row.** Its budget is 55
 lines; a phase file's is 40. If a file is over budget, the fix is to move detail down, not to trim

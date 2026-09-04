@@ -62,8 +62,8 @@ disk to match. That is the `1208 → 480 → 165` bleed.
 partially loaded in memory, and the sync pruned disk down to it. Note the 826 s save time; the
 large databanks are slow enough that a partial/incomplete load is plausible.
 
-**GBPJPY is not immune — the note in `CLAUDE.md` was wrong.** Mapping all six projects
-(`docs/*-pipeline.md`) shows every one of them has the same shape: build → robustness gauntlet →
+**GBPJPY is not immune — the note in `CLAUDE.md` was wrong.** Mapping all six projects with
+`dump_project.py` shows every one of them has the same shape: build → robustness gauntlet →
 `ClearDatabanks` → **unconditional** `GoToTask` back to the builder.
 
 | project | tasks | databanks cleared while auto-syncing | terminal output |
@@ -79,7 +79,8 @@ GBPJPY simply had not reached its clear task during the observed window, so its 
 `removed 0`. SP500 H1 clears its `WFM` databank outright. Every project is exposed.
 
 **Next step (needs the lifecycle lane):** confirm by watching one sync after a ClearDatabanks task
-fires. Full task-by-task maps are in `docs/<PROJECT>-pipeline.md`. Mitigation options: set the at-risk databanks to `Auto-sync never` (they currently say
+fires. Full task-by-task maps: regenerate with `dump_project.py <PROJECT>` (the old per-project
+pipeline docs are retired — see the entry below). Mitigation options: set the at-risk databanks to `Auto-sync never` (they currently say
 `Auto-sync every 1 hour` in `config.xml`), or export to a folder before each clear, or drop task 15
 from the chain.
 
@@ -329,14 +330,25 @@ safe direction — it over-warns — but the 🔬 claim in `knowhow/02` that "ev
 has that shape" is wrong as written, and issue 1's mitigation would be aimed partly at clear tasks
 that are already disabled.
 
-**Fix:** filter on `active` in `databank_flow()` and `tldr()`, regenerate all 15 maps, then rewrite
-issue 1's table and the `knowhow/02` bullet. The `terminal` list is affected too — a databank cleared
-only by a disabled task is currently excluded from it.
+**Fix:** filter on `active` in `databank_flow()` and `tldr()`. The per-project pipeline maps this
+issue was written against are retired pending a redesigned format (below); once that format lands,
+regenerate for all 15 projects and rewrite issue 1's table and the `knowhow/02` bullet. The
+`terminal` list is affected too — a databank cleared only by a disabled task is currently excluded
+from it.
 
 **Related:** issue 1's table covers 6 projects because only 6 maps existed when it was written; there
-are now 15. `CADJPY_H1`, `EURJPY_H1` and `USDCHF` belong in it, and all three clear a `WFM` databank
-while auto-sync is on, so "SP500 H1 clears its `WFM` outright" reads as unique when four projects do
-it.
+are now 15 projects to map. `CADJPY_H1`, `EURJPY_H1` and `USDCHF` belong in it, and all three clear a
+`WFM` databank while auto-sync is on, so "SP500 H1 clears its `WFM` outright" reads as unique when
+four projects do it.
+
+## 11. ⚪ The per-project pipeline maps are retired, format undecided
+
+The 15 per-project pipeline maps under `docs/` were deleted in the layout refactor (2026-09-04): they were
+hand-triggered, drifted from `project.cfx` between runs, and issue 10 found their generator has a
+real bug. `dump_project.py` is unchanged and is still the source — run it on demand
+(`1_sqx/inspect/dump_project.py <PROJECT>`) instead of reading a stale file in `docs/`.
+`tools/daily_audit.py` already runs it that way, to `/dev/null`, purely as a health check (it raises
+on a corrupted project archive). A persisted, regenerable format may return later; not designed yet.
 
 ## 11. 🔴 `XAUUSD_Breakout_H1` depends on the worker's template directory
 
