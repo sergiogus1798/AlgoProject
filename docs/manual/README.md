@@ -27,8 +27,9 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 ## La regla
 
 **Un comando nuevo sale con su página de manual en el mismo trabajo que lo crea.** Es la regla 9 del
-`CLAUDE.md` y `tools/checks.py` la comprueba: si un script tiene un `__main__` y no aparece ni en una
-página del manual ni en `PENDIENTE.md`, la comprobación falla.
+`CLAUDE.md` y `tools/checks.py` la comprueba: si un script tiene un `__main__` y no aparece —ni por
+su ruta ni por su comando `-m`— ni en una página del manual ni en `PENDIENTE.md`, la comprobación
+falla.
 
 El motivo es que un análisis que nadie sabe ejecutar no existe. La documentación escrita semanas
 después la escribe alguien que ya olvidó qué confundía al principio, que es justo lo que hay que

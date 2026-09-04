@@ -137,13 +137,16 @@ def no_manual_page(files: list[Path]) -> list[str]:
 
     Returns:
         One message per command with no page. A command is any file with a __main__ block;
-        tools/ and tests/ are developer-only and are deliberately outside the manual.
+        tools/ and tests/ are developer-only and are deliberately outside the manual. A command
+        may be named either by its path or by its dotted `python3 -m` form — the two are a
+        bijection, so recognizing both does not weaken the check.
     """
     written = "".join(p.read_text(encoding="utf-8") for p in MANUAL.glob("*.md"))
     out = []
     for f in files:
         rel = f.relative_to(ROOT).as_posix()
-        if rel.split("/")[0] in DEVELOPER_ONLY or rel in written:
+        dotted = rel[:-3].replace("/", ".")
+        if rel.split("/")[0] in DEVELOPER_ONLY or rel in written or dotted in written:
             continue
         if "__main__" in f.read_text(encoding="utf-8"):
             out.append(f"{rel}: no manual page — copy docs/manual/_PLANTILLA.md, "

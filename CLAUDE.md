@@ -22,7 +22,8 @@ Talk to the owner in Spanish.**
 7. **Heavy data goes to the data root** (`~/Desktop/AlgoData`). Never write data into the repo.
 8. **A new command ships with its manual page, in the same task.** Copy
    `docs/manual/_PLANTILLA.md` to `docs/manual/NN-<name>.md`, in Spanish, with screenshots of
-   real output. `checks.py` fails on a `__main__` that no manual page names.
+   real output. `checks.py` fails on a `__main__` that no manual page names, neither by its path
+   nor by its `python3 -m` dotted form.
    `docs/manual/PENDIENTE.md` is inherited backlog only — nothing new goes in it.
 9. **Writing Python? Read `CODESTYLE.md` first.** No absolute path outside `core/paths.py`. When
    done: `python3 tools/depmap.py && python3 tools/checks.py`.

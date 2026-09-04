@@ -32,7 +32,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/worker.py` | 52 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
 | `tests/test_cfx.py` | 47 | Golden-file test for core.cfx: a parser that breaks silently poisons every analysis. | core | — |
 | `tests/test_sqxfile.py` | 49 | Golden-file test for core.sqxfile: a parser that breaks silently poisons every analysis. | core | — |
-| `tools/checks.py` | 189 | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | depmap | — |
+| `tools/checks.py` | 192 | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | depmap | — |
 | `tools/daily_audit.py` | 112 | The half of the daily audit a machine can do alone. Judgement stays with the /audit agent. | core | — |
 | `tools/depmap.py` | 127 | Generate docs/DEPENDENCIES.md from the imports actually present in the project's Python files. | — | — |
 | `tools/manual.py` | 112 | Build the whole user manual as one PDF from the markdown pages in docs/manual/. | core | markdown |
