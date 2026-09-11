@@ -48,7 +48,7 @@ def main() -> None:
             record = index.setdefault(digest, {"symbol": symbol, "feed": feed, "copies": []})
             record["copies"].append({"path": str(path), "pool": jobs[path],
                                      "mtime": path.stat().st_mtime})
-    a.out.write_text(json.dumps({"by_hash": index, "unreadable": unreadable}))
+    a.out.write_text(json.dumps({"by_hash": index, "unreadable": unreadable}), encoding="utf-8")
     print(f"unique strategies: {len(index)}   unreadable: {len(unreadable)}", file=sys.stderr)
 
 

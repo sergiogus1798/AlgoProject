@@ -25,8 +25,8 @@ def main() -> None:
     csv = out / "metrics.csv"
     seen = exportdrv.metrics(a.project, a.databank, a.view, csv)
 
-    rows = sum(1 for _ in open(csv)) - 1
-    columns = open(csv).readline().count(";") + 1
+    rows = sum(1 for _ in open(csv, encoding="utf-8")) - 1
+    columns = open(csv, encoding="utf-8").readline().count(";") + 1
     manifest.write(out,
                    {"install": str(MASTER), "project": a.project,
                     "databank": a.databank, "view": a.view},
