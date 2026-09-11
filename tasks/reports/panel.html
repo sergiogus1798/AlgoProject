@@ -6,35 +6,105 @@
 <title>IS frente a OOS</title>
 <style>
   :root {
-    --blue:#2a78d6; --orange:#eb6834; --aqua:#1baf7a;
-    --ink:#0b0b0b; --muted:#52514e; --rule:#e4e3df; --paper:#fcfcfb; --grey:#b9b8b4;
+    --blue:#1c5cab; --orange:#d9531f; --aqua:#0f8f61; --yellow:#eda100;
+    --magenta:#e87ba4; --violet:#4a3aa7; --red:#c0332f;
+    --ink:#0b0b0b; --muted:#45443f; --dim:#75746e; --rule:#dedcd4; --edge:#b4b2a8;
+    --paper:#f7f7f4; --grey:#a3a29c;
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--paper); color:var(--ink);
-         font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
-  header { position:sticky; top:0; z-index:5; background:var(--paper);
-           border-bottom:1px solid var(--rule); padding:14px 20px 12px; }
-  h1 { margin:0 0 2px; font-size:15px; font-weight:600; }
-  .src { color:var(--muted); font-size:11.5px; margin-bottom:10px; }
-  .row { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; margin-bottom:8px; }
-  label { display:block; font-size:10.5px; color:var(--muted); text-transform:uppercase;
-          letter-spacing:.04em; margin-bottom:3px; }
-  select, input, button { font:inherit; font-size:12.5px; padding:4px 7px;
-          border:1px solid var(--rule); border-radius:4px; background:#fff; color:var(--ink); }
+         font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  header { position:sticky; top:0; z-index:5; background:#fff;
+           border-bottom:1px solid var(--edge); padding:16px 22px 13px;
+           box-shadow:0 1px 4px rgba(11,11,11,.06); }
+  h1 { margin:0 0 2px; font-size:18px; font-weight:600; }
+  .src { color:var(--muted); font-size:13px; margin-bottom:11px; }
+  .row { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-bottom:9px; }
+  label { display:block; font-size:11.5px; color:var(--muted); text-transform:uppercase;
+          letter-spacing:.04em; margin-bottom:4px; }
+  select, input, button { font:inherit; font-size:14px; padding:5px 8px;
+          border:1px solid var(--edge); border-radius:4px; background:#fff; color:var(--ink); }
   button { cursor:pointer; }
   button:hover { border-color:var(--muted); }
   button.link { border:none; background:none; color:var(--blue); padding:2px 0;
-                text-decoration:underline; font-size:12px; }
+                text-decoration:underline; font-size:13.5px; }
   .clause { display:flex; gap:6px; align-items:center; margin-bottom:5px; }
   .clause .x { border:none; background:none; color:var(--muted); cursor:pointer;
-               font-size:15px; padding:0 4px; }
-  #status { font-size:12px; color:var(--muted); padding-top:2px; }
+               font-size:17px; padding:0 4px; }
+  #status { font-size:13.5px; color:var(--muted); padding-top:2px; }
   #status b { color:var(--ink); font-weight:600; }
-  main { display:grid; gap:14px; padding:16px 20px 40px;
-         grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); }
-  .panel { border:1px solid var(--rule); border-radius:5px; background:#fff; }
-  canvas { display:block; width:100%; height:248px; }
-  footer { padding:0 20px 30px; color:var(--muted); font-size:11.5px; max-width:70ch; }
+  main { display:grid; gap:18px; padding:20px 22px 10px;
+         grid-template-columns:repeat(3,1fr); }
+  @media (max-width:1180px) { main { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:760px)  { main { grid-template-columns:1fr; } }
+  .panel { border:1px solid var(--edge); border-radius:8px; background:#fff; overflow:hidden;
+           box-shadow:0 1px 3px rgba(11,11,11,.08); }
+  .panel-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+                padding:10px 14px 9px; border-bottom:1px solid var(--edge); background:#fbfbf9; }
+  .panel-head .name { font-weight:600; font-size:14.5px; }
+  .panel-head .stats { font-size:13px; color:var(--dim); white-space:nowrap;
+                       font-variant-numeric:tabular-nums; }
+  .panel-head .stats.strong { color:var(--ink); font-weight:600; }
+  canvas { display:block; width:100%; height:330px; }
+  section.block { padding:28px 22px 6px; max-width:1400px; }
+  section.block h2 { font-size:17px; margin:0 0 4px; }
+  section.block .sub { color:var(--muted); font-size:13px; margin:0 0 16px; max-width:80ch; }
+  footer { padding:14px 22px 40px; color:var(--muted); font-size:12.5px; max-width:80ch; }
+
+  .heat-controls { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-bottom:14px; }
+  .heat-wrap { overflow:auto; border:1px solid var(--edge); border-radius:8px; background:#fff;
+               max-height:74vh; box-shadow:0 1px 3px rgba(11,11,11,.08);
+               display:inline-block; max-width:100%; vertical-align:top; }
+  table.heat { border-collapse:collapse; font-size:12px; }
+  table.heat th, table.heat td { padding:0; }
+  table.heat th.colhead { position:sticky; top:0; background:#fff; z-index:2;
+      height:150px; vertical-align:bottom; padding-bottom:6px; }
+  table.heat th.colhead div { writing-mode:vertical-rl; transform:rotate(180deg);
+      white-space:nowrap; font-weight:500; color:var(--muted); font-size:11.5px;
+      padding:0 3px; max-height:145px; }
+  table.heat th.rowhead { position:sticky; left:0; background:#fff; z-index:1;
+      text-align:right; padding:0 10px 0 14px; white-space:nowrap; font-weight:500;
+      color:var(--muted); font-size:11.5px; border-right:1px solid var(--rule); }
+  table.heat th.corner { position:sticky; left:0; top:0; background:#fff; z-index:3; }
+  table.heat td.cell { width:34px; height:34px; min-width:34px; text-align:center;
+      cursor:pointer; border:1px solid #fff; line-height:0; }
+  table.heat td.cell:hover { outline:2px solid var(--ink); outline-offset:-2px; }
+  .bh { display:inline-block; width:5px; height:5px; border-radius:50%;
+        background:rgba(255,255,255,.95); box-shadow:0 0 0 1px rgba(11,11,11,.45);
+        vertical-align:middle; }
+  #heatTip { position:fixed; pointer-events:none; background:var(--ink); color:#fff;
+      font-size:12.5px; padding:7px 10px; border-radius:5px; z-index:20; display:none;
+      line-height:1.5; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+  #heatTip b { font-weight:600; }
+  .legend-scale { display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--muted);
+      font-variant-numeric:tabular-nums; }
+  .legend-steps { display:flex; border:1px solid var(--edge); border-radius:3px; overflow:hidden; }
+  .legend-steps i { width:13px; height:15px; display:block; }
+  .legend-note { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--muted); }
+
+  .explain-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+      gap:18px; margin-bottom:8px; }
+  .data-wrap { overflow:auto; border:1px solid var(--edge); border-radius:8px; background:#fff;
+      max-height:70vh; box-shadow:0 1px 3px rgba(11,11,11,.08); }
+  table.data { border-collapse:collapse; font-size:12.5px; font-variant-numeric:tabular-nums;
+      white-space:nowrap; }
+  table.data th { position:sticky; top:0; background:#fbfbf9; z-index:2; cursor:pointer;
+      text-align:right; font-weight:600; font-size:12px; color:var(--muted);
+      padding:9px 12px; border-bottom:1px solid var(--edge); }
+  table.data th:first-child, table.data td:first-child { text-align:left; position:sticky; left:0;
+      background:#fbfbf9; z-index:1; border-right:1px solid var(--edge); }
+  table.data th:hover { color:var(--ink); }
+  table.data td { padding:6px 12px; text-align:right; border-bottom:1px solid var(--rule); }
+  table.data tbody tr:hover td { background:#f2f6fc; }
+  table.data th.sorted { color:var(--blue); }
+
+  .explain-card { border:1px solid var(--edge); border-radius:8px; padding:16px 18px; background:#fff;
+      box-shadow:0 1px 3px rgba(11,11,11,.08); }
+  .explain-card h3 { margin:0 0 6px; font-size:14.5px; }
+  .explain-card p { margin:0 0 8px; color:var(--muted); font-size:13.5px; line-height:1.6; }
+  .explain-card p:last-child { margin-bottom:0; }
+  .explain-card code { background:var(--paper); border:1px solid var(--rule); border-radius:3px;
+      padding:1px 5px; font-size:12.5px; }
 </style>
 </head>
 <body>
@@ -73,12 +143,109 @@
 
 <main id="grid"></main>
 
+<section class="block">
+  <h2>Mapa de correlaciones — IS contra OOS</h2>
+  <p class="sub">Cada casilla cruza una métrica in-sample (fila) con una métrica out-of-sample
+     (columna) y se recalcula sobre las estrategias que pasan el filtro de arriba — la misma
+     población que alimenta los gráficos. Haz clic en una casilla para llevar esa métrica OOS
+     al eje Y de los gráficos.</p>
+  <div class="heat-controls">
+    <div><label for="heatMetric">Valor mostrado</label>
+         <select id="heatMetric">
+           <option value="rho">ρ de Spearman</option>
+           <option value="r">r de Pearson</option>
+           <option value="p">p-valor</option>
+         </select></div>
+    <div class="legend-scale" id="heatLegend"></div>
+    <div class="legend-note"><span class="bh"></span>
+         sobrevive Benjamini-Hochberg al 5% dentro de su columna</div>
+  </div>
+  <div class="heat-wrap"><table class="heat" id="heatTable"></table></div>
+</section>
+
+<section class="block">
+  <h2>Tabla de estrategias</h2>
+  <p class="sub">Las cifras exactas de las estrategias que pasan el filtro. Haz clic en una
+     cabecera para ordenar por esa métrica.</p>
+  <div class="heat-controls">
+    <div><label for="tableRows">Filas mostradas</label>
+         <select id="tableRows">
+           <option value="100" selected>100</option>
+           <option value="0">ocultar tabla</option>
+           <option value="300">300</option>
+           <option value="1000">1000</option>
+         </select></div>
+    <div><label for="tableSort">Ordenar por</label><select id="tableSort"></select></div>
+    <div><label for="tableDir">Sentido</label>
+         <select id="tableDir">
+           <option value="desc">de mayor a menor</option>
+           <option value="asc">de menor a mayor</option>
+         </select></div>
+    <div class="legend-note" id="tableNote"></div>
+  </div>
+  <div class="data-wrap" id="dataWrap" hidden><table class="data" id="dataTable"></table></div>
+</section>
+
+<section class="block">
+  <h2>Cómo leer estos números</h2>
+  <p class="sub">Las tres cifras que acompañan cada gráfico y cada casilla del mapa de calor.</p>
+  <div class="explain-grid">
+    <div class="explain-card">
+      <h3>r de Pearson</h3>
+      <p>Mide la relación <b>lineal</b> entre dos métricas: cuánto se acerca la nube de puntos a
+         una recta. Va de −1 (relación lineal perfecta inversa) a +1 (perfecta directa); 0 es
+         ausencia de relación lineal.</p>
+      <p>Es sensible a valores extremos — una sola estrategia con un resultado disparado puede
+         mover <code>r</code> bastante aunque el resto de la población no muestre ninguna
+         relación. Con métricas de trading, que suelen tener colas largas, conviene mirarlo junto
+         a <code>ρ</code> y no en solitario.</p>
+    </div>
+    <div class="explain-card">
+      <h3>ρ (rho) de Spearman</h3>
+      <p>Mide si dos métricas se mueven <b>en el mismo orden</b> — cuando una sube de puesto entre
+         las estrategias, ¿sube la otra también? — sin exigir que la relación sea una línea recta.
+         Mismo rango que Pearson, de −1 a +1.</p>
+      <p>Al trabajar sobre el orden de los valores y no sobre su magnitud, un único resultado
+         extremo pesa lo mismo que cualquier otro. Es la cifra de referencia en este panel por
+         eso mismo, y la que ordena los gráficos.</p>
+    </div>
+    <div class="explain-card">
+      <h3>p-valor</h3>
+      <p>La probabilidad de observar una correlación tan fuerte como la medida <b>si en
+         realidad no hubiera ninguna relación</b>. Un p-valor pequeño (convencionalmente
+         &lt; 0.05) dice que la correlación observada es poco probable por puro azar.</p>
+      <p>No dice nada sobre el tamaño del efecto — con miles de estrategias hasta una
+         correlación minúscula sale "significativa". De ahí que haga falta el control de la
+         tarjeta siguiente.</p>
+    </div>
+    <div class="explain-card">
+      <h3>Benjamini-Hochberg (BH)</h3>
+      <p>Probar las <span id="nIs">21</span> métricas IS contra un mismo resultado OOS son otras
+         tantas apuestas, no una. Al 5%
+         convencional cabe esperar <b>alrededor de una "significativa" por puro azar por cada
+         veinte probadas</b>, así que el p-valor suelto deja de proteger en cuanto se mira una
+         familia entera de métricas a la vez.</p>
+      <p>BH controla la <b>tasa de falsos descubrimientos</b>: ordena los p-valores de la familia
+         de menor a mayor y acepta los que quedan por debajo de una línea que sube con la
+         posición (<code>i / m × 0.05</code>). Lo que sobrevive no es "seguro", sino que del
+         conjunto de hallazgos aceptados se espera que como mucho un 5% sean falsos.</p>
+      <p>En el mapa de calor cada columna OOS es una familia con sus métricas IS, y las casillas
+         que sobreviven llevan el punto <span class="bh"></span>. Es el mismo criterio que marca
+         con ✓ las tablas de <code>summary.md</code>.</p>
+    </div>
+  </div>
+</section>
+
+<div id="heatTip"></div>
+
 <footer>
   Las estadísticas — correlación, regresión e histograma — se calculan sobre todas las estrategias
   que pasan el filtro, nunca sobre la muestra dibujada. La muestra solo limita cuántos puntos se
   pintan, y son las mismas estrategias en todos los gráficos. Con un filtro puesto, la población
   entera se queda detrás en gris para poder comparar. Los puntos que caen fuera del rango de los
-  ejes no se dibujan, pero sí cuentan en las estadísticas.
+  ejes no se dibujan, pero sí cuentan en las estadísticas. La escala de color del mapa se ajusta
+  al recorrido real de los valores mostrados — su extremo aparece rotulado en la leyenda — porque
+  a escala −1…+1 estas correlaciones saldrían todas del mismo color.
 </footer>
 
 <script>const PAYLOAD = __PAYLOAD__;</script>
@@ -218,7 +385,7 @@ function survivors(clauses) {
 
 // ------------------------------------------------------------------- drawing
 
-const PAD = {l: 48, r: 12, t: 26, b: 38}, BINS = 34, HIST = 0.30;
+const PAD = {l: 56, r: 14, t: 30, b: 42}, BINS = 34, HIST = 0.30;
 const CSS = getComputedStyle(document.documentElement);
 const COLOR = name => CSS.getPropertyValue('--' + name).trim();
 
@@ -251,8 +418,13 @@ function drawPanel(canvas, xname) {
   const ys = v => (h - PAD.b) - (v - y0) / (y1 - y0 || 1) * (h - PAD.t - PAD.b);
   const plotH = h - PAD.t - PAD.b;
 
-  g.strokeStyle = COLOR('rule'); g.lineWidth = 1;
+  g.strokeStyle = COLOR('edge'); g.lineWidth = 1;
   g.strokeRect(PAD.l + .5, PAD.t + .5, w - PAD.l - PAD.r - 1, plotH - 1);
+  g.strokeStyle = COLOR('ink'); g.lineWidth = 1.5;
+  g.beginPath();
+  g.moveTo(PAD.l + .5, PAD.t); g.lineTo(PAD.l + .5, h - PAD.b + .5);
+  g.lineTo(w - PAD.r, h - PAD.b + .5);
+  g.stroke();
 
   const xa = take(D[xname], state.idx), ya = take(D[state.y], state.idx);
   const filtered = state.idx.length !== N;
@@ -269,8 +441,8 @@ function drawPanel(canvas, xname) {
       g.fillRect(PAD.l + b * bw, h - PAD.b - bh, Math.max(1, bw - 1), bh);
     }
   };
-  if (hb) bar(hb, 'rgba(185,184,180,0.45)');
-  bar(hf, filtered ? 'rgba(42,120,214,0.22)' : 'rgba(42,120,214,0.16)');
+  if (hb) bar(hb, 'rgba(140,139,132,0.45)');
+  bar(hf, filtered ? 'rgba(15,143,97,0.55)' : 'rgba(15,143,97,0.42)');
 
   const dot = (idx, fill, r) => {
     g.fillStyle = fill;
@@ -281,11 +453,11 @@ function drawPanel(canvas, xname) {
       g.beginPath(); g.arc(px, py, r, 0, 6.2832); g.fill();
     }
   };
-  if (filtered) dot(sample(ALL, state.points, state.seed), 'rgba(185,184,180,0.55)', 1.7);
-  dot(sample(state.idx, state.points, state.seed), 'rgba(42,120,214,0.72)', 2);
+  if (filtered) dot(sample(ALL, state.points, state.seed), 'rgba(140,139,132,0.55)', 2.1);
+  dot(sample(state.idx, state.points, state.seed), 'rgba(24,79,149,0.88)', 2.7);
 
   const line = fit(xa, ya);
-  g.strokeStyle = COLOR('orange'); g.lineWidth = 2;
+  g.strokeStyle = COLOR('orange'); g.lineWidth = 2.75;
   g.beginPath();
   g.moveTo(xs(x0), Math.max(PAD.t, Math.min(h - PAD.b, ys(line.slope * x0 + line.intercept))));
   g.lineTo(xs(x1), Math.max(PAD.t, Math.min(h - PAD.b, ys(line.slope * x1 + line.intercept))));
@@ -294,23 +466,199 @@ function drawPanel(canvas, xname) {
   const rho = pearson(ranks(xa), ranks(ya)), r = pearson(xa, ya);
   const p = pvalue(rho, xa.length);
 
-  g.fillStyle = COLOR('ink'); g.font = '600 11.5px sans-serif'; g.textAlign = 'left';
-  g.fillText(xname, PAD.l, 15);
-  g.font = '10.5px sans-serif'; g.textAlign = 'right';
-  g.fillStyle = Math.abs(rho) > 0.05 ? COLOR('ink') : COLOR('muted');
-  g.fillText(`ρ ${rho >= 0 ? '+' : ''}${rho.toFixed(3)}   r ${r >= 0 ? '+' : ''}${r.toFixed(3)}   ${fmtp(p)}`,
-             w - PAD.r, 15);
-
   const xw = Math.max(Math.abs(x0), Math.abs(x1)), yw = Math.max(Math.abs(y0), Math.abs(y1));
-  g.fillStyle = COLOR('muted'); g.font = '9.5px sans-serif';
-  g.textAlign = 'left';  g.fillText(fmt(x0, xw), PAD.l, h - PAD.b + 13);
-  g.textAlign = 'right'; g.fillText(fmt(x1, xw), w - PAD.r, h - PAD.b + 13);
+  g.fillStyle = COLOR('muted'); g.font = '12px sans-serif';
+  g.textAlign = 'left';  g.fillText(fmt(x0, xw), PAD.l, h - PAD.b + 17);
+  g.textAlign = 'right'; g.fillText(fmt(x1, xw), w - PAD.r, h - PAD.b + 17);
   g.textAlign = 'right';
-  g.fillText(fmt(y1, yw), PAD.l - 6, PAD.t + 8);
-  g.fillText(fmt(y0, yw), PAD.l - 6, h - PAD.b);
-  g.textAlign = 'center';
-  g.fillText('histograma: % de la población por tramo de ' + xname, w / 2, h - 8);
-  return rho;
+  g.fillText(fmt(y1, yw), PAD.l - 8, PAD.t + 9);
+  g.fillText(fmt(y0, yw), PAD.l - 8, h - PAD.b);
+  g.fillStyle = COLOR('dim'); g.font = '11.5px sans-serif'; g.textAlign = 'center';
+  g.fillText('histograma: % de la población por tramo', w / 2, h - 9);
+  return {rho, r, p};
+}
+
+// ------------------------------------------------------------------- heatmap
+
+const heatRanks = new Map();
+
+function rankedCol(name) {
+  if (!heatRanks.has(name)) heatRanks.set(name, ranks(take(D[name], state.idx)));
+  return heatRanks.get(name);
+}
+
+// Twenty steps, not a gradient: a cell's colour is readable off the legend on its own.
+// Diverging blue<->red for correlation (ten steps per arm), one hue for p.
+const STEPS = 20;
+const NEG = ['#cde2fb', '#b7d3f6', '#9ec5f4', '#86b6ef', '#6da7ec',
+             '#5598e7', '#3987e5', '#2a78d6', '#1c5cab', '#0d366b'];
+const POS = ['#fbdedc', '#f8c6c3', '#f4aeaa', '#f09591', '#e97b78',
+             '#e05f5c', '#d24441', '#b8322f', '#962523', '#6b1917'];
+
+// Twenty steps of one hue for p, interpolated between the blue ramp's anchors.
+function rampSteps(anchors, steps) {
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const pts = anchors.map(rgb);
+  return Array.from({length: steps}, (_, k) => {
+    const x = k / (steps - 1) * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(x));
+    const f = x - i;
+    return 'rgb(' + pts[i].map((c, j) => Math.round(c + (pts[i + 1][j] - c) * f)).join(',') + ')';
+  });
+}
+const PRAMP = rampSteps(['#eef4fd', '#cde2fb', '#9ec5f4', '#6da7ec',
+                         '#3987e5', '#256abf', '#184f95', '#0d366b'], STEPS);
+
+// The scale spans what the data actually reaches, not the theoretical -1..+1: these
+// correlations live inside +-0.3 and a fixed full-range scale paints every cell the same.
+function heatBound(kind, values) {
+  if (kind === 'p') {
+    const deep = Math.max(...values.map(v => -Math.log10(Math.max(v, 1e-300))));
+    return Math.max(3, Math.min(60, Math.ceil(deep)));
+  }
+  // The 95th percentile, not the maximum: one extreme pair would otherwise wash out
+  // the ramp and leave every other cell the same pale colour. Extremes clip.
+  const abs = values.map(Math.abs).sort((a, b) => a - b);
+  const peak = abs[Math.min(abs.length - 1, Math.floor(0.95 * abs.length))];
+  return [0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 0.75, 1].find(b => b >= peak) || 1;
+}
+
+// Bin index a value falls in, 0..STEPS-1: p by decades, correlation over +-bound.
+function heatBin(kind, v, bound) {
+  const t = kind === 'p'
+    ? 1 - Math.max(0, Math.min(1, -Math.log10(Math.max(v, 1e-300)) / bound))
+    : (Math.max(-bound, Math.min(bound, v)) / bound + 1) / 2;
+  return Math.max(0, Math.min(STEPS - 1, Math.floor(t * STEPS)));
+}
+
+function heatColor(kind, v, bound) {
+  const b = heatBin(kind, v, bound);
+  if (kind === 'p') return PRAMP[STEPS - 1 - b];
+  return b < STEPS / 2 ? NEG[STEPS / 2 - 1 - b] : POS[b - STEPS / 2];
+}
+
+// Benjamini-Hochberg over one family of tests, mirroring analysis/correlations.discoveries.
+function survivesBH(ps, alpha = 0.05) {
+  const order = ps.map((p, i) => [p, i]).sort((a, b) => a[0] - b[0]);
+  let cut = 0;
+  order.forEach(([p], k) => { if (p <= (k + 1) / ps.length * alpha) cut = k + 1; });
+  const keep = new Array(ps.length).fill(false);
+  for (let k = 0; k < cut; k++) keep[order[k][1]] = true;
+  return keep;
+}
+
+function buildHeatmap() {
+  heatRanks.clear();
+  const kind = document.getElementById('heatMetric').value;
+  const table = document.getElementById('heatTable');
+  const tip = document.getElementById('heatTip');
+  table.innerHTML = '';
+
+  const head = document.createElement('tr');
+  head.appendChild(Object.assign(document.createElement('th'), {className: 'corner'}));
+  for (const oos of P.oos) {
+    const th = document.createElement('th');
+    th.className = 'colhead';
+    th.innerHTML = `<div>${oos}</div>`;
+    head.appendChild(th);
+  }
+  table.appendChild(head);
+
+  const n = state.idx.length;
+  const cells = P.is.map(is => {
+    const ra = rankedCol(is), xa = take(D[is], state.idx);
+    return P.oos.map(oos => {
+      const rho = n > 4 ? pearson(ra, rankedCol(oos)) : 0;
+      const r = n > 4 ? pearson(xa, take(D[oos], state.idx)) : 0;
+      return {rho, r, p: pvalue(rho, n)};
+    });
+  });
+  // One family per OOS column: every IS metric tested against that same outcome.
+  P.oos.forEach((_, j) => {
+    const keep = survivesBH(cells.map(row => row[j].p));
+    keep.forEach((ok, i) => { cells[i][j].bh = ok && n > 4; });
+  });
+
+  const shown = cells.flatMap(row => row.map(c => kind === 'rho' ? c.rho : kind === 'r' ? c.r : c.p));
+  const bound = n > 4 ? heatBound(kind, shown) : 1;
+
+  P.is.forEach((is, i) => {
+    const row = document.createElement('tr');
+    const rh = document.createElement('th');
+    rh.className = 'rowhead'; rh.textContent = is;
+    row.appendChild(rh);
+    P.oos.forEach((oos, j) => {
+      const {rho, r, p, bh} = cells[i][j];
+      const val = kind === 'rho' ? rho : kind === 'r' ? r : p;
+      const td = document.createElement('td');
+      td.className = 'cell';
+      td.style.background = n > 4 ? heatColor(kind, val, bound) : 'transparent';
+      if (bh) td.innerHTML = '<span class="bh"></span>';
+      td.addEventListener('mouseenter', ev => {
+        tip.style.display = 'block';
+        tip.innerHTML = `<b>${oos}</b><br>frente a ${is}<br>`
+          + `ρ ${rho >= 0 ? '+' : ''}${rho.toFixed(3)} · r ${r >= 0 ? '+' : ''}${r.toFixed(3)} · ${fmtp(p)}`
+          + (bh ? '<br>sobrevive Benjamini-Hochberg' : '');
+      });
+      td.addEventListener('mousemove', ev => {
+        tip.style.left = (ev.clientX + 14) + 'px';
+        tip.style.top = (ev.clientY + 14) + 'px';
+      });
+      td.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+      td.addEventListener('click', () => {
+        const y = document.getElementById('y');
+        y.value = oos; state.y = oos;
+        document.getElementById('grid').scrollIntoView({behavior: 'smooth', block: 'start'});
+        render();
+      });
+      row.appendChild(td);
+    });
+    table.appendChild(row);
+  });
+
+  const swatches = order => `<span class="legend-steps">${
+    order.map(c => `<i style="background:${c}"></i>`).join('')}</span>`;
+  const legend = document.getElementById('heatLegend');
+  legend.innerHTML = kind === 'p'
+    ? `<span>p 10⁻${bound}</span>${swatches(PRAMP.slice().reverse())}<span>p 1</span>`
+    : `<span>−${bound}</span>${swatches(NEG.slice().reverse().concat(POS))}<span>+${bound}</span>`;
+}
+
+// ---------------------------------------------------------------- table view
+
+function buildTable() {
+  const limit = parseInt(document.getElementById('tableRows').value, 10);
+  const wrap = document.getElementById('dataWrap');
+  const note = document.getElementById('tableNote');
+  wrap.hidden = !limit;
+  if (!limit) { note.textContent = ''; return; }
+
+  const cols = P.is.concat(P.oos);
+  const by = document.getElementById('tableSort').value;
+  const dir = document.getElementById('tableDir').value === 'asc' ? 1 : -1;
+  const col = D[by];
+  const rows = Array.from(state.idx).sort((i, j) => dir * (col[i] - col[j])).slice(0, limit);
+  note.textContent = `${rows.length.toLocaleString('es-ES')} de `
+    + `${state.idx.length.toLocaleString('es-ES')} estrategias que pasan el filtro`;
+
+  const esc = s => s.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+  // One notation per column, from that column's widest value, so a column reads as a column.
+  const scale = Object.fromEntries(cols.map(c =>
+    [c, Math.max(...rows.map(i => Math.abs(D[c][i])))]));
+  const head = `<tr><th data-col="">Estrategia</th>${
+    cols.map(c => `<th data-col="${esc(c)}"${c === by ? ' class="sorted"' : ''}>${esc(c)}</th>`)
+        .join('')}</tr>`;
+  const body = rows.map(i => `<tr><td>${esc(P.names[i])}</td>${
+    cols.map(c => `<td>${fmt(D[c][i], scale[c])}</td>`).join('')}</tr>`).join('');
+  const table = document.getElementById('dataTable');
+  table.innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
+  table.querySelectorAll('th[data-col]').forEach(th => th.addEventListener('click', () => {
+    const c = th.dataset.col;
+    if (!c) return;
+    const sort = document.getElementById('tableSort'), d = document.getElementById('tableDir');
+    if (sort.value === c) d.value = d.value === 'asc' ? 'desc' : 'asc';
+    sort.value = c;
+    buildTable();
+  }));
 }
 
 // --------------------------------------------------------------------- render
@@ -328,6 +676,9 @@ function render() {
   document.getElementById('status').innerHTML =
     n === 0 ? '<b>ninguna estrategia pasa el filtro</b>' : line;
 
+  buildHeatmap();
+  buildTable();
+
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
   if (n < 5) return;
@@ -340,10 +691,17 @@ function render() {
   for (const {m} of order) {
     const box = document.createElement('div');
     box.className = 'panel';
+    const head = document.createElement('div');
+    head.className = 'panel-head';
     const canvas = document.createElement('canvas');
+    box.appendChild(head);
     box.appendChild(canvas);
     grid.appendChild(box);
-    drawPanel(canvas, m);
+    const {rho, r, p} = drawPanel(canvas, m);
+    head.innerHTML = `<span class="name">${m}</span>`
+      + `<span class="stats${Math.abs(rho) > 0.05 ? ' strong' : ''}">`
+      + `ρ ${rho >= 0 ? '+' : ''}${rho.toFixed(3)} · r ${r >= 0 ? '+' : ''}${r.toFixed(3)}`
+      + ` · ${fmtp(p)}</span>`;
   }
 }
 
@@ -379,6 +737,8 @@ function clauseRow(clause) {
 }
 
 function boot() {
+  // Several of these are open at once when samples are compared; the tab has to say which.
+  document.title = `${P.source.project} / ${P.source.databank} — IS/OOS`;
   document.getElementById('title').textContent =
     `${P.source.project} / ${P.source.databank} — IS frente a OOS`;
   document.getElementById('src').textContent =
@@ -406,6 +766,15 @@ function boot() {
     document.getElementById('clauses').appendChild(clauseRow(clause));
     render();
   });
+  document.getElementById('nIs').textContent = P.is.length;
+  document.getElementById('heatMetric').addEventListener('change', buildHeatmap);
+
+  const sort = document.getElementById('tableSort');
+  sort.innerHTML = P.is.concat(P.oos).map(m => `<option>${m}</option>`).join('');
+  sort.value = state.y;
+  ['tableRows', 'tableSort', 'tableDir'].forEach(id =>
+    document.getElementById(id).addEventListener('change', buildTable));
+
   document.getElementById('clear').addEventListener('click', () => {
     state.clauses = [];
     document.getElementById('clauses').innerHTML = '';

@@ -1,6 +1,26 @@
-# tasks — next module: improvement
+# tasks — improvement: BUILT 2026-09-04, and what is still open
 
-Not started. This file is the brief; everything it needs already exists.
+Built as `analysis/improvement.py` + `reports/filters.py`, documented in
+`docs/manual/02-filtros.md`. The three questions this brief left for the owner were decided on
+2026-09-04:
+
+- **What good means out of sample**: the target's own median plus the share above break-even, on
+  `Sharpe Ratio (OOS)` and `Ret/DD Ratio (OOS)` by default. Break-even is 1.0 for profit factor and
+  0.0 for the rest.
+- **Minimum survivors**: 200. Below that a candidate is not judged at all.
+- **Combinations**: not swept. Single clauses only.
+
+A 5% cut was added the same day, on the owner's call, because the first sweep found the improvement
+still rising at its tightest cut and so could not say where it stopped paying. It can now: on XAUUSD
+the first cut buys 22 points of hit rate and going from 10% to 5% buys under 2 more for half the
+survivors. The search space is 210 candidates.
+
+**Still open, in the order they are worth doing:**
+
+1. **Combinations**, with the correction that needs.
+2. **Across every project's databank**, which is the section at the end of this file.
+
+What follows is the original brief, kept because it explains why the module looks the way it does.
 
 ---
 
@@ -76,6 +96,11 @@ optional. Take the metrics from `metrics.measured(columns, metrics.IS)` so nothi
   call made per report.
 
 ## Beyond that
+
+**Comparing samples is built** — `analysis/replication.py` + `reports/compare.py`, page 3 of the
+manual — but it compares databanks *of one project*. It was written for the owner's replication
+study: generate again under the recommended filters, then check the promised uplift actually
+arrives. Pointing it across projects is a naming and reporting job, not new maths.
 
 The panel and improvement together only measure XAUUSD/OOS. The question the owner is actually
 asking is *which filters for which asset*, so the next step after improvement is running both across
