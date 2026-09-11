@@ -1,16 +1,43 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 tools/checks.py)",
-      "Bash(python3 tools/depmap.py)",
-      "Bash(python3 tools/daily_audit.py)",
-      "Bash(python3 tests/test_cfx.py)",
-      "Bash(python3 -m core.assets:*)",
-      "Bash(python3 -m sqx.inspect.dump_project:*)",
-      "Bash(python3 -m sqx.inspect.instruments:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(sed -n:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(stat:*)",
+      "Bash(file:*)",
+      "Bash(du:*)",
+      "Bash(pgrep:*)",
+      "Bash(ss:*)",
+      "Bash(bin/sqx-worker.sh check)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)"
+    ],
+    "ask": [
+      "Bash(python3 -m sqx.curate.apply_verdict:*)",
+      "Bash(bin/sqx-worker.sh start:*)",
+      "Bash(bin/sqx-worker.sh stop:*)",
+      "Bash(bin/sqx-worker.sh run:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)"
+    ],
+    "deny": [
+      "Bash(pkill:*)",
+      "Bash(killall:*)"
     ]
   }
 }
