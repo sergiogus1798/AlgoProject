@@ -1,0 +1,60 @@
+# Every tunable of the Monte Carlo study, in one place. Nothing below is hidden in code.
+# Override any of these on the command line with --set key=value (dotted keys).
+
+global:
+  starting_equity: 100000.0   # account the additive equity path starts from
+  risk_per_trade: 1000.0      # USD risked per trade; the divisor that turns P&L into R
+  n_sims: 100000              # simulated paths per sub-test
+  chunk: 2000                 # paths per worker batch; memory, not statistics
+  max_workers: null           # null = every core the machine has
+  percentile_set: [1, 5, 25, 50, 75, 95, 99]
+  report_percentile: 95       # the percentile the observed value is compared against
+  progress_update_pct: 1
+
+blocks:
+  block_min: 5                # smallest block of consecutive trades kept together
+  min_blocks: 20              # a reordering needs this many blocks to randomise anything
+  n_block_sizes: 6            # evenly spaced from block_min to floor(N / min_blocks)
+
+family_b:
+  oos_amber_frac: 0.60        # OOS median Sharpe below this share of IS: amber
+  oos_red_frac: 0.40
+  outlier_frac: 0.25          # net profit lost by dropping the best trade
+
+family_c:
+  p_skip: 0.05
+  skip_keep_frac: 0.70
+  cost_shock_range: [1.0, 2.0]
+  fill_frac: 0.15
+  fill_depth: 0.25            # fraction of the P&L-to-MAE distance a degraded fill gives back
+  fill_keep_frac: 0.75
+  spread_scale: [1.0, 2.0]
+  cost_crosscheck: true
+
+family_d:
+  window_months: 24
+  window_step_months: 3
+  window_pass_frac: 0.70
+  window_sims: 2000           # bootstrap paths inside one window or one regime bucket
+  vol_model: atr              # atr | garch
+  atr_period: 20              # in days; the regime is daily whatever the trading timeframe
+  garch_order: [1, 1]
+  garch_dist: t
+  regime_concentration: 0.80
+
+family_e:
+  psr_benchmark: 0.0
+  psr_gate: 0.90
+  psr_target: 0.95
+
+scoring:
+  dd_inflation_flag: 3.0
+  dd_inflation_watch: 1.5
+  survival_dd_pct: 0.10       # placeholder until the prop-firm rules are known
+  min_pf: 1.10
+  weights: {A: 0.25, B: 0.25, C: 0.20, D: 0.20, E: 0.10}
+  tiers: [80, 65, 50]
+
+stability:
+  n_stability_runs: 8
+  stability_tol: 0.10         # relative spread of a gate-driving percentile across runs

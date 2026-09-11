@@ -1,0 +1,22 @@
+# Additional markets for the cross-market retest, one block per base asset.
+#
+# THE LIST IS FIXED BEFORE RESULTS ARE LOOKED AT. Choosing markets after seeing where the
+# strategies work turns the test into a selection and its p-values into decoration.
+#
+# feed        the SQX symbol, exactly as -symbol action=list prints it. It must be the same
+#             feed the retest task used, or the export will not line up.
+# role        descriptive only; it is printed in the report and changes no calculation.
+# data_from   first date the feed has data for. Nothing is filtered on it: it is reported so
+#             the shrinking of the common window across markets is visible.
+#
+# The base asset itself is excluded from the vote wherever it appears: it is the market the
+# strategies were fitted on, so its random-entry p-value is not interpretable.
+
+# Read from the retest the owner actually ran: the "Retest Markets - Family" databank of the
+# XAUUSD project, whose strategies carry exactly these two AdditionalMarket results, at M30.
+XAUUSD:
+  main: XAUUSD_DukasM1_Infinox
+  timeframe: M30
+  additional:
+    - {feed: XAGUSD_DukasM1_Infinox, role: family, data_from: 2003-08-08}
+    - {feed: BRENTCMDUSD_ftmo, role: family, data_from: unknown}
