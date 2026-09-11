@@ -43,3 +43,17 @@ GUI shows a full databank.
   which downstream databank carries a synced copy.
 - ⚠️ The downstream copy is the **retested** strategy, so its stored main result covers whatever window
   that retest used — here 2008–2022 with an IS/OOS split, not the builder's 2008–2017.
+
+## A new databank can sit at "Auto-sync every 1 hour" and still have nothing on disk
+
+🔬 2026-09-05, XAUUSD. `OOS-Sharpe` reported **9,997 records** and `syncType: Auto-sync every 1 hour`
+through MCP `list_databanks`, while `user/projects/XAUUSD/databanks/OOS-Sharpe/` **did not exist** —
+same for `Results-Sharpe` (10,000 records). The master had been up 1d21h, so many hourly ticks had
+passed. The label describes the databank's setting, **not** evidence that a sync has ever run for it.
+
+- Practical consequence: `exportdrv.stage()` copies from the master's on-disk directory, so a
+  metrics export of such a databank silently stages **0** strategies. Always `ls` the directory
+  before exporting a databank you have not exported before — the MCP record count will not warn you.
+- 🔬 The owner syncing it by hand from the GUI wrote all 9,997 `.sqx` to disk within a minute, and
+  the reference `OOS` kept its 10,000 through that sync. Asking him to sync is the working route;
+  there is still no code-only one while the master's GUI is up.

@@ -24,6 +24,110 @@
 - 📓 Do **not** try to parse `orders.bin` — private versioned format inside Java serialization. SQX
   exports the same data natively (`-tools action=orderstocsv`, see `04-export.md`).
 
+- 🔬 **`dailyEquity.bin` IS parseable, and it is the way to get a period-by-period result without
+  SQX.** Unlike `orders.bin` it holds no objects: after the `aced0005` stream header it is nothing
+  but Java block-data markers — `0x7a` with a 4-byte length, `0x77` with a 1-byte one — whose
+  concatenated payload is an int count followed by that many `(big-endian int64 epoch millis,
+  big-endian float64)` pairs. The value is **cumulative P&L in account currency**, not balance, one
+  point per calendar trading day. Measured 2026-09-06 on `XAUUSD/OOS`: 3,946 points per strategy
+  spanning 2007-11-02 → 2022-12-29. `core/sqxstats.equity()` reads it.
+  This is what makes an arbitrary sub-period study possible — SQX's own sample types are only
+  IS/OOS/full, so splitting the OOS in two is impossible through any export but trivial from here.
+
+- 🔬 **`optimizationProfile.bin` is a strategy's SPP / optimization profile, and it parses.** It
+  appears only in a `.sqx` that went through a cross-check driving the optimizer (Sys. Param
+  Permutation, sequential optimization); 225 of the `.sqx` under the master's `user/projects`
+  carry one, 2026-09-10.
+  Framing is the same block-data stream as `dailyEquity.bin`. Layout, read straight off
+  `OptimizationProfile.readFormat2` in `internal/libs/SQTradingLib.jar`:
+  int format (2) · boolean *kept* · **if kept**, the original result and every permutation
+  (`writeUTF` params + an `SQStats` blob each) · three int-keyed maps of 135 entries — medians,
+  original values, and one JSON histogram per metric · `writeUTF` of the permuted parameter names ·
+  `writeUTF` of the profitable/losing counts · five ints and six doubles of run statistics ·
+  `writeUTF` of the profit distribution chart. `core/optprofile.py` reads it.
+
+  🔬 **`kept` follows *Settings → Performance → "Don't store data for 3D charts in Optimization
+  profile"*** (`user/settings/settings.xml`, `<dontStoreOP3DChartsData>`). Ticked, the
+  per-permutation results are dropped at save and only medians and histograms survive; a saved
+  strategy never recovers them, the SPP has to be re-run. Unticking it on 2026-09-10 and re-running
+  `XAUUSD/SPP IS` took each `.sqx` from **125 KB to 2.2 MB** and stored 4,309 permutations for one
+  strategy. `Infinox_SP500ft_H4_HighPrecision/SPP` carries 29 more from an earlier era.
+
+  🔬 **A permutation is `params` + `SQStats` and nothing else, so SPP permutation trades do not
+  exist.** This is now read off the format, not inferred: `SQStats.deserialize` is a loop over one
+  byte-tagged record type each — `1` int, `2` long, `3` float (double when the stats format is 1),
+  and `101`/`102`/`103` the same three under a name — and `default:` throws. `SQStats` does own an
+  `objectMap`, but **`serialize` never writes it**. No order list is reachable from the profile.
+
+  🔬 **`SQUtils.writeUTF` is not `writeUTF`**: a marker byte, then a 2-byte length when the marker is
+  1 and a 4-byte one otherwise, then UTF-8. `OptimizationTestResult` and the named `SQStats` records
+  use it; the chart strings in the tail use the plain Java form.
+
+  🔬 **The `SQStats` array indices are the same key space `core/sqxstats.py` decodes from the base64
+  XML blob**, and the binary form gives a way to calibrate them wholesale: the profile's own
+  medians/original table is name-keyed, so matching the original result's stats against it named
+  **79 of the 116 indexed slots** (`core/optprofile_stats.json`); the rest arrive already named, for
+  118 of 152 in all, and the last 34 are 0 everywhere. `docs/manual/09-diccionario-spp.md` is the
+  full field-by-field inventory. `core/sqxstats.KEYS` still carries only its original 14 — extending
+  it from this file is an open, cheap win.
+
+  🔬 **The 135 metric keys are `SQUtils.betterHashCode(<DatabankColumn simple name>)`**, and that
+  method ships in `internal/libs/SQLib.jar`, which is **not on disk** — the launcher loads it as an
+  embedded resource. The hash is not `String.hashCode` with any of the usual finalisers (tested), so
+  the names were recovered by **matching the stored original values against a 135-column databank
+  export of 50 SPP strategies**; the map lives in `core/optprofile_columns.json`. 101 of 135 are
+  verified one to one, 6 more are known to a pair (`Exposure`/`ExposurePosition`,
+  `Outlier`/`Outlier2`, `CalmarRatio`/`AnnualPctReturnDDRatio` — each pair's two members are equal
+  on all 225 profiles, so they cannot be told apart here) and are suffixed `?`. The remaining 28 are
+  exactly 0 in every strategy and stay as `id:<key>`.
+
+- 🔬 **`SQStats` decodes completely, and it holds 152 statistics, not 14.** The blob is a flat
+  record stream: a type byte, then either a one-byte metric id or -- when the type byte is over 100
+  -- a `writeUTF` name, then the value (1 int, 2 long, 3 float, big-endian). On this install every
+  blob is 116 id-keyed records followed by 36 self-naming ones (`SortinoRatio`, `RecoveryFactor`,
+  `UlcerIndex`, `ProbSharpeRatio`, `EdgeDecayRatio`, `MaxNewHighDurationFrom/To`, the `AddMarkets*`
+  medians…). The old reader stopped at the first type byte it did not know, which was the start of
+  the named tail, so **a quarter of every blob was silently discarded**. `core/sqxstats.records()`
+  reads all of it.
+
+  🔬 The id-keyed half is named by `core/sqxstats_columns.json`, **shared with `core/optprofile.py`**
+  (it replaced `optprofile_stats.json`). 79 of the 116 ids are named. Calibrated 2026-09-10 by
+  exporting XAUUSD/WFM through a generated 107-column databank view and matching the values against
+  each strategy's own blob; that agreed with the earlier, independent optprofile calibration on
+  **76 of 76** shared slots. Four ids carry `?` because their pair's two members are equal on every
+  strategy here (`AnnualPctReturnDDRatio`/`CalmarRatio`, `AvgTrade`/`Expectancy`); the remaining 37
+  are exactly zero everywhere and stay `stat:<f|i|l>:<id>`. Three ties were broken by arithmetic
+  inside the blob rather than left ambiguous: `AnnualPctReturn` is `NetProfitPct / TotalDataYears`,
+  `TotalDataYears` is `floor(TotalDataMonths/12)`, and `ExposurePosition` is in the named tail so the
+  id-keyed twin must be `Exposure`.
+
+- 🔬 **A Walk-Forward Matrix cross-check writes its whole grid into `settings.xml`**, under
+  `<WalkForwardResult type="…WalkForwardMatrixResult"><MatrixResult>`. `MatrixResult` carries the two
+  axes as ranges (`start1/stop1/increment1` is the OOS percentage, `start2/…` the number of runs;
+  `periodType=10` is a **rolling** window, measured: IS and OOS keep a constant length and
+  slide, they do not expand). Under it, one `<RunResult>` per cell -- 5 x 6 = 30 on
+  XAUUSD -- each with the parameters it settled on, a `stats` blob and a `statsOOS` blob. Under each
+  cell, `<Periods>` holds one `<WalkForwardPeriod>` per step with `optimizeFrom/To`, `runFrom/To`,
+  `futurePeriod`, the `testParameters` the optimiser picked on that window, and two more blobs:
+  `OptimizationStats` (in sample) and `RunStats` (out of sample). 30 cells x 12 steps = 360 steps,
+  1,212 blobs, 2.9 MB of XML. `core/wfmatrix.py` reads it; no SQX needed.
+
+  🔬 **The last step of every cell has an empty `RunStats`.** It is optimised on the tail of the
+  history and there is nothing left to run it on, so it is `futurePeriod="true"` and carries no OOS
+  statistics at all -- not zeros, no element. Drop those 30 rows per strategy before correlating.
+
+- 🔬 **The per-step optimisation population is not stored, and the 3D-charts setting does not change
+  that.** `<MaxTests>10000</MaxTests>` in `lastSettings.xml` says each step tries up to ten thousand
+  parameter sets; only the winner survives into `WalkForwardPeriod`. Tested directly 2026-09-10: the
+  owner re-ran the WFM on two strategies with *"Don't store data for 3D charts in Optimization
+  profile"* switched **off**, and the new `settings.xml` came out **structurally identical** -- same
+  360 periods, same 1,212 blobs, no new tags. The setting governs `optimizationProfile.bin`, which
+  only an SPP or sequential-optimisation cross-check creates, and a WFM strategy has none. The same
+  run did light up SPP: the five strategies in `XAUUSD/SPP IS` now carry `kept=true` with 3,940 to
+  4,523 permutations each, params plus 152 statistics apiece -- but one sample only, no IS/OOS split.
+  **So the closest thing to "every parameter set with its IS and OOS result" is the 360 walk-forward
+  steps, not the optimiser's population.**
+
 ## `project.cfx` — a project
 
 🔬 Also a **ZIP**: `config.xml` + one `<TaskType>-Task<N>.xml` per task. Reading is safe at any time —

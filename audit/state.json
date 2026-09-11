@@ -1,96 +1,114 @@
 {
-  "last_audit": "2026-09-04",
+  "last_audit": "2026-09-11",
   "scope_note": "SQX scope narrowed 2026-09-04: report only broken exports, oversized logs, corrupt blocks/archives. Project configuration (inactive tasks, template usage, databanks a task clears, loops, GoToTask targets, which templates a project names) is the owner's decision and is never a finding, never tracked here.",
   "findings": {
     "code.tldr_ignores_task_active": {
       "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "Reclassified from sqx.tldr_ignores_inactive_tasks under the narrowed scope: the SQX-wiring content (which loops are active, databank exposure) is out of scope, but 1_sqx/inspect/project_map.py databank_flow() and tldr() still never read Task@active -- a bug in our own code, core/cfx.py already exposes it. Unfixed as of 2026-09-04 08:36 snapshot."
+      "note": "Reclassified from sqx.tldr_ignores_inactive_tasks under the narrowed scope: 1_sqx/inspect/project_map.py databank_flow() and tldr() still never read Task@active -- a bug in our own code, core/cfx.py already exposes it. Not rechecked 2026-09-11 (no reason to believe it changed)."
     },
     "sqx.sp500ft_missing_task_members": {
       "severity": "orange",
       "status": "open",
       "first_seen": "2026-09-03",
-      "note": "In scope: corrupt archive. config.xml references Retest-Task4/6/8/9/10.xml, absent from the live archive (backup holds them). dump_project.py reproduces KeyError: There is no item named 'Retest-Task8.xml'. Repair (1_sqx/repair/graft_tasks.py) built and dry-run verified 2026-09-04, blocked on the master GUI being closed. Unchanged today."
+      "note": "In scope: corrupt archive. config.xml references Retest-Task4/6/8/9/10.xml, absent from the live archive (backup holds them). dump_project.py reproduces KeyError: There is no item named 'Retest-Task8.xml' -- reran 2026-09-11, identical traceback. Repair (sqx/repair/graft_tasks.py) built and dry-run verified, blocked on the master GUI being closed."
     },
     "data.export_missing_manifest": {
       "severity": "orange",
-      "status": "open",
+      "status": "fixed",
       "first_seen": "2026-09-04",
-      "note": "raw/XAUUSD/OOS/2026-09-03/export_data_view.csv (10823 bytes, 36 rows) has no manifest.json. Filename matches no current export script's output (export_metrics.py writes metrics.csv, export_trades.py writes per-strategy files). Only unmanifested export under raw/ today; tools/daily_audit.py's exports_without_manifest() now flags it."
+      "note": "raw/XAUUSD/OOS/2026-09-03/export_data_view.csv no longer exists on disk as of 2026-09-11 -- directory is gone. Resolved, whether by cleanup or by being superseded is not recorded."
     },
     "stats.is_oos_10k_no_trade_dedup": {
       "severity": "orange",
-      "status": "open",
+      "status": "worse",
       "first_seen": "2026-09-04",
-      "note": "New 2_tasks/reports/is_oos.py report over XAUUSD/OOS (10,000 strategies, metrics.csv) computes every correlation/p-value with no trade-list dedup, the exact trap 2_tasks/CLAUDE.md names first. Checked inner-XML identity hash across all 10,000 .sqx on disk: 0 duplicates -- reassuring but insufficient, since the documented old-corpus duplicates (45/231) had different hashes and identical trades. Rest of the report is methodologically careful (BH correction, heavy-tail caveats, weak-effect framing)."
+      "note": "2026-09-11: widened to a fourth report. Spans metrics/XAUUSD/OOS/metrics.csv-based tasks/reports/is_oos.py, filters.py, compare.py (BH correction, bootstrap CIs, self-test all present but no trade-list dedup), and now tasks/reports/decay.py (new, reads OOS databank .sqx directly, reports '834 estrategias -> 4 supervivientes' and a chance-multiplicity argument whose 834 denominator is unchecked for duplicate trade lists). Filed as OPEN.md issue 16, rewritten 2026-09-11."
     },
     "docs.subresult31_format_claim_unsupported": {
       "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "knowhow/05's 🤔 'subresult=31 is a percentage, inferred from pairing with format (Decimal2 vs Decimal2Pct)' does not hold: no .vw file carries a format attribute at all. Cheap test run (grep subresult= across user/settings/views/databanks/*.vw): subresult=31/32 appear only under resultType=WalkForwardMatrix, on both percentage and non-percentage metrics (NumberOfTrades, NetProfit, SharpeRatio, AvgWin). The split tracks resultType, not raw-vs-percentage. Inference should be retagged/corrected, not just left 🤔."
+      "note": "knowhow/05's inferred 'subresult=31 is a percentage, paired with format' does not hold -- no .vw carries a format attribute. Cheap test already run and documented in the 2026-09-04 report. Not rechecked 2026-09-11; still uncorrected in knowhow/05."
     },
     "code.two_cfx_parsers": {
       "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "core/cfx.py (tested, iter) vs 1_sqx/inspect/project_parts.py (untested, findall). core.cfx.conditions imported by nothing but its own test. Unchanged today."
+      "note": "core/cfx.py (tested, iter) vs sqx/inspect/project_parts.py (untested, findall). Not rechecked 2026-09-11."
     },
     "code.manifest_check_blind_spots": {
       "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "daily_audit.exports_without_manifest skips dirs holding subdirs and never leaves raw/; reports/XAUUSD_OOS_explorer.html-class outputs invisible. Stale DEPENDENCIES.md computed (dirty) but excluded from the exit code. Unchanged today -- confirmed by reading tools/daily_audit.py main()."
+      "note": "exports_without_manifest() only checks one directory up (d.parent), not the actual manifest location. 2026-09-11: this now produces ~70 false positives under raw/XAUUSD/WFM_Stability/2026-09-10/wfm/trades/<strategy>/ and raw/XAUUSD/Retest_Markets_-_Family/2026-09-09/trades/<market>/, all of which have a real manifest.json two directories up (wfm/manifest.json, Retest_Markets_-_Family/2026-09-09/manifest.json) -- confirmed by listing both. Same bug as before, much larger blast radius because of the new per-strategy WFM export layout."
     },
     "code.archived_analyses_unconverted": {
       "severity": "yellow",
       "status": "open",
       "first_seen": "2026-09-03",
-      "note": "archive/studies/ still holds atr_stop.py, atr_stop_study.py, scan_strategies.py, validate_trades.py, plots.py unconverted. is_oos_analysis.py was converted (2_tasks/analysis + 2_tasks/reports); plots_is_oos.py/scatter_page.py superseded in purpose but kept."
+      "note": "archive/studies/ still holds atr_stop.py, atr_stop_study.py, scan_strategies.py, validate_trades.py, plots.py unconverted. Not rechecked 2026-09-11."
     },
     "docs.phase_claude_over_budget": {
-      "severity": "yellow",
-      "status": "open",
+      "severity": "orange",
+      "status": "worse",
       "first_seen": "2026-09-04",
-      "note": "1_sqx/CLAUDE.md still 41 lines, limit 40. 2_tasks/CLAUDE.md is now exactly 40/40 (grew from 23, still within budget)."
+      "note": "2026-09-11: root CLAUDE.md 61/55 (unchanged, over) and sqx/CLAUDE.md 41/40 (unchanged, over). tasks/CLAUDE.md fixed -- back to 40/40 (was 44/40 in an uncommitted 2026-09-04 afternoon pass, since trimmed). New: strategies/CLAUDE.md grew from 24/40 to 57/40, adding the crossmarket/monteCarlo study-folder table -- now the worst-over phase file."
     },
     "stats.atr_stop_in_sample_grid_selected": {
       "severity": "orange",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "knowhow/07 still quotes PF 2.09 at 0.5xATR without requalifying as in-sample/grid-selected. Unchanged today."
+      "note": "knowhow/07 still quotes PF 2.09 at 0.5xATR without requalifying as in-sample/grid-selected. Not rechecked 2026-09-11."
     },
     "stats.two_population_split_underpowered": {
       "severity": "orange",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "knowhow/06 still states ~129 + ~11 of 231 = 140 (91 unclassified, threshold unstated, n=11 subgroup) without requalifying. Unchanged today."
+      "note": "knowhow/06 still states ~129 + ~11 of 231 = 140 without requalifying. Not rechecked 2026-09-11."
     },
     "data.knowhow_results_not_reproducible": {
       "severity": "orange",
       "status": "open",
       "first_seen": "2026-09-04",
-      "note": "knowhow/06 and 07 cite the old project's 231-strategy corpus; generating scripts parked in archive/studies against the old layout. Widened 2026-09-04: metrics/XAUUSD/OOS/metrics.csv (10,000 rows, code_version 'migrated from AlgoProject_Old, pre-git') now also feeds a live, current report (2_tasks/reports/is_oos.py), so the non-reproducibility is no longer purely a knowhow-prose concern."
+      "note": "knowhow/06 and 07 cite the old project's 231-strategy corpus; metrics/XAUUSD/OOS/metrics.csv (code_version 'migrated from AlgoProject_Old, pre-git') still feeds is_oos.py, filters.py and compare.py. Not rechecked 2026-09-11 beyond confirming those reports still read the same file."
     },
     "docs.export_py_renamed": {
       "severity": "yellow",
       "status": "fixed",
       "first_seen": "2026-09-04",
-      "note": "2026-09-04: knowhow/06 now correctly names export_trades.py and export_metrics.py. Resolved."
+      "note": "knowhow/06 correctly names export_trades.py and export_metrics.py. Still correct 2026-09-11."
     },
     "code.sqxfile_no_golden_test": {
       "severity": "yellow",
       "status": "fixed",
       "first_seen": "2026-09-03",
-      "note": "tests/test_sqxfile.py + fixture still passes today."
+      "note": "tests/test_sqxfile.py + fixture still passes 2026-09-11 (mechanical run)."
     },
     "docs.condition_third_schema": {
       "severity": "orange",
       "status": "fixed",
       "first_seen": "2026-09-03",
-      "note": "Not rechecked this run (out of the narrowed SQX-conditions territory); no reason to believe it regressed."
+      "note": "Not rechecked (out of the narrowed SQX-conditions territory); no reason to believe it regressed."
+    },
+    "sqx.master_log_still_large": {
+      "severity": "yellow",
+      "status": "open",
+      "first_seen": "2026-09-04",
+      "note": "~/Desktop/SQX/user/log was 4.4 GB live at last check (log_2026_08_18.log 4.66 GB uncompressed). archive_logs.py only backs up, never deletes the source. Not rechecked 2026-09-11 (not urgent, 439 GB free)."
+    },
+    "docs.strategies_claude_over_budget": {
+      "severity": "yellow",
+      "status": "new",
+      "first_seen": "2026-09-11",
+      "note": "strategies/CLAUDE.md grew from 24/40 to 57/40 lines, adding the crossmarket/monteCarlo study-folder table and the translation/traps sections that came with them. Genuinely over its own budget, not just large. Folded into docs.phase_claude_over_budget for reporting purposes."
+    },
+    "code.settings_json_ungated_repair": {
+      "severity": "yellow",
+      "status": "new",
+      "first_seen": "2026-09-11",
+      "note": ".claude/settings.json (edited this session) allows any python3:* command without asking, then re-gates sqx.curate.apply_verdict --apply into ask (it rewrites a live databank). sqx.repair.graft_tasks --apply is the same class of destructive action (rewrites a project archive, OPEN.md issue 3) with the same --apply flag, but has no matching ask/deny entry, so it runs unprompted under the blanket allow. Its own /proc guard still blocks it while the master GUI is up, so not exploitable today. Filed as OPEN.md issue 20."
     }
   },
   "dropped_scope_narrowed_2026_09_04": [
@@ -102,28 +120,31 @@
   ],
   "mechanical": {
     "exit_code": 1,
-    "exit_drivers": ["Infinox_SP500ft_H4_HighPrecision fails to render", "raw/XAUUSD/OOS/2026-09-03 has no manifest"],
+    "exit_drivers": ["Infinox_SP500ft_H4_HighPrecision fails to render", "~70 exports flagged without a manifest (checker blind spot, see code.manifest_check_blind_spots)"],
     "checks_py": 0,
-    "depmap": "current, 28 files",
-    "root_claude_lines": 53,
+    "depmap": "current, regenerated 2026-09-11",
+    "root_claude_lines": 61,
     "phase_claude_lines": {
-      "1_sqx": 41,
-      "2_tasks": 40,
-      "3_strategies": 24,
-      "4_portfolio": 14
+      "sqx": 41,
+      "tasks": 40,
+      "strategies": 57,
+      "portfolio": 14
     },
-    "assets_undecided": 17
+    "assets_undecided": 17,
+    "assets_sqx_default_drift": 0
   },
   "snapshot": {
-    "head": "08174a7",
-    "working_tree": "dirty at audit time; a documenter session is rewriting OPEN.md, CLAUDE.md, knowhow/03 concurrently; a second session landed 2_tasks/analysis/ and 2_tasks/reports/ uncommitted"
+    "head": "fce8635",
+    "working_tree": "dirty at audit time; fix/open-issues-2026-09-04 carries a large uncommitted body of work: core/bars.py, optprofile.py, sqxstats.py, trades.py, wfmatrix.py, wftrades.py; strategies/crossmarket/ and strategies/monteCarlo/ (full studies); sqx/curate/apply_verdict.py; sqx/repair/graft_tasks.py referenced by OPEN.md issue 3; sqx/export/export_bars.py, export_retest.py, export_spp.py, export_wfm.py; docs/manual/02-09 (new pages); tasks/analysis/decay.py, tasks/reports/decay.py, filters.py, compare.py; three new skills; audit/2026-09-04.md and state.json themselves mid-edit (an earlier afternoon pass, uncommitted, since superseded by this run)."
   },
   "next_audit_should_check": [
-    "whether raw/XAUUSD/OOS/2026-09-03 got a manifest or was removed",
-    "whether is_oos.py or its report gained a trade-dedup check or caveat",
+    "whether OPEN.md issue 16 (trade-list dedup, now 4 reports) gained a check or caveat in any of is_oos.py/filters.py/compare.py/decay.py",
     "whether knowhow/05's subresult=31 claim was corrected",
-    "whether project_map.py now filters on Task@active (code bug, independent of the SQX-wiring scope it used to feed)",
+    "whether project_map.py now filters on Task@active",
     "whether the ATR-stop and two-population claims were requalified",
-    "whether Infinox_SP500ft_H4_HighPrecision was repaired (needs the master GUI closed)"
+    "whether Infinox_SP500ft_H4_HighPrecision was repaired (needs the master GUI closed)",
+    "whether root CLAUDE.md (61/55), sqx/CLAUDE.md (41/40) and strategies/CLAUDE.md (57/40) were trimmed back under budget",
+    "whether the new core/ modules, crossmarket/ and monteCarlo/ studies were committed",
+    "whether .claude/settings.json gated sqx.repair.graft_tasks the way it gates apply_verdict (OPEN.md issue 20)"
   ]
 }

@@ -53,13 +53,50 @@ a non-obvious convention, a trap in the source data.
 - **No configurability nobody requested.** No flags "for flexibility", no options with defaults nobody
   will change. Hard-code what is fixed; parameterise only what actually varies.
 - **No premature abstraction.** Two similar lines are fine. Do not build a helper, a class or a
-  registry to avoid repeating yourself twice.
+  registry to avoid repeating yourself twice. Rule 5 is the exception, and only the exception: a
+  registry earns its place when the thing it holds is a **choice the study has to expose**, never
+  when it only saves typing.
 - Plain function over class. Dict over dataclass. Comprehension over loop while it stays readable.
 - Order within a file: constants, then helpers, then callers, then `main()`, then the
   `if __name__ == "__main__":` line.
 - Names say what the thing is, not how it works: `stop_rate`, not `calc_stop_rate_helper`.
 
-## 5. It must run on another machine
+## 5. An analysis is built from modules with one job each
+
+Analysis and tooling are split into **named modules with a stated boundary**, not into one file that
+does the study end to end. Each module answers a question a future session can name without opening
+it, and the boundaries are chosen so that a module can be replaced without touching its neighbours.
+
+The four boundaries that keep an analysis honest, in the order the data flows:
+
+| the module holds | it must not hold |
+|---|---|
+| **configuration** — what the study is run on | anything computed |
+| **modelling** — the assumptions, and the alternatives to them | the execution, or the conclusions |
+| **execution** — producing the numbers under a given model | choosing the model, or judging the output |
+| **inference** — the statistics and the decision | producing the numbers it judges |
+
+Why this and not one file: the modelling and the inference are where a study can be wrong in ways
+that do not crash. Keeping them apart means a modelling assumption can be swapped and the result
+recomputed under both, which is the only way to find out whether a conclusion depended on it. A file
+that draws its own trades and computes its own p-value cannot be cross-examined.
+
+Rules for a module in this shape:
+
+- **One name, one job, said in the module docstring.** If the docstring needs "and", it is two.
+- **State the contract.** Where several implementations of one job exist — several ways to model the
+  same thing — they share one signature, are collected in one registry in that module, and the
+  registry's table says what each holds fixed and what it randomises. Adding a fifth is then adding a
+  function and one row, and nothing else changes.
+- **Dependencies point one way**, along the table above. Inference never imports execution.
+- **A module is replaceable.** If swapping it means editing three other files, the boundary is wrong.
+- **Extension over modification.** New capability arrives as a new entry, not as a flag threaded
+  through the existing ones.
+
+This applies to analysis and tooling. It does not license spreading a thirty-line job over four files:
+rule 1 still decides when to split, and rule 4 still decides how much to build.
+
+## 6. It must run on another machine
 
 - Every third-party import appears in `requirements.txt` with a pinned version.
 - **No absolute path outside `core/paths.py`.** Machine-specific values — where SQX lives, worker
@@ -69,13 +106,13 @@ a non-obvious convention, a trap in the source data.
 - On a fresh machine: copy the example to `config/machine.yaml`, edit it, `pip install -r
   requirements.txt`, done.
 
-## 6. The dependency map is generated
+## 7. The dependency map is generated
 
 `python3 tools/depmap.py` reads the real imports and rewrites `docs/DEPENDENCIES.md`: the folder tree,
 who imports whom, and the external libraries each area uses. **Regenerate it after touching code;
 never edit it by hand.** A hand-maintained map is wrong within two weeks.
 
-## 7. Check before you hand work over
+## 8. Check before you hand work over
 
 ```bash
 python3 tools/depmap.py && python3 tools/checks.py
@@ -86,7 +123,7 @@ docstrings, functions without a docstring or without type hints, absolute paths 
 `core/paths.py`, imports missing from `requirements.txt`, and a stale `DEPENDENCIES.md`. It blocks
 nothing while you work — it just has to be green before the work is done.
 
-## 8. Review
+## 9. Review
 
 The owner reads every line. Show the plan before writing a non-trivial script. Do not run anything
 destructive without asking. **If a rule here would make the code wrong, say so and explain why** — do

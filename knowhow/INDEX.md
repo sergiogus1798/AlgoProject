@@ -9,10 +9,11 @@ Provenance tags used throughout: 🔬 verified by direct test · 📓 read from 
 | `01-file-formats.md` | what is inside a `.sqx` or a `project.cfx`, how to identify a strategy, what not to parse |
 | `02-databanks.md` | why strategies disappear, what a sync does, memory vs disk |
 | `03-driving-sqx.md` | which port/endpoint to use, the `-project` API and its four traps, what MCP can't do, authoring projects |
-| `04-export.md` | getting trades, metrics or bars out — the async traps, the `orderstocsv` schema, IS/OOS views |
+| `04-export.md` | getting trades, metrics, SPP profiles or bars out — the async traps, the `orderstocsv` schema, IS/OOS views |
 | `05-conditions.md` | reading acceptance conditions and `sampleType` correctly |
-| `06-locations.md` | where strategies, templates and tools actually live; what the XAUUSD corpus really is |
-| `07-practices.md` | working habits that already cost time, and research lessons |
+| `06-locations.md` | where strategies, templates and tools actually live; the full block vocabulary; what the XAUUSD corpus really is |
+| `07-practices.md` | working habits that already cost time, research lessons, and what is portable to Windows |
+| `08-columns.md` | custom metric columns: where the snippets live, and why their value is frozen into the `.sqx` |
 
 **Standing rule.** A finding that lives only in a chat transcript is lost when that session ends.
 Discovered something non-obvious? Write it into the right file here, in the same task, with its

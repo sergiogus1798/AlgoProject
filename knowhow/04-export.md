@@ -40,6 +40,96 @@ byte-identical trade lists**: WFM re-exports the SPP OOS strategy with parameter
 `makeExternal="true"` for optimisation, which changes the XML hash but not the logic. **For any pooled
 statistic, deduplicate on the exported trade list, not on the XML hash or the name.**
 
+### `data=all` gets the cross-market retest results, in one CSV per strategy
+
+🔬 A strategy retested on additional markets **stores every market inside its own `.sqx`**: entries
+`Results/AdditionalMarket: <feed>: <feed>/dailyEquity.bin`, `<Result resultKey="AdditionalMarket: ...">`
+blocks in `settings.xml`, and one `orders.bin` (`SQOrderFileFormat:11`) holding every result's orders
+tagged by result key. Verified on `EURUSD/databanks/RetestMarkets - Structural/Strategy 10.11.23.sqx`
+(main EURUSD plus USDJPY, USATEC and XAUUSD).
+
+🔬 `data=all` writes all of them into **one CSV per strategy**, as contiguous blocks in result order —
+main first, then each AdditionalMarket. **The `Symbol` column is the separator**; `Ticket` restarts at
+1 in every block, so it is not a key across markets. `orders.bin` never has to be parsed.
+`sqx/export/export_retest.py` does the split. Measured on that strategy: 301 / 256 / 193 / 393 rows,
+each block with its own date range, all four `Sample type=IST`.
+
+🔬 **The fill convention is open-to-open**: entry at the `Open` of the entry bar, exit at the `Open`
+of the exit bar. Reconciled against 1,101 real XAUUSD H1 trades with a **median price error of
+exactly 0.0** against `bars_H1.csv`. `strategies/analysis/pricing.reconcile()` re-derives it per
+market rather than assuming it, since a mismatch would silently invalidate any comparison against
+prices computed in Python.
+
+🔬 **The point value is recoverable per market, and does not need an asset file.** Regressing
+`Profit/Loss` on `(close − open) × Size` gives the slope as point value at R² ≈ 0.999; the residual is
+swap. Measured on `Strategy 24.14.35` of `Retest Markets - Family`: **99.8 for XAUUSD** (configured
+100), **5002 for XAGUSD** (a 5,000-ounce contract) and **100.0 for BRENTCMDUSD**. This matters because
+a cross-market study prices markets the base asset's `assets/*.yaml` knows nothing about — silver and
+Brent have no file at all. `strategies/crossmarket/pricing.point_value()` does it.
+
+🔬 **Not every entry lands on a bar open.** On the 36-strategy XAUUSD export, 573 of 48,894 entries
+(1.2%) fall inside a bar; on the EURUSD retest strategy above, entry times are minute-level
+throughout (`2008.01.07 11:12:00`) — those are pending orders filled intrabar. A pending fill is a
+price-conditional selection, so any study that places synthetic trades has to check this share per
+market before trusting the comparison.
+
+🔬 **The share is much worse on the additional markets than on the base one.** `Strategy 24.14.35`
+of `Retest Markets - Family` (M30) fills on a bar open 98.3% of the time on gold but only **91.8% on
+silver and 91.4% on Brent** — same strategy, same pending orders, different liquidity. Verified that
+these are genuine intrabar fills (`02:01`, `13:20`, `18:31`) and not gaps in the bar file: zero
+entries sit on the `:00/:30` grid without a matching bar. A cross-market study therefore has to test
+this **per market**, because the base asset's number does not predict the others'.
+
+🔬 **Check bar-open alignment against the bar index, not the clock.** `minute == 0` is right for H1
+and silently wrong for M30, where a bar also opens on the half hour. `core.trades.on_bar_open()` tests
+membership of the real bar index, which works at any timeframe.
+
+### `data=all` also gets every cell and every step of a Walk-Forward Matrix
+
+🔬 A WFM strategy's `orders.bin` holds the orders of all 31 results -- the main backtest plus the 30
+matrix cells -- and `data=all` writes them into one CSV per strategy as contiguous blocks in the
+order `settings.xml` lists the results. Measured on `XAUUSD/WFM/Strategy 10.16.68`: **60,151 rows**
+in one file.
+
+🔬 **The `Symbol` column cannot separate them.** Every cell trades the same symbol, so the
+cross-market trick from the retest export does not apply. The separator is `Sample type`: the main
+block is `IST` throughout, and each cell block **opens with `IS`** -- the backtest of its first
+optimisation window -- then turns to `OOS1` for the walk-forward steps and never goes back. Cutting
+where `Sample type` becomes `IS` gives exactly 30 blocks in cell order. `core/wftrades.chunks()`.
+
+🔬 **Assign a trade to its step by the next step's `runFrom`, never by its own `runTo`.** `runTo` is
+a date at midnight, so testing `runFrom <= t <= runTo` silently drops every trade taken later that
+same day -- 81 of 58,500 on the strategy this was checked against, always one or two per step, which
+is small enough to look like rounding and is not. A `searchsorted` over the `runFrom` values gets it
+exact. Verified against SQX's own stored `oos_NumberOfTrades` for all 30 cells: **0 discrepancies in
+39,873 trades**. `core/wftrades.check()` writes that comparison out rather than asserting it, because
+a date-based split of a 60,000-row file has to be provable.
+
+🔬 The whole thing is one command: `python3 -m sqx.export.export_wfm --project XAUUSD --databank WFM`.
+
+## SPP — the Sys. Param Permutation cross-check
+
+🔬 **There is no CLI verb for it.** `sqcli -help` offers nothing for optimization or cross-check
+results, and `-tools action=orderstocsv data=all` covers only what `settings.xml` lists under
+`Results` — main plus AdditionalMarket. The SPP panel lives entirely inside the strategy's
+`optimizationProfile.bin` (`01-file-formats.md`), so it is read from the file, not exported:
+`python3 -m sqx.export.export_spp --project XAUUSD --databank "SPP IS"`.
+
+🔬 **SPP permutations have no trades to get** — established from `SQStats.serialize` itself, not
+inferred (`01-file-formats.md`). Each permutation is its parameter string plus a numeric-only stats
+blob; no order list is ever written. Asking SQX for "the trades of the cross-check" is therefore not
+a matter of finding the right command. The trades that do exist are the strategy's own main backtest,
+and `data=main` gets them.
+
+🔬 **What you can get instead is the whole permutation table**, once *"Don't store data for 3D charts
+in Optimization profile"* is off and the SPP is re-run: one row per permutation with its parameters
+and its 152 statistics. 📓 Done for real on 2026-09-10 -- `XAUUSD/SPP IS` now yields **21,205
+permutations across five strategies**, 3,940 to 4,523 each, and `export_spp.py` already wrote them to
+`permutations.csv` and `permutation_params.csv` without a code change. Each permutation carries one
+sample, so this is an in-sample surface: it does not pair an IS result with an OOS one. That is strictly more than the SQX panel shows — it gives arbitrary
+percentiles instead of the stored median, cross-metric joins, and the parameter surface
+(`NetProfit` grouped by one parameter's value), which no SQX screen displays.
+
 ## Bars
 
 🔬 `-data action=export symbols=<SYMBOL> timeframe=<TF> ...` exports OHLC as CSV. **The symbol is

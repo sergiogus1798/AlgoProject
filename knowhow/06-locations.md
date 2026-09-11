@@ -27,6 +27,26 @@ often than every 14 days. First full archive taken 2026-09-04, back to 2026-06-1
 **2003.05.05 → 2026.01.16**. The XAUUSD build task's window stops at **2017.12.31**, leaving 8 years of
 gold data unused.
 
+## The building-block vocabulary
+
+🔬 The **whole AlgoWizard block vocabulary** is one file:
+`<install>/internal/web/SQWIZARD/branding/global/config.xml` (1.19 MB). Its single `<Blocks>`
+element holds four sections, each a list of `<Category>` of `<Item key= name= display= returnType=>`:
+**Comparisons 23 · Conditions 500 (63 categories) · Actions 23 · Values 303 (8 categories,
+190 of them indicators)** = 849 built-ins. `display` is the block's written form with its
+`#Param#` holes; `key` is what a template or a group references.
+
+⚠ Do not confuse it with `<install>/internal/ctemplate/config.xml` (18 KB) — that one is the
+*editor's* defaults, a `<UsedBlocks>` shortlist of ~14 keys, not the catalogue.
+
+🔬 The owner's own blocks are separate: `<install>/user/settings/customBlocks.xml` (1.3 MB,
+**171 `<Item>`**, flat, each with `category`, `type` and `oppositeBlockKey`). Backups sit beside it
+in `customBlocks-backups/`; the same folder pattern holds for `blockGroups.xml`.
+Total on the master today: **1,020 blocks**.
+
+🔬 `tools/sqx-lab/.../sqx-custom-block/catalog.json` is a derived index of the *value* atoms only
+(235 = 178 native + 57 the owner's), not of the conditions — regenerate it, don't hand-edit it.
+
 ## Tools built here
 
 | tool | does |

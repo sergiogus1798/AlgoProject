@@ -22,6 +22,10 @@ one thing: **the master GUI must be closed**. Nothing here writes to the master 
 | 11 | — | 🔴 | new: the master's only template project points at the worker's install |
 | 12 | — | 🟠 | new: nothing cited in `knowhow/` is reproducible from the current data root |
 | 13 | — | 🟠 | new: two analyses claim more than their samples support |
+| 16 | — | 🟠 | new: an export has no manifest, and the trade-dedup gap now spans three live reports |
+| 17 | — | 🟠 | new: `Param Count` corrected, but every existing strategy keeps the old stored value |
+| 19 | — | 🔴 | new: three Monte Carlo thresholds are placeholders and need the owner's decision |
+| 20 | — | 🟡 | new: `.claude/settings.json` gates one destructive repair script but not the other |
 
 ---
 
@@ -214,6 +218,13 @@ day adds 4–120 KB compressed (17 days totalled 394 KB). The 4.66 GB day was an
 `tools/daily_audit.py` is deliberately **not** scheduled. It renders all 16 projects, so if it reads
 a `project.cfx` while SQX is rewriting it on save or exit it reports a spurious "fails to render" —
 harmless, but noise in a report nobody asked for. Run it with `/audit`.
+
+**Note (auditor, 2026-09-04 afternoon):** "4.4 GB → 102 MB" above is the size of the *compressed
+copy* the archiver writes to `AlgoData/logs/`. `archive_logs.py` never deletes the source, so
+`~/Desktop/SQX/user/log` on the live master is still **4.4 GB** (`log_2026_08_18.log` alone is
+4.66 GB, uncompressed, still on disk 17 days after the date it logged — SQX's claimed 14-day prune
+does not appear to be happening). Not urgent: 439 GB free on the disk. Flagging only because the
+prose above could be read as "the master's log directory shrank," which it has not.
 
 ## 7. 🟢 `core.sqxfile` has a golden test
 
@@ -408,6 +419,80 @@ a real bug. `dump_project.py` is unchanged and is still the source — run it on
 `tools/daily_audit.py` already runs it that way, to `/dev/null`, purely as a health check (it raises
 on a corrupted project archive). A persisted, regenerable format may return later; not designed yet.
 
+## 16. 🟠 The trade-dedup gap now spans four live reports
+
+Found by the auditor 2026-09-04 (afternoon pass). The unmanifested `raw/XAUUSD/OOS/2026-09-03/` this
+issue originally named is gone as of 2026-09-11 — resolved, whether by cleanup or by being superseded
+is not recorded.
+
+`metrics/XAUUSD/OOS/metrics.csv` (10,000 rows) is read by three reports: `tasks/reports/is_oos.py`,
+`tasks/reports/filters.py` and `tasks/reports/compare.py`. None deduplicate on the exported trade
+list before computing a correlation, a bootstrap interval or a BH-corrected p-value — the exact trap
+`tasks/CLAUDE.md` names first ("45 of 231 strategies had byte-identical trades under different
+hashes"). Inner-XML identity hashing across all 10,000 `.sqx` on disk shows 0 duplicates, which is
+reassuring but is precisely the check that trap warns not to trust, since the known duplicates in the
+old corpus had *different* hashes and identical trades.
+
+**Widened again 2026-09-11:** `tasks/reports/decay.py` (new, reads the `OOS` databank's `.sqx` files
+directly rather than `metrics.csv`) reports "834 estrategias → 4 supervivientes" and argues 4-out-of-
+834 survivors "es aproximadamente lo que produce el azar" — a multiplicity argument whose denominator
+(834) is itself unchecked for duplicate strategies. If a meaningful fraction of the 834 are the same
+trade list under a different `.sqx` hash, both the survival count and the "looks like chance" framing
+shift. `decay.py`'s own manual page already discloses the *search*-multiplicity gap ("no corrige por
+el número de intentos") but not this one.
+
+**Fix:** export trades for a sample of `XAUUSD/OOS` and check for byte-identical lists before
+trusting any of the four reports' p-values, intervals or survivor counts — or add one sentence to
+each report naming this as an open assumption, the way `filters.py`'s own report already
+names its other assumptions.
+
+## 17. 🟠 Every strategy that already exists carries the OLD `Param Count`
+
+Opened 2026-09-06, when the column was rewritten to stop counting `MagicNumber`, the four signal
+variables and the `Shift` parameters (all 1286 of them have the value 1). See `knowhow/08-columns.md`.
+
+A custom column's value is **stored in the strategy's own `settings.xml`** when its result is
+computed, and `compute()` is never called again — not on export, not on load. Proven by exporting
+`XAUUSD/SPP OOS` with `compute()` replaced by `return 99.0`: the 165 exported values did not move.
+There is no `-databank` verb that recalculates.
+
+So the corrected column applies **only to results computed from now on** — a new build, a retest, an
+optimisation. Consequences, all live:
+
+- Every `metrics.csv` under `~/Desktop/AlgoData/metrics/` carries the old, inflated count, and so do
+  the panel, the filter sweeps and `replication.md`. Any filter or conclusion phrased on
+  `Param Count` is phrased on ~8 units of noise per strategy.
+- Once the owner rebuilds, one databank can hold strategies counted both ways with nothing in the
+  CSV to distinguish them.
+
+**Fix:** either recompute the corpus by retesting it in the GUI (owner's call — it is his project),
+or mirror the same count in Python from `strategy_Portfolio.xml` and join it into the exports, which
+needs no SQX at all and would also make the metric testable. Not built: it is a new command and would
+ship with its manual page.
+
+## 18. 🟠 `EdgeDecayRatio` / `EdgeDecayFilter` retired — waiting on the GUI to unwire it
+
+Decided 2026-09-06 by the owner, after the metric was measured against all five XAUUSD exports:
+four independent defects, the worst of them a net-profit decay term that is a pure 10y-vs-5y calendar
+artifact. Evidence and numbers: `knowhow/08-columns.md`, section "EdgeDecayRatio — measured, and
+retired".
+
+Nothing has been removed yet. The master GUI was up, and `EdgeDecayFilter` is referenced by a
+CustomAnalysis task in **four** projects — `AUDJPY`, `EURUSD`, `USDJPY`, `XAUUSD`. Deleting the
+`.java` first would leave those tasks pointing at a missing method, and project config is the
+owner's (HARD RULE 3).
+
+Order of operations, once the owner has unwired it in the GUI and closed the master:
+
+1. Owner: remove the `EdgeDecayFilter` CustomAnalysis step from those four projects, and the
+   `Edge Ratio Decay` column from the two databank views that carry it — `Modo Sergiogus.vw` and
+   `Modo Sergiogus - OOS.vw`, present in **both** installs.
+2. Then: move `user/extend/Snippets/SQ/Columns/Databanks/EdgeDecayRatio.java` and
+   `user/extend/Snippets/SQ/CustomAnalysis/EdgeDecayFilter.java` to `archive/` from `SQX` **and**
+   `SQX_w1` — the two extend trees are separate.
+3. The frozen values already inside existing `.sqx` cannot be removed and stay meaningless; they were
+   never exported, so no report depends on them.
+
 ## 15. ⚪ Layout renamed — `1_sqx/` etc. are now `sqx/` etc. — CLOSED
 
 Renamed 2026-09-04: `1_sqx/` → `sqx/`, `2_tasks/` → `tasks/`, `3_strategies/` → `strategies/`,
@@ -421,6 +506,25 @@ purpose and is not rewritten** — those are dated records of a tree that, on th
 named that way. `mt5/README.md` lost the `5_` in its own title; it is still a reserved, empty
 directory, just now a valid package name for whenever it is built.
 
+## 19. 🔴 Three Monte Carlo thresholds are placeholders
+
+`strategies/monteCarlo/` ships with the thresholds the specification gave, and three of them are
+not the owner's decision yet. Measured on the 36 strategies of `XAUUSD/Results` (2026-09-09):
+
+1. **`scoring.survival_dd_pct` = 10% of the account.** Vetoes 21 of 36 on its own. It is a
+   statement about **position size** as much as about the strategies — at 1,000 $ of risk on a
+   100,000 $ account. It stays a placeholder until the prop-firm rules fix it.
+2. **The dead-block veto** — any non-overlapping 24-month block with a negative bootstrap median —
+   vetoes 30 of 36. The blocks are real losing periods, so the rule is doing work; but a rule that
+   fails five of every six candidates is a threshold question. Alternatives in
+   `strategies/monteCarlo/POSSIBLE_IMPROVEMENTS.md` §1.
+3. **The Family D sub-score saturates at 0** for every strategy, because it takes the worst of
+   three parts and the worst block's 5th-percentile profit factor is almost always below 1. It is
+   faithful to the specification and currently carries no information.
+
+Nothing here is a bug and nothing blocks a run: the three live in `config.yaml` and `gates.py`, and
+changing one re-decides every strategy without touching code.
+
 ---
 
 ## Constraints discovered while investigating
@@ -431,3 +535,17 @@ directory, just now a valid package name for whenever it is built.
   while SQX is not running.
 - `project.cfx` is a plain ZIP: `config.xml` + one `<Type>-Task<N>.xml` per task. Safe to *read*
   at any time.
+
+## 20. 🟡 `.claude/settings.json` gates one destructive repair script but not the other
+
+Found by the auditor 2026-09-11. The broadened permission set added this session allows any
+`python3:*` command without asking, then carves `sqx.curate.apply_verdict` (moves strategies between
+databanks) back out into `ask` — appropriately, it rewrites a live databank. `sqx.repair.graft_tasks`
+does the same class of thing to a project archive (issue 3) and takes the same `--apply` flag, but
+has no matching `ask`/`deny` entry, so it now runs under the blanket `python3:*` allow with no
+confirmation prompt. It still refuses to write while the master GUI is up (its own `/proc` guard), so
+this is not a path to silent corruption today, but the two scripts are the same shape of risk and
+only one is gated.
+
+**Fix:** add `Bash(python3 -m sqx.repair.graft_tasks:*)` to `ask` alongside `apply_verdict`, or gate
+on `--apply` generally.
