@@ -134,6 +134,41 @@ cumplirse todas).
 En el ejemplo de arriba: filtrando por el 20% de mejor Sharpe IS sobreviven 2.034 estrategias y la
 mediana del Profit factor OOS sube de 0,950 a 0,990.
 
+### El mapa de correlaciones
+
+Debajo de los gráficos hay una tabla de colores que cruza **todas** las métricas del IS (filas)
+contra todas las del OOS (columnas). Es la vista de pájaro: dónde hay relación y dónde no, sin ir
+métrica por métrica.
+
+![El mapa de correlaciones](assets/panel-mapa.png)
+
+- **Rojo** = relación positiva (más de esa métrica IS va con más resultado OOS). **Azul** = negativa.
+  **Casi blanco** = nada.
+- La escala tiene **20 escalones**, y sus extremos son los que marca la leyenda — no −1 y +1. A
+  escala completa todo saldría del mismo color, porque estas correlaciones viven dentro de ±0,3.
+- **El puntito blanco** en una casilla significa que ese cruce aguanta la corrección Benjamini-
+  Hochberg dentro de su columna. Con 10.000 estrategias sobrevive casi todo; en cuanto pones un
+  filtro y bajan los supervivientes, los puntos empiezan a desaparecer. Ahí es donde la marca dice algo.
+- **Pasa el ratón** por una casilla para ver ρ, r y p exactos; **haz clic** y esa métrica OOS se va
+  al eje Y de los gráficos de arriba.
+- Se recalcula con el filtro puesto, igual que todo lo demás.
+
+### La tabla de estrategias
+
+Más abajo están las cifras exactas, una fila por estrategia de las que pasan el filtro.
+
+![La tabla de estrategias](assets/panel-tabla.png)
+
+Ordena haciendo clic en cualquier cabecera, o con los desplegables. `filas mostradas` limita cuántas
+se pintan (100 por defecto) — no cambia el filtro, solo lo que ves. Sirve para lo que un gráfico no
+sirve: ver quién es exactamente la estrategia que está en esa esquina de la nube.
+
+### Al final de la página
+
+Hay cuatro fichas explicando **r de Pearson**, **ρ de Spearman**, **el p-valor** y
+**Benjamini-Hochberg**: qué mide cada uno, y sobre todo qué no. Están ahí porque el panel se lo
+acabas enseñando a alguien, y esas tres cifras no se explican solas.
+
 ## Cómo se lee `summary.md`
 
 Es lo mismo en texto, pero calculado sobre las 10.000 y sin poder filtrar. Tiene tres partes:
@@ -193,8 +228,8 @@ números.
 - **Solo vale para este activo y este periodo.** Que el Sharpe funcione en XAUUSD no dice nada de
   los índices. Hay que repetirlo por activo.
 - **No te dice si el filtro merece la pena.** Ves que la mediana sube y cuántas estrategias pierdes,
-  pero no si esa subida aguanta o es ruido de haber probado muchos filtros. Eso es el módulo
-  *improvement*, descrito en `tasks/TODO.md` y todavía sin programar.
+  pero no si esa subida aguanta o es ruido de haber probado muchos filtros. Para eso está la
+  página 2, *Barrido de filtros*, que prueba 210 candidatos con intervalo de confianza y corrección.
 - **No hay costes reales metidos.** Son los números que da SQX con su configuración de comisiones.
 
 ## Si algo falla

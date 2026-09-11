@@ -8,15 +8,26 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | file | lines | what it is | imports from project | external |
 |---|---|---|---|---|
 | `core/assets.py` | 109 | Per-asset trading-cost overrides. Run as a module for the preflight every project needs. | core | yaml |
+| `core/bars.py` | 23 | Read an OHLC bar file exported by SQX into a frame indexed by bar open time. | — | pandas |
 | `core/cfx.py` | 125 | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | core | — |
-| `core/exportdrv.py` | 128 | The three ways data leaves SQX: trades, databank metrics, and bars. | core | — |
+| `core/exportdrv.py` | 135 | The three ways data leaves SQX: trades, databank metrics, and bars. | core | — |
 | `core/manifest.py` | 54 | Every export writes one of these. Without it an export cannot be reproduced or trusted. | core | — |
-| `core/paths.py` | 120 | Every path and port in the project. The only module allowed to know where things live. | — | yaml |
+| `core/optprofile.py` | 187 | Read the Sys. Param Permutation profile SQX stores inside a .sqx, without SQX running. | — | — |
+| `core/paths.py` | 127 | Every path and port in the project. The only module allowed to know where things live. | — | yaml |
 | `core/sqxfile.py` | 71 | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | — | — |
-| `core/worker.py` | 52 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
+| `core/sqxstats.py` | 99 | Read a .sqx result without SQX: its stored metrics and its daily equity curve. | — | numpy, pandas |
+| `core/trades.py` | 88 | Read a trade list exported by SQX's orderstocsv, and split it into one frame per market. | — | pandas |
+| `core/wfmatrix.py` | 126 | Read the Walk-Forward Matrix a WFM cross-check leaves inside a .sqx, without SQX running. | core | — |
+| `core/wftrades.py` | 64 | Assign the trades of a data=all export to the Walk-Forward cell and period that produced them. | — | numpy, pandas |
+| `core/worker.py` | 70 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
+| `sqx/curate/apply_verdict.py` | 123 | Move the strategies a verdict rejected into another databank, with the master shut down. | core | pandas |
 | `sqx/export/archive_logs.py` | 74 | Copy SQX's logs into the data root before it prunes them. SQX keeps only 14 days. | core | — |
+| `sqx/export/export_bars.py` | 42 | Export the bars of every market a base asset is retested on, into the shared bar library. | core, strategies | — |
 | `sqx/export/export_metrics.py` | 40 | Refresh one databank's metrics export: one row per strategy, paired IS/OOS columns. | core | — |
+| `sqx/export/export_retest.py` | 63 | Export a cross-market retest databank and split every strategy's trades by market. | core, sqx | — |
+| `sqx/export/export_spp.py` | 183 | Export a databank's Sys. Param Permutation profiles: the table, the histograms, the counts. | core | — |
 | `sqx/export/export_trades.py` | 65 | Export one databank's trades, and the bars those trades were taken on, into the data root. | core | — |
+| `sqx/export/export_wfm.py` | 105 | Export everything a Walk-Forward Matrix cross-check stored: cells, steps, parameters, trades. | core, sqx | pandas |
 | `sqx/inspect/dump_project.py` | 63 | Render a project.cfx as a readable Markdown pipeline map. Reading never touches SQX state. | core, sqx | — |
 | `sqx/inspect/index_sqx.py` | 56 | Index every .sqx on this machine by the hash of its inner strategy XML. | core | — |
 | `sqx/inspect/instruments.py` | 82 | List the trading costs every project has configured, per instrument. | core | — |
@@ -26,8 +37,53 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/inspect/project_parts.py` | 229 | Read the pieces of one task's XML: databanks, conditions, rankings, cross-checks. | — | — |
 | `sqx/inspect/template_check.py` | 161 | Check whether the strategies a project built really use the blocks its template declares. | core | — |
 | `sqx/repair/graft_tasks.py` | 155 | Heal a project.cfx that declares task files its archive lacks, grafting them from a donor. | core | — |
+| `strategies/crossmarket/backtest.py` | 109 | Run one strategy's real trades and its random counterparts on one market, under a given model. | core, strategies | numpy, pandas |
+| `strategies/crossmarket/charts.py` | 120 | Draw the study's figures as inline SVG: nothing to load, nothing to run in the browser. | — | — |
+| `strategies/crossmarket/envelope.py` | 96 | The mechanical envelope of a strategy on one market: which bars it held, and when it was flat. | — | numpy, pandas |
+| `strategies/crossmarket/inference.py` | 137 | Judge the runs: where the real one sits in its null, and what that is worth across markets. | — | numpy, pandas, scipy |
+| `strategies/crossmarket/markets.py` | 35 | Read markets.yaml: which additional markets each base asset is retested on. | — | yaml |
+| `strategies/crossmarket/panel.py` | 205 | Assemble the study's HTML report: the figures, the tables, and what every number means. | strategies | pandas |
+| `strategies/crossmarket/pricing.py` | 118 | Price a trade from bars the way SQX did, and prove it by reconciling against SQX's own P/L. | core | numpy, pandas |
+| `strategies/crossmarket/report.py` | 141 | Run the cross-market study over a retest export and write the per-market rows and verdict. | core, strategies | pandas |
+| `strategies/crossmarket/text.py` | 138 | Turn the cross-market results into crossmarket.md. Pure text, computes nothing. | strategies | pandas |
+| `strategies/crossmarket/trade_models.py` | 203 | How a random run's trades are drawn: the study's modelling assumptions, and its alternatives. | — | numpy, pandas, scipy |
+| `strategies/monteCarlo/charts.py` | 228 | The study's figures as inline SVG: nothing to load, nothing to run in the browser. | — | — |
+| `strategies/monteCarlo/confidence.py` | 65 | Whether the sample can hold up a number. Every statistic in the report carries one of these. | — | — |
+| `strategies/monteCarlo/config.py` | 63 | The single source of truth for every tunable of the study, and what N makes of it. | — | numpy, yaml |
+| `strategies/monteCarlo/costs.py` | 79 | What the broker charged and what a worse broker would charge, per asset and per trade. | core | numpy, pandas |
+| `strategies/monteCarlo/draws.py` | 143 | How a trade stream is reordered or resampled. Every model behind one signature. | — | numpy |
+| `strategies/monteCarlo/engine.py` | 162 | Run one simulated sub-test across every core, and say how far along it is while it does. | strategies | numpy |
+| `strategies/monteCarlo/explorer/cache.py` | 151 | Results kept on disk so switching strategy is instant and re-running is a decision. | core | numpy |
+| `strategies/monteCarlo/explorer/jobs.py` | 112 | One analysis at a time, run off the request thread, with the progress the terminal shows. | strategies | — |
+| `strategies/monteCarlo/explorer/sections.py` | 117 | The panel's content, rendered by the same functions that write the report file. | strategies | — |
+| `strategies/monteCarlo/explorer/serve.py` | 197 | The interactive panel: run any test on any strategy, look at everything, write the report. | core, strategies | flask |
+| `strategies/monteCarlo/explorer/work.py` | 72 | What a button actually runs: one strategy analysed, one test repeated, one report written. | core, strategies | — |
+| `strategies/monteCarlo/familypage.py` | 217 | The five family sections of a strategy's page: its tables, its figures and its verdict line. | strategies | — |
+| `strategies/monteCarlo/fan.py` | 35 | The equity envelope: where the reordered paths ran, trade by trade, around the real one. | strategies | numpy |
+| `strategies/monteCarlo/gates.py` | 136 | What disqualifies a strategy. Every threshold in the study lives here and nowhere else. | strategies | — |
+| `strategies/monteCarlo/metrics.py` | 140 | The core statistics of an equity path, computed on thousands of paths at once. | — | numpy |
+| `strategies/monteCarlo/panel.py` | 171 | Assemble the databank page: what every strategy scored, and what disqualified the rest. | strategies | pandas |
+| `strategies/monteCarlo/regime.py` | 95 | Family D in market state: the daily volatility a trade was opened into, and its tercile. | — | arch, numpy, pandas |
+| `strategies/monteCarlo/report.py` | 145 | Run the Monte Carlo study over every strategy of one databank and write its report. | core, strategies | pandas |
+| `strategies/monteCarlo/run.py` | 241 | Everything one strategy is put through, assembled into the single result the report reads. | strategies | numpy, pandas |
+| `strategies/monteCarlo/scoring.py` | 103 | How good a strategy is once nothing has vetoed it: five sub-scores, then one composite. | strategies | — |
+| `strategies/monteCarlo/significance.py` | 47 | Family E: could this edge be zero, given how many trades there are and how they are shaped? | — | numpy, scipy |
+| `strategies/monteCarlo/stability.py` | 61 | Whether the simulation count is high enough: the same gate numbers, computed again. | strategies | numpy |
+| `strategies/monteCarlo/stitch.py` | 49 | The adversarial path: a bad draw from every period of the history, one after another. | strategies | numpy |
+| `strategies/monteCarlo/strategypage.py` | 136 | One strategy's page: the verdict, what failed, and every family underneath it. | strategies | — |
+| `strategies/monteCarlo/stream.py` | 97 | The input contract: any time-ordered trade list, reduced to what every family needs. | core, strategies | numpy, pandas |
+| `strategies/monteCarlo/stress.py` | 92 | Family C: what the same trades are worth under worse fills, worse costs and missed entries. | — | numpy |
+| `strategies/monteCarlo/sweeps.py` | 63 | Which reordering and resampling runs a stream of this size gets, and the numbers they give. | strategies | — |
+| `strategies/monteCarlo/text.py` | 168 | Turns a result into the words the owner reads. Pure text: it computes nothing. | strategies | pandas |
+| `strategies/monteCarlo/windows.py` | 51 | Family D in time: the calendar slices of a trade stream, defined in months, never in trades. | — | numpy, pandas |
 | `tasks/analysis/correlations.py` | 93 | Correlate in-sample metrics against out-of-sample outcomes, and say which results survive. | — | numpy, scipy |
+| `tasks/analysis/decay.py` | 90 | Per-strategy decay: how much of the in-sample edge survives, and whether what is left is real. | — | numpy, pandas |
+| `tasks/analysis/improvement.py` | 141 | What an in-sample filter buys out of sample, and how many strategies it costs to get it. | — | numpy |
 | `tasks/analysis/metrics.py` | 57 | Load a metrics export and work out which of its columns pair in-sample against out-of-sample. | — | numpy |
+| `tasks/analysis/replication.py` | 109 | Does a conclusion drawn on one sample of strategies hold on another, independently generated one. | tasks | numpy |
+| `tasks/reports/compare.py` | 189 | Check whether one databank's conclusions hold on other, independently generated databanks. | core, tasks | — |
+| `tasks/reports/decay.py` | 86 | Judge every strategy in a databank on how much of its in-sample edge survived out of sample. | core, tasks | pandas |
+| `tasks/reports/filters.py` | 119 | Sweep in-sample filters against out-of-sample outcomes and write improvement.md. | core, tasks | — |
 | `tasks/reports/is_oos.py` | 78 | Build the interactive IS/OOS panel and its written summary for one databank. | core, tasks | — |
 | `tasks/reports/summary.py` | 122 | Write the conclusions of one IS/OOS study as summary.md. Pure text: it computes nothing. | — | — |
 | `tests/test_cfx.py` | 47 | Golden-file test for core.cfx: a parser that breaks silently poisons every analysis. | core | — |
@@ -41,16 +97,20 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 
 | project module | imported by |
 |---|---|
-| `core` | `core/assets.py`, `core/cfx.py`, `core/exportdrv.py`, `core/manifest.py`, `core/worker.py`, `sqx/export/archive_logs.py`, `sqx/export/export_metrics.py`, `sqx/export/export_trades.py`, `sqx/inspect/dump_project.py`, `sqx/inspect/index_sqx.py`, `sqx/inspect/instruments.py`, `sqx/inspect/project_health.py`, `sqx/inspect/template_check.py`, `sqx/repair/graft_tasks.py`, `tasks/reports/is_oos.py`, `tests/test_cfx.py`, `tests/test_sqxfile.py`, `tools/daily_audit.py`, `tools/manual.py` |
+| `core` | `core/assets.py`, `core/cfx.py`, `core/exportdrv.py`, `core/manifest.py`, `core/wfmatrix.py`, `core/worker.py`, `sqx/curate/apply_verdict.py`, `sqx/export/archive_logs.py`, `sqx/export/export_bars.py`, `sqx/export/export_metrics.py`, `sqx/export/export_retest.py`, `sqx/export/export_spp.py`, `sqx/export/export_trades.py`, `sqx/export/export_wfm.py`, `sqx/inspect/dump_project.py`, `sqx/inspect/index_sqx.py`, `sqx/inspect/instruments.py`, `sqx/inspect/project_health.py`, `sqx/inspect/template_check.py`, `sqx/repair/graft_tasks.py`, `strategies/crossmarket/backtest.py`, `strategies/crossmarket/pricing.py`, `strategies/crossmarket/report.py`, `strategies/monteCarlo/costs.py`, `strategies/monteCarlo/explorer/cache.py`, `strategies/monteCarlo/explorer/serve.py`, `strategies/monteCarlo/explorer/work.py`, `strategies/monteCarlo/report.py`, `strategies/monteCarlo/stream.py`, `tasks/reports/compare.py`, `tasks/reports/decay.py`, `tasks/reports/filters.py`, `tasks/reports/is_oos.py`, `tests/test_cfx.py`, `tests/test_sqxfile.py`, `tools/daily_audit.py`, `tools/manual.py` |
 | `depmap` | `tools/checks.py` |
-| `sqx` | `sqx/inspect/dump_project.py`, `sqx/inspect/project_map.py` |
-| `tasks` | `tasks/reports/is_oos.py` |
+| `sqx` | `sqx/export/export_retest.py`, `sqx/export/export_wfm.py`, `sqx/inspect/dump_project.py`, `sqx/inspect/project_map.py` |
+| `strategies` | `sqx/export/export_bars.py`, `strategies/crossmarket/backtest.py`, `strategies/crossmarket/panel.py`, `strategies/crossmarket/report.py`, `strategies/crossmarket/text.py`, `strategies/monteCarlo/engine.py`, `strategies/monteCarlo/explorer/jobs.py`, `strategies/monteCarlo/explorer/sections.py`, `strategies/monteCarlo/explorer/serve.py`, `strategies/monteCarlo/explorer/work.py`, `strategies/monteCarlo/familypage.py`, `strategies/monteCarlo/fan.py`, `strategies/monteCarlo/gates.py`, `strategies/monteCarlo/panel.py`, `strategies/monteCarlo/report.py`, `strategies/monteCarlo/run.py`, `strategies/monteCarlo/scoring.py`, `strategies/monteCarlo/stability.py`, `strategies/monteCarlo/stitch.py`, `strategies/monteCarlo/strategypage.py`, `strategies/monteCarlo/stream.py`, `strategies/monteCarlo/sweeps.py`, `strategies/monteCarlo/text.py` |
+| `tasks` | `tasks/analysis/replication.py`, `tasks/reports/compare.py`, `tasks/reports/decay.py`, `tasks/reports/filters.py`, `tasks/reports/is_oos.py` |
 
 ## External libraries
 
 | library | used in |
 |---|---|
+| `arch` | `strategies/monteCarlo/regime.py` |
+| `flask` | `strategies/monteCarlo/explorer/serve.py` |
 | `markdown` | `tools/manual.py` |
-| `numpy` | `tasks/analysis/correlations.py`, `tasks/analysis/metrics.py` |
-| `scipy` | `tasks/analysis/correlations.py` |
-| `yaml` | `core/assets.py`, `core/paths.py` |
+| `numpy` | `core/sqxstats.py`, `core/wftrades.py`, `strategies/crossmarket/backtest.py`, `strategies/crossmarket/envelope.py`, `strategies/crossmarket/inference.py`, `strategies/crossmarket/pricing.py`, `strategies/crossmarket/trade_models.py`, `strategies/monteCarlo/config.py`, `strategies/monteCarlo/costs.py`, `strategies/monteCarlo/draws.py`, `strategies/monteCarlo/engine.py`, `strategies/monteCarlo/explorer/cache.py`, `strategies/monteCarlo/fan.py`, `strategies/monteCarlo/metrics.py`, `strategies/monteCarlo/regime.py`, `strategies/monteCarlo/run.py`, `strategies/monteCarlo/significance.py`, `strategies/monteCarlo/stability.py`, `strategies/monteCarlo/stitch.py`, `strategies/monteCarlo/stream.py`, `strategies/monteCarlo/stress.py`, `strategies/monteCarlo/windows.py`, `tasks/analysis/correlations.py`, `tasks/analysis/decay.py`, `tasks/analysis/improvement.py`, `tasks/analysis/metrics.py`, `tasks/analysis/replication.py` |
+| `pandas` | `core/bars.py`, `core/sqxstats.py`, `core/trades.py`, `core/wftrades.py`, `sqx/curate/apply_verdict.py`, `sqx/export/export_wfm.py`, `strategies/crossmarket/backtest.py`, `strategies/crossmarket/envelope.py`, `strategies/crossmarket/inference.py`, `strategies/crossmarket/panel.py`, `strategies/crossmarket/pricing.py`, `strategies/crossmarket/report.py`, `strategies/crossmarket/text.py`, `strategies/crossmarket/trade_models.py`, `strategies/monteCarlo/costs.py`, `strategies/monteCarlo/panel.py`, `strategies/monteCarlo/regime.py`, `strategies/monteCarlo/report.py`, `strategies/monteCarlo/run.py`, `strategies/monteCarlo/stream.py`, `strategies/monteCarlo/text.py`, `strategies/monteCarlo/windows.py`, `tasks/analysis/decay.py`, `tasks/reports/decay.py` |
+| `scipy` | `strategies/crossmarket/inference.py`, `strategies/crossmarket/trade_models.py`, `strategies/monteCarlo/significance.py`, `tasks/analysis/correlations.py` |
+| `yaml` | `core/assets.py`, `core/paths.py`, `strategies/crossmarket/markets.py`, `strategies/monteCarlo/config.py` |

@@ -19,6 +19,15 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 |---|---|
 | `00-empezar.md` | instalación, cómo se ejecuta cualquier cosa, dónde acaban los datos, las reglas de SQX que no se rompen |
 | `01-analisis-is-oos.md` | el análisis IS/OOS: qué responde, cómo se corre, cómo se lee el panel |
+| `02-filtros.md` | el barrido de filtros: cuánto mejora cada filtro candidato el resultado OOS y a costa de cuántas estrategias |
+| `03-comparar-muestras.md` | la comprobación entre generaciones: si las conclusiones de una muestra se cumplen en otras |
+| `04-decaimiento.md` | el decaimiento estrategia por estrategia: cuánto edge sobrevive fuera de muestra y si te la quedas |
+| `05-retest-mercados.md` | el retest en mercados adicionales: si el sistema gana por acertar cuándo entra o por estar comprado |
+| `06-mover-estrategias.md` | aplicar un veredicto dentro de SQX: mover a otra databank las estrategias descartadas |
+| `07-montecarlo.md` | el Monte Carlo de robustez: de qué depende el resultado de una estrategia — del orden, de qué operaciones salieron, de la ejecución o del régimen |
+| `08-spp.md` | el perfil Sys. Param Permutation a CSV: cuántas permutaciones sobreviven y cuánto se aleja tu estrategia de la permutación mediana |
+| `09-diccionario-spp.md` | el inventario completo: cada campo que sale de una estrategia con SPP, con su nombre exacto y qué es. La página de consulta mientras escribes el análisis |
+| `09-wfm.md` | la matriz Walk-Forward a CSV: cada celda, cada tramo con sus fechas y sus parámetros, el rendimiento dentro y fuera de muestra, y los trades repartidos por tramo |
 | `_PLANTILLA.md` | **la plantilla obligatoria.** Se copia para documentar cada módulo nuevo |
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |
