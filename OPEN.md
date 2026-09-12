@@ -26,6 +26,7 @@ one thing: **the master GUI must be closed**. Nothing here writes to the master 
 | 17 | — | 🟠 | new: `Param Count` corrected, but every existing strategy keeps the old stored value |
 | 19 | — | 🔴 | new: three Monte Carlo thresholds are placeholders and need the owner's decision |
 | 20 | — | 🟡 | new: `.claude/settings.json` gates one destructive repair script but not the other |
+| 21 | — | 🟡 | new: `bin/sqx-worker.sh` is bash, so half the project cannot run on Windows |
 
 ---
 
@@ -549,3 +550,25 @@ only one is gated.
 
 **Fix:** add `Bash(python3 -m sqx.repair.graft_tasks:*)` to `ask` alongside `apply_verdict`, or gate
 on `--apply` generally.
+
+---
+
+## 21. 🟡 `bin/sqx-worker.sh` keeps half the project off Windows
+
+Opened 2026-09-12 while making the project cloneable. Everything that drives StrategyQuant X —
+`core/worker.py`, `core/exportdrv.py`, `sqx/export/`, `sqx/curate/apply_verdict.py` — shells out to
+`bin/sqx-worker.sh`, which needs `rsync`, `ss`, `md5sum`, `curl`, `setsid` and `stat -c`;
+`apply_verdict.py` also uses `pgrep` and the bare `sqcli` name, where Windows ships `sqcli.bat`.
+The analysis half is pure Python over exported CSVs and runs anywhere, so the working split today is
+**export on Linux, analyse on either**, and `core.worker.require_posix()` makes the boundary fail
+with one clear sentence instead of a `FileNotFoundError` on a `.sh`.
+
+The script also hardcodes `MASTER` and `WORKER` as absolute paths, duplicating `config/machine.yaml`.
+`tools/checks.py` does not catch it because the rule only scans `.py`.
+
+**Fix, if it is ever wanted:** port it to `core/workerctl.py` — `socket.connect_ex` for the port
+check instead of `ss`, `shutil.copy2` instead of `rsync`, `hashlib` instead of `md5sum`,
+`urllib.request` instead of `curl`, `subprocess.Popen` with `CREATE_NEW_PROCESS_GROUP` /
+`start_new_session` instead of `setsid`, and the paths read from `core/paths.py`. That removes the
+split and the duplicated paths in one change. Not done: the owner only needs the analysis half on
+Windows today.
