@@ -54,5 +54,7 @@ Read `CLAUDE.md` — it holds the rules that prevent irreversible damage, and a 
 file to open for which task. Read `CODESTYLE.md` before writing Python. Data never goes in this
 repository; it lives in the data root, indexed by `~/Desktop/AlgoData/INDEX.md`.
 
-Two specialists run over the project: `/audit` checks it daily for drift, breakage and weak
-statistics, and `/doc` records what a session discovered so the next one does not rediscover it.
+Three specialists run over the project: `/audit` checks it daily for drift, breakage and weak
+statistics, `/doc` records what a session discovered so the next one does not rediscover it, and
+`/sync` keeps the GitHub copy equal to this machine so a clone elsewhere works — see
+`docs/manual/10-github.md`.
