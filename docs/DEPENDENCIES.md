@@ -17,7 +17,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/sqxfile.py` | 71 | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | — | — |
 | `core/sqxstats.py` | 99 | Read a .sqx result without SQX: its stored metrics and its daily equity curve. | — | numpy, pandas |
 | `core/trades.py` | 88 | Read a trade list exported by SQX's orderstocsv, and split it into one frame per market. | — | pandas |
-| `core/wfmatrix.py` | 126 | Read the Walk-Forward Matrix a WFM cross-check leaves inside a .sqx, without SQX running. | core | — |
+| `core/wfmatrix.py` | 162 | Read the Walk-Forward Matrix a WFM cross-check leaves inside a .sqx, without SQX running. | core | — |
 | `core/wftrades.py` | 64 | Assign the trades of a data=all export to the Walk-Forward cell and period that produced them. | — | numpy, pandas |
 | `core/worker.py` | 70 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
 | `sqx/curate/apply_verdict.py` | 123 | Move the strategies a verdict rejected into another databank, with the master shut down. | core | pandas |
@@ -27,7 +27,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/export/export_retest.py` | 63 | Export a cross-market retest databank and split every strategy's trades by market. | core, sqx | — |
 | `sqx/export/export_spp.py` | 183 | Export a databank's Sys. Param Permutation profiles: the table, the histograms, the counts. | core | — |
 | `sqx/export/export_trades.py` | 65 | Export one databank's trades, and the bars those trades were taken on, into the data root. | core | — |
-| `sqx/export/export_wfm.py` | 105 | Export everything a Walk-Forward Matrix cross-check stored: cells, steps, parameters, trades. | core, sqx | pandas |
+| `sqx/export/export_wfm.py` | 106 | Export everything a Walk-Forward Matrix cross-check stored: cells, steps, parameters, trades. | core, sqx | pandas |
 | `sqx/inspect/dump_project.py` | 63 | Render a project.cfx as a readable Markdown pipeline map. Reading never touches SQX state. | core, sqx | — |
 | `sqx/inspect/index_sqx.py` | 56 | Index every .sqx on this machine by the hash of its inner strategy XML. | core | — |
 | `sqx/inspect/instruments.py` | 82 | List the trading costs every project has configured, per instrument. | core | — |

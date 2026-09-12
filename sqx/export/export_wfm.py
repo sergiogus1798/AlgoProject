@@ -23,8 +23,9 @@ def tables(project: str, databank: str) -> dict[str, pd.DataFrame]:
 
     Returns:
         `cells` (one row per matrix cell), `steps` (one per walk-forward step of every
-        cell) and `params` (long form: one row per step and parameter). Each statistic
-        appears twice, `is_` from the optimisation window and `oos_` from the run window.
+        cell) and `params` (long form: one row per step and parameter). A cell's statistics
+        come three times -- `is_`, `oos_`, `all_`; a step's twice, `is_` from its
+        optimisation window and `oos_` from its run window.
         A strategy the databank holds without a matrix result was never cross-checked with
         WFM and is skipped -- a stripped copy carries the rules and no cross-check at all.
     """
@@ -33,7 +34,7 @@ def tables(project: str, databank: str) -> dict[str, pd.DataFrame]:
         node = wfmatrix.matrix(f)
         if node is None:
             continue
-        cells += [{"strategy": f.stem} | c for c in wfmatrix.cells(node)]
+        cells += [{"strategy": f.stem} | c for c in wfmatrix.cells(node, wfmatrix.results(f))]
         steps += [{"strategy": f.stem} | s for s in wfmatrix.periods(node)]
     params = [{**{k: s[k] for k in KEYS}, "index": s["index"], "parameter": k, "value": v}
               for s in steps for k, v in s["params"].items()]

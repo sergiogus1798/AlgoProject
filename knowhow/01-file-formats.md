@@ -112,6 +112,24 @@
   `OptimizationStats` (in sample) and `RunStats` (out of sample). 30 cells x 12 steps = 360 steps,
   1,212 blobs, 2.9 MB of XML. `core/wfmatrix.py` reads it; no SQX needed.
 
+  🔬 **`RunResult/stats` is the FULL period, not the in-sample one**, even though it sits beside a
+  field called `statsOOS`. Reading it as in-sample is a silent, plausible-looking error -- it was
+  made here and caught by additivity. The cell's own `<Result>` element carries **15 blobs**,
+  direction (0 both, 1 long, -1 short) x sample, and those are unambiguous: sample **10 is the first
+  optimisation window alone**, **20 every walk-forward run concatenated**, **127 the two together**.
+  Verified on two strategies: 532 + 559 = 1,091 trades and 2,389 + 4,185 = 6,574 days, exactly.
+  `RunResult/stats` equals sample 127 and `statsOOS` equals sample 20. Samples 11 and 21 duplicate
+  10 and 20 on this install. Take a cell's metrics from the `<Result>` blobs, never from `RunResult`.
+
+  🔬 **The WFM panel's own numbers live in `SpecialValuesMap`, not in the matrix**: one
+  `ParametersStability_WF_<runs>_runs_<pct>_OOS` per cell plus `AvgParametersStability` and
+  `WorstParametersStability`, `FiltersResultFailedReason` (the acceptance verdict in words),
+  `WalkForwardConditions` (the conditions it was judged against), and one `MEC_FULL_WF_<cell>`
+  sparkline JSON for the cell SQX chose. The four WF-only databank columns
+  (`WFPctOfProfitableRuns`, `WFMaxProfitByRunInPct`, `WFMinTradesInRun`, `WFMaxPctDDbyRun`,
+  `resultType="WalkForwardMatrix"`, `subresult` 30/31/33) are **not** stored as numbers -- they are
+  recomputed from the matrix, and all four are derivable in Python from the steps table.
+
   🔬 **The last step of every cell has an empty `RunStats`.** It is optimised on the tail of the
   history and there is nothing left to run it on, so it is `futurePeriod="true"` and carries no OOS
   statistics at all -- not zeros, no element. Drop those 30 rows per strategy before correlating.
