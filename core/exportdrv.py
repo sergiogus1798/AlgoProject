@@ -12,19 +12,24 @@ SAMPLE = {"10": "IS", "20": "OOS", "127": "Full"}
 STAGING_PROJECT, STAGING_DATABANK = "Retester", "Results"
 
 
-def trades(source: Path, out_dir: Path) -> str:
+def trades(source: Path, out_dir: Path, data: str = "main") -> str:
     """Export every trade of every strategy in a folder or file.
 
     Args:
         source: A .sqx file, or a folder of them — a folder is exported in one JVM start,
             231 strategies in about four minutes.
         out_dir: Directory the CSVs are written into.
+        data: "main" for the strategy's main result only, "all" to add every cross-check
+            result. A cross-market retest stores one AdditionalMarket result per market, and
+            "all" writes them into the same CSV as contiguous blocks that the Symbol column
+            separates; ticket numbering restarts at 1 in each block.
 
     Returns:
         The command's output. Read-only: it needs no build and touches no project state.
     """
+    worker.require_posix()
     out_dir.mkdir(parents=True, exist_ok=True)
-    cmd = ["-tools", "action=orderstocsv", f"file={source}", f"output={out_dir}", "data=main"]
+    cmd = ["-tools", "action=orderstocsv", f"file={source}", f"output={out_dir}", f"data={data}"]
     return subprocess.run([str(WORKER_SH), "run", *cmd],
                           capture_output=True, text=True, check=True).stdout
 
@@ -43,6 +48,7 @@ def bars(symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: st
         Path of the renamed CSV. SQX writes "<symbol>-<TF>-No Session.csv"; run one
         timeframe per invocation, because a second export in the same JVM overwrites it.
     """
+    worker.require_posix()
     out_dir.mkdir(parents=True, exist_ok=True)
     cmd = ["-data", "action=export", f"symbols={symbol}", f"timeframe={timeframe}",
            f"datefrom={date_from}", f"dateto={date_to}",
@@ -70,14 +76,14 @@ def prepare_view(view: str) -> str:
     column name gains an (IS)/(OOS)/(Full) suffix from its sampleType so the exported
     headers are unique.
     """
-    xml = view_file(view).read_text()
+    xml = view_file(view).read_text(encoding="utf-8")
     xml = re.sub(r'name="([^"]+)" sampleType="(\d+)"',
                  lambda m: f'name="{m.group(1)} ({SAMPLE[m.group(2)]})" '
                            f'sampleType="{m.group(2)}"', xml)
     name = view.replace(" ", "")
     xml = re.sub(r'<View name="[^"]*" originalName="[^"]*"',
                  f'<View name="{name}" originalName="{name}"', xml)
-    (WORKER / VIEWS_REL / f"{name}.vw").write_text(xml)
+    (WORKER / VIEWS_REL / f"{name}.vw").write_text(xml, encoding="utf-8")
     return name
 
 
@@ -117,6 +123,7 @@ def metrics(project: str, databank: str, view: str, out: Path) -> int:
         -databank action=export only works on the instance holding the project, and the
         master's CLI is unavailable while its GUI is up.
     """
+    worker.require_posix()
     out.parent.mkdir(parents=True, exist_ok=True)
     prepared = prepare_view(view)
     stage(project, databank)

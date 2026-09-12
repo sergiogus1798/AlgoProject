@@ -5,15 +5,22 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-_CFG = yaml.safe_load((ROOT / "config" / "machine.yaml").read_text())
+_FILE = ROOT / "config" / "machine.yaml"
+if not _FILE.exists():
+    raise SystemExit(f"{_FILE} is missing. Copy config/machine.example.yaml to it and edit "
+                     "the paths for this machine — it is the only file not in git.")
+_CFG = yaml.safe_load(_FILE.read_text(encoding="utf-8"))
 
 MASTER = Path(_CFG["sqx_master"]).expanduser()
 WORKER = Path(_CFG["sqx_worker"]).expanduser()
 DATA = Path(_CFG["data_root"]).expanduser()
-ARCHIVE = Path(_CFG["archive"]).expanduser()
-BROWSER = Path(_CFG["browser"]).expanduser()
+# Optional on a machine that only analyses exported data: the archive may not be there,
+# and no browser is needed unless the manual is rendered to PDF.
+ARCHIVE = Path(_CFG.get("archive", "")).expanduser()
+BROWSER = Path(_CFG.get("browser", "")).expanduser()
 WORKER_PORT = _CFG["worker_port"]
-STRATEGY_POOLS = {name: Path(p).expanduser() for name, p in _CFG["strategy_pools"].items()}
+STRATEGY_POOLS = {name: Path(p).expanduser()
+                  for name, p in (_CFG.get("strategy_pools") or {}).items()}
 
 WORKER_SH = ROOT / "bin" / "sqx-worker.sh"
 ASSETS = ROOT / "assets"

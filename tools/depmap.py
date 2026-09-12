@@ -84,7 +84,7 @@ def render(files: list[Path]) -> str:
         used = imports_of(f)
         inside = sorted(n for n in used if n in known)
         outside = sorted(n for n in used if n not in known and n not in STDLIB)
-        rows.append((str(rel), summary(f), inside, outside, len(f.read_text().splitlines())))
+        rows.append((str(rel), summary(f), inside, outside, len(f.read_text(encoding="utf-8").splitlines())))
         for name in inside:
             reverse.setdefault(name, []).append(str(rel))
         for name in outside:

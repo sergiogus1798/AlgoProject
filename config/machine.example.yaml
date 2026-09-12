@@ -1,6 +1,12 @@
 # Machine-specific settings. Copy to machine.yaml and edit for this machine.
 # machine.yaml is NOT in git: it is the only file that may differ between computers.
 # core/paths.py is the only code allowed to read it.
+#
+# On Windows, write paths with forward slashes and no drive letter guessing:
+#   data_root: C:/Users/sergio/Desktop/AlgoData
+# data_root is the one that matters there; sqx_master and sqx_worker still have to be
+# present but are never opened, because everything that drives SQX runs
+# bin/sqx-worker.sh and is Linux-only. See the Windows section of README.md.
 
 # Top-level StrategyQuant X folders (the ones containing internal/ and user/).
 sqx_master: ~/Desktop/SQX        # the GUI the owner works in
@@ -22,6 +28,7 @@ archive: ~/Desktop/AlgoProject_Old
 
 # Folders that hold .sqx files worth indexing, by short name. Trash is deliberately
 # excluded: the owner has asked that it never appear in strategy searches.
+# Optional; omit the whole block on a machine with no SQX install.
 strategy_pools:
   master: ~/Desktop/SQX/user/projects
   june_tree: ~/Desktop/user

@@ -1,9 +1,13 @@
 # Pinned so the project runs the same on another machine.
 # Install: python3 -m pip install -r requirements.txt
-PyYAML==5.4.1
+# Python 3.10 to 3.13. numpy, scipy and arch publish no wheels for 3.14 yet,
+# and pip would try to compile them.
+PyYAML==6.0.3
 numpy==2.2.6
 scipy==1.15.3
 matplotlib==3.10.9
 pandas==2.3.3
 pyarrow==25.0.1
 Markdown==3.10.3
+arch==7.2.0
+Flask==3.1.2

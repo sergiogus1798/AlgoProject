@@ -1,10 +1,26 @@
 """Drive the headless worker install. The master's CLI is dead while its GUI is up."""
 
 import subprocess
+import sys
 import urllib.request
 from time import sleep
 
 from core.paths import WORKER_PORT, WORKER_SH
+
+
+def require_posix() -> None:
+    """Refuse to drive SQX from a platform bin/sqx-worker.sh cannot run on.
+
+    Raises:
+        RuntimeError: On Windows. Everything that talks to StrategyQuant X goes
+            through bin/sqx-worker.sh, which needs rsync, ss, curl and setsid. The
+            analysis half of the project reads exported CSVs and runs anywhere; only
+            the export and curation half is tied to Linux. See knowhow/07-practices.md.
+    """
+    if sys.platform.startswith("win"):
+        raise RuntimeError(
+            "Driving StrategyQuant X needs bin/sqx-worker.sh, which does not run on "
+            "Windows. Export on the Linux machine; analyse the CSVs anywhere.")
 
 
 def call(command: str) -> str:
@@ -23,11 +39,13 @@ def call(command: str) -> str:
 
 def start() -> None:
     """Start the worker as a daemon and sync bars from the master."""
+    require_posix()
     subprocess.run([str(WORKER_SH), "start"], check=True)
 
 
 def stop() -> None:
     """Stop the worker. Always call this when the job is done."""
+    require_posix()
     subprocess.run([str(WORKER_SH), "stop"], check=True)
 
 

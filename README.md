@@ -26,6 +26,27 @@ python3 tools/checks.py                              # should be green
 ```
 
 Nothing else is machine-specific: `core/paths.py` is the only module that knows where anything lives.
+Python 3.10 to 3.13; numpy, scipy and arch have no wheels for 3.14 yet.
+
+## Windows
+
+The project splits in two, and only one half is tied to Linux.
+
+| half | what it does | Windows |
+|---|---|---|
+| export and curation | `core/worker.py`, `core/exportdrv.py`, `sqx/export/`, `sqx/curate/` | **no** — they all shell out to `bin/sqx-worker.sh`, which needs `rsync`, `ss`, `curl` and `setsid`. They raise a clear `RuntimeError` instead of failing obscurely |
+| analysis | `tasks/`, `strategies/`, `portfolio/`, the panels and reports | **yes** — pure Python over CSVs that are already exported |
+
+So the working split is: export on the Linux machine, then analyse the CSVs on either. Set up on
+Windows exactly as above, with forward slashes in `machine.yaml`:
+
+```yaml
+data_root: C:/Users/<you>/Desktop/AlgoData
+sqx_master: C:/none      # required to be present, never opened on Windows
+sqx_worker: C:/none
+```
+
+Porting `sqx-worker.sh` to cross-platform Python would remove the split; it is not done.
 
 ## Working here
 
