@@ -6,15 +6,20 @@ description: Run the cross-market random-entry study for a retest databank — e
 # /analysis-crossmarket
 
 ```
-SQX retest  →  export_bars  →  export_retest  →  report  →  verdict.csv  →  apply_verdict
- (the owner)     bars/          trades/market/    the study    the call      moves in SQX
+SQX retest  →  export_bars  →  export_retest  →  explorer panel  →  verdict.csv  →  apply_verdict
+ (the owner)     bars/          trades/market/    the study         the call        moves in SQX
 
-report = trade_models (how random runs are drawn) → backtest (the numbers) → inference (the maths)
+explorer = trade_models (how random runs are drawn) → backtest (the numbers) → inference (the maths)
+          + exposure/significance/breadth/fingerprint/stress/correlation (Fases 1-4)
 ```
 
 It **reads data and writes reports**, and in its last step moves strategies between databanks of one
 project. It never changes a project, a task or a build — hard rule 3 stands. The retest itself is the
 owner's job in the GUI; this skill starts from its output.
+
+There is no batch command any more: `strategies/crossmarket/explorer/serve.py` is the only entry
+point, a local Flask panel. "Analizar toda la base de datos" plus "Generar informe" reproduce what
+the old `report.py` used to do in one pass.
 
 ## Step 1 — establish what you are looking at
 
@@ -33,25 +38,33 @@ Ask if it is not obvious from the request:
 python3 -m core.assets XAUUSD                                             # preflight, read it out
 python3 -m sqx.export.export_bars --asset XAUUSD                          # ~1 min per market
 python3 -m sqx.export.export_retest --project XAUUSD --databank RetestMarkets   # ~4 min / 200
-python3 -m strategies.crossmarket.report --project XAUUSD \
-    --databank RetestMarkets --asset XAUUSD --export <the export's date>   # 1-2 h for 900 x 8
+python3 -m strategies.crossmarket.explorer.serve --project XAUUSD \
+    --databank RetestMarkets --asset XAUUSD --export <the export's date>
 ```
 
-`--models` chooses how the random runs are drawn; the first one decides the verdict and defaults to
+The third command opens a panel at `http://127.0.0.1:8766`. In it: pick a strategy and press
+**Analizar esta estrategia** to see it alone across six tabs (Veredicto, Exposición, Significancia,
+Huella, Coste, Correlación), or **Analizar toda la base de datos** to run every strategy in the
+export — needed once before **Generar informe** can write the files below. The config drawer (▸
+above the tabs) is where `draws`, which models run, and every Fase 1-4 parameter are set for one
+run; nothing there touches disk.
+
+Which models to run is chosen in that drawer; the first one decides the verdict and defaults to
 `block_shift`, the only model that randomises exactly one thing. Add others to see whether a result
 survives a different assumption — never to find one that passes. `trade_models.RANDOMISES` says what
-each changes, and the report prints it next to every p-value it produced.
+each changes, and both the panel and the report print it next to every p-value it produced.
 
 `use: null` in the asset file does **not** block here, and this is the only place that is true. The
 work reproduces a simulation SQX already ran rather than authoring anything, and the cost is
 recovered per trade from the export instead of being chosen. Say that out loud rather than
 silently skipping the preflight.
 
-Every run writes **`crossmarket.html`** beside the CSVs: an illustrated report with the null
+"Generar informe" writes **`crossmarket.html`** beside the CSVs: an illustrated report with the null
 distribution of each strategy on each market, the real run marked on it, the p-value under every
-model, the diagnostics table and a closing section explaining what each number means. It is a single
-self-contained file — no scripts, no fonts, no network — so it can be sent to anyone. Open it with
-`xdg-open`, and hand the owner that path rather than pasting numbers into the chat.
+model, the Fase 1-4 tables for the top strategies, the diagnostics table and a closing section
+explaining what each number means. It is a single self-contained file — no scripts, no fonts, no
+network — so it can be sent to anyone. Open it with `xdg-open`, and hand the owner that path rather
+than pasting numbers into the chat.
 
 The figures are capped at the twelve strategies with the lowest p; the CSVs carry all of them. A run
 over a whole databank is read from the tables and the luck figure, not from the histograms.

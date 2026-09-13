@@ -2,15 +2,16 @@
 
 from strategies.monteCarlo import charts, familypage, panel, strategypage
 
-FAMILIES = {"A": lambda r, v, b, c: familypage.family_a(r, b, c),
-            "B": lambda r, v, b, c: familypage.family_b(r, c),
-            "C": lambda r, v, b, c: familypage.family_c(r, c),
-            "D": lambda r, v, b, c: familypage.family_d(r, c),
-            "E": lambda r, v, b, c: familypage.family_e(r, c)}
-UNITS = {"net": "beneficio neto de la simulación, en $", "return_pct": "retorno",
-         "dd": "drawdown máximo, en $", "dd_pct": "drawdown como fracción de la cuenta",
-         "ret_dd": "beneficio entre drawdown", "sharpe": "Sharpe por operación",
-         "pf": "profit factor", "losing_run": "operaciones perdedoras seguidas"}
+FAMILIES = {"A": lambda r, v, b, c: familypage.family_a(r, v, b, c),
+            "B": lambda r, v, b, c: familypage.family_b(r, v, c),
+            "C": lambda r, v, b, c: familypage.family_c(r, v, c),
+            "D": lambda r, v, b, c: familypage.family_d(r, v, c),
+            "E": lambda r, v, b, c: familypage.family_e(r, v, c)}
+UNITS = {"net": "Beneficio neto de la simulación, en $", "return_pct": "Retorno",
+         "dd": "Drawdown máximo, en $", "dd_pct": "Drawdown, como % de la cuenta",
+         "ret_dd": "Beneficio entre drawdown", "sharpe": "Sharpe por operación",
+         "pf": "Profit factor", "losing_run": "Operaciones perdedoras seguidas"}
+PCT = {"dd_pct", "return_pct"}
 
 
 def verdict_block(result: dict, verdict: dict, cfg: dict) -> str:
@@ -83,7 +84,7 @@ def _find(result: dict, label: str) -> tuple[dict, dict]:
     return result["C"][label]["shapes"], result["C"][label]["table"]
 
 
-def figure(result: dict, label: str, metric: str, title: str) -> str:
+def figure(result: dict, label: str, metric: str, title: str, band: dict | None = None) -> str:
     """One sub-run's distribution of one statistic, with its percentiles underneath.
 
     Args:
@@ -91,6 +92,8 @@ def figure(result: dict, label: str, metric: str, title: str) -> str:
         label: A label from runs().
         metric: Key of metrics.NAMES.
         title: The sub-run's readable name.
+        band: What work.band_for() returned for this label, or None to skip the cone —
+            an ad-hoc re-run has no stream handy to compute one from.
 
     Returns:
         The figure and the table. Every simulated number the study produced is reachable
@@ -102,16 +105,21 @@ def figure(result: dict, label: str, metric: str, title: str) -> str:
             if metric != "dd_pct" else
             f"El backtest tuvo un drawdown mayor que el {got['rank']:.0%} de las "
             f"simulaciones.")
-    body = [[f"percentil {q}", familypage.fmt(metric, v)] for q, v in got["p"].items()]
-    body += [["media", familypage.fmt(metric, got["mean"])],
-             ["mediana", familypage.fmt(metric, got["median"])],
-             ["backtest", familypage.fmt(metric, got["observed"])],
-             ["simulaciones utilizables", f"{got['n']:,}"]]
+    body = [[f"Percentil {q}", familypage.fmt(metric, v)] for q, v in got["p"].items()]
+    body += [["Media", familypage.fmt(metric, got["mean"])],
+             ["Mediana", familypage.fmt(metric, got["median"])],
+             ["Desviación estándar", familypage.fmt(metric, got["std"])],
+             ["Curtosis (exceso)", f"{got['kurtosis']:.2f}"],
+             ["Backtest", familypage.fmt(metric, got["observed"])],
+             ["Simulaciones utilizables", f"{got['n']:,}"]]
     flat = ('<div class="note"><b>Esta prueba conserva este estadístico por '
             'construcción.</b> Reordenar las mismas operaciones no puede cambiarlo, así que '
             'la distribución es un solo valor. Es la comprobación de que el modelo hace lo '
             'que dice: mira el drawdown o la racha, que sí se mueven.</div>'
             if got["p"][min(got["p"])] == got["p"][max(got["p"])] else "")
-    return (charts.distribution(shapes[metric], f"{title} — {familypage.LABELS[metric]}",
-                                rank, UNITS[metric])
-            + flat + panel.table(["qué", "valor"], body))
+    fig = charts.distribution(shapes[metric], f"{title} — {familypage.LABELS[metric]}",
+                              rank, UNITS[metric], pct=metric in PCT)
+    cone = (charts.cone(band, f"{title} — curva de equity",
+                        "bandas 5-95 y 25-75 · línea naranja: el backtest") if band else "")
+    return (f'<div class="figure-row">{fig}'
+            f'{panel.table(["Qué", "Valor"], body)}</div>{flat}{cone}')

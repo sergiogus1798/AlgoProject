@@ -5,6 +5,7 @@ live deeper add the root to `sys.path` in their first lines.
 
 | file | what it does | in → out |
 |---|---|---|
+| `__init__.py` | Puts stdout/stderr in UTF-8 on import, so Windows' cp1252 console does not crash on this project's own accents and symbols | — |
 | `paths.py` | The only module that knows where anything lives. Reads `config/machine.yaml` | names → `Path` |
 | `sqxfile.py` | Read a `.sqx` without SQX: identity hash, symbol, inner XML, parameters | `.sqx` → values |
 | `optprofile.py` | Read a `.sqx`'s Sys. Param Permutation profile without SQX: run counts, per-metric medians against the original value, the stored histograms, and every permutation's parameters and statistics when SQX kept them | `.sqx` → dicts |

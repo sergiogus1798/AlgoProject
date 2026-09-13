@@ -33,6 +33,7 @@ computes none of the numbers it judges.
 | `windows.py` | The calendar slices: rolling windows, non-overlapping blocks, and the calendar split | imported | times → positions |
 | `regime.py` | Daily volatility — ATR or GARCH — and the tercile each trade was opened into | imported | bars → buckets |
 | `stitch.py` | The adversarial path: a bad draw from every period, concatenated | imported | stream → worst path |
+| `familyd.py` | **Family D's execution.** Composition bootstrap inside every window and volatility tercile, the equity curve with its window marks, and the price/vol time series | imported | stream, bars → dict |
 | `fan.py` | The equity envelope of the reordered paths | imported | stream → bands |
 | `confidence.py` | Whether the sample can hold up a number | imported | N, q → tier |
 | `significance.py` | **Family E.** Probabilistic Sharpe Ratio and its cross-check against the bootstrap | imported | P&L → PSR |
@@ -41,9 +42,13 @@ computes none of the numbers it judges.
 | `stability.py` | The same gate numbers computed again, to price the noise in them | imported | stream → spread |
 | `run.py` | Puts one stream through all five families | imported | stream → result |
 | `text.py` | The Spanish sentences: one per check that can fire, plus `montecarlo.md` | imported | result → words |
-| `charts.py` | The figures as inline SVG: distributions, the equity cone, the scores, signed bars | imported | numbers → SVG |
+| `charts.py` | The figures as inline SVG: distributions and the equity cone, plus the shared legend and axis primitives | imported | numbers → SVG |
+| `barcharts.py` | The two bar figures: the sub-scores against their cutoffs, and a signed bar per group | imported | numbers → SVG |
+| `timeline.py` | Family D's two time-indexed figures: equity against its windows, price against the volatility regime | imported | series → SVG |
 | `panel.py` | The databank page and the shared table and shell helpers | imported | rows → HTML |
-| `familypage.py` | The five family sections of one strategy's page | imported | result → HTML |
+| `degrade.py` | The IS/OOS pair of each family's headline statistic, resampled on just that scope | imported | stream → shapes |
+| `overlay.py` | The IS/OOS figure: two histograms on one axis, each scope's own reference lines | imported | shapes → SVG |
+| `familypage/` | The five family sections of one strategy's page, one file per family. Its own README | imported | result → HTML |
 | `strategypage.py` | One strategy's page: verdict, what failed, then the families | imported | result → HTML |
 | `explorer/` | The interactive panel: one strategy at a time, any test on demand. Its own README | `python3 -m strategies.monteCarlo.explorer.serve --project XAUUSD --databank Results --asset XAUUSD --export 2026-09-03` | export → `http://127.0.0.1:8765` |
 | `report.py` | The command: every strategy of one databank | `python3 -m strategies.monteCarlo.report --project XAUUSD --databank Results --asset XAUUSD --export 2026-09-03` | `raw/<P>/<D>/<date>/trades/` → `reports/<P>/<D>/<date>/montecarlo[_portfolio]/` |

@@ -10,6 +10,10 @@ markets.yaml ─▶ markets ─▶ envelope ─▶ trade_models ─▶ backtest 
                               is shaped    runs are drawn
 ```
 
+**`explorer/` is the only way to run this study.** There is no batch command any more: open the
+panel, pick a strategy or the whole database, and its own "Generar informe" button writes the same
+files the old `report.py` used to. See `explorer/README.md`.
+
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `markets.py` | Reads `markets.yaml`: which additional markets each base asset is retested on | imported | asset → feeds |
@@ -18,10 +22,18 @@ markets.yaml ─▶ markets ─▶ envelope ─▶ trade_models ─▶ backtest 
 | `trade_models.py` | **How random trades are drawn.** Four models behind one signature, plus what each holds fixed and a goodness-of-fit check on the ones that fit distributions | imported | envelope → entries, holds |
 | `backtest.py` | Runs the real run and N random ones under a chosen model, priced identically | imported | trades + bars + model → real, null, diagnostics |
 | `inference.py` | **All the statistics.** p-value, effect size, admissibility, the verdict, and how many passes are luck | imported | real + null → rows, verdict |
-| `report.py` | The command: every strategy, every market, every model | `python3 -m strategies.crossmarket.report --project XAUUSD --databank RetestMarkets --asset XAUUSD --export 2026-09-08` | `raw/<P>/<D>/<date>/trades/<feed>/` → `reports/<P>/<D>/<date>/crossmarket/` |
 | `text.py` | Turns the rows into `crossmarket.md`. Pure text, computes nothing | imported | rows → markdown |
 | `charts.py` | Draws the figures as inline SVG: the null distribution with the real run on it, and the p-value per model | imported | a distribution → SVG |
 | `panel.py` | Assembles `crossmarket.html` from `panel.html`: figures, tables and what every number means | imported | rows + distributions → HTML |
+| `bootstrap.py` | Block-bootstrap resampling and percentile confidence intervals, shared by `exposure.py` and `significance.py` | imported | a sequence → resampled positions, a CI |
+| `exposure.py` | Test 1c: concentration ratio E, drift-neutral excess A with its bootstrap CI, risk-normalised A, and the MFE capture ratio | imported | trades + bars → E, A, capture |
+| `significance.py` | Minimum track-record length and bootstrap CIs on PF/expectancy, from the real per-trade returns. No DSR — see `POSSIBLE_IMPROVEMENTS.md` | imported | trades + bars → moments, CI |
+| `breadth.py` | Breadth, worst-market floor and PF dispersion across one strategy's markets — replaces the single median | imported | per-market rows → breadth, floor, CV |
+| `fingerprint.py` | Behavioural fingerprint against the base asset: holding-time KS, MAE/MFE profile normalised by ATR, return shape | imported | trades + bars, base vs. market → fingerprint |
+| `stress.py` | Cost gradient, breakeven cost multiple, and decay under a bar shift or range slippage | imported | trades + bars → cost/slippage curves |
+| `correlation.py` | Weekly equity curves, their correlation matrix, and PCA by SVD across a strategy's markets plus gold | imported | trades + bars per market → correlation, variance share |
+| `tables.py` | Renders Test 1c, significance, fingerprint, cost and correlation into HTML tables/figures for `panel.py`'s static report and `explorer/sections.py`'s live tabs | imported | rows/record → HTML |
+| `explorer/` | The interactive panel — the only entry point. See `explorer/README.md` | `python3 -m strategies.crossmarket.explorer.serve --project XAUUSD --databank RetestMarkets --asset XAUUSD --export 2026-09-08` | export → `http://127.0.0.1:8766` |
 
 `backtest.py` never chooses a model and `inference.py` never produces a number it judges. That is what
 lets the same runs be re-judged, or the same judgement re-run under another model, without editing
@@ -38,7 +50,8 @@ The bars and trades come from `sqx/export/export_bars.py` and `sqx/export/export
 
 Write a function in `trade_models.py` with the shared signature — `(held, market, draws, rng)` in,
 `(entries, holds)` out — add it to `MODELS`, and add a row to `RANDOMISES` saying **what it
-randomises**. Nothing else changes: `--models` picks it up, the report gains a column and a row.
+randomises**. Nothing else changes: the panel's config drawer picks it up as another model to run,
+and the test explorer's model dropdown gains an entry.
 
 That row is not documentation, it is the finding. A model that randomises more than one thing cannot
 attribute a low p-value to any single cause, so the report prints it next to every p-value it produced.

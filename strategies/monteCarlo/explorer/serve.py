@@ -10,7 +10,7 @@ from flask import Flask, jsonify, request
 from core import assets, bars
 from core.paths import bars_file, export_dir
 from strategies.monteCarlo import config, costs, regime, run, stream, stress, sweeps
-from strategies.monteCarlo.explorer import cache, jobs, sections, work
+from strategies.monteCarlo.explorer import cache, jobs, scope, sections, tooltips, work
 
 APP = Flask(__name__)
 PAGE = Path(__file__).with_name("page.html")
@@ -44,6 +44,23 @@ def state() -> object:
                                    for n in SETUP["strategies"]]})
 
 
+@APP.get("/api/config")
+def config_defaults() -> object:
+    """The whole configuration and cost basis this panel started with.
+
+    Returns:
+        {"cfg": ..., "asset": ...}. The panel's config drawer builds its form from this and
+        sends back only the fields the reader actually changed — never the whole tree —
+        as a per-run override, so a run nobody touched the drawer for still uses exactly
+        what config.yaml and assets/ say.
+    """
+    a = SETUP["asset"]
+    return jsonify({"cfg": SETUP["cfg"],
+                    "asset": {k: a[k] for k in ("point_value", "tick_size", "spread",
+                                                "commission")},
+                    "tips": tooltips.TIPS})
+
+
 @APP.post("/api/analyse")
 def analyse() -> object:
     """Start the whole analysis of one strategy.
@@ -51,9 +68,9 @@ def analyse() -> object:
     Returns:
         Whether the job started; False means another one is running.
     """
-    name = request.json["strategy"]
-    steps = len(sweeps.plan(len(work.stream_of(SETUP, name)["pnl"]), SETUP["cfg"])) + len(stress.STRESS)
-    return jsonify({"started": jobs.start(lambda: work.analyse(SETUP, name),
+    setup, name = scope.scoped(SETUP, request.json), request.json["strategy"]
+    steps = len(sweeps.plan(len(work.stream_of(setup, name)["pnl"]), setup["cfg"])) + len(stress.STRESS)
+    return jsonify({"started": jobs.start(lambda: work.analyse(setup, name),
                                           f"Análisis completo — {name}", steps)})
 
 
@@ -64,15 +81,16 @@ def run_one() -> object:
     Returns:
         Whether the job started.
     """
+    setup = scope.scoped(SETUP, request.json)
     name, label = request.json["strategy"], request.json["label"]
-    source = work.stream_of(SETUP, name)
-    steps = {s["label"]: s for s in sweeps.plan(len(source["pnl"]), SETUP["cfg"])}
+    source = work.stream_of(setup, name)
+    steps = {s["label"]: s for s in sweeps.plan(len(source["pnl"]), setup["cfg"])}
     step = steps.get(label, {"label": label, "model": label, "block": 0,
                              "title": stress.TITLES.get(label, label)})
 
     def again() -> dict:
         """Run it and keep it aside from the stored analysis."""
-        ADHOC.setdefault(name, {})[label] = run.one(source, step, SETUP["cfg"])
+        ADHOC.setdefault(name, {})[label] = run.one(source, step, setup["cfg"])
         return {"strategy": name, "label": label}
 
     return jsonify({"started": jobs.start(again, step["title"], 0)})
@@ -85,8 +103,8 @@ def report() -> object:
     Returns:
         Whether the job started.
     """
-    name = request.json["strategy"]
-    return jsonify({"started": jobs.start(lambda: work.report(SETUP, name),
+    setup, name = scope.scoped(SETUP, request.json), request.json["strategy"]
+    return jsonify({"started": jobs.start(lambda: work.report(setup, name),
                                           f"Informe — {name}", 0)})
 
 
@@ -107,8 +125,9 @@ def runs() -> object:
     Returns:
         The list, empty when that strategy has not been analysed yet.
     """
+    setup = scope.from_query(SETUP, request.args)
     record = cache.load(SETUP["project"], SETUP["databank"],
-                        request.args["strategy"], SETUP["cfg"])
+                        request.args["strategy"], setup["cfg"], setup["asset"])
     if record is None:
         return jsonify({"runs": [], "saved": "", "stale": False})
     return jsonify({"runs": sections.runs(record["body"]["result"]),
@@ -124,14 +143,17 @@ def section() -> object:
         HTML, or a note saying the strategy has not been analysed yet.
     """
     name, which = request.args["strategy"], request.args["name"]
-    record = cache.load(SETUP["project"], SETUP["databank"], name, SETUP["cfg"])
+    setup = scope.from_query(SETUP, request.args)
+    record = cache.load(SETUP["project"], SETUP["databank"], name, setup["cfg"],
+                        setup["asset"])
     if record is None:
         return jsonify({"html": '<div class="note">Esta estrategia todavía no se ha '
                                 'analizado. Pulsa «Analizar todo».</div>'})
-    body, cfg = record["body"], SETUP["cfg"]
-    warn = ('<div class="fail"><b>Resultado de otra configuración.</b> Se calculó con un '
-            '<code>config.yaml</code> distinto del actual. Vuelve a analizar antes de '
-            'decidir nada con estos números.</div>' if record["stale"] else "")
+    body, cfg = record["body"], setup["cfg"]
+    warn = ('<div class="fail"><b>Resultado de otra configuración.</b> Se calculó con una '
+            'configuración o un coste de activo distinto del que tienes puesto ahora. '
+            'Vuelve a analizar antes de decidir nada con estos números.</div>'
+            if record["stale"] else "")
     if which == "verdict":
         return jsonify({"html": warn + sections.verdict_block(body["result"],
                                                               body["verdict"], cfg)})
@@ -155,10 +177,13 @@ def figure() -> object:
             {"A": {"shapes": {label: got["shapes"]}, "runs": {label: got["table"]}},
              "B": {"shapes": {}, "runs": {}}, "C": {}}, label, metric,
             f"{got['title']} (re-ejecutada)")})
-    record = cache.load(SETUP["project"], SETUP["databank"], name, SETUP["cfg"])
+    setup = scope.from_query(SETUP, request.args)
+    record = cache.load(SETUP["project"], SETUP["databank"], name, setup["cfg"],
+                        setup["asset"])
     result = record["body"]["result"]
     title = next(r["title"] for r in sections.runs(result) if r["label"] == label)
-    return jsonify({"html": sections.figure(result, label, metric, title)})
+    band = work.band_for(setup, work.stream_of(setup, name), label)
+    return jsonify({"html": sections.figure(result, label, metric, title, band)})
 
 
 def main() -> None:
@@ -174,6 +199,7 @@ def main() -> None:
     a = ap.parse_args()
 
     print(assets.report(a.asset))
+    cache.clear(a.project, a.databank)
     cfg = config.load(a.set)
     asset = costs.load(a.asset)
     trades = export_dir(a.project, a.databank, a.export) / "trades"
@@ -181,7 +207,8 @@ def main() -> None:
     first = stream.build(trades / f"{names[0]}.csv", asset, cfg["global"]["risk_per_trade"])
     feed = str(first["frame"]["Symbol"].iloc[0])
     SETUP.update({"project": a.project, "databank": a.databank, "export": a.export,
-                  "cfg": cfg, "asset": asset, "trades": trades, "strategies": names,
+                  "cfg": cfg, "asset": asset, "base_set": a.set,
+                  "trades": trades, "strategies": names,
                   "day": regime.daily(bars.read(bars_file(feed, a.bars_timeframe))),
                   "shared": {"args": a, "export": trades,
                              "bars": bars_file(feed, a.bars_timeframe),

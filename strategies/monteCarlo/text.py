@@ -4,7 +4,7 @@ import argparse
 
 import pandas as pd
 
-from strategies.monteCarlo import gates, scoring
+from strategies.monteCarlo import gates, scoring, stress
 
 # One sentence per check that can fire, with the number that fired it. Written so that the
 # sentence alone says what to do about it.
@@ -48,6 +48,31 @@ FLAGS = {
                  "verdad. Las pruebas de la familia C se leen con esa reserva.",
     "sample": "Con {value:.0f} operaciones alguno de los números que deciden no es fiable. "
               "El veredicto se queda en INCONCLUSIVE."}
+
+# What to call a check where it is named rather than explained, e.g. the verdict's failed
+# list. Family C reuses stress.TITLES so the name is not typed twice.
+TITLES = {**stress.TITLES,
+          "dd_99": "Drawdown percentil 99", "inflation": "Drawdown inflado",
+          "inflation_watch": "Drawdown inflado (aviso)", "net_5": "Beneficio percentil 5",
+          "pf_5": "Profit factor percentil 5", "outlier": "Mejor operación",
+          "oos_red": "Caída OOS", "oos_amber": "Caída OOS (aviso)",
+          "high_vol": "Volatilidad alta", "dead_block": "Bloque muerto",
+          "windows": "Ventanas móviles", "concentration": "Concentración por régimen",
+          "psr": "PSR", "psr_amber": "PSR (aviso)", "cost_file": "Coste modelado",
+          "sample": "Muestra insuficiente"}
+
+
+def title(flag: dict) -> str:
+    """One fired check's name, for a heading — never the internal key.
+
+    Args:
+        flag: What gates.check() produced.
+
+    Returns:
+        The Spanish name a reader can act on, e.g. "Ejecuciones degradadas" rather than
+        "fill_degrade".
+    """
+    return TITLES[flag["test"]]
 
 
 def sentence(flag: dict) -> str:
@@ -105,7 +130,8 @@ def row(result: dict, verdict: dict) -> dict:
             "outlier_share": result["B"]["outlier"]["share"],
             "windows_ok": gates.passing(result["D"]["overlapping"]),
             "high_vol_net": result["D"]["regime"]["buckets"]["high"]["median_net"],
-            "stitched_dd_pct": result["D"]["stitch"]["dd_pct"], "psr": result["E"]["psr"],
+            # The 5% severity, for one flat column; the whole curve is in the HTML report.
+            "stitched_dd_pct": result["D"]["stitch"][0.05]["dd_pct"], "psr": result["E"]["psr"],
             "gates": sum(1 for f in verdict["flags"] if f["gate"]),
             "flags": sum(1 for f in verdict["flags"] if not f["gate"]),
             "confidence": verdict["tiers"]["worst"]}

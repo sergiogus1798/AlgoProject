@@ -1,10 +1,10 @@
 """One strategy's page: the verdict, what failed, and every family underneath it."""
 
-from strategies.monteCarlo import charts, confidence, familypage, panel, scoring, text
+from strategies.monteCarlo import barcharts, charts, confidence, familypage, panel, scoring, text
 
-GLANCE = (("net", "beneficio neto"), ("sharpe", "Sharpe por operación"),
-          ("dd_pct", "drawdown máximo"), ("ret_dd", "Ret/DD"),
-          ("losing_run", "racha perdedora"))
+GLANCE = (("net", "Beneficio neto"), ("sharpe", "Sharpe por operación"),
+          ("dd_pct", "Drawdown máximo"), ("ret_dd", "Ret/DD"),
+          ("losing_run", "Racha perdedora"))
 
 
 def header(result: dict, verdict: dict) -> str:
@@ -21,13 +21,13 @@ def header(result: dict, verdict: dict) -> str:
     vetoed = verdict["tier"] in scoring.VERDICTS[3:]
     shown = (f"<s>{verdict['composite']:.0f}</s>" if vetoed
              else f"{verdict['composite']:.0f}")
-    return (f'<div class="headline">'
+    return (f'<div class="card headline">'
             f'<div class="stat"><b><span class="tier {"no" if vetoed else "pass"}">'
-            f'{verdict["tier"]}</span></b><span>veredicto</span></div>'
-            f'<div class="stat"><b>{shown}</b><span>compuesto sobre 100</span></div>'
+            f'{verdict["tier"]}</span></b><span>Veredicto</span></div>'
+            f'<div class="stat"><b>{shown}</b><span>Compuesto sobre 100</span></div>'
             f'<div class="stat"><b>{sum(1 for f in verdict["flags"] if f["gate"])}</b>'
-            f'<span>vetos disparados</span></div>'
-            f'<div class="stat"><b>{result["n_trades"]:,}</b><span>operaciones</span></div>'
+            f'<span>Vetos disparados</span></div>'
+            f'<div class="stat"><b>{result["n_trades"]:,}</b><span>Operaciones</span></div>'
             f'</div><div class="note">{text.rationale(result, verdict)}</div>')
 
 
@@ -46,8 +46,8 @@ def failed(verdict: dict) -> str:
         return '<div class="note">Ninguna prueba falló ni levantó aviso.</div>'
     return "".join(
         f'<div class="{"fail" if f["gate"] else "note"}">'
-        f'<b>{"VETO" if f["gate"] else "aviso"} · familia {f["family"]} · {f["test"]}</b> — '
-        f'{text.sentence(f)}</div>' for f in fired)
+        f'<b>{"VETO" if f["gate"] else "aviso"} · familia {f["family"]} · {text.title(f)}</b> '
+        f'— {text.sentence(f)}</div>' for f in fired)
 
 
 def glance(result: dict, verdict: dict, cfg: dict) -> str:
@@ -70,12 +70,12 @@ def glance(result: dict, verdict: dict, cfg: dict) -> str:
                      familypage.fmt(key, s["median"]),
                      familypage.fmt(key, s["p"][5]), f"{s['rank']:.0%}",
                      confidence.percentile(result["n_trades"], 5)])
-    extra = [["inflación del drawdown", f"{result['A']['inflation']:.2f}×", "—", "—", "—",
+    extra = [["Inflación del drawdown", f"{result['A']['inflation']:.2f}×", "—", "—", "—",
               verdict["tiers"]["dd_95"]],
              ["PSR", f"{result['E']['psr']:.4f}", "—", "—", "—",
               confidence.average(result["n_trades"])]]
-    return panel.table(["", "backtest", "mediana simulada", "percentil 5",
-                        "rango del backtest", "confianza"], rows + extra)
+    return panel.table(["", "Backtest", "Mediana simulada", "Percentil 5",
+                        "Rango del backtest", "Confianza"], rows + extra)
 
 
 def charts_scores(verdict: dict, cfg: dict) -> str:
@@ -89,7 +89,7 @@ def charts_scores(verdict: dict, cfg: dict) -> str:
         The figure and the list of ingredients beside it.
     """
     items = "".join(f"<li><b>{k}</b> — {v}</li>" for k, v in scoring.BUILT_FROM.items())
-    return (charts.scores(verdict["subscores"], cfg["scoring"]["tiers"])
+    return (barcharts.scores(verdict["subscores"], cfg["scoring"]["tiers"])
             + f"<ul>{items}</ul>")
 
 
@@ -124,11 +124,11 @@ def page(result: dict, verdict: dict, band: dict, cfg: dict, source: dict) -> st
         'un backtest afortunado.</p>',
         glance(result, verdict, cfg),
         charts_scores(verdict, cfg),
-        *familypage.family_a(result, band, cfg),
-        *familypage.family_b(result, cfg),
-        *familypage.family_c(result, cfg),
-        *familypage.family_d(result, cfg),
-        *familypage.family_e(result, cfg),
+        *familypage.family_a(result, verdict, band, cfg),
+        *familypage.family_b(result, verdict, cfg),
+        *familypage.family_c(result, verdict, cfg),
+        *familypage.family_d(result, verdict, cfg),
+        *familypage.family_e(result, verdict, cfg),
         "<h2>Datos y método</h2>",
         panel.method(source["args"], cfg, source["stability"], source),
         panel.limits(cfg),

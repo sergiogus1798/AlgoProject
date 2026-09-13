@@ -3,8 +3,8 @@
 import numpy as np
 import pandas as pd
 
-from strategies.monteCarlo import (confidence, costs, draws, engine, metrics, regime,
-                                   significance, stitch, stream, stress, sweeps, windows)
+from strategies.monteCarlo import (confidence, costs, degrade, draws, engine, familyd,
+                                   metrics, significance, stream, stress, sweeps)
 
 
 def _family_a(runs: dict, seen: dict, cfg: dict) -> dict:
@@ -21,16 +21,17 @@ def _family_a(runs: dict, seen: dict, cfg: dict) -> dict:
         drawdown was the order the trades happened to arrive in.
     """
     qs = cfg["global"]["percentile_set"]
+    q = cfg["global"]["report_percentile"]
     labels = [k for k in runs if k == sweeps.HEADLINE or "shuffle" in k]
     head = runs[sweeps.HEADLINE]
     return {"runs": {k: metrics.table(runs[k], seen, qs) for k in labels},
-            "shapes": {k: metrics.shapes(runs[k], seen) for k in labels},
+            "shapes": {k: metrics.shapes(runs[k], seen, q) for k in labels},
             "invariant": {k: sweeps.invariant(runs[k]) for k in labels
                           if k.split("/")[0] in draws.KEEPS_MULTISET},
             "dd_pct_95": float(np.percentile(head["dd_pct"], 95)),
             "dd_pct_99": float(np.percentile(head["dd_pct"], 99)),
             "inflation": float(np.percentile(head["dd_pct"], 95) / seen["dd_pct"]),
-            "shape": metrics.shape(head["dd_pct"], seen["dd_pct"])}
+            "shape": metrics.shape(head["dd_pct"], seen["dd_pct"], q)}
 
 
 def _leave_one_out(pnl: np.ndarray) -> dict:
@@ -67,26 +68,31 @@ def _family_b(runs: dict, source: dict, cfg: dict, sims: int) -> dict:
     """
     seen = metrics.observed(source["pnl"], cfg["global"]["starting_equity"])
     qs = cfg["global"]["percentile_set"]
+    q = cfg["global"]["report_percentile"]
     labels = [k for k in runs if "bootstrap" in k]
     parts = {}
     for name, positions in stream.samples(source).items():
         if positions.size < confidence.MEAN_PROVISIONAL:
             continue
         cut = engine.payload(source, positions)
-        got = engine.single(cut, "draw", "iid_bootstrap", 0, sims, cfg)
+        # sequential(), not single(): sims is the full study count here, and single() only
+        # bounds memory for the small per-window counts family_d uses.
+        got = engine.sequential(cut, "draw", "iid_bootstrap", 0, sims, cfg)
         parts[name] = {"n": int(positions.size),
                        "sharpe": float(np.median(got["sharpe"])),
                        "net": float(np.median(got["net"])),
-                       "pf_5": float(np.nanpercentile(got["pf"], 5))}
+                       "pf_5": float(np.nanpercentile(got["pf"], 5)),
+                       "shape": metrics.shape(got["net"],
+                                              float(source["pnl"][positions].sum()), q)}
     ratio = (parts["OOS"]["sharpe"] / parts["IS"]["sharpe"]
              if {"IS", "OOS"} <= parts.keys() and parts["IS"]["sharpe"] else float("nan"))
     return {"runs": {k: metrics.table(runs[k], seen, qs) for k in labels},
-            "shapes": {k: metrics.shapes(runs[k], seen) for k in labels},
+            "shapes": {k: metrics.shapes(runs[k], seen, q) for k in labels},
             "net_5": min(float(np.percentile(runs[k]["net"], 5)) for k in labels),
             "pf_5": min(float(np.nanpercentile(runs[k]["pf"], 5)) for k in labels),
             "outlier": _leave_one_out(source["pnl"]),
             "samples": parts, "oos_ratio": float(ratio),
-            "shape": metrics.shape(runs[sweeps.BASELINE]["net"], seen["net"])}
+            "shape": metrics.shape(runs[sweeps.BASELINE]["net"], seen["net"], q)}
 
 
 def _family_c(source: dict, cfg: dict, sims: int) -> dict:
@@ -102,6 +108,7 @@ def _family_c(source: dict, cfg: dict, sims: int) -> dict:
         decides anything: gates.py owns every threshold.
     """
     seen = metrics.observed(source["pnl"], cfg["global"]["starting_equity"])
+    q = cfg["global"]["report_percentile"]
     data = engine.payload(source)
     out = {}
     for name in stress.STRESS:
@@ -112,78 +119,8 @@ def _family_c(source: dict, cfg: dict, sims: int) -> dict:
                      "keep": float(np.median(got["net"]) / seen["net"]),
                      "model": stress.MODELS[name],
                      "table": metrics.table(got, seen, cfg["global"]["percentile_set"]),
-                     "shapes": metrics.shapes(got, seen)}
+                     "shapes": metrics.shapes(got, seen, q)}
     return out
-
-
-def _slices(source: dict, spans: list[dict], cfg: dict) -> list[dict]:
-    """Composition bootstrap inside each calendar slice of the history.
-
-    Args:
-        source: What stream.build() returned.
-        spans: What windows.rolling() returned.
-        cfg: What config.load() returned.
-
-    Returns:
-        One row per window: its dates, its trade count and the low percentiles of its own
-        resampled distribution. A window with a negative median is a period in which the
-        strategy did not work, which no average over windows may hide.
-    """
-    sims = cfg["family_d"]["window_sims"]
-    rows = []
-    for span in spans:
-        pos = span["positions"]
-        if pos.size < confidence.MEAN_PROVISIONAL:
-            rows.append({**{k: span[k] for k in ("start", "end")}, "n": int(pos.size),
-                         "median_net": float("nan"), "net_5": float("nan"),
-                         "pf_5": float("nan")})
-            continue
-        got = engine.single(engine.payload(source, pos), "draw", "iid_bootstrap", 0,
-                            sims, cfg)
-        rows.append({**{k: span[k] for k in ("start", "end")}, "n": int(pos.size),
-                     "median_net": float(np.median(got["net"])),
-                     "net_5": float(np.percentile(got["net"], 5)),
-                     "pf_5": float(np.nanpercentile(got["pf"], 5))})
-    return rows
-
-
-def _family_d(source: dict, day: pd.DataFrame, cfg: dict) -> dict:
-    """Regime luck: where in time and in market state the edge actually lived.
-
-    Args:
-        source: What stream.build() returned.
-        day: Daily candles, from regime.daily().
-        cfg: What config.load() returned.
-
-    Returns:
-        The overlapping and non-overlapping window curves, the volatility buckets, the
-        stitched stress path and the calendar split.
-    """
-    d = cfg["family_d"]
-    over = _slices(source, windows.rolling(source["open"], d["window_months"],
-                                           d["window_step_months"]), cfg)
-    segments = windows.rolling(source["open"], d["window_months"], d["window_months"])
-    vol = regime.VOL[d["vol_model"]](day, d)
-    tagged = regime.tag(source["open"], vol["vol"])
-    buckets = {}
-    for name, pos in tagged["positions"].items():
-        got = engine.single(engine.payload(source, pos), "draw", "iid_bootstrap", 0,
-                            d["window_sims"], cfg)
-        buckets[name] = {"n": int(pos.size), "net": float(source["pnl"][pos].sum()),
-                         "median_net": float(np.median(got["net"])),
-                         "net_5": float(np.percentile(got["net"], 5)),
-                         "pf_5": float(np.nanpercentile(got["pf"], 5))}
-    total = float(source["pnl"].sum())
-    return {"overlapping": over, "nonoverlapping": _slices(source, segments, cfg),
-            "regime": {"model": vol["model"], "note": vol["note"],
-                       "edges": tagged["edges"], "coverage": tagged["coverage"],
-                       "buckets": buckets,
-                       "concentration": max(b["net"] for b in buckets.values()) / total},
-            "stitch": stitch.worst_path(source["pnl"], segments, d["window_sims"], 0.05,
-                                        cfg["global"]["starting_equity"]),
-            "calendar": {k: v.round(0).to_dict()
-                         for k, v in windows.calendar(source["open"],
-                                                      source["pnl"]).items()}}
 
 
 def one(source: dict, step: dict, cfg: dict) -> dict:
@@ -206,7 +143,7 @@ def one(source: dict, step: dict, cfg: dict) -> dict:
                      cfg["global"]["n_sims"], cfg, step["title"])
     return {"label": step["label"], "title": step["title"],
             "table": metrics.table(got, seen, cfg["global"]["percentile_set"]),
-            "shapes": metrics.shapes(got, seen)}
+            "shapes": metrics.shapes(got, seen, cfg["global"]["report_percentile"])}
 
 
 def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
@@ -234,7 +171,8 @@ def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
             "A": _family_a(runs, seen, cfg),
             "B": _family_b(runs, source, cfg, g["n_sims"]),
             "C": _family_c(source, cfg, g["n_sims"]),
-            "D": _family_d(source, day, cfg),
+            "D": familyd.run(source, day, cfg),
+            "degrade": degrade.overlay(source, cfg),
             "E": {**psr, **significance.crosscheck(psr["psr"],
                                                    runs[sweeps.BASELINE]["sharpe"])},
             "cost_check": costs.crosscheck(source["frame"], asset),

@@ -53,8 +53,16 @@ def pool(cfg: dict) -> ProcessPoolExecutor:
     """
     global _POOL
     if _POOL is None:
-        context = multiprocessing.get_context("forkserver")
-        context.set_forkserver_preload(["strategies.monteCarlo.engine"])
+        # Windows has no forkserver (get_all_start_methods() there is just ["spawn"]) --
+        # tested: get_context("forkserver") raises ValueError: cannot find context for
+        # 'forkserver'. spawn starts each worker from a clean interpreter too, so it is not
+        # exposed to the held-lock deadlock fork was replaced for; it just cannot preload a
+        # module, so the workers import numpy on first use instead of at start-up.
+        method = ("forkserver" if "forkserver" in multiprocessing.get_all_start_methods()
+                  else "spawn")
+        context = multiprocessing.get_context(method)
+        if method == "forkserver":
+            context.set_forkserver_preload(["strategies.monteCarlo.engine"])
         _POOL = ProcessPoolExecutor(max_workers=cfg["global"]["max_workers"] or os.cpu_count(),
                                     mp_context=context)
     return _POOL
@@ -126,6 +134,31 @@ def single(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict
     """
     return _batch((kind, model, block, n_sims, data, cfg["global"]["starting_equity"],
                    cfg["family_c"]))
+
+
+def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict) -> dict:
+    """Simulate one sub-test here, in chunks, without starting a pool.
+
+    Args:
+        data: What payload() returned.
+        kind: "draw" or "stress".
+        model: Key of draws.DRAWS or stress.STRESS.
+        block: Block length, ignored by the models that have none.
+        n_sims: Simulations to run.
+        cfg: The whole config.
+
+    Returns:
+        The same arrays run() returns. Unlike single(), safe for the full study count:
+        every draw model holds an (n_sims, trades) array in memory at once, so a caller
+        already inside its own process — stability.py runs eight of these in parallel —
+        must still chunk at cfg["global"]["chunk"] or it can ask for tens of gigabytes per
+        process on a strategy with a few thousand trades.
+    """
+    g = cfg["global"]
+    chunks = [min(g["chunk"], n_sims - i) for i in range(0, n_sims, g["chunk"])]
+    out = [_batch((kind, model, block, c, data, g["starting_equity"], cfg["family_c"]))
+           for c in chunks]
+    return {k: np.concatenate([o[k] for o in out]) for k in metrics.NAMES}
 
 
 def run(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,

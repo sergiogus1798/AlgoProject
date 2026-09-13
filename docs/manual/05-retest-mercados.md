@@ -85,7 +85,8 @@ estudio de estrategias tendrá su propia carpeta igual que esta.
 
 ### Cómo se ejecuta
 
-Son tres comandos, en este orden. El primero sólo hace falta la primera vez y cuando añadas mercados.
+Dos comandos preparan los datos, y el tercero abre el panel — que es ahora la **única** forma de
+correr la prueba. No hay comando de línea que la corra solo.
 
 ```bash
 # 1. Las barras de todos los mercados de la lista (una arranca de SQX por mercado, ~1 min cada una)
@@ -94,8 +95,8 @@ python3 -m sqx.export.export_bars --asset XAUUSD --from 2003.01.01 --to 2026.01.
 # 2. Los trades del retest, partidos por mercado (~4 min por cada 200 estrategias)
 python3 -m sqx.export.export_retest --project XAUUSD --databank RetestMarkets
 
-# 3. La prueba (~1-2 h para una databank entera de 900 estrategias sobre 8 mercados)
-python3 -m strategies.crossmarket.report --project XAUUSD --databank RetestMarkets \
+# 3. El panel
+python3 -m strategies.crossmarket.explorer.serve --project XAUUSD --databank RetestMarkets \
     --asset XAUUSD --export 2026-09-08
 ```
 
@@ -105,12 +106,20 @@ python3 -m strategies.crossmarket.report --project XAUUSD --databank RetestMarke
 | `--project` | sí | proyecto en el master |
 | `--databank` | sí | la databank donde dejaste el retest |
 | `--export` | sí (en el paso 3) | la fecha del export del paso 2, `AAAA-MM-DD`. Es la carpeta que va a leer |
-| `--from` / `--to` | no | ventana de barras. Por defecto 2003-2026 |
-| `--draws` | no | versiones al azar por estrategia y mercado. Por defecto 5000 |
-| `--models` | no | cómo se aleatorizan las operaciones. Por defecto `block_shift segment_permute` |
+| `--from` / `--to` | no, sólo en el paso 1 | ventana de barras. Por defecto 2003-2026 |
+| `--port` | no, sólo en el paso 3 | puerto del panel. Por defecto 8766 |
 
-**Sobre `--models`.** Hay cuatro formas de convertir tu backtest en uno aleatorio, y **no dan la misma
-respuesta porque no hacen la misma pregunta**:
+Los pasos 1 y 2 **arrancan SQX** (el worker, nunca el master) y se pueden ejecutar con tu interfaz
+abierta. El paso 3 no toca SQX en absoluto: sólo lee ficheros, y abre
+`http://127.0.0.1:8766` en tu navegador.
+
+**El cajón de configuración** (▸ arriba de las pestañas) es donde se toca todo lo que antes eran
+flags: cuántas versiones al azar (`draws`), qué modelos correr, el umbral de significancia, el suelo
+de operaciones mínimas, y los parámetros de las pruebas nuevas (bloque del bootstrap, múltiplos de
+coste, fracción de slippage). Cambiar un valor sólo afecta al siguiente análisis que pulses — nada se
+escribe a disco, y al recargar el panel vuelve a los valores de fábrica.
+
+**Los cuatro modelos** siguen siendo los mismos, ahora elegibles en el cajón:
 
 | modelo | qué cambia al azar | qué pregunta responde |
 |---|---|---|
@@ -121,18 +130,45 @@ respuesta porque no hacen la misma pregunta**:
 
 El primero de la lista es el que decide. Los demás están para ver si un resultado **sobrevive a otra
 suposición**, nunca para buscar uno que pase: si una estrategia sólo aprueba con un modelo alternativo,
-lo que has encontrado es la suposición de ese modelo, no la estrategia. El informe lo dice en una tabla.
+lo que has encontrado es la suposición de ese modelo, no la estrategia. La pestaña "Veredicto" lo dice
+en una tabla, y "Explorador de pruebas" te deja mirar cualquier mercado bajo cualquier modelo.
 
 Aviso concreto para tu flota: `fitted_holds` no le encaja. Tus estrategias salen casi siempre al tope
 de barras, así que sus duraciones son prácticamente constantes y ninguna distribución las representa
-(dispersión 0.05, KS p < 0.001). El informe imprime esos dos números al lado para que se vea.
+(dispersión 0.05, KS p < 0.001). El panel imprime esos dos números al lado para que se vea.
 
-Los pasos 1 y 2 **arrancan SQX** (el worker, nunca el master) y se pueden ejecutar con tu interfaz
-abierta. El paso 3 no toca SQX en absoluto: sólo lee ficheros.
-
-Sobre `--draws`: 5000 no se queda corto de potencia, pero sí fija el p-valor más pequeño que se puede
+Sobre `draws`: 5000 no se queda corto de potencia, pero sí fija el p-valor más pequeño que se puede
 observar, que es 1/5001 ≈ 0.0002. Si comparas cientos de estrategias entre sí, ese suelo importa;
 está explicado en `strategies/crossmarket/POSSIBLE_IMPROVEMENTS.md`.
+
+### Los botones y las pestañas
+
+Arriba: un desplegable de estrategias (marca `· analizada` la que ya tiene resultado guardado) y tres
+botones.
+
+| botón | qué hace |
+|---|---|
+| **Analizar esta estrategia** | Corre las cuatro pruebas de esta ficha — Test 1a bajo los cuatro modelos, exposición, significancia, huella, coste y correlación — sobre todos los mercados adicionales de la estrategia elegida. Barra de progreso, un mercado por paso |
+| **Analizar toda la base de datos** | Repite el botón anterior para cada estrategia del export. Es necesario antes de generar el informe, porque el panel es ahora el único sitio donde se corre la prueba |
+| **Generar informe** | Escribe `by_market.csv`, `verdict.csv`, `crossmarket.md`, `crossmarket.html` y `manifest.json`, leyendo lo que ya dejó en caché "Analizar toda la base de datos" — si no se ha corrido, el botón lo pide |
+
+Debajo de los botones, una franja fija resume la base de datos completa (cuántas `MANTENER`, la
+cifra de suerte) — vacía hasta que "Analizar toda la base de datos" haya corrido al menos una vez.
+
+Las pestañas, con lo que muestra cada una:
+
+| pestaña | qué muestra |
+|---|---|
+| **Veredicto** | Tabla por mercado, `MANTENER`/`DESCARTAR`/`NO EVALUABLE` y las comprobaciones (`fill_error`, `calendar_kept`, etc.) — igual que antes traía `crossmarket.html` |
+| **Exposición** | Test 1c: concentración E, exceso A y su intervalo de confianza, A por unidad de riesgo, y qué fracción del MFE se capturó |
+| **Significancia** | Sharpe, cuántas operaciones hacen falta para que ese Sharpe sea distinguible de cero (MinTRL), e intervalos de confianza de PF y expectancy por bootstrap — y la amplitud entre mercados |
+| **Huella** | Si la duración de las operaciones se parece a la del oro (KS), y la forma de la distribución de retornos |
+| **Coste** | El múltiplo de coste al que la estrategia deja de ganar (breakeven), y cuánto se degrada con un desplazamiento de una barra o con slippage |
+| **Correlación** | Matriz de correlación semanal entre los mercados de esa estrategia más el oro, y qué parte de la varianza explica el primer componente (PCA) |
+| **Explorador de pruebas** | Dos desplegables — mercado y modelo — para mirar cualquier combinación de las que ya se corrieron, más un botón "Re-ejecutar esta prueba" que la repite con más tiradas sin tocar la caché |
+
+*(Capturas de pantalla del panel real pendientes de añadir aquí — regla 8 exige que sean de una
+ejecución real, no inventadas.)*
 
 ### Qué produce
 

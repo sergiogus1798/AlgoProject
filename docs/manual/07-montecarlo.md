@@ -16,6 +16,13 @@ qué depende ese edge, que es otra cosa:
 - **¿De un régimen de mercado que ya no está?** Se parte la historia en ventanas de dos años y en
   terciles de volatilidad diaria, y se mira si ganaba en todos o solo en uno.
 
+Las cuatro familias, además, responden por separado a una quinta pregunta: **¿se sostiene igual
+dentro y fuera de muestra?** Cada una repite su propia prueba de cabecera sólo con las operaciones
+IS y sólo con las OOS, y las enseña una encima de la otra en el mismo histograma — no dos tablas
+que hay que comparar de memoria, sino la misma figura con dos distribuciones traslúcidas y las
+líneas de cada una (backtest, mediana, percentil de referencia) en su propio color. Es la forma de
+ver una degradación real sin necesidad de leer números sueltos.
+
 Termina con un veredicto por estrategia — `STRONG`, `ACCEPTABLE`, `MARGINAL`, `FAIL` o
 `INCONCLUSIVE` — y, lo más importante, **con la lista de pruebas que falló y el número que la
 tumbó**.
@@ -83,6 +90,13 @@ Con 96 núcleos tarda unos **25 segundos por estrategia** con las 100.000 simula
 las 36 del ejemplo, con la comprobación de estabilidad incluida, **15 minutos**. Bajar a 20.000 lo
 deja en unos 4 minutos y, medido, no cambia ningún veredicto — sólo ensancha un poco las colas.
 
+La comprobación de degradación IS/OOS de las familias A, B, C y D añade catorce remuestreos más por
+estrategia, a las mismas 100.000 simulaciones — en coste, como analizar una muestra dentro/fuera de
+la Familia B siete veces. Van al mismo grupo de procesos que todo lo demás, así que no se suman en
+serie: medido en una máquina de 16 núcleos, una estrategia completa (las cinco familias, con esto
+incluido) tardó 30 segundos — el tiempo lo decide cuántos núcleos tengas, no una cifra fija de esta
+página.
+
 ![La salida en el terminal](assets/montecarlo-terminal.png)
 
 ### Qué produce
@@ -129,6 +143,12 @@ percentil 95, no con el drawdown del backtest.**
 La comprobación de la caja gris tiene que decir que barajar movió el beneficio en ~0 $. Si dice otra
 cosa, el modelo está cambiando la composición y no sólo el orden: no sigas leyendo.
 
+Al final de cada familia (A, B, C y D) hay un apartado **«Degradación dentro / fuera de muestra»**
+con el histograma solapado descrito arriba. Léelo así: si la mediana y el percentil de referencia de
+la muestra OOS quedan muy por debajo de los de la IS, esa familia se está sosteniendo peor fuera de
+muestra que dentro — información que el veredicto agregado no distingue. *(Captura pendiente: el
+histograma solapado es nuevo y todavía no tiene imagen en `assets/`.)*
+
 **4. Familia D — dónde vivía el edge.**
 
 ![Familia D](assets/montecarlo-familia-d.png)
@@ -136,6 +156,13 @@ cosa, el modelo está cambiando la composición y no sólo el orden: no sigas le
 Las barras naranjas son ventanas de dos años en las que la estrategia, remuestreada, pierde. Un
 bloque de 24 meses que no se solapa con ningún otro y sale en negativo es un veto: es un periodo
 entero en el que el sistema no funcionó, y las ventanas solapadas lo camuflan.
+
+Debajo de esa tabla está la **curva de equity real con cada bloque marcado** — la misma curva del
+backtest, con una línea discontinua donde empieza cada bloque de la tabla de arriba, para ver a ojo
+en qué tramo del calendario vive el bloque muerto. Y en el régimen de volatilidad, el precio y la
+serie de volatilidad (ATR o GARCH, la que esté activa) superpuestos sobre el mismo eje de tiempo,
+con el fondo coloreado por tercil — pasa el ratón por la línea de precio o la de volatilidad para
+resaltar cada una por separado. *(Captura pendiente para ambas figuras.)*
 
 **Qué valor es bueno**, resumido:
 
@@ -221,29 +248,44 @@ Se abre solo en el navegador, en `http://127.0.0.1:8765` (cambia el puerto con `
 mismos `--set` que el comando, así que puedes explorar con 20.000 simulaciones y dejar las 100.000
 para el informe final. Se para con `Ctrl+C`.
 
+**Abre siempre en blanco.** A diferencia de versiones anteriores, cada arranque borra cualquier
+resultado guardado de esa databank antes de abrir el navegador: nunca te vas a encontrar estrategias
+«ya analizadas» de una sesión anterior confundiéndose con las de hoy. Dentro de la misma sesión el
+caché sigue funcionando igual — cambiar de estrategia y volver es instantáneo.
+
 ![El panel, pestaña Veredicto](assets/montecarlo-panel-ui.png)
 
 | control | qué hace |
 |---|---|
-| desplegable de estrategias | cambia de estrategia. Las que ya tienen resultado guardado salen marcadas |
+| desplegable de estrategias | cambia de estrategia. Las que ya tienen resultado guardado *en esta sesión* salen marcadas |
+| **Configuración de este runeo** (desplegable bajo la cabecera) | todos los valores de `config.yaml` y el coste del activo (spread, comisión, point value, tick size), con los de fábrica precargados. Lo que cambies aquí se aplica sólo al siguiente clic — nunca se escribe en disco — y pasa el ratón por el nombre de cualquier campo para ver qué es |
 | **Analizar todo** | corre las cinco familias sobre esa estrategia y guarda el resultado |
 | **Generar informe** | escribe su página HTML, con la comprobación de estabilidad incluida |
 | pestañas | el veredicto y cada familia, con las mismas tablas y figuras que el informe |
 | **Explorador de pruebas** | cualquiera de las 19 sub-pruebas × cualquiera de sus 8 estadísticos |
 
+*(Captura pendiente: la fila de Configuración es nueva y no sale todavía en la imagen de arriba.)*
+
 ![El explorador de pruebas](assets/montecarlo-panel-explorador.png)
 
 El explorador es la respuesta a «quiero ver absolutamente todos los resultados sin que sea un lío»:
-en vez de cuarenta figuras en una página, dos desplegables y la que quieras mirar. Y el botón
-**Re-ejecutar esta prueba** vuelve a correr esa sub-prueba sola, con azar nuevo, y la enseña al lado
-de la guardada — que es la forma honesta de comprobar si un número te está bailando.
+en vez de cuarenta figuras en una página, dos desplegables y la que quieras mirar. Debajo del
+histograma sale también la curva de equity de esa sub-prueba con sus bandas de confianza, para ver
+no sólo la distribución de un estadístico sino qué pinta tiene la curva entera bajo ese modelo.
+*(Captura pendiente para la curva de equity del explorador.)* Y el botón **Re-ejecutar esta prueba**
+vuelve a correr esa sub-prueba sola, con azar nuevo, y la enseña al lado de la guardada — que es la
+forma honesta de comprobar si un número te está bailando.
 
 **Lo que se guarda y dónde.** Cada análisis va a
 `~/Desktop/AlgoData/derived/montecarlo/<proyecto>/<databank>/<estrategia>.json`, con una huella de
-**toda** la configuración dentro. Por eso cambiar de estrategia es instantáneo. Y por eso, si tocas
-un umbral del `config.yaml`, el panel te avisa en rojo de que lo que estás viendo se calculó con
-otra configuración, en vez de contestarte tan tranquilo a una pregunta que no le hiciste. Se guardan
-resúmenes e histogramas, nunca las simulaciones crudas: son kilobytes, no gigabytes.
+**toda** la configuración dentro — incluidos los overrides de coste del activo que hayas puesto en
+el desplegable de Configuración, así que analizar la misma estrategia con un spread distinto no se
+confunde con el resultado de fábrica. Por eso cambiar de estrategia es instantáneo dentro de la
+misma sesión. Y por eso, si tocas un umbral del `config.yaml` o un coste del activo, el panel te
+avisa en rojo de que lo que estás viendo se calculó con otra configuración, en vez de contestarte
+tan tranquilo a una pregunta que no le hiciste. Se guardan resúmenes e histogramas, nunca las
+simulaciones crudas: son kilobytes, no gigabytes. Esos ficheros no sobreviven al siguiente arranque
+del panel — ver más arriba.
 
 Los informes que escribe el panel van a `montecarlo_panel/`, **al lado** de los del comando y nunca
 encima: el panel suele correrse con menos simulaciones, y una página hecha con una configuración no

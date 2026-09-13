@@ -78,18 +78,23 @@ def summarise(values: np.ndarray, seen: float, qs: list[int]) -> dict:
         backtest looks like: most simulations did worse than the one that was run.
     """
     clean = values[np.isfinite(values)]
+    std = float(clean.std(ddof=1))
+    kurt = float(((clean - clean.mean()) ** 4).mean() / std ** 4 - 3.0) if std else 0.0
     return {"p": {q: float(np.percentile(clean, q)) for q in qs},
-            "mean": float(clean.mean()), "median": float(np.median(clean)),
-            "observed": float(seen), "rank": float(np.mean(clean <= seen)),
+            "mean": float(clean.mean()), "median": float(np.median(clean)), "std": std,
+            "kurtosis": kurt, "observed": float(seen), "rank": float(np.mean(clean <= seen)),
             "n": int(clean.size)}
 
 
-def shape(values: np.ndarray, seen: float, bins: int = 60) -> dict:
+def shape(values: np.ndarray, seen: float, q: int, bins: int = 60) -> dict:
     """A distribution reduced to something a chart can draw.
 
     Args:
         values: One statistic, one entry per simulation.
         seen: The observed backtest's value.
+        q: The percentile every histogram marks alongside the backtest and the median —
+            cfg["global"]["report_percentile"], so the mark on the picture is always the
+            same number the tables read.
         bins: Histogram bins.
 
     Returns:
@@ -108,7 +113,8 @@ def shape(values: np.ndarray, seen: float, bins: int = 60) -> dict:
         lo, hi = middle - floor / 2, middle + floor / 2
     counts, edges = np.histogram(clean, bins=bins, range=(lo, hi))
     return {"counts": counts.tolist(), "lo": float(edges[0]), "hi": float(edges[-1]),
-            "observed": float(seen), "median": float(np.median(clean))}
+            "observed": float(seen), "median": float(np.median(clean)),
+            "p_report": float(np.percentile(clean, q))}
 
 
 def table(stats: dict[str, np.ndarray], seen: dict[str, float], qs: list[int]) -> dict:
@@ -125,16 +131,17 @@ def table(stats: dict[str, np.ndarray], seen: dict[str, float], qs: list[int]) -
     return {k: summarise(v, seen[k], qs) for k, v in stats.items()}
 
 
-def shapes(stats: dict[str, np.ndarray], seen: dict[str, float]) -> dict:
+def shapes(stats: dict[str, np.ndarray], seen: dict[str, float], q: int) -> dict:
     """A drawable histogram of every statistic of one sub-run.
 
     Args:
         stats: One array per statistic, from a simulated sub-run.
         seen: The observed backtest's statistics.
+        q: The percentile every histogram marks; see shape().
 
     Returns:
         {statistic: what shape() returned}. Kept for every sub-run so the panel can draw
         any of them without simulating again: a few hundred bytes each against the
         gigabytes the raw draws would be.
     """
-    return {k: shape(v, seen[k]) for k, v in stats.items()}
+    return {k: shape(v, seen[k], q) for k, v in stats.items()}

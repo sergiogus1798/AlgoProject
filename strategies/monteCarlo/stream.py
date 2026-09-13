@@ -81,6 +81,23 @@ def samples(stream: dict) -> dict[str, np.ndarray]:
     return {"IS": np.flatnonzero(tag == "IST"), "OOS": np.flatnonzero(tag == "OOS")}
 
 
+def restrict(source: dict, positions: np.ndarray) -> dict:
+    """One stream cut down to a subset of its own trades, keeping the same contract.
+
+    Args:
+        source: What build() or portfolio() returned.
+        positions: Which trades to keep, e.g. an IS or OOS split from samples().
+
+    Returns:
+        The same contract build() returns, restricted to those trades. Every family that
+        takes a stream can run on this unchanged — an IS-only or OOS-only cut is not a
+        different kind of input to them, just a shorter one.
+    """
+    arrays = {k: v[positions] for k, v in source.items() if k not in ("name", "frame")}
+    return {"name": source["name"],
+            "frame": source["frame"].iloc[positions].reset_index(drop=True), **arrays}
+
+
 def overlap(stream: dict) -> float:
     """Share of trades that were open while the previous one was still open.
 

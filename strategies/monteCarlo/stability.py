@@ -22,9 +22,9 @@ def _once(data: dict, cfg: dict, sims: int) -> dict[str, float]:
         execution stress. Fresh entropy, like every other run in the module.
     """
     block = cfg["blocks"]["block_min"]
-    got = {sweeps.HEADLINE: engine.single(data, "draw", "stationary", block, sims, cfg),
-           sweeps.BASELINE: engine.single(data, "draw", "iid_bootstrap", 0, sims, cfg)}
-    got.update({k: engine.single(data, "stress", k, 0, sims, cfg) for k in stress.STRESS})
+    got = {sweeps.HEADLINE: engine.sequential(data, "draw", "stationary", block, sims, cfg),
+           sweeps.BASELINE: engine.sequential(data, "draw", "iid_bootstrap", 0, sims, cfg)}
+    got.update({k: engine.sequential(data, "stress", k, 0, sims, cfg) for k in stress.STRESS})
     return {f"{label}.{metric}.{q}": float(np.nanpercentile(arr[metric], q))
             for label, arr in got.items() for metric, q in DRIVERS}
 

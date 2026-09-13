@@ -55,15 +55,43 @@ reported rather than averaged away.
   with the payoff vector — every shift at once, no sampling error, in milliseconds. It was written
   and then removed because the shift that matters is stratified by regime block and does not reduce
   to a single circular correlation. Worth revisiting for the per-block correlations.
-- **Minimum track-record length per market** instead of the flat 30-trade floor.
+- **Minimum track-record length per market** instead of the flat 30-trade floor. Built in
+  `significance.min_track_record()` — Bailey/López de Prado, on the real per-trade returns. It is a
+  diagnostic beside `inference.testable()`, not a replacement for it: the owner decided the verdict
+  stays with `inference.call()` on `block_shift` alone (see the note below on why nothing here feeds
+  back into it).
 - **Deduplicate on the trade list** before counting how many strategies passed: 45 of 231 strategies
   once shared byte-identical trades under different names, so a raw count of survivors is inflated.
+
+## Why three PDF sections were deliberately left out
+
+Decided with the owner before this build started, so a future session does not reopen them alone:
+
+- **Deflated Sharpe Ratio (PDF §5.1).** Not built. DSR needs the number of trials the generation
+  search actually made; this project has no such count (see the same reasoning in
+  `strategies/monteCarlo/README.md`), and fabricating one would produce a number that looks rigorous
+  and is not. `significance.min_track_record()` covers the part of §5.1 that does not need a trial
+  count.
+- **Edge-driver regression (PDF §5.4), and the loose structural indicators it would need** — Hurst
+  exponent, variance ratio, ADX%, ATR%, efficiency ratio. Not built, none of it. The owner's call:
+  the regression turns "it works here and not there" into "why", which is valuable, but it is a
+  separate, larger study and was kept out of this round entirely.
+- **Combined verdict across the new tests.** `inference.call()` on `block_shift` remains the only
+  thing that decides MANTENER / DESCARTAR / NO EVALUABLE. Test 1c, significance, breadth, the
+  fingerprint, cost robustness and correlation/PCA are each reported as their own diagnostic in the
+  panel; the owner reads them and weighs them by hand rather than folding them into one number.
 
 ## 3. Other tests on the same two inputs
 
 - **Test 1c, exposure-adjusted return.** Concentration ratio E and drift-neutral excess A. Cheaper
   than this test and answers a different question: beating the market's own average bar rather than
-  beating chance.
+  beating chance. Built in `exposure.py`. Sanity check against `trade_models.block_shift`-style
+  random entries on `XAGUSD_DukasM1_Infinox` gives E ≈ 1.13, A ≈ 1.5e-6 — near 1 and 0 as the PDF
+  predicts. The real strategy there (913 trades) measures E ≈ 3.28, A ≈ 2.5e-5 (CI 90%
+  [-2.9e-5, 7.3e-5] — the lower bound crosses zero on this one strategy), risk-normalised A ≈ 0.006.
+  **`capture_ratio` can be ±inf**: 7 of 844 trades on that market have MFE = 0 (the trade never
+  moved favourably at all), which divides by zero. The panel reports the median, which is robust to
+  this; the mean is not and should not be trusted without filtering those trades first.
 - **Edge-driver regression.** Hurst, variance ratio, ADX regime share, ATR%, efficiency ratio per
   market, regressed against the per-market result. Turns "it works here and not there" into a
   sentence about which market property the edge needs.
@@ -102,3 +130,16 @@ Options, none yet built:
   rather than corrected.
 - **Risk-based sizing.** The statistic is size-free, which makes it exchangeable but also means a
   passing p-value says nothing about the equity curve.
+
+## 6. Left out of the Fase 1-4 + panel build
+
+- **No holding-time comparison chart.** `fingerprint.holding_ks()` returns only a statistic and a
+  p-value, not the two distributions themselves, so the "huella" tab shows a table (`tables.fingerprint_table`)
+  rather than the two-histogram overlay the plan sketched. Building it needs `holding_ks()` to also
+  return the raw hold arrays (or a second function that does), which was left out to keep `charts.py`
+  under CODESTYLE's 250-line cap on this pass.
+- **Manual screenshots are placeholders.** `docs/manual/05-retest-mercados.md` describes every button
+  and tab from a real run of the panel (verified against `Retest_Markets_-_Family`'s one strategy,
+  which reproduces the known `Strategy 24.14.35` pending-order case in §4 above byte-for-byte), but
+  carries no screenshots yet — this session has no browser to capture them from, and rule 8 forbids
+  inventing them. Whoever next opens the panel for real should paste a few in.

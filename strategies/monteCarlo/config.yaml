@@ -33,14 +33,15 @@ family_c:
 
 family_d:
   window_months: 24
-  window_step_months: 3
+  window_step_months: 6
   window_pass_frac: 0.70
-  window_sims: 2000           # bootstrap paths inside one window or one regime bucket
+  window_sims: 20000          # bootstrap paths inside one window or one regime bucket
   vol_model: atr              # atr | garch
   atr_period: 20              # in days; the regime is daily whatever the trading timeframe
   garch_order: [1, 1]
   garch_dist: t
   regime_concentration: 0.80
+  stitch_quantiles: [0.01, 0.05, 0.10, 0.25]   # severity of the bad draw stitched from each block; no single one is "the" answer
 
 family_e:
   psr_benchmark: 0.0
