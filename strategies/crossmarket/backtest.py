@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 
 from core import trades as tradeio
-from strategies.crossmarket import envelope, equity, holdfit, metrics, pricing, trade_models
+from strategies.crossmarket import (envelope, equity, holdfit, metrics, pricing, strata,
+                                    trade_models)
 
 
 def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
@@ -42,7 +43,8 @@ def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
             "pnl": aligned["Profit/Loss"].to_numpy(),
             "charged": gross - aligned["Profit/Loss"].to_numpy(),
             "off_grid": len(trades) - len(held),
-            "market": envelope.describe(bars, held, cfg["nulls"]["block_months"])}
+            "market": {**envelope.describe(bars, held, cfg["nulls"]["block_months"]),
+                       "strata": strata.index(bars, cfg["strata"])}}
 
 
 def price(entries: np.ndarray, holds: np.ndarray, fixed: dict) -> tuple[np.ndarray, ...]:
@@ -106,6 +108,39 @@ def null(fixed: dict, cfg: dict, model: str,
         on_chunk(done + size, n["draws"])
     return {"stats": {k: np.concatenate([b[k] for b in stats]) for k in stats[0]},
             "curves": np.concatenate(curves), "entries": first}
+
+
+def swept(fixed: dict, cfg: dict,
+          draw: Callable[[int, np.random.Generator], tuple[np.ndarray, np.ndarray]],
+          on_chunk: Callable[[int, int], None] = lambda done, total: None) -> dict:
+    """mean_r and trade count of `draws` random runs drawn by any function, priced like null().
+
+    Args:
+        fixed: What setting() returned.
+        cfg: What config.load() returned.
+        draw: Called with (runs, rng), returns (entries, holds); the window sweep passes a
+            model confined to calendar blocks.
+        on_chunk: Called with (runs done, runs total) after each batch.
+
+    Returns:
+        Keys mean_r and trades, one value per run; trades counts the ones still live after
+        the draw and the Friday cut. Same seed, same batches, same truncation and same pricer
+        as null(), so a draw that reproduces a model reproduces its p exactly. Only what the
+        sweep reads is computed: the equity curves are most of null()'s time.
+    """
+    n = cfg["nulls"]
+    rng = np.random.default_rng(n["seed"])
+    out, counts = [], []
+    for done in range(0, n["draws"], n["chunk"]):
+        size = min(n["chunk"], n["draws"] - done)
+        entries, holds = draw(size, rng)
+        if n["replicate_friday"]:
+            holds = trade_models.truncate(entries, holds, fixed["market"])
+        _, logret, _, live = price(entries, holds, fixed)
+        out.append(logret.sum(axis=1) / np.maximum(live.sum(axis=1), 1) / fixed["scale"])
+        counts.append(live.sum(axis=1))
+        on_chunk(done + size, n["draws"])
+    return {"mean_r": np.concatenate(out), "trades": np.concatenate(counts)}
 
 
 def real(fixed: dict, bars: pd.DataFrame, cfg: dict) -> dict:

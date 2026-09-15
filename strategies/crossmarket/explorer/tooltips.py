@@ -17,6 +17,30 @@ TIPS = {
                               "operación colocada un viernes por la tarde se queda abierta "
                               "un fin de semana que la real nunca aguantó.",
     "nulls.min_hold": "Una operación que abre y cierra en la misma vela no es una operación.",
+    "sweep.windows": "Tamaños de bloque del barrido: «full» es un solo bloque (el modelo tal "
+                     "cual corre arriba), «3y» tres años, «6m» seis meses. Cada operación sólo "
+                     "se recoloca dentro de su propio bloque: encogerlo devuelve el régimen y "
+                     "nada más.",
+    "sweep.models": "Los modelos que se barren. Sólo tienen sentido los de colocación libre: "
+                    "Calendar Shift ya fija el régimen por construcción.",
+    "sweep.reference": "El modelo cuyo p se dibuja como línea horizontal en cada gráfico del "
+                       "barrido.",
+    "sweep.min_months": "Tamaño mínimo en meses. Un tamaño más corto no se calcula.",
+    "sweep.min_trades": "Un bloque con menos operaciones reales que esto es débil: barajar, "
+                        "remuestrear o ajustar una distribución a tan pocas no describe nada.",
+    "sweep.min_free_share": "Un bloque con menos de esta fracción de sus velas libre es débil: "
+                            "sus operaciones sólo pueden volver más o menos a donde estaban, y "
+                            "un nulo que reproduce el real da p ≈ 0,5 haya acierto o no.",
+    "sweep.max_weak_share": "Si los bloques débiles de un tamaño tienen más de esta fracción "
+                            "de las operaciones, ese tamaño no se calcula: sale como ✕ en vez "
+                            "de con un p engañoso.",
+    "sweep.evidence_drop": "Órdenes de magnitud que tiene que subir p del tamaño más ancho al "
+                           "más estrecho para etiquetar la curva «creciente → régimen». 1 es "
+                           "multiplicarse por diez.",
+    "strata.atr_bins": "Sólo para regime_strata, que corre si lo añades a nulls.models: en "
+                       "cuántos cuantiles de ATR se parten las velas.",
+    "strata.trend_bars": "Sólo para regime_strata: velas sobre las que se lee el signo de la "
+                         "tendencia, antes de que abra la vela.",
     "bootstrap.draws": "Remuestreos por cada intervalo de confianza.",
     "bootstrap.block": "Operaciones por bloque del bootstrap. Las velas dentro de una "
                        "operación están autocorrelacionadas, así que remuestrear operación a "
@@ -62,6 +86,7 @@ TIPS = {
                             "son una sola apuesta y no varias confirmaciones.",
 }
 
-GROUPS = {"nulls": "Modelos nulos", "bootstrap": "Bootstrap", "exposure": "Exposición (1c)",
+GROUPS = {"nulls": "Modelos nulos", "sweep": "Barrido de ventana",
+          "strata": "Estratos de régimen", "bootstrap": "Bootstrap", "exposure": "Exposición (1c)",
           "paired": "Test pareado (1b)", "drivers": "Propiedades del mercado",
           "stress": "Coste y ejecución", "diagnostics": "Lectura y avisos"}

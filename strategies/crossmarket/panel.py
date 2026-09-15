@@ -6,7 +6,8 @@ import pandas as pd
 # contract trade_models.MODELS, config.yaml and every docstring share — and this is the only
 # place a reader's name for one lives.
 NAMES = {"segment_permute": "Shuffled Sequence", "resampled_holds": "Resampled Sequence",
-         "fitted_holds": "Fitted Distributions Sequence", "block_shift": "Calendar Shift"}
+         "fitted_holds": "Fitted Distributions Sequence", "block_shift": "Calendar Shift",
+         "regime_strata": "Regime Strata"}
 
 # One paragraph per model, written as a ladder: each says what it adds over the one before it,
 # because that difference is the only reason to run more than one. The first three are the same
@@ -67,6 +68,14 @@ EXPLAINED = {
         "estrecha en 5. No es sistemáticamente el más exigente, es el <b>atribuible</b>. Así "
         "que <b>una estrategia que aguanta los cuatro dice bastante más que una que solo "
         "aguanta este</b>."),
+    "regime_strata": (
+        "<b>Opcional: sólo corre si lo añades a <code>nulls.models</code>.</b> Cada operación, "
+        "con su duración, se recoloca en una vela al azar de <b>su mismo estado de "
+        "régimen</b>: cuantil de ATR por signo de la tendencia reciente, leídos antes de que "
+        "abra la vela. Fija el régimen por estado y no por un bloque de calendario de "
+        "longitud arbitraria. Día, hora, orden y rachas quedan libres; si dos operaciones caen "
+        "una encima de otra, la posterior se descarta.<br><br>Contesta: <i>¿entrando en velas "
+        "del mismo tipo de mercado, pero en otro momento, habría ganado lo mismo?</i>"),
 }
 
 # Why there is no fifth model. Kept in the panel so the question is not reopened from scratch.
@@ -84,7 +93,9 @@ RANDOMISES = {"segment_permute": "cuándo entra, el orden, las rachas y el régi
                                  "total en mercado",
               "fitted_holds": "lo anterior, y además las duraciones mismas, sacadas de una "
                               "distribución ajustada",
-              "block_shift": "sólo cuándo entra, dentro de su semestre y en su día y hora"}
+              "block_shift": "sólo cuándo entra, dentro de su semestre y en su día y hora",
+              "regime_strata": "cuándo entra, dentro de velas de su mismo cuantil de "
+                               "volatilidad y signo de tendencia; libera día, hora y rachas"}
 # The Spanish mirror of inference.WARNINGS, for the pages the owner reads.
 WARNINGS_ES = {
     "few_trades": "muy pocas operaciones en este mercado para decir nada firme",

@@ -127,7 +127,7 @@ abierta. El paso 3 no toca SQX: sólo lee ficheros.
 sale del botón que acabas de pulsar, y al cerrar el panel se pierde. Al arrancar borra además
 cualquier resultado que versiones anteriores dejaran en `AlgoData/derived/crossmarket/`. Es
 deliberado: un resultado guardado siempre se acaba leyendo como respuesta a una pregunta que no era
-la suya. El precio es real — unos **14 segundos por estrategia** con 5.000 tiradas sobre dos
+la suya. El precio es real — unos **36-52 segundos por estrategia** con las 25.000 tiradas por defecto sobre dos
 mercados, y se paga otra vez si cierras el panel.
 
 ### El panel, de arriba abajo
@@ -138,7 +138,7 @@ cuando ya está analizado.
 
 | botón | qué corre |
 |---|---|
-| **Run analysis** | La estrategia entera: todos los mercados, los cinco modelos nulos y todas las pruebas |
+| **Run analysis** | La estrategia entera: todos los mercados, los cuatro modelos nulos (cinco si activas Regime Strata), el barrido de ventana y todas las pruebas |
 | **run**, al lado de un mercado | Sólo ese mercado, con la configuración que tenga el cajón en ese momento. **Se fusiona** con lo que ya hubiera: puedes re-ejecutar plata a 50.000 tiradas sin perder el Brent que ya tenías |
 
 Un mercado en el que esa estrategia **nunca disparó** sale en gris, como `sin operaciones` y sin
@@ -151,13 +151,15 @@ mercado y qué modelo está corriendo ahora mismo.
 
 ### El cajón de configuración
 
-El triángulo ▸ abre **los 35 knobs de `config.yaml`**, agrupados por sección y cada uno con su
+El triángulo ▸ abre **los 46 knobs de `config.yaml`**, agrupados por sección y cada uno con su
 explicación al pasar el ratón. Cambiar un valor afecta a la **siguiente** ejecución: nada se escribe
 a disco.
 
 | grupo | lo que controla |
 |---|---|
 | **Modelos nulos** | cuántos backtests aleatorios, la semilla, el bloque de régimen, qué modelos correr, si se replica el cierre del viernes, y el tamaño de lote |
+| **Barrido de ventana** | qué tamaños de bloque, qué modelos se barren, cuál es la referencia, y los umbrales de potencia: meses mínimos, operaciones mínimas por bloque, hueco libre mínimo y qué parte de las operaciones puede caer en bloques débiles |
+| **Estratos de régimen** | sólo para Regime Strata: cuántos cuantiles de ATR y cuántas velas para el signo de la tendencia |
 | **Equity** | la cuenta de partida, cuántos puntos tiene cada curva, qué percentiles dibuja el cono y cuáles salen en las tablas |
 | **Bootstrap** | tiradas, operaciones por bloque y percentiles de los intervalos de confianza |
 | **Exposición (1c)** | el t mínimo de la deriva para que E se muestre, y qué hacer con las operaciones de MFE cero |
@@ -169,13 +171,14 @@ a disco.
 **Ninguno de esos umbrales decide nada.** `alpha`, `min_trades` y `min_on_open` sólo colorean números
 y disparan avisos; ningún mercado se cae por ellos.
 
-### Las doce pestañas
+### Las trece pestañas
 
 | pestaña | qué muestra |
 |---|---|
 | **Resumen** | Tabla por mercado con el p de 1a y el de 1b, la categoría, cuántos avisos tiene cada uno, y las comprobaciones mecánicas |
 | **Entrada aleatoria (1a)** | Sub-pestañas por **mercado**, y debajo por **modelo**. Dentro: la **curva de equity real sobre el cono de las aleatorias** y, a su lado, el histograma del indicador que elijas en el desplegable, con la mediana y el IC 95% marcados, su tabla de valores y el % de simulaciones que el real bate. Debajo, la tabla completa de percentiles |
-| **Modelos** | El mismo p bajo las cinco formas de aleatorizar, y qué cambia cada una |
+| **Modelos** | El mismo p bajo las cuatro formas de aleatorizar (cinco con Regime Strata), y qué cambia cada una |
+| **Barrido de ventana** | Para los tres modelos de colocación libre, el p con bloques de toda la ventana, 3 años, 1 año y 6 meses, con Calendar Shift como línea fija, la etiqueta de tendencia y cuántas operaciones sostienen cada punto |
 | **Pareado (1b)** | El alfa medio por operación frente a su ventana ciega y el p de Wilcoxon |
 | **Exposición (1c)** | A con su intervalo, y E — que sale como «no aplica» donde el mercado no tiene deriva |
 | **Coste y ejecución** | El múltiplo de coste de equilibrio, y **las mismas operaciones ejecutadas peor miles de veces**: cono de equity e histogramas, igual que 1a pero contestando otra pregunta |
@@ -205,6 +208,70 @@ sufrió **menos** que el azar. Cada fila de la tabla lo dice al lado.
 Todos los backtests aleatorios se valoran **en dólares, con los mismos tamaños de posición y los
 mismos costes** que las operaciones reales. Por eso el beneficio neto que ves es directamente el de
 SQX: el P/L reconstruido desde las velas correlaciona 0,9996 con el que reporta la databank.
+
+### El barrido de ventana: ¿acierto o suerte de régimen?
+
+Shuffled, Resampled y Fitted Sequence colocan tu ritmo de operar en cualquier punto de la ventana del
+backtest. Con eso rompen a la vez tres cosas: **en qué régimen** cae cada operación (una tendencia de
+2011 o un lateral de 2019), **su calendario** (día, hora, fines de semana) y **sus rachas**. Si uno de
+ellos da un p bajo, no sabes si es porque tus entradas aciertan o porque tus operaciones cayeron por
+suerte en tramos buenos.
+
+El barrido lo separa. Repite esos tres modelos, pero obligando a cada operación a quedarse dentro de
+un bloque de calendario: primero la ventana entera, luego bloques de 3 años, de 1 año y de 6 meses.
+Cuanto más pequeño el bloque, más cerca de su fecha real cae cada operación, así que **más régimen se
+le devuelve** — y es lo único que cambia: el calendario y las rachas siguen rotos igual a todos los
+tamaños.
+
+![Curva del barrido para Shuffled Sequence en plata](assets/crossmarket-barrido-curva.png)
+
+**Cómo se lee la curva:**
+
+- **p se mantiene bajo al encoger el bloque** → el acierto sobrevive aunque le quites la suerte de
+  régimen. Es timing.
+- **p sube al encoger el bloque** → el aprobado con la ventana entera era herencia de régimen.
+- La **línea naranja discontinua** es el p de Calendar Shift, fijo. **La curva nunca va a llegar a
+  ella**: Calendar Shift conserva también calendario y rachas, que el barrido sigue rompiendo. Es otra
+  cosa; está ahí como referencia.
+- La **línea punteada** es alpha. El eje es logarítmico: cada raya es un orden de magnitud.
+
+Encima de cada gráfico hay una etiqueta automática: **plano/decreciente → timing**, **creciente →
+régimen** (p sube más de un orden de magnitud del bloque más ancho al más estrecho), **sin pass a
+ningún tamaño** (ningún punto llega a alpha, así que no hay aprobado que descomponer) o **no
+evaluable**. Es un pie de foto, no la lectura.
+
+**Nunca leas el p solo.** Con bloques pequeños hay menos sitio donde recolocar, el nulo se ensancha y
+p pierde resolución. Por eso la tabla de debajo de cada gráfico da, para cada tamaño, cuántos bloques
+hay, cuántas operaciones tiene cada uno, cuánto hueco libre queda, qué parte de las operaciones cae en
+bloques débiles, cuántas operaciones sobreviven por tirada y la σ del nulo. Si demasiadas operaciones
+caen en bloques con menos de 10 operaciones o con menos de un 25% de velas libres, ese tamaño **no se
+calcula** y sale como ✕. Debajo de todo, desplegable, la lista de bloques de cada tamaño:
+
+![Bloques de un barrido](assets/crossmarket-barrido-bloques.png)
+
+Un aviso sobre la columna de operaciones vivas: en Resampled y Fitted Sequence baja un poco al
+encoger el bloque (en plata, de 98% a 94% entre la ventana entera y 6 meses), porque lo que no cabe en
+un bloque se descarta. Shuffled Sequence no tiene ese efecto.
+
+Medido sobre 6 estrategias, 2 mercados y los 3 modelos, a 10.000 tiradas:
+
+```
+estrategia           mercado  modelo            completa     3y      1y      6m    etiqueta
+Strategy 2.29.29     XAGUSD   segment_permute    0.0017   0.0012  0.0013  0.0023  timing
+Strategy 1.10.80     XAGUSD   segment_permute    0.0507   0.0463  0.0482  0.0421  timing
+Strategy 14.15.26(2) BRENT    segment_permute    0.0752   0.0873  0.0953  0.1167  sin pass
+Strategy 14.15.26(2) XAGUSD   segment_permute    0.1048   0.1211  0.1321  0.1387  sin pass
+Strategy 15.17.41    XAGUSD   segment_permute    0.1924   0.1974  0.1819     ✕    sin pass
+```
+
+La primera es un acierto que aguanta a todos los tamaños. La tercera y la cuarta tienen justo la forma
+del régimen — p sube al encoger — pero nunca bajaron de alpha. La última no tiene potencia a 6 meses:
+el 13% de sus operaciones cae en bloques débiles.
+
+**Regime Strata**, apagado por defecto, es otra forma de hacer lo mismo sin elegir «un año»: recoloca
+cada operación en una vela del mismo tipo de mercado (cuantil de volatilidad y signo de la tendencia
+reciente). Para activarlo, añade `regime_strata` a `nulls.models` en el cajón; aparece como un modelo
+más en Entrada aleatoria y Modelos, no dentro del barrido.
 
 ### Cómo se lee el resultado
 
@@ -306,6 +373,9 @@ de entrar, moverlas tiene que estropearlo — y lo hace, de forma ordenada:
 
 ### Si algo falla
 
+- **Un tamaño del barrido sale como ✕** — no es un error: ese tamaño no tiene potencia para esa
+  estrategia en ese mercado. La tabla dice por qué. Si quieres verlo igualmente, baja
+  `sweep.min_trades` o sube `sweep.max_weak_share` en el cajón, y léelo sabiendo lo que has hecho.
 - **`FileNotFoundError` sobre un fichero de `bars/`** — ese mercado no está exportado. Ejecuta el
   paso 1, o quítalo de `strategies/crossmarket/markets.yaml`.
 - **`KeyError` con el nombre del activo** — el activo no tiene bloque en `strategies/crossmarket/markets.yaml`.

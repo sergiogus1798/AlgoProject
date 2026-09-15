@@ -5,6 +5,11 @@ import pandas as pd
 
 from strategies.crossmarket import charts, figures, metrics, panel, tables
 
+# The statistics that get a histogram, in the order the picker offers them; mean_r leads
+# because the Resumen's p is its. The stress prices the real entries, so it has no mean_r.
+DRAWN = ("mean_r", "net", "ret_dd", "dd", "sharpe", "pf")
+STRESSED = tuple(k for k in DRAWN if k != "mean_r")
+
 
 def _chip(text: str, passes: bool) -> str:
     """One cell of the p / Bate a columns, coloured by whether it clears the 95% criterion.
@@ -34,14 +39,15 @@ def metric_table(table: dict, cfg: dict) -> str:
         good side, so a small p means the real one is hard to explain by chance; `bate a` is
         the complement read as a percentage of simulations it outperformed. For drawdown and
         the losing run both are computed on *less is better*, so a small p there means the
-        real backtest suffered less than chance, not more.
+        real backtest suffered less than chance, not more. A statistic the run did not
+        compute is left out rather than shown empty: the execution stress has no mean_r.
     """
     qs = cfg["equity"]["percentiles"]
     alpha = cfg["diagnostics"]["alpha"]
     head = tables._row(["estadístico", "real", "mediana simulada", "p", "Bate a",
                         *[f"p{q:g}" for q in qs]], "th")
     body = []
-    for name in metrics.TABLED:
+    for name in (n for n in metrics.TABLED if n in table):
         v = table[name]
         better = "más es mejor" if metrics.HIGHER_IS_BETTER[name] else "menos es mejor"
         body.append(tables._row([f"{metrics.LABELS[name]} <span class='hint'>({better})</span>",
@@ -236,7 +242,7 @@ def stress_tab(record: dict, cfg: dict) -> str:
         out.append(charts.cone(run["cone"], f"Equity bajo ejecución degradada — {feed}",
                                "el backtest real sobre el cono de las versiones degradadas"))
         out.append(metric_table(run["table"], cfg))
-        for name in ("net", "ret_dd", "dd", "pf"):
+        for name in STRESSED:
             out.append(charts.distribution(run["shapes"][name], metrics.LABELS[name],
                                            f"{feed} · {s['sims']:,} ejecuciones degradadas"))
     return "".join(out)

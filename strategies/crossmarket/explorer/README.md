@@ -19,6 +19,7 @@ serve ─▶ scope ─▶ jobs ─▶ work ─▶ analysis ─▶ sections ─�
 | `analysis.py` | The heavy half: every null model and every test, market by market | imported | strategy → rows, runs |
 | `jobs.py` | One job at a time, off the request thread, publishing a continuous share | imported | callable → progress |
 | `sections.py` | The tab registry and the tabs that are tables | imported | record → HTML |
+| `sweep_tab.py` | The window-sweep tab: one p curve per free-placement model with Calendar Shift flat, its power table, and the blocks | imported | record → HTML |
 | `simulations.py` | The three tabs that draw simulated distributions and equity cones | imported | record → HTML |
 | `page.html` | The panel: dropdown, market list, run buttons, tabs, progress bar, config drawer | served | — |
 
@@ -29,8 +30,8 @@ memory and dies with the process; start-up deletes anything an earlier build lef
 `<data root>/derived/crossmarket/`. A number on the panel always comes from the button that was just
 pressed — which is the whole reason the cache was removed on 2026-09-15.
 
-The cost of that is real: a strategy takes about 25 s at the default 25,000 draws over two markets
-— roughly a minute over four — and closing the panel throws it away.
+The cost of that is real: a strategy takes 36-52 s at the default 25,000 draws over two markets
+— half of it the window sweep's nine extra nulls per market — and closing the panel throws it away.
 
 ## The two run buttons
 
@@ -43,7 +44,7 @@ fired there, and that absence is a result rather than a gap.
 
 ## The tabs
 
-`Resumen` · `Entrada aleatoria (1a)` · `Modelos` · `Pareado (1b)` · `Exposición (1c)` ·
+`Resumen` · `Entrada aleatoria (1a)` · `Modelos` · `Barrido de ventana` · `Pareado (1b)` · `Exposición (1c)` ·
 `Coste y ejecución` · `Significancia` · `Huella` · `El mercado` · `Correlación` · `Avisos` ·
 `Glosario`. There is no verdict tab, because there is no verdict.
 

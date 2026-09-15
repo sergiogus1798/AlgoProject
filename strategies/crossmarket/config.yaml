@@ -17,6 +17,20 @@ nulls:
   min_hold: 1                 # a trade that opens and closes on the same bar is not a trade
   chunk: 500                  # random runs priced per batch; memory, not statistics
 
+sweep:                        # the window sweep of the free-placement models
+  windows: [full, 3y, 1y, 6m] # block sizes, "Nm" or "Ny"; "full" is one block, the model as it runs
+  models: [segment_permute, resampled_holds, fitted_holds]   # block_shift already fixes the regime
+  reference: block_shift      # the model whose p is drawn flat across every sweep chart
+  min_months: 6               # a window shorter than this is not computed at all
+  min_trades: 10              # a block with fewer real trades than this is weak
+  min_free_share: 0.25        # a block with less than this share of its bars free is weak
+  max_weak_share: 0.10        # a window whose weak blocks hold more of the trades is withheld
+  evidence_drop: 1.0          # orders of magnitude p must climb, widest to narrowest, to read "regime"
+
+strata:                       # regime_strata only, which runs when nulls.models lists it
+  atr_bins: 5                 # volatility quantiles the bars are split into
+  trend_bars: 8               # bars over which the sign of the trend is read
+
 equity:
   starting: 100000.0          # account the additive equity path starts from, in USD
   steps: 200                  # points per curve; an SVG cannot show more

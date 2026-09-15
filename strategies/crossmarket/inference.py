@@ -4,6 +4,8 @@ Nothing here decides whether to keep a strategy. It locates a real run in its ow
 names the reasons a market's number should be read with suspicion — it never drops one. The
 owner reads the numbers and the warnings together and makes the call outside this study."""
 
+import math
+
 import pandas as pd
 
 # Code is English; panel.WARNINGS_ES is the Spanish mirror the owner's pages render, the same
@@ -59,3 +61,53 @@ def family(rows: pd.DataFrame) -> str:
         result is a joint test and must not be read as entry timing.
     """
     return "entry" if rows["bar_cap"].min() == 1.0 else "entry+exit"
+
+
+def sweep_power(rows: list[dict], months: int | None, cfg: dict) -> dict:
+    """Whether one window size of the sweep leaves its null enough room to mean anything.
+
+    Args:
+        rows: What sweep.blocks() returned for that size.
+        months: Its length, None for the whole window.
+        cfg: What config.load() returned.
+
+    Returns:
+        weak — one flag per block, set when it holds fewer than sweep.min_trades real trades
+        or has less than sweep.min_free_share of its bars free; weak_share — the share of the
+        real trades inside weak blocks; and reason — "" when the point may be computed,
+        "short_window" under sweep.min_months, "weak_blocks" when weak_share exceeds
+        sweep.max_weak_share. A crowded block can only put its trades back about where they
+        were, and a null that reproduces the real run returns p near 0.5 whatever the timing
+        was: block_shift measured exactly that before it wrapped. Such a point is withheld,
+        never drawn as a number.
+    """
+    s = cfg["sweep"]
+    weak = [r["trades"] < s["min_trades"] or r["free_share"] < s["min_free_share"]
+            for r in rows]
+    share = sum(r["trades"] for r, w in zip(rows, weak) if w) / sum(r["trades"] for r in rows)
+    reason = ("short_window" if months is not None and months < s["min_months"]
+              else "weak_blocks" if share > s["max_weak_share"] else "")
+    return {"weak": weak, "weak_share": share, "reason": reason}
+
+
+def sweep_trend(points: list[dict], cfg: dict) -> str:
+    """Which way one model's p moves as the sweep's window shrinks, on one market.
+
+    Args:
+        points: That model's sweep points, widest window first; p is None where withheld.
+        cfg: What config.load() returned.
+
+    Returns:
+        "unassessable" with fewer than two computed points; "no_pass" when none reaches
+        diagnostics.alpha, since there is then no pass whose origin to ask about; otherwise
+        "regime" when the narrowest computed p is more than sweep.evidence_drop orders of
+        magnitude above the widest one, and "timing" when it is not. It compares the two ends
+        only: it is the curve's caption, and the curve and its trade counts are the reading.
+    """
+    done = [p["p"] for p in points if p["p"] is not None]
+    if len(done) < 2:
+        return "unassessable"
+    if min(done) > cfg["diagnostics"]["alpha"]:
+        return "no_pass"
+    return ("regime" if math.log10(done[-1] / done[0]) > cfg["sweep"]["evidence_drop"]
+            else "timing")

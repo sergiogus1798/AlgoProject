@@ -8,8 +8,8 @@ import pandas as pd
 
 from core import trades as tradeio
 from strategies.crossmarket import (backtest, breadth, correlation, drivers, envelope,
-                                    exposure, fingerprint, inference, paired, significance,
-                                    stress)
+                                    exposure, fingerprint, inference, metrics, paired,
+                                    significance, stress, sweep)
 
 
 def tests(fixed: dict, bars: pd.DataFrame, cfg: dict) -> dict:
@@ -54,6 +54,61 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict) -> dict:
                                for f in s["slippage_fractions"]}}
 
 
+def window_sweep(fixed: dict, bars: pd.DataFrame, cfg: dict, runs: dict,
+                 step: Callable[[str, float], None]) -> dict:
+    """The free-placement models re-drawn inside ever smaller calendar blocks, on one market.
+
+    Args:
+        fixed: What backtest.setting() returned for this market.
+        bars: That market's bars.
+        cfg: What config.load() returned.
+        runs: This market's model results, for the full-window point and the reference line.
+        step: Called with (what is running, share of the sweep done).
+
+    Returns:
+        windows — per size its blocks, their weak flags and why a point was withheld;
+        points — per model the p, the null's σ and the mean live trades per random run at
+        each size, None where withheld — resampled_holds and fitted_holds drop more of what
+        overflows a block the smaller it is, so the count moves with the size; trend — per
+        model, inference.sweep_trend()'s key; reference — sweep.reference's p, drawn flat
+        because that model's regime is already fixed. The full window is read from the
+        model's own run rather than drawn again: tests/test_sweep.py shows they are the same
+        draws. Every point draws nulls.draws runs from the same seed.
+    """
+    s = cfg["sweep"]
+    seen = backtest.real(fixed, bars, cfg)["stats"]["mean_r"]
+    labels = sweep.ordered(s["windows"])
+    total = len(labels) * len(s["models"])
+    windows, points = [], {m: [] for m in s["models"]}
+    for i, window in enumerate(labels):
+        block = sweep.partition(bars, window)
+        rows = sweep.blocks(fixed["held"], block, bars.index, sweep.bar_hours(bars))
+        power = inference.sweep_power(rows, sweep.months(window), cfg)
+        windows.append({"window": window, "blocks": rows, **power})
+        for j, model in enumerate(s["models"]):
+            k = i * len(s["models"]) + j
+            if power["reason"]:
+                points[model].append({"p": None, "sigma": None, "trades": None})
+                continue
+            if window == sweep.FULL and model in runs:
+                v, live = runs[model]["table"]["mean_r"], runs[model]["table"]["trades"]["mean"]
+            else:
+                drawn = backtest.swept(
+                    fixed, cfg,
+                    lambda size, rng, m=model, b=block: sweep.confine(m, fixed["held"], b,
+                                                                      size, rng),
+                    lambda done, n, k=k, w=window, m=model: step(f"barrido {w} · {m}",
+                                                                 (k + done / n) / total))
+                v = metrics.summarise(drawn["mean_r"], seen, "mean_r",
+                                      cfg["equity"]["percentiles"])
+                live = float(drawn["trades"].mean())
+            points[model].append({"p": v["p_value"], "sigma": v["std"], "trades": live})
+    return {"windows": windows, "points": points,
+            "reference": (runs[s["reference"]]["table"]["mean_r"]["p_value"]
+                          if s["reference"] in runs else None),
+            "trend": {m: inference.sweep_trend(points[m], cfg) for m in s["models"]}}
+
+
 def analyse_market(cfg: dict, market: dict, trades: Path, bars: pd.DataFrame, base: dict,
                    step: Callable[[str, float], None]) -> tuple[dict, dict, pd.Series]:
     """Every test in this build on one strategy's trades on one market.
@@ -68,8 +123,8 @@ def analyse_market(cfg: dict, market: dict, trades: Path, bars: pd.DataFrame, ba
 
     Returns:
         (row, runs, curve): the flat per-market row with its warnings attached, one full
-        result per null model plus the execution stress, and the weekly equity curve for the
-        correlation tab.
+        result per null model plus the window sweep and the execution stress, and the weekly
+        equity curve for the correlation tab.
     """
     real = tradeio.read(trades)
     # Everything below runs on the backtest's own window, never on the whole bar file: the
@@ -84,12 +139,14 @@ def analyse_market(cfg: dict, market: dict, trades: Path, bars: pd.DataFrame, ba
     # it is the only one that changes exactly one thing, so the only one whose low p can be
     # attributed to entry timing rather than to the regime the run happened to land in.
     headline = cfg["nulls"]["headline"]
+    # One unit per model, per sweep point and for the stress, so the bar moves evenly.
+    swept = len(cfg["sweep"]["windows"]) * len(cfg["sweep"]["models"])
+    units = len(models) + swept + 1
     row, runs = {**market}, {}
     for i, model in enumerate(models):
         runs[model] = backtest.run(
             fixed, bars, cfg, model,
-            lambda done, total, i=i, m=model: step(f"{feed} · {m}",
-                                                   (i + done / total) / (len(models) + 1)))
+            lambda done, total, i=i, m=model: step(f"{feed} · {m}", (i + done / total) / units))
         table = runs[model]["table"]
         row[f"p_{model}"] = table["mean_r"]["p_value"]
         row[f"edge_r_{model}"] = table["mean_r"]["observed"] - table["mean_r"]["median"]
@@ -102,7 +159,9 @@ def analyse_market(cfg: dict, market: dict, trades: Path, bars: pd.DataFrame, ba
                        net=table["net"]["observed"], p_net=table["net"]["p_value"],
                        dd=table["dd"]["observed"], p_dd=table["dd"]["p_value"],
                        ret_dd=table["ret_dd"]["observed"])
-    step(f"{feed} · coste y ejecución", len(models) / (len(models) + 1))
+    runs["sweep"] = window_sweep(fixed, bars, cfg, runs, lambda what, share: step(
+        f"{feed} · {what}", (len(models) + share * swept) / units))
+    step(f"{feed} · coste y ejecución", (units - 1) / units)
     runs["stress"] = stress.simulate(fixed, bars, cfg)
     row.update(tests(fixed, bars, cfg))
     row["drivers"] = drivers.profile(bars, cfg)

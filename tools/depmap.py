@@ -80,15 +80,17 @@ def render(files: list[Path]) -> str:
     known = internal_names(files)
     rows, reverse, external = [], {}, {}
     for f in files:
-        rel = f.relative_to(ROOT)
+        # as_posix, not str: the map is committed, and a Windows run must not rewrite
+        # every path in it with backslashes.
+        rel = f.relative_to(ROOT).as_posix()
         used = imports_of(f)
         inside = sorted(n for n in used if n in known)
         outside = sorted(n for n in used if n not in known and n not in STDLIB)
-        rows.append((str(rel), summary(f), inside, outside, len(f.read_text(encoding="utf-8").splitlines())))
+        rows.append((rel, summary(f), inside, outside, len(f.read_text(encoding="utf-8").splitlines())))
         for name in inside:
-            reverse.setdefault(name, []).append(str(rel))
+            reverse.setdefault(name, []).append(rel)
         for name in outside:
-            external.setdefault(name, []).append(str(rel))
+            external.setdefault(name, []).append(rel)
 
     out = ["# DEPENDENCIES — generated",
            "",

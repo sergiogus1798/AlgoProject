@@ -28,7 +28,9 @@ as a joint entry-and-exit test.
 
 Still worth building:
 
-- **Condition the model on state.** Draw entries only from bars in the same volatility decile, the
+- **Condition the model on state.** *Partly built 2026-09-15:* `regime_strata` conditions on ATR
+  quantile × trend sign and is off by default, and the window sweep conditions the three free
+  models on calendar proximity. Draw entries only from bars in the same volatility decile, the
   same trend regime, or the same session as the real entries. Every condition added removes one
   explanation the strategy could be given credit for — deciding which of them the strategy is
   *allowed* to be rewarded for is a modelling choice, not a technical one, and it should be made and

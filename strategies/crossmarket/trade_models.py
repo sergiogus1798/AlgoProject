@@ -8,21 +8,27 @@ from strategies.crossmarket.holdfit import MIN_HOLD, fit
 
 def _lay(holds: np.ndarray, gaps: np.ndarray, n_bars: int,
          rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
-    """Place a sequence of holds and gaps end to end from a random start bar.
+    """Place a sequence of holds and gaps end to end on a circle of bars, from a random start.
 
     Args:
         holds: A (draws, trades) array of holding times in bars.
         gaps: A (draws, trades) array of flat bars before each trade.
-        n_bars: Bars in the market.
+        n_bars: Bars in the circle — the backtest window, or one block of the window sweep.
         rng: Seeded generator.
 
     Returns:
-        Entry indices and holds, wrapped circularly. Non-overlap holds by construction, since
-        every trade starts after the previous one has closed.
+        Entry indices and holds. Trade k opens gap k bars after trade k-1 closed. A hold is
+        zeroed, and its trade drops out of that run the way a Friday-close cut already drops
+        one, when it would wrap round onto the first trade of the sequence or run past the
+        last bar. That makes non-overlap true by construction. Before 2026-09-15 each trade
+        was offset by its *own* hold instead of the previous one's, and 1-7% of the trades of
+        every run overlapped another, under all three models, on every pair measured.
     """
     start = rng.integers(0, n_bars, size=(holds.shape[0], 1))
-    step = holds + gaps
-    return (start + np.cumsum(step, axis=1) - step[:, :1]) % n_bars, holds
+    offset = np.cumsum(gaps, axis=1) + np.cumsum(holds, axis=1) - holds
+    entries = (start + offset) % n_bars
+    keep = (offset + holds <= n_bars + gaps[:, :1]) & (entries + holds <= n_bars)
+    return entries, np.where(keep, holds, 0)
 
 
 def block_shift(held: pd.DataFrame, market: dict, draws: int,
@@ -130,6 +136,54 @@ def fitted_holds(held: pd.DataFrame, market: dict, draws: int,
                 market["n_bars"], rng)
 
 
+def _drop_overlaps(entries: np.ndarray, holds: np.ndarray) -> np.ndarray:
+    """Zero the hold of every trade that opens inside an earlier trade of the same run.
+
+    Args:
+        entries: A (runs, trades) array of entry bar indices, columns in the real order.
+        holds: Bars held, same shape.
+
+    Returns:
+        The holds, with the later trade of every overlapping pair set to zero. Sorted to find
+        the clashes and scattered back, because column k must stay real trade k: the pricer
+        charges it that trade's size and cost.
+    """
+    order = np.argsort(entries, axis=1, kind="stable")
+    ent, hold = np.take_along_axis(entries, order, 1), np.take_along_axis(holds, order, 1)
+    reach = np.maximum.accumulate(ent + hold, axis=1)
+    clash = np.zeros(hold.shape, dtype=bool)
+    clash[:, 1:] = ent[:, 1:] < reach[:, :-1]
+    out = np.empty_like(hold)
+    np.put_along_axis(out, order, np.where(clash, 0, hold), 1)
+    return out
+
+
+def regime_strata(held: pd.DataFrame, market: dict, draws: int,
+                  rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+    """Move each real trade, with its own hold, to a random bar of its own regime stratum.
+
+    Args:
+        held: What envelope.occupancy() returned.
+        market: What backtest.setting() put in `market`; this model reads its `strata`.
+        draws: How many runs.
+        rng: Seeded generator.
+
+    Returns:
+        Entry indices and holds. The stratum is the volatility quantile times the sign of the
+        recent trend, both read before the bar opens (strata.py), so the regime is held fixed
+        by state rather than by a calendar block of arbitrary length; the weekday, hour,
+        order and clustering are all free. Trades are placed independently, so the later of
+        two that land on each other is dropped. Off by default: it runs only when
+        `nulls.models` lists it, and the window sweep never uses it.
+    """
+    entry, index = held["entry"].to_numpy(), market["strata"]
+    pick = index["start"][entry] + (rng.random((draws, entry.size))
+                                    * index["size"][entry]).astype(np.int64)
+    entries = index["order"][pick]
+    holds = np.repeat(held["hold"].to_numpy()[None, :], draws, axis=0)
+    return entries, _drop_overlaps(entries, holds)
+
+
 def truncate(entries: np.ndarray, holds: np.ndarray, market: dict) -> np.ndarray:
     """Cut every random hold at the Friday close, the way the real exit rule cuts the real one.
 
@@ -150,7 +204,8 @@ def truncate(entries: np.ndarray, holds: np.ndarray, market: dict) -> np.ndarray
 
 
 MODELS = {"block_shift": block_shift, "segment_permute": segment_permute,
-          "resampled_holds": resampled_holds, "fitted_holds": fitted_holds}
+          "resampled_holds": resampled_holds, "fitted_holds": fitted_holds,
+          "regime_strata": regime_strata}
 
 # What each model holds fixed and what it randomises. A model that randomises more than one
 # thing cannot attribute a low p-value to any single cause, which is why the verdict uses
@@ -158,4 +213,6 @@ MODELS = {"block_shift": block_shift, "segment_permute": segment_permute,
 RANDOMISES = {"block_shift": "placement, within the regime block and the weekday-hour slot",
               "segment_permute": "placement, order, clustering and calendar",
               "resampled_holds": "placement, which holds and gaps occur, and time in market",
-              "fitted_holds": "placement, and the holding times themselves"}
+              "fitted_holds": "placement, and the holding times themselves",
+              "regime_strata": "placement, within bars of the same volatility quantile and "
+                               "trend sign; frees the weekday, hour and clustering"}

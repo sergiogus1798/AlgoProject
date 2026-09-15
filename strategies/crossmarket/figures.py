@@ -1,6 +1,8 @@
 """The per-market comparison figures: one bar or one cell per market, as inline SVG."""
 
-from strategies.crossmarket.charts import GRID, NAMES, NULL, PAD, REAL, W, H, _x
+import math
+
+from strategies.crossmarket.charts import GRID, INK, NAMES, NULL, PAD, REAL, W, H, _x, legend
 
 
 def bars_by_market(rows: list[dict], key: str, label: str, rule: float | None = None) -> str:
@@ -154,3 +156,62 @@ def models(rows: list[dict], alpha: float, metric: str) -> str:
     {''.join(bars)}
   </svg>
 </figure>'''
+
+
+def p_curve(points: list[dict], reference: dict | None, alpha: float, floor: float,
+            label: str) -> str:
+    """One model's p across the window sweep, widest window on the left, on a log axis.
+
+    Args:
+        points: Dicts with keys name and detail, the two lines of the axis label, and p —
+            None where it was withheld.
+        reference: {"name", "p"} of the model drawn flat across the sweep, or None.
+        alpha: diagnostics.alpha, drawn dotted.
+        floor: The smallest p the draws can produce, 1/(draws+1): the bottom of the axis.
+        label: Figure caption.
+
+    Returns:
+        An SVG element with its legend. p = 1 is the top, so a curve that climbs as the window
+        shrinks is a pass the regime was carrying. A withheld point is a cross on the top edge
+        and never a number: its null had no room to say anything. The flat lines are named in
+        the legend rather than on the plot, where they collided with the points near alpha.
+    """
+    top, bottom, span = PAD["t"], H - PAD["b"], -math.log10(floor)
+
+    def _y(p: float) -> float:
+        """Position a p-value on the log axis, 1 at the top."""
+        return top + -math.log10(max(p, floor)) / span * (bottom - top)
+
+    def _flat(p: float, colour: str, dash: str) -> str:
+        """A horizontal reference line across the plot."""
+        return (f'<line x1="{PAD["l"]}" y1="{_y(p):.1f}" x2="{W - PAD["r"]}" y2="{_y(p):.1f}" '
+                f'stroke="{colour}" stroke-width="2" stroke-dasharray="{dash}"/>')
+
+    xs = [_x(i, -0.5, len(points) - 0.5) for i in range(len(points))]
+    grid = "".join(
+        f'<line x1="{PAD["l"]}" y1="{_y(t):.1f}" x2="{W - PAD["r"]}" y2="{_y(t):.1f}" '
+        f'stroke="{GRID}"/><text x="{PAD["l"] - 8}" y="{_y(t) + 4:.1f}" text-anchor="end" '
+        f'class="tick">{t:g}</text>' for t in (10.0 ** -k for k in range(int(span) + 1)))
+    names = "".join(f'<text x="{x:.1f}" y="{bottom + 18}" text-anchor="middle" class="tick">'
+                    f'{p["name"]}</text><text x="{x:.1f}" y="{bottom + 33}" '
+                    f'text-anchor="middle" class="tick">{p["detail"]}</text>'
+                    for x, p in zip(xs, points))
+    keys = [(f"border-top:3px solid {NULL}", "p del modelo en cada tamaño"),
+            (f"border-top:2px dotted {INK}", f"α = {alpha:g}")]
+    lines = _flat(alpha, INK, "2 4")
+    if reference is not None:
+        lines += _flat(reference["p"], REAL, "7 4")
+        keys.append((f"border-top:2px dashed {REAL}",
+                     f'{reference["name"]} · p = {reference["p"]:.4f}'))
+    done = [(x, p["p"]) for x, p in zip(xs, points) if p["p"] is not None]
+    path = " ".join(f"{x:.1f},{_y(p):.1f}" for x, p in done)
+    marks = (f'<polyline points="{path}" fill="none" stroke="{NULL}" stroke-width="2"/>'
+             + "".join(f'<circle cx="{x:.1f}" cy="{_y(p):.1f}" r="4.5" fill="{NULL}"/>'
+                       f'<text x="{x:.1f}" y="{_y(p) - 11:.1f}" text-anchor="middle" '
+                       f'class="mark">{p:.4f}</text>' for x, p in done)
+             + "".join(f'<text x="{x:.1f}" y="{top + 5}" text-anchor="middle" '
+                       f'class="mark misses">✕ no fiable</text>'
+                       for x, p in zip(xs, points) if p["p"] is None))
+    return (f'<figure class="fig">\n  <figcaption><b>{label}</b>{legend(keys)}</figcaption>\n'
+            f'  <svg viewBox="0 0 {W} {H}" role="img" aria-label="{label}">\n'
+            f'    {grid}{lines}{marks}{names}\n  </svg>\n</figure>')

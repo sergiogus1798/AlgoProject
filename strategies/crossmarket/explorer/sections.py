@@ -3,7 +3,7 @@
 import pandas as pd
 
 from strategies.crossmarket import figures, panel, tables
-from strategies.crossmarket.explorer import simulations
+from strategies.crossmarket.explorer import simulations, sweep_tab
 
 
 def _rows(record: dict) -> pd.DataFrame:
@@ -174,12 +174,14 @@ def glossary_tab(record: dict, cfg: dict) -> str:
 
 
 TABS = [("summary", "Resumen"), ("random", "Entrada aleatoria (1a)"),
-        ("models", "Modelos"), ("paired", "Pareado (1b)"), ("exposure", "Exposición (1c)"),
+        ("models", "Modelos"), ("sweep", "Barrido de ventana"), ("paired", "Pareado (1b)"),
+        ("exposure", "Exposición (1c)"),
         ("stress", "Coste y ejecución"), ("significance", "Significancia"),
         ("fingerprint", "Huella"), ("drivers", "El mercado"),
         ("correlation", "Correlación"), ("warnings", "Avisos"), ("glossary", "Glosario")]
 RENDER = {"summary": summary_tab, "random": simulations.random_tab,
-          "models": simulations.models_tab, "stress": simulations.stress_tab,
+          "models": simulations.models_tab, "sweep": sweep_tab.sweep_tab,
+          "stress": simulations.stress_tab,
           "paired": paired_tab, "exposure": exposure_tab,
           "significance": significance_tab, "fingerprint": fingerprint_tab,
           "drivers": drivers_tab, "correlation": correlation_tab, "warnings": warnings_tab,
