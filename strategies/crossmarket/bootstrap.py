@@ -24,7 +24,7 @@ def block_bootstrap(n: int, size: int, rng: np.random.Generator, block: int) -> 
     return laid.reshape(n, count * block)[:, :size]
 
 
-def percentile_ci(values: np.ndarray, lo: float = 5.0, hi: float = 95.0) -> dict:
+def percentile_ci(values: np.ndarray, lo: float, hi: float) -> dict:
     """A percentile confidence interval from a set of bootstrap draws.
 
     Args:

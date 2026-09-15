@@ -2,58 +2,8 @@
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
-MIN_HOLD = 1    # a trade that opens and closes on the same bar is not a trade
-
-
-def _moments(shifted: np.ndarray) -> tuple[float, float]:
-    """Mean and variance of counts already shifted to start at zero.
-
-    Args:
-        shifted: Observed counts minus MIN_HOLD.
-
-    Returns:
-        Mean and variance. Which distribution is fitted depends only on these two, so both
-        the sampler and the goodness-of-fit check read them from here and cannot disagree.
-    """
-    return float(shifted.mean()), float(shifted.var())
-
-
-def _overdispersed(mean: float, var: float) -> tuple[float, float]:
-    """Negative binomial parameters matching a mean and a larger variance.
-
-    Args:
-        mean: Mean of the shifted counts.
-        var: Variance, which must exceed the mean or the parameters are undefined.
-
-    Returns:
-        The number of successes and the success probability, by moment matching.
-    """
-    successes = mean ** 2 / (var - mean)
-    return successes, successes / (successes + mean)
-
-
-def _fit(values: np.ndarray, draws: int, size: int, rng: np.random.Generator) -> np.ndarray:
-    """Sample from a discrete distribution fitted to `values` by its first two moments.
-
-    Args:
-        values: Observed counts in bars, all at least MIN_HOLD.
-        draws: Rows to produce.
-        size: Values per row.
-        rng: Seeded generator.
-
-    Returns:
-        A (draws, size) array of counts. Negative binomial when the observations are
-        overdispersed and Poisson when they are not, both shifted so the support starts at
-        MIN_HOLD. Which of the two was used is a property of the data, not a setting: a
-        strategy with a fixed bar cap has zero variance and lands on the Poisson branch, where
-        the fitted distribution is degenerate and reproduces the constant.
-    """
-    mean, var = _moments(values - MIN_HOLD)
-    if var <= mean:
-        return MIN_HOLD + rng.poisson(mean, size=(draws, size))
-    return MIN_HOLD + rng.negative_binomial(*_overdispersed(mean, var), size=(draws, size))
+from strategies.crossmarket.holdfit import MIN_HOLD, fit
 
 
 def _lay(holds: np.ndarray, gaps: np.ndarray, n_bars: int,
@@ -89,7 +39,14 @@ def block_shift(held: pd.DataFrame, market: dict, draws: int,
         Entry indices and holds. Randomises the placement and nothing else: the count, the
         holds, the gaps, the clustering, the weekday and the hour are all the real ones. It is
         the only model here under which the real run and the random ones differ in exactly one
-        thing, which is why it is the one the verdict uses.
+        thing, which is why it is the one read first.
+
+    Measured over 8 (strategy, market) pairs with the sample bounded to the backtest's own
+    window, it returns the **lowest p in 7 of them** — but not all, and its spread is the
+    narrowest in only 5. It is not systematically the conservative choice; it is the
+    *attributable* one. An earlier measurement made it look far tighter than it is, because
+    the other models were then free to place trades across the whole bar file, a third of
+    which lies outside the backtest.
     """
     entry = held["entry"].to_numpy()
     block, index = market["block"], market["calendar"]
@@ -117,9 +74,13 @@ def segment_permute(held: pd.DataFrame, market: dict, draws: int,
 
     Returns:
         Entry indices and holds. Keeps the holds and gaps as multisets but randomises their
-        order, so it also destroys the clustering and the calendar. A run without clustering
-        has a smaller variance, which makes the real run look more extreme than it is: this
-        answers a weaker question and is reported as a check, never as the verdict.
+        order, so it also destroys the clustering and the calendar — and, unlike block_shift,
+        lays the whole run from one random start over the **whole backtest window** rather
+        than inside each regime block. A run can therefore land in any part of the window and
+        inherit that part's regime, so beating this null is a broader claim than beating
+        block_shift's, and a less attributable one because three things changed at once. The
+        window is `envelope.window`'s, not the bar file's: before that was enforced this
+        model was placing trades in years the real strategy never traded.
     """
     order = np.argsort(rng.random((draws, len(held))), axis=1)
     holds = held["hold"].to_numpy()[order]
@@ -164,9 +125,28 @@ def fitted_holds(held: pd.DataFrame, market: dict, draws: int,
         this *shape* of holding time, entering at random, would have done as well.
     """
     shape = (draws, len(held))
-    holds = _fit(held["hold"].to_numpy(), *shape, rng)
-    return _lay(holds, _fit(market["gaps"] + MIN_HOLD, *shape, rng) - MIN_HOLD,
+    holds = fit(held["hold"].to_numpy(), *shape, rng)
+    return _lay(holds, fit(market["gaps"] + MIN_HOLD, *shape, rng) - MIN_HOLD,
                 market["n_bars"], rng)
+
+
+def truncate(entries: np.ndarray, holds: np.ndarray, market: dict) -> np.ndarray:
+    """Cut every random hold at the Friday close, the way the real exit rule cuts the real one.
+
+    Args:
+        entries: A (runs, trades) array of entry bar indices.
+        holds: Bars held, same shape.
+        market: What envelope.describe() returned.
+
+    Returns:
+        The holds, each capped at the bars remaining to the next Friday close. A hold that
+        reaches it exactly becomes zero and its trade drops out of that run — so a run's
+        effective trade count varies even though every model draws the same number of them,
+        which is why the statistics carry a `live` mask. Applied to every model: under
+        block_shift it is close to a no-op, since that model already keeps the weekday and
+        hour, and the difference between the two is the holiday weeks.
+    """
+    return np.minimum(holds, market["friday_cap"][entries])
 
 
 MODELS = {"block_shift": block_shift, "segment_permute": segment_permute,
@@ -179,25 +159,3 @@ RANDOMISES = {"block_shift": "placement, within the regime block and the weekday
               "segment_permute": "placement, order, clustering and calendar",
               "resampled_holds": "placement, which holds and gaps occur, and time in market",
               "fitted_holds": "placement, and the holding times themselves"}
-
-
-def goodness(held: pd.DataFrame, gaps: np.ndarray) -> dict:
-    """How well the fitted distributions describe the real holds and gaps.
-
-    Args:
-        held: What envelope.occupancy() returned.
-        gaps: Flat bars before each trade.
-
-    Returns:
-        Dispersion (variance over mean) and a two-sided KS p-value against the fitted model,
-        per quantity. Reported whenever fitted_holds is used: a fit that the data rejects makes
-        that model's result a statement about the wrong distribution.
-    """
-    out = {}
-    for name, values in (("hold", held["hold"].to_numpy()), ("gap", gaps + MIN_HOLD)):
-        shifted = values - MIN_HOLD
-        mean, var = _moments(shifted)
-        fitted = stats.poisson(mean) if var <= mean else stats.nbinom(*_overdispersed(mean, var))
-        out[f"{name}_dispersion"] = float(var / mean)
-        out[f"{name}_ks_p"] = float(stats.ks_1samp(shifted, fitted.cdf).pvalue)
-    return out

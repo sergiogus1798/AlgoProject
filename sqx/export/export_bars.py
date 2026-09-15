@@ -18,7 +18,9 @@ def main() -> None:
     a = ap.parse_args()
 
     tf = markets.load(a.asset)["timeframe"]
-    feeds = markets.feeds(a.asset)
+    # The declaration, not markets.universe(): bars are exported before the retest is, so
+    # there is no export to discover the real feeds from yet.
+    feeds = markets.declared(a.asset)
 
     rows = {}
     for feed in feeds:

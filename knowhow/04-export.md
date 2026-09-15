@@ -54,6 +54,43 @@ main first, then each AdditionalMarket. **The `Symbol` column is the separator**
 `sqx/export/export_retest.py` does the split. Measured on that strategy: 301 / 256 / 193 / 393 rows,
 each block with its own date range, all four `Sample type=IST`.
 
+🔬 **A market whose strategy never traded there produces no file at all.** The split is driven by the
+`Symbol` values actually present, so `trades/<feed>/<strategy>.csv` simply does not exist when that
+strategy fired zero times on that market. Measured 2026-09-14 on `XAUUSD / Retest Markets - Family`:
+of a 30-strategy sample, **2 have no `XAGUSD_DukasM1_Infinox` file** while all 30 have gold and
+Brent. Anything iterating (strategy × market) has to treat the absence as a result about the
+strategy, not as a missing input — `crossmarket/explorer/analysis.py` records it as `missing` and
+reports it. On the full 757-strategy databank expect roughly 50 such gaps.
+
+🔬 **`stage()` takes a `limit`**, added 2026-09-14: `export_retest.py --limit 30` stages a
+**reproducible random sample** (seed 20260914) instead of all 757. Random rather than the first N,
+because a databank is written in build order and its first strategies all come from one generation
+run. Both export commands drive the **worker**, never the master, so they are safe with the master
+GUI open.
+
+🔬 **Exit types in the XAUUSD generated fleet**, measured over 92,329 trades of that 30-strategy
+sample: `Exit After X Bars` **78.0%**, `Exit Signal` **16.6%**, `End Of Friday (Time)` **5.4%**. The
+Friday close lands on **Friday 21:00** (832 of 838 observed exits; the rest 21:02 and 21:16). That
+matters to any study that places synthetic trades: the Friday close is a calendar rule a null can
+reproduce exactly, and `Exit Signal` is not reproducible without reading the `.sqx`.
+
+🔬 **The whole databank is long-only.** All 92,329 trades of that sample are `Type=Buy`. Any code
+computing `log(exit/entry)` is silently wrong on a short, so assert rather than assume.
+
+🔬 **A trade's P/L can be rebuilt from the bars almost exactly, which is what makes dollar
+statistics possible for synthetic trades.** With the open-to-open convention,
+`(Open[exit] - Open[entry]) * Size * pointValue` against the reported `Profit/Loss` gives
+**r = 0.9996** on XAUUSD, XAGUSD and BRENT (2,031 / 2,005 / 1,321 trades, 2026-09-15). The residual
+is the cost plus the swap, ~20 $ per trade on the metals and ~29 $ on Brent, and it is recovered per
+trade as `gross - reported` rather than assumed. `pointValue` itself is measured from the trades by
+least squares (`pricing.point_value`), not read from the asset file, because a cross-market study
+prices instruments the base asset's file knows nothing about.
+
+Consequence: a random-entry null can be priced **in the account currency with the real trades' own
+sizes and costs**, so net profit, drawdown, Ret/DD, Sharpe and profit factor are all comparable
+against SQX's own numbers instead of against an abstract normalised statistic. That is what
+`strategies/crossmarket/metrics.py` does.
+
 🔬 **The fill convention is open-to-open**: entry at the `Open` of the entry bar, exit at the `Open`
 of the exit bar. Reconciled against 1,101 real XAUUSD H1 trades with a **median price error of
 exactly 0.0** against `bars_H1.csv`. `strategies/analysis/pricing.reconcile()` re-derives it per

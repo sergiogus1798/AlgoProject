@@ -1,0 +1,60 @@
+# Every tunable of the cross-market study, in one place. Nothing below is hidden in code.
+# Override any of these on the command line with --set key=value (dotted keys), or from the
+# panel's config drawer for one run.
+#
+# There are no acceptance thresholds here and no verdict. This study reports numbers and the
+# reasons to distrust them; which strategy to keep is the owner's call, made outside it.
+
+nulls:
+  draws: 25000                # random runs **per market and per model**; the smallest p observable is 1/(draws+1)
+  seed: 20260908              # fixed and shared across markets, so one draw is one displacement everywhere
+  block_months: 6             # regime blocks; six months keeps enough trades in each to move them
+  models: [segment_permute, resampled_holds, fitted_holds, block_shift]
+  headline: block_shift       # the model whose p the summary table reports; it is
+                              # the only one that changes exactly one thing, so it is
+                              # the only one whose low p is attributable to timing
+  replicate_friday: true      # a hold truncated by the Friday close is re-truncated at its new placement
+  min_hold: 1                 # a trade that opens and closes on the same bar is not a trade
+  chunk: 500                  # random runs priced per batch; memory, not statistics
+
+equity:
+  starting: 100000.0          # account the additive equity path starts from, in USD
+  steps: 200                  # points per curve; an SVG cannot show more
+  bands: [2.5, 25.0, 50.0, 75.0, 97.5]     # percentile cone drawn around the real curve
+  percentiles: [2.5, 5.0, 25.0, 50.0, 75.0, 95.0, 97.5]   # reported in the metric tables
+
+bootstrap:
+  draws: 2000                 # block-bootstrap draws for every confidence interval
+  block: 5                    # trades per block; bars inside a trade are autocorrelated
+  ci: [5.0, 95.0]             # percentiles reported as the interval
+
+exposure:
+  mu_min_t: 2.0               # |t| of the market's own drift below which E is withheld as meaningless
+  drop_zero_mfe: true         # a trade with MFE = 0 has an undefined capture ratio, not an infinite one
+
+paired:
+  alternative: greater        # one-sided: the strategy's trades beat a passive long on the same bars
+
+drivers:
+  hurst_lags: [2, 4, 8, 16, 32, 64, 128]   # lags the rescaled-range slope is fitted over
+  variance_ratio_q: 8         # aggregation horizon of the Lo-MacKinlay variance ratio, in bars
+  adx_period: 14
+  adx_trend: 25               # ADX above this counts the bar as trending
+  efficiency_window: 20       # bars over which the Kaufman efficiency ratio is measured
+
+stress:
+  cost_multiples: [1.0, 1.5, 2.0, 2.5, 3.0]
+  bar_shift: 1                # bars entries and exits are moved by, to see the decay
+  slippage_fractions: [0.1, 0.25, 0.5]     # share of the bar's range given back at both ends
+  sims: 5000                  # runs of the cost-and-fill stress that gets its own distributions
+  p_skip: 0.05                # chance each trade is simply missed
+  cost_shock: [1.0, 2.0]      # cost multiple drawn per run, uniform between these
+  fill_frac: 0.15             # share of trades filled worse
+  fill_depth: 0.25            # fraction of the trade's own adverse excursion given back
+
+diagnostics:
+  alpha: 0.05                 # the level every p-value is coloured against; it decides nothing
+  min_trades: 30              # below this a market is flagged as too small — it is never dropped
+  min_on_open: 0.95           # below this the entries include pending fills the null cannot reproduce
+  correlated: 0.5             # assumed pairwise correlation for the honest false-pass figure
+  pca_warn: 0.70              # PC1 variance share above which the markets are one bet, not several

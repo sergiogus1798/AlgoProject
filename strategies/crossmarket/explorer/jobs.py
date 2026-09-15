@@ -10,21 +10,20 @@ STATE = {"running": False, "what": "", "stage": "", "share": 0.0, "step": 0, "st
          "error": "", "result": None, "finished": ""}
 
 
-def advance(stage: str) -> None:
-    """Move the progress bar by one step.
+def step(stage: str, share: float) -> None:
+    """Move the progress bar to a fraction of the whole job.
 
     Args:
-        stage: What just started, shown on the progress line.
+        stage: What is running right now, shown on the progress line.
+        share: How much of the job is done, 0 to 1.
 
     Returns:
-        Nothing. `work.py` calls this once per market x model when analysing one strategy,
-        and once per strategy when analysing the whole database — there is no per-simulation
-        callback here, unlike monteCarlo's engine, because a cross-market run is a handful of
-        numpy calls rather than millions of individually reported simulations.
+        Nothing. The analysis reports a continuous share rather than counting steps: one
+        market under one null model is drawn in batches, so the bar advances several times
+        inside every model rather than jumping once per market.
     """
-    STATE["step"] = min(STATE["step"] + 1, STATE["steps"] or STATE["step"] + 1)
     STATE["stage"] = stage
-    STATE["share"] = min(STATE["step"] / STATE["steps"], 1.0) if STATE["steps"] else 0.0
+    STATE["share"] = min(max(share, 0.0), 1.0)
 
 
 def _run(work: Callable[[], object], what: str) -> None:
@@ -55,12 +54,11 @@ def start(work: Callable[[], object], what: str, steps: int) -> bool:
     Args:
         work: A no-argument callable doing the analysis.
         what: What to call it on screen.
-        steps: How many advance() calls it will make, for the progress bar. Zero when the
-            job has no natural sub-steps and the bar just fills at the end.
+        steps: Only for the counter beside the bar; the bar itself is driven by step().
 
     Returns:
         False when another job holds the machine, in which case nothing was started. Only
-        one job runs at a time: two would fight over the same cache files.
+        one job runs at a time: two would fight over the same session record.
     """
     with LOCK:
         if STATE["running"]:

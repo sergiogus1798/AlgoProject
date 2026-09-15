@@ -29,18 +29,22 @@ a otros mercados.
 **No lo usas** sobre el propio activo base. La estrategia se optimizó ahí, así que gana a lo aleatorio
 por construcción: en la prueba de este módulo sobre oro, las ocho estrategias probadas salieron con
 p entre 0.0002 y 0.007. Eso no dice nada bueno de ellas, sólo dice que el código funciona. Por eso el
-activo base está fuera de la lista de `strategies/crossmarket/markets.yaml` y fuera de la votación.
+activo base no es un mercado más: sale en el informe como **referencia**, nunca como evidencia.
 
-**No lo usas** en un mercado donde la estrategia hizo menos de 30 operaciones, ni en uno donde entre
-con órdenes pendientes. Ese caso se descarta solo y se te avisa (ver *Qué produce*).
+**No esperes un veredicto.** Este módulo no dice MANTENER ni DESCARTAR, y no esconde ningún mercado.
+Te da los números y, al lado de cada uno, la lista de motivos para desconfiar de él. La decisión la
+tomas tú. Antes no era así: un mercado con menos de 30 operaciones o con órdenes pendientes se caía
+entero del análisis, y eso costó tirar un resultado de Brent con p = 0,005 por culpa de un 8% de
+entradas que no caían en apertura de vela.
 
 ### Antes de empezar
 
 Tres cosas, en este orden:
 
 1. **En SQX**, pasa tus estrategias por una tarea de retest sobre mercados adicionales, y deja el
-   resultado en una databank. Los mercados que elijas ahí tienen que ser **los mismos** que estén en
-   `strategies/crossmarket/markets.yaml` para ese activo, escritos igual.
+   resultado en una databank. Los mercados que elijas ahí son los que manda: el módulo **descubre**
+   de la exportación en qué mercados se retesteó de verdad, leyendo la columna `Symbol` de las
+   propias operaciones. `markets.yaml` sólo les pone categoría y nombre.
 2. **Exporta en cuanto termine.** Varias databanks se vacían en cada ciclo de la cadena de tareas, y
    la sincronización horaria borra del disco lo que no está en memoria. Si el retest queda ahí una
    noche, puede no estar por la mañana.
@@ -58,183 +62,204 @@ proyecto. El motivo: aquí no se autoriza nada, se reproduce lo que SQX ya simul
 operación a operación de los propios datos exportados (`precio bruto − beneficio reportado`), no se
 elige. En el oro eso mide 8 $ por lote y lado, que es exactamente lo que SQX tiene configurado.
 
-### Dónde eliges los mercados
+### Dónde se clasifican los mercados
 
-En `strategies/crossmarket/markets.yaml`, un bloque por activo. Se edita a mano y ningún código
-cambia al hacerlo:
+En `strategies/crossmarket/markets.yaml`, un bloque por activo base y, dentro, una lista por
+categoría:
 
 ```yaml
 XAUUSD:
   main: XAUUSD_DukasM1_Infinox
   timeframe: M30
-  additional:
-    - {feed: XAGUSD_DukasM1_Infinox, role: family, data_from: 2003-08-08}
-    - {feed: BRENTCMDUSD_ftmo, role: family, data_from: unknown}
+  categories:
+    family:
+      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
+      - {feed: BRENTCMDUSD_ftmo, data_from: unknown}
+    structure: []
 ```
 
-`feed` tiene que estar escrito **exactamente** como lo llama SQX, y ser el mismo que usaste en la
-tarea de retest. `role` es sólo descriptivo, sale en el informe y no cambia ningún cálculo.
-`data_from` es la primera fecha con datos de ese mercado: tampoco filtra nada, está para que veas de
-un vistazo cuánta ventana común te queda de verdad — los índices no llegan más atrás de 2011-2013,
-mientras que las divisas y los metales llegan a 2003.
+**Este fichero clasifica; no decide qué existe.** Lo que se analiza sale de la exportación: la
+carpeta `trades/<mercado>/` que dejó el paso 2 se construye desde la columna `Symbol` de las
+operaciones, así que no puede mentir. Si un mercado aparece en el export y no está aquí, se analiza
+igual y sale marcado como `sin clasificar`. Si está aquí y el export no trae operaciones suyas, el
+panel lo imprime al arrancar como ausente. Antes, un desajuste entre los dos salía como un mercado
+con cero estrategias, que no parece un error y lo es.
 
-El activo base va en `main` y **nunca** en `additional`: es el mercado en el que se optimizó.
+`feed` tiene que estar escrito **exactamente** como lo llama SQX. `data_from` es la primera fecha con
+datos de ese mercado: no filtra nada, está para que veas cuánta ventana común te queda de verdad.
+Las categorías (`family`, `structure`, y las que vengan) son etiquetas: salen en las tablas y no
+cambian ningún cálculo.
 
-Todo el código de este análisis está junto en `strategies/crossmarket/`, incluida esa lista. Cada
-estudio de estrategias tendrá su propia carpeta igual que esta.
+La lista sigue fijándose **antes** de mirar resultados. Elegir mercados después de ver dónde funciona
+convierte la prueba en una selección.
 
 ### Cómo se ejecuta
 
-Dos comandos preparan los datos, y el tercero abre el panel — que es ahora la **única** forma de
-correr la prueba. No hay comando de línea que la corra solo.
+Dos comandos preparan los datos, y el tercero abre el panel — que es la **única** forma de correr la
+prueba, y corre **una estrategia cada vez**.
 
 ```bash
-# 1. Las barras de todos los mercados de la lista (una arranca de SQX por mercado, ~1 min cada una)
+# 1. Las barras de todos los mercados (una arranca de SQX por mercado, ~1 min cada una)
 python3 -m sqx.export.export_bars --asset XAUUSD --from 2003.01.01 --to 2026.01.01
 
 # 2. Los trades del retest, partidos por mercado (~4 min por cada 200 estrategias)
-python3 -m sqx.export.export_retest --project XAUUSD --databank RetestMarkets
+python3 -m sqx.export.export_retest --project XAUUSD --databank "Retest Markets - Family"
 
 # 3. El panel
-python3 -m strategies.crossmarket.explorer.serve --project XAUUSD --databank RetestMarkets \
-    --asset XAUUSD --export 2026-09-08
+python3 -m strategies.crossmarket.explorer.serve --project XAUUSD \
+    --databank "Retest Markets - Family" --asset XAUUSD --export 2026-09-14
 ```
 
 | flag | obligatorio | qué hace |
 |---|---|---|
-| `--asset` | sí | activo base. Es la clave que se busca en `strategies/crossmarket/markets.yaml` |
+| `--asset` | sí | activo base. Es la clave que se busca en `markets.yaml` |
 | `--project` | sí | proyecto en el master |
 | `--databank` | sí | la databank donde dejaste el retest |
-| `--export` | sí (en el paso 3) | la fecha del export del paso 2, `AAAA-MM-DD`. Es la carpeta que va a leer |
-| `--from` / `--to` | no, sólo en el paso 1 | ventana de barras. Por defecto 2003-2026 |
-| `--port` | no, sólo en el paso 3 | puerto del panel. Por defecto 8766 |
+| `--export` | sí (paso 3) | la fecha del export del paso 2, `AAAA-MM-DD` |
+| `--limit` | no (paso 2) | exporta una muestra aleatoria reproducible de N estrategias en vez de todas |
+| `--set` | no (paso 3) | cambia un knob de `config.yaml` al arrancar, p. ej. `--set nulls.draws=20000` |
+| `--port` | no (paso 3) | puerto del panel. Por defecto 8766 |
 
 Los pasos 1 y 2 **arrancan SQX** (el worker, nunca el master) y se pueden ejecutar con tu interfaz
-abierta. El paso 3 no toca SQX en absoluto: sólo lee ficheros, y abre
-`http://127.0.0.1:8766` en tu navegador.
+abierta. El paso 3 no toca SQX: sólo lee ficheros.
 
-**El cajón de configuración** (▸ arriba de las pestañas) es donde se toca todo lo que antes eran
-flags: cuántas versiones al azar (`draws`), qué modelos correr, el umbral de significancia, el suelo
-de operaciones mínimas, y los parámetros de las pruebas nuevas (bloque del bootstrap, múltiplos de
-coste, fracción de slippage). Cambiar un valor sólo afecta al siguiente análisis que pulses — nada se
-escribe a disco, y al recargar el panel vuelve a los valores de fábrica.
+**Nada se guarda.** No hay caché, no hay fichero de resultados y no hay informe. Cada número que ves
+sale del botón que acabas de pulsar, y al cerrar el panel se pierde. Al arrancar borra además
+cualquier resultado que versiones anteriores dejaran en `AlgoData/derived/crossmarket/`. Es
+deliberado: un resultado guardado siempre se acaba leyendo como respuesta a una pregunta que no era
+la suya. El precio es real — unos **14 segundos por estrategia** con 5.000 tiradas sobre dos
+mercados, y se paga otra vez si cierras el panel.
 
-**Los cuatro modelos** siguen siendo los mismos, ahora elegibles en el cajón:
+### El panel, de arriba abajo
 
-| modelo | qué cambia al azar | qué pregunta responde |
-|---|---|---|
-| `block_shift` | sólo *cuándo* entra, dentro de su mismo semestre y en el mismo día y hora | ¿acierta al elegir el momento? **Es el del veredicto** |
-| `segment_permute` | el momento, el orden y las rachas | lo mismo, pero deshaciendo las rachas. Más fácil de batir |
-| `resampled_holds` | el momento, y qué duraciones y esperas ocurren | ¿su ritmo de operar, en general, vale algo? |
-| `fitted_holds` | el momento y las duraciones, sacadas de una distribución ajustada | ¿un sistema con esa *forma* de duraciones, entrando al azar, iría igual? |
+**Arriba**: el desplegable de estrategias. Al elegir una aparece debajo **la lista de los mercados
+adicionales en los que SQX la retesteó**, cada uno con su categoría y un punto que se pone verde
+cuando ya está analizado.
 
-El primero de la lista es el que decide. Los demás están para ver si un resultado **sobrevive a otra
-suposición**, nunca para buscar uno que pase: si una estrategia sólo aprueba con un modelo alternativo,
-lo que has encontrado es la suposición de ese modelo, no la estrategia. La pestaña "Veredicto" lo dice
-en una tabla, y "Explorador de pruebas" te deja mirar cualquier mercado bajo cualquier modelo.
-
-Aviso concreto para tu flota: `fitted_holds` no le encaja. Tus estrategias salen casi siempre al tope
-de barras, así que sus duraciones son prácticamente constantes y ninguna distribución las representa
-(dispersión 0.05, KS p < 0.001). El panel imprime esos dos números al lado para que se vea.
-
-Sobre `draws`: 5000 no se queda corto de potencia, pero sí fija el p-valor más pequeño que se puede
-observar, que es 1/5001 ≈ 0.0002. Si comparas cientos de estrategias entre sí, ese suelo importa;
-está explicado en `strategies/crossmarket/POSSIBLE_IMPROVEMENTS.md`.
-
-### Los botones y las pestañas
-
-Arriba: un desplegable de estrategias (marca `· analizada` la que ya tiene resultado guardado) y tres
-botones.
-
-| botón | qué hace |
+| botón | qué corre |
 |---|---|
-| **Analizar esta estrategia** | Corre las cuatro pruebas de esta ficha — Test 1a bajo los cuatro modelos, exposición, significancia, huella, coste y correlación — sobre todos los mercados adicionales de la estrategia elegida. Barra de progreso, un mercado por paso |
-| **Analizar toda la base de datos** | Repite el botón anterior para cada estrategia del export. Es necesario antes de generar el informe, porque el panel es ahora el único sitio donde se corre la prueba |
-| **Generar informe** | Escribe `by_market.csv`, `verdict.csv`, `crossmarket.md`, `crossmarket.html` y `manifest.json`, leyendo lo que ya dejó en caché "Analizar toda la base de datos" — si no se ha corrido, el botón lo pide |
+| **Run analysis** | La estrategia entera: todos los mercados, los cinco modelos nulos y todas las pruebas |
+| **run**, al lado de un mercado | Sólo ese mercado, con la configuración que tenga el cajón en ese momento. **Se fusiona** con lo que ya hubiera: puedes re-ejecutar plata a 50.000 tiradas sin perder el Brent que ya tenías |
 
-Debajo de los botones, una franja fija resume la base de datos completa (cuántas `MANTENER`, la
-cifra de suerte) — vacía hasta que "Analizar toda la base de datos" haya corrido al menos una vez.
+Un mercado en el que esa estrategia **nunca disparó** sale en gris, como `sin operaciones` y sin
+botón. El export sólo escribe el fichero de un mercado si hubo operaciones ahí, así que esa ausencia
+es un resultado sobre la estrategia, no un dato que falte.
 
-Las pestañas, con lo que muestra cada una:
+**La barra de progreso** avanza de forma continua, no a saltos: los backtests aleatorios se sortean
+por lotes y la barra se mueve varias veces dentro de cada modelo. La línea de debajo dice qué
+mercado y qué modelo está corriendo ahora mismo.
+
+### El cajón de configuración
+
+El triángulo ▸ abre **los 35 knobs de `config.yaml`**, agrupados por sección y cada uno con su
+explicación al pasar el ratón. Cambiar un valor afecta a la **siguiente** ejecución: nada se escribe
+a disco.
+
+| grupo | lo que controla |
+|---|---|
+| **Modelos nulos** | cuántos backtests aleatorios, la semilla, el bloque de régimen, qué modelos correr, si se replica el cierre del viernes, y el tamaño de lote |
+| **Equity** | la cuenta de partida, cuántos puntos tiene cada curva, qué percentiles dibuja el cono y cuáles salen en las tablas |
+| **Bootstrap** | tiradas, operaciones por bloque y percentiles de los intervalos de confianza |
+| **Exposición (1c)** | el t mínimo de la deriva para que E se muestre, y qué hacer con las operaciones de MFE cero |
+| **Test pareado (1b)** | el lado del test de Wilcoxon |
+| **Propiedades del mercado** | lags de Hurst, horizonte del variance ratio, y los parámetros de ADX y eficiencia |
+| **Coste y ejecución** | múltiplos de coste, desplazamiento en barras, fracciones de slippage, y los parámetros de la ejecución degradada |
+| **Lectura y avisos** | alpha, los umbrales que disparan un aviso, la correlación supuesta y el umbral de PC1 |
+
+**Ninguno de esos umbrales decide nada.** `alpha`, `min_trades` y `min_on_open` sólo colorean números
+y disparan avisos; ningún mercado se cae por ellos.
+
+### Las doce pestañas
 
 | pestaña | qué muestra |
 |---|---|
-| **Veredicto** | Tabla por mercado, `MANTENER`/`DESCARTAR`/`NO EVALUABLE` y las comprobaciones (`fill_error`, `calendar_kept`, etc.) — igual que antes traía `crossmarket.html` |
-| **Exposición** | Test 1c: concentración E, exceso A y su intervalo de confianza, A por unidad de riesgo, y qué fracción del MFE se capturó |
-| **Significancia** | Sharpe, cuántas operaciones hacen falta para que ese Sharpe sea distinguible de cero (MinTRL), e intervalos de confianza de PF y expectancy por bootstrap — y la amplitud entre mercados |
-| **Huella** | Si la duración de las operaciones se parece a la del oro (KS), y la forma de la distribución de retornos |
-| **Coste** | El múltiplo de coste al que la estrategia deja de ganar (breakeven), y cuánto se degrada con un desplazamiento de una barra o con slippage |
-| **Correlación** | Matriz de correlación semanal entre los mercados de esa estrategia más el oro, y qué parte de la varianza explica el primer componente (PCA) |
-| **Explorador de pruebas** | Dos desplegables — mercado y modelo — para mirar cualquier combinación de las que ya se corrieron, más un botón "Re-ejecutar esta prueba" que la repite con más tiradas sin tocar la caché |
+| **Resumen** | Tabla por mercado con el p de 1a y el de 1b, la categoría, cuántos avisos tiene cada uno, y las comprobaciones mecánicas |
+| **Entrada aleatoria (1a)** | Sub-pestañas por **mercado**, y debajo por **modelo**. Dentro: la **curva de equity real sobre el cono de las aleatorias** y, a su lado, el histograma del indicador que elijas en el desplegable, con la mediana y el IC 95% marcados, su tabla de valores y el % de simulaciones que el real bate. Debajo, la tabla completa de percentiles |
+| **Modelos** | El mismo p bajo las cinco formas de aleatorizar, y qué cambia cada una |
+| **Pareado (1b)** | El alfa medio por operación frente a su ventana ciega y el p de Wilcoxon |
+| **Exposición (1c)** | A con su intervalo, y E — que sale como «no aplica» donde el mercado no tiene deriva |
+| **Coste y ejecución** | El múltiplo de coste de equilibrio, y **las mismas operaciones ejecutadas peor miles de veces**: cono de equity e histogramas, igual que 1a pero contestando otra pregunta |
+| **Significancia** | Sharpe, MinTRL, intervalos de PF y expectancy, y la amplitud entre mercados |
+| **Huella** | Si la duración de las operaciones se parece a la del activo base, y la forma de los retornos |
+| **El mercado** | Hurst, variance ratio, % de velas en tendencia, ATR% y eficiencia, con el activo base arriba |
+| **Correlación** | Matriz semanal entre los mercados más el activo base, y qué parte de la varianza explica PC1 |
+| **Avisos** | Cada motivo de desconfianza de cada mercado, en una frase. **Nada se excluye por esto** |
+| **Glosario** | Qué significa cada número |
 
-*(Capturas de pantalla del panel real pendientes de añadir aquí — regla 8 exige que sean de una
+*(Capturas de pantalla del panel real pendientes de añadir aquí — la regla 8 exige que sean de una
 ejecución real, no inventadas.)*
 
-### Qué produce
+### Cómo se leen los dos gráficos nuevos
 
-En `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/crossmarket/`. **Los informes se
-acumulan, no se sobreescriben**: cada ejecución crea su carpeta del día.
+**El cono de equity.** La línea naranja es el backtest real; la banda azul es donde corrieron los
+5.000 aleatorios. El eje X es **tiempo de calendario**, no número de operación: las entradas
+aleatorias caen en momentos distintos, así que sólo en ese eje la curva real y las suyas describen
+el mismo tramo de mercado. Se lee por el **ancho** del cono y por **dónde** la real se sale de él,
+nunca por una línea suelta de dentro.
 
-| fichero | qué lleva |
-|---|---|
-| `by_market.csv` | una fila por estrategia y mercado, con todo el detalle |
-| `verdict.csv` | una fila por estrategia: el veredicto |
-| `crossmarket.html` | **el informe ilustrado.** Es por donde se empieza |
-| `crossmarket.md` | las mismas conclusiones en texto plano |
-| `manifest.json` | qué export leyó, con qué semilla y qué versión del código |
+**Los histogramas.** Las barras son los backtests aleatorios, la línea naranja el real, la
+discontinua la mediana simulada y el sombreado la banda del 5 al 95. Ojo con la dirección: en
+**drawdown** y **racha perdedora**, menos es mejor, así que un p pequeño significa que el real
+sufrió **menos** que el azar. Cada fila de la tabla lo dice al lado.
 
-Los pasos 1 y 2 escriben en `AlgoData/bars/<mercado>/H1.csv` (se sobreescribe: las barras son un
-hecho del mercado, no de una ejecución) y en `AlgoData/raw/<proyecto>/<databank>/<fecha>/` (con
-fecha, inmutable).
+Todos los backtests aleatorios se valoran **en dólares, con los mismos tamaños de posición y los
+mismos costes** que las operaciones reales. Por eso el beneficio neto que ves es directamente el de
+SQX: el P/L reconstruido desde las velas correlaciona 0,9996 con el que reporta la databank.
 
 ### Cómo se lee el resultado
 
-**Empieza por `crossmarket.html`:**
+**El orden en que hay que leer el panel:**
 
-```bash
-xdg-open ~/Desktop/AlgoData/reports/XAUUSD/<databank>/<fecha>/crossmarket/crossmarket.html
-```
+1. **Las comprobaciones.** `fill_error` tiene que ser 0 y `calendar_kept` 1,00 en `block_shift`. Si no
+   lo son, el backtest real y los aleatorios no están valorados igual y no hay nada que interpretar.
+   Para ahí.
+2. **La pestaña de avisos.** Dice de qué desconfiar en cada mercado antes de que te enamores de un
+   número.
+3. **La tabla por mercado** del Resumen.
+4. **Sólo entonces**, el cono y los histogramas.
 
-Es un fichero suelto que no carga nada de internet, así que se puede mandar por correo y se abrirá
-igual dentro de cinco años. Lleva, en este orden: las cuatro cifras de cabecera, cuántas pasarían por
-suerte, la tabla por mercado, **la distribución de los 5.000 backtests aleatorios de cada estrategia
-con el backtest real marcado encima**, los cuatro modelos comparados contra el límite de 0,05, la
-tabla de comprobaciones, y un glosario que explica cada número. Se dibujan como mucho las doce
-estrategias con menor p; el resto están en los CSV.
+Y una cosa que no cambia por tener mejores gráficos: estás mirando **una estrategia de 757**, que
+además ya pasaron por la búsqueda de SQX. Con alpha en 0,05, de 757 estrategias unas 38 darían un
+p ≤ 0,05 en un mercado por puro azar. Un resultado bonito aquí no es un descubrimiento hasta que
+sepas contra cuántos intentos lo estás comparando.
 
-**Cómo se lee el histograma.** Las barras azules son los 5.000 backtests aleatorios y la línea
-naranja es el real. Si la línea cae dentro del montón azul, esa estrategia no hizo nada que el azar
-no hiciera. Cuanto más a la derecha del montón, más difícil es explicarla por suerte — y el p-valor
-es exactamente qué fracción del montón quedó a su derecha.
+Las columnas de la tabla por mercado que hay que saber leer:
 
-Luego, en `crossmarket.md`, la sección "How many of these are luck".** Da dos
-números: cuántas estrategias pasarían por pura suerte si los mercados fueran independientes, y
-cuántas si sus resultados se parecen entre sí. **El segundo es el bueno.** Ocho mercados movidos por
-el mismo factor dólar-y-riesgo se comportan como dos, así que la regla de mayoría es mucho más débil
-de lo que parece. Si el número de MANTENER no está cómodamente por encima de esa cifra, ahí no hay
-nada, por buenos que se vean los p-valores individuales.
-
-Las columnas de `by_market.csv`, que son las que hay que saber leer:
-
-| columna | qué es | qué valor es bueno |
+| columna | qué es | cómo se lee |
 |---|---|---|
-| `real_r` | lo que ganó de verdad por operación, en "barras típicas de ese mercado" | cuanto más alto mejor, pero **no significa nada solo** |
+| `real_r` | lo que ganó de verdad por operación, en "barras típicas de ese mercado" | **no significa nada solo** |
 | `null_r` | lo que ganó la versión aleatoria mediana | es la vara de medir; suele rondar cero |
-| `edge_r` | la diferencia entre las dos | es el tamaño del efecto |
-| `p` | qué fracción de las 5000 versiones al azar igualó o superó a la real | **≤ 0.05 es batir al azar.** Es el número del veredicto |
-| `p_<modelo>` | lo mismo bajo cada forma alternativa de aleatorizar | comprobación. Si una estrategia sólo pasa bajo un modelo alternativo, lo que encontraste es esa suposición, no la estrategia |
-| `trades` | operaciones en ese mercado | por debajo de 30 el mercado no vota |
-| `on_bar_open` | fracción de entradas al inicio de barra | por debajo de 0.95 el mercado no vota: son órdenes pendientes y la comparación deja de ser justa |
-| `calendar_kept` | fracción de entradas aleatorias que cayeron en el mismo día y hora que la real | debe ser 1.00. Si no lo es, hay un fallo |
-| `atr_ratio` | volatilidad en las entradas reales frente a la media del mercado | cerca de 1. Muy lejos de 1 significa que la estrategia elige barras raras y hay que leer el resultado con cuidado |
-| `convention` / `fill_error` | qué precios reproducen los de SQX y con cuánto error | `fill_error` debe ser 0. Si no, el resultado no vale |
-| `family` (en `verdict.csv`) | `entry` o `entry+exit` | ver más abajo |
+| `edge_r` | la diferencia entre las dos | es el tamaño del efecto, y es lo que hay que mirar cuando el p sale ajustado |
+| `p` | qué fracción de las versiones al azar igualó o superó a la real, bajo el primer modelo | es el número principal del test 1a |
+| `p_<modelo>` | lo mismo bajo cada forma alternativa de aleatorizar | comprobación, no segunda opinión |
+| `paired_p` | el p del test pareado (1b) | **no depende de ningún modelo nulo ni de ninguna suposición de coste** |
+| `paired_beat` | qué porcentaje de operaciones batió a su ventana ciega | 50% es el azar |
+| `a` / `a_ci_lo` / `a_ci_hi` | el exceso por vela sobre la vela media del mercado, con su intervalo | si el intervalo cruza el cero, el exceso no está demostrado |
+| `e` / `e_meaningful` | la concentración E, y si el mercado tiene deriva suficiente para que E signifique algo | cuando `e_meaningful` es falso, **ignora E** |
+| `mu_t` | el t de la deriva del propio mercado | por debajo de 2 en valor absoluto, ese mercado no tiene tendencia que dividir |
+| `breakeven` | a cuántas veces el coste real deja de ganar | el PDF pide 2,0 o más |
+| `trades` / `off_grid` | operaciones usables, y cuántas se cayeron por no encajar en la rejilla de velas | `off_grid` alto significa que las barras y las operaciones no cubren la misma ventana |
+| `on_bar_open` | fracción de entradas al inicio de barra | por debajo de 0,95 hay órdenes pendientes: dispara aviso, **no** excluye |
+| `calendar_kept` | fracción de entradas aleatorias en el mismo día y hora que la real | 1,00 en `block_shift`; vacío en `renewal`, que no empareja operaciones |
+| `null_trades` | operaciones por backtest aleatorio | igual a las reales salvo en `renewal` |
+| `atr_ratio` | volatilidad en las entradas reales frente a la media del mercado | cerca de 1. Lejos de 1 significa que la estrategia elige barras raras |
+| `warnings` | la lista de motivos para desconfiar de esa fila | está para leerse, no para filtrar |
+| `net` / `dd` / `ret_dd` | beneficio neto, drawdown máximo y su cociente, en dólares | son los de SQX: el P/L reconstruido correlaciona 0,9996 con el suyo |
+| `p_net` / `p_dd` | dónde cae cada uno dentro de los backtests aleatorios | en `p_dd`, pequeño es **bueno**: el real aguantó mejor que el azar |
 
-**Sobre `family`.** Cuando la estrategia sale siempre por el tope de barras, la duración de la
-operación no dependía del precio, y esto es una prueba limpia de la entrada. Cuando sale por una
-señal, la duración sí lleva información, y la versión aleatoria la reutiliza sin poder reproducir de
-dónde salía: para esas, el resultado mide entrada **y** salida a la vez. No es peor, es otra cosa, y
-no se puede contar como "acierta al entrar".
+**Sobre `family`, en el Resumen.** Cuando la estrategia sale siempre por el tope de barras, la
+duración no dependía del precio y esto es una prueba limpia de la entrada. Cuando sale por señal, la
+duración sí lleva información y el nulo la reutiliza sin poder reproducir de dónde salía: para esas,
+el resultado mide entrada **y** salida a la vez. No es peor, es otra cosa.
+
+**Dos avisos que vas a ver mucho y qué significan de verdad:**
+
+- `no_drift` — ese mercado no tiene una deriva distinguible de cero en la ventana medida. Medido:
+  oro t = +3,13, plata t = +1,61, Brent t = −0,11. Sólo en el oro tiene sentido E. Es por esto que
+  la lectura principal es **A**, que resta la deriva en vez de dividir por ella.
+- `short_sample` — el Sharpe por operación observado necesitaría más operaciones de las que hay para
+  distinguirse de cero (MinTRL). Es casi universal con Sharpes por operación de 0,03-0,15: dice que
+  la evidencia de *rentabilidad* es débil, no que el test de *timing* esté mal.
 
 ### Un ejemplo completo
 
@@ -274,15 +299,23 @@ de entrar, moverlas tiene que estropearlo — y lo hace, de forma ordenada:
   gestión monetaria funcione.
 - **No convierte un mercado fallado en un problema.** Que falle en un mercado es información sobre
   dónde vive la ventaja, y es la materia prima del estudio de propiedades de mercado.
-- **No corrige por haber probado cientos de estrategias a la vez.** Declara cuántas pasarían por
+- **No corrige por haber probado cientos de estrategias a la vez.** Declara cuántas saldrían así por
   suerte; no las quita. Ese es el número que tienes que mirar tú.
+- **No decide nada.** No hay veredicto, no hay lista de supervivientes y no hay ningún mercado
+  escondido. Es una herramienta de medida; la decisión es tuya.
 
 ### Si algo falla
 
 - **`FileNotFoundError` sobre un fichero de `bars/`** — ese mercado no está exportado. Ejecuta el
   paso 1, o quítalo de `strategies/crossmarket/markets.yaml`.
 - **`KeyError` con el nombre del activo** — el activo no tiene bloque en `strategies/crossmarket/markets.yaml`.
-- **Un mercado sale con 0 estrategias** — el nombre del feed en `markets.yaml` no coincide con el
-  que usó la tarea de retest en SQX. Mira los nombres de carpeta que dejó el paso 2.
+- **Un mercado sale como `sin clasificar`** — está en el export pero no en `markets.yaml`. Se analiza
+  igual; añádelo a la categoría que le toque cuando quieras que salga etiquetado.
+- **Un mercado declarado sale como ausente al arrancar** — está en `markets.yaml` pero el export no
+  trae operaciones suyas. O el nombre del feed no coincide con el que usó la tarea de retest, o la
+  estrategia no operó ahí.
+- **`ValueError: cross-market pricing is long-only`** — alguna estrategia lleva operaciones en corto.
+  Todo el retorno de este módulo es `log(salida/entrada)`, que para un corto tiene el signo al revés,
+  así que se niega a valorarlo en vez de dar un número equivocado.
 - **`fill_error` distinto de 0** — las barras y las operaciones no son del mismo mercado o de la
   misma ventana. El resultado no vale; no lo interpretes.

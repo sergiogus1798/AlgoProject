@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""The interactive panel: run every cross-market test on any strategy, or on the whole
-database, and write the report. The only way to run this study — report.py is retired."""
+"""The panel: pick a strategy, see its markets, set every knob, and run the study on it."""
 
 import argparse
 import webbrowser
@@ -9,94 +8,71 @@ from pathlib import Path
 from flask import Flask, jsonify, request
 
 from core import bars as barsio
-from core.paths import bars_file, export_dir
-from strategies.crossmarket import charts, markets
-from strategies.crossmarket.explorer import cache, jobs, sections, work
+from core.paths import DATA, bars_file, export_dir
+from strategies.crossmarket import config, markets, metrics, panel
+from strategies.crossmarket.explorer import jobs, scope, sections, simulations, tooltips, work
 
 APP = Flask(__name__)
 PAGE = Path(__file__).with_name("page.html")
 SETUP: dict = {}
-CFG: dict = {}
 
 
 @APP.get("/")
 def index() -> str:
-    """The panel itself."""
+    """The panel itself.
+
+    Returns:
+        The page, with this run's project and databank in its title.
+    """
     return PAGE.read_text(encoding="utf-8").replace(
         "__TITLE__", f"{SETUP['project']} / {SETUP['databank']}")
 
 
 @APP.get("/api/state")
 def state() -> object:
-    """What the panel needs to draw its dropdown and headline strip.
+    """What the panel needs to draw its dropdown.
 
     Returns:
-        The strategies, which already have a stored result, and the database summary from
-        the last "Analizar toda la base de datos" — empty until that has run once.
+        The strategies of the databank, and which of them have been run in this session.
     """
-    have = cache.stored(SETUP["project"], SETUP["databank"])
     return jsonify({"project": SETUP["project"], "databank": SETUP["databank"],
-                    "export": SETUP["export"],
-                    "strategies": [{"name": n, "saved": have.get(n, "")}
-                                   for n in SETUP["strategies"]],
-                    "database": work.DATABASE})
+                    "export": SETUP["export"], "strategies": SETUP["strategies"],
+                    "done": sorted(work.RESULTS), "tabs": sections.TABS})
+
+
+@APP.get("/api/markets")
+def market_list() -> object:
+    """The additional markets one strategy was retested on in SQX.
+
+    Returns:
+        One row per market of the universe with its category and whether this strategy
+        actually traded there, plus whether it has a result in this session.
+    """
+    name = request.args["strategy"]
+    return jsonify({"markets": work.available(SETUP, name),
+                    "analysed": sorted(work.RESULTS.get(name, {}).get("runs", {}))})
 
 
 @APP.get("/api/config")
 def config_defaults() -> object:
-    """The factory defaults the config drawer builds its form from."""
-    return jsonify(CFG)
-
-
-def _scoped(payload: dict) -> dict:
-    """This request's configuration, with the drawer's overrides applied.
-
-    Args:
-        payload: The request JSON. Its optional "cfg" is {key: value}, only the keys the
-            reader actually changed.
+    """The factory defaults the config drawer builds its form from.
 
     Returns:
-        A copy of CFG with those keys replaced — never mutated in place, so a run made with
-        the drawer open does not change what any other strategy sees.
+        Every knob of config.yaml flattened to dotted keys, one sentence per knob, and the
+        group each belongs to. The drawer sends back only the fields actually changed.
     """
-    return {**CFG, **payload.get("cfg", {})}
+    return jsonify({"cfg": config.flatten(SETUP["cfg"]), "tips": tooltips.TIPS,
+                    "groups": tooltips.GROUPS})
 
 
 @APP.post("/api/analyse")
 def analyse() -> object:
-    """Start "Analizar esta estrategia"."""
-    cfg, name = _scoped(request.json), request.json["strategy"]
-    steps = len(SETUP["spec"]["additional"])
-    return jsonify({"started": jobs.start(lambda: work.analyse(SETUP, cfg, name),
-                                          f"Analizando {name}", steps)})
-
-
-@APP.post("/api/analyse_all")
-def analyse_all() -> object:
-    """Start "Analizar toda la base de datos"."""
-    cfg = _scoped(request.json)
-    return jsonify({"started": jobs.start(lambda: work.analyse_all(SETUP, cfg),
-                                          "Analizando toda la base de datos",
-                                          len(SETUP["strategies"]))})
-
-
-@APP.post("/api/report")
-def report() -> object:
-    """Start "Generar informe"."""
-    cfg = _scoped(request.json)
-    return jsonify({"started": jobs.start(lambda: work.report(SETUP, cfg), "Informe", 0)})
-
-
-@APP.post("/api/run")
-def run_one() -> object:
-    """Re-run one (market, model) pair on its own, with its own draw count."""
-    cfg = _scoped(request.json)
-    name, market, model = (request.json["strategy"], request.json["market"],
-                           request.json["model"])
-    draws = int(request.json.get("draws", cfg["draws"]))
-    return jsonify({"started": jobs.start(
-        lambda: work.rerun(SETUP, name, market, model, draws),
-        f"Re-ejecutando {market} · {model}", 0)})
+    """Run the analysis: the whole strategy, or one of its markets."""
+    cfg, name = scope.scoped(SETUP, request.json), request.json["strategy"]
+    only = request.json.get("market") or None
+    what = f"{name} — {only}" if only else name
+    return jsonify({"started": jobs.start(lambda: work.analyse(SETUP, cfg, name, only),
+                                          f"Analizando {what}", 0)})
 
 
 @APP.get("/api/status")
@@ -105,42 +81,51 @@ def status() -> object:
     return jsonify({**jobs.status(), "result": jobs.take()})
 
 
-@APP.get("/api/runs")
-def runs() -> object:
-    """Every market whose null distribution can be drawn for one strategy."""
-    record = cache.load(SETUP["project"], SETUP["databank"], request.args["strategy"], CFG)
+@APP.get("/api/random")
+def random_axes() -> object:
+    """The three selectors of the random-entry tab, for the strategy on screen.
+
+    Returns:
+        The markets that have a result, the null models that were run with their reader's
+        names, and the statistics the histogram can draw. Everything was computed by the run
+        and is held in memory, so switching any of the three recomputes nothing.
+    """
+    record = work.RESULTS.get(request.args["strategy"])
     if record is None:
-        return jsonify({"markets": [], "saved": "", "stale": False})
-    return jsonify({"markets": sections.runs(record["body"]), "saved": record["saved"],
-                    "stale": record["stale"],
-                    "adhoc": list(work.ADHOC.get(request.args["strategy"], {}))})
+        return jsonify({"markets": [], "models": [], "metrics": []})
+    models = record["cfg"]["nulls"]["models"]
+    return jsonify({"markets": list(record["runs"]),
+                    "models": [{"key": m, "name": panel.NAMES[m]} for m in models],
+                    "metrics": [{"key": k, "label": metrics.LABELS[k]}
+                                for k in simulations.DRAWN]})
+
+
+@APP.get("/api/random/view")
+def random_view() -> object:
+    """One market, one null model, one statistic: the cone, the histogram and the table."""
+    a = request.args
+    record = work.RESULTS[a["strategy"]]
+    return jsonify({"html": simulations.random_view(record, record["cfg"], a["market"],
+                                                    a["model"], a["metric"])})
+
+
+@APP.get("/api/models/view")
+def models_view() -> object:
+    """The model comparison for one statistic, when the Modelos tab's dropdown changes."""
+    a = request.args
+    record = work.RESULTS[a["strategy"]]
+    return jsonify({"html": simulations.models_view(record, record["cfg"], a["metric"])})
 
 
 @APP.get("/api/section")
 def section() -> object:
     """One tab's HTML, for the strategy the panel is showing."""
     name, which = request.args["strategy"], request.args["name"]
-    record = cache.load(SETUP["project"], SETUP["databank"], name, CFG)
+    record = work.RESULTS.get(name)
     if record is None:
         return jsonify({"html": '<div class="note">Esta estrategia todavía no se ha '
-                                'analizado. Pulsa «Analizar esta estrategia».</div>'})
-    warn = ('<div class="fail"><b>Resultado de otra configuración.</b> Se calculó con un '
-            'ajuste distinto del actual. Vuelve a analizar antes de decidir nada con estos '
-            'números.</div>' if record["stale"] else "")
-    return jsonify({"html": warn + sections.section(which, record["body"])})
-
-
-@APP.get("/api/figure")
-def figure() -> object:
-    """One market/model pair's null distribution."""
-    name, market, model = (request.args["strategy"], request.args["market"],
-                           request.args["model"])
-    if request.args.get("source") == "adhoc":
-        got = work.ADHOC[name][f"{market}|{model}"]
-        return jsonify({"html": charts.distribution(
-            got["shape"], market, f"modelo {model} (re-ejecutada) — p = {got['p']:.4f}")})
-    record = cache.load(SETUP["project"], SETUP["databank"], name, CFG)
-    return jsonify({"html": sections.figure(record["body"], market, model)})
+                                'analizado en esta sesión. Pulsa <b>Run analysis</b>.</div>'})
+    return jsonify({"html": sections.section(which, record, record["cfg"])})
 
 
 def main() -> None:
@@ -150,21 +135,29 @@ def main() -> None:
     ap.add_argument("--databank", required=True, help="the databank export_retest exported")
     ap.add_argument("--asset", required=True, help="base asset, e.g. XAUUSD")
     ap.add_argument("--export", required=True, help="export date, YYYY-MM-DD")
+    ap.add_argument("--set", action="append", default=[], metavar="KEY=VALUE",
+                    help="config.yaml override, e.g. --set nulls.draws=20000")
     ap.add_argument("--port", type=int, default=8766)
     a = ap.parse_args()
 
-    cache.clear(a.project, a.databank)
-    spec = markets.load(a.asset)
     trades = export_dir(a.project, a.databank, a.export) / "trades"
-    names = [f.stem for f in sorted((trades / spec["main"]).glob("*.csv"))]
-    feed_bars = {feed: barsio.read(bars_file(feed, spec["timeframe"]))
-                for feed in markets.feeds(a.asset)}
+    universe = markets.universe(a.asset, trades)
+    names = [f.stem for f in sorted((trades / universe["main"]).glob("*.csv"))]
     SETUP.update({"project": a.project, "databank": a.databank, "export": a.export,
-                  "spec": spec, "bars": feed_bars, "trades": trades, "strategies": names,
-                  "args": a})
-    CFG.update(work.default_cfg())
+                  "universe": universe, "trades": trades, "strategies": names, "args": a,
+                  "base_set": a.set, "cfg": config.load(a.set),
+                  "bars": {feed: barsio.read(bars_file(feed, universe["timeframe"]))
+                           for feed in markets.feeds(universe)}})
+    wiped = work.clear(DATA)
     url = f"http://127.0.0.1:{a.port}/"
-    print(f"{len(names)} estrategias · panel en {url}  (Ctrl+C para parar)")
+    print(f"{len(names)} estrategias · {len(universe['markets'])} mercados · panel en {url}")
+    for m in universe["markets"]:
+        print(f"  {m['feed']:30} {m['category']}")
+    for feed in universe["absent"]:
+        print(f"  {feed:30} DECLARADO PERO SIN OPERACIONES EN EL EXPORT")
+    if wiped:
+        print(f"  {wiped} resultados de análisis anteriores borrados del disco")
+    print("  nada se guarda: cada número de esta sesión sale del botón que acabas de pulsar")
     webbrowser.open(url)
     APP.run(host="127.0.0.1", port=a.port, threaded=True)
 

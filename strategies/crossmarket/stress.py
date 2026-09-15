@@ -3,9 +3,65 @@
 import numpy as np
 import pandas as pd
 
-from strategies.crossmarket import pricing
+from core import trades as tradeio
+from strategies.crossmarket import equity, metrics, pricing
 
 DEFAULT_MULTIPLES = [1.0, 1.5, 2.0, 2.5, 3.0]
+
+
+def degraded(fixed: dict, cfg: dict, rng: np.random.Generator) -> tuple[np.ndarray, ...]:
+    """The real trades run again under worse execution, many times over.
+
+    Args:
+        fixed: What backtest.setting() returned.
+        cfg: What config.load() returned.
+        rng: Seeded generator.
+
+    Returns:
+        (pnl, live): USD per trade and which trades happened, one row per run. Three things
+        go wrong at once and each is drawn independently per run: a share of trades is simply
+        missed, the whole run's cost is scaled by a multiple drawn from a range, and a share
+        of trades gives back part of its own adverse excursion. Unlike the null models this
+        keeps the real entries — it asks what the same trades are worth under a worse broker,
+        not whether the entries were any good.
+    """
+    s, sims = cfg["stress"], cfg["stress"]["sims"]
+    base, charged = fixed["pnl"], fixed["charged"]
+    mae = tradeio.excursions(fixed["aligned"], fixed["point_value"])["mae"].to_numpy()
+    mae_usd = np.abs(mae) * fixed["size"]
+    shock = rng.uniform(*s["cost_shock"], size=(sims, 1))
+    live = rng.random((sims, base.size)) >= s["p_skip"]
+    worse = rng.random((sims, base.size)) < s["fill_frac"]
+    pnl = base + charged - shock * charged - np.where(worse, s["fill_depth"] * mae_usd, 0.0)
+    return np.where(live, pnl, 0.0), live
+
+
+def simulate(fixed: dict, bars: pd.DataFrame, cfg: dict) -> dict:
+    """Every statistic and the equity cone of the execution stress.
+
+    Args:
+        fixed: What backtest.setting() returned.
+        bars: That market's bars.
+        cfg: What config.load() returned.
+
+    Returns:
+        The same table, shapes and cone shape backtest.run() returns, so the panel draws
+        both with one renderer. The question is different: the cone here is what a worse
+        broker can do to the same trades, not what random timing can.
+    """
+    e = cfg["equity"]
+    rng = np.random.default_rng(cfg["nulls"]["seed"])
+    pnl, live = degraded(fixed, cfg, rng)
+    seen = metrics.observed(fixed["pnl"], e["starting"])
+    stats = metrics.paths(pnl, live, e["starting"])
+    closed = np.repeat(fixed["held"]["exit"].to_numpy()[None, :], pnl.shape[0], axis=0)
+    curves = equity.path(pnl, closed, fixed["market"]["n_bars"], e["steps"], e["starting"])
+    observed = equity.path(fixed["pnl"][None, :], closed[:1], fixed["market"]["n_bars"],
+                           e["steps"], e["starting"])[0]
+    return {"table": metrics.table(stats, seen, e["percentiles"]),
+            "shapes": metrics.shapes(stats, seen),
+            "cone": {"bands": equity.bands(curves, e["bands"]),
+                     "observed": observed.tolist(), "dates": equity.dates(bars, e["steps"])}}
 
 
 def cost_gradient(fixed: dict, bars: pd.DataFrame, multiples: list[float] = DEFAULT_MULTIPLES

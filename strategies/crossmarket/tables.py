@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from strategies.crossmarket import charts
+from strategies.crossmarket import figures
 
 
 def _row(cells: list[str], tag: str = "td") -> str:
@@ -18,22 +18,28 @@ def _row(cells: list[str], tag: str = "td") -> str:
 
 def _label(r: Any) -> str:
     """The row's first cell: strategy and market when both are present, market alone otherwise."""
-    return (f"{r.strategy} · <code>{r.market}</code>" if hasattr(r, "strategy")
-            else f"<code>{r.market}</code>")
+    return (f"{r.strategy} · <code>{r.feed}</code>" if hasattr(r, "strategy")
+            else f"<code>{r.feed}</code>")
 
 
 def exposure_table(rows: pd.DataFrame) -> str:
     """Test 1c: concentration, drift-neutral excess and its CI, risk-normalised A, MFE capture.
 
     Args:
-        rows: Per-market rows carrying e, a, a_ci_lo, a_ci_hi, risk_normalised, capture_median.
+        rows: Per-market rows carrying e, e_meaningful, mu_t, a, a_ci_lo, a_ci_hi,
+            risk_normalised and capture_median.
 
     Returns:
         A scrollable table, one row per market (and per strategy, when the frame holds more
-        than one).
+        than one). E is shown only where the market's own drift is a drift: dividing by a
+        mu_m that is statistically zero produced E = -69.4 on Brent, a market whose A was in
+        fact the strongest of the three.
     """
-    head = _row(["mercado", "E", "A", "IC 90% de A", "A / unidad", "captura MFE (mediana)"], "th")
-    body = [_row([_label(r), f"{r.e:.2f}", f"{r.a:+.2e}",
+    head = _row(["mercado", "E", "deriva del mercado (t)", "A", "IC 90% de A", "A / unidad",
+                "captura MFE (mediana)"], "th")
+    body = [_row([_label(r),
+                 f"{r.e:.2f}" if r.e_meaningful else '<span class="no">no aplica</span>',
+                 f"{r.mu_t:+.2f}", f"{r.a:+.2e}",
                  f"[{r.a_ci_lo:+.2e}, {r.a_ci_hi:+.2e}]", f"{r.risk_normalised:+.3f}",
                  f"{r.capture_median:+.3f}"]) for r in rows.itertuples()]
     return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
@@ -80,7 +86,11 @@ def breadth_block(summary: dict) -> str:
             f'<div class="stat"><b>{worst["pf"]:.2f}</b>'
             f'<span>peor PF, en {worst["market"]}</span></div>'
             f'<div class="stat"><b>{summary["pf_cv"]:.2f}</b>'
-            f'<span>CV de PF entre mercados</span></div></div>')
+            f'<span>CV de PF entre mercados</span></div>'
+            f'<div class="stat"><b>{summary["under_alpha"]}/{summary["markets"]}</b>'
+            f'<span>mercados bajo alpha (1a)</span></div>'
+            f'<div class="stat"><b>{summary["paired_under_alpha"]}/{summary["markets"]}</b>'
+            f'<span>mercados bajo alpha (1b pareado)</span></div></div>')
 
 
 def fingerprint_table(rows: pd.DataFrame) -> str:
@@ -134,6 +144,70 @@ def correlation_section(corr: dict, pca: dict) -> str:
     """
     components = [{"market": f"PC{i + 1}", "share": s}
                   for i, s in enumerate(pca["variance_share"])]
-    return (charts.heatmap(corr, "Correlación semanal entre mercados")
-            + charts.bars_by_market(components, "share",
+    return (figures.heatmap(corr, "Correlación semanal entre mercados")
+            + figures.bars_by_market(components, "share",
                                     "Varianza explicada por componente", rule=0.70))
+
+
+def paired_table(rows: pd.DataFrame) -> str:
+    """Test 1b: each trade against the average window of its own length in its own regime.
+
+    Args:
+        rows: Per-market rows carrying paired_mean, paired_median, paired_p, paired_beat and
+            the bootstrap bounds.
+
+    Returns:
+        A scrollable table. Cost cancels between the trade and its reference, so nothing here
+        depends on the cost assumption — and nothing here says the strategy is profitable,
+        only that its entries did or did not beat blind entries of the same duration.
+    """
+    head = _row(["mercado", "alfa medio / operación", "mediana", "IC 90%",
+                "% de operaciones que ganan", "p (Wilcoxon)"], "th")
+    body = [_row([_label(r), f"{r.paired_mean:+.5f}", f"{r.paired_median:+.5f}",
+                 f"[{r.paired_ci_lo:+.5f}, {r.paired_ci_hi:+.5f}]", f"{r.paired_beat:.1%}",
+                 f"{r.paired_p:.4f}"]) for r in rows.itertuples()]
+    return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
+
+
+def drivers_table(rows: pd.DataFrame, base: dict) -> str:
+    """What kind of market each one is: the structural properties of PDF section 5.4.
+
+    Args:
+        rows: Per-market rows carrying a `drivers` dict.
+        base: The record's `base` entry, whose own drivers are shown as the reference.
+
+    Returns:
+        A scrollable table with the base asset first. These describe the market, not the
+        strategy: with two markets they are a description of where the edge did and did not
+        transfer, and the regression the source note asks for needs six or more.
+    """
+    head = _row(["mercado", "Hurst", f"VR", "% barras en tendencia (ADX)", "ATR % del precio",
+                "ratio de eficiencia", "velas", "ventana"], "th")
+    entries = [(base["feed"], base["drivers"], " (base)")]
+    entries += [(r.feed, r.drivers, "") for r in rows.itertuples()]
+    body = [_row([f"<code>{feed}</code>{tag}", f"{d['hurst']:.3f}",
+                 f"{d['variance_ratio']:.3f}", f"{d['adx_trend_share']:.1%}",
+                 f"{d['atr_pct']:.3f}", f"{d['efficiency']:.3f}", f"{d['bars']:,}",
+                 f"{d['from']} … {d['to']}"]) for feed, d, tag in entries]
+    return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
+
+
+def warnings_block(rows: pd.DataFrame, texts: dict[str, str]) -> str:
+    """Every reason to distrust each market's numbers, spelled out.
+
+    Args:
+        rows: Per-market rows carrying a `warnings` list.
+        texts: inference.WARNINGS — the key to its sentence.
+
+    Returns:
+        One block per market, or a note when nothing fired. No market is ever hidden by these:
+        they are the context the numbers are read in.
+    """
+    blocks = []
+    for r in rows.itertuples():
+        if not r.warnings:
+            blocks.append(f'<p><code>{r.feed}</code> — <span class="ok">sin avisos</span></p>')
+            continue
+        items = "".join(f"<li>{texts[w]}</li>" for w in r.warnings)
+        blocks.append(f'<p><code>{r.feed}</code></p><ul class="warn">{items}</ul>')
+    return "".join(blocks)

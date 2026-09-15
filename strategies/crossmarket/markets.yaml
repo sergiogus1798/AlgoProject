@@ -1,22 +1,30 @@
-# Additional markets for the cross-market retest, one block per base asset.
+# The retest universe: which additional markets each base asset is retested on, grouped into
+# the categories the owner retests in. One block per base asset, one list per category.
 #
 # THE LIST IS FIXED BEFORE RESULTS ARE LOOKED AT. Choosing markets after seeing where the
 # strategies work turns the test into a selection and its p-values into decoration.
 #
-# feed        the SQX symbol, exactly as -symbol action=list prints it. It must be the same
-#             feed the retest task used, or the export will not line up.
-# role        descriptive only; it is printed in the report and changes no calculation.
+# This file CLASSIFIES; it does not decide what exists. What a strategy was really retested on
+# is read from the export itself — `markets.discovered()` lists the feeds that produced trades,
+# taken from the Symbol column. A feed in the export that is missing here is reported as
+# unclassified, never dropped; a feed here that the export does not carry is reported as absent.
+# Before this, a mismatch showed up as a market with zero strategies rather than as an error.
+#
+# feed        the SQX symbol, exactly as -symbol action=list prints it.
 # data_from   first date the feed has data for. Nothing is filtered on it: it is reported so
 #             the shrinking of the common window across markets is visible.
 #
-# The base asset itself is excluded from the vote wherever it appears: it is the market the
-# strategies were fitted on, so its random-entry p-value is not interpretable.
+# The base asset itself never appears in a category: it is the market the strategies were
+# fitted on, so its random-entry p-value is not interpretable. It is reported as the reference.
 
-# Read from the retest the owner actually ran: the "Retest Markets - Family" databank of the
-# XAUUSD project, whose strategies carry exactly these two AdditionalMarket results, at M30.
 XAUUSD:
   main: XAUUSD_DukasM1_Infinox
   timeframe: M30
-  additional:
-    - {feed: XAGUSD_DukasM1_Infinox, role: family, data_from: 2003-08-08}
-    - {feed: BRENTCMDUSD_ftmo, role: family, data_from: unknown}
+  categories:
+    # Same macro family as gold: metals and energy, driven by the dollar and by risk.
+    family:
+      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
+      - {feed: BRENTCMDUSD_ftmo, data_from: unknown}
+    # Markets chosen for a different structure rather than a shared driver. Empty until the
+    # owner runs that retest; the category exists so the export can be classified against it.
+    structure: []

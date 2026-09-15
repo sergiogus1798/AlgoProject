@@ -8,7 +8,7 @@ from pathlib import Path
 
 from core import exportdrv, manifest, trades
 from core.paths import MASTER, export_dir
-from sqx.export.export_trades import stage
+from sqx.export.export_trades import SAMPLE_SEED, stage
 
 
 def split(raw_dir: Path, out_dir: Path) -> dict[str, int]:
@@ -40,10 +40,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True, help="the databank the retest wrote into")
+    ap.add_argument("--limit", type=int, default=0,
+                    help="export a reproducible random sample of this many strategies")
     a = ap.parse_args()
 
     out = export_dir(a.project, a.databank, date.today().isoformat())
-    timeframes = stage(a.project, a.databank, out / "strategies")
+    timeframes = stage(a.project, a.databank, out / "strategies", a.limit)
     print(f"staged {len(timeframes)} strategies from {a.project}/{a.databank}")
 
     exportdrv.trades(out / "strategies", out / "raw", data="all")
@@ -53,8 +55,10 @@ def main() -> None:
 
     manifest.write(out,
                    {"install": str(MASTER), "project": a.project, "databank": a.databank,
-                    "data": "all", "timeframes": sorted(set(timeframes.values()))},
-                   f"export_retest.py --project {a.project} --databank {a.databank}",
+                    "data": "all", "timeframes": sorted(set(timeframes.values())),
+                    "limit": a.limit, "sample_seed": SAMPLE_SEED if a.limit else None},
+                   f"export_retest.py --project {a.project} --databank {a.databank}"
+                   + (f" --limit {a.limit}" if a.limit else ""),
                    {"strategies": len(timeframes), "markets": len(counts), **counts})
     print(f"wrote {out}")
 

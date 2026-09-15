@@ -1,67 +1,74 @@
-# strategies/crossmarket/explorer — the interactive panel
+# strategies/crossmarket/explorer — the panel
 
-The only way to run this study. There is no batch command: every test in the folder above —
-Test 1a, exposure, significance, fingerprint, cost and correlation — runs from here, on one
-strategy or on the whole database, and the panel's own "Generar informe" button writes the same
-files a batch command used to. It is **a way of looking, never a second set of numbers**: every
-figure comes from `charts.py`/`tables.py`, every table from `panel.py`, and the static report is
-built by the same functions that render the live tabs.
+The only way to run this study, **one strategy at a time**. Pick a strategy, see the markets SQX
+retested it on, set every knob, press **Run analysis**.
 
 ```
-serve ─▶ jobs ─▶ work ─▶ analysis ─▶ cache ─▶ sections ─▶ page.html
- routes   one     what     the study    disk    the HTML    the browser
-         job at   a button
-         a time   does
+serve ─▶ scope ─▶ jobs ─▶ work ─▶ analysis ─▶ sections ─▶ page.html
+ routes  the      one     the      the study   the HTML    the browser
+         drawer's job at  session
+         overrides a time record
 ```
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `serve.py` | The routes and the launch: which databank, which strategies, which port | `python3 -m strategies.crossmarket.explorer.serve --project XAUUSD --databank RetestMarkets --asset XAUUSD --export 2026-09-08` | export → `http://127.0.0.1:8766` |
-| `work.py` | What a button actually runs: analyse a strategy, analyse the database, write the report | imported | strategy(ies) → cache, file |
-| `analysis.py` | The heavy half of `work.py`: every test in the folder above, on one strategy over its additional markets | imported | strategy → rows, shapes, verdict, breadth, correlation |
-| `jobs.py` | One job at a time, off the request thread, publishing step-by-step progress | imported | callable → progress |
-| `cache.py` | Results on disk under the data root, stamped with a hash of the run configuration | imported | result → JSON |
-| `sections.py` | The panel's per-strategy tabs, rendered by `panel.py`/`tables.py`'s own functions | imported | record → HTML |
-| `page.html` | The panel: dropdown, buttons, tabs, progress bar, config drawer and the test explorer | served | — |
+| `serve.py` | The routes and the launch: which databank, which strategies, which port | `python3 -m strategies.crossmarket.explorer.serve --project XAUUSD --databank "Retest Markets - Family" --asset XAUUSD --export 2026-09-14` | export → `http://127.0.0.1:8766` |
+| `scope.py` | Turns the config drawer's overrides into the config one request runs with | imported | payload → cfg |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the drawer's hover text | imported | — |
+| `work.py` | What a button runs, and the session's results | imported | strategy → RESULTS |
+| `analysis.py` | The heavy half: every null model and every test, market by market | imported | strategy → rows, runs |
+| `jobs.py` | One job at a time, off the request thread, publishing a continuous share | imported | callable → progress |
+| `sections.py` | The tab registry and the tabs that are tables | imported | record → HTML |
+| `simulations.py` | The three tabs that draw simulated distributions and equity cones | imported | record → HTML |
+| `page.html` | The panel: dropdown, market list, run buttons, tabs, progress bar, config drawer | served | — |
 
-## Why the cache is the point
+## Nothing is stored
 
-Analysing one strategy runs Test 1a under four models plus Fases 1-4 on every additional market —
-seconds, not minutes, but multiplied by a whole database it adds up, and every click on the
-dropdown would pay it again inside the same session without a cache. Results live in
-`<data root>/derived/crossmarket/<project>/<databank>/<strategy>.json`, each stamped with a
-**fingerprint of the whole run configuration** — draws, models, alpha, the trade-count floors, the
-bootstrap block, the cost multiples, the slippage fractions. Change any of them and every stored
-result declares itself out of date, in red, rather than being silently reused to answer a question
-it was not computed for.
+There is no cache, no staleness flag and no file on disk. `work.RESULTS` holds the session's runs in
+memory and dies with the process; start-up deletes anything an earlier build left under
+`<data root>/derived/crossmarket/`. A number on the panel always comes from the button that was just
+pressed — which is the whole reason the cache was removed on 2026-09-15.
 
-The cache does not survive across launches: `serve.py` wipes the whole databank's stored results at
-start-up, so the panel always opens with nothing analysed rather than showing a previous session's
-strategies as if they were the current run's.
+The cost of that is real: a strategy takes about 25 s at the default 25,000 draws over two markets
+— roughly a minute over four — and closing the panel throws it away.
 
-## One job at a time
+## The two run buttons
 
-`jobs.py` refuses a second job while one runs, off the request thread so the progress bar can be
-polled. Unlike `monteCarlo/explorer`, there is no per-simulation callback to hook: a cross-market
-run is a handful of numpy calls, so progress advances once per market (analysing one strategy) or
-once per strategy (analysing the whole database).
+**Run analysis** does the whole strategy: every market, every null model, every test. **run** beside
+a market in the list does that one market only, with whatever the drawer says at that moment, and
+**merges into what is already there** — so re-running one market at 50,000 draws does not throw away
+the other. The markets are listed per strategy: one this strategy never traded on is shown greyed as
+`sin operaciones` with no button, because the export writes a market's file only when the strategy
+fired there, and that absence is a result rather than a gap.
+
+## The tabs
+
+`Resumen` · `Entrada aleatoria (1a)` · `Modelos` · `Pareado (1b)` · `Exposición (1c)` ·
+`Coste y ejecución` · `Significancia` · `Huella` · `El mercado` · `Correlación` · `Avisos` ·
+`Glosario`. There is no verdict tab, because there is no verdict.
+
+Two of them draw simulations: **Entrada aleatoria** and **Coste y ejecución**. Both show, per market,
+the equity cone with the real backtest on it and then one histogram per statistic — net, Ret/DD,
+drawdown, Sharpe, PF — each with the simulated median, the p5-p95 band and the real value marked,
+above the full percentile table. They answer different questions: the first is what random *timing*
+could have done with the same rhythm, the second is what a worse *broker* could do to the same
+trades.
+
+## The config drawer
+
+Every knob of `config.yaml`, grouped by section, each with the sentence `tooltips.py` gives it on
+hover. Editing one changes what the **next** run does and is never written back to disk; the same
+overrides can be passed at launch with `--set nulls.draws=20000`.
+
+## Progress
+
+`jobs.py` publishes a continuous share rather than counting steps, because `backtest.null()` draws
+its runs in batches and calls back after each one. The bar therefore moves several times inside every
+model, and the line under it names the market and the model running right now.
 
 ## What the panel deliberately cannot do
 
-- **Decide anything from a single re-run.** "Re-ejecutar esta prueba" runs one (market, model) pair
-  on its own and shows it beside the stored one, marked as a re-run. It never overwrites the cached
-  analysis.
-- **Change the verdict rule's own file.** The config drawer's ALPHA / MIN_TRADES / MIN_ON_OPEN /
-  MIN_MARKETS / CORRELATED fields patch `inference.py`'s module constants for the duration of one
-  run (`analysis.overridden()`) and restore them after — `inference.py` itself is never edited, per
-  the project's rule that the verdict model is validated and closed.
+- **Decide anything.** No verdict, no ranking, and no market is ever hidden.
+- **Reuse a result.** See above. A second strategy's numbers never come from a previous session.
+- **Write a knob back to disk.** The drawer patches one run; `config.yaml` is edited by hand.
 - **Be reached from another machine.** It binds `127.0.0.1` only.
-
-## What "Analizar toda la base de datos" adds over the old batch command
-
-The old `report.py` was the only way to run every strategy in one pass; now the panel has to do
-that too, since it is the only entry point left. The button repeats "Analizar esta estrategia" for
-every strategy in the export, filling the headline strip with the database-wide MANTENER count and
-the luck figure once it finishes. "Generar informe" then reads what it cached — never recomputes —
-to write `by_market.csv`, `verdict.csv`, `crossmarket.md` and `crossmarket.html`, and asks for that
-button first if any strategy is missing or stale under the current configuration.

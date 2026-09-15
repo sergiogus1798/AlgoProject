@@ -33,9 +33,11 @@ def moments(returns: np.ndarray) -> tuple[float, float, float]:
     Returns:
         (sharpe, skew, kurtosis). Sharpe is the plain per-trade mean over its own standard
         deviation, unannualised: min_track_record() needs it in this unit, not a yearly one.
+        Kurtosis is raw, not excess — 3 for a normal — because that is what the minimum
+        track-record formula's (kurtosis - 1) / 4 term expects.
     """
     sharpe = float(returns.mean() / returns.std(ddof=1))
-    return sharpe, float(stats.skew(returns)), float(stats.kurtosis(returns, fisher=True))
+    return sharpe, float(stats.skew(returns)), float(stats.kurtosis(returns, fisher=False))
 
 
 def min_track_record(returns: np.ndarray, alpha: float = 0.05) -> dict:
@@ -55,23 +57,23 @@ def min_track_record(returns: np.ndarray, alpha: float = 0.05) -> dict:
     return {"needed": float(needed), "have": len(returns), "enough": bool(len(returns) >= needed)}
 
 
-def bootstrap_metric(returns: np.ndarray, metric: Callable[[np.ndarray], float], draws: int,
-                     block: int, rng: np.random.Generator) -> dict:
+def bootstrap_metric(returns: np.ndarray, metric: Callable[[np.ndarray], float], cfg: dict,
+                     rng: np.random.Generator) -> dict:
     """Confidence interval of a metric by block-bootstrap over the real trades.
 
     Args:
         returns: Per-trade returns.
         metric: A function of a returns array, e.g. profit factor or expectancy.
-        draws: Bootstrap draws.
-        block: Trades per block.
+        cfg: What config.load() returned.
         rng: Seeded generator.
 
     Returns:
         What bootstrap.percentile_ci() returned, over `metric` applied to each draw.
     """
-    picks = bootstrap.block_bootstrap(draws, len(returns), rng, block)
+    b = cfg["bootstrap"]
+    picks = bootstrap.block_bootstrap(b["draws"], len(returns), rng, b["block"])
     values = np.array([metric(returns[p]) for p in picks])
-    return bootstrap.percentile_ci(values)
+    return bootstrap.percentile_ci(values, *b["ci"])
 
 
 def profit_factor(returns: np.ndarray) -> float:

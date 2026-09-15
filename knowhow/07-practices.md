@@ -260,3 +260,86 @@ report in `AlgoData/reports/XAUUSD/Results/2026-09-09/montecarlo/`; reproduce wi
   the standard deviation of net profit across reorderings: it comes out at ~1e-11 $, i.e. zero in
   floating point. If it is ever not zero, the model is touching composition, and the split between
   "order luck" and "composition luck" stops holding.
+
+
+## A gate that excludes evidence is a decision, and it belongs to the owner
+
+🔬 Found 2026-09-14 rebuilding `strategies/crossmarket/`. The first build turned every diagnostic
+into a gate: a market with fewer than 30 trades, or with under 95% of entries on a bar open, was
+dropped from the study entirely, and a strategy measured on fewer than four surviving markets came
+out NO EVALUABLE. Two things followed, both bad.
+
+- **It threw away real results.** `Strategy 24.14.35` came out NO EVALUABLE despite p = 0.005 on
+  Brent under every null model, because 8.6% of its Brent entries were pending fills. Losing 100% of
+  a market's evidence over 8% of its trades is not conservatism, it is discarding the measurement.
+- **It was structurally unreachable.** `MIN_MARKETS = 4` against the two markets the retest actually
+  ran made NO EVALUABLE the only possible outcome for XAUUSD, for every strategy, forever — and
+  nothing in the code or the report said so.
+
+The replacement: the study reports every market it measured and names, beside each one, every reason
+to distrust it (`inference.warnings()`). Nothing is hidden and nothing is decided. **A threshold that
+removes data is a decision about what counts as evidence; it is the owner's, not the analysis's.**
+
+## Dividing by a drift that is statistically zero
+
+🔬 Found 2026-09-14. The source note's "primary tool" for cross-market comparison is
+`E = mean(bar return while held) / mu_m`, the market's own mean bar return. Measured over M30 bars:
+gold `t = +3.13`, silver `t = +1.61`, **Brent `t = −0.11`**. On Brent, E came out **−69.4** — for the
+market with the *strongest* drift-neutral excess A of the three. The ratio inverts whenever the
+denominator is near zero and flips sign whenever the market drifted down.
+
+The fix is not a clamp. **A is the number to read** — it subtracts the drift instead of dividing by
+it, so it is defined everywhere — and E is withheld unless the market's drift clears a t threshold.
+Any metric shaped "strategy over market" inherits this; check the denominator's own significance
+before publishing the ratio.
+
+
+## A bar file is wider than the backtest that ran on it, and a null will happily use the rest
+
+🔬 Found 2026-09-15 in `strategies/crossmarket`, by the owner reading an equity chart. Exported bars
+cover whatever window was asked of SQX; the retest that produced the trades covers a narrower one.
+Measured on `XAUUSD / Retest Markets - Family`: bars 2003-05 to 2026-01, backtests 2008-01 to
+2022-12 — **a third of every bar file sits outside the backtest**.
+
+A random-entry null that samples the whole file is then trading years the real strategy never saw,
+each with its own drift and its own volatility regime. The damage is not confined to the null: the
+market drift `mu_m` that Test 1c subtracts, the blind-window benchmark Test 1b compares against, the
+structural profile in `drivers.py`, and the x axis of the equity curve were all computed over the
+wrong stretch.
+
+**The fix is one slice, applied once, before anything else** — `envelope.window(trades, bars)` cuts
+to the first entry and the last exit, and every downstream function receives the slice rather than
+the file. Per strategy, not per market: two strategies in one databank need not cover the same span.
+
+**Generalise it.** Any study that places synthetic events on a price series has to bound the series
+to what the real events could have used. Ask of any such test: *could a simulated trade land where a
+real one structurally could not?* Here the answer was yes for a third of the sample and nothing
+crashed.
+
+## Which null is hardest to beat is a measurement, not an intuition — and it moved twice
+
+🔬 `strategies/crossmarket` runs four random-entry nulls. Three re-lay the whole run from a random
+start; `block_shift` moves each trade inside its own six-month block and its own weekday-hour slot.
+
+- **First reading (2026-09-15, unbounded sample).** `block_shift` looked systematically tightest —
+  σ 0.073 against 0.095 on XAGUSD — and returned the lowest p everywhere tried. This contradicted
+  the module's own docstring, which had reasoned that destroying clustering would *reduce* the null's
+  variance, and the docstring was corrected.
+- **Second reading (same day, window bounded).** Most of that gap was the artefact above: the other
+  three had been roaming a third more sample. With the window bounded, `block_shift` has the
+  narrowest null in **5 of 8** (strategy, market) pairs and the lowest p in **7 of 8** — usually, not
+  systematically.
+
+Two lessons worth more than the numbers:
+
+- **"Randomises more things" does not imply "harder to beat."** Check each null's spread before
+  calling one conservative.
+- **A measurement that contradicts a docstring may be measuring a bug.** The first reading was real
+  and reproducible and still mostly an artefact. Before rewriting documentation around a surprising
+  number, ask what else would have to be true for it — here, that the nulls had more room than the
+  backtest, which was exactly the defect.
+
+`block_shift` stays the model the summary reports, and the reason is unchanged by either reading: it
+is the only one that changes exactly one thing, so the only one whose low p is attributable to entry
+timing rather than to where the run landed. **A strategy that survives all four says more than one
+that survives only it.**

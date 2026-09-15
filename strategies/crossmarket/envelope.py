@@ -4,6 +4,26 @@ import numpy as np
 import pandas as pd
 
 
+def window(trades: pd.DataFrame, bars: pd.DataFrame) -> pd.DataFrame:
+    """The bars the backtest actually covered, from its first entry to its last exit.
+
+    Args:
+        trades: One market's real trades, times already parsed.
+        bars: That market's whole bar file.
+
+    Returns:
+        The slice between the first entry and the last exit, both included. **Every other
+        function here takes the slice, never the file.** A bar file runs wider than the
+        retest that was run on it — measured, 2003-2026 against a 2008-2022 backtest, so a
+        third of the bars sit outside it — and a null model that may place trades anywhere in
+        the file is trading years the real strategy never saw. That is not a fair comparison
+        in either direction: the extra years carry their own drift and their own volatility
+        regime, and the equity axis stretches over a stretch where the real curve is flat by
+        construction.
+    """
+    return bars.loc[trades["Open time"].min():trades["Close time"].max()]
+
+
 def occupancy(trades: pd.DataFrame, bars: pd.DataFrame) -> pd.DataFrame:
     """Locate every trade on the bar grid.
 
@@ -62,6 +82,30 @@ def calendar_index(bars: pd.DataFrame, block: np.ndarray) -> dict[str, np.ndarra
             "size": np.searchsorted(ordered, key, side="right") - start}
 
 
+FRIDAY, FRIDAY_CLOSE = 4, 21   # measured: 832 of 838 "End Of Friday" exits land on Friday 21:00
+
+
+def friday_cap(bars: pd.DataFrame) -> np.ndarray:
+    """Bars from each bar to the next Friday close, which is when an open trade is forced out.
+
+    Args:
+        bars: One market's bars.
+
+    Returns:
+        One count per bar; the last bars, which no Friday close follows, get the bars left in
+        the file. These strategies carry an "End Of Friday (Time)" exit — 5.4% of all trades
+        across the sampled databank — so a hold is not a property of the trade alone: the same
+        eight-bar intention ends early if it is laid down on a Friday afternoon. A null that
+        reuses holds without re-applying this gives its random trades a rule the real one did
+        not have.
+    """
+    closes = np.flatnonzero((bars.index.dayofweek == FRIDAY)
+                            & (bars.index.hour == FRIDAY_CLOSE))
+    nxt = np.searchsorted(closes, np.arange(len(bars)), side="right")
+    return np.where(nxt < len(closes), closes[np.minimum(nxt, len(closes) - 1)],
+                    len(bars) - 1) - np.arange(len(bars))
+
+
 def describe(bars: pd.DataFrame, held: pd.DataFrame, months: int) -> dict:
     """Everything a trade model needs to know about one market and one real run on it.
 
@@ -71,13 +115,14 @@ def describe(bars: pd.DataFrame, held: pd.DataFrame, months: int) -> dict:
         months: Regime block length in months.
 
     Returns:
-        Keys block, calendar, gaps and n_bars. This is the whole interface between the
+        Keys block, calendar, gaps, n_bars and friday_cap. This is the whole interface
+        between the
         envelope and the models: a new model reads this dict and returns entries and holds,
         and needs nothing else from the rest of the study.
     """
     regime = blocks(bars, months)
     return {"block": regime, "calendar": calendar_index(bars, regime),
-            "gaps": gaps(held), "n_bars": len(bars)}
+            "gaps": gaps(held), "n_bars": len(bars), "friday_cap": friday_cap(bars)}
 
 
 def blocks(bars: pd.DataFrame, months: int) -> np.ndarray:

@@ -10,6 +10,24 @@ CONVENTIONS = {"open-open": ("Open", "Open"), "open-close": ("Open", "Close"),
                "close-close": ("Close", "Close"), "close-open": ("Close", "Open")}
 
 
+def require_long_only(trades: pd.DataFrame) -> None:
+    """Refuse to price a market whose trades are not all long.
+
+    Args:
+        trades: One market's trades.
+
+    Raises:
+        ValueError: A short trade is present. Every return here is log(exit / entry), which
+            has the wrong sign for a short, and nothing downstream would notice. The whole
+            XAUUSD corpus is long-only (92,329 trades checked), so this is an assertion about
+            the data rather than a case to handle: short support is a modelling decision, not
+            a sign flip, because the null's drift exposure changes with it.
+    """
+    kinds = set(trades["Type"].unique())
+    if kinds != {"Buy"}:
+        raise ValueError(f"cross-market pricing is long-only; found {sorted(kinds)}")
+
+
 def atr(bars: pd.DataFrame, window: int = ATR_BARS) -> np.ndarray:
     """Average true range, as a plain rolling mean of the true range.
 

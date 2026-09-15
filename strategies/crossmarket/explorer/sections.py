@@ -1,72 +1,124 @@
-"""The panel's per-strategy content, rendered by the same functions that write the report file."""
+"""The panel's per-strategy tabs, rendered by the same functions everywhere."""
 
 import pandas as pd
 
-from strategies.crossmarket import charts, panel, tables
+from strategies.crossmarket import figures, panel, tables
+from strategies.crossmarket.explorer import simulations
 
 
 def _rows(record: dict) -> pd.DataFrame:
     """The strategy's per-market rows as a frame, for every renderer here.
 
     Args:
-        record: What cache.load()'s "body" holds for one strategy.
+        record: What work.RESULTS holds for one strategy.
 
     Returns:
-        One row per additional market.
+        One row per market analysed, base asset excluded.
     """
     return pd.DataFrame(record["rows"])
 
 
-def verdict_tab(record: dict) -> str:
-    """Verdict, per-market table and the diagnostics that decide whether it may be believed.
+def summary_tab(record: dict, cfg: dict) -> str:
+    """The per-market result of every test, and the mechanical checks under it.
 
     Args:
-        record: What cache.load()'s "body" holds.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
 
     Returns:
-        The tab's HTML. `inference.call()` is not touched here: `verdict` is already what
-        analysis.analyse_strategy() computed from it.
+        The tab's HTML. No verdict: the table says what each market did and how many reasons
+        there are to distrust it, and the reading is the owner's.
     """
-    rows, v = _rows(record), record["verdict"]
-    head = (f'<div class="headline"><div class="stat"><b>{v["verdict"]}</b>'
-            f'<span>{v["beaten"]}/{v["markets"]} mercados · familia {v["family"]}</span>'
-            f'</div></div>')
-    return (head + "<h3>Por mercado</h3>" + panel.market_table(rows)
+    rows, s = _rows(record), record["summary"]
+    head = (f'<div class="headline">'
+            f'<div class="stat"><b>{s["under_alpha"]}/{s["markets"]}</b>'
+            f'<span>mercados bajo alpha (1a)</span></div>'
+            f'<div class="stat"><b>{s["paired_under_alpha"]}/{s["markets"]}</b>'
+            f'<span>mercados bajo alpha (1b)</span></div>'
+            f'<div class="stat"><b>{s["edge_r"]:+.3f}</b><span>ventaja mediana</span></div>'
+            f'<div class="stat"><b>{s["family"]}</b><span>qué se está probando</span></div>'
+            f'<div class="stat"><b>{s["warnings"]}</b><span>avisos en total</span></div></div>')
+    absent = ('<div class="note"><b>Sin operaciones en '
+              + ", ".join(f"<code>{f}</code>" for f in record["missing"])
+              + ".</b> Esta estrategia no llegó a disparar ni una vez ahí, así que ese mercado "
+                "no tiene fila. Es un resultado sobre la estrategia, no un dato que falte."
+                "</div>" if record["missing"] else "")
+    return (head + absent + "<h3>Por mercado</h3>" + panel.market_table(rows)
             + "<h3>Comprobaciones</h3>" + panel.diagnostics(rows))
 
 
-def exposure_tab(record: dict) -> str:
+def warnings_tab(record: dict, cfg: dict) -> str:
+    """Every reason to distrust each market's numbers.
+
+    Args:
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
+
+    Returns:
+        The tab's HTML.
+    """
+    return ('<div class="note">Ningún mercado se excluye por esto. Un aviso es contexto para '
+            'leer el número, no una razón para esconderlo.</div>'
+            + tables.warnings_block(_rows(record), panel.WARNINGS_ES))
+
+
+def paired_tab(record: dict, cfg: dict) -> str:
+    """Test 1b across the strategy's markets.
+
+    Args:
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
+
+    Returns:
+        The tab's HTML, with the base asset's own paired result shown as the reference.
+    """
+    base = record["base"]
+    note = (f'<div class="note">Referencia — en el activo base <code>{base["feed"]}</code>, '
+            f'donde la estrategia fue optimizada, el test pareado da p = {base["paired_p"]:.4f} '
+            f'con {base["paired_beat"]:.1%} de operaciones ganando a su ventana media. Eso dice '
+            f'que el código mide lo que dice medir, y nada sobre la estrategia.</div>')
+    return (figures.bars_by_market(
+        [{"market": r["feed"], "paired_mean": r["paired_mean"]} for r in record["rows"]],
+        "paired_mean", "Alfa medio por operación frente a su ventana ciega", rule=0.0)
+        + tables.paired_table(_rows(record)) + note)
+
+
+def exposure_tab(record: dict, cfg: dict) -> str:
     """Test 1c across the strategy's markets.
 
     Args:
-        record: What cache.load()'s "body" holds.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
 
     Returns:
-        The tab's HTML.
+        The tab's HTML. A drops the market's own drift out, so it is charted rather than E,
+        which exists only where that drift is real.
     """
-    rows = _rows(record)
-    return (charts.bars_by_market(rows[["market", "e"]].to_dict("records"), "e",
-                                  "Concentración E por mercado (1,0 = azar)", rule=1.0)
-            + tables.exposure_table(rows))
+    return (figures.bars_by_market(
+        [{"market": r["feed"], "a": r["a"]} for r in record["rows"]],
+        "a", "Exceso por vela sobre la vela media del mercado (A)", rule=0.0)
+        + tables.exposure_table(_rows(record)))
 
 
-def significance_tab(record: dict) -> str:
+def significance_tab(record: dict, cfg: dict) -> str:
     """Significance and breadth across the strategy's markets.
 
     Args:
-        record: What cache.load()'s "body" holds.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
 
     Returns:
         The tab's HTML.
     """
-    return tables.breadth_block(record["breadth"]) + tables.significance_table(_rows(record))
+    return tables.breadth_block(record["summary"]) + tables.significance_table(_rows(record))
 
 
-def fingerprint_tab(record: dict) -> str:
-    """Behavioural fingerprint against gold.
+def fingerprint_tab(record: dict, cfg: dict) -> str:
+    """Behavioural fingerprint against the base asset.
 
     Args:
-        record: What cache.load()'s "body" holds.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
 
     Returns:
         The tab's HTML.
@@ -74,75 +126,75 @@ def fingerprint_tab(record: dict) -> str:
     return tables.fingerprint_table(_rows(record))
 
 
-def cost_tab(record: dict) -> str:
-    """Cost gradient, breakeven and execution stress.
+def drivers_tab(record: dict, cfg: dict) -> str:
+    """What kind of market each one is — the structural properties of PDF section 5.4.
 
     Args:
-        record: What cache.load()'s "body" holds.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
 
     Returns:
-        The tab's HTML.
+        The tab's HTML, with the note that says why there is no regression here yet.
     """
-    rows = _rows(record)
-    return (charts.bars_by_market(rows[["market", "breakeven"]].to_dict("records"),
-                                  "breakeven", "Múltiplo de coste de equilibrio (gate: 2,0)",
-                                  rule=2.0)
-            + tables.cost_table(rows))
+    return (tables.drivers_table(_rows(record), record["base"])
+            + '<div class="note">Estas propiedades describen el <b>mercado</b>, no la '
+              'estrategia. La regresión que convierte «funciona aquí y no allí» en «funciona '
+              'en mercados con tal propiedad» necesita seis mercados o más; con dos, esto es '
+              'una descripción de dónde se trasladó el acierto y dónde no.</div>')
 
 
-def correlation_tab(record: dict) -> str:
-    """Correlation matrix and PCA across the strategy's markets plus gold.
+def correlation_tab(record: dict, cfg: dict) -> str:
+    """Correlation matrix and PCA across the strategy's markets plus the base asset.
 
     Args:
-        record: What cache.load()'s "body" holds.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
 
     Returns:
-        The tab's HTML.
+        The tab's HTML, warned when PC1 says the markets are one bet.
     """
-    return tables.correlation_section(record["correlation"], record["pca"])
+    warn = ('<div class="fail">PC1 explica más del '
+            f'{cfg["diagnostics"]["pca_warn"]:.0%} de la varianza: estos mercados son una sola '
+            'apuesta, no varias confirmaciones independientes.</div>'
+            if record["pca"]["pc1"] > cfg["diagnostics"]["pca_warn"] else "")
+    return warn + tables.correlation_section(record["correlation"], record["pca"])
 
 
-TABS = {"verdict": verdict_tab, "exposure": exposure_tab, "significance": significance_tab,
-       "fingerprint": fingerprint_tab, "cost": cost_tab, "correlation": correlation_tab}
+def glossary_tab(record: dict, cfg: dict) -> str:
+    """What every number on the page means.
+
+    Args:
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
+
+    Returns:
+        The closing section; none of these quantities explains itself.
+    """
+    return panel.glossary(cfg["nulls"]["models"])
 
 
-def section(name: str, record: dict) -> str:
+TABS = [("summary", "Resumen"), ("random", "Entrada aleatoria (1a)"),
+        ("models", "Modelos"), ("paired", "Pareado (1b)"), ("exposure", "Exposición (1c)"),
+        ("stress", "Coste y ejecución"), ("significance", "Significancia"),
+        ("fingerprint", "Huella"), ("drivers", "El mercado"),
+        ("correlation", "Correlación"), ("warnings", "Avisos"), ("glossary", "Glosario")]
+RENDER = {"summary": summary_tab, "random": simulations.random_tab,
+          "models": simulations.models_tab, "stress": simulations.stress_tab,
+          "paired": paired_tab, "exposure": exposure_tab,
+          "significance": significance_tab, "fingerprint": fingerprint_tab,
+          "drivers": drivers_tab, "correlation": correlation_tab, "warnings": warnings_tab,
+          "glossary": glossary_tab}
+
+
+def section(name: str, record: dict, cfg: dict) -> str:
     """One tab's HTML, for the strategy the panel is showing.
 
     Args:
-        name: A key of TABS.
-        record: What cache.load()'s "body" holds.
+        name: A key of RENDER.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
 
     Returns:
         The tab's content.
     """
-    return TABS[name](record)
-
-
-def runs(record: dict) -> list[str]:
-    """Every market this strategy was tested on, for the test explorer's market dropdown.
-
-    Args:
-        record: What cache.load()'s "body" holds.
-
-    Returns:
-        Market feeds, in the order they were run.
-    """
-    return list(record["shapes"])
-
-
-def figure(record: dict, market: str, model: str) -> str:
-    """One (market, model) pair's null distribution with the real run marked.
-
-    Args:
-        record: What cache.load()'s "body" holds.
-        market: A market feed, from runs().
-        model: A key of trade_models.MODELS.
-
-    Returns:
-        The figure. Every model's shape was stored for every market, so browsing this
-        dropdown never recomputes anything — only the "re-run" button does.
-    """
-    row = next(r for r in record["rows"] if r["market"] == market)
-    return charts.distribution(record["shapes"][market][model], market,
-                               f"modelo {model} — p = {row[f'p_{model}']:.4f}")
+    return RENDER[name](record, cfg)

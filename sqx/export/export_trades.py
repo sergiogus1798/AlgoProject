@@ -2,6 +2,7 @@
 """Export one databank's trades, and the bars those trades were taken on, into the data root."""
 
 import argparse
+import random
 import shutil
 from datetime import date
 from pathlib import Path
@@ -10,21 +11,30 @@ from core import exportdrv, manifest, sqxfile
 from core.paths import MASTER, databank_dir, export_dir
 
 
-def stage(project: str, databank: str, dest: Path) -> dict[str, str]:
+SAMPLE_SEED = 20260914   # a subset export is a sample, and a sample has to be reproducible
+
+
+def stage(project: str, databank: str, dest: Path, limit: int = 0) -> dict[str, str]:
     """Copy a databank's strategies aside and read each one's timeframe.
 
     Args:
         project: Project name on the master.
         databank: Databank name on the master.
         dest: Directory to copy the .sqx files into.
+        limit: Stage a random sample of this many instead of all of them; 0 means all.
+            Random rather than the first N, because a databank is written in build order
+            and its first strategies come from one generation run.
 
     Returns:
         Strategy name to timeframe, e.g. {"Strategy 1.2.3": "M30"}. Copies rather than
         exporting in place so SQX never opens the live files.
     """
     dest.mkdir(parents=True, exist_ok=True)
+    found = sorted(databank_dir(project, databank, MASTER).glob("*.sqx"))
+    if limit and limit < len(found):
+        found = sorted(random.Random(SAMPLE_SEED).sample(found, limit))
     timeframes = {}
-    for f in sorted(databank_dir(project, databank, MASTER).glob("*.sqx")):
+    for f in found:
         shutil.copy(f, dest / f.name)
         timeframes[f.stem] = sqxfile.symbol(f)[1].rsplit("_", 1)[-1]
     return timeframes

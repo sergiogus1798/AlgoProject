@@ -27,6 +27,7 @@ one thing: **the master GUI must be closed**. Nothing here writes to the master 
 | 19 | — | 🔴 | new: three Monte Carlo thresholds are placeholders and need the owner's decision |
 | 20 | — | 🟡 | new: `.claude/settings.json` gates one destructive repair script but not the other |
 | 21 | — | 🟡 | new: `bin/sqx-worker.sh` is bash, so half the project cannot run on Windows |
+| 22 | — | 🟡 | new: `crossmarket` rebuilt as a one-strategy panel; four threads left open |
 
 ---
 
@@ -572,3 +573,43 @@ check instead of `ss`, `shutil.copy2` instead of `rsync`, `hashlib` instead of `
 `start_new_session` instead of `setsid`, and the paths read from `core/paths.py`. That removes the
 split and the duplicated paths in one change. Not done: the owner only needs the analysis half on
 Windows today.
+
+## 22. 🟡 `strategies/crossmarket` — state of play after the 2026-09-14/15 rebuild
+
+Read `strategies/crossmarket/README.md` first, then `explorer/README.md`, then
+`POSSIBLE_IMPROVEMENTS.md`. Those three are current. What is **not** written in them:
+
+**What changed, in one line each.** No verdict and no market is ever dropped (warnings replace the
+gates). Nothing is cached or written to disk — the panel is the output. Random runs are priced in
+dollars with the real trades' own sizes and costs, so net / DD / Ret/DD / Sharpe / PF are directly
+comparable to SQX's. Four null models, 25,000 draws each per market. Test 1b (paired) and the market
+drivers (PDF §5.4 metrics) are new. Everything runs on `envelope.window()` — the backtest's own span,
+not the bar file's.
+
+**Open threads, in the order they are worth picking up:**
+
+1. 🔴 **The manual has no screenshots.** `docs/manual/05-retest-mercados.md` describes every tab of a
+   panel nobody has photographed. Rule 8 forbids inventing them; whoever next opens the panel for
+   real should paste a few in. This is the only thing blocking that page from being finished.
+2. 🟠 **Only 30 of the 757 strategies are exported.** `raw/XAUUSD/Retest_Markets_-_Family/2026-09-14`
+   is a reproducible random sample (`--limit 30`, seed 20260914). The full export is one command and
+   ~15 minutes on the worker.
+3. 🟠 **`markets.yaml`'s `structure` category is empty**, so every conclusion so far rests on two
+   correlated metals-and-energy markets. The edge-driver regression (`drivers.py` has the metrics,
+   not the regression) needs six or more markets before it can be fitted at all, and the PCA on two
+   markets is close to vacuous. This is the single change that would most improve what the module
+   can say — and it is a retest the owner runs in the GUI, not code.
+4. ⚪ **The shareable report was removed** (`text.py`, `panel.render`, the batch command) on the
+   owner's instruction that the panel is a one-strategy tool. `reports/XAUUSD/Retest_Markets_-_Family/2026-09-14/crossmarket/`
+   is an orphan left by the last batch run. Bringing the report back is a revert, not a rebuild, if
+   he ever wants to send someone a page.
+
+**Two documented reversals live in `knowhow/07-practices.md`** — a null's width is a measurement and
+not an intuition, and a bar file is wider than the backtest that ran on it. Read them before
+changing anything about how the nulls are placed.
+
+**A gap in `tools/checks.py`, found 2026-09-15.** It verifies every `.py` appears in its folder
+README, but not that every file the README names still exists — `text.py` sat in the table for a day
+after being deleted. It also cannot catch a call-site broken by a signature change:
+`sqx/export/export_bars.py` called `markets.feeds(asset)` for a day after that function started
+taking a universe dict, and only failed at runtime. Both classes of drift are cheap to check.
