@@ -9,7 +9,10 @@ from flask import Flask, jsonify, request
 
 from core import assets, bars
 from core.paths import bars_file, export_dir
-from strategies.monteCarlo import config, costs, regime, run, stream, stress, sweeps
+from strategies.monteCarlo import run
+from strategies.monteCarlo.inputs import config, costs, stream
+from strategies.monteCarlo.model import regime, stress
+from strategies.monteCarlo.simulate import sweeps
 from strategies.monteCarlo.explorer import cache, jobs, scope, sections, tooltips, work
 
 APP = Flask(__name__)

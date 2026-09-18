@@ -35,23 +35,34 @@ SQX itself reported, so the real equity curve on the panel is SQX's own.
 | `holdfit.py` | Fits a discrete distribution to the real holds and gaps, and says whether it fits | imported | counts → sampler, goodness |
 | `sweep.py` | **The window sweep.** Calendar blocks of each size, the trades and free room in each, and a free-placement model confined to them | imported | bars + trades + model → blocks, entries, holds |
 | `strata.py` | The regime state of every bar — ATR quantile × trend sign — for the optional `regime_strata` model | imported | bars → stratum index |
-| `trade_models.py` | **How random trades are drawn.** Five models behind one signature, what each holds fixed, and the Friday truncation every one of them gets | imported | envelope → entries, holds |
+| `trade_models.py` | **How random trades are drawn.** The registry, the Friday truncation every model gets, and the two that randomise placement only — `block_shift` and `regime_strata` | imported | envelope → entries, holds |
+| `free_models.py` | The free-placement family: the three that re-lay the whole run anywhere in the window | imported | envelope → entries, holds |
+| `joint.py` | **The joint null.** One a-priori statistic over the out-of-sample markets and one p, pooled from draws that displace every market together | imported | runs → joint p |
 | `backtest.py` | Prices the real run and N random ones identically, in dollars, in batches | imported | fixed + bars + model → table, shapes, cone |
+| `realrun.py` | The real backtest's own statistics — over **everything SQX reported** and over the grid-locatable subset, which are not the same population — and the mechanical checks | imported | fixed + bars → stats, checks |
 | `metrics.py` | **What a run is worth.** Net, drawdown, Ret/DD, Sharpe, PF and the losing run of thousands of runs at once, each with its own good side | imported | P&L matrix → statistics |
 | `equity.py` | Equity through the sample on the **calendar**, and the percentile cone around the real curve | imported | P&L + exit bars → curves, bands |
 | `inference.py` | Every reason to distrust a market, which test a result actually is, whether a sweep point has the power to be read, and which way a sweep curve goes. **It decides nothing** | imported | row, blocks, points → warnings, power, trend |
-| `paired.py` | **Test 1b.** Each trade against the exact mean of every window of its own length in its own regime block. Needs no null model and no cost assumption | imported | fixed + bars → alpha, Wilcoxon p |
-| `exposure.py` | **Test 1c.** Concentration E — withheld where the market has no drift — drift-neutral excess A with a hold-weighted bootstrap CI, and the MFE capture ratio | imported | fixed + bars → E, A, capture |
-| `drivers.py` | **PDF §5.4.** What kind of market this is: Hurst, variance ratio, ADX trend share, ATR%, efficiency ratio | imported | bars → profile |
+| `paired.py` | **Test 1b.** Each trade against the exact mean of every window of its own length, near it in time — a centered window or the regime block, and the test is run under both | imported | fixed + bars → alpha, Wilcoxon p |
+| `exposure.py` | **Test 1c.** Drift-neutral excess A with a hold-weighted bootstrap CI, its risk-normalised form, and concentration E with a Fieller interval | imported | fixed + bars → A, E |
+| `fieller.py` | The interval of a ratio whose denominator can be zero: unbounded when it is, instead of a number that looks decided | imported | moments → interval |
+| `units.py` | One log return in every unit a reader needs: bps, per cent, ATR units, dollars per trade and dollars accumulated | imported | logret → units |
+| `curves.py` | Each market's equity on its own real calendar, and what it returned once every market risks the same | imported | fixed → curve, factor |
+| `execution.py` | What a worse broker would charge, per feed, from `execution.yaml`; and that file against what SQX really charged | imported | feed + trades → shock, depth, gap |
+| `portfolio.py` | **The Portfolio tab.** Every market as one account, what each one adds to it, how often they overlapped, and two ways of asking how much is luck | imported | streams → account, marginal |
+| `views.py` | The two views that need more than one market, rebuilt whenever one market is re-run alone | imported | weekly + streams → correlation, portfolio |
 | `significance.py` | Minimum track-record length and bootstrap CIs on PF and expectancy. No DSR — see `POSSIBLE_IMPROVEMENTS.md` | imported | returns → moments, CI |
 | `breadth.py` | Breadth, worst-market floor and PF dispersion across one strategy's markets | imported | per-market rows → breadth, floor, CV |
-| `fingerprint.py` | Behavioural fingerprint against the base asset: holding-time KS, MAE/MFE by ATR, return shape | imported | trades + bars → fingerprint |
+| `fingerprint.py` | Behavioural fingerprint against the base asset: holding-time KS, MAE/MFE by ATR, return shape, MFE capture, and the four overlaid histograms | imported | trades + bars → fingerprint |
 | `stress.py` | Cost gradient, breakeven cost multiple, and decay under a bar shift or range slippage | imported | fixed + bars → cost/slippage curves |
-| `correlation.py` | Weekly equity curves, their correlation matrix, and PCA by SVD across a strategy's markets plus the base asset | imported | curves → correlation, variance share |
+| `correlation.py` | Weekly equity curves and their correlation matrix across a strategy's markets plus the base asset | imported | curves → correlation |
 | `bootstrap.py` | Block-bootstrap resampling and percentile confidence intervals | imported | a sequence → resampled positions, a CI |
 | `charts.py` | The two simulation figures as inline SVG: a statistic's distribution with the real run on it, and the equity cone | imported | numbers → SVG |
-| `figures.py` | The per-market comparison figures: one bar or one cell per market, and the window sweep's p curve | imported | rows → SVG |
-| `tables.py` | Renders every test into HTML tables for the panel's tabs and the static report | imported | rows → HTML |
+| `figures.py` | The per-market comparison figures: one bar or one cell per market, and the window sweep's p curves — every swept model on one axis | imported | rows → SVG |
+| `overview.py` | The main tab's tables: every market's real backtest, the same at equal risk, and what its sample size holds up | imported | rows → HTML |
+| `overlays.py` | The two figures that lay several series over one axis: market equity curves, and two distributions through each other | imported | curves, bins → SVG |
+| `alerts.py` | Every warning in four parts: what fired it, what it affects, what it does **not**, and what to do | imported | row → HTML |
+| `tables.py` | Renders every test into HTML tables for the panel's tabs | imported | rows → HTML |
 | `panel.py` | The market table, the diagnostics table, the glossary and the Spanish wording | imported | rows → HTML |
 | `explorer/` | The interactive panel — the only entry point. See `explorer/README.md` | `python3 -m strategies.crossmarket.explorer.serve --project XAUUSD --databank "Retest Markets - Family" --asset XAUUSD --export 2026-09-14` | export → `http://127.0.0.1:8766` |
 
@@ -77,6 +88,105 @@ money is realised.
 lets the same runs be re-judged, or the same judgement re-run under another model, without editing
 either — which is the only way to find out whether a conclusion depended on an assumption.
 
+## The panel opens on the backtest, not on a test
+
+Rebuilt 2026-09-16 at the owner's request. `Resumen`, `Significancia` and `Correlación` were three
+tabs answering one question between them, and nobody reads a strategy's drawdown on one page and its
+confidence interval on another: they are now one tab, **`Backtest`**, which the panel opens on.
+
+It carries, in this order: the strategy's tiles; every market's **real** backtest (net, return,
+drawdown in dollars and per cent, Ret/DD, Sharpe, PF, losing run) with the base asset last and
+marked *reference, not evidence*; the same comparison **at equal risk**, every market rescaled until
+its worst drawdown is `equity.risk_target_dd` of the account; the **overlaid equity curves**, each
+market on its own independent account, in per cent, on real calendar dates so a market whose
+backtest starts later starts later on the chart; the correlation matrix; what each test said; what
+holds those numbers up; the warnings; the mechanical checks; and a paragraph per statistic.
+
+**What was removed, and why.** `drivers.py` and the `El mercado` tab: the edge-driver regression it
+was built for needs six or more markets on the right-hand side and the owner will have four, so with
+two it described markets rather than saying anything. `correlation.pca()` and the `Correlación` tab:
+with two or three streams PC1 is close to a function of the mean pairwise correlation and added no
+axis the matrix did not already carry. Both are recorded as **discarded with a reason** in
+`POSSIBLE_IMPROVEMENTS.md` rather than deleted from it, so neither is proposed again from scratch.
+
+## Does adding a market break the portfolio?
+
+The `Portfolio` tab, built 2026-09-16 and named in English at the owner's request 2026-09-17. The retest asks whether the edge transfers; this asks the
+question that follows from it — *oil and the Nasdaq need not be brilliant, but they must not wreck
+what gold does.* One account of `equity.starting` for every market at once, the base asset included
+as the core position, and the drawdown computed on the **combined** curve, never summed from the
+parts, as `portfolio/CLAUDE.md` requires.
+
+The table it exists for is **marginal contribution**: the whole portfolio, the portfolio without
+each market, and the difference on every statistic. A market whose Δ Ret/DD is negative is costing
+the combination more than it brings, however good its own p-value was. 🔬 Measured on
+`Strategy 2.29.29`: gold +2.70, silver −0.19, Brent **−4.55**.
+
+Two different ways of asking how much of it is luck, because they are not the same question:
+**calendar-block resampling** (`portfolio.block_weeks`, default four weeks) draws whole weeks, so
+every market's trades inside a block travel together and a week that was bad for two markets at once
+stays bad for both — resampling single trades would destroy exactly the dependence being measured;
+and **reordering**, delegated to `strategies.monteCarlo.model.draws`, which leaves composition untouched
+so net profit is invariant by construction and only the path statistics move.
+
+It is one strategy in N markets, **not** N strategies: building the owner's real portfolio is
+`portfolio/`, where `DECISIONS.md` still has the design open.
+
+## The cost stress stopped using round numbers
+
+`execution.yaml` holds, per feed, a typical and a stressed spread in points, a commission in USD per
+lot per side, a typical slippage and the tick size. `stress.cost_shock` is now `spread_stress /
+spread_typical` and `stress.fill_depth` is two sides of that slippage as a fraction of the median
+MAE, both per market, instead of `[1.0, 2.0]` and `0.25` — numbers nobody had chosen. `p_skip` is
+**not** calibrated and is labelled as the assumption it is: nothing in the export says how often an
+order would have been missed.
+
+⚠️ **The values in `execution.yaml` are placeholders** written as a typical CFD broker's, so the
+owner has something concrete to correct; each block carries `source: placeholder` and
+`reviewed_by_owner: false`, and the panel prints both. They are deliberately **not** in
+`assets/*.yaml`: those files gate every project in this repo through `core.assets`, and
+`assets/RULES.md` says a file with invented values is worse than no file, because it looks decided.
+A feed that does have an asset file reads its decided spread from there instead.
+
+The tab also prints, per market, the cost SQX **really charged** — recovered per trade from its own
+P/L, and the truth — against what `execution.yaml` implies, and flags a gap past 25%. Measured today
+on Brent: 25.85 charged against 37.46 modelled, +45%, which is the placeholder being wrong and the
+table doing its job.
+
+## A warning now says what it does not affect
+
+Each of the seven is four fields instead of one sentence: what fired it **with the number that
+fired it**, what it affects, what it does *not*, and what to do. The missing half was the third one.
+`bad_hold_fit` touches exactly one null model — the other three reuse the real holds and are immune.
+`no_drift` touches exactly one number — A and A per unit of risk are unaffected, and Brent, which
+fires it, has the strongest A of the three. `pending_fills` touches Test 1a only; 1b and 1c use no
+null model at all. Read as one sentence, all three looked like they invalidated the market.
+
+## The panel reports more trades than the tests use, on purpose
+
+🔬 Found 2026-09-16 by the owner, comparing `Strategy 24.7.38` against SQX: the panel showed 2,089
+trades on gold where the databank had 2,142. `envelope.occupancy()` keeps a trade only when
+`exit > entry`, and **1,695 of the databank's 92,329 trades open and close inside one bar** —
+zero-duration `Exit Signal` exits, `Time in trade` of `0s`. Five more fall before the first bar of
+their file. 1.84% overall; 9.8% on the worst pair, `Strategy 8.16.41(1)` on silver.
+
+Dropping them from the **tests** is right and stays: a trade with no interval cannot be displaced by
+a null model, has no blind window of its own duration to be matched against, and occupies no bars to
+count as exposure. Dropping them from the **reported backtest** was a defect — their P&L is real,
+so net profit, drawdown, profit factor and the trade count were all quietly short of what SQX said.
+
+Both are now computed and both are shown:
+
+| what | from | used by |
+|---|---|---|
+| `realrun.reported()` | **every** trade SQX reported, in close-time order | the master table, the equal-risk table, the equity curves, the portfolio |
+| `realrun.real()` | the trades the bar grid can hold | the null comparison, where the real run and its random counterparts must be the same trades |
+
+🔬 Verified on `Strategy 24.7.38`: the panel's net now equals the sum of the export's own
+`Profit/Loss` column to the cent on all three markets. The master table prints both counts, a note
+under it says why they differ, and `diagnostics.min_on_grid` (0.95) raises the new `off_grid`
+warning when the gap is large enough to change how a p-value should be read.
+
 ## The markets are discovered, and only classified by hand
 
 `markets.yaml` groups each base asset's markets into categories — `family`, `structure`, and whatever
@@ -91,9 +201,12 @@ strategies work turns the test into a selection.
 
 ## Adding a model
 
-Write a function in `trade_models.py` with the shared signature — `(held, market, draws, rng)` in,
-`(entries, holds)` out — add it to `MODELS`, and add a row to `RANDOMISES` saying **what it
-randomises**. Nothing else changes: the drawer picks it up and the test explorer gains an entry.
+Write a function in `trade_models.py` — or in `free_models.py` if it re-lays the whole run — with
+the shared signature, `(held, market, draws, rng, batch)` in and `(entries, holds)` out; add it to
+`MODELS`, and add a row to `RANDOMISES` saying **what it randomises**. `batch` is how many draws
+were already produced, and only a model whose randomness must match across markets needs it:
+`block_shift` keys its displacement on the calendar rather than on `rng`, and without `batch` every
+chunk of the batched loop would redraw the same one. Nothing else changes: the drawer picks it up and the test explorer gains an entry.
 
 That row is not documentation, it is the finding. A model that randomises more than one thing cannot
 attribute a low p-value to any single cause, so the report prints it next to every p-value it produced.
@@ -131,7 +244,7 @@ the retest that was run on it: measured, XAGUSD bars cover 2003-2026 against a 2
 **a third of the file sits outside it**. Without the slice, a null model places trades in years the
 real strategy never saw, with their own drift and their own volatility regime; the drift in Test 1c
 is measured over the wrong period; Test 1b's blind window averages bars the strategy never had access
-to; the market profile in `drivers.py` describes the wrong stretch; and the equity axis spans years
+to; the drift and the correlation describe the wrong stretch; and the equity axis spans years
 where the real curve is flat by construction.
 
 Everything downstream inherits the slice because it is applied to `bars` before `backtest.setting()`.
@@ -170,10 +283,69 @@ under `segment_permute`, 0.004 under `resampled_holds` and 0.005 under `fitted_h
 this file were taken before the fix: a shift that size can reorder two models whose p differed by less
 than 0.01, and nothing larger.
 
+### `block_shift` overlapped its own trades until 2026-09-17, and it is the headline model
+
+🔬 Measured 2026-09-17 on `Strategy 24.14.35`, 500 draws, both OOS markets: **5.38% of Brent's
+random trades and 2.82% of silver's open before an earlier trade of the same run has closed**, under
+`block_shift`. The three free models read 0.0000% on the same pairs — `_lay` fixed them, and
+`regime_strata` drops its clashes in `_drop_overlaps`, but `block_shift` has never been checked. It
+moves each block's trades by whole weeks *inside the weekday-hour index*, which is not a rigid
+translation in bar space, so a hold that was legal at its real position can reach into the next
+trade at the new one. The strategy is single-position, so those runs are holding two at once.
+
+What it costs, measured at 5,000 draws against the same model with `_drop_overlaps` applied:
+p(`mean_r`) 0.0038 → 0.0044 on Brent and 0.0278 → 0.0288 on silver; p(`net`) 0.0048 → 0.0036 and
+0.0610 → 0.0628; σ of net **5% narrower** without the clashes; live trades 782 → 740 and 844 → 820.
+So the direction is not even consistent and the size is thousandths — this is a correctness defect
+worth naming, not a result that changes.
+
+**Repaired 2026-09-17 by cutting, not by dropping.** `trade_models.cut_at_next()` caps every hold
+at the bar the next trade opens, exactly as the Friday close already caps one. That keeps the trade
+count — dropping the clashing trade removed 3-5% of every run and traded an exposure bias for a
+sample-size one — and re-measured afterwards the overlap is **0.0000%** on both markets under all
+four models. `tests/test_models.py` now holds the property.
+
 🔬 **`block_shift` still overlaps**: 2.5% of trades on XAGUSD and 1.7% on Brent (Strategy 1.10.80),
 because trades in different weekday-hour groups wrap by different numbers of weeks. It was left as it
 is on purpose — the owner fixed it as the reference the window sweep is read against — and is recorded
 here rather than changed.
+
+## Does it generalise? The joint null
+
+Built 2026-09-17. The per-market tests ask whether the timing carried information *on that market*;
+the retest exists to ask whether it carries **across** markets, and counting how many markets came
+in under alpha does not answer that. Those p-values are dependent — same draws, markets that move
+together — so a vote, a Fisher combination or a Stouffer one is anti-conservative exactly where it
+matters.
+
+`joint.py` computes **one a-priori statistic and one p**: the equal-weight mean of `mean_r` over the
+out-of-sample markets, against the same pooled mean on every draw. Equal weight because each market
+is one vote that the edge generalises; weighting by trade count lets the busiest market decide alone.
+The base asset is not in the pool — there a strategy beats its null by construction, so including it
+would import a guaranteed pass. 🔬 Measured on `Strategy 24.14.35` at 3,000 draws over Brent and
+silver: pooled real `mean_r` **+0.1757** against a null median of −0.0860, **p = 0.0010**, z = +3.36.
+
+**What makes it correctly sized is the coupling, not the pooling.** 🔬 Until 2026-09-17 the draws
+were independent across markets — measured, the correlation between draw *d*'s `mean_r` on Brent and
+on silver was **−0.0016** — because sharing `nulls.seed` couples nothing: every market builds its own
+generator and consumes it at its own shape. `trade_models.semester_shift()` now draws the
+displacement of each **calendar semester** from a generator keyed by that semester, so draw *d*
+moves 2013H1 the same way everywhere. `envelope.periods()` is what gives a semester an identity
+independent of when a market's data starts. Measured after the change, 83.5% of draws displace a
+shared semester by exactly the same number of weeks in both markets; the rest differ only where the
+wrap folds a weekday-hour group of a different length.
+
+🔬 And the honest part: the per-draw correlation between the two markets' `mean_r` is still about
+**−0.035** even coupled. These two markets' null statistics simply do not co-move much at the
+horizon of these trades. That is not a reason to skip the joint null — its whole point is to be
+correctly sized *whatever* the correlation turns out to be, and with four markets planned it will
+not stay near zero — but it does mean the joint p here is close to what independence would have
+given, and saying otherwise would be selling it.
+
+`joint.pool` chooses the scale. The default `mean_r` averages the raw statistic and is right while
+the markets' null spreads sit within a small factor of each other — 🔬 measured 0.1236 against
+0.1026, a factor of 1.20. Switch it to `z` when one market's spread is several times another's, or
+that market decides the verdict on scale alone.
 
 ## The window sweep — how much of a free-placement p is regime
 
@@ -221,8 +393,17 @@ axis, drawn as a flat reference line, not a destination.
   size. Strategy 14.15.26(2) climbs steadily as the block shrinks on both markets — Brent 0.075 → 0.117,
   silver 0.105 → 0.139 — which is the regime shape, just never under alpha. Strategy 15.17.41 on silver
   was withheld at 6m: 13% of its trades sit in weak blocks.
-- **It costs time**: nine more nulls per market. One strategy over two markets at the default 25,000
-  draws now takes 36-52 s, against about 25 s before.
+- **Every point is a full null, and every statistic is swept.** Each sweep point goes through the
+  same `backtest.drawn()` + `backtest.summary()` as a null model, so it keeps the whole metric table,
+  a histogram per metric and an equity cone. The panel's statistic dropdown then reads the sweep in
+  Net profit, Return/DD, drawdown, Sharpe or PF, not only in `mean_r`, and the trend caption is
+  computed per statistic. Until 2026-09-16 a sweep point priced `mean_r` and the trade count alone.
+- **It costs time**: nine more nulls per market, now at full price. 🔬 Measured on Strategy 24.14.35
+  over two markets at the default 25,000 draws: **107 s**, against 36-52 s when the sweep priced one
+  statistic, and about 25 s before there was a sweep at all. 🔬 After the 2026-09-16 rebuild,
+  Strategy 2.29.29 over the same two markets is **95 s** — the sweep is still most of it, and what
+  the rebuild added on top is the cost stress drawing 25,000 runs instead of 5,000, Test 1b running
+  under four reference windows, and the portfolio account.
 
 `regime_strata` is the alternative the owner asked for alongside, built apart and off by default: it
 fixes the regime by **state** — each trade moves to a random bar of its own ATR quantile × trend-sign
@@ -244,10 +425,32 @@ passing. `atr_ratio` in every row is the diagnostic that would have caught it.
 
 **Test 1b is the one that needs nothing.** No null model, no cost assumption — cost appears on both
 sides of the difference and cancels. It is also the only test here whose reference is exact rather
-than sampled: the mean of *every* window of that length in that regime block, not a sample of them.
+than sampled: the mean of *every* window of that length near the trade, not a sample of them.
 The source note's literal version — each trade against a passive long over the identical window — is
 degenerate for this family: these strategies carry no stop and no target, so their trade return *is*
 that passive long, and the difference would be zero by construction.
+
+### What "near the trade" means, and why it is now swept
+
+The reference used to be the **fixed semester partition** `block_shift` moves trades inside. That
+partition has a defect nobody had written down: a trade entering three days before a block ends is
+measured against a stretch that is almost entirely past, and two trades a week apart across a
+boundary get *disjoint* references. `paired.reference` now defaults to a **centered window** —
+every blind trade of the same length starting within `±3 months` of the entry, by running mean, one
+pass per distinct hold. It reads bars after the entry as well as before, which is fine: the
+reference is "what this market was paying around then", not a rule anyone could have traded.
+
+Because the choice is a modelling decision and not a fact, **the test is run under all of
+`paired.sensitivity` and the panel prints every one**: ±3m, ±6m, ±12m and the block partition. A
+p-value that survives four definitions does not depend on the definition; one that survives a single
+one was being carried by it. 🔬 Measured on `Strategy 1.10.80`, Brent: p 0.749 / 0.677 / 0.667 /
+0.753 and alpha −5.3 / −4.7 / −4.7 / −5.2 bps across the four — the choice moves nothing on that
+pair, which is the outcome to hope for and not the one to assume.
+
+**The alpha is reported in five units.** 0.00042 is unreadable, so `units.py` prints the same number
+in basis points, in per cent, in ATR units, in dollars per trade and — the one to read first — in
+**dollars accumulated over the whole sample**: how much of the money the strategy made was put there
+by *when* it entered rather than by being in the market at all.
 
 ## Why block_shift is shaped the way it is
 
@@ -274,8 +477,12 @@ which a null can reproduce exactly. `Exit Signal` — 16.6% of trades — is not
 - **The base asset never counts as evidence.** It is reported as the reference case: on the market it
   was optimised on, a strategy beats its null and its paired benchmark by construction. That says the
   code works, and nothing about the strategy.
-- **E is withheld where the market has no drift.** Measured: Brent's drift is t = −0.11, which turned
-  the market with the strongest A of the three into E = −69.4.
+- **E is never a bare number.** It divides by the market's own drift, so where that drift is not
+  distinguishable from zero the ratio has no finite interval at all. It is now always shown with a
+  **Fieller interval**, which returns the unbounded one and says so, beside the share of bootstrap
+  replicates whose denominator changed sign. Measured on Brent: E = +17.4, CI *no acotado*, 54.5% of
+  replicates with a drift at or below zero. The number the panel leads with is **A per unit of
+  risk**, which divides by the market's typical bar move and is therefore defined everywhere.
 - **A confidence interval brackets the estimator it is an interval for.** A's bootstrap is weighted by
   holds because A itself is pooled over occupied bars; unweighted, it sat 9% away from its own point
   estimate.

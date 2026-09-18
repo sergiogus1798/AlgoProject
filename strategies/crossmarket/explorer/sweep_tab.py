@@ -1,14 +1,18 @@
-"""The window-sweep tab: p against block size for the free-placement models, Calendar Shift flat."""
+"""The window-sweep tab: a grid of every market, then one market's curve, distributions and blocks."""
 
 import numpy as np
 
-from strategies.crossmarket import figures, metrics, panel, sweep, tables
+from strategies.crossmarket import charts, figures, metrics, panel, sweep, tables
+from strategies.crossmarket.explorer import sweep_views
 
+# Net profit first: it is the number the owner reads a strategy in, and the one the tab opens on.
+METRICS = ("net", "mean_r", "ret_dd", "dd", "sharpe", "pf")
 TRENDS_ES = {"timing": "plano/decreciente → timing", "regime": "creciente → régimen",
              "no_pass": "sin pass a ningún tamaño: no hay aprobado que descomponer",
              "unassessable": "no evaluable: menos de dos tamaños calculados"}
-REASONS_ES = {"short_window": "ventana por debajo de sweep.min_months",
-              "weak_blocks": "demasiadas operaciones en bloques débiles"}
+TRENDS_SHORT = {"timing": '<span class="ok">timing</span>',
+                "regime": '<span class="no">régimen</span>',
+                "no_pass": "sin pass", "unassessable": "no evaluable"}
 INTRO = (
     '<div class="note">Los tres modelos de colocación libre recolocan el ritmo de operar sobre '
     'toda la ventana del backtest, y con eso destruyen a la vez tres cosas: el <b>régimen</b> '
@@ -16,6 +20,7 @@ INTRO = (
     'sortear dentro de bloques de calendario cada vez más cortos: cada operación sólo puede '
     'caer dentro de su propio bloque. Encoger el bloque devuelve el régimen y nada más, así '
     'que la curva separa qué parte del p es acierto y qué parte es herencia de régimen.</div>'
+    '<details><summary>Qué destruye cada nulo, y cómo se lee la curva</summary>'
     '<div class="scroll"><table><tr><th>nulo</th><th>régimen</th><th>calendario</th>'
     '<th>rachas</th></tr>'
     '<tr><td>libre, ventana completa</td><td>destruido</td><td>destruido</td>'
@@ -32,82 +37,125 @@ INTRO = (
     'un destino.<br><b>Léela siempre con las operaciones al lado.</b> Con bloques cortos hay '
     'menos sitio donde recolocar, el nulo se ensancha y p pierde resolución. Un tamaño en el '
     'que demasiadas operaciones caen en bloques con pocas operaciones o casi sin hueco libre '
-    'no se calcula: sale como ✕, nunca como un número.</div>')
+    'no se calcula: sale como ✕, nunca como un número.</div></details>')
 
 
-def _name(window: str) -> str:
-    """A sweep window as the owner reads it.
-
-    Args:
-        window: A sweep.windows entry.
-
-    Returns:
-        "completa" for the whole window, "3 años" for 3y, "6 meses" for 6m.
-    """
-    if window == sweep.FULL:
-        return "completa"
-    count = int(window[:-1])
-    words = {"y": ("año", "años"), "m": ("mes", "meses")}[window[-1]]
-    return f"{count} {words[count != 1]}"
-
-
-def power_table(sw: dict, model: str, alpha: float) -> str:
-    """One model's sweep point by point, beside the counts that say how far to trust each p.
+def axes(record: dict, cfg: dict) -> dict:
+    """The three selectors the tab needs, for the panel to draw its sub-tabs.
 
     Args:
-        sw: What analysis.window_sweep() returned for one market.
-        model: Which free-placement model.
-        alpha: diagnostics.alpha, for colouring p.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
 
     Returns:
-        A scrollable table: blocks, real trades per block, the free room, the share of trades
-        in weak blocks, the live trades per random run, the null's σ, and p — or why it was
-        withheld.
+        markets — the feeds this strategy was analysed on; models — the swept models as
+        {key, name}; metrics — what the dropdown offers, Net profit first; windows — the
+        block sizes, for the cone's selector. Everything was computed by the run and is held
+        in memory, so switching any of them recomputes nothing.
     """
-    head = tables._row(["ventana", "bloques (vacíos)", "ops/bloque mín · mediana",
-                        "hueco libre, velas H1", "libre mín", "ops en bloques débiles",
-                        "ops vivas por tirada", "σ del nulo", "p"], "th")
+    return {"markets": list(record["runs"]),
+            "models": [{"key": m, "name": panel.NAMES[m]} for m in cfg["sweep"]["models"]],
+            "metrics": [{"key": k, "label": metrics.LABELS[k]} for k in METRICS],
+            "windows": [{"key": w, "name": sweep_views.window_name(w)}
+                        for w in sweep.ordered(cfg["sweep"]["windows"])]}
+
+
+def grid(record: dict, cfg: dict, model: str, metric: str, current: str) -> str:
+    """Every market's whole sweep for one model and one statistic, one row each.
+
+    Args:
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
+        model: Which free-placement model the p-values are for.
+        metric: Which statistic they are the p of.
+        current: The market the detail below is showing, marked in the grid.
+
+    Returns:
+        A table with one column per block size and the trend beside it, so the question this
+        tab exists to answer — does p hold when the regime comes back — is read without
+        scrolling. Every row is clickable: it opens that market underneath.
+    """
+    labels = sweep.ordered(cfg["sweep"]["windows"])
+    alpha = cfg["diagnostics"]["alpha"]
+    head = tables._row(["mercado"] + [sweep_views.window_name(w) for w in labels]
+                       + ["tendencia"], "th")
     body = []
-    for window, point in zip(sw["windows"], sw["points"][model]):
-        used = [b for b in window["blocks"] if b["trades"]]
-        counts = [b["trades"] for b in used]
-        p = (f'<span class="no">✕ {REASONS_ES[window["reason"]]}</span>' if point["p"] is None
-             else f'<span class="chip-{"pass" if point["p"] <= alpha else "fail"}">'
-                  f'{point["p"]:.4f}</span>')
-        body.append(tables._row([
-            _name(window["window"]),
-            f'{len(window["blocks"])} ({len(window["blocks"]) - len(used)})',
-            f"{min(counts)} · {np.median(counts):.0f}",
-            f'{sum(b["free"] for b in window["blocks"]):,.0f}',
-            f'{min(b["free_share"] for b in used):.0%}', f'{window["weak_share"]:.1%}',
-            "—" if point["trades"] is None else f'{point["trades"]:,.0f} de {sum(counts):,}',
-            "—" if point["sigma"] is None else f'{point["sigma"]:.4f}', p]))
-    return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
+    for feed, runs in record["runs"].items():
+        sw = runs["sweep"]
+        point = {w["window"]: pt for w, pt in zip(sw["windows"], sw["points"][model])}
+        cells = "".join(
+            '<td class="n">' + (sweep_views.p_cell(sweep_views.at(point[w], metric), alpha)
+                                if w in point else "—") + "</td>" for w in labels)
+        body.append(f'<tr class="pick{" on" if feed == current else ""}" data-market="{feed}">'
+                    f'<td><code>{feed}</code></td>{cells}'
+                    f'<td class="n">{TRENDS_SHORT[sw["trend"][model][metric]]}</td></tr>')
+    return (f'<div class="scroll"><table class="gridpick">{head}{"".join(body)}</table></div>'
+            '<p class="lede">Pulsa un mercado para ver su curva, sus distribuciones y sus '
+            'bloques.</p>')
 
 
-def blocks_detail(sw: dict) -> str:
-    """Every block of every window size on one market: the counts behind the power table.
+def detail(record: dict, cfg: dict, feed: str, model: str, metric: str, window: str) -> str:
+    """One market's sweep: the three models on one curve, then the selected model's numbers.
 
     Args:
-        sw: What analysis.window_sweep() returned for one market.
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
+        feed: Which market.
+        model: Which free-placement model the table, the histograms and the highlighted line
+            are for.
+        metric: Which statistic every p, σ and histogram on the page is for.
+        window: Which block size the equity cone draws.
 
     Returns:
-        One collapsed section per size. Blocks depend on the real trades and the calendar,
-        not on the model, so they are listed once per market rather than once per model.
+        The block the panel swaps in when any selector changes. Three models used to mean
+        three charts and three tables per market; they share an axis and the same blocks, so
+        they are one chart, and only the numbers below depend on which is selected.
     """
-    head = tables._row(["bloque", "velas H1", "operaciones", "ocupadas H1", "libres H1",
-                        "libre", ""], "th")
-    out = []
-    for window in sw["windows"]:
-        rows = "".join(tables._row(
-            [f'{b["start"]} → {b["end"]}', f'{b["bars"]:,.0f}', str(b["trades"]),
-             f'{b["occupied"]:,.0f}', f'{b["free"]:,.0f}', f'{b["free_share"]:.0%}',
-             "" if not weak else "vacío" if not b["trades"] else '<span class="no">débil</span>'])
-            for b, weak in zip(window["blocks"], window["weak"]))
-        out.append(f'<details><summary>Bloques de la ventana {_name(window["window"])} · '
-                   f'{len(window["blocks"])}</summary><div class="scroll"><table>{head}{rows}'
-                   f'</table></div></details>')
-    return "".join(out)
+    s, alpha = cfg["sweep"], cfg["diagnostics"]["alpha"]
+    draws = cfg["nulls"]["draws"]
+    floor = 1.0 / (1 + draws)
+    sw = record["runs"][feed]["sweep"]
+    reference = (None if sw["reference"] is None
+                 else {"name": panel.NAMES[s["reference"]], "p": sw["reference"][metric]})
+    series = [{"key": m, "name": panel.NAMES[m], "colour": charts.SERIES[i % len(charts.SERIES)],
+               "points": [{"name": sweep_views.window_name(w["window"]),
+                           "p": (sweep_views.at(pt, metric) or {}).get("p_value"),
+                           "detail": f'≈{np.median([b["bars"] for b in w["blocks"]]):,.0f} '
+                                     f'velas H1'}
+                          for w, pt in zip(sw["windows"], sw["points"][m])]}
+              for i, m in enumerate(s["models"])]
+    return (f'<h2><code>{feed}</code> <span class="tagline">{panel.NAMES[model]} · '
+            f'{metrics.LABELS[metric]} · {TRENDS_ES[sw["trend"][model][metric]]}</span></h2>'
+            + figures.p_curves(series, reference, alpha, floor,
+                               f"p de «{metrics.LABELS[metric]}» según el tamaño de bloque "
+                               f"— {feed}", model)
+            + f"<h3>Potencia punto a punto · {panel.NAMES[model]}</h3>"
+            + sweep_views.power_table(sw, model, metric, alpha)
+            + f"<h3>Distribuciones del nulo · {metrics.LABELS[metric]}</h3>"
+            + sweep_views.distributions(sw, model, metric, draws)
+            + "<h3>Equity de las tiradas confinadas</h3>"
+            + '<div class="subtabs sub2" id="swWnTabs"></div>'
+            + sweep_views.equity_cone(sw, model, feed, window, draws)
+            + "<h3>Bloques</h3>" + sweep_views.blocks_detail(sw))
+
+
+def sweep_view(record: dict, cfg: dict, feed: str, model: str, metric: str,
+               window: str) -> dict:
+    """The two halves the panel redraws together, since both depend on model and statistic.
+
+    Args:
+        record: What work.RESULTS holds.
+        cfg: The configuration that run was made with.
+        feed: Which market the detail is for.
+        model: Which free-placement model.
+        metric: Which statistic.
+        window: Which block size the equity cone draws.
+
+    Returns:
+        {"grid", "detail"}: the front-page matrix and the open market, as HTML.
+    """
+    return {"grid": grid(record, cfg, model, metric, feed),
+            "detail": detail(record, cfg, feed, model, metric, window)}
 
 
 def sweep_tab(record: dict, cfg: dict) -> str:
@@ -118,26 +166,18 @@ def sweep_tab(record: dict, cfg: dict) -> str:
         cfg: The configuration that run was made with.
 
     Returns:
-        The tab's HTML: the decomposition it rests on, then per market one curve and one power
-        table per swept model, each with its trend caption, and the blocks underneath.
+        The tab's controls. The grid and the open market arrive from /api/sweep/view, so
+        changing model, statistic, market or block size never leaves the page and never
+        recomputes anything.
     """
-    s, alpha = cfg["sweep"], cfg["diagnostics"]["alpha"]
-    floor = 1.0 / (1 + cfg["nulls"]["draws"])
-    out = [INTRO]
-    for feed, runs in record["runs"].items():
-        sw = runs["sweep"]
-        reference = (None if sw["reference"] is None
-                     else {"name": panel.NAMES[s["reference"]], "p": sw["reference"]})
-        out.append(f"<h2><code>{feed}</code></h2>")
-        for model in s["models"]:
-            points = [{"name": _name(w["window"]), "p": pt["p"],
-                       "detail": f'≈{np.median([b["bars"] for b in w["blocks"]]):,.0f} velas H1'}
-                      for w, pt in zip(sw["windows"], sw["points"][model])]
-            out.append(f'<h3>{panel.NAMES[model]} <span class="tagline">'
-                       f'{TRENDS_ES[sw["trend"][model]]}</span></h3>'
-                       + figures.p_curve(points, reference, alpha, floor,
-                                         f"p de «{metrics.LABELS['mean_r']}» según el tamaño "
-                                         f"de bloque — {feed}")
-                       + power_table(sw, model, alpha))
-        out.append(blocks_detail(sw))
-    return "".join(out)
+    return (INTRO
+            + '<div class="note">El desplegable de indicador es <b>exploración</b>. La métrica '
+              'del veredicto sigue siendo <code>mean_r</code> bajo <code>block_shift</code>, '
+              'que es la que reporta la pestaña Backtest y la única elegida antes de mirar los '
+              'números.</div>'
+            + '<div class="subtabs sub2" id="swMdTabs"></div>'
+            + '<div class="tools"><label>Indicador</label><select id="swMetric"></select></div>'
+            + '<h3>Resumen — p por mercado y tamaño de bloque</h3>'
+            + '<div id="swGrid"></div>'
+            + '<div class="subtabs" id="swMkTabs"></div>'
+            + '<div id="swView"></div>')

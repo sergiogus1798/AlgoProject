@@ -1,0 +1,51 @@
+# Execution assumptions for the cost-and-fill stress of the cross-market study.
+#
+# THESE ARE ASSUMPTIONS, NOT FACTS. What the backtest really paid is recovered per trade in
+# pricing.py, from SQX's own P/L, and nothing here can change it. This file only says how
+# much WORSE a plausible broker could be, so stress.py stops using round numbers nobody chose.
+#
+# Everything marked `source: placeholder` was written by Claude as a typical mid-tier CFD
+# broker's numbers so the owner has something concrete to correct. They are NOT your broker's.
+# Replace them, set `reviewed_by_owner: true`, and the panel stops printing the warning.
+#
+# Deliberately NOT in assets/*.yaml: those files gate every project in this repo through
+# core.assets, and assets/RULES.md says a file with invented values is worse than no file,
+# because it looks decided. A feed that does have a file there is read from it instead —
+# see `asset_file` — and only the stress-only fields below are taken from here.
+#
+# UNITS, once, because every one of them is a different thing:
+#   spread_typical / spread_stress   POINTS. One point = `tick_size` of price. Gold at
+#                                    tick_size 0.01: 25 points = $0.25 of spread.
+#   commission                       USD per lot per SIDE. A round turn pays it twice.
+#   slippage_typical                 POINTS given up against the position, per side.
+#   tick_size                        Price of one point, in the instrument's own quote.
+
+XAUUSD_DukasM1_Infinox:
+  asset_file: XAUUSD          # assets/XAUUSD.yaml exists; its costs win where it has decided
+  tick_size: 0.01
+  spread_typical: 25.0        # $0.25 on gold, a normal London-session quote
+  spread_stress: 60.0         # $0.60: rollover, news, thin hours
+  commission: 8.0             # matches this install's SQX default, SizeBased 8
+  slippage_typical: 5.0       # $0.05 per side
+  source: placeholder
+  reviewed_by_owner: false
+
+XAGUSD_DukasM1_Infinox:
+  asset_file: null            # no assets/XAGUSD.yaml on this install
+  tick_size: 0.001
+  spread_typical: 25.0        # $0.025 on silver
+  spread_stress: 70.0         # silver widens harder than gold out of hours
+  commission: 8.0
+  slippage_typical: 8.0
+  source: placeholder
+  reviewed_by_owner: false
+
+BRENTCMDUSD_ftmo:
+  asset_file: null            # no assets/ file for the FTMO Brent feed
+  tick_size: 0.01
+  spread_typical: 4.0         # $0.04 on Brent CFD
+  spread_stress: 12.0         # contract roll and the US open
+  commission: 0.0             # spread-only instrument on most CFD books
+  slippage_typical: 3.0
+  source: placeholder
+  reviewed_by_owner: false

@@ -1,45 +1,77 @@
-"""How a random run's trades are drawn: the study's modelling assumptions, and its alternatives."""
+"""How a random run's trades are drawn: the study's modelling assumptions, and its alternatives.
+
+The registry lives here, and with it the models that randomise **placement only** — the ones
+that move each real trade with its own hold. The free-placement family, which re-lays the whole
+run anywhere in the window, is in `free_models.py`; that is the split the report argues, so it
+is the split the code makes. Every model shares one signature, `(held, market, draws, rng,
+batch)` in and `(entries, holds)` out, and declares in RANDOMISES what it changes."""
 
 import numpy as np
 import pandas as pd
 
-from strategies.crossmarket.holdfit import MIN_HOLD, fit
+from strategies.crossmarket.free_models import (fitted_holds, resampled_holds,
+                                                segment_permute)
 
 
-def _lay(holds: np.ndarray, gaps: np.ndarray, n_bars: int,
-         rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
-    """Place a sequence of holds and gaps end to end on a circle of bars, from a random start.
+def semester_shift(seed: int, period: int, draws: int, batch: int) -> np.ndarray:
+    """The displacement of one calendar semester, identical in every market of the draw.
 
     Args:
-        holds: A (draws, trades) array of holding times in bars.
-        gaps: A (draws, trades) array of flat bars before each trade.
-        n_bars: Bars in the circle — the backtest window, or one block of the window sweep.
-        rng: Seeded generator.
+        seed: nulls.seed.
+        period: The semester's absolute calendar id, from envelope.periods().
+        draws: How many runs this batch produces.
+        batch: How many runs were already produced before it, so a chunked run continues the
+            same sequence instead of restarting it.
 
     Returns:
-        Entry indices and holds. Trade k opens gap k bars after trade k-1 closed. A hold is
-        zeroed, and its trade drops out of that run the way a Friday-close cut already drops
-        one, when it would wrap round onto the first trade of the sequence or run past the
-        last bar. That makes non-overlap true by construction. Before 2026-09-15 each trade
-        was offset by its *own* hold instead of the previous one's, and 1-7% of the trades of
-        every run overlapped another, under all three models, on every pair measured.
+        One fraction in [0, 1) per run, drawn from a generator keyed by the semester itself
+        rather than by the market. Each market turns the fraction into whole weeks of its own
+        semester, so draw d displaces 2013H1 the same way in Brent and in silver — which is
+        what makes a joint null across markets correctly sized. Measured before this existed,
+        the correlation between draw d's mean_r on two markets was -0.0016: sharing
+        `nulls.seed` couples nothing, because every market consumes its own generator at its
+        own shape.
     """
-    start = rng.integers(0, n_bars, size=(holds.shape[0], 1))
-    offset = np.cumsum(gaps, axis=1) + np.cumsum(holds, axis=1) - holds
-    entries = (start + offset) % n_bars
-    keep = (offset + holds <= n_bars + gaps[:, :1]) & (entries + holds <= n_bars)
-    return entries, np.where(keep, holds, 0)
+    return np.random.default_rng([seed, period]).random(batch + draws)[batch:, None]
 
 
-def block_shift(held: pd.DataFrame, market: dict, draws: int,
-                rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+def cut_at_next(entries: np.ndarray, holds: np.ndarray) -> np.ndarray:
+    """Cut every hold at the next trade of the same run, the way the Friday close cuts one.
+
+    Args:
+        entries: A (runs, trades) array of entry bar indices, columns in the real order.
+        holds: Bars held, same shape.
+
+    Returns:
+        The holds, each capped so the trade closes at or before the next one opens. The
+        strategies are single-position — flat to enter — so a run holding two at once is not
+        a counterfactual of anything. Cutting keeps the trade count, which dropping the
+        clashing trade does not: measured on Strategy 24.14.35, dropping removed 3-5% of the
+        trades of every run and traded an exposure bias for a sample-size one. A hold cut to
+        zero drops out of that run exactly as a Friday cut drops one.
+    """
+    order = np.argsort(entries, axis=1, kind="stable")
+    ent, hold = np.take_along_axis(entries, order, 1), np.take_along_axis(holds, order, 1)
+    room = np.full(hold.shape, np.iinfo(np.int64).max)
+    room[:, :-1] = ent[:, 1:] - ent[:, :-1]
+    out = np.empty_like(hold)
+    np.put_along_axis(out, order, np.minimum(hold, room), 1)
+    return out
+
+
+def block_shift(held: pd.DataFrame, market: dict, draws: int, rng: np.random.Generator,
+                batch: int = 0) -> tuple[np.ndarray, np.ndarray]:
     """Move each regime block's real trades by a whole number of weeks inside that block.
 
     Args:
         held: What envelope.occupancy() returned.
-        market: What envelope.describe() returned for this market.
+        market: What envelope.describe() returned for this market, plus the seed.
         draws: How many runs.
-        rng: Seeded generator.
+        rng: Seeded generator. **Unused here**: this model's randomness is keyed by the
+            calendar so that it is identical across markets, which a sequential generator
+            cannot be — every market consumes it at its own shape. The parameter stays
+            because it is the registry's contract.
+        batch: Runs already produced, for the chunked loop in backtest.drawn().
 
     Returns:
         Entry indices and holds. Randomises the placement and nothing else: the count, the
@@ -53,87 +85,28 @@ def block_shift(held: pd.DataFrame, market: dict, draws: int,
     *attributable* one. An earlier measurement made it look far tighter than it is, because
     the other models were then free to place trades across the whole bar file, a third of
     which lies outside the backtest.
+
+    Two properties were added on 2026-09-17. The displacement of a semester is drawn from
+    `semester_shift()`, keyed by the calendar rather than by this market, so one draw is one
+    displacement everywhere and `joint.py` can pool the markets. And the holds are re-cut at
+    the next trade: until then 2.8-5.4% of every run's trades opened before the previous one
+    had closed, in the one model the summary reports.
     """
     entry = held["entry"].to_numpy()
-    block, index = market["block"], market["calendar"]
+    block, period, index = market["block"], market["period"], market["calendar"]
     ids = block[entry]
     out = np.empty((draws, entry.size), dtype=np.int64)
     for b in np.unique(ids):
         member = ids == b
         here = entry[member]
-        weeks = rng.integers(0, index["size"][here].max(), size=(draws, 1))
+        span = index["size"][here].max()
+        weeks = (semester_shift(market["seed"], int(period[here[0]]), draws, batch)
+                 * span).astype(np.int64)
         rank = index["pos"][here] - index["start"][here]
         out[:, member] = index["order"][index["start"][here]
                                         + (rank + weeks) % index["size"][here]]
-    return out, np.repeat(held["hold"].to_numpy()[None, :], draws, axis=0)
-
-
-def segment_permute(held: pd.DataFrame, market: dict, draws: int,
-                    rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
-    """Reorder the real hold-and-gap segments and lay them from a random start bar.
-
-    Args:
-        held: What envelope.occupancy() returned.
-        market: What envelope.describe() returned.
-        draws: How many runs.
-        rng: Seeded generator.
-
-    Returns:
-        Entry indices and holds. Keeps the holds and gaps as multisets but randomises their
-        order, so it also destroys the clustering and the calendar — and, unlike block_shift,
-        lays the whole run from one random start over the **whole backtest window** rather
-        than inside each regime block. A run can therefore land in any part of the window and
-        inherit that part's regime, so beating this null is a broader claim than beating
-        block_shift's, and a less attributable one because three things changed at once. The
-        window is `envelope.window`'s, not the bar file's: before that was enforced this
-        model was placing trades in years the real strategy never traded.
-    """
-    order = np.argsort(rng.random((draws, len(held))), axis=1)
-    holds = held["hold"].to_numpy()[order]
-    return _lay(holds, market["gaps"][order], market["n_bars"], rng)
-
-
-def resampled_holds(held: pd.DataFrame, market: dict, draws: int,
-                    rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
-    """Draw holds and gaps with replacement from the real ones, and lay them out.
-
-    Args:
-        held: What envelope.occupancy() returned.
-        market: What envelope.describe() returned.
-        draws: How many runs.
-        rng: Seeded generator.
-
-    Returns:
-        Entry indices and holds. Unlike segment_permute the multiset is not preserved — a hold
-        can appear twice and another not at all — so the run's total time in the market varies
-        between draws. That makes it a test of the trading rhythm rather than of this exact
-        realisation of it.
-    """
-    shape = (draws, len(held))
-    pick = rng.integers(0, len(held), size=shape)
-    return _lay(held["hold"].to_numpy()[pick], market["gaps"][pick], market["n_bars"], rng)
-
-
-def fitted_holds(held: pd.DataFrame, market: dict, draws: int,
-                 rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
-    """Fit a distribution to the real holds and gaps, and draw new ones from it.
-
-    Args:
-        held: What envelope.occupancy() returned.
-        market: What envelope.describe() returned.
-        draws: How many runs.
-        rng: Seeded generator.
-
-    Returns:
-        Entry indices and holds. The holds are no longer the real ones, so this model differs
-        from the real run in two things at once and cannot attribute what it finds to entry
-        timing alone. It answers a different and still useful question: whether a system with
-        this *shape* of holding time, entering at random, would have done as well.
-    """
-    shape = (draws, len(held))
-    holds = fit(held["hold"].to_numpy(), *shape, rng)
-    return _lay(holds, fit(market["gaps"] + MIN_HOLD, *shape, rng) - MIN_HOLD,
-                market["n_bars"], rng)
+    holds = np.repeat(held["hold"].to_numpy()[None, :], draws, axis=0)
+    return out, cut_at_next(out, holds)
 
 
 def _drop_overlaps(entries: np.ndarray, holds: np.ndarray) -> np.ndarray:
@@ -159,7 +132,7 @@ def _drop_overlaps(entries: np.ndarray, holds: np.ndarray) -> np.ndarray:
 
 
 def regime_strata(held: pd.DataFrame, market: dict, draws: int,
-                  rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+                  rng: np.random.Generator, batch: int = 0) -> tuple[np.ndarray, np.ndarray]:
     """Move each real trade, with its own hold, to a random bar of its own regime stratum.
 
     Args:
@@ -167,6 +140,8 @@ def regime_strata(held: pd.DataFrame, market: dict, draws: int,
         market: What backtest.setting() put in `market`; this model reads its `strata`.
         draws: How many runs.
         rng: Seeded generator.
+        batch: Runs already produced; unused, this model's randomness is
+            sequential. The registry's contract carries it for block_shift.
 
     Returns:
         Entry indices and holds. The stratum is the volatility quantile times the sign of the

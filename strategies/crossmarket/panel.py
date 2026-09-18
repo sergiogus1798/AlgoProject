@@ -96,23 +96,10 @@ RANDOMISES = {"segment_permute": "cuándo entra, el orden, las rachas y el régi
               "block_shift": "sólo cuándo entra, dentro de su semestre y en su día y hora",
               "regime_strata": "cuándo entra, dentro de velas de su mismo cuantil de "
                                "volatilidad y signo de tendencia; libera día, hora y rachas"}
-# The Spanish mirror of inference.WARNINGS, for the pages the owner reads.
-WARNINGS_ES = {
-    "few_trades": "muy pocas operaciones en este mercado para decir nada firme",
-    "pending_fills": "parte de las entradas no cae en apertura de vela: son órdenes "
-                     "pendientes que ningún modelo nulo reproduce",
-    "fill_mismatch": "los precios no se reproducen desde las velas: el real y el nulo no "
-                     "están valorados igual",
-    "no_drift": "el mercado no tiene deriva distinguible de cero, así que E no significa nada",
-    "calendar_lost": "el nulo no conserva el día y la hora de las entradas reales",
-    "short_sample": "el Sharpe observado necesita más operaciones de las que hay para "
-                    "distinguirse de cero",
-    "bad_hold_fit": "la distribución ajustada a los holds no la describe",
-}
 DIAGNOSTICS = [("convention", "convención de fill", "la que reprodujo los precios de SQX"),
                ("fill_error", "error de fill", "debe ser 0"),
                ("on_bar_open", "entradas en apertura de barra", "1,00 = ninguna pendiente"),
-               ("off_grid", "operaciones fuera de la rejilla de velas", "no se pueden valorar"),
+               ("off_grid", "operaciones que no ocupan ninguna vela", "fuera de 1a, 1b y 1c; dentro del beneficio"),
                ("calendar_kept", "calendario conservado", "1,00 en block_shift"),
                ("friday_exit", "salidas por cierre de viernes", "el nulo las reproduce"),
                ("atr_ratio", "volatilidad en las entradas", "1,00 = la media del mercado"),
@@ -135,31 +122,6 @@ def _row(cells: list[str], tag: str = "td") -> str:
     first, rest = cells[0], cells[1:]
     return (f"<tr><{tag}>{first}</{tag}>"
             + "".join(f'<{tag} class="n">{c}</{tag}>' for c in rest) + "</tr>")
-
-
-def market_table(rows: pd.DataFrame) -> str:
-    """The result per market, and whether it counted.
-
-    Args:
-        rows: Every (strategy, market) row.
-
-    Returns:
-        A scrollable table. No market is ever excluded; the `avisos` column says how many
-        reasons there are to distrust its numbers, and the warnings tab spells each one out.
-    """
-    head = _row(["mercado", "categoría", "operaciones", "real", "null", "ventaja",
-                "p (1a)", "p (1b pareado)", "avisos"], "th")
-    body = []
-    for market, g in rows.groupby("feed", sort=False):
-        count = int(g.warnings.map(len).sum())
-        flag = ('<span class="ok">ninguno</span>' if not count
-                else f'<span class="no">{count}</span>')
-        body.append(_row([f"<code>{market}</code>", g.category.iloc[0],
-                          f"{g.trades.median():.0f}",
-                          f"{g.real_r.median():+.3f}", f"{g.null_r.median():+.3f}",
-                          f"{g.edge_r.median():+.3f}", f"{g.p.median():.4f}",
-                          f"{g.paired_p.median():.4f}", flag]))
-    return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
 
 
 def diagnostics(rows: pd.DataFrame) -> str:
@@ -197,7 +159,7 @@ def glossary(models: list[str]) -> str:
     return f'''<h2>Qué significa cada número</h2>
 <p><b>El estadístico.</b> Retorno logarítmico medio por operación, ya descontado el coste, dividido
 por una constante de cada mercado (su ATR mediano). Esa constante es idéntica para el backtest real
-y para los 5.000 aleatorios, así que no puede mover ningún p-valor: sólo sirve para que oro, plata y
+y para todos los aleatorios, así que no puede mover ningún p-valor: sólo sirve para que oro, plata y
 petróleo se puedan comparar en el mismo eje.</p>
 <p><b>El p-valor.</b> Qué fracción de los backtests aleatorios igualó o superó al real. 0,03 quiere
 decir que 3 de cada 100 versiones al azar lo habrían hecho igual de bien. <b>No</b> es la
@@ -209,10 +171,19 @@ ventanas de su misma duración dentro de su mismo semestre. El coste aparece en 
 cancela, así que este test no depende de ninguna suposición de coste ni de ningún modelo nulo — y
 tampoco dice si la estrategia gana dinero, sólo si sus entradas baten a entradas ciegas de la misma
 duración.</p>
+<p><b>El test pareado, en dinero.</b> El alfa de 1b sale en logaritmos, donde 0,0004 no se lee. La
+misma cifra aparece en puntos básicos, en por ciento, en unidades de ATR y en dólares — y la columna
+<b>$ acumulado</b> es la que contesta la pregunta real: cuánto dinero de todo lo que ganó la
+estrategia lo puso el momento de entrar, y no el simple hecho de estar dentro del mercado.</p>
+<p><b>La sensibilidad de 1b.</b> El mismo test se corre con varias definiciones de «el mismo tramo de
+mercado»: ventanas centradas de ±3, ±6 y ±12 meses, y la partición fija en semestres. Un p que
+aguanta las cuatro no depende de esa elección; uno que sólo aguanta una la tenía de muleta.</p>
 <p><b>E y A (test 1c).</b> A es el exceso por vela sobre la vela media del mercado: mide el acierto
-con la deriva descontada. E es ese mismo cociente en vez de resta, y <b>sólo se muestra cuando la
-deriva del mercado es distinguible de cero</b>: dividir por una deriva que estadísticamente es cero
-da números como −69, que leen al revés de lo que son.</p>
+con la deriva descontada, y dividida por el movimiento típico de una vela es el número que preside
+la pestaña, porque está definido en todos los mercados. E es ese mismo cociente en vez de resta, y
+se muestra siempre <b>con su intervalo de Fieller</b>: cuando la deriva del mercado no se distingue
+de cero, ese intervalo sale <i>no acotado</i>, que es la verdad, en lugar de un número como −69 que
+parece decidido y no lo es.</p>
 <p><b>Los modelos.</b> No hay una única forma correcta de convertir un backtest en uno aleatorio, y
 la respuesta cambia con la elección. Por eso se corren varios: el primero decide, porque es el único
 que cambia exactamente una cosa.</p>

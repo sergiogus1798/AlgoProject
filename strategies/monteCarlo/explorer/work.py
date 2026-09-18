@@ -2,8 +2,12 @@
 
 from datetime import date
 
-from strategies.monteCarlo import (config, engine, fan, run, scoring, stability,
-                                   strategypage, stream, stress, sweeps)
+from strategies.monteCarlo import run
+from strategies.monteCarlo.inputs import config, stream
+from strategies.monteCarlo.model import stress
+from strategies.monteCarlo.simulate import engine, fan, stability, sweeps
+from strategies.monteCarlo.verdict import scoring
+from strategies.monteCarlo.render import strategypage
 from core.paths import report_dir
 from strategies.monteCarlo.explorer import cache
 

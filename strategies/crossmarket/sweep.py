@@ -109,7 +109,7 @@ def confine(model: str, held: pd.DataFrame, block: np.ndarray, draws: int,
         Entry indices and holds, columns in the real trades' order. Each block's real trades
         — those whose entry fell inside it, holds capped at its end — are handed to the model
         as if the block were the whole window, and the result is shifted to where the block
-        starts. The model's own logic draws the holds and gaps, and trade_models._lay keeps
+        starts. The model's own logic draws the holds and gaps, and free_models._lay keeps
         them inside the block and off each other. Shrinking the block therefore changes one
         thing: how far from its real date a trade may land. With one block this *is* the
         model, draw for draw; tests/test_sweep.py holds that.

@@ -3,7 +3,7 @@
 import json
 from collections.abc import Mapping
 
-from strategies.monteCarlo import config
+from strategies.monteCarlo.inputs import config
 
 
 def scoped(setup: dict, payload: dict) -> dict:

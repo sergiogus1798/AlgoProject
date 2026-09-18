@@ -127,7 +127,7 @@ abierta. El paso 3 no toca SQX: sólo lee ficheros.
 sale del botón que acabas de pulsar, y al cerrar el panel se pierde. Al arrancar borra además
 cualquier resultado que versiones anteriores dejaran en `AlgoData/derived/crossmarket/`. Es
 deliberado: un resultado guardado siempre se acaba leyendo como respuesta a una pregunta que no era
-la suya. El precio es real — unos **36-52 segundos por estrategia** con las 25.000 tiradas por defecto sobre dos
+la suya. El precio es real — unos **107 segundos por estrategia** con las 25.000 tiradas por defecto sobre dos
 mercados, y se paga otra vez si cierras el panel.
 
 ### El panel, de arriba abajo
@@ -160,42 +160,111 @@ a disco.
 | **Modelos nulos** | cuántos backtests aleatorios, la semilla, el bloque de régimen, qué modelos correr, si se replica el cierre del viernes, y el tamaño de lote |
 | **Barrido de ventana** | qué tamaños de bloque, qué modelos se barren, cuál es la referencia, y los umbrales de potencia: meses mínimos, operaciones mínimas por bloque, hueco libre mínimo y qué parte de las operaciones puede caer en bloques débiles |
 | **Estratos de régimen** | sólo para Regime Strata: cuántos cuantiles de ATR y cuántas velas para el signo de la tendencia |
-| **Equity** | la cuenta de partida, cuántos puntos tiene cada curva, qué percentiles dibuja el cono y cuáles salen en las tablas |
+| **Cuenta y curvas** | la cuenta de partida, cuántos puntos tiene cada curva, qué percentiles dibuja el cono, y **la caída objetivo a la que se reescala cada mercado** para compararlos a riesgo igual |
 | **Bootstrap** | tiradas, operaciones por bloque y percentiles de los intervalos de confianza |
-| **Exposición (1c)** | el t mínimo de la deriva para que E se muestre, y qué hacer con las operaciones de MFE cero |
-| **Test pareado (1b)** | el lado del test de Wilcoxon |
-| **Propiedades del mercado** | lags de Hurst, horizonte del variance ratio, y los parámetros de ADX y eficiencia |
-| **Coste y ejecución** | múltiplos de coste, desplazamiento en barras, fracciones de slippage, y los parámetros de la ejecución degradada |
-| **Lectura y avisos** | alpha, los umbrales que disparan un aviso, la correlación supuesta y el umbral de PC1 |
+| **Exposición (1c)** | el t mínimo de la deriva para marcar E como no interpretable, las velas por bloque del intervalo de Fieller, y qué hacer con las operaciones de MFE cero |
+| **Test pareado (1b)** | el lado del test de Wilcoxon, **cómo se define «el mismo tramo de mercado»** (ventana centrada de ±N meses, o la partición en semestres) y con qué otras definiciones se corre además |
+| **Portfolio** | semanas de calendario por bloque del remuestreo, cuántas tiradas, y operaciones por bloque al barajar el orden |
+| **Coste y ejecución** | múltiplos de coste, desplazamiento en velas, fracciones de slippage, los parámetros de la ejecución degradada, y **si se calibran desde `execution.yaml`** |
+| **Lectura y avisos** | alpha, los umbrales que disparan un aviso y la correlación supuesta |
 
 **Ninguno de esos umbrales decide nada.** `alpha`, `min_trades` y `min_on_open` sólo colorean números
 y disparan avisos; ningún mercado se cae por ellos.
 
-### Las trece pestañas
+### Las once pestañas
 
 | pestaña | qué muestra |
 |---|---|
-| **Resumen** | Tabla por mercado con el p de 1a y el de 1b, la categoría, cuántos avisos tiene cada uno, y las comprobaciones mecánicas |
-| **Entrada aleatoria (1a)** | Sub-pestañas por **mercado**, y debajo por **modelo**. Dentro: la **curva de equity real sobre el cono de las aleatorias** y, a su lado, el histograma del indicador que elijas en el desplegable, con la mediana y el IC 95% marcados, su tabla de valores y el % de simulaciones que el real bate. Debajo, la tabla completa de percentiles |
+| **Backtest** | **La que abre.** Lo que hizo de verdad cada backtest: beneficio, caída en dólares y en %, Ret/DD, Sharpe, PF y racha perdedora, con el activo base aparte y marcado como referencia. Debajo, **la misma comparación a riesgo igualado**; el **p conjunto** de todos los mercados fuera de muestra; **por dónde salieron las operaciones** y cuánto del beneficio descansa en cada salida; las **curvas de capital de todos los mercados solapadas**, cada uno con su cuenta independiente y en sus fechas reales; la matriz de correlación; lo que dijo cada test; lo que sostiene esos números (MinTRL y los CI); los avisos; las comprobaciones mecánicas; y un párrafo explicando cada estadístico |
+| **Entrada aleatoria (1a)** | Sub-pestañas por **mercado**, y debajo por **modelo**. Dentro: la **curva de equity real sobre el cono de las aleatorias** y, a su lado, el histograma del indicador que elijas, con la mediana y el CI 95% marcados, su tabla de valores y el % de simulaciones que el real bate. Debajo, la tabla completa de percentiles |
 | **Modelos** | El mismo p bajo las cuatro formas de aleatorizar (cinco con Regime Strata), y qué cambia cada una |
-| **Barrido de ventana** | Para los tres modelos de colocación libre, el p con bloques de toda la ventana, 3 años, 1 año y 6 meses, con Calendar Shift como línea fija, la etiqueta de tendencia y cuántas operaciones sostienen cada punto |
-| **Pareado (1b)** | El alfa medio por operación frente a su ventana ciega y el p de Wilcoxon |
-| **Exposición (1c)** | A con su intervalo, y E — que sale como «no aplica» donde el mercado no tiene deriva |
-| **Coste y ejecución** | El múltiplo de coste de equilibrio, y **las mismas operaciones ejecutadas peor miles de veces**: cono de equity e histogramas, igual que 1a pero contestando otra pregunta |
-| **Significancia** | Sharpe, MinTRL, intervalos de PF y expectancy, y la amplitud entre mercados |
-| **Huella** | Si la duración de las operaciones se parece a la del activo base, y la forma de los retornos |
-| **El mercado** | Hurst, variance ratio, % de velas en tendencia, ATR% y eficiencia, con el activo base arriba |
-| **Correlación** | Matriz semanal entre los mercados más el activo base, y qué parte de la varianza explica PC1 |
-| **Avisos** | Cada motivo de desconfianza de cada mercado, en una frase. **Nada se excluye por esto** |
+| **Barrido de ventana** | Arriba, una **rejilla de mercados × tamaños de bloque** con el p de cada celda y la tendencia al lado. Pulsas un mercado y debajo se abre el suyo — los tres modelos de colocación libre en **una sola curva**, con Calendar Shift como línea fija, la tabla de potencia, un histograma por tamaño de bloque y el cono de equity del tamaño que elijas |
+| **Pareado (1b)** | La pregunta explicada arriba del todo, el alfa de timing **en cinco unidades** (bps, %, R, $ por operación y **$ acumulado**), el p de Wilcoxon, y debajo **la tabla de sensibilidad**: el mismo test con ventanas centradas de ±3, ±6 y ±12 meses y con la partición en semestres |
+| **Exposición (1c)** | La pregunta explicada y **en qué se diferencia de 1b**. A por unidad de riesgo preside; E sale siempre con su **intervalo de Fieller**, que dice «no acotado» cuando el mercado no tiene deriva, y con el % de réplicas en las que el denominador cambiaba de signo |
+| **Coste y ejecución** | El múltiplo de coste de equilibrio, **de dónde sale cada supuesto** (y el coste que SQX cobró de verdad frente al que dice `execution.yaml`), y las mismas operaciones ejecutadas peor 25.000 veces: cono de equity e histogramas |
+| **Huella** | Qué mide cada métrica, explicado una por una, y **cuatro histogramas solapados por mercado** contra el activo base: duraciones, retornos por operación, MAE/ATR y MFE/ATR. Más la captura de MFE, que mide la salida |
+| **Portfolio** | Todos los mercados en **una sola cuenta**, el oro incluido. Qué aporta o qué resta cada mercado (Δ sobre la cartera entera), cuánto tiempo hubo dos o más posiciones abiertas, y dos formas distintas de preguntar cuánta suerte hay: remuestreo por bloques de calendario y barajado del orden |
+| **Avisos** | Cada motivo de desconfianza, en **cuatro partes**: qué es y qué número lo disparó, **a qué afecta**, **a qué NO afecta**, y qué hacer. **Nada se excluye por esto** |
 | **Glosario** | Qué significa cada número |
 
-*(Capturas de pantalla del panel real pendientes de añadir aquí — la regla 8 exige que sean de una
-ejecución real, no inventadas.)*
+*(El barrido de ventana sí tiene capturas, más abajo. Las de las pestañas nuevas —Backtest, Huella
+y Portfolio— están pendientes: la regla 8 exige que sean de una ejecución real, no inventadas, así que
+las pega quien abra el panel la próxima vez.)*
+
+### Qué desapareció, y por qué
+
+- **Resumen**, **Significancia** y **Correlación** eran tres pestañas para una sola pregunta. Ahora
+  son la pestaña **Backtest**, que es la que abre.
+- **El mercado** (Hurst, variance ratio, ADX, eficiencia) se ha quitado. Esos números existían para
+  una regresión que necesita **seis mercados o más**; con dos, o con cuatro, no puede ajustarse.
+- **El PCA** de la correlación se ha quitado: con dos o tres curvas, PC1 es casi una función de la
+  correlación media, así que no añadía ningún eje que la matriz no enseñara ya.
+
+### La tabla de riesgo igualado
+
+Un mercado que gana el doble sufriendo el triple **no lo hizo mejor**: arriesgó más. Esa tabla
+multiplica el tamaño de posición de cada mercado hasta que su peor caída es exactamente el 10% de la
+cuenta (`equity.risk_target_dd`), y multiplica su retorno por ese mismo factor.
+
+Su punto débil está escrito debajo de ella en el propio panel: el peor drawdown es **un** momento de
+la muestra, así que el número es ruidoso. Se lee junto al **Ret/DD**, que usa los mismos dos números
+sin depender del tamaño de la cuenta.
+
+### La pestaña Portfolio
+
+Contesta lo que el retest deja abierto: *vale, el oil no es una maravilla, pero ¿me rompe la
+cartera?*
+
+Todos los mercados se juntan en **una sola cuenta de 100.000 $**, con el oro dentro como posición
+núcleo, y la caída se calcula sobre la curva **combinada** — nunca sumando las de cada mercado.
+
+**El gráfico de equity de esta pestaña no es el de la principal.** Aquí la línea gruesa es la cuenta
+combinada y las finas son lo que cada mercado metió **en esa misma cuenta**, así que las finas
+*suman* la gruesa y se leen como «cuánto del resultado es este mercado». En la pestaña Backtest,
+en cambio, cada mercado tiene su propia cuenta independiente y las alturas no se comparan entre sí.
+Un mercado cuya línea pasa toda la muestra por debajo de cero es uno al que los demás estaban
+sosteniendo.
+
+No lleva cono de percentiles, y es a propósito: el remuestreo sortea bloques de calendario enteros y
+los concatena en el orden en que salieron, así que sus caminos no viven sobre el eje de fechas de
+ese gráfico. La incertidumbre está en la tabla de intervalos de debajo, no en una banda que
+insinuaría una línea de tiempo que no tiene.
+
+La
+tabla que importa es la de **contribución marginal**: la cartera entera, la cartera sin cada
+mercado, y la diferencia. **Δ positivo = ese mercado mejora la combinación.** Un mercado con Δ
+Ret/DD negativo le está costando más de lo que aporta, por bien que se viera su p-valor.
+
+Dos maneras de preguntar cuánta suerte hay, que no son la misma:
+
+- **Remuestreo por bloques de calendario** (cuatro semanas por defecto): se sortean semanas enteras,
+  así que las operaciones de todos los mercados dentro de un bloque viajan juntas y una semana mala
+  para dos mercados a la vez sigue siéndolo. Remuestrear operaciones sueltas destruiría justo eso.
+- **Barajado del orden**: las mismas operaciones en otro orden. La composición no cambia, así que el
+  beneficio sale idéntico por construcción y sólo se mueven la caída, la racha y el Ret/DD.
+
+Ojo con una cosa, y el panel lo dice: **el oro está sobreajustado**, así que la cartera base se ve
+mejor de lo que es.
+
+### Los costes del estrés salen de un fichero que tienes que revisar
+
+`strategies/crossmarket/execution.yaml` lleva, por cada mercado, el spread típico y el de estrés en
+puntos, la comisión en dólares por lote y por lado, el slippage típico y el tamaño del punto. De ahí
+salen el multiplicador de coste y la profundidad de fill del estrés, en vez de los números redondos
+que había antes.
+
+⚠️ **Los valores de hoy son de ejemplo**, escritos como los de un bróker CFD normal para que tengas
+algo concreto que corregir. Cada bloque lleva `source: placeholder` y `reviewed_by_owner: false`, y
+el panel lo dice en la columna «origen». Cuando pongas los tuyos, cambia esa marca a `true`.
+
+No están en `assets/*.yaml` a propósito: esos ficheros bloquean la creación de proyectos en todo el
+repositorio y `assets/RULES.md` dice que un fichero con valores inventados es peor que no tener
+fichero, porque parece decidido.
 
 ### Cómo se leen los dos gráficos nuevos
 
 **El cono de equity.** La línea naranja es el backtest real; la banda azul es donde corrieron los
-5.000 aleatorios. El eje X es **tiempo de calendario**, no número de operación: las entradas
+aleatorios. El eje X es **tiempo de calendario**, no número de operación: las entradas
 aleatorias caen en momentos distintos, así que sólo en ese eje la curva real y las suyas describen
 el mismo tramo de mercado. Se lee por el **ancho** del cono y por **dónde** la real se sale de él,
 nunca por una línea suelta de dentro.
@@ -223,7 +292,22 @@ Cuanto más pequeño el bloque, más cerca de su fecha real cae cada operación,
 le devuelve** — y es lo único que cambia: el calendario y las rachas siguen rotos igual a todos los
 tamaños.
 
-![Curva del barrido para Shuffled Sequence en plata](assets/crossmarket-barrido-curva.png)
+**Cómo se navega la pestaña.** Lo primero que ves es una rejilla: una fila por mercado, una columna
+por tamaño de bloque, el p de cada celda coloreado y la tendencia a la derecha. Ahí está el barrido
+entero sin bajar nada, y con varios mercados es donde se compara. Los **chips de arriba** eligen el
+modelo de colocación libre y el desplegable **Indicador** el estadístico —abre en **Net profit**—:
+entre los dos gobiernan toda la pestaña, rejilla incluida. Cada punto del barrido es ya un nulo
+completo, así que el p, la tendencia, los histogramas y el cono se recalculan para el indicador que
+elijas sin volver a correr nada.
+
+![Rejilla resumen del barrido: un mercado por fila, un tamaño de bloque por columna](assets/crossmarket-barrido-resumen.png)
+
+Pulsando una fila —o usando las sub-pestañas de mercado— se abre ese mercado debajo: **una sola
+curva con los tres modelos**, el seleccionado en trazo grueso y con sus valores escritos, los otros
+dos detrás para ver si coinciden. Debajo, la tabla de potencia del modelo seleccionado, y al final
+los bloques, plegados.
+
+![Curva del barrido en Brent: los tres modelos sobre el mismo eje](assets/crossmarket-barrido-curva.png)
 
 **Cómo se lee la curva:**
 
@@ -235,19 +319,28 @@ tamaños.
   cosa; está ahí como referencia.
 - La **línea punteada** es alpha. El eje es logarítmico: cada raya es un orden de magnitud.
 
-Encima de cada gráfico hay una etiqueta automática: **plano/decreciente → timing**, **creciente →
+Al lado del nombre del mercado hay una etiqueta automática, y la rejilla la repite en su última
+columna: **plano/decreciente → timing**, **creciente →
 régimen** (p sube más de un orden de magnitud del bloque más ancho al más estrecho), **sin pass a
 ningún tamaño** (ningún punto llega a alpha, así que no hay aprobado que descomponer) o **no
 evaluable**. Es un pie de foto, no la lectura.
 
 **Nunca leas el p solo.** Con bloques pequeños hay menos sitio donde recolocar, el nulo se ensancha y
-p pierde resolución. Por eso la tabla de debajo de cada gráfico da, para cada tamaño, cuántos bloques
+p pierde resolución. Por eso la tabla de debajo del gráfico da, para cada tamaño, cuántos bloques
 hay, cuántas operaciones tiene cada uno, cuánto hueco libre queda, qué parte de las operaciones cae en
 bloques débiles, cuántas operaciones sobreviven por tirada y la σ del nulo. Si demasiadas operaciones
 caen en bloques con menos de 10 operaciones o con menos de un 25% de velas libres, ese tamaño **no se
 calcula** y sale como ✕. Debajo de todo, desplegable, la lista de bloques de cada tamaño:
 
 ![Bloques de un barrido](assets/crossmarket-barrido-bloques.png)
+
+**Las distribuciones y el cono.** Debajo de la tabla hay un histograma por tamaño de bloque, los
+cuatro en fila y con el backtest real marcado en cada uno: ahí se ve —no se argumenta— cómo el nulo
+se ensancha o se estrecha al encoger el bloque, que es de dónde sale la pérdida de resolución del p.
+Y debajo, el **cono de equity** de las tiradas confinadas del tamaño que elijas con los chips, con
+la curva real encima, igual que en «Entrada aleatoria» pero con las operaciones atadas a su bloque.
+
+![Distribuciones por tamaño de bloque y cono de equity de las tiradas confinadas](assets/crossmarket-barrido-distribuciones.png)
 
 Un aviso sobre la columna de operaciones vivas: en Resampled y Fitted Sequence baja un poco al
 encoger el bloque (en plata, de 98% a 94% entre la ventana entera y 6 meses), porque lo que no cabe en
@@ -275,15 +368,71 @@ más en Entrada aleatoria y Modelos, no dentro del barrido.
 
 ### Cómo se lee el resultado
 
+### El p conjunto: ¿se traslada, o acertó en un mercado?
+
+Un p por mercado no contesta la pregunta del retest. Si miras cuatro mercados con alpha en 0,05,
+que **uno** baje de 0,05 no dice casi nada — y contar cuántos bajan tampoco vale, porque esos
+p-valores **no son independientes**: salen de los mismos sorteos y de mercados que se mueven
+juntos. Combinarlos con Fisher, con Stouffer o por votación supone independencia justo donde no la
+hay, y el resultado sale más generoso de lo que debería.
+
+La pestaña Backtest trae por eso **un solo número decidido de antemano**: la media de `mean_r` sobre
+los mercados fuera de muestra —un voto por mercado, el activo base fuera— medida contra esa misma
+media en cada sorteo. Y lo que lo hace correcto no es la media, es que **el mismo desplazamiento de
+calendario se aplica a todos los mercados a la vez**: si en el sorteo 412 el primer semestre de 2013
+se mueve nueve semanas, se mueve nueve semanas en Brent y en plata. Así el remuestreo ya lleva
+dentro la correlación que haya entre los mercados y no hay que modelar ninguna matriz.
+
+![El p conjunto sobre los mercados fuera de muestra](assets/crossmarket-nulo-conjunto.png)
+
+Si lo ves **sin número**, es por una de tres razones y el panel la dice: sólo hay un mercado fuera
+de muestra, los mercados se corrieron con distinto número de tiradas (te pasará si re-ejecutas uno
+solo cambiando `nulls.draws`), o esta sesión no guardó los sorteos.
+
+El desplegable `joint.pool` del cajón decide cómo se agregan los mercados. Por defecto, `mean_r`
+crudo, que es lo correcto mientras las anchuras del nulo de cada mercado estén parecidas —medido,
+0,1236 en Brent contra 0,1026 en plata, un factor de 1,20—. Cámbialo a `z` si algún día entra un
+mercado cuyo nulo sea varias veces más ancho, porque entonces decidiría él solo.
+
+### Por dónde salieron las operaciones
+
+Estas estrategias salen por tres sitios: **tope de barras**, **cierre del viernes** y **señal**. Los
+dos primeros el nulo los reproduce —uno cuenta barras, el otro mira el calendario—; el tercero no,
+porque haría falta leer el `.sqx`. Por eso el p de una estrategia con salidas por señal es un test
+conjunto de entrada **y** salida.
+
+Lo que la pestaña añade ahora es **cuánto dinero** hay en cada tipo de salida, no sólo cuántas
+operaciones. No es lo mismo: medido en `Strategy 24.14.35`, la salida por señal es el 16,5% de las
+operaciones en Brent pero sólo el **6,2% del P/L bruto**, y encima pierde dinero (−13.546 $). El
+**93,8% del resultado** descansa en salidas que el nulo sí reproduce, así que en ese mercado la
+advertencia de «entrada + salida» cubre una esquina pequeña del resultado. En otra estrategia podría
+ser al revés, y entonces el p diría mucho menos de lo que parece.
+
+![Por dónde salieron las operaciones de cada mercado, y cuánto del P/L lleva cada salida](assets/crossmarket-salidas.png)
+
+### La z, al lado del p
+
+En la tabla «Qué dijo cada test» hay ahora una columna **z (1a)** junto al p. Existe por dos
+motivos: el p **satura** —con 25.000 tiradas el más pequeño posible es 0,00004, así que dos
+mercados excelentes salen iguales y no lo son—, y el nulo es **más ancho en el mercado con menos
+operaciones**, lo cual no es edge. La z divide esa anchura: es (real − media del nulo) en
+desviaciones típicas del nulo. Sirve para **comparar mercados y ordenarlos**, no para decidir: el
+p exacto sigue siendo el test, y la z **no se convierte en un p** en ninguna parte, porque esa
+conversión no vale para el drawdown ni para la racha perdedora.
+
 **El orden en que hay que leer el panel:**
 
 1. **Las comprobaciones.** `fill_error` tiene que ser 0 y `calendar_kept` 1,00 en `block_shift`. Si no
    lo son, el backtest real y los aleatorios no están valorados igual y no hay nada que interpretar.
    Para ahí.
-2. **La pestaña de avisos.** Dice de qué desconfiar en cada mercado antes de que te enamores de un
-   número.
-3. **La tabla por mercado** del Resumen.
-4. **Sólo entonces**, el cono y los histogramas.
+2. **Los avisos**, que ahora están dentro de la propia pestaña Backtest y también en la suya. Dicen
+   de qué desconfiar en cada mercado antes de que te enamores de un número — y, sobre todo, **a qué
+   NO afecta** cada uno: casi ninguno invalida la fila entera.
+3. **La tabla maestra** de la pestaña Backtest: lo que hizo el backtest de verdad, antes de ninguna
+   simulación. Y al lado, la de riesgo igualado.
+4. **Lo que dijo cada test**, en la misma pestaña — el p de cada mercado con su z al lado.
+5. **El p conjunto**, que es el que contesta si se traslada.
+6. **Sólo entonces**, el cono y los histogramas de cada pestaña.
 
 Y una cosa que no cambia por tener mejores gráficos: estás mirando **una estrategia de 757**, que
 además ya pasaron por la búsqueda de SQX. Con alpha en 0,05, de 757 estrategias unas 38 darían un
@@ -302,10 +451,13 @@ Las columnas de la tabla por mercado que hay que saber leer:
 | `paired_p` | el p del test pareado (1b) | **no depende de ningún modelo nulo ni de ninguna suposición de coste** |
 | `paired_beat` | qué porcentaje de operaciones batió a su ventana ciega | 50% es el azar |
 | `a` / `a_ci_lo` / `a_ci_hi` | el exceso por vela sobre la vela media del mercado, con su intervalo | si el intervalo cruza el cero, el exceso no está demostrado |
-| `e` / `e_meaningful` | la concentración E, y si el mercado tiene deriva suficiente para que E signifique algo | cuando `e_meaningful` es falso, **ignora E** |
+| `e` / `e_ci` | la concentración E y su intervalo de Fieller | cuando el intervalo sale **«no acotado»**, E no está determinada: mira A por unidad de riesgo |
+| `risk_normalised` | A dividida por el movimiento típico de una vela de ese mercado | **es el número principal de 1c**: está definido en todos los mercados |
+| `paired_usd_total` | el alfa de timing acumulado en dólares sobre toda la muestra | cuánto del dinero que ganó lo puso el **momento** de entrar |
 | `mu_t` | el t de la deriva del propio mercado | por debajo de 2 en valor absoluto, ese mercado no tiene tendencia que dividir |
 | `breakeven` | a cuántas veces el coste real deja de ganar | el PDF pide 2,0 o más |
-| `trades` / `off_grid` | operaciones usables, y cuántas se cayeron por no encajar en la rejilla de velas | `off_grid` alto significa que las barras y las operaciones no cubren la misma ventana |
+| `trades_all` | **todas** las operaciones que reporta SQX | es con las que cuadran el beneficio, la caída y el PF de la pestaña Backtest |
+| `trades` / `off_grid` | las que ocupan al menos una vela, y las que no | las que no son, casi siempre, salidas `Exit Signal` de duración `0s`: son reales y su dinero cuenta, pero 1a, 1b y 1c necesitan una duración y no pueden usarlas |
 | `on_bar_open` | fracción de entradas al inicio de barra | por debajo de 0,95 hay órdenes pendientes: dispara aviso, **no** excluye |
 | `calendar_kept` | fracción de entradas aleatorias en el mismo día y hora que la real | 1,00 en `block_shift`; vacío en `renewal`, que no empareja operaciones |
 | `null_trades` | operaciones por backtest aleatorio | igual a las reales salvo en `renewal` |
@@ -314,7 +466,7 @@ Las columnas de la tabla por mercado que hay que saber leer:
 | `net` / `dd` / `ret_dd` | beneficio neto, drawdown máximo y su cociente, en dólares | son los de SQX: el P/L reconstruido correlaciona 0,9996 con el suyo |
 | `p_net` / `p_dd` | dónde cae cada uno dentro de los backtests aleatorios | en `p_dd`, pequeño es **bueno**: el real aguantó mejor que el azar |
 
-**Sobre `family`, en el Resumen.** Cuando la estrategia sale siempre por el tope de barras, la
+**Sobre `family`, en la pestaña Backtest.** Cuando la estrategia sale siempre por el tope de barras, la
 duración no dependía del precio y esto es una prueba limpia de la entrada. Cuando sale por señal, la
 duración sí lleva información y el nulo la reutiliza sin poder reproducir de dónde salía: para esas,
 el resultado mide entrada **y** salida a la vez. No es peor, es otra cosa.
@@ -322,8 +474,10 @@ el resultado mide entrada **y** salida a la vez. No es peor, es otra cosa.
 **Dos avisos que vas a ver mucho y qué significan de verdad:**
 
 - `no_drift` — ese mercado no tiene una deriva distinguible de cero en la ventana medida. Medido:
-  oro t = +3,13, plata t = +1,61, Brent t = −0,11. Sólo en el oro tiene sentido E. Es por esto que
-  la lectura principal es **A**, que resta la deriva en vez de dividir por ella.
+  oro t = +3,13, plata t = +1,61, Brent t = −0,11. Afecta **sólo a E**, que divide por esa deriva:
+  su intervalo de Fieller sale entonces «no acotado», que es la verdad. **A no se ve afectada** —
+  resta en vez de dividir — y de hecho Brent, que dispara este aviso, tiene la A más alta de los
+  tres.
 - `short_sample` — el Sharpe por operación observado necesitaría más operaciones de las que hay para
   distinguirse de cero (MinTRL). Es casi universal con Sharpes por operación de 0,03-0,15: dice que
   la evidencia de *rentabilidad* es débil, no que el test de *timing* esté mal.
@@ -361,6 +515,8 @@ de entrar, moverlas tiene que estropearlo — y lo hace, de forma ordenada:
 ### Qué NO te dice
 
 - **No te dice que la estrategia esté sobreajustada o no al activo base.** Mide traslado, no ajuste.
+- **La pestaña Portfolio no construye tu cartera real.** Es una estrategia en N mercados, para ver si uno
+  de ellos rompe la combinación. Tu cartera real, con varias estrategias, es otro módulo.
 - **No valida la curva de capital.** El número está construido a propósito sin tamaño de posición,
   para que la comparación sea justa. Dice que entra en barras mejores que el azar; no dice que la
   gestión monetaria funcione.

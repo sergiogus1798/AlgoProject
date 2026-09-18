@@ -20,6 +20,13 @@
   (`multiprocessing.get_context("forkserver")` + `set_forkserver_preload([...])` so workers start with
   numpy already imported). While at it, **one pool reused** instead of one per sub-test: it was 19
   pools of 96 workers per strategy.
+- 🤔 **`set_forkserver_preload()` takes a module path as a *string*, so no import checker follows
+  it, and getting it wrong does not fail — it only gets slower.** Found 2026-09-18 while moving
+  `strategies/monteCarlo/` into layer packages: `engine.py` names its own module there, and a move
+  that missed the rename would have left every worker reimporting numpy from scratch with no error
+  anywhere. Any refactor that moves a module has to grep for its own dotted path inside strings, and
+  the test that catches this one is **a stopwatch, not a traceback**: time one strategy before and
+  after (2m07s → 2m01s on the 36-strategy XAUUSD databank at 3,000 sims, i.e. unchanged).
 - 🔬 Launch SQX only with `ELECTRON_RUN_AS_NODE` unset. VS Code exports it; inheriting it makes SQX's
   Electron shell run as plain Node and the GUI dies with `bad option: --no-sandbox`.
 
@@ -292,6 +299,106 @@ The fix is not a clamp. **A is the number to read** — it subtracts the drift i
 it, so it is defined everywhere — and E is withheld unless the market's drift clears a t threshold.
 Any metric shaped "strategy over market" inherits this; check the denominator's own significance
 before publishing the ratio.
+
+🔬 **Updated 2026-09-16: withholding the ratio was still not the honest answer.** Hiding E where the
+drift is weak leaves the reader with no idea how badly determined it was, and a percentile bootstrap
+on the ratio is worse — it returns a comfortable finite interval precisely when no finite interval
+exists. **Fieller's theorem is the tool.** Given the two means, their variances and their covariance,
+it returns an interval that is genuinely **unbounded** when `z²·var(den)/den² ≥ 1`, which is the
+algebra's own way of saying the denominator cannot be told from zero. Measured on Brent,
+`Strategy 1.10.80`: E = +17.4, CI 90% **unbounded**, and 54.5% of bootstrap replicates had a market
+drift at or below zero. All three numbers together are a sentence; any one of them alone is not.
+
+Two details that decide whether the interval means anything:
+
+- **Resample the numerator and the denominator from the same replicate.** The occupied bars are a
+  *subset* of the market's bars, so the two estimates move together; treating them as independent
+  understates the interval on their ratio. Bootstrapping blocks of bars and computing both sides
+  from the same drawn blocks carries the covariance instead of assuming it away.
+- **Aggregate into blocks before resampling, not after.** A 120,000-bar market times 2,000 draws is
+  a matrix nobody needs: reduce each block to its four totals (sum and count of all bars, sum and
+  count of occupied ones) and resample those. It is the same estimator at a thousandth of the memory.
+
+And the reframing that made the panel readable: **the headline number is A divided by the market's
+typical bar move**, not E. That denominator is a volatility, so it is always positive and never near
+zero — it is defined in every market, and the ratio E becomes context with an interval rather than a
+figure anyone reads first.
+
+
+## A reference window with fixed boundaries measures the trades near its edge against the past
+
+🔬 Found 2026-09-16 in `strategies/crossmarket/paired.py`, on the owner asking "why six months, and
+what about three back and three forward?". Test 1b compared each trade against the mean of every
+window of its own length inside **the fixed semester partition** the null model shifts trades within.
+Reusing that partition looked like consistency and hid two artefacts:
+
+- A trade entering three days before a block ends is measured against a stretch that is **almost
+  entirely past**. Its reference describes a regime that had mostly already happened.
+- Two trades a week apart, on opposite sides of a boundary, get **disjoint** references. That
+  difference is a property of where the calendar was cut, not of the market.
+
+The replacement is a **centered window**: every blind trade of the same length starting within ±N
+months of the entry. It is a running mean over the per-bar return series, so it costs one pass per
+distinct hold whatever the width — no per-trade loop, no sampling. It reads bars *after* the entry,
+which is legitimate here and must be said out loud: the reference is "what this market was paying
+around then", not a rule anyone could have traded.
+
+The general lesson is the one worth keeping: **when a modelling choice is arbitrary, sweep it and
+print every answer.** The test now runs under ±3m, ±6m, ±12m and the block partition, and shows all
+four. Measured on `Strategy 1.10.80` / Brent: p = 0.749 / 0.677 / 0.667 / 0.753 and alpha −5.27 /
+−4.68 / −4.72 / −5.22 bps. The four agreeing is a *measurement*; assuming they would have agreed is
+what the old code did.
+
+🔬 **The same session, a presentation finding.** The statistic is a log return, so it prints as
+0.00042 and nobody reads it. Printing the identical number in basis points, per cent, ATR units,
+dollars per trade and **dollars accumulated over the sample** changed what the owner asked about it
+immediately: "the timing put −$6,507 into this market" is a sentence, and "−0.00053" is not. The
+maths stays in log space, where subtracting two windows is legitimate; only the presentation changes.
+
+
+## A zero-duration trade is a real trade that no bar-grid study can hold
+
+🔬 Found 2026-09-16 by the owner, who compared a cross-market panel against SQX and saw fewer
+trades. `Strategy 24.7.38` on gold: 2,142 in the databank, 2,089 in the study. The 53 missing ones
+have `Open time == Close time`, `Time in trade` of `0s` and `Close type` of `Exit Signal` — SQX's
+exit rule fired on the entry bar.
+
+Across the whole `Retest Markets - Family` export: **1,695 of 92,329 trades (1.84%)** are
+zero-duration, in 57 of the (strategy, market) pairs, reaching **9.8%** on `Strategy 8.16.41(1)` /
+silver. Three more are `Exit After X Bars` that also collapse to one bar, and five fall before the
+first bar of their own file.
+
+`envelope.occupancy()` keeps a trade only where `exit > entry`, which is correct for what it feeds:
+a trade with no interval cannot be displaced by a null model, matched against a blind window of its
+own duration, or counted as occupied bars. The mistake was letting that subset also define **what
+the backtest did**. Net profit, drawdown, profit factor and the trade count are properties of the
+trade list, not of the bar grid, and they must come from every row SQX exported or they silently
+disagree with the databank by whatever the grid could not hold.
+
+The general rule: **separate "what the run did" from "what the test could compare", compute each
+from its own population, and print both counts.** Any study that locates trades on a grid — this
+one, a stop simulation, an MAE/MFE study — inherits the same split. A single trade count on a page
+is a claim that the two populations are the same one, and here they are not.
+
+
+## A contemporaneous dependence cannot be bootstrapped by resampling trades
+
+🔬 Recorded 2026-09-16, building `strategies/crossmarket/portfolio.py`. When several markets are
+merged into one account, the dependence that matters is **contemporaneous** — two markets losing in
+the same week — not serial. A trade-level bootstrap, even a block one, draws trades that never
+co-occurred and destroys exactly the thing being measured, while reporting a comfortably narrow
+interval for the portfolio's drawdown.
+
+Resample **whole calendar blocks** instead: partition the timeline into N-week blocks, draw blocks
+with replacement, and every market's trades inside a drawn block travel together. Trade-level
+reordering still has a place next to it — it answers a different question, "did the sequence matter",
+and leaves composition untouched so net profit is invariant by construction — but it is not a
+substitute.
+
+🤔 A related trap, found by the numbers looking wrong: an event sweep over `(open, +1)` and
+`(close, −1)` pairs reported **four** concurrent positions across **three** markets. A close and an
+open at the same instant are one position handing over to the next; sort closes before opens at
+equal timestamps (`np.lexsort((moves, times))`) or every re-entry on its own exit bar counts twice.
 
 
 ## A bar file is wider than the backtest that ran on it, and a null will happily use the rest

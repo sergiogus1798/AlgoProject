@@ -3,8 +3,9 @@
 TIPS = {
     "nulls.draws": "Backtests aleatorios por mercado y modelo. El p-valor más pequeño que se "
                    "puede observar es 1/(draws+1): con 5.000, 0,0002.",
-    "nulls.seed": "Semilla fija y compartida entre mercados, así un mismo sorteo es el mismo "
-                  "desplazamiento en todos ellos.",
+    "nulls.seed": "Semilla fija: dos ejecuciones con la misma configuración dan los mismos "
+                  "números. No acopla los mercados entre sí — cada uno consume su propio "
+                  "generador con su propia forma, medido corr(sorteo) = -0,002.",
     "nulls.block_months": "Longitud del bloque de régimen dentro del cual se mueve cada "
                           "operación. Trece años de oro no son un solo régimen: un nulo "
                           "repartido por toda la muestra le regala a la estrategia la deriva "
@@ -37,6 +38,12 @@ TIPS = {
     "sweep.evidence_drop": "Órdenes de magnitud que tiene que subir p del tamaño más ancho al "
                            "más estrecho para etiquetar la curva «creciente → régimen». 1 es "
                            "multiplicarse por diez.",
+    "joint.pool": "Cómo se agregan los mercados fuera de muestra en el nulo conjunto. "
+                  "«mean_r» promedia el estadístico crudo — correcto mientras las anchuras "
+                  "del nulo de cada mercado estén dentro de un factor pequeño (medido 1,20 "
+                  "entre Brent y plata). «z» promedia el estadístico estandarizado de cada "
+                  "mercado, y es lo que hay que usar si uno tiene una anchura varias veces "
+                  "mayor, o decide el veredicto él solo.",
     "strata.atr_bins": "Sólo para regime_strata, que corre si lo añades a nulls.models: en "
                        "cuántos cuantiles de ATR se parten las velas.",
     "strata.trend_bars": "Sólo para regime_strata: velas sobre las que se lee el signo de la "
@@ -45,27 +52,53 @@ TIPS = {
     "bootstrap.block": "Operaciones por bloque del bootstrap. Las velas dentro de una "
                        "operación están autocorrelacionadas, así que remuestrear operación a "
                        "operación sueltas estrecharía el intervalo de mentira.",
-    "bootstrap.ci": "Percentiles que se reportan como intervalo. [5, 95] es un IC del 90%.",
+    "bootstrap.ci": "Percentiles que se reportan como intervalo. [5, 95] es un CI del 90%.",
     "exposure.mu_min_t": "|t| mínimo de la deriva del propio mercado para que E se muestre. "
                          "E divide por esa deriva: en un mercado cuya deriva es "
                          "estadísticamente cero, E no significa nada, y en uno que cayó sale "
                          "negativo y se lee justo al revés de lo que es. Medido: Brent t = "
                          "−0,11 daba E = −69,4 siendo el mercado con más A de los tres.",
+    "exposure.bar_block": "Velas por bloque del bootstrap pareado con el que se construye el "
+                          "intervalo de Fieller de E. Bloques, y no velas sueltas, porque los "
+                          "retornos de velas contiguas están autocorrelacionados.",
     "exposure.drop_zero_mfe": "Excluye las operaciones cuyo MFE es cero en vez de dividir "
                               "por él. Una operación que nunca se movió a favor tiene una "
                               "captura indefinida, no infinita.",
     "paired.alternative": "Lado del test de Wilcoxon. «greater» pregunta si las operaciones "
                           "reales baten a su ventana ciega, que es la hipótesis del estudio.",
-    "drivers.hurst_lags": "Horizontes sobre los que se ajusta la pendiente del exponente de "
-                          "Hurst. El número se mueve con este conjunto: léelo como un orden "
-                          "entre mercados, no como una cifra de tres decimales.",
-    "drivers.variance_ratio_q": "Horizonte de agregación del variance ratio de Lo-MacKinlay, "
-                                "en velas. 1 es paseo aleatorio, más de 1 tendencia, menos "
-                                "reversión.",
-    "drivers.adx_period": "Periodo del ADX, con el suavizado de Wilder.",
-    "drivers.adx_trend": "ADX por encima de este valor cuenta la vela como en tendencia.",
-    "drivers.efficiency_window": "Velas sobre las que se mide el ratio de eficiencia de "
-                                 "Kaufman: recorrido neto dividido por camino andado.",
+    "paired.reference": "Cómo se define «el mismo tramo de mercado»: un número son los meses a "
+                        "cada lado de la entrada (3 = ventana centrada de seis meses), y "
+                        "«block» es la partición fija en semestres que usa Calendar Shift. La "
+                        "centrada no tiene fronteras: con bloques, una operación que entra "
+                        "tres días antes de que acabe el semestre se mide contra un tramo que "
+                        "ya casi ha pasado.",
+    "paired.sensitivity": "Todas las definiciones con las que se corre además el test, para "
+                          "ver si el p depende de la elección. Un p que aguanta las cuatro no "
+                          "depende de ella; uno que sólo aguanta una la tenía de muleta.",
+    "portfolio.block_weeks": "Semanas de calendario por bloque del remuestreo del portfolio. "
+                             "En calendario y no en operaciones: lo que importa en una cartera "
+                             "es que dos mercados pierdan la misma semana, y remuestrear "
+                             "operaciones sueltas destruye justo eso.",
+    "portfolio.draws": "Remuestreos y barajados de la cuenta combinada.",
+    "portfolio.order_block": "Operaciones por bloque al barajar el orden del portfolio, de "
+                             "strategies.monteCarlo.model.draws.",
+    "equity.risk_target_dd": "Caída máxima a la que se reescala cada mercado para compararlos "
+                             "a riesgo igual. 0,10 = cada mercado se dimensiona hasta que su "
+                             "peor caída es el 10% de la cuenta.",
+    "stress.sims": "Ejecuciones degradadas por mercado. Igualado al número de sorteos de los "
+                   "nulos, para que su p tenga la misma resolución.",
+    "stress.calibrate": "Toma cost_shock y fill_depth de execution.yaml para los feeds "
+                        "declarados allí, en vez de los números redondos de este fichero. "
+                        "p_skip nunca se calibra: nada en el export dice cuántas órdenes se "
+                        "habrían perdido.",
+    "stress.p_skip": "Probabilidad de que cada operación simplemente no ocurra. Es un supuesto "
+                     "explícito y no se calibra desde ningún dato.",
+    "stress.cost_shock": "Multiplicador de coste por tirada, si no hay calibración. Con "
+                         "calibración sale de spread_stress / spread_typical del feed.",
+    "stress.fill_frac": "Fracción de operaciones que se llenan peor.",
+    "stress.fill_depth": "Parte de su propia excursión adversa que devuelve una operación mal "
+                         "llena. Con calibración sale del slippage típico del feed frente a su "
+                         "MAE mediana.",
     "stress.cost_multiples": "Múltiplos del coste a los que se vuelve a valorar todo, para "
                              "ver a partir de cuál desaparece el beneficio.",
     "stress.bar_shift": "Velas que se desplazan entrada y salida para ver cuánto decae el "
@@ -79,14 +112,16 @@ TIPS = {
     "diagnostics.min_on_open": "Por debajo de esto hay órdenes pendientes entre las entradas, "
                                "que son una selección condicionada al precio que ningún nulo "
                                "reproduce. Se avisa, no se descarta el mercado.",
-    "diagnostics.correlated": "Correlación supuesta entre mercados para la cifra honesta de "
-                              "falsos positivos. Mercados movidos por el dólar se comportan "
-                              "como muchos menos de los que son.",
-    "diagnostics.pca_warn": "Porción de varianza en PC1 por encima de la cual estos mercados "
-                            "son una sola apuesta y no varias confirmaciones.",
+    "diagnostics.min_on_grid": "Por debajo de esta fracción de operaciones colocables en la "
+                               "rejilla de velas salta un aviso. Una operación que abre y "
+                               "cierra dentro de la misma vela no tiene intervalo, así que 1a, "
+                               "1b y 1c no pueden usarla; el beneficio y la caída de la "
+                               "pestaña Backtest sí la incluyen.",
 }
 
 GROUPS = {"nulls": "Modelos nulos", "sweep": "Barrido de ventana",
-          "strata": "Estratos de régimen", "bootstrap": "Bootstrap", "exposure": "Exposición (1c)",
-          "paired": "Test pareado (1b)", "drivers": "Propiedades del mercado",
-          "stress": "Coste y ejecución", "diagnostics": "Lectura y avisos"}
+          "joint": "Nulo conjunto",
+          "strata": "Estratos de régimen", "equity": "Cuenta y curvas", "bootstrap": "Bootstrap",
+          "exposure": "Exposición (1c)", "paired": "Test pareado (1b)",
+          "portfolio": "Portfolio", "stress": "Coste y ejecución",
+          "diagnostics": "Lectura y avisos"}

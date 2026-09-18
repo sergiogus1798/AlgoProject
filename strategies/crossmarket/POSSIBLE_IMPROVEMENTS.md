@@ -28,6 +28,11 @@ as a joint entry-and-exit test.
 
 Still worth building:
 
+- **A joint null across markets.** ✅ *Built 2026-09-17* — `joint.py`, and `block_shift` now draws
+  one displacement per calendar semester and applies it in every market, which is what makes the
+  pooled p correctly sized. What is left is the scale question in §6 of the brief it came from:
+  `joint.pool` defaults to raw `mean_r` and should be revisited when a market arrives whose null
+  spread is several times another's.
 - **Condition the model on state.** *Partly built 2026-09-15:* `regime_strata` conditions on ATR
   quantile × trend sign and is off by default, and the window sweep conditions the three free
   models on calendar proximity. Draw entries only from bars in the same volatility decile, the
@@ -50,12 +55,24 @@ reported rather than averaged away.
 
 ## 2. Statistical treatment
 
-- **Joint null across markets.** The seed is already synchronised, so one draw is the same
-  displacement in every market. Combining the per-market statistics into one figure per strategy
-  under that joint null would price the correlation between markets instead of ignoring it. This is
-  the right fix for the false-pass inflation the report currently only declares.
-- **Combine p-values (Fisher / Stouffer)** rather than voting. More powerful, but it assumes
-  independence, which is precisely what item above measures.
+- **Joint null across markets.** ✅ *Built 2026-09-17.* `joint.run()` pools the out-of-sample
+  markets into one a-priori statistic — the equal-weight mean of `mean_r` — and compares it against
+  the same pool on every draw. It is correctly sized because the draws are **coupled**:
+  `trade_models.semester_shift()` keys each calendar semester's displacement on the semester itself
+  rather than on the market, so draw d is one counterfactual of the whole set.
+
+  🔬 The measurement that forced this: before the coupling existed, the correlation between draw d's
+  `mean_r` on Brent and on silver was **−0.0016**. Sharing `nulls.seed` couples nothing — every
+  market consumes its own generator at its own shape. After it, 83.5% of draws move a shared
+  semester by exactly the same number of weeks. The per-draw correlation of the two markets'
+  statistics is still ≈ −0.035, which is a fact about these two markets and not about the method.
+  `diagnostics.correlated`, the assumed-correlation knob kept for an "honest false-pass figure",
+  was **removed the same day**: nothing read it, and a measured joint p is what it was standing in
+  for.
+- **Combine p-values (Fisher / Stouffer)** rather than voting. Rejected, and it should stay
+  rejected: both assume independence, which the per-market p-values do not have — same draws,
+  markets that move together. The joint null above needs no such assumption, which is the whole
+  reason it is the one that ships.
 - **Two-stage refinement.** The default 25,000 draws bound the smallest p at 4e-5; across hundreds
   of strategies no FDR procedure can then reach a low q. Screen low, then re-run only the survivors
   high — the panel's per-market **run** button already does exactly that without recomputing the
@@ -141,6 +158,47 @@ Decided with the owner, so a future session does not reopen them alone:
   is reported as its own number with its own warnings, and the owner weighs them by hand. This is
   the explicit instruction, not an omission.
 
+## What changed on 2026-09-16, and what it closed
+
+The owner rebuilt the panel around the backtest rather than around the tests. Alongside that:
+
+- **Test 1b's reference window is no longer a hidden constant.** It was the fixed semester
+  partition; it is now a **centered window** by default (`paired.reference: 3`, meaning ±3 months)
+  and the test is run under every entry of `paired.sensitivity` — ±3m, ±6m, ±12m and the block
+  partition — with all four printed. The block partition's defect is real and had never been
+  written down: a trade entering three days before a block ends is measured against a stretch that
+  is almost entirely past, and two trades a week apart across a boundary get disjoint references.
+  Measured on `Strategy 1.10.80` / Brent the four agree to within 0.09 on p; that is a measurement,
+  not a reason to stop printing them.
+- **E has an interval.** `fieller.py` gives the ratio an honest one: unbounded when the denominator
+  cannot be told from zero, which is the truth a percentile bootstrap quietly hides. The bootstrap
+  behind it resamples **blocks of bars** and computes numerator and denominator from the same
+  replicate, so the dependence between the occupied bars and the market they are a subset of is
+  carried rather than assumed away; the share of replicates whose drift changed sign is printed
+  beside it. Brent: E = +17.4, unbounded, 54.5% sign flips.
+- **The fingerprint draws its distributions.** Closes §6 below: `fingerprint.overlay()` returns
+  shared bins and two share arrays, and the tab lays this market's holds, returns, MAE/ATR and
+  MFE/ATR over the base asset's.
+- **The cost stress is calibrated per feed** from `execution.yaml` instead of round numbers, and
+  the tab prints the cost SQX really charged against the one that file implies. `p_skip` stays an
+  assumption and is labelled as one.
+- **Warnings say what they do not affect.** See `alerts.py`.
+- **The Portfolio tab** answers the question the retest raises and could not: does a market break the
+  combination? Marginal contribution per market, calendar-block intervals, overlap, and reordering
+  delegated to `strategies.monteCarlo.model.draws`.
+
+### Discarded on 2026-09-16, with the reason, so they are not proposed again
+
+- **The edge-driver regression, and `drivers.py` with it.** It needs six or more markets on the
+  right-hand side. The owner expects four, and says they will be uncorrelated — which helps the
+  regression not at all, since the constraint is the count. Hurst, VR, ADX share, ATR% and the
+  efficiency ratio are gone from the code; if six markets ever exist, they are forty lines to
+  rebuild and the argument for them is in this file's history.
+- **The PCA across market equity streams.** With two or three streams PC1 is close to a function of
+  the mean pairwise correlation, so it was a second name for a number the matrix already showed.
+  The correlation matrix survives and moved onto the main tab, where it sits under the equity
+  curves it describes.
+
 ## 3. Other tests on the same two inputs
 
 - **Test 1c, exposure-adjusted return.** Concentration ratio E and drift-neutral excess A. Cheaper
@@ -153,11 +211,6 @@ Decided with the owner, so a future session does not reopen them alone:
   never moved favourably at all), which divided by zero. Those trades are now excluded and counted
   (`exposure.drop_zero_mfe`, on by default), because a trade that never moved favourably has an
   undefined capture, not an infinite one. The count of dropped trades is reported beside the ratio.
-- **Edge-driver regression.** Hurst, variance ratio, ADX regime share, ATR%, efficiency ratio per
-  market, regressed against the per-market result. Turns "it works here and not there" into a
-  sentence about which market property the edge needs.
-- **Independence / PCA** across the markets' equity streams. If PC1 explains most of the variance,
-  eight markets are one bet and a majority of eight is worth much less than it looks.
 - **Cost gradient** 1x to 3x with the breakeven multiple per market.
 - **Per-market equity curves without SQX.** A retested `.sqx` already stores one `dailyEquity.bin`
   per `AdditionalMarket` result; teaching `core/sqxstats.equity()` to read a named result would give
@@ -196,11 +249,11 @@ warning says so; it does not quantify it. Still worth building:
 
 ## 6. Left out of the Fase 1-4 + panel build
 
-- **No holding-time comparison chart.** `fingerprint.holding_ks()` returns only a statistic and a
-  p-value, not the two distributions themselves, so the "huella" tab shows a table (`tables.fingerprint_table`)
-  rather than the two-histogram overlay the plan sketched. Building it needs `holding_ks()` to also
-  return the raw hold arrays (or a second function that does), which was left out to keep `charts.py`
-  under CODESTYLE's 250-line cap on this pass.
+- ~~No holding-time comparison chart.~~ **Built 2026-09-16.** `fingerprint.overlay()` bins this
+  market and the base asset on shared edges, as shares rather than counts so different trade counts
+  compare, clipped at the 99th percentile of the two together — one 400-bar hold otherwise squeezed
+  900 trades into a single bar. Four of them: holds, returns, MAE/ATR, MFE/ATR. The drawing lives in
+  `overlays.py`, not `charts.py`, which was already at the line cap.
 - **Manual screenshots are placeholders.** `docs/manual/05-retest-mercados.md` describes every button
   and tab from a real run of the panel (verified against `Retest_Markets_-_Family`'s one strategy,
   which reproduces the known `Strategy 24.14.35` pending-order case in §4 above byte-for-byte), but

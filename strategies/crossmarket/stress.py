@@ -9,12 +9,13 @@ from strategies.crossmarket import equity, metrics, pricing
 DEFAULT_MULTIPLES = [1.0, 1.5, 2.0, 2.5, 3.0]
 
 
-def degraded(fixed: dict, cfg: dict, rng: np.random.Generator) -> tuple[np.ndarray, ...]:
+def degraded(fixed: dict, s: dict, rng: np.random.Generator) -> tuple[np.ndarray, ...]:
     """The real trades run again under worse execution, many times over.
 
     Args:
         fixed: What backtest.setting() returned.
-        cfg: What config.load() returned.
+        s: What execution.settings() returned — config.yaml's stress block, with cost_shock
+            and fill_depth calibrated from execution.yaml where that feed is declared.
         rng: Seeded generator.
 
     Returns:
@@ -25,7 +26,7 @@ def degraded(fixed: dict, cfg: dict, rng: np.random.Generator) -> tuple[np.ndarr
         keeps the real entries — it asks what the same trades are worth under a worse broker,
         not whether the entries were any good.
     """
-    s, sims = cfg["stress"], cfg["stress"]["sims"]
+    sims = s["sims"]
     base, charged = fixed["pnl"], fixed["charged"]
     mae = tradeio.excursions(fixed["aligned"], fixed["point_value"])["mae"].to_numpy()
     mae_usd = np.abs(mae) * fixed["size"]
@@ -36,13 +37,14 @@ def degraded(fixed: dict, cfg: dict, rng: np.random.Generator) -> tuple[np.ndarr
     return np.where(live, pnl, 0.0), live
 
 
-def simulate(fixed: dict, bars: pd.DataFrame, cfg: dict) -> dict:
+def simulate(fixed: dict, bars: pd.DataFrame, cfg: dict, s: dict) -> dict:
     """Every statistic and the equity cone of the execution stress.
 
     Args:
         fixed: What backtest.setting() returned.
         bars: That market's bars.
         cfg: What config.load() returned.
+        s: What execution.settings() returned for this market.
 
     Returns:
         The same table, shapes and cone shape backtest.run() returns, so the panel draws
@@ -51,7 +53,7 @@ def simulate(fixed: dict, bars: pd.DataFrame, cfg: dict) -> dict:
     """
     e = cfg["equity"]
     rng = np.random.default_rng(cfg["nulls"]["seed"])
-    pnl, live = degraded(fixed, cfg, rng)
+    pnl, live = degraded(fixed, s, rng)
     seen = metrics.observed(fixed["pnl"], e["starting"])
     stats = metrics.paths(pnl, live, e["starting"])
     closed = np.repeat(fixed["held"]["exit"].to_numpy()[None, :], pnl.shape[0], axis=0)

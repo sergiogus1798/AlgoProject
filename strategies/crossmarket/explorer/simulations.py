@@ -1,7 +1,6 @@
-"""The three tabs that draw simulated distributions and equity cones: 1a, the models, the
-execution stress. Split from sections.py so both stay under CODESTYLE's 250-line cap."""
-
-import pandas as pd
+"""The two tabs that draw simulated distributions and equity cones: 1a and the model
+comparison, plus the metric table every simulated tab shares. Split from sections.py so both
+stay under CODESTYLE's 250-line cap; stress_tab.py is the third reader of metric_table()."""
 
 from strategies.crossmarket import charts, figures, metrics, panel, tables
 
@@ -200,7 +199,10 @@ def models_tab(record: dict, cfg: dict) -> str:
            f'respuesta se mueve con la elección: por eso se corren varios y manda el que '
            f'cambia exactamente una cosa. El p que sale en el Resumen es el de '
            f'<b>{panel.NAMES[cfg["nulls"]["headline"]]}</b> sobre '
-           f'<b>{metrics.LABELS["mean_r"]}</b>.</div>',
+           f'<b>{metrics.LABELS["mean_r"]}</b>, y ésa es la métrica del veredicto: '
+           f'es la única comparable entre mercados y está elegida de antemano. Este '
+           f'desplegable es <b>exploración</b> — mirar siete indicadores y quedarse con el '
+           f'mejor p es hacerse trampas al solitario.</div>',
            f'<div class="tools"><label>p de qué indicador</label>'
            f'<select id="modelMetric">{options}</select></div>',
            '<div id="modelsView"></div>',
@@ -212,37 +214,4 @@ def models_tab(record: dict, cfg: dict) -> str:
                    f'<p class="lede"><code>{m}</code> · aleatoriza {panel.RANDOMISES[m]}</p>'
                    f'<p>{panel.EXPLAINED[m]}</p></div>')
     out.append(f'<div class="note">{panel.RETIRED}</div>')
-    return "".join(out)
-
-
-def stress_tab(record: dict, cfg: dict) -> str:
-    """Cost and execution: the gradient, the breakeven, and the degraded-run distributions.
-
-    Args:
-        record: What work.RESULTS holds.
-        cfg: The configuration that run was made with.
-
-    Returns:
-        The tab's HTML. The cone here is what a worse broker can do to the same trades, not
-        what random timing can — a different question from the random-entry tab's.
-    """
-    rows = pd.DataFrame(record["rows"])
-    s = cfg["stress"]
-    out = [figures.bars_by_market(
-        [{"market": r["feed"], "breakeven": r["breakeven"]} for r in record["rows"]],
-        "breakeven", "Múltiplo de coste de equilibrio (referencia del estudio: 2,0)", rule=2.0),
-        tables.cost_table(rows),
-        f'<div class="note">Debajo, las mismas operaciones ejecutadas peor {s["sims"]:,} veces: '
-        f'{s["p_skip"]:.0%} de entradas perdidas, coste entre {s["cost_shock"][0]:.1f}x y '
-        f'{s["cost_shock"][1]:.1f}x, y {s["fill_frac"]:.0%} de operaciones devolviendo el '
-        f'{s["fill_depth"]:.0%} de su propia excursión adversa.</div>']
-    for feed, by_model in record["runs"].items():
-        run = by_model["stress"]
-        out.append(f"<h3><code>{feed}</code></h3>")
-        out.append(charts.cone(run["cone"], f"Equity bajo ejecución degradada — {feed}",
-                               "el backtest real sobre el cono de las versiones degradadas"))
-        out.append(metric_table(run["table"], cfg))
-        for name in STRESSED:
-            out.append(charts.distribution(run["shapes"][name], metrics.LABELS[name],
-                                           f"{feed} · {s['sims']:,} ejecuciones degradadas"))
     return "".join(out)

@@ -5,9 +5,12 @@ from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
+from core.significance import min_track_record, moments
 from strategies.crossmarket import bootstrap, pricing
+
+__all__ = ["moments", "min_track_record", "trade_returns", "bootstrap_metric",
+           "profit_factor", "expectancy"]
 
 
 def trade_returns(fixed: dict, bars: pd.DataFrame) -> np.ndarray:
@@ -22,39 +25,6 @@ def trade_returns(fixed: dict, bars: pd.DataFrame) -> np.ndarray:
         subtracted.
     """
     return pricing.realised(bars, fixed["held"], fixed["fill"]["convention"]) - fixed["cost"]
-
-
-def moments(returns: np.ndarray) -> tuple[float, float, float]:
-    """Sharpe, skew and excess kurtosis of a return series.
-
-    Args:
-        returns: Per-trade returns.
-
-    Returns:
-        (sharpe, skew, kurtosis). Sharpe is the plain per-trade mean over its own standard
-        deviation, unannualised: min_track_record() needs it in this unit, not a yearly one.
-        Kurtosis is raw, not excess — 3 for a normal — because that is what the minimum
-        track-record formula's (kurtosis - 1) / 4 term expects.
-    """
-    sharpe = float(returns.mean() / returns.std(ddof=1))
-    return sharpe, float(stats.skew(returns)), float(stats.kurtosis(returns, fisher=False))
-
-
-def min_track_record(returns: np.ndarray, alpha: float = 0.05) -> dict:
-    """Bailey / Lopez de Prado minimum track-record length.
-
-    Args:
-        returns: Per-trade returns.
-        alpha: Significance level for the one-sided test that Sharpe > 0.
-
-    Returns:
-        Keys needed, have and enough. Replaces the flat MIN_TRADES floor as a diagnostic —
-        inference.testable() is unchanged, per the owner's decision not to touch the verdict.
-    """
-    sharpe, skew, kurt = moments(returns)
-    z = stats.norm.isf(alpha)
-    needed = 1 + (1 - skew * sharpe + (kurt - 1) / 4 * sharpe ** 2) * (z / sharpe) ** 2
-    return {"needed": float(needed), "have": len(returns), "enough": bool(len(returns) >= needed)}
 
 
 def bootstrap_metric(returns: np.ndarray, metric: Callable[[np.ndarray], float], cfg: dict,

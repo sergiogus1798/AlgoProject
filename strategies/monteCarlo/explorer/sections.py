@@ -1,12 +1,12 @@
 """The panel's content, rendered by the same functions that write the report file."""
 
-from strategies.monteCarlo import charts, familypage, panel, strategypage
+from strategies.monteCarlo.render import charts, families, panel, strategypage
 
-FAMILIES = {"A": lambda r, v, b, c: familypage.family_a(r, v, b, c),
-            "B": lambda r, v, b, c: familypage.family_b(r, v, c),
-            "C": lambda r, v, b, c: familypage.family_c(r, v, c),
-            "D": lambda r, v, b, c: familypage.family_d(r, v, c),
-            "E": lambda r, v, b, c: familypage.family_e(r, v, c)}
+FAMILIES = {"A": lambda r, v, b, c: families.family_a(r, v, b, c),
+            "B": lambda r, v, b, c: families.family_b(r, v, c),
+            "C": lambda r, v, b, c: families.family_c(r, v, c),
+            "D": lambda r, v, b, c: families.family_d(r, v, c),
+            "E": lambda r, v, b, c: families.family_e(r, v, c)}
 UNITS = {"net": "Beneficio neto de la simulación, en $", "return_pct": "Retorno",
          "dd": "Drawdown máximo, en $", "dd_pct": "Drawdown, como % de la cuenta",
          "ret_dd": "Beneficio entre drawdown", "sharpe": "Sharpe por operación",
@@ -63,7 +63,7 @@ def runs(result: dict) -> list[dict]:
     for group in ("A", "B"):
         out += [{"label": k, "title": result["titles"][k], "family": group}
                 for k in result[group]["shapes"]]
-    out += [{"label": k, "title": familypage.MODELS_ES[k], "family": "C"}
+    out += [{"label": k, "title": families.MODELS_ES[k], "family": "C"}
             for k in result["C"]]
     return out
 
@@ -105,19 +105,19 @@ def figure(result: dict, label: str, metric: str, title: str, band: dict | None 
             if metric != "dd_pct" else
             f"El backtest tuvo un drawdown mayor que el {got['rank']:.0%} de las "
             f"simulaciones.")
-    body = [[f"Percentil {q}", familypage.fmt(metric, v)] for q, v in got["p"].items()]
-    body += [["Media", familypage.fmt(metric, got["mean"])],
-             ["Mediana", familypage.fmt(metric, got["median"])],
-             ["Desviación estándar", familypage.fmt(metric, got["std"])],
+    body = [[f"Percentil {q}", families.fmt(metric, v)] for q, v in got["p"].items()]
+    body += [["Media", families.fmt(metric, got["mean"])],
+             ["Mediana", families.fmt(metric, got["median"])],
+             ["Desviación estándar", families.fmt(metric, got["std"])],
              ["Curtosis (exceso)", f"{got['kurtosis']:.2f}"],
-             ["Backtest", familypage.fmt(metric, got["observed"])],
+             ["Backtest", families.fmt(metric, got["observed"])],
              ["Simulaciones utilizables", f"{got['n']:,}"]]
     flat = ('<div class="note"><b>Esta prueba conserva este estadístico por '
             'construcción.</b> Reordenar las mismas operaciones no puede cambiarlo, así que '
             'la distribución es un solo valor. Es la comprobación de que el modelo hace lo '
             'que dice: mira el drawdown o la racha, que sí se mueven.</div>'
             if got["p"][min(got["p"])] == got["p"][max(got["p"])] else "")
-    fig = charts.distribution(shapes[metric], f"{title} — {familypage.LABELS[metric]}",
+    fig = charts.distribution(shapes[metric], f"{title} — {families.LABELS[metric]}",
                               rank, UNITS[metric], pct=metric in PCT)
     cone = (charts.cone(band, f"{title} — curva de equity",
                         "bandas 5-95 y 25-75 · línea naranja: el backtest") if band else "")

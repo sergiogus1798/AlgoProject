@@ -5,7 +5,7 @@ rediscovered. Nothing here is a bug. Ordered by how much it would change a concl
 
 ## 1. The thresholds are the study, and three of them are provisional
 
-Every number that decides lives in `gates.py` and `config.yaml`, which is what makes them arguable.
+Every number that decides lives in `verdict/gates.py` and `config.yaml`, which is what makes them arguable.
 Three of them are not yet the owner's decision and the report says so:
 
 - **The account-survival drawdown ceiling, 10%.** A placeholder until the prop-firm rules are known.

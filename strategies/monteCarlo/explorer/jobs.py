@@ -5,7 +5,7 @@ import traceback
 from collections.abc import Callable
 from datetime import datetime
 
-from strategies.monteCarlo import engine
+from strategies.monteCarlo.simulate import engine
 
 LOCK = threading.Lock()
 STATE = {"running": False, "what": "", "stage": "", "title": "", "share": 0.0,

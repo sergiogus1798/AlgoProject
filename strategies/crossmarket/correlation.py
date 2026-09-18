@@ -1,7 +1,9 @@
-"""Cross-market correlation and factor structure: is this eight markets, or one bet sampled
-eight times? Weekly equity curves, as the owner decided, forward-filled across trade-free weeks."""
+"""Cross-market correlation: is this several markets, or one bet sampled several times?
 
-import numpy as np
+Weekly equity curves, forward-filled across trade-free weeks. A PCA used to live here and was
+removed on 2026-09-16: with two or three streams PC1 is close to a function of the mean
+pairwise correlation, so it added an axis that carried no information the matrix did not."""
+
 import pandas as pd
 
 from strategies.crossmarket import pricing
@@ -47,19 +49,3 @@ def correlation_matrix(curves: dict[str, pd.Series]) -> pd.DataFrame:
         robustness" is really one macro bet, not independent evidence.
     """
     return returns_matrix(curves).corr()
-
-
-def pca(matrix: pd.DataFrame) -> dict:
-    """Principal components of the weekly return streams, by SVD.
-
-    Args:
-        matrix: What returns_matrix() returned.
-
-    Returns:
-        Keys variance_share (one fraction per component) and pc1. The PDF's gate is
-        pc1 < 0.70: above that the diversification across markets is illusory.
-    """
-    standardised = ((matrix - matrix.mean()) / matrix.std(ddof=0)).dropna()
-    _, s, _ = np.linalg.svd(standardised.to_numpy(), full_matrices=False)
-    variance_share = (s ** 2) / (s ** 2).sum()
-    return {"variance_share": variance_share.tolist(), "pc1": float(variance_share[0])}

@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from core import trades as tradeio
-from strategies.crossmarket import (envelope, equity, holdfit, metrics, pricing, strata,
-                                    trade_models)
+from strategies.crossmarket import (envelope, equity, holdfit, metrics, pricing, realrun,
+                                    strata, trade_models)
 
 
 def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
@@ -24,6 +24,14 @@ def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
         and the scale. The convention is re-derived per market rather than assumed: real and
         random runs must be priced identically or the comparison measures the gap between two
         pricers instead of the timing. Computed once per market and passed to every test.
+
+        `all` carries **every trade SQX reported**, priced by SQX itself and independent of
+        the bar grid, because `held` does not: a trade that opens and closes inside one bar
+        has no interval to occupy and is dropped from every test that needs one. Measured
+        across this databank that is 1.84% of 92,329 trades, up to 9.8% on one pair, almost
+        all of them zero-duration `Exit Signal` exits. They are real trades with real P&L, so
+        what the backtest **did** is reported from `all`, and what the tests could compare is
+        reported from `held`, with both counts on the page.
     """
     pricing.require_long_only(trades)
     held = envelope.occupancy(trades, bars)
@@ -37,14 +45,24 @@ def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
     # What SQX charged, recovered per trade rather than assumed: gross reconstructed from
     # the bars minus the P/L it reported. Measured correlation 0.9996 over three markets, so
     # the residual is the cost and the swap and nothing else.
+    order = np.argsort(trades["Close time"].to_numpy(), kind="stable")
     return {"held": held, "aligned": aligned, "fill": best, "point_value": value,
+            "all": {"pnl": trades["Profit/Loss"].to_numpy()[order],
+                    "close": trades["Close time"].to_numpy()[order],
+                    "open": trades["Open time"].to_numpy()[order],
+                    "trades": len(trades), "dropped": len(trades) - len(held),
+                    "dropped_pnl": float(trades["Profit/Loss"].sum()
+                                         - aligned["Profit/Loss"].sum())},
             "enter_px": enter_px, "leave_px": leave_px, "size": size,
             "cost": pricing.cost_rate(aligned, value), "scale": pricing.unit(bars),
             "pnl": aligned["Profit/Loss"].to_numpy(),
             "charged": gross - aligned["Profit/Loss"].to_numpy(),
             "off_grid": len(trades) - len(held),
             "market": {**envelope.describe(bars, held, cfg["nulls"]["block_months"]),
-                       "strata": strata.index(bars, cfg["strata"])}}
+                       "strata": strata.index(bars, cfg["strata"]),
+                       # block_shift draws one displacement per calendar semester from this
+                       # seed, so the same semester moves the same way in every market.
+                       "seed": cfg["nulls"]["seed"]}}
 
 
 def price(entries: np.ndarray, holds: np.ndarray, fixed: dict) -> tuple[np.ndarray, ...]:
@@ -73,14 +91,19 @@ def price(entries: np.ndarray, holds: np.ndarray, fixed: dict) -> tuple[np.ndarr
     return pnl, logret, safe, live
 
 
-def null(fixed: dict, cfg: dict, model: str,
-         on_chunk: Callable[[int, int], None] = lambda done, total: None) -> dict:
+def drawn(fixed: dict, cfg: dict,
+          draw: Callable[[int, np.random.Generator, int], tuple[np.ndarray, np.ndarray]],
+          on_chunk: Callable[[int, int], None] = lambda done, total: None) -> dict:
     """Every statistic and every equity curve of `draws` random runs, in batches.
 
     Args:
         fixed: What setting() returned.
         cfg: What config.load() returned.
-        model: A key of trade_models.MODELS.
+        draw: Called with (runs, rng, runs already produced), returns (entries, holds) — a
+            null model, or the window sweep's model confined to calendar blocks. The third
+            argument exists for `block_shift`, whose randomness is keyed by the calendar so
+            that it matches across markets and therefore cannot come from `rng`: without it
+            every chunk would redraw the same displacements.
         on_chunk: Called with (runs done, runs total) after each batch, for the progress bar.
 
     Returns:
@@ -94,7 +117,7 @@ def null(fixed: dict, cfg: dict, model: str,
     stats, curves, first = [], [], None
     for done in range(0, n["draws"], n["chunk"]):
         size = min(n["chunk"], n["draws"] - done)
-        entries, holds = trade_models.MODELS[model](fixed["held"], fixed["market"], size, rng)
+        entries, holds = draw(size, rng, done)
         if n["replicate_friday"]:
             holds = trade_models.truncate(entries, holds, fixed["market"])
         pnl, logret, closed, live = price(entries, holds, fixed)
@@ -110,90 +133,48 @@ def null(fixed: dict, cfg: dict, model: str,
             "curves": np.concatenate(curves), "entries": first}
 
 
-def swept(fixed: dict, cfg: dict,
-          draw: Callable[[int, np.random.Generator], tuple[np.ndarray, np.ndarray]],
-          on_chunk: Callable[[int, int], None] = lambda done, total: None) -> dict:
-    """mean_r and trade count of `draws` random runs drawn by any function, priced like null().
+def null(fixed: dict, cfg: dict, model: str,
+         on_chunk: Callable[[int, int], None] = lambda done, total: None) -> dict:
+    """One null model's random runs: drawn(), with that model doing the drawing.
 
     Args:
         fixed: What setting() returned.
         cfg: What config.load() returned.
-        draw: Called with (runs, rng), returns (entries, holds); the window sweep passes a
-            model confined to calendar blocks.
+        model: A key of trade_models.MODELS.
         on_chunk: Called with (runs done, runs total) after each batch.
 
     Returns:
-        Keys mean_r and trades, one value per run; trades counts the ones still live after
-        the draw and the Friday cut. Same seed, same batches, same truncation and same pricer
-        as null(), so a draw that reproduces a model reproduces its p exactly. Only what the
-        sweep reads is computed: the equity curves are most of null()'s time.
+        What drawn() returns. The window sweep calls drawn() directly with the same model
+        confined to blocks, so both sides of the sweep are priced by one code path — the
+        full-window point of the sweep and the model's own run are then the same draws, which
+        is the property tests/test_sweep.py pins down.
     """
-    n = cfg["nulls"]
-    rng = np.random.default_rng(n["seed"])
-    out, counts = [], []
-    for done in range(0, n["draws"], n["chunk"]):
-        size = min(n["chunk"], n["draws"] - done)
-        entries, holds = draw(size, rng)
-        if n["replicate_friday"]:
-            holds = trade_models.truncate(entries, holds, fixed["market"])
-        _, logret, _, live = price(entries, holds, fixed)
-        out.append(logret.sum(axis=1) / np.maximum(live.sum(axis=1), 1) / fixed["scale"])
-        counts.append(live.sum(axis=1))
-        on_chunk(done + size, n["draws"])
-    return {"mean_r": np.concatenate(out), "trades": np.concatenate(counts)}
+    return drawn(fixed, cfg,
+                 lambda size, rng, done: trade_models.MODELS[model](
+                     fixed["held"], fixed["market"], size, rng, done),
+                 on_chunk)
 
 
-def real(fixed: dict, bars: pd.DataFrame, cfg: dict) -> dict:
-    """The real backtest's own statistics and equity curve.
+def summary(fixed: dict, bars: pd.DataFrame, cfg: dict, draws: dict) -> dict:
+    """What the panel shows for one set of random runs, real backtest included.
 
     Args:
-        fixed: What setting() returned.
+        fixed: What setting() returned for this market.
         bars: That market's bars.
         cfg: What config.load() returned.
+        draws: What drawn() returned.
 
     Returns:
-        Keys stats and curve. `net` here is SQX's own reported profit summed, not a
-        reconstruction, so the number on the page is the number in the databank.
+        The metric table, a drawable histogram per metric, and the equity cone with the real
+        curve on it. The raw draws are hundreds of megabytes and are dropped here: everything
+        the panel can ask for later has to be in what this returns.
     """
     e = cfg["equity"]
-    pnl = fixed["pnl"]
-    stats = metrics.observed(pnl, e["starting"])
-    logret = pricing.realised(bars, fixed["held"], fixed["fill"]["convention"]) - fixed["cost"]
-    stats["mean_r"] = float(logret.mean() / fixed["scale"])
-    curve = equity.path(pnl[None, :], fixed["held"]["exit"].to_numpy()[None, :],
-                        fixed["market"]["n_bars"], e["steps"], e["starting"])
-    return {"stats": stats, "curve": curve[0].tolist()}
-
-
-def diagnostics(fixed: dict, bars: pd.DataFrame, entries: np.ndarray) -> dict:
-    """The checks that decide whether a market's result may be believed at all.
-
-    Args:
-        fixed: What setting() returned.
-        bars: That market's bars.
-        entries: One batch of the random runs' entry indices.
-
-    Returns:
-        Trade count, how many trades fell off the bar grid, fill error, share of entries on a
-        bar open, share of exits at the bar cap and at the Friday close, median hold, cost,
-        how much of the real entries' calendar the random runs kept, and the volatility at
-        the real entries against the market's own average.
-    """
-    held, aligned = fixed["held"], fixed["aligned"]
-    clock = bars.index.dayofweek.to_numpy() * 24 + bars.index.hour.to_numpy()
-    entry_atr = pricing.atr(bars)[held["entry"].to_numpy()]
-    kept = (float("nan") if entries.shape[1] != len(held)
-            else float(np.mean(clock[entries] == clock[held["entry"].to_numpy()])))
-    return {"trades": len(held), "off_grid": fixed["off_grid"],
-            "convention": fixed["fill"]["convention"],
-            "fill_error": fixed["fill"]["entry_median"] + fixed["fill"]["exit_median"],
-            "on_bar_open": tradeio.on_bar_open(aligned, bars.index),
-            "bar_cap": float((aligned["Close type"] == "Exit After X Bars").mean()),
-            "friday_exit": float((aligned["Close type"] == "End Of Friday (Time)").mean()),
-            "hold_median": float(held["hold"].median()),
-            "cost_rate": fixed["cost"], "point_value": fixed["point_value"],
-            "calendar_kept": kept,
-            "atr_ratio": float(np.nanmean(entry_atr) / np.nanmean(pricing.atr(bars)))}
+    seen = realrun.real(fixed, bars, cfg)
+    return {"table": metrics.table(draws["stats"], seen["stats"], e["percentiles"]),
+            "shapes": metrics.shapes(draws["stats"], seen["stats"]),
+            "cone": {"bands": equity.bands(draws["curves"], e["bands"]),
+                     "observed": seen["curve"], "dates": equity.dates(bars, e["steps"])}}
 
 
 def run(fixed: dict, bars: pd.DataFrame, cfg: dict, model: str,
@@ -213,13 +194,12 @@ def run(fixed: dict, bars: pd.DataFrame, cfg: dict, model: str,
         is inference's job, and keeping the two apart is what lets the same runs be
         re-judged, or the same judgement re-run under another model.
     """
-    e = cfg["equity"]
-    drawn = null(fixed, cfg, model, on_chunk)
-    seen = real(fixed, bars, cfg)
-    return {"model": model,
-            "table": metrics.table(drawn["stats"], seen["stats"], e["percentiles"]),
-            "shapes": metrics.shapes(drawn["stats"], seen["stats"]),
-            "cone": {"bands": equity.bands(drawn["curves"], e["bands"]),
-                     "observed": seen["curve"], "dates": equity.dates(bars, e["steps"])},
-            **diagnostics(fixed, bars, drawn["entries"]),
+    draws = null(fixed, cfg, model, on_chunk)
+    return {"model": model, **summary(fixed, bars, cfg, draws),
+            # Kept per draw, and only for the statistic that compares across markets: the
+            # joint null in joint.py pools draw d of every market at once and cannot be
+            # rebuilt from summaries. 25,000 floats per model and market, against the
+            # hundreds of megabytes of raw P&L that summary() drops.
+            "mean_r_draws": draws["stats"]["mean_r"],
+            **realrun.diagnostics(fixed, bars, draws["entries"]),
             **holdfit.goodness(fixed["held"], fixed["market"]["gaps"])}

@@ -115,14 +115,36 @@ def describe(bars: pd.DataFrame, held: pd.DataFrame, months: int) -> dict:
         months: Regime block length in months.
 
     Returns:
-        Keys block, calendar, gaps, n_bars and friday_cap. This is the whole interface
-        between the
-        envelope and the models: a new model reads this dict and returns entries and holds,
-        and needs nothing else from the rest of the study.
+        Keys block, period, calendar, gaps, n_bars and friday_cap. This is the whole
+        interface between the envelope and the models: a new model reads this dict and
+        returns entries and holds, and needs nothing else from the rest of the study.
+        `block` numbers this market's regime blocks from zero; `period` gives the same
+        blocks their calendar identity, which is what lets one displacement be shared
+        across markets.
     """
     regime = blocks(bars, months)
-    return {"block": regime, "calendar": calendar_index(bars, regime),
+    return {"block": regime, "period": periods(bars, months),
+            "calendar": calendar_index(bars, regime),
             "gaps": gaps(held), "n_bars": len(bars), "friday_cap": friday_cap(bars)}
+
+
+def periods(bars: pd.DataFrame, months: int) -> np.ndarray:
+    """Which calendar period each bar belongs to, counted from year zero rather than from
+    this market's first bar.
+
+    Args:
+        bars: One market's bars.
+        months: Block length. Six is the default used by the report.
+
+    Returns:
+        One absolute period id per bar. `blocks()` renumbers these from zero, which is what
+        every array here is indexed by; this one keeps the calendar identity, so the **same
+        semester has the same id in every market** however late that market's data starts.
+        `block_shift` needs that to draw one displacement per semester and apply it
+        everywhere: without it, Brent starting in 2013 and silver in 2008 would call two
+        different semesters "block 0".
+    """
+    return ((bars.index.year * 12 + bars.index.month - 1) // months).to_numpy()
 
 
 def blocks(bars: pd.DataFrame, months: int) -> np.ndarray:
@@ -133,9 +155,10 @@ def blocks(bars: pd.DataFrame, months: int) -> np.ndarray:
         months: Block length. Six is the default used by the report.
 
     Returns:
-        One block id per bar. The null shifts inside a block rather than across the whole
-        sample, because thirteen years of gold are not one regime: a global shift would let a
-        strategy whose trades sit in a strong trending stretch beat the null on drift alone.
+        One block id per bar, numbered from zero for this market. The null shifts inside a
+        block rather than across the whole sample, because thirteen years of gold are not one
+        regime: a global shift would let a strategy whose trades sit in a strong trending
+        stretch beat the null on drift alone.
     """
-    period = (bars.index.year * 12 + bars.index.month - 1) // months
-    return (period - period.min()).to_numpy()
+    period = periods(bars, months)
+    return period - period.min()

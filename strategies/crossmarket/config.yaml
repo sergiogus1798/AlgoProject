@@ -27,6 +27,11 @@ sweep:                        # the window sweep of the free-placement models
   max_weak_share: 0.10        # a window whose weak blocks hold more of the trades is withheld
   evidence_drop: 1.0          # orders of magnitude p must climb, widest to narrowest, to read "regime"
 
+joint:                        # the joint null over the out-of-sample markets
+  pool: mean_r                # "mean_r" averages the raw statistic, "z" each market's own
+                              # standardised one; use z only when one market's null spread is
+                              # several times another's, or it decides the verdict alone
+
 strata:                       # regime_strata only, which runs when nulls.models lists it
   atr_bins: 5                 # volatility quantiles the bars are split into
   trend_bars: 8               # bars over which the sign of the trend is read
@@ -35,6 +40,7 @@ equity:
   starting: 100000.0          # account the additive equity path starts from, in USD
   steps: 200                  # points per curve; an SVG cannot show more
   bands: [2.5, 25.0, 50.0, 75.0, 97.5]     # percentile cone drawn around the real curve
+  risk_target_dd: 0.10        # every market rescaled to this max drawdown, to compare returns at equal risk
   percentiles: [2.5, 5.0, 25.0, 50.0, 75.0, 95.0, 97.5]   # reported in the metric tables
 
 bootstrap:
@@ -43,24 +49,26 @@ bootstrap:
   ci: [5.0, 95.0]             # percentiles reported as the interval
 
 exposure:
-  mu_min_t: 2.0               # |t| of the market's own drift below which E is withheld as meaningless
+  mu_min_t: 2.0               # |t| of the market's own drift below which E is flagged as meaningless
   drop_zero_mfe: true         # a trade with MFE = 0 has an undefined capture ratio, not an infinite one
+  bar_block: 500              # bars per block of the paired bootstrap E's Fieller interval is built from
 
 paired:
   alternative: greater        # one-sided: the strategy's trades beat a passive long on the same bars
+  reference: 3                # half-width in MONTHS of the centered reference window, or `block`
+  sensitivity: [3, 6, 12, block]   # every reference the test is also run under, and reported beside it
 
-drivers:
-  hurst_lags: [2, 4, 8, 16, 32, 64, 128]   # lags the rescaled-range slope is fitted over
-  variance_ratio_q: 8         # aggregation horizon of the Lo-MacKinlay variance ratio, in bars
-  adx_period: 14
-  adx_trend: 25               # ADX above this counts the bar as trending
-  efficiency_window: 20       # bars over which the Kaufman efficiency ratio is measured
+portfolio:
+  block_weeks: 4              # calendar block the combined account is resampled in whole
+  draws: 2000                 # resamples and reorderings of the combined account
+  order_block: 10             # trades per block of the reordering, from monteCarlo.model.draws
 
 stress:
   cost_multiples: [1.0, 1.5, 2.0, 2.5, 3.0]
   bar_shift: 1                # bars entries and exits are moved by, to see the decay
   slippage_fractions: [0.1, 0.25, 0.5]     # share of the bar's range given back at both ends
-  sims: 5000                  # runs of the cost-and-fill stress that gets its own distributions
+  sims: 25000                 # runs of the cost-and-fill stress; the nulls' own count, so the p resolves as finely
+  calibrate: true             # take cost_shock and fill_depth from execution.yaml where the feed is declared
   p_skip: 0.05                # chance each trade is simply missed
   cost_shock: [1.0, 2.0]      # cost multiple drawn per run, uniform between these
   fill_frac: 0.15             # share of trades filled worse
@@ -70,5 +78,4 @@ diagnostics:
   alpha: 0.05                 # the level every p-value is coloured against; it decides nothing
   min_trades: 30              # below this a market is flagged as too small — it is never dropped
   min_on_open: 0.95           # below this the entries include pending fills the null cannot reproduce
-  correlated: 0.5             # assumed pairwise correlation for the honest false-pass figure
-  pca_warn: 0.70              # PC1 variance share above which the markets are one bet, not several
+  min_on_grid: 0.95           # below this a real share of the trades occupy no bar, so no test that needs a duration sees them

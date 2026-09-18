@@ -1,10 +1,10 @@
 # strategies/monteCarlo/explorer — the interactive panel
 
 A local web panel over the study in the folder above. It is **a way of looking, never a second set
-of numbers**: every figure it draws comes from `charts.py`, every section from `familypage/` and
-`strategypage.py`, and its report button writes byte-for-byte the same page the batch command
-writes. If the panel and the report ever disagreed, one of them would be lying, so neither is
-allowed to own a calculation.
+of numbers**: every figure it draws comes from `render/charts.py`, every section from
+`render/families/` and `render/strategypage.py`, and its report button writes byte-for-byte the same
+page the batch command writes. If the panel and the report ever disagreed, one of them would be
+lying, so neither is allowed to own a calculation.
 
 ```
 serve ─▶ jobs ─▶ work ─▶ run / stability ─▶ cache ─▶ sections ─▶ page.html

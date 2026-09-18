@@ -146,6 +146,148 @@
   **So the closest thing to "every parameter set with its IS and OOS result" is the 360 walk-forward
   steps, not the optimiser's population.**
 
+- 🔬 **A Monte Carlo Retest cross-check stores every simulation's P/L, and nothing else per
+  simulation.** Measured 2026-09-17 on the ten `.sqx` of `XAUUSD/databanks/MC Random IS` and
+  `MC Random IS 2.0` (4,896 simulations). Three new members appear under
+  `Results/Main: <SYMBOL>_<feed>/`:
+  `MonteCarloRetest_Results.xml`, `RobustnessOriginalOrders.bin`, and one
+  `MonteCarloRetest_Simulation<N>Orders.bin` per simulation.
+
+  **The `.bin` format is a 4-byte big-endian trade count followed by that many big-endian int32
+  P/L values in cents, in chronological order.** `size == 4 + 4*count` held on 4,896 of 4,896
+  files. It is *not* the `orders.bin` private format — no dates, no prices, no MAE/MFE, no size,
+  no direction. Four bytes per trade is the whole record, so per simulation the only recoverable
+  object is the P/L vector and everything derivable from it (equity path, drawdown, streaks).
+  `RobustnessOriginalOrders.bin` is the same format for the original backtest and is the bridge:
+  summing it gives `NetProfit` to within the cent rounding (24,268.56 vs a stored 24,269.22 on
+  `Strategy 1.19.29`, 763 trades).
+
+  🔬 **Simulation indices are contiguous and truncate at the tail; they never have holes.** Three
+  of the ten runs stopped early (499, 440 and 457 of a declared 500) and in all three the surviving
+  indices were `0..n-1`. So a short run is lost sample, never selection bias.
+
+  🔬 **`MonteCarloRetest_Results.xml` holds one `SQStats` blob for the original (152 metrics) plus
+  eleven `LevelStat` blobs, one per confidence level — 50, 60, 70, 80, 90, 92, 95, 97, 98, 99, 100
+  and no others.** The level blobs carry 148 metrics; they lack `DataLength` and
+  `MaxNewHighDurationFrom/To/Pct`. Of the 148, **97 move with the level and 51 are constant**
+  (the Walk-Forward and Add-Markets holes, `Fitness`, `Complexity`, `ParameterCount`,
+  `TotalDataDays/Months/Years` and 34 slots that are zero everywhere). Unlike the main result,
+  this XML stores **one direction and one sample only** — there is no long/short or IS/OOS split
+  inside a retest result.
+
+  🔬 **A confidence level is a per-metric marginal order statistic, not a simulation.** Level `L`
+  of metric `m` is the value at rank `n*(100-L)/100` of the `n` simulations sorted so that worse
+  is later — reconciled against the stored table on 9 of the 10 files to under 1 unit, i.e. to the
+  cent rounding of the P/L, for both `NetProfit` (higher is better) and `Drawdown` (lower is
+  better). The tenth is the 499-simulation run, where the table was written over 500 and every
+  rank is shifted by one. **Consequence: the "95% confidence" row is not a scenario** — its
+  NetProfit and its Drawdown come from different simulations, so no row of that table is a
+  coherent equity curve and the pair must never be read as one.
+
+  🔬 **The ~61 metrics that need dates or prices are lost per simulation but survive as those
+  eleven quantiles.** `AvgBarsInTrade`, `Exposure`, `BiggestMAE`, `TotalMFE`, `Efficiency`,
+  `EdgeRatioInPips`, `ExitQuality`, `RExpectancy`, `Stagnation`, `MaxNewHighDuration`,
+  `TotalTradingDays`, `CAGR`, `ProfitableMonthsPct`, `EquityAngle`, `AmbiguousTrades`,
+  `OpenDrawdown`, `MaxTSIntradayDrawdown`, `SortinoRatio` and `ProbSharpeRatio` all vary across
+  the levels, so SQX did compute them per simulation and threw the individuals away. Eleven points
+  of a marginal CDF is far less than 1,000, but it is not nothing — it is the only channel for any
+  MAE/MFE or duration question about a retest.
+
+  🔬 **The full method configuration is in `lastSettings.xml` under `<MonteCarloRetest>`**, with
+  every one of the ten methods listed whether used or not, each with its own `<Params>` — so the
+  exact perturbation that produced a databank is recoverable without reading the prose in
+  `<Method>`. The ten types: `RandomizeExitParameters` (bentra's script), `RandomizeHistoryData`
+  (by tick), `RandomizeHistoryDataFixedRange`, `RandomizeHistoryDataOHLC`, `RandomizeMinDistance`,
+  `RandomizeSlippage`, `RandomizeSpread`, `RandomizeStartingBar`, `RandomizeStrategyParameters`
+  and `RandomizeStrategyParametersCustomizable` (the last one adds per-kind switches: Period,
+  Shift, Constant, OtherParam, ExitUsed, ExitUnused, Boolean, TradingOptions). Beside them sit
+  `<NumberOfSimulations>`, `<MCUseFullSample>` and `<MCBacktestPrecision>`.
+
+  🔬 **`MCUseFullSample=true` does not mean the run saw out-of-sample data.** Both XAUUSD
+  databanks have it set and both ran `2008.01.01 - 2017.12.31` with sample 20 empty in all five
+  strategies. The toggle widens the retest to whatever the strategy's own sample split is; when
+  the strategy was retested IS-only, "full" is IS. Check `NumberOfTrades` on sample 20 of the main
+  result before reading any retest as out-of-sample.
+
+  🔬 **A re-run overwrites: one `.sqx` carries exactly one MC Retest result.** The two XAUUSD
+  databanks are the same five strategies with different method sets, and each file holds only its
+  own. Isolating perturbation methods therefore costs one databank per method — there is no way to
+  keep several retests inside one strategy file.
+
+  🔬 **Calibrating reconstructed formulas against the stored original settles four ambiguities the
+  metric names invite.** Run on `Strategy 1.19.29`'s original P/L vector, agreement to the stored
+  value is exact (relative error < 2e-3) for NetProfit, GrossProfit/Loss, NumberOfTrades,
+  NumberOfProfits/Losses, WinningPct, AvgWin, AvgTrade/Expectancy, StandardDev (ddof=1), Drawdown,
+  ReturnDDRatio, MaxProfit/MaxLoss, MaxConsecWins/Losses, AvgConsecWins/Losses and KellyFormula.
+  The four that do **not** mean what they look like:
+  - **`WinLossRatio` is the count ratio `#wins/#losses`** (459/304 = 1.51), **not** the ratio of
+    average win to average loss. **`PayoutRatio` is that one** (0.88). They are different columns,
+    not two names for one quantity, and `KellyFormula` uses `PayoutRatio` as its `R`.
+  - **`AvgLoss` is stored positive** (an absolute value), so a signed reconstruction is off by −2×.
+  - **`SQN` is `sqrt(min(n,100)) * mean / stddev`, not `sqrt(n) * …`** — 0.768 against a stored
+    0.77, where the textbook Van Tharp form gives 2.12 on 763 trades.
+  - **`RSquared` is measured on the daily equity curve, not on trade-indexed equity** (0.9146 vs a
+    stored 0.92; trade-indexed gives 0.897). `Stability` (0.81) and `StabilitySQ3` (0.86) are
+    separate quantities and neither is that R², still uncalibrated.
+  🔬 **The eleven confidence levels are a far stronger calibration oracle than the original.** A
+  candidate per-simulation formula is the one SQX used only if its own order statistic reproduces
+  the stored level table; that is 11 levels x 5 strategies = **55 constraint points per metric**
+  instead of the single value the original offers, and it tests the formula on perturbed data
+  rather than on one point. Run that way on `MC Random IS 2.0`, four more fall (worst relative
+  error over all 55 points in brackets), all against a *capital-relative* drawdown with
+  `MoneyManagement.InitialCapital` = 100,000:
+  - **`DrawdownPct` = max of `dd_k / (capital + peak_k)`** [7e-4] — not `dd/peak`.
+  - **`AvgDrawdown` = the mean of `dd_k` over EVERY trade, zeros included** [4e-5]. Averaging only
+    the points in drawdown is wrong by 11%, averaging episode maxima by 67%.
+  - **`AvgPctDrawdown` = the same mean of `dd_k / (capital + peak_k)`, zeros included** [2e-3].
+  - **`RecoveryFactor` = NetProfit / (DrawdownPct x capital)** [5e-3, at the limit of the stored
+    2-decimal precision] — i.e. it divides by the capital-relative drawdown, which is why it
+    differs from `ReturnDDRatio` = NetProfit / absolute `Drawdown`. The two are **not** synonyms.
+  - **`ZScore` carries a +0.5 continuity correction**: `(R - mu_R + 0.5) / sigma_R`. The offset
+    matches `0.5/sigma_R` on all five originals and cuts the oracle error from 0.046 to 0.014.
+
+  🔬 **`SharpeRatio`, `SortinoRatio`, `UlcerIndex`, `RSquared` and `Stability` are NOT
+  reconstructible per simulation**, and the oracle says so rather than leaving it a suspicion.
+  Sharpe-per-trade fails the level table by 70% and its sqrt(12) rescaling by 56%; every
+  trade-indexed Ulcer variant fails by 61% or worse. These are computed on the **daily equity
+  curve**, which exists for the original (`dailyEquity.bin`) and for no simulation. Any
+  per-simulation version is a declared analogue, never a replication -- and must not be compared
+  against the value SQX stores for the original.
+
+  🔬 **Validated at scale on the eight isolated-task databanks** (`MCR 1 Bar` .. `MCR 8 Stress`,
+  5 strategies x 1,000 simulations, 39,996 in all, 2026-09-18): **13,200 checks of 30 metrics x 11
+  levels x 5 strategies x 8 tasks reconcile, with 16 isolated failures (0.12%)**, all single levels
+  in the two widest-dispersion tasks (5 and 8) and all consistent with rank ties rather than wrong
+  formulas. That run forced two more corrections:
+  - **`StandardDev` is the POPULATION standard deviation, `ddof=0`.** With `ddof=1` the worst error
+    over the level tables is 0.47; with `ddof=0` it is 0.008. `SQN` cannot tell the two apart
+    (the difference is below its 2-decimal storage), so `StandardDev` is the only column that
+    settles it -- and any Sharpe-per-trade analogue must use `ddof=0` too, or it will not be the
+    same quantity SQX reports.
+  - **Every metric needs a ranking direction, and the losing half of the table runs the other
+    way.** Level 100 of `Drawdown` is the *deepest* fall while level 100 of `NetProfit` is the
+    *smallest* profit. Eleven of the reconstructible metrics rank worse-when-higher:
+    `GrossLoss`, `Drawdown`, `DrawdownPct`, `AvgDrawdown`, `AvgPctDrawdown`, `NumberOfLosses`,
+    `AvgLoss`, `StandardDev`, `MaxConsecLosses`, `AvgConsecLosses` and `MaxLoss`. Ranking them
+    the common way produces relative errors of **0.88 to 0.94** against the stored table — big
+    enough to be obvious, which is the only reason it was caught.
+    **`MaxLoss` being in that set is a trap for the reader, not just for the code**: its level
+    100 is the worst trade *closest to zero* (-1,743 on `MCR 5 Params / 23.16.37`, while the
+    actual worst simulation had -8,494), so a high-confidence `MaxLoss` read as a stress number
+    is backwards.
+  - Still unresolved: **`AvgAbsTrade`** sits at a constant ratio of 1.00215 to `mean(|p_i|)` across
+    every level and task -- systematic, small, formula unidentified. It is also nearly invariant
+    across simulations, so it carries almost no information for a robustness study; exclude it or
+    mark it approximate rather than trusting it.
+
+  **Net result: 29 of the 97 varying metrics are exactly reconstructible per simulation** from the
+  P/L vector alone -- NetProfit, GrossProfit/Loss, NumberOfTrades/Profits/Losses, WinningPct,
+  AvgWin, AvgLoss, AvgTrade, Expectancy, AvgAbsTrade, StandardDev, Drawdown, DrawdownPct,
+  AvgDrawdown, AvgPctDrawdown, ReturnDDRatio, RecoveryFactor, MaxProfit, MaxLoss,
+  MaxConsecWins/Losses, AvgConsecWins/Losses, ProfitFactor, PayoutRatio, WinLossRatio,
+  KellyFormula, SQN and ZScore. The rest need dates, prices or daily equity and exist only as the
+  eleven quantiles.
+
 ## `project.cfx` — a project
 
 🔬 Also a **ZIP**: `config.xml` + one `<TaskType>-Task<N>.xml` per task. Reading is safe at any time —

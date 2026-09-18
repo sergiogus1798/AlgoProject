@@ -9,8 +9,12 @@ import pandas as pd
 
 from core import assets, bars, manifest
 from core.paths import bars_file, export_dir, report_dir
-from strategies.monteCarlo import (config, costs, fan, panel, regime, run, scoring,
-                                   stability, strategypage, stream, sweeps, text)
+from strategies.monteCarlo import run
+from strategies.monteCarlo.inputs import config, costs, stream
+from strategies.monteCarlo.model import regime
+from strategies.monteCarlo.simulate import fan, stability, sweeps
+from strategies.monteCarlo.verdict import scoring
+from strategies.monteCarlo.render import panel, strategypage, text
 
 FAN_SIMS = 2000   # paths behind the equity cone; a picture of the spread, not a gate
 

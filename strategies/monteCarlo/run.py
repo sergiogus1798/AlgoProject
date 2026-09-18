@@ -3,8 +3,10 @@
 import numpy as np
 import pandas as pd
 
-from strategies.monteCarlo import (confidence, costs, degrade, draws, engine, familyd,
-                                   metrics, significance, stream, stress, sweeps)
+from strategies.monteCarlo.inputs import config, costs, stream
+from strategies.monteCarlo.model import draws, stress
+from strategies.monteCarlo.simulate import degrade, engine, family_d, metrics, sweeps
+from strategies.monteCarlo.verdict import confidence, significance
 
 
 def _family_a(runs: dict, seen: dict, cfg: dict) -> dict:
@@ -22,8 +24,8 @@ def _family_a(runs: dict, seen: dict, cfg: dict) -> dict:
     """
     qs = cfg["global"]["percentile_set"]
     q = cfg["global"]["report_percentile"]
-    labels = [k for k in runs if k == sweeps.HEADLINE or "shuffle" in k]
-    head = runs[sweeps.HEADLINE]
+    labels = [k for k in runs if k == config.HEADLINE or "shuffle" in k]
+    head = runs[config.HEADLINE]
     return {"runs": {k: metrics.table(runs[k], seen, qs) for k in labels},
             "shapes": {k: metrics.shapes(runs[k], seen, q) for k in labels},
             "invariant": {k: sweeps.invariant(runs[k]) for k in labels
@@ -92,7 +94,7 @@ def _family_b(runs: dict, source: dict, cfg: dict, sims: int) -> dict:
             "pf_5": min(float(np.nanpercentile(runs[k]["pf"], 5)) for k in labels),
             "outlier": _leave_one_out(source["pnl"]),
             "samples": parts, "oos_ratio": float(ratio),
-            "shape": metrics.shape(runs[sweeps.BASELINE]["net"], seen["net"], q)}
+            "shape": metrics.shape(runs[config.BASELINE]["net"], seen["net"], q)}
 
 
 def _family_c(source: dict, cfg: dict, sims: int) -> dict:
@@ -171,9 +173,9 @@ def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
             "A": _family_a(runs, seen, cfg),
             "B": _family_b(runs, source, cfg, g["n_sims"]),
             "C": _family_c(source, cfg, g["n_sims"]),
-            "D": familyd.run(source, day, cfg),
+            "D": family_d.run(source, day, cfg),
             "degrade": degrade.overlay(source, cfg),
             "E": {**psr, **significance.crosscheck(psr["psr"],
-                                                   runs[sweeps.BASELINE]["sharpe"])},
+                                                   runs[config.BASELINE]["sharpe"])},
             "cost_check": costs.crosscheck(source["frame"], asset),
             "overlap": stream.overlap(source)}

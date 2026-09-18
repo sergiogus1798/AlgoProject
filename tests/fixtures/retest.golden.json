@@ -1,0 +1,171 @@
+{
+  "simulations": [
+    {
+      "index": 0,
+      "trades": 1203,
+      "sum_cents": 3342198,
+      "first": -26429,
+      "last": 27935
+    },
+    {
+      "index": 1,
+      "trades": 1241,
+      "sum_cents": 1447184,
+      "first": -33877,
+      "last": 8243
+    },
+    {
+      "index": 2,
+      "trades": 1269,
+      "sum_cents": 687180,
+      "first": -40820,
+      "last": 32691
+    },
+    {
+      "index": 3,
+      "trades": 1194,
+      "sum_cents": 3743157,
+      "first": -1126,
+      "last": 27935
+    },
+    {
+      "index": 4,
+      "trades": 1195,
+      "sum_cents": 1716513,
+      "first": -8983,
+      "last": 60923
+    }
+  ],
+  "total_trades": 6102,
+  "offsets_end": 6102,
+  "original": {
+    "trades": 1157,
+    "sum_cents": 2426375,
+    "stored_netprofit": 24263.8008
+  },
+  "levels": {
+    "50": {
+      "NetProfit": 23430.2109,
+      "Drawdown": 14508.0098,
+      "NumberOfTrades": 1147.0,
+      "ProfitFactor": 1.1,
+      "MaxLoss": -3467.4199,
+      "StandardDev": 609.27
+    },
+    "60": {
+      "NetProfit": 20521.4707,
+      "Drawdown": 15668.8799,
+      "NumberOfTrades": 1122.0,
+      "ProfitFactor": 1.09,
+      "MaxLoss": -3237.3301,
+      "StandardDev": 621.44
+    },
+    "70": {
+      "NetProfit": 17400.0605,
+      "Drawdown": 17093.4609,
+      "NumberOfTrades": 1097.0,
+      "ProfitFactor": 1.07,
+      "MaxLoss": -3043.22,
+      "StandardDev": 634.8
+    },
+    "80": {
+      "NetProfit": 13869.7598,
+      "Drawdown": 18924.8008,
+      "NumberOfTrades": 1069.0,
+      "ProfitFactor": 1.06,
+      "MaxLoss": -2964.1599,
+      "StandardDev": 652.38
+    },
+    "90": {
+      "NetProfit": 8386.8701,
+      "Drawdown": 21128.5996,
+      "NumberOfTrades": 1030.0,
+      "ProfitFactor": 1.04,
+      "MaxLoss": -2762.54,
+      "StandardDev": 673.22
+    },
+    "92": {
+      "NetProfit": 7096.8701,
+      "Drawdown": 21759.8594,
+      "NumberOfTrades": 1022.0,
+      "ProfitFactor": 1.03,
+      "MaxLoss": -2498.3501,
+      "StandardDev": 679.28
+    },
+    "95": {
+      "NetProfit": 4841.1499,
+      "Drawdown": 23440.6895,
+      "NumberOfTrades": 1003.0,
+      "ProfitFactor": 1.02,
+      "MaxLoss": -2382.46,
+      "StandardDev": 688.48
+    },
+    "97": {
+      "NetProfit": 2876.0901,
+      "Drawdown": 24474.0898,
+      "NumberOfTrades": 993.0,
+      "ProfitFactor": 1.01,
+      "MaxLoss": -2122.6699,
+      "StandardDev": 697.36
+    },
+    "98": {
+      "NetProfit": 1245.58,
+      "Drawdown": 25407.4902,
+      "NumberOfTrades": 979.0,
+      "ProfitFactor": 1.01,
+      "MaxLoss": -2061.46,
+      "StandardDev": 700.84
+    },
+    "99": {
+      "NetProfit": -4087.51,
+      "Drawdown": 26170.4395,
+      "NumberOfTrades": 961.0,
+      "ProfitFactor": 0.98,
+      "MaxLoss": -1925.66,
+      "StandardDev": 714.6
+    },
+    "100": {
+      "NetProfit": -19274.2207,
+      "Drawdown": 31850.0898,
+      "NumberOfTrades": 933.0,
+      "ProfitFactor": 0.93,
+      "MaxLoss": -1743.0,
+      "StandardDev": 733.24
+    }
+  },
+  "level_metric_count": {
+    "50": 148,
+    "60": 148,
+    "70": 148,
+    "80": 148,
+    "90": 148,
+    "92": 148,
+    "95": 148,
+    "97": 148,
+    "98": 148,
+    "99": 148,
+    "100": 148
+  },
+  "reference_metric_count": 152,
+  "meta": {
+    "declared": 1000,
+    "instrument": "XAUUSD_DukasM1_Infinox",
+    "timeframe": "M30",
+    "date_range": "2008.01.01 - 2017.12.31",
+    "methods": [
+      "Randomize strategy parameters, with probability 100 % and max change 15 %"
+    ]
+  },
+  "settings": {
+    "methods": {
+      "RandomizeStrategyParameters": {
+        "Probability": "100",
+        "MaxChange": "15",
+        "Symmetric": "true"
+      }
+    },
+    "simulations": 1000,
+    "full_sample": false,
+    "precision": "1"
+  }
+}

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from strategies.crossmarket import views
 from strategies.crossmarket.explorer import analysis, jobs
 
 # The session's results, one entry per strategy. Deliberately memory only: the owner asked
@@ -43,11 +44,7 @@ def analyse(setup: dict, cfg: dict, name: str, only: str | None) -> dict:
     """
     record = analysis.analyse_strategy(setup, cfg, name, only, jobs.step)
     if only is not None and name in RESULTS:
-        kept = [r for r in RESULTS[name]["rows"] if r["feed"] != only]
-        record["rows"] = sorted(kept + record["rows"], key=lambda r: r["feed"])
-        record["runs"] = {**RESULTS[name]["runs"], **record["runs"]}
-        record["correlation"] = RESULTS[name]["correlation"]
-        record["pca"] = RESULTS[name]["pca"]
+        record = merged(RESULTS[name], record, only, cfg)
     RESULTS[name] = {**record, "cfg": cfg}
     return {"strategy": name, "markets": len(record["rows"])}
 
@@ -74,3 +71,28 @@ def clear(data_root: Path) -> int:
             d.rmdir()
     folder.rmdir()
     return len(files)
+
+
+def merged(old: dict, fresh: dict, feed: str, cfg: dict) -> dict:
+    """One market's new result folded into the record the session already had.
+
+    Args:
+        old: The record in RESULTS for this strategy.
+        fresh: What analyse_strategy() returned for the single market.
+        feed: The market that was re-run.
+        cfg: The configuration that run was made with.
+
+    Returns:
+        A record holding every market again — the re-run one from `fresh` and the rest from
+        `old`. The strategy-level views are **rebuilt**, not carried over: a correlation
+        matrix or a combined account still describing the previous version of this market
+        would be wrong without ever looking stale.
+    """
+    rows = sorted([r for r in old["rows"] if r["feed"] != feed] + fresh["rows"],
+                  key=lambda r: r["feed"])
+    weekly = {**old["weekly"], **fresh["weekly"]}
+    streams = {**old["streams"], **fresh["streams"]}
+    runs = {**old["runs"], **fresh["runs"]}
+    return {**fresh, "rows": rows, "runs": runs,
+            "equity": {**old["equity"], **fresh["equity"]}, "weekly": weekly,
+            "streams": streams, **views.build(weekly, streams, runs, cfg)}

@@ -10,7 +10,8 @@ from flask import Flask, jsonify, request
 from core import bars as barsio
 from core.paths import DATA, bars_file, export_dir
 from strategies.crossmarket import config, markets, metrics, panel
-from strategies.crossmarket.explorer import jobs, scope, sections, simulations, tooltips, work
+from strategies.crossmarket.explorer import (jobs, scope, sections, simulations,
+                                             sweep_tab, tooltips, work)
 
 APP = Flask(__name__)
 PAGE = Path(__file__).with_name("page.html")
@@ -107,6 +108,22 @@ def random_view() -> object:
     record = work.RESULTS[a["strategy"]]
     return jsonify({"html": simulations.random_view(record, record["cfg"], a["market"],
                                                     a["model"], a["metric"])})
+
+
+@APP.get("/api/sweep")
+def sweep_axes() -> object:
+    """The window sweep's two selectors: the markets analysed and the models swept."""
+    record = work.RESULTS[request.args["strategy"]]
+    return jsonify(sweep_tab.axes(record, record["cfg"]))
+
+
+@APP.get("/api/sweep/view")
+def sweep_view() -> object:
+    """The sweep's summary grid for one model, and the open market's curve, table and blocks."""
+    a = request.args
+    record = work.RESULTS[a["strategy"]]
+    return jsonify(sweep_tab.sweep_view(record, record["cfg"], a["market"], a["model"],
+                                        a["metric"], a["window"]))
 
 
 @APP.get("/api/models/view")

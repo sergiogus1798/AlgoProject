@@ -5,7 +5,29 @@ WIDE, NARROW = 820, 620               # the equity/histogram pair, side by side
 PAD = {"l": 56, "r": 20, "t": 28, "b": 46}
 NAMES = 150                           # room for a model name; "resampled_holds" must not clip
 NULL, REAL, GRID, INK = "var(--null)", "var(--real)", "var(--grid)", "var(--ink-2)"
+SERIES = ("var(--s1)", "var(--s2)", "var(--s3)")   # one colour per model when several
+                                                  # share an axis; --real stays the reference
+# One colour per market, fixed for the whole panel: the same market is the same colour in the
+# equity overlay, in the correlation heatmap and in every histogram. Six of them, because the
+# owner expects to retest on four markets plus the base and one unclassified feed.
+MARKETS = ("var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)")
 GAP = 2                               # surface gap between adjacent bars
+
+
+def palette(feeds: list[str], base: str) -> dict[str, str]:
+    """A fixed colour per market, the base asset always the same one.
+
+    Args:
+        feeds: Every market on the page, the base asset included.
+        base: The base asset's feed.
+
+    Returns:
+        {feed: CSS colour}. The base asset takes --real, the colour that means "the reference"
+        everywhere else on the page; the rest take MARKETS in the order the universe lists
+        them, so a market does not change colour when another one is re-run on its own.
+    """
+    rest = [f for f in feeds if f != base]
+    return {base: REAL, **{f: MARKETS[i % len(MARKETS)] for i, f in enumerate(rest)}}
 
 
 def _x(value: float, lo: float, hi: float, left: int = PAD["l"], width: int = W) -> float:

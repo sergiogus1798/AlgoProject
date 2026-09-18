@@ -21,6 +21,8 @@ WARNINGS = {
     "short_sample": "the observed Sharpe needs more trades than there are to be "
                     "distinguishable from zero",
     "bad_hold_fit": "the distribution fitted to the holds does not describe them",
+    "off_grid": "a share of the real trades never occupy a bar, so no test that needs a "
+                "duration can use them",
 }
 
 
@@ -44,7 +46,8 @@ def warnings(row: dict, cfg: dict) -> list[str]:
               ("no_drift", not row["e_meaningful"]),
               ("calendar_lost", row["calendar_kept"] < 0.99),
               ("short_sample", not row["min_track_enough"]),
-              ("bad_hold_fit", row["hold_ks_p"] < d["alpha"])]
+              ("bad_hold_fit", row["hold_ks_p"] < d["alpha"]),
+              ("off_grid", row["trades"] / row["trades_all"] < d["min_on_grid"])]
     return [name for name, fired in checks if fired]
 
 
