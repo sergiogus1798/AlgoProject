@@ -136,6 +136,78 @@ slippage    16262.     <- el slippage duele el triple que el spread
 stress      11837.     <- las seis cosas a la vez
 ```
 
+### El segundo comando: el informe
+
+La ingesta deja el parquet; el informe lo lee y da el veredicto.
+
+```bash
+python3 -m strategies.retest.report --project XAUUSD --databank MCR_All --day 2026-09-18
+```
+
+Mismos flags que la ingesta (`--project`, `--databank`, `--day`, `--set`). Tarda unos segundos y
+escribe en `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/retest/`:
+
+| fichero | qué es |
+|---|---|
+| `retest.md` | el informe: veredicto por estrategia, qué saltó, las ocho tareas y qué la rompe |
+| `verdict.csv` | una fila por estrategia, para filtrar |
+| `manifest.json` | qué configuración produjo ese veredicto |
+
+Lo que sale por pantalla:
+
+```
+report: 5 strategies -> /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/MCR_All/2026-09-18/retest
+strategy verdict  composite    binding  stress_net_p5  stress_cvar_dd_pct
+ 17.9.39    FAIL        2.9 production      -10437.83               28.25
+23.16.37    FAIL        7.8 production      -25184.63               45.35
+```
+
+**`binding`** es la subnota más baja: te dice por dónde se rompe, no solo que se rompe.
+Cinco veredictos posibles: `STRONG`, `ACCEPTABLE`, `MARGINAL`, `FAIL` e **`INCONCLUSIVE`**, que no
+significa que fallara sino que la batería no dio evidencia para juzgarla.
+
+> **Los umbrales son valores por defecto, no una política.** Cuánto drawdown aguanta la cuenta o
+> qué parte del beneficio debe sobrevivir a la ejecución salen del `config.yaml` y **no están
+> calibrados contra tu operativa**. Si fallan todas, mira primero el umbral. Se cambia sin tocar
+> código: `--set gates.survival_dd_pct=0.35`.
+
+### El tercer comando: el panel
+
+Lo mismo que el informe, pero pudiendo tocar los umbrales y ver el efecto al momento.
+
+```bash
+python3 -m strategies.retest.explorer.serve --project XAUUSD --databank MCR_All --day 2026-09-18
+```
+
+Abre el navegador solo, en `127.0.0.1:8767`. Añade `--port` si ese está ocupado.
+
+| botón | qué hace |
+|---|---|
+| **Analizar** | corre las cuatro preguntas sobre la estrategia elegida, un segundo |
+| **Analizar todas** | la batería entera, más lo que solo se puede decir entre estrategias |
+| **Ajustes** | abre el cajón: cada knob del `config.yaml` con una frase explicándolo |
+| **Escribir informe** | deja el mismo HTML que el comando `report` |
+
+Cinco pestañas: **Veredicto**, **Qué la rompe**, **Estrés combinado**, **Las ocho tareas** y
+**Tabla de confianza**.
+
+**El cajón de ajustes es lo que hace útil el panel.** Cambias `gates.survival_dd_pct` y le das a
+Analizar otra vez: el veredicto se recalcula con ese corte, sin tocar el `config.yaml` ni afectar
+a ninguna otra estrategia. Es la forma de calibrar los umbrales mirando el efecto en vez de
+adivinando. Probado: bajar `gates.exec_keep_frac` de 0.70 a 0.30 movió una estrategia de 32,7 a
+38,2 y dejó las demás intactas.
+
+> **Relajar un umbral hasta que una estrategia pase no es calibrar, es elegir la respuesta.** El
+> cajón sirve para ver cuánto margen hay, no para fabricarlo.
+
+El panel **no calcula nada propio**: cada sección la dibujan las mismas funciones que escriben el
+informe. Comprobado el 19/09/2026 — la pestaña de veredicto y la sección del informe para la misma
+estrategia salieron con 22.156 bytes las dos y comparadas byte a byte son idénticas. Si algún día
+discrepan, una de las dos miente.
+
+Sin caché, a propósito: lo caro ya pasó en la ingesta, así que cada número en pantalla sale de la
+ejecución que acabas de lanzar y no de una guardada.
+
 ### Qué NO te dice
 
 - **No te dice si la ventaja es real.** Eso se da por supuesto; aquí solo se mide de qué depende.

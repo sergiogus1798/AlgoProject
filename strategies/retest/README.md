@@ -38,7 +38,7 @@ hold, and the traps a future session would otherwise step in.
 | `measure/` | what are the numbers, and do they reconcile? | touching the ingest or the reconciliation |
 | `verdict/` | given those numbers, what do we conclude? | moving a threshold or a score |
 | `render/` | how is all of that read? | adding a figure, a table or a sentence |
-| `explorer/` | the same study, one strategy at a time, on demand | changing the panel |
+| `explorer/` | the same study, one strategy at a time, on demand | *not built yet* |
 
 `measure/` is where a sibling study would say `simulate/`. Nothing is simulated here in Python —
 SQX did that — and a folder named for something it does not do is exactly the trap these READMEs
@@ -48,7 +48,9 @@ Only the entry points sit in the root, because they are the only things that get
 
 | file | what it does | run it |
 |---|---|---|
-| `ingest.py` | Reads the eight task databanks once, reconciles every reconstructed metric against SQX, and writes one dated immutable export | `python3 -m strategies.retest.ingest --project XAUUSD --databank MCR_All --day 2026-09-18` |
+| `ingest.py` | Reads the eight task databanks once, reconciles every reconstructed metric against SQX, and writes one dated immutable export | `python3 -m strategies.retest.ingest --project XAUUSD` |
+| `run.py` | Puts one strategy through the four questions and returns the single result everything else reads | imported |
+| `report.py` | The command: every strategy of one ingest, to a report and a verdict table | `python3 -m strategies.retest.report --project XAUUSD` |
 | `config.yaml` | Every tunable of the study, grouped by the layer that reads it | edited |
 
 ## The four questions
@@ -67,12 +69,13 @@ earns its place by the question it answers, and each one lives in `verdict/`:
 
 - **A confidence level is not a scenario.** Level 95 of `NetProfit` and level 95 of `Drawdown` come
   from two *different* simulations: each metric is ranked on its own. Read as a pair they describe a
-  run that never existed. `model/levels.py` returns one metric at a time and the parquet is stored
-  long, so the wrong query cannot be written by accident; `model/scenario.py` is the only place a
-  coherent worst case is assembled, and it does it from the per-simulation frame.
+  run that never existed. The parquet stores the level table **long**, so `df[["NetProfit",
+  "Drawdown"]]` — which looks like a scenario and is not one — cannot be written by accident.
+  Assembling a *coherent* worst case, the whole metric row of the one simulation that really was
+  that bad, is not built yet; see `POSSIBLE_IMPROVEMENTS.md`.
 - **`StandardDev` is `ddof=0`.** SQX's is the population deviation, measured against its own stored
   tables. `core/significance.py` deliberately uses `ddof=1` for a different job. Do not harmonise.
-- **Only 29 of the 148 metrics are reconstructible per simulation.** The rest need dates or prices
+- **Only 30 of the 148 metrics are reconstructible per simulation.** The rest need dates or prices
   that a simulation file does not carry. `SharpeRatio`, `SortinoRatio`, `UlcerIndex`, `RSquared` and
   `Stability` are computed by SQX on the *daily equity curve* and are among them — any per-trade
   version is a declared analogue under a different name, never a replication.
