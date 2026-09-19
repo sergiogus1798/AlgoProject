@@ -19,6 +19,23 @@ def outcomes(values: np.ndarray) -> int:
     return int(np.unique(np.round(np.asarray(values, dtype=np.float64), 2)).size)
 
 
+def perturbed(values: np.ndarray) -> bool:
+    """Whether the task changed anything at all.
+
+    Args:
+        values: One value per simulation.
+
+    Returns:
+        False only when every simulation returned the identical result -- the task was run
+        and the strategy did not notice. This is a **different and weaker question** than
+        discriminated(): a task can perturb the result genuinely and still not produce a
+        continuous distribution, which is exactly what the grid-sampled spread and slippage
+        tasks do. Confusing the two let the execution subscore read 100 while the execution
+        gate was vetoing on the same numbers.
+    """
+    return outcomes(values) > 1
+
+
 def discriminated(values: np.ndarray, cfg: dict) -> bool:
     """Whether this task produced enough distinct outcomes for a distributional test.
 
@@ -129,9 +146,9 @@ def describe(metrics: dict, original_trades: float, cfg: dict) -> dict:
     """
     net = metrics["NetProfit"]
     if not discriminated(net, cfg):
-        return {"discriminated": False, "outcomes": outcomes(net),
+        return {"discriminated": False, "perturbed": perturbed(net), "outcomes": outcomes(net),
                 "trades": regime_collapse(metrics["NumberOfTrades"], original_trades, cfg)}
-    return {"discriminated": True, "outcomes": outcomes(net),
+    return {"discriminated": True, "perturbed": perturbed(net), "outcomes": outcomes(net),
             "bimodality": bimodality(net, cfg),
             "shape": shape(net),
             "trades": regime_collapse(metrics["NumberOfTrades"], original_trades, cfg)}

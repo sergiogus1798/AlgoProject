@@ -12,7 +12,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from core import manifest, sqxretest
+from core import manifest, sqxretest, sqxstats
 from core.paths import databank_dir
 from strategies.retest.inputs import config, tasks
 from strategies.retest.measure import integrity, store
@@ -55,7 +55,15 @@ def one(path: Path, task: str, cfg: dict) -> dict:
     pnl_rows = pd.DataFrame({**keys,
                              "sim": np.repeat(sims["index"], np.diff(sims["offsets"])),
                              "pnl_cents": sims["pnl"]})
-    return {**keys, "sims": sim_rows, "levels": level_rows, "pnl": pnl_rows,
+    # The daily equity of the ORIGINAL, once per strategy, from the full-sample task: it is the
+    # only dated series here -- a simulation carries no dates -- and the only possible input to a
+    # correlation between strategies, which the effective number of bets needs.
+    equity = sqxstats.equity(path) if task == "stress" else None
+    returns = (pd.DataFrame({"strategy": strategy, "date": equity.index,
+                             "ret": equity.diff().fillna(0.0).to_numpy()})
+               if equity is not None else pd.DataFrame(columns=["strategy", "date", "ret"]))
+
+    return {**keys, "sims": sim_rows, "levels": level_rows, "pnl": pnl_rows, "returns": returns,
             "original": pd.DataFrame([{**keys, **{k: float(v[0]) for k, v in original.items()}}]),
             "provenance": {**got, "usable": usable, "stored_only": integrity.stored_only(stored)},
             "reconciliation": integrity.reconcile(metrics, stored, cfg) if usable else {}}
@@ -144,7 +152,7 @@ def main() -> None:
     codec = cfg["ingest"]["compression"]
     counts = {}
     for name, parts in (("sims", ["task", "strategy"]), ("levels", ["task"]),
-                        ("pnl", ["task", "strategy"]), ("original", [])):
+                        ("pnl", ["task", "strategy"]), ("original", []), ("returns", [])):
         frame = pd.concat([entry[name] for entry in results], ignore_index=True)
         counts[name] = store.write(frame, out / name, parts, codec)
 

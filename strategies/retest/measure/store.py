@@ -6,7 +6,7 @@ import pandas as pd
 
 from core.paths import export_dir
 
-SIMS, LEVELS, ORIGINAL, PNL = "sims", "levels", "original", "pnl"
+SIMS, LEVELS, ORIGINAL, PNL, RETURNS = "sims", "levels", "original", "pnl", "returns"
 
 
 def root(project: str, databank: str, day: str) -> Path:
@@ -117,3 +117,20 @@ def load_pnl(project: str, databank: str, day: str, task: str, strategy: str) ->
     frame = pd.read_parquet(root(project, databank, day) / PNL,
                             filters=[("task", "==", task), ("strategy", "==", strategy)])
     return frame.assign(pnl=frame["pnl_cents"] / 100.0).drop(columns="pnl_cents")
+
+
+def load_returns(project: str, databank: str, day: str) -> pd.DataFrame:
+    """Daily profit of each strategy's original backtest, one column per strategy.
+
+    Args:
+        project: SQX project name.
+        databank: Ingest run name.
+        day: Ingest date.
+
+    Returns:
+        A frame indexed by date with one column per strategy. This is the study's only
+        dated series -- a simulation file carries no dates at all -- and so the only
+        possible input to a correlation between strategies.
+    """
+    frame = pd.read_parquet(root(project, databank, day) / RETURNS)
+    return frame.pivot(index="date", columns="strategy", values="ret").fillna(0.0)
