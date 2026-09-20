@@ -64,6 +64,41 @@ undoes all three. `sqx/repair/graft_tasks.py` keeps every live member and copies
 absent ones, then verifies that nothing is still missing and that every databank the grafted tasks
 name is registered.
 
+## Re-testing an arbitrary parameter set: the variant route
+
+There is **no CLI verb that sets a strategy's parameters** (`help.txt`, full verb list). The only
+way to score a chosen tuple is to write it into a `.sqx` and retest that file.
+
+- 🔬 **Parameter values live in exactly one place**: `strategy_Portfolio.xml`,
+  `<variable><id>NAME</id>...<value>N</value></variable>`. The rule slots reference the variable by
+  name (`<Param key="#Period#" ...>DICrossPeriod1</Param>`), so rewriting `<value>` rewrites the
+  rule. `settings.xml` does **not** carry the parameter names -- grepped, 0 hits for all of them.
+- 🔬 The databank's display name is `settings.xml`: `<ResultsGroup ResultName="...">` plus
+  `<StrategyName type="String">`. Rename both per variant or every variant lands under one name.
+- 🔬 Writing variants is mechanical and was verified end to end on `Strategy 17.9.39`: 8
+  substitutions, repack, read back -- values correct. **Strip the inherited members or the disk cost
+  is absurd**: all 8 members = 5,215 KB each (57 GB for 11,597 variants), without
+  `optimizationProfile.bin` = 100 KB, and keeping only `META-INF` + `settings.xml` +
+  `strategy_Portfolio.xml` + `lastSettings.xml` + `version.txt` = **15 KB** (160 MB for 11,597).
+  🤔 Whether SQX loads that 5-member form, and whether the databank de-duplicates on the inherited
+  `<Fingerprint>`, is **untested** -- both are cheap to settle on 3 files before generating 11,597.
+- 🔬 **One retest gives both samples.** A Retest task whose `Setup` spans 2008-2022 and whose
+  `<OutOfSample showGraph="false"><Range dateFrom="2018.01.01" dateTo="2022.12.31"/></OutOfSample>`
+  is set stores sample 10 and sample 20 in the same `.sqx` -- that is how `XAUUSD` task 1 fills the
+  `OOS` databank, and a paired `.vw` then exports IS and OOS on one row (`04-export.md`). So a WFC
+  needs one run, not two.
+
+📓 **Throughput, measured off the master's log on 2026-09-19** (`totalCores: 95`):
+
+| job | work | wall clock |
+|---|---|---|
+| `SPP IS` task | 5 strategies x ~12,400 permutations over 10 years = ~62,000 backtests | **369 s** |
+| `SPP OOS` task | the same over 5 years | **187 s** |
+| `MC Trades` task | **757 whole `.sqx` retested** over 2008-2026, loaded from a databank | **31 s** |
+
+The last row is the honest analogue for the variant route -- ~24 strategies/s including load and
+result-writing, so **11,597 variants land around 8 minutes**. Compute is not the constraint.
+
 ## Projects built on the worker are invisible on the master
 
 🔬 The two installs are fully independent. A project created on the worker will **never** appear in the

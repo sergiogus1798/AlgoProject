@@ -6,7 +6,7 @@ from datetime import date
 
 from core import exportdrv, manifest
 from core.paths import DATA, bars_file
-from strategies.crossmarket import markets
+from strategies.crossmarket.inputs import markets
 
 
 def main() -> None:

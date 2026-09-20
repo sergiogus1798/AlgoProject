@@ -10,7 +10,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from strategies.crossmarket import envelope, trade_models
+from strategies.crossmarket.mechanics import envelope
+from strategies.crossmarket.model import trade_models
 
 DRAWS, SEED = 200, 20260908
 

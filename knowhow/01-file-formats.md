@@ -101,6 +101,58 @@
   `TotalDataYears` is `floor(TotalDataMonths/12)`, and `ExposurePosition` is in the named tail so the
   id-keyed twin must be `Exposure`.
 
+- 🔬 **A strategy declares its own tunable parameters, and that list is authoritative.**
+  Every one is a `<variable>` in `strategy_Portfolio.xml` carrying `id`, `name`, `type` (`int` or
+  `double`), `value` (the current setting) and `paramType`. The `paramType` values seen on this
+  install -- `ParamTypePeriod`, `ParamTypeShift`, `ParamTypeConstant`, `ParamTypeOtherParam`,
+  `ParamTypeExitUsed` -- are exactly the classes a task's `<WhatToParametrize>` switches on. Checked
+  against what SPP actually permuted on all 5 XAUUSD strategies: **the variable list and the permuted
+  list match one for one** (8 of 8, 11 of 11). No block catalog lookup is needed to enumerate them.
+
+  🔬 **The ranges SQX builds are per class, and a percentage is not one of them for shifts.**
+  Measured off the stored permutation domains (settings: +/-30 %, 20 steps): `ParamTypePeriod`,
+  `ParamTypeConstant` and `ParamTypeExitUsed` get +/-30 % of the original, stepped and rounded --
+  `DICrossPeriod1` 67 -> 46..88, `ATRPrcRnkCrsDwnLvl1` 48.76 -> 34.13..63.20 at 2 decimals. Every
+  `ParamTypeShift` instead gets a flat **0..6** whatever its value. ⚠️ **A percentage range collapses
+  on small integers**: `MomentumPeriod1` = 14 yields only 10 distinct values out of 20 steps, and
+  `IsBars1` = 3 yields 5. A generator that uses percentages alone will silently produce a much
+  coarser grid than it thinks for every small-valued parameter.
+
+  🔬 **A declared parameter can be completely inert, and the permutation table proves it
+  cheaply.** Group the permutations by every parameter but one; where a group holds more than one
+  permutation, they differ only in that parameter. `CBlock_SqzMmnInt21` on `Strategy 17.9.39`:
+  **757 comparable groups, 757 with byte-identical `NetProfit` and trade count** -- the parameter
+  does nothing, and its 13 values multiply the grid for free. Same on `Strategy 23.16.37` (338 of
+  338). On `Strategy 41.5.25` the same name is *nearly* inert: 287 of 302. Dropping it shrinks those
+  grids by 13x. The test doubles as proof that **the engine is deterministic**: identical parameters
+  reproduce identical results to the last decimal.
+
+- 🔬 **A sequential-optimisation cross-check writes plain XML, not a binary profile.** The
+  `.sqx` gains `Results/Main: <SYMBOL>_<feed>/SequentialOptimization_Results.xml` (11 KB, root
+  `<ChainOptimizationResults>`) and, on this install, **no `optimizationProfile.bin` at all** -- the
+  two cross-checks do not share a container. One `<Parameter originalValue="…">` per optimised
+  variable, each holding the variable definition, a `;`-separated `<Values>` list (30 steps over
+  +/-30 % here, rounded, so 30 or 31 distinct values), a `;`-separated `<Fitness>` of the same
+  length, and `<Results>` with `BestValue`, `BestAreaStartValue/EndValue` and `StableAreaFound`.
+  Trivial to parse with `ElementTree`, no SQX running.
+
+  🔬 **Only fitness is stored -- one scalar per point, never an `SQStats` blob.** Where an
+  SPP permutation carries 152 statistics, a sequential-optimisation point carries a single number in
+  [0,1]. Any study over this surface is a study of the fitness function the task was configured with.
+
+  🔬 **`BestValue` is the centre of the stable area, not the argmax of the scan** -- it is
+  the scan's best point on only 5 to 9 of each strategy's parameters. Reading it as "the best value
+  found" is wrong.
+
+  🔬 **The scan is chained: parameter k is measured with parameters 1..k-1 already fixed at
+  the values this run chose.** Proven off the file rather than assumed -- the fitness at parameter
+  k+1's *original* value equals the fitness at parameter k's `BestValue` on nearly every link
+  (7/7, 7/7, 6/6, 8/9 on four of the five XAUUSD strategies; the misses are the links where
+  `BestValue` is not the argmax). So the fitness at the original value **differs from parameter to
+  parameter inside one run** (8 distinct values across 10 parameters on `Strategy 1.19.29`), which
+  is the cheap tell. Only the **first** parameter of the chain is measured on the untouched
+  strategy.
+
 - 🔬 **A Walk-Forward Matrix cross-check writes its whole grid into `settings.xml`**, under
   `<WalkForwardResult type="…WalkForwardMatrixResult"><MatrixResult>`. `MatrixResult` carries the two
   axes as ranges (`start1/stop1/increment1` is the OOS percentage, `start2/…` the number of runs;

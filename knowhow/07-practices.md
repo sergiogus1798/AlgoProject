@@ -327,7 +327,7 @@ figure anyone reads first.
 
 ## A reference window with fixed boundaries measures the trades near its edge against the past
 
-🔬 Found 2026-09-16 in `strategies/crossmarket/paired.py`, on the owner asking "why six months, and
+🔬 Found 2026-09-16 in `strategies/crossmarket/simulate/paired.py`, on the owner asking "why six months, and
 what about three back and three forward?". Test 1b compared each trade against the mean of every
 window of its own length inside **the fixed semester partition** the null model shifts trades within.
 Reusing that partition looked like consistency and hid two artefacts:
@@ -383,7 +383,7 @@ is a claim that the two populations are the same one, and here they are not.
 
 ## A contemporaneous dependence cannot be bootstrapped by resampling trades
 
-🔬 Recorded 2026-09-16, building `strategies/crossmarket/portfolio.py`. When several markets are
+🔬 Recorded 2026-09-16, building `strategies/crossmarket/simulate/portfolio.py`. When several markets are
 merged into one account, the dependence that matters is **contemporaneous** — two markets losing in
 the same week — not serial. A trade-level bootstrap, even a block one, draws trades that never
 co-occurred and destroys exactly the thing being measured, while reporting a comfortably narrow
@@ -450,3 +450,167 @@ Two lessons worth more than the numbers:
 is the only one that changes exactly one thing, so the only one whose low p is attributable to entry
 timing rather than to where the run landed. **A strategy that survives all four says more than one
 that survives only it.**
+
+## Moving a module into a layer package: the three things no checker catches
+
+🔬 Found 2026-09-18/19 reorganising `strategies/crossmarket/` into `inputs/ mechanics/ model/
+simulate/ verdict/ render/`, the second study after `strategies/monteCarlo/`.
+`python3 tools/checks.py` and a repo-wide import loop both come out green while all three of these
+are broken.
+
+- 🔬 **`Path(__file__).with_name("x.yaml")` follows the `.py`, not the data.** Three modules
+  resolved their own config that way, and the three `.yaml` had to stay in the module root because
+  `docs/manual/05-retest-mercados.md` names them by that path. After a `git mv` one level down,
+  `with_name` points at `inputs/` and the file is simply not found — at **run** time, not import
+  time. It has to become `Path(__file__).parents[1] / "x.yaml"`, and the line deserves a comment
+  saying why, because the next reader will "simplify" it back.
+- 🔬 **A private name imported from another module is a public API nobody declared**, and renaming
+  it can collide with a local. `render/charts.py` exported `_x` and `_ticks` to two other modules.
+  `_x` → `xpos` was free; `_ticks` → `ticks` **was not** — `ticks` is already a local holding
+  rendered markup in both `charts.cone()` and `overlays.py`, and a local shadowing an import fails
+  at *render* time, with no traceback anywhere near the import. Named it `tickvals` instead. Grep
+  for local assignments of every candidate name before choosing it; in monteCarlo the same trap was
+  `line`.
+- 🔬 **A layer violation is usually a function in the wrong layer, not a bad boundary.** crossmarket
+  had exactly two `simulate/ → verdict/` arrows. One, `fingerprint → significance`, used a single
+  function: `trade_returns()`, which is `realised(...) − cost` — a measurement wearing an inference
+  module's name. Moving it to `mechanics/pricing.py` removed the violation **and** left two dead
+  imports (`pricing`, `pandas`) in `significance.py`, after which `verdict/` imports nothing outside
+  `model/`. The other, `exposure → fieller`, is real and was **declared in the README table** rather
+  than dissolved, the same way monteCarlo declares `simulate/ → verdict/confidence`. In monteCarlo
+  the equivalent finding was two vocabulary constants that were really configuration.
+
+**How to know it still works when the module has no batch command.** crossmarket's only entry point
+is a Flask panel, so the baseline was taken **over its own HTTP API**: read the `@APP.get` /
+`@APP.post` decorators for the routes and the exact parameter names, run one strategy with the
+simulation counts cut by `--set`, and save every rendered view — 11 tabs plus every switchable
+`market × model × metric × window` combination, 214 in all. Then normalise every digit to `#` and
+diff before against after: the numbers move (there is no seed), the **structure must not**. 🔬 214
+of 214 came out identical. A stopwatch over 5 repeats is the companion test, the one that catches a
+module path left inside a string: median 10.12 s before, 10.10 s after.
+
+🔬 And the cheap proof for an extracted primitive: import the pre-move file straight out of git
+(`git show HEAD:<path>`) beside the new one and compare their output character for character on
+fixed inputs. `render/svg.py` against the old `charts.py` — both figures at three widths, plus every
+constant and primitive — came out with **0 differences**, which turns "I think nothing changed" into
+a fact for the cost of thirty lines.
+
+## Monte Carlo: la máquina no es lenta por CPU, es lenta por ancho de banda de memoria
+
+🔬 Medido 2026-09-19 con `XAUUSD / MC Trades` (757 estrategias, N mediano 1.132 operaciones)
+sobre la máquina de 96 núcleos y 125 GB.
+
+- 🔬 **El kernel satura a ~24 procesos.** El mismo lote (`draws.stationary` + `metrics.paths`,
+  2.000 caminos × 1.132 operaciones) escala 8,5× con 8 procesos, 16,5× con 24 y **17,9× con 95**.
+  De 24 a 95 procesos el tiempo por lote crece linealmente (175 ms → 642 ms) y el rendimiento
+  agregado no se mueve: 133 lotes/s en los tres casos. Es saturación de ancho de banda, no de
+  cálculo. Pedir `max_workers=96` no compra nada por encima de ~24 y multiplica por 4 la RAM.
+- 🔬 **Los bytes son el presupuesto, no los FLOPs.** Pasando la matriz de caminos a `float32`, los
+  índices a `int32` y fusionando los temporales de `metrics.paths` (siete arrays `(sims, N)` se
+  quedan en tres), el rendimiento saturado pasa de **271.000 a 532.000 caminos/s — 1,96× con el
+  mismo hardware** y con el mismo resultado numérico (`np.allclose` rtol 1e-9 en los ocho
+  estadísticos).
+- 🔬 **`chunk` acota simulaciones, no memoria.** Un lote de 2.000 caminos asigna 53 MB con N=542 y
+  **337 MB con N=3.437**: ×95 trabajadores son 5 GB frente a 32 GB según qué estrategia toque. El
+  presupuesto tiene que ser en bytes (`chunk = bytes_objetivo // N`), no en caminos.
+- 🔬 **El 24% del trabajo simulado corre en el proceso padre, en un solo núcleo**: `family_d`
+  (ventanas y terciles, vía `engine.single`), `_family_b` (IS/OOS, vía `engine.sequential`) y
+  `stitch`. Son 8,1 s + 4,6 s de los 28,2 s que cuesta una estrategia mediana.
+- 🔬 **`n_sims: 100000` está cinco veces por encima de lo que el propio módulo exige.**
+  `stability.spread()` sobre la misma estrategia da una dispersión relativa máxima de 3,0% con
+  100.000 caminos, 8,3% con 20.000 y 11,8% con 10.000, contra una tolerancia declarada de 10%:
+  20.000 es el primer valor que la cumple, y cuesta 5,0 s frente a 26,1 s.
+
+## El kernel Monte Carlo por tiras: 84× menos memoria y 3,6× más rápido, a la vez
+
+🔬 Medido 2026-09-19 sobre `XAUUSD / MC Trades`. Toda la memoria del módulo está en los
+trabajadores; el padre nunca pasa de 0,74 GB (96 MB de arrays crudos en `sweeps.execute`, 1,4 MB de
+resultado, 0,7 MB de JSON de caché). El problema es `_batch`.
+
+- 🔬 **`_batch` vive con 6,1 matrices `(chunk, N)` de `float64` a la vez.** Repartidas así, medidas
+  con `tracemalloc` y en unidades de "matriz base" (`chunk × N × 8 B`): `draws.stationary` 2,1 ·
+  `block_shuffle` 3,2 (el `argsort` del relleno) · `iid_bootstrap` 1,0 · los cuatro `stress` entre
+  1,1 y 3,1 · `metrics.paths` **5,1 encima de su entrada**. Con `chunk: 2000` eso es 111 MB por
+  trabajador con N=1.132 y **337 MB con N=3.437** — ×96 trabajadores, 32,3 GB.
+- 🔬 **La solución es tirar el lote en tiras y reutilizar buffers**, no bajar `chunk`. Con buffers
+  persistentes en `float32`/`int32` dimensionados por un presupuesto en **bytes**, la memoria por
+  trabajador es **constante sea cual sea N**: 12,2 / 12,1 / 12,1 / 12,0 MB para N = 542 / 1.132 /
+  2.374 / 3.437, contra 53 / 111 / 233 / 337 MB hoy.
+- 🔬 **Y el mismo cambio rompe el techo de ancho de banda**, porque el conjunto de trabajo pasa a
+  caber en L3. Caminos/s agregados, N=1.132:
+
+  | procesos | actual | por tiras |
+  |---|---|---|
+  | 24 | 188.961 | 333.902 |
+  | 48 | 191.093 | 549.773 |
+  | 96 | 200.602 | **714.801** |
+
+  El actual está plano desde 24 procesos; el de tiras **sigue escalando a 96**. Esto invierte la
+  recomendación de bajar `max_workers`: una vez el kernel cabe en caché, los 96 sí valen.
+- 🔬 **El presupuesto óptimo de la tira es 4 MB** en este EPYC (L3 ~5 MB por núcleo): 1 MB →
+  203.057 caminos/s, 2 MB → 494.914, **4 MB → 714.801**, 8 MB → 652.162, 16 MB → 481.943, 32 MB →
+  405.100. Por debajo manda el intérprete (tiras de 36 filas), por encima se sale de L3.
+- 🔬 **`float32` no degrada ningún número que decida, y arregla el invariante.** Los percentiles que
+  alimentan los vetos coinciden con `float64` con error relativo entre 4e-8 y 5e-7 — cinco órdenes
+  de magnitud por debajo del 3% que se mueven entre corridas. Y `sweeps.invariant()` sobre
+  `iid_shuffle` da **std exactamente 0,0** con caminos en `float32` sumados en `float64`, frente a
+  7,5e-12 hoy: 24 bits de mantisa sumados en `float64` no redondean nunca.
+  ⚠️ **El acumulador tiene que ser `float64` explícito** (`sum(..., dtype=np.float64)`,
+  `einsum(..., dtype=np.float64)`). Con acumulación en `float32` esa misma std sube a 7,7e-3 USD y
+  el invariante deja de serlo.
+- ⚠️ Un sorteo por tiras no puede reutilizar los mismos uniformes para "quién reinicia" y "dónde
+  reinicia": las posiciones de arranque quedarían correlacionadas con el umbral `1/block` y
+  sesgadas hacia el principio de la serie. Dos buffers, no uno.
+
+## Este servidor tiene 48 núcleos, no 96, y SQX se queda con 71 GB de los 128
+
+🔬 Medido 2026-09-19 buscando por qué `strategies/monteCarlo` no escala.
+
+**CPU — SQX no reserva núcleos, pero `os.cpu_count()` miente.**
+
+- 🔬 Nadie limita nada: afinidad `0-95` para el shell, para Python y para el propio SQX; sin
+  `cpu.max`, sin `cpuset`, sin `memory.max` en el cgroup. Con la GUI abierta y ociosa, SQX consume
+  **0,8% de un núcleo**. Los núcleos están ahí.
+- 🔬 **96 lógicos son 48 físicos.** AMD EPYC 7413, 2 sockets × 24 núcleos × 2 hilos. Los hermanos
+  SMT son `cpu N` ↔ `cpu N+48` (`/sys/devices/system/cpu/cpuN/topology/thread_siblings_list`). Un
+  solo nodo NUMA.
+- 🔬 **El SMT no aporta nada en esta carga, resta.** Mismo kernel, mismo número de procesos:
+  96 procesos sobre los 48 físicos → 211.419 caminos/s; 96 procesos sobre los 96 lógicos →
+  203.617 caminos/s.
+- 🔬 **Los núcleos están libres; lo que falta es DRAM.** Control compute-bound (8 KB, cabe en L1)
+  escala **46,1× con 95 procesos**; el kernel real, fuera de caché, escala **18,3×** con los mismos
+  95 procesos y con 85,6 de 96 núcleos marcados como ocupados. Ocupados esperando memoria.
+- 🔬 **Sobresuscribir empeora el ancho de banda, no sólo lo deja plano.** Triada tipo STREAM
+  agregada: **143,7 GB/s con 24 procesos, 121,7 con 48, 101,6 con 95.** Pedir 96 trabajadores
+  cuesta un 29% del ancho de banda de la máquina.
+- 🤔 De ahí `max_workers`: el punto bueno está entre 24 y 48, y `null` (= `os.cpu_count()` = 96) es
+  justo el peor de la curva.
+- ⚠️ SQX arranca con **95 hilos `comput` aparcados** ("Preparing thread executors: 95" en el log).
+  Ociosos no molestan, pero un build en la GUI compite por la máquina entera. Los dos no caben.
+
+**Memoria — aquí sí hay reserva, y es enorme.**
+
+- 🔬 `~/Desktop/SQX/StrategyQuantX.config` contiene `option -Xmx108g`: la GUI puede crecer hasta
+  **108 de los 125 GB**. Ahora mismo tiene **71,5 GB, todos anónimos** (heap de la JVM, 0,1 GB
+  respaldado por fichero), así que el kernel no puede recuperar ni un byte mientras esté abierta.
+  `user/settings/settings.xml` trae además `memoryCleanup=false`.
+- 🔬 `~/Desktop/SQX/sqcli.config` trae `option -Xmx32g`: el worker pide otros 32 GB al arrancar.
+- 🔬 Queda **37,4 GB disponibles y 1,2 GB de swap libre**. El módulo Monte Carlo con `chunk: 2000`
+  y 95 trabajadores pide **32 GB** en la estrategia más larga de `MC Trades` (N=3.437). Cabe por
+  5 GB — y no cabe si el worker de SQX está arrancado a la vez (71,5 + 32 + 32 = 135 > 125).
+
+## Un `ProcessPoolExecutor` global sin apagado deja el pool vivo cuando el padre muere
+
+🔬 Encontrado 2026-09-19. `strategies/monteCarlo/simulate/engine.py` guarda el pool en `_POOL` y no
+lo cierra nunca — no hay `shutdown()` ni `atexit` en todo el repositorio. Si el proceso padre muere
+sin desenrollar la pila (Ctrl-C duro, `kill -9`, el panel Flask cerrado desde la terminal), el
+`forkserver` y sus trabajadores quedan **reparentados a systemd y vivos indefinidamente**. En esta
+máquina había **68 procesos huérfanos ocupando 9,4 GB**, uno de ellos de hace nueve días y con la
+ruta de módulo *anterior* a la reorganización (`strategies.monteCarlo.engine`), lo que prueba que
+sobreviven a cualquier cosa. Se ven con:
+
+```bash
+ps -eo pid,ppid,etime,rss,cmd | grep -E 'forkserver|resource_tracker' | grep -v grep
+```
+
+y se limpian matando por PID el padre `forkserver` cuyo PPID sea 1. Nunca `pkill -f python3`.

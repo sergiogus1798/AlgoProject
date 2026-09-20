@@ -576,8 +576,12 @@ Windows today.
 
 ## 22. 🟡 `strategies/crossmarket` — state of play after the 2026-09-14/15 rebuild
 
-Read `strategies/crossmarket/README.md` first, then `explorer/README.md`, then
-`POSSIBLE_IMPROVEMENTS.md`. Those three are current. What is **not** written in them:
+Read `strategies/crossmarket/README.md` first — it is now a folder map and an import-direction
+table, not a file list — then the `README.md` of the layer you are touching (`inputs/`,
+`mechanics/`, `model/`, `simulate/`, `verdict/`, `render/`, `explorer/`), then
+`POSSIBLE_IMPROVEMENTS.md`. All of those are current as of the 2026-09-18/19 reorganisation into
+layer packages, which moved 37 flat modules and changed no calculation. What is **not** written in
+them:
 
 **What changed, in one line each.** No verdict and no market is ever dropped (warnings replace the
 gates). Nothing is cached or written to disk — the panel is the output. Random runs are priced in

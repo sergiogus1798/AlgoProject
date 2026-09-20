@@ -89,7 +89,7 @@ prices instruments the base asset's file knows nothing about.
 Consequence: a random-entry null can be priced **in the account currency with the real trades' own
 sizes and costs**, so net profit, drawdown, Ret/DD, Sharpe and profit factor are all comparable
 against SQX's own numbers instead of against an abstract normalised statistic. That is what
-`strategies/crossmarket/metrics.py` does.
+`strategies/crossmarket/simulate/metrics.py` does.
 
 🔬 **The fill convention is open-to-open**: entry at the `Open` of the entry bar, exit at the `Open`
 of the exit bar. Reconciled against 1,101 real XAUUSD H1 trades with a **median price error of
@@ -102,7 +102,7 @@ prices computed in Python.
 swap. Measured on `Strategy 24.14.35` of `Retest Markets - Family`: **99.8 for XAUUSD** (configured
 100), **5002 for XAGUSD** (a 5,000-ounce contract) and **100.0 for BRENTCMDUSD**. This matters because
 a cross-market study prices markets the base asset's `assets/*.yaml` knows nothing about — silver and
-Brent have no file at all. `strategies/crossmarket/pricing.point_value()` does it.
+Brent have no file at all. `strategies/crossmarket/mechanics/pricing.point_value()` does it.
 
 🔬 **Not every entry lands on a bar open.** On the 36-strategy XAUUSD export, 573 of 48,894 entries
 (1.2%) fall inside a bar; on the EURUSD retest strategy above, entry times are minute-level
@@ -166,6 +166,164 @@ permutations across five strategies**, 3,940 to 4,523 each, and `export_spp.py` 
 sample, so this is an in-sample surface: it does not pair an IS result with an OOS one. That is strictly more than the SQX panel shows — it gives arbitrary
 percentiles instead of the stored median, cross-metric joins, and the parameter surface
 (`NetProfit` grouped by one parameter's value), which no SQX screen displays.
+
+### Two SPP runs cannot be paired for a Walk Forward Correlation
+
+🔬 2026-09-19, `XAUUSD/SPP IS` (task 13, 2008-01-01 to 2017-12-31) and `XAUUSD/SPP OOS`
+(task 14, 2018-01-01 to 2022-12-31): the same 5 strategies, a byte-identical
+`strategy_Portfolio.xml`, the same permuted parameter list and identical SPP settings
+(`MaxTests` 15000, +/-30 %, 20 steps, *Recommended*). They still cannot be joined permutation by
+permutation, for two independent reasons:
+
+- **SPP samples, it does not walk a grid.** Every permutation changes *all* parameters at once, and
+  the full grid is 2.7e7 to 3.2e11 combinations of which only ~12,000 are drawn.
+  🔬 **Measured, both runs re-done with the permutations stored, 2026-09-19:** 62,997 IS
+  tuples against 63,114 OOS tuples share **5**. Per strategy the observed overlap equals the
+  birthday collision count of two independent uniform draws almost exactly -- expected 5.05 against
+  5 observed on `Strategy 17.9.39` (grid 2.7e7), 0.03/0.20/0.00/0.00 against 0 on the other four
+  (grids 7.2e8 to 3.2e11). The sampler is **not** seeded to repeat: nothing is shared but chance.
+  🔬 It is not a formatting or step problem either -- the per-parameter value domains are
+  **identical** in the two runs (same 7 to 20 values, same strings), and no run repeats a tuple of
+  its own. The grid is the same; only the ~12,000 points drawn from it differ.
+- **The draw is never close to the original either.** Every permutation changes at least 2 to 6
+  parameters, so even the few tuples that do collide sit far out in the space: an SPP sample cannot
+  describe the neighbourhood of the optimum, which is where an overfitting diagnostic lives.
+
+📓 Each permutation carries **152 statistics**, and the 5 collisions do pair correctly
+(`Strategy 17.9.39`, e.g. IS NetProfit 23,608 / OOS 10,789 on one tuple) -- the join itself is
+sound, there is simply nothing to join. Watch the storage setting when reading any of this:
+*"Don't store data for 3D charts"* ticked leaves only medians and histograms, and the run has to be
+repeated to get the permutations back.
+
+### Shrink the grid and two SPP runs DO pair — measured
+
+🔬 2026-09-19 20:11, `XAUUSD/SPP IS` gained two re-runs (`Strategy 1.19.29(1)`,
+`Strategy 4.33.46(1)`) under different SPP settings -- `Steps` 12, `MaxTests` effectively unlimited,
+and only Periods + Constants + ExitParamsUsed permuted, which freezes 4 of 10 parameters at a single
+value. The consequence is decisive:
+
+| | parameters moved | grid | permutations stored | coverage |
+|---|---|---|---|---|
+| `Strategy 1.19.29` (20 steps, Recommended) | 10 | 6.0e9 | 12,857 | 0.0002 % |
+| `Strategy 1.19.29(1)` (12 steps, 3 classes) | 6 | **6.27e4** | **41,720** | **66.5 %** |
+| `Strategy 4.33.46(1)` | 5 | **4.03e4** | **34,390** | **85.3 %** |
+
+At that coverage two independent runs of the same settings share `n_IS x n_OOS / grid` = **~27,750 and
+~29,300 tuples** -- 66 % and 85 % of each run, against 5 tuples in 63,000 before. The pairing problem
+is not a property of SPP; it is a property of grid size against sample size. **Saturate the grid and
+SPP becomes a WFC instrument**, with all 152 statistics per point and no variant machinery at all.
+
+🔬 **The lever that saturates a grid is the shifts, then `Steps`.** Measured over the 5
+XAUUSD strategies: freezing every `ParamTypeShift` (there are 3 to 6 per strategy, 7 levels each)
+divides the grid by 7^k -- `Strategy 41.5.25` goes 1.39e11 -> 1.18e6, `Strategy 17.9.39`
+2.06e6 -> 6.0e3, `Strategy 1.19.29` 6.02e9 -> 3.58e5. After that the grid is `(levels)^k` over the
+k surviving parameters, so the setting that saturates a budget of n permutations is
+**`Steps` ~ n^(1/k) - 1**: k=4 wants ~10 steps, k=6 wants ~4, k=7 wants ~3. Integer ranges cap it
+further (`IsBars1` = 3 can only ever yield 5 values), which errs toward saturation.
+
+🤔 Two things stay open. The permutation count saturates at 66 % rather than reaching the
+full grid (21,000 of 62,720 tuples never appear) and it is not known whether SQX excludes them
+systematically -- if it does, both runs exclude the same ones and the real overlap is nearer 100 %.
+And the OOS task must be given the **same** SPP settings before it is re-run; as of 2026-09-19 task
+14 still carries `Steps` 20 / `MaxTests` 15000 / Recommended, so its grid is a different one.
+
+### Unpaired SPP runs still answer "which parameters matter" -- and half of the WFC
+
+🔬 Two SPP runs that share no tuples are still two random samples of the same parameter
+space, so each supports a **first-order sensitivity** estimate on its own. Grouping the permutations
+by one parameter's value and taking the share of Ret/DD variance that falls between those groups
+(eta-squared, >= 100 trades) over the 11-13k permutations of each XAUUSD run:
+
+| strategy | parameters | eta2 >= 0.01 in either window | grid before | after |
+|---|---|---|---|---|
+| `Strategy 17.9.39` | 8 | **3** | 2.3e7 | **7.2e2** |
+| `Strategy 23.16.37` | 11 | 6 | 3.2e11 | 6.3e6 |
+| `Strategy 1.19.29` | 10 | 8 | 6.0e9 | 4.7e7 |
+| `Strategy 41.5.25` | 12 | 9 | 1.4e11 | 4.1e8 |
+| `Strategy 4.33.46` | 9 | 7 | 7.2e8 | 1.0e8 |
+
+Two or three parameters carry most of the variance every time -- `DICrossPeriod1` 0.28 and
+`DICrossShift1` 0.23 on `17.9.39`, `KCBarCloseserShift1` 0.41 on `41.5.25` -- and the rest sit under
+0.01. Freezing those shrinks the grid by 7x to 51,000x, which is what turns a saturated paired run
+from impossible into routine.
+
+🔬 **The marginal profile is a WFC that needs no pairing at all.** `E[Ret/DD | parameter =
+v]` is estimable in each run separately (every other parameter is randomised around it), so the two
+runs give two curves over the same values, and their rank correlation says whether the parameter's
+response replicates out of sample. Measured: `Strategy 4.33.46` / `ATRPrcRnkCrsDwnATRPrd1` **+0.95**
+with eta2 0.17/0.14 -- it matters and it holds. Against that, `Strategy 17.9.39` /
+`DICrossPeriod1` is the single most influential parameter in sample (eta2 0.28) and its profile
+correlation is **-0.47**: what was best in 2008-2017 is among the worst in 2018-2022.
+
+🤔 eta-squared is first-order only -- a parameter acting purely through an interaction reads
+as 0. For "does nothing at all", the exact-duplicate test in `01-file-formats.md` is the definitive
+one.
+
+### Sequential optimisation pairs perfectly and still is not a WFC
+
+🔬 2026-09-19, `XAUUSD/Seq. Opt. IS` (task 15, 2008-2017) against `Seq. Opt. OOS` (task 16,
+2018-2022), same 5 strategies, identical settings (+/-30 %, 30 steps, `ApplyToStrategy` false).
+Unlike SPP this **matches**: the same 50 parameters on both sides, the `<Values>` grids identical
+value for value, **1,507 (IS, OOS) fitness pairs** and no float or step mismatch anywhere.
+
+🔬 **But 1,356 of those pairs are not the same strategy on both sides.** The scan is chained
+(`01-file-formats.md`), so parameter k is measured with parameters 1..k-1 at the values *that run*
+chose -- and the two runs choose differently: the `BestValue` agrees on only **1 or 2 of each
+strategy's 8 to 12 parameters**. A point labelled `DICrossPeriod1=64` is the tuple
+(`CBlock`=IS's pick, 64, rest original) in one databank and (`CBlock`=OOS's pick, 64, rest original)
+in the other. Same label, different strategy.
+
+🔬 **What survives is the chain up to its first divergence**: while the two runs have
+picked the same values, the context is identical and the points are genuinely the same tuples. That
+prefix is short -- 0 or 1 parameter -- so **7 scans, 211 pairs**, of which two scans are inert
+(`CBlock_SqzMmnInt21`, flat fitness across all 31 values, which is also why its `BestValue` agrees:
+a flat curve gives the same stable-area centre in both runs), leaving **5 informative scans and 150
+pairs, one scan per strategy**. That is a line through the original per strategy, one scalar
+(fitness) per point: a sensitivity curve, not an optimisation surface.
+
+🔬 **The scatter is 1,507 points, not 50** -- 50 is the number of axes, each contributing 30
+or 31 paired points. Pooling them all into one cloud is a Simpson trap: the pooled Spearman is
++0.292, but per strategy it runs from **-0.05 to +0.74**, and each scan sits at its own fitness level.
+Demeaning the ranks within each scan -- which is what averaging the per-scan rho does -- gives
+**+0.235 over 1,415 points**. ⚠️ **The >= 100 trades filter cannot be applied here**: the
+sequential-optimisation XML stores fitness and nothing else. Only the 26 IS and 32 OOS points whose
+fitness is exactly 0 can be identified as degenerate.
+
+🔬 **The `Fitness` a sequential optimisation stores is the databank `Fitness` column, and
+above 100 trades it is Ret/DD.** The fitness at the first scan's original value equals the SPP
+profile's `Fitness` stat for the same strategy to float32 precision on all 5 strategies, so the two
+cross-checks report the same scalar. Against the SPP permutations of `Strategy 17.9.39`, restricted
+to the 10,935 permutations with >= 100 trades, Spearman(`Fitness`, `ReturnDDRatio`) = **+0.999**
+(+0.978 against `ProfitFactor`), and +0.999 again on the OOS run's 11,262. Below that trade count the
+relation breaks down (+0.769 unrestricted) -- a handful of trades makes any ratio meaningless. So a
+study over the sequential-optimisation surface is a study of **Ret/DD ranks**, not of an opaque score.
+
+🔬 **A rudimentary WFC does come out of it, and it is positive.** Per scan, Spearman of the
+30 IS fitness values against the 30 OOS ones:
+
+| | scans | pooled rho (Fisher-z) | 95 % CI | positive |
+|---|---|---|---|---|
+| clean (first link only, one per strategy) | 5 | **+0.335** | +0.10 to +0.54 | 5/5 |
+| every non-inert scan, contaminated included | 47 | **+0.309** | +0.14 to +0.46 | 35/47 |
+
+The two agree, which is the argument for reading the 42 contaminated scans at all: the chain's
+divergence adds noise without moving the estimate. 🤔 Three things it is not -- it is a star of
+axes through the original, so it says nothing about *joint* overfitting; the 30 points of a scan are
+strongly autocorrelated (lag-1 up to +0.89, effective n **9 to 33**), which is why a single scan's CI
+spans zero; and part of any positive rho is mechanical, since a parameter that changes exposure moves
+IS and OOS profit together. Naming a threshold for "high" without a null built from random-entry
+variants would be false precision.
+
+🤔 A WFC needs the *same* tuples scored on two windows, and no SQX cross-check gives that at
+scale: sequential optimisation gives one clean line per strategy and 49 contaminated ones, the
+Optimize task keeps only its top `maxOptimizations` results (truncating the surface on IS rank,
+which attenuates the very correlation being measured), and the WFM stores the parameters it picked
+per step, not the population. The route that cannot fail is to draw the tuple list **once** and
+score it twice: parameter values are plain `<variable><id>NAME</id><value>N</value>` entries in
+`strategy_Portfolio.xml`, so N variants can be written as N `.sqx`, dropped in one databank and
+retested once over 2008-2022 with the OOS cut at 2018 -- a `.vw` emitting sampleType 10 and 20 then
+puts the IS and the OOS score of each tuple on the same row, paired by strategy identity rather
+than by matching values.
 
 ## Bars
 
