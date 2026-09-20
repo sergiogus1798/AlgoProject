@@ -2,7 +2,8 @@
 
 import numpy as np
 
-from strategies.crossmarket import charts, figures, metrics, panel, sweep, tables
+from strategies.crossmarket.render import figures, panel, svg, tables
+from strategies.crossmarket.simulate import metrics, sweep
 from strategies.crossmarket.explorer import sweep_views
 
 # Net profit first: it is the number the owner reads a strategy in, and the one the tab opens on.
@@ -117,7 +118,7 @@ def detail(record: dict, cfg: dict, feed: str, model: str, metric: str, window: 
     sw = record["runs"][feed]["sweep"]
     reference = (None if sw["reference"] is None
                  else {"name": panel.NAMES[s["reference"]], "p": sw["reference"][metric]})
-    series = [{"key": m, "name": panel.NAMES[m], "colour": charts.SERIES[i % len(charts.SERIES)],
+    series = [{"key": m, "name": panel.NAMES[m], "colour": svg.SERIES[i % len(svg.SERIES)],
                "points": [{"name": sweep_views.window_name(w["window"]),
                            "p": (sweep_views.at(pt, metric) or {}).get("p_value"),
                            "detail": f'≈{np.median([b["bars"] for b in w["blocks"]]):,.0f} '

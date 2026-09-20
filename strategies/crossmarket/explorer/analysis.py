@@ -7,10 +7,13 @@ import numpy as np
 import pandas as pd
 
 from core import trades as tradeio
-from strategies.crossmarket import (backtest, breadth, correlation, curves, envelope,
-                                    execution, exposure, fingerprint, inference, metrics,
-                                    paired, portfolio, realrun, significance, stress, views)
+from strategies.crossmarket import views
 from strategies.crossmarket.explorer import sweep_run
+from strategies.crossmarket.inputs import execution
+from strategies.crossmarket.mechanics import curves, envelope, pricing
+from strategies.crossmarket.simulate import (backtest, correlation, exposure, fingerprint,
+                                             metrics, paired, portfolio, realrun, stress)
+from strategies.crossmarket.verdict import breadth, inference, significance
 
 
 def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
@@ -36,7 +39,7 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
     # counterparts have to be the same trades.
     seen = realrun.reported(fixed, cfg)
     pair = paired.run(fixed, bars, fixed["market"], cfg, rng)
-    returns = significance.trade_returns(fixed, bars)
+    returns = pricing.trade_returns(fixed, bars)
     mtr = significance.min_track_record(returns, cfg["diagnostics"]["alpha"])
     pf_ci = significance.bootstrap_metric(returns, significance.profit_factor, cfg, rng)
     ex_ci = significance.bootstrap_metric(returns, significance.expectancy, cfg, rng)

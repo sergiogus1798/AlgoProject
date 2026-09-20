@@ -2,7 +2,8 @@
 
 import numpy as np
 
-from strategies.crossmarket import charts, metrics, panel, sweep, tables
+from strategies.crossmarket.render import charts, panel, svg, tables
+from strategies.crossmarket.simulate import metrics, sweep
 
 REASONS_ES = {"short_window": "ventana por debajo de sweep.min_months",
               "weak_blocks": "demasiadas operaciones en bloques débiles"}
@@ -99,7 +100,7 @@ def distributions(sw: dict, model: str, metric: str, draws: int) -> str:
                        f'{REASONS_ES[window["reason"]]}</span></figcaption></div>')
             continue
         out.append(charts.distribution(point["shapes"][metric], f"Bloque {name}",
-                                       f"{draws:,} tiradas confinadas", charts.NARROW))
+                                       f"{draws:,} tiradas confinadas", svg.NARROW))
     return f'<div class="figure-row sweepdist">{"".join(out)}</div>'
 
 
@@ -151,5 +152,5 @@ def equity_cone(sw: dict, model: str, feed: str, window: str, draws: int) -> str
                     f'{REASONS_ES[w["reason"]]}.</div>')
         return charts.cone(point["cone"], f"Equity de las tiradas — bloque {window_name(window)}",
                            f"{feed} · {panel.NAMES[model]} · {draws:,} simulaciones",
-                           charts.WIDE)
+                           svg.WIDE)
     return ""

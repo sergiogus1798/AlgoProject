@@ -2,7 +2,8 @@
 
 import pandas as pd
 
-from strategies.crossmarket import alerts, figures, overlays, panel, tables
+from strategies.crossmarket.render import figures, overlays, panel, tables
+from strategies.crossmarket.verdict import alerts
 from strategies.crossmarket.explorer import (overview_tab, portfolio_tab, simulations,
                                              stress_tab as stress_view, sweep_tab)
 

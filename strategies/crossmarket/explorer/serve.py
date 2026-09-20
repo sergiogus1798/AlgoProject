@@ -9,7 +9,9 @@ from flask import Flask, jsonify, request
 
 from core import bars as barsio
 from core.paths import DATA, bars_file, export_dir
-from strategies.crossmarket import config, markets, metrics, panel
+from strategies.crossmarket.inputs import config, markets
+from strategies.crossmarket.render import panel
+from strategies.crossmarket.simulate import metrics
 from strategies.crossmarket.explorer import (jobs, scope, sections, simulations,
                                              sweep_tab, tooltips, work)
 

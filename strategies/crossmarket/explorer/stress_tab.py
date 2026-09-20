@@ -5,7 +5,8 @@ in config.yaml — and the tab says, per market, which of the two it ended up us
 
 import pandas as pd
 
-from strategies.crossmarket import charts, figures, metrics, tables
+from strategies.crossmarket.render import charts, figures, tables
+from strategies.crossmarket.simulate import metrics
 from strategies.crossmarket.explorer.simulations import STRESSED, metric_table
 
 

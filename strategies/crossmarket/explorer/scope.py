@@ -3,7 +3,7 @@
 import json
 from collections.abc import Mapping
 
-from strategies.crossmarket import config
+from strategies.crossmarket.inputs import config
 
 
 def scoped(setup: dict, payload: dict) -> dict:

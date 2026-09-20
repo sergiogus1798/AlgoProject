@@ -2,8 +2,8 @@
 
 Every market runs its **own independent account**: the same starting capital, its own real
 position sizes, its own dates. Nothing here adds two markets together — that is
-simulate/portfolio.py, where the drawdown of a combination has to be computed on the combined curve, never summed
-from the parts."""
+simulate/portfolio.py, where the drawdown of a combination has to be computed on the
+combined curve, never summed from the parts."""
 
 import numpy as np
 import pandas as pd

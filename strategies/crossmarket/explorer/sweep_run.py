@@ -1,13 +1,14 @@
 """The window sweep's execution: the free-placement models re-drawn inside ever smaller
 calendar blocks. Split from analysis.py so both stay under CODESTYLE's 250-line cap; the
-partitioning itself is `sweep.py`, which is modelling and knows nothing about running."""
+partitioning itself is `simulate/sweep.py`, which is modelling and knows nothing about running."""
 
 from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
 
-from strategies.crossmarket import backtest, inference, metrics, sweep
+from strategies.crossmarket.simulate import backtest, metrics, sweep
+from strategies.crossmarket.verdict import inference
 
 
 def window_sweep(fixed: dict, bars: pd.DataFrame, cfg: dict, runs: dict,

@@ -1,13 +1,13 @@
 """The strategy-level views, built from what each market contributed: correlation and portfolio.
 
-They exist apart from analysis.py because a single-market re-run has to rebuild them from the
-markets already in the session plus the one just recomputed — the panel's per-market **run**
-button merges into a record rather than replacing it, and a correlation matrix or a combined
-account that still described the old market would be silently wrong."""
+They exist apart from explorer/analysis.py because a single-market re-run has to rebuild
+them from the markets already in the session plus the one just recomputed — the panel's
+per-market **run** button merges into a record rather than replacing it, and a correlation
+matrix or a combined account that still described the old market would be silently wrong."""
 
 import numpy as np
 
-from strategies.crossmarket import correlation, joint, portfolio
+from strategies.crossmarket.simulate import correlation, joint, portfolio
 
 
 def build(weekly: dict, streams: dict, runs: dict, cfg: dict) -> dict:
@@ -15,7 +15,7 @@ def build(weekly: dict, streams: dict, runs: dict, cfg: dict) -> dict:
 
     Args:
         weekly: {feed: what correlation.weekly_equity() returned}.
-        streams: {feed: the trade stream portfolio.py takes} — feed, open, close and pnl.
+        streams: {feed: the trade stream simulate/portfolio.py takes} — feed, open, close and pnl.
         runs: {feed: that market's model results}, for the joint null.
         cfg: What config.load() returned.
 

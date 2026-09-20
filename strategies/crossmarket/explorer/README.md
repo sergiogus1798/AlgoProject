@@ -28,6 +28,15 @@ serve ─▶ scope ─▶ jobs ─▶ work ─▶ analysis ─▶ sections ─�
 | `simulations.py` | The three tabs that draw simulated distributions and equity cones | imported | record → HTML |
 | `page.html` | The panel: dropdown, market list, run buttons, tabs, progress bar, config drawer | served | — |
 
+## It is the one place allowed to cross every layer
+
+`analysis.py` is where the study's layers meet: it slices the window (`mechanics/envelope`), prices
+the real run and the nulls (`simulate/backtest`), runs every test (`simulate/`), attaches the
+warnings (`verdict/inference`) and hands the record to `views.py` for what needs more than one
+market. The tab modules then read `render/` and nothing else that computes. Which layer a thing
+belongs to is decided there, not here — see the module `README.md` and the import-direction table in
+it.
+
 ## Nothing is stored
 
 There is no cache, no staleness flag and no file on disk. `work.RESULTS` holds the session's runs in
@@ -55,7 +64,7 @@ verdict tab, because there is no verdict.
 
 **`Backtest` opens first** and is where a reading starts: it absorbed `Resumen`, `Significancia` and
 `Correlación`, which answered one question between them. `El mercado` (drivers) and the PCA half of
-`Correlación` were removed — see the module README for why. `Portfolio` is new: one account for every
+`Correlación` were removed — see `../render/README.md` for why. `Portfolio` is new: one account for every
 market at once, and what each market adds to or takes from it.
 
 Two of them draw simulations: **Entrada aleatoria** and **Coste y ejecución**. Both show, per market,
@@ -75,9 +84,9 @@ block size the chips choose, and the blocks collapsed. Two selectors govern the 
 nothing. It used to emit every market × every model at once, which on ten markets was thirty charts
 and thirty tables in one page.
 
-That dropdown is why `backtest.swept()` is gone. It priced only `mean_r` and the trade count, so the
+That dropdown is why `simulate/backtest.swept()` is gone. It priced only `mean_r` and the trade count, so the
 sweep could answer for no other statistic and had no distribution to draw; every sweep point now
-goes through the same `backtest.drawn()` + `backtest.summary()` as a null model and keeps the whole
+goes through the same `simulate/backtest.drawn()` + `summary()` as a null model and keeps the whole
 metric table, a histogram per metric and a cone. It costs: the same strategy over two markets at
 25,000 draws went from 36-52 s to **107 s**, and the sweep is most of it. 🔬 After the 2026-09-16
 rebuild, Strategy 2.29.29 over two markets measures **95 s** — the additions on top of the sweep are
@@ -92,7 +101,8 @@ overrides can be passed at launch with `--set nulls.draws=20000`.
 
 ## Progress
 
-`jobs.py` publishes a continuous share rather than counting steps, because `backtest.null()` draws
+`jobs.py` publishes a continuous share rather than counting steps, because
+`simulate/backtest.null()` draws
 its runs in batches and calls back after each one. The bar therefore moves several times inside every
 model, and the line under it names the market and the model running right now.
 

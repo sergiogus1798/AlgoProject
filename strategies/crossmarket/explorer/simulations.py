@@ -2,7 +2,8 @@
 comparison, plus the metric table every simulated tab shares. Split from sections.py so both
 stay under CODESTYLE's 250-line cap; stress_tab.py is the third reader of metric_table()."""
 
-from strategies.crossmarket import charts, figures, metrics, panel, tables
+from strategies.crossmarket.render import charts, figures, panel, svg, tables
+from strategies.crossmarket.simulate import metrics
 
 # The statistics that get a histogram, in the order the picker offers them; mean_r leads
 # because the Resumen's p is its. The stress prices the real entries, so it has no mean_r.
@@ -50,10 +51,10 @@ def metric_table(table: dict, cfg: dict) -> str:
         v = table[name]
         better = "más es mejor" if metrics.HIGHER_IS_BETTER[name] else "menos es mejor"
         body.append(tables._row([f"{metrics.LABELS[name]} <span class='hint'>({better})</span>",
-                          charts.num(v["observed"]), charts.num(v["median"]),
+                          svg.num(v["observed"]), svg.num(v["median"]),
                           _chip(f"{v['p_value']:.4f}", v["p_value"] <= alpha),
                           _chip(f"{v['beats']:.1%}", v["beats"] >= 1 - alpha),
-                          *[charts.num(v["p"][q]) for q in qs]]))
+                          *[svg.num(v["p"][q]) for q in qs]]))
     note = (f'<p class="lede"><b>p</b> — qué fracción de las simulaciones igualó o superó al '
             f'backtest real en ese indicador. Cuanto más pequeño, más difícil de explicar '
             f'por suerte; en verde cuando está en {alpha:.2f} o por debajo.<br>'
@@ -84,7 +85,7 @@ def stats_block(view: dict, metric: str) -> str:
             ("p2,5 de las simulaciones", view["lo_ci"], ""),
             ("p97,5 de las simulaciones", view["hi_ci"], "")]
     body = "".join(tables._row([f'<span class="{cls}">{label}</span>' if cls else label,
-                                charts.num(v) + unit]) for label, v, cls in rows)
+                                svg.num(v) + unit]) for label, v, cls in rows)
     return f'<div class="scroll mini"><table>{body}</table></div>'
 
 
@@ -124,10 +125,10 @@ def random_view(record: dict, cfg: dict, feed: str, model: str, metric: str) -> 
     return (f'<div class="pair">'
             + charts.cone(run["cone"], "Equity en calendario",
                           f"{feed} · {panel.NAMES[model]} · {draws:,} simulaciones",
-                          charts.WIDE)
+                          svg.WIDE)
             + '<div>'
             + charts.distribution(run["shapes"][metric], metrics.LABELS[metric],
-                                  f"{feed} · {draws:,} simulaciones", charts.NARROW)
+                                  f"{feed} · {draws:,} simulaciones", svg.NARROW)
             + stats_block(run["shapes"][metric], metric)
             + beats_line(run["shapes"][metric], metric) + '</div></div>'
             + metric_table(run["table"], cfg))

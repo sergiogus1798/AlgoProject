@@ -7,7 +7,7 @@ would change a conclusion.
 ## 1. How the null models the real trades — the open end of the whole test
 
 **This is the largest source of arbitrariness in the test.** There is no single correct way to turn a
-real run into a random one, and the answer moves with the choice. That is why `trade_models.py` is a
+real run into a random one, and the answer moves with the choice. That is why `model/trade_models.py` is a
 registry rather than one function: four models ship, they share a signature, and each declares in
 `RANDOMISES` what it changes. Adding a fifth is a function and a row.
 
@@ -28,7 +28,7 @@ as a joint entry-and-exit test.
 
 Still worth building:
 
-- **A joint null across markets.** ✅ *Built 2026-09-17* — `joint.py`, and `block_shift` now draws
+- **A joint null across markets.** ✅ *Built 2026-09-17* — `simulate/joint.py`, and `block_shift` now draws
   one displacement per calendar semester and applies it in every market, which is what makes the
   pooled p correctly sized. What is left is the scale question in §6 of the brief it came from:
   `joint.pool` defaults to raw `mean_r` and should be revisited when a market arrives whose null
@@ -55,10 +55,10 @@ reported rather than averaged away.
 
 ## 2. Statistical treatment
 
-- **Joint null across markets.** ✅ *Built 2026-09-17.* `joint.run()` pools the out-of-sample
+- **Joint null across markets.** ✅ *Built 2026-09-17.* `simulate/joint.run()` pools the out-of-sample
   markets into one a-priori statistic — the equal-weight mean of `mean_r` — and compares it against
   the same pool on every draw. It is correctly sized because the draws are **coupled**:
-  `trade_models.semester_shift()` keys each calendar semester's displacement on the semester itself
+  `model/trade_models.semester_shift()` keys each calendar semester's displacement on the semester itself
   rather than on the market, so draw d is one counterfactual of the whole set.
 
   🔬 The measurement that forced this: before the coupling existed, the correlation between draw d's
@@ -82,7 +82,7 @@ reported rather than averaged away.
   with the payoff vector — every shift at once, no sampling error, in milliseconds. It was written
   and then removed because the shift that matters is stratified by regime block and does not reduce
   to a single circular correlation. Worth revisiting for the per-block correlations.
-- **Minimum track-record length per market.** Built in `significance.min_track_record()` —
+- **Minimum track-record length per market.** Built in `verdict/significance.min_track_record()` —
   Bailey/López de Prado, on the real per-trade returns. It is a diagnostic that raises the
   `short_sample` warning; nothing is excluded by it. Its kurtosis term took **raw** kurtosis, not
   excess, and was passing excess: fixed 2026-09-14. On this data the correction is small (118.9 →
@@ -95,8 +95,8 @@ reported rather than averaged away.
 The owner's instruction was: no verdict, a tool that produces the data and the analysis. That
 removed a whole layer and fixed several things that the verdict layer had been hiding.
 
-- **The verdict is gone.** `inference.call()`, `inference.table()`, MANTENER/DESCARTAR/NO EVALUABLE,
-  `MIN_MARKETS` and the majority rule: all removed. `inference.warnings()` replaces the gate — it
+- **The verdict is gone.** `verdict/inference.call()`, `verdict/inference.table()`, MANTENER/DESCARTAR/NO EVALUABLE,
+  `MIN_MARKETS` and the majority rule: all removed. `verdict/inference.warnings()` replaces the gate — it
   names every reason to distrust a market and drops none. The old gate was not merely conservative,
   it was structurally broken here: `MIN_MARKETS = 4` against two available markets made NO EVALUABLE
   the only reachable verdict for XAUUSD, regardless of any p-value.
@@ -110,12 +110,12 @@ removed a whole layer and fixed several things that the verdict layer had been h
   5.00e-5 on gold, a 9% gap. The bootstrap is now weighted by holds.
 - **The panel declared its own results stale.** Its GET routes read the start-up config while its
   POST routes honoured the drawer, so any override made every stored result permanently red.
-  `scope.from_query()` and `overrideQS()` fix it, copying `monteCarlo/explorer`.
-- **`backtest.setting()` ran six times per market** — once per model inside `run()`, again in
+  `explorer/scope.from_query()` and `overrideQS()` fix it, copying `monteCarlo/explorer`.
+- **`simulate/backtest.setting()` ran six times per market** — once per model inside `run()`, again in
   `analyse_market`, again inside `exposure.run` — each doing a reconcile and a least-squares fit. It
   now runs once and is passed in.
 - **Shorts were priced as longs.** Every return is `log(exit/entry)`; a short would have come out
-  with the sign reversed and nothing would have noticed. `pricing.require_long_only()` refuses
+  with the sign reversed and nothing would have noticed. `mechanics/pricing.require_long_only()` refuses
   instead. All 92,329 trades of the sample are Buy, so this is an assertion about the data, not a
   case to handle — short support is a modelling decision (the null's drift exposure changes with
   it), not a sign flip.
@@ -128,7 +128,7 @@ removed a whole layer and fixed several things that the verdict layer had been h
 - **Test 1b (PDF §3), in the only form that says anything here.** The note's literal version — each
   trade against a passive long over the identical window — is **degenerate for this family**: these
   strategies carry no stop and no target, so under the reconciled open-to-open convention the trade
-  return *is* that passive long and every difference would be exactly zero. What `paired.py` builds
+  return *is* that passive long and every difference would be exactly zero. What `simulate/paired.py` builds
   instead is each trade against the **exact mean of every window of its own length inside its own
   regime block**. Exact rather than sampled, paired, Wilcoxon-tested, and — because cost appears on
   both sides and cancels — the one test here that needs neither a null model nor a cost assumption.
@@ -139,7 +139,7 @@ removed a whole layer and fixed several things that the verdict layer had been h
   gold Hurst 0.500 / VR 0.966, silver 0.478 / 0.738, Brent 0.495 / 0.982. **The regression is not
   built and should not be**: it needs six or more markets on the right-hand side and there are two.
   When `structure` is populated, the metrics are already there.
-- **Every knob in one file.** `config.yaml` holds all 25, `config.py` reads it, `tooltips.py` gives
+- **Every knob in one file.** `config.yaml` holds all 25, `inputs/config.py` reads it, `explorer/tooltips.py` gives
   each one a sentence, and the panel's drawer groups them. Nothing is hidden in a module constant
   any more.
 
@@ -150,7 +150,7 @@ Decided with the owner, so a future session does not reopen them alone:
 - **Deflated Sharpe Ratio (PDF §5.1).** Not built. DSR needs the number of trials the generation
   search actually made; this project has no such count (see the same reasoning in
   `strategies/monteCarlo/README.md`), and fabricating one would produce a number that looks rigorous
-  and is not. `significance.min_track_record()` covers the part of §5.1 that does not need a trial
+  and is not. `verdict/significance.min_track_record()` covers the part of §5.1 that does not need a trial
   count.
 - **The edge-driver regression itself (PDF §5.4).** The indicators are built; the regression is not,
   and cannot be honestly fitted on two markets. It is waiting for the `structure` category.
@@ -170,19 +170,19 @@ The owner rebuilt the panel around the backtest rather than around the tests. Al
   is almost entirely past, and two trades a week apart across a boundary get disjoint references.
   Measured on `Strategy 1.10.80` / Brent the four agree to within 0.09 on p; that is a measurement,
   not a reason to stop printing them.
-- **E has an interval.** `fieller.py` gives the ratio an honest one: unbounded when the denominator
+- **E has an interval.** `verdict/fieller.py` gives the ratio an honest one: unbounded when the denominator
   cannot be told from zero, which is the truth a percentile bootstrap quietly hides. The bootstrap
   behind it resamples **blocks of bars** and computes numerator and denominator from the same
   replicate, so the dependence between the occupied bars and the market they are a subset of is
   carried rather than assumed away; the share of replicates whose drift changed sign is printed
   beside it. Brent: E = +17.4, unbounded, 54.5% sign flips.
-- **The fingerprint draws its distributions.** Closes §6 below: `fingerprint.overlay()` returns
+- **The fingerprint draws its distributions.** Closes §6 below: `simulate/fingerprint.overlay()` returns
   shared bins and two share arrays, and the tab lays this market's holds, returns, MAE/ATR and
   MFE/ATR over the base asset's.
 - **The cost stress is calibrated per feed** from `execution.yaml` instead of round numbers, and
   the tab prints the cost SQX really charged against the one that file implies. `p_skip` stays an
   assumption and is labelled as one.
-- **Warnings say what they do not affect.** See `alerts.py`.
+- **Warnings say what they do not affect.** See `verdict/alerts.py`.
 - **The Portfolio tab** answers the question the retest raises and could not: does a market break the
   combination? Marginal contribution per market, calendar-block intervals, overlap, and reordering
   delegated to `strategies.monteCarlo.model.draws`.
@@ -203,7 +203,7 @@ The owner rebuilt the panel around the backtest rather than around the tests. Al
 
 - **Test 1c, exposure-adjusted return.** Concentration ratio E and drift-neutral excess A. Cheaper
   than this test and answers a different question: beating the market's own average bar rather than
-  beating chance. Built in `exposure.py`. Sanity check against `trade_models.block_shift`-style
+  beating chance. Built in `simulate/exposure.py`. Sanity check against `trade_models.block_shift`-style
   random entries on `XAGUSD_DukasM1_Infinox` gives E ≈ 1.13, A ≈ 1.5e-6 — near 1 and 0 as the PDF
   predicts. The real strategy there (913 trades) measures E ≈ 3.28, A ≈ 2.5e-5 (CI 90%
   [-2.9e-5, 7.3e-5] — the lower bound crosses zero on this one strategy), risk-normalised A ≈ 0.006.
@@ -249,11 +249,11 @@ warning says so; it does not quantify it. Still worth building:
 
 ## 6. Left out of the Fase 1-4 + panel build
 
-- ~~No holding-time comparison chart.~~ **Built 2026-09-16.** `fingerprint.overlay()` bins this
+- ~~No holding-time comparison chart.~~ **Built 2026-09-16.** `simulate/fingerprint.overlay()` bins this
   market and the base asset on shared edges, as shares rather than counts so different trade counts
   compare, clipped at the 99th percentile of the two together — one 400-bar hold otherwise squeezed
   900 trades into a single bar. Four of them: holds, returns, MAE/ATR, MFE/ATR. The drawing lives in
-  `overlays.py`, not `charts.py`, which was already at the line cap.
+  `render/overlays.py`, not `render/charts.py`, which was already at the line cap.
 - **Manual screenshots are placeholders.** `docs/manual/05-retest-mercados.md` describes every button
   and tab from a real run of the panel (verified against `Retest_Markets_-_Family`'s one strategy,
   which reproduces the known `Strategy 24.14.35` pending-order case in §4 above byte-for-byte), but

@@ -145,8 +145,8 @@ def regime_strata(held: pd.DataFrame, market: dict, draws: int,
 
     Returns:
         Entry indices and holds. The stratum is the volatility quantile times the sign of the
-        recent trend, both read before the bar opens (mechanics/strata.py), so the regime is held fixed
-        by state rather than by a calendar block of arbitrary length; the weekday, hour,
+        recent trend, both read before the bar opens (mechanics/strata.py), so the regime is
+        held fixed by state rather than by a calendar block of arbitrary length; weekday, hour,
         order and clustering are all free. Trades are placed independently, so the later of
         two that land on each other is dropped. Off by default: it runs only when
         `nulls.models` lists it, and the window sweep never uses it.

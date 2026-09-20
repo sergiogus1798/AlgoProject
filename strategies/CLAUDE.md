@@ -39,7 +39,7 @@ comparing the Python's trades against the CSV SQX exported for the same strategy
 the differences; do not bury them. An unreconciled translation is a hypothesis, and saying otherwise
 is the single easiest way to poison everything downstream.
 
-The same rule now has teeth elsewhere: `crossmarket/pricing.reconcile()` re-derives the fill
+The same rule now has teeth elsewhere: `crossmarket/mechanics/pricing.reconcile()` re-derives the fill
 convention per market and the study refuses to interpret a market it could not reproduce. Measured
 on XAUUSD H1 the convention is **open-to-open with a median price error of exactly 0.0**.
 

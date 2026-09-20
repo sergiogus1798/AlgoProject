@@ -6,7 +6,9 @@ one page and its confidence interval on another."""
 
 import pandas as pd
 
-from strategies.crossmarket import alerts, charts, joint, overlays, overview, panel, tables
+from strategies.crossmarket.render import overlays, overview, panel, svg, tables
+from strategies.crossmarket.simulate import joint
+from strategies.crossmarket.verdict import alerts
 
 
 def palette(record: dict) -> dict[str, str]:
@@ -19,7 +21,7 @@ def palette(record: dict) -> dict[str, str]:
         {feed: colour}, base asset first. Fixed here and passed down, so a market is the same
         colour in the equity overlay, in the master table's dot and in every histogram.
     """
-    return charts.palette(list(record["equity"]), record["base"]["feed"])
+    return svg.palette(list(record["equity"]), record["base"]["feed"])
 
 
 def equity_note(cfg: dict) -> str:

@@ -15,8 +15,8 @@ def block_bootstrap(n: int, size: int, rng: np.random.Generator, block: int) -> 
     Returns:
         One row of positions per simulation, into the original sequence. A copy of
         strategies.monteCarlo.model.draws.block_bootstrap: simulate/exposure.py and
-        verdict/significance.py both need it, which under CODESTYLE.md rule 5 is not yet "shared" — crossmarket keeps
-        its own rather than importing from monteCarlo.
+        verdict/significance.py both need it, which under CODESTYLE.md rule 5 is not yet
+        "shared" — crossmarket keeps its own rather than importing from monteCarlo.
     """
     count = -(-size // block)
     starts = rng.integers(0, size, (n, count))

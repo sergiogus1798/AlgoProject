@@ -4,8 +4,9 @@ The narrow question the cross-market retest raises on its own. It is not portfol
 construction — that lives in portfolio/ — and it is not a substitute for strategies/monteCarlo,
 which asks how much of one stream is luck."""
 
-from strategies.crossmarket import charts, metrics, overlays, overview
-from strategies.crossmarket.curves import COMBINED
+from strategies.crossmarket.mechanics.curves import COMBINED
+from strategies.crossmarket.render import overlays, overview, svg
+from strategies.crossmarket.simulate import metrics
 
 # What the marginal table compares. Ret/DD first: it is the one a market can quietly wreck
 # while still looking profitable on its own.
@@ -32,11 +33,11 @@ def marginal_table(marginal: list[dict], whole: dict) -> str:
     for m in marginal:
         body.append(overview._row(
             [f'<code>{m["feed"]}</code>', f'{m["trades"]:,}',
-             *[charts.num(m["without"][k]) for k in SHOWN],
+             *[svg.num(m["without"][k]) for k in SHOWN],
              *[f'<span class="{"ok" if m["delta"][k] > 0 else "no"}">'
-               f'{charts.num(m["delta"][k])}</span>' for k in SHOWN]]))
+               f'{svg.num(m["delta"][k])}</span>' for k in SHOWN]]))
     body.append(overview._row(
-        ["<b>el portfolio entero</b>", "", *[charts.num(whole[k]) for k in SHOWN],
+        ["<b>el portfolio entero</b>", "", *[svg.num(whole[k]) for k in SHOWN],
          *["" for _ in SHOWN]]))
     return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
 
@@ -53,9 +54,9 @@ def interval_table(ci: dict, whole: dict) -> str:
     """
     head = overview._row(["estadístico", "portfolio real", "mediana remuestreada",
                           "CI 90%"], "th")
-    body = [overview._row([metrics.LABELS[k], charts.num(whole[k]),
-                           charts.num(ci[k]["median"]),
-                           f'[{charts.num(ci[k]["lo"])}, {charts.num(ci[k]["hi"])}]'])
+    body = [overview._row([metrics.LABELS[k], svg.num(whole[k]),
+                           svg.num(ci[k]["median"]),
+                           f'[{svg.num(ci[k]["lo"])}, {svg.num(ci[k]["hi"])}]'])
             for k in SHOWN]
     return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
 
@@ -96,7 +97,7 @@ def overview_palette(record: dict) -> dict[str, str]:
         {feed: colour}. Imported through the main tab so a market cannot end up one colour
         here and another one there.
     """
-    return charts.palette(list(record["equity"]), record["base"]["feed"])
+    return svg.palette(list(record["equity"]), record["base"]["feed"])
 
 
 def portfolio_tab(record: dict, cfg: dict) -> str:
@@ -113,7 +114,7 @@ def portfolio_tab(record: dict, cfg: dict) -> str:
     """
     p, w = record["portfolio"], record["portfolio"]["whole"]
     weeks, base = cfg["portfolio"]["block_weeks"], record["base"]["feed"]
-    tiles = [(charts.num(w["net"]) + " $", "beneficio del portfolio"),
+    tiles = [(svg.num(w["net"]) + " $", "beneficio del portfolio"),
              (f'{w["dd_pct"] * 100:.1f} %', "peor caída, sobre la curva combinada"),
              (f'{w["ret_dd"]:.2f}', "Ret/DD del portfolio"),
              (f'{p["overlap"]["share"]:.1%}', "del tiempo abierto, con 2+ posiciones"),
@@ -166,9 +167,9 @@ def interval_from_table(table: dict) -> str:
     """
     head = overview._row(["estadístico", "portfolio real", "mediana barajada", "p2,5 – p97,5"],
                          "th")
-    body = [overview._row([metrics.LABELS[k], charts.num(table[k]["observed"]),
-                           charts.num(table[k]["median"]),
-                           f'{charts.num(table[k]["p"][2.5])} – '
-                           f'{charts.num(table[k]["p"][97.5])}'])
+    body = [overview._row([metrics.LABELS[k], svg.num(table[k]["observed"]),
+                           svg.num(table[k]["median"]),
+                           f'{svg.num(table[k]["p"][2.5])} – '
+                           f'{svg.num(table[k]["p"][97.5])}'])
             for k in SHOWN if k in table]
     return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
