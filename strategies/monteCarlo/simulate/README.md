@@ -11,6 +11,7 @@ and every module here would produce the same arrays if the study's verdict rules
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `tiles.py` | One worker's batch, in strips of rows sized in bytes so memory does not grow with N | imported | batch → statistics |
 | `metrics.py` | Net, drawdown, Ret/DD, Sharpe, profit factor and the longest losing run, on thousands of paths at once | imported | paths → statistics |
 | `engine.py` | Runs one sub-test across every core, with a live progress bar | imported | model → statistics |
 | `sweeps.py` | Which reordering and resampling runs a stream of this size gets | imported | N → runs |
@@ -36,4 +37,13 @@ and every module here would produce the same arrays if the study's verdict rules
   exactly that.
 - **The block sweep can vanish.** When N cannot support `min_blocks` blocks of the smallest size,
   `sweeps.plan()` skips it and flags it rather than running a degenerate randomisation.
-- `chunk` is a memory knob, not a statistical one. Changing it must not change a number.
+- **`chunk` is task granularity, `tile_bytes` is the memory knob.** `chunk` bounds simulations, so
+  what a worker cost used to depend on how long the strategy was; `tile_bytes` bounds the strip in
+  bytes, so it does not. Neither may change a number.
+- **A strip sampler must not recycle its uniforms.** `tiles.batch()` asks the model for a fresh
+  draw per strip instead of reusing one buffer for "does the block restart" and "where does it
+  restart": sharing it correlates the restart positions with the 1/block threshold and piles them
+  at the head of the stream.
+- **The gathered P&L is float32 and every accumulator in `metrics.paths` is float64.** Accumulating
+  in float32 moves net profit by millidollars and `sweeps.invariant()` stops being zero, which is
+  the one thing it is allowed to be.

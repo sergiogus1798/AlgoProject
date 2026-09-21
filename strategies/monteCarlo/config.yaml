@@ -5,7 +5,8 @@ global:
   starting_equity: 100000.0   # account the additive equity path starts from
   risk_per_trade: 1000.0      # USD risked per trade; the divisor that turns P&L into R
   n_sims: 100000              # simulated paths per sub-test
-  chunk: 2000                 # paths per worker batch; memory, not statistics
+  chunk: 2000                 # paths per worker task; task granularity, not memory
+  tile_bytes: 4_000_000       # working set of one strip inside a worker; this is the memory knob
   max_workers: null           # null = every core the machine has
   percentile_set: [1, 5, 25, 50, 75, 95, 99]
   report_percentile: 95       # the percentile the observed value is compared against

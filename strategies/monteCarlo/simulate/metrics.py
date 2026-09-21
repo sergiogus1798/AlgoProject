@@ -35,18 +35,23 @@ def paths(pnl: np.ndarray, equity0: float) -> dict[str, np.ndarray]:
         One array per statistic, all of length len(pnl). ret_dd and pf are NaN for a path
         with no drawdown or no losing trade — an undefined ratio, never a large number
         standing in for one.
+
+    Every accumulator is float64 whatever the paths arrive in. A float32 batch summed in
+    float32 moves net profit by millidollars, which is enough to stop sweeps.invariant()
+    being zero for the models that only reorder; summed in float64 it is exact.
     """
-    equity = equity0 + np.cumsum(pnl, axis=1)
+    equity = equity0 + np.cumsum(pnl, axis=1, dtype=np.float64)
     peak = np.maximum.accumulate(equity, axis=1)
     drop = peak - equity
     dd = drop.max(axis=1)
-    net = pnl.sum(axis=1)
-    wins = np.where(pnl > 0, pnl, 0.0).sum(axis=1)
-    loss = np.where(pnl < 0, -pnl, 0.0).sum(axis=1)
+    net = pnl.sum(axis=1, dtype=np.float64)
+    wins = np.where(pnl > 0, pnl, 0.0).sum(axis=1, dtype=np.float64)
+    loss = np.where(pnl < 0, -pnl, 0.0).sum(axis=1, dtype=np.float64)
     return {"net": net, "return_pct": net / equity0,
             "dd": dd, "dd_pct": (drop / peak).max(axis=1),
             "ret_dd": np.where(dd > 0, net / np.where(dd > 0, dd, 1.0), np.nan),
-            "sharpe": pnl.mean(axis=1) / pnl.std(axis=1, ddof=1),
+            "sharpe": pnl.mean(axis=1, dtype=np.float64)
+                      / pnl.std(axis=1, ddof=1, dtype=np.float64),
             "pf": np.where(loss > 0, wins / np.where(loss > 0, loss, 1.0), np.nan),
             "losing_run": _losing_run(pnl)}
 

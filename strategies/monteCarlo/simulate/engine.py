@@ -8,8 +8,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 
-from strategies.monteCarlo.model import draws, stress
-from strategies.monteCarlo.simulate import metrics
+from strategies.monteCarlo.simulate import metrics, tiles
 
 ARRAYS = ("pnl", "cost", "spread", "mae")
 
@@ -69,27 +68,6 @@ def pool(cfg: dict) -> ProcessPoolExecutor:
     return _POOL
 
 
-def _batch(job: tuple) -> dict[str, np.ndarray]:
-    """One worker's share of the simulations.
-
-    Args:
-        job: (kind, model, block, simulations, payload, starting equity, family_c config).
-
-    Returns:
-        One array per statistic. The generator is seeded from the operating system inside
-        the worker, so every batch draws independent fresh entropy and no two workers can
-        share a stream. Runs are deliberately not reproducible — section 9 measures the
-        run-to-run spread instead of hiding it behind a seed.
-    """
-    kind, model, block, n, data, equity0, cfg_c = job
-    rng = np.random.default_rng()
-    if kind == "draw":
-        pnl = data["pnl"][draws.DRAWS[model](n, data["pnl"].size, rng, block)]
-    else:
-        pnl = stress.STRESS[model](data, n, rng, cfg_c)
-    return metrics.paths(pnl, equity0)
-
-
 def _progress(done: int, total: int, title: str, started: float, step: int) -> None:
     """Print how far the current sub-test has got.
 
@@ -133,8 +111,9 @@ def single(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict
         The same arrays run() returns. Fifty rolling windows of two thousand draws each are
         cheaper in this process than fifty process pools are to start.
     """
-    return _batch((kind, model, block, n_sims, data, cfg["global"]["starting_equity"],
-                   cfg["family_c"]))
+    g = cfg["global"]
+    return tiles.batch((kind, model, block, n_sims, data, g["starting_equity"],
+                        cfg["family_c"], g["tile_bytes"]))
 
 
 def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict) -> dict:
@@ -149,16 +128,15 @@ def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: 
         cfg: The whole config.
 
     Returns:
-        The same arrays run() returns. Unlike single(), safe for the full study count:
-        every draw model holds an (n_sims, trades) array in memory at once, so a caller
-        already inside its own process — stability.py runs eight of these in parallel —
-        must still chunk at cfg["global"]["chunk"] or it can ask for tens of gigabytes per
-        process on a strategy with a few thousand trades.
+        The same arrays run() returns. It still walks the count in chunks so that this path
+        and run() ask the kernel for the same shape of batch; what bounds the memory is the
+        strip inside tiles.batch(), and it bounds it here exactly as it does in a worker —
+        stability.py runs eight of these at once inside their own processes.
     """
     g = cfg["global"]
     chunks = [min(g["chunk"], n_sims - i) for i in range(0, n_sims, g["chunk"])]
-    out = [_batch((kind, model, block, c, data, g["starting_equity"], cfg["family_c"]))
-           for c in chunks]
+    out = [tiles.batch((kind, model, block, c, data, g["starting_equity"], cfg["family_c"],
+                        g["tile_bytes"])) for c in chunks]
     return {k: np.concatenate([o[k] for o in out]) for k in metrics.NAMES}
 
 
@@ -176,17 +154,17 @@ def run(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
         title: What to call this sub-run on the progress bar.
 
     Returns:
-        One array of length n_sims per statistic of metrics.NAMES. Chunking is a memory
-        decision and not a statistical one: the percentile engine runs once, in the parent,
-        over the whole pool.
+        One array of length n_sims per statistic of metrics.NAMES. Chunking is task
+        granularity and not a statistical decision: the percentile engine runs once, in the
+        parent, over the whole pool. What a worker costs in memory is tile_bytes, not chunk.
     """
     g = cfg["global"]
     chunks = [min(g["chunk"], n_sims - i) for i in range(0, n_sims, g["chunk"])]
     jobs = [("draw" if kind == "draw" else "stress", model, block, c, data,
-             g["starting_equity"], cfg["family_c"]) for c in chunks]
+             g["starting_equity"], cfg["family_c"], g["tile_bytes"]) for c in chunks]
     started, done, out = time.time(), 0, []
     workers = pool(cfg)
-    futures = {workers.submit(_batch, j): j[3] for j in jobs}
+    futures = {workers.submit(tiles.batch, j): j[3] for j in jobs}
     for f in as_completed(futures):
         out.append(f.result())
         done += futures[f]
