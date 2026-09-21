@@ -562,6 +562,41 @@ resultado, 0,7 MB de JSON de caché). El problema es `_batch`.
   reinicia": las posiciones de arranque quedarían correlacionadas con el umbral `1/block` y
   sesgadas hacia el principio de la serie. Dos buffers, no uno.
 
+### Lo que salió al implementarlo de verdad (rama `perf/montecarlo-tiles`)
+
+🔬 Medido 2026-09-20 con `python3 -m perf.catalogue`, que muestrea el RSS del árbol entero.
+
+- 🔬 **La ganancia del kernel no llega al comando: el pool nunca se satura.** `engine.run` parte el
+  sub-test en tareas de `chunk: 2000`, así que con `n_sims: 5000` sólo hay **3 tareas a la vez**, no
+  96. El 3,6× del kernel se queda en **−13,5% de reloj** en `montecarlo.analyse` (10,13 s → 8,76 s)
+  y **−14,6%** con `n_sims: 100000` (24,44 s → 20,88 s). El resto del tiempo es el trabajo monohilo
+  del padre. Medir el kernel aislado y medir el comando son dos preguntas distintas.
+- 🔬 **El pico de memoria del árbol lo manda el pool, no el kernel.** Con `n_sims: 100000` sobre la
+  estrategia más larga (3.437 operaciones) el pico pasa de **19.671 MB a 8.814 MB (−55%)**, pero
+  esos 8,8 GB que quedan son **96 intérpretes vivos** con numpy cargado: con 920 operaciones el
+  pico por tiras es 8.723 MB, prácticamente el mismo. Lo que el cambio elimina es la parte que
+  crecía con N — master sube **+83%** de 920 a 3.437 operaciones, las tiras **+1,0%**.
+- 🔬 **No hace falta escribir un muestreador por tiras: basta con pedirle al modelo un sorteo por
+  tira.** `draws.stationary(145, ...)` llamado 138 veces sortea sus dos buffers cada vez, así que la
+  trampa de los uniformes compartidos no puede ocurrir. Medido sobre 20.000 caminos de N=3.437 con
+  bloque 15: fracción de operaciones consecutivas **0,9333** en una llamada grande y **0,9333** por
+  tiras (teórico 1 − 1/15 = 0,9333), y **0,1000** de los reinicios en la primera décima de la serie
+  en ambos — sin sesgo hacia el principio.
+- 🔬 **El óptimo de `tile_bytes` medido dentro del comando confirma los 4 MB, pero no es plano.**
+  Barrido de siete puntos, reloj de `montecarlo.analyse` (920 ops) y `analyse_long` (3.437 ops):
+  0,5 MB → 13,3 / 101,7 s · 1 MB → 10,6 / 62,5 · 2 MB → 9,2 / 43,1 · **4 MB → 8,7 / 33,0** ·
+  8 MB → 8,8 / 30,1 · 16 MB → 9,6 / 29,4 · 64 MB → 9,9 / 33,0. Con N grande el reloj sigue bajando
+  hasta 16 MB, pero el pico del árbol sube de 2.520 a 2.993 MB: 4 MB es el mínimo de la estrategia
+  corta y la elección conjunta.
+- ⚠️ **Un solo bloque de repeticiones no sirve para comparar dos versiones de un módulo sin
+  semilla.** `net_5` (el mínimo del percentil 5 sobre siete remuestreos) dio con 8 repeticiones
+  master −19.678 y tiras −18.903: z = +3,3, aparentemente significativo. Con dos bloques más de
+  master salieron −18.841 y −19.261: **la media de un bloque de 8 tiene un 2,2% de dispersión
+  propia**, y agrupando 24 contra 16 la diferencia cae a +1,6% (z = +1,7). La comparación que sí
+  decide es **apareada**: los mismos sorteos evaluados en `float64` y en `float32` mueven `net` p5
+  6,3e-8, `pf` p5 5,4e-10, `dd_pct` p95 1,0e-8 y p99 1,6e-9 en relativo, y `losing_run` sale
+  idéntico bit a bit.
+
 ## Este servidor tiene 48 núcleos, no 96, y SQX se queda con 71 GB de los 128
 
 🔬 Medido 2026-09-19 buscando por qué `strategies/monteCarlo` no escala.
@@ -614,3 +649,30 @@ ps -eo pid,ppid,etime,rss,cmd | grep -E 'forkserver|resource_tracker' | grep -v 
 ```
 
 y se limpian matando por PID el padre `forkserver` cuyo PPID sea 1. Nunca `pkill -f python3`.
+
+## 🔬 Measuring this project's own cost (2026-09-20)
+
+Found building `perf/`, the performance catalogue. Every number here is measured on this machine.
+
+- 🔬 **`ru_maxrss` is the wrong memory number as soon as a module spawns workers.** For child
+  processes `getrusage(RUSAGE_CHILDREN)` reports the **largest single child**, not their sum, and
+  `RUSAGE_SELF` of course sees only the parent. `montecarlo.analyse` on one strategy at 5,000
+  simulations reads **535 MB** by `ru_maxrss` and **2,340 MB** by sampling the whole process tree
+  from `/proc/<pid>/stat`. Anything deciding whether a run fits in RAM has to sample the tree.
+  Sampling every 50 ms can still miss a shorter peak, so the tree figure is a floor.
+- 🔬 **A `tracemalloc` snapshot taken after the call shows what survived, which is nothing.** The
+  first version of `perf/measure/runner.py` reported every allocation site at 0.0 MB for this
+  reason. The sites that matter are alive at the peak, so a watcher thread keeps a snapshot from the
+  moment the traced total was highest.
+- 🔬 **This machine's ceiling is memory bandwidth, and it arrives at 16 processes.** The same STREAM
+  triad moving the same bytes: cache-resident it scales to **575 GB/s at 96 processes and keeps
+  rising**; DRAM-resident it flattens at **57 GB/s from 16 processes on**. A kernel whose working
+  set does not fit in cache gets nothing from the 80 cores past that point — they wait for memory.
+  Reproduce with `python3 -m perf.catalogue --scaling`.
+- 🔬 **Comparing wall clock between dates is wrong here; compare per unit of work.** Exports grow.
+  `history.csv` stores the scale with every measurement for exactly this.
+- 🔬 **A pool that is never shut down outlives everything.** Found 68 orphaned `forkserver` workers
+  holding 8.9 GB, one of them nine days old and carrying the module path from *before* the
+  `strategies/monteCarlo/` reorganisation. They are reparented to systemd and survive any restart of
+  the panel. `ps -eo pid,ppid,etime,rss,cmd | grep forkserver` finds them; they are killed by PID,
+  children first — never `pkill -f python3`, which matches your own shell.
