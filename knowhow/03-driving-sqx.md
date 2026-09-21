@@ -164,3 +164,81 @@ Not "which agent has permission". The boundary is **whether a running instance h
   **target** install. Copy templates into `<install>/user/settings/StrategyTemplates/<set>/` first.
 - 🔬 `uSymbol` is the field SQX actually binds against, not `symbol`. The engine blanks it and SQX heals
   it on load — verified: it filled in `XAUUSD` for all 5 tasks.
+
+## The GUI is a web app — the surface a wrapper application would use
+
+🔬 Found 2026-09-20 while scoping whether a third-party front end could drive SQX with a live
+progress bar. **StrategyQuant X has no native desktop toolkit.** Its GUI is an Electron shell over a
+Jetty-served web application, and every module is a folder of HTML/JS on disk:
+
+```
+internal/electron/                     the shell
+internal/web/BUILDER  RETESTER  TASKMANAGER  RESULTS  RESULTS2
+             OPTIMIZER  PORTFOLIOMASTER  PORTFOLIOCOMPOSER  AlgoWizard
+             SQWIZARD  SQMANAGER  QDM  MTANALYZER  NEURALNETWORK  ...
+```
+
+📓 Confirmed in the master's own log: `com.strategyquant.webguilib.Electron`,
+`c.strategyquant.webguilib.BrowserGUI`, `c.s.webguilib.servlet.MainServlet` and
+`org.eclipse.jetty.server.Server` (jetty-all-uber 11.0.20) all log on startup.
+
+**Consequence.** The choice is not "drive the CLI or automate a native GUI". SQX's interface is
+already HTTP + WebSocket on localhost, so anything a browser can do to it, code can do to it.
+
+### The live event channel
+
+🔬 The GUI does not poll for progress — it subscribes. From `internal/web/common/Batch1/libs.js`:
+
+```js
+C("/main/getWebSocketPort", {}, "GET", function (e) {
+    x("ws://" + window.location.hostname + ":" + e.port + "/websocket/updates",
+      "WebSocketMessageMain")
+})
+```
+
+So the sequence is `GET /main/getWebSocketPort` → `{"port": N}` → connect
+`ws://localhost:N/websocket/updates`. The client vocabulary around it includes `progressChannel`,
+`progressUpdateEvent`, `progressPercent`, `progressAction` and `progressText` — the same fields that
+draw SQX's own progress bars.
+
+⚠️ **On this install the endpoint is gated.** `GET http://localhost:8080/main/getWebSocketPort`
+returns `{"disabled":true,"error":"Remote access disabled"}` with the master GUI up. The websocket
+port is therefore not discoverable from outside until remote access is enabled in SQX's own
+settings. 🤔 Untested whether enabling it exposes the full `/main/*` surface or only the port lookup
+— cheap to settle, and it is the single gate between the current CLI-only control and a real-time
+progress feed.
+
+### Progress without the websocket: the log
+
+📓 Every task-level event goes through one logger, `c.s.t.project.ProgressEngine`, in a stable and
+parseable vocabulary:
+
+```
+<TASK> : ================================
+<TASK> : Starting strategies retesting...
+<TASK> : Loading backtest data for Main test - <SYMBOL> / <TF>
+<TASK> : All backtest data prepared
+<TASK> : Sequential optimization: <STRATEGY> - Optimizing parameter <NAME>...
+<TASK> : Task finished in N.N s.
+Project finished
+Databank '<PROJ>/<BANK>' loaded - N strategies in Nms
+Databank '<PROJ>/<BANK>' saved - files before sync N / after sync N / saved N / removed N in N s.
+```
+
+🔬 Finer-grained progress is carried in the **thread name**, not the message:
+`[Blocking computeThread common #45 - WF: 6 runs : 20 % OOS WFO 4]`. Tailing
+`user/log/StrategyQuant/log_<date>.log` therefore yields both task boundaries and a percentage,
+with no setting to enable and no risk to a running instance.
+
+⚠️ That log is large and written fast — 55 MB by 20:44 on 2026-09-20. Tail it; never read it whole.
+
+### What this means for controlling SQX from outside
+
+| want | route | works with master GUI up |
+|---|---|---|
+| start a task chain | `-project action=start\|startOnlyTask\|startFromTask` | worker only |
+| stop / pause / resume | `-project action=stop\|pause\|resume` | worker only; MCP `stop_project` on master |
+| poll coarse state | `-project action=status` | worker only |
+| live progress % | `/websocket/updates` | needs remote access enabled |
+| live progress %, no settings change | tail `ProgressEngine` + thread names | ✅ always |
+| count results as they land | `-databank action=count` on a timer | worker only |

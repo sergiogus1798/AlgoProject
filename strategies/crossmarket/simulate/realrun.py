@@ -110,7 +110,12 @@ def diagnostics(fixed: dict, bars: pd.DataFrame, entries: np.ndarray) -> dict:
             else float(np.mean(clock[entries] == clock[held["entry"].to_numpy()])))
     return {"trades": len(held), "off_grid": fixed["off_grid"],
             "convention": fixed["fill"]["convention"],
-            "fill_error": fixed["fill"]["entry_median"] + fixed["fill"]["exit_median"],
+            "fill_error": fixed["profile"]["error"],
+            "fill_offset": fixed["profile"]["offset"],
+            "on_open_price": fixed["profile"]["at_open"],
+            # The clock reading, kept because it is what a reader expects to see and because a
+            # gap between the two is informative -- but nothing warns on it any more. 🔬 The
+            # 4,613 entries of 960,705 stamped mid-bar are priced exactly like the rest.
             "on_bar_open": tradeio.on_bar_open(aligned, bars.index),
             "bar_cap": float((aligned["Close type"] == "Exit After X Bars").mean()),
             "friday_exit": float((aligned["Close type"] == "End Of Friday (Time)").mean()),

@@ -12,7 +12,7 @@ anything that reads bars
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `config.py` | Reads `config.yaml`: every tunable of the study, in one place | imported | overrides → config |
-| `markets.py` | Reconciles what the export really carries against what `markets.yaml` declares | imported | asset + export → universe |
+| `markets.py` | Reconciles what the export really carries against what `markets.yaml` declares, and reads the main backtest's declared out-of-sample stretch | imported | asset + export → universe, OOS span |
 | `execution.py` | What a worse broker would charge, per feed, from `execution.yaml`; and that file against what SQX really charged | imported | feed + trades → shock, depth, gap |
 
 ## Where a threshold is changed

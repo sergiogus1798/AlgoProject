@@ -28,6 +28,7 @@ one thing: **the master GUI must be closed**. Nothing here writes to the master 
 | 20 | — | 🟡 | new: `.claude/settings.json` gates one destructive repair script but not the other |
 | 21 | — | 🟡 | new: `bin/sqx-worker.sh` is bash, so half the project cannot run on Windows |
 | 22 | — | 🟡 | new: `crossmarket` rebuilt as a one-strategy panel; four threads left open |
+| 23 | — | 🟡 | new: the robustness protocol is half built — the whole variant spine is missing |
 
 ---
 
@@ -607,6 +608,32 @@ not the bar file's.
    owner's instruction that the panel is a one-strategy tool. `reports/XAUUSD/Retest_Markets_-_Family/2026-09-14/crossmarket/`
    is an orphan left by the last batch run. Bringing the report back is a revert, not a rebuild, if
    he ever wants to send someone a page.
+5. 🟠 **The only strictly unseen window of this project starts 2023-01-01, and nothing has been
+   retested on it.** Added 2026-09-21, building the OOS-stretch tab. Every `dateTo` in every build
+   and retest task stops at `2022.12.31` while the bar files run to 2026-01-16 (gold, silver) and
+   2026-06-01 (Brent). So the 2018–2022 stretch the new tab tests is out of sample for the
+   *generator* but not for the *project*: it entered selection through every `sampleType=127`
+   acceptance condition and through the walk-forward matrix's OOS net profit, which is what the
+   `selected_window` warning says. A retest over 2023-01-01 → today would be unseen for the base
+   asset and for the additional markets at once, would need no such warning, and is a task the
+   owner runs in the GUI. `knowhow/05-conditions.md` holds the measurement.
+7. ⚪ **`pending_fills` and `fill_mismatch` were measuring the wrong quantity — FIXED 2026-09-21.**
+   `pending_fills` read the entry clock, `fill_mismatch` fired on any non-zero price error. Both now
+   go through `mechanics/pricing.fill_profile()`: the entry **price** against its own bar's with the
+   market's constant spread discounted, and the median error in ATR units against
+   `diagnostics.max_fill_error`. Both verified to still fire (a feed displaced 3 ATR, 6% of entries
+   moved half an ATR, H1 bars under an M30 backtest). On the three real markets both are now silent,
+   which is correct: there are no intrabar fills in this fleet.
+   `strategies/crossmarket/POSSIBLE_IMPROVEMENTS.md` §4 holds every measurement.
+8. ⚪ **M1 execution was considered for the random-entry study and is not needed by this fleet.**
+   Asked 2026-09-21. It would fix nothing here: no strategy has a price exit, every exit lands on a
+   bar open, the zero-duration trades share one timestamp (no interval exists at any resolution),
+   and the 0.05–0.09 entry offset is a spread. Pricing on M1 would put the study on a grid SQX never
+   executed on and *create* a mismatch. It becomes the right build the day a strategy carries a stop,
+   a target or a trailing, and `mechanics/pricing.reconcile()`'s exit-side median error is the
+   trigger to watch — 0.0000 on 757 of 757 today. Shape it would need then: entries drawn on the
+   **logic** timeframe's grid (an M1 placement grid gives the null 30× more room and makes it a
+   different, wider null), holds carried in minutes, pricing on M1.
 
 **Two documented reversals live in `knowhow/07-practices.md`** — a null's width is a measurement and
 not an intuition, and a bar file is wider than the backtest that ran on it. Read them before
@@ -617,3 +644,39 @@ README, but not that every file the README names still exists — `text.py` sat 
 after being deleted. It also cannot catch a call-site broken by a signature change:
 `sqx/export/export_bars.py` called `markets.feeds(asset)` for a day after that function started
 taking a universe dict, and only failed at runtime. Both classes of drift are cheap to check.
+
+---
+
+## 23. 🟡 The XAUUSD robustness protocol is half built
+
+**Where the plan lives:** `docs/AgentPDFs/protocolo-robustez-2026-09-21.md`. Its status table is
+authoritative; this entry only says that the work exists and is unfinished, so it surfaces in the
+daily audit.
+
+Built (2026-09-21): `core/surface/` with its property test, `strategies/sppUltra/`,
+`strategies/walkForwardMatrix/`, and the disk budget plus provisional costs in `perf/disk/` and
+`assets/XAUUSD.yaml`. Three manual pages, and the findings in `knowhow/01-file-formats.md` and
+`knowhow/04-export.md`.
+
+Not built: **the whole variant spine.** `sqx/variants/` (design, fabrication, execution, collection),
+`strategies/walkForwardCorrelation/` with its PBO, `pipeline/`, the multi-market study, and all six
+skills. **No variant has been fabricated yet.**
+
+Three things block it, and only the last is technical:
+
+1. **The SQX installation topology.** How many installs, on how many machines. The owner paused
+   `sqx/variants/` for this on 2026-09-21. It is the same decision as open question 2 of
+   `plataforma-unificada-2026-09-20.md`, which says it decides the architecture and cannot be
+   postponed. `docs/SETUP-NEW-MACHINE.md` is the runbook once it is decided.
+2. **`bin/sqx-worker.sh` is bash, and the platform must run on several Linux machines.** That
+   promotes the port to Python from "decide early" to a requirement. Cheapest moment is whenever
+   `sqx/variants/` is built, since that layer is being touched anyway. ⚠️ Related debt found the
+   same day: `bin/sqx-worker.sh` and `bin/clone-sqx-worker.sh` carry this machine's paths hard-coded
+   and `checks.py` does not see them, because it only scans `.py`.
+3. **The holdout pre-registration.** 2022–2026 is read by the WFM study and the variant study at
+   once, so what would count as approved has to be written, with a date, **before** either runs.
+   Nothing has been written. `strategies/walkForwardCorrelation/` must not run until it exists.
+
+Also pending the owner: the WFC verdict thresholds are PROPOSED, not approved; and the costs in
+`assets/XAUUSD.yaml` are SQX defaults, not agreed Infinox figures, so every cost-bearing result
+produced before he replaces them carries that caveat.

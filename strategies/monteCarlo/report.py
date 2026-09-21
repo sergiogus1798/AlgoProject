@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import assets, bars, manifest
-from core.paths import bars_file, export_dir, report_dir
+from core import assets, barstore, manifest, tradestore
+from core.paths import bar_source, export_dir, report_dir
 from strategies.monteCarlo import run
 from strategies.monteCarlo.inputs import config, costs, stream
 from strategies.monteCarlo.model import regime
@@ -93,18 +93,20 @@ def main() -> None:
     print(assets.report(a.asset))
     cfg = config.load(a.set)
     asset = costs.load(a.asset)
-    source_dir = export_dir(a.project, a.databank, a.export) / "trades"
-    files = sorted(source_dir.glob("*.csv"))
-    first = stream.build(files[0], asset, cfg["global"]["risk_per_trade"])
-    feed = str(first["frame"]["Symbol"].iloc[0])
-    day = regime.daily(bars.read(bars_file(feed, a.bars_timeframe)))
+    export = export_dir(a.project, a.databank, a.export)
+    packed = tradestore.read(export / "trades.parquet")
+    # The packed export drops the constant Symbol column, so the feed comes from the
+    # manifest — the record of which market the backtest actually ran on.
+    feed = manifest.read(export)["source"]["symbol"]
+    day = regime.daily(barstore.read(feed, a.bars_timeframe))
 
-    streams = ([stream.portfolio(files, asset, cfg["global"]["risk_per_trade"], a.databank)]
-               if a.portfolio else
-               [stream.build(f, asset, cfg["global"]["risk_per_trade"]) for f in files])
+    risk = cfg["global"]["risk_per_trade"]
+    streams = ([stream.portfolio(packed, asset, risk, a.databank)] if a.portfolio else
+               [stream.build(f, n, asset, risk)
+                for n, f in tradestore.by_strategy(packed).items()])
     reference = max(streams, key=lambda s: s["pnl"].size)
     print(f"{len(streams)} streams · estabilidad sobre {reference['name']}")
-    shared = {"args": a, "export": source_dir, "bars": bars_file(feed, a.bars_timeframe),
+    shared = {"args": a, "export": export / "trades.parquet", "bars": bar_source(feed),
               "cost": costs.crosscheck(reference["frame"], asset),
               "vol_model": cfg["family_d"]["vol_model"],
               "stability": stability.spread(reference, cfg)}

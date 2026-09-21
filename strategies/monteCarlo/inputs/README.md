@@ -15,7 +15,7 @@ numbers the study starts from*, `model/` says *what we are pretending could have
 |---|---|---|---|
 | `config.py` | Reads `config.yaml`, applies `--set` overrides, and scales the block sweep to the trade count | imported | overrides → config |
 | `costs.py` | The asset's cost facts, the cost SQX really charged per trade, and the cross-check between them | imported | symbol + trades → USD |
-| `stream.py` | **The input contract.** Any time-ordered trade list — one strategy or a portfolio — as the arrays every family runs on | imported | CSV → arrays |
+| `stream.py` | **The input contract.** Any time-ordered trade list — one strategy or a portfolio — as the arrays every family runs on | imported | frame → arrays |
 
 ## Contracts and traps
 
@@ -24,6 +24,9 @@ numbers the study starts from*, `model/` says *what we are pretending could have
   concatenates several strategies' trades, sorts by time, and the same families run unchanged.
   `stream.overlap()` measures how often two positions were open at once; the additive equity curve
   stays valid, but the longest losing run means something different at portfolio level.
+- **`stream.build()` takes a frame, not a path.** The export is one `trades.parquet` for the
+  whole databank: `report.py` reads it once and `tradestore.by_strategy()` splits it, which is why
+  nothing here opens a file any more.
 - **Costs are recovered, not modelled.** The trade export carries no cost column, so each trade's
   cost is `gross − net` (`core.trades.cost`) — commission and swap exactly as SQX booked them. The
   asset file supplies spread and point value from its `sqx_default` side, not its `use:` side: this

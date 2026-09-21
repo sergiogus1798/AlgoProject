@@ -32,6 +32,69 @@ side** ($16/lot round turn), matching `commissions=<Method type="SizeBased">8`. 
 (`defaultSpread="10.0"`) is already inside the fill prices — it does **not** appear in that residual.
 Overnight trades show extra drag (swap: long −73.42 pts, short +38.76 pts).
 
+### What the project actually stores — measured 2026-09-21
+
+🔬 **Resampling M1 in pandas reproduces SQX's own export of a higher timeframe exactly.** On
+`XAUUSD_DukasM1_Infinox`, 7,708,823 M1 bars resampled to M30 give **274,832 bars against SQX's
+274,832**, identical index, and `max|diff| = 0.000000` on Open, High, Low and Close. Only `Volume`
+differs, on **13 of 274,832 bars by at most 2 units** — SQX's own rounding when it aggregates.
+Consequence: **M1 is the only bar data worth storing**; M30/H1/H4/D1 are caches, not data, and
+`core/barstore.py` builds them on first use. Reading M1 costs 0.78 s from Parquet against 5.57 s
+from CSV, and each resample 0.3–0.4 s, so a cold timeframe is ~1.2 s and a cached one 0.02 s.
+
+🔬 **float64 compresses SMALLER than float32 under zstd** on this data — 6.71 MB against 7.08 MB for
+the same 274,832 M30 bars. A two-decimal price has a regular bit pattern in float64 that the
+rounding to float32 turns into mantissa noise. There is no precision-versus-size trade to make here:
+keep float64 everywhere, it is also cheaper.
+
+🔬 **The per-export `bars/` directory was dead and is gone.** `export_trades.py` wrote
+`raw/<P>/<D>/<date>/bars/bars_<TF>.csv` and **no module ever read it** — every consumer goes to the
+shared library. It was also worse than the library copy: 228,979 bars from 2007 against 274,833 from
+2003, different md5. Removed 2026-09-21 along with 29 MB of such copies.
+
+### The trade export: 12 columns carry everything, 4 are derivable
+
+🔬 Measured on `Strategy 1.19.29` (763 trades) and re-verified packing **757 strategies / 960,705
+trades** with zero discrepancies on every kept column. Of the 16 columns `orderstocsv` writes:
+
+| dropped | why | proof |
+|---|---|---|
+| `Ticket` | `= row index + 1`, and Parquet preserves row order | sorting by (`Open time`,`Close time`) reproduces it exactly on all 5 strategies checked |
+| `Time in trade` | `= Close − Open`, and stored as text (`"2h 0m"`) | 26 distinct values |
+| `Comment` | empty | 763 of 763 null |
+| `Symbol` | constant per file → goes to the manifest | 1 distinct value |
+
+⚠️ **`Symbol` is only droppable under `data=main`.** Under `data=all` it is the ONLY separator
+between the market blocks, so `tradestore.pack(per_market=True)` keeps it. Getting this wrong makes
+a cross-market retest unsplittable.
+
+⚠️ **`Ticket` is only droppable while row order carries it.** `tradestore.ordered()` checks per file
+— open-time sorted, no duplicate open times, no overlapping positions — and keeps `Ticket` for any
+file that fails, recording it in the manifest. A pyramiding strategy or two entries on the same bar
+would fail it. On the 757-strategy XAUUSD fleet, **zero files failed**: it is single-position
+throughout, which is itself a fact about that fleet.
+
+`Balance` is derivable too (`100,000 + cumsum(P/L)`, max deviation 0.17 over 763 rows, pure rounding)
+and is **kept by the owner's decision**, not because it carries information.
+
+🔬 **Packing moves the cost from time to peak memory, and that is a real trade.** Loading the
+757-strategy export as monteCarlo streams went from **5.2 s / 266 MB peak RSS** (757 CSVs) to
+**1.0 s / ~620 MB** (one Parquet). The bytes on disk and in the frames both fell — 74 MB of frame
+against 406 MB — but Arrow's decompression buffers cost ~270 MB of transient RSS for a 20.5 MB file,
+and `to_pandas(split_blocks=True, self_destruct=True)` only claws back 30 MB of that. Left as is:
+the simulation phase dominates the run and this machine has the RAM. Anything memory-bound reading
+these should read per strategy (`tradestore.read(path, name)`) rather than the whole export.
+
+⚠️ **Keep the packed text columns categorical.** Widening them to object costs **326 MB against
+74 MB** on that export. `core.trades.cost()` therefore does `.astype("object").map(SIDE)` on `Type`
+itself — mapping a categorical returns a categorical, which then refuses to multiply.
+
+🔬 **The packing is worth 8.7×.** 179 MB of CSV for 757 strategies becomes **20.5 MB** of one typed
+zstd Parquet with the text columns as categories. Reading all 960,705 trades takes **0.16 s** against
+about 3.9 s for the 757 CSVs. Reading ONE strategy out of it costs 0.032 s against 0.005 s for its
+own CSV — the filter scans the file — so anything per-strategy should read once and split with
+`tradestore.by_strategy()` rather than re-reading.
+
 ### Duplicates are real, but not what the name suggests
 
 🔬 `SPP OOS` and `WFM` share strategy **names**, but the same name in the two databanks is usually a
@@ -53,6 +116,80 @@ main first, then each AdditionalMarket. **The `Symbol` column is the separator**
 1 in every block, so it is not a key across markets. `orders.bin` never has to be parsed.
 `sqx/export/export_retest.py` does the split. Measured on that strategy: 301 / 256 / 193 / 393 rows,
 each block with its own date range, all four `Sample type=IST`.
+
+🔬 **A `data=all` retest export cannot tell you where the project's OOS starts.** Confirmed again
+2026-09-21 on `XAUUSD / Retest Markets - Family`: all 1,124 gold, 913 silver and 842 Brent rows of
+`Strategy 24.14.35` carry `Sample type = IST`, including the 351 gold trades that fall inside the
+project's own out-of-sample range. The split has to be read from the project and declared:
+`<OutOfSample><Range dateFrom="2018.01.01" dateTo="2022.12.31"/>` lives in `Build-Task3.xml` inside
+`XAUUSD/project.cfx`, and `strategies/crossmarket/markets.yaml` carries it as `out_of_sample` for
+that study. Reading the boundary off `Open time` works only because the range is known first — the
+data volunteers nothing.
+
+🔬 **On gold M30 the recorded entry price sits exactly 0.05–0.06 above the bar open, and the exit
+sits on it.** Measured 2026-09-21 over the 1,055 grid-locatable gold trades of `Strategy 24.14.35`:
+every single entry error is 0.05 (989 of them) or 0.06 (66), every exit error is 0. That is the
+**entry-side spread on a Buy** — filled at ask, closed at bid — baked into the fill price rather than
+charged as commission. The same export gives a median error of exactly **0** on silver and on Brent,
+so it is a property of the `XAUUSD_DukasM1_Infinox` feed, not of the exporter.
+
+Two consequences, and the second is the one that matters:
+
+- Any check that asks "does a fill convention reproduce SQX's prices" reports a non-zero median on
+  gold. It is **not** a wrong convention: open-to-open is still the winner by an order of magnitude,
+  and 0.05 on a ~1,800 price is 2.8 bps, or 0.023 ATR. `crossmarket`'s `fill_mismatch` fired on every
+  gold window over this until 2026-09-21; it now judges the error in median-ATR units against
+  `diagnostics.max_fill_error` and a constant offset lives far below it.
+- **The study is still priced consistently, because the cost is recovered rather than assumed.**
+  `charged = gross(bar opens) − reported P/L` works out to `0.05 × Size + commission`, so the spread
+  lands inside the per-trade cost every random run also pays; and `mean_r` is bar-open-to-bar-open on
+  both sides, so it never sees the 0.05 at all. Real and null are on the same pricer either way.
+
+🔬 **SQX executes this fleet on the logic timeframe's bar opens, and nothing happens inside a
+bar.** Measured 2026-09-21 over `raw/XAUUSD/MC_Trades/2026-09-19`: **757 strategies, 960,705 trades,
+M30**.
+
+| what | measured |
+|---|---|
+| `Close type` values present | `Exit After X Bars` 720,874 · `Exit Signal` 187,853 · `End Of Friday (Time)` 51,978 |
+| `Stop Loss` / `Take Profit` / trailing exits | **zero, in the whole fleet** |
+| \|exit price − its bar's Open\| | median **0.0000**, p99 0.0100, **max 0.0100** |
+| strategies whose median exit error is non-zero | **0 of 757** |
+| \|entry price − its bar's Open\| | median **0.0800**, max 0.0900 — the entry-side spread, constant |
+
+The consequence for any study that reprices these trades: **the logic timeframe's bar grid is the
+correct execution grid**, and a finer one is not an improvement. Pricing on M1 would put entries and
+exits on M1 bar opens SQX never used and would *create* a fill mismatch where there is none. The day
+a strategy carries a stop, a target or a trailing, exits stop landing on bar opens, that median exit
+error goes non-zero, and only then does M1 execution become the right fix —
+`crossmarket/mechanics/pricing.reconcile()`'s exit-side median is the instrument that decides it, and
+today it reads 0 on 757 of 757.
+
+🔬 **An entry stamped inside a bar is a clock artefact, not a pending-order fill.** Same measurement:
+4,613 of the 960,705 entries (0.48%) carry an `Open time` that is not a 30-minute boundary. Their
+price distribution is **identical** to the 956,092 that are:
+
+| | n | median price − bar Open | p1 | p99 | max abs |
+|---|---|---|---|---|---|
+| stamped late | 4,613 | +0.0800 | +0.080 | +0.090 | 0.090 |
+| stamped on the open | 956,092 | +0.0800 | +0.080 | +0.090 | 0.090 |
+
+**Not one** of the 4,613 sits outside `[0, 0.10]`. They entered at their own bar's open price and
+were merely timestamped a few minutes late. Confirmed independently on the retest export
+(`Retest_Markets_-_Family`, `Strategy 24.14.35`): gold's 19 late entries land on minute 1 and 31
+only, all at bar open + 0.05; silver's 72 and Brent's 67 scatter across the minutes and are all at
+bar open + 0.000 — the same offset their on-time entries carry. So a check that reads "share of
+entries landing on a bar open" off the **clock** measures a stamping quirk;
+`crossmarket`'s `diagnostics.min_on_open` does exactly that, and on this data it is measuring nothing
+real. Read the **price** against the bar's open instead, which is what the question actually is.
+
+🔬 **A zero-duration trade is a same-instant entry and exit, not a fast intrabar move.** 12,824 of
+960,705 (1.33%); in the retest export, 69 of 1,124 on gold, 69 of 913 on silver, 60 of 842 on Brent —
+**all `Exit Signal`, all with `Open time` exactly equal to `Close time`**. On silver and Brent the
+open and close prices are identical too (100%), so the P/L is pure cost (−18.6 $ and −26.9 $ mean);
+on gold they differ by exactly the 0.05 spread (−16.3 $ mean). No interval exists at any resolution,
+so no finer timeframe recovers one. They are real trades with real cost and they belong in the
+backtest's own numbers; they are simply invisible to any test that needs a duration.
 
 🔬 **A market whose strategy never traded there produces no file at all.** The split is driven by the
 `Symbol` values actually present, so `trades/<feed>/<strategy>.csv` simply does not exist when that
@@ -369,3 +506,126 @@ still. `sqx/export/export_metrics.py` does exactly this.
 🔬 A databank created with `-databank action=create` is **not** picked up by the startup
 sync-from-files — only databanks already registered in the project are. Staging into an existing
 `Results` databank works; creating `MetricsTmp` and loading into it does not.
+
+## Storage format — the saving is in the format, not in dropping columns
+
+🔬 Measured 2026-09-20 on `raw/XAUUSD/SPP_IS/2026-09-10/`, 21,205 permutations x 154 columns.
+
+| | size | factor |
+|---|---|---|
+| `permutations.csv`, 154 columns | 39.67 MB | 1x |
+| **Parquet zstd, the same 154** | **5.72 MB** | **6.9x** |
+| CSV, 29 curated columns | 9.87 MB | 4.0x |
+| Parquet zstd, 29 curated | 1.51 MB | 26x |
+
+**The format gives 6.9x with nothing discarded; curating the columns gives 3.8x more and is where
+the regret lives.** The same holds for trades, more sharply (one strategy, 763 trades): CSV 134.2 KB
+-> Parquet typed with all 16 columns 42.4 KB (3.2x) -> Parquet with 8 columns 29.8 KB (only 1.4x
+more). Halving the columns buys almost nothing and costs `MAE ($)`/`MFE ($)`, which `strategies/`
+uses and which cannot be reconstructed.
+
+Rule that follows: **change the format, keep the columns.** For SPP especially, where the
+permutation threw its trades away and those 152 numbers are all that will ever exist of that point —
+recovering one column later means re-running SQX.
+
+### What is safe to drop from an SPP export
+
+🔬 Of the 152 metrics, **42 are constant across all 21,205 rows** and carry nothing: the four
+`AddMarkets*Median`, `BestWF`, `EdgeDecayRatio`, `Parameters`, `SlopeRatio`, the three `TotalData*`,
+and **34 unnamed `stat:f:NN` / `stat:i:7` / `stat:l:2-3` columns SQX never fills**. Of the 110 that
+vary, **85 carry unique information**; 25 are redundant at |rho| > 0.999 within one window. The
+eleven groups:
+
+```
+AHPR = AnnualPctReturn = AvgPctProfitPerYear = AvgProfitPerDay = AvgProfitPerMonth
+     = AvgProfitPerYear = CAGR = NetProfit = NetProfitInPct
+AnnualPctReturnDDRatio? = CalmarRatio?        AvgTrade = Expectancy
+AvgTradesPerDay = AvgTradesPerMonth = AvgTradesPerYear = DegreesOfFreedom = NumberOfTrades
+Drawdown = DrawdownPctOnInitial = MaxTSIntradayDrawdown = OpenDrawdown
+DrawdownPct = OpenDrawdownPct    Exposure = ExposurePosition    Outlier = Outlier2
+PayoutRatio = TSWinLossRatio     WinLossRatio = WinningPct      ZProbability = ZScore
+```
+
+⚠️ **That redundancy is intra-window and does not survive between windows of different length.**
+`NetProfit` and `CAGR` rank identically inside one run; across a 10-year IS and a 5-year OOS they do
+not, because total return grows with the horizon and the annualised one does not. That is the same
+sqrt(T) bias that makes `Ret/DD` unusable for comparing windows. **Keep both.**
+
+### RExpectancy carries sentinels, and they win the argmax
+
+⚠️ 🔬 `RExpectancy` stores **99999.0** on 3 rows and **-1.0** on 15, all of them permutations with
+about one trade — SQX's "undefined", not a measurement. They are 0.08 % of the grid, which is exactly
+what makes them dangerous: **take the maximum of `RExpectancy` over 5,000 variants and those three
+rows win**, so a parameter-selection rule ends up decided by one-trade permutations. No other metric
+of the 41-column export carries them. `core/surface/dedupe.drop_sentinels` filters `|v| > 100` before
+any ranking.
+
+### Two columns carry a literal question mark in their name
+
+🔬 `CalmarRatio?` and `AnnualPctReturnDDRatio?`. Asking for them without the `?` yields a column of
+NaN with no error.
+
+### Eta-squared cannot decide which parameters are inert, and the duplicate test can
+
+🔬 Measured 2026-09-21 on `XAUUSD/SPP IS` (2026-09-10 export), reading `ReturnDDRatio`.
+
+`CBlock_SqzMmnInt21` on `Strategy 17.9.39` gives **217 groups of tuples differing only in it, and
+all 217 produced an identical backtest** — proof that it never moved anything. Its eta-squared is
+nonetheless **0.0173**, above any freezing threshold one would pick. `IsBars1` scores **0.0016** and
+is demonstrably live, with 1 of 188 groups identical.
+
+The cause is that **an SPP samples unbalanced**: each level of an inert parameter met a different
+mix of the other parameters, so the spread between group means is confounding rather than effect.
+**Eta-squared of an inert parameter is not zero; it is biased upward.**
+
+Consequence for any design built on an SPP: **freeze on the duplicate test, allocate levels with
+eta-squared.** Using eta-squared to freeze would have kept a dead parameter in the design and thrown
+out a live one, in the same table.
+
+⚠️ And eta-squared is meaningless as a single number, because it depends entirely on the metric:
+the same `DICrossShift1` explains **7.6 % of NetProfit, 23.6 % of Ret/DD and 78.5 % of trade
+count**. Report it as a table over several metrics and name the one the decision was taken on.
+
+🔬 **Inertness belongs to the strategy, not to the block.** The same `CBlock_SqzMmnInt21` gives 108
+groups on `Strategy 41.5.25` of which only **106** are identical. Test it per strategy; never carry
+the call across.
+
+🔬 **The pairing failure, with a number.** `Strategy 17.9.39`, the 2026-09-19 paired export: the IS
+run holds 11,598 rows and the OOS run 11,662, and they share **6 `param_key` values**. That is the
+measurement behind "two SPP runs cannot be paired", and the reason the 5,000 designed variants are
+the main route rather than a fallback.
+
+🔬 On that same paired export, `DICrossShift1` explains **34.2 % of the in-sample Ret/DD variance
+and 68.2 % of the out-of-sample** — confirming the protocol's headline figure of 67.6 %. It is the
+most important parameter out of sample, and it is a shift, i.e. one of the parameters an SPP
+configured the usual way freezes by default.
+
+## WFM — what the Walk-Forward Matrix export does and does not hold
+
+🔬 Measured 2026-09-21 on `raw/XAUUSD/WFM/2026-09-10/wfm/` (2 strategies, 60 cells, 720 steps).
+
+⚠️ **`is_Fitness` and `oos_Fitness` are 0 on every step.** SQX stores fitness only at cell level, as
+`fitness_is` / `fitness_oos` in `cells.csv`. The per-step columns exist, are named the obvious
+thing, and are zeros — an analysis reaching for them correlates nothing and gets a NaN, or silently
+reports whatever a constant input produces. Read a real metric per step.
+
+⚠️ **The last step of every cell runs past the end of the data.** 60 of the 720 steps carry
+`future=True`; cell 6x20 of `Strategy 1.19.29` ends with a step running **2025-12-31 to
+2027-08-20**. Their out-of-sample statistics are computed on history that does not exist.
+
+🔬 **The window geometry, which decides what may be pooled.** Within a cell, the run windows are
+**disjoint and consecutive** — 0 overlaps across all 60 cells — so a cell's steps are separate draws
+in time. The optimisation windows **overlap by 6.5 of 8.2 years, 79 %**. And every cell re-splits
+the same 10-14 years of history, so 30 cells are 30 views of one dataset rather than 30
+observations. **The cell is the unit**; pooling the 660 steps into one correlation reports an
+interval several times narrower than the data supports.
+
+🔬 **Two strategies in one export do not share a parameter list**, so the wide frame from
+`params.csv` carries all-NaN columns per strategy. `NaN != 0` is True in pandas, so any step-to-step
+comparison that does not drop them counts a parameter the strategy does not have as changed at
+every step — which inflates a drift statistic silently and plausibly.
+
+📓 First reading, 2026-09-21: neither strategy's in-sample optimisation predicts its own
+out-of-sample result. `Strategy 1.19.29` gives rho +0.076 (95 % over cells: -0.034 to +0.193);
+`Strategy 4.33.46` gives **-0.505 (-0.683 to -0.339)**, negative in 28 of 30 cells and on all four
+metrics read. The optimiser re-decides **70-78 % of the parameters at every step**.

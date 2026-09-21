@@ -97,8 +97,10 @@ RANDOMISES = {"segment_permute": "cuándo entra, el orden, las rachas y el régi
               "regime_strata": "cuándo entra, dentro de velas de su mismo cuantil de "
                                "volatilidad y signo de tendencia; libera día, hora y rachas"}
 DIAGNOSTICS = [("convention", "convención de fill", "la que reprodujo los precios de SQX"),
-               ("fill_error", "error de fill", "debe ser 0"),
-               ("on_bar_open", "entradas en apertura de barra", "1,00 = ninguna pendiente"),
+               ("fill_error", "error de fill (ATR)", "0 = las velas son las del backtest"),
+               ("fill_offset", "spread de entrada (ATR)", "constante; lo paga también cada nulo"),
+               ("on_open_price", "entradas al precio de su vela", "1,00 = ningún fill intravela"),
+               ("on_bar_open", "entradas selladas en apertura", "sólo el reloj; no dispara nada"),
                ("off_grid", "operaciones que no ocupan ninguna vela", "fuera de 1a, 1b y 1c; dentro del beneficio"),
                ("calendar_kept", "calendario conservado", "1,00 en block_shift"),
                ("friday_exit", "salidas por cierre de viernes", "el nulo las reproduce"),

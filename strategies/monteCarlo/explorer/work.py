@@ -2,6 +2,7 @@
 
 from datetime import date
 
+from core import tradestore
 from strategies.monteCarlo import run
 from strategies.monteCarlo.inputs import config, stream
 from strategies.monteCarlo.model import stress
@@ -18,14 +19,15 @@ def stream_of(setup: dict, name: str) -> dict:
     """One strategy's trade stream, read fresh from the export.
 
     Args:
-        setup: What serve.main() assembled: config, asset, export folder.
-        name: Strategy name, the CSV's stem.
+        setup: What serve.main() assembled: config, asset, packed export.
+        name: Strategy name.
 
     Returns:
-        What stream.build() returned. Reading the CSV again costs milliseconds and removes
-        every question about what is held in memory between clicks.
+        What stream.build() returned. Reading that strategy out of the packed export again
+        costs milliseconds and removes every question about what is held in memory between
+        clicks.
     """
-    return stream.build(setup["trades"] / f"{name}.csv", setup["asset"],
+    return stream.build(tradestore.read(setup["trades"], name), name, setup["asset"],
                         setup["cfg"]["global"]["risk_per_trade"])
 
 

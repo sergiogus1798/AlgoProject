@@ -37,7 +37,7 @@ Only these sit in the root, because they are the only things that get called or 
 |---|---|---|
 | `views.py` | The two views that need more than one market at once — the correlation matrix and the combined account — rebuilt whenever one market is re-run alone | imported |
 | `config.yaml` | Every tunable of the study, grouped by section | edited, or `--set section.key=value` |
-| `markets.yaml` | What each base asset's markets are called and how they are grouped | edited |
+| `markets.yaml` | What each base asset's markets are called, how they are grouped, and where its backtest's out-of-sample stretch starts | edited |
 | `execution.yaml` | Per feed, what a worse broker would charge | edited |
 
 `views.py` is the one module allowed to cross layers — that is what an orchestrator is. Everyone else
@@ -108,6 +108,11 @@ for. → `explorer/README.md`.
 - **The base asset never counts as evidence.** It is reported as the reference case: on the market it
   was optimised on, a strategy beats its null and its paired benchmark by construction. That says the
   code works, and nothing about the strategy.
+- **Its out-of-sample stretch is the one exception, and it is reported apart.** The same random-entry
+  test runs on the main backtest restricted to `markets.yaml`'s declared `out_of_sample` range — the
+  project's own `<OutOfSample>` — because the builder optimised nothing there. It is kept out of the
+  joint null, the breadth count, the portfolio and the correlation matrix: it is the same market, not
+  a second one. → `explorer/README.md`, and read the `selected_window` warning before reading its p.
 - **E is never a bare number.** It divides by the market's own drift, so where that drift is not
   distinguishable from zero the ratio has no finite interval at all. It is always shown with a
   **Fieller interval**, which returns the unbounded one and says so, beside the share of bootstrap

@@ -58,6 +58,25 @@ it**, what it affects, what it does *not*, and what to do. The missing half was 
 - `no_drift` touches exactly one number — A and A per unit of risk are unaffected, and Brent, which
   fires it, has the strongest A of the three.
 - `pending_fills` touches Test 1a only; 1b and 1c use no null model at all.
+- `fill_mismatch` is the one that touches **everything**, and the only one whose answer is "fix the
+  input" rather than "read the number carefully".
+
+🔬 **Two of the nine were measuring the wrong quantity until 2026-09-21**, and both fired constantly
+on data that had nothing wrong with it:
+
+- `pending_fills` read the entry **clock** — is the timestamp on a bar boundary. Over 960,705 trades
+  the 4,613 entries stamped mid-bar are priced *identically* to the 956,092 stamped on it, so it was
+  reporting a stamping quirk as a price-conditional fill. It now reads the entry **price** against
+  its own bar's, discounting the market's constant spread (`pricing.fill_profile`). The clock figure
+  is still reported as `on_bar_open`, and warns on nothing.
+- `fill_mismatch` fired on `fill_error > 0`. A constant offset is a **spread**, absorbed by the
+  per-trade cost `backtest.setting()` recovers and therefore paid by every random run too — the
+  comparison is symmetric and there is nothing wrong. It now fires above `max_fill_error` in
+  median-ATR units, which is what a wrong feed or a wrong timeframe inflates.
+
+Both were verified to still fire: a feed displaced 3 ATR trips `fill_mismatch`; H1 bars under an M30
+backtest drop `on_open_price` to 0.566; 6% of entries moved half an ATR off their bar trips
+`pending_fills` while 3% does not.
 
 Read as one sentence, all three looked like they invalidated the market. `inference.py` decides
 **whether** a warning fires; `alerts.py` says what it means, and `alerts.TRIGGER` is what puts the

@@ -1,0 +1,55 @@
+# What the performance catalogue measures and what counts as a regression.
+# Every number the measuring code uses is here. A value not in this file is a value
+# nobody can change without editing code, which is why none exist.
+
+harness:
+  repeats: 3                 # runs per measurement; the median is what gets stored
+  sample_ms: 50              # how often the whole process tree's RSS is sampled
+  timeout_s: 1800            # a target running longer than this is killed and recorded as timed out
+
+regression:
+  wall_pct: 15               # a median wall time this far above the last stored entry is a regression
+  rss_pct: 15                # same rule for peak resident memory
+  min_wall_s: 0.5            # under this, timing noise dominates and nothing is called a regression
+
+scaling:
+  workers: [1, 2, 4, 8, 16, 24, 48, 96]
+  probe_mb: 64               # working set per process in the bandwidth probe, all three arrays
+  small_kb: 24               # the cache-resident working set the same probe is run on
+  probe_passes: 20
+
+disk:
+  hash_bytes: 1048576        # files at least this large are fingerprinted to find duplicates
+  hash_head: 65536           # bytes read from head and tail; full hashes of 1.5 GB cost hours
+  stale_days: 90             # an export untouched this long is reported as archivable
+  sample_rows: 200000        # rows of a real CSV used in the format comparison
+
+  # Budgets, in GB. `report` exits non-zero when a branch or the total is over, so it can
+  # sit in cron and be believed. A branch with no entry is reported "unbudgeted" rather
+  # than passed: a new branch appearing and growing must be visible, not silently allowed.
+  # Sized 2026-09-21 against 2.3 GB in use, with headroom for the variant study:
+  # ~200 MB of trades per mother strategy per market, so raw/ is where growth will land.
+  total_gb: 60
+  near_share: 0.8            # share of a budget at which a branch is called "near"
+  budget_gb:
+    raw: 40                  # 2.1 GB today. Dated, immutable, and where the variants land
+    reports: 5               # 34 MB today. Accumulates forever by design, but text is cheap
+    metrics: 2               # 14 MB today. Overwritten, never accumulates
+    bars: 3                  # 36 MB today
+    logs: 1                  # 103 MB today — archived once already, 4.4 GB -> 102 MB
+    retest: 5                # 4 MB today
+    snapshots: 2             # 1.2 MB today
+    derived: 1
+    perf: 1
+
+# The real data every target is measured on. One place, so a measurement taken today and
+# one taken in March are comparable: same project, same databank, same file order.
+sample:
+  project: XAUUSD
+  asset: XAUUSD
+  trades_databank: MC_Trades      # holds both the trade CSVs and the .sqx they came from
+  retest_databank: MCR_All        # the ingested parquet the retest study reads back
+  bars_feed: XAUUSD_DukasM1_Infinox
+  bars_timeframe: M30
+  files: 20                       # how many files the per-file parsing targets chew through
+  n_sims: 5000                    # the catalogue measures the shape of the cost, not a real study

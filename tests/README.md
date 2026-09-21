@@ -8,6 +8,7 @@ else is built on. Run them with plain Python; there is no test framework to inst
 | `test_cfx.py` | `core.cfx` still reads a project's tasks, output databanks and conditions the same way | `python3 tests/test_cfx.py` |
 | `test_sweep.py` | the window sweep: one block is the free-placement model itself, draw for draw; smaller blocks keep every trade inside its block; no model overlaps its own trades | `python3 tests/test_sweep.py` |
 | `test_models.py` | `block_shift` never overlaps its own trades, and one calendar semester is displaced identically in every market — the property the joint null rests on | `python3 tests/test_models.py` |
+| `test_surface.py` | `core.surface` on grids whose answer is known by construction: a shuffled surface must read zero shift, zero Cliff and an unchanged plateau while its paired correlation collapses; `n_eff` counts backtests rather than rows; the sentinels never reach a ranking | `python3 tests/test_surface.py` |
 | `test_sqxfile.py` | `core.sqxfile` still reads a strategy's identity hash, symbol, parameters and rule tree the same way | `python3 tests/test_sqxfile.py` |
 | `test_sqxretest.py` | `core.sqxretest` still cuts a Monte Carlo Retest the same way: every simulation's trade count and P/L sum, the original, the eleven confidence levels, and the method settings | `python3 tests/test_sqxretest.py` |
 

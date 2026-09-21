@@ -364,3 +364,55 @@ no SQX process needed, no state touched. `sqx/inspect/dump_project.py` renders o
   `C:\Users\Rubén Martínez\OneDrive\Escritorio\FILTROS\Build strategies.cfx`. The strategy
   template that actually matters is `<StrategyType templateFile=>` inside the Build task.
   `project_health.py` decodes any such field.
+
+## Metric formulas confirmed 2026-09-20 (SPP export, XAUUSD)
+
+🔬 **`CalmarRatio?` = `CAGR` / `DrawdownPct`.** Verified over 20,554 rows with more than 50 trades.
+The 1.9 % median relative error is entirely the two-decimal storage of a small number: 2.20 / 5.52 =
+0.3986 is stored as 0.40, 0.59 / 9.11 = 0.0648 as 0.06. It is a legitimate Calmar ratio.
+
+🔬 **`CalmarRatio?` is byte-identical to `AnnualPctReturnDDRatio?`** — relative error 0.00e+00 on all
+20,554 rows, rho = 1.0000. They are one column under two names; store one.
+
+🔬 **`RExpectancyScore` is `RExpectancy` weighted by trade count.** It tracks `RExpectancy * sqrt(n)`
+with rho +0.89 to +0.99 across the five strategies, at a per-strategy scale factor of 2.0 to 3.6
+(exact formula not identified). It behaves as a t-statistic: the same edge scores higher when it was
+measured on more trades. It is **not** redundant with `RExpectancy` — rho between the two runs +0.856
+to +0.976 — and it is the column that penalises the few-trade regions a grid study most needs to
+distrust.
+
+🔬 **`UlcerPerformanceIndex` is NOT reconstructible** — reconciled 2026-09-21 against 21,179 SPP
+permutations and the attempt failed, which is the useful outcome. Its **functional form is
+confirmed**: it tracks `AnnualPctReturn / UlcerIndex` at rho +0.998 (and `AHPR / UlcerIndex` at
++0.9993). But the proportionality constant is **not constant**. It sits near 16 (median exactly
+16.0000 over the 1,440 rows with `UlcerIndex` >= 0.5) yet refuses to converge as precision
+improves — restricting to rows where both values are large gives median 16.53 with a standard
+deviation of 3.36, *worse* rather than better — and the residual correlates with `NumberOfTrades`
+(+0.52) and `DataLength` (+0.50).
+
+That rules out rounding and points at a time- or observation-dependent term absent from the 152
+stored columns, which is consistent with `UlcerIndex` being computed on the **daily equity curve**
+— the same reason `SharpeRatio`, `SortinoRatio`, `UlcerIndex`, `RSquared` and `Stability` are
+already listed as non-reconstructible. **`UlcerPerformanceIndex` joins that list.** Do not compute
+an analogue and compare it against the stored value; export the column and use SQX's.
+
+Do not read the near-16 constant as a finding. sqrt(252) = 15.87 and 16 both sit inside the spread
+and the data cannot separate them — fitting a constant and then naming it would be the mistake.
+
+## Trade exports — what is derivable and what is not
+
+🔬 Measured 2026-09-20 over the five XAUUSD strategies, 4,115 trades.
+
+- **`Ticket` = the row order, and the row order is already sorted by `Open time`.** In all five
+  files: zero duplicate open times, zero overlapping trades, and sorting by
+  (`Open time`, `Close time`) reproduces `Ticket` exactly. Parquet preserves row order, so the file
+  itself carries the ticket. ⚠️ These five hold one position at a time; a strategy that pyramids
+  would have duplicate open times and the tie would not be resolvable, so **an ingest must check
+  (sorted, no duplicates, no overlaps) per file and keep `Ticket` when the check fails**.
+- **`Balance` = initial capital + cumsum(`Profit/Loss`)**, maximum deviation 0.17 over 763 rows —
+  rounding of the two-decimal P/L, not a fee applied elsewhere.
+- **`Time in trade` = `Close time` - `Open time`**, and is stored as text (`"2h 0m"`).
+- **`Comment` is empty**: 763 of 763 null.
+- **`Close type` is not disposable** — `Exit Signal` 662 / `Exit After X Bars` 83 /
+  `End Of Friday (Time)` 18. Which one fires moves with the parameters, so a parameter-surface study
+  needs it.

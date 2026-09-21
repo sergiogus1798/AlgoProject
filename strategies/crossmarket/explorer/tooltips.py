@@ -109,9 +109,19 @@ TIPS = {
                          "aquí no hay veredicto, sólo un umbral de lectura.",
     "diagnostics.min_trades": "Por debajo de esto el mercado se marca como muestra pequeña. "
                               "No se excluye: sale con todos sus números y con el aviso.",
-    "diagnostics.min_on_open": "Por debajo de esto hay órdenes pendientes entre las entradas, "
-                               "que son una selección condicionada al precio que ningún nulo "
-                               "reproduce. Se avisa, no se descarta el mercado.",
+    "diagnostics.min_on_open": "Por debajo de esto hay entradas ejecutadas a un precio que no "
+                               "es el de su vela: una selección condicionada al precio que "
+                               "ningún nulo reproduce. Se mide sobre el precio, descontando el "
+                               "spread constante, nunca sobre el reloj. Se avisa, no se "
+                               "descarta el mercado.",
+    "diagnostics.fill_tolerance": "Cuánto puede separarse una entrada del spread constante del "
+                                  "mercado y seguir contando como que tomó el precio de su "
+                                  "vela, en múltiplos del ATR mediano. Medido, la desviación "
+                                  "máxima real es 0,0045 ATR: un tick.",
+    "diagnostics.max_fill_error": "Error mediano de precio por encima del cual las velas "
+                                  "probablemente no son las del backtest, en múltiplos del ATR "
+                                  "mediano. Un spread constante vive muy por debajo y no lo "
+                                  "dispara.",
     "diagnostics.min_on_grid": "Por debajo de esta fracción de operaciones colocables en la "
                                "rejilla de velas salta un aviso. Una operación que abre y "
                                "cierra dentro de la misma vela no tiene intervalo, así que 1a, "

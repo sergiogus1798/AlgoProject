@@ -71,6 +71,7 @@ categoría:
 XAUUSD:
   main: XAUUSD_DukasM1_Infinox
   timeframe: M30
+  out_of_sample: {from: 2018-01-01, to: 2022-12-31}
   categories:
     family:
       - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
@@ -92,6 +93,17 @@ cambian ningún cálculo.
 
 La lista sigue fijándose **antes** de mirar resultados. Elegir mercados después de ver dónde funciona
 convierte la prueba en una selección.
+
+`out_of_sample` es otra cosa: es el tramo OOS del backtest **principal**, copiado del
+`<OutOfSample><Range/>` del propio proyecto (en el XAUUSD está dentro de `Build-Task3.xml`, y vale
+`2018.01.01 → 2022.12.31`). Sobre él se corre el mismo test de entrada aleatoria, en la pestaña
+**Entrada aleatoria · OOS principal**.
+
+**Hay que escribirlo a mano, porque el export no lo sabe.** Todas las operaciones que exporta el
+retest salen marcadas `Sample type = IST`, estén dentro o fuera del tramo — comprobado en los tres
+mercados de `Retest_Markets_-_Family`—, así que el corte no se puede leer de los datos y las fechas
+son el único testigo que hay. Si un activo base no declara `out_of_sample`, la pestaña sale vacía
+diciéndolo; no se inventa nada.
 
 ### Cómo se ejecuta
 
@@ -168,15 +180,16 @@ a disco.
 | **Coste y ejecución** | múltiplos de coste, desplazamiento en velas, fracciones de slippage, los parámetros de la ejecución degradada, y **si se calibran desde `execution.yaml`** |
 | **Lectura y avisos** | alpha, los umbrales que disparan un aviso y la correlación supuesta |
 
-**Ninguno de esos umbrales decide nada.** `alpha`, `min_trades` y `min_on_open` sólo colorean números
-y disparan avisos; ningún mercado se cae por ellos.
+**Ninguno de esos umbrales decide nada.** `alpha`, `min_trades`, `min_on_open`, `fill_tolerance` y
+`max_fill_error` sólo colorean números y disparan avisos; ningún mercado se cae por ellos.
 
-### Las once pestañas
+### Las doce pestañas
 
 | pestaña | qué muestra |
 |---|---|
 | **Backtest** | **La que abre.** Lo que hizo de verdad cada backtest: beneficio, caída en dólares y en %, Ret/DD, Sharpe, PF y racha perdedora, con el activo base aparte y marcado como referencia. Debajo, **la misma comparación a riesgo igualado**; el **p conjunto** de todos los mercados fuera de muestra; **por dónde salieron las operaciones** y cuánto del beneficio descansa en cada salida; las **curvas de capital de todos los mercados solapadas**, cada uno con su cuenta independiente y en sus fechas reales; la matriz de correlación; lo que dijo cada test; lo que sostiene esos números (MinTRL y los CI); los avisos; las comprobaciones mecánicas; y un párrafo explicando cada estadístico |
 | **Entrada aleatoria (1a)** | Sub-pestañas por **mercado**, y debajo por **modelo**. Dentro: la **curva de equity real sobre el cono de las aleatorias** y, a su lado, el histograma del indicador que elijas, con la mediana y el CI 95% marcados, su tabla de valores y el % de simulaciones que el real bate. Debajo, la tabla completa de percentiles |
+| **Entrada aleatoria · OOS principal** | **El mismo test 1a, sobre el tramo OOS del backtest principal y nada más.** Un cono de equity y una tabla completa por cada modelo nulo, y debajo los avisos de esa fila. Es el único sitio donde el activo base cuenta como algo más que referencia — y el primer párrafo de la pestaña explica por qué tampoco ahí es dato virgen |
 | **Modelos** | El mismo p bajo las cuatro formas de aleatorizar (cinco con Regime Strata), y qué cambia cada una |
 | **Barrido de ventana** | Arriba, una **rejilla de mercados × tamaños de bloque** con el p de cada celda y la tendencia al lado. Pulsas un mercado y debajo se abre el suyo — los tres modelos de colocación libre en **una sola curva**, con Calendar Shift como línea fija, la tabla de potencia, un histograma por tamaño de bloque y el cono de equity del tamaño que elijas |
 | **Pareado (1b)** | La pregunta explicada arriba del todo, el alfa de timing **en cinco unidades** (bps, %, R, $ por operación y **$ acumulado**), el p de Wilcoxon, y debajo **la tabla de sensibilidad**: el mismo test con ventanas centradas de ±3, ±6 y ±12 meses y con la partición en semestres |
@@ -187,8 +200,8 @@ y disparan avisos; ningún mercado se cae por ellos.
 | **Avisos** | Cada motivo de desconfianza, en **cuatro partes**: qué es y qué número lo disparó, **a qué afecta**, **a qué NO afecta**, y qué hacer. **Nada se excluye por esto** |
 | **Glosario** | Qué significa cada número |
 
-*(El barrido de ventana sí tiene capturas, más abajo. Las de las pestañas nuevas —Backtest, Huella
-y Portfolio— están pendientes: la regla 8 exige que sean de una ejecución real, no inventadas, así que
+*(El barrido de ventana sí tiene capturas, más abajo. Las de las pestañas nuevas —Backtest, Huella,
+Portfolio y Entrada aleatoria · OOS principal— están pendientes: la regla 8 exige que sean de una ejecución real, no inventadas, así que
 las pega quien abra el panel la próxima vez.)*
 
 ### Qué desapareció, y por qué
@@ -245,6 +258,56 @@ Dos maneras de preguntar cuánta suerte hay, que no son la misma:
 
 Ojo con una cosa, y el panel lo dice: **el oro está sobreajustado**, así que la cartera base se ve
 mejor de lo que es.
+
+### La pestaña «Entrada aleatoria · OOS principal»
+
+El retest en otros mercados es un OOS **de mercado**: la estrategia no se optimizó ahí. Pero el
+backtest principal ya traía dentro un OOS **de tiempo**, el tramo que el proyecto reservó y sobre el
+que el generador no optimizó nada. Esta pestaña le hace exactamente la misma pregunta:
+
+> *Sobre 2018–2022, en oro, ¿las entradas eligieron momento mejor que el azar?*
+
+Es el mismo test 1a, con los mismos modelos nulos, las mismas tiradas y las mismas posiciones y
+costes reales. Lo único que cambia es qué se le da de comer: las operaciones del oro recortadas a ese
+tramo, y **las velas recortadas con ellas**. Eso segundo importa tanto como lo primero: un nulo que
+pudiera colocar una operación en 2010 no estaría probando el OOS, estaría probando el backtest entero
+con menos operaciones, con la deriva y el régimen de otros años metidos dentro.
+
+**Una operación a caballo del corte se descarta, no se recorta.** Recortarla le inventaría una salida
+que la estrategia nunca tomó. 🔬 En `Strategy 24.14.35` no hay ninguna — el oro está plano en el
+cambio de año— así que aquí no cuesta nada; en una estrategia que aguante más, costará.
+
+**Por qué no suma con plata y Brent.** No es otro mercado: es el mismo, sobre fechas que solapan con
+las suyas. El p conjunto de la pestaña Backtest está dimensionado para mercados distintos desplazados
+a la vez, así que esta fila se reporta aparte y no entra ni en él, ni en el recuento de mercados, ni
+en el portfolio, ni en la matriz de correlación. En la cuenta combinada el oro ya está entero.
+
+**No tiene barrido de ventana**, y no es un olvido: el barrido parte la muestra en bloques de 3 años,
+1 año y 6 meses, y cinco años con unos cientos de operaciones deja todos los bloques por debajo de
+`sweep.min_trades`. Saldrían cuatro celdas vacías. El estrés de coste y ejecución sí se corre, que no
+necesita ese hueco.
+
+#### Lo que hay que leer antes que el p
+
+🔬 **Ese tramo no es dato virgen.** Las condiciones de aceptación del proyecto lo leyeron igualmente,
+dos veces: dentro de las 8 condiciones `sampleType=127`, porque el periodo completo lo contiene, y de
+forma explícita por el beneficio neto OOS de la matriz walk-forward. Medido sobre `Build-Task3.xml`.
+
+Eso no invalida el número: un p bajo aquí sigue diciendo que **en ese tramo** el momento de entrada
+aporta por encima del azar, que es una afirmación sobre la mecánica de esa ventana y está bien
+calculada. Lo que no dice es que la estrategia funcione sobre datos que nadie había mirado, y sobre
+una población de estrategias seleccionadas está sesgado a la baja. 🔬 De las 30 de
+`Retest Markets - Family`, **30 son rentables en oro entre 2018 y 2022**: ésa es la forma que tiene
+una ventana seleccionada, no la que tiene una desconocida.
+
+🔬 La única ventana fuera de muestra en sentido estricto de este proyecto empieza el **2023-01-01**:
+ningún `dateTo` de ninguna tarea pasa de `2022.12.31`, mientras que los ficheros de velas llegan a
+2026. Un retest desde ahí es lo que hace falta para una afirmación limpia, y lo diría del oro y de
+los mercados adicionales a la vez. Está en `OPEN.md`.
+
+El panel dice todo esto solo: el aviso se llama `selected_window`, sale al final de la pestaña con
+sus cuatro partes, y es el único de los nueve que no se comprueba sino que se **adjunta** — nada en
+los datos puede delatarlo, es un hecho sobre el proyecto.
 
 ### Los costes del estrés salen de un fichero que tienes que revisar
 
@@ -422,9 +485,12 @@ conversión no vale para el drawdown ni para la racha perdedora.
 
 **El orden en que hay que leer el panel:**
 
-1. **Las comprobaciones.** `fill_error` tiene que ser 0 y `calendar_kept` 1,00 en `block_shift`. Si no
-   lo son, el backtest real y los aleatorios no están valorados igual y no hay nada que interpretar.
-   Para ahí.
+1. **Las comprobaciones.** `fill_error` tiene que estar muy por debajo de `max_fill_error` (0,25 ATR)
+   y `calendar_kept` valer 1,00 en `block_shift`. Si el primero se dispara, las velas no son las del
+   backtest y no hay nada que interpretar: para ahí. Ojo con `fill_error`: **no tiene que ser 0**.
+   Lleva dentro el spread de entrada, que es una constante que paga también cada corrida aleatoria
+   —el oro marca 0,023 ATR—; lo que delata un problema es que sea grande, no que exista. El spread
+   sale desglosado en su propia fila.
 2. **Los avisos**, que ahora están dentro de la propia pestaña Backtest y también en la suya. Dicen
    de qué desconfiar en cada mercado antes de que te enamores de un número — y, sobre todo, **a qué
    NO afecta** cada uno: casi ninguno invalida la fila entera.
@@ -458,7 +524,10 @@ Las columnas de la tabla por mercado que hay que saber leer:
 | `breakeven` | a cuántas veces el coste real deja de ganar | el PDF pide 2,0 o más |
 | `trades_all` | **todas** las operaciones que reporta SQX | es con las que cuadran el beneficio, la caída y el PF de la pestaña Backtest |
 | `trades` / `off_grid` | las que ocupan al menos una vela, y las que no | las que no son, casi siempre, salidas `Exit Signal` de duración `0s`: son reales y su dinero cuenta, pero 1a, 1b y 1c necesitan una duración y no pueden usarlas |
-| `on_bar_open` | fracción de entradas al inicio de barra | por debajo de 0,95 hay órdenes pendientes: dispara aviso, **no** excluye |
+| `on_open_price` | fracción de entradas ejecutadas **al precio** de su propia vela, descontado el spread constante | por debajo de 0,95 hay fills intravela que el azar no puede colocar: dispara aviso, **no** excluye. Si cae mucho (< 0,7) sospecha del timeframe antes que de las órdenes |
+| `on_bar_open` | fracción de entradas cuyo **reloj** cae en el inicio de barra | informativo y nada más. 🔬 No dispara nada: de 960.705 operaciones, las 4.613 selladas a mitad de vela están al mismo precio que el resto. Que sea 0,91 mientras `on_open_price` es 1,00 es normal |
+| `fill_error` | error mediano de precio contra las velas, en múltiplos del ATR | por encima de `max_fill_error` las velas no son las del backtest |
+| `fill_offset` | el spread de entrada, en múltiplos del ATR | constante por mercado; lo paga también cada corrida aleatoria porque el coste se recupera operación a operación |
 | `calendar_kept` | fracción de entradas aleatorias en el mismo día y hora que la real | 1,00 en `block_shift`; vacío en `renewal`, que no empareja operaciones |
 | `null_trades` | operaciones por backtest aleatorio | igual a las reales salvo en `renewal` |
 | `atr_ratio` | volatilidad en las entradas reales frente a la media del mercado | cerca de 1. Lejos de 1 significa que la estrategia elige barras raras |
@@ -543,5 +612,9 @@ de entrar, moverlas tiene que estropearlo — y lo hace, de forma ordenada:
 - **`ValueError: cross-market pricing is long-only`** — alguna estrategia lleva operaciones en corto.
   Todo el retorno de este módulo es `log(salida/entrada)`, que para un corto tiene el signo al revés,
   así que se niega a valorarlo en vez de dar un número equivocado.
-- **`fill_error` distinto de 0** — las barras y las operaciones no son del mismo mercado o de la
-  misma ventana. El resultado no vale; no lo interpretes.
+- **`fill_error` por encima de `max_fill_error`** — las barras y las operaciones no son del mismo
+  mercado o de la misma ventana. El resultado no vale; no lo interpretes. Que `fill_error` sea
+  distinto de 0 y pequeño **no** es esto: es el spread de entrada, y es normal.
+- **`on_open_price` muy por debajo de 0,95** — o hay órdenes limit/stop llenadas dentro de la vela,
+  o has cargado el timeframe equivocado. Probado: velas H1 para un backtest M30 dejan este número en
+  0,57 sin tocar `fill_error`.

@@ -28,6 +28,11 @@ python3 tools/checks.py                              # should be green
 Nothing else is machine-specific: `core/paths.py` is the only module that knows where anything lives.
 Python 3.10 to 3.13; numpy, scipy and arch have no wheels for 3.14 yet.
 
+That covers a machine that only analyses already-exported data. Setting up **StrategyQuant X itself**
+— how many installs, cloning the headless worker, the port triples, and the check that stops the
+worker being a silent alias of the master — is `docs/SETUP-NEW-MACHINE.md`. Follow it in full on any
+machine that has to drive SQX.
+
 ## Windows
 
 The project splits in two, and only one half is tied to Linux.

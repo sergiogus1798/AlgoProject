@@ -1,0 +1,19 @@
+# Every tunable of the Walk-Forward Matrix study, in one place.
+
+read:
+  # Bare metric name; `is_` and `oos_` are prefixed when reading a step.
+  # NOT `Fitness`: SQX stores it as 0 on every step (the cell-level fitness_is/fitness_oos
+  # are the only real ones), so a study reading Fitness per step would correlate zeros.
+  metric: ReturnDDRatio
+  companion_metrics: [NetProfit, SharpeRatio, ProfitFactor]
+  drop_future: true       # steps whose run window extends past the data. Never false.
+
+measure:
+  min_steps: 5            # a cell with fewer is not correlated at all
+  confidence: 0.95
+  n_resamples: 9999
+  seed: 0
+
+verdict:
+  zero_band: 0.0          # how far the interval must clear zero to be called either way
+  drift_high: 0.5         # share of parameters re-decided per step that counts as high

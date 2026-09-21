@@ -8,7 +8,7 @@ Provenance tags used throughout: 🔬 verified by direct test · 📓 read from 
 |---|---|
 | `01-file-formats.md` | what is inside a `.sqx` or a `project.cfx`, how to identify a strategy, what not to parse |
 | `02-databanks.md` | why strategies disappear, what a sync does, memory vs disk |
-| `03-driving-sqx.md` | which port/endpoint to use, the `-project` API and its four traps, what MCP can't do, authoring projects |
+| `03-driving-sqx.md` | which port/endpoint to use, the `-project` API and its four traps, what MCP cannot do, authoring projects, and the GUI's own HTTP/WebSocket surface a wrapper app would drive |
 | `04-export.md` | getting trades, metrics, SPP profiles or bars out — the async traps, the `orderstocsv` schema, IS/OOS views |
 | `05-conditions.md` | reading acceptance conditions and `sampleType` correctly |
 | `06-locations.md` | where strategies, templates and tools actually live; the full block vocabulary; what the XAUUSD corpus really is |

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export one databank's trades, and the bars those trades were taken on, into the data root."""
+"""Export one databank's trades into the data root, as one typed Parquet per export."""
 
 import argparse
 import random
@@ -7,7 +7,7 @@ import shutil
 from datetime import date
 from pathlib import Path
 
-from core import exportdrv, manifest, sqxfile
+from core import exportdrv, manifest, sqxfile, tradestore
 from core.paths import MASTER, databank_dir, export_dir
 
 
@@ -41,13 +41,13 @@ def stage(project: str, databank: str, dest: Path, limit: int = 0) -> dict[str, 
 
 
 def main() -> None:
-    """Stage a databank, export its trades and the bars for every timeframe it uses."""
+    """Stage a databank, export every trade of it, and pack them into one Parquet."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
+    # --symbol is load-bearing, not decoration: the packed trades drop the constant Symbol
+    # column, so the manifest is the only record of which feed the backtest ran on.
     ap.add_argument("--symbol", required=True, help="SQX symbol without the timeframe suffix")
-    ap.add_argument("--from", dest="date_from", default="2007.01.01")
-    ap.add_argument("--to", dest="date_to", default="2026.01.01")
     a = ap.parse_args()
 
     out = export_dir(a.project, a.databank, date.today().isoformat())
@@ -57,17 +57,19 @@ def main() -> None:
     print(f"staged {len(timeframes)} strategies from {a.project}/{a.databank}")
 
     exportdrv.trades(out / "strategies", out / "trades")
-    for tf in sorted(set(timeframes.values())):
-        exportdrv.bars(a.symbol, tf, out / "bars", a.date_from, a.date_to)
+    # The CSVs are an intermediate, not the export: nine tenths of their bytes are quoting,
+    # repeated text and four columns that are derivable back. Bars are not copied here at
+    # all — they live once in the M1 library, which covers more history than this window did.
+    packed = tradestore.pack(sorted((out / "trades").glob("*.csv")),
+                             out / "trades.parquet", per_market=False)
+    shutil.rmtree(out / "trades")
 
     manifest.write(out,
                    {"install": str(MASTER), "project": a.project, "databank": a.databank,
-                    "symbol": a.symbol, "window": [a.date_from, a.date_to]},
+                    "symbol": a.symbol},
                    f"export_trades.py --project {a.project} --databank {a.databank} "
                    f"--symbol {a.symbol}",
-                   {"strategies": len(timeframes),
-                    "trade_csvs": len(list((out / "trades").glob("*.csv"))),
-                    "timeframes": sorted(set(timeframes.values()))})
+                   {**packed, "timeframes": sorted(set(timeframes.values()))})
     print(f"wrote {out}")
 
 

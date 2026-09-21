@@ -15,6 +15,8 @@ live deeper add the root to `sys.path` in their first lines.
 | `wftrades.py` | Cut a `data=all` export into one block per matrix cell and tag every trade with its walk-forward step, checked against the counts SQX stored | CSV → frames |
 | `trades.py` | Read an `orderstocsv` export: times parsed, unfilled orders dropped, one frame per market, cost and MAE/MFE recovered | CSV → frames |
 | `bars.py` | Read an OHLC export into a frame indexed by bar open time | CSV → frame |
+| `barstore.py` | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it on first use and cached under the M1's fingerprint | feed, timeframe → frame |
+| `tradestore.py` | The trade library: one typed Parquet per export, carrying only the columns that cannot be derived back, and the guard that decides when `Ticket` still has to be kept | CSVs → Parquet → frames |
 | `cfx.py` | Read a `project.cfx`: task chain, output databanks, acceptance conditions | project → dicts |
 | `worker.py` | Start, stop and command the headless worker over its HTTP API | command → reply |
 | `exportdrv.py` | The three exports SQX offers: trades, databank metrics, bars | request → files |

@@ -30,6 +30,9 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `09-wfm.md` | la matriz Walk-Forward a CSV: cada celda, cada tramo con sus fechas y sus parámetros, el rendimiento dentro y fuera de muestra, y los trades repartidos por tramo |
 | `10-github.md` | tener el proyecto subido a GitHub y poder clonarlo en otro ordenador: qué viaja en el repositorio, qué no, y qué hay que hacer en el clon |
 | `11-retest-mc.md` | el Monte Carlo Retest: ocho tareas aisladas que vuelven a ejecutar el backtest entero contra una entrada perturbada, para saber **cuál** de ellas rompe la estrategia |
+| `13-barras.md` | la librería de barras: un solo dato guardado (el minuto) y todos los timeframes calculados desde él, cómo se sincroniza con SQX y cómo se entera de que actualizaste data |
+| `14-walkforwardmatrix.md` | el análisis de la matriz Walk-Forward: si lo que optimiza bien predice lo que va bien después, cuánto deriva el óptimo entre tramos, y por qué la unidad es la celda y no el tramo |
+| `15-sppultra.md` | el reconocimiento SPP: qué parámetros mueven el resultado, cuáles están demostradamente muertos, si la familia entera es ruido, y el diseño de las 5.000 variantes que sale de ahí |
 | `_PLANTILLA.md` | **la plantilla obligatoria.** Se copia para documentar cada módulo nuevo |
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |

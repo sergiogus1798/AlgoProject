@@ -125,3 +125,42 @@ def bars_file(symbol: str, timeframe: str) -> Path:
         Path under the data root.
     """
     return DATA / "bars" / symbol / f"{timeframe}.csv"
+
+
+def bar_source(feed: str) -> Path:
+    """The M1 bars of one feed: the only bar data the project stores.
+
+    Args:
+        feed: SQX symbol without the timeframe suffix, e.g. "XAUUSD_DukasM1_Infinox".
+
+    Returns:
+        Path under the data root. Every other timeframe is resampled from this file and
+        reproduces SQX's own export of it exactly, so nothing else is worth keeping.
+    """
+    return DATA / "bars" / feed / "M1.parquet"
+
+
+def bar_cache(feed: str, timeframe: str, version: str) -> Path:
+    """Where a timeframe resampled from M1 is kept.
+
+    Args:
+        feed: SQX symbol without the timeframe suffix.
+        timeframe: SQX timeframe code, e.g. "M30".
+        version: Fingerprint of the M1 data it was built from.
+
+    Returns:
+        Path under the data root. The version is in the name rather than in a field, so a
+        refreshed M1 orphans its caches instead of quietly answering with stale bars.
+    """
+    return DATA / "derived" / "bars" / feed / f"{timeframe}-{version}.parquet"
+
+
+def perf_dir() -> Path:
+    """Where the performance catalogue keeps its history.
+
+    Returns:
+        Path under the data root. It holds one row per measurement, appended forever: the
+        point of the catalogue is the comparison between dates, so nothing here is ever
+        overwritten.
+    """
+    return DATA / "perf"

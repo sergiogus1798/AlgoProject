@@ -7,8 +7,8 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 
-from core import bars as barsio
-from core.paths import DATA, bars_file, export_dir
+from core import barstore
+from core.paths import DATA, export_dir
 from strategies.crossmarket.inputs import config, markets
 from strategies.crossmarket.render import panel
 from strategies.crossmarket.simulate import metrics
@@ -163,15 +163,20 @@ def main() -> None:
     universe = markets.universe(a.asset, trades)
     names = [f.stem for f in sorted((trades / universe["main"]).glob("*.csv"))]
     SETUP.update({"project": a.project, "databank": a.databank, "export": a.export,
+                  "asset": a.asset,
                   "universe": universe, "trades": trades, "strategies": names, "args": a,
                   "base_set": a.set, "cfg": config.load(a.set),
-                  "bars": {feed: barsio.read(bars_file(feed, universe["timeframe"]))
+                  "bars": {feed: barstore.read(feed, universe["timeframe"])
                            for feed in markets.feeds(universe)}})
     wiped = work.clear(DATA)
     url = f"http://127.0.0.1:{a.port}/"
     print(f"{len(names)} estrategias · {len(universe['markets'])} mercados · panel en {url}")
     for m in universe["markets"]:
         print(f"  {m['feed']:30} {m['category']}")
+    span = markets.out_of_sample(a.asset)
+    if span:
+        print(f"  {'tramo OOS del backtest principal':30} "
+              f"{span['from']} -> {span['to']}, se prueba aparte")
     for feed in universe["absent"]:
         print(f"  {feed:30} DECLARADO PERO SIN OPERACIONES EN EL EXPORT")
     if wiped:

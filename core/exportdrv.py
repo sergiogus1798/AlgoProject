@@ -34,6 +34,19 @@ def trades(source: Path, out_dir: Path, data: str = "main") -> str:
                           capture_output=True, text=True, check=True).stdout
 
 
+def symbols() -> str:
+    """Everything SQX holds data for, as it lists it.
+
+    Returns:
+        The raw CSV `-symbol action=list` prints: feed name, base symbol, resolution,
+        timezone, first and last date, days and bar count, then source and category. The
+        bar count is what tells a sync whether a feed has grown since it was last pulled.
+    """
+    worker.require_posix()
+    return subprocess.run([str(WORKER_SH), "run", "-symbol", "action=list"],
+                          capture_output=True, text=True, check=True).stdout
+
+
 def bars(symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: str) -> Path:
     """Export OHLC bars for one symbol and timeframe.
 

@@ -77,5 +77,13 @@ stress:
 diagnostics:
   alpha: 0.05                 # the level every p-value is coloured against; it decides nothing
   min_trades: 30              # below this a market is flagged as too small — it is never dropped
-  min_on_open: 0.95           # below this the entries include pending fills the null cannot reproduce
+  min_on_open: 0.95           # below this, entries took a price that is not their bar's own: real
+                              # intrabar fills the null cannot place. Measured on the PRICE, never on
+                              # the clock -- an entry stamped mid-bar is priced like one stamped on it
+  fill_tolerance: 0.05        # how far an entry may sit from the market's constant spread and still
+                              # count as having taken its bar's price, in median-ATR units. 🔬 Measured
+                              # max deviation over 28,490 trades: 0.0045 ATR, one tick
+  max_fill_error: 0.25        # median |recorded price - bar price| above which the bars are probably
+                              # not the ones the backtest ran on, in median-ATR units. A spread is a
+                              # constant and lives well below it: gold's is 0.023 ATR
   min_on_grid: 0.95           # below this a real share of the trades occupy no bar, so no test that needs a duration sees them

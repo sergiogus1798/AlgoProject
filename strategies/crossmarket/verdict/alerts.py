@@ -21,25 +21,37 @@ TEXTS = {
         "Léelo como una indicación, no como un resultado. Mira el tamaño del efecto "
         "(ventaja, A, alfa de 1b) antes que cualquier p."),
     "pending_fills": (
-        "Parte de las entradas no cae en la apertura de una vela: son órdenes pendientes "
-        "(limit o stop) ejecutadas <b>dentro</b> de la vela.",
+        "Parte de las entradas se ejecutó a un precio que <b>no es el de su propia vela</b>: "
+        "órdenes limit o stop llenadas <i>dentro</i> de la vela, a un precio que el azar no "
+        "puede elegir. Se mide sobre el <b>precio</b>, descontando el spread constante del "
+        "mercado — 🔬 nunca sobre el reloj: de 960.705 operaciones, las 4.613 selladas a "
+        "mitad de vela están al mismo precio que las 956.092 selladas en la apertura, así "
+        "que contar sellos medía una rareza de marcado y no un fill.",
         "Al test 1a. Un modelo nulo sólo sabe colocar una operación «en la vela t» y la "
-        "valora a su apertura, así que para esa fracción de operaciones no reproduce lo que "
-        "el backtest hizo: es una selección condicionada al precio.",
+        "valora al precio de esa vela, así que para esa fracción no reproduce lo que el "
+        "backtest hizo: es una selección condicionada al precio.",
         "A 1b y 1c no les afecta: ninguno de los dos usa modelos nulos. Tampoco invalida el "
         "backtest — esas operaciones ocurrieron de verdad.",
         "Lee el p de 1a de este mercado como aproximado, y tanto más cuanto menor sea el "
-        "porcentaje de la izquierda."),
+        "porcentaje de la izquierda. En esta flota no salta: todas las salidas son por tiempo "
+        "o por señal y no hay ni un stop ni un target en 757 estrategias. ⚠️ Si el porcentaje "
+        "se desploma —por debajo de 0,7, digamos— sospecha antes del <b>timeframe</b> que de "
+        "las órdenes: probado, cargar velas H1 para un backtest M30 deja este número en 0,57 "
+        "sin disparar <code>fill_mismatch</code>, porque la mitad de las aperturas H1 "
+        "coinciden con una M30."),
     "fill_mismatch": (
-        "Ninguna convención de fill reproduce los precios que SQX registró: el error mediano "
-        "no es cero.",
-        "A todo lo que compare el backtest real con algo simulado, que es 1a y el estrés de "
-        "coste. Si el real y el nulo se valoran distinto, el p mide la diferencia entre dos "
-        "valoradores y no el acierto de la estrategia.",
-        "Nada más de la página: 1b y 1c usan la misma serie de precios en los dos lados de "
-        "su propia resta.",
-        "Éste sí es grave. Comprueba que las velas del export son las del mismo feed y "
-        "timeframe con que se corrió el retest."),
+        "Los precios que SQX registró están demasiado lejos de las velas para que éstas sean "
+        "las velas sobre las que corrió el backtest: el error mediano supera "
+        "<code>diagnostics.max_fill_error</code> ATR.",
+        "A todo. Si las barras no son las del backtest, no hay número en esta página que "
+        "signifique nada: ni el real, que se revalora con ellas, ni el nulo, ni la resta.",
+        "Nada, porque no hay nada que salvar. Es el único aviso de la lista que dice «para y "
+        "arregla el input» en vez de «lee el número con cuidado».",
+        "Comprueba que las velas del export son las del mismo feed y el mismo timeframe con "
+        "que se corrió el retest. 🔬 Un desplazamiento <b>constante</b> no es esto y no lo "
+        "dispara: es el spread, vive muy por debajo del umbral (el del oro son 0,023 ATR) y "
+        "lo paga también cada corrida aleatoria, porque el coste se recupera operación a "
+        "operación en vez de suponerse."),
     "no_drift": (
         "La deriva propia de este mercado no se distingue de cero "
         "(<code>exposure.mu_min_t</code>), o es negativa.",
@@ -91,12 +103,34 @@ TEXTS = {
         "maestra enseña las dos cuentas.",
         "Lee los p-valores sabiendo que describen la fracción usable de la estrategia. Medido "
         "sobre este databank: 1,84% de 92.329 operaciones, hasta un 9,8% en el peor par."),
+    "selected_window": (
+        "Este tramo <b>no es dato virgen</b>. Es el OOS del backtest principal, pero las "
+        "condiciones de aceptación del proyecto lo leyeron igualmente: 🔬 medido sobre "
+        "<code>Build-Task3.xml</code>, entra dos veces — dentro de las 8 condiciones "
+        "<code>sampleType=127</code>, porque el periodo completo lo contiene, y de forma "
+        "explícita por el beneficio neto OOS de la matriz walk-forward.",
+        "A cómo se lee el p de esta fila. Un p bajo aquí dice que <b>en este tramo</b> el "
+        "momento de entrada aporta por encima del azar; no dice que la estrategia funcione "
+        "sobre datos que nadie había mirado. Sobre una población de estrategias "
+        "seleccionadas, un p calculado en la ventana que las seleccionó está sesgado a la "
+        "baja. 🔬 De las 30 de <code>Retest Markets - Family</code>, <b>30 son rentables en "
+        "oro entre 2018 y 2022</b>: la forma que tiene una ventana seleccionada.",
+        "Al cálculo, que es el mismo que el de cualquier otro mercado y está igual de bien "
+        "hecho. Tampoco afecta a los mercados adicionales: ésos sí son otro mercado, y su "
+        "única condición de selección fue <code>ProfitFactor > 1.5</code>.",
+        "Léelo como lo que es: el mismo test de entrada aleatoria sobre un tramo que la "
+        "estrategia no optimizó pero que el proyecto sí miró. 🔬 La única ventana fuera de "
+        "muestra en sentido estricto de este proyecto empieza el <b>2023-01-01</b>, porque "
+        "ningún <code>dateTo</code> de ninguna tarea pasa de 2022.12.31 — un retest desde ahí "
+        "es lo que hace falta para una afirmación limpia."),
 }
 # What number fired each warning, so the reader sees the trigger and not only the rule.
 TRIGGER = {
     "few_trades": lambda r: f'{int(r["trades"])} operaciones',
-    "pending_fills": lambda r: f'{r["on_bar_open"]:.1%} de entradas en apertura de vela',
-    "fill_mismatch": lambda r: f'error de fill {r["fill_error"]:.4g}',
+    "pending_fills": lambda r: (f'{r["on_open_price"]:.1%} de entradas al precio de su vela '
+                                f'(reloj: {r["on_bar_open"]:.1%})'),
+    "fill_mismatch": lambda r: (f'error de fill {r["fill_error"]:.3g} ATR, spread '
+                                f'{r["fill_offset"]:+.3g} ATR'),
     "no_drift": lambda r: f'deriva del mercado t = {r["mu_t"]:+.2f}',
     "calendar_lost": lambda r: f'calendario conservado {r["calendar_kept"]:.2f}',
     "short_sample": lambda r: (f'{int(r["trades"])} operaciones frente a '
@@ -105,6 +139,7 @@ TRIGGER = {
     "off_grid": lambda r: (f'{int(r["dropped"])} de {int(r["trades_all"])} operaciones '
                            f'({r["dropped"] / r["trades_all"]:.1%}), '
                            f'{r["dropped_pnl"]:+,.0f} $'),
+    "selected_window": lambda r: "condiciones de aceptación sobre el periodo completo",
 }
 
 

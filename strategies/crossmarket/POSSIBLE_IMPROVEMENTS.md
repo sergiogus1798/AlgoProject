@@ -199,6 +199,45 @@ The owner rebuilt the panel around the backtest rather than around the tests. Al
   The correlation matrix survives and moved onto the main tab, where it sits under the equity
   curves it describes.
 
+## What was built on 2026-09-21: the main backtest's own OOS stretch
+
+The owner asked for the same random-entry test over the segment of the **main** backtest that the
+builder optimised nothing on — an OOS of time, next to the retest's OOS of market. It runs in
+`explorer/oos_run.py`, lands in `record["oos"]` and nowhere else, and has its own tab.
+
+Decided with the owner, so a future session does not reopen them:
+
+- **The OOS stretch only, not the IS beside it.** The IS contrast was offered and declined. It is
+  cheap to add — the same call on the complementary slice — and it is what makes the OOS p readable:
+  351 trades give a wider null and a higher p by sample size alone, and without the IS number there
+  is nothing to separate "the window is short" from "the edge is gone". If the OOS p ever looks
+  ambiguous, that is the first thing to build.
+- **It is not evidence alongside the additional markets.** Not in the joint null, not in the breadth
+  count, not in the portfolio or the correlation matrix. Gold-2018 is the same market as gold, over
+  dates that overlap silver's and Brent's, and `joint.py` is sized for markets displaced together by
+  `semester_shift`. Pooling it there would be wrong in a way no output would show.
+- **No window sweep on it.** Five years in 3-year / 1-year / 6-month blocks leaves every block under
+  `sweep.min_trades`; every point would be withheld.
+
+🔬 **The measurement that came out of building it, and it is not about the OOS.** `fill_mismatch`
+fires on every gold window — the base asset's own row had never been warning-checked, so nobody had
+seen it. The cause is the feed, not the study: gold M30 records the Buy entry 0.05–0.06 above the bar
+open (the entry-side spread) while silver and Brent record 0 exactly. The convention is still
+open-to-open and the study is still priced consistently, because `charged` recovers that 0.05 per
+trade and every random run pays it too. `knowhow/04-export.md` holds the arithmetic.
+
+What that leaves open, for the owner to decide rather than for a session to retune quietly:
+`diagnostics` has no tolerance for the fill error — `fill_mismatch` fires on `> 0`, full stop — so on
+this feed it is permanently on, and `verdict/alerts.py` tells the reader "éste sí es grave" about a
+constant half-spread. Either the check gets a tolerance in price units, or the warning's text learns
+to separate a spread from a wrong convention. Both change what every market reports, which is why
+neither was done here.
+
+- **The only strictly unseen window starts 2023-01-01.** Every `dateTo` in the project stops at
+  2022.12.31 while the bar files run to 2026. A retest from there would be out of sample for the base
+  asset and for the additional markets at once, and it would need no `selected_window` warning. It is
+  the retest worth asking SQX for; it is in `OPEN.md`, not here, because it is data and not code.
+
 ## 3. Other tests on the same two inputs
 
 - **Test 1c, exposure-adjusted return.** Concentration ratio E and drift-neutral excess A. Cheaper
@@ -216,23 +255,69 @@ The owner rebuilt the panel around the backtest rather than around the tests. Al
   per `AdditionalMarket` result; teaching `core/sqxstats.equity()` to read a named result would give
   a free cross-check of every market's P/L and the input to the independence test, with no export.
 
-## 4. Pending orders: the gate is gone, the modelling question is not
+## 4. Fills: ✅ the two checks now measure what they claimed to
 
-The gate that dropped a market over its pending fills is **removed** — `Strategy 24.14.35` fills on a
-bar open 98.3% of the time on gold but 91.8% on silver and 91.4% on Brent, and losing 100% of a
-market's evidence over 8% of its trades cost a Brent result at p = 0.005 under every model. Those
-markets are now reported in full with the `pending_fills` warning.
+**Fixed 2026-09-21.** Both warnings were reading the wrong quantity and firing on data with nothing
+wrong with it. `mechanics/pricing.fill_profile()` replaces both readings:
 
-That fixes the response, not the cause: a limit or stop fill really is a price-conditional selection
-the null cannot reproduce, and a market at 91% is genuinely weaker evidence than one at 100%. The
-warning says so; it does not quantify it. Still worth building:
+| | read before | reads now |
+|---|---|---|
+| `pending_fills` | the entry **clock** — is the timestamp a bar boundary | the entry **price** against its own bar's, discounting the market's constant spread |
+| `fill_mismatch` | `fill_error > 0` | median error above `diagnostics.max_fill_error`, in median-ATR units |
 
-- **Test the reproducible subset.** Keep only the trades that entered on a bar open, and say so: the
-  result is then about 92% of the strategy, which is a weaker claim but a real one. It needs care —
-  dropping the pending fills is itself a selection, and the kept subset may be systematically easier.
+🔬 **Why the clock was wrong.** Over `raw/XAUUSD/MC_Trades/2026-09-19` — 757 strategies, 960,705
+trades — the 4,613 entries stamped inside a bar are priced *identically* to the 956,092 stamped on
+it: both at exactly bar open + 0.08/0.09, and not one of the 4,613 outside `[0, 0.10]`. On gold's
+retest export the late entries land only on minute 1 and 31. They are stamping artefacts. Silver at
+92.1% and Brent at 92.0% were reporting nothing, and the Brent result at p = 0.005 that the
+2026-09-14 note mourns was gated on something that was never happening.
+
+🔬 **Why `> 0` was wrong.** A constant offset is a **spread**. `backtest.setting()` recovers
+`charged = gross(bar opens) − reported P/L`, which works out to `spread × Size + commission`, so the
+spread lands inside the per-trade cost every random run also pays; and `mean_r` is bar-open to
+bar-open on both sides and never sees it. Real and null are on the same pricer either way. What a
+wrong feed or a wrong timeframe produces is a *large* or *dispersed* error, and that is what the
+check now asks about.
+
+**The thresholds, and the measurement behind each.** `fill_tolerance: 0.05` ATR — the maximum
+deviation from the constant offset measured over 28,490 trades is **0.0045 ATR**, one tick, so the
+tolerance has an order of magnitude of headroom. `max_fill_error: 0.25` ATR — gold's spread, the
+largest legitimate offset on this install, is **0.023 ATR**; a wrong feed is of the order of a whole
+bar range.
+
+**Both were verified to still fire**, because a check that cannot fire is worthless: a feed displaced
+3 ATR trips `fill_mismatch` (3.000 ATR); 6% of entries moved half an ATR off their bar trips
+`pending_fills` (0.948) while 3% does not (0.975); and H1 bars under an M30 backtest drop
+`on_open_price` to **0.566** without touching `fill_error`, because half the H1 opens coincide with
+an M30 open — which is why the two checks are kept as a pair and why `pending_fills`' advice now
+names the timeframe.
+
+### Still worth building, for a fleet that has stops
+
+🔬 **This fleet has none.** Across the same 757 strategies the only `Close type` values are
+`Exit After X Bars` (720,874), `Exit Signal` (187,853) and `End Of Friday (Time)` (51,978) — zero
+`Stop Loss`, zero `Take Profit`, zero trailing — and every exit price is its bar's open, median
+error 0.0000 with a **maximum of 0.0100** across all 757. Nothing happens inside a bar here. The
+three ideas below are for the day that stops being true, and
+`pricing.fill_profile()["error"]` on the exit side is the instrument that will say when it does.
+
+- **M1 execution.** Asked by the owner 2026-09-21 and measured then: it fixes nothing for this fleet
+  and would make the pricing *worse*, because SQX executed on the logic timeframe's bar opens and
+  pricing on M1 would put the study on a grid SQX never used. The zero-duration trades share one
+  timestamp, so no resolution recovers an interval; the late entries are at their bar's open price;
+  and the 0.05–0.09 offset is a spread, which no timeframe changes. It becomes the right build once
+  exits stop landing on bar opens, and then its shape matters: **entries drawn on the logic
+  timeframe's grid** — an M1 placement grid hands the null 30× more room and makes it a different,
+  wider null whose p moved for reasons that have nothing to do with the strategy — **holds carried in
+  minutes**, and only the pricing on M1. Even then it makes the *pricing* honest, not the
+  *selection*: a limit fill is still a price-conditional event a displaced trade cannot reproduce.
 - **Model the fill.** Give a random trade the same limit or stop offset the real one used and walk the
   bar's OHLC to see whether it would have filled. That reproduces the mechanism instead of excluding
-  it, and needs the strategy's order type, which is in the `.sqx`.
+  it, and needs the strategy's order type, which is in the `.sqx`. This is the real answer, and M1
+  execution is what would make it precise.
+- **Test the reproducible subset.** Keep only the trades that took their bar's price, and say so: the
+  result is then about that share of the strategy, which is a weaker claim but a real one. It needs
+  care — dropping them is itself a selection, and the kept subset may be systematically easier.
 - **Grade the evidence.** Attach a confidence weight to the market rather than a sentence, so a
   market at 92% is visibly worth less than one at 100% when several are read together.
 

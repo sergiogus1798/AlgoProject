@@ -116,3 +116,19 @@ def feeds(universe_: dict) -> list[str]:
         is never tested against its own null, because it is reported as the reference case.
     """
     return [universe_["main"]] + [m["feed"] for m in universe_["markets"]]
+
+
+def out_of_sample(symbol: str) -> dict[str, str] | None:
+    """The main backtest's own out-of-sample stretch, as the declaration states it.
+
+    Args:
+        symbol: Base asset.
+
+    Returns:
+        {"from": ..., "to": ...} as ISO dates, or None where the base asset declares none.
+        It is declared and never inferred: every trade the retest export carries is stamped
+        `Sample type = IST` whatever window it fell in, so the split is unreadable from the
+        data and only the project's own <OutOfSample><Range/> knows it.
+    """
+    span = load(symbol).get("out_of_sample")
+    return {"from": str(span["from"]), "to": str(span["to"])} if span else None

@@ -51,7 +51,8 @@ def cost(trades: pd.DataFrame, point_value: float) -> pd.Series:
         steady $8 per lot per side. Spread is already inside the fill prices and does not
         appear here; overnight trades carry swap on top.
     """
-    direction = trades["Type"].map(SIDE)
+    # astype first: mapping a categorical returns a categorical, which will not multiply.
+    direction = trades["Type"].astype("object").map(SIDE)
     move = trades["Close price"] - trades["Open price"]
     return direction * move * trades["Size"] * point_value - trades["Profit/Loss"]
 

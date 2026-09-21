@@ -1,0 +1,29 @@
+# Every tunable of the SPP reconnaissance, in one place. Nothing below is hidden in code.
+
+read:
+  # The metric the verdict and the design are read on. Ret/DD is SQX's own Fitness
+  # (Spearman +0.999 with it at >=100 trades), so this is the axis the builder optimised.
+  # It is NOT invariant to window length -- see knowhow/04-export.md -- which is fine here
+  # because Phase 0 never compares two windows.
+  metric: ReturnDDRatio
+  # Metrics the eta-squared table reports alongside it. One parameter can explain 8% of
+  # one and 78% of another, so a single column would hide the choice being made.
+  companion_metrics: [NetProfit, ProfitFactor, NumberOfTrades, SharpeRatio]
+  breakeven: 0.0          # where `metric` stops being profitable; 1.0 for profit factor
+
+verdict:
+  margin: 1.0             # multiples of the null maximum the observed max must clear
+
+design:
+  n_target: 5000          # variants the design is sized for
+  strata:                 # shares of n_target; §5 of the protocol
+    neighbourhood: 0.20
+    factorial: 0.60
+    coverage: 0.20
+  # There is no eta-squared freezing threshold, deliberately. Freezing is decided by the
+  # duplicate test alone, which is proof; eta-squared on an unbalanced sampled grid is
+  # confounded and biased upward, so an inert parameter still scores above any threshold
+  # you would pick. See run.brief(). Eta-squared allocates levels instead.
+  min_levels: 3           # a live parameter never gets fewer
+  max_levels: 9           # nor more, however much variance it explains
+  plateau_share: 0.5      # how far below the best level still counts as plateau

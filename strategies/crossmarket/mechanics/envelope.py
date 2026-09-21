@@ -24,6 +24,26 @@ def window(trades: pd.DataFrame, bars: pd.DataFrame) -> pd.DataFrame:
     return bars.loc[trades["Open time"].min():trades["Close time"].max()]
 
 
+def segment(trades: pd.DataFrame, span: dict[str, str]) -> pd.DataFrame:
+    """The trades that lived entirely inside one declared stretch of the backtest.
+
+    Args:
+        trades: One market's real trades, times already parsed.
+        span: {"from": ..., "to": ...}, ISO dates; `to` is inclusive of its whole last day.
+
+    Returns:
+        The trades opened on or after `from` and closed on or before `to`. A trade straddling
+        either edge is **dropped rather than clipped**: its P/L belongs to a window the study
+        is not measuring, and clipping it would invent an exit the strategy never took.
+        Measured on `Strategy 24.14.35` at the 2018 cut, no trade straddles it — the gold
+        backtest is flat over the new year — so the choice costs nothing here and is stated
+        because it will cost something on a strategy that holds longer.
+    """
+    start, end = pd.Timestamp(span["from"]), pd.Timestamp(span["to"]) + pd.Timedelta(days=1)
+    return trades[(trades["Open time"] >= start)
+                  & (trades["Close time"] < end)].reset_index(drop=True)
+
+
 def occupancy(trades: pd.DataFrame, bars: pd.DataFrame) -> pd.DataFrame:
     """Locate every trade on the bar grid.
 

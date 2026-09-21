@@ -47,12 +47,12 @@ las mismas pruebas sobre él.
 ### Antes de empezar
 
 - **Las operaciones tienen que estar exportadas** en
-  `~/Desktop/AlgoData/raw/<proyecto>/<databank>/<fecha>/trades/`, un CSV por estrategia. Si no
-  están: `python3 -m sqx.export.export_trades --project XAUUSD --databank Results --symbol
-  XAUUSD_DukasM1_Infinox`.
-- **Las barras del mercado** en `~/Desktop/AlgoData/bars/<feed>/M30.csv`, de donde sale la
-  volatilidad diaria que define los regímenes. Si no están:
-  `python3 -m sqx.export.export_bars --asset XAUUSD`.
+  `~/Desktop/AlgoData/raw/<proyecto>/<databank>/<fecha>/trades.parquet`, un solo archivo con todas
+  las estrategias. Si no está: `python3 -m sqx.export.export_trades --project XAUUSD --databank
+  Results --symbol XAUUSD_DukasM1_Infinox`.
+- **Las barras del mercado** en la librería, de donde sale la volatilidad diaria que define los
+  regímenes. No hace falta el M30: se calcula desde el minuto. Si el mercado no está en la
+  librería: `python3 -m sqx.export.sync_bars` — ver el capítulo 13.
 - **El activo tiene que tener ficha** en `assets/`. Corre antes `python3 -m core.assets XAUUSD` y
   léela. Aquí un `use: null` **no bloquea**, porque el coste de cada operación no se elige: se
   recupera del propio backtest (bruto menos neto), que es lo que SQX cobró de verdad.
@@ -314,13 +314,13 @@ debe sustituir a otra hecha con otra.
 
 ### Si algo falla
 
-- `FileNotFoundError` en `bars/<feed>/M30.csv` — no has exportado las barras de ese mercado.
-  `python3 -m sqx.export.export_bars --asset XAUUSD`.
+- `FileNotFoundError` en `bars/<feed>/M1.parquet` — ese mercado no está en la librería de barras.
+  `python3 -m sqx.export.sync_bars`.
 - `ValueError: N trades open on days the bar file does not have` — las barras no son del mismo feed
   que las operaciones, o les falta histórico. No se imputa nada a propósito: compararías la
   estrategia con los regímenes de otro instrumento.
-- `IndexError` al empezar — la carpeta `trades/` de esa fecha de exportación está vacía o no existe.
-  Comprueba la fecha: es la de la exportación, no la de hoy.
+- `FileNotFoundError ... trades.parquet` al empezar — esa fecha de exportación no existe, o es de
+  antes de que los trades se empaquetaran. Comprueba la fecha: es la de la exportación, no la de hoy.
 - `Address already in use` al abrir el panel — ya tienes uno corriendo, o el puerto está ocupado.
   Ciérralo con `Ctrl+C` en su terminal, o abre el nuevo con `--port 8766`.
 - Un aviso de que el coste modelado no cuadra con el recuperado — la ficha de `assets/` describe

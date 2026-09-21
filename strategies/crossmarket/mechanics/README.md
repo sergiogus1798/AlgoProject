@@ -11,8 +11,8 @@ never "was it luck" — there is no null model here, no draw, no p-value.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `pricing.py` | ATR, the cost SQX charged recovered per trade, the net return per trade, the fill convention re-derived by reconciling against SQX's own prices, and the long-only assertion | imported | bars + trades → returns, cost, convention |
-| `envelope.py` | The real run's shape on the bar grid: bars held, gaps, regime blocks, the weekday-hour groups a model may move it to, and the bars to each Friday close | imported | trades + bars → the market dict |
+| `pricing.py` | ATR, the cost SQX charged recovered per trade, the net return per trade, the fill convention re-derived by reconciling against SQX's own prices, whether what is left over is a spread or a mismatch, and the long-only assertion | imported | bars + trades → returns, cost, convention, fill profile |
+| `envelope.py` | The real run's shape on the bar grid: bars held, gaps, regime blocks, the weekday-hour groups a model may move it to, the bars to each Friday close, and the trades inside one declared stretch of the backtest | imported | trades + bars → the market dict |
 | `equity.py` | Equity through the sample on the **calendar**, and the percentile cone around the real curve | imported | P&L + exit bars → curves, bands |
 | `curves.py` | Each market's equity on its own real calendar, and what it returned once every market risks the same | imported | fixed → curve, factor |
 | `strata.py` | The regime state of every bar — ATR quantile × trend sign — for the optional `regime_strata` model | imported | bars → stratum index |
@@ -42,8 +42,14 @@ period.
 - **Long only.** `pricing.require_long_only()` refuses anything else rather than silently flipping a
   sign. Checked: all 92,329 trades of the 30-strategy sample are Buy.
 - **The fill convention is re-derived, never assumed.** `pricing.reconcile()` reproduces SQX's own
-  prices per market and the study refuses to interpret a market it could not reproduce. Measured on
-  XAUUSD H1 the convention is **open-to-open with a median price error of exactly 0.0**.
+  prices per market; `pricing.fill_profile()` then says whether what is left over is a **spread** or a
+  **mismatch**, and that distinction is the whole point. Measured: open-to-open everywhere, with a
+  median entry error of 0.0000 ATR on silver and Brent and **0.0226 ATR on gold, which is its
+  entry-side spread** — a constant every trade pays, absorbed by the per-trade cost `setting()`
+  recovers, and therefore paid by every random run too. A *dispersed* error is the one that means
+  something, and the maximum deviation from the constant measured over 28,490 trades is 0.0045 ATR:
+  one tick. ⚠️ Do not restore a check that demands the error be exactly 0 — it fired on every gold
+  window for nothing until 2026-09-21.
 - **The cone is drawn on calendar time, not on trade number.** Random runs place their trades at
   different moments, so that is the only axis on which their curves and the real one describe the
   same stretch of market. `equity.path()` bins each trade's P&L into the step its **exit** falls in,

@@ -14,6 +14,9 @@ configuration and its own open questions:
 |---|---|
 | `crossmarket/` | does the edge transfer to markets the strategy never saw, or is it just being long? |
 | `monteCarlo/` | how much of the result is luck, and of what kind: order, composition, execution or regime? |
+| `retest/` | which single perturbed input breaks it: the cost of entering, the fill, its own parameters, or the history it saw? |
+| `walkForwardMatrix/` | does what optimises well predict what does well afterwards, or does re-optimising select for failure? |
+| `sppUltra/` | which parameters move the result, which are provably dead, and does this family deserve 5,000 designed variants? |
 
 This is not the `analysis/` + `reports/` split that `tasks/` uses, and the difference is deliberate.
 A population study is one pipeline with many renderings; a strategy study is one question with its
@@ -40,8 +43,11 @@ the differences; do not bury them. An unreconciled translation is a hypothesis, 
 is the single easiest way to poison everything downstream.
 
 The same rule now has teeth elsewhere: `crossmarket/mechanics/pricing.reconcile()` re-derives the fill
-convention per market and the study refuses to interpret a market it could not reproduce. Measured
-on XAUUSD H1 the convention is **open-to-open with a median price error of exactly 0.0**.
+convention per market and the study refuses to interpret a market it could not reproduce. Measured,
+the convention is **open-to-open** everywhere. What is left over is **not** required to be 0:
+`pricing.fill_profile()` separates a constant offset — the entry spread, 0.023 ATR on gold M30, paid
+by every random run because the cost is recovered per trade — from a dispersed one, which is the only
+kind that means the bars are wrong.
 
 ## Traps
 

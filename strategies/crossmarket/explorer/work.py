@@ -93,6 +93,8 @@ def merged(old: dict, fresh: dict, feed: str, cfg: dict) -> dict:
     weekly = {**old["weekly"], **fresh["weekly"]}
     streams = {**old["streams"], **fresh["streams"]}
     runs = {**old["runs"], **fresh["runs"]}
-    return {**fresh, "rows": rows, "runs": runs,
+    # `oos` is not recomputed by a single-market run — it is the base asset's own stretch
+    # and no market button touches it — so the one the session already has is carried.
+    return {**fresh, "rows": rows, "runs": runs, "oos": old["oos"],
             "equity": {**old["equity"], **fresh["equity"]}, "weekly": weekly,
             "streams": streams, **views.build(weekly, streams, runs, cfg)}

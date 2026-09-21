@@ -1,12 +1,10 @@
 """The input contract: any time-ordered trade list, reduced to what every family needs."""
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
-from core import trades
 from strategies.monteCarlo.inputs import costs
+
 
 def _from_frame(frame: pd.DataFrame, asset: dict, risk: float) -> dict:
     """The arrays every family runs on, from a frame already in time order.
@@ -32,26 +30,26 @@ def _from_frame(frame: pd.DataFrame, asset: dict, risk: float) -> dict:
             "sample": frame["Sample type"].to_numpy(dtype=object)}
 
 
-def build(path: Path, asset: dict, risk: float) -> dict:
+def build(frame: pd.DataFrame, name: str, asset: dict, risk: float) -> dict:
     """One strategy's exported trades as a stream.
 
     Args:
-        path: A CSV written by `-tools action=orderstocsv`, one strategy.
+        frame: That strategy's trades, in time order, from the packed export.
+        name: What to call the stream; the strategy's name.
         asset: What costs.load() returned.
         risk: USD risked per trade.
 
     Returns:
         The stream contract: its name, the source frame, and the arrays of _from_frame().
     """
-    frame = trades.read(path)
-    return {"name": path.stem, "frame": frame, **_from_frame(frame, asset, risk)}
+    return {"name": name, "frame": frame, **_from_frame(frame, asset, risk)}
 
 
-def portfolio(paths: list[Path], asset: dict, risk: float, name: str) -> dict:
+def portfolio(packed: pd.DataFrame, asset: dict, risk: float, name: str) -> dict:
     """Several strategies as one trade stream, in time order.
 
     Args:
-        paths: One CSV per strategy.
+        packed: Every strategy's trades together, as tradestore.read() returned them.
         asset: What costs.load() returned.
         risk: USD risked per trade.
         name: What to call the combined stream.
@@ -61,8 +59,7 @@ def portfolio(paths: list[Path], asset: dict, risk: float, name: str) -> dict:
         trade list is the only thing they were ever given. Read overlap() before believing
         an order-dependent statistic of it.
     """
-    frame = pd.concat([trades.read(p) for p in paths]).sort_values("Open time")
-    frame = frame.reset_index(drop=True)
+    frame = packed.sort_values("Open time").reset_index(drop=True)
     return {"name": name, "frame": frame, **_from_frame(frame, asset, risk)}
 
 

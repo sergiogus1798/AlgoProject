@@ -7,8 +7,8 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 
-from core import assets, bars
-from core.paths import bars_file, export_dir
+from core import assets, barstore, manifest, tradestore
+from core.paths import bar_source, export_dir
 from strategies.monteCarlo import run
 from strategies.monteCarlo.inputs import config, costs, stream
 from strategies.monteCarlo.model import regime, stress
@@ -205,16 +205,18 @@ def main() -> None:
     cache.clear(a.project, a.databank)
     cfg = config.load(a.set)
     asset = costs.load(a.asset)
-    trades = export_dir(a.project, a.databank, a.export) / "trades"
-    names = [f.stem for f in sorted(trades.glob("*.csv"))]
-    first = stream.build(trades / f"{names[0]}.csv", asset, cfg["global"]["risk_per_trade"])
-    feed = str(first["frame"]["Symbol"].iloc[0])
+    export = export_dir(a.project, a.databank, a.export)
+    trades = export / "trades.parquet"
+    names = tradestore.names(trades)
+    first = stream.build(tradestore.read(trades, names[0]), names[0], asset,
+                         cfg["global"]["risk_per_trade"])
+    feed = manifest.read(export)["source"]["symbol"]
     SETUP.update({"project": a.project, "databank": a.databank, "export": a.export,
                   "cfg": cfg, "asset": asset, "base_set": a.set,
                   "trades": trades, "strategies": names,
-                  "day": regime.daily(bars.read(bars_file(feed, a.bars_timeframe))),
+                  "day": regime.daily(barstore.read(feed, a.bars_timeframe)),
                   "shared": {"args": a, "export": trades,
-                             "bars": bars_file(feed, a.bars_timeframe),
+                             "bars": bar_source(feed),
                              "cost": costs.crosscheck(first["frame"], asset),
                              "vol_model": cfg["family_d"]["vol_model"]}})
     url = f"http://127.0.0.1:{a.port}/"

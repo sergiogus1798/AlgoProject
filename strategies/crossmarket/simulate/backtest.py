@@ -47,7 +47,10 @@ def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
     # the bars minus the P/L it reported. Measured correlation 0.9996 over three markets, so
     # the residual is the cost and the swap and nothing else.
     order = np.argsort(trades["Close time"].to_numpy(), kind="stable")
-    return {"held": held, "aligned": aligned, "fill": best, "point_value": value,
+    profile = pricing.fill_profile(aligned, bars, held, best["convention"],
+                                   cfg["diagnostics"]["fill_tolerance"])
+    return {"held": held, "aligned": aligned, "fill": best, "profile": profile,
+            "point_value": value,
             "all": {"pnl": trades["Profit/Loss"].to_numpy()[order],
                     "close": trades["Close time"].to_numpy()[order],
                     "open": trades["Open time"].to_numpy()[order],

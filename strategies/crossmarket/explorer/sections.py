@@ -4,7 +4,8 @@ import pandas as pd
 
 from strategies.crossmarket.render import figures, overlays, panel, tables
 from strategies.crossmarket.verdict import alerts
-from strategies.crossmarket.explorer import (overview_tab, portfolio_tab, simulations,
+from strategies.crossmarket.explorer import (oos_tab as oos_view, overview_tab,
+                                             portfolio_tab, simulations,
                                              stress_tab as stress_view, sweep_tab)
 
 
@@ -174,11 +175,13 @@ def glossary_tab(record: dict, cfg: dict) -> str:
 
 
 TABS = [("overview", "Backtest"), ("random", "Entrada aleatoria (1a)"),
+        ("oos", "Entrada aleatoria · OOS principal"),
         ("models", "Modelos"), ("sweep", "Barrido de ventana"), ("paired", "Pareado (1b)"),
         ("exposure", "Exposición (1c)"), ("stress", "Coste y ejecución"),
         ("fingerprint", "Huella"), ("portfolio", "Portfolio"), ("warnings", "Avisos"),
         ("glossary", "Glosario")]
 RENDER = {"overview": overview_tab.overview_tab, "random": simulations.random_tab,
+          "oos": oos_view.oos_tab,
           "models": simulations.models_tab, "sweep": sweep_tab.sweep_tab,
           "stress": stress_view.stress_tab, "paired": paired_tab, "exposure": exposure_tab,
           "fingerprint": fingerprint_tab, "portfolio": portfolio_tab.portfolio_tab,

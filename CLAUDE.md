@@ -41,6 +41,8 @@ Talk to the owner in Spanish.**
 | running something, or explaining to a human how to | `docs/manual/` — `00-empezar.md`, then that module's page |
 | what one SQX project actually does | regenerate on demand: `sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
 | what is broken or pending | `OPEN.md` |
+| the XAUUSD robustness protocol: what is built, what is left, and the contracts between them | `docs/AgentPDFs/protocolo-robustez-2026-09-21.md` |
+| what anything costs in time, memory or disk | `docs/manual/12-rendimiento.md`, then `perf/README.md` |
 | what data already exists | `~/Desktop/AlgoData/INDEX.md` |
 | what the code imports | `docs/DEPENDENCIES.md` |
 
@@ -53,7 +55,8 @@ contradicts this file, fix this file too.
 ## Layout
 
 `core/` shared library · `sqx/` SQX surface · `tasks/` population analysis ·
-`strategies/` single-strategy analysis · `portfolio/` portfolios · `mt5/` reserved ·
+`strategies/` single-strategy analysis · `portfolio/` portfolios · `perf/` cost catalogue ·
+`mt5/` reserved ·
 `assets/` cost overrides · `knowhow/` facts · `audit/` daily reports · `archive/` finished work,
 unmaintained.
 

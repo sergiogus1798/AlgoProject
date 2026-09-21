@@ -12,10 +12,10 @@ import pandas as pd
 # the same way render/panel.RANDOMISES mirrors model/trade_models.RANDOMISES.
 WARNINGS = {
     "few_trades": "too few trades on this market to say anything firm",
-    "pending_fills": "some entries do not land on a bar open: pending-order fills no null "
-                     "model reproduces",
-    "fill_mismatch": "prices are not reproduced from the bars, so the real run and the null "
-                     "are not priced alike",
+    "pending_fills": "some entries took a price that is not their own bar's: intrabar fills no "
+                     "null model reproduces",
+    "fill_mismatch": "the recorded prices are too far from the bars for these to be the bars "
+                     "the backtest ran on",
     "no_drift": "the market has no drift distinguishable from zero, so E means nothing here",
     "calendar_lost": "the null does not keep the weekday and hour of the real entries",
     "short_sample": "the observed Sharpe needs more trades than there are to be "
@@ -23,6 +23,11 @@ WARNINGS = {
     "bad_hold_fit": "the distribution fitted to the holds does not describe them",
     "off_grid": "a share of the real trades never occupy a bar, so no test that needs a "
                 "duration can use them",
+    # Never fired by warnings(): nothing in a row can reveal it. explorer/oos_run.py attaches
+    # it to the out-of-sample stretch, because it is a fact about the project's acceptance
+    # conditions and not about the data they selected.
+    "selected_window": "this stretch was read by the project's own acceptance conditions, so "
+                       "it is not unseen data",
 }
 
 
@@ -41,8 +46,8 @@ def warnings(row: dict, cfg: dict) -> list[str]:
     """
     d = cfg["diagnostics"]
     checks = [("few_trades", row["trades"] < d["min_trades"]),
-              ("pending_fills", row["on_bar_open"] < d["min_on_open"]),
-              ("fill_mismatch", row["fill_error"] > 0),
+              ("pending_fills", row["on_open_price"] < d["min_on_open"]),
+              ("fill_mismatch", row["fill_error"] > d["max_fill_error"]),
               ("no_drift", not row["e_meaningful"]),
               ("calendar_lost", row["calendar_kept"] < 0.99),
               ("short_sample", not row["min_track_enough"]),

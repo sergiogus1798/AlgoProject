@@ -21,7 +21,22 @@
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git show:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(awk:*)",
+      "Bash(mkdir:*)",
+      "Bash(unzip -l:*)",
+      "Bash(curl -s http://127.0.0.1:*)",
+      "Bash(curl -s http://localhost:*)",
+      "mcp__sqx__list_databanks",
+      "mcp__sqx__list_projects",
+      "mcp__sqx__list_strategies",
+      "mcp__sqx__get_strategy_stats"
+    ],
+    "additionalDirectories": [
+      "~/Desktop/AlgoData",
+      "~/Desktop/SQX",
+      "~/Desktop/SQX_w1",
+      "~/Desktop/AlgoProject_Old"
     ],
     "ask": [
       "Bash(python3 -m sqx.curate.apply_verdict:*)",

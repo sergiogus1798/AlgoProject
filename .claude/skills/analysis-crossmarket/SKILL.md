@@ -75,9 +75,12 @@ skipping the preflight.
 
 ## Step 3 — read it, in this order
 
-1. **`fill_error` and `calendar_kept`**, in the *Comprobaciones* table of the Resumen tab. They must
-   be 0 and 1.00 under `block_shift`. If they are not, the null and the real run are not comparable
-   and there is nothing to interpret. Stop here.
+1. **`fill_error`, `on_open_price` and `calendar_kept`**, in the *Comprobaciones* table. `fill_error`
+   must sit well under `diagnostics.max_fill_error` (0.25 ATR) — **not** at 0: it carries the market's
+   entry spread, a constant every random run pays too, and gold's is 0.023 ATR. `on_open_price` must
+   be 1.00 or near it, and `calendar_kept` 1.00 under `block_shift`. A large `fill_error` means the
+   bars are not the backtest's; a low `on_open_price` means intrabar fills, or the wrong timeframe.
+   Either way the null and the real run are not comparable and there is nothing to interpret.
 2. **The Avisos tab**, before any number. It names what to distrust on each market.
 3. **The per-market table**, then the cone, then the histograms.
 4. **The search space, out loud.** This panel shows one strategy of the 757 in the databank, and

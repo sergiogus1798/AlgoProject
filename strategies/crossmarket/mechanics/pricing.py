@@ -102,6 +102,44 @@ def reconcile(trades: pd.DataFrame, bars: pd.DataFrame, held: pd.DataFrame) -> l
     return sorted(rows, key=lambda r: r["entry_median"] + r["exit_median"])
 
 
+def fill_profile(trades: pd.DataFrame, bars: pd.DataFrame, held: pd.DataFrame,
+                 convention: str, tolerance: float) -> dict:
+    """How the recorded fills sit against the bar opens: a constant spread, or real intrabar fills.
+
+    Args:
+        trades: One market's trades, already restricted to the rows envelope kept.
+        bars: That market's bars.
+        held: What envelope.occupancy() returned.
+        convention: The key reconcile() chose.
+        tolerance: How far from the constant offset a fill may sit and still count as having
+            taken the bar's price, in units of the market's median ATR.
+
+    Returns:
+        `offset` — the median signed entry error in ATR units, which is the **spread**: one
+        constant every trade pays, absorbed by the per-trade cost `backtest.setting()`
+        recovers, and therefore paid by every random run too. `error` — the larger of the two
+        sides' median absolute error in ATR, which is what a wrong feed or a wrong timeframe
+        inflates. `at_open` — the share of entries whose own error sits within `tolerance` of
+        that constant offset, i.e. that really did take their bar's price.
+
+    🔬 The distinction is the whole point, measured 2026-09-21. A constant offset is a spread
+    and reproduces perfectly; a scattered one is a price-conditional fill no null can place.
+    Reading the **clock** instead — is the entry stamped on a bar boundary — answers neither:
+    over 960,705 trades the 4,613 entries stamped mid-bar are priced identically to the
+    956,092 stamped on it. See knowhow/04-export.md.
+    """
+    enter, leave = CONVENTIONS[convention]
+    scale = unit(bars) * float(bars["Open"].median())
+    a = (trades["Open price"].to_numpy()
+         - bars[enter].to_numpy()[held["entry"].to_numpy()]) / scale
+    b = (trades["Close price"].to_numpy()
+         - bars[leave].to_numpy()[held["exit"].to_numpy()]) / scale
+    offset = float(np.median(a))
+    return {"offset": offset, "exit_offset": float(np.median(b)),
+            "error": max(abs(offset), abs(float(np.median(b)))),
+            "at_open": float(np.mean(np.abs(a - offset) <= tolerance))}
+
+
 def point_value(trades: pd.DataFrame) -> float:
     """Account currency per 1.0 of price per 1.0 lot, measured from the trades themselves.
 

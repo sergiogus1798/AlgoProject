@@ -20,6 +20,13 @@
 XAUUSD:
   main: XAUUSD_DukasM1_Infinox
   timeframe: M30
+  # The out-of-sample stretch of the MAIN backtest, copied from <OutOfSample><Range/> inside
+  # Build-Task3.xml of XAUUSD/project.cfx, read 2026-09-21. Declared, never inferred: every
+  # trade the retest exports carries `Sample type = IST`, so the split cannot be read back
+  # from the export and the dates are the only witness. The study runs the same random-entry
+  # test on this stretch alone, reported apart from the additional markets — it is the same
+  # market, not a second one. Read knowhow/05-conditions.md before calling it virgin data.
+  out_of_sample: {from: 2018-01-01, to: 2022-12-31}
   categories:
     # Same macro family as gold: metals and energy, driven by the dollar and by risk.
     family:
