@@ -26,7 +26,7 @@ run:
   # Roughly half of any batch is dropped for trading too little, so 2,000 buys ~1,000
   # points, and that is the width that separates a weak-but-real rho from nothing.
   # Whole run, cold start to verdict: 2 min 16 s and 28 MB.
-  sample: 2000
+  sample: 5000
 
 verdict:
   # Thresholds are the user's, they are changeable, and changing one re-runs the verdict

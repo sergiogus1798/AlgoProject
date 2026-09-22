@@ -30,6 +30,7 @@ design_brief.json ─▶ design ─▶ build ─▶ manifest
 | `execute.py` | Loads a batch into the custodian, runs the retest harness, exports the panel | `python3 -m sqx.variants.execute --work <dir>` | `.sqx` → `retest.csv` |
 | `collect.py` | Contract C3: joins the panel onto the manifest, and refuses a batch whose controls all returned the same number | `python3 -m sqx.variants.collect --work <dir>` | csv + parquet → `metrics.parquet` |
 | `harness.py` | Rebuilds the worker's one-task harness from a donor task that is known to have run: SPP in sample, SPP out of sample, or a plain retest with a cross-market check | `python3 -m sqx.variants.harness --kind spp_is --project Retester --output SPPOut …` | donor task → the worker's `project.cfx` |
+| `spp.py` | Runs one mother's SPP reconnaissance on the custodian and leaves the profile where `export_spp` finds it | `python3 -m sqx.variants.spp --work <dir> --mother <sqx> --kind spp_is --chart '…'` | mother → profile + `spp_is.json` |
 | `config.yaml` | Every tunable: the seed, the strata knobs, the canaries, the file shape | edited | — |
 
 ## The three boundaries, and why they are three

@@ -56,3 +56,14 @@ execute:
   ready_tries: 40        # the port answers ~20 s before the CLI does; poll, do not conclude
   # ⚠️ `-project action=startOnlyTask` reports success and tests NOTHING on this install.
   # Only `action=start` runs the task. Measured 2026-09-22, knowhow/03-driving-sqx.md.
+
+spp:
+  # The reconnaissance run. These are the study's own numbers, not the donor's: the donor
+  # filters a population, this maps a surface.
+  steps: 40               # values per parameter. The permutation count comes out lower --
+                          # integer parameters collapse duplicates -- so measure, do not predict
+  spread_pct: 35          # percent up and down from each parameter's value
+  keep_pct: 0             # PctToPass. 0 because a study needs the profile of every strategy
+                          # it asked about, including the ones that fail
+  timeout_s: 3600         # an SPP reports nothing until it finishes; this is the only cap
+  sync_s: 6               # seconds to let `synctofiles` land before reading the folder

@@ -99,13 +99,18 @@ def cross_check(task: str, name: str, on: bool) -> str:
                   f'<CrossChecks use="{str(on).lower()}"', task, 1) if on else task
 
 
-def spp(task: str, spread: int, steps: int) -> str:
+def spp(task: str, spread: int, steps: int, keep: int = 0) -> str:
     """Set the permutation range and resolution of the SPP cross-check.
 
     Args:
         task: Task XML.
         spread: Percent up and down from each parameter's value.
         steps: How many values per parameter SQX walks.
+        keep: `PctToPass` -- the share of permutations that must be profitable for the
+            strategy to be accepted. **0 for a study.** The donor runs 80 because it is
+            filtering a population; a parameter study needs the profile of every strategy
+            it asked about, including the ones that fail, and a strategy rejected here
+            never reaches the output databank at all.
 
     Returns:
         The XML. `steps` is the only real lever on how many simulations a run performs --
@@ -119,7 +124,7 @@ def spp(task: str, spread: int, steps: int) -> str:
     block = re.search(r"<SequentialOptimization\b.*?</SequentialOptimization>", task, re.S)
     inner = block.group(0)
     for tag, value in (("DistributionUp", spread), ("DistributionDown", spread),
-                       ("Steps", steps)):
+                       ("Steps", steps), ("PctToPass", keep)):
         inner = re.sub(rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", inner, 1)
     return task[:block.start()] + inner + task[block.end():]
 
@@ -162,6 +167,9 @@ def main() -> None:
                     help='repeatable, main first: \'SYMBOL TIMEFRAME SPREAD\'')
     ap.add_argument("--spp-steps", type=int, help="enable SPP with this many steps")
     ap.add_argument("--spp-spread", type=int, default=35, help="percent up and down")
+    ap.add_argument("--spp-keep", type=int, default=0,
+                    help="PctToPass: share of permutations that must be profitable. 0 for "
+                         "a study -- the donor's 80 rejects the strategy and its profile")
     ap.add_argument("--markets", action="store_true",
                     help="enable the additional-markets cross-check")
     a = ap.parse_args()
@@ -172,12 +180,13 @@ def main() -> None:
     task = cross_check(task, "SequentialOptimization", bool(a.spp_steps))
     task = cross_check(task, "RetestOnAdditionalMarkets", a.markets)
     if a.spp_steps:
-        task = spp(task, a.spp_spread, a.spp_steps)
+        task = spp(task, a.spp_spread, a.spp_steps, a.spp_keep)
 
     cfx = write(a.project, task, inputs.load()["execute"]["role"])
     print(f"{a.kind}: {a.input} -> {a.output}")
     for line in re.findall(r"<(?:Setup|Chart|Databanks|CrossChecks|SequentialOptimization|"
-                           r"RetestOnAdditionalMarkets)\b[^>]*>|<Steps>\d+|<Distribution\w+>\d+",
+                           r"RetestOnAdditionalMarkets)\b[^>]*>|<Steps>\d+|<Distribution\w+>\d+"
+                           r"|<PctToPass>\d+",
                            task):
         print("  ", line[:130])
     print(f"-> {cfx}")
