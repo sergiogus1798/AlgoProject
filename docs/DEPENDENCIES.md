@@ -57,7 +57,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/run.py` | 92 | Chain every stage over every mother strategy, resumable, with the ledger as the record. | pipeline, strategies | — |
 | `pipeline/stages/execute.py` | 109 | Run one stage as its own process and turn what it prints into ledger progress. | core, pipeline | — |
 | `pipeline/stages/gates.py` | 177 | The hard refusals: what must exist, what must still be true, and how full the disk is. | core, perf, pipeline | — |
-| `pipeline/stages/recipe.py` | 78 | The stage registry: recipe.yaml read into concrete commands, gates and output paths. | core, pipeline | yaml |
+| `pipeline/stages/recipe.py` | 82 | The stage registry: recipe.yaml read into concrete commands, gates and output paths. | core, pipeline | yaml |
 | `pipeline/stages/verdict.py` | 83 | The last stage: judge one mother against the thresholds, from numbers already on disk. | pipeline | — |
 | `pipeline/stubs/placeholder.py` | 88 | Stands in for a stage whose real module is not written yet, honouring the same contract. | core | — |
 | `pipeline/verify/fixture.py` | 84 | A throwaway mother strategy on disk, so the two proofs need no SQX and no real export. | core, pipeline | — |
@@ -94,7 +94,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/variants/inputs.py` | 88 | What the factory reads: its own settings, the design brief, the known results, where it writes. | core | pandas, yaml |
 | `sqx/variants/make.py` | 100 | The command: one design brief in, the .sqx batch and its manifest out. Never touches SQX. | core, sqx | — |
 | `sqx/variants/manifest.py` | 115 | Contract C2: what was fabricated, read back off the disk. Never what the plan meant to fabricate. | sqx | pandas |
-| `sqx/variants/spp.py` | 139 | Run one mother's SPP reconnaissance on the custodian and export the permutation table. | core, sqx | — |
+| `sqx/variants/spp.py` | 141 | Run one mother's SPP reconnaissance on the custodian and export the permutation table. | core, sqx | — |
 | `sqx/variants/tuples.py` | 59 | The canonical form of a parameter tuple and its hash. Both ends of the factory use it. | — | — |
 | `strategies/crossmarket/explorer/analysis.py` | 78 | One strategy's whole cross-market analysis: every market, then the base asset's OOS stretch. | core, strategies | pandas |
 | `strategies/crossmarket/explorer/jobs.py` | 89 | One job at a time, off the request thread, publishing step-by-step progress. | — | — |

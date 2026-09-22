@@ -51,7 +51,11 @@ def context(project: str, databank: str, strategy: str, day: str) -> dict:
             "reports": str(report_dir(project, databank, day)),
             # 0 means "the whole design": --sample 0 is falsy to the factory, which then
             # fabricates every planned row rather than a slice of them.
-            "sample": settings()["run"]["sample"]}
+            "sample": settings()["run"]["sample"],
+            # The mother the SPP reconnoitres. Frozen copies, not the live databank: SQX
+            # rewrites what it holds, so a run started today and resumed tomorrow would
+            # otherwise be reconnoitring a different file under the same name.
+            "mother": str(DATA / settings()["run"]["mothers"] / f"{strategy}.sqx")}
 
 
 def resolve(stage: dict, ctx: dict) -> dict:

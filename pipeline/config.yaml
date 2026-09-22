@@ -28,6 +28,11 @@ run:
   # Whole run, cold start to verdict: 2 min 16 s and 28 MB.
   sample: 5000
 
+  # Where the frozen mother strategies live, under the data root. Copies, never the live
+  # master databank -- the reconnaissance has to be repeatable, and SQX rewrites what it
+  # holds. MADRES.json beside them records each one's md5 and parameter count.
+  mothers: donors/madres-2026-09-22
+
 verdict:
   # Thresholds are the user's, they are changeable, and changing one re-runs the verdict
   # stage alone: the ledger stores the numbers, never the judgement. `number` is

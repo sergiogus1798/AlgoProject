@@ -29,6 +29,30 @@
 # swaps every command for it so the ledger can be tested without SQX or a real export.
 
 stages:
+  # The reconnaissance, in sample and out. These are the expensive rows -- tens of minutes
+  # and tens of gigabytes each -- and they are first because everything downstream is
+  # shaped by what they find. ⚠️ Both run on the custodian, one at a time: the profile is
+  # ~20 MB on disk but tens of gigabytes while it is built, so two at once do not fit.
+  - name: spp_is
+    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_is --chart XAUUSD_DukasM1_Infinox=M30=5
+    needs: []
+    produces: ["{work}/spp_is.json"]
+    record: [tested, wall_s, steps, spread_pct]
+
+  - name: spp_oos
+    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_oos --chart XAUUSD_DukasM1_Infinox=M30=10
+    needs: ["{work}/spp_is.json"]
+    produces: ["{work}/spp_oos.json"]
+    record: [tested, wall_s]
+
+  # Lift the in-sample profile out of the worker and into the data root, where sppUltra
+  # reads it. The out-of-sample one is exported for comparison and is not what the grid is
+  # built from: a design chosen on the data it will be judged against is not a design.
+  - name: spp_export
+    command: python3 -m sqx.export.export_spp --project Retester --databank Results --role custodian --out-databank {databank}
+    needs: ["{work}/spp_oos.json"]
+    produces: ["raw/{project}/{databank}/{day}/spp/permutations.csv"]
+
   - name: sppultra
     command: python3 -m strategies.sppUltra.report --project {project} --databank {databank} --strategy {strategy}
     needs: ["raw/{project}/{databank}"]

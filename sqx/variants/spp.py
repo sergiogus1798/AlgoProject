@@ -88,8 +88,10 @@ def main() -> None:
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--mother", required=True, type=Path, help="the .sqx to reconnoitre")
     ap.add_argument("--kind", required=True, choices=["spp_is", "spp_oos"])
+    # `=` and not a space: pipeline/recipe.yaml splits a command on whitespace before it
+    # fills the placeholders, so an argument that contains one becomes three.
     ap.add_argument("--chart", action="append", required=True,
-                    help="repeatable, main first: 'SYMBOL TIMEFRAME SPREAD'")
+                    help="repeatable, main first: SYMBOL=TIMEFRAME=SPREAD")
     a = ap.parse_args()
 
     settings = inputs.load()
@@ -98,8 +100,8 @@ def main() -> None:
 
     print(f"PROGRESS 2 preparando el arnes {a.kind}", flush=True)
     stop(cfg["role"])
-    charts = [f'<Chart symbol="{s.split()[0]}" timeframe="{s.split()[1]}" '
-              f'spread="{s.split()[2]}" />' for s in a.chart]
+    charts = [f'<Chart symbol="{p[0]}" timeframe="{p[1]}" spread="{p[2]}" />'
+              for p in (c.replace("=", " ").split() for c in a.chart)]
     task = harness.ungate(harness.retarget(
         harness.donor_task(a.kind), charts, (cfg["input"], cfg["output"])))
     task = harness.cross_check(task, "SequentialOptimization", True)
