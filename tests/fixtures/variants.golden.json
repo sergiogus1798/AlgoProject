@@ -1,0 +1,44 @@
+{
+  "values": {
+    "11111111-1111-1111-1111-111111111111": "11111",
+    "33333333-2222-1111-3333-333333333333": "false",
+    "AroonCrossesPeriod1": "88",
+    "StochasticKPeriod1": "21",
+    "StochasticDPeriod1": "3",
+    "StochasticSlowing1": "45",
+    "ProfitTargetCoef1": "14.25",
+    "StopLossCoef1": "7",
+    "TrailingStop1": "50"
+  },
+  "result_name": "<ResultsGroup ResultName=\"Strategy 1.25.215 P00042\"",
+  "strategy_name": "<StrategyName type=\"String\">Strategy 1.25.215 P00042</StrategyName>",
+  "stamp": "P00042",
+  "tuple_hash": "f09f8deb8b11e053",
+  "shapes": {
+    "full": {
+      "META-INF/MANIFEST.MF": "566ad1a80220026d",
+      "settings.xml": "85a4828f8575eddc",
+      "strategy_Portfolio.xml": "7e5912bc4f0be22e",
+      "lastSettings.xml": "7d24b0141daab2e5",
+      "Results/Main: USDCHF_DarwTick_the5ers_LOM_H1/dailyEquity.bin": "6f0a0ecb414648f8",
+      "orders.bin": "db2f0a7170d75f52",
+      "version.txt": "6b86b273ff34fce1"
+    },
+    "no_profile": {
+      "META-INF/MANIFEST.MF": "566ad1a80220026d",
+      "settings.xml": "85a4828f8575eddc",
+      "strategy_Portfolio.xml": "7e5912bc4f0be22e",
+      "lastSettings.xml": "7d24b0141daab2e5",
+      "Results/Main: USDCHF_DarwTick_the5ers_LOM_H1/dailyEquity.bin": "6f0a0ecb414648f8",
+      "orders.bin": "db2f0a7170d75f52",
+      "version.txt": "6b86b273ff34fce1"
+    },
+    "minimal": {
+      "META-INF/MANIFEST.MF": "566ad1a80220026d",
+      "settings.xml": "85a4828f8575eddc",
+      "strategy_Portfolio.xml": "7e5912bc4f0be22e",
+      "lastSettings.xml": "7d24b0141daab2e5",
+      "version.txt": "6b86b273ff34fce1"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+# Every tunable of the pipeline, in one place. Nothing below is hidden in code.
+
+run:
+  # A stage prints its progress on stdout as "PROGRESS <0..100> <status line>". Any other
+  # line becomes the status without moving the bar. This is the whole coupling between the
+  # pipeline and the modules it chains: one print statement, no import.
+  protocol: PROGRESS
+  # Refuse to start a mother when the data root is already over budget. The budget is what
+  # has to stop a multi-day run, not a full disk -- perf/disk owns the ceilings.
+  stop_over_budget: true
+
+verdict:
+  # Thresholds are the user's, they are changeable, and changing one re-runs the verdict
+  # stage alone: the ledger stores the numbers, never the judgement. `number` is
+  # "<file stem>.<field>", read from the design brief (`brief.`) and from every .json the
+  # stages left in the work directory.
+  rules:
+    - number: brief.n_eff
+      min: 1000
+      why: fewer effective permutations than this and the SPP grid is not a sample of anything
+    - number: brief.observed_max
+      min: 0.0
+      why: a family whose best variant loses money in sample is not worth an out-of-sample look
+    # The canaries are NOT here. A failed canary is not a strategy being bad, it is the
+    # experiment being invalid, so it is a hard gate on the `ran` row of recipe.yaml and
+    # it stops the run rather than producing a verdict nobody should read.
+    - number: wfc.rho
+      min: 0.30
+      why: below this the in-sample surface does not order the out-of-sample one
+
+sweep:
+  # What `cleanup` is allowed to remove once a mother is finished. It deletes only paths
+  # the collect stage recorded as removable, and only after re-hashing what it exported.
+  require_hashes: true

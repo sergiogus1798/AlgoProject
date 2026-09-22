@@ -1,0 +1,45 @@
+# Every tunable of the variant factory, in one place. Nothing below is hidden in code.
+# The shares between strata and the target count are NOT here: they arrive in the design
+# brief (contract C1), because they are a property of the strategy being studied.
+
+design:
+  # A design is reproducible or it is not a design. Every sampler draws from this seed.
+  seed: 20260921
+  neighbourhood:
+    radius: 2             # how far from the centre tuple the dense grid reaches, in level steps
+  factorial:
+    min_levels: 2         # the coarse grid never drops below the two ends of a span
+  frozen:
+    # The coverage stratum varies the frozen parameters too -- that is what makes it a
+    # check on the freezing decision instead of a restatement of it. The brief carries no
+    # range for a frozen parameter, only the value it is pinned at, so the range is
+    # rebuilt the way SQX builds its own permutation ranges (knowhow/01-file-formats.md,
+    # measured): +/-30 % of the value, and a flat 0..6 for anything that is a shift.
+    span: 0.30
+    steps: 5
+    shift_levels: [0, 1, 2, 3, 4, 5, 6]
+
+canaries:
+  # Controls whose result is known before the retest runs. They are chosen at the extremes
+  # of the SPP table on purpose: a miswired chain returns a plausible middling number, it
+  # does not return the maximum of a grid of four thousand.
+  n: 3
+  inert_pairs: true       # one pair per frozen parameter, differing only in it
+
+build:
+  # Which ZIP members a variant carries. Sizes measured on Strategy 17.9.39 as the repack
+  # actually writes it -- the old 5.2 MB / 26 GB figures were a parent whose SPP profile had
+  # been kept, and do not generalise.
+  #   minimal     13.7 KB ->  70 MB at 5,000   META-INF, settings, portfolio, lastSettings, version
+  #   no_profile  98.7 KB -> 505 MB at 5,000   everything but the parent's optimizationProfile.bin
+  #   full       123.3 KB -> 631 MB at 5,000   a byte-for-byte copy of the parent's members
+  #
+  # SETTLED 2026-09-21: SQX loads, lists, exports and copies a five-member .sqx, and the
+  # databank does not de-duplicate on the inherited <Fingerprint> -- it does not de-duplicate
+  # at all on load or copy. So minimal is the shape, and it is 7x cheaper than the next one.
+  #
+  # ⚠️ minimal is cheaper, NOT safer. The parent's 36 <SQStats> blobs live in settings.xml,
+  # which every shape keeps, so a variant that never ran exports the parent's metrics rather
+  # than looking empty. The canaries are what catches that; the shape is not.
+  # knowhow/01-file-formats.md, both 2026-09-21 sections.
+  shape: minimal

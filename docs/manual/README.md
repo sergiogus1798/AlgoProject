@@ -33,6 +33,8 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `13-barras.md` | la librería de barras: un solo dato guardado (el minuto) y todos los timeframes calculados desde él, cómo se sincroniza con SQX y cómo se entera de que actualizaste data |
 | `14-walkforwardmatrix.md` | el análisis de la matriz Walk-Forward: si lo que optimiza bien predice lo que va bien después, cuánto deriva el óptimo entre tramos, y por qué la unidad es la celda y no el tramo |
 | `15-sppultra.md` | el reconocimiento SPP: qué parámetros mueven el resultado, cuáles están demostradamente muertos, si la familia entera es ruido, y el diseño de las 5.000 variantes que sale de ahí |
+| `17-pipeline.md` | el encadenador: mete las ~100 estrategias madre de un databank, vuelve al cabo de unos días y lee los veredictos. Reanudable, con el registro de lo que va pasando mientras pasa, y el borrado de variantes con su prueba de que no se pierde nada |
+| `18-variantes.md` | la fábrica de variantes: coge el diseño que salió del reconocimiento SPP y escribe las 5.000 estrategias en disco, con la tabla que dice qué combinación lleva cada archivo y los controles que delatan una cadena rota |
 | `_PLANTILLA.md` | **la plantilla obligatoria.** Se copia para documentar cada módulo nuevo |
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |

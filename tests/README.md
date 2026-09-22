@@ -10,6 +10,7 @@ else is built on. Run them with plain Python; there is no test framework to inst
 | `test_models.py` | `block_shift` never overlaps its own trades, and one calendar semester is displaced identically in every market — the property the joint null rests on | `python3 tests/test_models.py` |
 | `test_surface.py` | `core.surface` on grids whose answer is known by construction: a shuffled surface must read zero shift, zero Cliff and an unchanged plateau while its paired correlation collapses; `n_eff` counts backtests rather than rows; the sentinels never reach a ranking | `python3 tests/test_surface.py` |
 | `test_sqxfile.py` | `core.sqxfile` still reads a strategy's identity hash, symbol, parameters and rule tree the same way | `python3 tests/test_sqxfile.py` |
+| `test_variants.py` | `sqx.variants` still writes a variant the same way: the values in, the two name fields renamed, the identifier stamped inside, the inherited fingerprint gone, and every other member byte-identical | `python3 tests/test_variants.py` |
 | `test_sqxretest.py` | `core.sqxretest` still cuts a Monte Carlo Retest the same way: every simulation's trade count and P/L sum, the original, the eleven confidence levels, and the method settings | `python3 tests/test_sqxretest.py` |
 
 `test_sweep.py` and `test_models.py` are the two tests here that are not golden files: they check
@@ -34,6 +35,14 @@ golden file over the top. Measured, the invariants catch a little-endian decode,
 simulation indices, a shifted offset and a lost confidence level. They deliberately **cannot** catch
 a dropped *last* simulation — that is indistinguishable from a legitimately truncated run, which 3
 of the 40 real runs are — and the golden file catches that one instead.
+
+`test_variants.py` reuses `fixtures/strategy.sqx` rather than adding one: it carries both int and
+double parameters, which is what the rewriter can get wrong — `95.0` into an int parameter is not
+the same file as `95`. Beside the golden file it carries **invariants**, and the load-bearing one is
+that rewriting the parent's own tuple back into the parent reproduces the parent byte for byte apart
+from the identifier stamp. That ties the reader and the writer together, so a regex that matched the
+wrong block, a number formatted a new way or a lost member fails even if someone blesses the golden
+file over the top.
 
 `fixtures/strategy.sqx` is a real strategy from USDCHF/FinalOOS. **Not every `.sqx` is 6 MB**: they
 run from 28 KB to 15 MB on this machine, and the smallest carries everything the parser reads — a
