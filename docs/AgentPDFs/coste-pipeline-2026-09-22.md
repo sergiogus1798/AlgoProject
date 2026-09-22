@@ -132,7 +132,55 @@ Lo que abarata tokens, por orden de efecto:
 3. **No refabricar para reanudar.** Hoy `build` es de 5-13 s y no duele, pero con el diseño completo
    y varios mercados el orden de magnitud cambia.
 
-## 8 · La medición que falta, y por qué
+## 8 · El SPP: la etapa que domina el coste de verdad
+
+**Corregido respecto a la primera versión de este informe.** El SPP sí se ejecuta headless; lo que
+me llevó a concluir lo contrario fue probarlo sobre una variante fabricada de 8 parámetros, que
+termina en segundos y no escribe nada. Sobre una madre real el comportamiento es otro:
+
+| | variante fabricada | madre real |
+|---|---|---|
+| duración | segundos | **> 70 min** |
+| RSS del JVM | plana | **23,6 → 43,3 GB**, con GC reciclando |
+| perfil escrito | no | en curso |
+
+- 🔬 **No hay progreso por permutación en SQX.** El SPP escribe una línea por parámetro en los
+  primeros tres segundos y luego calla. `action=status` marca `Total tested 0` durante toda la
+  corrida. **La única señal honesta de vida es la memoria del JVM**: subiendo = trabajando, plana =
+  colgado. `sqx/variants/spp.py` reporta segundos transcurridos contra su tope, y no finge un
+  porcentaje que no existe.
+- ⚠️ **La memoria es el límite, no el tiempo.** El perfil pesa ~20 MB en disco y decenas de gigas
+  mientras se construye. Con un heap de 48 GB cabe **uno cada vez**: dos SPP simultáneos en el mismo
+  install no entran.
+- ⚠️ **`PctToPass` tiene que ir a 0.** El donante lo trae a 80 porque filtra una población. Aquí se
+  mapea una superficie, y una madre rechazada **no deja perfil en ningún sitio**. Con 80, una madre
+  con el 70 % de permutaciones rentables desaparece del estudio sin un solo error.
+
+**Lo que esto le hace al presupuesto del encargo.** Si un SPP son ~80 minutos:
+
+| etapa | por madre | 3 madres |
+|---|---:|---:|
+| SPP in-sample | ~80 min | 4 h |
+| SPP out-of-sample | ~80 min | 4 h |
+| fabricar 5.000 | 13 s | 40 s |
+| retestear 5.000, 2 mercados | 7,5 min | 22 min |
+| recogida + WFC + veredicto | 3 s | 9 s |
+| **total** | **~2 h 48 min** | **~8 h 25 min** |
+
+**El SPP pasa a ser el 95 % del coste del proceso entero**, y el retest —que era el cuello de
+botella cuando la rejilla venía dada— cae al 4 %. Las palancas, por rentabilidad:
+
+1. **`steps`.** Es el único mando real sobre cuántas simulaciones hay. Bajarlo de 40 a 20 debería
+   partir el tiempo y la memoria por la mitad; lo que cuesta es resolución en la superficie, y con
+   5.000 variantes muestreadas después, esa resolución quizá no se esté usando.
+2. **Los dos SPP en paralelo, en installs distintos.** No caben en uno, pero sí en dos: el conductor
+   está ocioso. Eso convierte 8 h en 4 h sin tocar nada más.
+   ⚠️ Antes habría que poner `dontStoreOP3DChartsData` a `false` en W1 — **ahí está en `true`**, y
+   con eso el SPP corre y no guarda el detalle.
+3. **`testPrecision`.** Está en 1 (un minuto) porque lo pediste. Bajar a 2 sería mucho más rápido y
+   cambiaría los resultados; es tu decisión, no una optimización que yo pueda tomar.
+
+## 9 · La medición que falta, y por qué
 
 **No pude medir el coste de un SPP nuevo**, que era parte del encargo. El SPP se ejecuta en el
 custodio — el log lo demuestra, una línea por parámetro — pero **no deja nada**: ni

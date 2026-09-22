@@ -19,7 +19,10 @@ VARIANTS, EXPORT = "sqx", "metrics_placeholder.json"
 # is labelled as such in the file the stub writes.
 # The keys have to cover every field the matching recipe row lists under `record`, or the
 # ledger raises KeyError on a stage the fixture is only pretending to run.
-SHAPE = {"design": {"n": 5000, "shortfall": 0, "n_target": 5000, "levels": 27},
+SHAPE = {"spp_is": {"tested": 1, "wall_s": 2100.0, "steps": 40, "spread_pct": 35},
+         "spp_oos": {"tested": 1, "wall_s": 2400.0},
+         "spp_export": {"rows": 12000},
+         "design": {"n": 5000, "shortfall": 0, "n_target": 5000, "levels": 27},
          "build": {"n": 5000, "bytes": 70000000},
          "ran": {"n_loaded": 5000, "n_returned": 5000},
          "collected": {"n": 5000, "canaries_distinct": 4},
