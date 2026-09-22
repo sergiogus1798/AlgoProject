@@ -93,6 +93,38 @@ python3 -m sqx.variants.collect --work <dir>     # une el panel al manifiesto �
 python3 -m strategies.walkForwardCorrelation.report --work <dir>
 ```
 
+### El reconocimiento SPP, dentro del proceso
+
+El SPP es la etapa que dice **qué parámetros mueven el resultado y con qué recorrido**. Sin él no
+hay rejilla. Corre en el custodio, sobre una sola madre:
+
+```bash
+python3 -m sqx.variants.spp --work <dir> --mother "<ruta al .sqx>" --kind spp_is   --chart "XAUUSD_DukasM1_Infinox M30 5"
+```
+
+`--kind` es `spp_is` (2008–2017) o `spp_oos` (2018–2022); las ventanas salen de la tarea del
+donante. Los mandos están en `sqx/variants/config.yaml`, bloque `spp`: `steps`, `spread_pct` y
+`keep_pct`.
+
+⚠️ **`keep_pct` (el `PctToPass` de SQX) va a 0**, y no es un descuido. El donante lo tiene a 80
+porque está **filtrando una población**; aquí se está **mapeando una superficie**, y hacen falta los
+perfiles de todas las madres, también de las que fallan. Con 80, una madre con el 70 % de
+permutaciones rentables es rechazada y **su perfil no se escribe en ningún sitio**.
+
+**Cuánto tarda, y por qué parece colgado.** Un SPP sobre una madre real de 22 parámetros a precisión
+de 1 minuto escribe sus 22 líneas de log **en tres segundos** y luego no dice nada durante **más de
+media hora**. `action=status` marca `Total tested 0` todo ese rato: no existe progreso por
+permutación en SQX. La señal de que está vivo es **la memoria del JVM**, que sube sin parar mientras
+acumula resultados — se midieron 23,6 → 36,9 GB sobre un heap de 48 GB.
+
+| | señal | qué significa |
+|---|---|---|
+| RSS del JVM subiendo, sin log | está trabajando | espera |
+| RSS plano, sin log | **colgado** | párralo |
+
+⚠️ **La memoria es el límite, no el tiempo.** El perfil acaba pesando ~20 MB en disco pero decenas
+de gigas mientras se construye. **No lances dos SPP a la vez en el mismo install.**
+
 ### Cambiar cómo se retestea: el arnés
 
 El retest lo ejecuta un **arnés** en el custodio: el proyecto `Retester` de `~/Desktop/SQX_w2`, con

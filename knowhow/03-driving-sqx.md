@@ -484,3 +484,27 @@ is there. A reader that checks only the count concludes a profile is usable when
 📓 And the count is not the export's row count either: `runs.csv` of the 2026-09-10 export records
 3,940 permutations for `Strategy 17.9.39` while its profile's `permutations` field says 2,533.
 Whatever the field counts, it is not rows. Use `len(results)`.
+
+## 🔬 What an SPP actually costs headlessly, and why silence is not a hang (2026-09-22)
+
+Measured on the custodian, one real XAUUSD mother (22 tunable parameters), `Steps 40`, ±35 %,
+`testPrecision 1` (one-minute bars), 2008–2017, M30.
+
+- 🔬 **It logs once per parameter, at the start, and then says nothing for the rest of the run.**
+  All 22 `Sequential optimization: <strategy> - Optimizing parameter <name>...` lines appear within
+  three seconds; the next log line is over **half an hour** later. `-project action=status` reports
+  `Total tested 0` and `Running time so far 0 ms` throughout — the status endpoint has no
+  per-permutation progress at all.
+- 🔬 **The honest progress signal is the JVM's resident memory**, which climbs steadily while the
+  run accumulates permutation results: 23.6 → 25.7 → 32.5 → 36.9 GB over roughly thirty minutes, on
+  a 48 GB heap. A flat RSS with no log output is a hang; a climbing one is work.
+- ⚠️ **So `sqx/variants/spp.py` cannot report a real percentage**, and does not pretend to: it
+  reports elapsed seconds against its cap. Anything else would be invented.
+- ⚠️ **Memory is the binding constraint, not time.** The profile for a strategy of this size is
+  ~20 MB on disk but tens of gigabytes while it is being built. A 48 GB heap holds one at a time;
+  running two SPPs concurrently on one install is not safe.
+
+🤔 **The contrast with a fabricated variant is the diagnostic.** The same harness on a five-member
+variant with 8 parameters finished in seconds, used no memory and wrote no profile. Same task, same
+settings — so "the SPP does nothing headlessly" was the wrong conclusion drawn from too small a
+subject. Reconnaissance is only meaningful on a strategy with real parameters and real trades.
