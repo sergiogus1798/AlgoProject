@@ -6,7 +6,7 @@ live deeper add the root to `sys.path` in their first lines.
 | file | what it does | in → out |
 |---|---|---|
 | `__init__.py` | Puts stdout/stderr in UTF-8 on import, so Windows' cp1252 console does not crash on this project's own accents and symbols | — |
-| `paths.py` | The only module that knows where anything lives. Reads `config/machine.yaml` | names → `Path` |
+| `paths.py` | The only module that knows where anything lives. Reads `config/machine.yaml`; `WORKERS` maps a worker role (conductor, custodian) to its install and port | names, roles → `Path` |
 | `sqxfile.py` | Read a `.sqx` without SQX: identity hash, symbol, inner XML, parameters | `.sqx` → values |
 | `optprofile.py` | Read a `.sqx`'s Sys. Param Permutation profile without SQX: run counts, per-metric medians against the original value, the stored histograms, and every permutation's parameters and statistics when SQX kept them | `.sqx` → dicts |
 | `sqxstats.py` | Read a `.sqx` result without SQX: decode any `SQStats` blob into its 152 statistics, the stored metrics per sample, and the daily equity curve | `.sqx` → metrics, series |
@@ -18,7 +18,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `barstore.py` | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it on first use and cached under the M1's fingerprint | feed, timeframe → frame |
 | `tradestore.py` | The trade library: one typed Parquet per export, carrying only the columns that cannot be derived back, and the guard that decides when `Ticket` still has to be kept | CSVs → Parquet → frames |
 | `cfx.py` | Read a `project.cfx`: task chain, output databanks, acceptance conditions | project → dicts |
-| `worker.py` | Start, stop and command the headless worker over its HTTP API | command → reply |
+| `worker.py` | Start, stop and command a headless worker over its HTTP API; every call takes the role, conductor by default | command, role → reply |
 | `exportdrv.py` | The three exports SQX offers: trades, databank metrics, bars | request → files |
 | `manifest.py` | Write and read the `manifest.json` every export must carry | facts → JSON |
 | `assets.py` | Load per-asset overrides; `python3 -m core.assets <SYMBOL>` is the preflight | symbol → report |

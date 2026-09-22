@@ -22,11 +22,46 @@ WORKER_PORT = _CFG["worker_port"]
 STRATEGY_POOLS = {name: Path(p).expanduser()
                   for name, p in (_CFG.get("strategy_pools") or {}).items()}
 
+# Headless installs by role. The conductor is sqx_worker / worker_port themselves rather
+# than an entry of its own: two places holding the same port is how one of them goes stale.
+# Any other role — the custodian, and it is optional — comes from sqx_workers.
+WORKERS = {"conductor": {"path": WORKER, "port": WORKER_PORT}}
+WORKERS.update({role: {"path": Path(w["path"]).expanduser(), "port": w["port"]}
+                for role, w in (_CFG.get("sqx_workers") or {}).items()})
+
 WORKER_SH = ROOT / "bin" / "sqx-worker.sh"
 ASSETS = ROOT / "assets"
 MANUAL = ROOT / "docs" / "manual"
 VIEWS_REL = "user/settings/views/databanks"
-STAGING = WORKER / "user/projects/Retester/databanks/Results"
+STAGING_REL = "user/projects/Retester/databanks/Results"
+STAGING = WORKER / STAGING_REL
+
+
+def worker_dir(role: str = "conductor") -> Path:
+    """Top-level folder of one headless install.
+
+    Args:
+        role: "conductor" for the always-awake worker that takes short jobs, "custodian"
+            for the one that holds a long job and receives no other command while it runs.
+
+    Returns:
+        Path to the install. Raises KeyError when the role is not in machine.yaml, which
+        is the honest answer on a machine where the custodian was never cloned.
+    """
+    return WORKERS[role]["path"]
+
+
+def worker_staging(role: str = "conductor") -> Path:
+    """The Retester/Results databank one install exports through.
+
+    Args:
+        role: Worker role, as in worker_dir.
+
+    Returns:
+        Path inside that install. Exports stage a copy of the strategies here because a
+        databank's folder can be empty while SQX holds its records in memory.
+    """
+    return WORKERS[role]["path"] / STAGING_REL
 
 
 def project_dir(name: str, install: Path = MASTER) -> Path:

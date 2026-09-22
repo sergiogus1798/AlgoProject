@@ -15,6 +15,18 @@ sqx_worker: ~/Desktop/SQX_w1     # headless install used for exports and authori
 # Worker command API. The master's CLI does not answer while its GUI is up.
 worker_port: 5060
 
+# Extra headless installs, by role. The conductor is sqx_worker / worker_port above — it
+# is not repeated here, so its port lives in exactly one place.
+#   conductor : short jobs, always awake. Exports, authoring, queries.
+#   custodian : ONE long job at a time; receives no other command while it runs, so a
+#               sync can never delete the .sqx it is holding.
+# custodian is OPTIONAL: a machine with two installs (master + conductor) is a valid
+# configuration and the code works unchanged without it — see docs/SETUP-NEW-MACHINE.md.
+sqx_workers:
+  custodian:
+    path: ~/Desktop/SQX_w2
+    port: 5070
+
 # Where exported data lives. Never inside the repo.
 data_root: ~/Desktop/AlgoData
 

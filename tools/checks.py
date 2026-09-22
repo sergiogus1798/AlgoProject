@@ -70,13 +70,15 @@ def hardcoded_paths(files: list[Path]) -> list[str]:
     """Absolute or home-relative paths written outside core/paths.py.
 
     Args:
-        files: Project Python files.
+        files: Project Python files. bin/*.sh is checked alongside them: the shell
+            scripts that drive SQX carried one machine's install paths for months
+            unseen, because depmap.py_files() only yields .py.
 
     Returns:
         One message per offending line.
     """
     out = []
-    for f in files:
+    for f in files + sorted((ROOT / "bin").glob("*.sh")):
         if f == PATHS_MODULE:
             continue
         for i, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):

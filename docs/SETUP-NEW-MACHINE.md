@@ -22,11 +22,10 @@ wanted for development only, and is understood to be partial today — see §7.
 `core/paths.py` is the **only** module allowed to read `machine.yaml`, and the only place an
 absolute path may appear. `python3 tools/checks.py` enforces that.
 
-⚠️ **Known exception, fix it while you are here:** `bin/clone-sqx-worker.sh` and
-`bin/sqx-worker.sh` carry the original machine's paths hard-coded at the top
-(`/home/sergioguslw/Desktop/SQX`). `checks.py` only scans `.py` files, so it does not catch them.
-**Edit `MASTER` and `WORKER` in both scripts before running either**, or they will operate on paths
-that do not exist — or worse, on the wrong install.
+`bin/sqx-worker.sh` and `bin/clone-sqx-worker.sh` carry no paths of their own: they ask
+`core/paths.py` for the install of the role they were given. Nothing in `bin/` has to be edited on a
+new machine, and `tools/checks.py` now scans `bin/*.sh` as well as the `.py` files, so a path
+creeping back in fails the check instead of hiding for months.
 
 ---
 
@@ -56,25 +55,40 @@ python3 -m pip install --user -r requirements.txt
 
 ## 2 · How many SQX installations, and why
 
-**Two is the working minimum, and it is what the code assumes today.**
+**Three per machine is the shape the code now speaks**, and each has a fixed role. Two — master plus
+conductor — is a valid, supported configuration; the custodian is optional and everything works
+without it.
 
-| install | role | GUI | command API | who may touch it |
-|---|---|---|---|---|
-| **master** | the owner's. Holds his projects and his data feeds | yes, he opens it | port 5050 — **dead while the GUI is up** | read-only for agents |
-| **worker** | headless clone. Every export, authoring and retest job | never | **port 5060 — always answers** | agents, one job at a time |
+| | install | role | GUI | port triple (cli / editor / web) | `-Xmx` sqcli | `coreUsage` (96c / 16c) | who may touch it |
+|---|---|---|---|---|---|---|---|
+| **M** | `~/Desktop/SQX` | the owner's. His projects, his data feeds | yes, he opens it | 5050 / 5051 / 8080 — **dead while the GUI is up** | 24g | **`-1` on both — untouched** | read-only for agents |
+| **W1** | `~/Desktop/SQX_w1` | **conductor**: short jobs, always awake — exports, authoring, queries | never | **5060** / 5061 / 8081 | 16g | 8 / 2 | agents, freely |
+| **W2** | `~/Desktop/SQX_w2` | **custodian**: one long job at a time | never | **5070** / 5071 / 8082 | 48g | 48 / 8 | agents, one job, no command in between |
 
-The reason is not preference, it is measured: with the master's GUI running, its CLI replies
-`Error: CLI not ready.` A headless second install has no GUI to compete with and answers always.
+Why a headless worker at all is measured, not preference: with the master's GUI running its CLI
+replies `Error: CLI not ready.` forever. A headless install has no GUI to compete with.
 
-**A third install** is worth it only when two jobs must run at once — typically a long retest holding
-a large databank while something else exports. The reason it helps is not throughput, it is
-**safety**: every SQX sync deletes on-disk `.sqx` files it does not hold in memory, so touching the
-install that holds a 5,000-variant databank is how work gets destroyed. A second worker lets that
-databank sit undisturbed.
+Why a **second** worker, in order of value:
 
-If you add one, give it its **own** port triple (e.g. 5070 / 5071 / 8082), its **own** copy of the H2
-bar files, and add it to `machine.yaml`. Note that `core/paths.py` exposes a single `WORKER` and
-`WORKER_PORT` today: supporting a pool is a code change, not configuration.
+1. **A busy worker cannot answer.** One worker means a three-hour retest queues every list, count and
+   status behind it. The conductor is what keeps the system answerable.
+2. **It removes a class of failure rather than mitigating it.** Every SQX sync deletes on-disk `.sqx`
+   it does not hold in memory. Give a 5,000-variant databank an install nobody commands and that risk
+   stops existing.
+3. **It overlaps the two expensive stages** — one worker exports while the other retests.
+
+The core split is **elastic**: leave the master at `coreUsage = -1` and cap only the workers, so an
+idle machine gives the owner's generation everything. That also means **the master's own
+`settings.xml` is never edited**, which keeps hard rule 3 clean. Full reasoning, with the measured
+numbers, in `knowhow/03-driving-sqx.md` § *The three-install topology*.
+
+A third install costs **~3 GB, not 98**: `user/data/History` is a symlink to the master's and only
+the three H2 bar files are copied.
+
+In `machine.yaml`, the conductor is `sqx_worker` + `worker_port`; every other role goes under
+`sqx_workers` as `path` + `port`. `core/paths.py` exposes them as `WORKERS`, `worker_dir(role)` and
+`worker_staging(role)`; `WORKER`, `WORKER_PORT` and `STAGING` still mean the conductor. Asking for a
+role `machine.yaml` does not define raises — which is the right answer on a two-install machine.
 
 ⚠️ **Check the SQX licence before running more than one headless instance.** Nobody has read the
 EULA on this point. Ask the owner; do not decide it yourself.
@@ -105,11 +119,12 @@ grep -oE '<AppWebServerPort[A-Z]*>[0-9]+' ~/Desktop/SQX/internal/AppSettings.txt
 **SQX and `sqcli` must both be closed.** H2 takes exclusive locks on the bar databases; cloning while
 anything is running produces a torn copy that truncates backtest windows silently.
 
+Configure `machine.yaml` first (§5) — the script reads the install paths and ports from it — then
+clone one role at a time:
+
 ```bash
-# 1. Point the script at THIS machine first.
-sed -i 's|^MASTER=.*|MASTER="'"$HOME"'/Desktop/SQX"|;s|^WORKER=.*|WORKER="'"$HOME"'/Desktop/SQX_w1"|' \
-  bin/clone-sqx-worker.sh
-bin/clone-sqx-worker.sh
+bin/clone-sqx-worker.sh              # conductor, the default
+bin/clone-sqx-worker.sh custodian    # only if this machine is getting the third install
 ```
 
 What it does, and why each step exists:
@@ -118,10 +133,13 @@ What it does, and why each step exists:
 |---|---|---|
 | 1 | `rsync` master → worker, excluding `user/data/`, `user/log/`, `user/projects/` | the worker starts with no projects of its own |
 | 2 | copy the H2 bar files; **symlink** `user/data/History` | H2 files cannot be shared (exclusive lock) so each install needs its own; `History` is a raw archive and is shared |
-| 3 | patch `internal/AppSettings.txt` → sqcli 5060, editor 5061 | two installs on the same ports collide |
+| 3 | patch `internal/AppSettings.txt` → the role's sqcli and editor ports | two installs on the same ports collide |
 | 4 | **rewrite every absolute path in `settings.xml`** | ⚠️ **the dangerous one.** Without it the worker is a silent *alias* of the master and writes into it |
-| 5 | patch `WebServerPortUsed` → 8081 | the third port, easy to miss |
-| 6 | heap: sqcli 32 GB, GUI 8 GB | tune to the machine's RAM |
+| 5 | patch `WebServerPortUsed` → the role's web port | the third port, easy to miss |
+| 6 | heap: sqcli 16 GB conductor / 48 GB custodian, GUI 8 GB | the §2 table; tune to the machine's RAM |
+
+The ports are derived from the role's cli port — editor is `cli + 1`, web is `8080 + (cli - 5050)/10`
+— so the triple always matches the §2 table and a new role only ever sets one number.
 
 The script verifies 4 and refuses to finish if any path still points at the master. **Do not skip or
 override that check.**
@@ -129,11 +147,13 @@ override that check.**
 Then confirm the worker answers on its own port:
 
 ```bash
-sed -i 's|^MASTER=.*|MASTER="'"$HOME"'/Desktop/SQX"|;s|^WORKER=.*|WORKER="'"$HOME"'/Desktop/SQX_w1"|' \
-  bin/sqx-worker.sh
-bin/sqx-worker.sh start
+bin/sqx-worker.sh start                       # --role conductor is the default
 curl -sg "http://localhost:5060/call?cmd=-project%20action=list"
 bin/sqx-worker.sh stop
+
+bin/sqx-worker.sh --role custodian start      # the same, one port up
+curl -sg "http://localhost:5070/call?cmd=-project%20action=list"
+bin/sqx-worker.sh --role custodian stop
 ```
 
 The port opens and answers `Error: CLI not ready.` for roughly 20 seconds before commands work, and
@@ -151,8 +171,9 @@ Edit it. The template documents every key; the ones that must be right:
 
 | key | note |
 |---|---|
-| `sqx_master`, `sqx_worker` | the two folders from §3 and §4 |
-| `worker_port` | 5060 unless you changed it |
+| `sqx_master`, `sqx_worker` | the master from §3 and the **conductor** from §4 |
+| `worker_port` | 5060 unless you changed it — the conductor's |
+| `sqx_workers` | every other role, `path` + `port`. Omit the block on a two-install machine |
 | `data_root` | **outside the repo.** Heavy data never enters git |
 | `browser` | Chrome or Chromium, for rendering the manual to PDF |
 | `archive`, `strategy_pools` | optional; omit the blocks entirely if absent on this machine |
@@ -183,6 +204,16 @@ bin/sqx-worker.sh check     # compares the .version stamps; changes nothing
 It compares `user/data/*.version`, **not** the `.db` files: H2 rewrites a database header every time
 it is opened, so the bytes diverge on first run even when the bars are identical. A comparison of
 `.db` files will tell you they are stale forever.
+
+⚠️ **Two of the `.version` files are restamped by `sqcli` itself, and `check` knows it.** Every
+launch writes a value of its own into `data_futures.version` and `data_stock.version` — one *newer*
+than the master's — so those two differ on a worker that was synced minutes earlier. `check` prints
+them as `restamp` and does **not** count them, which is what keeps its exit code meaning something.
+The forex bars this project actually trades live in `data.db` and are unaffected. Measured
+2026-09-21, in `knowhow/03-driving-sqx.md`.
+
+The price of that exemption: a genuine futures or stock import on the master is not flagged by
+`check`. It does not matter — `start` syncs unconditionally before every run.
 
 ---
 
@@ -222,12 +253,12 @@ Nothing is configured until all of these pass.
 ```bash
 python3 tools/checks.py                                   # 0 problems
 python3 tests/test_surface.py                             # property test green
-python3 -c "from core.paths import MASTER, WORKER, DATA; print(MASTER, WORKER, DATA)"
+python3 -c "from core.paths import MASTER, WORKERS, DATA; print(MASTER, WORKERS, DATA)"
 ls "$(python3 -c 'from core.paths import DATA; print(DATA)')"   # data root exists
-bin/sqx-worker.sh check                                   # bar versions agree
+bin/sqx-worker.sh check                                   # exit 0; restamped lines are exempt
 bin/sqx-worker.sh start && curl -sg "http://localhost:5060/call?cmd=-project%20action=list"
 bin/sqx-worker.sh stop
-grep -c "Desktop/SQX" bin/*.sh                            # paths are THIS machine's
+grep -c "Desktop/SQX" bin/*.sh                            # 0 — bin/ holds no paths at all
 ```
 
 And one that is not a command: **read `CLAUDE.md`.** Its nine hard rules exist because each of them
@@ -247,7 +278,9 @@ has already destroyed work once. The three that bite hardest on a fresh machine:
 Report to the owner:
 
 1. Which of §1's prerequisites were missing and what you did about them.
-2. The two (or three) install paths and their port triples.
+2. The install paths and port triples of every role you created, and whether the custodian exists
+   on this machine or the configuration is the two-install one.
 3. The output of §8, verbatim.
 4. Any symbol whose `core.assets` preflight exits non-zero — these block all authoring.
-5. Whether `bin/*.sh` still contain any path from another machine.
+5. The output of `grep -c "Desktop/SQX" bin/*.sh` — it must be 0 on every machine, because the
+   scripts resolve their install through `core/paths.py`.
