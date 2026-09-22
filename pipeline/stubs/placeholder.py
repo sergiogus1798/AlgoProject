@@ -20,7 +20,7 @@ VARIANTS, EXPORT = "sqx", "metrics_placeholder.json"
 # The keys have to cover every field the matching recipe row lists under `record`, or the
 # ledger raises KeyError on a stage the fixture is only pretending to run.
 SHAPE = {"sppultra": {"verdict": "proceed", "n_eff": 8412},
-         "spp_is": {"tested": 1, "wall_s": 2100.0, "steps": 40, "spread_pct": 35},
+         "spp_is": {"tested": 1, "wall_s": 2100.0, "max_tests": 15000, "spread_pct": 35},
          "spp_oos": {"tested": 1, "wall_s": 2400.0},
          "spp_export": {"rows": 12000},
          "design": {"n": 5000, "shortfall": 0, "n_target": 5000, "levels": 27},

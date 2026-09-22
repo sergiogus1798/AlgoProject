@@ -99,34 +99,69 @@ def cross_check(task: str, name: str, on: bool) -> str:
                   f'<CrossChecks use="{str(on).lower()}"', task, 1) if on else task
 
 
-def spp(task: str, spread: int, steps: int, keep: int = 0) -> str:
-    """Set the permutation range and resolution of the SPP cross-check.
+def spp(task: str, spread: int, step_pct: float, max_tests: int) -> str:
+    """Configure the System Parameter Permutation cross-check, and only that one.
 
     Args:
         task: Task XML.
         spread: Percent up and down from each parameter's value.
-        steps: How many values per parameter SQX walks.
-        keep: `PctToPass` -- the share of permutations that must be profitable for the
-            strategy to be accepted. **0 for a study.** The donor runs 80 because it is
-            filtering a population; a parameter study needs the profile of every strategy
-            it asked about, including the ones that fail, and a strategy rejected here
-            never reaches the output databank at all.
+        step_pct: How much one step moves a parameter, as a percent of its value. `Steps`
+            is derived from it: the walk spans `2 * spread` percent, so that many steps.
+        max_tests: Ceiling on how many permutations SQX runs.
 
     Returns:
-        The XML. `steps` is the only real lever on how many simulations a run performs --
-        integer parameters collapse duplicate values afterwards, so the permutation count
-        that comes back is always lower than steps x parameters, and by how much depends on
-        the strategy. Measure it; do not predict it.
+        The XML with `OptProfileSysParamPermutation` on and `SequentialOptimization` off.
+
+        ⚠️ **`OptProfileSysParamPermutation` is the SPP. `SequentialOptimization` is not.**
+        They sit side by side in the same `<CrossChecks>` block and both talk about
+        permuting parameters; the second one walks parameters one at a time looking for a
+        better setting, which is a different question and a different cost. Turning on the
+        wrong one burns hours and produces no profile.
+
+        ⚠️ **`MaxTests` must be set, never inherited.** A donor task can carry
+        `1000000001`, which is SQX's sentinel for *exhaustive* -- every combination of
+        every parameter. On a real strategy that is not a long run, it is an unbounded
+        one.
+
+        Steps: one step of ~4 % is the house default. Twelve steps over ±30 % is 5 % a
+        step and coarse; twenty over ±40 % is 4 % and right.
     """
-    # ⚠️ Scoped to the element, not applied to the file. `DistributionUp`, `Steps` and
-    # friends are generic names that several cross-checks use, and this task carries five
-    # of them; a first-match substitution silently retunes the Monte Carlo instead.
-    block = re.search(r"<SequentialOptimization\b.*?</SequentialOptimization>", task, re.S)
+    block = re.search(r"<OptProfileSysParamPermutation\b.*?</OptProfileSysParamPermutation>",
+                      task, re.S)
     inner = block.group(0)
-    for tag, value in (("DistributionUp", spread), ("DistributionDown", spread),
-                       ("Steps", steps), ("PctToPass", keep)):
+    inner = re.sub(r'<OptProfileSysParamPermutation use="(?:true|false)"',
+                   '<OptProfileSysParamPermutation use="true"', inner, 1)
+    for tag, value in (("MaxTests", max_tests), ("DistributionUp", spread),
+                       ("DistributionDown", spread),
+                       ("Steps", round(2 * spread / step_pct))):
         inner = re.sub(rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", inner, 1)
-    return task[:block.start()] + inner + task[block.end():]
+    inner = recommended(inner)
+    task = task[:block.start()] + inner + task[block.end():]
+    return cross_check(task, "SequentialOptimization", False)
+
+
+def recommended(inner: str) -> str:
+    """Permute the recommended parameters, and nothing else.
+
+    Args:
+        inner: The `OptProfileSysParamPermutation` element.
+
+    Returns:
+        The element with `WhatToParametrize` set to SQX's "Recommended parameters" choice:
+        `type="0"`, `Recommended` true, every other family false. Picking families by hand
+        -- periods and constants and used exit parameters, which is what a donor task may
+        carry -- permutes things the strategy does not actually key on and inflates the run
+        for nothing.
+    """
+    what = re.search(r"<WhatToParametrize\b.*?</WhatToParametrize>", inner, re.S)
+    block = re.sub(r'type="\d+"', 'type="0"', what.group(0), 1)
+    block = re.sub(r"<Recommended>(?:true|false)</Recommended>",
+                   "<Recommended>true</Recommended>", block, 1)
+    for family in ("Periods", "Shifts", "Constants", "OtherParams", "EntryParams",
+                   "EntryLogic", "ExitParamsUsed", "ExitParamsUnused", "BooleanParams"):
+        block = re.sub(rf"<{family}>(?:true|false)</{family}>",
+                       f"<{family}>false</{family}>", block, 1)
+    return inner[:what.start()] + block + inner[what.end():]
 
 
 def write(project: str, task: str, role: str) -> Path:
@@ -165,11 +200,15 @@ def main() -> None:
     ap.add_argument("--output", required=True)
     ap.add_argument("--chart", action="append", default=[],
                     help='repeatable, main first: \'SYMBOL TIMEFRAME SPREAD\'')
-    ap.add_argument("--spp-steps", type=int, help="enable SPP with this many steps")
-    ap.add_argument("--spp-spread", type=int, default=35, help="percent up and down")
-    ap.add_argument("--spp-keep", type=int, default=0,
-                    help="PctToPass: share of permutations that must be profitable. 0 for "
-                         "a study -- the donor's 80 rejects the strategy and its profile")
+    ap.add_argument("--spp", action="store_true",
+                    help="enable the System Parameter Permutation cross-check")
+    ap.add_argument("--spp-spread", type=int, default=35,
+                    help="percent up and down from each parameter (35 or 40; never 30)")
+    ap.add_argument("--spp-step-pct", type=float, default=4.0,
+                    help="how much one step moves a parameter, in percent; Steps is derived")
+    ap.add_argument("--spp-max-tests", type=int, default=15000,
+                    help="ceiling on permutations. NEVER inherit it: a donor can carry "
+                         "1000000001, which is SQX's sentinel for exhaustive")
     ap.add_argument("--markets", action="store_true",
                     help="enable the additional-markets cross-check")
     a = ap.parse_args()
@@ -177,17 +216,18 @@ def main() -> None:
     charts = [f'<Chart symbol="{s.split()[0]}" timeframe="{s.split()[1]}" '
               f'spread="{s.split()[2]}" />' for s in a.chart]
     task = ungate(retarget(donor_task(a.kind), charts, (a.input, a.output)))
-    task = cross_check(task, "SequentialOptimization", bool(a.spp_steps))
     task = cross_check(task, "RetestOnAdditionalMarkets", a.markets)
-    if a.spp_steps:
-        task = spp(task, a.spp_spread, a.spp_steps, a.spp_keep)
+    if a.spp:
+        task = cross_check(task, "OptProfileSysParamPermutation", True)
+        task = spp(task, a.spp_spread, a.spp_step_pct, a.spp_max_tests)
 
     cfx = write(a.project, task, inputs.load()["execute"]["role"])
     print(f"{a.kind}: {a.input} -> {a.output}")
-    for line in re.findall(r"<(?:Setup|Chart|Databanks|CrossChecks|SequentialOptimization|"
-                           r"RetestOnAdditionalMarkets)\b[^>]*>|<Steps>\d+|<Distribution\w+>\d+"
-                           r"|<PctToPass>\d+",
-                           task):
+    for line in re.findall(
+            r"<(?:Setup|Chart|Databanks|CrossChecks|OptProfileSysParamPermutation|"
+            r"SequentialOptimization|RetestOnAdditionalMarkets|WhatToParametrize)\b[^>]*>"
+            r"|<(?:Steps|MaxTests|DistributionUp|DistributionDown)>\d+"
+            r"|<Recommended>\w+", task):
         print("  ", line[:130])
     print(f"-> {cfx}")
 

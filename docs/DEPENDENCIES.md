@@ -90,11 +90,11 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/variants/design/plan.py` | 151 | Turn one design brief into the list of tuples to fabricate. Pure maths; touches no file. | sqx | numpy, pandas |
 | `sqx/variants/design/strata.py` | 137 | The three ways a tuple gets into the design. One signature, one registry, one table each. | — | numpy, scipy |
 | `sqx/variants/execute.py` | 164 | Retest a fabricated batch on the custodian and read the IS/OOS panel back out. | core, sqx | — |
-| `sqx/variants/harness.py` | 196 | Build a worker's one-task retest harness from a donor task that is known to have run. | core, sqx | — |
+| `sqx/variants/harness.py` | 236 | Build a worker's one-task retest harness from a donor task that is known to have run. | core, sqx | — |
 | `sqx/variants/inputs.py` | 88 | What the factory reads: its own settings, the design brief, the known results, where it writes. | core | pandas, yaml |
 | `sqx/variants/make.py` | 100 | The command: one design brief in, the .sqx batch and its manifest out. Never touches SQX. | core, sqx | — |
 | `sqx/variants/manifest.py` | 115 | Contract C2: what was fabricated, read back off the disk. Never what the plan meant to fabricate. | sqx | pandas |
-| `sqx/variants/spp.py` | 141 | Run one mother's SPP reconnaissance on the custodian and export the permutation table. | core, sqx | — |
+| `sqx/variants/spp.py` | 142 | Run one mother's SPP reconnaissance on the custodian and export the permutation table. | core, sqx | — |
 | `sqx/variants/tuples.py` | 59 | The canonical form of a parameter tuple and its hash. Both ends of the factory use it. | — | — |
 | `strategies/crossmarket/explorer/analysis.py` | 78 | One strategy's whole cross-market analysis: every market, then the base asset's OOS stretch. | core, strategies | pandas |
 | `strategies/crossmarket/explorer/jobs.py` | 89 | One job at a time, off the request thread, publishing step-by-step progress. | — | — |

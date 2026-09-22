@@ -441,7 +441,11 @@ way, so the status output cannot distinguish "finished" from "never started" fro
 start again". Always stop before starting, even when you believe nothing is running. It costs one
 call and it is the difference between a run and an hour of confusion.
 
-## ⚠️ The SPP cross-check runs headlessly but leaves nothing behind (2026-09-22)
+## ⚠️ ~~The SPP cross-check runs headlessly but leaves nothing behind~~ — WRONG, see below
+
+🔴 **Superseded 2026-09-22.** Everything in this section is a correct set of measurements of the **wrong cross-check**: `SequentialOptimization` was enabled, not `OptProfileSysParamPermutation`. The SPP persists fine. Kept because the measurements are real and because the reasoning shows how a confident wrong conclusion was built — every control was run except the one that mattered, which was *checking the element name*. See *SPP is `OptProfileSysParamPermutation`* at the end of this file.
+
+## (superseded) The SPP cross-check runs headlessly but leaves nothing behind
 
 **Unresolved, and it blocks running new SPPs on a worker.** Measured on the custodian with a task
 copied verbatim from the owner's own `SPP IS` task (`Retest-Task13.xml` of the frozen donor),
@@ -509,7 +513,9 @@ variant with 8 parameters finished in seconds, used no memory and wrote no profi
 settings — so "the SPP does nothing headlessly" was the wrong conclusion drawn from too small a
 subject. Reconnaissance is only meaningful on a strategy with real parameters and real trades.
 
-## ⚠️ The SPP computes for over an hour and persists nothing — 2026-09-22, unresolved
+## (superseded) The SPP computes for over an hour and persists nothing
+
+🔴 **Resolved 2026-09-22: it was `SequentialOptimization`, not the SPP.** The 91 minutes and the 43 GB were real, and they were spent on a cross-check that writes no profile. The list of things ruled out below stands and is still useful; what it was missing is the first question — *is this even the right element?*
 
 Everything below is measured on the custodian, one real XAUUSD mother, `Steps 40`, ±35 %,
 `testPrecision 1`, `PctToPass 0`, all acceptance conditions off, output databank empty and distinct
@@ -550,3 +556,33 @@ the effective setting living somewhere the GUI owns and the headless CLI only de
 **What would settle it:** open each worker's GUI once, confirm the option in Settings, save and
 close. The owner has offered. Until then, an SPP started headlessly is 90 minutes of CPU for
 nothing, and `sqx/variants/spp.py` should not be pointed at a batch.
+
+## 🔬 SPP is `OptProfileSysParamPermutation`, not `SequentialOptimization` (2026-09-22)
+
+**This is the error that cost the most in this whole project.** Both elements live side by side in a
+retest task's `<CrossChecks>` block, both are about permuting parameters, and only one is the SPP.
+
+| element | what it is |
+|---|---|
+| `OptProfileSysParamPermutation` | **the SPP.** Writes the optimization profile the study reads |
+| `SequentialOptimization` | walks parameters one at a time hunting a better setting. **Writes no profile** |
+
+Enabling the wrong one burned **47 cores for 91 minutes** and produced nothing — and every symptom
+matched "the SPP does not persist headlessly", which is what it was wrongly recorded as above. It
+persists fine; it was never running.
+
+The owner's standing defaults, to be applied unless he names different numbers:
+
+| setting | value | why |
+|---|---|---|
+| `MaxTests` | **15,000** (10,000 also fine) | ⚠️ a donor task can carry `1000000001`, SQX's sentinel for **exhaustive**. Set it, never inherit it |
+| `DistributionUp` / `Down` | **35 or 40** | ±30 is too narrow |
+| `Steps` | `round(2 * spread / 4)` — 18 at ±35, 20 at ±40 | ~4 % a step. 12 steps over ±30 is 5 % and coarse |
+| `WhatToParametrize` | `type="0"`, `Recommended` true, every other family false | hand-picked families permute what the strategy does not key on |
+
+Everything else in the task — the IS/OOS window, the Friday close, the money management, the exits,
+the spread — has to **match what the strategies were built with**, which is why a task is built by
+copying one the owner already runs and replacing only the cross-check block and the databanks.
+
+Written up as a skill: `tools/sqx-lab/plugins/sqx-lab/skills/sqx-spp/SKILL.md`. Implemented in
+`sqx/variants/harness.py`.

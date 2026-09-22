@@ -37,7 +37,7 @@ stages:
     command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_is --chart XAUUSD_DukasM1_Infinox=M30=5
     needs: []
     produces: ["{work}/spp_is.json"]
-    record: [tested, wall_s, steps, spread_pct]
+    record: [tested, wall_s, max_tests, spread_pct]
 
   - name: spp_oos
     command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_oos --chart XAUUSD_DukasM1_Infinox=M30=10

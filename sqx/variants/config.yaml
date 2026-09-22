@@ -60,10 +60,11 @@ execute:
 spp:
   # The reconnaissance run. These are the study's own numbers, not the donor's: the donor
   # filters a population, this maps a surface.
-  steps: 40               # values per parameter. The permutation count comes out lower --
-                          # integer parameters collapse duplicates -- so measure, do not predict
-  spread_pct: 35          # percent up and down from each parameter's value
-  keep_pct: 0             # PctToPass. 0 because a study needs the profile of every strategy
-                          # it asked about, including the ones that fail
+  # ⚠️ The SPP is the OptProfileSysParamPermutation cross-check. SequentialOptimization
+  # sits next to it in the same block, sounds like the same thing, and writes no profile.
+  spread_pct: 35          # percent up and down from each parameter. 35 or 40; never 30
+  step_pct: 4             # how much one step moves a parameter. Steps = 2*spread/step_pct
+  max_tests: 15000        # ⚠️ SET it, never inherit: a donor can carry 1000000001, which is
+                          # SQX's sentinel for exhaustive -- every combination of everything
   timeout_s: 3600         # an SPP reports nothing until it finishes; this is the only cap
   sync_s: 6               # seconds to let `synctofiles` land before reading the folder

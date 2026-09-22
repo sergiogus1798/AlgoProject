@@ -104,8 +104,8 @@ def main() -> None:
               for p in (c.replace("=", " ").split() for c in a.chart)]
     task = harness.ungate(harness.retarget(
         harness.donor_task(a.kind), charts, (cfg["input"], cfg["output"])))
-    task = harness.cross_check(task, "SequentialOptimization", True)
-    task = harness.spp(task, spp["spread_pct"], spp["steps"], spp["keep_pct"])
+    task = harness.cross_check(task, "OptProfileSysParamPermutation", True)
+    task = harness.spp(task, spp["spread_pct"], spp["step_pct"], spp["max_tests"])
     harness.write(cfg["project"], task, cfg["role"])
 
     print("PROGRESS 5 despertando el custodio", flush=True)
@@ -132,7 +132,8 @@ def main() -> None:
     print(f"PROGRESS 100 {done} reteseada en {spent:.0f} s", flush=True)
     (a.work / f"{a.kind}.json").write_text(json.dumps(
         {"tested": done, "wall_s": round(spent, 1), "kind": a.kind,
-         "steps": spp["steps"], "spread_pct": spp["spread_pct"],
+         "max_tests": spp["max_tests"], "spread_pct": spp["spread_pct"],
+         "step_pct": spp["step_pct"],
          "in_databank": {b: [f.name for f in v] for b, v in found.items()}},
         indent=2), encoding="utf-8")
 
