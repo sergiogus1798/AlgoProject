@@ -66,3 +66,87 @@ Lo que si pasa verde ahora mismo: `tools/checks.py` (0 problems), `tests/test_va
 - `-databank action=count` hace un sync-from-files y **destruye** lo que `action=load` acaba de
   cargar. Verificar cargas con `action=export`. (En `knowhow/01-file-formats.md`.)
 - Los verbos de databank usan `name=`, no `databank=`.
+
+---
+
+# Sesión nocturna autónoma — 2026-09-22, 06:30 a 07:05
+
+## 1 · El `selftest` que quedó rojo: arreglado
+
+Era mío. `fixture.chain()` sustituía **todas** las etapas por `stubs/placeholder.py`, incluida
+`verdict`, y el placeholder no conoce ese nombre → `argparse` salía 2 y el arnés se colgaba después.
+Ahora solo sustituye las etapas cuyo nombre está en `placeholder.SHAPE`; `verdict` es módulo de esta
+misma carpeta, lee solo el libro mayor, y corre de verdad contra el fixture, que es lo correcto.
+
+```
+0 problemas
+EXIT=0
+```
+
+**Todo verde:** `tools/checks.py` 247 ficheros 0 problemas · `tests/test_variants.py` ok ·
+`tests/test_surface.py` ok · `pipeline.verify.selftest` 0 problemas. Maestro intacto (7.546 `.sqx`),
+W1 intacto (66), W2 sin `.sqx` propios.
+
+## 2 · El retest: NO resuelto, pero el bloqueo ya no es donde parecía
+
+Monté el arnés en el custodio: `Retester` de W2 recableado a XAUUSD M30 con el `Setup`, el `Chart` y
+el `OutOfSample` del donante congelado, sin cross-checks y con las 30 condiciones de aceptación
+desactivadas para que no filtre nada.
+
+**La tarea arranca y no testea nada, en silencio.** `Total tested 0`, `In databank 3`, `0 ms`, sin
+error y sin `Project finished`.
+
+**El control es lo que salva la noche:** cargué el **padre íntegro** (126 KB, el `.sqx` original del
+export) él solo, y tampoco se retestea. `Total tested 0` igual.
+
+> Es decir: **el problema no es la forma del fichero que fabrica `sqx/variants/`.** Es el arnés o la
+> ejecución de tareas en `sqcli` headless. La forma mínima de 70 MB se queda.
+
+Descartado además: las barras M30 de XAUUSD están (symlink a `History` del maestro), el símbolo
+resuelve, y no hay ni un error en el log de la corrida.
+
+**Siguiente paso, y es barato:** el `Retest-Task1` del XAUUSD del maestro **sí** ha producido
+databanks alguna vez. Diffear su XML contra el recableado, elemento a elemento, es el camino más
+corto. *(Diffear el fichero. No arrancar el proyecto del maestro.)*
+
+## 3 · Las filas stub: NO tocadas, a propósito
+
+`ran`, `collected` y `wfc` siguen en placeholder. `ran` **es** la ejecución del retest: sin retest
+funcionando no hay nada que construir ahí, y construirlo a ciegas sería inventarse el contrato. Todo
+lo de aguas abajo (C3, C4, el WFC, el veredicto real) cuelga de esa misma medición.
+
+## 4 · Tres hechos nuevos, ya en `knowhow/01-file-formats.md`
+
+- 🔬 **SQX renombra en colisión añadiendo `(N)`.** Cargar la misma carpeta dos veces dio `P00000…`
+  y `P00000(1)…`. Es el modo de fallo 1 del encargo 4 visto en vivo, y justifica que el `variant_id`
+  vaya también **dentro** del fichero.
+- 🔬 **Un cross-check desactivado sigue resolviendo su símbolo**, y si no existe mata la tarea sin
+  hacerla fallar. Me costó dos intentos: `Symbol 'EURUSD_M1_dukas' doesn't exist`.
+- 🔬 **`loadconfig` se lleva solo la tarea, no el proyecto**, y SQX lo funde en `project.cfx` al
+  salir. La regla dura 4 por el otro lado: la reescritura al salir no es solo un peligro, es también
+  cómo un `loadconfig` se vuelve permanente.
+
+## 5 · Estado del repositorio
+
+Cuatro commits agrupados por tema, **en local**:
+
+```
+6502b1c docs: what the four commissions found, and what is still open
+13b1c4f fix(logs,disk): archive every install, and budget what the data root now holds
+692528e feat(portability): installs by role, and no absolute path left in bin/
+0ff06f3 feat(pipeline,variants): the variant factory and the stage chainer
+```
+
+⚠️ **El push falló**: `could not read Username for 'https://github.com'`. La sesión no es
+interactiva y no hay credenciales. **Hay que hacer `git push origin data/bar-library` a mano.**
+
+⚠️ **`.claude/settings.json` lo dejé sin commitear a propósito.** Es tu cambio de permisos y es
+deliberado; no me pareció que me tocara a mí meterlo en la historia del repo. Commitéalo tú si
+quieres que viaje.
+
+## 6 · Lo que toqué fuera del repo
+
+- `SQX_w2/user/projects/Retester/project.cfx` — recableado a XAUUSD M30. Copia del original en
+  `AlgoData/snapshots/2026-09-21/w2-retester-before/project.cfx` (md5 `593ea6ac…`).
+- Databank `RetestOut` creado en `Retester` de W2.
+- El maestro **no se tocó**. Ningún build arrancado. Los dos workers parados al terminar.
