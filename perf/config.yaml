@@ -29,7 +29,11 @@ disk:
   # than passed: a new branch appearing and growing must be visible, not silently allowed.
   # Sized 2026-09-21 against 2.3 GB in use, with headroom for the variant study:
   # ~200 MB of trades per mother strategy per market, so raw/ is where growth will land.
-  total_gb: 60
+  # Re-sized the same evening: the first real projects snapshot is 4.8 GB, not the 1.2 MB
+  # the snapshots line was written against, so that branch and the total both moved. Heavy
+  # data belongs in the data root by project rule 7 -- the budget follows the data, the
+  # data does not get moved out to fit the budget.
+  total_gb: 90
   near_share: 0.8            # share of a budget at which a branch is called "near"
   budget_gb:
     raw: 40                  # 2.1 GB today. Dated, immutable, and where the variants land
@@ -38,9 +42,19 @@ disk:
     bars: 3                  # 36 MB today
     logs: 1                  # 103 MB today — archived once already, 4.4 GB -> 102 MB
     retest: 5                # 4 MB today
-    snapshots: 2             # 1.2 MB today
+    snapshots: 20            # 4.8 GB today. One projects snapshot of the master is ~4.5 GB
+                             # (user/projects only; History is excluded). 20 GB holds four,
+                             # which is the point at which the oldest should be pruned --
+                             # see docs/SETUP-NEW-MACHINE.md and knowhow/02-databanks.md.
+    variants: 15             # 0 GB today. Where the fabricated .sqx batches land: ~70 MB per
+                             # mother in the five-member shape, so 15 GB holds the ~100 the
+                             # protocol plans. In the no_profile shape it would hold 30.
+    donors: 1                # frozen project.cfx copies. Kilobytes, but it must be budgeted
+                             # or it reports "unbudgeted" forever.
     derived: 1
     perf: 1
+    pipeline: 1              # the pipeline ledgers: kilobytes per mother strategy,
+                             # and they outlive the data they describe
 
 # The real data every target is measured on. One place, so a measurement taken today and
 # one taken in March are comparable: same project, same databank, same file order.

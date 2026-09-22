@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 from core import manifest
-from core.paths import DATA, MASTER, WORKER
+from core.paths import DATA, MASTER, WORKERS
 
 # 4.6 GB single-day logs exist, so stream rather than read; level 1 keeps a daily run cheap
 # and text logs compress to a few per cent either way.
@@ -48,13 +48,16 @@ def archive(source: Path, dest: Path) -> bool:
 
 
 def main() -> None:
-    """Archive both installs' logs and record what was taken."""
+    """Archive every install's logs and record what was taken."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--install", type=Path, action="append",
-                    help="repeatable; default is the master and the worker")
+                    help="repeatable; default is the master and every worker role")
     a = ap.parse_args()
 
-    for install in a.install or [MASTER, WORKER]:
+    # Every role, not just the conductor. bin/sqx-log-prune.sh walks the same list, and it
+    # deletes a log only once a .gz of it exists here -- so a role this loop skips is a role
+    # whose logs are archived never and pruned never, growing quietly forever.
+    for install in a.install or [MASTER, *(w["path"] for w in WORKERS.values())]:
         if not (install / "user/log").exists():
             continue
         out_dir = DATA / "logs" / install.name
