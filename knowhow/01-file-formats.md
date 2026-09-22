@@ -127,6 +127,50 @@
   grids by 13x. The test doubles as proof that **the engine is deterministic**: identical parameters
   reproduce identical results to the last decimal.
 
+
+- 🔬 **Writing a variant of a strategy is four changes to two members, and nothing else.** Verified
+  end to end 2026-09-21 on `XAUUSD/Strategy 17.9.39` and on `tests/fixtures/strategy.sqx`: rewrite
+  → repack → read back → values correct, and every untouched member byte-identical.
+  1. the tuple, in `strategy_Portfolio.xml`, `<variable><id>NAME</id>…<value>N</value>`;
+  2. the name in `settings.xml`, **twice** — `<ResultsGroup ResultName="…">` and
+     `<StrategyName type="String">`. Miss one and the whole batch lands under a single name;
+  3. the `<Fingerprint …>…</Fingerprint>` element of `settings.xml`, **removed** — every variant
+     inherits the parent's, and the outer element's only child is self-closing, so a non-greedy
+     `<Fingerprint\b.*?</Fingerprint>` cuts exactly the right span;
+  4. the variant's own identifier, as an XML comment after the declaration of
+     `strategy_Portfolio.xml`. The external name cannot be the identity because SQX may rename on
+     collision.
+  Do it by **string substitution, not an `ElementTree` round trip**: the round trip reformats
+  attributes, self-closing tags and whitespace across a file SQX parses with its own reader, and
+  buys nothing. `sqx/variants/build/rewrite.py` does it; `tests/test_variants.py` holds the byte
+  identity as an invariant.
+
+- 🔬 **The tunable parameters are exactly the variables with a non-empty `<paramType>`.** The
+  others — `MagicNumber`, the four direction booleans — carry a UUID as their `<id>` and an empty
+  `<paramType />`, while every tunable has its own name as its id. Seen on `Strategy 17.9.39`
+  (8 tunables of 13 variables) and on the USDCHF test fixture (7 of 9). No catalog lookup needed.
+
+- 🔬 **SQX writes an integral `double` with no decimal point**, so a variant must too: the fixture's
+  `TrailingStop1` is declared `double` and stored `50`. `%g` reproduces the file's own convention.
+  An `int` variable written `67.0` instead of `67` is a different file, and the type is declared
+  right there in the block being rewritten.
+
+- 🔬 **"A full `.sqx` is 5.2 MB" does not generalise, and the 26 GB it implies for 5,000 variants is
+  wrong by forty times.** Measured 2026-09-21 on `XAUUSD/Strategy 17.9.39` as the repack actually
+  writes it — full **123.3 KB**, without `optimizationProfile.bin` **98.7 KB**, and the five-member
+  form (`META-INF`, `settings.xml`, `strategy_Portfolio.xml`, `lastSettings.xml`, `version.txt`)
+  **13.7 KB**. For 5,000 variants that is 631 MB, 505 MB and 70 MB, fabricated in 65 s, 49 s and
+  6 s. The 5.2 MB figure belongs to a parent whose SPP profile was **kept** — the 2.2 MB
+  `optimizationProfile.bin` the 3D-charts setting produces — so the size of a batch depends on how
+  its parent's cross-check was configured, not on the strategy.
+
+- 🤔 **A fabricated variant carries the parent's results until it is retested**, in every shape but
+  the five-member one: `orders.bin`, `dailyEquity.bin` and the `SQStats` blobs in `settings.xml` are
+  the parent's. So a variant that silently never ran does not look empty, it looks like the parent.
+  Nothing readable off the file distinguishes the two; only a canary with a known different result,
+  or the databank count, can. It is the strongest argument for the five-member shape — and 🔬 SQX
+  does load one: settled 2026-09-21, see *The five-member `.sqx` and databank de-duplication* below.
+
 - 🔬 **A sequential-optimisation cross-check writes plain XML, not a binary profile.** The
   `.sqx` gains `Results/Main: <SYMBOL>_<feed>/SequentialOptimization_Results.xml` (11 KB, root
   `<ChainOptimizationResults>`) and, on this install, **no `optimizationProfile.bin` at all** -- the
@@ -416,3 +460,148 @@ and the data cannot separate them — fitting a constant and then naming it woul
 - **`Close type` is not disposable** — `Exit Signal` 662 / `Exit After X Bars` 83 /
   `End Of Friday (Time)` 18. Which one fires moves with the parameters, so a parameter-surface study
   needs it.
+
+## The five-member `.sqx` and databank de-duplication — settled 2026-09-21
+
+The two questions `sqx/variants/` was blocked on. Probed on the **conductor (W1, 5060)** with three
+hand-made variants of `XAUUSD/SPP IS/Strategy 17.9.39` (`DICrossPeriod1` 55 / 60 / 70, distinct
+`ResultName` and `StrategyName`, **parent `<Fingerprint>` deliberately left in**), loaded into a
+fresh databank `Retester/ProbeA` with `-databank action=load folder=…`.
+
+- 🔬 **SQX loads a five-member `.sqx`.** `META-INF/MANIFEST.MF` + `settings.xml` +
+  `strategy_Portfolio.xml` + `lastSettings.xml` + `version.txt`, 15.0 KB as `zipfile` deflates it.
+  All three landed (`Records: 3`), under their own names, and `-databank action=export` rendered a
+  full metrics row for each. Dropping `optimizationProfile.bin`, `orders.bin` and
+  `Results/…/dailyEquity.bin` costs nothing at load time. **So the 70 MB shape is the one to build.**
+- ⚠️ **"Loads" here means loads, lists, exports and copies — not "retests".** No CLI verb exercises
+  a strategy's *rules*; only a project task does, and on this install no worker project is wired to
+  XAUUSD M30, so that half is untested. 🤔 The rules live in `strategy_Portfolio.xml`, which the
+  five-member form keeps intact, so a retest is expected to work — but expected, not measured. The
+  measurement is one retest task on W2 against the variant databank, and it should be the **first**
+  thing the 5,000-variant batch does, on three files, before fabricating the rest.
+
+- 🔬 **The databank does not de-duplicate on the inherited `<Fingerprint>` — because on these write
+  paths it does not de-duplicate at all.** This is the important correction: a bare "three variants
+  went in, three came out" proves nothing, since it is also what a databank with no de-duplication
+  whatsoever produces. The controls:
+
+  | write path | action | records |
+  |---|---|---|
+  | `load` a folder of 3 variants into an empty databank | — | 3 |
+  | `load` **the same folder again** | identical files, identical names, identical fingerprint | **6** |
+  | `copy` those 6 into another databank | — | 6 |
+  | `copy` **the same 6 again** into the same destination | — | **12** |
+
+  Byte-identical files under the same name accumulate. There is no fingerprint check, no name
+  check, no similarity check on `load` or `copy`.
+- 📓 **The only similarity filter in a project lives in the builder, not in a databank.**
+  `DismissTooSimilarStrategies` and `FreshBloodReplaceSimilar` appear in `Build-Task*.xml`
+  (the generation loop); no `Retest-Task*.xml` and no `<Databank …>` registration in `config.xml`
+  carries any de-duplication attribute. So the risk, if it exists anywhere, is on the **output of a
+  retest task**, and that is the same untested path as the point above — one measurement settles
+  both.
+- 🔬 **Removing the parent `<Fingerprint>` is therefore prudence, not a requirement.** Nothing on
+  the load path reads it. Keep removing it (it is wrong data, and the retest path is unproven), but
+  it is not what makes the study possible.
+- 🔬 **A databank created through `-databank action=create` does not appear on disk, and
+  `synctofiles` does not make it appear.** `Retester/ProbeA` held 3 records through the API while
+  `user/projects/Retester/databanks/ProbeA/` never existed, before or after an explicit
+  `action=synctofiles`. Expect to read a fabricated-variant databank through `action=export`, not
+  off the filesystem — and see `02-databanks.md`, which records the same memory-versus-disk gap
+  from the other direction.
+
+## The five-member shape does NOT strip inherited results — verified 2026-09-21 (evening)
+
+Re-ran the probe on the **custodian (W2, 5070)** against the real output of `sqx/variants/`
+(`python3 -m sqx.variants.make --limit 3`, `shape: minimal`), not hand-made files. It corrects the
+🤔 above into a 🔬, and in the direction that costs the most.
+
+- 🔬 **`settings.xml` carries 36 `SQStats` blobs, and the five-member form keeps `settings.xml`.**
+  So dropping `optimizationProfile.bin`, `orders.bin` and `dailyEquity.bin` does **not** drop the
+  parent's results. The earlier note argued the minimal shape was the strongest defence against a
+  variant that silently never ran. It is not a defence at all.
+- 🔬 **Three variants with genuinely different tuples export three byte-identical metric rows.**
+  Loaded into `Retester/VerifA`, `action=export` rendered for all three: net profit `22650.2`,
+  755 trades, PF `1.15`, Sharpe `0.38`, drawdown `8449.28` — the parent's numbers, to the decimal.
+  The tuples inside the files really do differ (`DICrossPeriod1` 67 / 43 / 94, and seven more), and
+  `<Fingerprint>` was removed from all three. Fabrication is correct; the *results* are inherited.
+
+  | what is right | what is wrong |
+  |---|---|
+  | `P00000/1/2` keep their own names — no collision rename | every metric column is the parent's |
+  | `Symbol`/`TimeFrame` correct (`XAUUSD_DukasM1_Infinox`, M30) | `Filters result: FAILED` is the parent's verdict too |
+  | no de-duplication: 3 in, 3 out | nothing on the file distinguishes "not yet run" from "ran" |
+
+- ⚠️ **This is failure mode 2 of `4-variantes.md` §4, and it is live.** A 5,000-variant batch read
+  back today returns 5,000 copies of one row and looks entirely plausible. The **canaries are the
+  only detector**, and they cannot fire until a retest has actually run. 🤔 A cheaper second
+  detector is free and should exist: the collect step refusing a batch whose metric rows are
+  identical across distinct `tuple_hash` values.
+- **The measurement still outstanding is unchanged and is now urgent**: one retest task on the
+  custodian against a variant databank, on three files, *before* fabricating 5,000. Nothing on this
+  install is wired to XAUUSD M30 for it — `Retester` is a clean 1-task harness (no Build, no
+  `GoToTask`) but its `Setup` points elsewhere.
+
+- 🔬 **`-databank action=count` destroys an in-memory load; `action=export` does not.** Straight
+  after `action=load` put 3 strategies in `Retester/VerifA`, `action=count` printed
+  `Syncing databank(s) from files / Loaded 0 strategies to databank VerifA / Records: 0` — the count
+  verb runs a sync-from-files first, disk holds nothing (see the note above), and the load is gone.
+  Re-loading and calling `action=export` returned all 3. **Never verify a load with `count`.** It is
+  hard rule 1 reaching through a verb that reads like a read.
+
+## Does a retest rewrite the inherited `SQStats`? — attempted 2026-09-22, NOT answered
+
+The question the variant study is blocked on. It is still open, but the attempt narrowed it a long
+way and the narrowing is the useful part.
+
+**What was built.** `Retester` on the custodian (W2, 5070) is a stock 1-task harness — no Build, no
+`GoToTask`, so it is the safe place to run one. Its task was rewired to the donor's own retest
+settings, taken verbatim from `AlgoData/donors/XAUUSD_base_2026-09-21/project.cfx`,
+`Retest-Task1.xml`:
+
+| | value |
+|---|---|
+| `Setup` | `dateFrom 2008.01.01` `dateTo 2022.12.31` `testPrecision 2` `slippage 0` `minDist 10` `engine MetaTrader5 (hedged)` |
+| `Chart` | `XAUUSD_DukasM1_Infinox` M30 `spread 0` |
+| `OutOfSample` | `Range 2018.01.01 → 2022.12.31` |
+| cross-checks | off |
+| acceptance conditions | all 30 set `use="false"`, so nothing is filtered out of the output |
+
+Backup of the harness as it was: `AlgoData/snapshots/2026-09-21/w2-retester-before/project.cfx`
+(md5 `593ea6ac11eeb600ed7a4e569dd1f910`).
+
+- 🔬 **The task starts and tests nothing, silently.** `-project action=startOnlyTask name=Retester
+  task=1` logs `=========== Project started ===========` and then `Total tested 0`, `In databank 3`,
+  `Running time so far 0 ms`, forever. No error, no `Project finished`. Tried with input and output
+  on the same databank and on separate ones; same result.
+- 🔬 **It is NOT the five-member shape.** The control settles it: the **parent itself**, the full
+  126 KB `Strategy 17.9.39.sqx` straight out of `raw/XAUUSD/SPP_IS/2026-09-10/strategies/`, loaded
+  alone into the same databank, retests exactly as little — `Total tested 0`. Whatever is wrong is
+  in the harness or in headless task execution, not in what the factory writes. **So the variant
+  format is not implicated, and the 70 MB minimal shape stays.**
+- 🔬 **The bars are present and the symbol resolves.** `SQX_w2/user/data/History` is a symlink to
+  the master's and holds `XAUUSD_DukasM1_Infinox_M30.dat`. After the symbol fix below there is no
+  error of any kind in the custodian's log for the run.
+- ⚠️ **What is still unknown:** whether headless `sqcli` can execute a project task at all on this
+  install, or whether this stock `Retester` needs something a hand-rewired task does not carry.
+  **The next step is to compare against a task known to have run** — the master's own XAUUSD
+  `Retest-Task1` has produced databanks, so diffing its XML against the rewired one, element by
+  element, is the cheapest way in. Do not start the master's project to find out.
+
+Three facts worth keeping, all met while doing this:
+
+- 🔬 **SQX renames on collision by appending `(N)`.** Loading the same folder of `P00000/1/2` twice
+  gave six records: `P00000`, `P00001`, `P00002` and `P00002(1)`, `P00001(1)`, `P00000(1)`. This is
+  failure mode 1 of `docs/encargos/4-variantes.md` §4 observed live, and it is exactly why the
+  `variant_id` is also written **inside** the file and why C2 carries `sqx_name` separately.
+- 🔬 **A cross-check that is switched off still has its symbol resolved,** and an unresolvable one
+  kills the task without failing it. With `<CrossChecks use="false">` the log still showed
+  `ERROR ProjectResources - Error while adding symbol to resources - Symbol 'EURUSD_M1_dukas'
+  doesn't exist`, and the task did nothing. Every `<Chart>` in a task must name a symbol the install
+  actually has, used or not.
+- 🔬 **`-project action=loadconfig` takes only the task, not the project,** and SQX merges it into
+  `project.cfx` when the instance exits. A cfx built from `action=saveconfig` contains a single
+  `config.xml` holding the task; pushing it back left the live project without its databank
+  registrations until the instance was stopped, at which point SQX rewrote `project.cfx` on disk
+  with the merged result — databanks restored, task settings kept. Hard rule 4 from the other side:
+  **the rewrite-on-exit is not only a hazard, it is also how a `loadconfig` becomes permanent.**

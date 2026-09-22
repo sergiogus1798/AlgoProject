@@ -57,3 +57,29 @@ passed. The label describes the databank's setting, **not** evidence that a sync
 - 🔬 The owner syncing it by hand from the GUI wrote all 9,997 `.sqx` to disk within a minute, and
   the reference `OOS` kept its 10,000 through that sync. Asking him to sync is the working route;
   there is still no code-only one while the master's GUI is up.
+
+## The custodian role — how the sync rule stops being a permanent risk
+
+Decided 2026-09-21, alongside the three-install topology (`knowhow/03-driving-sqx.md`).
+
+Hard rule 1 — *every sync deletes on-disk `.sqx` not held in memory* — is usually described as
+something to be careful about. It can instead be designed away, because **the rule is per install**.
+
+**The condition, and it is the whole of it:** the install holding a large databank receives **no
+command between "start" and "collect"**. Not a `-databank action=count`, not a `-project
+action=status`, not an export of something else. Any of those can trigger the sync that prunes disk
+down to whatever memory happens to hold.
+
+That is impossible to guarantee with a single worker, because the same worker is also the one
+answering every other request. With a dedicated **custodian** (`SQX_w2`, port 5070) it is guaranteed
+by construction, and the **conductor** (`SQX_w1`, port 5060) absorbs everything else.
+
+Two corollaries worth stating, because both have already cost work:
+
+- ⚠️ **Only the install that holds a databank can export it.** A `-databank` verb addresses that
+  instance's own projects. So the 5,000 variants are exported by W2, not W1 — which is also why W1
+  can stay small (16 GB) while W2 is large (48 GB).
+- ⚠️ **Opening a worker's GUI triggers syncs**, and it must never run at the same time as that
+  install's CLI daemon. With a 5,000-variant databank inside, opening it is the USDJPY log scenario
+  (`before sync 248 / after sync 36 / removed 248`). Inspect **before** fabricating or **after**
+  collecting — never in between. 🤔 Inferred from the master's behaviour; not verified on a worker.

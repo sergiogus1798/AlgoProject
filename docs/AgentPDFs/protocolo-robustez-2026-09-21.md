@@ -576,6 +576,11 @@ escrita en la misma tarea.
 
 ---
 
+> ⚠️ **Esta sección y la tabla «Estado a 2026-09-21» que la sigue están SUSTITUIDAS por la §7 de
+> `plan-ejecucion-2026-09-21.md`** (topología decidida, umbrales desbloqueados, licencia cerrada).
+> Se conservan como registro de lo que se creía el 2026-09-21. **El resto de este documento sigue
+> vigente**, en particular los contratos de la §2 y los hechos medidos de la §3.
+
 ## 9 · Bloqueos y orden de arranque
 
 | | estado |

@@ -1,8 +1,9 @@
 # AlgoProject
 
 StrategyQuant X generates and robustness-tests strategies for MetaTrader 5; Python does the maths on
-top. **Files in English — except `docs/manual/`, whose reader is the owner and which is in Spanish.
-Talk to the owner in Spanish.**
+top. **Talk to the owner in Spanish.** Code, `knowhow/` and the `README.md` of code folders are in
+English; **`docs/manual/`, `docs/AgentPDFs/`, `docs/preregistro/` and `docs/encargos/` are in
+Spanish, because their reader is the owner.** Do not "fix" them.
 
 ## HARD RULES — ignoring one of these destroys work
 
@@ -41,6 +42,7 @@ Talk to the owner in Spanish.**
 | running something, or explaining to a human how to | `docs/manual/` — `00-empezar.md`, then that module's page |
 | what one SQX project actually does | regenerate on demand: `sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
 | what is broken or pending | `OPEN.md` |
+| **what to work on next, and who does it** — the whole remaining programme split into dispatchable tasks | `docs/AgentPDFs/plan-ejecucion-2026-09-21.md` |
 | the XAUUSD robustness protocol: what is built, what is left, and the contracts between them | `docs/AgentPDFs/protocolo-robustez-2026-09-21.md` |
 | what anything costs in time, memory or disk | `docs/manual/12-rendimiento.md`, then `perf/README.md` |
 | what data already exists | `~/Desktop/AlgoData/INDEX.md` |

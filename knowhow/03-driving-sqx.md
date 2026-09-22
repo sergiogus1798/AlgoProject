@@ -55,6 +55,11 @@ archive does not contain** (found 2026-09-03). That project declares 8 tasks and
 files. `sqx/inspect/project_health.py` scans every project for it in one pass; it is the only
 broken one on this install.
 
+⚪ **Owner's decision 2026-09-21: this one is not repaired.** The two facts above stay true forever
+on this install, so treat them as permanent: **the project list is 14 against 15 directories**, and
+**the hourly sync error keeps being logged**. Diff the list against the directory as always — just
+do not re-diagnose that one gap. What follows is kept for a change of mind, not as pending work.
+
 🔬 **Repair it by grafting, not by swapping in the backup** (2026-09-04). Diffing the two archives
 member by member: `project_backup.cfx` is from 2025-10-13 and its `config.xml` still carries the old
 name `Infinox - SP500ft - H4 (High Precision)` **with spaces** — which breaks the HTTP API, hard rule
@@ -242,3 +247,156 @@ with no setting to enable and no risk to a running instance.
 | live progress % | `/websocket/updates` | needs remote access enabled |
 | live progress %, no settings change | tail `ProgressEngine` + thread names | ✅ always |
 | count results as they land | `-databank action=count` on a timer | worker only |
+
+## The three-install topology — decided 2026-09-21, **built 2026-09-21**
+
+One master plus **two** headless workers **per machine**, each with a fixed role. The decision and
+its reasoning live in `docs/AgentPDFs/plan-ejecucion-2026-09-21.md` §3; the facts are here.
+
+🔬 **Built and verified on PC-A, 2026-09-21.** All three installs exist and each answered on its own
+port with the other two down:
+
+| install | CLI | editor | web | `-Xmx` | `-Xms` | `coreUsage` | size |
+|---|---|---|---|---|---|---|---|
+| `SQX` (master) | 5050 | 5051 | 8080 | 24g | 2g | −1 | 9.7 G + History |
+| `SQX_w1` (conductor) | 5060 | 5061 | 8081 | 16g | 1g | 8 | 4.4 G |
+| `SQX_w2` (custodian) | 5070 | 5071 | 8082 | 48g | 1g | 48 | 4.3 G |
+
+- 🔬 **The CLI port is not a setting in `user/settings/settings.xml` and not in the binary** — the
+  `sqcli` binaries of all three installs are byte-identical (same MD5). It lives in
+  `internal/AppSettings.txt`, as `<AppWebServerPortSQUANT>` plus `<AppWebServerPortSQEDITOR>`. The
+  third port, the web GUI, is `<WebServerPortUsed>` in `settings.xml`. **Three files, two places.**
+- 🔬 **`coreUsage` is absent from a fresh clone's `settings.xml`, and absent means every core.** W1
+  ran for weeks with no `coreUsage` element at all, i.e. all 96, competing with the master's own −1.
+  `clone-sqx-worker.sh` now writes it per role; an install cloned before that date needs it added by
+  hand.
+- 🔬 **`-Xms` is what an idle worker costs.** Dropped from the shipped `4g` to `1g`, a freshly
+  started worker commits **1.7 GB** (`jstat -gc`, eden 1.0 + old 0.7) instead of 4 GB, on both
+  workers, whatever its `-Xmx`.
+- ⚠️ **Before 2026-09-21 the two installs promised 140 GB of heap on a 125 GB machine** (master
+  `-Xmx108g` + W1 `-Xmx32g`). It never failed only because the two were never full at once. Now
+  24 + 16 + 48 = **88 GB**, which is what the budget in `07-practices.md` allows.
+- 🔬 **`user/data/History` is a symlink to the master's**, on both workers — the 84 GB raw archive
+  exists once. The H2 bar files are per-install copies, because H2 takes an exclusive lock.
+- ⚠️ **A worker is cloned without `user/projects`**, so W2 starts with only the five stock projects
+  (`Builder`, `Optimizer`, `Retester`, `PortfolioMaster`, `PortfolioComposer`). That is correct for
+  a custodian: it receives the databank it is given, and nothing else.
+
+| | install | GUI | `-Xms` | `-Xmx` | `coreUsage` (96c / 16c) | ports |
+|---|---|---|---|---|---|---|
+| **M** master | `~/Desktop/SQX` | the owner's | `2g` | `24g` | **`-1` on both — untouched** | 5050 / 5051 / 8080 |
+| **W1** conductor | `~/Desktop/SQX_w1` | never | `1g` | `16g` | 8 / 2 | 5060 / 5061 / 8081 |
+| **W2** custodian | `~/Desktop/SQX_w2` | never | `2g` | `48g` | 48 / 8 | **5070 / 5071 / 8082** |
+
+**Why two workers and not one.** Three reasons, in order of value:
+
+1. 🔬 **A busy worker cannot answer.** With one worker, a three-hour retest queues every interactive
+   query behind it — list, count, status, authoring. A small always-awake conductor is what keeps
+   the system answerable. This is the main reason and it is about responsiveness, not throughput.
+2. 🔬 **It removes a whole class of the rule-1 failure.** Every sync deletes on-disk `.sqx` not held
+   in memory, so any command to the install holding a 5,000-variant databank is a risk. Give that
+   databank its own install and the risk does not get mitigated, it **stops existing** — provided
+   the custodian receives no command between "start" and "collect".
+3. 🔬 **It overlaps the two expensive stages.** W1 exports mother *N*'s trades while W2 retests
+   mother *N+1*'s variants.
+
+**The core split is elastic, not static.** Leave the master at `-1` and cap only the workers. Linux
+CFS then shares by runnable-thread count: with the workers idle the master keeps the whole machine
+and the owner's 24/7 generation loses nothing; with W2 running (95 threads vs 48) the master still
+holds ~66 %. A static three-way split would cost half the generation even on an empty machine — and
+it means **the master's own `settings.xml` is never edited**, which keeps hard rule 3 clean.
+
+⚠️ 🔬 **An install's core setting is `<coreUsage>` in `user/settings/settings.xml`, and `-1` means
+"all".** The master carries it; **`SQX_w1`'s settings.xml is 38 lines and does not contain the key
+at all**, so until 2026-09-21 both installs believed they owned all 96 cores.
+
+🔬 **A third install costs ~3 GB of disk, not 98.** `SQX_w1` is 4.5 GB against the master's 98 GB
+because `user/data/History` is a **symlink** to the master's (84 GB shared) and only the three H2
+bar files are copied (42 MB). The rest is `internal/` at 2.8 GB. Disk is never the argument against
+another install.
+
+## 🔬 `sqcli` rewrites two `.version` stamps on start, so `check` cries STALE forever (2026-09-21)
+
+`bin/sqx-worker.sh check` compares `user/data/*.version` precisely because the `.db` files are not
+comparable — H2 rewrites a database header every time it is opened. **The `.version` files are not
+safe either.** Measured on the conductor, worker stopped throughout except where stated:
+
+| step | `data_futures.version` worker vs master |
+|---|---|
+| `sync` with the worker stopped | **equal** — `check` green, exit 0 |
+| `start`, then `check` | `202609201214` vs master's `202609181234` → **STALE**, exit 1 |
+| `stop`, `sync`, `check` | equal again, exit 0 |
+
+The md5 of the file changes across the start (`c46fbd6c…` → `a02699c3…`) and its mtime becomes the
+moment of the start. `sqcli` writes its own stamp into `data_futures.version` and
+`data_stock.version` on every launch — always the same value, and one *newer* than the master's.
+`brokers.version` and `group_of_stocks.version` are left alone.
+
+🔬 **It is the same value on a different install.** `SQX_w2`, cloned from the master hours later and
+never run by anyone but its cloning agent, showed `202609201214` on both files before this session
+touched it — the identical stamp `SQX_w1` writes. So this is not per-install drift accumulating: it
+is one fixed value `sqcli` stamps wherever it runs. 📓 Where it comes from is **not** the shared
+`user/data/History` store — nothing under it has an mtime anywhere near 2026-09-20 12:14. Origin
+still unknown; a future session can skip that search.
+
+Consequences, in the order they bite:
+
+- **`check` used to report STALE on a perfectly current worker** as soon as it had run once, with a
+  message that read `worker <stamp> < master <stamp>` — and the `<` was backwards, since the
+  restamped value is the newer of the two. **Fixed 2026-09-21 (evening).** `check` now knows which
+  two files `sqcli` restamps, prints them as `restamp`, and does not count them toward its verdict.
+  So `sqx-worker.sh check` exits 0 on a healthy worker and its exit code is usable again.
+- ⚠️ **The price of the exemption:** a genuine futures or stock import on the master is no longer
+  flagged by `check`. Accepted deliberately — `start` syncs unconditionally before every run, so the
+  worker cannot run on stale bars whatever `check` says. `data.db`, where this project's forex bars
+  live, is still compared for real.
+- 🤔 The sync logic itself is right and is deliberately left alone: the copy at start is always safe
+  and always current. What was wrong was only the *freshness report* after the fact.
+
+## 🔬 `rsync` creates its destination, so a role that was never cloned must be refused
+
+`sync_bars` does `rsync -a "$MASTER/user/data/" "$WORKER/user/data/"`. Point that at a role whose
+install does not exist and it happily builds `~/Desktop/SQX_w2/user/data` — 42 MB of bars with no
+`sqcli` around them. `bin/clone-sqx-worker.sh` then refuses to clone that role, because "the worker
+already exists". `sync_bars` now stops unless `$WORKER/sqcli` is executable. `check` and `stop` are
+read-only and still report on a missing install, which is what you want while setting one up.
+
+## Driving a role from Python and from bash (2026-09-21)
+
+🔬 `core/paths.py` holds the roles in `WORKERS`, a map of role → `{"path", "port"}`, plus
+`worker_dir(role)` and `worker_staging(role)`. The **conductor is not an entry of `machine.yaml`'s
+`sqx_workers` block**: it is `sqx_worker` + `worker_port` themselves, so its port exists in exactly
+one place and `WORKER`, `WORKER_PORT` and `STAGING` keep meaning what they always meant. Every
+consumer written before the roles existed still works untouched.
+
+`core/worker.call/start/stop/wait_ready` take `role="conductor"` as their last argument.
+`bin/sqx-worker.sh` and `bin/clone-sqx-worker.sh` take `--role ROLE` / `ROLE` and **ask Python** for
+the install rather than parsing YAML — three lines on stdout, `MASTER`, path, port. That is what
+keeps `paths.py` the only thing in the project that knows where anything lives.
+
+🤔 A role `machine.yaml` does not define raises `KeyError` rather than falling back to the
+conductor. A silent fallback would send a three-hour retest to the install that must stay
+answerable, and that failure would be invisible until something was already lost.
+
+🔬 **The port triple is derivable, so a new role sets one number.** Editor is `cli + 1` and web is
+`8080 + (cli - 5050) / 10`: master 5050/5051/8080, conductor 5060/5061/8081, custodian
+5070/5071/8082. `clone-sqx-worker.sh` computes both from the role's cli port instead of carrying
+three constants that can disagree.
+
+## ⚠️ The command API listens on 0.0.0.0, with no authentication
+
+🔬 2026-09-21, `ss -ltnp`:
+
+```
+LISTEN 0.0.0.0:5050   users:(("StrategyQuantX",pid=3385011))
+LISTEN 0.0.0.0:8080   users:(("StrategyQuantX",pid=3385011))
+```
+
+Not `127.0.0.1`. Anyone on the same network can send `-project action=start` or
+`-databank action=clear`, because the API asks for no credentials. Two consequences:
+
+- **Defensive**: close 5050/5051/5060/5061/5070/5071/8080/8081/8082 at the firewall on any machine
+  that is not on a network you fully trust. Needs `sudo`, so it is the owner's to run.
+- **Opportunity, unused for now**: a worker on another machine is drivable over the LAN without any
+  daemon of its own. The owner's machines are used independently, so this is not being built — but
+  it is the reason a future multi-machine design would not need one daemon per box.

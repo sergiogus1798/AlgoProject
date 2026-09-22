@@ -9,10 +9,15 @@ Status: 🔴 open · 🟡 in progress · 🟢 resolved · ⚪ closed / won't fix
 Reviewed 2026-09-04. 6 and 7 are resolved, 5 is closed, 3 and 9 are settled and built but blocked on
 one thing: **the master GUI must be closed**. Nothing here writes to the master while it is up.
 
+**Reviewed 2026-09-21.** Issue 3 is **⚪ withdrawn by the owner** — the SP500 repair is out of the
+plan and is not to be run; read its box before acting on anything that tails the master's log or
+counts its projects. The GUI-closed window also stopped being the blocker it was: the three-install
+topology was built and verified that day (`knowhow/03-driving-sqx.md`).
+
 | # | was | now | what remains |
 |---|---|---|---|
 | 1 | 🟡 | 🟡 | mitigation needs the lifecycle lane |
-| 3 | 🔴 | 🟡 | repair written and dry-run verified — run it with SQX closed |
+| 3 | 🟡 | ⚪ | **withdrawn by the owner 2026-09-21** — repair not to be run; the hourly error stays |
 | 4 | 🔴 | 🟡 | detector wired; restamping is GUI work |
 | 5 | 🔴 | ⚪ | decoded and proven dead metadata |
 | 6 | 🔴 | 🟢 | archived, 4.4 GB → 102 MB; schedule it |
@@ -28,7 +33,8 @@ one thing: **the master GUI must be closed**. Nothing here writes to the master 
 | 20 | — | 🟡 | new: `.claude/settings.json` gates one destructive repair script but not the other |
 | 21 | — | 🟡 | new: `bin/sqx-worker.sh` is bash, so half the project cannot run on Windows |
 | 22 | — | 🟡 | new: `crossmarket` rebuilt as a one-strategy panel; four threads left open |
-| 23 | — | 🟡 | new: the robustness protocol is half built — the whole variant spine is missing |
+| 23 | — | 🟡 | topology **settled**; design unblocked, execution still waiting on lane P and W2 |
+| 24 | — | 🔴 | new: **the holdout pre-registration is a one-way door** — scaffolded, unsigned |
 
 ---
 
@@ -115,7 +121,19 @@ Still on disk if ever wanted as seed material (unique, not in the master project
 Two pools were undocumented in `CLAUDE.md`: `~/Desktop/WorkSQX` (635 `.sqx`) and
 `~/Desktop/AddonsSQX` (68). Both are now covered by the indexer.
 
-## 3. 🟡 `Infinox_SP500ft_H4_HighPrecision` never loads — repair built, waiting on SQX
+## 3. ⚪ `Infinox_SP500ft_H4_HighPrecision` never loads — WON'T FIX, owner's decision 2026-09-21
+
+> **The owner withdrew this from the plan on 2026-09-21** ("olvídate de ese proyecto del SP500";
+> "quita de la ejecución del plan ese punto"). The repair is written and dry-run verified, and is
+> **not to be run**. Everything below stands as a recorded fact about the install, not as work.
+>
+> **Two consequences that outlive the decision, and both bite other work:**
+> - **The hourly `Project ... does not exist.` keeps being written.** `bin/sqx-log-prune.sh` caps the
+>   disk, it does not stop the cause. Anything tailing the master's log (the progress monitor, lane
+>   P0) **must** filter `ProgressEngine` at source — now a requirement, not an optimisation.
+> - **The master's project list will always be 14 against 15 directories.** That gap is this, not a
+>   new bug. Do not re-diagnose it.
+
 
 `project.cfx` holds 4 files but `config.xml` declares 8 active tasks. A larger
 `project_backup.cfx` (306 KB, 2025-10-13) sits beside it.
@@ -144,8 +162,8 @@ and copies in only the five absent ones. Rehearsed on a copy in the scratchpad: 
 9-member archive, nothing still missing, the underscore name kept, and every databank the five
 grafted tasks name (`SPP`, `WFM LaCity`, `MC Trades`) already registered in the live `config.xml`.
 
-**What remains — needs the master GUI closed.** The tool reads `/proc` and refuses to write while any
-process runs out of the install; it currently exits on that guard. When the lifecycle lane is free:
+**Not to be run** (owner's decision, above). Kept only so a future change of mind does not start from
+scratch. The tool reads `/proc` and refuses to write while any process runs out of the install:
 
 ```bash
 python3 -m sqx.repair.graft_tasks Infinox_SP500ft_H4_HighPrecision           # dry run
@@ -315,6 +333,17 @@ not as work waiting to be done:
 That matters when interpreting those populations — `tasks/` analysis over XAUUSD/OOS is analysis of
 generic strategies, whatever `DoubleVortexLong_Template.sqx` implies. Rerun `template_check.py` after
 any deliberate change to confirm the new setting took.
+
+**Update 2026-09-21 — XAUUSD no longer matches the row above.** Read off the live `project.cfx`
+while freezing the donor copy (`AlgoData/donors/XAUUSD_base_2026-09-21/`), its Build task now
+declares `<StrategyType type="template">` with
+`templateFile=…/AddonsSQX/Templates/TemplatesClaude/StructuralBreakFilters_EntryOnly.sqx` — neither
+the `type="simple"` nor the `DoubleVortexLong_Template.sqx` measured on 2026-09-03. The owner changed
+it; per hard rule 3 that is a decision, not a defect. Recorded only because the consequence is
+factual: **strategies already sitting in XAUUSD's databanks were generated under the old setting**,
+so the "generic strategies" reading still holds for them and stops holding for anything built from
+now on. `template_check.py` against a databank built after this date is what would settle the new
+one. The other eight rows are unverified since 2026-09-04 and may have moved the same way.
 
 
 
@@ -658,16 +687,37 @@ Built (2026-09-21): `core/surface/` with its property test, `strategies/sppUltra
 `assets/XAUUSD.yaml`. Three manual pages, and the findings in `knowhow/01-file-formats.md` and
 `knowhow/04-export.md`.
 
-Not built: **the whole variant spine.** `sqx/variants/` (design, fabrication, execution, collection),
+Built 2026-09-21, later the same day: **`sqx/variants/` design, fabrication and manifest** —
+contract C1 in, `.sqx` batch and contract C2 out, with `tests/test_variants.py` and
+`docs/manual/18-variantes.md`. Verified on `Strategy 17.9.39`: 5,000 tuples designed, 3 fabricated
+and read back clean. **The batch has not been loaded into SQX and no variant has been retested** —
+that is W3 and it stays blocked.
+
+Not built: `sqx/variants/` **execution and collection** (`views.py`, `run.py`, `collect.py`),
 `strategies/walkForwardCorrelation/` with its PBO, `pipeline/`, the multi-market study, and all six
-skills. **No variant has been fabricated yet.**
+skills.
+
+Three decisions `sqx/variants/` took under stated assumptions, all cheap to revisit:
+
+- **The file shape defaults to `no_profile`** (98.7 KB, 505 MB for 5,000). Whether SQX loads the
+  13.7 KB five-member form, and whether the databank dedupes on the inherited `<Fingerprint>`, are
+  still unmeasured; all three shapes are implemented and `sqx/variants/config.yaml` picks one.
+- **A frozen parameter's range for the coverage stratum is reconstructed**, ±30 % and 0..6 for a
+  shift, the way SQX builds its own permutation ranges. The brief gives a value and no span, and
+  coverage has to vary it or it only restates the freezing decision.
+- **Contract C2 gained one column the protocol's table does not list**, `canary_expect_same_as`.
+  An inert-pair canary has no absolute expectation — it must equal the origin row — and without it
+  the pairs are unusable at collection time. Null everywhere else. Needs the owner's nod.
 
 Three things block it, and only the last is technical:
 
-1. **The SQX installation topology.** How many installs, on how many machines. The owner paused
-   `sqx/variants/` for this on 2026-09-21. It is the same decision as open question 2 of
-   `plataforma-unificada-2026-09-20.md`, which says it decides the architecture and cannot be
-   postponed. `docs/SETUP-NEW-MACHINE.md` is the runbook once it is decided.
+1. ~~**The SQX installation topology.**~~ 🟢 **SETTLED 2026-09-21: three installs per machine** —
+   master + conductor (W1, 5060) + custodian (W2, 5070), on both PCs. Heaps, core caps and the
+   reasoning are in `knowhow/03-driving-sqx.md` and `knowhow/07-practices.md`; the execution tasks
+   are lane S of `docs/AgentPDFs/plan-ejecucion-2026-09-21.md`. **`sqx/variants/` design is
+   unblocked**; execution additionally waits for lane P's path work and for W2 to exist.
+   ⚠️ `docs/SETUP-NEW-MACHINE.md` §2 still says "two is the working minimum" and is now stale —
+   task P1 updates it.
 2. **`bin/sqx-worker.sh` is bash, and the platform must run on several Linux machines.** That
    promotes the port to Python from "decide early" to a requirement. Cheapest moment is whenever
    `sqx/variants/` is built, since that layer is being touched anyway. ⚠️ Related debt found the
@@ -680,3 +730,27 @@ Three things block it, and only the last is technical:
 Also pending the owner: the WFC verdict thresholds are PROPOSED, not approved; and the costs in
 `assets/XAUUSD.yaml` are SQX defaults, not agreed Infinox figures, so every cost-bearing result
 produced before he replaces them carries that caveat.
+
+
+---
+
+## 24. 🔴 The holdout pre-registration does not exist, and it is a one-way door
+
+Split out of issue 23's blocker list on 2026-09-21 because it is not a variant-study problem: it
+gates every study that reads **2022–2026**, and unlike everything else here it **cannot be fixed
+retroactively**. The first analysis that looks at that window without it burns the holdout
+permanently, and no later result over that window is defensible.
+
+Scaffolding written 2026-09-21 to `docs/preregistro/holdout-XAUUSD-2026-09-21.md` — **in the
+repo, not in `AlgoData`**: it has to be under version control to be worth anything, and hard rule 7
+governs heavy data, not a governance document. **It is not
+in force until the owner fills in the four decisions and signs it** — the file names them
+explicitly and says so at the top.
+
+Until it is signed, no module reads 2022–2026. Lots build and verify against the SPP Phase 0 export
+already on disk (`raw/XAUUSD/SPP_IS/2026-09-10/`).
+
+Related: the WFC verdict thresholds are PROPOSED, not approved — but the owner decided 2026-09-21
+that **thresholds do not block anything**: the user decides them and they are changeable. The
+pre-registration records whichever number is current, and records the change when it changes. That
+is what keeps it honest while the criteria are still moving.

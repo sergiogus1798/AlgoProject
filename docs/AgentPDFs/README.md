@@ -53,6 +53,13 @@ protocol, with the lots already built marked as such and the rest specified in e
 several agents to work in parallel against the contracts in its §2. Its status table is the
 authoritative answer to "what is left", and it is updated as lots land.
 
+`plan-ejecucion-2026-09-21` is the third dossier, and the first written to be **dispatched rather
+than read**. It splits the whole remaining programme into two lanes — one agent organising the three
+SQX installations, several agents writing Python — with every task a self-contained brief: what to
+read, what to do, how to verify it, what to hand back. Its §7 supersedes the status table and the
+blockers section of `protocolo-robustez-2026-09-21`; the rest of that dossier stands. It deliberately
+excludes the desktop shell.
+
 Stems, then: `<module>-` for a spec, `<module>-rendimiento-` for an audit, `<topic>-` for a dossier.
 
 Not covered by `tools/checks.py`: these are hand-triggered deliverables, not generated on every run.

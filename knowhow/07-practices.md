@@ -50,6 +50,28 @@ The project splits cleanly in two, and only one half is tied to Linux.
   both platforms.**
 - 🔬 Python 3.10–3.13. numpy, scipy and arch publish no 3.14 wheels at the pinned versions.
 
+## 📓 A checker only sees the files it is handed — `bin/*.sh` was never one of them (2026-09-21)
+
+`tools/checks.py` enforces "no absolute path outside `core/paths.py`" over `depmap.py_files()`,
+which yields **only `.py`**. `bin/sqx-worker.sh` and `bin/clone-sqx-worker.sh` therefore carried
+`/home/sergioguslw/Desktop/SQX` at the top for months, in green builds, and
+`docs/SETUP-NEW-MACHINE.md` had grown a manual "⚠️ edit these two files first" step to compensate.
+A documented workaround for a rule the checker cannot see is the signal that the checker's *input*
+is wrong, not its rule. `hardcoded_paths()` now takes `files + bin/*.sh`; the same regex works on
+bash because a shell comment also starts with `#`.
+
+## 🔬 `mapfile` over a process substitution hides the exit status, and a line count is not a substitute
+
+Reading a helper's output with `mapfile -t X < <(python3 -c ... 2>&1)` discards `$?`. The obvious
+patch — "trust it only if it printed the 3 lines I expect" — fails silently here: a `KeyError`
+traceback from `python3 -c` is **exactly three lines**, so an unknown worker role sailed through and
+the script ran with an empty install path. Use command substitution, which preserves the status:
+
+```bash
+_W=$(python3 -c '...' "$ROLE" 2>&1) || { printf 'cannot resolve %s:\n  %s\n' "$ROLE" "$_W"; exit 1; }
+mapfile -t _W <<< "$_W"
+```
+
 ## Research lessons
 
 - 🔬 **A stop-fill assumption can dominate a stop study's conclusion.** In the ATR-stop study
@@ -676,3 +698,262 @@ Found building `perf/`, the performance catalogue. Every number here is measured
   `strategies/monteCarlo/` reorganisation. They are reparented to systemd and survive any restart of
   the panel. `ps -eo pid,ppid,etime,rss,cmd | grep forkserver` finds them; they are killed by PID,
   children first — never `pkill -f python3`, which matches your own shell.
+
+## 🔬 Budgeting RAM across SQX and Python (2026-09-21)
+
+Found while deciding how many SQX installs fit on one machine. Measured on the 96-core / 125 GB box.
+
+### `jstat -gc` separates what a JVM *needs* from what it was *allowed*
+
+⚠️ **RSS of a JVM with a generous `-Xmx` measures nothing.** The master showed **67.5 GB RSS** and
+looked like it needed 67 GB. It did not:
+
+```
+$ ~/Desktop/SQX/j64/bin/jstat -gc 3385011
+   EC 12,711,936 KB   EU          0 KB     ← eden, just collected
+   OC 47,538,176 KB   OU 16,686,751 KB     ← old gen
+   YGC 252 (21.3 s)   FGC 39 (41.9 s)
+```
+
+**Committed heap 57.4 GB · live set 15.9 GB.** With `-Xmx108g` and `UseParallelGC` there was never
+any pressure to collect, so the heap grew lazily and kept the garbage. 1.5× the measured live set is
+`-Xmx24g`, and that is what the master should carry.
+
+⚠️ **An earlier version of this page said the master "was re-sized to `-Xmx24g` on that evidence".
+It had not been** — `StrategyQuantX.config` still read `-Xmx108g` on 2026-09-21, file mtime
+2026-09-19. Either the edit was never applied or something reverted it. **Applied for real
+2026-09-21**, verified by reading the file back. The lesson is the cheap one: a heap figure in a
+document is not a heap figure on disk; `grep Xm <install>/*.config` is one command.
+
+- **The JDK tools ship inside the install**: `~/Desktop/SQX/j64/bin/{jstat,jcmd,jinfo,jps}`. They are
+  not on `PATH`.
+- **Use `jstat`, not `jcmd`**, on the owner's running master: `jstat` reads the shared perf counters
+  off disk and never attaches to or signals the process.
+- `OU + EU` is the number that matters. `FGCT` growing by more than a few seconds per hour means the
+  heap is too small.
+
+### The budget, and why the two halves are not symmetric
+
+```
+Σ(-Xmx)  ≈  (RAM_total − 5_OS − Python_reserve) / 1.08      # 1.08 = JVM overhead beyond heap
+```
+
+🔬 **A Python reserve costs nothing until it is used; an `-Xmx` is spent the moment it is granted.**
+A reserve is just RAM not promised to any JVM — if unused it stays free for whoever needs it. An
+`-Xmx` is a permission the JVM *exercises*, as the master proved. So be generous with the Python
+reserve and careful with heap ceilings.
+
+🔬 **The Python side does not compete for RAM.** Worst of the nine catalogue targets,
+`montecarlo.analyse_long`, peaks at **2.5 GB** (`AlgoData/perf/history.csv`, 2026-09-21);
+`montecarlo.analyse` at 0.33 GB. The owner's 24 GB reserve is for the future app, not for today's
+analysis.
+
+🔬 **`-Xms` low on the workers is what makes three installs fit.** An idle worker with `-Xms4g`
+(the shipped default in `sqcli.config`) holds 4 GB doing nothing. Dropped to `1g`/`2g`, an idle
+worker costs almost nothing and only the busy one is expensive.
+
+### The two machines
+
+| | PC-A 96c / 125 GB | PC-B 16c / 128 GB |
+|---|---|---|
+| binding constraint | **RAM** | **CPU** — RAM is abundant |
+| M / W1 / W2 `-Xmx` | 24 / 16 / 48 GB | **identical** |
+| M / W1 / W2 `coreUsage` | −1 / 8 / 48 | −1 / 2 / 8 |
+| **applied on PC-A** | **2026-09-21, all three** | not yet |
+| 5,000-variant retest | 3.5 min | ~21 min |
+
+**Identical heaps on both, despite PC-B having more RAM.** Raising ceilings because RAM is free buys
+nothing but uncollected garbage — that is the master's lesson, above. 🔭 On PC-B the longer jobs make
+the custodian role *more* valuable, not less: the window in which a stray command would destroy work
+is six times wider.
+
+## 🔬 A resumable job needs three separate facts, and two of them are not the ledger (2026-09-21)
+
+Written while building `pipeline/`, and measured with `pipeline/verify/selftest.py`.
+
+### A ledger entry is not evidence that the work survived
+
+"Did this stage finish?" has three different answers and a multi-day unattended run meets all
+three. The ledger says done; the outputs are on disk; the outputs are *still what was written*.
+`pipeline/stages/gates.py` needs the first two to skip a stage, because the ledger outlives the
+data it describes on purpose — a mother whose variants were swept would otherwise read as one that
+never finished, and the pipeline would rebuild 5,000 variants to reach a verdict it already had.
+`pipeline/cleanup.py` needs the third, and gets it by re-hashing: a recorded sha256 is what turns
+"the export probably worked" into evidence that outlives the data.
+
+### `os.replace` plus a polling reader: measured, not assumed
+
+The claim that an atomic replace lets a monitor read a file another process is writing is easy to
+repeat and easy to get wrong (a plain `write_text` truncates first, and a reader lands in the
+hole). Measured: a thread reading `state.json` every 20 ms while five stages wrote it through
+temp-file-plus-`os.replace` never caught a partial file across the whole self-test. The temp file
+must be in the **same directory**, not `/tmp` — `os.replace` is only atomic within a filesystem,
+and `AlgoData` is not necessarily on the same one as the repository.
+
+### `SIGKILL` the process *group*, or the test is a lie
+
+The resume test kills the pipeline mid-stage. Killing the child alone leaves the stage's own
+subprocess running, and it keeps writing progress into the ledger of a pipeline that no longer
+exists — which passes the test for the wrong reason. `start_new_session=True` plus
+`os.killpg(os.getpgid(pid), SIGKILL)` is what actually reproduces a power cut. Measured: the stage
+died at 20 %, `state.json` still parsed, the stage was not recorded as finished, and relaunching
+skipped the completed stage and retook the killed one.
+
+### "Progress never decreases" is not the property worth testing
+
+A stage that writes 0 and then 100 at the very end satisfies monotonicity perfectly and is exactly
+the failure the requirement exists to prevent — the owner staring at a screen that shows nothing,
+unable to tell a long stage from a hung one. The test that bites is **an outside reader seeing at
+least two distinct intermediate values**, which is what `pipeline/verify/monotonic.py` asserts.
+Monotonicity is worth enforcing too, but as a raise rather than a clamp: clamping turns a stage
+that repeats work it already did into a bar that merely sits still.
+
+### Split a command template before filling it in, not after
+
+`shlex.split(template.format(...))` turns `--strategy Strategy 17.9.39` into three arguments. The
+same whitespace trap that forces SQX project names to use underscores (`CLAUDE.md` rule 6) reaches
+any subprocess built from a template. Formatting each token of an already-split template is one
+line and has no such failure mode.
+
+### A stage joins by printing, not by importing
+
+`pipeline/` chains modules that three other agents are writing at the same time. The entire
+coupling is one stdout line, `PROGRESS <0..100> <status>`; anything else a stage prints becomes its
+status without moving the bar. Measured on the one real stage that exists: `strategies.sppUltra`
+does not know the protocol, and still records a live status line each time it prints, with progress
+going 0 → 100 at the end. An import-based contract would have blocked all three agents on each
+other's signatures.
+
+## 🔬 Log retention: archive first, prune second, never the day in course (2026-09-21)
+
+SQX's own log directory has no ceiling and no working prune. Measured on the master that day:
+**35 files, 4.5 GB**, and the distribution is not gradual — it is two error storms.
+
+| file | size |
+|---|---|
+| `log_2026_08_18.log` | **4.4 GB** |
+| `log_2026_09_20.log` | **55.5 MB** |
+| `log_2026_09_19.log` | 1.2 MB |
+| a normal idle day | ~130 KB |
+
+📓 One bad day is 34,000× a normal one. `archive_logs.py`'s docstring says "SQX keeps only 14 days —
+SQX prunes on start"; **on this install that is false** — files from 2026-06-13 were still present.
+Do not rely on SQX pruning anything.
+
+**The policy, in force from 2026-09-21.** Two halves, and the order between them is the whole safety
+argument:
+
+1. **Archive.** `sqx.export.archive_logs` runs from cron at 08:00 daily and gzips **every**
+   install's logs into `AlgoData/logs/<install>/`. It compresses **4.5 GB → 104 MB** (2.3%). Nothing
+   is being kept for its bytes; it is being kept for its content, and the archive keeps that.
+2. **Prune.** `bin/sqx-log-prune.sh` deletes a live log only when **a `.gz` copy of it already
+   exists in the archive** — it prints `KEEP … sin copia en el archivo` and refuses otherwise. So a
+   prune can never outrun the archiver, whatever order cron happens to fire them in.
+
+**🔬 A daily cron is the wrong shape for this, and `--auto` is the fix (2026-09-21).** Cron fires at
+a wall-clock time; a machine that is off at 08:15 simply skips that day, and the 4.4 GB file sat for
+a month. `sqx-log-prune.sh --auto` is the event-driven form, wired to **activity** instead:
+
+- It **archives first, then prunes.** Without that a frequent prune finds nothing it is allowed to
+  delete, because deletability is exactly "a `.gz` already exists". This is the whole reason `--auto`
+  is not just "the prune, but more often".
+- It is **rate-limited by a stamp file** (`AlgoData/logs/.prune-stamp`, `MIN_HOURS`, default 4), so
+  calling it on every trigger is free: **50 ms** when the limit blocks it, **170 ms** when it runs
+  with nothing to do (`archive_logs` skips an up-to-date `.gz` by mtime and costs 77 ms).
+- It is **silent unless bytes moved or something is wrong.** A trigger that prints on every session
+  start gets ignored within a week.
+
+Triggers, in order of how often they fire: the `SessionStart` and `Stop` hooks in
+`.claude/settings.json` (async, so they never delay a turn), `bin/sqx-worker.sh start` and `stop`
+(a stopped worker holds no log — the quiescent moment), and the 08:15 cron as the backstop for a day
+when nobody opens the project at all.
+
+⚠️ **The guard checks that a `.gz` exists, not that it matches.** SQX's logs are append-only and the
+archiver re-archives whenever mtime moves, so divergence needs a file rewritten *with an older
+mtime* — which SQX never does, but a test fixture does. Found while testing, worth knowing before
+trusting the guard against something other than SQX.
+
+**⚠️ The one thing pruning can never reclaim is the current day's log**, and on an error-storm day
+that is the entire problem: 55 MB by 20:44, 4.4 GB over one day. SQX holds it open. So `--auto`
+does the only useful thing instead — it **shouts** when the live log passes `WARN_MB` (default 200):
+
+```
+AVISO: SQX/log_2026_09_21.log son 412 MB y es el log del dia en curso — la poda no puede tocarlo.
+       Eso es una tormenta de errores en marcha. 'tail -100' ese fichero y arregla la causa.
+```
+
+📓 That check must live **outside** the `find -mtime +$KEEP_DAYS` loop. Written inside it, it is
+unreachable code: `-mtime +7` can never return a file written today. It was wrong that way first.
+
+- **Retention: 7 days** in the install (`KEEP_DAYS`, overridable), unbounded in the archive.
+  7 days is enough to tail a live incident; anything older is a forensic question, and forensics
+  reads the `.gz`.
+- ⚠️ **Never the current day's log.** The script skips `log_$(date +%Y_%m_%d).log` by name. SQX holds
+  it open and appends; deleting it under a running instance loses the day.
+- **Scheduled**: `15 8 * * *`, fifteen minutes after the archiver's `0 8 * * *`. The order is
+  belt-and-braces, not load-bearing — the archive check makes the prune safe at any hour. Since
+  `--auto` exists this cron is only the backstop for a day with no session at all.
+- The script covers **every install** and both file families (`log_*.log` and `launcher_*.log`), and
+  `--dry-run` lists what would go without deleting. First real run reclaimed the 4.4 GB.
+- ⚠️ 🔬 **The archiver and the pruner have to walk the same list of installs, and for one day they
+  did not (fixed 2026-09-21, evening).** `archive_logs.py` defaulted to `[MASTER, WORKER]` — a
+  two-install constant written before roles existed — while `sqx-log-prune.sh` asks `core.paths` for
+  the master plus *every* role. So the custodian's logs were archived never, and therefore, by the
+  safety rule, pruned never: they just printed `KEEP … sin copia en el archivo` and grew. The
+  archiver now defaults to `[MASTER, *WORKERS]`. **A role added to `machine.yaml` in future is
+  picked up by both halves automatically** — that is the point of asking `core.paths` rather than
+  naming installs.
+- **The archive itself is not pruned, and does not need to be.** It is bounded by the `logs: 1 GB`
+  entry in `perf/config.yaml` (0.11 GB today, compressing 2.3%), and `perf.disk.report` exits
+  non-zero when a branch is over. That check is the periodic look, not a deletion. Deleting archived
+  logs would remove exactly the thing that makes deleting live logs safe.
+- ⚠️ **That log is never read whole — it is tailed.** 4.4 GB in an editor is a dead session.
+  `tail` and `grep`, always.
+
+🔬 **The archive is dominated by the same storms, and it has no ceiling.** Measured 2026-09-21:
+`AlgoData/logs/` is **104 MB, of which 101 MB is one file** — `log_2026_08_18.log.gz`, the 4.4 GB
+day compressed 43×. Every other day of the year together is 3 MB. So "the archive is cheap" is true
+only while no storm happens; each one adds ~100 MB forever. 🤔 Untested but obvious: a log that is
+one stack trace repeated millions of times keeps all its information in a digest (first and last
+occurrence, plus a count per distinct message). Nothing has been deleted from the archive — the
+option is recorded, not taken.
+
+🔬 **The 55 MB day was not volume, it was one repeating error.** `log_2026_09_20.log` is the
+`Infinox_SP500ft_H4_HighPrecision` sync failure looping hourly (`OPEN.md` issue 3). **Log hygiene
+and that repair were one problem seen from two sides**: prune and the disk stops filling; graft the
+missing task files and it stops being written in the first place.
+
+⚠️ **Only one of those two sides is being done.** The owner withdrew the repair on 2026-09-21
+(`OPEN.md` issue 3, ⚪). So **the cause stays and the pruning is permanent load-bearing
+infrastructure**, not a tidy-up while a fix lands. Two things follow: the retention policy cannot be
+relaxed, and anything that reads the master's log must filter `ProgressEngine` at source rather than
+expect a quiet file.
+
+### The number that stops the run and the number that produces a verdict are different things
+
+Both are "a figure compared against a limit", and putting them in the same place is the easy
+mistake. A failed canary does not mean the strategy is bad — it means the variants SQX returned
+are not the ones that were written, so **nothing measured afterwards means anything**. Judging it
+produces a verdict nobody should read; gating on it stops the machine before it spends hours. The
+test that separates them: does the number say *this strategy is not good enough* (a threshold, the
+user's, in `config.yaml`, changeable without reprocessing) or *this measurement is invalid* (a
+gate, on the recipe row, stops the run)? In `pipeline/` the canaries are a gate and are
+deliberately absent from `verdict.rules`.
+
+### Fingerprinting the design is what catches the failure that does not crash
+
+`brief_hash` in the C5 ledger looks like bookkeeping until you ask what it is for. The brief is
+read once, 5,000 variants are fabricated from it, and everything afterwards is measured against
+numbers the brief also carries. If the brief is regenerated in between — sppUltra rerun, a
+threshold changed, a different export day — nothing errors: the run completes and reports one
+design judged against another's numbers. `gates.unchanged` compares the recorded hash to the file
+before every stage and refuses. **A recorded hash with nothing reading it is decoration**; the
+gate is what makes the field worth writing.
+
+### A provisional cost is a decision; a missing one is a blocker
+
+`core.assets.pending()` returns only the fields whose `use` is null, not the ones marked
+PROVISIONAL. That distinction is the right one for a gate: XAUUSD's spread and commission are SQX
+defaults the owner has not replaced yet, and refusing to run on that would block everything for
+weeks. What the pipeline does instead is start, and stamp `costs_provisional: true` into every
+ledger, so no money figure produced under it can later be mistaken for one priced properly.
