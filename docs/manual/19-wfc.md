@@ -93,6 +93,39 @@ python3 -m sqx.variants.collect --work <dir>     # une el panel al manifiesto �
 python3 -m strategies.walkForwardCorrelation.report --work <dir>
 ```
 
+### Cambiar cómo se retestea: el arnés
+
+El retest lo ejecuta un **arnés** en el custodio: el proyecto `Retester` de `~/Desktop/SQX_w2`, con
+**una sola tarea Retest** — sin tarea Build y sin `GoToTask`, que es lo que lo hace seguro de
+arrancar. Se reconstruye con:
+
+```bash
+# retest normal, solo XAUUSD
+python3 -m sqx.variants.harness --kind retest --project Retester --output RetestOut   --chart "XAUUSD_DukasM1_Infinox M30 5"
+
+# añadiendo un cross-check en otro mercado (la plata, mismo bróker y feed)
+python3 -m sqx.variants.harness --kind retest --project Retester --output RetestOut   --chart "XAUUSD_DukasM1_Infinox M30 5" --chart "XAGUSD_DukasM1_Infinox M30 5" --markets
+```
+
+| flag | qué hace |
+|---|---|
+| `--kind` | `retest`, `spp_is` o `spp_oos`. De qué tarea del donante se copia |
+| `--chart` | repetible, **el principal primero**: `'SÍMBOLO TIMEFRAME SPREAD'` |
+| `--markets` | activa el cross-check en mercados adicionales |
+| `--spp-steps`, `--spp-spread` | activan el SPP con esa resolución y ese ±% |
+
+⚠️ **El custodio tiene que estar parado**: SQX reescribe el `project.cfx` al salir, así que un
+cambio hecho mientras está levantado se pierde en silencio. El comando se niega a escribir si
+detecta el puerto abierto.
+
+⚠️ **Todos los `<Chart>` se reapuntan, incluidos los de cross-checks desactivados.** SQX resuelve
+todos los símbolos de la tarea al cargar el proyecto, y uno que no existe mata la tarea sin
+hacerla fallar: `Total tested 0`, sin error, para siempre.
+
+⚠️ **El arnés se construye copiando una tarea del donante que sí ha corrido**, nunca a mano. Una
+tarea a la que le falta `<Databanks retestSelected="false">` retestea "la selección", la selección
+está vacía, y reporta cero sin quejarse. Eso costó dos días.
+
 ### Qué produce
 
 Todo en `AlgoData/pipeline/<proyecto>/<estrategia>/`:

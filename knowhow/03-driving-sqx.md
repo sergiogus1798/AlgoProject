@@ -429,3 +429,58 @@ Two days of "the retest does nothing" came down to two things, and neither repor
   that lost money become the same thing. The harness sets it `false` and sets all 30 conditions
   `use="false"`.
 
+
+## 🔬 Running a task twice: `action=start` needs an `action=stop` first (2026-09-22)
+
+A second `-project action=start` on a project that has already run **does nothing**, silently: no
+error, no log line, `Total tested` stays 0 forever. `-project action=stop` first, then `start`, and
+it runs — measured back to back, 0 before the stop and `tested=2` ten seconds after it.
+
+The project does not report itself as running in the meantime; `action=status` shows zeros either
+way, so the status output cannot distinguish "finished" from "never started" from "refusing to
+start again". Always stop before starting, even when you believe nothing is running. It costs one
+call and it is the difference between a run and an hour of confusion.
+
+## ⚠️ The SPP cross-check runs headlessly but leaves nothing behind (2026-09-22)
+
+**Unresolved, and it blocks running new SPPs on a worker.** Measured on the custodian with a task
+copied verbatim from the owner's own `SPP IS` task (`Retest-Task13.xml` of the frozen donor),
+`SequentialOptimization use="true"`, `DistributionUp/Down 35`, `Steps 40`.
+
+What happens: the log fills with
+`ProgressEngine - Sequential optimization: <strategy> - Optimizing parameter <name>...`, once per
+tunable parameter, so the cross-check **is executing**.
+
+What does not happen, in any combination tried:
+
+| tried | `Total tested` | output databank | `optimizationProfile.bin` on the strategy |
+|---|---|---|---|
+| acceptance conditions all `use="false"` | 2 | empty | **absent** |
+| acceptance conditions as the donor writes them (19 active) | 0 | empty | absent |
+| input and output the same databank | 0 | — | absent |
+
+- 🔬 **The plain retest in the same harness works**, which is the control: the strategy comes back
+  with `orders.bin` and `Results/…/dailyEquity.bin` written, so the backtest ran and was saved. Only
+  the SPP product is missing.
+- ⚠️ **A trap that cost real time: a strategy staged out of `raw/…/strategies/` already carries a
+  306 KB `optimizationProfile.bin` from the master's own run.** Reading it back after a worker SPP
+  looks like success and is not. Test on a fabricated variant instead — the five-member shape has no
+  profile member at all, so "did a profile appear" becomes a question with a yes-or-no answer.
+- 🤔 The likely candidates, untested: the profile may only be persisted by the GUI's own SPP task;
+  `dontStoreOP3DChartsData` is already `false` on both installs so it is not that; `ApplyToStrategy`
+  is `false` in the donor and may gate the write.
+- **Consequence for the protocol:** a design brief can only be built from an SPP the *master* has
+  already run. `strategies/sppUltra` needs `permutations.csv` and `permutation_params.csv`, and
+  those come from `export_spp.py` reading a profile that only the master currently produces.
+  `export_spp.py --role custodian` now exists and works — what is missing is a profile for it to
+  read.
+
+## 🔬 `optprofile.read` reports `permutations` even when it kept no per-permutation rows
+
+The same 306 KB profile reports `permutations: 2533` whether or not `results` holds anything. The
+count is a summary field; `permutation_results` plus a non-empty `results` is what says the detail
+is there. A reader that checks only the count concludes a profile is usable when it is not.
+
+📓 And the count is not the export's row count either: `runs.csv` of the 2026-09-10 export records
+3,940 permutations for `Strategy 17.9.39` while its profile's `permutations` field says 2,533.
+Whatever the field counts, it is not rows. Use `len(results)`.
