@@ -49,7 +49,7 @@ def chain(ctx: dict) -> list[dict]:
         ctx: What `build()` returned.
 
     Returns:
-        Every stage after `sppultra`, resolved, with each command that drives a real module
+        Every stage, resolved, with each command that drives a real module
         swapped for the placeholder and its outputs normalised to `{work}/<name>.json`.
 
         What is under test here is the **ledger**: ordering, resumption, the monotonicity of
@@ -68,7 +68,9 @@ def chain(ctx: dict) -> list[dict]:
         it is the stage that turns numbers into a judgement.
     """
     rows = []
-    for row in recipe.stages()[1:]:
+    # Every row, not stages()[1:]. The slice used to skip sppultra because it was first;
+    # the SPP rows now are, and a positional skip silently stopped matching what it meant.
+    for row in recipe.stages():
         if row["name"] in placeholder.SHAPE:
             row = row | {"command": f"python3 -m pipeline.stubs.placeholder "
                                     f"--stage {row['name']} --work {{work}}",

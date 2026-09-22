@@ -59,8 +59,8 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/stages/gates.py` | 177 | The hard refusals: what must exist, what must still be true, and how full the disk is. | core, perf, pipeline | — |
 | `pipeline/stages/recipe.py` | 82 | The stage registry: recipe.yaml read into concrete commands, gates and output paths. | core, pipeline | yaml |
 | `pipeline/stages/verdict.py` | 83 | The last stage: judge one mother against the thresholds, from numbers already on disk. | pipeline | — |
-| `pipeline/stubs/placeholder.py` | 91 | Stands in for a stage whose real module is not written yet, honouring the same contract. | core | — |
-| `pipeline/verify/fixture.py` | 84 | A throwaway mother strategy on disk, so the two proofs need no SQX and no real export. | core, pipeline | — |
+| `pipeline/stubs/placeholder.py` | 92 | Stands in for a stage whose real module is not written yet, honouring the same contract. | core | — |
+| `pipeline/verify/fixture.py` | 86 | A throwaway mother strategy on disk, so the two proofs need no SQX and no real export. | core, pipeline | — |
 | `pipeline/verify/monotonic.py` | 99 | Proof that progress only ever goes up, and that it is written while a stage runs. | pipeline | — |
 | `pipeline/verify/resume.py` | 103 | Proof that killing the pipeline mid-stage neither corrupts the ledger nor loses work. | core, pipeline | — |
 | `pipeline/verify/selftest.py` | 75 | The two proofs this is a pipeline: progress streams and is monotonic, and a kill resumes. | pipeline | — |

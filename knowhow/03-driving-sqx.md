@@ -508,3 +508,45 @@ Measured on the custodian, one real XAUUSD mother (22 tunable parameters), `Step
 variant with 8 parameters finished in seconds, used no memory and wrote no profile. Same task, same
 settings — so "the SPP does nothing headlessly" was the wrong conclusion drawn from too small a
 subject. Reconnaissance is only meaningful on a strategy with real parameters and real trades.
+
+## ⚠️ The SPP computes for over an hour and persists nothing — 2026-09-22, unresolved
+
+Everything below is measured on the custodian, one real XAUUSD mother, `Steps 40`, ±35 %,
+`testPrecision 1`, `PctToPass 0`, all acceptance conditions off, output databank empty and distinct
+from the input.
+
+| what | measured |
+|---|---|
+| CPU burned | **47 cores average over 91 minutes** (`ps` `pcpu` 4736 %) |
+| JVM resident | 23.6 → 43.3 GB, GC recycling, on a 48 GB heap |
+| CPU in a 5 s sample at the end | **0 ticks** — idle, not thrashing |
+| log output after the first 3 s | **none for 91 minutes** |
+| `Total tested` | 0, throughout and after |
+| `optimizationProfile.bin` on the strategy | **absent**, after `synctofiles`, after `action=stop`, after both |
+
+So the work happens — tens of core-hours of it, and the results are clearly held in memory, which is
+why the heap fills — and then **nothing is written**. Stopping the project does not flush it.
+
+Ruled out, each by measurement: acceptance conditions (on and off), `PctToPass` (80 and 0),
+`ResultsCount`, `StabilityRange`, `evaluateAll`, `retestSelected`, input and output on the same
+databank versus different ones, a missing symbol on a disabled cross-check, and the subject being a
+five-member fabricated variant rather than a real strategy.
+
+🤔 **The remaining candidate is the global setting, and it cannot be settled from outside the GUI.**
+`user/settings/settings.xml` carries `dontStoreOP3DChartsData`, and `core/optprofile.py` already
+records that the per-permutation detail is kept only while that option is off. On this machine:
+
+| install | value | note |
+|---|---|---|
+| master | `false` (stores) | and its `SPP IS`/`SPP OOS` databanks hold 11k–13k-permutation profiles |
+| `SQX_w2` | `false` (stores) | cloned from the master — and yet writes nothing |
+| `SQX_w1` | **`true`** (does not store) | 🔬 would silently produce useless SPPs. Fix before using it |
+
+📓 **`sqcli` has never rewritten `settings.xml`**: W2's is still stamped 2026-09-21 21:11, the moment
+it was cloned, across a dozen starts and stops today, while it does touch `snippets.txt` and
+`wizard.txt` in the same directory. That is not proof it ignores the file, but it is consistent with
+the effective setting living somewhere the GUI owns and the headless CLI only defaults.
+
+**What would settle it:** open each worker's GUI once, confirm the option in Settings, save and
+close. The owner has offered. Until then, an SPP started headlessly is 90 minutes of CPU for
+nothing, and `sqx/variants/spp.py` should not be pointed at a batch.
