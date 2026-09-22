@@ -479,6 +479,8 @@ fresh databank `Retester/ProbeA` with `-databank action=load folder=…`.
   five-member form keeps intact, so a retest is expected to work — but expected, not measured. The
   measurement is one retest task on W2 against the variant databank, and it should be the **first**
   thing the 5,000-variant batch does, on three files, before fabricating the rest.
+  ✅ **Done 2026-09-22 — see *ANSWERED: a retest DOES rewrite the inherited `SQStats`* below.**
+  A retested variant returns its own numbers; the five-member shape retests like a full one.
 
 - 🔬 **The databank does not de-duplicate on the inherited `<Fingerprint>` — because on these write
   paths it does not de-duplicate at all.** This is the important correction: a bare "three variants
@@ -605,3 +607,45 @@ Three facts worth keeping, all met while doing this:
   registrations until the instance was stopped, at which point SQX rewrote `project.cfx` on disk
   with the merged result — databanks restored, task settings kept. Hard rule 4 from the other side:
   **the rewrite-on-exit is not only a hazard, it is also how a `loadconfig` becomes permanent.**
+
+## 🔬 ANSWERED: a retest DOES rewrite the inherited `SQStats` (2026-09-22)
+
+The question the whole variant study hung on. Measured on the custodian, 11 fabricated variants of
+`XAUUSD/Strategy 17.9.39` in the five-member shape, one `action=start` of the rewired harness.
+
+Before the retest all three controls exported the parent's row to the decimal (net profit
+`22650.2`, 755 trades, PF `1.15`). After it:
+
+| variant | `DICrossPeriod1` | net profit IS | trades IS | net profit OOS | trades OOS |
+|---|---|---|---|---|---|
+| `P00000` (origin) | 67 | **+26,138.78** | 755 | **+14,622.08** | 423 |
+| `P00001` | 43 | **+43,647.37** | 1077 | **−6,988.39** | 588 |
+| `P00002` | 94 | **−33,472.63** | 843 | **−12,962.25** | 497 |
+
+- 🔬 **The chain is sound.** Different tuples produce different results, and none of them is the
+  inherited one. The five-member `.sqx` retests exactly like a full one.
+- 🔬 **One run gives both samples.** With `<OutOfSample><Range/></OutOfSample>` in the task, sample
+  10 and sample 20 come back in the same export. A walk-forward correlation needs one run, not two.
+- 🤔 **The origin's own retest is the reference, not the number it inherited.** `P00000` carries the
+  parent's exact tuple and returns `26,138.78` against the inherited `22,650.2` — with the *same*
+  755 trades. Same trades, different P&L, so the gap is costs and precision, not rules: the retest
+  Setup is not the setup that produced the stored figure. **Never compare a retested variant against
+  an inherited number.** That is why `origin` is a stratum and gets fabricated and retested like any
+  other point.
+- 🔬 **The inert-pair control fires correctly.** `P00004` differs from `P00000` only in a *frozen*
+  parameter and returns an identical row — which is what that control exists to demonstrate. So
+  "all controls identical" means a dead chain, but "one pair identical" means the freezing was
+  justified. `sqx/variants/collect.py` counts distinct results among the controls and aborts only
+  on the former.
+
+## 🔬 SQX names a loaded strategy after the FILE, not after the name inside it (2026-09-22)
+
+`P00000.sqx` appears in the databank as `P00000`, even though both `<StrategyName>` and
+`ResultsGroup/@ResultName` inside it say `Strategy 17.9.39 P00000`. This **corrects** the note above
+that says renaming those two fields is what keeps a batch from collapsing under one name: renaming
+them is right and worth doing, but it is the **filename** that the databank, the export and the
+retest all use as the handle. So:
+
+- the join key between contract C2 and the retested panel is `variant_id`, not `sqx_name`;
+- 🔬 on collision SQX appends `(N)` to the *file-derived* name — loading the same folder twice gives
+  `P00000` and `P00000(1)` — so a reader must strip `\(\d+\)$` before joining.

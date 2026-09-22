@@ -43,8 +43,15 @@ def batch(plan: pd.DataFrame, parent: Path, strategy: str, out: Path, shape: str
         Nothing is verified here on purpose. What was actually written is the manifest's
         question, and it answers it by reading the files back rather than by trusting
         this loop.
+
+        ⚠️ The directory is emptied first, and it has to be. The manifest describes what
+        is **on disk**, so a previous, larger batch left in place is silently adopted into
+        this one: its files carry no stratum, they join onto nothing, and the count comes
+        out wrong in a way that looks like a fabrication fault rather than a stale folder.
     """
     out.mkdir(parents=True, exist_ok=True)
+    for stale in out.glob("*.sqx"):
+        stale.unlink()
     source = rewrite.members(parent)
     written = 0
     for row in plan.to_dict("records"):

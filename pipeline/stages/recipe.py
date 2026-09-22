@@ -48,7 +48,10 @@ def context(project: str, databank: str, strategy: str, day: str) -> dict:
     work = state.work_dir(project, strategy)
     return {"project": project, "databank": databank, "strategy": strategy,
             "safe": state.safe(strategy), "day": day, "work": str(work),
-            "reports": str(report_dir(project, databank, day))}
+            "reports": str(report_dir(project, databank, day)),
+            # 0 means "the whole design": --sample 0 is falsy to the factory, which then
+            # fabricates every planned row rather than a slice of them.
+            "sample": settings()["run"]["sample"]}
 
 
 def resolve(stage: dict, ctx: dict) -> dict:

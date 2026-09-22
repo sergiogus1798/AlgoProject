@@ -400,3 +400,32 @@ Not `127.0.0.1`. Anyone on the same network can send `-project action=start` or
 - **Opportunity, unused for now**: a worker on another machine is drivable over the LAN without any
   daemon of its own. The owner's machines are used independently, so this is not being built — but
   it is the reason a future multi-machine design would not need one daemon per box.
+
+## 🔬 Running a project task headlessly: `startOnlyTask` lies, `start` works (2026-09-22)
+
+Two days of "the retest does nothing" came down to two things, and neither reports an error.
+
+- 🔬 **`-project action=startOnlyTask name=X task=1` reports success and tests NOTHING.** It logs
+  `Starting project 'X' task 1 only` and `=========== Project started ===========`, and then
+  `action=status` says `Total tested 0 · Running time so far 0 ms` forever. No error, no
+  `Project finished`, nothing in the log. **`-project action=start` on the same project, the same
+  databank and the same instant runs the task properly** — `Total tested 11 · Time per strategy
+  67 ms`. Whatever `startOnlyTask` is for, it is not this.
+  ⚠️ `action=start` runs the **whole chain**, so it is only safe on a project that is a single task.
+  On a project with a Build task and a `GoToTask` it starts perpetual generation. The harness this
+  project drives (`Retester` on W2) holds exactly one Retest task, and it has to stay that way.
+
+- 🔬 **A Retest task without `<Databanks retestSelected="false">` retests nothing.** A harness built
+  by hand, or a stock `Retester` project, carries `<Databanks>` with no attribute; a task that has
+  actually run carries `retestSelected="false"` and a `<SelectedStrategies />` element beside it.
+  Absent, SQX retests "the selection", the selection is empty, and it reports 0 without complaining.
+  **Build a task by copying one that has run, not by editing one that has not.** Structurally
+  diffing the two is what found this: the donor also carries `Broker`, `Swap`, `Session`,
+  `SequentialOptimization`, `CustomAnalysis`, `ForceRunCrossChecks` and `DeleteFailedStrategies`,
+  none of which the stock harness had.
+
+- ⚠️ 🔬 **`<DeleteFailedStrategies>true`** is in the donor and would delete any variant that fails
+  the acceptance conditions. For a parameter study that is fatal — a missing variant and a variant
+  that lost money become the same thing. The harness sets it `false` and sets all 30 conditions
+  `use="false"`.
+

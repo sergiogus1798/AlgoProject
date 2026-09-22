@@ -21,9 +21,9 @@ VARIANTS, EXPORT = "sqx", "metrics_placeholder.json"
 # ledger raises KeyError on a stage the fixture is only pretending to run.
 SHAPE = {"design": {"n": 5000, "shortfall": 0, "n_target": 5000, "levels": 27},
          "build": {"n": 5000, "bytes": 70000000},
-         "ran": {"n_returned": 5000, "canaries_failed": 0},
-         "collected": {"n": 5000},
-         "wfc": {"rho": 0.41, "pairs": 1200}}
+         "ran": {"n_loaded": 5000, "n_returned": 5000},
+         "collected": {"n": 5000, "canaries_distinct": 4},
+         "wfc": {"n": 1001, "rho": 0.41, "call": "fiable", "pairs": 1200}}
 
 
 def digest(path: Path) -> str:

@@ -36,6 +36,11 @@ def read_back(folder: Path, names: list[str]) -> pd.DataFrame:
         found = {n: float(stored[n]) for n in names
                  if n in stored and declared[n] in NUMERIC}
         rows.append({"variant_id": rewrite.stamped(portfolio),
+                     # The name written INSIDE the file. ⚠️ It is not what the databank
+                     # shows: SQX names a loaded entry after the FILE (`P00000.sqx` ->
+                     # `P00000`), not after either name field. So this column is the
+                     # intent, `variant_id` is the join key, and the collection stage
+                     # overwrites this with whatever actually came back.
                      "sqx_name": rewrite.RESULT_NAME.search(settings).group(0).split('"')[1],
                      "file": path.name, **tuples.columns(found),
                      "tuple_hash": tuples.tuple_hash(found)})

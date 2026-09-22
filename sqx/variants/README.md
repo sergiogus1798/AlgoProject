@@ -27,6 +27,8 @@ design_brief.json ─▶ design ─▶ build ─▶ manifest
 | `inputs.py` | Reads `config.yaml`, the brief, the already-known results, and says where output goes | imported | names → values, paths |
 | `tuples.py` | The canonical form of a parameter tuple and its hash | imported | tuple → hash, columns |
 | `manifest.py` | Contract C2, built by reading the files back off the disk | imported | folder → parquet |
+| `execute.py` | Loads a batch into the custodian, runs the retest harness, exports the panel | `python3 -m sqx.variants.execute --work <dir>` | `.sqx` → `retest.csv` |
+| `collect.py` | Contract C3: joins the panel onto the manifest, and refuses a batch whose controls all returned the same number | `python3 -m sqx.variants.collect --work <dir>` | csv + parquet → `metrics.parquet` |
 | `config.yaml` | Every tunable: the seed, the strata knobs, the canaries, the file shape | edited | — |
 
 ## The three boundaries, and why they are three

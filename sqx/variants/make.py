@@ -40,6 +40,9 @@ def main() -> None:
     ap.add_argument("--project", required=True, help="project name, for the output path")
     ap.add_argument("--limit", type=int,
                     help="fabricate only the first N rows of the plan; the design is unchanged")
+    ap.add_argument("--sample", type=int,
+                    help="fabricate N rows SPREAD across the plan instead of its first N: "
+                         "the controls, then evenly spaced picks from every stratum")
     ap.add_argument("--design-only", action="store_true",
                     help="write the plan and stop, without fabricating anything")
     ap.add_argument("--out", type=Path,
@@ -71,7 +74,8 @@ def main() -> None:
         print(f"\n-> {out / 'plan.csv'}")
         return
 
-    rows = table.head(args.limit) if args.limit else table
+    rows = plan.spread(table, args.sample) if args.sample else \
+        table.head(args.limit) if args.limit else table
     written = fabricate.batch(rows, parent, design["strategy"], out / SQX_DIR,
                               settings["build"]["shape"])
     print(f"\nwrote {written['files']:,} .sqx as '{written['shape']}', "

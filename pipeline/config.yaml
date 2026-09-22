@@ -9,6 +9,25 @@ run:
   # has to stop a multi-day run, not a full disk -- perf/disk owns the ceilings.
   stop_over_budget: true
 
+  # How many variants each mother gets. The design is always the full one in the brief --
+  # this picks how many of its rows are fabricated and retested, SPREAD across the strata
+  # rather than taken off the top. Small numbers are for looking; the study's own number
+  # is the brief's n_target, and `sample: 0` means all of it.
+  #
+  # ⚠️ Retesting costs ~70 ms per variant on the custodian, so 5,000 is about six minutes
+  # of machine per mother -- but fabricating them is 70 MB, and 100 mothers is 7 GB.
+  #
+  # 2,000 is the default because it is where the answer stops being "cannot tell". Measured
+  # on Strategy 17.9.39, 2026-09-22, the same grid at four sizes:
+  #     11 points ->  9 usable, rho 0.18, IC [-0.55, 0.75]   indeciso
+  #    150 points -> 74 usable, rho 0.23, IC [-0.00, 0.43]   indeciso
+  #    600 points -> 297 usable, rho 0.22, IC [ 0.10, 0.32]  indeciso
+  #  2,000 points -> 1001 usable, rho 0.19, IC [ 0.13, 0.25] no_fiable  <- decides
+  # Roughly half of any batch is dropped for trading too little, so 2,000 buys ~1,000
+  # points, and that is the width that separates a weak-but-real rho from nothing.
+  # Whole run, cold start to verdict: 2 min 16 s and 28 MB.
+  sample: 2000
+
 verdict:
   # Thresholds are the user's, they are changeable, and changing one re-runs the verdict
   # stage alone: the ledger stores the numbers, never the judgement. `number` is

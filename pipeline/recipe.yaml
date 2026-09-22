@@ -21,12 +21,12 @@
 # Placeholders: {project} {databank} {strategy} {safe} {day} {work} {reports}
 #   {work}     pipeline/<project>/<safe>
 #   {reports}  reports/<project>/<databank>/<day>
+#   {sample}   how many variants to fabricate, from pipeline/config.yaml
 #   {safe}     the strategy name with spaces as _ and dots as -, the same spelling
 #              sppUltra already uses for its brief filenames
 #
-# ⚠️ Six of the seven modules are not built yet, so their rows point at the placeholder.
-# Wiring the real one in is editing `command` and `produces` on its row -- nothing else in
-# this folder changes. The comment on each row is the line it becomes.
+# All seven rows drive real modules. `stubs/placeholder.py` is kept for verify/, which
+# swaps every command for it so the ledger can be tested without SQX or a real export.
 
 stages:
   - name: sppultra
@@ -52,41 +52,42 @@ stages:
 
   - name: build
     #   also produces {work}/manifest.parquet  (C2) and {work}/sqx/P*.sqx
-    command: python3 -m sqx.variants.make --brief {reports}/design_brief_{safe}.json --project {project} --out {work}
+    command: python3 -m sqx.variants.make --brief {reports}/design_brief_{safe}.json --project {project} --out {work} --sample {sample}
     needs: ["{work}/design.json"]
     produces: ["{work}/build.json", "{work}/manifest.parquet"]
     record: [n, bytes]
 
+  # Drives the custodian: loads the batch, runs the harness's one Retest task, exports the
+  # panel. It is the only stage that talks to SQX, and the only long one.
   - name: ran
-    # → python3 -m sqx.variants.execute --manifest {work}/manifest.parquet --out {work}
-    #   produces: ["{work}/ran.json"]
-    command: python3 -m pipeline.stubs.placeholder --stage ran --work {work}
+    command: python3 -m sqx.variants.execute --work {work}
     needs: ["{work}/build.json"]
-    produces: ["{work}/ran.json"]
-    record: [n_returned, canaries_failed]
-    must:
-      - number: canaries_failed
-        max: 0
-        why: >-
-          un canario fallido significa que las variantes que corrió SQX no son las que se
-          escribieron, y nada de lo que se mida después quiere decir nada
+    produces: ["{work}/ran.json", "{work}/retest.csv"]
+    record: [n_loaded, n_returned]
 
+  # The ledger name is `collected` because perf/disk/retention.py already reads
+  # stages.collected.removable to decide what is provably safe to delete.
+  # It exits non-zero when the controls all return the same number, which is what a batch
+  # that never actually ran looks like -- see knowhow/01-file-formats.md.
   - name: collected
-    # → python3 -m sqx.variants.collect --manifest {work}/manifest.parquet --out {work}
-    #   produces: ["{work}/metrics.parquet", "{work}/trades.parquet"]   (C3, C4)
-    # The ledger name is `collected` because perf/disk/retention.py already reads
-    # stages.collected.removable to decide what is provably safe to delete.
-    command: python3 -m pipeline.stubs.placeholder --stage collected --work {work}
+    command: python3 -m sqx.variants.collect --work {work}
     needs: ["{work}/ran.json"]
-    produces: ["{work}/collected.json"]
-    record: [n, files, removable]
+    produces: ["{work}/collected.json", "{work}/metrics.parquet"]
+    record: [n, files, removable, canaries_distinct]
+    must:
+      - number: canaries_distinct
+        min: 2
+        why: >-
+          los controles han devuelto todos el mismo numero. Una variante que no llego a
+          correr no sale vacia: sale con las metricas del padre, porque SQX las guarda en
+          settings.xml y la fabrica solo reescribe los parametros. Si todos coinciden, no
+          se reteseo nada y nada de lo que se mida despues quiere decir nada
 
   - name: wfc
-    # → python3 -m strategies.walkForwardCorrelation.report --work {work}
-    #   produces: ["{work}/wfc.json"]
-    command: python3 -m pipeline.stubs.placeholder --stage wfc --work {work}
+    command: python3 -m strategies.walkForwardCorrelation.report --work {work}
     needs: ["{work}/collected.json"]
-    produces: ["{work}/wfc.json"]
+    produces: ["{work}/wfc.json", "{work}/wfc.html"]
+    record: [n, rho, call]
 
   - name: verdict
     command: python3 -m pipeline.stages.verdict --work {work} --brief {reports}/design_brief_{safe}.json

@@ -957,3 +957,38 @@ PROVISIONAL. That distinction is the right one for a gate: XAUUSD's spread and c
 defaults the owner has not replaced yet, and refusing to run on that would block everything for
 weeks. What the pipeline does instead is start, and stamp `costs_provisional: true` into every
 ledger, so no money figure produced under it can later be mistaken for one priced properly.
+
+## 🔬 In-sample parameter optimisation does not rank the out-of-sample result (2026-09-22)
+
+First real output of the walk-forward-correlation chain, and it is a result about the research
+method rather than about one strategy.
+
+`XAUUSD/Strategy 17.9.39`, M30, 2008–2017 in sample and 2018–2022 out, 2,000 parameter tuples drawn
+across the whole design, every one of them retested for real:
+
+| points asked | usable | rho | 95 % interval | call |
+|---|---|---|---|---|
+| 11 | 9 | 0.18 | [−0.55, 0.75] | indeciso |
+| 150 | 74 | 0.23 | [−0.00, 0.43] | indeciso |
+| 600 | 297 | 0.22 | [0.10, 0.32] | indeciso |
+| **2,000** | **1,001** | **0.19** | **[0.13, 0.25]** | **no_fiable** |
+
+- 🔬 **Spearman rho ≈ 0.19, and the interval excludes both 0 and the 0.30 floor.** So the surface
+  carries *some* information — this is not noise — but nowhere near enough to rank on. Picking the
+  parameter set with the best in-sample net profit buys almost nothing out of sample.
+- 🔬 **rho barely moved across a 180-fold increase in sample size (0.18 → 0.19).** The estimate was
+  right at eleven points and useless at eleven points; what changed was the interval. **Report the
+  interval, not the coefficient** — a study that had stopped at a dozen tuples would have had the
+  correct number and no way to know it.
+- 🔬 **About half of any batch is unusable.** 1,001 of 2,000 tuples traded fewer than 30 times in
+  one of the two samples. That is a property of the design, not of the filter: the neighbourhood
+  and coverage strata reach into corners where the strategy stops trading. Budget for it — ask for
+  twice the points you want.
+- 🤔 **The obvious next question is whether this is the strategy or the family.** One strategy
+  cannot distinguish "this one's parameters are meaningless" from "the XAUUSD generation run
+  produces strategies whose parameters are meaningless". The chain now runs unattended, so the
+  answer is to run it over the databank rather than to argue about it.
+- ⚠️ **Costs were the PROVISIONAL XAUUSD figures** (SQX defaults, not agreed Infinox ones). A rank
+  correlation is far less sensitive to a constant cost error than a net profit is, so the finding
+  should survive the correction — but it has not been re-run against agreed costs, and
+  `state.json` carries `costs_provisional: true` for exactly this reason.

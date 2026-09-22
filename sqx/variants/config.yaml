@@ -43,3 +43,16 @@ build:
   # than looking empty. The canaries are what catches that; the shape is not.
   # knowhow/01-file-formats.md, both 2026-09-21 sections.
   shape: minimal
+
+execute:
+  # Where the batch is retested. The custodian takes ONE long job at a time and receives no
+  # other command while it runs, so a sync can never delete the .sqx it is holding -- which
+  # is the whole reason the role exists (knowhow/03-driving-sqx.md).
+  role: custodian
+  project: Retester       # a 1-task Retest harness: no Build task, no GoToTask, nothing to loop
+  input: Results
+  output: RetestOut
+  poll_seconds: 5
+  ready_tries: 40        # the port answers ~20 s before the CLI does; poll, do not conclude
+  # ⚠️ `-project action=startOnlyTask` reports success and tests NOTHING on this install.
+  # Only `action=start` runs the task. Measured 2026-09-22, knowhow/03-driving-sqx.md.

@@ -9,6 +9,7 @@ from sqx.variants import tuples
 from sqx.variants.design import canaries, levels, strata
 
 ORDER = ["neighbourhood", "factorial", "coverage"]
+CONTROLS = ("origin", "canary")
 OVERDRAW = 2
 
 
@@ -122,3 +123,29 @@ def _frame(rows: list[dict]) -> pd.DataFrame:
         for vid, row in zip(ids, rows)])
     frame["canary_expect_trades"] = frame["canary_expect_trades"].astype("Int64")
     return frame
+
+
+def spread(table: pd.DataFrame, n: int) -> pd.DataFrame:
+    """N rows taken across the whole plan rather than off the top of it.
+
+    Args:
+        table: What `build` returned, controls first.
+        n: How many rows to keep.
+
+    Returns:
+        Every control, then evenly spaced picks from what is left.
+
+        `head(n)` is the wrong sample for a small batch and it is wrong in a way that looks
+        right: the plan is ordered controls-first and then stratum by stratum, so the first
+        eleven rows are five controls plus a dense neighbourhood cluster one level step
+        apart. Retested, most of those return the same number, and a correlation over them
+        measures the clustering rather than the surface. Spacing the picks is what makes a
+        small batch a miniature of the design instead of a corner of it.
+    """
+    controls = table[table["stratum"].isin(CONTROLS)]
+    rest = table[~table["stratum"].isin(CONTROLS)]
+    room = n - len(controls)
+    if room <= 0:
+        return controls.head(n)
+    step = max(1, len(rest) // room)
+    return pd.concat([controls, rest.iloc[::step].head(room)], ignore_index=True)

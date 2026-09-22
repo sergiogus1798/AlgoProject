@@ -1,0 +1,14 @@
+# Every tunable of the walk-forward correlation study.
+
+# A combination that barely trades produces a net profit one or two trades wide. Left in,
+# a handful of them decide a correlation computed over a dozen points. 30 is the floor SQX
+# itself uses in its own acceptance conditions for a sample of this length.
+min_trades: 30
+
+# The rho below which ranking by in-sample profit is not worth doing. Not a law: it is the
+# owner's threshold and changing it re-runs only the verdict, never the measurement.
+rho_floor: 0.30
+
+# Rows kept from each end of the in-sample ranking when the batch is too big to tabulate.
+# The ends are what answers the question: did the in-sample winners stay winners?
+table_ends: 12
