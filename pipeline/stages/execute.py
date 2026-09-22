@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 from core.paths import ROOT
-from pipeline.ledger import progress, state
+from pipeline.ledger import cost, progress, state
 
 
 def parse(line: str, marker: str) -> tuple[int, str] | None:
@@ -101,5 +101,9 @@ def run(stage: dict, work: Path, marker: str) -> None:
         marker: The protocol word from config.yaml.
     """
     state.begin(work, stage["name"])
-    stream(stage, work, marker)
-    state.finish(work, stage["name"], recorded(stage) | hashed(stage))
+    # Every stage is measured, always. A cost recorded only when somebody remembers to ask
+    # is a cost nobody has for the run that mattered, and the whole point of the ledger is
+    # that it outlives the data -- including the data about how expensive the data was.
+    with cost.Watch(work) as watch:
+        stream(stage, work, marker)
+    state.finish(work, stage["name"], recorded(stage) | hashed(stage) | watch.result())

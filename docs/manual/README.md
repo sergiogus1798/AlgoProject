@@ -36,6 +36,7 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `17-pipeline.md` | el encadenador: mete las ~100 estrategias madre de un databank, vuelve al cabo de unos días y lee los veredictos. Reanudable, con el registro de lo que va pasando mientras pasa, y el borrado de variantes con su prueba de que no se pierde nada |
 | `18-variantes.md` | la fábrica de variantes: coge el diseño que salió del reconocimiento SPP y escribe las 5.000 estrategias en disco, con la tabla que dice qué combinación lleva cada archivo y los controles que delatan una cadena rota |
 | `19-wfc.md` | ¿sirve de algo optimizar los parámetros? Fabrica muchas versiones de una estrategia, las retestea todas con la misma partición IS/OOS y dibuja un punto por combinación: lo que ganó dentro contra lo que ganó fuera. Cubre `sqx.variants.execute`, `sqx.variants.collect` y `strategies.walkForwardCorrelation.report` |
+| `20-donde-esta-todo.md` | el mapa de los datos: dónde quedan las estrategias generadas, las métricas, los backtests, los informes y los veredictos, qué se borra a propósito y qué no se borra nunca |
 | `_PLANTILLA.md` | **la plantilla obligatoria.** Se copia para documentar cada módulo nuevo |
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |

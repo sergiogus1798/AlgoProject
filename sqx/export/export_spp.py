@@ -8,25 +8,28 @@ from datetime import date
 from pathlib import Path
 
 from core import manifest, optprofile
-from core.paths import MASTER, databank_dir, export_dir
+from core.paths import MASTER, databank_dir, export_dir, worker_dir
 
 RUN = ["strategy", "permutations", "profitable", "losing", "zero", "profitable_pct",
        "avg_profit", "top_profit", "stdev", "uniform_changes", "parameters"]
 
 
-def profiles(project: str, databank: str) -> dict:
+def profiles(project: str, databank: str, install: Path = MASTER) -> dict:
     """Read every SPP profile a databank's strategies carry.
 
     Args:
         project: Project name on the master.
         databank: Databank name as SQX shows it, e.g. "SPP IS".
+        install: Which SQX install holds it. The master by default; a worker when the SPP
+            was run on a harness there, which is the only way to run one without touching
+            the owner's own projects.
 
     Returns:
         Strategy name to the profile `core.optprofile.read` returns. Strategies whose .sqx
         holds no profile were never cross-checked with SPP and are skipped silently.
     """
     return {f.stem: optprofile.read(f)
-            for f in sorted(databank_dir(project, databank, MASTER).glob("*.sqx"))
+            for f in sorted(databank_dir(project, databank, install).glob("*.sqx"))
             if optprofile.MEMBER in zipfile.ZipFile(f).namelist()}
 
 
@@ -153,11 +156,15 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
+    ap.add_argument("--role", help="read a worker's install instead of the master")
+    ap.add_argument("--out-databank", help="name the export directory this instead")
     a = ap.parse_args()
 
-    found = profiles(a.project, a.databank)
+    install = worker_dir(a.role) if a.role else MASTER
+    found = profiles(a.project, a.databank, install)
     kept = [n for n, p in found.items() if p["permutation_results"]]
-    out = export_dir(a.project, a.databank, date.today().isoformat()) / "spp"
+    out = export_dir(a.project, a.out_databank or a.databank,
+                     date.today().isoformat()) / "spp"
     out.mkdir(parents=True, exist_ok=True)
 
     counts = {"runs.csv": write_runs(found, out / "runs.csv"),
@@ -169,7 +176,7 @@ def main() -> None:
         counts["permutation_params.csv"] = write_permutation_params(
             full, out / "permutation_params.csv")
     manifest.write(out,
-                   {"install": str(MASTER), "project": a.project, "databank": a.databank,
+                   {"install": str(install), "project": a.project, "databank": a.databank,
                     "profiles_found": len(found),
                     "with_permutation_results": len(kept)},
                    f"export_spp.py --project {a.project} --databank {a.databank}",
