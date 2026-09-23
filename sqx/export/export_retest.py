@@ -8,7 +8,7 @@ from datetime import date
 import pandas as pd
 
 from core import exportdrv, manifest, tradestore
-from core.paths import MASTER, export_dir
+from core.paths import MASTER, export_dir, worker_dir
 from sqx.export.export_trades import SAMPLE_SEED, stage
 
 
@@ -17,12 +17,14 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True, help="the databank the retest wrote into")
+    ap.add_argument("--role", help="headless install holding the project; the master if absent")
     ap.add_argument("--limit", type=int, default=0,
                     help="export a reproducible random sample of this many strategies")
     a = ap.parse_args()
 
+    install = worker_dir(a.role) if a.role else MASTER
     out = export_dir(a.project, a.databank, date.today().isoformat())
-    timeframes = stage(a.project, a.databank, out / "strategies", a.limit)
+    timeframes = stage(a.project, a.databank, out / "strategies", a.limit, install)
     print(f"staged {len(timeframes)} strategies from {a.project}/{a.databank}")
 
     exportdrv.trades(out / "strategies", out / "raw", data="all")
@@ -39,7 +41,7 @@ def main() -> None:
     shutil.rmtree(out / "strategies")
 
     manifest.write(out,
-                   {"install": str(MASTER), "project": a.project, "databank": a.databank,
+                   {"install": str(install), "project": a.project, "databank": a.databank,
                     "data": "all", "timeframes": sorted(set(timeframes.values())),
                     "limit": a.limit, "sample_seed": SAMPLE_SEED if a.limit else None},
                    f"export_retest.py --project {a.project} --databank {a.databank}"

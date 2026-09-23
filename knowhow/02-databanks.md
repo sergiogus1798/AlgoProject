@@ -186,3 +186,47 @@ moved rejects to `AlgoData/rejected/`; both are gone.
 📓 **`-databank action=synctofiles` exists** and forces memory → disk (`knowhow/03-driving-sqx.md`
 records it for the equity harvest). An earlier note in this project claimed no verb forces a write;
 that was wrong. It is the opposite direction from the one curation needs, which is disk → memory.
+
+## Dropping tasks with `--only` leaves the survivors reading the wrong databank
+
+🔬 2026-09-23. Each task carries `<Databank label="Input databank" name="Input" value="…">` and an
+`Output` beside it, and SQX matches them **by string against `config.xml`** — a name no `<Databank>`
+declares is silently ignored, not an error. The chain is therefore only correct for the tasks the
+donor shipped, in the order it shipped them.
+
+Keep a subset with `builder --only` and the survivors still point where they used to. Measured on a
+three-task clone of the XAUUSD donor: the additional-markets task read **`Retest Markets - Family`,
+its own output**, so the cross-market check would have run over an empty databank and passed
+everything for free. Nothing announces it — the task runs, writes a result, and tests nothing.
+
+`sqx.projects.databanks.chain_databanks` now threads it: each task's `Input` becomes the previous
+task's `Output`, in `config.xml`'s own `<Task>` order, and `builder --json` reports the result as
+`chain` with what each task read before. The correct wiring for the build → OOS → cross-market chain
+is:
+
+| task | reads | writes |
+|---|---|---|
+| Build | — (see below) | `Results` |
+| Retest (OOS) | `Results` | `OOS` |
+| Retest (additional markets) | `OOS` | `Retest Markets - Family` |
+
+📓 **The first task's input is left alone on purpose.** There is no previous output to hand it, and a
+Build on `generationType="genetic-evolution"` seeds from the system databanks (`Initial population`,
+`Strategies to improve`), not from its `Input`. The donor ships `Results-Rexpect` there, which no
+project declares — and so do the owner's own master projects: `XAUUSD` and `TestXAUUSD2` carry
+`Results-Rexpect`, `USDJPY`, `EURUSD` and `AUDJPY` carry `Retest Markets IS`, `SP500_H1` and the five
+`XAUUSD_Breakout_H1` build tasks carry `null`. Six of his eleven build tasks point at a databank that
+does not exist, the builds run, and `XAU_ISOOS_ejemplo` produced 120 strategies with the phantom in
+place. It is his configuration and it is inert; nothing here changes it.
+
+## Un databank con espacios en el nombre es inalcanzable por la API HTTP (2026-09-23)
+
+- 🔬 `-databank action=count project=P name=Retest Markets - Family` responde
+  **`Error: Databank 'Retest' doesn't exist.`**: el nombre se corta en el primer espacio, igual que
+  el selector `strategies=`. **`%20` no lo arregla** — probado. `action=load` falla igual.
+- 🔬 **La vía que sí funciona es la de ficheros**, la misma que usa `/curate`: con la instalación
+  parada, copiar los `.sqx` dentro de `user/projects/<P>/databanks/<nombre con espacios>/` y
+  arrancar. El log lo confirma: `Loaded 9 strategies to databank Retest Markets - Family`.
+- 📓 Cuatro de los siete databanks del donante llevan espacios (`Retest Markets - Family`,
+  `MC Trades`, `Last generation`, `Initial population`). Cualquier herramienta que los direccione
+  por la API los pierde en silencio.

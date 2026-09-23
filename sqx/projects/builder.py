@@ -14,7 +14,8 @@ from core.paths import worker_dir
 from core.datapaths import projects_backup
 from sqx.inspect.keep_tasks import keep
 from sqx.projects.configure import configure, ignored_templates, running_install
-from sqx.projects.doctrine import blockers
+from sqx.projects.databanks import chain_databanks
+from sqx.projects.doctrine import blockers, borrow_session
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 TEMPLATES_REL = "user/settings/StrategyTemplates"
@@ -74,7 +75,8 @@ def sync_databanks(config: str) -> tuple[str, list[str]]:
 
 def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
           minutes: int, donor: Path, segment: str | None = None,
-          tasks: tuple = ("Build",), only: set | None = None) -> dict:
+          tasks: tuple = ("Build",), only: set | None = None,
+          session_from: Path | None = None) -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -91,6 +93,8 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             type — the build on `build`, the retests on `oos1`, in one project.
         tasks: Which task types to keep from the donor.
         only: Task XML file names to narrow those types to, e.g. {"Retest-Task1.xml"}.
+        session_from: A project.cfx that defines the asset's session, for when the donor does
+            not. Read only. Omit when the donor already carries it.
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
@@ -111,12 +115,17 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
         members = {n: z.read(n) for n in z.namelist()}
     members, kept = keep(members, set(tasks), only=only)
 
+    borrowed = (borrow_session(members, load(symbol)["session"], session_from)
+                if session_from else None)
+
     config, synced = sync_databanks(members["config.xml"].decode("utf-8"))
     members["config.xml"] = re.sub(r'<Project name="[^"]*"', f'<Project name="{name}"',
                                    config, count=1).encode("utf-8")
     for member in [n for n in members if n.endswith(".xml") and n != "config.xml"]:
         text = set_template(members[member].decode("utf-8"), installed_template)
         members[member] = set_caps(text, strategies, minutes).encode("utf-8")
+
+    chained = chain_databanks(members)
 
     out = install / "user/projects" / name / "project.cfx"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -130,8 +139,11 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
     doc = next((c for _, c in costs.values() if c.get("generator")), {})
     return {"project": name, "install": install.name, "cfx": str(out), "timeframe": timeframe,
             "exit_bars": doc.get("exit_bars"), "session": load(symbol)["session"],
+            "session_borrowed_from": str(session_from) if session_from else None,
+            "session_borrowed_into": borrowed,
             "template": str(installed_template), "tasks": kept["kept"],
             "databanks": kept["databanks"], "synced_to_disk": synced,
+            "chain": chained,
             "max_strategies": strategies, "minutes": minutes,
             "segments": {n: seg for n, (seg, _) in costs.items()},
             "template_ignored": ignored_templates(final),
@@ -151,6 +163,9 @@ def main() -> None:
                     default=doctrine()["databank"]["max_strategies"])
     ap.add_argument("--minutes", type=int, default=10)
     ap.add_argument("--donor", type=Path, default=DONOR)
+    ap.add_argument("--session-from", type=Path,
+                    help="a project.cfx that defines the asset's session, when the donor "
+                         "does not — read only, never written")
     ap.add_argument("--segment", choices=("build", "oos1"),
                     help="force one segment on every task; omit to take each task's own")
     ap.add_argument("--tasks", default="Build",
@@ -179,7 +194,7 @@ def main() -> None:
         raise SystemExit("\n".join(stop))
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe, a.max_strategies,
                  a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')),
-                 set(a.only.split(',')) if a.only else None)
+                 set(a.only.split(',')) if a.only else None, a.session_from)
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
 
@@ -190,8 +205,10 @@ def main() -> None:
     print(f"  template  {done['template']}")
     print(f"  tasks     {', '.join(done['tasks'])}   caps {done['max_strategies']} strategies "
           f"/ {done['minutes']} min")
-    print(f"  doctrina  {done['timeframe']} en todas las tareas, sesión {done['session']}, "
-          f"salida por barras {done['exit_bars'][0]}–{done['exit_bars'][1]}")
+    bars = done["exit_bars"]
+    # A project with no Build task has no generator, so there are no exit bounds to report.
+    print(f"  doctrina  {done['timeframe']} en todas las tareas, sesión {done['session']}"
+          + (f", salida por barras {bars[0]}–{bars[1]}" if bars else ", sin tarea de construcción"))
     print(f"  segments  " + ", ".join(f"{m}={s}" for m, s in done["segments"].items()))
     print(f"  to disk   {', '.join(done['synced_to_disk']) or 'already syncing'}")
     if done["provisional_costs"]:

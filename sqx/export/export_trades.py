@@ -14,23 +14,27 @@ from core.paths import MASTER, databank_dir, export_dir
 SAMPLE_SEED = 20260914   # a subset export is a sample, and a sample has to be reproducible
 
 
-def stage(project: str, databank: str, dest: Path, limit: int = 0) -> dict[str, str]:
+def stage(project: str, databank: str, dest: Path, limit: int = 0,
+          install: Path = MASTER) -> dict[str, str]:
     """Copy a databank's strategies aside and read each one's timeframe.
 
     Args:
-        project: Project name on the master.
-        databank: Databank name on the master.
+        project: Project name.
+        databank: Databank name.
         dest: Directory to copy the .sqx files into.
         limit: Stage a random sample of this many instead of all of them; 0 means all.
             Random rather than the first N, because a databank is written in build order
             and its first strategies come from one generation run.
+        install: Which install holds the project. Defaults to the master, which is where
+            it lived before builds moved to the headless workers — a project built on the
+            custodian is invisible from here without this.
 
     Returns:
         Strategy name to timeframe, e.g. {"Strategy 1.2.3": "M30"}. Copies rather than
         exporting in place so SQX never opens the live files.
     """
     dest.mkdir(parents=True, exist_ok=True)
-    found = sorted(databank_dir(project, databank, MASTER).glob("*.sqx"))
+    found = sorted(databank_dir(project, databank, install).glob("*.sqx"))
     if limit and limit < len(found):
         found = sorted(random.Random(SAMPLE_SEED).sample(found, limit))
     timeframes = {}
