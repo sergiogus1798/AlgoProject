@@ -45,6 +45,46 @@ LOG="$WORKER/user/log/worker-daemon.log"
 BARS=(data.db data_futures.h2.db data_stock.h2.db)
 
 running() { ss -ltn 2>/dev/null | grep -q ":${CLI_PORT} "; }
+
+# Does any sqcli already have this install open? `running` only watches the port, and a
+# worker whose AppSettings drifted listens somewhere else -- so the port alone says "free"
+# while the H2 database is locked, and the second launch is the one that does the damage.
+holds_install() {
+  local p
+  for p in $(pgrep -x sqcli 2>/dev/null); do
+    [ "$(readlink -f "/proc/$p/cwd" 2>/dev/null)" = "$(readlink -f "$WORKER")" ] && return 0
+  done
+  return 1
+}
+
+configured_port() {
+  grep -oE '<AppWebServerPortSQUANT>[0-9]+' "$WORKER/internal/AppSettings.txt" 2>/dev/null \
+    | grep -oE '[0-9]+'
+}
+
+# 🔬 2026-09-23: two sqcli started on SQX_w2 200 ms apart. The second could not take the H2
+# lock, logged "Cannot load settings", fell back to the DEFAULTS -- 5050, the master's own
+# port, with no SQEDITOR entry -- and ON EXIT wrote those defaults into AppSettings.txt.
+# A transient collision permanently reconfigured the worker to impersonate the master.
+# Both halves are guarded here because either one alone lets it happen again.
+guard_launch() {
+  local have
+  have=$(configured_port)
+  if [ "$have" != "$CLI_PORT" ]; then
+    printf 'REFUSING: %s declares AppWebServerPortSQUANT=%s, but role %s must be %s.\n' \
+      "$(basename "$WORKER")" "${have:-<missing>}" "$ROLE" "$CLI_PORT"
+    printf 'Its port config drifted -- launching now would bind the wrong port.\n'
+    printf 'Fix internal/AppSettings.txt to %s / %s, install stopped, then retry.\n' \
+      "$CLI_PORT" "$((CLI_PORT + 1))"
+    exit 1
+  fi
+  if holds_install; then
+    printf 'REFUSING: another sqcli already holds %s.\n' "$WORKER"
+    printf 'A second one cannot take the H2 lock and rewrites AppSettings.txt on the way out.\n'
+    printf 'Stop it first, by PID, never by pattern.\n'
+    exit 1
+  fi
+}
 fingerprint() { md5sum "$MASTER"/user/data/*.db "$MASTER"/user/data/*.version 2>/dev/null | md5sum; }
 
 check() {
@@ -121,6 +161,7 @@ case "${1:-}" in
     ;;
   start)
     running && { echo "$ROLE already running on :$CLI_PORT"; exit 0; }
+    guard_launch
     # Nothing holds a log right now, and a start is about to write more of them.
     # --auto is rate-limited, so calling it on every start costs nothing.
     "$ROOT/bin/sqx-log-prune.sh" --auto || true
@@ -141,6 +182,7 @@ case "${1:-}" in
     ;;
   run)
     shift
+    guard_launch
     sync_bars || exit 1
     cd "$WORKER" || exit 1
     env -u ELECTRON_RUN_AS_NODE ./sqcli "$@" 2>&1 | grep -vE "DEBUG|oshi|ResponseProcessCookies|set-cookie"
