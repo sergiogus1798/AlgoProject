@@ -17,6 +17,9 @@
       "Bash(pgrep:*)",
       "Bash(ss:*)",
       "Bash(bin/sqx-worker.sh check)",
+      "Bash(bin/sqx-log-prune.sh)",
+      "Bash(bin/sqx-log-prune.sh --dry-run)",
+      "Bash(bin/sqx-log-prune.sh --auto)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
@@ -30,7 +33,16 @@
       "mcp__sqx__list_databanks",
       "mcp__sqx__list_projects",
       "mcp__sqx__list_strategies",
-      "mcp__sqx__get_strategy_stats"
+      "mcp__sqx__get_strategy_stats",
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "mcp__sqx__*"
     ],
     "additionalDirectories": [
       "~/Desktop/AlgoData",
@@ -53,6 +65,33 @@
     "deny": [
       "Bash(pkill:*)",
       "Bash(killall:*)"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/bin/sqx-log-prune.sh\" --auto 2>/dev/null || true",
+            "async": true,
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/bin/sqx-log-prune.sh\" --auto 2>/dev/null || true",
+            "async": true,
+            "timeout": 120
+          }
+        ]
+      }
     ]
   }
 }
