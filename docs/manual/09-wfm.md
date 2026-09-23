@@ -50,18 +50,18 @@ En `~/Desktop/AlgoData/raw/<proyecto>/<databank>/<fecha>/wfm/`:
 
 | archivo | qué es |
 |---|---|
-| `cells.csv` | una fila por celda de la matriz (30 por estrategia): el `% OOS`, el número de tramos, y **152 estadísticos con prefijo `is_` y otros 152 con `oos_`** |
-| `steps.csv` | una fila por **tramo** de cada celda (360 por estrategia): las fechas de la ventana de optimización y de la ventana de after, y los mismos 152 + 152 estadísticos |
-| `params.csv` | forma larga: una fila por tramo y parámetro, con el valor que eligió el optimizador en ese tramo |
-| `check.csv` | la comprobación del reparto de trades: trades asignados contra trades que SQX dice que hubo, tramo a tramo |
-| `trades/<estrategia>/<celda>.csv` | los trades de esa celda, con dos columnas añadidas: `period` (el tramo) y `sample` (`IS` o `OOS`) |
-| `raw/`, `strategies/` | lo que escupió SQX antes de trocearlo, y las copias que se le pasaron. Se pueden borrar |
+| `cells.parquet` | una fila por celda de la matriz (30 por estrategia): el `% OOS`, el número de tramos, y **152 estadísticos con prefijo `is_` y otros 152 con `oos_`** |
+| `steps.parquet` | una fila por **tramo** de cada celda (360 por estrategia): las fechas de la ventana de optimización y de la ventana de after, y los mismos 152 + 152 estadísticos |
+| `params.parquet` | una fila por tramo, una columna por parámetro, con el valor que eligió el optimizador en ese tramo |
+| `check.parquet` | la comprobación del reparto de trades: trades asignados contra trades que SQX dice que hubo, tramo a tramo |
+| `trades.parquet` | **todos** los trades de todas las estrategias en un fichero, con tres columnas añadidas: `result` (la celda), `period` (el tramo) y `sample` (`IS` o `OOS`). Se lee con `pandas.read_parquet` y se filtra por `strategy` y `result` |
+| `raw/`, `strategies/` | lo que escupió SQX antes de trocearlo, y las copias que se le pasaron. **Se borran solos** cuando la comprobación cuadra; si no cuadra, se quedan para mirarlos |
 
 La carpeta lleva fecha, así que **no sobrescribe** una exportación anterior.
 
 ### Cómo se lee el resultado
 
-Cada fila de `steps.csv` es un experimento honesto: *"optimicé aquí, obtuve esto; luego lo solté ahí
+Cada fila de `steps.parquet` es un experimento honesto: *"optimicé aquí, obtuve esto; luego lo solté ahí
 sin tocarlo, y obtuve esto otro"*.
 
 ![Un tramo tras otro de una celda](assets/wfm-pasos.png)
@@ -75,7 +75,7 @@ La correlación walk-forward es exactamente esto medido sobre todas las filas:
 
 ```python
 import pandas as pd
-s = pd.read_csv("steps.csv")
+s = pd.read_parquet("steps.parquet")
 s = s[~s.future]                      # el último tramo de cada celda no se llegó a correr
 s.groupby("strategy").apply(lambda d: d.is_NetProfit.corr(d.oos_NetProfit))
 ```
@@ -84,7 +84,7 @@ Un valor cerca de 0 quiere decir que optimizar no informa de nada sobre lo que v
 de 1, que sí. **En las dos estrategias medidas salió −0,04 y 0,06**, es decir, nada — con 330 tramos
 cada una, que es muestra suficiente para creérselo.
 
-Antes de fiarte de los trades, mira `check.csv`: la columna `assigned` tiene que ser igual a
+Antes de fiarte de los trades, mira `check.parquet`: la columna `assigned` tiene que ser igual a
 `stored` en todas las filas. En la comprobación que se hizo al construir esto, 39.873 trades
 repartidos en 30 celdas cuadraron **uno a uno**.
 
@@ -92,9 +92,9 @@ repartidos en 30 celdas cuadraron **uno a uno**.
 
 ```bash
 $ python3 -m sqx.export.export_wfm --project XAUUSD --databank WFM
-cells.csv             60 rows   308 columns
-steps.csv            720 rows   314 columns
-params.csv          6840 rows     7 columns
+cells.parquet         60 rows   308 columns
+steps.parquet        720 rows   314 columns
+params.parquet       720 rows    14 columns
 trades             65161 assigned, 0 unaccounted for
 wrote /home/sergioguslw/Desktop/AlgoData/raw/XAUUSD/WFM/2026-09-10/wfm
 ```
@@ -125,6 +125,6 @@ sobre ni falte ninguno.
 
 | lo que ves | qué pasa |
 |---|---|
-| `cells.csv 0 rows` | ninguna estrategia del databank pasó por WFM. Mira que sea el databank en el que escribió el retest, no el de origen |
-| `trades ... N unaccounted for` con N > 0 | el reparto por fechas no cuadra con lo que dice SQX. **No uses esos trades**; mira `check.csv` para ver en qué tramo se descuadra |
+| `cells.parquet 0 rows` | ninguna estrategia del databank pasó por WFM. Mira que sea el databank en el que escribió el retest, no el de origen |
+| `trades ... N unaccounted for` con N > 0 | el reparto por fechas no cuadra con lo que dice SQX. **No uses esos trades**; mira `check.parquet` para ver en qué tramo se descuadra |
 | el worker no arranca | quedó uno colgado de antes: `bin/sqx-worker.sh stop` y vuelve a lanzarlo |

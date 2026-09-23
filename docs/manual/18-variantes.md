@@ -71,7 +71,7 @@ del archivo** (`minimal` / `no_profile` / `full`).
 
 ### Qué produce
 
-Todo en `~/Desktop/AlgoData/variants/<proyecto>/<Estrategia>/`:
+Todo en `~/Desktop/AlgoData/strategyPermutations/<proyecto>/<Estrategia>/`:
 
 | archivo | qué es |
 |---|---|
@@ -175,7 +175,7 @@ wrote 3 .sqx as 'no_profile', 0.3 MB
   "duplicate_tuples": 0
 }
 
--> /home/sergioguslw/Desktop/AlgoData/variants/XAUUSD/Strategy_17.9.39
+-> /home/sergioguslw/Desktop/AlgoData/strategyPermutations/XAUUSD/Strategy_17.9.39
 ```
 
 Y mirando el manifiesto, que es lo que leerán todos los análisis de después:
@@ -238,5 +238,5 @@ no fuerces nada, dilo.
 cargues ese lote en SQX. Mira cuál de los cuatro campos salió con contenido; lo normal es
 `unexpected`, que son restos de una tirada anterior en `sqx/`.
 
-**Un `FileNotFoundError` sobre `permutations.csv`** — falta el export SPP del que salió el diseño.
+**Un `FileNotFoundError` sobre `spp.parquet`** — falta el export SPP del que salió el diseño.
 Los centinelas salen de ahí. Reexpórtalo con `python3 -m sqx.export.export_spp`.

@@ -255,6 +255,11 @@ copy* the archiver writes to `AlgoData/logs/`. `archive_logs.py` never deletes t
 does not appear to be happening). Not urgent: 439 GB free on the disk. Flagging only because the
 prose above could be read as "the master's log directory shrank," which it has not.
 
+**2026-09-23:** the live master no longer holds `log_2026_08_18.log` (its biggest file is now
+`log_2026_09_20.log`, 53 MB), and the archived `.gz` was replaced by
+`log_2026_08_18.condensed.log.gz` (36 KB) — what it was is in `knowhow/07-practices.md`, log
+retention. `AlgoData/logs/` went from 105 MB to 11 MB.
+
 ## 7. 🟢 `core.sqxfile` has a golden test
 
 Done 2026-09-04: `tests/test_sqxfile.py` against `tests/fixtures/strategy.sqx`, wired into
@@ -343,7 +348,7 @@ generic strategies, whatever `DoubleVortexLong_Template.sqx` implies. Rerun `tem
 any deliberate change to confirm the new setting took.
 
 **Update 2026-09-21 — XAUUSD no longer matches the row above.** Read off the live `project.cfx`
-while freezing the donor copy (`AlgoData/donors/XAUUSD_base_2026-09-21/`), its Build task now
+while freezing the donor copy (`AlgoData/projectsBackup/XAUUSD_base_2026-09-21/`), its Build task now
 declares `<StrategyType type="template">` with
 `templateFile=…/AddonsSQX/Templates/TemplatesClaude/StructuralBreakFilters_EntryOnly.sqx` — neither
 the `type="simple"` nor the `DoubleVortexLong_Template.sqx` measured on 2026-09-03. The owner changed
@@ -939,3 +944,12 @@ en **5050** (los puertos del maestro), y W2 arrancó como maestro hasta que algo
 07:47. Mecanismo en `knowhow/03-driving-sqx.md`. El arreglo del candado debe incluir que `start`
 compruebe el puerto en `AppSettings.txt` antes de lanzar.
 
+## 33. 🟠 `pipeline.cleanup` refuses the one finished mother: `metrics.parquet` no longer matches its hash
+
+📓 2026-09-23. `python3 -m pipeline.cleanup --project XAUUSD --strategy "Strategy 17.9.39"` exits
+with `el export ya no coincide con su hash: metrics.parquet`. The `collected` stage hashed the file
+at 09:40:04 on 2026-09-22 and something rewrote it afterwards — the `wfc` and `verdict` stages ran
+in the following second, so one of them, or a later re-run, writes `metrics.parquet` after collect
+recorded it. Until that is found the ledger's "removable" (`sqx/`, 2,000 files, 32 MB) cannot be
+swept, and the guarantee the sweep rests on is broken for every mother that follows. Nothing was
+forced. Find which stage rewrites the file and either hash after it or make it write elsewhere.

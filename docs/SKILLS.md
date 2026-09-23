@@ -58,7 +58,7 @@ Regenerado 2026-09-23 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | skill | ~tokens al invocar | ficheros | último cambio | para qué |
 |---|---:|---:|---|---|
 | `curate` | 1,900 | 1 | 2026-09-23 | Apply a Python verdict back into SQX — move the strategies a filter, a test or an analysis rejected out of a databank, so the next task in the chain only sees the survivors. Works between any two tasks and with any module that can name what it drops |
-| `template-run` | 1,673 | 1 | 2026-09-23 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
+| `template-run` | 1,602 | 1 | 2026-09-23 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
 | `sync` | 1,553 | 1 | 2026-09-12 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
 | `strategy-template` | 1,140 | 1 | 2026-09-22 | Turn a trading idea into a StrategyQuant X strategy template — understand the logic, check whether the condition already exists, author the custom block if it does not, and emit the .sqx into the library. Authoring only, no SQX running and no CPU burnt |
 | `perf` | 898 | 1 | 2026-09-20 | Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement on a branch |
@@ -67,7 +67,7 @@ Regenerado 2026-09-23 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | `audit` | 401 | 1 | 2026-09-12 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 224 | 1 | 2026-09-03 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-9 skills, 8,685 tokens de cuerpo en total, 33 KB en disco.
+9 skills, 8,614 tokens de cuerpo en total, 33 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 

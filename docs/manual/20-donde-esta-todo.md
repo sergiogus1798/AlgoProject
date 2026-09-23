@@ -51,7 +51,7 @@ Nada. Este capítulo describe lo que producen los demás.
 
 ⚠️ **Las del maestro son volátiles y las demás no.** Cada sync de SQX borra del disco los `.sqx`
 que no tiene en memoria, y hay auto-sync horario: por eso existe la rama `snapshots/`, y por eso el
-donante congelado vive en `AlgoData/donors/`, no en el install. Regla dura 1.
+donante congelado vive en `AlgoData/projectsBackup/`, no en el install. Regla dura 1.
 
 ⚠️ **Las fabricadas se borran a propósito.** Son 14 KB cada una y 5.000 por estrategia madre; el
 paso de limpieza las tira cuando ya se midieron. **Lo que sobrevive es el registro**, que pesa
@@ -67,7 +67,7 @@ kilobytes y dice qué había. Eso es lo que hace que el borrado sea auditable en
 | **El panel de un lote de variantes** | `AlgoData/pipeline/<proyecto>/<estrategia>/retest.csv` | se rehace al reejecutar |
 | **Ese panel unido al diseño** (contrato C3) | `AlgoData/pipeline/<proyecto>/<estrategia>/metrics.parquet` | **esta es la tabla del estudio** |
 | **Las barras** | `AlgoData/bars/<feed>/M1.parquet` | la única copia. M30/H1/H4/D1 se resamplean |
-| **Las barras resampleadas** (caché) | `AlgoData/derived/bars/<feed>/<TF>-<huella>.parquet` | se puede borrar, se regenera |
+| **Las barras resampleadas** (caché) | `AlgoData/barsDerived/<feed>/<TF>-<huella>.parquet` | se puede borrar, se regenera |
 
 **`metrics/` guarda una sola copia a propósito**, para que "cuál es el CSV bueno" no pueda ser una
 pregunta. `raw/` va fechado porque un export de hoy y uno de hace un mes son datos distintos, no
@@ -112,11 +112,12 @@ solo toca esa carpeta, y solo después de que `metrics.parquet` esté escrito y 
 
 | rama | qué es | ¿se puede borrar? |
 |---|---|---|
-| `donors/` | copias congeladas de `project.cfx`. El punto fijo del que salen los proyectos nuevos | **no** |
-| `snapshots/` | `user/projects` copiado entero antes de algo destructivo | sí, los viejos |
-| `logs/` | los logs de SQX comprimidos, de los tres installs | **no** — es lo que hace seguro podar los vivos |
-| `retest/` | el parquet ingerido que lee el estudio de MC Retest | se regenera |
-| `perf/` | el catálogo de lo que cuesta cada cosa | **no** |
+| `projectsBackup/` | copias congeladas: `project.cfx` donantes, las madres, y las configs de los installs. El punto fijo del que salen los proyectos nuevos | **no** |
+| `snapshots/` | `user/projects` copiado antes de algo destructivo, **sin las carpetas `log/` de los proyectos** (`rsync -a --exclude='log/'`). Vive hasta que se comprueba que el reinicio no perdió nada, y entonces **se borra** (dueño, 23-09-2026): el del 21-09 eran 3,5 GB sin un solo fichero que el maestro vivo no tuviera | sí, en cuanto se verifica |
+| `logs/` | los logs de SQX comprimidos, de los tres installs. Un log gigante se guarda *condensado* (`*.condensed.log.gz`): sin trazas Java ni las líneas por estrategia del EdgeDecay, que eran el 97 % | **no** — es lo que hace seguro podar los vivos |
+| `cache/` | cachés de los paneles (Monte Carlo, cross-market) | sí, se regeneran |
+| `profiling/` | el catálogo de lo que cuesta cada cosa y cuánto ocupa el disco | **no** |
+| `strategyPermutations/` | las variantes fabricadas a mano de una estrategia (fuera del pipeline) | cuando el pipeline las haya cubierto |
 
 ## Cómo se sabe qué produjo un fichero
 

@@ -80,8 +80,9 @@ XAUUSD:
 ```
 
 **Este fichero clasifica; no decide qué existe.** Lo que se analiza sale de la exportación: la
-carpeta `trades/<mercado>/` que dejó el paso 2 se construye desde la columna `Symbol` de las
-operaciones, así que no puede mentir. Si un mercado aparece en el export y no está aquí, se analiza
+columna `Symbol` del `trades.parquet` que dejó el paso 2 dice qué mercados hubo, así que no puede
+mentir. (Hasta el 23-09-2026 el paso 2 dejaba una carpeta `trades/<mercado>/` con un CSV por
+estrategia; ahora es un solo parquet con todos los mercados dentro, 118 ficheros → 1.) Si un mercado aparece en el export y no está aquí, se analiza
 igual y sale marcado como `sin clasificar`. Si está aquí y el export no trae operaciones suyas, el
 panel lo imprime al arrancar como ausente. Antes, un desajuste entre los dos salía como un mercado
 con cero estrategias, que no parece un error y lo es.
@@ -111,8 +112,8 @@ Dos comandos preparan los datos, y el tercero abre el panel — que es la **úni
 prueba, y corre **una estrategia cada vez**.
 
 ```bash
-# 1. Las barras de todos los mercados (una arranca de SQX por mercado, ~1 min cada una)
-python3 -m sqx.export.export_bars --asset XAUUSD --from 2003.01.01 --to 2026.01.01
+# 1. Las barras de todos los mercados: la librería M1, y el resto de timeframes se calcula al vuelo
+python3 -m sqx.export.sync_bars
 
 # 2. Los trades del retest, partidos por mercado (~4 min por cada 200 estrategias)
 python3 -m sqx.export.export_retest --project XAUUSD --databank "Retest Markets - Family"
@@ -137,7 +138,7 @@ abierta. El paso 3 no toca SQX: sólo lee ficheros.
 
 **Nada se guarda.** No hay caché, no hay fichero de resultados y no hay informe. Cada número que ves
 sale del botón que acabas de pulsar, y al cerrar el panel se pierde. Al arrancar borra además
-cualquier resultado que versiones anteriores dejaran en `AlgoData/derived/crossmarket/`. Es
+cualquier resultado que versiones anteriores dejaran en `AlgoData/cache/crossmarket/`. Es
 deliberado: un resultado guardado siempre se acaba leyendo como respuesta a una pregunta que no era
 la suya. El precio es real — unos **107 segundos por estrategia** con las 25.000 tiradas por defecto sobre dos
 mercados, y se paga otra vez si cierras el panel.

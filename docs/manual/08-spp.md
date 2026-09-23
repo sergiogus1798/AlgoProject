@@ -66,11 +66,10 @@ En `~/Desktop/AlgoData/raw/<proyecto>/<databank>/<fecha>/spp/`:
 
 | archivo | qué es |
 |---|---|
-| `runs.csv` | una fila por estrategia: permutaciones, cuántas ganaron y perdieron, beneficio medio y máximo, desviación típica y los parámetros que se movieron |
-| `metrics.csv` | una fila por estrategia y métrica: la mediana de las permutaciones, el valor original y su cociente |
-| `histograms.csv` | una fila por estrategia, métrica y bin: la frecuencia, y qué bin contiene la mediana y cuál el valor original |
-| `permutations.csv` | **solo si SQX guardó el detalle** — una fila por permutación con sus 152 estadísticos. La fila `permutation = -1` es la estrategia original, contra la que se comparan las demás |
-| `permutation_params.csv` | **solo si SQX guardó el detalle** — una fila por permutación y parámetro con el valor que le tocó. Se cruza con la anterior por `strategy` + `permutation` |
+| `runs.parquet` | una fila por estrategia: permutaciones, cuántas ganaron y perdieron, beneficio medio y máximo, desviación típica y los parámetros que se movieron |
+| `metrics.parquet` | una fila por estrategia y métrica: la mediana de las permutaciones, el valor original y su cociente |
+| `histograms.parquet` | una fila por estrategia, métrica y bin: la frecuencia, y qué bin contiene la mediana y cuál el valor original |
+| `spp.parquet` | **solo si SQX guardó el detalle** — **una fila por permutación**: `strategy`, `permutation`, una columna por parámetro que se movió (vacía en las estrategias que no mueven ese parámetro) y después los 152 estadísticos. La fila `permutation = -1` es la estrategia original, contra la que se comparan las demás. Desde el 23-09-2026 sustituye a `permutations.csv` + `permutation_params.csv`: 49 MB de CSV son 6 MB de parquet, y quien necesita cuatro columnas lee cuatro columnas |
 | `manifest.json` | qué se leyó, cuántos perfiles había y con qué versión del código |
 
 Las carpetas van por fecha: una exportación nueva no borra la anterior.
@@ -121,11 +120,10 @@ print(j.groupby("LWMAPeriod1").NetProfit.median())
 ```bash
 $ python3 -m sqx.export.export_spp --project XAUUSD --databank "SPP IS"
 5 profiles -> /home/sergioguslw/Desktop/AlgoData/raw/XAUUSD/SPP_IS/2026-09-10/spp
-  runs.csv         5 rows
-  metrics.csv      675 rows
-  histograms.csv   13500 rows
-  permutations.csv 21205 rows
-  permutation_params.csv 213642 rows
+  runs.parquet     5 rows
+  metrics.parquet  675 rows
+  histograms.parquet 13500 rows
+  spp.parquet      21205 rows
 ```
 
 Y en Python:
@@ -135,7 +133,7 @@ import pandas as pd
 from pathlib import Path
 
 d = Path.home() / "Desktop/AlgoData/raw/XAUUSD/SPP_IS/2026-09-10/spp"
-m = pd.read_csv(d / "metrics.csv")
+m = pd.read_parquet(d / "metrics.parquet")
 
 frag = m[m.metric == "NetProfit"].set_index("strategy")["orig_over_median"]
 print(frag.sort_values(ascending=False))
@@ -164,14 +162,14 @@ if p["permutation_results"]:                       # la casilla estaba quitada
   clavado los parámetros—, no que el edge sea real.
 - **Los histogramas vienen ya agregados por SQX**, en 20 bins que él eligió. Si el databank no
   guardó el detalle, ésa es toda la distribución que hay: no se puede pedir otro percentil ni cruzar
-  dos métricas permutación a permutación. Con el detalle guardado, `permutations.csv` deja hacer las
+  dos métricas permutación a permutación. Con el detalle guardado, `spp.parquet` deja hacer las
   dos cosas y los histogramas sobran.
-- **En `permutations.csv`, 34 de los 152 estadísticos salen como `stat:<tipo>:<índice>`.** SQX los
+- **En `spp.parquet`, 34 de los 152 estadísticos salen como `stat:<tipo>:<índice>`.** SQX los
   guarda por su posición en un array, sin nombre. Los 118 nombrados se calibraron cruzando el
   resultado original de 34 perfiles contra la tabla de medianas del mismo fichero, que sí lleva
   nombre; los 34 restantes valen 0 en todas las estrategias, que es justo por lo que no hubo con qué
   distinguirlos. El inventario completo, campo a campo, está en el capítulo 9.
-- **28 de las 135 métricas de `metrics.csv` salen como `id:<número>`.** SQX guarda las métricas bajo un hash de su
+- **28 de las 135 métricas de `metrics.parquet` salen como `id:<número>`.** SQX guarda las métricas bajo un hash de su
   nombre que ya no se puede deshacer, así que los nombres se reconstruyeron comparando valores
   contra una exportación de databank de 50 estrategias. Esas 28 valen exactamente 0 en todas las
   estrategias de esta instalación, así que no había con qué distinguirlas — y por eso mismo tampoco

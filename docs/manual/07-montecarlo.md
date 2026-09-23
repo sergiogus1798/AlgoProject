@@ -277,7 +277,7 @@ vuelve a correr esa sub-prueba sola, con azar nuevo, y la enseña al lado de la 
 forma honesta de comprobar si un número te está bailando.
 
 **Lo que se guarda y dónde.** Cada análisis va a
-`~/Desktop/AlgoData/derived/montecarlo/<proyecto>/<databank>/<estrategia>.json`, con una huella de
+`~/Desktop/AlgoData/cache/montecarlo/<proyecto>/<databank>/<estrategia>.json`, con una huella de
 **toda** la configuración dentro — incluidos los overrides de coste del activo que hayas puesto en
 el desplegable de Configuración, así que analizar la misma estrategia con un spread distinto no se
 confunde con el resultado de fábrica. Por eso cambiar de estrategia es instantáneo dentro de la

@@ -11,17 +11,16 @@ Todo lo que aparece aquí se lee del `.sqx` directamente. No hace falta SQX abie
 
 | fichero | una fila por | lo llena |
 |---|---|---|
-| `runs.csv` | estrategia | el resumen de la tirada de permutaciones |
-| `metrics.csv` | estrategia × métrica | la tabla mediana / valor original del panel |
-| `histograms.csv` | estrategia × métrica × bin | los histogramas que dibuja el panel |
-| `permutations.csv` | estrategia × permutación | **solo si la casilla 3D estaba quitada** |
-| `permutation_params.csv` | estrategia × permutación × parámetro | ídem |
-| `trades/<estrategia>.csv` | operación | el backtest principal, vía `export_trades.py` |
-| `bars/bars_<TF>.csv` | barra | las velas sobre las que operó |
+| `runs.parquet` | estrategia | el resumen de la tirada de permutaciones |
+| `metrics.parquet` | estrategia × métrica | la tabla mediana / valor original del panel |
+| `histograms.parquet` | estrategia × métrica × bin | los histogramas que dibuja el panel |
+| `spp.parquet` | estrategia × permutación | **solo si la casilla 3D estaba quitada**: los parámetros en columnas y después los estadísticos. Hasta el 23-09-2026 eran dos CSV, `permutations.csv` (estadísticos) y `permutation_params.csv` (parámetros en forma larga); las secciones 4 y 5 describen las columnas, que son las mismas |
+| `trades.parquet` | operación | el backtest principal, vía `export_trades.py` |
+| la librería de barras (`13-barras.md`) | barra | las velas sobre las que operó |
 
 ---
 
-## 1. `runs.csv` — la tirada entera en una línea
+## 1. `runs.parquet` — la tirada entera en una línea
 
 | campo | qué es |
 |---|---|
@@ -40,7 +39,7 @@ Todo lo que aparece aquí se lee del `.sqx` directamente. No hace falta SQX abie
 Hay dos campos más que el lector de Python devuelve y que no se escriben al CSV porque no son
 tabulares: `last_count` (repite `permutations`) y `stdev_computed` (siempre 0 en esta instalación).
 
-## 2. `metrics.csv` — la tabla del panel
+## 2. `metrics.parquet` — la tabla del panel
 
 | campo | qué es |
 |---|---|
@@ -50,7 +49,7 @@ tabulares: `last_count` (repite `permutations`) y `stdev_computed` (siempre 0 en
 | `orig` | el valor de la estrategia original, la que tú tienes guardada |
 | `orig_over_median` | `orig / median`. **La columna que decide.** Cerca de 1 el resultado no depende de los parámetros; muy por encima, vive en un pico |
 
-## 3. `histograms.csv` — la distribución tal y como la agrupó SQX
+## 3. `histograms.parquet` — la distribución tal y como la agrupó SQX
 
 | campo | qué es |
 |---|---|
@@ -62,7 +61,7 @@ tabulares: `last_count` (repite `permutations`) y `stdev_computed` (siempre 0 en
 | `is_median` | `True` en el bin donde cae la mediana |
 | `is_orig` | `True` en el bin donde cae el valor original |
 
-## 4. `permutations.csv` — una fila por permutación
+## 4. `spp.parquet`, los estadísticos — una fila por permutación
 
 | campo | qué es |
 |---|---|
@@ -70,7 +69,7 @@ tabulares: `last_count` (repite `permutations`) y `stdev_computed` (siempre 0 en
 | `permutation` | número de permutación desde 0. **La fila `-1` es la estrategia original**, para comparar contra ella sin buscarla aparte |
 | los otros 152 | los estadísticos, uno por columna. Los nombrados son los de la tabla grande; los demás salen como `stat:<tipo>:<índice>` |
 
-## 5. `permutation_params.csv` — qué valores le tocaron a cada permutación
+## 5. `spp.parquet`, los parámetros — qué valores le tocaron a cada permutación (una columna por parámetro; antes, forma larga con `parameter` y `value`)
 
 | campo | qué es |
 |---|---|

@@ -99,13 +99,14 @@ candidatos a borrar: 6, 0.47 GB  (nada se borra aquí)
         0.9 MB  superseded_export  raw/XAUUSD/Retest_Markets_-_Family/2026-09-09
 ```
 
-Cuatro reglas, y **sólo una de ellas es un veredicto**:
+Cinco reglas, y **sólo una de ellas es un veredicto**:
 
 | regla | qué encuentra | cuánto te puedes fiar |
 |---|---|---|
 | `collected_variants` | databanks que el ledger del pipeline dice que ya se exportaron **y se comprobó el hash** | **veredicto** — está probado que el dato sobrevivió |
 | `superseded_export` | un export fechado cuyo hermano más nuevo contiene todo lo que él tiene | candidato |
 | `strategy_copies` | ficheros `.sqx` dentro de exports, que duplican lo que ya guarda el databank | candidato |
+| `intermediates` | carpetas `raw/` y `trades/` de CSV al lado de un `trades.parquet` que ya las contiene (los exports posteriores al 23-09-2026 las borran solos) | candidato |
 | `stale_branch` | nada escrito en 90 días | la más floja — viejo no es lo mismo que sobrante |
 
 ⚠️ **Nada del proyecto borra ninguna de estas cosas.** La lista sólo le pone un número a una
@@ -122,7 +123,7 @@ arranca para medir un objetivo aislado. No lo llames a mano.)
 
 ### Qué salidas produce, y qué significan
 
-Todo vive en `~/Desktop/AlgoData/perf/`:
+Todo vive en `~/Desktop/AlgoData/profiling/`:
 
 | fichero | qué guarda |
 |---|---|

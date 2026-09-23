@@ -60,7 +60,7 @@ fecha se marcaría como desactualizado para siempre.
 |---|---|
 | `~/Desktop/AlgoData/bars/<feed>/M1.parquet` | las barras de un minuto. 128 MB el oro, 107 el plata, 65 el Brent |
 | `~/Desktop/AlgoData/bars/manifest.json` | qué tiene la librería: barras, rango y la huella de cada mercado |
-| `~/Desktop/AlgoData/derived/bars/<feed>/<TF>-<huella>.parquet` | los timeframes ya calculados |
+| `~/Desktop/AlgoData/barsDerived/<feed>/<TF>-<huella>.parquet` | los timeframes ya calculados |
 
 La huella en el nombre del archivo es lo que hace que no tengas que acordarte de nada: si actualizas
 la data de un mercado en SQX y vuelves a sincronizar, la huella cambia y **los timeframes viejos
@@ -109,8 +109,8 @@ huérfanos en ese momento y se recalculan la próxima vez que alguien los pida.
   ocho meses sin actualizar un mercado, los dos dirán `ok` tan contentos. Eso se mira en SQX.
   *(A 21-09-2026 el oro y la plata llegan hasta el 16-01-2026 y el Brent hasta el 07-09-2026: los
   metales llevan ocho meses sin actualizar **en SQX**, y esto no te lo iba a decir el comando.)*
-- **No sustituye a `export_bars.py`.** Ese sigue existiendo para bajar un timeframe concreto a CSV
-  si alguna vez hace falta uno suelto.
+- **`export_bars.py` ya no existe** (retirado el 23-09-2026). Un timeframe suelto se pide a
+  `core.barstore.bars(feed, TF)`, que lo calcula desde el minuto en un instante y lo cachea.
 - **El volumen no es exacto al de SQX.** Calculado desde el minuto, difiere en 13 barras de 274.832
   y como mucho en 2 unidades — redondeo de SQX al agregar. Los precios sí son exactos. Si algún día
   haces algo que dependa del volumen al detalle, tenlo presente.
