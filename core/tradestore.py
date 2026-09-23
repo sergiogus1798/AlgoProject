@@ -106,3 +106,20 @@ def read(path: Path, strategy: str = "") -> pd.DataFrame:
     """
     filters = [("strategy", "==", strategy)] if strategy else None
     return pd.read_parquet(path, filters=filters).reset_index(drop=True)
+
+
+def market(packed: pd.DataFrame, strategy: str, feed: str) -> pd.DataFrame:
+    """One strategy's trades on one market, out of a `data=all` export packed per market.
+
+    Args:
+        packed: What read() returned for a whole per-market export.
+        strategy: Strategy name.
+        feed: SQX symbol of the market, as the `Symbol` column spells it.
+
+    Returns:
+        The rows, re-indexed from zero, without the `strategy` column. Empty when the
+        strategy never fired on that market -- which is a result about the strategy, and
+        the caller shows it rather than treating it as a missing input.
+    """
+    rows = packed[(packed["strategy"] == strategy) & (packed["Symbol"] == feed)]
+    return rows.drop(columns=["strategy"]).reset_index(drop=True)
