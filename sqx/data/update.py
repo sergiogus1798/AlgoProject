@@ -9,10 +9,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from core.assets import write_dataranges
-from core.paths import DATA, MASTER
+from core.paths import MASTER, data_update_backups
 from core.worker import holding
 
-SNAPSHOTS = DATA / "backups" / "data-update"
+SNAPSHOTS = data_update_backups()
 
 
 def inventory(install: Path) -> dict[str, int]:

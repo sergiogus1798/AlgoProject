@@ -7,7 +7,8 @@ from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree
 
-from core.paths import MASTER, WORKERS, vocabulary_snapshot
+from core.paths import MASTER, WORKERS
+from core.templatepaths import vocabulary_snapshot
 
 CONFIG_REL = "internal/web/SQWIZARD/branding/global/config.xml"
 CUSTOM_REL = "user/settings/customBlocks.xml"

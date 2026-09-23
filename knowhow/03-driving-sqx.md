@@ -784,11 +784,28 @@ resolves.
 reverted every edit. The copy is now skipped while the master's fingerprint is unchanged
 (`--force-sync` overrides), and an edit survived a stop/start with the value intact.
 
-⚠️ **But only `defaultspread` can be set headlessly.** `-instrument action=edit` moved the spread
-and the listing confirmed it. `defaultslippage` has **no parameter at all**, and `commissions=`
-and `swap=` did not take — a task carrying `assets/`'s commission and swap stayed unresolved after
-editing them, though whether the parameter is ignored or my escaping was wrong is **not
-distinguished**. Those three are GUI-only for now.
+🔬 **One segment per PROJECT, not per task.** The same 15-task project starts when every task
+carries spread 5.0 against a registry of 5.0, and is unresolved when its Build says 5.0 and its
+retests say 10.0. SQX resolves the instrument once per project. So a chain that needs the build's
+spread and the retests' spread is **two projects**, run with the registry set to each in turn — and
+joining their results means exporting both databanks.
+
+🔬 **`defaultslippage` works and is NOT in the CLI's own help.** `internal/web/SQUANT/help.txt`
+lists `defaultspread`, `commissions`, `swap`, `minDistance`, `pointvalue`, `ticksize`, `tickstep`,
+`orderSizeMultiplier`, `orderSizeStep`, `datatype`, `broker`, `description` — no slippage, though
+the listing has that column. `-instrument action=edit … defaultslippage=2.5` moved it, confirmed in
+`action=list`, and so did `defaultSlippage=` and `slippage=`. **The help is incomplete; try the
+parameter anyway.**
+
+With that, the loop closes end to end: registry `5.0 / 2.5`, task `5.0 / 2.5` → the project starts;
+the `oos1` project carrying `10.0 / 5` against the same registry does not, which is the check that
+the agreement is what decides.
+
+⚠️ **`commissions=` and `swap=` still do not take.** `-instrument action=edit` moved the spread
+and the listing confirmed it. `defaultslippage` has **no parameter at all**, and Three forms were tried —
+the escaped XML, `PercentageBased:0.001` and a bare number — and `PercentageBased` appears in no
+install's `data.db` afterwards, so none landed. Whether the format is wrong or the parameter is
+ignored is **not distinguished**. Those two are GUI-only for now.
 
 **So the one-time fix is the master's own instrument list**: set `XAUUSD_Infinox` there to the
 `assets/` figures and every worker inherits them at the next sync, tasks written from `assets/`

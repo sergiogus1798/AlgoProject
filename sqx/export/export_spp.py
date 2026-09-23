@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Export a databank's Sys. Param Permutation profiles: the table, the histograms, the counts."""
+"""Export a databank's Sys. Param Permutation profiles: one wide table, the histograms, the counts."""
 
 import argparse
-import csv
 import zipfile
 from datetime import date
 from pathlib import Path
+
+import pandas as pd
 
 from core import manifest, optprofile
 from core.paths import MASTER, databank_dir, export_dir, worker_dir
@@ -38,18 +39,15 @@ def write_runs(found: dict, path: Path) -> int:
 
     Args:
         found: Output of `profiles`.
-        path: CSV to write.
+        path: Parquet to write.
 
     Returns:
-        Rows written.
+        Rows written. `parameters` is the space-joined list of what the SPP permuted.
     """
-    with open(path, "w", newline="", encoding="utf-8") as fh:
-        out = csv.DictWriter(fh, RUN)
-        out.writeheader()
-        for name, p in found.items():
-            out.writerow({"strategy": name, "parameters": " ".join(p["params"]),
-                          **{k: p[k] for k in RUN[1:-1]}})
-    return len(found)
+    rows = [{"strategy": name, "parameters": " ".join(p["params"]),
+             **{k: p[k] for k in RUN[1:-1]}} for name, p in found.items()]
+    pd.DataFrame(rows, columns=RUN).to_parquet(path, index=False)
+    return len(rows)
 
 
 def write_metrics(found: dict, path: Path) -> int:
@@ -57,19 +55,16 @@ def write_metrics(found: dict, path: Path) -> int:
 
     Args:
         found: Output of `profiles`.
-        path: CSV to write.
+        path: Parquet to write.
 
     Returns:
         Rows written.
     """
     rows = [{"strategy": name, "metric": metric, "median": median,
              "orig": p["orig"][metric],
-             "orig_over_median": p["orig"][metric] / median if median else ""}
+             "orig_over_median": p["orig"][metric] / median if median else float("nan")}
             for name, p in found.items() for metric, median in p["medians"].items()]
-    with open(path, "w", newline="", encoding="utf-8") as fh:
-        out = csv.DictWriter(fh, ["strategy", "metric", "median", "orig", "orig_over_median"])
-        out.writeheader()
-        out.writerows(rows)
+    pd.DataFrame(rows).to_parquet(path, index=False)
     return len(rows)
 
 
@@ -78,19 +73,15 @@ def write_histograms(found: dict, path: Path) -> int:
 
     Args:
         found: Output of `profiles`.
-        path: CSV to write.
+        path: Parquet to write.
 
     Returns:
-        Rows written.
+        Rows written. Kept because the binning is SQX's own and cannot be derived back.
     """
     rows = [{"strategy": name, "metric": metric, **b}
             for name, p in found.items() for metric, chart in p["charts"].items()
             for b in optprofile.histogram(chart)]
-    with open(path, "w", newline="", encoding="utf-8") as fh:
-        out = csv.DictWriter(fh, ["strategy", "metric", "bin", "edge", "frequency",
-                                  "is_median", "is_orig"])
-        out.writeheader()
-        out.writerows(rows)
+    pd.DataFrame(rows).to_parquet(path, index=False)
     return len(rows)
 
 
@@ -107,52 +98,57 @@ def runs_of(profile: dict) -> list[tuple[int, dict]]:
     return [(-1, profile["original"])] + list(enumerate(profile["results"]))
 
 
-def write_permutations(found: dict, path: Path) -> int:
-    """One row per permutation: every statistic SQX kept for it.
+def table(found: dict) -> pd.DataFrame:
+    """One row per permutation: its parameter values wide, then every statistic SQX kept.
 
     Args:
         found: Output of `profiles`, holding profiles with `permutation_results` true.
-        path: CSV to write.
 
     Returns:
-        Rows written. Columns are the union over the databank, so a metric one strategy
-        does not carry comes out blank rather than shifting the row.
+        Columns `strategy` (categorical), `permutation` (-1 is the original, the row every
+        permutation is compared against), one column per parameter any strategy permuted
+        (NaN where this strategy did not), then the statistics. Wide on purpose: the long
+        form measured 34 MB in memory for 21,205 x 8 numbers that fit in 6 MB wide, and a
+        reader that needs four of 154 columns can ask Parquet for just those.
+
+    Raises:
+        SystemExit: A parameter and a statistic share a name, which would silently merge
+            two columns.
     """
-    metrics = sorted({m for p in found.values() for _, r in runs_of(p) for m in r["stats"]})
-    with open(path, "w", newline="", encoding="utf-8") as fh:
-        out = csv.DictWriter(fh, ["strategy", "permutation", *metrics])
-        out.writeheader()
-        rows = 0
-        for name, p in found.items():
-            for i, r in runs_of(p):
-                out.writerow({"strategy": name, "permutation": i, **r["stats"]})
-                rows += 1
-    return rows
+    rows = []
+    for name, p in found.items():
+        for i, r in runs_of(p):
+            params = {k: v for k, _, v in (kv.partition("=") for kv in r["params"].split(",") if kv)}
+            rows.append({"strategy": name, "permutation": i, **params, **r["stats"]})
+    names = sorted({k for p in found.values() for _, r in runs_of(p)
+                    for k in (kv.partition("=")[0] for kv in r["params"].split(",") if kv)})
+    stats = sorted({m for p in found.values() for _, r in runs_of(p) for m in r["stats"]})
+    if set(names) & set(stats):
+        raise SystemExit(f"parameter and statistic share a name: {sorted(set(names) & set(stats))}")
+    frame = pd.DataFrame(rows, columns=["strategy", "permutation", *names, *stats])
+    frame[names] = frame[names].apply(pd.to_numeric, errors="coerce")
+    frame["strategy"] = frame["strategy"].astype("category")
+    frame["permutation"] = frame["permutation"].astype("int32")
+    return frame
 
 
-def write_permutation_params(found: dict, path: Path) -> int:
-    """One row per permutation and parameter: the value SQX gave it.
+def write_table(found: dict, path: Path) -> int:
+    """Write `table(found)` as one zstd Parquet.
 
     Args:
         found: Output of `profiles`, holding profiles with `permutation_results` true.
-        path: CSV to write.
+        path: Parquet to write.
 
     Returns:
-        Rows written. SQX stores the whole permutation as one `Name=value,` string; this
-        splits it so the table can be pivoted per parameter.
+        Rows written.
     """
-    rows = [{"strategy": name, "permutation": i, "parameter": k, "value": v}
-            for name, p in found.items() for i, r in runs_of(p)
-            for k, _, v in (kv.partition("=") for kv in r["params"].split(",") if kv)]
-    with open(path, "w", newline="", encoding="utf-8") as fh:
-        out = csv.DictWriter(fh, ["strategy", "permutation", "parameter", "value"])
-        out.writeheader()
-        out.writerows(rows)
-    return len(rows)
+    frame = table(found)
+    frame.to_parquet(path, compression="zstd", index=False)
+    return len(frame)
 
 
 def main() -> None:
-    """Read every profile in a databank and write the three CSVs into a dated directory."""
+    """Read every profile in a databank and write its Parquet tables into a dated directory."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
@@ -167,14 +163,12 @@ def main() -> None:
                      date.today().isoformat()) / "spp"
     out.mkdir(parents=True, exist_ok=True)
 
-    counts = {"runs.csv": write_runs(found, out / "runs.csv"),
-              "metrics.csv": write_metrics(found, out / "metrics.csv"),
-              "histograms.csv": write_histograms(found, out / "histograms.csv")}
+    counts = {"runs.parquet": write_runs(found, out / "runs.parquet"),
+              "metrics.parquet": write_metrics(found, out / "metrics.parquet"),
+              "histograms.parquet": write_histograms(found, out / "histograms.parquet")}
     if kept:
         full = {n: p for n, p in found.items() if p["permutation_results"]}
-        counts["permutations.csv"] = write_permutations(full, out / "permutations.csv")
-        counts["permutation_params.csv"] = write_permutation_params(
-            full, out / "permutation_params.csv")
+        counts["spp.parquet"] = write_table(full, out / "spp.parquet")
     manifest.write(out,
                    {"install": str(install), "project": a.project, "databank": a.databank,
                     "profiles_found": len(found),

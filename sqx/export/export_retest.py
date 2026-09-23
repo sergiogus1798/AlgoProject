@@ -1,42 +1,19 @@
 #!/usr/bin/env python3
-"""Export a cross-market retest databank and split every strategy's trades by market."""
+"""Export a cross-market retest databank as one typed Parquet, every market inside it."""
 
 import argparse
-import collections
+import shutil
 from datetime import date
-from pathlib import Path
 
-from core import exportdrv, manifest, trades
+import pandas as pd
+
+from core import exportdrv, manifest, tradestore
 from core.paths import MASTER, export_dir
 from sqx.export.export_trades import SAMPLE_SEED, stage
 
 
-def split(raw_dir: Path, out_dir: Path) -> dict[str, int]:
-    """Fan one CSV per strategy out into one CSV per market.
-
-    Args:
-        raw_dir: Where orderstocsv wrote its files, one per strategy, all markets inside.
-        out_dir: Root to write `<feed>/<strategy>.csv` under.
-
-    Returns:
-        Trades written per feed. The feed name is taken from the Symbol column rather than
-        from the retest task's chart list, so a market that produced no trades simply does
-        not appear and is never silently confused with one that did.
-    """
-    counts: dict[str, int] = collections.Counter()
-    for f in sorted(raw_dir.glob("*.csv")):
-        for feed, block in trades.by_market(trades.read(f)).items():
-            dest = out_dir / feed
-            dest.mkdir(parents=True, exist_ok=True)
-            # Written back in SQX's own date format: a split file has to be readable by the
-            # same reader as the file it came from, and to_csv would default to ISO.
-            block.to_csv(dest / f.name, sep=";", index=False, date_format=trades.TIME)
-            counts[feed] += len(block)
-    return dict(counts)
-
-
 def main() -> None:
-    """Stage a retest databank, export it with data=all, and split the result per market."""
+    """Stage a retest databank, export it with data=all, and pack it into one Parquet."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True, help="the databank the retest wrote into")
@@ -49,9 +26,17 @@ def main() -> None:
     print(f"staged {len(timeframes)} strategies from {a.project}/{a.databank}")
 
     exportdrv.trades(out / "strategies", out / "raw", data="all")
-    counts = split(out / "raw", out / "trades")
+    # One typed Parquet for the whole export, `Symbol` separating the markets: the same
+    # store export_trades uses, read back with tradestore.market(). The CSVs orderstocsv
+    # wrote and the .sqx copies are intermediates and do not outlive the pack.
+    packed = tradestore.pack(sorted((out / "raw").glob("*.csv")), out / "trades.parquet",
+                             per_market=True)
+    symbols = pd.read_parquet(out / "trades.parquet", columns=["Symbol"])["Symbol"]
+    counts = {str(k): int(v) for k, v in symbols.value_counts().items()}
     for feed, n in sorted(counts.items()):
         print(f"{feed:30} {n:>8} trades")
+    shutil.rmtree(out / "raw")
+    shutil.rmtree(out / "strategies")
 
     manifest.write(out,
                    {"install": str(MASTER), "project": a.project, "databank": a.databank,
@@ -59,7 +44,8 @@ def main() -> None:
                     "limit": a.limit, "sample_seed": SAMPLE_SEED if a.limit else None},
                    f"export_retest.py --project {a.project} --databank {a.databank}"
                    + (f" --limit {a.limit}" if a.limit else ""),
-                   {"strategies": len(timeframes), "markets": len(counts), **counts})
+                   {"strategies": len(timeframes), "markets": len(counts), **counts,
+                    "kept_ticket": packed["kept_ticket"]})
     print(f"wrote {out}")
 
 

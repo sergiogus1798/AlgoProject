@@ -3,17 +3,16 @@
 Every script here writes into the data root and leaves a `manifest.json` next to what it wrote.
 Nothing here writes into the repo. **They have different lifecycles**: `export_metrics.py` keeps one
 current CSV per databank and deletes the previous one before writing, `export_trades.py` and
-`export_retest.py` write dated, immutable directories, and `export_bars.py` overwrites one file per
+`export_retest.py` write dated, immutable directories, and `sync_bars.py` overwrites one M1 file per
 feed because bars are a fact about the market, not about a run. See `tasks/CLAUDE.md` for why.
 
 | file | what it does | run it |
 |---|---|---|
 | `export_metrics.py` | One row per strategy, columns tagged (IS)/(OOS)/(Full) from the view's sample types. Replaces the databank's previous export | `python3 -m sqx.export.export_metrics --project XAUUSD --databank OOS` |
-| `export_wfm.py` | Everything a Walk-Forward Matrix cross-check stored: one row per cell, one per walk-forward step with paired IS/OOS statistics, the parameters each step settled on, and the trades split per cell and step | `python3 -m sqx.export.export_wfm --project XAUUSD --databank WFM` |
-| `export_trades.py` | Every trade of every strategy in a databank, packed into one typed `trades.parquet`. Exports no bars: those live once in the M1 library | `python3 -m sqx.export.export_trades --project XAUUSD --databank OOS --symbol XAUUSD_DukasM1_Infinox` |
-| `export_retest.py` | A cross-market retest databank exported with `data=all`, split into one folder of trades per market | `python3 -m sqx.export.export_retest --project XAUUSD --databank RetestMarkets` |
-| `export_spp.py` | Every Sys. Param Permutation profile in a databank: run counts, medians against the original values, the histograms bin by bin, and — where SQX kept them — one row per permutation with its parameters and its 152 statistics. Reads the `.sqx` directly — drives nothing | `python3 -m sqx.export.export_spp --project XAUUSD --databank "SPP IS"` |
-| `export_bars.py` | The bars of every market an asset is retested on, at the timeframe assets/_markets.yaml declares. Superseded by `sync_bars.py` for anything the M1 library covers | `python3 -m sqx.export.export_bars --asset XAUUSD` |
+| `export_wfm.py` | Everything a Walk-Forward Matrix cross-check stored, as Parquet: one row per cell, one per walk-forward step with paired IS/OOS statistics, the parameters each step settled on (wide), and every trade tagged with its cell and step in one `trades.parquet`. Deletes its intermediates once the split reconciles | `python3 -m sqx.export.export_wfm --project XAUUSD --databank WFM` |
+| `export_trades.py` | Every trade of every strategy in a databank, packed into one typed `trades.parquet`. Exports no bars: those live once in the M1 library. Nothing but the Parquet and the manifest outlives the export | `python3 -m sqx.export.export_trades --project XAUUSD --databank OOS --symbol XAUUSD_DukasM1_Infinox` |
+| `export_retest.py` | A cross-market retest databank exported with `data=all`, packed into one `trades.parquet` whose `Symbol` column separates the markets (`tradestore.market()` reads one strategy on one market) | `python3 -m sqx.export.export_retest --project XAUUSD --databank RetestMarkets` |
+| `export_spp.py` | Every Sys. Param Permutation profile in a databank, as Parquet: run counts, medians against the original values, the histograms bin by bin, and — where SQX kept them — `spp.parquet`, one row per permutation with its parameters as columns and its 152 statistics beside them. Reads the `.sqx` directly — drives nothing | `python3 -m sqx.export.export_spp --project XAUUSD --databank "SPP IS"` |
 | `sync_bars.py` | Keep the M1 bar library in step with SQX: pull the feeds assets/_markets.yaml declares that are missing, refresh the ones SQX has grown, and leave every other timeframe to be resampled | `python3 -m sqx.export.sync_bars --check` |
 | `archive_logs.py` | Copy both installs' logs to `AlgoData/logs/` as `.gz` before SQX prunes them | `python3 -m sqx.export.archive_logs` |
 

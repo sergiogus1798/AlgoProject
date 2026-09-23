@@ -72,7 +72,7 @@ def sync_databanks(config: str) -> tuple[str, list[str]]:
 
 
 def build(name: str, template: Path, symbol: str, role: str, strategies: int,
-          minutes: int, donor: Path) -> dict:
+          minutes: int, donor: Path, segment: str = "build") -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -83,6 +83,9 @@ def build(name: str, template: Path, symbol: str, role: str, strategies: int,
         strategies: MaxStrategies and the databank-full stop.
         minutes: Wall-clock cap.
         donor: The project cloned for its data feed, exits and acceptance conditions.
+        segment: Which segment the whole project runs on. One project, one segment: SQX
+            resolves the instrument once per project, so a chain needing the build's
+            spread and the retests' spread needs two projects, not two tasks.
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
@@ -116,7 +119,7 @@ def build(name: str, template: Path, symbol: str, role: str, strategies: int,
         for member, blob in members.items():
             z.writestr(member, blob)
 
-    costs = configure(out, symbol)
+    costs = configure(out, symbol, segment)
     with zipfile.ZipFile(out) as z:
         final = {n: z.read(n) for n in z.namelist()}
     return {"project": name, "install": install.name, "cfx": str(out),
@@ -142,6 +145,8 @@ def main() -> None:
     ap.add_argument("--max-strategies", type=int, default=30)
     ap.add_argument("--minutes", type=int, default=10)
     ap.add_argument("--donor", type=Path, default=DONOR)
+    ap.add_argument("--segment", default="build", choices=("build", "oos1"),
+                    help="the whole project's segment; oos2 is the holdout and is refused")
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
     a = ap.parse_args()
 
@@ -159,7 +164,8 @@ def main() -> None:
         raise SystemExit(f"the {held} is running and rewrites a project.cfx on exit. "
                          f"Stop it: bin/sqx-worker.sh --role {held} stop")
 
-    done = build(a.name, a.template, a.symbol, a.role, a.max_strategies, a.minutes, a.donor)
+    done = build(a.name, a.template, a.symbol, a.role, a.max_strategies, a.minutes,
+                 a.donor, a.segment)
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
 
@@ -172,15 +178,19 @@ def main() -> None:
           f"/ {done['minutes']} min")
     print(f"  segments  " + ", ".join(f"{m}={s}" for m, s in done["segments"].items()))
     print(f"  to disk   {', '.join(done['synced_to_disk']) or 'already syncing'}")
+    print("  ANTES DE ARRANCARLO: la tarea y el registro de instrumentos tienen que coincidir\n"
+          "  campo a campo, o el proyecto no resuelve. Con el worker vivo:")
+    for line in done["instrument_edits"]:
+        print(f"     {line}")
     gaps = {s: g for s, g in done["cost_gap"].items() if g}
     if gaps:
-        print("  ⚠️ ESTA CORRIDA NO SE VALORA CON assets/. El registro de instrumentos de SQX")
-        print("     vive en user/data/data.db y cada arranque lo copia del maestro, así que un")
-        print("     worker lleva siempre las cifras del maestro. Diferencias:")
-        for seg, lines in sorted(gaps.items()):
-            for line in lines:
+        stuck = [(s, l) for s, ls in sorted(gaps.items()) for l in ls
+                 if l.startswith(("comision", "swap"))]
+        if stuck:
+            print("  ⚠️ y esto NO se puede fijar sin GUI — probados tres formatos de "
+                  "`commissions=`, ninguno prende:")
+            for seg, line in stuck:
                 print(f"       [{seg}] {line}")
-        print("     Se arregla en el registro del MAESTRO, y es decisión del dueño.")
     if done["provisional_costs"]:
         print(f"  ⚠️ PROVISIONAL: {', '.join(done['provisional_costs'])}")
     print(f"\nrun it:  bin/sqx-worker.sh --role {a.role} start && "

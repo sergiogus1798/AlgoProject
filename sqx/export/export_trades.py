@@ -63,6 +63,9 @@ def main() -> None:
     packed = tradestore.pack(sorted((out / "trades").glob("*.csv")),
                              out / "trades.parquet", per_market=False)
     shutil.rmtree(out / "trades")
+    # The staged .sqx are copies of what the databank holds; the manifest names the
+    # databank, and 757 of them weighed 119 MB beside a 20 MB Parquet.
+    shutil.rmtree(out / "strategies")
 
     manifest.write(out,
                    {"install": str(MASTER), "project": a.project, "databank": a.databank,

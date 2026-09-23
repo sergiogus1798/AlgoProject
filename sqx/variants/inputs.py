@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from core.paths import DATA
+from core.paths import DATA, variants_dir
 
 HERE = Path(__file__).resolve().parent
 ORIGINAL = -1
@@ -60,17 +60,18 @@ def known(design: dict) -> pd.DataFrame:
         and has no row in the results table, so it is dropped here and handled as the
         origin instead.
 
-        Only four columns of a 40 MB file are read. The full grid, all 154 columns of it,
-        is `strategies/sppUltra`'s business and is not needed to pick a control.
+        Only the parameter columns plus two of the 152 statistics are read: the table is
+        Parquet, so asking for those columns costs their bytes and nothing else. The full
+        grid is `strategies/sppUltra`'s business and is not needed to pick a control.
     """
     folder, strategy = Path(design["source"]), design["strategy"]
-    params = pd.read_csv(folder / "permutation_params.csv")
-    results = pd.read_csv(folder / "permutations.csv",
-                          usecols=["strategy", "permutation", "NetProfit", "NumberOfTrades"])
-    wide = params[params["strategy"] == strategy].pivot(
-        index="permutation", columns="parameter", values="value")
-    measured = results[results["strategy"] == strategy].set_index("permutation")
-    return wide.join(measured.drop(columns="strategy"), how="inner")
+    names = (pd.read_parquet(folder / "runs.parquet").set_index("strategy")
+             .loc[strategy, "parameters"].split())
+    frame = pd.read_parquet(folder / "spp.parquet",
+                            columns=["strategy", "permutation", *names, "NetProfit",
+                                     "NumberOfTrades"],
+                            filters=[("strategy", "==", strategy)])
+    return frame.drop(columns="strategy").set_index("permutation")
 
 
 def out_dir(project: str, strategy: str) -> Path:
@@ -85,4 +86,4 @@ def out_dir(project: str, strategy: str) -> Path:
         replaces it, so "which of these five thousand files is the real batch" cannot
         arise. Heavy output never goes in the repository.
     """
-    return DATA / "variants" / project / strategy.replace(" ", "_")
+    return variants_dir(project, strategy)

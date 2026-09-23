@@ -5,7 +5,6 @@ import argparse
 import re
 import zipfile
 from pathlib import Path
-from xml.etree import ElementTree
 
 from core.assetcheck import mc_pending, pending, provisional
 from core.assetdata import load, sqx_settings, window
@@ -16,13 +15,6 @@ from core.paths import WORKERS
 # <Symbol> element instead, and that is where the backtest window lives.
 INSTRUMENT = '<InstrumentInfo instrument="{key}"'
 SYMBOL = '<Symbol name="{feed}"'
-
-# Which segment each task type runs on, from `_policy.yaml`: the builder sees `build` and
-# nothing else, while everything from the retest through the SPPs is `oos1`. This mapping
-# is what makes two spreads worth having — forcing one segment on a whole chain prices the
-# retests with the build's spread and undoes the point of declaring them apart.
-BY_TASK = {"Build": "build"}
-DEFAULT_SEGMENT = "oos1"
 
 
 def running_install(cfx: Path) -> str | None:
@@ -66,7 +58,7 @@ def set_attr(text: str, opening: str, attr: str, value: str) -> tuple[str, int]:
 
 
 def apply(text: str, data: dict, segment: str) -> tuple[str, dict[str, int]]:
-    """Put one segment's window into one task XML.
+    """Put one segment's window and costs into one task XML.
 
     Args:
         text: The task XML.
@@ -76,17 +68,22 @@ def apply(text: str, data: dict, segment: str) -> tuple[str, dict[str, int]]:
     Returns:
         The patched text and a count per attribute touched.
 
-    ⚠️ Costs are NOT written here, and must not be. Measured 2026-09-23: a task whose
-    <InstrumentInfo> disagrees with SQX's own instrument registry makes the project
-    refuse to start with "Project has unresolved resources" — any attribute, any value,
-    while rewriting the same value is fine. Costs go through `-instrument action=edit`
-    on a live install; `instrument_edit()` builds that command.
+    ⚠️ The costs written here must ALSO be in SQX's instrument registry, or the project
+    refuses to start. Measured 2026-09-23: task and registry must agree field by field,
+    and the same segment must run across every task — a 15-task project with the Build at
+    spread 5.0 and the retests at 10.0 is unresolved even when the registry matches one of
+    them. It is one segment per PROJECT, not per task. `instrument_edit()` gives the
+    command that puts the registry in step.
     """
     a, b = window(data, segment)
+    s = sqx_settings(data, segment)
     feed = SYMBOL.format(feed=data["sqx_symbol"])
+    key = INSTRUMENT.format(key=f'{data["symbol"]}_{data["broker"]}')
     counts = {}
-    for attr, value in (("dateFrom", a), ("dateTo", b)):
-        text, n = set_attr(text, feed, attr, str(value))
+    for opening, attr, value in ((feed, "dateFrom", a), (feed, "dateTo", b),
+                                 (key, "defaultSpread", s["defaultSpread"]),
+                                 (key, "defaultSlippage", s["defaultSlippage"])):
+        text, n = set_attr(text, opening, attr, str(value))
         counts[attr] = n
     ranges = set_ranges(text, data)
     text = ranges.pop("text")
@@ -102,15 +99,16 @@ def instrument_edit(data: dict, segment: str) -> str:
         segment: Segment name, which picks the spread on a no_forex asset.
 
     Returns:
-        A `-instrument action=edit …` command line. The registry is global to an install
-        and is re-copied from the master on every start, so this does not stick; it is
-        printed so the owner can apply it where it does, on the master's own list.
+        A `-instrument action=edit …` command line, to run on the live install before the
+        project is started: the task and the registry must agree field by field. The
+        registry is global, so one install holds one segment's costs at a time — which is
+        why a run is one project per segment. `defaultslippage` is **not in the CLI's own
+        help** and works anyway, measured 2026-09-23.
     """
     s = sqx_settings(data, segment)
     return (f'-instrument action=edit instrument={data["symbol"]}_{data["broker"]} '
             f'defaultspread={s["defaultSpread"]} '
-            f'pointvalue={data["instrument"]["point_value"]} '
-            f'ticksize={data["instrument"]["tick_size"]}')
+            f'defaultslippage={s["defaultSlippage"]}')
 
 
 def ignored_templates(members: dict[str, bytes]) -> list[str]:
@@ -137,28 +135,14 @@ def ignored_templates(members: dict[str, bytes]) -> list[str]:
     return out
 
 
-def segment_of(members: dict[str, bytes]) -> dict[str, str]:
-    """Which segment each task member runs on, read from the project's own task list.
-
-    Args:
-        members: The .cfx contents by member name.
-
-    Returns:
-        Task XML member name to segment name.
-    """
-    cfg = ElementTree.fromstring(members["config.xml"])
-    return {t.get("taskXMLFile"): BY_TASK.get(t.get("type"), DEFAULT_SEGMENT)
-            for t in cfg.find("Tasks")}
-
-
-def configure(cfx: Path, symbol: str, segment: str | None = None) -> dict[str, tuple]:
+def configure(cfx: Path, symbol: str, segment: str = "build") -> dict[str, tuple]:
     """Rewrite every task of a project so it prices and dates this asset as assets/ says.
 
     Args:
         cfx: Path of a project.cfx. Must not be held by a running install.
         symbol: Asset name, e.g. "XAUUSD".
-        segment: Force one segment on every task. Omit to take each task's own from its
-            type, which is what a multi-task chain needs.
+        segment: Which segment the whole project runs on. One project, one segment:
+            SQX resolves the instrument once per project and every task must agree.
 
     Returns:
         Task member name to (segment, what changed). The donor a project is cloned from
@@ -169,18 +153,16 @@ def configure(cfx: Path, symbol: str, segment: str | None = None) -> dict[str, t
     data = load(symbol)
     with zipfile.ZipFile(cfx) as z:
         members = {n: z.read(n) for n in z.namelist()}
-    per_task = segment_of(members)
     for line in ignored_templates(members):
         print(f"  ⚠️ TEMPLATE IGNORADA — {line}")
     out = {}
     for name, blob in members.items():
         if not name.endswith(".xml") or name == "config.xml":
             continue
-        seg = segment or per_task.get(name, DEFAULT_SEGMENT)
-        text, counts = apply(blob.decode("utf-8"), data, seg)
+        text, counts = apply(blob.decode("utf-8"), data, segment)
         members[name] = text.encode("utf-8")
         if any(counts.values()):
-            out[name] = (seg, counts)
+            out[name] = (segment, counts)
     with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
         for name, blob in members.items():
             z.writestr(name, blob)
@@ -192,9 +174,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("cfx", type=Path)
     ap.add_argument("symbol")
-    ap.add_argument("--segment", choices=("build", "oos1", "oos2"),
-                    help="force one segment on every task; omit to take each task's own "
-                         "from its type, which is what a multi-task chain needs")
+    ap.add_argument("--segment", default="build", choices=("build", "oos1", "oos2"),
+                    help="which segment the whole project runs on; one project, one segment")
     args = ap.parse_args()
 
     data = load(args.symbol)

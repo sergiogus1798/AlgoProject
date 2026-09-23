@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 from core import manifest
-from core.paths import DATA, MASTER, WORKERS
+from core.paths import DATA, MASTER, WORKERS, log_archive
 
 # 4.6 GB single-day logs exist, so stream rather than read; level 1 keeps a daily run cheap
 # and text logs compress to a few per cent either way.
@@ -60,7 +60,7 @@ def main() -> None:
     for install in a.install or [MASTER, *(w["path"] for w in WORKERS.values())]:
         if not (install / "user/log").exists():
             continue
-        out_dir = DATA / "logs" / install.name
+        out_dir = log_archive(install.name)
         written = {}
         for source in logs(install):
             dest = out_dir / source.relative_to(install / "user/log").with_suffix(".log.gz")

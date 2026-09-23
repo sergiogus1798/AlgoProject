@@ -299,7 +299,9 @@ and `data=main` gets them.
 in Optimization profile"* is off and the SPP is re-run: one row per permutation with its parameters
 and its 152 statistics. 📓 Done for real on 2026-09-10 -- `XAUUSD/SPP IS` now yields **21,205
 permutations across five strategies**, 3,940 to 4,523 each, and `export_spp.py` already wrote them to
-`permutations.csv` and `permutation_params.csv` without a code change. Each permutation carries one
+`permutations.csv` and `permutation_params.csv` without a code change (since 2026-09-23 the two
+are one wide `spp.parquet`: parameters as columns, statistics beside them — 49 MB → 6 MB, and
+a reader that needs four columns reads four). Each permutation carries one
 sample, so this is an in-sample surface: it does not pair an IS result with an OOS one. That is strictly more than the SQX panel shows — it gives arbitrary
 percentiles instead of the stored median, cross-metric joins, and the parameter surface
 (`NetProfit` grouped by one parameter's value), which no SQX screen displays.
@@ -509,6 +511,17 @@ sync-from-files — only databanks already registered in the project are. Stagin
 
 ## Storage format — the saving is in the format, not in dropping columns
 
+🔬 **Decided and applied 2026-09-23 — one typed Parquet per test and export** (the analysis with every
+measurement: `docs/AgentPDFs/almacenamiento-datos-2026-09-23.md`). Five rules: the `.sqx` is the
+source and an export is a projection; one file per test and export, never one per strategy (118
+cross-market CSVs became one 4 MB `trades.parquet`); wide for parameters and statistics, long for
+trades (the SPP's long parameter table was 34 MB in RAM for 21,205 × 8 numbers that are 6 MB wide);
+`strategy`/`Symbol`/`Sample type`/`result`/`sample` categorical, money as `int32` cents or
+`float32` where it already was; intermediates (`raw/` CSV, staged `.sqx`) die with the export.
+`raw/` went from 346 MB and 270 files to 112 MB and 123. `metrics.csv` stays CSV: a person reads it.
+📓 The three studies re-ran on the migrated data with identical verdicts (sppUltra, WFM) and the
+cross-market readers reproduce `backtest.setting` on all three markets.
+
 🔬 Measured 2026-09-20 on `raw/XAUUSD/SPP_IS/2026-09-10/`, 21,205 permutations x 154 columns.
 
 | | size | factor |
@@ -621,7 +634,7 @@ observations. **The cell is the unit**; pooling the 660 steps into one correlati
 interval several times narrower than the data supports.
 
 🔬 **Two strategies in one export do not share a parameter list**, so the wide frame from
-`params.csv` carries all-NaN columns per strategy. `NaN != 0` is True in pandas, so any step-to-step
+`params.parquet` (wide since 2026-09-23) carries all-NaN columns per strategy. `NaN != 0` is True in pandas, so any step-to-step
 comparison that does not drop them counts a parameter the strategy does not have as changed at
 every step — which inflates a drift statistic silently and plausibly.
 
