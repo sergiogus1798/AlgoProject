@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 
 from core.assetcheck import mc_pending, pending, provisional
 from core.assetdata import load, sqx_settings, window
+from sqx.projects.ranges import set_ranges
 from core.paths import WORKERS
 
 # SQX names an InstrumentInfo <uSymbol>_<broker>, not by the feed. The feed names the
@@ -43,10 +44,6 @@ def running_install(cfx: Path) -> str | None:
                 if s.connect_ex(("127.0.0.1", w["port"])) == 0:
                     return role
     return None
-
-
-
-
 
 
 def set_attr(text: str, opening: str, attr: str, value: str) -> tuple[str, int]:
@@ -91,6 +88,9 @@ def apply(text: str, data: dict, segment: str) -> tuple[str, dict[str, int]]:
     for attr, value in (("dateFrom", a), ("dateTo", b)):
         text, n = set_attr(text, feed, attr, str(value))
         counts[attr] = n
+    ranges = set_ranges(text, data)
+    text = ranges.pop("text")
+    counts.update({f"mc_{k}": v for k, v in ranges.items()})
     return text, counts
 
 
@@ -102,10 +102,9 @@ def instrument_edit(data: dict, segment: str) -> str:
         segment: Segment name, which picks the spread on a no_forex asset.
 
     Returns:
-        A `-instrument action=edit …` command line. The registry is global to an install,
-        so it applies to every task at once — a chain that wants one spread on `build` and
-        another on `oos1` has to edit it between the two, which no unattended run can do
-        in one pass.
+        A `-instrument action=edit …` command line. The registry is global to an install
+        and is re-copied from the master on every start, so this does not stick; it is
+        printed so the owner can apply it where it does, on the master's own list.
     """
     s = sqx_settings(data, segment)
     return (f'-instrument action=edit instrument={data["symbol"]}_{data["broker"]} '
@@ -122,11 +121,9 @@ def ignored_templates(members: dict[str, bytes]) -> list[str]:
 
     Returns:
         One line per task whose StrategyType names a templateFile but declares
-        type="simple". SQX then builds generically and the template is ignored, with no
-        error anywhere — `OPEN.md` issue 9, where 0 of 642 strategies from the master's
-        projects carried their template's block. It is a static, free check: reading the
-        attribute before the build costs nothing, while proving it afterwards costs the
-        build.
+        type="simple". SQX then builds generically and ignores the template, with no error
+        anywhere — `OPEN.md` issue 9, 0 of 642. Free: reading the attribute before the
+        build costs nothing, proving the same afterwards costs the build.
     """
     out = []
     for name, blob in members.items():

@@ -76,6 +76,9 @@ Cuatro cosas que decide esa salida:
 - **`segments`** — de qué tramo sale la ventana de cada tarea. `build` es la única muestra que ve
   el generador.
 - **`costes`** — no se escriben en la tarea, y el motivo está medido: ver `knowhow/03-driving-sqx.md`.
+- **Los rangos del MC Retest sí se escriben**, porque viven en los `<Method type="Randomize*">` de
+  la propia tarea y no en la `InstrumentInfo`. Salen de `mc_retest:` del activo; los que sigan en
+  `null` se saltan en vez de inventarse, y la preflight lo avisa.
 - **`PROVISIONAL`** — cifras de trabajo del dueño, no pactadas con el bróker. Marcan todo resultado.
 
 Si la plantilla fuese a ignorarse —`type="simple"` con un `templateFile` puesto— **aborta** en vez
