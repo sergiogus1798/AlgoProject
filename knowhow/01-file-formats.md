@@ -656,6 +656,25 @@ Before the retest all three controls exported the parent's row to the decimal (n
   justified. `sqx/variants/collect.py` counts distinct results among the controls and aborts only
   on the former.
 
+## 🔬 `identity` survives a retest, and is the only key that joins two databanks (2026-09-23)
+
+`core.sqxfile.identity` — SHA-256 of the inner `strategy_Portfolio.xml` — is **identical for the same
+strategy in a build databank and in a retest databank**: 5 of 5 between `XAUUSD/SPP IS` and
+`XAUUSD/SPP OOS`, which hold the same five strategies run over 2007–2017 and 2017–2022. The member
+holds the strategy's definition and no result (results live in `Results/*/dailyEquity.bin`,
+`orders.bin` and `settings.xml`), so running it over another window with another spread does not move
+it. **That is what lets a two-task IS/OOS study be joined at all.**
+
+**The name cannot be that key, and not only in theory.** `Strategy 17.8.29` exists in both
+`XAUUSD/OOS` and `XAUUSD/MC Trades` and they are *entirely different strategies* — different template
+(`StructuralBreakFilters_EntryOnly` against `DirectionalMomentumFilters_EntryExit`), different rules,
+281 lines against 355. Of 231 and 757 files, only 4 names collide, and all 4 are collisions of this
+kind rather than the same strategy twice.
+
+🔬 And the same count run over identities exposes duplicates a name count hides: **`XAUUSD/MC Trades`
+holds 757 `.sqx` under 694 distinct identities** — 63 files are exact copies of another strategy in
+their own databank.
+
 ## 🔬 SQX names a loaded strategy after the FILE, not after the name inside it (2026-09-22)
 
 `P00000.sqx` appears in the databank as `P00000`, even though both `<StrategyName>` and
@@ -667,3 +686,21 @@ retest all use as the handle. So:
 - the join key between contract C2 and the retested panel is `variant_id`, not `sqx_name`;
 - 🔬 on collision SQX appends `(N)` to the *file-derived* name — loading the same folder twice gives
   `P00000` and `P00000(1)` — so a reader must strip `\(\d+\)$` before joining.
+
+## La identidad de una estrategia cambia tras un retest si se hashea el XML crudo (2026-09-23)
+
+- 🔬 **Un retest reescribe `makeExternal` en cada `<variable>` del `strategy_Portfolio.xml`, y no
+  toca nada más.** Diff de un par del proyecto `XAU_ISOOS_ejemplo`: 335 líneas a cada lado, 29
+  líneas de diferencia, **todas** el mismo atributo. Las reglas son idénticas.
+- 🔬 **Por eso el hash crudo no empareja los dos databanks: 0 de 115.** Normalizando —quitando
+  `makeExternal` antes de hashear— **115 de 115**, y el emparejamiento coincide exactamente con
+  el que da el nombre de fichero. `core.sqxfile.identity()` normaliza desde hoy.
+- ⚠️ **Cualquier identidad guardada antes del 2026-09-23 es de la fórmula vieja.** Una cosecha o
+  un veredicto escritos con ella no casan con los de hoy. Hay que regenerarlos.
+- 📓 El "5 de 5 estable" que daba por bueno el dossier de la puerta se midió sobre `SPP IS` y
+  `SPP OOS`, y ahí coincidía porque **los dos lados ya habían pasado por un retest**. Un control
+  que sale bien por una casualidad del material no es un control.
+- 🔬 **`core.sqxfile.structure()`**: hash de las claves de bloque en orden, sin valores de
+  parámetro. Es la identidad de la LÓGICA. Las 115 supervivientes del ejemplo son **24
+  estructuras**, dos de ellas con 32 estrategias cada una. Coste: 0,2 ms por estrategia, 0,18 s
+  para leer 235 ficheros.

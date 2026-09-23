@@ -20,7 +20,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/optprofile.py` | 187 | Read the Sys. Param Permutation profile SQX stores inside a .sqx, without SQX running. | — | — |
 | `core/paths.py` | 204 | Every path and port in the project. The only module allowed to know where things live. | — | yaml |
 | `core/significance.py` | 74 | Could this edge be zero? The Sharpe-based tests three studies now share, and nothing else. | — | numpy, scipy |
-| `core/sqxfile.py` | 71 | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | — | — |
+| `core/sqxfile.py` | 109 | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | — | — |
 | `core/sqxretest.py` | 191 | Read a Monte Carlo Retest result out of a .sqx: its simulation P/L vectors and its level table. | core | numpy |
 | `core/sqxstats.py` | 107 | Read a .sqx result without SQX: its stored metrics and its daily equity curve. | — | numpy, pandas |
 | `core/surface/__init__.py` | 1 | The maths of a parameter grid: how many observations it holds, how it moved, how flat it is. | — | — |
@@ -33,11 +33,11 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/wftrades.py` | 64 | Assign the trades of a data=all export to the Walk-Forward cell and period that produced them. | — | numpy, pandas |
 | `core/worker.py` | 105 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
 | `gate/cascade.py` | 85 | Run the screens in the order the config gives, each one over what the last one left. | gate | pandas |
-| `gate/collect.py` | 70 | One databank's three tables, taken in a single staging of its files. | core | pandas |
-| `gate/harvest.py` | 78 | Two databanks in, one joined cosecha out: the build window and the retest window. | core, gate | pandas |
+| `gate/collect.py` | 73 | One databank's three tables, taken in a single staging of its files. | core | pandas |
+| `gate/harvest.py` | 82 | Two databanks in, one joined cosecha out: the build window and the retest window. | core, gate | pandas |
 | `gate/inputs.py` | 75 | The knobs, one harvest read back, and the out-of-sample window read from the trades. | core | pandas, yaml |
 | `gate/monkey.py` | 61 | The two screens that need the null study: the monkey itself, and the family correction. | nulls, tasks | pandas |
-| `gate/redundancy.py` | 34 | The soft screen: are these N strategies, or one strategy repeated N times? | — | pandas |
+| `gate/redundancy.py` | 40 | The soft screen: are these N strategies, or one strategy repeated N times? | — | pandas |
 | `gate/report.py` | 85 | The gate over one databank: the cascade, the scorecard, and the verdict SQX can apply. | core, gate, nulls | pandas |
 | `gate/screens.py` | 150 | The cribas themselves: one function per screen, and the registry the cascade reads. | gate, tasks | pandas |
 | `nulls/barrier.py` | 107 | The triple-barrier exit: where a trade leaves, given a stop, a target and a time limit. | — | numpy |
