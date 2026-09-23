@@ -7,6 +7,7 @@ from pathlib import Path
 
 from core.assets import load as load_asset, provisional
 from core.paths import DATA
+from core.datapaths import pipeline_dir
 
 BRANCH = "pipeline"
 FILE = "state.json"
@@ -37,7 +38,7 @@ def work_dir(project: str, strategy: str) -> Path:
         variant data, and outlives the data: the ledger is what makes the deletion
         auditable instead of a loss.
     """
-    return DATA / BRANCH / project / safe(strategy)
+    return pipeline_dir(project, safe(strategy))
 
 
 def now() -> str:

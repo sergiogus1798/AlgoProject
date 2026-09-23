@@ -8,9 +8,9 @@ from pathlib import Path
 
 import numpy as np
 
-from core.paths import DATA
+from core.datapaths import cache_dir
 
-ROOT = DATA / "derived" / "montecarlo"
+ROOT = cache_dir("montecarlo")
 
 
 def fingerprint(cfg: dict, asset: dict) -> str:

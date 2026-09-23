@@ -7,7 +7,7 @@ live deeper add the root to `sys.path` in their first lines.
 |---|---|---|
 | `__init__.py` | Puts stdout/stderr in UTF-8 on import, so Windows' cp1252 console does not crash on this project's own accents and symbols | — |
 | `paths.py` | The only module that knows where anything lives. Reads `config/machine.yaml`; `WORKERS` maps a worker role (conductor, custodian) to its install and port | names, roles → `Path` |
-| `templatepaths.py` | Where the strategy-template library lives under the data root: one folder per template, `registry.csv`, `runs.csv` and the dated vocabulary snapshots. Split out of `paths.py` for its line limit | names → `Path` |
+| `datapaths.py` | The data root's secondary trees: the template library, `pipeline/`, `strategyPermutations/`, `logs/`, `backups/`, `projectsBackup/` and `cache/`. Split out of `paths.py`, which keeps the installs and the primary exports | names → `Path` |
 | `sqxfile.py` | Read a `.sqx` without SQX: identity hash, symbol, inner XML, parameters | `.sqx` → values |
 | `optprofile.py` | Read a `.sqx`'s Sys. Param Permutation profile without SQX: run counts, per-metric medians against the original value, the stored histograms, and every permutation's parameters and statistics when SQX kept them | `.sqx` → dicts |
 | `sqxstats.py` | Read a `.sqx` result without SQX: decode any `SQStats` blob into its 152 statistics, the stored metrics per sample, and the daily equity curve | `.sqx` → metrics, series |

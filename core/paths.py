@@ -174,7 +174,7 @@ def bar_cache(feed: str, timeframe: str, version: str) -> Path:
         Path under the data root. The version is in the name rather than in a field, so a
         refreshed M1 orphans its caches instead of quietly answering with stale bars.
     """
-    return DATA / "derived" / "bars" / feed / f"{timeframe}-{version}.parquet"
+    return DATA / "barsDerived" / feed / f"{timeframe}-{version}.parquet"
 
 
 def perf_dir() -> Path:
@@ -185,52 +185,4 @@ def perf_dir() -> Path:
         point of the catalogue is the comparison between dates, so nothing here is ever
         overwritten.
     """
-    return DATA / "perf"
-
-
-def pipeline_dir(project: str, strategy_slug: str) -> Path:
-    """One mother strategy's pipeline ledger and stage outputs.
-
-    Args:
-        project: Project name on the master.
-        strategy_slug: The strategy name as `pipeline.ledger.state.safe` spells it.
-
-    Returns:
-        Path under the data root. The ledger outlives the data `pipeline.cleanup` sweeps.
-    """
-    return DATA / "pipeline" / project / strategy_slug
-
-
-def variants_dir(project: str, strategy: str) -> Path:
-    """One strategy's fabricated variants and their manifest; rebuilding replaces it.
-
-    Args:
-        project: Project name on the master.
-        strategy: Strategy name as SQX writes it.
-
-    Returns:
-        Path under the data root.
-    """
-    return DATA / "variants" / project / strategy.replace(" ", "_")
-
-
-def log_archive(install_name: str) -> Path:
-    """One install's SQX logs, gzipped before SQX prunes them.
-
-    Args:
-        install_name: Folder name of the install, e.g. "SQX" or "SQX_w1".
-
-    Returns:
-        Path under the data root, mirroring `<install>/user/log`. `projects/<P>/` under it
-        holds the projects' own `log/` files condensed — a snapshot must not carry them.
-    """
-    return DATA / "logs" / install_name
-
-
-def data_update_backups() -> Path:
-    """Where `sqx.data.update` records what it saw before touching the master's data.
-
-    Returns:
-        Path under the data root, one JSON per run.
-    """
-    return DATA / "backups" / "data-update"
+    return DATA / "profiling"
