@@ -113,3 +113,40 @@ el registro de SQX. No lo arregla este comando; ver `knowhow/03-driving-sqx.md`.
 `the custodian is running and rewrites a project.cfx on exit` — párala primero.
 
 `'<nombre>': project names are underscores only` — la API HTTP parte el comando por espacios.
+
+## La doctrina de construcción (`assets/_build.yaml`)
+
+Desde el 2026-09-23 el builder no hereda nada del donante en lo que a la forma de la estrategia se
+refiere. Lo escribe todo desde `assets/_build.yaml`, y **en todas las tareas del proyecto**:
+
+| regla | valor por defecto |
+|---|---|
+| condiciones de entrada / de salida | como máximo **2 y 2** |
+| global lookback | **1 barra** (`minShift = maxShift = 1`) |
+| tipos de orden | **sólo a mercado** |
+| salidas | por barras o por condición; **nada** de SL, TP, trailing ni break-even |
+| barras en mercado | **2 a 24 horas**, convertidas a barras según el timeframe |
+| money management | `ATRRiskBasedSizingFixedRisk`, ATR(20) × **4**, riesgo 1000 sobre 100.000 |
+| salir el viernes | sí, a las **21:00** |
+| motor | **MetaTrader5 (hedged)** |
+| databank | 10.000 estrategias, parada por databank lleno |
+| crosschecks | **sólo** el de alta precisión, **al mismo spread que el test principal** |
+| genético | copia verbatim de `XAUUSD_Breakout_H1` |
+
+El timeframe es obligatorio y va en `--timeframe`. Todas las tareas lo comparten: un retest en otro
+timeframe no está probando la estrategia que se construyó.
+
+```bash
+python3 -m sqx.projects.builder algo_XAU_doctrina --timeframe M30 \
+    --template ~/Desktop/AlgoData/templates/library/keltnerUpperCrossUp/template.sqx \
+    --symbol XAUUSD --role custodian --tasks Build,Retest
+```
+
+```
+  doctrina  M30 en todas las tareas, sesión XAUUSD_the5ers, salida por barras 4–48
+  sesión XAUUSD_the5ers añadida a 14 tarea(s) que la nombraban sin definirla
+```
+
+Comprobado sobre las 20 estrategias que generó `algo_XAU_doctrina_smoke`: **20 de 20** con
+exactamente 2 condiciones de entrada, 1 de salida, `EnterAtMarket` y nada más, shift 1 en los 31
+sitios donde aparece, y cero stop loss, profit target o trailing.

@@ -771,3 +771,31 @@ What survives from it and is still true:
   which makes SQX perform the write.** Both were used here and the difference did not change any
   result, but `loadconfig` is what `docs/project-config-workflow.md` documents.
 
+
+## La doctrina de construcción vive en el `<Setup>` y en cuatro secciones más (2026-09-23)
+
+Medido sobre el donante `XAUUSD_base_2026-09-21` y el proyecto modelo del dueño
+`XAUUSD_Breakout_H1`, escribiendo con `sqx/projects/doctrine.py` y verificando en las 20
+estrategias que salieron de `algo_XAU_doctrina_smoke`.
+
+- 🔬 **Un `<Param>` de opciones de trading lleva `className` detrás de `key`.** La forma real es
+  `<Param key="ExitOnFriday" className="ExitOnFriday">true</Param>`. Un patrón que asume
+  `<Param key="X">` **no casa con nada y no cambia nada, sin error**. Aquí pasó desapercibido
+  porque el donante ya traía los valores buenos: el fallo sólo se vio al comparar dos tareas del
+  mismo proyecto y encontrar la sesión sin tocar. Por eso `set_params()` devuelve el número de
+  sustituciones — un cero es la señal.
+- 🔬 **Las tareas de un mismo proyecto pueden nombrar sesiones distintas y definir sólo la suya.**
+  El donante lo hace: `Build` define `XAUUSD_the5ers`, `Retest-Task6` define `XAUUSD_ftmo`. Una
+  tarea que nombra una sesión que su `<Resources><Sessions>` no lleva **carga sin quejarse** y opera
+  otro horario. Apuntar el `MarketOpenSession` no basta; hay que copiar la definición.
+- 🔬 **`ExitAfterBars` va en BARRAS, y el mismo número no dice lo mismo en dos timeframes.** 24
+  barras son un día en H1 y doce horas en M30. El rango se declara en horas en `_build.yaml` y se
+  convierte por tarea.
+- 🔬 **Sólo una tarea `Build` lleva `<Blocks>`.** Un `Retest` no tiene generador: no tiene
+  `<Blocks>`, ni `<SLPTOptions>`, ni `<BuildMode>`, ni `<Chart name="Main chart">`. Sí lleva
+  `<MoneyManagement>`, `<BuildTradingOptions>`, `<CrossChecks>` y `<StopCondition>` — que son justo
+  las que tienen que coincidir con las del build.
+- 🔬 **El crosscheck de alta precisión tiene un `<Spread>` propio** bajo `CustomSpread=true`, y el
+  donante lo trae a `0`. Vuelve a correr la estrategia gratis y llama robustez al resultado.
+- 🤔 **`on:` en YAML es la clave booleana `True`** (YAML 1.1). `crosschecks: on: [...]` se lee como
+  `{True: [...]}`. La clave aquí se llama `enabled`.

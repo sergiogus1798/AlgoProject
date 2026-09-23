@@ -38,6 +38,12 @@ A gap here is the failure that looks like success: the build runs and the templa
 ignored. If blocks are missing, install them (`python3 -m sqx.blocks.install … --role custodian`)
 with the install stopped.
 
+## It is always a custom project
+
+Hard rule 10. The stock `Builder` and `Retester` are never the harness, not even for a smoke test:
+they carry costs, databanks and a task chain that belong to something else. Build a new project, or
+reuse a custom one by name.
+
 ## Set the project up — one command
 
 ```bash

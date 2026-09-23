@@ -1,0 +1,53 @@
+<!-- Bloque de configuracion genetica copiado VERBATIM del proyecto modelo del dueno,
+     SQX maestro / user/projects/XAUUSD_Breakout_H1 / Build-Task1.xml, 2026-09-23.
+     Es su configuracion genetica, no una decidida aqui. Para refrescarlo:
+     python3 -m sqx.projects.doctrine --refresh-genetic -->
+<BuildMode generationType="genetic-evolution">
+      <PopulationSize>50</PopulationSize>
+      <MaxGenerations>50</MaxGenerations>
+      <CrossoverProbability>80</CrossoverProbability>
+      <MutationProbability>30</MutationProbability>
+      <ShowAdvancedGeneticSettings>false</ShowAdvancedGeneticSettings>
+      <Islands>24</Islands>
+      <MigrationModulo>10</MigrationModulo>
+      <MigrationRate>10</MigrationRate>
+      <ShowLastGenerationDatabank>true</ShowLastGenerationDatabank>
+      <InitGenerationType>1</InitGenerationType>
+      <DecimationCoef>1</DecimationCoef>
+      <Conditions>
+        <Condition use="true">
+          <Left-Side valueType="column">
+            <Column-Value column="NumberOfTrades" format="Integer" resultType="main" subresult="30" direction="0" sampleType="10" plType="10" confidenceLevel="50" market="1" class="NumberOfTrades" />
+          </Left-Side>
+          <Comparator value="&gt;" />
+          <Right-Side valueType="numeric">
+            <Numeric-Value value="150" />
+          </Right-Side>
+        </Condition>
+        <Condition use="false">
+          <Left-Side valueType="column">
+            <Column-Value column="ParameterCount" format="Integer" resultType="main" subresult="30" direction="0" sampleType="10" plType="10" confidenceLevel="50" market="1" class="ParameterCount" />
+          </Left-Side>
+          <Comparator value="&lt;=" />
+          <Right-Side valueType="numeric">
+            <Numeric-Value value="10" />
+          </Right-Side>
+        </Condition>
+        <Condition use="false">
+          <Left-Side valueType="column">
+            <Column-Value column="ReturnDDRatio" format="Decimal2" resultType="main" subresult="30" direction="0" sampleType="10" plType="10" confidenceLevel="50" market="1" class="ReturnDDRatio" />
+          </Left-Side>
+          <Comparator value="&gt;" />
+          <Right-Side valueType="numeric">
+            <Numeric-Value value="3" />
+          </Right-Side>
+        </Condition>
+      </Conditions>
+      <EvoRestartOnFinish status="true" />
+      <EvoRestartOnStagnation status="true" fitnessType="11" generations="5" />
+      <EvoInSamplePeriod ratio="50" />
+      <FreshBloodReplaceSimilar>true</FreshBloodReplaceSimilar>
+      <FreshBloodReplaceWeakest>true</FreshBloodReplaceWeakest>
+      <FreshBloodWeakestPct>5</FreshBloodWeakestPct>
+      <FreshBloodWeakestGenerations>5</FreshBloodWeakestGenerations>
+    </BuildMode>

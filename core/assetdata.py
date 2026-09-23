@@ -8,6 +8,7 @@ import yaml
 from core.paths import ASSETS
 
 POLICY, CLASSES, MARKETS = "_policy.yaml", "_classes.yaml", "_markets.yaml"
+BUILD = "_build.yaml"   # how a strategy is generated; the symbol files say what it costs
 SYMBOLS = ASSETS / "symbols"   # one file per instrument; the `_*.yaml` above them are shared
 
 RESERVED = "reserved_for"   # a segment spent by looking at it; report() flags it loudly
@@ -26,6 +27,11 @@ def policy() -> dict:
 def classes() -> dict:
     """The cost schema of each class: which fields exist, in what unit, on which SQX setting."""
     return _read(CLASSES)
+
+
+def doctrine() -> dict:
+    """The build doctrine: rule complexity, order types, exits, sizing, hours, cross-checks."""
+    return _read(BUILD)
 
 
 def symbols() -> list[str]:

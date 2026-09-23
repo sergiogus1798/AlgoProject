@@ -1,0 +1,72 @@
+# Doctrina de construcción: CÓMO se buildea, igual para todos los activos.
+#
+# `assets/symbols/<SIM>.yaml` dice cuánto cuesta operar un instrumento y entre qué fechas.
+# Este fichero dice qué forma tiene la estrategia que se genera. Son dos preguntas distintas
+# y por eso están en dos sitios. Lo de aquí lo fijó el dueño el 2026-09-23 y es lo que
+# `sqx/projects/doctrine.py` escribe en TODAS las tareas de un custom project.
+#
+# ⚠️ La regla que lo gobierna todo: lo que se fija aquí se fija PARA EL PROYECTO ENTERO.
+# Un IS y un OOS con distinto money management, distinto timeframe o distinto horario no
+# son comparables, y la comparación es justo lo que el OOS existe para hacer.
+
+# ─── Complejidad de las reglas ─────────────────────────────────────────────────────────
+# "Simplicity is key". Como MÁXIMO 2 indicadores de entrada y 2 de salida en el resultado
+# final — da igual que vengan de la plantilla o del hueco aleatorio: el tope es global.
+complexity:
+  max_entry_conditions: 2
+  max_exit_conditions: 2
+  # Global lookback. 1 = sólo la última barra cerrada. Subirlo es invitar al sobreajuste.
+  lookback_bars: 1
+
+# ─── Tipos de orden ────────────────────────────────────────────────────────────────────
+# Sólo a mercado, salvo que el dueño pida otra cosa explícitamente.
+order_types: [EnterAtMarket]
+
+# ─── Salidas ───────────────────────────────────────────────────────────────────────────
+# Sólo por barras o por condición. Nada de trailing, nada de break-even, y NADA de SL/PT
+# en construcción ni en retest: el stop de verdad lo decidirá el módulo de SL cuando el
+# edge ya esté verificado, porque en MT5 es obligatorio ponerlo.
+#
+# El rango va EN HORAS y se convierte a barras según el timeframe de la tarea, que es lo
+# que SQX guarda. 24 barras no significan lo mismo en M30 que en H4: en M30 son 12 horas.
+exits:
+  bars: {min_hours: 2, max_hours: 24}
+  by_condition: true
+  stop_loss: false
+  profit_target: false
+  trailing_stop: false
+  move_sl_to_be: false
+
+# ─── Money management ──────────────────────────────────────────────────────────────────
+# Idéntico en todo el proyecto. ATRMult 4 es lo que lleva el proyecto modelo del dueño
+# (XAUUSD_Breakout_H1); el XAUUSD del maestro lleva 5. Debatible entre 3, 4 y 5.
+money_management:
+  method: ATRRiskBasedSizingFixedRisk
+  params: {Amount: 1000, ATRPeriod: 20, ATRMult: 4, Decimals: 2, LotsIfNoMM: 0.01, MaxLots: 500}
+  initial_capital: 100000
+  max_drawdown: 30
+
+# ─── Opciones de trading ───────────────────────────────────────────────────────────────
+# 75600 s = 21:00. Iguales en todas las tareas del proyecto.
+trading_options:
+  ExitOnFriday: "true"
+  FridayExitTime: "75600"
+
+engine: MetaTrader5 (hedged)
+
+# ─── Databank ──────────────────────────────────────────────────────────────────────────
+databank:
+  max_strategies: 10000
+  stop_condition: databank-full
+
+# ─── Crosschecks ───────────────────────────────────────────────────────────────────────
+# Por defecto sólo el de alta precisión, y CON EL MISMO SPREAD que el test principal: el
+# donante lo trae a 0 con CustomSpread=true, o sea gratis, que es la versión optimista.
+# Cualquier otro se enciende sólo si el dueño lo pide.
+crosschecks:
+  enabled: [RetestWithHigherPrecision]
+  precision: 2
+
+# ─── Genético ──────────────────────────────────────────────────────────────────────────
+# No se parametriza: el bloque <BuildMode> entero se copia verbatim del proyecto modelo,
+# en `sqx/projects/buildmode_model.xml`. Decisión del dueño: "copia todo del modelo".

@@ -9,11 +9,12 @@ import zipfile
 from pathlib import Path
 
 from core.assetcheck import pending, provisional
-from core.assetdata import load
+from core.assetdata import doctrine, load
 from core.paths import worker_dir
 from core.datapaths import projects_backup
 from sqx.inspect.keep_tasks import keep
 from sqx.projects.configure import configure, ignored_templates, running_install
+from sqx.projects.doctrine import blockers
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 TEMPLATES_REL = "user/settings/StrategyTemplates"
@@ -71,8 +72,9 @@ def sync_databanks(config: str) -> tuple[str, list[str]]:
                   rf"\g<1>{SYNCED}", config), changed
 
 
-def build(name: str, template: Path, symbol: str, role: str, strategies: int, minutes: int,
-          donor: Path, segment: str | None = None, tasks: tuple = ("Build",)) -> dict:
+def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
+          minutes: int, donor: Path, segment: str | None = None,
+          tasks: tuple = ("Build",)) -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -80,6 +82,8 @@ def build(name: str, template: Path, symbol: str, role: str, strategies: int, mi
         template: The .sqx to build from, from the template library.
         symbol: Asset name, e.g. "XAUUSD".
         role: Which headless install it is installed into and will build on.
+        timeframe: SQX timeframe name. Every task of the project gets this one — a retest
+            on another timeframe is not testing the strategy that was built.
         strategies: MaxStrategies and the databank-full stop.
         minutes: Wall-clock cap.
         donor: The project cloned for its data feed, exits and acceptance conditions.
@@ -119,10 +123,12 @@ def build(name: str, template: Path, symbol: str, role: str, strategies: int, mi
         for member, blob in members.items():
             z.writestr(member, blob)
 
-    costs = configure(out, symbol, segment)
+    costs = configure(out, symbol, segment, timeframe)
     with zipfile.ZipFile(out) as z:
         final = {n: z.read(n) for n in z.namelist()}
-    return {"project": name, "install": install.name, "cfx": str(out),
+    doc = next((c for _, c in costs.values() if c.get("generator")), {})
+    return {"project": name, "install": install.name, "cfx": str(out), "timeframe": timeframe,
+            "exit_bars": doc.get("exit_bars"), "session": load(symbol)["session"],
             "template": str(installed_template), "tasks": kept["kept"],
             "databanks": kept["databanks"], "synced_to_disk": synced,
             "max_strategies": strategies, "minutes": minutes,
@@ -139,7 +145,9 @@ def main() -> None:
     ap.add_argument("--template", type=Path, required=True)
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--role", default="custodian")
-    ap.add_argument("--max-strategies", type=int, default=30)
+    ap.add_argument("--timeframe", required=True, help="M15, M30, H1 or H4 — every task gets it")
+    ap.add_argument("--max-strategies", type=int,
+                    default=doctrine()["databank"]["max_strategies"])
     ap.add_argument("--minutes", type=int, default=10)
     ap.add_argument("--donor", type=Path, default=DONOR)
     ap.add_argument("--segment", choices=("build", "oos1"),
@@ -163,8 +171,11 @@ def main() -> None:
         raise SystemExit(f"the {held} is running and rewrites a project.cfx on exit. "
                          f"Stop it: bin/sqx-worker.sh --role {held} stop")
 
-    done = build(a.name, a.template, a.symbol, a.role, a.max_strategies, a.minutes,
-                 a.donor, a.segment, tuple(a.tasks.split(',')))
+    stop = blockers(load(a.symbol), a.timeframe)
+    if stop:
+        raise SystemExit("\n".join(stop))
+    done = build(a.name, a.template, a.symbol, a.role, a.timeframe, a.max_strategies,
+                 a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')))
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
 
@@ -175,6 +186,8 @@ def main() -> None:
     print(f"  template  {done['template']}")
     print(f"  tasks     {', '.join(done['tasks'])}   caps {done['max_strategies']} strategies "
           f"/ {done['minutes']} min")
+    print(f"  doctrina  {done['timeframe']} en todas las tareas, sesión {done['session']}, "
+          f"salida por barras {done['exit_bars'][0]}–{done['exit_bars'][1]}")
     print(f"  segments  " + ", ".join(f"{m}={s}" for m, s in done["segments"].items()))
     print(f"  to disk   {', '.join(done['synced_to_disk']) or 'already syncing'}")
     if done["provisional_costs"]:

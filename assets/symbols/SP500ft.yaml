@@ -10,6 +10,13 @@ feeds:
   - SP500ft_Plus02_Infinox
 verified: 2026-09-03
 
+# Sesión de negociación que SQX aplica a la tarea (`MarketOpenSession`). Tiene que ser la
+# del activo que se construye: una tarea que nombra la sesión de otro mercado carga sin
+# quejarse y opera horas que no son. `null` = sin decidir, y eso bloquea la autoría.
+# Las sesiones se definen DENTRO del proyecto, en <Resources><Sessions>, así que una que
+# el donante no lleve hay que darla de alta en SQX antes.
+session: null
+
 # Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano:
 # `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
 instrument:

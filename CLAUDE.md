@@ -32,6 +32,14 @@ Spanish, because their reader is the owner.** Do not "fix" them.
 9. **Writing Python? Read `CODESTYLE.md` first.** No absolute path outside `core/paths.py`. When
    done: `python3 tools/depmap.py && python3 tools/checks.py`.
 
+10. **Every SQX run happens in a CUSTOM PROJECT — never in the stock `Builder` or `Retester`.**
+    Owner, 2026-09-23. A test on a template, a symbol or a timeframe gets a project of its own,
+    cloned from the frozen donor by `sqx/projects/builder.py`, or an existing custom project reused
+    by name. The stock projects are not harnesses: they carry someone else's costs, someone else's
+    databanks and someone else's task chain, and a run inside one is unattributable afterwards.
+    Per-task costs are what makes this work — one project holds the build on `build` and the
+    retests on `oos1`, each with its own spread, slippage, swap, asset and cross-checks.
+
 ## ROUTER — read only what the task needs
 
 | task | read |

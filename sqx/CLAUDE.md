@@ -12,6 +12,20 @@ python3 -m core.assets <SYMBOL>      # blocking. Non-zero exit means stop and as
 Then say out loud which spread, commission and swap you are applying and where they differ from what
 SQX carries. `sqx/inspect/instruments.py` shows what SQX carries today.
 
+## Every run gets its own custom project
+
+Owner, 2026-09-23, hard rule 10. Never run anything in the stock `Builder` or `Retester`, and never
+treat one as a scratch harness — the knowhow pages that used `Retester` that way predate this rule.
+One command builds the project:
+
+```bash
+python3 -m sqx.projects.builder <name> --template <lib>/template.sqx --symbol <SYM> \
+    --role custodian --tasks Build[,Retest]
+```
+
+It clones the frozen donor, keeps the task types asked for, and prices each one from `assets/` by
+its own segment. Reusing a custom project by name is fine; borrowing a stock one is not.
+
 ## Lanes — one owner each, because this state is shared and not reversible
 
 | lane | who | rule |

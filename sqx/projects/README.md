@@ -5,6 +5,10 @@
 | `builder.py` | Turn a template plus an asset into a Builder project installed and ready to run — one command for what were five hand-edits of the task XML | `python3 -m sqx.projects.builder <name> --template <sqx> --symbol <SYM> [--role custodian] [--json]` | a template + `assets/<SYM>` → an installed `project.cfx`, verified |
 | `setups.py` | One segment's window and costs into a task's `<Setup>` blocks — where a per-task cost actually lives | imported | an asset + a task XML → dates, slippage, spread, commission method and swap |
 | `ranges.py` | The MC Retest spread and slippage ranges a task randomises within, from `assets/` | imported | an asset + a task XML → the task with its declared ranges |
+| `doctrine.py` | Apply `assets/_build.yaml` to every task, and make them all carry the session they name | imported | a task + an asset + a timeframe → the task, generating and trading as declared |
+| `buildrules.py` | What a generator may emit: how many conditions, which order types, which exits, no SL/PT | imported | a Build task → the same task with the generator bounded |
+| `tasksettings.py` | What every task of a project must share: timeframe, engine, session, sizing, hours, cross-checks | imported | a task → the same task, aligned with its siblings |
+| `buildmode_model.xml` | The owner's genetic settings, copied verbatim from his `XAUUSD_Breakout_H1` | data | — |
 | `configure.py` | Write an asset's declared costs and each task's own segment window into a `project.cfx` | `python3 -m sqx.projects.configure <cfx> <SYMBOL> [--segment build\|oos1]` | a cloned `.cfx` + `assets/<SYMBOL>` → the same `.cfx`, priced and dated as declared |
 
 **Why this exists.** A project is cloned from a donor, and the donor carries the **master's own
@@ -17,6 +21,17 @@ swap — and it is what the GUI edits when a task is given its own. The second i
 DEFINITION, which must agree with SQX's own registry; editing it is what produces
 `Project has unresolved resources`, measured 2026-09-23. That is also why **one project really does
 carry two segments**: the build task on `build`, the retests on `oos1`, each with its own costs.
+
+**The doctrine is data, not code.** `assets/_build.yaml` holds what shape a strategy may have —
+at most two entry and two exit conditions, a lookback of one bar, market orders only, exits by bars
+or by condition and never a stop or a target, ATR-based sizing, out on Friday at 21:00. It is
+written into **every** task, because an IS and an OOS that differ in any of it are not comparable,
+and comparing them is the only reason the OOS exists. The genetic settings are not parameterised at
+all: the whole `<BuildMode>` block is a verbatim copy of the owner's own model project.
+
+⚠️ **A task can name a session it does not define, and trades the wrong hours in silence.** The
+donor does exactly that — its Build defines `XAUUSD_the5ers` and its Retest `XAUUSD_ftmo` — so
+`doctrine.unify_sessions()` copies the definition into every task that was missing it.
 
 **One segment per task.** With no `--segment`, each task takes its own from its type: `Build` →
 `build`, everything else → `oos1`, per `assets/_policy.yaml`. That is the whole reason a `no_forex`

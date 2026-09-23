@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 
 from core.assetcheck import mc_pending, pending, provisional
 from core.assetdata import load, sqx_settings, window
+from sqx.projects.doctrine import apply_doctrine, blockers, unify_sessions
 from sqx.projects.ranges import set_ranges
 from sqx.projects.setups import set_costs
 from core.paths import WORKERS
@@ -65,13 +66,16 @@ def set_attr(text: str, opening: str, attr: str, value: str) -> tuple[str, int]:
     return text, len(tags)
 
 
-def apply(text: str, data: dict, segment: str) -> tuple[str, dict[str, int]]:
+def apply(text: str, data: dict, segment: str,
+          timeframe: str | None = None) -> tuple[str, dict[str, int]]:
     """Put one segment's window and costs into one task XML.
 
     Args:
         text: The task XML.
         data: One asset as load() returned it.
         segment: Segment name.
+        timeframe: When given, the build doctrine is applied too and every task of the
+            project is put on this timeframe.
 
     Returns:
         The patched text and a count per attribute touched.
@@ -83,6 +87,9 @@ def apply(text: str, data: dict, segment: str) -> tuple[str, dict[str, int]]:
     """
     text, setups = set_costs(text, data, segment)
     counts = {"setups": setups}
+    if timeframe:
+        text, applied = apply_doctrine(text, data, segment, timeframe)
+        counts.update(applied)
     ranges = set_ranges(text, data)
     text = ranges.pop("text")
     counts.update({f"mc_{k}": v for k, v in ranges.items()})
@@ -127,7 +134,8 @@ def segment_of(members: dict[str, bytes]) -> dict[str, str]:
             for t in cfg.find("Tasks")}
 
 
-def configure(cfx: Path, symbol: str, segment: str | None = None) -> dict[str, tuple]:
+def configure(cfx: Path, symbol: str, segment: str | None = None,
+              timeframe: str | None = None) -> dict[str, tuple]:
     """Rewrite every task of a project so it prices and dates this asset as assets/ says.
 
     Args:
@@ -135,6 +143,8 @@ def configure(cfx: Path, symbol: str, segment: str | None = None) -> dict[str, t
         symbol: Asset name, e.g. "XAUUSD".
         segment: Force one segment on every task. Omit to take each task's own from its
             type, which is what a chain wants: the build on `build`, the retests on `oos1`.
+        timeframe: When given, `_build.yaml`'s doctrine is written into every task and
+            they are all put on this timeframe. Omit only to reprice an existing project.
 
     Returns:
         Task member name to (segment, what changed). The donor a project is cloned from
@@ -153,10 +163,15 @@ def configure(cfx: Path, symbol: str, segment: str | None = None) -> dict[str, t
         if not name.endswith(".xml") or name == "config.xml":
             continue
         seg = segment or per_task.get(name, DEFAULT_SEGMENT)
-        text, counts = apply(blob.decode("utf-8"), data, seg)
+        text, counts = apply(blob.decode("utf-8"), data, seg, timeframe)
         members[name] = text.encode("utf-8")
-        if any(counts.values()):
+        if any(v for v in counts.values() if not isinstance(v, bool)):
             out[name] = (seg, counts)
+    if timeframe:
+        added = unify_sessions(members, data["session"])
+        if added:
+            print(f"  sesión {data['session']} añadida a {len(added)} tarea(s) que la nombraban "
+                  "sin definirla")
     with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
         for name, blob in members.items():
             z.writestr(name, blob)
@@ -168,6 +183,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("cfx", type=Path)
     ap.add_argument("symbol")
+    ap.add_argument("--timeframe", help="put every task on this timeframe and apply "
+                    "the build doctrine of assets/_build.yaml")
     ap.add_argument("--segment", choices=("build", "oos1", "oos2"),
                     help="force one segment on every task; omit to take each task's own")
     args = ap.parse_args()
@@ -185,7 +202,9 @@ def main() -> None:
         raise SystemExit(f"{args.symbol}: {', '.join(missing)} sin valor pactado. "
                          "Pregúntale al dueño antes de configurar nada.")
 
-    changed = configure(args.cfx, args.symbol, args.segment)
+    for line in blockers(data, args.timeframe) if args.timeframe else []:
+        raise SystemExit(line)
+    changed = configure(args.cfx, args.symbol, args.segment, args.timeframe)
     print(f"{args.cfx.name}  {args.symbol}")
     for seg in sorted({s for s, _ in changed.values()}):
         s, (a, b) = sqx_settings(data, seg), window(data, seg)
