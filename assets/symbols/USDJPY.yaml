@@ -16,7 +16,7 @@ verified: 2026-09-03
 # quejarse y opera horas que no son. `null` = sin decidir, y eso bloquea la autoría.
 # Las sesiones se definen DENTRO del proyecto, en <Resources><Sessions>, así que una que
 # el donante no lleve hay que darla de alta en SQX antes.
-session: null
+session: USDJPY_ftmo
 
 # Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano:
 # `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.

@@ -169,6 +169,10 @@ def configure(cfx: Path, symbol: str, segment: str | None = None,
             out[name] = (seg, counts)
     if timeframe:
         added = unify_sessions(members, data["session"])
+        if added is None:
+            raise SystemExit(f"ninguna tarea de este proyecto define la sesión "
+                             f"{data['session']}. Hay que darla de alta en SQX, o clonar de "
+                             "un donante que la lleve — no se inventan horarios de mercado.")
         if added:
             print(f"  sesión {data['session']} añadida a {len(added)} tarea(s) que la nombraban "
                   "sin definirla")

@@ -24,11 +24,14 @@ assets/
                      (per asset, with the data range SQX holds), the swap conventions.
   _classes.yaml      the two cost schemas: which fields exist, in what unit, on which SQX setting.
   _markets.yaml      the retest universe: per main asset, family and structural markets.
+  _build.yaml        the build doctrine: rule complexity, order types, exits, sizing, hours,
+                     precision and cross-checks. What SHAPE a strategy may have, as opposed to
+                     what it costs to trade one.
   symbols/
     <SYMBOL>.yaml    what is genuinely this instrument's own, and nothing else.
 ```
 
-The three shared files sit at the top; the seventeen per-instrument ones live in `symbols/`, so the
+The four shared files sit at the top; the seventeen per-instrument ones live in `symbols/`, so the
 directory shows four entries instead of twenty. `core.assets.symbols()` globs `symbols/` and nothing
 else. What a session reads is `load(<SYMBOL>)`, which folds the policy in and hands back one dict —
 the lookup unit is still the asset, exactly as before.
@@ -175,3 +178,23 @@ Copy the closest file in `symbols/` **of the same class**, fill `instrument` and
 `sqx.inspect.instruments`, leave every `use: null`, and ask the owner for the real numbers. Then
 `python3 -m core.assets <SYMBOL>` — it will exit 3 if the schema is wrong and 2 until the owner
 decides. A file with invented values is worse than no file: it looks decided.
+
+## La sesión del activo
+
+`session:` en cada fichero de símbolo nombra la sesión de negociación que SQX aplica a la tarea.
+Decisión del dueño, 2026-09-23: **se usan las de FTMO**. Las de The5ers tienen las mismas horas
+pero cada tramo cierra al día SIGUIENTE, solapándose con el de mañana; las de FTMO cierran el
+mismo día.
+
+FTMO nombra los índices distinto que el feed, así que el mapeo no es mecánico y está escrito
+activo por activo: `DAX40 → GER40.cash_ftmo`, `DJ30 → US30.cash_ftmo`,
+`NIKKEI225 → JP225.cash_ftmo`, `USA500 → US500.cash_ftmo`, `USATEC → US100.cash_ftmo`.
+`SP500ft` se queda en `null` porque SQX no tiene su feed.
+
+⚠️ **Una sesión se define DENTRO del proyecto**, en `<Resources><Sessions>`. Una tarea que nombra
+una sesión que su proyecto no lleva carga sin quejarse y opera otro horario.
+`sqx/projects/doctrine.py` copia la definición a las tareas que la nombran sin llevarla, y se
+**niega** cuando ninguna tarea del proyecto la define: un horario de mercado no se inventa.
+
+El registro completo está en `user/data/data.db`, que es **SQLite** pese al nombre — tablas
+`SESSIONS` y `ELEMENTS`, y `BROKER` para los perfiles (FTMO es el 8, The5ers el 9).

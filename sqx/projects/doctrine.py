@@ -79,7 +79,7 @@ def blockers(data: dict, timeframe: str) -> list[str]:
     return out
 
 
-def unify_sessions(members: dict[str, bytes], session: str) -> list[str]:
+def unify_sessions(members: dict[str, bytes], session: str) -> list[str] | None:
     """Make every task of a project carry the definition of the session it trades.
 
     Args:
@@ -87,16 +87,17 @@ def unify_sessions(members: dict[str, bytes], session: str) -> list[str]:
         session: Session name, from the asset's file.
 
     Returns:
-        The tasks that were missing it. The definition is taken from whichever task in
-        the project already has it, so nothing is invented; when no task has it, the
-        session has to be created in SQX first and the caller is told which.
+        The tasks that were missing it, or None when NO task of the project defines it.
+        The definition is taken from whichever task already has it, so nothing is
+        invented; a session no task carries has to come from SQX first, and inventing
+        trading hours is exactly the kind of quiet fabrication this refuses to do.
     """
     texts = {n: b.decode("utf-8") for n, b in members.items()
              if n.endswith(".xml") and n != "config.xml"}
     block = next((b for b in (settings.session_block(t, session) for t in texts.values()) if b),
                  None)
     if not block:
-        return sorted(texts)
+        return None
     fixed = []
     for name, text in texts.items():
         if settings.session_block(text, session):
