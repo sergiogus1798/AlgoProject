@@ -51,7 +51,7 @@ stages:
   - name: spp_export
     command: python3 -m sqx.export.export_spp --project Retester --databank Results --role custodian --out-databank {databank}
     needs: ["{work}/spp_oos.json"]
-    produces: ["raw/{project}/{databank}/{day}/spp/permutations.csv"]
+    produces: ["raw/{project}/{databank}/{day}/spp/spp.parquet"]
 
   - name: sppultra
     command: python3 -m strategies.sppUltra.report --project {project} --databank {databank} --strategy {strategy}

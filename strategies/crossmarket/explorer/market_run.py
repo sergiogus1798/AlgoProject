@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from core import trades as tradeio
+from core import tradestore
 from strategies.crossmarket.explorer import sweep_run
 from strategies.crossmarket.inputs import execution
 from strategies.crossmarket.mechanics import curves, envelope, pricing
@@ -122,14 +122,14 @@ def nulls(fixed: dict, bars: pd.DataFrame, cfg: dict, models: list[str],
     return row, runs
 
 
-def analyse_market(cfg: dict, market: dict, trades: Path, bars: pd.DataFrame, base: dict,
+def analyse_market(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataFrame, base: dict,
                    step: Callable[[str, float], None]) -> tuple[dict, dict, dict]:
     """Every test in this build on one strategy's trades on one market.
 
     Args:
         cfg: What config.load() returned.
         market: One row of markets.universe()'s `markets` — feed, category, data_from.
-        trades: That market's trade CSV for this strategy.
+        trades: That market's trades for this strategy, as tradestore.market() returns them.
         bars: That market's bars.
         base: What backtest.setting() returned for the same strategy on the base asset.
         step: Called with (what is running, share of this market done) for the progress bar.
@@ -141,7 +141,7 @@ def analyse_market(cfg: dict, market: dict, trades: Path, bars: pd.DataFrame, ba
         correlation matrix, its equity in per cent for the overlay, and the priced trades
         themselves for the portfolio account.
     """
-    real = tradeio.read(trades)
+    real = trades
     # Everything below runs on the backtest's own window, never on the whole bar file: the
     # nulls must not be able to trade years the real strategy never saw, and the statistics
     # that compare against the market's own average — the drift in Test 1c, the blind window

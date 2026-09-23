@@ -27,7 +27,7 @@ def export(project: str, databank: str, day: str | None = None) -> Path:
         day: Export date. None takes the most recent one holding a matrix.
 
     Returns:
-        The folder holding cells.csv, steps.csv, params.csv and check.csv.
+        The folder holding cells, steps, params and check as Parquet, and trades.parquet.
     """
     root = DATA / "raw" / project / databank
     if day:

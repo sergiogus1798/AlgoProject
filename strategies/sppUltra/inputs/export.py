@@ -1,10 +1,11 @@
-"""Turn the five CSVs an SPP export leaves into one grid: parameters wide, metrics beside them."""
+"""Read an SPP export: the wide permutation table, the parameters it permuted, and the origin."""
 
 from pathlib import Path
 
 import pandas as pd
 
 ORIGINAL = -1
+KEYS = ["strategy", "permutation"]
 
 
 def strategies(directory: Path) -> list[str]:
@@ -16,7 +17,7 @@ def strategies(directory: Path) -> list[str]:
     Returns:
         Names as SQX writes them, sorted.
     """
-    return sorted(pd.read_csv(directory / "runs.csv")["strategy"].unique())
+    return sorted(pd.read_parquet(directory / "runs.parquet")["strategy"].unique())
 
 
 def grid(directory: Path, strategy: str) -> pd.DataFrame:
@@ -27,17 +28,14 @@ def grid(directory: Path, strategy: str) -> pd.DataFrame:
         strategy: Which strategy's table to read.
 
     Returns:
-        Indexed by permutation number, parameter columns first. The original strategy
-        sits at permutation -1 in `permutation_params.csv` but has no row in
-        `permutations.csv`, so the inner join drops it; `original` reads it separately.
+        Indexed by permutation number, parameter columns first. The original strategy is
+        permutation -1 and is a row here too. Parameter columns other strategies permuted
+        and this one did not come out all-NaN in the wide table and are dropped, so the
+        frame holds exactly this strategy's parameters, as the long form used to.
     """
-    params = pd.read_csv(directory / "permutation_params.csv")
-    stats = pd.read_csv(directory / "permutations.csv")
-    wide = params[params["strategy"] == strategy].pivot(
-        index="permutation", columns="parameter", values="value")
-    measured = stats[stats["strategy"] == strategy].set_index("permutation").drop(
-        columns="strategy")
-    return wide.join(measured, how="inner")
+    frame = pd.read_parquet(directory / "spp.parquet", filters=[("strategy", "==", strategy)])
+    frame = frame.drop(columns="strategy").set_index("permutation")
+    return frame.dropna(axis=1, how="all")
 
 
 def parameters(directory: Path, strategy: str) -> list[str]:
@@ -51,7 +49,7 @@ def parameters(directory: Path, strategy: str) -> list[str]:
         Names in the order SQX lists them. A parameter absent here was frozen by the SPP
         settings, which says nothing about whether it matters.
     """
-    runs = pd.read_csv(directory / "runs.csv").set_index("strategy")
+    runs = pd.read_parquet(directory / "runs.parquet").set_index("strategy")
     return runs.loc[strategy, "parameters"].split()
 
 
@@ -66,9 +64,10 @@ def original(directory: Path, strategy: str) -> dict[str, float]:
         Parameter name to value, read from permutation -1. It anchors everything
         downstream: a design that cannot contain it cannot show that the plateau moved.
     """
-    params = pd.read_csv(directory / "permutation_params.csv")
-    rows = params[(params["strategy"] == strategy) & (params["permutation"] == ORIGINAL)]
-    return dict(zip(rows["parameter"], rows["value"]))
+    names = parameters(directory, strategy)
+    row = pd.read_parquet(directory / "spp.parquet", columns=[*KEYS, *names],
+                          filters=[("strategy", "==", strategy), ("permutation", "==", ORIGINAL)])
+    return {k: float(row[k].iloc[0]) for k in names}
 
 
 def varying(frame: pd.DataFrame, names: list[str]) -> list[str]:

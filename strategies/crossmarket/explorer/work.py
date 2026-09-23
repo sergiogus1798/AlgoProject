@@ -1,6 +1,7 @@
 """What a button runs, and the one place a finished analysis is held for the session."""
 
-from pathlib import Path
+from core import tradestore
+from core.datapaths import cache_dir
 
 from strategies.crossmarket import views
 from strategies.crossmarket.explorer import analysis, jobs
@@ -20,11 +21,11 @@ def available(setup: dict, name: str) -> list[dict]:
 
     Returns:
         One row per market of the universe, with `traded` saying whether the export carries
-        trades for this strategy there. A market the strategy never fired on has no file at
-        all — that is a result about the strategy, not a missing input, and it is shown
+        trades for this strategy there. A market the strategy never fired on has no rows
+        at all — that is a result about the strategy, not a missing input, and it is shown
         rather than hidden.
     """
-    return [{**m, "traded": (setup["trades"] / m["feed"] / f"{name}.csv").exists()}
+    return [{**m, "traded": not tradestore.market(setup["trades"], name, m["feed"]).empty}
             for m in setup["universe"]["markets"]]
 
 
@@ -49,18 +50,15 @@ def analyse(setup: dict, cfg: dict, name: str, only: str | None) -> dict:
     return {"strategy": name, "markets": len(record["rows"])}
 
 
-def clear(data_root: Path) -> int:
+def clear() -> int:
     """Delete any cross-market results a previous build left on disk.
-
-    Args:
-        data_root: The data root.
 
     Returns:
         How many files were removed. Nothing here writes to disk any more, but earlier
-        versions cached under `derived/crossmarket/`; leaving those behind would let someone
+        versions cached under `cache/crossmarket/`; leaving those behind would let someone
         believe a stale number came from this session.
     """
-    folder = data_root / "derived" / "crossmarket"
+    folder = cache_dir("crossmarket")
     if not folder.exists():
         return 0
     files = list(folder.rglob("*.json"))

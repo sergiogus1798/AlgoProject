@@ -27,7 +27,7 @@ def export(project: str, databank: str, day: str | None = None) -> Path:
         day: Export date. None takes the most recent one that holds an SPP table.
 
     Returns:
-        The folder holding runs.csv, permutations.csv and permutation_params.csv. Trade
+        The folder holding runs.parquet and spp.parquet. Trade
         and bar exports are dated and immutable, so several dates coexist on purpose and
         which one was read belongs in the report.
     """

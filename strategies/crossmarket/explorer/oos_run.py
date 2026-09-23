@@ -10,7 +10,7 @@ and Brent draws over the same dates. It gets its own record key and its own tab.
 
 from collections.abc import Callable
 
-from core import trades as tradeio
+from core import tradestore
 from strategies.crossmarket.explorer import market_run
 from strategies.crossmarket.inputs import markets
 from strategies.crossmarket.mechanics import envelope
@@ -61,7 +61,7 @@ def run(setup: dict, cfg: dict, name: str, asset: str,
     if span is None:
         return None
     feed = setup["universe"]["main"]
-    whole = tradeio.read(setup["trades"] / feed / f"{name}.csv")
+    whole = tradestore.market(setup["trades"], name, feed)
     real = envelope.segment(whole, span)
     # The bars are sliced to this stretch's own first entry and last exit, exactly as a
     # market is: a null that may place a trade in 2010 is not testing the out-of-sample

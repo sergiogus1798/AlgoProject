@@ -18,7 +18,7 @@ def cells(directory: Path) -> pd.DataFrame:
         SQX stores -- the per-step `is_Fitness` column exists but is zero throughout, so
         every step-level reading uses a real metric instead.
     """
-    return pd.read_csv(directory / "cells.csv")
+    return pd.read_parquet(directory / "cells.parquet")
 
 
 def steps(directory: Path, drop_future: bool = True) -> pd.DataFrame:
@@ -36,7 +36,7 @@ def steps(directory: Path, drop_future: bool = True) -> pd.DataFrame:
         60 of the 720 steps are marked that way. Their out-of-sample numbers are computed
         on data that does not exist and must never reach a correlation.
     """
-    frame = pd.read_csv(directory / "steps.csv")
+    frame = pd.read_parquet(directory / "steps.parquet")
     if drop_future:
         frame = frame[~frame["future"]]
     for column in WINDOW:
@@ -51,14 +51,13 @@ def chosen(directory: Path) -> pd.DataFrame:
         directory: The export's `wfm/` folder.
 
     Returns:
-        Wide: one row per (strategy, result, step index), one column per parameter. This
-        is the only record of what the optimiser decided -- the thousands of combinations
+        Wide: one row per (strategy, result, step index), one column per parameter, as
+        the export wrote it. This is the only record of what the optimiser decided -- the thousands of combinations
         it tried inside each step are not stored anywhere, so nothing here can say how
         close the runner-up was.
     """
-    long = pd.read_csv(directory / "params.csv")
-    return long.pivot_table(index=["strategy", "result", "index"],
-                            columns="parameter", values="value")
+    return (pd.read_parquet(directory / "params.parquet")
+            .set_index(["strategy", "result", "index"]))
 
 
 def varying(frame: pd.DataFrame, prefix: str) -> list[str]:

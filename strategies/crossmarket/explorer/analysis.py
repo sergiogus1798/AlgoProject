@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import pandas as pd
 
-from core import trades as tradeio
+from core import tradestore
 from strategies.crossmarket import views
 from strategies.crossmarket.explorer import market_run, oos_run
 from strategies.crossmarket.mechanics import curves, envelope
@@ -17,7 +17,7 @@ def analyse_strategy(setup: dict, cfg: dict, name: str, only: str | None,
     """The whole cross-market analysis of one strategy.
 
     Args:
-        setup: What serve.main() assembled: universe, bars per feed, trades folder.
+        setup: What serve.main() assembled: universe, bars per feed, the packed trades.
         cfg: What config.load() returned.
         name: Strategy name, the CSV's stem.
         only: One market feed to run on its own, or None for all of them.
@@ -35,7 +35,7 @@ def analyse_strategy(setup: dict, cfg: dict, name: str, only: str | None,
     """
     universe = setup["universe"]
     main = universe["main"]
-    base_trades = tradeio.read(setup["trades"] / main / f"{name}.csv")
+    base_trades = tradestore.market(setup["trades"], name, main)
     base_bars = envelope.window(base_trades, setup["bars"][main])
     # The base asset carries its own bars: the fingerprint compares every market's
     # distributions against it, and that needs its ATR as well as its trades.
@@ -51,10 +51,10 @@ def analyse_strategy(setup: dict, cfg: dict, name: str, only: str | None,
     rows, runs, missing = [], {}, []
     for i, market in enumerate(wanted):
         feed = market["feed"]
-        trades = setup["trades"] / feed / f"{name}.csv"
-        # The export writes a market's file only when that strategy traded there, so a
-        # strategy that never fired on one market simply has no file.
-        if not trades.exists():
+        trades = tradestore.market(setup["trades"], name, feed)
+        # The export carries a market's rows only when that strategy traded there, so a
+        # strategy that never fired on one market simply has none.
+        if trades.empty:
             missing.append(feed)
             continue
         row, got, extra = market_run.analyse_market(

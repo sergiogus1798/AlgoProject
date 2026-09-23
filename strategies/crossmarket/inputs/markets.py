@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pandas as pd
+
 from core import assets
 
 UNCLASSIFIED = "sin clasificar"
@@ -27,13 +29,13 @@ def discovered(trades: Path) -> list[str]:
     """Which markets the export actually carries trades for.
 
     Args:
-        trades: The export's `trades/` directory, one subdirectory per feed.
+        trades: The export's `trades.parquet`.
 
     Returns:
-        Feed names, sorted. Written by export_retest from the trades' own Symbol column, so
-        this is what the retest really ran, not what a task list or this file claims.
+        Feed names, sorted, from the trades' own `Symbol` column -- what the retest really
+        ran, not what a task list or this file claims. Reads the one column.
     """
-    return sorted(d.name for d in trades.iterdir() if d.is_dir())
+    return sorted(pd.read_parquet(trades, columns=["Symbol"])["Symbol"].unique())
 
 
 def classify(symbol: str) -> dict[str, str]:
@@ -86,7 +88,7 @@ def universe(symbol: str, trades: Path) -> dict:
 
     Args:
         symbol: Base asset.
-        trades: The export's `trades/` directory.
+        trades: The export's `trades.parquet`.
 
     Returns:
         Keys main, timeframe, markets and absent. `markets` is one row per feed the export

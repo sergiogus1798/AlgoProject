@@ -10,7 +10,7 @@ Holds nothing computed.
 ## Traps in this export
 
 - ⚠️ **`is_Fitness` and `oos_Fitness` are zero on every step.** SQX stores fitness only at cell level
-  (`fitness_is` / `fitness_oos` in `cells.csv`). A study reading `Fitness` per step correlates
+  (`fitness_is` / `fitness_oos` in `cells.parquet`). A study reading `Fitness` per step correlates
   zeros and reports a NaN — or worse, silently reports something. `config.yaml` names a real metric
   and says why.
 - ⚠️ **The last step of every cell runs past the end of the data.** Measured 2026-09-10: cell 6x20
