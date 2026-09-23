@@ -817,3 +817,14 @@ estrategias que salieron de `algo_XAU_doctrina_smoke`.
   intento está revertido.
 - 🤔 Queda por probar `randomValue=`, que hoy vale `"default"`. La salida vive en la plantilla,
   así que lo más probable es que la palanca sea de autoría de plantillas y no de la tarea.
+
+### El tramo OOS de una tarea se marca con `<OutOfSample><Range/></OutOfSample>` (2026-09-23)
+
+- 🔬 Vive bajo `<Data>`, **al lado de `<Setups>` y no dentro de un `<Setup>`**. SQX lo escribe
+  autocerrado (`<OutOfSample showGraph="false" />`) cuando no hay tramo marcado, y con uno o más
+  `<Range dateFrom dateTo/>` cuando lo hay. Los proyectos `AUDJPY` y `EURUSD` del maestro ya lo
+  usan así; `Retester` llega a llevar **nueve** Range, o sea que admite un OOS troceado.
+- ⚠️ **Un `<Setup>` tiene UN spread y UN slippage.** Una ventana de retest que arranca en el IS y
+  acaba en el OOS cruza los dos tramos de `assets/` con un solo coste. Se aplica el del OOS: el
+  tramo que decide no se abarata nunca, y el IS se reencarece. Consecuencia buscada, no error —
+  el IS de ese retest NO cuadra con el backtest del builder, que lleva el spread de construcción.

@@ -25,13 +25,14 @@ def bounds(data: dict, segment: str) -> tuple[str, str]:
     return (f"{at(seg['from'], False):%Y.%m.%d}", f"{at(seg['to'], True):%Y.%m.%d}")
 
 
-def one_setup(block: str, data: dict, segment: str) -> str:
+def one_setup(block: str, data: dict, segment: str, since: str | None = None) -> str:
     """Rewrite a single <Setup> with this asset's declared window and costs.
 
     Args:
         block: The <Setup>…</Setup> text.
         data: One asset as load() returned it.
         segment: Segment name, which picks the spread and the slippage.
+        since: Override for dateFrom, so a retest can start where the build started.
 
     Returns:
         The rewritten block. The commission method is selected by flipping `use` on the
@@ -40,6 +41,7 @@ def one_setup(block: str, data: dict, segment: str) -> str:
     """
     s = sqx_settings(data, segment)
     a, b = bounds(data, segment)
+    a = since or a
     block = re.sub(r'dateFrom="[^"]*"', f'dateFrom="{a}"', block, count=1)
     block = re.sub(r'dateTo="[^"]*"', f'dateTo="{b}"', block, count=1)
     block = re.sub(r'(<Setup\b[^>]*?)slippage="[^"]*"', rf'\g<1>slippage="{s["defaultSlippage"]}"',
@@ -60,13 +62,34 @@ def one_setup(block: str, data: dict, segment: str) -> str:
     return block
 
 
-def set_costs(text: str, data: dict, segment: str) -> tuple[str, int]:
+def set_oos_range(text: str, start: str, end: str) -> int:
+    """Mark which part of a task's tested window is out of sample.
+
+    Args:
+        text: A task XML.
+        start, end: The OOS bounds as YYYY.MM.DD.
+
+    Returns:
+        The text and whether the marker was written. <OutOfSample> lives under <Data>,
+        beside <Setups> and not inside a <Setup>, and SQX writes it self-closing when no
+        range is set. Without it the retest reports one undifferentiated number over
+        fifteen years and the only question worth asking — did it hold up after 2018 —
+        has no answer in the result.
+    """
+    marker = f'<Range dateFrom="{start}" dateTo="{end}" />'
+    return re.subn(r"<OutOfSample([^>]*?)/>|<OutOfSample([^>]*?)>.*?</OutOfSample>",
+                   lambda m: f"<OutOfSample{(m.group(1) or m.group(2)).rstrip()}>{marker}</OutOfSample>",
+                   text, count=1, flags=re.S)
+
+
+def set_costs(text: str, data: dict, segment: str, since: str | None = None) -> tuple[str, int]:
     """Write the window and costs into every <Setup> of a task that trades this asset.
 
     Args:
         text: A task XML.
         data: One asset as load() returned it.
         segment: Segment name.
+        since: Override for dateFrom, so a retest can start where the build started.
 
     Returns:
         The task and how many Setups were rewritten.
@@ -87,6 +110,6 @@ def set_costs(text: str, data: dict, segment: str) -> tuple[str, int]:
         if feed not in m.group(0):
             return m.group(0)
         done += 1
-        return one_setup(m.group(0), data, segment)
+        return one_setup(m.group(0), data, segment, since)
 
     return SETUP.sub(rewrite, text), done

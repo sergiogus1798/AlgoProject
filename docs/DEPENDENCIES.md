@@ -99,10 +99,10 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/inspect/vocabulary.py` | 233 | What one SQX install can express: its blocks, its random groups, and what each pools. | core | — |
 | `sqx/projects/builder.py` | 201 | Turn a template plus an asset into a Builder project installed and ready to run. | core, sqx | — |
 | `sqx/projects/buildrules.py` | 158 | The shape of the strategy a task may generate: how complex, which orders, which exits. | — | — |
-| `sqx/projects/configure.py` | 231 | Write an asset's declared costs and one segment's window into every task of a project.cfx. | core, sqx | — |
+| `sqx/projects/configure.py` | 241 | Write an asset's declared costs and one segment's window into every task of a project.cfx. | core, sqx | — |
 | `sqx/projects/doctrine.py` | 107 | Apply the owner's build doctrine to every task of a project, identically. | core, sqx | — |
 | `sqx/projects/ranges.py` | 37 | The MC Retest perturbation ranges a task randomises within, taken from assets/. | core | — |
-| `sqx/projects/setups.py` | 92 | Write one segment's window and costs into a task's <Setup> blocks, which is where they live. | core | — |
+| `sqx/projects/setups.py` | 115 | Write one segment's window and costs into a task's <Setup> blocks, which is where they live. | core | — |
 | `sqx/projects/tasksettings.py` | 224 | Task settings that must be identical across a whole project: timeframe, engine, MM, hours. | — | — |
 | `sqx/repair/graft_tasks.py` | 135 | Heal a project.cfx that declares task files its archive lacks, grafting them from a donor. | core | — |
 | `sqx/templates/build.py` | 121 | Emit a strategy template by fixing one concrete block into a build-confirmed skeleton. | core | — |
