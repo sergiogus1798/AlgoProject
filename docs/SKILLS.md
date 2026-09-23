@@ -27,6 +27,55 @@ explica está tirando 4.800 tokens y, peor, atención.
 | `audit`, `doc`, `perf`, `sync` | mantenimiento del proyecto | puntual |
 | `sqx-*` (globales, de sqx-lab) | producto genérico de autoría SQX | **candidatas a retirar, ver abajo** |
 
+## Cobertura del workflow — qué paso tiene skill y cuál no
+
+Los 20 pasos están en `docs/AgentPDFs/WORKFLOW.md`. Cada paso de SQX necesita **un custom project
+y su tarea o tareas**; cada paso de Python necesita **leer el resultado y emitir un veredicto**.
+Esto dice quién cubre qué, a 2026-09-23.
+
+| # | paso | quién lo cubre | |
+|---|---|---|---|
+| 2-3 | vocabulario y plantilla | `/strategy-template` | ✅ |
+| 4-6 | preflight, custom project, configuración del build | `/template-run` · `sqx/projects/builder.py` | ✅ |
+| 7 | retest OOS en SQX | `/template-run`, misma cadena | ✅ |
+| 8 | análisis IS/OOS | `/oos-gate` → `/curate` | ✅ |
+| 9 | retest crossmarkets | `/crossmarket` · `sqx/projects/crossmarket.py` | ✅ |
+| 10 | análisis crossmarkets | `strategies/crossmarket/` | ❌ **sin skill** |
+| 10.5-11 | variantes escaladas y retest crossTF | `/crosstf` · `sqx/projects/crosstf.py` | ✅ |
+| 12 | análisis crossTFs | `strategies/crossTF/` | 🟡 dentro de `/crosstf` |
+| 13 | **MC Retest en SQX** | sólo los rangos (`sqx/projects/ranges.py`) | ❌ **falta la tarea** |
+| 14 | análisis MC Retest | `strategies/retest/` | ❌ **sin skill** |
+| 15 | **SPPs en SQX** | `sqx/variants/spp.py` | ❌ sin skill · ⚠️ ver abajo |
+| 16 | análisis SPPs | `strategies/sppUltra/` | ❌ **sin skill** |
+| 16.5-17 | variantes para WFC, y el WFC | `sqx/variants/make.py`, `walkForwardCorrelation/` | ❌ sin skill · ⚠️ ver abajo |
+| 18 | CSCV | `walkForwardCorrelation/pbo.py` | ❌ **sin skill** |
+| 19 | **Walk Forward Matrix en SQX** | `strategies/walkForwardMatrix/` es sólo el análisis | ❌ **falta la tarea** |
+| 20 | análisis conjunto ciego de 17-18-19 | — | ❌ **no existe** |
+
+### Los tres huecos de SQX, y son el mismo hueco
+
+`crossmarket.py` y `crosstf.py` hacen lo mismo con distinto crosscheck: **encender el suyo en una
+tarea concreta y escribirle su configuración desde `assets/`**. Ese patrón no existe todavía para:
+
+- `MonteCarloRetest` (paso 13) — los rangos sí se escriben, la tarea no se enciende
+- `WalkForwardMatrix` (paso 19)
+- `OptProfileSysParamPermutation` (paso 15) — **el SPP, que NO es `SequentialOptimization`**
+
+Y hay una razón de fondo: la doctrina apaga **todos** los crosschecks fuera de la construcción, a
+propósito. Encender el que toca en la tarea que toca es justo lo que hace falta escribir.
+
+### ⚠️ Los pasos 15 y 17 corren sobre el `Retester` de serie
+
+`sqx/variants/config.yaml` lleva `project: Retester`. Eso **incumple la regla dura 10** (dueño,
+2026-09-23: todo run en un custom project, nunca el `Builder` ni el `Retester` de serie). Es
+anterior a la regla, no una decisión contra ella, pero hay que migrarlo.
+
+### Lo que falta en Python es lo que se retiró
+
+Los pasos 10, 14 y 16 no tienen skill porque sus `analysis-*` se borraron el 2026-09-22. Los
+módulos funcionan; lo que falta son las reglas de lectura y, sobre todo, que **emitan el mismo
+veredicto de dos columnas** que `/curate` ya sabe aplicar (acordado con el dueño, 2026-09-23).
+
 ## Candidatas a retirar
 
 **Las cuatro globales de sqx-lab** (`sqx-custom-block`, `sqx-random-group`, `sqx-strategy-template`,
@@ -58,6 +107,7 @@ Regenerado 2026-09-23 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | skill | ~tokens al invocar | ficheros | último cambio | para qué |
 |---|---:|---:|---|---|
 | `curate` | 1,900 | 1 | 2026-09-23 | Apply a Python verdict back into SQX — move the strategies a filter, a test or an analysis rejected out of a databank, so the next task in the chain only sees the survivors. Works between any two tasks and with any module that can name what it drops |
+| `crosstf` | 1,788 | 1 | 2026-09-23 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
 | `template-run` | 1,667 | 1 | 2026-09-23 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
 | `sync` | 1,553 | 1 | 2026-09-12 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
 | `strategy-template` | 1,140 | 1 | 2026-09-22 | Turn a trading idea into a StrategyQuant X strategy template — understand the logic, check whether the condition already exists, author the custom block if it does not, and emit the .sqx into the library. Authoring only, no SQX running and no CPU burnt |
@@ -69,7 +119,7 @@ Regenerado 2026-09-23 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | `audit` | 401 | 1 | 2026-09-12 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 224 | 1 | 2026-09-03 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-11 skills, 10,829 tokens de cuerpo en total, 42 KB en disco.
+12 skills, 12,617 tokens de cuerpo en total, 49 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 
