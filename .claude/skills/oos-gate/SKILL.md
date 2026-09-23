@@ -24,13 +24,22 @@ bin/sqx-worker.sh --role custodian stop
 python3 -m gate.harvest --project <P> --databank Results --oos-databank OOS --role custodian
 ```
 
-**Pairs on identity, not on name.** SQX renames on collision and two databanks of one project can
-hold different strategies under the same name; the identity — the SHA-256 of the inner
-`strategy_Portfolio.xml` — is stable across databanks. A strategy in the build with no twin in the
-retest is dropped: SQX already judged it, by its own red flags.
+**Pairs on identity, and on file name only for what identity missed.** SQX renames on collision,
+so two databanks of one project can hold different strategies under one name — the name is not an
+identity. The identity is the SHA-256 of the inner `strategy_Portfolio.xml` **with SQX's own
+bookkeeping stripped**, and the stripping is the whole trick: a retest flips `makeExternal` on every
+variable, so the raw hash matched 0 of 115 pairs while the normalised one matches 115 of 115.
 
-That drop happens **before** anything is exported, so nothing is spent on the dead. In one run 689
-of 694 died there and 5 were exported.
+The name fallback (`gate/pairing.py`, owner's decision) only takes names that appear exactly once
+on each side. With the identity fixed it rescues nothing — it is a safety net, not a mechanism, and
+a strategy whose normalised identity really did change between the two databanks is a different
+strategy. If it ever starts rescuing pairs, that is a finding to chase, not a success.
+
+A strategy in the build with no twin in the retest is dropped: SQX already judged it, by its own
+red flags.
+
+That drop happens **before** anything is exported, so nothing is spent on the dead. On `XAU_ISOOS_ejemplo`, 5 of 120
+died there and only the 115 pairs were exported.
 
 ## 2 · The screens
 

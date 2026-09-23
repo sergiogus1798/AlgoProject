@@ -62,14 +62,14 @@ Regenerado 2026-09-23 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | `sync` | 1,553 | 1 | 2026-09-12 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
 | `strategy-template` | 1,140 | 1 | 2026-09-22 | Turn a trading idea into a StrategyQuant X strategy template — understand the logic, check whether the condition already exists, author the custom block if it does not, and emit the .sqx into the library. Authoring only, no SQX running and no CPU burnt |
 | `crossmarket` | 1,108 | 1 | 2026-09-23 | Retest surviving strategies on other markets with SQX's Retest on additional markets cross-check — the markets from assets/_markets.yaml, each over its own window and at its own declared costs. Configures and runs a task on the custodian |
+| `oos-gate` | 1,041 | 1 | 2026-09-23 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
 | `perf` | 898 | 1 | 2026-09-20 | Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement on a branch |
-| `oos-gate` | 878 | 1 | 2026-09-23 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
 | `export` | 449 | 1 | 2026-09-12 | Export data out of StrategyQuant X — a databank's metrics with IS/OOS columns, every trade of every strategy, or OHLC bars |
 | `translate` | 443 | 1 | 2026-09-12 | Turn a .sqx strategy into readable pseudocode and an executable Python backtest, reconciled against the trades SQX exported |
 | `audit` | 401 | 1 | 2026-09-12 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 224 | 1 | 2026-09-03 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-11 skills, 10,666 tokens de cuerpo en total, 41 KB en disco.
+11 skills, 10,829 tokens de cuerpo en total, 42 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 
