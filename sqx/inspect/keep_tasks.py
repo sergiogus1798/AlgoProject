@@ -15,8 +15,8 @@ import argparse, os, sys, zipfile
 import xml.etree.ElementTree as ET
 
 
-def keep(members: dict[str, bytes], keep_types: set[str],
-         system_count: int = 5) -> tuple[dict[str, bytes], dict]:
+def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
+         only: set[str] | None = None) -> tuple[dict[str, bytes], dict]:
     """Strip a project's contents down to the chosen task types.
 
     Args:
@@ -24,6 +24,9 @@ def keep(members: dict[str, bytes], keep_types: set[str],
         keep_types: Task types to keep, e.g. {"Build"}.
         system_count: How many lowest-position databanks are system ones. SQX expects
             those to exist whatever the project does, so they are never dropped.
+            only: Task XML file names to narrow the kept types down to. The donor's chain
+            holds fourteen Retest tasks; a study that only needs the IS→OOS gate wants
+            one of them, and which one is not a property of the type.
 
     Returns:
         The rewritten members, and a summary naming what was kept and dropped. Raises
@@ -34,7 +37,8 @@ def keep(members: dict[str, bytes], keep_types: set[str],
 
     kept, dropped = [], []
     for t in list(tasks_el.findall("Task")):
-        (kept if t.get("type") in keep_types else dropped).append(t)
+        wanted = t.get("type") in keep_types and (not only or t.get("taskXMLFile") in only)
+        (kept if wanted else dropped).append(t)
     if not kept:
         sys.exit(f"nothing kept - no task of type(s) {sorted(keep_types)}")
     for t in dropped:

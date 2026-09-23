@@ -74,7 +74,7 @@ def sync_databanks(config: str) -> tuple[str, list[str]]:
 
 def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
           minutes: int, donor: Path, segment: str | None = None,
-          tasks: tuple = ("Build",)) -> dict:
+          tasks: tuple = ("Build",), only: set | None = None) -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -90,6 +90,7 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
         segment: Force one segment on every task. Omit so each takes its own from its
             type — the build on `build`, the retests on `oos1`, in one project.
         tasks: Which task types to keep from the donor.
+        only: Task XML file names to narrow those types to, e.g. {"Retest-Task1.xml"}.
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
@@ -108,7 +109,7 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
 
     with zipfile.ZipFile(donor) as z:
         members = {n: z.read(n) for n in z.namelist()}
-    members, kept = keep(members, set(tasks))
+    members, kept = keep(members, set(tasks), only=only)
 
     config, synced = sync_databanks(members["config.xml"].decode("utf-8"))
     members["config.xml"] = re.sub(r'<Project name="[^"]*"', f'<Project name="{name}"',
@@ -154,6 +155,8 @@ def main() -> None:
                     help="force one segment on every task; omit to take each task's own")
     ap.add_argument("--tasks", default="Build",
                     help="comma-separated donor task types to keep, e.g. Build,Retest")
+    ap.add_argument("--only", help="comma-separated task XML files to narrow --tasks to, "
+                    "e.g. Build-Task3.xml,Retest-Task1.xml")
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
     a = ap.parse_args()
 
@@ -175,7 +178,8 @@ def main() -> None:
     if stop:
         raise SystemExit("\n".join(stop))
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe, a.max_strategies,
-                 a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')))
+                 a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')),
+                 set(a.only.split(',')) if a.only else None)
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
 

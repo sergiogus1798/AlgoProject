@@ -150,3 +150,19 @@ python3 -m sqx.projects.builder algo_XAU_doctrina --timeframe M30 \
 Comprobado sobre las 20 estrategias que generó `algo_XAU_doctrina_smoke`: **20 de 20** con
 exactamente 2 condiciones de entrada, 1 de salida, `EnterAtMarket` y nada más, shift 1 en los 31
 sitios donde aparece, y cero stop loss, profit target o trailing.
+
+## Quedarse con una sola tarea de retest
+
+El donante lleva catorce. `--tasks Retest` las conserva todas, que es la cadena entera; para un
+proyecto de dos pasos —construir y cruzar la puerta del OOS— se nombra la que se quiere:
+
+```bash
+python3 -m sqx.projects.builder XAU_ISOOS_ejemplo --timeframe M30 --symbol XAUUSD \
+    --template <plantilla> --role custodian \
+    --tasks Build,Retest --only Build-Task3.xml,Retest-Task1.xml
+```
+
+`Retest-Task1.xml` es la que lee de `Results` y escribe en `OOS`. Las demás son la cadena de
+Monte Carlo, los SPP y la WFM, cada una encadenada al databank de la anterior.
+
+Hay un ejemplo construido y corrido en `docs/encargos/ejemplo-IS-OOS-XAUUSD.md`.
