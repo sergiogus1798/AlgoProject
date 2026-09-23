@@ -12,7 +12,7 @@ anything that reads bars
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `config.py` | Reads `config.yaml`: every tunable of the study, in one place | imported | overrides → config |
-| `markets.py` | Reconciles what the export really carries against what `markets.yaml` declares, and reads the main backtest's declared out-of-sample stretch | imported | asset + export → universe, OOS span |
+| `markets.py` | Reconciles what the export really carries against what `assets/_markets.yaml` declares, and reads the main backtest's declared out-of-sample stretch | imported | asset + export → universe, OOS span |
 | `execution.py` | What a worse broker would charge, per feed, from `execution.yaml`; and that file against what SQX really charged | imported | feed + trades → shock, depth, gap |
 
 ## Where a threshold is changed
@@ -30,7 +30,7 @@ nobody can find; it belongs in `config.yaml` and is read where the judgement is 
 
 ## The `.yaml` files stay in the module root
 
-`config.yaml`, `markets.yaml` and `execution.yaml` sit **one level up**, beside `README.md`, because
+`config.yaml`, `assets/_markets.yaml` and `execution.yaml` sit **one level up**, beside `README.md`, because
 `docs/manual/05-retest-mercados.md` names them by that path. Each of the three modules resolves its
 own file as `Path(__file__).parents[1] / "<name>.yaml"` — `with_name()` would look inside `inputs/`
 and the file would silently not be found. Moving a module here without changing that line is the
@@ -38,7 +38,7 @@ failure this layer is most likely to suffer.
 
 ## Contracts and traps
 
-- **The markets are discovered; `markets.yaml` only classifies them.** It groups each base asset's
+- **The markets are discovered; `assets/_markets.yaml` only classifies them.** It groups each base asset's
   markets into categories — `family`, `structure`, whatever comes next — and **does not decide what
   exists**. What a strategy was really retested on is read from the export, whose `trades/<feed>/`
   folders are built from the trades' own `Symbol` column. A feed the declaration does not name is

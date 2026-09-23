@@ -2,7 +2,7 @@
 
 The cross-market test asks whether the timing survives on markets the strategy was never
 fitted to. This asks the same question of the **same** market over the stretch the builder
-optimised nothing on: `markets.yaml`'s declared `out_of_sample` range, the project's own
+optimised nothing on: `assets/_markets.yaml`'s declared `out_of_sample` range, the project's own
 <OutOfSample>. It is deliberately kept out of `record["rows"]` and `record["runs"]` — the
 joint null, the breadth count, the portfolio and the correlation matrix are all statements
 about *other* markets, and gold-2018 is neither another market nor independent of the silver

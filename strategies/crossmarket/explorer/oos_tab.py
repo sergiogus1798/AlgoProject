@@ -61,7 +61,7 @@ def oos_tab(record: dict, cfg: dict) -> str:
     oos = record.get("oos")
     if oos is None:
         return ('<div class="note">Este activo base no declara ningún tramo fuera de muestra '
-                'en <code>markets.yaml</code> (<code>out_of_sample</code>), así que no hay '
+                'en <code>assets/_markets.yaml</code> (<code>out_of_sample</code>), así que no hay '
                 'nada que probar aquí. Se lee del <code>&lt;OutOfSample&gt;</code> del '
                 'proyecto y se declara a mano: el export marca <code>Sample type = IST</code> '
                 'en todas las operaciones y no sabe dónde está el corte.</div>')

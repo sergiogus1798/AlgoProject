@@ -12,3 +12,28 @@ rho_floor: 0.30
 # Rows kept from each end of the in-sample ranking when the batch is too big to tabulate.
 # The ends are what answers the question: did the in-sample winners stay winners?
 table_ends: 12
+
+# The CSCV. Where the correlation asks whether this surface carried over, this asks the
+# harder question behind it: is the WAY I pick parameters prone to overfitting at all?
+# The IS/OOS boundary is NOT here -- it is written into equity.json by the harvest, which
+# reads it off the harness that produced the numbers. One date, one definition.
+cscv:
+  # How daily P&L is aggregated before anything is ranked. At roughly sixty trades a year
+  # a daily matrix is almost all zeros and its ranks are noise. "W" weekly, "ME" monthly.
+  period: W
+  # Blocks the history is cut into. Ten gives C(10,5) = 252 partitions, which is the
+  # number the paper uses and enough for an interval on the PBO. Sixteen gives 12,870 and
+  # costs sixty times as much for a third-decimal improvement.
+  blocks: 10
+  # The ways of choosing parameters that get compared. The point of the study is the
+  # difference between them, so a run with one rule answers half the question.
+  rules: [argmax, plateau_centre, random_profitable]
+  # Draws averaged for the rule that is random. It is a control, and a control measured
+  # once is an anecdote.
+  random_draws: 50
+  # Resamples behind the interval on each rule's out-of-sample percentile.
+  bootstrap: 200
+  # Largest number of clusters considered when counting how many independent trials the
+  # grid really holds. The deflated Sharpe is only as honest as that count.
+  cluster_k_max: 40
+  seed: 20260922

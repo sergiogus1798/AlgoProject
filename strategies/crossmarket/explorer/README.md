@@ -21,7 +21,7 @@ serve ─▶ scope ─▶ jobs ─▶ work ─▶ analysis ─▶ market_run ─
 | `work.py` | What a button runs, and the session's results | imported | strategy → RESULTS |
 | `analysis.py` | The orchestrator: every market, then the base asset's own out-of-sample stretch, then the strategy-level views | imported | strategy → rows, runs, oos |
 | `market_run.py` | The heavy half: one market's null models, its window sweep and every other test | imported | trades + bars → row, runs |
-| `oos_run.py` | The same random-entry test on the **main backtest's out-of-sample stretch alone**, declared in `markets.yaml` | imported | strategy → row, runs |
+| `oos_run.py` | The same random-entry test on the **main backtest's out-of-sample stretch alone**, declared in `assets/_markets.yaml` | imported | strategy → row, runs |
 | `sweep_run.py` | The window sweep's execution: each free-placement model re-drawn inside every block size | imported | fixed + bars → windows, points |
 | `jobs.py` | One job at a time, off the request thread, publishing a continuous share | imported | callable → progress |
 | `sections.py` | The tab registry and the tabs that are tables | imported | record → HTML |
@@ -57,7 +57,7 @@ The cost of that is real: a strategy takes 107 s at the default 25,000 draws ove
 
 The cross-market test asks whether the timing survives on markets the strategy was never fitted to.
 `oos_run.py` asks the same question of the **same** market over the stretch the builder optimised
-nothing on — `markets.yaml`'s `out_of_sample`, copied from the project's own `<OutOfSample>` — and it
+nothing on — `assets/_markets.yaml`'s `out_of_sample`, copied from the project's own `<OutOfSample>` — and it
 lands in `record["oos"]`, in **no** other key.
 
 That exclusion is the whole design, and undoing it is the easy mistake:
@@ -79,7 +79,7 @@ That exclusion is the whole design, and undoing it is the easy mistake:
 🔬 The stretch is **declared, never inferred**. Every trade the retest export carries is stamped
 `Sample type = IST` whatever window it fell in — checked on all three markets of
 `Retest_Markets_-_Family` — so the split cannot be read back from the data, and the dates in
-`markets.yaml` are the only witness. A base asset that declares none simply has no tab content.
+`assets/_markets.yaml` are the only witness. A base asset that declares none simply has no tab content.
 
 🔬 And it is **not virgin data**, which is the first thing the tab says. The stretch entered
 selection twice: inside every `sampleType=127` acceptance condition, because the full period contains

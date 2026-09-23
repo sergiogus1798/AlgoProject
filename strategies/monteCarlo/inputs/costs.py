@@ -21,11 +21,15 @@ def load(symbol: str) -> dict:
         so the costs that belong in it are the ones that were actually charged in it.
     """
     data = assets.load(symbol)
+    # A no_forex asset declares two spreads, build and OOS; SQX itself still carries ONE
+    # defaultSpread per instrument, so both `sqx_now` hold that same number and the first
+    # is it. When they diverge, this has to pick the segment the export came from.
+    spread = assets.schema(data)["spread"]["fields"][0]
     return {"symbol": symbol,
-            "point_value": float(data["point_value"]["sqx_default"]),
-            "tick_size": float(data["tick_size"]),
-            "spread": float(data["spread"]["sqx_default"]),
-            "commission": float(str(data["commission"]["sqx_default"]).split()[-1]),
+            "point_value": float(data["instrument"]["point_value"]),
+            "tick_size": float(data["instrument"]["tick_size"]),
+            "spread": float(data["costs"][spread]["sqx_now"]),
+            "commission": float(data["costs"]["commission"]["sqx_now"]["value"]),
             "pending": assets.pending(data)}
 
 

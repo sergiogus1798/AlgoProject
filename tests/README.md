@@ -11,10 +11,11 @@ else is built on. Run them with plain Python; there is no test framework to inst
 | `test_surface.py` | `core.surface` on grids whose answer is known by construction: a shuffled surface must read zero shift, zero Cliff and an unchanged plateau while its paired correlation collapses; `n_eff` counts backtests rather than rows; the sentinels never reach a ranking | `python3 tests/test_surface.py` |
 | `test_sqxfile.py` | `core.sqxfile` still reads a strategy's identity hash, symbol, parameters and rule tree the same way | `python3 tests/test_sqxfile.py` |
 | `test_variants.py` | `sqx.variants` still writes a variant the same way: the values in, the two name fields renamed, the identifier stamped inside, the inherited fingerprint gone, and every other member byte-identical | `python3 tests/test_variants.py` |
+| `test_cscv.py` | the CSCV maths on panels whose answer is known by construction: pure noise and a block-shuffled surface must both read a PBO of 0.5, one real edge must read 0, the carry-over slope must read zero without an edge, and the plateau rule must refuse an isolated spike | `python3 tests/test_cscv.py` |
 | `test_sqxretest.py` | `core.sqxretest` still cuts a Monte Carlo Retest the same way: every simulation's trade count and P/L sum, the original, the eleven confidence levels, and the method settings | `python3 tests/test_sqxretest.py` |
 
-`test_sweep.py` and `test_models.py` are the two tests here that are not golden files: they check
-properties on synthetic runs. The first exists because the owner asked for the sweep's full window
+`test_sweep.py`, `test_models.py` and `test_cscv.py` are the tests here that are not golden files:
+they check properties on synthetic runs. The first exists because the owner asked for the sweep's full window
 to be proven identical to the model it sweeps; the second because the headline model was measured
 overlapping 2.8-5.4% of its own trades on 2026-09-17, against a docstring that said it could not.
 
@@ -48,3 +49,9 @@ file over the top.
 run from 28 KB to 15 MB on this machine, and the smallest carries everything the parser reads — a
 `Results/` entry naming symbol and feed, 28 parameters and a full rule tree. `.gitignore` excludes
 `*.sqx` and makes `tests/fixtures/` the one exception.
+
+`test_cscv.py` checks every PBO property on the **average of twelve panels**, never on one. Measured
+2026-09-22, the PBO of a single pure-noise panel has a standard deviation of 0.21 and individual
+draws ran from 0.25 to 0.92: the 252 partitions overlap heavily and are nothing like 252
+independent observations. A single-panel assertion would have passed or failed on the seed. That
+same spread is why the pipeline's 50 % gate on the PBO is documented as a coarse filter.

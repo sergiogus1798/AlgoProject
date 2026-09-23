@@ -1,11 +1,9 @@
-"""What the study runs on: the export says which markets exist, markets.yaml says what they are."""
+"""What the study runs on: the export says which markets exist, assets/ says what they are."""
 
 from pathlib import Path
 
-import yaml
+from core import assets
 
-# parents[1]: the .yaml stays in the module root, where the manual names it.
-FILE = Path(__file__).parents[1] / "markets.yaml"
 UNCLASSIFIED = "sin clasificar"
 
 
@@ -16,11 +14,13 @@ def load(symbol: str) -> dict:
         symbol: Base asset, e.g. "XAUUSD".
 
     Returns:
-        Keys main, timeframe and categories, where categories maps a category name to a list
-        of {feed, data_from}. This is the declaration, fixed before results are looked at; it
-        classifies markets and never decides which ones the study runs on.
+        Keys main, timeframe and categories, where categories maps `family` or `structural`
+        to a list of {feed, data_from}. This is the declaration, fixed before results are
+        looked at; it classifies markets and never decides which ones the study runs on.
+        It lives in `assets/_markets.yaml`, next to the costs, so there is one declaration
+        of a market and not one per study.
     """
-    return yaml.safe_load(FILE.read_text(encoding="utf-8"))[symbol]
+    return assets.markets(symbol)
 
 
 def discovered(trades: Path) -> list[str]:
@@ -82,7 +82,7 @@ def declared(symbol: str) -> list[str]:
 
 
 def universe(symbol: str, trades: Path) -> dict:
-    """Reconcile what the export carries against what markets.yaml declares.
+    """Reconcile what the export carries against what assets/_markets.yaml declares.
 
     Args:
         symbol: Base asset.
@@ -125,10 +125,11 @@ def out_of_sample(symbol: str) -> dict[str, str] | None:
         symbol: Base asset.
 
     Returns:
-        {"from": ..., "to": ...} as ISO dates, or None where the base asset declares none.
-        It is declared and never inferred: every trade the retest export carries is stamped
-        `Sample type = IST` whatever window it fell in, so the split is unreadable from the
-        data and only the project's own <OutOfSample><Range/> knows it.
+        {"from": ..., "to": ...} as ISO dates. This is the `oos1` segment of
+        `assets/_policy.yaml`, which is the one place the window is declared — it used to be
+        copied here from the project's own <OutOfSample><Range/> and could drift from it.
+        Declared and never inferred: every trade the retest export carries is stamped
+        `Sample type = IST` whatever window it fell in, so the split is unreadable.
     """
-    span = load(symbol).get("out_of_sample")
-    return {"from": str(span["from"]), "to": str(span["to"])} if span else None
+    seg = assets.load(symbol)["segments"]["oos1"]
+    return {"from": f"{seg['from']}-01-01", "to": f"{seg['to']}-12-31"}

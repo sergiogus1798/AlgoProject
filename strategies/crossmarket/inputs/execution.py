@@ -32,7 +32,9 @@ def load(feed: str) -> dict | None:
     if declared is None:
         return None
     named = declared.get("asset_file")
-    decided = assets.load(named)["spread"]["use"] if named else None
+    # The study runs on the retest window, so the spread that belongs here is the OOS one.
+    # A forex asset declares a single spread and that is the one this picks.
+    decided = assets.sqx_settings(assets.load(named), "oos1")["defaultSpread"] if named else None
     if decided is None:
         return declared
     return {**declared, "spread_typical": float(decided), "source": f"assets/{named}.yaml"}
