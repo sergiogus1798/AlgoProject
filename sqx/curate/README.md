@@ -1,29 +1,55 @@
 # sqx/curate — act on a verdict inside SQX
 
-The only folder here that **changes what a databank contains**. Everything it does is reversible from
-the snapshot it takes first, and nothing runs without `--apply`.
+The only folder here that **changes what a databank contains**. Nothing runs without `--apply`,
+and every cut leaves a record of what it removed next to the verdict that asked for it.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `apply_verdict.py` | Moves the strategies a verdict rejected into another databank of the same project, after backing the source up | `python3 -m sqx.curate.apply_verdict --project XAUUSD --databank RetestMarkets --verdict <path>/verdict.csv --into Rejected --apply` | `verdict.csv` → strategies moved, snapshot in `AlgoData/snapshots/` |
+| `verdict.py` | Write a `verdict.csv` from the databank's metrics export: keep what passes a pandas filter, or drop the names given; identities read from the files | `python3 -m sqx.curate.verdict --project P --databank Results --role custodian --keep "net_profit_oos > 0"` · `--drop "Strategy 11.4.39"` · `--columns` | `metrics.csv` → `AlgoData/reports/P/Results/<day>/curate/verdict-HHMMSS.csv` |
+| `apply_verdict.py` | Delete the strategies a verdict rejected from a databank (or move them into another databank with `--into`), after checking each file's identity and recording what was there | `python3 -m sqx.curate.apply_verdict --project P --databank Results --verdict <path>/verdict.csv --role custodian --apply` | `verdict.csv` → files deleted, `before-HHMMSS.csv` + `rejected-HHMMSS.csv` beside the verdict |
 
-## The three guards, and why each exists
+## The contract between Python and SQX
 
-1. **The master's GUI must be closed.** This is the one place in the project that drives the master
-   install rather than the worker, because a project's databanks only exist inside their own install.
-   Its databases take an exclusive lock while the GUI holds them, and a file changed underneath a
-   running instance is silently undone by the next sync. The command checks and refuses.
-2. **A snapshot is taken before anything moves**, into `AlgoData/snapshots/<date>/<project>/<databank>/`,
-   outside the install. It has to be outside: every sync deletes on-disk strategies that are not in
-   memory, so a backup inside `user/projects` is not a backup.
-3. **The result is verified by counting the files back**, not by trusting the reply. If the number
-   that left the source does not match the number the verdict named, the command stops and prints
-   where the snapshot is.
+A CSV with `strategy` and `verdict`; a verdict of `DESCARTAR` drops that strategy, anything else
+keeps it. Optionally `identity` — SHA-256 of the inner `strategy_Portfolio.xml`
+(`core.sqxfile.identity`) — and `reason`. **That is the whole contract** — any module that judges
+strategies writes one, and `apply_verdict` applies it. Nothing here knows or cares what the judging
+was. When `identity` is present the file is hashed before it goes: the name is not an identity
+(SQX renames on collision, `copy` stacks identical files), and a mismatch aborts with nothing
+touched. `verdict.py` writes the CSV for the two cases that need no module: a metrics filter, or a
+name.
 
-## Before the first run
+## Why it works on files instead of calling the CLI
 
-Create the destination databank **in the GUI**. One created over the API is not picked up by the
-startup sync, so the move would report success into a databank that is not really there.
+Because the CLI's own selector cannot be reached, and fails silently when tried
+(`knowhow/02-databanks.md`, measured 2026-09-23):
 
-Move, never delete. A strategy that fails one test on eight markets is evidence about that test, and
-the population it came from is the input to every later study.
+- Over the worker's HTTP API a strategy name is **cut at its first space**, and every SQX name has
+  one. `action=delete` answers `Reports removed.` and the count does not move.
+- A **one-shot `sqcli`** never loads the databank's records: `action=save` with no selector wrote
+  0 of 30 files while answering `Reports saved.`
+- `action=move` with a selector that never arrives moves the **whole databank**.
+
+What works is the file level. SQX syncs a databank *from* files on its next access, so removing the
+`.sqx` with the install stopped and starting it again makes memory match the curated directory —
+and memory is what the next task reads.
+
+## The three guards
+
+1. **The install must be stopped.** It holds the records in memory and rewrites the files from them,
+   so a file removed underneath a live instance comes back on the next sync. `--role` picks which
+   install; the check is the GUI process for the master and the port for a worker.
+2. **A record first.** `before-<stamp>.csv` lists every strategy on disk with identity, size,
+   this cut's verdict and **why** (the verdict's `reason`: the filter it failed, the test, or the
+   verdict file's name when the judging module wrote no reason); `rejected-<stamp>.csv` keeps the
+   dropped ones' rows of the metrics export with that reason as its first column.
+   Both land in `AlgoData/reports/<P>/<databank>/<day>/curate/`, beside the verdict. The `.sqx`
+   themselves are deleted: at ~5 MB each, 8k rejects would be 40 GB kept for a strategy nobody
+   will revisit (owner's decision, 2026-09-23). A `Rejected` databank inside the project would be
+   worse: SQX loads every databank of a project on start, so they would cost RAM as well.
+3. **Counted back, not trusted.** If the number that left does not match the number removed, or the
+   verdict named a strategy with no file, it stops and says which list to compare the directory
+   against.
+
+What survives a cut is the population's **metrics**, which is what the population studies read.
+Trade-level data of a rejected strategy is gone with the file.

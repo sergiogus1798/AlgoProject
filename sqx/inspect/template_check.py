@@ -9,12 +9,15 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.cfx import resolve, task_xml, tasks
-from core.paths import MASTER, project_dir
+from core.paths import MASTER, WORKERS, project_dir
 from core.sqxfile import INNER
 
 # Item categories that name a real trading block. Operators, brackets and variables are
 # structure: every strategy has them whatever template built it.
-BLOCK_CATEGORIES = ("indicator", "simpleRules", "priceValue", "priceRange")
+# "Custom blocks" was missing until 2026-09-22 and the omission was not visible: a template
+# whose only fixed block is a custom one signed as MarketPositionIsLong instead, which every
+# strategy carries, so the check reported a confident pass about the wrong block.
+BLOCK_CATEGORIES = ("indicator", "simpleRules", "priceValue", "priceRange", "Custom blocks")
 
 # A random block is the hole the builder fills, so what it contains is not fixed by the
 # template and must not enter the signature.
@@ -75,37 +78,40 @@ def build_settings(project: str) -> dict:
     return None
 
 
-def databanks(project: str) -> dict[str, list[Path]]:
+def databanks(project: str, install: Path = MASTER) -> dict[str, list[Path]]:
     """Every .sqx a project has on disk, by the databank holding it.
 
     Args:
-        project: Project name on the master.
+        project: Project name.
+        install: Which install holds it; the master by default.
 
     Returns:
         Databank name to its files. Empty when the project's databanks live only in
         memory — see knowhow/02-databanks.md. An "Existing portfolio" databank holds
         strategies imported from elsewhere, so it says nothing about this builder.
     """
-    root = project_dir(project) / "databanks"
+    root = project_dir(project, install) / "databanks"
     found = {}
     for f in sorted(root.rglob("*.sqx")):
         found.setdefault(f.relative_to(root).parts[0], []).append(f)
     return found
 
 
-def verdict(project: str, sample: int, seed: int) -> dict:
+def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dict:
     """Whether one project's strategies on disk carry its template's blocks.
 
     Args:
         project: Project name on the master.
         sample: How many strategies to open per databank, drawn at random.
         seed: Seed for that draw, so a rerun reports the same figure.
+        install: Which install holds the project; the master by default. A template built
+            on a worker has to be checked on that worker — the master knows nothing of it.
 
     Returns:
         The declared type and template, the blocks the template fixes, and per databank
         how many of the sampled strategies contain all of them.
     """
-    settings = build_settings(project)
+    settings = build_settings(str(project_dir(project, install) / "project.cfx"))
     if settings is None:
         return {"project": project, "note": "no build task"}
     template = Path(settings.get("templateFile", ""))
@@ -117,7 +123,7 @@ def verdict(project: str, sample: int, seed: int) -> dict:
     row["signature"] = sorted(signature)
     if not signature:
         return {**row, "note": "template fixes no blocks, only random groups"}
-    found = databanks(project)
+    found = databanks(project, install)
     if not found:
         return {**row, "note": "no strategies on disk"}
 
@@ -137,11 +143,13 @@ def main() -> None:
     ap.add_argument("-n", "--sample", type=int, default=SAMPLE)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--role", choices=sorted(WORKERS), help="check a worker's projects instead")
     a = ap.parse_args()
 
-    names = a.projects or sorted(d.name for d in (MASTER / "user/projects").iterdir()
+    install = WORKERS[a.role]["path"] if a.role else MASTER
+    names = a.projects or sorted(d.name for d in (install / "user/projects").iterdir()
                                  if (d / "project.cfx").exists())
-    rows = [verdict(n, a.sample, a.seed) for n in names]
+    rows = [verdict(n, a.sample, a.seed, install) for n in names]
 
     if a.json:
         print(json.dumps(rows, indent=2))
