@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+"""Write the additional-markets cross-check from assets/: which markets, when, at what cost."""
+
+import argparse
+import re
+import zipfile
+from pathlib import Path
+from datetime import date
+
+from core.assetdata import doctrine, load, markets, sqx_settings, symbols
+from sqx.projects.setups import bounds
+
+SETUPS = re.compile(r"(<RetestOnAdditionalMarkets\b[^>]*>\s*<Settings>\s*)"
+                    r"<Setups\b[^>]*>.*?</Setups>", re.S)
+# What the extra market takes from the main test instead of from its own <Setup>. The costs
+# and the window are its own — that is the whole point — and the shape of the test is shared.
+INHERIT = ('timeframe="true" dates="false" subcharts="false" precision="true" distance="true" '
+           'spread="false" slippage="false" commissions="false" swap="false" session="true"')
+
+
+def feed_owner(feed: str) -> str | None:
+    """Which asset file declares a feed.
+
+    Args:
+        feed: SQX feed name, e.g. "XAGUSD_DukasM1_Infinox".
+
+    Returns:
+        The asset name, or None when no file in assets/symbols/ carries that feed — which
+        means its costs are undeclared and nothing may be authored for it.
+    """
+    return next((s for s in symbols() if feed in (load(s).get("feeds") or [])), None)
+
+
+def window(main: dict, data_from: date | str) -> tuple[str, str]:
+    """The retest window for one extra market.
+
+    Args:
+        main: The main asset as load() returned it.
+        data_from: First date the market has data, from `_markets.yaml`. A date, or the
+            string "unknown".
+
+    Returns:
+        (dateFrom, dateTo) as YYYY.MM.DD. It runs from the main asset's build start — or
+        from this market's own first bar when that is later — to the end of oos1. The
+        whole history is used on purpose: this test asks whether the logic survives a
+        different market, and cutting it to the main asset's window throws away the years
+        that would answer it.
+    """
+    start, _ = bounds(main, "build")
+    _, end = bounds(main, "oos1")
+    if isinstance(data_from, date):
+        start = max(start, f"{data_from:%Y.%m.%d}")
+    return start, end
+
+
+def one_market(feed: str, data: dict, segment: str, window_: tuple[str, str],
+               precision: int, engine: str, timeframe: str) -> str:
+    """One extra market as the <Setup> the cross-check runs it with.
+
+    Args:
+        feed: SQX feed name.
+        data: That market's asset file, as load() returned it.
+        segment: Which segment's costs to charge it.
+        window_: (dateFrom, dateTo).
+        precision: testPrecision.
+        engine: Backtest engine name.
+        timeframe: The project's timeframe.
+
+    Returns:
+        The <Setup> element. One Setup holds one spread and one slippage while the window
+        spans both segments, so the OOS figures are charged — the market that has to
+        surprise us is never given the cheaper price.
+    """
+    s = sqx_settings(data, segment)
+    c, sw = s["commission"], s["swap"]
+    methods = "".join(
+        f'<Method type="{m}" use="{str(m == c["method"]).lower()}"><Params>'
+        f'<Param key="{"Commission" if m == "SizeBased" else "CommissionPct"}" '
+        f'className="{m}">{c["value"] if m == c["method"] else 0}</Param></Params></Method>'
+        for m in ("SizeBased", "PercentageBased"))
+    return (f'<Setup dateFrom="{window_[0]}" dateTo="{window_[1]}" testPrecision="{precision}" '
+            f'session="No Session" slippage="{s["defaultSlippage"]}" minDist="10" '
+            f'engine="{engine}">'
+            f'<Chart symbol="{feed}" timeframe="{timeframe}" spread="{s["defaultSpread"]}" />'
+            f"<Commissions>{methods}</Commissions>"
+            f'<Swap use="true" type="{sw["type"]}" long="{sw["long"]}" short="{sw["short"]}" '
+            f'tripleSwapOn="{sw["triple_swap_on"]}" rolloutHour="{sw["rollout_hour"]}" />'
+            f"<MainTestValues {INHERIT} /></Setup>")
+
+
+def chosen(symbol: str, categories: tuple = ("family", "structural")) -> list[dict]:
+    """The declared cross-check markets of one asset, with where their costs would come from.
+
+    Args:
+        symbol: The main asset.
+        categories: Which categories of `_markets.yaml` to take.
+
+    Returns:
+        One row per market: its feed, category, first date, and the asset file that
+        declares its costs — None when there is none. The list is what `_markets.yaml`
+        fixed before any result was looked at; nothing here chooses a market.
+    """
+    cats = markets(symbol).get("categories") or {}
+    return [{"feed": m["feed"], "category": cat, "data_from": m.get("data_from"),
+             "costs_from": feed_owner(m["feed"])}
+            for cat in categories for m in cats.get(cat) or []]
+
+
+def set_markets(text: str, symbol: str, timeframe: str, segment: str = "oos1",
+                categories: tuple = ("family", "structural")) -> tuple[str, list, list]:
+    """Turn the additional-markets cross-check on and give it its markets.
+
+    Args:
+        text: A task XML.
+        symbol: The main asset.
+        timeframe: The project's timeframe.
+        segment: Which segment's costs each extra market is charged.
+        categories: Which categories of `_markets.yaml` to include.
+
+    Returns:
+        The task, the markets written, and the ones that could not be — because no file in
+        assets/ declares their costs. A market in the second list is NOT written: SQX
+        would happily run it at the default spread of whatever instrument it resolves to,
+        and a cross-market result at an invented cost is worse than no result.
+    """
+    d = doctrine()
+    main = load(symbol)
+    used, blocked = [], []
+    for m in chosen(symbol, categories):
+        if not m["costs_from"]:
+            blocked.append(m)
+            continue
+        used.append(m | {"window": window(main, m["data_from"])})
+    if not used:
+        return text, used, blocked
+    body = "".join(one_market(m["feed"], load(m["costs_from"]), segment, m["window"],
+                              d["precision"]["default"], d["engine"], timeframe) for m in used)
+    text = SETUPS.sub(rf'\g<1><Setups detailed="true">{body}</Setups>', text, count=1)
+    return (re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"',
+                   r'\g<1>use="true"', text, count=1), used, blocked)
+
+
+def main() -> None:
+    """Report an asset's cross-check markets, or write them into one task of a project."""
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("symbol")
+    ap.add_argument("--cfx", type=Path, help="write them into this project instead of reporting")
+    ap.add_argument("--task", help="task XML file to write into, e.g. Retest-Task3.xml")
+    ap.add_argument("--timeframe", help="the project's timeframe; required with --cfx")
+    ap.add_argument("--categories", default="family,structural")
+    a = ap.parse_args()
+    cats = tuple(a.categories.split(","))
+
+    if not a.cfx:
+        for m in chosen(a.symbol, cats):
+            w = window(load(a.symbol), m["data_from"])
+            where = m["costs_from"] or "⚠️ NINGÚN fichero de assets/symbols/ declara este feed"
+            when = "" if isinstance(m["data_from"], date) else "  ⚠️ data_from sin averiguar"
+            print(f"{m['feed']:30} {m['category']:11} {w[0]} a {w[1]}   costes: {where}{when}")
+        return
+
+    with zipfile.ZipFile(a.cfx) as z:
+        members = {n: z.read(n) for n in z.namelist()}
+    text, used, blocked = set_markets(members[a.task].decode("utf-8"), a.symbol, a.timeframe,
+                                      categories=cats)
+    if blocked:
+        raise SystemExit("sin escribir nada — estos mercados no tienen costes declarados en "
+                         "assets/symbols/: " + ", ".join(m["feed"] for m in blocked)
+                         + ".\nCrea su fichero o dime sus costes; no se copian del maestro ni "
+                         "se inventan (regla dura 5).")
+    members[a.task] = text.encode("utf-8")
+    with zipfile.ZipFile(a.cfx, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, blob in members.items():
+            z.writestr(name, blob)
+    for m in used:
+        print(f"  {m['feed']:30} {m['category']:11} {m['window'][0]} a {m['window'][1]}")
+
+
+if __name__ == "__main__":
+    main()
