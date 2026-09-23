@@ -150,22 +150,3 @@ python3 -m sqx.projects.builder algo_XAU_doctrina --timeframe M30 \
 Comprobado sobre las 20 estrategias que generó `algo_XAU_doctrina_smoke`: **20 de 20** con
 exactamente 2 condiciones de entrada, 1 de salida, `EnterAtMarket` y nada más, shift 1 en los 31
 sitios donde aparece, y cero stop loss, profit target o trailing.
-
-## El retest no empieza donde empieza el OOS
-
-Un retest de `oos1` arranca **donde arrancó la construcción** y marca su propio tramo como fuera
-de muestra:
-
-```xml
-<Setup dateFrom="2008.01.01" dateTo="2022.12.31" testPrecision="2" slippage="5">
-  <Chart symbol="XAUUSD_DukasM1_Infinox" timeframe="M30" spread="10.0" />
-<OutOfSample showGraph="false"><Range dateFrom="2018.01.01" dateTo="2022.12.31" /></OutOfSample>
-```
-
-Así la estrategia lleva su curva entera en un solo backtest, con el IS y el OOS distinguidos, en
-vez de quedarse el IS suelto y duplicado en el databank del builder.
-
-⚠️ **El precio.** Un `<Setup>` tiene un spread y un slippage, y esta ventana cruza los dos tramos.
-Se aplican los del OOS: 10.0 y 5, no 5.0 y 2.5. El tramo que decide no se abarata nunca, y el IS
-se reencarece. **El IS de este retest no va a cuadrar con el backtest del builder** — es el mismo
-trade con otro coste, no un fallo.

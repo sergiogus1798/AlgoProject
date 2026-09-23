@@ -8,10 +8,10 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.assetcheck import mc_pending, pending, provisional
-from core.assetdata import doctrine, load, sqx_settings, window
+from core.assetdata import load, sqx_settings, window
 from sqx.projects.doctrine import apply_doctrine, blockers, unify_sessions
 from sqx.projects.ranges import set_ranges
-from sqx.projects.setups import bounds, set_costs, set_oos_range
+from sqx.projects.setups import set_costs
 from core.paths import WORKERS
 
 # SQX names an InstrumentInfo <uSymbol>_<broker>, not by the feed. The feed names the
@@ -80,23 +80,13 @@ def apply(text: str, data: dict, segment: str,
     Returns:
         The patched text and a count per attribute touched.
 
-    A task on a later segment starts where the build started and marks its own segment as
-    out of sample, so one backtest carries the whole curve with the two halves told apart.
-    The cost of that is real and deliberate: a <Setup> has one spread, the window crosses
-    both segments, and the OOS one is applied — the half that decides is never made
-    cheaper, and the IS half is re-priced rather than left optimistic.
-
     Costs and window go into the task's <Setup> blocks, which is where a per-task cost
     lives. The <InstrumentInfo> under <Resources> is the instrument DEFINITION and must
     agree with SQX's registry — editing that is what gives "unresolved resources", and
     it is not touched here.
     """
-    joined = doctrine()["retest_window"]["starts_at"]
-    since = bounds(data, joined)[0] if segment != joined else None
-    text, setups = set_costs(text, data, segment, since)
+    text, setups = set_costs(text, data, segment)
     counts = {"setups": setups}
-    if since and setups:
-        text, counts["oos_marked"] = set_oos_range(text, *bounds(data, segment))
     if timeframe:
         text, applied = apply_doctrine(text, data, segment, timeframe)
         counts.update(applied)

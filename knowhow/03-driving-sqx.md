@@ -826,5 +826,8 @@ estrategias que salieron de `algo_XAU_doctrina_smoke`.
   usan así; `Retester` llega a llevar **nueve** Range, o sea que admite un OOS troceado.
 - ⚠️ **Un `<Setup>` tiene UN spread y UN slippage.** Una ventana de retest que arranca en el IS y
   acaba en el OOS cruza los dos tramos de `assets/` con un solo coste. Se aplica el del OOS: el
-  tramo que decide no se abarata nunca, y el IS se reencarece. Consecuencia buscada, no error —
-  el IS de ese retest NO cuadra con el backtest del builder, que lleva el spread de construcción.
+  tramo que decide no se abarata nunca, y el IS se reencarece — pero entonces **el IS de ese
+  retest deja de cuadrar con el backtest del builder**, que lleva el spread de construcción.
+- 📓 **Por eso no se usa.** Se implementó y se revirtió el 2026-09-23 a petición del dueño: prefiere
+  las ventanas separadas —el IS en el databank del builder, el OOS en el del retest— y juntarlos
+  al exportar. Queda escrito porque el mecanismo es correcto y algún día hará falta.
