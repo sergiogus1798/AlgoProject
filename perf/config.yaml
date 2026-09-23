@@ -36,25 +36,29 @@ disk:
   total_gb: 90
   near_share: 0.8            # share of a budget at which a branch is called "near"
   budget_gb:
-    raw: 40                  # 2.1 GB today. Dated, immutable, and where the variants land
+    raw: 40                  # 0.35 GB on 2026-09-23, after WFM_Stability (1.5 GB) was
+                             # deleted. Dated, immutable, and where the variants land
     reports: 5               # 34 MB today. Accumulates forever by design, but text is cheap
     metrics: 2               # 14 MB today. Overwritten, never accumulates
     bars: 3                  # 36 MB today
-    logs: 1                  # 103 MB today — archived once already, 4.4 GB -> 102 MB
-    retest: 5                # 4 MB today
-    snapshots: 20            # 4.8 GB today. One projects snapshot of the master is ~4.5 GB
-                             # (user/projects only; History is excluded). 20 GB holds four,
-                             # which is the point at which the oldest should be pruned --
-                             # see docs/SETUP-NEW-MACHINE.md and knowhow/02-databanks.md.
-    variants: 15             # 0 GB today. Where the fabricated .sqx batches land: ~70 MB per
+    logs: 1                  # 7 MB on 2026-09-23. The 4.66 GB log of 2026-08-18 was one
+                             # WFM exception repeated 2M times; it lives on condensed
+    snapshots: 8             # 5 MB today. A projects snapshot of the master is ~3.5 GB
+                             # (user/projects without the projects' log/ folders; History
+                             # excluded) and lives only until the restart it guarded is
+                             # verified -- then it is deleted (owner, 2026-09-23). 8 GB is
+                             # two of them at once, which is already one too many.
+    strategyPermutations: 15 # 0 GB today. Where the fabricated .sqx batches land: ~70 MB per
                              # mother in the five-member shape, so 15 GB holds the ~100 the
                              # protocol plans. In the no_profile shape it would hold 30.
-    donors: 1                # frozen project.cfx copies. Kilobytes, but it must be budgeted
-                             # or it reports "unbudgeted" forever.
-    derived: 1
-    perf: 1
+    projectsBackup: 1        # frozen project.cfx copies, mothers, install configs.
+                             # Kilobytes, but budgeted or it reports "unbudgeted" forever.
+    barsDerived: 1           # timeframes resampled from M1; deletable, regenerated on read
+    cache: 1                 # panel caches; deletable, regenerated on read
+    profiling: 1
     pipeline: 1              # the pipeline ledgers: kilobytes per mother strategy,
                              # and they outlive the data they describe
+    templates: 1             # the template library: .sqx plus two CSVs, kilobytes
 
 # The real data every target is measured on. One place, so a measurement taken today and
 # one taken in March are comparable: same project, same databank, same file order.

@@ -31,6 +31,7 @@ is exactly what this table exists to make visible, and a default of "unlimited" 
 | `collected_variants` | databanks a pipeline ledger records as exported **and hashed** | **a verdict** — the data provably survived |
 | `superseded_export` | a dated export whose newer sibling contains every entry it has | candidate |
 | `strategy_copies` | `.sqx` files sitting inside exports, duplicating what the databank holds | candidate |
+| `intermediates` | `raw/` and `trades/` CSV folders beside a `trades.parquet` that already holds them (exports after 2026-09-23 delete these themselves) | candidate |
 | `stale_branch` | nothing written for `disk.stale_days` | weakest — old is not unwanted, and `reports/` accumulates by design |
 
 ⚠️ **Nothing in this repository deletes any of it.** These rows attach a number to a decision that

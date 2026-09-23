@@ -7,6 +7,7 @@ from pathlib import Path
 from core.paths import DATA
 
 DAY = 86400
+INTERMEDIATES = "intermediates"
 SUPERSEDED, STRATEGY_COPIES, COLLECTED, STALE = (
     "superseded_export", "strategy_copies", "collected_variants", "stale_branch")
 
@@ -92,6 +93,30 @@ def strategy_copies(root: Path = DATA) -> list[dict]:
     return rows
 
 
+def intermediates(root: Path = DATA) -> list[dict]:
+    """`raw/` and `trades/` CSV folders left beside a `trades.parquet` that already holds them.
+
+    Args:
+        root: The data root.
+
+    Returns:
+        One row per such folder. What orderstocsv wrote before it was packed, and the
+        per-file splits the first exporters left: exports made after 2026-09-23 delete
+        them on the way out, so anything here predates that and is reproducible from the
+        Parquet beside it.
+    """
+    rows = []
+    for packed in sorted((root / "raw").rglob("trades.parquet")):
+        for name in ("raw", "trades"):
+            folder = packed.parent / name
+            if folder.is_dir():
+                size, files = _bytes(folder)
+                rows.append({"rule": INTERMEDIATES, "path": str(folder.relative_to(root)),
+                             "bytes": size, "files": files,
+                             "why": "CSV intermediates of the trades.parquet beside them"})
+    return rows
+
+
 def collected(root: Path = DATA) -> list[dict]:
     """Variant databanks whose pipeline ledger says their data was exported and verified.
 
@@ -143,7 +168,7 @@ def stale(rows: list[dict], cfg: dict, root: Path = DATA) -> list[dict]:
 
 
 def proposals(rows: list[dict], cfg: dict, root: Path = DATA) -> list[dict]:
-    """Everything the four rules found, biggest first.
+    """Everything the five rules found, biggest first.
 
     Args:
         rows: Output of `inventory.tree`.
@@ -156,5 +181,5 @@ def proposals(rows: list[dict], cfg: dict, root: Path = DATA) -> list[dict]:
         possible by attaching a number to it.
     """
     found = (collected(root) + superseded(root) + strategy_copies(root)
-             + stale(rows, cfg, root))
+             + intermediates(root) + stale(rows, cfg, root))
     return sorted(found, key=lambda r: r["bytes"], reverse=True)
