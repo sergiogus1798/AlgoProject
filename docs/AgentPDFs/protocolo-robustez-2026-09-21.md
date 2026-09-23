@@ -602,7 +602,7 @@ escrita en la misma tarea.
 | **W7** presupuesto de disco + costes provisionales | ✅ hecho — `perf/disk/budget.py` + `retention.py`, `report` sale non-zero al pasarse, `assets/XAUUSD.yaml` relleno y `core.assets` ya sale 0. Más `docs/SETUP-NEW-MACHINE.md` |
 | **W2** `sqx/variants/` diseño y fabricación | ⬜ pausado por la topología de SQX |
 | **W3** `sqx/variants/` ejecución y recogida | ⬜ bloqueado por costes + worker + §6bis |
-| **W5** `walkForwardCorrelation/` | ⬜ necesita datos de W3 |
+| **W5** `walkForwardCorrelation/` | 🟡 **parcial, 2026-09-22.** El ρ emparejado y el **CSCV/PBO por regla de selección** están hechos y corriendo en el pipeline, con el DSR y el n efectivo por agrupamiento de curvas. La matriz N×T no sale de los trades (C4) sino de `dailyEquity.bin`, que es 3.600× más barato. Faltan del §6: las tres correcciones de sesgo del `model/` y el ρ por distancia al óptimo |
 | **W6** `pipeline/` | ⬜ |
 | **W8** multi-mercado §9 | ⬜ |
 | Las 6 skills + el orquestador | ⬜ ninguna escrita |

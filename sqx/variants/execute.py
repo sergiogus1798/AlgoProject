@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import worker
+from core.paths import worker_dir
 from sqx.variants import inputs
 
 TESTED = re.compile(r"Total tested\s+(\d+)")
@@ -123,6 +124,39 @@ def panel(out: Path, cfg: dict) -> Path:
     return csv
 
 
+def synced(expected: int, cfg: dict) -> tuple[Path, int]:
+    """Flush the retested databank onto disk and wait until the writing has finished.
+
+    Args:
+        expected: How many strategies the retest returned.
+        cfg: The `execute` block.
+
+    Returns:
+        The databank's folder inside the install, and how many `.sqx` it now holds.
+
+        SQX writes a retested strategy to disk lazily: measured 2026-09-22, a finished run
+        of 2,000 had 962 files on disk. Every per-period equity curve lives inside those
+        files, so without this the harvest reads half a batch. Safe here and only here --
+        the install has the whole batch in memory, which is the condition hard rule 1
+        turns on.
+
+        ⚠️ **The wait is a poll and not a sleep, because the sync is slow and its cost
+        grows with the batch.** Read off the custodian's log 2026-09-23: syncing 962
+        `.sqx` took **21.95 s**, so a fixed wait sized for a small run silently returns a
+        folder that is still filling, and the harvest then studies whatever arrived in
+        time. Polling for the count the retest reported scales with the batch and costs
+        nothing when the sync was quick.
+    """
+    _call(f'-databank action=synctofiles project={cfg["project"]} name={cfg["output"]}', cfg)
+    folder = worker_dir(cfg["role"]) / "user/projects" / cfg["project"] / "databanks" / cfg["output"]
+    for _ in range(cfg["sync_tries"]):
+        time.sleep(cfg["poll_seconds"])
+        on_disk = len(list(folder.glob("*.sqx")))
+        if on_disk >= expected:
+            break
+    return folder, on_disk
+
+
 def main() -> None:
     """Load one batch, retest it, and leave the raw panel beside it."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -150,13 +184,17 @@ def main() -> None:
         load(folder, cfg)
         done = run(n, cfg, say)
         csv = panel(a.work, cfg)
+        print("PROGRESS 96 volcando el databank a disco", flush=True)
+        bank, on_disk = synced(done, cfg)
     finally:
         if ours:
             worker.stop(cfg["role"])
 
-    print(f"PROGRESS 100 {done} reteseadas, panel en {csv.name}", flush=True)
+    print(f"PROGRESS 100 {done} reteseadas, panel en {csv.name}, {on_disk} en disco",
+          flush=True)
     (a.work / "ran.json").write_text(
-        json.dumps({"n_loaded": n, "n_returned": done, "panel": csv.name}, indent=2),
+        json.dumps({"n_loaded": n, "n_returned": done, "panel": csv.name,
+                    "databank_dir": str(bank), "n_on_disk": on_disk}, indent=2),
         encoding="utf-8")
 
 

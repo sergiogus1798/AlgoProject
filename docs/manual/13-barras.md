@@ -24,7 +24,7 @@ porque un tick no es una barra y aquí no se remuestrea nada desde ahí.
 
 - **El worker tiene que poder arrancar.** El comando lo levanta él solo y lo deja parado al acabar.
   No toca el master, así que **puedes lanzarlo con la GUI de SQX abierta**.
-- **El mercado tiene que estar declarado** en `strategies/crossmarket/markets.yaml`, o ya estar en la
+- **El mercado tiene que estar declarado** en `strategies/crossmarket/assets/_markets.yaml`, o ya estar en la
   librería. Si añades un activo nuevo ahí, el siguiente `sync_bars` lo baja sin que hagas nada más.
 - No hace falta que exportes nada antes. Las barras son un hecho del mercado, no de un backtest.
 
@@ -72,7 +72,7 @@ En `--check`, una línea por mercado:
 
 - **`ok`** — la librería tiene exactamente las barras que tiene SQX. No hay nada que hacer.
 - **`PULL`** — falta el mercado, o SQX tiene más barras que tú. Se va a bajar entero.
-- **`??`** — el mercado está declarado en `markets.yaml` pero SQX no lo tiene como feed de minuto.
+- **`??`** — el mercado está declarado en `assets/_markets.yaml` pero SQX no lo tiene como feed de minuto.
   Es un nombre mal escrito, casi siempre.
 
 La comparación es **el número de barras**, no la fecha. Eso es lo que hace que detecte también un
@@ -118,7 +118,7 @@ huérfanos en ese momento y se recalculan la próxima vez que alguien los pida.
 ### Si algo falla
 
 - **`KeyError: '<feed>'` al pedir barras** — ese mercado no está en la librería. Corre
-  `sync_bars --check` y mira si sale como `??`: entonces el nombre en `markets.yaml` no coincide con
+  `sync_bars --check` y mira si sale como `??`: entonces el nombre en `assets/_markets.yaml` no coincide con
   el de SQX.
 - **El comando se queda colgado al arrancar** — el worker no levantó. `bin/sqx-worker.sh stop` y
   vuelve a lanzarlo.

@@ -13,8 +13,8 @@ feed because bars are a fact about the market, not about a run. See `tasks/CLAUD
 | `export_trades.py` | Every trade of every strategy in a databank, packed into one typed `trades.parquet`. Exports no bars: those live once in the M1 library | `python3 -m sqx.export.export_trades --project XAUUSD --databank OOS --symbol XAUUSD_DukasM1_Infinox` |
 | `export_retest.py` | A cross-market retest databank exported with `data=all`, split into one folder of trades per market | `python3 -m sqx.export.export_retest --project XAUUSD --databank RetestMarkets` |
 | `export_spp.py` | Every Sys. Param Permutation profile in a databank: run counts, medians against the original values, the histograms bin by bin, and — where SQX kept them — one row per permutation with its parameters and its 152 statistics. Reads the `.sqx` directly — drives nothing | `python3 -m sqx.export.export_spp --project XAUUSD --databank "SPP IS"` |
-| `export_bars.py` | The bars of every market an asset is retested on, at the timeframe markets.yaml declares. Superseded by `sync_bars.py` for anything the M1 library covers | `python3 -m sqx.export.export_bars --asset XAUUSD` |
-| `sync_bars.py` | Keep the M1 bar library in step with SQX: pull the feeds markets.yaml declares that are missing, refresh the ones SQX has grown, and leave every other timeframe to be resampled | `python3 -m sqx.export.sync_bars --check` |
+| `export_bars.py` | The bars of every market an asset is retested on, at the timeframe assets/_markets.yaml declares. Superseded by `sync_bars.py` for anything the M1 library covers | `python3 -m sqx.export.export_bars --asset XAUUSD` |
+| `sync_bars.py` | Keep the M1 bar library in step with SQX: pull the feeds assets/_markets.yaml declares that are missing, refresh the ones SQX has grown, and leave every other timeframe to be resampled | `python3 -m sqx.export.sync_bars --check` |
 | `archive_logs.py` | Copy both installs' logs to `AlgoData/logs/` as `.gz` before SQX prunes them | `python3 -m sqx.export.archive_logs` |
 
 `export_spp.py` and `archive_logs.py` are the exceptions to the paragraph below: they only read files, drive no instance,

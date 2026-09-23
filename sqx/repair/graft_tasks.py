@@ -10,29 +10,9 @@ from datetime import datetime
 from pathlib import Path
 
 from core.paths import DATA, MASTER, project_dir
+from core.worker import holding
 
 TASK_REF = re.compile(r'taskXMLFile="([^"]+)"')
-PROC = Path("/proc")
-
-
-def holding(install: Path) -> list[int]:
-    """PIDs of StrategyQuant processes running out of one install.
-
-    Args:
-        install: Top-level SQX folder.
-
-    Returns:
-        Every PID whose command line names that folder. Writing to user/projects while
-        one of these is alive is silently undone: SQX rewrites the file on save and exit.
-    """
-    found = []
-    for d in PROC.iterdir():
-        if not d.name.isdigit():
-            continue
-        cmdline = d / "cmdline"
-        if cmdline.exists() and str(install) in cmdline.read_bytes().decode("utf-8", "replace"):
-            found.append(int(d.name))
-    return found
 
 
 def missing(cfx: Path) -> list[str]:

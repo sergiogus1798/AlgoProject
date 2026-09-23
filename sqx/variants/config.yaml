@@ -54,6 +54,18 @@ execute:
   output: RetestOut
   poll_seconds: 5
   ready_tries: 40        # the port answers ~20 s before the CLI does; poll, do not conclude
+  # How many polls to wait for `synctofiles` to finish writing, at poll_seconds each.
+  # SQX writes a retested strategy to disk lazily -- 962 of 2,000 were there when the run
+  # reported finished -- and `sqx.variants.equity` reads those files, not the databank.
+  # ⚠️ Not a fixed sleep: syncing 962 .sqx took 21.95 s (custodian log, 2026-09-23), so
+  # the cost grows with the batch and 5,000 is minutes. The poll stops as soon as the
+  # folder holds what the retest returned; this is only the cap.
+  sync_tries: 60
+  # First day of the harness's <OutOfSample> range, which is what splits every harvested
+  # curve. It is the same boundary `assets/XAUUSD.yaml` records (build ends 2017-12-31,
+  # oos1 starts here), and `equity.py` both checks the curves against it and writes it
+  # into equity.json -- so the studies downstream read the split rather than restating it.
+  split: "2018-01-01"
   # ⚠️ `-project action=startOnlyTask` reports success and tests NOTHING on this install.
   # Only `action=start` runs the task. Measured 2026-09-22, knowhow/03-driving-sqx.md.
 

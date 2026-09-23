@@ -1,4 +1,4 @@
-# The seven stages, in order, as data. `run.py` reads this file and nothing else decides
+# The twelve stages, in order, as data. `run.py` reads this file and nothing else decides
 # what a pipeline is; the daemon that replaces the CLI will read the same file.
 #
 # Fields:
@@ -25,7 +25,7 @@
 #   {safe}     the strategy name with spaces as _ and dots as -, the same spelling
 #              sppUltra already uses for its brief filenames
 #
-# All seven rows drive real modules. `stubs/placeholder.py` is kept for verify/, which
+# All twelve rows drive real modules. `stubs/placeholder.py` is kept for verify/, which
 # swaps every command for it so the ledger can be tested without SQX or a real export.
 
 stages:
@@ -87,7 +87,31 @@ stages:
     command: python3 -m sqx.variants.execute --work {work}
     needs: ["{work}/build.json"]
     produces: ["{work}/ran.json", "{work}/retest.csv"]
-    record: [n_loaded, n_returned]
+    record: [n_loaded, n_returned, n_on_disk]
+
+  # Reads every retested .sqx off the custodian's disk and keeps the one thing the panel
+  # throws away: what each variant earned period by period. Nothing here talks to SQX --
+  # the `ran` stage flushed the databank to files before it stopped the install, and this
+  # is a zip read. It has to run BEFORE the next mother's `ran` clears that databank.
+  #
+  # ⚠️ Between `ran` and here, those files are only as safe as the next restart of the
+  # custodian. Whoever starts that install next syncs what its memory holds, and an empty
+  # memory means 5,000 deleted files (knowhow/02-databanks.md, hard rule 1). A run that
+  # stops between the two stages should resume at `equity` before anything else touches
+  # W2 -- and if another session needs the custodian meanwhile, harvest first.
+  - name: equity
+    command: python3 -m sqx.variants.equity --work {work}
+    needs: ["{work}/ran.json"]
+    produces: ["{work}/equity.json", "{work}/equity.parquet"]
+    record: [n, days, bytes, open_at_end]
+    must:
+      - number: mismatch
+        max: 0
+        why: >-
+          alguna curva diaria no cuadra con el beneficio que SQX guardo en la frontera
+          dentro/fuera de muestra. Un .sqx reteseado con cross-check lleva TRES curvas de
+          equity y la primera del archivo es oro mas plata: si esta leyendo esa, todo lo
+          que venga despues mide otra cosa
 
   # The ledger name is `collected` because perf/disk/retention.py already reads
   # stages.collected.removable to decide what is provably safe to delete.
@@ -113,8 +137,21 @@ stages:
     produces: ["{work}/wfc.json", "{work}/wfc.html"]
     record: [n, rho, call]
 
+  # Where `wfc` asks whether this surface carried over, this asks whether the WAY the
+  # parameters get picked is prone to overfitting at all -- 252 ways of splitting the
+  # history, three selection rules, and what each one costs. Needs the per-period matrix,
+  # which is why it sits after `equity` and not next to `wfc`.
+  # Named for what it writes, like every other row: the stage is `cscv`, the command that
+  # produces it is `pbo`. `pipeline/stages/verdict.py` keys its thresholds on the file
+  # stem, so a row whose name and output disagree is a threshold that cannot be read.
+  - name: cscv
+    command: python3 -m strategies.walkForwardCorrelation.pbo --work {work}
+    needs: ["{work}/wfc.json", "{work}/equity.parquet"]
+    produces: ["{work}/cscv.json", "{work}/cscv.html"]
+    record: [pbo_argmax, pbo_plateau_centre, dsr, n_clusters, slope]
+
   - name: verdict
     command: python3 -m pipeline.stages.verdict --work {work} --brief {reports}/design_brief_{safe}.json
-    needs: ["{work}/wfc.json"]
+    needs: ["{work}/wfc.json", "{work}/cscv.json"]
     produces: ["{work}/verdict.json"]
     recompute: true

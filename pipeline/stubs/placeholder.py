@@ -25,9 +25,13 @@ SHAPE = {"sppultra": {"verdict": "proceed", "n_eff": 8412},
          "spp_export": {"rows": 12000},
          "design": {"n": 5000, "shortfall": 0, "n_target": 5000, "levels": 27},
          "build": {"n": 5000, "bytes": 70000000},
-         "ran": {"n_loaded": 5000, "n_returned": 5000},
+         "ran": {"n_loaded": 5000, "n_returned": 5000, "n_on_disk": 5000},
          "collected": {"n": 5000, "canaries_distinct": 4},
-         "wfc": {"n": 1001, "rho": 0.41, "call": "fiable", "pairs": 1200}}
+         "wfc": {"n": 1001, "rho": 0.41, "call": "fiable", "pairs": 1200},
+         "equity": {"n": 5000, "days": 3925, "bytes": 30000000, "mismatch": 0,
+                    "open_at_end": 890},
+         "cscv": {"pbo_argmax": 0.41, "pbo_plateau_centre": 0.05, "dsr": 0.66,
+                  "n_clusters": 21, "slope": 0.42}}
 
 
 def digest(path: Path) -> str:

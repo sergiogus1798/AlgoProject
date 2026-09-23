@@ -39,7 +39,7 @@ def wanted() -> list[str]:
     """Every feed the project should hold bars for.
 
     Returns:
-        Feed names, sorted. The declaration in markets.yaml drives it — every base asset
+        Feed names, sorted. The declaration in assets/_markets.yaml drives it — every base asset
         and every market it is retested on — plus whatever the library already holds, so a
         feed pulled once keeps being refreshed after its asset leaves the declaration.
     """

@@ -5,12 +5,11 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from core.assets import REQUIRED, load as load_asset
+from core.assets import load as load_asset, provisional
 from core.paths import DATA
 
 BRANCH = "pipeline"
 FILE = "state.json"
-PROVISIONAL = "PROVISIONAL"
 
 
 def safe(strategy: str) -> str:
@@ -91,8 +90,7 @@ def costs_provisional(asset: str) -> bool:
         on this run inherits the stamp, so a number produced with SQX defaults can never
         be mistaken later for one produced with the broker's real figures.
     """
-    data = load_asset(asset)
-    return any(PROVISIONAL in data[field]["why"] for field in REQUIRED)
+    return bool(provisional(load_asset(asset)))
 
 
 def open_run(work: Path, strategy: str, project: str, databank: str, asset: str) -> dict:

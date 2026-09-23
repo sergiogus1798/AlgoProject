@@ -44,7 +44,7 @@ Tres cosas, en este orden:
 1. **En SQX**, pasa tus estrategias por una tarea de retest sobre mercados adicionales, y deja el
    resultado en una databank. Los mercados que elijas ahí son los que manda: el módulo **descubre**
    de la exportación en qué mercados se retesteó de verdad, leyendo la columna `Symbol` de las
-   propias operaciones. `markets.yaml` sólo les pone categoría y nombre.
+   propias operaciones. `assets/_markets.yaml` sólo les pone categoría y nombre.
 2. **Exporta en cuanto termine.** Varias databanks se vacían en cada ciclo de la cadena de tareas, y
    la sincronización horaria borra del disco lo que no está en memoria. Si el retest queda ahí una
    noche, puede no estar por la mañana.
@@ -64,7 +64,7 @@ elige. En el oro eso mide 8 $ por lote y lado, que es exactamente lo que SQX tie
 
 ### Dónde se clasifican los mercados
 
-En `strategies/crossmarket/markets.yaml`, un bloque por activo base y, dentro, una lista por
+En `strategies/crossmarket/assets/_markets.yaml`, un bloque por activo base y, dentro, una lista por
 categoría:
 
 ```yaml
@@ -124,7 +124,7 @@ python3 -m strategies.crossmarket.explorer.serve --project XAUUSD \
 
 | flag | obligatorio | qué hace |
 |---|---|---|
-| `--asset` | sí | activo base. Es la clave que se busca en `markets.yaml` |
+| `--asset` | sí | activo base. Es la clave que se busca en `assets/_markets.yaml` |
 | `--project` | sí | proyecto en el master |
 | `--databank` | sí | la databank donde dejaste el retest |
 | `--export` | sí (paso 3) | la fecha del export del paso 2, `AAAA-MM-DD` |
@@ -602,11 +602,11 @@ de entrar, moverlas tiene que estropearlo — y lo hace, de forma ordenada:
   estrategia en ese mercado. La tabla dice por qué. Si quieres verlo igualmente, baja
   `sweep.min_trades` o sube `sweep.max_weak_share` en el cajón, y léelo sabiendo lo que has hecho.
 - **`FileNotFoundError` sobre un fichero de `bars/`** — ese mercado no está exportado. Ejecuta el
-  paso 1, o quítalo de `strategies/crossmarket/markets.yaml`.
-- **`KeyError` con el nombre del activo** — el activo no tiene bloque en `strategies/crossmarket/markets.yaml`.
-- **Un mercado sale como `sin clasificar`** — está en el export pero no en `markets.yaml`. Se analiza
+  paso 1, o quítalo de `strategies/crossmarket/assets/_markets.yaml`.
+- **`KeyError` con el nombre del activo** — el activo no tiene bloque en `strategies/crossmarket/assets/_markets.yaml`.
+- **Un mercado sale como `sin clasificar`** — está en el export pero no en `assets/_markets.yaml`. Se analiza
   igual; añádelo a la categoría que le toque cuando quieras que salga etiquetado.
-- **Un mercado declarado sale como ausente al arrancar** — está en `markets.yaml` pero el export no
+- **Un mercado declarado sale como ausente al arrancar** — está en `assets/_markets.yaml` pero el export no
   trae operaciones suyas. O el nombre del feed no coincide con el que usó la tarea de retest, o la
   estrategia no operó ahí.
 - **`ValueError: cross-market pricing is long-only`** — alguna estrategia lleva operaciones en corto.

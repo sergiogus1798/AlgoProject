@@ -66,19 +66,27 @@ def stats(path: Path) -> dict:
             for direction, pl, sample, blob in _BLOCK.findall(xml) if direction == "0"}
 
 
-def equity(path: Path) -> pd.Series:
-    """Daily cumulative P&L of a strategy's main result.
+def equity(path: Path, result: str = "Main") -> pd.Series:
+    """Daily cumulative P&L of one of a strategy's results.
 
     Args:
         path: A .sqx file.
+        result: Which `Results/` entry to read: "Main" for the symbol the strategy trades,
+            "Portfolio" for every market summed, "AdditionalMarket" for a cross-check's.
 
     Returns:
         Account-currency profit since the start of the backtest, indexed by date. The
         member is a Java-serialised stream: block markers 0x7a (4-byte length) and 0x77
         (1-byte), then a count followed by big-endian long-millis / double pairs.
+
+        ⚠️ A strategy retested with a cross-market check carries **three** of these, and
+        `Portfolio` comes first in the archive. Reading whichever one appears first gives
+        gold plus silver where the databank's Net profit is gold alone -- measured on
+        `P00000`, 10,476 against 35,328 -- so the result is named, never taken by position.
     """
     archive = zipfile.ZipFile(path)
-    member = next(n for n in archive.namelist() if n.endswith("dailyEquity.bin"))
+    member = next(n for n in archive.namelist()
+                  if n.startswith(f"Results/{result}") and n.endswith("dailyEquity.bin"))
     raw = archive.read(member)
     i, buf = 4, bytearray()
     while i < len(raw):

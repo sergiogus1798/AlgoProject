@@ -18,10 +18,12 @@ live deeper add the root to `sys.path` in their first lines.
 | `barstore.py` | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it on first use and cached under the M1's fingerprint | feed, timeframe → frame |
 | `tradestore.py` | The trade library: one typed Parquet per export, carrying only the columns that cannot be derived back, and the guard that decides when `Ticket` still has to be kept | CSVs → Parquet → frames |
 | `cfx.py` | Read a `project.cfx`: task chain, output databanks, acceptance conditions | project → dicts |
-| `worker.py` | Start, stop and command a headless worker over its HTTP API; every call takes the role, conductor by default | command, role → reply |
+| `worker.py` | Start, stop and command a headless worker over its HTTP API; every call takes the role, conductor by default. `holding()` reports which PIDs run out of an install, the guard every write to a live install must pass | command, role → reply |
 | `exportdrv.py` | The three exports SQX offers: trades, databank metrics, bars | request → files |
 | `manifest.py` | Write and read the `manifest.json` every export must carry | facts → JSON |
-| `assets.py` | Load per-asset overrides; `python3 -m core.assets <SYMBOL>` is the preflight | symbol → report |
+| `assetdata.py` | What `assets/` declares: costs and windows resolved against the shared policy | symbol → dict |
+| `assetcheck.py` | What is missing or wrong about an asset: undecided values, and windows the data cannot fill | dict → problems |
+| `assets.py` | The preflight read out loud; `python3 -m core.assets <SYMBOL>` | symbol → report |
 | `significance.py` | Could this edge be zero: Sharpe and its shape, the variance factor both formulas below share, the Probabilistic Sharpe Ratio and the minimum track-record length | returns → probabilities |
 
 Three rules specific to this folder:

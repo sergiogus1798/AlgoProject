@@ -72,9 +72,17 @@ Lo que el carril S tiene que dejar montado. **Por PC**, no por red.
 |---|---|---|---|---|---|---|---|
 | **M** | `~/Desktop/SQX` | sí, del dueño | `2g` | **`24g`** | **sin tocar** (`-1`) | 5050 / 5051 / 8080 | sus proyectos, su generación. Agentes: **solo lectura** |
 | **W1** | `~/Desktop/SQX_w1` | nunca | `1g` | **`16g`** | **8** | 5060 / 5061 / 8081 | **conductor**: exports, `-databank`, autoría, config de proyectos. Siempre vivo |
-| **W2** | `~/Desktop/SQX_w2` | nunca | `2g` | **`48g`** | **48** | **5070 / 5071 / 8082** | **custodio**: un trabajo largo cada vez. Sostiene el databank de 5.000 variantes |
+| **W2** | `~/Desktop/SQX_w2` | nunca | `1g` | **`80g`** (era 48g) | **-1** = todos (era 48) | **5070 / 5071 / 8082** | **custodio**: un trabajo largo cada vez. Sostiene el databank de 5.000 variantes |
 
-Presupuesto sobre 125 GB: `5 SO + 24 Python + (24+16+48) techos + ~8 % overhead JVM ≈ 124`.
+Presupuesto sobre 125 GB, **revisado por el dueño el 2026-09-23**: el maestro casi nunca se abre, así
+que el custodio se lleva la RAM: `10-12 SO + 20 Python + 80×1,08 W2 ≈ 118`, y W1 (16g de techo,
+~2 GB ocioso) cabe mientras no sostenga nada grande a la vez. **Si el maestro se abre como visor**
+(`-Xmx12g`, 2 núcleos) sigue cabiendo justo; **abrirlo para generar con 24g mientras W2 está lleno
+no cabe** — swap de 4 GB, así que el que sobre muere por OOM. Núcleos: medido 2026-09-23, de 48 a 95
+hilos un retest gana ≤ 10 % (los 47 extra son SMT), así que W2 con todos los núcleos no compite con
+nadie mientras el maestro esté cerrado, y si se abre a generar los dos van a la mitad.
+
+(Presupuesto anterior, 2026-09-21: `5 SO + 24 Python + (24+16+48) techos + ~8 % overhead ≈ 124`.)
 
 **Las tres reglas de oro de esta topología:**
 

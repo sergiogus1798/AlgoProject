@@ -1,9 +1,20 @@
 # sqx/variants — the variant factory
 
 Stage 2 of the robustness protocol. A design brief comes in; **N `.sqx` files and the manifest that
-says what each one is** go out. It never talks to SQX, never starts a job, and never loads anything:
-loading the batch, running the retest and collecting the results are the next stage and are blocked
-on the owner.
+says what each one is** go out. `execute.py` then loads the batch into the custodian and retests it,
+`collect.py` writes the metrics panel, and `equity.py` keeps the one thing that panel throws away:
+what each variant earned **day by day**.
+
+That last one is what makes the CSCV possible. A databank export gives 41 aggregate numbers per
+variant and no way to re-cut the windows; the retested `.sqx` carries a `dailyEquity.bin` that
+`core.sqxstats.equity` reads with no SQX running. Measured 2026-09-22: 962 variants in **1.5 s**,
+5.9 MB of Parquet, against roughly 90 minutes to export their trades.
+
+⚠️ **A retested `.sqx` carries THREE equity curves** -- `Results/Portfolio/`, `Results/Main: …/` and
+one per cross-check market -- and `Portfolio` comes first in the archive. Reading whichever appears
+first gives gold plus silver where the databank's net profit is gold alone: 10,476 against 35,328 on
+`P00000`. The result is named, never taken by position, and `equity.py` checks every curve against
+the profit SQX stored at the in-sample boundary before it writes anything.
 
 Why it exists at all: **no `sqcli` verb changes a strategy's parameters.** The only way to score a
 chosen combination is to write it into a `.sqx` and retest that file.
@@ -29,6 +40,7 @@ design_brief.json ─▶ design ─▶ build ─▶ manifest
 | `manifest.py` | Contract C2, built by reading the files back off the disk | imported | folder → parquet |
 | `execute.py` | Loads a batch into the custodian, runs the retest harness, exports the panel | `python3 -m sqx.variants.execute --work <dir>` | `.sqx` → `retest.csv` |
 | `collect.py` | Contract C3: joins the panel onto the manifest, and refuses a batch whose controls all returned the same number | `python3 -m sqx.variants.collect --work <dir>` | csv + parquet → `metrics.parquet` |
+| `equity.py` | Every variant's **per-day** P&L, read straight out of the retested `.sqx` with no SQX running | `python3 -m sqx.variants.equity --work <dir>` | `.sqx` → `equity.parquet` |
 | `harness.py` | Rebuilds the worker's one-task harness from a donor task that is known to have run: SPP in sample, SPP out of sample, or a plain retest with a cross-market check | `python3 -m sqx.variants.harness --kind spp_is --project Retester --output SPPOut …` | donor task → the worker's `project.cfx` |
 | `spp.py` | Runs one mother's SPP reconnaissance on the custodian and leaves the profile where `export_spp` finds it | `python3 -m sqx.variants.spp --work <dir> --mother <sqx> --kind spp_is --chart '…'` | mother → profile + `spp_is.json` |
 | `config.yaml` | Every tunable: the seed, the strata knobs, the canaries, the file shape | edited | — |

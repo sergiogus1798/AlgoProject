@@ -3,9 +3,12 @@
 import subprocess
 import sys
 import urllib.request
+from pathlib import Path
 from time import sleep
 
 from core.paths import WORKERS, WORKER_SH
+
+PROC = Path("/proc")
 
 
 def require_posix() -> None:
@@ -81,3 +84,22 @@ def wait_ready(project: str, databank: str, role: str = "conductor") -> int:
         if "Records:" in reply:
             return int(reply.split("Records:")[1].split()[0])
         sleep(2)
+
+def holding(install: Path) -> list[int]:
+    """PIDs of StrategyQuant processes running out of one install.
+
+    Args:
+        install: Top-level SQX folder.
+
+    Returns:
+        Every PID whose command line names that folder. Writing to user/projects while
+        one of these is alive is silently undone: SQX rewrites the file on save and exit.
+    """
+    found = []
+    for d in PROC.iterdir():
+        if not d.name.isdigit():
+            continue
+        cmdline = d / "cmdline"
+        if cmdline.exists() and str(install) in cmdline.read_bytes().decode("utf-8", "replace"):
+            found.append(int(d.name))
+    return found

@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.paths import ASSETS, DATA, MASTER, ROOT
+from core.paths import DATA, MASTER, ROOT
 
 
 def run(*command: str) -> tuple[int, str]:
@@ -65,10 +65,10 @@ def undecided_assets() -> list[str]:
     sys.path.insert(0, str(ROOT))
     from core import assets
     out = []
-    for f in sorted(ASSETS.glob("*.yaml")):
-        data = assets.load(f.stem)
+    for symbol in assets.symbols():
+        data = assets.load(symbol)
         if assets.pending(data) and data.get("projects_using_it"):
-            out.append(f.stem)
+            out.append(symbol)
     return out
 
 

@@ -23,7 +23,8 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `03-comparar-muestras.md` | la comprobación entre generaciones: si las conclusiones de una muestra se cumplen en otras |
 | `04-decaimiento.md` | el decaimiento estrategia por estrategia: cuánto edge sobrevive fuera de muestra y si te la quedas |
 | `05-retest-mercados.md` | el retest en mercados adicionales: si el sistema gana por acertar cuándo entra o por estar comprado |
-| `06-mover-estrategias.md` | aplicar un veredicto dentro de SQX: mover a otra databank las estrategias descartadas |
+| `06-mover-estrategias.md` | aplicar un veredicto dentro de SQX: borrar de la databank las estrategias descartadas, con comprobación de identidad y registro de lo que había |
+| `27-curar.md` | escribir el veredicto tú mismo: un filtro sobre las métricas o una estrategia elegida por su nombre |
 | `07-montecarlo.md` | el Monte Carlo de robustez: de qué depende el resultado de una estrategia — del orden, de qué operaciones salieron, de la ejecución o del régimen |
 | `08-spp.md` | el perfil Sys. Param Permutation a CSV: cuántas permutaciones sobreviven y cuánto se aleja tu estrategia de la permutación mediana |
 | `09-diccionario-spp.md` | el inventario completo: cada campo que sale de una estrategia con SPP, con su nombre exacto y qué es. La página de consulta mientras escribes el análisis |
@@ -37,6 +38,9 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `18-variantes.md` | la fábrica de variantes: coge el diseño que salió del reconocimiento SPP y escribe las 5.000 estrategias en disco, con la tabla que dice qué combinación lleva cada archivo y los controles que delatan una cadena rota |
 | `19-wfc.md` | ¿sirve de algo optimizar los parámetros? Fabrica muchas versiones de una estrategia, las retestea todas con la misma partición IS/OOS y dibuja un punto por combinación: lo que ganó dentro contra lo que ganó fuera. Cubre `sqx.variants.execute`, `sqx.variants.collect` y `strategies.walkForwardCorrelation.report` |
 | `20-donde-esta-todo.md` | el mapa de los datos: dónde quedan las estrategias generadas, las métricas, los backtests, los informes y los veredictos, qué se borra a propósito y qué no se borra nunca |
+| `24-costes.md` | qué le cobras a cada mercado y en qué unidad: los cuatro ficheros de `assets/`, las dos clases (forex contra todo lo demás), las dos trampas de unidad que cuestan dinero, y los mercados adicionales donde se comprueba el edge |
+| `25-actualizar-datos.md` | el botón «Update all» automatizado: descarga en el maestro con la GUI cerrada, cuenta las 7.546 estrategias antes y después porque cada sync se las puede llevar, y refresca las fechas de `_policy.yaml` al terminar |
+| `26-nulos.md` | el test del mono: miles de versiones imaginarias de una estrategia sobre las mismas velas, cambiando solo cuándo entra; por qué el estadístico elegido decide el veredicto más que el mono, y por qué un mono que entra al azar en el oro pierde dinero |
 | `_PLANTILLA.md` | **la plantilla obligatoria.** Se copia para documentar cada módulo nuevo |
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |

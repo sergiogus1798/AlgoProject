@@ -51,6 +51,18 @@ verdict:
     - number: wfc.rho
       min: 0.30
       why: below this the in-sample surface does not order the out-of-sample one
+    # PROPOSED, from §11 of the protocol: "PBO below 50 % with the chosen rule". It is
+    # read on `argmax` because that is what optimising means unless somebody decides
+    # otherwise -- if the owner adopts the plateau centre as the house rule, this line
+    # becomes cscv.pbo_plateau_centre and nothing else changes.
+    # ⚠️ Measured 2026-09-22: on panels of pure noise the PBO of a single grid has a
+    # standard deviation of 0.21 across draws. A grid at 0.45 and a grid at 0.55 are not
+    # distinguishable, so this gate is a coarse filter and the report is the evidence.
+    - number: cscv.pbo_argmax
+      max: 0.50
+      why: >-
+        above this, picking the best parameters in sample chooses the ones about to
+        disappoint more often than not -- the optimisation is worse than not optimising
 
 sweep:
   # What `cleanup` is allowed to remove once a mother is finished. It deletes only paths
