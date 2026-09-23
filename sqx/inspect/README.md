@@ -12,6 +12,7 @@ running instance, so these are safe at any time, including while the owner's GUI
 | `keep_tasks.py` | Emit a variant of a `.cfx` keeping only the chosen task types | `python3 -m sqx.inspect.keep_tasks in.cfx out.cfx --types Build` |
 | `instruments.py` | List the spread, commission, point value and swap every project has configured | `python3 -m sqx.inspect.instruments [--json]` |
 | `project_health.py` | Every project's broken task references, version drift and mangled text fields | `python3 -m sqx.inspect.project_health [--json]` |
+| `vocabulary.py` | What one install can express: its blocks, its random groups, and what each pools | `python3 -m sqx.inspect.vocabulary [TERM] [--role ROLE] [--diff ROLE] [--snapshot]` |
 | `template_check.py` | Whether the strategies a project built really carry the blocks its template fixes | `python3 -m sqx.inspect.template_check [PROJECT ...]` |
 
 `instruments.py` is what keeps `assets/*.yaml` honest: it reports what SQX carries today, which is
@@ -25,3 +26,10 @@ every project at once, without the traceback; `sqx/repair/graft_tasks.py` is the
 `template_check.py` ignores what a template's random blocks will contain — the builder chooses those
 — and compares only the blocks the template fixes. A template made entirely of random groups fixes
 nothing, and the tool says so rather than passing it.
+
+`vocabulary.py` answers the question that has to be settled before a template is designed: does this
+install know the thing the idea names, and can a template *reach* it. Those are two questions. A
+template references **groups**, never blocks, so a block no group pools is unusable however native
+it is — the tool says `NO GROUP POOLS IT` rather than reporting a hit and letting the design fail
+later. It also calls out **empty groups**: a group with no items is structurally valid, a template
+pointing a hole at it builds without error, and nothing is ever sampled.
