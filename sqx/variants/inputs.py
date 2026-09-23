@@ -6,7 +6,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from core.paths import DATA, variants_dir
+from core.paths import DATA
+from core.datapaths import variants_dir
 
 HERE = Path(__file__).resolve().parent
 ORIGINAL = -1

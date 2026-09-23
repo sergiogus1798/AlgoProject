@@ -8,14 +8,14 @@ import shutil
 import zipfile
 from pathlib import Path
 
-from core.assetcheck import cost_gap, pending, provisional
+from core.assetcheck import pending, provisional
 from core.assetdata import load
-from core.paths import DATA, worker_dir
+from core.paths import worker_dir
+from core.datapaths import projects_backup
 from sqx.inspect.keep_tasks import keep
-from sqx.projects.configure import (configure, ignored_templates, instrument_edit,
-                                    running_install)
+from sqx.projects.configure import configure, ignored_templates, running_install
 
-DONOR = DATA / "donors" / "XAUUSD_base_2026-09-21" / "project.cfx"
+DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 TEMPLATES_REL = "user/settings/StrategyTemplates"
 NAME_OK = re.compile(r"^[A-Za-z0-9_]+$")
 SYNCED = "Auto-sync every 1 hour"
@@ -71,8 +71,8 @@ def sync_databanks(config: str) -> tuple[str, list[str]]:
                   rf"\g<1>{SYNCED}", config), changed
 
 
-def build(name: str, template: Path, symbol: str, role: str, strategies: int,
-          minutes: int, donor: Path, segment: str = "build") -> dict:
+def build(name: str, template: Path, symbol: str, role: str, strategies: int, minutes: int,
+          donor: Path, segment: str | None = None, tasks: tuple = ("Build",)) -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -83,9 +83,9 @@ def build(name: str, template: Path, symbol: str, role: str, strategies: int,
         strategies: MaxStrategies and the databank-full stop.
         minutes: Wall-clock cap.
         donor: The project cloned for its data feed, exits and acceptance conditions.
-        segment: Which segment the whole project runs on. One project, one segment: SQX
-            resolves the instrument once per project, so a chain needing the build's
-            spread and the retests' spread needs two projects, not two tasks.
+        segment: Force one segment on every task. Omit so each takes its own from its
+            type — the build on `build`, the retests on `oos1`, in one project.
+        tasks: Which task types to keep from the donor.
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
@@ -104,7 +104,7 @@ def build(name: str, template: Path, symbol: str, role: str, strategies: int,
 
     with zipfile.ZipFile(donor) as z:
         members = {n: z.read(n) for n in z.namelist()}
-    members, kept = keep(members, {"Build"})
+    members, kept = keep(members, set(tasks))
 
     config, synced = sync_databanks(members["config.xml"].decode("utf-8"))
     members["config.xml"] = re.sub(r'<Project name="[^"]*"', f'<Project name="{name}"',
@@ -129,10 +129,7 @@ def build(name: str, template: Path, symbol: str, role: str, strategies: int,
             "segments": {n: seg for n, (seg, _) in costs.items()},
             "template_ignored": ignored_templates(final),
             "provisional_costs": provisional(load(symbol)),
-            "instrument_edits": sorted({instrument_edit(load(symbol), seg)
-                                        for seg, _ in costs.values()}),
-            "cost_gap": {seg: cost_gap(load(symbol), seg)
-                         for seg in {s for s, _ in costs.values()}}}
+            "setups": {n: c.get("setups", 0) for n, (_, c) in costs.items()}}
 
 
 def main() -> None:
@@ -145,8 +142,10 @@ def main() -> None:
     ap.add_argument("--max-strategies", type=int, default=30)
     ap.add_argument("--minutes", type=int, default=10)
     ap.add_argument("--donor", type=Path, default=DONOR)
-    ap.add_argument("--segment", default="build", choices=("build", "oos1"),
-                    help="the whole project's segment; oos2 is the holdout and is refused")
+    ap.add_argument("--segment", choices=("build", "oos1"),
+                    help="force one segment on every task; omit to take each task's own")
+    ap.add_argument("--tasks", default="Build",
+                    help="comma-separated donor task types to keep, e.g. Build,Retest")
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
     a = ap.parse_args()
 
@@ -165,7 +164,7 @@ def main() -> None:
                          f"Stop it: bin/sqx-worker.sh --role {held} stop")
 
     done = build(a.name, a.template, a.symbol, a.role, a.max_strategies, a.minutes,
-                 a.donor, a.segment)
+                 a.donor, a.segment, tuple(a.tasks.split(',')))
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
 
@@ -178,19 +177,6 @@ def main() -> None:
           f"/ {done['minutes']} min")
     print(f"  segments  " + ", ".join(f"{m}={s}" for m, s in done["segments"].items()))
     print(f"  to disk   {', '.join(done['synced_to_disk']) or 'already syncing'}")
-    print("  ANTES DE ARRANCARLO: la tarea y el registro de instrumentos tienen que coincidir\n"
-          "  campo a campo, o el proyecto no resuelve. Con el worker vivo:")
-    for line in done["instrument_edits"]:
-        print(f"     {line}")
-    gaps = {s: g for s, g in done["cost_gap"].items() if g}
-    if gaps:
-        stuck = [(s, l) for s, ls in sorted(gaps.items()) for l in ls
-                 if l.startswith(("comision", "swap"))]
-        if stuck:
-            print("  ⚠️ y esto NO se puede fijar sin GUI — probados tres formatos de "
-                  "`commissions=`, ninguno prende:")
-            for seg, line in stuck:
-                print(f"       [{seg}] {line}")
     if done["provisional_costs"]:
         print(f"  ⚠️ PROVISIONAL: {', '.join(done['provisional_costs'])}")
     print(f"\nrun it:  bin/sqx-worker.sh --role {a.role} start && "

@@ -5,7 +5,7 @@ import argparse
 import csv
 from pathlib import Path
 
-from core.templatepaths import template_registry, template_runs
+from core.datapaths import template_registry, template_runs
 
 TEMPLATE_COLUMNS = ("name", "archetype", "shape", "entry", "exit", "groups", "blocks",
                     "created", "origin", "status")

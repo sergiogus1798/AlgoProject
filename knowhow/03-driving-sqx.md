@@ -717,102 +717,57 @@ that the licence passed. After a start, treat the first `Connection refused` as 
 last three lines of `user/log/worker-daemon.log` before anything else. 🤔 Cause unknown: SQX's
 licence server, not the machine's connectivity.
 
-## 🔬 A task's `InstrumentInfo` may not disagree with SQX's instrument registry (2026-09-23)
+## 🔬 Per-task costs live in `<Setup>`, not in `<InstrumentInfo>` (2026-09-23)
 
-Changing any cost inside a task's `<InstrumentInfo>` makes the project refuse to start:
+A task's cost configuration — the backtest window, the slippage, the spread, the commission method
+and the swap — is its `<Setup>` block, and **every task of one project can carry its own**:
 
+```xml
+<Setup dateFrom="2018.01.01" dateTo="2022.12.31" slippage="5" minDist="10" …>
+  <Chart symbol="XAUUSD_DukasM1_Infinox" timeframe="M30" spread="10.0" />
+  <Commissions>
+    <Method type="SizeBased" use="false">…8…</Method>
+    <Method type="PercentageBased" use="true">…0.001…</Method>
+  </Commissions>
+  <Swap use="true" type="percent" long="-7" short="-7" tripleSwapOn="WEDNESDAY" rolloutHour="23:00" />
+</Setup>
 ```
-ERROR c.s.p.S.impl.Project.ProjectServlet - Trying to start project that has unresolved resources!
-java.lang.Exception: Project has unresolved resources.
-```
 
-Bisected on the custodian against one project that started, varying **one attribute at a time**,
-each variant byte-identical in length to the one before:
+Dates are plain `YYYY.MM.DD` here, not the epoch milliseconds the `<Resources>` `<Symbol>` carries
+for the data range. The commission method is chosen by flipping `use` between the two `<Method>`
+entries SQX always ships, never by adding one. `sqx/projects/setups.py` writes all of it from
+`assets/`, and leaves alone any Setup whose `<Chart>` is a different symbol, so a cross-check on a
+second market keeps its own costs.
 
-| variant | result |
-|---|---|
-| `defaultSlippage` rewritten to its own value `0.0` | **starts** |
-| `defaultSlippage` → `5` | unresolved |
-| `defaultSlippage` → `5.0` | unresolved |
-| `defaultSlippage` → `0.5` | unresolved |
-| `defaultSpread` rewritten to its own value `10.0` | **starts** |
-| `defaultSpread` → `12.0` | unresolved |
-| `dateFrom` / `dateTo` on `<Symbol>` changed | **starts** |
+**Verified 2026-09-23**: one project, Build on `build` (2008–2017, spread 5.0, slippage 2.5) and
+fourteen Retests on `oos1` (2018–2022, spread 10.0, slippage 5), loaded with
+`-project action=loadconfig` and started. It runs, and reading the stored `.cfx` back shows exactly
+those values per task.
 
-So it is not the attribute, not the format and not the magnitude: it is **any disagreement**. The
-XML stays well-formed and the error names no field.
+⚠️ **`<Resources><Symbol><InstrumentInfo>` is a different thing and must not be edited.** It is the
+instrument DEFINITION and has to agree with SQX's own registry (`-instrument action=list`). Any
+disagreement — any attribute, any value — makes the project refuse to start with
+`Project has unresolved resources`.
 
-🔬 **Why.** SQX keeps a global instrument registry, readable with `-instrument action=list` (1,025
-rows on this install). `XAUUSD_Infinox` is registered with `Default spread 10.0`, `Default slippage
-0.0`, point value `100.0`, tick size `0.01` — exactly what the donor's tasks carry. A task whose
-`InstrumentInfo` differs from that row is an unresolved resource.
+### ~~Superseded: "a worker cannot be priced from assets/"~~
 
-**Consequences, and they are structural:**
+Everything this section said between 2026-09-23 morning and afternoon was a real measurement of the
+wrong element. The bisection was sound — changing `defaultSpread` or `defaultSlippage` inside
+`InstrumentInfo` really does make a project unresolvable, and rewriting the same value really is
+fine — but the conclusions drawn from it were wrong, because **that is not where a per-task cost
+goes**. Recorded, not deleted, because the failure mode is instructive: a clean bisection over the
+wrong variable produces confident, consistent, false conclusions. The controls all passed; none of
+them asked whether the element under test was the right one.
 
-- **A backtest window IS writable in the task** (`<Symbol dateFrom/dateTo>`), a cost is not.
-  `sqx/projects/configure.py` writes the window and refuses to write costs for this reason.
-- **`-instrument action=edit` exists and works — and does not survive a restart.** Measured: it
-  moved `XAUUSD_Infinox` from `defaultspread 10.0` to `12.0` and `action=list` confirmed it; after
-  a stop/start it was back at `10.0`. 🔬 **The registry lives in `user/data/data.db`**, one of the
-  three files `bin/sqx-worker.sh start` copies from the master on **every** start. So a worker's
-  costs are always the master's, and any edit is wiped by the next start. Its arguments do **not**
-  include `defaultslippage`, though the listing has that column.
-- ⚠️ **And the validation is against the registry AS LOADED AT STARTUP, not the live one.** With
-  the registry edited to `12.0` mid-session, the project whose task said `10.0` still started and
-  the one saying `12.0` did not. So editing the registry after the worker is up does not make a
-  differently-priced task resolvable either.
+What survives from it and is still true:
 
-### 🔬 The rule, settled 2026-09-23: task and registry must agree field by field
+- 🔬 `-instrument action=edit` works, and `defaultslippage` works **though the CLI's own help does
+  not list it** (`internal/web/SQUANT/help.txt` names twelve parameters and omits it). `commissions=`
+  and `swap=` did not take in any of three forms.
+- 🔬 The instrument registry lives in `user/data/data.db`, which `bin/sqx-worker.sh start` used to
+  copy from the master on every start. The copy is now skipped while the master's fingerprint is
+  unchanged (`--force-sync` overrides), so a worker keeps what it is given.
+- 🔬 **Drop a `.cfx` on disk and SQX loads it; the supported path is `-project action=loadconfig`,
+  which makes SQX perform the write.** Both were used here and the difference did not change any
+  result, but `loadconfig` is what `docs/project-config-workflow.md` documents.
 
-Six projects, one field changed at a time, registry edited between runs:
-
-| registry | task | |
-|---|---|---|
-| spread 10.0, slip 0.0 | 10.0 / 0.0 | **starts** |
-| spread 12.0 | 10.0 | unresolved |
-| spread 5.0 | 10.0 / 0.0 | unresolved |
-| spread 5.0, slip 0.0 | 5.0 / **2.5** | unresolved — slippage alone |
-| spread 5.0, slip 0.0 | **5.0 / 0.0** | **starts** |
-| spread 5.0, slip 0.0 | 5.0 / 0.0 + assets' commission and swap | unresolved |
-
-So it is not "the task may not be edited": it is **every field of the task's InstrumentInfo must
-equal the registry's row**, as loaded at startup. Edit both to the same values and the project
-resolves.
-
-🔬 **The registry is holdable now.** `bin/sqx-worker.sh` used to rsync the master's whole
-`user/data/` on every start, and the registry lives in `data.db` beside the bars — which is what
-reverted every edit. The copy is now skipped while the master's fingerprint is unchanged
-(`--force-sync` overrides), and an edit survived a stop/start with the value intact.
-
-🔬 **One segment per PROJECT, not per task.** The same 15-task project starts when every task
-carries spread 5.0 against a registry of 5.0, and is unresolved when its Build says 5.0 and its
-retests say 10.0. SQX resolves the instrument once per project. So a chain that needs the build's
-spread and the retests' spread is **two projects**, run with the registry set to each in turn — and
-joining their results means exporting both databanks.
-
-🔬 **`defaultslippage` works and is NOT in the CLI's own help.** `internal/web/SQUANT/help.txt`
-lists `defaultspread`, `commissions`, `swap`, `minDistance`, `pointvalue`, `ticksize`, `tickstep`,
-`orderSizeMultiplier`, `orderSizeStep`, `datatype`, `broker`, `description` — no slippage, though
-the listing has that column. `-instrument action=edit … defaultslippage=2.5` moved it, confirmed in
-`action=list`, and so did `defaultSlippage=` and `slippage=`. **The help is incomplete; try the
-parameter anyway.**
-
-With that, the loop closes end to end: registry `5.0 / 2.5`, task `5.0 / 2.5` → the project starts;
-the `oos1` project carrying `10.0 / 5` against the same registry does not, which is the check that
-the agreement is what decides.
-
-⚠️ **`commissions=` and `swap=` still do not take.** `-instrument action=edit` moved the spread
-and the listing confirmed it. `defaultslippage` has **no parameter at all**, and Three forms were tried —
-the escaped XML, `PercentageBased:0.001` and a bare number — and `PercentageBased` appears in no
-install's `data.db` afterwards, so none landed. Whether the format is wrong or the parameter is
-ignored is **not distinguished**. Those two are GUI-only for now.
-
-**So the one-time fix is the master's own instrument list**: set `XAUUSD_Infinox` there to the
-`assets/` figures and every worker inherits them at the next sync, tasks written from `assets/`
-match, and the whole chain resolves. Until then `core.assetcheck.cost_gap()` reports what a run is
-really priced with and `sqx/projects/builder.py` prints it before anything is built.
-- ⚠️ **The registry is global to an install.** So one install cannot hold `spread_is` for the build
-  task and `spread_oos` for the retest tasks at the same time. The two-spread policy of
-  `assets/_classes.yaml` needs either an edit between the two stages — which no unattended chain
-  can do in one pass — or one install per segment. **This is a design decision the owner has to
-  make**, and it was invisible until the project refused to start.

@@ -10,7 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from core.paths import DATA, WORKERS, worker_dir
+from core.datapaths import projects_backup
+from core.paths import WORKERS, worker_dir
 from sqx.variants import inputs
 
 TASK = "Retest-Task1.xml"
@@ -33,7 +34,7 @@ def donor_task(kind: str) -> str:
         SQX rewrites a project.cfx on save and on exit, so the live one is not a fixed
         point and cannot be a donor.
     """
-    cfx = sorted((DATA / "donors").glob("*/project.cfx"))[-1]
+    cfx = sorted(projects_backup("").glob("*/project.cfx"))[-1]
     return zipfile.ZipFile(cfx).read(DONOR[kind]).decode("utf-8")
 
 

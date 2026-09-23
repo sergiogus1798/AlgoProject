@@ -576,7 +576,7 @@ way and the narrowing is the useful part.
 
 **What was built.** `Retester` on the custodian (W2, 5070) is a stock 1-task harness — no Build, no
 `GoToTask`, so it is the safe place to run one. Its task was rewired to the donor's own retest
-settings, taken verbatim from `AlgoData/donors/XAUUSD_base_2026-09-21/project.cfx`,
+settings, taken verbatim from `AlgoData/projectsBackup/XAUUSD_base_2026-09-21/project.cfx`,
 `Retest-Task1.xml`:
 
 | | value |

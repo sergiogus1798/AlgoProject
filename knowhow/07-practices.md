@@ -809,7 +809,7 @@ A reserve is just RAM not promised to any JVM — if unused it stays free for wh
 reserve and careful with heap ceilings.
 
 🔬 **The Python side does not compete for RAM.** Worst of the nine catalogue targets,
-`montecarlo.analyse_long`, peaks at **2.5 GB** (`AlgoData/perf/history.csv`, 2026-09-21);
+`montecarlo.analyse_long`, peaks at **2.5 GB** (`AlgoData/profiling/history.csv`, 2026-09-21);
 `montecarlo.analyse` at 0.33 GB. The owner's 24 GB reserve is for the future app, not for today's
 analysis.
 

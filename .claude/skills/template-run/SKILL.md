@@ -55,17 +55,14 @@ It refuses, rather than producing something that fails later: a name with whites
 that is not there, a cost still at `use: null`, an install that is up, and a task where the template
 would be **ignored**.
 
-⚠️ **A worker cannot be priced from `assets/` today — say so, do not pretend otherwise.**
-Measured 2026-09-23, three ways, all closed: a task whose `<InstrumentInfo>` differs from SQX's
-registry refuses to start (*"Project has unresolved resources"*, any attribute, any value); the
-registry itself lives in `user/data/data.db`, which **every worker start copies from the master**,
-so an `-instrument action=edit` is wiped; and the validation uses the registry as loaded at
-startup, so editing it mid-session changes nothing either. The only place that decides is the
-**master's** instrument list, and that is the owner's.
+✅ **The costs DO come from `assets/`, per task.** They live in each task's `<Setup>` — the window
+as plain dates, the slippage, the `<Chart>`'s spread, which commission `<Method>` is `use="true"`,
+and the `<Swap>` — so one project carries the build on `build` and the retests on `oos1`, each with
+its own. `builder` writes all of it.
 
-`builder` prints the gap before building — slippage, commission method and swap all differ on
-XAUUSD today. **Report it with the result**: the run is priced with the master's figures, not the
-declared ones, and every number it produces carries that.
+⚠️ **Never touch `<Resources><Symbol><InstrumentInfo>`.** That is the instrument definition and must
+match SQX's own registry; any difference makes the project refuse to start with *"unresolved
+resources"*. If you see that error, something edited it.
 
 ## The cross-check markets come from `assets/` too
 

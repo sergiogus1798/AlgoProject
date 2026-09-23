@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from core.assets import write_dataranges
-from core.paths import MASTER, data_update_backups
+from core.paths import MASTER
+from core.datapaths import data_update_backups
 from core.worker import holding
 
 SNAPSHOTS = data_update_backups()

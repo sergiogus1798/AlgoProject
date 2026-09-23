@@ -71,6 +71,12 @@ Two days after the 2026-09-21 copy, 7,402 of the master's 7,546 `.sqx` differed 
 SQX rewrites every file on sync, even when nothing changed. `--link-dest` and hashing gain nothing;
 the only lever is what a snapshot includes.
 
+🔬 **A snapshot is deleted once the restart it guarded is verified** (owner, 2026-09-23). Checked
+that day: the 2026-09-21 copy (7,546 `.sqx`, 3.5 GB) held **no file and no databank count** the
+live master did not, and the worker's 66 were rebuildable projects of ours. `AlgoData` is for data,
+not an ark: take the copy, do the restart, compare counts per databank (`projectsBackup/
+install-configs-2026-09-21/count_sqx.sh` does it with `find -print0`), delete the copy.
+
 ## Memory vs disk also bites the exporter
 
 🔬 **A databank set to `Auto-sync never` can hold records in memory and have an empty directory on
