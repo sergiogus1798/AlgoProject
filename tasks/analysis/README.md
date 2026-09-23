@@ -8,6 +8,7 @@ Libraries, not commands. The entry points that use them live in `../reports/`.
 | `correlations.py` | Pearson/Spearman, the single-test significance floor, and Benjamini-Hochberg over a family of tests | imported | two columns → correlation rows |
 | `improvement.py` | Sweeps candidate IS filters: what each one does to an OOS outcome, with a bootstrap interval on the difference | imported | columns + one target → one row per filter |
 | `replication.py` | Whether a conclusion drawn on one sample holds on another independently generated one: outcome gaps, filter thresholds carried across, rank stability | imported | two samples' columns → gaps and agreement |
+| `excess.py` | Observed against chance over a family of tests: how many passed, how many luck alone would give, and whether the p-values are fine-grained enough to name anyone | imported | p-values → excess, FDR, resolution |
 | `decay.py` | How much of each strategy's in-sample edge survived, whether what is left beats its own error bar, and the keep/doubt/discard call | imported | daily equity → one row per strategy |
 
 Two things these enforce, because both have already produced wrong answers:

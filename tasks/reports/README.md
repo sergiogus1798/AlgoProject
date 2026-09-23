@@ -6,6 +6,7 @@
 | `filters.py` | The filter sweep: what each candidate IS filter buys on an OOS outcome, corrected across the sweep | `python3 -m tasks.reports.filters --project XAUUSD --databank OOS` | `metrics/<P>/<D>/metrics.csv` → `reports/<P>/<D>/<date>/filters/improvement.md` |
 | `compare.py` | The replication check: do one databank's conclusions hold on other, independently generated databanks | `python3 -m tasks.reports.compare --project XAUUSD --reference OOS --databank OOS-sharpe` | several `metrics.csv` → `reports/<P>/_comparison/<date>/comparison.md` |
 | `decay.py` | The decay verdict: per strategy, how much edge survived out of sample and whether to keep it | `python3 -m tasks.reports.decay --project XAUUSD --databank OOS --split 2018-01-01 --end 2022-12-31` | the databank's `.sqx` → `reports/<P>/<D>/<date>/decay.csv` + `decay.md` |
+| `nulls.py` | The population verdict on the null study: how many strategies beat their monkeys against how many chance would give, and how many can actually be named | `python3 -m tasks.reports.nulls --project XAUUSD --databank MC_Trades` | `reports/<P>/<D>/<date>/nulls/nulls.csv` → `excess.md` |
 | `summary.py` | Turns computed correlation rows into `summary.md`. Pure text, computes nothing | imported | rows → markdown |
 | `panel.html` | Template for the interactive panel. `__PAYLOAD__` is replaced with the embedded data | — | — |
 
