@@ -20,7 +20,8 @@
 🔬 `<install>/user/log/StrategyQuant/log_YYYY_MM_DD.log` keeps **14 days**; SQX prunes the rest on
 start. A single day reaches multi-GB — `log_2026_08_18.log` alone is **4.66 GB**, and the master's
 whole log tree was 4.4 GB. It gzips to 102 MB, so archiving is cheap and there is no reason not to.
-`AlgoData/logs/<install>/` holds them; `sqx/export/archive_logs.py` refreshes it and must run more
+`AlgoData/logs/<install>/` holds them (`SQX/projects/<P>/` the projects' own logs, condensed — see
+`07-practices.md`, log retention); `sqx/export/archive_logs.py` refreshes it and must run more
 often than every 14 days. First full archive taken 2026-09-04, back to 2026-06-13.
 
 🔬 Data coverage, from `-symbol action=list` on the worker: `XAUUSD_DukasM1_Infinox` runs

@@ -762,11 +762,38 @@ rows on this install). `XAUUSD_Infinox` is registered with `Default spread 10.0`
   the one saying `12.0` did not. So editing the registry after the worker is up does not make a
   differently-priced task resolvable either.
 
-**Net: a worker cannot be priced from `assets/` by any route available today.** Not in the task
-(unresolved), not in the registry (reset on start, and ignored once up). The only place that
-decides is the **master's** instrument list, which is the owner's. `core.assetcheck.cost_gap()`
-reports the difference so a run says what it is really priced with; `sqx/projects/builder.py`
-prints it before anything is built.
+### 🔬 The rule, settled 2026-09-23: task and registry must agree field by field
+
+Six projects, one field changed at a time, registry edited between runs:
+
+| registry | task | |
+|---|---|---|
+| spread 10.0, slip 0.0 | 10.0 / 0.0 | **starts** |
+| spread 12.0 | 10.0 | unresolved |
+| spread 5.0 | 10.0 / 0.0 | unresolved |
+| spread 5.0, slip 0.0 | 5.0 / **2.5** | unresolved — slippage alone |
+| spread 5.0, slip 0.0 | **5.0 / 0.0** | **starts** |
+| spread 5.0, slip 0.0 | 5.0 / 0.0 + assets' commission and swap | unresolved |
+
+So it is not "the task may not be edited": it is **every field of the task's InstrumentInfo must
+equal the registry's row**, as loaded at startup. Edit both to the same values and the project
+resolves.
+
+🔬 **The registry is holdable now.** `bin/sqx-worker.sh` used to rsync the master's whole
+`user/data/` on every start, and the registry lives in `data.db` beside the bars — which is what
+reverted every edit. The copy is now skipped while the master's fingerprint is unchanged
+(`--force-sync` overrides), and an edit survived a stop/start with the value intact.
+
+⚠️ **But only `defaultspread` can be set headlessly.** `-instrument action=edit` moved the spread
+and the listing confirmed it. `defaultslippage` has **no parameter at all**, and `commissions=`
+and `swap=` did not take — a task carrying `assets/`'s commission and swap stayed unresolved after
+editing them, though whether the parameter is ignored or my escaping was wrong is **not
+distinguished**. Those three are GUI-only for now.
+
+**So the one-time fix is the master's own instrument list**: set `XAUUSD_Infinox` there to the
+`assets/` figures and every worker inherits them at the next sync, tasks written from `assets/`
+match, and the whole chain resolves. Until then `core.assetcheck.cost_gap()` reports what a run is
+really priced with and `sqx/projects/builder.py` prints it before anything is built.
 - ⚠️ **The registry is global to an install.** So one install cannot hold `spread_is` for the build
   task and `spread_oos` for the retest tasks at the same time. The two-spread policy of
   `assets/_classes.yaml` needs either an edit between the two stages — which no unattended chain

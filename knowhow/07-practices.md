@@ -898,6 +898,28 @@ other's signatures.
 
 ## 🔬 Log retention: archive first, prune second, never the day in course (2026-09-21)
 
+📓 **What the 4.66 GB day actually was (read 2026-09-23, then condensed).** 43.9 million lines, of
+which **39.8 million were Java stack frames** and 2 million the same exception:
+`TradingException: Setting 'TradingSetup.StrategyClass' is not set.`, thrown by `StatsComputer`
+inside `WFSimulationJob` while a Walk-Forward Matrix cross-check computed the custom databank
+columns `ParameterCount` and `DoFRatio` (`SQ.Columns.Databanks.*`, the owner's own columns) on
+every WF step. Plus 49,080 × `NonexistingVariableException: Variable 'PriceEntryMult…' doesn't exist`
+from the same job, and 184 × `Project 'Infinox - SPNft - HN (High Precision)' does not exist` (the
+hourly sync failure `OPEN.md` issue 6 already tracks). Everything else fitted in **2,825 lines**.
+So: **a WFM cross-check over strategies whose custom columns cannot compute per step writes a
+gigabyte per hour of log**, and a log that size is a symptom of that job, not of the day's work.
+The archive keeps `log_2026_08_18.condensed.log.gz` (36 KB): stack frames dropped, the four
+repeated messages replaced by their counts on the last line.
+
+📓 **The projects' own `log/` folders are 97 % EdgeDecay noise.** `user/projects/<P>/log/global_log_*`
+logs three lines per strategy per pass of the `EdgeDecayFilter` custom analysis
+(`Strategy N, running Per strategy analysis: EdgeDecayFilter` / `- OK` / `- Failed`): USDJPY's
+566 MB file was 15.5 M lines, 135 K without them. The signal that remains — every `TASK STARTED` /
+`TASK FINISHED` block with databank counts before and after, per-filter rejection counts and
+time per strategy — is kept in `AlgoData/logs/SQX/projects/<P>/*.condensed.log.gz` (1,278 files,
+6.7 MB for the ten projects of the 2026-09-21 snapshot). `archive_logs.py` does not cover these
+folders (it walks `user/log`), and a `user/projects` snapshot must exclude them.
+
 SQX's own log directory has no ceiling and no working prune. Measured on the master that day:
 **35 files, 4.5 GB**, and the distribution is not gradual — it is two error storms.
 

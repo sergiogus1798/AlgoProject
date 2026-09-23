@@ -14,7 +14,7 @@
 # You never have to remember anything.
 #
 # Usage:
-#   sqx-worker [--role ROLE] start    sync bars, then run the worker (HTTP API)
+#   sqx-worker [--role ROLE] [--force-sync] start   sync bars if the master moved, then run
 #   sqx-worker [--role ROLE] stop     shut the worker down cleanly
 #   sqx-worker [--role ROLE] check    report bar freshness; changes nothing
 #   sqx-worker [--role ROLE] sync     sync bars only
@@ -25,7 +25,11 @@ set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 ROLE=conductor
+FORCE_SYNC=0
 if [ "${1:-}" = "--role" ]; then ROLE="${2:?--role needs a role}"; shift 2; fi
+# The data copy is skipped when the master has not moved, so a worker keeps the
+# instruments it was given. --force-sync copies anyway.
+if [ "${1:-}" = "--force-sync" ]; then FORCE_SYNC=1; shift; fi
 
 # core/paths.py is the only place that knows where an install lives, so ask it
 # instead of parsing YAML in bash. One line each, so a path with a space survives.
@@ -134,12 +138,25 @@ sync_bars() {
   fi
   # The master may be mid-import. Copy, then confirm the source didn't move
   # underneath us; a torn H2 file silently truncates the backtest window.
-  local before after
+  # 🔬 2026-09-23: this rsync copies the whole of user/data/, and SQX's INSTRUMENT
+  # REGISTRY lives in data.db alongside the bars. So an unconditional sync silently
+  # reverts every -instrument edit on every start -- an instrument added on the worker
+  # was gone after one restart, and XAUUSD_Infinox was back to the master's spread.
+  # Skipping the copy when the master has not moved is what lets a worker hold its own
+  # costs; the marker records which master state the worker was last given.
+  local before after marker
+  marker="$WORKER/user/data/.synced-from-master"
+  before=$(fingerprint)
+  if [ "$FORCE_SYNC" != "1" ] && [ "$(cat "$marker" 2>/dev/null)" = "$before" ]; then
+    echo "bars already current (master unchanged) — not copying, worker keeps its instruments"
+    return 0
+  fi
   for attempt in 1 2 3; do
     before=$(fingerprint)
     rsync -a --exclude='History/' "$MASTER/user/data/" "$WORKER/user/data/"
     after=$(fingerprint)
     if [ "$before" = "$after" ]; then
+      printf '%s' "$after" >"$marker"
       echo "bars synced (attempt $attempt)"; return 0
     fi
     echo "master data changed mid-copy — retrying"
