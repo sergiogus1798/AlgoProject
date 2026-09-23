@@ -11,31 +11,29 @@ registrations nothing references any more.
 System databanks (the first `--system-count` by position, default 5) are always
 kept; SQX expects them to exist.
 """
-import argparse, os, shutil, sys, tempfile, zipfile
+import argparse, os, sys, zipfile
 import xml.etree.ElementTree as ET
 
 
-def main() -> None:
-    """Copy a .cfx keeping only the chosen task types, their XML members and databanks."""
-    ap = argparse.ArgumentParser()
-    ap.add_argument("src")
-    ap.add_argument("dst")
-    ap.add_argument("--types", default="Build",
-                    help="comma-separated task types to KEEP (default: Build)")
-    ap.add_argument("--system-count", type=int, default=5,
-                    help="how many lowest-position databanks are system ones")
-    args = ap.parse_args()
-    keep_types = {t.strip() for t in args.types.split(",") if t.strip()}
+def keep(members: dict[str, bytes], keep_types: set[str],
+         system_count: int = 5) -> tuple[dict[str, bytes], dict]:
+    """Strip a project's contents down to the chosen task types.
 
-    with zipfile.ZipFile(args.src) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    Args:
+        members: The .cfx contents by member name, as read from the archive.
+        keep_types: Task types to keep, e.g. {"Build"}.
+        system_count: How many lowest-position databanks are system ones. SQX expects
+            those to exist whatever the project does, so they are never dropped.
 
+    Returns:
+        The rewritten members, and a summary naming what was kept and dropped. Raises
+        SystemExit when no task survives, which means the type was misspelled.
+    """
     cfg = ET.fromstring(members["config.xml"])
     tasks_el = cfg.find("Tasks")
-    all_tasks = list(tasks_el.findall("Task"))
 
     kept, dropped = [], []
-    for t in all_tasks:
+    for t in list(tasks_el.findall("Task")):
         (kept if t.get("type") in keep_types else dropped).append(t)
     if not kept:
         sys.exit(f"nothing kept - no task of type(s) {sorted(keep_types)}")
@@ -59,31 +57,55 @@ def main() -> None:
                 referenced.add(v)
 
     dbs_el = cfg.find("Databanks")
-    dbs = list(dbs_el.findall("Databank"))
-    by_pos = sorted(dbs, key=lambda d: int(d.get("position") or 0))
-    system = {d.get("name") for d in by_pos[:args.system_count]}
+    by_pos = sorted(dbs_el.findall("Databank"), key=lambda d: int(d.get("position") or 0))
+    system = {d.get("name") for d in by_pos[:system_count]}
     dropped_dbs = []
-    for d in dbs:
+    for d in list(dbs_el.findall("Databank")):
         if d.get("name") not in system and d.get("name") not in referenced:
             dbs_el.remove(d)
             dropped_dbs.append(d.get("name"))
 
+    members = dict(members)
     members["config.xml"] = ET.tostring(cfg, encoding="utf-8", xml_declaration=True)
     for f in dropped_files:
         members.pop(f, None)
+
+    return members, {"kept": [t.get("type") for t in kept],
+                     "dropped": sorted({t.get("type") for t in dropped}),
+                     "dropped_files": len(dropped_files),
+                     "databanks": [d.get("name") for d in dbs_el.findall("Databank")],
+                     "dropped_databanks": dropped_dbs}
+
+
+def main() -> None:
+    """Copy a .cfx keeping only the chosen task types, their XML members and databanks."""
+    ap = argparse.ArgumentParser()
+    ap.add_argument("src")
+    ap.add_argument("dst")
+    ap.add_argument("--types", default="Build",
+                    help="comma-separated task types to KEEP (default: Build)")
+    ap.add_argument("--system-count", type=int, default=5,
+                    help="how many lowest-position databanks are system ones")
+    args = ap.parse_args()
+
+    with zipfile.ZipFile(args.src) as z:
+        members = {n: z.read(n) for n in z.namelist()}
+
+    members, done = keep(members, {t.strip() for t in args.types.split(",") if t.strip()},
+                         args.system_count)
 
     os.makedirs(os.path.dirname(os.path.abspath(args.dst)) or ".", exist_ok=True)
     with zipfile.ZipFile(args.dst, "w", zipfile.ZIP_DEFLATED) as z:
         for n, data in members.items():
             z.writestr(n, data)
 
-    print(f"kept {len(kept)} task(s): " + ", ".join(t.get("type") for t in kept))
-    print(f"dropped {len(dropped)} task(s): " +
-          ", ".join(sorted({t.get('type') for t in dropped})))
-    print(f"dropped {len(dropped_files)} task XML member(s)")
-    print(f"kept databanks: " + ", ".join(d.get("name") for d in dbs_el.findall("Databank")))
-    if dropped_dbs:
-        print(f"dropped {len(dropped_dbs)} unreferenced databank(s): " + ", ".join(dropped_dbs))
+    print(f"kept {len(done['kept'])} task(s): " + ", ".join(done["kept"]))
+    print(f"dropped task(s): " + ", ".join(done["dropped"]))
+    print(f"dropped {done['dropped_files']} task XML member(s)")
+    print("kept databanks: " + ", ".join(done["databanks"]))
+    if done["dropped_databanks"]:
+        print(f"dropped {len(done['dropped_databanks'])} unreferenced databank(s): "
+              + ", ".join(done["dropped_databanks"]))
     print(f"-> {args.dst}")
 
 
