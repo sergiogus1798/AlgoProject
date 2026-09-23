@@ -122,7 +122,7 @@ each block with its own date range, all four `Sample type=IST`.
 `Strategy 24.14.35` carry `Sample type = IST`, including the 351 gold trades that fall inside the
 project's own out-of-sample range. The split has to be read from the project and declared:
 `<OutOfSample><Range dateFrom="2018.01.01" dateTo="2022.12.31"/>` lives in `Build-Task3.xml` inside
-`XAUUSD/project.cfx`, and `strategies/crossmarket/markets.yaml` carries it as `out_of_sample` for
+`XAUUSD/project.cfx`, and `strategies/crossmarket/assets/_markets.yaml` carries it as `out_of_sample` for
 that study. Reading the boundary off `Open time` works only because the range is known first — the
 data volunteers nothing.
 
@@ -629,3 +629,19 @@ every step — which inflates a drift statistic silently and plausibly.
 out-of-sample result. `Strategy 1.19.29` gives rho +0.076 (95 % over cells: -0.034 to +0.193);
 `Strategy 4.33.46` gives **-0.505 (-0.683 to -0.339)**, negative in 28 of 30 cells and on all four
 metrics read. The optimiser re-decides **70-78 % of the parameters at every step**.
+
+🔬 **SQX rellena a la apertura de la barra, en la entrada y en la salida** (XAUUSD M30,
+2026-09-22). Reconstruyendo el P/L desde las barras y comparando con el que SQX reportó, las
+cuatro convenciones dan: `open-open` **1.0000**, `close-open` 0.9629, `open-close` 0.9512,
+`close-close` 0.8651. Y el 100 % de los `Open price` coincide con el `Open` de su barra y el 100 %
+de los `Close price` con el `Open` de la barra de salida. Quien reconstruya precios desde barras
+y use el cierre se equivoca en un 4-13 % de correlación, que es suficiente para mover un p y no
+para que salte nada. `nulls/calibrate.convention()` lo mide por estrategia en vez de suponerlo.
+
+🔬 **El repertorio de salidas del corpus XAUUSD son tres tipos y ninguno es un stop.**
+`Exit After X Bars` 75.04 %, `Exit Signal` 19.55 %, `End Of Friday (Time)` 5.41 %; 100 % de los
+trades son `Buy`. **No hay SL ni TP**, lo que elimina la ambigüedad intrabar de cualquier
+reconstrucción. 95 de 757 estrategias no usan `Exit Signal` en absoluto — su salida es 100 %
+independiente del camino — y 352 lo usan en menos del 10 % de sus trades. ⚠️ Es una propiedad de
+**estos templates**, no del mundo: en cuanto una estrategia lleve barreras hay que calibrar la
+convención intrabar antes de leer nada.

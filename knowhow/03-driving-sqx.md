@@ -31,7 +31,7 @@ name:   Project name      file: Path of the config file      task: Task number, 
 4. **A GUI-loaded project still cannot be edited on disk.** The API works because SQX itself performs
    the write.
 
-Other verbs: `-databank action=list|export|syncfromfiles|clear|count|create|load`,
+Other verbs: `-databank action=list|export|syncfromfiles|synctofiles|clear|count|create|remove|load|save|copy|move|delete`, — the full reference is `internal/web/SQUANT/help.txt`,
 `-tools action=orderstocsv`, `-data action=export`, `-symbol action=list`.
 🔬 `internal/web/SQUANT/help.txt` holds the **full `sqcli` verb reference**, readable without starting
 SQX. Consult it instead of guessing at arguments.
@@ -103,6 +103,21 @@ way to score a chosen tuple is to write it into a `.sqx` and retest that file.
 
 The last row is the honest analogue for the variant route -- ~24 strategies/s including load and
 result-writing, so **11,597 variants land around 8 minutes**. Compute is not the constraint.
+
+🔬 **A finished retest is not a finished disk.** Measured 2026-09-22 on the custodian: a run that
+reported `Total tested 2000` and exported a 2,000-row panel had **962 `.sqx` on disk**. SQX writes a
+retested strategy out lazily, and `action=export` reads memory, so the shortfall is invisible to
+anything that only looks at the export. Any stage that reads the `.sqx` themselves -- the equity
+harvest does -- must run `-databank action=synctofiles` first and give it time to land
+(`sqx/variants/config.yaml: execute.sync_s`, 20 s). Safe on the custodian and only there: it holds
+the whole batch in memory, which is the condition hard rule 1 turns on. `ran.json` now records
+`n_on_disk` beside `n_returned` so the gap is visible rather than inferred.
+
+📓 **Harvesting the curves is free next to exporting the trades.** Reading `dailyEquity.bin` out of
+962 retested `.sqx` with no SQX running: **1.5 s**, 5.9 MB of Parquet. `orderstocsv` over the same
+folder would be ~4 min per 231 strategies (`04-export.md`), so roughly 90 minutes for a batch of
+5,000. If the question only needs returns per period -- a CSCV, a correlation between variants, a
+portfolio of variants -- the curve is the cheap answer and the trades are not needed.
 
 ## Projects built on the worker are invisible on the master
 
@@ -266,6 +281,27 @@ port with the other two down:
   `sqcli` binaries of all three installs are byte-identical (same MD5). It lives in
   `internal/AppSettings.txt`, as `<AppWebServerPortSQUANT>` plus `<AppWebServerPortSQEDITOR>`. The
   third port, the web GUI, is `<WebServerPortUsed>` in `settings.xml`. **Three files, two places.**
+- 📓 **Two `sqcli` started at once in the same install reset `internal/AppSettings.txt` to the
+  master's ports.** 2026-09-23, `SQX_w2` log: two sessions launched `sqcli` at 07:31:41 within
+  200 ms of each other. One logged `Cannot load settings. Exc.` (the file was being read while the
+  other wrote it), fell back to the built-in defaults, opened **5050** next to the other's 5070,
+  died at 07:31:49 with `Database may be already in use: Locked by another process` — and on
+  that exit wrote its defaults back: `AppWebServerPortSQUANT=5050`, no `SQEDITOR` line. Every
+  later start of W2 then came up on 5050, i.e. **a worker impersonating the master**, and refused
+  with `Preventing multiple instances: already running on port 5050`. Restored by hand to
+  5070/5071 (+ `WebServerPortUsed` 8082) with the install stopped. Two lessons: `sqx-worker.sh
+  start` should verify the port in `AppSettings.txt` before launching, and a worker answering on
+  5050 is the signature of this, not of the master. Root cause is `OPEN.md` issue 32 (no owner
+  lock on the custodian).
+
+  ✅ **Both halves are now guarded, 2026-09-23.** `bin/sqx-worker.sh` refuses to launch — on
+  `start` and on `run` — when the install's `AppWebServerPortSQUANT` is not the role's port, and
+  when another `sqcli` already has that install as its working directory. The second check is the
+  one that matters: `running()` only watches the port, so a worker whose settings drifted listens
+  elsewhere and the port alone reads "free", which is exactly how the second launch got in.
+  Verified both ways — a corrupted port and a live instance each produce a refusal, and a clean
+  start still works. It does not replace the owner lock issue 32 asks for: two sessions can still
+  `stop` each other's runs.
 - 🔬 **`coreUsage` is absent from a fresh clone's `settings.xml`, and absent means every core.** W1
   ran for weeks with no `coreUsage` element at all, i.e. all 96, competing with the master's own −1.
   `clone-sqx-worker.sh` now writes it per role; an install cloned before that date needs it added by
@@ -586,3 +622,153 @@ copying one the owner already runs and replacing only the cross-check block and 
 
 Written up as a skill: `tools/sqx-lab/plugins/sqx-lab/skills/sqx-spp/SKILL.md`. Implemented in
 `sqx/variants/harness.py`.
+
+## 🔬 Blocks, groups and templates install by copying a file — no GUI import (2026-09-22)
+
+Measured on the conductor with all three installs closed. The three authoring artefacts are plain
+files under `<install>/user/settings/`, and SQX's persisted store **is** that file:
+
+| artefact | where it lives | shape |
+|---|---|---|
+| custom blocks | `user/settings/customBlocks.xml` | one file, flat `<Item>` list (171 on `SQX_w1`) |
+| random groups | `user/settings/blockGroups.xml` | one file |
+| strategy templates | `user/settings/StrategyTemplates/<set>/<name>.sqx` | one file each, subfolders allowed |
+
+🔬 **`sqcli` never rewrites `customBlocks.xml` or `blockGroups.xml`.** On `SQX_w1` both are still
+stamped `2026-07-04`, across three months and dozens of headless starts and stops, while
+`settings.xml`, `wizard.txt` and `snippets.txt` in the same directory carry today's date. So the
+`project.cfx` trap of hard rule 4 — the running instance rewrites the file on exit and the edit is
+silently lost — **does not apply to these two**. Editing them with the install stopped is safe.
+
+⚠️ That is not a licence to edit them while an instance is up: the GUI *does* rewrite them (the
+`customBlocks-backups/` folder holds one dated copy per GUI save), and nothing was measured about a
+concurrent write. The protocol stays: **stop the install, edit, start, verify**.
+
+🤔 **What is still not proven is the read side** — that SQX parses an externally written
+`<Item>` and offers it to the builder. The evidence is strong (the file is the only store, and
+`templateFile` copying into `StrategyTemplates/<set>/` is already known to work — see the
+`.cfx` section above), but the only oracle is a build that uses the new block and produces
+strategies. Until that smoke build runs, treat headless block/group authoring as inferred.
+
+## 🔬 The whole authoring chain runs headless, end to end (2026-09-22)
+
+Measured on the custodian with the pilot template `keltnerUpperCrossUp`. Every step below ran
+without opening a GUI, and the build is the oracle that closes the inference left open above.
+
+| step | how | result |
+|---|---|---|
+| author a custom block | write `<Item key="CBlock_…">` XML | — |
+| install it | `python3 -m sqx.blocks.install <xml> --role conductor` | 171 → 173 blocks |
+| install it on the build install too | the same, `--role custodian` | **`vocabulary --diff` caught that W2 lacked it** |
+| emit the template | `python3 -m sqx.templates.build …` | transplant into `market_long_skeleton` |
+| install the template | copy into `<install>/user/settings/StrategyTemplates/<set>/` | — |
+| build | `-project action=start` on a single-task project | **30 strategies in 29 s** |
+
+🔬 **SQX reads an externally written `customBlocks.xml`.** This is what was inferred and is now
+measured: the two blocks were written by a Python script into a stopped install, and the builder
+generated 13,639 strategies from a template referencing one of them. **No GUI import is needed for
+blocks, groups or templates.**
+
+🔬 **A custom block sits in a signal as its store entry minus `<Contents>`**, with every `<Param>`
+carrying a value and `categoryType="Custom blocks"` added. The definition stays in
+`customBlocks.xml`; the template only references it. No template on this install used a custom
+block directly in a signal, so there was no precedent to copy — the build is what settled it.
+
+🔬 **The template really is applied: 30 of 30 built strategies carry the fixed block**, each paired
+with a different random partner (`CSSAMarketRegimeAboveLevel` ×15, `VWAP` ×5, `BollingerBands` ×5,
+`HighD`, `UlcerIndex`, …). That is the positive control `OPEN.md` issue 9 never had: there the
+projects declare `type="simple"` and the template is ignored; here the task declares
+`type="template"` and it is honoured. **The difference is `StrategyType type=`, nothing else.**
+
+⚠️ **A build output databank is `Auto-sync never` in the XAUUSD donor**, so after a successful build
+its directory is empty and nothing downstream can read it. No `-databank` verb forces a write.
+What works: stop the install, set the databank to `Auto-sync every 1 hour` in `project.cfx`
+(hard rule 4 — never while an instance holds it), start, rebuild, stop the worker; the shutdown
+sync writes the files. Cost here: one extra 30-second build.
+
+⚠️ **Correction, 2026-09-23: "no `-databank` verb forces a write" was wrong.**
+`-databank action=synctofiles project=… name=…` does exactly that, and the full verb reference in
+`internal/web/SQUANT/help.txt` lists it along with `delete`, `save`, `copy`, `move` and `remove` —
+six verbs this file did not name. Consult that file instead of the short list above.
+
+⚠️ Two traps already documented bit exactly as written: `action=start` and not `startOnlyTask`,
+and an `action=stop` before every second `start`.
+
+⚠️ **`template_check.py` was blind to custom blocks until 2026-09-22, and the blindness passed.**
+Its `BLOCK_CATEGORIES` listed `indicator`, `simpleRules`, `priceValue` and `priceRange` but not
+`Custom blocks`. A template whose only fixed block is a custom one therefore signed as
+`MarketPositionIsLong` — a structural block every long strategy carries — and the tool reported a
+confident `25/25 carry it  ok` **about the wrong block**. Fixed by adding the category.
+
+📓 The published `OPEN.md` issue 9 figure (0 of 642) is unaffected: the master's nine templates all
+fix **native** blocks, so their verdicts do not move. But the omission would have passed every
+template this project's authoring chain produces, since each of those fixes a custom block. The
+lesson is the one already in this file: a check that cannot fail is not a check. Its positive
+control here was `MarketPositionIsLong`, which is exactly the thing that made it useless.
+
+## 📓 A worker can start, bind its port and exit two seconds later on the licence check (2026-09-23)
+
+`bin/sqx-worker.sh start` printed `worker up`, and the first call got `Connection refused`. The
+daemon log ends `Server started on port 5060 … Verifying license ... Failed to check license -
+Error - Program cannot connect to internet … Exit app`. It happened twice in a row on W1 at 07:47
+and 07:49 while `curl https://www.google.com` answered 200 and W2 stayed up on 5070; the same
+W1 had started fine at 07:17, 07:29 and 07:38. So "worker up" means the port answered once, not
+that the licence passed. After a start, treat the first `Connection refused` as this and read the
+last three lines of `user/log/worker-daemon.log` before anything else. 🤔 Cause unknown: SQX's
+licence server, not the machine's connectivity.
+
+## 🔬 A task's `InstrumentInfo` may not disagree with SQX's instrument registry (2026-09-23)
+
+Changing any cost inside a task's `<InstrumentInfo>` makes the project refuse to start:
+
+```
+ERROR c.s.p.S.impl.Project.ProjectServlet - Trying to start project that has unresolved resources!
+java.lang.Exception: Project has unresolved resources.
+```
+
+Bisected on the custodian against one project that started, varying **one attribute at a time**,
+each variant byte-identical in length to the one before:
+
+| variant | result |
+|---|---|
+| `defaultSlippage` rewritten to its own value `0.0` | **starts** |
+| `defaultSlippage` → `5` | unresolved |
+| `defaultSlippage` → `5.0` | unresolved |
+| `defaultSlippage` → `0.5` | unresolved |
+| `defaultSpread` rewritten to its own value `10.0` | **starts** |
+| `defaultSpread` → `12.0` | unresolved |
+| `dateFrom` / `dateTo` on `<Symbol>` changed | **starts** |
+
+So it is not the attribute, not the format and not the magnitude: it is **any disagreement**. The
+XML stays well-formed and the error names no field.
+
+🔬 **Why.** SQX keeps a global instrument registry, readable with `-instrument action=list` (1,025
+rows on this install). `XAUUSD_Infinox` is registered with `Default spread 10.0`, `Default slippage
+0.0`, point value `100.0`, tick size `0.01` — exactly what the donor's tasks carry. A task whose
+`InstrumentInfo` differs from that row is an unresolved resource.
+
+**Consequences, and they are structural:**
+
+- **A backtest window IS writable in the task** (`<Symbol dateFrom/dateTo>`), a cost is not.
+  `sqx/projects/configure.py` writes the window and refuses to write costs for this reason.
+- **`-instrument action=edit` exists and works — and does not survive a restart.** Measured: it
+  moved `XAUUSD_Infinox` from `defaultspread 10.0` to `12.0` and `action=list` confirmed it; after
+  a stop/start it was back at `10.0`. 🔬 **The registry lives in `user/data/data.db`**, one of the
+  three files `bin/sqx-worker.sh start` copies from the master on **every** start. So a worker's
+  costs are always the master's, and any edit is wiped by the next start. Its arguments do **not**
+  include `defaultslippage`, though the listing has that column.
+- ⚠️ **And the validation is against the registry AS LOADED AT STARTUP, not the live one.** With
+  the registry edited to `12.0` mid-session, the project whose task said `10.0` still started and
+  the one saying `12.0` did not. So editing the registry after the worker is up does not make a
+  differently-priced task resolvable either.
+
+**Net: a worker cannot be priced from `assets/` by any route available today.** Not in the task
+(unresolved), not in the registry (reset on start, and ignored once up). The only place that
+decides is the **master's** instrument list, which is the owner's. `core.assetcheck.cost_gap()`
+reports the difference so a run says what it is really priced with; `sqx/projects/builder.py`
+prints it before anything is built.
+- ⚠️ **The registry is global to an install.** So one install cannot hold `spread_is` for the build
+  task and `spread_oos` for the retest tasks at the same time. The two-spread policy of
+  `assets/_classes.yaml` needs either an edit between the two stages — which no unattended chain
+  can do in one pass — or one install per segment. **This is a design decision the owner has to
+  make**, and it was invisible until the project refused to start.

@@ -14,6 +14,7 @@ Provenance tags used throughout: 🔬 verified by direct test · 📓 read from 
 | `06-locations.md` | where strategies, templates and tools actually live; the full block vocabulary; what the XAUUSD corpus really is |
 | `07-practices.md` | working habits that already cost time, research lessons, and what is portable to Windows |
 | `08-columns.md` | custom metric columns: where the snippets live, and why their value is frozen into the `.sqx` |
+| `09-costs.md` | what SQX can charge and in what unit — commission methods, swap types, where the spread hides |
 
 **Standing rule.** A finding that lives only in a chat transcript is lost when that session ends.
 Discovered something non-obvious? Write it into the right file here, in the same task, with its

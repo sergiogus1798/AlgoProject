@@ -17,8 +17,8 @@ SQX carries. `sqx/inspect/instruments.py` shows what SQX carries today.
 | lane | who | rule |
 |---|---|---|
 | SQX lifecycle (start/stop), master install | one session only | announce before stopping SQX |
-| running builds and jobs | **nobody** | suspended by the owner. Do not start builds anywhere |
-| authoring projects and templates | worker 5060 | start it for the job, then `bin/sqx-worker.sh stop` |
+| builds and long jobs | **custodian** `SQX_w2` / 5070 | 48 cores, 48 g. One job at a time, no command between start and collect. **Never on the master** |
+| authoring blocks, groups, templates, projects | **conductor** `SQX_w1` / 5060 | 8 cores, always awake. Start it for the job, then `bin/sqx-worker.sh stop` |
 | reading configs, `.cfx`, task chains | anyone | read-only, never triggers a restart |
 | snapshots and recovery | one session | snapshot before anything destructive |
 | repairing a project on disk | SQX-lifecycle lane | `repair/` refuses to run while a process holds the install |

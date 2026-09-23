@@ -35,6 +35,14 @@ topology was built and verified that day (`knowhow/03-driving-sqx.md`).
 | 22 | — | 🟡 | new: `crossmarket` rebuilt as a one-strategy panel; four threads left open |
 | 23 | — | 🟡 | topology **settled**; design unblocked, execution still waiting on lane P and W2 |
 | 24 | — | 🔴 | new: **the holdout pre-registration is a one-way door** — scaffolded, unsigned |
+| 25 | — | 🟢 | new: the authoring chain is proven headless end to end; `OPEN.md` issue 9 now has its positive control |
+| 26 | — | 🔴 | new: the `%` commission may charge per leg or per trade — a factor of 2, unmeasured |
+| 27 | — | 🟠 | new: 16 of 17 assets still have no agreed cost, now in the owner's new units |
+| 28 | — | 🟠 | new: `DAX40`'s feed is in no project on the master, so its file cannot be refreshed |
+| 29 | — | 🟡 | forex and metals filled 2026-09-22; the 6 index CFDs still have no IS/OOS window |
+| 30 | — | 🟡 | new: the data-update command is guarded and documented; its download awaits a GUI-closed run |
+| 31 | — | 🔴 | new: **revisión completa 2026-09-22** — `ran` hereda el arnés SPP, `spp_export` lee el databank/ventana equivocados, el IC del WFC ignora la dependencia entre variantes, sin candado ni timeout en el custodio. `docs/AgentPDFs/revision-proyecto-2026-09-22.md` |
+| 32 | — | 🟡 | **mitad cerrada**: `sqx-worker.sh` ya rechaza un segundo lanzamiento sobre el mismo install y un puerto derivado (2026-09-23). Falta el candado de propietario: **el custodio no tiene candado** — 2026-09-23 dos sesiones se pisaron en W2: `stop` mató corridas ajenas. Evidencia en vivo del §2.D de la revisión. `knowhow/07-practices.md` «dos sesiones sobre el custodio a la vez» |
 
 ---
 
@@ -628,7 +636,7 @@ not the bar file's.
 2. 🟠 **Only 30 of the 757 strategies are exported.** `raw/XAUUSD/Retest_Markets_-_Family/2026-09-14`
    is a reproducible random sample (`--limit 30`, seed 20260914). The full export is one command and
    ~15 minutes on the worker.
-3. 🟠 **`markets.yaml`'s `structure` category is empty**, so every conclusion so far rests on two
+3. 🟠 **`assets/_markets.yaml`'s `structural` category is empty**, so every conclusion so far rests on two
    correlated metals-and-energy markets. The edge-driver regression (`drivers.py` has the metrics,
    not the regression) needs six or more markets before it can be fitted at all, and the PCA on two
    markets is close to vacuous. This is the single change that would most improve what the module
@@ -697,6 +705,18 @@ Not built: `sqx/variants/` **execution and collection** (`views.py`, `run.py`, `
 `strategies/walkForwardCorrelation/` with its PBO, `pipeline/`, the multi-market study, and all six
 skills.
 
+**Built 2026-09-22: the CSCV / PBO** (`strategies/walkForwardCorrelation/` gained `matrix.py`,
+`rules.py`, `cscv.py`, `summary.py`, `trials.py`, `cost.py`, `figures.py`, `pbo.py`), fed by a new
+harvest stage `sqx/variants/equity.py` that reads every retested variant's daily curve straight out
+of the custodian's `.sqx`. Two new pipeline rows, `equity` and `cscv`; `tests/test_cscv.py`;
+`docs/manual/25-cscv.md`. Measured on `Strategy 17.9.39`, 479 usable variants: **PBO 41 % choosing
+the in-sample maximum against 5 % choosing the plateau centre**, and the in-sample maximum landed in
+the 0.2nd out-of-sample percentile.
+
+⚠️ **Contract C4 (trades per variant) still does not exist**, and this did not build it. The CSCV
+needs returns per period, which the daily curve gives for 1.5 s per batch against ~90 min to export
+the trades. Anything that needs MAE, MFE or exit types per variant still has no source.
+
 Three decisions `sqx/variants/` took under stated assumptions, all cheap to revisit:
 
 - **The file shape defaults to `no_profile`** (98.7 KB, 505 MB for 5,000). Whether SQX loads the
@@ -754,3 +774,168 @@ Related: the WFC verdict thresholds are PROPOSED, not approved — but the owner
 that **thresholds do not block anything**: the user decides them and they are changeable. The
 pre-registration records whichever number is current, and records the change when it changes. That
 is what keeps it honest while the criteria are still moving.
+
+## 26. 🔴 `PercentageBased` may charge per leg or per trade, and nobody has measured which
+
+Every `no_forex` asset in `assets/` now declares its commission as a **percentage of notional**,
+applied by SQX's `PercentageBased` method. Reading the snippet
+(`internal/extend/Snippets/SQ/Trading/Commissions/PercentageBased.java`, 2026-09-22) it charges in
+`computeCommissionsOnOpen` only and returns 0 on close. But `knowhow/04-export.md` measures **$8 per
+lot per side, $16 round turn** against `SizeBased 8`, which only fits if the engine applies the
+method to each leg.
+
+**It is a factor of two on the commission of gold and every index.** Until it is settled, any figure
+written into a `no_forex` `commission` field is uncertain by 2×, and XAUUSD's carries the caveat in
+its own `why`.
+
+The test is cheap and needs no new code: build or retest one strategy with `PercentageBased` at a
+known percentage, export its trades, and recover `gross − reported P/L` per trade — the same
+residual `strategies/monteCarlo/inputs/costs.py` already computes. One worker job.
+
+## 27. 🟠 Sixteen of seventeen assets have no agreed cost, and the schema changed under them
+
+`python3 -m core.assets --index` shows one asset decided (XAUUSD, and provisionally) and sixteen
+blocked. That was already true before the 2026-09-22 reorganisation; what changed is that the units
+are now the ones the owner asked for, so **the numbers he gives have to be in the new unit**:
+
+- forex — one spread in points, commission in $/lot, swap in **points per night**;
+- everything else — two spreads in points (`build` and OOS), commission in **% of notional**, swap in
+  **% ANNUAL** (`knowhow/09-costs.md` has the conversion; the annual/nightly confusion is 360×).
+
+Nothing is blocked that was not blocked before, and no invented value was written.
+
+The same file now also carries `mc_retest` — the spread and slippage ranges the MC Retest task
+draws from, in points, per asset. **All 34 of them are undecided.** These do not block: the
+preflight warns and exits 0, because an undecided range only makes that one MC Retest task
+uninterpretable. `core.assetdata.mc_pending()` names them.
+
+## 30. 🟡 `sqx.data.update` is guarded and documented, but its download has never run
+
+`python3 -m sqx.data.update --apply` drives `-data action=update` on the master — the CLI form of
+the GUI's "Update all" — then proves no `.sqx` was lost and refreshes `assets/_policy.yaml`.
+
+**Tested:** the guard (it refuses while the master GUI is up, by PID, killing nothing), the
+inventory (7,546 `.sqx`, 3.4 GB under `user/projects`), `lost()`, the dry run, and the data-range
+refresh, which caught four feeds moving from `2026-01-16` to `2026-09-22` mid-update on 2026-09-22.
+
+**Not tested:** the download itself. It needs the master's GUI closed, which is the owner's action,
+so its first real run will be his. `-data action=update` is in `internal/web/SQUANT/help.txt` and
+the `-data` verb dispatches (verified with the read-only `action=timezones`), but whether `update`
+with no `symbol=` updates every configured symbol is **inferred from the help text, not observed**.
+Run the dry run first; if the no-symbol form turns out to need an argument, it is one line.
+
+## 29. 🟡 Six index assets have no IS/OOS window, and `SP500ft`'s feed does not exist
+
+`assets/_policy.yaml` now carries `segments: <SYMBOL>:` for all seventeen, each with the date range
+SQX actually holds for its feed (read 2026-09-22 with `-symbol action=list` on the conductor).
+**Forex and metals were filled on 2026-09-22** — `build` 2008-01-01 to 2017-12-31, `oos1` to
+2022-12-31, `oos2` to 2026-08-30, eleven assets. The **six index CFDs are still
+`{from: null, to: null}`**: `window()` refuses to invent one and the preflight warns, so nothing
+silently runs on a made-up window.
+
+They were left out deliberately, and it is not a free choice — their histories start in 2011-2013,
+so gold's 2008 build window would not fit and `validate()` would reject it:
+
+| asset | data from | | asset | data from |
+|---|---|---|---|---|
+| EURUSD, GBPUSD, USDCHF, USDJPY, XAUUSD | 2003-05-05 | | NIKKEI225 | 2011-09-19 |
+| AUDUSD, EURJPY, GBPJPY, USDCAD | 2003-08-04 | | USA500, USATEC | 2012-01-19 |
+| AUDJPY | 2003-12-01 | | DAX40, DJ30 | 2013-09-30 |
+| CADJPY | 2004-10-25 | | **SP500ft** | **none** |
+
+⚠️ **`SP500ft_Plus02_Infinox` is in no SQX feed list**, so that asset cannot be built or tested at
+all. Its `data` is null and `validate()` reports it. Either the feed needs setting up or the file
+describes a market that was never wired.
+
+## 28. 🟠 `DAX40` has an asset file but the master configures no such feed
+
+`assets/DAX40.yaml` names `DAX40_DukasM1_Infinox`, and a sweep of every `project.cfx` on the master
+on 2026-09-22 found that symbol in none of them — the other sixteen assets all resolve. Its
+`instrument` block and `sqx_now` values are therefore the ones read on 2026-09-03 and carried
+forward, not re-read from the live install.
+
+Either the feed was removed from the projects since, or the file was written for a market not yet
+set up. **Not a finding against the master's configuration** — that is the owner's — just a note
+that this one file cannot be refreshed from `sqx.inspect.instruments` until the feed exists.
+
+
+---
+
+## 17 · 🟠 `benchmark=0` is the wrong null for PSR, in three finished studies
+
+**Opened 2026-09-22, out of the `nulls/` work.** `core/significance.psr()` takes a `benchmark`
+and its docstring says *"Zero asks whether there is any edge"*. All three callers pass zero —
+`strategies/crossmarket/verdict/significance.py`, `strategies/monteCarlo/verdict/significance.py`
+and `strategies/retest/verdict/evidence.py`.
+
+Zero is not the null a trading strategy is measured against. The honest benchmark is what a
+random trader with the same footprint would have got: drift weighted by occupancy, minus cost.
+🔬 Measured on XAUUSD `OOS1` that benchmark is **negative in 100 % of 757 strategies** (median
+−4,698 $), because a 6-hour position captures ~2,867 $ of gold's rise and pays ~7,756 $ of cost.
+So `benchmark=0` is currently the **stricter** of the two, and the studies are conservative rather
+than wrong — but they are not answering the question they say they answer.
+
+With Sharpe the two are the same ruler with different centrings (`knowhow/07-practices.md`), so
+the fix is one argument. **Not done here on purpose**: all three modules are finished, and
+changing what a finished study reports is the owner's call, not a side effect of building a
+fourth one.
+
+## 18 · 🟠 `crossmarket` already computes the answer to a question it does not ask
+
+**Opened 2026-09-22.** `simulate/metrics.py` computes nine statistics for the real run and every
+null run, and the panel prints them side by side. What is missing is the sentence that makes the
+spread between them readable:
+
+- `sharpe` is scale-free, so it divides out the very thing that separates a real trade from a
+  random one — 🔬 the real ones are **36 % less volatile** (491 $ against 661 $ per trade, skew
+  +0.53 against −0.78, kurtosis 6.4 against 27.0). Measured on XAUUSD `OOS1`, the same simulation
+  passes **77.4 %** of strategies on `sharpe` and **39.5 %** on `net`. A reader comparing the two
+  p-values without that sentence concludes the module contradicts itself.
+- `verdict/significance.py`'s MinTRL and the study's own nulls are one axis with two centrings,
+  and are presented as two unrelated numbers.
+- `stress.py` already computes the breakeven cost multiple, which is what decides whether the
+  null's mean is negative at all. Neither number cites the other.
+
+All three are additive — a README section, a tooltip, one extra column. None changes a computed
+number. Same reasoning as issue 17: `crossmarket` is finished and this is the owner's call.
+
+## 31. 🔴 Revisión completa del proyecto — 2026-09-22
+
+Revisión en modo revisor pedida por el dueño: fallos, mejoras, optimizaciones de tiempo, memoria y
+tokens, y decisiones pendientes. Está entera en `docs/AgentPDFs/revision-proyecto-2026-09-22.md`;
+aquí solo lo que bloquea la siguiente corrida larga, todo verificado en ficheros reales:
+
+- **`ran` no construye su arnés** (`sqx/variants/execute.py`): hereda el que dejó `spp_oos`, y hoy
+  `SQX_w2/Retester` está en estado SPP (2008–2017 sola, `OptProfileSysParamPermutation` exhaustivo
+  y `SequentialOptimization` encendidos). Lanzar la cadena con la receta actual retestearía las
+  variantes con ese arnés, sin error.
+- **`spp_export`** exporta el databank de entrada (`Results`) después de `spp_oos`, sobreescribe
+  `raw/<P>/<D>/<hoy>/spp/` por madre y no deja el `strategies/` que `inputs.source` espera.
+- **IC del WFC** con `n = 1001` sobre variantes con correlación mediana 0,80 (21 clústeres según el
+  propio módulo). `no_fiable` e `indeciso` no están sostenidos.
+- **Custodio sin candado**, `start` sin `stop` previo, `run()` sin timeout, carga sin verificar.
+- **Reanudación rota al cambiar de día** (`{day}` = hoy) y `mothers()` lee un export viejo.
+- 5.000 variantes × 2 mercados ≈ 50 GB de JVM contra `-Xmx48g`.
+- **20 commits sin push y ~70 ficheros sin commitear**, incluido `nulls/` y `assets/`.
+
+Orden de arreglo y las once decisiones del dueño: §7 y §8 del documento.
+
+## 32. 🔴 El custodio no tiene candado de propietario
+
+📓 2026-09-23. Cinco sesiones de Claude paralelas en la máquina (`ListAgents`). Una hacía un
+benchmark en `SQX_w2` (arrancar, cargar, correr, **parar**, cambiar `coreUsage`) mientras otra
+bisecaba costes en el mismo custodio. Siete `stop` mataron corridas ajenas; los proyectos de ambas
+arrancaron sobre instancias de la otra; un tercer arranque murió con `Database may be already in
+use`. Timeline completa en `knowhow/07-practices.md`, «Lo que salió mal: dos sesiones sobre el
+custodio a la vez».
+
+Es el §2.D de `docs/AgentPDFs/revision-proyecto-2026-09-22.md` visto en vivo. Arreglo propuesto:
+`bin/sqx-worker.sh start` escribe `user/log/OWNER` (sesión, PID, hora); `stop` de otra sesión se
+niega salvo `--force`; `check` lo muestra. Y todo script que use un worker pasa por `awake()`, nunca
+por un start/stop propio.
+
+Daño colateral verificado: la carrera de dos `sqcli` a las 07:31:41 dejó `SQX_w2/internal/AppSettings.txt`
+en **5050** (los puertos del maestro), y W2 arrancó como maestro hasta que algoproject-07 lo restauró a
+07:47. Mecanismo en `knowhow/03-driving-sqx.md`. El arreglo del candado debe incluir que `start`
+compruebe el puerto en `AppSettings.txt` antes de lanzar.
+

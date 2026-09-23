@@ -34,6 +34,24 @@
   This is what makes an arbitrary sub-period study possible — SQX's own sample types are only
   IS/OOS/full, so splitting the OOS in two is impossible through any export but trivial from here.
 
+- 🔬 **A `.sqx` retested with a cross-check carries THREE `dailyEquity.bin`, and the one you want is
+  not the first.** Measured 2026-09-22 on the variant batch of `Strategy 17.9.39`, retested by a
+  harness whose task holds an XAGUSD cross-market check. The archive holds, in this order:
+  `Results/Portfolio/dailyEquity.bin`, `Results/Main: XAUUSD_DukasM1_Infinox_LOM_M30/…` and
+  `Results/AdditionalMarket: XAGUSD_…/…`. On `P00000` their final values are **10,476 / 35,328 /
+  −24,852**: `Portfolio` is gold plus silver, and only `Main` matches the `Net profit` the databank
+  shows. `core/sqxstats.equity()` now takes the result by name and defaults to `Main`; taking
+  whichever member appears first silently studies a two-market portfolio.
+
+- 🔬 **The daily curve and the stored net profit disagree exactly when a position is open on the
+  last bar.** Same batch, 2026-09-22: at the in-sample boundary all 962 curves matched the stored
+  `Net profit (IS)` to within **0.59 $** (float32 storage against two decimals in the panel), but
+  over the whole history 172 of them ran 95 to 332 $ below it. Those 172 average **551 out-of-sample
+  trades against 186** for the rest — they trade often enough to be holding something when the data
+  ends, and SQX marks that to market in the curve while net profit counts only closed trades. So:
+  **reconcile a harvested curve at a window boundary, never at the end of the file**, and any study
+  aggregating the curve into periods should drop the last one.
+
 - 🔬 **`optimizationProfile.bin` is a strategy's SPP / optimization profile, and it parses.** It
   appears only in a `.sqx` that went through a cross-check driving the optimizer (Sys. Param
   Permutation, sequential optimization); 225 of the `.sqx` under the master's `user/projects`

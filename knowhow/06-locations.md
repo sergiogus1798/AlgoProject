@@ -47,6 +47,54 @@ Total on the master today: **1,020 blocks**.
 🔬 `tools/sqx-lab/.../sqx-custom-block/catalog.json` is a derived index of the *value* atoms only
 (235 = 178 native + 57 the owner's), not of the conditions — regenerate it, don't hand-edit it.
 
+### 🔬 A RandomCondition needs no group, and a fixed block beside it is already proven (2026-09-22)
+
+Read out of `highest_breakout_template_daily_filter.sqx`, the template this install ships and the
+one the `session_market` shape was derived from. Its entry signal is:
+
+```xml
+<Item key="AND">
+  <Block><Item key="RandomCondition" ...>
+           <Param key="#Group#" name="Random group" randomGroupType="Conditions" />   <!-- empty -->
+  <Block><Item key="BarDayOfWeekIsNot" ...>                                           <!-- concrete -->
+```
+
+Two facts, both load-bearing for authoring templates from a plain-English idea:
+
+🔬 **`#Group#` is empty and the template builds.** A `RandomCondition` left without a group samples
+the whole Conditions vocabulary — 500 blocks — rather than a pool. Binding it to a group narrows the
+search; it is an option, not a requirement. Anything claiming a hole needs a group is wrong.
+
+🔬 **`AND(RandomCondition, <concrete block>)` is build-confirmed** on this install. The shape the
+owner asks for — one fixed condition that states the idea, plus one random condition — needs no new
+skeleton. Only which concrete block sits in the fixed slot varies.
+
+Consequence for the pooling note below: **a group matters only for a hole.** A block that no group
+pools is unreachable from a `RandomCondition`, and perfectly usable as the fixed half.
+
+### 🔬 A block no group pools is unreachable from a template's HOLE (2026-09-22)
+
+A template's **hole** references a random group, never a block — the fixed half of a signal is the opposite case, see above. So the install knowing a block is
+necessary and not sufficient: if no group contains it, no template can point a hole at it. Measured
+with `sqx/inspect/vocabulary.py` on the conductor, which reports exactly this.
+
+The Keltner channel is the worked case. SQX ships a whole native category, `Conditions/Keltner
+Channel`, with **16 ready-made conditions** — `KCBarClosesAboveUpper` is literally "the bar closes
+above the upper band". **None of the 16 is in any group.** The indicator is reachable only as a
+*value*, through `BollingerBands_Lower`, a Value group whose name misleads: it pools eleven band
+indicators, `KeltnerChannel` and `MTKeltnerChannel` among them. So a Keltner **price level** is
+available today and a Keltner **entry condition** is not, until a group is authored for it.
+
+⚠️ **An empty group is a silent failure.** `RandConditions` on this install has zero items, and the
+`catalog.json` of `sqx-strategy-template` lists it among the clean condition groups. A template
+pointing a hole at it does not fail: it builds, and samples nothing. `vocabulary.py` prints those
+groups on their own `EMPTY, unusable` line for that reason.
+
+🔬 **The three installs carry the same vocabulary today** — 849 native + 171 own blocks, 20 groups,
+identical on master, `SQX_w1` and `SQX_w2` (`--diff` reports no gap either way). That stops being
+true the moment anything is authored on only one of them, which is why a template authored on the
+conductor and built on the custodian has to be diffed first.
+
 ## Tools built here
 
 | tool | does |
@@ -57,6 +105,7 @@ Total on the master today: **1,020 blocks**.
 | `sqx/inspect/project_health.py` | every project's broken task references, version drift and mangled fields |
 | `sqx/inspect/template_check.py` | whether built strategies carry the blocks their template fixes |
 | `sqx/repair/graft_tasks.py` | heal a project archive missing task files, with SQX closed |
+| `sqx/inspect/vocabulary.py` | what an install can express: blocks, groups, what pools what, and the gap against another install |
 | `sqx/export/archive_logs.py` | copy both installs' logs to `AlgoData/logs/` before SQX prunes them |
 | `sqx/export/export_metrics.py` | databank metrics with paired IS/OOS columns, via the worker |
 | `sqx/export/export_trades.py` | a databank's trades plus the bars they were traded on |

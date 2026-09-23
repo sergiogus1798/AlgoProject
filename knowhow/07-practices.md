@@ -656,6 +656,71 @@ resultado, 0,7 MB de JSON de caché). El problema es `_batch`.
   y 95 trabajadores pide **32 GB** en la estrategia más larga de `MC Trades` (N=3.437). Cabe por
   5 GB — y no cabe si el worker de SQX está arrancado a la vez (71,5 + 32 + 32 = 135 > 125).
 
+## SMT y núcleos en un retest de SQX: 48 hilos rinden casi como 95, y 24 la mitad
+
+🔬 Medido 2026-09-23 en el custodio (`SQX_w2`, `-Xmx48g`), con un proyecto desechable `bench_smt`:
+un Retest sin SPP ni SO, XAUUSD M1 2008-01-01..2026-08-30, motor MT5 hedged, sobre 2.886 estrategias
+(la carpeta `Retester/databanks/RetestOut` de 962 cargada tres veces — `action=load` no deduplica).
+`coreUsage` se cambia en `user/settings/settings.xml` **con el worker parado**; el log confirma el
+valor en `Preparing thread executors: N`.
+
+| `coreUsage` | hilos | reloj | ms/estrategia (SQX) | %CPU medio del proceso | limpio |
+|---|---|---|---|---|---|
+| 24 | 24 | 55,5 s | 18 | 1.355 % | ⚠️ no: otra sesión arrancó dos proyectos pequeños encima |
+| 48 | 48 | 31,1 s | 10 | 1.815 % | ✅ sí |
+| 95 (`-1`) | 95 | 30,4 s | 9 | 3.114 % | ⚠️ no: otra sesión arrancó cuatro proyectos pequeños encima |
+
+- 🔬 **De 24 a 48 hilos el retest escala casi lineal (1,8×). De 48 a 95 gana un 2-10 %.** Las 48
+  son los núcleos físicos; los otros 47 son hermanos SMT (`cpu N` ↔ `cpu N+48`). Lo mismo que
+  ya se vio en el Monte Carlo de Python: **lo que cuenta son los 48 físicos**. Los dos ciclos
+  contaminados lo son *en contra* de la conclusión (carga ajena encima hace que 95 parezca peor de
+  lo que es), así que "≤ 10 %" es una cota indicativa, no un número cerrado. Repetir con W2 libre.
+- 🤔 Consecuencia: el maestro con `coreUsage -1` (95) y el custodio con 48 **no suman 143 núcleos,
+  se pelean por los mismos 48 físicos**. Si el maestro genera mientras el custodio retestea, los dos
+  van a la mitad. Y si el maestro pasa a ser sólo un visor (sin builds), el custodio no gana casi
+  nada subiendo de 48 a 95.
+- 🔬 **Un `sqcli` ocioso cuesta 1,9 GB de RSS y 160 MB de heap vivo** (`jstat`: old 90 MB +
+  survivor 71 MB, 267 hilos, `-Xms1g`). Con 964 estrategias cargadas y sin retestear: +350 MB de
+  heap tras un young GC (≈ 0,4 MB por estrategia, cota superior sin full GC). Con las 2.886
+  retesteadas (entrada + salida con resultados): old gen 5,7 GB a 48 hilos, 7,4 GB a 95, sin full GC
+  — basura incluida. **`jcmd` no funciona contra el JVM de SQX** (`AttachNotSupportedException:
+  The VM does not support the attach mechanism`, es un build jvmci); sólo `jstat`.
+- 🔬 **`sqcli` no carga las estrategias de los proyectos al arrancar.** Recién arrancado,
+  `-databank action=count` devuelve `Records: 0`; es `-databank action=list project=X` (o `count`
+  sobre un databank concreto) lo que dispara `Syncing databank(s) from files` y las carga. Por eso
+  un `action=copy` inmediato copia **0** registros: copia lo que hay en memoria. Para meter una
+  carpeta en un databank nuevo: `-databank action=load project=P name=D folder=/ruta` (carga desde
+  disco, sí funciona recién arrancado).
+- 🔬 `-project action=loadconfig` **exige `name=`** además de `file=` (`Error: Missing parameter
+  'name'`), y `file=` relativo se resuelve contra la carpeta del install, no contra el cliente.
+- ⚠️ **El `status` de un Retest sin SPP no tiene la línea `Total tested`.** Trae `Strategies
+  generated`, `Time per strategy`, `Running time so far`, `In databank`. El `TESTED` de
+  `sqx/variants/execute.py` sólo existe porque la tarea del pipeline lleva SPP; sobre un retest
+  plano `re.search` devuelve `None` y el `.group` revienta. La señal de fin que sirve para ambos es
+  `-databank action=count` del databank de salida.
+
+### ⚠️ Lo que salió mal: dos sesiones sobre el custodio a la vez
+
+📓 Mientras yo hacía estos ciclos (cada uno arranca, carga, corre, **para** W2 y edita su
+`coreUsage`), **otra sesión de Claude estaba usando el mismo custodio** para bisecar costes
+(`bisect_sin_costes`, `bis_fechas_solo`, `bis_slippage`, `bis_comision`, `bis_swap`,
+`bis_slip_*`, `chat_keltner_M30`, `ctrl_*`). Consecuencias, todas visibles en
+`SQX_w2/user/log/StrategyQuant/log_2026_09_23.log` entre 07:20 y 07:37:
+
+- Mis `stop` (07:26:21, 07:27:11, 07:27:42, 07:29:19, 07:30:28, 07:31:37, 07:32:58) **mataron sus
+  corridas** a medias. Sus proyectos arrancaron encima de mis instancias y los míos encima de las
+  suyas; dos de mis tres medidas quedaron contaminadas y las suyas corrieron con un `coreUsage`
+  que yo había cambiado (24 ó 95 en vez de 48).
+- Un `start` a las 07:31:41 abrió puerto **5050** desde `SQX_w2` y murió con `Database may be
+  already in use: Locked by another` — dos procesos intentando el mismo H2.
+- La regla «al custodio no se le habla mientras trabaja» **no la impone ninguna herramienta**:
+  `execute.awake()` respeta una instancia ya levantada, pero `bin/sqx-worker.sh stop` para lo que
+  haya, sea de quien sea, y un script ad hoc (el mío) ni siquiera pasa por `awake()`. Con cinco
+  sesiones paralelas en la máquina (`ListAgents` las lista) la colisión no es un accidente raro,
+  es lo esperable. Pendiente en `OPEN.md`: un lock de propietario en `bin/sqx-worker.sh`
+  (`start` escribe quién lo levantó; `stop` de otro se niega salvo `--force`), y **antes de tocar un
+  worker, `ListAgents` + mirar `ls -lt user/projects` y la cola del log**.
+
 ## Un `ProcessPoolExecutor` global sin apagado deja el pool vivo cuando el padre muere
 
 🔬 Encontrado 2026-09-19. `strategies/monteCarlo/simulate/engine.py` guarda el pool en `_POOL` y no
@@ -751,6 +816,13 @@ analysis.
 🔬 **`-Xms` low on the workers is what makes three installs fit.** An idle worker with `-Xms4g`
 (the shipped default in `sqcli.config`) holds 4 GB doing nothing. Dropped to `1g`/`2g`, an idle
 worker costs almost nothing and only the busy one is expensive.
+
+### Revised 2026-09-23 — the master is rarely open, so W2 takes the RAM
+
+⚪ Owner's decision: W2 `-Xmx80g` (was 48g) and `coreUsage -1` (was 48), Python reserve 20 GB, OS
+10-12 GB. Applied to `SQX_w2/sqcli.config` and `settings.xml` with the install stopped. The
+constraint that comes with it: the master GUI as a viewer (`-Xmx12g`) still fits next to a full W2;
+the master **generating** with 24g does not (swap is 4 GB, whoever overflows is OOM-killed).
 
 ### The two machines
 
@@ -992,3 +1064,77 @@ across the whole design, every one of them retested for real:
   correlation is far less sensitive to a constant cost error than a net profit is, so the finding
   should survive the correction — but it has not been re-run against agreed costs, and
   `state.json` carries `costs_provisional: true` for exactly this reason.
+
+## Nulos de entrada aleatoria — qué mide un "mono" y qué no
+
+Medido 2026-09-22 con `nulls/` sobre `raw/XAUUSD/MC_Trades/2026-09-19/`: 757 estrategias,
+960.705 trades, muestra `OOS1` (2018–2022, 320.423 trades), 2.500 draws por peldaño, fill
+`open-open` reconciliado (mediana 0.999983, mínimo 0.99945). Costes PROVISIONALES de XAUUSD.
+
+⚠️ **Las primeras cifras de este hilo se midieron con fill close-close y estaban mal.** Un 4-13 %
+de correlación perdida en la reconstrucción movía los porcentajes entre 10 y 26 puntos sin que
+nada saltara. Las de aquí abajo son las del motor reconciliado.
+
+🔬 **El canal de edge por sizing está vacío en este corpus.** `corr(Size, P/L por unidad)` tiene
+mediana **+0.001**; |corr| > 0.05 en el 10.7 % de las estrategias contra el ~7 % que da el azar
+con n≈1.270. **Esto solo descarta el canal de *retorno*, no el de *varianza*:** normalizar por
+volatilidad estabiliza la varianza y sube el Sharpe sin tocar la media, y esa correlación no lo
+ve. Lo mide el peldaño `timing_sizing` de `nulls/`, y nada más.
+
+🔬 **El sizing es ATR puro y NO compone sobre el equity.** `CV(Size × ATR)` baja de 0.384 (Size
+crudo) a 0.200 con ATR(14) y 0.119 con ATR(50); dividir además por `Balance` lo **empeora** en
+todos los periodos (0.220 / 0.157). La familia está identificada y los parámetros no — el periodo
+del ATR está en el `.sqx`, no se ajusta. Consecuencia: los runs aleatorios no tienen dependencia
+secuencial y el problema es vergonzosamente paralelo (757 estrategias × 4 peldaños × 2.500 draws
+en **2m37s**).
+
+🔬 **El listón del mono lo fija el coste, no la deriva.** Con ocupación del 7.4 % (366 trades ×
+12 barras M30 sobre 59.112), el mono captura ~2.867 $ de la subida del oro (1307 → 1822) y paga
+~7.756 $ de coste. Su media es negativa en el **100 %** de las 757 estrategias (mediana −4.698 $).
+Por eso batir al mono es un listón **más bajo** que batir a cero, y no al revés.
+
+🔬 **El estadístico mueve el veredicto mucho más que el null.** De una sola simulación, peldaño
+`timing`, p < 0.05:
+
+| estadístico | pasan | |
+|---|---|---|
+| `dd` | 84.5 % | el más permisivo |
+| `sharpe` | 77.4 % | |
+| `retdd` | 76.9 % | |
+| `pf` | 55.2 % | |
+| `net` | **39.5 %** | el más duro |
+
+**Nunca reportar un solo estadístico.** `nulls/config.yaml` lista cinco y no elige.
+
+🔬 **La razón es que el Sharpe es invariante de escala y las dos poblaciones de trades no son la
+misma.** Con fill open-open, sobre 120 estrategias:
+
+| por trade | estrategia | mono | |
+|---|---|---|---|
+| desviación | 491 $ | 661 $ | el mono es un **36 %** más volátil |
+| skew | +0.53 | −0.78 | signo opuesto |
+| curtosis | 6.4 | 27.0 | 4× más cola |
+
+`mean/std` divide fuera justo esa diferencia. **Ser más tranquilo que el azar es un edge**, el
+Sharpe lo cobra y el neto no.
+
+🔬 **Frente a MinTRL: el mismo eje con el Sharpe, tests distintos con el neto.** MinTRL sobre el
+P/L que SQX reportó pasa **202/757 (26.7 %)**. Cruzado contra el mono:
+
+| estadístico del mono | pasan MinTRL y NO el mono | pasan el mono y NO MinTRL |
+|---|---|---|
+| `sharpe` | **0** | 384 |
+| `retdd` | **0** | 380 |
+| `pf` | 5 | 221 |
+| `dd` | 15 | 453 |
+| `net` | **48** | **145** |
+
+Con `sharpe` la contención es total —MinTRL ⊂ mono— y coincide con que la dispersión del null
+del mono × √n da **1.006**, que es la dispersión iid: ahí `psr(returns, benchmark=media_del_mono)`
+reproduce la simulación (corr 0.9956 en el p). Con `net` los dos tests **se cruzan en las dos
+direcciones**: no es que uno domine al otro, es que miden cosas distintas. Un cribado con MinTRL
+antes del mono descarta 48 estrategias que el mono aprueba por beneficio.
+
+⚠️ La aproximación normal tiene la cola más fina que el null simulado, así que sirve para la
+puerta en p≈0.05 y **no** para la cola extrema tras corregir por multiplicidad. Para un
+Benjamini-Hochberg sobre la lista corta manda la simulación.

@@ -24,8 +24,52 @@ Log format (`user/log/StrategyQuant/log_YYYY_MM_DD.log`):
   in memory gets pruned down to that partial set. This is a second, separate shrink mechanism, and it
   hits databanks no `ClearDatabanks` touches.
 
+- 🔬 **A sync only touches the databanks that were loaded. One nobody opened is not pruned — it is
+  not in the sync at all.** This narrows the headline rule above, which is too broad as stated, and
+  it was established by reading the custodian's own log for 2026-09-23
+  (`SQX_w2/user/log/StrategyQuant/log_2026_09_23.log`):
+
+  | evidence | what it shows |
+  |---|---|
+  | **26 `removed` fields in the whole day, every one `removed 0`** | nothing was pruned all day, across ~9 start/stop cycles |
+  | **22 `Synchronizing databanks to files` events, ~9 `StrategiesSaver` lines** | most syncs wrote nothing, because nothing was loaded. A sync with no loaded databank logs the header and `Synchronization finished.` with no databank line between them |
+  | the 07:20–07:33 cycles loaded only `bench_smt` and `smoke_keltnerUpperCrossUp` | `Retester/RetestOut` never entered memory in those starts and kept its **962 `.sqx`** through all of them |
+  | `Retester/RetestOut saved - files before sync 962 / after sync 962 / removed 0 in 21.95 s` at 06:48 | the one cycle that *did* load it round-tripped it intact |
+
+  **So the loss mechanism is narrower than "any sync while the files are not in memory".** It is a
+  databank that gets **loaded and then emptied or only partly filled**: the `ClearDatabanks` case
+  and the partial-load case above, which are exactly the two examples this file already carried.
+  The USDJPY line at the top — `before sync 248 / after sync 36 / removed 248` — is the first of
+  those, not a sync of something untouched.
+
+  ⚠️ **This is a narrowing, not an all-clear**, and the practical rules do not move: a batch left on
+  a worker is still destroyed by anything that loads it and then clears it, the custodian's
+  no-commands-between-start-and-collect discipline still earns its place, and the snapshot is still
+  the safety net. What changes is only that another session starting that install for unrelated work
+  does not, by itself, endanger a databank it never opens.
+
+  🤔 Corrected the same day from a first reading that called the survival luck. It was not: the
+  files were never a candidate for pruning. Worth recording because the wrong version is the
+  intuitive one.
+
+- 🔬 **`-databank` verbs move data in opposite directions and none is as read-only as it sounds.**
+  `action=count` syncs **from** files and destroys what `action=load` put in memory
+  (`sqx/variants/execute.py`); `action=list` fills memory **from** disk, and a running worker
+  answering it logs `Loaded 30 strategies`; `action=export` reads memory and is the safe reader.
+  Which one you reach for decides whether a restart preserves or discards.
+
 **Before anything that restarts SQX: snapshot `user/projects` at the file level.** It is a complete
 safety net, because the loss is always disk-files-versus-memory.
+
+🔬 **Exclude `<project>/log/` from the snapshot.** The 2026-09-21 snapshot is 4.5 GB, and 1.03 GB
+of it is ten `global_log_*.log` files (one of 566 MB) that hard rule 1 does not protect and that
+`sqx/export/archive_logs.py` does not cover either (it archives `user/log`, not the projects' own
+`log/`). Without them a master snapshot is ~3.5 GB. Use `rsync -a --exclude='log/'`.
+
+🔬 **A snapshot cannot be deduplicated against the live master or against the next snapshot.**
+Two days after the 2026-09-21 copy, 7,402 of the master's 7,546 `.sqx` differed in size and mtime:
+SQX rewrites every file on sync, even when nothing changed. `--link-dest` and hashing gain nothing;
+the only lever is what a snapshot includes.
 
 ## Memory vs disk also bites the exporter
 
@@ -83,3 +127,56 @@ Two corollaries worth stating, because both have already cost work:
   install's CLI daemon. With a 5,000-variant databank inside, opening it is the USDJPY log scenario
   (`before sync 248 / after sync 36 / removed 248`). Inspect **before** fabricating or **after**
   collecting — never in between. 🤔 Inferred from the master's behaviour; not verified on a worker.
+
+## 🔬 Curating a databank: the CLI selector does not work, files do (2026-09-23)
+
+Measured end to end on the custodian against a 30-strategy databank. The question was how a Python
+verdict removes strategies from SQX so the next task only sees the survivors.
+
+**`strategies=` is unreachable from either CLI path.** Both report success and change nothing:
+
+- 🔬 **Over the worker's HTTP API the name is cut at its first space.** Every SQX strategy is called
+  `Strategy 11.3.25`, and the server splits the command on whitespace (hard rule 6). `%20`, `+`,
+  `%2520` and `"quotes"` were all tried: the count never moved. `action=delete` answered
+  `Reports removed.` each time.
+- 🔬 **A one-shot `sqcli -databank …` never loads the records.** `action=save` with **no** selector
+  wrote **0 of 30** files while answering `Reports saved.` So the verb acts on an empty memory. A
+  running worker does load them — a `-databank action=list` prints `Loaded 30 strategies` — which
+  is why the HTTP path at least sees the databank.
+- ⚠️ **`action=move` with a selector that does not arrive moves the WHOLE databank.** Naming two
+  strategies moved all thirty. There is no partial failure and no error.
+
+**What works: move the files with the install stopped.** SQX syncs a databank *from* files on its
+next access, so the curated directory becomes memory:
+
+```bash
+# install stopped
+mv "<install>/user/projects/<P>/databanks/Results/Strategy 11.3.36.sqx" \
+   "<install>/user/projects/<P>/databanks/Rejected/"
+# start it
+-databank action=list  →  Loaded 27 strategies to databank Results
+```
+
+Verified 30 → 28 → 27 → 24 across four rounds, each confirmed by the record count SQX reports after
+the restart. `sqx/curate/apply_verdict.py` does this, with a snapshot outside the install first.
+
+🔬 **A destination databank can be created over the API, or by `mkdir` alone**, and a restart picks
+both up: `Rejected` was created with `-databank action=create` on the worker and carried its records
+after the next start. The older note that it had to be made in the GUI does not hold here.
+
+🔬 **Rejects are deleted after a record, and the name is checked against a hash** (2026-09-23,
+conductor, `Retester/Results`, 66 → 34 → 33). Each `.sqx` weighs ~5 MB (32 → 158 MB), so keeping
+8k rejects of 10k would be 40 GB per cut, and a `Rejected` databank inside the project is worse:
+SQX loads every databank of a project on start, so they would cost RAM too. The owner's decision:
+`apply_verdict` writes `before-<stamp>.csv` (name, identity, bytes, verdict and reason of everything on disk)
+and `rejected-<stamp>.csv` (the dropped rows of the metrics export) beside the verdict under
+`reports/<P>/<bank>/<day>/curate/`, then unlinks the files. A cut's record is ~56 KB. The verdict
+carries `identity` = SHA-256 of the inner `strategy_Portfolio.xml`: a file swapped under a judged
+name (`Strategy 11.10.85(1)` replaced by another strategy) is caught in the dry run and nothing
+is touched. Names are not identities — this export already had 5 `(1)` collisions in 66. Two
+earlier versions the same day copied the whole databank first (50 GB per cut at 10k) and then
+moved rejects to `AlgoData/rejected/`; both are gone.
+
+📓 **`-databank action=synctofiles` exists** and forces memory → disk (`knowhow/03-driving-sqx.md`
+records it for the equity harvest). An earlier note in this project claimed no verb forces a write;
+that was wrong. It is the opposite direction from the one curation needs, which is disk → memory.
