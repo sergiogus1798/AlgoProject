@@ -1,0 +1,63 @@
+# GBPJPY — lo propio de este activo, y nada más.
+#   · el esquema de sus costes, sus unidades y los ajustes de SQX → `../_classes.yaml`, clase `forex`
+#   · los segmentos temporales y las convenciones de swap        → `../_policy.yaml`
+#   · los mercados donde se retestea su edge                     → `../_markets.yaml`
+symbol: GBPJPY
+class: forex
+broker: the5ers
+sqx_symbol: GBPJPY_DukasM1_the5ers
+feeds:
+  - GBPJPY_DukasM1_the5ers
+verified: 2026-09-03
+
+# Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano:
+# `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
+instrument:
+  tick_size: 0.01
+  point_value: 653.92387    # $ por 1.0 de precio y 1.0 de lote
+  min_distance: 10
+
+# Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
+# `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
+costs:
+  spread:
+    use: null                 # points
+    sqx_now: 1.2              # points
+    why: ""
+  commission:
+    use: null                 # $ por lote
+    sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
+    why: ""
+  slippage:
+    use: 0.6                  # points
+    sqx_now: 0.0              # el maestro lo lleva a 0.0
+    why: "PROVISIONAL 2026-09-22 — la mitad del spread, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y no hay slippage recuperable de un backtest, que aplica el que se le da."
+  swap_long:
+    use: null                 # points por noche
+    sqx_now: {type: points, value: 0.53}
+    why: ""
+  swap_short:
+    use: null                 # points por noche
+    sqx_now: {type: points, value: -11.59}
+    why: ""
+
+notes: []
+
+# Rangos que sortea la tarea MC Retest, en PUNTOS y por activo. `min`/`max` null =
+# sin decidir. `sqx_now` es lo que el maestro lleva hoy para este símbolo; una lista
+# significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
+mc_retest:
+  spread:
+    min: null
+    max: null
+    sqx_now: {min: 1, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
+  slippage:
+    min: null
+    max: null
+    sqx_now: {min: 0, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
+
+# Proyectos del maestro que usan este activo. Leído, no decidido.
+projects_using_it:
+  - AUDJPY
+  - GBPJPY_H1
+  - USDJPY

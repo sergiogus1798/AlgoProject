@@ -1,0 +1,164 @@
+# Política de investigación: lo que vale igual para TODOS los activos.
+#
+# Un fichero `<SIMBOLO>.yaml` sólo declara lo que es propio de ese instrumento. Todo lo que
+# aquí abajo se decide una vez, se decide para todos, y un activo únicamente lo sobreescribe
+# cuando tiene un motivo escrito. Los ficheros que empiezan por `_` no son activos.
+
+# ─── Segmentos temporales ──────────────────────────────────────────────────────────────
+# Años enteros, ambos extremos INCLUIDOS: `from: 2008` es el 1 de enero de 2008 a las 00:00
+# y `to: 2017` es el 31 de diciembre de 2017 completo. `core.assets.window()` los convierte
+# en los milisegundos epoch que lleva una tarea de SQX.
+#
+# `segments_default` dice QUÉ ES cada tramo — su papel y qué spread usa — y vale para todos.
+# `segments` dice DÓNDE EMPIEZA Y ACABA en cada activo, que es lo que cambia: el oro tiene
+# datos desde 2003 y sólo se construye desde 2008; el DAX40 no tiene nada antes de 2013 y
+# ahí se usa todo el histórico. Los 17 están juntos aquí a propósito, para poder mirarlos
+# y ajustarlos de una vez en lugar de abrir diecisiete ficheros.
+#
+# `data` NO se edita a mano: es lo que SQX dice que tiene para el feed de ese activo, leído
+# con `bin/sqx-worker.sh run -symbol action=list`. Está al lado de los tramos justo para que
+# se vea de un golpe si una ventana pide datos que no existen — `core.assets.validate()` lo
+# comprueba y la preflight lo canta.
+#
+# `from: null` = sin decidir. No bloquea la autoría (el coste ya lo hace), pero `window()`
+# se niega a inventar una ventana y la preflight lo avisa.
+segments_default:
+  build:
+    purpose: "Construcción. Es la única muestra que el generador ve."
+    spread: is
+  oos1:
+    purpose: >-
+      Todo lo que va desde el retest hasta los SPP: decaimiento, Monte Carlo, MC Retest,
+      cross-market, SPP.
+    spread: oos
+  oos2:
+    purpose: >-
+      RESERVADO para Walk Forward Correlation y Walk Forward Matrix, que son las últimas
+      pruebas. No usar antes: cada mirada a este tramo lo gasta.
+    spread: oos
+    reserved_for: [WFC, WFM]
+
+segments:
+  AUDJPY:
+    data: {from: 2003-12-01, to: 2026-01-16}   # AUDJPY_DukasM1_the5ers, 8.276.570 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  AUDUSD:
+    data: {from: 2003-08-04, to: 2026-09-22}   # AUDUSD_DukasM1_the5ers, 8.500.423 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  CADJPY:
+    data: {from: 2004-10-25, to: 2026-09-22}   # CADJPY_DukasM1_the5ers, 7.892.396 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  DAX40:
+    data: {from: 2013-09-30, to: 2026-01-16}   # DAX40_DukasM1_Infinox, 3.676.604 barras M1
+    build: {from: null, to: null}
+    oos1: {from: null, to: null}
+    oos2: {from: null, to: null}
+  DJ30:
+    data: {from: 2013-09-30, to: 2026-01-16}   # DJ30_DukasM1_Infinox, 3.763.466 barras M1
+    build: {from: null, to: null}
+    oos1: {from: null, to: null}
+    oos2: {from: null, to: null}
+  EURJPY:
+    data: {from: 2003-08-04, to: 2026-01-16}   # EURJPY_DukasM1_the5ers, 8.397.754 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  EURUSD:
+    data: {from: 2003-05-05, to: 2026-01-16}   # EURUSD_DukasM1_the5ers, 8.485.091 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  GBPJPY:
+    data: {from: 2003-08-04, to: 2026-01-16}   # GBPJPY_DukasM1_the5ers, 8.396.081 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  GBPUSD:
+    data: {from: 2003-05-05, to: 2026-01-16}   # GBPUSD_DukasM1_the5ers, 8.482.094 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  NIKKEI225:
+    data: {from: 2011-09-19, to: 2026-01-16}   # NIKKEI225_DukasM1_Infinox, 3.849.122 barras M1
+    build: {from: null, to: null}
+    oos1: {from: null, to: null}
+    oos2: {from: null, to: null}
+  SP500ft:
+    data: null   # ⚠️ SP500ft_Plus02_Infinox NO EXISTE en SQX — no hay histórico que partir
+    build: {from: null, to: null}
+    oos1: {from: null, to: null}
+    oos2: {from: null, to: null}
+  USA500:
+    data: {from: 2012-01-19, to: 2026-01-16}   # USA500_DukasM1_Infinox, 3.815.553 barras M1
+    build: {from: null, to: null}
+    oos1: {from: null, to: null}
+    oos2: {from: null, to: null}
+  USATEC:
+    data: {from: 2012-01-19, to: 2026-01-16}   # USATEC_DukasM1_Infinox, 3.977.586 barras M1
+    build: {from: null, to: null}
+    oos1: {from: null, to: null}
+    oos2: {from: null, to: null}
+  USDCAD:
+    data: {from: 2003-08-04, to: 2026-09-22}   # USDCAD_DukasM1_the5ers, 8.624.354 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  USDCHF:
+    data: {from: 2003-05-05, to: 2026-01-16}   # USDCHF_DukasM1_the5ers, 8.461.578 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  USDJPY:
+    data: {from: 2003-05-05, to: 2026-01-16}   # USDJPY_DukasM1_the5ers, 8.481.791 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  XAUUSD:
+    data: {from: 2003-05-05, to: 2026-09-22}   # XAUUSD_DukasM1_Infinox, 7.949.285 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+
+# ─── Convenciones de swap ──────────────────────────────────────────────────────────────
+# Las lleva el atributo <Swap> de cada InstrumentInfo. Son iguales en los 142 instrumentos
+# configurados hoy en el maestro, así que viven aquí en vez de repetirse 17 veces.
+swap:
+  triple_swap_on: WEDNESDAY
+  rollout_hour: "23:00"
+
+# ─── Convención de la ventana ──────────────────────────────────────────────────────────
+# ⚠️ El proyecto XAUUSD del maestro NO sigue la convención inclusiva: su tarea Build lleva
+# dateTo = 2017-12-31 00:00, o sea el principio del último día. Las estrategias que ya están
+# en sus databanks vienen de esa ventana, un día más corta que la que describe este fichero.
+
+# ─── Rangos de perturbación del MC Retest ──────────────────────────────────────────────
+# La tarea `MC Retest` vuelve a correr el backtest entero contra una entrada perturbada. Dos
+# de sus métodos sortean un valor dentro de un rango, y ese rango es lo único que decide si
+# la prueba dice algo: `RandomizeSpread` y `RandomizeSlippage`.
+#
+#   <Method use="true" type="RandomizeSpread">
+#     <Params><Param key="Min">…</Param><Param key="Max">…</Param></Params>
+#   </Method>
+#
+# LOS DOS VAN EN PUNTOS, absolutos, no en múltiplos del spread real: 1 punto = 1 × tick_size.
+# Por eso el rango tiene que estar a la escala del instrumento y se declara POR ACTIVO, en su
+# propio fichero, bajo `mc_retest:`. El que trae SQX de fábrica —spread 1.0–5.0, slippage
+# 0.0–5.0— es el mismo para todos los mercados y no tiene sentido en casi ninguno: en el
+# NIKKEI225, cuyo spread real son 1100 puntos, sortea entre 1 y 5.
+#
+# `RandomizeMinDistance` tiene la misma forma y hoy no se declara aquí: el dueño pidió estos
+# dos. Su rango de fábrica es 0.0–10.0 en todos los instrumentos.
+mc_retest:
+  unit: points
+  methods:
+    spread: RandomizeSpread
+    slippage: RandomizeSlippage
+  sqx_factory_default:
+    spread: {min: 1.0, max: 5.0}
+    slippage: {min: 0.0, max: 5.0}

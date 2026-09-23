@@ -1,0 +1,69 @@
+# USATEC — lo propio de este activo, y nada más.
+#   · el esquema de sus costes, sus unidades y los ajustes de SQX → `../_classes.yaml`, clase `no_forex`
+#   · los segmentos temporales y las convenciones de swap        → `../_policy.yaml`
+#   · los mercados donde se retestea su edge                     → `../_markets.yaml`
+symbol: USATEC
+class: no_forex
+broker: Infinox
+sqx_symbol: USATEC_DukasM1_Infinox
+feeds:
+  - USATEC_DukasM1_Infinox
+verified: 2026-09-03
+
+# Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano:
+# `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
+instrument:
+  tick_size: 0.01
+  point_value: 1            # $ por 1.0 de precio y 1.0 de lote
+  min_distance: 0
+
+# Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
+# `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
+costs:
+  spread_is:
+    use: null                 # points — tramo `build`
+    sqx_now: 85               # points, el unico que hay hoy
+    why: ""
+  spread_oos:
+    use: null                 # points — tramos `oos1` y `oos2`
+    sqx_now: 85               # points, el unico que hay hoy
+    why: ""
+  commission:
+    use: null                 # % del nocional
+    sqx_now: {method: SizeBased, value: 1}   # $ por lote — HAY QUE PASARLO A %
+    why: ""
+  slippage:
+    use: 42.5                 # points
+    sqx_now: 0.0              # el maestro lo lleva a 0.0
+    why: "PROVISIONAL 2026-09-22 — la mitad del spread, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y no hay slippage recuperable de un backtest, que aplica el que se le da."
+  swap_long:
+    use: -8                   # % ANUAL (SQX divide /100 y /360)
+    sqx_now: {type: money, value: -6.18}
+    why: "PROVISIONAL 2026-09-22 — cifra de trabajo puesta por el dueno, no pactada con el broker. Mismo signo en largo y corto: ambos lados pagan."
+  swap_short:
+    use: -8                   # % ANUAL (SQX divide /100 y /360)
+    sqx_now: {type: money, value: 1.2}
+    why: "PROVISIONAL 2026-09-22 — cifra de trabajo puesta por el dueno, no pactada con el broker. Mismo signo en largo y corto: ambos lados pagan."
+
+notes:
+  - "USATEC is the Nasdaq 100 (US Tech index) at Infinox. The owner said the Nasdaq should use 80 points of spread rather than 40, but what SQX actually carries here is 85 and the 40 belongs to USA500. Confirm which instrument and which number before filling `use`, rather than assuming either."
+
+# Rangos que sortea la tarea MC Retest, en PUNTOS y por activo. `min`/`max` null =
+# sin decidir. `sqx_now` es lo que el maestro lleva hoy para este símbolo; una lista
+# significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
+mc_retest:
+  spread:
+    min: null
+    max: null
+    sqx_now: {min: 1, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
+  slippage:
+    min: null
+    max: null
+    sqx_now: {min: 0, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
+
+# Proyectos del maestro que usan este activo. Leído, no decidido.
+projects_using_it:
+  - AUDJPY
+  - EURUSD
+  - USDJPY
+  - XAUUSD

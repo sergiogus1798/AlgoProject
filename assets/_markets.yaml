@@ -1,0 +1,42 @@
+# El universo de retest: para cada activo MAIN, en qué otros mercados hay que comprobar que
+# el edge sobrevive. Un bloque por activo main, una lista por categoría.
+#
+# LA LISTA SE FIJA ANTES DE MIRAR NINGÚN RESULTADO. Elegir los mercados después de ver dónde
+# funcionan las estrategias convierte la prueba en una selección y sus p-valores en decoración.
+#
+# Este fichero CLASIFICA; no decide qué existe. Lo que una estrategia se retesteó de verdad se
+# lee del propio export (`markets.discovered()`, de la columna Symbol). Un feed del export que
+# no esté aquí se reporta como sin clasificar, nunca se descarta; un feed de aquí que el export
+# no traiga se reporta como ausente.
+#
+# El activo main nunca aparece en una categoría: es el mercado sobre el que se ajustaron las
+# estrategias, así que su p-valor de entrada aleatoria no es interpretable. Va como referencia.
+#
+# LAS DOS CATEGORÍAS, y la diferencia importa porque responden a preguntas distintas:
+#
+#   family      Mismo motor económico que el main. Si el edge transfiere aquí, puede ser que
+#               capture algo real de ese motor — o que los dos mercados sean el mismo trade.
+#               Es la prueba fácil: pasarla no demuestra mucho, fallarla sí dice algo.
+#
+#   structural  Elegidos por tener una ESTRUCTURA parecida (volatilidad, horario, ruido,
+#               tendencia) pero NINGÚN motor compartido. Es la prueba dura: si el edge
+#               transfiere aquí, es que la lógica capta una regularidad del movimiento del
+#               precio, no una exposición a un factor macro.
+#
+# feed        el símbolo SQX, exactamente como lo imprime `-symbol action=list`.
+# data_from   primera fecha con datos. No se filtra nada con ella: se reporta para que se vea
+#             cómo encoge la ventana común entre mercados.
+#
+# Los segmentos (build / oos1 / oos2) NO se repiten aquí: salen de `_policy.yaml`.
+
+XAUUSD:
+  main: XAUUSD_DukasM1_Infinox
+  timeframe: M30
+  categories:
+    # Misma familia macro que el oro: metales y energía, movidos por el dólar y por el riesgo.
+    family:
+      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
+      - {feed: BRENTCMDUSD_ftmo, data_from: unknown}
+    # Vacío hasta que el dueño elija los mercados estructurales y corra ese retest. La
+    # categoría existe para que el export se pueda clasificar contra ella.
+    structural: []

@@ -1,0 +1,77 @@
+# Los dos esquemas de coste, uno al lado del otro. La clase de un activo decide QUÉ CAMPOS
+# tiene su fichero, en qué UNIDAD, y con qué ajuste de SQX se aplica cada uno.
+#
+# `core.assets` valida cada fichero contra su clase: un activo forex con dos spreads, o uno
+# no-forex con la comisión en dólares, es un error que salta en la preflight, no una
+# convención que hay que recordar. Por eso el esquema está en datos y no en la cabeza de nadie.
+#
+# Las tres fórmulas están verificadas sobre el propio install (2026-09-22), decompilando
+# SQTradingLib.jar y los snippets de SQ/Trading/Commissions. Ver knowhow/09-costs.md.
+
+forex:
+  what: "Pares de divisas. Hoy: los 10 de the5ers."
+  # Un solo spread: el nocional de un par no se mueve como el del oro, así que un valor fijo
+  # en puntos sigue siendo un coste relativo estable a lo largo de los diez años de build.
+  spread:
+    fields: [spread]
+    unit: points
+    sqx: 'InstrumentInfo defaultSpread'
+    note: "1 punto = 1 × tick_size de precio."
+  commission:
+    field: commission
+    unit: usd_per_lot
+    sqx_method: SizeBased
+    formula: "coste = Commission × size"
+  slippage:
+    field: slippage
+    unit: points
+    sqx: 'InstrumentInfo defaultSlippage'
+    note: >-
+      Lo que se pierde contra la posición en cada relleno, en puntos. SQX lo lleva a 0.0 en
+      los 17 instrumentos, que es una hipótesis optimista, no una medición. No bloquea la
+      autoría: un 0 es una decisión declarada, a diferencia de un spread sin pactar.
+  swap:
+    fields: [swap_long, swap_short]
+    unit: points_per_night
+    sqx_type: points
+    formula: "coste_noche = size × pointValue × tick_size × puntos"
+
+no_forex:
+  what: "Todo lo demás: índices CFD y metales. Hoy: DAX40, DJ30, NIKKEI225, SP500ft, USA500, USATEC, XAUUSD."
+  # DOS spreads. El precio de estos activos se multiplica a lo largo del histórico — el oro va
+  # de 800 a 3500 — así que un spread fijo en puntos cuesta, en % del nocional, el triple en
+  # 2010 que hoy. Declarar uno para el tramo de construcción y otro para los dos fuera de
+  # muestra quita esa pendiente. `_policy.yaml` dice qué segmento usa cuál.
+  # Es aplicable porque SQX guarda los costes por símbolo DENTRO DE CADA TAREA, no una vez
+  # por proyecto: la tarea Build puede llevar un defaultSpread y la de retest otro.
+  spread:
+    fields: [spread_is, spread_oos]
+    unit: points
+    sqx: 'InstrumentInfo defaultSpread, distinto en la tarea de cada segmento'
+    note: "1 punto = 1 × tick_size de precio."
+  commission:
+    field: commission
+    unit: pct_of_notional
+    sqx_method: PercentageBased
+    formula: "coste = (pct/100) × size × precio_apertura × pointValue"
+    note: >-
+      Escala con el precio sola, que es el motivo de usarla aquí. ⚠️ El snippet sólo cobra en
+      computeCommissionsOnOpen; computeCommissionsOnClose devuelve 0. Si el motor la aplica a
+      cada pata —como sugieren los $16 ida y vuelta medidos con SizeBased 8— el número es por
+      pata; si no, tiene que llevar la ida y la vuelta dentro. SIN VERIFICAR.
+  slippage:
+    field: slippage
+    unit: points
+    sqx: 'InstrumentInfo defaultSlippage'
+    note: >-
+      Lo que se pierde contra la posición en cada relleno, en puntos. SQX lo lleva a 0.0 en
+      los 17 instrumentos, que es una hipótesis optimista, no una medición. No bloquea la
+      autoría: un 0 es una decisión declarada, a diferencia de un spread sin pactar.
+  swap:
+    fields: [swap_long, swap_short]
+    unit: pct_annual
+    sqx_type: percent
+    formula: "coste_noche = size × pointValue × precio_apertura × (pct / 100 / 360)"
+    note: >-
+      ⚠️ EL PORCENTAJE ES ANUAL, no por noche: SQX divide entre 100 y entre 360 (año
+      comercial) antes de aplicarlo. Escribir aquí el % de una noche se equivoca por 360×.

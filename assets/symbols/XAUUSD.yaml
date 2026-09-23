@@ -1,0 +1,72 @@
+# XAUUSD — lo propio de este activo, y nada más.
+#   · el esquema de sus costes, sus unidades y los ajustes de SQX → `../_classes.yaml`, clase `no_forex`
+#   · los segmentos temporales y las convenciones de swap        → `../_policy.yaml`
+#   · los mercados donde se retestea su edge                     → `../_markets.yaml`
+symbol: XAUUSD
+class: no_forex
+broker: Infinox
+sqx_symbol: XAUUSD_DukasM1_Infinox
+feeds:
+  - XAUUSD_DukasM1_Infinox
+verified: 2026-09-03
+
+# Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano:
+# `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
+instrument:
+  tick_size: 0.01
+  point_value: 100          # $ por 1.0 de precio y 1.0 de lote
+  min_distance: 0
+
+# Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
+# `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
+costs:
+  spread_is:
+    use: 10.0                 # points — tramo `build`
+    sqx_now: 10               # points, el unico que hay hoy
+    why: "PROVISIONAL 2026-09-21 — default de SQX, no una cifra pactada con Infinox."
+  spread_oos:
+    use: 10.0                 # points — tramos `oos1` y `oos2`
+    sqx_now: 10               # points, el unico que hay hoy
+    why: "PROVISIONAL 2026-09-21 — default de SQX, no una cifra pactada con Infinox."
+  commission:
+    use: 0.00174              # % del nocional
+    sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
+    why: "PROVISIONAL 2026-09-22 — conversion de unidad del default de SQX, no una cifra pactada. 8 $/lote/pata sobre el nocional de 1 lote al ultimo cierre real (4595.52 x point_value 100 = 459.552 $) son 8/459552 = 0.00174 %. Antes decia 0.00229 con un precio de referencia supuesto de 3500; el cierre real del 2026-01-16 es 4595.52. Depende del precio de referencia elegido y de si SQX cobra el % por pata o por operacion, SIN VERIFICAR."
+  slippage:
+    use: 5                    # points
+    sqx_now: 0.0              # el maestro lo lleva a 0.0
+    why: "PROVISIONAL 2026-09-22 — la mitad del spread, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y no hay slippage recuperable de un backtest, que aplica el que se le da."
+  swap_long:
+    use: -7                   # % ANUAL (SQX divide /100 y /360)
+    sqx_now: {type: points, value: -73.42}
+    why: "PROVISIONAL 2026-09-22 — cifra de trabajo puesta por el dueno, no pactada con el broker. Mismo signo en largo y corto: ambos lados pagan."
+  swap_short:
+    use: -7                   # % ANUAL (SQX divide /100 y /360)
+    sqx_now: {type: points, value: 38.76}
+    why: "PROVISIONAL 2026-09-22 — cifra de trabajo puesta por el dueno, no pactada con el broker. Mismo signo en largo y corto: ambos lados pagan."
+
+notes:
+  - "2026-09-21: spread, commission and point_value filled with SQX's own defaults so authoring is not blocked while the protocol is built. They are NOT agreed Infinox figures. Every cost-bearing result produced before the owner replaces them carries that caveat."
+
+# Rangos que sortea la tarea MC Retest, en PUNTOS y por activo. `min`/`max` null =
+# sin decidir. `sqx_now` es lo que el maestro lleva hoy para este símbolo; una lista
+# significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
+mc_retest:
+  spread:
+    min: null
+    max: null
+    sqx_now: [{min: 1, max: 5}, {min: 5, max: 12}]   # varias tareas, rangos distintos
+  slippage:
+    min: null
+    max: null
+    sqx_now: [{min: 0, max: 5}, {min: 0, max: 10}]   # varias tareas, rangos distintos
+
+# Proyectos del maestro que usan este activo. Leído, no decidido.
+projects_using_it:
+  - AUDJPY
+  - Builder
+  - EURUSD
+  - Retester
+  - USDJPY
+  - XAUUSD
+  - XAUUSD_Breakout_H1
