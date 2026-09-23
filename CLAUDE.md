@@ -51,9 +51,11 @@ Spanish, because their reader is the owner.** Do not "fix" them.
 | one strategy in depth, or translating it to Python | `strategies/CLAUDE.md` |
 | portfolios | `portfolio/CLAUDE.md` |
 | whether a result beats random entry, and which channel the edge lives in | `nulls/README.md` |
+| cribar una poblacion OOS entera hasta una lista de supervivientes | `gate/README.md` |
 | running something, or explaining to a human how to | `docs/manual/` — `00-empezar.md`, then that module's page |
 | what one SQX project actually does | regenerate on demand: `sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
 | what is broken or pending | `OPEN.md` |
+| **la secuencia entera, de la idea a la estrategia superviviente — los 20 pasos y en cuál estás** | `docs/AgentPDFs/WORKFLOW.md` — manda sobre el orden que digan los otros dos dossiers |
 | **what to work on next, and who does it** — the whole remaining programme split into dispatchable tasks | `docs/AgentPDFs/plan-ejecucion-2026-09-21.md` |
 | the XAUUSD robustness protocol: what is built, what is left, and the contracts between them | `docs/AgentPDFs/protocolo-robustez-2026-09-21.md` |
 | what anything costs in time, memory or disk | `docs/manual/12-rendimiento.md`, then `perf/README.md` |
