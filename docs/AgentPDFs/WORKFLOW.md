@@ -76,6 +76,47 @@ no identifica, SQX renombra en colisión.
 ⚠️ La identidad es el SHA-256 del `strategy_Portfolio.xml` **normalizado**. Un retest reescribe
 `makeExternal` en cada variable: con el hash crudo, el emparejamiento build↔retest casa 0 de 115.
 
+## Decisiones del dueño sobre la secuencia — 2026-09-23
+
+### El paso 20 va ciego, y por eso el orden importa
+
+Los pasos 17, 18 y 19 **no se miran hasta que los tres estén hechos**. La razón no es estética:
+
+> Una vez miramos una ventana de OOS la quemamos, y esas pruebas se hacen con los datos que ya
+> habíamos visto **y además la última bala del `oos2`**.
+
+Del 7 al 16 se mira `oos1` una y otra vez, así que para cuando se llega al 17 ese tramo está
+gastado. `oos2` es lo único virgen que queda, y sólo se dispara una vez. Si se leen los resultados
+de 17 y 18 antes de correr el 19, la decisión de si correrlo —y con qué parámetros— ya está
+contaminada por lo que se vio, y la última bala se gasta en un test elegido a posteriori.
+
+**Esto ha de estar forzado por el ledger, no por la buena voluntad de quien lo corra.**
+
+### Un manifiesto global de la cadena — acordado
+
+Un solo registro por estudio que diga, paso a paso, cuántas estrategias entran y cuántas salen. Sin
+él, al llegar al 17 nadie sabe si quedan tres supervivientes de diez mil o de cincuenta — y esa
+diferencia **es** el resultado, no un detalle de contabilidad.
+
+### 🔭 Antes de correr el workflow entero por primera vez: pasar una población NULA
+
+**Recordatorio para el dueño, pedido por él el 2026-09-23.**
+
+La cadena son seis filtros en serie sobre la misma población, y cada uno ajusta su umbral mirando
+lo que mató el anterior. Eso es selección múltiple: el superviviente del paso 20 ha pasado por una
+búsqueda tan intensa como la del builder, sólo que esa búsqueda **la hacemos nosotros**.
+
+Habrá métricas y requisitos de rendimiento cuantificables, y eso es necesario. No es suficiente:
+un umbral cuantificado sigue sin decir cuántas estrategias sin ningún edge lo cruzarían por azar.
+
+Lo que sí lo dice: **meter por la cadena entera una población de estrategias de entrada aleatoria**
+y contar cuántas llegan al paso 20. Si de diez mil monos llegan 4 y de diez mil tuyas llegan 5, ya
+sabes lo que vale ese 5. La máquina del mono ya existe (`gate/monkey.py`) y hoy sólo se usa en el
+paso 8; llevarla de punta a punta es el control que hace interpretable todo lo demás.
+
+Hacerlo **antes** del primer pase completo, no después: después ya se sabe qué sobrevivió, y el
+número de monos se convierte en una cifra que se compara con un resultado conocido.
+
 ## Lo que bloquea hoy
 
 | | qué falta, y de quién depende |
