@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from strategies.walkForwardCorrelation import measure
+from strategies.walkForwardCorrelation.measure import correlation
 
 
 def panel(work: Path, period: str) -> pd.DataFrame:
@@ -52,11 +52,11 @@ def usable(wide: pd.DataFrame, metrics: pd.DataFrame, min_trades: int) -> pd.Dat
         min_trades: A variant trading less than this in either sample is dropped.
 
     Returns:
-        The same frame with only the columns that survive `measure.points`, so the rho
+        The same frame with only the columns that survive `correlation.points`, so the rho
         and the PBO are two statements about one set of points rather than two samples
         that happen to share a name.
     """
-    kept = set(measure.points(metrics, min_trades)["variant_id"])
+    kept = set(correlation.points(metrics, min_trades)["variant_id"])
     return wide[[c for c in wide.columns if c in kept]]
 
 

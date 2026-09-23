@@ -8,16 +8,16 @@ parámetros, ¿escoge sistemáticamente los que van a decepcionar?**
 
 La diferencia importa. Una correlación se mide sobre una sola partición: entrenas con 2008–2017,
 compruebas con 2018–2022, y sale un número. Pero esa frontera la elegiste tú, y si la hubieras
-puesto en otro sitio habría salido otra cosa. El CSCV parte la historia en diez trozos y prueba
-**las 252 formas** de usar cinco para elegir y cinco para juzgar. En cada una elige los parámetros
+puesto en otro sitio habría salido otra cosa. El CSCV parte la historia en doce trozos y prueba
+**las 924 formas** de usar seis para elegir y seis para juzgar. En cada una elige los parámetros
 como los elegirías tú, y anota en qué puesto quedaron. La proporción de veces que quedaron por
 debajo de la mediana es el **PBO**, la probabilidad de sobreajuste del backtest.
 
 Y como lo que se juzga es la *forma de elegir*, se corre tres veces cambiando solo eso. La
-conclusión deja de ser «esta estrategia decae un 30 %» y pasa a ser algo accionable:
+conclusión deja de ser «esta estrategia decae» y pasa a ser algo accionable:
 
-> Con esta estrategia, elegir el máximo dentro de muestra falla el 41 % de las veces. Elegir el
-> centro de la meseta falla el 5 %. **Cambiar de regla vale más que cambiar de estrategia.**
+> Con esta estrategia, elegir el máximo dentro de muestra falla el 30 % de las veces. Elegir el
+> centro de la meseta falla el 4 %. **Cambiar de regla vale más que cambiar de estrategia.**
 
 ### Cuándo lo usas, y cuándo no
 
@@ -34,7 +34,7 @@ lo elegido entre sus compañeros es demasiado grueso para significar nada.
 
 **Y no lo uses para separar un 45 % de un 55 %.** Está medido: sobre paneles de puro ruido, el PBO
 de un panel concreto tiene una desviación típica de **0,21**, y doce paneles idénticos en todo menos
-la semilla dieron desde 0,25 hasta 0,92. El PBO distingue bien un 5 % de un 41 %; no distingue un
+la semilla dieron desde 0,25 hasta 0,92. El PBO distingue bien un 4 % de un 30 %; no distingue un
 45 % de un 55 %.
 
 ### Antes de empezar
@@ -73,18 +73,25 @@ python3 -m strategies.walkForwardCorrelation.pbo --work ~/Desktop/AlgoData/pipel
 | flag | obligatorio | qué hace |
 |---|---|---|
 | `--work` | sí | la carpeta del lote. Es de donde lee y donde escribe; no hay opción de salida |
+| `--blocks` | no | en cuántos trozos partir la historia, por encima de lo que diga el `config.yaml`. 12 da 924 particiones, 10 da 252 y cuesta la mitad, 16 da 12.870 |
 
-Cuánto tarda, medido el 2026-09-22 sobre 962 variantes y 786 semanas:
+Cuánto tarda, medido el 2026-09-23 sobre 962 variantes y 786 semanas:
 
 | | |
 |---|---|
 | `equity` (leer 962 `.sqx`) | **1,5 s**, y deja 5,9 MB |
-| `pbo` (3 reglas × 252 particiones + agrupamiento + bootstrap) | **6 s** |
+| `pbo` con 12 bloques (3 reglas × 924 particiones + agrupamiento + bootstrap) | **14 s**, 380 MB de RAM |
+| `pbo --blocks 10` (las 252 particiones de antes) | **6 s** |
 
 Los mandos están todos en `strategies/walkForwardCorrelation/config.yaml`, bloque `cscv`: el
-periodo de agregación, cuántos bloques, qué reglas comparar y cuántos remuestreos. **La frontera
-dentro/fuera de muestra no está ahí**: la escribe `equity.json` leyéndola del arnés que produjo los
-números, para que no haya dos ficheros diciendo dos fechas.
+periodo de agregación, con qué métrica se ordena (`score`), cuántos bloques, qué reglas comparar y
+cuántos remuestreos. **`score` admite `sharpe` o `sortino`**, y no admite Ret/DD a propósito: el
+Ret/DD crece con la longitud de la ventana (el retorno crece con el tiempo y el drawdown solo con
+su raíz), así que no sirve para comparar ventanas de distinta longitud. El Deflated Sharpe sigue
+siendo un Sharpe aunque ordenes por Sortino, porque está definido contra un máximo de Sharpes.
+
+**La frontera dentro/fuera de muestra no está ahí**: la escribe `equity.json` leyéndola del arnés
+que produjo los números, para que no haya dos ficheros diciendo dos fechas.
 
 ### Qué produce
 
@@ -102,32 +109,32 @@ Los cuatro se sobrescriben al volver a correr.
 Así queda la salida real de `Strategy 17.9.39`:
 
 ```
-PROGRESS 100 PBO 41% con argmax, DSR 0.66
-  argmax               PBO  41.3%  percentil OOS   0.2 [0, 49]  pierde 23%
-  plateau_centre       PBO   4.8%  percentil OOS  63.3 [31, 82]  pierde 4%
-  random_profitable    PBO  34.9%  percentil OOS  68.3 [6, 98]  pierde 26%
+PROGRESS 100 PBO 30% con argmax, DSR 0.66
+  argmax               PBO  30.4%  percentil OOS   0.2 [0, 49]  pierde 24%
+  plateau_centre       PBO   3.6%  percentil OOS  63.3 [31, 82]  pierde 3%
+  random_profitable    PBO  38.6%  percentil OOS  68.3 [6, 98]  pierde 29%
 
-479 variantes que valen 21 pruebas independientes; el orden se conserva con pendiente +0.42
+479 variantes que valen 21 pruebas independientes; el orden se conserva con pendiente +0.49
 ```
 
 Léelo fila a fila:
 
 - **PBO.** Por debajo del 50 % la regla sirve; por encima, elegir así es peor que no elegir.
-  `argmax` (quedarse con el mejor) falla el 41 % de las veces. `plateau_centre` (quedarse con el
-  mejor después de promediar con sus vecinos) falla el 5 %. **Ésa es la conclusión del estudio.**
+  `argmax` (quedarse con el mejor) falla el 30 % de las veces. `plateau_centre` (quedarse con el
+  mejor después de promediar con sus vecinos) falla el 4 %. **Ésa es la conclusión del estudio.**
 - **Percentil OOS.** Sobre la partición cronológica de verdad, en qué puesto quedó lo que la regla
   habría elegido. 50 es lo que da elegir a ciegas. El máximo dentro de muestra quedó en el
   **percentil 0,2**: de 479 variantes, casi la peor. El corchete es el intervalo del 95 %, y cuando
   es ancho es que el número no soporta una conclusión fina.
-- **Pierde.** En qué fracción de las 252 particiones lo elegido acabó la mitad reservada en
+- **Pierde.** En qué fracción de las 924 particiones lo elegido acabó la mitad reservada en
   pérdidas. El PBO habla de puestos; esto habla de dinero.
 - **Pruebas independientes.** Las 479 variantes no son 479 intentos: comparten árbol de reglas y
   casi todas sus operaciones. Agrupadas por lo parecido de sus rendimientos valen **21**. Ese
   número es el que usa el Deflated Sharpe, y de él sale el `DSR 0.66`: la probabilidad de que el
   Sharpe del mejor sea real teniendo en cuenta cuántas cosas se probaron para encontrarlo.
 - **Pendiente.** Cuánto del orden dentro de muestra se conserva fuera, ajustado sobre **todas** las
-  variantes. 1 sería conservarlo entero, 0 que el número de dentro no decía nada. Aquí +0,42: hay
-  información, pero menos de la mitad.
+  variantes. 1 sería conservarlo entero, 0 que el número de dentro no decía nada. Aquí +0,49: hay
+  información, pero la mitad justa.
 
 En la página HTML, la figura de arriba es la que se lee sin saber estadística: tres bandas, una por
 regla, y cada barra cuenta particiones. **Lo rojo, a la izquierda de la raya, son las veces que la
@@ -153,10 +160,10 @@ SQX guardó en la frontera, y entonces se está leyendo el resultado equivocado 
 
 ```
 $ python3 -m strategies.walkForwardCorrelation.pbo --work ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39
-PROGRESS 30 argmax: 252 particiones sobre 479 variantes
+PROGRESS 30 argmax: 924 particiones sobre 479 variantes
 ...
-  argmax               PBO  41.3%  percentil OOS   0.2 [0, 49]  pierde 23%
-  plateau_centre       PBO   4.8%  percentil OOS  63.3 [31, 82]  pierde 4%
+  argmax               PBO  30.4%  percentil OOS   0.2 [0, 49]  pierde 24%
+  plateau_centre       PBO   3.6%  percentil OOS  63.3 [31, 82]  pierde 3%
 -> .../cscv.html
 ```
 
@@ -171,7 +178,9 @@ Y la lectura en una frase: **en esta estrategia, la meseta es la regla y el máx
   «pierde»: el PBO es un puesto, no un euro.
 - **No dice que `plateau_centre` sea la regla correcta siempre.** Lo dice de esta madre. El estudio
   existe precisamente para medirlo en cada una en vez de suponerlo.
-- **No distingue un PBO del 45 % de uno del 55 %.** Ver «cuándo no lo usas».
+- **No distingue un PBO del 45 % de uno del 55 %.** Ver «cuándo no lo usas». Por el mismo motivo,
+  tampoco esperes el mismo número al cambiar de bloques: con esta misma estrategia, pasar de 10 a
+  12 bloques movió el PBO de `argmax` del 41 % al 30 %, y las dos cifras dicen lo mismo.
 - **El recuento de pruebas independientes es una regla, no una medición.** Está explicado en
   `strategies/walkForwardCorrelation/POSSIBLE_IMPROVEMENTS.md`, sección 6, con la alternativa.
 

@@ -11,8 +11,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from strategies.walkForwardCorrelation import (cost, cscv, figures, matrix, report,
-                                               rules, summary, trials)
+from strategies.walkForwardCorrelation.inputs import config, panel
+from strategies.walkForwardCorrelation.measure import cscv, rules
+from strategies.walkForwardCorrelation.render import figures
+from strategies.walkForwardCorrelation.verdict import cost, summary, trials
 
 PARAM = "param_"
 
@@ -53,34 +55,41 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--work", required=True, type=Path,
                     help="the batch directory: holds metrics.parquet and equity.parquet")
+    ap.add_argument("--blocks", type=int,
+                    help="blocks to cut the history into, overriding config.yaml. "
+                         "12 gives C(12,6) = 924 partitions, 10 gives 252, 16 gives 12,870")
     a = ap.parse_args()
 
-    cfg = report.settings()
+    cfg = config.load()
     knobs = cfg["cscv"]
+    if a.blocks:
+        knobs["blocks"] = a.blocks
+    score = cscv.SCORES[knobs["score"]]
     print("PROGRESS 10 construyendo la matriz de rendimientos por periodo", flush=True)
     metrics = pd.read_parquet(a.work / "metrics.parquet")
-    wide = matrix.usable(matrix.panel(a.work, knobs["period"]), metrics, cfg["min_trades"])
+    wide = panel.usable(panel.panel(a.work, knobs["period"]), metrics, cfg["min_trades"])
     grid = grid_of(metrics, wide.columns)
-    inside, outside = matrix.windows(wide, matrix.split(a.work))
+    inside, outside = panel.windows(wide, panel.split(a.work))
 
     runs, found = {}, {}
     for n, name in enumerate(knobs["rules"], 1):
         print(f"PROGRESS {10 + n * 20} {name}: {len(cscv.partitions(knobs['blocks']))} "
               f"particiones sobre {wide.shape[1]} variantes", flush=True)
         runs[name] = cscv.run(wide, knobs["blocks"], rules.RULES[name], grid,
-                              np.random.default_rng(knobs["seed"]))
+                              np.random.default_rng(knobs["seed"]), score)
         found[name] = summary.everything(runs[name]) | cost.cost(inside, outside, grid,
                                                                 name, knobs)
 
     print("PROGRESS 80 contando cuantas pruebas independientes hay de verdad", flush=True)
     independent = trials.independent(inside, knobs["cluster_k_max"])
-    best = rules.argmax(cscv.sharpe(inside.to_numpy()), grid, None)
+    best = rules.argmax(score(inside.to_numpy()), grid, None)
     deflated = trials.deflated(inside, best, independent["n_clusters"])
-    moved = cost.drift(inside, outside, grid)
+    moved = cost.drift(inside, outside, grid, score)
 
     print("PROGRESS 90 dibujando", flush=True)
     result = {"n": int(wide.shape[1]), "periods": int(wide.shape[0]),
               "period": knobs["period"], "blocks": knobs["blocks"],
+              "score": knobs["score"], "partitions": len(cscv.partitions(knobs["blocks"])),
               "dsr": deflated["dsr"], "sharpe_benchmark": deflated["benchmark"],
               "n_clusters": independent["n_clusters"], "levels_max": moved["levels_max"],
               # The carry-over slope is fitted across every variant of a partition, so it

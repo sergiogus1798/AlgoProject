@@ -92,7 +92,7 @@ Medido el 23-09-2026 sobre lo que hay en `~/Desktop/AlgoData` con pandas; "RAM" 
 | **MC Retest** | parquet particionado ✅ | sin cambio | — | — | nada |
 | **variantes** | `retest.csv` + `sqx/` | `retest.parquet`; `sqx/` lo barre `pipeline.cleanup` en cuanto se resuelva el asunto 33 de `OPEN.md` (una etapa reescribe `metrics.parquet` después de que `collect` lo firme) | −32 MB por madre | — | `sqx/variants/collect.py`, `execute.py`; el asunto 33 |
 | **metrics** | CSV | sin cambio | — | — | nada |
-| **wfc_pairs** | CSV ancho | parquet, misma forma | 5 → 0,6 MB | 3,4 → 1 MB | el que lo escribe es manual; `walkForwardCorrelation/trials.py` |
+| **wfc_pairs** | CSV ancho | parquet, misma forma | 5 → 0,6 MB | 3,4 → 1 MB | el que lo escribe es manual; `walkForwardCorrelation/verdict/trials.py` |
 
 `raw/` pasaría de 346 MB a unos **130 MB** (76 MC Retest, 20 trades, 6 SPP, 3 WFM, 3 cross-market,
 y el resto kilobytes), con **7 ficheros de datos donde hoy hay 270**, y cada uno con manifiesto.

@@ -138,7 +138,7 @@ stages:
     record: [n, rho, call]
 
   # Where `wfc` asks whether this surface carried over, this asks whether the WAY the
-  # parameters get picked is prone to overfitting at all -- 252 ways of splitting the
+  # parameters get picked is prone to overfitting at all -- 924 ways of splitting the
   # history, three selection rules, and what each one costs. Needs the per-period matrix,
   # which is why it sits after `equity` and not next to `wfc`.
   # Named for what it writes, like every other row: the stage is `cscv`, the command that

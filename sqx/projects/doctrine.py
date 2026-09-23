@@ -29,7 +29,12 @@ def apply_doctrine(text: str, data: dict, segment: str, timeframe: str) -> tuple
     number that are actually left enabled.
     """
     d = doctrine()
+    # Only a Build task carries a generator, and that is also what decides its precision
+    # and whether it runs the high-precision cross-check.
+    generates = bool(rules.BLOCKS.search(text))
+    key = "build" if generates else "default"
     text, charts = settings.set_timeframe(text, timeframe)
+    text = settings.set_precision(text, d["precision"][key])
     text = settings.set_engine(text, d["engine"])
     text, sessions = settings.set_session(text, data["session"])
     text = settings.set_money_management(text, d["money_management"])
@@ -37,16 +42,18 @@ def apply_doctrine(text: str, data: dict, segment: str, timeframe: str) -> tuple
     text = settings.set_databank_caps(text, d["databank"])
     text = settings.set_genetic(text)
     text = settings.set_crosschecks(text, d["crosschecks"],
-                                    sqx_settings(data, segment)["defaultSpread"])
-    generates = bool(rules.BLOCKS.search(text))
+                                    sqx_settings(data, segment)["defaultSpread"],
+                                    d["crosschecks"][key])
     exit_types = None
     if generates:
         text = rules.set_order_types(text, d["order_types"])
         text, exit_types = rules.set_exit_types(text, d["exits"], timeframe)
-        text = rules.set_complexity(text, d["complexity"], exit_types)
+        text = rules.set_complexity(text, d["complexity"], exit_types,
+                                    d["exits"]["condition_required"])
         text = rules.set_slpt(text)
     lo, hi = rules.bar_range(d["exits"], timeframe)
     return text, {"charts": charts, "generator": generates, "exit_types": exit_types,
+                  "precision": d["precision"][key],
                   "exit_bars": [lo, hi], "sessions": sessions, "trading_options": options,
                   "session_defined": settings.session_defined(text, data["session"])}
 

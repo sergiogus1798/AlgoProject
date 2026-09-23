@@ -29,9 +29,14 @@ order_types: [EnterAtMarket]
 #
 # El rango va EN HORAS y se convierte a barras según el timeframe de la tarea, que es lo
 # que SQX guarda. 24 barras no significan lo mismo en M30 que en H4: en M30 son 12 horas.
+#
+# La salida por barras es OBLIGATORIA siempre. La de condición es OPTATIVA: el generador
+# puede ponerla o no. `condition_required: true` la vuelve obligatoria también, y eso se
+# pide explícitamente, no se asume.
 exits:
   bars: {min_hours: 2, max_hours: 24}
   by_condition: true
+  condition_required: false
   stop_loss: false
   profit_target: false
   trailing_stop: false
@@ -59,12 +64,26 @@ databank:
   max_strategies: 10000
   stop_condition: databank-full
 
+# ─── Precisión del backtest ────────────────────────────────────────────────────────────
+# `testPrecision` en cada <Setup>. 1 = sólo el timeframe elegido, 2 = 1 minuto. Medido
+# 2026-09-23 contra los proyectos del dueño: `Infinox_SP500ft_H4_HighPrecision` está
+# entero a 2 y `XAUUSD_Breakout_H1`, que es el modelo de construcción, entero a 1.
+#
+# El builder construye a timeframe elegido porque a 1 minuto no terminaría nunca, y se
+# apoya en el crosscheck de alta precisión para descartar lo que sólo existe en las barras
+# grandes. De ahí en adelante ya no hay atajo: todo a 1 minuto, el test principal incluido.
+precision:
+  build: 1
+  default: 2
+
 # ─── Crosschecks ───────────────────────────────────────────────────────────────────────
-# Por defecto sólo el de alta precisión, y CON EL MISMO SPREAD que el test principal: el
-# donante lo trae a 0 con CustomSpread=true, o sea gratis, que es la versión optimista.
+# El de alta precisión SÓLO en la construcción — después no pinta nada, porque el propio
+# test ya va a 1 minuto. Y CON EL MISMO SPREAD que el test principal: el donante lo trae
+# a 0 con CustomSpread=true, o sea gratis, que es la versión optimista.
 # Cualquier otro se enciende sólo si el dueño lo pide.
 crosschecks:
-  enabled: [RetestWithHigherPrecision]
+  build: [RetestWithHigherPrecision]
+  default: []
   precision: 2
 
 # ─── Genético ──────────────────────────────────────────────────────────────────────────

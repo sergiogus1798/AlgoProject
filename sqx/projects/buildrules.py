@@ -13,23 +13,31 @@ EXIT_BLOCKS = {"stop_loss": ["StopLoss.StopLoss"],
                "trailing_stop": ["TrailingStop.TrailingStop", "TrailingStop.TrailingActivation"],
                "move_sl_to_be": ["MoveSL2BE.MoveSL2BE", "MoveSL2BE.SL2BEAddPips"],
                "by_condition": ["_ExitRule_"]}
+# SQX asks for each exit type twice: `use` says it is available at all, `probability` how
+# often the generator reaches for it. 100 is what makes one compulsory.
+ALWAYS, SOMETIMES = "100", "50"
 BARS_BLOCK = "ExitAfterBars.ExitAfterBars"
 BLOCKS = re.compile(r"<Blocks\b[^>]*>.*?</Blocks>", re.S)
 
 
-def block_use(text: str, key: str, use: bool) -> str:
-    """Turn one generator block on or off.
+def block_use(text: str, key: str, use: bool, probability: str | None = None) -> str:
+    """Turn one generator block on or off, and say how often it is reached for.
 
     Args:
         text: XML holding <Block key="..."> elements.
         key: The block key, e.g. "TrailingStop.TrailingStop".
         use: Whether the generator may emit it.
+        probability: Percentage as SQX writes it; omit to leave it alone.
 
     Returns:
-        The text with that block's `use` attribute set.
+        The text with that block's attributes set.
     """
-    return re.sub(rf'(<Block key="{re.escape(key)}"[^>]*?)use="[^"]*"',
+    text = re.sub(rf'(<Block key="{re.escape(key)}"[^>]*?)use="[^"]*"',
                   rf'\g<1>use="{str(use).lower()}"', text)
+    if probability:
+        text = re.sub(rf'(<Block key="{re.escape(key)}"[^>]*?)probability="[^"]*"',
+                      rf'\g<1>probability="{probability}"', text)
+    return text
 
 
 def set_order_types(text: str, allowed: list[str]) -> str:
@@ -77,16 +85,19 @@ def set_exit_types(text: str, exits: dict, timeframe: str) -> tuple[str, int]:
     Returns:
         The text and how many exit types stayed enabled — that count is also the cap
         written into maxExitTypes, so the generator cannot ask for more kinds of exit
-        than exist. SL and PT are off on purpose: the real stop is decided later, by the
-        module that sizes it, once the edge is known to be there.
+        than exist. The bar exit is compulsory and the rule exit optional unless the owner
+        asks for it: every strategy leaves the market on its own, and a rule that happens
+        to fire is a bonus. SL and PT are off on purpose — the real stop is decided later,
+        by the module that sizes it, once the edge is known to be there.
     """
     whole = BLOCKS.search(text).group(0)
     section = re.search(r"<ExitTypes>.*?</ExitTypes>", whole, re.S).group(0)
-    out = block_use(section, BARS_BLOCK, True)
+    out = block_use(section, BARS_BLOCK, True, ALWAYS)
     enabled = 1
     for flag, keys in EXIT_BLOCKS.items():
+        odds = ALWAYS if exits["condition_required"] and flag == "by_condition" else SOMETIMES
         for key in keys:
-            out = block_use(out, key, bool(exits[flag]))
+            out = block_use(out, key, bool(exits[flag]), odds)
         enabled += bool(exits[flag])
 
     lo, hi = bar_range(exits, timeframe)
@@ -98,13 +109,16 @@ def set_exit_types(text: str, exits: dict, timeframe: str) -> tuple[str, int]:
     return text.replace(section, out.replace(bars, fixed, 1), 1), enabled
 
 
-def set_complexity(text: str, complexity: dict, exit_types: int) -> str:
+def set_complexity(text: str, complexity: dict, exit_types: int, exit_required: bool) -> str:
     """Cap how many conditions a generated strategy may carry, and how far back it may look.
 
     Args:
         text: A task XML.
         complexity: The doctrine's `complexity` mapping.
         exit_types: How many exit types the task leaves enabled.
+        exit_required: Whether every strategy must carry an exit condition. False leaves
+            minExitConditions at zero, which is what makes the rule exit optional — the
+            bar exit is what guarantees the position closes.
 
     Returns:
         The text with the Main chart's bounds rewritten. The lookback is min and max at
@@ -113,7 +127,8 @@ def set_complexity(text: str, complexity: dict, exit_types: int) -> str:
     """
     shift = complexity["lookback_bars"]
     want = {"minConditions": 1, "maxConditions": complexity["max_entry_conditions"],
-            "minExitConditions": 1, "maxExitConditions": complexity["max_exit_conditions"],
+            "minExitConditions": int(exit_required),
+            "maxExitConditions": complexity["max_exit_conditions"],
             "minExitTypes": 1, "maxExitTypes": exit_types,
             "minShift": shift, "maxShift": shift}
     tag = re.search(r'<Chart name="Main chart"[^>]*>', text).group(0)

@@ -8,29 +8,40 @@ quadrants means optimising in-sample buys nothing out of sample; a cloud on the 
 means the surface carries information and the in-sample ranking is worth trusting.
 
 **And is the way I pick parameters prone to overfitting at all?** That one is not about this
-history. It splits the history 252 ways, picks by each half in turn, and counts how often the
+history. It splits the history 924 ways, picks by each half in turn, and counts how often the
 winner came back below average — the CSCV of Bailey, Borwein, López de Prado and Zhu. It is run
 once per selection rule, so the answer is not "this strategy decays" but **"choosing by plateau
-centre instead of by maximum takes the PBO from 41 % to 5 %"**.
+centre instead of by maximum takes the PBO from 30 % to 4 %"**.
 
 Reads contract **C3** (`metrics.parquet`, from `sqx.variants.collect`) and, for the CSCV,
 `equity.parquet` (from `sqx.variants.equity`). Writes `wfc.html`, `wfc.json`, `cscv.html` and
 `cscv.json` beside them.
 
-| file | what it does | run it | in → out |
-|---|---|---|---|
-| `config.yaml` | the trade floor, the rho below which the ranking is not worth trusting, and every knob of the CSCV | edited | — |
-| `measure.py` | which points are usable, Spearman's rho, its 95 % interval, and the call | imported | C3 → rho, call |
-| `render.py` | the scatter, as inline SVG | imported | points → svg |
-| `report.py` | the correlation: `python3 -m strategies.walkForwardCorrelation.report --work <dir>` | command | C3 → `wfc.html` |
-| `matrix.py` | the N × T panel the CSCV runs on, and where the real in-sample boundary is | imported | equity → panel |
-| `rules.py` | the three ways a person picks one parameter set off a surface, behind one signature | imported | scores → a choice |
-| `cscv.py` | the partitions, the per-period Sharpe, and the choose-then-score loop | imported | panel → 252 rows |
-| `summary.py` | what those rows say: PBO, carry-over, probability of loss, dominance | imported | rows → numbers |
-| `trials.py` | how many independent trials the grid really holds, and the deflated Sharpe that follows | imported | panel → count, DSR |
-| `cost.py` | what each rule cost on the split that actually happened, and how far the optimum moved | imported | panel → percentiles |
-| `figures.py` | the CSCV page: the lambda bands, the partition cloud, and every statistic explained | imported | rows → html |
-| `pbo.py` | the CSCV: `python3 -m strategies.walkForwardCorrelation.pbo --work <dir>` | command | C3 + equity → `cscv.html` |
+```
+config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ render
+ every knob    the panel,  rho, the    PBO, DSR,   wfc.html
+               the split   rules,      what each   cscv.html
+                           the CSCV    rule cost
+```
+
+| folder | the question it answers | read its README before |
+|---|---|---|
+| `inputs/` | what is the study run on, and where does the history split? | touching the panel or the boundary |
+| `measure/` | what are the numbers? | touching the rho, a selection rule or the partitions |
+| `verdict/` | what do they mean? | moving a threshold or a cluster count |
+| `render/` | how is it read? | adding a figure or a table |
+
+| file | what it does | run it |
+|---|---|---|
+| `report.py` | The correlation | `python3 -m strategies.walkForwardCorrelation.report --work <dir>` |
+| `pbo.py` | The CSCV, once per selection rule | `python3 -m strategies.walkForwardCorrelation.pbo --work <dir>` |
+| `config.yaml` | The trade floor, the rho floor, and every knob of the CSCV | edited |
+
+**Twelve blocks, C(12,6) = 924 partitions, ranked by per-period Sharpe.** Those are López de
+Prado's own numbers and the owner's decision of 2026-09-23; `pbo.py --blocks N` overrides the count
+per run, and `cscv.score` takes `sortino` as well. What it will never take is Ret/DD — a score has
+to be a rate per period to be comparable across windows, and Ret/DD grows with elapsed time.
+`POSSIBLE_IMPROVEMENTS.md` §2 and §3 carry both arguments and what each choice cost.
 
 **The interval is the point, not the coefficient.** With a dozen tuples the sampling error on a
 correlation is enormous, so the study reports a band and will say `indeciso` rather than pretend.
@@ -39,10 +50,10 @@ correlation is enormous, so the study reports a band and will say `indeciso` rat
 ## Three traps measured here, and the code is shaped around all three
 
 **The PBO of pure noise has a standard deviation of 0.21.** Measured 2026-09-22 over twelve
-synthetic panels: individual draws ran from 0.25 to 0.92 with a mean of 0.52. The 252 partitions
-overlap heavily and are nothing like 252 independent observations. A grid at 0.45 and a grid at
-0.55 are not distinguishable, so the 50 % gate is a coarse filter and `tests/test_cscv.py` checks
-the *average* over panels, never one.
+synthetic panels at 252 partitions: individual draws ran from 0.25 to 0.92 with a mean of 0.52. The
+partitions overlap heavily and are nothing like as many independent observations. A grid at 0.45
+and a grid at 0.55 are not distinguishable, so the 50 % gate is a coarse filter and
+`tests/test_cscv.py` checks the *average* over panels, never one.
 
 **Regressing the chosen variant's out-of-sample Sharpe on its in-sample Sharpe measures a
 seesaw, not decay.** The two halves are complementary, so a partition whose winner looked unusually

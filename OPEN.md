@@ -710,13 +710,22 @@ Not built: `sqx/variants/` **execution and collection** (`views.py`, `run.py`, `
 `strategies/walkForwardCorrelation/` with its PBO, `pipeline/`, the multi-market study, and all six
 skills.
 
-**Built 2026-09-22: the CSCV / PBO** (`strategies/walkForwardCorrelation/` gained `matrix.py`,
-`rules.py`, `cscv.py`, `summary.py`, `trials.py`, `cost.py`, `figures.py`, `pbo.py`), fed by a new
+**Built 2026-09-22: the CSCV / PBO** (`strategies/walkForwardCorrelation/` gained `inputs/panel.py`,
+`measure/rules.py`, `measure/cscv.py`, `verdict/summary.py`, `verdict/trials.py`, `verdict/cost.py`,
+`render/figures.py` and the `pbo.py` command), fed by a new
 harvest stage `sqx/variants/equity.py` that reads every retested variant's daily curve straight out
 of the custodian's `.sqx`. Two new pipeline rows, `equity` and `cscv`; `tests/test_cscv.py`;
-`docs/manual/25-cscv.md`. Measured on `Strategy 17.9.39`, 479 usable variants: **PBO 41 % choosing
-the in-sample maximum against 5 % choosing the plateau centre**, and the in-sample maximum landed in
+`docs/manual/25-cscv.md`. Measured on `Strategy 17.9.39`, 479 usable variants: **PBO 30 % choosing
+the in-sample maximum against 4 % choosing the plateau centre**, and the in-sample maximum landed in
 the 0.2nd out-of-sample percentile.
+
+**Settled 2026-09-23** (owner, on `POSSIBLE_IMPROVEMENTS.md` §1, §2, §3 and §8): weekly periods
+stay; the score has to be a rate per period, so `cscv.score` now takes `sharpe` or `sortino` and
+never Ret/DD; the default is **twelve blocks, 924 partitions**, López de Prado's own number, with
+`pbo.py --blocks N` to override it per run; and the open last period keeps being dropped. The move
+from 252 to 924 partitions costs 6 s → 14 s and moved the `argmax` PBO from 41 % to 30 %, well
+inside the 0.21 null spread — same reading, and neither figure survives a decimal. §4 to §7 stay
+open on purpose until there is a fully tested strategy to rule on them with.
 
 ⚠️ **Contract C4 (trades per variant) still does not exist**, and this did not build it. The CSCV
 needs returns per period, which the daily curve gives for 1.5 s per batch against ~90 min to export

@@ -799,3 +799,21 @@ estrategias que salieron de `algo_XAU_doctrina_smoke`.
   donante lo trae a `0`. Vuelve a correr la estrategia gratis y llama robustez al resultado.
 - 🤔 **`on:` en YAML es la clave booleana `True`** (YAML 1.1). `crosschecks: on: [...]` se lee como
   `{True: [...]}`. La clave aquí se llama `enabled`.
+
+### La salida por barras de una plantilla no obedece a la tarea (2026-09-23, SIN RESOLVER)
+
+- 🔬 **En una plantilla, `ExitAfterBars` no es un tipo de salida generado: es un parámetro de
+  la orden de entrada**, `<Param key="#ExitAfterBars.ExitAfterBars#" … defaultValue="0"
+  generate="random" randomValue="default">`. La clave lleva el prefijo del bloque; buscar
+  `#ExitAfterBars#` a secas en una estrategia generada no encuentra nada y hace creer que no
+  hay ninguna salida por barras. Ese fue el error de medición de la primera pasada.
+- 🔬 **El RANGO sí lo manda la tarea.** Con `minValue=4 maxValue=48` en el `<Block>` de
+  `ExitTypes`, las estrategias salieron con 15, 18, 20, 34, 42, 45 y 46 barras — por encima del
+  `builderMaxValue="20"` que trae la plantilla.
+- 🔬 **La PRESENCIA no la manda ninguna palanca probada.** Con `use="true" probability="100"`,
+  `minExitTypes=1`, `maxExitTypes=2` y `minExitConditions=0`, 13 de 20 estrategias salieron sin
+  salida por barras. Subir `defaultValue` y `minValue` del parámetro de la plantilla por encima
+  de cero para quitar el estado "desactivado" del sorteo lo empeoró: 15 de 20 sin ella. Ese
+  intento está revertido.
+- 🤔 Queda por probar `randomValue=`, que hoy vale `"default"`. La salida vive en la plantilla,
+  así que lo más probable es que la palanca sea de autoría de plantillas y no de la tarea.

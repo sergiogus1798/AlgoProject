@@ -10,7 +10,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from strategies.walkForwardCorrelation import cscv, rules, summary, trials
+from strategies.walkForwardCorrelation.measure import cscv, rules
+from strategies.walkForwardCorrelation.verdict import summary, trials
 
 N, T, BLOCKS, SEED = 60, 400, 10, 20260922
 # One panel proves nothing about the null: measured 2026-09-22, the PBO of pure noise has

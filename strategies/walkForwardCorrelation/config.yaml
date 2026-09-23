@@ -21,10 +21,17 @@ cscv:
   # How daily P&L is aggregated before anything is ranked. At roughly sixty trades a year
   # a daily matrix is almost all zeros and its ranks are noise. "W" weekly, "ME" monthly.
   period: W
-  # Blocks the history is cut into. Ten gives C(10,5) = 252 partitions, which is the
-  # number the paper uses and enough for an interval on the PBO. Sixteen gives 12,870 and
-  # costs sixty times as much for a third-decimal improvement.
-  blocks: 10
+  # What "best" means when a rule ranks variants. It has to be comparable across windows
+  # of different lengths, which is exactly what Ret/DD is not: its return grows with the
+  # window and its drawdown only with the square root of it, so a longer window scores
+  # higher for free. "sharpe" and "sortino" are both rates per period and are both
+  # legitimate here; sortino counts only the periods that lost.
+  score: sharpe
+  # Blocks the history is cut into, following Lopez de Prado. Twelve gives C(12,6) = 924
+  # partitions. Ten gives 252 and is the cheap setting; sixteen gives 12,870 and costs
+  # fourteen times as much for a third-decimal improvement on a statistic whose null
+  # standard deviation is 0.21. Overridable per run with `pbo.py --blocks`.
+  blocks: 12
   # The ways of choosing parameters that get compared. The point of the study is the
   # difference between them, so a run with one rule answers half the question.
   rules: [argmax, plateau_centre, random_profitable]

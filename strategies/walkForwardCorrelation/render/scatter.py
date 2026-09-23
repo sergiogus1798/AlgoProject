@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from strategies.walkForwardCorrelation.measure import IS, OOS
+from strategies.walkForwardCorrelation.measure.correlation import IS, OOS
 
 W, H = 900, 640
 PAD = {"l": 110, "r": 40, "t": 96, "b": 96}

@@ -40,6 +40,23 @@ def set_engine(text: str, engine: str) -> str:
     return re.sub(r'(<Setup\b[^>]*?)engine="[^"]*"', rf'\g<1>engine="{engine}"', text)
 
 
+def set_precision(text: str, precision: int) -> str:
+    """Put every Setup of a task on one backtest precision.
+
+    Args:
+        text: A task XML.
+        precision: SQX's testPrecision — 1 is the selected timeframe only, 2 is one minute.
+
+    Returns:
+        The text with the precision rewritten on every <Setup>. The build runs at the
+        selected timeframe because a minute-precision build would never finish, and leans
+        on the high-precision cross-check to drop what only exists on the big bars.
+        Everything after it runs at one minute, the main backtest included.
+    """
+    return re.sub(r'(<Setup\b[^>]*?)testPrecision="[^"]*"',
+                  rf'\g<1>testPrecision="{precision}"', text)
+
+
 def set_params(text: str, values: dict) -> tuple[str, int]:
     """Rewrite named <Param key="…"> entries wherever they appear in a task.
 
@@ -113,13 +130,16 @@ def set_money_management(text: str, mm: dict) -> str:
                   rf'\g<1>maxDrawdown="{mm["max_drawdown"]}"', text)
 
 
-def set_crosschecks(text: str, cc: dict, spread: float) -> str:
+def set_crosschecks(text: str, cc: dict, spread: float, enabled: list) -> str:
     """Leave only the cross-checks the doctrine turns on, priced like the main test.
 
     Args:
         text: A task XML.
         cc: The doctrine's `crosschecks` mapping.
         spread: The segment's spread, in points.
+        enabled: The cross-checks to leave on in this task. Empty for everything after the
+            build: once the task itself runs at minute precision, re-running it at minute
+            precision proves nothing.
 
     Returns:
         The text with every cross-check off except the listed ones. The high-precision
@@ -131,7 +151,7 @@ def set_crosschecks(text: str, cc: dict, spread: float) -> str:
         return text
     out = found.group(0)
     for name in re.findall(r"<(\w+) use=\"(?:true|false)\">", out):
-        out = re.sub(rf'(<{name} )use="[^"]*"', rf'\g<1>use="{str(name in cc["enabled"]).lower()}"', out)
+        out = re.sub(rf'(<{name} )use="[^"]*"', rf'\g<1>use="{str(name in enabled).lower()}"', out)
     hp = re.search(r"<RetestWithHigherPrecision.*?</Settings>", out, re.S)
     if hp:
         fixed = re.sub(r"<Spread>[^<]*</Spread>", f"<Spread>{spread}</Spread>", hp.group(0))

@@ -8,6 +8,7 @@ PAD = {"l": 70, "r": 30, "t": 34, "b": 40}
 INK, MUTED, GRID = "#14181f", "#5b6675", "#d8dde5"
 GOOD, BAD = "#1a7f37", "#b3261e"
 BINS = 41
+PERIODO = {"W": "semanal", "ME": "mensual", "D": "diario"}
 CALL = {"primer_orden": "gana siempre", "segundo_orden": "gana en promedio",
         "ninguna": "no gana"}
 
@@ -86,13 +87,14 @@ def lambdas(runs: dict, found: dict) -> str:
     return "".join(parts)
 
 
-def decay(records: pd.DataFrame, found: dict, name: str) -> str:
+def decay(records: pd.DataFrame, found: dict, name: str, unit: str) -> str:
     """What each partition promised in sample against what it delivered out of it.
 
     Args:
         records: What `cscv.run` returned for one rule.
         found: That rule's summary.
         name: The rule, for the caption.
+        unit: What the axes are in -- the score and its period, already in Spanish.
 
     Returns:
         An SVG, one dot per partition.
@@ -105,7 +107,7 @@ def decay(records: pd.DataFrame, found: dict, name: str) -> str:
         variants instead of only the chosen one.
     """
     height = 420
-    x, y = records["is_sharpe"].to_numpy(), records["oos_sharpe"].to_numpy()
+    x, y = records["is_score"].to_numpy(), records["oos_score"].to_numpy()
     slope, intercept = np.polyfit(x, y, 1)
     both = np.concatenate([x, y])
     low, high = both.min(), both.max()
@@ -113,7 +115,7 @@ def decay(records: pd.DataFrame, found: dict, name: str) -> str:
     low, high = low - pad, high + pad
 
     def px(v: float) -> float:
-        """Horizontal pixel of a Sharpe value.
+        """Horizontal pixel of a score.
 
         Args:
             v: The value.
@@ -124,7 +126,7 @@ def decay(records: pd.DataFrame, found: dict, name: str) -> str:
         return PAD["l"] + (v - low) / (high - low) * (W - PAD["l"] - PAD["r"])
 
     def py(v: float) -> float:
-        """Vertical pixel of a Sharpe value, on the same scale as the horizontal one.
+        """Vertical pixel of a score, on the same scale as the horizontal one.
 
         Args:
             v: The value.
@@ -148,7 +150,7 @@ def decay(records: pd.DataFrame, found: dict, name: str) -> str:
             f'<line x1="{px(0):.1f}" y1="{py(low):.1f}" x2="{px(0):.1f}" '
             f'y2="{py(high):.1f}" stroke="{GRID}"/>{dots}{fit}'
             f'<text x="{W - PAD["r"]}" y="{height - 14}" font-size="13" '
-            f'text-anchor="end" fill="{MUTED}">Sharpe semanal dentro de muestra</text>'
+            f'text-anchor="end" fill="{MUTED}">{unit} dentro de muestra</text>'
             f'<text x="{PAD["l"] - 50}" y="{PAD["t"]}" font-size="13" fill="{MUTED}">'
             f'fuera</text></svg>')
 
@@ -188,9 +190,12 @@ def page(title: str, runs: dict, found: dict, result: dict) -> str:
         A standalone HTML page.
     """
     head = list(runs)[0]
+    unit = (f'{result["score"].capitalize()} '
+            f'{PERIODO.get(result["period"], result["period"])}')
     note = (f'{result["n"]} variantes, {result["periods"]} periodos de tipo '
             f'{result["period"]}, {result["blocks"]} bloques y '
-            f'{found[head]["partitions"]} particiones. Las {result["n"]} variantes valen '
+            f'{found[head]["partitions"]} particiones, ordenadas por {unit.lower()}. '
+            f'Las {result["n"]} variantes valen '
             f'{result["n_clusters"]} pruebas independientes una vez agrupadas por lo '
             f'parecido de sus rendimientos, y con ese recuento el Sharpe del mejor '
             f'sobrevive con probabilidad {result["dsr"]:.2f}. El mejor dentro de muestra '
@@ -212,7 +217,7 @@ def page(title: str, runs: dict, found: dict, result: dict) -> str:
             "dt{font-weight:600;margin-top:10px}dd{margin:0;color:#5b6675}</style>"
             f"<main><figure>{lambdas(runs, found)}</figure>{table(found, result)}"
             f"<p class='note'>{note}</p>"
-            f"<figure>{decay(runs[head], found[head], head)}</figure>"
+            f"<figure>{decay(runs[head], found[head], head, unit)}</figure>"
             "<p class='note'>La recta de puntos de esa figura cae aunque no pase nada "
             "malo: las dos mitades son complementarias, asi que una particion cuyo "
             "ganador brillo dentro deja menos por ganar fuera. Sobre ruido puro esa "

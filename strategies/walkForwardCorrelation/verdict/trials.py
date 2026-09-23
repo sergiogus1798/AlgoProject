@@ -7,7 +7,7 @@ from scipy.spatial.distance import squareform
 
 from core import significance
 from core.surface import plateau
-from strategies.walkForwardCorrelation import cscv
+from strategies.walkForwardCorrelation.measure import cscv
 
 FLOOR = 2            # fewest clusters worth testing
 
@@ -101,10 +101,17 @@ def deflated(window: pd.DataFrame, pick: int, n_eff: int) -> dict:
         n_eff: Independent trials, from `independent`.
 
     Returns:
-        What `core.surface.plateau.deflated_sharpe` returns. **Every Sharpe here is per
-        period**, the unit that function's docstring insists on: the returns, the spread
-        across trials and the benchmark are all computed off the same weekly panel, so
-        nothing is annualised on one side of the comparison and not the other.
+        What `core.surface.plateau.deflated_sharpe` returns.
+
+        ⚠️ **This is a Sharpe whatever `cscv.score` the study ranks by.** The deflated
+        Sharpe is defined against the expected maximum of n_eff draws of a Sharpe, so a
+        Sortino here would be compared against the wrong benchmark. Ranking picks the
+        variant; the DSR then judges that variant on its Sharpe.
+
+        **Every Sharpe here is per period**, the unit that function's docstring insists
+        on: the returns, the spread across trials and the benchmark are all computed off
+        the same weekly panel, so nothing is annualised on one side of the comparison and
+        not the other.
     """
     returns = window.to_numpy()[:, pick]
     observed, skew, kurtosis = significance.moments(returns)

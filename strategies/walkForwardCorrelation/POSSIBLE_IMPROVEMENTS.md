@@ -3,33 +3,61 @@
 Every section here is a decision that moves the answer and was taken on an argument rather than on
 a measurement. Argue with it in writing before changing it in code.
 
-## 1. Weekly periods, not monthly or daily
+**Sections 1, 2, 3 and 8 were settled by the owner on 2026-09-23** and are kept here as the record
+of what was decided and why, not as open questions. **4 to 7 stay open on purpose**: they are
+choices he wants to re-read against a fully tested strategy before ruling on them.
+
+## 1. Weekly periods, not monthly or daily — ✅ settled 2026-09-23
 
 `config.yaml: cscv.period` is `W`. Daily was never an option: at roughly sixty trades a year a
 daily matrix is almost all zeros, and ranking variants by the Sharpe of a mostly-zero series ranks
 their luck. Monthly would halve the noise per observation and leave 180 periods over 2008–2022,
 which is 18 per block — thin but not absurd.
 
-**What would settle it:** run both and compare the PBO's spread across seeds on the same mother. If
-monthly moves the PBO by less than its own sampling error, weekly is free and keeps the resolution.
+**Settled: weekly stays**, and the owner's reason is that it is the aggregation the rest of the
+study is built on — a daily matrix at sixty trades a year ranks luck, and monthly throws away
+resolution the CSCV needs to cut twelve blocks. `config.yaml: cscv.period` still accepts `ME` for
+anyone who wants to check.
 
-## 2. The score is a Sharpe, not Ret/DD
+## 2. The score is a Sharpe, not Ret/DD — ✅ settled 2026-09-23
 
 Every ranking inside the CSCV uses per-period Sharpe. The protocol's §4a is emphatic that Ret/DD is
 biased by window length — total return grows with T and max drawdown with √T — which is exactly why
 it is wrong for comparing in-sample against out-of-sample windows of different lengths.
 
-**Inside the CSCV that objection is weaker than it looks**: every partition has five blocks on each
-side, so every window is the same length and the bias is constant. Ret/DD would be legitimate here
-and is closer to what the owner actually trades on. Sharpe was kept because `trials.deflated` needs
-a Sharpe in the same unit as its benchmark, and because one score across the whole module is easier
-to defend than two.
+**Inside the CSCV that objection is weaker than it looks**: every partition has six blocks on each
+side, so every window is the same length and the bias is constant. Ret/DD would be *arithmetically*
+legitimate here.
 
-## 3. Ten blocks
+**Settled: the score must be a rate per period, and Ret/DD is not one.** The owner ruled it out on
+the general argument rather than the partition-level one — Ret/DD grows with elapsed time, so it
+can never be compared across windows of different lengths, and a score used in only one place of
+the module would be a trap waiting for the first person who reuses it.
 
-C(10,5) = 252 partitions. Sixteen blocks gives 12,870 — fifty times the compute for a
-third-decimal improvement on a statistic whose null standard deviation is 0.21. Eight gives 70,
-which is too few to see the shape of the lambda distribution.
+**What was built instead:** `config.yaml: cscv.score` now chooses between `sharpe` and `sortino`,
+both rates per period, and `cscv.SCORES` is where a third one would go. Measured 2026-09-23 on
+`Strategy 17.9.39`, 12 blocks: the choice barely moves the answer — PBO 30.4 % against 28.9 % for
+`argmax`, 3.6 % against 4.1 % for `plateau_centre`, and the same verdict on every rule.
+
+⚠️ **The deflated Sharpe stays a Sharpe whatever the score is.** It is defined against the expected
+maximum of n_eff draws of a Sharpe; ranking picks the variant, the DSR then judges that variant on
+its Sharpe. `trials.deflated` says so in its docstring.
+
+## 3. Twelve blocks — ✅ settled 2026-09-23
+
+C(12,6) = 924 partitions, which is what López de Prado's own worked examples use. It was ten
+(252 partitions) until the owner asked for the paper's recommendation to be the default.
+
+**It is not free and it does not change the reading.** Measured on `Strategy 17.9.39`, 479
+variants, 786 weeks: 6 s at ten blocks against 14 s at twelve, same 380 MB of RAM, and the PBO of
+`argmax` moved from 41.3 % to 30.4 % while `plateau_centre` moved from 4.8 % to 3.6 %. Both
+movements sit well inside the 0.21 null standard deviation of §7 — the verdict is the same one, and
+neither number should be quoted to the decimal.
+
+Sixteen blocks gives 12,870 partitions, fourteen times the compute of twelve for a third-decimal
+improvement on that same statistic. Eight gives 70, too few to see the shape of the lambda
+distribution. **`pbo.py --blocks N` overrides the default per run**, so the cheap setting is one
+flag away and the expensive one needs no edit either.
 
 ## 4. Neighbours are defined by the levels the design actually fabricated
 
@@ -75,10 +103,13 @@ block-jackknife over the ten blocks is the right shape but was out of scope for 
 
 **Until it exists, the 50 % gate is a coarse filter and the figure is the evidence.**
 
-## 8. The final period is dropped, the first is not
+## 8. The final period is dropped, the first is not — ✅ settled 2026-09-23
 
-`matrix.panel` drops the last period because an open position on the last bar is marked to market
-in the equity curve and excluded from net profit — measured on 172 of 962 variants, by up to 332
-dollars. The leading weeks before the backtest starts are left in: they are identical zeros across
-every variant, so they cannot change a ranking, and dropping them would need a rule for where the
-trading really begins.
+`inputs.panel.panel` drops the last period because an open position on the last bar is marked to
+market in the equity curve and excluded from net profit — measured on 172 of 962 variants, by up
+to 332 dollars. The leading weeks before the backtest starts are left in: they are identical zeros
+across every variant, so they cannot change a ranking, and dropping them would need a rule for
+where the trading really begins.
+
+**Settled: confirmed by the owner, the last week goes.** The mark-to-market on an open position is
+not a result the strategy delivered, and 172 of 962 variants carry one.

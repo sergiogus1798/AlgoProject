@@ -121,7 +121,7 @@ Tres problemas en la misma costura, todos sin verificar porque la cadena SPP nun
 
 ### 2.C 🔴 El intervalo del WFC trata 1.001 variantes correlacionadas como 1.001 observaciones
 
-`strategies/walkForwardCorrelation/measure.py:correlation` usa el intervalo de Fisher con
+`strategies/walkForwardCorrelation/measure/correlation.py:correlation` usa el intervalo de Fisher con
 `n = len(kept)`. Medido esta noche sobre `pipeline/XAUUSD/Strategy_17-9-39`:
 
 | | |

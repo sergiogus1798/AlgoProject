@@ -7,13 +7,13 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from strategies.walkForwardCorrelation import measure, render
+from strategies.walkForwardCorrelation.inputs import config
+from strategies.walkForwardCorrelation.measure import correlation
+from strategies.walkForwardCorrelation.render.scatter import scatter
 
-HERE = Path(__file__).resolve().parent
 PAGE = """<!doctype html><meta charset="utf-8"><title>{title} — WFC</title>
 <style>body{{margin:0;padding:32px;background:#f6f7f9;color:#14181f;
 font:15px/1.6 Inter,system-ui,sans-serif}}main{{max-width:940px;margin:0 auto}}
@@ -34,15 +34,6 @@ TINT = {"fiable": ("#dafbe1", "#0a5d2a"), "no_fiable": ("#ffebe9", "#8b1a12"),
         "indeciso": ("#fff8c5", "#7a5c00"), "sin_dato": ("#eef1f4", "#5b6675")}
 
 
-def settings() -> dict:
-    """This study's tunables.
-
-    Returns:
-        The parsed config.yaml.
-    """
-    return yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8"))
-
-
 def shown(kept: pd.DataFrame, ends: int) -> tuple[pd.DataFrame, int]:
     """The rows worth tabulating when the batch is too big to tabulate.
 
@@ -59,7 +50,7 @@ def shown(kept: pd.DataFrame, ends: int) -> tuple[pd.DataFrame, int]:
     """
     keep = pd.concat([kept.head(ends), kept.tail(ends),
                       kept[kept["stratum"].isin(["origin", "canary"])]])
-    keep = keep[~keep.index.duplicated()].sort_values(measure.IS, ascending=False)
+    keep = keep[~keep.index.duplicated()].sort_values(correlation.IS, ascending=False)
     return keep, len(kept) - len(keep)
 
 
@@ -73,11 +64,11 @@ def table(kept: pd.DataFrame, ends: int) -> str:
     Returns:
         An HTML table. The figure is the argument; this is the evidence.
     """
-    ordered = kept.sort_values(measure.IS, ascending=False)
+    ordered = kept.sort_values(correlation.IS, ascending=False)
     rows, hidden = shown(ordered, ends)
     cells = [f'<tr><td>{r["variant_id"]}</td><td>{r["stratum"]}</td>'
-             f'<td>{r[measure.IS]:,.0f}</td><td>{r[measure.TRADES_IS]:,.0f}</td>'
-             f'<td>{r[measure.OOS]:,.0f}</td><td>{r[measure.TRADES_OOS]:,.0f}</td></tr>'
+             f'<td>{r[correlation.IS]:,.0f}</td><td>{r[correlation.TRADES_IS]:,.0f}</td>'
+             f'<td>{r[correlation.OOS]:,.0f}</td><td>{r[correlation.TRADES_OOS]:,.0f}</td></tr>'
              for _, r in rows.iterrows()]
     if hidden:
         # The gap goes where the rows were dropped from, so the ranking still reads as one
@@ -98,15 +89,15 @@ def main() -> None:
                     help="the batch directory: holds metrics.parquet (contract C3)")
     a = ap.parse_args()
 
-    cfg = settings()
+    cfg = config.load()
     print("PROGRESS 20 leyendo el panel IS/OOS", flush=True)
     metrics = pd.read_parquet(a.work / "metrics.parquet")
-    kept = measure.points(metrics, cfg["min_trades"])
+    kept = correlation.points(metrics, cfg["min_trades"])
     dropped = len(metrics) - len(kept)
 
     print(f"PROGRESS 55 {len(kept)} puntos utiles de {len(metrics)}", flush=True)
-    found = measure.correlation(kept)
-    said = measure.verdict(found, cfg["rho_floor"])
+    found = correlation.correlation(kept)
+    said = correlation.verdict(found, cfg["rho_floor"])
 
     title = a.work.name.replace("_", " ")
     tint, ink = TINT[said["call"]]
@@ -115,7 +106,7 @@ def main() -> None:
             f"apenas opera da un beneficio que mide una o dos operaciones, y sobre una "
             f"docena de puntos esas dominan la correlacion.")
     (a.work / "wfc.html").write_text(
-        PAGE.format(title=title, svg=render.scatter(kept, found, said, title),
+        PAGE.format(title=title, svg=scatter(kept, found, said, title),
                     call=said["call"].replace("_", " "), why=said["why"], note=note,
                     table=table(kept, cfg["table_ends"]), tint=tint, ink=ink), encoding="utf-8")
     (a.work / "wfc.json").write_text(
