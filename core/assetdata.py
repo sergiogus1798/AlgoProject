@@ -75,7 +75,7 @@ def fields(data: dict) -> list[str]:
         Field names. A forex asset carries one spread, a no_forex asset two.
     """
     s = schema(data)
-    return (s["spread"]["fields"] + [s["commission"]["field"], s["slippage"]["field"]]
+    return (s["spread"]["fields"] + [s["commission"]["field"]] + s["slippage"]["fields"]
             + s["swap"]["fields"])
 
 
@@ -126,15 +126,17 @@ def sqx_settings(data: dict, segment: str) -> dict:
 
     Returns:
         defaultSpread and defaultSlippage, and the commission and swap blocks with the
-        method and type their class declares. Costs live per symbol INSIDE EACH TASK, not
+        method and type their class declares. The segment picks both the spread and the
+        slippage: the slippage is half its segment's spread, so it follows the spread. Costs live per symbol INSIDE EACH TASK, not
         once per project — that is what lets build carry one spread and the retest tasks
         another.
     """
     use = lambda k: data["costs"][k]["use"]
     s = schema(data)
-    spread = "spread" if data["class"] == "forex" else f"spread_{data['segments'][segment]['spread']}"
+    half = data["segments"][segment]["spread"]
+    spread = "spread" if data["class"] == "forex" else f"spread_{half}"
     return {"defaultSpread": use(spread),
-            "defaultSlippage": use("slippage"),
+            "defaultSlippage": use(f"slippage_{half}"),
             "commission": {"method": s["commission"]["sqx_method"], "value": use("commission")},
             "swap": {"type": s["swap"]["sqx_type"], "long": use("swap_long"),
                      "short": use("swap_short"), **data["swap"]}}

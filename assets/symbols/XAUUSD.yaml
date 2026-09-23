@@ -15,27 +15,31 @@ verified: 2026-09-03
 instrument:
   tick_size: 0.01
   point_value: 100          # $ por 1.0 de precio y 1.0 de lote
-  min_distance: 0
+  min_distance: 10
 
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 10.0                 # points — tramo `build`
-    sqx_now: 10               # points, el unico que hay hoy
+    use: 5.0                 # points — tramo `build`
+    sqx_now: 5               # points, el unico que hay hoy
     why: "PROVISIONAL 2026-09-21 — default de SQX, no una cifra pactada con Infinox."
   spread_oos:
     use: 10.0                 # points — tramos `oos1` y `oos2`
     sqx_now: 10               # points, el unico que hay hoy
     why: "PROVISIONAL 2026-09-21 — default de SQX, no una cifra pactada con Infinox."
   commission:
-    use: 0.00174              # % del nocional
+    use: 0.001              # % del nocional
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
     why: "PROVISIONAL 2026-09-22 — conversion de unidad del default de SQX, no una cifra pactada. 8 $/lote/pata sobre el nocional de 1 lote al ultimo cierre real (4595.52 x point_value 100 = 459.552 $) son 8/459552 = 0.00174 %. Antes decia 0.00229 con un precio de referencia supuesto de 3500; el cierre real del 2026-01-16 es 4595.52. Depende del precio de referencia elegido y de si SQX cobra el % por pata o por operacion, SIN VERIFICAR."
-  slippage:
-    use: 5                    # points
-    sqx_now: 0.0              # el maestro lo lleva a 0.0
-    why: "PROVISIONAL 2026-09-22 — la mitad del spread, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y no hay slippage recuperable de un backtest, que aplica el que se le da."
+  slippage_is:
+    use: 2.5                 # points — tramo(s) build
+    sqx_now: 0.0
+    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
+  slippage_oos:
+    use: 5                 # points — tramo(s) oos1 y oos2
+    sqx_now: 0.0
+    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
   swap_long:
     use: -7                   # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: -73.42}
@@ -53,12 +57,12 @@ notes:
 # significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
 mc_retest:
   spread:
-    min: null
-    max: null
+    min: 5
+    max: 30
     sqx_now: [{min: 1, max: 5}, {min: 5, max: 12}]   # varias tareas, rangos distintos
   slippage:
-    min: null
-    max: null
+    min: 5
+    max: 20
     sqx_now: [{min: 0, max: 5}, {min: 0, max: 10}]   # varias tareas, rangos distintos
 
 # Proyectos del maestro que usan este activo. Leído, no decidido.

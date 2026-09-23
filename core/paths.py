@@ -149,19 +149,6 @@ def report_dir(project: str, databank: str, day: str) -> Path:
     return DATA / "reports" / project / databank.replace(" ", "_") / day
 
 
-def bars_file(symbol: str, timeframe: str) -> Path:
-    """Where exported OHLC bars for one symbol and timeframe live.
-
-    Args:
-        symbol: SQX symbol without the timeframe suffix, e.g. "XAUUSD_DukasM1_Infinox".
-        timeframe: SQX timeframe code, e.g. "M30".
-
-    Returns:
-        Path under the data root.
-    """
-    return DATA / "bars" / symbol / f"{timeframe}.csv"
-
-
 def bar_source(feed: str) -> Path:
     """The M1 bars of one feed: the only bar data the project stores.
 
@@ -190,55 +177,6 @@ def bar_cache(feed: str, timeframe: str, version: str) -> Path:
     return DATA / "derived" / "bars" / feed / f"{timeframe}-{version}.parquet"
 
 
-def template_dir(name: str) -> Path:
-    """Folder of one strategy template in the library.
-
-    Args:
-        name: Template name in camelCase, underscores separating roles only, e.g.
-            "keltnerCrossClose_atrTrail".
-
-    Returns:
-        Path under the data root. Self-contained — the .sqx, its brief and the blocks and
-        groups it references — so it installs on any SQX unchanged. A template carries no
-        symbol and no timeframe: those belong to a run.
-    """
-    return DATA / "templates" / "library" / name
-
-
-def template_registry() -> Path:
-    """The CSV of every template in the library, one row each.
-
-    Returns:
-        Path under the data root. CSV and not parquet because a human reads it; written by
-        code, never hand-edited.
-    """
-    return DATA / "templates" / "registry.csv"
-
-
-def template_runs() -> Path:
-    """The CSV of every (template, symbol, timeframe) that has been tried.
-
-    Returns:
-        Path under the data root. Separate from the registry because one template is tried
-        on many markets: "have I run this on NASDAQ H1" is a row here, not a second copy.
-    """
-    return DATA / "templates" / "runs.csv"
-
-
-def vocabulary_snapshot(install: str, day: str) -> Path:
-    """Where one install's block-and-group inventory is kept.
-
-    Args:
-        install: Folder name of the install, e.g. "SQX_w1".
-        day: Snapshot date as YYYY-MM-DD.
-
-    Returns:
-        Path under the data root. Dated and kept, not replaced: the point is comparing
-        installs and dates, which a single current file cannot answer.
-    """
-    return DATA / "templates" / "vocabulary" / f"{install}-{day}.json"
-
-
 def perf_dir() -> Path:
     """Where the performance catalogue keeps its history.
 
@@ -248,3 +186,51 @@ def perf_dir() -> Path:
         overwritten.
     """
     return DATA / "perf"
+
+
+def pipeline_dir(project: str, strategy_slug: str) -> Path:
+    """One mother strategy's pipeline ledger and stage outputs.
+
+    Args:
+        project: Project name on the master.
+        strategy_slug: The strategy name as `pipeline.ledger.state.safe` spells it.
+
+    Returns:
+        Path under the data root. The ledger outlives the data `pipeline.cleanup` sweeps.
+    """
+    return DATA / "pipeline" / project / strategy_slug
+
+
+def variants_dir(project: str, strategy: str) -> Path:
+    """One strategy's fabricated variants and their manifest; rebuilding replaces it.
+
+    Args:
+        project: Project name on the master.
+        strategy: Strategy name as SQX writes it.
+
+    Returns:
+        Path under the data root.
+    """
+    return DATA / "variants" / project / strategy.replace(" ", "_")
+
+
+def log_archive(install_name: str) -> Path:
+    """One install's SQX logs, gzipped before SQX prunes them.
+
+    Args:
+        install_name: Folder name of the install, e.g. "SQX" or "SQX_w1".
+
+    Returns:
+        Path under the data root, mirroring `<install>/user/log`. `projects/<P>/` under it
+        holds the projects' own `log/` files condensed — a snapshot must not carry them.
+    """
+    return DATA / "logs" / install_name
+
+
+def data_update_backups() -> Path:
+    """Where `sqx.data.update` records what it saw before touching the master's data.
+
+    Returns:
+        Path under the data root, one JSON per run.
+    """
+    return DATA / "backups" / "data-update"

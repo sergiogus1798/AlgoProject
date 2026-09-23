@@ -23,13 +23,15 @@ forex:
     sqx_method: SizeBased
     formula: "coste = Commission × size"
   slippage:
-    field: slippage
+    fields: [slippage_is, slippage_oos]
     unit: points
     sqx: 'InstrumentInfo defaultSlippage'
     note: >-
-      Lo que se pierde contra la posición en cada relleno, en puntos. SQX lo lleva a 0.0 en
-      los 17 instrumentos, que es una hipótesis optimista, no una medición. No bloquea la
-      autoría: un 0 es una decisión declarada, a diferencia de un spread sin pactar.
+      Lo que se pierde contra la posición en cada relleno, en puntos. DOS valores, uno por
+      tramo, por el mismo motivo que el spread: es la mitad del spread de su tramo, así que
+      sigue al spread. SQX lo lleva a 0.0 en los 17 instrumentos, que es una hipótesis
+      optimista, no una medición. No bloquea la autoría: un 0 es una decisión declarada, a
+      diferencia de un spread sin pactar.
   swap:
     fields: [swap_long, swap_short]
     unit: points_per_night
@@ -60,13 +62,15 @@ no_forex:
       cada pata —como sugieren los $16 ida y vuelta medidos con SizeBased 8— el número es por
       pata; si no, tiene que llevar la ida y la vuelta dentro. SIN VERIFICAR.
   slippage:
-    field: slippage
+    fields: [slippage_is, slippage_oos]
     unit: points
     sqx: 'InstrumentInfo defaultSlippage'
     note: >-
-      Lo que se pierde contra la posición en cada relleno, en puntos. SQX lo lleva a 0.0 en
-      los 17 instrumentos, que es una hipótesis optimista, no una medición. No bloquea la
-      autoría: un 0 es una decisión declarada, a diferencia de un spread sin pactar.
+      Lo que se pierde contra la posición en cada relleno, en puntos. DOS valores, uno por
+      tramo, por el mismo motivo que el spread: es la mitad del spread de su tramo, así que
+      sigue al spread. SQX lo lleva a 0.0 en los 17 instrumentos, que es una hipótesis
+      optimista, no una medición. No bloquea la autoría: un 0 es una decisión declarada, a
+      diferencia de un spread sin pactar.
   swap:
     fields: [swap_long, swap_short]
     unit: pct_annual

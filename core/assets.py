@@ -40,7 +40,7 @@ def report(symbol: str) -> str:
     s = schema(data)
     units = {**{f: s["spread"]["unit"] for f in s["spread"]["fields"]},
              s["commission"]["field"]: s["commission"]["unit"],
-             s["slippage"]["field"]: s["slippage"]["unit"],
+             **{f: s["slippage"]["unit"] for f in s["slippage"]["fields"]},
              **{f: s["swap"]["unit"] for f in s["swap"]["fields"]}}
     lines = [f"# {symbol} — clase `{data['class']}`, overrides a aplicar", "",
              f"SQX symbol: {data['sqx_symbol']}   verificado: {data['verified']}", ""]

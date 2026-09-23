@@ -159,9 +159,10 @@ def cost_gap(data: dict, segment: str) -> list[str]:
     spread = "spread" if data["class"] == "forex" else f"spread_{data['segments'][segment]['spread']}"
     if not same(now[spread]["sqx_now"], use["defaultSpread"]):
         out.append(f"spread: assets dice {use['defaultSpread']}, SQX lleva {now[spread]['sqx_now']}")
-    if not same(now["slippage"]["sqx_now"], use["defaultSlippage"]):
+    slip = f"slippage_{data['segments'][segment]['spread']}"
+    if not same(now[slip]["sqx_now"], use["defaultSlippage"]):
         out.append(f"slippage: assets dice {use['defaultSlippage']}, SQX lleva "
-                   f"{now['slippage']['sqx_now']}")
+                   f"{now[slip]['sqx_now']}")
     method = (now["commission"]["sqx_now"] or {}).get("method")
     if method != use["commission"]["method"]:
         out.append(f"comision: assets dice {use['commission']['method']} "
