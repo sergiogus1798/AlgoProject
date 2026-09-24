@@ -9,8 +9,9 @@ from core import trades
 # What `orderstocsv` writes that is worth storing. The four it leaves out are derivable or
 # empty, measured 2026-09-20 on Strategy 1.19.29 (763 trades) and re-measured across five:
 # `Ticket` = row order, `Time in trade` = Close − Open (and text), `Comment` all null, and
-# `Symbol` constant per file — except under data=all, where it separates the market blocks
-# and is kept. `Balance` is derivable too (100k + cumsum) and is kept by the owner's call.
+# `Symbol` constant per file — except under data=all, where it is kept because it names the
+# market. It does not separate the blocks on its own: see `pack`. `Balance` is derivable too
+# (100k + cumsum) and is kept by the owner's call.
 KEEP = ["Type", "Open time", "Open price", "Size", "Close time", "Close price",
         "Profit/Loss", "Balance", "Sample type", "Close type", "MAE ($)", "MFE ($)"]
 CATEGORICAL = ("strategy", "Symbol", "Type", "Sample type", "Close type")
@@ -33,23 +34,62 @@ def ordered(frame: pd.DataFrame) -> bool:
                 and (opens[1:].to_numpy() >= closes[:-1].to_numpy()).all())
 
 
+def blocks_of(frame: pd.DataFrame) -> pd.Series:
+    """Which result block each row of a data=all export belongs to.
+
+    Args:
+        frame: One strategy's export, in the row order orderstocsv wrote it.
+
+    Returns:
+        A block index per row, 0 for the main test. Every block numbers its tickets from
+        1, so the k-th row carrying a given ticket belongs to the k-th block.
+
+    🔬 2026-09-23: the blocks are NOT contiguous in the CSV. A cross-timeframe export
+    comes out ordered by open time with the blocks interleaved, so the old separator —
+    a new block wherever the ticket stopped increasing — cut one strategy into 173 pieces
+    and `block(packed, s, 0)` returned a sliver of the main test with nothing failing.
+    """
+    return frame.groupby("Ticket").cumcount()
+
+
+def whole(frame: pd.DataFrame) -> bool:
+    """Whether every block came out as a complete ticket run.
+
+    Args:
+        frame: One strategy's export, with `block` already assigned.
+
+    Returns:
+        True when each block holds tickets 1..N with no gaps, which is what makes the
+        k-th-occurrence rule sound. A False here means the blocks are guesses.
+    """
+    sizes = frame.groupby("block")["Ticket"]
+    return bool((sizes.max() == sizes.size()).all() and (sizes.min() == 1).all())
+
+
 def pack(files: list[Path], out: Path, per_market: bool) -> dict:
     """Every strategy of one export as a single typed Parquet.
 
     Args:
         files: One CSV per strategy, as orderstocsv wrote them.
         out: Parquet file to write.
-        per_market: True for a data=all export, whose CSVs carry several markets and where
-            `Symbol` is the only separator between them.
+        per_market: True for a data=all export, whose CSVs carry several result blocks --
+            the main test first, then one per additional market in Setup order. Both
+            `Symbol` and `block` are kept for those. `Symbol` alone is NOT a separator:
+            a cross-timeframe retest puts several blocks on the same symbol, and they
+            collapse into one.
 
     Returns:
-        Counts and the names of any strategy whose row order does not carry its ticket, so
-        the manifest records which files kept `Ticket` instead of dropping it.
+        Counts, the names of any strategy whose row order does not carry its ticket, and
+        `torn`, the strategies whose blocks did not come out as complete ticket runs.
     """
-    columns = KEEP + (["Symbol"] if per_market else [])
-    frames, unordered = [], []
+    columns = KEEP + (["Symbol", "block"] if per_market else [])
+    frames, unordered, torn = [], [], []
     for f in files:
         frame = trades.read(f)
+        if per_market:
+            frame["block"] = blocks_of(frame)
+            if not whole(frame):
+                torn.append(f.stem)
         keep = columns if ordered(frame) else columns + ["Ticket"]
         if "Ticket" in keep:
             unordered.append(f.stem)
@@ -61,7 +101,7 @@ def pack(files: list[Path], out: Path, per_market: bool) -> dict:
     out.parent.mkdir(parents=True, exist_ok=True)
     packed.to_parquet(out, compression="zstd", index=False)
     return {"strategies": len(files), "trades": len(packed),
-            "columns": list(packed.columns), "kept_ticket": unordered}
+            "columns": list(packed.columns), "kept_ticket": unordered, "torn_blocks": torn}
 
 
 def names(path: Path) -> list[str]:
@@ -122,4 +162,23 @@ def market(packed: pd.DataFrame, strategy: str, feed: str) -> pd.DataFrame:
         the caller shows it rather than treating it as a missing input.
     """
     rows = packed[(packed["strategy"] == strategy) & (packed["Symbol"] == feed)]
+    return rows.drop(columns=["strategy"]).reset_index(drop=True)
+
+
+def block(packed: pd.DataFrame, strategy: str, index: int) -> pd.DataFrame:
+    """One strategy's trades on one result block of a `data=all` export.
+
+    The block index is what `market()` cannot do when the additional markets share a
+    symbol: 0 is the main test and 1.. are the additional markets in the order their
+    `<Setup>` elements appear in the retest task.
+
+    Args:
+        packed: What read() returned for a whole per-market export.
+        strategy: Strategy name.
+        index: Position of the block.
+
+    Returns:
+        The rows, re-indexed from zero, without the `strategy` column.
+    """
+    rows = packed[(packed["strategy"] == strategy) & (packed["block"] == index)]
     return rows.drop(columns=["strategy"]).reset_index(drop=True)

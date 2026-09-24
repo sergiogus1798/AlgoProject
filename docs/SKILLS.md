@@ -43,32 +43,35 @@ Esto dice quién cubre qué, a 2026-09-23.
 | 10 | análisis crossmarkets | `strategies/crossmarket/` | ❌ **sin skill** |
 | 10.5-11 | variantes escaladas y retest crossTF | `/crosstf` · `sqx/projects/crosstf.py` | ✅ |
 | 12 | análisis crossTFs | `strategies/crossTF/` | 🟡 dentro de `/crosstf` |
-| 13 | **MC Retest en SQX** | sólo los rangos (`sqx/projects/ranges.py`) | ❌ **falta la tarea** |
+| 13 | **MC Retest en SQX** | `/mcretest` · `sqx/projects/mcretest.py` | ✅ |
 | 14 | análisis MC Retest | `strategies/retest/` | ❌ **sin skill** |
-| 15 | **SPPs en SQX** | `sqx/variants/spp.py` | ❌ sin skill · ⚠️ ver abajo |
+| 15 | **SPPs en SQX** | `/spp` · `sqx/projects/spp.py` | ✅ |
 | 16 | análisis SPPs | `strategies/sppUltra/` | ❌ **sin skill** |
-| 16.5-17 | variantes para WFC, y el WFC | `sqx/variants/make.py`, `walkForwardCorrelation/` | ❌ sin skill · ⚠️ ver abajo |
+| 16.5 | variantes para el WFC | `/variants` · `sqx/variants/` | ✅ · ⚠️ ver abajo |
+| 17 | el WFC | `walkForwardCorrelation/` | ❌ **sin skill** |
 | 18 | CSCV | `walkForwardCorrelation/pbo.py` | ❌ **sin skill** |
-| 19 | **Walk Forward Matrix en SQX** | `strategies/walkForwardMatrix/` es sólo el análisis | ❌ **falta la tarea** |
+| 19 | **Walk Forward Matrix en SQX** | `/wfm` · `sqx/projects/wfm.py`; el análisis sigue siendo `strategies/walkForwardMatrix/` | ✅ la tarea |
 | 20 | análisis conjunto ciego de 17-18-19 | — | ❌ **no existe** |
 
-### Los tres huecos de SQX, y son el mismo hueco
+### Los cuatro huecos de SQX eran el mismo hueco, y ya está tapado
 
-`crossmarket.py` y `crosstf.py` hacen lo mismo con distinto crosscheck: **encender el suyo en una
-tarea concreta y escribirle su configuración desde `assets/`**. Ese patrón no existe todavía para:
+`crossmarket.py` y `crosstf.py` hacían lo mismo con distinto crosscheck: **encender el suyo en una
+tarea concreta y escribirle su configuración desde `assets/`**. Desde el 2026-09-23 ese patrón
+existe también para `MonteCarloRetest` (13), `OptProfileSysParamPermutation` (15 — **el SPP, que NO
+es `SequentialOptimization`**) y `WalkForwardMatrix` (19). La cirugía común vive en
+`sqx/projects/crosschecks.py`: encontrar la tarea por su título, encenderla con su padre, callar su
+aceptación y dejar sólo los parámetros recomendados.
 
-- `MonteCarloRetest` (paso 13) — los rangos sí se escriben, la tarea no se enciende
-- `WalkForwardMatrix` (paso 19)
-- `OptProfileSysParamPermutation` (paso 15) — **el SPP, que NO es `SequentialOptimization`**
+Hacía falta porque la doctrina apaga **todos** los crosschecks fuera de la construcción, a
+propósito: encender el que toca en la tarea que toca es un acto explícito, por diseño.
 
-Y hay una razón de fondo: la doctrina apaga **todos** los crosschecks fuera de la construcción, a
-propósito. Encender el que toca en la tarea que toca es justo lo que hace falta escribir.
+### ⚠️ El paso 16.5 sigue corriendo sobre el `Retester` de serie
 
-### ⚠️ Los pasos 15 y 17 corren sobre el `Retester` de serie
-
-`sqx/variants/config.yaml` lleva `project: Retester`. Eso **incumple la regla dura 10** (dueño,
-2026-09-23: todo run en un custom project, nunca el `Builder` ni el `Retester` de serie). Es
-anterior a la regla, no una decisión contra ella, pero hay que migrarlo.
+`sqx/variants/config.yaml` lleva `execute.project: Retester`. Eso **incumple la regla dura 10**
+(dueño, 2026-09-23). Es anterior a la regla, no una decisión contra ella. La migración —crear un
+custom project de una sola tarea Retest y poner su nombre ahí— está escrita en la skill `/variants`
+y en `OPEN.md` §38; no se ha cambiado el default para no romper en silencio una cadena que hoy
+funciona.
 
 ### Lo que falta en Python es lo que se retiró
 
@@ -106,12 +109,16 @@ Regenerado 2026-09-23 con `python3 tools/skillmap.py`. El coste en tokens es el 
 
 | skill | ~tokens al invocar | ficheros | último cambio | para qué |
 |---|---:|---:|---|---|
+| `crosstf` | 1,939 | 1 | 2026-09-23 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
 | `curate` | 1,900 | 1 | 2026-09-23 | Apply a Python verdict back into SQX — move the strategies a filter, a test or an analysis rejected out of a databank, so the next task in the chain only sees the survivors. Works between any two tasks and with any module that can name what it drops |
-| `crosstf` | 1,788 | 1 | 2026-09-23 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
 | `template-run` | 1,667 | 1 | 2026-09-23 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
 | `sync` | 1,553 | 1 | 2026-09-12 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
+| `variants` | 1,369 | 1 | 2026-09-23 | Run the variant factory in SQX — turn one mother's SPP design brief into a batch of parameter variants, load and retest them on the custodian, and harvest the metrics panel and the per-day equity the WFC and the CSCV read |
+| `spp` | 1,200 | 1 | 2026-09-23 | Configure and run the two SPP tasks of a custom SQX project — the System Parameter Permutation grid over the in-sample and the out-of-sample window, at the owner's spread and steps, with every acceptance silenced so the profile is a map and not a filter |
 | `strategy-template` | 1,140 | 1 | 2026-09-22 | Turn a trading idea into a StrategyQuant X strategy template — understand the logic, check whether the condition already exists, author the custom block if it does not, and emit the .sqx into the library. Authoring only, no SQX running and no CPU burnt |
 | `crossmarket` | 1,108 | 1 | 2026-09-23 | Retest surviving strategies on other markets with SQX's Retest on additional markets cross-check — the markets from assets/_markets.yaml, each over its own window and at its own declared costs. Configures and runs a task on the custodian |
+| `wfm` | 1,091 | 1 | 2026-09-23 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over the reserved oos2 window, acceptance silenced, and the two owner's rules it enforces (every look spends the window, and nothing is read until steps 17, 18 and 19 are all done) |
+| `mcretest` | 1,048 | 1 | 2026-09-23 | Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders |
 | `oos-gate` | 1,041 | 1 | 2026-09-23 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
 | `perf` | 898 | 1 | 2026-09-20 | Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement on a branch |
 | `export` | 449 | 1 | 2026-09-12 | Export data out of StrategyQuant X — a databank's metrics with IS/OOS columns, every trade of every strategy, or OHLC bars |
@@ -119,7 +126,7 @@ Regenerado 2026-09-23 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | `audit` | 401 | 1 | 2026-09-12 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 224 | 1 | 2026-09-03 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-12 skills, 12,617 tokens de cuerpo en total, 49 KB en disco.
+16 skills, 17,478 tokens de cuerpo en total, 68 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 

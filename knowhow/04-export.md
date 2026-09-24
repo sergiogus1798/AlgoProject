@@ -484,6 +484,38 @@ sample-independent ones (Symbol, TimeFrame, indicators).
 columns on one row per strategy. 46 metric classes exist. The export also prepends `Strategy Name` and
 `Filters result` (PASSED/FAILED) automatically. Project copies of the views live in `sqx/views/`.
 
+### 🔬 A databank whose task ran ONE window fills ONE of the view's two blocks — and WHICH one cannot be assumed (2026-09-23)
+
+A paired view emits every metric twice, at `sampleType` 10 (`(IS)`) and 20 (`(OOS)`). A task that ran
+a single window fills one block and leaves the other at zero. **Which block is the one SQX designated
+that task as, and two real retest databanks disagree:**
+
+| databank | window it ran | block with the numbers | the other block |
+|---|---|---|---|
+| `XAUUSD/SPP IS` | 2007-12 → 2017-12 | **10 `(IS)`** — `DrawdownPct` 6.57 | 20 all zeros |
+| `XAUUSD/SPP OOS` | 2017-11 → 2022-12 | **10 `(IS)`** — `DrawdownPct` 7.27 | 20 all zeros |
+| `XAU_ISOOS_ejemplo/Results` | 2007-12 → 2017-12 | **10 `(IS)`** — `DrawdownPct` 6.58 | 20 all zeros |
+| `XAU_ISOOS_ejemplo/OOS` | 2017-11 → 2022-12 | **20 `(OOS)`** — `DrawdownPct` 14.85 | 10 all zeros |
+
+Both `SPP OOS` and `XAU_ISOOS_ejemplo/OOS` are retests over the same out-of-sample window, and they
+put their numbers under opposite labels. Sample type 11 and 127 repeat whichever one is filled.
+
+**So reading "Net profit (OOS)" from a two-task setup returns a zero about half the time, with
+nothing failing.** The block has to be read off the data: `gate/collect.py::measured()` sums the
+absolute values of the metrics the view emits at **both** types and takes the block that is not zero.
+
+⚠️ **Compare only the paired metrics.** A view also emits structural columns at one type only —
+`Param Count (IS)`, `DoF Ratio (IS)`, `TimeFrame (IS)` — and those carry a number whatever the task
+ran. Counting them makes every databank look like it filled the `(IS)` block, which is the first
+version of this detector and it was wrong.
+
+⚠️ **Both blocks filled means the task ran its own internal split** (`XAUUSD/OOS`, `XAUUSD/MC
+Trades`). Then neither half can be called "the retest" from outside, and `measured()` refuses rather
+than guessing.
+
+This is the metrics-side twin of the trades-side trap above: `Sample type` was `IST` for every row of
+the `SPP OOS` and `WFM` exports for the same reason.
+
 ### The route, and why it is convoluted
 
 `-databank action=export` only works on the instance that **holds** the project, and the master's CLI
@@ -658,3 +690,21 @@ reconstrucción. 95 de 757 estrategias no usan `Exit Signal` en absoluto — su 
 independiente del camino — y 352 lo usan en menos del 10 % de sus trades. ⚠️ Es una propiedad de
 **estos templates**, no del mundo: en cuanto una estrategia lleve barreras hay que calibrar la
 convención intrabar antes de leer nada.
+
+## Los bloques de un export `data=all` NO son contiguos (2026-09-23)
+
+`orderstocsv data=all` escribe el test principal y cada crosscheck en el mismo CSV. El docstring
+decía "bloques contiguos que separa la columna Symbol"; **las dos mitades de esa frase son falsas**
+para un retest cross-timeframe.
+
+- 🔬 **`Symbol` no separa nada**: los tres bloques de un crossTF son el mismo instrumento.
+- 🔬 **Y no son contiguos.** El CSV sale **ordenado por fecha de apertura, con los bloques
+  entrelazados**. El separador que había —bloque nuevo donde el ticket deja de crecer— partió una
+  estrategia en **173 trozos**, y `tradestore.block(packed, s, 0)` devolvía una astilla del test
+  principal sin que fallara nada. Con 9 estrategias salían 396 "bloques" en vez de 27.
+- 🔬 **El invariante que sí vale**: cada bloque numera sus tickets desde 1 sin huecos, así que la
+  **k-ésima aparición de un ticket pertenece al k-ésimo bloque** — `groupby("Ticket").cumcount()`.
+  Comprobado en las 9 estrategias del proyecto `TestXAU_crossTF`: 3 bloques cada una, `max(ticket)
+  == n` en las 27, y tamaños decrecientes con el timeframe (347 M30 · 180 H1 · 40 H4).
+- `tradestore.pack()` devuelve ahora `torn_blocks`: las estrategias cuyos bloques no salieron como
+  series completas. Una lista no vacía significa que los bloques son conjeturas.

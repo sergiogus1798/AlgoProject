@@ -10,6 +10,14 @@
 | `tasksettings.py` | What every task of a project must share: timeframe, engine, session, sizing, hours, cross-checks | imported | a task → the same task, aligned with its siblings |
 | `buildmode_model.xml` | The owner's genetic settings, copied verbatim from his `XAUUSD_Breakout_H1` | data | — |
 | `crossmarket.py` | The additional-markets cross-check: which markets, over what window, at whose cost — all from `assets/` | `python3 -m sqx.projects.crossmarket <SYM> [--cfx <cfx> --task <file> --timeframe <TF>]` | `_markets.yaml` + the markets' own files → the task's `<Setups>` |
+| `databanks.py` | qué databank lee y qué escribe cada tarea, y encadena el input de cada una con el output de la anterior | importado | proyecto → una fila por tarea |
+| `crosstf.py` | The **same** asset read on other timeframes: one `<Setup>` per timeframe whose only override is the timeframe, with the cross-check's acceptance silenced so it stays evidence | `python3 -m sqx.projects.crosstf <SYM> --cfx <cfx> --task <file> --timeframes H4 D1` | a task → its `<Setups>`, plus the block order `strategies/crossTF/` must agree with |
+| `mcretest.py` | Las ocho tareas MC Retest de un proyecto: cuál perturba qué, sobre qué ventana, leyendo todas el mismo databank | `python3 -m sqx.projects.mcretest <SYM> --cfx <cfx> --input <databank>` | un `.cfx` + el catálogo de `_build.yaml` → las ocho tareas escritas, o desactivadas con el motivo |
+| `perturbations.py` | Una tarea MC Retest: el método que sortea, la ventana que vuelve a correr, su aceptación apagada | importado | una tarea → la misma tarea, perturbando una sola cosa |
+| `orders.py` | Si la población opera con órdenes pendientes — lo que el generador permitió y lo que las estrategias llevan de verdad | importado | la tarea Build y el databank → `stop/limit: sí, no, o sin resolver` |
+| `crosschecks.py` | La cirugía que repiten todos los configuradores de crosscheck: encontrar la tarea por su título, encenderla, callar su aceptación y dejar sólo los parámetros recomendados | importado | una tarea → la misma tarea, con un solo crosscheck vivo |
+| `spp.py` | Las dos tareas SPP de un proyecto: la rejilla de permutación, una ventana cada una, sin que ninguna filtre | `python3 -m sqx.projects.spp <SYM> --cfx <cfx> --input <databank>` | un `.cfx` + el catálogo `spp:` de `_build.yaml` → `SPP IS` y `SPP OOS` escritas y activas |
+| `wfm.py` | La tarea Walk Forward Matrix: los dos ejes de la rejilla, y la ventana que la política reserva | `python3 -m sqx.projects.wfm <SYM> --cfx <cfx> --input <databank>` | un `.cfx` + el catálogo `wfm:` → la tarea `WFM` escrita sobre `oos2` |
 | `configure.py` | Write an asset's declared costs and each task's own segment window into a `project.cfx` | `python3 -m sqx.projects.configure <cfx> <SYMBOL> [--segment build\|oos1]` | a cloned `.cfx` + `assets/<SYMBOL>` → the same `.cfx`, priced and dated as declared |
 
 **Why this exists.** A project is cloned from a donor, and the donor carries the **master's own
@@ -38,6 +46,10 @@ donor does exactly that — its Build defines `XAUUSD_the5ers` and its Retest `X
 `build`, everything else → `oos1`, per `assets/_policy.yaml`. That is the whole reason a `no_forex`
 asset declares `spread_is` and `spread_oos` apart; forcing one segment on a chain prices the
 retests with the build's spread and undoes it.
+
+⚠️ **`wfm.py` is the one command that writes `oos2`**, and it is the exception `configure.py`'s
+refusal exists for: the walk-forward matrix is what that window is reserved *for*. Everything else
+still refuses it, and the WFM's own output says so every time it runs.
 
 It refuses on three things: `oos2` (reserved for the WFC and the WFM — looking at it spends it), a
 cost still carrying `use: null`, and a `.cfx` held by a running install, which rewrites it on exit.
