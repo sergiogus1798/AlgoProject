@@ -228,6 +228,67 @@ The rule this fixes: **a filter on the OOS spends the OOS.** Decay measured afte
 answers no question. Measure decay on the unselected population as a diagnostic of the generator, and
 keep selection filters on IS-side columns only, as `improvement.py` already enforces.
 
+### 🔬 Confirmed again 2026-09-23, with a second instrument: the whole gate reads inert
+
+`gate/` run over `XAUUSD/OOS` — **the 231 `.sqx` the databank holds on disk today**, which are the
+survivors the owner kept, not the 10,000 rows of that databank's metrics export. Every screen of the
+cascade, with deliberately lax thresholds:
+
+| screen | threshold in force | died |
+|---|---|---|
+| sanidad | ≥ 20 OOS trades, no duplicate trade set | 2 |
+| estaticas | `Net profit (OOS) > 0` | **0 of 229** |
+| degradacion | retention ≥ 0, t ≥ 0, ≥1 profitable year, concentration ≤ 1.0 | 1 |
+| forma | max DD OOS / max DD IS ≤ 5 | 0 |
+| mono | p ≤ 0.50 on `sharpe`, rung `timing`, 2,000 draws | **0 of 228** |
+
+Three numbers say the same thing three ways: **229 of 231 are profitable out of sample**; the median
+**Sharpe retention is 1.00**, so half of them rank *better* out of sample than in it; and the median
+empirical p against the monkey is **0.022**, with the worst of 228 at 0.23. A population where
+nobody loses to a random trader on the very window it was selected on is not a population of edges,
+it is a selected sample. Benjamini-Hochberg over those 228 p-values still names only **146**.
+
+The reconciliation licensing those p-values is 0.999999 on every one of the 228, so the pricing is
+not the explanation.
+
+**Two operational facts from the same run.** Trade-level dedup caught **2 clone pairs in 231**
+(byte-identical trade sets, different file hashes, different names) — the same failure mode as the
+45-of-231 already recorded in `tasks/CLAUDE.md`, and it is why deduplication comes before the
+expensive screens. And the cost is not where it looks: the harvest (staging, metrics export, trade
+export, 231 zip reads) is ~5 minutes of SQX, while the whole cascade including 2,000 null runs per
+strategy is **0.1 s per strategy** — the corpus carries no stops or targets, so `barrier.exits()`
+takes its fast path. On a corpus with barriers that ratio changes.
+
+### 🔬 The same gate on an UNSELECTED population, for contrast (2026-09-23)
+
+`XAU_ISOOS_ejemplo` — a build task and a separate retest task, 120 strategies built, whose acceptance
+conditions never read the out-of-sample window. Same screens, same lax thresholds as the run above:
+
+| screen | entered | died | |
+|---|---|---|---|
+| presencia | 120 | **5** | SQX itself dropped them from the retest databank |
+| sanidad | 115 | 3 | |
+| estaticas | 112 | **48** | `Net profit [OOS] > 0` — 43 % of them simply lose money out of sample |
+| degradacion | 64 | 19 | |
+| forma, mono | 45 | 0 | |
+
+**45 of 120 survive, and the contrast with the selected population is the whole point:**
+
+| | `XAUUSD/OOS` (selected on OOS) | `XAU_ISOOS_ejemplo` (not selected) |
+|---|---|---|
+| profitable out of sample | 229 of 231 (99 %) | 64 of 112 (57 %) |
+| median Sharpe retention | **1.00** | **0.45** |
+| median p against the monkey | 0.022 | **0.100** |
+| beating the monkey at p ≤ 0.05 | 184 of 228 | **5 of 45** |
+
+Retention of 0.45 is what a real generator's decay looks like on this stack; 1.00 is what selection
+looks like. Reading either number without knowing which population it came from is how the mistake
+recorded above gets made twice.
+
+🔬 And the redundancy screen, now grouping by the strategy's own structure rather than by equity
+correlation: the 45 survivors are **13 distinct structures**, one of which holds 24 of them. A funnel
+that ends in "45 survivors" ends in about a dozen ideas.
+
 ### 🤔 IS proxies that separate survivors inside the top Sharpe decile
 
 Stratifying on `Sharpe Ratio (IS)` first removes the mechanical regression-to-the-mean that makes
@@ -1160,3 +1221,20 @@ antes del mono descarta 48 estrategias que el mono aprueba por beneficio.
 ⚠️ La aproximación normal tiene la cola más fina que el null simulado, así que sirve para la
 puerta en p≈0.05 y **no** para la cola extrema tras corregir por multiplicidad. Para un
 Benjamini-Hochberg sobre la lista corta manda la simulación.
+
+## No cortes XML por `str.index()` de una etiqueta literal (2026-09-23)
+
+- 📓 Para silenciar a mano las condiciones de aceptación de una tarea escribí
+  `i, j = t.index('<Conditions>'), t.index('</Conditions>') + 13` y luego `t[:i] + bloque + t[j:]`.
+  En esa tarea la **primera** condición es `<Conditions CrossCheck="RetestOnAdditionalMarkets">`,
+  que no casa con la cadena literal, así que `i` cayó en un `<Conditions>` **posterior** al primer
+  `</Conditions>`. Con `i > j`, el corte no falla: **borra todo lo que hay entre `j` e `i`**.
+- 🔬 El resultado fue un `Retest-Task3.xml` sin `</Settings>`, y SQX respondiendo
+  `Project 'TestXAUUSD2' does not exist` en cada sincronización de salida — el proyecto estaba en
+  disco, pero el motor no podía cargarlo. Un XML roto no se anuncia como XML roto.
+- ✅ La forma correcta ya existía: `sqx/projects/crosschecks.silence()`, que sustituye por regex
+  sobre todo el texto y devuelve cuántas apagó. `builder.py --silence Retest` la aplica, para que
+  no haya que editar a mano.
+- **Regla**: si hay que tocar un XML de SQX, se toca con un `re.sub` acotado o con la función que
+  ya existe, y **se valida con `ElementTree.fromstring` antes de escribir el `.cfx`**. Un índice
+  calculado sobre dos etiquetas distintas no es un rango.

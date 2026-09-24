@@ -13,9 +13,11 @@ from core.assetdata import doctrine, load
 from core.paths import worker_dir
 from core.datapaths import projects_backup
 from sqx.inspect.keep_tasks import keep
+from sqx.projects import crosschecks
 from sqx.projects.configure import configure, ignored_templates, running_install
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session
+from xml.etree import ElementTree
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 TEMPLATES_REL = "user/settings/StrategyTemplates"
@@ -76,7 +78,7 @@ def sync_databanks(config: str) -> tuple[str, list[str]]:
 def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
           minutes: int, donor: Path, segment: str | None = None,
           tasks: tuple = ("Build",), only: set | None = None,
-          session_from: Path | None = None) -> dict:
+          session_from: Path | None = None, silence: tuple = ()) -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -93,6 +95,9 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             type — the build on `build`, the retests on `oos1`, in one project.
         tasks: Which task types to keep from the donor.
         only: Task XML file names to narrow those types to, e.g. {"Retest-Task1.xml"}.
+        silence: Task types whose acceptance conditions are turned off, so the task reads
+            instead of filtering. A task that deletes what fails turns a measurement into
+            a selection, and then the only thing the study can say is how many survived.
         session_from: A project.cfx that defines the asset's session, for when the donor does
             not. Read only. Omit when the donor already carries it.
 
@@ -121,9 +126,16 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
     config, synced = sync_databanks(members["config.xml"].decode("utf-8"))
     members["config.xml"] = re.sub(r'<Project name="[^"]*"', f'<Project name="{name}"',
                                    config, count=1).encode("utf-8")
+    kinds = {t.get("taskXMLFile"): t.get("type")
+             for t in ElementTree.fromstring(members["config.xml"]).find("Tasks")}
+    quiet = 0
     for member in [n for n in members if n.endswith(".xml") and n != "config.xml"]:
         text = set_template(members[member].decode("utf-8"), installed_template)
-        members[member] = set_caps(text, strategies, minutes).encode("utf-8")
+        text = set_caps(text, strategies, minutes)
+        if kinds.get(member) in silence:
+            text, n = crosschecks.silence(text)
+            quiet += n
+        members[member] = text.encode("utf-8")
 
     chained = chain_databanks(members)
 
@@ -144,7 +156,7 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             "template": str(installed_template), "tasks": kept["kept"],
             "databanks": kept["databanks"], "synced_to_disk": synced,
             "chain": chained,
-            "max_strategies": strategies, "minutes": minutes,
+            "max_strategies": strategies, "minutes": minutes, "silenced": quiet,
             "segments": {n: seg for n, (seg, _) in costs.items()},
             "template_ignored": ignored_templates(final),
             "provisional_costs": provisional(load(symbol)),
@@ -170,6 +182,9 @@ def main() -> None:
                     help="force one segment on every task; omit to take each task's own")
     ap.add_argument("--tasks", default="Build",
                     help="comma-separated donor task types to keep, e.g. Build,Retest")
+    ap.add_argument("--silence", default="",
+                    help="comma-separated task types whose acceptance conditions go off, "
+                         "e.g. Retest — the task then reads instead of filtering")
     ap.add_argument("--only", help="comma-separated task XML files to narrow --tasks to, "
                     "e.g. Build-Task3.xml,Retest-Task1.xml")
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
@@ -194,7 +209,8 @@ def main() -> None:
         raise SystemExit("\n".join(stop))
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe, a.max_strategies,
                  a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')),
-                 set(a.only.split(',')) if a.only else None, a.session_from)
+                 set(a.only.split(',')) if a.only else None, a.session_from,
+                 tuple(x for x in a.silence.split(',') if x))
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
 
@@ -211,6 +227,9 @@ def main() -> None:
           + (f", salida por barras {bars[0]}–{bars[1]}" if bars else ", sin tarea de construcción"))
     print(f"  segments  " + ", ".join(f"{m}={s}" for m, s in done["segments"].items()))
     print(f"  to disk   {', '.join(done['synced_to_disk']) or 'already syncing'}")
+    if done["silenced"]:
+        print(f"  ⚠️ {done['silenced']} condiciones de aceptación apagadas — esas tareas "
+              "miden, no filtran")
     if done["provisional_costs"]:
         print(f"  ⚠️ PROVISIONAL: {', '.join(done['provisional_costs'])}")
     print(f"\nrun it:  bin/sqx-worker.sh --role {a.role} start && "
