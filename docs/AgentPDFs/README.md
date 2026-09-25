@@ -60,6 +60,9 @@ invented, every empirical number stamped with the databank and export it came fr
 carry conclusions and recommendations, which the specs above deliberately do not. Keep the two
 kinds distinguishable by their stem: `<module>-` for a spec, `<module>-rendimiento-` for an audit.
 
+`hallazgos-rendimiento-y-cadena-2026-09-25` is the same kind, across the whole project: the day
+the Python was sped up, and steps 16.5 and 19 were run end to end on real mothers for the first time.
+
 ## And a third kind: design dossiers
 
 `plataforma-unificada-2026-09-20` is neither a raw-numbers spec nor a performance audit: it is a
