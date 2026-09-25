@@ -2,56 +2,63 @@
 """Judge every strategy in a databank on how much of its in-sample edge survived out of sample."""
 
 import argparse
+import sys
+import time
 from datetime import date
 
 import pandas as pd
 
-from core import manifest, sqxstats
+from core import sqxfile, sqxstats
 from core.paths import databank_dir, report_dir
+from core.study import blocks, output, result as envelope, verdicts
+from core.study.render import markdown
 from tasks.analysis import decay
 
+MODULE = "tasks.reports.decay"
 COLUMNS = ["name", "sharpe_is", "sharpe_oos", "retention", "t", "years_positive",
            "worst_year", "concentration", "net_profit_oos", "verdict"]
+STATE = {"MANTENER": "pass", "DUDOSA": "watch", "DESCARTAR": "fail"}
 
 
-def render(source: dict, rows: pd.DataFrame) -> str:
-    """The written summary that goes beside the CSV.
+def result(rows: pd.DataFrame, source: dict, started: float) -> dict:
+    """The databank's decay as one result: the counts, retention, templates, the keepers.
 
     Args:
-        source: What was analysed and when, for the header.
         rows: The table from analysis.decay.
+        source: What was analysed, for the notes.
+        started: When the computation began.
 
     Returns:
-        Markdown. The counts are per verdict and per template — the leading field of a
-        strategy's name is the build task that produced it — and nothing is averaged
-        across templates.
+        The contract dict. Counts are per verdict and per template — the leading field of a
+        strategy's name is the build task that produced it — and nothing is averaged across
+        templates.
     """
     counts = rows.verdict.value_counts()
-    lines = [f"# Decaimiento — {source['project']} / {source['databank']}", "",
-             f"{len(rows)} estrategias · IS hasta {source['split']} · "
-             f"OOS {source['split']} → {source['end']} · informe {source['reported']}", "",
-             "## Veredicto", "", "| veredicto | n |", "|---|---|"]
-    lines += [f"| {name} | {n} |" for name, n in counts.items()]
-
-    keep = rows[rows.verdict == "MANTENER"]
-    lines += ["", "## Retención del Sharpe", "",
-              f"Mediana {rows.retention.median():.0%} · p90 {rows.retention.quantile(.9):.0%} · "
-              f"máximo {rows.retention.max():.0%}", "",
-              f"Ninguna estrategia con t ≥ 2 (el máximo es {rows.t.max():.2f}): "
-              "el Sharpe fuera de muestra no se distingue de cero en ninguna.", "",
-              "## Por plantilla", "", "| plantilla | n | mantener | descartar |", "|---|---|---|---|"]
-    rows = rows.assign(template=rows.name.str.split(".").str[0])
-    for name, group in rows.groupby("template"):
-        lines.append(f"| {name} | {len(group)} | {(group.verdict == 'MANTENER').sum()} | "
-                     f"{(group.verdict == 'DESCARTAR').sum()} |")
-
-    lines += ["", "## Las que pasan todo", "",
-              "| estrategia | Sharpe IS | Sharpe OOS | retiene | t | años+ | concentr. |",
-              "|---|---|---|---|---|---|---|"]
-    lines += [f"| {r.name_} | {r.sharpe_is:.2f} | {r.sharpe_oos:.2f} | {r.retention:.0%} | "
-              f"{r.t:.2f} | {r.years_positive} | {r.concentration:.0%} |"
-              for r in keep.rename(columns={"name": "name_"}).itertuples()]
-    return "\n".join(lines) + "\n"
+    kept = rows[rows.verdict == "MANTENER"]
+    by = rows.assign(plantilla=rows.name.str.split(".").str[0]).groupby("plantilla")
+    per_template = pd.DataFrame({"n": by.size(),
+                                 "mantener": by.verdict.apply(lambda v: (v == "MANTENER").sum()),
+                                 "descartar": by.verdict.apply(lambda v: (v == "DESCARTAR").sum())}
+                                ).reset_index()
+    return envelope.envelope(
+        MODULE, None, None, {"split": source["split"], "end": source["end"]}, started,
+        [envelope.tab("verdicts", "Veredicto", [
+            {"kind": "bars", "title": "Estrategias por veredicto", "unit": "estrategias",
+             "reference": None,
+             "items": [{"label": k, "value": int(n), "error": None,
+                        "state": STATE.get(k, "info")} for k, n in counts.items()]},
+            blocks.table("Retención del Sharpe", pd.DataFrame(
+                [["mediana", rows.retention.median()], ["p90", rows.retention.quantile(.9)],
+                 ["máximo", rows.retention.max()], ["t máximo", rows.t.max()]],
+                columns=["", "valor"]),
+                "Con t por debajo de 2 el Sharpe fuera de muestra no se distingue de cero."),
+            blocks.table("Por plantilla", per_template),
+            blocks.table("Las que pasan todo", kept[COLUMNS])],
+            note=f"IS hasta {source['split']} · OOS {source['split']} → {source['end']}.")],
+        blocks.verdict(f"{int(counts.get('MANTENER', 0))} de {len(rows)}",
+                       "pass" if counts.get("MANTENER", 0) else "fail",
+                       "Cuánto del filo dentro de muestra sobrevivió fuera, y si lo que queda "
+                       "bate a su propio error estándar."))
 
 
 def main() -> None:
@@ -63,23 +70,21 @@ def main() -> None:
     ap.add_argument("--end", required=True, help="last day to consider, YYYY-MM-DD")
     a = ap.parse_args()
 
-    files = sorted(databank_dir(a.project, a.databank).glob("*.sqx"))
-    curves = {f.stem: sqxstats.equity(f) for f in files}
-    rows = decay.table(curves, a.split, a.end)
-
-    source = {"project": a.project, "databank": a.databank, "split": a.split, "end": a.end,
-              "reported": date.today().isoformat(), "code_version": manifest.code_version()}
-    out = report_dir(a.project, a.databank, source["reported"])
-    out.mkdir(parents=True, exist_ok=True)
-    rows[COLUMNS].to_csv(out / "decay.csv", index=False)
-    (out / "decay.md").write_text(render(source, rows), encoding="utf-8")
-    manifest.write(out, source,
-                   f"decay.py --project {a.project} --databank {a.databank} "
-                   f"--split {a.split} --end {a.end}",
-                   {"strategies": len(rows),
-                    **rows.verdict.value_counts().to_dict()})
+    started = time.time()
+    folder = databank_dir(a.project, a.databank)
+    files = sorted(folder.glob("*.sqx"))
+    rows = decay.table({f.stem: sqxstats.equity(f) for f in files}, a.split, a.end)
+    identity = {f.stem: sqxfile.identity(f) for f in files}
+    source = {"split": a.split, "end": a.end}
+    out = report_dir(a.project, a.databank, date.today().isoformat()) / "decay"
+    got = result(rows, source, started)
+    title = f"Decaimiento — {a.project} / {a.databank}"
+    output.population(out, "decay", got, title)
+    table = rows[COLUMNS].rename(columns={"name": "strategy"})
+    table.insert(1, "identity", table["strategy"].map(identity))
+    verdicts.write(out, table, folder, " ".join(sys.argv), [])
+    print(markdown.render(got, title))
     print(f"{len(rows)} estrategias → {out}")
-    print(rows.verdict.value_counts().to_string())
 
 
 if __name__ == "__main__":

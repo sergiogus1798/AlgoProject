@@ -379,10 +379,10 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tasks/analysis/metrics.py` | 57 | Load a metrics export and work out which of its columns pair in-sample against out-of-sample. | — | numpy |
 | `tasks/analysis/replication.py` | 109 | Does a conclusion drawn on one sample of strategies hold on another, independently generated one. | tasks | numpy |
 | `tasks/reports/compare.py` | 189 | Check whether one databank's conclusions hold on other, independently generated databanks. | core, tasks | — |
-| `tasks/reports/decay.py` | 86 | Judge every strategy in a databank on how much of its in-sample edge survived out of sample. | core, tasks | pandas |
+| `tasks/reports/decay.py` | 91 | Judge every strategy in a databank on how much of its in-sample edge survived out of sample. | core, tasks | pandas |
 | `tasks/reports/filters.py` | 119 | Sweep in-sample filters against out-of-sample outcomes and write improvement.md. | core, tasks | — |
 | `tasks/reports/is_oos.py` | 78 | Build the interactive IS/OOS panel and its written summary for one databank. | core, tasks | — |
-| `tasks/reports/nulls.py` | 142 | How many strategies of a databank beat their monkeys, and how many should have by chance. | core, tasks | pandas |
+| `tasks/reports/nulls.py` | 163 | How many strategies of a databank beat their monkeys, and how many should have by chance. | core, tasks | pandas |
 | `tasks/reports/summary.py` | 122 | Write the conclusions of one IS/OOS study as summary.md. Pure text: it computes nothing. | — | — |
 | `tests/test_cfx.py` | 47 | Golden-file test for core.cfx: a parser that breaks silently poisons every analysis. | core | — |
 | `tests/test_cscv.py` | 168 | Property test for the CSCV on panels whose answer is known by construction — above all | core, strategies | numpy, pandas |
