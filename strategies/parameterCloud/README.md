@@ -7,7 +7,7 @@ moves the result, whether the surface is a surface at all, and whether its shape
 into periods.** It never talks to SQX and it never runs a backtest.
 
 ```
-config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ render
+config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ contract
  every knob    the cloud  the       the         what it    the
                and the    geometry  per-period  means      panel
                curves     and the   and the
@@ -20,11 +20,13 @@ config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ rend
 | `model/` | what shape is the cloud, and who gives it that shape? | changing the neighbourhood metric or the surrogate |
 | `measure/` | what are the per-period and per-ensemble numbers? | touching the period metric or how members are picked |
 | `verdict/` | what does each of them mean? | moving a threshold |
-| `render/` | how is it read? | adding a table |
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `report.py` | **The panel — the only way to run it** | `python3 -m strategies.parameterCloud.report --work <dir>` | batch → four readings |
+| `one.py` | Every measurement of one batch and its four readings, as the contract's data the window paints | imported — the window calls it | batch → result |
+| `contract.py` | The four tabs — A1, A2 and A3, B2, C1 — each with its readings | imported | numbers → tabs |
+| `report.py` | **The command**: prints the result and writes `cloud.json`, `cloud.html` and `cloud.md` into the batch; `--out` also writes the numbers alone | `python3 -m strategies.parameterCloud.report --work <dir>` | batch → four readings |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` | — |
 
 Manual page, in Spanish: `docs/manual/39-nube-de-parametros.md`.
