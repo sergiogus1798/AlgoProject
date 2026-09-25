@@ -3,7 +3,6 @@
 import numpy as np
 import pandas as pd
 
-from strategies.walkForwardCorrelation.measure.correlation import IS, OOS
 
 W, H = 900, 640
 PAD = {"l": 110, "r": 40, "t": 96, "b": 96}
@@ -43,7 +42,7 @@ def _money(v: float) -> str:
     return f"{v/1000:+.0f}k" if abs(v) >= 1000 else f"{v:+.0f}"
 
 
-def scatter(kept: pd.DataFrame, found: dict, said: dict, title: str) -> str:
+def scatter(kept: pd.DataFrame, found: dict, said: dict, title: str, cols: dict) -> str:
     """In-sample net profit against out-of-sample net profit, one mark per tuple.
 
     Args:
@@ -51,6 +50,9 @@ def scatter(kept: pd.DataFrame, found: dict, said: dict, title: str) -> str:
         found: What `measure.correlation` returned.
         said: What `measure.verdict` returned.
         title: Strategy name.
+        cols: What `measure.correlation.columns` returned — which segments are the two
+            axes. The labels say so on the figure, because the same batch is read two
+            ways and a chart that does not name its split is unreadable a week later.
 
     Returns:
         An SVG element. The two rules at zero are what the eye should find first: a point
@@ -58,6 +60,7 @@ def scatter(kept: pd.DataFrame, found: dict, said: dict, title: str) -> str:
         in-sample and lost it out-of-sample, and a cloud that fills all four quadrants is
         a surface where in-sample profit carries no information about the future.
     """
+    IS, OOS = cols["is"], cols["oos"]
     x, lo_x, hi_x = _scale(kept[IS].to_numpy(), PAD["l"], W - PAD["r"])
     y, lo_y, hi_y = _scale(kept[OOS].to_numpy(), H - PAD["b"], PAD["t"])
     out = [f'<svg viewBox="0 0 {W} {H}" width="100%" xmlns="http://www.w3.org/2000/svg" '
@@ -66,8 +69,8 @@ def scatter(kept: pd.DataFrame, found: dict, said: dict, title: str) -> str:
            f'<text x="{PAD["l"]}" y="38" font-size="21" font-weight="600" fill="{INK}">'
            f'{title} — walk forward correlation</text>',
            f'<text x="{PAD["l"]}" y="62" font-size="14" fill="{MUTED}">'
-           f'cada punto es una combinacion de parametros · eje X lo que gano dentro de '
-           f'muestra · eje Y lo que gano fuera</text>']
+           f'cada punto es una combinacion de parametros · eje X lo que gano en '
+           f'{cols["is_label"]} · eje Y lo que gano en {cols["oos_label"]}</text>']
 
     for frac in (0, .25, .5, .75, 1):
         gx, gy = PAD["l"] + frac * (W - PAD["l"] - PAD["r"]), PAD["t"] + frac * (H - PAD["t"] - PAD["b"])

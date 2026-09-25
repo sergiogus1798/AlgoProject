@@ -92,15 +92,17 @@ def number_of_losses(p: dict) -> np.ndarray:
 
 
 def winning_pct(p: dict) -> np.ndarray:
-    """Share of trades that made money.
+    """Share of trades that made money, with a flat trade counted as half a win.
 
     Args:
         p: What recon.parts() returned.
 
     Returns:
-        Percent per simulation.
+        Percent per simulation. The half is SQX's own convention, measured — see
+        `recon.parts`. It matters only on instruments whose tick can close a trade at
+        exactly zero, and there it is the difference between reconciling and not.
     """
-    return 100.0 * p["wins_n"] / p["n"]
+    return 100.0 * p["wins_rate_n"] / p["n"]
 
 
 def avg_win(p: dict) -> np.ndarray:
@@ -235,5 +237,5 @@ def kelly_formula(p: dict) -> np.ndarray:
         Percent per simulation, from the win rate and PayoutRatio. A theoretical ceiling on
         sizing and never a sizing: the fractional variant is what anyone actually uses.
     """
-    r, w = payout_ratio(p), p["wins_n"] / p["n"]
+    r, w = payout_ratio(p), p["wins_rate_n"] / p["n"]
     return 100.0 * np.divide(w * r - (1 - w), r, out=np.zeros_like(r), where=np.isfinite(r) & (r > 0))

@@ -21,6 +21,31 @@ Conventions:
   opening the HTML would see. The `.md` keeps the images as `![](file.png)` references to files that
   live only in the temp scratchpad that built it; open the `.pdf` to see them.
 
+## And a fourth kind: outbound briefs
+
+`capabilities-2026-09-24` is not a spec, an audit or a dossier: it is a **briefing written to be
+handed out of this project**, to a reasoning agent that is helping design new tests and has never
+seen the code. It says what the toolchain can do, inventories every analysis already implemented or
+commissioned, and — the part that earns its length — lists the hard constraints and the measured
+facts that make most obvious proposals unbuildable here.
+
+Two conventions of its own:
+
+- **It is in English, deliberately.** Its reader is an agent working in English, not the owner. It
+  is the one file in this folder that is not to be translated.
+- **It is an inventory, so it goes stale.** Re-date and regenerate it whenever a module is added or
+  a commission is fulfilled — a brief that under-reports what exists invites duplicate work, which
+  is the exact failure it was written to prevent.
+
+`catalogo-para-la-ui-2026-09-25` is the second of this kind and the counter-example to the first
+convention: it is **in Spanish**, because it briefs an agent helping design the desktop application,
+whose labels and whose conversation are in Spanish. So the rule is not "outbound means English" — it
+is **the language of the conversation the document is walking into**, and each one says which it
+chose and why on its last page.
+
+Regenerate the PDF with the manual's own stylesheet; there is no committed tool for a single
+dossier, and `tools/manual.py` holds the `STYLE` any ad-hoc renderer should import.
+
 ## A second kind of document lives here too
 
 `montecarlo-rendimiento-2026-09-20` is not a raw-numbers spec: it is a **performance and memory

@@ -81,12 +81,13 @@ stages:
     produces: ["{work}/build.json", "{work}/manifest.parquet"]
     record: [n, bytes]
 
-  # Drives the custodian: loads the batch, runs the harness's one Retest task, exports the
-  # panel. It is the only stage that talks to SQX, and the only long one.
+  # Drives the custodian: loads the batch, runs the project's THREE retest tasks -- build,
+  # oos1 and oos2, each at its own costs and with the cross-market check inside -- and
+  # exports one panel per leg. It is the only stage that talks to SQX, and the only long one.
   - name: ran
     command: python3 -m sqx.variants.execute --work {work}
     needs: ["{work}/build.json"]
-    produces: ["{work}/ran.json", "{work}/retest.csv"]
+    produces: ["{work}/ran.json"]   # y un retest_<tramo>.csv por pata, que ran.json nombra
     record: [n_loaded, n_returned, n_on_disk]
 
   # Reads every retested .sqx off the custodian's disk and keeps the one thing the panel
@@ -103,15 +104,16 @@ stages:
     command: python3 -m sqx.variants.equity --work {work}
     needs: ["{work}/ran.json"]
     produces: ["{work}/equity.json", "{work}/equity.parquet"]
-    record: [n, days, bytes, open_at_end]
+    record: [n, days, bytes, open_at_end, markets]
     must:
-      - number: mismatch
+      - number: unreadable
         max: 0
         why: >-
-          alguna curva diaria no cuadra con el beneficio que SQX guardo en la frontera
-          dentro/fuera de muestra. Un .sqx reteseado con cross-check lleva TRES curvas de
-          equity y la primera del archivo es oro mas plata: si esta leyendo esa, todo lo
-          que venga despues mide otra cosa
+          hay un bloque (tramo x mercado) donde NINGUNA curva cuadra con lo que SQX
+          guardo. Un .sqx reteseado con cross-check lleva una curva por mercado mas la
+          del portfolio: si se esta leyendo la que no es, todo lo que venga despues mide
+          otra cosa. Unas pocas descuadradas no son fallo -- son posiciones abiertas al
+          cerrar el tramo, y van en `open_at_end`
 
   # The ledger name is `collected` because perf/disk/retention.py already reads
   # stages.collected.removable to decide what is provably safe to delete.
@@ -119,8 +121,8 @@ stages:
   # that never actually ran looks like -- see knowhow/01-file-formats.md.
   - name: collected
     command: python3 -m sqx.variants.collect --work {work}
-    needs: ["{work}/ran.json"]
-    produces: ["{work}/collected.json", "{work}/metrics.parquet"]
+    needs: ["{work}/equity.json"]   # las uniones se recortan con los tramos que midio equity
+    produces: ["{work}/collected.json", "{work}/metrics.parquet", "{work}/segments.parquet"]
     record: [n, files, removable, canaries_distinct]
     must:
       - number: canaries_distinct

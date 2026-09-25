@@ -42,6 +42,20 @@ def template_runs() -> Path:
     return DATA / "templates" / "runs.csv"
 
 
+def template_draft(name: str) -> Path:
+    """Draft brief of a template the interview composed but nobody has authored yet.
+
+    Args:
+        name: Template name in camelCase, as it will appear in the registry.
+
+    Returns:
+        Path under the data root, beside the library rather than inside it. A draft is not
+        a template: it carries no .sqx and no deps, so a folder in library/ would make the
+        catalogue count strategies that do not exist.
+    """
+    return DATA / "templates" / "drafts" / f"{name}.json"
+
+
 def vocabulary_snapshot(install: str, day: str) -> Path:
     """Where one install's block-and-group inventory is kept.
 
@@ -80,6 +94,22 @@ def variants_dir(project: str, strategy: str) -> Path:
         Path under the data root.
     """
     return DATA / "strategyPermutations" / project / strategy.replace(" ", "_")
+
+
+def crosstf_dir(project: str, day: str) -> Path:
+    """One batch of timeframe-scaled siblings and the manifest of what was rescaled.
+
+    Args:
+        project: Project name on the master.
+        day: Fabrication date as YYYY-MM-DD.
+
+    Returns:
+        Path under the data root. Dated and immutable, like harvest/, because a cross-
+        timeframe verdict is only readable against the exact scaling that produced it:
+        `scaling.parquet` is the sole record of which parameter was divided and how far
+        the rounding moved it, and a `.sqx` without it is indistinguishable from any other.
+    """
+    return DATA / "crosstf" / project / day
 
 
 def log_archive(install_name: str) -> Path:

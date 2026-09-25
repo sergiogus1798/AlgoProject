@@ -9,6 +9,12 @@ import numpy as np
 import pandas as pd
 
 
+# One entry per (bars, window). A population study calls atr() once per strategy over the
+# very same bars -- 234 calls x 39 ms = 9.2 s of the gate's 33 -- and the result depends on
+# nothing else. The frame is held in the value so its id cannot be recycled under the key.
+_ATR_CACHE: dict = {}
+
+
 def atr(frame: pd.DataFrame, window: int) -> np.ndarray:
     """Average true range, as a plain rolling mean of the true range.
 
@@ -18,12 +24,17 @@ def atr(frame: pd.DataFrame, window: int) -> np.ndarray:
 
     Returns:
         One value per bar; the first `window` are NaN. Wilder's smoothing is deliberately
-        not used: nothing here reproduces an indicator SQX computed.
+        not used: nothing here reproduces an indicator SQX computed. The array is shared,
+        not copied: it is read-only to every caller here.
     """
-    prev = frame["Close"].shift(1)
-    spread = pd.concat([frame["High"] - frame["Low"], (frame["High"] - prev).abs(),
-                        (frame["Low"] - prev).abs()], axis=1).max(axis=1)
-    return spread.rolling(window).mean().to_numpy()
+    key = (id(frame), len(frame), window)
+    if key not in _ATR_CACHE:
+        prev = frame["Close"].shift(1)
+        spread = pd.concat([frame["High"] - frame["Low"], (frame["High"] - prev).abs(),
+                            (frame["Low"] - prev).abs()], axis=1).max(axis=1)
+        _ATR_CACHE.clear()
+        _ATR_CACHE[key] = (frame, spread.rolling(window).mean().to_numpy())
+    return _ATR_CACHE[key][1]
 
 
 def point_value(trades: pd.DataFrame) -> float:

@@ -19,6 +19,9 @@ DATA = Path(_CFG["data_root"]).expanduser()
 ARCHIVE = Path(_CFG.get("archive", "")).expanduser()
 BROWSER = Path(_CFG.get("browser", "")).expanduser()
 WORKER_PORT = _CFG["worker_port"]
+# The desktop app's local daemon. Loopback only, never exposed; a machine that never
+# opens the app never sets it, so it carries a default rather than being required.
+UI_PORT = _CFG.get("ui_port", 8765)
 STRATEGY_POOLS = {name: Path(p).expanduser()
                   for name, p in (_CFG.get("strategy_pools") or {}).items()}
 
@@ -31,6 +34,10 @@ WORKERS.update({role: {"path": Path(w["path"]).expanduser(), "port": w["port"]}
 
 WORKER_SH = ROOT / "bin" / "sqx-worker.sh"
 ASSETS = ROOT / "assets"
+# La taxonomía de bloques: configuración a mano, versionada, no un derivado del install.
+TAXONOMY = ROOT / "sqx" / "blocks" / "taxonomy.yaml"
+# Las paletas: una por arquetipo, lo único que la ventana escribe de este lado.
+PALETTES = ROOT / "sqx" / "blocks" / "palettes"
 MANUAL = ROOT / "docs" / "manual"
 VIEWS_REL = "user/settings/views/databanks"
 STAGING_REL = "user/projects/Retester/databanks/Results"
@@ -134,6 +141,22 @@ def metrics_export(project: str, databank: str) -> Path:
     return DATA / "metrics" / project / databank.replace(" ", "_")
 
 
+def harvest_dir(project: str, databank: str, day: str) -> Path:
+    """Where one cosecha of a databank lands: its metrics, trades and equity together.
+
+    Args:
+        project: Project name.
+        databank: Databank name as SQX shows it.
+        day: Harvest date as YYYY-MM-DD.
+
+    Returns:
+        Path under the data root. Dated and immutable, like raw/, and separate from it
+        because the three files here were taken in one pass from one state of the
+        databank: a gate verdict is only reproducible against the set it was judged on.
+    """
+    return DATA / "harvest" / project / databank.replace(" ", "_") / day
+
+
 def report_dir(project: str, databank: str, day: str) -> Path:
     """Where one day's rendered analysis of a databank lands.
 
@@ -186,3 +209,17 @@ def perf_dir() -> Path:
         overwritten.
     """
     return DATA / "profiling"
+
+
+def ledger_file(study: str) -> Path:
+    """The global search ledger of one study.
+
+    Args:
+        study: Study id, e.g. "XAUUSD_M30_DirectionalMomentum".
+
+    Returns:
+        A `.jsonl` under the data root, one line per search, appended and never rewritten.
+        It lives with the data and not in the repository because it grows with every run
+        and because it is a record of what happened on this machine, not source.
+    """
+    return DATA / "ledger" / f"{study}.jsonl"

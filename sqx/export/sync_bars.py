@@ -6,11 +6,10 @@ import csv
 import io
 from datetime import date
 
-import yaml
 
 from core import barstore, exportdrv, manifest
+from core.assetdata import markets, symbols
 from core.paths import DATA, bar_source
-from strategies.crossmarket.inputs import markets
 
 # Column positions of `-symbol action=list`: name, base symbol, resolution, timezone,
 # date from, date to, days, bars. The rest is the data source and the category.
@@ -43,10 +42,10 @@ def wanted() -> list[str]:
         and every market it is retested on — plus whatever the library already holds, so a
         feed pulled once keeps being refreshed after its asset leaves the declaration.
     """
-    declared = yaml.safe_load(markets.FILE.read_text(encoding="utf-8"))
-    feeds = {spec["main"] for spec in declared.values()}
-    feeds |= {m["feed"] for spec in declared.values()
-              for category in spec["categories"].values() for m in category}
+    declared = [markets(s) for s in symbols()]
+    feeds = {spec["main"] for spec in declared if spec}
+    feeds |= {m["feed"] for spec in declared if spec
+              for category in spec.get("categories", {}).values() for m in category}
     feeds |= {d.name for d in (DATA / "bars").iterdir() if bar_source(d.name).exists()}
     return sorted(feeds)
 
@@ -98,13 +97,16 @@ def main() -> None:
         written = exportdrv.bars(f, "M1", bar_source(f).parent,
                                  sqx[f]["from"], sqx[f]["to"])
         entries[f] = barstore.store(f, written)
+        # Written after EVERY feed, not once at the end: a pull of thirteen feeds is tens of
+        # minutes and whatever interrupts it used to leave gigabytes on disk that the
+        # manifest had never heard of, so the next run downloaded them all again.
+        manifest.write(DATA / "bars",
+                       {"timeframe": "M1", "window": "each feed over its own full range",
+                        "synced": date.today().isoformat()},
+                       "sync_bars.py", entries)
         print(f"  {f:32} {entries[f]['bars']:>9,} bars  "
               f"{entries[f]['from']} → {entries[f]['to']}  {bar_source(f).stat().st_size/1e6:.0f} MB")
 
-    manifest.write(DATA / "bars",
-                   {"timeframe": "M1", "window": "each feed over its own full range",
-                    "synced": date.today().isoformat()},
-                   "sync_bars.py", entries)
     print(f"{len(todo)} feed(s) refreshed; library holds {len(entries)}")
 
 

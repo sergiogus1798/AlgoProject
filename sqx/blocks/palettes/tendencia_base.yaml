@@ -1,0 +1,172 @@
+# Paleta «Tendencia — base» — familia Tendencia.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `trend`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/06-locations.md`.
+
+name: tendencia_base
+label: Tendencia — base
+family: trend
+origin: default
+based_on: null
+created: '2026-09-24'
+note: 'Paleta por defecto de la familia. Sin curar todavía: el criterio de qué bloques
+  la forman lo pone el encargo de autoría, no el generador.'
+unlabelled: 'off'
+overrides:
+  CBlock_CrossAboveMA: 3
+  CBlock_CrossAboveMA_2: 3
+  CBlock_CrossAboveMA_3: 3
+  CBlock_CrossAboveMA_4: 3
+  CBlock_CrossAboveMA_5: 3
+  CBlock_CrossAboveMA_6: 3
+  CBlock_CrossAboveMA_7: 3
+  CBlock_CrossAboveMA_8: 3
+  CBlock_EMAMAIsRising_2_2_2: 3
+  CBlock_EMAMAIsRising_2_2_2_2: 3
+  CBlock_EMAMAIsRising_2: 2
+  CBlock_EMAMAIsRising_2_4: 2
+  CBlock_EMAMAIsRising_2_2_2_3: 2
+  CBlock_EMAMAIsRising_2_2_2_3_2: 2
+  CBlock_EMAMAIsRising_2_3_2: 2
+  CBlock_EMAMAIsRising_2_3_2_2: 2
+  CBlock_ChoppinessTrending: 3
+  CBlock_EntropyLow: 2
+  CBlock_HursExponentIsAboveLevel_3: 3
+  CBlock_HursExponentIsAboveLevel: 2
+  CBlock_DisparityAbove0: 2
+  CBlock_DisparityBelow0: 2
+  CBlock_SqueezeMomentumPos: 2
+  CBlock_SqueezeMomentumNeg: 2
+  CBlock_AroonUpCross: 2
+  CBlock_AroonDownCross: 2
+  CBlock_DidiCrossUp: 2
+  CBlock_DidiCrossDown: 2
+  CBlock_PMaxFlipUp: 2
+  CBlock_PMaxFlipDown: 2
+  CBlock_QQEModBuy: 2
+  CBlock_QQEModSell: 2
+  CBlock_RSIVWMAEntryLong: 2
+  CBlock_RSIVWMAEntryShort: 2
+  CBlock_StochOTTBuy: 2
+  CBlock_StochOTTSell: 2
+  CBlock_ThreeWhiteSoldiers: 2
+  CBlock_ThreeWhiteSoldiers_2: 2
+  MARising: 3
+  MAFalling: 3
+  MABarClosesAbove: 2
+  MABarClosesBelow: 2
+  MABarOpensAboveAfterOpenBelow: 2
+  MABarOpensBelowAfterOpenAbove: 2
+  DoubleDEMARising: 3
+  DoubleDEMAFalling: 3
+  FasterHMAIsAboveSlowerHMA: 3
+  FasterHMAIsBelowSlowerHMA: 3
+  FastKAMAAboveSlowKAMA: 3
+  FastKAMABelowSlowKAMA: 3
+  ADXHigher: 3
+  ADXRising: 2
+  ADXCrossUp: 2
+  DICrossUp: 3
+  DICrossDown: 3
+  DIPlusHigher: 2
+  DIPlusLower: 2
+  IsUptrend: 3
+  IsDowntrend: 3
+  SuperTrendUPTrend: 3
+  SuperTrendDownTrend: 3
+  BarClosesAboveSuperTrend: 2
+  BarClosesBelowSuperTrend: 2
+  VortexUptrend: 3
+  VortexDowntrend: 3
+  VortexChangesTrendUP: 2
+  VortexChangesTrendDown: 2
+  AroonCrossesAbove: 2
+  AroonCrossesBelow: 2
+  PSARBarHigher: 2
+  PSARBarLower: 2
+  IchimokuTenkanKijunCrossBullish: 2
+  IchimokuTenkanKijunCrossBearish: 2
+  MACDMainCrossAboveSignal: 3
+  MACDMainCrossBelowSignal: 3
+  MACDMainCrossAboveZero: 2
+  MACDMainCrossBelowZero: 2
+  MACDMainHigherZero: 2
+  MACDMainLowerZero: 2
+  MACDMainHigherSignal: 2
+  MACDMainLowerSignal: 2
+  MomHigher: 2
+  MomLower: 2
+  ROCAboveLevel: 2
+  ROCBelowLevel: 2
+  WoodiesTrendUP: 2
+  WoodiesTrendDown: 2
+  ChoppinessIndexBelowLevel: 2
+  KERaboveLevel: 2
+  FastVWAPAboveSlowVWAP: 2
+  FastVWAPBelowSlowVWAP: 2
+  VPRisingPOC: 2
+  VPFallingPOC: 2
+  VPValueShiftUp: 2
+  VPValueShiftDown: 2
+  SMA: 3
+  EMA: 3
+  HullMovingAverage: 3
+  KAMA: 3
+  SlopeDirectionLine: 3
+  LWMA: 2
+  SMMA: 2
+  TEMA: 2
+  DEMA: 2
+  VIDYA: 2
+  VMA: 2
+  LinearRegression: 2
+  EhlersMotherOfAdaptiveMovingAverages: 2
+  SuperTrend: 3
+  ParabolicSAR: 3
+  ATRTrailingStops: 3
+  HalfTrend: 2
+  SSL: 2
+  GannHiLo: 2
+  Ichimoku: 2
+  CBlock_EhlersFAMAPriceLevel: 2
+  CBlock_EhlersFAMAPriceLevel_2: 2
+  ADX: 3
+  MACD: 3
+  Vortex: 2
+  Aroon: 2
+  OSMA: 2
+  Momentum: 2
+  ROC: 2
+  KaufmanEfficiencyRatio: 2
+  ChoppinessIndex: 2
+  HurstExponent: 2
+  VWAP: 2
+  ATR: 2
+  Close: 2
+  Highest: 1
+  Lowest: 1
+  Number: 1
+  CrossesAbove: 3
+  CrossesBelow: 3
+  IsGreater: 3
+  IsLower: 3
+  IsRising: 2
+  IsFalling: 2
+  IsGreaterCount: 2
+  IsLowerCount: 2
+  IndicatorAboveMA: 2
+  IndicatorBelowMA: 2
+  IndicatorCrossesAboveMA: 2
+  IndicatorCrossesBelowMA: 2
+  BarHourIsBigger: 1
+  BarHourIsSmaller: 1
+  BarDayOfWeekIsNot: 1

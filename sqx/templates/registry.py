@@ -8,7 +8,7 @@ from pathlib import Path
 from core.datapaths import template_registry, template_runs
 
 TEMPLATE_COLUMNS = ("name", "archetype", "shape", "entry", "exit", "groups", "blocks",
-                    "created", "origin", "status")
+                    "created", "origin", "status", "notes")
 RUN_COLUMNS = ("template", "symbol", "timeframe", "project", "date", "strategies_built",
                "strategies_kept", "verdict", "report")
 

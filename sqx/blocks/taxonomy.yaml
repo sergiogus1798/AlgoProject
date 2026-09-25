@@ -1,0 +1,5087 @@
+# Taxonomía de bloques — qué bloque pega con qué tipo de estrategia.
+#
+# Generado por `python3 -m sqx.blocks.taxonomy`, que RESPETA lo ya etiquetado: vuelve a
+# leer la instalación, añade los bloques nuevos, y deja intactos los `archetypes` que ya
+# tengan valor. Las etiquetas se ponen a mano (o las pone un agente); el resto es derivado
+# y se pisa en cada refresco.
+#
+# Solo están los bloques que el builder puede sortear de verdad. Los que no aparecen aquí
+# —las acciones, las funciones matemáticas, los 158 `talib_*`— existen en el vocabulario y
+# son inalcanzables desde la generación: `knowhow/06-locations.md`.
+#
+# archetypes: un peso por familia. 0 lo excluye, 1 es neutro, 2 y 3 lo prefieren.
+#   breakout, mean_reversion, trend
+# Vacío = sin etiquetar. Un bloque sin etiquetar no entra en ninguna paleta.
+#
+# roles   señal (condición de entrada/salida) · indicador (valor a comparar) ·
+#         nivel (precio de una orden stop/limit). Un bloque puede jugar dos.
+# groups  los grupos aleatorios que lo agrupan. OJO: un hueco atado a un grupo IGNORA la
+#         paleta — para esos la palanca es el grupo, no el peso. Medido 2026-09-24.
+
+ADX:
+  ADXChangesDown:
+    roles: [signal]
+    origin: native
+    form: ADX(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if ADX changes direction downwards
+  ADXChangesUp:
+    roles: [signal]
+    origin: native
+    form: ADX(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if ADX changes direction upwards
+  ADXCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'ADX(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  ADXCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'ADX(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  ADXFalling:
+    roles: [signal]
+    origin: native
+    form: ADX(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if ADX is falling
+  ADXHigher:
+    roles: [signal]
+    origin: native
+    form: 'ADX(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  ADXLower:
+    roles: [signal]
+    origin: native
+    form: 'ADX(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  ADXRising:
+    roles: [signal]
+    origin: native
+    form: ADX(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if ADX is rising
+ATR:
+  ATRChangesDown:
+    roles: [signal]
+    origin: native
+    form: ATR(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR changes direction downwards
+  ATRChangesUp:
+    roles: [signal]
+    origin: native
+    form: ATR(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR changes direction upwards
+  ATRCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'ATR(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  ATRCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'ATR(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  ATRFalling:
+    roles: [signal]
+    origin: native
+    form: ATR(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR is falling
+  ATRHigher:
+    roles: [signal]
+    origin: native
+    form: 'ATR(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  ATRLower:
+    roles: [signal]
+    origin: native
+    form: 'ATR(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  ATRRising:
+    roles: [signal]
+    origin: native
+    form: ATR(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR is rising
+ATR Percent:
+  ATRPercentAboveLevel:
+    roles: [signal]
+    origin: native
+    form: ATR Percent Above Level(@Chart@#ATRPeriod#,#Level#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent is above Level
+  ATRPercentBelowLevel:
+    roles: [signal]
+    origin: native
+    form: ATR Percent Below Level(@Chart@#ATRPeriod#,#Level#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent is below Level
+  ATRPercentCrossDown:
+    roles: [signal]
+    origin: native
+    form: ATR Percent Crosses Below Level(@Chart@#ATRPeriod#,#Level#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent crosses below Level
+  ATRPercentCrossUP:
+    roles: [signal]
+    origin: native
+    form: ATR Percent Crosses Above Level(@Chart@#ATRPeriod#,#Level#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent crosses above Level
+ATR Percent Rank:
+  ATRPercentRankAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#) is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent Rank is above level
+  ATRPercentRankBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#) is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent Rank is below level
+  ATRPercentRankCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#) crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent Rank crosses below level
+  ATRPercentRankCrossUP:
+    roles: [signal]
+    origin: native
+    form: 'ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#) crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent Rank crosses above level
+  ATRPercentRankFalling:
+    roles: [signal]
+    origin: native
+    form: ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#) is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent Rank is falling 2 consecutive bars
+  ATRPercentRankRising:
+    roles: [signal]
+    origin: native
+    form: ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#) is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if ATR Percent Rank is rising 2 consecutive bars
+Anchored VWAP:
+  AnchoredVWAPFalling:
+    roles: [signal]
+    origin: native
+    form: AnchoredVWAP(@Chart@#SessionType#,#StdDevMult#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Anchored VWAP is falling
+  AnchoredVWAPRising:
+    roles: [signal]
+    origin: native
+    form: AnchoredVWAP(@Chart@#SessionType#,#StdDevMult#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Anchored VWAP is rising
+  CloseAboveAnchoredVWAP:
+    roles: [signal]
+    origin: native
+    form: Close is above AnchoredVWAP(@Chart@#SessionType#,#StdDevMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Close is above VWAP
+  CloseBelowAnchoredVWAP:
+    roles: [signal]
+    origin: native
+    form: Close is below AnchoredVWAP(@Chart@#SessionType#,#StdDevMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Close is below VWAP
+  FastAnchoredVWAPAboveSlowAnchoredVWAP:
+    roles: [signal]
+    origin: native
+    form: Faster AnchoredVWAP(@Chart@#FastSessionType#,#FastStdDevMult#)[#Shift#] is above Slower AnchoredVWAP(@Chart@#SlowSessionType#,#SlowStdDevMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Faster Anchored VWAP is above Slower Anchored VWAP
+  FastAnchoredVWAPBelowSlowAnchoredVWAP:
+    roles: [signal]
+    origin: native
+    form: Faster AnchoredVWAP(@Chart@#FastSessionType#,#FastStdDevMult#)[#Shift#] is below Slower AnchoredVWAP(@Chart@#SlowSessionType#,#SlowStdDevMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Faster Anchored VWAP is below Slower Anchored VWAP
+Aroon:
+  AroonCrossesAbove:
+    roles: [signal]
+    origin: native
+    form: Aroon(@Chart@#Period#).Up[#Shift#] crosses above Aroon Down
+    groups: []
+    archetypes: {}
+    help: Is triggered if Aroon Up crosses above Aroon Down
+  AroonCrossesBelow:
+    roles: [signal]
+    origin: native
+    form: Aroon(@Chart@#Period#).Up[#Shift#] crosses below Aroon Down
+    groups: []
+    archetypes: {}
+    help: Is triggered if Aroon Up crosses below Aroon Down
+  AroonDownRiseFromBottom:
+    roles: [signal]
+    origin: native
+    form: Aroon(@Chart@#Period#).Down[#Shift#] rises from bottom
+    groups: []
+    archetypes: {}
+    help: Is triggered if Aroon Down rises from bottom and Aroon Up is around middle of the range
+  AroonFallFromTop:
+    roles: [signal]
+    origin: native
+    form: Aroon(@Chart@#Period#).Down[#Shift#] falls from top
+    groups: []
+    archetypes: {}
+    help: Is triggered if Aroon Down falls from top and Aroon Up is around middle of the range
+  AroonRiseFromBottom:
+    roles: [signal]
+    origin: native
+    form: Aroon(@Chart@#Period#).Up[#Shift#] rises from bottom
+    groups: []
+    archetypes: {}
+    help: Is triggered if Aroon Up rises from bottom and Aroon Down is around middle of the range
+  AroonUpFallFromTop:
+    roles: [signal]
+    origin: native
+    form: Aroon(@Chart@#Period#).Up[#Shift#] falls from top
+    groups: []
+    archetypes: {}
+    help: Is triggered if Aroon Up falls from top and Aroon Down is around middle of the range
+Avg Volume:
+  AvgVolumeFalling:
+    roles: [signal]
+    origin: native
+    form: AV(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+  AvgVolumeRising:
+    roles: [signal]
+    origin: native
+    form: AV(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+  VolumeFalling:
+    roles: [signal]
+    origin: native
+    form: Volume(@Chart@)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Volume is falling
+  VolumeRising:
+    roles: [signal]
+    origin: native
+    form: Volume(@Chart@)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Volume is rising
+Awesome Oscillator:
+  AWOChangesDown:
+    roles: [signal]
+    origin: native
+    form: AwesomeOscillator(@Chart@)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if AWO changes direction downwards
+  AWOChangesUp:
+    roles: [signal]
+    origin: native
+    form: AwesomeOscillator(@Chart@)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Awesome Oscillator changes direction upwards
+  AWOCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'AwesomeOscillator(@Chart@)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  AWOCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'AwesomeOscillator(@Chart@)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  AWOFalling:
+    roles: [signal]
+    origin: native
+    form: AwesomeOscillator(@Chart@)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Awesome Oscillator is falling
+  AWOHigher:
+    roles: [signal]
+    origin: native
+    form: 'AwesomeOscillator(@Chart@)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  AWOLower:
+    roles: [signal]
+    origin: native
+    form: 'AwesomeOscillator(@Chart@)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  AWORising:
+    roles: [signal]
+    origin: native
+    form: AwesomeOscillator(@Chart@)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Awesome Oscillator is rising
+BH Ergodic:
+  BHErgodicAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'BH Ergodic(@Chart@#R#,#S#,#U#,#Trigger#) is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if BH Ergodic is above Level
+  BHErgodicBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'BH Ergodic(@Chart@#R#,#S#,#U#,#Trigger#) is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if BH Ergodic is below Level
+  BHErgodicCrossDown:
+    roles: [signal]
+    origin: native
+    form: BH Ergodic(@Chart@#R#,#S#,#U#,#Trigger#) crosses Down
+    groups: []
+    archetypes: {}
+    help: Is triggered if BH Ergodic crosses Down
+  BHErgodicCrossUP:
+    roles: [signal]
+    origin: native
+    form: BH Ergodic(@Chart@#R#,#S#,#U#,#Trigger#) crosses UP
+    groups: []
+    archetypes: {}
+    help: Is triggered if BH Ergodic crosses UP
+  BHErgodicDown:
+    roles: [signal]
+    origin: native
+    form: BH Ergodic(@Chart@#R#,#S#,#U#,#Trigger#) is Down
+    groups: []
+    archetypes: {}
+    help: Is triggered if BH Ergodic is Down
+  BHErgodicUP:
+    roles: [signal]
+    origin: native
+    form: BH Ergodic(@Chart@#R#,#S#,#U#,#Trigger#) is UP
+    groups: []
+    archetypes: {}
+    help: Is triggered if BH Ergodic is UP
+Bar And Time:
+  AlwaysFalse:
+    roles: [signal]
+    origin: native
+    form: Always False
+    groups: []
+    archetypes: {}
+    help: Condition that is always false.
+  AlwaysTrue:
+    roles: [signal]
+    origin: native
+    form: Always True
+    groups: []
+    archetypes: {}
+    help: Condition that is always true.
+  BarDayOfMonth:
+    roles: [indicator]
+    origin: native
+    form: DayOfMonth[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Returns day of the month (1-31)
+  BarDayOfWeek:
+    roles: [indicator]
+    origin: native
+    form: DayOfWeek[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Sunday=0,Monday=1,Tuesday=2,Wednesday=3,Thursday=4,Friday=5,Saturday=6
+  BarDayOfWeekIs:
+    roles: [signal]
+    origin: native
+    form: 'Bar[#Shift#] day of week = #Day#'
+    groups: []
+    archetypes: {}
+  BarDayOfWeekIsNot:
+    roles: [signal]
+    origin: native
+    form: 'Bar[#Shift#] day of week != #Day#'
+    groups: []
+    archetypes: {}
+  BarHour:
+    roles: [indicator]
+    origin: native
+    form: Hour[#Shift#]
+    groups: []
+    archetypes: {}
+  BarHourIs:
+    roles: [signal]
+    origin: native
+    form: 'Bar[#Shift#] hour = #Hour#'
+    groups: []
+    archetypes: {}
+  BarHourIsBigger:
+    roles: [signal]
+    origin: native
+    form: 'Bar[#Shift#] hour > #Hour#'
+    groups: []
+    archetypes: {}
+  BarHourIsSmaller:
+    roles: [signal]
+    origin: native
+    form: 'Bar[#Shift#] hour < #Hour#'
+    groups: []
+    archetypes: {}
+  BarMinute:
+    roles: [indicator]
+    origin: native
+    form: Minute[#Shift#]
+    groups: []
+    archetypes: {}
+  BarMonth:
+    roles: [indicator]
+    origin: native
+    form: Month[#Shift#]
+    groups: []
+    archetypes: {}
+    help: 'Returns month of the bar: 1=January,..., 12=December'
+  BarMonthIs:
+    roles: [signal]
+    origin: native
+    form: 'Bar[#Shift#] month = #Month#'
+    groups: []
+    archetypes: {}
+  BarMonthIsNot:
+    roles: [signal]
+    origin: native
+    form: 'Bar[#Shift#] month != #Month#'
+    groups: []
+    archetypes: {}
+  BarWeekOfMonth:
+    roles: [indicator]
+    origin: native
+    form: WeekOfMonth[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Returns week of the month (1-6)
+  CurrentDayOfWeek:
+    roles: [indicator]
+    origin: native
+    form: Current Day Of Week
+    groups: []
+    archetypes: {}
+    help: Current day of week (in broker time). Sunday=0,Monday=1,Tuesday=2,Wednesday=3,Thursday=4,Friday=5,Saturday=6
+  CurrentDayOfWeekIs:
+    roles: [signal]
+    origin: native
+    form: 'Current day of week is #Day#'
+    groups: []
+    archetypes: {}
+  CurrentHour:
+    roles: [indicator]
+    origin: native
+    form: Current Hour
+    groups: []
+    archetypes: {}
+    help: Current hour (in broker time)
+  CurrentHourIs:
+    roles: [signal]
+    origin: native
+    form: 'Current hour is #Hour#'
+    groups: []
+    archetypes: {}
+  CurrentMinute:
+    roles: [indicator]
+    origin: native
+    form: Current Minute
+    groups: []
+    archetypes: {}
+    help: Current minute (in broker time)
+  CurrentMinuteIs:
+    roles: [signal]
+    origin: native
+    form: 'Current minute is #Minute#'
+    groups: []
+    archetypes: {}
+  CurrentMonth:
+    roles: [indicator]
+    origin: native
+    form: Current Month
+    groups: []
+    archetypes: {}
+    help: Current month (in broker time). 1=January,..., 12=December
+  CurrentMonthIs:
+    roles: [signal]
+    origin: native
+    form: 'Current month is #Month#'
+    groups: []
+    archetypes: {}
+  IsMonthFirstTradingDay:
+    roles: [signal]
+    origin: native
+    form: IsMonthFirstTradingDay
+    groups: []
+    archetypes: {}
+  IsMonthLastTradingDay:
+    roles: [signal]
+    origin: native
+    form: IsMonthLastTradingDay
+    groups: []
+    archetypes: {}
+Bar Range:
+  FixedPips:
+    roles: [level]
+    origin: native
+    form: FixedPips(#Value# pips)
+    groups: []
+    archetypes: {}
+Bears Power:
+  BEPChangesDown:
+    roles: [signal]
+    origin: native
+    form: BearsPower(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bears Power changes direction downwards
+  BEPChangesUp:
+    roles: [signal]
+    origin: native
+    form: BearsPower(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bears Power changes direction upwards
+  BEPCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'BearsPower(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  BEPCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'BearsPower(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  BEPFalling:
+    roles: [signal]
+    origin: native
+    form: BearsPower(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bears Power is falling
+  BEPHigher:
+    roles: [signal]
+    origin: native
+    form: 'BearsPower(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  BEPLower:
+    roles: [signal]
+    origin: native
+    form: 'BearsPower(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  BEPRising:
+    roles: [signal]
+    origin: native
+    form: BearsPower(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bears Power is rising
+Bollinger Bands:
+  BBBarClosesAboveDown:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes above BB(@Chart@#Period#, #Deviation#).Lower[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBBarClosesAboveUp:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes above BB(@Chart@#Period#, #Deviation#).Upper[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBBarClosesBelowDown:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes below BB(@Chart@#Period#, #Deviation#).Lower[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBBarClosesBelowUp:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes below BB(@Chart@#Period#, #Deviation#).Upper[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBBarOpensAboveDown:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above BB(@Chart@#Period#, #Deviation#).Lower[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBBarOpensAboveDownAfterOpenBelow:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above BB(@Chart@#Period#, #Deviation#).Lower[#Shift#] after opened below'
+    groups: []
+    archetypes: {}
+  BBBarOpensAboveUp:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above BB(@Chart@#Period#, #Deviation#).Upper[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBBarOpensAboveUpAfterOpenBelow:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above BB(@Chart@#Period#, #Deviation#).Upper[#Shift#] after opened below'
+    groups: []
+    archetypes: {}
+  BBBarOpensBelowDown:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below BB(@Chart@#Period#, #Deviation#).Lower[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBBarOpensBelowDownAfterOpenAbove:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below BB(@Chart@#Period#, #Deviation#).Lower[#Shift#] after opened above'
+    groups: []
+    archetypes: {}
+  BBBarOpensBelowUp:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below BB(@Chart@#Period#, #Deviation#).Upper[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBBarOpensBelowUpAfterOpenAbove:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below BB(@Chart@#Period#, #Deviation#).Upper[#Shift#] after opened above'
+    groups: []
+    archetypes: {}
+  BBLowerFalling:
+    roles: [signal]
+    origin: native
+    form: 'BB(@Chart@#Period#, #Deviation#).Lower[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if BB is falling
+  BBLowerRising:
+    roles: [signal]
+    origin: native
+    form: 'BB(@Chart@#Period#, #Deviation#).Lower[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if BB is rising
+  BBUpperFalling:
+    roles: [signal]
+    origin: native
+    form: 'BB(@Chart@#Period#, #Deviation#).Upper[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if BB is falling
+  BBUpperRising:
+    roles: [signal]
+    origin: native
+    form: 'BB(@Chart@#Period#, #Deviation#).Upper[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if BB is rising
+BookTriggers_user:
+  CBlock_AroonDownCross:
+    roles: [signal]
+    origin: own
+    form: Aroon Down crosses above Aroon Up
+    groups: []
+    archetypes: {}
+    help: 'Aroon: Down crosses above Up = bearish trend onset.'
+  CBlock_AroonUpCross:
+    roles: [signal]
+    origin: own
+    form: Aroon Up crosses above Aroon Down
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'Aroon: Up crosses above Down = bullish trend onset.'
+  CBlock_BBBreakoutDown:
+    roles: [signal]
+    origin: own
+    form: Close crosses below lower Bollinger Band
+    groups: []
+    archetypes: {}
+    help: 'BB breakout: close pushes below the lower band (momentum down).'
+  CBlock_BBBreakoutUp:
+    roles: [signal]
+    origin: own
+    form: Close crosses above upper Bollinger Band
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'BB breakout: close pushes above the upper band (momentum up).'
+  CBlock_DidiCrossDown:
+    roles: [signal]
+    origin: own
+    form: Didi fast line crosses below slow line
+    groups: []
+    archetypes: {}
+    help: 'Didi Index: fast (green) crosses below slow (red) = bearish.'
+  CBlock_DidiCrossUp:
+    roles: [signal]
+    origin: own
+    form: Didi fast line crosses above slow line
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'Didi Index: fast (green) crosses above slow (red) = bullish.'
+  CBlock_NormMACDBuy:
+    roles: [signal]
+    origin: own
+    form: MACD below zero and crosses above signal
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'Normalized MACD: below the zero line and crossing up through signal (buy).'
+  CBlock_NormMACDSell:
+    roles: [signal]
+    origin: own
+    form: MACD above zero and crosses below signal
+    groups: []
+    archetypes: {}
+    help: 'Normalized MACD: above the zero line and crossing down through signal (sell).'
+  CBlock_PMaxFlipDown:
+    roles: [signal]
+    origin: own
+    form: Close crosses below ATR trailing stop (PMax red)
+    groups: []
+    archetypes: {}
+    help: 'PMax: price flips below the ATR trailing line (trend down).'
+  CBlock_PMaxFlipUp:
+    roles: [signal]
+    origin: own
+    form: Close crosses above ATR trailing stop (PMax green)
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'PMax: price flips above the ATR trailing line (trend up).'
+  CBlock_QQECrossDown:
+    roles: [signal]
+    origin: own
+    form: QQE fast crosses below QQE slow
+    groups: []
+    archetypes: {}
+    help: 'QQE: fast line crosses below the slow line (sell).'
+  CBlock_QQECrossUp:
+    roles: [signal]
+    origin: own
+    form: QQE fast crosses above QQE slow
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'QQE: fast line crosses above the slow line (buy).'
+  CBlock_QQEModBuy:
+    roles: [signal]
+    origin: own
+    form: QQE value crosses above midline
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'QQE Mod: QQE value crosses up through the 50 midline (bullish momentum).'
+  CBlock_QQEModSell:
+    roles: [signal]
+    origin: own
+    form: QQE value crosses below midline
+    groups: []
+    archetypes: {}
+    help: 'QQE Mod: QQE value crosses down through the 50 midline (bearish momentum).'
+  CBlock_RMICrossDown:
+    roles: [signal]
+    origin: own
+    form: TDI RSI crosses below its signal MA
+    groups: []
+    archetypes: {}
+    help: 'RMI/TDI: momentum line crosses below its moving average (sell).'
+  CBlock_RMICrossUp:
+    roles: [signal]
+    origin: own
+    form: TDI RSI crosses above its signal MA
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'RMI/TDI: momentum line crosses above its moving average (buy).'
+  CBlock_RSIVWMAEntryLong:
+    roles: [signal]
+    origin: own
+    form: Close above SMA200 and RSI crosses above its MA
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'RSI+VWMA: long when price is above the SMA(200) trend filter and RSI crosses up through its MA.'
+  CBlock_RSIVWMAEntryShort:
+    roles: [signal]
+    origin: own
+    form: Close below SMA200 and RSI crosses below its MA
+    groups: []
+    archetypes: {}
+    help: 'RSI+VWMA: short when price is below the SMA(200) trend filter and RSI crosses down through its MA.'
+  CBlock_SMICrossDown:
+    roles: [signal]
+    origin: own
+    form: DSS crosses below its trigger line
+    groups: []
+    archetypes: {}
+    help: 'SMI/DSS: smoothed stochastic crosses down through its trigger (sell).'
+  CBlock_SMICrossUp:
+    roles: [signal]
+    origin: own
+    form: DSS crosses above its trigger line
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'SMI/DSS: smoothed stochastic crosses up through its trigger (buy).'
+  CBlock_StochOTTBuy:
+    roles: [signal]
+    origin: own
+    form: Price above ATR trail and Stoch %K crosses above %D
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'Stochastic-OTT: stochastic cross up confirmed by the OTT/ATR uptrend.'
+  CBlock_StochOTTSell:
+    roles: [signal]
+    origin: own
+    form: Price below ATR trail and Stoch %K crosses below %D
+    groups: []
+    archetypes: {}
+    help: 'Stochastic-OTT: stochastic cross down confirmed by the OTT/ATR downtrend.'
+  CBlock_StochWeightsDown:
+    roles: [signal]
+    origin: own
+    form: Stoch %K crosses below %D while above midline
+    groups: []
+    archetypes: {}
+    help: 'Stochastic Weights: %K crosses down through %D while still above 50 (early sell).'
+  CBlock_StochWeightsUp:
+    roles: [signal]
+    origin: own
+    form: Stoch %K crosses above %D while below midline
+    groups: [BookTriggers]
+    archetypes: {}
+    help: 'Stochastic Weights: %K crosses up through %D while still below 50 (early buy).'
+  CBlock_TRSICrossDown:
+    roles: [signal]
+    origin: own
+    form: RSI crosses below its moving average
+    groups: []
+    archetypes: {}
+    help: '+TRSI: RSI line crosses below its smoothing MA (sell).'
+  CBlock_TRSICrossUp:
+    roles: [signal]
+    origin: own
+    form: RSI crosses above its moving average
+    groups: [BookTriggers]
+    archetypes: {}
+    help: '+TRSI: RSI line crosses above its smoothing MA (buy).'
+BreakoutLong:
+  CBlock_BBWRPercent:
+    roles: [signal]
+    origin: own
+    form: 'BBWRPercent(#Int2#, #Double3#, #Double4#, #Int5#)'
+    groups: []
+    archetypes: {}
+  CBlock_BarsLargerRSI:
+    roles: [signal]
+    origin: own
+    form: 'BarsLargerRSI(#Int2#, #Double3#, #Int4#)'
+    groups: []
+    archetypes: {}
+  CBlock_BreakoutDonchianLong:
+    roles: [signal]
+    origin: own
+    form: BreakoutDonchianLong(#Int2#)
+    groups: []
+    archetypes: {}
+  CBlock_CandleBreakoutLong:
+    roles: [signal]
+    origin: own
+    form: 'CandleBreakoutATRLong(#Double2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CandleSmallUpperWick:
+    roles: [signal]
+    origin: own
+    form: CandleSmallUpperWick(#Double2#)
+    groups: []
+    archetypes: {}
+  CBlock_StrongCandle:
+    roles: [signal]
+    origin: own
+    form: StrongCandle(#Double2#)
+    groups: []
+    archetypes: {}
+  CBlock_TimeBreakoutLong:
+    roles: [signal]
+    origin: own
+    form: 'TimeBreakoutLong(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+BreakoutShort:
+  CBlock_BarsLargerRSI_2:
+    roles: [signal]
+    origin: own
+    form: 'BarSmallerRSI(#Int2#, #Double3#, #Int4#)'
+    groups: []
+    archetypes: {}
+  CBlock_BreakoutDonchianLong_2:
+    roles: [signal]
+    origin: own
+    form: BreakoutDonchianShort(#Int2#)
+    groups: []
+    archetypes: {}
+  CBlock_CandleBreakoutLong_2:
+    roles: [signal]
+    origin: own
+    form: 'CandleBreakoutATRShort(#Double2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CandleSmallUpperWick_2:
+    roles: [signal]
+    origin: own
+    form: CandleLongUpperWick(#Double2#)
+    groups: []
+    archetypes: {}
+  CBlock_TimeBreakoutLong_2:
+    roles: [signal]
+    origin: own
+    form: 'TimeBreakoutShort(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+Bulls Power:
+  BUPChangesDown:
+    roles: [signal]
+    origin: native
+    form: BullsPower(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bulls Power changes direction downwards
+  BUPChangesUp:
+    roles: [signal]
+    origin: native
+    form: BullsPower(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bulls Power changes direction upwards
+  BUPCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'BullsPower(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  BUPCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'BullsPower(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  BUPFalling:
+    roles: [signal]
+    origin: native
+    form: BullsPower(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bulls Power is falling
+  BUPHigher:
+    roles: [signal]
+    origin: native
+    form: 'BullsPower(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  BUPLower:
+    roles: [signal]
+    origin: native
+    form: 'BullsPower(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  BUPRising:
+    roles: [signal]
+    origin: native
+    form: BullsPower(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bulls Power is rising
+CCI:
+  CCIChangesDown:
+    roles: [signal]
+    origin: native
+    form: CCI(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI changes direction downwards
+  CCIChangesUp:
+    roles: [signal]
+    origin: native
+    form: CCI(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI changes direction upwards
+  CCICrossDown:
+    roles: [signal]
+    origin: native
+    form: 'CCI(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  CCICrossUp:
+    roles: [signal]
+    origin: native
+    form: 'CCI(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  CCIFalling:
+    roles: [signal]
+    origin: native
+    form: CCI(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI is falling
+  CCIHigher:
+    roles: [signal]
+    origin: native
+    form: 'CCI(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  CCILower:
+    roles: [signal]
+    origin: native
+    form: 'CCI(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  CCIRising:
+    roles: [signal]
+    origin: native
+    form: CCI(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI is rising
+  WoodiesCCIZeroLineBreakDown:
+    roles: [signal]
+    origin: native
+    form: CCI(@Chart@#Period#)[#Shift#] Zero Line Break Down
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI cross zero line down
+  WoodiesCCIZeroLineBreakUP:
+    roles: [signal]
+    origin: native
+    form: CCI(@Chart@#Period#)[#Shift#] Zero Line Break UP
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI cross zero line UP
+  WoodiesFamirDown:
+    roles: [signal]
+    origin: native
+    form: Woodies Famir Down(@Chart@#Period#,#Factor#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI makes ZLR UP pattern and next bar fails. It is counter trend pattern; Factor = minimum distance between top and bottom hook on CCI chart.
+  WoodiesFamirUP:
+    roles: [signal]
+    origin: native
+    form: Woodies Famir UP(@Chart@#Period#,#Factor#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI makes ZLR Down pattern and next bar fails. It is counter trend pattern; Factor = minimum distance between top and bottom hook on CCI chart.
+  WoodiesTrendDown:
+    roles: [signal]
+    origin: native
+    form: Woodies Trend Down(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if WCCI is 6 consecutive bars below 0
+  WoodiesTrendUP:
+    roles: [signal]
+    origin: native
+    form: WoodiesTrendUP(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if WCCI is 6 consecutive bars abovoe 0
+  WoodiesVegasTradeDown:
+    roles: [signal]
+    origin: native
+    form: Woodies Vegas Trade Down(@Chart@#Period#,#Factor#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI falls back from 200 leves and make U. It is counter trend pattern, Factor = minimum distance between top and bottom hook on CCI chart
+  WoodiesVegasTradeUP:
+    roles: [signal]
+    origin: native
+    form: Woodies Vegas Trade UP(@Chart@#Period#,#Factor#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI rise up from -200 leves and make U. It is counter trend pattern, Factor = minimum distance between top and bottom hook on CCI chart
+  WoodiesZLRDown:
+    roles: [signal]
+    origin: native
+    form: WoodiesZLRDown(@Chart@#Period#,#Factor#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI makes hook in the direction of down trend, Factor = minimum distance between top and bottom hook on CCI chart
+  WoodiesZLRUP:
+    roles: [signal]
+    origin: native
+    form: WoodiesZLRUP(@Chart@#Period#,#Factor#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if CCI makes hook in the direction of uptrend, Factor = minimum distance between top and bottom hook on CCI chart
+CSSA Market Regime:
+  CSSAMarketRegimeAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'CSSA Market Regime(@Chart@#HLSumPeriod#,#HLPeriod#,#AvgPeriod#,#PercRankPeriod#)[#Shift#] is above #Level#'
+    groups: []
+    archetypes: {}
+  CSSAMarketRegimeBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'CSSA Market Regime(@Chart@#HLSumPeriod#,#HLPeriod#,#AvgPeriod#,#PercRankPeriod#)[#Shift#] is below #Level#'
+    groups: []
+    archetypes: {}
+Candle Patterns:
+  BearishEngulfing:
+    roles: [signal]
+    origin: native
+    form: 'BearishEngulfing pattern(@Chart@) before #Shift# bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered when BearishEngulfing pattern is formed
+  BullishEngulfing:
+    roles: [signal]
+    origin: native
+    form: 'BullishEngulfing pattern(@Chart@) before #Shift# bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered when BullishEngulfing pattern is formed
+  DarkCloud:
+    roles: [signal]
+    origin: native
+    form: 'DarkCloud pattern(@Chart@) before #Shift# bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered when DarkCloud pattern is formed
+  Doji:
+    roles: [signal]
+    origin: native
+    form: 'Doji pattern(@Chart@) before #Shift# bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered when Doji pattern is formed
+  Hammer:
+    roles: [signal]
+    origin: native
+    form: 'Hammer pattern(@Chart@) before #Shift# bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered when Hammer pattern is formed
+  PiercingLine:
+    roles: [signal]
+    origin: native
+    form: 'PiercingLine pattern(@Chart@) before #Shift# bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered when PiercingLine pattern is formed
+  ShootingStar:
+    roles: [signal]
+    origin: native
+    form: 'ShootingStar pattern(@Chart@) before #Shift# bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered when ShootingStar pattern is formed
+Candlesticks La City:
+  CBlock_AdvanceBlock:
+    roles: [signal]
+    origin: own
+    form: LaCity AdvanceBlock
+    groups: []
+    archetypes: {}
+  CBlock_BullishBeltHold:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishBeltHold
+    groups: []
+    archetypes: {}
+  CBlock_BullishBeltHold_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishBeltHold
+    groups: []
+    archetypes: {}
+  CBlock_BullishBreakaway:
+    roles: [signal]
+    origin: own
+    form: BullishBreakaway
+    groups: []
+    archetypes: {}
+  CBlock_BullishEngulfing:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishEngulfing
+    groups: []
+    archetypes: {}
+  CBlock_BullishEngulfing_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishEngulfing
+    groups: []
+    archetypes: {}
+  CBlock_BullishHarami:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishHarami
+    groups: []
+    archetypes: {}
+  CBlock_BullishHaramiCross:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishHaramiCross
+    groups: []
+    archetypes: {}
+  CBlock_BullishHaramiCross_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearhishHaramiCross
+    groups: []
+    archetypes: {}
+  CBlock_BullishHarami_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishHarami
+    groups: []
+    archetypes: {}
+  CBlock_BullishHarami_3:
+    roles: [signal]
+    origin: own
+    form: LaCity DarkCloudCover
+    groups: []
+    archetypes: {}
+  CBlock_BullishHomingPigeon:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishHomingPigeon
+    groups: []
+    archetypes: {}
+  CBlock_BullishKicker:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishKicker
+    groups: []
+    archetypes: {}
+  CBlock_BullishKicker_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishKicker
+    groups: []
+    archetypes: {}
+  CBlock_BullishMarubozu:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishMarubozu
+    groups: []
+    archetypes: {}
+  CBlock_BullishMarubozu_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishMarubozu
+    groups: []
+    archetypes: {}
+  CBlock_BullishMeetingLines:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishMeetingLines
+    groups: []
+    archetypes: {}
+  CBlock_BullishMeetingLines_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishMeetingLines
+    groups: []
+    archetypes: {}
+  CBlock_BullishOnNeckLine:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishOnNeckLine
+    groups: []
+    archetypes: {}
+  CBlock_BullishOnNeckLine_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishOnNeckLine
+    groups: []
+    archetypes: {}
+  CBlock_BullishSeparatingLines:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishSeparatingLines
+    groups: []
+    archetypes: {}
+  CBlock_BullishSeparatingLines_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishSeparatingLines
+    groups: []
+    archetypes: {}
+  CBlock_BullishSideBySide:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishSideBySide
+    groups: []
+    archetypes: {}
+  CBlock_BullishSideBySide_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishSideBySide
+    groups: []
+    archetypes: {}
+  CBlock_BullishStickSandwich:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishStickSandwich
+    groups: []
+    archetypes: {}
+  CBlock_BullishStickSandwich_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishStickSandwich
+    groups: []
+    archetypes: {}
+  CBlock_BullishThreeLineStrike:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishThreeLineStrike
+    groups: []
+    archetypes: {}
+  CBlock_BullishThreeLineStrike_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishThreeLineStrike
+    groups: []
+    archetypes: {}
+  CBlock_BullishTriStarDoji:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishTriStarDoji
+    groups: []
+    archetypes: {}
+  CBlock_BullishTriStarDoji_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishTriStarDoji
+    groups: []
+    archetypes: {}
+  CBlock_BullishTrust:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishTrust
+    groups: []
+    archetypes: {}
+  CBlock_BullishTrust_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishTrust
+    groups: []
+    archetypes: {}
+  CBlock_BullishTrusting:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishNeckLine
+    groups: []
+    archetypes: {}
+  CBlock_BullishTrusting_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishNeckLine
+    groups: []
+    archetypes: {}
+  CBlock_Hammer:
+    roles: [signal]
+    origin: own
+    form: LaCity Hammer
+    groups: []
+    archetypes: {}
+  CBlock_Hammer_2:
+    roles: [signal]
+    origin: own
+    form: LaCity InvertedHammer
+    groups: []
+    archetypes: {}
+  CBlock_LaCityBullishMatHold:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishMatHold
+    groups: []
+    archetypes: {}
+  CBlock_LaCityBullishMatHold_2:
+    roles: [signal]
+    origin: own
+    form: LaCity BearishMatHold
+    groups: []
+    archetypes: {}
+  CBlock_LaCityBullishPiercingLine:
+    roles: [signal]
+    origin: own
+    form: LaCity BullishPiercingLine
+    groups: []
+    archetypes: {}
+  CBlock_LaCityShootingStar:
+    roles: [signal]
+    origin: own
+    form: LaCity ShootingStar
+    groups: []
+    archetypes: {}
+  CBlock_LadderTop:
+    roles: [signal]
+    origin: own
+    form: LaCity LadderTop
+    groups: []
+    archetypes: {}
+  CBlock_LadderTop_2:
+    roles: [signal]
+    origin: own
+    form: LaCity LadderBottom
+    groups: []
+    archetypes: {}
+  CBlock_MatchingHigh:
+    roles: [signal]
+    origin: own
+    form: LaCity MatchingHigh
+    groups: []
+    archetypes: {}
+  CBlock_MatchingHigh_2:
+    roles: [signal]
+    origin: own
+    form: LaCity MatchingLow
+    groups: []
+    archetypes: {}
+  CBlock_NeutralDoji:
+    roles: [signal]
+    origin: own
+    form: LaCity NeutralDoji
+    groups: []
+    archetypes: {}
+  CBlock_RisingWindow:
+    roles: [signal]
+    origin: own
+    form: LaCity RisingWindow
+    groups: []
+    archetypes: {}
+  CBlock_RisingWindow_2:
+    roles: [signal]
+    origin: own
+    form: LaCity FallingWindow
+    groups: []
+    archetypes: {}
+  CBlock_SpinningTop:
+    roles: [signal]
+    origin: own
+    form: LaCity SpinningTop
+    groups: []
+    archetypes: {}
+  CBlock_ThreeInsideUp:
+    roles: [signal]
+    origin: own
+    form: LaCity ThreeInsideUp
+    groups: []
+    archetypes: {}
+  CBlock_ThreeInsideUp_2:
+    roles: [signal]
+    origin: own
+    form: LaCity ThreeInsideDown
+    groups: []
+    archetypes: {}
+  CBlock_ThreeOutsideUp:
+    roles: [signal]
+    origin: own
+    form: LaCity ThreeOutsideDown
+    groups: []
+    archetypes: {}
+  CBlock_ThreeOutsideUp_2:
+    roles: [signal]
+    origin: own
+    form: LaCity ThreeOutsideUp
+    groups: []
+    archetypes: {}
+  CBlock_ThreeStarsInTheSouth:
+    roles: [signal]
+    origin: own
+    form: LaCity ThreeStarsInTheSouth
+    groups: []
+    archetypes: {}
+  CBlock_ThreeWhiteSoldiers:
+    roles: [signal]
+    origin: own
+    form: LaCity ThreeWhiteSoldiers
+    groups: []
+    archetypes: {}
+    help: LaCity ThreeWhiteSoldiers
+  CBlock_ThreeWhiteSoldiers_2:
+    roles: [signal]
+    origin: own
+    form: LaCity ThreeBlackCrows
+    groups: []
+    archetypes: {}
+    help: LaCity ThreeBlackCrows
+  CBlock_TweezerTop:
+    roles: [signal]
+    origin: own
+    form: LaCity TweezerTop
+    groups: []
+    archetypes: {}
+  CBlock_TweezerTop_2:
+    roles: [signal]
+    origin: own
+    form: LaCity TweezerBottom
+    groups: []
+    archetypes: {}
+  CBlock_UpsideGapTwoCrows:
+    roles: [signal]
+    origin: own
+    form: LaCity UpsideGapTwoCrows
+    groups: []
+    archetypes: {}
+  CBlock_UpsideTasukiGap:
+    roles: [signal]
+    origin: own
+    form: LaCity UpsideTasukiGap
+    groups: []
+    archetypes: {}
+  CBlock_UpsideTasukiGap_2:
+    roles: [signal]
+    origin: own
+    form: LaCity DownsideTasukiGap
+    groups: []
+    archetypes: {}
+Choppiness Index:
+  ChoppinessIndexAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'Chopiness Index(@Chart@#Period#) is above #Level#'
+    groups: []
+    archetypes: {}
+  ChoppinessIndexBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'Chopiness Index(@Chart@#Period#) is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Choppiness Index is below level
+  ChoppinessIndexCrossesAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'Chopiness Index(@Chart@#Period#) crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ChoppinessIndex crosses above level
+  ChoppinessIndexCrossesBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'Chopiness Index(@Chart@#Period#) crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ChoppinessIndex crosses below level
+  ChoppinessIndexFalling:
+    roles: [signal]
+    origin: native
+    form: Chopiness Index(@Chart@#Period#) is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if ChoppinessIndex is falling
+  ChoppinessIndexRising:
+    roles: [signal]
+    origin: native
+    form: Chopiness Index(@Chart@#Period#) is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if ChoppinessIndex is rising
+Close Minus Moving Average ( CMMA ):
+  CBlock_CMMAIsAboveLevel:
+    roles: [signal]
+    origin: own
+    form: CMMAIsAboveLevel
+    groups: []
+    archetypes: {}
+  CBlock_CMMAIsAboveLevel_2:
+    roles: [signal]
+    origin: own
+    form: CMMAIsBelowLevel
+    groups: []
+    archetypes: {}
+  CBlock_CMMAIsAboveLevel_3:
+    roles: [signal]
+    origin: own
+    form: CMMACrossesAboveLevel
+    groups: []
+    archetypes: {}
+  CBlock_CMMAIsAboveLevel_3_2:
+    roles: [signal]
+    origin: own
+    form: CMMACrossesBelowLevel
+    groups: []
+    archetypes: {}
+  CBlock_CMMAIsAboveLevel_4:
+    roles: [signal]
+    origin: own
+    form: CMMAIsRising
+    groups: []
+    archetypes: {}
+  CBlock_CMMAIsAboveLevel_4_2:
+    roles: [signal]
+    origin: own
+    form: CMMAIsFalling
+    groups: []
+    archetypes: {}
+Comparisons:
+  CrossesAbove:
+    roles: [indicator]
+    origin: native
+    form: '#Left# crosses above #Right#'
+    groups: [BreakoutLong, CrossMAsAbove]
+    archetypes: {}
+  CrossesAboveAdaptive:
+    roles: [indicator]
+    origin: native
+    form: '#IndicatorLeft# crosses above #IndicatorRight# Adaptive'
+    groups: []
+    archetypes: {}
+  CrossesBelow:
+    roles: [indicator]
+    origin: native
+    form: '#Left# crosses below #Right#'
+    groups: [CrossMAsBelow]
+    archetypes: {}
+  CrossesBelowAdaptive:
+    roles: [indicator]
+    origin: native
+    form: '#IndicatorLeft# crosses below #IndicatorRight# Adaptive'
+    groups: []
+    archetypes: {}
+  Equals:
+    roles: [indicator]
+    origin: native
+    form: '#Left# = #Right#'
+    groups: []
+    archetypes: {}
+  IndicatorAboveMA:
+    roles: [indicator]
+    origin: native
+    form: '#Indicator# is above its #MAType# MA(#Period#)'
+    groups: []
+    archetypes: {}
+  IndicatorBelowMA:
+    roles: [indicator]
+    origin: native
+    form: '#Indicator# is below its #MAType# MA(#Period#)'
+    groups: [EntropyFilter]
+    archetypes: {}
+  IndicatorCrossesAboveMA:
+    roles: [indicator]
+    origin: native
+    form: '#Indicator# crosses above its #MAType# MA(#Period#)'
+    groups: []
+    archetypes: {}
+  IndicatorCrossesBelowMA:
+    roles: [indicator]
+    origin: native
+    form: '#Indicator# crosses below its #MAType# MA(#Period#)'
+    groups: [EntropyFilter]
+    archetypes: {}
+  IsFalling:
+    roles: [indicator]
+    origin: native
+    form: '#Indicator# is falling'
+    groups: []
+    archetypes: {}
+  IsGreater:
+    roles: [indicator]
+    origin: native
+    form: '#Left# > #Right#'
+    groups: [BreakoutLong, HurstLarger]
+    archetypes: {}
+  IsGreaterAdaptive:
+    roles: [indicator]
+    origin: native
+    form: '#IndicatorLeft# > #IndicatorRight# Adaptive'
+    groups: []
+    archetypes: {}
+  IsGreaterCount:
+    roles: [indicator]
+    origin: native
+    form: '#IndicatorLeft# > #IndicatorRight# is true #Bars# bars'
+    groups: [BreakoutLong]
+    archetypes: {}
+  IsGreaterOrEqual:
+    roles: [indicator]
+    origin: native
+    form: '#Left# >= #Right#'
+    groups: []
+    archetypes: {}
+  IsGreaterPercentil:
+    roles: [indicator]
+    origin: native
+    form: '#Indicator# is greater or equal than #Percentile# % of the values over #Bars# bars in the past'
+    groups: []
+    archetypes: {}
+  IsLower:
+    roles: [indicator]
+    origin: native
+    form: '#Left# < #Right#'
+    groups: [HurstLarger]
+    archetypes: {}
+  IsLowerAdaptive:
+    roles: [indicator]
+    origin: native
+    form: '#IndicatorLeft# < #IndicatorRight# Adaptive'
+    groups: []
+    archetypes: {}
+  IsLowerCount:
+    roles: [indicator]
+    origin: native
+    form: '#IndicatorLeft# < #IndicatorRight# is true #Bars# bars'
+    groups: [PeriodsFastMABelow]
+    archetypes: {}
+  IsLowerOrEqual:
+    roles: [indicator]
+    origin: native
+    form: '#Left# <= #Right#'
+    groups: []
+    archetypes: {}
+  IsLowerPercentil:
+    roles: [indicator]
+    origin: native
+    form: '#Indicator# is lower or equal than #Percentile# % of the values over #Bars# bars in the past'
+    groups: [BreakoutLong, EntropyFilter2]
+    archetypes: {}
+  IsRising:
+    roles: [indicator]
+    origin: native
+    form: '#Indicator# is rising'
+    groups: []
+    archetypes: {}
+  Not:
+    roles: [indicator]
+    origin: native
+    form: 'Not #Value#'
+    groups: []
+    archetypes: {}
+  NotEquals:
+    roles: [indicator]
+    origin: native
+    form: '#Left# <> #Right#'
+    groups: []
+    archetypes: {}
+CrossIndicatorEMA:
+  CBlock_ATRCrossMAATR:
+    roles: [signal]
+    origin: own
+    form: 'ATRCrossEMAATR(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+    help: ATRCrossEMAATR
+CrossMAs:
+  CBlock_CrossAboveMA:
+    roles: [signal]
+    origin: own
+    form: 'CrossAboveSMA(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CrossAboveMA_2:
+    roles: [signal]
+    origin: own
+    form: 'CrossAboveEMA(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CrossAboveMA_3:
+    roles: [signal]
+    origin: own
+    form: 'CrossAboveHMA(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CrossAboveMA_4:
+    roles: [signal]
+    origin: own
+    form: 'CrossBelowSMA(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CrossAboveMA_5:
+    roles: [signal]
+    origin: own
+    form: 'CrossAboveSSMA(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CrossAboveMA_6:
+    roles: [signal]
+    origin: own
+    form: 'CrossBelowEMA(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CrossAboveMA_7:
+    roles: [signal]
+    origin: own
+    form: 'CrossBelowHMA(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+  CBlock_CrossAboveMA_8:
+    roles: [signal]
+    origin: own
+    form: 'CrossBelowSSMA(#Int2#, #Int3#)'
+    groups: []
+    archetypes: {}
+DEMA:
+  DEMAFalling:
+    roles: [signal]
+    origin: native
+    form: DEMA(@Chart@#Period#,#AppliedPrice#) is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if DEMA is falling
+  DEMARising:
+    roles: [signal]
+    origin: native
+    form: DEMA(@Chart@#Period#,#AppliedPrice#) is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if DEMA is rising
+  DoubleDEMAFalling:
+    roles: [signal]
+    origin: native
+    form: Fast DEMA(@Chart@#FastDEMAPeriod#,#AppliedPrice#) is below Slow DEMA(#SlowDEMAPeriod#,#AppliedPrice#) and both of them are falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Fast DEMA is Below Slow DEMA and both of them are falling
+  DoubleDEMARising:
+    roles: [signal]
+    origin: native
+    form: Fast DEMA(@Chart@#FastDEMAPeriod#,#AppliedPrice#) is above Slow DEMA(#SlowDEMAPeriod#,#AppliedPrice#) and both of them are rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Fast DEMA is Above Slow DEMA and both of them are rising
+DPO:
+  DPOAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'DPO(@Chart@#Period#) is above #Level#'
+    groups: []
+    archetypes: {}
+  DPOBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'DPO(@Chart@#Period#) is below #Level#'
+    groups: []
+    archetypes: {}
+  DPOCrossesAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'DPO(@Chart@#Period#) crosses above #Level#'
+    groups: []
+    archetypes: {}
+  DPOCrossesBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'DPO(@Chart@#Period#) crosses below #Level#'
+    groups: []
+    archetypes: {}
+DSS Bressert:
+  DSSBressertCrossDown:
+    roles: [signal]
+    origin: native
+    form: DSS Bressert crosses below trigger line(@Chart@#StochPeriod#,#EMAPeriod#,#TriggerPeriod#)
+    groups: []
+    archetypes: {}
+  DSSBressertCrossUP:
+    roles: [signal]
+    origin: native
+    form: DSS Bressert crosses above trigger line(@Chart@#StochPeriod#,#EMAPeriod#,#TriggerPeriod#)
+    groups: []
+    archetypes: {}
+  DSSBressertFalling:
+    roles: [signal]
+    origin: native
+    form: DSS Bressert is below trigger line(@Chart@#StochPeriod#,#EMAPeriod#,#TriggerPeriod#)
+    groups: []
+    archetypes: {}
+  DSSBressertRising:
+    roles: [signal]
+    origin: native
+    form: DSS Bressert is above trigger line(@Chart@#StochPeriod#,#EMAPeriod#,#TriggerPeriod#)
+    groups: []
+    archetypes: {}
+DVO:
+  DVOAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'DVO(@Chart@#MAPeriod#,#PercentRankPeriod#) is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if DVO is above Level
+  DVOBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'DVO(@Chart@#MAPeriod#,#PercentRankPeriod#) is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if DVO is below Level
+  DVOCrossAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'DVO(@Chart@#MAPeriod#,#PercentRankPeriod#) crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if DVO crosses above Level
+  DVOCrossBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'DVO(@Chart@#MAPeriod#,#PercentRankPeriod#) crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if DVO crosses below Level
+De Marker:
+  DEMChangesDown:
+    roles: [signal]
+    origin: native
+    form: DeMarker(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if DeMarker changes direction downwards
+  DEMChangesUp:
+    roles: [signal]
+    origin: native
+    form: DeMarker(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if DeMarker changes direction upwards
+  DEMCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'DeMarker(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  DEMCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'DeMarker(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  DEMFalling:
+    roles: [signal]
+    origin: native
+    form: DeMarker(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if DeMarker is falling
+  DEMHigher:
+    roles: [signal]
+    origin: native
+    form: 'DeMarker(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  DEMLower:
+    roles: [signal]
+    origin: native
+    form: 'DeMarker(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  DEMRising:
+    roles: [signal]
+    origin: native
+    form: DeMarker(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if DeMarker is rising
+Didi Index:
+  DidiIndexCrossDown:
+    roles: [signal]
+    origin: native
+    form: Didi Index crosses Down(@Chart@#FastPeriod#,#MediumPeriod#,#SlowPeriod#,#MAMethod#)
+    groups: []
+    archetypes: {}
+  DidiIndexCrossUP:
+    roles: [signal]
+    origin: native
+    form: Didi Index crosses UP(@Chart@#FastPeriod#,#MediumPeriod#,#SlowPeriod#,#MAMethod#)
+    groups: []
+    archetypes: {}
+  DidiIndexDown:
+    roles: [signal]
+    origin: native
+    form: Didi Index(@Chart@#FastPeriod#,#MediumPeriod#,#SlowPeriod#,#MAMethod#) is Down
+    groups: []
+    archetypes: {}
+  DidiIndexUp:
+    roles: [signal]
+    origin: native
+    form: Didi Index(@Chart@#FastPeriod#,#MediumPeriod#,#SlowPeriod#,#MAMethod#) is UP
+    groups: []
+    archetypes: {}
+Directional Index:
+  DICrossDown:
+    roles: [signal]
+    origin: native
+    form: DI+(@Chart@#Period#)[#Shift#] crosses below DI-(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  DICrossUp:
+    roles: [signal]
+    origin: native
+    form: DI+(@Chart@#Period#)[#Shift#] crosses above DI-(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  DIMinusChangesDown:
+    roles: [signal]
+    origin: native
+    form: DI-(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if DI- changes direction downwards
+  DIMinusChangesUp:
+    roles: [signal]
+    origin: native
+    form: DI-(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if DI- changes direction upwards
+  DIMinusFalling:
+    roles: [signal]
+    origin: native
+    form: DI-(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if DI- is falling
+  DIMinusRising:
+    roles: [signal]
+    origin: native
+    form: DI-(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if DI- is rising
+  DIPlusChangesDown:
+    roles: [signal]
+    origin: native
+    form: DI+(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if DI+ changes direction downwards
+  DIPlusChangesUp:
+    roles: [signal]
+    origin: native
+    form: DI+(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if DI+ changes direction upwards
+  DIPlusFalling:
+    roles: [signal]
+    origin: native
+    form: DI+(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if DI+ is falling
+  DIPlusHigher:
+    roles: [signal]
+    origin: native
+    form: DI+(@Chart@#Period#)[#Shift#] > DI-(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  DIPlusLower:
+    roles: [signal]
+    origin: native
+    form: DI+(@Chart@#Period#)[#Shift#] < DI-(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  DIPlusRising:
+    roles: [signal]
+    origin: native
+    form: DI+(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if DI+ is rising
+DirectionalMomentum_user:
+  CBlock_DPOAbove0:
+    roles: [signal]
+    origin: own
+    form: DPO(@Chart@10) > 0 (price above detrended mean)
+    groups: [DirectionalMomentumFilters]
+    archetypes: {}
+    help: 'Up bias: detrended price oscillator positive.'
+  CBlock_DPOBelow0:
+    roles: [signal]
+    origin: own
+    form: DPO(@Chart@10) < 0 (price below detrended mean)
+    groups: [DirectionalMomentumFilters]
+    archetypes: {}
+    help: 'Down bias: detrended price oscillator negative.'
+  CBlock_DisparityAbove0:
+    roles: [signal]
+    origin: own
+    form: Disparity Index(@Chart@10) > 0 (price above MA)
+    groups: [DirectionalMomentumFilters]
+    archetypes: {}
+    help: 'Up bias: price stretched above its moving average.'
+  CBlock_DisparityBelow0:
+    roles: [signal]
+    origin: own
+    form: Disparity Index(@Chart@10) < 0 (price below MA)
+    groups: [DirectionalMomentumFilters]
+    archetypes: {}
+    help: 'Down bias: price stretched below its moving average.'
+  CBlock_SqueezeMomentumNeg:
+    roles: [signal]
+    origin: own
+    form: TTM Squeeze(@Chart@20).Momentum < 0 (bearish momentum)
+    groups: [DirectionalMomentumFilters]
+    archetypes: {}
+    help: 'Bearish momentum regime: TTM squeeze momentum histogram negative.'
+  CBlock_SqueezeMomentumPos:
+    roles: [signal]
+    origin: own
+    form: TTM Squeeze(@Chart@20).Momentum > 0 (bullish momentum)
+    groups: [DirectionalMomentumFilters]
+    archetypes: {}
+    help: 'Bullish momentum regime: TTM squeeze momentum histogram positive.'
+Disparity Index:
+  DisparityIndexAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'Disparity Index(@Chart@#Period#) is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Disparity Index is above Level
+  DisparityIndexBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'Disparity Index(@Chart@#Period#) is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Disparity Index is below Level
+  DisparityIndexCrossesAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'Disparity Index(@Chart@#Period#) crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Disparity Index crosses above Level
+  DisparityIndexCrossesBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'Disparity Index(@Chart@#Period#) crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Disparity Index crosses below Level
+  DisparityIndexFalling:
+    roles: [signal]
+    origin: native
+    form: Disparity Index is falling (@Chart@#Period#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if Disparity Index is falling
+  DisparityIndexRising:
+    roles: [signal]
+    origin: native
+    form: Disparity Index is rising (@Chart@#Period#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if Disparity Index is rising
+Ehlers Mother of All MA:
+  CBlock_EMAMAIsRising_2:
+    roles: [signal]
+    origin: own
+    form: EhlersMAMAandFAMAIsRising
+    groups: []
+    archetypes: {}
+  CBlock_EMAMAIsRising_2_2:
+    roles: [signal]
+    origin: own
+    form: EhlersMAMAIsRising
+    groups: []
+    archetypes: {}
+  CBlock_EMAMAIsRising_2_2_2:
+    roles: [signal]
+    origin: own
+    form: EhlersMACrossMAMAAboveFAMA
+    groups: []
+    archetypes: {}
+    help: EhlersMACrossMAMAAboveFAMA
+  CBlock_EMAMAIsRising_2_2_2_2:
+    roles: [signal]
+    origin: own
+    form: EhlersMACrossMAMABelowFAMA
+    groups: []
+    archetypes: {}
+    help: EhlersMACrossMAMABelowFAMA
+  CBlock_EMAMAIsRising_2_2_2_3:
+    roles: [signal]
+    origin: own
+    form: EhlersMACloseCrossesAboveMAMA
+    groups: []
+    archetypes: {}
+  CBlock_EMAMAIsRising_2_2_2_3_2:
+    roles: [signal]
+    origin: own
+    form: EhlersMACloseCrossesBelowMAMA
+    groups: []
+    archetypes: {}
+  CBlock_EMAMAIsRising_2_3:
+    roles: [signal]
+    origin: own
+    form: EhlersMAMAIsFalling
+    groups: []
+    archetypes: {}
+  CBlock_EMAMAIsRising_2_3_2:
+    roles: [signal]
+    origin: own
+    form: EhlersMAMAvsFAMADifferenceRisingUP
+    groups: []
+    archetypes: {}
+  CBlock_EMAMAIsRising_2_3_2_2:
+    roles: [signal]
+    origin: own
+    form: EhlersMAMAvsFAMADifferenceRisingDown
+    groups: []
+    archetypes: {}
+  CBlock_EMAMAIsRising_2_4:
+    roles: [signal]
+    origin: own
+    form: EhlersMAMAandFAMAIsFalling
+    groups: []
+    archetypes: {}
+Ehlers Mother of All MA Price Levels:
+  CBlock_EhlersFAMAPriceLevel:
+    roles: [level]
+    origin: own
+    form: EhlersFAMAPriceLevel
+    groups: []
+    archetypes: {}
+  CBlock_EhlersFAMAPriceLevel_2:
+    roles: [level]
+    origin: own
+    form: EhlersMAMAPriceLevel
+    groups: []
+    archetypes: {}
+Entropy Math:
+  EntropyMathAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'EntropyMath(@Chart@#EMPeriod#) is above #Level#'
+    groups: []
+    archetypes: {}
+  EntropyMathBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'EntropyMath(@Chart@#EMPeriod#) is below #Level#'
+    groups: []
+    archetypes: {}
+  EntropyMathCrossAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'EntropyMath(@Chart@#EMPeriod#) crosses above #Level#'
+    groups: []
+    archetypes: {}
+  EntropyMathCrossBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'EntropyMath(@Chart@#EMPeriod#) crosses below #Level#'
+    groups: []
+    archetypes: {}
+Fractal:
+  IsBearishFractal:
+    roles: [signal]
+    origin: native
+    form: Is Bearish Fractal(#Fractal#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered in case of Bearish Fractal (trend reversal)
+  IsBullishFractal:
+    roles: [signal]
+    origin: native
+    form: Is Bullish Fractal(#Fractal#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered in case of Bullish Fractal (trend reversal)
+Gann Hi Lo:
+  GannHiLoDownTrend:
+    roles: [signal]
+    origin: native
+    form: GannHiLo(@Chart@#Period#)[#Shift#] is in Down Trend
+    groups: []
+    archetypes: {}
+    help: Is triggered if Close < GannHiLo
+  GannHiLoUPTrend:
+    roles: [signal]
+    origin: native
+    form: GannHiLo(@Chart@#Period#)[#Shift#] is in UP Trend
+    groups: []
+    archetypes: {}
+    help: Is triggered if Close > GannHiLo
+Highest Lowest:
+  BarOpensAboveHighestAfterOpenBelow:
+    roles: [signal]
+    origin: native
+    form: Bar opens above Highest(@Chart@#Period#)[#Shift#] after opened below
+    groups: []
+    archetypes: {}
+  BarOpensAboveLowestAfterOpenBelow:
+    roles: [signal]
+    origin: native
+    form: Bar opens above Lowest(@Chart@#Period#)[#Shift#] after opened below
+    groups: []
+    archetypes: {}
+  BarOpensBelowHighestAfterOpenAbove:
+    roles: [signal]
+    origin: native
+    form: Bar opens below Highest(@Chart@#Period#)[#Shift#] after opened above
+    groups: []
+    archetypes: {}
+  BarOpensBelowLowestAfterOpenAbove:
+    roles: [signal]
+    origin: native
+    form: Bar opens below Lowest(@Chart@#Period#)[#Shift#] after opened above
+    groups: []
+    archetypes: {}
+Hull Moving Average:
+  FasterHMAIsAboveSlowerHMA:
+    roles: [signal]
+    origin: native
+    form: Fast HMA(@Chart@#FasterPeriod#)[#Shift#] Is Above Slow HMA(@Chart@#SlowerPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Faster HMA Is Above Slower HMA
+  FasterHMAIsBelowSlowerHMA:
+    roles: [signal]
+    origin: native
+    form: Fast HMA(@Chart@#FasterPeriod#)[#Shift#] Is Below Slow HMA(@Chart@#SlowerPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Fast HMA Is below Slow HMA
+  HMAChangesDown:
+    roles: [signal]
+    origin: native
+    form: HMA(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if HMA changes direction downwards
+  HMAChangesUP:
+    roles: [signal]
+    origin: native
+    form: HMA(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if HMA changes direction upwards
+  HMAFalling:
+    roles: [signal]
+    origin: native
+    form: HMA(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if HMA is falling 2 bars
+  HMARising:
+    roles: [signal]
+    origin: native
+    form: HMA(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if HMA is rising 2 bars
+Hurst Exponent (HE):
+  CBlock_HursExponentIsAboveLevel:
+    roles: [signal]
+    origin: own
+    form: HurstExponentIsAboveLevel
+    groups: []
+    archetypes: {}
+  CBlock_HursExponentIsAboveLevel_2:
+    roles: [signal]
+    origin: own
+    form: HurstExponentIsBelowLevel
+    groups: []
+    archetypes: {}
+  CBlock_HursExponentIsAboveLevel_3:
+    roles: [signal]
+    origin: own
+    form: HurstExponentIsAbove50
+    groups: []
+    archetypes: {}
+  CBlock_HursExponentIsAboveLevel_3_2:
+    roles: [signal]
+    origin: own
+    form: HurstExponentIsBelow50
+    groups: []
+    archetypes: {}
+IBS:
+  CBlock_IBSCloseLarger:
+    roles: [signal]
+    origin: own
+    form: IBSCloseLarger(#Double3#)
+    groups: [GroupIBS]
+    archetypes: {}
+    help: IBSCloseLarger
+  CBlock_IBSCloseLarger_2:
+    roles: [signal]
+    origin: own
+    form: IBSCloseSmaller(#Double3#)
+    groups: [GroupIBS]
+    archetypes: {}
+  CBlock_IBSCloseLarger_3:
+    roles: [signal]
+    origin: own
+    form: IBSOpenSmaller(#Double3#)
+    groups: []
+    archetypes: {}
+  CBlock_IBSCloseLarger_4:
+    roles: [signal]
+    origin: own
+    form: IBSOpenLarger(#Double3#)
+    groups: []
+    archetypes: {}
+Ichimoku:
+  IchimokuKijunSenCrossBearish:
+    roles: [signal]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#)[#Shift#] price crosses KijunSen bearish
+    groups: []
+    archetypes: {}
+  IchimokuKijunSenCrossBullish:
+    roles: [signal]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#)[#Shift#] price crosses KijunSen bullish
+    groups: []
+    archetypes: {}
+  IchimokuKumoBreakoutBearish:
+    roles: [signal]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#)[#Shift#] Kumo breakout bearish
+    groups: []
+    archetypes: {}
+  IchimokuKumoBreakoutBullish:
+    roles: [signal]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#)[#Shift#] Kumo breakout bullish
+    groups: []
+    archetypes: {}
+  IchimokuSenkouSpanCrossBearish:
+    roles: [signal]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#)[#Shift#] Senkou Span cross bearish
+    groups: []
+    archetypes: {}
+  IchimokuSenkouSpanCrossBullish:
+    roles: [signal]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#)[#Shift#] Senkou Span cross bullish
+    groups: []
+    archetypes: {}
+  IchimokuTenkanKijunCrossBearish:
+    roles: [signal]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#)[#Shift#] TenkanSen crosses KijunSen bearish
+    groups: []
+    archetypes: {}
+  IchimokuTenkanKijunCrossBullish:
+    roles: [signal]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#)[#Shift#] TenkanSen crosses KijunSen bullish
+    groups: []
+    archetypes: {}
+Indicators:
+  ADX:
+    roles: [indicator]
+    origin: native
+    form: 'ADX(@Chart@#Period#, #Line#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  ATR:
+    roles: [indicator, level]
+    origin: native
+    form: ATR(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  ATRPercent:
+    roles: [indicator]
+    origin: native
+    form: ATR Percent(@Chart@#ATRPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: ATRPercent help text
+  ATRPercentRank:
+    roles: [indicator]
+    origin: native
+    form: ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: ATRPercentRank help text
+  ATRTrailingStops:
+    roles: [indicator, level]
+    origin: native
+    form: ATR Trailing Stops(@Chart@#ATRPeriod#,#ATRSmoothigPeriod#,#ATRMultiplier#,#ATRSmoothingMode#,#Method#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: ATRTrailingStops help text
+  Accelerator:
+    roles: [indicator]
+    origin: native
+    form: Accelerator(@Chart@#PeriodFast#,#PeriodSlow#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Accelerator help text
+  AdaptiveFisherTransform:
+    roles: [indicator]
+    origin: native
+    form: 'Adaptive Fisher Transform(@Chart@#Period#, #AdaptiveFactor#).#Line#[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Adaptive Fisher Transform converts prices into Gaussian normal distribution with adaptive period based on volatility
+  AnchoredVWAP:
+    roles: [indicator, level]
+    origin: native
+    form: AnchoredVWAP(@Chart@#SessionType#,#StdDevMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Anchored VWAP with standard deviation bands. Resets at session start (Day/Week/Month).
+  Aroon:
+    roles: [indicator]
+    origin: native
+    form: Aroon(@Chart@#Period#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+  AvgVolume:
+    roles: [indicator]
+    origin: native
+    form: AV(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  AwesomeOscillator:
+    roles: [indicator]
+    origin: native
+    form: AwesomeOscillator(@Chart@)[#Shift#]
+    groups: []
+    archetypes: {}
+  BBRange:
+    roles: [level]
+    origin: native
+    form: 'BB Range(@Chart@#Period#, #Deviation#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  BBWidthRatio:
+    roles: [level]
+    origin: native
+    form: 'BB WR(@Chart@#Period#, #Deviation#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  BHErgodic:
+    roles: [indicator]
+    origin: native
+    form: BH Ergodic(@Chart@#R#,#S#,#U#,#Trigger#)[#Shift#]
+    groups: []
+    archetypes: {}
+  BarRange:
+    roles: [level]
+    origin: native
+    form: BarRange(@Chart@)[#Shift#]
+    groups: []
+    archetypes: {}
+  BearsPower:
+    roles: [indicator]
+    origin: native
+    form: 'BearsPower(@Chart@#Period#, #ComputedFrom#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  BiggestRange:
+    roles: [level]
+    origin: native
+    form: BiggestRange(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: returns value of biggest range (high - low of one candle) of candles in given period
+  BollingerBands:
+    roles: [indicator, level]
+    origin: native
+    form: 'BollingerBands(@Chart@#Period#, #Deviation#).#Line#[#Shift#]'
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+  BollingerBandsPercentB:
+    roles: [indicator]
+    origin: native
+    form: 'Bollinger Bands %B(@Chart@#Period#, #Deviation#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  BullsPower:
+    roles: [indicator]
+    origin: native
+    form: 'BullsPower(@Chart@#Period#, #ComputedFrom#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  CCI:
+    roles: [indicator]
+    origin: native
+    form: CCI(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Commodity channel index
+  CMMA:
+    roles: [indicator]
+    origin: native
+    form: CMMA (@Chart@#Lookback#,#ATRLength#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Close minus moving mverage, normalised
+  CSSAMarketRegime:
+    roles: [indicator]
+    origin: native
+    form: CSSA Market Regime(@Chart@#HLSumPeriod#,#HLPeriod#,#AvgPeriod#,#PercRankPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+  CUSUM:
+    roles: [indicator]
+    origin: native
+    form: 'CUSUM(@Chart@#Period#, #Threshold#, #Drift#).#Line#[#Shift#]'
+    groups: []
+    archetypes: {}
+  ChoppinessIndex:
+    roles: [indicator]
+    origin: native
+    form: Choppiness Index(#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  DEMA:
+    roles: [indicator, level]
+    origin: native
+    form: DEMA(@Chart@#Period#,#AppliedPrice#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Double Exponential Moving Average
+  DPO:
+    roles: [indicator]
+    origin: native
+    form: DPO(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: DPO help text
+  DSSBressert:
+    roles: [indicator]
+    origin: native
+    form: DSS Bressert(@Chart@#StochPeriod#,#EMAPeriod#,#TriggerPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+  DTW:
+    roles: [indicator]
+    origin: native
+    form: 'DTW(@Chart@#WindowSize#, #PatternSize#, #DistanceType#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  DVO:
+    roles: [indicator]
+    origin: native
+    form: David Varadi Oscillator (DVO) (@Chart@#MAPeriod#,#PercentRankPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: DVO help text
+  DeMarker:
+    roles: [indicator]
+    origin: native
+    form: DeMarker(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: DeMarker
+  DidiIndex:
+    roles: [indicator]
+    origin: native
+    form: Didi Index(@Chart@#FastPeriod#,#MediumPeriod#,#SlowPeriod#,#MAMethod#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+  DisparityIndex:
+    roles: [indicator]
+    origin: native
+    form: Disparity Index(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  DonchianChannels:
+    roles: [indicator, level]
+    origin: native
+    form: Donchian Channels(#Period#).#Line#[#Shift#]
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+  EMA:
+    roles: [indicator, level]
+    origin: native
+    form: EMA(@Chart@#Period#)[#Shift#]
+    groups: [GroupMAs]
+    archetypes: {}
+    help: Exponential Moving Average
+  EhlersHilbertTransform:
+    roles: [indicator]
+    origin: native
+    form: Ehlers Hilbert Transform(@Chart@).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: EhlersHilbertTransform help text
+  EhlersMotherOfAdaptiveMovingAverages:
+    roles: [indicator, level]
+    origin: native
+    form: Ehlers Mother Of Adaptive Moving Averages(@Chart@#FastLimit#,#SlowLimit#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: MotherOfAdaptiveMovingAverages help text
+  EntropyMath:
+    roles: [indicator]
+    origin: native
+    form: Entropy Math(@Chart@#EMPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: EntropyMath help text
+  Fibo:
+    roles: [indicator, level]
+    origin: native
+    form: Fibo(@Chart@)
+    groups: []
+    archetypes: {}
+  Fractal:
+    roles: [indicator, level]
+    origin: native
+    form: Fractal(@Chart@#Fractal#)[#Shift#]
+    groups: []
+    archetypes: {}
+  GannHiLo:
+    roles: [indicator, level]
+    origin: native
+    form: GannHiLo(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: GannHiLo help text
+  HalfTrend:
+    roles: [indicator, level]
+    origin: native
+    form: HalfTrend(@Chart@#AtrLength#,#Amplitude#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: HalfTrend is a trend-following indicator that combines elements of a moving average and channel breakout system
+  HalfTrendBollingerBands:
+    roles: [indicator, level]
+    origin: native
+    form: HalfTrend Bollinger Bands(@Chart@#AtrLength#,#Amplitude#,#Deviation#).#Line#[#Shift#]
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+    help: HalfTrend with Bollinger Bands - combines trend-following HalfTrend indicator with volatility bands
+  Highest:
+    roles: [indicator, level]
+    origin: native
+    form: Highest(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Returns highest value of given period of bars
+  HighestInRange:
+    roles: [indicator, level]
+    origin: native
+    form: 'HighestInRange(@Chart@#TimeFrom#, #TimeTo#)[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: returns highest high of candles in given time range
+  HullMovingAverage:
+    roles: [indicator, level]
+    origin: native
+    form: HMA(@Chart@#Period#)[#Shift#]
+    groups: [GroupMAs]
+    archetypes: {}
+    help: HMA is an adaptive MA
+  HullMovingAverageATRBands:
+    roles: [indicator, level]
+    origin: native
+    form: Hull Moving Average ATR Bands (@Chart@#Period#,#Multiplication#,#ComputedFrom#).#Line#[#Shift#]
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+  HullMovingAverageBollingerBands:
+    roles: [indicator, level]
+    origin: native
+    form: Hull Moving Average Bollinger Bands(@Chart@#Period#,#Deviation#,#ComputedFrom#).#Line#[#Shift#]
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+  HurstExponent:
+    roles: [indicator]
+    origin: native
+    form: Hurst Exponent(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: HurstExponent help text
+  Ichimoku:
+    roles: [indicator, level]
+    origin: native
+    form: Ichimoku(@Chart@#TenkanPeriod#,#KijunPeriod#,#SenkouPeriod#,#Line#)[#Shift#]
+    groups: []
+    archetypes: {}
+  KAMA:
+    roles: [indicator, level]
+    origin: native
+    form: Kaufman's Adaptive Moving Average(@Chart@#ERPeriod#,#ShortPeriod#,#LongPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: KAMA is another smoothed MA.
+  KAMAOhlc:
+    roles: [indicator, level]
+    origin: native
+    form: Kaufman's Adaptive Moving Average OHLC (@Chart@#ComputedFrom#,#ERPeriod#,#ShortPeriod#,#LongPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: KAMA is another smoothed MA.
+  KalmanFilter:
+    roles: [indicator, level]
+    origin: native
+    form: 'KalmanFilter(@Chart@#ProcessNoise#, #MeasurementNoise#, #Decay#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  KaufmanEfficiencyRatio:
+    roles: [indicator]
+    origin: native
+    form: Kaufman Efficiency Ratio(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Kaufman Efficiency Ratio
+  KeltnerChannel:
+    roles: [indicator, level]
+    origin: native
+    form: 'Keltner Channel(@Chart@#Period#, #Deviation#).#Line#[#Shift#]'
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+  KolmogorovSmirnovTest:
+    roles: [indicator]
+    origin: native
+    form: KSTest(@Chart@#Period1#,#Period2#,#SignalThreshold#)[#Shift#]
+    groups: []
+    archetypes: {}
+  LWMA:
+    roles: [indicator, level]
+    origin: native
+    form: LWMA(@Chart@#Period#)[#Shift#]
+    groups: [GroupMAs]
+    archetypes: {}
+    help: Linear Weighted Moving Average
+  LaguerreRSI:
+    roles: [indicator]
+    origin: native
+    form: Laguerre RSI(@Chart@#Gamma#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: LaguerreRSI help text
+  LinearRegression:
+    roles: [indicator, level]
+    origin: native
+    form: LinReg(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  LogATR:
+    roles: [indicator]
+    origin: native
+    form: LogATR(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Average True Range of log prices
+  Lowest:
+    roles: [indicator, level]
+    origin: native
+    form: Lowest(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Returns lowest value of given period of bars
+  LowestInRange:
+    roles: [indicator, level]
+    origin: native
+    form: 'LowestInRange(@Chart@#TimeFrom#, #TimeTo#)[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: returns lowest low of candles in given time range
+  MACD:
+    roles: [indicator]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).#Line#[#Shift#]'
+    groups: []
+    archetypes: {}
+  MAMAFAMAKAMA:
+    roles: [indicator, level]
+    origin: native
+    form: MAMAFAMAKAMA(@Chart@#Period#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+  MTATR:
+    roles: [indicator, level]
+    origin: native
+    form: MTATR(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  MTKeltnerChannel:
+    roles: [indicator, level]
+    origin: native
+    form: 'MT Keltner Channel(@Chart@#Period#, #Deviation#).#Line#[#Shift#]'
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+  Momentum:
+    roles: [indicator]
+    origin: native
+    form: Momentum(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  MoneyFlowIndex:
+    roles: [indicator]
+    origin: native
+    form: Money Flow Index(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  OSMA:
+    roles: [indicator]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  ParabolicSAR:
+    roles: [indicator, level]
+    origin: native
+    form: 'ParabolicSAR(@Chart@#Step#, #Maximum#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  Pivots:
+    roles: [indicator, level]
+    origin: native
+    form: Pivots(@Chart@#StartHour#:#StartMinute#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Pivots
+  QQE:
+    roles: [indicator]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+  ROC:
+    roles: [indicator]
+    origin: native
+    form: ROC(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Price rate of change
+  RSI:
+    roles: [indicator]
+    origin: native
+    form: RSI(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  RVI:
+    roles: [indicator]
+    origin: native
+    form: RVI(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: RVI help text
+  Reflex:
+    roles: [indicator]
+    origin: native
+    form: Reflex(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Reflex help text
+  SMA:
+    roles: [indicator, level]
+    origin: native
+    form: SMA(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Simple Moving Average
+  SMMA:
+    roles: [indicator, level]
+    origin: native
+    form: SMMA(@Chart@#Period#)[#Shift#]
+    groups: [GroupMAs]
+    archetypes: {}
+    help: Smoothed Moving Average
+  SRPercentRank:
+    roles: [indicator]
+    origin: native
+    form: SRPercRank(@Chart@#Mode#,#Length#,#ATRPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: 'SRPercRank helps you to identify Support/Ressistance Levels. Indicator si also able to help you with breakout areas identifications. Check blog post: adress'
+  SRPercentRankSmoothed:
+    roles: [indicator]
+    origin: native
+    form: SR Percent Rank Smoothed(@Chart@#Length#,#SmoothPer#,#ATRPeriod#,#Multiplication#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+  SSL:
+    roles: [indicator, level]
+    origin: native
+    form: SSL(@Chart@#LB#,#MAMethod#)[#Shift#]
+    groups: []
+    archetypes: {}
+  SchaffTrendCycle:
+    roles: [indicator]
+    origin: native
+    form: Schaff Trend Cycle(@Chart@#StochPeriod#,#FastPeriod#,#SlowPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Schaff TrendCycle help text
+  SlopeDirectionLine:
+    roles: [indicator, level]
+    origin: native
+    form: Slope Direction Line(@Chart@#ComputedFrom#,#MAPeriod#,#MAMethod#)[#Shift#]
+    groups: []
+    archetypes: {}
+  SmallestRange:
+    roles: [level]
+    origin: native
+    form: SmallestRange(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: returns value of smallest range (high - low of one candle) of candles in given period
+  SmoothedATRWithBands:
+    roles: [indicator]
+    origin: native
+    form: SmoothedATRBands(@Chart@#ATR1Period#,#ATR2Period#,#ATR1SmoothingPeriod#,#ATR2SmoothingPeriod#,#StdDevMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Smoothed ATR with Standard Deviation Bands
+  SmoothedRSI:
+    roles: [indicator]
+    origin: native
+    form: Smoothed RSI(@Chart@#RSIPeriod#,#MAPeriod#,#MAMethod#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: SmoothedRSI help text
+  StdDev:
+    roles: [indicator]
+    origin: native
+    form: StdDev(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Simple Moving Average
+  Stochastic:
+    roles: [indicator]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).#Line#[#Shift#]'
+    groups: []
+    archetypes: {}
+  SuperTrend:
+    roles: [indicator, level]
+    origin: native
+    form: SuperTrend(@Chart@#Mode#,#ATRPeriod#,#ATRMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: SuperTrend help text
+  SwingFailureIndex:
+    roles: [indicator]
+    origin: native
+    form: SFI(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Swing Failure Index detects potential trend reversals by identifying momentum divergences in price swings
+  TEMA:
+    roles: [indicator, level]
+    origin: native
+    form: TEMA(@Chart@#Period#)[#Shift#]
+    groups: [GroupMAs]
+    archetypes: {}
+    help: Triple Exponential Moving Average
+  TPOProfile:
+    roles: [indicator, level]
+    origin: native
+    form: TPO_Letters(#SessionType#,#ProfileRows#,#ValueAreaPct#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: TPO (Market Profile). Outputs POC/VAH/VAL based on Time Price Opportunities.
+  TTMSqueeze:
+    roles: [indicator]
+    origin: native
+    form: TTM Squeeze(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: TTM Squeeze help text
+  TotalPowerIndicator:
+    roles: [indicator]
+    origin: native
+    form: Total Power Indicator (@Chart@#LookbackPeriod#,#PowerPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: TotalPowerIndicator help text
+  TradersDynamicIndex:
+    roles: [indicator, level]
+    origin: native
+    form: TradersDynamicIndex(#RSIPeriod#,#VolatilityBandPeriod#,#RSIPriceLinePeriod#,#TradeSignalPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: TradersDynamicIndex help text
+  TrueRange:
+    roles: [indicator, level]
+    origin: native
+    form: TrueRange[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  UlcerIndex:
+    roles: [indicator]
+    origin: native
+    form: Ulcer Index(@Chart@#Mode#,#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Ulcer Index indicator
+  UltimateC:
+    roles: [indicator]
+    origin: native
+    form: Ultimate Casey C%(@Chart@#Lookback#,#Factor#,#SmoothLookback#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Momentum Oscillator that takes different weights of CaseyC% indicator to create a new oscillator. Range 0-100.
+  UltimateOscillator:
+    roles: [indicator]
+    origin: native
+    form: UO(@Chart@#FastLenght#,#MiddleLenght#,#SlowLenght#)[#Shift#]
+    groups: []
+    archetypes: {}
+  VIDYA:
+    roles: [indicator, level]
+    origin: native
+    form: 'VIDYA(@Chart@#Period#, #CMOPeriod#)[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: VIDYA is an adaptive moving average that adjusts based on market volatility measured by the Chande Momentum Oscillator
+  VIDYABollingerBands:
+    roles: [indicator, level]
+    origin: native
+    form: VIDYA Bollinger Bands(@Chart@#Period#,#CMOPeriod#,#Deviation#).#Line#[#Shift#]
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+    help: VIDYA Bollinger Bands - adaptive moving average with volatility bands based on Chande Momentum Oscillator
+  VMA:
+    roles: [indicator, level]
+    origin: native
+    form: 'VMA(@Chart@#Period#, #VolFactor#)[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Variable Moving Average by Tushar Chande that adapts based on price efficiency
+  VMABollingerBands:
+    roles: [indicator, level]
+    origin: native
+    form: 'BBVMA(@Chart@#Period#, #VolFactor#, #StdDevFactor#)[#Shift#]'
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+    help: Bollinger Bands around Variable Moving Average by Tushar Chande
+  VST:
+    roles: [indicator]
+    origin: native
+    form: VST(@Chart@#LookbackPeriod#,#SmoothingPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Measures asymmetry in price volatility to identify bullish vs bearish pressure. Positive values indicate bullish skew, negative values indicate bearish skew.
+  VWAP:
+    roles: [indicator, level]
+    origin: native
+    form: Volume Weighted Average Price - VWAP(@Chart@#VWAPPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: VWAP help text
+  VWAPATRBands:
+    roles: [indicator, level]
+    origin: native
+    form: Volume Weighted Average Price Bollinger Bands(@Chart@#VWAPPeriod#,#Multiplication#).#Line#[#Shift#]
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+    help: VWAPATRBands help text
+  VWAPBollingerBands:
+    roles: [indicator, level]
+    origin: native
+    form: Volume Weighted Average Price Bollinger Bands(@Chart@#VWAPPeriod#,#Deviation#).#Line#[#Shift#]
+    groups: [BollingerBands_Lower]
+    archetypes: {}
+    help: VWAPBollingerBands help text
+  VolumeProfile:
+    roles: [indicator, level]
+    origin: native
+    form: VolumeProfile(#SessionType#,#ProfileRows#,#ValueAreaPct#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Volume Profile. Outputs POC / VAH / VAL. Use H1 Timeframe for monthly session, M30 for weekly session
+  VolumeProfileCustomHours:
+    roles: [indicator, level]
+    origin: native
+    form: VolumeProfileCH(#SessionStartHours#:#SessionStartMinutes#-#SessionEndHours#:#SessionEndMinutes#,#ProfileRows#,#ValueAreaPct#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Volume Profile with Custom Hours. Define your own session window by setting start/end hours and minutes. Outputs POC / VAH / VAL for the custom session period.
+  VolumeProfileCustomHoursMultiSession:
+    roles: [indicator, level]
+    origin: native
+    form: VolumeProfileCHMulti(#ProfileRows#,#ValueAreaPct#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Volume Profile with 4 configurable sessions (London, New York, Sydney, Tokyo). Each session can be enabled/disabled independently and outputs its own POC/VAH/VAL.
+  Vortex:
+    roles: [indicator]
+    origin: native
+    form: Vortex(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  WAE:
+    roles: [indicator]
+    origin: native
+    form: Waddah Attar Explosion(@Chart@#FastMAPeriod#,#SlowMAPeriod#,#SignalMAPeriod#,#ATRPeriod#,#BBPeriod#,#BBStdvPeriod#,#Sensetive#,#DeadZonePip#)[#Shift#]
+    groups: []
+    archetypes: {}
+  WassersteinDistance:
+    roles: [indicator]
+    origin: native
+    form: Wasserstein Distance(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  WaveTrend:
+    roles: [indicator]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).#Line#[#Shift#]
+    groups: []
+    archetypes: {}
+  WilliamsPR:
+    roles: [indicator]
+    origin: native
+    form: Williams %R(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: The Williams Percent Range is a momentum indicator that is designed to identify overbought and oversold areas in a nontrending market.
+  ZScore:
+    roles: [indicator]
+    origin: native
+    form: ZScore(@Chart@#ComputedFrom#,#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: ZScore help text
+KAMA:
+  BarClosesAboveKAMA:
+    roles: [signal]
+    origin: native
+    form: Bar crosses above KAMA(@Chart@#ERPeriod#,#ShortPeriod#,#LongPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar closes above KAMA
+  BarClosesBelowKAMA:
+    roles: [signal]
+    origin: native
+    form: Bar crosses below KAMA(@Chart@#ERPeriod#,#ShortPeriod#,#LongPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar closes below KAMA
+  FastKAMAAboveSlowKAMA:
+    roles: [signal]
+    origin: native
+    form: Fast KAMA(@Chart@#FastERPeriod#,#FastShortPeriod#,#FastLongPeriod#)[#Shift#] is above Slow KAMA(@Chart@#SlowERPeriod#,#SlowShortPeriod#,#SlowLongPeriod#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if Fast KAMA is above Slow KAMA
+  FastKAMABelowSlowKAMA:
+    roles: [signal]
+    origin: native
+    form: Fast KAMA(@Chart@#FastERPeriod#,#FastShortPeriod#,#FastLongPeriod#)[#Shift#] is below Slow KAMA(@Chart@#SlowERPeriod#,#SlowShortPeriod#,#SlowLongPeriod#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if Fast KAMA is below Slow KAMA
+  KAMAFalling:
+    roles: [signal]
+    origin: native
+    form: KAMA(@Chart@#ERPeriod#,#ShortPeriod#,#LongPeriod#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if KAMA is falling 2 bars
+  KAMARising:
+    roles: [signal]
+    origin: native
+    form: KAMA(@Chart@#ERPeriod#,#ShortPeriod#,#LongPeriod#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if KAMA is rising 2 bars
+Kaufman Efficiency Ratio:
+  KERaboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'KER(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Kaufman Efficiency Ratio is above value
+  KERbelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'KER(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Kaufman Efficiency Ratio is below value
+Keltner Channel:
+  KCBarClosesAboveLower:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes above Keltner Channel(@Chart@#Period#, #Deviation#).Lower[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar closes above KC Lower band
+  KCBarClosesAboveUpper:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes above Keltner Channel(@Chart@#Period#, #Deviation#).Upper[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar closes above KC Upper band
+  KCBarClosesBelowLower:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes below Keltner Channel(@Chart@#Period#, #Deviation#).Lower[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar closes below KC Lower band
+  KCBarClosesBelowUpper:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes below Keltner Channel(@Chart@#Period#, #Deviation#).Upper[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar closes below KC Upper band
+  KCBarOpensAboveLower:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above Keltner Channel(@Chart@#Period#, #Deviation#).Lower[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar opens above KC Lower band
+  KCBarOpensAboveLowerAfterOpenBelow:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above Keltner Channel(@Chart@#Period#, #Deviation#).Lower[#Shift#] after opened below'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar opens above KC Lower band after opened below
+  KCBarOpensAboveUpper:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above Keltner Channel(@Chart@#Period#, #Deviation#).Upper[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar opens above KC Upper band
+  KCBarOpensAboveUpperAfterOpenBelow:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above Keltner Channel(@Chart@#Period#, #Deviation#).Upper[#Shift#] after opened below'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar opens above KC Upper band after opened below
+  KCBarOpensBelowLower:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below Keltner Channel(@Chart@#Period#, #Deviation#).Lower[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar opens below KC Lower band
+  KCBarOpensBelowLowerAfterOpenAbove:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below Keltner Channel(@Chart@#Period#, #Deviation#).Lower[#Shift#] after opened above'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar opens below KC Lower band after opened above
+  KCBarOpensBelowUpper:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below Keltner Channel(@Chart@#Period#, #Deviation#).Upper[#Shift#]'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar opens below KC Upper band
+  KCBarOpensBelowUpperAfterOpenAbove:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below Keltner Channel(@Chart@#Period#, #Deviation#).Upper[#Shift#] after opened above'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar opens below KC Upper band after opened above
+  KCLowerFalling:
+    roles: [signal]
+    origin: native
+    form: 'Keltner Channel(@Chart@#Period#, #Deviation#).Lower[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if KC Lower band is falling
+  KCLowerRising:
+    roles: [signal]
+    origin: native
+    form: 'Keltner Channel(@Chart@#Period#, #Deviation#).Lower[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if KC Lower band is rising
+  KCUpperFalling:
+    roles: [signal]
+    origin: native
+    form: 'Keltner Channel(@Chart@#Period#, #Deviation#).Upper[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if KC Upper band is falling
+  KCUpperRising:
+    roles: [signal]
+    origin: native
+    form: 'Keltner Channel(@Chart@#Period#, #Deviation#).Upper[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if KC Upper band is rising
+Laguerre RSI:
+  LaguerreRSIChangesDown:
+    roles: [signal]
+    origin: native
+    form: Laguerre RSI(@Chart@#Gamma#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Laguerre RSI changes direction downwards
+  LaguerreRSIChangesUP:
+    roles: [signal]
+    origin: native
+    form: Laguerre RSI(@Chart@#Gamma#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Laguerre RSI changes direction upwards
+  LaguerreRSICrossDown:
+    roles: [signal]
+    origin: native
+    form: 'Laguerre RSI(@Chart@#Gamma#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Laguerre RSI crosses below Level
+  LaguerreRSICrossUP:
+    roles: [signal]
+    origin: native
+    form: 'Laguerre RSI(@Chart@#Gamma#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Laguerre RSI crosses above Level
+  LaguerreRSIFalling:
+    roles: [signal]
+    origin: native
+    form: Laguerre RSI(@Chart@#Gamma#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Laguerre RSI is falling
+  LaguerreRSIRising:
+    roles: [signal]
+    origin: native
+    form: Laguerre RSI(@Chart@#Gamma#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Laguerre RSI is rising
+Lin Reg:
+  LinRegBarClosesAbove:
+    roles: [signal]
+    origin: native
+    form: Bar closes above LinReg(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  LinRegBarClosesBelow:
+    roles: [signal]
+    origin: native
+    form: Bar closes below LinReg(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  LinRegBarOpensAbove:
+    roles: [signal]
+    origin: native
+    form: Bar opens above LinReg(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  LinRegBarOpensAboveAfterOpenBelow:
+    roles: [signal]
+    origin: native
+    form: Bar opens above LinReg(@Chart@#Period#)[#Shift#] after opened below
+    groups: []
+    archetypes: {}
+  LinRegBarOpensBelow:
+    roles: [signal]
+    origin: native
+    form: Bar opens below LinReg(@Chart@#Period#)[#Shift#]
+    groups: []
+    archetypes: {}
+  LinRegBarOpensBelowAfterOpenAbove:
+    roles: [signal]
+    origin: native
+    form: Bar opens below LinReg(@Chart@#Period#)[#Shift#] after opened above
+    groups: []
+    archetypes: {}
+  LinRegFalling:
+    roles: [signal]
+    origin: native
+    form: LinReg(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if LinReg is falling
+  LinRegRising:
+    roles: [signal]
+    origin: native
+    form: LinReg(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if LinReg is rising
+MACD:
+  MACDMainChangesDown:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] changes direction downwards'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MACD Main changes direction downwards
+  MACDMainChangesUp:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] changes direction upwards'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MACD Main changes direction upwards
+  MACDMainCrossAbove:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  MACDMainCrossAboveSignal:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] crosses above MACD.Signal'
+    groups: []
+    archetypes: {}
+  MACDMainCrossAboveZero:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] crosses above 0'
+    groups: []
+    archetypes: {}
+  MACDMainCrossBelow:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  MACDMainCrossBelowSignal:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] crosses below MACD.Signal'
+    groups: []
+    archetypes: {}
+  MACDMainCrossBelowZero:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] crosses below 0'
+    groups: []
+    archetypes: {}
+  MACDMainFalling:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MACD Main is falling
+  MACDMainHigher:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  MACDMainHigherSignal:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] > MACD.Signal'
+    groups: []
+    archetypes: {}
+  MACDMainHigherZero:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] > 0'
+    groups: []
+    archetypes: {}
+  MACDMainLower:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  MACDMainLowerSignal:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] < MACD.Signal'
+    groups: []
+    archetypes: {}
+  MACDMainLowerZero:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] < 0'
+    groups: []
+    archetypes: {}
+  MACDMainRising:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Main[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MACD Main is rising
+  MACDSignalFalling:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Signal[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MACD Signal is falling
+  MACDSignalRising:
+    roles: [signal]
+    origin: native
+    form: 'MACD(@Chart@#Fast#, #Slow#, #Smooth#).Signal[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MACD Signal is rising
+MeanReversion_user:
+  CBlock_ZScoreStretchedDown:
+    roles: [signal]
+    origin: own
+    form: ZScore(@Chart@20) < -2 (overstretched down)
+    groups: [MeanReversionFilters]
+    archetypes: {}
+    help: 'Mean-reversion: price statistically overstretched below the mean (fade candidate).'
+  CBlock_ZScoreStretchedUp:
+    roles: [signal]
+    origin: own
+    form: ZScore(@Chart@20) > 2 (overstretched up)
+    groups: [MeanReversionFilters]
+    archetypes: {}
+    help: 'Mean-reversion: price statistically overstretched above the mean (fade candidate).'
+Momentum:
+  MomChangesDown:
+    roles: [signal]
+    origin: native
+    form: Momentum(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+  MomChangesUp:
+    roles: [signal]
+    origin: native
+    form: Momentum(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+  MomCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'Momentum(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  MomCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'Momentum(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  MomFalling:
+    roles: [signal]
+    origin: native
+    form: Momentum(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Momentum is falling
+  MomHigher:
+    roles: [signal]
+    origin: native
+    form: 'Momentum(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  MomLower:
+    roles: [signal]
+    origin: native
+    form: 'Momentum(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  MomRising:
+    roles: [signal]
+    origin: native
+    form: Momentum(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Momentum is rising
+Money Flow Index:
+  MoneyFlowIndexAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'Money Flow Index(@Chart@#Period#) is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MoneyFlowIndex is above Level
+  MoneyFlowIndexBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'Money Flow Index(@Chart@#Period#) is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MoneyFlowIndex is below Level
+  MoneyFlowIndexCrossAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'Money Flow Index(@Chart@#Period#) crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MoneyFlowIndex crosses above Level
+  MoneyFlowIndexCrossBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'Money Flow Index(@Chart@#Period#) crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MoneyFlowIndex crosses below Level
+  MoneyFlowIndexFalling:
+    roles: [signal]
+    origin: native
+    form: Money Flow Index(@Chart@#Period#) is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if MoneyFlowIndex is rising 2 bars
+  MoneyFlowIndexRising:
+    roles: [signal]
+    origin: native
+    form: Money Flow Index(@Chart@#Period#) is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if MoneyFlowIndex is rising 2 bars
+Moving Average:
+  MABarClosesAbove:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes above #Type# Moving Average(@Chart@#Period#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  MABarClosesBelow:
+    roles: [signal]
+    origin: native
+    form: 'Bar closes below #Type# Moving Average(@Chart@#Period#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  MABarOpensAbove:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above #Type# Moving Average(@Chart@#Period#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  MABarOpensAboveAfterOpenBelow:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens above #Type# Moving Average(@Chart@#Period#)[#Shift#] after opened below'
+    groups: []
+    archetypes: {}
+  MABarOpensBelow:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below #Type# Moving Average(@Chart@#Period#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  MABarOpensBelowAfterOpenAbove:
+    roles: [signal]
+    origin: native
+    form: 'Bar opens below #Type# Moving Average(@Chart@#Period#)[#Shift#] after opened above'
+    groups: []
+    archetypes: {}
+  MAFalling:
+    roles: [signal]
+    origin: native
+    form: '#Type# Moving Average(@Chart@#Period#)[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MA is falling
+  MARising:
+    roles: [signal]
+    origin: native
+    form: '#Type# Moving Average(@Chart@#Period#)[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if MA is rising
+OSMA:
+  OSMAChangesDown:
+    roles: [signal]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#] changes direction downwards'
+    groups: []
+    archetypes: {}
+    help: Is triggered if OSMA changes direction downwards
+  OSMAChangesUp:
+    roles: [signal]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#] changes direction upwards'
+    groups: []
+    archetypes: {}
+    help: Is triggered if OSMA changes direction upwards
+  OSMACrossZeroDown:
+    roles: [signal]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#] crosses below 0'
+    groups: []
+    archetypes: {}
+  OSMACrossZeroUp:
+    roles: [signal]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#] crosses above 0'
+    groups: []
+    archetypes: {}
+  OSMAFalling:
+    roles: [signal]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if OSMA is falling
+  OSMAHigherZero:
+    roles: [signal]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#] > 0'
+    groups: []
+    archetypes: {}
+  OSMALowerZero:
+    roles: [signal]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#] < 0'
+    groups: []
+    archetypes: {}
+  OSMARising:
+    roles: [signal]
+    origin: native
+    form: 'OSMA(@Chart@#FastEMA#, #SlowEMA#, #SignalPeriod#)[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if OSMA is rising
+Other:
+  Number:
+    roles: [indicator]
+    origin: native
+    form: '#Number#'
+    groups: []
+    archetypes: {}
+    help: Number constant
+Parabolic SAR:
+  PSARBarHigher:
+    roles: [signal]
+    origin: native
+    form: 'Price is above ParabolicSAR(@Chart@#Step#, #Maximum#)[#Shift#]'
+    groups: []
+    archetypes: {}
+  PSARBarLower:
+    roles: [signal]
+    origin: native
+    form: 'Price is below ParabolicSAR(@Chart@#Step#, #Maximum#)[#Shift#]'
+    groups: []
+    archetypes: {}
+Price:
+  Ask:
+    roles: [indicator, level]
+    origin: native
+    form: Ask
+    groups: [BreakoutRand, RandomPrices]
+    archetypes: {}
+  Bid:
+    roles: [indicator, level]
+    origin: native
+    form: Bid
+    groups: [BreakoutRand]
+    archetypes: {}
+  Close:
+    roles: [indicator, level]
+    origin: native
+    form: Close[@Chart@#Shift#]
+    groups: [BreakoutRand, RandomPrices]
+    archetypes: {}
+  CloseD:
+    roles: [indicator, level]
+    origin: native
+    form: CloseD[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  CloseM:
+    roles: [indicator, level]
+    origin: native
+    form: CloseM[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  CloseW:
+    roles: [indicator, level]
+    origin: native
+    form: CloseW[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  HeikenAshiClose:
+    roles: [indicator, level]
+    origin: native
+    form: Heiken Ashi Close[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  HeikenAshiHigh:
+    roles: [indicator, level]
+    origin: native
+    form: Heiken Ashi High[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  HeikenAshiLow:
+    roles: [indicator, level]
+    origin: native
+    form: Heiken Ashi Low[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  HeikenAshiOpen:
+    roles: [indicator, level]
+    origin: native
+    form: Heiken Ashi Open[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  High:
+    roles: [indicator, level]
+    origin: native
+    form: High[@Chart@#Shift#]
+    groups: [RandomPrices]
+    archetypes: {}
+  HighD:
+    roles: [indicator, level]
+    origin: native
+    form: HighD[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  HighM:
+    roles: [indicator, level]
+    origin: native
+    form: HighM[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  HighW:
+    roles: [indicator, level]
+    origin: native
+    form: HighW[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  Low:
+    roles: [indicator, level]
+    origin: native
+    form: Low[@Chart@#Shift#]
+    groups: [RandomPrices]
+    archetypes: {}
+  LowD:
+    roles: [indicator, level]
+    origin: native
+    form: LowD[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  LowM:
+    roles: [indicator, level]
+    origin: native
+    form: LowM[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  LowW:
+    roles: [indicator, level]
+    origin: native
+    form: LowW[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  Open:
+    roles: [indicator, level]
+    origin: native
+    form: Open[@Chart@#Shift#]
+    groups: [RandomPrices]
+    archetypes: {}
+  OpenD:
+    roles: [indicator, level]
+    origin: native
+    form: OpenD[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  OpenM:
+    roles: [indicator, level]
+    origin: native
+    form: OpenM[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  OpenW:
+    roles: [indicator, level]
+    origin: native
+    form: OpenW[@Chart@#Shift#]
+    groups: []
+    archetypes: {}
+  SessionClose:
+    roles: [indicator, level]
+    origin: native
+    form: SessionClose(@Chart@#EndHours#:#EndMinutes#)[#Shift#]
+    groups: []
+    archetypes: {}
+  SessionHigh:
+    roles: [indicator, level]
+    origin: native
+    form: SessionHigh(@Chart@#StartHours#:#StartMinutes#-#EndHours#:#EndMinutes#)[#Shift#]
+    groups: []
+    archetypes: {}
+  SessionLow:
+    roles: [indicator, level]
+    origin: native
+    form: SessionLow(@Chart@#StartHours#:#StartMinutes#-#EndHours#:#EndMinutes#)[#Shift#]
+    groups: []
+    archetypes: {}
+  SessionOpen:
+    roles: [indicator, level]
+    origin: native
+    form: SessionOpen(@Chart@#StartHours#:#StartMinutes#)[#Shift#]
+    groups: []
+    archetypes: {}
+QQE:
+  QQEValue1ChangesDown:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value1[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if QQE Value1 changes direction downwards
+  QQEValue1ChangesUp:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value1[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if QQE Value1 changes direction upwards
+  QQEValue1CrossAbove:
+    roles: [signal]
+    origin: native
+    form: 'QQE(@Chart@#RSIPeriod#).Value1[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  QQEValue1CrossAboveValue2:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value1[#Shift#] crosses above QQE.Value2
+    groups: []
+    archetypes: {}
+  QQEValue1CrossBelow:
+    roles: [signal]
+    origin: native
+    form: 'QQE(@Chart@#RSIPeriod#).Value1[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  QQEValue1CrossBelowValue2:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value1[#Shift#] crosses below QQE.Value2
+    groups: []
+    archetypes: {}
+  QQEValue1Falling:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value1[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if QQE Value1 is falling
+  QQEValue1Higher:
+    roles: [signal]
+    origin: native
+    form: 'QQE(@Chart@#RSIPeriod#).Value1[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  QQEValue1HigherValue2:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value1[#Shift#] > QQE.Value2
+    groups: []
+    archetypes: {}
+  QQEValue1Lower:
+    roles: [signal]
+    origin: native
+    form: 'QQE(@Chart@#RSIPeriod#).Value1[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  QQEValue1LowerValue2:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value1[#Shift#] < QQE.Value2
+    groups: []
+    archetypes: {}
+  QQEValue1Rising:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value1[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if QQE Value1 is rising
+  QQEValue2Falling:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value2[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if QQE Value2 is falling
+  QQEValue2Rising:
+    roles: [signal]
+    origin: native
+    form: QQE(@Chart@#RSIPeriod#).Value2[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if QQE Value2 is rising
+ROC:
+  ROCAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'ROC(@Chart@#Period#)[#Shift#] is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ROC is above Level
+  ROCBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'ROC(@Chart@#Period#)[#Shift#] is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ROC is above Level
+  ROCCrossesAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'ROC(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ROC is above Level
+  ROCCrossesBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'ROC(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if ROC is below Level
+  ROCFalling:
+    roles: [signal]
+    origin: native
+    form: ROC(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if ROC is falling
+  ROCRising:
+    roles: [signal]
+    origin: native
+    form: ROC(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if ROC is rising
+RSI:
+  RSIChangesDown:
+    roles: [signal]
+    origin: native
+    form: RSI(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: [GroupRSIs]
+    archetypes: {}
+    help: Is triggered if RSI changes direction downwards
+  RSIChangesUp:
+    roles: [signal]
+    origin: native
+    form: RSI(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: [GroupRSIs]
+    archetypes: {}
+    help: Is triggered if RSI changes direction upwards
+  RSICrossDown:
+    roles: [signal]
+    origin: native
+    form: 'RSI(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: [GroupRSIs]
+    archetypes: {}
+  RSICrossUp:
+    roles: [signal]
+    origin: native
+    form: 'RSI(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: [GroupRSIs]
+    archetypes: {}
+  RSIFalling:
+    roles: [signal]
+    origin: native
+    form: RSI(@Chart@#Period#)[#Shift#] is falling
+    groups: [GroupRSIs]
+    archetypes: {}
+    help: Is triggered if RSI is falling
+  RSIHigher:
+    roles: [signal]
+    origin: native
+    form: 'RSI(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: [GroupRSIs]
+    archetypes: {}
+  RSILower:
+    roles: [signal]
+    origin: native
+    form: 'RSI(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: [GroupRSIs]
+    archetypes: {}
+  RSIRising:
+    roles: [signal]
+    origin: native
+    form: RSI(@Chart@#Period#)[#Shift#] is rising
+    groups: [GroupRSIs]
+    archetypes: {}
+    help: Is triggered if RSI is rising
+RVI:
+  RVIAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'RVI(@Chart@#Period#) is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if RVI is above level
+  RVIBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'RVI(@Chart@#Period#) is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if RVI is below level
+  RVICrossesAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'RVI(@Chart@#Period#) crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if RVI crosses above level
+  RVICrossesBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'RVI(@Chart@#Period#) crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if RVI crosses below level
+  RVIFalling:
+    roles: [signal]
+    origin: native
+    form: RVI(@Chart@#Period#) is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if RVI is falling
+  RVIRising:
+    roles: [signal]
+    origin: native
+    form: RVI(@Chart@#Period#) is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if RVI is rising
+Reflex:
+  FastReflexCrossDownSlowReflex:
+    roles: [signal]
+    origin: native
+    form: Fast Reflex(@Chart@#FastPeriod#)[#Shift#] Crosses Down Slow Reflex(#SlowPeriod#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if fast Reflex crosses Slow Reflex Down
+  FastReflexCrossUPSlowReflex:
+    roles: [signal]
+    origin: native
+    form: Fast Reflex(@Chart@#FastPeriod#)[#Shift#] Crosses UP Slow Reflex(#SlowPeriod#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if fast Reflex crosses Slow reflex UP
+  ReflexChangesDirectionDown:
+    roles: [signal]
+    origin: native
+    form: Reflex(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Reflex changes direction downwards
+  ReflexChangesDirectionUP:
+    roles: [signal]
+    origin: native
+    form: Reflex(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Reflex changes direction upwards
+  ReflexFalling:
+    roles: [signal]
+    origin: native
+    form: Reflex(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Reflex is falling 2 bars
+  ReflexRising:
+    roles: [signal]
+    origin: native
+    form: Reflex(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Reflex is rising 2 bars
+SR Percent Rank:
+  SRPercRankAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'SR Percent Rank(@Chart@#Mode#,#Length#,#ATRPeriod#)[#Shift#] is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if SRPercentRank is below Level
+  SRPercRankAboveLevelXBars:
+    roles: [signal]
+    origin: native
+    form: 'SR Percent Rank(@Chart@#Mode#,#Length#,#ATRPeriod#)[#Shift#] is above #Level# for #Bars# Bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered if SRPercentRank is above Level for X Bars
+  SRPercRankBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'SR Percent Rank(@Chart@#Mode#,#Length#,#ATRPeriod#)[#Shift#] is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if SRPercentRank is below Level
+  SRPercRankBelowLevelXBars:
+    roles: [signal]
+    origin: native
+    form: 'SR Percent Rank(@Chart@#Mode#,#Length#,#ATRPeriod#)[#Shift#] is below #Level# for #Bars# Bars'
+    groups: []
+    archetypes: {}
+    help: Is triggered if SRPercentRank is below Level for X Bars
+Schaff Trend Cycle:
+  SchaffTrendCycleAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'Schaff Trend Cycle(@Chart@#StochPeriod#,#FastPeriod#,#SlowPeriod#)[#Shift#] is above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Schaff Trend Cycle is above Level
+  SchaffTrendCycleBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'Schaff Trend Cycle(@Chart@#StochPeriod#,#FastPeriod#,#SlowPeriod#)[#Shift#] is below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Schaff Trend Cycle is below Level
+  SchaffTrendCycleCrossesAboveLevel:
+    roles: [signal]
+    origin: native
+    form: 'Schaff Trend Cycle(@Chart@#StochPeriod#,#FastPeriod#,#SlowPeriod#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Schaff Trend Cycle crosses above Level
+  SchaffTrendCycleCrossesBelowLevel:
+    roles: [signal]
+    origin: native
+    form: 'Schaff Trend Cycle(@Chart@#StochPeriod#,#FastPeriod#,#SlowPeriod#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Schaff Trend Cycle crosses above Level
+Smoothed RSI:
+  CBlock_SmoothedRSIRising:
+    roles: [signal]
+    origin: own
+    form: SmoothedRSIRising
+    groups: [GroupRSIs]
+    archetypes: {}
+  CBlock_SmoothedRSIRising_2:
+    roles: [signal]
+    origin: own
+    form: SmoothedRSIFalling
+    groups: [GroupRSIs]
+    archetypes: {}
+  CBlock_SmoothedRSIRising_3:
+    roles: [signal]
+    origin: own
+    form: SmoothedRSICrossesUP
+    groups: [GroupRSIs]
+    archetypes: {}
+  CBlock_SmoothedRSIRising_3_2:
+    roles: [signal]
+    origin: own
+    form: SmoothedRSICrossesDown
+    groups: [GroupRSIs]
+    archetypes: {}
+  CBlock_SmoothedRSIRising_3_3:
+    roles: [signal]
+    origin: own
+    form: SmoothedRSICrossesUPRSIBelowLevel
+    groups: [GroupRSIs]
+    archetypes: {}
+  CBlock_SmoothedRSIRising_3_3_2:
+    roles: [signal]
+    origin: own
+    form: SmoothedRSICrossesDownRSIAboveLevel
+    groups: [GroupRSIs]
+    archetypes: {}
+  CBlock_SmoothedRSIRising_3_4:
+    roles: [signal]
+    origin: own
+    form: SmoothedRSICrossesUPMARising
+    groups: [GroupRSIs]
+    archetypes: {}
+  CBlock_SmoothedRSIRising_3_4_2:
+    roles: [signal]
+    origin: own
+    form: SmoothedRSICrossesUPMAFalling
+    groups: [GroupRSIs]
+    archetypes: {}
+Std Dev:
+  StdDevChangesDown:
+    roles: [signal]
+    origin: native
+    form: StdDev(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if StdDev changes direction downwards
+  StdDevChangesUp:
+    roles: [signal]
+    origin: native
+    form: StdDev(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if StdDev changes direction upwards
+  StdDevCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'StdDev(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  StdDevCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'StdDev(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  StdDevFalling:
+    roles: [signal]
+    origin: native
+    form: StdDev(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if StdDev is falling
+  StdDevHigher:
+    roles: [signal]
+    origin: native
+    form: 'StdDev(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  StdDevLower:
+    roles: [signal]
+    origin: native
+    form: 'StdDev(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  StdDevRising:
+    roles: [signal]
+    origin: native
+    form: StdDev(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if StdDev is rising
+Stochastic:
+  StochFastKCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Fast %K[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  StochFastKCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Fast %K[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  StochFastKDown:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Fast %K[#Shift#] is lower than Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D'
+    groups: []
+    archetypes: {}
+  StochFastKUp:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Fast %K[#Shift#] is higher than Stoch(#KPeriod#, #DPeriod#, #Slowing#).Slow %D'
+    groups: []
+    archetypes: {}
+  StochSlowDChangesDown:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D[#Shift#] changes direction downwards'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Stochastic changes direction downwards
+  StochSlowDChangesUp:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D[#Shift#] changes direction upwards'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Stochastic changes direction upwards
+  StochSlowDCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  StochSlowDCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  StochSlowDFalling:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D[#Shift#] is falling'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Stochastic is falling
+  StochSlowDHigher:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  StochSlowDLower:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  StochSlowDRising:
+    roles: [signal]
+    origin: native
+    form: 'Stoch(@Chart@#KPeriod#, #DPeriod#, #Slowing#).Slow %D[#Shift#] is rising'
+    groups: []
+    archetypes: {}
+    help: Is triggered if Stochastic is rising
+StructuralBreak_user:
+  CBlock_KSBreakOff:
+    roles: [signal]
+    origin: own
+    form: KSTest(@Chart@20,50) signal OFF (stable distribution)
+    groups: [StructuralBreakFilters]
+    archetypes: {}
+    help: 'Stable regime: recent return distribution matches history (KS signal=0).'
+  CBlock_KSBreakOn:
+    roles: [signal]
+    origin: own
+    form: KSTest(@Chart@20,50) signal ON (distribution shift)
+    groups: [StructuralBreakFilters]
+    archetypes: {}
+    help: 'Structural break: recent return distribution differs significantly from history (KS signal=1).'
+  CBlock_WassersteinShiftHigh:
+    roles: [signal]
+    origin: own
+    form: Wasserstein Distance(@Chart@50) > level (large distribution shift)
+    groups: [StructuralBreakFilters]
+    archetypes: {}
+    help: 'Regime shift: large distance between recent and prior return distributions. Range non-standard - verify on first import (level optimizable).'
+  CBlock_WassersteinShiftLow:
+    roles: [signal]
+    origin: own
+    form: Wasserstein Distance(@Chart@50) < level (stable distribution)
+    groups: [StructuralBreakFilters]
+    archetypes: {}
+    help: 'Stable regime: small distance between recent and prior return distributions. Range non-standard - verify on first import (level optimizable).'
+Super Trend:
+  BarClosesAboveSuperTrend:
+    roles: [signal]
+    origin: native
+    form: Bar closes above SuperTrend(@Chart@#Mode#,#ATRPeriod#,#ATRMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar closes above SuperTrend
+  BarClosesBelowSuperTrend:
+    roles: [signal]
+    origin: native
+    form: Bar closes below SuperTrend(@Chart@#Mode#,#ATRPeriod#,#ATRMult#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Bar closes below SuperTrend
+  SuperTrendDownTrend:
+    roles: [signal]
+    origin: native
+    form: SuperTrend(@Chart@#Mode#,#ATRPeriod#,#ATRMult#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if SuperTrend is falling
+  SuperTrendInRange:
+    roles: [signal]
+    origin: native
+    form: SuperTrend(@Chart@#Mode#,#ATRPeriod#,#ATRMult#)[#Shift#] is in Range
+    groups: []
+    archetypes: {}
+    help: Is triggered if SuperTrend is in range
+  SuperTrendUPTrend:
+    roles: [signal]
+    origin: native
+    form: SuperTrend(@Chart@#Mode#,#ATRPeriod#,#ATRMult#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if SuperTrend is rising
+TTM Squeeze:
+  TTMSqueezeMomentumCrossLevelDown:
+    roles: [signal]
+    origin: native
+    form: TTM Squeeze Momentum crosses Level Down(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#,#Level#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if TTM Squeeze Momentum crosses Level Down and Squeeze is ON
+  TTMSqueezeMomentumCrossLevelUP:
+    roles: [signal]
+    origin: native
+    form: TTM Squeeze Momentum crosses Level UP(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#,#Level#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if TTM Squeeze Momentum crosses Level UP and Squeeze is ON
+  TTMSqueezeMomentumIsFalling:
+    roles: [signal]
+    origin: native
+    form: TTM Squeeze Momentum is falling(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if TTMSqueeze Momentum is falling 2 bars
+  TTMSqueezeMomentumIsRising:
+    roles: [signal]
+    origin: native
+    form: TTMSqueeze Momentum is rising(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#)
+    groups: []
+    archetypes: {}
+    help: Is triggered if TTM Squeeze Momentum is rising 2 bars
+Trend:
+  IsDowntrend:
+    roles: [signal]
+    origin: native
+    form: IsDowntrend(@Chart@#Method#)
+    groups: []
+    archetypes: {}
+    help: Is true when there is an downtrend identified by the given method.
+  IsUptrend:
+    roles: [signal]
+    origin: native
+    form: IsUptrend(@Chart@#Method#)
+    groups: []
+    archetypes: {}
+    help: Is true when there is an uptrend identified by the given method.
+TrendRegime_user:
+  CBlock_CSSARegimeAbove50:
+    roles: [signal]
+    origin: own
+    form: CSSA Market Regime > 50 (regime A)
+    groups: [TrendRegimeFilters]
+    archetypes: {}
+    help: CSSA Market Regime above the midline (one regime state). Verify polarity on first import.
+  CBlock_CSSARegimeBelow50:
+    roles: [signal]
+    origin: own
+    form: CSSA Market Regime < 50 (regime B)
+    groups: [TrendRegimeFilters]
+    archetypes: {}
+    help: CSSA Market Regime below the midline (other regime state). Verify polarity on first import.
+  CBlock_ChoppinessChoppy:
+    roles: [signal]
+    origin: own
+    form: Choppiness Index(@Chart@14) > 61.8 (choppy regime)
+    groups: [TrendRegimeFilters]
+    archetypes: {}
+    help: 'Choppy/ranging regime: Choppiness Index above the chop level.'
+  CBlock_ChoppinessTrending:
+    roles: [signal]
+    origin: own
+    form: Choppiness Index(@Chart@14) < 38.2 (trending regime)
+    groups: [TrendRegimeFilters]
+    archetypes: {}
+    help: 'Trending regime: Choppiness Index below the trend level (low chop = directional).'
+  CBlock_EntropyHigh:
+    roles: [signal]
+    origin: own
+    form: Entropy Math(@Chart@10) > level (random/disordered)
+    groups: [TrendRegimeFilters]
+    archetypes: {}
+    help: 'High-entropy regime: more random/disordered. Output range non-standard - verify on first import (level optimizable).'
+  CBlock_EntropyLow:
+    roles: [signal]
+    origin: own
+    form: Entropy Math(@Chart@10) < level (ordered/predictable)
+    groups: [TrendRegimeFilters]
+    archetypes: {}
+    help: 'Low-entropy regime: more ordered/predictable. Output range non-standard - verify on first import (level optimizable).'
+Ulcer Index:
+  UlcerIndexDownBelowSafeLevel:
+    roles: [signal]
+    origin: native
+    form: 'Ulcer Index Down(@Chart@#Mode#,#Period#)[#Shift#] is Below #SafeLevel#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if UlcerIndex Down is below Safe Level
+  UlcerIndexDownRising:
+    roles: [signal]
+    origin: native
+    form: Ulcer Index Down (@Chart@#Mode#,#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Ulcer Index Down is rising
+  UlcerIndexUPBelowSafeLevel:
+    roles: [signal]
+    origin: native
+    form: 'Ulcer Index UP(@Chart@#Mode#,#Period#)[#Shift#] is Below #SafeLevel#'
+    groups: []
+    archetypes: {}
+    help: Is triggered if UlcerIndex UP is below Safe Level
+  UlcerIndexUPRising:
+    roles: [signal]
+    origin: native
+    form: Ulcer Index UP (@Chart@#Mode#,#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if UlcerIndex UP is rising
+VWAP:
+  CloseAboveVWAP:
+    roles: [signal]
+    origin: native
+    form: Close is above VWAP(@Chart@#VWAPPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Close is above VWAP
+  CloseBelowVWAP:
+    roles: [signal]
+    origin: native
+    form: Close is below VWAP(@Chart@#VWAPPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Close is below VWAP
+  FastVWAPAboveSlowVWAP:
+    roles: [signal]
+    origin: native
+    form: Faster VWAP(@Chart@#FastPeriod#)[#Shift#] is above Slower VWAP(@Chart@#SlowPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Faster VWAP is above Slower VWAP
+  FastVWAPBelowSlowVWAP:
+    roles: [signal]
+    origin: native
+    form: Faster VWAP(@Chart@#FastPeriod#)[#Shift#] is below Slower VWAP(@Chart@#SlowPeriod#)[#Shift#]
+    groups: []
+    archetypes: {}
+    help: Is triggered if Faster VWAP is below Slower VWAP
+  VWAPFalling:
+    roles: [signal]
+    origin: native
+    form: VWAP(@Chart@#VWAPPeriod#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if VWAP is falling
+  VWAPRising:
+    roles: [signal]
+    origin: native
+    form: VWAP(@Chart@#VWAPPeriod#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if VWAP is rising
+VolatilityRegime_user:
+  CBlock_ATRRankHighVol:
+    roles: [signal]
+    origin: own
+    form: ATR Percent Rank(@Chart@12,120) > 50 (high volatility)
+    groups: [VolatilityRegimeFilters]
+    archetypes: {}
+    help: 'High-volatility regime: current ATR ranks high vs its own history.'
+  CBlock_ATRRankLowVol:
+    roles: [signal]
+    origin: own
+    form: ATR Percent Rank(@Chart@12,120) < 50 (low volatility)
+    groups: [VolatilityRegimeFilters]
+    archetypes: {}
+    help: 'Low-volatility regime: current ATR ranks low vs its own history.'
+  CBlock_SqueezeOff:
+    roles: [signal]
+    origin: own
+    form: TTM Squeeze(@Chart@20).Squeeze is OFF (volatility released)
+    groups: [VolatilityRegimeFilters]
+    archetypes: {}
+    help: 'Volatility-expansion regime: squeeze released. Verify polarity on first import.'
+  CBlock_SqueezeOn:
+    roles: [signal]
+    origin: own
+    form: TTM Squeeze(@Chart@20).Squeeze is ON (volatility compressed)
+    groups: [VolatilityRegimeFilters]
+    archetypes: {}
+    help: 'Volatility-compression regime: Bollinger inside Keltner. Verify polarity on first import.'
+Volume Profile:
+  VPFallingPOC:
+    roles: [signal]
+    origin: native
+    form: FallingPOC(@Chart@#LookbackBars#,#MinimumShift#)
+    groups: []
+    archetypes: {}
+    help: 'POC migration downward: current session POC is lower than the POC from LookbackBars ago by at least MinimumShift pips. Falling fair value across sessions suggests a bearish regime—prefer short setups on rallies to prior POC/value levels.'
+  VPRisingPOC:
+    roles: [signal]
+    origin: native
+    form: RisingPOC(@Chart@#LookbackBars#,#MinimumShift#)
+    groups: []
+    archetypes: {}
+    help: 'POC migration upward: current session POC is higher than the POC from LookbackBars ago by at least MinimumShift pips. Rising fair value across sessions suggests a bullish regime—prefer long setups on pullbacks to prior POC/value levels.'
+  VPValueShiftDown:
+    roles: [signal]
+    origin: native
+    form: ValueShiftDown(@Chart@#LookbackBars#,#MinimumGap#)
+    groups: []
+    archetypes: {}
+    help: 'Strong bearish regime: current session''s VAH sits entirely below the prior session''s VAL. The entire value area has shifted lower, indicating aggressive acceptance of lower prices. Prefer short setups—sell rallies into the new value area.'
+  VPValueShiftUp:
+    roles: [signal]
+    origin: native
+    form: ValueShiftUp(@Chart@#LookbackBars#,#MinimumGap#)
+    groups: []
+    archetypes: {}
+    help: 'Strong bullish regime: current session''s VAL sits entirely above the prior session''s VAH. The entire value area has shifted higher, indicating aggressive acceptance of higher prices. Prefer long setups—buy pullbacks into the new value area.'
+Vortex:
+  VortexChangesTrendDown:
+    roles: [signal]
+    origin: native
+    form: Vortex(@Chart@#Period#)[#Shift#] Changes Trend Down
+    groups: []
+    archetypes: {}
+    help: Is triggered if Vortex changes direction downwards
+  VortexChangesTrendUP:
+    roles: [signal]
+    origin: native
+    form: Vortex(@Chart@#Period#)[#Shift#] Changes Trend UP
+    groups: []
+    archetypes: {}
+    help: Is triggered if Vortex changes direction upwards
+  VortexDowntrend:
+    roles: [signal]
+    origin: native
+    form: Vortex(@Chart@#Period#)[#Shift#] is In Down Trend
+    groups: []
+    archetypes: {}
+    help: Is triggered when Vortex is in downtrend
+  VortexUptrend:
+    roles: [signal]
+    origin: native
+    form: Vortex(@Chart@#Period#)[#Shift#] is in Up Trend
+    groups: []
+    archetypes: {}
+    help: Is triggered when Vortex is in uptrend
+WAE:
+  CBlock_WAEPosAboveExplosion:
+    roles: [signal]
+    origin: own
+    form: WAEPosAboveExplosion
+    groups: []
+    archetypes: {}
+  CBlock_WAEPosAboveExplosion_2:
+    roles: [signal]
+    origin: own
+    form: WAENegAboveExplosion
+    groups: []
+    archetypes: {}
+  CBlock_WAEPosAboveExplosion_2_2:
+    roles: [signal]
+    origin: own
+    form: WAENegRisingExplosionRisingXBars
+    groups: []
+    archetypes: {}
+  CBlock_WAEPosAboveExplosion_2_2_2:
+    roles: [signal]
+    origin: own
+    form: WAEPosRisingExplosionRisingXBars
+    groups: []
+    archetypes: {}
+  CBlock_WAEPosAboveExplosion_2_2_3:
+    roles: [signal]
+    origin: own
+    form: WAENegBelowExplosionXBars
+    groups: []
+    archetypes: {}
+  CBlock_WAEPosAboveExplosion_2_2_3_2:
+    roles: [signal]
+    origin: own
+    form: WAEPosBelowExplosionXBars
+    groups: []
+    archetypes: {}
+  CBlock_WAEPosAboveExplosion_2_3:
+    roles: [signal]
+    origin: own
+    form: WAEPosWaeExplosionRisingXBars
+    groups: []
+    archetypes: {}
+  CBlock_WAEPosAboveExplosion_2_3_2:
+    roles: [signal]
+    origin: own
+    form: WAENegWaeExplosionRisingXBars
+    groups: []
+    archetypes: {}
+Wave Trend:
+  WaveTrendMainChangesDown:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if WaveTrend Main changes direction downwards
+  WaveTrendMainChangesUp:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if WaveTrend Main changes direction upwards
+  WaveTrendMainCrossAbove:
+    roles: [signal]
+    origin: native
+    form: 'WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  WaveTrendMainCrossAboveSignal:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] crosses above WaveTrend.Signal
+    groups: []
+    archetypes: {}
+  WaveTrendMainCrossAboveZero:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] crosses above 0
+    groups: []
+    archetypes: {}
+  WaveTrendMainCrossBelow:
+    roles: [signal]
+    origin: native
+    form: 'WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  WaveTrendMainCrossBelowSignal:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] crosses below WaveTrend.Signal
+    groups: []
+    archetypes: {}
+  WaveTrendMainCrossBelowZero:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] crosses below 0
+    groups: []
+    archetypes: {}
+  WaveTrendMainFalling:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if WaveTrend Main is falling
+  WaveTrendMainHigher:
+    roles: [signal]
+    origin: native
+    form: 'WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  WaveTrendMainHigherSignal:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] > WaveTrend.Signal
+    groups: []
+    archetypes: {}
+  WaveTrendMainHigherZero:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] > 0
+    groups: []
+    archetypes: {}
+  WaveTrendMainLower:
+    roles: [signal]
+    origin: native
+    form: 'WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  WaveTrendMainLowerSignal:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] < WaveTrend.Signal
+    groups: []
+    archetypes: {}
+  WaveTrendMainLowerZero:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] < 0
+    groups: []
+    archetypes: {}
+  WaveTrendMainRising:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Main[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if WaveTrend Main is rising
+  WaveTrendSignalFalling:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Signal[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if WaveTrend Signal is falling
+  WaveTrendSignalRising:
+    roles: [signal]
+    origin: native
+    form: WaveTrend(@Chart@#ChannelLength#,#AverageLength#).Signal[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if WaveTrend Signal is rising
+Williams PR:
+  WPRChangesDown:
+    roles: [signal]
+    origin: native
+    form: Williams%R(@Chart@#Period#)[#Shift#] changes direction downwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Williams%R changes direction downwards
+  WPRChangesUp:
+    roles: [signal]
+    origin: native
+    form: Williams%R(@Chart@#Period#)[#Shift#] changes direction upwards
+    groups: []
+    archetypes: {}
+    help: Is triggered if Williams%R changes direction upwards
+  WPRCrossDown:
+    roles: [signal]
+    origin: native
+    form: 'Williams%R(@Chart@#Period#)[#Shift#] crosses below #Level#'
+    groups: []
+    archetypes: {}
+  WPRCrossUp:
+    roles: [signal]
+    origin: native
+    form: 'Williams%R(@Chart@#Period#)[#Shift#] crosses above #Level#'
+    groups: []
+    archetypes: {}
+  WPRFalling:
+    roles: [signal]
+    origin: native
+    form: Williams%R(@Chart@#Period#)[#Shift#] is falling
+    groups: []
+    archetypes: {}
+    help: Is triggered if Williams%R is falling
+  WPRHigher:
+    roles: [signal]
+    origin: native
+    form: 'Williams%R(@Chart@#Period#)[#Shift#] > #Level#'
+    groups: []
+    archetypes: {}
+  WPRLower:
+    roles: [signal]
+    origin: native
+    form: 'Williams%R(@Chart@#Period#)[#Shift#] < #Level#'
+    groups: []
+    archetypes: {}
+  WPRRising:
+    roles: [signal]
+    origin: native
+    form: Williams%R(@Chart@#Period#)[#Shift#] is rising
+    groups: []
+    archetypes: {}
+    help: Is triggered if Williams%R is rising

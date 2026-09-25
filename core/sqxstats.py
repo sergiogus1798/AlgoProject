@@ -20,6 +20,7 @@ NAMED = 100
 WIDTH = {1: ("i", ">i", 4), 2: ("l", ">q", 8), 3: ("f", ">f", 4)}
 COLUMNS = json.loads((Path(__file__).parent / "sqxstats_columns.json").read_text(encoding="utf-8"))
 
+_RESULT = re.compile(r'<Result resultKey="([^"]*)"')
 _BLOCK = re.compile(r'<stats_LQ1_direction_DD_(-?\d+)_L1_pl_DD_(\d+)_L1_sample_DD_(\d+)_L1__RQ1_'
                     r'[^>]*>\s*<SQStats version="\d+" e="b64">([^<]+)</SQStats>')
 
@@ -50,20 +51,55 @@ def records(blob: str) -> dict:
     return out
 
 
-def stats(path: Path) -> dict:
-    """Metrics SQX stored in a strategy's main result, per sample type.
+def results(path: Path) -> list[str]:
+    """Every result key the strategy carries, in the order SQX wrote them.
 
     Args:
         path: A .sqx file.
 
     Returns:
+        The `resultKey` of each `<Result>` block: "Portfolio", "Main: <feed>/<TF>" and one
+        "AdditionalMarket: <feed>/<TF>: …" per cross-check market. A strategy that was
+        never retested on a second market carries only its Main one.
+    """
+    xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
+    return _RESULT.findall(xml)
+
+
+def stats(path: Path, result: str = "Main") -> dict:
+    """Metrics SQX stored in one of a strategy's results, per sample type.
+
+    Args:
+        path: A .sqx file.
+        result: Which `<Result>` block to read, by the start of its key: "Main" for the
+            symbol the strategy trades, "Portfolio" for every market summed,
+            "AdditionalMarket: <feed>" for one cross-check market.
+
+    Returns:
         {sample type: {metric name: value}} for the Both/Money direction, keyed by the
         IS/OOS/FULL constants. These are the frozen values SQX shows in the databank --
         see knowhow/08-columns.md -- not a recomputation.
+
+        🔬 **The blocks are scoped, and they have to be** (2026-09-24, measured on
+        `XAUUSD/Retest Markets - Family/Strategy 10.16.41.sqx`): a strategy retested on two
+        extra markets carries FOUR `<Result>` sections, each with its own SQStats blobs.
+        Reading the file whole mixes them, last one winning. Scoped, each section's
+        `NetProfit` reproduces that result's own `dailyEquity.bin` to the cent -- Main
+        4,974.86, silver -14,352.24, Brent -14,977.61 -- and Portfolio is their sum.
+
+    Raises:
+        KeyError: The file has no such result.
     """
     xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
+    cuts = [(m.start(), m.group(1)) for m in _RESULT.finditer(xml)]
+    at = next((i for i, (_, key) in enumerate(cuts) if key.startswith(result)), None)
+    if at is None:
+        raise KeyError(f"{path.name} no lleva el resultado {result!r}: "
+                       f"{[k for _, k in cuts]}")
+    end = cuts[at + 1][0] if at + 1 < len(cuts) else len(xml)
     return {int(sample): records(blob)
-            for direction, pl, sample, blob in _BLOCK.findall(xml) if direction == "0"}
+            for direction, pl, sample, blob in _BLOCK.findall(xml[cuts[at][0]:end])
+            if direction == "0"}
 
 
 def equity(path: Path, result: str = "Main") -> pd.Series:

@@ -54,7 +54,9 @@ def load(symbol: str) -> dict:
     base = policy()
     data = yaml.safe_load((SYMBOLS / f"{symbol}.yaml").read_text(encoding="utf-8"))
     mine = (base["segments"].get(symbol) or {})
-    segments = {name: {**spec, **(mine.get(name) or {})}
+    # `from`/`to` first: an asset with no block yet in _policy.yaml — one just added, or
+    # one that arrived as a cross-market feed — has undecided windows, not missing keys.
+    segments = {name: {"from": None, "to": None, **spec, **(mine.get(name) or {})}
                 for name, spec in base["segments_default"].items()}
     return {**base, **data, "segments": segments, "data": mine.get("data")}
 
@@ -148,19 +150,39 @@ def sqx_settings(data: dict, segment: str) -> dict:
                      "short": use("swap_short"), **data["swap"]}}
 
 
-def mc_retest(data: dict) -> dict:
+def mc_retest(data: dict, segment: str = "build") -> dict:
     """The spread and slippage ranges the MC Retest task must randomise within.
 
     Args:
         data: One asset as load() returned it.
+        segment: Which segment's costs the default multiples are read against — the one the
+            MC Retest tasks run on.
 
     Returns:
-        {"spread": {"min", "max"}, "slippage": {"min", "max"}} in points, per this asset's
-        own declaration. Both are absolute point ranges and not multiples of the real
-        spread, so a range is only meaningful at the instrument's own scale — SQX's factory
-        1.0-5.0 sorts between 1 and 5 points on an instrument whose spread is 1100.
+        {"spread": {"min", "max", "source"}, ...} in points. A bound the asset declares is
+        used as written; a null one falls back to `mc_retest.default_multiples` of
+        `_policy.yaml` times the cost the backtest itself runs at, and `source` says which
+        of the two it was.
+
+    Absolute points is the only unit SQX accepts, so a multiple is resolved here rather than
+    stored: a range is only meaningful at the instrument's own scale, and SQX's factory
+    1.0-5.0 is between 1 and 5 points on an instrument whose spread is 1100.
     """
-    return {k: {"min": v["min"], "max": v["max"]} for k, v in data["mc_retest"].items()}
+    policy = _read(POLICY)["mc_retest"]["default_multiples"]
+    costs = {"spread": sqx_settings(data, segment)["defaultSpread"],
+             "slippage": sqx_settings(data, segment)["defaultSlippage"]}
+    out = {}
+    for name, span in data["mc_retest"].items():
+        if span["min"] is not None and span["max"] is not None:
+            out[name] = {**{k: span[k] for k in ("min", "max")}, "source": "declarado"}
+            continue
+        factor, cost = policy.get(name), costs.get(name)
+        if factor is None or cost is None:
+            out[name] = {"min": span["min"], "max": span["max"], "source": "sin decidir"}
+            continue
+        out[name] = {"min": round(factor["min"] * cost, 6), "max": round(factor["max"] * cost, 6),
+                     "source": f"{factor['min']}x-{factor['max']}x el {name} de `{segment}`"}
+    return out
 
 
 def markets(symbol: str) -> dict:
@@ -174,6 +196,20 @@ def markets(symbol: str) -> dict:
         Empty dict when the asset is not a declared main.
     """
     return _read(MARKETS).get(symbol, {})
+
+
+def symbol_for(feed: str) -> str | None:
+    """Which asset file declares this SQX feed.
+
+    Args:
+        feed: SQX symbol name, e.g. "USDJPY_DukasM1_the5ers".
+
+    Returns:
+        The asset name, or None when no file claims it. Lets a study that only knows the
+        feed it read say whose costs its numbers carry, instead of naming one asset in a
+        sentence that every asset then gets.
+    """
+    return next((s for s in symbols() if load(s)["sqx_symbol"] == feed), None)
 
 
 def special_notes() -> list[Path]:

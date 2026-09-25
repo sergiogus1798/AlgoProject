@@ -29,34 +29,46 @@ def panel(work: Path, period: str) -> pd.DataFrame:
     return daily.resample(period).sum().iloc[:-1]
 
 
-def split(work: Path) -> str:
-    """The in-sample / out-of-sample boundary this batch was retested on.
+def split(work: Path, mode: str = "oos1_oos2") -> str:
+    """The in-sample / out-of-sample boundary this batch is being read at.
 
     Args:
         work: The batch directory.
+        mode: Which reading of the split — `oos1_oos2` puts the boundary at the first day
+            of `oos1`, `oos2_only` at the first day of `oos2`.
 
     Returns:
-        The first out-of-sample day, as `sqx.variants.equity` recorded it. Read from the
-        harvest rather than restated in this study's own config: two files naming one
-        date is how they come to disagree.
+        The first out-of-sample day, taken from the spans `sqx.variants.equity` measured
+        off the curves themselves. Read from the harvest rather than restated in this
+        study's own config: two files naming one date is how they come to disagree.
+
+        ⚠️ The CSCV proper does not use this — `cscv.run` splits the history its own 924
+        ways and never looks at the declared boundary, so the PBO is the same number under
+        both modes. What does move is the four chronological numbers computed beside it:
+        the cost of each selection rule, the deflated Sharpe, the count of independent
+        trials and the drift.
     """
-    return json.loads((work / "equity.json").read_text(encoding="utf-8"))["split"]
+    found = json.loads((work / "equity.json").read_text(encoding="utf-8"))
+    first = {"oos1_oos2": "oos1", "oos2_only": "oos2"}[mode]
+    return found["windows"][first][0]
 
 
-def usable(wide: pd.DataFrame, metrics: pd.DataFrame, min_trades: int) -> pd.DataFrame:
+def usable(wide: pd.DataFrame, metrics: pd.DataFrame, min_trades: int,
+           cols: dict) -> pd.DataFrame:
     """Narrow the panel to the variants the correlation study already accepted.
 
     Args:
         wide: What `panel` returned.
         metrics: Contract C3, the manifest joined to the retested panel.
         min_trades: A variant trading less than this in either sample is dropped.
+        cols: What `measure.correlation.columns` returned.
 
     Returns:
         The same frame with only the columns that survive `correlation.points`, so the rho
         and the PBO are two statements about one set of points rather than two samples
         that happen to share a name.
     """
-    kept = set(correlation.points(metrics, min_trades)["variant_id"])
+    kept = set(correlation.points(metrics, min_trades, cols)["variant_id"])
     return wide[[c for c in wide.columns if c in kept]]
 
 

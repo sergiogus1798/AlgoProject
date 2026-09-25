@@ -17,6 +17,9 @@ configuration and its own open questions:
 | `retest/` | which single perturbed input breaks it: the cost of entering, the fill, its own parameters, or the history it saw? |
 | `walkForwardMatrix/` | does what optimises well predict what does well afterwards, or does re-optimising select for failure? |
 | `sppUltra/` | which parameters move the result, which are provably dead, and does this family deserve 5,000 designed variants? |
+| `profitShape/` | how few trades and how few periods the result rests on, whether the trades are independent, and whether the mean changed inside the sample |
+| `entryQuality/` | does the entry signal itself predict favourable movement, and what does arriving a few bars late cost? |
+| `parameterCloud/` | once those variants exist: is the chosen point a lucky spike or a plateau, who really moves the result, and does the surface keep its shape period by period? |
 
 This is not the `analysis/` + `reports/` split that `tasks/` uses, and the difference is deliberate.
 A population study is one pipeline with many renderings; a strategy study is one question with its

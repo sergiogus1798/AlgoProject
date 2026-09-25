@@ -4,7 +4,7 @@
 import argparse
 
 from core import exportdrv, manifest
-from core.paths import MASTER, metrics_export
+from core.paths import MASTER, databank_dir, metrics_export, worker_dir
 
 
 def main() -> None:
@@ -12,6 +12,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
+    ap.add_argument("--role", help="headless install holding the project; "
+                    "omit for the master")
     ap.add_argument("--view", default="Export Data View",
                     help="databank view on the master; its sampleTypes become (IS)/(OOS) columns")
     a = ap.parse_args()
@@ -23,12 +25,13 @@ def main() -> None:
         print(f"removed {stale.name}")
 
     csv = out / "metrics.csv"
-    seen = exportdrv.metrics(a.project, a.databank, a.view, csv)
+    install = worker_dir(a.role) if a.role else MASTER
+    seen = exportdrv.metrics(databank_dir(a.project, a.databank, install), a.view, csv)
 
     rows = sum(1 for _ in open(csv, encoding="utf-8")) - 1
     columns = open(csv, encoding="utf-8").readline().count(";") + 1
     manifest.write(out,
-                   {"install": str(MASTER), "project": a.project,
+                   {"install": str(install), "project": a.project,
                     "databank": a.databank, "view": a.view},
                    f"export_metrics.py --project {a.project} --databank {a.databank} "
                    f"--view '{a.view}'",

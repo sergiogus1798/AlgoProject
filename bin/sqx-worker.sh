@@ -171,8 +171,16 @@ case "${1:-}" in
   stop)
     running || { echo "$ROLE not running"; exit 0; }
     curl -sg -m 30 "http://localhost:${CLI_PORT}/call?cmd=-exit" >/dev/null 2>&1
-    for _ in $(seq 1 20); do running || break; sleep 1; done
-    running && echo "$ROLE did not stop" || echo "$ROLE stopped"
+    # The shutdown sync is what writes the databanks to disk, and it is NOT quick: a
+    # 500-strategy databank took over 20 s on its own, and with three of them the JVM was
+    # still writing when the old 20-second wait gave up. It did not kill anything — it
+    # returned "did not stop" and the next command read a half-written databank: 211 of 500
+    # .sqx, no error anywhere (measured 2026-09-24). So wait for the process to actually go.
+    echo -n "stopping $ROLE"
+    for _ in $(seq 1 300); do running || break; echo -n "."; sleep 1; done
+    echo
+    running && echo "⚠️ $ROLE STILL RUNNING after 5 min — do not read its databanks yet" \
+            || echo "$ROLE stopped"
     # The worker just released its log. Quiescent install = safe moment to prune.
     "$ROOT/bin/sqx-log-prune.sh" --auto || true
     ;;

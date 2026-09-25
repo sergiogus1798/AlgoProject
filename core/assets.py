@@ -62,7 +62,7 @@ def report(symbol: str) -> str:
                      f"inclusive (dateFrom {a}, dateTo {b}){mark}")
     for name, r in mc_retest(data).items():
         span = f"{r['min']} a {r['max']}" if r["min"] is not None else "SIN DECIDIR"
-        lines.append(f"- **MC Retest {name}**: sortea {span} puntos "
+        lines.append(f"- **MC Retest {name}**: sortea {span} puntos — {r['source']} "
                      f"(SQX lleva hoy `{data['mc_retest'][name]['sqx_now']}`)")
     for cat, feeds in (markets(symbol).get("categories") or {}).items():
         lines.append(f"- **retest {cat}**: {', '.join(m['feed'] for m in feeds) or '(vacío)'}")
@@ -129,6 +129,12 @@ def write_dataranges() -> list[str]:
         else:
             new = f"    data: null   # \u26a0\ufe0f {feed} NO EXISTE en SQX \u2014 no hay hist\u00f3rico que partir"
         block = re.search(rf"^  {symbol}:\n    data: .*$", text, re.M)
+        # A symbol with a file but no `segments:` entry is a gap in the declaration, not a
+        # crash: the windows below `data:` are the owner's decision and are not invented here.
+        if not block:
+            changed.append(f"{symbol}: ⚠️ no está en `segments:` de _policy.yaml — "
+                           "sin tramos declarados, no se le puede refrescar el rango")
+            continue
         old = block.group().split("\n")[1]
         if old != new:
             changed.append(f"{symbol}: {old.strip()}  \u2192  {new.strip()}")

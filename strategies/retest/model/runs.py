@@ -55,6 +55,14 @@ def _zscore(signs: np.ndarray) -> float:
         it the reconstruction misses its stored value by exactly 0.5 / sigma every time.
         Zero when there are too few trades, or when every trade went the same way.
     """
+    # 🔬 A flat trade is a WIN here, measured 2026-09-24 on USDJPY H1 against SQX's own
+    # stored ZScore: zero-as-win lands within 0.003 on all five strategies that have one,
+    # zero-as-loss and dropping it do not. Note this is NOT the convention WinningPct uses,
+    # where the same trade is half a win -- two metrics, two rules, both measured.
+    # Reading the sign array as it comes was also a bug in its own right: `n` excluded the
+    # flat trades while the run count still saw their sign flips, so one of them added two
+    # phantom runs to a denominator that had never counted it.
+    signs = np.where(signs == 0, 1, signs)
     wins, losses = int((signs > 0).sum()), int((signs < 0).sum())
     n = wins + losses
     if n < 3 or not wins or not losses:

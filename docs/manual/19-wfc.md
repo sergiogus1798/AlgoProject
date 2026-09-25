@@ -90,8 +90,69 @@ La corrida entera de 2.000, arrancando con el custodio apagado: **2 min 16 s y 2
 python3 -m sqx.variants.make    --brief <design_brief.json> --project XAUUSD --sample 11
 python3 -m sqx.variants.execute --work <dir>     # carga en el custodio, retestea, exporta
 python3 -m sqx.variants.collect --work <dir>     # une el panel al manifiesto → metrics.parquet
-python3 -m strategies.walkForwardCorrelation.report --work <dir>
+python3 -m sqx.variants.equity  --work <dir>     # las curvas diarias de los 3 tramos, unidas
+python3 -m strategies.walkForwardCorrelation.report --work <dir> [--split oos2_only]
 ```
+
+### El suelo de operaciones: 50, y es duro
+
+**Ningún backtest con menos de 50 operaciones en todo el periodo (`build`+`oos1`+`oos2`) entra en
+ninguna estadística.** Decisión del dueño, 2026-09-24. Está en `wfc.min_trades_total` de
+`assets/_build.yaml` y lo aplica `collect.py`: lo que no llega **no se escribe** en
+`metrics.parquet`, así que ningún estudio de aguas abajo puede volver a meterlo por descuido.
+
+Se cuenta por **variante × mercado**, porque un backtest es una estrategia corriendo en un mercado.
+Una variante que opera 400 veces en oro y 9 en plata tiene un resultado y un no-resultado:
+
+```
+P00003  Main      300 operaciones   usable=True
+P00003  XAGUSD      9 operaciones   usable=False
+```
+
+No desaparece sin decirlo. `collect.py` avisa:
+
+```
+⚠️  1 variantes y 12 celdas (variante x mercado) operan menos de 50 veces en
+    build+oos1+oos2 y quedan FUERA de toda estadistica. Siguen en segments.parquet
+    con usable=False, por si hace falta mirarlas.
+```
+
+y el recuento queda en `collected.json` (`thin`, `thin_cells`, `floor`) y en la nota del `wfc.html`.
+
+⚠️ **Hay un segundo suelo, y es otra cosa.** `min_trades: 30` en el `config.yaml` del WFC mira cada
+**lado** de la partición por separado: una variante puede sumar 200 operaciones y llevar sólo 4 en
+el tramo que hace de fuera de muestra. Actúa sobre lo que ya pasó el duro, y el informe dice cuántos
+puntos cayó cada uno:
+
+```
+PROGRESS 100 rho 0.19 — no_fiable (1001 puntos; 37 fuera por pocas operaciones en total,
+                                   962 por pocas en un lado)
+```
+
+Con `split_mode: oos2_only` ese segundo suelo aprieta más, porque el lado fuera de muestra son 3,7
+años en vez de 10. Si se come el lote, se baja **ése**, no el duro.
+
+### Los tres tramos, y las dos maneras de leerlos
+
+El lote se retestea **una vez** en tres tareas de SQX —`build`, `oos1` y `oos2`, cada una a sus
+propios costes: `docs/manual/37-wfc-retest.md`— y de ahí salen tres paneles. La cosecha los une:
+
+- **suma lo que es sumable** (neto, número de operaciones, beneficio y pérdida brutos), así que el
+  profit factor de una unión es `Σ bruto ganado / Σ bruto perdido` y no el promedio de tres profit
+  factors, que pesaría un tramo de cinco años igual que uno de diez;
+- **recalcula lo que no lo es** (drawdown y Sharpe) sobre la curva diaria ya unida, porque una unión
+  puede cruzar un valle más profundo que cualquiera de sus partes.
+
+Y con eso, el mismo lote responde a **dos preguntas distintas** (decisión del dueño, 2026-09-24):
+
+| modo | dentro de muestra | fuera de muestra | qué pregunta |
+|---|---|---|---|
+| `oos1_oos2` | `build` | `oos1` + `oos2` | la normal: ¿lo que se construyó predice todo lo que vino después? |
+| `oos2_only` | `build` + `oos1` | `oos2` | **la estricta**: dando por vistos los dos primeros tramos, ¿sigue apareciendo en el que no ha mirado nadie? |
+
+El default está en `strategies/walkForwardCorrelation/config.yaml` (`split_mode`), hoy `oos2_only`.
+`--split` lo pisa para una ejecución suelta. **Cambiar de modo no re-corre ningún backtest**: las
+columnas de los dos ya están en `metrics.parquet`.
 
 ### El reconocimiento SPP, dentro del proceso
 
@@ -167,8 +228,11 @@ Todo en `AlgoData/pipeline/<proyecto>/<estrategia>/`:
 | `plan.csv` | el diseño completo: qué combinaciones y de qué estrato |
 | `sqx/P*.sqx` | las estrategias fabricadas. **Es lo único pesado**, y lo que se borra al final |
 | `manifest.parquet` | contrato C2: qué es cada fichero, leído **del disco**, no de lo que se pretendía |
-| `retest.csv` | el panel tal y como lo escupe SQX |
-| `metrics.parquet` | contrato C3: el panel unido al manifiesto. Es la tabla del estudio |
+| `retest_build.csv`, `retest_oos1.csv`, `retest_oos2.csv` | el panel de cada tramo, tal y como lo escupe SQX |
+| `equity.parquet` | la P&L diaria del activo principal, **los tres tramos unidos** en una sola serie continua |
+| `equity_markets.parquet` | lo mismo para cada mercado adicional, en formato largo (fecha, variante, mercado, tramo) |
+| `segments.parquet` | las 82 métricas que SQX guarda, por variante **× tramo × mercado**, más las uniones y el `usable` de cada celda. **Aquí sí están los descartados** |
+| `metrics.parquet` | contrato C3: las métricas de cabecera por tramo y por unión, unidas al manifiesto, **sin los backtests que no llegan a 50 operaciones**. Es la tabla del estudio |
 | `wfc.html` | **el gráfico**. Ábrelo en el navegador |
 | `wfc.json` | rho, su intervalo, el veredicto y cuántos puntos se descartaron |
 | `state.json` | el libro mayor. Sobrevive al borrado de las variantes |
@@ -182,7 +246,7 @@ Por pantalla ves esto:
    | PROGRESS 2 despertando el custodian
    | PROGRESS 95 2000 de 2000 reteseadas
    | custodian stopped
-   | PROGRESS 100 2000 reteseadas, panel en retest.csv
+   | PROGRESS 100 2000 variantes x 3 tramos, build: 2000 en disco, oos1: 2000 en disco, oos2: 2000 en disco
   collected  python3 -m sqx.variants.collect --work .../Strategy_17-9-39
    | PROGRESS 100 4 resultados distintos entre 5 controles
   wfc        python3 -m strategies.walkForwardCorrelation.report --work .../Strategy_17-9-39

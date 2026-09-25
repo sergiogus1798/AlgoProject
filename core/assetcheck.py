@@ -124,11 +124,16 @@ def mc_pending(data: dict) -> list[str]:
         data: One asset as load() returned it.
 
     Returns:
-        Names of the ranges still carrying a null bound. These do NOT block authoring: an
-        undecided range only makes that one MC Retest task uninterpretable, and the report
-        says so rather than stopping the work.
+        Names of the ranges that resolve to nothing at all. A range the asset leaves null
+        now falls back to `mc_retest.default_multiples` of `_policy.yaml`, so this is empty
+        unless the policy has no multiple for it either. These never block authoring: an
+        undecided range only makes that one MC Retest task uninterpretable.
     """
-    return [k for k, v in data["mc_retest"].items() if v["min"] is None or v["max"] is None]
+    # Imported here and not at the top: assetcheck is the pure-file half and assetdata reads
+    # the policy, so importing it up here would make the two modules circular.
+    from core.assetdata import mc_retest
+
+    return [k for k, v in mc_retest(data).items() if v["min"] is None or v["max"] is None]
 
 
 def cost_gap(data: dict, segment: str) -> list[str]:

@@ -102,9 +102,24 @@ def main() -> None:
     if not low < np.median(g["identical"][0]) < high:
         failures.append("bootstrap_ci no contiene la mediana que remuestrea")
 
+    # A1 on a grid whose answer is known: a lone spike over a flat field. The rank must be
+    # 1 and the plateau fraction must be the spike alone; on a broad plateau, the reverse.
+    spike = np.concatenate([np.zeros(99), [10.0]])
+    if plateau.rank_of(spike, 10.0) != 1.0 or plateau.plateau_fraction(spike, 10.0, 0.2) != 0.01:
+        failures.append("rank_of/plateau_fraction no ven un pico aislado como tal")
+    broad = np.concatenate([np.zeros(50), np.full(50, 10.0)])
+    if plateau.plateau_fraction(broad, 10.0, 0.2) != 0.5:
+        failures.append("plateau_fraction no ve una meseta ancha")
+    if plateau.shrunk(spike) != 0.0:
+        failures.append("shrunk deberia devolver la mediana del entorno, no el punto elegido")
+    # On a negative metric the (1-delta)*ref form would put the floor ABOVE the reference.
+    if plateau.plateau_fraction(np.array([-5.0, -3.0, -1.0]), -3.0, 0.2) != 2 / 3:
+        failures.append("plateau_fraction se rompe con una metrica negativa")
+
     print("\n".join(failures) or
           "ok: la rejilla barajada da HL 0, Cliff 0, misma meseta y rho 0 — solo el "
-          "emparejamiento la ve; n_eff cuenta backtests y los centinelas no pasan")
+          "emparejamiento la ve; n_eff cuenta backtests, los centinelas no pasan y A1 "
+          "distingue un pico aislado de una meseta")
     sys.exit(1 if failures else 0)
 
 

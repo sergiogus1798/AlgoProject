@@ -1,13 +1,46 @@
 # Every tunable of the walk-forward correlation study.
 
-# A combination that barely trades produces a net profit one or two trades wide. Left in,
-# a handful of them decide a correlation computed over a dozen points. 30 is the floor SQX
-# itself uses in its own acceptance conditions for a sample of this length.
+# ⚠️ Este suelo es EL SEGUNDO, y actúa sobre lo que ya sobrevivió al primero. El duro está
+# en `wfc.min_trades_total` de `assets/_build.yaml`: 50 operaciones en TOTAL sobre
+# build+oos1+oos2, por variante y por mercado, y lo que no llega no entra en
+# `metrics.parquet` — o sea que no llega aquí siquiera (dueño, 2026-09-24).
+#
+# Éste mira cada LADO de la partición por separado: una variante puede sumar 200
+# operaciones y llevar sólo 4 en el tramo que hace de fuera de muestra, y entonces su punto
+# mide cuatro operaciones por mucho que el total sea sano. 30 es el suelo que usa el propio
+# SQX en sus condiciones de aceptación para una muestra de esta longitud.
+#
+# ⚠️ Ojo con `split_mode: oos2_only`: ahí el lado fuera de muestra es sólo `oos2`, 3,7 años,
+# y pedirle 30 operaciones es bastante más duro que pedírselas a los 10 años de `build`.
+# El informe dice cuántos puntos cayó cada suelo; si el segundo se come el lote, bájalo
+# aquí y no toques el duro.
 min_trades: 30
 
 # The rho below which ranking by in-sample profit is not worth doing. Not a law: it is the
 # owner's threshold and changing it re-runs only the verdict, never the measurement.
 rho_floor: 0.30
+
+# ─── Las dos lecturas de un mismo lote ────────────────────────────────────────────────
+# Decisión del dueño, 2026-09-24, y es exactamente la razón de tener `oos2` en un pedestal:
+# el mismo lote retesteado una vez se puede leer de dos maneras, y las dos son legítimas.
+#
+#   oos1_oos2   IS = build,        OOS = oos1 + oos2   la pregunta normal: ¿lo que se
+#                                                       construyó predice todo lo que vino
+#                                                       después?
+#   oos2_only   IS = build + oos1, OOS = oos2          la estricta: dando por vistos los
+#                                                       dos primeros tramos, ¿sigue
+#                                                       apareciendo en el que no ha mirado
+#                                                       nadie? Es la que gasta el reservado.
+#
+# Cambiar esto NO re-corre ningún backtest: `sqx.variants.collect` deja las columnas de los
+# dos en `metrics.parquet`. `report.py --split <modo>` lo pisa para una ejecución suelta.
+#
+# ⚠️ El CSCV no cambia con esto, y está comprobado leyendo el código: `cscv.run` parte la
+# historia de sus 924 maneras y no mira la frontera declarada, así que el PBO es el MISMO
+# número en los dos modos. Lo que sí se mueve son los cuatro números cronológicos que van
+# al lado en el mismo informe: el coste de cada regla de selección, el Sharpe desinflado,
+# el número de pruebas independientes y el drift.
+split_mode: oos2_only
 
 # Rows kept from each end of the in-sample ranking when the batch is too big to tabulate.
 # The ends are what answers the question: did the in-sample winners stay winners?

@@ -1,0 +1,43 @@
+# Every tunable of the parameter-cloud study, in one place. Nothing below is hidden in code.
+#
+# These are DIAGNOSTIC thresholds, not gates: nothing here removes a strategy or replaces
+# theta-zero with a better clone. They are set before the cloud is read, and a threshold
+# moved after seeing the numbers is not a threshold.
+
+run:
+  symbol: XAUUSD            # whose segments say where the reserved oos2 starts
+  # The column every reading is taken on. Ret/DD is SQX's own Fitness, so it is the axis
+  # the builder optimised; (IS) because A1, A2 and A3 describe the search space, and the
+  # search happened in sample. It is not comparable between windows -- nothing here does.
+  metric: "Ret/DD Ratio (IS)"
+  min_trades: 30            # a variant trading less than this is not a point on a surface
+  exclude_strata: [canary]  # placed at the extremes on purpose; see inputs/README.md
+
+neighbourhood:              # A1
+  # Distance in LEVEL STEPS, not per cent: the cloud is discrete and was designed in
+  # levels, so a step means the same thing for a bar count of 3 and a period of 67.
+  radius: 2
+  delta: 0.20               # shortfall still counted as company, for pi(delta)
+
+surrogate:                  # A2 and A3
+  neighbours: 8             # nearest tuples the model-free roughness compares against
+  sobol_power: 12           # 2**12 base points; the cost is arithmetic, not SQX runs
+  seed: 0
+
+stability:                  # B2
+  period: YE                # calendar years. 2QE gives more resolution and fewer trades
+  min_active_days: 60       # median active days a period needs before it is read at all
+  top_share: 0.10           # the decile whose centroid is tracked
+
+ensemble:                   # C1
+  k: 8                      # plateau members in the diagnostic blend
+
+verdict:
+  rank_high: 0.95           # above this the origin is top of its neighbourhood
+  plateau_low: 0.15         # below this it has no company there
+  roughness_high: 0.35      # 1 - r2 of the smooth model
+  local_roughness_high: 0.35  # neighbour disagreement, in IQRs
+  slope_high: 1.0           # gradient norm at theta-zero, metric per unit range
+  rho_low: 0.20             # median period-to-period Spearman
+  drift_high: 0.20          # median centroid movement, share of each parameter's range
+  fraction_low: 0.50        # the worst period's share of profitable clones

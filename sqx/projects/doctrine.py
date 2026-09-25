@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Apply the owner's build doctrine to every task of a project, identically."""
 
+import zipfile
+from pathlib import Path
+
 from core.assetdata import doctrine, sqx_settings
 from sqx.projects import buildrules as rules
 from sqx.projects import tasksettings as settings
@@ -77,6 +80,42 @@ def blockers(data: dict, timeframe: str) -> list[str]:
         out.append(f"{timeframe}: timeframe desconocido. Conocidos: "
                    + ", ".join(rules.TF_MINUTES))
     return out
+
+
+def borrow_session(members: dict[str, bytes], session: str, source: Path) -> str:
+    """Bring one session definition in from another project, so the clone can trade its asset.
+
+    Args:
+        members: The .cfx contents by member name, patched in place. One task gains the
+            definition; `unify_sessions` is what then spreads it to the rest.
+        session: Session name, from the asset's file.
+        source: A project.cfx that defines it. Read only — never written, so a live install
+            may hold it open (hard rule 4 is about writing).
+
+    Returns:
+        The member that received it.
+
+    Raises:
+        SystemExit: When `source` does not define that session either. Nothing is invented:
+            the hours come from a project SQX itself produced, or the caller is told to
+            register the session in SQX first.
+
+    A donor frozen for one asset carries only that asset's sessions, so every project cloned
+    from it is stuck on a different asset until the hours arrive from somewhere. This is that
+    somewhere, and it is deliberately a copy of a real definition rather than a constructor:
+    a task naming a session it does not define trades the wrong hours in silence.
+    """
+    with zipfile.ZipFile(source) as z:
+        block = next((b for b in (settings.session_block(
+            z.read(n).decode("utf-8", "replace"), session)
+            for n in z.namelist() if n.endswith(".xml") and n != "config.xml") if b), None)
+    if not block:
+        raise SystemExit(f"{source} no define la sesión {session} tampoco. Hay que darla de "
+                         "alta en SQX — no se inventan horarios de mercado.")
+    target = next(n for n in members if n.endswith(".xml") and n != "config.xml")
+    members[target] = settings.add_session(
+        members[target].decode("utf-8"), block).encode("utf-8")
+    return target
 
 
 def unify_sessions(members: dict[str, bytes], session: str) -> list[str] | None:

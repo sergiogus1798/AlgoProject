@@ -21,6 +21,7 @@ config.yaml ─▶ inputs ─▶ calibrate ─▶ model ─▶ simulate ─▶ v
 | `stats.py` | What a run is worth, for the real one and for thousands at once, each with its good side | imported | P/L matrix → statistics |
 | `simulate.py` | The real run and its null runs, priced identically, in batches | imported | trades + bars + rung → statistics |
 | `verdict.py` | The empirical p, the attribution across the ladder, and every reason to distrust them | imported | statistics → p, channels, warnings |
+| `filter.py` | The random-filter benchmark: a filter against dropping the same share of trades at random | imported | two trade lists → p |
 | `one.py` | **One strategy against its monkeys, readable**: where it landed among them, where its edge came from, and the distribution drawn in text | `python3 -m nulls.one --project XAUUSD --databank MC_Trades --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.10.80"` | one strategy → three readings |
 | `report.py` | Every strategy of one export through every rung | `python3 -m nulls.report --project XAUUSD --databank MC_Trades --feed XAUUSD_DukasM1_Infinox` | export → `nulls.csv` |
 | `verify.py` | The two checks that must pass before a p is read | `python3 -m nulls.verify --project XAUUSD --databank MC_Trades --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.10.80"` | one strategy → three checks |
@@ -58,6 +59,19 @@ two lines. 🔬 On this corpus `open-open` reconciles at **0.999985** and the ru
 100 % of reported entry and exit prices are the open of their own bar. The fill is measured per
 strategy, never assumed, and `verdict.distrust()` says so out loud when it fails.
 
+## The filter benchmark is the same question asked of a rule
+
+`filter.py` does not place any trade. It takes the trades of a strategy **without** one condition
+and the trades of the same strategy **with** it, and asks whether the condition beat removing the
+same number of trades at random — the cheap half of the ablation test (`D1` of
+`docs/encargos/12-tests-estructurales.md`), which needs no SQX run at all. The statistics are per
+trade, never total profit: a filter changes the trade count, and totals always flatter whichever
+version traded more.
+
+Its input today is a pair of exports that differ by a parameter hardened far enough to act as a
+filter. The pair that would answer the question properly — the same strategy with a condition
+replaced by TRUE — needs the strategy's logic edited, which is that encargo.
+
 ## What is deliberately not handled
 
 - **Random placements may overlap**, where real trades never do. At this corpus's occupancy —
@@ -73,6 +87,35 @@ strategy, never assumed, and `verdict.distrust()` says so out loud when it fails
 - **`barrier.intrabar` cannot be calibrated on a corpus with no barriers.** It ships as
   `pessimistic` and `verify.py` proves the scan is *correct*, not that the convention is SQX's.
   The day a strategy carries a stop and a target, calibrating it against SQX comes first.
+
+## Known defects, measured and not yet fixed
+
+Owner's decisions of 2026-09-25, not yet implemented: a null run's drawdown is read **in exit
+order**; its swap follows **its own drawn hold** (for gold and indices a percentage of the notional
+per night, with the asset's weekday multiplier); random entries are **restricted to the hours the
+strategy trades**; and the test stays **per strategy**, with no population-wide null.
+
+- 🔬 **A null run's drawdown is accumulated in the real trades' order, not its own.**
+  `simulate.nulls()` reshapes the P/L to (runs, trades) in trade-index order, but the entries
+  were drawn at random, so `dd` and `retdd` read a shuffled sequence and lose the market's
+  clustering. On one strategy of `XAUUSD/MC_Trades` (632 trades, 2026-09-25), sorting each run
+  by exit bar raised the null's median drawdown from 27,442 to 29,038 and moved `p_dd` from
+  0.018 to 0.0084. `net`, `sharpe` and `pf` do not depend on order.
+- 🤔 **The cost follows the trade, not its drawn holding time.** `calibrate.charged()` folds swap
+  into each trade's cost, and the rungs that redraw the hold keep the old trade's swap.
+- 🔬 **`chunk` is a speed knob as well as a memory knob, and it should be set in trades, not
+  runs.** Swept 2026-09-25 on an idle machine, one pinned core, 2,500 draws, three strategies
+  (255 / 373 / 1,119 trades), every rung (`AlgoData/reports/perf-chunk-2026-09-25/`): the fastest
+  block holds **~130–220 k trade valuations** (10–17 MB of temporaries), about 28–30 ns per
+  trade. That is `chunk: 500` for 255–373 trades and 200 for 1,119. At 2,500 it is 1.5–2.2x
+  slower; below 50 the Python overhead per block shows. The shipped 500 is within 0–13 % of
+  the best on all three. An earlier single reading (36 ns at 50, 105 at 500) was taken while
+  another run held 12 cores and is not representative of an idle machine; it suggests that
+  under shared-L3 load the optimum moves smaller, which is untested. For `timing` and
+  `timing_sizing` the draws are identical at any chunk; for the two rungs that draw holds and
+  entries per block, changing it changes the stream.
+- 🔬 **Direction is not modelled**: P/L is `value × size × (exit − entry)`, long only. The whole
+  XAUUSD export is `Type = Buy`; a short strategy would be priced with the wrong sign.
 
 ## Before reading any number from it
 

@@ -4,9 +4,10 @@
 import re
 from datetime import date
 
-from core.assetdata import sqx_settings
+from core.assetdata import sqx_settings, window
 
 SETUP = re.compile(r"<Setup\b[^>]*>.*?</Setup>", re.S)
+SYMBOL = re.compile(r"<Symbol\b[^>]*?>")
 
 
 def bounds(data: dict, segment: str) -> tuple[str, str]:
@@ -23,6 +24,33 @@ def bounds(data: dict, segment: str) -> tuple[str, str]:
     seg = data["segments"][segment]
     at = lambda b, end: (date(b, 12, 31) if end else date(b, 1, 1)) if isinstance(b, int) else b
     return (f"{at(seg['from'], False):%Y.%m.%d}", f"{at(seg['to'], True):%Y.%m.%d}")
+
+
+def span(data: dict, segment: str, reserved_ok: bool = False) -> tuple[str, str, str]:
+    """A segment name or a `first..last` span as the window it means and who pays for it.
+
+    Args:
+        data: One asset as load() returned it.
+        segment: A segment name, e.g. "oos1", or a span with two dots, e.g. "build..oos1" —
+            ONE continuous window from the start of the first to the end of the last, the
+            same notation the MC Retest catalogue uses.
+        reserved_ok: Whether `oos2` is allowed. True only for the WFC and the WFM, which
+            are the two studies `_policy.yaml` reserves it for; every other caller leaves
+            it False so a catalogue edit cannot spend the segment by accident.
+
+    Returns:
+        (dateFrom, dateTo, costs segment). A span is priced at the LAST segment's costs:
+        it covers both samples and the oos spread is the dearer of the two declared, so it
+        is read at the pessimistic price.
+
+    Raises:
+        SystemExit: When the span names `oos2` and `reserved_ok` is False.
+    """
+    named = segment.split("..")
+    if "oos2" in named and not reserved_ok:
+        raise SystemExit(f"`{segment}` toca oos2, reservado al WFC y a la WFM — cada mirada "
+                         "lo gasta. Si de verdad hace falta, que lo diga el dueno.")
+    return (bounds(data, named[0])[0], bounds(data, named[-1])[1], named[-1])
 
 
 def one_setup(block: str, data: dict, segment: str) -> str:
@@ -60,6 +88,34 @@ def one_setup(block: str, data: dict, segment: str) -> str:
     return block
 
 
+def set_data_range(text: str, data: dict, span: tuple[int, int]) -> tuple[str, int]:
+    """Write which bars the task LOADS, which is a different place from which it trades.
+
+    Args:
+        text: A task XML.
+        data: One asset as load() returned it.
+        span: (dateFrom, dateTo) in epoch milliseconds.
+
+    Returns:
+        The task and how many <Symbol> entries were rewritten.
+
+    🔬 Measured 2026-09-24 on the frozen donor: in all 15 of its tasks the `<Resources>`
+    `<Symbol>` range and the `<Setup>` dates say the same thing, because the GUI keeps them
+    in sync. A task whose Setup asks for 2008-2026 while its Symbol still declares the
+    donor's 2018-2022 is asking to trade bars it never loaded, and nothing in SQX complains.
+    Only this asset's own entries are touched: an additional market keeps its own range.
+    """
+    def rewrite(m: re.Match) -> str:
+        """One <Symbol>, rewritten when it is this asset's feed."""
+        if f'name="{data["sqx_symbol"]}"' not in m.group(0):
+            return m.group(0)
+        one = re.sub(r'dateFrom="\d+"', f'dateFrom="{span[0]}"', m.group(0), count=1)
+        return re.sub(r'dateTo="\d+"', f'dateTo="{span[1]}"', one, count=1)
+
+    found = [m for m in SYMBOL.finditer(text) if f'name="{data["sqx_symbol"]}"' in m.group(0)]
+    return SYMBOL.sub(rewrite, text), len(found)
+
+
 def set_costs(text: str, data: dict, segment: str) -> tuple[str, int]:
     """Write the window and costs into every <Setup> of a task that trades this asset.
 
@@ -89,4 +145,5 @@ def set_costs(text: str, data: dict, segment: str) -> tuple[str, int]:
         done += 1
         return one_setup(m.group(0), data, segment)
 
-    return SETUP.sub(rewrite, text), done
+    text, _ = set_data_range(SETUP.sub(rewrite, text), data, window(data, segment))
+    return text, done

@@ -39,10 +39,13 @@ design_brief.json ─▶ design ─▶ build ─▶ manifest
 | `tuples.py` | The canonical form of a parameter tuple and its hash | imported | tuple → hash, columns |
 | `manifest.py` | Contract C2, built by reading the files back off the disk | imported | folder → parquet |
 | `execute.py` | Loads a batch into the custodian, runs the retest harness, exports the panel | `python3 -m sqx.variants.execute --work <dir>` | `.sqx` → `retest.csv` |
-| `collect.py` | Contract C3: joins the panel onto the manifest, and refuses a batch whose controls all returned the same number | `python3 -m sqx.variants.collect --work <dir>` | csv + parquet → `metrics.parquet` |
-| `equity.py` | Every variant's **per-day** P&L, read straight out of the retested `.sqx` with no SQX running | `python3 -m sqx.variants.equity --work <dir>` | `.sqx` → `equity.parquet` |
+| `collect.py` | Contract C3: per-segment and per-union metrics joined onto the manifest, plus `segments.parquet`; refuses a batch whose controls all returned the same number | `python3 -m sqx.variants.collect --work <dir>` | csv + parquet → `metrics.parquet` |
+| `equity.py` | Every variant's **per-day** P&L for the three legs and every cross-check market, joined into one continuous curve | `python3 -m sqx.variants.equity --work <dir>` | `.sqx` → `equity.parquet` |
 | `harness.py` | Rebuilds the worker's one-task harness from a donor task that is known to have run: SPP in sample, SPP out of sample, or a plain retest with a cross-market check | `python3 -m sqx.variants.harness --kind spp_is --project Retester --output SPPOut …` | donor task → the worker's `project.cfx` |
 | `spp.py` | Runs one mother's SPP reconnaissance on the custodian and leaves the profile where `export_spp` finds it | `python3 -m sqx.variants.spp --work <dir> --mother <sqx> --kind spp_is --chart '…'` | mother → profile + `spp_is.json` |
+| `scale.py` | **A different job in the same lane**: one mother's bar-unit parameters rescaled to another timeframe, as sibling `.sqx` plus the manifest of what moved. Not brief-driven -- read by `strategies/crossTF/` | `python3 -m sqx.variants.scale --mothers <dir> --out <dir> --targets H4` | mother → siblings + `scaling.parquet` |
+| `legs.py` | The three legs of the study — segment, task title and output databank — read from `wfc:` in `assets/_build.yaml` so the project and the harvest cannot disagree | imported | doctrine → legs, databank folders |
+| `united.py` | Per-segment, per-market metrics read straight out of the `.sqx`, and the exact union of any set of segments | imported | `.sqx` → long frame, unions |
 | `config.yaml` | Every tunable: the seed, the strata knobs, the canaries, the file shape | edited | — |
 
 ## The three boundaries, and why they are three

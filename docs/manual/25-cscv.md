@@ -90,8 +90,16 @@ Ret/DD crece con la longitud de la ventana (el retorno crece con el tiempo y el 
 su raíz), así que no sirve para comparar ventanas de distinta longitud. El Deflated Sharpe sigue
 siendo un Sharpe aunque ordenes por Sortino, porque está definido contra un máximo de Sharpes.
 
-**La frontera dentro/fuera de muestra no está ahí**: la escribe `equity.json` leyéndola del arnés
-que produjo los números, para que no haya dos ficheros diciendo dos fechas.
+**La frontera dentro/fuera de muestra no está ahí**: sale de los tramos que `equity.json` midió
+sobre las propias curvas, para que no haya dos ficheros diciendo dos fechas. Cuál de las dos se usa
+lo dice `split_mode` del mismo `config.yaml` — `oos2_only` pone la frontera al empezar `oos2`,
+`oos1_oos2` al empezar `oos1` (ver `19-wfc.md`).
+
+⚠️ **El PBO NO cambia entre los dos modos, y está comprobado sobre el código**: `cscv.run` parte la
+historia de sus 924 maneras y no mira nunca la frontera declarada. Lo que sí se mueve son los cuatro
+números cronológicos que van al lado en el mismo informe: el **coste** de cada regla de selección,
+el **Sharpe desinflado**, el **número de pruebas independientes** y el **drift**. Los cuatro se
+calculan sobre `inside`/`outside`, que son justo las dos mitades que la frontera define.
 
 ### Qué produce
 

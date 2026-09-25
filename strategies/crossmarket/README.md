@@ -35,6 +35,7 @@ Only these sit in the root, because they are the only things that get called or 
 
 | file | what it does | run it |
 |---|---|---|
+| `report.py` | The batch half: every strategy of one export judged on breadth, to the `verdict.csv` that `/curate` applies — the panel stays the place a single strategy is read | `python3 -m strategies.crossmarket.report --project P --databank D --asset USDJPY --export DAY` |
 | `views.py` | The two views that need more than one market at once — the correlation matrix and the combined account — rebuilt whenever one market is re-run alone | imported |
 | `config.yaml` | Every tunable of the study, grouped by section | edited, or `--set section.key=value` |
 | `assets/_markets.yaml` | What each base asset's markets are called, how they are grouped, and where its backtest's out-of-sample stretch starts | edited |

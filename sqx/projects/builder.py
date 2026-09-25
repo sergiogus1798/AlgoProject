@@ -17,6 +17,8 @@ from sqx.projects import crosschecks
 from sqx.projects.configure import configure, ignored_templates, running_install
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session
+from sqx.projects.resources import borrow_symbol
+from sqx.projects import summary
 from xml.etree import ElementTree
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
@@ -122,6 +124,12 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
 
     borrowed = (borrow_session(members, load(symbol)["session"], session_from)
                 if session_from else None)
+    # The donor's own feed is read from its generator when it kept one, and otherwise
+    # from any task: every task of a one-asset donor names the same chart.
+    tasks = [m for m in members if m.endswith(".xml") and m != "config.xml"]
+    build_member = next((m for m in tasks if m.startswith("Build-")), tasks[0])
+    replaced = (borrow_symbol(members, load(symbol)["sqx_symbol"], build_member, session_from)
+                if session_from else None)
 
     config, synced = sync_databanks(members["config.xml"].decode("utf-8"))
     members["config.xml"] = re.sub(r'<Project name="[^"]*"', f'<Project name="{name}"',
@@ -153,6 +161,7 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             "exit_bars": doc.get("exit_bars"), "session": load(symbol)["session"],
             "session_borrowed_from": str(session_from) if session_from else None,
             "session_borrowed_into": borrowed,
+            "feed": load(symbol)["sqx_symbol"], "feed_replaced": replaced,
             "template": str(installed_template), "tasks": kept["kept"],
             "databanks": kept["databanks"], "synced_to_disk": synced,
             "chain": chained,
@@ -213,28 +222,18 @@ def main() -> None:
                  tuple(x for x in a.silence.split(',') if x))
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
+    # A task with no priced Setup is one still trading the donor's market at the donor's
+    # costs: setups.py only rewrites a <Setup> whose <Chart> already names this feed.
+    unpriced = [m for m, n in done["setups"].items() if not n]
+    if unpriced:
+        raise SystemExit(f"{', '.join(unpriced)} no lleva ningún <Setup> sobre "
+                         f"{done['feed']}: esas tareas operarían el mercado del donante a "
+                         "sus costes. Pasa --session-from con un proyecto que defina el feed.")
 
     if a.json:
         print(json.dumps(done, indent=2))
         return
-    print(f"{done['project']} on {done['install']}")
-    print(f"  template  {done['template']}")
-    print(f"  tasks     {', '.join(done['tasks'])}   caps {done['max_strategies']} strategies "
-          f"/ {done['minutes']} min")
-    bars = done["exit_bars"]
-    # A project with no Build task has no generator, so there are no exit bounds to report.
-    print(f"  doctrina  {done['timeframe']} en todas las tareas, sesión {done['session']}"
-          + (f", salida por barras {bars[0]}–{bars[1]}" if bars else ", sin tarea de construcción"))
-    print(f"  segments  " + ", ".join(f"{m}={s}" for m, s in done["segments"].items()))
-    print(f"  to disk   {', '.join(done['synced_to_disk']) or 'already syncing'}")
-    if done["silenced"]:
-        print(f"  ⚠️ {done['silenced']} condiciones de aceptación apagadas — esas tareas "
-              "miden, no filtran")
-    if done["provisional_costs"]:
-        print(f"  ⚠️ PROVISIONAL: {', '.join(done['provisional_costs'])}")
-    print(f"\nrun it:  bin/sqx-worker.sh --role {a.role} start && "
-          f"python3 -c \"from core import worker; "
-          f"worker.call('-project action=start name={a.name}','{a.role}')\"")
+    summary.say(done, a.role)
 
 
 if __name__ == "__main__":

@@ -82,17 +82,28 @@ changes it.
 ```bash
 python3 -m core.assets <SYMBOL>                           # hard rule 5, blocking
 python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/project.cfx \
-    --task <Retest-TaskN>.xml --timeframes H4 D1
+    --task <Retest-TaskN>.xml            # --timeframes H4 D1 overrides the doctrine's list
 ```
+
+The timeframes, the window and the precision come from `crosstf:` in `assets/_build.yaml`
+(`timeframes: [H4]`, `segment: build..oos1`, `precision: 2`). `--timeframes` overrides the list for
+a one-off; the window and the precision are not overridable on purpose.
 
 Each `<Setup>` overrides **only** `timeframe`; the window, costs, precision and session all come from
 the main test through `<MainTestValues>`. That is deliberate and it is what makes the blocks
 comparable — the same instrument does not get a different spread for being resampled.
 
-The command **silences every acceptance condition** of the cross-check and says how many. With them
-live, the cross-check is a selection filter and what survives is no longer an untouched reading
-(`knowhow/05-conditions.md`). If it reports 0 silenced on a donor you expected conditions in, check
-you named the right task.
+⚠️ **Consequence of `dates="true"`: the dates written into the extra `<Setup>` blocks are inert.**
+The window that actually runs is the hosting task's own, so that task has to be configured on
+`build..oos1`. The command reads it back and prints a ⚠️ line when it does not match — if you see
+it, fix the task before running anything, or the cells are read over a window nobody declared.
+
+The command **silences every acceptance condition** of the cross-check and forces
+`DeleteFailedStrategies` to false, and says how many it turned off — `crosstf.conditions: []` in the
+doctrine (owner, 2026-09-24). With them live, the cross-check is a selection filter and what
+survives is no longer an untouched reading (`knowhow/05-conditions.md`): SQX drops the failing
+strategy from the output databank and Python never sees the dead ones. If it reports 0 silenced on a
+donor you expected conditions in, check you named the right task.
 
 It ends by printing the `run.blocks` line. **Paste it into `strategies/crossTF/config.yaml`.**
 

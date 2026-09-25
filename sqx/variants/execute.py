@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import worker
 from core.paths import worker_dir
-from sqx.variants import inputs
+from sqx.variants import inputs, legs as legmod
 
 TESTED = re.compile(r"Total tested\s+(\d+)")
 SETTLE = 8          # seconds SQX needs after `load` before the databank answers for them all
@@ -68,14 +68,15 @@ def load(folder: Path, cfg: dict) -> None:
         cfg: The `execute` block.
 
     Returns:
-        Nothing. Both databanks are cleared first so the count afterwards is the batch and
+        Nothing. The input and every leg's output databank are cleared first so the count afterwards is the batch and
         not the batch plus whatever the last run left. Loading the same folder twice does
         NOT de-duplicate -- SQX renames the second copy `P00000(1)` and keeps both.
     """
-    for bank in (cfg["input"], cfg["output"]):
+    source = legmod.source()
+    for bank in [source] + [leg["databank"] for leg in legmod.legs()]:
         _call(f'-databank action=clear project={cfg["project"]} name={bank}', cfg)
         time.sleep(2)
-    _call(f'-databank action=load project={cfg["project"]} name={cfg["input"]} '
+    _call(f'-databank action=load project={cfg["project"]} name={source} '
           f"folder={folder}", cfg)
     time.sleep(SETTLE)
 
@@ -107,29 +108,32 @@ def run(expected: int, cfg: dict, progress: Callable[[int, str], None]) -> int:
     return done
 
 
-def panel(out: Path, cfg: dict) -> Path:
-    """Export the retested databank as a CSV.
+def panel(out: Path, cfg: dict, databank: str, stem: str) -> Path:
+    """Export one retested databank as a CSV.
 
     Args:
         out: Directory to write into.
         cfg: The `execute` block.
+        databank: Which databank to export — one leg's output.
+        stem: File name without the extension, e.g. "retest_oos1".
 
     Returns:
         Path to the CSV. `action=export` is the only safe reader: `action=count` runs a
         sync-from-files first and destroys what `action=load` put in memory.
     """
-    csv = out / "retest.csv"
-    _call(f'-databank action=export project={cfg["project"]} name={cfg["output"]} '
+    csv = out / f"{stem}.csv"
+    _call(f'-databank action=export project={cfg["project"]} name={databank} '
           f"file={csv}", cfg)
     return csv
 
 
-def synced(expected: int, cfg: dict) -> tuple[Path, int]:
-    """Flush the retested databank onto disk and wait until the writing has finished.
+def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
+    """Flush one retested databank onto disk and wait until the writing has finished.
 
     Args:
         expected: How many strategies the retest returned.
         cfg: The `execute` block.
+        databank: Which databank to flush — one leg's output.
 
     Returns:
         The databank's folder inside the install, and how many `.sqx` it now holds.
@@ -147,8 +151,8 @@ def synced(expected: int, cfg: dict) -> tuple[Path, int]:
         time. Polling for the count the retest reported scales with the batch and costs
         nothing when the sync was quick.
     """
-    _call(f'-databank action=synctofiles project={cfg["project"]} name={cfg["output"]}', cfg)
-    folder = worker_dir(cfg["role"]) / "user/projects" / cfg["project"] / "databanks" / cfg["output"]
+    _call(f'-databank action=synctofiles project={cfg["project"]} name={databank}', cfg)
+    folder = legmod.bank_dir(cfg["role"], cfg["project"], databank)
     for _ in range(cfg["sync_tries"]):
         time.sleep(cfg["poll_seconds"])
         on_disk = len(list(folder.glob("*.sqx")))
@@ -165,6 +169,7 @@ def main() -> None:
     a = ap.parse_args()
 
     cfg = inputs.load()["execute"]
+    legs = legmod.legs()
     folder = a.work / "sqx"
     n = len(list(folder.glob("*.sqx")))
 
@@ -179,22 +184,29 @@ def main() -> None:
     # A worker left running is a worker that will auto-sync, and a sync deletes the .sqx
     # it does not hold in memory (hard rule 1).
     try:
-        print(f"PROGRESS 5 cargando {n} variantes en {cfg['project']}/{cfg['input']}",
-              flush=True)
+        print(f"PROGRESS 5 cargando {n} variantes en "
+              f"{cfg['project']}/{legmod.source()}", flush=True)
         load(folder, cfg)
-        done = run(n, cfg, say)
-        csv = panel(a.work, cfg)
-        print("PROGRESS 96 volcando el databank a disco", flush=True)
-        bank, on_disk = synced(done, cfg)
+        # One `action=start` runs the project's three active retest tasks in chain --
+        # build, oos1, oos2 -- so the progress counter passes `n` twice on its way. It is
+        # the last leg that has to finish, and that is what `expected` counts here.
+        done = run(n * len(legs), cfg, say) // len(legs)
+        harvest = []
+        for leg in legs:
+            print(f"PROGRESS 92 exportando {leg['databank']}", flush=True)
+            csv = panel(a.work, cfg, leg["databank"], f"retest_{leg['segment']}")
+            bank, on_disk = synced(done, cfg, leg["databank"])
+            harvest.append(leg | {"panel": csv.name, "databank_dir": str(bank),
+                                  "n_on_disk": on_disk})
     finally:
         if ours:
             worker.stop(cfg["role"])
 
-    print(f"PROGRESS 100 {done} reteseadas, panel en {csv.name}, {on_disk} en disco",
+    print(f"PROGRESS 100 {done} variantes x {len(legs)} tramos, "
+          + ", ".join(f"{h['segment']}: {h['n_on_disk']} en disco" for h in harvest),
           flush=True)
     (a.work / "ran.json").write_text(
-        json.dumps({"n_loaded": n, "n_returned": done, "panel": csv.name,
-                    "databank_dir": str(bank), "n_on_disk": on_disk}, indent=2),
+        json.dumps({"n_loaded": n, "n_returned": done, "legs": harvest}, indent=2),
         encoding="utf-8")
 
 

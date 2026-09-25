@@ -10,7 +10,17 @@ statistics, which is the bar `core/README.md` sets for anything statistical livi
 | `__init__.py` | Names what the package is; holds no code | — |
 | `dedupe.py` | How many independent observations the grid really holds: sentinel removal, distinct tuples, the effective n, and a bootstrap that resamples tuples instead of rows | grid → counts, intervals |
 | `shift.py` | How far the surface moved between two windows: Hodges-Lehmann in units, Cliff's delta in rank, the quantile-quantile curve, the tail excess, and the dispersion ratio adjusted for sample size | two windows → displacement |
-| `plateau.py` | How much of the grid works, and whether its best point beats what searching noise would have produced anyway: plateau area, half-max area, the noise maximum and the deflated Sharpe | grid → probabilities, thresholds |
+| `trials.py` | How many independent things were really tried: the correlation distance between result streams, the silhouette that picks a cluster count, and the count itself | daily or per-period streams → n_eff |
+| `plateau.py` | How much of the grid works, whether its best point beats what searching noise would have produced anyway, and where one chosen point sits in it: plateau area, half-max area, the noise maximum, the deflated Sharpe, and the rank / plateau fraction / shrunk expectation of a named tuple | grid → probabilities, thresholds |
+
+**`rank_of`, `plateau_fraction` and `shrunk` describe one chosen point against its grid**, which
+the other three do not: they describe the grid. Read the first two together — a rank near 1 is only
+alarming when almost nothing comes close — and carry `shrunk`, never the chosen point's own score,
+into anything downstream. The chosen point was selected; its neighbours were not.
+
+⚠️ `plateau_fraction` floors at `reference - delta * |reference|`, not at `(1 - delta) * reference`:
+on a metric that goes negative the second form puts the floor **above** the reference and the
+fraction stops meaning anything.
 
 ## The two mistakes these exist to prevent
 

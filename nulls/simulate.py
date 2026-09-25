@@ -36,6 +36,20 @@ def fixed(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict) -> dict:
             "atr": calibrate.atr(frame, cfg["barrier"]["atr_bars"]), "checks": checks}
 
 
+def warm(frame: pd.DataFrame, cfg: dict) -> None:
+    """Compute the ATR of these bars once, before a population study forks or loops.
+
+    Args:
+        frame: The bars every strategy of the study is priced on.
+        cfg: What inputs.config() returned.
+
+    Returns:
+        Nothing. `fixed()` needs the same ATR over the same bars once per strategy and it
+        depends on nothing else, so calling this first turns 234 x 39 ms into 39 ms.
+    """
+    calibrate.atr(frame, cfg["barrier"]["atr_bars"])
+
+
 def real(kept: dict, names: list[str]) -> dict:
     """The statistics of the run that actually happened, priced the same way as the nulls.
 

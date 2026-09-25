@@ -26,8 +26,9 @@ p-values into decoration. If the universe is wrong, the owner edits the file fir
 
 ## The window is each market's own
 
-From the main asset's **build start** — or from that market's first bar, whichever is later — to the
-end of `oos1`. For XAUUSD: XAGUSD runs 2008–2022, and a market whose data starts in 2013 runs
+`assets/_build.yaml` declares it once for every asset, under `crossmarket.segment`: **`build..oos1`**
+(owner, 2026-09-24), the same two-dot notation the MC Retest uses. That means from the main asset's
+**build start** — or from that market's first bar, whichever is later — to the end of `oos1`. For XAUUSD: XAGUSD runs 2008–2022, and a market whose data starts in 2013 runs
 2013–2022. The whole history is used on purpose; cutting it to the main asset's window throws away
 the years that would answer the question.
 
@@ -66,9 +67,17 @@ second start, one job at a time, always end stopped.
 
 ## What the result means
 
-The acceptance settings of this cross-check carry `<MinMarkets>` — how many of the extra markets a
-strategy must satisfy. With two markets declared and `MinMarkets 1`, half the evidence is enough,
-and that is a decision, not a default: report which value was in force.
+**Nothing is filtered here.** `crossmarket.conditions: []` in `assets/_build.yaml` is the owner's
+decision (2026-09-24), and the command enforces it: every acceptance condition of the cross-check is
+switched off and `DeleteFailedStrategies` forced to false, and it prints how many it silenced. The
+donor brought one live — `ReturnDDRatio > 1` on the first market — and with a live condition SQX
+does not write the failing strategy into the output databank, which leaves the Python analysis
+without the dead ones: the half of the evidence that says *which market killed which strategy*.
+SQX runs the backtests; the verdict is taken in Python and applied with `/curate`.
+
+🤔 With zero live conditions, `<MinConditions>` and `<MinMarkets>` are inert and are left untouched.
+Check on the first real run that the output databank holds every strategy the input had, and write
+what you saw into `knowhow/05-conditions.md`.
 
 **A strategy that fails here is not necessarily broken, and one that passes is not validated.** The
 family test shares a driver with the main asset, so passing it may only mean the two markets are

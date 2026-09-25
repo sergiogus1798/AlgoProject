@@ -68,6 +68,7 @@ def main() -> None:
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)
+    cfg["feed"] = a.feed
     packed = newest(a.project, a.databank)
     frame = inputs.bars(a.feed, a.timeframe)
     every = pd.read_parquet(packed, columns=["strategy", "Sample type"])

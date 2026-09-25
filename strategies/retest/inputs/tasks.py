@@ -121,8 +121,16 @@ def verify(got: dict, task: str) -> list[str]:
         A short run is not here: it is a data-quality fact, not a wrong task. See usable().
     """
     out = []
-    if tuple(sorted(got["methods"])) != tuple(sorted(METHOD[task])):
-        out.append(f"{task}: ran {sorted(got['methods'])}, expected {sorted(METHOD[task])}")
+    ran, want = set(got["methods"]), set(METHOD[task])
+    # The production task is the one composition the project cannot always write in full: a
+    # perturbation whose range is undecided is not written, and MinDistance never applies to
+    # a population of market orders. A SUBSET is therefore read, not refused -- what it is
+    # missing changes what the number means, so `methods` travels with the result and the
+    # report names them. Every other task stays exact: two methods in one task cannot be
+    # attributed to either, and that isolation is what the whole study rests on.
+    wrong = ran - want if task == "stress" else ran ^ want
+    if wrong or not ran:
+        out.append(f"{task}: ran {sorted(ran)}, expected {sorted(want)}")
     if got["scope"] != SCOPE[task]:
         out.append(f"{task}: ran on the {got['scope']} sample, expected {SCOPE[task]}")
     return out

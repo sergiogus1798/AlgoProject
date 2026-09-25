@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Harvest every retested variant's per-day P&L out of the custodian's .sqx, without SQX."""
+"""Harvest every variant's per-day P&L from the three legs, per market, and join them."""
 
 import argparse
 import json
@@ -13,19 +13,18 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import sqxstats
-from sqx.variants import inputs
+from sqx.variants import legs as legmod
 
-NAME = "Strategy Name"
-IS, OOS = "Net profit (IS)", "Net profit (OOS)"
-ROUNDING = 1.0        # dollars: the curve is stored at float32 precision, the panel at 2 dp
+ROUNDING = 1.0        # dollars: the curve is stored at float32 precision
 STEP = 100            # files between progress lines
 
 
-def curves(folder: Path, say: Callable[[int, str], None]) -> pd.DataFrame:
-    """Every variant's cumulative P&L, one column each, aligned on one calendar.
+def curves(folder: Path, result: str, say: Callable[[int, str], None]) -> pd.DataFrame:
+    """One result's cumulative P&L for every variant in a leg's databank.
 
     Args:
-        folder: The databank folder inside the install, after `execute.synced`.
+        folder: One leg's databank folder inside the install.
+        result: Which `Results/` entry to read — "Main", or "AdditionalMarket: <feed>".
         say: Called with a percentage and a status line.
 
     Returns:
@@ -36,9 +35,12 @@ def curves(folder: Path, say: Callable[[int, str], None]) -> pd.DataFrame:
     files = sorted(folder.glob("*.sqx"))
     found = {}
     for n, path in enumerate(files, 1):
-        found[path.stem] = sqxstats.equity(path)
+        try:
+            found[path.stem] = sqxstats.equity(path, result)
+        except StopIteration:
+            continue
         if n % STEP == 0:
-            say(n * 100 // len(files), f"{n} de {len(files)} curvas leidas")
+            say(n * 100 // len(files), f"{n} de {len(files)} curvas ({result[:24]})")
     return pd.DataFrame(found).ffill().fillna(0.0)
 
 
@@ -58,87 +60,154 @@ def daily(cum: pd.DataFrame) -> pd.DataFrame:
     return steps
 
 
-def mismatches(cum: pd.DataFrame, panel: pd.DataFrame, split: str) -> list[str]:
-    """Variants whose harvested curve disagrees with the result SQX stored for them.
+def joined(per_leg: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """The three legs of one market, end to end, as one continuous daily series.
 
     Args:
-        cum: What `curves` returned.
-        panel: The retest export, as `collect.panel` reads it.
-        split: First day of the out-of-sample range.
+        per_leg: {segment: daily increments}, in the doctrine's segment order.
 
     Returns:
-        The variants that disagree by more than a dollar, named.
+        One frame, dates down and `variant_id` across, spanning `build` to `oos2`.
 
-        **This is the invariant that ties the binary reader to the number the databank
-        shows**, and it is read at the in-sample boundary rather than at the end of the
-        curve. It catches the failure this module was written around -- a strategy
-        retested with a cross-market check carries three equity members, and the first in
-        the archive is gold plus silver, which misses by thousands.
+        The join is on INCREMENTS and never on the cumulative curves, and that is the
+        whole trick: each leg is its own backtest and restarts its equity at zero, so
+        stacking the cumulative curves would drop the account back to zero twice. Summing
+        the increments down reproduces the account the three legs would have produced run
+        as one — which is what the united metrics are read off.
     """
-    stored = panel.set_index(NAME)[IS].reindex(cum.columns)
-    gap = (cum[cum.index < split].iloc[-1] - stored).abs()
-    return sorted(gap.index[~(gap <= ROUNDING)])
+    return pd.concat([per_leg[s] for s in per_leg], axis=0).sort_index()
 
 
-def open_at_end(cum: pd.DataFrame, panel: pd.DataFrame) -> list[str]:
-    """Variants still holding a position when the data ran out.
+def unreconciled(cum: pd.DataFrame, folder: Path, result: str) -> list[str]:
+    """Variants whose harvested curve does not end where SQX says the result ended.
 
     Args:
-        cum: What `curves` returned.
-        panel: The retest export.
+        cum: What `curves` returned for this leg and result.
+        folder: The leg's databank folder.
+        result: The result that was read.
 
     Returns:
-        The variants whose whole-curve total exceeds in-sample plus out-of-sample profit.
+        The variants that disagree by more than a dollar.
 
-        Not a fault and not a gate: SQX marks an open position to market in the equity
-        curve and counts only closed trades in net profit, so the two disagree exactly
-        when a trade is open on the last bar. Measured 2026-09-22 on this batch, 172 of
-        962, by 95 to 332 dollars, and they average three times the trades of the rest --
-        which is why `matrix.py` drops the final period rather than trusting it.
+        ⚠️ Expected in small numbers and NOT a fault: SQX marks an open position to market
+        in the equity curve and counts only closed trades in net profit, so the two differ
+        exactly when a trade is open on the last bar of the leg. Three legs means three
+        such boundaries. What it does catch is the failure this module was written around
+        — reading the wrong result out of a .sqx that carries four of them — and that one
+        shows up as *every* variant disagreeing, not a handful.
     """
-    stored = (panel.set_index(NAME)[IS] + panel.set_index(NAME)[OOS]).reindex(cum.columns)
-    gap = (cum.iloc[-1] - stored).abs()
-    return sorted(gap.index[~(gap <= ROUNDING)])
+    off = []
+    for name in cum.columns:
+        stored = sqxstats.stats(folder / f"{name}.sqx", result)[sqxstats.FULL]["NetProfit"]
+        if abs(float(cum[name].iloc[-1]) - stored) > ROUNDING:
+            off.append(name)
+    return off
+
+
+def markets_of(folder: Path) -> list[str]:
+    """Which results this leg's .sqx carry, main first and one per cross-check market.
+
+    Args:
+        folder: One leg's databank folder.
+
+    Returns:
+        {market name: result key}, read off the first file. `Portfolio` is left out on
+        purpose: it is every market summed, and harvesting it beside its parts would
+        double-count anything that adds them up.
+    """
+    first = next(iter(sorted(folder.glob("*.sqx"))), None)
+    keys = sqxstats.results(first) if first else []
+    return {legmod.market(k): k for k in keys
+            if k.startswith(legmod.MAIN) or k.startswith(legmod.EXTRA)}
+
+
+def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> dict:
+    """Read all three legs, write the joined curves, and report what did not reconcile.
+
+    Args:
+        work: The batch directory.
+        legs: What `ran.json` recorded, in segment order.
+        say: Called with a percentage and a status line.
+
+    Returns:
+        What went into `equity.json`. Two files are written: `equity.parquet`, the main
+        market's joined daily P&L in the wide shape every study downstream already reads,
+        and `equity_markets.parquet`, the same thing in long form for every extra market —
+        which is what a surface-of-performance view on other assets needs.
+    """
+    main, extra, report = {}, [], []
+    for i, leg in enumerate(legs):
+        folder = Path(leg["databank_dir"])
+        results = markets_of(folder)
+        for name, key in results.items():
+            cum = curves(folder, key, lambda p, line, i=i: say(i * 30 + p * 30 // 100, line))
+            if cum.empty:
+                continue
+            off = unreconciled(cum, folder, key)
+            report.append({"segment": leg["segment"], "market": name, "n": cum.shape[1],
+                           "days": cum.shape[0], "first": str(cum.index[0].date()),
+                           "last": str(cum.index[-1].date()), "open_at_end": len(off),
+                           "all_off": bool(off and len(off) == cum.shape[1])})
+            if name == legmod.MAIN:
+                main[leg["segment"]] = daily(cum)
+            else:
+                extra.append(daily(cum).stack().rename("pnl").reset_index(
+                    names=["date", "variant_id"]).assign(market=name,
+                                                         segment=leg["segment"]))
+
+    united = joined(main)
+    united.to_parquet(work / "equity.parquet", compression="zstd")
+    if extra:
+        pd.concat(extra).to_parquet(work / "equity_markets.parquet", compression="zstd")
+    return {"n": united.shape[1], "days": united.shape[0],
+            # The real span of each leg, measured off its own curves rather than restated
+            # from the project: it is what `collect.unions` slices the joined curve by.
+            "windows": {s: [str(d.index[0].date()), str(d.index[-1].date())]
+                        for s, d in main.items()},
+            "first": str(united.index[0].date()), "last": str(united.index[-1].date()),
+            "segments": [leg["segment"] for leg in legs],
+            # Every boundary, as the first day of each leg after the first. The studies
+            # read a boundary from here and never restate one of their own: two files
+            # naming one date is how they come to disagree.
+            "splits": {s: d.index[0].strftime("%Y-%m-%d")
+                       for s, d in list(main.items())[1:]},
+            "markets": sorted({r["market"] for r in report if r["market"] != legmod.MAIN}),
+            # Lifted to the top level for the pipeline's `must` gate, which reads one
+            # number out of this file by name. `unreadable` is the one that must be zero:
+            # a whole block where no curve reconciles is the wrong-result bug. Positions
+            # open at a leg boundary are expected and only counted.
+            "open_at_end": sum(r["open_at_end"] for r in report),
+            "unreadable": sum(1 for r in report if r["all_off"]),
+            "bytes": (work / "equity.parquet").stat().st_size,
+            "blocks": report}
 
 
 def main() -> None:
-    """Read one batch's curves off the custodian's disk and leave them beside the batch."""
+    """Read the three legs' curves off the custodian's disk and leave them beside the batch."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--work", required=True, type=Path,
-                    help="the batch directory: holds ran.json and retest.csv")
+                    help="the batch directory: holds ran.json and the retest_*.csv")
     a = ap.parse_args()
 
-    cfg = inputs.load()["execute"]
     ran = json.loads((a.work / "ran.json").read_text(encoding="utf-8"))
-    folder = Path(ran["databank_dir"])
     started = time.time()
+    done = harvest(a.work, ran["legs"],
+                   lambda pct, line: print(f"PROGRESS {5 + pct * 85 // 100} {line}",
+                                           flush=True))
+    done["wall_s"] = round(time.time() - started, 1)
+    (a.work / "equity.json").write_text(json.dumps(done, indent=2), encoding="utf-8")
 
-    print(f"PROGRESS 5 leyendo {ran['n_on_disk']} .sqx de {folder.name}", flush=True)
-    cum = curves(folder, lambda pct, line: print(f"PROGRESS {5 + pct * 85 // 100} {line}",
-                                                 flush=True))
-
-    print("PROGRESS 92 comprobando cada curva contra lo que SQX guardo", flush=True)
-    panel = pd.read_csv(a.work / "retest.csv", sep=";")
-    bad = mismatches(cum, panel, cfg["split"])
-    held = open_at_end(cum, panel)
-
-    out = a.work / "equity.parquet"
-    daily(cum).to_parquet(out, compression="zstd")
-    spent = time.time() - started
-    (a.work / "equity.json").write_text(json.dumps(
-        {"n": cum.shape[1], "days": cum.shape[0], "bytes": out.stat().st_size,
-         "first": str(cum.index[0].date()), "last": str(cum.index[-1].date()),
-         "split": cfg["split"], "mismatch": len(bad), "mismatched": bad[:20],
-         "open_at_end": len(held), "wall_s": round(spent, 1)},
-        indent=2), encoding="utf-8")
-
-    print(f"PROGRESS 100 {cum.shape[1]} curvas x {cum.shape[0]} dias, "
-          f"{out.stat().st_size / 1e6:.1f} MB en {spent:.0f} s, "
-          f"{len(held)} con posicion abierta al final", flush=True)
-    if bad:
-        sys.exit(f"{len(bad)} variantes cuya curva no cuadra con el resultado que SQX "
-                 f"guardo, p.ej. {bad[:5]}. El lector esta leyendo el resultado "
-                 f"equivocado del .sqx, o el databank no es el de este lote.")
+    print(f"PROGRESS 100 {done['n']} variantes x {done['days']} dias unidos "
+          f"({done['first']} a {done['last']}), mercados: "
+          f"{', '.join(done['markets']) or 'ninguno'}, {done['wall_s']:.0f} s", flush=True)
+    for row in done["blocks"]:
+        print(f"  {row['segment']:<6} {row['market']:<24} {row['n']:>5} curvas  "
+              f"{row['first']} a {row['last']}  {row['open_at_end']} con posicion abierta")
+    broken = [r for r in done["blocks"] if r["all_off"]]
+    if broken:
+        sys.exit(f"{len(broken)} bloques donde NINGUNA curva cuadra con lo que SQX guardo: "
+                 f"{[(r['segment'], r['market']) for r in broken]}. El lector esta leyendo "
+                 "el resultado equivocado del .sqx, o el databank no es el de este lote.")
 
 
 if __name__ == "__main__":

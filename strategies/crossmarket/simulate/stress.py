@@ -1,5 +1,7 @@
 """Cost and execution robustness: how much of the edge survives worse fills or a bigger spread."""
 
+from collections.abc import Iterator
+
 import numpy as np
 import pandas as pd
 
@@ -8,34 +10,56 @@ from strategies.crossmarket.mechanics import equity, pricing
 from strategies.crossmarket.simulate import metrics
 
 DEFAULT_MULTIPLES = [1.0, 1.5, 2.0, 2.5, 3.0]
+# Runs priced per batch, for the same reason `nulls.chunk` exists: memory, not statistics.
+# Unbatched, one market of 600 trades at the shipped 25,000 sims allocated 258 MB in this
+# function alone, and the ninety-six workers of a population run do not fit in 125 GB.
+CHUNK = 500
 
 
-def degraded(fixed: dict, s: dict, rng: np.random.Generator) -> tuple[np.ndarray, ...]:
-    """The real trades run again under worse execution, many times over.
+def degraded(fixed: dict, s: dict, rng: np.random.Generator
+              ) -> Iterator[tuple[np.ndarray, np.ndarray]]:
+    """The real trades run again under worse execution, many times over, in batches.
 
     Args:
         fixed: What backtest.setting() returned.
-        s: What execution.settings() returned — config.yaml's stress block, with cost_shock
+        s: What execution.settings() returned -- config.yaml's stress block, with cost_shock
             and fill_depth calibrated from execution.yaml where that feed is declared.
         rng: Seeded generator.
 
-    Returns:
-        (pnl, live): USD per trade and which trades happened, one row per run. Three things
-        go wrong at once and each is drawn independently per run: a share of trades is simply
-        missed, the whole run's cost is scaled by a multiple drawn from a range, and a share
-        of trades gives back part of its own adverse excursion. Unlike the null models this
-        keeps the real entries — it asks what the same trades are worth under a worse broker,
-        not whether the entries were any good.
+    Yields:
+        (pnl, live) for CHUNK runs at a time: USD per trade and which trades happened, one
+        row per run. Three things go wrong at once and each is drawn independently per run:
+        a share of trades is simply missed, the whole run's cost is scaled by a multiple
+        drawn from a range, and a share of trades gives back part of its own adverse
+        excursion. Unlike the null models this keeps the real entries -- it asks what the
+        same trades are worth under a worse broker, not whether the entries were any good.
+
+    The three draws are taken whole and in the order they were always taken, so the numbers
+    are the ones the unbatched version produced; only the pricing is batched. `live` and
+    `worse` are stored as the booleans they are rather than as the float64 they are drawn
+    from, which is where eight ninths of this function's memory went.
     """
     sims = s["sims"]
     base, charged = fixed["pnl"], fixed["charged"]
     mae = tradeio.excursions(fixed["aligned"], fixed["point_value"])["mae"].to_numpy()
     mae_usd = np.abs(mae) * fixed["size"]
     shock = rng.uniform(*s["cost_shock"], size=(sims, 1))
-    live = rng.random((sims, base.size)) >= s["p_skip"]
-    worse = rng.random((sims, base.size)) < s["fill_frac"]
-    pnl = base + charged - shock * charged - np.where(worse, s["fill_depth"] * mae_usd, 0.0)
-    return np.where(live, pnl, 0.0), live
+    live = np.empty((sims, base.size), dtype=bool)
+    worse = np.empty((sims, base.size), dtype=bool)
+    for a in range(0, sims, CHUNK):
+        b = min(a + CHUNK, sims)
+        np.greater_equal(rng.random((b - a, base.size)), s["p_skip"], out=live[a:b])
+    for a in range(0, sims, CHUNK):
+        b = min(a + CHUNK, sims)
+        np.less(rng.random((b - a, base.size)), s["fill_frac"], out=worse[a:b])
+    gross = base + charged
+    for a in range(0, sims, CHUNK):
+        b = min(a + CHUNK, sims)
+        pnl = shock[a:b] * charged
+        np.subtract(gross, pnl, out=pnl)
+        np.subtract(pnl, s["fill_depth"] * mae_usd, out=pnl, where=worse[a:b])
+        np.copyto(pnl, 0.0, where=~live[a:b])
+        yield pnl, live[a:b]
 
 
 def simulate(fixed: dict, bars: pd.DataFrame, cfg: dict, s: dict) -> dict:
@@ -51,16 +75,24 @@ def simulate(fixed: dict, bars: pd.DataFrame, cfg: dict, s: dict) -> dict:
         The same table, shapes and cone shape backtest.run() returns, so the panel draws
         both with one renderer. The question is different: the cone here is what a worse
         broker can do to the same trades, not what random timing can.
+
+        Accumulated batch by batch: every statistic here is a function of one run's own row,
+        so a batch of rows gives the same numbers a whole matrix of them does.
     """
     e = cfg["equity"]
     rng = np.random.default_rng(cfg["nulls"]["seed"])
-    pnl, live = degraded(fixed, s, rng)
     seen = metrics.observed(fixed["pnl"], e["starting"])
-    stats = metrics.paths(pnl, live, e["starting"])
-    closed = np.repeat(fixed["held"]["exit"].to_numpy()[None, :], pnl.shape[0], axis=0)
-    curves = equity.path(pnl, closed, fixed["market"]["n_bars"], e["steps"], e["starting"])
-    observed = equity.path(fixed["pnl"][None, :], closed[:1], fixed["market"]["n_bars"],
-                           e["steps"], e["starting"])[0]
+    exits = fixed["held"]["exit"].to_numpy()
+    parts, cones = [], []
+    for pnl, live in degraded(fixed, s, rng):
+        closed = np.repeat(exits[None, :], pnl.shape[0], axis=0)
+        parts.append(metrics.paths(pnl, live, e["starting"]))
+        cones.append(equity.path(pnl, closed, fixed["market"]["n_bars"], e["steps"],
+                                 e["starting"]))
+    stats = {name: np.concatenate([p[name] for p in parts]) for name in parts[0]}
+    curves = np.concatenate(cones)
+    observed = equity.path(fixed["pnl"][None, :], exits[None, :],
+                           fixed["market"]["n_bars"], e["steps"], e["starting"])[0]
     return {"table": metrics.table(stats, seen, e["percentiles"]),
             "shapes": metrics.shapes(stats, seen),
             "cone": {"bands": equity.bands(curves, e["bands"]),

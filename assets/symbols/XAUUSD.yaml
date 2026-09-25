@@ -71,6 +71,15 @@ mc_retest:
     min: 5
     max: 20
     sqx_now: [{min: 0, max: 5}, {min: 0, max: 10}]   # varias tareas, rangos distintos
+  # Sólo lo usa la tarea `MCR 4 MinDist`, y esa tarea sólo se escribe si la población
+  # lleva órdenes stop o limit — a mercado no hay ninguna orden pendiente cuya distancia
+  # al precio el bróker pueda rechazar. Con `null` la tarea se queda sin configurar y
+  # `sqx.projects.mcretest` lo dice. El `min_distance: 10` de `instrument:` de arriba es
+  # lo que el bróker impone HOY, no el rango que se quiere sortear: son cosas distintas.
+  min_distance:
+    min: null
+    max: null
+    sqx_now: {min: 0.0, max: 10.0}   # el default de fábrica, igual en los 142 instrumentos
 
 # Proyectos del maestro que usan este activo. Leído, no decidido.
 projects_using_it:

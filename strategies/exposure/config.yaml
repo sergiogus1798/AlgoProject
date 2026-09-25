@@ -1,0 +1,27 @@
+# Every tunable of the exposure study, in one place. Nothing below is hidden in code.
+#
+# The question this study answers is a trade-off, not a score: 5 % earned with one hour a
+# week in the market is not the same object as 10 % earned by being exposed every minute.
+# So the thresholds here are the owner's stated preference, and they are meant to be moved.
+
+study:
+  sample: OOS1                # the `Sample type` this runs on. IST is in sample, OOS1 out
+  segment: oos1               # the policy segment that sample is, which fixes the window.
+                              # Taken from assets/_policy.yaml, never from the trades: a
+                              # strategy that never traded in 2018 would otherwise shorten
+                              # its own window and inflate its occupancy
+  timeframe: M30              # the bar grid occupancy is counted on
+
+benchmark:
+  report: [one_lot, avg_size, equal_risk]
+  headline: equal_risk        # the one the verdict reads. Equal risk is the only
+                              # convention under which "it returns less than buy & hold"
+                              # is a statement about the edge instead of about the sizing
+
+gate:
+  min_efficiency: 2.0         # return per unit of exposure, as a multiple of buy & hold's.
+                              # 1.0 means "as productive per hour in the market"; the owner
+                              # wants a strategy to be clearly better per hour exposed, or
+                              # there is no reason to prefer it to holding the thing
+  min_trades: 30              # fewer than this and no rate is worth reading
+  min_days: 250               # a window shorter than a year makes CAGR a fiction

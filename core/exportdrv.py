@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 from core import worker
-from core.paths import MASTER, STAGING, VIEWS_REL, WORKER, WORKER_SH, databank_dir, view_file
+from core.paths import STAGING, VIEWS_REL, WORKER, WORKER_SH, view_file
 
 SAMPLE = {"10": "IS", "20": "OOS", "127": "Full"}
 STAGING_PROJECT, STAGING_DATABANK = "Retester", "Results"
@@ -100,12 +100,12 @@ def prepare_view(view: str) -> str:
     return name
 
 
-def stage(project: str, databank: str) -> int:
-    """Copy a master databank's strategies into the worker's staging databank.
+def stage(source: Path) -> int:
+    """Copy a folder of strategies into the worker's staging databank.
 
     Args:
-        project: Project name on the master.
-        databank: Databank name on the master.
+        source: Folder holding the .sqx — a databank on any install, or a copy of one
+            already staged elsewhere, which is what lets one harvest serve two exports.
 
     Returns:
         How many .sqx were staged.
@@ -116,18 +116,17 @@ def stage(project: str, databank: str) -> int:
     STAGING.mkdir(parents=True, exist_ok=True)
     for old in STAGING.glob("*.sqx"):
         old.unlink()
-    source = sorted(databank_dir(project, databank, MASTER).glob("*.sqx"))
-    for f in source:
+    found = sorted(source.glob("*.sqx"))
+    for f in found:
         shutil.copy(f, STAGING / f.name)
-    return len(source)
+    return len(found)
 
 
-def metrics(project: str, databank: str, view: str, out: Path) -> int:
+def metrics(source: Path, view: str, out: Path) -> int:
     """Export one databank's performance metrics, one row per strategy.
 
     Args:
-        project: Project name on the master.
-        databank: Databank name on the master.
+        source: Folder holding the databank's .sqx, on whichever install holds it.
         view: Databank view to export through, defining the columns and their sample types.
         out: CSV file to write.
 
@@ -139,7 +138,7 @@ def metrics(project: str, databank: str, view: str, out: Path) -> int:
     worker.require_posix()
     out.parent.mkdir(parents=True, exist_ok=True)
     prepared = prepare_view(view)
-    stage(project, databank)
+    stage(source)
     worker.start()
     seen = worker.wait_ready(STAGING_PROJECT, STAGING_DATABANK)
     worker.call(f"-databank action=export project={STAGING_PROJECT} "

@@ -5,6 +5,7 @@ discard: it locates a result, names what is wrong with it, and stops."""
 
 import numpy as np
 
+from core import assetcheck, assetdata
 from nulls.stats import GOOD_HIGH
 
 RECONCILE_FLOOR = 0.99      # below this the priced run is not the run SQX reported
@@ -83,7 +84,16 @@ def distrust(kept: dict, found: dict, trades: int, cfg: dict) -> list[str]:
         said.append("CONVENCION INTRABAR: la estrategia no lleva stop ni objetivo, asi que "
                     "barrier.intrabar no se puede calibrar contra SQX en esta corrida. El dia "
                     "que lleve barreras, calibrarla es obligatorio antes de leer un p.")
-    said.append("COSTES PROVISIONALES: el spread y la comision de XAUUSD son los defaults de "
-                "SQX, no cifras pactadas con el broker (assets/symbols/XAUUSD.yaml). La posicion del "
-                "null la fija sobre todo el coste, asi que estos p se mueven con ellos.")
+    # The feed is what a study knows about itself; the asset behind it is what carries the
+    # costs. Naming one asset in a constant made every other asset's run claim gold's.
+    symbol = assetdata.symbol_for(cfg.get("feed", "")) if cfg.get("feed") else None
+    loose = assetcheck.provisional(assetdata.load(symbol)) if symbol else None
+    if loose:
+        said.append(f"COSTES PROVISIONALES: {', '.join(loose)} de {symbol} no son cifras "
+                    f"pactadas con el broker (assets/symbols/{symbol}.yaml). La posicion del "
+                    "null la fija sobre todo el coste, asi que estos p se mueven con ellos.")
+    elif not symbol:
+        said.append(f"COSTES SIN IDENTIFICAR: ningun fichero de assets/symbols/ declara el feed "
+                    f"`{cfg.get('feed') or 'que se leyo'}`, asi que no se puede decir si el coste "
+                    "con que corrio esto esta pactado. La posicion del null la fija ese coste.")
     return said

@@ -30,17 +30,51 @@ que sólo el dueño puede dar.
 | 10.5 | **Preparación crossTF** — generación de variantes escaladas | `sqx/variants/scale.py`, `/crosstf` | 🟡 |
 | 11 | **Retest crossTimeframes en SQX** | `/crosstf` | 🟡 |
 | 12 | **Análisis crossTFs en Python** | `strategies/crossTF/` | 🟡 |
-| 13 | **MC Retest en SQX** | tarea del donante; rangos ya en `assets/` | ⬜ |
+| 13 | **MC Retest en SQX** | `sqx/projects/mcretest.py`, `/mcretest`; catálogo en `assets/_build.yaml` | ✅ |
 | 14 | **Análisis MC Retest en Python** | `strategies/retest/` | 🟡 |
-| 15 | **SPPs en SQX** | `sqx/variants/spp.py` | ✅ |
+| 15 | **SPPs en SQX** | `sqx/projects/spp.py`, `/spp`; catálogo en `assets/_build.yaml` | ✅ |
 | 16 | **Análisis SPPs en Python** | `strategies/sppUltra/` | ✅ |
-| 16.5 | **Preparación de variantes para el WFC** | `sqx/variants/make.py` | ✅ |
+| 16.5 | **Preparación de variantes para el WFC** | `sqx/variants/make.py`, `/variants` | ✅ · ⚠️ corre en el `Retester` de serie, OPEN.md §38 |
 | 17 | **Walk Forward Correlation** | `strategies/walkForwardCorrelation/report.py` | ✅ |
 | 18 | **CSCV** | `strategies/walkForwardCorrelation/pbo.py` | ✅ |
-| 19 | **Walk Forward Matrix en SQX** | `strategies/walkForwardMatrix/` | 🟡 |
+| 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `strategies/walkForwardMatrix/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
 | 20 | **Análisis conjunto de 17, 18 y 19 — CIEGO hasta tener los tres** | — | ⬜ |
+| 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `strategies/exposure/`, `docs/manual/38-exposicion.md` | ✅ |
 
-Del 21 en adelante empieza la cartera. **Primero las estrategias individuales.**
+**Tres lecturas adicionales que no son pasos nuevos y no renumeran nada.** Dos sobre una
+estrategia y su lista de operaciones, gratis y sin SQX: `strategies/profitShape/` (manual
+`40-forma-del-beneficio.md`) dice de qué pocas operaciones y qué pocos meses depende el resultado,
+si las operaciones se agrupan —y entonces el Monte Carlo de cartera tiene que remuestrear por
+bloques— y si la media cambió dentro de la muestra; `strategies/entryQuality/` (manual
+`42-calidad-de-la-entrada.md`) aísla la **entrada** del resto midiendo el recorrido a favor y en
+contra contra entradas al azar a las mismas horas, y lo que cuesta llegar tarde. Las dos salen del
+PDF `TRADE_LEVEL_TESTS.pdf` del dueño. Y la tercera, sobre el lote de variantes:
+`strategies/parameterCloud/` (manual `39-nube-de-parametros.md`) lee las variantes del 16.5 como lo
+que son —una superficie— y dice si la madre está en un pico o en una meseta, qué parámetros mandan,
+si hay superficie que leer y si su forma aguanta año a año. Es gratis, no toca SQX, **corta las
+curvas donde empieza `oos2`** y no elige nada: sale del PDF `PARAMETER_SPACE_TESTS.pdf` del dueño,
+cuya sección E prohíbe expresamente sustituir la madre por el mejor clon.
+
+Del 22 en adelante empieza la cartera. **Primero las estrategias individuales.**
+
+## El paso 21 — la dicotomía rendimiento/exposición
+
+Encargo del dueño, 2026-09-24, y cierra la secuencia individual:
+
+> *«Una estrategia que saque 5 %, pero solo se exponga al mercado 1 hora a la semana, me parecería
+> mejor que sacar un 10 % con el buy and hold.»*
+
+Los pasos 1 a 20 preguntan si la ventaja es **real**. El 21 pregunta qué **forma** tiene: el mismo
+retorno conseguido con el 4 % de ocupación no es el mismo objeto que conseguido estando dentro
+siempre, porque las horas fuera no tienen gap, ni noticia, ni drawdown, ni capital inmovilizado.
+
+Mide tres cosas y no las confunde: lo que ganó **en total** contra un buy and hold **al mismo
+riesgo**, lo que gana **por hora expuesta**, y cuánto del movimiento del mercado ocurrió mientras
+tenía posición — que es lo que separa una ventaja propia de estar presente en los tramos buenos.
+
+**La alfa y la beta están aparcadas ahí, a propósito.** Decisión del dueño del mismo día: primero
+se cierra la secuencia individual. Si algún día se construye la regresión, va en
+`strategies/exposure/`, que ya tiene montada su antesala.
 
 ## El Monte Carlo de bootstrap está FUERA, a propósito
 
@@ -92,7 +126,26 @@ contaminada por lo que se vio, y la última bala se gasta en un test elegido a p
 
 **Esto ha de estar forzado por el ledger, no por la buena voluntad de quien lo corra.**
 
-### Un manifiesto global de la cadena — acordado
+✅ **Construido el 2026-09-24.** `ledger/gate.py` se niega: `allow(paso, segmento, activo)` lanza si
+un paso mira un tramo que `_policy.yaml` reserva para otro, y `allow_read` lanza si se piden los
+resultados de 17, 18 o 19 sin que los tres estén registrados. Manual: `docs/manual/43-ledger.md`.
+
+#### Qué significa «los tres a la vez» — aclarado 2026-09-24
+
+No significa correrlos en paralelo. **Corren secuencialmente, y así se quiere**: el 17, el 18 y el 19
+uno detrás de otro. Lo que tiene que ser simultáneo es **la lectura**:
+
+> Cuando digo que quiero ver el WFC + WFM + CSCV a la vez, me refiero al mismo tiempo y una vez ya
+> sepamos que el programa funciona bien. La cosa es que, cuando en un futuro hagamos una UI, los
+> resultados de las 3 pruebas se mostrarán a la vez, o al menos no ver uno mientras se está
+> simulando la siguiente prueba.
+
+Consecuencia para quien programe la ventana de `ui/`: los tres resultados se **retienen** hasta que
+los tres existen, y no se pinta ninguno mientras el siguiente está corriendo. Es la misma regla
+ciega del paso 20, pero dicha en términos de interfaz — y es la interfaz la que la tiene que forzar,
+no la disciplina de quien mira.
+
+## Un manifiesto global de la cadena — acordado
 
 Un solo registro por estudio que diga, paso a paso, cuántas estrategias entran y cuántas salen. Sin
 él, al llegar al 17 nadie sabe si quedan tres supervivientes de diez mil o de cincuenta — y esa

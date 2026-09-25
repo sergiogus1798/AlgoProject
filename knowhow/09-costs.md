@@ -173,3 +173,105 @@ leaving `defaultSpread` non-zero **charges it twice**.
 like that, so they keep one spread and a dollar commission; everything else gets two spreads and
 percentage-based commission and swap. The schema is in `assets/_classes.yaml`, checked by
 `core.assets.validate()` rather than remembered.
+
+## What SQX's own FX costs are worth, and why they are not a fallback
+
+📓 Measured 2026-09-23 with `sqx.inspect.instruments` over every `project.cfx` on the master. The ten
+`the5ers` pairs carry **`commission: SizeBased 0.00` — zero — and these `defaultSpread` values**, one
+per pair with no disagreement between projects:
+
+| 0.1 | 0.2 | 0.6 | 1.2 |
+|---|---|---|---|
+| USDJPY, EURUSD, GBPUSD, AUDUSD, **CADJPY** | USDCAD, USDCHF | EURJPY, AUDJPY | GBPJPY |
+
+Two things follow, and both matter more for a cross-market test than for a single-asset build.
+
+🤔 **The level is wrong by about 10×.** the5ers charges on the order of 8 $/lot round-turn. On a pair
+with `point_value` 100000 a pip is 10 $/lot, so that commission alone is **0.8 pips** — against a
+modelled total of 0.2 (spread 0.1 + slippage 0.05 per side). A build at these numbers produces
+strategies whose edge is the missing cost.
+
+🤔 **The ordering between pairs is not credible, which is the part that poisons a cross-market
+test.** CADJPY sits at 0.1 while GBPJPY sits at 1.2 — same `point_value` 653.92, same family, 12×
+apart — and CADJPY comes out six times cheaper than EURJPY (0.6) despite being the less liquid of
+the two. These are factory defaults, not a cost structure. A retest across markets charged this way
+partly answers *"where did SQX undercharge"* rather than *"where does the edge survive"*, which is
+the failure mode `/crossmarket` refuses to write for when a market has no `assets/symbols/` file at
+all — and which a file full of these defaults passes straight through.
+
+🔬 They are still usable for one thing: **measuring how correlated a strategy's equity is across
+markets**. A correlation between curves barely moves with the cost level, while profitability moves a
+lot. So a run at these costs sizes the effective sample of a multi-market test (`N_eff = N / (1 +
+(N−1)ρ)`) and must not be used to decide whether an edge is real. The ten files say so in every
+`why:` and in their `notes:`, written the same day.
+
+## A session cannot be borrowed from another asset
+
+🔬 2026-09-23. `sqx.projects.doctrine.unify_sessions` copies a session definition **between the tasks
+of one project** and returns `None` when no task defines it at all — the builder then refuses. The
+XAUUSD donor (`projectsBackup/XAUUSD_base_2026-09-21`) carries only `XAUUSD_ftmo` and
+`XAUUSD_the5ers`, so **no project cloned from it can build a non-gold asset** until its session comes
+from somewhere. 📓 Which master project defines what, read from the `.cfx` files:
+
+| session | defined in |
+|---|---|
+| `USDJPY_ftmo`, `USDJPY_the5ers` | master project `USDJPY` |
+| `EURUSD_the5ers` | master project `EURUSD` |
+| `AUDJPY_the5ers` | master project `AUDJPY` |
+| `CADJPY_the5ers`, `EURJPY_the5ers`, `GBPJPY_the5ers`, `USDCHF_the5ers` | `CADJPY_H1`, `EURJPY_H1`, `GBPJPY_H1`, `USDCHF` |
+| `XAUUSD_ftmo` | `XAUUSD`, `Retester`, and the frozen donor |
+
+🔬 **Fixing the session is not enough, and that is the trap.** Borrowing `USDJPY_ftmo` into the gold
+donor made `builder` succeed — and the project it produced still built `XAUUSD_DukasM1_Infinox` at
+gold's spread, with USDJPY's trading hours, because `--symbol` never switches the market. The session
+is the blocker that *announces itself*; the market is the one that does not. `OPEN.md` issue 35.
+
+GBPUSD, AUDUSD and USDCAD have **no session defined in any project on this machine**, so authoring
+for them needs one registered in SQX first. Inventing the hours is the one thing the code will not
+do, and that is deliberate: a task naming a session it does not define trades the wrong hours in
+silence.
+
+## The triple swap day is per feed, and the policy hardcoded one for everybody
+
+🔬 2026-09-23, found while verifying a written cross-check `<Setup>` against the master. The
+`<Swap tripleSwapOn>` SQX carries is **not** the same day everywhere:
+
+| day | feeds |
+|---|---|
+| `WEDNESDAY` | 17 — every FX pair, XAUUSD, XAGUSD |
+| `FRIDAY` | 7 — `BRENTCMDUSD_ftmo`, `DJ30`, `NIKKEI225` (both feeds), `USA500` (both feeds), `USATEC` |
+| `NEVER` | 1 — `EURUSD_M1_dukas`, a stale feed no asset file claims |
+
+`assets/_policy.yaml` declares `swap: {triple_swap_on: WEDNESDAY}` **once, for all of them**, and has
+no per-asset field. So five assets with a file — BRENT, DJ30, NIKKEI225, USA500, USATEC — were being
+configured with the wrong night. It is not cosmetic: the triple charge is 3× one night's financing,
+and BRENT's short side alone is −9.54 % annual, so a decade of it lands on the wrong bars.
+
+🔬 **The override needs no code.** `core.assetdata.load` returns `{**policy, **asset_file}`, so a
+top-level `swap:` in an asset file **replaces the policy's block entirely** — which is why the
+override must repeat `rollout_hour` even when it does not change. Field-by-field merging is not what
+happens. All five files now carry it and `load()` agrees with the master on all nineteen.
+
+🤔 The cleaner fix is a per-asset `triple_swap_on` in `_policy.yaml` next to the segments, so the day
+sits with the other read-from-SQX facts instead of in five hand-written overrides. That needs a small
+change in `load()` and has not been done.
+
+
+## Cuánto tarda cada paso del workflow (2026-09-24)
+
+📓 Del log del custodio y de `/usr/bin/time`, corrida completa 1→16.5 sobre USDJPY H1. La tabla
+entera está en `docs/manual/12-rendimiento.md`; aquí sólo lo que cambia una decisión:
+
+- 🔬 **El MC Retest es el 89 % del tiempo de SQX de la cadena** (1.955 s de 2.202), y dentro de él
+  `MCR 7 OHLC` (695 s) y `MCR 8 Stress` (1.022 s) son el 88 %. Medido con CINCO tareas activas; con
+  las siete que ahora se configuran, más.
+- 🔬 **`crossmarket.report` es el único cuello de botella de Python**: 13 min a 2.000 sorteos y >50
+  min sin terminar a los 10.000 de su config, con 8 estrategias × 9 mercados en un núcleo. Todo lo
+  demás de Python son segundos.
+- 🔬 **`retest.ingest` pica 3,2 GB con 36 corridas de 1.000 simulaciones.** Escala con corridas ×
+  sims: 800 corridas pedirían del orden de 70 GB si la proporción aguanta. Medirlo antes de lanzarlo.
+- 🔬 **Parar y arrancar el custodio cuesta ~39 s**, de los cuales 21,5 son la CLI, que responde mucho
+  después de que el puerto conteste. Se paga una vez por etapa porque `startOnlyTask` no corre nada
+  en este install, así que cribar entre pasos implica ese ciclo.
+- ⚠️ Sin medir: los pasos 17, 18 y 19, y el retest del lote de variantes que los alimenta — que es
+  el candidato a más caro de toda la cadena (240 variantes × 3 tramos × 9 mercados).

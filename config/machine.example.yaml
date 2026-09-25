@@ -27,6 +27,9 @@ sqx_workers:
     path: ~/Desktop/SQX_w2
     port: 5070
 
+# Port the desktop app's local daemon listens on, loopback only. Optional: 8765 if absent.
+ui_port: 8765
+
 # Where exported data lives. Never inside the repo.
 data_root: ~/Desktop/AlgoData
 

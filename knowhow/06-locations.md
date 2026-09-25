@@ -48,6 +48,79 @@ Total on the master today: **1,020 blocks**.
 🔬 `tools/sqx-lab/.../sqx-custom-block/catalog.json` is a derived index of the *value* atoms only
 (235 = 178 native + 57 the owner's), not of the conditions — regenerate it, don't hand-edit it.
 
+### 🔬 The builder's block switches live in the Build task, not in the install (2026-09-24)
+
+The catalogue (`config.xml` + `customBlocks.xml`) says what the install *knows*. What the builder
+may *sample* is a separate, per-task list: `<Blocks><BuildingBlocks>` inside the Build task XML —
+**844 `<Block key= weight= use= category=>` entries**, which is why `Build-Task3.xml` is 2.9 MB
+while a Retest task is 40 KB. Measured on the frozen donor
+`AlgoData/projectsBackup/XAUUSD_base_2026-09-21`.
+
+Three categories, and they are **three switches over the same vocabulary, one per role**:
+
+| `category` | entries | keys look like | what the switch gates | on in the donor |
+|---|---|---|---|---|
+| `signals` | 588 | `ADXCrossUp`, `CBlock_BBBreakoutUp` | the block as an entry/exit condition | 400 |
+| `indicators` | 171 | `Indicators.ADX`, plus the 23 comparators bare | the block as a value to compare | 26 |
+| `stopLimitBlocks` | 85 | `Stop/Limit Price Levels.EMA`, `…Ranges.ATR` | the block as the price of a stop/limit order | 10 |
+
+🔬 The prefixes are a namespace, not other blocks: `Indicators.ATR` and
+`Stop/Limit Price Ranges.ATR` both resolve to the single `ATR` of `config.xml`, and every one of
+the 844 keys resolves into the 1,020-block catalogue. All 171 of the owner's blocks are present.
+**253 native blocks appear in no category at all** — the Actions, the Functions, the Bar/Time
+values, the Strategy Control values and all 158 `talib_*`: they exist for a hand-built strategy and
+are unreachable from generation.
+
+🔬 `weight` is `1` on all 844 today, so nothing in this install has ever used the soft knob.
+
+#### 🔬 A group-bound hole IGNORES the switches; a free hole obeys them (tested 2026-09-24)
+
+Measured, not inferred. Project `blocktest_grupoA` on the custodian: donor cloned untouched,
+template `TrendRegimeFilters_EntryOnly.sqx`, whose entry is
+`AND(RandomCondition(group=TrendRegimeFilters), RandomCondition(free))`. All six members of
+`TrendRegimeFilters` are `use="false"` in the donor's `<BuildingBlocks>`. 30 strategies, 21 s.
+
+| hole | bound to | what it produced |
+|---|---|---|
+| `RandomConditionFilter1` | `TrendRegimeFilters` | **30/30 `CBlock_CSSARegimeAbove50`, `use="false"`** |
+| `RandomCondition2` | nothing | 98 fills, 28 distinct blocks — **97 of 98 `use="true"`** |
+
+So the two mechanisms are genuinely independent and the switch is not a global gate:
+
+- **A `RandomCondition` bound to a group samples the group and nothing else.** `use="false"` does
+  not remove a block from a pool. Turning a block off cannot stop a template that points a hole at
+  a group holding it.
+- **A free `RandomCondition` obeys the switches.** Of 408 `use="false"` blocks, the only one that
+  ever appeared in the free hole was the one the bound hole had already forced into the strategy
+  (once out of 98, evolution copying it across slots).
+
+#### 🔬 A template's FIXED block is outside the switches too (2026-09-24)
+
+Stronger than `use="false"`: `CBlock_CloseCrossesAboveKCUpper` is **not in the donor's
+`<BuildingBlocks>` at all** — it was authored on 2026-09-22, the donor was frozen on 2026-09-21 —
+and the `smoke_keltnerUpperCrossUp` build carried it in 29 of 29 strategies. A block written into
+the template is part of the skeleton, not drawn from a pool, so nothing in that list can remove it.
+
+Which leaves the list governing exactly one thing: **what a free `RandomCondition` may draw.**
+Fixed blocks and group-bound holes are both outside it.
+
+⚠️ **A frozen donor's `<BuildingBlocks>` goes stale.** It is a stored settings overlay, not the
+install's vocabulary: every block authored after the freeze is missing from it, and SQX builds with
+that block anyway. Anything deriving "what the builder can sample" from a donor must add the
+install's own blocks back — `sqx/blocks/taxonomy.py` does, by block type.
+
+⚠️ Consequence for anything that filters the builder's vocabulary: **`<BuildingBlocks>` governs
+free holes and generic generation only.** Narrowing what a group-bound template may sample is done
+by choosing or authoring the **group**, never by the switches. A system that offers only the
+switches will silently do nothing on exactly the templates that bind their holes.
+
+🔬 The 85 `indicators` entries that carry `indicatorMin/Max/Step` are calibrated ranges, and
+`<Calibration calibrateBeforeStart="true" maxSteps="50"/>` sits beside them: SQX recalibrates
+before each run, so the ranges a cloned donor carries are not stale on a new asset.
+
+Nothing in this repo reads or writes `<BuildingBlocks>` as of 2026-09-24 — `sqx/projects/` touches
+costs, windows, templates, databanks and cross-checks, never the block switches.
+
 ### 🔬 A RandomCondition needs no group, and a fixed block beside it is already proven (2026-09-22)
 
 Read out of `highest_breakout_template_daily_filter.sqx`, the template this install ships and the
@@ -125,3 +198,78 @@ machinery is configured (`MinSLATRMultiple 2`, `MaxSLATRMultiple 8`, period 20 f
   at the 8-bar cap, median MAE 1.37×ATR) and ~11 **signal-exit** strategies (exit on a rule after 1–3
   bars, median MAE 0.95×ATR, some near 0.01). Any pooled exit statistic hides this.
 - 🔬 In-sample window is `2008.01.01–2017.12.31` (`<Setup dateFrom= dateTo=>` in `Build-Task3.xml`).
+
+## Un clon del donante congelado sigue operando el mercado del donante (2026-09-24)
+
+🔬 Medido montando el primer proyecto de un activo que NO es XAUUSD. `sqx.projects.builder` clonaba
+el donante, le escribía la sesión, las fechas y el timeframe del activo pedido — y **dejaba el feed
+del donante**. El log lo dice sin que nada falle:
+
+```
+CONSTRUCCION : Loading backtest data for Higher backtest precision - XAUUSD_DukasM1_Infinox / H1
+```
+
+La causa está en `setups.py`: `set_costs` sólo reescribe un `<Setup>` cuyo `<Chart symbol=…>` **ya
+es** el del activo. Con el donante en XAUUSD y el activo en USDJPY no casa ninguno, así que el
+proyecto salía con el oro en el `<Chart>`, `spread="0"`, la comisión apagada… y la ventana y la
+sesión de USDJPY. Un resultado así es peor que un error: es interpretable y está mal.
+
+- 🔬 La reparación es `sqx/projects/resources.py`: trae el `<Symbol>`, su `<InstrumentInfo>` y su
+  `<Broker>` de un proyecto que ya opere ese feed (el mismo mecanismo que `borrow_session`), y
+  cambia el `<Chart>` **sólo** del feed del donante — los mercados extra de un cross-check conservan
+  el suyo. El feed del donante se lee del primer `<Chart>` de su tarea de Build.
+- 🔬 El guardia que faltaba: `builder` ya se niega cuando una tarea acaba con **cero** `<Setup>`
+  sobre el feed del activo. Ese número lo calculaba desde el 2026-09-23 y no lo miraba nadie.
+- 🤔 Todo proyecto creado con este builder para un activo distinto de XAUUSD **antes** de esta fecha
+  construyó sobre oro. En `runs.csv` sólo hay corridas de XAUUSD, así que probablemente no hay
+  resultado contaminado; conviene comprobarlo antes de creer uno.
+
+## Un bloque nativo fijo en una plantilla no admite un parámetro generado (2026-09-24)
+
+🔬 Fijar `MABarClosesAbove` en el hueco concreto de `market_long` y poner
+`generate="random" randomValue="default"` en su `#Period#` hace que el builder se niegue:
+
+```
+GenerateException: Bad configuration - Identification not found in item 'MABarClosesAbove'
+```
+
+Sin el `generate` construye: **50 de 50** llevaron el bloque (`template_check -n 50`). El bloque
+nativo fijo de la plantilla de serie (`highest_breakout_template_daily_filter.sqx`, `BarDayOfWeekIsNot`)
+tampoco lleva ningún `generate`, así que la forma confirmada es **parámetros congelados en el hueco
+fijo**, y lo que varía de verdad es el hueco aleatorio y las salidas.
+
+- 🔬 Eso NO deja el parámetro fuera del estudio: aparece como parámetro de la estrategia
+  (`MABarClosesPeriod1`, `MABarClosesType1`) y por tanto el SPP lo permuta y `variants.scale` lo
+  escala. Congelado en el build ≠ invisible después.
+- 🤔 Queda sin averiguar si añadir un `#Identification#` al Item lo desbloquea. No se probó: la forma
+  congelada es la que está confirmada por un build.
+
+## Un `feed:` en un config.yaml es una bomba de relojería (2026-09-24)
+
+🔬 `strategies/crossTF/config.yaml` llevaba `run.feed: XAUUSD_DukasM1_Infinox` fijo. Al correr el
+crossTF sobre USDJPY, **las doce celdas se puntuaron contra barras de ORO**. El síntoma no fue un
+error: fue una reconciliación de −0,20 a −0,34 contra el P/L de SQX, y doce veredictos escritos
+debajo. Con el feed correcto sube a **0,98–0,99**.
+
+- 🔬 El módulo se salvó a sí mismo: el aviso `RECONCILIACION ... por debajo de 0.99` salía en las
+  doce celdas y decía literalmente «nada de lo que sigue describe el backtest que SQX corrio». La
+  puerta funcionaba; lo que faltaba era que el feed no fuese una constante.
+- 🔬 El mismo `config.yaml` nombraba XAUUSD en el aviso de costes provisionales, así que cualquier
+  activo heredaba la advertencia del oro. Ahora sale de `assetdata.symbol_for(feed)` y
+  `assetcheck.provisional()`, así que nombra el activo que de verdad se leyó.
+- 🤔 Regla para el resto: **un `config.yaml` puede declarar umbrales y modelos, no de qué activo se
+  está hablando.** Eso es propiedad de la corrida y va por la línea de comandos. Quedan por revisar
+  los demás: `strategies/sppUltra/`, `strategies/retest/` y `strategies/crossmarket/` toman el
+  proyecto por `--project`, pero conviene mirar si alguno guarda un feed.
+
+## 🔬 Every per-strategy report CSV names the strategy in a `strategy` column (2026-09-24)
+
+Checked over every CSV under `reports/` on 2026-09-24: `gate`, `curate`, `crossmarket`, `retest`,
+`montecarlo`, `nulls`, `exposure`, `wfc` and `wfm` all write `strategy`; the two exceptions are
+the SQX exports copied by `curate` (`Strategy Name`) and `decay.csv` (`name`). The decision word
+sits in `verdict` (or `tier` for Monte Carlo) and is one of `MANTENER · DESCARTAR · DUDOSA ·
+NO EVALUABLE · FAIL · MARGINAL · worth_it · not_worth_it`. `ui/daemon/studies.py` relies on this
+to find what any module said about one strategy without knowing the module: a new report joins the
+window by writing that column, and its verdict is coloured by `ui/desktop/theme.state_colour`,
+which names any word outside that list instead of hiding it. Report folders are per **project**,
+not per databank: a strategy built in `Results` is judged under `OOS`, `SPP_IS` or `MC_Trades`.

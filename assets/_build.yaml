@@ -89,3 +89,449 @@ crosschecks:
 # ─── Genético ──────────────────────────────────────────────────────────────────────────
 # No se parametriza: el bloque <BuildMode> entero se copia verbatim del proyecto modelo,
 # en `sqx/projects/buildmode_model.xml`. Decisión del dueño: "copia todo del modelo".
+
+# ─── Cross-market y cross-timeframe ────────────────────────────────────────────────────
+# Los dos usan el MISMO crosscheck de SQX, `RetestOnAdditionalMarkets`, y se diferencian en
+# qué deja variar cada `<Setup>`: el cross-market cambia de mercado y mantiene el reloj, el
+# cross-timeframe cambia el reloj y mantiene el mercado.
+#
+# Lo que NO está aquí, porque no es doctrina sino universo: QUÉ mercados se comprueban, que
+# está en `assets/_markets.yaml` y se fija antes de mirar ningún resultado, y cuánto cuesta
+# cada uno, que está en su `assets/symbols/<SIM>.yaml`.
+#
+# ⚠️ NINGUNA CONDICIÓN DE ACEPTACIÓN, y eso es una decisión del dueño (2026-09-24), no un
+# descuido. El donante trae una viva —`ReturnDDRatio > 1` sobre el primer mercado, con
+# `MinConditions: 2` y `MinMarkets: 1`— y con una condición viva SQX no escribe en el
+# databank de salida la estrategia que no la cumple. Eso convierte la prueba en un filtro y
+# deja al análisis de Python sin las muertas, que son justo la mitad de la evidencia: sin
+# ellas no se puede decir qué mercado mató a qué estrategia ni calcular un p-valor contra
+# nada. SQX corre los backtests; el veredicto se toma en Python y se aplica con `/curate`.
+# `conditions: []` significa que se apagan TODAS las que traiga el donante — `use="false"` en
+# cada una, más `DeleteFailedStrategies` a false — y el comando dice cuántas apagó.
+# 🤔 Con cero condiciones activas `MinConditions` y `MinMarkets` quedan inertes (es lo que
+# hace la WFM, donde cero condiciones dan score 100 y aprueban todas las casillas). Se dejan
+# como estén en vez de tocarlos: comprobar en la primera corrida real que no cae nadie.
+#
+# `segment: build..oos1` — una sola ventana continua de 2008 a 2022 en XAUUSD, con la misma
+# sintaxis de dos puntos que la MC Retest, y cobrada a los costes del ÚLTIMO tramo, o sea al
+# spread de `oos`, que es el pesimista. Decisión del dueño, 2026-09-24: los dos retesteos
+# corren sobre build+oos1. `oos2` no vale aquí tampoco.
+#
+# ⚠️ Los dos lo aplican por vías distintas, por culpa de la máscara `<MainTestValues>`:
+#   cross-market  lleva `dates="false"`, así que cada mercado corre su PROPIA ventana: desde
+#                 el principio de `build` —o su primera barra, lo que sea más tarde— hasta el
+#                 final de `oos1`. Un mercado con datos desde 2013 corre 2013→2022.
+#   cross-tf      lleva `dates="true"`: las fechas de sus `<Setup>` son INERTES y manda la
+#                 ventana del test principal de la tarea. Para que corra build+oos1 hay que
+#                 configurar con ese segmento la tarea de retest que lo aloja; `crosstf.py`
+#                 avisa si la tarea no lo lleva.
+crossmarket:
+  segment: build..oos1
+  precision: 2          # un minuto; el crosscheck de alta precisión ya no pinta nada aquí
+  conditions: []        # ninguna. Es una medición, no una puerta
+
+crosstf:
+  segment: build..oos1
+  precision: 2
+  conditions: []
+  # Los timeframes extra POR DEFECTO, en el orden en que se vuelven los bloques 1, 2, ... El
+  # bloque 0 es siempre el test principal. `--timeframes` en la línea de comandos manda sobre
+  # esta lista. Sólo H4 por defecto: medido 2026-09-23, D1 no es alcanzable escalando desde H1
+  # (mueve los parámetros 140-586 % y los clava en el suelo del builder).
+  # ⚠️ Este orden es un CONTRATO con `strategies/crossTF/config.yaml` (`run.blocks`):
+  # equivocarlo lee cada celda sobre las barras de otro timeframe, en silencio.
+  timeframes: [H4]
+
+# ─── MC Retest ─────────────────────────────────────────────────────────────────────────
+# Paso 13 del workflow. Ocho tareas, cada una perturbando UNA cosa y volviendo a correr el
+# backtest entero N veces, más una octava que perturba las seis a la vez. Aislar es todo el
+# diseño: una tarea que mueve dos cosas no puede atribuir el daño a ninguna.
+#
+# ⚠️ Los títulos son un CONTRATO con `strategies/retest/inputs/tasks.py`, que busca los
+# databanks por ese nombre exacto y verifica qué métodos corrió cada uno antes de escribir
+# nada. Cambiar un título aquí rompe el análisis de Python, en silencio y aguas abajo.
+#
+# Los rangos que van entre un mínimo y un máximo NO están aquí: son del activo, van en
+# PUNTOS y viven en `assets/symbols/<SIM>.yaml` bajo `mc_retest:`. Un método con
+# `params: {}` es justo eso — sus dos bordes los pone el activo, y si no los ha decidido
+# ese método se cae (y la tarea entera si se queda sin ninguno).
+#
+# ─── Las tres cosas que se tocan por tarea ─────────────────────────────────────────────
+#
+# `simulations` — cuántas veces se vuelve a correr el backtest perturbado. Cada tarea lleva
+#   el suyo, así que se puede abaratar una cara sin tocar las demás. El de aquí arriba es
+#   sólo el valor por defecto, para una tarea que no lo diga.
+#   ⚠️ Es el eje de coste dominante y es LINEAL: la mitad de simulaciones es la mitad de
+#   tiempo. Por debajo de ~200 el percentil de confianza que lee el paso 14 empieza a ser
+#   ruido; 1.000 es lo que lleva el maestro y lo que se ha medido.
+#
+# `precision` — es `MCBacktestPrecision`, la fidelidad intrabarra de CADA simulación. Ojo,
+#   NO es el `testPrecision` del backtest principal, que lo pone la doctrina de arriba.
+#   Los dos valores van al revés de lo que sugiere la palabra "precisión":
+#
+#     1 -> SÓLO EL TIMEFRAME ELEGIDO. El más RÁPIDO y el más GROSERO: la simulación ve las
+#          velas M30 tal cual, sin mirar qué pasó dentro de cada una.
+#     2 -> UN MINUTO. El más LENTO y el más FINO: reconstruye cada vela desde barras de un
+#          minuto, así que respeta el orden real en que se tocaron máximo y mínimo.
+#
+#   Medido 2026-09-23 con las mismas 1.000 simulaciones y la misma ventana: precisión 1
+#   tarda 20-25 s y precisión 2 tarda 50 s. Es el factor dos, y va en la dirección
+#   esperable — el fino cuesta el doble que el grosero.
+#   El maestro lleva 1 en `MCR 1 Bar` y `MCR 5 Params`, y 2 en las otras seis.
+#
+# `segment` — qué ventana se vuelve a correr. Dos formas, y sólo dos:
+#
+#     segment: build          un tramo suelto, tal cual lo define `assets/_policy.yaml`
+#                             para este activo. En XAUUSD, 2008.01.01 → 2017.12.31.
+#
+#     segment: build..oos1    DOS PUNTOS, no tres. Significa "de donde empieza el primero
+#                             a donde acaba el último", o sea una sola ventana continua que
+#                             abarca los dos: 2008.01.01 → 2022.12.31. Además marca el
+#                             segundo tramo como fuera de muestra dentro de la tarea
+#                             (`<OutOfSample><Range>` 2018→2022), que es lo que hace que
+#                             `MCUseFullSample: true` signifique algo.
+#                             Se cobra a los costes del ÚLTIMO tramo —aquí el spread de
+#                             `oos`, el más caro de los dos declarados—, porque una ventana
+#                             que abarca las dos muestras se lee al precio pesimista.
+#
+#   Valen los nombres de `segments_default` de `_policy.yaml`: hoy `build` y `oos1`.
+#   ⛔ `oos2` NO vale, ni suelto ni en un rango: está reservado al WFC y a la WFM y cada
+#      mirada lo gasta. `sqx/projects/perturbations.py` se niega y dice por qué.
+mc_retest:
+  simulations: 1000            # por defecto; cada tarea puede llevar el suyo
+  tasks:
+    - title: MCR 1 Bar
+      segment: build
+      simulations: 1000
+      precision: 1             # timeframe elegido — rápido y grosero
+      full_sample: false
+      methods:
+        RandomizeStartingBar: {MaxChange: 500}
+    - title: MCR 2 Spread
+      segment: build
+      simulations: 1000
+      precision: 2             # un minuto — lento y fino
+      full_sample: false
+      methods:
+        RandomizeSpread: {}
+    - title: MCR 3 Slippage
+      segment: build
+      simulations: 1000
+      precision: 2
+      full_sample: false
+      methods:
+        RandomizeSlippage: {}
+    # Sólo tiene sentido si la población lleva órdenes stop o limit: a mercado no hay
+    # ninguna orden pendiente cuya distancia al precio el bróker pueda rechazar. Regla del
+    # dueño, 2026-09-23. `sqx/projects/orders.py` lo mira antes de escribirla.
+    - title: MCR 4 MinDist
+      segment: build
+      simulations: 1000
+      precision: 2
+      full_sample: false
+      methods:
+        RandomizeMinDistance: {}
+    - title: MCR 5 Params
+      segment: build
+      simulations: 1000
+      precision: 1
+      full_sample: false
+      methods:
+        RandomizeStrategyParameters: {Probability: 100, MaxChange: 15, Symmetric: true}
+    - title: MCR 6 Exits
+      segment: build
+      simulations: 1000
+      precision: 2
+      full_sample: false
+      methods:
+        RandomizeExitParameters: {Probability: 100, MaxChange: 30, Symmetric: true}
+    # La más cara de las aisladas: 149 s medidos contra los 50 s de sus hermanas, porque
+    # reconstruye el histórico entero en cada simulación. Candidata a bajarle `simulations`.
+    - title: MCR 7 OHLC
+      segment: build
+      simulations: 1000
+      precision: 2
+      full_sample: false
+      methods:
+        RandomizeHistoryDataOHLC: {ProbabilityOpen: 30, ProbabilityHigh: 30,
+                                   ProbabilityLow: 30, ProbabilityClose: 30, MaxChange: 15,
+                                   ATRPeriod: 14, KeepConnected: true,
+                                   ProbabilityGapChange: 30, MaxChangeOfGap: 15}
+    # La de producción, y la más cara de todas: 227 s medidos. Seis perturbaciones a la vez
+    # y 15 años en vez de 10.
+    - title: MCR 8 Stress
+      segment: build..oos1
+      simulations: 1000
+      precision: 2
+      full_sample: true
+      methods:
+        RandomizeExitParameters: {Probability: 100, MaxChange: 15, Symmetric: true}
+        RandomizeHistoryDataOHLC: {ProbabilityOpen: 30, ProbabilityHigh: 30,
+                                   ProbabilityLow: 30, ProbabilityClose: 30, MaxChange: 15,
+                                   ATRPeriod: 14, KeepConnected: true,
+                                   ProbabilityGapChange: 30, MaxChangeOfGap: 15}
+        RandomizeMinDistance: {}
+        RandomizeSlippage: {}
+        RandomizeSpread: {}
+        RandomizeStrategyParameters: {Probability: 100, MaxChange: 15, Symmetric: true}
+
+# ─── WFC y CSCV: el retest de las variantes ────────────────────────────────────────────
+# Pasos 16.5, 17 y 18. UN SOLO bloque para los dos estudios, y eso es deliberado: la
+# Walk Forward Correlation y el CSCV leen EXACTAMENTE el mismo material —el panel de
+# métricas (`metrics.parquet`) y la equity diaria (`equity.parquet`) del mismo lote de
+# variantes— y sólo se diferencian en qué pregunta le hacen. Dos configuraciones separadas
+# serían dos lotes distintos, y entonces sus respuestas ya no hablarían del mismo objeto.
+#
+# La ventana es de PRINCIPIO DE `build` A FINAL DE `oos2` (dueño, 2026-09-24). Es el único
+# estudio que recorre el histórico entero, porque la pregunta del CSCV —¿mi forma de elegir
+# parámetros sobreajusta?— necesita toda la historia para poder partirla de 924 maneras.
+#
+# ⚠️ Toca `oos2`, que `_policy.yaml` reserva al WFC y a la WFM. Esto ES el WFC, así que es
+# uno de sus dos consumidores legítimos; `sqx.projects.setups.span` deja pasar el tramo sólo
+# aquí y en la WFM. Cada mirada lo gasta: no se corre "para ver qué sale".
+#
+# ─── Por qué TRES tareas y no una ──────────────────────────────────────────────────────
+# Decisión del dueño, 2026-09-24. Una sola tarea que cubriera 2008-2026 llevaría UN spread y
+# UN slippage para los dieciocho años, y habría que elegir cuál: con el de `is` se regalan
+# ocho años de costes optimistas, y con el de `oos` se castigan diez años de in-sample con
+# un coste que no les toca. Tres tareas, una por tramo, y cada una cobra lo suyo.
+#
+# Y sale gratis en información: cada tarea escribe SU databank, así que el corte IS/OOS deja
+# de ser una fecha dentro de una curva y pasa a ser de qué tarea vino cada curva. El panel
+# de cada tramo es directamente comparable con el de los otros porque los tres corren las
+# mismas variantes sobre la misma definición de estrategia.
+#
+# ⚠️ Los títulos y los databanks son un CONTRATO con la cosecha de Python: `sqx/variants/`
+# los busca por este nombre exacto. Cambiar uno aquí rompe el análisis aguas abajo y en
+# silencio, igual que en la MC Retest.
+#
+# `markets: true` — cada una de las tres tareas lleva ADEMÁS el crosscheck de mercados
+# adicionales (dueño, 2026-09-24): los mismos mercados de `_markets.yaml`, cada uno con sus
+# propios costes y recortado a su `data_from` si empieza más tarde que el tramo. Son los
+# crossmarkets, NO los crossTF: un timeframe reescalado no es un mercado nuevo y no aporta
+# grados de libertad a un CSCV.
+#   ⚠️ El coste no es gratis: multiplica cada tarea por (1 + nº de mercados declarados).
+#   Con XAUUSD y sus dos mercados family, las tres tareas son nueve backtests por variante.
+#
+# Ninguna condición de aceptación, por lo mismo que en el cross-market: una variante
+# descartada y una variante que perdió dinero son la misma cosa para el que cuenta, y
+# entonces el PBO deja de significar nada.
+wfc:
+  precision: 2
+  conditions: []
+  markets: true
+  # ─── El suelo de operaciones, y es DURO ────────────────────────────────────────────
+  # Dueño, 2026-09-24: un backtest con menos de 50 operaciones EN TOTAL —los tres tramos
+  # sumados— no entra en ninguna estadística. Ni en la correlación, ni en el CSCV, ni en
+  # la superficie por mercados. No se pondera menos: se va.
+  #
+  # El motivo es que una variante que apenas opera no da un resultado malo, da un
+  # resultado que no es un resultado: su neto mide una o dos operaciones, y sobre una
+  # rejilla de miles de puntos ese puñado de esquinas degeneradas decide la correlación
+  # entera. Y el ratio que enseña es peor que el neto — un profit factor calculado sobre
+  # 3 operaciones es ruido con dos decimales.
+  #
+  # Se cuenta por (variante × mercado) sobre `build+oos1+oos2`, porque un backtest es una
+  # estrategia corriendo en un mercado: una variante puede operar 400 veces en oro y 9 en
+  # plata, y la celda de la plata es la que no vale. `sqx.variants.collect` deja fuera de
+  # `metrics.parquet` lo que no llega, lo cuenta y lo canta; la evidencia completa —con
+  # los descartados y su recuento— se queda en `segments.parquet`.
+  min_trades_total: 50
+  input: WFC Variants        # el databank donde se cargan las variantes fabricadas
+  tasks:
+    - {title: WFC 1 IS,   segment: build, databank: WFC Build}
+    - {title: WFC 2 OOS1, segment: oos1,  databank: WFC OOS1}
+    - {title: WFC 3 OOS2, segment: oos2,  databank: WFC OOS2}
+
+# ─── SPP ───────────────────────────────────────────────────────────────────────────────
+# Paso 15 del workflow. El crosscheck `OptProfileSysParamPermutation` recorre el entorno de
+# cada parámetro y guarda el `optimizationProfile.bin` que `strategies/sppUltra/` lee.
+#
+# ⚠️ El SPP es `OptProfileSysParamPermutation`. `SequentialOptimization` vive al lado, en el
+# mismo bloque, habla también de permutar parámetros y NO escribe perfil ninguno.
+# Encender el equivocado costó 47 núcleos durante 91 minutos y no produjo nada
+# (knowhow/03-driving-sqx.md, 2026-09-22).
+#
+# Dos tareas, dos ventanas, y no se comparan entre sí: medido 2026-09-19, un SPP de IS y uno
+# de OOS de la MISMA estrategia con ajustes idénticos comparten 6 tuplas de ~11.600. Son dos
+# lecturas del mismo entorno, no un antes y un después. De ahí salen las variantes del 16.5.
+#
+# ⚠️ `precision: 1` diverge de `precision.default: 2`. Un SPP son miles de backtests por
+# estrategia: a 1 minuto no termina. Es lo que llevan las tareas del maestro y hasta que el
+# dueño diga otra cosa se queda — está anotado en OPEN.md §38 como pregunta suya.
+#
+# ⚠️ `SPP IS` corre sobre `build`, que es lo que significa "in sample" y lo que hacen las
+# tareas del dueño. La línea de `_policy.yaml` que dice que `build` es sólo del paso 6 habla
+# de la SELECCIÓN; esto no selecciona nada (las condiciones van apagadas), sólo vuelve a leer
+# una ventana ya gastada. También anotado en OPEN.md §38.
+spp:
+  max_tests: 15000        # ⚠️ PONERLO siempre: el donante trae 1000000001, que es el
+                          # centinela de SQX para "exhaustivo" — todas las combinaciones
+  spread_pct: 35          # cuánto se mueve cada parámetro arriba y abajo. 35 o 40, nunca 30
+  step_pct: 4             # cuánto mueve un paso. Steps = 2*spread/step → 18 a ±35
+  tasks:
+    - {title: SPP IS, segment: build, precision: 1}
+    - {title: SPP OOS, segment: oos1, precision: 1}
+
+# ─── Walk Forward Matrix ───────────────────────────────────────────────────────────────
+# Paso 19, y el ÚLTIMO que mira datos. Reoptimiza la estrategia sobre una ventana deslizante
+# y corre cada elección sobre el tramo siguiente, para 30 combinaciones de cuántas pasadas y
+# cuánto de cada pasada va fuera de muestra. Lo lee `strategies/walkForwardMatrix/`.
+#
+# ⚠️ Esta tarea NO se cobra al último tramo, que es la convención del resto de spans.
+# Decisión del dueño, 2026-09-24: `costs_segment: oos1`, el spread intermedio. La ventana son
+# 18,7 años de los que `oos2` es sólo la cola de 3,7, así que cobrarla entera al precio del
+# tramo más caro castigaría quince años por culpa de cuatro. Hoy `oos1` y `oos2` comparten
+# `spread_oos` (10 puntos en XAUUSD, slippage 5) y el número sale idéntico; el día que el
+# activo declare un spread propio para `oos2`, esta línea es la que decide. ⚠️ Un "intermedio"
+# de verdad —algo entre los 5 de `is` y los 10 de `oos`— haría falta declararlo en
+# `assets/symbols/<SIM>.yaml`, y esa es una cifra que pone el dueño, no el catálogo.
+#
+# ⚠️ `segment: build..oos2` acaba en `oos2`, y eso es una puerta de un solo sentido:
+# `_policy.yaml` reserva ese tramo para el WFC y la WFM, y cada mirada lo gasta. No se corre
+# para "ver qué sale". Los dos puntos significan una sola ventana continua desde el principio
+# de `build` hasta el final de `oos2` —en XAUUSD, 2008.01.01 → 2026.08.30, 18,7 años— porque
+# un walk-forward necesita histórico delante para optimizar antes de correr nada.
+#
+# ⚠️ Y no se LEE hasta que 17, 18 y 19 estén los tres hechos (decisión del dueño, 2026-09-23):
+# mirar el WFC antes de decidir si se corre la WFM contamina esa decisión con lo ya visto.
+#
+# Los dos ejes son los de la tarea del maestro: 5 porcentajes de OOS x 6 números de pasadas =
+# 30 celdas.
+#
+# ─── Los dos enteros que el donante traía sin decodificar: FIJOS, no son mandos ────────
+# Decisión del dueño, 2026-09-24: **los periodos van por número de pasadas y % de OOS**, no
+# por días ni por barras. Eso es exactamente `period_type: percent`, y por eso los dos ejes
+# de abajo son `runs` y `oos_pct`.
+#
+# 🔬 Decodificados el 2026-09-24 leyendo el propio SQX (`CrossCheckWalkForwardMatrix` y
+# `SQTradingLib.jar`): `period="10"` es el TIPO DE PERIODO y `optimization="15"` el TIPO DE
+# OPTIMIZACIÓN. Sus enums, de `internal/plugins/.../settings.html`:
+#
+#     periodTypes       percent=10   days=20   bars=30
+#     optimizationTypes floating=15  fixed=25
+#
+# Los otros valores están escritos aquí para que se reconozcan si aparecen en un proyecto
+# ajeno, NO como alternativas a elegir: con `days` o `bars` los dos ejes dejarían de ser
+# "cuántas pasadas" y "cuánto de cada una va fuera de muestra" y pasarían a ser longitudes,
+# o sea otro estudio con el mismo nombre. `floating` es la ventana que se desliza manteniendo
+# su longitud — coincide con lo medido en el fichero (IS 4,72 años y OOS 1,33, ambos
+# constantes, `knowhow/01-file-formats.md`). Se escriben por su nombre, no por su número.
+wfm:
+  title: WFM
+  segment: build..oos2
+  costs_segment: oos1       # a qué precio se cobra la ventana entera, no al del último tramo
+  precision: 2
+  # Por PASO y por celda. El donante trae 500 y aquí hubo 15.000 un rato; el dueño lo bajó a
+  # 5.000 el 2026-09-24 al poner `exact_is_exact_oos`, y el reparto es deliberado: `MaxTests`
+  # compra una elección mejor por paso y NADA que se pueda leer después —SQX guarda sólo el
+  # ganador de cada paso, no la población que probó (`knowhow/01-file-formats.md`)—, mientras
+  # que `wf_type` cambia lo que SIGNIFICA el número que sí se guarda. Si hay núcleos que
+  # gastar, se gastan en exactitud antes que en más juegos de parámetros por paso.
+  max_tests: 5000
+  period_type: percent      # FIJO: los ejes son nº de pasadas y % de OOS, no días ni barras
+  optimization_type: floating   # FIJO: la ventana de optimización se desliza, no se ancla
+  # Con qué fidelidad se calcula cada pasada. Es el atributo `type` del elemento
+  # <WalkForward> y SQX lo llama "Walk-Forward type":
+  #
+  #     simulated_is_simulated_oos = 0   "Simulated IS, Simulated OOS (fastest)"
+  #     simulated_is_exact_oos     = 1   "Simulated IS, Exact OOS (slower)"   ← el default de SQX
+  #     exact_is_exact_oos         = 2   "Exact IS, Exact OOS (slow)"         ← el nuestro
+  #
+  # 🔬 Decompilado 2026-09-24 (`OptimizationEngineWF`): con `exact OOS` cada pasada fuera de
+  # muestra se vuelve a BACKTESTEAR de verdad con los parámetros que eligió ese paso
+  # (`testStrategy(... runFrom, runTo)`); con `simulated` se recortan las órdenes de un
+  # backtest único ya calculado (`runSimpleSimulationRun`). Y lo que cambia el `IS` no son los
+  # decimales sino QUIÉN ELIGE los parámetros: con `simulated` el ganador de cada paso sale de
+  # recortar esa tanda única a la ventana del paso —arrastrando el camino de la equity, que con
+  # sizing por ATR no es neutro, y los trades abiertos antes del borde—; con `exact` cada paso
+  # hace su propia optimización sobre su ventana, que es lo que se haría en vivo.
+  #
+  # Decisión del dueño, 2026-09-24: **`exact_is_exact_oos`**. La pregunta que responde la WFM
+  # es si la optimización PREDICE el tramo siguiente, y con IS simulado la "optimización" es un
+  # recorte; además las tres condiciones `stability` de abajo dividen entre ese número.
+  # No es territorio nuevo: la WFM que ya corrió el maestro llevaba `type="2"` —leído en el
+  # `lastSettings.xml` de las cinco estrategias de su databank `WFM`— con MaxTests 500 sobre
+  # cinco años, y terminó.
+  wf_type: exact_is_exact_oos
+  # Cuánto se mueve cada parámetro al reoptimizar, igual que en el SPP: ±35 % del valor
+  # original, y un paso mueve un 4 %. SQX no acepta el paso en %, acepta `maxSteps`, así que
+  # `sqx/projects/wfm.py` lo deriva: maxSteps = round(2 * distribution_pct / step_pct) = 18.
+  distribution_pct: 35
+  step_pct: 4
+  oos_pct: {start: 20, stop: 40, step: 5}   # Param1: cuánto de cada pasada va fuera de muestra
+  runs: {start: 6, stop: 16, step: 2}       # Param2: cuántas pasadas
+
+  # ─── Cuándo aprueba una casilla, y cuándo aprueba la estrategia ──────────────────────
+  # 🔬 Decodificado del bytecode de SQX el 2026-09-24 (`WalkForwardResult.computeRobustnessScore`
+  # y `WalkForwardMatrixResult.findBestGroupOfPassedCombinations`), y es exactamente esto:
+  #
+  #   1. En CADA una de las 30 casillas se evalúan las condiciones de aquí abajo.
+  #      robustness score = round(condiciones que pasan / condiciones ACTIVAS * 100).
+  #      La casilla aprueba si score >= `threshold_pct`. Las condiciones apagadas no cuentan
+  #      ni en el numerador ni en el denominador; con CERO condiciones el score vale 100 y
+  #      todas las casillas aprueban — que es lo que hacía la tarea del maestro, que las
+  #      llevaba vacías.
+  #   2. Se desliza un rectángulo de `grid_passing_size` x `grid_passing_size` casillas por
+  #      toda la matriz (filas = pasadas, columnas = % OOS) y se busca la posición con más
+  #      casillas aprobadas. La estrategia pasa si en ALGUNA posición hay `min_squares` o más.
+  #      La celda central de ese rectángulo es la "Recommended combination" que enseña SQX:
+  #      cada cuántos días reoptimizar y con cuánto histórico.
+  #
+  # ⚠️ Esto ya NO es sólo evidencia: con condiciones activas, SQX DESCARTA la estrategia que
+  # no encuentre el área (`Cross Check filter in 'WF matrix'`) y no la escribe en el databank
+  # de salida. Para volver al modo mapa —puntuar cada casilla sin tirar nada— basta
+  # `min_squares: 0`: el rectángulo siempre cumple "0 o más" y no se descarta a nadie.
+  #
+  # Con 6 números de pasadas x 5 porcentajes, un rectángulo 4x4 cabe en 3 x 2 = 6 posiciones.
+  # `grid_passing_size` no puede pasar de 5 (la matriz sólo tiene 5 columnas): si no cabe,
+  # SQX se conforma con la mejor casilla suelta y pide `min_squares <= 1`. `wfm.py` lo rechaza
+  # antes de escribir nada.
+  threshold_pct: 80         # % de condiciones que ha de cumplir una casilla para aprobar
+  grid_passing_size: 4      # el rectángulo que se busca: 4x4 casillas
+  min_squares: 12           # al menos 12 aprobadas dentro de ese 4x4
+
+  # ─── Las condiciones de cada casilla ─────────────────────────────────────────────────
+  # `read` dice DE DÓNDE sale el número de la casilla. Las cuatro familias de SQX:
+  #
+  #   oos        el resultado de concatenar todas las pasadas fuera de muestra (subresult 30,
+  #              sampleType 20). Es el dinero de verdad: lo que la estrategia hizo en los
+  #              tramos que su optimización no vio.
+  #   stability  "performance in run vs in optimization part": suma de la métrica en los
+  #              tramos OOS dividida por la suma en los tramos de optimización, x100
+  #              (subresult 31). En NetProfit y # de trades se normaliza por día antes de
+  #              dividir; en los ratios no hace falta. 100 % = fuera de muestra rinde igual
+  #              que dentro.
+  #   score      la misma métrica de la WFM entera dividida por la del backtest original, x100
+  #              (subresult 32). Responde a "¿reoptimizar cada cierto tiempo mejora o estropea
+  #              lo que ya había?".
+  #   special    las cuatro columnas que SQX calcula pasada a pasada (subresult 33). Son las
+  #              únicas que miran la DISTRIBUCIÓN del resultado entre pasadas, no su total.
+  #
+  # Los umbrales están calibrados sobre las 150 casillas reales de las 5 estrategias del
+  # databank `WFM` del maestro (2026-09-24). El % que aparece en cada línea es cuántas de
+  # esas 150 casillas lo cumplen: un umbral que pasa el 100 % no separa nada y uno que pasa
+  # el 5 % es un "no" disfrazado. Con este juego y `threshold_pct: 80`, 2 de esas 5
+  # estrategias encuentran el área 4x4 con 12 y 3 no.
+  #
+  # ⚠️ Los defaults de SQX NO sirven aquí y medirlo es la razón de esta lista: su
+  # `Stability Net profit > 60` lo cumple el 1 % de las casillas reales (la mediana está en
+  # 8,6 %, porque el tramo de optimización es justo el que se eligió por ser bueno), y su
+  # `% of profitable runs > 70` lo cumple el 9 %. Copiarlos habría tirado todo siempre.
+  conditions:
+    # ¿Gana dinero en los tramos que no vio? — el suelo, y no basta con que sea positivo.
+    - {read: oos, metric: NetProfit, op: ">", value: 0}            # 66 % de las casillas
+    - {read: oos, metric: ProfitFactor, op: ">", value: 1.05}      # 45 %
+    # ¿Se parece el fuera de muestra a lo que prometía la optimización?
+    - {read: stability, metric: ProfitFactor, op: ">", value: 60}  # 80 %
+    - {read: stability, metric: NetProfit, op: ">", value: 20}     # 30 % — un quinto del ritmo
+    - {read: stability, metric: DrawdownPct, op: "<", value: 150}  # 79 % — DD OOS < 1,5x el IS
+    # ¿Reoptimizar conserva la forma del original, o la estrategia sólo vive optimizada?
+    - {read: score, metric: ProfitFactor, op: ">", value: 85}      # 83 %
+    # ¿El resultado está repartido entre pasadas, o lo sostiene una sola?
+    - {read: special, metric: WFPctOfProfitableRuns, op: ">", value: 50}    # 51 %
+    - {read: special, metric: WFMaxProfitByRunInPct, op: "<", value: 50}    # 11 % — la dura
+    - {read: special, metric: WFMinTradesInRun, op: ">", value: 20}         # 55 %
+    - {read: special, metric: WFMaxPctDDbyRun, op: "<=", value: 25}         # 100 % — red de
+    #   seguridad: sobre 5 años no la rompe nadie, pero `build..oos2` son 18,7 y las pasadas
+    #   son 3,7 veces más largas, así que ahí sí puede morder.

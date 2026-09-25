@@ -39,8 +39,13 @@ segments_default:
     reserved_for: [WFC, WFM]
 
 segments:
+  BRENT:
+    data: {from: 2013-01-01, to: 2026-09-21}   # BRENTCMDUSD_ftmo, 4.118.134 barras M1
+    build: {from: null, to: null}
+    oos1: {from: null, to: null}
+    oos2: {from: null, to: null}
   AUDJPY:
-    data: {from: 2003-12-01, to: 2026-01-16}   # AUDJPY_DukasM1_the5ers, 8.276.570 barras M1
+    data: {from: 2003-12-01, to: 2026-09-22}   # AUDJPY_DukasM1_the5ers, 8.529.114 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
@@ -55,37 +60,37 @@ segments:
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   DAX40:
-    data: {from: 2013-09-30, to: 2026-01-16}   # DAX40_DukasM1_Infinox, 3.676.604 barras M1
+    data: {from: 2013-09-30, to: 2026-09-22}   # DAX40_DukasM1_Infinox, 3.907.965 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   DJ30:
-    data: {from: 2013-09-30, to: 2026-01-16}   # DJ30_DukasM1_Infinox, 3.763.466 barras M1
+    data: {from: 2013-09-30, to: 2026-09-22}   # DJ30_DukasM1_Infinox, 3.995.606 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   EURJPY:
-    data: {from: 2003-08-04, to: 2026-01-16}   # EURJPY_DukasM1_the5ers, 8.397.754 barras M1
+    data: {from: 2003-08-04, to: 2026-09-22}   # EURJPY_DukasM1_the5ers, 8.650.499 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   EURUSD:
-    data: {from: 2003-05-05, to: 2026-01-16}   # EURUSD_DukasM1_the5ers, 8.485.091 barras M1
+    data: {from: 2003-05-05, to: 2026-09-22}   # EURUSD_DukasM1_the5ers, 8.737.566 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   GBPJPY:
-    data: {from: 2003-08-04, to: 2026-01-16}   # GBPJPY_DukasM1_the5ers, 8.396.081 barras M1
+    data: {from: 2003-08-04, to: 2026-09-22}   # GBPJPY_DukasM1_the5ers, 8.648.506 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   GBPUSD:
-    data: {from: 2003-05-05, to: 2026-01-16}   # GBPUSD_DukasM1_the5ers, 8.482.094 barras M1
+    data: {from: 2003-05-05, to: 2026-09-22}   # GBPUSD_DukasM1_the5ers, 8.734.437 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   NIKKEI225:
-    data: {from: 2011-09-19, to: 2026-01-16}   # NIKKEI225_DukasM1_Infinox, 3.849.122 barras M1
+    data: {from: 2011-09-19, to: 2026-09-22}   # NIKKEI225_DukasM1_Infinox, 4.079.049 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
@@ -94,13 +99,18 @@ segments:
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
+  XAGUSD:
+    data: {from: 2003-08-08, to: 2026-09-22}   # XAGUSD_DukasM1_Infinox, 7.274.464 barras M1
+    build: {from: null, to: null}
+    oos1: {from: null, to: null}
+    oos2: {from: null, to: null}
   USA500:
-    data: {from: 2012-01-19, to: 2026-01-16}   # USA500_DukasM1_Infinox, 3.815.553 barras M1
+    data: {from: 2012-01-19, to: 2026-09-22}   # USA500_DukasM1_Infinox, 4.047.625 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   USATEC:
-    data: {from: 2012-01-19, to: 2026-01-16}   # USATEC_DukasM1_Infinox, 3.977.586 barras M1
+    data: {from: 2012-01-19, to: 2026-09-22}   # USATEC_DukasM1_Infinox, 4.209.890 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
@@ -110,12 +120,12 @@ segments:
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   USDCHF:
-    data: {from: 2003-05-05, to: 2026-01-16}   # USDCHF_DukasM1_the5ers, 8.461.578 barras M1
+    data: {from: 2003-05-05, to: 2026-09-22}   # USDCHF_DukasM1_the5ers, 8.713.619 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   USDJPY:
-    data: {from: 2003-05-05, to: 2026-01-16}   # USDJPY_DukasM1_the5ers, 8.481.791 barras M1
+    data: {from: 2003-05-05, to: 2026-09-22}   # USDJPY_DukasM1_the5ers, 8.734.300 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
@@ -152,13 +162,29 @@ swap:
 # 0.0–5.0— es el mismo para todos los mercados y no tiene sentido en casi ninguno: en el
 # NIKKEI225, cuyo spread real son 1100 puntos, sortea entre 1 y 5.
 #
-# `RandomizeMinDistance` tiene la misma forma y hoy no se declara aquí: el dueño pidió estos
-# dos. Su rango de fábrica es 0.0–10.0 en todos los instrumentos.
+# `RandomizeMinDistance` tiene la misma forma y desde el 2026-09-23 también se declara por
+# activo, bajo `mc_retest: min_distance:`. La diferencia es que ése SÓLO se usa si la
+# población lleva órdenes stop o limit: a mercado no hay orden pendiente que el bróker pueda
+# rechazar por estar demasiado cerca del precio, y la tarea `MCR 4 MinDist` no se escribe.
+# Con los dos bordes en `null` la tarea tampoco se escribe, y el comando lo dice.
 mc_retest:
   unit: points
   methods:
     spread: RandomizeSpread
     slippage: RandomizeSlippage
+    min_distance: RandomizeMinDistance
   sqx_factory_default:
     spread: {min: 1.0, max: 5.0}
     slippage: {min: 0.0, max: 5.0}
+    min_distance: {min: 0.0, max: 10.0}
+
+  # Lo que se usa cuando un activo deja su rango en `null`, en MÚLTIPLOS del coste con que
+  # corre el backtest — no en puntos. Decisión del dueño, 2026-09-24: «min 1x, max 4x, con el
+  # spread y el slippage los del backtest normal». En múltiplos y no en puntos a propósito: el
+  # día que cambie el spread pactado de un par, su rango de MC Retest lo sigue solo, y un
+  # número escrito a mano en el fichero del activo sigue mandando sobre esto.
+  # ⚠️ El de fábrica de SQX (arriba) es el MISMO en los diecisiete mercados y por eso no
+  # significa nada: 1-5 puntos es enorme en un par de divisas y ridículo en un índice.
+  default_multiples:
+    spread: {min: 1, max: 4}
+    slippage: {min: 1, max: 4}

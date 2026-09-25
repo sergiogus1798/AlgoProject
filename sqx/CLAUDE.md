@@ -52,5 +52,11 @@ references, version drift, mangled fields) and `inspect/template_check.py` (whet
 project built actually carry the blocks its template fixes — on this install, they do not).
 
 Authoring skills (`sqx-custom-block`, `sqx-random-group`, `sqx-strategy-template`,
-`sqx-strategy-project`) are installed globally and live in `tools/sqx-lab/`. A project the skill
+`sqx-strategy-project`) are installed globally and live in `tools/sqx-lab/`. **They are installed by
+hand, not by `/plugin`** — that command does not exist in this environment (2026-09-24). One script
+does the whole wiring and is idempotent: `bin/sqx-lab-install.sh`, manual page `40-sqx-lab.md`. Run
+it after updating the toolkit and whenever the install's blocks or groups change: a **stale catalog
+does not fail, it invents atoms** the building install does not have, and the template is then
+silently wrong. `/sqx-doctor` says whether it is stale, and on 2026-09-24 it was — twenty days old
+and built against the master instead of the conductor. A project the skill
 builds on the worker is invisible on the master: hand it over as a `.cfx` for GUI import, and say so.

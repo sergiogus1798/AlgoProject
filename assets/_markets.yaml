@@ -36,7 +36,41 @@ XAUUSD:
     # Misma familia macro que el oro: metales y energía, movidos por el dólar y por el riesgo.
     family:
       - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: BRENTCMDUSD_ftmo, data_from: unknown}
+      # 2026-09-23: averiguado. `AlgoData/bars/manifest.json`, sincronizado de SQX el
+      # 2026-09-21 con sync_bars.py: 4.105.534 barras M1 de 2013-01-01 a 2026-09-07.
+      # Con `unknown` el cross-check le daba ventana desde 2008, cinco años sin datos.
+      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
     # Vacío hasta que el dueño elija los mercados estructurales y corra ese retest. La
     # categoría existe para que el export se pueda clasificar contra ella.
+    structural: []
+
+USDJPY:
+  main: USDJPY_DukasM1_the5ers
+  timeframe: M30
+  categories:
+    # Los 28 pares de las 8 divisas major comparten motor macro — dólar, diferenciales de
+    # tipos, apetito de riesgo — así que TODOS van en `family`. Ninguno es una prueba dura
+    # para USDJPY, y decirlo aquí evita leer un resultado family como si fuera structural.
+    #
+    # El universo son los pares que el feed `the5ers` ya tiene descargados Y que declaran
+    # costes en `symbols/`: 9 de los 27 posibles. Se fija ANTES de mirar ningún resultado
+    # (dueño, 2026-09-23). Los 5 que tienen feed pero no fichero de costes — NZDUSD, EURGBP,
+    # EURAUD, EURCAD, EURCHF — quedan FUERA a propósito: entrarían al coste por defecto del
+    # registro de instrumentos, y un cross-market a un coste inventado es peor que nada.
+    #
+    # Los 9 tienen datos desde 2003-2004, antes del `build` de 2008: la ventana común es
+    # entera, 2008-01-01 → 2022-12-31, sin que ningún mercado la recorte.
+    family:
+      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
+      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
+      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
+      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
+      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
+      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
+      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
+      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
+      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
+    # Vacío a propósito: ningún par de divisas es structural para otro. Los candidatos
+    # reales son los mercados que ya tienen feed y costes fuera del FX — XAUUSD, DAX40,
+    # USA500, NIKKEI225 — y entran cuando el dueño lo decida, no antes.
     structural: []

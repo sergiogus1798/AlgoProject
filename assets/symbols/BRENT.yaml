@@ -1,0 +1,85 @@
+# BRENT — lo propio de este activo, y nada más.
+#   · el esquema de sus costes, sus unidades y los ajustes de SQX → `../_classes.yaml`, clase `no_forex`
+#   · los segmentos temporales y las convenciones de swap        → `../_policy.yaml`
+#   · los mercados donde se retestea su edge                     → `../_markets.yaml`
+#
+# ESTE ACTIVO EXISTE HOY SÓLO COMO MERCADO DE CROSS-CHECK DE XAUUSD, no como activo main.
+# `session: null` a propósito: el <Setup> del mercado extra lleva `session="No Session"` y
+# hereda la del test principal. Construir SOBRE brent exigiría decidir su sesión primero.
+symbol: BRENT
+class: no_forex
+broker: ftmo
+sqx_symbol: BRENTCMDUSD_ftmo
+feeds:
+  - BRENTCMDUSD_ftmo
+verified: 2026-09-23
+
+session: null
+
+# Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano.
+instrument:
+  tick_size: 0.001
+  point_value: 100             # $ por 1.0 de precio y 1.0 de lote
+  min_distance: 10             # SQX lleva minDistance 0.0; el <Setup> del cross-check escribe 10
+
+costs:
+  spread_is:
+    use: 16.0                # points — tramo `build`
+    sqx_now: 32.0            # points, el unico que hay hoy
+    why: "PROVISIONAL 2026-09-23 — la mitad del defaultSpread de SQX, por el precedente de XAUUSD. NO es una cifra pactada con FTMO."
+  spread_oos:
+    use: 32.0                # points — tramos `oos1` y `oos2`
+    sqx_now: 32.0            # points, el unico que hay hoy
+    why: "PROVISIONAL 2026-09-23 — el defaultSpread que el maestro lleva hoy, leido de los project.cfx con `sqx.inspect.instruments`. Default de fabrica de SQX, NO pactado con FTMO. 32 puntos x tick 0.001 = 0.032 de precio, sobre un brent a ~70 son 0.046 % del nocional: mas de un orden de magnitud por encima de la plata en % — ojo al comparar mercados."
+  commission:
+    use: 0.0                 # % del nocional
+    sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
+    why: "PROVISIONAL 2026-09-23 — el maestro lleva SizeBased 0.00: comision CERO. Se conserva porque el dueno pidio usar los valores de SQX, no porque sea creible que un CFD de brent no cobre comision."
+  slippage_is:
+    use: 8.0                 # points — tramo `build`
+    sqx_now: 0.0
+    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. SQX lleva defaultSlippage 0.0 y un backtest aplica el que se le da."
+  slippage_oos:
+    use: 16.0                # points — tramos `oos1` y `oos2`
+    sqx_now: 0.0
+    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. SQX lleva defaultSlippage 0.0 y un backtest aplica el que se le da."
+  swap_long:
+    use: 0.0111              # % ANUAL (SQX divide /100 y /360)
+    sqx_now: {type: points, value: 0.03}
+    why: "PROVISIONAL 2026-09-23 — conversion del swap en puntos del maestro: 100 x 0.001 x 0.03 = +0.003 $/noche sobre el nocional de 1 lote al ultimo cierre real (97.235 x 100 = 9.723,50 $) son +0.0111 % anual. SIGNO POSITIVO: el largo cobra."
+  swap_short:
+    use: -9.5373             # % ANUAL (SQX divide /100 y /360)
+    sqx_now: {type: points, value: -25.76}
+    why: "PROVISIONAL 2026-09-23 — conversion del swap en puntos del maestro: 100 x 0.001 x -25.76 = -2.576 $/noche sobre 9.723,50 $ son -9.5373 % anual. ⚠️ Con la mediana de brent en oos1 (68.578) saldria -13.5 % anual. Mismo precio de referencia que el resto del fichero."
+
+notes:
+  - "2026-09-23: fichero creado para que XAUUSD pueda escribir su cross-check de mercados
+     adicionales, que se negaba porque ningun fichero declaraba el feed BRENTCMDUSD_ftmo.
+     Costes del maestro, con las conversiones de unidad de la clase no_forex hechas al ultimo
+     cierre real. Nada pactado con FTMO."
+  - "2026-09-23: el triple swap de este feed cae en VIERNES (tripleSwapOn=FRIDAY), no en
+     miercoles como los otros dieciseis. `../_policy.yaml` lo fija en WEDNESDAY para TODOS y no
+     tiene override por activo, asi que el <Setup> del cross-check salia con el miercoles y el
+     coste de financiacion caia la noche equivocada. Se corrige con el bloque `swap:` de abajo:
+     `load()` hace {**politica, **activo}, asi que un `swap:` propio pisa el global entero — por
+     eso hay que repetir tambien `rollout_hour`. Verificado en el <Setup> escrito."
+
+# ⚠️ PISA el bloque `swap` de `../_policy.yaml` ENTERO, no campo a campo: `load()` fusiona con
+# {**politica, **activo}. Por eso `rollout_hour` se repite aunque no cambie. Unico activo de los
+# diecinueve con triple swap en viernes, leido del <Swap tripleSwapOn> del maestro.
+swap:
+  triple_swap_on: FRIDAY
+  rollout_hour: "23:00"
+
+mc_retest:
+  spread:
+    min: null
+    max: null
+    sqx_now: {min: 1, max: 5}
+  slippage:
+    min: null
+    max: null
+    sqx_now: {min: 0, max: 5}
+
+projects_using_it:
+  - XAUUSD

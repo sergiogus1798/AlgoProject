@@ -38,8 +38,10 @@ Dos categorías, y la diferencia importa:
 
 ### La ventana de cada mercado
 
-Desde el **inicio del IS del activo principal** —o desde la primera barra de ese mercado, la que
-sea más tardía— hasta el final de `oos1`. Para el XAUUSD: la plata va de 2008 a 2022, y un mercado
+La declara `assets/_build.yaml` de una vez para todos los activos, en `crossmarket.segment`:
+**`build..oos1`** (decisión del dueño, 2026-09-24), con la misma notación de dos puntos que la MC
+Retest. O sea, desde el **inicio del IS del activo principal** —o desde la primera barra de ese
+mercado, la que sea más tardía— hasta el final de `oos1`. Para el XAUUSD: la plata va de 2008 a 2022, y un mercado
 cuyos datos empiezan en 2013 va de 2013 a 2022.
 
 Se usa todo el histórico a propósito. Recortarlo a la ventana del activo principal tira justo los
@@ -74,11 +76,29 @@ python3 -m sqx.projects.crossmarket XAUUSD \
 `Retest Markets - Family`. Ejecutarla es igual que cualquier otra tarea del custodio: ver
 `28-builder.md` y la skill `/template-run`.
 
-### Cómo se lee el resultado
+### Aquí no se filtra nada
 
-El crosscheck lleva `<MinMarkets>`: cuántos de los mercados extra tiene que satisfacer una
-estrategia para pasar. Con dos mercados declarados y `MinMarkets 1`, media prueba basta. **Eso es
-una decisión, no un default**: al informar, di qué valor estaba puesto.
+`crossmarket.conditions: []` en `assets/_build.yaml`, decisión del dueño del 2026-09-24. El comando
+lo hace cumplir: apaga **todas** las condiciones de aceptación del crosscheck, fuerza
+`DeleteFailedStrategies` a false y dice cuántas apagó.
+
+```
+  XAGUSD_DukasM1_Infinox         family      2008.01.01 a 2022.12.31
+  BRENTCMDUSD_ftmo               family      2013.01.01 a 2022.12.31
+1 condiciones de aceptacion apagadas — esto es evidencia, no un filtro
+```
+
+El donante traía una viva, `ReturnDDRatio > 1` sobre el primer mercado. Con una condición viva SQX
+**no escribe en el databank de salida** la estrategia que no la cumple, y entonces el análisis de
+Python se queda sin las muertas — que son la mitad de la evidencia: sin ellas no se puede decir qué
+mercado mató a qué estrategia. SQX corre los backtests; el veredicto se toma en Python y se aplica
+con `/curate`.
+
+🤔 Con cero condiciones vivas, `<MinConditions>` y `<MinMarkets>` quedan inertes y se dejan como
+estaban. En la primera corrida real, comprueba que el databank de salida tiene tantas estrategias
+como el de entrada y apunta lo que veas en `knowhow/05-conditions.md`.
+
+### Cómo se lee el resultado
 
 Y di a qué categoría pertenecía cada mercado. Pasar el test de `family` puede significar sólo que
 los dos mercados son el mismo trade.

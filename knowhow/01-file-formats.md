@@ -34,6 +34,24 @@
   This is what makes an arbitrary sub-period study possible — SQX's own sample types are only
   IS/OOS/full, so splitting the OOS in two is impossible through any export but trivial from here.
 
+- 🔬 **And it carries one `<Result resultKey>` section of SQStats per result too — scope them or
+  they mix.** Measured 2026-09-24 on `XAUUSD/Retest Markets - Family/Strategy 10.16.41.sqx`:
+  `settings.xml` holds four sections — `Portfolio`, `Main: <feed>/M30` and one
+  `AdditionalMarket: <feed>/M30: …` per cross-check market — each with its own 12 blobs
+  (3 directions x 4 sample types). Reading the file whole and regexing every blob mixes them and the
+  last one wins. Scoped, each section's `NetProfit` reproduces that result's own `dailyEquity.bin`
+  to the cent: Main 4,974.86, silver -14,352.24, Brent -14,977.61, and `Portfolio` is exactly their
+  sum (-24,354.99). `core.sqxstats.stats(path, result)` does the slicing; `core.sqxstats.results`
+  lists the keys. **This is what makes per-market metrics free** — no trade export needed for any
+  aggregate that is a sum or a ratio of sums.
+
+- 🔬 **`ProfitFactor` is stored as `0.0` when there were no trades and capped at `5.0` when there
+  were no losses.** Both measured 2026-09-24 over the 2,271 (strategy x market) rows of that
+  databank: 38 rows with `NumberOfTrades = 0` carry `ProfitFactor = 0.0`, and `Strategy 9.6.29` on
+  Brent — 3 trades, all winners, `GrossLoss = 0` — carries `5.0`. Neither is a number to sort on: a
+  0 ranks like the worst result in a grid when it is the absence of one, and the 5.0 becomes a lie
+  as soon as segments are added up. `sqx.variants.united.combine` writes NaN and infinity there.
+
 - 🔬 **A `.sqx` retested with a cross-check carries THREE `dailyEquity.bin`, and the one you want is
   not the first.** Measured 2026-09-22 on the variant batch of `Strategy 17.9.39`, retested by a
   harness whose task holds an XAGUSD cross-market check. The archive holds, in this order:
@@ -552,7 +570,7 @@ Re-ran the probe on the **custodian (W2, 5070)** against the real output of `sqx
   | `Symbol`/`TimeFrame` correct (`XAUUSD_DukasM1_Infinox`, M30) | `Filters result: FAILED` is the parent's verdict too |
   | no de-duplication: 3 in, 3 out | nothing on the file distinguishes "not yet run" from "ran" |
 
-- ⚠️ **This is failure mode 2 of `4-variantes.md` §4, and it is live.** A 5,000-variant batch read
+- ⚠️ **This is the inherited-`<Fingerprint>` failure mode, and it is live.** A 5,000-variant batch read
   back today returns 5,000 copies of one row and looks entirely plausible. The **canaries are the
   only detector**, and they cannot fire until a retest has actually run. 🤔 A cheaper second
   detector is free and should exist: the collect step refusing a batch whose metric rows are
@@ -611,9 +629,9 @@ Backup of the harness as it was: `AlgoData/snapshots/2026-09-21/w2-retester-befo
 Three facts worth keeping, all met while doing this:
 
 - 🔬 **SQX renames on collision by appending `(N)`.** Loading the same folder of `P00000/1/2` twice
-  gave six records: `P00000`, `P00001`, `P00002` and `P00002(1)`, `P00001(1)`, `P00000(1)`. This is
-  failure mode 1 of `docs/encargos/4-variantes.md` §4 observed live, and it is exactly why the
-  `variant_id` is also written **inside** the file and why C2 carries `sqx_name` separately.
+  gave six records: `P00000`, `P00001`, `P00002` and `P00002(1)`, `P00001(1)`, `P00000(1)`. This is the
+  collision-rename failure mode observed live, and it is exactly why the `variant_id` is also
+  written **inside** the file and why C2 carries `sqx_name` separately.
 - 🔬 **A cross-check that is switched off still has its symbol resolved,** and an unresolvable one
   kills the task without failing it. With `<CrossChecks use="false">` the log still showed
   `ERROR ProjectResources - Error while adding symbol to resources - Symbol 'EURUSD_M1_dukas'

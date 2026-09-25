@@ -1,0 +1,19 @@
+#!/bin/bash
+# algoui — open the desktop app. Doble clic, o esto desde cualquier sitio.
+#
+# El demonio se levanta solo si no está ya escuchando, y se apaga al cerrar la
+# ventana solo si lo arrancó ella: dos ventanas comparten un demonio, y matarlo
+# le quitaría la librería a la otra.
+set -euo pipefail
+# readlink -f y no dirname a secas: el lanzador se invoca también por el enlace de
+# ~/.local/bin, y ahí BASH_SOURCE apunta al enlace, no al repositorio.
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+
+# El plugin xcb de Qt necesita cuatro libs de XCB que Ubuntu no trae instaladas y que
+# aquí no se pueden poner con apt (sudo pide contraseña). Están extraídas en ~/.local, y
+# sin esta línea la ventana muere con «could not load the Qt platform plugin xcb».
+QT_XCB="$HOME/.local/lib/qt-xcb"
+[ -d "$QT_XCB" ] && export LD_LIBRARY_PATH="$QT_XCB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+cd "$ROOT"
+exec python3 -m ui.desktop.launch "$@"

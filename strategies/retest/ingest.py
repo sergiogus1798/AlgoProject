@@ -13,7 +13,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from core import manifest, sqxretest, sqxstats
-from core.paths import databank_dir
+from core.paths import MASTER, databank_dir, worker_dir
 from strategies.retest.inputs import config, tasks
 from strategies.retest.measure import integrity, store
 from strategies.retest.model import recon
@@ -81,47 +81,74 @@ def _job(args: tuple) -> dict:
     return one(*args)
 
 
-def collect(project: str, cfg: dict, limit: int | None) -> list[dict]:
+def collect(project: str, cfg: dict, limit: int | None, install: Path = MASTER) -> list[dict]:
     """Read every strategy of every task, in parallel.
 
     Args:
         project: SQX project name.
         cfg: What inputs.config.load() returned.
         limit: Keep only this many strategies per task, for a smoke run.
+        install: Which install holds the project; the master by default.
 
     Returns:
         One entry per (task, strategy). Memory stays bounded by one strategy's simulations
         per worker, so a databank of hundreds costs wall-clock and disk, never RAM.
     """
-    jobs = []
+    jobs, absent = [], []
     for task in tasks.TASKS:
-        found = sorted(databank_dir(project, tasks.DATABANK[task]).glob("*.sqx"))
-        assert found, f"{tasks.DATABANK[task]}: no .sqx found"
+        found = sorted(databank_dir(project, tasks.DATABANK[task], install).glob("*.sqx"))
+        # A task with no .sqx is a task the project could not run, not a broken ingest:
+        # MinDistance never applies to a population of market orders, and a perturbation
+        # whose range the owner has not decided is not written at all. The study reads the
+        # perturbations that exist and says which are missing.
+        if not found:
+            absent.append(tasks.DATABANK[task])
+            continue
         jobs += [(path, task, cfg) for path in found[:limit]]
+    required = [t for t in ("bar", "stress") if tasks.DATABANK[t] in absent]
+    assert not required, (f"faltan las tareas {', '.join(required)}, que no son opcionales: "
+                          "`bar` es el denominador de toda comparación y `stress` es la que "
+                          "ordena las estrategias por su cola")
+    if absent:
+        print(f"sin correr, se leen las demás: {', '.join(absent)}")
     with ProcessPoolExecutor(max_workers=cfg["ingest"]["workers"]) as pool:
         return list(pool.map(_job, jobs))
 
 
-def report(results: list[dict]) -> tuple[list[str], dict]:
+def report(results: list[dict], share: float) -> tuple[list[str], list[str], dict]:
     """What the reconciliation found, and what to record about it.
 
     Args:
         results: What collect() returned.
+        share: Fraction of a metric's runs that must fail before the formula itself is
+            called wrong, from `recon.systematic_share`.
 
     Returns:
-        (failures, summary). A failure is a metric whose reconstruction fell outside the
-        order statistics SQX could have reported; the ingest refuses to write when there is
-        one, because every number downstream is that reconstruction.
+        (fatal, isolated, summary). A metric that misses on `share` of its runs or more is
+        a WRONG FORMULA and the ingest refuses: every number downstream is that
+        reconstruction. A single run missing on a metric that reconciles everywhere else is
+        one unreadable cell, and it is excluded and recorded — the same treatment the
+        truncated confidence tables already get, for the same reason.
+
+    🔬 That distinction is what the three formula bugs of 2026-09-24 looked like: WinningPct,
+    KellyFormula and ZScore missed on 31 to 71 runs each, never on one.
     """
-    worst, failures = {}, []
+    worst, seen, missed = {}, {}, {}
     for entry in results:
         for name, got in entry["reconciliation"].items():
             worst[name] = max(worst.get(name, 0.0), got["worst_ratio"])
+            seen[name] = seen.get(name, 0) + 1
             if not got["passed"]:
-                failures.append(f"{entry['task']}/{entry['strategy']}: {name} "
-                                f"at {got['worst_ratio']:.2f}x its tolerance")
-    return failures, {"metrics_checked": len(worst),
-                      "worst_ratio_by_metric": {k: round(v, 4) for k, v in sorted(worst.items())}}
+                missed.setdefault(name, []).append(
+                    f"{entry['task']}/{entry['strategy']}: {name} "
+                    f"at {got['worst_ratio']:.2f}x its tolerance")
+    fatal = [line for name, lines in missed.items()
+             if len(lines) >= max(2, share * seen[name]) for line in lines]
+    isolated = [line for name, lines in missed.items()
+                if len(lines) < max(2, share * seen[name]) for line in lines]
+    return fatal, isolated, {"metrics_checked": len(worst), "unreconciled_cells": isolated,
+                             "worst_ratio_by_metric": {k: round(v, 4)
+                                                       for k, v in sorted(worst.items())}}
 
 
 def main() -> None:
@@ -131,6 +158,8 @@ def main() -> None:
     parser.add_argument("--databank", default="MCR_All", help="name for this ingest run")
     parser.add_argument("--day", default=date.today().isoformat())
     parser.add_argument("--limit", type=int, help="strategies per task, for a smoke run")
+    parser.add_argument("--role", help="headless install holding the project; "
+                        "omit for the master")
     parser.add_argument("--set", action="append", dest="overrides", metavar="KEY=VALUE")
     args = parser.parse_args()
 
@@ -141,13 +170,17 @@ def main() -> None:
     # here on 2026-09-18 and read back as 79,992 simulations from 40 runs of 1,000.
     assert not (out / store.SIMS).exists(), (
         f"{out} already holds an ingest; re-ingest under another --day or delete it first")
-    results = collect(args.project, cfg, args.limit)
-    failures, summary = report(results)
+    install = worker_dir(args.role) if args.role else MASTER
+    results = collect(args.project, cfg, args.limit, install)
+    failures, isolated, summary = report(results, cfg["recon"]["systematic_share"])
     if failures:
-        print(f"ingest: REFUSING to write — {len(failures)} reconstructions disagree with SQX")
+        print(f"ingest: REFUSING to write — {len(failures)} reconstructions disagree with SQX "
+              "on a metric that misses systematically, which is a wrong formula")
         for line in failures[:20]:
             print("  ", line)
         sys.exit(1)
+    for line in isolated:
+        print(f"celda sin reconciliar, excluida y anotada: {line}")
 
     codec = cfg["ingest"]["compression"]
     counts = {}
@@ -158,7 +191,7 @@ def main() -> None:
 
     short = [f"{e['task']}/{e['strategy']}" for e in results if not e["provenance"]["usable"]]
     manifest.write(out,
-                   {"install": "master", "project": args.project,
+                   {"install": str(install), "project": args.project,
                     "tasks": {e["task"] + "/" + e["strategy"]: e["provenance"] for e in results},
                     "unusable_level_tables": short,
                     "integrity": summary, "config": config.flatten(cfg)},

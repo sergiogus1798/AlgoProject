@@ -1238,3 +1238,339 @@ Benjamini-Hochberg sobre la lista corta manda la simulación.
 - **Regla**: si hay que tocar un XML de SQX, se toca con un `re.sub` acotado o con la función que
   ya existe, y **se valida con `ElementTree.fromstring` antes de escribir el `.cfx`**. Un índice
   calculado sobre dos etiquetas distintas no es un rango.
+
+### 🔬 El mismo corte por índice, ahora sobre YAML — y por qué `git diff` no avisa
+
+2026-09-24. Reescribí la sección `mc_retest:` de `assets/_build.yaml` así:
+
+```python
+head = s[:s.index("# ─── MC Retest ")]   # ⛔ se queda con TODO lo anterior
+p.write_text(head + bloque_nuevo)        # ⛔ y tira TODO lo posterior
+```
+
+Entre que leí el fichero y lo reescribí, otra sesión le había añadido los bloques `spp:` y `wfm:`
+al final. Se perdieron los dos, y `sqx/projects/spp.py:114` y `wfm.py:112` quedaron petando con
+`KeyError` sobre `doctrine()["spp"]`. Es el mismo fallo que el `t.index('<Conditions>')` de la
+sección anterior, un formato más arriba: **cortar por índice se queda con lo que hay entre los
+índices y tira el resto, y "el resto" incluye lo que escribió otro mientras tanto.**
+
+- ⚠️ **`git diff` no lo delata, y da una falsa tranquilidad activa.** Miré `git diff --stat` y decía
+  `133 insertions(+)`, cero deleciones. Era cierto: esos bloques nunca se habían commiteado, así que
+  para git no existían y borrarlos no es una deleción. **Un fichero compartido en un repo con varias
+  sesiones vive medio en el árbol de trabajo**, y ahí `git diff` sólo ve la mitad que ya estaba.
+  Para saber si te has llevado algo por delante hay que comparar contra lo que había **en disco**,
+  no contra HEAD.
+- La regla, igual que abajo: **editar sólo tu sección con un `re.sub` o un `replace(old, new, 1)`
+  acotado, con un `assert` del ancla delante**, y nunca reconstruir el fichero entero. Las demás
+  ediciones de esa misma sesión iban así y ninguna perdió nada.
+- Y una segunda, de recuperación. Lo primero que dije fue "no está commiteado, no se recupera", y
+  **era falso**: git no tenía nada, pero el repositorio sí. 🔬 Los valores de los dos bloques
+  perdidos estaban en `docs/manual/34-wfm.md:40-46` y `33-spp.md:38,91-93`, escritos por la misma
+  sesión un minuto después del módulo. **La regla dura 8 de este proyecto es justo eso —un comando
+  nuevo sale con su página de manual en el mismo trabajo— así que la página del módulo es una
+  segunda copia de su configuración, en prosa y con la salida real pegada.** Antes de dar por
+  perdido un bloque de `assets/`, leer la página del módulo que lo consume. Sólo cuatro valores
+  (`period`, `optimization`, `max_steps`, `threshold_pct`) no aparecían ahí, y ésos salen de la
+  tarea del donante congelado.
+- 🤔 Aun así: antes de reescribir un fichero que otros tocan, un `cp` a `scratchpad/` cuesta nada.
+
+## Editar `assets/*.yaml` sin perder los comentarios — `core.assetyaml` (2026-09-24)
+
+La app de escritorio escribe ahora estos ficheros desde la ventana, así que el problema de arriba
+—editar a mano un YAML lleno de comentarios que son la mitad de su valor— está resuelto en código.
+
+- 🔬 **`ruamel.yaml` en round-trip devuelve estos ficheros idénticos BYTE A BYTE**, pero sólo con
+  tres ajustes, y sin alguno de ellos hay diff espurio en los diecinueve ficheros a la vez:
+  `indent(mapping=2, sequence=4, offset=2)` (sin él toda lista se desindenta), `width=4096` (sin él
+  parte los `why` largos) y un representer explícito de `None` a `null` (por defecto escribe el
+  valor vacío, y `min:` a secas no dice «sin decidir» a quien lo lee). Está en `core/assetyaml.py`.
+- 🔬 **Se lleva por delante dos cosas, las dos cosméticas.** Un escalar partido a mano en varias
+  líneas (los `notes:` de EURUSD) vuelve en una sola línea, con el mismo contenido; y las
+  alineaciones a columna dentro de un flow mapping (`{title: WFC 1 IS,   segment: build}`, con
+  espacios de relleno) se normalizan a un espacio. Ninguna de las dos toca un comentario.
+- 🔬 **Vaciar una lista se come la línea en blanco que la seguía**: al quitar los items se van los
+  tokens a los que colgaba el salto. Sólo pasa al dejar una lista vacía.
+- 📓 **Esto no reintroduce el fallo de arriba**, el de tirar lo que otra sesión escribió mientras
+  tanto: `read()` carga el documento entero y `write()` lo vuelve a emitir entero, así que un
+  bloque añadido por otro sale en la escritura. Lo que se pierde es lo que se pierde siempre con
+  dos escritores: el valor que el otro cambió **en la misma clave** entre la lectura y la escritura.
+- 🔬 **`lc.key(k)` da la línea de cada clave** de un `CommentedMap`, y con ella se saca de un vistazo
+  el comentario que una clave lleva encima y al lado, leyéndolo del texto en vez de del árbol de
+  `ca.items` — que guarda el comentario de una clave colgado de la ANTERIOR, y a veces de la
+  anterior de otro nivel. Es lo que hace que la ventana explique cada campo con las palabras del
+  propio fichero en vez de con una segunda copia que se desincroniza.
+
+## 🔬 "Buy and hold" is three numbers, and they differ by 7x on the same asset (2026-09-24)
+
+Measured on `Strategy 1.10.39(1)` over XAUUSD `oos1` (2018–2022, M30). Holding the same gold over
+the same window earns, depending only on **how much** of it is held:
+
+| convention | lots | profit |
+|---|---|---|
+| one lot, start to end | 1.000 | **50,650 $** |
+| the strategy's own mean position size | 0.903 | **45,711 $** |
+| the size whose daily P&L volatility equals the strategy's | 0.141 | **7,133 $** |
+
+The strategy itself made 9,184 $. So "it beat buy and hold by 29 %" and "it made a fifth of buy and
+hold" are both true statements about the same pair, and which one gets said is decided entirely by
+an unstated sizing convention. **Any comparison against buy and hold that does not name its
+convention is not a result.** `strategies/exposure/benchmark.py` reports all three and takes the
+volatility-matched one as its headline, because it is the only one under which the comparison is
+about the edge rather than about leverage.
+
+🔬 Related, same run: that strategy holds a position on **3.7 % of the bars** — 4.2 hours of the
+week — and the 757 strategies of `MC Trades` have a median occupancy of 8.3 %. A per-calendar-day
+rate therefore divides the edge by roughly thirteen before anyone reads it, which is why a daily
+alpha computed with flat days as zeros comes out looking like nothing. Report the rate per unit of
+exposure **and** the absolute one, never one alone.
+
+## 🔬 A trade filter is not neutral in parameter space, and it can flatten a parameter (2026-09-24)
+
+Measured on `Strategy 17.9.39`'s fabricated batch (2,000 variants, `metrics.parquet`) while building
+`strategies/parameterCloud/`. Dropping the four canaries and every variant trading under 30 times in
+sample leaves **998 rows — and `DICrossShift1` with a single surviving value.**
+
+The filter looks like a quality floor and behaves like a projection: it does not thin the cloud
+evenly, it deletes whole regions of it. Every level of that parameter but one produces a strategy
+that barely trades, so after the floor there is nothing left to compare it against.
+
+Two consequences, and the second is the one that bites:
+
+- **It is a finding about the strategy**, not about the data. That parameter does not choose between
+  a good result and a bad one; it chooses between trading and not trading. `sppUltra`'s eta-squared
+  saw the same thing from the other side — 🔬 `DICrossShift1` explains 7.6 % of NetProfit and
+  **78.5 % of trade count**.
+- **Any model fitted after the filter must be told.** A collapsed column divides by zero in a unit
+  rescaling, and if it does not crash it is silently handed a sensitivity index of zero it did not
+  earn. `space.varying()` names them and the report prints them before any other number.
+
+The same trap applies to every screen that runs before a surface is fitted, `gate/`'s cascade
+included: **what a filter removed is a property of the parameter space, and it has to be reported
+there, not only counted.**
+
+## 🔬 A cloud can be smooth, profitable and still reshuffle its own ranking every year (2026-09-24)
+
+Same batch, read per calendar year over build + `oos1` (`oos2` untouched — the study cuts there):
+
+| | |
+|---|---|
+| smoothness of the surface | r² **0.90** for a full quadratic; neighbour disagreement 0.15 IQR |
+| who moves it | `DICrossPeriod1` alone, Sobol total **0.89** of seven live parameters |
+| period-to-period Spearman between variants | median **+0.11**, negative in 5 of 14 years |
+| share of the cloud profitable in a year | from **0.00** (2009) to **1.00** (2014) |
+
+Read together, those four rows say something none of them says alone: the surface has a clear,
+smooth shape *within* any window, and that shape carries almost no information into the next one.
+It is not that the family is noise — it makes money — it is that **which member of the family is
+best is noise**, and in-sample tuning of this logic is therefore buying nothing.
+
+This is the diagnosis `walkForwardCorrelation` cannot give: the CSCV judges the selection procedure
+over combinatorial splits and is blind on purpose to chronology, while `f_y` and rho are
+chronological and per period. They answer different questions and both are needed.
+
+🤔 The likely mechanism is that one year dominates each window's ranking — in 2009 no variant of 998
+made money and in 2014 every one of them did — so a ranking fitted on a window is largely a ranking
+of how each variant did in that window's best year.
+
+## 🔬 The CUSUM can call a series stable while its two halves differ by a factor of sixteen (2026-09-24)
+
+Measured on `Strategy 35.44.31`, OOS1, 1,119 trades, while building `strategies/profitShape/`. The
+OLS-CUSUM places its candidate break at trade 277 and does **not** reject stability — supremum 1.01
+against a 5 % critical value of 1.36 — and yet:
+
+| segment | n | mean per trade | Sharpe per trade |
+|---|---|---|---|
+| before | 278 | **+82.5** | +0.165 |
+| after | 841 | **−5.1** | −0.009 |
+
+Both statements are correct and neither is a bug. The supremum is standardised by the dispersion of
+the trades, and at a per-trade standard deviation of several hundred dollars a shift of that size is
+well inside what a constant mean produces. The lesson is about reporting, not about the test:
+
+- **The two-sided table must be printed with the verdict, never instead of it.** A split shown alone
+  reads as a break the test found, and it is not one.
+- **A non-rejection is not evidence of stability** at this noise level. It is the absence of
+  evidence, and with per-trade P&L the test has very little power against anything but a huge shift.
+- The same series can therefore read `stable` here and `few_periods` in the concentration test —
+  🔬 the best year carried **99 %** of its profit. Those are not contradictory readings: the profit
+  is concentrated in time *without* the mean having provably changed.
+
+## 🔬 An entry can be indistinguishable from chance while the strategy still makes money (2026-09-24)
+
+Same strategy, measured by `strategies/entryQuality/`: the e-ratio — mean favourable excursion over
+mean adverse excursion, both in ATR units — sits **inside the 5–95 % band of random entries matched
+on hour of day and long/short split at every horizon tested** (k = 1, 5, 10, 20, 50), and below it
+at k = 1. The strategy is nonetheless profitable over the stretch.
+
+It is the same conclusion `nulls/` reached from the other side (🔬 only 51 % of 757 XAUUSD
+strategies beat their null on Sharpe) and it is worth stating plainly: **on this corpus the entries
+are, so far, the part that carries least.** Three facts line up behind it —
+
+- the population is entirely long (1,119 of 1,119 trades on this strategy);
+- its exits are `Exit After X Bars`, `Exit Signal` and `End Of Friday`, with **no SL or TP anywhere**
+  in 960,705 exported trades;
+- 99 % of the profit comes from one year.
+
+🤔 So what is being measured over this stretch is closer to *being long gold in 2020 with a
+bar-count exit* than to an entry edge. That is not a reason to discard the population — it is the
+reason the null, the e-ratio and the concentration have to be read together, and why a random-entry
+benchmark with the same exits (`PARAMETER_SPACE_TESTS.pdf` D3, `docs/encargos/12`) is the control
+that would settle it.
+
+## 🔬 Pooling the moments of many searches is exact, and the ddof is where it goes wrong (2026-09-24)
+
+Built for `ledger/trials.accumulated`, which has to say how many candidates a study ever scored and
+how widely they were spread — without keeping any of them. The mixture variance of k groups is
+exact from their stored counts, means and spreads:
+
+```
+grand   = sum(n_i * mu_i) / N
+var_pop = sum(n_i * (sigma_pop_i^2 + mu_i^2)) / N - grand^2
+```
+
+⚠️ **It is exact only with population spreads.** Each search stores its `ddof=1` spread, which is the
+right thing to store — it is the unbiased estimate the deflated Sharpe wants — so the pooling has to
+convert in and back out: `sigma_pop^2 = sigma^2 (n-1)/n` going in, `* N/(N-1)` coming out. Skipping
+either conversion leaves an error that looks like rounding (0.8357 against 0.8354 on the first
+test), survives every eyeball check, and grows as the searches differ in size.
+
+The reason this matters beyond tidiness: **that sigma is the denominator of the whole
+overfitting correction.** A deflated Sharpe fed a spread that is 0.3 % wrong is fine; one fed the
+spread of a single variant batch instead of the study's is wrong by much more than that, and always
+in the flattering direction. The pooling is what makes recording cheap enough that nobody skips it.
+
+## 🔬 A soft screen removes nobody, and a ledger that records it literally says the study died (2026-09-24)
+
+Reconstructing `XAU_ISOOS_ejemplo`'s funnel into the global ledger: 120 strategies in, 45 out across
+eight screens. The `familia` screen — Benjamini-Hochberg over the survivors — is declared `soft`,
+"informa, no elimina", and `funnel.csv` records it as **entered 45, passed 0**.
+
+Recorded literally, the ledger's own funnel would read `45 → 0` and say the study ended with nothing.
+Recorded as `n_out = n_in` with the informative count in the note, it reads 45 → 45 and the number
+that was actually computed is still there.
+
+The general shape, worth remembering wherever one module's output feeds another's accounting:
+**a column called `passed` does not always mean "these survived"** — it means whatever the screen
+that wrote it decided it means, and the two readings differ exactly where a screen reports without
+acting. Anything that aggregates across screens has to know which kind each one is.
+
+🔬 And an operational finding from the same run: **a reconstructed study has the score distribution
+of one search out of eight.** `backfill` can only recover what an artefact wrote down, and a funnel
+stores counts, not the candidates' scores. So the accumulated N of a backfilled study is the N of
+its last gate run, not of its life — which is precisely why recording has to happen at the time,
+and why every reconstructed row is stamped `backfill`.
+
+## Qué cuesta nuestro Python, con 500 estrategias (2026-09-24)
+
+🔬 Medido sobre `PerfUSDJPY_Python_v1`, 500 estrategias de USDJPY H1, máquina de 96 núcleos. La
+tabla entera está en `docs/manual/12-rendimiento.md`; aquí lo que cambia una decisión.
+
+- 🔬 **La unidad es la operación, no la estrategia.** En una misma corrida las 8 estrategias llevaban
+  entre 5.338 y 43.109 operaciones en los mercados ajenos, un factor de 8. Cualquier «segundos por
+  estrategia» sobre una población así es ruido.
+- 🔬 **`crossmarket.report` cuesta `(3,36 + 0,00168 × sorteos)` ms por operación en un núcleo**, y la
+  constante se confirmó en tres tamaños (3,82 · 3,81 · 3,98 ms/op a 500 sorteos). Para las 500
+  estrategias son **12,0 M de operaciones: 14 h a 500 sorteos y ~67 h a los 10.000 de su config**.
+- 🔬 **No hay micro-optimización que lo salve.** `np.add.at` → `np.bincount` da **1,6x–2,5x** medido,
+  no el 10x que se suele suponer; y `_losing_run` ya está vectorizado por caminos. El coste es
+  `operaciones × sorteos × mercados × modelos` y está donde debe. **Lo que sobra es que corre en 1 de
+  96 núcleos**: el bucle sobre estrategias es independiente, y paralelizarlo no toca ninguna fórmula.
+- 🔬 **El gate es barato y lineal**: 60 ms por estrategia de coste marginal, 500 cribadas en 32 s. Pero
+  el 88 % de eso es el mono, y dentro de él **el 28 % es recalcular el ATR sobre las mismas barras
+  una vez por estrategia** (`nulls/simulate.py:fixed()` → `calibrate.atr`), más un 13 % de filtrar la
+  tabla de operaciones por una columna `object` una vez por estrategia (`gate/monkey.py`). Las dos
+  son la misma cuenta repetida: ~40 % del paso 8 sin cambiar un solo número.
+- 🔬 **La memoria es el límite antes que el tiempo** en la cosecha y las exportaciones:
+  `gate.harvest` pica 4,56 GB con 1.000 ficheros y `export_retest` **6,3 GB con 500 × 9 mercados**.
+- 🔬 **SQX es MÁS eficiente con lotes grandes, al contrario que nuestro Python.** Build: 0,32 s por
+  estrategia con 50, **0,06 s con 500**. Crossmarket sobre 9 mercados: 4,9 s por estrategia con 17,
+  **0,59 s con 500**. Extrapolar linealmente desde una población pequeña **sobreestima SQX 4x-8x**.
+
+## Paralelizar nuestro Python: dónde estaba el trabajo repetido y dónde la memoria (2026-09-25)
+
+🔬 Medido sobre la misma población de 500 (`PerfUSDJPY_Python_v1`). Las tablas completas están en
+`docs/manual/12-rendimiento.md`; aquí lo que cambia una decisión.
+
+- 🔬 **`fork` es lo que hace barato el reparto, no el número de procesos.** El padre lee el export de
+  12 M de operaciones y las barras de diez mercados una vez, y los hijos los heredan por
+  copy-on-write. Mandarlos por `pickle` a cada tarea costaría más que el cálculo. Por eso los hijos
+  devuelven **sólo la fila del veredicto**, nunca el registro entero de `analyse_strategy`, que lleva
+  todas las curvas de equity y todas las corridas nulas.
+- 🔬 **Cachear el ATR y agrupar por identidad valen tanto como parecían**: `gate.report` a 500 baja de
+  31,1 s a 6,1 s con el reparto, y el `scorecard` de 500×29 sale idéntico columna a columna.
+- ⚠️ **La memoria es el límite antes que el reloj, y el culpable tenía nombre.**
+  `crossmarket/simulate/stress.py:degraded()` construía la matriz de **25.000 corridas × operaciones
+  del mercado** entera, con tres arrays `float64` donde los valores eran booleanos: **816 MB por
+  mercado**. Multiplicado por los procesos, 96 no caben en 125 GB — el primer intento llegó a 94,5 GB
+  y hubo que abortarlo, y un segundo a 48 procesos llegó a 89 GB y **el núcleo mató la ventana de
+  VSCode**. Troceado en lotes de 500 corridas: **140 MB**, y 72 procesos ocupan 22 GB.
+- 🔬 **Trocear un Monte Carlo puede ser exacto, pero sólo si los sorteos se siguen tomando enteros y
+  en el mismo orden.** `rng.random((n, k))` rellena fila a fila, así que pedirlo por bloques
+  consecutivos da exactamente el mismo flujo; pedir `sorteo_A, sorteo_B, sorteo_C` por bloque en vez
+  de `todo A, todo B, todo C` **no**, y ahí se pierden los números sin que nada falle. Verificado:
+  tabla, formas, bandas y curva observada idénticas.
+- 🤔 **Cuenta ~0,35 GB por proceso** en el crossmarket ya troceado, más lo que ocupe el export en el
+  padre. `--workers` es el mando que cambia RAM por reloj y la máquina también la usa alguien.
+
+- 🔬 **El filtro estaba después del cálculo.** `nulls/stats.py:measure()` construía las cinco
+  estadísticas de cada corrida nula y devolvía las pedidas; la puerta pide **una**. Medido sobre
+  2.000 corridas × 570 operaciones: **22,45 ms las cinco, 1,75 ms sólo `sharpe`** — 12,8x. Eran el
+  **46 %** del paso 8. Quien pide las cinco (`nulls.report`) no paga nada por el cambio: 22,32 ms.
+  El patrón que hay que buscar en el resto del proyecto es ése, `{k: todo[k] for k in names}`.
+- 🔬 **El coste por operación del paso 10 SÍ es una constante, y la media por estrategia no vale.**
+  Dos lotes de 8 con casi las mismas operaciones totales, un solo proceso: **3,94 y 3,77 ms por
+  operación** (623,50 s / 158.415 y 593,94 s / 157.571). Pero dentro de un lote las estrategias van
+  de **50 a 44.771 operaciones**, un factor de 900, y en el paso 8 la más cara cuesta **83,4x** la
+  más barata con `r = 0,982` entre tiempo y operaciones. **Cuenta operaciones antes de lanzar nada.**
+- ⚠️ **Perfilar `names[0]` es perfilar la estrategia que el orden alfabético puso primero.** Salió
+  la segunda más barata de su lote y el reparto por fases que dio no era el de la población: las
+  estadísticas son el 17,9 % en una estrategia de 5.563 operaciones y el **33,3 %** en una de 44.771.
+  Perfila tres tamaños o no publiques porcentajes.
+- ⚠️ **`pool.map` devuelve en orden, así que un lote no enseña nada hasta que acaba la primera
+  tarea.** En la corrida de 499 fueron 38 minutos sin una línea, indistinguibles de un cuelgue. Y
+  desde fuera tampoco se ve: `py-spy` necesita ptrace y aquí está bloqueado.
+
+- 🔬 **Más procesos dejan de comprar reloj mucho antes de los 96, y la razón no es Amdahl.** Curva
+  medida sobre 96 estrategias: 12 procesos 1.041 s (75 % de eficiencia), 24 → 759 s (51 %),
+  48 → 695 s (28 %), 72 → 674 s (19 %), 96 → 660 s (15 %). El tramo en serie está medido y es
+  **0,83 s de 695**. Lo que manda es que **una tarea es una estrategia** y dentro de un lote van de
+  12 a 117.612 operaciones: la más larga cuesta **453 s ella sola** y es el suelo de cualquier
+  reparto a partir de 24 procesos. **Repartir por `(estrategia, mercado)` lo dividiría por ~9.**
+  Mientras tanto: 24-32 procesos dan el 87 % del reloj de 96 con una fracción de la RAM.
+
+## 🔬 La semilla de los nulos no es reproducible entre corridas (2026-09-25)
+
+`nulls/simulate.py:nulls()` construye el generador con
+`np.random.default_rng([knobs["seed"], abs(hash(rung)) % (2 ** 32)])`. **`hash()` de una cadena está
+aleatorizado por proceso** en Python 3, así que el segundo elemento de la semilla cambia en cada
+ejecución y `nulls.seed`, que existe precisamente para fijar el sorteo, no fija nada.
+
+Medido: tres procesos seguidos dan `810825080`, `1328569471`, `751024716` para el mismo `rung`. Se ve
+en el resultado — dos corridas de `gate.report` sobre los mismos ficheros dieron **227 y 229
+supervivientes**. Con `PYTHONHASHSEED=0` el valor se repite y el `scorecard` sale idéntico.
+
+El arreglo es una línea (un hash estable, p. ej. los cuatro primeros bytes de un SHA-1 del `rung`),
+pero **cambia una vez todos los p almacenados**, así que es decisión del dueño y no se ha aplicado.
+Mientras tanto: **cualquier medida A/B sobre los nulos tiene que fijar `PYTHONHASHSEED`**, o la
+diferencia que se lea será el sorteo y no el cambio.
+
+## El patrón que se repite: traceback en vez de «me falta esto» (2026-09-24)
+
+🔬 Probando a mano cinco análisis de Python que nadie había corrido en esta cadena, **cuatro
+fallaron**, y ninguno por un fallo de cálculo. Los cuatro modos, por orden de peligro:
+
+1. **Cero silencioso.** `nulls.report` trae `--sample OOS1` por defecto; un export de crossmarket
+   sólo lleva `Sample type = IST`, así que filtra 0 filas, escribe «0 estrategias» y **sale con
+   código 0**. Un informe vacío que parece un resultado.
+2. **Entrada de la forma equivocada.** `tasks.reports.is_oos` sobre un databank sin partición OOS
+   muere en `StopIteration` dentro de `summary.render`. Con el databank correcto funciona sin tocar
+   nada: 17 estrategias en 0,57 s. No estaba roto, estaba mal alimentado.
+3. **Prerrequisito no declarado.** `exposure.report` necesita un `trades.parquet` del mismo
+   databank y muere con `IndexError: list index out of range` en un `sorted(...)[-1]` en vez de
+   decir qué fichero busca. `tasks.reports.nulls` igual, pero con la salida de `nulls.report`.
+4. **Población vacía.** Una estrategia sin operaciones en ningún mercado ajeno tumbaba el lote
+   entero del crossmarket con `KeyError: 'bar_cap'` (arreglado).
+
+🤔 El patrón es siempre `sorted(glob(...))[-1]` o `next(iter(...))` sobre algo que puede estar
+vacío. Cuesta una línea decir qué falta y ahorra media hora de traceback — y en el caso 1 evita
+leer un cero como una respuesta.

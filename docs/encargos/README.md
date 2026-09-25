@@ -4,38 +4,112 @@ Cada fichero de esta carpeta es **un encargo autocontenido**: lo que una sola in
 para hacer su parte, y nada más. Se despacha diciéndole al agente que lea **su** fichero, no el
 plan entero.
 
-El plan completo vive en `docs/AgentPDFs/plan-ejecucion-2026-09-21.md` y sigue siendo la referencia
-de por qué existe cada tarea y cómo encajan. **Los encargos son la versión ejecutable de una parte
-de él.** Donde discrepen, manda el plan — y se arregla el encargo.
+El plan completo vive en `docs/AgentPDFs/plan-ejecucion-2026-09-21.md` y la secuencia manda desde
+`docs/AgentPDFs/WORKFLOW.md`. **Los encargos son la versión ejecutable de una parte de ellos.**
+Donde discrepen, manda el WORKFLOW — y se arregla el encargo.
 
-## Los cuatro de esta tanda
+**Un encargo cumplido se borra.** No se marca como hecho ni se deja «por si acaso»: lo que se
+aprendió haciéndolo ya está en `knowhow/`, en el manual y en el código. Limpieza del 2026-09-24:
+salieron los encargos 1, 2, 3, 4 y 7, verificados uno a uno contra el repositorio.
 
-| fichero | agente | posee | lote del plan |
+## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
+
+Salen de la revisión del PDF del dueño. **El 8 es el cimiento y va primero**: los otros cinco
+escriben en él.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `8-ledger-global.md` | ✅ **construido el 2026-09-24** salvo la migración de umbrales; ver su §ESTADO | — |
+| `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 20 pasos, y cuántos llegan | 8 |
+| `10-spa-stepm.md` | SPA de Hansen y StepM de Romano–Wolf sobre la población superviviente | 8 · gate |
+| `11-edge-por-coste.md` | edge en unidades de spread y coste de breakeven | 8 |
+| `13-alfa-beta.md` | **interrogante aparcado**, no encargo: nadie lo coge hasta cerrar la secuencia individual | — |
+
+## La tanda del PDF `PARAMETER_SPACE_TESTS`, 2026-09-24
+
+Del PDF del dueño sobre la nube de clones. Lo implementable **ya está implementado** y vive en
+`strategies/parameterCloud/` (A1, A2, A3, B2, C1) y en `nulls/filter.py` (la mitad del D1 que no
+necesita SQX). Aquí quedan los dos que exigen cosas que hoy no tenemos:
+
+| fichero | qué construye | qué lo bloquea |
+|---|---|---|
+| `12-tests-estructurales.md` | ablación de reglas, inversión de señal y el mono dentro de SQX | hace falta editar la *lógica* del `.sqx`; la ruta XML ya está investigada dentro |
+| `15-superficies-multimercado.md` | una superficie de parámetros por mercado, y si la región buena coincide | los costes de 16 activos (`OPEN.md` §27) y CPU del custodio |
+
+**Orden recomendado: 8 → 10 → 11 → 9**, y el 8 ya está. Los tres primeros leen de la misma cosecha que la puerta ya
+hace y no gastan CPU de SQX.
+
+**El punto 5 del PDF (perturbación de zona horaria) se ha retirado.** Decisión del dueño,
+2026-09-24: no le sirve. Su encargo se ha borrado.
+
+**El punto 6 se ha convertido en otra cosa y ya está construido.** En vez de la descomposición
+alfa/beta, el dueño pidió medir la dicotomía **rendimiento contra exposición al mercado** — una
+estrategia que saca un 5 % estando dentro una hora a la semana contra un buy and hold que saca un
+10 % estando dentro siempre. Es `strategies/exposure/`, el **paso 21** del `WORKFLOW.md`, con su
+página de manual `docs/manual/38-exposicion.md`. La alfa y la beta quedan como interrogante dentro
+de esa misma carpeta, en `13-alfa-beta.md`.
+
+**El punto 2 del PDF (permutaciones de Masters) no tiene encargo propio, a propósito.** Se
+investigó: la API de SQX no tiene verbo de import, el almacén de datos está compartido por symlink
+con el maestro y `strategies/translate/` está vacío. El encargo 9 responde la misma pregunta —la
+tasa de falsos positivos de la cadena— con la maquinaria de monos que ya existe. Decisión del
+dueño, 2026-09-24: **«monos se ha dicho»**.
+
+## Perfilado de la capa de Python, 2026-09-24
+
+| fichero | qué construye | estado de partida |
+|---|---|---|
+| `18-profiling-python.md` | perfilar y optimizar los análisis de Python, con la población de 500 ya construida y medida | 11 de 23 módulos medidos, dos puntos calientes localizados con línea, y la paralelización del crossmarket como único cambio de 90x |
+
+Es el único encargo que **ya trae sus propias medidas**: lo que hay dentro no son hipótesis, son
+números con su método al lado, incluidas **dos optimizaciones que se probaron y no funcionan**, para
+que nadie las repita.
+
+## La tanda del PDF `TRADE_LEVEL_TESTS`, 2026-09-24
+
+Siete tests sobre listas de operaciones y datos M1, ninguno necesita SQX. **Cinco están
+construidos** — `strategies/profitShape/` (items 1, 2 y 7) y `strategies/entryQuality/` (item 3 y
+el tier 1 del 4). Quedan tres:
+
+| fichero | qué construye | qué lo bloquea |
+|---|---|---|
+| `16-replay-de-operaciones.md` | el tier 2 del retraso: reejecutar cada operación desde una entrada desplazada | hay que recalcular stops, y **esta población no tiene ninguno** con el que validarlo |
+| `17-calidad-del-feed.md` | anomalías del M1 y qué parte del beneficio las toca | los umbrales `K`, `m`, `L`, `w` son del dueño |
+| `14-mapa-condicional.md` | rendimiento por régimen, sesión y día | nada técnico; va el último **a propósito**: es el único que fabrica hipótesis |
+
+## Encargos vivos de tandas anteriores
+
+| fichero | agente | posee | estado |
 |---|---|---|---|
-| `1-sqx.md` | instalaciones SQX | los installs, `knowhow/` | S1, S9, S7, S6 |
-| `2-portabilidad.md` | Python | `core/paths.py`, `core/worker.py`, `bin/`, `tools/`, `config/` | P1 |
-| `3-pipeline.md` | Python | `pipeline/` *(nueva)* | P2 · W6 |
-| `4-variantes.md` | Python | `sqx/variants/` *(nueva)*, `tests/` | P3 · W2 |
+| `6-taxonomia-bloques.md` | etiquetador | **solo el campo `archetypes` de `sqx/blocks/taxonomy.yaml`** | 🔴 sin empezar: los 767 bloques siguen con `archetypes: {}` |
 
-**Se lanzan los cuatro a la vez.** Las carpetas son disjuntas por diseño.
+No toca código, no toca SQX, no gasta CPU. Se puede lanzar en paralelo con cualquier otra cosa.
+Su hermano, el encargo 7 (las tres paletas por defecto), **está hecho** — 180 / 177 / 148 bloques
+nombrados con `unlabelled: off` — y por eso ya no está aquí.
+
+## Lo que no es un encargo
+
+| fichero | qué es |
+|---|---|
+| `5-nulos.md` | informe de cierre del módulo `nulls/`, con cinco cosas pendientes en su §6. Se queda hasta que esas cinco estén resueltas o descartadas |
+| `CONTEXTO-curacion-de-poblaciones.md` | estado del terreno para quien diseñe la curación desde la UI |
+| `CONTEXTO-ecosistema-skills-sqx.md` | estado del terreno para quien diseñe skills de SQX |
+| `ejemplo-IS-OOS-XAUUSD.md` | el proyecto de ejemplo con IS y OOS en dos databanks, citado desde `docs/manual/28-builder.md` |
 
 ## Cómo se despacha
 
-> Lee `docs/encargos/2-portabilidad.md` y ejecútalo entero. Es tu encargo completo: no necesitas
+> Lee `docs/encargos/8-ledger-global.md` y ejecútalo entero. Es tu encargo completo: no necesitas
 > leer el plan grande ni los otros encargos. Si algo te bloquea, párate y dímelo.
 
 ## Protocolo anticolisión
 
-Tres ficheros son compartidos y los tocan varios agentes. Las reglas son las tres:
+Tres ficheros son compartidos y los tocan varios agentes:
 
 - **`docs/DEPENDENCIES.md` se regenera, nunca se fusiona.** Si hay conflicto, `python3
   tools/depmap.py` y se queda lo que salga.
 - **`requirements.txt`: se añade línea, nunca se reordena.**
-- **`core/` lo posee el agente 2 en esta tanda.** Si el 3 o el 4 necesitan un helper compartido, lo
-  escriben dentro de su propia carpeta y lo anotan en su entrega. No tocan `core/`.
-
-Árbol git compartido, porque las carpetas no se solapan. Si prefieres ramas separadas, una por
-encargo y el merge al final.
+- **`ledger/thresholds.yaml` (encargo 8) lo leen todos y no lo escribe ninguno.** Mover un umbral
+  es del dueño.
 
 ## Qué devuelve cada agente
 

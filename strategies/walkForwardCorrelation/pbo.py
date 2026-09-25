@@ -12,8 +12,9 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from strategies.walkForwardCorrelation.inputs import config, panel
-from strategies.walkForwardCorrelation.measure import cscv, rules
+from strategies.walkForwardCorrelation.measure import correlation, cscv, rules
 from strategies.walkForwardCorrelation.render import figures
+from core.surface import trials as counting
 from strategies.walkForwardCorrelation.verdict import cost, summary, trials
 
 PARAM = "param_"
@@ -67,9 +68,14 @@ def main() -> None:
     score = cscv.SCORES[knobs["score"]]
     print("PROGRESS 10 construyendo la matriz de rendimientos por periodo", flush=True)
     metrics = pd.read_parquet(a.work / "metrics.parquet")
-    wide = panel.usable(panel.panel(a.work, knobs["period"]), metrics, cfg["min_trades"])
+    cols = correlation.columns(cfg["split_mode"])
+    wide = panel.usable(panel.panel(a.work, knobs["period"]), metrics, cfg["min_trades"],
+                        cols)
     grid = grid_of(metrics, wide.columns)
-    inside, outside = panel.windows(wide, panel.split(a.work))
+    # The PBO itself ignores this boundary: `cscv.run` cuts the history its own way.
+    # It is the four chronological numbers below -- rule cost, deflated Sharpe, trial
+    # count, drift -- that are read at the split the config declares.
+    inside, outside = panel.windows(wide, panel.split(a.work, cfg["split_mode"]))
 
     runs, found = {}, {}
     for n, name in enumerate(knobs["rules"], 1):
@@ -81,7 +87,7 @@ def main() -> None:
                                                                 name, knobs)
 
     print("PROGRESS 80 contando cuantas pruebas independientes hay de verdad", flush=True)
-    independent = trials.independent(inside, knobs["cluster_k_max"])
+    independent = counting.independent(inside, knobs["cluster_k_max"])
     best = rules.argmax(score(inside.to_numpy()), grid, None)
     deflated = trials.deflated(inside, best, independent["n_clusters"])
     moved = cost.drift(inside, outside, grid, score)

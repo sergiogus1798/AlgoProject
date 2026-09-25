@@ -5,9 +5,10 @@ import re
 
 from core.assetdata import mc_retest
 
-# The two methods that draw a value from a range. `RandomizeMinDistance` has the same
-# shape and is deliberately not here: the owner asked for these two.
-RANDOMIZE = {"spread": "RandomizeSpread", "slippage": "RandomizeSlippage"}
+# The three methods that draw a value from a range, each named by the key its range
+# carries in `assets/symbols/<SYM>.yaml`. All three are absolute point ranges.
+RANDOMIZE = {"spread": "RandomizeSpread", "slippage": "RandomizeSlippage",
+             "min_distance": "RandomizeMinDistance"}
 
 
 def set_ranges(text: str, data: dict) -> dict[str, int]:
@@ -21,11 +22,13 @@ def set_ranges(text: str, data: dict) -> dict[str, int]:
         Range name to how many <Method> blocks were rewritten, and the new text under
         "text". Unlike a cost, these live in the task's own <Method> blocks and not in
         <InstrumentInfo>, so they ARE writable — the registry never sees them. A range
-        still at null is skipped rather than invented.
+        still at null, or one the asset does not declare at all, is skipped rather than
+        invented, and only a `use="true"` method is touched: the ranges of a method the
+        task does not run are left as the donor wrote them.
     """
     out = {"text": text}
     for name, method in RANDOMIZE.items():
-        span = mc_retest(data)[name]
+        span = mc_retest(data).get(name, {"min": None, "max": None})
         if span["min"] is None or span["max"] is None:
             out[name] = 0
             continue

@@ -29,13 +29,13 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread:
-    use: null                 # points
+    use: 0.6                 # points
     sqx_now: 0.6              # points
-    why: ""
+    why: "PROVISIONAL 2026-09-23 — `defaultSpread` que el maestro lleva HOY, leido de los project.cfx con `sqx.inspect.instruments`. NO es una cifra pactada con the5ers: es el default de fabrica de SQX, y su ordenacion relativa entre pares no es creible (CADJPY 0.1 contra GBPJPY 1.2 con el mismo point_value; CADJPY seis veces mas barato que EURJPY siendo menos liquido). Sirve para montar la cadena y medir la correlacion entre mercados, que apenas depende del nivel de coste; NO sirve para juzgar si un edge es real."
   commission:
-    use: null                 # $ por lote
+    use: 0.0                 # $ por lote
     sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
-    why: ""
+    why: "PROVISIONAL 2026-09-23 — `SizeBased 0.00` es lo que el maestro lleva hoy: comision CERO en los diez pares. the5ers cobra del orden de 8 $/lote round-turn, que en un par con point_value 100000 equivalen a 0.8 pips. Con este valor el coste modelado infravalora el real unas 10 veces. Se escribe para desbloquear la autoria (regla dura 5), no porque sea creible."
   slippage_is:
     use: 0.3                 # points — tramo(s) build
     sqx_now: 0.0
@@ -45,15 +45,20 @@ costs:
     sqx_now: 0.0
     why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
   swap_long:
-    use: null                 # points por noche
+    use: 0.41                 # points por noche
     sqx_now: {type: points, value: 0.41}
-    why: ""
+    why: "PROVISIONAL 2026-09-23 — `<Swap use=true type=points>` del maestro, leido de los project.cfx. No pactado con the5ers. Rollout 23:00, triple swap el miercoles. Mismo valor en todos los proyectos que tocan el par, sin conflictos."
   swap_short:
-    use: null                 # points por noche
+    use: -7.84                 # points por noche
     sqx_now: {type: points, value: -7.84}
-    why: ""
+    why: "PROVISIONAL 2026-09-23 — `<Swap use=true type=points>` del maestro, leido de los project.cfx. No pactado con the5ers. Rollout 23:00, triple swap el miercoles. Mismo valor en todos los proyectos que tocan el par, sin conflictos."
 
-notes: []
+notes:
+  - "2026-09-23: spread, commission y los dos swap rellenados con lo que el MAESTRO lleva hoy
+     (leido de los project.cfx con `sqx.inspect.instruments`), para desbloquear la regla dura 5
+     sin esperar a las cifras de the5ers. Son defaults de fabrica de SQX, comision CERO incluida:
+     el coste modelado infravalora el real ~10x y su ordenacion entre pares no es creible. Todo
+     resultado con coste producido antes de que el dueno los sustituya arrastra esa advertencia."
 
 # Rangos que sortea la tarea MC Retest, en PUNTOS y por activo. `min`/`max` null =
 # sin decidir. `sqx_now` es lo que el maestro lleva hoy para este símbolo; una lista

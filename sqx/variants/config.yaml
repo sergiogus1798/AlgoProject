@@ -49,7 +49,16 @@ execute:
   # other command while it runs, so a sync can never delete the .sqx it is holding -- which
   # is the whole reason the role exists (knowhow/03-driving-sqx.md).
   role: custodian
+  # ⚠️ `Retester` is the STOCK project and using it breaks hard rule 10 (owner, 2026-09-23:
+  # every run in a custom project). This predates the rule. Migration: build a one-task
+  # Retest project of its own -- `sqx.projects.builder <SYM>_variantes --tasks Retest
+  # --only Retest-Task1.xml` -- and name it here. OPEN.md §38, and the `/variants` skill.
   project: Retester       # a 1-task Retest harness: no Build task, no GoToTask, nothing to loop
+  # ⚠️ Estos dos son los del harness de una sola tarea que usa `spp.py` (el reconocimiento
+  # SPP de una madre). El RETEST DEL LOTE ya no los usa: sus databanks salen de `wfc:` en
+  # assets/_build.yaml — el de entrada y uno de salida por tramo—, que es donde se declara
+  # el estudio entero. `sqx.projects.wfc` escribe las tareas con esos nombres y
+  # `sqx.variants.legs` los lee, para que no haya dos sitios donde se llamen distinto.
   input: Results
   output: RetestOut
   poll_seconds: 5
@@ -80,3 +89,30 @@ spp:
                           # SQX's sentinel for exhaustive -- every combination of everything
   timeout_s: 3600         # an SPP reports nothing until it finishes; this is the only cap
   sync_s: 6               # seconds to let `synctofiles` land before reading the folder
+
+crosstf:
+  # Which parameters move when the timeframe moves. OWNER'S RULE, 2026-09-23: periods and
+  # bar-count exits, NOTHING ELSE. This is a positive whitelist, not a classification --
+  # anything unmatched is written through untouched, so an unknown custom-block parameter
+  # is never silently reinterpreted.
+  #
+  # Deliberately NOT here, and the consequence stated so nobody reads a cell as clean:
+  #   *Coef*, *Mult*, *Deviation*  multiply a volatility or range measure that grows when
+  #                                bars are aggregated, so a StopLossCoef left at 2 is a
+  #                                physically ~2x wider stop on H4 than on H1.
+  #   *Lvl*                        oscillator thresholds, bounded 0..100, dimensionless.
+  #   *Shift*, *Shf*               fixed at 1 by the builder; 1/4 is not a bar.
+  #   *Mth*, *Fld*, *Str*          categorical selectors, not quantities.
+  scale:
+    - "(Period|Prd|Lookback|Lkb)\\d*$"
+    - "EMA\\d*$"
+    - "Bars\\d*$"        # ExitAfterBars, and the #Bars# lookback of comparisons like
+                        # "Is rising" (IsBars1) -- found 2026-09-23 by the unmatched-int
+                        # report, which is what that report is for
+  # Candidates the whitelist does not claim yet -- `scale.py` prints every unmatched int
+  # parameter so this list can be settled against real strategies rather than guessed:
+  #   "Slw\\d*$"      Stochastic slowing, a smoothing length in bars
+  #   "(Smooth|Smt)\\d*$"
+
+  floor: 2        # the builder's own minPeriod; a scaled period below it is clamped and flagged
+  shape: minimal  # 13.7 KB per file, and the parent's results cannot ride along

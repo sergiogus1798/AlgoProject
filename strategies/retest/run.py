@@ -107,7 +107,18 @@ def battery(keys: dict, provenance: dict, cfg: dict) -> dict:
     """
     sims = store.load_sims(**keys)
     original = store.load_original(**keys)
-    names = sorted(sims["strategy"].unique())
+    # The eight tasks read one databank, so a strategy normally appears in all of them. One
+    # that does not was curated out between two tasks, and it has no production run to be
+    # read against -- reporting it would mean answering "what breaks it?" without the task
+    # that answers it. It is named and dropped, not half-reported.
+    ran = {t for t in tasks.TASKS if (sims["task"] == t).any()}
+    present = {name: {t for t in ran if not sims[(sims["strategy"] == name)
+                                                 & (sims["task"] == t)].empty}
+               for name in sorted(sims["strategy"].unique())}
+    partial = {n: sorted(ran - got) for n, got in present.items() if ran - got}
+    for name, short in partial.items():
+        print(f"fuera del informe, le faltan tareas: {name} — sin {', '.join(short)}")
+    names = [n for n in present if n not in partial]
     per = {name: one(keys, sims, original,
                      {task: provenance[f"{task}/{name}"] for task in tasks.TASKS
                       if f"{task}/{name}" in provenance}, name, cfg)

@@ -42,6 +42,22 @@ topology was built and verified that day (`knowhow/03-driving-sqx.md`).
 | 29 | — | 🟡 | forex and metals filled 2026-09-22; the 6 index CFDs still have no IS/OOS window |
 | 30 | — | 🟡 | new: the data-update command is guarded and documented; its download awaits a GUI-closed run |
 | 31 | — | 🔴 | new: **revisión completa 2026-09-22** — `ran` hereda el arnés SPP, `spp_export` lee el databank/ventana equivocados, el IC del WFC ignora la dependencia entre variantes, sin candado ni timeout en el custodio. `docs/AgentPDFs/revision-proyecto-2026-09-22.md` |
+| 37 | 🔴 | 🟢 | **hecho 2026-09-24**: el lector salta la tarea que no corrió (MinDist nunca aplica a órdenes a mercado), los rangos de spread/slippage salen de `mc_retest.default_multiples` (1x–4x el coste del backtest, dueño 2026-09-24) y tres fórmulas mal reconstruidas están corregidas. 71 desacuerdos → 2 celdas sueltas |
+| 38b | — | 🟡 | new 2026-09-24: **`/plugin` no existe en este entorno**, así que `sqx-lab` va instalado a mano con `bin/sqx-lab-install.sh`. Funciona igual pero **no se actualiza solo**, y una versión nueva descomprimida encima se lleva la skill local `sqx-spp`. Hay que reejecutar el script tras cada actualización |
+| 39 | 🔴 | 🟢 | **hecho 2026-09-25**: el bucle sobre estrategias de `crossmarket.report` se reparte entre los núcleos con `fork` (`--workers`, por defecto todos). 8×9 a 500 sorteos: **623,5 s → 156,1 s con 7 procesos**, `verdict.csv` idéntico byte a byte. `docs/manual/12-rendimiento.md` |
+| 40 | 🔴 | 🟢 | **hecho 2026-09-25**: el ATR se cachea por `(barras, ventana)` (`nulls/calibrate.py`) y la tabla OOS se agrupa una vez por identidad (`gate/monkey.py`), y el mono va en paralelo. `gate.report` a 500: **31,1 s → 6,1 s**, `scorecard` de 500×29 idéntico columna a columna |
+| 41 | — | 🟢 | new 2026-09-24: **`sqx-worker.sh stop` volvía a los 20 s diciendo «did not stop»** mientras la JVM seguía escribiendo databanks, y quien leía después veía 211 de 500 `.sqx`. Ahora espera hasta 5 min a que el proceso se vaya de verdad. **No se perdió nada**: la sincronización acabó sola |
+| 42 | — | 🟢 | new 2026-09-24: una estrategia que **no dispara en ningún mercado ajeno** tumbaba el lote entero del paso 10 con `KeyError: 'bar_cap'`. Ahora se anota como veredicto propio. Salió a la primera con 8 estrategias reales |
+| 43 | — | 🔴 | new 2026-09-24: **la mitad de los análisis de Python no está ejercitada.** De 23 puntos de entrada se han medido 7; de los 5 primeros que se probaron a mano, 4 fallaron por prerrequisitos o por entrada de la forma equivocada. El peor: **`nulls.report` escribe «0 estrategias» y sale con éxito** cuando `--sample OOS1` no casa con el export (los de crossmarket sólo llevan `IST`). `tasks.is_oos` muere con `StopIteration` en un databank sin OOS y funciona perfecto (0,57 s) en el correcto; `exposure.report` y `tasks.nulls` mueren con `IndexError` en vez de nombrar el fichero que les falta |
+| 33 | — | 🟢 | new: **un clon del donante seguía operando ORO** para cualquier activo que no fuese XAUUSD. Arreglado el 2026-09-24 con `sqx/projects/resources.py` y un guardia; `knowhow/06-locations.md` |
+| 34 | 🔴 | 🟢 | **causa hallada y arreglada 2026-09-24**: `crossTF/config.yaml` llevaba el feed de XAUUSD fijo y puntuaba USDJPY contra barras de oro. Con `--feed` correcto la correlación sube de −0.34 a 0.98–0.99; el aviso de costes ya nombra el activo real. `knowhow/06-locations.md` |
+| 35 | — | 🟢 | new: `export_metrics` sólo leía el maestro y `sync_bars` moría en un `markets.FILE` inexistente. Los dos arreglados el 2026-09-24; `knowhow/04-export.md` |
+| 36 | 🔴 | 🟢 | **hecho 2026-09-24**: `strategies/crossmarket/report.py` juzga la población entera por amplitud y escribe el `verdict.csv` de `/curate`. ⚠️ Revierte la decisión del 2026-09-15 de no guardar resultados; el panel sigue siendo donde se mira UNA estrategia |
+| 41 | — | 🟠 | new: **el diseño de variantes gasta la mitad del presupuesto en combinaciones que apenas operan** — 1.002 de 2.000 filas de `Strategy 17-9-39` quedan bajo 30 operaciones, y el filtro colapsa `DICrossShift1` a un valor. Medido 2026-09-24 con `strategies/parameterCloud/` |
+| 46 | — | 🔴 | new 2026-09-25: **la tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado**. En un lote de 96 la mayor lleva 117.612 operaciones y cuesta **453 s ella sola**: es el suelo de cualquier reparto a partir de 24 procesos, y por eso 96 procesos sólo dan 14,2x. Los 9 mercados son independientes dentro de `analyse_market` — repartir por ahí divide la tarea más larga por ~9. Toca la forma de `analyse_strategy`, que es la puerta del panel: decisión de diseño. `docs/manual/12-rendimiento.md` |
+| 47 | — | 🟠 | new 2026-09-25: **el lote del paso 10 no deja ver por dónde va** — `pool.map` devuelve en orden y la corrida de 499 estuvo **38 min sin imprimir una línea**, indistinguible de un cuelgue. Desde fuera tampoco: `py-spy` necesita ptrace y está bloqueado. Se arregla imprimiendo por orden de terminación |
+| 44 | — | 🟢 | new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y **el núcleo mató la ventana de VSCode** |
+| 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/07-practices.md` |
 | 32 | — | 🟡 | **mitad cerrada**: `sqx-worker.sh` ya rechaza un segundo lanzamiento sobre el mismo install y un puerto derivado (2026-09-23). Falta el candado de propietario: **el custodio no tiene candado** — 2026-09-23 dos sesiones se pisaron en W2: `stop` mató corridas ajenas. Evidencia en vivo del §2.D de la revisión. `knowhow/07-practices.md` «dos sesiones sobre el custodio a la vez» |
 
 ---
@@ -572,6 +588,140 @@ changing one re-decides every strategy without touching code.
 
 ---
 
+## 34. 🔴 `sqx.projects.builder` installs the donor clone before it refuses
+
+🔬 2026-09-23. Building a USDJPY project from the frozen XAUUSD donor failed at the session gate:
+
+```
+ninguna tarea de este proyecto define la sesión USDJPY_ftmo. Hay que darla de alta en SQX,
+o clonar de un donante que la lleve — no se inventan horarios de mercado.
+```
+
+The refusal is correct (see `knowhow/09-costs.md`, "A session cannot be borrowed"). **What is wrong
+is that `user/projects/USDJPY_crossmarket/project.cfx` was already on disk in the custodian when it
+printed that** — and it was an untouched XAUUSD clone: `XAUUSD_DukasM1_Infinox`, `defaultSpread`
+10.0, `MarketOpenSession XAUUSD_ftmo`, and the additional-markets cross-check still pointing at
+XAGUSD and BRENT. Nothing of USDJPY had been applied. A project named for one asset that builds
+another, with that asset's costs, is unattributable the moment anyone runs it — exactly what hard
+rule 10 exists to prevent.
+
+Removed by hand from `SQX_w2` on 2026-09-23; a copy of the aborted `.cfx` is in that session's
+scratchpad, not in the repo.
+
+**The fix**: run the doctrine blockers — sessions included — against the donor **before** writing
+anything into an install, or write to a temporary path and move it into `user/projects/` only once
+every gate has passed. Until then, a failed `builder` run leaves a booby trap and the operator has
+to know to delete it.
+
+## 37. 🟠 `strategies/retest/` assumes all eight MCR tasks always ran
+
+🔬 2026-09-23, found while writing `sqx/projects/mcretest.py`. The owner's rule is that
+`MCR 4 MinDist` is configured **only** when the population trades with stop or limit orders, so on a
+market-only population that databank is never written. The Python side does not know that:
+
+- `strategies/retest/ingest.py:99` — `assert found, f"{tasks.DATABANK[task]}: no .sqx found"`, over
+  the fixed eight of `tasks.TASKS`. A missing `MCR 4 MinDist` aborts the whole ingest.
+- `strategies/retest/inputs/tasks.py`, `METHOD["stress"]` — expects exactly six methods. When the
+  population has no pending orders the stress task is written with five, and `verify()` refuses the
+  databank for "carrying the wrong methods".
+- `strategies/retest/ingest.py` calls `core.paths.databank_dir(project, name)`, whose `install`
+  defaults to the **master**. There is no `--role`, so it cannot read a study that ran on a worker —
+  and hard rule 3 says the workers are where our runs happen. `sqx/export/export_retest.py` got its
+  `--role` on 2026-09-23 (commit 53007d7); this one still needs it.
+
+So today the SQX side and the Python side disagree about what a legal run looks like, and every
+market-only study — which is all of them, since `_build.yaml` has `order_types: [EnterAtMarket]` —
+hits it at step 14.
+
+🔬 **Ya no es una previsión: medido el 2026-09-23** corriendo el proyecto entero en el custodio
+(`SQX_w2/user/projects/XAU_mcr_prueba`, 2 estrategias reales del `OOS` del XAUUSD del maestro,
+1.000 simulaciones por tarea). Pasando los `.sqx` producidos por `tasks.verify()`:
+
+| tarea | verify() |
+|---|---|
+| bar, spread, slippage, params, exits, ohlc | **OK** — 1000/1000 simulaciones, aislamiento correcto |
+| mindist | sin databank: `ingest.py:99` abortaría |
+| stress | `ran [5 metodos], expected [6]` — le falta `RandomizeMinDistance` |
+
+**The fix** is on the Python side and is a study-level decision, not a patch: a task that could not
+exist has to be recorded as absent, with its reason, and the report has to say "seven of eight" in
+so many words rather than quietly averaging over what it found. `sqx.projects.mcretest --json`
+already emits exactly that, per task, under `dropped`.
+
+## 35. 🔴 `sqx.projects.builder --symbol` does not change the market — it cannot author for a non-donor asset
+
+🔬 2026-09-23, building the first non-gold project. `--symbol USDJPY` produced a project whose three
+tasks contain **no occurrence of `USDJPY_DukasM1_the5ers` at all**:
+
+| what | value in the built project |
+|---|---|
+| main chart | `XAUUSD_DukasM1_Infinox`, M30 |
+| spread on the build task | 10.0 — gold's |
+| `<Resources><Symbols>` | `XAUUSD_DukasM1_Infinox`, plus a stray `AUDJPY_DarwTick_the5ers` |
+| session | `USDJPY_ftmo` ✅ — the only thing that took |
+| additional-markets cross-check | the 9 FX pairs ✅, retesting **gold** |
+
+**The cause.** `sqx.projects.setups.set_costs` picks the Setups to rewrite by matching
+`<Chart symbol="{data['sqx_symbol']}"`, and `configure` patches dates on `<Symbol name="{feed}"`.
+Neither element exists in a donor frozen for a different asset, so **both rewrite zero elements,
+silently**, and the donor's own market survives untouched. `--symbol` really drives only the
+doctrine, the window, the session and the costs — and the costs are applied by feed match, so they
+land nowhere. Nothing caught it because every project built until today came from the XAUUSD donor
+*for* XAUUSD, where the match always succeeds.
+
+**It reports success.** The run printed the doctrine line, the segments, and
+`⚠️ PROVISIONAL: spread, commission, slippage_is, …`, which reads as though those costs had been
+applied to something. `configure` does return a per-task Setup count and `build()` passes it through
+as `setups`, but the human-readable output never prints it — a `0` there would have said everything.
+
+Removed from `SQX_w2` by hand; the mongrel `.cfx` is in that session's scratchpad, not the repo.
+
+**What it blocks.** No asset but XAUUSD can be authored today: the USDJPY cross-market programme, the
+28-pair FX test, and every `structural` market.
+
+**The fix, and why it is not a one-liner.** Switching market means rewriting the main chart's
+`symbol`, the `<Resources><Symbols>` entry and the `<InstrumentInfo instrument=…>` key together — and
+`setups.py` already warns that editing `InstrumentInfo` is what produces *"Project has unresolved
+resources"*. Two routes:
+
+1. **A donor per asset**, frozen from a master project that already trades it. Cheap and safe; costs
+   one snapshot per asset, and inherits that project's exits and acceptance, so results across assets
+   stop being comparable unless the donors agree.
+2. **A real feed-swap step** in `builder` that rewrites the three places at once, verified by loading
+   the project in SQX. Keeps one donor and one doctrine for every asset — the reason to want it — but
+   needs the unresolved-resources failure understood first.
+
+Until one exists, `builder` should **refuse** when the donor carries no chart on the target asset's
+feed, instead of reporting success. That refusal is the smallest useful change and should land first.
+
+## 36. 🟠 Unit conversions in `no_forex` cost files swing ~5× with the reference price nobody chose
+
+🔬 2026-09-23. The `no_forex` class requires commission as **% of notional** and swap as **% annual**,
+while SQX stores `SizeBased` dollars and swap in points. Every such file therefore carries a
+conversion, and the conversion needs a price — which is not written down anywhere as a convention.
+
+`XAUUSD.yaml` uses **the last real close**. Following it for the two new metals/energy files gives:
+
+| | at last close | at the tested window's median (oos1) | factor |
+|---|---|---|---|
+| XAGUSD commission | 0.001776 % (P=90.078) | 0.00863 % (P=18.535) | **4.9×** |
+| XAGUSD `swap_long` | −6.35 % annual | −30.9 % annual | **4.9×** |
+| BRENT `swap_short` | −9.54 % annual (P=97.235) | −13.5 % annual (P=68.578) | 1.4× |
+
+Silver traded at a median of 18.5 across 2018–2022 and closes at 90 today, so **the last close
+understates the cost of the window actually being charged by nearly five times**. The same applies to
+`XAUUSD.yaml` itself, whose own file already says the figure "depends on the reference price chosen"
+and is `SIN VERIFICAR`.
+
+The three files agree with each other, which is the only reason to keep the last-close convention for
+now. **The decision the owner has to make**: reference price = last close, the median of the segment
+being charged, or the median of the whole history. It changes cost-bearing results on every `no_forex`
+asset, and until it is made, no absolute profitability figure on gold, silver or Brent means much —
+relative comparisons between strategies on the *same* asset are unaffected.
+
+Still unverified underneath all of it: whether SQX applies `PercentageBased` per leg or per trade
+(issue 26).
+
 ## Constraints discovered while investigating
 
 - **SQX rewrites every `project.cfx` on save/exit.** All 14 project files were restamped within the
@@ -962,3 +1112,82 @@ in the following second, so one of them, or a later re-run, writes `metrics.parq
 recorded it. Until that is found the ledger's "removable" (`sqx/`, 2,000 files, 32 MB) cannot be
 swept, and the guarantee the sweep rests on is broken for every mother that follows. Nothing was
 forced. Find which stage rewrites the file and either hash after it or make it write elsewhere.
+
+## 38. 🟡 Tres divergencias declaradas de los pasos 15, 16.5 y 19 — decisión del dueño
+
+📓 2026-09-23, al escribir `sqx/projects/spp.py`, `sqx/projects/wfm.py` y las skills `/spp`,
+`/variants` y `/wfm`. Ninguna es un bug: son tres sitios donde el código sigue lo que hacen las
+tareas del maestro y eso **no coincide con la letra** de un fichero de política. Están escritas para
+que él decida, no para que la siguiente sesión las "arregle".
+
+1. **La precisión del SPP es `1`, no el `2` de la doctrina.** `_build.yaml` dice
+   `precision.default: 2` (un minuto) de la construcción en adelante, y las dos tareas SPP del
+   donante corren a `1`. Un SPP son miles de backtests **por estrategia**: a un minuto no termina.
+   El catálogo `spp:` lo fija en 1 y lo canta en cada ejecución. Si el dueño quiere el 2, es cambiar
+   una línea — y medir antes cuánto tarda una madre real.
+
+2. **`SPP IS` corre sobre `build`.** `_policy.yaml` dice que `build` es «sólo el paso 6, la única
+   muestra que el generador ve». Esa frase habla de **selección**; el SPP de IS no selecciona nada
+   (las condiciones y los cuatro `Eval*Check` van apagados), sólo vuelve a leer una ventana ya
+   gastada, que es lo que significa "in sample" y lo que hacen las tareas del maestro. Si el dueño
+   prefiere que el paso 15 no toque `build` en absoluto, se queda sólo el `SPP OOS` y el paso 16
+   pierde la mitad de su entrada.
+
+3. **La fábrica de variantes sigue corriendo sobre el `Retester` de serie.**
+   `sqx/variants/config.yaml`, `execute.project: Retester`, incumple la regla dura 10. Es anterior a
+   la regla. La migración es crear un custom project de una sola tarea Retest
+   (`sqx.projects.builder <SIM>_variantes --tasks Retest --only Retest-Task1.xml`) y poner su nombre
+   ahí. No se ha cambiado el default para no romper una cadena que hoy funciona sin que él lo sepa.
+
+## 39. ✅ El WFC en tres tramos — hecho el 2026-09-24
+
+📓 Decisión del dueño: el retest de las variantes son tres tareas de SQX (`build`, `oos1`, `oos2`),
+cada una a sus costes y con los mercados adicionales dentro, y la cosecha las une. Hecho de punta a
+punta: `sqx/projects/wfc.py` escribe las tareas, `sqx/variants/{legs,execute,equity,united,collect}.py`
+las cosechan, y el WFC lee el lote de dos maneras (`split_mode`). Queda una sola cosa viva de esto:
+
+**🟡 Nada de esto se ha corrido todavía sobre un lote de verdad.** Los lectores están probados
+contra un databank real del maestro (`XAUUSD/Retest Markets - Family`, 757 estrategias x 3 mercados)
+y la aritmética de las uniones está comprobada contra lo que SQX guarda, pero el ciclo entero
+—cargar, correr las tres tareas, exportar, cosechar— no. Lo que hay que mirar la primera vez:
+
+1. que `action=start` corra de verdad las tres tareas en cadena y que el contador de `execute.run`
+   —que divide el total entre tres— no se quede corto ni largo;
+2. que los tres databanks de salida existan en el proyecto (§40), porque SQX ignora en silencio un
+   nombre que no declara ningún `<Databank>`;
+3. que `unreconciled` devuelva un puñado de variantes y no todas: todas significa que se está
+   leyendo el resultado equivocado del `.sqx`.
+
+## 40. 🟡 Los databanks del proyecto WFC hay que crearlos a mano
+
+📓 2026-09-24. `sqx.projects.wfc` apunta las tres tareas a `WFC Variants` (entrada) y a `WFC Build`,
+`WFC OOS1` y `WFC OOS2` (salidas), pero **no los crea**: SQX empareja por el nombre exacto e ignora
+en silencio un databank que ningún `<Databank>` del `config.xml` declara. Hoy se crean en la GUI del
+proyecto custom. Lo natural es que `sqx/projects/databanks.py` sepa añadirlos, que es trabajo de una
+sesión y no se ha hecho para no mezclarlo con la autoría de las tareas.
+
+
+## 41. 🟠 Half the variant budget goes to combinations that barely trade
+
+🔬 Measured 2026-09-24 on `Strategy 17.9.39`'s batch while building `strategies/parameterCloud/`.
+Of the 2,000 fabricated rows in `metrics.parquet`, **1,002 trade fewer than 30 times in sample** —
+the trade count is bimodal, with a first quartile of 4 trades and a median of 752. They are not a
+tail: they are half the design.
+
+Two costs, and they are different:
+
+- **Budget.** Those slots were fabricated, loaded and retested on the custodian like any other. The
+  design's own `n_target` is a cap on *tuples*, and nothing in `sqx/variants/design/` knows that a
+  region of the grid produces strategies that do not trade.
+- **Inference.** Once they are filtered out — and they have to be, a 4-trade backtest is not a point
+  on a performance surface — `DICrossShift1` is left with a single value, so the surface can no
+  longer say anything about it. `knowhow/07-practices.md`, "A trade filter is not neutral in
+  parameter space".
+
+**Not a bug and not urgent**: the design is doing what it was told, and the reading layer now names
+what collapsed instead of quietly fitting around it. What it suggests is a cheap pilot — a few
+hundred tuples scored on trade count alone before the full batch is fabricated, so the levels that
+produce silence are known before the budget is spent, which is close to what
+`docs/AgentPDFs/revision-proyecto-2026-09-22.md` already proposes for the sampling.
+
+**Whose call:** the owner's, because it changes what a batch contains.

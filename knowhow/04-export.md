@@ -708,3 +708,48 @@ para un retest cross-timeframe.
   == n` en las 27, y tamaños decrecientes con el timeframe (347 M30 · 180 H1 · 40 H4).
 - `tradestore.pack()` devuelve ahora `torn_blocks`: las estrategias cuyos bloques no salieron como
   series completas. Una lista no vacía significa que los bloques son conjeturas.
+
+## `export_metrics` sólo sabía leer el maestro (2026-09-24)
+
+🔬 `sqx.export.export_metrics` fijaba `MASTER` como install, así que un databank de un proyecto del
+custodio devolvía **0 filas sin error** — el `worker saw 0 strategies` es toda la señal que daba.
+Ahora lleva `--role`, como `export_retest`, `export_trades` y `gate.harvest`.
+
+- 🔬 Y un segundo modo de devolver 0 con éxito: exportar un databank cuyas `.sqx` están **sólo en
+  memoria**. Un `synctofiles` no se puede pedir por HTTP si el databank lleva espacios en el nombre
+  (la API corta el comando en el primer espacio, `knowhow/02-databanks.md`), así que la vía fiable
+  para `Retest Markets - Family` y compañía es **parar el install**: la sincronización de cierre las
+  escribe.
+
+## `sync_bars` llevaba roto desde un refactor (2026-09-24)
+
+🔬 `wanted()` leía `markets.FILE`, que desapareció cuando `strategies/crossmarket/inputs/markets.py`
+pasó a delegar en `core.assets`. `python3 -m sqx.export.sync_bars --check` moría con
+`AttributeError`. Ahora la lista sale de `assetdata.symbols()` + `markets(symbol)`.
+
+- 📓 Con eso, el 2026-09-24 la librería declaraba **13 feeds por traer** (~110 M barras M1): los diez
+  pares de the5ers, más XAGUSD, XAUUSD y Brent que han crecido en SQX. USDJPY se trajo solo:
+  8.734.300 barras M1, 2003-05-05 → 2026-09-22, **139 MB** en Parquet.
+
+
+## 🔬 What the trade export says about exits, and what the M1 library looks like (2026-09-24)
+
+Measured while building `strategies/entryQuality/` and `strategies/profitShape/`.
+
+**`Close type` is the exit reason, and it is usable.** Over the 960,705 trades of
+`XAUUSD/MC_Trades` (236 strategies) it takes exactly three values: `Exit After X Bars` (720,874),
+`Exit Signal` (187,853) and `End Of Friday (Time)` (51,978). **No SL and no TP anywhere.** That
+confirms from the export side what `strategies/CLAUDE.md` says about the generated population, and
+it is what makes a delay analysis that holds the exits fixed legitimate on this corpus — and what
+will make it illegitimate the day a population carries stops.
+
+**The M1 library is fast and clean enough to be read whole.** `XAUUSD_DukasM1_Infinox` holds
+**7,949,285 bars** (2003-05-05 to 2026-09-22) and `core.barstore.source` loads all of them in
+**0.4 s**. Of those bars:
+
+- **0** are OHLC-inconsistent (`H < max(O,C)`, `L > min(O,C)`, `H < L`);
+- **40,097 (0.50 %)** are flat, `High == Low`.
+
+So the OHLC-consistency check the data-quality work would start with finds nothing here, and the
+open question is the flat bars and their distribution by hour — `docs/encargos/17-calidad-del-feed.md`.
+There is no need for memory-mapping or chunked reads at this size.

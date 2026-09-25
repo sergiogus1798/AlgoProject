@@ -14,6 +14,26 @@ Generado el 2026-09-23. Se sitúa **antes** de `protocolo-robustez-2026-09-21.md
 ejecución: la puerta cierne una población entera de miles de estrategias, y el protocolo de
 robustez coge de una en una las que salgan vivas y les dedica días de máquina.
 
+**Estado: construido y corrido el mismo día.** `gate/` existe, sus siete cribas corren, y la
+primera cosecha real es `AlgoData/harvest/XAUUSD/OOS/2026-09-23` (231 estrategias, 307.593 trades,
+906.675 días de equity, 11 MB). El primer veredicto está en
+`AlgoData/reports/XAUUSD/OOS/2026-09-23/gate/`. Dos cambios sobre lo diseñado, ambos del dueño el
+2026-09-23: **`redundancia` es `soft`** —agrupa y nombra, no elimina— y **todos los umbrales salen
+deliberadamente laxos**, para ver cuánta población mata cada criba antes de apretar ninguno.
+Lo que ese primer pase midió está en `knowhow/07-practices.md`.
+
+**Revisión del mismo día — la cosecha lee DOS databanks.** SQX solo admite un spread y un slippage
+por backtest, y estas ventanas son de años sobre un activo que se mueve mucho, así que la
+construcción y el retesteo son dos tareas y dos databanks. La cosecha los **empareja por identidad**
+—🔬 estable entre databanks, 5 de 5 en `SPP IS`/`SPP OOS`; el nombre no, porque dos databanks de
+este proyecto tienen estrategias distintas bajo un mismo nombre— y una estrategia que está en el
+build y no en el retesteo **se descarta**: SQX ya decidió por sus banderas rojas (dueño, 2026-09-23).
+Eso añade la criba `presencia` como primera de la cascada, y como el emparejamiento ocurre antes de
+exportar nada, no se gasta máquina en ellas: en `XAU_ISOOS_ejemplo`, 5 de 120 murieron ahí y solo se
+exportaron los 115 pares. Los contratos de la §4 quedan así: `metrics.parquet` indexado por identidad con cada
+métrica dos veces (`[IS]`/`[OOS]`), `trades`/`equity` con columna `sample`, `missing_oos.csv`, y
+**dos** veredictos, uno por databank.
+
 ---
 
 ## 1 · Contexto y hueco

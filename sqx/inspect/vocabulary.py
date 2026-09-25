@@ -31,9 +31,10 @@ def native_blocks(install: Path) -> dict[str, dict]:
         install: Top-level install folder.
 
     Returns:
-        Block key to its section, category, return type and display form. The display
-        form carries the block's typed holes (#Period#, #Line#), which is what a design
-        has to fill and the reason it is kept verbatim.
+        Block key to its section, category, return type, display form and SQX's own help
+        text. The display form carries the block's typed holes (#Period#, #Line#), which is
+        what a design has to fill and the reason it is kept verbatim; the help is what
+        settles whether a block tests a transition or a state, which its name rarely does.
     """
     root = ElementTree.parse(install / CONFIG_REL).getroot()
     found = {}
@@ -43,7 +44,8 @@ def native_blocks(install: Path) -> dict[str, dict]:
                 found[item.get("key")] = {"section": section.tag,
                                           "category": category.get("name"),
                                           "returns": item.get("returnType"),
-                                          "display": item.get("display") or item.get("name")}
+                                          "display": item.get("display") or item.get("name"),
+                                          "help": item.get("help") or ""}
     return found
 
 
@@ -61,7 +63,8 @@ def custom_blocks(install: Path) -> dict[str, dict]:
     return {item.get("key"): {"section": item.get("type"),
                               "category": item.get("category"),
                               "returns": item.get("returnType"),
-                              "display": item.get("display") or item.get("name")}
+                              "display": item.get("display") or item.get("name"),
+                              "help": item.get("help") or ""}
             for item in root}
 
 

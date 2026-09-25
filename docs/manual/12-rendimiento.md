@@ -222,3 +222,422 @@ trabajo. Si lo cambias, la historia previa de ese objetivo deja de valer.
 - **Una medida con la máquina ocupada no vale.** Por eso cada fila guarda la carga del sistema y la
   memoria libre que había.
 - **Un commit `-dirty` no se puede reproducir.** El panel lo enseña tal cual para que se vea.
+
+---
+
+## Lo que cuesta el workflow de punta a punta — medido 2026-09-24
+
+Esto **no** sale de `perf.catalogue` y no está en `history.csv`, a propósito: el catálogo compara por
+unidad de trabajo y no toca SQX nunca, y esto es reloj de pared de una cadena que sí lo toca. Es una
+referencia de planificación, no una serie temporal.
+
+**La corrida medida**: USDJPY H1, plantilla `emaCloseAbove`, proyecto `TestUSDJPY_Workflow_v1` en el
+custodio (48 núcleos, 80 g de heap), embudo 50 → 17 → 12 → 8 → 4. Los tiempos escalan con la
+población, así que están anotados con el tamaño al que se midieron.
+
+### En SQX — sacado del propio log (`Task finished in`)
+
+| paso | tarea | población | tiempo |
+|---|---|---|---|
+| 6 | CONSTRUCCION (build, 2008–2017) | → 50 estrategias | **16 s** |
+| 7 | OOS (retest `oos1` 2018–2022) | 50 | **5,4 s** |
+| 9 | Retest Markets - Family (9 pares) | 17 × 9 | **84 s** |
+| 11 | crossTF H1+H4 | 24 celdas | **21 s** |
+| 13 | MCR 1 Bar | 8 × 1.000 sims | **24 s** |
+| 13 | MCR 5 Params | 8 × 1.000 | **16 s** |
+| 13 | MCR 6 Exits | 8 × 1.000 | **198 s** |
+| 13 | MCR 7 OHLC | 8 × 1.000 | **695 s** |
+| 13 | MCR 8 Stress (3 perturbaciones, 15 años) | 8 × 1.000 | **1.022 s** |
+| 15 | SPP IS | 4 madres | **79 s** |
+| 15 | SPP OOS | 4 madres | **42 s** |
+
+**El MC Retest es el 89 % del tiempo de SQX de toda la cadena**: 1.955 s de 2.202. Y eso con CINCO
+tareas; con las siete que ahora se pueden configurar será más. Dentro del MC Retest, `OHLC` y
+`Stress` son el 88 %: perturbar el histórico y correr las tres perturbaciones juntas sobre 15 años.
+
+### En Python — `/usr/bin/time`, un núcleo salvo donde se diga
+
+| paso | comando | población | tiempo | RSS pico |
+|---|---|---|---|---|
+| 8 | `gate.harvest` | 50 + 17 | **58 s** | 1,6 GB |
+| 8 | `gate.report` (8 cribas + 17 monos a 2.000 sorteos) | 17 | **2,4 s** | 380 MB |
+| 10 | `crossmarket.report` a 2.000 sorteos | 8 × 9 | **~13 min** | — |
+| 10 | `crossmarket.report` a 10.000 sorteos (el de `config.yaml`) | 8 × 9 | **>50 min, no terminó** | — |
+| 10.5 | `variants.scale` | 12 madres → 12 hermanas | **0,7 s** | 125 MB |
+| 12 | `crossTF.report` | 24 celdas | **29 s** | 580 MB |
+| 14 | `retest.ingest` | 36 corridas, 35.972 sims | **10 s** | **3,2 GB** |
+| 14 | `retest.report` | 4 estrategias | **3,4 s** | 1,1 GB |
+| 16 | `sppUltra.report` | 4 perfiles, 49.226 filas | **17 s** | 910 MB |
+| 16.5 | `variants.make` | 1 madre, 60 variantes | **1,3 s** | 300 MB |
+
+Exportaciones, que arrancan y paran el conductor por su cuenta:
+
+| comando | población | tiempo | RSS pico |
+|---|---|---|---|
+| `export_metrics` | 8 estrategias | **15 s** | 20 MB |
+| `export_spp` | 4 perfiles | **15 s** | 1,4 GB |
+| `export_retest` | 8 × 9 mercados, 66 k operaciones | **17 s** | 1,9 GB |
+
+### El impuesto que no aparece en ninguna tabla
+
+Cada etapa exige parar el custodio para reescribir el `project.cfx` (regla dura 4) y arrancarlo otra
+vez. Medido:
+
+| | tiempo |
+|---|---|
+| `sqx-worker.sh start` (el script vuelve) | 2,6 s |
+| **hasta que la CLI responde** | **21,5 s** |
+| `sqx-worker.sh stop` (con su sincronización de cierre) | 14,7 s |
+| **ciclo completo** | **~39 s** |
+
+En esta corrida se pagó **ocho veces: unos 5 minutos** sólo en abrir y cerrar. No es evitable hoy:
+`startOnlyTask` no corre nada en este install, así que una etapa por arranque es la única forma de
+parar entre pasos para cribar.
+
+### Los dos números que hay que tener en la cabeza
+
+1. **`crossmarket.report` es el cuello de botella de Python**, y por dos órdenes de magnitud: 13
+   minutos frente a segundos de todo lo demás. Un núcleo, 9 mercados × 10.000 sorteos por
+   estrategia. Con una población de 100 en vez de 8 son horas. Es el primer candidato a
+   paralelizar.
+2. **`retest.ingest` pica 3,2 GB con 36 corridas.** Escala con corridas × simulaciones, así que
+   una población de 100 por las ocho tareas (800 corridas) pediría del orden de 70 GB si la
+   proporción se mantiene. Antes de correr eso, medirlo.
+
+### Lo que NO está medido
+
+**Los pasos 17 (WFC), 18 (CSCV) y 19 (WFM) no se han corrido**, porque gastan `oos2`. Tampoco el
+retest del lote de variantes del 16.5, que es el que los alimenta y el que se prevé más caro de
+todos: 240 variantes × 3 tramos × 9 mercados adicionales. Cualquier presupuesto de la cadena
+completa que salga de esta página está incompleto por ese lado, y no de poco.
+
+---
+
+## Lo que cuesta NUESTRO Python, con 500 estrategias — medido 2026-09-24
+
+La sección anterior mide la cadena entera con una población de juguete. Esta mide **sólo la capa que
+hemos escrito nosotros**, con 500 estrategias construidas y retesteadas a propósito para esto
+(proyecto `PerfUSDJPY_Python_v1`, USDJPY H1), y mide **escalado**, no un punto suelto.
+
+**Máquina**: 96 núcleos, 125 GB. **Todo lo que sigue usa UN núcleo.**
+
+### La unidad correcta no es la estrategia, es la operación
+
+Medido: las 8 estrategias de una misma corrida llevan entre **5.338 y 43.109 operaciones** en los
+nueve mercados ajenos — un factor de 8. Un «segundos por estrategia» sobre esa población no dice
+nada. Por eso todo lo de abajo está normalizado por operación.
+
+### `gate.*` — el paso 8, cribar la población
+
+| N estrategias | `gate.report` | RSS |
+|---|---|---|
+| 25 | 3,5 s | 505 MB |
+| 50 | 5,2 s | 545 MB |
+| 100 | 8,2 s | 636 MB |
+| 250 | 15,9 s | 819 MB |
+| **500** | **32,3 s** | **1,32 GB** |
+
+**Lineal y barato**: unos **60 ms por estrategia** de coste marginal, sobre un fijo de ~2 s. Incluye
+las 8 cribas y el mono de cada superviviente a 2.000 sorteos. 500 estrategias se criban en medio
+minuto.
+
+`gate.harvest`, que es la mitad que conduce SQX: **112 s y 4,56 GB** con 1.000 ficheros (500+500),
+contra 58 s y 1,6 GB con 67. El tiempo lo domina el arranque de la JVM; **la memoria sí crece con la
+población** y es el número a vigilar.
+
+#### Dónde se le va el tiempo al gate (cProfile, N=500)
+
+| | s | % |
+|---|---|---|
+| total | 33,4 | 100 |
+| `monkey.mono` | **29,5** | **88** |
+| ↳ `simulate.nulls` | 15,1 | 45 |
+| ↳ `simulate.fixed` | 9,9 | 30 |
+| ↳ ↳ **`calibrate.atr`** | **9,2** | **28** |
+| comparación de columnas `object` | 4,2 | 13 |
+
+Dos cosas concretas, y las dos son trabajo repetido, no trabajo necesario:
+
+1. 🔬 **El ATR se recalcula una vez por estrategia sobre las MISMAS barras.**
+   `nulls/simulate.py:fixed()` llama a `calibrate.atr(frame, …)` y `frame` es idéntico en las 500
+   llamadas: 234 llamadas × 39 ms = **9,2 s de los 33**, y crece lineal con la población haciendo
+   siempre la misma cuenta. Calcularlo una vez por (barras, periodo) lo deja en 39 ms totales.
+2. 🔬 **Se filtra la tabla entera de operaciones por identidad, una vez por estrategia**
+   (`gate/monkey.py:31`, `oos[oos["identity"] == name]`), y la columna es de tipo `object`: 4,2 s en
+   236 comparaciones de cadenas. Un `groupby` una sola vez lo elimina.
+
+Juntas son **~40 % del paso 8** y ninguna cambia un número: es la misma cuenta hecha una vez.
+
+### `crossmarket.report` — el paso 10, y el cuello de botella real
+
+Tres medidas limpias, con SQX parado y a 500 sorteos:
+
+| N | operaciones | tiempo | ms/operación | RSS |
+|---|---|---|---|---|
+| 2 | 44.660 | 170,6 s | **3,82** | 6,0 GB |
+| 4 | 133.240 | 507,4 s | **3,81** | 6,8 GB |
+| 8 | 158.415 | 630,1 s | **3,98** | 6,8 GB |
+
+**La constante aguanta: 3,8–4,0 ms por operación.** Y el coste crece con los sorteos, medido sobre
+una población fija de 122.045 operaciones: 4,19 ms/op a 500 sorteos y 5,03 a 1.000. Ajustando:
+
+> **coste ≈ (3,36 + 0,00168 × sorteos) ms por operación, en un núcleo**
+
+Lo que significa para el export completo de las 500 estrategias, que lleva **12.010.976 operaciones**
+en diez mercados:
+
+| sorteos | un núcleo | con 90 núcleos |
+|---|---|---|
+| 500 | **14 h** | 9 min |
+| 2.000 | **22 h** | 15 min |
+| 10.000 (el de su `config.yaml`) | **67 h** | **45 min** |
+
+⚠️ El ajuste de los sorteos sale de dos puntos medidos **con SQX corriendo a la vez**, así que las
+tres cifras de la derecha son el orden de magnitud, no una promesa.
+
+#### Dónde se le va el tiempo (cProfile, 8 × 9 mercados, 500 sorteos)
+
+| | tottime | cumtime |
+|---|---|---|
+| `simulate/metrics.py:paths` | 64,8 s | **184,1 s** |
+| ↳ `_losing_run` | 65,8 s | — |
+| `verdict/stress.py:degraded` | 65,4 s | 65,5 s |
+| `np.add.at` (`mechanics/equity.py:42`) | 52,6 s | — |
+| `model/holdfit.py:fit` | 38,7 s | — |
+| `cumsum` · `ufunc.reduce` (1,78 M llamadas) | 28,5 · 28,1 s | — |
+
+🔬 **`np.add.at` → `np.bincount` medido, y NO es el premio que parece**: 1,6x a 2,5x según el
+tamaño, no el 10x de la sabiduría popular. Verificado dando el mismo resultado.
+
+🔬 **`_losing_run` ya está vectorizado por caminos** — el bucle recorre operaciones, no caminos, y
+cada paso es una operación vectorial. No es código ingenuo: es el coste inherente del barrido.
+
+**Conclusión: aquí no hay una micro-optimización que salve el día.** El coste es
+`operaciones × sorteos × mercados × modelos` y está donde tiene que estar. Lo que sobra es que
+**corre en 1 de 96 núcleos**, y el bucle exterior sobre estrategias es independiente por
+construcción. Paralelizarlo es un cambio que no toca ni una fórmula y convierte 67 horas en 45
+minutos. **Es la única optimización que importa de todo el proyecto.**
+
+### Los demás pasos de Python, a la escala a la que se pudieron medir
+
+| paso | comando | población | tiempo | RSS |
+|---|---|---|---|---|
+| 10.5 | `variants.scale` | 12 → 12 | 0,7 s | 125 MB |
+| 12 | `crossTF.report` | 24 celdas | 29 s | 580 MB |
+| 14 | `retest.ingest` | 36 corridas, 36 k sims | 10 s | **3,2 GB** |
+| 14 | `retest.report` | 4 | 3,4 s | 1,1 GB |
+| 16 | `sppUltra.report` | 4 perfiles, 49 k filas | 17 s | 910 MB |
+| 16.5 | `variants.make` | 1 madre, 60 | 1,3 s | 300 MB |
+
+⚠️ **Estos seis NO están medidos a 500**, y no por pereza: cada uno necesita trabajo de SQX
+proporcional a la población que no cabe en una sesión. El MC Retest son ~1.955 s por cada 8
+estrategias, o sea **unas 34 horas para 500**; el SPP son ~20 s por madre, **2,8 h para 500**. Lo que
+sí se puede afirmar de ellos es la forma: `retest.ingest` escala con corridas × simulaciones y ya
+pica 3,2 GB con 36 corridas, así que 500 estrategias por 8 tareas (4.000 corridas) es el número que
+hay que medir antes de lanzarlo, no después.
+
+### Exportaciones, que son parte del coste de Python
+
+| comando | población | tiempo | RSS | escrito |
+|---|---|---|---|---|
+| `export_metrics` | 8 | 15 s | 20 MB | — |
+| `export_retest` | 8 × 9 | 17 s | 1,9 GB | — |
+| `export_retest` | **500 × 9** | **154 s** | **6,3 GB** | **365 MB** |
+
+### Y un regalo de la medición: SQX es MÁS eficiente con lotes grandes
+
+| tarea | población | tiempo | por estrategia |
+|---|---|---|---|
+| build | 50 | 16 s | 0,32 s |
+| build | **500** | **30 s** | **0,06 s** |
+| retest OOS | 50 | 5,4 s | 0,11 s |
+| retest OOS | **500** | **13,9 s** | **0,03 s** |
+| crossmarket 9 mercados | 17 | 84 s | 4,9 s |
+| crossmarket 9 mercados | **500** | **293 s** | **0,59 s** |
+
+Extrapolar linealmente desde una población pequeña **sobreestima SQX entre 4x y 8x**: paraleliza
+sobre los 96 núcleos y el coste fijo por tarea se diluye. Lo contrario que nuestro Python.
+
+---
+
+## Lo mismo, ya paralelizado — medido 2026-09-25
+
+Todo lo de la sección anterior corría en **un núcleo de 96**. Esta sección es la misma medida después
+de repartir el trabajo, sobre la misma población y los mismos ficheros. **Ninguna cifra del análisis
+cambia**: cada optimización se verificó comparando el resultado contra el de antes.
+
+### Qué se cambió, y por qué no cambia ningún número
+
+| cambio | dónde | por qué es exacto |
+|---|---|---|
+| el ATR se calcula una vez por fichero de barras, no una por estrategia | `nulls/calibrate.py` | depende sólo de `(barras, ventana)`; se cachea el mismo array |
+| la tabla OOS se agrupa una vez por identidad, no se filtra una vez por estrategia | `gate/monkey.py` | `groupby` y la máscara booleana devuelven las mismas filas en el mismo orden |
+| `stats.measure()` construye sólo la estadística pedida, y la puerta pide la única que lee | `nulls/stats.py`, `gate/monkey.py` | el filtro estaba **después** del cálculo. `nulls.report`, que lee las cinco, cuesta lo mismo que antes |
+| el bucle sobre estrategias se reparte entre los núcleos | `gate/monkey.py`, `strategies/crossmarket/report.py` | las estrategias no comparten estado ni escriben nada |
+| el estrés de ejecución se trocea en lotes de 500 corridas | `strategies/crossmarket/simulate/stress.py` | los tres sorteos se siguen tomando enteros y en el mismo orden; sólo el precio va por lotes |
+
+Los cuatro usan `fork`: el padre lee el export entero y las barras **una vez** y los procesos hijos
+los heredan sin copiarlos. Mandárselos por `pickle` costaría más que el cálculo.
+
+### Paso 8 — `gate.report`, 500 estrategias
+
+| | antes | después |
+|---|---|---|
+| tiempo | **31,1 s** | **5,2 s** |
+| RSS | 1,30 GB | 1,17 GB |
+| CPU | 143 % | 2.437 % |
+
+**5,9x.** Verificado: el `scorecard.parquet` de 500 filas × 29 columnas sale **idéntico**, columna a
+columna, y sobreviven las mismas 229 estrategias.
+
+El techo no es el reparto: de los 5,2 s, unos 2,5 s son leer la cosecha y correr las otras siete
+cribas, que ya eran baratas, y 0,48 s la maquinaria de reparto. El mono en serie baja de **29,5 s a
+8,54 s** en tres pasos: el ATR cacheado y el `groupby` lo dejan en 15,7 s, y pedir una estadística en
+vez de cinco lo baja a 8,54 s.
+
+### Dentro del mono, y la dispersión que la media esconde
+
+Reparto del mono ya optimizado, agregado sobre las 234 estrategias que llegan a él:
+
+| fase | % |
+|---|---|
+| precio de cada operación (`barrier.pnl`) | 29,1 |
+| numpy suelto: `repeat`/`tile`, `reduce`, `std`, `mean` | 28,9 |
+| sortear las entradas aleatorias (`model._place`) | 27,7 |
+| barrido de barreras | 13,2 |
+| reconciliar · fontanería · estadísticas · rejilla · p | 1,1 |
+
+🔬 **Las estadísticas eran el 46 % de este paso y cuatro de las cinco se tiraban.** `stats.measure()`
+calculaba `net, sharpe, pf, retdd, dd` para las 2.000 corridas de cada estrategia y la puerta lee
+`sharpe`. Medido sobre 2.000×570: **22,45 ms las cinco, 1,75 ms sólo `sharpe`** — y quien pide las
+cinco no paga nada por el cambio.
+
+Y una por una, con 2.000 sorteos cada una:
+
+| | mín | p25 | mediana | p75 | máx | media |
+|---|---|---|---|---|---|---|
+| ms por estrategia | 3,2 | 14,0 | 29,2 | 48,0 | **268,3** | 36,5 |
+| operaciones OOS | 39 | 497 | 879 | 1.289 | 6.192 | 1.001 |
+| µs por operación | 25,3 | 29,4 | 34,2 | 40,5 | 84,1 | **36,0** |
+
+⚠️ **La más cara cuesta 83,4x la más barata.** Presupuesta por operación, no por estrategia: la
+correlación entre tiempo y operaciones es **r = 0,982**.
+
+### Paso 10 — `crossmarket.report`
+
+Con 8 estrategias × 9 mercados a 500 sorteos (158.415 operaciones), que es la medida que la sección
+anterior dejó hecha en un núcleo:
+
+| | antes | después |
+|---|---|---|
+| tiempo | **623,5 s** | **156,1 s** |
+| CPU | 102 % | 375 % |
+
+**4,0x con sólo 7 procesos**, porque siete estrategias en siete procesos duran lo que la más larga de
+las siete — y ese lote va de 50 a 44.771 operaciones. `verdict.csv` sale **idéntico byte a byte**.
+
+**Y la población entera, que es el número que importa: 499 estrategias × 9 mercados a 500 sorteos,
+72 procesos, `2.285 s` — 38,1 minutos.** Contra 12,8 h en un núcleo.
+
+🔬 **El coste por operación es una constante de verdad, comprobado con un control.** Ocho estrategias
+del medio de la población, con casi las mismas operaciones que las ocho primeras, en un solo proceso:
+
+| lote | operaciones | segundos, 1 proceso | ms/operación |
+|---|---|---|---|
+| las 8 primeras | 158.415 | 623,50 | 3,94 |
+| 8 del medio | 157.571 | 593,94 | 3,77 |
+
+De ahí el «antes» de las 499: 12.010.976 × 3,85 ms = 46.278 s ≈ **12,8 h**.
+
+### El reparto del paso 10 se mueve con el tamaño de la estrategia
+
+Perfiladas tres del mismo lote, con un factor de 8 en operaciones. Dar una sola habría engañado:
+
+| fase | 5.563 ops | 8.988 ops | 44.771 ops |
+|---|---|---|---|
+| numpy suelto (percentiles, `reduce`, `cumsum`, `add.at`) | 54,0 % | 46,8 % | 31,6 % |
+| estadísticas acumuladas de cada camino | 17,9 % | 20,9 % | **33,3 %** |
+| sortear: los 4 modelos de colocación | 9,4 % | 10,2 % | 13,9 % |
+| estrés de ejecución | 6,6 % | 7,5 % | 9,7 % |
+| test pareado contra estar largo | 4,9 % | 6,4 % | 1,4 % |
+| preparar el mercado y reconciliar el fill | 3,0 % | 3,4 % | 4,4 % |
+| todo lo demás | 4,1 % | 3,9 % | 2,7 % |
+| ms por operación | 5,09 | 4,46 | 3,64 |
+
+Abierto por función, **nada pasa del 11 %** (`_losing_run` 11,1 %, `np.partition` 8,6 %,
+`metrics.paths` 6,7 %, `np.add.at` 6,4 %, `stress.degraded` 6,2 %, `holdfit.fit` 6,1 %). Aquí no hay
+bala de plata: el premio fue el reparto.
+
+### Lo que cuesta la maquinaria de paralelizar
+
+Padre de 1,02 GB, 234 tareas, tarea vacía para medir sólo la fontanería:
+
+| procesos | crear el pool (`fork`) | repartir y recoger 234 tareas |
+|---|---|---|
+| 16 | 0,00 s | 0,11 s |
+| 48 | 0,00 s | 0,26 s |
+| 96 | 0,00 s | 0,48 s |
+
+`fork` es instantáneo porque no copia, y cada resultado del paso 8 son **45 bytes**. La comunicación
+no es el cuello de botella, precisamente porque no se manda nada grande.
+
+### La memoria era el límite de verdad, y estaba en un sitio concreto
+
+🔬 `stress.simulate` construía la matriz entera de **25.000 corridas × operaciones del mercado** de
+una vez, y tres de los arrays eran `float64` donde los valores son booleanos:
+
+| operaciones del mercado | pico antes | pico después |
+|---|---|---|
+| 684 | **816 MB** | **140 MB** |
+| 607 | 724 MB | 137 MB |
+| 563 | 672 MB | 136 MB |
+
+⚠️ **Esto no era un lujo.** El primer intento de correr las 500 estrategias con 96 procesos llegó a
+**94,5 GB de los 125** y hubo que abortarlo; un segundo intento con 48 procesos llegó a **89 GB** y el
+núcleo mató la ventana de VSCode. Con el troceado, **72 procesos ocupan 22 GB**.
+
+> **La regla:** `--workers` es el mando que cambia RAM por reloj. Cuenta **~0,35 GB por proceso**
+> más lo que ocupe el export en el padre, y deja margen: la máquina también está siendo usada.
+
+### Cuántos procesos conviene usar — y no son 96
+
+96 estrategias (2,43 M operaciones), 500 sorteos, el mismo trabajo a cinco tamaños de reparto. La
+referencia de un núcleo son 9.370 s por la constante de 3,85 ms/operación:
+
+| procesos | segundos | CPU | aceleración | eficiencia | horas-CPU |
+|---|---|---|---|---|---|
+| 12 | 1.041,4 | 851 % | 9,0x | **75 %** | 2,5 |
+| 24 | 759,2 | 1.324 % | 12,3x | 51 % | 2,8 |
+| 48 | 695,1 | 2.317 % | 13,5x | 28 % | 4,5 |
+| 72 | 673,7 | 3.293 % | 13,9x | 19 % | 6,2 |
+| 96 | 660,4 | 3.801 % | 14,2x | 15 % | 7,0 |
+
+**De 24 a 96 procesos se gana un 13 % de reloj y se gastan 2,5x más horas-CPU.**
+
+🔬 **Y la causa no es Amdahl.** El tramo en serie —leer el export y las barras antes de lanzar a
+nadie— está medido y es **0,83 s de 695** con 96 estrategias, **2,38 s** con las 499. Eso
+autorizaría 800x, no 14x.
+
+🔬 **La causa es el tamaño de la tarea.** Una tarea es una estrategia, y dentro del mismo lote la
+mayor lleva **117.612 operaciones (453 s ella sola)** y la menor **12**: un factor de 10.000. A
+partir de 24 procesos el reloj no lo manda el reparto, lo manda la estrategia más larga:
+
+| procesos | suelo teórico | medido | quién manda |
+|---|---|---|---|
+| 12 | 781 s | 1.041 s | el reparto |
+| 24 | **453 s** | 759 s | la más larga |
+| 96 | **453 s** | 660 s | la más larga |
+
+El hueco entre 453 y 660 sí es contención, pero aunque se borrara no se bajaría de 453 s. **El
+siguiente paso real es repartir por `(estrategia, mercado)`**: los nueve mercados son independientes
+dentro de `analyse_market` y eso divide la tarea más larga por ~9.
+
+> **Recomendación:** para el paso 10, **24-32 procesos**. Dan el 87 % del reloj de 96 con una
+> fracción de la memoria, y la memoria es lo que mató la ventana de VSCode.
+
+### Lo que se midió y se decidió NO hacer
+
+- 🔬 **`_losing_run` recorriendo filas contiguas en vez de columnas con salto**: 4,5x sobre la matriz
+  de 25.000×600, pero **sólo 1,5x** sobre los lotes de 500 en los que ahora se trabaja, y es ~13 % del
+  tiempo. Resultado idéntico verificado. Queda medido por si el troceado cambia de tamaño.
+- 🔬 `np.add.at` → `np.bincount`: 1,6x–2,5x, ya medido el 2026-09-24. No cambia el orden de magnitud.

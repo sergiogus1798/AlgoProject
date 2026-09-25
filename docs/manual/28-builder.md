@@ -35,14 +35,51 @@ python3 -m sqx.projects.builder chat_v2 \
 |---|---|---|
 | `name` | sí | nombre del proyecto, **solo guiones bajos** — la API parte por espacios |
 | `--template` | sí | el `.sqx` de la librería |
-| `--symbol` | sí | activo de `assets/`; de ahí salen la ventana y los costes |
+| `--symbol` | sí | activo de `assets/`; de ahí salen la ventana, la sesión y los costes. ⚠️ **NO cambia el mercado que se construye** — ver el aviso de abajo |
 | `--role` | no | instalación destino; `custodian` por defecto |
 | `--max-strategies` | no | tope de estrategias, 30 por defecto |
 | `--minutes` | no | tope de reloj, 10 por defecto |
 | `--donor` | no | proyecto del que clona; el XAUUSD congelado por defecto |
+| `--session-from` | no | un `project.cfx` que sí define la sesión del activo, cuando el donante no la lleva. **Sólo lectura**, nunca se escribe en él |
 | `--json` | no | emite el resultado como JSON y nada más — **esto es lo que consume un chat** |
 
 Instantáneo: mueve ficheros y reescribe XML, no arranca SQX.
+
+**Encadena los databanks solo.** El input de cada tarea pasa a ser el output de la anterior, en el
+orden que lleva `config.xml`. Hace falta porque al quedarte con un subconjunto de tareas (`--only`)
+las supervivientes siguen apuntando a donde apuntaban en el donante: sin esto, la tarea de mercados
+adicionales leía **su propio output** y el cross-check corría sobre un databank vacío. `--json` lo
+devuelve en `chain`, con lo que cada tarea leía antes. La primera tarea se queda con el input del
+donante a propósito — no hay nada anterior que darle, y un Build genético se siembra de
+`Initial population`, no de su `Input`.
+
+### ⚠️ Hoy sólo sirve para XAUUSD
+
+`--symbol` **no cambia el mercado**. Aplica la doctrina, el timeframe, la sesión, la ventana y los
+costes del activo que nombres, pero el mercado que se construye es el del donante, y el donante por
+defecto es de oro. Peor: los costes se aplican buscando el `<Chart symbol="<feed del activo>">` del
+donante, que en un donante de otro activo no existe, así que **se aplican a cero elementos y el
+comando informa de éxito igualmente**.
+
+Comprobado el 2026-09-23: un `--symbol USDJPY` dio un proyecto que construye
+`XAUUSD_DukasM1_Infinox` al spread del oro, con el horario de USDJPY, y sin que la cadena
+`USDJPY_DukasM1_the5ers` apareciera en ninguna tarea.
+
+**Antes de fiarte de un proyecto para un activo que no sea XAUUSD**, míralo:
+
+```bash
+python3 -c "
+import zipfile, re
+z = zipfile.ZipFile('<instalación>/user/projects/<nombre>/project.cfx')
+for n in sorted(z.namelist()):
+    if n == 'config.xml': continue
+    t = z.read(n).decode('utf-8', 'replace')
+    print(n, sorted(set(re.findall(r'<Chart symbol=\"([^\"]+)\"', t))))
+"
+```
+
+Si el feed de tu activo no sale ahí, el proyecto no es de tu activo. `OPEN.md` issue 35 tiene la
+causa y las dos vías de arreglo.
 
 ### Qué produce
 

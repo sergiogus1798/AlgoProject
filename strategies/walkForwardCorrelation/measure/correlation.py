@@ -3,16 +3,39 @@
 import numpy as np
 import pandas as pd
 
-IS, OOS = "Net profit (IS)", "Net profit (OOS)"
-TRADES_IS, TRADES_OOS = "# of trades (IS)", "# of trades (OOS)"
+# The two readings of one batch, and the difference is what `oos2` is kept on a pedestal
+# for (owner, 2026-09-24). `oos1_oos2` asks the ordinary question — does the build predict
+# everything after it. `oos2_only` asks the strict one: with build AND oos1 both treated as
+# in sample, does the segment nothing has ever looked at still come back. The batch is
+# retested once and carries both, so switching reading re-runs the verdict and nothing else.
+MODES = {"oos1_oos2": ("build", "oos1+oos2"), "oos2_only": ("build+oos1", "oos2")}
 
 
-def points(metrics: pd.DataFrame, min_trades: int) -> pd.DataFrame:
+def columns(mode: str) -> dict:
+    """The four C3 columns one reading of the split is measured on.
+
+    Args:
+        mode: A key of `MODES`.
+
+    Returns:
+        The in-sample and out-of-sample net-profit and trade-count column names, plus the
+        two segment labels for the figure. `sqx.variants.collect` writes a column per
+        segment and per union, so a mode is a choice of columns and never a recomputation.
+    """
+    inside, outside = MODES[mode]
+    return {"is": f"NetProfit ({inside})", "oos": f"NetProfit ({outside})",
+            "trades_is": f"NumberOfTrades ({inside})",
+            "trades_oos": f"NumberOfTrades ({outside})",
+            "is_label": inside, "oos_label": outside}
+
+
+def points(metrics: pd.DataFrame, min_trades: int, cols: dict) -> pd.DataFrame:
     """The tuples that produced a real backtest on both sides of the split.
 
     Args:
         metrics: Contract C3, the manifest joined to the retested panel.
         min_trades: A tuple with fewer trades than this in either sample is dropped.
+        cols: What `columns` returned — which reading of the split is being measured.
 
     Returns:
         One row per usable tuple. **The filter is not tidying, it is the measurement.** A
@@ -21,8 +44,9 @@ def points(metrics: pd.DataFrame, min_trades: int) -> pd.DataFrame:
         dozen points and the answer becomes an artefact of the degenerate corners rather
         than a statement about the surface.
     """
-    kept = metrics.dropna(subset=[IS, OOS])
-    return kept[(kept[TRADES_IS] >= min_trades) & (kept[TRADES_OOS] >= min_trades)]
+    kept = metrics.dropna(subset=[cols["is"], cols["oos"]])
+    return kept[(kept[cols["trades_is"]] >= min_trades)
+                & (kept[cols["trades_oos"]] >= min_trades)]
 
 
 def _spearman(a: np.ndarray, b: np.ndarray) -> float:
@@ -43,11 +67,12 @@ def _spearman(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.corrcoef(ra, rb)[0, 1])
 
 
-def correlation(kept: pd.DataFrame) -> dict:
+def correlation(kept: pd.DataFrame, cols: dict) -> dict:
     """The walk-forward correlation and what it is allowed to claim.
 
     Args:
         kept: What `points` returned.
+        cols: What `columns` returned.
 
     Returns:
         The statistic, the sample size, and the width of the band inside which the
@@ -56,7 +81,7 @@ def correlation(kept: pd.DataFrame) -> dict:
         reading is "this grid cannot tell", not "there is no relationship".
     """
     n = len(kept)
-    rho = _spearman(kept[IS].to_numpy(), kept[OOS].to_numpy())
+    rho = _spearman(kept[cols["is"]].to_numpy(), kept[cols["oos"]].to_numpy())
     if n < 4 or np.isnan(rho):
         return {"n": n, "rho": rho, "ci95": (float("nan"), float("nan")),
                 "pearson": float("nan")}
@@ -64,7 +89,7 @@ def correlation(kept: pd.DataFrame) -> dict:
     half = 1.959964 / np.sqrt(n - 3)
     return {"n": n, "rho": rho,
             "ci95": (float(np.tanh(z - half)), float(np.tanh(z + half))),
-            "pearson": float(np.corrcoef(kept[IS], kept[OOS])[0, 1])}
+            "pearson": float(np.corrcoef(kept[cols["is"]], kept[cols["oos"]])[0, 1])}
 
 
 def verdict(found: dict, floor: float) -> dict:

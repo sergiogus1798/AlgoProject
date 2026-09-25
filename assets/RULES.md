@@ -31,7 +31,10 @@ assets/
     <SYMBOL>.yaml    what is genuinely this instrument's own, and nothing else.
 ```
 
-The four shared files sit at the top; the seventeen per-instrument ones live in `symbols/`, so the
+A retired asset lives in `symbols/_retired/`, which `symbols()` does not glob: out of the library,
+not lost, and its `_policy.yaml` block stays so a restore brings its windows back.
+
+The four shared files sit at the top; the per-instrument ones live in `symbols/`, so the
 directory shows four entries instead of twenty. `core.assets.symbols()` globs `symbols/` and nothing
 else. What a session reads is `load(<SYMBOL>)`, which folds the policy in and hands back one dict —
 the lookup unit is still the asset, exactly as before.
@@ -172,10 +175,25 @@ classifies; what a strategy was really retested on is read from the export itsel
 `special/` holds cases that cross assets: session filters, news windows, broker quirks. Every file
 there is surfaced by the preflight, so a case written once is seen by every future session.
 
+## Editing all of this from the window
+
+Since 2026-09-24 the desktop app's **Activos** zone reads and writes everything described here:
+the costs with their units, the windows, the MC Retest ranges, the retest universe and the two
+shared schemas. It keeps every comment in place — `core.assetyaml` round-trips the file and only
+the changed line moves — and regenerates `INDEX.md` after each write. `docs/manual/38-app-activos.md`
+is its page. The rule above does not change: **the window is not the preflight**. What stops work
+is `python3 -m core.assets <SYMBOL>` and its exit code.
+
+The one writer is `core.assetwrite`. Nothing else in the project writes these files, and a second
+writer is how a comment gets lost.
+
 ## Adding an asset
 
-Copy the closest file in `symbols/` **of the same class**, fill `instrument` and `sqx_now` from
-`sqx.inspect.instruments`, leave every `use: null`, and ask the owner for the real numbers. Then
+From the window: **Nuevo activo**, which asks for the identity, the class and the three
+`instrument` facts, writes every cost as `use: null` and adds the asset's block to `_policy.yaml` —
+without that block `load()` hands back windows with no dates at all. By hand: copy the closest file
+in `symbols/` **of the same class**, fill `instrument` and `sqx_now` from `sqx.inspect.instruments`,
+leave every `use: null`, add the `_policy.yaml` block, and ask the owner for the real numbers. Then
 `python3 -m core.assets <SYMBOL>` — it will exit 3 if the schema is wrong and 2 until the owner
 decides. A file with invented values is worse than no file: it looks decided.
 

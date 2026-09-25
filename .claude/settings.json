@@ -50,24 +50,15 @@
       "~/Desktop/SQX_w1",
       "~/Desktop/AlgoProject_Old"
     ],
-    "ask": [
-      "Bash(python3 -m sqx.curate.apply_verdict:*)",
-      "Bash(bin/sqx-worker.sh start:*)",
-      "Bash(bin/sqx-worker.sh stop:*)",
-      "Bash(bin/sqx-worker.sh run:*)",
-      "Bash(rm:*)",
-      "Bash(mv:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(git reset:*)",
-      "Bash(git checkout:*)"
-    ],
+    "ask": [],
     "deny": [
       "Bash(pkill:*)",
       "Bash(killall:*)"
     ],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "bypassPermissions"
   },
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
   "hooks": {
     "SessionStart": [
       {

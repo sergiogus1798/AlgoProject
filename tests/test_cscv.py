@@ -11,6 +11,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from strategies.walkForwardCorrelation.measure import cscv, rules
+from core.surface import trials as counting
 from strategies.walkForwardCorrelation.verdict import summary, trials
 
 N, T, BLOCKS, SEED = 60, 400, 10, 20260922
@@ -152,7 +153,7 @@ def main() -> None:
     family = pd.DataFrame(
         {f"g{g}_{i}": base[:, g] + rng.normal(0, 0.15, T) for g in range(3) for i in range(20)},
         index=dates(T))
-    counted = trials.independent(family, 20)
+    counted = counting.independent(family, 20)
     print(f"     tres familias correlacionadas -> {counted}")
     check(failures, counted["n_clusters"] == 3,
           "tres grupos de variantes correlacionadas cuentan como tres pruebas")

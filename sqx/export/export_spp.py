@@ -2,6 +2,7 @@
 """Export a databank's Sys. Param Permutation profiles: one wide table, the histograms, the counts."""
 
 import argparse
+import shutil
 import zipfile
 from datetime import date
 from pathlib import Path
@@ -147,6 +148,28 @@ def write_table(found: dict, path: Path) -> int:
     return len(frame)
 
 
+def copy_mothers(project: str, databank: str, install: Path, out: Path) -> int:
+    """Put each profiled strategy's own .sqx beside its profile.
+
+    Args:
+        project: Project name.
+        databank: Databank the profiles were read from.
+        install: Which install holds it.
+        out: The export directory the Parquet tables were written into.
+
+    Returns:
+        How many were copied. `sqx/variants/inputs.py` resolves a mother as
+        `<export>/strategies/<name>.sqx`, so without this the variant factory of step 16.5
+        cannot open the strategy its own design brief describes.
+    """
+    dest = out / "strategies"
+    dest.mkdir(parents=True, exist_ok=True)
+    found = sorted(databank_dir(project, databank, install).glob("*.sqx"))
+    for path in found:
+        shutil.copy2(path, dest / path.name)
+    return len(found)
+
+
 def main() -> None:
     """Read every profile in a databank and write its Parquet tables into a dated directory."""
     ap = argparse.ArgumentParser()
@@ -175,7 +198,9 @@ def main() -> None:
                     "with_permutation_results": len(kept)},
                    f"export_spp.py --project {a.project} --databank {a.databank}",
                    counts)
+    mothers = copy_mothers(a.project, a.databank, install, out.parent)
     print(f"{len(found)} profiles -> {out}")
+    print(f"  strategies/      {mothers} madres, que es lo que abre la fábrica de variantes")
     for name, n in counts.items():
         print(f"  {name:16s} {n} rows")
 

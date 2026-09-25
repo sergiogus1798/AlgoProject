@@ -93,3 +93,47 @@ def deflated_sharpe(sharpe: float, sigma_sr: float, n_eff: int, n_obs: int,
         variance_factor(sharpe, skew, kurtosis))
     return {"benchmark": benchmark, "sharpe": sharpe, "n_eff": n_eff,
             "dsr": float(stats.norm.cdf(z))}
+
+
+def rank_of(values: np.ndarray, reference: float) -> float:
+    """Where one chosen point sits among every point of its own grid.
+
+    Args:
+        values: One value per distinct tuple, the reference included or not.
+        reference: The chosen point's value, in the same metric.
+
+    Returns:
+        The fraction of the grid the reference beats, so 1.0 means nothing did better.
+        Read it with `plateau_fraction`: a rank near 1 is only alarming when almost
+        nothing else comes close, which is the shape of a point picked off a noise peak.
+    """
+    return float((values <= reference).mean())
+
+
+def plateau_fraction(values: np.ndarray, reference: float, delta: float = 0.2) -> float:
+    """How much of the grid performs within a given shortfall of the chosen point.
+
+    Args:
+        values: One value per distinct tuple.
+        reference: The chosen point's value.
+        delta: Relative shortfall still counted as company, 0.2 for "within 20%".
+
+    Returns:
+        A probability. The floor is `reference - delta * |reference|` rather than
+        `(1 - delta) * reference`: on a metric that goes negative the second form raises
+        the bar above the reference itself and the fraction stops meaning anything.
+    """
+    return float((values >= reference - delta * abs(reference)).mean())
+
+
+def shrunk(values: np.ndarray) -> float:
+    """What a point drawn from this neighbourhood is worth on average.
+
+    Args:
+        values: One value per distinct tuple of the neighbourhood.
+
+    Returns:
+        The median. It is the number to carry into any downstream expectation instead of
+        the chosen point's own: the chosen point was selected, its neighbours were not.
+    """
+    return float(np.median(values))

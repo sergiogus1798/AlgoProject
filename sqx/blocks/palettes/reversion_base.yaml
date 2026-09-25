@@ -1,0 +1,204 @@
+# Paleta «Reversión a la media — base» — familia Reversión a la media.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `mean_reversion`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/06-locations.md`.
+
+name: reversion_base
+label: Reversión a la media — base
+family: mean_reversion
+origin: default
+based_on: null
+created: '2026-09-24'
+note: 'Paleta por defecto de la familia. Sin curar todavía: el criterio de qué bloques
+  la forman lo pone el encargo de autoría, no el generador.'
+unlabelled: 'off'
+overrides:
+  CBlock_ZScoreStretchedUp: 3
+  CBlock_ZScoreStretchedDown: 3
+  CBlock_IBSCloseLarger: 3
+  CBlock_IBSCloseLarger_2: 3
+  CBlock_CMMAIsAboveLevel: 3
+  CBlock_CMMAIsAboveLevel_2: 3
+  CBlock_CMMAIsAboveLevel_3: 2
+  CBlock_CMMAIsAboveLevel_3_2: 2
+  CBlock_HursExponentIsAboveLevel_3_2: 3
+  CBlock_HursExponentIsAboveLevel_2: 2
+  CBlock_ChoppinessChoppy: 3
+  CBlock_EntropyHigh: 2
+  CBlock_ATRRankLowVol: 3
+  CBlock_SqueezeOn: 3
+  CBlock_SmoothedRSIRising_3_3: 2
+  CBlock_SmoothedRSIRising_3_3_2: 2
+  CBlock_StochWeightsUp: 2
+  CBlock_StochWeightsDown: 2
+  CBlock_NormMACDBuy: 2
+  CBlock_NormMACDSell: 2
+  CBlock_BullishEngulfing: 2
+  CBlock_BullishEngulfing_2: 2
+  CBlock_BullishHarami: 2
+  CBlock_BullishHarami_2: 2
+  CBlock_BullishHarami_3: 2
+  CBlock_Hammer: 2
+  CBlock_Hammer_2: 2
+  CBlock_LaCityShootingStar: 2
+  CBlock_LaCityBullishPiercingLine: 2
+  CBlock_TweezerTop: 2
+  CBlock_TweezerTop_2: 2
+  RSILower: 3
+  RSIHigher: 3
+  RSICrossUp: 2
+  RSICrossDown: 2
+  StochSlowDLower: 3
+  StochSlowDHigher: 3
+  StochSlowDCrossUp: 2
+  StochSlowDCrossDown: 2
+  CCILower: 3
+  CCIHigher: 3
+  CCICrossUp: 2
+  CCICrossDown: 2
+  WoodiesVegasTradeUP: 2
+  WoodiesVegasTradeDown: 2
+  WPRLower: 3
+  WPRHigher: 3
+  WPRCrossUp: 2
+  WPRCrossDown: 2
+  DVOBelowLevel: 3
+  DVOAboveLevel: 3
+  DVOCrossAboveLevel: 2
+  DVOCrossBelowLevel: 2
+  DisparityIndexAboveLevel: 3
+  DisparityIndexBelowLevel: 3
+  WaveTrendMainCrossAboveSignal: 2
+  WaveTrendMainCrossBelowSignal: 2
+  BBBarOpensAboveUp: 2
+  BBBarOpensBelowDown: 2
+  BBBarClosesAboveUp: 2
+  BBBarClosesBelowDown: 2
+  KCBarOpensAboveUpper: 2
+  KCBarOpensBelowLower: 2
+  BarOpensAboveLowestAfterOpenBelow: 2
+  BarOpensBelowHighestAfterOpenAbove: 2
+  BBUpperFalling: 2
+  BBLowerRising: 2
+  KCUpperFalling: 2
+  KCLowerRising: 2
+  ATRFalling: 2
+  ATRPercentRankBelowLevel: 2
+  StdDevFalling: 2
+  ADXLower: 2
+  ChoppinessIndexAboveLevel: 2
+  KERbelowLevel: 2
+  SuperTrendInRange: 2
+  BullishEngulfing: 2
+  BearishEngulfing: 2
+  Hammer: 2
+  ShootingStar: 2
+  RSI: 3
+  Stochastic: 3
+  CCI: 3
+  WilliamsPR: 3
+  ZScore: 3
+  CMMA: 3
+  DisparityIndex: 3
+  DVO: 3
+  BollingerBandsPercentB: 3
+  BollingerBands: 3
+  KeltnerChannel: 3
+  VWAPBollingerBands: 2
+  AnchoredVWAP: 2
+  MoneyFlowIndex: 2
+  LaguerreRSI: 2
+  WaveTrend: 2
+  UltimateOscillator: 2
+  SMA: 2
+  EMA: 2
+  VWAP: 2
+  Pivots: 2
+  VolumeProfile: 2
+  ATR: 2
+  StdDev: 2
+  ATRPercentRank: 2
+  ChoppinessIndex: 2
+  HurstExponent: 2
+  KaufmanEfficiencyRatio: 2
+  Close: 2
+  High: 1
+  Low: 1
+  Number: 2
+  IsGreater: 3
+  IsLower: 3
+  CrossesAbove: 2
+  CrossesBelow: 2
+  IsGreaterPercentil: 2
+  IsLowerPercentil: 2
+  IsGreaterOrEqual: 1
+  IsLowerOrEqual: 1
+  BarHourIsBigger: 1
+  BarHourIsSmaller: 1
+  BarDayOfWeekIsNot: 1
+  KCBarClosesAboveUpper: 2
+  KCBarClosesBelowLower: 2
+  ATRPercentBelowLevel: 2
+  ATRChangesDown: 2
+  StdDevChangesDown: 2
+  ATRPercentCrossDown: 2
+  ATRPercentRankCrossDown: 2
+  ATRPercentRankFalling: 2
+  StdDevLower: 1
+  ATRLower: 1
+  DEMLower: 2
+  DEMHigher: 2
+  MoneyFlowIndexBelowLevel: 2
+  MoneyFlowIndexAboveLevel: 2
+  LaguerreRSICrossUP: 2
+  LaguerreRSICrossDown: 2
+  WaveTrendMainLower: 2
+  WaveTrendMainHigher: 2
+  DPOAboveLevel: 2
+  DPOBelowLevel: 2
+  DisparityIndexCrossesAboveLevel: 2
+  DisparityIndexCrossesBelowLevel: 2
+  WoodiesFamirUP: 2
+  WoodiesFamirDown: 2
+  RSIChangesUp: 1
+  RSIChangesDown: 1
+  StochSlowDChangesUp: 1
+  StochSlowDChangesDown: 1
+  CBlock_SMICrossUp: 1
+  CBlock_SMICrossDown: 1
+  PiercingLine: 2
+  DarkCloud: 2
+  Doji: 1
+  CBlock_NeutralDoji: 1
+  CBlock_BullishHaramiCross: 2
+  CBlock_BullishHaramiCross_2: 2
+  CBlock_ThreeInsideUp: 2
+  CBlock_ThreeInsideUp_2: 2
+  CBlock_BullishKicker: 1
+  CBlock_BullishKicker_2: 1
+  CBlock_BullishHomingPigeon: 1
+  CBlock_MatchingHigh: 1
+  CBlock_MatchingHigh_2: 1
+  DeMarker: 2
+  DPO: 2
+  SwingFailureIndex: 1
+  TradersDynamicIndex: 1
+  SmoothedATRWithBands: 1
+  HullMovingAverageBollingerBands: 2
+  VIDYABollingerBands: 2
+  VMABollingerBands: 2
+  VWAPATRBands: 2
+  HullMovingAverageATRBands: 2
+  MTKeltnerChannel: 2
+  Fibo: 1
+  LWMA: 1
+  SMMA: 1

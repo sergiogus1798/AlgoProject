@@ -95,6 +95,7 @@ def main() -> None:
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)
+    cfg["feed"] = a.feed
     trades = inputs.sample(newest(a.project, a.databank), a.strategy, a.sample)
     kept = simulate.fixed(trades, inputs.bars(a.feed, a.timeframe), cfg)
     names = cfg["statistics"]["report"]

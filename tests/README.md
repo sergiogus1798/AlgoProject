@@ -8,7 +8,7 @@ else is built on. Run them with plain Python; there is no test framework to inst
 | `test_cfx.py` | `core.cfx` still reads a project's tasks, output databanks and conditions the same way | `python3 tests/test_cfx.py` |
 | `test_sweep.py` | the window sweep: one block is the free-placement model itself, draw for draw; smaller blocks keep every trade inside its block; no model overlaps its own trades | `python3 tests/test_sweep.py` |
 | `test_models.py` | `block_shift` never overlaps its own trades, and one calendar semester is displaced identically in every market — the property the joint null rests on | `python3 tests/test_models.py` |
-| `test_surface.py` | `core.surface` on grids whose answer is known by construction: a shuffled surface must read zero shift, zero Cliff and an unchanged plateau while its paired correlation collapses; `n_eff` counts backtests rather than rows; the sentinels never reach a ranking | `python3 tests/test_surface.py` |
+| `test_surface.py` | `core.surface` on grids whose answer is known by construction: a shuffled surface must read zero shift, zero Cliff and an unchanged plateau while its paired correlation collapses; `n_eff` counts backtests rather than rows; the sentinels never reach a ranking; and A1 reads a lone spike as rank 1 with no company while a broad plateau reads the reverse, on a negative metric included | `python3 tests/test_surface.py` |
 | `test_sqxfile.py` | `core.sqxfile` still reads a strategy's identity hash, symbol, parameters and rule tree the same way. ⚠️ Rebendecido el 2026-09-23: `identity()` pasó a hashear el XML **normalizado**, así que el hash del golden cambió a propósito. Sólo cambió ese campo — comprobado antes de rebendecir | `python3 tests/test_sqxfile.py` |
 | `test_variants.py` | `sqx.variants` still writes a variant the same way: the values in, the two name fields renamed, the identifier stamped inside, the inherited fingerprint gone, and every other member byte-identical | `python3 tests/test_variants.py` |
 | `test_cscv.py` | the CSCV maths on panels whose answer is known by construction: pure noise and a block-shuffled surface must both read a PBO of 0.5, one real edge must read 0, the carry-over slope must read zero without an edge, and the plateau rule must refuse an isolated spike | `python3 tests/test_cscv.py` |
@@ -18,6 +18,10 @@ else is built on. Run them with plain Python; there is no test framework to inst
 they check properties on synthetic runs. The first exists because the owner asked for the sweep's full window
 to be proven identical to the model it sweeps; the second because the headline model was measured
 overlapping 2.8-5.4% of its own trades on 2026-09-17, against a docstring that said it could not.
+
+| `test_tradeshape.py` | the trade-level statistics on series built to have one answer: one outlier must own the whole profit and the trimmed expectancy must go negative; blocks of five identical outcomes must read as clustered on both the runs test and the streak while an i.i.d. sequence does not; the CUSUM must reject a mean that flips halfway and locate it, and must not reject a constant one; the e-ratio must separate a rising path from a symmetric one | `python3 tests/test_tradeshape.py` |
+
+| `test_ledger.py` | the global ledger's two guarantees: the one-way door refuses step 8 on the reserved segment and refuses to serve 17/18/19 until all three have run; the pooled sigma reproduces the union of two searches exactly; two score units are never averaged; and widening N from one search to the whole study raises the deflated Sharpe's benchmark and lowers the DSR | `python3 tests/test_ledger.py` |
 
 `fixtures/optimizer.cfx` is a real 2.4 KB project copied from the master. `--bless` rewrites the
 golden file: only do that when the change in output is intended, and say in the commit why.

@@ -138,3 +138,42 @@ The mapping was solved on 2026-09-06 by matching decoded values against a databa
   `dailyEquity.bin` (`01-file-formats.md`) instead.
 - Tool: `core/sqxstats.py` (`stats()` and `equity()`). Together they made
   `tasks/reports/decay.py` possible with the master's GUI up and the worker never started.
+
+## Qué hace SQX con un trade que cierra en CERO (2026-09-24)
+
+🔬 Medido en USDJPY H1, comparando el `metrics.csv` de SQX contra las operaciones exportadas del
+mismo backtest. **Dos métricas, dos convenciones distintas, las dos medidas y ninguna documentada
+por SQX.**
+
+### `Winning Percent`: medio acierto
+
+| estrategia | ceros | `>0`/n | `>=0`/n | SQX |
+|---|---|---|---|---|
+| Strategy 11.1.50 | 1 de 506 | 51,581 | 51,779 | **51,680** |
+| Strategy 23.1.60 | 1 de 401 | 52,369 | 52,618 | **52,500** |
+| Strategy 23.1.71 | 2 de 838 | 52,267 | 52,506 | **52,390** |
+
+Exactamente en medio, las tres. `WinningPct = (ganadoras + 0,5 × planas) / n`. Las cinco
+estrategias sin ningún cero casan al decimal por los dos caminos, que es el control.
+
+### `ZScore`: acierto entero
+
+El mismo trade plano cuenta como **victoria completa** en el estadístico de rachas de
+Wald–Wolfowitz. Contra el `ZScore` almacenado, `cero=victoria` cae dentro de 0,003 en las cinco
+estrategias que tienen alguno; `cero=pérdida` y `quitarlo de la secuencia` no.
+
+| estrategia | actual (bug) | quitarlo | **cero=victoria** | cero=pérdida | SQX |
+|---|---|---|---|---|---|
+| Strategy 11.1.50 | 0,3823 | 0,2039 | **0,3404** | 0,1562 | 0,3400 |
+| Strategy 23.1.71 | −0,1764 | −0,3845 | **−0,4468** | −0,3213 | −0,4500 |
+
+⚠️ La columna «actual» era además un fallo propio: `n` excluía las planas mientras el contador de
+rachas sí veía sus cambios de signo, así que **una sola plana añadía dos rachas fantasma a un
+denominador que nunca la había contado**.
+
+### Por qué no se había visto
+
+El corpus de XAUUSD no produce ni un solo trade plano, y es contra él contra el que se calibró la
+reconstrucción. En USDJPY salen 6 de 4.482 (0,13 %) — suficiente para tumbar `WinningPct`,
+`KellyFormula` (que amplifica el error de la tasa de acierto) y `ZScore`, y para dejar el paso 14
+del workflow sin poder escribir. 🔬 Arreglado en `strategies/retest/model/`: 71 desacuerdos → 2.

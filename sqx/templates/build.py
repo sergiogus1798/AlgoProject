@@ -31,10 +31,11 @@ def skeleton_xml(shape: str) -> str:
 
 
 def block_xml(blocks: Path, key: str) -> str:
-    """One authored block, rendered as the Item a signal can hold.
+    """One block, custom or native, rendered as the Item a signal can hold.
 
     Args:
-        blocks: XML file of authored <Item key="CBlock_..."> blocks.
+        blocks: XML file of `<Item>` blocks — authored `CBlock_*` ones, or a native
+            definition copied out of the install's own config.xml.
         key: Which block to take.
 
     Returns:
@@ -47,8 +48,11 @@ def block_xml(blocks: Path, key: str) -> str:
         item.remove(contents)
     for param in item.findall("Param"):
         param.text = param.get("defaultValue", "")
-    item.set("categoryType", "Custom blocks")
-    item.set("customSnippet", "true")
+    # A native block is not a custom block: its own categoryType is what SQX resolves it by,
+    # and mislabelling it as "Custom blocks" sends the builder looking in customBlocks.xml.
+    if key.startswith("CBlock_"):
+        item.set("categoryType", "Custom blocks")
+        item.set("customSnippet", "true")
     return ElementTree.tostring(item, encoding="unicode").strip()
 
 

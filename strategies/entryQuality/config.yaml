@@ -1,0 +1,22 @@
+# Every tunable of the entry-quality study, in one place. Nothing below is hidden in code.
+
+run:
+  sample: OOS1              # which `Sample type` to read
+  feed: XAUUSD_DukasM1_Infinox
+  timeframe: M30            # the grid the strategy was built on; the delay is also
+                            # measured on M1, which is the library's own resolution
+  atr: 14                   # lookback of the volatility every excursion is divided by
+
+eratio:
+  horizon: 50               # bars walked forward from each entry
+  marks: [1, 5, 10, 20, 50] # the horizons the table prints
+  draws: 200                # random entry sets behind the 5-95% band
+  seed: 0
+
+delay:
+  bars: [1, 2, 3, 4, 5]     # delays on the strategy's own timeframe
+  minutes: [1, 2, 3, 4, 5]  # and on M1
+
+verdict:
+  dcr_high: 0.30            # a delay of one bar giving up this share of gross expectancy
+                            # is either latency-fragile or a sign of lookahead

@@ -13,6 +13,10 @@ levels: [50, 60, 70, 80, 90, 92, 95, 97, 98, 99, 100]   # the only ones SQX prod
 recon:
   tolerance: 0.002         # relative agreement a reconstructed metric must reach against SQX
   absolute_floor: 0.02     # below this the cent rounding of the stored P/L dominates
+  # A metric that misses on this share of its runs is a wrong FORMULA and stops the ingest;
+  # below it, the miss is one unreadable cell, excluded and recorded. Two is always enough
+  # to be systematic: the three formula bugs of 2026-09-24 missed on 31 to 71 runs each.
+  systematic_share: 0.05
 
 scenario:
   ordering_metric: NetProfit   # which metric ranks the simulations when a level is read as one

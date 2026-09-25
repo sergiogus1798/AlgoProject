@@ -8,7 +8,8 @@ from pathlib import Path
 from datetime import date
 
 from core.assetdata import doctrine, load, markets, sqx_settings, symbols
-from sqx.projects.setups import bounds
+from sqx.projects.crosschecks import silence_block
+from sqx.projects.setups import span
 
 SETUPS = re.compile(r"(<RetestOnAdditionalMarkets\b[^>]*>\s*<Settings>\s*)"
                     r"<Setups\b[^>]*>.*?</Setups>", re.S)
@@ -31,23 +32,22 @@ def feed_owner(feed: str) -> str | None:
     return next((s for s in symbols() if feed in (load(s).get("feeds") or [])), None)
 
 
-def window(main: dict, data_from: date | str) -> tuple[str, str]:
+def window(main: dict, data_from: date | str, segment: str) -> tuple[str, str]:
     """The retest window for one extra market.
 
     Args:
         main: The main asset as load() returned it.
         data_from: First date the market has data, from `_markets.yaml`. A date, or the
             string "unknown".
+        segment: The span `assets/_build.yaml` declares under `crossmarket.segment`.
 
     Returns:
-        (dateFrom, dateTo) as YYYY.MM.DD. It runs from the main asset's build start — or
-        from this market's own first bar when that is later — to the end of oos1. The
-        whole history is used on purpose: this test asks whether the logic survives a
-        different market, and cutting it to the main asset's window throws away the years
-        that would answer it.
+        (dateFrom, dateTo) as YYYY.MM.DD. It runs from the start of the span — or from
+        this market's own first bar when that is later — to its end. The whole history is
+        used on purpose: this test asks whether the logic survives a different market, and
+        cutting it to the main asset's window throws away the years that would answer it.
     """
-    start, _ = bounds(main, "build")
-    _, end = bounds(main, "oos1")
+    start, end, _ = span(main, segment)
     if isinstance(data_from, date):
         start = max(start, f"{data_from:%Y.%m.%d}")
     return start, end
@@ -106,38 +106,48 @@ def chosen(symbol: str, categories: tuple = ("family", "structural")) -> list[di
             for cat in categories for m in cats.get(cat) or []]
 
 
-def set_markets(text: str, symbol: str, timeframe: str, segment: str = "oos1",
-                categories: tuple = ("family", "structural")) -> tuple[str, list, list]:
+def set_markets(text: str, symbol: str, timeframe: str,
+                categories: tuple = ("family", "structural")) -> tuple[str, list, list, int]:
     """Turn the additional-markets cross-check on and give it its markets.
 
     Args:
         text: A task XML.
         symbol: The main asset.
         timeframe: The project's timeframe.
-        segment: Which segment's costs each extra market is charged.
         categories: Which categories of `_markets.yaml` to include.
 
     Returns:
-        The task, the markets written, and the ones that could not be — because no file in
-        assets/ declares their costs. A market in the second list is NOT written: SQX
-        would happily run it at the default spread of whatever instrument it resolves to,
-        and a cross-market result at an invented cost is worse than no result.
+        The task, the markets written, the ones that could not be — because no file in
+        assets/ declares their costs — and how many acceptance conditions were silenced. A
+        market in the second list is NOT written: SQX would happily run it at the default
+        spread of whatever instrument it resolves to, and a cross-market result at an
+        invented cost is worse than no result. The window and the costs segment come from
+        `crossmarket:` in the doctrine, not from an argument: they are the same question
+        for every asset and a run at a window nobody declared is unattributable.
     """
     d = doctrine()
+    study = d["crossmarket"]
     main = load(symbol)
+    costs = span(main, study["segment"])[2]
     used, blocked = [], []
     for m in chosen(symbol, categories):
         if not m["costs_from"]:
             blocked.append(m)
             continue
-        used.append(m | {"window": window(main, m["data_from"])})
+        used.append(m | {"window": window(main, m["data_from"], study["segment"])})
     if not used:
-        return text, used, blocked
-    body = "".join(one_market(m["feed"], load(m["costs_from"]), segment, m["window"],
-                              d["precision"]["default"], d["engine"], timeframe) for m in used)
+        return text, used, blocked, 0
+    body = "".join(one_market(m["feed"], load(m["costs_from"]), costs, m["window"],
+                              study["precision"], d["engine"], timeframe) for m in used)
     text = SETUPS.sub(rf'\g<1><Setups detailed="true">{body}</Setups>', text, count=1)
-    return (re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"',
-                   r'\g<1>use="true"', text, count=1), used, blocked)
+    text = re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"',
+                  r'\g<1>use="true"', text, count=1)
+    if study["conditions"]:
+        raise SystemExit("`crossmarket.conditions` de assets/_build.yaml ya no esta vacio: "
+                         "esta prueba es una medicion, no una puerta, y escribir condiciones "
+                         "no esta implementado. Quitalas o dilo explicitamente.")
+    text, silenced = silence_block(text, "RetestOnAdditionalMarkets")
+    return text, used, blocked, silenced
 
 
 def main() -> None:
@@ -153,7 +163,7 @@ def main() -> None:
 
     if not a.cfx:
         for m in chosen(a.symbol, cats):
-            w = window(load(a.symbol), m["data_from"])
+            w = window(load(a.symbol), m["data_from"], doctrine()["crossmarket"]["segment"])
             where = m["costs_from"] or "⚠️ NINGÚN fichero de assets/symbols/ declara este feed"
             when = "" if isinstance(m["data_from"], date) else "  ⚠️ data_from sin averiguar"
             print(f"{m['feed']:30} {m['category']:11} {w[0]} a {w[1]}   costes: {where}{when}")
@@ -161,8 +171,8 @@ def main() -> None:
 
     with zipfile.ZipFile(a.cfx) as z:
         members = {n: z.read(n) for n in z.namelist()}
-    text, used, blocked = set_markets(members[a.task].decode("utf-8"), a.symbol, a.timeframe,
-                                      categories=cats)
+    text, used, blocked, silenced = set_markets(members[a.task].decode("utf-8"), a.symbol,
+                                               a.timeframe, categories=cats)
     if blocked:
         raise SystemExit("sin escribir nada — estos mercados no tienen costes declarados en "
                          "assets/symbols/: " + ", ".join(m["feed"] for m in blocked)
@@ -174,6 +184,7 @@ def main() -> None:
             z.writestr(name, blob)
     for m in used:
         print(f"  {m['feed']:30} {m['category']:11} {m['window'][0]} a {m['window'][1]}")
+    print(f"{silenced} condiciones de aceptacion apagadas — esto es evidencia, no un filtro")
 
 
 if __name__ == "__main__":

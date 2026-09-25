@@ -3,6 +3,7 @@
 
 import argparse
 import re
+import sys
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
@@ -174,8 +175,10 @@ def configure(cfx: Path, symbol: str, segment: str | None = None,
                              f"{data['session']}. Hay que darla de alta en SQX, o clonar de "
                              "un donante que la lleve — no se inventan horarios de mercado.")
         if added:
+            # A stderr: `builder --json` promete JSON y nada más en stdout, y su salida la
+            # consume un chat que hace json.load() sobre ella.
             print(f"  sesión {data['session']} añadida a {len(added)} tarea(s) que la nombraban "
-                  "sin definirla")
+                  "sin definirla", file=sys.stderr)
     with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
         for name, blob in members.items():
             z.writestr(name, blob)

@@ -1,0 +1,26 @@
+# Every tunable of the profit-shape study, in one place. Nothing below is hidden in code.
+#
+# These are DIAGNOSTIC thresholds. None of them removes a strategy on its own: a
+# trend-following system is positively skewed by design, so concentration alone is not a
+# failure, and the PDF that asked for these tests says so in its own first section.
+
+run:
+  sample: OOS1              # which `Sample type` to read. IST is the window the builder saw
+  trim: [0, 5, 10, 20]      # how many of the best trades the sensitivity removes
+  best_months: 3            # top months pooled for the time-concentration share
+
+dependence:
+  lags: 10                  # Ljung-Box lags, on trade returns and on daily P&L
+  draws: 10000              # shuffles behind the losing-streak distribution
+  seed: 0
+
+breaks:
+  window: 100               # trades per rolling-Sharpe window
+  min_trades: 200           # below this the CUSUM is not printed: a supremum over a short
+                            # series is dominated by its own sampling noise
+
+verdict:
+  max_top5: 0.60            # share of total profit the best 5% of trades may carry
+  max_best_months: 0.50     # share the best three months may carry
+  min_runs_z: 2.0           # how negative the Wald-Wolfowitz z must be to call clustering
+  alpha: 0.05

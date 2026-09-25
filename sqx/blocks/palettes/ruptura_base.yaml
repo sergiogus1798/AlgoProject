@@ -1,0 +1,201 @@
+# Paleta «Ruptura — base» — familia Ruptura.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `breakout`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/06-locations.md`.
+
+name: ruptura_base
+label: Ruptura — base
+family: breakout
+origin: default
+based_on: null
+created: '2026-09-24'
+note: 'Paleta por defecto de la familia. Sin curar todavía: el criterio de qué bloques
+  la forman lo pone el encargo de autoría, no el generador.'
+unlabelled: 'off'
+overrides:
+  CBlock_BBBreakoutUp: 3
+  CBlock_BBBreakoutDown: 3
+  CBlock_BreakoutDonchianLong: 3
+  CBlock_BreakoutDonchianLong_2: 3
+  CBlock_CandleBreakoutLong: 3
+  CBlock_CandleBreakoutLong_2: 3
+  CBlock_TimeBreakoutLong: 3
+  CBlock_TimeBreakoutLong_2: 3
+  CBlock_StrongCandle: 2
+  CBlock_CandleSmallUpperWick: 2
+  CBlock_CandleSmallUpperWick_2: 2
+  CBlock_PMaxFlipUp: 2
+  CBlock_PMaxFlipDown: 2
+  CBlock_SqueezeOff: 3
+  CBlock_ATRRankHighVol: 3
+  CBlock_WAEPosAboveExplosion: 3
+  CBlock_WAEPosAboveExplosion_2: 3
+  CBlock_WAEPosAboveExplosion_2_2: 2
+  CBlock_WAEPosAboveExplosion_2_2_2: 2
+  CBlock_WAEPosAboveExplosion_2_3: 2
+  CBlock_WAEPosAboveExplosion_2_3_2: 2
+  CBlock_BullishMarubozu: 2
+  CBlock_BullishMarubozu_2: 2
+  CBlock_RisingWindow: 2
+  CBlock_RisingWindow_2: 2
+  CBlock_BullishBreakaway: 2
+  BBBarOpensAboveUpAfterOpenBelow: 3
+  BBBarOpensBelowDownAfterOpenAbove: 3
+  KCBarOpensAboveUpperAfterOpenBelow: 3
+  KCBarOpensBelowLowerAfterOpenAbove: 3
+  BarOpensAboveHighestAfterOpenBelow: 3
+  BarOpensBelowLowestAfterOpenAbove: 3
+  IchimokuKumoBreakoutBullish: 3
+  IchimokuKumoBreakoutBearish: 3
+  BBBarClosesAboveUp: 1
+  BBBarClosesBelowDown: 1
+  KCBarClosesAboveUpper: 1
+  KCBarClosesBelowLower: 1
+  BBUpperRising: 2
+  BBLowerFalling: 2
+  KCUpperRising: 2
+  KCLowerFalling: 2
+  ATRRising: 2
+  ATRChangesUp: 2
+  ATRCrossUp: 2
+  ATRPercentCrossUP: 2
+  ATRPercentAboveLevel: 2
+  ATRPercentRankCrossUP: 2
+  ATRPercentRankAboveLevel: 2
+  ATRPercentRankRising: 2
+  StdDevRising: 2
+  StdDevCrossUp: 2
+  StdDevHigher: 1
+  TTMSqueezeMomentumCrossLevelUP: 2
+  TTMSqueezeMomentumCrossLevelDown: 2
+  VolumeRising: 2
+  AvgVolumeRising: 1
+  VPValueShiftUp: 2
+  VPValueShiftDown: 2
+  MABarOpensAboveAfterOpenBelow: 1
+  MABarOpensBelowAfterOpenAbove: 1
+  Highest: 3
+  Lowest: 3
+  HighestInRange: 3
+  LowestInRange: 3
+  SessionHigh: 3
+  SessionLow: 3
+  DonchianChannels: 3
+  HighD: 2
+  LowD: 2
+  HighW: 1
+  LowW: 1
+  BollingerBands: 2
+  KeltnerChannel: 2
+  Pivots: 2
+  Fractal: 2
+  ATR: 2
+  TrueRange: 2
+  BiggestRange: 2
+  BBWidthRatio: 2
+  BBRange: 1
+  ATRPercentRank: 2
+  StdDev: 2
+  AvgVolume: 2
+  WAE: 2
+  TTMSqueeze: 1
+  Close: 2
+  High: 2
+  Low: 2
+  Open: 1
+  Number: 1
+  CrossesAbove: 3
+  CrossesBelow: 3
+  IsGreater: 2
+  IsLower: 2
+  IsGreaterPercentil: 2
+  IsLowerPercentil: 2
+  IsGreaterCount: 1
+  IsLowerCount: 1
+  IsRising: 1
+  IsFalling: 1
+  BarHourIsBigger: 1
+  BarHourIsSmaller: 1
+  BarDayOfWeekIsNot: 1
+  ChoppinessIndexCrossesBelowLevel: 2
+  AroonRiseFromBottom: 2
+  AroonDownRiseFromBottom: 2
+  DICrossUp: 2
+  DICrossDown: 2
+  ADXCrossUp: 2
+  CCICrossUp: 2
+  CCICrossDown: 2
+  ROCCrossesAboveLevel: 2
+  ROCCrossesBelowLevel: 2
+  MomCrossUp: 2
+  MomCrossDown: 2
+  ROCAboveLevel: 1
+  ROCBelowLevel: 1
+  MomHigher: 1
+  MomLower: 1
+  RSICrossUp: 1
+  RSICrossDown: 1
+  StochFastKCrossUp: 1
+  StochFastKCrossDown: 1
+  WPRCrossUp: 1
+  WPRCrossDown: 1
+  WoodiesCCIZeroLineBreakUP: 1
+  WoodiesCCIZeroLineBreakDown: 1
+  MACDMainCrossAboveZero: 1
+  MACDMainCrossBelowZero: 1
+  OSMACrossZeroUp: 1
+  OSMACrossZeroDown: 1
+  AWOCrossUp: 1
+  AWOCrossDown: 1
+  TTMSqueezeMomentumIsRising: 1
+  TTMSqueezeMomentumIsFalling: 1
+  CBlock_QQEModBuy: 1
+  CBlock_QQEModSell: 1
+  CBlock_SqueezeMomentumPos: 1
+  CBlock_SqueezeMomentumNeg: 1
+  CBlock_AroonUpCross: 1
+  CBlock_AroonDownCross: 1
+  AroonCrossesAbove: 1
+  AroonCrossesBelow: 1
+  VortexChangesTrendUP: 1
+  VortexChangesTrendDown: 1
+  ADXRising: 1
+  ADXChangesUp: 1
+  VPRisingPOC: 1
+  VPFallingPOC: 1
+  LinRegBarOpensAboveAfterOpenBelow: 1
+  LinRegBarOpensBelowAfterOpenAbove: 1
+  IchimokuKijunSenCrossBullish: 1
+  IchimokuKijunSenCrossBearish: 1
+  BarClosesAboveSuperTrend: 1
+  BarClosesBelowSuperTrend: 1
+  BarClosesAboveKAMA: 1
+  BarClosesBelowKAMA: 1
+  CBlock_EMAMAIsRising_2_2_2_3: 1
+  CBlock_EMAMAIsRising_2_2_2_3_2: 1
+  ADXLower: 1
+  ChoppinessIndexAboveLevel: 1
+  CBlock_ChoppinessChoppy: 1
+  CBlock_SqueezeOn: 1
+  KERaboveLevel: 1
+  BarHourIs: 1
+  ATRHigher: 1
+  StdDevChangesUp: 2
+  SmallestRange: 2
+  BarRange: 1
+  HullMovingAverageBollingerBands: 2
+  VIDYABollingerBands: 2
+  VMABollingerBands: 2
+  VWAPATRBands: 2
+  HullMovingAverageATRBands: 2
+  MTKeltnerChannel: 2
+  CUSUM: 1

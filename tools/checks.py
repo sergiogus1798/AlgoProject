@@ -14,7 +14,8 @@ PATHS_MODULE = ROOT / "core" / "paths.py"
 MANUAL = ROOT / "docs" / "manual"
 DEVELOPER_ONLY = {"tools", "tests"}
 ABSOLUTE = re.compile(r"""["'](?:/home/|/root/|~/)""")
-PIP_NAME = {"yaml": "PyYAML", "sklearn": "scikit-learn", "PIL": "Pillow"}
+PIP_NAME = {"yaml": "PyYAML", "sklearn": "scikit-learn", "PIL": "Pillow",
+            "ruamel": "ruamel.yaml"}
 
 
 def too_long(files: list[Path]) -> list[str]:
