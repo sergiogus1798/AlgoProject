@@ -232,7 +232,7 @@ disponibles hoy.
 ## 6. La superficie de control de SQX
 
 Consolidado de `internal/web/SQUANT/help.txt` (la referencia completa de verbos de `sqcli`, legible
-sin arrancar SQX) y de lo verificado en `knowhow/03-driving-sqx.md`.
+sin arrancar SQX) y de lo verificado en `knowhow/sqx-drive/gui-web-surface.md`.
 
 ### Puertos
 
@@ -541,5 +541,5 @@ Por honestidad, y para que nadie construya sobre arena:
 
 *Documento generado el 2026-09-20 a partir de una sesión de consultoría sobre el árbol en `master`.
 Los hallazgos de las secciones 4, 5 y 6 se incorporaron el mismo día a
-`knowhow/03-driving-sqx.md`, que es su sitio permanente; este documento es el relato completo,
+`knowhow/sqx-drive/gui-web-surface.md`, que es su sitio permanente; este documento es el relato completo,
 con el razonamiento y el plan. Si los dos discrepan, manda el knowhow.*

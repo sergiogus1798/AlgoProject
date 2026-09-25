@@ -77,7 +77,7 @@ SQX runs the backtests; the verdict is taken in Python and applied with `/curate
 
 🤔 With zero live conditions, `<MinConditions>` and `<MinMarkets>` are inert and are left untouched.
 Check on the first real run that the output databank holds every strategy the input had, and write
-what you saw into `knowhow/05-conditions.md`.
+what you saw into `knowhow/conditions/crossmarket-crosstf-no-conditions.md`.
 
 **A strategy that fails here is not necessarily broken, and one that passes is not validated.** The
 family test shares a driver with the main asset, so passing it may only mean the two markets are

@@ -1,23 +1,41 @@
-# knowhow — index
+# knowhow — hard-won facts, one card per fact
 
-Hard-won facts about this stack. **Read one file, not all of them.** Pick from the table.
+**Find, don't browse.** Reading costs tokens; every step below costs less than the next.
 
-Provenance tags used throughout: 🔬 verified by direct test · 📓 read from logs or files · 🤔 inferred.
+1. `grep -rh '^q:' knowhow/<domain>/` — or `grep -ril '<term>' knowhow/` when the domain is unclear.
+2. Read only the card's header: `sed '/^## Evidence/q' knowhow/<domain>/<slug>.md`. The rule is there.
+3. Read `## Evidence` only to reproduce or challenge the rule. `<domain>/INDEX.md` lists every card.
 
-| file | read it when you need |
+| domain | what it holds |
 |---|---|
-| `01-file-formats.md` | what is inside a `.sqx` or a `project.cfx`, how to identify a strategy, what not to parse |
-| `02-databanks.md` | why strategies disappear, what a sync does, memory vs disk |
-| `03-driving-sqx.md` | which port/endpoint to use, the `-project` API and its four traps, what MCP cannot do, authoring projects, and the GUI's own HTTP/WebSocket surface a wrapper app would drive |
-| `04-export.md` | getting trades, metrics, SPP profiles or bars out — the async traps, the `orderstocsv` schema, IS/OOS views |
-| `05-conditions.md` | reading acceptance conditions and `sampleType` correctly |
-| `06-locations.md` | where strategies, templates and tools actually live; the full block vocabulary; what the XAUUSD corpus really is |
-| `07-practices.md` | working habits that already cost time, research lessons, and what is portable to Windows |
-| `08-columns.md` | custom metric columns: where the snippets live, and why their value is frozen into the `.sqx` |
-| `09-costs.md` | what SQX can charge and in what unit — commission methods, swap types, where the spread hides |
+| `sqx-format/` | inside a `.sqx` or `project.cfx`: members, binaries, `SQStats`, identity, MC/WFM/SPP storage |
+| `databanks/` | why strategies disappear: sync, memory vs disk, snapshots, curating a databank |
+| `sqx-drive/` | driving SQX: endpoints, `-project` API, workers and roles, headless tasks, SPP, variants |
+| `authoring/` | blocks, groups, templates, projects: the vocabulary, the builder's switches, the headless chain |
+| `export/` | getting trades, metrics, SPP, WFM, cross-market results and bars out, and how to store them |
+| `conditions/` | acceptance conditions, `sampleType`, which window selected a strategy, WFM/MC task anatomy |
+| `locations/` | where things live on disk, logs, the XAUUSD corpus, report conventions |
+| `columns/` | custom metric columns, frozen values, zero-P/L trades |
+| `costs/` | commissions, swaps, spread, slippage, sessions, per-task costs |
+| `research/` | statistical lessons: selection bias, nulls, Monte Carlo, targets, what a gate can measure |
+| `perf/` | what things cost on this machine: cores, RAM budget, numba, pools, step durations |
+| `eng/` | engineering habits that already cost time: parsing, resumable jobs, logs, portability |
 
-**Standing rule.** A finding that lives only in a chat transcript is lost when that session ends.
-Discovered something non-obvious? Write it into the right file here, in the same task, with its
-provenance tag. If it contradicts `CLAUDE.md`, fix `CLAUDE.md` too.
+## Writing a card
 
-Migrated from `AlgoProject_Old/KNOWHOW.md` on 2026-09-03; paths updated to this tree.
+```
+---
+q: <the question it answers, with the words someone would grep for>
+tag: 🔬|📓|🤔  date: YYYY-MM-DD  see: other-slug
+---
+# <the fact, as a title>
+<the rule, 1–5 lines: a reader who stops here must act correctly>
+
+## Evidence
+<command, file, numbers — only what reproduces or challenges it>
+```
+
+🔬 verified by direct test · 📓 read from logs or files · 🤔 inferred (say what would confirm it).
+English. Header ≤ 12 lines, card ≤ 3 KB (6 KB hard). **Edit the card that exists — never append, never
+`cat >>`.** When a fact changes, rewrite the rule and bump `date:`; git keeps the old one. After
+adding or renaming a card: `python3 tools/knowhowmap.py`. `tools/checks.py` enforces all of this.

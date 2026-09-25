@@ -77,7 +77,7 @@ cinco años, y terminó.
 
 **Y por eso `MaxTests` bajó de 15.000 a 5.000.** Los dos mandos compran cosas distintas: `MaxTests`
 compra una elección mejor por paso y **nada que se pueda leer después** —SQX guarda sólo el ganador
-de cada paso, no la población que probó (medido, `knowhow/01-file-formats.md`)—, mientras que
+de cada paso, no la población que probó (medido, `knowhow/sqx-format/wfm-in-settings-xml.md`)—, mientras que
 `wf_type` cambia lo que significa el número que sí se guarda. Habiendo que elegir dónde van los
 núcleos, van a la exactitud. Cuenta la factura antes de lanzar: son 5.000 backtests por paso, por
 los 6–16 pasos de cada celda, por 30 celdas, por estrategia, a precisión 2.
@@ -86,7 +86,7 @@ los 6–16 pasos de cada celda, por 30 celdas, por estrategia, a precisión 2.
 
 Esto es lo que la tarea del maestro NO tenía —corría con el elemento de condiciones vacío, y con
 cero condiciones SQX aprueba todas las casillas con un 100— y es lo que ahora escribe el comando.
-Decodificado del propio SQX el 2026-09-24 (`knowhow/05-conditions.md` tiene la disección):
+Decodificado del propio SQX el 2026-09-24 (`knowhow/conditions/wfm-acceptance.md` tiene la disección):
 
 ```
 score de la casilla = round(condiciones cumplidas / condiciones activas * 100)

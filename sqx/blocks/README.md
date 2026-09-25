@@ -7,7 +7,7 @@
 | `palette.py` | The palette library: named block selections, each a family plus what it changes, resolved against the taxonomy | `python3 -m sqx.blocks.palette [NAME]` | a palette + the taxonomy → a switch per block |
 
 **No GUI import is needed.** `customBlocks.xml` is the store itself, and `sqcli` never rewrites it
-(measured: `knowhow/03-driving-sqx.md`). The GUI does, so the tool refuses to write while the
+(measured: `knowhow/authoring/headless-authoring-chain.md`). The GUI does, so the tool refuses to write while the
 install's port answers — a write into a running instance is undone on exit, silently.
 
 A key already present is **replaced in place**, never appended a second time: SQX reads the first
@@ -29,5 +29,5 @@ Only the **767 blocks the builder can actually sample** are here, taken from a B
 labelling something no palette can ever switch.
 
 ⚠️ A palette built from these labels reaches a template's **free** holes only. A hole bound to a
-random group samples that group and ignores the switches entirely — measured, `knowhow/06-locations.md`.
+random group samples that group and ignores the switches entirely — measured, `knowhow/authoring/builder-block-switches.md`.
 Narrowing a bound hole means choosing or authoring the group.

@@ -6,7 +6,7 @@
 # convención que hay que recordar. Por eso el esquema está en datos y no en la cabeza de nadie.
 #
 # Las tres fórmulas están verificadas sobre el propio install (2026-09-22), decompilando
-# SQTradingLib.jar y los snippets de SQ/Trading/Commissions. Ver knowhow/09-costs.md.
+# SQTradingLib.jar y los snippets de SQ/Trading/Commissions. Ver knowhow/costs/commission-methods.md.
 
 forex:
   what: "Pares de divisas. Hoy: los 10 de the5ers."

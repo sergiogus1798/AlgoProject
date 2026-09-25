@@ -3,7 +3,7 @@
 read:
   # The metric the verdict and the design are read on. Ret/DD is SQX's own Fitness
   # (Spearman +0.999 with it at >=100 trades), so this is the axis the builder optimised.
-  # It is NOT invariant to window length -- see knowhow/04-export.md -- which is fine here
+  # It is NOT invariant to window length -- see knowhow/export/ -- which is fine here
   # because Phase 0 never compares two windows.
   metric: ReturnDDRatio
   # Metrics the eta-squared table reports alongside it. One parameter can explain 8% of

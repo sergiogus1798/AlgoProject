@@ -25,7 +25,7 @@ Three of them are not yet the owner's decision and the report says so:
 ## 2. What the trade export cannot say
 
 The specification asks for `StopLoss`, `ProfitTarget`, `BarsInTrade` and a per-trade `CommSwap`
-column. SQX's `orderstocsv` writes none of them (`knowhow/04-export.md`). What was done instead:
+column. SQX's `orderstocsv` writes none of them (`knowhow/export/orderstocsv-schema.md`). What was done instead:
 
 - **Cost is recovered**, `gross − net`, which is better than a modelled cost: it is what was
   actually charged. The modelled commission is kept only as a cross-check.

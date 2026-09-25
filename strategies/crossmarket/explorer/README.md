@@ -85,7 +85,7 @@ That exclusion is the whole design, and undoing it is the easy mistake:
 selection twice: inside every `sampleType=127` acceptance condition, because the full period contains
 it, and explicitly through the walk-forward matrix's OOS net profit. That is what the
 `selected_window` warning is for, and unlike the other eight it is attached rather than tested —
-nothing in a row can reveal it. `knowhow/05-conditions.md` holds the measurement.
+nothing in a row can reveal it. `knowhow/conditions/selection-window.md` holds the measurement.
 
 ## The two run buttons
 

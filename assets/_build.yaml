@@ -344,7 +344,7 @@ wfc:
 # ⚠️ El SPP es `OptProfileSysParamPermutation`. `SequentialOptimization` vive al lado, en el
 # mismo bloque, habla también de permutar parámetros y NO escribe perfil ninguno.
 # Encender el equivocado costó 47 núcleos durante 91 minutos y no produjo nada
-# (knowhow/03-driving-sqx.md, 2026-09-22).
+# (knowhow/sqx-drive/spp-task-type.md, 2026-09-22).
 #
 # Dos tareas, dos ventanas, y no se comparan entre sí: medido 2026-09-19, un SPP de IS y uno
 # de OOS de la MISMA estrategia con ajustes idénticos comparten 6 tuplas de ~11.600. Son dos
@@ -410,7 +410,7 @@ spp:
 # "cuántas pasadas" y "cuánto de cada una va fuera de muestra" y pasarían a ser longitudes,
 # o sea otro estudio con el mismo nombre. `floating` es la ventana que se desliza manteniendo
 # su longitud — coincide con lo medido en el fichero (IS 4,72 años y OOS 1,33, ambos
-# constantes, `knowhow/01-file-formats.md`). Se escriben por su nombre, no por su número.
+# constantes, `knowhow/conditions/wf-type.md`). Se escriben por su nombre, no por su número.
 wfm:
   title: WFM
   segment: build..oos2
@@ -419,7 +419,7 @@ wfm:
   # Por PASO y por celda. El donante trae 500 y aquí hubo 15.000 un rato; el dueño lo bajó a
   # 5.000 el 2026-09-24 al poner `exact_is_exact_oos`, y el reparto es deliberado: `MaxTests`
   # compra una elección mejor por paso y NADA que se pueda leer después —SQX guarda sólo el
-  # ganador de cada paso, no la población que probó (`knowhow/01-file-formats.md`)—, mientras
+  # ganador de cada paso, no la población que probó (`knowhow/sqx-format/wfm-in-settings-xml.md`)—, mientras
   # que `wf_type` cambia lo que SIGNIFICA el número que sí se guarda. Si hay núcleos que
   # gastar, se gastan en exactitud antes que en más juegos de parámetros por paso.
   max_tests: 5000

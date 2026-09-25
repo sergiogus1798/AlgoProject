@@ -22,7 +22,7 @@ name.
 ## Why it works on files instead of calling the CLI
 
 Because the CLI's own selector cannot be reached, and fails silently when tried
-(`knowhow/02-databanks.md`, measured 2026-09-23):
+(`knowhow/databanks/curating-a-databank.md`, measured 2026-09-23):
 
 - Over the worker's HTTP API a strategy name is **cut at its first space**, and every SQX name has
   one. `action=delete` answers `Reports removed.` and the count does not move.

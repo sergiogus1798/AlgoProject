@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import depmap
+import knowhowmap
 
 ROOT = depmap.ROOT
 MAX_LINES = 250
@@ -179,7 +180,9 @@ def main() -> None:
     checks = [("file length", too_long), ("documentation", undocumented),
               ("hardcoded paths", hardcoded_paths), ("requirements", missing_requirements),
               ("folder READMEs", unlisted_in_readme), ("manual pages", no_manual_page),
-              ("dependency map", stale_depmap)]
+              ("dependency map", stale_depmap), ("knowhow cards", knowhowmap.bad_cards),
+              ("knowhow links", knowhowmap.broken_links),
+              ("knowhow indexes", knowhowmap.stale_indexes)]
     total = 0
     for name, check in checks:
         problems = check(files)

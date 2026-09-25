@@ -117,7 +117,7 @@ Monte Carlo, nulo y exposición explican que ese export mezcla mercados y no les
 - **No dice si la estrategia es buena.** Enseña cifras y palabras que otros módulos decidieron.
   Las reglas de cada uno están en su página.
 - **No sabe nada de un informe que no nombre a la estrategia en una columna `strategy`.** Es la
-  convención que todos los módulos siguen hoy (`knowhow/06-locations.md`); un informe que la
+  convención que todos los módulos siguen hoy (`knowhow/locations/report-csv-conventions.md`); un informe que la
   rompa no aparece, sin aviso.
 - **No enseña las estrategias que están en SQX y no exportadas.** Un databank vivo con 5.000
   estrategias y ningún export es invisible aquí.

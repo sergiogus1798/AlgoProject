@@ -80,7 +80,7 @@ the next task will actually read.
 ## Why it moves files, and why you must not "just use the CLI"
 
 The CLI has a `strategies=` selector. **It cannot be reached, and it fails silently when tried** —
-measured 2026-09-23, written up in `knowhow/02-databanks.md`:
+measured 2026-09-23, written up in `knowhow/databanks/curating-a-databank.md`:
 
 - Over the worker's HTTP API the name is **cut at its first space**, and every SQX strategy name has
   one. `action=delete` answers `Reports removed.` and the count does not move. `%20`, `+`, `%2520`

@@ -45,7 +45,7 @@ nada; `checks.py` revienta si aparece una ruta absoluta en cualquier otro sitio,
 ## 3 · Las trampas de SQX. Todas medidas, todas silenciosas
 
 Esto es lo caro de este proyecto y lo que más valor tiene meter en skills. **Ninguna de estas
-escribe un error en ningún log.** Están todas en `knowhow/03-driving-sqx.md` con su medición.
+escribe un error en ningún log.** Están todas en `knowhow/sqx-drive/` con su medición.
 
 | lo que pasa | la realidad |
 |---|---|

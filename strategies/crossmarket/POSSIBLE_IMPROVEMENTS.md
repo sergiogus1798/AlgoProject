@@ -224,7 +224,7 @@ fires on every gold window — the base asset's own row had never been warning-c
 seen it. The cause is the feed, not the study: gold M30 records the Buy entry 0.05–0.06 above the bar
 open (the entry-side spread) while silver and Brent record 0 exactly. The convention is still
 open-to-open and the study is still priced consistently, because `charged` recovers that 0.05 per
-trade and every random run pays it too. `knowhow/04-export.md` holds the arithmetic.
+trade and every random run pays it too. `knowhow/export/fill-and-pricing.md` holds the arithmetic.
 
 What that leaves open, for the owner to decide rather than for a session to retune quietly:
 `diagnostics` has no tolerance for the fill error — `fill_mismatch` fires on `> 0`, full stop — so on

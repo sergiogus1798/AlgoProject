@@ -14,7 +14,7 @@ you do not write code, do not touch StrategyQuant X, and do not change `~/Deskto
 
 | kind of fact | file |
 |---|---|
-| how a format, endpoint, export or condition actually behaves | the matching `knowhow/0*.md` |
+| how a format, endpoint, export or condition actually behaves | one card in `knowhow/<domain>/` — format and protocol in `knowhow/INDEX.md` |
 | something broken, or a decision not yet made | `OPEN.md` |
 | a rule a session must follow to avoid damage | `CLAUDE.md`, hard rules |
 | how to work inside one phase | that phase's `CLAUDE.md` |
@@ -32,8 +32,11 @@ Every claim carries its provenance: **🔬 verified by direct test · 📓 read 
 
 - State the trap first, then the mechanism, then the fix. A reader in a hurry stops after the trap.
 - Give the reproduction: the command, the file, the log line. A claim nobody can re-check rots.
-- When a new finding contradicts an old one, **correct the old text and say it was corrected**, with
-  the date. Do not leave both versions standing.
+- When a new finding contradicts an old one, **rewrite the card's rule in place** and bump its
+  `date:`. Git keeps the old version; the card keeps only what is true now. A `Not: <old belief>`
+  line is allowed only when the old belief is a trap readers still fall into.
+- Knowhow is one fact per card. `grep -rh '^q:' knowhow/` first: edit the card that exists, or
+  create a new one. Never append a section to a card, and never `cat >>` into knowhow.
 - Numbers get a date and a source. "231 strategies" without "in `SPP OOS` + `WFM`, 2026-09-03" is
   worthless in three months.
 

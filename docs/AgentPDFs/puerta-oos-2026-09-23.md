@@ -20,7 +20,7 @@ primera cosecha real es `AlgoData/harvest/XAUUSD/OOS/2026-09-23` (231 estrategia
 `AlgoData/reports/XAUUSD/OOS/2026-09-23/gate/`. Dos cambios sobre lo diseñado, ambos del dueño el
 2026-09-23: **`redundancia` es `soft`** —agrupa y nombra, no elimina— y **todos los umbrales salen
 deliberadamente laxos**, para ver cuánta población mata cada criba antes de apretar ninguno.
-Lo que ese primer pase midió está en `knowhow/07-practices.md`.
+Lo que ese primer pase midió está en `knowhow/research/post-selection-bias.md`.
 
 **Revisión del mismo día — la cosecha lee DOS databanks.** SQX solo admite un spread y un slippage
 por backtest, y estas ventanas son de años sobre un activo que se mueve mucho, así que la
@@ -110,7 +110,7 @@ ningún rung vuelve a tocar SQX.
 
 ⚠️ `equity()` se llama **siempre con el resultado nombrado**, nunca por posición: un `.sqx`
 reteseado con cross-check lleva tres curvas y `Portfolio` va primero en el archivo
-(`knowhow/01-file-formats.md`).
+(`knowhow/sqx-format/result-sections.md`).
 
 ### G2 · `scorecard.parquet` — una fila por estrategia
 

@@ -96,7 +96,7 @@ con `/curate`.
 
 🤔 Con cero condiciones vivas, `<MinConditions>` y `<MinMarkets>` quedan inertes y se dejan como
 estaban. En la primera corrida real, comprueba que el databank de salida tiene tantas estrategias
-como el de entrada y apunta lo que veas en `knowhow/05-conditions.md`.
+como el de entrada y apunta lo que veas en `knowhow/conditions/crossmarket-crosstf-no-conditions.md`.
 
 ### Cómo se lee el resultado
 

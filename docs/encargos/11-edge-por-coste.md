@@ -2,7 +2,7 @@
 
 **Tu oficio:** Python puro. No toca SQX salvo para un export que ya existe.
 
-Lee `knowhow/09-costs.md` **entero** antes de escribir una línea, y `knowhow/04-export.md` §«El
+Lee `knowhow/costs/commission-methods.md` **entero** antes de escribir una línea, y `knowhow/export/fill-and-pricing.md` §«El
 trade export».
 
 ---
@@ -11,7 +11,7 @@ trade export».
 
 > *«Quizás es posible acceder directamente al spread que ha usado cada run del MC Retest.»*
 
-**No lo es, y está medido.** 🔬 `knowhow/01-file-formats.md`: un cross-check de MC Retest guarda
+**No lo es, y está medido.** 🔬 `knowhow/sqx-format/mc-retest-storage.md`: un cross-check de MC Retest guarda
 **por simulación únicamente el vector de P/L** — `MonteCarloRetest_Simulation<N>Orders.bin` es un
 entero big-endian con el número de operaciones seguido de esos int32 de P/L en céntimos. Cuatro
 bytes por operación y nada más: ni fechas, ni precios, ni tamaño, ni dirección, ni el spread
@@ -32,7 +32,7 @@ para nada más de este encargo. El edge por operación y el breakeven salen del 
 
 ## 1 · La segunda trampa: el spread no es un cargo
 
-🔬 `knowhow/09-costs.md`: el spread **va dentro de los precios de fill**, no aparece en el residual
+🔬 `knowhow/costs/`: el spread **va dentro de los precios de fill**, no aparece en el residual
 `gross − P/L`. Ahí sólo está la comisión ($16/lote ida y vuelta en el oro). Así que el P&L **bruto**
 por operación hay que reconstruirlo:
 
@@ -47,7 +47,7 @@ no en puntos).
 
 ⚠️ **OPEN.md issue 26 está abierto y te muerde**: la comisión porcentual puede cobrar por pata o por
 operación — un factor de 2 sin medir. Si el activo que analizas la usa, **mídelo antes** con un caso
-conocido y escribe el resultado en `knowhow/09-costs.md`. Si no puedes, dilo y marca los números
+conocido y escribe el resultado en `knowhow/costs/where-the-spread-is.md`. Si no puedes, dilo y marca los números
 como provisionales; `pipeline/ledger` ya tiene `costs_provisional` para exactamente esto.
 
 ## 2 · Lo que construyes
@@ -80,5 +80,5 @@ los números no es un umbral.
 
 Página de manual (regla dura 8): `docs/manual/41-edge.md`, en español, con salida real.
 
-Y **escribe en `knowhow/09-costs.md`**, en esta misma tarea, lo que hayas medido sobre la comisión
+Y **escribe en `knowhow/costs/commission-methods.md`**, en esta misma tarea, lo que hayas medido sobre la comisión
 porcentual (issue 26) — es el hallazgo más valioso que puede salir de este encargo.

@@ -8,7 +8,7 @@ Spanish, because their reader is the owner.** Do not "fix" them.
 ## HARD RULES — ignoring one of these destroys work
 
 1. **Every SQX sync deletes on-disk `.sqx` not held in memory.** Snapshot `user/projects` before
-   anything that restarts SQX. → `knowhow/02-databanks.md`
+   anything that restarts SQX. → `knowhow/databanks/sync-deletes-unloaded-files.md`
 2. **Never run `sqcli` on the master while its GUI is up** — use the worker on 5060. Never
    `pkill -f StrategyQuantX`: the pattern matches your own shell. Kill by PID.
 3. **The master is the owner's; the workers are yours.** Never start a build on the master and
@@ -44,7 +44,7 @@ Spanish, because their reader is the owner.** Do not "fix" them.
 
 | task | read |
 |---|---|
-| a fact about formats, the API, exports, conditions | `knowhow/INDEX.md`, then that one file |
+| a fact about formats, the API, exports, conditions, costs, research, perf | `grep -rh '^q:' knowhow/<domain>/`, then read only the card's header (up to `## Evidence`) — domains in `knowhow/INDEX.md` |
 | writing or changing Python | `CODESTYLE.md`, then the folder's own `README.md` |
 | authoring blocks, groups, templates, projects | `sqx/CLAUDE.md` |
 | mass export and population maths | `tasks/CLAUDE.md` |
@@ -67,9 +67,10 @@ Spanish, because their reader is the owner.** Do not "fix" them.
 
 ## Standing rule
 
-Found a non-obvious fact? Write it into the right `knowhow/` file **in the same task**, tagged
-🔬 tested · 📓 from logs · 🤔 inferred. A finding left in a transcript dies with the session. If it
-contradicts this file, fix this file too.
+Found a non-obvious fact? Write it as a card in `knowhow/<domain>/` **in the same task** — edit the
+card that exists, never append; format in `knowhow/INDEX.md` — tagged 🔬 tested · 📓 from logs ·
+🤔 inferred. A finding left in a transcript dies with the session. If it contradicts this file, fix
+this file too.
 
 ## Layout
 

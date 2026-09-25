@@ -46,7 +46,7 @@ instancia en marcha se pierde en silencio en la siguiente sincronización.
 > un `sqcli` de un disparo ni siquiera carga los registros — los dos informan de éxito y no hacen
 > nada, y `move` sin selector se lleva la databank entera. Ahora mueve los ficheros `.sqx` con la
 > instalación parada, y es el arranque siguiente el que hace que la memoria coincida. Medido y
-> escrito en `knowhow/02-databanks.md`.
+> escrito en `knowhow/databanks/`.
 
 ### Cómo se ejecuta
 

@@ -47,7 +47,7 @@ rompiera en silencio.
 
 - **Las reglas duras y la topología de tres installs** han convertido la pérdida de databanks de
   riesgo permanente en imposible por construcción. Es la decisión de arquitectura más valiosa del
-  proyecto y está bien argumentada en `knowhow/02` y `03`.
+  proyecto y está bien argumentada en `knowhow/databanks/` y `03`.
 - **La fábrica de variantes** (`sqx/variants/`) lee de vuelta lo que escribió, en vez de fiarse
   del plan, y tiene un test que exige que reescribir la tupla del padre reproduzca el padre byte a
   byte. Es la forma correcta de construir algo que falla en silencio.
@@ -140,7 +140,7 @@ los clústeres para deflactar el Sharpe. **Pero el WFC no lo usa.** Consecuencia
 - El `no_fiable` de la corrida de 2.000 (IC [0,13, 0,25] "entero por debajo de 0,30") y el
   `indeciso` de esta no están sostenidos. La conclusión honesta hoy es "rho ≈ 0,2 y no sabemos su
   intervalo".
-- El hallazgo de `knowhow/07` "rho apenas se movió al multiplicar por 180 los puntos" es
+- El hallazgo de `knowhow/export/spp-pairing-for-wfc.md` "rho apenas se movió al multiplicar por 180 los puntos" es
   precisamente lo que se espera cuando los puntos no son independientes: se estrechó un intervalo
   que no debía estrecharse.
 
@@ -156,7 +156,7 @@ Leído en `sqx/variants/execute.py`:
 - `awake()` devuelve `False` si el custodio ya está levantado ("alguien lo está usando") **y
   sigue**: `load()` hace `-databank action=clear` sobre `Results` y `RetestOut` sin más. Si otra
   sesión tenía un SPP de 80 minutos en marcha, se le borra el databank de salida.
-- `run()` hace `-project action=start` **sin `action=stop` antes**. `knowhow/03` documenta que un
+- `run()` hace `-project action=start` **sin `action=stop` antes**. `knowhow/sqx-drive/running-a-task-headless.md` documenta que un
   segundo `start` no hace nada en silencio y que hay que parar siempre antes; `template-run` lo
   hace; `execute.py` no.
 - `run()` es `while done < expected` sin tope. Si SQX carga menos variantes de las esperadas (no
@@ -165,7 +165,7 @@ Leído en `sqx/variants/execute.py`:
 - No hay lock. El "un trabajo cada vez" del custodio es una convención entre sesiones, y el dueño
   corre varias.
 
-**Ocurrió a la mañana siguiente (2026-09-23, 07:26–07:33):** otra sesión arrancó y paró el custodio varias veces para un benchmark y cambió su `coreUsage`, sin saber si alguien más lo usaba. Está anotado en `knowhow/07-practices.md`, sección «dos sesiones sobre el custodio a la vez». Es este fallo, en vivo.
+**Ocurrió a la mañana siguiente (2026-09-23, 07:26–07:33):** otra sesión arrancó y paró el custodio varias veces para un benchmark y cambió su `coreUsage`, sin saber si alguien más lo usaba. Está anotado en `knowhow/perf/smt-in-sqx-retest.md`, sección «dos sesiones sobre el custodio a la vez». Es este fallo, en vivo.
 
 **Arreglo propuesto.** Un fichero `AlgoData/locks/custodian.json` (pid, sesión, madre, hora)
 que `execute`/`spp` toman y sueltan, y que `awake()` respeta; `stop` antes de `start`; timeout en
@@ -218,7 +218,7 @@ no vale es firmarlo como si estuviera virgen.
 ### 2.I 🟠 La mitad del diseño se tira
 
 999 de 2.000 variantes operan menos de 30 veces en alguna muestra. El diseño muestrea esquinas
-donde la estrategia deja de operar (y `knowhow/07` ya lo dice: "pide el doble de puntos"). Es CPU
+donde la estrategia deja de operar (y `knowhow/sqx-format/declared-parameters.md` ya lo dice: "pide el doble de puntos"). Es CPU
 de retest, disco y, sobre todo, **puntos del WFC que no existen**. **Arreglo:** diseño en dos
 pasadas: un piloto de ~200 tuplas Sobol, podar los niveles con menos de N operaciones por año, y
 rellenar el resto del presupuesto dentro de la región viva. Coste del piloto: 200 × 90 ms.
@@ -236,7 +236,7 @@ informe de costes lo propone) o bajar `sample` a 2.000 hasta que exista el loteo
 - **20 commits sin push** (falló por credenciales; hay que hacerlo a mano).
 - **~70 ficheros modificados o nuevos sin commitear**: `nulls/` entero, `assets/` reestructurado
   (`symbols/`, `_classes`, `_markets`, `_policy`), `core/assetcheck.py`, `core/assetdata.py`,
-  siete páginas de manual (21–26), `knowhow/09-costs.md`, y el borrado de las cuatro skills
+  siete páginas de manual (21–26), `knowhow/costs/`, y el borrado de las cuatro skills
   `analysis-*`. Dos días de trabajo que un `git checkout` o un disco pueden llevarse.
 - La rama **`perf/montecarlo-tiles` no está fusionada**: −55 % de pico de memoria y −14 % de reloj
   en Monte Carlo, medidos.
@@ -352,7 +352,7 @@ con una regla distinta y luego se comparan sus números. Un solo sitio (`assets/
 ### 4.1 El coste de arrancar un agente
 
 Lo que `CLAUDE.md` manda leer para tocar el pipeline hoy: el plan (35 KB), el protocolo (40 KB),
-`knowhow/03` (45 KB), `knowhow/04` (45 KB) y `CODESTYLE` + el README de la carpeta. **Unos 45.000
+`knowhow/sqx-drive/` (45 KB), `knowhow/export/` (45 KB) y `CODESTYLE` + el README de la carpeta. **Unos 45.000
 tokens antes de escribir una línea**, y buena parte es narrativa o está supersedida.
 
 Propuesta: un `docs/BRIEF.md` de dos páginas, **generado** (como `SKILLS.md` y `DEPENDENCIES.md`),
@@ -370,7 +370,7 @@ tokens) que un lector nuevo lee antes de llegar a la corrección.
 
 Propuesta: por fichero, un bloque "hechos" arriba (una línea por hecho, con su etiqueta y un
 ancla) y la narrativa debajo; y una regla de estilo: **una sección supersedida se reduce a una línea
-que apunta a la que la corrige**, con el texto original movido a `knowhow/superseded/`. El
+que apunta a la que la corrige**, con el texto original movido a una carpeta `superseded/` dentro de knowhow. El
 `INDEX.md` gana una columna "tokens".
 
 ### 4.3 Cuatro documentos que dicen el estado
@@ -389,7 +389,7 @@ vivo con la tabla de lotes y las decisiones pendientes; el resto, archivo fechad
 ### 4.5 El gasto que de verdad duele: depurar silencios de SQX
 
 El informe de costes lo mide: 55 % de 105.000 tokens en una sesión. La receta correcta ya está
-escrita ("que el fallo hable") y hay que aplicarla sistemáticamente: **cada trampa de `knowhow/03`
+escrita ("que el fallo hable") y hay que aplicarla sistemáticamente: **cada trampa de `knowhow/sqx-drive/`
 que ya costó tokens debe existir también como puerta en código** (lectura de vuelta del arnés,
 `stop` antes de `start`, verificación de carga por `export`, timeout). Cada una vale los tokens de
 la próxima depuración que evita.
@@ -439,7 +439,7 @@ la próxima depuración que evita.
    El auditor lleva once días sin correr y el proyecto ha cambiado más en esos once días que en
    los quince anteriores.
 8. **Cortafuegos** para 5050–5071 y 8080–8082: la API escucha en `0.0.0.0` sin credenciales. Es un
-   `sudo` del dueño, y está en `knowhow/03` desde el 21-09.
+   `sudo` del dueño, y está en `knowhow/sqx-drive/api-no-auth.md` desde el 21-09.
 9. **Rotación de snapshots y limpieza del escritorio** (§3.7): 2 GB de zips que nadie rastrea.
 10. **Un test de coherencia de la receta**: para cada fila, que los `needs` de la siguiente estén
     entre los `produces` de alguna anterior, y que ninguna fila con `{day}` sea reanudable sin

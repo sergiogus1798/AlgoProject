@@ -51,7 +51,7 @@ and will stop being true. Tier 2 — the replay simulator — is
 
 ⚠️ **The delay cost is expressed against total modelled cost, not against the spread.** The PDF asks
 for spread units; on this install the spread is inside the fill prices and does not appear in the
-`gross - net` residual (`knowhow/09-costs.md`), so the spread alone is not recoverable per trade.
+`gross - net` residual (`knowhow/costs/where-the-spread-is.md`), so the spread alone is not recoverable per trade.
 Reading the ratio as spreads would overstate the delay's severity.
 
 ## What it does not tell you

@@ -93,7 +93,7 @@ otra cosa distinta de una cuyas dos mitades funcionan, y la curva agregada no en
 que esperar te habría salido a favor, que es lo contrario de la fragilidad.
 
 ⚠️ El PDF original pide esto en **unidades de spread**. En este install el spread va dentro de los
-precios de fill y no aparece en el residual `bruto − neto` (`knowhow/09-costs.md`), así que lo
+precios de fill y no aparece en el residual `bruto − neto` (`knowhow/costs/where-the-spread-is.md`), así que lo
 recuperable por operación es el coste total, no el spread solo. La columna se llama
 `veces_el_coste` por eso, y leerla como spreads exageraría la gravedad.
 

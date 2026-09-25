@@ -5,7 +5,7 @@ description: Export data out of StrategyQuant X — a databank's metrics with IS
 
 # /export
 
-Everything lands in the data root with a manifest. Read `knowhow/04-export.md` before deviating from
+Everything lands in the data root with a manifest. Read `knowhow/export/` before deviating from
 these commands; the traps in it are the reason they look the way they do.
 
 ## Metrics — one row per strategy

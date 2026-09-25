@@ -20,7 +20,7 @@ from strategies.crossmarket.verdict import inference
 # The stretch entered selection twice — inside every sampleType=127 acceptance condition,
 # since the full period contains it, and explicitly through the walk-forward matrix's OOS
 # net profit — so a p computed here is a statement about this window's mechanics and not
-# about unseen data. Measured 2026-09-17 on Build-Task3.xml; knowhow/05-conditions.md.
+# about unseen data. Measured 2026-09-17 on Build-Task3.xml; knowhow/conditions/selection-window.md.
 SELECTED = "selected_window"
 
 

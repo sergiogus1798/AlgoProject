@@ -108,7 +108,7 @@ porque es lo que te sirve para decidir:
 
 **La lección de coste es esa primera fila.** Un fallo de SQX que no escribe nada en ningún log
 cuesta entre diez y cincuenta veces más que escribir el código que lo usa. Cada uno de esos
-comportamientos está ahora en `knowhow/03-driving-sqx.md` con su medición, y ese es el único motivo
+comportamientos está ahora en `knowhow/sqx-drive/` con su medición, y ese es el único motivo
 por el que la próxima vez será barato.
 
 Lo que abarata tokens, por orden de efecto:
@@ -187,6 +187,6 @@ custodio — el log lo demuestra, una línea por parámetro — pero **no deja n
 `optimizationProfile.bin` en la estrategia, ni registros en el databank de salida, con o sin
 condiciones de aceptación. El retest normal en el mismo arnés sí funciona, que es el control.
 
-Medido y escrito en `knowhow/03-driving-sqx.md`. Mientras eso no se resuelva, una rejilla de diseño
+Medido y escrito en `knowhow/sqx-drive/spp-task-type.md`. Mientras eso no se resuelva, una rejilla de diseño
 solo puede salir de un SPP que **haya corrido el maestro**, y por tanto las dos SPP por madre que
 pediste no se pueden hacer desde aquí.

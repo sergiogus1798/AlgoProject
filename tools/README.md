@@ -5,6 +5,7 @@
 | `checks.py` | Verify every mechanical rule in `CODESTYLE.md` and list what breaks them | `python3 tools/checks.py` |
 | `depmap.py` | Read the real imports and regenerate `docs/DEPENDENCIES.md` | `python3 tools/depmap.py` |
 | `skillmap.py` | Read every installed skill and regenerate `docs/SKILLS.md` — what exists, what it costs to invoke, what is stale | `python3 tools/skillmap.py` |
+| `knowhowmap.py` | Regenerate each `knowhow/<domain>/INDEX.md` from its cards' `q:` lines; `checks.py` uses it to check the cards, the `knowhow/` links and the indexes | `python3 tools/knowhowmap.py` |
 | `manual.py` | Build the whole user manual as one PDF from the markdown pages in `docs/manual/` | `python3 tools/manual.py` |
 | `daily_audit.py` | The half of the audit a machine can do alone: checks, tests, corrupt projects, missing manifests, undecided asset costs | `python3 tools/daily_audit.py` |
 

@@ -223,7 +223,7 @@ De **23 puntos de entrada** de análisis en Python se han medido **11**. Lo que 
 | `tasks/reports/{compare,decay,filters,nulls}` | `decay` pide `--split`/`--end`; `nulls` pide la salida de `nulls/report.py` primero |
 
 🔬 **Y ojo: probando cinco de ellos a mano, cuatro fallaron, ninguno por un fallo de cálculo.** El
-patrón y los cuatro modos están en `knowhow/07-practices.md`, «El patrón que se repite». El peor es
+patrón y los cuatro modos están en `knowhow/eng/missing-input-not-traceback.md`, «El patrón que se repite». El peor es
 **`nulls.report`, que escribe "0 estrategias" y sale con código 0** cuando `--sample` no casa con el
 export. Si mides ese módulo, **comprueba que el informe no está vacío antes de creerte el tiempo**.
 
@@ -250,8 +250,8 @@ estrategias en el MCR son **~34 h para 500**, y el SPP a ~20 s por madre son **2
 | qué | dónde |
 |---|---|
 | las tablas completas, con el desglose de SQX | `docs/manual/12-rendimiento.md` |
-| lo que cambia una decisión, en tres párrafos | `knowhow/07-practices.md` y `knowhow/09-costs.md` |
-| los cuatro modos de fallo por entrada vacía | `knowhow/07-practices.md` |
+| lo que cambia una decisión, en tres párrafos | `knowhow/perf/` y `knowhow/costs/` |
+| los cuatro modos de fallo por entrada vacía | `knowhow/eng/missing-input-not-traceback.md` |
 | el estado del workflow que produjo esta población | `docs/encargos/ejemplo-workflow-USDJPY.md` |
 | lo abierto: §39 paralelizar, §40 el ATR y el filtro, §43 la mitad sin ejercitar | `OPEN.md` |
 

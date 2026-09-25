@@ -10,7 +10,7 @@ from core.paths import DATA, bar_cache, bar_source
 
 # SQX timeframe code to the pandas offset that reproduces it. Verified on XAUUSD 2026-09-21:
 # resampling 7,708,823 M1 bars to M30 gives SQX's own M30 export to the last decimal on all
-# four prices, same index, no bar on either side — see knowhow/04-export.md.
+# four prices, same index, no bar on either side — see knowhow/export/bars.md.
 RULE = {"M1": "1min", "M5": "5min", "M15": "15min", "M30": "30min", "H1": "1h",
         "H4": "4h", "D1": "1D"}
 AGG = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}

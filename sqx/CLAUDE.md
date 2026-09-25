@@ -1,7 +1,7 @@
 # sqx — the SQX surface
 
-Everything that reads, drives or authors StrategyQuant X. Read `knowhow/03-driving-sqx.md` before
-writing anything that talks to SQX, and `knowhow/04-export.md` before touching an export.
+Everything that reads, drives or authors StrategyQuant X. Read `knowhow/sqx-drive/` before
+writing anything that talks to SQX, and `knowhow/export/` before touching an export.
 
 ## Before authoring anything
 

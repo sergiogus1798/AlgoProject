@@ -3,7 +3,7 @@
 **Tu oficio:** Python que reescribe XML de estrategias, y una corrida en el custodio para
 comprobar que lo que escribiste carga y opera. **No toques el maestro.**
 
-Lee `CODESTYLE.md` · `sqx/variants/build/README.md` · `knowhow/01-file-formats.md` §formatos ·
+Lee `CODESTYLE.md` · `sqx/variants/build/README.md` · `knowhow/sqx-format/` §formatos ·
 `CLAUDE.md` reglas duras 2, 3, 4 y 10. No necesitas más.
 
 Sale del PDF del dueño `PARAMETER_SPACE_TESTS.pdf`, sección D (D1, D2, D3), revisado contra el
@@ -97,11 +97,11 @@ esas tres trampas ya están resueltas y volver a pisarlas sería gratuito.
 ## 4 · Cómo cierras
 
 - Página de manual (regla dura 8), en español, con salida real.
-- **Escribe en `knowhow/01-file-formats.md`** lo que midas sobre si SQX acepta un `AND` con un solo
+- **Escribe en `knowhow/sqx-format/`** lo que midas sobre si SQX acepta un `AND` con un solo
   bloque y si respeta una regla `IfThen` reescrita. Son dos hechos que hoy nadie tiene, y el segundo
   decide si D2 es viable.
 - Si D3 resulta imposible por el vocabulario, **bórralo del encargo y escribe por qué** en
-  `knowhow/05-conditions.md`. Un «no se puede, y éste es el motivo» cierra la pregunta para siempre;
+  `knowhow/conditions/`. Un «no se puede, y éste es el motivo» cierra la pregunta para siempre;
   dejarla abierta hace que se vuelva a investigar cada seis meses.
 
 ## 5 · La regla que manda sobre todo esto

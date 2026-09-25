@@ -20,7 +20,7 @@ existen, qué papel puede jugar cada uno y qué grupos aleatorios lo agrupan.
 
 ⚠️ **Y no vale para estrechar un hueco atado a un grupo.** Las etiquetas alimentan una paleta, y una
 paleta solo alcanza los huecos **libres** de una plantilla. Un `RandomCondition` atado a un grupo
-sortea ese grupo y se salta los interruptores — medido el 2026-09-24, `knowhow/06-locations.md`.
+sortea ese grupo y se salta los interruptores — medido el 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
 Para esos, la palanca es el grupo.
 
 ### Antes de empezar

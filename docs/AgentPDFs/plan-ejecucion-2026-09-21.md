@@ -144,7 +144,7 @@ El repositorio viaja por git; los datos **nunca**.
 ## 4 · CARRIL S — las instalaciones de SQX
 
 **Antes de tocar nada, el agente de este carril lee:** `CLAUDE.md` entero,
-`knowhow/02-databanks.md`, `knowhow/03-driving-sqx.md`, `docs/SETUP-NEW-MACHINE.md`.
+`knowhow/databanks/`, `knowhow/sqx-drive/three-install-topology.md`, `docs/SETUP-NEW-MACHINE.md`.
 
 **Las cuatro reglas que más muerden aquí:**
 
@@ -264,7 +264,7 @@ regresiones ya arregladas.
 **Puede empezar:** ya · **Dura:** 30 min
 
 El log del maestro se escribe rápido y crece sin techo. Deja una rotación o una poda por antigüedad
-bajo `user/log/StrategyQuant/`, y anota la política en `knowhow/07-practices.md`.
+bajo `user/log/StrategyQuant/`, y anota la política en `knowhow/eng/log-retention.md`.
 
 ⚠️ **Nunca leas ese log entero: se tailea.** Todo lo que lo consuma (P0) filtra por
 `ProgressEngine` **en origen**.
@@ -281,7 +281,7 @@ La vista existente `Export Data View.vw` del maestro es **asimétrica**: 22 colu
 Crea en **W2** una vista `WFC Variants.vw` **simétrica**: las mismas 41 columnas de la §4 del
 protocolo en IS y en OOS.
 
-⚠️ **Esto es irreversible por estrategia.** `knowhow/08-columns.md`: el valor de una columna se
+⚠️ **Esto es irreversible por estrategia.** `knowhow/columns/custom-columns-stored.md`: el valor de una columna se
 congela dentro del `.sqx` al calcular el resultado. Una columna añadida a la vista **después** sale
 0 en toda estrategia anterior, sin aviso y sin celda vacía. **La vista tiene que estar cerrada antes
 de lanzar el retest de las 5.000.**
@@ -309,7 +309,7 @@ tres ficheros:
 además `ResultsGroup ResultName` y `StrategyName` de `settings.xml` o las tres caen bajo el mismo
 nombre). Cárgalas en un databank de W2 y cuenta.
 
-**Entregable:** respuesta 🔬 a las dos preguntas, escrita en `knowhow/01-file-formats.md`. Es lo que
+**Entregable:** respuesta 🔬 a las dos preguntas, escrita en `knowhow/sqx-format/five-member-sqx.md`. Es lo que
 permite a P3 elegir forma de fichero con un dato en vez de con una apuesta.
 
 ---

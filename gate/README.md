@@ -65,7 +65,7 @@ changing a threshold re-judges without recomputing anything that costs machine t
   `<metric> [OOS]` from the retest one. **Which of the view's two blocks each side filled is read off
   the data, never assumed**: 🔬 a task that ran one window fills the block SQX designated it as, and
   two real retest databanks over the same window disagree — `XAUUSD/SPP OOS` puts its numbers under
-  `(IS)` and `XAU_ISOOS_ejemplo/OOS` under `(OOS)` (`knowhow/04-export.md`). `collect.measured()`
+  `(IS)` and `XAU_ISOOS_ejemplo/OOS` under `(OOS)` (`knowhow/export/databank-metrics-is-oos.md`). `collect.measured()`
   compares only the metrics the view emits at both types, because structural columns like
   `Param Count (IS)` carry a number whatever ran, and **refuses** when both blocks are filled: that
   databank ran its own split and no half of it can be called "the retest" from outside.
@@ -112,7 +112,7 @@ screen that needs new maths **extends that module** rather than growing a second
   period, the population was filtered by the very sample being judged and every screen reads as inert
   — measured on `XAUUSD/OOS`, where 229 of 231 are profitable out of sample, median Sharpe retention
   is 1.00 and the monkey kills nobody. On an unselected population the same screens leave 45 of 120,
-  retention is 0.45 and 5 of 45 beat the monkey at 5 % (`knowhow/07-practices.md`). The gate records
+  retention is 0.45 and 5 of 45 beat the monkey at 5 % (`knowhow/research/post-selection-bias.md`). The gate records
   what it judged; it cannot un-select it.
 - **It does not choose the statistic the monkey is read on.** `config.yaml` does, and that choice
   moves the verdict more than the null does.

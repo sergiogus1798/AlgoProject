@@ -19,7 +19,7 @@ es lo único que `strategies/sppUltra/` sabe leer.
 
 Los dos viven **en el mismo bloque** de crosschecks, los dos hablan de permutar parámetros, y sólo
 uno es el SPP. Encender el otro costó 47 núcleos durante 91 minutos y no produjo perfil ninguno
-(medido el 2026-09-22, está en `knowhow/03-driving-sqx.md`). El comando enciende el correcto y no
+(medido el 2026-09-22, está en `knowhow/sqx-drive/spp-task-type.md`). El comando enciende el correcto y no
 te deja elegir: ésa es media razón de que exista.
 
 ### Cuándo lo usas, y cuándo no

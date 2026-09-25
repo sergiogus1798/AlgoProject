@@ -78,7 +78,7 @@ def stats(path: Path, result: str = "Main") -> dict:
     Returns:
         {sample type: {metric name: value}} for the Both/Money direction, keyed by the
         IS/OOS/FULL constants. These are the frozen values SQX shows in the databank --
-        see knowhow/08-columns.md -- not a recomputation.
+        see knowhow/columns/custom-columns-stored.md -- not a recomputation.
 
         🔬 **The blocks are scoped, and they have to be** (2026-09-24, measured on
         `XAUUSD/Retest Markets - Family/Strategy 10.16.41.sqx`): a strategy retested on two

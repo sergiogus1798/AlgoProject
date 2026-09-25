@@ -43,7 +43,7 @@ def members(cfx: Path) -> tuple[list[str], list[str]]:
 
     Returns:
         (declared, missing). A project with anything missing is dropped by the GUI at
-        load with no error at all — see knowhow/03-driving-sqx.md.
+        load with no error at all — see knowhow/sqx-format/project-cfx.md.
     """
     with zipfile.ZipFile(cfx) as z:
         declared = TASK_REF.findall(z.read("config.xml").decode("utf-8", "replace"))

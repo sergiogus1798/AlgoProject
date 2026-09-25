@@ -94,7 +94,7 @@ def databank_dir(project: str, databank: str, install: Path = MASTER) -> Path:
 
     Returns:
         Path to the databank directory. It can be empty while the databank holds
-        records in memory — see knowhow/02-databanks.md.
+        records in memory — see knowhow/databanks/sync-deletes-unloaded-files.md.
     """
     return project_dir(project, install) / "databanks" / databank
 

@@ -41,7 +41,7 @@ HEADER = """\
 #
 # ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
 # sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
-# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/06-locations.md`.
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
 """
 
 

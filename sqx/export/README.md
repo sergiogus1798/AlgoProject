@@ -23,4 +23,4 @@ to run more often than that — `OPEN.md` issue 6. Single-day logs reach several
 The two exporters drive the worker, never the master: `-databank action=export` only works on the instance holding
 the project, and the master's CLI is dead while its GUI is up. `core/exportdrv.py` does the staging
 and `core/worker.py` waits for the two asynchronous loading steps that otherwise produce a
-header-only CSV with no error. Read `knowhow/04-export.md` before changing either script.
+header-only CSV with no error. Read `knowhow/export/` before changing either script.

@@ -43,7 +43,7 @@ def shape(path: Path, install: Path = MASTER) -> dict:
         `fixed`, the blocks the template writes in literally. The distinction is the whole
         point: a palette of building blocks reaches a free hole and nothing else — a bound
         hole samples its group and a fixed block is part of the skeleton, neither of which
-        the switches can touch (`knowhow/06-locations.md`, 2026-09-24).
+        the switches can touch (`knowhow/authoring/builder-block-switches.md`, 2026-09-24).
     """
     names = group_names(install)
     with zipfile.ZipFile(path) as z:

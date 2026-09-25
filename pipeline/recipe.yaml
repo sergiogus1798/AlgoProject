@@ -97,7 +97,7 @@ stages:
   #
   # ⚠️ Between `ran` and here, those files are only as safe as the next restart of the
   # custodian. Whoever starts that install next syncs what its memory holds, and an empty
-  # memory means 5,000 deleted files (knowhow/02-databanks.md, hard rule 1). A run that
+  # memory means 5,000 deleted files (knowhow/databanks/sync-deletes-unloaded-files.md, hard rule 1). A run that
   # stops between the two stages should resume at `equity` before anything else touches
   # W2 -- and if another session needs the custodian meanwhile, harvest first.
   - name: equity
@@ -118,7 +118,7 @@ stages:
   # The ledger name is `collected` because perf/disk/retention.py already reads
   # stages.collected.removable to decide what is provably safe to delete.
   # It exits non-zero when the controls all return the same number, which is what a batch
-  # that never actually ran looks like -- see knowhow/01-file-formats.md.
+  # that never actually ran looks like -- see knowhow/sqx-format/.
   - name: collected
     command: python3 -m sqx.variants.collect --work {work}
     needs: ["{work}/equity.json"]   # las uniones se recortan con los tramos que midio equity

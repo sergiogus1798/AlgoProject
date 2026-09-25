@@ -11,7 +11,7 @@ exista el módulo anterior.
 
 **Regla que hereda de esta carpeta.** El dossier guarda la narrativa y el plan; `knowhow/` guarda
 los hechos. **Donde los dos discrepen, manda `knowhow/`.** Todo lo marcado 🔬 aquí está ya
-duplicado en `knowhow/01-file-formats.md` y `knowhow/04-export.md`, que es su sitio permanente.
+duplicado en `knowhow/sqx-format/` y `knowhow/export/`, que es su sitio permanente.
 
 Generado el 2026-09-21. Continúa `Protocolo_robustez_XAUUSD.pdf` y
 `plataforma-unificada-2026-09-20.md`.
@@ -163,7 +163,7 @@ necesita volver a medirlos.** Van a `knowhow/` en el mismo lote que los usa (reg
 
 **El formato da 6,9× sin perder un dato; la poda de columnas da 3,8× más y es donde vive el
 arrepentimiento.** Igual en trades: tipar+comprimir da 3,2×, podar 5 columnas solo un 1,4× más.
-→ `knowhow/04-export.md`
+→ `knowhow/export/storage-format.md`
 
 ### Columnas del SPP
 
@@ -189,7 +189,7 @@ arrepentimiento.** Igual en trades: tipar+comprimir da 3,2×, podar 5 columnas s
   2,0–3,6). Es un estadístico tipo t. **No es redundante** con `RExpectancy` (ρ entre ellas +0,856 a
   +0,976) y es justo lo que el §4c necesita: penaliza las regiones de pocas operaciones.
 - **`ZScore` = (R − μ_R + 0,5) / σ_R** — rachas de Wald-Wolfowitz con corrección de continuidad.
-  Ya documentado en `knowhow/01-file-formats.md`.
+  Ya documentado en `knowhow/sqx-format/metric-formulas.md`.
 - **`UlcerPerformanceIndex` = retorno / `UlcerIndex`** — 🤔 **sin verificar en esta instalación.**
   W1 lo reconcilia con el método del oráculo antes de usarlo; si no reconcilia, se marca análogo
   declarado.
@@ -217,7 +217,7 @@ exige en ambas ventanas), `Drawdown`, `Stability`, `RSquared`.
 
 → **No se toca.** W3 crea `WFC Variants.vw` en el worker, **simétrica**: las mismas 41 en IS y en OOS.
 
-⚠️ **`knowhow/08-columns.md`: el valor de una columna se congela en el `.sqx` al calcular el
+⚠️ **`knowhow/columns/custom-columns-stored.md`: el valor de una columna se congela en el `.sqx` al calcular el
 resultado. Una columna añadida a la vista después sale 0 en toda estrategia anterior, sin aviso y sin
 celda vacía.** La vista tiene que estar cerrada **antes** de lanzar el retest de las 5.000.
 

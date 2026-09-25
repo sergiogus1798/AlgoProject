@@ -44,7 +44,7 @@ def cost(handed: np.ndarray, size: np.ndarray, value: float, pnl: np.ndarray,
 
         ⚠️ The PDF asks for this in **spread units**. The spread is inside the fill prices
         on this install and does not appear in the `gross - net` residual
-        (`knowhow/09-costs.md`), so what is recoverable per trade is the whole modelled
+        (`knowhow/costs/where-the-spread-is.md`), so what is recoverable per trade is the whole modelled
         cost, not the spread alone. The ratio is therefore against total cost and is named
         that way; reading it as spreads would overstate the delay's severity.
     """

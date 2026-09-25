@@ -79,7 +79,7 @@ def tables(sides: dict[str, list[Path]], work: Path, view: str) -> dict:
         reported for that side -- and `sample`, which of the view's two blocks it filled.
 
         Both sides go into ONE staging folder under a side prefix, because SQX names a
-        loaded strategy after its file (`knowhow/01-file-formats.md`): the prefix keeps the
+        loaded strategy after its file (`knowhow/sqx-format/loaded-name-is-filename.md`): the prefix keeps the
         two copies of a strategy apart, and it is what splits the rows back afterwards. One
         conductor cycle and one `orderstocsv` instead of one of each per side -- each JVM
         start is ~20 s, and they were most of `gate.harvest`.

@@ -12,7 +12,7 @@ one thing: **the master GUI must be closed**. Nothing here writes to the master 
 **Reviewed 2026-09-21.** Issue 3 is **⚪ withdrawn by the owner** — the SP500 repair is out of the
 plan and is not to be run; read its box before acting on anything that tails the master's log or
 counts its projects. The GUI-closed window also stopped being the blocker it was: the three-install
-topology was built and verified that day (`knowhow/03-driving-sqx.md`).
+topology was built and verified that day (`knowhow/sqx-drive/three-install-topology.md`).
 
 | # | was | now | what remains |
 |---|---|---|---|
@@ -49,16 +49,16 @@ topology was built and verified that day (`knowhow/03-driving-sqx.md`).
 | 41 | — | 🟢 | new 2026-09-24: **`sqx-worker.sh stop` volvía a los 20 s diciendo «did not stop»** mientras la JVM seguía escribiendo databanks, y quien leía después veía 211 de 500 `.sqx`. Ahora espera hasta 5 min a que el proceso se vaya de verdad. **No se perdió nada**: la sincronización acabó sola |
 | 42 | — | 🟢 | new 2026-09-24: una estrategia que **no dispara en ningún mercado ajeno** tumbaba el lote entero del paso 10 con `KeyError: 'bar_cap'`. Ahora se anota como veredicto propio. Salió a la primera con 8 estrategias reales |
 | 43 | — | 🔴 | new 2026-09-24: **la mitad de los análisis de Python no está ejercitada.** De 23 puntos de entrada se han medido 7; de los 5 primeros que se probaron a mano, 4 fallaron por prerrequisitos o por entrada de la forma equivocada. El peor: **`nulls.report` escribe «0 estrategias» y sale con éxito** cuando `--sample OOS1` no casa con el export (los de crossmarket sólo llevan `IST`). `tasks.is_oos` muere con `StopIteration` en un databank sin OOS y funciona perfecto (0,57 s) en el correcto; `exposure.report` y `tasks.nulls` mueren con `IndexError` en vez de nombrar el fichero que les falta |
-| 33 | — | 🟢 | new: **un clon del donante seguía operando ORO** para cualquier activo que no fuese XAUUSD. Arreglado el 2026-09-24 con `sqx/projects/resources.py` y un guardia; `knowhow/06-locations.md` |
-| 34 | 🔴 | 🟢 | **causa hallada y arreglada 2026-09-24**: `crossTF/config.yaml` llevaba el feed de XAUUSD fijo y puntuaba USDJPY contra barras de oro. Con `--feed` correcto la correlación sube de −0.34 a 0.98–0.99; el aviso de costes ya nombra el activo real. `knowhow/06-locations.md` |
-| 35 | — | 🟢 | new: `export_metrics` sólo leía el maestro y `sync_bars` moría en un `markets.FILE` inexistente. Los dos arreglados el 2026-09-24; `knowhow/04-export.md` |
+| 33 | — | 🟢 | new: **un clon del donante seguía operando ORO** para cualquier activo que no fuese XAUUSD. Arreglado el 2026-09-24 con `sqx/projects/resources.py` y un guardia; `knowhow/authoring/donor-clone-market.md` |
+| 34 | 🔴 | 🟢 | **causa hallada y arreglada 2026-09-24**: `crossTF/config.yaml` llevaba el feed de XAUUSD fijo y puntuaba USDJPY contra barras de oro. Con `--feed` correcto la correlación sube de −0.34 a 0.98–0.99; el aviso de costes ya nombra el activo real. `knowhow/authoring/donor-clone-market.md` |
+| 35 | — | 🟢 | new: `export_metrics` sólo leía el maestro y `sync_bars` moría en un `markets.FILE` inexistente. Los dos arreglados el 2026-09-24; `knowhow/export/bars.md` |
 | 36 | 🔴 | 🟢 | **hecho 2026-09-24**: `strategies/crossmarket/report.py` juzga la población entera por amplitud y escribe el `verdict.csv` de `/curate`. ⚠️ Revierte la decisión del 2026-09-15 de no guardar resultados; el panel sigue siendo donde se mira UNA estrategia |
 | 41 | — | 🟠 | new: **el diseño de variantes gasta la mitad del presupuesto en combinaciones que apenas operan** — 1.002 de 2.000 filas de `Strategy 17-9-39` quedan bajo 30 operaciones, y el filtro colapsa `DICrossShift1` a un valor. Medido 2026-09-24 con `strategies/parameterCloud/` |
 | 46 | — | 🔴 | new 2026-09-25: **la tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado**. En un lote de 96 la mayor lleva 117.612 operaciones y cuesta **453 s ella sola**: es el suelo de cualquier reparto a partir de 24 procesos, y por eso 96 procesos sólo dan 14,2x. Los 9 mercados son independientes dentro de `analyse_market` — repartir por ahí divide la tarea más larga por ~9. Toca la forma de `analyse_strategy`, que es la puerta del panel: decisión de diseño. `docs/manual/12-rendimiento.md` |
 | 47 | — | 🟠 | new 2026-09-25: **el lote del paso 10 no deja ver por dónde va** — `pool.map` devuelve en orden y la corrida de 499 estuvo **38 min sin imprimir una línea**, indistinguible de un cuelgue. Desde fuera tampoco: `py-spy` necesita ptrace y está bloqueado. Se arregla imprimiendo por orden de terminación |
 | 44 | — | 🟢 | new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y **el núcleo mató la ventana de VSCode** |
-| 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/07-practices.md` |
-| 32 | — | 🟡 | **mitad cerrada**: `sqx-worker.sh` ya rechaza un segundo lanzamiento sobre el mismo install y un puerto derivado (2026-09-23). Falta el candado de propietario: **el custodio no tiene candado** — 2026-09-23 dos sesiones se pisaron en W2: `stop` mató corridas ajenas. Evidencia en vivo del §2.D de la revisión. `knowhow/07-practices.md` «dos sesiones sobre el custodio a la vez» |
+| 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/perf/python-parallelism.md` |
+| 32 | — | 🟡 | **mitad cerrada**: `sqx-worker.sh` ya rechaza un segundo lanzamiento sobre el mismo install y un puerto derivado (2026-09-23). Falta el candado de propietario: **el custodio no tiene candado** — 2026-09-23 dos sesiones se pisaron en W2: `stop` mató corridas ajenas. Evidencia en vivo del §2.D de la revisión. `knowhow/perf/smt-in-sqx-retest.md` «dos sesiones sobre el custodio a la vez» |
 
 ---
 
@@ -273,7 +273,7 @@ prose above could be read as "the master's log directory shrank," which it has n
 
 **2026-09-23:** the live master no longer holds `log_2026_08_18.log` (its biggest file is now
 `log_2026_09_20.log`, 53 MB), and the archived `.gz` was replaced by
-`log_2026_08_18.condensed.log.gz` (36 KB) — what it was is in `knowhow/07-practices.md`, log
+`log_2026_08_18.condensed.log.gz` (36 KB) — what it was is in `knowhow/eng/log-retention.md`, log
 retention. `AlgoData/logs/` went from 105 MB to 11 MB.
 
 ## 7. 🟢 `core.sqxfile` has a golden test
@@ -382,7 +382,7 @@ one. The other eight rows are unverified since 2026-09-04 and may have moved the
 attribute: `databank_flow()` records reads/writes/clears for every task, and `tldr()` walks every
 `GoToTask`, whether or not SQX will run it. `core/cfx.py:51` already exposes `active` correctly — the
 map generator simply does not use it. Same class of mistake as `use="false"` on a condition
-(`knowhow/05`), one level up.
+(`knowhow/conditions/`), one level up.
 
 Recomputed honouring `active`, across all 15 renderable projects:
 
@@ -399,13 +399,13 @@ Recomputed honouring `active`, across all 15 renderable projects:
 | EURJPY_H1 | **no** — task 18 off | 7 → 7 |
 
 **Four projects loop forever, not nine, and three at-risk counts are inflated.** The error is in the
-safe direction — it over-warns — but the 🔬 claim in `knowhow/02` that "every project on this install
+safe direction — it over-warns — but the 🔬 claim in `knowhow/databanks/sync-only-touches-loaded.md` that "every project on this install
 has that shape" is wrong as written, and issue 1's mitigation would be aimed partly at clear tasks
 that are already disabled.
 
 **Fix:** filter on `active` in `databank_flow()` and `tldr()`. The per-project pipeline maps this
 issue was written against are retired pending a redesigned format (below); once that format lands,
-regenerate for all 15 projects and rewrite issue 1's table and the `knowhow/02` bullet. The
+regenerate for all 15 projects and rewrite issue 1's table and the `knowhow/databanks/sync-only-touches-loaded.md` bullet. The
 `terminal` list is affected too — a databank cleared only by a disabled task is currently excluded
 from it.
 
@@ -428,7 +428,7 @@ worker : the same, plus breakout_xau/  (5 templates)
 
 It works today only because both installs share one filesystem. `bin/clone-sqx-worker.sh` refuses to
 run while the worker exists, so re-cloning means deleting `~/Desktop/SQX_w1` — which would silently
-break the master project's five build tasks. It also contradicts `knowhow/03`'s own rule that
+break the master project's five build tasks. It also contradicts `knowhow/sqx-drive/`'s own rule that
 `templateFile` resolves against the *target* install and templates must be copied there first.
 
 This project is also the natural control group for issue 9, so keeping it working matters.
@@ -439,8 +439,8 @@ This project is also the natural control group for issue 9, so keeping it workin
 
 ## 12. 🟠 Results cited in `knowhow/` cannot be reproduced from the current data root
 
-🔬 Found 2026-09-04. Every quantitative claim in `knowhow/06-locations.md` and
-`knowhow/07-practices.md` — the 231-strategy corpus, the ~129/~11 population split, the ATR-stop PF
+🔬 Found 2026-09-04. Every quantitative claim in `knowhow/locations/xauusd-corpus.md` and
+`knowhow/research/research-lessons.md` — the 231-strategy corpus, the ~129/~11 population split, the ATR-stop PF
 figures — comes from the previous project's export. `~/Desktop/AlgoData/` holds **36** strategies'
 trades. The generating scripts are parked in `archive/studies/` against the old data layout
 (issue 8), so nothing cited can be re-run, checked or challenged today, and both current manifests
@@ -453,7 +453,7 @@ old project, not reproducible here", so nobody builds on them assuming they can.
 
 🔬 Found 2026-09-04, reading `knowhow/` against `archive/studies/`.
 
-- **ATR-stop study.** `knowhow/07` quotes PF 2.09 at 0.5×ATR. That figure is **in-sample**: the pool
+- **ATR-stop study.** `knowhow/research/research-lessons.md` quotes PF 2.09 at 0.5×ATR. That figure is **in-sample**: the pool
   was selected by SQX search over 2008–2017 and `atr_stop_study.py` restricts to 2008–2017. The
   reported N is the argmax over an 11-point grid (`N_GRID = 0.5…3.0 step 0.25`) and it lands on the
   grid edge — a selected maximum, with no out-of-sample confirmation and no multiple-testing
@@ -461,10 +461,10 @@ old project, not reproducible here", so nobody builds on them assuming they can.
   under slippage is defensible, and that rests on a single slippage value (`SLIP_REF = 0.25`), not a
   curve. The script's own CAVEATS block still says "Slippage on the stop fill is not modelled", which
   its code contradicts.
-- **Two-population split.** `knowhow/06` claims "~129 bar-cap + ~11 signal-exit" of 231 — that is
+- **Two-population split.** `knowhow/locations/xauusd-corpus.md` claims "~129 bar-cap + ~11 signal-exit" of 231 — that is
   140, leaving **91 strategies (39%) unclassified**, with the classification threshold unstated. The
   median-MAE comparison (1.37 vs 0.95 ×ATR) rests on **n=11**. The denominator is the raw 231, which
-  `knowhow/04` says contains **45 byte-identical trade lists**, so the proportions violate
+  `knowhow/export/what-a-project-stores.md` says contains **45 byte-identical trade lists**, so the proportions violate
   `tasks/CLAUDE.md`'s own first trap; and the pool mixes retest windows (46 of 231 cover only
   2018–2023). It carries a 🔬 tag.
 
@@ -510,7 +510,7 @@ names its other assumptions.
 ## 17. 🟠 Every strategy that already exists carries the OLD `Param Count`
 
 Opened 2026-09-06, when the column was rewritten to stop counting `MagicNumber`, the four signal
-variables and the `Shift` parameters (all 1286 of them have the value 1). See `knowhow/08-columns.md`.
+variables and the `Shift` parameters (all 1286 of them have the value 1). See `knowhow/columns/param-count.md`.
 
 A custom column's value is **stored in the strategy's own `settings.xml`** when its result is
 computed, and `compute()` is never called again — not on export, not on load. Proven by exporting
@@ -535,7 +535,7 @@ ship with its manual page.
 
 Decided 2026-09-06 by the owner, after the metric was measured against all five XAUUSD exports:
 four independent defects, the worst of them a net-profit decay term that is a pure 10y-vs-5y calendar
-artifact. Evidence and numbers: `knowhow/08-columns.md`, section "EdgeDecayRatio — measured, and
+artifact. Evidence and numbers: `knowhow/columns/edge-decay-retired.md`, section "EdgeDecayRatio — measured, and
 retired".
 
 Nothing has been removed yet. The master GUI was up, and `EdgeDecayFilter` is referenced by a
@@ -597,7 +597,7 @@ ninguna tarea de este proyecto define la sesión USDJPY_ftmo. Hay que darla de a
 o clonar de un donante que la lleve — no se inventan horarios de mercado.
 ```
 
-The refusal is correct (see `knowhow/09-costs.md`, "A session cannot be borrowed"). **What is wrong
+The refusal is correct (see `knowhow/costs/sessions-per-asset.md`, "A session cannot be borrowed"). **What is wrong
 is that `user/projects/USDJPY_crossmarket/project.cfx` was already on disk in the custodian when it
 printed that** — and it was an untouched XAUUSD clone: `XAUUSD_DukasM1_Infinox`, `defaultSpread`
 10.0, `MarketOpenSession XAUUSD_ftmo`, and the additional-markets cross-check still pointing at
@@ -808,7 +808,7 @@ not the bar file's.
    acceptance condition and through the walk-forward matrix's OOS net profit, which is what the
    `selected_window` warning says. A retest over 2023-01-01 → today would be unseen for the base
    asset and for the additional markets at once, would need no such warning, and is a task the
-   owner runs in the GUI. `knowhow/05-conditions.md` holds the measurement.
+   owner runs in the GUI. `knowhow/conditions/` holds the measurement.
 7. ⚪ **`pending_fills` and `fill_mismatch` were measuring the wrong quantity — FIXED 2026-09-21.**
    `pending_fills` read the entry clock, `fill_mismatch` fired on any non-zero price error. Both now
    go through `mechanics/pricing.fill_profile()`: the entry **price** against its own bar's with the
@@ -827,7 +827,7 @@ not the bar file's.
    **logic** timeframe's grid (an M1 placement grid gives the null 30× more room and makes it a
    different, wider null), holds carried in minutes, pricing on M1.
 
-**Two documented reversals live in `knowhow/07-practices.md`** — a null's width is a measurement and
+**Two documented reversals live in `knowhow/research/hardest-null.md`** — a null's width is a measurement and
 not an intuition, and a bar file is wider than the backtest that ran on it. Read them before
 changing anything about how the nulls are placed.
 
@@ -847,8 +847,8 @@ daily audit.
 
 Built (2026-09-21): `core/surface/` with its property test, `strategies/sppUltra/`,
 `strategies/walkForwardMatrix/`, and the disk budget plus provisional costs in `perf/disk/` and
-`assets/XAUUSD.yaml`. Three manual pages, and the findings in `knowhow/01-file-formats.md` and
-`knowhow/04-export.md`.
+`assets/XAUUSD.yaml`. Three manual pages, and the findings in `knowhow/sqx-format/` and
+`knowhow/export/`.
 
 Built 2026-09-21, later the same day: **`sqx/variants/` design, fabrication and manifest** —
 contract C1 in, `.sqx` batch and contract C2 out, with `tests/test_variants.py` and
@@ -897,7 +897,7 @@ Three things block it, and only the last is technical:
 
 1. ~~**The SQX installation topology.**~~ 🟢 **SETTLED 2026-09-21: three installs per machine** —
    master + conductor (W1, 5060) + custodian (W2, 5070), on both PCs. Heaps, core caps and the
-   reasoning are in `knowhow/03-driving-sqx.md` and `knowhow/07-practices.md`; the execution tasks
+   reasoning are in `knowhow/sqx-drive/install-ports-and-heap.md` and `knowhow/perf/ram-budget.md`; the execution tasks
    are lane S of `docs/AgentPDFs/plan-ejecucion-2026-09-21.md`. **`sqx/variants/` design is
    unblocked**; execution additionally waits for lane P's path work and for W2 to exist.
    ⚠️ `docs/SETUP-NEW-MACHINE.md` §2 still says "two is the working minimum" and is now stale —
@@ -944,7 +944,7 @@ is what keeps it honest while the criteria are still moving.
 Every `no_forex` asset in `assets/` now declares its commission as a **percentage of notional**,
 applied by SQX's `PercentageBased` method. Reading the snippet
 (`internal/extend/Snippets/SQ/Trading/Commissions/PercentageBased.java`, 2026-09-22) it charges in
-`computeCommissionsOnOpen` only and returns 0 on close. But `knowhow/04-export.md` measures **$8 per
+`computeCommissionsOnOpen` only and returns 0 on close. But `knowhow/costs/commission-methods.md` measures **$8 per
 lot per side, $16 round turn** against `SizeBased 8`, which only fits if the engine applies the
 method to each leg.
 
@@ -964,7 +964,7 @@ are now the ones the owner asked for, so **the numbers he gives have to be in th
 
 - forex — one spread in points, commission in $/lot, swap in **points per night**;
 - everything else — two spreads in points (`build` and OOS), commission in **% of notional**, swap in
-  **% ANNUAL** (`knowhow/09-costs.md` has the conversion; the annual/nightly confusion is 360×).
+  **% ANNUAL** (`knowhow/costs/swap-types.md` has the conversion; the annual/nightly confusion is 360×).
 
 Nothing is blocked that was not blocked before, and no invented value was written.
 
@@ -1039,7 +1039,7 @@ random trader with the same footprint would have got: drift weighted by occupanc
 So `benchmark=0` is currently the **stricter** of the two, and the studies are conservative rather
 than wrong — but they are not answering the question they say they answer.
 
-With Sharpe the two are the same ruler with different centrings (`knowhow/07-practices.md`), so
+With Sharpe the two are the same ruler with different centrings (`knowhow/research/`), so
 the fix is one argument. **Not done here on purpose**: all three modules are finished, and
 changing what a finished study reports is the owner's call, not a side effect of building a
 fourth one.
@@ -1090,7 +1090,7 @@ Orden de arreglo y las once decisiones del dueño: §7 y §8 del documento.
 benchmark en `SQX_w2` (arrancar, cargar, correr, **parar**, cambiar `coreUsage`) mientras otra
 bisecaba costes en el mismo custodio. Siete `stop` mataron corridas ajenas; los proyectos de ambas
 arrancaron sobre instancias de la otra; un tercer arranque murió con `Database may be already in
-use`. Timeline completa en `knowhow/07-practices.md`, «Lo que salió mal: dos sesiones sobre el
+use`. Timeline completa en `knowhow/perf/smt-in-sqx-retest.md`, «Lo que salió mal: dos sesiones sobre el
 custodio a la vez».
 
 Es el §2.D de `docs/AgentPDFs/revision-proyecto-2026-09-22.md` visto en vivo. Arreglo propuesto:
@@ -1100,7 +1100,7 @@ por un start/stop propio.
 
 Daño colateral verificado: la carrera de dos `sqcli` a las 07:31:41 dejó `SQX_w2/internal/AppSettings.txt`
 en **5050** (los puertos del maestro), y W2 arrancó como maestro hasta que algoproject-07 lo restauró a
-07:47. Mecanismo en `knowhow/03-driving-sqx.md`. El arreglo del candado debe incluir que `start`
+07:47. Mecanismo en `knowhow/sqx-drive/running-a-task-headless.md`. El arreglo del candado debe incluir que `start`
 compruebe el puerto en `AppSettings.txt` antes de lanzar.
 
 ## 33. 🟠 `pipeline.cleanup` refuses the one finished mother: `metrics.parquet` no longer matches its hash
@@ -1161,7 +1161,7 @@ y la aritmética de las uniones está comprobada contra lo que SQX guarda, pero 
 ## 40. ✅ Los databanks del proyecto WFC hay que crearlos a mano — resuelto 2026-09-25
 
 `sqx.projects.wfc` los declara él mismo, y se llaman sin espacios (`WFC_Variants`...): con espacios
-la API no puede nombrarlos. Detalle en `knowhow/03-driving-sqx.md`. Lo que sigue es la nota original.
+la API no puede nombrarlos. Detalle en `knowhow/databanks/no-spaces-in-names.md`. Lo que sigue es la nota original.
 
 ### (original)
 
@@ -1186,7 +1186,7 @@ Two costs, and they are different:
   region of the grid produces strategies that do not trade.
 - **Inference.** Once they are filtered out — and they have to be, a 4-trade backtest is not a point
   on a performance surface — `DICrossShift1` is left with a single value, so the surface can no
-  longer say anything about it. `knowhow/07-practices.md`, "A trade filter is not neutral in
+  longer say anything about it. `knowhow/research/trade-filter-parameter-space.md`, "A trade filter is not neutral in
   parameter space".
 
 **Not a bug and not urgent**: the design is doing what it was told, and the reading layer now names

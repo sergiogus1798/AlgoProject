@@ -17,7 +17,7 @@ from sqx.variants import inputs
 TASK = "Retest-Task1.xml"
 # Donor tasks, by what they are for. These are the owner's own XAUUSD settings, frozen:
 # copying one is how a harness inherits a configuration that demonstrably works, instead of
-# being hand-assembled and silently missing an element (knowhow/03-driving-sqx.md).
+# being hand-assembled and silently missing an element (knowhow/conditions/active-conditions-in-crosschecks.md).
 DONOR = {"spp_is": "Retest-Task13.xml", "spp_oos": "Retest-Task14.xml",
          "retest": "Retest-Task1.xml"}
 CHART = re.compile(r'<Chart symbol="[^"]*" timeframe="[^"]*" spread="([^"]*)" ?/>')

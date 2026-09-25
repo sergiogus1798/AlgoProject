@@ -80,5 +80,5 @@ Do not paste the whole catalogue. Name the page and give the three numbers that 
 
 ## Standing rule
 
-A non-obvious fact you measure goes into `knowhow/07-practices.md` **in the same task**, tagged
+A non-obvious fact you measure goes into a card in `knowhow/perf/` (format: `knowhow/INDEX.md`) **in the same task**, tagged
 🔬 tested. Findings left in a transcript die with the session.

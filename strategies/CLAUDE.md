@@ -58,7 +58,7 @@ kind that means the bars are wrong.
   trade: `price = abs(MAE_$) / (Size * pointValue)`.
 - **Drop the last row when its close price is blank** — it is an unfilled pending order.
 - **Never present a stop simulation without a slippage sensitivity.** The tighter the stop, the more
-  of the answer is the fill assumption. See `knowhow/07-practices.md`.
+  of the answer is the fill assumption. See `knowhow/research/research-lessons.md`.
 - The generated XAUUSD strategies carry **no stop, no target and no trailing** — check what a
   strategy actually does before assuming the builder's settings reached it.
 - **1.2% of XAUUSD entries do not land on a bar open**, and on other projects it is far more. Those

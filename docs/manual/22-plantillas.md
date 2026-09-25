@@ -177,7 +177,7 @@ esqueleto no tiene dos huecos aleatorios.
 **La construcción termina y el databank está vacío en disco.** No es un fallo: el databank está en
 `Auto-sync never` y SQX guarda en memoria. Se arregla parando la instalación, poniendo ese databank
 en `Auto-sync every 1 hour` dentro del `project.cfx` —nunca con una instancia abierta, regla dura
-4— y reconstruyendo. Está contado en `knowhow/03-driving-sqx.md`.
+4— y reconstruyendo. Está contado en `knowhow/databanks/memory-vs-disk-exporter.md`.
 
 **El proyecto arranca y no testea nada.** Estás usando `startOnlyTask`, que informa de éxito y no
 hace nada. Usa `action=start`, y un `action=stop` antes de cada segundo arranque.

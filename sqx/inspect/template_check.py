@@ -87,7 +87,7 @@ def databanks(project: str, install: Path = MASTER) -> dict[str, list[Path]]:
 
     Returns:
         Databank name to its files. Empty when the project's databanks live only in
-        memory — see knowhow/02-databanks.md. An "Existing portfolio" databank holds
+        memory — see knowhow/databanks/sync-deletes-unloaded-files.md. An "Existing portfolio" databank holds
         strategies imported from elsewhere, so it says nothing about this builder.
     """
     root = project_dir(project, install) / "databanks"

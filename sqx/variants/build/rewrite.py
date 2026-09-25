@@ -9,7 +9,7 @@ SETTINGS = "settings.xml"
 PROFILE = "optimizationProfile.bin"
 MINIMAL = ("META-INF/MANIFEST.MF", SETTINGS, PORTFOLIO, "lastSettings.xml", "version.txt")
 
-# Which members a variant carries. Measured whole-file sizes, knowhow/01-file-formats.md:
+# Which members a variant carries. Measured whole-file sizes, knowhow/sqx-format/writing-a-variant.md:
 # full 123.3 KB · no_profile 98.7 KB · minimal 13.7 KB. No shape drops the parent's <SQStats>:
 # those are in settings.xml, which all three keep.
 SHAPES = {"full": lambda name: True,

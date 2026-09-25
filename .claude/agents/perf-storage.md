@@ -60,5 +60,5 @@ built, `perf-optimizer` builds it.
 
 ## Standing rule
 
-Write what you learn about the layout into `knowhow/04-export.md` **in the same task**, tagged
+Write what you learn about the layout into a card in `knowhow/export/` (format: `knowhow/INDEX.md`) **in the same task**, tagged
 🔬 tested · 📓 from logs · 🤔 inferred.

@@ -4,7 +4,7 @@
 `TRADE_LEVEL_TESTS.pdf`.
 
 Lee `CODESTYLE.md` · `strategies/entryQuality/README.md` (el mismo kernel de situar operaciones
-sobre la rejilla) · `knowhow/07-practices.md` §«Any statistic measured after selecting on the OOS».
+sobre la rejilla) · `knowhow/research/post-selection-bias.md` §«Any statistic measured after selecting on the OOS».
 
 ---
 

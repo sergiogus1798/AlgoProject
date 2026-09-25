@@ -24,7 +24,7 @@ def databank_table(cfg: Element) -> list[str]:
     return out + ["", "⚠️ = auto-syncs on a timer. A sync writes memory → disk and **deletes "
                   "on-disk `.sqx` files not present in memory**. Combined with a "
                   "`ClearDatabanks` task this is what empties a databank. See "
-                  "`knowhow/02-databanks.md`.", ""]
+                  "`knowhow/databanks/sync-deletes-unloaded-files.md`.", ""]
 
 
 def databank_flow(cfg: Element, task_xml: dict) -> dict:

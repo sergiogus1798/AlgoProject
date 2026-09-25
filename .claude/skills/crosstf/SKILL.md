@@ -101,7 +101,7 @@ it, fix the task before running anything, or the cells are read over a window no
 The command **silences every acceptance condition** of the cross-check and forces
 `DeleteFailedStrategies` to false, and says how many it turned off — `crosstf.conditions: []` in the
 doctrine (owner, 2026-09-24). With them live, the cross-check is a selection filter and what
-survives is no longer an untouched reading (`knowhow/05-conditions.md`): SQX drops the failing
+survives is no longer an untouched reading (`knowhow/conditions/crossmarket-crosstf-no-conditions.md`): SQX drops the failing
 strategy from the output databank and Python never sees the dead ones. If it reports 0 silenced on a
 donor you expected conditions in, check you named the right task.
 

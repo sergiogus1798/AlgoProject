@@ -64,7 +64,7 @@ sola métrica se puede ganar por accidente:
 | # | condición | umbral propuesto | por qué |
 |---|---|---|---|
 | 1 | Operaciones en la ventana | **≥ 100** | por debajo, nada de lo que sigue es estable |
-| 2 | `RExpectancyScore` | **> 0** | es `RExpectancy × √n`: un estadístico tipo t que penaliza las regiones de pocas operaciones (🔬 `knowhow/01-file-formats.md`) |
+| 2 | `RExpectancyScore` | **> 0** | es `RExpectancy × √n`: un estadístico tipo t que penaliza las regiones de pocas operaciones (🔬 `knowhow/sqx-format/metric-formulas.md`) |
 | 3 | Degradación contra el OOS de trabajo | **`CalmarRatio?` del holdout ≥ 50 % del OOS** | no se exige que vaya igual de bien, se exige que no se desplome |
 
 ⚠️ **Tres avisos que el código debe respetar al calcular esto:**
@@ -75,7 +75,7 @@ sola métrica se puede ganar por accidente:
   `?` devuelve una columna entera de NaN, sin error.
 - **La vista de export tiene que estar cerrada antes** de calcular ningún resultado sobre el
   holdout: el valor de una columna **se congela dentro del `.sqx`**, y una columna añadida después
-  sale 0 en toda estrategia anterior, sin aviso (`knowhow/08-columns.md`, tarea S8 del plan).
+  sale 0 en toda estrategia anterior, sin aviso (`knowhow/columns/custom-columns-stored.md`, tarea S8 del plan).
 
 ☐ **Aprobado tal cual**  ☐ **Modificado a:** ______________________  · fecha: __________
 

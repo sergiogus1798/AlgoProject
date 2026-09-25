@@ -37,4 +37,4 @@ python3 -m tasks.reports.is_oos      --project XAUUSD --databank OOS   # analyse
 - **A correlation inside a sample selected on that metric is attenuated by construction, not a
   failed conclusion** — compare outcomes, never correlations, across samples: `analysis/README.md`.
 
-Details in `knowhow/04-export.md`.
+Details in `knowhow/export/`.

@@ -24,7 +24,7 @@ MASTER="${_WHERE[0]}"
 WORKER="${_WHERE[1]}"
 CLI_PORT="${_WHERE[2]}"
 
-# The port convention of knowhow/03-driving-sqx.md: each install owns a triple
+# The port convention of knowhow/sqx-drive/install-ports-and-heap.md: each install owns a triple
 # <cli> / <cli+1> / <web>, with the master at 5050 / 5051 / 8080 and every worker
 # ten above the previous one. Derived, so a new role only sets its cli port.
 EDITOR_PORT=$((CLI_PORT + 1))

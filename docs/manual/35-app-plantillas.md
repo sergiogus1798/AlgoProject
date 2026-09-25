@@ -218,7 +218,7 @@ a `ADX 5/8`. Ésa es la forma rápida de comprobar que una paleta está estrecha
 
 ⚠️ La línea gris de debajo repite el límite, y hay que tomárselo en serio: **una paleta gobierna los
 huecos LIBRES de una plantilla.** Un hueco atado a un grupo sortea ese grupo y la ignora, y un
-bloque fijo es parte del esqueleto. Está medido el 2026-09-24 y está en `knowhow/06-locations.md`.
+bloque fijo es parte del esqueleto. Está medido el 2026-09-24 y está en `knowhow/authoring/builder-block-switches.md`.
 Cuando un bloque apagado está en un grupo, su celda de **Grupos** se pone en ámbar y lo dice.
 
 ![Los huecos de una plantilla](assets/ui-plantilla-huecos.png)

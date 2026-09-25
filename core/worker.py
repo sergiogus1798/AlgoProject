@@ -18,7 +18,7 @@ def require_posix() -> None:
         RuntimeError: On Windows. Everything that talks to StrategyQuant X goes
             through bin/sqx-worker.sh, which needs rsync, ss, curl and setsid. The
             analysis half of the project reads exported CSVs and runs anywhere; only
-            the export and curation half is tied to Linux. See knowhow/07-practices.md.
+            the export and curation half is tied to Linux. See knowhow/eng/windows-portability.md.
     """
     if sys.platform.startswith("win"):
         raise RuntimeError(

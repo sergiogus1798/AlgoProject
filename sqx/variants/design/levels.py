@@ -33,7 +33,7 @@ def frozen(design: dict, settings: dict) -> dict[str, list[float]]:
         stratum varies it anyway, and needs somewhere to vary it to.
 
         The range is the one SQX uses for its own permutations, measured and recorded in
-        `knowhow/01-file-formats.md`: +/-30 % of the value stepped and rounded, except a
+        `knowhow/sqx-format/declared-parameters.md`: +/-30 % of the value stepped and rounded, except a
         shift, which gets a flat 0..6 whatever its value. Rounding follows the value:
         integral in, integral out.
     """

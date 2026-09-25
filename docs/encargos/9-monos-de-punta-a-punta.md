@@ -26,7 +26,7 @@ El plan original era el test de Masters: permutar la serie y reconstruir. Se inv
 practicable hoy**, y el motivo no es de esfuerzo:
 
 - 🔬 La API de SQX **no tiene verbo de import** — ni `sqcli` ni MCP. `-data` sólo hace
-  `action=export` (`knowhow/03-driving-sqx.md`).
+  `action=export` (`knowhow/sqx-drive/project-verb.md`).
 - Meter una serie sintética como símbolo propio exige **la GUI del maestro**, que es del dueño.
 - El registro de instrumentos vive en `user/data/data.db` y `user/data/History` está **symlinkado
   al del maestro** desde los dos workers: fabricar símbolos toca el almacén compartido.

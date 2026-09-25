@@ -46,7 +46,7 @@ Y el criterio, que es lo que la tarea del maestro no tenía: **diez condiciones 
 casilla aprueba con el 80 % de ellas cumplidas, y la estrategia aprueba si hay un rectángulo de 4x4
 casillas con 12 aprobadas. Están en `assets/_build.yaml`, `wfm.conditions`, con el % de las 150
 casillas reales del maestro que cumple cada umbral al lado; la disección de las fórmulas de SQX está
-en `knowhow/05-conditions.md`.
+en `knowhow/conditions/wfm-acceptance.md`.
 
 ⚠️ **Con condiciones activas esto FILTRA**: SQX descarta a quien no encuentre el área y no lo
 escribe en el databank de salida, al margen de `DeleteFailedStrategies`. Es la excepción a "el
@@ -109,7 +109,7 @@ revienta, que es lo correcto.
 
 Exportar desde un worker: `python3 -m sqx.export.export_wfm --project <P> --databank WFM --role custodian`.
 
-Medido el 2026-09-25 sobre 3 madres de USDJPY H1 (`knowhow/03-driving-sqx.md`): la matriz, ~4-5 min
+Medido el 2026-09-25 sobre 3 madres de USDJPY H1 (`knowhow/sqx-drive/wfm-end-to-end.md`): la matriz, ~4-5 min
 por madre y un JVM de 45 GB; export 20 s; análisis 2 s. **SQX no da ninguna señal de avance** mientras
 corre: `Running time 0 ms` y el databank quieto hasta que termina cada madre.
 

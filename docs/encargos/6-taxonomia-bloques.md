@@ -169,7 +169,7 @@ encargo:
 ## 10 · Lo que tienes que saber para no sacar conclusiones de más
 
 Tres hechos medidos el 2026-09-24 que acotan lo que tus etiquetas pueden llegar a hacer. Están en
-`knowhow/06-locations.md`, y no se te pide comprobarlos:
+`knowhow/authoring/block-vocabulary.md`, y no se te pide comprobarlos:
 
 - Una paleta construida con tus etiquetas gobierna **solo los huecos libres** de una plantilla.
 - Un hueco **atado a un grupo aleatorio** sortea ese grupo e ignora la paleta por completo.

@@ -405,7 +405,7 @@ servidor. Para correr las 757 estrategias: o la GUI se cierra, o ese número baj
 
 ## Apéndice — dónde está cada cosa
 
-Los hallazgos de este informe están además escritos en `knowhow/07-practices.md`, con sus etiquetas
+Los hallazgos de este informe están además escritos en `knowhow/perf/monte-carlo-bandwidth.md`, con sus etiquetas
 de procedencia (verificado por prueba directa), bajo tres secciones:
 
 - *El kernel Monte Carlo por tiras: 84× menos memoria y 3,6× más rápido, a la vez*

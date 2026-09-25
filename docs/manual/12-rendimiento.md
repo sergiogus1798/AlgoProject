@@ -736,7 +736,7 @@ BLAS. Datos crudos y scripts: `AlgoData/reports/perf-optim-2026-09-25/`.
 Todos los procesos de Python del proyecto que no se habían optimizado, con la base re-medida el
 mismo día desde el commit anterior en una copia aparte del código. **Memoria = PSS del árbol de
 procesos** (`/proc/<pid>/smaps_rollup`), no RSS: con `fork`, el RSS cuenta una vez por hijo las
-páginas que comparten (`knowhow/07-practices.md`). Datos crudos, scripts y validaciones:
+páginas que comparten (`knowhow/perf/`). Datos crudos, scripts y validaciones:
 `AlgoData/profiling/bench-2026-09-25/`.
 
 | proceso | antes | después | factor | memoria, antes → después | qué se cambió |

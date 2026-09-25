@@ -32,7 +32,7 @@ HEADER = f"""\
 #
 # Solo están los bloques que el builder puede sortear de verdad. Los que no aparecen aquí
 # —las acciones, las funciones matemáticas, los 158 `talib_*`— existen en el vocabulario y
-# son inalcanzables desde la generación: `knowhow/06-locations.md`.
+# son inalcanzables desde la generación: `knowhow/authoring/holes-groups-randomcondition.md`.
 #
 # archetypes: un peso por familia. 0 lo excluye, 1 es neutro, 2 y 3 lo prefieren.
 #   {", ".join(ARCHETYPES)}

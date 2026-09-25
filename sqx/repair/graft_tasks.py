@@ -23,7 +23,7 @@ def missing(cfx: Path) -> list[str]:
 
     Returns:
         Member names, in declaration order. Any of these makes the GUI drop the project
-        at load with no error — see knowhow/03-driving-sqx.md.
+        at load with no error — see knowhow/sqx-format/project-cfx.md.
     """
     with zipfile.ZipFile(cfx) as z:
         return [t for t in TASK_REF.findall(z.read("config.xml").decode("utf-8", "replace"))

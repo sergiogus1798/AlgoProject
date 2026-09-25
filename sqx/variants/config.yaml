@@ -13,7 +13,7 @@ design:
     # The coverage stratum varies the frozen parameters too -- that is what makes it a
     # check on the freezing decision instead of a restatement of it. The brief carries no
     # range for a frozen parameter, only the value it is pinned at, so the range is
-    # rebuilt the way SQX builds its own permutation ranges (knowhow/01-file-formats.md,
+    # rebuilt the way SQX builds its own permutation ranges (knowhow/sqx-format/declared-parameters.md,
     # measured): +/-30 % of the value, and a flat 0..6 for anything that is a shift.
     span: 0.30
     steps: 5
@@ -41,13 +41,13 @@ build:
   # ⚠️ minimal is cheaper, NOT safer. The parent's 36 <SQStats> blobs live in settings.xml,
   # which every shape keeps, so a variant that never ran exports the parent's metrics rather
   # than looking empty. The canaries are what catches that; the shape is not.
-  # knowhow/01-file-formats.md, both 2026-09-21 sections.
+  # knowhow/sqx-format/five-member-sqx.md, both 2026-09-21 sections.
   shape: minimal
 
 execute:
   # Where the batch is retested. The custodian takes ONE long job at a time and receives no
   # other command while it runs, so a sync can never delete the .sqx it is holding -- which
-  # is the whole reason the role exists (knowhow/03-driving-sqx.md).
+  # is the whole reason the role exists (knowhow/sqx-drive/three-install-topology.md).
   role: custodian
   # ⚠️ `Retester` is the STOCK project and using it breaks hard rule 10 (owner, 2026-09-23:
   # every run in a custom project). This predates the rule. Migration: build a one-task
@@ -76,7 +76,7 @@ execute:
   # into equity.json -- so the studies downstream read the split rather than restating it.
   split: "2018-01-01"
   # ⚠️ `-project action=startOnlyTask` reports success and tests NOTHING on this install.
-  # Only `action=start` runs the task. Measured 2026-09-22, knowhow/03-driving-sqx.md.
+  # Only `action=start` runs the task. Measured 2026-09-22, knowhow/sqx-drive/running-a-task-headless.md.
 
 spp:
   # The reconnaissance run. These are the study's own numbers, not the donor's: the donor

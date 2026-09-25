@@ -150,7 +150,7 @@ aparezca algo que crece tiene que verse.
 - **No te dice qué se puede borrar con seguridad.** Eso lo calcula `python3 -m perf.disk.report`,
   que propone y nunca borra.
 - **No cubre el árbol de SQX.** Lo que hay dentro de un `.sqx` o de un `project.cfx` está en
-  `knowhow/01-file-formats.md`.
+  `knowhow/sqx-format/`.
 
 ### Si algo falla
 
@@ -159,4 +159,4 @@ aparezca algo que crece tiene que verse.
 | no encuentras un export que juras haber hecho | míralo en `AlgoData/INDEX.md`; si no está, no se escribió |
 | un directorio sin `manifest.json` | no es reproducible. Vuelve a exportarlo antes de usarlo |
 | `AlgoData N GB de 90 GB` y se para una corrida | `python3 -m perf.disk.report` dice qué rama y qué sobra |
-| faltan `.sqx` en un databank del maestro | regla dura 1: un sync los borró. Mira `knowhow/02-databanks.md` |
+| faltan `.sqx` en un databank del maestro | regla dura 1: un sync los borró. Mira `knowhow/databanks/sync-deletes-unloaded-files.md` |

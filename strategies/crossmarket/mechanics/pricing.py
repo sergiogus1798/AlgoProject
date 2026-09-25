@@ -126,7 +126,7 @@ def fill_profile(trades: pd.DataFrame, bars: pd.DataFrame, held: pd.DataFrame,
     and reproduces perfectly; a scattered one is a price-conditional fill no null can place.
     Reading the **clock** instead — is the entry stamped on a bar boundary — answers neither:
     over 960,705 trades the 4,613 entries stamped mid-bar are priced identically to the
-    956,092 stamped on it. See knowhow/04-export.md.
+    956,092 stamped on it. See knowhow/export/fill-and-pricing.md.
     """
     enter, leave = CONVENTIONS[convention]
     scale = unit(bars) * float(bars["Open"].median())

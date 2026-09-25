@@ -2,7 +2,7 @@
 
 No es un encargo: es el estado del terreno para quien diseñe las skills que van del prompt del dueño
 a las estrategias generadas y filtradas. Revisión del 2026-09-23. **Lee también** `CLAUDE.md` (las
-nueve reglas duras), `knowhow/02-databanks.md` y `.claude/skills/curate/SKILL.md`.
+nueve reglas duras), `knowhow/databanks/curating-a-databank.md` y `.claude/skills/curate/SKILL.md`.
 
 ## 1 · El objetivo del dueño, en sus términos
 
@@ -27,9 +27,9 @@ a partir de ahí, sin tocar nada más:
 | contrato `verdict.csv` (`strategy`, `verdict`=`DESCARTAR`) | cómo Python le dice a SQX qué sobra | `.claude/skills/curate/SKILL.md` |
 | `sqx/curate/apply_verdict.py` | aplica el veredicto moviendo ficheros con el install parado, snapshot fuera del install, recuento de vuelta | `sqx/curate/` |
 | `pipeline/` (recipe + ledger + cleanup) | la cola de trabajos del futuro daemon; etapas como datos, progreso `PROGRESS n status` en stdout | `pipeline/README.md` |
-| tres installs: maestro M (intocable), conductor W1/5060, custodio W2/5070 | dónde se autora, dónde se construye | `knowhow/03-driving-sqx.md` |
+| tres installs: maestro M (intocable), conductor W1/5060, custodio W2/5070 | dónde se autora, dónde se construye | `knowhow/sqx-drive/three-install-topology.md` |
 | cadena bloque → grupo → template → proyecto probada headless | el punto 1 del objetivo ya funciona sin GUI | `OPEN.md` issue 25 |
-| `sqx/inspect/index_sqx.py` | indexar 17k `.sqx` en 1,5 s: la base de una tabla de estrategias propia | `knowhow/01-file-formats.md` |
+| `sqx/inspect/index_sqx.py` | indexar 17k `.sqx` en 1,5 s: la base de una tabla de estrategias propia | `knowhow/sqx-format/sqx-zip-members.md` |
 
 ## 3 · El mecanismo de curación: una sola ruta funciona
 
@@ -72,7 +72,7 @@ verificación válida. `apply_verdict.py` ya hace exactamente eso.
    `-project action=loadconfig` en el worker, con `action=remove` antes porque `loadconfig` nunca
    sobreescribe. Trampas medidas y silenciosas: `startOnlyTask` no hace nada; un segundo `start`
    necesita `stop`; un símbolo inexistente en un `<Chart>` mata la tarea aunque su cross-check esté
-   apagado. `knowhow/03-driving-sqx.md` §trampas.
+   apagado. `knowhow/sqx-drive/` §trampas.
 5. **Un databank de build está en `Auto-sync never` en el donante XAUUSD**: tras generar, su
    directorio está vacío y nada externo lo lee. Hay que dejarlo en `Auto-sync every 1 hour` o
    forzar `-databank action=synctofiles` antes de parar. Sin eso Python filtra sobre cero ficheros.
@@ -181,5 +181,5 @@ ningún `.sqx` y explica las dos salidas: `Auto-sync every 1 hour` en el `projec
 `-databank action=synctofiles` antes de parar la instalación.
 
 📓 Y una corrección a la lista de verbos: **`synctofiles` existe** y fuerza memoria → disco. La lista
-corta de `knowhow/03-driving-sqx.md` tenía seis verbos de menos; la referencia completa es
+corta de `knowhow/sqx-drive/project-verb.md` tenía seis verbos de menos; la referencia completa es
 `internal/web/SQUANT/help.txt`, legible sin arrancar SQX.

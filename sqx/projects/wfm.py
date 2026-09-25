@@ -86,7 +86,7 @@ def settings(block: str, cfg: dict) -> tuple[str, dict]:
     Returns:
         The element and what was written. `MaxTests` caps how many parameter sets each step
         tries; only the winner survives into the stored period, so raising it buys a better
-        pick per step and nothing readable afterwards (knowhow/01-file-formats.md).
+        pick per step and nothing readable afterwards (knowhow/sqx-format/wfm-in-settings-xml.md).
     """
     rows, cols = grid(cfg)
     element, steps = axes(cfg)

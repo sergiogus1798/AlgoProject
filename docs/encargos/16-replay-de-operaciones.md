@@ -3,7 +3,7 @@
 **Tu oficio:** Python numérico. No toca SQX. Sale del **item 4, tier 2** del PDF del dueño
 `TRADE_LEVEL_TESTS.pdf`, y es el único de ese documento que no se pudo construir el 2026-09-24.
 
-Lee `CODESTYLE.md` · `strategies/entryQuality/README.md` · `knowhow/04-export.md` §«El trade
+Lee `CODESTYLE.md` · `strategies/entryQuality/README.md` · `knowhow/export/fill-and-pricing.md` §«El trade
 export» · `nulls/README.md` §reconciliación.
 
 ---
@@ -73,5 +73,5 @@ y ese módulo ya demuestra que se puede. Mide primero, pide dependencia después
 ## 5 · Cómo cierras
 
 `python3 tools/depmap.py && python3 tools/checks.py` → 0 problemas · página de manual en español con
-salida real · y **escribe en `knowhow/04-export.md`** la convención intrabarra que midas. Es el dato
+salida real · y **escribe en `knowhow/export/fill-and-pricing.md`** la convención intrabarra que midas. Es el dato
 que hoy no tiene nadie y el que hace reutilizable todo lo demás.

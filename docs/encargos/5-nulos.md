@@ -6,7 +6,7 @@ en un podcast, generando curvas de equity aleatorias y viendo cuántas operacion
 que una con ventaja se despegue del ruido.
 
 Lo entregado es `nulls/`, su página de manual (`docs/manual/26-nulos.md`) y siete hechos medidos
-que están en `knowhow/07-practices.md` y `knowhow/04-export.md`. **Donde este documento y
+que están en `knowhow/research/random-entry-nulls.md` y `knowhow/export/`. **Donde este documento y
 `knowhow/` discrepen, manda `knowhow/`.**
 
 ---

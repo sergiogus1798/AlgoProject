@@ -292,5 +292,5 @@ python3 -m core.assets --index && head -8 assets/INDEX.md
 ### Dónde está el detalle
 
 - `assets/RULES.md` — la regla y el esquema, para una sesión de Claude.
-- `knowhow/09-costs.md` — qué puede cobrar SQX y en qué unidad, con las fórmulas decompiladas.
+- `knowhow/costs/` — qué puede cobrar SQX y en qué unidad, con las fórmulas decompiladas.
 - `assets/_classes.yaml` — los dos esquemas, uno al lado del otro.

@@ -39,7 +39,7 @@ different strategies, so that question is always asked, however obvious the phra
 entry signal of the stock `highest_breakout_template_daily_filter.sqx`, and the `session_market`
 shape was derived from it. So a fixed condition beside one random hole needs **no new skeleton**;
 only which concrete block sits in the fixed slot varies. Details and the XML in
-`knowhow/06-locations.md`.
+`knowhow/authoring/`.
 
 Two consequences worth keeping straight, because they look contradictory and are not:
 

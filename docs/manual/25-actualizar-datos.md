@@ -116,5 +116,5 @@ guardas, el inventario y el refresco de fechas sí están probados. Haz el ensay
 ### Dónde está el detalle
 
 - `sqx/data/README.md` — el porqué del maestro y del rsync.
-- `knowhow/09-costs.md` — la referencia de verbos y el flujo de datos entre instalaciones.
+- `knowhow/costs/refreshing-sqx-costs.md` — la referencia de verbos y el flujo de datos entre instalaciones.
 - `docs/manual/24-costes.md` — el refresco de fechas por separado, sin descargar nada.

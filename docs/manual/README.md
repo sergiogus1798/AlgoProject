@@ -54,6 +54,7 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `35-app-plantillas.md` | la aplicación de escritorio: la matriz de cobertura de la librería de plantillas, la ficha de cada una con sus corridas y su veredicto, y el chat que entrevista una idea hasta dejar el brief escrito y el comando listo |
 | `36-taxonomia.md` | la taxonomía de bloques —los 767 que el builder puede sortear de verdad, listos para etiquetar por familia— y la librería de paletas que se construye encima |
 | `44-app-estrategias.md` | la zona de estrategias de la ventana: los databanks exportados como los agrupa SQX, las estrategias de cada uno, y al pulsar una, qué dijo ya cada módulo de análisis sobre ella y el comando de lo que falta |
+| `46-knowhow.md` | el knowhow en fichas: cómo encontrar un hecho leyendo lo mínimo (grep de `q:` y la cabecera), cómo escribir uno nuevo sin volver al diario, y lo que se ahorra: 43× menos tokens por consulta, medido
 | `38-app-activos.md` | la zona de activos de la ventana: los diecinueve instrumentos y los cuatro ficheros compartidos, con sus costes, tramos y rangos editables sin abrir un YAML |
 | `37-wfc-retest.md` | el retest de las variantes para el WFC y el CSCV: tres tareas de SQX, una por tramo (`build`, `oos1`, `oos2`), cada una a sus costes y con los mercados adicionales dentro |
 | `38-exposicion.md` | la exposición: cuánto tiempo de mercado le costó a la estrategia lo que ganó, contra el buy and hold al mismo riesgo — el paso 21, el último de la secuencia |

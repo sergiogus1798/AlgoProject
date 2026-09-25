@@ -80,7 +80,7 @@ Why a **second** worker, in order of value:
 The core split is **elastic**: leave the master at `coreUsage = -1` and cap only the workers, so an
 idle machine gives the owner's generation everything. That also means **the master's own
 `settings.xml` is never edited**, which keeps hard rule 3 clean. Full reasoning, with the measured
-numbers, in `knowhow/03-driving-sqx.md` § *The three-install topology*.
+numbers, in `knowhow/sqx-drive/three-install-topology.md` § *The three-install topology*.
 
 A third install costs **~3 GB, not 98**: `user/data/History` is a symlink to the master's and only
 the three H2 bar files are copied.
@@ -210,7 +210,7 @@ launch writes a value of its own into `data_futures.version` and `data_stock.ver
 than the master's — so those two differ on a worker that was synced minutes earlier. `check` prints
 them as `restamp` and does **not** count them, which is what keeps its exit code meaning something.
 The forex bars this project actually trades live in `data.db` and are unaffected. Measured
-2026-09-21, in `knowhow/03-driving-sqx.md`.
+2026-09-21, in `knowhow/sqx-drive/version-stamps-stale.md`.
 
 The price of that exemption: a genuine futures or stock import on the master is not flagged by
 `check`. It does not matter — `start` syncs unconditionally before every run.

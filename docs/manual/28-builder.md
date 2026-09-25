@@ -112,7 +112,7 @@ Cuatro cosas que decide esa salida:
   generar el directorio queda vacío y `/curate` no tiene ficheros que mover.
 - **`segments`** — de qué tramo sale la ventana de cada tarea. `build` es la única muestra que ve
   el generador.
-- **`costes`** — no se escriben en la tarea, y el motivo está medido: ver `knowhow/03-driving-sqx.md`.
+- **`costes`** — no se escriben en la tarea, y el motivo está medido: ver `knowhow/costs/per-task-costs.md`.
 - **Los rangos del MC Retest sí se escriben**, porque viven en los `<Method type="Randomize*">` de
   la propia tarea y no en la `InstrumentInfo`. Salen de `mc_retest:` del activo; los que sigan en
   `null` se saltan en vez de inventarse, y la preflight lo avisa.
@@ -145,7 +145,7 @@ disco**, y la puerta de la plantilla da **25/25 llevan el bloque fijo**
 ### Si algo falla
 
 `Project has unresolved resources` al arrancar — la `InstrumentInfo` de alguna tarea no coincide con
-el registro de SQX. No lo arregla este comando; ver `knowhow/03-driving-sqx.md`.
+el registro de SQX. No lo arregla este comando; ver `knowhow/costs/per-task-costs.md`.
 
 `the custodian is running and rewrites a project.cfx on exit` — párala primero.
 

@@ -109,7 +109,7 @@ def conditions(task: ElementTree.Element) -> list[dict]:
     Returns:
         One dict per condition with `used`, and either the acceptance form
         (left, op, right) or the GoToTask form (type, fields). A threshold inside a
-        condition with used=False gates nothing — see knowhow/05-conditions.md.
+        condition with used=False gates nothing — see knowhow/conditions/condition-xml-shapes.md.
     """
     out = []
     for c in task.iter("Condition"):

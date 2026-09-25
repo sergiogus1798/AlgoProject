@@ -90,5 +90,5 @@ you checked for correctness, and what you deliberately did not touch.
 
 ## Standing rule
 
-The non-obvious thing you learned making it fast goes into `knowhow/07-practices.md` **in the same
+The non-obvious thing you learned making it fast goes into a card in `knowhow/perf/` (format: `knowhow/INDEX.md`) **in the same
 task**, tagged 🔬 tested, with the number that proves it.

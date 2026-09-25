@@ -37,7 +37,7 @@ product overruns the budget the grid is sampled and stops being complete; that i
 duplicate test — proof that it never moved a backtest — and hands over a value, not a span. The
 coverage stratum has to vary it anyway or it is only restating the brief's own conclusion. The range
 is rebuilt the way SQX builds its own permutation ranges, which is measured in
-`knowhow/01-file-formats.md`: ±30 % of the value stepped and rounded, and a flat 0..6 for a shift,
+`knowhow/sqx-format/declared-parameters.md`: ±30 % of the value stepped and rounded, and a flat 0..6 for a shift,
 because a percentage of a small integer collapses to a handful of distinct values. **This is an
 assumption, and it is the one to revisit first** if a coverage row ever disagrees with the freezing.
 
