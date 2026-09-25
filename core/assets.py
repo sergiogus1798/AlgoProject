@@ -86,7 +86,7 @@ def main() -> None:
     data = load(symbol)
     broken = validate(data)
     if broken:
-        print(f"ESQUEMA ROTO en assets/{symbol}.yaml: " + "; ".join(broken))
+        print(f"ESQUEMA ROTO en assets/symbols/{symbol}.yaml: " + "; ".join(broken))
         sys.exit(3)
     print(report(symbol))
     for line in past_data(data):

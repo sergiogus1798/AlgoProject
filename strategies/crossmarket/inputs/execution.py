@@ -37,7 +37,7 @@ def load(feed: str) -> dict | None:
     decided = assets.sqx_settings(assets.load(named), "oos1")["defaultSpread"] if named else None
     if decided is None:
         return declared
-    return {**declared, "spread_typical": float(decided), "source": f"assets/{named}.yaml"}
+    return {**declared, "spread_typical": float(decided), "source": f"assets/symbols/{named}.yaml"}
 
 
 def shock(spec: dict | None, default: list[float]) -> list[float]:

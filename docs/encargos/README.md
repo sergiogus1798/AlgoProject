@@ -12,6 +12,15 @@ Donde discrepen, manda el WORKFLOW — y se arregla el encargo.
 aprendió haciéndolo ya está en `knowhow/`, en el manual y en el código. Limpieza del 2026-09-24:
 salieron los encargos 1, 2, 3, 4 y 7, verificados uno a uno contra el repositorio.
 
+## La ventana — 2026-09-25
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `19-contrato-de-datos-para-la-ventana.md` | la forma común de todo módulo de estudio y el contrato de datos (ocho `kind`) con que la ventana los pinta en nativo; retira los tres paneles Flask | el inventario `docs/AgentPDFs/paneles-flask-inventario-2026-09-25.md` |
+
+**Va antes de cualquier reorganización de `strategies/`, `tasks/`, `nulls/` o `gate/`**, y la
+zona «Estudios» de `ui/` no se programa hasta que esté hecho.
+
 ## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
 
 Salen de la revisión del PDF del dueño. **El 8 es el cimiento y va primero**: los otros cinco

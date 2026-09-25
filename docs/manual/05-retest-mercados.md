@@ -64,7 +64,7 @@ elige. En el oro eso mide 8 $ por lote y lado, que es exactamente lo que SQX tie
 
 ### Dónde se clasifican los mercados
 
-En `strategies/crossmarket/assets/_markets.yaml`, un bloque por activo base y, dentro, una lista por
+En `assets/_markets.yaml`, un bloque por activo base y, dentro, una lista por
 categoría:
 
 ```yaml
@@ -603,8 +603,8 @@ de entrar, moverlas tiene que estropearlo — y lo hace, de forma ordenada:
   estrategia en ese mercado. La tabla dice por qué. Si quieres verlo igualmente, baja
   `sweep.min_trades` o sube `sweep.max_weak_share` en el cajón, y léelo sabiendo lo que has hecho.
 - **`FileNotFoundError` sobre un fichero de `bars/`** — ese mercado no está exportado. Ejecuta el
-  paso 1, o quítalo de `strategies/crossmarket/assets/_markets.yaml`.
-- **`KeyError` con el nombre del activo** — el activo no tiene bloque en `strategies/crossmarket/assets/_markets.yaml`.
+  paso 1, o quítalo de `assets/_markets.yaml`.
+- **`KeyError` con el nombre del activo** — el activo no tiene bloque en `assets/_markets.yaml`.
 - **Un mercado sale como `sin clasificar`** — está en el export pero no en `assets/_markets.yaml`. Se analiza
   igual; añádelo a la categoría que le toque cuando quieras que salga etiquetado.
 - **Un mercado declarado sale como ausente al arrancar** — está en `assets/_markets.yaml` pero el export no

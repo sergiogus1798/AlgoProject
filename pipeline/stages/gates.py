@@ -123,7 +123,7 @@ def costs(asset: str) -> None:
     """
     undecided = pending(load_asset(asset))
     if undecided:
-        raise SystemExit(f"assets/{asset}.yaml: {', '.join(undecided)} sin valor acordado. "
+        raise SystemExit(f"assets/symbols/{asset}.yaml: {', '.join(undecided)} sin valor acordado. "
                          f"Corre `python3 -m core.assets {asset}` y pregúntale al dueño.")
 
 

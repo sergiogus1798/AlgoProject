@@ -121,33 +121,40 @@ def chip(text: str, colour: str) -> str:
 # dashboard. Neutral near-black with no blue cast, one monospace face for every figure and
 # identifier, tabular digits so columns read without being looked at, rows of 24 px and thin
 # rules instead of cards. Colour keeps the same five meanings as `C`; nothing here is decorative.
-T = {"bg": "#0b0b0c", "panel": "#111113", "line": "#232326", "rule": "#2e2e33",
-     "text": "#e6e6e3", "muted": "#8a8a90", "faint": "#55555c", "select": "#1c1c20"}
+# Owner, 2026-09-25: the greys were unreadable. `muted` and `faint` are now light enough to
+# read as text, not as decoration; hierarchy comes from weight, not from fading.
+T = {"bg": "#0b0b0c", "panel": "#111113", "line": "#232326", "rule": "#34343a",
+     "text": "#f0f0ec", "muted": "#c2c2c8", "faint": "#9a9aa2", "select": "#1f1f24"}
 MONO = '"JetBrains Mono", "DejaVu Sans Mono", monospace'
 
 QSS += f"""
 QFrame#term {{ background: {T['bg']}; border: none; }}
 QFrame#term QWidget {{ background: {T['bg']}; color: {T['text']}; }}
-QFrame#term QLabel#kicker {{ color: {T['muted']}; font-size: 11px; font-weight: 600;
+QFrame#term QLabel#kicker {{ color: {T['text']}; font-size: 11px; font-weight: 700;
                              letter-spacing: 1.5px; }}
-QFrame#term QLabel#mono {{ font-family: {MONO}; font-size: 12px; }}
-QFrame#term QLabel#figure {{ font-family: {MONO}; font-size: 26px; font-weight: 600; }}
+QFrame#term QLabel#mono {{ font-family: {MONO}; font-size: 12px; font-weight: 600; }}
+QFrame#term QLabel#figure {{ font-family: {MONO}; font-size: 26px; font-weight: 700; }}
 QFrame#term QLabel#dim {{ color: {T['faint']}; font-family: {MONO}; font-size: 12px; }}
+QFrame#term QLabel#h1 {{ font-weight: 700; }}
 QFrame#term QFrame#rule {{ background: {T['rule']}; max-height: 1px; min-height: 1px; }}
 QFrame#term QTableWidget, QFrame#term QListWidget {{
     background: {T['bg']}; border: none; border-top: 1px solid {T['rule']};
     border-radius: 0; gridline-color: {T['line']}; font-family: {MONO}; font-size: 12px;
     padding: 0; }}
-QFrame#term QHeaderView::section {{ background: {T['bg']}; color: {T['muted']};
+QFrame#term QHeaderView::section {{ background: {T['bg']}; color: {T['text']};
     border: none; border-bottom: 1px solid {T['rule']}; padding: 4px 6px;
-    font-family: {MONO}; font-size: 11px; font-weight: 600; }}
+    font-family: {MONO}; font-size: 11px; font-weight: 700; }}
 QFrame#term QTableWidget::item {{ padding: 0 6px; }}
 QFrame#term QTableWidget::item:selected, QFrame#term QListWidget::item:selected {{
     background: {T['select']}; color: {T['text']}; }}
 QFrame#term QListWidget::item {{ padding: 3px 8px; border-radius: 0; }}
-QFrame#term QPushButton {{ background: transparent; border: 1px solid {T['rule']};
-    border-radius: 2px; padding: 3px 10px; font-family: {MONO}; font-size: 11px; }}
+QFrame#term QPushButton {{ background: transparent; border: 1px solid {T['muted']};
+    border-radius: 2px; padding: 3px 10px; font-family: {MONO}; font-size: 11px;
+    font-weight: 700; }}
 QFrame#term QPushButton:hover {{ border-color: {T['text']}; }}
+QFrame#term QComboBox {{ background: {T['panel']}; border: 1px solid {T['rule']};
+    border-radius: 2px; padding: 3px 8px; font-family: {MONO}; font-weight: 700; }}
+QFrame#term QCheckBox {{ font-weight: 600; }}
 QFrame#term QLineEdit {{ background: {T['panel']}; border: 1px solid {T['rule']};
     border-radius: 2px; padding: 4px 8px; font-family: {MONO}; font-size: 12px; }}
 QFrame#term QScrollBar::handle:vertical, QFrame#term QScrollBar::handle:horizontal {{

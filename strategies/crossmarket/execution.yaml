@@ -31,7 +31,7 @@ XAUUSD_DukasM1_Infinox:
   reviewed_by_owner: false
 
 XAGUSD_DukasM1_Infinox:
-  asset_file: null            # no assets/XAGUSD.yaml on this install
+  asset_file: null            # assets/symbols/XAGUSD.yaml exists now, but its costs are still undecided
   tick_size: 0.001
   spread_typical: 25.0        # $0.025 on silver
   spread_stress: 70.0         # silver widens harder than gold out of hours

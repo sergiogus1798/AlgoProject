@@ -7,6 +7,7 @@ from ui.desktop.assets import Assets
 from ui.desktop.catalogue import Catalogue
 from ui.desktop.chat import Chat
 from ui.desktop.coverage import Matrix
+from ui.desktop.gate import Gate
 from ui.desktop.palettes import Palettes
 from ui.desktop.soon import ZONES as SOON, page as soon_page
 from ui.desktop.studies import Studies
@@ -17,7 +18,7 @@ from ui.desktop.theme import C
 # today — reachable rather than greyed out, because a disabled button in Qt never shows its
 # tooltip, so five dead entries would explain nothing at all.
 ZONES = ["Cobertura", "Plantillas", "Nueva plantilla", "Paletas", "Activos", "Estrategias",
-         *SOON]
+         "Puerta IS/OOS", *SOON]
 
 
 class Shell(QWidget):
@@ -38,6 +39,7 @@ class Shell(QWidget):
         self.palettes = Palettes()
         self.assets = Assets()
         self.studies = Studies()
+        self.gate = Gate()
         self.matrix.picked.connect(self.open_template)
         self.chat.authored.connect(self.catalogue.reload)
 
@@ -46,7 +48,7 @@ class Shell(QWidget):
         right.setSpacing(12)
         self.stack = QStackedWidget()
         for view in (self.matrix, self.catalogue, self.chat, self.palettes, self.assets,
-                     self.studies):
+                     self.studies, self.gate):
             self.stack.addWidget(view)
         for name in SOON:
             self.stack.addWidget(soon_page(name))
@@ -131,6 +133,7 @@ class Shell(QWidget):
         self.palettes.reload()
         self.assets.reload()
         self.studies.reload()
+        self.gate.reload()
         totals = self.matrix.data
         self.status.setText(
             f"registry.csv · runs.csv · library/  —  {len(totals['rows'])} filas × "

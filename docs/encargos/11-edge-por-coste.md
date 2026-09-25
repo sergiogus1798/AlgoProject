@@ -2,7 +2,7 @@
 
 **Tu oficio:** Python puro. No toca SQX salvo para un export que ya existe.
 
-Lee `knowhow/costs/commission-methods.md` **entero** antes de escribir una línea, y `knowhow/export/fill-and-pricing.md` §«El
+Lee `knowhow/costs/` **entero** antes de escribir una línea, y `knowhow/export/fill-and-pricing.md` §«El
 trade export».
 
 ---
@@ -32,7 +32,7 @@ para nada más de este encargo. El edge por operación y el breakeven salen del 
 
 ## 1 · La segunda trampa: el spread no es un cargo
 
-🔬 `knowhow/costs/`: el spread **va dentro de los precios de fill**, no aparece en el residual
+🔬 `knowhow/costs/where-the-spread-is.md`: el spread **va dentro de los precios de fill**, no aparece en el residual
 `gross − P/L`. Ahí sólo está la comisión ($16/lote ida y vuelta en el oro). Así que el P&L **bruto**
 por operación hay que reconstruirlo:
 
@@ -47,7 +47,7 @@ no en puntos).
 
 ⚠️ **OPEN.md issue 26 está abierto y te muerde**: la comisión porcentual puede cobrar por pata o por
 operación — un factor de 2 sin medir. Si el activo que analizas la usa, **mídelo antes** con un caso
-conocido y escribe el resultado en `knowhow/costs/where-the-spread-is.md`. Si no puedes, dilo y marca los números
+conocido y escribe el resultado en `knowhow/costs/commission-methods.md`. Si no puedes, dilo y marca los números
 como provisionales; `pipeline/ledger` ya tiene `costs_provisional` para exactamente esto.
 
 ## 2 · Lo que construyes

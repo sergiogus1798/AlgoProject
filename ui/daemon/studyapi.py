@@ -4,9 +4,18 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from core import assetdata
-from ui.daemon import jobs, studies
+from ui.daemon import gateview, jobs, studies
 
 ROUTER = APIRouter()
+
+
+class GateRun(BaseModel):
+    """One press of the gate's run button: which harvest, the asset for its feed, overrides."""
+
+    project: str
+    databank: str
+    asset: str
+    overrides: list[str] = []
 
 
 class Run(BaseModel):
@@ -89,3 +98,64 @@ def job_list() -> dict[str, object]:
         `jobs`, oldest first, each with its exit code and the end of its log.
     """
     return {"jobs": jobs.listing()}
+
+
+@ROUTER.get("/api/gate/harvests")
+def gate_harvests() -> dict[str, object]:
+    """Every cosecha and whether the gate judged it, plus the screens as configured today.
+
+    Returns:
+        `harvests` newest first and `screens` with their thresholds and their why.
+    """
+    return {"harvests": gateview.harvests(), "screens": gateview.screens()}
+
+
+@ROUTER.get("/api/gate/report")
+def gate_report(project: str, databank: str, day: str) -> dict[str, object]:
+    """One gate report in full.
+
+    Args:
+        project: Project name.
+        databank: The build databank.
+        day: The report's day, `report_day` of the harvest listing.
+
+    Returns:
+        As `gateview.gate` builds it.
+    """
+    return gateview.gate(project, databank, day)
+
+
+@ROUTER.get("/api/gate/strategy")
+def gate_strategy(project: str, databank: str, day: str, identity: str) -> dict[str, object]:
+    """One strategy's paired metrics and daily curve.
+
+    Args:
+        project: Project name.
+        databank: The build databank.
+        day: The harvest day.
+        identity: The harvest's index value.
+
+    Returns:
+        As `gateview.strategy` builds it.
+    """
+    return gateview.strategy(project, databank, day, identity)
+
+
+@ROUTER.post("/api/gate/run")
+def gate_run(req: GateRun) -> dict[str, object]:
+    """Run the gate over a databank's newest cosecha.
+
+    Args:
+        req: The harvest, the asset whose feed the monkey prices with, and any
+            `screen.threshold=value` overrides — recorded in the report's manifest.
+
+    Returns:
+        The job record.
+    """
+    feed = assetdata.load(req.asset)["sqx_symbol"]
+    argv = ["-m", "gate.report", "--project", req.project, "--databank", req.databank,
+            "--feed", feed]
+    for item in req.overrides:
+        argv += ["--set", item]
+    return jobs.start("gate", argv, {"project": req.project, "databank": req.databank,
+                                     "strategy": ""})

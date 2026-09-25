@@ -1,4 +1,4 @@
-"""Read a trade list exported by SQX's orderstocsv, and split it into one frame per market."""
+"""Read a trade list exported by SQX's orderstocsv, and the per-trade quantities derived from it."""
 
 from pathlib import Path
 
@@ -23,20 +23,6 @@ def read(path: Path) -> pd.DataFrame:
     d["Open time"] = pd.to_datetime(d["Open time"], format=TIME)
     d["Close time"] = pd.to_datetime(d["Close time"], format=TIME)
     return d.reset_index(drop=True)
-
-
-def by_market(trades: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Split a `data=all` export into its per-market results.
-
-    Args:
-        trades: What read() returned.
-
-    Returns:
-        {SQX feed name: that market's trades}, in the order SQX wrote them, which puts the
-        main result first and each AdditionalMarket after it. The ticket numbering restarts
-        at 1 inside every block, so it is not a key across markets.
-    """
-    return {s: g.reset_index(drop=True) for s, g in trades.groupby("Symbol", sort=False)}
 
 
 def cost(trades: pd.DataFrame, point_value: float) -> pd.Series:

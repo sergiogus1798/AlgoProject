@@ -48,25 +48,6 @@ def running_install(cfx: Path) -> str | None:
     return None
 
 
-def set_attr(text: str, opening: str, attr: str, value: str) -> tuple[str, int]:
-    """Replace one attribute on every element whose opening tag starts with a given string.
-
-    Args:
-        text: A task XML.
-        opening: The start of the opening tag, e.g. '<InstrumentInfo instrument="X_Y"'.
-        attr: Attribute name.
-        value: Its new value, already escaped.
-
-    Returns:
-        The text and how many elements were changed. Zero means the element is not in this
-        task, which is normal: a project's tasks do not all carry every symbol.
-    """
-    tags = re.findall(re.escape(opening) + r"[^>]*>", text)
-    for tag in tags:
-        text = text.replace(tag, re.sub(f'{attr}="[^"]*"', f'{attr}="{value}"', tag, count=1), 1)
-    return text, len(tags)
-
-
 def apply(text: str, data: dict, segment: str,
           timeframe: str | None = None) -> tuple[str, dict[str, int]]:
     """Put one segment's window and costs into one task XML.

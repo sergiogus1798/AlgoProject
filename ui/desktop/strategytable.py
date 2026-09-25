@@ -33,6 +33,9 @@ def cell(value: object) -> QTableWidgetItem:
             item.setForeground(Qt.GlobalColor.red)
     else:
         item = QTableWidgetItem(str(value))
+        font = item.font()
+        font.setBold(True)
+        item.setFont(font)
     if isinstance(value, (int, float)):
         item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
     item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)

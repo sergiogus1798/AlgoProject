@@ -26,7 +26,8 @@ app ─▶ library ─▶ registry.csv · runs.csv · library/<name>/
 | `studies.py` | What the data root holds per databank — the `metrics/` exports and the `harvest/` cosechas — and everything every module's reports already said about one strategy | imported | disk → JSON |
 | `runs.py` | What running one module on one strategy means: the argv, given the asset's feed and what `raw/` and `harvest/` hold — or the sentence saying why it cannot run here | imported | context → argv · reason |
 | `jobs.py` | The daemon's job list: commands started from the window as its own children, each logged under `AlgoData/logs/ui/` | imported | argv → job record |
-| `studyapi.py` | The strategies zone's routes: the databanks, one's strategies, one strategy's results | imported | request → JSON |
+| `gateview.py` | What the gate zone draws: every cosecha with its newest judgement, one report's funnel and scorecard, one strategy's paired metrics and daily curve | imported | disk → JSON |
+| `studyapi.py` | The routes of the strategies and gate zones, and the job routes they share | imported | request → JSON |
 | `assetapi.py` | The asset library's routes, as a router. They would double `app.py`, and a zone is not a reason for a second daemon | imported | request → JSON |
 | `interview.py` | The questions the chat asks, and which is next | imported | answers → question |
 | `brief.py` | A finished interview into a draft brief, a prompt and the commands | imported | answers → files |
@@ -51,6 +52,9 @@ app ─▶ library ─▶ registry.csv · runs.csv · library/<name>/
   `runs.guess_asset` takes the longest asset symbol the project name contains and the window
   lets the owner override it. A project named without its asset gets no button until one is
   chosen.
+- **A gate report is tied to its harvest by the manifest, not by the folder date.** The report
+  is dated the day it ran; `gateview.judged` reads `source.harvest` to find the newest report
+  over a harvest, so a harvest judged twice shows its latest judgement.
 - **Jobs live in memory.** They are children of this daemon; when it dies they die, and a record
   that outlived them would describe processes that do not exist.
 - **The interview is stateless.** The whole conversation is the answers dict the client holds, so a

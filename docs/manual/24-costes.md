@@ -130,7 +130,7 @@ ventana de 2008 no cabría — el comando la rechazaría.
 justo para que veas si la ventana que pones cabe. **Si no cabe, el comando falla:**
 
 ```
-ESQUEMA ROTO en assets/DAX40.yaml: el tramo `build` empieza en 2008 y los datos de
+ESQUEMA ROTO en assets/symbols/DAX40.yaml: el tramo `build` empieza en 2008 y los datos de
 `DAX40_DukasM1_Infinox` empiezan en 2013-09-30
 ```
 → exit 3. Eso es fatal: esa ventana no se puede llenar nunca. En cambio, que un tramo **acabe

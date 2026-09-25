@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from core.assetdata import fields, load, schema, sqx_settings
+from core.assetdata import fields, load, schema
 
 # Cost fields that block authoring while undecided, per class. The swaps do not block.
 REQUIRED = {"forex": ("spread", "commission"),
@@ -134,49 +134,3 @@ def mc_pending(data: dict) -> list[str]:
     from core.assetdata import mc_retest
 
     return [k for k, v in mc_retest(data).items() if v["min"] is None or v["max"] is None]
-
-
-def cost_gap(data: dict, segment: str) -> list[str]:
-    """Costs the run will NOT be priced with, because SQX carries something else.
-
-    Args:
-        data: One asset as load() returned it.
-        segment: Segment name, which picks the spread on a no_forex asset.
-
-    Returns:
-        One line per cost whose declared `use` differs from the `sqx_now` the master
-        carries. Measured 2026-09-23: a task whose <InstrumentInfo> disagrees with SQX's
-        instrument registry makes the project refuse to start, and that registry lives in
-        `user/data/data.db`, which every worker start copies from the master. So a worker
-        is always priced with the master's figures and declaring others here changes
-        nothing until the owner edits the master's own instrument list.
-    """
-    def same(a: object, b: object) -> bool:
-        """Whether two cost values mean the same number; 10 and 10.0 do."""
-        try:
-            return float(a) == float(b)
-        except (TypeError, ValueError):
-            return str(a) == str(b)
-
-    use = sqx_settings(data, segment)
-    now = data["costs"]
-    out = []
-    spread = "spread" if data["class"] == "forex" else f"spread_{data['segments'][segment]['spread']}"
-    if not same(now[spread]["sqx_now"], use["defaultSpread"]):
-        out.append(f"spread: assets dice {use['defaultSpread']}, SQX lleva {now[spread]['sqx_now']}")
-    slip = f"slippage_{data['segments'][segment]['spread']}"
-    if not same(now[slip]["sqx_now"], use["defaultSlippage"]):
-        out.append(f"slippage: assets dice {use['defaultSlippage']}, SQX lleva "
-                   f"{now[slip]['sqx_now']}")
-    method = (now["commission"]["sqx_now"] or {}).get("method")
-    if method != use["commission"]["method"]:
-        out.append(f"comision: assets dice {use['commission']['method']} "
-                   f"{use['commission']['value']}, SQX lleva {method} "
-                   f"{(now['commission']['sqx_now'] or {}).get('value')}")
-    if (now["swap_long"]["sqx_now"] or {}).get("type") != use["swap"]["type"]:
-        out.append(f"swap: assets dice {use['swap']['type']} {use['swap']['long']}/"
-                   f"{use['swap']['short']}, SQX lleva "
-                   f"{(now['swap_long']['sqx_now'] or {}).get('type')} "
-                   f"{(now['swap_long']['sqx_now'] or {}).get('value')}/"
-                   f"{(now['swap_short']['sqx_now'] or {}).get('value')}")
-    return out
