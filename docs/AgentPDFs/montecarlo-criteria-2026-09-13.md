@@ -1,6 +1,6 @@
 # Monte Carlo — decision criteria
 
-**What this is.** A decision procedure. Given the output of `strategies/monteCarlo` for one
+**What this is.** A decision procedure. Given the output of `portfolio/common/monteCarlo` for one
 strategy, it returns exactly one of three verdicts — **ADVANCE**, **KILL**, **HOLD** — together with
 the rule that decided and the number that fired it. It is written to be executed by a reasoning
 agent without further judgement calls: every threshold is a stated constant, every constant is

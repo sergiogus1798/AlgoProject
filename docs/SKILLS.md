@@ -22,7 +22,7 @@ explica está tirando 4.800 tokens y, peor, atención.
 | familia | qué cubre | cuándo se invoca |
 |---|---|---|
 | `strategy-template`, `template-run` | de una idea a una plantilla, y de una plantilla a una construcción en un mercado | autoría (gratis) y ejecución (horas de CPU) — partidas a propósito |
-| _(retiradas)_ | las cuatro `analysis-*` — generación, retest MC, Monte Carlo, cross-market — se borraron el 2026-09-22 por decisión del dueño. **Los módulos de Python siguen ahí y funcionan** (`tasks/reports/`, `strategies/retest/`, `strategies/monteCarlo/`, `strategies/crossmarket/`); lo que se fue son las reglas de lectura. Recuperables: `git show <commit>:.claude/skills/analysis-<x>/SKILL.md` | — |
+| _(retiradas)_ | las cuatro `analysis-*` — generación, retest MC, Monte Carlo, cross-market — se borraron el 2026-09-22 por decisión del dueño. **Los módulos de Python siguen ahí y funcionan** (`tasks/reports/`, `studies/breakage/mcRetest/`, `portfolio/common/monteCarlo/`, `studies/transfer/crossmarket/`); lo que se fue son las reglas de lectura. Recuperables: `git show <commit>:.claude/skills/analysis-<x>/SKILL.md` | — |
 | `export`, `translate` | sacar datos de SQX, y traducir una estrategia a Python | puntual |
 | `audit`, `doc`, `perf`, `sync` | mantenimiento del proyecto | puntual |
 | `sqx-*` (globales, de sqx-lab) | producto genérico de autoría SQX | **candidatas a retirar, ver abajo** |
@@ -40,17 +40,17 @@ Esto dice quién cubre qué, a 2026-09-23.
 | 7 | retest OOS en SQX | `/template-run`, misma cadena | ✅ |
 | 8 | análisis IS/OOS | `/oos-gate` → `/curate` | ✅ |
 | 9 | retest crossmarkets | `/crossmarket` · `sqx/projects/crossmarket.py` | ✅ |
-| 10 | análisis crossmarkets | `strategies/crossmarket/` | ❌ **sin skill** |
+| 10 | análisis crossmarkets | `studies/transfer/crossmarket/` | ❌ **sin skill** |
 | 10.5-11 | variantes escaladas y retest crossTF | `/crosstf` · `sqx/projects/crosstf.py` | ✅ |
-| 12 | análisis crossTFs | `strategies/crossTF/` | 🟡 dentro de `/crosstf` |
+| 12 | análisis crossTFs | `studies/transfer/crossTF/` | 🟡 dentro de `/crosstf` |
 | 13 | **MC Retest en SQX** | `/mcretest` · `sqx/projects/mcretest.py` | ✅ |
-| 14 | análisis MC Retest | `strategies/retest/` | ❌ **sin skill** |
+| 14 | análisis MC Retest | `studies/breakage/mcRetest/` | ❌ **sin skill** |
 | 15 | **SPPs en SQX** | `/spp` · `sqx/projects/spp.py` | ✅ |
-| 16 | análisis SPPs | `strategies/sppUltra/` | ❌ **sin skill** |
+| 16 | análisis SPPs | `studies/breakage/spp/` | ❌ **sin skill** |
 | 16.5 | variantes para el WFC | `/variants` · `sqx/variants/` | ✅ · ⚠️ ver abajo |
 | 17 | el WFC | `walkForwardCorrelation/` | ❌ **sin skill** |
 | 18 | CSCV | `walkForwardCorrelation/pbo.py` | ❌ **sin skill** |
-| 19 | **Walk Forward Matrix en SQX** | `/wfm` · `sqx/projects/wfm.py`; el análisis sigue siendo `strategies/walkForwardMatrix/` | ✅ la tarea |
+| 19 | **Walk Forward Matrix en SQX** | `/wfm` · `sqx/projects/wfm.py`; el análisis sigue siendo `studies/optimisation/wfm/` | ✅ la tarea |
 | 20 | análisis conjunto ciego de 17-18-19 | — | ❌ **no existe** |
 
 ### Los cuatro huecos de SQX eran el mismo hueco, y ya está tapado

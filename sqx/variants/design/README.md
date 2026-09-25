@@ -23,7 +23,7 @@ Every one takes `(levels, budget, context)` and returns tuples, and they are col
 | `coverage` | 20 % | **every** parameter, frozen ones included | nothing | the corners the other two never visit, and a test of the freezing decision rather than a restatement of it |
 
 The shares are read from the brief, not from `config.yaml`: they are a property of the strategy
-being studied, and `strategies/sppUltra` sets them.
+being studied, and `studies/breakage/spp` sets them.
 
 ## The three decisions worth arguing with
 

@@ -12,8 +12,8 @@ tag: 🔬  date: 2026-09-04  see: research/post-selection-bias, research/is-prox
 ## Evidence
 - ATR-stop study (`archive/studies/atr_stop_study.py`): fill at stop → PF 2.09 at 0.5×ATR; 0.25×ATR slippage → PF 1.49, net −37 %; a 3×ATR stop lost only 11 %.
 - Range restriction, `XAUUSD/OOS` 10,000 strategies (`AlgoData/metrics/XAUUSD/OOS/metrics.csv`, report
-  `AlgoData/reports/XAUUSD/OOS/2026-09-04/`; `python3 -m tasks.reports.is_oos --project XAUUSD --databank OOS`).
+  `AlgoData/reports/XAUUSD/OOS/2026-09-04/`; `python3 -m studies.screening.isOos.report --project XAUUSD --databank OOS`).
   Dedup checked: 10,000 distinct names, 2 byte-identical metric vectors. `Sharpe Ratio (IS)` → `Profit factor (OOS)`
-  ρ +0.223 overall, +0.088 inside its own top 20 %, where another metric leads. Hence `tasks/reports/panel.html` recomputes.
-- |r| > 0.020 clears two-tailed 5 % at n≈10,000: 19 of 21 IS metrics "pass" vs OOS PF. Use `tasks/analysis/correlations.py:discoveries`.
+  ρ +0.223 overall, +0.088 inside its own top 20 %, where another metric leads. Hence `studies/screening/isOos/panel.html` recomputes.
+- |r| > 0.020 clears two-tailed 5 % at n≈10,000: 19 of 21 IS metrics "pass" vs OOS PF. Use `studies/screening/analysis/correlations.py:discoveries`.
 - 🤔 Population was generic strategies, not template-built (owner decision 2026-09-04, `knowhow/sqx-drive/`); untested for template populations.

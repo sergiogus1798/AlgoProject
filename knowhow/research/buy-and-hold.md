@@ -3,7 +3,7 @@ q: compare strategy against buy and hold, sizing convention one lot vs mean size
 tag: 🔬  date: 2026-09-24  see: research/random-entry-nulls
 ---
 # Buy and hold is three numbers; name the sizing convention or it is not a result
-`strategies/exposure/benchmark.py` reports all three and headlines the volatility-matched one (the only one about
+`studies/closing/exposure/benchmark.py` reports all three and headlines the volatility-matched one (the only one about
 edge, not leverage). Report returns per unit of exposure and absolute, never one alone — a per-calendar-day
 rate with flat days as zeros divides the edge by ~13.
 

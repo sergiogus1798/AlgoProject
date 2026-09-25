@@ -5,11 +5,10 @@ import io
 import re
 import sys
 
-from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending,
-                             provisional, segments_pending, validate)
-from core.assetdata import (MARKETS, POLICY, RESERVED, classes, fields, load, markets,
-                            mc_retest, policy, schema, special_notes, sqx_settings,
-                            symbols, window)
+from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending, provisional,
+                             segments_pending, validate)
+from core.assetdata import (MARKETS, POLICY, RESERVED, classes, fields, load, markets, mc_retest,
+                            policy, schema, special_notes, sqx_settings, symbols, window)
 from core.paths import ASSETS
 
 

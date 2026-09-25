@@ -10,15 +10,14 @@ from pathlib import Path
 
 from core.assetcheck import pending, provisional
 from core.assetdata import doctrine, load
-from core.paths import worker_dir
 from core.datapaths import projects_backup
+from core.paths import worker_dir
 from sqx.inspect.keep_tasks import keep
-from sqx.projects import crosschecks
+from sqx.projects import crosschecks, summary
 from sqx.projects.configure import configure, ignored_templates, running_install
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session
 from sqx.projects.resources import borrow_symbol
-from sqx.projects import summary
 from xml.etree import ElementTree
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"

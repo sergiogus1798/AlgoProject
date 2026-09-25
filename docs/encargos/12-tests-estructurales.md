@@ -12,6 +12,9 @@ repositorio el 2026-09-24. Los tres comparten **una sola capacidad que hoy no ex
 
 ---
 
+**Dónde va** (refactorización del 25-09, `docs/MAPA-DE-CARPETAS.md`): la fábrica y la corrida en `sqx/structural/` (§2); la lectura de las ablaciones — qué bloque sostiene el filo — en `studies/readings/structure/` (ya creada con su `README.md`). Forma de
+módulo: `studies/CLAUDE.md`; contrato del resultado: `core/study/CONTRACT.md`.
+
 ## 0 · Por qué no está hecho ya
 
 `sqx/variants/build/rewrite.py` sabe escribir una variante, pero sólo toca
@@ -56,7 +59,7 @@ están. **El PDF pide la segunda** —mismos instantes de entrada, dirección op
 la que se construye. La primera, si la construyes, es otro test y se llama de otra manera.
 
 ⚠️ Y una ventaja de este corpus: las estrategias XAUUSD generadas **no llevan stop, ni target, ni
-trailing** (`strategies/CLAUDE.md`). La advertencia del PDF sobre asimetría SL/TP no aplica todavía
+trailing** (`studies/CLAUDE.md`). La advertencia del PDF sobre asimetría SL/TP no aplica todavía
 aquí, así que la inversión es casi espejo exacto. Escríbelo en el informe, porque dejará de ser
 cierto en cuanto una población lleve stops.
 
@@ -65,7 +68,7 @@ hash entero sembrado de `(timestamp, seed)` dentro de un custom block, y el PDF 
 contra los hashes basados en `sin()`, que son estadísticamente malos. **Primero mira qué hay**:
 `python3 -m sqx.inspect.vocabulary` lista lo que este install puede componer. Si no hay operaciones
 enteras (XOR, desplazamientos, módulo sobre enteros de 64 bits), **párate y dilo**: el módulo
-`nulls/` ya responde esa pregunta fuera de SQX con la reconciliación medida (`open-open` a
+`studies/readings/monkey/` ya responde esa pregunta fuera de SQX con la reconciliación medida (`open-open` a
 0.999985), y forzar un generador malo dentro de SQX es peor que no tenerlo.
 
 ## 2 · Lo que construyes

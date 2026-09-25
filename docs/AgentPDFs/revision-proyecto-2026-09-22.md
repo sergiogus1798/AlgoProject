@@ -39,7 +39,7 @@ rompiera en silencio.
    madre y ventana) y la propia fábrica de variantes da lo mismo en menos de un minuto, con IS y
    OOS emparejados. **§3.1.**
 5. **Hacer `git push`** y commitear los ~70 ficheros que llevan dos días fuera del historial (entre
-   ellos `nulls/`, la reestructura de `assets/` y siete páginas de manual). **§2.K.**
+   ellos `studies/readings/monkey/`, la reestructura de `assets/` y siete páginas de manual). **§2.K.**
 
 ---
 
@@ -121,7 +121,7 @@ Tres problemas en la misma costura, todos sin verificar porque la cadena SPP nun
 
 ### 2.C 🔴 El intervalo del WFC trata 1.001 variantes correlacionadas como 1.001 observaciones
 
-`strategies/walkForwardCorrelation/measure/correlation.py:correlation` usa el intervalo de Fisher con
+`studies/optimisation/wfc/measure/correlation.py:correlation` usa el intervalo de Fisher con
 `n = len(kept)`. Medido esta noche sobre `pipeline/XAUUSD/Strategy_17-9-39`:
 
 | | |
@@ -208,8 +208,8 @@ con un retest previo de 3 variantes en el mismo arnés (barato: 3 × 90 ms).
 
 Y dos estudios ya han leído esa ventana para XAUUSD: el **WFM** (export 2026-09-10, celdas hasta
 2027, lo reconoce el propio protocolo) y el **Monte Carlo sobre `MC Trades`** (export 2026-09-19,
-757 estrategias, ventana 2007-01-01 a 2026-01-01, usado por `strategies/monteCarlo` y por el
-catálogo `perf`). `nulls/` se restringió a `OOS1` y está limpio.
+757 estrategias, ventana 2007-01-01 a 2026-01-01, usado por `portfolio/common/monteCarlo` y por el
+catálogo `perf`). `studies/readings/monkey/` se restringió a `OOS1` y está limpio.
 
 No es reversible y no es grave si se registra: el pre-registro debe decir **qué se ha leído ya, por
 quién y a qué nivel** (flota entera, no estrategia a estrategia) y elegir una sola frontera. Lo que
@@ -234,7 +234,7 @@ informe de costes lo propone) o bajar `sample` a 2.000 hasta que exista el loteo
 ### 2.K 🟡 Estado del repositorio
 
 - **20 commits sin push** (falló por credenciales; hay que hacerlo a mano).
-- **~70 ficheros modificados o nuevos sin commitear**: `nulls/` entero, `assets/` reestructurado
+- **~70 ficheros modificados o nuevos sin commitear**: `studies/readings/monkey/` entero, `assets/` reestructurado
   (`symbols/`, `_classes`, `_markets`, `_policy`), `core/assetcheck.py`, `core/assetdata.py`,
   siete páginas de manual (21–26), `knowhow/costs/`, y el borrado de las cuatro skills
   `analysis-*`. Dos días de trabajo que un `git checkout` o un disco pueden llevarse.
@@ -293,7 +293,7 @@ más barato:**
 
 Lo que hay que replicar: la lista de parámetros "recomendados" que SQX permuta. Está en
 `strategy_Portfolio.xml` (todas las `<variable>` numéricas) y los cinco `permutation_params.csv`
-del maestro sirven para validar que la selección coincide. `strategies/sppUltra` ya lee un grid
+del maestro sirven para validar que la selección coincide. `studies/breakage/spp` ya lee un grid
 genérico (`inputs/export.grid`): bastaría alimentarlo con el `metrics.parquet` del piloto en lugar
 de `permutations.csv`.
 
@@ -409,7 +409,7 @@ la próxima depuración que evita.
   protocolo exige para comparar ventanas de distinta longitud. Mientras tanto el WFC compara neto
   de 10 años contra neto de 5 en rangos (correcto) pero el filtro de operaciones no lo es (§2.C).
 - **Un solo régimen en el holdout** (2022–2026, oro en subida casi continua). El protocolo lo
-  avisa; añado que el mono de `nulls/` ya mide "cuánto de esto es la deriva" y sería el control
+  avisa; añado que el mono de `studies/readings/monkey/` ya mide "cuánto de esto es la deriva" y sería el control
   natural del holdout: una estrategia que pasa el holdout pero no bate al mono en esa ventana no
   ha demostrado nada.
 - **Costes provisionales en todo lo medido**: las estadísticas de rango (rho, PBO) aguantan; el
@@ -433,7 +433,7 @@ la próxima depuración que evita.
 4. **Diseño adaptativo** (§2.I): duplica los puntos útiles sin fabricar más.
 5. **Una ficha por madre** (`mother.json`: verdict, rho, IC, n_clusters, PBO, coste en segundos y
    GB) que el futuro demonio sirva tal cual. El libro mayor ya tiene casi todo; falta la vista.
-6. **Control del mono en el holdout** (§5): reutiliza `nulls/` sin código nuevo.
+6. **Control del mono en el holdout** (§5): reutiliza `studies/readings/monkey/` sin código nuevo.
 7. **Un cron para lo mecánico**: `daily_audit.py` no está programado por miedo a un falso "no
    renderiza" durante un save de SQX; un reintento de 5 s sobre `zipfile.BadZipFile` lo resuelve.
    El auditor lleva once días sin correr y el proyecto ha cambiado más en esos once días que en

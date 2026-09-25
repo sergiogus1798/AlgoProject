@@ -9,7 +9,7 @@ tag: 🔬  date: 2026-09-19  see: eng/practices-that-bit, eng/checker-blind-spot
 Verify: structure-diff every rendered output with digits normalised to `#` (numbers move, no seed), a stopwatch (catches module paths in strings), and `git show HEAD:<path>` output compared char-for-char.
 
 ## Evidence
-`strategies/crossmarket/` → `inputs/ mechanics/ model/ simulate/ verdict/ render/` (second after `strategies/monteCarlo/`).
+`studies/transfer/crossmarket/` → `inputs/ mechanics/ model/ simulate/ verdict/ render/` (second after `portfolio/common/monteCarlo/`).
 - Three configs stay in the module root because `docs/manual/05-retest-mercados.md` names them by path.
 - `render/charts.py` exported `_x`, `_ticks` to two modules: `_x` → `xpos` fine; `ticks` already a local (rendered markup) in `charts.cone()` and `overlays.py` → named `tickvals`. In monteCarlo the trap was `line`.
 - Two `simulate/ → verdict/` arrows: `fingerprint → significance` used only `trade_returns()` (`realised(...) − cost`, a measurement) → moved to `mechanics/pricing.py`,

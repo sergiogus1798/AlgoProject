@@ -3,10 +3,13 @@
 **Tu oficio:** Python sobre operaciones y barras. No toca SQX. Sale del **item 6** del PDF del dueño
 `TRADE_LEVEL_TESTS.pdf`.
 
-Lee `CODESTYLE.md` · `strategies/entryQuality/README.md` (el mismo kernel de situar operaciones
+Lee `CODESTYLE.md` · `studies/readings/entryQuality/README.md` (el mismo kernel de situar operaciones
 sobre la rejilla) · `knowhow/research/post-selection-bias.md` §«Any statistic measured after selecting on the OOS».
 
 ---
+
+**Dónde va** (refactorización del 25-09, `docs/MAPA-DE-CARPETAS.md`): `studies/readings/conditionalMap/` (ya creada con su `README.md`). Forma de
+módulo: `studies/CLAUDE.md`; contrato del resultado: `core/study/CONTRACT.md`.
 
 ## 0 · Qué es
 
@@ -38,7 +41,7 @@ Las tres reglas, y no son negociables:
 ## 2 · Lo que ya existe
 
 - Situar operaciones sobre la rejilla, la ATR y la reconciliación: `engines/nulls/inputs.py`,
-  `engines/market/calibrate.py`, usados ya por `strategies/entryQuality/`.
+  `engines/market/calibrate.py`, usados ya por `studies/readings/entryQuality/`.
 - Barras de cualquier timeframe desde el M1: `core.barstore.read`.
 - La sesión declarada de cada activo: `assets/symbols/<SYMBOL>.yaml`, campo `session`. **Úsala**, no
   inventes husos.
@@ -49,7 +52,7 @@ Las tres reglas, y no son negociables:
 No «¿qué filtro añado?», sino **«¿de qué depende que esto siga funcionando?»**. Una estrategia que
 sólo gana en el tercil de volatilidad alta depende de que ese régimen vuelva, y eso es una propiedad
 del objeto que hay que escribir en su ficha — al lado de la concentración temporal que
-`strategies/profitShape/` ya mide, que es la misma idea sobre el eje del calendario.
+`studies/readings/profitShape/` ya mide, que es la misma idea sobre el eje del calendario.
 
 ## 4 · Cómo cierras
 

@@ -47,10 +47,10 @@ dirección que hace que los resultados parezcan mejores.
 | pieza | qué da | dónde |
 |---|---|---|
 | ledger por madre (contrato C5) | `state.json` atómico, progreso durante la etapa, `brief_hash` | `pipeline/ledger/state.py` |
-| `n_eff` por clustering de correlaciones | trials independientes, silueta, el caso «un clúster de uno» | `strategies/walkForwardCorrelation/verdict/trials.py` |
+| `n_eff` por clustering de correlaciones | trials independientes, silueta, el caso «un clúster de uno» | `studies/optimisation/cscv/verdict/trials.py` |
 | DSR | `deflated_sharpe(sharpe, sigma_sr, n_eff, n_obs, skew, kurtosis)` | `core/surface/plateau.py` |
 | PSR y MinTRL | | `core/significance.py` |
-| embudo de la puerta | cuántas entran y salen de cada criba, con sus umbrales | `gate/cascade.py` |
+| embudo de la puerta | cuántas entran y salen de cada criba, con sus umbrales | `studies/screening/gate/cascade.py` |
 | manifiesto de variantes | una fila por `.sqx` real, `tuple_hash` | `sqx/variants/manifest.py` |
 | segmentos y su papel | `build` / `oos1` / `oos2`, con `reserved_for` | `assets/_policy.yaml` |
 
@@ -106,7 +106,7 @@ barata de sobreajustar una cadena entera, y sin fecha no se distingue de uno fij
 
 `trials.independent()` agrupa variantes correlacionadas de una madre. Extiéndelo para aceptar el
 panel de **toda la población superviviente** — es la misma matriz de equity diaria que
-`gate/collect.py` ya cosecha — y deja que el DSR se alimente de ese `n_eff` global.
+`studies/screening/gate/collect.py` ya cosecha — y deja que el DSR se alimente de ese `n_eff` global.
 
 ⚠️ El detalle que no se puede perder: **una variante sola en su clúster puntúa cero en la silueta**,
 por convención y con motivo — sin eso, el recuento que gana es 2 en vez de 21 (medido 2026-09-22).

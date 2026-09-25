@@ -32,5 +32,5 @@ then 1-byte id — or, if type > 100, a `writeUTF` name — then value (1 int, 2
   | `(f,11)` | Stability | `(f,21)` | Max DD % |
 - ⚠️ `SPP OOS` strategies carry an all-zero sample-20 block (their OOS columns export 0; trades all `IST`,
   see `knowhow/export/`) — useless as OOS-side calibration.
-- `core/sqxstats.py` (`stats()`, `equity()`) made `tasks/reports/decay.py` possible with the master GUI up
+- `core/sqxstats.py` (`stats()`, `equity()`) made `studies/screening/decay/report.py` possible with the master GUI up
   and no worker started.

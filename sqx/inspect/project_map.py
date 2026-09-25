@@ -3,7 +3,7 @@
 from xml.etree.ElementTree import Element
 
 from sqx.inspect.project_parts import (conditions_table, crosschecks_summary, databanks_of,
-                                        rankings_summary, special_summary)
+                                       rankings_summary, special_summary)
 
 
 def databank_table(cfg: Element) -> list[str]:

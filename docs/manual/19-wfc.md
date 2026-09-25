@@ -45,7 +45,7 @@ Tres cosas, y las tres son bloqueantes:
    `costs_provisional: true`.
 
 2. **Tiene que existir el export SPP de la estrategia**, en
-   `AlgoData/raw/<proyecto>/<databank>/<fecha>/`. Es lo que lee `strategies/sppUltra` para decidir
+   `AlgoData/raw/<proyecto>/<databank>/<fecha>/`. Es lo que lee `studies/breakage/spp` para decidir
    qué parámetros mueven el resultado y con qué niveles.
 
 3. **El custodio tiene que poder arrancar.** Es el install `~/Desktop/SQX_w2`, puerto 5070, y es
@@ -91,7 +91,7 @@ python3 -m sqx.variants.make    --brief <design_brief.json> --project XAUUSD --s
 python3 -m sqx.variants.execute --work <dir>     # carga en el custodio, retestea, exporta
 python3 -m sqx.variants.collect --work <dir>     # une el panel al manifiesto → metrics.parquet
 python3 -m sqx.variants.equity  --work <dir>     # las curvas diarias de los 3 tramos, unidas
-python3 -m strategies.walkForwardCorrelation.report --work <dir> [--split oos2_only]
+python3 -m studies.optimisation.wfc.report --work <dir> [--split oos2_only]
 ```
 
 ### El suelo de operaciones: 50, y es duro
@@ -117,7 +117,7 @@ No desaparece sin decirlo. `collect.py` avisa:
     con usable=False, por si hace falta mirarlas.
 ```
 
-y el recuento queda en `collected.json` (`thin`, `thin_cells`, `floor`) y en la nota del `wfc.html`.
+y el recuento queda en `collected.json` (`thin`, `thin_cells`, `floor`) y en la nota de `estudios/wfc.html`.
 
 ⚠️ **Hay un segundo suelo, y es otra cosa.** `min_trades: 30` en el `config.yaml` del WFC mira cada
 **lado** de la partición por separado: una variante puede sumar 200 operaciones y llevar sólo 4 en
@@ -150,7 +150,7 @@ Y con eso, el mismo lote responde a **dos preguntas distintas** (decisión del d
 | `oos1_oos2` | `build` | `oos1` + `oos2` | la normal: ¿lo que se construyó predice todo lo que vino después? |
 | `oos2_only` | `build` + `oos1` | `oos2` | **la estricta**: dando por vistos los dos primeros tramos, ¿sigue apareciendo en el que no ha mirado nadie? |
 
-El default está en `strategies/walkForwardCorrelation/config.yaml` (`split_mode`), hoy `oos2_only`.
+El default está en `studies/optimisation/wfc/config.yaml` (`split_mode`), hoy `oos2_only`.
 `--split` lo pisa para una ejecución suelta. **Cambiar de modo no re-corre ningún backtest**: las
 columnas de los dos ya están en `metrics.parquet`.
 
@@ -233,8 +233,9 @@ Todo en `AlgoData/pipeline/<proyecto>/<estrategia>/`:
 | `equity_markets.parquet` | lo mismo para cada mercado adicional, en formato largo (fecha, variante, mercado, tramo) |
 | `segments.parquet` | las 82 métricas que SQX guarda, por variante **× tramo × mercado**, más las uniones y el `usable` de cada celda. **Aquí sí están los descartados** |
 | `metrics.parquet` | contrato C3: las métricas de cabecera por tramo y por unión, unidas al manifiesto, **sin los backtests que no llegan a 50 operaciones**. Es la tabla del estudio |
-| `wfc.html` | **el gráfico**. Ábrelo en el navegador |
-| `wfc.json` | rho, su intervalo, el veredicto y cuántos puntos se descartaron |
+| `estudios/wfc.html` | **el gráfico**. Ábrelo en el navegador (hasta el 25-09 estaba en la raíz, como `wfc.html`) |
+| `estudios/wfc.md` | lo mismo en texto |
+| `wfc.json` | rho, su intervalo, el veredicto y cuántos puntos se descartaron. **Se queda en la raíz**: el pipeline lee de aquí sus escalares |
 | `state.json` | el libro mayor. Sobrevive al borrado de las variantes |
 
 ### Cómo se lee el resultado
@@ -249,7 +250,7 @@ Por pantalla ves esto:
    | PROGRESS 100 2000 variantes x 3 tramos, build: 2000 en disco, oos1: 2000 en disco, oos2: 2000 en disco
   collected  python3 -m sqx.variants.collect --work .../Strategy_17-9-39
    | PROGRESS 100 4 resultados distintos entre 5 controles
-  wfc        python3 -m strategies.walkForwardCorrelation.report --work .../Strategy_17-9-39
+  wfc        python3 -m studies.optimisation.wfc.report --work .../Strategy_17-9-39
    | PROGRESS 55 1001 puntos utiles de 2000
    | PROGRESS 100 rho 0.19 — no_fiable
    |
@@ -296,7 +297,7 @@ Los tres veredictos posibles:
 | `indeciso` | el intervalo cruza el umbral | **fabrica más puntos**. No bajes el umbral |
 
 El umbral (`rho_floor`, por defecto 0,30) es tuyo y está en
-`strategies/walkForwardCorrelation/config.yaml`. Cambiarlo **no obliga a repetir nada**: el estudio
+`studies/optimisation/wfc/config.yaml`. Cambiarlo **no obliga a repetir nada**: el estudio
 guarda los números, no los juicios, y solo se recalcula el veredicto.
 
 ### Un ejemplo completo
@@ -309,7 +310,7 @@ python3 -m core.assets XAUUSD
 python3 -m pipeline.run --project XAUUSD --databank SPP_IS --strategy "Strategy 17.9.39"
 
 # 3. Mira el gráfico
-xdg-open ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39/wfc.html
+xdg-open ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39/estudios/wfc.html
 
 # 4. Si sale `indeciso`, sube los puntos y repite
 sed -i 's/^  sample: 2000/  sample: 5000/' pipeline/config.yaml
@@ -344,7 +345,7 @@ ficheros.
 - **No te dice qué parámetros poner.** Dice si elegirlos sirve de algo.
 - **No es un walk forward de verdad.** Hay **una** partición IS/OOS, no una ventana que rueda. Mide
   si la superficie de parámetros se mantiene entre dos trozos de historia, no si se mantiene a lo
-  largo del tiempo. Para eso está `strategies/walkForwardMatrix`.
+  largo del tiempo. Para eso está `studies/optimisation/wfm`.
 - **No te dice nada sobre el futuro.** El OOS de este estudio es historia que la estrategia no vio
   al optimizarse, pero que tú sí has visto ya muchas veces. La única ventana que no está contaminada
   es la del holdout pre-registrado (`docs/preregistro/`), y hasta que esté firmada ningún módulo la

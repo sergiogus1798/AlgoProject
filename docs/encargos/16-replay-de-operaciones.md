@@ -3,10 +3,13 @@
 **Tu oficio:** Python numérico. No toca SQX. Sale del **item 4, tier 2** del PDF del dueño
 `TRADE_LEVEL_TESTS.pdf`, y es el único de ese documento que no se pudo construir el 2026-09-24.
 
-Lee `CODESTYLE.md` · `strategies/entryQuality/README.md` · `knowhow/export/fill-and-pricing.md` §«El trade
-export» · `nulls/README.md` §reconciliación.
+Lee `CODESTYLE.md` · `studies/readings/entryQuality/README.md` · `knowhow/export/fill-and-pricing.md` §«El trade
+export» · `studies/readings/monkey/README.md` §reconciliación.
 
 ---
+
+**Dónde va** (refactorización del 25-09, `docs/MAPA-DE-CARPETAS.md`): el motor en `engines/market/replay/` (ya creada con su `README.md`): calcula y no juzga, y lo consumen `entryQuality` y quien venga después. Forma de
+módulo: `studies/CLAUDE.md`; contrato del resultado: `core/study/CONTRACT.md`.
 
 ## 0 · Qué es y qué no es
 
@@ -14,7 +17,7 @@ export» · `nulls/README.md` §reconciliación.
 reimplementa nunca. El simulador sólo vuelve a ejecutar cada operación desde una entrada
 —posiblemente desplazada `d` barras— caminando el M1 hasta que algo la cierra.
 
-Existe porque el **tier 1 ya construido** (`strategies/entryQuality/delay.py`) supone que las
+Existe porque el **tier 1 ya construido** (`studies/readings/entryQuality/delay.py`) supone que las
 salidas no se mueven. Eso es correcto para salidas por señal y por número de barras, y **falso para
 un stop o un target**, que se recalculan desde el precio de entrada nuevo.
 
@@ -42,7 +45,7 @@ de salida, misma razón de salida, y P&L dentro de una tolerancia pequeña. Ante
 resultado con retraso vale nada.
 
 Reporta la **tasa de coincidencia** e investiga cada discrepancia. El precedente está medido y es
-exactamente el mismo patrón: `nulls/calibrate.convention()` encontró que el fill es `open-open` con
+exactamente el mismo patrón: `studies/readings/monkey/calibrate.convention()` encontró que el fill es `open-open` con
 una correlación de **0.999985**, y el runner-up daba 0.9629 — la reconciliación es lo que licenció
 todo lo demás de aquel módulo. Sin ella habría sido decoración.
 

@@ -50,7 +50,7 @@ tarea que perturba dos cosas no sirve para atribuir el daño a ninguna.
 ### Cómo se ejecuta
 
 ```bash
-python3 -m strategies.retest.ingest --project XAUUSD --databank MCR_All --day 2026-09-18
+python3 -m studies.breakage.mcRetest.ingest --project XAUUSD --databank MCR_All --day 2026-09-18
 ```
 
 | flag | obligatorio | qué hace |
@@ -111,7 +111,7 @@ guardada tiene todos los rangos desplazados** y no se lee. La reconstruida sí v
 
 ```bash
 $ python3 -m core.assets XAUUSD          # preflight obligatorio antes de nada
-$ python3 -m strategies.retest.ingest --project XAUUSD --databank MCR_All --day 2026-09-18
+$ python3 -m studies.breakage.mcRetest.ingest --project XAUUSD --databank MCR_All --day 2026-09-18
 ingest: 40 runs, 39996 simulations -> /home/sergioguslw/Desktop/AlgoData/raw/XAUUSD/MCR_All/2026-09-18
   reconciled 30 metrics against SQX, 0 disagreements
   level tables unusable (run cut short): 3 — bar/1.19.29, exits/1.19.29, ohlc/41.5.25
@@ -120,7 +120,7 @@ ingest: 40 runs, 39996 simulations -> /home/sergioguslw/Desktop/AlgoData/raw/XAU
 Y así se mira lo que ha escrito:
 
 ```python
-from strategies.retest.measure import store
+from studies.breakage.mcRetest.measure import store
 s = store.load_sims(project="XAUUSD", databank="MCR_All", day="2026-09-18")
 print(s.groupby("task").NetProfit.median().round(0))
 ```
@@ -142,22 +142,23 @@ stress      11837.     <- las seis cosas a la vez
 La ingesta deja el parquet; el informe lo lee y da el veredicto.
 
 ```bash
-python3 -m strategies.retest.report --project XAUUSD --databank MCR_All --day 2026-09-18
+python3 -m studies.breakage.mcRetest.report --project XAUUSD --databank MCR_All --day 2026-09-18
 ```
 
 Mismos flags que la ingesta (`--project`, `--databank`, `--day`, `--set`). Tarda unos segundos y
-escribe en `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/retest/`:
+escribe en `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/mcRetest/` (hasta el 25-09, `retest/`):
 
 | fichero | qué es |
 |---|---|
-| `retest.md` | el informe: veredicto por estrategia, qué saltó, las ocho tareas y qué la rompe |
-| `verdict.csv` | una fila por estrategia, para filtrar |
+| `mcRetest.html` / `.md` / `.json` | el databank: los veredictos y lo que sólo se ve entre estrategias |
+| `estrategias/<nombre>.html` / `.json` | una estrategia: Veredicto, Qué la rompe, Estrés combinado, Las ocho tareas y Tabla de confianza |
+| `verdict.csv` | una fila por estrategia, con su identidad, para filtrar y para `/curate` |
 | `manifest.json` | qué configuración produjo ese veredicto |
 
 Lo que sale por pantalla:
 
 ```
-report: 5 strategies -> /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/MCR_All/2026-09-18/retest
+report: 5 strategies -> /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/MCR_All/2026-09-18/mcRetest
 strategy verdict  composite    binding  stress_net_p5  stress_cvar_dd_pct
  17.9.39    FAIL        2.9 production      -10437.83               28.25
 23.16.37    FAIL        7.8 production      -25184.63               45.35
@@ -172,39 +173,27 @@ significa que fallara sino que la batería no dio evidencia para juzgarla.
 > calibrados contra tu operativa**. Si fallan todas, mira primero el umbral. Se cambia sin tocar
 > código: `--set gates.survival_dd_pct=0.35`.
 
-### El tercer comando: el panel
+### Tocar los umbrales y ver el efecto
 
-Lo mismo que el informe, pero pudiendo tocar los umbrales y ver el efecto al momento.
+El panel del navegador (`explorer.serve`, puerto 8767) **se retiró el 25-09**. Su cajón de ajustes
+vive ahora en la ventana de escritorio (`ui/`), que corre el mismo `report` con los `--set` que
+elijas y pinta las mismas cinco pestañas. Desde el terminal es igual de corto:
 
 ```bash
-python3 -m strategies.retest.explorer.serve --project XAUUSD --databank MCR_All --day 2026-09-18
+python3 -m studies.breakage.mcRetest.report --project XAUUSD --databank MCR_All --day 2026-09-18 \
+    --set gates.exec_keep_frac=0.30
 ```
 
-Abre el navegador solo, en `127.0.0.1:8767`. Añade `--port` si ese está ocupado.
-
-| botón | qué hace |
-|---|---|
-| **Analizar** | corre las cuatro preguntas sobre la estrategia elegida, un segundo |
-| **Analizar todas** | la batería entera, más lo que solo se puede decir entre estrategias |
-| **Ajustes** | abre el cajón: cada knob del `config.yaml` con una frase explicándolo |
-| **Escribir informe** | deja el mismo HTML que el comando `report` |
-
-Cinco pestañas: **Veredicto**, **Qué la rompe**, **Estrés combinado**, **Las ocho tareas** y
-**Tabla de confianza**.
-
-**El cajón de ajustes es lo que hace útil el panel.** Cambias `gates.survival_dd_pct` y le das a
-Analizar otra vez: el veredicto se recalcula con ese corte, sin tocar el `config.yaml` ni afectar
-a ninguna otra estrategia. Es la forma de calibrar los umbrales mirando el efecto en vez de
-adivinando. Probado: bajar `gates.exec_keep_frac` de 0.70 a 0.30 movió una estrategia de 32,7 a
-38,2 y dejó las demás intactas.
+El veredicto se recalcula con ese corte sin tocar el `config.yaml`. Es la forma de calibrar los
+umbrales mirando el efecto en vez de adivinando. Probado: bajar `gates.exec_keep_frac` de 0.70 a
+0.30 movió una estrategia de 32,7 a 38,2 y dejó las demás intactas. Cada knob tiene su frase en
+`studies/breakage/mcRetest/tooltips.py`.
 
 > **Relajar un umbral hasta que una estrategia pase no es calibrar, es elegir la respuesta.** El
-> cajón sirve para ver cuánto margen hay, no para fabricarlo.
+> `--set` sirve para ver cuánto margen hay, no para fabricarlo.
 
-El panel **no calcula nada propio**: cada sección la dibujan las mismas funciones que escriben el
-informe. Comprobado el 19/09/2026 — la pestaña de veredicto y la sección del informe para la misma
-estrategia salieron con 22.156 bytes las dos y comparadas byte a byte son idénticas. Si algún día
-discrepan, una de las dos miente.
+La ventana **no calcula nada propio**: pinta el mismo `estrategias/<nombre>.json` que dibuja la
+página HTML, así que las dos no pueden discrepar.
 
 Sin caché, a propósito: lo caro ya pasó en la ingesta, así que cada número en pantalla sale de la
 ejecución que acabas de lanzar y no de una guardada.
@@ -239,4 +228,4 @@ duplicaría todas las filas en silencio.
 
 **`REFUSING to write — N reconstructions disagree with SQX`** — alguna fórmula reconstruida ya no
 reproduce lo que SQX calculó. No es un aviso: no escribe nada. Suele significar que alguien tocó
-`strategies/retest/model/` sin volver a calibrar.
+`studies/breakage/mcRetest/model/` sin volver a calibrar.

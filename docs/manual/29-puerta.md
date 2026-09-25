@@ -63,14 +63,14 @@ Son **dos comandos**: uno saca los datos de SQX una sola vez, el otro juzga y se
 tantas veces como quieras sin volver a tocar SQX.
 
 ```bash
-python3 -m gate.harvest --project XAU_ISOOS_ejemplo --databank Results --oos-databank OOS --role custodian
-python3 -m gate.report  --project XAU_ISOOS_ejemplo --databank Results --feed XAUUSD_DukasM1_Infinox
+python3 -m studies.screening.gate.harvest --project XAU_ISOOS_ejemplo --databank Results --oos-databank OOS --role custodian
+python3 -m studies.screening.gate.report  --project XAU_ISOOS_ejemplo --databank Results --feed XAUUSD_DukasM1_Infinox
 ```
 
 `--databank` es siempre **el de construcción**, en los dos comandos: es el que da nombre a la carpeta
 de la cosecha, y el que define la población que entra.
 
-### `gate.harvest` — la cosecha
+### `studies.screening.gate.harvest` — la cosecha
 
 | flag | obligatorio | qué hace |
 |---|---|---|
@@ -85,7 +85,7 @@ de la cosecha, y el que define la población que entra.
 230 estrategias por lado tardan unos 5 minutos cada uno. No lo lances con otra cosa usando el
 conductor.
 
-### `gate.report` — el juicio
+### `studies.screening.gate.report` — el juicio
 
 | flag | obligatorio | qué hace |
 |---|---|---|
@@ -124,7 +124,8 @@ Es el aviso de que le has dado un databank de otro tipo.
 | `verdict.csv` | para el databank **de retesteo** — la población que sigue adelante |
 | `verdict_build.csv` | para el databank **de construcción** — el único que puede nombrar a las que SQX tiró del retesteo, porque allí no tienen nombre |
 | `funnel.csv` | el embudo: por criba, cuántas entran, pasan y mueren |
-| `resumen.md` | el embudo con los umbrales que estaban puestos y por qué existe cada criba |
+| `gate.md` / `gate.html` / `gate.json` | el embudo con los umbrales que estaban puestos y por qué existe cada criba (hasta el 25-09, `resumen.md`); el `.json` es lo que pinta la ventana |
+| `estrategias/<nombre>.html` / `.json` | la ficha de una estrategia: cada criba con su valor y su nota |
 
 ## Cómo se lee el resultado
 
@@ -183,13 +184,13 @@ byte idénticos** bajo nombres y hashes de fichero distintos. No son dos observa
 ## Un ejemplo completo
 
 ```bash
-$ python3 -m gate.harvest --project XAU_ISOOS_ejemplo --databank Results \
+$ python3 -m studies.screening.gate.harvest --project XAU_ISOOS_ejemplo --databank Results \
       --oos-databank OOS --role custodian
 Results: 120 · OOS: 115 · emparejadas 115 (0 por nombre) · sin OOS 5 · solo en OOS 0
 bloque con datos: build=(IS) · retesteo=(OOS)
 wrote /home/sergioguslw/Desktop/AlgoData/harvest/XAU_ISOOS_ejemplo/Results/2026-09-23
 
-$ python3 -m gate.report --project XAU_ISOOS_ejemplo --databank Results \
+$ python3 -m studies.screening.gate.report --project XAU_ISOOS_ejemplo --databank Results \
       --feed XAUUSD_DukasM1_Infinox
 115 emparejadas + 5 sin OOS, ventana 2017-11-29 -> 2022-12-29
 presencia      hard  entran   120 pasan   115 mueren     5
@@ -200,7 +201,7 @@ presencia      hard  entran   120 pasan   115 mueren     5
 Probar un umbral más duro sin volver a tocar SQX:
 
 ```bash
-$ python3 -m gate.report --project XAU_ISOOS_ejemplo --databank Results \
+$ python3 -m studies.screening.gate.report --project XAU_ISOOS_ejemplo --databank Results \
       --feed XAUUSD_DukasM1_Infinox --set mono.max_p=0.05 --set degradacion.min_t=1.65
 ```
 
@@ -217,7 +218,7 @@ $ python3 -m sqx.curate.apply_verdict --project XAU_ISOOS_ejemplo --databank OOS
 - **No te dice que las supervivientes sean buenas.** Te dice que no murieron con los umbrales que
   tenías puestos. Hoy son deliberadamente laxos.
 - **No deshace la preselección.** Si el build ya filtraba por OOS, la puerta mide ese filtro, no la
-  estrategia. Lo avisa el `resumen.md`, pero no lo puede arreglar.
+  estrategia. Lo avisa el `gate.md`, pero no lo puede arreglar.
 - **No te dice por qué SQX tiró una estrategia del retesteo.** La criba `presencia` sabe que no está,
   no por qué. Eso está en el log del proyecto y en las banderas rojas de SQX.
 - **No compara los costes de las dos tareas.** Cada mitad lleva el spread y el slippage que su tarea

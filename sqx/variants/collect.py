@@ -12,8 +12,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core.assetdata import doctrine
-from sqx.variants import legs as legmod
-from sqx.variants import united
+from sqx.variants import legs as legmod, united
 
 NAME = "Strategy Name"
 # The two ways the owner reads one batch, and they are not a preference: the whole point of

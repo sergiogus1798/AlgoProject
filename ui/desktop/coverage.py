@@ -6,8 +6,7 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QHeaderView, QLab
                                QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from ui.desktop import client
-from ui.desktop.theme import (C, VERDICT_COLOUR, VERDICT_LABEL, chip, verdict_colour,
-                              verdict_label)
+from ui.desktop.theme import C, VERDICT_COLOUR, VERDICT_LABEL, chip, verdict_colour, verdict_label
 
 AXIS_LABEL = {"archetype": "Arquetipo", "symbol": "Activo", "template": "Plantilla"}
 TILE_HELP = {

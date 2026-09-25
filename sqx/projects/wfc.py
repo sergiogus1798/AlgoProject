@@ -216,7 +216,7 @@ def main() -> None:
         for feed, why in row["skipped"].items():
             print(f"      ⚠️ sin {feed}: {why}")
     print("\noos2 se gasta aqui: `_policy.yaml` lo reserva al WFC y a la WFM, y esto es el "
-          "WFC.\nEl veredicto se toma en Python (strategies/walkForwardCorrelation/).")
+          "WFC.\nEl veredicto se toma en Python (studies/optimisation/wfc/).")
 
 
 if __name__ == "__main__":

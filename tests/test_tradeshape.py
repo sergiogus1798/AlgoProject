@@ -9,8 +9,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from strategies.entryQuality import eratio, excursion
-from strategies.profitShape import breaks, concentration, dependence
+from studies.readings.entryQuality import eratio, excursion
+from studies.readings.profitShape import breaks, concentration, dependence
 
 SEED = 7
 

@@ -57,8 +57,8 @@ def own_trades(c: dict) -> str | None:
 def gate(c: dict) -> list[str] | str:
     """Step 8: the whole databank through the gate; needs its cosecha."""
     if not c["harvest"]:
-        return "necesita la cosecha de este databank (gate.harvest, skill /oos-gate)"
-    return ["-m", "gate.report", "--project", c["project"], "--databank", c["databank"],
+        return "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
+    return ["-m", "studies.screening.gate.report", "--project", c["project"], "--databank", c["databank"],
             "--feed", c["feed"]]
 
 
@@ -66,7 +66,7 @@ def monte_carlo(c: dict) -> list[str] | str:
     """Trade-level Monte Carlo over the databank's newest trades export."""
     if own_trades(c):
         return own_trades(c)
-    return ["-m", "strategies.monteCarlo.report", "--project", c["project"], "--databank",
+    return ["-m", "portfolio.common.monteCarlo.report", "--project", c["project"], "--databank",
             c["databank"], "--asset", c["asset"], "--export", c["export"]]
 
 
@@ -74,7 +74,7 @@ def nulls(c: dict) -> list[str] | str:
     """The entry-timing null of this one strategy."""
     if own_trades(c):
         return own_trades(c)
-    return ["-m", "nulls.report", "--project", c["project"], "--databank", c["databank"],
+    return ["-m", "studies.readings.monkey.report", "--project", c["project"], "--databank", c["databank"],
             "--feed", c["feed"], "--strategy", c["strategy"]]
 
 
@@ -82,7 +82,7 @@ def exposure(c: dict) -> list[str] | str:
     """Step 21: market time against buy and hold, this strategy only."""
     if own_trades(c):
         return own_trades(c)
-    return ["-m", "strategies.exposure.report", "--project", c["project"], "--databank",
+    return ["-m", "studies.closing.exposure.report", "--project", c["project"], "--databank",
             c["databank"], "--feed", c["feed"], "--symbol", c["asset"], "--strategy",
             c["strategy"]]
 
@@ -91,7 +91,7 @@ def profitshape(c: dict) -> list[str] | str:
     """Which few trades and months the result depends on; prints, writes nothing."""
     if own_trades(c):
         return own_trades(c)
-    return ["-m", "strategies.profitShape.report", "--export", c["trades"], "--strategy",
+    return ["-m", "studies.readings.profitShape.report", "--export", c["trades"], "--strategy",
             c["strategy"]]
 
 
@@ -99,36 +99,36 @@ def entryquality(c: dict) -> list[str] | str:
     """The entry alone, against random entries at the same hours; prints, writes nothing."""
     if own_trades(c):
         return own_trades(c)
-    return ["-m", "strategies.entryQuality.report", "--export", c["trades"], "--strategy",
+    return ["-m", "studies.readings.entryQuality.report", "--export", c["trades"], "--strategy",
             c["strategy"]]
 
 
 def decay(c: dict) -> list[str] | str:
     """IS to OOS decay of the whole databank, split at the asset's first oos1 day."""
-    return ["-m", "tasks.reports.decay", "--project", c["project"], "--databank",
+    return ["-m", "studies.screening.decay.report", "--project", c["project"], "--databank",
             c["databank"], "--split", c["split"], "--end", c["end"]]
 
 
 def mc_retest(c: dict) -> list[str] | str:
     """Step 14 over the MC Retest export of this project."""
-    return ["-m", "strategies.retest.report", "--project", c["project"]]
+    return ["-m", "studies.breakage.mcRetest.report", "--project", c["project"]]
 
 
 def wfm(c: dict) -> list[str] | str:
     """Step 19 over the project's newest WFM export."""
-    return ["-m", "strategies.walkForwardMatrix.report", "--project", c["project"]]
+    return ["-m", "studies.optimisation.wfm.report", "--project", c["project"]]
 
 
 def crossmarket(c: dict) -> list[str] | str:
     """Step 10; needs the cross-market retest export of this databank."""
     if not c["multimarket"]:
         return "necesita el export del retest cross-market (skill /crossmarket)"
-    return ["-m", "strategies.crossmarket.report", "--project", c["project"], "--databank",
+    return ["-m", "studies.transfer.crossmarket.report", "--project", c["project"], "--databank",
             c["databank"], "--asset", c["asset"], "--export", c["export"]]
 
 
 RUNS = {"gate": gate, "monteCarlo": monte_carlo, "monkey": nulls, "exposure": exposure,
-        "profitshape": profitshape, "entryquality": entryquality, "decay": decay,
+        "profitShape": profitshape, "entryQuality": entryquality, "decay": decay,
         "mcRetest": mc_retest, "wfm": wfm, "crossmarket": crossmarket,
         "curate": lambda c: "es una skill: /curate, desde Claude Code",
         "wfc": lambda c: "se corre desde el pipeline, sobre el lote de variantes"}

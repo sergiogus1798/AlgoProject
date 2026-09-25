@@ -72,11 +72,12 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
 | a fact about formats, the API, exports, conditions, costs, research, perf | `grep -rh '^q:' knowhow/<domain>/`, then read only the card's header (up to `## Evidence`) — domains in `knowhow/INDEX.md` |
 | writing or changing Python | `CODESTYLE.md`, then the folder's own `README.md` |
 | authoring blocks, groups, templates, projects | `sqx/CLAUDE.md` |
-| mass export and population maths | `tasks/CLAUDE.md` |
-| one strategy in depth, or translating it to Python | `strategies/CLAUDE.md` |
+| any study — population or one strategy: where it lives, the shape of a module, the traps | `studies/CLAUDE.md`, then the study's `README.md` |
+| how something is computed and shared: pricing, nulls, resampling, regimes, multiple testing | `engines/README.md` |
+| where an old path went (`strategies/…`, `tasks/…`, `nulls/`, `gate/`) | `docs/MAPA-DE-CARPETAS.md` |
 | portfolios | `portfolio/CLAUDE.md` |
-| whether a result beats random entry, and which channel the edge lives in | `nulls/README.md` |
-| cribar una poblacion OOS entera hasta una lista de supervivientes | `gate/README.md` |
+| whether a result beats random entry, and which channel the edge lives in | `studies/readings/monkey/README.md` |
+| cribar una poblacion OOS entera hasta una lista de supervivientes | `studies/screening/gate/README.md` |
 | running something, or explaining to a human how to | `docs/manual/` — `00-empezar.md`, then that module's page |
 | what one SQX project actually does | regenerate on demand: `sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
 | what is broken or pending | `OPEN.md` |
@@ -93,8 +94,8 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
 ## Standing rules
 
 **Anything with an interface is a view inside `ui/`** — the PySide6 window over the local FastAPI
-daemon. Owner, 2026-09-24: no new `serve.py`, no panel in the browser. The old
-`strategies/*/explorer/` servers are the pattern being retired, not one to copy. A new zone opens in
+daemon. Owner, 2026-09-24: no new `serve.py`, no panel in the browser. The three Flask
+explorers were retired on 2026-09-25 (encargo 19): a study returns data and the window paints it. A new zone opens in
 the terminal style (`theme.T`, a `QFrame` named `term`); do not start a second theme or a second
 app. → `ui/README.md`
 
@@ -112,9 +113,10 @@ this file too.
 
 ## Layout
 
-`ui/` the desktop app (window + local daemon) · `core/` shared library · `sqx/` SQX surface ·
-`tasks/` population analysis · `strategies/` single-strategy analysis · `portfolio/` portfolios ·
-`nulls/` entry-timing nulls · `gate/` the IS/OOS screen · `pipeline/` one mother in, one verdict out, unattended ·
+`ui/` the desktop app (window + local daemon) · `core/` shared library, and `core/study/` the
+contract every study speaks · `sqx/` SQX surface · `studies/` every question asked of a strategy or
+a population, by WORKFLOW family · `engines/` what the studies compute with · `portfolio/`
+portfolios, and the trade-level Monte Carlo · `pipeline/` one mother in, one verdict out, unattended ·
 `ledger/` the global search ledger and the frozen thresholds · `perf/` cost catalogue ·
 `mt5/` reserved · `assets/` cost overrides · `knowhow/` facts · `docs/` manual and owner's
 dossiers · `audit/` daily reports · `tests/` golden and known-answer tests · `tools/` checks and

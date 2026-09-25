@@ -144,7 +144,7 @@ def main() -> None:
         for method, why in row["dropped"].items():
             print(f"      ⚠️ sin {method}: {why}")
     print("\nLas ocho leen el MISMO databank: son ocho lecturas de una poblacion, no un "
-          "embudo.\nEl veredicto se toma en Python (strategies/retest/) y se aplica con "
+          "embudo.\nEl veredicto se toma en Python (studies/breakage/mcRetest/) y se aplica con "
           "/curate.")
 
 

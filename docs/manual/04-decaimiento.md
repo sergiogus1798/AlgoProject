@@ -47,7 +47,7 @@ un IS y un OOS — y quieres saber con cuáles quedarte.
 ### Cómo se ejecuta
 
 ```bash
-python3 -m tasks.reports.decay --project XAUUSD --databank OOS \
+python3 -m studies.screening.decay.report --project XAUUSD --databank OOS \
         --split 2018-01-01 --end 2022-12-31
 ```
 
@@ -64,11 +64,12 @@ Tarda unos segundos para 834 estrategias. No toca SQX.
 
 ### Qué produce
 
-En `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/`:
+En `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/decay/` (hasta el 25-09, sueltos en la carpeta del día):
 
 | archivo | qué es |
 |---|---|
-| `decay.csv` | una fila por estrategia con todas las columnas y su veredicto |
+| `verdict.csv` | una fila por estrategia con todas las columnas, su identidad y su veredicto (antes `decay.csv`) |
+| `decay.html` / `decay.json` | el mismo resumen como página y como resultado del contrato de estudios |
 | `decay.md` | el resumen escrito: recuento, retención, desglose por plantilla y las que pasan todo |
 | `manifest.json` | qué se analizó, con qué fechas y con qué versión del código |
 
@@ -105,7 +106,7 @@ Sobre el databank `OOS` de XAUUSD, 834 estrategias que ya habían pasado un filt
 positivo fuera de muestra:
 
 ```
-$ python3 -m tasks.reports.decay --project XAUUSD --databank OOS \
+$ python3 -m studies.screening.decay.report --project XAUUSD --databank OOS \
         --split 2018-01-01 --end 2022-12-31
 
 834 estrategias → /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-06

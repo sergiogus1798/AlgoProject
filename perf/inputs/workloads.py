@@ -5,10 +5,10 @@ from pathlib import Path
 from core import bars
 from engines.regimes import regime
 from perf.inputs import sample
-from strategies.crossmarket.simulate import paired
-from strategies.monteCarlo import run
-from strategies.monteCarlo.inputs import config as mc_config, costs, stream
-from strategies.retest.measure import store
+from portfolio.common.monteCarlo import run
+from portfolio.common.monteCarlo.inputs import config as mc_config, costs, stream
+from studies.breakage.mcRetest.measure import store
+from studies.transfer.crossmarket.simulate import paired
 
 
 def montecarlo_stream(cfg: dict) -> dict:

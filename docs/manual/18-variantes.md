@@ -33,7 +33,7 @@ resultado de la combinación nueva, vas a leer el del padre. Ver *Qué NO te dic
 1. **Que exista el diseño.** Es el archivo que escribe la etapa 15:
 
 ```bash
-python3 -m strategies.sppUltra.report --project XAUUSD --databank SPP_IS
+python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS
 ```
 
    Deja `~/Desktop/AlgoData/reports/XAUUSD/SPP_IS/<fecha>/design_brief_Strategy_17-9-39.json`.

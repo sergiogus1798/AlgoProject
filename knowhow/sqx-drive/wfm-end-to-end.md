@@ -17,7 +17,7 @@ project log is empty — so watch CPU and the JVM, not the API. Export with
 | the matrix in SQX (30 cells, 1,080 WF steps) | 790 s | JVM 45 GB peak |
 | dump of databank `WFM` | 7 s | 3-10 MB per `.sqx` |
 | `sqx.export.export_wfm --role custodian` | 20 s | 129,473 trades assigned to cell and step, 0 unassigned |
-| `strategies.walkForwardMatrix.report` | 2 s | |
+| `studies.optimisation.wfm.report` | 2 s | |
 
 - `action=status` reports `Running time so far 0 ms` throughout.
 - `Param Count` fails on every databank listing through the API

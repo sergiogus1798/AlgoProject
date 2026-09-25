@@ -12,8 +12,7 @@ from core.assetcheck import pending
 from core.assetdata import doctrine, load, policy, sqx_settings, window
 from sqx.projects.acceptance import acceptance, area
 from sqx.projects.configure import running_install
-from sqx.projects.crosschecks import (active, enable, member_of, others_on,
-                                      recommended, silence)
+from sqx.projects.crosschecks import active, enable, member_of, others_on, recommended, silence
 from sqx.projects.databanks import set_databank
 from sqx.projects.setups import bounds, set_costs, set_data_range
 from sqx.projects.tasksettings import set_precision

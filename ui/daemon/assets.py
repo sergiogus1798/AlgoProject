@@ -3,8 +3,8 @@
 from datetime import date
 
 from core import assetwrite
-from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending,
-                             provisional, segments_pending, validate)
+from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending, provisional,
+                             segments_pending, validate)
 from core.assetdata import RESERVED, classes, fields, load, markets, schema, special_notes, symbols
 from core.assets import report
 from core.assetyaml import leaves

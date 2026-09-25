@@ -44,7 +44,8 @@ def apply(cfg: dict, overrides: list[str], names: dict | None = None) -> dict:
     for item in overrides:
         where, raw = item.split("=", 1)
         *path, leaf = where.split(".")
-        node = (names or {}).get(path[0]) or cfg[path[0]]
+        # A key at the top of the file ("min_trades=40") has no section to walk into.
+        node = ((names or {}).get(path[0]) or cfg[path[0]]) if path else cfg
         for key in path[1:]:
             node = node[key]
         node[leaf] = _cast(node[leaf], raw)

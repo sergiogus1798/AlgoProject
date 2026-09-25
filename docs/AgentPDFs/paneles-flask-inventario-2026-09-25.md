@@ -1,7 +1,7 @@
 # Los tres paneles Flask — inventario de lo que ofrecen, para trasplantarlo a la ventana
 
-**Qué es.** Un inventario, no un juicio. Los paneles de `strategies/monteCarlo/explorer/`,
-`strategies/retest/explorer/` y `strategies/crossmarket/explorer/` están «mal» por su forma —tres
+**Qué es.** Un inventario, no un juicio. Los paneles de `portfolio/common/monteCarlo/explorer/`,
+`studies/breakage/mcRetest/explorer/` y `studies/transfer/crossmarket/explorer/` están «mal» por su forma —tres
 aplicaciones en el navegador, tres puertos, sin memoria compartida— y el dueño lo sabe. Lo que
 quiere que se conserve es **su profundidad**: elegir estrategia, configurar cada test, ver todos
 los resultados y todos los dibujos, en muchas pestañas. Este documento lista eso, panel por
@@ -38,7 +38,7 @@ estrategia); cross-market no guarda nada (decisión 2026-09-15, revertida en par
 
 ## 1 · Monte Carlo de operaciones — «cuánto de esto es suerte»
 
-`python3 -m strategies.monteCarlo.explorer.serve --project P --databank D --asset A --export FECHA`
+`python3 -m portfolio.common.monteCarlo.explorer.serve --project P --databank D --asset A --export FECHA`
 
 **Pestañas (7):** Veredicto · Familia A · B · C · D · E · Explorador de pruebas.
 
@@ -72,7 +72,7 @@ entero o de ninguno».
 
 ## 2 · MC Retest — «qué la rompe», leyendo las ocho tareas de SQX
 
-`python3 -m strategies.retest.explorer.serve --project P`
+`python3 -m studies.breakage.mcRetest.explorer.serve --project P`
 
 **Pestañas (5):** Veredicto · Qué la rompe · Estrés combinado · Las ocho tareas · Tabla de confianza.
 
@@ -101,7 +101,7 @@ p-valores donde el tamaño de muestra es un mando. Sin caché a propósito: la p
 
 ## 3 · Cross-market — «¿transfiere el filo?», una estrategia sobre cada mercado
 
-`python3 -m strategies.crossmarket.explorer.serve --project P --databank "Retest Markets - Family" --asset A --export FECHA`
+`python3 -m studies.transfer.crossmarket.explorer.serve --project P --databank "Retest Markets - Family" --asset A --export FECHA`
 
 **Dos botones de correr:** «Run analysis» (todos los mercados, todos los modelos, todos los tests)
 y **«run» al lado de cada mercado** en la lista, que corre solo ese con lo que diga el cajón en

@@ -8,7 +8,7 @@ the two-sided before/after table next to the verdict, never instead of it (alone
 `stable` here and `few_periods` in the concentration test are compatible.
 
 ## Evidence
-`Strategy 35.44.31`, OOS1, 1,119 trades (`strategies/profitShape/`): candidate break at trade 277, supremum 1.01 vs 5 % critical 1.36 (not rejected).
+`Strategy 35.44.31`, OOS1, 1,119 trades (`studies/readings/profitShape/`): candidate break at trade 277, supremum 1.01 vs 5 % critical 1.36 (not rejected).
 
 | segment | n | mean per trade | Sharpe per trade |
 |---|---|---|---|

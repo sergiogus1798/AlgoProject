@@ -41,7 +41,7 @@ app ─▶ library ─▶ registry.csv · runs.csv · library/<name>/
   it removes it from the builder in silence.
 - **`studies.py` finds a module's verdict by one convention, not by knowing the module.** Every
   report CSV that speaks per strategy names it in a `strategy` column (`Strategy Name` in the
-  exports, `name` in `decay.csv`). The zone reads any CSV under `reports/<project>/` with such a
+  exports; `decay` wrote `name` until 2026-09-25). The zone reads any CSV under `reports/<project>/` with such a
   column and shows the matching row, so a new module appears in the window the day it writes
   that column — and a module that names the strategy some other way is invisible there.
 - **`runs.py` refuses before starting, never after.** A module's inputs are checked against the

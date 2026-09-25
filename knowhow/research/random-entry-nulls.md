@@ -1,5 +1,5 @@
 ---
-q: monkey random-entry null what it measures, nulls/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed reproducible hash PYTHONHASHSEED
+q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed reproducible hash PYTHONHASHSEED
 tag: 🔬  date: 2026-09-25  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias
 ---
 # A monkey verdict depends on the statistic far more than on the null: report all five
@@ -9,7 +9,7 @@ than beating zero (its mean is cost-negative). Use fill `open-open` (reconciled)
 is fine for a gate at p≈0.05, not for the extreme tail after multiplicity — BH on the short list uses the simulation.
 
 ## Evidence
-`nulls/` on `raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25/`: 757 strategies, 960,705 trades, sample `OOS1` (2018–2022, 320,423 trades),
+`studies/readings/monkey/` on `raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25/`: 757 strategies, 960,705 trades, sample `OOS1` (2018–2022, 320,423 trades),
 2,500 draws per rung, fill `open-open` reconciled (median 0.999983, min 0.99945). XAUUSD costs PROVISIONAL.
 - ⚠️ Not: close-close fill — 4–13 % lost correlation moved percentages by 10–26 pp with no alarm.
 - Sizing channel of *return* empty: median `corr(Size, P/L per unit)` +0.001; |corr| > 0.05 in 10.7 % vs ~7 % by chance (n≈1,270).
@@ -38,5 +38,5 @@ MinTRL on SQX P/L passes 202/757 (26.7 %). Crossed with the monkey:
 
 Seed: fixed 2026-09-25. Each block draws from `SeedSequence([seed, blake2b(strategy), fixed rung id, block])` (`engines/nulls/simulate.py`).
 Not: `default_rng([seed, abs(hash(rung)) % 2**32])` — `hash()` of a str is per-process randomised (3 runs: 810825080, 1328569471, 751024716),
-so `nulls.seed` fixed nothing; two `gate.report` runs gave 227 vs 229 survivors (identical with `PYTHONHASHSEED=0`).
+so `nulls.seed` fixed nothing; two `studies.screening.gate.report` runs gave 227 vs 229 survivors (identical with `PYTHONHASHSEED=0`).
 p-values stored before the fix came from other monkeys; vs new ones over 15,140 p, difference within Monte Carlo error.

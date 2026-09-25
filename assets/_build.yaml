@@ -138,7 +138,7 @@ crosstf:
   # bloque 0 es siempre el test principal. `--timeframes` en la línea de comandos manda sobre
   # esta lista. Sólo H4 por defecto: medido 2026-09-23, D1 no es alcanzable escalando desde H1
   # (mueve los parámetros 140-586 % y los clava en el suelo del builder).
-  # ⚠️ Este orden es un CONTRATO con `strategies/crossTF/config.yaml` (`run.blocks`):
+  # ⚠️ Este orden es un CONTRATO con `studies/transfer/crossTF/config.yaml` (`run.blocks`):
   # equivocarlo lee cada celda sobre las barras de otro timeframe, en silencio.
   timeframes: [H4]
 
@@ -147,7 +147,7 @@ crosstf:
 # backtest entero N veces, más una octava que perturba las seis a la vez. Aislar es todo el
 # diseño: una tarea que mueve dos cosas no puede atribuir el daño a ninguna.
 #
-# ⚠️ Los títulos son un CONTRATO con `strategies/retest/inputs/tasks.py`, que busca los
+# ⚠️ Los títulos son un CONTRATO con `studies/breakage/mcRetest/inputs/tasks.py`, que busca los
 # databanks por ese nombre exacto y verifica qué métodos corrió cada uno antes de escribir
 # nada. Cambiar un título aquí rompe el análisis de Python, en silencio y aguas abajo.
 #
@@ -339,7 +339,7 @@ wfc:
 
 # ─── SPP ───────────────────────────────────────────────────────────────────────────────
 # Paso 15 del workflow. El crosscheck `OptProfileSysParamPermutation` recorre el entorno de
-# cada parámetro y guarda el `optimizationProfile.bin` que `strategies/sppUltra/` lee.
+# cada parámetro y guarda el `optimizationProfile.bin` que `studies/breakage/spp/` lee.
 #
 # ⚠️ El SPP es `OptProfileSysParamPermutation`. `SequentialOptimization` vive al lado, en el
 # mismo bloque, habla también de permutar parámetros y NO escribe perfil ninguno.
@@ -370,7 +370,7 @@ spp:
 # ─── Walk Forward Matrix ───────────────────────────────────────────────────────────────
 # Paso 19, y el ÚLTIMO que mira datos. Reoptimiza la estrategia sobre una ventana deslizante
 # y corre cada elección sobre el tramo siguiente, para 30 combinaciones de cuántas pasadas y
-# cuánto de cada pasada va fuera de muestra. Lo lee `strategies/walkForwardMatrix/`.
+# cuánto de cada pasada va fuera de muestra. Lo lee `studies/optimisation/wfm/`.
 #
 # ⚠️ Esta tarea NO se cobra al último tramo, que es la convención del resto de spans.
 # Decisión del dueño, 2026-09-24: `costs_segment: oos1`, el spread intermedio. La ventana son

@@ -53,7 +53,7 @@ def population_n_eff(panel: pd.DataFrame, k_max: int) -> dict:
     """How many independent things a whole surviving population really is.
 
     Args:
-        panel: Periods down, strategies across -- the same shape `gate/collect.py`
+        panel: Periods down, strategies across -- the same shape `studies/screening/gate/collect.py`
             harvests, not one mother's variants.
         k_max: Largest cluster count to consider.
 

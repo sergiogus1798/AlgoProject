@@ -6,8 +6,8 @@ from datetime import datetime
 from pathlib import Path
 
 from core.assets import load as load_asset, provisional
-from core.paths import DATA
 from core.datapaths import pipeline_dir
+from core.paths import DATA
 
 BRANCH = "pipeline"
 FILE = "state.json"

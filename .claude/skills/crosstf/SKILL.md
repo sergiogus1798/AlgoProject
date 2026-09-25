@@ -105,7 +105,7 @@ survives is no longer an untouched reading (`knowhow/conditions/crossmarket-cros
 strategy from the output databank and Python never sees the dead ones. If it reports 0 silenced on a
 donor you expected conditions in, check you named the right task.
 
-It ends by printing the `run.blocks` line. **Paste it into `strategies/crossTF/config.yaml`.**
+It ends by printing the `run.blocks` line. **Paste it into `studies/transfer/crossTF/config.yaml`.**
 
 **3 · Run and export.** Load that one folder into the databank
 (`sqcli -databank action=load project=<P> name=<DB> folder=<the crosstf dir>`), then the run half is
@@ -119,7 +119,7 @@ python3 sqx/export/export_retest.py --project <P> --databank <DB>    # data=all
 **4 · Read.**
 
 ```bash
-python3 -m strategies.crossTF.report --export <trades.parquet> --scaling <scaling.parquet>
+python3 -m studies.transfer.crossTF.report --export <trades.parquet> --scaling <scaling.parquet>
 ```
 
 Five readings: `survives` (beats its own timeframe's null — the edge is its own), `inherited`

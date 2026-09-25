@@ -33,8 +33,9 @@ primera tabla del informe.
 
 ## 2 · Lo que construyes
 
-Módulo nuevo, y **no cuelga de `strategies/`**: esto describe un feed, no una estrategia. Ponlo como
-carpeta propia de primer nivel, igual que `nulls/` lo es por tener varios consumidores.
+Módulo nuevo, y **no es una lectura de estrategia**: esto describe un feed. Va en
+`studies/data/feedQuality/` (ya creada con su `README.md`), la familia de los estudios sobre los
+datos; lo que otros estudios necesiten reutilizar de él sube a `engines/market/`.
 
 Dos mitades, y la segunda es la que justifica la primera:
 

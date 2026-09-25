@@ -24,32 +24,32 @@ que sólo el dueño puede dar.
 | 5 | **Creación del custom project** | `sqx/projects/builder.py` | ✅ |
 | 6 | **Configuración del build** | `assets/_build.yaml`, `sqx/projects/doctrine.py` | 🔴 filtros · ⬜ building blocks |
 | 7 | **Retest OOS en SQX** | tarea propia, costes de `oos1` | ✅ |
-| 8 | **Análisis IS/OOS en Python** | `gate/`, `/oos-gate` → `/curate` | 🟡 umbrales laxos |
+| 8 | **Análisis IS/OOS en Python** | `studies/screening/gate/`, `/oos-gate` → `/curate` | 🟡 umbrales laxos |
 | 9 | **Retest crossmarkets en SQX** | `sqx/projects/crossmarket.py` | 🔴 faltan costes |
-| 10 | **Análisis crossmarkets en Python** | `strategies/crossmarket/` | 🟡 sin skill |
+| 10 | **Análisis crossmarkets en Python** | `studies/transfer/crossmarket/` | 🟡 sin skill |
 | 10.5 | **Preparación crossTF** — generación de variantes escaladas | `sqx/variants/scale.py`, `/crosstf` | 🟡 |
 | 11 | **Retest crossTimeframes en SQX** | `/crosstf` | 🟡 |
-| 12 | **Análisis crossTFs en Python** | `strategies/crossTF/` | 🟡 |
+| 12 | **Análisis crossTFs en Python** | `studies/transfer/crossTF/` | 🟡 |
 | 13 | **MC Retest en SQX** | `sqx/projects/mcretest.py`, `/mcretest`; catálogo en `assets/_build.yaml` | ✅ |
-| 14 | **Análisis MC Retest en Python** | `strategies/retest/` | 🟡 |
+| 14 | **Análisis MC Retest en Python** | `studies/breakage/mcRetest/` | 🟡 |
 | 15 | **SPPs en SQX** | `sqx/projects/spp.py`, `/spp`; catálogo en `assets/_build.yaml` | ✅ |
-| 16 | **Análisis SPPs en Python** | `strategies/sppUltra/` | ✅ |
+| 16 | **Análisis SPPs en Python** | `studies/breakage/spp/` | ✅ |
 | 16.5 | **Preparación de variantes para el WFC** | `sqx/variants/make.py`, `/variants` | ✅ · ⚠️ corre en el `Retester` de serie, OPEN.md §38 |
-| 17 | **Walk Forward Correlation** | `strategies/walkForwardCorrelation/report.py` | ✅ |
-| 18 | **CSCV** | `strategies/walkForwardCorrelation/pbo.py` | ✅ |
-| 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `strategies/walkForwardMatrix/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
+| 17 | **Walk Forward Correlation** | `studies/optimisation/wfc/report.py` | ✅ |
+| 18 | **CSCV** | `studies/optimisation/cscv/report.py` | ✅ |
+| 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `studies/optimisation/wfm/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
 | 20 | **Análisis conjunto de 17, 18 y 19 — CIEGO hasta tener los tres** | — | ⬜ |
-| 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `strategies/exposure/`, `docs/manual/38-exposicion.md` | ✅ |
+| 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/38-exposicion.md` | ✅ |
 
 **Tres lecturas adicionales que no son pasos nuevos y no renumeran nada.** Dos sobre una
-estrategia y su lista de operaciones, gratis y sin SQX: `strategies/profitShape/` (manual
+estrategia y su lista de operaciones, gratis y sin SQX: `studies/readings/profitShape/` (manual
 `40-forma-del-beneficio.md`) dice de qué pocas operaciones y qué pocos meses depende el resultado,
 si las operaciones se agrupan —y entonces el Monte Carlo de cartera tiene que remuestrear por
-bloques— y si la media cambió dentro de la muestra; `strategies/entryQuality/` (manual
+bloques— y si la media cambió dentro de la muestra; `studies/readings/entryQuality/` (manual
 `42-calidad-de-la-entrada.md`) aísla la **entrada** del resto midiendo el recorrido a favor y en
 contra contra entradas al azar a las mismas horas, y lo que cuesta llegar tarde. Las dos salen del
 PDF `TRADE_LEVEL_TESTS.pdf` del dueño. Y la tercera, sobre el lote de variantes:
-`strategies/parameterCloud/` (manual `39-nube-de-parametros.md`) lee las variantes del 16.5 como lo
+`studies/optimisation/cloud/` (manual `39-nube-de-parametros.md`) lee las variantes del 16.5 como lo
 que son —una superficie— y dice si la madre está en un pico o en una meseta, qué parámetros mandan,
 si hay superficie que leer y si su forma aguanta año a año. Es gratis, no toca SQX, **corta las
 curvas donde empieza `oos2`** y no elige nada: sale del PDF `PARAMETER_SPACE_TESTS.pdf` del dueño,
@@ -74,7 +74,7 @@ tenía posición — que es lo que separa una ventaja propia de estar presente e
 
 **La alfa y la beta están aparcadas ahí, a propósito.** Decisión del dueño del mismo día: primero
 se cierra la secuencia individual. Si algún día se construye la regresión, va en
-`strategies/exposure/`, que ya tiene montada su antesala.
+`studies/closing/exposure/`, que ya tiene montada su antesala.
 
 ## El Monte Carlo de bootstrap está FUERA, a propósito
 
@@ -88,7 +88,7 @@ Remuestrear los trades realizados mide la dispersión de **una muestra ya selecc
 estrategia llegó ahí por haber sobrevivido a una búsqueda, el bootstrap hereda esa selección entera
 y no puede verla: reordenar trades afortunados da secuencias afortunadas.
 
-**El módulo `strategies/monteCarlo/` se mantiene**: en la cartera responde otra pregunta —
+**El módulo `portfolio/common/monteCarlo/` se mantiene**: en la cartera responde otra pregunta —
 dimensionamiento y riesgo de ruina dada una distribución de trades— y ahí sí es la herramienta.
 
 ## Qué segmento toca cada paso
@@ -164,7 +164,7 @@ un umbral cuantificado sigue sin decir cuántas estrategias sin ningún edge lo 
 
 Lo que sí lo dice: **meter por la cadena entera una población de estrategias de entrada aleatoria**
 y contar cuántas llegan al paso 20. Si de diez mil monos llegan 4 y de diez mil tuyas llegan 5, ya
-sabes lo que vale ese 5. La máquina del mono ya existe (`gate/monkey.py`) y hoy sólo se usa en el
+sabes lo que vale ese 5. La máquina del mono ya existe (`studies/screening/gate/monkey.py`) y hoy sólo se usa en el
 paso 8; llevarla de punta a punta es el control que hace interpretable todo lo demás.
 
 Hacerlo **antes** del primer pase completo, no después: después ya se sabe qué sobrevivió, y el

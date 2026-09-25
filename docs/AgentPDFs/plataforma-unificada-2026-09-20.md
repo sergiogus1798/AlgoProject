@@ -114,7 +114,7 @@ El día de trabajo actual, para un solo estudio, tal y como lo describe el manua
  4. Cambiar de ventana → terminal
  5. python3 -m sqx.export.export_metrics ...
  6. python3 -m sqx.export.export_trades ...
- 7. python3 -m strategies.monteCarlo.explorer.serve --project X --databank Y
+ 7. python3 -m portfolio.common.monteCarlo.explorer.serve --project X --databank Y
  8. Se abre el navegador con el panel de Monte Carlo
  9. ¿Y el retest? Otra terminal, otro comando, OTRO panel, otra pestaña
 10. ¿Y cross-market? Lo mismo otra vez
@@ -360,8 +360,8 @@ Las cadenas se declaran, no se teclean:
 receta: walk_forward_completo
   - sqx:    startOnlyTask  project=XAUUSD  task=14
   - export: metrics + trades del databank WFM
-  - python: strategies.monteCarlo  sobre lo exportado
-  - python: strategies.retest      sobre lo exportado
+  - python: portfolio.common.monteCarlo  sobre lo exportado
+  - python: studies.breakage.mcRetest      sobre lo exportado
   - vista:  panel unificado, pestaña Robustez
 ```
 

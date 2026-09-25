@@ -106,7 +106,7 @@ def set_timeframes(text: str, symbol: str,
         The task, the timeframe of every result block in order (block 0 first), how many
         acceptance conditions were silenced, and a warning about the window — empty when
         the task already runs the declared span. The block order is what
-        `strategies/crossTF/config.yaml` has to agree with, and getting it wrong prices
+        `studies/transfer/crossTF/config.yaml` has to agree with, and getting it wrong prices
         every cell on the wrong bars with no error anywhere.
     """
     d = doctrine()
@@ -160,7 +160,7 @@ def main() -> None:
     print(f"{silenced} condiciones de aceptacion apagadas — esto es evidencia, no un filtro")
     if warning:
         print(warning)
-    print("\nPon esto en strategies/crossTF/config.yaml, run.blocks:")
+    print("\nPon esto en studies/transfer/crossTF/config.yaml, run.blocks:")
     print(f"  blocks: [{', '.join(blocks)}]")
 
 

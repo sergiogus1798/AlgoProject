@@ -58,9 +58,9 @@ def main() -> None:
             continue
         raise AssertionError(f"accepted {bad.get('kind')}")
 
-    cfg = {"s": {"n": 1, "f": 0.5, "x": None}}
-    config.apply(cfg, ["s.n=3", "s.f=2", "s.x=[1, 2]"])
-    assert cfg == {"s": {"n": 3, "f": 2.0, "x": [1, 2]}}, cfg
+    cfg = {"s": {"n": 1, "f": 0.5, "x": None}, "top": 7}
+    config.apply(cfg, ["s.n=3", "s.f=2", "s.x=[1, 2]", "top=9"])
+    assert cfg == {"s": {"n": 3, "f": 2.0, "x": [1, 2]}, "top": 9}, cfg
     try:
         config.apply(cfg, ["s.n=2e4"])
     except ValueError:

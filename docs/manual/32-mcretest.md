@@ -144,7 +144,7 @@ XAUUSD  XAUUSD  <- OOS
       ⚠️ sin RandomizeMinDistance: la poblacion no lleva ordenes stop ni limit
 
 Las ocho leen el MISMO databank: son ocho lecturas de una poblacion, no un embudo.
-El veredicto se toma en Python (strategies/retest/) y se aplica con /curate.
+El veredicto se toma en Python (studies/breakage/mcRetest/) y se aplica con /curate.
 ```
 
 Línea por línea:
@@ -212,7 +212,7 @@ Una sola cosa a la vez en el custodio, y `bin/sqx-worker.sh --role custodian sto
 ### Qué NO te dice
 
 - **No dice si la estrategia es buena.** Deja las tareas configuradas; quien las corre es SQX y
-  quien las lee es `strategies/retest/`.
+  quien las lee es `studies/breakage/mcRetest/`.
 - **No decide nada sobre la población.** Las condiciones de aceptación se apagan a propósito: esto
   produce evidencia, y el veredicto se toma después, en Python, y se aplica con `/curate`.
 - **No comprueba que los rangos tengan sentido.** Que el spread se sortee entre 5 y 30 puntos es una

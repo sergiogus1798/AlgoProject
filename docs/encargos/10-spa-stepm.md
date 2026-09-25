@@ -3,7 +3,7 @@
 **Tu oficio:** Python puro. No tocas SQX, no gastas CPU de máquina, no quemas ventanas nuevas si lo
 colocas donde dice el §2.
 
-Lee `CODESTYLE.md` · `gate/README.md` · `strategies/walkForwardCorrelation/README.md`.
+Lee `CODESTYLE.md` · `studies/screening/gate/README.md` · `studies/optimisation/wfc/README.md`.
 
 ---
 
@@ -19,13 +19,13 @@ complementarias y no se sustituyen.
 |---|---|---|
 | columnas | las **variantes de UNA madre** | las **K supervivientes de la población** |
 | filas | períodos semanales de P&L | retornos diarios |
-| de dónde | `sqx/variants/equity.py` → panel del lote | `gate/collect.py` → equity diaria de la cosecha |
+| de dónde | `sqx/variants/equity.py` → panel del lote | `studies/screening/gate/collect.py` → equity diaria de la cosecha |
 | pregunta | ¿mi regla de elegir parámetros sobreajusta? | ¿cuáles baten al benchmark contando toda la búsqueda? |
 
 ## 1 · Dónde va — **decisión del dueño, dos sitios posibles**
 
 - **A · pegado al paso 8**, tras la puerta OOS, sobre `oos1`. Reusa la cosecha que ya se hace
-  (`gate/harvest.py` lee los dos databanks una vez y nada vuelve a tocar SQX), criba pronto y
+  (`studies/screening/gate/harvest.py` lee los dos databanks una vez y nada vuelve a tocar SQX), criba pronto y
   barato. Coste: una mirada más a `oos1`.
 - **B · dentro del paso 20**, con el análisis ciego de 17-18-19. Es donde la pregunta de verdad
   decide, pero llega tarde para ahorrar máquina.
@@ -37,11 +37,14 @@ veredicto— y no lo cablees a ningún paso hasta que lo diga.
 
 ## 2 · Lo que construyes
 
-Carpeta nueva `strategies/snooping/`, con la forma de la casa (`config.yaml`, subcarpetas con su
-`README.md`, un punto de entrada).
+Tres sitios, ya creados con su `README.md` (refactorización del 25-09, `docs/MAPA-DE-CARPETAS.md`):
+el motor en `engines/inference/snooping/` (SPA y StepM calculan, no juzgan), la criba de la cosecha
+en `studies/screening/snoopingScreen/` y la prueba conjunta ciega del paso 20 en
+`studies/closing/blindJoint/`. Los dos estudios con la forma de `studies/CLAUDE.md` (`config.yaml`,
+`tooltips.py`, `one.py`/`many.py`, `report.py`) y el contrato de `core/study/CONTRACT.md`.
 
 **Entrada.** Matriz T×K de retornos diarios de las K candidatas que pasaron los filtros de SQX. Ya
-existe: `gate/collect.py` se lleva métricas, trades y equity diaria en una sola pasada.
+existe: `studies/screening/gate/collect.py` se lleva métricas, trades y equity diaria en una sola pasada.
 
 **Benchmark.** Cero, o una estrategia ingenua sobre el mismo instrumento. Declara cuál y por qué; el
 benchmark **define la hipótesis nula** y cambiarlo cambia el resultado.

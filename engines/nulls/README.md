@@ -121,7 +121,7 @@ strategy trades**; and the test stays **per strategy**, with no population-wide 
 ## Before reading any number from it
 
 ```bash
-python3 -m nulls.verify --project XAUUSD --databank Results \
+python3 -m studies.readings.monkey.verify --project XAUUSD --databank Results \
     --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"
 ```
 

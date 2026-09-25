@@ -3,9 +3,12 @@
 **Tu oficio:** una corrida en el custodio y Python. Sale de las secciones **A4** y **B3** del PDF
 `PARAMETER_SPACE_TESTS.pdf` del dueño.
 
-Lee `sqx/variants/README.md` · `strategies/parameterCloud/README.md` · `assets/RULES.md`.
+Lee `sqx/variants/README.md` · `studies/optimisation/cloud/README.md` · `assets/RULES.md`.
 
 ---
+
+**Dónde va** (refactorización del 25-09, `docs/MAPA-DE-CARPETAS.md`): `studies/optimisation/marketSurfaces/` (ya creada con su `README.md`), al lado de `cloud/`, que lee una sola superficie. Forma de
+módulo: `studies/CLAUDE.md`; contrato del resultado: `core/study/CONTRACT.md`.
 
 ## 0 · La pregunta
 
@@ -28,7 +31,7 @@ J_ab   = |T^a ∩ T^b| / |T^a ∪ T^b|              solape de los deciles superi
 | cosecha por mercado | `equity_markets.parquet`, P&L por día **por variante y por mercado** | `sqx/variants/equity.py` — ya lo escribe cuando los cross-checks están |
 | métricas por segmento y mercado | leídas del propio `.sqx` | `sqx/variants/united.py` |
 | el conjunto de mercados | fijado por activo, **antes** de mirar nada | `assets/_markets.yaml` |
-| la lectura de una sola superficie | A1, A2, A3, B2, C1 | `strategies/parameterCloud/` |
+| la lectura de una sola superficie | A1, A2, A3, B2, C1 | `studies/optimisation/cloud/` |
 
 **Tu trabajo no es la cosecha.** Es (a) conseguir que el retest del lote lleve los cross-checks, y
 (b) las dos estadísticas de arriba más la tabla que las lee.

@@ -2,11 +2,12 @@
 
 A study (`studies/…`, `portfolio/common/monteCarlo`) computes; this folder only says **what shape
 its answer takes** so the desktop window and the batch report read one structure and cannot
-disagree. It analyses nothing. The contract itself is `docs/encargos/19-contrato-de-datos-para-la-ventana.md`
-§2–§3; `studies/CLAUDE.md` says how a module is laid out around it.
+disagree. It analyses nothing. The contract itself is `CONTRACT.md`
+(it was encargo 19); `studies/CLAUDE.md` says how a module is laid out around it.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `CONTRACT.md` | The result dict and the eight block kinds, field by field | — | — |
 | `__init__.py` | Names what the package is; holds no code | — | — |
 | `config.py` | A module's `config.yaml` read, `--set section.key=value` applied with the type of the value it replaces, and the config's fingerprint | imported | YAML + overrides → dict, hash |
 | `blocks.py` | The eight block kinds, the five state words, builders for the two that aggregate raw draws (`distribution`, `cone`) plus `table` and `verdict`, and the validator that refuses anything else | imported | numbers → blocks |
@@ -25,7 +26,7 @@ disagree. It analyses nothing. The contract itself is `docs/encargos/19-contrato
 - **Aggregated, never raw.** `blocks.distribution` and `blocks.cone` take the draws and keep
   only the histogram and the percentiles, which is what keeps a result in kilobytes.
 
-## Two keys beyond the encargo's §3
+## Two keys beyond the original encargo
 
 - **`tab["note"]`** — the paragraph a tab opens with. The contract puts every sentence in a
   block's `note`, but a tab's own framing ("the same trades in another order: profit cannot

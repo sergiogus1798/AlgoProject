@@ -11,8 +11,7 @@ from xml.etree import ElementTree
 from core.assetcheck import pending
 from core.assetdata import doctrine, load
 from sqx.projects.configure import running_install
-from sqx.projects.crosschecks import (active, enable, member_of, others_on,
-                                      recommended, silence)
+from sqx.projects.crosschecks import active, enable, member_of, others_on, recommended, silence
 from sqx.projects.databanks import set_databank
 from sqx.projects.setups import bounds, set_costs
 from sqx.projects.tasksettings import set_precision
@@ -58,7 +57,7 @@ def evaluations_off(block: str) -> tuple[str, int]:
         SPP's own acceptance — `ProfitOptPct 70` on the donor's IS task means a strategy
         whose permutations are profitable less than 70 % of the time is dropped. This step
         maps a surface; the surface of the strategies that already passed a filter is a
-        different object, and `strategies/sppUltra/` would be reading it without knowing.
+        different object, and `studies/breakage/spp/` would be reading it without knowing.
     """
     done = 0
     for flag in EVALUATIONS:
@@ -178,7 +177,7 @@ def main() -> None:
             print(f"      ⚠️ esta tarea corre ademas: {', '.join(row['others_on'])} — el "
                   "proyecto no paso por la doctrina")
     print("\nEl perfil lo guarda cada .sqx del databank de salida: sacalo con "
-          "sqx/export/export_spp.py y leelo con strategies/sppUltra/.")
+          "sqx/export/export_spp.py y leelo con studies/breakage/spp/.")
     print("⚠️ Una SPP a la vez por instalacion: el perfil ocupa decenas de GB mientras se "
           "construye (medido 2026-09-22).")
 

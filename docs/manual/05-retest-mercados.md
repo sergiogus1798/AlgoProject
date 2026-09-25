@@ -84,7 +84,7 @@ columna `Symbol` del `trades.parquet` que dejó el paso 2 dice qué mercados hub
 mentir. (Hasta el 23-09-2026 el paso 2 dejaba una carpeta `trades/<mercado>/` con un CSV por
 estrategia; ahora es un solo parquet con todos los mercados dentro, 118 ficheros → 1.) Si un mercado aparece en el export y no está aquí, se analiza
 igual y sale marcado como `sin clasificar`. Si está aquí y el export no trae operaciones suyas, el
-panel lo imprime al arrancar como ausente. Antes, un desajuste entre los dos salía como un mercado
+comando lo imprime al arrancar como ausente. Antes, un desajuste entre los dos salía como un mercado
 con cero estrategias, que no parece un error y lo es.
 
 `feed` tiene que estar escrito **exactamente** como lo llama SQX. `data_from` es la primera fecha con
@@ -108,8 +108,10 @@ diciéndolo; no se inventa nada.
 
 ### Cómo se ejecuta
 
-Dos comandos preparan los datos, y el tercero abre el panel — que es la **única** forma de correr la
-prueba, y corre **una estrategia cada vez**.
+Dos comandos preparan los datos y el tercero corre la prueba. El tercero tiene dos formas: el
+databank entero con un veredicto por estrategia, o **una estrategia en profundidad** con todas las
+pestañas. La ventana de escritorio (`ui/`) llama a esta misma segunda forma y pinta su resultado;
+el panel del navegador (`explorer.serve`) se retiró el 25-09.
 
 ```bash
 # 1. Las barras de todos los mercados: la librería M1, y el resto de timeframes se calcula al vuelo
@@ -118,9 +120,14 @@ python3 -m sqx.export.sync_bars
 # 2. Los trades del retest, partidos por mercado (~4 min por cada 200 estrategias)
 python3 -m sqx.export.export_retest --project XAUUSD --databank "Retest Markets - Family"
 
-# 3. El panel
-python3 -m strategies.crossmarket.explorer.serve --project XAUUSD \
+# 3a. El databank entero: amplitud entre mercados y un veredicto por estrategia
+python3 -m studies.transfer.crossmarket.report --project XAUUSD \
     --databank "Retest Markets - Family" --asset XAUUSD --export 2026-09-14
+
+# 3b. Una estrategia, con todas las pestañas (y, con --only, un solo mercado)
+python3 -m studies.transfer.crossmarket.report --project XAUUSD \
+    --databank "Retest Markets - Family" --asset XAUUSD --export 2026-09-14 \
+    --strategy "Strategy 24.14.35"
 ```
 
 | flag | obligatorio | qué hace |
@@ -130,43 +137,45 @@ python3 -m strategies.crossmarket.explorer.serve --project XAUUSD \
 | `--databank` | sí | la databank donde dejaste el retest |
 | `--export` | sí (paso 3) | la fecha del export del paso 2, `AAAA-MM-DD` |
 | `--limit` | no (paso 2) | exporta una muestra aleatoria reproducible de N estrategias en vez de todas |
-| `--set` | no (paso 3) | cambia un knob de `config.yaml` al arrancar, p. ej. `--set nulls.draws=20000` |
-| `--port` | no (paso 3) | puerto del panel. Por defecto 8766 |
+| `--strategy` | no (paso 3) | estudia esa estrategia entera en vez del databank |
+| `--only` | no (paso 3, con `--strategy`) | sólo ese mercado, por su nombre de feed |
+| `--floor` | no (paso 3a) | fracción de mercados que debe tener esperanza positiva para MANTENER. Lo mismo que `--set verdict.breadth_floor=`; por defecto 0,5 |
+| `--set` | no (paso 3) | cambia un knob de `config.yaml` para esta ejecución, p. ej. `--set nulls.draws=20000` |
+| `--workers` | no (paso 3) | procesos en paralelo. Por defecto, todos los núcleos |
 
 Los pasos 1 y 2 **arrancan SQX** (el worker, nunca el master) y se pueden ejecutar con tu interfaz
 abierta. El paso 3 no toca SQX: sólo lee ficheros.
 
-**Nada se guarda.** No hay caché, no hay fichero de resultados y no hay informe. Cada número que ves
-sale del botón que acabas de pulsar, y al cerrar el panel se pierde. Al arrancar borra además
-cualquier resultado que versiones anteriores dejaran en `AlgoData/cache/crossmarket/`. Es
-deliberado: un resultado guardado siempre se acaba leyendo como respuesta a una pregunta que no era
-la suya. El precio es real — unos **107 segundos por estrategia** con las 25.000 tiradas por defecto sobre dos
-mercados, y se paga otra vez si cierras el panel.
+### Qué produce
 
-### El panel, de arriba abajo
+En `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<export>/crossmarket/`:
 
-**Arriba**: el desplegable de estrategias. Al elegir una aparece debajo **la lista de los mercados
-adicionales en los que SQX la retesteó**, cada uno con su categoría y un punto que se pone verde
-cuando ya está analizado.
-
-| botón | qué corre |
+| archivo | qué es |
 |---|---|
-| **Run analysis** | La estrategia entera: todos los mercados, los cuatro modelos nulos (cinco si activas Regime Strata), el barrido de ventana y todas las pruebas |
-| **run**, al lado de un mercado | Sólo ese mercado, con la configuración que tenga el cajón en ese momento. **Se fusiona** con lo que ya hubiera: puedes re-ejecutar plata a 50.000 tiradas sin perder el Brent que ya tenías |
+| `crossmarket.html` / `.md` / `.json` | 3a: la pestaña **Amplitud** — cuántos mercados sostienen cada estrategia |
+| `verdict.csv` | 3a: `strategy`, `identity`, `verdict` (MANTENER / DESCARTAR) y el motivo, para `/curate` |
+| `estrategias/<nombre>.html` / `.json` | 3b: el estudio completo de una estrategia, con las pestañas de abajo |
+| `manifest.json` | qué export se leyó, con qué configuración entera |
 
-Un mercado en el que esa estrategia **nunca disparó** sale en gris, como `sin operaciones` y sin
-botón. El export sólo escribe el fichero de un mercado si hubo operaciones ahí, así que esa ausencia
-es un resultado sobre la estrategia, no un dato que falte.
+El precio es real — unos **107 segundos por estrategia** con las 25.000 tiradas por defecto sobre
+dos mercados en 3b. En 3a el comando imprime `PROGRESS <n>` y una línea por estrategia:
 
-**La barra de progreso** avanza de forma continua, no a saltos: los backtests aleatorios se sortean
-por lotes y la barra se mueve varias veces dentro de cada modelo. La línea de debajo dice qué
-mercado y qué modelo está corriendo ahora mismo.
+```
+PROGRESS 60 Strategy 47.20.34 MANTENER — 1 de 2 mercados con la esperanza por encima de cero (50% >= 50%)
+PROGRESS 63 Strategy 30.9.23 DESCARTAR — solo 0 de 2 mercados con la esperanza por encima de cero (0% < 50%)
+...
+5 de 30 pasan el suelo de amplitud -> .../crossmarket/verdict.csv
+```
+
+Un mercado en el que esa estrategia **nunca disparó** sale como `sin operaciones`. El export sólo
+escribe el fichero de un mercado si hubo operaciones ahí, así que esa ausencia es un resultado
+sobre la estrategia, no un dato que falte.
 
 ### El cajón de configuración
 
-El triángulo ▸ abre **los 46 knobs de `config.yaml`**, agrupados por sección y cada uno con su
-explicación al pasar el ratón. Cambiar un valor afecta a la **siguiente** ejecución: nada se escribe
-a disco.
+**Los 46 knobs de `config.yaml`**, agrupados por sección; cada uno tiene su frase en `tooltips.py`, que
+es lo que enseña el cajón de la ventana al pasar el ratón. Se cambian con `--set` o desde ese cajón,
+y afectan sólo a esa ejecución: el `config.yaml` no se reescribe.
 
 | grupo | lo que controla |
 |---|---|
@@ -201,9 +210,10 @@ a disco.
 | **Avisos** | Cada motivo de desconfianza, en **cuatro partes**: qué es y qué número lo disparó, **a qué afecta**, **a qué NO afecta**, y qué hacer. **Nada se excluye por esto** |
 | **Glosario** | Qué significa cada número |
 
-*(El barrido de ventana sí tiene capturas, más abajo. Las de las pestañas nuevas —Backtest, Huella,
-Portfolio y Entrada aleatoria · OOS principal— están pendientes: la regla 8 exige que sean de una ejecución real, no inventadas, así que
-las pega quien abra el panel la próxima vez.)*
+*(El barrido de ventana sí tiene capturas, más abajo, hechas con el panel ya retirado; el contenido
+es el mismo. Las de las pestañas Backtest, Huella, Portfolio y Entrada aleatoria · OOS principal
+están pendientes: la regla 8 exige que sean de una ejecución real, así que las pega quien abra la
+estrategia en la ventana la próxima vez.)*
 
 ### Qué desapareció, y por qué
 
@@ -220,7 +230,7 @@ Un mercado que gana el doble sufriendo el triple **no lo hizo mejor**: arriesgó
 multiplica el tamaño de posición de cada mercado hasta que su peor caída es exactamente el 10% de la
 cuenta (`equity.risk_target_dd`), y multiplica su retorno por ese mismo factor.
 
-Su punto débil está escrito debajo de ella en el propio panel: el peor drawdown es **un** momento de
+Su punto débil está escrito debajo de ella en la propia pestaña: el peor drawdown es **un** momento de
 la muestra, así que el número es ruidoso. Se lee junto al **Ret/DD**, que usa los mismos dos números
 sin depender del tamaño de la cuenta.
 
@@ -257,7 +267,7 @@ Dos maneras de preguntar cuánta suerte hay, que no son la misma:
 - **Barajado del orden**: las mismas operaciones en otro orden. La composición no cambia, así que el
   beneficio sale idéntico por construcción y sólo se mueven la caída, la racha y el Ret/DD.
 
-Ojo con una cosa, y el panel lo dice: **el oro está sobreajustado**, así que la cartera base se ve
+Ojo con una cosa, y la pestaña lo dice: **el oro está sobreajustado**, así que la cartera base se ve
 mejor de lo que es.
 
 ### La pestaña «Entrada aleatoria · OOS principal»
@@ -306,20 +316,20 @@ ningún `dateTo` de ninguna tarea pasa de `2022.12.31`, mientras que los fichero
 2026. Un retest desde ahí es lo que hace falta para una afirmación limpia, y lo diría del oro y de
 los mercados adicionales a la vez. Está en `OPEN.md`.
 
-El panel dice todo esto solo: el aviso se llama `selected_window`, sale al final de la pestaña con
+El estudio dice todo esto solo: el aviso se llama `selected_window`, sale al final de la pestaña con
 sus cuatro partes, y es el único de los nueve que no se comprueba sino que se **adjunta** — nada en
 los datos puede delatarlo, es un hecho sobre el proyecto.
 
 ### Los costes del estrés salen de un fichero que tienes que revisar
 
-`strategies/crossmarket/execution.yaml` lleva, por cada mercado, el spread típico y el de estrés en
+`studies/transfer/crossmarket/execution.yaml` lleva, por cada mercado, el spread típico y el de estrés en
 puntos, la comisión en dólares por lote y por lado, el slippage típico y el tamaño del punto. De ahí
 salen el multiplicador de coste y la profundidad de fill del estrés, en vez de los números redondos
 que había antes.
 
 ⚠️ **Los valores de hoy son de ejemplo**, escritos como los de un bróker CFD normal para que tengas
 algo concreto que corregir. Cada bloque lleva `source: placeholder` y `reviewed_by_owner: false`, y
-el panel lo dice en la columna «origen». Cuando pongas los tuyos, cambia esa marca a `true`.
+la tabla lo dice en la columna «origen». Cuando pongas los tuyos, cambia esa marca a `true`.
 
 No están en `assets/*.yaml` a propósito: esos ficheros bloquean la creación de proyectos en todo el
 repositorio y `assets/RULES.md` dice que un fichero con valores inventados es peor que no tener
@@ -449,7 +459,7 @@ dentro la correlación que haya entre los mercados y no hay que modelar ninguna 
 
 ![El p conjunto sobre los mercados fuera de muestra](assets/crossmarket-nulo-conjunto.png)
 
-Si lo ves **sin número**, es por una de tres razones y el panel la dice: sólo hay un mercado fuera
+Si lo ves **sin número**, es por una de tres razones y la pestaña la dice: sólo hay un mercado fuera
 de muestra, los mercados se corrieron con distinto número de tiradas (te pasará si re-ejecutas uno
 solo cambiando `nulls.draws`), o esta sesión no guardó los sorteos.
 
@@ -484,7 +494,7 @@ desviaciones típicas del nulo. Sirve para **comparar mercados y ordenarlos**, n
 p exacto sigue siendo el test, y la z **no se convierte en un p** en ninguna parte, porque esa
 conversión no vale para el drawdown ni para la racha perdedora.
 
-**El orden en que hay que leer el panel:**
+**El orden en que hay que leer el estudio de una estrategia:**
 
 1. **Las comprobaciones.** `fill_error` tiene que estar muy por debajo de `max_fill_error` (0,25 ATR)
    y `calendar_kept` valer 1,00 en `block_shift`. Si el primero se dispara, las velas no son las del

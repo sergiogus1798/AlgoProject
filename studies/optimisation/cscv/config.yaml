@@ -1,0 +1,34 @@
+# Every tunable of the CSCV. The trade floor and the split are shared with the WFC and live in
+# engines/variants/config.yaml.
+
+# The CSCV. Where the correlation asks whether this surface carried over, this asks the
+# harder question behind it: is the WAY I pick parameters prone to overfitting at all?
+# The IS/OOS boundary is NOT here -- it is written into equity.json by the harvest, which
+# reads it off the harness that produced the numbers. One date, one definition.
+cscv:
+  # How daily P&L is aggregated before anything is ranked. At roughly sixty trades a year
+  # a daily matrix is almost all zeros and its ranks are noise. "W" weekly, "ME" monthly.
+  period: W
+  # What "best" means when a rule ranks variants. It has to be comparable across windows
+  # of different lengths, which is exactly what Ret/DD is not: its return grows with the
+  # window and its drawdown only with the square root of it, so a longer window scores
+  # higher for free. "sharpe" and "sortino" are both rates per period and are both
+  # legitimate here; sortino counts only the periods that lost.
+  score: sharpe
+  # Blocks the history is cut into, following Lopez de Prado. Twelve gives C(12,6) = 924
+  # partitions. Ten gives 252 and is the cheap setting; sixteen gives 12,870 and costs
+  # fourteen times as much for a third-decimal improvement on a statistic whose null
+  # standard deviation is 0.21. Overridable per run with `pbo.py --blocks`.
+  blocks: 12
+  # The ways of choosing parameters that get compared. The point of the study is the
+  # difference between them, so a run with one rule answers half the question.
+  rules: [argmax, plateau_centre, random_profitable]
+  # Draws averaged for the rule that is random. It is a control, and a control measured
+  # once is an anecdote.
+  random_draws: 50
+  # Resamples behind the interval on each rule's out-of-sample percentile.
+  bootstrap: 200
+  # Largest number of clusters considered when counting how many independent trials the
+  # grid really holds. The deflated Sharpe is only as honest as that count.
+  cluster_k_max: 40
+  seed: 20260922

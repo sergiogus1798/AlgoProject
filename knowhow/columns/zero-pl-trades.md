@@ -4,7 +4,7 @@ tag: 🔬  date: 2026-09-24  see: sqx-format/mc-retest-reconstruction
 ---
 # A zero-P/L trade is half a win in `WinningPct` and a full win in `ZScore`
 `WinningPct = (wins + 0.5 × flats) / n`. In the Wald–Wolfowitz runs `ZScore`, a flat trade counts as a
-win. Neither is documented by SQX. Fixed in `strategies/retest/model/` (71 disagreements → 2).
+win. Neither is documented by SQX. Fixed in `studies/breakage/mcRetest/model/` (71 disagreements → 2).
 ⚠️ Keep `n` and the run counter consistent: excluding flats from `n` while the run counter sees their
 sign changes adds two phantom runs per flat.
 

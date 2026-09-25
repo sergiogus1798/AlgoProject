@@ -11,7 +11,7 @@ is the only way to find out whether a conclusion depended on it. `POSSIBLE_IMPRO
 about this layer and should be read before changing anything in it.
 
 **Imports from:** nothing outside itself — numpy, pandas and scipy only
-**Consumed by:** `strategies/crossmarket` — its `simulate/`, `verdict/` and `contract/`
+**Consumed by:** `studies/transfer/crossmarket` — its `simulate/`, `verdict/` and `contract/`
 **Must not contain:** a price, a P&L, a percentile, a threshold, or any wording of a verdict
 
 | file | what it does | run it | in → out |

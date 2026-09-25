@@ -7,8 +7,8 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
-from sqx.inspect import project_map
 from core.cfx import resolve
+from sqx.inspect import project_map
 
 
 def build(project: str) -> str:

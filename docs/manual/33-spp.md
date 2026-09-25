@@ -13,7 +13,7 @@ existe en el valor exacto que salió del generador, la estrategia está clavada 
 nada debajo; si la vecindad entera gana dinero, hay una meseta.
 
 Ese mapa es el `optimizationProfile.bin` que cada `.sqx` del databank de salida se lleva dentro, y
-es lo único que `strategies/sppUltra/` sabe leer.
+es lo único que `studies/breakage/spp/` sabe leer.
 
 ### ⚠️ El SPP es `OptProfileSysParamPermutation`, no `SequentialOptimization`
 
@@ -94,7 +94,7 @@ XAUUSD  XAUUSD  <- MCR 8 Stress
       SPP IS → SPP OOS   19 condicion(es) y 2 chequeo(s) del SPP apagados
 
 El perfil lo guarda cada .sqx del databank de salida: sacalo con sqx/export/export_spp.py y leelo
-con strategies/sppUltra/.
+con studies/breakage/spp/.
 ⚠️ Una SPP a la vez por instalacion: el perfil ocupa decenas de GB mientras se construye.
 ```
 
@@ -133,7 +133,7 @@ bin/sqx-worker.sh --role custodian stop
 
 # 3. sacar los perfiles y leerlos (pasos 15→16)
 python3 -m sqx.export.export_spp --project XAUUSD_estudio --databank "SPP IS" --role custodian
-python3 -m strategies.sppUltra.report --project XAUUSD_estudio --databank SPP_IS
+python3 -m studies.breakage.spp.report --project XAUUSD_estudio --databank SPP_IS
 ```
 
 ### Qué NO te dice
@@ -142,7 +142,7 @@ python3 -m strategies.sppUltra.report --project XAUUSD_estudio --databank SPP_IS
   estrategia mala puede tener una meseta preciosa de resultados malos.
 - **No compara IS con OOS.** Las dos rejillas no coinciden (6 tuplas de 11.600); quien compare
   columna con columna entre los dos databanks está comparando estrategias distintas.
-- **No filtra nada**, por diseño. El veredicto lo da `strategies/sppUltra/` y se aplica con
+- **No filtra nada**, por diseño. El veredicto lo da `studies/breakage/spp/` y se aplica con
   `/curate`.
 - **El conteo `permutations` del perfil no es el número de filas.** Medido: un perfil que dice 2.533
   exporta 3.940 filas. Para saber cuántas hay de verdad, `len(results)`.

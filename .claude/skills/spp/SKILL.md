@@ -7,7 +7,7 @@ description: Configure and run the two SPP tasks of a custom SQX project — the
 
 Paso 15 del workflow, la mitad de SQX. Deja las tareas `SPP IS` y `SPP OOS` de un custom project
 configuradas, y opcionalmente las corre en el custodio. Leer lo que producen es
-`strategies/sppUltra/` (paso 16), que sale de ahí con el `design_brief.json` de las variantes.
+`studies/breakage/spp/` (paso 16), que sale de ahí con el `design_brief.json` de las variantes.
 
 ## Lo único que hay que entender antes
 

@@ -54,7 +54,7 @@ stages:
     produces: ["raw/{project}/{databank}/{day}/spp/spp.parquet"]
 
   - name: sppultra
-    command: python3 -m strategies.sppUltra.report --project {project} --databank {databank} --strategy {strategy}
+    command: python3 -m studies.breakage.spp.report --project {project} --databank {databank} --strategy {strategy}
     needs: ["raw/{project}/{databank}"]
     produces: ["{reports}/spp/design_brief_{safe}.json"]
     record_from: "{reports}/spp/design_brief_{safe}.json"
@@ -134,7 +134,7 @@ stages:
           se reteseo nada y nada de lo que se mida despues quiere decir nada
 
   - name: wfc
-    command: python3 -m strategies.walkForwardCorrelation.report --work {work}
+    command: python3 -m studies.optimisation.wfc.report --work {work}
     needs: ["{work}/collected.json"]
     produces: ["{work}/wfc.json", "{work}/estudios/wfc.html"]
     record: [n, rho, call]
@@ -147,7 +147,7 @@ stages:
   # produces it is `pbo`. `pipeline/stages/verdict.py` keys its thresholds on the file
   # stem, so a row whose name and output disagree is a threshold that cannot be read.
   - name: cscv
-    command: python3 -m strategies.walkForwardCorrelation.pbo --work {work}
+    command: python3 -m studies.optimisation.cscv.report --work {work}
     needs: ["{work}/wfc.json", "{work}/equity.parquet"]
     produces: ["{work}/cscv.json", "{work}/estudios/cscv.html"]
     record: [pbo_argmax, pbo_plateau_centre, dsr, n_clusters, slope]

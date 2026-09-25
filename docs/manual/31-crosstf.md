@@ -35,7 +35,7 @@ sin escalar de la madre.
 1. Las madres, en una carpeta, como `.sqx`. No se tocan: el módulo solo lee.
 2. `python3 -m core.assets XAUUSD` en verde, antes de tocar ninguna tarea de SQX.
 3. La tarea de retest configurada con los mercados adicionales que toquen. Los `<Setup>` van
-   **en el mismo orden** que `run.blocks` de `strategies/crossTF/config.yaml`, y con
+   **en el mismo orden** que `run.blocks` de `studies/transfer/crossTF/config.yaml`, y con
    `<AcceptanceSettings use="false">`: queremos evidencia, no un filtro de selección.
 4. El worker custodio parado antes de arrancar nada, y comprobar que no lo está usando otra
    sesión (`ls -lt user/projects` y el log).
@@ -102,7 +102,7 @@ que no la cumple, y el análisis se queda sin las muertas. Esto mide; el corte s
 aplica con `/curate`.
 
 El comando termina imprimiendo la línea de `run.blocks` que tienes que pegar en
-`strategies/crossTF/config.yaml`. **Pégala**: si no coincide con el orden real de los `<Setup>`,
+`studies/transfer/crossTF/config.yaml`. **Pégala**: si no coincide con el orden real de los `<Setup>`,
 cada celda se valora sobre las barras equivocadas y no falla nada.
 
 Luego cargas las madres *y* las hermanas en el databank, corres la tarea, y exportas con:
@@ -114,7 +114,7 @@ python3 sqx/export/export_retest.py --project XAUUSD --databank CrossTF
 **3 · Leer**
 
 ```bash
-python3 -m strategies.crossTF.report \
+python3 -m studies.transfer.crossTF.report \
   --export  ~/Desktop/AlgoData/exports/XAUUSD/CrossTF/2026-09-23/trades.parquet \
   --scaling ~/Desktop/AlgoData/crosstf/madres-2026-09-22/scaling.parquet
 ```

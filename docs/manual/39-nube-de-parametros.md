@@ -45,7 +45,7 @@ SQX puede estar abierto o cerrado: da igual, no se le habla.
 ### Cómo se ejecuta
 
 ```bash
-python3 -m strategies.parameterCloud.report \
+python3 -m studies.optimisation.cloud.report \
     --work ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39
 ```
 

@@ -10,6 +10,11 @@ Report folders are per project, not per databank. A gate report is dated the day
 ## Evidence
 - Checked every CSV under `reports/`: `gate`, `curate`, `crossmarket`, `retest`, `montecarlo`, `nulls`,
   `exposure`, `wfc`, `wfm` write `strategy`. Exceptions: SQX exports copied by `curate` (`Strategy Name`), `decay.csv` (`name`).
+- 🔬 Since the move to `studies/` (2026-09-25) every study writes its per-strategy table as
+  `reports/P/D/<day>/<study>/verdict.csv` through `core.study.verdicts.write`, with `strategy`,
+  `identity` and `verdict` always present; `decay` now says `strategy` too. Old folder names map
+  to new ones in `docs/MAPA-DE-CARPETAS.md` (`retest`→`mcRetest`, `montecarlo`→`monteCarlo`,
+  `nulls`→`monkey`, loose `exposure.csv`→`exposure/verdict.csv`, `decay.csv`→`decay/verdict.csv`).
 - Verdict words: `MANTENER · DESCARTAR · DUDOSA · NO EVALUABLE · FAIL · MARGINAL · worth_it · not_worth_it`.
   `ui/desktop/theme.state_colour` names any word outside the list instead of hiding it. `ui/daemon/studies.py` relies on the column.
 - A strategy built in `Results` is judged under `OOS`, `SPP_IS` or `MC_Trades`.

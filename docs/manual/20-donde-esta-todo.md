@@ -77,9 +77,9 @@ versiones del mismo.
 
 | qué | dónde |
 |---|---|
-| Informes de un databank (`explorer.html`, `summary.md`) | `AlgoData/reports/<proyecto>/<databank>/<fecha>/` |
-| El brief de diseño de una madre (contrato C1) | `AlgoData/reports/<proyecto>/<databank>/<fecha>/design_brief_<estrategia>.json` |
-| **El gráfico del walk forward correlation** | `AlgoData/pipeline/<proyecto>/<estrategia>/wfc.html` |
+| Informes de un databank | `AlgoData/reports/<proyecto>/<databank>/<fecha>/<estudio>/` — una subcarpeta por estudio (`gate/`, `isOos/`, `monteCarlo/`, `mcRetest/`, `exposure/`…) con `<estudio>.html/.md/.json`, `estrategias/` y `verdict.csv`. Qué nombre tenía antes cada una: `docs/MAPA-DE-CARPETAS.md` |
+| El brief de diseño de una madre (contrato C1) | `AlgoData/reports/<proyecto>/<databank>/<fecha>/spp/design_brief_<estrategia>.json` |
+| **El gráfico del walk forward correlation** | `AlgoData/pipeline/<proyecto>/<estrategia>/estudios/wfc.html` |
 | Su veredicto en números | `AlgoData/pipeline/<proyecto>/<estrategia>/wfc.json` |
 | **El libro mayor de una madre** | `AlgoData/pipeline/<proyecto>/<estrategia>/state.json` |
 
@@ -100,7 +100,7 @@ AlgoData/pipeline/XAUUSD/Strategy_17-9-39/
 ├── ran.json            cuántas se cargaron y cuántas volvieron
 ├── metrics.parquet     contrato C3: el panel unido al diseño.  ← LA TABLA
 ├── collected.json      los controles, y si alguno no volvió
-├── wfc.html            EL GRÁFICO
+├── estudios/wfc.html   EL GRÁFICO (y cscv.html, cloud.html: los estudios del lote)
 ├── wfc.json            rho, su intervalo, el veredicto
 └── state.json          el libro mayor. Sobrevive al borrado de sqx/
 ```
@@ -115,7 +115,7 @@ solo toca esa carpeta, y solo después de que `metrics.parquet` esté escrito y 
 | `projectsBackup/` | copias congeladas: `project.cfx` donantes, las madres, y las configs de los installs. El punto fijo del que salen los proyectos nuevos | **no** |
 | `snapshots/` | `user/projects` copiado antes de algo destructivo, **sin las carpetas `log/` de los proyectos** (`rsync -a --exclude='log/'`). Vive hasta que se comprueba que el reinicio no perdió nada, y entonces **se borra** (dueño, 23-09-2026): el del 21-09 eran 3,5 GB sin un solo fichero que el maestro vivo no tuviera | sí, en cuanto se verifica |
 | `logs/` | los logs de SQX comprimidos, de los tres installs. Un log gigante se guarda *condensado* (`*.condensed.log.gz`): sin trazas Java ni las líneas por estrategia del EdgeDecay, que eran el 97 % | **no** — es lo que hace seguro podar los vivos |
-| `cache/` | cachés de los paneles (Monte Carlo, cross-market) | sí, se regeneran |
+| `cache/` | cachés de los paneles retirados (Monte Carlo, cross-market) | sí, ya no los escribe nadie |
 | `profiling/` | el catálogo de lo que cuesta cada cosa y cuánto ocupa el disco | **no** |
 | `strategyPermutations/` | las variantes fabricadas a mano de una estrategia (fuera del pipeline) | cuando el pipeline las haya cubierto |
 

@@ -259,8 +259,8 @@ tareas; con las siete que ahora se pueden configurar será más. Dentro del MC R
 
 | paso | comando | población | tiempo | RSS pico |
 |---|---|---|---|---|
-| 8 | `gate.harvest` | 50 + 17 | **58 s** | 1,6 GB |
-| 8 | `gate.report` (8 cribas + 17 monos a 2.000 sorteos) | 17 | **2,4 s** | 380 MB |
+| 8 | `studies.screening.gate.harvest` | 50 + 17 | **58 s** | 1,6 GB |
+| 8 | `studies.screening.gate.report` (8 cribas + 17 monos a 2.000 sorteos) | 17 | **2,4 s** | 380 MB |
 | 10 | `crossmarket.report` a 2.000 sorteos | 8 × 9 | **~13 min** | — |
 | 10 | `crossmarket.report` a 10.000 sorteos (el de `config.yaml`) | 8 × 9 | **>50 min, no terminó** | — |
 | 10.5 | `variants.scale` | 12 madres → 12 hermanas | **0,7 s** | 125 MB |
@@ -329,7 +329,7 @@ nada. Por eso todo lo de abajo está normalizado por operación.
 
 ### `gate.*` — el paso 8, cribar la población
 
-| N estrategias | `gate.report` | RSS |
+| N estrategias | `studies.screening.gate.report` | RSS |
 |---|---|---|
 | 25 | 3,5 s | 505 MB |
 | 50 | 5,2 s | 545 MB |
@@ -341,7 +341,7 @@ nada. Por eso todo lo de abajo está normalizado por operación.
 las 8 cribas y el mono de cada superviviente a 2.000 sorteos. 500 estrategias se criban en medio
 minuto.
 
-`gate.harvest`, que es la mitad que conduce SQX: **112 s y 4,56 GB** con 1.000 ficheros (500+500),
+`studies.screening.gate.harvest`, que es la mitad que conduce SQX: **112 s y 4,56 GB** con 1.000 ficheros (500+500),
 contra 58 s y 1,6 GB con 67. El tiempo lo domina el arranque de la JVM; **la memoria sí crece con la
 población** y es el número a vigilar.
 
@@ -363,7 +363,7 @@ Dos cosas concretas, y las dos son trabajo repetido, no trabajo necesario:
    llamadas: 234 llamadas × 39 ms = **9,2 s de los 33**, y crece lineal con la población haciendo
    siempre la misma cuenta. Calcularlo una vez por (barras, periodo) lo deja en 39 ms totales.
 2. 🔬 **Se filtra la tabla entera de operaciones por identidad, una vez por estrategia**
-   (`gate/monkey.py:31`, `oos[oos["identity"] == name]`), y la columna es de tipo `object`: 4,2 s en
+   (`studies/screening/gate/monkey.py:31`, `oos[oos["identity"] == name]`), y la columna es de tipo `object`: 4,2 s en
    236 comparaciones de cadenas. Un `groupby` una sola vez lo elimina.
 
 Juntas son **~40 % del paso 8** y ninguna cambia un número: es la misma cuenta hecha una vez.
@@ -471,15 +471,15 @@ cambia**: cada optimización se verificó comparando el resultado contra el de a
 | cambio | dónde | por qué es exacto |
 |---|---|---|
 | el ATR se calcula una vez por fichero de barras, no una por estrategia | `engines/market/calibrate.py` | depende sólo de `(barras, ventana)`; se cachea el mismo array |
-| la tabla OOS se agrupa una vez por identidad, no se filtra una vez por estrategia | `gate/monkey.py` | `groupby` y la máscara booleana devuelven las mismas filas en el mismo orden |
-| `stats.measure()` construye sólo la estadística pedida, y la puerta pide la única que lee | `engines/nulls/stats.py`, `gate/monkey.py` | el filtro estaba **después** del cálculo. `nulls.report`, que lee las cinco, cuesta lo mismo que antes |
-| el bucle sobre estrategias se reparte entre los núcleos | `gate/monkey.py`, `strategies/crossmarket/report.py` | las estrategias no comparten estado ni escriben nada |
-| el estrés de ejecución se trocea en lotes de 500 corridas | `strategies/crossmarket/simulate/stress.py` | los tres sorteos se siguen tomando enteros y en el mismo orden; sólo el precio va por lotes |
+| la tabla OOS se agrupa una vez por identidad, no se filtra una vez por estrategia | `studies/screening/gate/monkey.py` | `groupby` y la máscara booleana devuelven las mismas filas en el mismo orden |
+| `stats.measure()` construye sólo la estadística pedida, y la puerta pide la única que lee | `engines/nulls/stats.py`, `studies/screening/gate/monkey.py` | el filtro estaba **después** del cálculo. `studies.readings.monkey.report`, que lee las cinco, cuesta lo mismo que antes |
+| el bucle sobre estrategias se reparte entre los núcleos | `studies/screening/gate/monkey.py`, `studies/transfer/crossmarket/report.py` | las estrategias no comparten estado ni escriben nada |
+| el estrés de ejecución se trocea en lotes de 500 corridas | `studies/transfer/crossmarket/simulate/stress.py` | los tres sorteos se siguen tomando enteros y en el mismo orden; sólo el precio va por lotes |
 
 Los cuatro usan `fork`: el padre lee el export entero y las barras **una vez** y los procesos hijos
 los heredan sin copiarlos. Mandárselos por `pickle` costaría más que el cálculo.
 
-### Paso 8 — `gate.report`, 500 estrategias
+### Paso 8 — `studies.screening.gate.report`, 500 estrategias
 
 | | antes | después |
 |---|---|---|
@@ -657,22 +657,22 @@ BLAS. Datos crudos y scripts: `AlgoData/reports/perf-optim-2026-09-25/`.
 | 1 | **kernel numba** que valora cada run y calcula sus estadísticas en una pasada, sin matrices intermedias | `engines/nulls/kernel.py`, `engines/nulls/placement/kernel.py` |
 | 2 | barrido de barreras que **se para en el primer toque** | `engines/nulls/kernel.py:touched` |
 | 3 | **balanceo de carga**: lo más caro primero (LPT), un hilo de BLAS por proceso | `core/fanout.py` |
-| 4 | el paso 10 reparte por **(estrategia, mercado)** y calcula solo lo que publica el `verdict.csv` | `strategies/crossmarket/report.py`, `market_run.verdict_row` |
-| 5 | `nulls.report` en paralelo y leyendo el export **una vez**, no una por estrategia | `nulls/report.py` |
+| 4 | el paso 10 reparte por **(estrategia, mercado)** y calcula solo lo que publica el `verdict.csv` | `studies/transfer/crossmarket/report.py`, `market_run.verdict_row` |
+| 5 | `studies.readings.monkey.report` en paralelo y leyendo el export **una vez**, no una por estrategia | `studies/readings/monkey/report.py` |
 | 6 | semilla estable por (estrategia, peldaño, bloque) y bloque medido en trades | `engines/nulls/simulate.py` |
-| 7 | la cosecha exporta IS y OOS en **un** ciclo del conductor y **un** `orderstocsv` | `gate/collect.py` |
+| 7 | la cosecha exporta IS y OOS en **un** ciclo del conductor y **un** `orderstocsv` | `studies/screening/gate/collect.py` |
 
 ### El resultado
 
 | tarea | antes | después | factor | RAM del sistema, antes → después |
 |---|---|---|---|---|
-| `nulls.report`, 757 estrategias × 4 peldaños × 2.500 | **569,0 s** | **11,1 s** | **51x** | 1,0 → 5,3 GB |
+| `studies.readings.monkey.report`, 757 estrategias × 4 peldaños × 2.500 | **569,0 s** | **11,1 s** | **51x** | 1,0 → 5,3 GB |
 | `crossmarket` 8 × 9, 7 procesos | 155,7 s | **12,9 s** | **12x** | 8,6 → 1,5 GB |
 | `crossmarket` 96 × 9, 24 procesos | 755,4 s | **52,2 s** | **14x** | 20,8 → 7,3 GB |
 | `crossmarket` 96 × 9, 96 procesos | 674,9 s | 59,4 s | 11x | 37,4 → 21,1 GB |
 | `crossmarket` **499 × 9**, 72 procesos | 2.285 s (38 min) | **255 s (4 min)** | **9x** | 53,8 → 32,7 GB |
-| `gate.report`, 500 estrategias | 5,6 s | 4,9 s | 1,15x | 5,3 → 1,1 GB |
-| `gate.harvest`, 500 + 500 (export) | 114,1 s | **81,5 s** | 1,4x | 4,4 → 4,4 GB |
+| `studies.screening.gate.report`, 500 estrategias | 5,6 s | 4,9 s | 1,15x | 5,3 → 1,1 GB |
+| `studies.screening.gate.harvest`, 500 + 500 (export) | 114,1 s | **81,5 s** | 1,4x | 4,4 → 4,4 GB |
 | `export_retest`, 499 × 9 (export) | 160,4 s | 160,0 s | 1,0x | 6,0 → 5,8 GB |
 
 ### Cuántos procesos, ahora
@@ -696,7 +696,7 @@ BLAS. Datos crudos y scripts: `AlgoData/reports/perf-optim-2026-09-25/`.
   trades **idénticos bit a bit**; net, Sharpe y PF a ≤ 5,5·10⁻¹¹ (numpy suma por pares, el kernel en
   orden).
 - `nulls` y el mono de la puerta **cambian de monos**, a propósito (semilla nueva). 15.140 p de
-  `nulls.report`: correlación 0,991 con los de antes, y solo el 0,23 % se aleja más de 3 errores
+  `studies.readings.monkey.report`: correlación 0,991 con los de antes, y solo el 0,23 % se aleja más de 3 errores
   Monte Carlo (se espera ~0,3 %). La puerta: las cinco cribas deterministas idénticas; supervivientes
   229 → 228, una estrategia en el umbral.
 - La cosecha: métricas y equity idénticas; operaciones idénticas en valores, con `Sample type` ahora
@@ -742,11 +742,11 @@ páginas que comparten (`knowhow/perf/`). Datos crudos, scripts y validaciones:
 | proceso | antes | después | factor | memoria, antes → después | qué se cambió |
 |---|---|---|---|---|---|
 | Monte Carlo, 36 estrategias × 20.000 caminos | **477 s** | **27 s** | **18x** | 1,7 → 2,7 GB | cada estrategia en su proceso, LPT; kernel numba de los estadísticos sin la matriz reunida |
-| `tasks.reports.filters`, 10.000 estrategias | 38,7 s | **3,2 s** | 12x | 0,4 → 1,5 GB | los 420 filtros candidatos, repartidos |
+| `studies.screening.filters.report`, 10.000 estrategias | 38,7 s | **3,2 s** | 12x | 0,4 → 1,5 GB | los 420 filtros candidatos, repartidos |
 | CSCV (`pbo`), 962 variantes | 30,8 s | **9,5 s** | 3,3x | igual | vecinos de la rejilla calculados una vez; las tres reglas a la vez |
 | crossTF, 48 celdas | 29,2 s | **5,7 s** | 5,1x | igual | caché de los YAML de `assets/` (54 de 60 s eran parsearlos) |
 | `sqx.variants.make`, 5.000 variantes | 11,2 s | **2,1 s** | 5,3x | igual | fabricar y releer los `.sqx` en paralelo |
-| `nulls.report` (tras la ronda 2) | 11,1 s | **3,6 s** | 3,1x | — | la misma caché de YAML |
+| `studies.readings.monkey.report` (tras la ronda 2) | 11,1 s | **3,6 s** | 3,1x | — | la misma caché de YAML |
 | `retest.ingest`, 5 × 8 tareas | 7,9 s | **1,9 s** | 4,0x | **2,9 → 1,9 GB** | cada proceso escribe su P&L; 16 procesos |
 | `sppUltra` | 7,0 s | **1,9 s** | 3,7x | igual | la prueba de inertes, vectorizada |
 | `retest.report` | 5,3 s | **2,0 s** | 2,6x | 0,4 → 0,85 GB | una estrategia por proceso |
@@ -758,8 +758,8 @@ páginas que comparten (`knowhow/perf/`). Datos crudos, scripts y validaciones:
 
 ### Por qué los números son los mismos
 
-- **Idénticos byte a byte o celda a celda:** los ficheros de `sppUltra` y `retest.report`, el
-  `cscv.json`, las 48 celdas de crossTF, el `improvement.md` de `filters`, el `nulls.csv`, el índice
+- **Idénticos byte a byte o celda a celda:** los ficheros de `sppUltra` y `retest.report` (hoy `spp` y `mcRetest`), el
+  `cscv.json`, las 48 celdas de crossTF, el `improvement.md` de `filters` (hoy `filters/filters.md`), el `nulls.csv`, el índice
   de `.sqx`, el manifiesto de `variants.make` y el contenido de sus 5.000 `.sqx`, la salida de
   `entryQuality`, y las cinco tablas de la ingesta, incluidas las **35.125.203 filas de P&L**.
 - **Kernel de Monte Carlo** contra `metrics.paths` con los mismos índices, en los 5 modelos de

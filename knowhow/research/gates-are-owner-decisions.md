@@ -8,7 +8,7 @@ A soft screen removes nobody: aggregators must know which screens act and which 
 the screen decided). Record at run time: a backfilled study keeps only its last gate run's scores (rows stamped `backfill`).
 
 ## Evidence
-- `strategies/crossmarket/` first build dropped markets with < 30 trades or < 95 % entries on bar open; < 4 surviving markets → NO EVALUABLE.
+- `studies/transfer/crossmarket/` first build dropped markets with < 30 trades or < 95 % entries on bar open; < 4 surviving markets → NO EVALUABLE.
   `Strategy 24.14.35` NO EVALUABLE despite p = 0.005 on Brent under every null, because 8.6 % of Brent entries were pending fills.
   `MIN_MARKETS = 4` vs the two markets the retest ran → NO EVALUABLE for every XAUUSD strategy forever, silently.
 - `XAU_ISOOS_ejemplo` into the global ledger: 120 in, 45 out over eight screens. `familia` (BH over survivors) is `soft`

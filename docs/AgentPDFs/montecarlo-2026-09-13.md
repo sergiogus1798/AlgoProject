@@ -8,7 +8,7 @@ o "malo", ni recomienda ningún umbral.** El sistema de veredicto que existe hoy
 sistema actual" — es información sobre lo que ya se probó, no una respuesta a copiar.
 
 Generado a partir del código fuente el 2026-09-13, contra la configuración de
-`strategies/monteCarlo/config.yaml` vigente en esa fecha (ver Apéndice C para el archivo completo).
+`portfolio/common/monteCarlo/config.yaml` vigente en esa fecha (ver Apéndice C para el archivo completo).
 Si el código o la configuración cambian después de esta fecha, algunas fórmulas o valores por
 defecto de aquí pueden haber quedado desactualizados frente al código real.
 
@@ -26,7 +26,7 @@ exactamente lo mismo que vería un humano abriendo el informe.
 Antes de llegar aquí, una estrategia ya pasó — o no — por otras dos comprobaciones independientes.
 Se describen aquí solo en qué consisten, sin sus números: ese detalle no es parte de este documento.
 
-- **Decaimiento IS/OOS** (`strategies/crossmarket`... realmente `tasks/` y el módulo de decaimiento):
+- **Decaimiento IS/OOS** (`studies/transfer/crossmarket`... realmente `tasks/` y el módulo de decaimiento):
   compara el rendimiento de la estrategia en el periodo con el que se construyó (in-sample) contra
   un periodo que no vio (out-of-sample). Mide si el Sharpe OOS se distingue de cero con su propio
   error estándar, si la estrategia ganó en la mayoría de los años del OOS por separado, y qué
@@ -48,7 +48,7 @@ el backtest, y del régimen de mercado en el que vivió.
 ## 1. El contrato de entrada: qué es una "estrategia" para este módulo
 
 Todo lo que sigue opera sobre un **stream**: una lista de operaciones de una estrategia, ordenada en
-el tiempo, reducida a un conjunto fijo de arrays alineados (`strategies/monteCarlo/stream.py`). Un
+el tiempo, reducida a un conjunto fijo de arrays alineados (`portfolio/common/monteCarlo/stream.py`). Un
 `stream` no distingue entre una estrategia y una cartera: `stream.portfolio()` concatena varias
 estrategias por tiempo y todo lo demás corre igual sobre el resultado.
 
@@ -710,7 +710,7 @@ documento): `point_value = 100.0` USD por 1.0 de precio por lote, `tick_size = 0
 
 Las páginas que siguen son el informe HTML real de `Strategy 17.18.29` (el mismo databank y fecha
 de todo este documento, `n_sims=100000`), impreso a PDF tal cual lo renderiza un navegador —
-`strategies/monteCarlo/report.py` escribe exactamente este archivo en
+`portfolio/common/monteCarlo/report.py` escribe exactamente este archivo en
 `estrategias/Strategy 17.18.29.html` cuando corre el databank entero, y el panel interactivo
 (`explorer/serve.py`) construye la misma página sección por sección bajo demanda. Todo lo descrito
 en las secciones 1 a 10 de este documento está aquí, en el orden en que un lector — o un agente con

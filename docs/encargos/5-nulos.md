@@ -5,7 +5,7 @@ suficientes operaciones para que su resultado no sea suerte?** — el test que M
 en un podcast, generando curvas de equity aleatorias y viendo cuántas operaciones hacen falta para
 que una con ventaja se despegue del ruido.
 
-Lo entregado es `nulls/`, su página de manual (`docs/manual/26-nulos.md`) y siete hechos medidos
+Lo entregado es `studies/readings/monkey/`, su página de manual (`docs/manual/26-nulos.md`) y siete hechos medidos
 que están en `knowhow/research/random-entry-nulls.md` y `knowhow/export/`. **Donde este documento y
 `knowhow/` discrepen, manda `knowhow/`.**
 
@@ -115,7 +115,7 @@ para confirmar lo que P1 seleccione.
    las 10.000 hay que exportarlas: ~265 MB de Parquet (nada), pero el tiempo de `orderstocsv` en
    SQX **no está medido** y es lo único sin cuantificar del plan.
 2. ~~El punto de entrada de P1~~ **construido 2026-09-23**: `engines/inference/excess.py` +
-   `tasks/reports/nulls.py`. Reporta observado contra esperado por azar, el exceso, la estimación
+   `studies/screening/monkeyExcess/report.py`. Reporta observado contra esperado por azar, el exceso, la estimación
    de Storey, cuántas son nombrables bajo Benjamini-Hochberg, y detecta solo si la muestra fue
    preseleccionada. ⚠️ Corrido sobre `MC Trades` salta ese aviso: el 100 % de esas 757 gana dinero
    en OOS1, porque descienden de la tarea #2 del proyecto, que lleva tres condiciones de
@@ -146,7 +146,7 @@ Las tres: `AnnualPctReturn(OOS) > 0`, `AnnualPctReturn(OOS) > AnnualPctReturn(IS
 datos: `MC_Trades` tiene el **99,9 %** de sus 757 con beneficio OOS positivo, mientras que el
 export de métricas de la databank `OOS` (10.000 filas, 2026-09-03) solo el **26,9 %**.
 
-No es un problema de configuración — es saber qué población es cuál. `tasks/reports/nulls.py`
+No es un problema de configuración — es saber qué población es cuál. `studies/screening/monkeyExcess/report.py`
 lo detecta por su cuenta desde los datos, porque la configuración dice lo que la tarea hace **hoy**
 y la databank se llenó cuando se llenó.
 

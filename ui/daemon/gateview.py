@@ -7,7 +7,7 @@ import pandas as pd
 
 from core import assetdata
 from core.paths import DATA
-from gate.inputs import config
+from studies.screening.gate.inputs import config
 from ui.daemon.runs import guess_asset
 
 META = ("name", "kind", "why")
@@ -32,7 +32,7 @@ def manifest(folder: Path) -> dict:
 
 
 def screens() -> list[dict]:
-    """The gate's screens as `gate/config.yaml` states them today.
+    """The gate's screens as `studies/screening/gate/config.yaml` states them today.
 
     Returns:
         One dict per screen: name, kind, why and `thresholds`, the rest of its row.

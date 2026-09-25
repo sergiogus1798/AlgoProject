@@ -6,7 +6,7 @@ description: Configure and run the Walk Forward Matrix task of a custom SQX proj
 # /wfm
 
 Paso 19 del workflow, y **el último paso que mira datos**. Deja la tarea `WFM` de un custom project
-configurada y lista para correr. Leerla es `strategies/walkForwardMatrix/` — y eso ya es el paso 20,
+configurada y lista para correr. Leerla es `studies/optimisation/wfm/` — y eso ya es el paso 20,
 que va ciego hasta que el 17, el 18 y el 19 estén los tres hechos.
 
 ## Las dos reglas del dueño que este comando hace cumplir

@@ -4,7 +4,7 @@
 
 Si una población entera de estrategias sigue ganando en los mercados que **nunca vio**, y escribe la
 respuesta como una lista de supervivientes que el paso siguiente de SQX puede leer. Es la mitad
-automática del paso 10 del workflow: el panel de `strategies/crossmarket/explorer/` sigue siendo
+automática del paso 10 del workflow: el panel de `studies/transfer/crossmarket/explorer/` sigue siendo
 donde se mira **una** estrategia con lupa; esto es para cribar las ochenta.
 
 La pregunta concreta que contesta es **amplitud**: en cuántos de los mercados declarados el
@@ -42,7 +42,7 @@ No toca SQX, así que puedes lanzarlo con la GUI del maestro abierta.
 ## Cómo se ejecuta
 
 ```bash
-python3 -u -m strategies.crossmarket.report \
+python3 -u -m studies.transfer.crossmarket.report \
     --project TestUSDJPY_Workflow_v1 \
     --databank Retest_Markets_-_Family \
     --asset USDJPY \
@@ -164,7 +164,7 @@ python3 -m sqx.export.export_retest --project TestUSDJPY_Workflow_v1 \
 python3 -m sqx.export.sync_bars --check
 
 # 3. juzga la población entera
-python3 -u -m strategies.crossmarket.report --project TestUSDJPY_Workflow_v1 \
+python3 -u -m studies.transfer.crossmarket.report --project TestUSDJPY_Workflow_v1 \
     --databank Retest_Markets_-_Family --asset USDJPY --export 2026-09-24 \
     --set nulls.draws=2000
 

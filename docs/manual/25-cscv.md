@@ -67,7 +67,7 @@ Dos comandos, en este orden. El primero solo hace falta una vez por lote:
 
 ```bash
 python3 -m sqx.variants.equity --work ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39
-python3 -m strategies.walkForwardCorrelation.pbo --work ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39
+python3 -m studies.optimisation.cscv.report --work ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39
 ```
 
 | flag | obligatorio | qué hace |
@@ -83,7 +83,7 @@ Cuánto tarda, medido el 2026-09-23 sobre 962 variantes y 786 semanas:
 | `pbo` con 12 bloques (3 reglas × 924 particiones + agrupamiento + bootstrap) | **9,5 s** (medido 2026-09-25; antes 31 s): las tres reglas corren a la vez y los vecinos de la rejilla se calculan una sola vez |
 | `pbo --blocks 10` (las 252 particiones de antes) | **6 s** |
 
-Los mandos están todos en `strategies/walkForwardCorrelation/config.yaml`, bloque `cscv`: el
+Los mandos están todos en `studies/optimisation/wfc/config.yaml`, bloque `cscv`: el
 periodo de agregación, con qué métrica se ordena (`score`), cuántos bloques, qué reglas comparar y
 cuántos remuestreos. **`score` admite `sharpe` o `sortino`**, y no admite Ret/DD a propósito: el
 Ret/DD crece con la longitud de la ventana (el retorno crece con el tiempo y el drawdown solo con
@@ -108,7 +108,7 @@ calculan sobre `inside`/`outside`, que son justo las dos mitades que la frontera
 | `<work>/equity.parquet` | el P&L de cada variante, día a día. Una columna por variante |
 | `<work>/equity.json` | cuántas curvas, cuántos días, la frontera usada y cuántas curvas no cuadran |
 | `<work>/cscv.json` | todos los números, planos, para que el veredicto los lea por nombre |
-| `<work>/cscv.html` | **el informe. Es esto lo que se mira** |
+| `<work>/estudios/cscv.html` | **el informe. Es esto lo que se mira** (hasta el 25-09, `<work>/cscv.html`). Al lado, `cscv.md` y `cscv.json` del contrato de estudios |
 
 Los cuatro se sobrescriben al volver a correr.
 
@@ -167,12 +167,12 @@ Lo que **sí** bloquea es que `mismatch` no sea 0: eso significa que las curvas 
 SQX guardó en la frontera, y entonces se está leyendo el resultado equivocado del fichero.
 
 ```
-$ python3 -m strategies.walkForwardCorrelation.pbo --work ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39
+$ python3 -m studies.optimisation.cscv.report --work ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39
 PROGRESS 30 argmax: 924 particiones sobre 479 variantes
 ...
   argmax               PBO  30.4%  percentil OOS   0.2 [0, 49]  pierde 24%
   plateau_centre       PBO   3.6%  percentil OOS  63.3 [31, 82]  pierde 3%
--> .../cscv.html
+-> .../estudios/cscv.html
 ```
 
 Y la lectura en una frase: **en esta estrategia, la meseta es la regla y el máximo es una trampa.**
@@ -190,7 +190,7 @@ Y la lectura en una frase: **en esta estrategia, la meseta es la regla y el máx
   tampoco esperes el mismo número al cambiar de bloques: con esta misma estrategia, pasar de 10 a
   12 bloques movió el PBO de `argmax` del 41 % al 30 %, y las dos cifras dicen lo mismo.
 - **El recuento de pruebas independientes es una regla, no una medición.** Está explicado en
-  `strategies/walkForwardCorrelation/POSSIBLE_IMPROVEMENTS.md`, sección 6, con la alternativa.
+  `studies/optimisation/wfc/POSSIBLE_IMPROVEMENTS.md`, sección 6, con la alternativa.
 
 ### Si algo falla
 

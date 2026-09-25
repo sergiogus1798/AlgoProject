@@ -45,7 +45,7 @@ El comando usa solo las métricas comunes a todas las muestras y te dice cuánta
 
 ```bash
 cd ~/Desktop/AlgoProject
-python3 -m tasks.reports.compare --project XAUUSD --reference OOS \
+python3 -m studies.screening.replication.report --project XAUUSD --reference OOS \
     --databank OOS-sharpe --databank OOS-rExpectancy --databank OOS-hasta2026
 ```
 
@@ -61,8 +61,10 @@ python3 -m tasks.reports.compare --project XAUUSD --reference OOS \
 ## Qué produce
 
 ```
-~/Desktop/AlgoData/reports/XAUUSD/_comparison/2026-09-04/
-    comparison.md    la comparación
+~/Desktop/AlgoData/reports/XAUUSD/_comparison/2026-09-04/replication/
+    replication.md   la comparación (antes `comparison.md`, suelto en la carpeta del día)
+    replication.html la misma comparación como página
+    replication.json el resultado entero, en el contrato de estudios
     manifest.json    qué muestras, de qué fecha de exportación, con qué código
 ```
 

@@ -37,7 +37,7 @@ Lo mismo que la página 1, y nada más:
 
 ```bash
 cd ~/Desktop/AlgoProject
-python3 -m tasks.reports.filters --project XAUUSD --databank OOS
+python3 -m studies.screening.filters.report --project XAUUSD --databank OOS
 ```
 
 | flag | obligatorio | qué hace |
@@ -54,7 +54,9 @@ son 2.000 remuestreos por cada filtro candidato.
 
 ```
 ~/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/filters/
-    improvement.md   la tabla de filtros, en texto
+    filters.md       la tabla de filtros, en texto (antes `improvement.md`)
+    filters.html     la misma tabla como página
+    filters.json     el resultado entero, en el contrato de estudios
     manifest.json    de qué CSV salió y con qué versión del código
 ```
 
@@ -104,15 +106,15 @@ Pregunta: **¿qué condición de aceptación pongo en la generación de XAUUSD?*
 
 ```bash
 cd ~/Desktop/AlgoProject
-python3 -m tasks.reports.filters --project XAUUSD --databank OOS
+python3 -m studies.screening.filters.report --project XAUUSD --databank OOS
 ```
 
 ```
 210 candidate filters over 10000 strategies, 2 outcomes
-  /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/filters/improvement.md
+  /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/filters/filters.md
 ```
 
-En `improvement.md`, para `Ret/DD Ratio (OOS)`:
+En `filters.md`, para `Ret/DD Ratio (OOS)`:
 
 > Best surviving filter: **Sharpe Ratio (IS) top 5%** — keeps 528 strategies, median 0.015
 > (+0.485), hit rate 50.4% (+23.7 pp).

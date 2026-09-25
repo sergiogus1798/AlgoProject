@@ -10,10 +10,10 @@ from xml.etree import ElementTree
 
 from core.assetcheck import mc_pending, pending, provisional
 from core.assetdata import load, sqx_settings, window
+from core.paths import WORKERS
 from sqx.projects.doctrine import apply_doctrine, blockers, unify_sessions
 from sqx.projects.ranges import set_ranges
 from sqx.projects.setups import set_costs
-from core.paths import WORKERS
 
 # SQX names an InstrumentInfo <uSymbol>_<broker>, not by the feed. The feed names the
 # <Symbol> element instead, and that is where the backtest window lives.
