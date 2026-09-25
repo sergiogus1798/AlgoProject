@@ -78,7 +78,7 @@ def from_gate(folder: Path, study: str, symbol: str, timeframe: str) -> list[dic
                      "timeframe": timeframe, "segment": "oos1",
                      "n_in": int(screen.entered),
                      "n_out": int(screen.entered if soft else screen.passed),
-                     "criterion": f"studies/screening/gate/{screen.screen}",
+                     "criterion": f"gate/{screen.screen}",
                      "thresholds": thresholds_of(screen.screen),
                      "window_from": source["source"]["split"],
                      "window_to": source["source"]["end"],
