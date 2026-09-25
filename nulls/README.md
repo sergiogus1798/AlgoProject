@@ -23,8 +23,10 @@ config.yaml ─▶ inputs ─▶ calibrate ─▶ model ─▶ simulate ─▶ v
 | `simulate.py` | The real run and its null runs, priced identically, in batches | imported | trades + bars + rung → statistics |
 | `verdict.py` | The empirical p, the attribution across the ladder, and every reason to distrust them | imported | statistics → p, channels, warnings |
 | `filter.py` | The random-filter benchmark: a filter against dropping the same share of trades at random | imported | two trade lists → p |
-| `one.py` | **One strategy against its monkeys, readable**: where it landed among them, where its edge came from, and the distribution drawn in text | `python3 -m nulls.one --project XAUUSD --databank Results --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"` | one strategy → three readings |
-| `report.py` | Every strategy of one export through every rung | `python3 -m nulls.report --project XAUUSD --databank Results --feed XAUUSD_DukasM1_Infinox` | export → `nulls.csv` |
+| `one.py` | **One strategy against its monkeys, as the contract's data**: where it landed on every rung and statistic, the ladder, where its edge came from, and every reason to distrust it | imported — the window calls it | one strategy → result |
+| `many.py` | Every strategy of one export through every rung, one process each: the panel `monkeyExcess` reads | imported | export → panel |
+| `report.py` | **The command**: every strategy to `reports/<P>/<D>/<day>/monkey/nulls.csv` and its page, or `--strategy` for one read in full | `python3 -m nulls.report --project XAUUSD --databank Results --feed XAUUSD_DukasM1_Infinox [--strategy "Strategy 1.17.44"]` | export → reports |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `verify.py` | The two checks that must pass before a p is read | `python3 -m nulls.verify --project XAUUSD --databank Results --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"` | one strategy → three checks |
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/26-nulos.md`.

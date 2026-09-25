@@ -25,7 +25,7 @@ def newest(project: str, databank: str) -> tuple:
         (the panel, its manifest). Reports accumulate, so the newest is the current one.
     """
     folder = DATA / "reports" / project / databank.replace(" ", "_")
-    found = sorted(folder.glob("*/nulls/nulls.csv"))[-1]
+    found = sorted(folder.glob("*/monkey/nulls.csv"))[-1]
     return pd.read_csv(found), read_manifest(found.parent)
 
 
@@ -131,7 +131,7 @@ def main() -> None:
             lines.append(f"- ⚠️ `{r['statistic']}`: {r['saturated']} p topados en {r['floor']:.1e}. "
                          f"No estan medidos, estan tocando el suelo.")
 
-    out = DATA / "reports" / a.project / a.databank.replace(" ", "_") / date.today().isoformat() / "nulls"
+    out = DATA / "reports" / a.project / a.databank.replace(" ", "_") / date.today().isoformat() / "monkeyExcess"
     out.mkdir(parents=True, exist_ok=True)
     (out / "excess.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))

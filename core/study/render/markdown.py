@@ -1,5 +1,6 @@
 """A study result written as Markdown, for the .md report and for reading in a terminal."""
 
+from core.study.render.page import shown
 from core.study.render.svg import num
 
 
@@ -63,7 +64,10 @@ def render(result: dict, title: str) -> str:
     out += [f"- ⚠️ **{w['code']}** {w['text']}" for w in result["warnings"]]
     for tab in result["tabs"]:
         out += ["", f"## {tab['title']}", ""] + ([tab["note"], ""] if tab["note"] else [])
-        for b in tab["blocks"]:
+        if tab["selectors"]:
+            out += ["Combinación por defecto: " + ", ".join(
+                f"{s['label']} {s['default']}" for s in tab["selectors"]) + ".", ""]
+        for b in shown(tab):
             out += block(b)
     out += ["", f"_{result['module']} · configuración {result['config_hash']} · "
                 f"{result['computed_at']}_", ""]

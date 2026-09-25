@@ -1,123 +1,140 @@
-"""One strategy against its monkeys, readable: where it landed, and where its edge came from."""
+"""One strategy against its monkeys, as the contract's data: where it landed, where its edge came from."""
 
-import argparse
+import time
 
 import numpy as np
+import pandas as pd
 
-from nulls import inputs, simulate, verdict
-from nulls.report import newest
+from core.study import blocks, identity, result as envelope
+from nulls import simulate, verdict
 
-BARS = 30           # rows of the text histogram
-WIDTH = 46          # its widest bar, in characters
-
-
-def table(seen: dict, drawn: dict, names: list[str]) -> list[str]:
-    """Each statistic against the null distribution of the headline rung.
-
-    Args:
-        seen: What simulate.real() returned.
-        drawn: The headline rung's null statistics.
-        names: statistics.report.
-
-    Returns:
-        One line per statistic: what the strategy did, what the average monkey did, the
-        monkey's 95th percentile, the strategy's own percentile among them, and the p.
-        Five statistics and no composite, because which of them matters is the owner's
-        call -- and because they disagree by up to 45 points of the population.
-    """
-    head = (f"{'':>8} {'tu estrategia':>15} {'mono medio':>13} {'mono p95':>12} "
-            f"{'percentil':>10} {'p':>8}")
-    rows = [head, "-" * len(head)]
-    for name in names:
-        null = drawn[name]
-        found = verdict.pvalue(seen[name], null, name)
-        rows.append(f"{name:>8} {seen[name]:>15,.2f} {null.mean():>13,.2f} "
-                    f"{np.percentile(null, 95):>12,.2f} {100 * (null < seen[name]).mean():>9.1f}% "
-                    f"{found:>8.4f}{'  <--' if found < 0.05 else ''}")
-    return rows
+MODULE = "nulls"
+RUNGS_ES = {"timing": "cuándo entra",
+            "timing_holds": "cuándo entra y cuánto aguanta",
+            "timing_sizing": "cuándo entra y el tamaño por volatilidad",
+            "free": "cuándo, cuánto y cuánto tamaño: sólo quedan el número de operaciones y "
+                    "el coste"}
+GLOSSARY = [
+    {"term": "Mono", "text": "Una versión al azar de la estrategia con su mismo conjunto de "
+     "oportunidades: mismas velas, misma ventana, mismos costes, misma huella."},
+    {"term": "Peldaño", "text": "Lo que cada nulo deja al azar. Lo que le dejas fijo al nulo, "
+     "se lo regalas: la distancia entre dos peldaños es lo que valía ese canal."},
+    {"term": "p empírico", "text": "Qué fracción de los monos igualó o superó a la estrategia. "
+     "El más pequeño observable es 1/(monos+1)."}]
 
 
-def channels(seen: dict, per_rung: dict, name: str) -> list[str]:
-    """Where the margin over the loosest monkey came from.
+def measure(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict, name: str) -> dict:
+    """The real run and every rung's null runs, priced identically.
 
     Args:
-        seen: What simulate.real() returned.
-        per_rung: Rung name to the null statistics it produced.
-        name: Which statistic to decompose.
+        trades: One strategy's trades on one sample.
+        frame: The bars they are placed on.
+        cfg: What inputs.config() returned, with `feed` set.
+        name: The strategy, which seeds its own monkeys.
 
     Returns:
-        One line per channel. The remainder is the entry timing itself: it is what is left
-        after the channels that CAN be handed to chance have been, not a separately measured
-        quantity, and the report says so rather than printing it as though it were one.
+        {"kept", "seen", "per_rung", "found"}: the calibrated trades, the real statistics,
+        each rung's null statistics, and the headline rung's p per statistic.
     """
-    got = verdict.attribute(seen, per_rung, name)
-    rest = got["total"] - got["holding_time"] - got["sizing"]
-    return [f"  ventaja total sobre el mono suelto .... {got['total']:>14,.2f}",
-            f"  de cuanto aguanta la posicion ......... {got['holding_time']:>14,.2f}",
-            f"  del tamano por volatilidad ............ {got['sizing']:>14,.2f}",
-            f"  resto, que es el momento de entrar .... {rest:>14,.2f}"]
-
-
-def histogram(null: np.ndarray, seen: float, unit: str) -> list[str]:
-    """The null distribution drawn in text, with the real run marked in it.
-
-    Args:
-        null: The statistic over every null run.
-        seen: The real run's value.
-        unit: What the axis is counted in, for the caption.
-
-    Returns:
-        One line per bin. This is the picture the whole study is about -- thousands of
-        random runs, and where the real one fell among them -- and it is text so that it
-        survives a terminal, a log and a paste into a report.
-    """
-    edges = np.linspace(min(null.min(), seen), max(null.max(), seen), BARS + 1)
-    counts, _ = np.histogram(null, edges)
-    here = int(np.clip(np.searchsorted(edges, seen) - 1, 0, BARS - 1))
-    lines = [f"  distribucion de {len(null):,} monos, en {unit}:", ""]
-    for i, count in enumerate(counts):
-        mark = "  TU >>>" if i == here else "        "
-        lines.append(f"{mark} {edges[i]:>12,.0f} {'#' * int(WIDTH * count / counts.max())}")
-    return lines
-
-
-def main() -> None:
-    """Run one strategy against its monkeys and print the three readings."""
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--project", required=True)
-    ap.add_argument("--databank", required=True)
-    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_DukasM1_Infinox")
-    ap.add_argument("--strategy", required=True)
-    ap.add_argument("--timeframe", default="M30")
-    ap.add_argument("--sample", default="OOS1", help="IST in sample, OOS1 out of it")
-    ap.add_argument("--statistic", default="net", help="which one the histogram and channels use")
-    ap.add_argument("--set", action="append", default=[], help="section.key=value")
-    a = ap.parse_args()
-
-    cfg = inputs.config(a.set)
-    cfg["feed"] = a.feed
-    trades = inputs.sample(newest(a.project, a.databank), a.strategy, a.sample)
-    kept = simulate.fixed(trades, inputs.bars(a.feed, a.timeframe), cfg)
+    kept = simulate.fixed(trades, frame, cfg)
     names = cfg["statistics"]["report"]
     seen = simulate.real(kept, names)
-    per_rung = {rung: simulate.nulls(kept, rung, cfg, a.strategy)
-                for rung in cfg["nulls"]["rungs"]}
-
-    print(f"\n{a.strategy}   {len(trades)} operaciones   muestra {a.sample}   "
-          f"{cfg['nulls']['draws']:,} monos por peldano")
-    print(f"reconciliacion {kept['checks']['corr']:.6f}  (relleno {kept['checks']['fill']}, "
-          f"segunda convencion {kept['checks']['runner_up']:.4f})\n")
-    print("\n".join(table(seen, per_rung[cfg["nulls"]["headline"]], names)))
-    print(f"\nde donde sale la ventaja, medida en '{a.statistic}':")
-    print("\n".join(channels(seen, per_rung, a.statistic)))
-    print()
-    print("\n".join(histogram(per_rung["free"][a.statistic], seen[a.statistic], a.statistic)))
-    print()
-    for line in verdict.distrust(kept, {n: verdict.pvalue(seen[n],
-                                                          per_rung[cfg["nulls"]["headline"]][n], n)
-                                        for n in names}, len(trades), cfg):
-        print(f"  ! {line}")
+    per_rung = {rung: simulate.nulls(kept, rung, cfg, name) for rung in cfg["nulls"]["rungs"]}
+    head = cfg["nulls"]["headline"]
+    return {"kept": kept, "seen": seen, "per_rung": per_rung,
+            "found": {n: verdict.pvalue(seen[n], per_rung[head][n], n) for n in names}}
 
 
-if __name__ == "__main__":
-    main()
+def tabs(got: dict, cfg: dict, statistic: str) -> list[dict]:
+    """The three readings: where it landed, the ladder of rungs, where its edge came from."""
+    seen, per_rung, names = got["seen"], got["per_rung"], cfg["statistics"]["report"]
+    head = per_rung[cfg["nulls"]["headline"]]
+    draws = cfg["nulls"]["draws"]
+    landed = [blocks.table("Tu estrategia contra el mono del peldaño titular", pd.DataFrame(
+        [[n, seen[n], head[n].mean(), np.percentile(head[n], 95),
+          (head[n] < seen[n]).mean(), got["found"][n]] for n in names],
+        columns=["estadístico", "tu estrategia", "mono medio", "mono p95", "percentil",
+                 "p"]),
+        "Cinco estadísticos y ningún compuesto: cuál importa lo decide el dueño, y discrepan "
+        "hasta en 45 puntos de la población.")]
+    landed += [{**blocks.distribution(f"{n} — {draws:,} monos, peldaño {rung}", "", values[n],
+                                      seen[n], RUNGS_ES[rung],
+                                      p=verdict.pvalue(seen[n], values[n], n)),
+                "select": {"estadístico": n, "peldaño": rung}}
+               for rung, values in per_rung.items() for n in names]
+    ladder = {"kind": "grid", "title": "p de cada estadístico en cada peldaño",
+              "rows": list(per_rung), "cols": names,
+              "values": [[verdict.pvalue(seen[n], per_rung[r][n], n) for n in names]
+                         for r in per_rung],
+              "scale": "sequential", "levels": [cfg["verdict"]["alpha"], 0.1, 0.25, 0.5],
+              "labels": None, "note": "; ".join(f"{r}: aleatoriza {RUNGS_ES[r]}"
+                                               for r in per_rung) + "."}
+    a = verdict.attribute(seen, per_rung, statistic)
+    rest = a["total"] - a["holding_time"] - a["sizing"]
+    channels = {"kind": "bars", "title": f"De dónde sale la ventaja, en {statistic}",
+                "unit": statistic, "reference": 0.0,
+                "items": [{"label": label, "value": value, "error": None,
+                           "state": "info"} for label, value in (
+                    ("ventaja total sobre el mono suelto", a["total"]),
+                    ("de cuánto aguanta la posición", a["holding_time"]),
+                    ("del tamaño por volatilidad", a["sizing"]),
+                    ("resto: el momento de entrar", rest))],
+                "note": "El resto no se mide aparte: es lo que queda cuando los canales que sí "
+                        "se pueden dar al azar ya se han dado."}
+    return [envelope.tab("landed", "Dónde cayó entre los monos", landed,
+                         selectors=[{"key": "estadístico", "label": "Estadístico",
+                                     "options": names, "default": statistic},
+                                    {"key": "peldaño", "label": "Peldaño",
+                                     "options": list(per_rung),
+                                     "default": cfg["nulls"]["headline"]}]),
+            envelope.tab("ladder", "La escalera de nulos", [ladder]),
+            envelope.tab("channels", "De dónde sale la ventaja", [channels])]
+
+
+def run(strategy: str, given: dict, cfg: dict, statistic: str = "net") -> dict:
+    """One strategy against its monkeys.
+
+    Args:
+        strategy: Its name in the export.
+        given: {"trades": its trades on the sample, "frame": the bars, "project",
+            "databank", "sample"}.
+        cfg: What inputs.config() returned, with `feed` set.
+        statistic: Which statistic the headline call and the channels read.
+
+    Returns:
+        The contract dict: a call on the headline rung, three tabs, the reasons to distrust.
+    """
+    started = time.time()
+    trades = given["trades"]
+    got = measure(trades, given["frame"], cfg, strategy)
+    p, alpha = got["found"][statistic], cfg["verdict"]["alpha"]
+    said = blocks.verdict(
+        "bate al mono" if p <= alpha else "no se distingue del mono",
+        "pass" if p <= alpha else "fail",
+        f"En {statistic}, el {100 * (1 - p):.1f} % de los monos del peldaño "
+        f"{cfg['nulls']['headline']} ({RUNGS_ES[cfg['nulls']['headline']]}) quedó por debajo; "
+        f"p = {p:.4f}. Reconciliación {got['kept']['checks']['corr']:.6f} "
+        f"(relleno {got['kept']['checks']['fill']}).", p)
+    warn = [{"code": line.split(":")[0].lower(), "state": "watch",
+             "text": line.split(":", 1)[1].strip()}
+            for line in verdict.distrust(got["kept"], got["found"], len(trades), cfg)]
+    return envelope.envelope(
+        MODULE, strategy, identity.lookup(given["project"], given["databank"],
+                                          [strategy])[strategy], cfg, started,
+        tabs(got, cfg, statistic), said, warn, GLOSSARY,
+        summary={"n": len(trades), "reconcile": got["kept"]["checks"]["corr"],
+                 **{f"p_{n}": v for n, v in got["found"].items()}})
+
+
+def row(got: dict, trades: int, cfg: dict) -> dict:
+    """One strategy's line of nulls.csv: real statistics, p per rung, attribution, distrust."""
+    names = cfg["statistics"]["report"]
+    out = {"n": trades, "reconcile": got["kept"]["checks"]["corr"]}
+    out |= {f"real_{n}": got["seen"][n] for n in names}
+    out |= {f"p_{rung}_{n}": verdict.pvalue(got["seen"][n], values[n], n)
+            for rung, values in got["per_rung"].items() for n in names}
+    out |= {f"edge_{k}": v for k, v in verdict.attribute(got["seen"], got["per_rung"],
+                                                         names[0]).items()}
+    out["distrust"] = " | ".join(verdict.distrust(got["kept"], got["found"], trades, cfg))
+    return out
+

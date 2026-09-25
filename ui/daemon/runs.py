@@ -74,7 +74,7 @@ def nulls(c: dict) -> list[str] | str:
     """The entry-timing null of this one strategy."""
     if own_trades(c):
         return own_trades(c)
-    return ["-m", "nulls.one", "--project", c["project"], "--databank", c["databank"],
+    return ["-m", "nulls.report", "--project", c["project"], "--databank", c["databank"],
             "--feed", c["feed"], "--strategy", c["strategy"]]
 
 
@@ -127,7 +127,7 @@ def crossmarket(c: dict) -> list[str] | str:
             c["databank"], "--asset", c["asset"], "--export", c["export"]]
 
 
-RUNS = {"gate": gate, "monteCarlo": monte_carlo, "nulls": nulls, "exposure": exposure,
+RUNS = {"gate": gate, "monteCarlo": monte_carlo, "monkey": nulls, "exposure": exposure,
         "profitshape": profitshape, "entryquality": entryquality, "decay": decay,
         "mcRetest": mc_retest, "wfm": wfm, "crossmarket": crossmarket,
         "curate": lambda c: "es una skill: /curate, desde Claude Code",

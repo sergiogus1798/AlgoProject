@@ -7,7 +7,6 @@ import pandas as pd
 from scipy import stats
 
 from nulls import inputs, kernel, model, simulate
-from nulls.report import newest
 from nulls.stats import measure
 
 
@@ -96,7 +95,7 @@ def main() -> None:
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)
-    trades = inputs.sample(newest(a.project, a.databank), a.strategy, a.sample)
+    trades = inputs.sample(inputs.newest(a.project, a.databank), a.strategy, a.sample)
     kept = simulate.fixed(trades, inputs.bars(a.feed, a.timeframe), cfg)
 
     print(f"{a.strategy}  ({len(trades)} trades, muestra {a.sample})\n")

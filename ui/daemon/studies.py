@@ -27,7 +27,7 @@ MODULES = {
     "crossmarket": ("Cross-market", "10"),
     "mcRetest": ("MC Retest", "14"),
     "monteCarlo": ("Monte Carlo de operaciones", "lectura extra"),
-    "nulls": ("Nulo de entrada", "lectura extra"),
+    "monkey": ("Nulo de entrada", "lectura extra"),
     "profitshape": ("Forma del beneficio", "lectura extra"),
     "entryquality": ("Calidad de la entrada", "lectura extra"),
     "exposure": ("Exposición", "21"),

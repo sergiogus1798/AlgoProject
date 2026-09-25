@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from core.barstore import read as read_bars
+from core.paths import DATA
 from core.study import config as study_config
 
 CONFIG = Path(__file__).with_name("config.yaml")
@@ -78,3 +79,18 @@ def on_grid(trades: pd.DataFrame, index: pd.DatetimeIndex, max_hold: int) -> dic
     return {"entry": entry, "exit": leave, "hold": hold,
             "size": trades["Size"].to_numpy(np.float64),
             "window": (int(entry.min()), int(leave.max()))}
+
+
+def newest(project: str, databank: str) -> Path:
+    """The most recent dated trade export of one databank.
+
+    Args:
+        project: Project name.
+        databank: Databank name as SQX shows it.
+
+    Returns:
+        Its `trades.parquet`. Exports are dated and immutable, so the newest is the one
+        with the most strategies in it, never a partially refreshed older one.
+    """
+    folder = DATA / "raw" / project / databank.replace(" ", "_")
+    return sorted(folder.glob("*/trades.parquet"))[-1]
