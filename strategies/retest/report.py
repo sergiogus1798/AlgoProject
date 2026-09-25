@@ -23,7 +23,8 @@ def main() -> None:
     parser.add_argument("--project", required=True)
     parser.add_argument("--databank", default="MCR_All")
     parser.add_argument("--day", default=date.today().isoformat())
-    parser.add_argument("--set", nargs="*", default=[], dest="overrides", metavar="KEY=VALUE")
+    parser.add_argument("--set", action="extend", nargs="+", default=[], dest="overrides",
+                        metavar="KEY=VALUE")
     args = parser.parse_args()
 
     missing = set(gates.VETOES) ^ set(words.SENTENCES)

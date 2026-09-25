@@ -14,7 +14,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--export", required=True, type=Path, help="a trades.parquet")
     ap.add_argument("--strategy", required=True, help="its name as the export spells it")
-    ap.add_argument("--set", dest="overrides", nargs="*", default=[], metavar="KEY=VALUE")
+    ap.add_argument("--set", dest="overrides",
+                    action="extend", nargs="+", default=[], metavar="KEY=VALUE")
     a = ap.parse_args()
 
     cfg = inputs.config(a.overrides)

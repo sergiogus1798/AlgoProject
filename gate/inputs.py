@@ -3,11 +3,11 @@
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
-from core.paths import DATA, ROOT
+from core.paths import DATA
+from core.study import config as study_config
 
-CONFIG = ROOT / "gate" / "config.yaml"
+CONFIG = Path(__file__).with_name("config.yaml")
 
 
 def config(overrides: list[str]) -> dict:
@@ -18,17 +18,12 @@ def config(overrides: list[str]) -> dict:
             is addressed by its own name, e.g. "degradacion.min_retention=0.5".
 
     Returns:
-        The parsed config.yaml. Overrides are cast to the type of the value they replace,
-        so a threshold typed on the command line cannot silently become a string.
+        The parsed config.yaml. Each override keeps the type of the value it replaces
+        (core.study.config), so a threshold typed on the command line cannot silently
+        become a string.
     """
-    cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
-    screens = {s["name"]: s for s in cfg["screens"]}
-    for item in overrides:
-        where, value = item.split("=", 1)
-        section, key = where.split(".", 1)
-        block = screens[section] if section in screens else cfg[section]
-        block[key] = type(block[key])(value)
-    return cfg
+    return study_config.load(CONFIG, overrides,
+                             lambda cfg: {s["name"]: s for s in cfg["screens"]})
 
 
 def newest(project: str, databank: str) -> Path:

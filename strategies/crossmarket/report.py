@@ -26,7 +26,7 @@ def main() -> None:
     ap.add_argument("--floor", type=float,
                     help="fraction of markets whose expectancy must clear zero to keep it; "
                          "the same as --set verdict.breadth_floor=")
-    ap.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE")
+    ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="KEY=VALUE")
     ap.add_argument("--workers", type=int, default=os.cpu_count(),
                     help="markets studied at once; each holds its own null batches, so "
                          "this is the knob that trades RAM for wall clock")

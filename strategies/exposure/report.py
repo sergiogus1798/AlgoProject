@@ -19,7 +19,7 @@ def main() -> None:
     ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_DukasM1_Infinox")
     ap.add_argument("--symbol", required=True, help="asset file name, e.g. XAUUSD")
     ap.add_argument("--strategy", default="", help="one strategy; every one when omitted")
-    ap.add_argument("--set", nargs="*", default=[], metavar="section.key=value")
+    ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="section.key=value")
     args = ap.parse_args()
 
     cfg = inputs.config(args.set)

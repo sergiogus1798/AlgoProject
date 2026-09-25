@@ -27,7 +27,7 @@ def main() -> None:
     ap.add_argument("--statistic", default="net",
                     help="with --strategy: which one the call and the channels read")
     ap.add_argument("--limit", type=int, default=0, help="first N strategies only, for a trial")
-    ap.add_argument("--set", nargs="*", default=[], help="section.key=value")
+    ap.add_argument("--set", action="extend", nargs="+", default=[], help="section.key=value")
     ap.add_argument("--workers", type=int, default=os.cpu_count(),
                     help="strategies run at once; each process holds one strategy's blocks")
     a = ap.parse_args()

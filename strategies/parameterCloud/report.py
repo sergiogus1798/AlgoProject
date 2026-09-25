@@ -70,7 +70,7 @@ def main() -> None:
     ap.add_argument("--work", required=True, type=Path,
                     help="batch directory: metrics.parquet and equity.parquet")
     ap.add_argument("--out", type=Path, help="write every number here as JSON")
-    ap.add_argument("--set", dest="overrides", action="append", default=[])
+    ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[])
     a = ap.parse_args()
 
     cfg = config(a.overrides)

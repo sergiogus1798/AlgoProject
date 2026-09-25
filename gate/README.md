@@ -27,7 +27,10 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 | `monkey.py` | The two screens that need the null study: the monkey, and the family correction over it | imported | trades + bars → p |
 | `redundancy.py` | The soft screen: are these N strategies or one repeated N times | imported | equity → groups |
 | `cascade.py` | Runs the screens in the config's order, each over what the last left, and writes the verdicts | imported | harvest → scorecard, funnel |
-| `report.py` | **The gate over one harvest** | `python3 -m gate.report --project P --databank build --feed XAUUSD_DukasM1_Infinox` | harvest → `scorecard.parquet`, two `verdict.csv`, `resumen.md` |
+| `one.py` | One strategy through the gate as the contract's data: MANTENER or DESCARTAR, and every screen with its number | imported — the window calls it | scorecard row → result |
+| `many.py` | The cascade and the funnel as one result, and every strategy's own | imported | harvest → results |
+| `report.py` | **The gate over one harvest** | `python3 -m gate.report --project P --databank build --feed XAUUSD_DukasM1_Infinox` | harvest → `scorecard.parquet`, `funnel.csv`, two `verdict.csv`, `gate.md`/`.html`/`.json`, one page per strategy |
+| `tooltips.py` | One sentence per `config.yaml` knob, addressed by the screen's name, for the window's configuration drawer | imported | — |
 | `config.yaml` | The screens as data: order, kind, thresholds, and why each exists | edited | — |
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/29-puerta.md`.

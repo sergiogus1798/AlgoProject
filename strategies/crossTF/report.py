@@ -20,7 +20,8 @@ def main() -> None:
     ap.add_argument("--feed", help="SQX symbol the cells were run on; overrides run.feed, "
                     "which is only a default and belongs to whichever asset was studied last")
     ap.add_argument("--out", type=Path, help="also write every cell here as Parquet")
-    ap.add_argument("--set", dest="overrides", nargs="*", default=[], metavar="KEY=VALUE")
+    ap.add_argument("--set", dest="overrides",
+                    action="extend", nargs="+", default=[], metavar="KEY=VALUE")
     a = ap.parse_args()
 
     cfg = inputs.config(a.overrides)

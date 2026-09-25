@@ -91,7 +91,7 @@ def main() -> None:
     ap.add_argument("--timeframe", default="M30")
     ap.add_argument("--sample", default="OOS1")
     ap.add_argument("--trials", type=int, default=400)
-    ap.add_argument("--set", action="append", default=[])
+    ap.add_argument("--set", action="extend", nargs="+", default=[])
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)

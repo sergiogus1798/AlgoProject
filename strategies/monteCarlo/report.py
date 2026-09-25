@@ -27,7 +27,7 @@ def main() -> None:
                     help="which exported bars the daily volatility is built from")
     ap.add_argument("--portfolio", action="store_true",
                     help="treat every strategy as one combined trade stream")
-    ap.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE",
+    ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="KEY=VALUE",
                     help="override any config value, e.g. global.n_sims=20000")
     a = ap.parse_args()
 
