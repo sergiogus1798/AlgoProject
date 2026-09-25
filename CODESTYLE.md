@@ -47,7 +47,10 @@ a non-obvious convention, a trap in the source data.
 - Write the smallest thing that answers the question. If a job fits in 30 lines, it is 30 lines.
 - **No defensive code.** No `try/except` around things that will not fail, no `if x is None` guards,
   no fallbacks for inputs nobody said would occur. If the data is malformed, let it crash — a
-  traceback tells the owner more than a silent skip.
+  traceback tells the owner more than a silent skip. **The one exception is the boundary with a
+  person** — the window and its daemon (`ui/`). There a daemon that is down, a field the owner typed
+  wrong or a value that is not a number is caught and shown, because one bad input must not take
+  the app down. The analysis the window calls still crashes as above.
 - **No edge cases that were not asked for.** Not the empty list, not the missing column, not the
   second date format.
 - **No configurability nobody requested.** No flags "for flexibility", no options with defaults nobody
@@ -57,6 +60,10 @@ a non-obvious convention, a trap in the source data.
   registry earns its place when the thing it holds is a **choice the study has to expose**, never
   when it only saves typing.
 - Plain function over class. Dict over dataclass. Comprehension over loop while it stays readable.
+  Logic is a function that takes data and returns data, never an object that keeps state and changes
+  it through methods. **A class is written only when a library demands one** — a Qt widget or dialog
+  is a subclass, a FastAPI request body is a pydantic `BaseModel` — and it holds the wiring that
+  library asks for, not the logic, which stays in functions.
 - Order within a file: constants, then helpers, then callers, then `main()`, then the
   `if __name__ == "__main__":` line.
 - Names say what the thing is, not how it works: `stop_rate`, not `calc_stop_rate_helper`.
@@ -123,14 +130,41 @@ docstrings, functions without a docstring or without type hints, absolute paths 
 `core/paths.py`, imports missing from `requirements.txt`, and a stale `DEPENDENCIES.md`. It blocks
 nothing while you work — it just has to be green before the work is done.
 
-## 9. Review
+## 9. Measure what you change
 
-The owner reads every line. Show the plan before writing a non-trivial script. Do not run anything
-destructive without asking. **If a rule here would make the code wrong, say so and explain why** — do
+The load here is thousands of strategies times hundreds of thousands of simulations, on a machine
+whose RAM is already split between three SQX installs. A module that grows in memory does not get
+slow — it dies halfway through a run. So speed and memory are part of the work, not an extra:
+
+- **A change to analysis code is measured before and after**, with
+  `python3 -m perf.catalogue --only <target>`, and the two numbers go in the commit message. The
+  history under the data root only grows, so the next session can see what the change cost.
+- **A new module that reads a population or runs simulations gets a target** in
+  `perf/inputs/targets.py`, in the same task. What is not in the catalogue is never measured again.
+- **Budgets are in bytes, not in simulations.** "Keep it under 4 GB" survives a bigger export;
+  "at most 10,000 draws" does not say whether it fits.
+- **Speed does not suspend the other rules.** A faster module that is longer, more configurable or
+  harder to read than rule 4 allows is not an improvement.
+
+→ `perf/README.md`, `docs/manual/12-rendimiento.md`, and the `/perf` skill.
+
+## 10. Review
+
+The owner reviews the plan and the diff, not every line. Show the plan before writing a non-trivial
+script; work that is more than a fix goes on a branch of its own, and the owner reads its diff before
+it is merged into `master`. Do not run anything destructive without asking — a skill the owner
+invokes that deletes by design (`curate`, `oos-gate`) is the asking. **If a rule here would make the code wrong, say so and explain why** — do
 not silently break it, and do not silently write bad code to obey it.
 
 ## Tests
 
-Not a suite. Golden-file tests only, in `tests/`, for the `.sqx` and `.cfx` parsers and the strategy
-translator: a stored input and its expected output. A parser that breaks silently poisons every
-analysis downstream and nobody notices for weeks.
+Not a suite, and no framework: each test is a plain script in `tests/`, listed in its README. Two
+kinds, and only where a silent break would go unnoticed for weeks:
+
+- **Golden files** for the readers and writers everything else is built on — the `.sqx`, `.cfx` and
+  retest parsers, the variant writer, the strategy translator: a stored input and its expected
+  output. A parser that breaks silently poisons every analysis downstream.
+- **Known-answer tests** for the inference — the nulls, the surfaces, CSCV, the ledger, the trade
+  statistics: synthetic data built so the answer is known by construction (pure noise must read a
+  PBO of 0.5, a shuffled surface must read no plateau). A statistic that is wrong does not crash;
+  this is the only way to catch it.
