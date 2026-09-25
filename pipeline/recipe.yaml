@@ -56,10 +56,10 @@ stages:
   - name: sppultra
     command: python3 -m strategies.sppUltra.report --project {project} --databank {databank} --strategy {strategy}
     needs: ["raw/{project}/{databank}"]
-    produces: ["{reports}/design_brief_{safe}.json"]
-    record_from: "{reports}/design_brief_{safe}.json"
+    produces: ["{reports}/spp/design_brief_{safe}.json"]
+    record_from: "{reports}/spp/design_brief_{safe}.json"
     record: [verdict, n_eff]
-    hash: {brief_hash: "{reports}/design_brief_{safe}.json"}
+    hash: {brief_hash: "{reports}/spp/design_brief_{safe}.json"}
 
   # `design` and `build` are the same entry point twice: sqx.variants.make with and without
   # --design-only. That is not a workaround -- the design is seeded from variants/config.yaml
@@ -69,14 +69,14 @@ stages:
   # --out sends both at {work}, so the batch lands beside its own ledger instead of in
   # variants/<project>/<strategy>, which is where the command writes when run by hand.
   - name: design
-    command: python3 -m sqx.variants.make --brief {reports}/design_brief_{safe}.json --project {project} --out {work} --design-only
-    needs: ["{reports}/design_brief_{safe}.json"]
+    command: python3 -m sqx.variants.make --brief {reports}/spp/design_brief_{safe}.json --project {project} --out {work} --design-only
+    needs: ["{reports}/spp/design_brief_{safe}.json"]
     produces: ["{work}/design.json", "{work}/plan.csv"]
     record: [n, shortfall]
 
   - name: build
     #   also produces {work}/manifest.parquet  (C2) and {work}/sqx/P*.sqx
-    command: python3 -m sqx.variants.make --brief {reports}/design_brief_{safe}.json --project {project} --out {work} --sample {sample}
+    command: python3 -m sqx.variants.make --brief {reports}/spp/design_brief_{safe}.json --project {project} --out {work} --sample {sample}
     needs: ["{work}/design.json"]
     produces: ["{work}/build.json", "{work}/manifest.parquet"]
     record: [n, bytes]
@@ -153,7 +153,7 @@ stages:
     record: [pbo_argmax, pbo_plateau_centre, dsr, n_clusters, slope]
 
   - name: verdict
-    command: python3 -m pipeline.stages.verdict --work {work} --brief {reports}/design_brief_{safe}.json
+    command: python3 -m pipeline.stages.verdict --work {work} --brief {reports}/spp/design_brief_{safe}.json
     needs: ["{work}/wfc.json", "{work}/cscv.json"]
     produces: ["{work}/verdict.json"]
     recompute: true

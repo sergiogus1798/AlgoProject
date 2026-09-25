@@ -8,7 +8,7 @@ anything but noise.** It produces two outputs, not one — a report for the owne
 It never talks to SQX. The owner runs the SPP and names the databank; this reads what came out.
 
 ```
-config.yaml ─▶ inputs ─▶ model ─▶ verdict ─▶ render
+config.yaml ─▶ inputs ─▶ model ─▶ verdict ─▶ contract
  every knob   the grid   what      is it     the report
               and the    moves it  worth
               original   and what  more?
@@ -20,13 +20,15 @@ config.yaml ─▶ inputs ─▶ model ─▶ verdict ─▶ render
 | `inputs/` | what grid is this, and what was the original tuple? | touching an export path or a column name |
 | `model/` | what does a number read off this grid mean? | changing how a parameter is judged live or dead |
 | `verdict/` | is this family worth the next stage? | moving the noise threshold |
-| `render/` | how is all of that read? | adding a table |
 
 | file | what it does | run it |
 |---|---|---|
 | `run.py` | One strategy's whole reading, and the brief derived from it | imported |
-| `report.py` | The command: every strategy of one export, to a report and one brief each | `python3 -m strategies.sppUltra.report --project XAUUSD --databank SPP_IS` |
-| `config.yaml` | Every tunable, grouped by the layer that reads it | edited |
+| `contract.py` | The reading as the contract's tabs: the noise call, influence, plateaus and the design | imported |
+| `one.py` | **One strategy as the contract's data**, its brief carried in the summary | imported — the window calls it |
+| `report.py` | The command: every strategy of one export to `reports/<P>/<D>/<day>/spp/` — a page and a JSON each, and the `design_brief_<strategy>.json` the fabrication reads | `python3 -m strategies.sppUltra.report --project XAUUSD --databank SPP_IS` |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
+| `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` |
 
 ## The three things this module exists to get right
 
