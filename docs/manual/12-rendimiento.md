@@ -709,3 +709,22 @@ BLAS. Datos crudos y scripts: `AlgoData/reports/perf-optim-2026-09-25/`.
   deshizo.
 - En el export manda SQX: el `orderstocsv` y la carga del databank. La cosecha solo ganó lo que
   cuesta un arranque de JVM; `export_retest` ya tenía uno solo y no ganó nada.
+
+### Dónde está el cuello de botella ahora, y qué se estropea al doblar procesos
+
+🔬 Medido el 2026-09-25 cronometrando cada fase de cada tarea (estrategia, mercado) de 96 × 9, a
+24, 48 y 96 procesos (`AlgoData/reports/perf-optim-2026-09-25/phases_*.parquet`):
+
+- **No es el reparto**: los procesos están ocupados el 99 % del reloj en los tres casos, y la última
+  tarea dura menos de 3 s. La parte en serie (leer el export y compilar) es 1,5 s.
+- **Cada tarea se vuelve más lenta cuantas más corren a la vez**, y sin esperar a nada (CPU/reloj =
+  1,00). El mismo trabajo cuesta 1.155 s de proceso con 24, 1.940 con 48 y **5.219 con 96**. De 48
+  a 96 dos procesos comparten núcleo físico. De 24 a 48 ya se pierde un 68 %: se comparten L3 y
+  memoria, y 🤔 probablemente baja el turbo.
+- **Lo que más se estropea de 48 a 96**: el kernel numba de los nulos, **6,2 veces** más lento, y el
+  estrés de slippage, 5,6 veces. Son las fases que leen los arrays de precios a saltos. El resto
+  empeora entre 2,2 y 3,4 veces.
+- **Lo que más pesa, con 48 procesos**: el **test pareado** (`paired.run`), el **42 %** del tiempo de
+  cada tarea; la exposición (bootstrap), el 15 %; la reconciliación (`backtest.setting`), el 12 %; el
+  bootstrap de PF y esperanza, el 10 %. Los nulos enteros (sortear, kernel, diagnósticos) ya son sólo
+  el 12 %. **El siguiente objetivo es `paired.run`**, no los nulos.
