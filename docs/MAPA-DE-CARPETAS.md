@@ -112,6 +112,13 @@ estrategia, `verdict.csv` (`strategy`, `identity`, `verdict`) y `manifest.json`.
 | `crossmarket/` (`verdict.csv`, `crossmarket.*`) | igual, más `estrategias/` con el estudio completo de una estrategia (`--strategy`) |
 | `crossTF/` | igual, más `crossTF.*` |
 
+**Los informes anteriores al 25-09 ya están movidos** a su subcarpeta (66 movimientos, sin colisiones),
+pero **conservan el nombre de sus ficheros**: `mcRetest/retest.md`, `decay/decay.csv`,
+`spp/sppultra.md`, `isOos/summary.md`… Dentro llevan el formato antiguo, y renombrarlos habría
+hecho pasar un informe viejo por uno del contrato nuevo. Los `design_brief_*.json` sí están donde
+el pipeline los busca ahora (`{reports}/spp/`). Un `manifest.json` suelto se movió sólo cuando la
+carpeta del día tenía un único estudio; si tenía varios, sigue en la raíz.
+
 En una carpeta de lote de variantes (`AlgoData/pipeline/<proyecto>/<estrategia>/`):
 
 | antes | ahora |
