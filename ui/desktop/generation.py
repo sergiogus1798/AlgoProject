@@ -6,10 +6,12 @@ from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFrame, QHBoxLayout
                                QLabel, QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout)
 
 from ui.desktop import client
+from ui.desktop.durations import clock, per, ratio
 from ui.desktop.resultspanel import kicker, rule
 from ui.desktop.theme import C, chip
 
-COLUMNS = ["#", "tarea", "tipo", "en este start", "estado", "databank de salida", "estrategias"]
+COLUMNS = ["#", "tarea", "tipo", "en este start", "estado", "hechas / total", "tiempo",
+           "por estrategia", "databank de salida", "en disco"]
 STATUS = {"done": ("hecha", "promising"), "running": ("en curso", "weak"),
           "skipped": ("saltada", "faint"), "earlier": ("hecha antes", "promising"),
           "queued": ("en cola", "pending"),
@@ -134,12 +136,18 @@ class Generation(QFrame):
         if run["project"] == project and not run["finished"]:
             pct = f" · {run['percent']} %" if run["percent"] is not None else ""
             line = chip("CORRIENDO", C["weak"]) + f" &nbsp;tarea <b>{run['current'] or '…'}</b>{pct}"
+            now = next((t for t in got["tasks"] if t["status"] == "running"), None)
+            if now:
+                line += f" · <b>{ratio(now)}</b> estrategias · {per(now)} por estrategia · " \
+                        f"la tarea lleva {clock(now['elapsed_s'])}"
         elif run["project"] == project:
             line = chip("terminado", C["promising"]) + " &nbsp;el último start de este proyecto acabó"
         elif run["project"] and not run["finished"]:
             line = chip("otro proyecto corre", C["dead"]) + f" &nbsp;el install está con <b>{run['project']}</b>"
         else:
             line = chip("parado", C["pending"]) + " &nbsp;el log de hoy no tiene un start de este proyecto"
+        if got["workflow_s"] is not None:
+            line += f" · workflow de hoy: <b>{clock(got['workflow_s'])}</b>"
         line += (f"<span style='color:{C['faint']}'>  · log hace {age} s</span>" if age is not None
                  else f"<span style='color:{C['faint']}'>  · sin log de hoy</span>")
         self.state.setText(line)
@@ -159,11 +167,14 @@ class Generation(QFrame):
             label, colour = STATUS[t["status"]]
             n = t["strategies"]
             cells = [str(i + 1), t["title"], t["type"], "sí" if t["active"] else "·", label,
+                     ratio(t) if t["started"] else "·",
+                     clock(t["elapsed_s"]) if t["started"] else "·",
+                     per(t) if t["started"] else "·",
                      t["output"], "·" if n is None else str(n)]
             for j, text in enumerate(cells):
                 item = QTableWidgetItem(text)
                 item.setFlags(Qt.ItemIsEnabled)
-                if j in (0, 6):
+                if j in (0, 5, 6, 7, 9):
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 if j == 4:
                     item.setForeground(QColor(C[colour]))
@@ -179,7 +190,15 @@ class Generation(QFrame):
                 "start pero su databank tiene estrategias de uno anterior · en curso: la última "
                 "tarea que escribe · saltada: inactiva en este start (stage) · en cola: activa "
                 "y aún no empezada · inactiva: apagada")
-            self.table.item(i, 6).setToolTip("ficheros .sqx en disco: SQX los escribe al "
+            self.table.item(i, 5).setToolTip(
+                "hechas: las que SQX dice haber procesado (el estado del worker mientras corre, "
+                "el log de la tarea al acabar) · total: lo que había en su databank de entrada "
+                "al empezar. Un build no tiene total")
+            self.table.item(i, 6).setToolTip("desde «TASK STARTED» hasta «TASK FINISHED», o "
+                                             "hasta ahora si corre")
+            self.table.item(i, 7).setToolTip("tiempo medio por estrategia que SQX declara; si "
+                                             "mientras corre dice 0, lo que lleva entre las hechas")
+            self.table.item(i, 9).setToolTip("ficheros .sqx en disco: SQX los escribe al "
                                              "sincronizar, así que la salida de la tarea en "
                                              "curso va con retraso")
         header = self.table.horizontalHeader()

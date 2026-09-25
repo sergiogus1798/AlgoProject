@@ -46,6 +46,7 @@ launch ─▶ shell ─▶ coverage  (la matriz, lo primero que se ve)
 | `gatedetail.py` | One strategy after the gate: its curve, its IS/OOS pairs, each screen's value and note | imported | — |
 | `equitychart.py` | One strategy's daily P&L, build and retest, the retest lifted to the build's last level | imported | — |
 | `generation.py` | The generation zone: one install, one project, its tasks with their state, the running task's percentage and the log tail, refreshed every three seconds while on screen | imported | — |
+| `durations.py` | How the generation zone prints a duration, a processed-over-total and a time per strategy | imported | — |
 | `soon.py` | The page a zone shows before it is built: what goes there, and how the job is done today | imported | — |
 
 ## Contracts and traps

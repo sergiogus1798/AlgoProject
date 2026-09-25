@@ -7,6 +7,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.paths import MASTER, WORKERS
+from ui.daemon import tasklog
 
 TAIL_BYTES = 2_000_000
 TAIL_LINES = 14
@@ -108,7 +109,8 @@ def run_state(lines: list[str]) -> dict:
     """
     project, finished, events, percent, current = None, True, {}, None, None
     tail: list[str] = []
-    for line in lines:
+    since = 0   # index of the running task's first line; a percentage before it is another task's
+    for i, line in enumerate(lines):
         m = STARTING.search(line)
         if m:
             project, finished, events, percent, current = m.group(1), False, {}, None, None
@@ -131,9 +133,9 @@ def run_state(lines: list[str]) -> dict:
             current, percent = None, None
         elif events.get(title) != "done":
             if current != title:
-                current, percent = title, None
+                current, percent, since = title, None, i
             events[title] = "running"
-    for line in reversed(lines):
+    for line in reversed(lines[since:]):
         m = PERCENT.search(line)
         if m:
             percent = int(m.group(1))
@@ -152,22 +154,44 @@ def state(role: str, project: str) -> dict:
     Returns:
         `tasks` with each task's `status` — `done`, `running`, `skipped`, `earlier` (skipped
         in this start but its output databank holds strategies: a previous start did it),
-        `queued` (active, not reached), `inactive` — and `strategies`, its output
-        databank's count on disk;
-        `run`, what the log says (whose `project` may be another one: the log is per
-        install); `log_age_s`, seconds since the log last grew.
+        `queued` (active, not reached), `inactive` — its `strategies` on disk, and from the
+        project's own log `started`, `elapsed_s`, `total` (its input databank when it
+        started), `done` (tested, or the worker's count while it runs), `per_strategy_ms`;
+        `run`, what the install log says; `workflow_s`, from today's first task start to
+        the last finish or now; `status`, the worker's line; `log_age_s`.
     """
     install = installs()[role]
     folder = install / "user" / "projects" / project
     lines, mtime = log_lines(install)
     run = run_state(lines)
     held = counts(folder)
+    runs = tasklog.task_runs(folder)
+    by_title = {r["title"]: r for r in runs}
+    live = tasklog.status(role, project) if run["project"] == project and not run["finished"] \
+        else None
     rows = []
     for t in tasks(folder / "project.cfx"):
         seen = run["events"].get(t["title"]) if run["project"] == project else None
         status = seen or ("queued" if t["active"] else "inactive")
         if status == "skipped" and held.get(t["output"]):
             status = "earlier"
-        rows.append({**t, "status": status, "strategies": held.get(t["output"])})
-    return {"tasks": rows, "run": run, "banks": held,
+        row = {**t, "status": status, "strategies": held.get(t["output"]),
+               "started": None, "elapsed_s": None, "total": None, "done": None,
+               "per_strategy_ms": None}
+        r = by_title.get(t["title"])
+        if r:
+            total = r["before"].get(t["input"]) if t["type"] != "Build" else None
+            row |= {"started": r["started"], "elapsed_s": r["elapsed_s"], "total": total,
+                    "done": r.get("tested"), "per_strategy_ms": r.get("per_strategy_ms")}
+            if status == "running" and live:
+                row["done"] = live["generated"]
+                row["per_strategy_ms"] = (live["per_strategy_ms"] or
+                                          (r["elapsed_s"] * 1000 / live["generated"]
+                                           if live["generated"] else None))
+        rows.append(row)
+    first = datetime.fromisoformat(runs[0]["started"]) if runs else None
+    last = (datetime.fromisoformat(runs[-1]["finished"]) if runs and runs[-1]["finished"]
+            else datetime.now())
+    return {"tasks": rows, "run": run, "banks": held, "status": live,
+            "workflow_s": round((last - first).total_seconds()) if first else None,
             "log_age_s": round(datetime.now().timestamp() - mtime) if mtime else None}
