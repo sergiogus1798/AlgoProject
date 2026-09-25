@@ -12,7 +12,10 @@ They share one kernel — the forward path from an entry — which is why they a
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `report.py` | **The panel — the only way to run it** | `python3 -m strategies.entryQuality.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades + bars → two readings |
+| `report.py` | **The command**: one strategy's two readings, printed and written to `reports/<P>/<D>/<export day>/entryQuality/estrategias/` | `python3 -m strategies.entryQuality.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades + bars → two readings |
+| `one.py` | The measurements — the e-ratio against its band, per side, and the two delay tables — as the contract's data the window paints | imported — the window calls it | trades + bars → result |
+| `contract.py` | The two tabs, each with its reading, and the glossary | imported | numbers → tabs |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `inputs.py` | The knobs, the trades placed on the bar grid, the ATR, the cost and which trades have a full path | imported | export → located trades |
 | `excursion.py` | MFE and MAE at every horizon, and the same in units of the entry's own volatility | imported | bars → paths |
 | `eratio.py` | e(k), the matched random benchmark and its 5-95% band | imported | paths → curve, band |

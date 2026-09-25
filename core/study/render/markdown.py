@@ -7,8 +7,11 @@ def _table(columns: list[str], rows: list[list]) -> list[str]:
     """A Markdown table; cells through the same number format as the page."""
     def cell(v: object) -> str:
         """One cell."""
-        return num(v) if isinstance(v, (int, float)) and not isinstance(v, bool) or v is None \
-            else str(v).replace("|", "/")
+        if isinstance(v, bool):
+            return "sí" if v else "no"
+        if isinstance(v, (int, float)) or v is None:
+            return num(v)
+        return str(v).replace("|", "/")
 
     return (["| " + " | ".join(columns) + " |", "|" + "---|" * len(columns)]
             + ["| " + " | ".join(cell(v) for v in r) + " |" for r in rows])
