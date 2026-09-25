@@ -1581,3 +1581,26 @@ fallaron**, y ninguno por un fallo de cálculo. Los cuatro modos, por orden de p
 🤔 El patrón es siempre `sorted(glob(...))[-1]` o `next(iter(...))` sobre algo que puede estar
 vacío. Cuesta una línea decir qué falta y ahorra media hora de traceback — y en el caso 1 evita
 leer un cero como una respuesta.
+
+## 🔬 numba divide por cero distinto que numpy: `error_model="numpy"` siempre (2026-09-25)
+
+Por defecto `@njit` usa el modelo de errores de Python: `0.0 / 0.0` **lanza
+`ZeroDivisionError`** donde numpy devuelve `nan` o `inf` con un aviso. Un kernel que reproduce una
+fórmula numpy (un Sharpe sobre una racha sin varianza, un ratio con denominador cero) no se
+comporta igual y tumba el proceso entero. Todos los kernels del proyecto llevan
+`@njit(cache=True, nogil=True, error_model="numpy")`; uno nuevo tiene que llevarlo también.
+
+## 🔬 Para medir memoria de un pool con `fork`, sumar PSS y no RSS (2026-09-25)
+
+Con `fork` los hijos comparten las páginas del padre, y el RSS de cada proceso las cuenta enteras:
+sumar el RSS del árbol cuenta la misma memoria una vez por hijo. `retest.ingest` salía a 7,5 GB
+así. La medida honesta es el **PSS** (`/proc/<pid>/smaps_rollup`), que reparte cada página
+compartida entre quienes la usan. `/usr/bin/time %M` tampoco sirve: es el pico del mayor proceso.
+
+## 🔬 Parsear YAML en un bucle cuesta más que el estudio (2026-09-25)
+
+`core.assetdata.symbol_for()` parseaba todos los ficheros de `assets/` en cada llamada, y los
+estudios la llaman una vez por estrategia o por celda: **54 s de los 60 de crossTF** eran parsear
+1.971 veces los mismos YAML. Ahora `assetdata` guarda cada fichero parseado sellado con su `mtime`
+y su tamaño, y da a cada llamada su propia copia: una edición desde la ventana se lee en la
+siguiente llamada, y nadie puede corromper la caché mutando lo que recibe.

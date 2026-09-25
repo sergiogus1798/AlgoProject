@@ -1,13 +1,20 @@
 """Write the plan to disk as one .sqx per row. Mechanical; decides nothing and reads nothing back."""
 
+import os
 from pathlib import Path
 
 import pandas as pd
 
+from core import fanout
 from sqx.variants import tuples
 from sqx.variants.build import rewrite
 
 NAME = "{strategy} {variant_id}"
+BLOCK = 100          # variants per task handed to a worker
+
+# What every worker reads, set before the fork: the parent's members, the plan's rows,
+# the strategy's name, where the files go and their shape.
+_SHARED: dict = {}
 
 
 def name_of(strategy: str, variant_id: str) -> str:
@@ -52,11 +59,30 @@ def batch(plan: pd.DataFrame, parent: Path, strategy: str, out: Path, shape: str
     out.mkdir(parents=True, exist_ok=True)
     for stale in out.glob("*.sqx"):
         stale.unlink()
-    source = rewrite.members(parent)
-    written = 0
-    for row in plan.to_dict("records"):
-        parts = rewrite.variant(source, row["variant_id"],
-                                name_of(strategy, row["variant_id"]),
-                                tuples.from_columns(row))
-        written += rewrite.save(out / f"{row['variant_id']}.sqx", parts, shape)
+    rows = plan.to_dict("records")
+    _SHARED.update(source=rewrite.members(parent), rows=rows, strategy=strategy, out=out,
+                   shape=shape)
+    # Every file is independent and the time is zlib's, so the rows are cut into blocks and
+    # written on every core: 🔬 2026-09-25, 5,000 variants took 11 s on one.
+    blocks = {i: BLOCK for i in range(0, len(rows), BLOCK)}
+    written = sum(got for _, got in fanout.run(_block, blocks, os.cpu_count()))
     return {"files": len(plan), "bytes": written, "shape": shape}
+
+
+def _block(start: int) -> int:
+    """Write one block of the plan's rows, in a worker that inherited the parent's members.
+
+    Args:
+        start: Position of the block's first row.
+
+    Returns:
+        Bytes written.
+    """
+    got = _SHARED
+    written = 0
+    for row in got["rows"][start:start + BLOCK]:
+        parts = rewrite.variant(got["source"], row["variant_id"],
+                                name_of(got["strategy"], row["variant_id"]),
+                                tuples.from_columns(row))
+        written += rewrite.save(got["out"] / f"{row['variant_id']}.sqx", parts, got["shape"])
+    return written

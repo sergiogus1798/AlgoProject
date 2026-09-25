@@ -29,7 +29,30 @@ def identity(path: Path) -> str:
         build databank and a different one in the retest databank, which is exactly the
         join those two databanks have to be paired on.
     """
-    return hashlib.sha256(COSMETIC.sub("", rules(path)).encode("utf-8")).hexdigest()
+    return _hashed(rules(path))
+
+
+def _hashed(text: str) -> str:
+    """identity() of a strategy definition already read out of its archive."""
+    return hashlib.sha256(COSMETIC.sub("", text).encode("utf-8")).hexdigest()
+
+
+def describe(path: Path) -> tuple[str, str, str]:
+    """identity() and symbol() together, from one opening of the archive.
+
+    Args:
+        path: A .sqx file.
+
+    Returns:
+        (identity, symbol, feed). Reading a ZIP's directory is most of what either costs on
+        its own -- a result-laden .sqx carries some 250 entries -- so a scan that wants both
+        opens it once. 🔬 2026-09-25, `index_sqx` over 19,328 files was paying it twice.
+    """
+    with zipfile.ZipFile(path) as z:
+        names = z.namelist()
+        text = z.read(next(n for n in names if n.endswith(INNER))).decode("utf-8", "replace")
+    found = next((m for m in map(RESULTS_RE.search, names) if m), None)
+    return _hashed(text), *((found.group(1), found.group(2)) if found else ("", ""))
 
 
 def rules(path: Path) -> str:

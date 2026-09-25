@@ -11,6 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
+from core import fanout
 from strategies.walkForwardCorrelation.inputs import config, panel
 from strategies.walkForwardCorrelation.measure import correlation, cscv, rules
 from strategies.walkForwardCorrelation.render import figures
@@ -18,6 +19,9 @@ from core.surface import trials as counting
 from strategies.walkForwardCorrelation.verdict import cost, summary, trials
 
 PARAM = "param_"
+
+# What the rule workers read, set before the fork.
+_SHARED: dict = {}
 
 
 def grid_of(metrics: pd.DataFrame, columns: pd.Index) -> pd.DataFrame:
@@ -51,6 +55,22 @@ def flat(name: str, found: dict) -> dict:
     return {f"{k}_{name}": v for k, v in found.items() if not isinstance(v, (dict, list))}
 
 
+def _rule(name: str) -> tuple[pd.DataFrame, dict]:
+    """One selection rule's CSCV and its measured cost, in a worker of its own.
+
+    Args:
+        name: A key of `rules.RULES`.
+
+    Returns:
+        (its partitions, what `summary.everything` and `cost.cost` found).
+    """
+    got = _SHARED
+    run = cscv.run(got["wide"], got["knobs"]["blocks"], rules.RULES[name], got["grid"],
+                   np.random.default_rng(got["knobs"]["seed"]), got["score"])
+    return run, summary.everything(run) | cost.cost(got["inside"], got["outside"],
+                                                    got["grid"], name, got["knobs"])
+
+
 def main() -> None:
     """Run the CSCV once per selection rule and write the verdict beside the batch."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -77,14 +97,16 @@ def main() -> None:
     # count, drift -- that are read at the split the config declares.
     inside, outside = panel.windows(wide, panel.split(a.work, cfg["split_mode"]))
 
-    runs, found = {}, {}
-    for n, name in enumerate(knobs["rules"], 1):
-        print(f"PROGRESS {10 + n * 20} {name}: {len(cscv.partitions(knobs['blocks']))} "
-              f"particiones sobre {wide.shape[1]} variantes", flush=True)
-        runs[name] = cscv.run(wide, knobs["blocks"], rules.RULES[name], grid,
-                              np.random.default_rng(knobs["seed"]), score)
-        found[name] = summary.everything(runs[name]) | cost.cost(inside, outside, grid,
-                                                                name, knobs)
+    print(f"PROGRESS 20 {', '.join(knobs['rules'])}: "
+          f"{len(cscv.partitions(knobs['blocks']))} particiones sobre {wide.shape[1]} "
+          "variantes", flush=True)
+    # The rules share nothing and each seeds its own generator, so they run side by side
+    # and give exactly what they gave one after another.
+    _SHARED.update(wide=wide, grid=grid, inside=inside, outside=outside, knobs=knobs,
+                   score=score)
+    done = dict(fanout.run(_rule, {name: 1 for name in knobs["rules"]}, len(knobs["rules"])))
+    runs = {name: done[name][0] for name in knobs["rules"]}
+    found = {name: done[name][1] for name in knobs["rules"]}
 
     print("PROGRESS 80 contando cuantas pruebas independientes hay de verdad", flush=True)
     independent = counting.independent(inside, knobs["cluster_k_max"])

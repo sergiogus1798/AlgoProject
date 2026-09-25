@@ -1,11 +1,18 @@
 """What an in-sample filter buys out of sample, and how many strategies it costs to get it."""
 
+import os
+
 import numpy as np
+
+from core import fanout
 
 CUTS = (5, 10, 20, 30, 50)
 MIN_SURVIVORS = 200
 DRAWS = 2000
 SEED = 20260904
+
+# What the sweep's workers read, set before the fork.
+_SHARED: dict = {}
 
 
 def breakeven(target: str) -> float:
@@ -111,6 +118,21 @@ def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS) -> d
             "p": max(2 * tail, 1 / draws)}
 
 
+def _judged(i: int) -> dict:
+    """One candidate's outcome and lift, in a worker that inherited the columns by fork.
+
+    Args:
+        i: Its position in the judged list.
+
+    Returns:
+        The keys from outcome() and those from lift().
+    """
+    columns, y, level = _SHARED["columns"], _SHARED["y"], _SHARED["level"]
+    candidate = _SHARED["judged"][i]
+    mask = survivors(columns[candidate["metric"]], candidate)
+    return outcome(y[mask], level) | lift(y, mask, level)
+
+
 def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
           min_n: int = MIN_SURVIVORS) -> list[dict]:
     """Measure every candidate filter against one out-of-sample outcome.
@@ -128,14 +150,15 @@ def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
         are dropped without being tested, so they never enter the family the correction covers.
     """
     y, level = columns[target], breakeven(target)
-    rows = []
-    for candidate in candidates(is_metrics):
-        mask = survivors(columns[candidate["metric"]], candidate)
-        if mask.sum() < min_n:
-            continue
-        row = {"metric": label(candidate), "column": candidate["metric"],
-               "side": candidate["side"], "cut": candidate["cut"]}
-        row.update(outcome(y[mask], level))
-        row.update(lift(y, mask, level))
-        rows.append(row)
+    judged = [c for c in candidates(is_metrics)
+              if survivors(columns[c["metric"]], c).sum() >= min_n]
+    _SHARED.update(columns=columns, y=y, level=level, judged=judged)
+    # Every lift() reseeds its own generator, so a candidate's numbers do not depend on
+    # which process ran it: the parallel sweep returns exactly the serial one's rows.
+    got = dict(fanout.run(_judged, {i: int(survivors(columns[c["metric"]], c).sum())
+                                    for i, c in enumerate(judged)}, os.cpu_count()))
+    for i, c in enumerate(judged):
+        got[i] = {"metric": label(c), "column": c["metric"], "side": c["side"],
+                  "cut": c["cut"], **got[i]}
+    rows = [got[i] for i in range(len(judged))]
     return sorted(rows, key=lambda r: -r["d_median"])

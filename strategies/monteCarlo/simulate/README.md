@@ -12,6 +12,7 @@ and every module here would produce the same arrays if the study's verdict rules
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `tiles.py` | One worker's batch, in strips of rows sized in bytes so memory does not grow with N | imported | batch → statistics |
+| `kernel.py` | The core statistics of many equity paths in one compiled numba pass, read straight out of `source[idx]` without building the path matrix; checked against `metrics.paths` to 2.5e-15 | imported | positions or P&L → statistics |
 | `metrics.py` | Net, drawdown, Ret/DD, Sharpe, profit factor and the longest losing run, on thousands of paths at once | imported | paths → statistics |
 | `engine.py` | Runs one sub-test across every core, with a live progress bar | imported | model → statistics |
 | `sweeps.py` | Which reordering and resampling runs a stream of this size gets | imported | N → runs |

@@ -23,7 +23,7 @@ def probe(path: Path) -> tuple:
         them must not kill a 17k-file scan.
     """
     try:
-        return path, sqxfile.identity(path), *sqxfile.symbol(path)
+        return path, *sqxfile.describe(path)
     except Exception as e:
         return path, None, type(e).__name__, ""
 

@@ -728,3 +728,51 @@ BLAS. Datos crudos y scripts: `AlgoData/reports/perf-optim-2026-09-25/`.
   cada tarea; la exposición (bootstrap), el 15 %; la reconciliación (`backtest.setting`), el 12 %; el
   bootstrap de PF y esperanza, el 10 %. Los nulos enteros (sortear, kernel, diagnósticos) ya son sólo
   el 12 %. **El siguiente objetivo es `paired.run`**, no los nulos.
+
+---
+
+## Tercera ronda: todo lo demás — medido 2026-09-25
+
+Todos los procesos de Python del proyecto que no se habían optimizado, con la base re-medida el
+mismo día desde el commit anterior en una copia aparte del código. **Memoria = PSS del árbol de
+procesos** (`/proc/<pid>/smaps_rollup`), no RSS: con `fork`, el RSS cuenta una vez por hijo las
+páginas que comparten (`knowhow/07-practices.md`). Datos crudos, scripts y validaciones:
+`AlgoData/profiling/bench-2026-09-25/`.
+
+| proceso | antes | después | factor | memoria, antes → después | qué se cambió |
+|---|---|---|---|---|---|
+| Monte Carlo, 36 estrategias × 20.000 caminos | **477 s** | **27 s** | **18x** | 1,7 → 2,7 GB | cada estrategia en su proceso, LPT; kernel numba de los estadísticos sin la matriz reunida |
+| `tasks.reports.filters`, 10.000 estrategias | 38,7 s | **3,2 s** | 12x | 0,4 → 1,5 GB | los 420 filtros candidatos, repartidos |
+| CSCV (`pbo`), 962 variantes | 30,8 s | **9,5 s** | 3,3x | igual | vecinos de la rejilla calculados una vez; las tres reglas a la vez |
+| crossTF, 48 celdas | 29,2 s | **5,7 s** | 5,1x | igual | caché de los YAML de `assets/` (54 de 60 s eran parsearlos) |
+| `sqx.variants.make`, 5.000 variantes | 11,2 s | **2,1 s** | 5,3x | igual | fabricar y releer los `.sqx` en paralelo |
+| `nulls.report` (tras la ronda 2) | 11,1 s | **3,6 s** | 3,1x | — | la misma caché de YAML |
+| `retest.ingest`, 5 × 8 tareas | 7,9 s | **1,9 s** | 4,0x | **2,9 → 1,9 GB** | cada proceso escribe su P&L; 16 procesos |
+| `sppUltra` | 7,0 s | **1,9 s** | 3,7x | igual | la prueba de inertes, vectorizada |
+| `retest.report` | 5,3 s | **2,0 s** | 2,6x | 0,4 → 0,85 GB | una estrategia por proceso |
+| `entryQuality` | 2,5 s | 2,1 s | 1,2x | **1,3 → 0,47 GB** | lee sólo la columna M1 que usa |
+| `index_sqx`, 19.328 `.sqx` | 2,2 s | 1,65 s | 1,3x | igual | abre cada zip una vez, no dos (−28 % CPU) |
+| los diez restantes (WFM, WFC, parameterCloud, profitShape, exposure, decay, is_oos, tasks.nulls, ledger, variants.scale) | 0,4–1,9 s | igual | 1x | igual | su tiempo es importar pandas y scipy (~0,7 s) |
+
+**Suma de los 20: 623 s → 67 s.**
+
+### Por qué los números son los mismos
+
+- **Idénticos byte a byte o celda a celda:** los ficheros de `sppUltra` y `retest.report`, el
+  `cscv.json`, las 48 celdas de crossTF, el `improvement.md` de `filters`, el `nulls.csv`, el índice
+  de `.sqx`, el manifiesto de `variants.make` y el contenido de sus 5.000 `.sqx`, la salida de
+  `entryQuality`, y las cinco tablas de la ingesta, incluidas las **35.125.203 filas de P&L**.
+- **Kernel de Monte Carlo** contra `metrics.paths` con los mismos índices, en los 5 modelos de
+  sorteo y los 4 de estrés: ≤ 2,5·10⁻¹⁵ relativo, drawdown y racha idénticos.
+- **Monte Carlo es aleatorio sin semilla**, así que se validó contra su propio ruido: dos corridas
+  nuevas y una base dan el **mismo tier en las 36 estrategias**, y la base se separa de la nueva lo
+  mismo que la nueva de sí misma.
+
+### Lo que se encontró por el camino
+
+- 🔬 **`@njit` por defecto lanza `ZeroDivisionError`** donde numpy da `nan`. Los tres kernels llevan
+  ya `error_model="numpy"`, también los de la ronda 2.
+- `retest.ingest` no gastaba memoria en el padre, sino en los trabajadores (~85 MB cada uno). Con
+  40 va en 1,4 s y 3,4 GB; con 16, en 1,9 s y 1,9 GB; con 8, en 2,7 s y 1,1 GB. Se dejó en 16.
+- `sqx.variants.equity` y `collect` no se pudieron medir: no hay en disco ninguna carpeta de
+  variantes con el formato de tres tramos actual.

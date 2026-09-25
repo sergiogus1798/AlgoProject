@@ -7,7 +7,7 @@ from numba import njit
 NAMES = ("net", "sharpe", "pf", "retdd", "dd")
 
 
-@njit(cache=True, nogil=True)
+@njit(cache=True, nogil=True, error_model="numpy")
 def runs(entries: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np.ndarray,
          leave_px: np.ndarray, cost: np.ndarray, value: float, out: np.ndarray) -> None:
     """Price every run of a batch on its time barrier and write its five statistics.
@@ -54,7 +54,7 @@ def runs(entries: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np
         out[s, 4] = dd
 
 
-@njit(cache=True, nogil=True)
+@njit(cache=True, nogil=True, error_model="numpy")
 def touched(entries: np.ndarray, holds: np.ndarray, low: np.ndarray, high: np.ndarray,
             stop: np.ndarray, target: np.ndarray) -> tuple:
     """The first bar of each trade's life on which a price barrier is reached.

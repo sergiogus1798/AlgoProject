@@ -1,15 +1,21 @@
 """Contract C2: what was fabricated, read back off the disk. Never what the plan meant to fabricate."""
 
+import os
 import zipfile
 from pathlib import Path
 
 import pandas as pd
 
+from core import fanout
 from sqx.variants import tuples
 from sqx.variants.build import rewrite
 
 FILE = "manifest.parquet"
 NUMERIC = ("int", "double")
+BLOCK = 100          # files read back per worker task
+
+# What the workers read, set before the fork: the sorted files and the design's names.
+_SHARED: dict = {}
 
 
 def read_back(folder: Path, names: list[str]) -> pd.DataFrame:
@@ -26,8 +32,24 @@ def read_back(folder: Path, names: list[str]) -> pd.DataFrame:
         only place the study finds out that file `P01234` holds the combination the plan
         says it holds.
     """
-    rows = []
-    for path in sorted(folder.glob("*.sqx")):
+    paths = sorted(folder.glob("*.sqx"))
+    _SHARED.update(paths=paths, names=names)
+    blocks = dict(fanout.run(_read_block, {i: BLOCK for i in range(0, len(paths), BLOCK)},
+                             os.cpu_count()))
+    return pd.DataFrame([row for i in sorted(blocks) for row in blocks[i]])
+
+
+def _read_block(start: int) -> list[dict]:
+    """One block of files, read back in a worker; the rows come back in file order.
+
+    Args:
+        start: Position of the block's first file in the sorted folder.
+
+    Returns:
+        One row per file, as read_back() describes them.
+    """
+    names, rows = _SHARED["names"], []
+    for path in _SHARED["paths"][start:start + BLOCK]:
         with zipfile.ZipFile(path) as archive:
             portfolio = archive.read(rewrite.PORTFOLIO).decode("utf-8")
             settings = archive.read(rewrite.SETTINGS).decode("utf-8")
@@ -44,7 +66,7 @@ def read_back(folder: Path, names: list[str]) -> pd.DataFrame:
                      "sqx_name": rewrite.RESULT_NAME.search(settings).group(0).split('"')[1],
                      "file": path.name, **tuples.columns(found),
                      "tuple_hash": tuples.tuple_hash(found)})
-    return pd.DataFrame(rows)
+    return rows
 
 
 def verify(plan: pd.DataFrame, disk: pd.DataFrame) -> dict:

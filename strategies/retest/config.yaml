@@ -4,7 +4,9 @@
 ingest:
   capital: 100000.0        # account the drawdown percentages are measured against; SQX's own
   cents_per_usd: 100       # the .bin stores P/L in cents, as integers
-  workers: null            # null = every core the machine has
+  workers: 16              # 🔬 2026-09-25, 40 runs: 16 -> 1.9 s and 1.9 GB, 40 -> 1.4 s and
+                            # 3.4 GB, 8 -> 2.7 s and 1.1 GB. Each worker is ~85 MB of its own
+                            # simulations; this is the knob that trades RAM for wall clock
   min_sims: 200            # below this a task's quantiles are not worth reading
   compression: zstd
 

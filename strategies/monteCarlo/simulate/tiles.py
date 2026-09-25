@@ -3,12 +3,11 @@
 import numpy as np
 
 from strategies.monteCarlo.model import draws, stress
-from strategies.monteCarlo.simulate import metrics
+from strategies.monteCarlo.simulate import kernel, metrics
 
-# Bytes one trade of one simulated path costs while its strip is alive. The kernel holds
-# several (rows, trades) intermediates at once — the equity path, its running peak, the
-# drop and the drop ratio — and the widest of them is float64, so the strip is measured in
-# whole float64 matrices and tile_bytes carries the rest of the factor.
+# Bytes one trade of one simulated path costs while its strip is alive: the (rows, trades)
+# int64 positions a draw model returns, or the float64 P&L a stress model prices. The
+# statistics themselves run in `kernel`, which keeps no matrix of its own.
 ROW_ITEM = 8
 
 
@@ -53,13 +52,13 @@ def batch(job: tuple) -> dict[str, np.ndarray]:
     # instead of gathering it, so they arrive in float64 and stay there.
     source = data["pnl"].astype(np.float32)
     height = rows(source.size, tile_bytes)
-    out = {k: np.empty(n) for k in metrics.NAMES}
+    out = np.empty((n, len(metrics.NAMES)))
     for lo in range(0, n, height):
         high = min(lo + height, n)
         if kind == "draw":
-            pnl = source[draws.DRAWS[model](high - lo, source.size, rng, block)]
+            kernel.gathered(source, draws.DRAWS[model](high - lo, source.size, rng, block),
+                            equity0, out[lo:high])
         else:
-            pnl = stress.STRESS[model](data, high - lo, rng, cfg_c)
-        for name, value in metrics.paths(pnl, equity0).items():
-            out[name][lo:high] = value
-    return out
+            kernel.priced(stress.STRESS[model](data, high - lo, rng, cfg_c), equity0,
+                          out[lo:high])
+    return {name: out[:, i].copy() for i, name in enumerate(metrics.NAMES)}

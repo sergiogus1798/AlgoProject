@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import sys
 import time
+from collections.abc import Callable, Iterable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
@@ -13,6 +14,10 @@ from strategies.monteCarlo.simulate import metrics, tiles
 ARRAYS = ("pnl", "cost", "spread", "mae")
 
 _POOL = None   # the one pool this process ever builds; see pool()
+# True inside a worker that already is one strategy's whole process: run() then walks its
+# chunks here instead of asking a pool, so the parallelism is across strategies and never
+# a pool nested inside a pool.
+SERIAL = False
 
 # The interactive panel points this at a function(done, total, title) to get the progress
 # the terminal would print. The command leaves it None and the bar goes to the terminal.
@@ -66,6 +71,28 @@ def pool(cfg: dict) -> ProcessPoolExecutor:
         _POOL = ProcessPoolExecutor(max_workers=cfg["global"]["max_workers"] or os.cpu_count(),
                                     mp_context=context)
     return _POOL
+
+
+def mapped(fn: Callable, *iterables: Iterable, cfg: dict) -> list:
+    """`map` over the pool, or right here inside a worker that already is one strategy's.
+
+    Args:
+        fn: A module-level function.
+        iterables: Its arguments, one iterable per parameter.
+        cfg: The whole config, for the pool's size.
+
+    Returns:
+        The results, in order.
+    """
+    return list(map(fn, *iterables) if SERIAL else pool(cfg).map(fn, *iterables))
+
+
+def close() -> None:
+    """Shut the pool down, so this process can fork without a pool's threads inside it."""
+    global _POOL
+    if _POOL is not None:
+        _POOL.shutdown()
+        _POOL = None
 
 
 def _progress(done: int, total: int, title: str, started: float, step: int) -> None:
@@ -158,6 +185,8 @@ def run(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
         granularity and not a statistical decision: the percentile engine runs once, in the
         parent, over the whole pool. What a worker costs in memory is tile_bytes, not chunk.
     """
+    if SERIAL:
+        return sequential(data, kind, model, block, n_sims, cfg)
     g = cfg["global"]
     chunks = [min(g["chunk"], n_sims - i) for i in range(0, n_sims, g["chunk"])]
     jobs = [("draw" if kind == "draw" else "stress", model, block, c, data,

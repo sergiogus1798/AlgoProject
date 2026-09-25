@@ -66,7 +66,7 @@ def overlay(source: dict, cfg: dict) -> dict:
         for scope, positions in samples.items():
             keys.append((fam, scope))
             jobs.append((source, positions, kind, model, blk, metric, cfg))
-    shapes = engine.pool(cfg).map(scope_shape, *zip(*jobs)) if jobs else []
+    shapes = engine.mapped(scope_shape, *zip(*jobs), cfg=cfg) if jobs else []
     out = {fam: {"metric": spec[fam][3]} for fam in spec}
     for (fam, scope), shape in zip(keys, shapes):
         out[fam][scope] = shape

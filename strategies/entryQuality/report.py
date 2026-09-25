@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
+from core import barstore
 from core.barstore import read as read_bars
 from nulls import calibrate
 from strategies.entryQuality import delay, eratio, excursion, inputs, verdict
@@ -41,7 +42,7 @@ def read(packed: Path, strategy: str, cfg: dict) -> dict:
                        found["trades"]["Profit/Loss"].to_numpy(np.float64),
                        found["charged"], d["bars"])
 
-    minute = read_bars(run["feed"], "M1")
+    minute = barstore.source(run["feed"], ["Open"])
     at_m1 = minute.index.searchsorted(found["trades"]["Open time"].to_numpy())
     on_m1 = delay.cost(delay.given_up(minute["Open"].to_numpy(), at_m1, found["side"],
                                       d["minutes"]),

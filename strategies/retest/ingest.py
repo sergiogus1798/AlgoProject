@@ -2,6 +2,8 @@
 """The command: read each .sqx once, reconcile it against SQX, and write the study's parquet."""
 
 import argparse
+import os
+import shutil
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from datetime import date
@@ -70,24 +72,33 @@ def one(path: Path, task: str, cfg: dict) -> dict:
 
 
 def _job(args: tuple) -> dict:
-    """Run one() in a worker process.
+    """Run one() in a worker process, and write its per-simulation P&L from there.
 
     Args:
-        args: (path, task, cfg), because a process pool maps over one argument.
+        args: (path, task, cfg, staging), because a process pool maps over one argument.
 
     Returns:
-        What one() returned.
+        What one() returned, with `pnl` replaced by its row count. The P&L of every trade
+        of every simulation is the one big table of an ingest, and each (task, strategy) is
+        exactly one of its partitions: written by the worker that built it, it never
+        travels back. 🔬 2026-09-25, returning it made the parent hold all of them at once.
     """
-    return one(*args)
+    path, task, cfg, staging = args
+    got = one(path, task, cfg)
+    got["pnl"] = store.write(got["pnl"], staging, ["task", "strategy"],
+                             cfg["ingest"]["compression"])
+    return got
 
 
-def collect(project: str, cfg: dict, limit: int | None, install: Path = MASTER) -> list[dict]:
+def collect(project: str, cfg: dict, limit: int | None, staging: Path,
+            install: Path = MASTER) -> list[dict]:
     """Read every strategy of every task, in parallel.
 
     Args:
         project: SQX project name.
         cfg: What inputs.config.load() returned.
         limit: Keep only this many strategies per task, for a smoke run.
+        staging: Where the workers write the P&L dataset until the ingest is accepted.
         install: Which install holds the project; the master by default.
 
     Returns:
@@ -104,14 +115,15 @@ def collect(project: str, cfg: dict, limit: int | None, install: Path = MASTER) 
         if not found:
             absent.append(tasks.DATABANK[task])
             continue
-        jobs += [(path, task, cfg) for path in found[:limit]]
+        jobs += [(path, task, cfg, staging) for path in found[:limit]]
     required = [t for t in ("bar", "stress") if tasks.DATABANK[t] in absent]
     assert not required, (f"faltan las tareas {', '.join(required)}, que no son opcionales: "
                           "`bar` es el denominador de toda comparación y `stress` es la que "
                           "ordena las estrategias por su cola")
     if absent:
         print(f"sin correr, se leen las demás: {', '.join(absent)}")
-    with ProcessPoolExecutor(max_workers=cfg["ingest"]["workers"]) as pool:
+    with ProcessPoolExecutor(max_workers=min(len(jobs), cfg["ingest"]["workers"]
+                                             or os.cpu_count())) as pool:
         return list(pool.map(_job, jobs))
 
 
@@ -171,9 +183,12 @@ def main() -> None:
     assert not (out / store.SIMS).exists(), (
         f"{out} already holds an ingest; re-ingest under another --day or delete it first")
     install = worker_dir(args.role) if args.role else MASTER
-    results = collect(args.project, cfg, args.limit, install)
+    staging = out.parent / f".{out.name}.{store.PNL}.staging"
+    shutil.rmtree(staging, ignore_errors=True)
+    results = collect(args.project, cfg, args.limit, staging, install)
     failures, isolated, summary = report(results, cfg["recon"]["systematic_share"])
     if failures:
+        shutil.rmtree(staging)
         print(f"ingest: REFUSING to write — {len(failures)} reconstructions disagree with SQX "
               "on a metric that misses systematically, which is a wrong formula")
         for line in failures[:20]:
@@ -185,9 +200,11 @@ def main() -> None:
     codec = cfg["ingest"]["compression"]
     counts = {}
     for name, parts in (("sims", ["task", "strategy"]), ("levels", ["task"]),
-                        ("pnl", ["task", "strategy"]), ("original", []), ("returns", [])):
+                        ("original", []), ("returns", [])):
         frame = pd.concat([entry[name] for entry in results], ignore_index=True)
         counts[name] = store.write(frame, out / name, parts, codec)
+    shutil.move(staging, out / store.PNL)
+    counts["pnl"] = sum(entry["pnl"] for entry in results)
 
     short = [f"{e['task']}/{e['strategy']}" for e in results if not e["provenance"]["usable"]]
     manifest.write(out,

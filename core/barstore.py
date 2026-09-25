@@ -62,18 +62,21 @@ def store(feed: str, csv: Path) -> dict:
             "from": f"{frame.index[0]:%Y-%m-%d}", "to": f"{frame.index[-1]:%Y-%m-%d}"}
 
 
-def source(feed: str) -> pd.DataFrame:
+def source(feed: str, columns: list[str] | None = None) -> pd.DataFrame:
     """One feed's M1 bars.
 
     Args:
         feed: SQX symbol without the timeframe suffix.
+        columns: Only these price columns, for a caller that reads one or two of them: a
+            feed is 7.7 M bars and each column read is 62 MB.
 
     Returns:
         Columns Open, High, Low, Close, Volume indexed by bar open time, as core.bars.read()
         returns them. Prices stay float64: under zstd they compress smaller than float32
         does, so rounding them buys nothing and costs precision.
     """
-    return pd.read_parquet(bar_source(feed)).set_index("t")
+    return pd.read_parquet(bar_source(feed),
+                           columns=["t", *columns] if columns else None).set_index("t")
 
 
 def read(feed: str, timeframe: str) -> pd.DataFrame:

@@ -61,9 +61,10 @@ python3 -m strategies.retest.ingest --project XAUUSD --databank MCR_All --day 20
 | `--limit` | no | solo las primeras N estrategias de cada tarea, para una prueba rápida |
 | `--set` | no | cambia cualquier ajuste del `config.yaml`, p. ej. `--set ingest.capital=50000` |
 
-**Tarda 8 segundos** con 5 estrategias × 8 tareas × 1.000 simulaciones en esta máquina (96 núcleos).
-Escala a cientos de estrategias sin cargar nada entero en memoria: el pico es una estrategia por
-proceso.
+**Tarda 2 segundos** con 5 estrategias × 8 tareas × 1.000 simulaciones en esta máquina (medido el
+2026-09-25, 1,9 GB de memoria real). Cada proceso escribe él mismo el P&L de su estrategia, así que
+nada grande viaja al proceso principal. `ingest.workers` (16 por defecto) es el mando que cambia
+memoria por tiempo: 40 procesos lo bajan a 1,4 s pero suben a 3,4 GB.
 
 ### Qué produce
 

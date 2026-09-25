@@ -80,7 +80,7 @@ Cuánto tarda, medido el 2026-09-23 sobre 962 variantes y 786 semanas:
 | | |
 |---|---|
 | `equity` (leer 962 `.sqx`) | **1,5 s**, y deja 5,9 MB |
-| `pbo` con 12 bloques (3 reglas × 924 particiones + agrupamiento + bootstrap) | **14 s**, 380 MB de RAM |
+| `pbo` con 12 bloques (3 reglas × 924 particiones + agrupamiento + bootstrap) | **9,5 s** (medido 2026-09-25; antes 31 s): las tres reglas corren a la vez y los vecinos de la rejilla se calculan una sola vez |
 | `pbo --blocks 10` (las 252 particiones de antes) | **6 s** |
 
 Los mandos están todos en `strategies/walkForwardCorrelation/config.yaml`, bloque `cscv`: el

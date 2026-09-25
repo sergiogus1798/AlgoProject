@@ -86,9 +86,10 @@ comentario por línea. No hay ni un número escondido en el código. Los tres qu
 | `scoring.survival_dd_pct` | 10% | el techo de drawdown que la cuenta aguanta. **Provisional** |
 | `stability.n_stability_runs` | 8 | cuántas veces se recalculan los números que deciden |
 
-Con 96 núcleos tarda unos **25 segundos por estrategia** con las 100.000 simulaciones por defecto:
-las 36 del ejemplo, con la comprobación de estabilidad incluida, **15 minutos**. Bajar a 20.000 lo
-deja en unos 4 minutos y, medido, no cambia ningún veredicto — sólo ensancha un poco las colas.
+Cada estrategia corre entera en su propio proceso, las más largas primero, y los caminos se
+calculan en un kernel compilado. Medido el 2026-09-25 en esta máquina (96 núcleos): las 36
+estrategias del ejemplo a **20.000** simulaciones, estabilidad incluida, en **27 segundos** (antes,
+8 minutos). Con las 100.000 por defecto, cuenta unas cinco veces eso.
 
 La comprobación de degradación IS/OOS de las familias A, B, C y D añade catorce remuestreos más por
 estrategia, a las mismas 100.000 simulaciones — en coste, como analizar una muestra dentro/fuera de

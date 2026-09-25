@@ -1,7 +1,11 @@
 """Puts one strategy through the four questions and returns the single result everything reads."""
 
+import os
+
 import numpy as np
 import pandas as pd
+
+from core import fanout
 
 from strategies.retest.inputs import tasks
 from strategies.retest.measure import store
@@ -10,6 +14,9 @@ from strategies.retest.verdict import attribution, evidence, fragility, gates, m
 # Columns the questions actually read. Loading thirty when four are wanted costs nothing at
 # five strategies and a great deal at seven hundred.
 NEEDED = ("NetProfit", "ProfitFactor", "DrawdownPct", "NumberOfTrades", "AvgTrade", "StandardDev")
+
+# What the per-strategy workers read, set before the fork.
+_SHARED: dict = {}
 
 
 def _arrays(sims: pd.DataFrame, task: str, strategy: str) -> dict:
@@ -91,6 +98,14 @@ def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict
             "verdict": scoring.verdict(scores, flags, cfg)}
 
 
+def _one(name: str) -> dict:
+    """one() for one strategy, in a worker that inherited the ingest's tables by fork."""
+    got = _SHARED
+    return one(got["keys"], got["sims"], got["original"],
+               {task: got["provenance"][f"{task}/{name}"] for task in tasks.TASKS
+                if f"{task}/{name}" in got["provenance"]}, name, got["cfg"])
+
+
 def battery(keys: dict, provenance: dict, cfg: dict) -> dict:
     """Every strategy of one ingest, plus what can only be said across them.
 
@@ -119,10 +134,12 @@ def battery(keys: dict, provenance: dict, cfg: dict) -> dict:
     for name, short in partial.items():
         print(f"fuera del informe, le faltan tareas: {name} — sin {', '.join(short)}")
     names = [n for n in present if n not in partial]
-    per = {name: one(keys, sims, original,
-                     {task: provenance[f"{task}/{name}"] for task in tasks.TASKS
-                      if f"{task}/{name}" in provenance}, name, cfg)
-           for name in names}
+    # One strategy per process, the one with most simulations first: each reads its own
+    # P&L partitions and nothing crosses between them until the pool below.
+    _SHARED.update(keys=keys, sims=sims, original=original, provenance=provenance, cfg=cfg)
+    got = dict(fanout.run(_one, {n: int((sims["strategy"] == n).sum()) for n in names},
+                          os.cpu_count()))
+    per = {name: got[name] for name in names}
 
     pool = {f"{task}/{name}": got[task]["modes"]["bimodality"]["p"]
             for name, got in per.items() for task in tasks.TASKS

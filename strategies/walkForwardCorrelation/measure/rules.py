@@ -2,9 +2,15 @@
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 from scipy.spatial import cKDTree
 
 NEIGHBOUR = 1        # level steps in each parameter that still counts as next door
+
+# One entry: the grid the neighbourhoods were built for, held so its id cannot be recycled
+# under the key. Every partition and every bootstrap draw of a batch smooths over the same
+# grid, and building the tree was 77% of the CSCV (🔬 2026-09-25, 26.6 s of 34.6).
+_SMOOTHER: dict = {}
 
 
 def coordinates(grid: pd.DataFrame) -> np.ndarray:
@@ -56,9 +62,30 @@ def plateau_centre(score: np.ndarray, grid: pd.DataFrame,
         plateau keeps its value, which is the whole difference between a parameter set
         that survives and one that was a coincidence.
     """
-    coords = coordinates(grid)
-    groups = cKDTree(coords).query_ball_point(coords, r=NEIGHBOUR, p=np.inf)
-    return int(np.argmax([score[list(g)].mean() for g in groups]))
+    sums, count = smoother(grid)
+    return int(np.argmax(sums @ score / count))
+
+
+def smoother(grid: pd.DataFrame) -> tuple:
+    """Every variant's neighbourhood on the grid, built once per grid.
+
+    Args:
+        grid: The `param_` columns, in the panel's column order.
+
+    Returns:
+        (a sparse 0/1 matrix whose row i marks variant i's neighbours, itself included;
+        the size of each neighbourhood). `sums @ score / count` is each neighbourhood's
+        mean score in one sparse product.
+    """
+    if id(grid) not in _SMOOTHER or _SMOOTHER[id(grid)][0] is not grid:
+        coords = coordinates(grid)
+        groups = cKDTree(coords).query_ball_point(coords, r=NEIGHBOUR, p=np.inf)
+        count = np.array([len(g) for g in groups])
+        rows, cols = np.repeat(np.arange(len(groups)), count), np.concatenate(groups)
+        sums = csr_matrix((np.ones(cols.size), (rows, cols)), shape=(len(groups),) * 2)
+        _SMOOTHER.clear()
+        _SMOOTHER[id(grid)] = (grid, sums, count)
+    return _SMOOTHER[id(grid)][1:]
 
 
 def random_profitable(score: np.ndarray, grid: pd.DataFrame,

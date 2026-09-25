@@ -4,7 +4,7 @@ import numpy as np
 from numba import njit
 
 
-@njit(cache=True, nogil=True)
+@njit(cache=True, nogil=True, error_model="numpy")
 def batch(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray, enter_px: np.ndarray,
           size: np.ndarray, charged: np.ndarray, cost: float, scale: float, equity0: float,
           n_bars: int, stats: np.ndarray, curves: np.ndarray) -> None:

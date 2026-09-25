@@ -1,5 +1,6 @@
 """What assets/ declares: costs resolved against the shared policy, checked against the class."""
 
+import copy
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -14,9 +15,25 @@ SYMBOLS = ASSETS / "symbols"   # one file per instrument; the `_*.yaml` above th
 RESERVED = "reserved_for"   # a segment spent by looking at it; report() flags it loudly
 
 
+# Parsed files, keyed by path and stamped with the mtime and size they were parsed at, so an
+# edit from the window is read on the next call. 🔬 2026-09-25: `symbol_for()` parses every
+# asset file and a study calls it once per strategy or per cell -- 54 s of crossTF's 60 went
+# to parsing the same YAML 1,971 times.
+_PARSED: dict = {}
+
+
+def _parse(path: Path) -> dict:
+    """One YAML file, parsed once per version of it on disk; each caller gets its own copy."""
+    stamp = path.stat()
+    stamp = (stamp.st_mtime_ns, stamp.st_size)
+    if _PARSED.get(path, (None,))[0] != stamp:
+        _PARSED[path] = (stamp, yaml.safe_load(path.read_text(encoding="utf-8")))
+    return copy.deepcopy(_PARSED[path][1])
+
+
 def _read(name: str) -> dict:
     """The parsed YAML of one file of the assets root, named with its extension."""
-    return yaml.safe_load((ASSETS / name).read_text(encoding="utf-8"))
+    return _parse(ASSETS / name)
 
 
 def policy() -> dict:
@@ -52,7 +69,7 @@ def load(symbol: str) -> dict:
         authored for one.
     """
     base = policy()
-    data = yaml.safe_load((SYMBOLS / f"{symbol}.yaml").read_text(encoding="utf-8"))
+    data = _parse(SYMBOLS / f"{symbol}.yaml")
     mine = (base["segments"].get(symbol) or {})
     # `from`/`to` first: an asset with no block yet in _policy.yaml — one just added, or
     # one that arrived as a cross-market feed — has undecided windows, not missing keys.

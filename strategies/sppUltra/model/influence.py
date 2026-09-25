@@ -55,8 +55,10 @@ def duplicate_test(frame: pd.DataFrame, parameters: list[str],
     rows = []
     for name in parameters:
         others = [c for c in parameters if c != name]
-        groups = frame.groupby(others).filter(lambda x: len(x) > 1).groupby(others)
-        identical = sum(1 for _, g in groups if all(g[k].nunique() == 1 for k in keys))
-        rows.append({"parameter": name, "groups": groups.ngroups, "identical": identical,
-                     "inert": bool(groups.ngroups and identical == groups.ngroups)})
+        grouped = frame.groupby(others)
+        several = grouped.size() > 1
+        same = grouped[list(keys)].nunique().eq(1).all(axis=1)
+        count, identical = int(several.sum()), int((several & same).sum())
+        rows.append({"parameter": name, "groups": count, "identical": identical,
+                     "inert": bool(count and identical == count)})
     return pd.DataFrame(rows).set_index("parameter")
