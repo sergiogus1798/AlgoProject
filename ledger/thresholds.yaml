@@ -56,6 +56,13 @@ thresholds:
     set_on: 2026-09-23
     why: Benjamini-Hochberg sobre la familia superviviente; SOFT hasta que el dueño vea el exceso
 
+  - key: snoopingScreen.stepm.fwer
+    value: 0.05
+    source: studies/screening/snoopingScreen/config.yaml#stepm.fwer
+    set_by: dueño
+    set_on: 2026-09-25
+    why: probabilidad de nombrar al menos una que no bate al buy & hold a igual riesgo; anota, no corta
+
   # ── Lecturas por estrategia ───────────────────────────────────────────────────────────
   - key: profitShape.max_top5
     value: 0.60

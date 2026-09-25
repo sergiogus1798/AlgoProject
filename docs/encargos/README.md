@@ -12,6 +12,8 @@ Donde discrepen, manda el WORKFLOW — y se arregla el encargo.
 aprendió haciéndolo ya está en `knowhow/`, en el manual y en el código. Limpieza del 2026-09-24:
 salieron los encargos 1, 2, 3, 4 y 7, verificados uno a uno contra el repositorio. El 25-09 salió
 el 19 (el contrato de datos de la ventana): vive en `core/study/CONTRACT.md` y `studies/CLAUDE.md`.
+Y el 18 (perfilado de Python): hecho en los commits `c9011a2` y `3923010`; lo que no pudo medirse
+porque gasta `oos2` está en `OPEN.md` §42.
 
 ## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
 
@@ -22,7 +24,7 @@ escriben en él.
 |---|---|---|
 | `8-ledger-global.md` | ✅ **construido el 2026-09-24** salvo la migración de umbrales; ver su §ESTADO | — |
 | `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 20 pasos, y cuántos llegan | 8 |
-| `10-spa-stepm.md` | SPA de Hansen y StepM de Romano–Wolf sobre la población superviviente | 8 · gate |
+| `10-spa-stepm.md` | ✅ **parte A construida el 2026-09-25** (detrás de la puerta, anota); queda la B, la prueba ciega del paso 20 | 8 · gate |
 | `11-edge-por-coste.md` | edge en unidades de spread y coste de breakeven | 8 |
 | `13-alfa-beta.md` | **interrogante aparcado**, no encargo: nadie lo coge hasta cerrar la secuencia individual | — |
 
@@ -37,7 +39,7 @@ necesita SQX). Aquí quedan los dos que exigen cosas que hoy no tenemos:
 | `12-tests-estructurales.md` | ablación de reglas, inversión de señal y el mono dentro de SQX | hace falta editar la *lógica* del `.sqx`; la ruta XML ya está investigada dentro |
 | `15-superficies-multimercado.md` | una superficie de parámetros por mercado, y si la región buena coincide | los costes de 16 activos (`OPEN.md` §27) y CPU del custodio |
 
-**Orden recomendado: 8 → 10 → 11 → 9**, y el 8 ya está. Los tres primeros leen de la misma cosecha que la puerta ya
+**Orden recomendado: 8 → 10 → 11 → 9**; el 8 y la parte A del 10 ya están. Los tres primeros leen de la misma cosecha que la puerta ya
 hace y no gastan CPU de SQX.
 
 **El punto 5 del PDF (perturbación de zona horaria) se ha retirado.** Decisión del dueño,
@@ -55,16 +57,6 @@ investigó: la API de SQX no tiene verbo de import, el almacén de datos está c
 con el maestro y `strategies/translate/` está vacío. El encargo 9 responde la misma pregunta —la
 tasa de falsos positivos de la cadena— con la maquinaria de monos que ya existe. Decisión del
 dueño, 2026-09-24: **«monos se ha dicho»**.
-
-## Perfilado de la capa de Python, 2026-09-24
-
-| fichero | qué construye | estado de partida |
-|---|---|---|
-| `18-profiling-python.md` | perfilar y optimizar los análisis de Python, con la población de 500 ya construida y medida | 11 de 23 módulos medidos, dos puntos calientes localizados con línea, y la paralelización del crossmarket como único cambio de 90x |
-
-Es el único encargo que **ya trae sus propias medidas**: lo que hay dentro no son hipótesis, son
-números con su método al lado, incluidas **dos optimizaciones que se probaron y no funcionan**, para
-que nadie las repita.
 
 ## La tanda del PDF `TRADE_LEVEL_TESTS`, 2026-09-24
 

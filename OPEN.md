@@ -1202,3 +1202,14 @@ produce silence are known before the budget is spent, which is close to what
 `docs/AgentPDFs/revision-proyecto-2026-09-22.md` already proposes for the sampling.
 
 **Whose call:** the owner's, because it changes what a batch contains.
+
+## 42. 🟡 Three Python entry points were never profiled, because they spend `oos2`
+
+Encargo 18 (profiling the Python layer) closed on 2026-09-25 with commits `c9011a2` and
+`3923010`: nulls, crossmarket, Monte Carlo, filters, CSCV, crossTF, variants, sppUltra, retest and
+the gate's harvest, each measured before and after under `AlgoData/reports/perf-optim-2026-09-25`
+and `AlgoData/profiling/bench-2026-09-25`, outputs identical. What it could not reach:
+`walkForwardCorrelation/report.py` (step 17), its `pbo.py` path over `oos2` (step 18) and
+`walkForwardMatrix/report.py` (step 19) — running them spends the reserved window, which is the
+owner's one-way door. Measure them the first time the owner runs 17-19 for real, not before.
+The MC Retest and the SPP were not measured at 500 either: their cost is SQX's (~34 h and ~2.8 h).
