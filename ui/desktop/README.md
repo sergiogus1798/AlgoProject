@@ -11,6 +11,7 @@ launch ─▶ shell ─▶ coverage  (la matriz, lo primero que se ve)
                    assets ─▶ assetlist · assetcard · assetspans · yamltree   (la librería de activos)
                    studies ─▶ strategytable · resultspanel   (los databanks y la ficha de una estrategia)
                    gate ─▶ funnel · scorecard · gatedetail ─▶ equitychart   (la puerta IS/OOS)
+                   generation   (por dónde va el proyecto que corre, cada 3 s)
              all of them ─▶ client ─▶ the daemon
 ```
 
@@ -44,6 +45,7 @@ launch ─▶ shell ─▶ coverage  (la matriz, lo primero que se ve)
 | `scorecard.py` | The scorecard: one row per strategy, one column per screen, coloured by its pass | imported | — |
 | `gatedetail.py` | One strategy after the gate: its curve, its IS/OOS pairs, each screen's value and note | imported | — |
 | `equitychart.py` | One strategy's daily P&L, build and retest, the retest lifted to the build's last level | imported | — |
+| `generation.py` | The generation zone: one install, one project, its tasks with their state, the running task's percentage and the log tail, refreshed every three seconds while on screen | imported | — |
 | `soon.py` | The page a zone shows before it is built: what goes there, and how the job is done today | imported | — |
 
 ## Contracts and traps
@@ -70,6 +72,9 @@ launch ─▶ shell ─▶ coverage  (la matriz, lo primero que se ve)
 - **The equity chart lifts the retest onto the build's last level.** On disk each side starts
   from zero because each was its own backtest; drawn from zero the retest is a flat line at the
   bottom of a chart the build filled. The lift is for reading the shape, and the legend says so.
+- **The generation zone polls only while visible.** `showEvent` starts the three-second timer
+  and `hideEvent` stops it: a hidden zone tailing a 40 MB log every three seconds would be paid
+  by every other zone.
 - **One project at a time.** The left column is a project picker over its databanks, not every
   databank of every project: the owner's decision of 2026-09-24.
 - **A wrapped `QLabel` needs its height asked for.** It reports a one-line sizeHint and the layout

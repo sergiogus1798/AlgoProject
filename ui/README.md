@@ -5,7 +5,8 @@ described in `docs/AgentPDFs/plataforma-unificada-2026-09-20.md`. Three modules 
 **template library**, the **asset library** — every instrument's costs, windows and MC Retest
 ranges, plus the four shared files that decide for all of them — the **strategies zone**, the
 databanks as SQX groups them and, per strategy, what every analysis module already said about it —
-and the **IS/OOS gate**, step 8 of the workflow: the funnel, the scorecard and the run. The remaining zones of that study
+the **IS/OOS gate**, step 8 of the workflow: the funnel, the scorecard and the run — and
+**generation**, read-only: where the project running on an install is, task by task. The remaining zones of that study
 are named in the sidebar and open a page saying what will live there — they arrive as a view here,
 never as a second window.
 

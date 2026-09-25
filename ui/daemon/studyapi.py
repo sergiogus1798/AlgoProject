@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from core import assetdata
-from ui.daemon import gateview, jobs, studies
+from ui.daemon import gateview, jobs, progress, studies
 
 ROUTER = APIRouter()
 
@@ -159,3 +159,28 @@ def gate_run(req: GateRun) -> dict[str, object]:
         argv += ["--set", item]
     return jobs.start("gate", argv, {"project": req.project, "databank": req.databank,
                                      "strategy": ""})
+
+
+@ROUTER.get("/api/progress/installs")
+def progress_installs() -> dict[str, object]:
+    """Every install by role, with the projects each one holds.
+
+    Returns:
+        Role → project names. Read off the folders: no install is asked anything.
+    """
+    return {role: progress.projects(path) for role, path in progress.installs().items()}
+
+
+@ROUTER.get("/api/progress")
+def progress_state(install: str, project: str) -> dict[str, object]:
+    """Where one project of one install is right now.
+
+    Args:
+        install: A role from the installs listing.
+        project: One of its projects.
+
+    Returns:
+        As `progress.state` builds it, from the project file, the databank folders and
+        the tail of today's log.
+    """
+    return progress.state(install, project)

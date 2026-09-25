@@ -18,14 +18,6 @@ ZONES = {
         "today": "Leer a mano ~/Desktop/AlgoData/INDEX.md, y correr python3 -m core.barstore "
                  "cuando hay dudas de si las velas están al día.",
     },
-    "Generación": {
-        "steps": "pasos 4 a 7",
-        "what": "Los custom projects de SQX y sus tareas, con un botón por tarea, la cola de "
-                "trabajos y la barra de progreso de verdad. Es la zona que hace que SQX deje "
-                "de ser una aplicación que se abre y pase a ser un módulo que se invoca.",
-        "today": "Abrir SQX, navegar sus menús, y por el otro lado "
-                 "python3 -m sqx.projects.builder más bin/sqx-worker.sh a mano.",
-    },
     "Estudios": {
         "steps": "pasos 8, 10, 12, 14, 16, 17 y 18",
         "what": "Monte Carlo, Retest, Cross-market y Cross-timeframe como pestañas de UNA vista, "

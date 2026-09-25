@@ -27,6 +27,7 @@ app ─▶ library ─▶ registry.csv · runs.csv · library/<name>/
 | `runs.py` | What running one module on one strategy means: the argv, given the asset's feed and what `raw/` and `harvest/` hold — or the sentence saying why it cannot run here | imported | context → argv · reason |
 | `jobs.py` | The daemon's job list: commands started from the window as its own children, each logged under `AlgoData/logs/ui/` | imported | argv → job record |
 | `gateview.py` | What the gate zone draws: every cosecha with its newest judgement, one report's funnel and scorecard, one strategy's paired metrics and daily curve | imported | disk → JSON |
+| `progress.py` | Where a running SQX project is: its tasks from `project.cfx`, which one runs and how far from the tail of today's log, and each databank's count on disk. Reads files; sends no install anything | imported | disk → JSON |
 | `studyapi.py` | The routes of the strategies and gate zones, and the job routes they share | imported | request → JSON |
 | `assetapi.py` | The asset library's routes, as a router. They would double `app.py`, and a zone is not a reason for a second daemon | imported | request → JSON |
 | `interview.py` | The questions the chat asks, and which is next | imported | answers → question |
@@ -55,6 +56,11 @@ app ─▶ library ─▶ registry.csv · runs.csv · library/<name>/
 - **A gate report is tied to its harvest by the manifest, not by the folder date.** The report
   is dated the day it ran; `gateview.judged` reads `source.harvest` to find the newest report
   over a harvest, so a harvest judged twice shows its latest judgement.
+- **`progress.py` never talks to an install.** The tail of `user/log/StrategyQuant/log_<hoy>.log`
+  gives the task boundaries and the percentage (in the compute thread's name); `project.cfx`
+  gives the tasks and which are active; the databank folders give counts. Route B of the
+  platform study: works with the master's GUI up and with the custodian mid-job, which a
+  `-databank action=count` would not (the custodian takes no command while it runs).
 - **Jobs live in memory.** They are children of this daemon; when it dies they die, and a record
   that outlived them would describe processes that do not exist.
 - **The interview is stateless.** The whole conversation is the answers dict the client holds, so a
