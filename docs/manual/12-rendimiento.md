@@ -776,3 +776,18 @@ páginas que comparten (`knowhow/07-practices.md`). Datos crudos, scripts y vali
   40 va en 1,4 s y 3,4 GB; con 16, en 1,9 s y 1,9 GB; con 8, en 2,7 s y 1,1 GB. Se dejó en 16.
 - `sqx.variants.equity` y `collect` no se pudieron medir: no hay en disco ninguna carpeta de
   variantes con el formato de tres tramos actual.
+
+## El paso 16.5 de punta a punta — medido 2026-09-25
+
+Tres madres de USDJPY H1, 5.000 variantes cada una, retesteadas en 3 tramos × 10 mercados en el
+custodio. Tabla completa en `docs/manual/19-wfc.md`. Lo que cambió en la cosecha, medido sobre la
+misma escala y validado contra la lógica original en 200 ficheros de cada tramo:
+
+| fase | antes (madre 1) | después (madres 2 y 3) |
+|---|---|---|
+| `equity` | 385 s, **31,8 GB** | **83–88 s, 3,7–4,4 GB** |
+| `collect` | 196 s | **17 s** |
+| vaciar el custodio | 206 s arrancando SQX, que carga las 20.000 estrategias (JVM 47 GB) solo para borrarlas | **3–4 s** borrando con SQX parado |
+| **Python por madre** | **~13 min** | **~1,8 min** |
+
+Lo que manda es SQX: 63–71 min de retest por madre, con el JVM pegado a su techo de 80 GB.

@@ -320,8 +320,24 @@ python3 -m pipeline.run --project XAUUSD --databank SPP_IS --strategy "Strategy 
 python3 -m pipeline.cleanup --project XAUUSD --strategy "Strategy 17.9.39" --apply
 ```
 
-Coste medido: **70 ms por variante** en el retest y **14 KB por fichero**. 2.000 combinaciones son
-2 min 16 s de punta a punta y 28 MB; 5.000 son unos seis minutos y 70 MB.
+**Coste medido el 2026-09-25**, tres madres de USDJPY H1 × 5.000 variantes × 3 tramos × 10 mercados
+(USDJPY y los nueve de su familia) en el custodio, en el proyecto propio `USDJPY_variantes`:
+
+| fase | por madre | memoria | disco |
+|---|---|---|---|
+| `make` (fabricar 5.000 `.sqx`) | 3 s | — | 67 MB en local |
+| `execute` (cargar, retestear, exportar, volcar) | **63–71 min** | JVM **84–87 GB**: toca su techo de 80 GB y el recolector aguanta | **7,5–14,7 GB** en el custodio |
+| `equity` | 83–88 s | 3,7–4,4 GB | — |
+| `collect` | 17 s | 2,1 GB | — |
+| `execute --clear` (vaciar los cuatro databanks) | **3–4 s** | — | el custodio a 0 |
+| WFC (paso 17) | 0,7 s | 0,3 GB | — |
+| CSCV (paso 18) | **90–170 s** | 1,6 GB | — |
+| **se guarda por madre** | | | **~520–870 MB** de parquet (el 80 % son las curvas de los 9 mercados) |
+
+**50 madres**: ~55–60 h de custodio, ~3 h de Python (casi todo CSCV) y ~25–45 GB de parquet. El
+custodio **tiene** que vaciarse entre una madre y la siguiente: sin eso serían 50 × ~10 GB en su
+disco. `execute --clear` lo hace con SQX parado, **después** de `equity` y `collect`, que leen esos
+ficheros.
 
 ### Qué NO te dice
 
