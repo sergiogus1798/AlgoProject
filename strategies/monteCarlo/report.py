@@ -2,41 +2,18 @@
 """Run the Monte Carlo study over every strategy of one databank and write its report."""
 
 import argparse
-import json
 from datetime import date
-from pathlib import Path
 
 import pandas as pd
 
 from core import assets
 from core.paths import report_dir
-from core.study import verdicts
-from core.study.render import markdown, page
+from core.study import output, verdicts
 from strategies.monteCarlo import load, many
 from strategies.monteCarlo.inputs import config
 
-
-def write(out: Path, got: dict, title: str) -> None:
-    """Every strategy's result as JSON and as a page, and the databank's page and summary.
-
-    Args:
-        out: The report folder.
-        got: What many.run() returned.
-        title: The databank page's heading.
-    """
-    (out / "estrategias").mkdir(parents=True, exist_ok=True)
-    for m in got["members"]:
-        # Names carry dots ("Strategy 10.15.25"), so the suffix is appended, never swapped.
-        stem = out / "estrategias" / m["strategy"]
-        Path(f"{stem}.json").write_text(json.dumps(m, ensure_ascii=False), encoding="utf-8")
-        Path(f"{stem}.html").write_text(
-            page.page(m, f"Monte Carlo — {m['strategy']}", "Robustez de una estrategia ya "
-                      "aceptada: cuánto de este resultado es suerte, y de qué tipo."),
-            encoding="utf-8")
-    pop = got["population"]
-    (out / "montecarlo.json").write_text(json.dumps(pop, ensure_ascii=False), encoding="utf-8")
-    (out / "montecarlo.html").write_text(page.page(pop, title), encoding="utf-8")
-    (out / "montecarlo.md").write_text(markdown.render(pop, title), encoding="utf-8")
+LEDE = ("Robustez de una estrategia ya aceptada: cuánto de este resultado es suerte, y de "
+        "qué tipo.")
 
 
 def main() -> None:
@@ -65,8 +42,11 @@ def main() -> None:
     # A portfolio run writes beside the per-strategy one, never over it: they answer
     # different questions about the same databank and both are worth keeping.
     out = (report_dir(a.project, a.databank, date.today().isoformat())
-           / ("montecarlo_portfolio" if a.portfolio else "montecarlo"))
-    write(out, got, f"Monte Carlo — {a.project} / {a.databank}")
+           / ("monteCarlo_portfolio" if a.portfolio else "monteCarlo"))
+    title = f"Monte Carlo — {a.project} / {a.databank}"
+    for m in got["members"]:
+        output.member(out, m, f"Monte Carlo — {m['strategy']}", LEDE)
+    output.population(out, "monteCarlo", got["population"], title)
     fired = [{"strategy": m["strategy"], **f} for m in got["members"]
              for f in m["summary"]["fired"]]
     pd.DataFrame(fired, columns=["strategy", "family", "test", "value", "limit", "gate"]

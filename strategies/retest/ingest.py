@@ -14,7 +14,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from core import manifest, sqxretest, sqxstats
+from core import manifest, sqxfile, sqxretest, sqxstats
 from core.paths import MASTER, databank_dir, worker_dir
 from strategies.retest.inputs import config, tasks
 from strategies.retest.measure import integrity, store
@@ -67,7 +67,8 @@ def one(path: Path, task: str, cfg: dict) -> dict:
 
     return {**keys, "sims": sim_rows, "levels": level_rows, "pnl": pnl_rows, "returns": returns,
             "original": pd.DataFrame([{**keys, **{k: float(v[0]) for k, v in original.items()}}]),
-            "provenance": {**got, "usable": usable, "stored_only": integrity.stored_only(stored)},
+            "provenance": {**got, "usable": usable, "stored_only": integrity.stored_only(stored),
+                           "identity": sqxfile.identity(path)},
             "reconciliation": integrity.reconcile(metrics, stored, cfg) if usable else {}}
 
 

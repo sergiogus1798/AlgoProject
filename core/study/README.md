@@ -12,6 +12,7 @@ disagree. It analyses nothing. The contract itself is `docs/encargos/19-contrato
 | `blocks.py` | The eight block kinds, the five state words, builders for the two that aggregate raw draws (`distribution`, `cone`) plus `table` and `verdict`, and the validator that refuses anything else | imported | numbers → blocks |
 | `result.py` | The envelope of one result — module, strategy, identity, config hash, tabs, warnings, glossary — validated on the way out, and the `PROGRESS` line | imported | tabs → result dict |
 | `verdicts.py` | A population verdict: `verdict.csv` with `strategy`, `identity`, `verdict`, and the manifest naming the absolute input it judged | imported | frame → CSV + manifest |
+| `output.py` | Where results land: `estrategias/<strategy>.json` and `.html` per strategy, and the population's `.json`, `.html` and `.md` | imported | results → files |
 | `identity.py` | The identity of a strategy an export only names, read from its `.sqx` on the master or a worker | imported | names → hashes |
 | `render/` | The result dict drawn as a self-contained HTML page, one drawer per kind | imported | result → HTML |
 

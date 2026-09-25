@@ -1,4 +1,4 @@
-"""The Spanish sentence behind every check that can fire. gates decides, this narrates."""
+"""The Spanish sentence behind every check that can fire, and every task. gates decides, this narrates."""
 
 from strategies.retest.inputs import tasks
 
@@ -47,6 +47,16 @@ PERTURBA = {
     "ohlc": "el propio histórico de precios, cada vela movida una fracción de su ATR",
     "stress": "las seis cosas a la vez"}
 
+FIJA = {
+    "bar": "la estrategia, sus parámetros, los datos y todos los costes",
+    "spread": "la estrategia, los datos y todos los costes salvo el spread",
+    "slippage": "la estrategia, los datos y todos los costes salvo el slippage",
+    "mindist": "la estrategia, los datos y todos los costes por operación",
+    "params": "los datos y todos los costes",
+    "exits": "los datos, todos los costes y todos los parámetros de entrada",
+    "ohlc": "la estrategia, sus parámetros y todos los costes",
+    "stress": "nada salvo las propias reglas de la estrategia"}
+
 VERDICTS = {
     "STRONG": "Aguanta las ocho tareas con margen.",
     "ACCEPTABLE": "Aguanta, sin margen de sobra.",
@@ -55,62 +65,39 @@ VERDICTS = {
     "INCONCLUSIVE": "No falló: no se pudo juzgar. La batería no dio evidencia suficiente."}
 
 
-def flag(entry: dict) -> str:
-    """One line describing a check that fired.
-
-    Args:
-        entry: One of gates.check()'s records.
-
-    Returns:
-        What fired, what it measured against what, and the sentence that explains it.
-    """
-    mark = "VETO" if entry["gate"] else "aviso"
-    return (f"**{mark} · {entry['test']}** — midió {entry['value']:,.2f} contra "
-            f"{entry['limit']:,.2f}. {SENTENCES[entry['veto']]}")
+STATE = {"STRONG": "pass", "ACCEPTABLE": "pass", "MARGINAL": "watch", "FAIL": "fail",
+         "INCONCLUSIVE": "none"}
 
 
-def task_line(task: str, got: dict) -> str:
-    """One line describing what a task did to a strategy.
-
-    Args:
-        task: One of tasks.TASKS.
-        got: That task's entry in a run.one() result.
-
-    Returns:
-        The perturbation, the tail, and whether the task produced a distribution at all.
-    """
-    tail = got["fragility"]["net_p5"]["point"]
-    if not got["modes"]["perturbed"]:
-        shape = "no perturbó nada"
-    elif not got["modes"]["discriminated"]:
-        shape = f"{got['modes']['outcomes']} valores: rejilla, sin forma que medir"
-    else:
-        shape = "bimodal" if got["modes"]["bimodality"]["bimodal"] else "unimodal"
-    return (f"| {tasks.TITLES[task]} | {PERTURBA[task]} | {tail:,.0f} | "
-            f"{got['fragility']['drawdown']['cvar']:.1f}% | "
-            f"{got['modes']['trades']['median_share']:.0%} | {shape} |")
+def shape(entry: dict) -> str:
+    """What a task's outcome looks like, in words: nothing moved, a grid, or a real shape."""
+    m = entry["modes"]
+    if not m["perturbed"]:
+        return "no perturbó nada"
+    if not m["discriminated"]:
+        return f"{m['outcomes']} valores: rejilla, sin forma que medir"
+    return "bimodal" if m["bimodality"]["bimodal"] else "unimodal"
 
 
-def battery_note(result: dict) -> str:
-    """What can only be said across the strategies, in words.
+def battery(result: dict) -> list[list[str]]:
+    """What can only be said across the strategies, one row per fact.
 
     Args:
         result: What run.battery() returned.
 
     Returns:
-        The effective number of independent bets, the multiplicity pool, and whether the
-        ranking could be measured at all.
+        Rows of (fact, value, what it means).
     """
     enb, mult, ranks = result["effective_bets"], result["multiplicity"], result["rank_stability"]
     order = (f"no evaluable con {ranks['n']} estrategias, hacen falta {ranks['needed']}"
              if not ranks["measurable"] else
              f"tau de Kendall {ranks['tau']:+.2f} (p = {ranks['p']:.3f})")
-    return (f"**Apuestas efectivas:** {enb['enb']:.2f} de {enb['n']} estrategias "
-            f"({enb['ratio']:.0%}). Comparten plantilla de generación, pero sus retornos diarios "
-            f"apenas se correlacionan: la plantilla fija la forma de las reglas, no el momento "
-            f"de las operaciones.\n\n"
-            f"**Multiplicidad:** {mult['pool']} contrastes en el pool, corregidos por "
-            f"{mult['method'].upper()} con factor {mult.get('factor', 1):.2f}. Solo entran los "
-            f"tests del dip: los contrastes entre tareas se llevan a cero subiendo el número de "
-            f"simulaciones, así que no son evidencia de nada.\n\n"
-            f"**Estabilidad del ranking:** {order}.")
+    return [["Apuestas efectivas", f"{enb['enb']:.2f} de {enb['n']} ({enb['ratio']:.0%})",
+             "Comparten plantilla de generación, pero sus retornos diarios apenas se "
+             "correlacionan: la plantilla fija la forma de las reglas, no el momento."],
+            ["Multiplicidad", f"{mult['pool']} contrastes, {mult['method'].upper()} factor "
+                              f"{mult.get('factor', 1):.2f}",
+             "Sólo entran los tests del dip: los contrastes entre tareas se llevan a cero "
+             "subiendo simulaciones, así que no son evidencia."],
+            ["Estabilidad del ranking", order, "Si el orden de las estrategias sobrevive al "
+                                               "estrés combinado."]]

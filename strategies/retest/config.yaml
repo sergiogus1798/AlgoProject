@@ -25,7 +25,7 @@ scenario:
   show_levels: [90, 95, 99]
 
 fragility:
-  band_levels: [5, 25, 50, 75, 95]   # the equity fan's percentiles
+  band_levels: [2.5, 25, 50, 75, 97.5]   # the equity fan's percentiles, the study contract's five
   fan_points: 100          # points of normalised progress; simulations differ in length
   cvar_alpha: 0.05         # the drawdown tail the gate reads, as a conditional mean
   n_resamples: 9999        # BCa resamples, for smooth statistics only; a quantile uses the exact interval

@@ -19,7 +19,7 @@ Read `POSSIBLE_IMPROVEMENTS.md` before extending any of this, and `docs/manual/1
 before running it.
 
 ```
-config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ render
+config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ contract
  every knob    which runs  what a      the         the vetoes,  the
                and what    number      numbers     the score    report
                SQX did     means
@@ -37,8 +37,7 @@ hold, and the traps a future session would otherwise step in.
 | `model/` | what does a number read off a simulation mean? | touching a reconstructed formula or a confidence level |
 | `measure/` | what are the numbers, and do they reconcile? | touching the ingest or the reconciliation |
 | `verdict/` | given those numbers, what do we conclude? | moving a threshold or a score |
-| `render/` | how is all of that read? | adding a figure, a table or a sentence |
-| `explorer/` | the same study, one strategy at a time, on demand | *not built yet* |
+| `contract/` | how is all of that read? — the result as the contract's five tabs, every sentence in Spanish | adding a figure, a table or a sentence |
 
 `measure/` is where a sibling study would say `simulate/`. Nothing is simulated here in Python —
 SQX did that — and a folder named for something it does not do is exactly the trap these READMEs
@@ -49,9 +48,16 @@ Only the entry points sit in the root, because they are the only things that get
 | file | what it does | run it |
 |---|---|---|
 | `ingest.py` | Reads the eight task databanks once, reconciles every reconstructed metric against SQX, and writes one dated immutable export | `python3 -m strategies.retest.ingest --project XAUUSD` |
-| `run.py` | Puts one strategy through the four questions and returns the single result everything else reads | imported |
-| `report.py` | The command: every strategy of one ingest, to a report and a verdict table | `python3 -m strategies.retest.report --project XAUUSD` |
-| `config.yaml` | Every tunable of the study, grouped by the layer that reads it | edited |
+| `run.py` | Puts one strategy through the four questions and returns the raw result the verdict reads | imported |
+| `load.py` | Everything one report reads from one ingest, once: simulations, originals, the confidence table, provenance and identity | imported |
+| `one.py` | **One strategy as the contract's data**: verdict, five tabs, glossary, summary row | imported — the window calls it |
+| `many.py` | Every strategy, and what can only be said across them, as one result | imported |
+| `report.py` | The command: every strategy of one ingest, to `verdict.csv`, one JSON and one page per strategy, and the ingest's page | `python3 -m strategies.retest.report --project XAUUSD` |
+| `config.yaml` | Every tunable of the study, grouped by the layer that reads it | edited, or `--set section.key=value` |
+
+The browser panel is gone (2026-09-25, `docs/encargos/19-…`); the window paints `one.run()`'s dict,
+and the batch page is drawn from the same dict by `core/study/render`. Reports land in
+`reports/<P>/<D>/<day>/mcRetest/`, not `retest/`: "retest" alone also names the cross-market one.
 
 ## The four questions
 

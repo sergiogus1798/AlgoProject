@@ -62,7 +62,7 @@ def gate(c: dict) -> list[str] | str:
             "--feed", c["feed"]]
 
 
-def montecarlo(c: dict) -> list[str] | str:
+def monte_carlo(c: dict) -> list[str] | str:
     """Trade-level Monte Carlo over the databank's newest trades export."""
     if own_trades(c):
         return own_trades(c)
@@ -109,7 +109,7 @@ def decay(c: dict) -> list[str] | str:
             c["databank"], "--split", c["split"], "--end", c["end"]]
 
 
-def retest(c: dict) -> list[str] | str:
+def mc_retest(c: dict) -> list[str] | str:
     """Step 14 over the MC Retest export of this project."""
     return ["-m", "strategies.retest.report", "--project", c["project"]]
 
@@ -127,9 +127,9 @@ def crossmarket(c: dict) -> list[str] | str:
             c["databank"], "--asset", c["asset"], "--export", c["export"]]
 
 
-RUNS = {"gate": gate, "montecarlo": montecarlo, "nulls": nulls, "exposure": exposure,
+RUNS = {"gate": gate, "monteCarlo": monte_carlo, "nulls": nulls, "exposure": exposure,
         "profitshape": profitshape, "entryquality": entryquality, "decay": decay,
-        "retest": retest, "wfm": wfm, "crossmarket": crossmarket,
+        "mcRetest": mc_retest, "wfm": wfm, "crossmarket": crossmarket,
         "curate": lambda c: "es una skill: /curate, desde Claude Code",
         "wfc": lambda c: "se corre desde el pipeline, sobre el lote de variantes"}
 
