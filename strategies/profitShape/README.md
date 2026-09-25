@@ -14,7 +14,10 @@ than the trade count suggests, and each does it from a different angle.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `report.py` | **The panel — the only way to run it** | `python3 -m strategies.profitShape.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades → three readings |
+| `report.py` | **The command**: one strategy's three readings, printed and written to `reports/<P>/<D>/<export day>/profitShape/estrategias/` | `python3 -m strategies.profitShape.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades → three readings |
+| `one.py` | The measurements, and the three readings as the contract's data the window paints | imported — the window calls it | trades → result |
+| `contract.py` | The three tabs: concentration, independence, a break, each with its reading | imported | numbers → tabs |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `inputs.py` | The knobs, and one strategy's trades in time order with its daily P&L | imported | export → streams |
 | `concentration.py` | Top-share, trimmed metrics, monthly and yearly concentration | imported | P&L → shares |
 | `dependence.py` | Wald-Wolfowitz runs, Ljung-Box, and the losing streak against shuffling | imported | P&L → statistics |

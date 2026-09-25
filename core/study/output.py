@@ -3,7 +3,31 @@
 import json
 from pathlib import Path
 
+from core import manifest
+from core.paths import report_dir
+from core.study import identity
 from core.study.render import markdown, page
+
+
+def folder(export: Path, module: str) -> Path:
+    """Where a module that read one export writes: beside that export's own day.
+
+    Args:
+        export: A trades.parquet (or any file) inside raw/<project>/<databank>/<day>/.
+        module: The module's report folder name, e.g. "profitShape".
+
+    Returns:
+        reports/<project>/<databank>/<day>/<module>/, project and databank read from the
+        export's manifest — the path spells the databank with underscores, SQX with spaces.
+    """
+    source = manifest.read(export.parent)["source"]
+    return report_dir(source["project"], source["databank"], export.parent.name) / module
+
+
+def identify(export: Path, names: list[str]) -> dict[str, str | None]:
+    """The identity of each strategy an export names, read from its databank's .sqx files."""
+    source = manifest.read(export.parent)["source"]
+    return identity.lookup(source["project"], source["databank"], names)
 
 
 def member(out: Path, result: dict, title: str, lede: str = "") -> Path:

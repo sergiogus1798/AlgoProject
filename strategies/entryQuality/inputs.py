@@ -4,30 +4,25 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import yaml
 
-from core.paths import ROOT
+from core.study import config as study_config
 from core.trades import SIDE
 from nulls import calibrate, inputs as nullinputs
 
-CONFIG = ROOT / "strategies" / "entryQuality" / "config.yaml"
+CONFIG = Path(__file__).with_name("config.yaml")
 
 
 def config(overrides: list[str]) -> dict:
     """The study's knobs, with command-line overrides applied.
 
     Args:
-        overrides: Dotted `section.key=value` strings, as `--set` passes them.
+        overrides: Dotted `section.key=value` strings, as `--set` passes them; each keeps
+            the type of the value it replaces (core.study.config).
 
     Returns:
-        What config.yaml holds, each override parsed as YAML so numbers stay numbers.
+        What config.yaml holds.
     """
-    cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
-    for item in overrides:
-        dotted, raw = item.split("=", 1)
-        section, key = dotted.split(".", 1)
-        cfg[section][key] = yaml.safe_load(raw)
-    return cfg
+    return study_config.load(CONFIG, overrides)
 
 
 def located(packed: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> dict:

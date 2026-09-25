@@ -27,6 +27,7 @@ def block(b: dict) -> list[str]:
         body = _table(["", "valor", "estado"],
                       [[i["label"], i["value"], i.get("state", "")] for i in b["items"]])
     elif kind == "verdict":
+        head = []
         body = [f"**{b['label']}**" + ("" if b["score"] is None else f" ({num(b['score'])})")
                 + f" — {b['meaning']}", ""]
         body += [f"- {p['label']}: {num(p.get('value'))} {p.get('note', '')}" for p in b["parts"]]

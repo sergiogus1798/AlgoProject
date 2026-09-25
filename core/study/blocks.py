@@ -55,6 +55,20 @@ def plain(value: object, digits: int | None = None) -> object:
     return value
 
 
+def thin(length: int, most: int = 400) -> list[int]:
+    """Which positions of a long series a drawing keeps: evenly spaced, both ends included.
+
+    Args:
+        length: Points in the series.
+        most: The most a line needs to look like itself; a trade-by-trade path of 5,000
+            points draws the same at 400 and weighs twelve times less.
+
+    Returns:
+        Sorted indices, every one of them when the series is already short.
+    """
+    return sorted(set(np.linspace(0, length - 1, min(length, most)).astype(int).tolist()))
+
+
 def distribution(title: str, unit: str, values: np.ndarray, real: float, note: str,
                  p: float | None = None, band: tuple[float, float] = (5, 95),
                  bins: int = 60) -> dict:

@@ -2,25 +2,19 @@
 
 from pathlib import Path
 
-import yaml
+from core.study import config as study_config
 
-from core.paths import ROOT
-
-CONFIG = ROOT / "strategies" / "parameterCloud" / "config.yaml"
+CONFIG = Path(__file__).parents[1] / "config.yaml"
 
 
 def config(overrides: list[str]) -> dict:
     """The study's knobs, with command-line overrides applied.
 
     Args:
-        overrides: Dotted `section.key=value` strings, as `--set` passes them.
+        overrides: Dotted `section.key=value` strings, as `--set` passes them; each keeps
+            the type of the value it replaces (core.study.config).
 
     Returns:
-        What config.yaml holds, each override parsed as YAML so numbers stay numbers.
+        What config.yaml holds.
     """
-    cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
-    for item in overrides:
-        dotted, raw = item.split("=", 1)
-        section, key = dotted.split(".", 1)
-        cfg[section][key] = yaml.safe_load(raw)
-    return cfg
+    return study_config.load(CONFIG, overrides)
