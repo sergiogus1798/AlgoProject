@@ -34,7 +34,7 @@ PDF del que sale esto y no es una formalidad.
 Un `trades.parquet` exportado, por ejemplo con:
 
 ```bash
-python3 -m sqx.export.export_trades --project XAUUSD --databank MC_Trades \
+python3 -m sqx.export.export_trades --project XAUUSD --databank Results \
     --symbol XAUUSD_DukasM1_Infinox
 ```
 
@@ -42,8 +42,8 @@ python3 -m sqx.export.export_trades --project XAUUSD --databank MC_Trades \
 
 ```bash
 python3 -m strategies.profitShape.report \
-    --export ~/Desktop/AlgoData/raw/XAUUSD/MC_Trades/2026-09-19/trades.parquet \
-    --strategy "Strategy 35.44.31"
+    --export ~/Desktop/AlgoData/raw/XAUUSD/Results/2026-09-03/trades.parquet \
+    --strategy "Strategy 1.17.44"
 ```
 
 | flag | obligatorio | qué hace |
@@ -84,6 +84,8 @@ operación es enorme. Cuando no rechaza, la partición **no es una rotura que el
 encontrado** y no se puede contar como tal.
 
 ### Un ejemplo completo
+
+Salida real sobre `Strategy 35.44.31` de `MC_Trades` (datos borrados el 2026-09-25; el comando de arriba corre hoy sobre `Strategy 1.17.44` de `Results`):
 
 ```
 Strategy 35.44.31 · muestra OOS1 · 1119 operaciones

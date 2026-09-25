@@ -106,8 +106,7 @@ Monte Carlo, nulo y exposición explican que ese export mezcla mercados y no les
 1. `bin/algoui`, **Estrategias**. Bajo `XAUUSD`, pulsar `OOS 10000`.
 2. En «filtrar por nombre» escribir `17.9.39` y pulsar la fila.
 3. La ficha dice: en el pipeline hasta `verdict`, y la puerta la mantuvo en `SPP_IS` el
-   2026-09-23; el nulo de entrada tiene sus p-valores en `MC_Trades/2026-09-22`; la exposición
-   en `MC_Trades/2026-09-24`; el WFC tiene sus puntos en `Seq._Opt._IS/2026-09-19`. Cross-market,
+   2026-09-23; el WFC tiene sus puntos en `Seq._Opt._IS/2026-09-19`. Cross-market,
    MC Retest, Monte Carlo y WFM: sin resultado, con su comando debajo.
 4. Pulsar **correr** en MC Retest. El bloque pasa a «en curso»; al minuto, «terminó» y las
    últimas líneas de la tabla; la ficha se redibuja sola con el veredicto en su sitio.

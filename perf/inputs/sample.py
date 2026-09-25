@@ -10,13 +10,16 @@ def export(cfg: dict, databank: str) -> Path:
 
     Args:
         cfg: What config.load() returned.
-        databank: Directory name under the project, e.g. "MC_Trades".
+        databank: Directory name under the project, e.g. "OOS".
 
     Returns:
         Path to the latest YYYY-MM-DD directory. Newest rather than pinned, because an
         export is immutable and a pinned date would rot the catalogue the first time the
         owner re-exports.
     """
+    if not databank:
+        raise SystemExit("perf/config.yaml: sample.trades_databank is empty — choose an export with "
+                         "trades/ and strategies/ (MC_Trades was deleted 2026-09-25)")
     where = DATA / "raw" / cfg["sample"]["project"] / databank
     return max(d for d in where.iterdir() if d.is_dir())
 

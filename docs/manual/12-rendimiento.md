@@ -30,7 +30,7 @@ Tiene que existir un export de trabajo bajo el raíz de datos. Por defecto el ca
 
 | qué | dónde | se cambia en |
 |---|---|---|
-| operaciones exportadas y sus `.sqx` | `raw/XAUUSD/MC_Trades/<fecha>/` | `sample.trades_databank` |
+| operaciones exportadas y sus `.sqx` | ninguna desde el 2026-09-25 (se borró `MC_Trades`): hay que elegir una exportación con `trades/` y `strategies/` | `sample.trades_databank` |
 | batería de retest ya ingerida | `raw/XAUUSD/MCR_All/<fecha>/` | `sample.retest_databank` |
 | velas | `bars/XAUUSD_DukasM1_Infinox/M30.csv` | `sample.bars_feed` |
 

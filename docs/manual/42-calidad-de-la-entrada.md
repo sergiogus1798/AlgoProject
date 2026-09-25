@@ -43,8 +43,8 @@ Dos cosas:
 
 ```bash
 python3 -m strategies.entryQuality.report \
-    --export ~/Desktop/AlgoData/raw/XAUUSD/MC_Trades/2026-09-19/trades.parquet \
-    --strategy "Strategy 35.44.31"
+    --export ~/Desktop/AlgoData/raw/XAUUSD/Results/2026-09-03/trades.parquet \
+    --strategy "Strategy 1.17.44"
 ```
 
 | flag | obligatorio | qué hace |
@@ -98,6 +98,8 @@ recuperable por operación es el coste total, no el spread solo. La columna se l
 `veces_el_coste` por eso, y leerla como spreads exageraría la gravedad.
 
 ### Un ejemplo completo
+
+Salida real sobre `Strategy 35.44.31` de `MC_Trades` (datos borrados el 2026-09-25; el comando de arriba corre hoy sobre `Strategy 1.17.44` de `Results`):
 
 ```
 Strategy 35.44.31 · muestra OOS1 · XAUUSD_DukasM1_Infinox M30 · 1119 de 1119 operaciones con camino completo

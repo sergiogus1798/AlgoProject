@@ -9,7 +9,7 @@ than beating zero (its mean is cost-negative). Use fill `open-open` (reconciled)
 is fine for a gate at p≈0.05, not for the extreme tail after multiplicity — BH on the short list uses the simulation.
 
 ## Evidence
-`nulls/` on `raw/XAUUSD/MC_Trades/2026-09-19/`: 757 strategies, 960,705 trades, sample `OOS1` (2018–2022, 320,423 trades),
+`nulls/` on `raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25/`: 757 strategies, 960,705 trades, sample `OOS1` (2018–2022, 320,423 trades),
 2,500 draws per rung, fill `open-open` reconciled (median 0.999983, min 0.99945). XAUUSD costs PROVISIONAL.
 - ⚠️ Not: close-close fill — 4–13 % lost correlation moved percentages by 10–26 pp with no alarm.
 - Sizing channel of *return* empty: median `corr(Size, P/L per unit)` +0.001; |corr| > 0.05 in 10.7 % vs ~7 % by chance (n≈1,270).

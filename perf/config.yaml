@@ -65,7 +65,8 @@ disk:
 sample:
   project: XAUUSD
   asset: XAUUSD
-  trades_databank: MC_Trades      # holds both the trade CSVs and the .sqx they came from
+  trades_databank: null           # MC_Trades was deleted 2026-09-25; name an export that holds
+                                  # both trades/ CSVs and the strategies/ .sqx they came from
   retest_databank: MCR_All        # the ingested parquet the retest study reads back
   bars_feed: XAUUSD_DukasM1_Infinox
   bars_timeframe: M30

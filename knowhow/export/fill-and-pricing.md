@@ -9,7 +9,7 @@ tag: 🔬  date: 2026-09-22  see: export/data-all-crossmarket, export/exits-and-
 - Check bar-open alignment against the bar index (`core.trades.on_bar_open()`), not `minute == 0` (wrong on M30).
 
 ## Evidence
-- 757 strategies / 960,705 M30 trades (`raw/XAUUSD/MC_Trades/2026-09-19`): zero SL/TP/trailing exits; |exit − bar Open| median 0.0000,
+- 757 strategies / 960,705 M30 trades (`raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25`): zero SL/TP/trailing exits; |exit − bar Open| median 0.0000,
   max 0.0100, 0 of 757 non-zero median; |entry − bar Open| median 0.0800, max 0.0900.
 - Retest export (`Strategy 24.14.35`, 1,055 gold trades): entry error 0.05 (989) or 0.06 (66), exit 0 = Buy filled at ask. Silver, Brent median 0 →
   property of `XAUUSD_DukasM1_Infinox`. 0.05 on ~1,800 = 2.8 bps = 0.023 ATR. `fill_mismatch` now judged in median-ATR units vs `diagnostics.max_fill_error`.

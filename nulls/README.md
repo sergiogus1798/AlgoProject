@@ -23,9 +23,9 @@ config.yaml ─▶ inputs ─▶ calibrate ─▶ model ─▶ simulate ─▶ v
 | `simulate.py` | The real run and its null runs, priced identically, in batches | imported | trades + bars + rung → statistics |
 | `verdict.py` | The empirical p, the attribution across the ladder, and every reason to distrust them | imported | statistics → p, channels, warnings |
 | `filter.py` | The random-filter benchmark: a filter against dropping the same share of trades at random | imported | two trade lists → p |
-| `one.py` | **One strategy against its monkeys, readable**: where it landed among them, where its edge came from, and the distribution drawn in text | `python3 -m nulls.one --project XAUUSD --databank MC_Trades --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.10.80"` | one strategy → three readings |
-| `report.py` | Every strategy of one export through every rung | `python3 -m nulls.report --project XAUUSD --databank MC_Trades --feed XAUUSD_DukasM1_Infinox` | export → `nulls.csv` |
-| `verify.py` | The two checks that must pass before a p is read | `python3 -m nulls.verify --project XAUUSD --databank MC_Trades --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.10.80"` | one strategy → three checks |
+| `one.py` | **One strategy against its monkeys, readable**: where it landed among them, where its edge came from, and the distribution drawn in text | `python3 -m nulls.one --project XAUUSD --databank Results --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"` | one strategy → three readings |
+| `report.py` | Every strategy of one export through every rung | `python3 -m nulls.report --project XAUUSD --databank Results --feed XAUUSD_DukasM1_Infinox` | export → `nulls.csv` |
+| `verify.py` | The two checks that must pass before a p is read | `python3 -m nulls.verify --project XAUUSD --databank Results --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"` | one strategy → three checks |
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/26-nulos.md`.
 
@@ -121,8 +121,8 @@ strategy trades**; and the test stays **per strategy**, with no population-wide 
 ## Before reading any number from it
 
 ```bash
-python3 -m nulls.verify --project XAUUSD --databank MC_Trades \
-    --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.10.80"
+python3 -m nulls.verify --project XAUUSD --databank Results \
+    --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"
 ```
 
 Three checks, and all three have to pass: the fill reconciles above 0.99; the vectorised barrier

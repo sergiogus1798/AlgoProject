@@ -54,7 +54,7 @@ python3 -m strategies.exposure.report \
 | `--databank` | sí | databank del que salió el export de operaciones |
 | `--feed` | sí | nombre del feed, p. ej. `XAUUSD_DukasM1_Infinox`. De ahí salen las barras |
 | `--symbol` | sí | nombre del fichero de activo, p. ej. `XAUUSD`. De ahí salen la ventana y el valor del punto |
-| `--strategy` | no | una estrategia y su panel en pantalla. **Si lo omites, pasa las 757 y escribe la tabla** |
+| `--strategy` | no | una estrategia y su panel en pantalla. **Si lo omites, pasa todas y escribe la tabla** |
 | `--set` | no | mueve un mando sin editar el `config.yaml`: `--set gate.min_efficiency=3` |
 
 **Cuánto tarda:** 10 segundos las 757 estrategias de XAUUSD sobre cinco años de M30. Una sola, dos
@@ -145,6 +145,7 @@ dispara un motivo: ésa es justamente la dicotomía que el módulo existe para m
 ### Un ejemplo completo
 
 ```bash
+# corrida del 2026-09-24 sobre las 757 de MC_Trades (datos borrados el 2026-09-25)
 $ python3 -m strategies.exposure.report --project XAUUSD --databank "MC Trades" \
     --feed XAUUSD_DukasM1_Infinox --symbol XAUUSD
 
