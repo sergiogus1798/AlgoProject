@@ -40,57 +40,57 @@ segments_default:
 
 segments:
   BRENT:
-    data: {from: 2013-01-01, to: 2026-09-21}   # BRENTCMDUSD_ftmo, 4.118.134 barras M1
+    data: {from: 2013-01-01, to: 2026-09-24}   # BRENTCMDUSD_ftmo, 4.121.895 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   AUDJPY:
-    data: {from: 2003-12-01, to: 2026-09-22}   # AUDJPY_DukasM1_the5ers, 8.529.114 barras M1
+    data: {from: 2003-12-01, to: 2026-09-25}   # AUDJPY_DukasM1_the5ers, 8.533.415 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   AUDUSD:
-    data: {from: 2003-08-04, to: 2026-09-22}   # AUDUSD_DukasM1_the5ers, 8.500.423 barras M1
+    data: {from: 2003-08-04, to: 2026-09-25}   # AUDUSD_DukasM1_the5ers, 8.504.721 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   CADJPY:
-    data: {from: 2004-10-25, to: 2026-09-22}   # CADJPY_DukasM1_the5ers, 7.892.396 barras M1
+    data: {from: 2004-10-25, to: 2026-09-25}   # CADJPY_DukasM1_the5ers, 7.896.704 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   DAX40:
-    data: {from: 2013-09-30, to: 2026-09-22}   # DAX40_DukasM1_Infinox, 3.907.965 barras M1
+    data: {from: 2013-09-30, to: 2026-09-25}   # DAX40_DukasM1_Infinox, 3.911.957 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   DJ30:
-    data: {from: 2013-09-30, to: 2026-09-22}   # DJ30_DukasM1_Infinox, 3.995.606 barras M1
+    data: {from: 2013-09-30, to: 2026-09-25}   # DJ30_DukasM1_Infinox, 3.999.606 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   EURJPY:
-    data: {from: 2003-08-04, to: 2026-09-22}   # EURJPY_DukasM1_the5ers, 8.650.499 barras M1
+    data: {from: 2003-08-04, to: 2026-09-25}   # EURJPY_DukasM1_the5ers, 8.654.801 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   EURUSD:
-    data: {from: 2003-05-05, to: 2026-09-22}   # EURUSD_DukasM1_the5ers, 8.737.566 barras M1
+    data: {from: 2003-05-05, to: 2026-09-25}   # EURUSD_DukasM1_the5ers, 8.741.866 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   GBPJPY:
-    data: {from: 2003-08-04, to: 2026-09-22}   # GBPJPY_DukasM1_the5ers, 8.648.506 barras M1
+    data: {from: 2003-08-04, to: 2026-09-25}   # GBPJPY_DukasM1_the5ers, 8.652.803 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   GBPUSD:
-    data: {from: 2003-05-05, to: 2026-09-22}   # GBPUSD_DukasM1_the5ers, 8.734.437 barras M1
+    data: {from: 2003-05-05, to: 2026-09-25}   # GBPUSD_DukasM1_the5ers, 8.738.737 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   NIKKEI225:
-    data: {from: 2011-09-19, to: 2026-09-22}   # NIKKEI225_DukasM1_Infinox, 4.079.049 barras M1
+    data: {from: 2011-09-19, to: 2026-09-25}   # NIKKEI225_DukasM1_Infinox, 4.082.974 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
@@ -100,37 +100,37 @@ segments:
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   XAGUSD:
-    data: {from: 2003-08-08, to: 2026-09-22}   # XAGUSD_DukasM1_Infinox, 7.274.464 barras M1
+    data: {from: 2003-08-08, to: 2026-09-25}   # XAGUSD_DukasM1_Infinox, 7.278.583 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   USA500:
-    data: {from: 2012-01-19, to: 2026-09-22}   # USA500_DukasM1_Infinox, 4.047.625 barras M1
+    data: {from: 2012-01-19, to: 2026-09-25}   # USA500_DukasM1_Infinox, 4.051.618 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   USATEC:
-    data: {from: 2012-01-19, to: 2026-09-22}   # USATEC_DukasM1_Infinox, 4.209.890 barras M1
+    data: {from: 2012-01-19, to: 2026-09-25}   # USATEC_DukasM1_Infinox, 4.213.892 barras M1
     build: {from: null, to: null}
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   USDCAD:
-    data: {from: 2003-08-04, to: 2026-09-22}   # USDCAD_DukasM1_the5ers, 8.624.354 barras M1
+    data: {from: 2003-08-04, to: 2026-09-25}   # USDCAD_DukasM1_the5ers, 8.628.639 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   USDCHF:
-    data: {from: 2003-05-05, to: 2026-09-22}   # USDCHF_DukasM1_the5ers, 8.713.619 barras M1
+    data: {from: 2003-05-05, to: 2026-09-25}   # USDCHF_DukasM1_the5ers, 8.717.915 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   USDJPY:
-    data: {from: 2003-05-05, to: 2026-09-22}   # USDJPY_DukasM1_the5ers, 8.734.300 barras M1
+    data: {from: 2003-05-05, to: 2026-09-25}   # USDJPY_DukasM1_the5ers, 8.738.610 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   XAUUSD:
-    data: {from: 2003-05-05, to: 2026-09-22}   # XAUUSD_DukasM1_Infinox, 7.949.285 barras M1
+    data: {from: 2003-05-05, to: 2026-09-25}   # XAUUSD_DukasM1_Infinox, 7.953.422 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}

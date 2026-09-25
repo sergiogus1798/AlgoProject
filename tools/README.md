@@ -12,14 +12,10 @@
 `manual.py` renders the markdown to `docs/manual/AlgoProject-Manual.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. Neither the PDF nor the intermediate HTML is in git: both are products of the `.md` files, which are the original.
 
 `daily_audit.py` writes `audit/YYYY-MM-DD-mechanical.md` and exits non-zero when something regressed.
-It involves no model, so it can run unattended. Enable it with:
-
-```bash
-(crontab -l 2>/dev/null; echo "0 8 * * * cd ~/Desktop/AlgoProject && python3 tools/daily_audit.py") | crontab -
-```
-
-It is **not** installed. The judgement half — documentation drift, SQX health, statistical rigour —
-needs `/audit`, which is run by hand because no `claude` CLI exists on this machine.
+It involves no model. **It is installed**, as the first half of `bin/nightly-audit.sh`, which cron
+runs at 03:00 and which then runs the `auditor` agent headless on Sonnet for the judgement half.
+`bin/nightly-sync.sh` is the same shape for `/sync`. Why the `claude` they call is found the way it
+is: `knowhow/eng/headless-claude-from-cron.md`.
 
 `sqx-lab/` is a vendored plugin, not project code: four skills that author custom blocks, random
 groups, strategy templates and build projects. **Its path must not move** — `~/.claude/skills/sqx-*`

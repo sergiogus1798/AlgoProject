@@ -3,6 +3,7 @@
 - `checker-blind-spots` — checks.py absolute path in bin/*.sh, checker input files, hardcoded_paths, mapfile process substitution exit status lost, bash KeyError three lines
 - `editing-asset-yaml` — edit assets/*.yaml keeping comments, ruamel round-trip byte identical, core.assetyaml, indent width null representer, comment of a key lc.key ca.items
 - `feed-in-config-yaml` — can a config.yaml name the feed / symbol / asset? wrong feed, scored against gold bars, crossTF USDJPY, reconciliation below 0.99
+- `headless-claude-from-cron` — run claude headless from cron, unattended agent, claude -p, binary not on PATH, workspace not trusted, add-dir
 - `log-retention` — SQX log huge gigabytes, log retention prune archive, sqx-log-prune.sh --auto, archive_logs, keep days, current day log, error storm, WFM custom columns log, EdgeDecay project log noise, condensed log
 - `missing-input-not-traceback` — analysis fails with traceback instead of saying what is missing, empty report exit 0, nulls.report --sample OOS1 zero strategies, is_oos StopIteration, exposure.report IndexError trades.parquet, sorted(glob)[-1] next(iter)
 - `moving-module-into-layer` — refactor move module into layer package inputs mechanics model simulate verdict render, Path(__file__).with_name config not found, private name import collision shadowing local, layer violation, verify refactor no batch command, git show HEAD compare output

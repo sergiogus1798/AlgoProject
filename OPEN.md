@@ -973,20 +973,24 @@ draws from, in points, per asset. **All 34 of them are undecided.** These do not
 preflight warns and exits 0, because an undecided range only makes that one MC Retest task
 uninterpretable. `core.assetdata.mc_pending()` names them.
 
-## 30. 🟡 `sqx.data.update` is guarded and documented, but its download has never run
+## 30. ✅ `sqx.data.update` ran end to end on 2026-09-25
 
 `python3 -m sqx.data.update --apply` drives `-data action=update` on the master — the CLI form of
 the GUI's "Update all" — then proves no `.sqx` was lost and refreshes `assets/_policy.yaml`.
 
-**Tested:** the guard (it refuses while the master GUI is up, by PID, killing nothing), the
-inventory (7,546 `.sqx`, 3.4 GB under `user/projects`), `lost()`, the dry run, and the data-range
-refresh, which caught four feeds moving from `2026-01-16` to `2026-09-22` mid-update on 2026-09-22.
+**Run on 2026-09-25, master GUI closed, owner's order:** the no-symbol form updated **all 67
+configured symbols** in 16 min (19:42→19:58 UTC), exit 0. Rule 1 held: 7,546 `.sqx` before and
+after (full copy taken first in `AlgoData/snapshots/2026-09-25-master-antes-update-data`). The
+seventeen assets' ranges moved from `2026-09-22` to `2026-09-25` (BRENT to `2026-09-24`). Log kept
+at `AlgoData/backups/data-update/2026-09-25T194240Z.log`.
 
-**Not tested:** the download itself. It needs the master's GUI closed, which is the owner's action,
-so its first real run will be his. `-data action=update` is in `internal/web/SQUANT/help.txt` and
-the `-data` verb dispatches (verified with the read-only `action=timezones`), but whether `update`
-with no `symbol=` updates every configured symbol is **inferred from the help text, not observed**.
-Run the dry run first; if the no-symbol form turns out to need an argument, it is one line.
+**Left open:** two days of `MSFT_DukasM1_ICMarkets` (2026-09-21, 2026-09-23) failed with HTTP 429 —
+the feed's rate limit. The next run fetches them; nothing to fix in the code.
+
+**Scheduled since 2026-09-25:** `bin/weekly-data-update.sh`, Saturdays 03:00 from cron — full copy
+of `user/projects` first (last three kept), then the update. Not guarded: a worker **started**
+during the ~16 min copies half-written H2 databases, since `sqx-worker.sh` does not know the update
+is running.
 
 ## 29. 🟡 Six index assets have no IS/OOS window, and `SP500ft`'s feed does not exist
 

@@ -108,10 +108,43 @@ XAUUSD: data: {from: 2003-05-05, to: 2026-01-16}   # …, 7.708.823 barras M1
 
 ### Ojo
 
-⚠️ **La descarga en sí no está probada de punta a punta.** El verbo `-data action=update` existe en
-la referencia de `sqcli` y el verbo `-data` despacha —comprobado con `action=timezones`—, pero
-ejecutarla requiere tu GUI cerrada, así que la primera vez que corra de verdad será contigo. Las
-guardas, el inventario y el refresco de fechas sí están probados. Haz el ensayo primero.
+✅ **Probada de punta a punta el 2026-09-25.** Sin `--symbol` actualizó **los 67 símbolos** que
+tiene el maestro en **16 minutos**, y los 7.546 `.sqx` siguieron en disco. Los diecisiete activos
+pasaron de acabar el `2026-09-22` a acabar el `2026-09-25`.
+
+⚠️ **Algún día puede fallar por límite de descargas.** Aquella vez, dos días de
+`MSFT_DukasM1_ICMarkets` dieron `ERROR: download failed. Error code: 429`: el servidor de datos
+cortó por exceso de peticiones. No hace falta arreglar nada; la siguiente ejecución los baja. Búscalo
+así en la salida:
+
+```bash
+grep 'ERROR: download failed' <salida>
+```
+
+Haz igualmente una copia de `user/projects` antes (regla dura 1): la foto que guarda el comando es
+un inventario, no una copia.
+
+### Automático, cada sábado
+
+Desde el 2026-09-25 cron lo lanza **los sábados a las 03:00** con `bin/weekly-data-update.sh`, sin
+modelo de por medio. Hace tres cosas en orden y, si una falla, no hace la siguiente:
+
+1. Copia `user/projects` del maestro entero (unos 4 GB) en
+   `AlgoData/snapshots/weekly-data-update-AAAA-MM-DD`, y comprueba que la copia tiene los mismos
+   `.sqx`. Guarda las tres últimas copias y borra las anteriores, solo las suyas.
+2. Lanza `python3 -m sqx.data.update --apply`. **Si tu GUI del maestro está abierta, no hace nada**,
+   ni la copia.
+3. Apunta los días que el servidor de datos rechazó (el `429` de arriba).
+
+Lo que pasó lo lees en `AlgoData/logs/weekly-data-update.log`, ya sin las miles de líneas de ruido
+de `sqcli`. Para probarlo sin lanzar nada:
+
+```bash
+bin/weekly-data-update.sh --dry-run
+```
+
+Si un worker arranca durante la descarga, copia las bases de datos del maestro a medio escribir. Por
+eso a esa hora no debería haber nada arrancando.
 
 ### Dónde está el detalle
 
