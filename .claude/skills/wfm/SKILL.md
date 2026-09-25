@@ -107,5 +107,11 @@ revienta, que es lo correcto.
 | qué tramo es `oos2` en cada activo | `assets/_policy.yaml`, `segments:` |
 | el título `WFM` | **contrato** con el donante y con `export_wfm` |
 
+Exportar desde un worker: `python3 -m sqx.export.export_wfm --project <P> --databank WFM --role custodian`.
+
+Medido el 2026-09-25 sobre 3 madres de USDJPY H1 (`knowhow/03-driving-sqx.md`): la matriz, ~4-5 min
+por madre y un JVM de 45 GB; export 20 s; análisis 2 s. **SQX no da ninguna señal de avance** mientras
+corre: `Running time 0 ms` y el databank quieto hasta que termina cada madre.
+
 Manual: `docs/manual/34-wfm.md`. Exportar: `docs/manual/09-wfm.md`. Leerlo:
 `docs/manual/14-walkforwardmatrix.md`.

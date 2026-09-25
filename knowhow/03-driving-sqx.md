@@ -861,3 +861,24 @@ Medido en la misma corrida, con 30 variantes: el retest de los tres tramos con n
 **174 s** de punta a punta y el JVM llega a **~23 GB**; los mercados son el 87-90 % del tiempo del
 retest. **Vaciar los cuatro databanks** —arrancar, `clear`, `synctofiles`, parar— tarda **33 s** y
 deja **0 ficheros en disco**.
+
+## 🔬 La WFM de punta a punta en un proyecto propio (2026-09-25)
+
+Primera corrida del paso 19 en un worker: `USDJPY_wfm` en el custodio, clonado del donante
+(`Retest-Task2.xml` es su WFM), escrito con `sqx.projects.wfm`, sobre 3 madres de USDJPY H1, en modo
+mapa (`min_squares: 0`, sólo en ese proyecto). Lo medido:
+
+| fase | 3 madres | nota |
+|---|---|---|
+| la matriz en SQX (30 celdas, 1.080 pasos de walk-forward) | **790 s** | ~4-5 min por madre; JVM 45 GB de pico |
+| volcado del databank `WFM` | 7 s | 3-10 MB por `.sqx` |
+| `sqx.export.export_wfm --role custodian` | 20 s | 129.473 operaciones asignadas a celda y paso, 0 sin asignar |
+| `strategies.walkForwardMatrix.report` | 2 s | |
+
+- **No hay señal de avance.** `action=status` dice `Running time so far 0 ms` y `In databank` no se
+  mueve hasta que una madre termina entera; el log del proyecto está vacío. Sólo la CPU y el JVM.
+- **`Param Count` falla en cada consulta** (`Setting 'TradingSetup.StrategyClass' is not set`) al
+  listar un databank por la API: es la columna personalizada y es ruido de los hilos HTTP, no de la
+  optimización.
+- Dos arreglos para que corriera: `export_wfm` sólo sabía leer el maestro (ahora `--role`), y el
+  pivote de los parámetros hacía la media de valores que llegan como texto, que pandas 2.3 rechaza.

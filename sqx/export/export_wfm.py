@@ -10,18 +10,19 @@ import pandas as pd
 import shutil
 
 from core import exportdrv, manifest, trades, tradestore, wfmatrix, wftrades
-from core.paths import MASTER, databank_dir, export_dir
+from core.paths import MASTER, databank_dir, export_dir, worker_dir
 from sqx.export.export_trades import stage
 
 KEYS = ["strategy", "result", "oos_pct", "runs"]
 
 
-def tables(project: str, databank: str) -> dict[str, pd.DataFrame]:
+def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.DataFrame]:
     """Read the matrix out of every .sqx in a databank, without SQX running.
 
     Args:
-        project: Project name on the master.
+        project: Project name.
         databank: Databank the WFM cross-check wrote into.
+        install: Which install holds the project; a worker's, since the runs moved there.
 
     Returns:
         `cells` (one row per matrix cell), `steps` (one per walk-forward step of every
@@ -32,7 +33,7 @@ def tables(project: str, databank: str) -> dict[str, pd.DataFrame]:
         WFM and is skipped -- a stripped copy carries the rules and no cross-check at all.
     """
     cells, steps = [], []
-    for f in sorted(databank_dir(project, databank, MASTER).glob("*.sqx")):
+    for f in sorted(databank_dir(project, databank, install).glob("*.sqx")):
         node = wfmatrix.matrix(f)
         if node is None:
             continue
@@ -43,9 +44,16 @@ def tables(project: str, databank: str) -> dict[str, pd.DataFrame]:
     frame = lambda rows: pd.DataFrame(rows).drop(columns="params", errors="ignore")
     # Wide: one row per step, one column per parameter -- the shape every reader wants,
     # written once instead of pivoted on every read.
+    # A step holds one value per parameter, so nothing is averaged: `first` takes it as SQX
+    # wrote it. The values arrive as text -- 🔬 2026-09-25, pandas 2.3 refuses the old
+    # implicit mean over them -- and a column becomes numeric only when every value is.
     wide = (pd.DataFrame(params).pivot_table(index=[*KEYS, "index"], columns="parameter",
-                                             values="value").reset_index())
+                                             values="value", aggfunc="first").reset_index())
     wide.columns.name = None
+    for name in wide.columns.difference([*KEYS, "index"]):
+        number = pd.to_numeric(wide[name], errors="coerce")
+        if number.notna().sum() == wide[name].notna().sum():
+            wide[name] = number
     return {"cells": frame(cells), "steps": frame(steps), "params": wide}
 
 
@@ -91,16 +99,18 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True, help="the databank the WFM retest wrote into")
+    ap.add_argument("--role", help="worker role holding the project; the master if absent")
     a = ap.parse_args()
 
+    install = worker_dir(a.role) if a.role else MASTER
     out = export_dir(a.project, a.databank, date.today().isoformat()) / "wfm"
     out.mkdir(parents=True, exist_ok=True)
-    written = tables(a.project, a.databank)
+    written = tables(a.project, a.databank, install)
     for name, table in written.items():
         table.to_parquet(out / f"{name}.parquet", compression="zstd", index=False)
         print(f"{name + '.parquet':16} {len(table):>7} rows  {len(table.columns):>4} columns")
 
-    staged = stage(a.project, a.databank, out / "strategies")
+    staged = stage(a.project, a.databank, out / "strategies", install=install)
     exportdrv.trades(out / "strategies", out / "raw", data="all")
     checked = split(out / "raw", written["steps"], out / "trades.parquet")
     checked.to_parquet(out / "check.parquet", index=False)
@@ -113,7 +123,7 @@ def main() -> None:
         shutil.rmtree(out / "strategies")
 
     manifest.write(out,
-                   {"install": str(MASTER), "project": a.project, "databank": a.databank,
+                   {"install": str(install), "project": a.project, "databank": a.databank,
                     "data": "all"},
                    f"export_wfm.py --project {a.project} --databank {a.databank}",
                    {"strategies": len(staged), "unaccounted_trades": off,
