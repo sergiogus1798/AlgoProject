@@ -104,8 +104,8 @@ skill, el otro se corre sobre un lote de variantes).
 | **Estudios** | 8, 10, 12, 14, 16, 17, 18 | **tres `serve.py` distintos en el navegador**, cada uno con su puerto, sin estado compartido |
 | **Carteras** | después del 20 | nada: `portfolio/` está vacío |
 
-⚠️ **Los tres paneles de navegador son deuda declarada.** `strategies/crossmarket/explorer/`,
-`strategies/monteCarlo/explorer/` y `strategies/retest/explorer/` levantan cada uno un Flask con su
+⚠️ **Los tres paneles de navegador son deuda declarada.** `studies/transfer/crossmarket/explorer/`,
+`portfolio/common/monteCarlo/explorer/` y `studies/breakage/mcRetest/explorer/` levantan cada uno un Flask con su
 puerto. La decisión del dueño es que **las vistas nuevas van dentro de `ui/`**, misma app y mismo
 demonio, y que esos tres se absorban. Que dejen de ser cuatro aplicaciones es la razón por la que
 el demonio existe.
@@ -145,10 +145,10 @@ De miles de estrategias a decenas. Es el paso donde más datos se mueven.
 |---|---|---|---|---|
 | `python3 -m sqx.export.export_metrics --project P --databank D` | Las 41 métricas por estrategia, con columnas IS/OOS emparejadas | databank → `metrics.csv` (único, se sobrescribe) | lee | — |
 | `python3 -m sqx.export.export_trades --project P --databank D --symbol S` | Cada operación: horas, precios, tamaño, P&L, **MAE/MFE**, muestra y **motivo de salida** | databank → `trades.parquet` (fechado, inmutable) | lee | — |
-| `python3 -m gate.harvest --project P --databank build --oos-databank oos1` | **La cosecha**: une los dos databanks por identidad y se lleva métricas, operaciones y equity diaria de una pasada | dos databanks → 4 ficheros + manifiesto | lee | — |
-| **`python3 -m gate.report --project P --databank D --feed F`** | **La puerta**: ocho cribas en cascada, cada una sobre lo que dejó la anterior | cosecha → `scorecard.parquet`, `funnel.csv`, dos `verdict.csv`, `resumen.md` | no | lanzable desde **Estrategias** |
+| `python3 -m studies.screening.gate.harvest --project P --databank build --oos-databank oos1` | **La cosecha**: une los dos databanks por identidad y se lleva métricas, operaciones y equity diaria de una pasada | dos databanks → 4 ficheros + manifiesto | lee | — |
+| **`python3 -m studies.screening.gate.report --project P --databank D --feed F`** | **La puerta**: ocho cribas en cascada, cada una sobre lo que dejó la anterior | cosecha → `scorecard.parquet`, `funnel.csv`, dos `verdict.csv`, `resumen.md` | no | lanzable desde **Estrategias** |
 | `python3 -m sqx.curate.verdict …` / `apply_verdict …` | Escribir un veredicto a mano, y aplicarlo: borrar del databank lo rechazado, con parada del install y registro de lo que había | veredicto → databank curado | **escribe, con `--apply`** | es una skill: `/curate` |
-| `python3 -m tasks.reports.is_oos` · `decay` · `filters` · `compare` · `nulls` | Las cinco lecturas de población: el panel IS/OOS, el decaimiento por estrategia, el barrido de filtros candidatos, si una conclusión se replica en otra muestra, y cuántas baten a su mono | `metrics.csv` → informes HTML/MD | no | — |
+| `python3 -m studies.screening.isOos.report` · `decay` · `filters` · `compare` · `nulls` | Las cinco lecturas de población: el panel IS/OOS, el decaimiento por estrategia, el barrido de filtros candidatos, si una conclusión se replica en otra muestra, y cuántas baten a su mono | `metrics.csv` → informes HTML/MD | no | — |
 
 **Las ocho cribas de la puerta, en orden** (las dos últimas informan y no eliminan):
 
@@ -167,21 +167,21 @@ mitad (112 → 64) y la degradación otro 30 %.
 |---|---|---|---|---|
 | `python3 -m sqx.projects.crossmarket <símbolo> --cfx …` | Escribe el chequeo de mercados adicionales: cuáles, en qué ventana y a qué costes, desde `assets/_markets.yaml` | activo → tarea configurada | escribe | — |
 | `python3 -m sqx.export.export_retest --project P --databank D` | El retest cross-market a un Parquet, cada mercado dentro | databank → `trades.parquet` con columna `Symbol` | lee | — |
-| `python3 -m strategies.crossmarket.report …` | ¿El filo transfiere, o sólo estaba largo? **Cinco modelos nulos de colocación** por mercado, reconciliando el fill de cada uno | export → panel por mercado | no | 🟠 **panel Flask propio** |
+| `python3 -m studies.transfer.crossmarket.report …` | ¿El filo transfiere, o sólo estaba largo? **Cinco modelos nulos de colocación** por mercado, reconciliando el fill de cada uno | export → panel por mercado | no | 🟠 **panel Flask propio** |
 | `python3 -m sqx.variants.scale --mothers … --targets H4` | Hermanas con los parámetros en barras reescalados a otro timeframe | `.sqx` → hermanas + `scaling.parquet` | no | — |
 | `python3 -m sqx.projects.crosstf <símbolo> --cfx … --task …` | El chequeo cross-timeframe: mismo activo y costes, leído en otros relojes | activo → tarea | escribe | — |
-| `python3 -m strategies.crossTF.report --export … --scaling …` | ¿Sobrevive a un reloj más lento? Con **celda de control**: la hermana corrida en su propio timeframe, que separa «murió en H4» de «murió al cambiarle los periodos» | export → tabla de celdas con veredicto | no | — |
+| `python3 -m studies.transfer.crossTF.report --export … --scaling …` | ¿Sobrevive a un reloj más lento? Con **celda de control**: la hermana corrida en su propio timeframe, que separa «murió en H4» de «murió al cambiarle los periodos» | export → tabla de celdas con veredicto | no | — |
 
 ### 3.4 · ¿Qué la rompe? — pasos 13 a 16
 
 | herramienta | qué responde | entrada → salida | SQX | UI |
 |---|---|---|---|---|
 | `python3 -m sqx.projects.mcretest <símbolo> --cfx … --input …` | Escribe las **ocho tareas** de MC Retest: barra inicial, spread, slippage, distancia mínima, parámetros, salidas, OHLC y todo a la vez | activo → 8 tareas | escribe | skill `/mcretest` |
-| `python3 -m strategies.retest.ingest --project P` | Lee las ocho, reconcilia cada métrica reconstruida contra SQX y escribe un export fechado e inmutable | 8 databanks → parquet | lee | 🔴 **roto hoy**, §8 |
-| `python3 -m strategies.retest.report --project P` | Cuatro preguntas en orden: cuánto duele, cómo duele (un régimen o dos), qué la rompe, y si queda filo pagada la multiplicidad | export → informe + veredictos | no | 🟠 panel Flask propio |
+| `python3 -m studies.breakage.mcRetest.ingest --project P` | Lee las ocho, reconcilia cada métrica reconstruida contra SQX y escribe un export fechado e inmutable | 8 databanks → parquet | lee | 🔴 **roto hoy**, §8 |
+| `python3 -m studies.breakage.mcRetest.report --project P` | Cuatro preguntas en orden: cuánto duele, cómo duele (un régimen o dos), qué la rompe, y si queda filo pagada la multiplicidad | export → informe + veredictos | no | 🟠 panel Flask propio |
 | `python3 -m sqx.projects.spp <símbolo> --cfx … --input …` | Las dos tareas SPP: la rejilla de permutaciones, una por ventana, con la aceptación apagada para que sea un mapa y no un filtro | activo → 2 tareas | escribe | skill `/spp` |
 | `python3 -m sqx.export.export_spp --project P --databank D` | Los perfiles de permutación a una tabla ancha | databank → parquet | lee | — |
-| `python3 -m strategies.sppUltra.report --project P --databank D` | Qué parámetros mueven el resultado, cuáles están **demostradamente muertos**, si la familia entera es ruido, y el diseño de las variantes | rejilla → informe + `design_brief.json` | no | — |
+| `python3 -m studies.breakage.spp.report --project P --databank D` | Qué parámetros mueven el resultado, cuáles están **demostradamente muertos**, si la familia entera es ruido, y el diseño de las variantes | rejilla → informe + `design_brief.json` | no | — |
 
 ### 3.5 · ¿Sirve de algo optimizar? — pasos 16.5 a 19
 
@@ -193,18 +193,18 @@ mitad (112 → 64) y la degradación otro 30 %.
 | `python3 -m sqx.variants.execute --work <dir>` | Carga el lote en el custodio y lo retestea | `.sqx` → `retest.csv` | **trabajo largo** | — |
 | `python3 -m sqx.variants.collect --work <dir>` | Métricas por segmento y por unión, unidas al manifiesto (contrato C3) | csv → `metrics.parquet` | no | — |
 | `python3 -m sqx.variants.equity --work <dir>` | El P&L **por día** de cada variante, por tramo y por mercado de chequeo | `.sqx` → `equity.parquet` | no | — |
-| `python3 -m strategies.parameterCloud.report --work <dir>` | ¿El punto elegido es un pico de suerte o una meseta? Quién mueve el resultado (índices de Sobol), si hay superficie que leer, si su forma aguanta año a año, y qué rinde la meseta repartida | lote → cuatro lecturas | no | — |
-| `python3 -m strategies.walkForwardCorrelation.report --work <dir>` | ¿Lo que optimiza dentro predice lo de fuera? Con intervalo, y con la palabra «indeciso» cuando no da | panel → `wfc.html` | no | — |
-| `python3 -m strategies.walkForwardCorrelation.pbo --work <dir>` | ¿Mi forma de elegir parámetros sobreajusta? CSCV sobre **924 particiones**, una vez por regla de selección | panel → `cscv.html` | no | — |
+| `python3 -m studies.optimisation.cloud.report --work <dir>` | ¿El punto elegido es un pico de suerte o una meseta? Quién mueve el resultado (índices de Sobol), si hay superficie que leer, si su forma aguanta año a año, y qué rinde la meseta repartida | lote → cuatro lecturas | no | — |
+| `python3 -m studies.optimisation.wfc.report --work <dir>` | ¿Lo que optimiza dentro predice lo de fuera? Con intervalo, y con la palabra «indeciso» cuando no da | panel → `wfc.html` | no | — |
+| `python3 -m studies.optimisation.cscv.report --work <dir>` | ¿Mi forma de elegir parámetros sobreajusta? CSCV sobre **924 particiones**, una vez por regla de selección | panel → `cscv.html` | no | — |
 | `python3 -m sqx.projects.wfm <símbolo> --cfx … --input …` | La Walk Forward Matrix: 30 celdas, y la ventana reservada que **sólo esta tarea** puede escribir | activo → tarea | escribe | skill `/wfm` |
-| `python3 -m strategies.walkForwardMatrix.report --project P` | ¿Reoptimizar selecciona lo que va a fallar? Veredicto: predice / ciego / perverso | export → informe | no | lanzable desde **Estrategias** |
+| `python3 -m studies.optimisation.wfm.report --project P` | ¿Reoptimizar selecciona lo que va a fallar? Veredicto: predice / ciego / perverso | export → informe | no | lanzable desde **Estrategias** |
 
 ### 3.6 · El veredicto y la forma — pasos 20 y 21
 
 | herramienta | qué responde | estado |
 |---|---|---|
 | **paso 20** | La lectura conjunta y ciega de 17, 18 y 19 | ❌ **no existe** — §8 |
-| `python3 -m strategies.exposure.report --project P --databank D --feed F --symbol S` | ¿Qué tiempo de mercado costó lo ganado? Ocupación, buy & hold al mismo riesgo con tres convenciones de tamaño, retorno por hora expuesta, y cuánto del movimiento ocurrió estando dentro | ✅ |
+| `python3 -m studies.closing.exposure.report --project P --databank D --feed F --symbol S` | ¿Qué tiempo de mercado costó lo ganado? Ocupación, buy & hold al mismo riesgo con tres convenciones de tamaño, retorno por hora expuesta, y cuánto del movimiento ocurrió estando dentro | ✅ |
 
 ### 3.7 · Lecturas por estrategia que no son un paso
 
@@ -213,11 +213,11 @@ estrategia en la interfaz.
 
 | herramienta | qué responde | coste |
 |---|---|---|
-| `python3 -m nulls.one --project P --databank D --feed F --strategy S` | **El test del mono**: dónde cayó entre miles de versiones imaginarias sobre las mismas velas, y de qué canal viene su filo. Escalera de cuatro peldaños según qué se le entrega al azar | — |
-| `python3 -m nulls.verify …` | Las tres comprobaciones que tienen que pasar **antes** de leer ninguna p | — |
-| `python3 -m strategies.monteCarlo.report …` | De qué depende el resultado: del orden, de qué operaciones salieron, de la ejecución o del régimen. Cinco modelos de remuestreo en dos familias, más estrés y régimen | — |
-| `python3 -m strategies.profitShape.report --export … --strategy …` | De qué pocas cosas depende: concentración por operaciones y por meses, independencia de la secuencia, y si la media cambió dentro de la muestra | **2,9 s** |
-| `python3 -m strategies.entryQuality.report --export … --strategy …` | ¿La señal de entrada vale algo por sí sola? Recorrido a favor/en contra contra entradas al azar a las mismas horas, y lo que cuesta llegar tarde | **3,3 s** |
+| `python3 -m studies.readings.monkey.one --project P --databank D --feed F --strategy S` | **El test del mono**: dónde cayó entre miles de versiones imaginarias sobre las mismas velas, y de qué canal viene su filo. Escalera de cuatro peldaños según qué se le entrega al azar | — |
+| `python3 -m studies.readings.monkey.verify …` | Las tres comprobaciones que tienen que pasar **antes** de leer ninguna p | — |
+| `python3 -m portfolio.common.monteCarlo.report …` | De qué depende el resultado: del orden, de qué operaciones salieron, de la ejecución o del régimen. Cinco modelos de remuestreo en dos familias, más estrés y régimen | — |
+| `python3 -m studies.readings.profitShape.report --export … --strategy …` | De qué pocas cosas depende: concentración por operaciones y por meses, independencia de la secuencia, y si la media cambió dentro de la muestra | **2,9 s** |
+| `python3 -m studies.readings.entryQuality.report --export … --strategy …` | ¿La señal de entrada vale algo por sí sola? Recorrido a favor/en contra contra entradas al azar a las mismas horas, y lo que cuesta llegar tarde | **3,3 s** |
 
 ### 3.8 · Transversales — no pertenecen a ningún paso
 

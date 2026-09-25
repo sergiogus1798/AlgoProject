@@ -54,12 +54,12 @@ stages:
     produces: ["raw/{project}/{databank}/{day}/spp/spp.parquet"]
 
   - name: sppultra
-    command: python3 -m strategies.sppUltra.report --project {project} --databank {databank} --strategy {strategy}
+    command: python3 -m studies.breakage.spp.report --project {project} --databank {databank} --strategy {strategy}
     needs: ["raw/{project}/{databank}"]
-    produces: ["{reports}/design_brief_{safe}.json"]
-    record_from: "{reports}/design_brief_{safe}.json"
+    produces: ["{reports}/spp/design_brief_{safe}.json"]
+    record_from: "{reports}/spp/design_brief_{safe}.json"
     record: [verdict, n_eff]
-    hash: {brief_hash: "{reports}/design_brief_{safe}.json"}
+    hash: {brief_hash: "{reports}/spp/design_brief_{safe}.json"}
 
   # `design` and `build` are the same entry point twice: sqx.variants.make with and without
   # --design-only. That is not a workaround -- the design is seeded from variants/config.yaml
@@ -69,14 +69,14 @@ stages:
   # --out sends both at {work}, so the batch lands beside its own ledger instead of in
   # variants/<project>/<strategy>, which is where the command writes when run by hand.
   - name: design
-    command: python3 -m sqx.variants.make --brief {reports}/design_brief_{safe}.json --project {project} --out {work} --design-only
-    needs: ["{reports}/design_brief_{safe}.json"]
+    command: python3 -m sqx.variants.make --brief {reports}/spp/design_brief_{safe}.json --project {project} --out {work} --design-only
+    needs: ["{reports}/spp/design_brief_{safe}.json"]
     produces: ["{work}/design.json", "{work}/plan.csv"]
     record: [n, shortfall]
 
   - name: build
     #   also produces {work}/manifest.parquet  (C2) and {work}/sqx/P*.sqx
-    command: python3 -m sqx.variants.make --brief {reports}/design_brief_{safe}.json --project {project} --out {work} --sample {sample}
+    command: python3 -m sqx.variants.make --brief {reports}/spp/design_brief_{safe}.json --project {project} --out {work} --sample {sample}
     needs: ["{work}/design.json"]
     produces: ["{work}/build.json", "{work}/manifest.parquet"]
     record: [n, bytes]
@@ -134,9 +134,9 @@ stages:
           se reteseo nada y nada de lo que se mida despues quiere decir nada
 
   - name: wfc
-    command: python3 -m strategies.walkForwardCorrelation.report --work {work}
+    command: python3 -m studies.optimisation.wfc.report --work {work}
     needs: ["{work}/collected.json"]
-    produces: ["{work}/wfc.json", "{work}/wfc.html"]
+    produces: ["{work}/wfc.json", "{work}/estudios/wfc.html"]
     record: [n, rho, call]
 
   # Where `wfc` asks whether this surface carried over, this asks whether the WAY the
@@ -147,13 +147,13 @@ stages:
   # produces it is `pbo`. `pipeline/stages/verdict.py` keys its thresholds on the file
   # stem, so a row whose name and output disagree is a threshold that cannot be read.
   - name: cscv
-    command: python3 -m strategies.walkForwardCorrelation.pbo --work {work}
+    command: python3 -m studies.optimisation.cscv.report --work {work}
     needs: ["{work}/wfc.json", "{work}/equity.parquet"]
-    produces: ["{work}/cscv.json", "{work}/cscv.html"]
+    produces: ["{work}/cscv.json", "{work}/estudios/cscv.html"]
     record: [pbo_argmax, pbo_plateau_centre, dsr, n_clusters, slope]
 
   - name: verdict
-    command: python3 -m pipeline.stages.verdict --work {work} --brief {reports}/design_brief_{safe}.json
+    command: python3 -m pipeline.stages.verdict --work {work} --brief {reports}/spp/design_brief_{safe}.json
     needs: ["{work}/wfc.json", "{work}/cscv.json"]
     produces: ["{work}/verdict.json"]
     recompute: true

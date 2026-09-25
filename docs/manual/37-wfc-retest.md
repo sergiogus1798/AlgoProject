@@ -8,7 +8,7 @@ spread y el slippage que le tocan, y cada una corriendo además los mercados adi
 
 Ninguna, todavía. Esto no analiza: **prepara los backtests**. Lo que produce son tres databanks con
 las mismas variantes corridas sobre tres tramos distintos, que es el material que luego leen
-`strategies/walkForwardCorrelation/` (¿el in-sample predice el out-of-sample?) y su CSCV (¿mi forma
+`studies/optimisation/wfc/` (¿el in-sample predice el out-of-sample?) y su CSCV (¿mi forma
 de elegir parámetros sobreajusta?).
 
 Los dos estudios comparten configuración a propósito: leen el mismo panel y la misma equity diaria

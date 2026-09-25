@@ -100,7 +100,7 @@ to false, and says how many — `crosstf.conditions: []` (owner, 2026-09-24): wi
 the failing strategy and Python never sees the dead ones
 (`knowhow/conditions/crossmarket-crosstf-no-conditions.md`). It leaves `CrossTF` the only active
 task, refuses while the install is up (hard rule 4), and ends by printing the `run.blocks` line.
-**Paste it into `strategies/crossTF/config.yaml`.**
+**Paste it into `studies/transfer/crossTF/config.yaml`.**
 
 **3 · Run and export.** On the custodian, stopped at first. Start it, load the folder into the
 task's input, then the run half of `/template-run` — `stop` then `start`, only `status` while it
@@ -114,7 +114,7 @@ python3 -m sqx.export.export_retest --project <P> --databank CrossTF --role cust
 **4 · Read.**
 
 ```bash
-python3 -m strategies.crossTF.report --export <trades.parquet> --scaling <scaling.parquet>
+python3 -m studies.transfer.crossTF.report --export <trades.parquet> --scaling <scaling.parquet>
 ```
 
 Five readings: `survives` (beats its own timeframe's null — the edge is its own), `inherited`

@@ -4,7 +4,7 @@ tag: 🔬  date: 2026-09-24  see: export/sequential-opt-not-wfc, databanks/no-sp
 ---
 # Paired IS/OOS metrics come from a custom `.vw`; read which block is filled off the data
 - `sampleType`: 10 = IS · 20 = OOS · 127 = full period. View in `user/settings/views/databanks/<Name>.vw`, pass `view=<Name>`; project copies in `sqx/views/`.
-- A single-window task fills ONE block, and SQX labels it either way → `gate/collect.py::measured()` picks the non-zero block over paired metrics only; both filled (internal split) → refuses.
+- A single-window task fills ONE block, and SQX labels it either way → `studies/screening/gate/collect.py::measured()` picks the non-zero block over paired metrics only; both filled (internal split) → refuses.
 - Use `sqx/export/export_metrics.py` (daemon worker, poll `-databank action=count` until `Records:`), with `--role` for custodian projects. Never `sqx-worker.sh run` for a databank export.
 
 ## Evidence
@@ -24,5 +24,5 @@ tag: 🔬  date: 2026-09-24  see: export/sequential-opt-not-wfc, databanks/no-sp
 - Silent header-only CSV: (1) `-databank action=load ... folder=` returns before loading (`count` in same `-run` says `Loaded 0 strategies`); (2) startup sync-from-files is async too.
   Port answers `Error: CLI not ready.` ~20 s; loading finishes later.
 - A databank from `-databank action=create` is not picked up by startup sync — stage into an existing registered `Results`, not a new `MetricsTmp`.
-- Silent 0 rows: `export_metrics` was fixed to `MASTER` until 2026-09-24 (only signal `worker saw 0 strategies`); now `--role` like `export_retest`, `export_trades`, `gate.harvest`.
+- Silent 0 rows: `export_metrics` was fixed to `MASTER` until 2026-09-24 (only signal `worker saw 0 strategies`); now `--role` like `export_retest`, `export_trades`, `studies.screening.gate.harvest`.
   Also 0 rows when `.sqx` are memory-only: `synctofiles` over HTTP fails for names with spaces (API splits on whitespace) → stop the install; the shutdown sync writes them.

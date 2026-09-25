@@ -38,21 +38,21 @@ Si lo que quieres saber es qué pasaría en **otra** historia, eso es el MC Rete
 **Una sola estrategia**, que es el uso normal:
 
 ```bash
-python3 -m nulls.one --project XAUUSD --databank Results \
+python3 -m studies.readings.monkey.one --project XAUUSD --databank Results \
     --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"
 ```
 
 **Primero la verificación, siempre.** Sobre una estrategia cualquiera:
 
 ```bash
-python3 -m nulls.verify --project XAUUSD --databank Results \
+python3 -m studies.readings.monkey.verify --project XAUUSD --databank Results \
     --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"
 ```
 
 Y luego la corrida completa:
 
 ```bash
-python3 -m nulls.report --project XAUUSD --databank Results \
+python3 -m studies.readings.monkey.report --project XAUUSD --databank Results \
     --feed XAUUSD_DukasM1_Infinox --timeframe M30 --sample OOS1
 ```
 
@@ -77,7 +77,7 @@ p, uses 1 proceso o 96, y aunque cambien las demás estrategias del lote. Subir 
 monos y no cambia los primeros. Lo que sí los cambia es `nulls.chunk_trades`: no lo toques.
 No toca SQX, así que puedes lanzarlo con la GUI abierta.
 
-**Lo que imprime `nulls.one`**, salida real (2026-09-22, `Strategy 1.10.80` de `MC_Trades`, datos borrados el 2026-09-25):
+**Lo que imprime `studies.readings.monkey.one`**, salida real (2026-09-22, `Strategy 1.10.80` de `MC_Trades`, datos borrados el 2026-09-25):
 
 ```
 Strategy 1.10.80   399 operaciones   muestra OOS1   2,500 monos por peldano
@@ -199,7 +199,7 @@ paga ~7.756 $ de coste. Batir a ese mono es, por tanto, un listón **más bajo**
 ### El tercer comando: ¿y la población entera?
 
 ```bash
-python3 -m tasks.reports.nulls --project XAUUSD --databank Results
+python3 -m studies.screening.monkeyExcess.report --project XAUUSD --databank Results
 ```
 
 Los dos comandos de arriba miran estrategias. Éste mira **el lote**, y contesta otra pregunta:

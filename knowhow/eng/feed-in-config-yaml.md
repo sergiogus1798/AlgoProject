@@ -8,11 +8,11 @@ A fixed `feed:` in a module's `config.yaml` silently scores every other asset ag
 Asset names in warnings must come from the feed actually read, not from config.
 
 ## Evidence
-- `strategies/crossTF/config.yaml` had `run.feed: XAUUSD_DukasM1_Infinox`. crossTF on USDJPY scored all
+- `studies/transfer/crossTF/config.yaml` had `run.feed: XAUUSD_DukasM1_Infinox`. crossTF on USDJPY scored all
   12 cells against gold bars: reconciliation vs SQX P/L −0.20 to −0.34; correct feed → 0.98–0.99.
 - The gate caught it: `RECONCILIACION ... por debajo de 0.99` fired in all 12 cells ("nothing below
   describes the backtest SQX ran"). Missing piece was only that the feed was a constant.
 - Provisional-cost warning also named XAUUSD for any asset; now from `assetdata.symbol_for(feed)` +
   `assetcheck.provisional()`.
-- 🤔 Still to review: `strategies/sppUltra/`, `strategies/retest/`, `strategies/crossmarket/` take
+- 🤔 Still to review: `studies/breakage/spp/`, `studies/breakage/mcRetest/`, `studies/transfer/crossmarket/` take
   `--project`, but check none stores a feed.

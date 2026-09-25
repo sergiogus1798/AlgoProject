@@ -13,4 +13,4 @@ tag: 🔬  date: 2026-09-24  see: export/fill-and-pricing, export/bars, export/t
   `raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25/trades.parquet`: 960,705 trades, 757 strategies (counted 2026-09-25).
 - `XAUUSD_DukasM1_Infinox`: 7,949,285 bars (2003-05-05 → 2026-09-22), `core.barstore.source` loads all in 0.4 s. 0 OHLC-inconsistent
   (`H < max(O,C)`, `L > min(O,C)`, `H < L`); 40,097 (0.50 %) flat `High == Low`.
-- Consistent with `strategies/CLAUDE.md` on the generated population. Used by `strategies/entryQuality/`, `strategies/profitShape/`.
+- Consistent with `studies/CLAUDE.md` on the generated population. Used by `studies/readings/entryQuality/`, `studies/readings/profitShape/`.

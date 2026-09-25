@@ -47,19 +47,19 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 38 | 🔴 | 🟡 | **hecho en parte 2026-09-25**: el retest de variantes ya no corre en el `Retester` de serie — `sqx.variants.execute` exige `--project` (el del workflow, de `builder --workflow`) y se niega si hay activa otra cosa que las tres patas del WFC. **Queda** el arnés SPP del pipeline desatendido (`sqx.variants.spp`, `pipeline/recipe.yaml`), que sigue escribiendo su tarea en el `Retester` de serie, contra la regla 10 |
 | 48 | — | 🟡 | new 2026-09-25: **dos parches locales al código de sqx-lab 1.2.0**, marcados `LOCAL PATCH` y listados en `tools/sqx-lab/LOCAL_PATCHES.md` — `sqx-random-group` reexportaba bloques sin `categoryType="Custom blocks"`, y la verificación de `sqx-strategy-project` exigía un databank que los proyectos de serie de los workers no traen. Una versión nueva descomprimida encima los borra: `bin/sqx-lab-install.sh` avisa si faltan |
 | 39 | 🔴 | 🟢 | **hecho 2026-09-25**: el bucle sobre estrategias de `crossmarket.report` se reparte entre los núcleos con `fork` (`--workers`, por defecto todos). 8×9 a 500 sorteos: **623,5 s → 156,1 s con 7 procesos**, `verdict.csv` idéntico byte a byte. `docs/manual/12-rendimiento.md` |
-| 40 | 🔴 | 🟢 | **hecho 2026-09-25**: el ATR se cachea por `(barras, ventana)` (`nulls/calibrate.py`) y la tabla OOS se agrupa una vez por identidad (`gate/monkey.py`), y el mono va en paralelo. `gate.report` a 500: **31,1 s → 6,1 s**, `scorecard` de 500×29 idéntico columna a columna |
+| 40 | 🔴 | 🟢 | **hecho 2026-09-25**: el ATR se cachea por `(barras, ventana)` (`engines/market/calibrate.py`) y la tabla OOS se agrupa una vez por identidad (`studies/screening/gate/monkey.py`), y el mono va en paralelo. `studies.screening.gate.report` a 500: **31,1 s → 6,1 s**, `scorecard` de 500×29 idéntico columna a columna |
 | 41 | — | 🟢 | new 2026-09-24: **`sqx-worker.sh stop` volvía a los 20 s diciendo «did not stop»** mientras la JVM seguía escribiendo databanks, y quien leía después veía 211 de 500 `.sqx`. Ahora espera hasta 5 min a que el proceso se vaya de verdad. **No se perdió nada**: la sincronización acabó sola |
 | 42 | — | 🟢 | new 2026-09-24: una estrategia que **no dispara en ningún mercado ajeno** tumbaba el lote entero del paso 10 con `KeyError: 'bar_cap'`. Ahora se anota como veredicto propio. Salió a la primera con 8 estrategias reales |
-| 43 | — | 🔴 | new 2026-09-24: **la mitad de los análisis de Python no está ejercitada.** De 23 puntos de entrada se han medido 7; de los 5 primeros que se probaron a mano, 4 fallaron por prerrequisitos o por entrada de la forma equivocada. El peor: **`nulls.report` escribe «0 estrategias» y sale con éxito** cuando `--sample OOS1` no casa con el export (los de crossmarket sólo llevan `IST`). `tasks.is_oos` muere con `StopIteration` en un databank sin OOS y funciona perfecto (0,57 s) en el correcto; `exposure.report` y `tasks.nulls` mueren con `IndexError` en vez de nombrar el fichero que les falta |
+| 43 | — | 🔴 | new 2026-09-24: **la mitad de los análisis de Python no está ejercitada.** De 23 puntos de entrada se han medido 7; de los 5 primeros que se probaron a mano, 4 fallaron por prerrequisitos o por entrada de la forma equivocada. El peor: **`studies.readings.monkey.report` escribe «0 estrategias» y sale con éxito** cuando `--sample OOS1` no casa con el export (los de crossmarket sólo llevan `IST`). `tasks.is_oos` muere con `StopIteration` en un databank sin OOS y funciona perfecto (0,57 s) en el correcto; `exposure.report` y `tasks.nulls` mueren con `IndexError` en vez de nombrar el fichero que les falta |
 | 33 | — | 🟢 | new: **un clon del donante seguía operando ORO** para cualquier activo que no fuese XAUUSD. Arreglado el 2026-09-24 con `sqx/projects/resources.py` y un guardia; `knowhow/authoring/donor-clone-market.md` |
 | 34 | 🔴 | 🟢 | **causa hallada y arreglada 2026-09-24**: `crossTF/config.yaml` llevaba el feed de XAUUSD fijo y puntuaba USDJPY contra barras de oro. Con `--feed` correcto la correlación sube de −0.34 a 0.98–0.99; el aviso de costes ya nombra el activo real. `knowhow/authoring/donor-clone-market.md` |
 | 35 | — | 🟢 | new: `export_metrics` sólo leía el maestro y `sync_bars` moría en un `markets.FILE` inexistente. Los dos arreglados el 2026-09-24; `knowhow/export/bars.md` |
-| 36 | 🔴 | 🟢 | **hecho 2026-09-24**: `strategies/crossmarket/report.py` juzga la población entera por amplitud y escribe el `verdict.csv` de `/curate`. ⚠️ Revierte la decisión del 2026-09-15 de no guardar resultados; el panel sigue siendo donde se mira UNA estrategia |
-| 41 | — | 🟠 | new: **el diseño de variantes gasta la mitad del presupuesto en combinaciones que apenas operan** — 1.002 de 2.000 filas de `Strategy 17-9-39` quedan bajo 30 operaciones, y el filtro colapsa `DICrossShift1` a un valor. Medido 2026-09-24 con `strategies/parameterCloud/` |
+| 36 | 🔴 | 🟢 | **hecho 2026-09-24**: `studies/transfer/crossmarket/report.py` juzga la población entera por amplitud y escribe el `verdict.csv` de `/curate`. ⚠️ Revierte la decisión del 2026-09-15 de no guardar resultados; el panel sigue siendo donde se mira UNA estrategia |
+| 41 | — | 🟠 | new: **el diseño de variantes gasta la mitad del presupuesto en combinaciones que apenas operan** — 1.002 de 2.000 filas de `Strategy 17-9-39` quedan bajo 30 operaciones, y el filtro colapsa `DICrossShift1` a un valor. Medido 2026-09-24 con `studies/optimisation/cloud/` |
 | 46 | — | 🔴 | new 2026-09-25: **la tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado**. En un lote de 96 la mayor lleva 117.612 operaciones y cuesta **453 s ella sola**: es el suelo de cualquier reparto a partir de 24 procesos, y por eso 96 procesos sólo dan 14,2x. Los 9 mercados son independientes dentro de `analyse_market` — repartir por ahí divide la tarea más larga por ~9. Toca la forma de `analyse_strategy`, que es la puerta del panel: decisión de diseño. `docs/manual/12-rendimiento.md` |
 | 47 | — | 🟠 | new 2026-09-25: **el lote del paso 10 no deja ver por dónde va** — `pool.map` devuelve en orden y la corrida de 499 estuvo **38 min sin imprimir una línea**, indistinguible de un cuelgue. Desde fuera tampoco: `py-spy` necesita ptrace y está bloqueado. Se arregla imprimiendo por orden de terminación |
 | 44 | — | 🟢 | new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y **el núcleo mató la ventana de VSCode** |
-| 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/perf/python-parallelism.md` |
+| 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `engines/nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `studies.screening.gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/perf/python-parallelism.md` |
 | 32 | — | 🟡 | **mitad cerrada**: `sqx-worker.sh` ya rechaza un segundo lanzamiento sobre el mismo install y un puerto derivado (2026-09-23). Falta el candado de propietario: **el custodio no tiene candado** — 2026-09-23 dos sesiones se pisaron en W2: `stop` mató corridas ajenas. Evidencia en vivo del §2.D de la revisión. `knowhow/perf/smt-in-sqx-retest.md` «dos sesiones sobre el custodio a la vez» |
 
 ---
@@ -298,8 +298,8 @@ and makes `tests/fixtures/` the single exception.
 `archive/studies/` held eight scripts from the previous project. They were written against the old
 data layout, so reusing one means rewriting it over `core/` and the data root.
 
-**Converted 2026-09-04:** the IS→OOS predictor study is now `tasks/analysis/` plus
-`tasks/reports/is_oos.py`. It is a rewrite, not a port — the old `is_oos_analysis.py` would crash on
+**Converted 2026-09-04:** the IS→OOS predictor study is now `studies/screening/analysis/` plus
+`studies/screening/isOos/report.py`. It is a rewrite, not a port — the old `is_oos_analysis.py` would crash on
 the current export, because its hard-coded `PAIRED` list names columns this view does not have. The
 new code derives the pairs from the header, deduplicates nothing (this export is one databank, so the
 cross-databank duplicate trap does not apply) and adds a Benjamini-Hochberg correction the old study
@@ -467,7 +467,7 @@ old project, not reproducible here", so nobody builds on them assuming they can.
   140, leaving **91 strategies (39%) unclassified**, with the classification threshold unstated. The
   median-MAE comparison (1.37 vs 0.95 ×ATR) rests on **n=11**. The denominator is the raw 231, which
   `knowhow/export/what-a-project-stores.md` says contains **45 byte-identical trade lists**, so the proportions violate
-  `tasks/CLAUDE.md`'s own first trap; and the pool mixes retest windows (46 of 231 cover only
+  `studies/CLAUDE.md`'s own first trap; and the pool mixes retest windows (46 of 231 cover only
   2018–2023). It carries a 🔬 tag.
 
 **Fix:** restate the ATR lesson as the slippage delta only, and retag the population split 🤔 with its
@@ -488,15 +488,15 @@ Found by the auditor 2026-09-04 (afternoon pass). The unmanifested `raw/XAUUSD/O
 issue originally named is gone as of 2026-09-11 — resolved, whether by cleanup or by being superseded
 is not recorded.
 
-`metrics/XAUUSD/OOS/metrics.csv` (10,000 rows) is read by three reports: `tasks/reports/is_oos.py`,
-`tasks/reports/filters.py` and `tasks/reports/compare.py`. None deduplicate on the exported trade
+`metrics/XAUUSD/OOS/metrics.csv` (10,000 rows) is read by three reports: `studies/screening/isOos/report.py`,
+`studies/screening/filters/report.py` and `studies/screening/replication/report.py`. None deduplicate on the exported trade
 list before computing a correlation, a bootstrap interval or a BH-corrected p-value — the exact trap
-`tasks/CLAUDE.md` names first ("45 of 231 strategies had byte-identical trades under different
+`studies/CLAUDE.md` names first ("45 of 231 strategies had byte-identical trades under different
 hashes"). Inner-XML identity hashing across all 10,000 `.sqx` on disk shows 0 duplicates, which is
 reassuring but is precisely the check that trap warns not to trust, since the known duplicates in the
 old corpus had *different* hashes and identical trades.
 
-**Widened again 2026-09-11:** `tasks/reports/decay.py` (new, reads the `OOS` databank's `.sqx` files
+**Widened again 2026-09-11:** `studies/screening/decay/report.py` (new, reads the `OOS` databank's `.sqx` files
 directly rather than `metrics.csv`) reports "834 estrategias → 4 supervivientes" and argues 4-out-of-
 834 survivors "es aproximadamente lo que produce el azar" — a multiplicity argument whose denominator
 (834) is itself unchecked for duplicate strategies. If a meaningful fraction of the 834 are the same
@@ -571,7 +571,7 @@ directory, just now a valid package name for whenever it is built.
 
 ## 19. 🔴 Three Monte Carlo thresholds are placeholders
 
-`strategies/monteCarlo/` ships with the thresholds the specification gave, and three of them are
+`portfolio/common/monteCarlo/` ships with the thresholds the specification gave, and three of them are
 not the owner's decision yet. Measured on the 36 strategies of `XAUUSD/Results` (2026-09-09):
 
 1. **`scoring.survival_dd_pct` = 10% of the account.** Vetoes 21 of 36 on its own. It is a
@@ -580,7 +580,7 @@ not the owner's decision yet. Measured on the 36 strategies of `XAUUSD/Results` 
 2. **The dead-block veto** — any non-overlapping 24-month block with a negative bootstrap median —
    vetoes 30 of 36. The blocks are real losing periods, so the rule is doing work; but a rule that
    fails five of every six candidates is a threshold question. Alternatives in
-   `strategies/monteCarlo/POSSIBLE_IMPROVEMENTS.md` §1.
+   `portfolio/common/monteCarlo/POSSIBLE_IMPROVEMENTS.md` §1.
 3. **The Family D sub-score saturates at 0** for every strategy, because it takes the worst of
    three parts and the worst block's 5th-percentile profit factor is almost always below 1. It is
    faithful to the specification and currently carries no information.
@@ -615,18 +615,18 @@ anything into an install, or write to a temporary path and move it into `user/pr
 every gate has passed. Until then, a failed `builder` run leaves a booby trap and the operator has
 to know to delete it.
 
-## 37. 🟠 `strategies/retest/` assumes all eight MCR tasks always ran
+## 37. 🟠 `studies/breakage/mcRetest/` assumes all eight MCR tasks always ran
 
 🔬 2026-09-23, found while writing `sqx/projects/mcretest.py`. The owner's rule is that
 `MCR 4 MinDist` is configured **only** when the population trades with stop or limit orders, so on a
 market-only population that databank is never written. The Python side does not know that:
 
-- `strategies/retest/ingest.py:99` — `assert found, f"{tasks.DATABANK[task]}: no .sqx found"`, over
+- `studies/breakage/mcRetest/ingest.py:99` — `assert found, f"{tasks.DATABANK[task]}: no .sqx found"`, over
   the fixed eight of `tasks.TASKS`. A missing `MCR 4 MinDist` aborts the whole ingest.
-- `strategies/retest/inputs/tasks.py`, `METHOD["stress"]` — expects exactly six methods. When the
+- `studies/breakage/mcRetest/inputs/tasks.py`, `METHOD["stress"]` — expects exactly six methods. When the
   population has no pending orders the stress task is written with five, and `verify()` refuses the
   databank for "carrying the wrong methods".
-- `strategies/retest/ingest.py` calls `core.paths.databank_dir(project, name)`, whose `install`
+- `studies/breakage/mcRetest/ingest.py` calls `core.paths.databank_dir(project, name)`, whose `install`
   defaults to the **master**. There is no `--role`, so it cannot read a study that ran on a worker —
   and hard rule 3 says the workers are where our runs happen. `sqx/export/export_retest.py` got its
   `--role` on 2026-09-23 (commit 53007d7); this one still needs it.
@@ -769,9 +769,9 @@ check instead of `ss`, `shutil.copy2` instead of `rsync`, `hashlib` instead of `
 split and the duplicated paths in one change. Not done: the owner only needs the analysis half on
 Windows today.
 
-## 22. 🟡 `strategies/crossmarket` — state of play after the 2026-09-14/15 rebuild
+## 22. 🟡 `studies/transfer/crossmarket` — state of play after the 2026-09-14/15 rebuild
 
-Read `strategies/crossmarket/README.md` first — it is now a folder map and an import-direction
+Read `studies/transfer/crossmarket/README.md` first — it is now a folder map and an import-direction
 table, not a file list — then the `README.md` of the layer you are touching (`inputs/`,
 `mechanics/`, `model/`, `simulate/`, `verdict/`, `render/`, `explorer/`), then
 `POSSIBLE_IMPROVEMENTS.md`. All of those are current as of the 2026-09-18/19 reorganisation into
@@ -818,7 +818,7 @@ not the bar file's.
    `diagnostics.max_fill_error`. Both verified to still fire (a feed displaced 3 ATR, 6% of entries
    moved half an ATR, H1 bars under an M30 backtest). On the three real markets both are now silent,
    which is correct: there are no intrabar fills in this fleet.
-   `strategies/crossmarket/POSSIBLE_IMPROVEMENTS.md` §4 holds every measurement.
+   `studies/transfer/crossmarket/POSSIBLE_IMPROVEMENTS.md` §4 holds every measurement.
 8. ⚪ **M1 execution was considered for the random-entry study and is not needed by this fleet.**
    Asked 2026-09-21. It would fix nothing here: no strategy has a price exit, every exit lands on a
    bar open, the zero-duration trades share one timestamp (no interval exists at any resolution),
@@ -847,8 +847,8 @@ taking a universe dict, and only failed at runtime. Both classes of drift are ch
 authoritative; this entry only says that the work exists and is unfinished, so it surfaces in the
 daily audit.
 
-Built (2026-09-21): `core/surface/` with its property test, `strategies/sppUltra/`,
-`strategies/walkForwardMatrix/`, and the disk budget plus provisional costs in `perf/disk/` and
+Built (2026-09-21): `core/surface/` with its property test, `studies/breakage/spp/`,
+`studies/optimisation/wfm/`, and the disk budget plus provisional costs in `perf/disk/` and
 `assets/XAUUSD.yaml`. Three manual pages, and the findings in `knowhow/sqx-format/` and
 `knowhow/export/`.
 
@@ -859,10 +859,10 @@ and read back clean. **The batch has not been loaded into SQX and no variant has
 that is W3 and it stays blocked.
 
 Not built: `sqx/variants/` **execution and collection** (`views.py`, `run.py`, `collect.py`),
-`strategies/walkForwardCorrelation/` with its PBO, `pipeline/`, the multi-market study, and all six
+`studies/optimisation/wfc/` with its PBO, `pipeline/`, the multi-market study, and all six
 skills.
 
-**Built 2026-09-22: the CSCV / PBO** (`strategies/walkForwardCorrelation/` gained `inputs/panel.py`,
+**Built 2026-09-22: the CSCV / PBO** (`studies/optimisation/wfc/` gained `inputs/panel.py`,
 `measure/rules.py`, `measure/cscv.py`, `verdict/summary.py`, `verdict/trials.py`, `verdict/cost.py`,
 `render/figures.py` and the `pbo.py` command), fed by a new
 harvest stage `sqx/variants/equity.py` that reads every retested variant's daily curve straight out
@@ -911,7 +911,7 @@ Three things block it, and only the last is technical:
    and `checks.py` does not see them, because it only scans `.py`.
 3. **The holdout pre-registration.** 2022–2026 is read by the WFM study and the variant study at
    once, so what would count as approved has to be written, with a date, **before** either runs.
-   Nothing has been written. `strategies/walkForwardCorrelation/` must not run until it exists.
+   Nothing has been written. `studies/optimisation/wfc/` must not run until it exists.
 
 Also pending the owner: the WFC verdict thresholds are PROPOSED, not approved; and the costs in
 `assets/XAUUSD.yaml` are SQX defaults, not agreed Infinox figures, so every cost-bearing result
@@ -956,7 +956,7 @@ its own `why`.
 
 The test is cheap and needs no new code: build or retest one strategy with `PercentageBased` at a
 known percentage, export its trades, and recover `gross − reported P/L` per trade — the same
-residual `strategies/monteCarlo/inputs/costs.py` already computes. One worker job.
+residual `portfolio/common/monteCarlo/inputs/costs.py` already computes. One worker job.
 
 ## 27. 🟠 Sixteen of seventeen assets have no agreed cost, and the schema changed under them
 
@@ -1033,10 +1033,10 @@ that this one file cannot be refreshed from `sqx.inspect.instruments` until the 
 
 ## 17 · 🟠 `benchmark=0` is the wrong null for PSR, in three finished studies
 
-**Opened 2026-09-22, out of the `nulls/` work.** `core/significance.psr()` takes a `benchmark`
+**Opened 2026-09-22, out of the `studies/readings/monkey/` work.** `core/significance.psr()` takes a `benchmark`
 and its docstring says *"Zero asks whether there is any edge"*. All three callers pass zero —
-`strategies/crossmarket/verdict/significance.py`, `strategies/monteCarlo/verdict/significance.py`
-and `strategies/retest/verdict/evidence.py`.
+`studies/transfer/crossmarket/verdict/significance.py`, `portfolio/common/monteCarlo/verdict/significance.py`
+and `studies/breakage/mcRetest/verdict/evidence.py`.
 
 Zero is not the null a trading strategy is measured against. The honest benchmark is what a
 random trader with the same footprint would have got: drift weighted by occupancy, minus cost.
@@ -1086,7 +1086,7 @@ aquí solo lo que bloquea la siguiente corrida larga, todo verificado en fichero
 - **Custodio sin candado**, `start` sin `stop` previo, `run()` sin timeout, carga sin verificar.
 - **Reanudación rota al cambiar de día** (`{day}` = hoy) y `mothers()` lee un export viejo.
 - 5.000 variantes × 2 mercados ≈ 50 GB de JVM contra `-Xmx48g`.
-- **20 commits sin push y ~70 ficheros sin commitear**, incluido `nulls/` y `assets/`.
+- **20 commits sin push y ~70 ficheros sin commitear**, incluido `studies/readings/monkey/` y `assets/`.
 
 Orden de arreglo y las once decisiones del dueño: §7 y §8 del documento.
 
@@ -1180,7 +1180,7 @@ sesión y no se ha hecho para no mezclarlo con la autoría de las tareas.
 
 ## 41. 🟠 Half the variant budget goes to combinations that barely trade
 
-🔬 Measured 2026-09-24 on `Strategy 17.9.39`'s batch while building `strategies/parameterCloud/`.
+🔬 Measured 2026-09-24 on `Strategy 17.9.39`'s batch while building `studies/optimisation/cloud/`.
 Of the 2,000 fabricated rows in `metrics.parquet`, **1,002 trade fewer than 30 times in sample** —
 the trade count is bimodal, with a first quartile of 4 trades and a median of 752. They are not a
 tail: they are half the design.

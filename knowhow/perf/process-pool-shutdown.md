@@ -10,5 +10,5 @@ ps -eo pid,ppid,etime,rss,cmd | grep -E 'forkserver|resource_tracker' | grep -v 
 ```
 
 ## Evidence
-`strategies/monteCarlo/simulate/engine.py` kept the pool in `_POOL`, no `shutdown()` or `atexit` anywhere in the repo.
-Found 68 orphans holding 8.9–9.4 GB (two readings), one nine days old with the pre-reorganisation module path (`strategies.monteCarlo.engine`).
+`portfolio/common/monteCarlo/simulate/engine.py` kept the pool in `_POOL`, no `shutdown()` or `atexit` anywhere in the repo.
+Found 68 orphans holding 8.9–9.4 GB (two readings), one nine days old with the pre-reorganisation module path (`portfolio.common.monteCarlo.engine`).

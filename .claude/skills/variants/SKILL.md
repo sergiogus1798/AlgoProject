@@ -81,7 +81,7 @@ python3 -m sqx.variants.equity   --work <work>
 espaciados de cada estrato); `--limit N` coge las N primeras y sesga el lote hacia un estrato. Para
 una prueba de humo, `--sample`.
 
-El brief sale del paso 16: `strategies/sppUltra/report.py`. Si su veredicto es `noise`, la familia
+El brief sale del paso 16: `studies/breakage/spp/report.py`. Si su veredicto es `noise`, la familia
 no se distingue del azar y fabricar variantes de ella es medir ruido — el comando no lo impide, lo
 enseña en la primera línea. Decírselo al dueño antes de gastar la tarde.
 

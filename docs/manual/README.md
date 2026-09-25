@@ -18,7 +18,7 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | archivo | qué es |
 |---|---|
 | `00-empezar.md` | instalación, cómo se ejecuta cualquier cosa, dónde acaban los datos, las reglas de SQX que no se rompen |
-| `01-analisis-is-oos.md` | el análisis IS/OOS: qué responde, cómo se corre, cómo se lee el panel |
+| `01-analisis-is-oos.md` | el análisis IS/OOS: qué responde, cómo se corre, cómo se lee el informe y el explorador |
 | `02-filtros.md` | el barrido de filtros: cuánto mejora cada filtro candidato el resultado OOS y a costa de cuántas estrategias |
 | `03-comparar-muestras.md` | la comprobación entre generaciones: si las conclusiones de una muestra se cumplen en otras |
 | `04-decaimiento.md` | el decaimiento estrategia por estrategia: cuánto edge sobrevive fuera de muestra y si te la quedas |
@@ -42,7 +42,7 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `15-sppultra.md` | el reconocimiento SPP: qué parámetros mueven el resultado, cuáles están demostradamente muertos, si la familia entera es ruido, y el diseño de las 5.000 variantes que sale de ahí |
 | `17-pipeline.md` | el encadenador: mete las ~100 estrategias madre de un databank, vuelve al cabo de unos días y lee los veredictos. Reanudable, con el registro de lo que va pasando mientras pasa, y el borrado de variantes con su prueba de que no se pierde nada |
 | `18-variantes.md` | la fábrica de variantes: coge el diseño que salió del reconocimiento SPP y escribe las 5.000 estrategias en disco, con la tabla que dice qué combinación lleva cada archivo y los controles que delatan una cadena rota |
-| `19-wfc.md` | ¿sirve de algo optimizar los parámetros? Fabrica muchas versiones de una estrategia, las retestea todas con la misma partición IS/OOS y dibuja un punto por combinación: lo que ganó dentro contra lo que ganó fuera. Cubre `sqx.variants.execute`, `sqx.variants.collect` y `strategies.walkForwardCorrelation.report` |
+| `19-wfc.md` | ¿sirve de algo optimizar los parámetros? Fabrica muchas versiones de una estrategia, las retestea todas con la misma partición IS/OOS y dibuja un punto por combinación: lo que ganó dentro contra lo que ganó fuera. Cubre `sqx.variants.execute`, `sqx.variants.collect` y `studies.optimisation.wfc.report` |
 | `39-nube-de-parametros.md` | la nube de clones: si el punto elegido es un pico de suerte o una meseta, qué parámetros mandan de verdad, si la superficie se rebaraja cada año, y qué rinde la meseta entera repartida contra el punto único |
 | `40-forma-del-beneficio.md` | de qué pocas cosas depende el resultado: cuántas operaciones y cuántos meses lo sostienen, si las operaciones se agrupan —y entonces barajarlas subestima la caída— y si la media cambió dentro de la muestra |
 | `42-calidad-de-la-entrada.md` | si la señal de entrada vale algo por sí sola: cuánto corre el precio a favor y en contra desde cada entrada, contra entradas al azar a las mismas horas, y cuánto edge se pierde llegando tarde |

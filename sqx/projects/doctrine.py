@@ -5,8 +5,7 @@ import zipfile
 from pathlib import Path
 
 from core.assetdata import doctrine, sqx_settings
-from sqx.projects import buildrules as rules
-from sqx.projects import tasksettings as settings
+from sqx.projects import buildrules as rules, tasksettings as settings
 
 
 def apply_doctrine(text: str, data: dict, segment: str, timeframe: str) -> tuple[str, dict]:

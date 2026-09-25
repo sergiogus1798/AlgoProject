@@ -16,42 +16,42 @@ thresholds:
   # ── Paso 8 · la puerta OOS ────────────────────────────────────────────────────────────
   - key: gate.sanidad.min_trades
     value: 20
-    source: gate/config.yaml#screens[name=sanidad].min_trades
+    source: studies/screening/gate/config.yaml#screens[name=sanidad].min_trades
     set_by: dueño
     set_on: 2026-09-23
     why: una estrategia con cuatro trades fuera de muestra no tiene error estándar que leer
 
   - key: gate.degradacion.min_retention
     value: 0.0
-    source: gate/config.yaml#screens[name=degradacion].min_retention
+    source: studies/screening/gate/config.yaml#screens[name=degradacion].min_retention
     set_by: dueño
     set_on: 2026-09-23
     why: laxo a propósito — hoy sólo pide que la pendiente fuera de muestra sea positiva
 
   - key: gate.degradacion.max_concentration
     value: 1.0
-    source: gate/config.yaml#screens[name=degradacion].max_concentration
+    source: studies/screening/gate/config.yaml#screens[name=degradacion].max_concentration
     set_by: dueño
     set_on: 2026-09-23
     why: laxo a propósito; el suelo real lo pondrá el dueño cuando vea la distribución
 
   - key: gate.forma.max_dd_ratio
     value: 5.0
-    source: gate/config.yaml#screens[name=forma].max_dd_ratio
+    source: studies/screening/gate/config.yaml#screens[name=forma].max_dd_ratio
     set_by: dueño
     set_on: 2026-09-23
     why: un múltiplo de 5 es casi no pedir nada
 
   - key: gate.mono.max_p
     value: 0.50
-    source: gate/config.yaml#screens[name=mono].max_p
+    source: studies/screening/gate/config.yaml#screens[name=mono].max_p
     set_by: dueño
     set_on: 2026-09-23
     why: la mediana del mono — hoy sólo pide estar en la mitad buena
 
   - key: gate.familia.alpha
     value: 0.05
-    source: gate/config.yaml#screens[name=familia].alpha
+    source: studies/screening/gate/config.yaml#screens[name=familia].alpha
     set_by: dueño
     set_on: 2026-09-23
     why: Benjamini-Hochberg sobre la familia superviviente; SOFT hasta que el dueño vea el exceso
@@ -59,7 +59,7 @@ thresholds:
   # ── Lecturas por estrategia ───────────────────────────────────────────────────────────
   - key: profitShape.max_top5
     value: 0.60
-    source: strategies/profitShape/config.yaml#verdict.max_top5
+    source: studies/readings/profitShape/config.yaml#verdict.max_top5
     set_by: agente
     set_on: 2026-09-24
     why: >-
@@ -69,14 +69,14 @@ thresholds:
 
   - key: profitShape.alpha
     value: 0.05
-    source: strategies/profitShape/config.yaml#verdict.alpha
+    source: studies/readings/profitShape/config.yaml#verdict.alpha
     set_by: agente
     set_on: 2026-09-24
     why: para el Ljung-Box y la racha perdedora
 
   - key: entryQuality.dcr_high
     value: 0.30
-    source: strategies/entryQuality/config.yaml#verdict.dcr_high
+    source: studies/readings/entryQuality/config.yaml#verdict.dcr_high
     set_by: agente
     set_on: 2026-09-24
     why: >-
@@ -85,21 +85,21 @@ thresholds:
 
   - key: parameterCloud.rank_high
     value: 0.95
-    source: strategies/parameterCloud/config.yaml#verdict.rank_high
+    source: studies/optimisation/cloud/config.yaml#verdict.rank_high
     set_by: agente
     set_on: 2026-09-24
     why: por encima de esto la original es la cima de su vecindad; sólo se lee junto a plateau_low
 
   - key: parameterCloud.plateau_low
     value: 0.15
-    source: strategies/parameterCloud/config.yaml#verdict.plateau_low
+    source: studies/optimisation/cloud/config.yaml#verdict.plateau_low
     set_by: agente
     set_on: 2026-09-24
     why: por debajo de esto no tiene compañía, que es la forma de un pico de ruido
 
   - key: parameterCloud.rho_low
     value: 0.20
-    source: strategies/parameterCloud/config.yaml#verdict.rho_low
+    source: studies/optimisation/cloud/config.yaml#verdict.rho_low
     set_by: agente
     set_on: 2026-09-24
     why: mediana de la persistencia del orden entre periodos por debajo de esto = superficie rebarajada
@@ -107,7 +107,7 @@ thresholds:
   # ── Paso 18 · el CSCV ─────────────────────────────────────────────────────────────────
   - key: cscv.blocks
     value: 12
-    source: strategies/walkForwardCorrelation/config.yaml#cscv.blocks
+    source: studies/optimisation/cscv/config.yaml#cscv.blocks
     set_by: dueño
     set_on: 2026-09-23
     why: C(12,6) = 924 particiones, los números de López de Prado

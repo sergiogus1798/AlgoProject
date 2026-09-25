@@ -18,5 +18,5 @@ tag: 🔬  date: 2026-09-21  see: eng/pipeline-run-guards
 - Progress test: an outside reader must see ≥ 2 distinct intermediate values (`pipeline/verify/monotonic.py`); 0-then-100 is monotonic and is the failure.
   Enforce monotonicity by raising, not clamping (clamping hides repeated work as a still bar).
 - `shlex.split(template.format(...))` turns `--strategy Strategy 17.9.39` into three args (same trap as CLAUDE.md rule 6).
-- Any other stdout becomes the status without moving the bar. `strategies.sppUltra` doesn't know the protocol, still shows live status, progress 0 → 100 at end.
+- Any other stdout becomes the status without moving the bar. `studies.breakage.spp` doesn't know the protocol, still shows live status, progress 0 → 100 at end.
   An import contract would have blocked three agents writing modules concurrently.

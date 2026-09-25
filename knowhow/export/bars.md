@@ -8,6 +8,6 @@ Output `<symbol>-<TF>-No Session.csv`; a second export in the same JVM overwrite
 Library refresh: `python3 -m sqx.export.sync_bars --check`; feed list = `assetdata.symbols()` + `markets(symbol)`.
 
 ## Evidence
-- `sync_bars.wanted()` read `markets.FILE`, removed when `strategies/crossmarket/inputs/markets.py` began delegating to `core.assets` → `AttributeError`; fixed 2026-09-24.
+- `sync_bars.wanted()` read `markets.FILE`, removed when `studies/transfer/crossmarket/inputs/markets.py` began delegating to `core.assets` → `AttributeError`; fixed 2026-09-24.
 - 📓 2026-09-24: 13 feeds to fetch (~110 M M1 bars): ten the5ers pairs, plus XAGUSD, XAUUSD, Brent (grown in SQX).
   USDJPY fetched: 8,734,300 M1 bars, 2003-05-05 → 2026-09-22, 139 MB Parquet.

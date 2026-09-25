@@ -55,15 +55,15 @@ documento — `bin/sqx-worker.sh` es bash — de «decidirlo pronto» a **requis
 | # | Pieza | Pregunta que contesta | Ubicación |
 |---|---|---|---|
 | 0 | `core/surface.py` | *(librería)* la matemática de cualquier rejilla de parámetros | `core/` |
-| 1 | `strategies/sppUltra/` | ¿qué mueve el resultado y merece esta estrategia las 5.000 variantes? | `strategies/` |
+| 1 | `studies/breakage/spp/` | ¿qué mueve el resultado y merece esta estrategia las 5.000 variantes? | `strategies/` |
 | 2 | `sqx/variants/` | fabricar, cargar, correr y recoger las 5.000 variantes | `sqx/` |
-| 3 | `strategies/walkForwardCorrelation/` | ¿sobrevive la superficie fuera de muestra, y qué regla usar? | `strategies/` |
-| 4 | `strategies/walkForwardMatrix/` | ¿lo que optimiza bien predice lo que va bien después? | `strategies/` |
+| 3 | `studies/optimisation/wfc/` | ¿sobrevive la superficie fuera de muestra, y qué regla usar? | `strategies/` |
+| 4 | `studies/optimisation/wfm/` | ¿lo que optimiza bien predice lo que va bien después? | `strategies/` |
 | 5 | `pipeline/` | encadenar 1→4 por estrategia, reanudable y auditable | raíz |
 
 Extensiones a módulos existentes, no módulos nuevos:
 
-- **§9 multi-mercado** → `strategies/crossmarket/`, que ya construye nulos de ocupación igualada.
+- **§9 multi-mercado** → `studies/transfer/crossmarket/`, que ya construye nulos de ocupación igualada.
 - **Higiene de disco** → `perf/disk/`, que ya inventaría `AlgoData` (`inventory.py`, `duplicates.py`,
   `formats.py`). Le falta un **presupuesto** que falle y una **política de retención**.
 
@@ -314,9 +314,9 @@ Por rule 1 de CODESTYLE (250 líneas) probablemente sea `core/surface/` con 3 fi
 
 Reutiliza `core/significance.py` (BH, suelo de significación) — no reimplementar.
 
-### W1 · `strategies/sppUltra/`
+### W1 · `studies/breakage/spp/`
 
-Forma del repo (`strategies/retest/`): `inputs/ model/ verdict/ render/` + `run.py` + `report.py` +
+Forma del repo (`studies/breakage/mcRetest/`): `inputs/ model/ verdict/ render/` + `run.py` + `report.py` +
 `config.yaml` + `README.md` + `POSSIBLE_IMPROVEMENTS.md`.
 
 | capa | contenido |
@@ -397,7 +397,7 @@ siguiente — 500 MB de pico por una red de seguridad de una vuelta entera.
 Reutiliza `core/worker.py` (start/stop/wait_ready), `core/exportdrv.py`, `core/cfx.py`, y la skill
 `sqx-strategy-project` para clonar.
 
-### W4 · `strategies/walkForwardMatrix/`
+### W4 · `studies/optimisation/wfm/`
 
 **La mitad que falta de algo ya construido.** `sqx/export/export_wfm.py` + `core/wfmatrix.py` +
 `core/wftrades.py` + `docs/manual/09-wfm.md` ya sacan la cuadrícula completa. **No existe el
@@ -413,7 +413,7 @@ etapa WFM si no existe con fecha anterior**. Si es un papel opcional, no se escr
 Aviso a incluir en el informe: en oro, 2022–2026 son ~4 años de **un solo régimen**. Sobrevivir ahí es
 una observación, no generalidad.
 
-### W5 · `strategies/walkForwardCorrelation/`
+### W5 · `studies/optimisation/wfc/`
 
 | capa | contenido |
 |---|---|
@@ -553,7 +553,7 @@ de 5.000 variantes dentro, es el escenario del log de USDJPY. Inspeccionar **ant
 **W0** — `python3 -m pytest tests/` con las tres rejillas sintéticas. La barajada es la decisiva: si
 HL-shift ≈ 0 pero ρ ≈ 0, la librería ve lo que las distribuciones no ven.
 
-**W1** — `python3 -m strategies.sppUltra.report --project XAUUSD --databank "SPP IS"` sobre
+**W1** — `python3 -m studies.breakage.spp.report --project XAUUSD --databank "SPP IS"` sobre
 `raw/XAUUSD/SPP_IS/2026-09-10` (ya en disco). Comprobaciones contra lo medido:
 `CBlock_SqzMmnInt21` debe dar **757 grupos, 757 con NetProfit y nº de operaciones idénticos**; y
 `DICrossShift1` en `Strategy 17.9.39` debe explicar **22,6 % de la varianza IS y 67,6 % de la OOS**.
@@ -597,8 +597,8 @@ escrita en la misma tarea.
 | lote | estado |
 |---|---|
 | **W0** `core/surface/` + tests | ✅ hecho |
-| **W1** `strategies/sppUltra/` | ✅ hecho — módulo, manual `12-sppultra.md`, knowhow |
-| **W4** `strategies/walkForwardMatrix/` | ✅ hecho — módulo, manual `14-walkforwardmatrix.md`, knowhow |
+| **W1** `studies/breakage/spp/` | ✅ hecho — módulo, manual `12-sppultra.md`, knowhow |
+| **W4** `studies/optimisation/wfm/` | ✅ hecho — módulo, manual `14-walkforwardmatrix.md`, knowhow |
 | **W7** presupuesto de disco + costes provisionales | ✅ hecho — `perf/disk/budget.py` + `retention.py`, `report` sale non-zero al pasarse, `assets/XAUUSD.yaml` relleno y `core.assets` ya sale 0. Más `docs/SETUP-NEW-MACHINE.md` |
 | **W2** `sqx/variants/` diseño y fabricación | ⬜ pausado por la topología de SQX |
 | **W3** `sqx/variants/` ejecución y recogida | ⬜ bloqueado por costes + worker + §6bis |

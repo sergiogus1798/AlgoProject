@@ -6,7 +6,7 @@ description: Configure the eight MC Retest tasks of a custom SQX project — one
 # /mcretest
 
 Paso 13 del workflow, la mitad de SQX. Deja las ocho tareas MC Retest de un custom project
-configuradas y listas para correr. Leer lo que producen es `strategies/retest/`
+configuradas y listas para correr. Leer lo que producen es `/retest` → `studies/breakage/mcRetest/`
 (paso 14), y el Monte Carlo que reordena operaciones está FUERA del workflow a propósito.
 
 ## Lo único que hay que entender antes
@@ -18,7 +18,7 @@ propios parámetros o del histórico exacto que le tocó ver.
 Eso impone dos cosas, y las dos las escribe el comando:
 
 - **Un solo método activo por tarea** (seis en la de estrés). Una tarea que mueve dos cosas no
-  puede atribuir el daño a ninguna, y `strategies/retest/` se niega a ingerir su databank.
+  puede atribuir el daño a ninguna, y `studies/breakage/mcRetest/` se niega a ingerir su databank.
 - **Condiciones de aceptación apagadas.** Con ellas vivas SQX borra lo que falla y cada tarea
   encadena en la siguiente: al final sólo sabes cuántas sobrevivieron. El veredicto se toma en
   Python y se aplica con `/curate`.
@@ -87,6 +87,6 @@ bin/sqx-worker.sh --role custodian stop
 | `precision` | `1` = timeframe elegido, rápido y grosero · `2` = un minuto, lento y fino. Va al revés de lo que sugiere la palabra, y el 2 cuesta el doble (medido) |
 | `segment` | `build` un tramo · `build..oos1` **dos puntos**, una ventana continua que abarca los dos, cobrada al coste del último. `oos2` está prohibido y el comando se niega |
 | entre qué dos valores se sortea spread, slippage y distancia mínima | `assets/symbols/<SIMBOLO>.yaml`, bloque `mc_retest:` |
-| los títulos de las ocho tareas | **contrato** con `strategies/retest/inputs/tasks.py`. Cambiarlos rompe el paso 14 en silencio |
+| los títulos de las ocho tareas | **contrato** con `studies/breakage/mcRetest/inputs/tasks.py`. Cambiarlos rompe el paso 14 en silencio |
 
 Manual: `docs/manual/32-mcretest.md`. Lectura de resultados: `docs/manual/11-retest-mc.md`.

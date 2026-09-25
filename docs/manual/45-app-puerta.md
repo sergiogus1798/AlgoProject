@@ -1,7 +1,7 @@
 # 45. La aplicación de escritorio — la puerta IS/OOS
 
 La zona del **paso 8** del workflow: el primer análisis dentro y fuera de muestra, el que pasa de
-miles de estrategias a decenas. Enseña lo que la puerta (`gate.report`, manual `29-puerta.md`)
+miles de estrategias a decenas. Enseña lo que la puerta (`studies.screening.gate.report`, manual `29-puerta.md`)
 hizo con una cosecha, criba a criba y estrategia a estrategia, y la lanza con los umbrales a la
 vista. Es el primer panel construido a partir del catálogo
 `docs/AgentPDFs/catalogo-para-la-ui-2026-09-25.md` (sección 3.2); el resto del catálogo llegará
@@ -29,16 +29,16 @@ como paneles al lado de este.
 
 **Lo usas** justo después de una cosecha, para ver cuánto mata cada criba antes de decidir nada;
 para buscar en qué criba cae una estrategia concreta; y para probar un umbral distinto sin tocar
-`gate/config.yaml`: se escribe en la caja de umbrales y queda en el manifest del informe.
+`studies/screening/gate/config.yaml`: se escribe en la caja de umbrales y queda en el manifest del informe.
 
-**No lo usas** para hacer la cosecha: eso es `gate.harvest` y toca el conductor (skill
+**No lo usas** para hacer la cosecha: eso es `studies.screening.gate.harvest` y toca el conductor (skill
 `/oos-gate`), y la ventana no arranca SQX. Tampoco aplica el veredicto al databank: eso es
 `/curate`. Y no decide qué umbrales son los buenos: los del fichero son laxos a propósito
 (decisión del dueño, 2026-09-23) y están registrados en `ledger/thresholds.yaml`.
 
 ### Antes de empezar
 
-- Una cosecha en `AlgoData/harvest/<proyecto>/<databank>/<día>/`: `python3 -m gate.harvest
+- Una cosecha en `AlgoData/harvest/<proyecto>/<databank>/<día>/`: `python3 -m studies.screening.gate.harvest
   --project P --databank Results --oos-databank OOS`, manual `29-puerta.md`.
 - El activo del proyecto en `assets/symbols/` con su `sqx_symbol`: la puerta necesita el feed
   para las barras del mono.
@@ -56,13 +56,13 @@ error, con el final de la salida en su tooltip) y la zona se recarga sola.
 |---|---|
 | cosecha | qué cosecha se mira. Una cosecha juzgada varias veces enseña su puerta más reciente |
 | activo | el símbolo cuyo feed leen las barras del mono. Se rellena desde el informe, o desde el nombre del proyecto |
-| umbrales | overrides `criba.umbral=valor` separados por espacios, como `--set`. Vacío = `gate/config.yaml` |
+| umbrales | overrides `criba.umbral=valor` separados por espacios, como `--set`. Vacío = `studies/screening/gate/config.yaml` |
 | solo supervivientes | esconde las filas muertas del scorecard |
 
 ### Qué produce
 
-Lo que produce `gate.report`, en `AlgoData/reports/<proyecto>/<databank>/<día de hoy>/gate/`:
-`scorecard.parquet`, `funnel.csv`, `verdict.csv`, `verdict_build.csv`, `resumen.md` y su
+Lo que produce `studies.screening.gate.report`, en `AlgoData/reports/<proyecto>/<databank>/<día de hoy>/gate/`:
+`scorecard.parquet`, `funnel.csv`, `verdict.csv`, `verdict_build.csv`, `gate.md/.html/.json` y su
 manifest, que apunta a la cosecha que juzgó y guarda los overrides. Un informe se fecha el día que
 corre, no el de la cosecha; la ventana los une por ese manifest. Más el log del botón en
 `AlgoData/logs/ui/`.
@@ -100,7 +100,7 @@ Las cribas: verde pasa, rojo no pasa, gris *soft* con ✓/✗ informativo, y «n
 - **No dice si un umbral es el bueno.** Enseña cuánta población mata; decidir el umbral es el
   paso que viene después, con la distribución delante, y se anota en `ledger/thresholds.yaml`.
 - **No puede deshacer una selección previa.** Si el build ya filtró con el periodo OOS, todas las
-  cribas leen inertes (`gate/README.md`). El embudo lo delata: nadie muere salvo en presencia.
+  cribas leen inertes (`studies/screening/gate/README.md`). El embudo lo delata: nadie muere salvo en presencia.
 - **No es el veredicto aplicado.** Hasta `/curate`, el databank de SQX sigue con todas.
 - **La curva empalmada no es una cuenta real.** Cada lado fue su propio backtest desde su saldo;
   el empalme es para leer la forma, no el beneficio total.

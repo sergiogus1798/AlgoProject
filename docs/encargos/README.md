@@ -10,16 +10,8 @@ Donde discrepen, manda el WORKFLOW — y se arregla el encargo.
 
 **Un encargo cumplido se borra.** No se marca como hecho ni se deja «por si acaso»: lo que se
 aprendió haciéndolo ya está en `knowhow/`, en el manual y en el código. Limpieza del 2026-09-24:
-salieron los encargos 1, 2, 3, 4 y 7, verificados uno a uno contra el repositorio.
-
-## La ventana — 2026-09-25
-
-| fichero | qué construye | depende de |
-|---|---|---|
-| `19-contrato-de-datos-para-la-ventana.md` | la forma común de todo módulo de estudio y el contrato de datos (ocho `kind`) con que la ventana los pinta en nativo; retira los tres paneles Flask | el inventario `docs/AgentPDFs/paneles-flask-inventario-2026-09-25.md` |
-
-**Va antes de cualquier reorganización de `strategies/`, `tasks/`, `nulls/` o `gate/`**, y la
-zona «Estudios» de `ui/` no se programa hasta que esté hecho.
+salieron los encargos 1, 2, 3, 4 y 7, verificados uno a uno contra el repositorio. El 25-09 salió
+el 19 (el contrato de datos de la ventana): vive en `core/study/CONTRACT.md` y `studies/CLAUDE.md`.
 
 ## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
 
@@ -37,7 +29,7 @@ escriben en él.
 ## La tanda del PDF `PARAMETER_SPACE_TESTS`, 2026-09-24
 
 Del PDF del dueño sobre la nube de clones. Lo implementable **ya está implementado** y vive en
-`strategies/parameterCloud/` (A1, A2, A3, B2, C1) y en `nulls/filter.py` (la mitad del D1 que no
+`studies/optimisation/cloud/` (A1, A2, A3, B2, C1) y en `engines/nulls/filter.py` (la mitad del D1 que no
 necesita SQX). Aquí quedan los dos que exigen cosas que hoy no tenemos:
 
 | fichero | qué construye | qué lo bloquea |
@@ -54,7 +46,7 @@ hace y no gastan CPU de SQX.
 **El punto 6 se ha convertido en otra cosa y ya está construido.** En vez de la descomposición
 alfa/beta, el dueño pidió medir la dicotomía **rendimiento contra exposición al mercado** — una
 estrategia que saca un 5 % estando dentro una hora a la semana contra un buy and hold que saca un
-10 % estando dentro siempre. Es `strategies/exposure/`, el **paso 21** del `WORKFLOW.md`, con su
+10 % estando dentro siempre. Es `studies/closing/exposure/`, el **paso 21** del `WORKFLOW.md`, con su
 página de manual `docs/manual/38-exposicion.md`. La alfa y la beta quedan como interrogante dentro
 de esa misma carpeta, en `13-alfa-beta.md`.
 
@@ -77,7 +69,7 @@ que nadie las repita.
 ## La tanda del PDF `TRADE_LEVEL_TESTS`, 2026-09-24
 
 Siete tests sobre listas de operaciones y datos M1, ninguno necesita SQX. **Cinco están
-construidos** — `strategies/profitShape/` (items 1, 2 y 7) y `strategies/entryQuality/` (item 3 y
+construidos** — `studies/readings/profitShape/` (items 1, 2 y 7) y `studies/readings/entryQuality/` (item 3 y
 el tier 1 del 4). Quedan tres:
 
 | fichero | qué construye | qué lo bloquea |
@@ -100,7 +92,7 @@ nombrados con `unlabelled: off` — y por eso ya no está aquí.
 
 | fichero | qué es |
 |---|---|
-| `5-nulos.md` | informe de cierre del módulo `nulls/`, con cinco cosas pendientes en su §6. Se queda hasta que esas cinco estén resueltas o descartadas |
+| `5-nulos.md` | informe de cierre del módulo `studies/readings/monkey/`, con cinco cosas pendientes en su §6. Se queda hasta que esas cinco estén resueltas o descartadas |
 | `CONTEXTO-curacion-de-poblaciones.md` | estado del terreno para quien diseñe la curación desde la UI |
 | `CONTEXTO-ecosistema-skills-sqx.md` | estado del terreno para quien diseñe skills de SQX |
 | `ejemplo-IS-OOS-XAUUSD.md` | el proyecto de ejemplo con IS y OOS en dos databanks, citado desde `docs/manual/28-builder.md` |

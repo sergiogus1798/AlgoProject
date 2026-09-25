@@ -45,7 +45,7 @@ python3 -m paquete.modulo --unos --flags
 Todos los comandos aceptan `--help`, que te lista los flags sin ejecutar nada:
 
 ```bash
-python3 -m tasks.reports.is_oos --help
+python3 -m studies.screening.isOos.report --help
 ```
 
 ## Dónde acaban las cosas

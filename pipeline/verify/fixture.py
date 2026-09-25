@@ -34,7 +34,7 @@ def build() -> dict:
         because the point of the fixture is to test the chaining, not sppUltra.
     """
     remove()
-    where = report_dir(PROJECT, DATABANK, DAY)
+    where = report_dir(PROJECT, DATABANK, DAY) / "spp"
     where.mkdir(parents=True, exist_ok=True)
     (where / f"design_brief_{state.safe(STRATEGY)}.json").write_text(
         json.dumps(BRIEF, indent=2), encoding="utf-8")

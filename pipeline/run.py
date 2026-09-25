@@ -7,7 +7,7 @@ from datetime import date
 from pipeline import cleanup
 from pipeline.ledger import state
 from pipeline.stages import execute, gates, recipe
-from strategies.sppUltra.inputs import config as spp_config, export
+from studies.breakage.spp.inputs import config as spp_config, export
 
 
 def mothers(project: str, databank: str, day: str | None, named: list[str] | None) -> list[str]:

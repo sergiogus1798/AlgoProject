@@ -36,7 +36,7 @@ def main() -> None:
     """Design one strategy's variants, fabricate them, and write the manifest."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--brief", required=True, type=Path,
-                    help="design_brief_<strategy>.json from strategies.sppUltra")
+                    help="design_brief_<strategy>.json from studies.breakage.spp")
     ap.add_argument("--project", required=True, help="project name, for the output path")
     ap.add_argument("--limit", type=int,
                     help="fabricate only the first N rows of the plan; the design is unchanged")

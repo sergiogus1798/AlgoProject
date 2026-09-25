@@ -46,7 +46,7 @@ def superseded(root: Path = DATA) -> list[dict]:
         the newer one contains **every top-level entry the older has** -- a superset, not
         merely a later date.
 
-        ⚠️ Still candidates, not verdicts. `tasks/CLAUDE.md` makes `raw/` immutable on
+        ⚠️ Still candidates, not verdicts. `studies/CLAUDE.md` makes `raw/` immutable on
         purpose: these exports are slow to produce and are cited by strategy-level
         reports, which is why several dates coexist. An older export is only actually free
         once nothing published still refers to it, and that is a judgement this module

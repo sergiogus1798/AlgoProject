@@ -104,7 +104,7 @@ Ya existe la skill `sqx-spp` con todo esto. `sqx/variants/harness.py` lo impleme
 | `sqx/variants/collect.py` | une panel y manifiesto (C3) y **aborta si los controles no se movieron** |
 | `sqx/export/export_spp.py` | exporta perfiles SPP; `--role` para leer de un worker |
 | `sqx/inspect/` | lectura pura: `dump_project.py`, `project_health.py` |
-| `strategies/walkForwardCorrelation/` | el estudio y su gráfico |
+| `studies/optimisation/wfc/` | el estudio y su gráfico |
 | `pipeline/` | encadena las diez etapas con libro mayor reanudable |
 
 **El pipeline entero es un comando** y mide cada etapa sola (`pipeline/ledger/cost.py` muestrea los

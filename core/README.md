@@ -34,7 +34,7 @@ Three rules specific to this folder:
 
 - **No absolute path may appear anywhere but `paths.py`.** `tools/checks.py` enforces it.
 - These modules read and drive SQX, they do not analyse. Maths belongs in a phase folder —
-  **with one carve-out, `significance.py`**, taken deliberately on 2026-09-18. `strategies/CLAUDE.md`
+  **with one carve-out, `significance.py`**, taken deliberately on 2026-09-18. `studies/CLAUDE.md`
   says a helper two studies need is copied and promoted here when a third one wants it, and PSR is
   now wanted by three. It was written twice already, and the `1 - skew·SR + (kurt-1)/4·SR²` factor
   appearing in two files is a correctness risk, not a typing one: a fix to one copy leaves the other

@@ -11,11 +11,11 @@ re-medida el mismo día desde el commit anterior y cada cambio validado contra e
 
 | proceso | antes | después | cómo |
 |---|---|---|---|
-| `nulls.report` (757 estrategias × 4 peldaños) | **569 s** | **3,6 s** | numba, reparto por procesos, parquet leído una vez, caché de YAML |
+| `studies.readings.monkey.report` (757 estrategias × 4 peldaños) | **569 s** | **3,6 s** | numba, reparto por procesos, parquet leído una vez, caché de YAML |
 | Monte Carlo (36 estrategias, 20.000 caminos) | 477 s | **27 s** | una estrategia por proceso + kernel numba |
 | crossmarket 499 × 9 mercados | 38 min | **4 min** | reparto por (estrategia, mercado), LPT, numba |
 | crossmarket 96 × 9 | 755 s | **45 s** (48 procesos) | ídem |
-| `tasks.reports.filters` (10.000 estrategias) | 38,7 s | 3,2 s | candidatos repartidos |
+| `studies.screening.filters.report` (10.000 estrategias) | 38,7 s | 3,2 s | candidatos repartidos |
 | CSCV (962 variantes) | 30,8 s | 9,5 s | vecinos de la rejilla una vez; reglas en paralelo |
 | crossTF | 29,2 s | 5,7 s | caché de YAML (54 de 60 s eran parsear) |
 | `sqx.variants.make` (5.000) | 11,2 s | 2,1 s | fabricar en paralelo |
@@ -23,7 +23,7 @@ re-medida el mismo día desde el commit anterior y cada cambio validado contra e
 | `sppUltra` | 7,0 s | 1,9 s | prueba de inertes vectorizada |
 | cosecha de variantes (`equity`+`collect`), por madre | 581 s · 31,8 GB | **100 s · 4,4 GB** | lectura en paralelo, escritura por partes |
 | vaciar el custodio entre madres | 206 s · JVM 47 GB | **3–4 s** | borrar con SQX parado |
-| `gate.harvest` (export 500+500) | 114 s | 81 s | un ciclo del conductor, no dos |
+| `studies.screening.gate.harvest` (export 500+500) | 114 s | 81 s | un ciclo del conductor, no dos |
 
 **Veinte procesos de Python medidos a la vez: 623 s → 67 s.** Los diez más pequeños (WFM, WFC,
 parameterCloud, profitShape…) no cambiaron: su tiempo es importar pandas y scipy (~0,7 s).
@@ -35,7 +35,7 @@ parameterCloud, profitShape…) no cambiaron: su tiempo es importar pandas y sci
 **Qué se hizo.**
 
 - Kernels numba que valoran y miden cada camino en una pasada, sin matrices intermedias:
-  `nulls/kernel.py`, `strategies/crossmarket/simulate/kernel.py`.
+  `engines/nulls/kernel.py`, `engines/nulls/placement/kernel.py`.
 - Barrido de barreras que se para en el primer toque.
 - `core/fanout.py`: reparto por procesos con `fork`, **lo más caro primero (LPT)**, un hilo de BLAS
   por proceso (OpenBLAS arrancaba 64 en cada uno).
@@ -155,7 +155,7 @@ Lo que manda es SQX, y dentro de él el retest de las variantes. El Python ya no
 
 - Nulos: drawdown del mono en **orden de salida**; **swap según la duración sorteada** (con el
   multiplicador del día de la semana); **entradas restringidas al horario** de la estrategia; test
-  **por estrategia**. Anotadas en `nulls/README.md`, **sin implementar**.
+  **por estrategia**. Anotadas en `studies/readings/monkey/README.md`, **sin implementar**.
 - Variantes y WFM en **proyecto propio**, nunca en el `Retester` de serie.
 - Estudio con la **doctrina completa** (3 tramos × 10 mercados).
 - **`oos2` de USDJPY gastado** con madres de prueba: no leer esos resultados como un WFC/WFM real.

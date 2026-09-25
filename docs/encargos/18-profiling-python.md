@@ -68,7 +68,7 @@ ruido. **Normaliza por operación y cuéntalas antes de lanzar nada:**
 python3 -c "import pandas as pd; print(len(pd.read_parquet('<trades.parquet>')))"
 ```
 
-### `gate.report` — el paso 8. Lineal y barato
+### `studies.screening.gate.report` — el paso 8. Lineal y barato
 
 | N | segundos | RSS |
 |---|---|---|
@@ -79,9 +79,9 @@ python3 -c "import pandas as pd; print(len(pd.read_parquet('<trades.parquet>')))
 | 500 | 32,28 | 1,32 GB |
 
 **~60 ms por estrategia** de coste marginal sobre un fijo de ~2 s. Incluye las 8 cribas y el mono de
-cada superviviente a 2.000 sorteos (`gate/config.yaml`, `monkey.draws`).
+cada superviviente a 2.000 sorteos (`studies/screening/gate/config.yaml`, `monkey.draws`).
 
-`gate.harvest` (la mitad que conduce SQX): **112,37 s y 4,56 GB** con 1.000 ficheros (500+500),
+`studies.screening.gate.harvest` (la mitad que conduce SQX): **112,37 s y 4,56 GB** con 1.000 ficheros (500+500),
 contra 58,29 s y 1,60 GB con 67. El tiempo lo domina el arranque de la JVM; **la memoria sí escala**.
 
 ### `crossmarket.report` — el paso 10. El cuello de botella
@@ -118,7 +118,7 @@ orden de magnitud, no promesa. **Remídelo limpio si vas a prometer algo.**
 | `retest.report` | 4 | 3,43 | 1,06 GB |
 | `sppUltra.report` | 4 perfiles, 49.226 filas | 16,58 | 910 MB |
 | `variants.make` | 1 madre, 60 variantes | 1,26 | 302 MB |
-| `tasks.reports.is_oos` | 17 | 0,57 | 94 MB |
+| `studies.screening.isOos.report` | 17 | 0,57 | 94 MB |
 | `export_metrics` | 8 | 14,58 | 20 MB |
 | `export_spp` | 4 perfiles | 15,31 | 1,41 GB |
 | `export_retest` | 8 × 9 | 17,38 | 1,86 GB |
@@ -133,17 +133,17 @@ orden de magnitud, no promesa. **Remídelo limpio si vas a prometer algo.**
 | | tottime | % |
 |---|---|---|
 | `monkey.mono` (cumtime) | 29,5 | 88 |
-| ↳ `nulls/simulate.py:nulls` | 15,1 | 45 |
-| ↳ `nulls/simulate.py:fixed` | 9,9 | 30 |
-| ↳ ↳ **`nulls/calibrate.py:atr`** | **9,2** | **28** |
+| ↳ `engines/nulls/simulate.py:nulls` | 15,1 | 45 |
+| ↳ `engines/nulls/simulate.py:fixed` | 9,9 | 30 |
+| ↳ ↳ **`engines/market/calibrate.py:atr`** | **9,2** | **28** |
 | `comp_method_OBJECT_ARRAY` | 4,2 | 13 |
-| `nulls/stats.py:profit_factor` | 3,6 | 11 |
+| `engines/nulls/stats.py:profit_factor` | 3,6 | 11 |
 
-1. 🔬 **`nulls/simulate.py:fixed()` recalcula el ATR sobre las MISMAS barras, una vez por
+1. 🔬 **`engines/nulls/simulate.py:fixed()` recalcula el ATR sobre las MISMAS barras, una vez por
    estrategia.** `calibrate.atr(frame, cfg["barrier"]["atr_bars"])` y `frame` es idéntico en las 500
    llamadas: 234 llamadas × 39 ms = **9,2 s de 33**. Depende sólo de `(frame, atr_bars)`. Cachearlo
    lo deja en 39 ms totales. **No cambia ningún número.**
-2. 🔬 **`gate/monkey.py:31` filtra la tabla entera por identidad una vez por estrategia**
+2. 🔬 **`studies/screening/gate/monkey.py:31` filtra la tabla entera por identidad una vez por estrategia**
    (`oos[oos["identity"] == name]`) y la columna es `object`: 4,2 s en 236 comparaciones de cadenas.
    Un `groupby("identity")` una sola vez lo elimina.
 
@@ -216,15 +216,15 @@ De **23 puntos de entrada** de análisis en Python se han medido **11**. Lo que 
 | `walkForwardCorrelation/report.py` (paso 17) | 🔴 gasta `oos2` — **no se corre sin permiso del dueño** |
 | `walkForwardCorrelation/pbo.py` (CSCV, paso 18) | 🔴 idem |
 | `walkForwardMatrix/report.py` (paso 19) | 🔴 idem |
-| `nulls/report.py`, `nulls/one.py`, `nulls/verify.py` | un export con `Sample type = OOS1`; el de crossmarket sólo lleva `IST` — ver abajo |
-| `strategies/exposure/report.py` | un `trades.parquet` del **mismo** databank que las métricas |
-| `strategies/monteCarlo/report.py` | un export de operaciones + `--asset` + `--export` |
-| `strategies/entryQuality`, `parameterCloud`, `profitShape` | son paneles; hay que ver si tienen ruta de lote |
-| `tasks/reports/{compare,decay,filters,nulls}` | `decay` pide `--split`/`--end`; `nulls` pide la salida de `nulls/report.py` primero |
+| `studies/readings/monkey/report.py`, `studies/readings/monkey/one.py`, `studies/readings/monkey/verify.py` | un export con `Sample type = OOS1`; el de crossmarket sólo lleva `IST` — ver abajo |
+| `studies/closing/exposure/report.py` | un `trades.parquet` del **mismo** databank que las métricas |
+| `portfolio/common/monteCarlo/report.py` | un export de operaciones + `--asset` + `--export` |
+| `studies/readings/entryQuality`, `parameterCloud`, `profitShape` | son paneles; hay que ver si tienen ruta de lote |
+| `studies/screening/{replication,decay,filters,monkeyExcess}` (antes `tasks/reports/{compare,decay,filters,nulls}`) | `decay` pide `--split`/`--end`; `nulls` pide la salida de `studies/readings/monkey/report.py` primero |
 
 🔬 **Y ojo: probando cinco de ellos a mano, cuatro fallaron, ninguno por un fallo de cálculo.** El
 patrón y los cuatro modos están en `knowhow/eng/missing-input-not-traceback.md`, «El patrón que se repite». El peor es
-**`nulls.report`, que escribe "0 estrategias" y sale con código 0** cuando `--sample` no casa con el
+**`studies.readings.monkey.report`, que escribe "0 estrategias" y sale con código 0** cuando `--sample` no casa con el
 export. Si mides ese módulo, **comprueba que el informe no está vacío antes de creerte el tiempo**.
 
 El MC Retest y el SPP no se midieron a 500 porque el trabajo de SQX no cabe: ~1.955 s por cada 8
@@ -263,8 +263,8 @@ No están en el repositorio a propósito: son sondas de medición, no código de
 para que el encargo sea autocontenido. Las carpetas que crean (`perfN*`, `cmN*`) **se borran al
 acabar** — no son datos del proyecto.
 
-**Trocear la cosecha** (para `gate.report` a N estrategias). Crea proyectos sintéticos `perfN<N>` que
-`gate.report --project perfN<N>` lee sin tocar nada más. ⚠️ Hay que arrastrar **todos** los ficheros
+**Trocear la cosecha** (para `studies.screening.gate.report` a N estrategias). Crea proyectos sintéticos `perfN<N>` que
+`studies.screening.gate.report --project perfN<N>` lee sin tocar nada más. ⚠️ Hay que arrastrar **todos** los ficheros
 laterales, no sólo los parquet: sin `missing_oos.csv` el gate muere con `FileNotFoundError`.
 
 ```python
@@ -320,7 +320,7 @@ Con eso, una medida de escalado es:
 ```bash
 python3 slice_trades.py 2 4 8 16
 for n in 2 4 8 16; do
-  timeit.sh salida.csv "crossmarket,$n" python3 -u -m strategies.crossmarket.report \
+  timeit.sh salida.csv "crossmarket,$n" python3 -u -m studies.transfer.crossmarket.report \
       --project cmN$n --databank Retest_Markets_-_Family --asset USDJPY \
       --export 2026-09-24 --set nulls.draws=500
 done

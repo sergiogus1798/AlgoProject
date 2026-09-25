@@ -43,7 +43,7 @@ python3 -m sqx.export.export_wfm --project XAUUSD --databank WFM
 ### Cómo se ejecuta
 
 ```bash
-python3 -m strategies.walkForwardMatrix.report --project XAUUSD --databank WFM
+python3 -m studies.optimisation.wfm.report --project XAUUSD --databank WFM
 ```
 
 | flag | obligatorio | qué hace |
@@ -56,9 +56,13 @@ Tarda unos segundos.
 
 ### Qué produce
 
-En `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/`:
+En `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/wfm/` (hasta el 25-09, sueltos en la
+carpeta del día):
 
-- **`walkforwardmatrix.md`** — el informe.
+- **`wfm.html`** / **`wfm.md`** / **`wfm.json`** — el informe (antes `walkforwardmatrix.md`), y el
+  mismo resultado en el contrato de estudios, que es lo que pinta la ventana.
+- **`estrategias/<nombre>.html`** / **`.json`** — la matriz de una estrategia.
+- **`verdict.csv`** — una fila por estrategia con su identidad y su veredicto, para `/curate`.
 - **`cell_correlations.csv`** — la correlación de cada una de las 30 celdas, por si quieres mirarlas
   a mano.
 
@@ -105,7 +109,7 @@ de creerte el veredicto.**
 ### Un ejemplo completo
 
 ```bash
-$ python3 -m strategies.walkForwardMatrix.report --project XAUUSD --databank WFM --day 2026-09-10
+$ python3 -m studies.optimisation.wfm.report --project XAUUSD --databank WFM --day 2026-09-10
 Strategy 1.19.29       blind     rho=+0.076 [-0.034, +0.193]  celdas= 30  deriva=70%
 Strategy 4.33.46       perverse  rho=-0.505 [-0.683, -0.339]  celdas= 30  deriva=78%
 

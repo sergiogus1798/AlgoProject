@@ -52,7 +52,8 @@ como provisionales; `pipeline/ledger` ya tiene `costs_provisional` para exactame
 
 ## 2 · Lo que construyes
 
-Carpeta nueva `strategies/edge/`, forma de la casa. Métricas:
+Carpeta `studies/readings/edgeCost/` (ya creada con su `README.md`), con la forma de
+`studies/CLAUDE.md` y el contrato de `core/study/CONTRACT.md`. Métricas:
 
 | métrica | definición | cómo se lee |
 |---|---|---|
@@ -70,7 +71,7 @@ los números no es un umbral.
 
 1. **Reconciliación primero.** Reconstruye el P&L **neto** desde las piezas y compáralo con el que
    SQX reporta, operación a operación. Sin esa conciliación, el bruto es decoración. Precedente: la
-   misma puerta salvó el estudio de `nulls/` (0.87 contra un suelo de 0.99 → el fill era
+   misma puerta salvó el estudio de `studies/readings/monkey/` (0.87 contra un suelo de 0.99 → el fill era
    `open-open`).
 2. **Un caso a mano.** Una operación, con sus números escritos en el informe, que cualquiera pueda
    repetir con una calculadora.

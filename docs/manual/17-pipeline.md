@@ -95,7 +95,7 @@ Esto es una corrida real sobre `Strategy 17.9.39`:
 1 estrategias madre en XAUUSD/SPP_IS
 
 [1/1] Strategy 17.9.39
-  sppultra   python3 -m strategies.sppUltra.report --project XAUUSD --databank SPP_IS --strategy Strategy 17.9.39
+  sppultra   python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS --strategy Strategy 17.9.39
    | Strategy 17.9.39         proceed  n_eff= 3,381  max 14.64 vs nulo 5.11  vivos=7 congelados=1
    | -> /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/SPP_IS/2026-09-21
   design     python3 -m pipeline.stubs.placeholder --stage design --work .../Strategy_17-9-39

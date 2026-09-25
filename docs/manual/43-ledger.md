@@ -85,14 +85,14 @@ XAUUSD_M30_DirectionalMomentum · 8 búsquedas · /home/…/AlgoData/ledger/XAUU
 
 -- el embudo, paso a paso
         ts  step        criterion segment  n_in  n_out   kept
-2026-09-23     8   gate/presencia    oos1   120    115 0.9583
-2026-09-23     8     gate/sanidad    oos1   115    112 0.9739
-2026-09-23     8   gate/estaticas    oos1   112     64 0.5714
-2026-09-23     8 gate/degradacion    oos1    64     45 0.7031
-2026-09-23     8       gate/forma    oos1    45     45 1.0000
-2026-09-23     8        gate/mono    oos1    45     45 1.0000
-2026-09-23     8     gate/familia    oos1    45     45 1.0000
-2026-09-23     8 gate/redundancia    oos1    45     45 1.0000
+2026-09-23     8   studies/screening/gate/presencia    oos1   120    115 0.9583
+2026-09-23     8     studies/screening/gate/sanidad    oos1   115    112 0.9739
+2026-09-23     8   studies/screening/gate/estaticas    oos1   112     64 0.5714
+2026-09-23     8 studies/screening/gate/degradacion    oos1    64     45 0.7031
+2026-09-23     8       studies/screening/gate/forma    oos1    45     45 1.0000
+2026-09-23     8        studies/screening/gate/mono    oos1    45     45 1.0000
+2026-09-23     8     studies/screening/gate/familia    oos1    45     45 1.0000
+2026-09-23     8 studies/screening/gate/redundancia    oos1    45     45 1.0000
 de 120 entraron a 45 supervivientes
 
 -- qué historia se ha gastado

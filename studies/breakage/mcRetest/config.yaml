@@ -1,0 +1,61 @@
+# Every tunable of the Monte Carlo Retest study, in one place. Nothing below is hidden in code.
+# Override any of these on the command line with --set key=value (dotted keys).
+
+ingest:
+  capital: 100000.0        # account the drawdown percentages are measured against; SQX's own
+  cents_per_usd: 100       # the .bin stores P/L in cents, as integers
+  workers: 16              # 🔬 2026-09-25, 40 runs: 16 -> 1.9 s and 1.9 GB, 40 -> 1.4 s and
+                            # 3.4 GB, 8 -> 2.7 s and 1.1 GB. Each worker is ~85 MB of its own
+                            # simulations; this is the knob that trades RAM for wall clock
+  min_sims: 200            # below this a task's quantiles are not worth reading
+  compression: zstd
+
+levels: [50, 60, 70, 80, 90, 92, 95, 97, 98, 99, 100]   # the only ones SQX produces
+
+recon:
+  tolerance: 0.002         # relative agreement a reconstructed metric must reach against SQX
+  absolute_floor: 0.02     # below this the cent rounding of the stored P/L dominates
+  # A metric that misses on this share of its runs is a wrong FORMULA and stops the ingest;
+  # below it, the miss is one unreadable cell, excluded and recorded. Two is always enough
+  # to be systematic: the three formula bugs of 2026-09-24 missed on 31 to 71 runs each.
+  systematic_share: 0.05
+
+scenario:
+  ordering_metric: NetProfit   # which metric ranks the simulations when a level is read as one
+  show_levels: [90, 95, 99]
+
+fragility:
+  band_levels: [2.5, 25, 50, 75, 97.5]   # the equity fan's percentiles, the study contract's five
+  fan_points: 100          # points of normalised progress; simulations differ in length
+  cvar_alpha: 0.05         # the drawdown tail the gate reads, as a conditional mean
+  n_resamples: 9999        # BCa resamples, for smooth statistics only; a quantile uses the exact interval
+  confidence: 0.95
+
+modes:
+  dip_alpha: 0.05
+  min_outcome_share: 0.30  # share of simulations that must give distinct results before anything
+                           # distributional is said. Measured per 1000: mindist 1, bar 2-3, exits 2-6,
+                           # spread 69, slippage 100 (all grid-sampled combs), params 392-1000,
+                           # ohlc 997, stress 999. Only the last three are continuous.
+
+attribution:
+  control_task: bar        # every effect is reported in units of this task's dispersion
+  min_control_sigma: 1.0   # an effect smaller than this many control sigmas is noise, not a finding
+  dispersion_center: median   # Brown-Forsythe. The mean-centred variant is Levene and is not robust here
+
+evidence:
+  method: by               # Benjamini-Yekutieli: four of five strategies share a template
+  alpha: 0.05
+  psr_benchmark: 0.0
+  ranks_min_strategies: 20   # Kendall tau below this is not measurable and is not printed
+
+gates:
+  min_pf: 1.10             # profit factor floor at the production task's 5th percentile
+  survival_dd_pct: 0.25    # conditional drawdown the account is assumed to survive
+  collapse_frac: 0.50      # median trade count below this share of the original is regime collapse
+  exec_keep_frac: 0.70     # net profit the worst execution task must leave standing
+  psr_gate: 0.90
+
+scoring:
+  weights: {production: 0.55, execution: 0.20, specification: 0.20, data: 0.05}
+  tiers: [80, 65, 50]      # STRONG / ACCEPTABLE / MARGINAL

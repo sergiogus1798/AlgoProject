@@ -41,7 +41,7 @@ no has exportado, no aparece. Y no hace curado (`/curate`) ni WFC (va por el pip
 ### Antes de empezar
 
 - Algún databank exportado: `python3 -m sqx.export.export_metrics --project X --databank Y`
-  (manual `04-export.md`) o una cosecha de `gate.harvest` (manual `31-puerta-oos.md`).
+  (manual `04-export.md`) o una cosecha de `studies.screening.gate.harvest` (manual `31-puerta-oos.md`).
 - La app abierta con `bin/algoui`. **Si ya la tenías abierta antes de este cambio, ciérrala y
   vuelve a abrirla**: la ventana comparte un demonio con las otras ventanas y el demonio viejo no
   conoce las rutas nuevas.
@@ -72,8 +72,8 @@ No toca SQX: se puede usar con el maestro abierto y con un worker construyendo.
 Un log por cada botón pulsado, en `~/Desktop/AlgoData/logs/ui/<fecha-hora>-<módulo>.log`, con
 la salida entera del módulo. Lo que el módulo escriba —su `reports/...`— es cosa suya y está en
 su página del manual. La ventana no escribe nada más. El botón «abrir informe html» abre en el navegador la página que
-un módulo ya escribió para esa estrategia (hoy solo Monte Carlo las escribe, en
-`reports/<proyecto>/<databank>/<día>/montecarlo/estrategias/`).
+un módulo ya escribió para esa estrategia (desde el 25-09 todos los estudios la escriben, en
+`reports/<proyecto>/<databank>/<día>/<estudio>/estrategias/<nombre>.html`, al lado de su `.json`).
 
 ### Cómo se lee el resultado
 
@@ -134,4 +134,4 @@ Monte Carlo, nulo y exposición explican que ese export mezcla mercados y no les
 - **Un botón termina en rojo**: el final de su log está debajo; el log entero en
   `AlgoData/logs/ui/`. Casi siempre es una entrada que no era la que el módulo esperaba.
 - **`KeyError: 'strategy_build'`** al abrir una cosecha: el `metrics.parquet` es de antes del
-  2026-09-23, cuando la columna se llamaba de otra forma. Rehacer la cosecha con `gate.harvest`.
+  2026-09-23, cuando la columna se llamaba de otra forma. Rehacer la cosecha con `studies.screening.gate.harvest`.

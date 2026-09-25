@@ -14,7 +14,7 @@ Generado el 2026-09-23. Se sitúa **antes** de `protocolo-robustez-2026-09-21.md
 ejecución: la puerta cierne una población entera de miles de estrategias, y el protocolo de
 robustez coge de una en una las que salgan vivas y les dedica días de máquina.
 
-**Estado: construido y corrido el mismo día.** `gate/` existe, sus siete cribas corren, y la
+**Estado: construido y corrido el mismo día.** `studies/screening/gate/` existe, sus siete cribas corren, y la
 primera cosecha real es `AlgoData/harvest/XAUUSD/OOS/2026-09-23` (231 estrategias, 307.593 trades,
 906.675 días de equity, 11 MB). El primer veredicto está en
 `AlgoData/reports/XAUUSD/OOS/2026-09-23/gate/`. Dos cambios sobre lo diseñado, ambos del dueño el
@@ -63,13 +63,13 @@ Tomadas antes de escribir código, y son las que fijan la forma del módulo:
 | # | decisión | consecuencia |
 |---|---|---|
 | D1 | **Cascada dura**: cada rung elimina | el `reason` del veredicto dice en qué rung murió cada una |
-| D2 | El módulo vive en **`gate/`, en la raíz** | `tasks/` y `pipeline/` lo importan; él no importa de ellos |
+| D2 | El módulo vive en **`studies/screening/gate/`, en la raíz** | `tasks/` y `pipeline/` lo importan; él no importa de ellos |
 | D3 | El test del mono corre **solo sobre los supervivientes** de los rungs baratos | acota el coste; renuncia al exceso-sobre-azar de la población entera (§8) |
 | D4 | La puerta **escribe `verdict.csv`, no aplica nada** | borrar sigue siendo un paso explícito con `--apply` |
 
 ## 3 · Arquitectura
 
-`gate/` en la raíz, paralelo a `nulls/` y por el mismo motivo: lo llaman `tasks/`, `pipeline/` y las
+`studies/screening/gate/` en la raíz, paralelo a `studies/readings/monkey/` y por el mismo motivo: lo llaman `tasks/`, `pipeline/` y las
 skills, y meterlo dentro de `tasks/` obligaría a `pipeline/` a importar de `tasks/`, que apunta la
 flecha al revés.
 
@@ -83,10 +83,10 @@ gate.yaml ─▶ harvest ─▶ rungs ─▶ scorecard ─▶ verdict ─▶ rep
 
 | fichero | qué hace | correrlo | en → sale |
 |---|---|---|---|
-| `harvest.py` | La cosecha única: métricas, trades y equity diaria de un databank en una sola pasada, con un manifest | `python3 -m gate.harvest --project P --databank OOS --role custodian` | databank → tres `.parquet` fechados |
+| `harvest.py` | La cosecha única: métricas, trades y equity diaria de un databank en una sola pasada, con un manifest | `python3 -m studies.screening.gate.harvest --project P --databank OOS --role custodian` | databank → tres `.parquet` fechados |
 | `rungs.py` | Un rung = una función pura `frame → (pasa, valor, motivo)`. Nada de I/O, nada de SQX | importado | cosecha → columnas del scorecard |
 | `cascade.py` | Corre los rungs en el orden del yaml, cada uno sobre los supervivientes del anterior | importado | cosecha + yaml → scorecard |
-| `report.py` | **La puerta entera sobre un databank** | `python3 -m gate.report --project P --databank OOS` | cosecha → `scorecard.parquet` + `verdict.csv` + `gate.html` |
+| `report.py` | **La puerta entera sobre un databank** | `python3 -m studies.screening.gate.report --project P --databank OOS` | cosecha → `scorecard.parquet` + `verdict.csv` + `gate.html` |
 | `gate.yaml` | Los rungs como datos: orden, umbral, `why`, y si elimina o solo mide | editado | — |
 | `README.md` | Este diseño, en inglés, como el resto de carpetas de código | — | — |
 
@@ -143,11 +143,11 @@ rungs:
 | # | rung | la pregunta | lee | coste | qué ya existe |
 |---|---|---|---|---|---|
 | 0 | `sanidad` | ¿esto es un dato válido? | trades | segundos | `core.trades`, `core.tradestore` |
-| 1 | `estaticas` | ¿pasa los umbrales sobre OOS? | métricas | ~0 | `sqx.curate.verdict` (filtro pandas), `tasks.reports.filters` mide qué compra cada umbral |
-| 2 | `degradacion` | ¿cuánto del filo IS sobrevivió, y lo que queda bate a su propio error? | equity | segundos | **`tasks/analysis/decay.py` entero**: retención de Sharpe, t de Lo (2002), años positivos, concentración trimestral |
+| 1 | `estaticas` | ¿pasa los umbrales sobre OOS? | métricas | ~0 | `sqx.curate.verdict` (filtro pandas), `studies.screening.filters.report` mide qué compra cada umbral |
+| 2 | `degradacion` | ¿cuánto del filo IS sobrevivió, y lo que queda bate a su propio error? | equity | segundos | **`studies/screening/analysis/decay.py` entero**: retención de Sharpe, t de Lo (2002), años positivos, concentración trimestral |
 | 3 | `forma` | ¿el drawdown OOS cabe en lo que IS hacía esperar? ¿es estable en el tiempo? | equity | segundos | `core.significance` (PSR, longitud mínima de track record) |
-| 4 | `mono` | ¿bate a un aleatorio con la misma oportunidad? | trades + barras | **minutos por estrategia** | **`nulls/` entero** — `nulls.report` ya barre un export completo |
-| 5 | `familia` | de los que pasan, ¿cuántos daría el azar? | p del rung 4 | ~0 | `tasks.analysis.excess`, `discoveries()` (Benjamini-Hochberg) |
+| 4 | `mono` | ¿bate a un aleatorio con la misma oportunidad? | trades + barras | **minutos por estrategia** | **`studies/readings/monkey/` entero** — `studies.readings.monkey.report` ya barre un export completo |
+| 5 | `familia` | de los que pasan, ¿cuántos daría el azar? | p del rung 4 | ~0 | `engines.inference.excess`, `discoveries()` (Benjamini-Hochberg) |
 | 6 | `redundancia` | ¿son N estrategias o una repetida N veces? | equity | segundos | nada — **es el único rung sin pieza previa** |
 
 **El rung 0 no es burocracia.** Tres trampas ya documentadas viven ahí: el último trade puede ser
@@ -170,14 +170,14 @@ decenas en lugar de miles. Ese es todo el argumento, y es la decisión D3.
 
 Muy poco, y es deliberado:
 
-- `gate/harvest.py` — envuelve tres exportadores que ya existen en una sola pasada con un manifest.
-- `gate/rungs.py` — los seis rungs; cinco son llamadas a módulos existentes, uno (redundancia) es nuevo.
-- `gate/cascade.py`, `gate/report.py`, `gate/gate.yaml`, `gate/README.md`.
+- `studies/screening/gate/harvest.py` — envuelve tres exportadores que ya existen en una sola pasada con un manifest.
+- `studies/screening/gate/rungs.py` — los seis rungs; cinco son llamadas a módulos existentes, uno (redundancia) es nuevo.
+- `studies/screening/gate/cascade.py`, `studies/screening/gate/report.py`, `studies/screening/gate/gate.yaml`, `studies/screening/gate/README.md`.
 - `docs/manual/NN-puerta.md` — en español, con capturas de salida real. **Regla dura 8: la página de
   manual va en la misma tarea que el comando.**
 - La skill `/puerta`, o una fila más en la skill `curate` existente.
 
-Nada de `nulls/`, `tasks/analysis/` ni `sqx/curate/` se toca. Si un rung necesita algo que un módulo
+Nada de `studies/readings/monkey/`, `studies/screening/analysis/` ni `sqx/curate/` se toca. Si un rung necesita algo que un módulo
 existente no da, se amplía ese módulo, no se copia aquí.
 
 ## 7 · Lo que la puerta NO hace
@@ -185,7 +185,7 @@ existente no da, se amplía ese módulo, no se copia aquí.
 - **No aplica nada** (D4). Escribe el `verdict.csv` y para.
 - **No juzga el generador, solo las estrategias.** Ver §8.
 - **No decide umbrales.** Los lee del yaml; medir qué compra cada uno es trabajo de
-  `tasks/reports/filters.py`, que ya barre 210 candidatos con intervalo bootstrap y corrección BH.
+  `studies/screening/filters/report.py`, que ya barre 210 candidatos con intervalo bootstrap y corrección BH.
 - **No sustituye al protocolo de robustez.** Lo que sale vivo de aquí es lo que *entra* en
   `pipeline/`, que le dedica 5.000 variantes a cada una.
 
@@ -200,24 +200,24 @@ umbral provisional se cuela en un módulo y se lee como si fuera una respuesta.
 | rung | umbral | valor de arranque | cómo decidirlo de verdad |
 |---|---|---|---|
 | 0 | trades mínimos OOS | 100 | la longitud mínima de track record de `core.significance` sobre el Sharpe observado |
-| 1 | métricas estáticas OOS | ninguno | barrido de `tasks.reports.filters` sobre el propio databank |
+| 1 | métricas estáticas OOS | ninguno | barrido de `studies.screening.filters.report` sobre el propio databank |
 | 2 | retención mínima | 0.30 | distribución de retención sobre una población NO filtrada por OOS |
 | 2 | t mínima | 1.65 | ya es el valor que usa `decay.py`; es un 5% a una cola |
 | 2 | años positivos | 4 de 5 | `decay.py` ya documenta que 3 de 5 es lo que da una moneda |
 | 2 | concentración máxima | 0.40 | ídem |
-| 4 | p del mono | 0.05, y **sobre qué estadístico** | medido: en XAUUSD el 51,0 % bate al nulo en `sharpe` y el 21,5 % en `net`. **El estadístico mueve el veredicto más que el nulo**, y `nulls/` imprime todos y no elige ninguno. Esta es la decisión más importante del apéndice |
+| 4 | p del mono | 0.05, y **sobre qué estadístico** | medido: en XAUUSD el 51,0 % bate al nulo en `sharpe` y el 21,5 % en `net`. **El estadístico mueve el veredicto más que el nulo**, y `studies/readings/monkey/` imprime todos y no elige ninguno. Esta es la decisión más importante del apéndice |
 | 6 | correlación de corte | 0.70 | medida sobre la matriz real de una población superviviente |
 
 ## Apéndice B · Lo que NO se ha verificado
 
-- **El coste real de `gate.harvest` sobre un databank grande no está medido.** `export_trades` sí lo
+- **El coste real de `studies.screening.gate.harvest` sobre un databank grande no está medido.** `export_trades` sí lo
   está (757 estrategias, 960.705 trades); la extracción de equity vía `sqxstats.equity` está medida
   por variante en `sqx/variants/equity.py`, no por databank.
-- **El rung 4 nunca ha corrido sobre estrategias con stop y target.** `nulls/barrier.intrabar` viene
-  como `pessimistic` y `nulls/verify.py` prueba que el barrido es *correcto*, no que el convenio sea
+- **El rung 4 nunca ha corrido sobre estrategias con stop y target.** `studies/readings/monkey/barrier.intrabar` viene
+  como `pessimistic` y `studies/readings/monkey/verify.py` prueba que el barrido es *correcto*, no que el convenio sea
   el de SQX. El día que una estrategia lleve barreras, calibrarlo contra SQX va primero.
 - **El rung 6 no tiene implementación previa ni medición.** Es el único trozo realmente nuevo.
 - **La contaminación por preselección no se resuelve, solo se declara.** Si el build llevaba
   condiciones de aceptación sobre OOS, la población ya está filtrada por la muestra que se juzga, y
-  `tasks/reports/nulls.py::contamination()` avisa de ello. La puerta debe registrar **qué espacio de
+  `studies/screening/monkeyExcess/report.py::contamination()` avisa de ello. La puerta debe registrar **qué espacio de
   búsqueda** produjo la población; no puede deshacerlo.

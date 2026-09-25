@@ -41,7 +41,7 @@ python3 -m sqx.export.export_spp --project XAUUSD --databank "SPP IS"
 ### Cómo se ejecuta
 
 ```bash
-python3 -m strategies.sppUltra.report --project XAUUSD --databank SPP_IS
+python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS
 ```
 
 | flag | obligatorio | qué hace |
@@ -55,9 +55,11 @@ Tarda unos segundos por estrategia.
 
 ### Qué produce
 
-Todo va a `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/`:
+Todo va a `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/spp/` (hasta el 25-09, suelto
+en la carpeta del día):
 
-- **`sppultra.md`** — el informe, una sección por estrategia.
+- **`estrategias/<nombre>.html`** / **`.json`** — el informe de cada estrategia (antes, una sección
+  de `sppultra.md`), en el contrato de estudios que pinta la ventana.
 - **`design_brief_<Estrategia>.json`** — uno por estrategia. Es el archivo que lee la etapa de
   fabricación de variantes. No lo edites a mano: se regenera cada vez que corres el comando.
 
@@ -128,7 +130,7 @@ Un parámetro que hay que acertar clavado no es un parámetro que puedas poner e
 ### Un ejemplo completo
 
 ```bash
-$ python3 -m strategies.sppUltra.report --project XAUUSD --databank SPP_IS --day 2026-09-10
+$ python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS --day 2026-09-10
 Strategy 1.19.29         proceed  n_eff= 4,283  max 17.01 vs nulo 10.04  vivos=10 congelados=0
 Strategy 17.9.39         proceed  n_eff= 3,381  max 14.64 vs nulo 5.11  vivos=7 congelados=1
 Strategy 23.16.37        proceed  n_eff= 4,300  max 8.44 vs nulo 5.35  vivos=10 congelados=1

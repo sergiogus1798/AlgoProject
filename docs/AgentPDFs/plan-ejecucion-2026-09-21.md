@@ -503,7 +503,7 @@ variantes.
 
 ---
 
-### P5 · `strategies/walkForwardCorrelation/` (lote W5)
+### P5 · `studies/optimisation/wfc/` (lote W5)
 **Puede empezar:** ya contra fixtures de C3/C4; la corrida real tras P4 · **Dura:** 1 semana
 
 ¿Sobrevive la superficie fuera de muestra, y qué regla de selección de parámetros usar?
@@ -518,7 +518,7 @@ dejan de serlo** — que es exactamente el sesgo √T. Por eso se guardan las do
 ---
 
 ### P6 · Multi-mercado (lote W8)
-**Puede empezar:** tras P4 · **Dura:** 1 semana · **Carpeta:** `strategies/crossmarket/`
+**Puede empezar:** tras P4 · **Dura:** 1 semana · **Carpeta:** `studies/transfer/crossmarket/`
 
 **Extensión, no módulo nuevo:** `crossmarket/` ya construye nulos de ocupación igualada. `OPEN.md`
 issue 22 deja cuatro hilos abiertos ahí; ciérralos en el mismo lote.
@@ -558,8 +558,8 @@ más de lo que hace el carril S.**
 | lote | estado | ahora |
 |---|---|---|
 | **W0** `core/surface/` | ✅ hecho | — |
-| **W1** `strategies/sppUltra/` | ✅ hecho | — |
-| **W4** `strategies/walkForwardMatrix/` | ✅ hecho | — |
+| **W1** `studies/breakage/spp/` | ✅ hecho | — |
+| **W4** `studies/optimisation/wfm/` | ✅ hecho | — |
 | **W7** presupuesto de disco + costes | ✅ hecho | `core.assets XAUUSD` ya sale 0 |
 | **W2** variantes diseño+fabricación | ⬜ *«pausado por topología»* | 🟢 **P3, desbloqueado** |
 | **W3** variantes ejecución+recogida | ⬜ *bloqueado ×3* | 🟡 **P4, solo espera P1+P3+S4+S8** |

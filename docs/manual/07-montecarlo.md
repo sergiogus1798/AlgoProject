@@ -62,7 +62,7 @@ las mismas pruebas sobre él.
 ### Cómo se ejecuta
 
 ```bash
-python3 -m strategies.monteCarlo.report --project XAUUSD --databank Results \
+python3 -m portfolio.common.monteCarlo.report --project XAUUSD --databank Results \
         --asset XAUUSD --export 2026-09-03
 ```
 
@@ -76,7 +76,7 @@ python3 -m strategies.monteCarlo.report --project XAUUSD --databank Results \
 | `--bars-timeframe` | no | de qué barras sale la volatilidad diaria; `M30` por defecto |
 | `--set` | no | cambia cualquier valor del config: `--set global.n_sims=100000` |
 
-**Todo lo ajustable está en `strategies/monteCarlo/config.yaml`**, agrupado por familia y con un
+**Todo lo ajustable está en `portfolio/common/monteCarlo/config.yaml`**, agrupado por familia y con un
 comentario por línea. No hay ni un número escondido en el código. Los tres que importan:
 
 | ajuste | por defecto | qué cambia |
@@ -102,16 +102,18 @@ página.
 
 ### Qué produce
 
-En `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/montecarlo/` — y en
-`montecarlo_portfolio/`, al lado y sin pisarlo, cuando corres con `--portfolio`:
+En `~/Desktop/AlgoData/reports/<proyecto>/<databank>/<fecha>/monteCarlo/` — y en
+`monteCarlo_portfolio/`, al lado y sin pisarlo, cuando corres con `--portfolio`. (Hasta el 25-09
+las carpetas se llamaban `montecarlo/` y `montecarlo_portfolio/`; ver `docs/MAPA-DE-CARPETAS.md`.)
 
 | archivo | qué es |
 |---|---|
-| `montecarlo.html` | **la página que hay que abrir.** Resumen del databank, qué falló y la tabla de todas |
+| `monteCarlo.html` | **la página que hay que abrir.** Resumen del databank, qué falló y la tabla de todas |
 | `estrategias/<nombre>.html` | el informe completo de una estrategia: las cinco familias con sus figuras |
-| `verdict.csv` | una fila por estrategia: veredicto, compuesto, las cinco notas y cada número que decidió |
+| `estrategias/<nombre>.json` | ese mismo informe como resultado del contrato de estudios: lo que pinta la ventana |
+| `verdict.csv` | una fila por estrategia: identidad, veredicto, compuesto, las cinco notas y cada número que decidió |
 | `flags.csv` | una fila por prueba disparada: qué estrategia, qué prueba, con qué valor y si veta |
-| `montecarlo.md` | el resumen escrito |
+| `monteCarlo.md` / `monteCarlo.json` | el resumen escrito, y el mismo resumen como resultado del contrato |
 | `manifest.json` | qué se analizó y con qué configuración entera |
 
 Los informes se acumulan por fecha: uno nuevo no borra el anterior.
@@ -181,11 +183,11 @@ resaltar cada una por separado. *(Captura pendiente para ambas figuras.)*
 Las 36 estrategias del databank `Results` del proyecto `XAUUSD`, con la configuración por defecto:
 
 ```
-python3 -m strategies.monteCarlo.report --project XAUUSD --databank Results \
+python3 -m portfolio.common.monteCarlo.report --project XAUUSD --databank Results \
         --asset XAUUSD --export 2026-09-03
 ```
 
-El resumen escrito que deja en `montecarlo.md`:
+El resumen escrito que deja en `monteCarlo.md`:
 
 ```
 # Monte Carlo — XAUUSD / Results
@@ -234,73 +236,21 @@ Lo que hay que leer de ahí, en cristiano:
 - **Cuenta con el doble de drawdown del que viste.** La inflación mediana es **1,95**, y la más baja
   de las 36 es 1,52. Ninguna tiene un drawdown de backtest que sirva para dimensionar la cuenta.
 
-### El panel interactivo
+### Una estrategia cada vez: la ventana
 
-El comando de arriba analiza el databank entero y escribe. El **panel** es lo contrario: una
-estrategia cada vez, tú decidiendo qué se corre y mirando lo que salga, sin generar nada hasta que
-lo pidas.
+El panel del navegador (`explorer.serve`, puerto 8765) **se retiró el 25-09**. Lo que hacía — una
+estrategia cada vez, con los knobs a mano — lo hace ahora la ventana de escritorio (`ui/`): llama a
+`portfolio.common.monteCarlo.one` para la estrategia elegida, con los `--set` del cajón de
+configuración, y pinta el diccionario que devuelve. El comando y la ventana usan el mismo
+`one.run`, así que la ficha de `estrategias/<nombre>.html` y lo que ves en la ventana no pueden
+discrepar. Las frases del cajón salen de `portfolio/common/monteCarlo/tooltips.py`.
 
-```bash
-python3 -m strategies.monteCarlo.explorer.serve --project XAUUSD --databank Results \
-        --asset XAUUSD --export 2026-09-03
-```
-
-Se abre solo en el navegador, en `http://127.0.0.1:8765` (cambia el puerto con `--port`). Acepta los
-mismos `--set` que el comando, así que puedes explorar con 20.000 simulaciones y dejar las 100.000
-para el informe final. Se para con `Ctrl+C`.
-
-**Abre siempre en blanco.** A diferencia de versiones anteriores, cada arranque borra cualquier
-resultado guardado de esa databank antes de abrir el navegador: nunca te vas a encontrar estrategias
-«ya analizadas» de una sesión anterior confundiéndose con las de hoy. Dentro de la misma sesión el
-caché sigue funcionando igual — cambiar de estrategia y volver es instantáneo.
-
-![El panel, pestaña Veredicto](assets/montecarlo-panel-ui.png)
-
-| control | qué hace |
-|---|---|
-| desplegable de estrategias | cambia de estrategia. Las que ya tienen resultado guardado *en esta sesión* salen marcadas |
-| **Configuración de este runeo** (desplegable bajo la cabecera) | todos los valores de `config.yaml` y el coste del activo (spread, comisión, point value, tick size), con los de fábrica precargados. Lo que cambies aquí se aplica sólo al siguiente clic — nunca se escribe en disco — y pasa el ratón por el nombre de cualquier campo para ver qué es |
-| **Analizar todo** | corre las cinco familias sobre esa estrategia y guarda el resultado |
-| **Generar informe** | escribe su página HTML, con la comprobación de estabilidad incluida |
-| pestañas | el veredicto y cada familia, con las mismas tablas y figuras que el informe |
-| **Explorador de pruebas** | cualquiera de las 19 sub-pruebas × cualquiera de sus 8 estadísticos |
-
-*(Captura pendiente: la fila de Configuración es nueva y no sale todavía en la imagen de arriba.)*
-
-![El explorador de pruebas](assets/montecarlo-panel-explorador.png)
-
-El explorador es la respuesta a «quiero ver absolutamente todos los resultados sin que sea un lío»:
-en vez de cuarenta figuras en una página, dos desplegables y la que quieras mirar. Debajo del
-histograma sale también la curva de equity de esa sub-prueba con sus bandas de confianza, para ver
-no sólo la distribución de un estadístico sino qué pinta tiene la curva entera bajo ese modelo.
-*(Captura pendiente para la curva de equity del explorador.)* Y el botón **Re-ejecutar esta prueba**
-vuelve a correr esa sub-prueba sola, con azar nuevo, y la enseña al lado de la guardada — que es la
-forma honesta de comprobar si un número te está bailando.
-
-**Lo que se guarda y dónde.** Cada análisis va a
-`~/Desktop/AlgoData/cache/montecarlo/<proyecto>/<databank>/<estrategia>.json`, con una huella de
-**toda** la configuración dentro — incluidos los overrides de coste del activo que hayas puesto en
-el desplegable de Configuración, así que analizar la misma estrategia con un spread distinto no se
-confunde con el resultado de fábrica. Por eso cambiar de estrategia es instantáneo dentro de la
-misma sesión. Y por eso, si tocas un umbral del `config.yaml` o un coste del activo, el panel te
-avisa en rojo de que lo que estás viendo se calculó con otra configuración, en vez de contestarte
-tan tranquilo a una pregunta que no le hiciste. Se guardan resúmenes e histogramas, nunca las
-simulaciones crudas: son kilobytes, no gigabytes. Esos ficheros no sobreviven al siguiente arranque
-del panel — ver más arriba.
-
-Los informes que escribe el panel van a `montecarlo_panel/`, **al lado** de los del comando y nunca
-encima: el panel suele correrse con menos simulaciones, y una página hecha con una configuración no
-debe sustituir a otra hecha con otra.
-
-**Lo que el panel no hace, a propósito:**
-
-- **No decide con una prueba suelta.** Re-ejecutar una sub-prueba no toca el resultado guardado ni
-  puede mover un veredicto: un veredicto sale de un análisis entero o no sale.
-- **No corre el databank entero.** Para eso está el comando, que lo dejas trabajando y te vas.
-- **No se abre desde otro ordenador.** Escucha sólo en local. Si clonas el repo en otro PC funciona
-  allí igual: no hay nada suyo atado a esta máquina.
-- **Un trabajo a la vez.** Dos análisis simultáneos se pelearían por los mismos núcleos y ninguna de
-  las dos barras de progreso significaría nada, así que el segundo se rechaza.
+Lo que el panel tenía sigue en el resultado: la pestaña **Explorador de pruebas** lleva cada
+sub-prueba × cada estadístico ya calculado, con dos selectores (`prueba`, `métrica`) que la ventana
+filtra sin volver a calcular, más el cono de equity de cada sub-prueba. **Re-ejecutar una
+sub-prueba** es `one.run(..., only="<etiqueta>")`: devuelve esa sub-prueba sola, con azar nuevo y
+sin veredicto — un veredicto sale de un análisis entero o no sale —, y la ventana la pone al lado
+de la guardada.
 
 ### Qué NO te dice
 
@@ -322,7 +272,5 @@ debe sustituir a otra hecha con otra.
   estrategia con los regímenes de otro instrumento.
 - `FileNotFoundError ... trades.parquet` al empezar — esa fecha de exportación no existe, o es de
   antes de que los trades se empaquetaran. Comprueba la fecha: es la de la exportación, no la de hoy.
-- `Address already in use` al abrir el panel — ya tienes uno corriendo, o el puerto está ocupado.
-  Ciérralo con `Ctrl+C` en su terminal, o abre el nuevo con `--port 8766`.
 - Un aviso de que el coste modelado no cuadra con el recuperado — la ficha de `assets/` describe
   otro instrumento. Sólo invalida la familia C; el resto del informe sigue en pie.

@@ -19,7 +19,7 @@ Unselected decay, 5 XAUUSD runs (~10,000 rows each), IS 2008–2017 vs OOS 2018�
 
 Generator decay: **−0.17 Sharpe, −0.03 PF**. Inside `Net profit (OOS) > 0` survivors (25.3–33.5 %) it flips to +0.10…+0.19 Sharpe, +0.03…+0.06 PF in all 5.
 
-`gate/` on `XAUUSD/OOS` — the 231 `.sqx` on disk (owner-kept survivors, not the 10,000-row export), lax thresholds:
+`studies/screening/gate/` on `XAUUSD/OOS` — the 231 `.sqx` on disk (owner-kept survivors, not the 10,000-row export), lax thresholds:
 sanidad (≥20 OOS trades, no duplicate trade set) 2 died; estaticas (`Net profit (OOS) > 0`) 0 of 229; degradacion
 (retention ≥ 0, t ≥ 0, ≥1 profitable year, concentration ≤ 1.0) 1; forma (max DD OOS/IS ≤ 5) 0; mono (p ≤ 0.50 `sharpe`, rung `timing`, 2,000 draws) 0 of 228.
 Reconciliation 0.999999 on all 228 (pricing is not the cause). BH over 228 p-values names 146.
@@ -35,6 +35,6 @@ Contrast, `XAU_ISOOS_ejemplo` (build + separate retest task, 120 built, acceptan
 | beat monkey p ≤ 0.05 | 184/228 | **5/45** |
 
 Operational: trade-level dedup found 2 clone pairs in 231 (identical trade sets, different hashes and names; cf. 45-of-231
-in `tasks/CLAUDE.md`) → dedup before expensive screens. Cost: harvest (staging, metrics + trade export, 231 zip reads) ~5 min of SQX;
+in `studies/CLAUDE.md`) → dedup before expensive screens. Cost: harvest (staging, metrics + trade export, 231 zip reads) ~5 min of SQX;
 whole cascade incl. 2,000 nulls = 0.1 s/strategy (no stops/targets → `barrier.exits()` fast path; changes with barriers).
 Redundancy by structure: the 45 survivors are 13 distinct structures, one holds 24.

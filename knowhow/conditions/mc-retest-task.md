@@ -7,7 +7,7 @@ tag: 🔬  date: 2026-09-23  see: costs/mc-retest-ranges, conditions/active-cond
   `sqx/projects/mcretest.py` enables the crosscheck itself, after the doctrine, never before.
 - `tasksettings.set_crosschecks()` regex also matches `<Condition use="true">` → every acceptance condition of every crosscheck ends `use="false"`.
   So `RetestWithHigherPrecision` in Build runs with no acceptance (evidence, not filter) — a regex side effect, not a written decision.
-- Task titles `MCR 1 Bar` … `MCR 8 Stress` are a contract with `strategies/retest/inputs/tasks.py`; renaming breaks step 14.
+- Task titles `MCR 1 Bar` … `MCR 8 Stress` are a contract with `studies/breakage/mcRetest/inputs/tasks.py`; renaming breaks step 14.
 - Configure the MinDistance task only when the build produced stop/limit entries (owner rule).
 
 ## Evidence
@@ -23,7 +23,7 @@ tag: 🔬  date: 2026-09-23  see: costs/mc-retest-ranges, conditions/active-cond
 - Master `XAUUSD`, `Retest-Task5..12`, verified by writing with `mcretest.py`.
 - `MCBacktestPrecision` = fidelity of the 1000 sims; Setup `testPrecision` = main backtest. Master: Setup 2 / MC 1 in `MCR 1 Bar`, `MCR 5 Params`; 2/2 in the other six.
 - `MCUseFullSample` decides the sample: 7 isolated tasks `false`, empty `<OutOfSample showGraph="false" />`, window 2008–2017; stress task `true`, 2008–2022,
-  `<OutOfSample><Range dateFrom="2018.01.01" …>`. `strategies/retest/` labels the run from it — must match the window.
+  `<OutOfSample><Range dateFrom="2018.01.01" …>`. `studies/breakage/mcRetest/` labels the run from it — must match the window.
 - Regex: `re.findall(r"<(\w+) use=\"(?:true|false)\">", block)`. Donor: 1 active condition in `MonteCarloRetest`; fresh builder clone: 0.
   Hence `mcretest.py` reports `0 condiciones apagadas` on a new project; its `silence()` still needed for projects not passed through the doctrine.
 - 🤔 `RandomizeMinDistance` on a market-order population perturbs nothing (min distance separates a pending order from price). Not confirmed against SQX's engine; measured only that the population has no such orders.

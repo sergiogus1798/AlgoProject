@@ -3,10 +3,13 @@
 **Tu oficio:** Python numérico. No toca SQX. Sale del **item 4, tier 2** del PDF del dueño
 `TRADE_LEVEL_TESTS.pdf`, y es el único de ese documento que no se pudo construir el 2026-09-24.
 
-Lee `CODESTYLE.md` · `strategies/entryQuality/README.md` · `knowhow/export/fill-and-pricing.md` §«El trade
-export» · `nulls/README.md` §reconciliación.
+Lee `CODESTYLE.md` · `studies/readings/entryQuality/README.md` · `knowhow/export/fill-and-pricing.md` §«El trade
+export» · `studies/readings/monkey/README.md` §reconciliación.
 
 ---
+
+**Dónde va** (refactorización del 25-09, `docs/MAPA-DE-CARPETAS.md`): el motor en `engines/market/replay/` (ya creada con su `README.md`): calcula y no juzga, y lo consumen `entryQuality` y quien venga después. Forma de
+módulo: `studies/CLAUDE.md`; contrato del resultado: `core/study/CONTRACT.md`.
 
 ## 0 · Qué es y qué no es
 
@@ -14,7 +17,7 @@ export» · `nulls/README.md` §reconciliación.
 reimplementa nunca. El simulador sólo vuelve a ejecutar cada operación desde una entrada
 —posiblemente desplazada `d` barras— caminando el M1 hasta que algo la cierra.
 
-Existe porque el **tier 1 ya construido** (`strategies/entryQuality/delay.py`) supone que las
+Existe porque el **tier 1 ya construido** (`studies/readings/entryQuality/delay.py`) supone que las
 salidas no se mueven. Eso es correcto para salidas por señal y por número de barras, y **falso para
 un stop o un target**, que se recalculan desde el precio de entrada nuevo.
 
@@ -31,9 +34,9 @@ un stop o un target**, que se recalculan desde el precio de entrada nuevo.
   párate antes de escribir el recálculo a ciegas.
 - **El M1 del oro son 7.949.285 barras y se cargan en 0,4 s** con `core.barstore.source`. No hace
   falta memory-mapping ni cargar por trozos, al contrario de lo que sugiere el PDF.
-- `core.trades` y `nulls.calibrate` ya dan lo que necesitas por operación: `point_value` medido de
+- `core.trades` y `engines.market.calibrate` ya dan lo que necesitas por operación: `point_value` medido de
   los propios trades (99.85 contra 100 configurado en el oro), el coste real `bruto − neto`, y
-  `nulls.inputs.on_grid` para situar cada operación en la rejilla.
+  `engines.nulls.inputs.on_grid` para situar cada operación en la rejilla.
 
 ## 2 · El criterio de aceptación, que es el encargo entero
 
@@ -42,7 +45,7 @@ de salida, misma razón de salida, y P&L dentro de una tolerancia pequeña. Ante
 resultado con retraso vale nada.
 
 Reporta la **tasa de coincidencia** e investiga cada discrepancia. El precedente está medido y es
-exactamente el mismo patrón: `nulls/calibrate.convention()` encontró que el fill es `open-open` con
+exactamente el mismo patrón: `studies/readings/monkey/calibrate.convention()` encontró que el fill es `open-open` con
 una correlación de **0.999985**, y el runner-up daba 0.9629 — la reconciliación es lo que licenció
 todo lo demás de aquel módulo. Sin ella habría sido decoración.
 
@@ -67,7 +70,7 @@ retrasadas (el caso real en vivo).
 El PDF propone Numba. **No está en `requirements.txt` y añadir una dependencia compilada a este
 proyecto es decisión del dueño** — `sudo` pide contraseña en esta máquina y las ruedas se instalan
 en `~/.local`. Antes de pedirla: el camino se puede vectorizar por lotes de operaciones con numpy
-(el mismo truco que `nulls/barrier.py` usa para el triple barrier sobre miles de corridas a la vez),
+(el mismo truco que `engines/nulls/barrier.py` usa para el triple barrier sobre miles de corridas a la vez),
 y ese módulo ya demuestra que se puede. Mide primero, pide dependencia después.
 
 ## 5 · Cómo cierras

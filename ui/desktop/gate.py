@@ -75,7 +75,7 @@ class Gate(QFrame):
         row.addWidget(kicker("umbrales"))
         self.overrides = QLineEdit()
         self.overrides.setPlaceholderText("criba.umbral=valor, separados por espacios · "
-                                          "vacío = los de gate/config.yaml")
+                                          "vacío = los de studies/screening/gate/config.yaml")
         self.overrides.setToolTip("Los umbrales se congelan antes de mirar (ledger/thresholds"
                                   ".yaml). Un override queda escrito en el manifest del informe.")
         row.addWidget(self.overrides, 1)
@@ -128,7 +128,7 @@ class Gate(QFrame):
 
     def reload(self) -> None:
         """Ask the daemon for the cosechas again."""
-        self.data = client.get("gate/harvests")
+        self.data = client.get("studies/screening/gate/harvests")
         assets = client.get("databanks")["assets"]
         self.asset.blockSignals(True)
         self.asset.clear()
@@ -174,7 +174,7 @@ class Gate(QFrame):
             self.screens.setText("Esta cosecha no ha pasado por la puerta. Pulsa «correr la "
                                  "puerta»: sobre cientos de estrategias tarda segundos, sin SQX.")
             return
-        self.report = client.get("gate/report", project=h["project"], databank=h["databank"],
+        self.report = client.get("studies/screening/gate/report", project=h["project"], databank=h["databank"],
                                  day=h["report_day"])
         self.funnel.fill(self.report["funnel"], self.report["screens"])
         self.scorecard.fill(self.report["rows"], self.report["screens"])
@@ -195,14 +195,14 @@ class Gate(QFrame):
         """
         h = self.current()
         row = next(r for r in self.report["rows"] if r["identity"] == identity)
-        got = client.get("gate/strategy", project=h["project"], databank=h["databank"],
+        got = client.get("studies/screening/gate/strategy", project=h["project"], databank=h["databank"],
                          day=h["day"], identity=identity)
         self.detail.show(row, self.report["screens"], got)
 
     def start_run(self) -> None:
         """Run the gate over the picked cosecha, with the overrides typed."""
         h = self.current()
-        client.post("gate/run", {"project": h["project"], "databank": h["databank"],
+        client.post("studies/screening/gate/run", {"project": h["project"], "databank": h["databank"],
                                  "asset": self.asset.currentText(),
                                  "overrides": self.overrides.text().split()})
         self.state.setText(chip("en curso", C["weak"]))

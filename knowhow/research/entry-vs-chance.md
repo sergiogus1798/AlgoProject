@@ -7,8 +7,8 @@ An entry can be indistinguishable from chance while the strategy makes money. Th
 random-entry benchmark with the same exits (`PARAMETER_SPACE_TESTS.pdf` D3, `docs/encargos/12`).
 
 ## Evidence
-- `Strategy 35.44.31` (`strategies/entryQuality/`): e-ratio (mean favourable / mean adverse excursion, ATR units) inside the
+- `Strategy 35.44.31` (`studies/readings/entryQuality/`): e-ratio (mean favourable / mean adverse excursion, ATR units) inside the
   5–95 % band of random entries matched on hour of day and long/short split at k = 1, 5, 10, 20, 50; below it at k = 1. Still profitable.
-- `nulls/`: only 51 % of 757 XAUUSD strategies beat their null on Sharpe.
+- `studies/readings/monkey/`: only 51 % of 757 XAUUSD strategies beat their null on Sharpe.
 - All long (1,119 of 1,119); exits `Exit After X Bars`, `Exit Signal`, `End Of Friday` — no SL/TP in any of 960,705 exported trades; 99 % of profit from one year.
 - 🤔 What is measured is closer to "long gold in 2020 with a bar-count exit" than an entry edge. Not a reason to discard the population.

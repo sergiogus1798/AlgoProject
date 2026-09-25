@@ -23,7 +23,7 @@ def thresholds_of(screen: str) -> dict:
         screen: A screen name as `funnel.csv` spells it.
 
     Returns:
-        Its row of `gate/config.yaml` minus the prose, so a funnel row carries the numbers
+        Its row of `studies/screening/gate/config.yaml` minus the prose, so a funnel row carries the numbers
         it was produced under. A funnel read without its thresholds says nothing.
     """
     screens = yaml.safe_load(GATE_CONFIG.read_text(encoding="utf-8"))["screens"]
@@ -78,7 +78,7 @@ def from_gate(folder: Path, study: str, symbol: str, timeframe: str) -> list[dic
                      "timeframe": timeframe, "segment": "oos1",
                      "n_in": int(screen.entered),
                      "n_out": int(screen.entered if soft else screen.passed),
-                     "criterion": f"gate/{screen.screen}",
+                     "criterion": f"studies/screening/gate/{screen.screen}",
                      "thresholds": thresholds_of(screen.screen),
                      "window_from": source["source"]["split"],
                      "window_to": source["source"]["end"],

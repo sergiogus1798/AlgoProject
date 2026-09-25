@@ -41,7 +41,7 @@ python3 -m sqx.export.export_trades --project XAUUSD --databank Results \
 ### Cómo se ejecuta
 
 ```bash
-python3 -m strategies.profitShape.report \
+python3 -m studies.readings.profitShape.report \
     --export ~/Desktop/AlgoData/raw/XAUUSD/Results/2026-09-03/trades.parquet \
     --strategy "Strategy 1.17.44"
 ```

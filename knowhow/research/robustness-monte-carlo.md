@@ -10,8 +10,8 @@ without replacement must leave net profit identical (`sweeps.invariant()` ≈ 1e
 
 ## Evidence
 36 strategies of `XAUUSD/Results` (export `raw/XAUUSD/Results/2026-09-03/trades/`, report
-`AlgoData/reports/XAUUSD/Results/2026-09-09/montecarlo/`):
-`python3 -m strategies.monteCarlo.report --project XAUUSD --databank Results --asset XAUUSD --export 2026-09-03`
+`AlgoData/reports/XAUUSD/Results/2026-09-09/montecarlo/`, renamed `monteCarlo/` on 2026-09-25):
+`python3 -m portfolio.common.monteCarlo.report --project XAUUSD --databank Results --asset XAUUSD --export 2026-09-03`
 - DD inflation median 1.95, min 1.52; pure order effect, no trade changes.
 - `Strategy 18.28.28`: 2.4 % observed → 4.4 % at p95 reordering → 9–12 % stitched (5th pct of every two-year block). Stitched path moves more between runs.
 - Edge dies after 2013: 24-month rolling windows positive early, negative later for almost all; 29–30 of 36 have a

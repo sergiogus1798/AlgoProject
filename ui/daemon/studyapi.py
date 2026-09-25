@@ -153,7 +153,7 @@ def gate_run(req: GateRun) -> dict[str, object]:
         The job record.
     """
     feed = assetdata.load(req.asset)["sqx_symbol"]
-    argv = ["-m", "gate.report", "--project", req.project, "--databank", req.databank,
+    argv = ["-m", "studies.screening.gate.report", "--project", req.project, "--databank", req.databank,
             "--feed", feed]
     for item in req.overrides:
         argv += ["--set", item]

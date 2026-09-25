@@ -4,7 +4,7 @@ Every script here writes into the data root and leaves a `manifest.json` next to
 Nothing here writes into the repo. **They have different lifecycles**: `export_metrics.py` keeps one
 current CSV per databank and deletes the previous one before writing, `export_trades.py` and
 `export_retest.py` write dated, immutable directories, and `sync_bars.py` overwrites one M1 file per
-feed because bars are a fact about the market, not about a run. See `tasks/CLAUDE.md` for why.
+feed because bars are a fact about the market, not about a run. See `studies/CLAUDE.md` for why.
 
 | file | what it does | run it |
 |---|---|---|

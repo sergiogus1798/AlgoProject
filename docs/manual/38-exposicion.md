@@ -42,7 +42,7 @@ fuera de muestra por construcción. Una criba sobre un eje que ya se cribó no t
 ### Cómo se ejecuta
 
 ```bash
-python3 -m strategies.exposure.report \
+python3 -m studies.closing.exposure.report \
   --project XAUUSD --databank "MC Trades" \
   --feed XAUUSD_DukasM1_Infinox --symbol XAUUSD \
   --strategy "Strategy 1.10.39(1)"
@@ -54,7 +54,7 @@ python3 -m strategies.exposure.report \
 | `--databank` | sí | databank del que salió el export de operaciones |
 | `--feed` | sí | nombre del feed, p. ej. `XAUUSD_DukasM1_Infinox`. De ahí salen las barras |
 | `--symbol` | sí | nombre del fichero de activo, p. ej. `XAUUSD`. De ahí salen la ventana y el valor del punto |
-| `--strategy` | no | una estrategia y su panel en pantalla. **Si lo omites, pasa todas y escribe la tabla** |
+| `--strategy` | no | una estrategia: su ficha en pantalla y en `estrategias/`. **Si lo omites, pasa todas y escribe la tabla** |
 | `--set` | no | mueve un mando sin editar el `config.yaml`: `--set gate.min_efficiency=3` |
 
 **Cuánto tarda:** 10 segundos las 757 estrategias de XAUUSD sobre cinco años de M30. Una sola, dos
@@ -62,13 +62,13 @@ segundos, casi todo leyendo el parquet.
 
 ### Qué produce
 
-Todo en `AlgoData/reports/<proyecto>/<databank>/<fecha>/`:
+Todo en `AlgoData/reports/<proyecto>/<databank>/<fecha>/exposure/` (hasta el 25-09, suelto en la carpeta del día):
 
 | archivo | qué es |
 |---|---|
-| `exposure.csv` | una fila por estrategia con las 30 columnas: ocupación, las tres versiones del buy and hold, el compromiso y el veredicto |
-| `exposure.json` | la configuración con la que se corrió, la ventana y cuántas pasaron |
-| `exposure_<Estrategia>.csv` / `.json` | lo mismo para una sola estrategia. **Nombre aparte a propósito**: mirar una no pisa la tabla de la población del mismo día |
+| `verdict.csv` | una fila por estrategia con las 30 columnas: ocupación, las tres versiones del buy and hold, el compromiso, la identidad y el veredicto (antes `exposure.csv`) |
+| `exposure.html` / `.md` / `.json` | la población: la configuración, la ventana, cuántas pasaron y la tabla; el `.json` es lo que pinta la ventana |
+| `estrategias/<nombre>.html` / `.json` | una sola estrategia (antes `exposure_<Estrategia>.csv/.json`). **Aparte a propósito**: mirar una con `--strategy` no pisa la tabla de la población del mismo día |
 | `manifest.json` | de qué export salió y con qué versión del código |
 
 ### Cómo se lee el resultado
@@ -104,7 +104,7 @@ Línea por línea:
   50.650 $), mantener **el tamaño medio que usa la estrategia** (45.711 $), o mantener **el tamaño
   cuya volatilidad diaria iguala a la de la estrategia** (7.133 $). Sólo la tercera convierte
   «gana menos que el buy and hold» en una frase sobre la ventaja y no sobre el tamaño de posición.
-  El panel usa la tercera y las tres están en el CSV.
+  La ficha usa la tercera y las tres están en el CSV.
 - **POR HORA EXPUESTA.** El 7,57 % dividido entre el 3,71 % de ocupación: la tasa a la que gana
   **mientras está dentro**. Los 34,74x son esa tasa contra la del buy and hold, que está dentro el
   100 % del tiempo. ⚠️ **Es una extrapolación, no un retorno que nadie pudiera cobrar**: una
@@ -137,7 +137,7 @@ Strategy 14.10.29 · XAUUSD/MC Trades · muestra OOS1 · 2018-01-01 a 2023-01-01
 Está dentro seis veces más tiempo, gana la cuarta parte y aguanta el mismo drawdown. Por hora
 expuesta apenas rinde más que tener el oro: no compensa la molestia.
 
-**El umbral** está en `strategies/exposure/config.yaml`, `gate.min_efficiency`, y hoy vale `2.0` —
+**El umbral** está en `studies/closing/exposure/config.yaml`, `gate.min_efficiency`, y hoy vale `2.0` —
 «que rinda al menos el doble por hora expuesta». Es una preferencia del dueño, no una ley, y se
 mueve ahí o con `--set`. **Ganar menos en total que el buy and hold no es un suspenso** y nunca
 dispara un motivo: ésa es justamente la dicotomía que el módulo existe para medir.
@@ -146,10 +146,10 @@ dispara un motivo: ésa es justamente la dicotomía que el módulo existe para m
 
 ```bash
 # corrida del 2026-09-24 sobre las 757 de MC_Trades (datos borrados el 2026-09-25)
-$ python3 -m strategies.exposure.report --project XAUUSD --databank "MC Trades" \
+$ python3 -m studies.closing.exposure.report --project XAUUSD --databank "MC Trades" \
     --feed XAUUSD_DukasM1_Infinox --symbol XAUUSD
 
-757 estrategias -> /home/.../AlgoData/reports/XAUUSD/MC_Trades/2026-09-24/exposure.csv
+757 estrategias -> /home/.../AlgoData/reports/XAUUSD/MC_Trades/2026-09-24/exposure/verdict.csv
 ```
 
 Diez segundos. La distribución de esas 757, que es lo que hay que mirar cuando el veredicto no corta:

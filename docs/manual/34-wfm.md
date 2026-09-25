@@ -189,7 +189,7 @@ XAUUSD  XAUUSD  SPP OOS → WFM
 - **`cobrada al tramo oos1`** — si dice `oos2`, alguien cambió `costs_segment` y la ventana entera
   está corriendo al precio del tramo más caro.
 - **`30 celdas`** — si sale otro número, alguien tocó los ejes en `_build.yaml`. No es un error; es
-  un estudio distinto, y `strategies/walkForwardMatrix/` te dirá cuántas celdas leyó.
+  un estudio distinto, y `studies/optimisation/wfm/` te dirá cuántas celdas leyó.
 - **`13 del donante apagadas y 10 propias escritas`** — el 13 es lo normal en un clon del donante y
   un **0 es un aviso**: ese `.cfx` no viene del donante o alguien ya lo editó. Si el segundo número
   no es el de `wfm.conditions`, la matriz está juzgando con otra cosa.
@@ -212,7 +212,7 @@ bin/sqx-worker.sh --role custodian stop
 
 # el paso 20 empieza aquí, y sólo si el 17 y el 18 ya están hechos:
 python3 -m sqx.export.export_wfm --project XAUUSD_estudio --databank WFM --role custodian
-python3 -m strategies.walkForwardMatrix.report --project XAUUSD_estudio --databank WFM
+python3 -m studies.optimisation.wfm.report --project XAUUSD_estudio --databank WFM
 ```
 
 ### Qué NO te dice

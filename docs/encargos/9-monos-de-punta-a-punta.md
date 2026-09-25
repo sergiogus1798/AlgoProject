@@ -4,12 +4,15 @@
 **Tu encargo es el control negativo de todo el proyecto**: pasar por los criterios de los veinte
 pasos una población sin ningún edge, y contar cuántos salen vivos.
 
-Lee `CLAUDE.md` · `docs/AgentPDFs/WORKFLOW.md` · `nulls/README.md` · `gate/README.md`.
+Lee `CLAUDE.md` · `docs/AgentPDFs/WORKFLOW.md` · `studies/readings/monkey/README.md` · `studies/screening/gate/README.md`.
 
 **Depende del encargo 8.** Este estudio es exactamente el que más filas escribe en el ledger, y sin
 ledger no se puede contar lo que hizo.
 
 ---
+
+**Dónde va** (refactorización del 25-09, `docs/MAPA-DE-CARPETAS.md`): `studies/screening/falsePositives/` (ya creada con su `README.md`); las series del mono las genera `engines/nulls/`, no una copia. Forma de
+módulo: `studies/CLAUDE.md`; contrato del resultado: `core/study/CONTRACT.md`.
 
 ## 0 · De dónde sale este encargo
 
@@ -30,26 +33,26 @@ practicable hoy**, y el motivo no es de esfuerzo:
 - Meter una serie sintética como símbolo propio exige **la GUI del maestro**, que es del dueño.
 - El registro de instrumentos vive en `user/data/data.db` y `user/data/History` está **symlinkado
   al del maestro** desde los dos workers: fabricar símbolos toca el almacén compartido.
-- No hay motor externo: `strategies/translate/` está **vacío**, así que no existe forma de reevaluar
+- No hay motor externo: `strategies/translate/` estaba **vacío** y desapareció con la refactorización del 25-09, así que no existe forma de reevaluar
   una estrategia fuera de SQX.
 
 Lo que sí tenemos ya construido responde **la misma pregunta del Tier B de Masters** — la tasa de
-falsos positivos de la cadena entera — sin generar ni una serie: `gate/monkey.py` y el módulo
-`nulls/`, con su reconciliación de fills medida (🔬 `open-open` a 0.999985).
+falsos positivos de la cadena entera — sin generar ni una serie: `studies/screening/gate/monkey.py` y el módulo
+`studies/readings/monkey/`, con su reconciliación de fills medida (🔬 `open-open` a 0.999985).
 
 ## 2 · Lo que construyes
 
 ### 2.1 · La población nula — **se simula en Python. Decisión del dueño, 2026-09-24**
 
 Diez mil poblaciones de operaciones de **entrada aleatoria** sobre las mismas barras, la misma
-ventana y los mismos costes que la población real, generadas por `nulls/model.py`, que ya hace
+ventana y los mismos costes que la población real, generadas por `engines/nulls/model.py`, que ya hace
 exactamente esto y está reconciliado contra los precios reales (🔬 `open-open` a 0.999985).
 
 **Nada de hacer que SQX construya monos.** Se evaluó y el dueño lo descartó: un build con paleta
 neutra cuesta horas de licencia, mide el generador además del filtro, y mete en el maestro
 estrategias que nadie quiere. En Python son ~35 minutos para 10.000 y no toca SQX.
 
-⚠️ **Lo que el mono tiene fijo, se le regala.** Es la idea que gobierna `nulls/`: emparéjale la
+⚠️ **Lo que el mono tiene fijo, se le regala.** Es la idea que gobierna `studies/readings/monkey/`: emparéjale la
 huella de trading —frecuencia, ocupación, duración de las operaciones— y lo que mides son los
 filtros; emparéjale también las reglas y no mides nada. Esa huella se toma de la población real,
 no se inventa.
@@ -108,7 +111,7 @@ estrategias es lo único del plan que sigue sin cuantificar.
 
 1. **El mono pierde dinero, y eso es correcto.** 🔬 Con ocupación del 7,4 % captura ~2.867 $ de la
    subida y paga ~7.756 $ de coste. Si tu población nula gana de media, le has regalado algo.
-2. **La reconciliación pasa antes de leer ninguna p.** `nulls/verify.py`, suelo 0.99.
+2. **La reconciliación pasa antes de leer ninguna p.** `studies/readings/monkey/verify.py`, suelo 0.99.
 3. **El embudo cuadra con el ledger** fila a fila.
 
 ## 6 · Cómo cierras

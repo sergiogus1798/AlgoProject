@@ -42,7 +42,7 @@ cd ~/Desktop/AlgoProject
 python3 -m sqx.export.export_metrics --project XAUUSD --databank OOS
 
 # 2. analizar y generar el reporte  (~1 segundo, no toca SQX)
-python3 -m tasks.reports.is_oos --project XAUUSD --databank OOS
+python3 -m studies.screening.isOos.report --project XAUUSD --databank OOS
 ```
 
 **El paso 1 solo cuando quieras datos nuevos.** El paso 2 lo puedes repetir las veces que quieras.
@@ -70,16 +70,21 @@ No toca SQX. Solo lee el CSV que dejó el paso 1.
 ## Qué produce
 
 ```
-~/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/
+~/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/isOos/
     explorer.html    el panel interactivo. Lo abres con doble clic
-    summary.md       las conclusiones escritas, en texto
+    isOos.html       las conclusiones, la misma página que pinta la ventana
+    isOos.md         las conclusiones escritas, en texto
+    isOos.json       el resultado entero, en el contrato de estudios
     manifest.json    de qué exportación salió y de qué fecha
 ```
+
+Hasta el 25-09 estos archivos caían sueltos en la carpeta del día y el texto se llamaba
+`summary.md`; ahora cada estudio tiene su subcarpeta (ver `docs/MAPA-DE-CARPETAS.md`).
 
 Una carpeta por día. Los reportes viejos no se borran nunca.
 
 ```bash
-xdg-open ~/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/explorer.html
+xdg-open ~/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/isOos/explorer.html
 ```
 
 ## Cómo se lee el panel
@@ -169,7 +174,7 @@ Hay cuatro fichas explicando **r de Pearson**, **ρ de Spearman**, **el p-valor*
 **Benjamini-Hochberg**: qué mide cada uno, y sobre todo qué no. Están ahí porque el panel se lo
 acabas enseñando a alguien, y esas tres cifras no se explican solas.
 
-## Cómo se lee `summary.md`
+## Cómo se lee `isOos.md`
 
 Es lo mismo en texto, pero calculado sobre las 10.000 y sin poder filtrar. Tiene tres partes:
 
@@ -195,13 +200,13 @@ Pregunta: **¿me sirve el Sharpe del histórico para elegir estrategias de oro?*
 
 ```bash
 cd ~/Desktop/AlgoProject
-python3 -m tasks.reports.is_oos --project XAUUSD --databank OOS
+python3 -m studies.screening.isOos.report --project XAUUSD --databank OOS
 ```
 
 ```
 10000 strategies, 21 IS metrics x 13 OOS
-  /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/explorer.html
-  /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/summary.md
+  /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/isOos/isOos.html
+  /home/sergioguslw/Desktop/AlgoData/reports/XAUUSD/OOS/2026-09-04/isOos/explorer.html
 ```
 
 Abres el panel, dejas `Profit factor (OOS)` en el eje Y y miras el primer gráfico: `Sharpe Ratio

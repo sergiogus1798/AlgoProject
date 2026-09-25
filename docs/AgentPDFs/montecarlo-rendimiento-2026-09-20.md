@@ -1,6 +1,6 @@
 # Monte Carlo — auditoría de rendimiento y memoria
 
-**Qué es este documento.** El módulo `strategies/monteCarlo` acaba de ser reorganizado y va a tener
+**Qué es este documento.** El módulo `portfolio/common/monteCarlo` acaba de ser reorganizado y va a tener
 que procesar miles de estrategias con cientos de miles de simulaciones cada una. Este informe dice
 **dónde se le va el tiempo y dónde se le va la memoria**, con los números medidos que lo demuestran,
 y propone qué cambiar y en qué orden.
@@ -13,7 +13,7 @@ prototipado y medido fuera del repositorio, en el scratchpad de la sesión. Lo q
 operaciones, exportadas el 2026-09-19 a
 `~/Desktop/AlgoData/raw/XAUUSD/MC_Trades/2026-09-19/`. Distribución de operaciones por estrategia:
 mínimo 542, primer cuartil 882, mediana 1.132, tercer cuartil 1.610, percentil 95 2.374, máximo
-3.437. Configuración: la de `strategies/monteCarlo/config.yaml` vigente, con `n_sims: 100000`,
+3.437. Configuración: la de `portfolio/common/monteCarlo/config.yaml` vigente, con `n_sims: 100000`,
 `chunk: 2000`, `max_workers: null`.
 
 Generado el 2026-09-20.
@@ -291,7 +291,7 @@ el panel Flask cerrado desde la terminal), el `forkserver` y sus trabajadores qu
 a systemd y vivos indefinidamente**.
 
 En esta máquina había **68 procesos huérfanos ocupando 8,9 GB**. Uno de ellos llevaba nueve días y
-tenía la ruta de módulo **anterior a la reorganización** (`strategies.monteCarlo.engine`), lo que
+tenía la ruta de módulo **anterior a la reorganización** (`portfolio.common.monteCarlo.engine`), lo que
 prueba que sobreviven a cualquier cosa.
 
 ```bash
@@ -355,7 +355,7 @@ Comprobado, para que nadie lo vuelva a mirar:
 | El arranque en frío del pool con `forkserver` | 0,82 s, una vez | correcto y bien resuelto |
 | La memoria del proceso padre | 0,74–1,52 GB | no es el problema |
 
-El `forkserver` con preload de `strategies.monteCarlo.simulate.engine` está bien planteado y
+El `forkserver` con preload de `portfolio.common.monteCarlo.simulate.engine` está bien planteado y
 funciona: los trabajadores arrancan con numpy ya importado.
 
 Un detalle latente, no activo: OpenBLAS está compilado con `MAX_THREADS=64`. Hoy no molesta porque

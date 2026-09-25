@@ -1,0 +1,87 @@
+# Las cribas, en orden, como datos. `cascade.py` lee este fichero y nada mas decide que es
+# la puerta. Añadir la octava criba es añadir una fila aqui y una funcion en screens.py.
+#
+# Campos de cada fila:
+#   name   como la llaman el scorecard, el veredicto y el informe
+#   kind   hard = elimina a quien no pasa · soft = mide y no elimina a nadie
+#   why    por que existe, en una frase; se copia al informe
+#   resto  los umbrales que lee su propia funcion
+#
+# ⚠️ TODOS LOS UMBRALES DE AQUI SON DELIBERADAMENTE LAXOS. Decision del dueño, 2026-09-23:
+# estan puestos para VER cuanta poblacion mata cada criba sobre datos reales, no para
+# seleccionar nada. Ninguno de estos numeros esta decidido; apretarlos viene despues, con
+# la distribucion delante. Ver el apendice A de docs/AgentPDFs/puerta-oos-2026-09-23.md.
+
+# Las metricas vienen de DOS databanks, porque SQX solo admite un spread y un slippage por
+# backtest y la ventana es de años: la de construccion y la de retesteo. Cada metrica aparece
+# dos veces, `[IS]` del databank de build y `[OOS]` del de retesteo, y las dos se unen por la
+# identidad de la estrategia, nunca por el nombre.
+
+screens:
+  - name: presencia
+    kind: hard
+    why: >-
+      si SQX la tiro del databank de retesteo —demasiados trades ambiguos, o cualquier otra
+      de sus banderas rojas— esa decision ya esta tomada y la estrategia se va. Decision del
+      dueño, 2026-09-23
+
+  - name: sanidad
+    kind: hard
+    min_trades: 20
+    why: >-
+      una estrategia con cuatro trades fuera de muestra no tiene error estandar que leer, y
+      una que repite los trades de otra no es una segunda observacion
+
+  - name: estaticas
+    kind: hard
+    keep: "`Net profit [OOS]` > 0"
+    value: "Net profit [OOS]"
+    why: >-
+      el suelo de metricas estaticas sobre el periodo fuera de muestra. Laxo a proposito:
+      hoy solo pide no perder dinero
+
+  - name: degradacion
+    kind: hard
+    min_retention: 0.0
+    min_t: 0.0
+    min_years_positive: 1
+    max_concentration: 1.0
+    why: >-
+      cuanto del filo dentro de muestra sobrevivio, y si lo que queda bate a su propio error
+      estandar. Laxo a proposito: hoy solo pide que la pendiente fuera de muestra sea positiva
+
+  - name: forma
+    kind: hard
+    max_dd_ratio: 5.0
+    why: >-
+      si el peor descenso fuera de muestra cabe en lo que dentro de muestra hacia esperar.
+      Un multiplo de 5 es casi no pedir nada
+
+  - name: mono
+    kind: hard
+    statistic: sharpe
+    rung: timing
+    max_p: 0.50
+    why: >-
+      si bate a un aleatorio con la misma oportunidad de mercado. max_p 0.50 es la mediana
+      del mono: hoy solo pide estar en la mitad buena
+
+  - name: familia
+    kind: soft
+    alpha: 0.05
+    why: >-
+      de los que pasan el mono, cuantos daria el azar. Corrige Benjamini-Hochberg sobre la
+      familia superviviente. SOFT: informa, no elimina, hasta que el dueño vea el exceso
+
+  - name: redundancia
+    kind: soft
+    why: >-
+      si son N estrategias o una repetida N veces, por la LOGICA del XML: los bloques y su
+      orden, ignorando los valores de los parametros. Sustituye a la correlacion de equity
+      (dueño 2026-09-23), que es un proxy y depende de la ventana. SOFT: agrupar puede
+      matar estrategias buenas, asi que nombra al representante de cada grupo y no descarta
+      a nadie. El valor de la criba es el TAMAÑO del grupo
+
+monkey:
+  draws: 2000        # corridas nulas por estrategia. engines/nulls/config.yaml manda en el resto
+  timeframe: M30

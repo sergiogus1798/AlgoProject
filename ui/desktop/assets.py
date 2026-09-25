@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QLabel, QMessageBox, QPushButton,
 from ui.desktop import client
 from ui.desktop.assetcard import AssetCard
 from ui.desktop.assetforms import NewAssetBox, explain
-from ui.desktop.assetlist import SHARED, AssetList
+from ui.desktop.assetlist import AssetList, SHARED
 from ui.desktop.assetspans import AssetSpans
 from ui.desktop.yamltree import YamlTree
 

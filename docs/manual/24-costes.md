@@ -18,7 +18,7 @@ del `CLAUDE.md` y no es opcional: si el activo tiene un coste sin decidir, el co
 trabajo se para hasta que tú des la cifra.
 
 **No lo usas** para saber qué pagó de verdad un backtest que ya corrió. Eso no se supone, se
-recupera de las propias operaciones (`gross − P/L`), y lo hace `strategies/monteCarlo/inputs/costs.py`.
+recupera de las propias operaciones (`gross − P/L`), y lo hace `portfolio/common/monteCarlo/inputs/costs.py`.
 `assets/` dice lo que hay que aplicar de aquí en adelante, no lo que se aplicó.
 
 ### Antes de empezar

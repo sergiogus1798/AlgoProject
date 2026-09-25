@@ -21,11 +21,11 @@ explica está tirando 4.800 tokens y, peor, atención.
 
 | familia | qué cubre | cuándo se invoca |
 |---|---|---|
-| `sqx-strategy-template` (+ `sqx-custom-block`, `sqx-random-group`), `template-run` | de una idea a una plantilla, y de una plantilla a una construcción en un mercado | autoría (gratis) y ejecución (horas de CPU) — partidas a propósito |
-| _(retiradas)_ | las cuatro `analysis-*` — generación, retest MC, Monte Carlo, cross-market — se borraron el 2026-09-22 por decisión del dueño. **Los módulos de Python siguen ahí y funcionan** (`tasks/reports/`, `strategies/retest/`, `strategies/monteCarlo/`, `strategies/crossmarket/`); lo que se fue son las reglas de lectura. Recuperables: `git show <commit>:.claude/skills/analysis-<x>/SKILL.md` | — |
+| `strategy-template`, `template-run` | de una idea a una plantilla, y de una plantilla a una construcción en un mercado | autoría (gratis) y ejecución (horas de CPU) — partidas a propósito |
+| _(retiradas)_ | las cuatro `analysis-*` — generación, retest MC, Monte Carlo, cross-market — se borraron el 2026-09-22 por decisión del dueño. **Los módulos de Python siguen ahí y funcionan** (`tasks/reports/`, `studies/breakage/mcRetest/`, `portfolio/common/monteCarlo/`, `studies/transfer/crossmarket/`); lo que se fue son las reglas de lectura. Recuperables: `git show <commit>:.claude/skills/analysis-<x>/SKILL.md` | — |
 | `export`, `translate` | sacar datos de SQX, y traducir una estrategia a Python | puntual |
 | `audit`, `doc`, `perf`, `sync` | mantenimiento del proyecto | puntual |
-| `sqx-*` (globales, de sqx-lab) | la autoría: bloques, grupos y plantillas, con las reglas de este proyecto encima (`tools/sqx-lab/overlays/`) | cuando hay que crear algo |
+| `sqx-*` (globales, de sqx-lab) | producto genérico de autoría SQX | **candidatas a retirar, ver abajo** |
 
 ## Cobertura del workflow — qué paso tiene skill y cuál no
 
@@ -35,22 +35,22 @@ Esto dice quién cubre qué, a 2026-09-23.
 
 | # | paso | quién lo cubre | |
 |---|---|---|---|
-| 2-3 | vocabulario y plantilla | `/sqx-strategy-template` (+ `/sqx-custom-block`) | ✅ |
+| 2-3 | vocabulario y plantilla | `/strategy-template` | ✅ |
 | 4-6 | preflight, custom project, configuración del build | `/template-run` · `sqx/projects/builder.py` | ✅ |
 | 7 | retest OOS en SQX | `/template-run`, misma cadena | ✅ |
 | 8 | análisis IS/OOS | `/oos-gate` → `/curate` | ✅ |
 | 9 | retest crossmarkets | `/crossmarket` · `sqx/projects/crossmarket.py` | ✅ |
-| 10 | análisis crossmarkets | `strategies/crossmarket/` | ❌ **sin skill** |
+| 10 | análisis crossmarkets | `studies/transfer/crossmarket/` | ❌ **sin skill** |
 | 10.5-11 | variantes escaladas y retest crossTF | `/crosstf` · `sqx/projects/crosstf.py` | ✅ |
-| 12 | análisis crossTFs | `strategies/crossTF/` | 🟡 dentro de `/crosstf` |
+| 12 | análisis crossTFs | `studies/transfer/crossTF/` | 🟡 dentro de `/crosstf` |
 | 13 | **MC Retest en SQX** | `/mcretest` · `sqx/projects/mcretest.py` | ✅ |
-| 14 | análisis MC Retest | `strategies/retest/` | ❌ **sin skill** |
+| 14 | análisis MC Retest | `studies/breakage/mcRetest/` | ❌ **sin skill** |
 | 15 | **SPPs en SQX** | `/spp` · `sqx/projects/spp.py` | ✅ |
-| 16 | análisis SPPs | `strategies/sppUltra/` | ❌ **sin skill** |
+| 16 | análisis SPPs | `studies/breakage/spp/` | ❌ **sin skill** |
 | 16.5 | variantes para el WFC | `/variants` · `sqx/variants/` | ✅ · ⚠️ ver abajo |
 | 17 | el WFC | `walkForwardCorrelation/` | ❌ **sin skill** |
 | 18 | CSCV | `walkForwardCorrelation/pbo.py` | ❌ **sin skill** |
-| 19 | **Walk Forward Matrix en SQX** | `/wfm` · `sqx/projects/wfm.py`; el análisis sigue siendo `strategies/walkForwardMatrix/` | ✅ la tarea |
+| 19 | **Walk Forward Matrix en SQX** | `/wfm` · `sqx/projects/wfm.py`; el análisis sigue siendo `studies/optimisation/wfm/` | ✅ la tarea |
 | 20 | análisis conjunto ciego de 17-18-19 | — | ❌ **no existe** |
 
 ### Los cuatro huecos de SQX eran el mismo hueco, y ya está tapado
@@ -65,13 +65,13 @@ aceptación y dejar sólo los parámetros recomendados.
 Hacía falta porque la doctrina apaga **todos** los crosschecks fuera de la construcción, a
 propósito: encender el que toca en la tarea que toca es un acto explícito, por diseño.
 
-### Todo el workflow corre en un solo custom project
+### ⚠️ El paso 16.5 sigue corriendo sobre el `Retester` de serie
 
-Dueño, 2026-09-25: `/template-run` crea el proyecto con `builder --workflow`, que ya lleva las
-tareas de todos los pasos de SQX (5 a 19, incluidas CrossTF y las tres del WFC), y cada skill
-configura la suya y la deja como la única activa (`sqx.projects.stage`) antes de lanzar. El 16.5 ya
-no corre en el `Retester` de serie: `sqx.variants.execute` exige `--project`. Queda en el `Retester`
-sólo el arnés SPP del pipeline desatendido (`OPEN.md` §38).
+`sqx/variants/config.yaml` lleva `execute.project: Retester`. Eso **incumple la regla dura 10**
+(dueño, 2026-09-23). Es anterior a la regla, no una decisión contra ella. La migración —crear un
+custom project de una sola tarea Retest y poner su nombre ahí— está escrita en la skill `/variants`
+y en `OPEN.md` §38; no se ha cambiado el default para no romper en silencio una cadena que hoy
+funciona.
 
 ### Lo que falta en Python es lo que se retiró
 
@@ -79,15 +79,18 @@ Los pasos 10, 14 y 16 no tienen skill porque sus `analysis-*` se borraron el 202
 módulos funcionan; lo que falta son las reglas de lectura y, sobre todo, que **emitan el mismo
 veredicto de dos columnas** que `/curate` ya sabe aplicar (acordado con el dueño, 2026-09-23).
 
-## Retiradas el 2026-09-25
+## Candidatas a retirar
 
-- **`/strategy-template`** (del proyecto). El dueño eligió la de sqx-lab, `sqx-strategy-template`,
-  porque es mejor: catorce formas probadas en build y un validador. Lo que era de esta casa —sus
-  defaults, la librería, el registro, instalar en los dos workers— va ahora en la capa que el
-  instalador pone encima de la skill del fabricante.
-- **`sqx-strategy-project`** (global). Clona cualquier proyecto de la instalación y despliega en
-  ella, contra la regla dura 10, y seis de sus pruebas fallan aquí. `sqx.projects.builder` hace ese
-  trabajo desde el donante congelado.
+**Las cuatro globales de sqx-lab** (`sqx-custom-block`, `sqx-random-group`, `sqx-strategy-template`,
+`sqx-strategy-project`). Son producto genérico: no conocen los defaults del dueño, ni el reparto
+conductor/custodio, ni `registry.csv`. Pesan entre 2.700 y 6.000 tokens cada una.
+
+El riesgo no es el gasto, es **el enrutado**: una petición de plantilla puede caer en
+`sqx-strategy-template` en vez de en la nuestra, y salir una plantilla que no sigue las reglas de
+esta casa. Lo único suyo que hoy se usa son los esqueletos, y esos viven dentro del repo en
+`tools/sqx-lab/`, así que desinstalar las skills globales no pierde nada.
+
+**Decisión pendiente del dueño.**
 
 ## Cómo leer las tablas
 
@@ -106,30 +109,30 @@ Regenerado 2026-09-25 con `python3 tools/skillmap.py`. El coste en tokens es el 
 
 | skill | ~tokens al invocar | ficheros | último cambio | para qué |
 |---|---:|---:|---|---|
-| `crosstf` | 2,091 | 1 | 2026-09-25 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
+| `crosstf` | 2,094 | 1 | 2026-09-25 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
 | `curate` | 1,904 | 1 | 2026-09-25 | Apply a Python verdict back into SQX — move the strategies a filter, a test or an analysis rejected out of a databank, so the next task in the chain only sees the survivors. Works between any two tasks and with any module that can name what it drops |
-| `wfm` | 1,890 | 1 | 2026-09-25 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in the reserved oos2, the ten per-cell conditions and the area rule that decide whether a strategy survives, and the two owner's rules it enforces (every look spends the window, and nothing is read until steps 17, 18 and 19 are all done) |
+| `wfm` | 1,889 | 1 | 2026-09-25 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in the reserved oos2, the ten per-cell conditions and the area rule that decide whether a strategy survives, and the two owner's rules it enforces (every look spends the window, and nothing is read until steps 17, 18 and 19 are all done) |
 | `variants` | 1,857 | 1 | 2026-09-25 | Run the variant factory in SQX — turn one mother's SPP design brief into a batch of parameter variants, load and retest them on the custodian, and harvest the metrics panel and the per-day equity the WFC and the CSCV read |
 | `template-run` | 1,779 | 1 | 2026-09-25 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
 | `sync` | 1,550 | 1 | 2026-09-25 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
 | `crossmarket` | 1,341 | 1 | 2026-09-25 | Retest surviving strategies on other markets with SQX's Retest on additional markets cross-check — the markets from assets/_markets.yaml, each over its own window and at its own declared costs. Configures and runs a task on the custodian |
-| `mcretest` | 1,331 | 1 | 2026-09-25 | Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders |
+| `mcretest` | 1,340 | 1 | 2026-09-25 | Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders |
 | `spp` | 1,325 | 1 | 2026-09-25 | Configure and run the two SPP tasks of a custom SQX project — the System Parameter Permutation grid over the in-sample and the out-of-sample window, at the owner's spread and steps, with every acceptance silenced so the profile is a map and not a filter |
-| `oos-gate` | 1,041 | 1 | 2026-09-23 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
+| `oos-gate` | 1,068 | 1 | 2026-09-25 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
 | `perf` | 898 | 1 | 2026-09-20 | Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement on a branch |
-| `export` | 447 | 1 | 2026-09-25 | Export data out of StrategyQuant X — a databank's metrics with IS/OOS columns, every trade of every strategy, or OHLC bars |
+| `export` | 500 | 1 | 2026-09-25 | Export data out of StrategyQuant X — a databank's metrics with IS/OOS columns, every trade of every strategy, or OHLC bars |
 | `translate` | 443 | 1 | 2026-09-12 | Turn a .sqx strategy into readable pseudocode and an executable Python backtest, reconciled against the trades SQX exported |
 | `audit` | 401 | 1 | 2026-09-12 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 247 | 1 | 2026-09-25 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-15 skills, 18,551 tokens de cuerpo en total, 72 KB en disco.
+15 skills, 18,643 tokens de cuerpo en total, 72 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 
 | skill | ~tokens al invocar | ficheros | último cambio | para qué |
 |---|---:|---:|---|---|
 | `sqx-custom-block` | 6,488 | 50 | 2026-09-25 | Author StrategyQuant X / AlgoWizard custom blocks (trading rules) as importable XML, from a plain-English idea. Discovers the indicator vocabulary from the user's OWN install (config.xml + optional customBlocksExport.xml) and builds both Condition blocks (true/false rules) and Price-level blocks (that return a price — stops, targets, bands, breakout references), validating them before import |
-| `sqx-strategy-template` | 5,554 | 53 | 2026-09-25 | Turn a trading idea into a StrategyQuant X strategy template for this project — ask the exact logic, check the block exists (authoring it with sqx-custom-block if not), emit the .sqx with the owner's defaults (his condition fixed plus one free random condition) or, when asked, one of the vendor's build-confirmed shapes, file it in the template library and install its blocks on both workers. Authoring only, no SQX run and no CPU burnt |
+| `sqx-strategy-template` | 5,657 | 53 | 2026-09-25 | Turn a trading idea into a StrategyQuant X strategy template for this project — ask the exact logic, check the block exists (authoring it with sqx-custom-block if not), emit the .sqx with the owner's defaults (his condition fixed plus one free random condition) or, when asked, one of the vendor's build-confirmed shapes, file it in the template library and install its blocks on both workers. Authoring only, no SQX run and no CPU burnt |
 | `sqx-random-group` | 3,022 | 30 | 2026-09-25 | Author StrategyQuant X / AlgoWizard random groups (the pools the strategy builder samples from) as importable XML. Discovers what THIS install can pool from its own config.xml + customBlocks.xml, and builds both Condition groups (boolean rule pools) and Value groups (price/level pools), in two item modes — hybrid (re-export existing custom blocks by reference) and inline (fresh rules / value atoms / comparisons) — validating before import |
 
-3 skills, 15,064 tokens de cuerpo en total, 2,894 KB en disco.
+3 skills, 15,167 tokens de cuerpo en total, 2,895 KB en disco.

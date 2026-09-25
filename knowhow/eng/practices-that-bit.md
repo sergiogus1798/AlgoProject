@@ -10,7 +10,7 @@ tag: 🔬  date: 2026-09-18  see: eng/moving-module-into-layer, perf/process-poo
 - Launch SQX with `ELECTRON_RUN_AS_NODE` unset.
 
 ## Evidence
-- 🔬 2026-09-10: `strategies/monteCarlo/explorer/` ran analysis on a Flask thread; `fork` pool deadlocked
+- 🔬 2026-09-10: `portfolio/common/monteCarlo/explorer/` ran analysis on a Flask thread; `fork` pool deadlocked
   mid 7th sub-test, no error, no CPU (child inherits a mutex held by another thread). Fix:
   `multiprocessing.get_context("forkserver")` + `set_forkserver_preload([...])` (workers start with numpy
   imported). Was 19 pools × 96 workers per strategy → one reused pool.

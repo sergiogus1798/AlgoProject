@@ -22,7 +22,7 @@
 
 ## Dónde irá cuando se haga
 
-En **`strategies/exposure/`**, el paso 21, que ya está construido y ya tiene montada la antesala:
+En **`studies/closing/exposure/`**, el paso 21, que ya está construido y ya tiene montada la antesala:
 `occupancy.presence` dice cuánto del movimiento del mercado ocurrió mientras la estrategia tenía
 posición y cuánto de ese movimiento tenía el signo correcto. Eso es una beta dicha en los dos
 únicos términos que importan antes de montar ninguna regresión — y si sale alta, la regresión

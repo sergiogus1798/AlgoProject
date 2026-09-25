@@ -3,8 +3,7 @@
 
 import re
 
-from core.assetdata import mc_retest
-from core.assetdata import window as epoch
+from core.assetdata import mc_retest, window as epoch
 from sqx.projects.ranges import RANDOMIZE, set_ranges
 from sqx.projects.setups import bounds, set_costs, set_data_range
 
@@ -114,7 +113,7 @@ def silence(block: str) -> tuple[str, int]:
         SQX drops what fails, each task chains into the next and all the study can say at
         the end is how many survived — never which perturbation killed which strategy,
         which is the only thing eight isolated tasks exist to answer. The verdict is taken
-        in Python (`strategies/retest/`) and applied with `/curate`.
+        in Python (`studies/breakage/mcRetest/`) and applied with `/curate`.
     """
     return re.subn(r'(<Condition\s+)use="true"', r'\g<1>use="false"', block)
 

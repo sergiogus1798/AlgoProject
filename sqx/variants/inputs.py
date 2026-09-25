@@ -6,8 +6,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from core.paths import DATA
 from core.datapaths import variants_dir
+from core.paths import DATA
 
 HERE = Path(__file__).resolve().parent
 ORIGINAL = -1
@@ -26,7 +26,7 @@ def brief(path: Path) -> dict:
     """One strategy's design brief.
 
     Args:
-        path: A `design_brief_<strategy>.json` written by `strategies/sppUltra`.
+        path: A `design_brief_<strategy>.json` written by `studies/breakage/spp`.
 
     Returns:
         Contract C1 as it stands on disk: the live parameters with their levels, the
@@ -63,7 +63,7 @@ def known(design: dict) -> pd.DataFrame:
 
         Only the parameter columns plus two of the 152 statistics are read: the table is
         Parquet, so asking for those columns costs their bytes and nothing else. The full
-        grid is `strategies/sppUltra`'s business and is not needed to pick a control.
+        grid is `studies/breakage/spp`'s business and is not needed to pick a control.
     """
     folder, strategy = Path(design["source"]), design["strategy"]
     names = (pd.read_parquet(folder / "runs.parquet").set_index("strategy")
