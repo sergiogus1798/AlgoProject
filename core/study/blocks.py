@@ -138,14 +138,15 @@ def verdict(label: str, state: str, meaning: str, score: float | None = None,
             "meaning": meaning, "parts": parts or []}
 
 
-def table(title: str, frame: object, note: str = "", digits: int = 4) -> dict:
+def table(title: str, frame: object, note: str = "", digits: int = 6) -> dict:
     """A table block from a DataFrame, numbers right-aligned and rounded.
 
     Args:
         title: What the table shows.
         frame: A pandas DataFrame; its index is dropped, so reset it first if it matters.
         note: One sentence under it.
-        digits: Rounding for floats.
+        digits: Significant digits kept in floats — significant, not decimal, so a p of
+            2e-113 stays 2e-113 instead of rounding to 0.
 
     Returns:
         A "table" block.
@@ -157,7 +158,7 @@ def table(title: str, frame: object, note: str = "", digits: int = 4) -> dict:
         if isinstance(v, (int, np.integer)):
             return int(v)
         if isinstance(v, (float, np.floating)):
-            return None if not np.isfinite(v) else round(float(v), digits)
+            return None if not np.isfinite(v) else float(f"{float(v):.{digits}g}")
         return None if v is None else str(v)
 
     numeric = [str(t).startswith(("int", "float")) for t in frame.dtypes]

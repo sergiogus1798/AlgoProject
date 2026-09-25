@@ -2,13 +2,15 @@
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `is_oos.py` | The IS/OOS study: reads a databank's current metrics export, writes one dated report | `python3 -m tasks.reports.is_oos --project XAUUSD --databank OOS` | `metrics/<P>/<D>/metrics.csv` → `reports/<P>/<D>/<date>/explorer.html` + `summary.md` |
-| `filters.py` | The filter sweep: what each candidate IS filter buys on an OOS outcome, corrected across the sweep | `python3 -m tasks.reports.filters --project XAUUSD --databank OOS` | `metrics/<P>/<D>/metrics.csv` → `reports/<P>/<D>/<date>/filters/improvement.md` |
-| `compare.py` | The replication check: do one databank's conclusions hold on other, independently generated databanks | `python3 -m tasks.reports.compare --project XAUUSD --reference OOS --databank OOS-sharpe` | several `metrics.csv` → `reports/<P>/_comparison/<date>/comparison.md` |
-| `decay.py` | The decay verdict: per strategy, how much edge survived out of sample and whether to keep it | `python3 -m tasks.reports.decay --project XAUUSD --databank OOS --split 2018-01-01 --end 2022-12-31` | the databank's `.sqx` → `reports/<P>/<D>/<date>/decay.csv` + `decay.md` |
-| `nulls.py` | The population verdict on the null study: how many strategies beat their monkeys against how many chance would give, and how many can actually be named | `python3 -m tasks.reports.nulls --project XAUUSD --databank MC_Trades` | `reports/<P>/<D>/<date>/nulls/nulls.csv` → `excess.md` |
-| `summary.py` | Turns computed correlation rows into `summary.md`. Pure text, computes nothing | imported | rows → markdown |
-| `panel.html` | Template for the interactive panel. `__PAYLOAD__` is replaced with the embedded data | — | — |
+| `is_oos.py` | The IS/OOS study as one result — the IS × OOS correlation map, persistence, one predictor ranking per outcome — plus the interactive explorer | `python3 -m tasks.reports.is_oos --project XAUUSD --databank OOS` | `metrics/<P>/<D>/metrics.csv` → `reports/<P>/<D>/<date>/isOos/` (`isOos.*`, `explorer.html`) |
+| `filters.py` | The filter sweep: what each candidate IS filter buys on an OOS outcome, corrected across the sweep | `python3 -m tasks.reports.filters --project XAUUSD --databank OOS` | `metrics.csv` → `reports/<P>/<D>/<date>/filters/filters.*` |
+| `compare.py` | The replication check: do one databank's conclusions hold on other, independently generated databanks | `python3 -m tasks.reports.compare --project XAUUSD --reference OOS --databank OOS-sharpe` | several `metrics.csv` → `reports/<P>/_comparison/<date>/replication/replication.*` |
+| `decay.py` | The decay verdict: per strategy, how much edge survived out of sample and whether to keep it | `python3 -m tasks.reports.decay --project XAUUSD --databank OOS --split 2018-01-01 --end 2022-12-31` | the databank's `.sqx` → `reports/<P>/<D>/<date>/decay/` (`verdict.csv` with identity, `decay.*`) |
+| `nulls.py` | The population verdict on the null study: how many strategies beat their monkeys against how many chance would give, and how many can be named | `python3 -m tasks.reports.nulls --project XAUUSD --databank Results` | `reports/<P>/<D>/<date>/monkey/nulls.csv` → `monkeyExcess/monkeyExcess.*` |
+| `panel.html` | Template for the interactive IS/OOS explorer. `__PAYLOAD__` is replaced with the embedded data | — | — |
+
+Every command writes its result as the study contract (`core/study`, `docs/encargos/19-…`): a
+`.json` the window paints, and a `.html` and a `.md` drawn from that same dict.
 
 ## The split between Python and the browser
 
