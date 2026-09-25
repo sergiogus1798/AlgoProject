@@ -831,3 +831,33 @@ estrategias que salieron de `algo_XAU_doctrina_smoke`.
 - 📓 **Por eso no se usa.** Se implementó y se revirtió el 2026-09-23 a petición del dueño: prefiere
   las ventanas separadas —el IS en el databank del builder, el OOS en el del retest— y juntarlos
   al exportar. Queda escrito porque el mecanismo es correcto y algún día hará falta.
+
+## 🔬 La cadena de variantes en un proyecto propio: seis cosas que no se veían (2026-09-25)
+
+Primera vez que `sqx.variants` corre entera en un proyecto custom (`USDJPY_variantes`, custodio),
+con los tres tramos y los mercados de familia. Cada una de estas la rompía sin avisar:
+
+- **La API no admite un databank con espacios en el nombre**, ni con `%20` ni entre comillas:
+  `name="WFC Variants"` responde `Databank ''WFC' doesn't exist`. `core.worker.call` convierte todo
+  espacio en `%20` y el servidor vuelve a partir por ahí. Es la regla dura 6 aplicada a databanks:
+  los de `wfc:` en `assets/_build.yaml` pasan a `WFC_Variants`, `WFC_Build`, `WFC_OOS1`, `WFC_OOS2`.
+- **SQX sólo carga los databanks que declara el `config.xml` del proyecto**; ni `mkdir` ni la tarea
+  que los nombra bastan. `sqx.projects.wfc` los declara ahora él mismo (cierra OPEN §40).
+- **Las condiciones de la propia tarea bloquean los mercados.** La tarea del donante para el tramo
+  `build` traía `AnnualPctReturn (OOS) > 0` activa; un tramo `build` no tiene OOS, todo fallaba, y
+  con `evaluateAll="false"` SQX no corría los mercados adicionales: el tramo volvía con USDJPY solo.
+  `wfc.py` apaga ahora todas las condiciones de la tarea, como pide `wfc.conditions: []`.
+- **Un proyecto sólo de retests no imprime `Total tested`** en `action=status`. Lo que se mueve es
+  `In databank`, la suma de todos sus databanks: lo cargado más lo que van devolviendo los tramos.
+  `execute.run` lee eso cuando falta lo otro.
+- **`core.worker.holding()` no veía a los workers**: su JVM corre como `./sqcli` desde dentro de la
+  instalación y la línea de órdenes no nombra ninguna carpeta. La guarda de la regla dura 4 estaba
+  abierta para los dos workers. Ahora también mira el directorio de trabajo del proceso.
+- **La clave de un resultado no es la carpeta del zip**: `settings.xml` guarda
+  `Main: USDJPY_DukasM1_the5ers/H1` y el archivo `Results/Main: USDJPY_DukasM1_the5ers_LOM_H1/`.
+  Hasta la `/` es prefijo de las dos; `equity.markets_of` corta ahí.
+
+Medido en la misma corrida, con 30 variantes: el retest de los tres tramos con nueve mercados tarda
+**174 s** de punta a punta y el JVM llega a **~23 GB**; los mercados son el 87-90 % del tiempo del
+retest. **Vaciar los cuatro databanks** —arrancar, `clear`, `synctofiles`, parar— tarda **33 s** y
+deja **0 ficheros en disco**.

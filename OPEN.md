@@ -1158,7 +1158,12 @@ y la aritmética de las uniones está comprobada contra lo que SQX guarda, pero 
 3. que `unreconciled` devuelva un puñado de variantes y no todas: todas significa que se está
    leyendo el resultado equivocado del `.sqx`.
 
-## 40. 🟡 Los databanks del proyecto WFC hay que crearlos a mano
+## 40. ✅ Los databanks del proyecto WFC hay que crearlos a mano — resuelto 2026-09-25
+
+`sqx.projects.wfc` los declara él mismo, y se llaman sin espacios (`WFC_Variants`...): con espacios
+la API no puede nombrarlos. Detalle en `knowhow/03-driving-sqx.md`. Lo que sigue es la nota original.
+
+### (original)
 
 📓 2026-09-24. `sqx.projects.wfc` apunta las tres tareas a `WFC Variants` (entrada) y a `WFC Build`,
 `WFC OOS1` y `WFC OOS2` (salidas), pero **no los crea**: SQX empareja por el nombre exacto e ignora

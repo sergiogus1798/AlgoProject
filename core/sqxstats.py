@@ -102,6 +102,26 @@ def stats(path: Path, result: str = "Main") -> dict:
             if direction == "0"}
 
 
+def every(path: Path) -> dict[str, dict]:
+    """stats() for every result a .sqx carries, from one read of its settings.xml.
+
+    Args:
+        path: A .sqx file.
+
+    Returns:
+        {result key: {sample type: {metric name: value}}}, keys in file order. The same
+        numbers stats() gives one key at a time: a caller that wants every result of a
+        cross-market retest -- ten on a nine-market family -- would otherwise decompress and
+        search a multi-megabyte settings.xml ten times per file.
+    """
+    xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
+    cuts = [(m.start(), m.group(1)) for m in _RESULT.finditer(xml)] + [(len(xml), "")]
+    return {key: {int(sample): records(blob)
+                  for direction, pl, sample, blob in _BLOCK.findall(xml[start:end])
+                  if direction == "0"}
+            for (start, key), (end, _) in zip(cuts, cuts[1:])}
+
+
 def equity(path: Path, result: str = "Main") -> pd.Series:
     """Daily cumulative P&L of one of a strategy's results.
 

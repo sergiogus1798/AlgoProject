@@ -13,9 +13,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import worker
 from core.paths import worker_dir
-from sqx.variants import inputs, legs as legmod
+from sqx.variants import banks, inputs, legs as legmod
 
 TESTED = re.compile(r"Total tested\s+(\d+)")
+# A project whose tasks are all Retest reports no "Total tested" line; what moves is the
+# record count across its databanks, the loaded batch plus every leg's output so far.
+IN_BANK = re.compile(r"In databank\s+(\d+)")
 SETTLE = 8          # seconds SQX needs after `load` before the databank answers for them all
 
 
@@ -81,11 +84,13 @@ def load(folder: Path, cfg: dict) -> None:
     time.sleep(SETTLE)
 
 
-def run(expected: int, cfg: dict, progress: Callable[[int, str], None]) -> int:
+def run(expected: int, loaded: int, cfg: dict,
+        progress: Callable[[int, str], None]) -> int:
     """Run the harness's retest task and wait for it.
 
     Args:
-        expected: How many strategies were loaded.
+        expected: How many retests the legs have to return between them.
+        loaded: How many strategies went into the input databank.
         cfg: The `execute` block.
         progress: Called with a percentage and a status line as the run advances.
 
@@ -103,7 +108,9 @@ def run(expected: int, cfg: dict, progress: Callable[[int, str], None]) -> int:
     while done < expected:
         time.sleep(cfg["poll_seconds"])
         status = _call(f'-project action=status name={cfg["project"]}', cfg)
-        done = int(TESTED.search(status).group(1))
+        tested = TESTED.search(status)
+        done = (int(tested.group(1)) if tested
+                else int(IN_BANK.search(status).group(1)) - loaded)
         progress(done * 100 // expected, f"{done} de {expected} reteseadas")
     return done
 
@@ -164,11 +171,20 @@ def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
 def main() -> None:
     """Load one batch, retest it, and leave the raw panel beside it."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--work", required=True, type=Path,
+    ap.add_argument("--work", type=Path,
                     help="the batch directory: holds sqx/ and manifest.parquet")
+    ap.add_argument("--project", help="the custom project holding the three WFC legs, "
+                                      "e.g. USDJPY_variantes; execute.project when absent")
+
+    ap.add_argument("--clear", action="store_true",
+                    help="empty the four databanks off the disk, install stopped, and exit")
     a = ap.parse_args()
 
     cfg = inputs.load()["execute"]
+    cfg["project"] = a.project or cfg["project"]
+    if a.clear:
+        print(f"{banks.clear(cfg)} .sqx borrados de {cfg['project']}: entrada y los tres tramos")
+        return
     legs = legmod.legs()
     folder = a.work / "sqx"
     n = len(list(folder.glob("*.sqx")))
@@ -190,7 +206,7 @@ def main() -> None:
         # One `action=start` runs the project's three active retest tasks in chain --
         # build, oos1, oos2 -- so the progress counter passes `n` twice on its way. It is
         # the last leg that has to finish, and that is what `expected` counts here.
-        done = run(n * len(legs), cfg, say) // len(legs)
+        done = run(n * len(legs), n, cfg, say) // len(legs)
         harvest = []
         for leg in legs:
             print(f"PROGRESS 92 exportando {leg['databank']}", flush=True)

@@ -11,7 +11,7 @@ from xml.etree import ElementTree
 
 from core.assetdata import doctrine, load
 from sqx.projects.configure import running_install
-from sqx.projects.crosschecks import silence_block
+from sqx.projects.crosschecks import silence
 from sqx.projects.crossmarket import SETUPS, chosen, one_market
 from sqx.projects.databanks import set_databank
 from sqx.projects.perturbations import OUT_OF_SAMPLE
@@ -107,11 +107,37 @@ def write_task(text: str, symbol: str, spec: dict, timeframe: str,
     if used:
         text = re.sub(r'<CrossChecks use="(?:true|false)"', '<CrossChecks use="true"',
                       text, count=1)
-    text, silenced = silence_block(text, CHECK)
+    # Every condition of the task, not only the market check's: `wfc.conditions` is empty.
+    # 🔬 2026-09-25, the donor's build-leg task kept `AnnualPctReturn (OOS) > 0` active; a
+    # build leg has no OOS, every variant failed it, and with evaluateAll="false" SQX then
+    # never ran the nine markets -- the leg came back with USDJPY alone and no error.
+    text, silenced = silence(text)
     window = bounds(data, spec["segment"])
     return text, {"setups": setups, "from": window[0], "to": window[1],
                   "markets": [m["feed"] for m in used], "silenced": silenced,
                   "skipped": {m["feed"]: m["why"] for m in skipped}}
+
+
+def declare(config: str, names: list[str]) -> str:
+    """Register every databank the legs read or write that the project does not declare.
+
+    Args:
+        config: The project's config.xml as text.
+        names: The input databank and the three outputs.
+
+    Returns:
+        The config with one `<Databank>` per missing name, synced to disk like the rest.
+        🔬 2026-09-25, on a project cloned from the donor: the tasks named `WFC Variants`
+        and the three outputs, the project declared none of them, and SQX only loads the
+        databanks its config lists -- the task had nothing to read, and a folder made by
+        hand was not picked up either.
+    """
+    have = set(re.findall(r'<Databank name="([^"]*)"', config))
+    last = max(map(int, re.findall(r'<Databank [^>]*position="(\d+)"', config)), default=0)
+    new = "".join(f'    <Databank name="{name}" view="Default - Main data" '
+                  f'syncType="Auto-sync every 1 hour" position="{last + 100 * i}" />\n'
+                  for i, name in enumerate([n for n in names if n not in have], 1))
+    return config.replace("</Databanks>", new + "  </Databanks>", 1)
 
 
 def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str]) -> dict:
@@ -152,6 +178,7 @@ def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str
         config = retitle(config, member, spec["title"])
         rows.append({"member": member, **spec, **done})
 
+    config = declare(config, [study["input"]] + [t["databank"] for t in study["tasks"]])
     members["config.xml"] = config.encode("utf-8")
     with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
         for name, blob in members.items():

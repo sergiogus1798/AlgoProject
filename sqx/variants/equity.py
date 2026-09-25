@@ -3,45 +3,84 @@
 
 import argparse
 import json
+import os
 import sys
 import time
 from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from core import sqxstats
+from core import fanout, sqxstats
 from sqx.variants import legs as legmod
 
 ROUNDING = 1.0        # dollars: the curve is stored at float32 precision
-STEP = 100            # files between progress lines
+BLOCK = 100           # files per worker task
+SCHEMA = pa.schema([("date", pa.timestamp("ns")), ("variant_id", pa.string()),
+                    ("pnl", pa.float64()), ("market", pa.string()), ("segment", pa.string())])
+
+# What the block readers see, set before the fork: one leg's sorted files and its results.
+_SHARED: dict = {}
 
 
-def curves(folder: Path, result: str, say: Callable[[int, str], None]) -> pd.DataFrame:
-    """One result's cumulative P&L for every variant in a leg's databank.
+def _block(start: int) -> tuple[dict, dict]:
+    """Every result's curve for one block of a leg's files, and which did not reconcile.
+
+    Args:
+        start: Position of the block's first file in the leg's sorted folder.
+
+    Returns:
+        ({market: cumulative curves of the block, dates down and variant across},
+        {market: the variants whose curve does not end where SQX says the result ended}).
+        ⚠️ A few off are expected and NOT a fault: SQX marks an open position to market in
+        the curve and counts only closed trades in net profit, so the two differ when a
+        trade is open on a leg's last bar. The failure this catches -- the wrong result read
+        out of a .sqx that carries several -- shows up as every variant off, not a handful.
+    """
+    files, keys = _SHARED["files"], _SHARED["keys"]
+    found, off = {m: {} for m in keys}, {m: [] for m in keys}
+    for path in files[start:start + BLOCK]:
+        for market, key in keys.items():
+            try:
+                curve = sqxstats.equity(path, key)
+            except StopIteration:
+                continue
+            found[market][path.stem] = curve
+            stored = sqxstats.stats(path, key)[sqxstats.FULL]["NetProfit"]
+            if abs(float(curve.iloc[-1]) - stored) > ROUNDING:
+                off[market].append(path.stem)
+    return {m: pd.DataFrame(c) for m, c in found.items()}, off
+
+
+def leg_curves(folder: Path, keys: dict) -> dict:
+    """Every result of one leg: its cumulative curves and the variants that did not reconcile.
 
     Args:
         folder: One leg's databank folder inside the install.
-        result: Which `Results/` entry to read — "Main", or "AdditionalMarket: <feed>".
-        say: Called with a percentage and a status line.
+        keys: What markets_of() returned for it.
 
     Returns:
-        Cumulative account-currency profit, dates down and `variant_id` across. Gaps are
-        carried forward rather than zeroed: a date another variant traded on and this one
-        did not is a day this one's total did not move, not a day it lost everything.
+        {market: (curves, dates down and `variant_id` across in file order, off-list)}. Gaps
+        are carried forward rather than zeroed: a date another variant traded on and this
+        one did not is a day this one's total did not move, not a day it lost everything.
+        Read in blocks on every core: 🔬 2026-09-25, 15,000 files x 10 results took 385 s
+        on one.
     """
     files = sorted(folder.glob("*.sqx"))
-    found = {}
-    for n, path in enumerate(files, 1):
-        try:
-            found[path.stem] = sqxstats.equity(path, result)
-        except StopIteration:
-            continue
-        if n % STEP == 0:
-            say(n * 100 // len(files), f"{n} de {len(files)} curvas ({result[:24]})")
-    return pd.DataFrame(found).ffill().fillna(0.0)
+    _SHARED.update(files=files, keys=keys)
+    parts = dict(fanout.run(_block, {i: BLOCK for i in range(0, len(files), BLOCK)},
+                            os.cpu_count()))
+    out = {}
+    for market in keys:
+        frames = [parts[i][0][market] for i in sorted(parts) if not parts[i][0][market].empty]
+        cum = (pd.concat(frames, axis=1).sort_index().ffill().fillna(0.0) if frames
+               else pd.DataFrame())
+        out[market] = (cum, [v for i in sorted(parts) for v in parts[i][1][market]])
+    return out
 
 
 def daily(cum: pd.DataFrame) -> pd.DataFrame:
@@ -78,32 +117,6 @@ def joined(per_leg: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return pd.concat([per_leg[s] for s in per_leg], axis=0).sort_index()
 
 
-def unreconciled(cum: pd.DataFrame, folder: Path, result: str) -> list[str]:
-    """Variants whose harvested curve does not end where SQX says the result ended.
-
-    Args:
-        cum: What `curves` returned for this leg and result.
-        folder: The leg's databank folder.
-        result: The result that was read.
-
-    Returns:
-        The variants that disagree by more than a dollar.
-
-        ⚠️ Expected in small numbers and NOT a fault: SQX marks an open position to market
-        in the equity curve and counts only closed trades in net profit, so the two differ
-        exactly when a trade is open on the last bar of the leg. Three legs means three
-        such boundaries. What it does catch is the failure this module was written around
-        — reading the wrong result out of a .sqx that carries four of them — and that one
-        shows up as *every* variant disagreeing, not a handful.
-    """
-    off = []
-    for name in cum.columns:
-        stored = sqxstats.stats(folder / f"{name}.sqx", result)[sqxstats.FULL]["NetProfit"]
-        if abs(float(cum[name].iloc[-1]) - stored) > ROUNDING:
-            off.append(name)
-    return off
-
-
 def markets_of(folder: Path) -> list[str]:
     """Which results this leg's .sqx carry, main first and one per cross-check market.
 
@@ -117,7 +130,11 @@ def markets_of(folder: Path) -> list[str]:
     """
     first = next(iter(sorted(folder.glob("*.sqx"))), None)
     keys = sqxstats.results(first) if first else []
-    return {legmod.market(k): k for k in keys
+    # Cut at the "/": 🔬 2026-09-25 on USDJPY, the key `settings.xml` stores is
+    # `Main: USDJPY_DukasM1_the5ers/H1` and the archive's folder is
+    # `Results/Main: USDJPY_DukasM1_the5ers_LOM_H1/`, so the whole key matched no curve and
+    # the harvest came back empty. Up to the "/" it is a prefix of both.
+    return {legmod.market(k): k.split("/")[0] for k in keys
             if k.startswith(legmod.MAIN) or k.startswith(legmod.EXTRA)}
 
 
@@ -135,30 +152,33 @@ def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> di
         and `equity_markets.parquet`, the same thing in long form for every extra market —
         which is what a surface-of-performance view on other assets needs.
     """
-    main, extra, report = {}, [], []
+    main, report, writer = {}, [], None
     for i, leg in enumerate(legs):
         folder = Path(leg["databank_dir"])
-        results = markets_of(folder)
-        for name, key in results.items():
-            cum = curves(folder, key, lambda p, line, i=i: say(i * 30 + p * 30 // 100, line))
+        say(i * 30, f"leyendo {leg['segment']} en paralelo")
+        for name, (cum, off) in leg_curves(folder, markets_of(folder)).items():
             if cum.empty:
                 continue
-            off = unreconciled(cum, folder, key)
             report.append({"segment": leg["segment"], "market": name, "n": cum.shape[1],
                            "days": cum.shape[0], "first": str(cum.index[0].date()),
                            "last": str(cum.index[-1].date()), "open_at_end": len(off),
                            "all_off": bool(off and len(off) == cum.shape[1])})
             if name == legmod.MAIN:
                 main[leg["segment"]] = daily(cum)
-            else:
-                extra.append(daily(cum).stack().rename("pnl").reset_index(
-                    names=["date", "variant_id"]).assign(market=name,
-                                                         segment=leg["segment"]))
+                continue
+            # One (leg, market) at a time into the file, never all of them in memory:
+            # 🔬 2026-09-25, building the 228 M rows before writing peaked at 31.8 GB.
+            rows = daily(cum).stack().rename("pnl").rename_axis(
+                ["date", "variant_id"]).reset_index().assign(market=name,
+                                                             segment=leg["segment"])
+            writer = writer or pq.ParquetWriter(work / "equity_markets.parquet", SCHEMA,
+                                                compression="zstd")
+            writer.write_table(pa.Table.from_pandas(rows, schema=SCHEMA, preserve_index=False))
+    if writer:
+        writer.close()
 
     united = joined(main)
     united.to_parquet(work / "equity.parquet", compression="zstd")
-    if extra:
-        pd.concat(extra).to_parquet(work / "equity_markets.parquet", compression="zstd")
     return {"n": united.shape[1], "days": united.shape[0],
             # The real span of each leg, measured off its own curves rather than restated
             # from the project: it is what `collect.unions` slices the joined curve by.

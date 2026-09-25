@@ -42,7 +42,25 @@ python3 -m sqx.projects.wfc <SIMBOLO> --cfx <install>/user/projects/<P>/project.
     --timeframe M30 --tasks Retest-Task1.xml,Retest-Task2.xml,Retest-Task5.xml
 ```
 
-Manual: `docs/manual/37-wfc-retest.md`. **La cosecha ya lee los tres databanks**: `execute.py`
+Manual: `docs/manual/37-wfc-retest.md`. Desde 2026-09-25 `wfc.py` declara él mismo los cuatro
+databanks (`WFC_Variants`, `WFC_Build`, `WFC_OOS1`, `WFC_OOS2` — **sin espacios**, la API no puede
+nombrar uno que los lleve) y apaga todas las condiciones de las tres tareas: con la de OOS que el
+donante trae en la de `build`, ese tramo volvía sin los mercados y sin avisar.
+
+Receta probada sobre USDJPY H1 (una sola vez por símbolo):
+
+```bash
+python3 -m sqx.projects.builder USDJPY_variantes --template <plantilla> --symbol USDJPY \
+    --role custodian --timeframe H1 --tasks Retest \
+    --only Retest-Task1.xml,Retest-Task2.xml,Retest-Task5.xml \
+    --session-from <un project.cfx que defina la sesión del símbolo>
+python3 -m sqx.projects.wfc USDJPY --cfx <SQX_w2>/user/projects/USDJPY_variantes/project.cfx \
+    --timeframe H1 --tasks Retest-Task1.xml,Retest-Task2.xml,Retest-Task5.xml
+```
+
+⚠️ **Entre una madre y la siguiente, vaciar los cuatro databanks** —`clear` y `synctofiles` de cada
+uno, y parar—, **después** de `equity` y `collect`: las curvas se leen del disco del custodio.
+Medido: 33 s y el disco a cero. **La cosecha ya lee los tres databanks**: `execute.py`
 exporta un panel por tramo, `equity.py` une las curvas diarias de los tres (y guarda las de cada
 mercado adicional aparte) y `collect.py` deja en C3 las métricas por tramo, por mercado y las
 uniones. De ahí salen las dos lecturas del WFC — `build` vs `oos1+oos2`, y la estricta `build+oos1`
@@ -65,7 +83,7 @@ por separado y actúa después.
 ```bash
 python3 -m sqx.variants.make --brief <design_brief_<Estrategia>.json> --project <PROYECTO> \
     [--out <work>] [--sample N | --limit N] [--design-only]
-python3 -m sqx.variants.execute --work <work>     # ⏰ el único que ocupa el custodio
+python3 -m sqx.variants.execute --work <work> --project <SIMBOLO>_variantes   # ⏰ el único que ocupa el custodio
 python3 -m sqx.variants.collect  --work <work>
 python3 -m sqx.variants.equity   --work <work>
 ```

@@ -38,7 +38,8 @@ design_brief.json ─▶ design ─▶ build ─▶ manifest
 | `inputs.py` | Reads `config.yaml`, the brief, the already-known results, and says where output goes | imported | names → values, paths |
 | `tuples.py` | The canonical form of a parameter tuple and its hash | imported | tuple → hash, columns |
 | `manifest.py` | Contract C2, built by reading the files back off the disk | imported | folder → parquet |
-| `execute.py` | Loads a batch into the custodian, runs the retest harness, exports the panel | `python3 -m sqx.variants.execute --work <dir>` | `.sqx` → `retest.csv` |
+| `execute.py` | Loads a batch into the custodian, runs the retest harness, exports the panel | `python3 -m sqx.variants.execute --work <dir> --project <SYM>_variantes`; `--clear` empties the four databanks between batches | `.sqx` → `retest.csv` |
+| `banks.py` | Empties the input and the three legs' databanks off the custodian's disk, refusing while the install is up | imported | project → files deleted |
 | `collect.py` | Contract C3: per-segment and per-union metrics joined onto the manifest, plus `segments.parquet`; refuses a batch whose controls all returned the same number | `python3 -m sqx.variants.collect --work <dir>` | csv + parquet → `metrics.parquet` |
 | `equity.py` | Every variant's **per-day** P&L for the three legs and every cross-check market, joined into one continuous curve | `python3 -m sqx.variants.equity --work <dir>` | `.sqx` → `equity.parquet` |
 | `harness.py` | Rebuilds the worker's one-task harness from a donor task that is known to have run: SPP in sample, SPP out of sample, or a plain retest with a cross-market check | `python3 -m sqx.variants.harness --kind spp_is --project Retester --output SPPOut …` | donor task → the worker's `project.cfx` |

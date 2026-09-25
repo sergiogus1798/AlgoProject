@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Per-segment and per-market metrics read off the .sqx, and the exact union of any of them."""
 
+import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -10,7 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from core import sqxstats
+from core import fanout, sqxstats
 from sqx.variants import legs as legmod
 
 FULL = sqxstats.FULL
@@ -23,7 +24,10 @@ ADDITIVE = ["NetProfit", "GrossProfit", "GrossLoss", "NumberOfTrades", "NumberOf
 HEADLINE = ["NetProfit", "NumberOfTrades", "ProfitFactor", "WinningPct", "AvgTrade",
             "GrossProfit", "GrossLoss", "Drawdown", "DrawdownPct", "SharpeRatio",
             "RExpectancy", "Stability", "ReturnDDRatio"]
-STEP = 100
+BLOCK = 100          # files per worker task
+
+# What the block readers see, set before the fork: one leg's sorted files and its name.
+_SHARED: dict = {}
 
 
 def per_result(folder: Path, segment: str,
@@ -43,17 +47,26 @@ def per_result(folder: Path, segment: str,
         retest (`core.sqxstats.stats`, measured 2026-09-24).
     """
     files = sorted(folder.glob("*.sqx"))
+    _SHARED.update(files=files, segment=segment)
+    # Blocks of files on every core, each file's settings.xml parsed once for all its
+    # results: 🔬 2026-09-25, 15,000 files x 10 results took 196 s on one core.
+    blocks = dict(fanout.run(_rows, {i: BLOCK for i in range(0, len(files), BLOCK)},
+                             os.cpu_count()))
+    say(100, f"{len(files)} de {len(files)} .sqx leidos ({segment})")
+    return pd.DataFrame([row for i in sorted(blocks) for row in blocks[i]])
+
+
+def _rows(start: int) -> list[dict]:
+    """per_result()'s rows for one block of a leg's files, in file order."""
     rows = []
-    for n, path in enumerate(files, 1):
-        for key in sqxstats.results(path):
+    for path in _SHARED["files"][start:start + BLOCK]:
+        for key, stats in sqxstats.every(path).items():
             name = legmod.market(key)
             if name not in (legmod.MAIN,) and not key.startswith(legmod.EXTRA):
                 continue
-            rows.append({"variant_id": path.stem, "segment": segment, "market": name,
-                         "result_key": key} | sqxstats.stats(path, key)[FULL])
-        if n % STEP == 0:
-            say(n * 100 // len(files), f"{n} de {len(files)} .sqx leidos ({segment})")
-    return pd.DataFrame(rows)
+            rows.append({"variant_id": path.stem, "segment": _SHARED["segment"],
+                         "market": name, "result_key": key} | stats[FULL])
+    return rows
 
 
 def combine(rows: pd.DataFrame, segments: list[str], curves: pd.DataFrame | None = None,

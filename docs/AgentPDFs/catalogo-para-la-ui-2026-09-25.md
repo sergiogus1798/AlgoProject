@@ -357,6 +357,7 @@ Existen como encargo autocontenido en `docs/encargos/`: el diseño está decidid
 | **Los costes de 16 de 17 activos** | Sin ellos el paso 9 se niega a escribirse, y cualquier diseño multimercado está parado | Activos |
 | **Tres paneles en el navegador** | Cross-market, Monte Carlo y MC Retest levantan cada uno su Flask con su puerto y sin estado compartido. Deben absorberse en la aplicación | Estudios |
 | **El análisis del MC Retest está roto hoy** | Exige las ocho tareas y aborta sin la de distancia mínima, que **nunca** se escribe en una población a mercado — y todas lo son. Además no sabe leer un worker. El paso 14 no se puede leer hasta arreglarlo | Estudios |
+| **El pulso de un run largo del custodio** | Pedido por el dueño el 2026-09-25, viendo el retest de 5.000 variantes. Una línea que se refresca cada pocos minutos: **cuántos backtests van de cuántos** (`3987 de 15000`), el ritmo y lo que falta, la **memoria del JVM contra su techo** (`-Xmx80g` de `sqcli.config`), su CPU y la **RAM libre de la máquina**, con aviso por debajo de 15 GB. Y lo que de verdad decide: **cuántos backtests caben todavía** a la pendiente medida (~8–12 MB por retest). De dónde sale cada cifra: el avance, de las líneas `PROGRESS n de N` de `sqx.variants.execute` (o de `In databank` del `action=status`); la memoria, del PSS del proceso `./sqcli` en `/proc/<pid>/smaps_rollup` (no del RSS); la RAM, de `MemAvailable`. Formato que le gustó: `13:38:32 3987 de 15000 | JVM 63.2 GB | CPU 6845% | libre 55 GB` | Custodio |
 
 ---
 

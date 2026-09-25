@@ -253,10 +253,7 @@ mc_retest:
       precision: 2
       full_sample: false
       methods:
-        RandomizeHistoryDataOHLC: {ProbabilityOpen: 30, ProbabilityHigh: 30,
-                                   ProbabilityLow: 30, ProbabilityClose: 30, MaxChange: 15,
-                                   ATRPeriod: 14, KeepConnected: true,
-                                   ProbabilityGapChange: 30, MaxChangeOfGap: 15}
+        RandomizeHistoryDataOHLC: {ProbabilityOpen: 30, ProbabilityHigh: 30, ProbabilityLow: 30, ProbabilityClose: 30, MaxChange: 15, ATRPeriod: 14, KeepConnected: true, ProbabilityGapChange: 30, MaxChangeOfGap: 15}
     # La de producción, y la más cara de todas: 227 s medidos. Seis perturbaciones a la vez
     # y 15 años en vez de 10.
     - title: MCR 8 Stress
@@ -266,10 +263,7 @@ mc_retest:
       full_sample: true
       methods:
         RandomizeExitParameters: {Probability: 100, MaxChange: 15, Symmetric: true}
-        RandomizeHistoryDataOHLC: {ProbabilityOpen: 30, ProbabilityHigh: 30,
-                                   ProbabilityLow: 30, ProbabilityClose: 30, MaxChange: 15,
-                                   ATRPeriod: 14, KeepConnected: true,
-                                   ProbabilityGapChange: 30, MaxChangeOfGap: 15}
+        RandomizeHistoryDataOHLC: {ProbabilityOpen: 30, ProbabilityHigh: 30, ProbabilityLow: 30, ProbabilityClose: 30, MaxChange: 15, ATRPeriod: 14, KeepConnected: true, ProbabilityGapChange: 30, MaxChangeOfGap: 15}
         RandomizeMinDistance: {}
         RandomizeSlippage: {}
         RandomizeSpread: {}
@@ -337,11 +331,11 @@ wfc:
   # `metrics.parquet` lo que no llega, lo cuenta y lo canta; la evidencia completa —con
   # los descartados y su recuento— se queda en `segments.parquet`.
   min_trades_total: 50
-  input: WFC Variants        # el databank donde se cargan las variantes fabricadas
+  input: WFC_Variants        # el databank donde se cargan las variantes fabricadas
   tasks:
-    - {title: WFC 1 IS,   segment: build, databank: WFC Build}
-    - {title: WFC 2 OOS1, segment: oos1,  databank: WFC OOS1}
-    - {title: WFC 3 OOS2, segment: oos2,  databank: WFC OOS2}
+    - {title: WFC 1 IS, segment: build, databank: WFC_Build}
+    - {title: WFC 2 OOS1, segment: oos1, databank: WFC_OOS1}
+    - {title: WFC 3 OOS2, segment: oos2, databank: WFC_OOS2}
 
 # ─── SPP ───────────────────────────────────────────────────────────────────────────────
 # Paso 15 del workflow. El crosscheck `OptProfileSysParamPermutation` recorre el entorno de
