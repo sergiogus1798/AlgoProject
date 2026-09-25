@@ -96,8 +96,8 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `perf/inputs/config.py` | 28 | The single source of truth for what the catalogue measures and what it calls a regression. | — | yaml |
 | `perf/inputs/parsers.py` | 65 | The reading work the catalogue times: the formats every study opens before it can start. | core, perf | — |
 | `perf/inputs/sample.py` | 67 | Where the real files a measurement runs on are found, so two dates measure the same thing. | core | — |
-| `perf/inputs/targets.py` | 41 | The registry of everything the catalogue measures: one row is one comparable number. | perf | — |
-| `perf/inputs/workloads.py` | 107 | The real analysis work the catalogue times: one call each, on data already on disk. | core, engines, perf, portfolio, studies | — |
+| `perf/inputs/targets.py` | 43 | The registry of everything the catalogue measures: one row is one comparable number. | perf | — |
+| `perf/inputs/workloads.py` | 130 | The real analysis work the catalogue times: one call each, on data already on disk. | core, engines, perf, portfolio, studies | — |
 | `perf/measure/harness.py` | 99 | Run a target in its own process, watch the whole tree's memory, and keep the median run. | core | — |
 | `perf/measure/hotspots.py` | 49 | Where one target's time and memory actually go: the functions and the allocation sites. | perf | — |
 | `perf/measure/runner.py` | 93 | Run one target inside its own process and report what it cost. Internal to the harness. | perf | — |
@@ -179,9 +179,9 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/projects/builder.py` | 249 | Turn a template plus an asset into a Builder project installed and ready to run. | core, sqx | — |
 | `sqx/projects/buildrules.py` | 158 | The shape of the strategy a task may generate: how complex, which orders, which exits. | — | — |
 | `sqx/projects/configure.py` | 215 | Write an asset's declared costs and one segment's window into every task of a project.cfx. | core, sqx | — |
-| `sqx/projects/crosschecks.py` | 121 | The surgery every cross-check configurator repeats: find the task, switch it on, silence it. | — | — |
-| `sqx/projects/crossmarket.py` | 205 | Write the additional-markets cross-check from assets/: which markets, when, at what cost. | core, sqx | — |
-| `sqx/projects/crosstf.py` | 181 | Write the cross-timeframe check: the same asset and costs, read on other timeframes. | core, sqx | — |
+| `sqx/projects/crosschecks.py` | 143 | The surgery every cross-check configurator repeats: find the task, switch it on, silence it. | — | — |
+| `sqx/projects/crossmarket.py` | 202 | Write the additional-markets cross-check from assets/: which markets, when, at what cost. | core, sqx | — |
+| `sqx/projects/crosstf.py` | 178 | Write the cross-timeframe check: the same asset and costs, read on other timeframes. | core, sqx | — |
 | `sqx/projects/databanks.py` | 71 | Which databank each task of a project reads and which it writes. | — | — |
 | `sqx/projects/doctrine.py` | 145 | Apply the owner's build doctrine to every task of a project, identically. | core, sqx | — |
 | `sqx/projects/mcretest.py` | 155 | Write the eight MC Retest tasks of a custom project: one perturbation each, as evidence. | core, sqx | — |
@@ -417,7 +417,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_tradeshape.py` | 80 | Trade-level statistics on series whose answer is known by construction. | studies | numpy, pandas |
 | `tests/test_variants.py` | 122 | Golden-file test for sqx.variants: a rewriter that breaks silently fabricates a wrong study. | sqx | — |
 | `tools/checks.py` | 198 | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | depmap, knowhowmap | — |
-| `tools/daily_audit.py` | 118 | The half of the daily audit a machine can do alone. Judgement stays with the /audit agent. | core | — |
+| `tools/daily_audit.py` | 112 | The half of the daily audit a machine can do alone. Judgement stays with the /audit agent. | core | — |
 | `tools/depmap.py` | 129 | Generate docs/DEPENDENCIES.md from the imports actually present in the project's Python files. | — | — |
 | `tools/knowhowmap.py` | 120 | Regenerate each knowhow/<domain>/INDEX.md from its cards' q: lines, and check the cards. | — | — |
 | `tools/manual.py` | 112 | Build the whole user manual as one PDF from the markdown pages in docs/manual/. | core, markdown | — |
