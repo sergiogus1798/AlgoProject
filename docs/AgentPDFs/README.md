@@ -43,6 +43,11 @@ whose labels and whose conversation are in Spanish. So the rule is not "outbound
 is **the language of the conversation the document is walking into**, and each one says which it
 chose and why on its last page.
 
+`paneles-flask-inventario-2026-09-25` is the third, also in Spanish and for the same reader: what
+the three Flask panels of `strategies/*/explorer/` offer — every tab, selector, knob and drawing —
+so the window's «Estudios» zone reproduces their depth instead of thinning it. Its last section is
+the ten-point contract that zone has to keep.
+
 Regenerate the PDF with the manual's own stylesheet; there is no committed tool for a single
 dossier, and `tools/manual.py` holds the `STYLE` any ad-hoc renderer should import.
 
