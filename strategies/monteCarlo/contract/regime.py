@@ -3,9 +3,10 @@
 import pandas as pd
 
 from core.study import blocks, result as envelope
+from engines.regimes import regime
 from strategies.monteCarlo.contract import headline, shapes
 from strategies.monteCarlo.contract.words import MODELS_ES
-from strategies.monteCarlo.model import regime, stress
+from strategies.monteCarlo.model import stress
 from strategies.monteCarlo.verdict import gates
 
 

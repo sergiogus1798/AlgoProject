@@ -35,7 +35,7 @@ parameterCloud, profitShape…) no cambiaron: su tiempo es importar pandas y sci
 **Qué se hizo.**
 
 - Kernels numba que valoran y miden cada camino en una pasada, sin matrices intermedias:
-  `nulls/kernel.py`, `strategies/crossmarket/simulate/kernel.py`.
+  `engines/nulls/kernel.py`, `engines/nulls/placement/kernel.py`.
 - Barrido de barreras que se para en el primer toque.
 - `core/fanout.py`: reparto por procesos con `fork`, **lo más caro primero (LPT)**, un hilo de BLAS
   por proceso (OpenBLAS arrancaba 64 en cada uno).

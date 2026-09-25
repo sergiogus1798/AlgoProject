@@ -30,15 +30,15 @@ Las tres reglas, y no son negociables:
 
 1. **Sin mirar al futuro.** Los umbrales de los terciles salen de una ventana expansiva o del tramo
    de construcción, nunca de la muestra que se está describiendo.
-2. **Tamaño mínimo de celda** (30 operaciones, el mismo suelo que `nulls/config.yaml`), y mapas de
+2. **Tamaño mínimo de celda** (30 operaciones, el mismo suelo que `engines/nulls/config.yaml`), y mapas de
    dos dimensiones sólo donde haya celdas pobladas.
 3. **Nada de filtros nuevos** sin registrarlos en el ledger (encargo 8) y revalidarlos sobre datos
    que no se hayan mirado.
 
 ## 2 · Lo que ya existe
 
-- Situar operaciones sobre la rejilla, la ATR y la reconciliación: `nulls/inputs.py`,
-  `nulls/calibrate.py`, usados ya por `strategies/entryQuality/`.
+- Situar operaciones sobre la rejilla, la ATR y la reconciliación: `engines/nulls/inputs.py`,
+  `engines/market/calibrate.py`, usados ya por `strategies/entryQuality/`.
 - Barras de cualquier timeframe desde el M1: `core.barstore.read`.
 - La sesión declarada de cada activo: `assets/symbols/<SYMBOL>.yaml`, campo `session`. **Úsala**, no
   inventes husos.

@@ -359,7 +359,7 @@ población** y es el número a vigilar.
 Dos cosas concretas, y las dos son trabajo repetido, no trabajo necesario:
 
 1. 🔬 **El ATR se recalcula una vez por estrategia sobre las MISMAS barras.**
-   `nulls/simulate.py:fixed()` llama a `calibrate.atr(frame, …)` y `frame` es idéntico en las 500
+   `engines/nulls/simulate.py:fixed()` llama a `calibrate.atr(frame, …)` y `frame` es idéntico en las 500
    llamadas: 234 llamadas × 39 ms = **9,2 s de los 33**, y crece lineal con la población haciendo
    siempre la misma cuenta. Calcularlo una vez por (barras, periodo) lo deja en 39 ms totales.
 2. 🔬 **Se filtra la tabla entera de operaciones por identidad, una vez por estrategia**
@@ -470,9 +470,9 @@ cambia**: cada optimización se verificó comparando el resultado contra el de a
 
 | cambio | dónde | por qué es exacto |
 |---|---|---|
-| el ATR se calcula una vez por fichero de barras, no una por estrategia | `nulls/calibrate.py` | depende sólo de `(barras, ventana)`; se cachea el mismo array |
+| el ATR se calcula una vez por fichero de barras, no una por estrategia | `engines/market/calibrate.py` | depende sólo de `(barras, ventana)`; se cachea el mismo array |
 | la tabla OOS se agrupa una vez por identidad, no se filtra una vez por estrategia | `gate/monkey.py` | `groupby` y la máscara booleana devuelven las mismas filas en el mismo orden |
-| `stats.measure()` construye sólo la estadística pedida, y la puerta pide la única que lee | `nulls/stats.py`, `gate/monkey.py` | el filtro estaba **después** del cálculo. `nulls.report`, que lee las cinco, cuesta lo mismo que antes |
+| `stats.measure()` construye sólo la estadística pedida, y la puerta pide la única que lee | `engines/nulls/stats.py`, `gate/monkey.py` | el filtro estaba **después** del cálculo. `nulls.report`, que lee las cinco, cuesta lo mismo que antes |
 | el bucle sobre estrategias se reparte entre los núcleos | `gate/monkey.py`, `strategies/crossmarket/report.py` | las estrategias no comparten estado ni escriben nada |
 | el estrés de ejecución se trocea en lotes de 500 corridas | `strategies/crossmarket/simulate/stress.py` | los tres sorteos se siguen tomando enteros y en el mismo orden; sólo el precio va por lotes |
 
@@ -654,12 +654,12 @@ BLAS. Datos crudos y scripts: `AlgoData/reports/perf-optim-2026-09-25/`.
 
 | # | cambio | dónde |
 |---|---|---|
-| 1 | **kernel numba** que valora cada run y calcula sus estadísticas en una pasada, sin matrices intermedias | `nulls/kernel.py`, `strategies/crossmarket/simulate/kernel.py` |
-| 2 | barrido de barreras que **se para en el primer toque** | `nulls/kernel.py:touched` |
+| 1 | **kernel numba** que valora cada run y calcula sus estadísticas en una pasada, sin matrices intermedias | `engines/nulls/kernel.py`, `engines/nulls/placement/kernel.py` |
+| 2 | barrido de barreras que **se para en el primer toque** | `engines/nulls/kernel.py:touched` |
 | 3 | **balanceo de carga**: lo más caro primero (LPT), un hilo de BLAS por proceso | `core/fanout.py` |
 | 4 | el paso 10 reparte por **(estrategia, mercado)** y calcula solo lo que publica el `verdict.csv` | `strategies/crossmarket/report.py`, `market_run.verdict_row` |
 | 5 | `nulls.report` en paralelo y leyendo el export **una vez**, no una por estrategia | `nulls/report.py` |
-| 6 | semilla estable por (estrategia, peldaño, bloque) y bloque medido en trades | `nulls/simulate.py` |
+| 6 | semilla estable por (estrategia, peldaño, bloque) y bloque medido en trades | `engines/nulls/simulate.py` |
 | 7 | la cosecha exporta IS y OOS en **un** ciclo del conductor y **un** `orderstocsv` | `gate/collect.py` |
 
 ### El resultado

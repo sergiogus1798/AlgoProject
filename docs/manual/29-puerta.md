@@ -244,6 +244,6 @@ $ python3 -m sqx.curate.apply_verdict --project XAU_ISOOS_ejemplo --databank OOS
   no exporta. Mira las columnas reales en el `metrics.parquet` de la cosecha.
 - `SystemExit` dentro del mono, hablando de `max_hold` — alguna estrategia mantiene una posición más
   barras de las que el escáner mira hacia delante. Es una negativa a propósito, no un fallo: subir
-  `barrier.max_hold` en `nulls/config.yaml` es la decisión que hay que tomar a mano.
+  `barrier.max_hold` en `engines/nulls/config.yaml` es la decisión que hay que tomar a mano.
 - La cosecha se queda colgada arrancando el conductor — otra sesión lo está usando. `ss -ltnp | grep
   5060`.

@@ -145,7 +145,7 @@ def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
 
     Returns:
         One row per judged candidate, sorted by descending d_median, carrying metric (the
-        label, unique so correlations.discoveries can key on it), column, side, cut, the keys
+        label, unique so engines.inference.fdr.discoveries can key on it), column, side, cut, the keys
         from outcome() and those from lift(). Candidates leaving fewer than min_n survivors
         are dropped without being tested, so they never enter the family the correction covers.
     """

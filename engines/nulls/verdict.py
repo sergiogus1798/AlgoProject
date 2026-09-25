@@ -6,7 +6,7 @@ discard: it locates a result, names what is wrong with it, and stops."""
 import numpy as np
 
 from core import assetcheck, assetdata
-from nulls.stats import GOOD_HIGH
+from engines.nulls.stats import GOOD_HIGH
 
 RECONCILE_FLOOR = 0.99      # below this the priced run is not the run SQX reported
 

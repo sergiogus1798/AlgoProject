@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from core.study import blocks, identity, result as envelope
-from nulls import simulate, verdict
+from engines.nulls import simulate, verdict
 
 MODULE = "nulls"
 RUNGS_ES = {"timing": "cuándo entra",

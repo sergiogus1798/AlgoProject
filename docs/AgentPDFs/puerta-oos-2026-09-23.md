@@ -147,7 +147,7 @@ rungs:
 | 2 | `degradacion` | ¿cuánto del filo IS sobrevivió, y lo que queda bate a su propio error? | equity | segundos | **`tasks/analysis/decay.py` entero**: retención de Sharpe, t de Lo (2002), años positivos, concentración trimestral |
 | 3 | `forma` | ¿el drawdown OOS cabe en lo que IS hacía esperar? ¿es estable en el tiempo? | equity | segundos | `core.significance` (PSR, longitud mínima de track record) |
 | 4 | `mono` | ¿bate a un aleatorio con la misma oportunidad? | trades + barras | **minutos por estrategia** | **`nulls/` entero** — `nulls.report` ya barre un export completo |
-| 5 | `familia` | de los que pasan, ¿cuántos daría el azar? | p del rung 4 | ~0 | `tasks.analysis.excess`, `discoveries()` (Benjamini-Hochberg) |
+| 5 | `familia` | de los que pasan, ¿cuántos daría el azar? | p del rung 4 | ~0 | `engines.inference.excess`, `discoveries()` (Benjamini-Hochberg) |
 | 6 | `redundancia` | ¿son N estrategias o una repetida N veces? | equity | segundos | nada — **es el único rung sin pieza previa** |
 
 **El rung 0 no es burocracia.** Tres trampas ya documentadas viven ahí: el último trade puede ser

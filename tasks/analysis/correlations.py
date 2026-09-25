@@ -31,27 +31,10 @@ def critical_r(n: int, alpha: float = 0.05) -> float:
 
     Returns:
         The critical correlation. At n=10,000 it is around 0.02, which is why passing it
-        means almost nothing here and discoveries() is the threshold that matters.
+        means almost nothing here and engines.inference.fdr.discoveries() is the threshold that matters.
     """
     t = stats.t.ppf(1 - alpha / 2, n - 2)
     return float(t / np.sqrt(n - 2 + t ** 2))
-
-
-def discoveries(rows: list[dict], alpha: float = 0.05) -> set[str]:
-    """Which of a family of tests survive Benjamini-Hochberg control of the FDR.
-
-    Args:
-        rows: One dict per test, each carrying "metric" and "p".
-        alpha: False discovery rate to hold across the whole family.
-
-    Returns:
-        The metric names that survive. Every in-sample metric is tested against the same
-        outcome at once, so the plain 5% level would be expected to hand back one false
-        positive in every twenty metrics tested.
-    """
-    ordered = sorted(rows, key=lambda r: r["p"])
-    below = [i for i, r in enumerate(ordered, 1) if r["p"] <= i / len(rows) * alpha]
-    return {r["metric"] for r in ordered[: max(below, default=0)]}
 
 
 def persistence(columns: dict[str, np.ndarray], names: list[str]) -> list[dict]:

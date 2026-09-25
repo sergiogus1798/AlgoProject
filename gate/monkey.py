@@ -5,8 +5,8 @@ import os
 import pandas as pd
 
 from core import fanout
-from nulls import simulate, verdict
-from tasks.analysis.correlations import discoveries
+from engines.inference.fdr import discoveries
+from engines.nulls import simulate, verdict
 
 # What the workers read. Set by mono() before the pool is built and never written again:
 # `fork` hands every worker the bars, the ATR already computed over them and the whole OOS

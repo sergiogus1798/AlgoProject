@@ -15,7 +15,11 @@ import pandas as pd
 _ATR_CACHE: dict = {}
 
 
-def atr(frame: pd.DataFrame, window: int) -> np.ndarray:
+# The lookback both studies price volatility over unless they say otherwise.
+ATR_BARS = 14
+
+
+def atr(frame: pd.DataFrame, window: int = ATR_BARS) -> np.ndarray:
     """Average true range, as a plain rolling mean of the true range.
 
     Args:

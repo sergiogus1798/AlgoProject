@@ -3,12 +3,11 @@
 from pathlib import Path
 
 from core import bars
+from engines.regimes import regime
 from perf.inputs import sample
-from strategies.monteCarlo.inputs import config as mc_config
-from strategies.monteCarlo.inputs import costs, stream
-from strategies.monteCarlo.model import regime
-from strategies.monteCarlo import run
 from strategies.crossmarket.simulate import paired
+from strategies.monteCarlo import run
+from strategies.monteCarlo.inputs import config as mc_config, costs, stream
 from strategies.retest.measure import store
 
 

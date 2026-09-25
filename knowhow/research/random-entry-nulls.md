@@ -3,7 +3,7 @@ q: monkey random-entry null what it measures, nulls/ statistic choice sharpe net
 tag: 🔬  date: 2026-09-25  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias
 ---
 # A monkey verdict depends on the statistic far more than on the null: report all five
-`nulls/config.yaml` lists five statistics and chooses none; never report one. Sharpe is scale-invariant, so
+`engines/nulls/config.yaml` lists five statistics and chooses none; never report one. Sharpe is scale-invariant, so
 being calmer than chance counts as edge under `sharpe` but not under `net`. Beating the monkey is a lower bar
 than beating zero (its mean is cost-negative). Use fill `open-open` (reconciled). Normal approximation (PSR/MinTRL)
 is fine for a gate at p≈0.05, not for the extreme tail after multiplicity — BH on the short list uses the simulation.
@@ -36,7 +36,7 @@ MinTRL on SQX P/L passes 202/757 (26.7 %). Crossed with the monkey:
 `sharpe`: MinTRL ⊂ monkey; null spread × √n = 1.006 (iid), `psr(returns, benchmark=monkey_mean)` reproduces the simulation (p corr 0.9956).
 `net`: the tests cross both ways (different things); screening MinTRL before the monkey drops 48 the monkey passes on profit.
 
-Seed: fixed 2026-09-25. Each block draws from `SeedSequence([seed, blake2b(strategy), fixed rung id, block])` (`nulls/simulate.py`).
+Seed: fixed 2026-09-25. Each block draws from `SeedSequence([seed, blake2b(strategy), fixed rung id, block])` (`engines/nulls/simulate.py`).
 Not: `default_rng([seed, abs(hash(rung)) % 2**32])` — `hash()` of a str is per-process randomised (3 runs: 810825080, 1328569471, 751024716),
 so `nulls.seed` fixed nothing; two `gate.report` runs gave 227 vs 229 survivors (identical with `PYTHONHASHSEED=0`).
 p-values stored before the fix came from other monkeys; vs new ones over 15,140 p, difference within Monte Carlo error.

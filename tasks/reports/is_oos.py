@@ -13,6 +13,7 @@ from core import manifest
 from core.paths import metrics_export, report_dir
 from core.study import blocks, output, result as envelope
 from core.study.render import markdown
+from engines.inference import fdr
 from tasks.analysis import correlations, metrics
 
 MODULE = "tasks.reports.is_oos"
@@ -54,7 +55,7 @@ def result(columns: dict, n: int, is_metrics: list[str], oos_metrics: list[str],
     """
     ranked = {t: correlations.predictors(columns, t, is_metrics)
               for t in TARGETS if t in oos_metrics}
-    found = {t: correlations.discoveries(rows) for t, rows in ranked.items()}
+    found = {t: fdr.discoveries(rows) for t, rows in ranked.items()}
     persist = pd.DataFrame(correlations.persistence(columns, metrics.paired(columns)))
     rho = {t: {r["metric"]: r["spearman"] for r in rows} for t, rows in ranked.items()}
     r_crit = correlations.critical_r(n)

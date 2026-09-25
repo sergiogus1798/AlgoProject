@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from engines.nulls.placement import bootstrap
 from strategies.crossmarket.mechanics import pricing, units
-from strategies.crossmarket.model import bootstrap
 
 BLOCK = "block"      # the sensitivity entry that means the regime-block partition, not a width
 

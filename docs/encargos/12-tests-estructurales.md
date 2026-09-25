@@ -18,7 +18,7 @@ repositorio el 2026-09-24. Los tres comparten **una sola capacidad que hoy no ex
 `<variable><id>NAME</id>…<value>N</value>`, y `set_values` revienta a propósito si el nombre no es
 una variable de la estrategia. Eso cubre todo el espacio de parámetros y nada del espacio de reglas.
 
-**Ya está hecha la mitad barata del D1**, y no necesita SQX: `nulls/filter.py` compara un filtro
+**Ya está hecha la mitad barata del D1**, y no necesita SQX: `engines/nulls/filter.py` compara un filtro
 contra quitar al azar la misma fracción de operaciones (p empírica, estadísticos **por operación**
 porque un filtro cambia el número de trades). Lo que le falta es la lista de operaciones *sin* el
 filtro, y eso es lo que fabricas aquí.
@@ -79,7 +79,7 @@ esas tres trampas ya están resueltas y volver a pisarlas sería gratuito.
 | **la fábrica** | una madre + qué bloque se quita (o la dirección invertida) → un `.sqx` por ablación, con su manifiesto |
 | **la corrida** | reutiliza `sqx.variants.execute` sobre el custodio; **un trabajo y `bin/sqx-worker.sh --role custodian stop`** |
 | **la lectura** | ΔM por condición, en expectativa **por operación** y Sharpe, nunca en beneficio total |
-| **el enlace con `nulls/filter.py`** | con los trades de la ablación y los de la madre, el contraste contra filtro aleatorio |
+| **el enlace con `engines/nulls/filter.py`** | con los trades de la ablación y los de la madre, el contraste contra filtro aleatorio |
 
 ## 3 · Verificación — sin esto no has entregado nada
 

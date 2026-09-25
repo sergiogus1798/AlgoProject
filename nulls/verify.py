@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from nulls import inputs, kernel, model, simulate
-from nulls.stats import measure
+from engines.nulls import inputs, kernel, model, simulate
+from engines.nulls.stats import measure
 
 
 def slow_exits(entries: np.ndarray, holds: np.ndarray, low: np.ndarray, high: np.ndarray,

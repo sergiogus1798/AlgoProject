@@ -3,8 +3,8 @@
 from core import barstore, manifest, tradestore
 from core.paths import bar_source, export_dir
 from core.study import identity
+from engines.regimes import regime
 from strategies.monteCarlo.inputs import costs, stream
-from strategies.monteCarlo.model import regime
 from strategies.monteCarlo.simulate import stability
 
 

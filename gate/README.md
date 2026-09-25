@@ -75,7 +75,7 @@ changing a threshold re-judges without recomputing anything that costs machine t
 - **The equity curve is glued on daily returns, not on levels.** The two runs start from their own
   balances and their windows can overlap by a few bars of warm-up; the boundary is the first day the
   retest covers, and whatever the build window ran past it is dropped rather than double counted.
-- **The monkey inherits the retest's costs for free.** `nulls.calibrate` measures what SQX charged
+- **The monkey inherits the retest's costs for free.** `engines.market.calibrate` measures what SQX charged
   from the trades themselves, so the null runs are priced with the retest task's own spread and
   slippage without this module ever knowing what they were.
 

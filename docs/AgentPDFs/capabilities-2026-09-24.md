@@ -170,7 +170,7 @@ from it, or be a sharper version of something in it with the difference stated.
 | `tasks/analysis/decay.py` | how much of each strategy's in-sample edge survived, and is what is left bigger than its own error bar? | Sharpe either side, retention, Lo's standard error, years positive, share of profit from the best quarter → keep / doubt / discard |
 | `tasks/analysis/improvement.py` | does filtering on an in-sample metric improve the out-of-sample outcome, and at what cost in survivors? | every metric swept at the 5/10/20/30/50 % cut from both ends, with a bootstrap interval on the difference; refuses to judge a filter leaving under 200 strategies |
 | `tasks/analysis/replication.py` | does a conclusion drawn on one generation hold on another, independently generated one? | outcome gaps, thresholds carried across, rank stability |
-| `tasks/analysis/excess.py` | over a family of tests, how many passed against how many chance alone would give? | excess, FDR, and whether the p-values are fine-grained enough to name anyone |
+| `engines/inference/excess.py` | over a family of tests, how many passed against how many chance alone would give? | excess, FDR, and whether the p-values are fine-grained enough to name anyone |
 | `tasks/analysis/correlations.py` | which in-sample metric predicts which out-of-sample outcome? | Spearman-led, with the FDR correction across the family |
 
 ### 4.2 One strategy, from its trade list
@@ -185,7 +185,7 @@ from it, or be a sharper version of something in it with the difference stated.
 | `strategies/exposure/` | what did that return cost in market time? | Occupancy, three buy-and-hold sizing conventions at matched risk, return per exposed hour, and how much of the market's move happened while holding |
 | `strategies/profitShape/` | how few trades and how few periods does the result rest on; are the trades independent; did the mean change? | `S_top(1 %, 5 %)`, metrics with the best 5/10/20 trades removed, best-3-months and best-year shares, median vs mean · Wald–Wolfowitz runs, Ljung–Box on trades and on daily P&L, longest losing streak against 10,000 shuffles · OLS-CUSUM with both sides, rolling Sharpe with a non-normal band |
 | `strategies/entryQuality/` | does the entry itself predict favourable movement, and what does arriving late cost? | MFE/MAE per horizon in ATR units off highs and lows, **e(k) against a band of random entries matched on hour-of-day and long/short split**, reported per direction; and the price given up by entering d bars (and d minutes) late, as a share of gross expectancy and as a multiple of modelled cost |
-| `nulls/filter.py` | did a filter beat dropping the same share of trades at random? | Per-trade statistics, empirical p. **Built, tested, and with no consumer yet** — it waits for the ablation work in §5 |
+| `engines/nulls/filter.py` | did a filter beat dropping the same share of trades at random? | Per-trade statistics, empirical p. **Built, tested, and with no consumer yet** — it waits for the ablation work in §5 |
 
 ### 4.3 One strategy, across a parameter space
 

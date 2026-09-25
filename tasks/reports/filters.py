@@ -11,7 +11,8 @@ from core import manifest
 from core.paths import metrics_export, report_dir
 from core.study import blocks, output, result as envelope
 from core.study.render import markdown
-from tasks.analysis import correlations, improvement, metrics
+from engines.inference import fdr
+from tasks.analysis import improvement, metrics
 
 TARGETS = ["Sharpe Ratio (OOS)", "Ret/DD Ratio (OOS)"]
 MODULE = "tasks.reports.filters"
@@ -77,7 +78,7 @@ def main() -> None:
     for target in targets:
         rows = improvement.sweep(columns, is_metrics, target)
         base = improvement.outcome(columns[target], improvement.breakeven(target))
-        tabs.append(tab(target, base, rows, correlations.discoveries(rows), a.top))
+        tabs.append(tab(target, base, rows, fdr.discoveries(rows), a.top))
     got = envelope.envelope(
         MODULE, None, None, {"targets": targets, "top": a.top}, started, tabs,
         warnings=[{"code": "busqueda", "state": "info",

@@ -6,7 +6,7 @@ was never optimised on, or whether it was only being long while those markets ro
 before running it.
 
 ```
-config.yaml ─▶ inputs ─▶ mechanics ─▶ model ─▶ simulate ─▶ verdict ─▶ contract
+config.yaml ─▶ inputs ─▶ mechanics ─▶ engines/nulls ─▶ simulate ─▶ verdict ─▶ contract
  every knob    what the   what a        what could   the         what there   the
                study      trade         have         numbers     is to        tabs
                runs on    occupied      happened     under a     distrust
@@ -25,7 +25,6 @@ session would otherwise step in.
 |---|---|---|
 | `inputs/` | what is this study being run on? | touching a knob, a market declaration or a cost |
 | `mechanics/` | what did a trade occupy, and what was it worth? | touching the pricing, the bar grid or the window |
-| `model/` | what could have happened instead? | adding or changing a null model |
 | `simulate/` | what are the numbers, under a given model? | touching a test, the sweep or the portfolio |
 | `verdict/` | what is there to distrust about them? | moving a threshold or adding a warning |
 | `orchestrate/` | how does one strategy go through every market? | changing what a market's analysis runs |
@@ -51,9 +50,8 @@ else obeys one direction:
 |---|---|
 | `inputs/` | `core/` |
 | `mechanics/` | `core/`, itself |
-| `model/` | nothing inside the module |
-| `simulate/` | `inputs/`, `mechanics/`, `model/`, itself, **`verdict/fieller`** |
-| `verdict/` | `model/`, itself |
+| `simulate/` | `inputs/`, `mechanics/`, `engines/`, itself, **`verdict/fieller`** |
+| `verdict/` | `engines/`, itself |
 | `contract/` | everything above it |
 | `orchestrate/`, `load.py`, `one.py`, `many.py`, `report.py` | everything |
 
@@ -64,7 +62,6 @@ exception, `simulate/exposure.py → verdict/fieller`:
 cd strategies/crossmarket
 grep -rn "from strategies.crossmarket" inputs/
 grep -rn "from strategies.crossmarket" mechanics/ | grep -v "crossmarket\.mechanics"
-grep -rn "from strategies.crossmarket" model/    | grep -v "crossmarket\.model"
 grep -rn "from strategies.crossmarket" verdict/  | grep -vE "crossmarket\.(model|verdict)"
 grep -rn "from strategies.crossmarket" simulate/ | grep -vE "crossmarket\.(inputs|mechanics|model|simulate)"
 grep -rn "from strategies.crossmarket" contract/ | grep -vE "crossmarket\.(inputs|mechanics|model|simulate|verdict|contract)"
@@ -80,11 +77,11 @@ module that reads that file; `verdict/` is the only layer that turns a key into 
 `tooltips.py` holds the one sentence the config drawer shows for each knob. Nothing in
 `simulate/` or `contract/` holds a limit. → `inputs/README.md`, `verdict/README.md`.
 
-**What do I touch to add a placement model?** Three things: the function in `model/trade_models.py`
-(or `model/free_models.py` if it re-lays the whole run) with the signature
+**What do I touch to add a placement model?** Three things: the function in `engines/nulls/placement/trade_models.py`
+(or `free_models.py` beside it if it re-lays the whole run) with the signature
 `(held, market, draws, rng, batch)` → `(entries, holds)`; a row in `MODELS` **and** in `RANDOMISES`
 saying what it randomises; and its key in `config.yaml` under `nulls.models`. The reader's Spanish
-name goes in `render/panel.NAMES`. Nothing else changes. → `model/README.md`.
+name goes in `contract/words.NAMES`. Nothing else changes. → `engines/nulls/placement/README.md`.
 
 **Why can the panel not give different numbers from the report?** Because there is no report. The
 panel is the only entry point, nothing is written to disk and nothing is cached: every number comes

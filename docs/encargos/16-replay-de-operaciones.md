@@ -31,9 +31,9 @@ un stop o un target**, que se recalculan desde el precio de entrada nuevo.
   párate antes de escribir el recálculo a ciegas.
 - **El M1 del oro son 7.949.285 barras y se cargan en 0,4 s** con `core.barstore.source`. No hace
   falta memory-mapping ni cargar por trozos, al contrario de lo que sugiere el PDF.
-- `core.trades` y `nulls.calibrate` ya dan lo que necesitas por operación: `point_value` medido de
+- `core.trades` y `engines.market.calibrate` ya dan lo que necesitas por operación: `point_value` medido de
   los propios trades (99.85 contra 100 configurado en el oro), el coste real `bruto − neto`, y
-  `nulls.inputs.on_grid` para situar cada operación en la rejilla.
+  `engines.nulls.inputs.on_grid` para situar cada operación en la rejilla.
 
 ## 2 · El criterio de aceptación, que es el encargo entero
 
@@ -67,7 +67,7 @@ retrasadas (el caso real en vivo).
 El PDF propone Numba. **No está en `requirements.txt` y añadir una dependencia compilada a este
 proyecto es decisión del dueño** — `sudo` pide contraseña en esta máquina y las ruedas se instalan
 en `~/.local`. Antes de pedirla: el camino se puede vectorizar por lotes de operaciones con numpy
-(el mismo truco que `nulls/barrier.py` usa para el triple barrier sobre miles de corridas a la vez),
+(el mismo truco que `engines/nulls/barrier.py` usa para el triple barrier sobre miles de corridas a la vez),
 y ese módulo ya demuestra que se puede. Mide primero, pide dependencia después.
 
 ## 5 · Cómo cierras

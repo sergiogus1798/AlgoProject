@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 from core import trades as tradeio
+from engines.nulls.placement import holdfit, kernel, trade_models
 from strategies.crossmarket.mechanics import envelope, equity, pricing, strata
-from strategies.crossmarket.model import holdfit, trade_models
-from strategies.crossmarket.simulate import kernel, metrics, realrun
+from strategies.crossmarket.simulate import metrics, realrun
 
 
 def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:

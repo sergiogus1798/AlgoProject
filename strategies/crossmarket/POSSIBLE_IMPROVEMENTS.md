@@ -185,7 +185,7 @@ The owner rebuilt the panel around the backtest rather than around the tests. Al
 - **Warnings say what they do not affect.** See `verdict/alerts.py`.
 - **The Portfolio tab** answers the question the retest raises and could not: does a market break the
   combination? Marginal contribution per market, calendar-block intervals, overlap, and reordering
-  delegated to `strategies.monteCarlo.model.draws`.
+  delegated to `engines.resample.draws`.
 
 ### Discarded on 2026-09-16, with the reason, so they are not proposed again
 

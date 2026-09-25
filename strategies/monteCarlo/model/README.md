@@ -15,15 +15,13 @@ which is the only way to find out whether a verdict depended on it.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `draws.py` | **How a stream is reordered or resampled.** Five models behind one signature, with what each preserves | imported | N → index matrix |
 | `stress.py` | **Family C.** Missed entries, worse costs, degraded fills toward each trade's own MAE, wider spread | imported | stream → P&L matrix |
-| `regime.py` | Daily volatility — ATR or GARCH — and the tercile each trade was opened into | imported | bars → buckets |
 | `windows.py` | The calendar slices: rolling windows, non-overlapping blocks, and the calendar split | imported | times → positions |
 
 ## Contracts and traps
 
 - **Adding a way of randomising touches three things and nothing else.** Write a function in
-  `draws.py` with the shared signature — `(n, size, rng, block)` in, an index matrix out — add it
+  `engines/resample/draws.py` with the shared signature — `(n, size, rng, block)` in, an index matrix out — add it
   to `DRAWS`, say what it preserves in `PRESERVES`, and put it in `FAMILY`. A Family C perturbation
   is the same shape: a function in `stress.py` with `(stream, n, rng, cfg)`, a row in `MODELS` and
   in `TITLES`, and a floor in `verdict/gates.py`.
@@ -37,3 +35,7 @@ which is the only way to find out whether a verdict depended on it.
   strategy's own activity and stops being a calendar statement.
 - **MAE arrives in account currency, not points**, and each trade has its own size —
   `fill_degrade` works off the already-converted per-trade distance, not off a price.
+
+The reordering and resampling generators (`draws.py`) and the volatility regime (`regime.py`)
+moved to `engines/resample/` and `engines/regimes/` on 2026-09-25: the cross-market portfolio and
+the conditional map read them too, and a study must not import another.

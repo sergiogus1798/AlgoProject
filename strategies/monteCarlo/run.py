@@ -3,8 +3,9 @@
 import numpy as np
 import pandas as pd
 
+from engines.resample import draws
 from strategies.monteCarlo.inputs import config, costs, stream
-from strategies.monteCarlo.model import draws, stress
+from strategies.monteCarlo.model import stress
 from strategies.monteCarlo.simulate import degrade, engine, family_d, metrics, sweeps
 from strategies.monteCarlo.verdict import confidence, significance
 

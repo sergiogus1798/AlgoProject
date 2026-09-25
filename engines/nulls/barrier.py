@@ -7,7 +7,7 @@ and the same scan prices it."""
 
 import numpy as np
 
-from nulls import kernel
+from engines.nulls import kernel
 
 FIRST = {"pessimistic": "sl", "optimistic": "tp"}
 

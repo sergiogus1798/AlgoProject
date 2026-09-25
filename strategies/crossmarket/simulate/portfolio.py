@@ -10,10 +10,10 @@ parts, as portfolio/CLAUDE.md requires."""
 import numpy as np
 import pandas as pd
 
+from engines.nulls.placement import bootstrap
+from engines.resample import draws as mcdraws
 from strategies.crossmarket.mechanics import curves
-from strategies.crossmarket.model import bootstrap
 from strategies.crossmarket.simulate import metrics
-from strategies.monteCarlo.model import draws as mcdraws
 
 CHUNK = 500     # draws priced per batch; the padded position matrix is the memory, not the maths
 
@@ -199,7 +199,7 @@ def reordered(merged: pd.DataFrame, cfg: dict, rng: np.random.Generator) -> dict
 
     Returns:
         What metrics.table() returns for the reordered runs against the real one. The
-        reordering itself comes from strategies.monteCarlo.model.draws, which owns this family:
+        reordering itself comes from engines.resample.draws, which owns this family:
         duplicating it here would be two copies of one decision. It answers a different
         question from resampled() — composition is untouched, only the order changes — so net
         profit is invariant by construction and only the path statistics move.

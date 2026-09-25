@@ -4,8 +4,9 @@ tercile, plus the two time series its page draws."""
 import numpy as np
 import pandas as pd
 
+from engines.regimes import regime
 from strategies.monteCarlo.inputs import config
-from strategies.monteCarlo.model import regime, windows
+from strategies.monteCarlo.model import windows
 from strategies.monteCarlo.simulate import engine, metrics, stitch
 from strategies.monteCarlo.verdict import confidence
 

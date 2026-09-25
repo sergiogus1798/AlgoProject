@@ -15,9 +15,9 @@ Full tables: `docs/manual/12-rendimiento.md`.
 - `crossmarket.report` = `(3.36 + 0.00168 × draws)` ms/trade/core (3.82 · 3.81 · 3.98 at 500 draws; batches of 8: 3.94 and 3.77 ms/trade = 623.50 s/158,415, 593.94 s/157,571).
   500 strategies = 12.0 M trades: 14 h at 500 draws, ~67 h at config's 10,000 — single core. `np.add.at` → `np.bincount` only 1.6–2.5×; `_losing_run` already vectorised.
 - Per strategy, 8 strategies: 5,338–43,109 foreign-market trades; step 8 costliest/cheapest 83.4× (r = 0.982 time vs trades).
-- Gate: 60 ms/strategy marginal, 500 in 32 s; 88 % is the monkey: 28 % recomputing ATR per strategy (`nulls/simulate.py:fixed()` → `calibrate.atr`), 13 % filtering the trade table by an `object` column (`gate/monkey.py`).
+- Gate: 60 ms/strategy marginal, 500 in 32 s; 88 % is the monkey: 28 % recomputing ATR per strategy (`engines/nulls/simulate.py:fixed()` → `calibrate.atr`), 13 % filtering the trade table by an `object` column (`gate/monkey.py`).
   Cached ATR + grouping by identity + fork: `gate.report` 31.1 → 6.1 s, 500×29 `scorecard` identical.
-- `nulls/stats.py:measure()` built all five stats then filtered: 22.45 ms vs 1.75 ms `sharpe` only (12.8×; 2,000 runs × 570 trades) = 46 % of step 8; `nulls.report` (all five) 22.32 ms.
+- `engines/nulls/stats.py:measure()` built all five stats then filtered: 22.45 ms vs 1.75 ms `sharpe` only (12.8×; 2,000 runs × 570 trades) = 46 % of step 8; `nulls.report` (all five) 22.32 ms.
 - ⚠️ `crossmarket/simulate/stress.py:degraded()` built 25,000 runs × trades with three float64 arrays of booleans: 816 MB/market → 94.5 GB (aborted), 48 procs 89 GB (kernel killed VSCode). Chunks of 500 runs: 140 MB; 72 procs 22 GB. Output verified identical.
 - Memory binds before time: `gate.harvest` 4.56 GB with 1,000 files; `export_retest` 6.3 GB with 500 × 9 markets. `retest.ingest` read 7.5 GB by summed RSS.
 - SQX is more efficient with big batches: build 0.32 s/strategy at 50, 0.06 s at 500; crossmarket 9 markets 4.9 s at 17, 0.59 s at 500 → linear extrapolation overestimates SQX 4–8×.

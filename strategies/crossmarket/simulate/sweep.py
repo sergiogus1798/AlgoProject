@@ -3,8 +3,8 @@
 import numpy as np
 import pandas as pd
 
+from engines.nulls.placement import trade_models
 from strategies.crossmarket.mechanics import envelope
-from strategies.crossmarket.model import trade_models
 
 FULL = "full"
 

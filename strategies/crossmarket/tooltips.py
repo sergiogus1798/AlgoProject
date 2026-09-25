@@ -81,7 +81,7 @@ TIPS = {
                              "operaciones sueltas destruye justo eso.",
     "portfolio.draws": "Remuestreos y barajados de la cuenta combinada.",
     "portfolio.order_block": "Operaciones por bloque al barajar el orden del portfolio, de "
-                             "strategies.monteCarlo.model.draws.",
+                             "engines.resample.draws.",
     "equity.risk_target_dd": "Caída máxima a la que se reescala cada mercado para compararlos "
                              "a riesgo igual. 0,10 = cada mercado se dimensiona hasta que su "
                              "peor caída es el 10% de la cuenta.",

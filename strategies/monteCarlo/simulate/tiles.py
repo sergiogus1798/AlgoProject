@@ -2,7 +2,8 @@
 
 import numpy as np
 
-from strategies.monteCarlo.model import draws, stress
+from engines.resample import draws
+from strategies.monteCarlo.model import stress
 from strategies.monteCarlo.simulate import kernel, metrics
 
 # Bytes one trade of one simulated path costs while its strip is alive: the (rows, trades)

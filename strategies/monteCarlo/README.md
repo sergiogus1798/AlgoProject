@@ -89,7 +89,7 @@ Family C only, not the rest.
 
 ## Adding a way of randomising
 
-Write a function in `model/draws.py` with the shared signature — `(n, size, rng, block)` in, an
+Write a function in `engines/resample/draws.py` with the shared signature — `(n, size, rng, block)` in, an
 index matrix out — add it to `DRAWS`, say what it preserves in `PRESERVES`, and put it in `FAMILY`.
 A Family C perturbation is the same: a function in `model/stress.py`, a row in `MODELS`, and a floor
 in `verdict/gates.py`. Nothing else changes.

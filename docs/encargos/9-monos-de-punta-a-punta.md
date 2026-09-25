@@ -42,7 +42,7 @@ falsos positivos de la cadena entera — sin generar ni una serie: `gate/monkey.
 ### 2.1 · La población nula — **se simula en Python. Decisión del dueño, 2026-09-24**
 
 Diez mil poblaciones de operaciones de **entrada aleatoria** sobre las mismas barras, la misma
-ventana y los mismos costes que la población real, generadas por `nulls/model.py`, que ya hace
+ventana y los mismos costes que la población real, generadas por `engines/nulls/model.py`, que ya hace
 exactamente esto y está reconciliado contra los precios reales (🔬 `open-open` a 0.999985).
 
 **Nada de hacer que SQX construya monos.** Se evaluó y el dueño lo descartó: un build con paleta

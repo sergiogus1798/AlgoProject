@@ -6,7 +6,7 @@ from collections.abc import Callable
 import numpy as np
 
 from core.significance import min_track_record, moments
-from strategies.crossmarket.model import bootstrap
+from engines.nulls.placement import bootstrap
 
 __all__ = ["moments", "min_track_record", "bootstrap_metric", "profit_factor",
            "expectancy"]

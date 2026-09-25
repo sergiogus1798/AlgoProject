@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from core.study import config as study_config
-from nulls import inputs as nullinputs
+from engines.nulls import inputs as nullinputs
 
 CONFIG = Path(__file__).with_name("config.yaml")
 

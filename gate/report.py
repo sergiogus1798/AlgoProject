@@ -7,8 +7,8 @@ from datetime import date
 from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import output
+from engines.nulls import inputs as null_inputs
 from gate import cascade, inputs, many
-from nulls import inputs as null_inputs
 
 
 def main() -> None:

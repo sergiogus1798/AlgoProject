@@ -22,5 +22,5 @@ TIPS = {
     "familia.alpha": "Nivel de la corrección por multiplicidad sobre todas las p del mono. "
                      "Blanda: informa, no elimina.",
     "monkey.draws": "Corridas nulas por estrategia; el resto de mandos del nulo son los de "
-                    "nulls/config.yaml.",
+                    "engines/nulls/config.yaml.",
     "monkey.timeframe": "Las barras sobre las que se colocan los monos."}

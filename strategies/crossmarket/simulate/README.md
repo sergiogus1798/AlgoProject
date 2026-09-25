@@ -4,7 +4,7 @@ The execution layer: it prices runs, real and random, and computes every statist
 reports. It **chooses no model** — the model arrives as a key from `config.yaml` — and it **judges
 nothing**: every number here is handed on with no threshold applied to it.
 
-**Imports from:** `inputs/`, `mechanics/`, `model/`, itself, and `verdict/fieller` (one declared
+**Imports from:** `inputs/`, `mechanics/`, `engines/nulls/placement`, itself, and `verdict/fieller` (one declared
 exception, below)
 **Consumed by:** `views.py`, `render/`, `explorer/`
 **Must not contain:** a threshold, a warning's wording, a pass/fail, or any HTML
@@ -12,7 +12,6 @@ exception, below)
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `backtest.py` | Prices the real run and N random ones identically, in dollars, in batches | imported | fixed + bars + model → table, shapes, cone |
-| `kernel.py` | A batch of random runs priced, measured and drawn as equity in one compiled numba pass; `price()`, `metrics.paths` and `equity.path` are the definition it is checked against | imported | entries + holds → statistics, curves |
 | `realrun.py` | The real backtest's own statistics — over **everything SQX reported** and over the grid-locatable subset, which are not the same population — and the mechanical checks | imported | fixed + bars → stats, checks |
 | `metrics.py` | **What a run is worth.** Net, drawdown, Ret/DD, Sharpe, PF and the losing run of thousands of runs at once, each with its own good side | imported | P&L matrix → statistics |
 | `sweep.py` | **The window sweep.** Calendar blocks of each size, the trades and free room in each, and a free-placement model confined to them | imported | bars + trades + model → blocks, entries, holds |
@@ -198,7 +197,7 @@ null median of −0.0860, **p = 0.0010**, z = +3.36.
 **What makes it correctly sized is the coupling, not the pooling.** 🔬 Until 2026-09-17 the draws
 were independent across markets — the correlation between draw *d*'s `mean_r` on Brent and on silver
 was **−0.0016** — because sharing `nulls.seed` couples nothing: every market builds its own generator
-and consumes it at its own shape. `model/trade_models.semester_shift()` now draws the displacement of
+and consumes it at its own shape. `engines/nulls/placement/trade_models.semester_shift()` now draws the displacement of
 each **calendar semester** from a generator keyed by that semester, so draw *d* moves 2013H1 the same
 way everywhere. Measured after the change, 83.5% of draws displace a shared semester by exactly the
 same number of weeks in both markets.
@@ -231,7 +230,7 @@ Two different ways of asking how much of it is luck, because they are not the sa
 **calendar-block resampling** (`portfolio.block_weeks`, default four weeks) draws whole weeks, so
 every market's trades inside a block travel together and a week that was bad for two markets at once
 stays bad for both — resampling single trades would destroy exactly the dependence being measured;
-and **reordering**, delegated to `strategies.monteCarlo.model.draws`, which leaves composition
+and **reordering**, delegated to `engines.resample.draws`, which leaves composition
 untouched so net profit is invariant by construction and only the path statistics move.
 
 It is one strategy in N markets, **not** N strategies: building the owner's real portfolio is

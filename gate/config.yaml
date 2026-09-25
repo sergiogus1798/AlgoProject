@@ -83,5 +83,5 @@ screens:
       a nadie. El valor de la criba es el TAMAÑO del grupo
 
 monkey:
-  draws: 2000        # corridas nulas por estrategia. nulls/config.yaml manda en el resto
+  draws: 2000        # corridas nulas por estrategia. engines/nulls/config.yaml manda en el resto
   timeframe: M30

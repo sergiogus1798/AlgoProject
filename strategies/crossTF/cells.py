@@ -4,23 +4,23 @@ import numpy as np
 import pandas as pd
 
 from core import tradestore
-from nulls import model, simulate, verdict
+from engines.nulls import model, simulate, verdict
 
 
 def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
             statistic: str, rung: str, key: str) -> dict:
     """One cell's statistic, its empirical p, and what there is to distrust about them.
 
-    The statistic is priced from the bars by `nulls.simulate`, never read off SQX, because
+    The statistic is priced from the bars by `engines.nulls.simulate`, never read off SQX, because
     the cell and its nulls have to come out of the same three lines for the p to mean
     anything.
 
     Args:
         rows: That cell's trades, as `tradestore.block` returned them.
         frame: The bars of that cell's own timeframe.
-        nullcfg: What `nulls.inputs.config` returned.
-        statistic: A key of `nulls.stats.measure`.
-        rung: A key of `nulls.model.RUNGS`.
+        nullcfg: What `engines.nulls.inputs.config` returned.
+        statistic: A key of `engines.nulls.stats.measure`.
+        rung: A key of `engines.nulls.model.RUNGS`.
         key: What identifies the cell, strategy and block; it seeds the cell's monkeys.
 
     Returns:
@@ -53,7 +53,7 @@ def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
         plan: What `inputs.plan` returned.
         packed: What `inputs.trades` returned.
         frames: Timeframe to bars, from `inputs.bars`.
-        nullcfg: What `nulls.inputs.config` returned.
+        nullcfg: What `engines.nulls.inputs.config` returned.
         cfg: What `inputs.config` returned.
 
     Returns:

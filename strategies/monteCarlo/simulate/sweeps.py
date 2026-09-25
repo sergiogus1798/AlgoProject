@@ -1,7 +1,7 @@
 """Which reordering and resampling runs a stream of this size gets, and the numbers they give."""
 
+from engines.resample import draws
 from strategies.monteCarlo.inputs import config
-from strategies.monteCarlo.model import draws
 from strategies.monteCarlo.simulate import engine
 
 

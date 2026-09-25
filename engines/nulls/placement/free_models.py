@@ -6,7 +6,7 @@ the registry keeps them beside `block_shift` rather than instead of it."""
 import numpy as np
 import pandas as pd
 
-from strategies.crossmarket.model.holdfit import MIN_HOLD, fit
+from engines.nulls.placement.holdfit import MIN_HOLD, fit
 
 
 def _lay(holds: np.ndarray, gaps: np.ndarray, n_bars: int,

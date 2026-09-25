@@ -133,13 +133,13 @@ orden de magnitud, no promesa. **Remídelo limpio si vas a prometer algo.**
 | | tottime | % |
 |---|---|---|
 | `monkey.mono` (cumtime) | 29,5 | 88 |
-| ↳ `nulls/simulate.py:nulls` | 15,1 | 45 |
-| ↳ `nulls/simulate.py:fixed` | 9,9 | 30 |
-| ↳ ↳ **`nulls/calibrate.py:atr`** | **9,2** | **28** |
+| ↳ `engines/nulls/simulate.py:nulls` | 15,1 | 45 |
+| ↳ `engines/nulls/simulate.py:fixed` | 9,9 | 30 |
+| ↳ ↳ **`engines/market/calibrate.py:atr`** | **9,2** | **28** |
 | `comp_method_OBJECT_ARRAY` | 4,2 | 13 |
-| `nulls/stats.py:profit_factor` | 3,6 | 11 |
+| `engines/nulls/stats.py:profit_factor` | 3,6 | 11 |
 
-1. 🔬 **`nulls/simulate.py:fixed()` recalcula el ATR sobre las MISMAS barras, una vez por
+1. 🔬 **`engines/nulls/simulate.py:fixed()` recalcula el ATR sobre las MISMAS barras, una vez por
    estrategia.** `calibrate.atr(frame, cfg["barrier"]["atr_bars"])` y `frame` es idéntico en las 500
    llamadas: 234 llamadas × 39 ms = **9,2 s de 33**. Depende sólo de `(frame, atr_bars)`. Cachearlo
    lo deja en 39 ms totales. **No cambia ningún número.**

@@ -2,7 +2,8 @@
 
 import numpy as np
 
-from strategies.monteCarlo.model import draws, stress
+from engines.resample import draws
+from strategies.monteCarlo.model import stress
 
 STEPS = 200   # points kept per curve; an SVG cannot show more and the file stays small
 

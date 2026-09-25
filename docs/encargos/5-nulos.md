@@ -114,7 +114,7 @@ para confirmar lo que P1 seleccione.
 1. **El export completo de operaciones.** Hoy el módulo corre sobre las 757 de `MC_Trades`. Para
    las 10.000 hay que exportarlas: ~265 MB de Parquet (nada), pero el tiempo de `orderstocsv` en
    SQX **no está medido** y es lo único sin cuantificar del plan.
-2. ~~El punto de entrada de P1~~ **construido 2026-09-23**: `tasks/analysis/excess.py` +
+2. ~~El punto de entrada de P1~~ **construido 2026-09-23**: `engines/inference/excess.py` +
    `tasks/reports/nulls.py`. Reporta observado contra esperado por azar, el exceso, la estimación
    de Storey, cuántas son nombrables bajo Benjamini-Hochberg, y detecta solo si la muestra fue
    preseleccionada. ⚠️ Corrido sobre `MC Trades` salta ese aviso: el 100 % de esas 757 gana dinero

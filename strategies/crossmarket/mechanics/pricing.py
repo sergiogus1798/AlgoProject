@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 
 from core import trades as tradeio
+from engines.market.calibrate import CONVENTIONS, atr, point_value
 
-ATR_BARS = 14
-CONVENTIONS = {"open-open": ("Open", "Open"), "open-close": ("Open", "Close"),
-               "close-close": ("Close", "Close"), "close-open": ("Close", "Open")}
+# The ATR, the point value and the fill conventions are the null engine's own
+# (engines/market/calibrate.py): until 2026-09-25 this file held a second copy of each.
 
 
 def require_long_only(trades: pd.DataFrame) -> None:
@@ -26,24 +26,6 @@ def require_long_only(trades: pd.DataFrame) -> None:
     kinds = set(trades["Type"].unique())
     if kinds != {"Buy"}:
         raise ValueError(f"cross-market pricing is long-only; found {sorted(kinds)}")
-
-
-def atr(bars: pd.DataFrame, window: int = ATR_BARS) -> np.ndarray:
-    """Average true range, as a plain rolling mean of the true range.
-
-    Args:
-        bars: One market's bars.
-        window: Bars averaged over.
-
-    Returns:
-        One value per bar; the first `window` are NaN. Wilder's smoothing is deliberately not
-        used: nothing here compares against an indicator SQX computed, so the simpler
-        definition is the honest one.
-    """
-    prev = bars["Close"].shift(1)
-    spread = pd.concat([bars["High"] - bars["Low"], (bars["High"] - prev).abs(),
-                        (bars["Low"] - prev).abs()], axis=1).max(axis=1)
-    return spread.rolling(window).mean().to_numpy()
 
 
 def unit(bars: pd.DataFrame) -> float:
@@ -138,23 +120,6 @@ def fill_profile(trades: pd.DataFrame, bars: pd.DataFrame, held: pd.DataFrame,
     return {"offset": offset, "exit_offset": float(np.median(b)),
             "error": max(abs(offset), abs(float(np.median(b)))),
             "at_open": float(np.mean(np.abs(a - offset) <= tolerance))}
-
-
-def point_value(trades: pd.DataFrame) -> float:
-    """Account currency per 1.0 of price per 1.0 lot, measured from the trades themselves.
-
-    Args:
-        trades: One market's trades.
-
-    Returns:
-        The slope of profit against price move times size. Measured rather than read from an
-        asset file because a cross-market study prices markets the base asset's file knows
-        nothing about: on this install it recovers 99.8 for gold against a configured 100, and
-        5002 for silver, whose contract is 5,000 ounces. The fit is near exact (R² 0.999); what
-        is left over is swap, which depends on how many nights each trade was held.
-    """
-    move = ((trades["Close price"] - trades["Open price"]) * trades["Size"]).to_numpy()
-    return float(np.polyfit(move, trades["Profit/Loss"].to_numpy(), 1)[0])
 
 
 def cost_rate(trades: pd.DataFrame, value: float) -> float:

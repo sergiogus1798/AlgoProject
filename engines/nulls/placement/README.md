@@ -1,4 +1,4 @@
-# crossmarket/model — what are we pretending could have happened instead?
+# engines/nulls/placement — trades re-laid on another market's bars
 
 The null models, and the resampling they are built from. Every module here answers "where else could
 these trades have gone": another placement in the sample, another set of holds, another draw of the
@@ -11,11 +11,13 @@ is the only way to find out whether a conclusion depended on it. `POSSIBLE_IMPRO
 about this layer and should be read before changing anything in it.
 
 **Imports from:** nothing outside itself — numpy, pandas and scipy only
-**Consumed by:** `simulate/`, `verdict/`, and `render/panel.py` for its label tables
+**Consumed by:** `strategies/crossmarket` — its `simulate/`, `verdict/` and `contract/`
 **Must not contain:** a price, a P&L, a percentile, a threshold, or any wording of a verdict
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `__init__.py` | Names what the package is; holds no code | — | — |
+| `kernel.py` | A batch of random runs priced, measured and drawn as equity in one compiled pass | imported | draws + bars → statistics, curves |
 | `trade_models.py` | **How random trades are drawn.** The registry, the Friday truncation every model gets, the re-cut at the next trade, and the two that randomise placement only — `block_shift` and `regime_strata` | imported | envelope → entries, holds |
 | `free_models.py` | The free-placement family: the three that re-lay the whole run anywhere in the window | imported | envelope → entries, holds |
 | `holdfit.py` | Fits a discrete distribution to the real holds and gaps, and says whether it fits | imported | counts → sampler, goodness |
@@ -102,7 +104,7 @@ which a null can reproduce exactly. `Exit Signal` — 16.6% of trades — is not
     because trades in different weekday-hour groups wrap by different numbers of weeks. Left as it is
     **on purpose** — the owner fixed it as the reference the window sweep is read against — and
     recorded rather than changed.
-- **`bootstrap.block_bootstrap` is a deliberate copy** of `strategies.monteCarlo.model.draws`'s. Two
+- **`bootstrap.block_bootstrap` is a deliberate copy** of `engines.resample.draws`'s. Two
   callers here need it, which under `CODESTYLE.md` rule 5 is not yet "shared"; crossmarket keeps its
   own rather than importing across studies. `simulate/portfolio.py` is the one place that does import
   monteCarlo, for the reordering family it owns.

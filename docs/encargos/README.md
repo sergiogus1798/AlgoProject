@@ -37,7 +37,7 @@ escriben en él.
 ## La tanda del PDF `PARAMETER_SPACE_TESTS`, 2026-09-24
 
 Del PDF del dueño sobre la nube de clones. Lo implementable **ya está implementado** y vive en
-`strategies/parameterCloud/` (A1, A2, A3, B2, C1) y en `nulls/filter.py` (la mitad del D1 que no
+`strategies/parameterCloud/` (A1, A2, A3, B2, C1) y en `engines/nulls/filter.py` (la mitad del D1 que no
 necesita SQX). Aquí quedan los dos que exigen cosas que hoy no tenemos:
 
 | fichero | qué construye | qué lo bloquea |

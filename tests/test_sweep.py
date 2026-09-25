@@ -9,8 +9,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engines.nulls.placement import trade_models
 from strategies.crossmarket.mechanics import envelope
-from strategies.crossmarket.model import trade_models
 from strategies.crossmarket.simulate import sweep
 
 FREE = ("segment_permute", "resampled_holds", "fitted_holds")

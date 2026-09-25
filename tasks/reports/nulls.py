@@ -10,8 +10,8 @@ from core.manifest import read as read_manifest
 from core.paths import DATA, report_dir
 from core.study import blocks, output, result as envelope
 from core.study.render import markdown
-from tasks.analysis import excess as measure
-from tasks.analysis.correlations import discoveries
+from engines.inference import excess as measure
+from engines.inference.fdr import discoveries
 
 MODULE = "tasks.reports.nulls"
 ALPHA = 0.05

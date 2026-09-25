@@ -9,8 +9,7 @@ batch)` in and `(entries, holds)` out, and declares in RANDOMISES what it change
 import numpy as np
 import pandas as pd
 
-from strategies.crossmarket.model.free_models import (fitted_holds, resampled_holds,
-                                                      segment_permute)
+from engines.nulls.placement.free_models import fitted_holds, resampled_holds, segment_permute
 
 
 def semester_shift(seed: int, period: int, draws: int, batch: int) -> np.ndarray:

@@ -8,8 +8,8 @@ not there."""
 import numpy as np
 import pandas as pd
 
+from engines.nulls.placement import bootstrap
 from strategies.crossmarket.mechanics import pricing
-from strategies.crossmarket.model import bootstrap
 from strategies.crossmarket.verdict import fieller
 
 Z90 = 1.6448536269514722   # one-sided 95% normal quantile: the 90% interval bootstrap.ci uses
