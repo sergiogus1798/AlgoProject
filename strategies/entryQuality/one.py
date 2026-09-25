@@ -97,7 +97,7 @@ def run(strategy: str, export: Path, cfg: dict) -> dict:
     found["sides"] = by_side(found["found"], found["walk"], found["keep"])
     kept, total = int(found["keep"].sum()), int(found["keep"].size)
     return envelope.envelope(
-        MODULE, strategy, output.identify(export, [strategy])[strategy], cfg, started,
+        MODULE, strategy, output.identify(export.parent, [strategy])[strategy], cfg, started,
         [contract.eratio_tab(found, cfg), contract.delay_tab(found, cfg)],
         warnings=[{"code": "tier_1", "state": "info",
                    "text": "El retraso supone que las salidas no se mueven. Con stop o target "

@@ -24,9 +24,17 @@ def folder(export: Path, module: str) -> Path:
     return report_dir(source["project"], source["databank"], export.parent.name) / module
 
 
-def identify(export: Path, names: list[str]) -> dict[str, str | None]:
-    """The identity of each strategy an export names, read from its databank's .sqx files."""
-    source = manifest.read(export.parent)["source"]
+def identify(folder: Path, names: list[str]) -> dict[str, str | None]:
+    """The identity of each strategy an export names, read from its databank's .sqx files.
+
+    Args:
+        folder: The export folder that holds its manifest.json.
+        names: Strategy names as the export spells them.
+
+    Returns:
+        name -> identity, None where no install still holds the .sqx.
+    """
+    source = manifest.read(folder)["source"]
     return identity.lookup(source["project"], source["databank"], names)
 
 

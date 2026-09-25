@@ -42,7 +42,7 @@ def load(export: Path, scaling: Path, feed: str, cfg: dict) -> dict:
     mothers = sorted(plan["mother"].unique())
     return {"plan": plan, "trades": inputs.trades(export), "scaling": table,
             "frames": inputs.bars(feed, cfg["run"]["blocks"]), "nullcfg": nullcfg,
-            "feed": feed, "identity": output.identify(export, mothers)}
+            "feed": feed, "identity": output.identify(export.parent, mothers)}
 
 
 def run(got: dict, cfg: dict) -> dict:

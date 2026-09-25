@@ -8,7 +8,7 @@ out of sample*. The export already existed — `sqx/export/export_wfm.py`, `core
 It never talks to SQX. The owner runs the cross-check; this reads what came out.
 
 ```
-config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ render
+config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ many
  every knob    cells,     what the  rho per    predicts/  the report
                steps,     geometry  cell,      blind/
                picks      allows    drift      perverse
@@ -20,13 +20,14 @@ config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ rend
 | `model/` | what may be pooled with what? | changing the unit of observation |
 | `measure/` | what are the numbers? | touching the correlation or the drift |
 | `verdict/` | what do they mean? | moving a threshold |
-| `render/` | how is it read? | adding a table |
 
 | file | what it does | run it |
 |---|---|---|
 | `run.py` | One export's whole reading | imported |
-| `report.py` | The command | `python3 -m strategies.walkForwardMatrix.report --project XAUUSD --databank WFM` |
-| `config.yaml` | Every tunable | edited |
+| `many.py` | The export as one result — verdicts with each strategy's ρ grid, the window geometry, the drift, the two axes — and each strategy's own | imported — the window reads it |
+| `report.py` | The command: `reports/<P>/<D>/<day>/wfm/` with `verdict.csv`, `cell_correlations.csv`, the page and one per strategy | `python3 -m strategies.walkForwardMatrix.report --project XAUUSD --databank WFM` |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
+| `config.yaml` | Every tunable | edited, or `--set section.key=value` |
 
 ## The three things this module exists to get right
 

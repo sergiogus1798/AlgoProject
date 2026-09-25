@@ -4,14 +4,12 @@
 import argparse
 import sys
 from datetime import date
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core.paths import report_dir
-from strategies.walkForwardMatrix import run
+from core.study import output, verdicts
+from core.study.render import markdown
+from strategies.walkForwardMatrix import many
 from strategies.walkForwardMatrix.inputs import config
-from strategies.walkForwardMatrix.render import text
 
 
 def main() -> None:
@@ -21,20 +19,23 @@ def main() -> None:
     ap.add_argument("--databank", default="WFM",
                     help="export folder name, underscores not spaces")
     ap.add_argument("--day", help="export date; default is the most recent one")
+    ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[])
     args = ap.parse_args()
 
     directory = config.export(args.project, args.databank, args.day)
-    result = run.read(directory, config.load())
-
-    out = report_dir(args.project, args.databank, date.today().isoformat())
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "walkforwardmatrix.md").write_text(text.page(result), encoding="utf-8")
-    result["cells"].to_csv(out / "cell_correlations.csv", index=False)
-
-    for strategy, got in result["verdicts"].items():
-        print(f"{strategy:22s} {got['verdict']:9s} rho={got['rho']:+.3f} "
-              f"[{got['low']:+.3f}, {got['high']:+.3f}]  "
-              f"celdas={got['cells']:3d}  deriva={got['share_changed']:.0%}")
+    got = many.run(directory, config.load(args.overrides))
+    out = report_dir(args.project, args.databank, date.today().isoformat()) / "wfm"
+    title = f"Walk-Forward Matrix — {args.project} / {args.databank}"
+    output.population(out, "wfm", got["population"], title,
+                      "¿Lo que optimiza bien predice lo que va bien después?")
+    for m in got["members"]:
+        output.member(out, m, f"Walk-Forward Matrix — {m['strategy']}")
+    got["cells"].to_csv(out / "cell_correlations.csv", index=False)
+    verdicts.write(out, got["table"], directory, " ".join(sys.argv), args.overrides)
+    for r in got["table"].itertuples():
+        print(f"{r.strategy:22s} {r.verdict:9s} rho={r.rho:+.3f} [{r.low:+.3f}, "
+              f"{r.high:+.3f}]  celdas={r.cells:3d}  deriva={r.share_changed:.0%}")
+    print(markdown.render(got["population"], title))
     print(f"\n-> {out}")
 
 

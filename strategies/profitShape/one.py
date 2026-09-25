@@ -69,7 +69,7 @@ def run(strategy: str, export: Path, cfg: dict) -> dict:
     started = time.time()
     found = read(export, strategy, cfg)
     return envelope.envelope(
-        MODULE, strategy, output.identify(export, [strategy])[strategy], cfg, started,
+        MODULE, strategy, output.identify(export.parent, [strategy])[strategy], cfg, started,
         [contract.concentration_tab(found["concentration"], cfg),
          contract.dependence_tab(found["dependence"], cfg), contract.breaks_tab(found["breaks"])],
         warnings=[{"code": "descriptivo", "state": "info",
