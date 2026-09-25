@@ -19,6 +19,7 @@ from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session
 from sqx.projects.resources import borrow_symbol
 from sqx.projects import summary
+from sqx.projects import workflow as wf
 from xml.etree import ElementTree
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
@@ -80,7 +81,7 @@ def sync_databanks(config: str) -> tuple[str, list[str]]:
 def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
           minutes: int, donor: Path, segment: str | None = None,
           tasks: tuple = ("Build",), only: set | None = None,
-          session_from: Path | None = None, silence: tuple = ()) -> dict:
+          session_from: Path | None = None, silence: tuple = (), workflow: bool = False) -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -102,12 +103,13 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             a selection, and then the only thing the study can say is how many survived.
         session_from: A project.cfx that defines the asset's session, for when the donor does
             not. Read only. Omit when the donor already carries it.
+        workflow: Every workflow step's task in this one project, only Build and OOS on
+            (owner, 2026-09-25). Overrides `tasks` and `only`.
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
-        databanks switched to syncing, and the verification. Every step here was a
-        hand-edit of the task XML until 2026-09-23, which is what made the chain
-        impossible to embed in an application.
+        databanks switched to syncing, and the verification — each one a hand-edit of the
+        task XML until 2026-09-23.
     """
     install = worker_dir(role)
     # Every library folder holds a file literally called template.sqx, so installing it
@@ -120,7 +122,10 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
 
     with zipfile.ZipFile(donor) as z:
         members = {n: z.read(n) for n in z.namelist()}
+    if workflow:
+        tasks, only = ("Build", "Retest"), wf.kept_members(members["config.xml"].decode("utf-8"))
     members, kept = keep(members, set(tasks), only=only)
+    added = wf.complete(members) if workflow else []
 
     borrowed = (borrow_session(members, load(symbol)["session"], session_from)
                 if session_from else None)
@@ -146,6 +151,8 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
         members[member] = text.encode("utf-8")
 
     chained = chain_databanks(members)
+    if workflow:
+        wf.rewire(members)
 
     out = install / "user/projects" / name / "project.cfx"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -154,6 +161,8 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             z.writestr(member, blob)
 
     costs = configure(out, symbol, segment, timeframe)
+    if workflow:
+        wf.finish(out, symbol)
     with zipfile.ZipFile(out) as z:
         final = {n: z.read(n) for n in z.namelist()}
     doc = next((c for _, c in costs.values() if c.get("generator")), {})
@@ -162,7 +171,7 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             "session_borrowed_from": str(session_from) if session_from else None,
             "session_borrowed_into": borrowed,
             "feed": load(symbol)["sqx_symbol"], "feed_replaced": replaced,
-            "template": str(installed_template), "tasks": kept["kept"],
+            "template": str(installed_template), "tasks": kept["kept"], "added": added,
             "databanks": kept["databanks"], "synced_to_disk": synced,
             "chain": chained,
             "max_strategies": strategies, "minutes": minutes, "silenced": quiet,
@@ -196,6 +205,7 @@ def main() -> None:
                          "e.g. Retest — the task then reads instead of filtering")
     ap.add_argument("--only", help="comma-separated task XML files to narrow --tasks to, "
                     "e.g. Build-Task3.xml,Retest-Task1.xml")
+    ap.add_argument("--workflow", action="store_true", help="every workflow task, Build+OOS on")
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
     a = ap.parse_args()
 
@@ -219,7 +229,7 @@ def main() -> None:
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe, a.max_strategies,
                  a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')),
                  set(a.only.split(',')) if a.only else None, a.session_from,
-                 tuple(x for x in a.silence.split(',') if x))
+                 tuple(x for x in a.silence.split(',') if x), a.workflow)
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
     # A task with no priced Setup is one still trading the donor's market at the donor's

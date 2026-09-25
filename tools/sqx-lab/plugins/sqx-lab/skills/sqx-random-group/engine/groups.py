@@ -328,7 +328,14 @@ def hybrid_ref(block: ET.Element, optimize: dict[str, str] | None = None) -> str
         if key in optimize:
             extra = f' generate="random" randomValue="{_esc_attr(optimize[key])}"'
         parts.append(f"<Param{_attrs(p)}{extra}>{_esc_text(body)}</Param>")
-    return f"<Item{_attrs(block)}>{''.join(parts)}</Item>"
+    # LOCAL PATCH (AlgoProject, 2026-09-25): customBlocks.xml on build 144 stores no
+    # categoryType/help/strategyType on any CBlock_, but every group item SQX itself
+    # writes carries all three. Copying verbatim emitted a reference SQX never produces.
+    head = ET.Element("Item", dict(block.attrib))
+    head.attrib.setdefault("help", block.get("name", ""))
+    head.attrib.setdefault("categoryType", "Custom blocks")
+    head.attrib.setdefault("strategyType", "Standard")
+    return f"<Item{_attrs(head)}>{''.join(parts)}</Item>"
 
 
 # ---------------------------------------------------------------------------

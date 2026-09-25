@@ -49,11 +49,11 @@ execute:
   # other command while it runs, so a sync can never delete the .sqx it is holding -- which
   # is the whole reason the role exists (knowhow/sqx-drive/three-install-topology.md).
   role: custodian
-  # ⚠️ `Retester` is the STOCK project and using it breaks hard rule 10 (owner, 2026-09-23:
-  # every run in a custom project). This predates the rule. Migration: build a one-task
-  # Retest project of its own -- `sqx.projects.builder <SYM>_variantes --tasks Retest
-  # --only Retest-Task1.xml` -- and name it here. OPEN.md §38, and the `/variants` skill.
-  project: Retester       # a 1-task Retest harness: no Build task, no GoToTask, nothing to loop
+  # The batch retest (`sqx.variants.execute`) no longer reads this: it takes `--project`,
+  # the workflow's own project (owner, 2026-09-25), and refuses a stock one. Only the SPP
+  # reconnaissance harness of the unattended pipeline (`sqx.variants.spp`, pipeline/recipe.yaml)
+  # still runs here -- ⚠️ on the STOCK `Retester`, against hard rule 10. OPEN.md §38.
+  project: Retester
   # ⚠️ Estos dos son los del harness de una sola tarea que usa `spp.py` (el reconocimiento
   # SPP de una madre). El RETEST DEL LOTE ya no los usa: sus databanks salen de `wfc:` en
   # assets/_build.yaml — el de entrada y uno de salida por tramo—, que es donde se declara

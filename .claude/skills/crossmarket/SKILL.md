@@ -52,18 +52,20 @@ when reporting rather than choosing one.
 
 ## Set it up and run it
 
+It runs in the workflow's own project (`/template-run` created it with `--workflow`), on the
+survivors `/oos-gate` left in `OOS`:
+
 ```bash
 python3 -m core.assets <SYMBOL>                          # hard rule 5, blocking
-python3 -m sqx.projects.builder <P> --timeframe <TF> --symbol <SYMBOL> --role custodian \
-    --template <plantilla> --tasks Build,Retest --only <build>.xml,Retest-Task3.xml
 python3 -m sqx.projects.crossmarket <SYMBOL> --cfx <install>/user/projects/<P>/project.cfx \
-    --task Retest-Task3.xml --timeframe <TF>
+    --timeframe <TF>
 ```
 
-`Retest-Task3.xml` is the donor's additional-markets task; it reads and writes
-`Retest Markets - Family`. Then start the custodian, `action=start`, poll, stop — the run half is
-`/template-run`, and its rules hold here: `start` and never `startOnlyTask`, `action=stop` before a
-second start, one job at a time, always end stopped.
+It writes the task titled `Retest Markets - Family` (reads `OOS`, writes `Retest Markets - Family`)
+and leaves it the only active task. The install must be stopped — it refuses otherwise (hard rule 4).
+A project built for this study alone, without `--workflow`, needs `--task <file>` and prints a ⚠️:
+check what is active before starting it. Then the run half of `/template-run`: custodian, `stop`
+then `start`, only `status` while it runs, always end stopped.
 
 ## What the result means
 

@@ -6,6 +6,7 @@ import json
 import re
 import sys
 import time
+import zipfile
 from collections.abc import Callable
 from pathlib import Path
 
@@ -20,6 +21,8 @@ TESTED = re.compile(r"Total tested\s+(\d+)")
 # record count across its databanks, the loaded batch plus every leg's output so far.
 IN_BANK = re.compile(r"In databank\s+(\d+)")
 SETTLE = 8          # seconds SQX needs after `load` before the databank answers for them all
+
+STOCK = {"Builder", "Retester"}   # SQX's own projects: never a harness (hard rule 10)
 
 
 def _call(command: str, cfg: dict) -> str:
@@ -84,13 +87,12 @@ def load(folder: Path, cfg: dict) -> None:
     time.sleep(SETTLE)
 
 
-def run(expected: int, loaded: int, cfg: dict,
+def run(expected: int, cfg: dict,
         progress: Callable[[int, str], None]) -> int:
     """Run the harness's retest task and wait for it.
 
     Args:
         expected: How many retests the legs have to return between them.
-        loaded: How many strategies went into the input databank.
         cfg: The `execute` block.
         progress: Called with a percentage and a status line as the run advances.
 
@@ -98,11 +100,13 @@ def run(expected: int, loaded: int, cfg: dict,
         How many strategies SQX reports as tested.
 
         ⚠️ `action=startOnlyTask` is NOT used: on this install it reports the project
-        started and then tests nothing, silently, forever. `action=start` runs the task.
-        The harness project holds exactly one task, so "start the project" and "start the
-        task" are the same thing here -- and it must stay that way: a project with a Build
-        task or a GoToTask would loop forever under `action=start`.
+        started and then tests nothing, silently, forever. `action=start` runs every ACTIVE
+        task and skips the rest (🔬 2026-09-25), which is why `main` refuses unless the three
+        WFC legs are the only ones switched on.
     """
+    # In a workflow project the other steps' databanks count too: measure from here.
+    base = int(IN_BANK.search(_call(f'-project action=status name={cfg["project"]}', cfg))
+               .group(1))
     _call(f'-project action=start name={cfg["project"]}', cfg)
     done = 0
     while done < expected:
@@ -110,7 +114,7 @@ def run(expected: int, loaded: int, cfg: dict,
         status = _call(f'-project action=status name={cfg["project"]}', cfg)
         tested = TESTED.search(status)
         done = (int(tested.group(1)) if tested
-                else int(IN_BANK.search(status).group(1)) - loaded)
+                else int(IN_BANK.search(status).group(1)) - base)
         progress(done * 100 // expected, f"{done} de {expected} reteseadas")
     return done
 
@@ -173,15 +177,19 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--work", type=Path,
                     help="the batch directory: holds sqx/ and manifest.parquet")
-    ap.add_argument("--project", help="the custom project holding the three WFC legs, "
-                                      "e.g. USDJPY_variantes; execute.project when absent")
+    ap.add_argument("--project", required=True,
+                    help="the custom project holding the three WFC legs: the workflow's own "
+                         "(`builder --workflow`), or e.g. USDJPY_variantes")
 
     ap.add_argument("--clear", action="store_true",
                     help="empty the four databanks off the disk, install stopped, and exit")
     a = ap.parse_args()
 
     cfg = inputs.load()["execute"]
-    cfg["project"] = a.project or cfg["project"]
+    cfg["project"] = a.project
+    if a.project in STOCK:
+        raise SystemExit(f"{a.project} es un proyecto de serie: regla dura 10, todo run en un "
+                         "custom project. Usa el del workflow o crea uno con sqx.projects.builder.")
     if a.clear:
         print(f"{banks.clear(cfg)} .sqx borrados de {cfg['project']}: entrada y los tres tramos")
         return
@@ -189,6 +197,12 @@ def main() -> None:
     folder = a.work / "sqx"
     n = len(list(folder.glob("*.sqx")))
 
+    cfx = worker_dir(cfg["role"]) / "user/projects" / a.project / "project.cfx"
+    with zipfile.ZipFile(cfx) as z:
+        on = re.findall(r'active="true"[^>]*title="([^"]*)"', z.read("config.xml").decode())
+    if sorted(on) != sorted(leg["title"] for leg in legs):
+        raise SystemExit(f"{a.project} tiene activas {on}: `action=start` las correria todas. "
+                         f"python3 -m sqx.projects.stage --cfx {cfx} --step wfc")
     print(f"PROGRESS 2 despertando el {cfg['role']}", flush=True)
     ours = awake(cfg)
 
@@ -206,7 +220,7 @@ def main() -> None:
         # One `action=start` runs the project's three active retest tasks in chain --
         # build, oos1, oos2 -- so the progress counter passes `n` twice on its way. It is
         # the last leg that has to finish, and that is what `expected` counts here.
-        done = run(n * len(legs), n, cfg, say) // len(legs)
+        done = run(n * len(legs), cfg, say) // len(legs)
         harvest = []
         for leg in legs:
             print(f"PROGRESS 92 exportando {leg['databank']}", flush=True)

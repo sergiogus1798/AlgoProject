@@ -42,9 +42,15 @@ salir (regla dura 4). El comando se niega y dice qué parar.
 
 Correrlo después, en el custodio y una sola cosa a la vez:
 
+`<PROYECTO>` es el del workflow (`/template-run --workflow`): el comando de arriba deja su paso
+como **el único activo**, porque `action=start` corre todas las tareas activas. El `stop` antes del
+`start` no sobra: en un proyecto que ya corrió, un segundo `start` sin él no hace nada, en silencio.
+
 ```bash
 bin/sqx-worker.sh --role custodian start
+python3 -c "from core import worker; worker.call('-project action=stop name=<PROYECTO>','custodian')"
 python3 -c "from core import worker; worker.call('-project action=start name=<PROYECTO>','custodian')"
+# mientras corre, sólo -project action=status; el final es `Project finished` en el log de SQX
 bin/sqx-worker.sh --role custodian stop
 ```
 

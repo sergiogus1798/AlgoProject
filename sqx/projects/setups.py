@@ -147,3 +147,22 @@ def set_costs(text: str, data: dict, segment: str) -> tuple[str, int]:
 
     text, _ = set_data_range(SETUP.sub(rewrite, text), data, window(data, segment))
     return text, done
+
+
+def set_span(text: str, data: dict, segment: str) -> tuple[str, int]:
+    """Write a segment or a `first..last` span as the window a task trades and loads.
+
+    Args:
+        text: A task XML.
+        data: One asset as load() returned it.
+        segment: A segment name or a span, e.g. "build..oos1". `oos2` is refused.
+
+    Returns:
+        The task and how many Setups were rewritten, priced at the span's last segment.
+    """
+    start, _, costs = span(data, segment)
+    text, done = set_costs(text, data, costs)
+    text = text.replace(f'dateFrom="{bounds(data, costs)[0]}"', f'dateFrom="{start}"')
+    first = segment.split("..")[0]
+    text, _ = set_data_range(text, data, (window(data, first)[0], window(data, costs)[1]))
+    return text, done

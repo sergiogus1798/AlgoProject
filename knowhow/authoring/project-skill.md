@@ -3,7 +3,8 @@ q: sqx-strategy-project skill donor task chain; keep_tasks strip; StrategyType s
 tag: 🔬  date: 2026-09-22  see: authoring/headless-authoring-chain, sqx-format/project-cfx
 ---
 # With `<StrategyType type="simple">` the `templateFile` is ignored; only `type="template"` applies it
-The `sqx-strategy-project` skill carries the donor's whole task chain; for builder-only strip it with
+The `sqx-strategy-project` skill (retired 2026-09-25 — projects come from `sqx.projects.builder`,
+which forces `type="template"`) carried the donor's whole task chain; for builder-only strip it with
 `python3 -m sqx.inspect.keep_tasks in.cfx out.cfx --types Build` (also drops unreferenced databanks, keeps the 5 system ones).
 `templateFile` paths are absolute and resolve on the target install: copy templates into
 `<install>/user/settings/StrategyTemplates/<set>/` first. SQX binds `uSymbol`, not `symbol` (heals it on load).

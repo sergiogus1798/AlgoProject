@@ -20,18 +20,23 @@ One command builds the project:
 
 ```bash
 python3 -m sqx.projects.builder <name> --template <lib>/template.sqx --symbol <SYM> \
-    --role custodian --tasks Build[,Retest]
+    --role custodian --timeframe <TF> --workflow
 ```
 
-It clones the frozen donor, keeps the task types asked for, and prices each one from `assets/` by
-its own segment. Reusing a custom project by name is fine; borrowing a stock one is not.
+It clones the frozen donor and prices each task from `assets/` by its own segment. With
+`--workflow` (owner, 2026-09-25) the one project holds **every step's task** — the donor's, plus
+`CrossTF` and the three WFC legs — with only Build and OOS switched on. Each later step's
+configurator (`crossmarket`, `crosstf`, `mcretest`, `spp`, `wfc`, `wfm`) writes its task and leaves
+only its own step active, because `action=start` runs every active task and skips the rest; by
+hand it is `python3 -m sqx.projects.stage --cfx <cfx> --step <step>`. Without `--workflow`,
+`--tasks`/`--only` keep a subset, for a study run on its own. A stock project is never borrowed.
 
 ## Lanes — one owner each, because this state is shared and not reversible
 
 | lane | who | rule |
 |---|---|---|
 | SQX lifecycle (start/stop), master install | one session only | announce before stopping SQX |
-| builds and long jobs | **custodian** `SQX_w2` / 5070 | 48 cores, 48 g. One job at a time, no command between start and collect. **Never on the master** |
+| builds and long jobs | **custodian** `SQX_w2` / 5070 | One job at a time; between start and collect only `-project action=status`, never `count`. **Never on the master** |
 | authoring blocks, groups, templates, projects | **conductor** `SQX_w1` / 5060 | 8 cores, always awake. Start it for the job, then `bin/sqx-worker.sh stop` |
 | reading configs, `.cfx`, task chains | anyone | read-only, never triggers a restart |
 | snapshots and recovery | one session | snapshot before anything destructive |
@@ -51,8 +56,10 @@ Two checks worth running before trusting a project: `inspect/project_health.py` 
 references, version drift, mangled fields) and `inspect/template_check.py` (whether the strategies a
 project built actually carry the blocks its template fixes — on this install, they do not).
 
-Authoring skills (`sqx-custom-block`, `sqx-random-group`, `sqx-strategy-template`,
-`sqx-strategy-project`) are installed globally and live in `tools/sqx-lab/`. **They are installed by
+Authoring skills (`sqx-custom-block`, `sqx-random-group`, `sqx-strategy-template`) are installed
+globally and live in `tools/sqx-lab/`; the installer puts this project's rules on top of each
+(`tools/sqx-lab/overlays/`) and no longer wires `sqx-strategy-project` (retired 2026-09-25, against
+hard rule 10). `sqx-strategy-template` is THE template skill — the old `/strategy-template` is gone. **They are installed by
 hand, not by `/plugin`** — that command does not exist in this environment (2026-09-24). One script
 does the whole wiring and is idempotent: `bin/sqx-lab-install.sh`, manual page `40-sqx-lab.md`. Run
 it after updating the toolkit and whenever the install's blocks or groups change: a **stale catalog

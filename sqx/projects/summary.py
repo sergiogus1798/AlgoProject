@@ -17,6 +17,10 @@ def say(done: dict, role: str) -> None:
     print(f"  template  {done['template']}")
     print(f"  tasks     {', '.join(done['tasks'])}   caps {done['max_strategies']} strategies "
           f"/ {done['minutes']} min")
+    if done["added"]:
+        print(f"  workflow  + {', '.join(done['added'])}: todas las tareas del workflow, "
+              "activas sólo CONSTRUCCION y OOS. CrossTF va a build..oos1; las WFC se "
+              "precian con sqx.projects.wfc")
     bars = done["exit_bars"]
     # A project with no Build task has no generator, so there are no exit bounds to report.
     print(f"  doctrina  {done['timeframe']} en todas las tareas, sesión {done['session']}"

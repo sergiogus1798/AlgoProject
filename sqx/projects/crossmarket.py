@@ -8,8 +8,12 @@ from pathlib import Path
 from datetime import date
 
 from core.assetdata import doctrine, load, markets, sqx_settings, symbols
-from sqx.projects.crosschecks import silence_block
+from sqx.projects.configure import running_install
+from sqx.projects.crosschecks import member_of, silence_block
 from sqx.projects.setups import span
+from sqx.projects.stage import own
+
+TITLE = "Retest Markets - Family"     # the donor's additional-markets task
 
 SETUPS = re.compile(r"(<RetestOnAdditionalMarkets\b[^>]*>\s*<Settings>\s*)"
                     r"<Setups\b[^>]*>.*?</Setups>", re.S)
@@ -155,7 +159,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("symbol")
     ap.add_argument("--cfx", type=Path, help="write them into this project instead of reporting")
-    ap.add_argument("--task", help="task XML file to write into, e.g. Retest-Task3.xml")
+    ap.add_argument("--task", help="task XML file to write into; by default the one titled "
+                                   "`Retest Markets - Family`")
     ap.add_argument("--timeframe", help="the project's timeframe; required with --cfx")
     ap.add_argument("--categories", default="family,structural")
     a = ap.parse_args()
@@ -169,8 +174,13 @@ def main() -> None:
             print(f"{m['feed']:30} {m['category']:11} {w[0]} a {w[1]}   costes: {where}{when}")
         return
 
+    held = running_install(a.cfx)
+    if held:
+        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
+                         f"Paralo: bin/sqx-worker.sh --role {held} stop")
     with zipfile.ZipFile(a.cfx) as z:
         members = {n: z.read(n) for n in z.namelist()}
+    a.task = a.task or member_of(members["config.xml"].decode("utf-8"), TITLE)
     text, used, blocked, silenced = set_markets(members[a.task].decode("utf-8"), a.symbol,
                                                a.timeframe, categories=cats)
     if blocked:
@@ -185,6 +195,7 @@ def main() -> None:
     for m in used:
         print(f"  {m['feed']:30} {m['category']:11} {m['window'][0]} a {m['window'][1]}")
     print(f"{silenced} condiciones de aceptacion apagadas — esto es evidencia, no un filtro")
+    print(own(a.cfx, "crossmarket"))
 
 
 if __name__ == "__main__":

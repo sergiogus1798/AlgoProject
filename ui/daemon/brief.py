@@ -36,7 +36,7 @@ def compose(answers: dict[str, str]) -> dict[str, object]:
             "direction": a["direction"],
             "logic": a["logic"],
             "shape": "fixed_and_random" if a["random"] != "none" else "fixed_only",
-            "signal": {"fixed": {"block": "por decidir — lo resuelve /strategy-template",
+            "signal": {"fixed": {"block": "por decidir — lo resuelve /sqx-strategy-template",
                                  "rule": a["idea"],
                                  "logic": LOGIC_TEXT[a["logic"]]},
                        "random": random_text,
@@ -55,14 +55,14 @@ def prompt(brief: dict[str, object]) -> str:
         brief: The dict `compose` returned.
 
     Returns:
-        A `/strategy-template` invocation carrying every answer, so the skill does not
+        A `/sqx-strategy-template` invocation carrying every answer, so the skill does not
         re-ask what the interview already settled. The skill still does the two things
         this window cannot: check the vocabulary of the real install, and author the
         custom block if the condition is not there.
     """
     s = brief["signal"]
     return "\n".join([
-        f"/strategy-template {brief['name']}",
+        f"/sqx-strategy-template {brief['name']}",
         "",
         f"Idea: {brief['idea']}",
         f"Lógica: {s['fixed']['logic']} — ya preguntado, no lo vuelvas a preguntar.",
@@ -95,6 +95,8 @@ def commands(brief: dict[str, object]) -> list[dict[str, str]]:
          "cmd": "python3 -m sqx.inspect.vocabulary <término>"},
         {"what": "Instala el bloque en las dos instalaciones (si hay que autorarlo)",
          "cmd": f"python3 -m sqx.blocks.install {lib}/deps/blocks.xml --role conductor"},
+        {"what": "… y en el custodio, que es el que construye",
+         "cmd": f"python3 -m sqx.blocks.install {lib}/deps/blocks.xml --role custodian"},
         {"what": "Comprueba que la instalación que construye no se queda sin el bloque",
          "cmd": "python3 -m sqx.inspect.vocabulary --diff custodian"},
         {"what": "Emite la plantilla",

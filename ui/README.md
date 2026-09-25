@@ -34,7 +34,7 @@ runs three SQX installs.
 ## What it does not do
 
 **It never runs SQX and it never authors anything.** The chat writes a draft brief and hands over
-the prompt; the authoring is `/strategy-template`, which installs blocks into a real install and is
+the prompt; the authoring is `/sqx-strategy-template`, which installs blocks into a real install and is
 the conductor's lane. A window that quietly wrote to `SQX_w1` would break the lane table in
 `sqx/CLAUDE.md` the first time two sessions had it open.
 

@@ -63,28 +63,41 @@ catálogos, que son medio minuto.
 verdad. El script las copia sustituyendo la variable por la ruta real. **Ésa es la razón por la que
 una actualización obliga a volver a correr esto**: los enlaces se actualizan solos, las copias no.
 
-⚠️ **Hay una quinta carpeta de skill que NO se enchufa a propósito.** `sqx-spp` es local, no viene
-del zip, y duplica el `/spp` de este proyecto. Dos skills de SPP solapadas es peor que una, así que
-el script nombra las cuatro del fabricante una por una en lugar de recorrer la carpeta. Cuidado:
-descomprimir una versión nueva encima de `tools/sqx-lab/` **se la lleva por delante**.
+⚠️ **Se enchufan tres, no cinco.** `sqx-strategy-project` está **retirada** (dueño, 2026-09-25):
+clona cualquier proyecto de la instalación y despliega en ella, contra la regla dura 10, y seis de
+sus pruebas fallan aquí. Los proyectos los crea `sqx.projects.builder` desde el donante congelado.
+`sqx-spp` es local, no viene del zip, y duplica el `/spp` de este proyecto. El script quita el
+enlace de las dos si existe (`retired`).
+
+⚠️ **Las tres llevan encima las reglas de este proyecto.** El script inserta
+`tools/sqx-lab/overlays/<skill>.md` al principio de cada `SKILL.md` del fabricante, entre marcas
+(`overlay`), y a `sqx-strategy-template` le cambia la descripción para que tus defaults manden:
+tu condición fija más un aleatorio libre. Las capas se editan en `overlays/`, nunca dentro del
+fichero del fabricante. Hay además dos parches al código del fabricante, listados en
+`tools/sqx-lab/LOCAL_PATCHES.md`; si una versión nueva se los lleva, el script lo avisa con
+`⚠️ falta el parche local`. Descomprimir una versión nueva encima de `tools/sqx-lab/` se lleva
+también `sqx-spp` por delante.
 
 ## Cómo se lee el resultado
 
-Salida real del 2026-09-24:
+Salida real del 2026-09-25:
 
 ```
 sqx-lab 1.2.0  ->  conductor (/home/sergioguslw/Desktop/SQX_w1)
   skill   sqx-custom-block
   skill   sqx-random-group
   skill   sqx-strategy-template
-  skill   sqx-strategy-project
+  overlay sqx-custom-block
+  overlay sqx-random-group
+  overlay sqx-strategy-template
   command /sqx-setup
   command /sqx-doctor
 catálogos:
     note: 74 talib_* atoms flagged UNUSABLE in single-symbol builds
     .../sqx-random-group/catalog.md
 wrote .../sqx-strategy-template/engine/catalog.json
--> .../sqx-strategy-project/engine/catalog.json (7 projects, 8 templates)
+-> .../sqx-strategy-project/engine/catalog.json (8 projects, 8 templates)
+
 
 ====================================================================
 All green — the full block -> group -> template -> project chain is usable.

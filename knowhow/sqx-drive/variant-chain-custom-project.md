@@ -17,7 +17,7 @@ Project `USDJPY_variantes`, custodian, three windows + family markets.
 3. Donor `build`-window task had `AnnualPctReturn (OOS) > 0` active; `build` has no OOS → all fail, and
    with `evaluateAll="false"` SQX skips additional markets → window came back USDJPY only.
    `wfc.py` turns all task conditions off (`wfc.conditions: []`).
-4. `In databank` = sum over all its databanks (loaded + returned); `execute.run` reads it when `Total tested` is missing.
+4. `In databank` = sum over ALL the project's databanks (loaded + returned + every other step's); `execute.run` takes it once before `start` and counts from there (🔬 2026-09-25: workflow project, 3 in `WFC_Variants` + 3 in `OOS` → 6 before, 15 after three legs).
 5. Worker JVM runs as `./sqcli` from inside the install; `core.worker.holding()` (hard rule 4 guard) now also checks process cwd.
 6. `settings.xml` key `Main: USDJPY_DukasM1_the5ers/H1` vs folder `Results/Main: USDJPY_DukasM1_the5ers_LOM_H1/`;
    common prefix ends at `/`; `equity.markets_of` cuts there.

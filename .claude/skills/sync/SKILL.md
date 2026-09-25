@@ -85,7 +85,7 @@ One commit per concern, never one giant "update". The owner reads every line of 
 commit message that says *why* is the only thing that survives the session that wrote it.
 
 ```bash
-git add core/... && git commit -m "core: <what changed>" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git add core/... && git commit -m "core: <what changed>" -m "<the attribution lines the session gives>"
 ```
 
 The themes that recur here: `core:` shared readers · `sqx:` exporters, inspection, curation ·

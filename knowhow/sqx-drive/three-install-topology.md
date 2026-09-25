@@ -1,11 +1,12 @@
 ---
-q: master conductor custodian roles; why two workers; custodian sync rule no command between start and collect; which install exports a databank; opening a worker GUI syncs; core split elastic coreUsage
+q: master conductor custodian roles; why two workers; custodian sync rule only status between start and collect; which install exports a databank; opening a worker GUI syncs; core split elastic coreUsage
 tag: 🔬  date: 2026-09-23  see: sqx-drive/install-ports-and-heap, databanks/sync-deletes-unloaded-files, sqx-drive/driving-a-role
 ---
 # One master + two headless workers: conductor W1 answers, custodian W2 holds the one long job
 M `~/Desktop/SQX` (owner's GUI) · W1 conductor `~/Desktop/SQX_w1` 5060 (queries, authoring) ·
-W2 custodian `~/Desktop/SQX_w2` 5070 (large databank, one long job). The custodian gets NO command
-between "start" and "collect" (not `count`, not `status`, not an export) — that is what makes hard rule 1 impossible to trip.
+W2 custodian `~/Desktop/SQX_w2` 5070 (large databank, one long job). Between "start" and
+"collect" the custodian gets only `-project action=status` (owner, 2026-09-25) — never `count`
+(it syncs from files, `databanks/databank-verbs`), a load or an export: that is what keeps hard rule 1 from tripping.
 Only the install holding a databank can export it. Never open a worker's GUI with a big databank inside.
 
 ## Evidence

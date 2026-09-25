@@ -77,12 +77,13 @@ and has nowhere to be divided to. **Check the clamped column before spending a r
 the batch is clamped, the answer is "this population cannot be rescaled", and no amount of CPU
 changes it.
 
-**2 · Wire the task.** Hard rule 10: a custom project, never the stock `Retester`.
+**2 · Wire the task.** It lives in the workflow's own project (`/template-run --workflow`), in the
+task titled `CrossTF`, which reads `CrossTF_Input` and writes `CrossTF`:
 
 ```bash
 python3 -m core.assets <SYMBOL>                           # hard rule 5, blocking
-python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/project.cfx \
-    --task <Retest-TaskN>.xml            # --timeframes H4 D1 overrides the doctrine's list
+python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/project.cfx
+                                         # --timeframes H4 D1 overrides the doctrine's list
 ```
 
 The timeframes, the window and the precision come from `crosstf:` in `assets/_build.yaml`
@@ -90,30 +91,24 @@ The timeframes, the window and the precision come from `crosstf:` in `assets/_bu
 a one-off; the window and the precision are not overridable on purpose.
 
 Each `<Setup>` overrides **only** `timeframe`; the window, costs, precision and session all come from
-the main test through `<MainTestValues>`. That is deliberate and it is what makes the blocks
-comparable — the same instrument does not get a different spread for being resampled.
+the main test through `<MainTestValues>` — the same instrument does not get a different spread for
+being resampled. Because the extra blocks inherit the main test's dates, the command **writes the
+task's own window as `build..oos1`** (since 2026-09-25; it used to only warn).
 
-⚠️ **Consequence of `dates="true"`: the dates written into the extra `<Setup>` blocks are inert.**
-The window that actually runs is the hosting task's own, so that task has to be configured on
-`build..oos1`. The command reads it back and prints a ⚠️ line when it does not match — if you see
-it, fix the task before running anything, or the cells are read over a window nobody declared.
+It **silences every acceptance condition** of the cross-check and forces `DeleteFailedStrategies`
+to false, and says how many — `crosstf.conditions: []` (owner, 2026-09-24): with them live SQX drops
+the failing strategy and Python never sees the dead ones
+(`knowhow/conditions/crossmarket-crosstf-no-conditions.md`). It leaves `CrossTF` the only active
+task, refuses while the install is up (hard rule 4), and ends by printing the `run.blocks` line.
+**Paste it into `strategies/crossTF/config.yaml`.**
 
-The command **silences every acceptance condition** of the cross-check and forces
-`DeleteFailedStrategies` to false, and says how many it turned off — `crosstf.conditions: []` in the
-doctrine (owner, 2026-09-24). With them live, the cross-check is a selection filter and what
-survives is no longer an untouched reading (`knowhow/conditions/crossmarket-crosstf-no-conditions.md`): SQX drops the failing
-strategy from the output databank and Python never sees the dead ones. If it reports 0 silenced on a
-donor you expected conditions in, check you named the right task.
-
-It ends by printing the `run.blocks` line. **Paste it into `strategies/crossTF/config.yaml`.**
-
-**3 · Run and export.** Load that one folder into the databank
-(`sqcli -databank action=load project=<P> name=<DB> folder=<the crosstf dir>`), then the run half is
-`/template-run` and its rules hold: custodian only, `action=start` and never `startOnlyTask`,
-`action=stop` before a second start, one job at a time, always end stopped. Then:
+**3 · Run and export.** On the custodian, stopped at first. Start it, load the folder into the
+task's input, then the run half of `/template-run` — `stop` then `start`, only `status` while it
+runs, always end stopped:
 
 ```bash
-python3 sqx/export/export_retest.py --project <P> --databank <DB>    # data=all
+python3 -c "from core import worker; print(worker.call('-databank action=load project=<P> name=CrossTF_Input folder=<the crosstf dir>','custodian'))"
+python3 -m sqx.export.export_retest --project <P> --databank CrossTF --role custodian
 ```
 
 **4 · Read.**
@@ -150,4 +145,4 @@ the `Symbol` column, which is identical across the timeframes of one asset.
 - Read a scaled cell whose `clamped` is True, or whose rounding shift is over tolerance.
 - Run it with the cross-check's acceptance conditions live.
 - Build D1-scaled siblings and read them as scaled.
-- Run it on the master, or on the stock `Retester`.
+- Run it on the master, or on a stock project.

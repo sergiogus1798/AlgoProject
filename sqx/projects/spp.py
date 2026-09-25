@@ -16,6 +16,7 @@ from sqx.projects.crosschecks import (active, enable, member_of, others_on,
 from sqx.projects.databanks import set_databank
 from sqx.projects.setups import bounds, set_costs
 from sqx.projects.tasksettings import set_precision
+from sqx.projects.stage import own
 
 # ⚠️ The SPP is OptProfileSysParamPermutation. SequentialOptimization sits beside it in the
 # same <CrossChecks> block, is also about permuting parameters, and writes no profile at
@@ -160,10 +161,12 @@ def main() -> None:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
                          f"salir. Parala: bin/sqx-worker.sh --role {held} stop")
     done = configure(a.cfx, a.symbol, a.input)
+    staged = own(a.cfx, "spp")
 
     if a.json:
         print(json.dumps(done, indent=2, default=str))
         return
+    print(staged)
     print(f"{done['project']}  {a.symbol}  <- {done['input']}")
     for row in done["tasks"]:
         if not row["written"]:

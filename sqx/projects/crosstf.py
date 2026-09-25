@@ -7,8 +7,10 @@ import zipfile
 from pathlib import Path
 
 from core.assetdata import doctrine, load, sqx_settings
-from sqx.projects.crosschecks import silence_block
-from sqx.projects.setups import span
+from sqx.projects.configure import running_install
+from sqx.projects.crosschecks import member_of, silence_block
+from sqx.projects.setups import set_span, span
+from sqx.projects.stage import own
 
 BLOCK = re.compile(r"<RetestOnAdditionalMarkets\b.*?</RetestOnAdditionalMarkets>", re.S)
 SETUPS = re.compile(r"(<RetestOnAdditionalMarkets\b[^>]*>\s*<Settings>\s*)"
@@ -119,6 +121,8 @@ def set_timeframes(text: str, symbol: str,
     feed, native = main_chart(text)
     data = load(symbol)
     start, end, costs = span(data, study["segment"])
+    # The extra timeframes inherit the main test's dates, so the main test carries the span.
+    text = set_span(text, data, study["segment"])[0]
     body = "".join(one_timeframe(feed, data, costs, tf, study["precision"], d["engine"],
                                  (start, end))
                    for tf in timeframes)
@@ -140,13 +144,18 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("symbol")
     ap.add_argument("--cfx", required=True, type=Path)
-    ap.add_argument("--task", required=True, help="task XML file, e.g. Retest-Task3.xml")
+    ap.add_argument("--task", help="task XML file; by default the one titled `CrossTF`")
     ap.add_argument("--timeframes", nargs="+",
                     help="los timeframes extra, en orden de bloque; por defecto, la doctrina")
     a = ap.parse_args()
 
+    held = running_install(a.cfx)
+    if held:
+        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
+                         f"Paralo: bin/sqx-worker.sh --role {held} stop")
     with zipfile.ZipFile(a.cfx) as z:
         members = {n: z.read(n) for n in z.namelist()}
+    a.task = a.task or member_of(members["config.xml"].decode("utf-8"), "CrossTF")
     text, blocks, silenced, warning = set_timeframes(members[a.task].decode("utf-8"), a.symbol,
                                                      a.timeframes)
     members[a.task] = text.encode("utf-8")
@@ -160,6 +169,7 @@ def main() -> None:
     print(f"{silenced} condiciones de aceptacion apagadas — esto es evidencia, no un filtro")
     if warning:
         print(warning)
+    print(own(a.cfx, "crosstf"))
     print("\nPon esto en strategies/crossTF/config.yaml, run.blocks:")
     print(f"  blocks: [{', '.join(blocks)}]")
 

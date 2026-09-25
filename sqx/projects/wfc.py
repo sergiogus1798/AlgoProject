@@ -11,11 +11,12 @@ from xml.etree import ElementTree
 
 from core.assetdata import doctrine, load
 from sqx.projects.configure import running_install
-from sqx.projects.crosschecks import silence
+from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.crossmarket import SETUPS, chosen, one_market
 from sqx.projects.databanks import set_databank
 from sqx.projects.perturbations import OUT_OF_SAMPLE
 from sqx.projects.setups import bounds, set_costs
+from sqx.projects.stage import own
 
 CHECK = "RetestOnAdditionalMarkets"
 
@@ -193,9 +194,10 @@ def main() -> None:
     ap.add_argument("symbol")
     ap.add_argument("--cfx", required=True, type=Path)
     ap.add_argument("--timeframe", required=True, help="el timeframe del proyecto, e.g. M30")
-    ap.add_argument("--tasks", required=True,
+    ap.add_argument("--tasks",
                     help="tres ficheros de tarea separados por comas, en el orden de "
-                         "`wfc.tasks`: build, oos1, oos2")
+                         "`wfc.tasks`: build, oos1, oos2. Sin el, las que ya llevan esos "
+                         "titulos (un proyecto de `builder --workflow`)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
@@ -203,10 +205,16 @@ def main() -> None:
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
                          f"salir. Parala: bin/sqx-worker.sh --role {held} stop")
-    done = configure(a.cfx, a.symbol, a.timeframe, a.tasks.split(","))
+    with zipfile.ZipFile(a.cfx) as z:
+        config = z.read("config.xml").decode("utf-8")
+    members = (a.tasks.split(",") if a.tasks else
+               [member_of(config, t["title"]) for t in doctrine()["wfc"]["tasks"]])
+    done = configure(a.cfx, a.symbol, a.timeframe, members)
+    staged = own(a.cfx, "wfc")
     if a.json:
         print(json.dumps(done, indent=2, default=str))
         return
+    print(staged)
 
     print(f"{done['project']}  {a.symbol}  <- {done['input']} (las tres leen el MISMO lote)")
     for row in done["tasks"]:

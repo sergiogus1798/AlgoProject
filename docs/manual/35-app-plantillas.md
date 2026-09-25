@@ -20,7 +20,7 @@ Tres, y las tres se contestaban hasta hoy abriendo dos CSV en Excel y una carpet
 veredicto de una corrida en cuanto lo tengas, y para redactar la idea de una plantilla nueva.
 
 **No lo usas** para construir nada. La ventana **no arranca SQX, no instala bloques y no emite
-ningún `.sqx`**. Todo eso lo hace `/strategy-template` y `/template-run`, que escriben en
+ningún `.sqx`**. Todo eso lo hace `/sqx-strategy-template` y `/template-run`, que escriben en
 instalaciones de verdad y son el carril del conductor y el del custodio. Una ventana que escribiera
 en `SQX_w1` por su cuenta rompería la tabla de carriles de `sqx/CLAUDE.md` en cuanto hubiera dos
 sesiones abiertas.
@@ -252,7 +252,7 @@ Idea: *«el cierre supera el máximo de las últimas 20 barras»*.
    aleatorias y salidas: **Elige tú** en las tres. Nombre: `high20BreakStop`.
 3. La ventana escribe
    `~/Desktop/AlgoData/templates/drafts/high20BreakStop.json` y te da el prompt.
-4. **Copiar el prompt** y pegarlo en Claude Code. Ahí sí: `/strategy-template` mira el vocabulario
+4. **Copiar el prompt** y pegarlo en Claude Code. Ahí sí: `/sqx-strategy-template` mira el vocabulario
    de la instalación, autora el bloque si no existe, emite el `.sqx` y da de alta la fila.
 5. Vuelves a la ventana, **Recargar**. La plantilla ya está en la lista, el borrador ha
    desaparecido, y la fila `breakout` de la matriz sigue sin corrida nueva — porque autorar no es

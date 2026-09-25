@@ -1433,7 +1433,10 @@ def make_project(base_cfx, project_name, tasks, out_cfx,
         for d in _section(cfg_new, "Databanks").findall("Databank"):
             os.makedirs(os.path.join(db_dir, d.get("name") or ""), exist_ok=True)
 
-    report = verify(out_cfx, spec, require_templates_exist=True, analysis_spec=a_spec)
+    base_dbs = {d.get("name") for d in _section(
+        ET.fromstring(members["config.xml"].decode("utf-8")), "Databanks").findall("Databank")}
+    report = verify(out_cfx, spec, require_templates_exist=True, analysis_spec=a_spec,
+                    base_databanks=base_dbs)
     # identical per-task notes collapse to one entry (N clones of one donor produce the
     # same correction note N times); order of first occurrence is kept
     seen = set()
@@ -1444,7 +1447,8 @@ def make_project(base_cfx, project_name, tasks, out_cfx,
 # --------------------------------------------------------------------------------------
 # verification (the oracle short of an actual build)
 # --------------------------------------------------------------------------------------
-def verify(cfx_path, spec, require_templates_exist=True, analysis_spec=None):
+def verify(cfx_path, spec, require_templates_exist=True, analysis_spec=None,
+           base_databanks=None):
     """Re-open the written project and assert the proven invariants. Raises on any
     failure; returns a report dict on success."""
     analysis_spec = analysis_spec or []
@@ -1468,7 +1472,10 @@ def verify(cfx_path, spec, require_templates_exist=True, analysis_spec=None):
         assert not missing_db, f"output databanks not registered: {missing_db}"
 
         # 3) system databanks survived
-        missing_sys = [s for s in SYSTEM_DB if s not in reg]
+        # LOCAL PATCH (AlgoProject, 2026-09-25): a headless worker's stock project carries
+        # 4 of the 5 (no "Existing portfolio") and builds fine. Require what the base had.
+        required_sys = SYSTEM_DB if base_databanks is None else SYSTEM_DB & set(base_databanks)
+        missing_sys = [s for s in required_sys if s not in reg]
         assert not missing_sys, f"system databanks dropped: {missing_sys}"
 
         # 4) per-task: the task is in TEMPLATE MODE and templateFile resolves to THIS

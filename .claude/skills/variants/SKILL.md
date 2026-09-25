@@ -19,44 +19,26 @@ la fábrica.
 Y hace falta porque los dos SPP del paso 15 **no se pueden emparejar**: comparten 6 tuplas de
 ~11.600. Para tener la misma combinación medida dentro y fuera de muestra hay que fabricarla.
 
-## ⚠️ Antes de nada: en qué proyecto corre
+## En qué proyecto corre: el del workflow
 
-`sqx/variants/config.yaml` lleva `execute.project`. Si pone **`Retester`**, eso incumple la regla
-dura 10 (todo run en un custom project) y hay que migrarlo antes de lanzar nada:
-
-```bash
-python3 -m sqx.projects.builder <SIMBOLO>_variantes --template <plantilla> --symbol <SIMBOLO> \
-    --role custodian --timeframe M30 --tasks Retest --only Retest-Task1.xml
-```
-
-y poner ese nombre en `execute.project`. Está anotado en `OPEN.md` §38. Si el dueño dice que corra
-igual, se corre y se dice en el informe por dónde ha corrido.
-
-⚠️ **Y ya no es una tarea, son tres** (dueño, 2026-09-24). El retest que alimenta el WFC y el CSCV
-corre `build`, `oos1` y `oos2` en tareas separadas, cada una a su spread y su slippage y con los
-mercados adicionales dentro. La doctrina está en `wfc:` de `assets/_build.yaml` y quien escribe las
-tareas es:
+Dueño, 2026-09-25: todo el workflow vive en **un** custom project, el que `/template-run` creó con
+`--workflow`. Ya lleva las tres patas del retest que alimenta el WFC y el CSCV —`WFC 1 IS`,
+`WFC 2 OOS1`, `WFC 3 OOS2`, una por tramo, cada una a su spread y su slippage y con los mercados
+adicionales dentro—, leyendo las tres `WFC_Variants` (**sin espacios**: la API no puede nombrar un
+databank que los lleve). La doctrina está en `wfc:` de `assets/_build.yaml`:
 
 ```bash
-python3 -m sqx.projects.wfc <SIMBOLO> --cfx <install>/user/projects/<P>/project.cfx \
-    --timeframe M30 --tasks Retest-Task1.xml,Retest-Task2.xml,Retest-Task5.xml
+python3 -m sqx.projects.wfc <SIMBOLO> --cfx <install>/user/projects/<PROYECTO>/project.cfx \
+    --timeframe <TF>
 ```
 
-Manual: `docs/manual/37-wfc-retest.md`. Desde 2026-09-25 `wfc.py` declara él mismo los cuatro
-databanks (`WFC_Variants`, `WFC_Build`, `WFC_OOS1`, `WFC_OOS2` — **sin espacios**, la API no puede
-nombrar uno que los lleve) y apaga todas las condiciones de las tres tareas: con la de OOS que el
-donante trae en la de `build`, ese tramo volvía sin los mercados y sin avisar.
+Encuentra las tres por su título, apaga todas sus condiciones (con la de OOS que el donante trae en
+la de `build`, ese tramo volvía sin los mercados y sin avisar) y las deja **como las únicas
+activas**. `execute` exige `--project` y se niega con un proyecto de serie (regla dura 10) o si hay
+activa otra cosa que esas tres. Manual: `docs/manual/37-wfc-retest.md`.
 
-Receta probada sobre USDJPY H1 (una sola vez por símbolo):
-
-```bash
-python3 -m sqx.projects.builder USDJPY_variantes --template <plantilla> --symbol USDJPY \
-    --role custodian --timeframe H1 --tasks Retest \
-    --only Retest-Task1.xml,Retest-Task2.xml,Retest-Task5.xml \
-    --session-from <un project.cfx que defina la sesión del símbolo>
-python3 -m sqx.projects.wfc USDJPY --cfx <SQX_w2>/user/projects/USDJPY_variantes/project.cfx \
-    --timeframe H1 --tasks Retest-Task1.xml,Retest-Task2.xml,Retest-Task5.xml
-```
+Un proyecto hecho sólo para esto (el viejo `USDJPY_variantes`) sigue valiendo: `wfc` con
+`--tasks <tres ficheros>` en el orden build, oos1, oos2.
 
 ⚠️ **Entre una madre y la siguiente, vaciar los cuatro databanks** —`clear` y `synctofiles` de cada
 uno, y parar—, **después** de `equity` y `collect`: las curvas se leen del disco del custodio.
@@ -83,7 +65,7 @@ por separado y actúa después.
 ```bash
 python3 -m sqx.variants.make --brief <design_brief_<Estrategia>.json> --project <PROYECTO> \
     [--out <work>] [--sample N | --limit N] [--design-only]
-python3 -m sqx.variants.execute --work <work> --project <SIMBOLO>_variantes   # ⏰ el único que ocupa el custodio
+python3 -m sqx.variants.execute --work <work> --project <PROYECTO>   # ⏰ el único que ocupa el custodio
 python3 -m sqx.variants.collect  --work <work>
 python3 -m sqx.variants.equity   --work <work>
 ```

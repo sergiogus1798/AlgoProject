@@ -12,7 +12,7 @@ que la etiqueta la ponga alguien que sepa —tú o un agente— y no se pierda e
 ### Cuándo lo usas, y cuándo no
 
 Se corre **cuando cambia el vocabulario de la instalación**: después de autorar bloques propios con
-`/strategy-template`, después de importar un paquete de bloques, o cuando llega una instalación
+`/sqx-strategy-template`, después de importar un paquete de bloques, o cuando llega una instalación
 nueva. Fuera de eso no hay motivo: el fichero ya está y las etiquetas no las pone este comando.
 
 No sirve para saber si un bloque es bueno, ni si funciona en tu mercado. Solo dice qué bloques

@@ -26,8 +26,10 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
      Work that needs the master closed waits: he closes it himself and says so. A project of yours
      that appears there is one he copied to look at — say so in a line, do not investigate or delete.
    - **Workers:** author, configure and build freely. One job, then
-     `bin/sqx-worker.sh [--role ROLE] stop`. The custodian receives **no command** between start
-     and collect — not `count`, not `status`, not an export: that is what keeps rule 1 from firing.
+     `bin/sqx-worker.sh [--role ROLE] stop`. Between start and collect the custodian receives only
+     `-project action=status` (owner, 2026-09-25) — never `count`, a load or an export: `count`
+     syncs **from** files and wipes what is only in memory, which is rule 1 firing
+     (`knowhow/databanks/databank-verbs.md`). The end is `Project finished` in SQX's own log.
    - **Other sessions share the workers, and `stop` kills anyone's run** (`OPEN.md` #32, no lock
      yet). Before starting, stopping or reconfiguring one: `ListAgents`, `ls -lt
      <worker>/user/projects | head`, the tail of the day's log. Someone else's recent project or a
@@ -57,6 +59,9 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
     databanks and someone else's task chain, and a run inside one is unattributable afterwards.
     Per-task costs are what makes this work — one project holds the build on `build` and the
     retests on `oos1`, each with its own spread, slippage, swap, asset and cross-checks.
+    **A workflow run lives in ONE project** (owner, 2026-09-25): `builder --workflow` creates every
+    step's task at step 5, and each step switches on only its own before `action=start`, which
+    skips inactive tasks (`sqx.projects.stage`; every configurator does it for its step).
 11. **Ambiguous? Ask — always.** Owner, "guárdatelo a fuego". When an idea for a strategy or an
     automation admits more than one reading — "crosses above the Keltner": the upper band or the
     middle line? — list the readings and ask which, at every link of the chain (idea → block →

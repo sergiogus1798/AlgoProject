@@ -11,7 +11,7 @@ tarea**, que es lo que impedía meter la cadena dentro de una aplicación.
 ### Cuándo lo usas, y cuándo no
 
 Cuando la plantilla ya existe y está registrada. No sirve para crear la plantilla —eso es
-`/strategy-template`— ni para lanzar la construcción: esto deja el proyecto listo, y arrancarlo es
+`/sqx-strategy-template`— ni para lanzar la construcción: esto deja el proyecto listo, y arrancarlo es
 una decisión aparte porque cuesta CPU.
 
 ### Antes de empezar
@@ -141,6 +141,13 @@ disco**, y la puerta de la plantilla da **25/25 llevan el bloque fijo**
 - **No aplica los costes.** Los imprime como comando; aplicarlos en el registro de SQX es un paso
   aparte y **global a la instalación**.
 - **No lanza la construcción.** A propósito: eso cuesta horas y es una decisión del dueño.
+
+### Todo el workflow en un solo proyecto: `--workflow`
+
+Desde el 2026-09-25 (decisión del dueño), cuando una plantilla entra en el workflow el proyecto se
+crea con `--workflow`: lleva **todas** las tareas de los pasos siguientes —mercados, crossTF, MC
+Retest, SPP, WFC y WFM— apagadas salvo `CONSTRUCCION` y `OOS`, e ignora `--tasks` y `--only`. Cada
+paso enciende sólo las suyas antes de lanzar. Todo el detalle en `47-proyecto-workflow.md`.
 
 ### Si algo falla
 

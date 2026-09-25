@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install authored custom blocks into a stopped SQX install, by writing customBlocks.xml."""
+"""Install authored custom blocks or random groups into a stopped SQX install's settings."""
 
 import argparse
 import shutil
@@ -11,7 +11,9 @@ from xml.etree import ElementTree
 from core.paths import MASTER, WORKERS
 
 CUSTOM_REL = "user/settings/customBlocks.xml"
-BACKUP_REL = "user/settings/customBlocks-backups"
+GROUPS_REL = "user/settings/blockGroups.xml"
+# What each kind of element is stored in, and the attribute that names it.
+STORES = {"Item": (CUSTOM_REL, "key"), "Group": (GROUPS_REL, "name")}
 
 
 def targets() -> dict[str, dict]:
@@ -41,41 +43,52 @@ def is_running(port: int) -> bool:
 
 
 def backup(store: Path) -> Path:
-    """Copy customBlocks.xml beside itself, the way the GUI does.
+    """Copy a settings store beside itself, the way the GUI does.
 
     Args:
-        store: Path of the install's customBlocks.xml.
+        store: Path of the install's customBlocks.xml or blockGroups.xml.
 
     Returns:
         Path of the copy. Named with a millisecond timestamp so it sorts with the GUI's
         own backups in the same folder.
     """
-    out = store.parent / BACKUP_REL.split("/")[-1] / f"{int(time.time() * 1000)}.xml"
+    out = store.parent / f"{store.stem}-backups" / f"{int(time.time() * 1000)}.xml"
     out.parent.mkdir(exist_ok=True)
     shutil.copy2(store, out)
     return out
 
 
-def install(blocks: Path, into: Path) -> dict[str, list[str]]:
-    """Add or replace custom blocks in one install's store.
+def store_of(authored: Path) -> tuple[str, str]:
+    """Which settings file an authored XML goes into, and the attribute that names an entry.
 
     Args:
-        blocks: An XML file whose root holds <Item key="CBlock_..."> elements.
+        authored: Blocks (<Item key="CBlock_...">) or groups (<Group name=...>, as
+            sqx-random-group emits them under <RandomGroups>).
+    """
+    return STORES[ElementTree.parse(authored).getroot()[0].tag]
+
+
+def install(blocks: Path, into: Path) -> dict[str, list[str]]:
+    """Add or replace custom blocks or random groups in one install's store.
+
+    Args:
+        blocks: An XML file whose root holds <Item key="CBlock_..."> or <Group> elements.
         into: Top-level install folder.
 
     Returns:
-        "added" and "replaced" block keys. A key already present is replaced in place
-        rather than appended twice, because SQX reads the first match and a duplicate is
-        invisible until a build uses the wrong one.
+        "added" and "replaced" names. One already present is replaced in place rather than
+        appended twice, because SQX reads the first match and a duplicate is invisible
+        until a build uses the wrong one.
     """
-    store = into / CUSTOM_REL
+    rel, attr = store_of(blocks)
+    store = into / rel
     tree = ElementTree.parse(store)
     root = tree.getroot()
-    present = {item.get("key"): item for item in root}
+    present = {item.get(attr): item for item in root}
 
     out = {"added": [], "replaced": []}
     for item in ElementTree.parse(blocks).getroot():
-        key = item.get("key")
+        key = item.get(attr)
         if key in present:
             root.remove(present[key])
             out["replaced"].append(key)
@@ -91,7 +104,8 @@ def install(blocks: Path, into: Path) -> dict[str, list[str]]:
 def main() -> None:
     """Install a block XML into one install, refusing while that install is running."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("blocks", type=Path, help="XML file of <Item key='CBlock_...'> blocks")
+    ap.add_argument("blocks", type=Path,
+                    help="XML of <Item key='CBlock_...'> blocks, or of <Group> random groups")
     ap.add_argument("--role", default="conductor", choices=sorted(targets()),
                     help="which install to write to; default the conductor")
     args = ap.parse_args()
@@ -105,11 +119,12 @@ def main() -> None:
                          "rewrites user/settings on exit, so this write would be lost. "
                          f"Stop it first: bin/sqx-worker.sh --role {args.role} stop")
 
-    kept = backup(target["path"] / CUSTOM_REL)
+    rel = store_of(args.blocks)[0]
+    kept = backup(target["path"] / rel)
     done = install(args.blocks, target["path"])
-    total = len(ElementTree.parse(target["path"] / CUSTOM_REL).getroot())
+    total = len(ElementTree.parse(target["path"] / rel).getroot())
     print(f"{target['path'].name}: added {done['added']}, replaced {done['replaced']}")
-    print(f"  store now holds {total} blocks; previous copy kept at {kept}")
+    print(f"  {Path(rel).name} now holds {total}; previous copy kept at {kept}")
 
 
 if __name__ == "__main__":

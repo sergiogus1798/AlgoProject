@@ -6,7 +6,7 @@ description: Build an existing strategy template on a market — set up the proj
 # /template-run
 
 This one starts SQX and spends cores. Everything here has a cost; the authoring half is
-`/strategy-template`. Defaults and the owner's contract: `sqx/templates/README.md`.
+`/sqx-strategy-template`. Defaults and the owner's contract: `sqx/templates/README.md`.
 
 ## Before anything — two lookups that cost nothing
 
@@ -38,20 +38,21 @@ A gap here is the failure that looks like success: the build runs and the templa
 ignored. If blocks are missing, install them (`python3 -m sqx.blocks.install … --role custodian`)
 with the install stopped.
 
-## It is always a custom project
+## It is always a custom project — and the whole workflow lives in it
 
-Hard rule 10. The stock `Builder` and `Retester` are never the harness, not even for a smoke test:
-they carry costs, databanks and a task chain that belong to something else. Build a new project, or
-reuse a custom one by name.
+Hard rule 10. The stock `Builder` and `Retester` are never the harness, not even for a smoke test.
+Owner, 2026-09-25: a template run is step 5 of the workflow, so the project it creates is the one
+**every later step** configures and runs — `--workflow` gives it all their tasks now, switched off.
 
 ## Set the project up — one command
 
 ```bash
-python3 -m sqx.projects.builder <name> --template <library>/template.sqx \
-    --symbol <SYMBOL> --role custodian --max-strategies <n> --minutes <m> [--json]
+python3 -m sqx.projects.builder <name> --template <library>/template.sqx --symbol <SYMBOL> \
+    --timeframe <TF> --role custodian --workflow --max-strategies <n> --minutes <m> [--json]
 ```
 
-That is the whole setup. It clones the frozen donor, keeps only the Build task, installs the
+That is the whole setup. It clones the frozen donor with every workflow task (plus `CrossTF` and
+the three WFC legs), leaves only `CONSTRUCCION` and `OOS` active, installs the
 template under its library name, forces `StrategyType type="template"`, applies the caps, switches
 every output databank off `Auto-sync never`, and dates the window from `assets/`. Each of those was
 a hand-edit of the task XML until 2026-09-23, which is what kept this chain out of an application.
@@ -96,12 +97,14 @@ python3 -c "from core import worker; print(worker.call('-project action=start na
 ```
 
 - **`action=start`, never `startOnlyTask`** — the latter reports success and tests nothing. `start`
-  runs the whole chain, which is safe only because this project is a single task.
+  runs every **active** task and skips the rest (🔬 2026-09-25): here Build then OOS. Before any
+  later start the step's configurator — or `python3 -m sqx.projects.stage --cfx <cfx> --step <s>`
+  — leaves only that step on; a start with Build still active rebuilds from scratch.
 - **`action=stop` before every second `start`.** A second start on a project that already ran does
   nothing, silently, forever.
-- Poll with `-project action=status` and `-databank action=count`. The custodian takes **one job at
-  a time and no other command between start and collect** — that is what makes rule 1 stop existing
-  for the databank it is holding.
+- Poll with `-project action=status` only (hard rule 3). **Never `-databank action=count` while it
+  runs**: it syncs from files and wipes what is still only in memory. The end is `Project finished`
+  in `<install>/user/log/StrategyQuant/log_<date>.log`.
 
 Then `bin/sqx-worker.sh --role custodian stop`. The shutdown sync is what writes the strategies to
 disk. Always end stopped.

@@ -17,6 +17,7 @@ from sqx.projects.crosschecks import (active, enable, member_of, others_on,
 from sqx.projects.databanks import set_databank
 from sqx.projects.setups import bounds, set_costs, set_data_range
 from sqx.projects.tasksettings import set_precision
+from sqx.projects.stage import own
 
 BLOCK = re.compile(r"<WalkForwardMatrix\b.*?</WalkForwardMatrix>", re.S)
 # 🔬 Decoded 2026-09-24 (`OptimizationConst.wfTypeToString`): `type` is the "Walk-Forward
@@ -209,10 +210,12 @@ def main() -> None:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
                          f"salir. Parala: bin/sqx-worker.sh --role {held} stop")
     done = configure(a.cfx, a.symbol, a.input)
+    staged = own(a.cfx, "wfm")
 
     if a.json:
         print(json.dumps(done, indent=2, default=str))
         return
+    print(staged)
     print(f"{done['project']}  {a.symbol}  {done['reads']} → {done['writes']}")
     print(f"  ✓ {done['title']:<4} {done['segment']} {done['from']}→{done['to']}  "
           f"{done['cells']} celdas ({done['rows']} pasadas x {done['columns']} % OOS), "

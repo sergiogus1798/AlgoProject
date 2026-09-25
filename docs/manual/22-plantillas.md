@@ -45,6 +45,18 @@ python3 -m sqx.templates.registry --run --set template=<nombre> --set symbol=XAU
 | `install.py --role` | no | `conductor` (por defecto) o `custodian`. El maestro está prohibido |
 | `build.py --shape` | no | esqueleto a transplantar; por defecto `market_long` |
 | `build.py --install ROLE` | no | además copia el `.sqx` a `StrategyTemplates/` de esa instalación |
+| `build.py --param '#Type#=1'` | no | fija un parámetro que nombraste (una EMA: `#Type#=1`); el resto se queda optimizable. Repetible |
+
+**Un bloque nativo** (no autorado) se fija igual, pasando en lugar de `deps/blocks.xml` el
+`config.xml` de AlgoWizard del conductor. Salida real, 2026-09-25, que reproduce la `emaCloseAbove`
+que se hizo a mano y ya está confirmada en build:
+
+```
+$ python3 -m sqx.templates.build emaCloseAbove \
+    ~/Desktop/SQX_w1/internal/web/SQWIZARD/branding/global/config.xml MABarClosesAbove \
+    template.sqx --param '#Type#=1'
+template.sqx  (5343 bytes, shape market_long, fixed MABarClosesAbove)
+```
 | `build.py --set` | no | subcarpeta usada al instalar; por defecto `authored` |
 | `registry.py --run` | no | escribe en `runs.csv` en vez de en `registry.csv` |
 | `registry.py --set COL=VALOR` | sí | un valor por columna, repetido tantas veces como columnas |

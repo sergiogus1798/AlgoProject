@@ -6,7 +6,7 @@ description: Configure the eight MC Retest tasks of a custom SQX project — one
 # /mcretest
 
 Paso 13 del workflow, la mitad de SQX. Deja las ocho tareas MC Retest de un custom project
-configuradas y listas para correr. Leer lo que producen es `/retest` → `strategies/retest/`
+configuradas y listas para correr. Leer lo que producen es `strategies/retest/`
 (paso 14), y el Monte Carlo que reordena operaciones está FUERA del workflow a propósito.
 
 ## Lo único que hay que entender antes
@@ -56,6 +56,19 @@ claro por el paso anterior (normalmente los supervivientes de `/oos-gate`, `/cro
 
 Antes de escribir: **el `.cfx` no puede estar abierto por una instancia** — SQX lo reescribe al
 salir (regla dura 4). El comando se niega y dice qué parar.
+
+`<PROYECTO>` es el del workflow (`/template-run --workflow`): ya lleva las ocho tareas. El comando
+las deja como **las únicas activas**, menos las que no pudo configurar (`⊘`), que se quedan
+apagadas. Correrlo, en el custodio y una sola cosa a la vez (antes, `ListAgents`,
+`ls -lt <install>/user/projects` y el log: el `stop` mata lo de cualquier sesión):
+
+```bash
+bin/sqx-worker.sh --role custodian start
+python3 -c "from core import worker; worker.call('-project action=stop name=<PROYECTO>','custodian')"
+python3 -c "from core import worker; worker.call('-project action=start name=<PROYECTO>','custodian')"
+# mientras corre, sólo -project action=status; el final es `Project finished` en el log de SQX
+bin/sqx-worker.sh --role custodian stop
+```
 
 ## Qué mirar en la salida
 

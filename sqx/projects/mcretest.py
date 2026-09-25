@@ -14,6 +14,7 @@ from sqx.projects.configure import running_install
 from sqx.projects.databanks import set_databank
 from sqx.projects.orders import pending_orders
 from sqx.projects.perturbations import disable, usable, write_task
+from sqx.projects.stage import own
 
 
 def active(config: str, title: str, on: bool) -> str:
@@ -124,10 +125,12 @@ def main() -> None:
                          f"salir. Parala: bin/sqx-worker.sh --role {held} stop")
     folder = a.databank_dir or a.cfx.parent / "databanks" / a.input
     done = configure(a.cfx, a.symbol, a.input, folder if folder.is_dir() else None)
+    staged = own(a.cfx, "mcretest", [r["title"] for r in done["tasks"] if not r["written"]])
 
     if a.json:
         print(json.dumps(done, indent=2, default=str))
         return
+    print(staged)
     o = done["orders"]
     verdict = {True: "SI", False: "no", None: "SIN RESOLVER"}[o["pending"]]
     read = f", {o['read']} estrategias leidas" if o["read"] else ""

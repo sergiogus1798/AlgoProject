@@ -22,6 +22,9 @@
 | `acceptance.py` | Cómo juzga un crosscheck: las condiciones que evalúa en cada celda y los umbrales del elemento `<Conditions>` — incluida el área que la WFM busca en su matriz | importado | el catálogo + un crosscheck → su `<AcceptanceSettings>` reescrito |
 | `spp.py` | Las dos tareas SPP de un proyecto: la rejilla de permutación, una ventana cada una, sin que ninguna filtre | `python3 -m sqx.projects.spp <SYM> --cfx <cfx> --input <databank>` | un `.cfx` + el catálogo `spp:` de `_build.yaml` → `SPP IS` y `SPP OOS` escritas y activas |
 | `wfm.py` | La tarea Walk Forward Matrix: los dos ejes de la rejilla, y la ventana que la política reserva | `python3 -m sqx.projects.wfm <SYM> --cfx <cfx> --input <databank>` | un `.cfx` + el catálogo `wfm:` → la tarea `WFM` escrita sobre `build..oos2`, con su criterio por casilla |
+| `stage.py` | Leave only one workflow step's tasks active, so `action=start` runs that step and skips the rest; every configurator calls it for its own step | `python3 -m sqx.projects.stage --cfx <cfx> --step build,oos` | a workflow project → the same project, one step switched on |
+| `stages.yaml` | Which task titles each workflow step runs | data | — |
+| `workflow.py` | Give a donor clone every task of the workflow: keep the steps' own, add CrossTF and the three WFC legs, wire their databanks | imported by `builder --workflow` | a donor clone → the whole workflow in one project |
 | `configure.py` | Write an asset's declared costs and each task's own segment window into a `project.cfx` | `python3 -m sqx.projects.configure <cfx> <SYMBOL> [--segment build\|oos1]` | a cloned `.cfx` + `assets/<SYMBOL>` → the same `.cfx`, priced and dated as declared |
 
 **Why this exists.** A project is cloned from a donor, and the donor carries the **master's own

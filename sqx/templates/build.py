@@ -30,29 +30,43 @@ def skeleton_xml(shape: str) -> str:
     return zipfile.ZipFile(SKELETONS / f"{shape}_skeleton.sqx").read(INNER).decode("utf-8")
 
 
-def block_xml(blocks: Path, key: str) -> str:
+def block_xml(blocks: Path, key: str, fixed: dict[str, str] | None = None) -> str:
     """One block, custom or native, rendered as the Item a signal can hold.
 
     Args:
-        blocks: XML file of `<Item>` blocks — authored `CBlock_*` ones, or a native
-            definition copied out of the install's own config.xml.
+        blocks: XML file of `<Item>` blocks — authored `CBlock_*` ones, or the install's
+            AlgoWizard config.xml (`sqx.inspect.vocabulary.CONFIG_REL`) for a native block.
         key: Which block to take.
+        fixed: Param key to value for what the owner named, e.g. {"#Type#": "1"} for an EMA.
+            Every other param keeps its default and stays optimizable.
 
     Returns:
         The Item as text: its store entry with <Contents> dropped and every Param carrying
         its default as a value. The definition stays in customBlocks.xml — a template
         references a custom block, it does not carry it.
     """
-    item = next(i for i in ElementTree.parse(blocks).getroot() if i.get("key") == key)
+    root = ElementTree.parse(blocks).getroot()
+    # config.xml also carries preset <Item>s under the same key; the definition is under <Blocks>.
+    scope = root.find(".//Blocks") if root.find(".//Blocks") is not None else root
+    item = next(i for i in scope.iter("Item") if i.get("key") == key)
     for contents in item.findall("Contents"):
         item.remove(contents)
+    # config.xml groups a native block's params under <paramCategory>; a signal holds them flat.
+    for category in item.findall("paramCategory"):
+        item.remove(category)
+        item.extend(category.findall("Param"))
     for param in item.findall("Param"):
+        if param.get("key") in (fixed or {}):
+            param.set("defaultValue", fixed[param.get("key")])
         param.text = param.get("defaultValue", "")
     # A native block is not a custom block: its own categoryType is what SQX resolves it by,
     # and mislabelling it as "Custom blocks" sends the builder looking in customBlocks.xml.
     if key.startswith("CBlock_"):
         item.set("categoryType", "Custom blocks")
         item.set("customSnippet", "true")
+    else:
+        item.set("openingBrackets", "0")
+        item.set("closingBrackets", "0")
     return ElementTree.tostring(item, encoding="unicode").strip()
 
 
@@ -97,15 +111,19 @@ def main() -> None:
     """Build one template from a skeleton plus one authored block, and optionally install it."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("name", help="template name, camelCase")
-    ap.add_argument("blocks", type=Path, help="XML file holding the authored block")
+    ap.add_argument("blocks", type=Path, help="XML holding the block: the authored deps/blocks.xml, "
+                                              "or the install's config.xml for a native one")
     ap.add_argument("key", help="key of the block to fix into the signal")
     ap.add_argument("out", type=Path, help="where to write the .sqx")
     ap.add_argument("--shape", default="market_long", help="skeleton to transplant into")
     ap.add_argument("--install", help="also copy it into this role's StrategyTemplates/")
     ap.add_argument("--set", default="authored", help="subfolder used when installing")
+    ap.add_argument("--param", action="append", default=[], metavar="KEY=VALUE",
+                    help="fix a param the owner named, e.g. '#Type#=1' (repeatable)")
     args = ap.parse_args()
 
-    xml = fix_into_signal(skeleton_xml(args.shape), block_xml(args.blocks, args.key))
+    fixed = dict(p.split("=", 1) for p in args.param)
+    xml = fix_into_signal(skeleton_xml(args.shape), block_xml(args.blocks, args.key, fixed))
     ElementTree.fromstring(xml)
     if args.key not in xml:
         raise SystemExit(f"{args.key} did not land in the signal; the transplant failed")

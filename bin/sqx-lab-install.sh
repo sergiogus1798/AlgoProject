@@ -38,12 +38,44 @@ echo "sqx-lab $(python3 -c "import json;print(json.load(open('$PLUGIN/.claude-pl
 
 mkdir -p "$SKILLS" "$COMMANDS"
 
-# The four the vendor ships. A fifth folder may exist and be deliberately unwired:
-# sqx-spp duplicates this project's own /spp skill, and two overlapping SPP skills
-# is worse than one. Listing the four explicitly is what keeps it that way.
-for skill in sqx-custom-block sqx-random-group sqx-strategy-template sqx-strategy-project; do
+# Three of the four the vendor ships. sqx-strategy-project is retired (owner, 2026-09-25):
+# it clones any project of the install and deploys into it, against hard rule 10, and
+# sqx.projects.builder does that job from the frozen donor. A folder may also exist and be
+# deliberately unwired: sqx-spp duplicates this project's own /spp skill. Listing the wired
+# ones explicitly is what keeps it that way.
+for skill in sqx-custom-block sqx-random-group sqx-strategy-template; do
     ln -sfn "$PLUGIN/skills/$skill" "$SKILLS/$skill"
     echo "  skill   $skill"
+done
+for skill in sqx-strategy-project sqx-spp; do
+    [[ -L $SKILLS/$skill ]] && rm "$SKILLS/$skill" && echo "  retired $skill"
+done
+
+# The project's own rules go on top of each vendor SKILL.md, between markers, so a vendor
+# update that rewrites the file only needs this script re-run (tools/sqx-lab/LOCAL_PATCHES.md).
+python3 - "$PLUGIN/skills" "$REPO/tools/sqx-lab/overlays" <<'PY'
+import re, sys
+from pathlib import Path
+skills, overlays = map(Path, sys.argv[1:])
+START, END = "<!-- ALGOPROJECT OVERLAY START -->", "<!-- ALGOPROJECT OVERLAY END -->"
+for overlay in sorted(overlays.glob("*.md")):
+    skill = skills / overlay.stem / "SKILL.md"
+    raw = skill.read_bytes().decode("utf-8")
+    nl = "\r\n" if "\r\n" in raw else "\n"      # the vendor ships CRLF; keep its bytes
+    text = re.sub(rf"\n?{START}.*?{END}\n?", "\n", raw.replace("\r\n", "\n"), flags=re.S)
+    head, body = re.match(r"(---\n.*?\n---\n)(.*)", text, re.S).groups()
+    description = overlay.with_suffix(".description")
+    if description.exists():
+        head = re.sub(r"^description: .*$", "description: " + description.read_text().strip(),
+                      head, count=1, flags=re.M)
+    out = f"{head}\n{START}\n{overlay.read_text(encoding='utf-8')}{END}\n" + body.lstrip("\n")
+    skill.write_bytes(out.replace("\n", nl).encode("utf-8"))
+    print(f"  overlay {overlay.stem}")
+PY
+
+# A vendor update erases the local code patches; say so instead of running without them.
+for f in skills/sqx-random-group/engine/groups.py skills/sqx-strategy-project/engine/generate.py; do
+    grep -q "LOCAL PATCH" "$PLUGIN/$f" || echo "  ⚠️ falta el parche local de $f — tools/sqx-lab/LOCAL_PATCHES.md"
 done
 
 for command in sqx-setup sqx-doctor; do

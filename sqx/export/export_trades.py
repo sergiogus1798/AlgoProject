@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 
 from core import exportdrv, manifest, sqxfile, tradestore
-from core.paths import MASTER, databank_dir, export_dir
+from core.paths import MASTER, databank_dir, export_dir, worker_dir
 
 
 SAMPLE_SEED = 20260914   # a subset export is a sample, and a sample has to be reproducible
@@ -52,10 +52,13 @@ def main() -> None:
     # --symbol is load-bearing, not decoration: the packed trades drop the constant Symbol
     # column, so the manifest is the only record of which feed the backtest ran on.
     ap.add_argument("--symbol", required=True, help="SQX symbol without the timeframe suffix")
+    ap.add_argument("--role", help="headless install holding the project, e.g. custodian; "
+                                   "the master if absent")
     a = ap.parse_args()
+    install = worker_dir(a.role) if a.role else MASTER
 
     out = export_dir(a.project, a.databank, date.today().isoformat())
-    timeframes = stage(a.project, a.databank, out / "strategies")
+    timeframes = stage(a.project, a.databank, out / "strategies", install=install)
     (out / "timeframes.csv").write_text(
         "strategy,timeframe\n" + "".join(f"{k},{v}\n" for k, v in timeframes.items()))
     print(f"staged {len(timeframes)} strategies from {a.project}/{a.databank}")
@@ -72,7 +75,7 @@ def main() -> None:
     shutil.rmtree(out / "strategies")
 
     manifest.write(out,
-                   {"install": str(MASTER), "project": a.project, "databank": a.databank,
+                   {"install": str(install), "project": a.project, "databank": a.databank,
                     "symbol": a.symbol},
                    f"export_trades.py --project {a.project} --databank {a.databank} "
                    f"--symbol {a.symbol}",

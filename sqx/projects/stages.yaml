@@ -1,0 +1,18 @@
+# Which tasks of a workflow project each step runs, by the title the GUI shows.
+#
+# Owner, 2026-09-25: a workflow run keeps every task in ONE custom project, built at step 5 by
+# `sqx.projects.builder --workflow`. `action=start` runs every task marked active and skips the
+# rest (🔬 2026-09-25, knowhow/sqx-drive/running-a-task-headless.md), so before each start only
+# the step's tasks are switched on — `sqx.projects.stage` does that, and every configurator
+# calls it for its own step.
+#
+# The three WFC legs are not listed here: their titles live in `wfc.tasks` of
+# assets/_build.yaml, which `sqx.projects.wfc` and `sqx.variants.legs` already read.
+build: [CONSTRUCCION]
+oos: [OOS]
+crossmarket: [Retest Markets - Family]
+crosstf: [CrossTF]
+mcretest: [MCR 1 Bar, MCR 2 Spread, MCR 3 Slippage, MCR 4 MinDist, MCR 5 Params, MCR 6 Exits,
+           MCR 7 OHLC, MCR 8 Stress]
+spp: [SPP IS, SPP OOS]
+wfm: [WFM]
