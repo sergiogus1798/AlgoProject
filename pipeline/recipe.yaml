@@ -136,7 +136,7 @@ stages:
   - name: wfc
     command: python3 -m strategies.walkForwardCorrelation.report --work {work}
     needs: ["{work}/collected.json"]
-    produces: ["{work}/wfc.json", "{work}/wfc.html"]
+    produces: ["{work}/wfc.json", "{work}/estudios/wfc.html"]
     record: [n, rho, call]
 
   # Where `wfc` asks whether this surface carried over, this asks whether the WAY the
@@ -149,7 +149,7 @@ stages:
   - name: cscv
     command: python3 -m strategies.walkForwardCorrelation.pbo --work {work}
     needs: ["{work}/wfc.json", "{work}/equity.parquet"]
-    produces: ["{work}/cscv.json", "{work}/cscv.html"]
+    produces: ["{work}/cscv.json", "{work}/estudios/cscv.html"]
     record: [pbo_argmax, pbo_plateau_centre, dsr, n_clusters, slope]
 
   - name: verdict

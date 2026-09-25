@@ -14,12 +14,13 @@ once per selection rule, so the answer is not "this strategy decays" but **"choo
 centre instead of by maximum takes the PBO from 30 % to 4 %"**.
 
 Reads contract **C3** (`metrics.parquet`, from `sqx.variants.collect`) and, for the CSCV,
-`equity.parquet` (from `sqx.variants.equity`). Writes `wfc.html`, `wfc.json`, `cscv.html` and
-`cscv.json` beside them.
+`equity.parquet` (from `sqx.variants.equity`). Writes `wfc.json` and `cscv.json` beside them —
+the pipeline reads their scalars, so they do not change shape — and the result the window paints
+into the batch's `estudios/` folder: `wfc.*` and `cscv.*`, each `.json`, `.html` and `.md`.
 
 ```
-config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ render
- every knob    the panel,  rho, the    PBO, DSR,   wfc.html
+config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ contract
+ every knob    the panel,  rho, the    PBO, DSR,   estudios/
                the split   rules,      what each   cscv.html
                            the CSCV    rule cost
 ```
@@ -29,13 +30,14 @@ config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ render
 | `inputs/` | what is the study run on, and where does the history split? | touching the panel or the boundary |
 | `measure/` | what are the numbers? | touching the rho, a selection rule or the partitions |
 | `verdict/` | what do they mean? | moving a threshold or a cluster count |
-| `render/` | how is it read? | adding a figure or a table |
+| `contract/` | how is it read? — the call, the cloud and the λ per rule as the contract's blocks | adding a figure or a table |
 
 | file | what it does | run it |
 |---|---|---|
 | `report.py` | The correlation | `python3 -m strategies.walkForwardCorrelation.report --work <dir>` |
 | `pbo.py` | The CSCV, once per selection rule | `python3 -m strategies.walkForwardCorrelation.pbo --work <dir>` |
-| `config.yaml` | The trade floor, the rho floor, and every knob of the CSCV | edited |
+| `config.yaml` | The trade floor, the rho floor, and every knob of the CSCV | edited, or `--set section.key=value` |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 
 **Twelve blocks, C(12,6) = 924 partitions, ranked by per-period Sharpe.** Those are López de
 Prado's own numbers and the owner's decision of 2026-09-23; `pbo.py --blocks N` overrides the count

@@ -2,15 +2,19 @@
 
 from pathlib import Path
 
-import yaml
+from core.study import config as study_config
 
 HERE = Path(__file__).resolve().parent.parent
 
 
-def load() -> dict:
+def load(overrides: list[str] | None = None) -> dict:
     """The study's tunables.
 
+    Args:
+        overrides: "section.key=value" strings; each keeps the type of the value it replaces
+            (core.study.config).
+
     Returns:
-        The parsed `config.yaml`, unmodified.
+        The parsed `config.yaml`.
     """
-    return yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8"))
+    return study_config.load(HERE / "config.yaml", overrides or [])

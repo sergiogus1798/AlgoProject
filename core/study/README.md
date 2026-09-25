@@ -33,7 +33,9 @@ disagree. It analyses nothing. The contract itself is `docs/encargos/19-contrato
 - **`result["summary"]`** — the flat numbers one strategy contributes to its population's
   table and `verdict.csv`. Without it the population step would re-derive them from the blocks.
 
-A distribution's `band` may be `[null, null]` when the module kept only one percentile.
+A distribution's `band` may be `[null, null]` when the module kept only one percentile, and
+its optional `mark` names the line at `real` when that line is not a real run (the CSCV marks
+the median, 0).
 
 ## Why the override refuses a change of type
 

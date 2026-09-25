@@ -4,6 +4,7 @@
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -12,9 +13,10 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import fanout
+from core.study import output, result as envelope
+from strategies.walkForwardCorrelation.contract import cscv as contract
 from strategies.walkForwardCorrelation.inputs import config, panel
 from strategies.walkForwardCorrelation.measure import correlation, cscv, rules
-from strategies.walkForwardCorrelation.render import figures
 from core.surface import trials as counting
 from strategies.walkForwardCorrelation.verdict import cost, summary, trials
 
@@ -79,9 +81,11 @@ def main() -> None:
     ap.add_argument("--blocks", type=int,
                     help="blocks to cut the history into, overriding config.yaml. "
                          "12 gives C(12,6) = 924 partitions, 10 gives 252, 16 gives 12,870")
+    ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[])
     a = ap.parse_args()
 
-    cfg = config.load()
+    started = time.time()
+    cfg = config.load(a.overrides)
     knobs = cfg["cscv"]
     if a.blocks:
         knobs["blocks"] = a.blocks
@@ -129,8 +133,10 @@ def main() -> None:
               "rules": found, "trials": independent, "sharpe": deflated, "drift": moved}
     (a.work / "cscv.json").write_text(json.dumps(result, indent=2, ensure_ascii=False),
                                       encoding="utf-8")
-    (a.work / "cscv.html").write_text(
-        figures.page(a.work.name.replace("_", " "), runs, found, result), encoding="utf-8")
+    output.population(a.work / "estudios", "cscv", envelope.envelope(
+        "strategies.walkForwardCorrelation.pbo", a.work.name, None, cfg, started,
+        contract.tabs(runs, found, result), contract.verdict(found, result),
+        glossary=contract.GLOSSARY), f"CSCV — {a.work.name.replace('_', ' ')}")
 
     head = knobs["rules"][0]
     print(f"PROGRESS 100 PBO {found[head]['pbo']:.0%} con {head}, DSR {deflated['dsr']:.2f}",
@@ -142,7 +148,7 @@ def main() -> None:
               f"pierde {found[name]['prob_loss']:.0%}")
     print(f"\n{wide.shape[1]} variantes que valen {independent['n_clusters']} pruebas "
           f"independientes; el orden se conserva con pendiente {result['slope']:+.2f}")
-    print(f"-> {a.work / 'cscv.html'}")
+    print(f"-> {a.work / 'estudios' / 'cscv.html'}")
 
 
 if __name__ == "__main__":

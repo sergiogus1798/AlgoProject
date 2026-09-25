@@ -35,11 +35,11 @@ def distribution(b: dict) -> str:
         body.append(f'<line x1="{x(b["real"]):.1f}" x2="{x(b["real"]):.1f}" y1="{PAD["t"]}" '
                     f'y2="{H - PAD["b"]}" stroke="{REAL}" stroke-width="3"/>'
                     f'<text class="mark" x="{x(b["real"]) + 5:.1f}" y="{PAD["t"] + 12}">'
-                    f'real {svg.num(b["real"])}</text>')
+                    f'{escape(b.get("mark", "real"))} {svg.num(b["real"])}</text>')
     p = "" if b["p"] is None else f" · p = {b['p']:.4f}"
     key = svg.legend([(svg.box(SIM, .75), "simuladas"), (svg.box(SIM, .2), "banda"),
                       (svg.line(svg.INK2, "dashed"), f"mediana {svg.num(b['median'])}"),
-                      (svg.line(REAL), f"real{p}")])
+                      (svg.line(REAL), f"{b.get('mark', 'real')}{p}")])
     return svg.figure(b["title"], b["note"], svg.canvas("".join(body)), key)
 
 

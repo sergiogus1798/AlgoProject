@@ -25,11 +25,11 @@ def main() -> None:
     lede = ("Diagnóstico, nunca selección: ninguna lectura sustituye el punto elegido por un "
             "clon mejor. Eso lo decide el dueño, y se revalida aparte.")
     print(markdown.render(got, title))
-    output.population(a.work, "cloud", got, title, lede)
+    output.population(a.work / "estudios", "cloud", got, title, lede)
     if a.out:
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(json.dumps(got["summary"], indent=1), encoding="utf-8")
-    print(f"-> {a.work / 'cloud.html'}")
+    print(f"-> {a.work / 'estudios' / 'cloud.html'}")
 
 
 if __name__ == "__main__":
