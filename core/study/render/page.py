@@ -34,6 +34,22 @@ def block(b: dict) -> str:
     return head + DRAW[b["kind"]](b)
 
 
+def shown(tab: dict) -> list[dict]:
+    """The blocks a static page draws: under selectors, only the default combination.
+
+    Args:
+        tab: One tab of a result.
+
+    Returns:
+        Its blocks, or, when it has selectors, those whose "select" agrees with every
+        default. The window redraws any other combination from the same result; a page that
+        drew all of them was 1.9 MB per strategy, three times the old report.
+    """
+    defaults = {s["key"]: s["default"] for s in tab["selectors"]}
+    return [b for b in tab["blocks"]
+            if all(defaults.get(k) == v for k, v in b.get("select", {}).items())]
+
+
 def body(result: dict, level: int = 2) -> list[str]:
     """Every part of one result, in reading order: verdict, warnings, tabs, glossary.
 
@@ -49,7 +65,14 @@ def body(result: dict, level: int = 2) -> list[str]:
             f'{escape(w["text"])}</div>' for w in result["warnings"]]
     for tab in result["tabs"]:
         out.append(f'<h{level} id="{escape(tab["name"])}">{escape(tab["title"])}</h{level}>')
-        out += [block(b) for b in tab["blocks"]]
+        if tab["note"]:
+            out.append(f'<p class="lede">{escape(tab["note"])}</p>')
+        if tab["selectors"]:
+            out.append('<p class="lede">Aquí se ve la combinación por defecto de '
+                       + ", ".join(f"{escape(s['label'])} ({escape(str(s['default']))})"
+                                   for s in tab["selectors"])
+                       + ". Las demás están en el resultado JSON y en la ventana.</p>")
+        out += [block(b) for b in shown(tab)]
     if result["glossary"]:
         out.append(f"<h{level}>Glosario</h{level}><dl class='glossary'>"
                    + "".join(f"<dt>{escape(g['term'])}</dt><dd>{escape(g['text'])}</dd>"

@@ -27,16 +27,20 @@ hold, and the traps a future session would otherwise step in.
 | `model/` | what are we pretending could have happened instead? | adding or changing a randomisation |
 | `simulate/` | what are the numbers, under a given model? | touching the parallelism or a sweep |
 | `verdict/` | given those numbers, what do we conclude? | moving a threshold or a score |
-| `render/` | how is all of that read? | adding a figure, a table or a sentence |
-| `explorer/` | the same study, one strategy at a time, on demand | changing the panel |
+| `contract/` | how is all of that read? — the result as the contract's blocks, one tab per family | adding a figure, a table or a sentence |
 
-Only two things sit in the root, because they are the only two things that get called:
+The panel and the hand-drawn pages are gone (2026-09-25, `docs/encargos/19-…`): the window paints
+`one.run()`'s dict with native widgets, and `core/study/render` draws the batch page from the same
+dict, so the two cannot disagree.
 
 | file | what it does | run it |
 |---|---|---|
-| `run.py` | Puts one stream through all five families and returns the single result everything else reads | imported |
-| `report.py` | The command: every strategy of one databank | `python3 -m strategies.monteCarlo.report --project XAUUSD --databank Results --asset XAUUSD --export 2026-09-03` |
-| `config.yaml` | Every tunable of the study, grouped by family | edited |
+| `run.py` | Puts one stream through all five families and returns the raw result the verdict reads | imported |
+| `load.py` | Everything one run reads, assembled once: the streams, the daily bars, the costs, each strategy's identity, and the stability check | imported |
+| `one.py` | **One strategy as the contract's data**: verdict, seven tabs, warnings, glossary, summary row; `only=` re-runs one sub-test | imported — the window calls it |
+| `many.py` | Every strategy, one process each, and the databank read as one result | imported |
+| `report.py` | The command: every strategy of one databank, to `verdict.csv`, one JSON and one page per strategy, and the databank page | `python3 -m strategies.monteCarlo.report --project XAUUSD --databank Results --asset XAUUSD --export 2026-09-03` |
+| `config.yaml` | Every tunable of the study, grouped by family | edited, or `--set section.key=value` |
 
 `run.py` is the one module allowed to cross every layer — that is what an orchestrator is. Everyone
 else obeys one direction:
@@ -47,8 +51,8 @@ else obeys one direction:
 | `model/` | nothing inside the module |
 | `simulate/` | `inputs/`, `model/`, `verdict/confidence` |
 | `verdict/` | `inputs/`, itself |
-| `render/` | everything above it |
-| `run.py`, `report.py`, `explorer/` | everything |
+| `contract/` | everything above it |
+| `run.py`, `load.py`, `one.py`, `many.py`, `report.py` | everything |
 
 `report.py` produces numbers and judges none of them; `verdict/gates.py` owns every threshold in the
 study and computes none of the numbers it judges.

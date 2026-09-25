@@ -1,11 +1,19 @@
-"""Turns a result into the words the owner reads. Pure text: it computes nothing."""
-
-import argparse
-
-import pandas as pd
+"""The words the owner reads: every fired check as a sentence, and why the verdict is what it is."""
 
 from strategies.monteCarlo.model import stress
-from strategies.monteCarlo.verdict import gates, scoring
+from strategies.monteCarlo.verdict import scoring
+
+LABELS = {"net": "Beneficio neto", "return_pct": "Retorno", "dd": "Drawdown $",
+          "dd_pct": "Drawdown %", "ret_dd": "Ret/DD", "sharpe": "Sharpe por operación",
+          "pf": "Profit factor", "losing_run": "Racha perdedora"}
+UNITS = {"net": "USD", "return_pct": "%", "dd": "USD", "dd_pct": "%", "ret_dd": "",
+         "sharpe": "", "pf": "", "losing_run": ""}
+# stress.MODELS is code and stays in English; the report is read in Spanish.
+MODELS_ES = {"skip": "Entradas que el sistema real no llega a tomar",
+             "cost_shock": "Comisión y swap hasta el doble de lo que SQX cobró",
+             "fill_degrade": "Ejecuciones que devuelven parte de lo que la propia operación "
+                             "ya había cedido",
+             "spread_widen": "Un spread más ancho que el fijo que supuso el backtest"}
 
 # One sentence per check that can fire, with the number that fired it. Written so that the
 # sentence alone says what to do about it.
@@ -108,88 +116,3 @@ def rationale(result: dict, verdict: dict) -> str:
     return (f"Ninguna prueba veta. Lo que limita la nota es la familia {family} "
             f"({binding['value']:.0f} sobre 100): {scoring.BUILT_FROM[family]}. "
             f"El compuesto es {verdict['composite']:.0f}.")
-
-
-def row(result: dict, verdict: dict) -> dict:
-    """One strategy reduced to the line the databank table and the CSV carry.
-
-    Args:
-        result: What run.analyse() returned.
-        verdict: What scoring.verdict() returned.
-
-    Returns:
-        A flat dict: verdict, composite, sub-scores and the numbers every gate read.
-    """
-    return {"strategy": result["name"], "trades": result["n_trades"],
-            "tier": verdict["tier"], "composite": verdict["composite"],
-            **{f"score_{k}": v for k, v in verdict["subscores"].items()},
-            "net": result["observed"]["net"], "dd_pct": result["observed"]["dd_pct"],
-            "ret_dd": result["observed"]["ret_dd"],
-            "dd_pct_95": result["A"]["dd_pct_95"], "dd_pct_99": result["A"]["dd_pct_99"],
-            "inflation": result["A"]["inflation"], "net_5": result["B"]["net_5"],
-            "pf_5": result["B"]["pf_5"], "oos_ratio": result["B"]["oos_ratio"],
-            "outlier_share": result["B"]["outlier"]["share"],
-            "windows_ok": gates.passing(result["D"]["overlapping"]),
-            "high_vol_net": result["D"]["regime"]["buckets"]["high"]["median_net"],
-            # The 5% severity, for one flat column; the whole curve is in the HTML report.
-            "stitched_dd_pct": result["D"]["stitch"][0.05]["dd_pct"], "psr": result["E"]["psr"],
-            "gates": sum(1 for f in verdict["flags"] if f["gate"]),
-            "flags": sum(1 for f in verdict["flags"] if not f["gate"]),
-            "confidence": verdict["tiers"]["worst"]}
-
-
-def _failure_counts(flags: pd.DataFrame) -> dict:
-    """How many strategies each check disqualified.
-
-    Args:
-        flags: One row per fired check, over every strategy.
-
-    Returns:
-        {check: strategies}, most common first, vetoes before warnings.
-    """
-    if flags.empty:
-        return {}
-    return flags[flags.gate].test.value_counts().to_dict()
-
-
-def markdown(args: argparse.Namespace, rows: pd.DataFrame, flags: pd.DataFrame,
-             stab: dict, cfg: dict) -> str:
-    """The written conclusion of a whole databank run.
-
-    Args:
-        args: Parsed command line.
-        rows: One row per strategy, from row().
-        flags: One row per fired check, over every strategy.
-        stab: What stability.spread() returned for the run's reference strategy.
-        cfg: What config.load() returned.
-
-    Returns:
-        Markdown. It opens with what did not pass, because a page that opens with an
-        average invites the reader to read the average.
-    """
-    counts = rows.tier.value_counts().to_dict()
-    lines = [f"# Monte Carlo — {args.project} / {args.databank}", "",
-             f"{len(rows)} estrategias · {cfg['global']['n_sims']:,} simulaciones por prueba · "
-             f"export {args.export}", "",
-             "## Veredicto", "",
-             "| veredicto | estrategias |", "|---|---|"]
-    lines += [f"| {k} | {v} |" for k, v in counts.items()]
-    survivors = rows[rows.tier.isin(scoring.VERDICTS[:3])]
-    lines += ["", f"Pasan sin ningún veto: **{len(survivors)}** de {len(rows)}.", "",
-              "## Por qué caen las que caen", ""]
-    for test, n in _failure_counts(flags).items():
-        lines.append(f"- `{test}` — {n} estrategia" + ("s" if n > 1 else ""))
-    lines += ["", "## Estabilidad del propio Monte Carlo", "",
-              f"Con {cfg['global']['n_sims']:,} simulaciones y {stab['runs']} repeticiones "
-              f"independientes, el número que más se mueve es `{stab['worst']}`, con una "
-              f"dispersión del {stab['worst_spread']:.1%} de su media. "
-              + ("Es demasiado: sube `n_sims`." if stab["unstable"]
-                 else "Por debajo de la tolerancia, así que las cifras que deciden son estables."),
-              "", "## Lo que este informe no dice", "",
-              "- **No detecta sobreajuste.** Ni DSR ni CSCV: harían falta las estrategias que se "
-              "probaron durante la generación, que aquí no están.",
-              "- **No valida el edge.** Asume que ya lo tiene y mide de qué depende.",
-              "- **El techo de drawdown es un marcador de posición** "
-              f"({cfg['scoring']['survival_dd_pct']:.0%}) hasta que estén las reglas de la "
-              "prop firm."]
-    return "\n".join(lines) + "\n"

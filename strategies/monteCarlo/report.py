@@ -2,102 +2,41 @@
 """Run the Monte Carlo study over every strategy of one databank and write its report."""
 
 import argparse
-import os
+import json
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 
-from core import assets, barstore, fanout, manifest, tradestore
-from core.paths import bar_source, export_dir, report_dir
-from strategies.monteCarlo import run
-from strategies.monteCarlo.inputs import config, costs, stream
-from strategies.monteCarlo.model import regime
-from strategies.monteCarlo.simulate import engine, fan, kernel, stability, sweeps
-from strategies.monteCarlo.verdict import scoring
-from strategies.monteCarlo.render import panel, strategypage, text
-
-FAN_SIMS = 2000   # paths behind the equity cone; a picture of the spread, not a gate
-
-# What every strategy's worker reads, set before the fork: the streams, the daily bars, the
-# asset, the config, the appendix and where the pages go.
-_SHARED: dict = {}
+from core import assets
+from core.paths import report_dir
+from core.study import verdicts
+from core.study.render import markdown, page
+from strategies.monteCarlo import load, many
+from strategies.monteCarlo.inputs import config
 
 
-def analyse_one(source: dict, day: pd.DataFrame, asset: dict, cfg: dict,
-                shared: dict) -> tuple[dict, dict, str]:
-    """Everything one strategy gets: the numbers, the verdict and its page.
+def write(out: Path, got: dict, title: str) -> None:
+    """Every strategy's result as JSON and as a page, and the databank's page and summary.
 
     Args:
-        source: What stream.build() or stream.portfolio() returned.
-        day: Daily candles, from regime.daily().
-        asset: What costs.load() returned.
-        cfg: What config.load() returned.
-        shared: What the appendix of every page shows: paths, costs, stability.
-
-    Returns:
-        The result, the verdict and the rendered page.
+        out: The report folder.
+        got: What many.run() returned.
+        title: The databank page's heading.
     """
-    result = run.analyse(source, day, asset, cfg)
-    verdict = scoring.verdict(result, cfg)
-    band = fan.envelope(source["pnl"], "stationary",
-                        config.stationary_block(source["pnl"].size), FAN_SIMS,
-                        cfg["global"]["starting_equity"], [5, 25, 50, 75, 95])
-    return result, verdict, strategypage.page(result, verdict, band, cfg, shared)
-
-
-def _strategy(name: str) -> tuple[dict, list[dict], str]:
-    """One strategy's whole study, in a worker process of its own.
-
-    Args:
-        name: The stream's name.
-
-    Returns:
-        (its row of the verdict table, its fired checks, the line to print). The page is
-        written here, so only the row travels back.
-    """
-    got = _SHARED
-    engine.SERIAL = len(got["streams"]) > 1
-    result, verdict, html = analyse_one(got["streams"][name], got["day"], got["asset"],
-                                        got["cfg"], got["shared"])
-    (got["out"] / "estrategias" / f"{name}.html").write_text(html, encoding="utf-8")
-    return (text.row(result, verdict), [{"strategy": name, **f} for f in verdict["flags"]],
-            f"{verdict['tier']}  compuesto {verdict['composite']:.0f}  "
-            f"{sum(1 for f in verdict['flags'] if f['gate'])} vetos")
-
-
-def page(a: argparse.Namespace, rows: pd.DataFrame, flags: pd.DataFrame, cfg: dict,
-         shared: dict) -> str:
-    """The databank page, in reading order.
-
-    Args:
-        a: Parsed command line.
-        rows: One row per strategy.
-        flags: One row per fired check.
-        cfg: What config.load() returned.
-        shared: What the appendix shows.
-
-    Returns:
-        A self-contained HTML page linking to every strategy's own report.
-    """
-    title = f"Monte Carlo — {a.project} / {a.databank}"
-    return panel.render(title, [
-        f"<h1>{title}</h1>",
-        f'<p class="lede">{len(rows)} estrategias · {cfg["global"]["n_sims"]:,} simulaciones '
-        f'por prueba · export {a.export}. Cada estrategia llega aquí ya con edge: esto mide de '
-        f'qué depende, no si existe.</p>',
-        panel.headline(rows),
-        "<h2>Lo que falló</h2>",
-        '<p class="lede">Cada prueba que vetó o avisó, cuántas estrategias tumbó, y el número '
-        'de una de ellas.</p>',
-        panel.failures(flags),
-        "<h2>Estrategia a estrategia</h2>",
-        '<p class="lede">Pincha el nombre para ver su informe completo.</p>',
-        panel.verdict_table(rows),
-        "<h2>Datos y método</h2>", panel.method(a, cfg, shared["stability"], shared),
-        panel.limits(cfg),
-        f"<footer>{a.project} / {a.databank} · generado por "
-        f"<code>strategies.monteCarlo.report</code> · sin semilla</footer>"])
+    (out / "estrategias").mkdir(parents=True, exist_ok=True)
+    for m in got["members"]:
+        # Names carry dots ("Strategy 10.15.25"), so the suffix is appended, never swapped.
+        stem = out / "estrategias" / m["strategy"]
+        Path(f"{stem}.json").write_text(json.dumps(m, ensure_ascii=False), encoding="utf-8")
+        Path(f"{stem}.html").write_text(
+            page.page(m, f"Monte Carlo — {m['strategy']}", "Robustez de una estrategia ya "
+                      "aceptada: cuánto de este resultado es suerte, y de qué tipo."),
+            encoding="utf-8")
+    pop = got["population"]
+    (out / "montecarlo.json").write_text(json.dumps(pop, ensure_ascii=False), encoding="utf-8")
+    (out / "montecarlo.html").write_text(page.page(pop, title), encoding="utf-8")
+    (out / "montecarlo.md").write_text(markdown.render(pop, title), encoding="utf-8")
 
 
 def main() -> None:
@@ -117,66 +56,28 @@ def main() -> None:
 
     print(assets.report(a.asset))
     cfg = config.load(a.set)
-    asset = costs.load(a.asset)
-    export = export_dir(a.project, a.databank, a.export)
-    packed = tradestore.read(export / "trades.parquet")
-    # The packed export drops the constant Symbol column, so the feed comes from the
-    # manifest — the record of which market the backtest actually ran on.
-    feed = manifest.read(export)["source"]["symbol"]
-    day = regime.daily(barstore.read(feed, a.bars_timeframe))
-
-    risk = cfg["global"]["risk_per_trade"]
-    streams = ([stream.portfolio(packed, asset, risk, a.databank)] if a.portfolio else
-               [stream.build(f, n, asset, risk)
-                for n, f in tradestore.by_strategy(packed).items()])
-    reference = max(streams, key=lambda s: s["pnl"].size)
-    print(f"{len(streams)} streams · estabilidad sobre {reference['name']}")
-    shared = {"args": a, "export": export / "trades.parquet", "bars": bar_source(feed),
-              "cost": costs.crosscheck(reference["frame"], asset),
-              "vol_model": cfg["family_d"]["vol_model"],
-              "stability": stability.spread(reference, cfg)}
+    inputs = load.load(a.project, a.databank, a.asset, a.export, cfg, a.bars_timeframe,
+                         a.portfolio)
+    print(f"{len(inputs['streams'])} streams · estabilidad sobre {inputs['reference']}",
+          flush=True)
+    got = many.run(inputs, cfg)
 
     # A portfolio run writes beside the per-strategy one, never over it: they answer
     # different questions about the same databank and both are worth keeping.
     out = (report_dir(a.project, a.databank, date.today().isoformat())
            / ("montecarlo_portfolio" if a.portfolio else "montecarlo"))
-    (out / "estrategias").mkdir(parents=True, exist_ok=True)
-    # One strategy per process, the longest first (`core.fanout`), each running its
-    # sub-tests serially inside. 🔬 2026-09-25: the old loop took one strategy at a time
-    # and gave each sub-test 10 to 50 chunks, which left most of 96 cores idle for the
-    # whole run. The stability pool is shut first: a pool's threads must not be forked.
-    engine.close()
-    kernel.prime()
-    _SHARED.update(streams={s["name"]: s for s in streams}, day=day, asset=asset, cfg=cfg,
-                   shared=shared, out=out)
-    got = {}
-    workers = cfg["global"]["max_workers"] or os.cpu_count()
-    costs_ = {s["name"]: int(s["pnl"].size) for s in streams}
-    for i, (name, done) in enumerate(fanout.run(_strategy, costs_, workers), 1):
-        got[name] = done
-        print(f"[{i}/{len(streams)}] {name}  ({costs_[name]} operaciones)  {done[2]}",
-              flush=True)
-    rows = [got[s["name"]][0] for s in streams]
-    fired = [f for s in streams for f in got[s["name"]][1]]
-
-    table = pd.DataFrame(rows)
-    flags = pd.DataFrame(fired, columns=["strategy", "family", "test", "value", "limit",
-                                         "gate"])
-    table.to_csv(out / "verdict.csv", index=False)
-    flags.to_csv(out / "flags.csv", index=False)
-    (out / "montecarlo.md").write_text(
-        text.markdown(a, table, flags, shared["stability"], cfg), encoding="utf-8")
-    (out / "montecarlo.html").write_text(page(a, table, flags, cfg, shared),
-                                         encoding="utf-8")
-    manifest.write(out,
-                   {"project": a.project, "databank": a.databank, "asset": a.asset,
-                    "export": a.export, "bars": str(shared["bars"]),
-                    "config": cfg, "portfolio": a.portfolio},
-                   f"python3 -m strategies.monteCarlo.report --project {a.project} "
-                   f"--databank {a.databank} --asset {a.asset} --export {a.export}",
-                   {"strategies": len(table), "models": len(sweeps.plan(
-                       reference["pnl"].size, cfg)),
-                    **table.tier.value_counts().to_dict()})
+    write(out, got, f"Monte Carlo — {a.project} / {a.databank}")
+    fired = [{"strategy": m["strategy"], **f} for m in got["members"]
+             for f in m["summary"]["fired"]]
+    pd.DataFrame(fired, columns=["strategy", "family", "test", "value", "limit", "gate"]
+                 ).to_csv(out / "flags.csv", index=False)
+    command = (f"python3 -m strategies.monteCarlo.report --project {a.project} --databank "
+               f"{a.databank} --asset {a.asset} --export {a.export}"
+               + (" --portfolio" if a.portfolio else "")
+               + "".join(f" --set {s}" for s in a.set))
+    table = many.table(got["members"])
+    verdicts.write(out, table, inputs["shared"]["export"], command, a.set)
+    print(table[["strategy", "verdict", "composite", "gates"]].to_string(index=False))
     print(f"{len(table)} estrategias → {out}")
 
 

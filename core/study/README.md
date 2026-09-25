@@ -24,6 +24,16 @@ disagree. It analyses nothing. The contract itself is `docs/encargos/19-contrato
 - **Aggregated, never raw.** `blocks.distribution` and `blocks.cone` take the draws and keep
   only the histogram and the percentiles, which is what keeps a result in kilobytes.
 
+## Two keys beyond the encargo's §3
+
+- **`tab["note"]`** — the paragraph a tab opens with. The contract puts every sentence in a
+  block's `note`, but a tab's own framing ("the same trades in another order: profit cannot
+  move, drawdown can") belongs to no single block.
+- **`result["summary"]`** — the flat numbers one strategy contributes to its population's
+  table and `verdict.csv`. Without it the population step would re-derive them from the blocks.
+
+A distribution's `band` may be `[null, null]` when the module kept only one percentile.
+
 ## Why the override refuses a change of type
 
 `2e4` is a string to YAML. Typed into `global.n_sims`, the old loaders stored the string and the

@@ -20,8 +20,9 @@ def distribution(b: dict) -> str:
     x = svg.scale(edges[0], edges[-1], PAD["l"], W - PAD["r"])
     y = svg.scale(0, max(counts) or 1, H - PAD["b"], PAD["t"])
     lo, hi = b["band"]
-    body = [f'<rect x="{x(lo):.1f}" y="{PAD["t"]}" width="{x(hi) - x(lo):.1f}" '
-            f'height="{H - PAD["b"] - PAD["t"]}" fill="{SIM}" opacity=".10"/>']
+    body = ([f'<rect x="{x(lo):.1f}" y="{PAD["t"]}" width="{x(hi) - x(lo):.1f}" '
+             f'height="{H - PAD["b"] - PAD["t"]}" fill="{SIM}" opacity=".10"/>']
+            if lo is not None else [])
     body += [f'<rect x="{x(a) + .5:.1f}" y="{y(c):.1f}" width="{max(x(z) - x(a) - 1, .5):.1f}" '
              f'height="{y(0) - y(c):.1f}" fill="{SIM}" opacity=".75"/>'
              for a, z, c in zip(edges, edges[1:], counts)]

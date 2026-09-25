@@ -8,6 +8,7 @@ script, no font, no network.
 |---|---|---|---|
 | `__init__.py` | Names what the package is; holds no code | — | — |
 | `page.py` | The whole page: verdict, warnings, one section per tab, glossary, provenance footer; `body()` for embedding one result inside a batch page | imported | result → HTML |
+| `markdown.py` | The same result as Markdown: tables and bars in full, a drawing by its numbers | imported | result → text |
 | `figures.py` | The four drawings over a continuous axis: `distribution`, `cone`, `lines`, `bars` | imported | block → SVG |
 | `grids.py` | The two over two axes: `grid` on a discrete scale, and `scatter` | imported | block → SVG |
 | `tables.py` | `table` and `verdict` | imported | block → HTML |

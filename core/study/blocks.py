@@ -30,6 +30,31 @@ def _num(value: float) -> float | None:
     return value if np.isfinite(value) else None
 
 
+def plain(value: object, digits: int | None = None) -> object:
+    """Any nested structure made of what JSON can hold: numpy scalars unwrapped, NaN to None.
+
+    Args:
+        value: A dict, list, tuple, array, scalar or string.
+        digits: Significant digits floats are rounded to; None keeps them whole. A drawing
+            needs six, and seventeen made a strategy's result three times heavier.
+
+    Returns:
+        The same structure with plain Python leaves; dict keys become strings.
+    """
+    if isinstance(value, dict):
+        return {str(k): plain(v, digits) for k, v in value.items()}
+    if isinstance(value, (list, tuple, np.ndarray)):
+        return [plain(v, digits) for v in value]
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    if isinstance(value, (int, np.integer)):
+        return int(value)
+    if isinstance(value, (float, np.floating)):
+        v = _num(value)
+        return v if v is None or digits is None else float(f"{v:.{digits}g}")
+    return value
+
+
 def distribution(title: str, unit: str, values: np.ndarray, real: float, note: str,
                  p: float | None = None, band: tuple[float, float] = (5, 95),
                  bins: int = 60) -> dict:
