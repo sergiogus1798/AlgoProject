@@ -8,7 +8,7 @@ from nulls import model, simulate, verdict
 
 
 def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
-            statistic: str, rung: str) -> dict:
+            statistic: str, rung: str, key: str) -> dict:
     """One cell's statistic, its empirical p, and what there is to distrust about them.
 
     The statistic is priced from the bars by `nulls.simulate`, never read off SQX, because
@@ -21,6 +21,7 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
         nullcfg: What `nulls.inputs.config` returned.
         statistic: A key of `nulls.stats.measure`.
         rung: A key of `nulls.model.RUNGS`.
+        key: What identifies the cell, strategy and block; it seeds the cell's monkeys.
 
     Returns:
         `trades`, `seen`, `p` and `warnings`. `p` is NaN when the cell has too few trades
@@ -38,7 +39,7 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
     if len(rows) < nullcfg["verdict"]["min_trades"]:
         return {"trades": len(rows), "seen": seen[statistic], "p": np.nan,
                 "warnings": ["too few trades for a p"]}
-    drawn = simulate.nulls(kept, rung, nullcfg)
+    drawn = simulate.nulls(kept, rung, nullcfg, key)
     return {"trades": len(rows), "seen": seen[statistic],
             "p": verdict.pvalue(seen[statistic], drawn[statistic], statistic),
             "warnings": verdict.distrust(kept, seen, len(rows), nullcfg)}
@@ -60,7 +61,8 @@ def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
     """
     statistic, rung = cfg["verdict"]["statistic"], cfg["verdict"]["rung"]
     measured = [numbers(tradestore.block(packed, row.strategy, row.block),
-                        frames[row.timeframe], nullcfg, statistic, rung)
+                        frames[row.timeframe], nullcfg, statistic, rung,
+                        f"{row.strategy}|{row.block}")
                 for row in plan.itertuples()]
     return pd.concat([plan.reset_index(drop=True), pd.DataFrame(measured)], axis=1)
 

@@ -12,6 +12,7 @@ exception, below)
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `backtest.py` | Prices the real run and N random ones identically, in dollars, in batches | imported | fixed + bars + model → table, shapes, cone |
+| `kernel.py` | A batch of random runs priced, measured and drawn as equity in one compiled numba pass; `price()`, `metrics.paths` and `equity.path` are the definition it is checked against | imported | entries + holds → statistics, curves |
 | `realrun.py` | The real backtest's own statistics — over **everything SQX reported** and over the grid-locatable subset, which are not the same population — and the mechanical checks | imported | fixed + bars → stats, checks |
 | `metrics.py` | **What a run is worth.** Net, drawdown, Ret/DD, Sharpe, PF and the losing run of thousands of runs at once, each with its own good side | imported | P&L matrix → statistics |
 | `sweep.py` | **The window sweep.** Calendar blocks of each size, the trades and free room in each, and a free-placement model confined to them | imported | bars + trades + model → blocks, entries, holds |

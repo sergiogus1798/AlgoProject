@@ -1549,10 +1549,17 @@ Medido: tres procesos seguidos dan `810825080`, `1328569471`, `751024716` para e
 en el resultado — dos corridas de `gate.report` sobre los mismos ficheros dieron **227 y 229
 supervivientes**. Con `PYTHONHASHSEED=0` el valor se repite y el `scorecard` sale idéntico.
 
-El arreglo es una línea (un hash estable, p. ej. los cuatro primeros bytes de un SHA-1 del `rung`),
-pero **cambia una vez todos los p almacenados**, así que es decisión del dueño y no se ha aplicado.
-Mientras tanto: **cualquier medida A/B sobre los nulos tiene que fijar `PYTHONHASHSEED`**, o la
-diferencia que se lea será el sorteo y no el cambio.
+✅ **Arreglado el 2026-09-25**, por encargo del dueño: cada bloque sortea de
+`SeedSequence([seed, blake2b(estrategia), id fijo del peldaño, bloque])` (`nulls/simulate.py`). Los p
+guardados antes de esa fecha salieron de otros monos; comparados con los nuevos sobre 15.140 p, la
+diferencia está dentro del error Monte Carlo.
+
+## 🔬 Tras numba, más procesos que núcleos físicos es más lento (2026-09-25)
+
+`crossmarket.report` sobre 96 estrategias, repartido por (estrategia, mercado): 90,8 s con 12
+procesos, 52,2 s con 24, **44,6 s con 48**, 51,7 s con 72 y 59,4 s con 96. La máquina tiene 48
+núcleos físicos. Con el kernel compilado cada proceso aprovecha su núcleo entero, y dos hilos del
+mismo núcleo se estorban. Usar 48, no `os.cpu_count()`.
 
 ## El patrón que se repite: traceback en vez de «me falta esto» (2026-09-24)
 

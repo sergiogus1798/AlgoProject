@@ -100,7 +100,8 @@ def main() -> None:
     kept = simulate.fixed(trades, inputs.bars(a.feed, a.timeframe), cfg)
     names = cfg["statistics"]["report"]
     seen = simulate.real(kept, names)
-    per_rung = {rung: simulate.nulls(kept, rung, cfg) for rung in cfg["nulls"]["rungs"]}
+    per_rung = {rung: simulate.nulls(kept, rung, cfg, a.strategy)
+                for rung in cfg["nulls"]["rungs"]}
 
     print(f"\n{a.strategy}   {len(trades)} operaciones   muestra {a.sample}   "
           f"{cfg['nulls']['draws']:,} monos por peldano")

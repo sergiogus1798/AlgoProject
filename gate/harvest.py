@@ -40,8 +40,8 @@ def main() -> None:
 
     out = harvest_dir(a.project, a.databank, date.today().isoformat())
     out.mkdir(parents=True, exist_ok=True)
-    sides = {side: collect.tables([pairs[i][n] for i in matched], out / f"_{side}", a.view)
-             for n, side in enumerate(("IS", "OOS"))}
+    sides = collect.tables({side: [pairs[i][n] for i in matched]
+                            for n, side in enumerate(("IS", "OOS"))}, out / "_work", a.view)
     # A pair the names rescued carries two different identities, so the retest side is
     # re-keyed to the build's before anything is joined on it.
     if alias:

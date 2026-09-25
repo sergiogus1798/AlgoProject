@@ -58,6 +58,11 @@ python3 -u -m strategies.crossmarket.report \
 | `--export` | sí | la fecha de la exportación, `AAAA-MM-DD` |
 | `--floor` | no | fracción de mercados que tienen que superar cero para conservarla. Por defecto `0.5` |
 | `--set` | no | cualquier knob de `config.yaml`, p. ej. `nulls.draws=2000` |
+| `--workers` | no | cuántos **mercados** se estudian a la vez. Pon **48**: con más va más lento |
+
+Cada tarea es **una estrategia en un mercado**, no una estrategia entera, y las más largas salen
+primero. Medido el 2026-09-25: 96 estrategias × 9 mercados a 500 sorteos en **45 s** con 48
+procesos, y las 499 × 9 en **4 min 15 s** con 72 (antes 38 min).
 
 ⚠️ **Pon el `-u` de Python.** Y no lo canalices a `tail`: una tubería retiene la salida hasta el
 final y un lote de una hora se vuelve indistinguible de un cuelgue.

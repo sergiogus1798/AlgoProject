@@ -8,6 +8,7 @@ import pandas as pd
 from core import exportdrv, sqxfile, sqxstats, tradestore
 
 SUFFIXES = (" (IS)", " (OOS)")   # the two blocks a paired view emits, by sampleType 10 and 20
+PREFIX = {"IS": "IS__", "OOS": "OOS__"}   # which databank a staged file came from
 
 
 def index(folder: Path) -> dict[str, Path]:
@@ -64,42 +65,58 @@ def measured(metrics: pd.DataFrame) -> str:
     return filled[0]
 
 
-def tables(files: list[Path], work: Path, view: str) -> dict:
-    """Stage a set of strategies once, and take everything they hold.
+def tables(sides: dict[str, list[Path]], work: Path, view: str) -> dict:
+    """Stage both databanks' strategies once, and take everything they hold in one pass.
 
     Args:
-        files: The .sqx to take, from one databank.
+        sides: "IS" and "OOS" to the .sqx to take from each databank.
         work: Scratch directory; nothing in it survives this call.
         view: Databank view to export the metrics through.
 
     Returns:
-        `metrics` (one row per identity, only the columns that carry numbers, their sample
-        suffix stripped), `trades`, `equity`, `seen` — how many strategies the worker
-        reported — and `sample`, which of the view's two blocks this databank had filled.
+        Per side: `metrics` (one row per identity, only the columns that carry numbers, their
+        sample suffix stripped), `trades`, `equity`, `seen` -- how many strategies the worker
+        reported for that side -- and `sample`, which of the view's two blocks it filled.
+
+        Both sides go into ONE staging folder under a side prefix, because SQX names a
+        loaded strategy after its file (`knowhow/01-file-formats.md`): the prefix keeps the
+        two copies of a strategy apart, and it is what splits the rows back afterwards. One
+        conductor cycle and one `orderstocsv` instead of one of each per side -- each JVM
+        start is ~20 s, and they were most of `gate.harvest`.
     """
     staged = work / "sqx"
     staged.mkdir(parents=True, exist_ok=True)
-    for f in files:
-        shutil.copy(f, staged / f.name)
-    ids = {f.stem: sqxfile.identity(f) for f in sorted(staged.glob("*.sqx"))}
+    ids, side_of = {}, {}
+    for side, files in sides.items():
+        for f in files:
+            stem = PREFIX[side] + f.stem
+            shutil.copy(f, staged / f"{stem}.sqx")
+            ids[stem], side_of[stem] = sqxfile.identity(f), side
 
-    seen = exportdrv.metrics(staged, view, work / "metrics.csv")
+    exportdrv.metrics(staged, view, work / "metrics.csv")
     metrics = pd.read_csv(work / "metrics.csv", sep=";", encoding="utf-8-sig")
-    suffix = measured(metrics)
-    metrics["identity"] = metrics["Strategy Name"].map(ids)
-    keep = [c for c in metrics.columns if c.endswith(suffix)]
-    metrics = metrics[["identity", "Strategy Name"] + keep].rename(
-        columns={c: c[: -len(suffix)] for c in keep}).set_index("identity")
-
+    metrics["side"] = metrics["Strategy Name"].map(side_of)
     exportdrv.trades(staged, work / "csv")
-    tradestore.pack(sorted((work / "csv").glob("*.csv")), work / "trades.parquet", False)
-    trades = pd.read_parquet(work / "trades.parquet")
-    trades["identity"] = trades["strategy"].astype(str).map(ids)
+    trades = tradestore.frame(sorted((work / "csv").glob("*.csv")), False)[0]
+    trades["side"] = trades["strategy"].astype(str).map(side_of)
+    curves = {stem: sqxstats.equity(staged / f"{stem}.sqx", "Main") for stem in sorted(ids)}
 
-    curves = {ids[f.stem]: sqxstats.equity(f, "Main") for f in sorted(staged.glob("*.sqx"))}
-    equity = pd.DataFrame(curves).rename_axis("day").reset_index().melt(
-        id_vars="day", var_name="identity", value_name="equity").dropna()
-
+    out = {}
+    for side in sides:
+        mine = metrics[metrics["side"] == side].drop(columns="side")
+        suffix = measured(mine)
+        keep = [c for c in mine.columns if c.endswith(suffix)]
+        mine = mine.assign(identity=mine["Strategy Name"].map(ids),
+                           **{"Strategy Name": mine["Strategy Name"].str[len(PREFIX[side]):]})
+        drawn = trades[trades["side"] == side]
+        equity = pd.DataFrame({ids[s]: c for s, c in curves.items() if side_of[s] == side})
+        out[side] = {
+            "metrics": mine[["identity", "Strategy Name"] + keep].rename(
+                columns={c: c[: -len(suffix)] for c in keep}).set_index("identity"),
+            "trades": drawn.assign(identity=drawn["strategy"].astype(str).map(ids)).drop(
+                columns=["strategy", "side"]),
+            "equity": equity.rename_axis("day").reset_index().melt(
+                id_vars="day", var_name="identity", value_name="equity").dropna(),
+            "seen": len(mine), "sample": suffix.strip()}
     shutil.rmtree(work)
-    return {"metrics": metrics, "trades": trades.drop(columns="strategy"), "equity": equity,
-            "seen": seen, "sample": suffix.strip()}
+    return out

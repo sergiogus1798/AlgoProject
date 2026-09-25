@@ -6,7 +6,8 @@ strategy with no stop and no target is not a special case here -- it is the dege
 and the same scan prices it."""
 
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
+
+from nulls import kernel
 
 FIRST = {"pessimistic": "sl", "optimistic": "tp"}
 
@@ -25,34 +26,6 @@ def vertical(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray) -> tu
     """
     leave = entries + holds
     return leave, leave_px[leave]
-
-
-def touched(entries: np.ndarray, holds: np.ndarray, low: np.ndarray, high: np.ndarray,
-            stop: np.ndarray, target: np.ndarray, reach: int) -> tuple[np.ndarray, ...]:
-    """The first bar of each trade's life on which a price barrier is reached.
-
-    Args:
-        entries: Entry bar index of each trade.
-        holds: Bars until the vertical barrier.
-        low, high: Extremes of every bar.
-        stop, target: Price level of each trade's lower and upper barrier.
-        reach: Bars scanned ahead, `holds.max()`.
-
-    Returns:
-        (offset of the first touch, whether the stop was touched there, whether the target
-        was). An offset of 0 means neither was reached before the vertical barrier. The
-        scan is one boolean matrix of shape (trades, reach + 1): `sliding_window_view` makes
-        the windows a view, so only the comparison allocates, and the caller chunks to keep
-        that allocation bounded.
-    """
-    window = np.arange(reach + 1)
-    live = (window[None, :] >= 1) & (window[None, :] <= holds[:, None])
-    hit_stop = (sliding_window_view(low, reach + 1)[entries] <= stop[:, None]) & live
-    hit_target = (sliding_window_view(high, reach + 1)[entries] >= target[:, None]) & live
-    either = hit_stop | hit_target
-    offset = np.where(either.any(axis=1), either.argmax(axis=1), 0)
-    rows = np.arange(len(entries))
-    return offset, hit_stop[rows, offset], hit_target[rows, offset]
 
 
 def exits(entries: np.ndarray, holds: np.ndarray, bars: dict, levels: dict,
@@ -78,8 +51,8 @@ def exits(entries: np.ndarray, holds: np.ndarray, bars: dict, levels: dict,
     if not levels:
         return vertical(entries, holds, bars["leave_px"])
     stop, target = levels["stop"], levels["target"]
-    offset, on_stop, on_target = touched(entries, holds, bars["low"], bars["high"],
-                                         stop, target, int(holds.max()))
+    offset, on_stop, on_target = kernel.touched(entries, holds, bars["low"], bars["high"],
+                                                stop, target)
     both = on_stop & on_target
     wins_stop = (on_stop & ~on_target) | (both & (FIRST[intrabar] == "sl"))
     leave = np.where(offset > 0, entries + offset, entries + holds)

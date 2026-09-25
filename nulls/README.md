@@ -17,6 +17,7 @@ config.yaml ─▶ inputs ─▶ calibrate ─▶ model ─▶ simulate ─▶ v
 | `inputs.py` | The knobs, one strategy's trades on one sample, its bars, and where each trade sits on the bar grid | imported | export + feed → trades, bars, indices |
 | `calibrate.py` | What SQX charged and which bar price it filled at, measured from the real trades, plus the reconciliation that licenses everything else | imported | trades + bars → point value, cost, fill |
 | `barrier.py` | The triple-barrier exit: stop, target and time limit, vectorised over thousands of runs at once | imported | entries + levels → exit bar, exit price |
+| `kernel.py` | The null runs priced and measured in one compiled numba pass, and the first-touch barrier scan that stops at the first touch; checked against the numpy definitions to 1e-12 | imported | draws + bars → five statistics per run |
 | `model.py` | The ladder of nulls — what each rung holds fixed and what it hands to chance | imported | located trades → entries, holds, sizes |
 | `stats.py` | What a run is worth, for the real one and for thousands at once, each with its good side | imported | P/L matrix → statistics |
 | `simulate.py` | The real run and its null runs, priced identically, in batches | imported | trades + bars + rung → statistics |
@@ -96,8 +97,8 @@ per night, with the asset's weekday multiplier); random entries are **restricted
 strategy trades**; and the test stays **per strategy**, with no population-wide null.
 
 - 🔬 **A null run's drawdown is accumulated in the real trades' order, not its own.**
-  `simulate.nulls()` reshapes the P/L to (runs, trades) in trade-index order, but the entries
-  were drawn at random, so `dd` and `retdd` read a shuffled sequence and lose the market's
+  `kernel.runs()` accumulates each run's P/L in trade-index order, but the entries were drawn
+  at random, so `dd` and `retdd` read a shuffled sequence and lose the market's
   clustering. On one strategy of `XAUUSD/MC_Trades` (632 trades, 2026-09-25), sorting each run
   by exit bar raised the null's median drawdown from 27,442 to 29,038 and moved `p_dd` from
   0.018 to 0.0084. `net`, `sharpe` and `pf` do not depend on order.

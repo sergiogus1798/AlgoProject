@@ -65,8 +65,16 @@ python3 -m nulls.report --project XAUUSD --databank MC_Trades \
 | `--sample` | no | `OOS1` por defecto. `IST` es dentro de muestra — úsalo para atribuir, nunca para decidir |
 | `--limit` | no | solo las N primeras estrategias, para una prueba rápida |
 | `--set` | no | cambia un ajuste sin editar el fichero: `--set nulls.draws=500` |
+| `--workers` | no | estrategias a la vez, una por proceso. Por defecto todos los núcleos |
 
-**Cuánto tarda:** 757 estrategias × 4 peldaños × 2.500 tiradas en **2 minutos y 37 segundos**.
+**Cuánto tarda:** 757 estrategias × 4 peldaños × 2.500 tiradas en **11 segundos** con 96 procesos
+(medido el 2026-09-25; en un solo núcleo, 569 s). No toca SQX, así que puedes lanzarlo con la GUI
+abierta.
+
+**Los monos son reproducibles.** Cada estrategia sortea de su propia semilla, que sale de
+`nulls.seed`, de su nombre, del peldaño y del bloque. Repetir la corrida da exactamente los mismos
+p, uses 1 proceso o 96, y aunque cambien las demás estrategias del lote. Subir `nulls.draws` añade
+monos y no cambia los primeros. Lo que sí los cambia es `nulls.chunk_trades`: no lo toques.
 No toca SQX, así que puedes lanzarlo con la GUI abierta.
 
 **Lo que imprime `nulls.one`**, salida real:

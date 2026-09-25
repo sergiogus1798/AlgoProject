@@ -641,3 +641,71 @@ dentro de `analyse_market` y eso divide la tarea más larga por ~9.
   de 25.000×600, pero **sólo 1,5x** sobre los lotes de 500 en los que ahora se trabaja, y es ~13 % del
   tiempo. Resultado idéntico verificado. Queda medido por si el troceado cambia de tamaño.
 - 🔬 `np.add.at` → `np.bincount`: 1,6x–2,5x, ya medido el 2026-09-24. No cambia el orden de magnitud.
+
+---
+
+## Segunda ronda: numba y balanceo de carga — medido 2026-09-25
+
+Misma máquina, mismos ficheros y mismas órdenes que arriba, con la base **re-medida el mismo día**
+desde el commit anterior (`f1bf407`) en una copia aparte del código. `PYTHONHASHSEED=0`, un hilo de
+BLAS. Datos crudos y scripts: `AlgoData/reports/perf-optim-2026-09-25/`.
+
+### Qué se cambió
+
+| # | cambio | dónde |
+|---|---|---|
+| 1 | **kernel numba** que valora cada run y calcula sus estadísticas en una pasada, sin matrices intermedias | `nulls/kernel.py`, `strategies/crossmarket/simulate/kernel.py` |
+| 2 | barrido de barreras que **se para en el primer toque** | `nulls/kernel.py:touched` |
+| 3 | **balanceo de carga**: lo más caro primero (LPT), un hilo de BLAS por proceso | `core/fanout.py` |
+| 4 | el paso 10 reparte por **(estrategia, mercado)** y calcula solo lo que publica el `verdict.csv` | `strategies/crossmarket/report.py`, `market_run.verdict_row` |
+| 5 | `nulls.report` en paralelo y leyendo el export **una vez**, no una por estrategia | `nulls/report.py` |
+| 6 | semilla estable por (estrategia, peldaño, bloque) y bloque medido en trades | `nulls/simulate.py` |
+| 7 | la cosecha exporta IS y OOS en **un** ciclo del conductor y **un** `orderstocsv` | `gate/collect.py` |
+
+### El resultado
+
+| tarea | antes | después | factor | RAM del sistema, antes → después |
+|---|---|---|---|---|
+| `nulls.report`, 757 estrategias × 4 peldaños × 2.500 | **569,0 s** | **11,1 s** | **51x** | 1,0 → 5,3 GB |
+| `crossmarket` 8 × 9, 7 procesos | 155,7 s | **12,9 s** | **12x** | 8,6 → 1,5 GB |
+| `crossmarket` 96 × 9, 24 procesos | 755,4 s | **52,2 s** | **14x** | 20,8 → 7,3 GB |
+| `crossmarket` 96 × 9, 96 procesos | 674,9 s | 59,4 s | 11x | 37,4 → 21,1 GB |
+| `crossmarket` **499 × 9**, 72 procesos | 2.285 s (38 min) | **255 s (4 min)** | **9x** | 53,8 → 32,7 GB |
+| `gate.report`, 500 estrategias | 5,6 s | 4,9 s | 1,15x | 5,3 → 1,1 GB |
+| `gate.harvest`, 500 + 500 (export) | 114,1 s | **81,5 s** | 1,4x | 4,4 → 4,4 GB |
+| `export_retest`, 499 × 9 (export) | 160,4 s | 160,0 s | 1,0x | 6,0 → 5,8 GB |
+
+### Cuántos procesos, ahora
+
+| procesos | 96 × 9, después |
+|---|---|
+| 12 | 90,8 s |
+| 24 | 52,2 s |
+| **48** | **44,6 s** |
+| 72 | 51,7 s |
+| 96 | 59,4 s |
+
+> **Recomendación nueva: 48 procesos, uno por núcleo físico.** Por encima el hyperthreading y la
+> caché compartida lo hacen **más lento**, no igual, y además gasta más memoria.
+
+### Por qué los números son los mismos
+
+- `crossmarket`: el `verdict.csv` sale **idéntico byte a byte** al de antes en 8 × 9 y en 96 × 9, con
+  12, 24, 48, 72 y 96 procesos. El 499 × 9 no se pudo comparar: su salida anterior se sobrescribió.
+- Los kernels se compararon contra el código numpy con los mismos sorteos: drawdown, curvas, racha y
+  trades **idénticos bit a bit**; net, Sharpe y PF a ≤ 5,5·10⁻¹¹ (numpy suma por pares, el kernel en
+  orden).
+- `nulls` y el mono de la puerta **cambian de monos**, a propósito (semilla nueva). 15.140 p de
+  `nulls.report`: correlación 0,991 con los de antes, y solo el 0,23 % se aleja más de 3 errores
+  Monte Carlo (se espera ~0,3 %). La puerta: las cinco cribas deterministas idénticas; supervivientes
+  229 → 228, una estrategia en el umbral.
+- La cosecha: métricas y equity idénticas; operaciones idénticas en valores, con `Sample type` ahora
+  categórica en vez de texto.
+
+### Lo que se midió y NO funcionó
+
+- 🔬 **Parsear los CSV del export con 16 hilos es más lento**: `export_retest` 179,5 s contra 160,4 s
+  en serie, misma salida. Lo que se hace con cada fichero después de `read_csv` retiene el GIL. Se
+  deshizo.
+- En el export manda SQX: el `orderstocsv` y la carga del databank. La cosecha solo ganó lo que
+  cuesta un arranque de JVM; `export_retest` ya tenía uno solo y no ganó nada.

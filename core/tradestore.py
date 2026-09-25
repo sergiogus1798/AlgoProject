@@ -66,12 +66,32 @@ def whole(frame: pd.DataFrame) -> bool:
     return bool((sizes.max() == sizes.size()).all() and (sizes.min() == 1).all())
 
 
-def pack(files: list[Path], out: Path, per_market: bool) -> dict:
-    """Every strategy of one export as a single typed Parquet.
+def _prepared(path: Path, per_market: bool) -> tuple:
+    """One strategy's CSV as it goes into the store.
+
+    Args:
+        path: A CSV orderstocsv wrote.
+        per_market: As in frame().
+
+    Returns:
+        (frame with the stored columns and its `strategy`, whether it kept `Ticket`,
+        whether its market blocks came out torn).
+    """
+    got = trades.read(path)
+    torn = False
+    if per_market:
+        got["block"] = blocks_of(got)
+        torn = not whole(got)
+    keep = KEEP + (["Symbol", "block"] if per_market else [])
+    keep = keep if ordered(got) else keep + ["Ticket"]
+    return got[keep].assign(strategy=path.stem), "Ticket" in keep, torn
+
+
+def frame(files: list[Path], per_market: bool) -> tuple[pd.DataFrame, dict]:
+    """Every strategy of one export as a single typed frame.
 
     Args:
         files: One CSV per strategy, as orderstocsv wrote them.
-        out: Parquet file to write.
         per_market: True for a data=all export, whose CSVs carry several result blocks --
             the main test first, then one per additional market in Setup order. Both
             `Symbol` and `block` are kept for those. `Symbol` alone is NOT a separator:
@@ -79,29 +99,38 @@ def pack(files: list[Path], out: Path, per_market: bool) -> dict:
             collapse into one.
 
     Returns:
-        Counts, the names of any strategy whose row order does not carry its ticket, and
-        `torn`, the strategies whose blocks did not come out as complete ticket runs.
+        (the frame, counts): counts carry the names of any strategy whose row order does not
+        carry its ticket, and `torn`, the strategies whose blocks did not come out as complete
+        ticket runs. Parsed in one thread on purpose: 🔬 2026-09-25, sixteen threads made
+        `export_retest` of 499 x 9 slower, 179.5 s against 160.4 s, with the same output --
+        the work per file beyond `read_csv` holds the GIL.
     """
-    columns = KEEP + (["Symbol", "block"] if per_market else [])
-    frames, unordered, torn = [], [], []
-    for f in files:
-        frame = trades.read(f)
-        if per_market:
-            frame["block"] = blocks_of(frame)
-            if not whole(frame):
-                torn.append(f.stem)
-        keep = columns if ordered(frame) else columns + ["Ticket"]
-        if "Ticket" in keep:
-            unordered.append(f.stem)
-        frames.append(frame[keep].assign(strategy=f.stem))
-    packed = pd.concat(frames, ignore_index=True)
+    parts = [_prepared(f, per_market) for f in files]
+    packed = pd.concat([part for part, _, _ in parts], ignore_index=True)
     for c in CATEGORICAL:
         if c in packed:
             packed[c] = packed[c].astype("category")
+    return packed, {"strategies": len(files), "trades": len(packed),
+                    "columns": list(packed.columns),
+                    "kept_ticket": [f.stem for f, (_, kept, _) in zip(files, parts) if kept],
+                    "torn_blocks": [f.stem for f, (_, _, torn) in zip(files, parts) if torn]}
+
+
+def pack(files: list[Path], out: Path, per_market: bool) -> dict:
+    """Every strategy of one export as a single typed Parquet.
+
+    Args:
+        files: One CSV per strategy, as orderstocsv wrote them.
+        out: Parquet file to write.
+        per_market: As in frame().
+
+    Returns:
+        What frame() counted.
+    """
+    packed, counts = frame(files, per_market)
     out.parent.mkdir(parents=True, exist_ok=True)
     packed.to_parquet(out, compression="zstd", index=False)
-    return {"strategies": len(files), "trades": len(packed),
-            "columns": list(packed.columns), "kept_ticket": unordered, "torn_blocks": torn}
+    return counts
 
 
 def names(path: Path) -> list[str]:

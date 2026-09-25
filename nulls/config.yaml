@@ -8,7 +8,9 @@ nulls:
                               # observable is 1/(draws+1) = 4.0e-4, which is what a
                               # Benjamini-Hochberg over ~125 strategies needs to resolve
   seed: 20260922
-  chunk: 500                  # runs priced per batch; memory, not statistics
+  chunk_trades: 200000       # trade valuations per seeded block. Sets the cache footprint
+                             # (swept 2026-09-25: fastest at 130-220 k) AND the random
+                             # streams: changing it changes every monkey
   rungs: [timing, timing_holds, timing_sizing, free]
   headline: timing            # the rung whose p the summary reports: it is the only one
                               # that changes exactly one thing, so it is the only one whose

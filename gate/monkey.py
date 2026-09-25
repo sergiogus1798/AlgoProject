@@ -1,12 +1,11 @@
 """The two screens that need the null study: the monkey itself, and the family correction."""
 
 import os
-from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import get_context
 
 import pandas as pd
 
-from nulls import inputs as null_inputs, simulate, verdict
+from core import fanout
+from nulls import simulate, verdict
 from tasks.analysis.correlations import discoveries
 
 # What the workers read. Set by mono() before the pool is built and never written again:
@@ -26,7 +25,7 @@ def _one(name: str) -> dict:
     """
     kept = simulate.fixed(_SHARED["oos"][name], _SHARED["bars"], _SHARED["cfg"])
     seen = simulate.real(kept, _SHARED["cfg"]["statistics"]["report"])
-    drawn = simulate.nulls(kept, _SHARED["rung"], _SHARED["cfg"])
+    drawn = simulate.nulls(kept, _SHARED["rung"], _SHARED["cfg"], name)
     stat = _SHARED["statistic"]
     return {"p": verdict.pvalue(seen[stat], drawn[stat], stat), "corr": kept["checks"]["corr"]}
 
@@ -49,9 +48,9 @@ def mono(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         runs are charged is measured from these very trades, so the retest task's own
         spread and slippage are carried without this module knowing what they were.
 
-        The strategies are independent by construction and are run in parallel. `fork` is
-        the start method on purpose and is safe here: `gate.report` is a batch command with
-        no threads of its own, and the workers only read what they inherited.
+        The strategies are independent by construction and are run in parallel, the ones
+        with the most trades first (`core.fanout`). Each strategy's monkeys are seeded by its
+        identity, so its p does not depend on which others were in the batch.
     """
     trades = data["trades"]
     oos = trades[trades["sample"] == "OOS"]
@@ -64,16 +63,18 @@ def mono(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     # mask this replaces spent 4.2 s of the gate's 33 comparing strings 234 times over.
     _SHARED.update(oos=dict(tuple(oos.groupby("identity", observed=True))), bars=data["bars"],
                    cfg=null_cfg, rung=cfg["rung"], statistic=cfg["statistic"])
-    # Warmed in the parent so the fork hands the same array to every worker instead of each
-    # recomputing it over the very same bars.
-    simulate.warm(data["bars"], null_cfg)
-    workers = min(len(alive), os.cpu_count())
-    got = []
-    with ProcessPoolExecutor(max_workers=workers, mp_context=get_context("fork")) as pool:
-        for i, (name, one) in enumerate(zip(alive, pool.map(_one, alive, chunksize=1)), 1):
-            got.append(one)
-            print(f"PROGRESS {100 * i // len(alive)} mono {i}/{len(alive)} {name}", flush=True)
-    frame = pd.DataFrame(dict(zip(alive, got))).T.reindex(alive)
+    # Warmed and compiled in the parent, so the fork hands every worker the same ATR array
+    # and the kernel's machine code instead of each recomputing or recompiling them.
+    simulate.warm(data["bars"], data["null_cfg"])
+    first = next(iter(alive))
+    simulate.prime(simulate.fixed(_SHARED["oos"][first], data["bars"], data["null_cfg"]),
+                   data["null_cfg"])
+    costs = {name: len(_SHARED["oos"][name]) for name in alive}
+    got = {}
+    for i, (name, one) in enumerate(fanout.run(_one, costs, os.cpu_count()), 1):
+        got[name] = one
+        print(f"PROGRESS {100 * i // len(alive)} mono {i}/{len(alive)} {name}", flush=True)
+    frame = pd.DataFrame(got).T.reindex(alive)
     ok = (frame["p"] <= cfg["max_p"]) & (frame["corr"] >= verdict.RECONCILE_FLOOR)
     note = "reconcilia " + frame["corr"].round(4).astype(str)
     return pd.DataFrame({"value": frame["p"], "passed": ok, "note": note, "p": frame["p"]})

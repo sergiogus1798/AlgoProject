@@ -43,9 +43,9 @@ def timing(located: dict, draws: int, rng: np.random.Generator) -> dict:
     Returns:
         Keys `entries`, `holds`, `sizes`, each shape (draws, trades).
     """
-    holds = np.tile(located["hold"], (draws, 1))
+    holds = np.broadcast_to(located["hold"], (draws, located["hold"].size))
     return {"entries": _place(located, holds, draws, rng), "holds": holds,
-            "sizes": np.tile(located["size"], (draws, 1))}
+            "sizes": np.broadcast_to(located["size"], (draws, located["size"].size))}
 
 
 def timing_holds(located: dict, draws: int, rng: np.random.Generator) -> dict:
@@ -65,7 +65,7 @@ def timing_holds(located: dict, draws: int, rng: np.random.Generator) -> dict:
     pool = located["hold"]
     holds = rng.choice(pool, size=(draws, len(pool)), replace=True)
     return {"entries": _place(located, holds, draws, rng), "holds": holds,
-            "sizes": np.tile(located["size"], (draws, 1))}
+            "sizes": np.broadcast_to(located["size"], (draws, located["size"].size))}
 
 
 def timing_sizing(located: dict, draws: int, rng: np.random.Generator) -> dict:
@@ -83,8 +83,8 @@ def timing_sizing(located: dict, draws: int, rng: np.random.Generator) -> dict:
         is worth it through the variance, not the mean, which is why no correlation between
         size and per-unit return can find it.
     """
-    holds = np.tile(located["hold"], (draws, 1))
-    flat = np.full_like(holds, located["size"].mean(), dtype=np.float64)
+    holds = np.broadcast_to(located["hold"], (draws, located["hold"].size))
+    flat = np.broadcast_to(located["size"].mean(), holds.shape)
     return {"entries": _place(located, holds, draws, rng), "holds": holds, "sizes": flat}
 
 
@@ -102,9 +102,13 @@ def free(located: dict, draws: int, rng: np.random.Generator) -> dict:
         total edge rather than about one channel.
     """
     drawn = timing_holds(located, draws, rng)
-    drawn["sizes"] = np.full_like(drawn["holds"], located["size"].mean(), dtype=np.float64)
+    drawn["sizes"] = np.broadcast_to(located["size"].mean(), drawn["holds"].shape)
     return drawn
 
+
+# Fixed by hand, never enumerated: a rung's number enters its seed, so reordering RUNGS or
+# adding one must not move the monkeys of the others.
+RUNG_ID = {"timing": 1, "timing_holds": 2, "timing_sizing": 3, "free": 4}
 
 RUNGS = {"timing": timing, "timing_holds": timing_holds,
          "timing_sizing": timing_sizing, "free": free}

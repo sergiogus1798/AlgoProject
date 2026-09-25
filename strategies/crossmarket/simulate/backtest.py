@@ -8,7 +8,7 @@ import pandas as pd
 from core import trades as tradeio
 from strategies.crossmarket.mechanics import envelope, equity, pricing, strata
 from strategies.crossmarket.model import holdfit, trade_models
-from strategies.crossmarket.simulate import metrics, realrun
+from strategies.crossmarket.simulate import kernel, metrics, realrun
 
 
 def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
@@ -113,8 +113,10 @@ def drawn(fixed: dict, cfg: dict,
     Returns:
         Keys stats (one array per statistic across the runs), curves (one equity path per
         run) and entries (the first batch's entry indices, for the calendar diagnostic).
-        Drawn and priced in batches because one 5,000 x 2,000 matrix plus the four numpy
-        intermediates the statistics need is well over a gigabyte.
+        Drawn in batches because the entries and holds of 5,000 x 2,000 are still large;
+        pricing, statistics and curves run in `kernel.batch`, which keeps no (runs, trades)
+        intermediate at all. `price()`, `metrics.paths` and `equity.path` remain as the
+        readable definition it is checked against.
     """
     n, e = cfg["nulls"], cfg["equity"]
     rng = np.random.default_rng(n["seed"])
@@ -124,16 +126,16 @@ def drawn(fixed: dict, cfg: dict,
         entries, holds = draw(size, rng, done)
         if n["replicate_friday"]:
             holds = trade_models.truncate(entries, holds, fixed["market"])
-        pnl, logret, closed, live = price(entries, holds, fixed)
-        batch = metrics.paths(pnl, live, e["starting"])
-        batch["mean_r"] = (logret.sum(axis=1)
-                           / np.maximum(live.sum(axis=1), 1) / fixed["scale"])
+        batch, curve = np.empty((size, len(metrics.NAMES))), np.zeros((size, e["steps"]))
+        kernel.batch(entries, holds, fixed["leave_px"], fixed["enter_px"], fixed["size"],
+                     fixed["charged"], fixed["cost"], fixed["scale"], e["starting"],
+                     fixed["market"]["n_bars"], batch, curve)
         stats.append(batch)
-        curves.append(equity.path(pnl, closed, fixed["market"]["n_bars"], e["steps"],
-                                  e["starting"]))
+        curves.append(curve)
         first = entries if first is None else first
         on_chunk(done + size, n["draws"])
-    return {"stats": {k: np.concatenate([b[k] for b in stats]) for k in stats[0]},
+    stats = np.concatenate(stats)
+    return {"stats": {k: stats[:, i] for i, k in enumerate(metrics.NAMES)},
             "curves": np.concatenate(curves), "entries": first}
 
 

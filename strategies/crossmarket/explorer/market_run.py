@@ -169,3 +169,34 @@ def analyse_market(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataF
     return row, runs, {"weekly": correlation.weekly_equity(fixed, bars),
                        "curve": curves.series(fixed, cfg),
                        "stream": portfolio.priced(fixed, feed)}
+
+
+def verdict_row(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataFrame,
+                base: dict) -> dict:
+    """The per-market row `analyse_market` returns, and nothing the batch verdict never reads.
+
+    Args:
+        cfg: What config.load() returned.
+        market: One row of markets.universe()'s `markets`.
+        trades: That market's trades for this strategy.
+        bars: That market's bars.
+        base: What backtest.setting() returned for the same strategy on the base asset.
+
+    Returns:
+        The row, with every column `breadth.summary` and `inference` read equal to
+        `analyse_market`'s: each model and each test draws from its own generator seeded
+        from `nulls.seed`, so leaving one out moves nothing in the others. Left out: the
+        three non-headline models, the window sweep built from them, the execution stress
+        and the curves for the strategy-level views -- 🔬 2026-09-25, about a quarter of
+        the batch, computed and dropped, since `report.py` writes only the summary.
+    """
+    bars = envelope.window(trades, bars)
+    fixed = backtest.setting(trades, bars, cfg)
+    row, _ = nulls(fixed, bars, cfg, [cfg["nulls"]["headline"]], lambda what, share: None)
+    row = {**market, **row, **tests(fixed, bars, cfg, market["feed"])}
+    row["exits"] = realrun.exits(fixed)
+    row["reproducible_pnl"] = sum(e["gross_share"] for e in row["exits"] if e["reproducible"])
+    row["fingerprint"] = fingerprint.fingerprint(market["feed"], base, {**fixed, "bars": bars},
+                                                 cfg["exposure"]["drop_zero_mfe"])
+    row["warnings"] = inference.warnings(row, cfg)
+    return row

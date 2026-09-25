@@ -4,14 +4,18 @@
 import argparse
 import csv
 import os
-from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import get_context
+from functools import lru_cache
 
-from core import barstore, tradestore
+import pandas as pd
+
+from core import barstore, fanout, tradestore
 from core.paths import export_dir, report_dir
 
-from strategies.crossmarket.explorer import analysis
+from strategies.crossmarket.explorer import market_run
 from strategies.crossmarket.inputs import config, markets
+from strategies.crossmarket.mechanics import envelope
+from strategies.crossmarket.simulate import backtest
+from strategies.crossmarket.verdict import breadth, inference
 
 COLUMNS = ["strategy", "verdict", "reason", "markets", "cleared", "fraction",
            "under_alpha", "paired_under_alpha", "edge_r", "worst_pf", "pf_cv",
@@ -96,20 +100,59 @@ def setup(project: str, databank: str, asset: str, export: str, overrides: list[
 _SHARED: dict = {}
 
 
-def _one(name: str) -> dict:
-    """One strategy's whole cross-market study, in a worker that inherited the export.
+@lru_cache(maxsize=4)
+def _base(name: str) -> dict:
+    """The strategy on its own base asset, which every market's fingerprint compares against.
 
     Args:
-        name: Strategy name, exactly as SQX has it.
+        name: Strategy name.
 
     Returns:
-        Its line of the table. Only the line comes back: `analyse_strategy` also returns
-        every equity curve, every null run and the portfolio account, and returning those
-        would cost more to pickle than the study costs to compute.
+        What backtest.setting() returned there, with its bars. Cached because the same
+        worker usually draws several markets of one strategy: the tasks are queued longest
+        first, and a strategy's markets are close in length.
     """
-    got, cfg, floor = _SHARED["got"], _SHARED["cfg"], _SHARED["floor"]
-    record = analysis.analyse_strategy(got, cfg, name, None, lambda *_: None)
-    return row(name, record, floor)
+    got = _SHARED["got"]
+    main = got["universe"]["main"]
+    trades = tradestore.market(got["trades"], name, main)
+    bars = envelope.window(trades, got["bars"][main])
+    return {**backtest.setting(trades, bars, _SHARED["cfg"]), "bars": bars}
+
+
+def _market(task: tuple[str, str]) -> dict:
+    """One strategy on one market, in a worker that inherited the export by fork.
+
+    Args:
+        task: (strategy name, market feed).
+
+    Returns:
+        That market's row of the verdict. The unit of work is the market, not the strategy:
+        🔬 2026-09-25, on 96 strategies the largest one alone took 453 s and set the wall
+        clock from 24 processes up, while its nine markets are independent -- every model and
+        test seeds its own generator -- so split, the longest task is one market.
+    """
+    name, feed = task
+    got = _SHARED["got"]
+    market = next(m for m in got["universe"]["markets"] if m["feed"] == feed)
+    return market_run.verdict_row(_SHARED["cfg"], market,
+                                  tradestore.market(got["trades"], name, feed),
+                                  got["bars"][feed], _base(name))
+
+
+def summarise(rows: list[dict], missing: int, alpha: float) -> dict:
+    """One strategy's summary from its markets' rows, as `analyse_strategy` builds it.
+
+    Args:
+        rows: Its per-market rows, in the universe's market order.
+        missing: Markets it never traded on.
+        alpha: diagnostics.alpha.
+
+    Returns:
+        The `summary` block row() reads.
+    """
+    per_market = pd.DataFrame(rows)
+    return {"summary": {"family": inference.family(per_market), "missing": missing,
+                        **breadth.summary(per_market, alpha)}}
 
 
 def main() -> None:
@@ -123,7 +166,7 @@ def main() -> None:
                     help="fraction of markets whose expectancy must clear zero to keep it")
     ap.add_argument("--set", action="append", default=[], metavar="KEY=VALUE")
     ap.add_argument("--workers", type=int, default=os.cpu_count(),
-                    help="strategies studied at once; each holds its own null batches, so "
+                    help="markets studied at once; each holds its own null batches, so "
                          "this is the knob that trades RAM for wall clock")
     a = ap.parse_args()
 
@@ -145,22 +188,34 @@ def main() -> None:
                                "mercados: no hay nada que juzgar"}
               for name in got["strategies"] if int(traded.get(name, 0)) == 0}
     wanted = [n for n in got["strategies"] if n not in silent]
-    _SHARED.update(got=got, cfg=got["cfg"], floor=a.floor)
-    # The strategies share no state and write nothing, so the outer loop is the whole
-    # parallelism there is here — and it is the only one: the cost is operations x draws x
-    # markets x models and every micro-optimisation inside it was measured and did not pay.
-    # `fork` because the export is gigabytes; this is a batch command with no threads.
-    workers = max(1, min(a.workers, len(wanted)))
-    print(f"{workers} procesos en paralelo sobre {len(wanted)} estrategias "
-          f"({len(silent)} sin disparo en ningún mercado ajeno)", flush=True)
-    rows = list(silent.values())
-    with ProcessPoolExecutor(max_workers=workers, mp_context=get_context("fork")) as pool:
-        for i, (name, line) in enumerate(zip(wanted, pool.map(_one, wanted, chunksize=1)), 1):
-            rows.append(line)
-            # Flushed: a batch that prints nothing until it finishes is indistinguishable
-            # from one that hung.
-            print(f"  [{i}/{len(wanted)}] {name:22} {line['verdict']:9} {line['reason']}",
-                  flush=True)
+    _SHARED.update(got=got, cfg=got["cfg"])
+    # One task per (strategy, market) it traded on, costed by its trades, longest first.
+    counts = got["trades"][got["trades"]["Symbol"].isin(feeds)].groupby(
+        ["strategy", "Symbol"], observed=True).size()
+    order = [m["feed"] for m in got["universe"]["markets"]]
+    costs = {(name, feed): int(counts.get((name, feed), 0))
+             for name in wanted for feed in order if counts.get((name, feed), 0) > 0}
+    left = {name: sum(1 for key in costs if key[0] == name) for name in wanted}
+    done, rows = {name: {} for name in wanted}, list(silent.values())
+    print(f"{len(costs)} tareas (estrategia, mercado) sobre {a.workers} procesos, "
+          f"{len(wanted)} estrategias ({len(silent)} sin disparo en ningún mercado ajeno)",
+          flush=True)
+    # The smallest task, run here first: every kernel specialisation gets compiled in the
+    # parent, and the fork hands the machine code to every worker instead of each compiling.
+    _market(min(costs, key=costs.get))
+    for (name, feed), market_row in fanout.run(_market, costs, a.workers):
+        done[name][feed] = market_row
+        if len(done[name]) < left[name]:
+            continue
+        # Flushed: a batch that prints nothing until it finishes is indistinguishable
+        # from one that hung.
+        line = row(name, summarise([done[name][f] for f in order if f in done[name]],
+                                   len(feeds) - left[name], got["cfg"]["diagnostics"]["alpha"]),
+                   a.floor)
+        del done[name]
+        rows.append(line)
+        print(f"  [{len(rows) - len(silent)}/{len(wanted)}] {name:22} {line['verdict']:9} "
+              f"{line['reason']}", flush=True)
     rows.sort(key=lambda r: got["strategies"].index(r["strategy"]))
 
     out = report_dir(a.project, a.databank, a.export) / "crossmarket"
