@@ -5,7 +5,6 @@ be one sentence, which left the owner unable to tell whether it invalidated the 
 one model: each now names what fired it, what it affects, what it does **not** affect, and
 what to do about it."""
 
-import pandas as pd
 
 # key -> (what it is, what it affects, what it does not affect, what to do). The `affects`
 # half is the part that was missing: `bad_hold_fit` touches exactly one null model, and
@@ -141,41 +140,3 @@ TRIGGER = {
                            f'{r["dropped_pnl"]:+,.0f} $'),
     "selected_window": lambda r: "condiciones de aceptación sobre el periodo completo",
 }
-
-
-def one(key: str, row: dict) -> str:
-    """One warning as a block: the trigger, then what it does and does not touch.
-
-    Args:
-        key: A key of inference.WARNINGS.
-        row: The (strategy, market) row that fired it.
-
-    Returns:
-        An HTML block.
-    """
-    what, affects, spares, todo = TEXTS[key]
-    return (f'<div class="alert"><p class="alert-head"><b>{what}</b> '
-            f'<span class="trigger">{TRIGGER[key](row)}</span></p>'
-            f'<p><b>Afecta a:</b> {affects}</p>'
-            f'<p><b>No afecta a:</b> {spares}</p>'
-            f'<p><b>Qué hacer:</b> {todo}</p></div>')
-
-
-def block(rows: pd.DataFrame) -> str:
-    """Every market's warnings, spelled out.
-
-    Args:
-        rows: Per-market rows carrying a `warnings` list.
-
-    Returns:
-        One section per market, or a line saying it collected none. No market is ever hidden
-        by these: they are the context its numbers are read in.
-    """
-    out = []
-    for r in rows.itertuples():
-        out.append(f'<h3><code>{r.feed}</code></h3>')
-        row = r._asdict()
-        out.append("".join(one(w, row) for w in r.warnings) if r.warnings
-                   else '<p><span class="ok">Sin avisos.</span> Ninguna de las ocho '
-                        'comprobaciones saltó en este mercado.</p>')
-    return "".join(out)

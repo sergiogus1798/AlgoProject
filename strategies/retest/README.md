@@ -53,6 +53,7 @@ Only the entry points sit in the root, because they are the only things that get
 | `one.py` | **One strategy as the contract's data**: verdict, five tabs, glossary, summary row | imported — the window calls it |
 | `many.py` | Every strategy, and what can only be said across them, as one result | imported |
 | `report.py` | The command: every strategy of one ingest, to `verdict.csv`, one JSON and one page per strategy, and the ingest's page | `python3 -m strategies.retest.report --project XAUUSD` |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable of the study, grouped by the layer that reads it | edited, or `--set section.key=value` |
 
 The browser panel is gone (2026-09-25, `docs/encargos/19-…`); the window paints `one.run()`'s dict,

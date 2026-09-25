@@ -1,6 +1,6 @@
 """The strategy-level views, built from what each market contributed: correlation and portfolio.
 
-They exist apart from explorer/analysis.py because a single-market re-run has to rebuild
+They exist apart from orchestrate/strategy.py because a single-market re-run has to rebuild
 them from the markets already in the session plus the one just recomputed — the panel's
 per-market **run** button merges into a record rather than replacing it, and a correlation
 matrix or a combined account that still described the old market would be silently wrong."""

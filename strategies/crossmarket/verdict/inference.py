@@ -23,7 +23,7 @@ WARNINGS = {
     "bad_hold_fit": "the distribution fitted to the holds does not describe them",
     "off_grid": "a share of the real trades never occupy a bar, so no test that needs a "
                 "duration can use them",
-    # Never fired by warnings(): nothing in a row can reveal it. explorer/oos_run.py attaches
+    # Never fired by warnings(): nothing in a row can reveal it. orchestrate/stretch.py attaches
     # it to the out-of-sample stretch, because it is a fact about the project's acceptance
     # conditions and not about the data they selected.
     "selected_window": "this stretch was read by the project's own acceptance conditions, so "

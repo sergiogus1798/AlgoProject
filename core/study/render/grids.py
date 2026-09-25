@@ -32,7 +32,8 @@ def grid(b: dict) -> str:
     rows, cols = b["rows"], b["cols"]
     cut = _levels(b)
     colours = DIVERGING if b["scale"] == "diverging" else SEQUENTIAL
-    left, top = 150, 40
+    # Room for the longest row label, at the tick font's ~6.5 px per character.
+    left, top = min(320, 24 + int(6.5 * max(len(str(r)) for r in rows))), 40
     cw = (W - left - PAD["r"]) / max(len(cols), 1)
     ch = 26
     body = [f'<text class="tick" x="{left + (j + .5) * cw:.1f}" y="{top - 8}" '

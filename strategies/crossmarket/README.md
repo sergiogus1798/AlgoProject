@@ -6,9 +6,9 @@ was never optimised on, or whether it was only being long while those markets ro
 before running it.
 
 ```
-config.yaml ─▶ inputs ─▶ mechanics ─▶ model ─▶ simulate ─▶ verdict ─▶ render
+config.yaml ─▶ inputs ─▶ mechanics ─▶ model ─▶ simulate ─▶ verdict ─▶ contract
  every knob    what the   what a        what could   the         what there   the
-               study      trade         have         numbers     is to        panel
+               study      trade         have         numbers     is to        tabs
                runs on    occupied      happened     under a     distrust
                           and was       instead      model       about them
                           worth
@@ -28,21 +28,24 @@ session would otherwise step in.
 | `model/` | what could have happened instead? | adding or changing a null model |
 | `simulate/` | what are the numbers, under a given model? | touching a test, the sweep or the portfolio |
 | `verdict/` | what is there to distrust about them? | moving a threshold or adding a warning |
-| `render/` | how is all of that read? | adding a figure, a table or a sentence |
-| `explorer/` | the panel — **the only way to run it** | changing the panel |
+| `orchestrate/` | how does one strategy go through every market? | changing what a market's analysis runs |
+| `contract/` | how is all of that read? — the twelve tabs as the contract's blocks | adding a figure, a table or a sentence |
 
 Only these sit in the root, because they are the only things that get called or edited:
 
 | file | what it does | run it |
 |---|---|---|
-| `report.py` | The batch half: every strategy of one export judged on breadth, to the `verdict.csv` that `/curate` applies — the panel stays the place a single strategy is read | `python3 -m strategies.crossmarket.report --project P --databank D --asset USDJPY --export DAY` |
-| `views.py` | The two views that need more than one market at once — the correlation matrix and the combined account — rebuilt whenever one market is re-run alone | imported |
+| `load.py` | Everything a run reads, once: the export, its market universe, every feed's bars, the strategy names and their identity | imported |
+| `one.py` | **One strategy across every market, as the contract's data** — twelve tabs, the breadth verdict, warnings, glossary; `only=` runs one market alone | imported — the window calls it |
+| `many.py` | Every strategy judged on breadth, one (strategy, market) task per process: the verdict `/curate` applies | imported |
+| `report.py` | The command: the batch to `verdict.csv` and the export's page, or `--strategy NAME` for one strategy's whole study | `python3 -m strategies.crossmarket.report --project P --databank D --asset USDJPY --export DAY [--strategy S]` |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable of the study, grouped by section | edited, or `--set section.key=value` |
 | `assets/_markets.yaml` | What each base asset's markets are called, how they are grouped, and where its backtest's out-of-sample stretch starts | edited |
 | `execution.yaml` | Per feed, what a worse broker would charge | edited |
 
-`views.py` is the one module allowed to cross layers — that is what an orchestrator is. Everyone else
-obeys one direction:
+`orchestrate/` is the one folder allowed to cross layers — that is what an orchestrator is. Everyone
+else obeys one direction:
 
 | layer | may import |
 |---|---|
@@ -51,8 +54,8 @@ obeys one direction:
 | `model/` | nothing inside the module |
 | `simulate/` | `inputs/`, `mechanics/`, `model/`, itself, **`verdict/fieller`** |
 | `verdict/` | `model/`, itself |
-| `render/` | everything above it |
-| `views.py`, `explorer/` | everything |
+| `contract/` | everything above it |
+| `orchestrate/`, `load.py`, `one.py`, `many.py`, `report.py` | everything |
 
 And it is checkable without running anything — each of these prints nothing but the one declared
 exception, `simulate/exposure.py → verdict/fieller`:
@@ -64,7 +67,7 @@ grep -rn "from strategies.crossmarket" mechanics/ | grep -v "crossmarket\.mechan
 grep -rn "from strategies.crossmarket" model/    | grep -v "crossmarket\.model"
 grep -rn "from strategies.crossmarket" verdict/  | grep -vE "crossmarket\.(model|verdict)"
 grep -rn "from strategies.crossmarket" simulate/ | grep -vE "crossmarket\.(inputs|mechanics|model|simulate)"
-grep -rn "from strategies.crossmarket" render/   | grep -vE "crossmarket\.(inputs|mechanics|model|simulate|verdict|render)"
+grep -rn "from strategies.crossmarket" contract/ | grep -vE "crossmarket\.(inputs|mechanics|model|simulate|verdict|contract)"
 ```
 
 `simulate/` produces numbers and judges none of them; `verdict/` names every reason to distrust a
@@ -74,8 +77,8 @@ number and computes none of the numbers it names.
 
 **Where is a threshold changed?** In `config.yaml`, and nowhere else. `inputs/config.py` is the only
 module that reads that file; `verdict/` is the only layer that turns a key into a consequence, and
-`explorer/tooltips.py` holds the one sentence the config drawer shows for each knob. Nothing in
-`simulate/` or `render/` holds a limit. → `inputs/README.md`, `verdict/README.md`.
+`tooltips.py` holds the one sentence the config drawer shows for each knob. Nothing in
+`simulate/` or `contract/` holds a limit. → `inputs/README.md`, `verdict/README.md`.
 
 **What do I touch to add a placement model?** Three things: the function in `model/trade_models.py`
 (or `model/free_models.py` if it re-lays the whole run) with the signature

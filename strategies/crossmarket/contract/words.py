@@ -1,6 +1,4 @@
-"""The shared tables and the Spanish wording the panel's tabs are built from."""
-
-import pandas as pd
+"""The Spanish the study speaks: each null model's name and argument, the checks, the glossary."""
 
 # What each model is called on screen. The registry keys stay as they are — they are the
 # contract trade_models.MODELS, config.yaml and every docstring share — and this is the only
@@ -111,90 +109,28 @@ DIAGNOSTICS = [("convention", "convención de fill", "la que reprodujo los preci
                ("cost_rate", "coste por operación", "fracción del precio")]
 
 
-def _row(cells: list[str], tag: str = "td") -> str:
-    """One table row, numbers right-aligned.
-
-    Args:
-        cells: Already-formatted cell contents.
-        tag: "td" or "th".
-
-    Returns:
-        A table row. The first cell is a label and the rest are numbers.
-    """
-    first, rest = cells[0], cells[1:]
-    return (f"<tr><{tag}>{first}</{tag}>"
-            + "".join(f'<{tag} class="n">{c}</{tag}>' for c in rest) + "</tr>")
-
-
-def diagnostics(rows: pd.DataFrame) -> str:
-    """Every check that decides whether a market's result may be believed.
-
-    Args:
-        rows: Every (strategy, market) row.
-
-    Returns:
-        A table, one row per check and one column per market, with what each value should be.
-    """
-    markets = list(rows.feed.unique())
-    head = _row(["comprobación", *markets, "qué se espera"], "th")
-    body = []
-    for key, label, expect in DIAGNOSTICS:
-        values = []
-        for m in markets:
-            v = rows.loc[rows.feed == m, key].iloc[0]
-            values.append(v if isinstance(v, str) else f"{v:,.4g}")
-        body.append(_row([label, *values, expect]))
-    return f'<div class="scroll"><table>{head}{"".join(body)}</table></div>'
-
-
-def glossary(models: list[str]) -> str:
-    """What every number on the page means, in the owner's own terms.
-
-    Args:
-        models: The models that were run.
-
-    Returns:
-        The closing section. The report is read by whoever the owner shows it to, and none of
-        these quantities explains itself.
-    """
-    items = "".join(f"<li><code>{m}</code> — aleatoriza {RANDOMISES[m]}.</li>" for m in models)
-    return f'''<h2>Qué significa cada número</h2>
-<p><b>El estadístico.</b> Retorno logarítmico medio por operación, ya descontado el coste, dividido
-por una constante de cada mercado (su ATR mediano). Esa constante es idéntica para el backtest real
-y para todos los aleatorios, así que no puede mover ningún p-valor: sólo sirve para que oro, plata y
-petróleo se puedan comparar en el mismo eje.</p>
-<p><b>El p-valor.</b> Qué fracción de los backtests aleatorios igualó o superó al real. 0,03 quiere
-decir que 3 de cada 100 versiones al azar lo habrían hecho igual de bien. <b>No</b> es la
-probabilidad de que la estrategia funcione.</p>
-<p><b>La ventaja.</b> Real menos la mediana de los aleatorios, en las mismas unidades. Es el tamaño
-del efecto, y es lo que hay que mirar cuando el p-valor sale ajustado.</p>
-<p><b>El test pareado (1b).</b> Compara cada operación real con la media exacta de <i>todas</i> las
-ventanas de su misma duración dentro de su mismo semestre. El coste aparece en los dos lados y se
-cancela, así que este test no depende de ninguna suposición de coste ni de ningún modelo nulo — y
-tampoco dice si la estrategia gana dinero, sólo si sus entradas baten a entradas ciegas de la misma
-duración.</p>
-<p><b>El test pareado, en dinero.</b> El alfa de 1b sale en logaritmos, donde 0,0004 no se lee. La
-misma cifra aparece en puntos básicos, en por ciento, en unidades de ATR y en dólares — y la columna
-<b>$ acumulado</b> es la que contesta la pregunta real: cuánto dinero de todo lo que ganó la
-estrategia lo puso el momento de entrar, y no el simple hecho de estar dentro del mercado.</p>
-<p><b>La sensibilidad de 1b.</b> El mismo test se corre con varias definiciones de «el mismo tramo de
-mercado»: ventanas centradas de ±3, ±6 y ±12 meses, y la partición fija en semestres. Un p que
-aguanta las cuatro no depende de esa elección; uno que sólo aguanta una la tenía de muleta.</p>
-<p><b>E y A (test 1c).</b> A es el exceso por vela sobre la vela media del mercado: mide el acierto
-con la deriva descontada, y dividida por el movimiento típico de una vela es el número que preside
-la pestaña, porque está definido en todos los mercados. E es ese mismo cociente en vez de resta, y
-se muestra siempre <b>con su intervalo de Fieller</b>: cuando la deriva del mercado no se distingue
-de cero, ese intervalo sale <i>no acotado</i>, que es la verdad, en lugar de un número como −69 que
-parece decidido y no lo es.</p>
-<p><b>Los modelos.</b> No hay una única forma correcta de convertir un backtest en uno aleatorio, y
-la respuesta cambia con la elección. Por eso se corren varios: el primero decide, porque es el único
-que cambia exactamente una cosa.</p>
-<ul>{items}</ul>
-<div class="note"><b>Aquí no hay veredicto.</b> Ningún número de esta página decide si una
-estrategia se queda o se descarta, y ningún mercado se oculta por haber fallado una comprobación:
-cada uno sale con todos sus números y con la lista de motivos para desconfiar de ellos. La decisión
-la toma el dueño fuera de este estudio.</div>
-<div class="note"><b>Lo que este informe no dice.</b> No detecta sobreajuste al activo base: mide si
-el acierto se traslada a mercados que la estrategia nunca vio. Y no valida la curva de capital — el
-estadístico está construido a propósito sin tamaño de posición, para que la comparación sea justa.
-</div>'''
+# What every number on the page means, in the owner's own terms. Plain text: the window prints it.
+GLOSSARY = [
+    {"term": "El estadístico (mean_r)", "text": "Retorno logarítmico medio por operación, ya "
+     "descontado el coste, dividido por el ATR mediano del mercado. Esa constante es la misma "
+     "para el real y para los aleatorios, así que no mueve ningún p: sólo pone oro, plata y "
+     "petróleo en el mismo eje."},
+    {"term": "p-valor", "text": "Qué fracción de los backtests aleatorios igualó o superó al "
+     "real. 0,03 son 3 de cada 100. No es la probabilidad de que la estrategia funcione."},
+    {"term": "Ventaja", "text": "Real menos la mediana de los aleatorios: el tamaño del efecto, "
+     "lo que hay que mirar cuando el p sale ajustado."},
+    {"term": "Test pareado (1b)", "text": "Cada operación contra la media exacta de todas las "
+     "ventanas de su misma duración en su mismo tramo. El coste se cancela: no dice si gana "
+     "dinero, sólo si sus entradas eligen momento."},
+    {"term": "$ acumulado (1b)", "text": "Cuánto de lo que ganó la estrategia lo puso el "
+     "momento de entrar, y no el simple hecho de estar dentro del mercado."},
+    {"term": "Sensibilidad de 1b", "text": "El mismo test con ventanas centradas de ±3, ±6 y "
+     "±12 meses y con semestres fijos. Un p que aguanta las cuatro no depende de esa elección."},
+    {"term": "A y E (1c)", "text": "A es el exceso por vela sobre la vela media del mercado, "
+     "definido siempre; E es el mismo cociente y sale con su intervalo de Fieller, no acotado "
+     "cuando la deriva del mercado no se distingue de cero."},
+    {"term": "Los modelos", "text": "No hay una única forma correcta de convertir un backtest "
+     "en uno aleatorio. Se corren varios; decide Calendar Shift, el único que cambia "
+     "exactamente una cosa."},
+    {"term": "Sin veredicto por mercado", "text": "Ningún mercado se oculta por fallar una "
+     "comprobación. El único veredicto del estudio es la amplitud, sobre todos a la vez."}]

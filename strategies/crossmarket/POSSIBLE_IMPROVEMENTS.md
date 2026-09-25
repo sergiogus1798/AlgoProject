@@ -203,7 +203,7 @@ The owner rebuilt the panel around the backtest rather than around the tests. Al
 
 The owner asked for the same random-entry test over the segment of the **main** backtest that the
 builder optimised nothing on — an OOS of time, next to the retest's OOS of market. It runs in
-`explorer/oos_run.py`, lands in `record["oos"]` and nowhere else, and has its own tab.
+`orchestrate/stretch.py`, lands in `record["oos"]` and nowhere else, and has its own tab.
 
 Decided with the owner, so a future session does not reopen them:
 

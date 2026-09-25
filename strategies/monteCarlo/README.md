@@ -40,6 +40,7 @@ dict, so the two cannot disagree.
 | `one.py` | **One strategy as the contract's data**: verdict, seven tabs, warnings, glossary, summary row; `only=` re-runs one sub-test | imported — the window calls it |
 | `many.py` | Every strategy, one process each, and the databank read as one result | imported |
 | `report.py` | The command: every strategy of one databank, to `verdict.csv`, one JSON and one page per strategy, and the databank page | `python3 -m strategies.monteCarlo.report --project XAUUSD --databank Results --asset XAUUSD --export 2026-09-03` |
+| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable of the study, grouped by family | edited, or `--set section.key=value` |
 
 `run.py` is the one module allowed to cross every layer — that is what an orchestrator is. Everyone

@@ -74,6 +74,10 @@ stress:
   fill_frac: 0.15             # share of trades filled worse
   fill_depth: 0.25            # fraction of the trade's own adverse excursion given back
 
+verdict:
+  breadth_floor: 0.5          # share of markets whose expectancy interval must clear zero to keep the
+                              # strategy (MANTENER); the only screen this study applies, see report.py
+
 diagnostics:
   alpha: 0.05                 # the level every p-value is coloured against; it decides nothing
   min_trades: 30              # below this a market is flagged as too small — it is never dropped

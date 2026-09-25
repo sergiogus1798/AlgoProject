@@ -58,7 +58,7 @@ def exits(fixed: dict) -> list[dict]:
     pnl = d["Profit/Loss"].to_numpy()
     total = np.abs(pnl).sum() or 1.0
     out = []
-    for kind, group in d.groupby("Close type", sort=False):
+    for kind, group in d.groupby("Close type", sort=False, observed=False):
         at = d["Close type"].to_numpy() == kind
         out.append({"exit": str(kind), "trades": int(at.sum()),
                     "share": float(at.mean()), "net": float(pnl[at].sum()),

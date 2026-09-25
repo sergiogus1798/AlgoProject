@@ -5,8 +5,8 @@ from collections.abc import Callable
 import pandas as pd
 
 from core import tradestore
-from strategies.crossmarket import views
-from strategies.crossmarket.explorer import market_run, oos_run
+from strategies.crossmarket.orchestrate import views
+from strategies.crossmarket.orchestrate import market as market_run, stretch as oos_run
 from strategies.crossmarket.mechanics import curves, envelope
 from strategies.crossmarket.simulate import backtest, correlation, portfolio
 from strategies.crossmarket.verdict import breadth, inference
@@ -17,7 +17,7 @@ def analyse_strategy(setup: dict, cfg: dict, name: str, only: str | None,
     """The whole cross-market analysis of one strategy.
 
     Args:
-        setup: What serve.main() assembled: universe, bars per feed, the packed trades.
+        setup: What load.load() assembled: universe, bars per feed, the packed trades.
         cfg: What config.load() returned.
         name: Strategy name, the CSV's stem.
         only: One market feed to run on its own, or None for all of them.

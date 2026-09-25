@@ -66,3 +66,28 @@ def summary(rows: pd.DataFrame, alpha: float) -> dict:
             "paired_under_alpha": int((rows["paired_p"] <= alpha).sum()),
             "edge_r": float(rows["edge_r"].median()),
             "warnings": int(rows["warnings"].map(len).sum())}
+
+
+def judge(summary: dict, floor: float) -> tuple[str, str]:
+    """Whether a strategy's edge showed up on the markets it never saw.
+
+    Args:
+        summary: What summary() returned for one strategy.
+        floor: verdict.breadth_floor, the share of markets whose expectancy interval must
+            clear zero.
+
+    Returns:
+        (verdict, reason). DESCARTAR is what `/curate` acts on; MANTENER is kept.
+
+    One screen and one number, deliberately: breadth is the only reading of this study that
+    does not need a model to be believed — an expectancy interval clearing zero on a market
+    the strategy was never fitted to is arithmetic. The p-values are reported beside it and
+    decide nothing, because they come from a placement model and the owner reads the model
+    before he reads its p.
+    """
+    got = summary["fraction"]
+    if got >= floor:
+        return "MANTENER", (f"{summary['cleared']} de {summary['markets']} mercados con la "
+                            f"esperanza por encima de cero ({got:.0%} >= {floor:.0%})")
+    return "DESCARTAR", (f"solo {summary['cleared']} de {summary['markets']} mercados con la "
+                         f"esperanza por encima de cero ({got:.0%} < {floor:.0%})")

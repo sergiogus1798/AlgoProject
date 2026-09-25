@@ -7,6 +7,8 @@ from core.study.render import svg
 from core.study.render.svg import H, PAD, REAL, SIM, STATE, W
 
 ROLE = {"real": REAL, "sim": SIM, "reference": svg.INK2}
+# When several series share a role, each takes the next of these; the first is the role's own.
+SERIES = (REAL, SIM, "#1baf7a", "#8e5bd6", "#c98a00", "#d6337a", "#2aa3b8", "#7a6a55")
 
 
 def _xfmt(labels: list) -> Callable:
@@ -92,12 +94,16 @@ def lines(b: dict) -> str:
     body = [svg.axes(x, y, svg.ticks(0, n - 1), svg.ticks(min(values), max(values)),
                      _xfmt(b["x"]))]
     dash = {"real": "", "sim": "", "reference": ' stroke-dasharray="5 4"'}
+    drawn = [s for s in b["series"] if s["role"] != "reference"]
+    colour = {id(s): ROLE[s["role"]] if len(drawn) == 1 else SERIES[i % len(SERIES)]
+              for i, s in enumerate(drawn)}
+    colour.update({id(s): ROLE["reference"] for s in b["series"] if s["role"] == "reference"})
     for s in b["series"]:
         body.append(f'<path d="{_path(xs, s["values"], x, y)}" fill="none" '
-                    f'stroke="{ROLE[s["role"]]}" stroke-width="2"{dash[s["role"]]} '
-                    f'opacity="{1 if s["role"] == "real" else .7}"><title>{escape(s["label"])}'
+                    f'stroke="{colour[id(s)]}" stroke-width="2"{dash[s["role"]]} '
+                    f'opacity="{1 if s["role"] == "real" else .8}"><title>{escape(s["label"])}'
                     f"</title></path>")
-    key = svg.legend([(svg.line(ROLE[s["role"]], "dashed" if s["role"] == "reference"
+    key = svg.legend([(svg.line(colour[id(s)], "dashed" if s["role"] == "reference"
                                 else "solid"), s["label"]) for s in b["series"]][:12])
     return svg.figure(b["title"], b.get("note", ""), svg.canvas("".join(body)), key)
 

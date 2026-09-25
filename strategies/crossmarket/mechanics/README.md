@@ -21,7 +21,7 @@ never "was it luck" — there is no null model here, no draw, no p-value.
 ## The window is the backtest's, not the bar file's
 
 🔬 **Every market is sliced to the backtest's own span before anything is computed** —
-`envelope.window(trades, bars)`, called once in `explorer/analysis.py`. A bar file runs wider than
+`envelope.window(trades, bars)`, called once in `orchestrate/strategy.py`. A bar file runs wider than
 the retest that was run on it: measured, XAGUSD bars cover 2003-2026 against a 2008-2022 backtest, so
 **a third of the file sits outside it**. Without the slice, a null model places trades in years the
 real strategy never saw, with their own drift and their own volatility regime; the drift in Test 1c

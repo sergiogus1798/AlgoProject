@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from core import tradestore
-from strategies.crossmarket.explorer import sweep_run
+from strategies.crossmarket.orchestrate import sweep as sweep_run
 from strategies.crossmarket.inputs import execution
 from strategies.crossmarket.mechanics import curves, envelope, pricing
 from strategies.crossmarket.simulate import (backtest, correlation, exposure, fingerprint,

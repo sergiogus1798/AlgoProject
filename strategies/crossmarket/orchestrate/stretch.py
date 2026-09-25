@@ -11,7 +11,7 @@ and Brent draws over the same dates. It gets its own record key and its own tab.
 from collections.abc import Callable
 
 from core import tradestore
-from strategies.crossmarket.explorer import market_run
+from strategies.crossmarket.orchestrate import market as market_run
 from strategies.crossmarket.inputs import markets
 from strategies.crossmarket.mechanics import envelope
 from strategies.crossmarket.simulate import backtest, realrun, stress
@@ -43,7 +43,7 @@ def run(setup: dict, cfg: dict, name: str, asset: str,
     """The same random-entry test, on the main backtest's out-of-sample stretch only.
 
     Args:
-        setup: What serve.main() assembled.
+        setup: What load.load() assembled.
         cfg: What config.load() returned.
         name: Strategy name, the CSV's stem.
         asset: Base asset, for the declared range.
