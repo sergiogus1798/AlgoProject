@@ -25,7 +25,7 @@ config.yaml ─▶ inputs ─▶ benchmark ─▶ measure ─▶ many / one ─�
 | `many.py` | The population as one result: the three SPA p-values, the Sharpe histogram against buy and hold, the gate's survivors, the StepM set | imported | inputs → results |
 | `report.py` | **The command**: runs it, writes `reports/<P>/<D>/<day>/snoopingScreen/`, records a step-8 row in the ledger | `python3 -m studies.screening.snoopingScreen.report --project XAU_ISOOS_ejemplo --databank Results --feed XAUUSD_DukasM1_Infinox --symbol XAUUSD --timeframe M30 --family DirectionalMomentum` | harvest → reports + ledger row |
 | `tooltips.py` | One Spanish sentence per `config.yaml` knob | imported | — |
-| `config.yaml` | The segment, the benchmark's sizing, the FWER, the bootstrap | edited | — |
+| `config.yaml` | The segment, the benchmark's sizing, the FWER — a `ledger:` placeholder, the number is in `ledger/thresholds.yaml` — and the bootstrap | edited | — |
 
 Manual page, in Spanish: `docs/manual/49-snooping.md`. The engine: `engines/inference/snooping/`.
 

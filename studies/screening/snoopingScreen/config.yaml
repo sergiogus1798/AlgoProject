@@ -18,8 +18,9 @@ benchmark:
                               # in the market a few percent of the time, and test the asset's drift
 
 stepm:
-  fwer: 0.05                  # owner, 2026-09-25. The chance of naming at least one strategy that
-                              # does not beat buy and hold. Mirrored in ledger/thresholds.yaml
+  fwer: ledger:snoopingScreen.stepm.fwer
+                              # owner, 2026-09-25. The chance of naming at least one strategy that
+                              # does not beat buy and hold. The number lives in ledger/thresholds.yaml
 
 bootstrap:
   reps: 1000                  # stationary-bootstrap replications, for the SPA and the StepM alike

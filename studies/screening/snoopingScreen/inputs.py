@@ -9,6 +9,7 @@ from core.assetdata import load as load_asset, window as asset_window
 from core.barstore import read as read_bars
 from core.paths import DATA, report_dir
 from core.study import config as study_config
+from ledger import thresholds
 
 CONFIG = Path(__file__).with_name("config.yaml")
 
@@ -20,9 +21,10 @@ def config(overrides: list[str]) -> dict:
         overrides: Dotted `section.key=value` strings, as `--set` passes them.
 
     Returns:
-        What config.yaml holds.
+        What config.yaml holds, its `ledger:<key>` replaced by the number
+        `ledger/thresholds.yaml` declares.
     """
-    return study_config.load(CONFIG, overrides)
+    return study_config.apply(thresholds.fill(study_config.load(CONFIG, [])), overrides)
 
 
 def harvest(project: str, databank: str) -> Path:
