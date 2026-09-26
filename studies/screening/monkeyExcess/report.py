@@ -151,12 +151,19 @@ def main() -> None:
 
     started = time.time()
     panel, made = newest(a.project, a.databank)
-    got = result(panel, made, a.rung or made["source"]["rungs"][0], a.alpha, started)
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "monkeyExcess"
-    title = f"{a.project} / {a.databank} — cuántas baten al mono, y cuántas deberían"
-    output.population(out, "monkeyExcess", got, title)
-    print(markdown.render(got, title))
-    print(f"\n-> {out / 'monkeyExcess.md'}")
+    # A cross-market panel is judged market by market: pooling ten markets would count one
+    # strategy ten times, and the question is how many beat the monkey on each market.
+    markets = sorted(panel["market"].unique()) if "market" in panel else [""]
+    for market in markets:
+        mine = panel[panel["market"] == market] if market else panel
+        got = result(mine, made, a.rung or made["source"]["rungs"][0], a.alpha, started)
+        where = out / market if len(markets) > 1 else out
+        title = (f"{a.project} / {a.databank}{f' / {market}' if len(markets) > 1 else ''} — "
+                 f"cuántas baten al mono, y cuántas deberían")
+        output.population(where, "monkeyExcess", got, title)
+        print(markdown.render(got, title))
+        print(f"\n-> {where / 'monkeyExcess.md'}")
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ not merged: they answer different questions and merging them would move every p.
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names what the package is; holds no code | — | — |
-| `inputs.py` | The knobs, one strategy's trades on one sample, its bars, and where each trade sits on the bar grid | imported | export + feed → trades, bars, indices |
+| `inputs.py` | The knobs, the markets an export holds, the trades of one sample and market (read filtered; an export of several markets refuses without its feed), the bars, and where each trade sits on the bar grid | imported | export + feed → trades, bars, indices |
 | `barrier.py` | The triple-barrier exit: stop, target and time limit, vectorised over thousands of runs at once | imported | entries + levels → exit bar, exit price |
 | `kernel.py` | The null runs priced and measured in one compiled numba pass, and the first-touch barrier scan that stops at the first touch; checked against the numpy definitions to 1e-12 | imported | draws + bars → five statistics per run |
 | `model.py` | The ladder of nulls — what each rung holds fixed and what it hands to chance | imported | located trades → entries, holds, sizes |

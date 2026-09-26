@@ -95,7 +95,7 @@ def main() -> None:
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)
-    trades = inputs.sample(inputs.newest(a.project, a.databank), a.strategy, a.sample)
+    trades = inputs.sample(inputs.newest(a.project, a.databank), a.strategy, a.sample, a.feed)
     kept = simulate.fixed(trades, inputs.bars(a.feed, a.timeframe), cfg)
 
     print(f"{a.strategy}  ({len(trades)} trades, muestra {a.sample})\n")

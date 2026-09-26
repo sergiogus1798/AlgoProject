@@ -9,45 +9,53 @@ from core.study import blocks, result as envelope
 from engines.nulls import simulate
 from studies.readings.monkey import one
 
-# What the workers read, set before the pool forks: the bars, the config and every
-# strategy's trades on the sample, each handed over without pickling.
+# What the workers read, set before the pool forks: every market's bars, the config and every
+# (strategy, market)'s trades on the sample, each handed over without pickling.
 _SHARED: dict = {}
 
 
-def _one(name: str) -> dict:
-    """One strategy's line, in a worker that inherited the sample by fork."""
-    trades = _SHARED["sample"][name]
-    return one.row(one.measure(trades, _SHARED["frame"], _SHARED["cfg"], name), len(trades),
-                   _SHARED["cfg"])
+def _one(key: tuple[str, str]) -> dict:
+    """One strategy on one market, in a worker that inherited the sample by fork."""
+    trades = _SHARED["sample"][key]
+    # The feed is what names the asset whose costs the distrust lines check.
+    cfg = {**_SHARED["cfg"], "feed": key[1]}
+    # Seeded by the strategy alone, as before markets were split: a one-market export
+    # draws exactly the monkeys it always drew.
+    return one.row(one.measure(trades, _SHARED["frames"][key[1]], cfg, key[0]),
+                   len(trades), cfg)
 
 
-def run(sample: dict[str, pd.DataFrame], frame: pd.DataFrame, cfg: dict,
-        workers: int) -> dict:
-    """Every strategy with enough trades, one process each, the longest first.
+def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFrame],
+        cfg: dict, workers: int) -> dict:
+    """Every (strategy, market) with enough trades, one process each, the longest first.
 
     Args:
-        sample: Strategy name -> its trades on the sample.
-        frame: The bars.
-        cfg: What inputs.config() returned, with `feed` set.
-        workers: Strategies run at once.
+        sample: (strategy name, market feed) -> its trades on the sample.
+        frames: Market feed -> its bars.
+        cfg: What inputs.config() returned.
+        workers: Tasks run at once.
 
     Returns:
-        {"population": the export's result, "panel": nulls.csv's frame}. This module
-        judges nobody: the population verdict — how many beat their monkeys against how
-        many chance gives — is tasks' monkeyExcess, which reads this panel.
+        {"population": the export's result, "panel": nulls.csv's frame, one row per strategy
+        and market}. This module judges nobody: the population verdict — how many beat
+        their monkeys against how many chance gives — is tasks' monkeyExcess, which reads
+        this panel.
     """
     started = time.time()
-    # Too few trades and there is no p to compute; such a strategy never reaches a worker.
-    names = [n for n in sorted(sample) if len(sample[n]) >= cfg["verdict"]["min_trades"]]
-    _SHARED.update(sample=sample, frame=frame, cfg=cfg)
-    simulate.warm(frame, cfg)
-    simulate.prime(simulate.fixed(sample[names[0]], frame, cfg), cfg)
+    # Too few trades and there is no p to compute; such a pair never reaches a worker.
+    keys = [k for k in sorted(sample) if len(sample[k]) >= cfg["verdict"]["min_trades"]]
+    _SHARED.update(sample=sample, frames=frames, cfg=cfg)
+    for frame in frames.values():
+        simulate.warm(frame, cfg)
+    simulate.prime(simulate.fixed(sample[keys[0]], frames[keys[0][1]], cfg), cfg)
     rows = {}
-    for i, (name, got) in enumerate(fanout.run(_one, {n: len(sample[n]) for n in names},
-                                               workers), 1):
-        rows[name] = got
-        envelope.progress(100 * i // len(names), f"{i}/{len(names)} {name}")
-    panel = pd.DataFrame(rows).T.loc[names].rename_axis("strategy")
+    for i, (key, got) in enumerate(fanout.run(_one, {k: len(sample[k]) for k in keys},
+                                              workers), 1):
+        rows[key] = got
+        envelope.progress(100 * i // len(keys), f"{i}/{len(keys)} {key[0]} · {key[1]}")
+    panel = pd.DataFrame([{"strategy": s, "market": m, **rows[s, m]} for s, m in keys])
+    panel = panel.set_index("strategy")
+    label = (lambda s, m: s) if len(frames) == 1 else (lambda s, m: f"{s} · {m}")
     head, alpha = cfg["nulls"]["headline"], cfg["verdict"]["alpha"]
     shown = panel[[c for c in panel.columns if c.startswith(f"p_{head}_")] + ["n"]]
     population = envelope.envelope(
@@ -55,12 +63,12 @@ def run(sample: dict[str, pd.DataFrame], frame: pd.DataFrame, cfg: dict,
         [envelope.tab("panel", "Cada estrategia contra sus monos", [
             {"kind": "bars", "title": f"p en {c[len(f'p_{head}_'):]} — peldaño {head}",
              "unit": "p", "reference": alpha,
-             "items": [{"label": s, "value": float(v), "error": None,
+             "items": [{"label": label(s, m), "value": float(v), "error": None,
                         "state": "pass" if float(v) <= alpha else "fail"}
-                       for s, v in panel[c].items()]}
+                       for s, m, v in zip(panel.index, panel["market"], panel[c])]}
             for c in shown.columns if c != "n"]
             + [blocks.table("Todas", panel.reset_index())],
-            note=f"{cfg['nulls']['draws']:,} monos por estrategia y peldaño. Sin veredicto: "
-                 f"cuántas baten a sus monos contra cuántas daría el azar lo dice "
-                 f"monkeyExcess, que lee este panel.")])
+            note=f"{cfg['nulls']['draws']:,} monos por estrategia, mercado y peldaño. Sin "
+                 f"veredicto: cuántas baten a sus monos contra cuántas daría el azar lo "
+                 f"dice monkeyExcess, que lee este panel.")])
     return {"population": population, "panel": panel}

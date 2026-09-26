@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 from core.barstore import read as read_bars
 from core.paths import DATA
@@ -25,19 +26,59 @@ def config(overrides: list[str]) -> dict:
     return study_config.load(CONFIG, overrides)
 
 
-def sample(packed: Path, strategy: str, which: str) -> pd.DataFrame:
+def markets(packed: Path) -> list[str]:
+    """The markets one export holds, when it holds more than its own.
+
+    Args:
+        packed: The `trades.parquet` an export wrote.
+
+    Returns:
+        The feeds of its `Symbol` column, sorted, for a `data=all` export (cross-market);
+        empty for a one-market export, whose feed is only in its manifest.
+    """
+    if "Symbol" not in pq.read_schema(packed).names:
+        return []
+    return sorted(pd.read_parquet(packed, columns=["Symbol"])["Symbol"].astype(str).unique())
+
+
+def trades(packed: Path, which: str, feed: str = "", strategy: str = "") -> pd.DataFrame:
+    """The trades of one sample of an export, of one market and one strategy when asked.
+
+    Args:
+        packed: The `trades.parquet` an export wrote.
+        which: A value of the `Sample type` column -- "IST" in sample, "OOS1" out of it.
+        feed: The market to keep. Required for an export of several markets: 📓 2026-09-26,
+            reading a cross-market export by strategy alone handed the monkey the trades of
+            ten markets as one strategy, priced on one market's bars, with nothing failing.
+        strategy: The strategy to keep; every strategy when empty.
+
+    Returns:
+        The rows, in the order SQX reported them. Filtered while reading, so a 12 M-row
+        cross-market export costs what its one market costs.
+    """
+    held = markets(packed)
+    if len(held) > 1 and not feed:
+        raise SystemExit(f"{packed} tiene {len(held)} mercados ({', '.join(held)}): di cuál "
+                         f"con --feed, o córrelo por mercado")
+    filters = [("Sample type", "==", which)]
+    filters += [("Symbol", "==", feed)] if held else []
+    filters += [("strategy", "==", strategy)] if strategy else []
+    return pd.read_parquet(packed, filters=filters).reset_index(drop=True)
+
+
+def sample(packed: Path, strategy: str, which: str, feed: str = "") -> pd.DataFrame:
     """One strategy's trades on one sample of its backtest.
 
     Args:
         packed: The `trades.parquet` an export wrote.
         strategy: Its name exactly as the export spells it.
         which: A value of the `Sample type` column -- "IST" in sample, "OOS1" out of it.
+        feed: Its market, which an export of several markets needs (see trades()).
 
     Returns:
         That strategy's trades on that sample, in the order SQX reported them.
     """
-    frame = pd.read_parquet(packed)
-    return frame[(frame["strategy"] == strategy) & (frame["Sample type"] == which)]
+    return trades(packed, which, feed, strategy)
 
 
 def bars(feed: str, timeframe: str) -> pd.DataFrame:
