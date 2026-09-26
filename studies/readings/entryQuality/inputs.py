@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from core.study import config as study_config
+from ledger import thresholds
 from core.trades import SIDE
 from engines.market import calibrate
 from engines.nulls import inputs as nullinputs
@@ -21,9 +22,10 @@ def config(overrides: list[str]) -> dict:
             the type of the value it replaces (core.study.config).
 
     Returns:
-        What config.yaml holds.
+        What config.yaml holds, each `ledger:<key>` replaced by the number
+        `ledger/thresholds.yaml` declares.
     """
-    return study_config.load(CONFIG, overrides)
+    return study_config.apply(thresholds.fill(study_config.load(CONFIG, [])), overrides)
 
 
 def located(packed: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> dict:

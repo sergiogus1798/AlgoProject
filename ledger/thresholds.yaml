@@ -4,11 +4,13 @@
 # cadena entera, y sin fecha no se distingue de uno fijado de antemano. Por eso cada fila
 # lleva quién lo puso, cuándo y por qué.
 #
-# ⚠️ ESTADO, 2026-09-24: este fichero es hoy el REGISTRO, no todavía la FUENTE. Cada fila
-# apunta con `source` al sitio donde el código lee ese número, y
-# `python3 -m ledger.report --check-thresholds` compara los dos y grita si divergen.
-# Migrar cada módulo a leer de aquí es el trabajo que queda; hacerlo de golpe tocaría siete
-# módulos en funcionamiento y ninguno tendría prueba de que sigue haciendo lo mismo.
+# CÓMO LLEGA UN NÚMERO A SU MÓDULO. El `config.yaml` del módulo escribe `ledger:<key>` donde
+# antes ponía el número, y su `config()` lo sustituye por el `value` de aquí al leer
+# (`ledger.thresholds.fill`). Una clave ausente o repetida hace fallar la lectura. `source`
+# apunta a ese hueco del `config.yaml`; una fila cuyo módulo aún guarda su propio número es una
+# COPIA, y `python3 -m ledger.report --check-thresholds` dice de cada fila si se lee del ledger
+# o es copia, y grita si una copia diverge. `tests/test_thresholds.py` prueba que un módulo
+# migrado no lee el número de ningún otro sitio.
 
 version: 2026-09-24
 
@@ -55,6 +57,13 @@ thresholds:
     set_by: dueño
     set_on: 2026-09-23
     why: Benjamini-Hochberg sobre la familia superviviente; SOFT hasta que el dueño vea el exceso
+
+  - key: snoopingScreen.stepm.fwer
+    value: 0.05
+    source: studies/screening/snoopingScreen/config.yaml#stepm.fwer
+    set_by: dueño
+    set_on: 2026-09-25
+    why: probabilidad de nombrar al menos una que no bate al buy & hold a igual riesgo; anota, no corta
 
   # ── Lecturas por estrategia ───────────────────────────────────────────────────────────
   - key: profitShape.max_top5

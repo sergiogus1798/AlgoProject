@@ -15,7 +15,7 @@ family: the unit the multiple-testing correction is owed to.
 | `gate.py` | **The one-way door**: who may read a reserved segment, and when 17-19 may be read | imported | step, segment → pass or raise |
 | `trials.py` | N and the pooled sigma over every search, the population's n_eff, and the deflated Sharpe that follows | imported | ledger → N, sigma, DSR |
 | `spend.py` | The map of spent data: how often each segment has been read, and what is left virgin | imported | ledger → segments |
-| `thresholds.py` | Reads `thresholds.yaml` and checks the code still uses the numbers it declares | imported | register → divergences |
+| `thresholds.py` | **The accessor**: `value(key)` and `fill(cfg)`, which a module's `config()` runs over its parsed `config.yaml` to replace every `ledger:<key>`; and the check of which rows are read through it | imported | register → numbers, divergences |
 | `backfill.py` | Rebuilds a study's ledger backwards from artefacts a run already left | `python3 -m ledger.backfill --gate <dir> --symbol XAUUSD --timeframe M30 --family <name>` | a gate report → rows |
 | `report.py` | **The command**: the funnel, what was spent, the blind door, and what the whole search costs the Sharpe | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
 | `thresholds.yaml` | Every threshold of the chain, with who set it and when. **Read, never written** | edited by the owner | — |
@@ -53,7 +53,13 @@ every row it produces is marked `backfill` and carries the report's own date, no
 study ended with nothing left. `backfill` records `n_out = n_in` for a soft screen and puts the
 informative count in the note.
 
-**`thresholds.yaml` is a register, not yet the source.** Each row points at where the code really
-reads that number, and `ledger.report --check-thresholds` compares the two — 🔬 13 declared, 0
-divergent on 2026-09-24. Migrating each module to read from here is what remains; doing it in one
-pass would touch seven working modules with no test that any of them still behaves the same.
+**`thresholds.yaml` is the source, reached through one accessor.** A migrated module's
+`config.yaml` holds `ledger:<key>` where the number was, and its `config()` runs
+`thresholds.fill` over the parsed file *before* any `--set` override, so an override is still held
+to the number's type and the window's drawer still shows the knob. The placeholder keeps the key in
+its place: the gate prints a screen's thresholds in row order, and 🔬 its scorecard, funnel,
+verdict, pages and config fingerprint came out byte-identical after the move. A key missing from
+the register, or appended twice by two branches, raises on read. `ledger.report
+--check-thresholds` says of each row whether its module reads it from here (`ledger`) or still
+keeps a copy (`copia`), and fails on a copy that diverges; `tests/test_thresholds.py` swaps every
+value for a sentinel and fails if a migrated module does not see it.

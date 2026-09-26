@@ -1,0 +1,27 @@
+# Every tunable of the snooping screen, in one place. Nothing below is hidden in code.
+#
+# It runs after the OOS gate, over the same harvest, and ANNOTATES: it names which strategies
+# beat buy and hold once every strategy the harvest holds is paid for, and removes nobody.
+# Owner, 2026-09-25: annotate, do not cut, until the owner has seen how many it would keep.
+
+study:
+  segment: oos1               # the policy window the panel is cut to. The gate reads oos1, and
+                              # so does this: one more look at the same stretch, recorded in
+                              # the ledger as step 8
+
+benchmark:
+  sizing: equal_risk          # owner, 2026-09-25. Buy and hold sized, per strategy, so its daily
+                              # P&L is as volatile as the strategy's. The only sizing under which
+                              # "beats buy and hold" is a statement about the edge: the excess is
+                              # positive exactly when the strategy's Sharpe beats buy and hold's.
+                              # The other two sizings hold the asset every day against a strategy
+                              # in the market a few percent of the time, and test the asset's drift
+
+stepm:
+  fwer: ledger:snoopingScreen.stepm.fwer
+                              # owner, 2026-09-25. The chance of naming at least one strategy that
+                              # does not beat buy and hold. The number lives in ledger/thresholds.yaml
+
+bootstrap:
+  reps: 1000                  # stationary-bootstrap replications, for the SPA and the StepM alike
+  seed: 0                     # fixed, so a rerun on the same harvest names the same strategies

@@ -17,6 +17,7 @@ delay:
   bars: [1, 2, 3, 4, 5]     # delays on the strategy's own timeframe
   minutes: [1, 2, 3, 4, 5]  # and on M1
 
+# `ledger:<key>`: the number lives in ledger/thresholds.yaml, with who set it and when.
 verdict:
-  dcr_high: 0.30            # a delay of one bar giving up this share of gross expectancy
+  dcr_high: ledger:entryQuality.dcr_high  # a delay of one bar giving up this share of gross expectancy
                             # is either latency-fragile or a sign of lookahead

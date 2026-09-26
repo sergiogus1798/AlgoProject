@@ -27,7 +27,7 @@ config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ cont
 | `contract.py` | The four tabs — A1, A2 and A3, B2, C1 — each with its readings | imported | numbers → tabs |
 | `report.py` | **The command**: prints the result and writes `cloud.json`, `cloud.html` and `cloud.md` into the batch; `--out` also writes the numbers alone | `python3 -m studies.optimisation.cloud.report --work <dir>` | batch → four readings |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` | — |
+| `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
 
 Manual page, in Spanish: `docs/manual/39-nube-de-parametros.md`.
 
