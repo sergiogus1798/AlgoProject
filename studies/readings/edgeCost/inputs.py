@@ -6,6 +6,7 @@ import pandas as pd
 
 from core.paths import DATA
 from core.study import config as study_config
+from ledger import thresholds
 
 CONFIG = Path(__file__).with_name("config.yaml")
 
@@ -17,9 +18,12 @@ def config(overrides: list[str]) -> dict:
         overrides: "section.key=value" strings, as --set gives them.
 
     Returns:
-        The parsed config.yaml.
+        The parsed config.yaml, every `ledger:<key>` replaced by the number
+        `ledger/thresholds.yaml` declares (`min_edge_spreads`, `action`). Each override
+        keeps the type of the value it replaces (core.study.config).
     """
-    return study_config.load(CONFIG, overrides)
+    cfg = thresholds.fill(study_config.load(CONFIG, []))
+    return study_config.apply(cfg, overrides)
 
 
 def newest(project: str, databank: str) -> Path:

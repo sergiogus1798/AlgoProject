@@ -14,7 +14,7 @@ from ledger import thresholds
 # A module joins the list the commit it is migrated; it never leaves it.
 MIGRATED = ("studies/screening/gate/", "studies/screening/snoopingScreen/",
             "studies/readings/profitShape/", "studies/readings/entryQuality/",
-            "studies/optimisation/cloud/")
+            "studies/optimisation/cloud/", "studies/readings/edgeCost/")
 
 
 def reader(source: str) -> object:
