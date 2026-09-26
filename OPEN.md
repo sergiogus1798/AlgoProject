@@ -1262,7 +1262,6 @@ instead. The owner gives the UTC hours, or the cut stays out. Card: `knowhow/cos
 
 ## 48. 🟡 Loose ends of the 2026-09-26 batch — each the owner's word, none blocking
 
-- `assets/_markets.yaml` says USDJPY is **M30**; every USDJPY mother and batch is **H1**.
 - Market surfaces: the call uses the raw rho; `rho_neutral` (each market's exposure × drift
   removed) is shown beside it. Which one should decide is open. Its Fisher interval and J band are
   optimistic because the design clusters variants.

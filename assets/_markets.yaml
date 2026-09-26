@@ -46,7 +46,7 @@ XAUUSD:
 
 USDJPY:
   main: USDJPY_DukasM1_the5ers
-  timeframe: M30
+  timeframe: H1
   categories:
     # Los 28 pares de las 8 divisas major comparten motor macro — dólar, diferenciales de
     # tipos, apetito de riesgo — así que TODOS van en `family`. Ninguno es una prueba dura
