@@ -77,6 +77,11 @@ python3 -m sqx.variants.collect  --work <work>
 | `equity` | `equity.parquet` — el P&L **por día** de cada variante | no |
 | `collect` | `metrics.parquet` — el panel unido al manifiesto | no |
 
+**El espacio de variantes** (dueño, 2026-09-26): cada parámetro cubre al menos ±30 %, los enteros con
+todos sus valores, los *shift* fijos, y cada madre tiene **al menos 1.000 variantes distintas**
+(`--min-variants`, `minimum:` en `sqx/variants/config.yaml`) — si no caben en el ±30 %, los enteros se
+ensanchan hasta ±60 %. Si `make` imprime `⚠️ only N distinct tuples`, dilo al dueño antes de correr.
+
 `--sample N` fabrica N filas **repartidas** por todo el plan (los controles y luego picks
 espaciados de cada estrato); `--limit N` coge las N primeras y sesga el lote hacia un estrato. Para
 una prueba de humo, `--sample`.

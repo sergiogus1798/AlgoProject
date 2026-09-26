@@ -19,6 +19,15 @@ design:
     span: 0.30
     steps: 5
 
+minimum:
+  # Owner, 2026-09-26: every mother is studied with at least this many distinct variants. When
+  # its +/-30 % holds fewer (integer parameters with small values), the integer spans widen by
+  # `widen_step` of the original value per side until it does, up to `max_span`, and whatever
+  # is still missing is printed as a shortfall. `make --min-variants` overrides `variants`.
+  variants: 1000
+  widen_step: 0.05
+  max_span: 0.60
+
 canaries:
   # Controls whose result is known before the retest runs. They are chosen at the extremes
   # of the SPP table on purpose: a miswired chain returns a plausible middling number, it
