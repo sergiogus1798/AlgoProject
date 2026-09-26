@@ -19,6 +19,16 @@ Exclude `~/.local/share/Trash/` from strategy searches (owner's request).
 | `~/Desktop/SQX.zip` | 1.28 GB June install backup, 32 example `.sqx` — not a strategy archive |
 Template sets: `TemplatesSergiogus`, `TemplatesClaude`, `TemplatesLaCity`, `TemplatesBook`.
 
+Seed material for the ~1,208 `SPP OOS` / ~1,142 `WFM` XAUUSD strategies lost 2026-09-02 (not
+recoverable — owner's decision was to accept the loss and regenerate), still on disk and unique
+(not in the master project):
+
+| symbol | in master | elsewhere | main sources |
+|---|---|---|---|
+| XAUUSD | 461 | 5,746 | `~/Desktop/user` (June tree) 5,189 · `~/Desktop/StrategiesWFM/XAUUSD` 458 · `~/Desktop/WorkSQX` 148 |
+| USDJPY | 409 | 592 | June tree 1,429 copies · WorkSQX 34 · Banquillo 21 |
+| AUDJPY | 2,348 | 22 | June tree 12 · Banquillo 12 · WorkSQX 10 |
+
 | tool | does |
 |---|---|
 | `sqx/inspect/index_sqx.py` | index every `.sqx` by inner-XML hash + symbol; 17.7k files in 1.5 s |

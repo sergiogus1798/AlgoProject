@@ -18,5 +18,8 @@ The strategy template is `<StrategyType templateFile=>` in the Build task; `<Pro
   `sqx/inspect/project_health.py`; heal: `sqx/repair/graft_tasks.py`.
 - `<Project templateFile=>` records the `.cfx` it was imported from; on Windows imports it is
   UTF-8-as-CP1252 re-encoded **seven times**, decoding to
-  `C:\Users\Rubén Martínez\OneDrive\Escritorio\FILTROS\Build strategies.cfx`. `project_health.py` decodes it.
+  `C:\Users\Rubén Martínez\OneDrive\Escritorio\FILTROS\Build strategies.cfx`, on 11 of 16 projects,
+  always the same string. Nothing resolves it — it is a Windows path on a Linux box, and it is not a
+  strategy template (that is `<StrategyType templateFile=>`, above). Not worth repairing: it would
+  mean rewriting eleven archives offline for a field nothing reads. `project_health.py` decodes it.
 - Rewrite-on-exit is also how `-project action=loadconfig` becomes permanent (see retest-rewrites-sqstats).
