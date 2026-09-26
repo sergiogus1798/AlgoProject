@@ -53,7 +53,7 @@ timeout 2h "$CLAUDE" -p --agent documenter --model sonnet \
   "Documentation drift pass, unattended from cron: nobody can answer, so never ask — decide, and \
 leave in OPEN.md what you could not resolve. Start from today's audit (audit/${TODAY}.md and \
 audit/${TODAY}-mechanical.md): repair every documentation finding in it, then check paths, \
-commands and claims in CLAUDE.md files, READMEs, knowhow/ and docs/manual/ against what is on disk. \
+commands and claims in CLAUDE.md files, READMEs, knowhow/ and the manual chapters in AlgoData/manual-fuentes/ against what is on disk. \
 Documentation only: never edit code, never write under the data root, never run git add, commit, \
 checkout, stash or reset — leave your changes uncommitted. When done run python3 tools/checks.py. \
 Finish with the list of files you changed, in Spanish."

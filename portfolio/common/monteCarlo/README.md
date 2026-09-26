@@ -5,7 +5,7 @@ OOS decay test and the cross-market retest — and it does not ask whether the e
 what the edge depends on: the order the trades arrived in, which trades occurred at all, how they
 were filled, and the regime they lived in.
 
-Read `POSSIBLE_IMPROVEMENTS.md` before extending any of this, and `docs/manual/07-montecarlo.md`
+Read `POSSIBLE_IMPROVEMENTS.md` before extending any of this, and `docs/manual/08-montecarlo.pdf` (cap. 07-montecarlo)
 before running it.
 
 ```

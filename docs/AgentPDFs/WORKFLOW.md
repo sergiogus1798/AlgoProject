@@ -4,8 +4,8 @@
 fecha en el nombre: se actualiza, no se sustituye. Cualquier sesión que vaya a construir algo mira
 aquí primero en qué paso está y qué contrato tiene que cumplir.
 
-Qué NO es: `plan-ejecucion-2026-09-21.md` reparte el trabajo entre agentes y
-`protocolo-robustez-2026-09-21.md` detalla los contratos internos del tramo de robustez. Esto es la
+Qué NO es: un plan de reparto entre agentes (el plan y el protocolo del 21-09 se retiraron el
+26-09: sus tablas de estado contradecían el código). Esto es la
 **secuencia**, y manda sobre el orden que digan los otros dos.
 
 Estados: ✅ construido y medido · 🟡 existe, sin cerrar · ⬜ sin empezar · 🔴 bloqueado por un dato
@@ -20,7 +20,7 @@ que sólo el dueño puede dar.
 | 1 | **Idea en el chat** | — | — |
 | 2 | **Vocabulario** — ¿existe el bloque? si no, se crea e instala | `sqx/inspect/vocabulary.py`, `sqx/blocks/install.py` | ✅ |
 | 3 | **Plantilla** — bloque fijo + hueco aleatorio, con registro de lo ya probado | `sqx/templates/`, `/sqx-strategy-template` | ✅ |
-| 4 | **Preflight** — costes, ventanas y rangos, BLOQUEANTE | `core/assets.py` | ✅ · ⬜ aviso de calidad del feed (encargo 17), EN PAUSA — consulta externa pendiente, `docs/AgentPDFs/consulta-calidad-del-feed-2026-09-26.md` |
+| 4 | **Preflight** — costes, ventanas y rangos, BLOQUEANTE | `core/assets.py` | ✅ · ⬜ aviso de calidad del feed (encargo 17), EN PAUSA — esperando las 16 decisiones del dueño, `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md` |
 | 5 | **Creación del custom project** | `sqx/projects/builder.py` | ✅ |
 | 6 | **Configuración del build** | `assets/_build.yaml`, `sqx/projects/doctrine.py` | 🔴 filtros · ⬜ building blocks |
 | 7 | **Retest OOS en SQX** | tarea propia, costes de `oos1` | ✅ |
@@ -40,7 +40,7 @@ que sólo el dueño puede dar.
 | 18.5 | **Superficies por mercado** — la misma región de parámetros, ¿es la buena en los 9 mercados de `_markets.yaml`? `rho` de Spearman y Jaccard del decil superior entre cada par, sobre el lote del 16.5 retesteado con los cross-checks | `studies/optimisation/marketSurfaces/report.py`, manual `52-superficies-mercado.md` | ✅ · ⚠️ costes de los 9 pares = defaults de SQX con comisión CERO (`costs_provisional`) · lee `build`, `oos1` y `oos2`, este último a ciegas hasta el 20 |
 | 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `studies/optimisation/wfm/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
 | 20 | **Análisis conjunto de 17, 18, 18.5 y 19 — CIEGO hasta tener los cuatro** | — | ⬜ |
-| 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/38-exposicion.md` | ✅ |
+| 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/10-cierre.pdf` (cap. 38-exposicion) | ✅ |
 | 22 | **Mapa condicional** — clasifica cada operación por el estado del mercado al entrar (volatilidad realizada, tendencia, día de la semana) y lee el P&L celda a celda; fabrica hipótesis, no filtra | `studies/readings/conditionalMap/`, manual `53-mapa-condicional.md` | 🟡 · ⬜ sesión (Asia/Londres/Nueva York/solape) pendiente de que el dueño fije las horas UTC — ver `_coord/BOARD.md` |
 | 23 | **Estructura** — por superviviente: una ablación por condición de entrada y la inversión de la orden en las mismas entradas. ¿Qué condición aporta por operación contra un recorte al azar, cuál es redundante, y vive el filo en la dirección? Diagnóstico, nunca selección | `sqx.structural.make` → `sqx.variants.execute` (custodio) → `sqx.structural.keep` → `sqx.export.export_retest` → `studies/readings/structure/report.py`, manual `51-estructura.md` | ✅ · lee `build` y `oos1`; `oos2` lo rechaza `ledger.gate` · sin stops: la inversión se niega si la madre ya lleva stop/target (por eso va antes del 24) · D3 (mono dentro de SQX) cerrado como imposible |
 | 24 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, `sqx/variants/stopgrid.py`, manual `54-atr-calculator.md` | 🟡 construido y probado en SQX sobre una estrategia de desarrollo; falta una superviviente real · lee `build`, `oos1` y `oos2` (reservado también para este paso, dueño 2026-09-26) |
@@ -160,7 +160,7 @@ contaminada por lo que se vio, y la última bala se gasta en un test elegido a p
 
 ✅ **Construido el 2026-09-24.** `ledger/gate.py` se niega: `allow(paso, segmento, activo)` lanza si
 un paso mira un tramo que `_policy.yaml` reserva para otro, y `allow_read` lanza si se piden los
-resultados de 17, 18 o 19 sin que los tres estén registrados. Manual: `docs/manual/43-ledger.md`.
+resultados de 17, 18 o 19 sin que los tres estén registrados. Manual: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 43-ledger).
 
 #### Qué significa «los tres a la vez» — aclarado 2026-09-24
 
@@ -211,4 +211,4 @@ número de monos se convierte en una cifra que se compara con un resultado conoc
 | ⬜ | **los building blocks** del paso 6: qué indicadores entran en el hueco aleatorio |
 | ⬜ | el paso 20, que no existe |
 | ⬜ | **las horas UTC de cada sesión** (Asia/Londres/Nueva York/solape) — sin ellas el paso 22 no puede añadir el corte de sesión; el campo `session` de `assets/symbols/` sólo da la semana de mercado abierto, no la partición del día. Del dueño |
-| 🔴 | **calidad del feed** (encargo 17) — EN PAUSA pendiente de una consulta externa (`docs/AgentPDFs/consulta-calidad-del-feed-2026-09-26.md`); afecta el aviso del paso 4 y la criba de atribución del paso 8. Del dueño |
+| 🔴 | **calidad del feed** (encargo 17) — EN PAUSA hasta que el dueño conteste la hoja de respuestas de `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md` (16 decisiones, cada una con propuesta medida sobre el feed); afecta el aviso del paso 4 y la criba de atribución del paso 8. Del dueño |

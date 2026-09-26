@@ -3,7 +3,7 @@
 SQX's Walk-Forward Matrix re-optimises a strategy over a sliding window and runs each pick forward
 on the period that follows, for 30 combinations of *how many steps* and *how much of each step is
 out of sample*. The export already existed — `sqx/export/export_wfm.py`, `core/wfmatrix.py`,
-`core/wftrades.py`, `docs/manual/09-wfm.md`. **This is the analysis that did not.**
+`core/wftrades.py`, `docs/manual/09-optimizacion.pdf` (cap. 09-wfm). **This is the analysis that did not.**
 
 It never talks to SQX. The owner runs the cross-check; this reads what came out.
 

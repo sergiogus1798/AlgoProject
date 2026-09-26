@@ -339,7 +339,7 @@ three ideas below are for the day that stops being true, and
   compare, clipped at the 99th percentile of the two together — one 400-bar hold otherwise squeezed
   900 trades into a single bar. Four of them: holds, returns, MAE/ATR, MFE/ATR. The drawing lives in
   `render/overlays.py`, not `render/charts.py`, which was already at the line cap.
-- **Manual screenshots are placeholders.** `docs/manual/05-retest-mercados.md` describes every button
+- **Manual screenshots are placeholders.** `docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 05-retest-mercados) describes every button
   and tab from a real run of the panel (verified against `Retest_Markets_-_Family`'s one strategy,
   which reproduces the known `Strategy 24.14.35` pending-order case in §4 above byte-for-byte), but
   carries no screenshots yet — this session has no browser to capture them from, and rule 8 forbids

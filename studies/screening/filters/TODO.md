@@ -1,7 +1,7 @@
 # tasks — improvement: BUILT 2026-09-04, and what is still open
 
 Built as `../analysis/improvement.py` + `report.py` (this folder), documented in
-`docs/manual/02-filtros.md`. The three questions this brief left for the owner were decided on
+`docs/manual/05-cribado-oos.pdf` (cap. 02-filtros). The three questions this brief left for the owner were decided on
 2026-09-04:
 
 - **What good means out of sample**: the target's own median plus the share above break-even, on

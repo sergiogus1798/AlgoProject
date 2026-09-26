@@ -17,7 +17,7 @@ hypotheses instead of testing one** — descriptive, never a filter, never a ver
 | `cells.py` | Per-cell trades, mean P&L with its bootstrap interval and hit rate, floored at `engines/nulls`'s own minimum cell size | imported | trades + terciles → cells |
 | `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` | — |
 
-Manual page, in Spanish: `docs/manual/53-mapa-condicional.md` — **read the warning at its top
+Manual page, in Spanish: `docs/manual/06-lecturas.pdf` (cap. 53-mapa-condicional) — **read the warning at its top
 before reading anything else in it.**
 
 ## The three rules, and how this module keeps them (encargo 14 §1)

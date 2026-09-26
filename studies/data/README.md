@@ -4,4 +4,4 @@ Studies of the inputs rather than of a strategy. `feedQuality/` (encargo 17) is 
 
 | folder | what it answers |
 |---|---|
-| `feedQuality/` | on hold — the thresholds are out for consultation (`docs/AgentPDFs/consulta-calidad-del-feed-2026-09-26.md`) |
+| `feedQuality/` | on hold — the owner is answering the 16 threshold decisions in `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md`, each with a proposal measured on the feed |

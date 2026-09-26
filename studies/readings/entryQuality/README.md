@@ -23,7 +23,7 @@ They share one kernel — the forward path from an entry — which is why they a
 | `verdict.py` | What the two curves mean | imported | numbers → readings |
 | `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
 
-Manual page, in Spanish: `docs/manual/42-calidad-de-la-entrada.md`.
+Manual page, in Spanish: `docs/manual/06-lecturas.pdf` (cap. 42-calidad-de-la-entrada).
 
 ## Five decisions, and each one moves the answer
 

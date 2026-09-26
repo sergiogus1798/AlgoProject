@@ -13,7 +13,7 @@ perf/ (los instrumentos)  →  history.csv  →  rendimiento.html  →  una rama
 Nothing here touches StrategyQuant X, and nothing here commits: the owner does (CLAUDE.md rule 12).
 
 You do the work in this session — there are no perf subagents (retired 2026-09-25: never used, and
-a cold agent re-derives what the session already knows). Read `docs/manual/12-rendimiento.md` first.
+a cold agent re-derives what the session already knows). Read `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento) first.
 
 ## Sin argumento — la revisión completa
 
@@ -73,7 +73,7 @@ python3 -m perf.disk.report                               # qué hay en AlgoData
 python3 -m perf.render.panel                              # redibuja la página
 ```
 
-`docs/manual/12-rendimiento.md` explains every column. `catalogue` exits non-zero on a regression,
+`docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento) explains every column. `catalogue` exits non-zero on a regression,
 so it can go in cron.
 
 ## Lo que hace honesta la respuesta

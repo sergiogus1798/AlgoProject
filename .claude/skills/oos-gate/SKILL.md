@@ -71,7 +71,7 @@ Report three things, always together: buy and hold's Sharpe, how many strategies
 the correction, and how many the StepM names at FWER 0.05 — with the SPA's `consistent` p.
 **None named is a result**, not a failure; say which of the gate's survivors beat buy and hold only
 before the correction. Its K is every paired strategy, not the survivors, on purpose — the manual
-page (`docs/manual/49-snooping.md`) says why.
+page (`docs/manual/05-cribado-oos.pdf` (cap. 49-snooping)) says why.
 
 ## 3 · Put it back — `/curate`
 

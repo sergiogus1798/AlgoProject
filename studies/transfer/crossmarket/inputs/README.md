@@ -31,7 +31,7 @@ nobody can find; it belongs in `config.yaml` and is read where the judgement is 
 ## The `.yaml` files stay in the module root
 
 `config.yaml`, `assets/_markets.yaml` and `execution.yaml` sit **one level up**, beside `README.md`, because
-`docs/manual/05-retest-mercados.md` names them by that path. Each of the three modules resolves its
+`docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 05-retest-mercados) names them by that path. Each of the three modules resolves its
 own file as `Path(__file__).parents[1] / "<name>.yaml"` — `with_name()` would look inside `inputs/`
 and the file would silently not be found. Moving a module here without changing that line is the
 failure this layer is most likely to suffer.

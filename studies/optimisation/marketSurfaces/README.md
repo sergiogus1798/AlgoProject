@@ -39,7 +39,7 @@ config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ contract
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `config.yaml` | Segments, metric, top share and the three thresholds (registered in `ledger/thresholds.yaml`) | edited, or `--set key=value` | — |
 
-Manual page, in Spanish: `docs/manual/52-superficies-mercado.md`. Known-answer test:
+Manual page, in Spanish: `docs/manual/09-optimizacion.pdf` (cap. 52-superficies-mercado). Known-answer test:
 `tests/test_marketsurfaces.py`.
 
 🔬 **What it costs**, measured 2026-09-26 on the three USDJPY batches (5,000 variants × 10 markets ×

@@ -56,4 +56,4 @@ Port: `ui_port` in `config/machine.yaml`, 8765 by default.
 Qt's `xcb` plugin needs four XCB libraries Ubuntu does not ship installed, and `sudo` asks for a
 password on this machine — so they live extracted in `~/.local/lib/qt-xcb/` and `bin/algoui` puts
 that folder on `LD_LIBRARY_PATH` itself. Qt's own error message blames a different library than the
-one actually missing; `docs/manual/35-app-plantillas.md` has the command that names the real one.
+one actually missing; `docs/manual/02-la-ventana.pdf` (cap. 35-app-plantillas) has the command that names the real one.

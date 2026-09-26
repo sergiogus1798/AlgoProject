@@ -33,7 +33,7 @@ numbers the study starts from*, `model/` says *what we are pretending could have
   study stresses a backtest SQX already ran, so the costs that belong in it are the ones charged in
   it. `costs.crosscheck()` warns when the modelled and recovered commissions diverge, and that
   warning invalidates Family C only.
-- **`config.yaml` lives one level up, in the module root**, because `docs/manual/07-montecarlo.md`
+- **`config.yaml` lives one level up, in the module root**, because `docs/manual/08-montecarlo.pdf` (cap. 07-montecarlo)
   names it by that path. `config.FILE` resolves it with `parents[1]`; moving either breaks the other.
 - **`HEADLINE` and `BASELINE` live here**, not in `simulate/sweeps.py`. Which sub-run the gates and
   the report speak about is a choice of the study, not a result of it — and keeping it here is what

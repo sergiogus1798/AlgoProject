@@ -6,10 +6,10 @@
 | `depmap.py` | Read the real imports and regenerate `docs/DEPENDENCIES.md` | `python3 tools/depmap.py` |
 | `skillmap.py` | Read every installed skill and regenerate `docs/SKILLS.md` — what exists, what it costs to invoke, what is stale | `python3 tools/skillmap.py` |
 | `knowhowmap.py` | Regenerate each `knowhow/<domain>/INDEX.md` from its cards' `q:` lines; `checks.py` uses it to check the cards, the `knowhow/` links and the indexes | `python3 tools/knowhowmap.py` |
-| `manual.py` | Build the whole user manual as one PDF from the markdown pages in `docs/manual/` | `python3 tools/manual.py` |
+| `manual.py` | Build the user manual as one PDF per workflow family, from the chapters in `AlgoData/manual-fuentes/` | `python3 tools/manual.py` |
 | `daily_audit.py` | The half of the audit a machine can do alone: checks, tests, corrupt projects, missing manifests, undecided asset costs | `python3 tools/daily_audit.py` |
 
-`manual.py` renders the markdown to `docs/manual/AlgoProject-Manual.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. Neither the PDF nor the intermediate HTML is in git: both are products of the `.md` files, which are the original.
+`manual.py` renders the chapters to `docs/manual/NN-<family>.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. The owner reads only PDFs (2026-09-26): the PDFs are in git and are the only thing in `docs/manual/`; the `.md` chapters and their `assets/` are the original and live in `AlgoData/manual-fuentes/`, out of the repo. `FAMILIES` decides which chapter goes in which PDF, and a chapter in no family stops the build.
 
 `daily_audit.py` writes `audit/YYYY-MM-DD-mechanical.md` and exits non-zero when something regressed.
 It involves no model. **It is installed**, as the first half of `bin/nightly-audit.sh`, which cron

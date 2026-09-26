@@ -15,7 +15,7 @@ It runs **after** the strategy has been accepted, and it does not ask whether th
 asks **which single thing breaks it**: the cost of entering, the fill received, its own parameters,
 the exact history it happened to see — or nothing at all.
 
-Read `POSSIBLE_IMPROVEMENTS.md` before extending any of this, and `docs/manual/11-retest-mc.md`
+Read `POSSIBLE_IMPROVEMENTS.md` before extending any of this, and `docs/manual/08-montecarlo.pdf` (cap. 11-retest-mc)
 before running it.
 
 ```

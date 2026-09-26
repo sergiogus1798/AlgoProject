@@ -23,8 +23,9 @@ findings from most severe to least. Nothing else is in scope: do not go looking 
 ## What you fix
 
 Anything whose fix lives **inside this repository** and is not a decision: a broken import, a
-failing check or test, a README row missing, a manual page missing for a `__main__` (hard rule 8:
-in Spanish, from `docs/manual/_PLANTILLA.md`, with real output), a path or command that drifted, a
+failing check or test, a README row missing, a manual chapter missing for a `__main__` (hard rule 8:
+in Spanish, from `_PLANTILLA.md` in `AlgoData/manual-fuentes/`, with real output, then
+`python3 tools/manual.py`), a path or command that drifted, a
 dead reference, a bug with a reproduction, a stale `docs/DEPENDENCIES.md`.
 
 ## What you never touch — write it down instead

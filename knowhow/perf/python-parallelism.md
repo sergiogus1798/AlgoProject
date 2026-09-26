@@ -8,7 +8,7 @@ tag: 🔬  date: 2026-09-25  see: perf/monte-carlo-bandwidth, perf/numba-divisio
 - Count trades before launching anything: cost is per trade (strategies in one batch span ×900). Task = (strategy, market), not strategy (longest strategy floors the wall).
 - Chunk a Monte Carlo exactly: draw whole and in the same order (`rng.random((n, k))` by consecutive row blocks = same stream; A,B,C per block ≠ all A, all B, all C).
 - Compute only what is asked: look for `{k: all[k] for k in names}` patterns. Pool memory with `fork` = sum of PSS (`/proc/<pid>/smaps_rollup`), not RSS; `/usr/bin/time %M` = largest process only.
-Full tables: `docs/manual/12-rendimiento.md`.
+Full tables: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento).
 
 ## Evidence
 `PerfUSDJPY_Python_v1`, 500 USDJPY H1 strategies, 96-core box.

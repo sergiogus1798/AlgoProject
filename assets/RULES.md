@@ -180,7 +180,7 @@ there is surfaced by the preflight, so a case written once is seen by every futu
 Since 2026-09-24 the desktop app's **Activos** zone reads and writes everything described here:
 the costs with their units, the windows, the MC Retest ranges, the retest universe and the two
 shared schemas. It keeps every comment in place — `core.assetyaml` round-trips the file and only
-the changed line moves — and regenerates `INDEX.md` after each write. `docs/manual/38-app-activos.md`
+the changed line moves — and regenerates `INDEX.md` after each write. `docs/manual/02-la-ventana.pdf` (cap. 38-app-activos)
 is its page. The rule above does not change: **the window is not the preflight**. What stops work
 is `python3 -m core.assets <SYMBOL>` and its exit code.
 

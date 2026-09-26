@@ -4,8 +4,7 @@ Cada fichero de esta carpeta es **un encargo autocontenido**: lo que una sola in
 para hacer su parte, y nada más. Se despacha diciéndole al agente que lea **su** fichero, no el
 plan entero.
 
-El plan completo vive en `docs/AgentPDFs/plan-ejecucion-2026-09-21.md` y la secuencia manda desde
-`docs/AgentPDFs/WORKFLOW.md`. **Los encargos son la versión ejecutable de una parte de ellos.**
+La secuencia manda desde `docs/AgentPDFs/WORKFLOW.md`. **Los encargos son la versión ejecutable de una parte de ellos.**
 Donde discrepen, manda el WORKFLOW — y se arregla el encargo.
 
 **Un encargo cumplido se borra.** No se marca como hecho ni se deja «por si acaso»: lo que se
@@ -19,7 +18,10 @@ el **11** (`studies/readings/edgeCost/`, pasos 8 y 25), el **12** (`sqx/structur
 `studies/readings/structure/`, paso 23; el mono dentro de SQX es imposible,
 `knowhow/conditions/no-seeded-hash-in-sqx.md`), el **14** (`studies/readings/conditionalMap/`, paso 22)
 y el **15** (`studies/optimisation/marketSurfaces/`, paso 18.5). Lo que dejaron abierto está en
-`OPEN.md` §43–§48.
+`OPEN.md` §43–§48. Y en la limpieza de `docs/` del mismo día salió el **21** (la prueba
+del workflow entero): su informe es `docs/AgentPDFs/profiling-workflow-2026-09-26.md`. Con él
+salieron el ejemplo USDJPY del 24-09, al que ese informe supera, y los dos `CONTEXTO-*`: las
+skills de SQX y `/curate` ya existen.
 
 ## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
 
@@ -45,7 +47,7 @@ necesita SQX). Los dos que quedaban —el 12 y el 15— se construyeron el 2026-
 alfa/beta, el dueño pidió medir la dicotomía **rendimiento contra exposición al mercado** — una
 estrategia que saca un 5 % estando dentro una hora a la semana contra un buy and hold que saca un
 10 % estando dentro siempre. Es `studies/closing/exposure/`, el **paso 21** del `WORKFLOW.md`, con su
-página de manual `docs/manual/38-exposicion.md`. La alfa y la beta quedan como interrogante dentro
+página de manual `docs/manual/10-cierre.pdf` (cap. 38-exposicion). La alfa y la beta quedan como interrogante dentro
 de esa misma carpeta, en `13-alfa-beta.md`.
 
 **El punto 2 del PDF (permutaciones de Masters) no tiene encargo propio, a propósito.** Se
@@ -63,19 +65,13 @@ el tier 1 del 4) y `studies/readings/conditionalMap/` (item 6, paso 22). Quedan 
 | fichero | qué construye | qué lo bloquea |
 |---|---|---|
 | `16-replay-de-operaciones.md` | el tier 2 del retraso: reejecutar cada operación desde una entrada desplazada | hay que recalcular stops, y **esta población no tiene ninguno** con el que validarlo |
-| `17-calidad-del-feed.md` | anomalías del M1 y qué parte del beneficio las toca: detección como aviso en el paso 4, atribución como criba en el 8 | **en pausa**: sus umbrales están en consulta, `docs/AgentPDFs/consulta-calidad-del-feed-2026-09-26.md` |
+| `17-calidad-del-feed.md` | anomalías del M1 y qué parte del beneficio las toca: detección como aviso en el paso 4, atribución como criba en el 8 | **en pausa**: espera a que el dueño conteste la hoja de respuestas de `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md` — 16 decisiones, cada una con propuesta |
 
 ## El stop loss para MT5, 2026-09-25
 
 | fichero | qué construye | qué lo bloquea |
 |---|---|---|
 | `20-atr-calculator.md` | el paso 24 (era el 22 antes del 26-09): el stop X·ATR de cada superviviente, leído del MAE de sus operaciones, **sin optimizar** — MT5 lo exige y la cadena genera sin stop | ✅ construido y probado en SQX; falta correrlo sobre una superviviente real |
-
-## La prueba del workflow entero, 2026-09-26
-
-| fichero | qué construye | qué lo bloquea |
-|---|---|---|
-| `21-prueba-workflow-completo.md` | los 25 pasos uno detrás de otro sobre USDJPY H1, SQX incluido, con tiempo, memoria, CPU y disco de cada paso; sólo mide, no optimiza | nada: se lanza con el custodio libre |
 
 ## Encargos vivos de tandas anteriores
 
@@ -92,9 +88,7 @@ nombrados con `unlabelled: off` — y por eso ya no está aquí.
 | fichero | qué es |
 |---|---|
 | `5-nulos.md` | informe de cierre del módulo `studies/readings/monkey/`, con cinco cosas pendientes en su §6. Se queda hasta que esas cinco estén resueltas o descartadas |
-| `CONTEXTO-curacion-de-poblaciones.md` | estado del terreno para quien diseñe la curación desde la UI |
-| `CONTEXTO-ecosistema-skills-sqx.md` | estado del terreno para quien diseñe skills de SQX |
-| `ejemplo-IS-OOS-XAUUSD.md` | el proyecto de ejemplo con IS y OOS en dos databanks, citado desde `docs/manual/28-builder.md` |
+| `ejemplo-IS-OOS-XAUUSD.md` | el proyecto de ejemplo con IS y OOS en dos databanks, citado desde `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 28-builder) |
 
 ## Cómo se despacha
 

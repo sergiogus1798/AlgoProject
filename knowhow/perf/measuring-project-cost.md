@@ -7,7 +7,7 @@ tag: 🔬  date: 2026-09-20  see: perf/python-parallelism, perf/server-cores-and
   (`RUSAGE_CHILDREN` = largest single child, `RUSAGE_SELF` = parent only). For `fork` pools sum PSS, not RSS (`perf/python-parallelism`).
 - `tracemalloc`: keep the snapshot from the moment the traced total peaked (watcher thread), not after the call.
 - Compare between dates per unit of work, never wall clock (exports grow; `history.csv` stores the scale).
-Instruments and catalogue: `perf/README.md`, `docs/manual/12-rendimiento.md`.
+Instruments and catalogue: `perf/README.md`, `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento).
 
 ## Evidence
 - `montecarlo.analyse`, 1 strategy, 5,000 sims: 535 MB by `ru_maxrss`, 2,340 MB by tree sampling.

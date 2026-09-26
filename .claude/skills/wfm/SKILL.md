@@ -121,5 +121,5 @@ Medido el 2026-09-25 sobre 3 madres de USDJPY H1 (`knowhow/sqx-drive/wfm-end-to-
 por madre y un JVM de 45 GB; export 20 s; análisis 2 s. **SQX no da ninguna señal de avance** mientras
 corre: `Running time 0 ms` y el databank quieto hasta que termina cada madre.
 
-Manual: `docs/manual/34-wfm.md`. Exportar: `docs/manual/09-wfm.md`. Leerlo:
-`docs/manual/14-walkforwardmatrix.md`.
+Manual: `docs/manual/09-optimizacion.pdf` (cap. 34-wfm). Exportar: `docs/manual/09-optimizacion.pdf` (cap. 09-wfm). Leerlo:
+`docs/manual/09-optimizacion.pdf` (cap. 14-walkforwardmatrix).

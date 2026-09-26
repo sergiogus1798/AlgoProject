@@ -77,7 +77,7 @@ only an encargo whose described work you can point at, already done, in the repo
 encargos 1, 2, 3, 4, 7 and 19 were already removed (see README.md's own log of that). Leave alone \
 anything genuinely still open, and anything you are not sure is done. \
 (4) a general pass: pick up where nightly-docs.sh's daily runs leave off — a path, command or \
-claim in a README, a CLAUDE.md or docs/manual/ page that no longer matches the code, that a whole \
+claim in a README, a CLAUDE.md or a manual chapter in AlgoData/manual-fuentes/ that no longer matches the code, that a whole \
 week of daily passes has not yet caught because nobody's audit finding pointed at it. \
 When done run python3 tools/checks.py and fix anything you broke. Documentation only: never edit \
 code, never write under the data root, never run git add, commit, checkout, stash or reset — \

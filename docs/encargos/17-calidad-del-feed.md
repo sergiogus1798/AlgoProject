@@ -1,9 +1,14 @@
 # 17 · Calidad del feed y atribución de ticks malos — encargo autocontenido
 
+> **ESTADO 2026-09-26:** en pausa hasta que el dueño conteste la hoja de respuestas de
+> `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md` — 16 decisiones (`K`, `m`, `L`, `w`,
+> la alarma…), cada una con su propuesta medida sobre el propio feed. **Léelo antes que esto:** sus
+> respuestas mandan sobre los §2 y §3 de aquí.
+
 **Tu oficio:** Python sobre la librería de barras. No toca SQX. Sale del **item 5** del PDF del
 dueño `TRADE_LEVEL_TESTS.pdf`.
 
-Lee `CODESTYLE.md` · `core/README.md` §`barstore.py` · `docs/manual/13-barras.md`.
+Lee `CODESTYLE.md` · `core/README.md` §`barstore.py` · `docs/manual/03-datos-costes-y-registro.pdf` (cap. 13-barras).
 
 ---
 

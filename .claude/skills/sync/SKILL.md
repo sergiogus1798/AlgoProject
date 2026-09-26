@@ -141,7 +141,7 @@ What the clone does not bring, because it is deliberately not in git:
 |---|---|
 | `config/machine.yaml` | `cp config/machine.example.yaml config/machine.yaml`, then edit the paths |
 | the data root | it is not in the repository and never will be; copy `~/Desktop/AlgoData` separately, or re-export |
-| `docs/manual/AlgoProject-Manual.pdf` | `python3 tools/manual.py` rebuilds it in seconds |
+| `AlgoData/manual-fuentes/` (the manual's chapters and screenshots) | copy it with the data root; the PDFs in `docs/manual/` are in git |
 
 Then `python3 -m pip install -r requirements.txt` and `python3 tools/checks.py`, which must be
 green. On Windows, only the analysis half runs — see the Windows section of `README.md`.

@@ -2,7 +2,7 @@
 
 One study, one folder. It asks whether a strategy's entry timing carried information on markets it
 was never optimised on, or whether it was only being long while those markets rose. Read
-`POSSIBLE_IMPROVEMENTS.md` before extending any of this, and `docs/manual/05-retest-mercados.md`
+`POSSIBLE_IMPROVEMENTS.md` before extending any of this, and `docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 05-retest-mercados)
 before running it.
 
 ```

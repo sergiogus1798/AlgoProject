@@ -33,7 +33,7 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 | `tooltips.py` | One sentence per `config.yaml` knob, addressed by the screen's name, for the window's configuration drawer | imported | — |
 | `config.yaml` | The screens as data: order, kind, and why each exists. Each threshold is a `ledger:<key>` placeholder: the number lives in `ledger/thresholds.yaml`, and `inputs.config()` fills it in before applying `--set` | edited | — |
 
-Manual page, in Spanish, for whoever runs it: `docs/manual/29-puerta.md`.
+Manual page, in Spanish, for whoever runs it: `docs/manual/05-cribado-oos.pdf` (cap. 29-puerta).
 Design dossier: `docs/AgentPDFs/puerta-oos-2026-09-23.md`.
 
 ## The four things this module exists to get right

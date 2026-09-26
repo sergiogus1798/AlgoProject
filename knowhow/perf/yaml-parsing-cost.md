@@ -8,4 +8,4 @@ next call, and no caller can corrupt the cache by mutating what it gets.
 
 ## Evidence
 `core.assetdata.symbol_for()` parsed all of `assets/` per call: 54 s of crossTF's 60 s = 1,971 parses of the same YAML.
-After: crossTF 48 cells 29.2 → 5.7 s; `studies.readings.monkey.report` 11.1 → 3.6 s (`docs/manual/12-rendimiento.md`).
+After: crossTF 48 cells 29.2 → 5.7 s; `studies.readings.monkey.report` 11.1 → 3.6 s (`docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento)).

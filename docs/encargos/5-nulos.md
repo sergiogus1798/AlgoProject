@@ -5,7 +5,7 @@ suficientes operaciones para que su resultado no sea suerte?** — el test que M
 en un podcast, generando curvas de equity aleatorias y viendo cuántas operaciones hacen falta para
 que una con ventaja se despegue del ruido.
 
-Lo entregado es `studies/readings/monkey/`, su página de manual (`docs/manual/26-nulos.md`) y siete hechos medidos
+Lo entregado es `studies/readings/monkey/`, su página de manual (`docs/manual/06-lecturas.pdf` (cap. 26-nulos)) y siete hechos medidos
 que están en `knowhow/research/random-entry-nulls.md` y `knowhow/export/`. **Donde este documento y
 `knowhow/` discrepen, manda `knowhow/`.**
 

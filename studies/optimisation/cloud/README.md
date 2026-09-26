@@ -29,7 +29,7 @@ config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ cont
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
 
-Manual page, in Spanish: `docs/manual/39-nube-de-parametros.md`.
+Manual page, in Spanish: `docs/manual/09-optimizacion.pdf` (cap. 39-nube-de-parametros).
 
 🔬 **What it costs**, measured 2026-09-24 on `Strategy 17.9.39` (998 variants after filtering, 3,925
 days, 7 live parameters): **1.9 s wall, 410 MB peak RSS**. The whole batch is read into memory at

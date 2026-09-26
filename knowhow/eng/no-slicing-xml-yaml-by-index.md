@@ -15,6 +15,6 @@ with what was on disk, not with HEAD. 🤔 `cp` the file to scratchpad before re
 - 🔬 YAML: `head = s[:s.index("# ─── MC Retest ")]; p.write_text(head + new)` on `assets/_build.yaml` dropped `spp:` and `wfm:`
   blocks another session had just appended → `KeyError` on `doctrine()["spp"]` in `sqx/projects/spp.py:114`, `wfm.py:112`.
 - ⚠️ `git diff --stat` said 133 insertions, 0 deletions: uncommitted blocks don't exist for git. Shared files live half in the worktree.
-- Recovery: the module's manual page is a second copy of its config (hard rule 8). Lost values were in `docs/manual/34-wfm.md:40-46`
+- Recovery: the module's manual page is a second copy of its config (hard rule 8). Lost values were in `docs/manual/09-optimizacion.pdf (cap. 34-wfm):40-46`
   and `33-spp.md:38,91-93`; only `period`, `optimization`, `max_steps`, `threshold_pct` missing → take from the frozen donor's task.
   Read the consuming module's page before declaring an `assets/` block lost.

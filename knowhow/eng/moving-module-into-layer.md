@@ -10,7 +10,7 @@ Verify: structure-diff every rendered output with digits normalised to `#` (numb
 
 ## Evidence
 `studies/transfer/crossmarket/` → `inputs/ mechanics/ model/ simulate/ verdict/ render/` (second after `portfolio/common/monteCarlo/`).
-- Three configs stay in the module root because `docs/manual/05-retest-mercados.md` names them by path.
+- Three configs stay in the module root because `docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 05-retest-mercados) names them by path.
 - `render/charts.py` exported `_x`, `_ticks` to two modules: `_x` → `xpos` fine; `ticks` already a local (rendered markup) in `charts.cone()` and `overlays.py` → named `tickvals`. In monteCarlo the trap was `line`.
 - Two `simulate/ → verdict/` arrows: `fingerprint → significance` used only `trade_returns()` (`realised(...) − cost`, a measurement) → moved to `mechanics/pricing.py`,
   leaving dead imports (`pricing`, `pandas`) in `significance.py`; `verdict/` now imports nothing outside `model/`. `exposure → fieller` is real → declared (as monteCarlo declares `simulate/ → verdict/confidence`). monteCarlo's case: two vocabulary constants that were configuration.

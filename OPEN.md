@@ -41,12 +41,12 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 28 | — | 🟠 | new: `DAX40`'s feed is in no project on the master, so its file cannot be refreshed |
 | 29 | — | 🟡 | forex and metals filled 2026-09-22; the 6 index CFDs still have no IS/OOS window |
 | 30 | — | 🟡 | new: the data-update command is guarded and documented; its download awaits a GUI-closed run |
-| 31 | — | 🔴 | new: **revisión completa 2026-09-22** — `ran` hereda el arnés SPP, `spp_export` lee el databank/ventana equivocados, el IC del WFC ignora la dependencia entre variantes, sin candado ni timeout en el custodio. `docs/AgentPDFs/revision-proyecto-2026-09-22.md` |
+| 31 | 🔴 | ⚪ | **cerrado 2026-09-26**: la revisión del 22-09 quedó superada — el arnés heredado desapareció con la regla dura 10 (proyectos custom, `stage`); el candado del custodio sigue abierto en el §32. Documento borrado (en el historial de git) |
 | 37 | 🔴 | 🟢 | **hecho 2026-09-24**: el lector salta la tarea que no corrió (MinDist nunca aplica a órdenes a mercado), los rangos de spread/slippage salen de `mc_retest.default_multiples` (1x–4x el coste del backtest, dueño 2026-09-24) y tres fórmulas mal reconstruidas están corregidas. 71 desacuerdos → 2 celdas sueltas |
 | 38b | — | 🟡 | new 2026-09-24: **`/plugin` no existe en este entorno**, así que `sqx-lab` va instalado a mano con `bin/sqx-lab-install.sh`. Funciona igual pero **no se actualiza solo**, y una versión nueva descomprimida encima se lleva la skill local `sqx-spp`. Hay que reejecutar el script tras cada actualización |
 | 38 | 🔴 | 🟡 | **hecho en parte 2026-09-25**: el retest de variantes ya no corre en el `Retester` de serie — `sqx.variants.execute` exige `--project` (el del workflow, de `builder --workflow`) y se niega si hay activa otra cosa que las tres patas del WFC. **Queda** el arnés SPP del pipeline desatendido (`sqx.variants.spp`, `pipeline/recipe.yaml`), que sigue escribiendo su tarea en el `Retester` de serie, contra la regla 10 |
 | 48 | — | 🟡 | new 2026-09-25: **dos parches locales al código de sqx-lab 1.2.0**, marcados `LOCAL PATCH` y listados en `tools/sqx-lab/LOCAL_PATCHES.md` — `sqx-random-group` reexportaba bloques sin `categoryType="Custom blocks"`, y la verificación de `sqx-strategy-project` exigía un databank que los proyectos de serie de los workers no traen. Una versión nueva descomprimida encima los borra: `bin/sqx-lab-install.sh` avisa si faltan |
-| 39 | 🔴 | 🟢 | **hecho 2026-09-25**: el bucle sobre estrategias de `crossmarket.report` se reparte entre los núcleos con `fork` (`--workers`, por defecto todos). 8×9 a 500 sorteos: **623,5 s → 156,1 s con 7 procesos**, `verdict.csv` idéntico byte a byte. `docs/manual/12-rendimiento.md` |
+| 39 | 🔴 | 🟢 | **hecho 2026-09-25**: el bucle sobre estrategias de `crossmarket.report` se reparte entre los núcleos con `fork` (`--workers`, por defecto todos). 8×9 a 500 sorteos: **623,5 s → 156,1 s con 7 procesos**, `verdict.csv` idéntico byte a byte. `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento) |
 | 40 | 🔴 | 🟢 | **hecho 2026-09-25**: el ATR se cachea por `(barras, ventana)` (`engines/market/calibrate.py`) y la tabla OOS se agrupa una vez por identidad (`studies/screening/gate/monkey.py`), y el mono va en paralelo. `studies.screening.gate.report` a 500: **31,1 s → 6,1 s**, `scorecard` de 500×29 idéntico columna a columna |
 | 41 | — | 🟢 | new 2026-09-24: **`sqx-worker.sh stop` volvía a los 20 s diciendo «did not stop»** mientras la JVM seguía escribiendo databanks, y quien leía después veía 211 de 500 `.sqx`. Ahora espera hasta 5 min a que el proceso se vaya de verdad. **No se perdió nada**: la sincronización acabó sola |
 | 42 | — | 🟢 | new 2026-09-24: una estrategia que **no dispara en ningún mercado ajeno** tumbaba el lote entero del paso 10 con `KeyError: 'bar_cap'`. Ahora se anota como veredicto propio. Salió a la primera con 8 estrategias reales |
@@ -56,7 +56,7 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 35 | — | 🟢 | new: `export_metrics` sólo leía el maestro y `sync_bars` moría en un `markets.FILE` inexistente. Los dos arreglados el 2026-09-24; `knowhow/export/bars.md` |
 | 36 | 🔴 | 🟢 | **hecho 2026-09-24**: `studies/transfer/crossmarket/report.py` juzga la población entera por amplitud y escribe el `verdict.csv` de `/curate`. ⚠️ Revierte la decisión del 2026-09-15 de no guardar resultados; el panel sigue siendo donde se mira UNA estrategia |
 | 41 | — | 🟠 | new: **el diseño de variantes gasta la mitad del presupuesto en combinaciones que apenas operan** — 1.002 de 2.000 filas de `Strategy 17-9-39` quedan bajo 30 operaciones, y el filtro colapsa `DICrossShift1` a un valor. Medido 2026-09-24 con `studies/optimisation/cloud/` |
-| 46 | — | 🔴 | new 2026-09-25: **la tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado**. En un lote de 96 la mayor lleva 117.612 operaciones y cuesta **453 s ella sola**: es el suelo de cualquier reparto a partir de 24 procesos, y por eso 96 procesos sólo dan 14,2x. Los 9 mercados son independientes dentro de `analyse_market` — repartir por ahí divide la tarea más larga por ~9. Toca la forma de `analyse_strategy`, que es la puerta del panel: decisión de diseño. `docs/manual/12-rendimiento.md` |
+| 46 | — | 🔴 | new 2026-09-25: **la tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado**. En un lote de 96 la mayor lleva 117.612 operaciones y cuesta **453 s ella sola**: es el suelo de cualquier reparto a partir de 24 procesos, y por eso 96 procesos sólo dan 14,2x. Los 9 mercados son independientes dentro de `analyse_market` — repartir por ahí divide la tarea más larga por ~9. Toca la forma de `analyse_strategy`, que es la puerta del panel: decisión de diseño. `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento) |
 | 47 | — | 🟠 | new 2026-09-25: **el lote del paso 10 no deja ver por dónde va** — `pool.map` devuelve en orden y la corrida de 499 estuvo **38 min sin imprimir una línea**, indistinguible de un cuelgue. Desde fuera tampoco: `py-spy` necesita ptrace y está bloqueado. Se arregla imprimiendo por orden de terminación |
 | 44 | — | 🟢 | new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y **el núcleo mató la ventana de VSCode** |
 | 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `engines/nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `studies.screening.gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/perf/python-parallelism.md` |
@@ -784,7 +784,7 @@ not the bar file's.
 
 **Open threads, in the order they are worth picking up:**
 
-1. 🔴 **The manual has no screenshots.** `docs/manual/05-retest-mercados.md` describes every tab of a
+1. 🔴 **The manual has no screenshots.** `docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 05-retest-mercados) describes every tab of a
    panel nobody has photographed. Rule 8 forbids inventing them; whoever next opens the panel for
    real should paste a few in. This is the only thing blocking that page from being finished.
 2. 🟠 **Only 30 of the 757 strategies are exported.** `raw/XAUUSD/Retest_Markets_-_Family/2026-09-14`
@@ -840,8 +840,8 @@ taking a universe dict, and only failed at runtime. Both classes of drift are ch
 
 ## 23. 🟡 The XAUUSD robustness protocol is half built
 
-**Where the plan lives:** `docs/AgentPDFs/protocolo-robustez-2026-09-21.md`. Its status table is
-authoritative; this entry only says that the work exists and is unfinished, so it surfaces in the
+**Where the plan lives:** `docs/AgentPDFs/WORKFLOW.md` (the protocol dossier of 2026-09-21 was
+retired on 2026-09-26, its status table long stale). The WORKFLOW's step table is authoritative; this entry only says that the work exists and is unfinished, so it surfaces in the
 daily audit.
 
 Built (2026-09-21): `core/surface/` with its property test, `studies/breakage/spp/`,
@@ -851,7 +851,7 @@ Built (2026-09-21): `core/surface/` with its property test, `studies/breakage/sp
 
 Built 2026-09-21, later the same day: **`sqx/variants/` design, fabrication and manifest** —
 contract C1 in, `.sqx` batch and contract C2 out, with `tests/test_variants.py` and
-`docs/manual/18-variantes.md`. Verified on `Strategy 17.9.39`: 5,000 tuples designed, 3 fabricated
+`docs/manual/09-optimizacion.pdf` (cap. 18-variantes). Verified on `Strategy 17.9.39`: 5,000 tuples designed, 3 fabricated
 and read back clean. **The batch has not been loaded into SQX and no variant has been retested** —
 that is W3 and it stays blocked.
 
@@ -864,7 +864,7 @@ skills.
 `render/figures.py` and the `pbo.py` command), fed by a new
 harvest stage `sqx/variants/equity.py` that reads every retested variant's daily curve straight out
 of the custodian's `.sqx`. Two new pipeline rows, `equity` and `cscv`; `tests/test_cscv.py`;
-`docs/manual/25-cscv.md`. Measured on `Strategy 17.9.39`, 479 usable variants: **PBO 30 % choosing
+`docs/manual/09-optimizacion.pdf` (cap. 25-cscv). Measured on `Strategy 17.9.39`, 479 usable variants: **PBO 30 % choosing
 the in-sample maximum against 4 % choosing the plateau centre**, and the in-sample maximum landed in
 the 0.2nd out-of-sample percentile.
 
@@ -897,7 +897,7 @@ Three things block it, and only the last is technical:
 1. ~~**The SQX installation topology.**~~ 🟢 **SETTLED 2026-09-21: three installs per machine** —
    master + conductor (W1, 5060) + custodian (W2, 5070), on both PCs. Heaps, core caps and the
    reasoning are in `knowhow/sqx-drive/install-ports-and-heap.md` and `knowhow/perf/ram-budget.md`; the execution tasks
-   are lane S of `docs/AgentPDFs/plan-ejecucion-2026-09-21.md`. **`sqx/variants/` design is
+   were lane S of the execution plan of 2026-09-21 (retired 2026-09-26, in git history). **`sqx/variants/` design is
    unblocked**; execution additionally waits for lane P's path work and for W2 to exist.
    ⚠️ `docs/SETUP-NEW-MACHINE.md` §2 still says "two is the working minimum" and is now stale —
    task P1 updates it.
@@ -1074,10 +1074,14 @@ spread between them readable:
 All three are additive — a README section, a tooltip, one extra column. None changes a computed
 number. Same reasoning as issue 17: `crossmarket` is finished and this is the owner's call.
 
-## 31. 🔴 Revisión completa del proyecto — 2026-09-22
+## 31. ⚪ Revisión completa del proyecto — 2026-09-22 — CERRADO 2026-09-26
+
+> Cerrado: su fallo principal (`ran` heredando el arnés del Retester) desapareció con la regla dura
+> 10 y `sqx.projects.stage`; lo que sigue vivo tiene entrada propia (§32, el candado del custodio).
+> El documento `revision-proyecto-2026-09-22.md` se borró; está en el historial de git.
 
 Revisión en modo revisor pedida por el dueño: fallos, mejoras, optimizaciones de tiempo, memoria y
-tokens, y decisiones pendientes. Está entera en `docs/AgentPDFs/revision-proyecto-2026-09-22.md`;
+tokens, y decisiones pendientes. Estaba entera en el documento de la revisión (borrado, en el historial de git);
 aquí solo lo que bloquea la siguiente corrida larga, todo verificado en ficheros reales:
 
 - **`ran` no construye su arnés** (`sqx/variants/execute.py`): hereda el que dejó `spp_oos`, y hoy
@@ -1104,7 +1108,7 @@ arrancaron sobre instancias de la otra; un tercer arranque murió con `Database 
 use`. Timeline completa en `knowhow/perf/smt-in-sqx-retest.md`, «Lo que salió mal: dos sesiones sobre el
 custodio a la vez».
 
-Es el §2.D de `docs/AgentPDFs/revision-proyecto-2026-09-22.md` visto en vivo. Arreglo propuesto:
+Es el §2.D de la revisión del 2026-09-22 (retirada, en el historial de git) visto en vivo. Arreglo propuesto:
 `bin/sqx-worker.sh start` escribe `user/log/OWNER` (sesión, PID, hora); `stop` de otra sesión se
 niega salvo `--force`; `check` lo muestra. Y todo script que use un worker pasa por `awake()`, nunca
 por un start/stop propio.
@@ -1204,7 +1208,7 @@ Two costs, and they are different:
 what collapsed instead of quietly fitting around it. What it suggests is a cheap pilot — a few
 hundred tuples scored on trade count alone before the full batch is fabricated, so the levels that
 produce silence are known before the budget is spent, which is close to what
-`docs/AgentPDFs/revision-proyecto-2026-09-22.md` already proposes for the sampling.
+the 2026-09-22 review (retired, in git history) already proposed for the sampling.
 
 **Whose call:** the owner's, because it changes what a batch contains.
 

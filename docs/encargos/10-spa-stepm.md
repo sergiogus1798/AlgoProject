@@ -10,7 +10,7 @@ Lee `CODESTYLE.md` · `studies/screening/gate/README.md` · `studies/optimisatio
 | pedido | estado |
 |---|---|
 | el motor, SPA y StepM con bootstrap estacionario (Politis–White) | ✅ `engines/inference/snooping/superior.py` |
-| **A** · pegado al paso 8, detrás de la puerta | ✅ `studies/screening/snoopingScreen/`, paso 2b de `/oos-gate`, manual `docs/manual/49-snooping.md`. **Anota y no corta** (dueño, 2026-09-25) |
+| **A** · pegado al paso 8, detrás de la puerta | ✅ `studies/screening/snoopingScreen/`, paso 2b de `/oos-gate`, manual `docs/manual/05-cribado-oos.pdf` (cap. 49-snooping). **Anota y no corta** (dueño, 2026-09-25) |
 | benchmark | ✅ buy & hold **a igual riesgo** (dueño, 2026-09-25): exceso positivo ⇔ Sharpe mayor que el del activo |
 | FWER | ✅ 0,05, en `ledger/thresholds.yaml` |
 | una fila en el ledger | ✅ paso 8, blanda: `n_out = n_in`, lo que nombra va en la nota |

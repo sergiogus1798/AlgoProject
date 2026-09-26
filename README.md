@@ -62,4 +62,4 @@ repository; it lives in the data root, indexed by `~/Desktop/AlgoData/INDEX.md`.
 Three specialists run over the project: `/audit` checks it daily for drift, breakage and weak
 statistics, `/doc` records what a session discovered so the next one does not rediscover it, and
 `/sync` keeps the GitHub copy equal to this machine so a clone elsewhere works — see
-`docs/manual/10-github.md`.
+`docs/manual/01-empezar.pdf` (cap. 10-github).

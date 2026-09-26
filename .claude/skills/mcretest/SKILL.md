@@ -89,4 +89,4 @@ bin/sqx-worker.sh --role custodian stop
 | entre qué dos valores se sortea spread, slippage y distancia mínima | `assets/symbols/<SIMBOLO>.yaml`, bloque `mc_retest:` |
 | los títulos de las ocho tareas | **contrato** con `studies/breakage/mcRetest/inputs/tasks.py`. Cambiarlos rompe el paso 14 en silencio |
 
-Manual: `docs/manual/32-mcretest.md`. Lectura de resultados: `docs/manual/11-retest-mc.md`.
+Manual: `docs/manual/08-montecarlo.pdf` (cap. 32-mcretest). Lectura de resultados: `docs/manual/08-montecarlo.pdf` (cap. 11-retest-mc).

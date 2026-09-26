@@ -92,5 +92,5 @@ heap de 48.
 `1` y no el `2` de la doctrina (a 1 minuto no termina), y `SPP IS` corre sobre `build`, que es lo
 que significa "in sample" y lo que hacen las tareas del maestro.
 
-Manual: `docs/manual/33-spp.md`. Exportar el perfil: `docs/manual/08-spp.md`. Leerlo:
-`docs/manual/15-sppultra.md`.
+Manual: `docs/manual/09-optimizacion.pdf` (cap. 33-spp). Exportar el perfil: `docs/manual/09-optimizacion.pdf` (cap. 08-spp). Leerlo:
+`docs/manual/09-optimizacion.pdf` (cap. 15-sppultra).

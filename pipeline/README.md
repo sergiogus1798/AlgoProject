@@ -38,7 +38,7 @@ server on top of it. Three consequences, and they are the design:
 | `recipe.yaml` | the seven stages: command, entry gate, exit gate | edited | — |
 | `config.yaml` | every tunable, grouped by the layer that reads it | edited | — |
 
-Manual page, in Spanish, for whoever runs it: `docs/manual/17-pipeline.md`.
+Manual page, in Spanish, for whoever runs it: `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 17-pipeline).
 
 ## The three things this module exists to get right
 

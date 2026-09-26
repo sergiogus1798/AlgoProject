@@ -21,7 +21,7 @@ name fields and the `<Fingerprint>` removal are `sqx.variants.build.rewrite.vari
 
 `python3 -m sqx.variants.execute --work <batch> --project <P>` retests the batch on the custodian's
 three WFC legs, one job, and stops it. `sqx.export.export_retest` then exports each leg's trades.
-The whole sequence, with a real output, is `docs/manual/51-estructura.md`.
+The whole sequence, with a real output, is `docs/manual/06-lecturas.pdf` (cap. 51-estructura).
 
 ## What was measured, 2026-09-26 (USDJPY `Strategy 23.1.53`, knowhow/sqx-format/rewriting-strategy-logic.md)
 

@@ -32,7 +32,7 @@ config.yaml ─▶ inputs ─▶ occupancy ─▶ benchmark ─▶ compare ─�
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `config.yaml` | The sample, the segment, the three conventions and the gate | edited | — |
 
-Manual page, in Spanish, for whoever runs it: `docs/manual/38-exposicion.md`.
+Manual page, in Spanish, for whoever runs it: `docs/manual/10-cierre.pdf` (cap. 38-exposicion).
 
 ## The three things this module exists to get right
 

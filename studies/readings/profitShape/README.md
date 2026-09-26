@@ -25,7 +25,7 @@ than the trade count suggests, and each does it from a different angle.
 | `verdict.py` | What each of the three means, against frozen thresholds | imported | numbers → readings |
 | `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
 
-Manual page, in Spanish: `docs/manual/40-forma-del-beneficio.md`.
+Manual page, in Spanish: `docs/manual/06-lecturas.pdf` (cap. 40-forma-del-beneficio).
 
 ## Four decisions worth arguing with
 

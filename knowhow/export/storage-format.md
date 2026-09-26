@@ -10,7 +10,7 @@ tag: 🔬  date: 2026-09-23  see: export/trade-export-columns, export/spp-export
 - ⚠️ `CalmarRatio?` and `AnnualPctReturnDDRatio?` have a literal `?`; without it → all-NaN column, no error.
 
 ## Evidence
-- Full analysis: `docs/AgentPDFs/almacenamiento-datos-2026-09-23.md`. 118 cross-market CSVs → one 4 MB `trades.parquet`; SPP long param table 34 MB RAM vs 6 MB wide (21,205 × 8).
+- Measured 2026-09-23: 118 cross-market CSVs → one 4 MB `trades.parquet`; SPP long param table 34 MB RAM vs 6 MB wide (21,205 × 8).
   `raw/` 346 MB / 270 files → 112 MB / 123. 📓 Studies re-ran with identical verdicts (sppUltra, WFM); cross-market readers reproduce `backtest.setting` on all 3 markets.
 - `raw/XAUUSD/SPP_IS/2026-09-10/`, 21,205 × 154: CSV 39.67 MB · Parquet 154 cols 5.72 MB (6.9×) · CSV 29 cols 9.87 MB · Parquet 29 cols 1.51 MB (26×).
   Trades (763): CSV 134.2 KB → Parquet 16 cols 42.4 KB → 8 cols 29.8 KB. Dropping loses `MAE ($)`/`MFE ($)` (used by `strategies/`, not reconstructible).

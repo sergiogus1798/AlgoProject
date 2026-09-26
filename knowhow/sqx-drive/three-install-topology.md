@@ -10,7 +10,7 @@ W2 custodian `~/Desktop/SQX_w2` 5070 (large databank, one long job). Between "st
 Only the install holding a databank can export it. Never open a worker's GUI with a big databank inside.
 
 ## Evidence
-Decision: `docs/AgentPDFs/plan-ejecucion-2026-09-21.md` §3. Ports/heap/settings: `sqx-drive/install-ports-and-heap`.
+Decision: execution plan of 2026-09-21 §3 (retired, in git history). Ports/heap/settings: `sqx-drive/install-ports-and-heap`.
 
 Why two workers, by value:
 1. A busy worker cannot answer: one worker queues list/count/status/authoring behind a 3-hour retest.

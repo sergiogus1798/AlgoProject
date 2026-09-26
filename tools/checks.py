@@ -12,7 +12,6 @@ import knowhowmap
 ROOT = depmap.ROOT
 MAX_LINES = 250
 PATHS_MODULE = ROOT / "core" / "paths.py"
-MANUAL = ROOT / "docs" / "manual"
 DEVELOPER_ONLY = {"tools", "tests"}
 ABSOLUTE = re.compile(r"""["'](?:/home/|/root/|~/)""")
 PIP_NAME = {"yaml": "PyYAML", "sklearn": "scikit-learn", "PIL": "Pillow",
@@ -143,9 +142,15 @@ def no_manual_page(files: list[Path]) -> list[str]:
         One message per command with no page. A command is any file with a __main__ block;
         tools/ and tests/ are developer-only and are deliberately outside the manual. A command
         may be named either by its path or by its dotted `python3 -m` form — the two are a
-        bijection, so recognizing both does not weaken the check.
+        bijection, so recognizing both does not weaken the check. The chapters live in
+        MANUAL_SRC, out of the repo (the owner reads only the PDFs); on a machine without
+        them there is nothing to check against, and the check says so instead of passing.
     """
-    written = "".join(p.read_text(encoding="utf-8") for p in MANUAL.glob("*.md"))
+    sys.path.insert(0, str(ROOT))
+    from core.paths import MANUAL_SRC
+    if not MANUAL_SRC.is_dir():
+        return [f"{MANUAL_SRC}: the manual's sources are missing, commands not checked"]
+    written = "".join(p.read_text(encoding="utf-8") for p in MANUAL_SRC.glob("*.md"))
     out = []
     for f in files:
         rel = f.relative_to(ROOT).as_posix()
@@ -153,8 +158,8 @@ def no_manual_page(files: list[Path]) -> list[str]:
         if rel.split("/")[0] in DEVELOPER_ONLY or rel in written or dotted in written:
             continue
         if "__main__" in f.read_text(encoding="utf-8"):
-            out.append(f"{rel}: no manual page — copy docs/manual/_PLANTILLA.md, "
-                       f"or add it to docs/manual/PENDIENTE.md if it is inherited backlog")
+            out.append(f"{rel}: no manual chapter — copy _PLANTILLA.md in {MANUAL_SRC}, "
+                       f"add it to a family in tools/manual.py and rebuild the PDFs")
     return out
 
 

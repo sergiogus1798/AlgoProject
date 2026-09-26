@@ -26,7 +26,7 @@ SPP must be re-run. A permutation is params + `SQStats` only: **SPP permutation 
   then UTF-8. Used by `OptimizationTestResult` and named `SQStats` records.
 - `SQStats` array indices = same key space as the base64 XML blob (`core/sqxstats.py`); matching the
   name-keyed medians table named 79 of 116 indexed slots, 118 of 152 in all; last 34 are 0 everywhere.
-  Full inventory: `docs/manual/09-diccionario-spp.md`.
+  Full inventory: `docs/manual/09-optimizacion.pdf` (cap. 09-diccionario-spp).
 - The 135 metric keys = `SQUtils.betterHashCode(<DatabankColumn simple name>)`, in
   `internal/libs/SQLib.jar` which is **not on disk** (embedded resource); not `String.hashCode` with
   usual finalisers (tested). Names recovered by matching against a 135-column export of 50 SPP

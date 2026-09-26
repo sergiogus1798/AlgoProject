@@ -146,7 +146,7 @@ slow — it dies halfway through a run. So speed and memory are part of the work
 - **Speed does not suspend the other rules.** A faster module that is longer, more configurable or
   harder to read than rule 4 allows is not an improvement.
 
-→ `perf/README.md`, `docs/manual/12-rendimiento.md`, and the `/perf` skill.
+→ `perf/README.md`, `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento), and the `/perf` skill.
 
 ## 10. Review
 

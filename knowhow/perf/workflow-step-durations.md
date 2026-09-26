@@ -3,7 +3,7 @@ q: how long does each workflow step take, MC Retest share of SQX time, MCR 7 OHL
 tag: 🔬  date: 2026-09-26  see: perf/python-parallelism, perf/smt-in-sqx-retest
 ---
 # MC Retest is the single biggest SQX cost; WFC's per-mother cost is FIXED (market loading) until the population is large enough to shift it
-Full table: `docs/manual/12-rendimiento.md`. Measure `retest.ingest` memory before a big run (scales
+Full table: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento). Measure `retest.ingest` memory before a big run (scales
 with runs × sims). Stop+start of the custodian costs ~39 s per stage (screening between steps pays
 it; `startOnlyTask` runs nothing on this install).
 

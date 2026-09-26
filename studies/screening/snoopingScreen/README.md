@@ -27,7 +27,7 @@ config.yaml ─▶ inputs ─▶ benchmark ─▶ measure ─▶ many / one ─�
 | `tooltips.py` | One Spanish sentence per `config.yaml` knob | imported | — |
 | `config.yaml` | The segment, the benchmark's sizing, the FWER — a `ledger:` placeholder, the number is in `ledger/thresholds.yaml` — and the bootstrap | edited | — |
 
-Manual page, in Spanish: `docs/manual/49-snooping.md`. The engine: `engines/inference/snooping/`.
+Manual page, in Spanish: `docs/manual/05-cribado-oos.pdf` (cap. 49-snooping). The engine: `engines/inference/snooping/`.
 
 ## The four things this module exists to get right
 

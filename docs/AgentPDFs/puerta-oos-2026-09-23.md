@@ -10,7 +10,7 @@ para implementarlo contra los contratos de la §4 sin que exista el módulo ante
 **Regla que hereda de esta carpeta.** El dossier guarda la narrativa y el plan; `knowhow/` guarda
 los hechos. **Donde los dos discrepen, manda `knowhow/`.**
 
-Generado el 2026-09-23. Se sitúa **antes** de `protocolo-robustez-2026-09-21.md` en el orden de
+Generado el 2026-09-23. Se sitúa **antes** del protocolo de robustez del 21-09 (retirado el 26-09) en el orden de
 ejecución: la puerta cierne una población entera de miles de estrategias, y el protocolo de
 robustez coge de una en una las que salgan vivas y les dedica días de máquina.
 

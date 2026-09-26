@@ -35,7 +35,7 @@ python3 -m sqx.projects.wfc <SIMBOLO> --cfx <install>/user/projects/<PROYECTO>/p
 Encuentra las tres por su título, apaga todas sus condiciones (con la de OOS que el donante trae en
 la de `build`, ese tramo volvía sin los mercados y sin avisar) y las deja **como las únicas
 activas**. `execute` exige `--project` y se niega con un proyecto de serie (regla dura 10) o si hay
-activa otra cosa que esas tres. Manual: `docs/manual/37-wfc-retest.md`.
+activa otra cosa que esas tres. Manual: `docs/manual/09-optimizacion.pdf` (cap. 37-wfc-retest).
 
 Un proyecto hecho sólo para esto (`Test_<SIM>_variantes`, clonado con `--tasks Retest`) sigue valiendo: `wfc` con
 `--tasks <tres ficheros>` en el orden build, oos1, oos2.
@@ -129,5 +129,5 @@ ventana IS del retest sea la que corrió el SPP.
 - `equity`: 962 variantes en 1,5 s y 5,9 MB de Parquet — contra ~90 minutos si se exportaran sus
   trades. Si tarda mucho más, está leyendo lo que no debe.
 
-Manual: `docs/manual/18-variantes.md` (fabricar) y `docs/manual/19-wfc.md` (ejecutar, recoger y el
-paso 17). El encadenador de las ~100 madres es `docs/manual/17-pipeline.md`.
+Manual: `docs/manual/09-optimizacion.pdf` (cap. 18-variantes) (fabricar) y `docs/manual/09-optimizacion.pdf` (cap. 19-wfc) (ejecutar, recoger y el
+paso 17). El encadenador de las ~100 madres es `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 17-pipeline).

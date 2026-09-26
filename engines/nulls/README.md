@@ -27,7 +27,7 @@ not merged: they answer different questions and merging them would move every p.
 | `placement/` | The cross-market placement models and their compiled kernel | imported | envelope → entries, holds |
 
 
-Manual page, in Spanish, for whoever runs it: `docs/manual/26-nulos.md`.
+Manual page, in Spanish, for whoever runs it: `docs/manual/06-lecturas.pdf` (cap. 26-nulos).
 
 ## Why this is a top-level module and not part of a study
 

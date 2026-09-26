@@ -37,6 +37,8 @@ TAXONOMY = ROOT / "sqx" / "blocks" / "taxonomy.yaml"
 # Las paletas: una por arquetipo, lo único que la ventana escribe de este lado.
 PALETTES = ROOT / "sqx" / "blocks" / "palettes"
 MANUAL = ROOT / "docs" / "manual"
+# The manual's markdown and screenshots: out of the repo, the owner reads only the PDFs.
+MANUAL_SRC = DATA / "manual-fuentes"
 VIEWS_REL = "user/settings/views/databanks"
 STAGING_REL = "user/projects/Retester/databanks/Results"
 STAGING = WORKER / STAGING_REL

@@ -7,7 +7,7 @@
 # AlgoData/projects/retire-queue.txt — archiving each project.cfx in AlgoData first. It never
 # starts, stops or queries an install: a running one keeps its projects another week. Writes
 # audit/YYYY-MM-DD-proyectos.md, uncommitted. See .claude/agents/projectJanitor.md and
-# docs/manual/55-retirar-proyectos.md.
+# docs/manual/04-sqx-plantillas-y-proyectos.pdf (cap. 55-retirar-proyectos).
 #
 # Usage:
 #   weekly-project-cleanup            run it

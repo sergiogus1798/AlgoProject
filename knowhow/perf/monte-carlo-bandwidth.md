@@ -27,4 +27,4 @@ Accumulators must be explicit `float64` (`sum/einsum(..., dtype=np.float64)`). `
 - Tree peak (100,000, N=3,437): 19,671 → 8,814 MB (−55 %); the rest is 96 live interpreters (N=920: 8,723 MB). Growth 920→3,437 ops: master +83 %, tiles +1.0 %.
 - ⚠️ `net_5` 8 repeats: master −19,678 vs tiles −18,903 (z = +3.3); two more master blocks −18,841, −19,261 → a block mean has 2.2 % own spread; 24 vs 16 → +1.6 % (z = +1.7).
   Paired float64 vs float32 on same draws: `net` p5 6.3e-8, `pf` p5 5.4e-10, `dd_pct` p95 1.0e-8, p99 1.6e-9; `losing_run` bit-identical.
-- Later speedups (numba, LPT): `docs/manual/12-rendimiento.md`.
+- Later speedups (numba, LPT): `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento).

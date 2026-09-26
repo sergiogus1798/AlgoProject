@@ -2,7 +2,7 @@
 
 One study, one folder. A strategy built on H1 is rescaled to H4, run on both, and asked
 whether what it earns on H4 is its own or inherited from H1. Read
-`docs/manual/31-crosstf.md` before running it.
+`docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 31-crosstf) before running it.
 
 ```
 scaling.parquet ─┐
