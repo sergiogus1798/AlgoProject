@@ -4,7 +4,7 @@
 - `mc-retest-ranges` — MC Retest RandomizeSpread RandomizeSlippage Min Max units points or multiples; factory default 1-5 0-5; mc_retest block assets; mc_pending; RandomizeMinDistance range
 - `per-task-costs` — where per-task costs live SQX project; Setup vs InstrumentInfo; different spread IS OOS per task; commission method flip use; project unresolved resources; instrument edit defaultslippage; setups.py
 - `refreshing-sqx-costs` — update SQX bar data download; data action=update on worker lost; master to worker rsync user/data; core.assets --dataranges refresh data ranges
-- `sessions-per-asset` — session missing for asset builder refuses; unify_sessions; borrow session from another asset; clone donor for non-gold asset; --symbol does not switch market; GBPUSD AUDUSD USDCAD no session
+- `sessions-per-asset` — session missing for asset builder refuses; unify_sessions; borrow session from another asset; clone donor for non-gold asset; --symbol does not switch market; GBPUSD AUDUSD USDCAD no session; what does the session field actually resolve to; Asia London New York overlap hours
 - `slippage` — slippage value per asset; defaultSlippage zero; can slippage be measured from export; half the spread convention; point value dollars per point
 - `sqx-fx-costs` — SQX default FX costs the5ers pairs spread commission zero; fallback costs cross-market; CADJPY GBPJPY spread; use SQX defaults for correlation N_eff
 - `swap-types` — SQX swap types points percent money formula; percent swap annual or nightly 360; convert points to percent; triple swap day per feed WEDNESDAY FRIDAY; tripleSwapOn override asset file

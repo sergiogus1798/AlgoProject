@@ -1,4 +1,4 @@
-# EL WORKFLOW — los 20 pasos, de la idea a la estrategia superviviente
+# EL WORKFLOW — los 25 pasos, de la idea a la estrategia superviviente
 
 **Esto lo dictó el dueño el 2026-09-23 y es la espina dorsal del proyecto.** Documento vivo, sin
 fecha en el nombre: se actualiza, no se sustituye. Cualquier sesión que vaya a construir algo mira
@@ -20,11 +20,11 @@ que sólo el dueño puede dar.
 | 1 | **Idea en el chat** | — | — |
 | 2 | **Vocabulario** — ¿existe el bloque? si no, se crea e instala | `sqx/inspect/vocabulary.py`, `sqx/blocks/install.py` | ✅ |
 | 3 | **Plantilla** — bloque fijo + hueco aleatorio, con registro de lo ya probado | `sqx/templates/`, `/sqx-strategy-template` | ✅ |
-| 4 | **Preflight** — costes, ventanas y rangos, BLOQUEANTE | `core/assets.py` | ✅ |
+| 4 | **Preflight** — costes, ventanas y rangos, BLOQUEANTE | `core/assets.py` | ✅ · ⬜ aviso de calidad del feed (encargo 17), EN PAUSA — consulta externa pendiente, `docs/AgentPDFs/consulta-calidad-del-feed-2026-09-26.md` |
 | 5 | **Creación del custom project** | `sqx/projects/builder.py` | ✅ |
 | 6 | **Configuración del build** | `assets/_build.yaml`, `sqx/projects/doctrine.py` | 🔴 filtros · ⬜ building blocks |
 | 7 | **Retest OOS en SQX** | tarea propia, costes de `oos1` | ✅ |
-| 8 | **Análisis IS/OOS en Python** | `studies/screening/gate/`, `/oos-gate` → `/curate` | 🟡 umbrales laxos |
+| 8 | **Análisis IS/OOS en Python** — incluye la criba de edge por coste (encargo 11): el bruto por operación reconstruido de `Profit/Loss + comisión + coste de spread modelado`, en spreads de hoy (media y mediana) y como `c*` de breakeven, sobre la cosecha de la puerta | `studies/screening/gate/`, `/oos-gate` → `/curate`; edge por coste en `studies/readings/edgeCost/report.py --project P --databank D --feed F`, manual `50-edge-por-coste.md` | 🟡 umbrales laxos de la puerta · ✅ edge por coste — corre encadenado tras `gate.report` sobre su misma cosecha, sin import entre estudios · ⚠️ costes de `assets/` PROVISIONAL heredados, XAUUSD `costs_provisional` (OPEN.md #26) · ⬜ atribución de calidad del feed (encargo 17), EN PAUSA — misma consulta que el paso 4 |
 | 9 | **Retest crossmarkets en SQX** | `sqx/projects/crossmarket.py` | 🔴 faltan costes |
 | 10 | **Análisis crossmarkets en Python** | `studies/transfer/crossmarket/` | 🟡 sin skill |
 | 10.5 | **Preparación crossTF** — generación de variantes escaladas | `sqx/variants/scale.py`, `/crosstf` | 🟡 |
@@ -37,10 +37,14 @@ que sólo el dueño puede dar.
 | 16.5 | **Preparación de variantes para el WFC** | `sqx/variants/make.py`, `/variants` | ✅ · ⚠️ corre en el `Retester` de serie, OPEN.md §38 |
 | 17 | **Walk Forward Correlation** | `studies/optimisation/wfc/report.py` | ✅ |
 | 18 | **CSCV** | `studies/optimisation/cscv/report.py` | ✅ |
+| 18.5 | **Superficies por mercado** — la misma región de parámetros, ¿es la buena en los 9 mercados de `_markets.yaml`? `rho` de Spearman y Jaccard del decil superior entre cada par, sobre el lote del 16.5 retesteado con los cross-checks | `studies/optimisation/marketSurfaces/report.py`, manual `52-superficies-mercado.md` | ✅ · ⚠️ costes de los 9 pares = defaults de SQX con comisión CERO (`costs_provisional`) · lee `build` y `oos1`, **no** `oos2` |
 | 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `studies/optimisation/wfm/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
-| 20 | **Análisis conjunto de 17, 18 y 19 — CIEGO hasta tener los tres** | — | ⬜ |
+| 20 | **Análisis conjunto de 17, 18, 18.5 y 19 — CIEGO hasta tener los cuatro** | — | ⬜ |
 | 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/38-exposicion.md` | ✅ |
-| 22 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, encargo `docs/encargos/20-atr-calculator.md` | ⬜ |
+| 22 | **Mapa condicional** — clasifica cada operación por el estado del mercado al entrar (volatilidad realizada, tendencia, día de la semana) y lee el P&L celda a celda; fabrica hipótesis, no filtra | `studies/readings/conditionalMap/`, manual `53-mapa-condicional.md` | 🟡 · ⬜ sesión (Asia/Londres/Nueva York/solape) pendiente de que el dueño fije las horas UTC — ver `_coord/BOARD.md` |
+| 23 | **Estructura** — por superviviente: una ablación por condición de entrada y la inversión de la orden en las mismas entradas. ¿Qué condición aporta por operación contra un recorte al azar, cuál es redundante, y vive el filo en la dirección? Diagnóstico, nunca selección | `sqx.structural.make` → `sqx.variants.execute` (custodio) → `sqx.structural.keep` → `sqx.export.export_retest` → `studies/readings/structure/report.py`, manual `51-estructura.md` | ✅ · lee `build` y `oos1`; `oos2` lo rechaza `ledger.gate` · sin stops: la inversión se niega si la madre ya lleva stop/target (por eso va antes del 24) · D3 (mono dentro de SQX) cerrado como imposible |
+| 24 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, encargo `docs/encargos/20-atr-calculator.md` | ⬜ |
+| 25 | **Edge por coste, por estrategia** — la misma lectura sobre el export de trades de la versión que se va a operar, para confirmar que el edge sigue por encima del umbral con el stop puesto | `studies/readings/edgeCost/report.py ... --strategy "<nombre>"`, mismo manual `50-edge-por-coste.md` | ✅ · misma forma de columnas que el export de la puerta, ningún cambio de código entre los dos usos |
 
 **Tres lecturas adicionales que no son pasos nuevos y no renumeran nada.** Dos sobre una
 estrategia y su lista de operaciones, gratis y sin SQX: `studies/readings/profitShape/` (manual
@@ -56,7 +60,7 @@ si hay superficie que leer y si su forma aguanta año a año. Es gratis, no toca
 curvas donde empieza `oos2`** y no elige nada: sale del PDF `PARAMETER_SPACE_TESTS.pdf` del dueño,
 cuya sección E prohíbe expresamente sustituir la madre por el mejor clon.
 
-Del 23 en adelante empieza la cartera. **Primero las estrategias individuales.**
+Del 26 en adelante empieza la cartera. **Primero las estrategias individuales.**
 
 ## El paso 21 — la dicotomía rendimiento/exposición
 
@@ -77,7 +81,7 @@ tenía posición — que es lo que separa una ventaja propia de estar presente e
 se cierra la secuencia individual. Si algún día se construye la regresión, va en
 `studies/closing/exposure/`, que ya tiene montada su antesala.
 
-## El paso 22 — el stop loss que MT5 exige
+## El paso 24 — el stop loss que MT5 exige
 
 Encargo del dueño, 2026-09-25/26. La cadena construye **sin stop a propósito**: un stop es un
 parámetro más y cada parámetro es sitio para el sobreajuste. Pero MT5 lo exige, así que al final
@@ -114,10 +118,15 @@ dimensionamiento y riesgo de ruina dada una distribución de trades— y ahí s�
 
 Sale de `assets/_policy.yaml` y no se negocia por paso:
 
-- `build` — sólo el paso 6. Es la única muestra que el generador ve.
-- `oos1` — del 7 al 16. Retest, crossmarket, crossTF, MC Retest y SPPs.
+- `build` — sólo el paso 6. Es la única muestra que el generador ve. El paso 22 (mapa condicional)
+  también lo lee, pero sólo para congelar sus cortes de tercil — clasifica la muestra de
+  `run.sample` (por defecto `oos1`), nunca la construye contra ella.
+- `oos1` — del 7 al 16, el paso 18.5 (superficies por mercado, junto con `build`), el paso 22
+  (mapa condicional) y el paso 23 (tests estructurales, junto con `build`).
 - `oos2` — **RESERVADO** para 17 y 19 (WFC y WFM). Es una puerta de un solo sentido: cada mirada
-  lo gasta. Ningún paso anterior lo toca.
+  lo gasta. El paso 18.5 lee `build` y `oos1` deliberadamente y **no** pide `oos2` (front D,
+  recomendación 2026-09-26); el paso 23 tampoco: `ledger.gate` se lo rechaza. Ningún otro paso
+  anterior a 20 lo toca.
 
 ## El contrato que une los pasos pares
 
@@ -197,3 +206,5 @@ número de monos se convierte en una cifra que se compara con un resultado conoc
 | 🔴 | **costes de `XAGUSD_DukasM1_Infinox` y `BRENTCMDUSD_ftmo`**, y el `data_from` del Brent. Sin ellos el paso 9 se niega a escribirse. Del dueño |
 | ⬜ | **los building blocks** del paso 6: qué indicadores entran en el hueco aleatorio |
 | ⬜ | el paso 20, que no existe |
+| ⬜ | **las horas UTC de cada sesión** (Asia/Londres/Nueva York/solape) — sin ellas el paso 22 no puede añadir el corte de sesión; el campo `session` de `assets/symbols/` sólo da la semana de mercado abierto, no la partición del día. Del dueño |
+| 🔴 | **calidad del feed** (encargo 17) — EN PAUSA pendiente de una consulta externa (`docs/AgentPDFs/consulta-calidad-del-feed-2026-09-26.md`); afecta el aviso del paso 4 y la criba de atribución del paso 8. Del dueño |
