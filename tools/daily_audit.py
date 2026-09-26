@@ -45,15 +45,21 @@ def corrupt_projects() -> list[str]:
 def exports_without_manifest() -> list[str]:
     """Export directories that cannot be reproduced.
 
+    A partitioned export (`pnl/task=x/strategy=y/`) carries one manifest at its dated root, so a
+    leaf is covered by a manifest in any folder above it, and a missing one is reported once per
+    export (`raw/<project>/<databank>/<date>`), not once per partition.
+
     Returns:
-        Paths under the data root holding data files but no manifest.json.
+        Exports under the data root holding data files but no manifest.json.
     """
-    missing = []
-    for d in (DATA / "raw").rglob("*"):
+    raw = DATA / "raw"
+    missing = set()
+    for d in raw.rglob("*"):
         if d.is_dir() and any(d.iterdir()) and not any(c.is_dir() for c in d.iterdir()):
-            if not (d.parent / "manifest.json").exists() and not (d / "manifest.json").exists():
-                missing.append(str(d.relative_to(DATA)))
-    return missing
+            chain = [d, *d.parents[:len(d.relative_to(raw).parts) - 1]]
+            if not any((p / "manifest.json").exists() for p in chain):
+                missing.add(str(Path("raw", *d.relative_to(raw).parts[:3])))
+    return sorted(missing)
 
 
 def undecided_assets() -> list[str]:

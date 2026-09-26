@@ -21,9 +21,9 @@ you do not write code, do not touch StrategyQuant X, and do not change `~/Deskto
 | what a folder's code does | that folder's `README.md` |
 | what one SQX project does | run `sqx/inspect/dump_project.py <PROJECT>`; no file lives in `docs/` (retired, `OPEN.md`) |
 
-**Nothing lands in the root `CLAUDE.md` that is not a hard rule or a router row.** Its budget is 55
-lines; a phase file's is 40. If a file is over budget, the fix is to move detail down, not to trim
-meaning.
+**Nothing lands in the root `CLAUDE.md` that is not a hard rule or a router row**, and the same for
+`sqx/`, `studies/` and `portfolio/`. Detail moves down into a README or a knowhow card; the hard rules
+are the owner's words and you never trim them.
 
 ## How to write a finding
 

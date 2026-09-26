@@ -23,7 +23,7 @@ Big logs are tailed/grepped, never opened. The storm's cause stays unrepaired (o
   (it's what makes pruning safe); bounded by `logs: 1 GB` in `perf/config.yaml`, `perf.disk.report` exits non-zero when over. 🤔 digest option (first/last + count per message) recorded, not taken.
 - `--auto`: stamp `AlgoData/logs/.prune-stamp`, `MIN_HOURS` 4; 50 ms blocked, 170 ms idle run (`archive_logs` skips up-to-date `.gz` by mtime, 77 ms).
   Triggers: `SessionStart`/`Stop` hooks in `.claude/settings.json` (async), `bin/sqx-worker.sh start`/`stop`, cron backstop.
-  Cron: archiver `0 8 * * *`, prune `15 8 * * *` (order not load-bearing). A machine off at cron time skipped days — the 4.4 GB file sat a month.
+  Cron: archiver `0 4 * * *`, prune `15 4 * * *` (moved from 08:00 on 2026-09-25) (order not load-bearing). A machine off at cron time skipped days — the 4.4 GB file sat a month.
 - Warning text: `AVISO: SQX/log_2026_09_21.log son 412 MB y es el log del dia en curso — la poda no puede tocarlo.` The check must sit outside the
   `find -mtime +$KEEP_DAYS` loop (inside, unreachable).
 - ⚠️ Guard checks a `.gz` exists, not that it matches (divergence needs a rewrite with older mtime — SQX never, test fixtures do).

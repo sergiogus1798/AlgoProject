@@ -65,7 +65,7 @@ fi
 TODAY=$(date +%F)
 timeout 2h "$CLAUDE" -p --agent auditor --model sonnet \
   --permission-mode acceptEdits "${ADD_DIRS[@]}" \
-  --allowedTools "Bash Read Grep Glob Write Edit" \
+  --allowedTools=Bash,Read,Grep,Glob,Write,Edit \
   "Run the full daily audit (all four areas). Read audit/${TODAY}-mechanical.md first, and the data root's size from the last \
 perf.disk.report run in the data root's logs/disk-nightly.log. \
 Write audit/${TODAY}.md. This run is unattended from cron: ask nothing, change nothing \
