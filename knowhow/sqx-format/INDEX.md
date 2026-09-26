@@ -13,6 +13,7 @@
 - `project-cfx` — project.cfx format, cfx zip config.xml task xml, edit project.cfx while running, task output databank, Databank value null, cfx only config.xml rejected, missing task files project dropped, templateFile Project vs StrategyType
 - `result-sections` — settings.xml result sections, per-market metrics from sqx, AdditionalMarket SQStats, stats mixing across markets, ProfitFactor 0 or 5.0 stored, profit factor capped
 - `retest-rewrites-sqstats` — does a retest rewrite inherited SQStats, retested variant own results, IS and OOS in one retest run, startOnlyTask tests nothing Total tested 0, disabled cross-check symbol error, loadconfig merges on exit, origin variant reference
+- `rewriting-strategy-logic` — edit strategy logic in sqx, delete a condition block, ablation, AND with one block, invert long to short, rewrite IfThen rule, Long entry Short entry, #Direction# flip, MarketPositionIsLong, same trades after ablation redundant or ignored
 - `sequential-optimisation-xml` — sequential optimization results sqx, SequentialOptimization_Results.xml, BestValue stable area, chained scan fitness, sequential opt parse
 - `sqstats-blob` — decode SQStats blob, settings.xml base64 stats, 152 statistics, sqxstats KEYS, metric key mapping, read databank metrics off disk without SQX, sample type 10 20
 - `sqx-zip-members` — what is inside a .sqx file? sqx zip members, sqx file size, compare strategies by hash, get symbol from sqx, parse orders.bin, index all sqx

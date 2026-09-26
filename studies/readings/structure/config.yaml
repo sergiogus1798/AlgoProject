@@ -1,0 +1,16 @@
+# Every tunable of the structural reading (encargo 12, workflow step 23). Nothing below is
+# hidden in code. This is a DIAGNOSTIC: no knob here removes a strategy, and an ablation
+# that reads better is a condition that did not help, never a strategy to adopt (§5).
+
+subsets:
+  draws: 10000              # random subsets of the ablation's trades, as many as the mother has
+  seed: 0
+
+verdict:
+  alpha: 0.05               # level of the random-subset test on expectancy per trade
+
+controls:
+  identity_tolerance: 0.005 # relative net-profit gap still called the same backtest when the
+                            # rebuilt mother is compared with a result its .sqx stored
+  min_paired: 0.99          # share of the mother's trades the inversion must return at the
+                            # same instants, same size, opposite side
