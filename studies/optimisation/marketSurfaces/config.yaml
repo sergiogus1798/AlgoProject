@@ -1,0 +1,35 @@
+# Every tunable of the market surfaces. The trade floor is shared with the WFC and the CSCV
+# and lives in engines/variants/config.yaml: a surface here and the WFC's cloud are two
+# readings of one set of points, so which points cannot live in two files.
+
+# Which segments of the batch are read, one surface per market per segment.
+# ⚠️ `oos2` is reserved (assets/_policy.yaml) and `ledger.gate.allow` is asked BEFORE any
+# file is opened: asking for it here is refused, not read. Whether this step should join
+# the oos2 group is the owner's call (BOARD 2026-09-26), not a knob to flip.
+segments: [build, oos1]
+
+# The metric each surface is made of. The WFC reads net profit per segment
+# (engines/variants/panel.columns), so the surfaces do too: a rho here and the WFC's rho
+# then speak about the same number. Ranks, so the account currency and the size of each
+# market's moves drop out.
+metric: NetProfit
+
+# The top share whose overlap the Jaccard measures: the top decile, as the encargo defines.
+top_share: 0.10
+
+# The Spearman that the whole Fisher interval must clear to call two markets' rankings the
+# same. The WFC's floor, for the same reason: below 0.30 the ranks share under 9 % of
+# their variance, and a region "shared" at that level is not one a person would pick twice.
+rho_floor: 0.30
+
+# The quantile of the Jaccard under independence (hypergeometric overlap) that the observed
+# one must exceed. ⚠️ Optimistic: the design clusters variants, so the true null is wider.
+j_quantile: 0.975
+
+# The share of the declared markets that must pass, in EVERY segment read, for the region
+# to be called one that travels. Below it in every segment is a fail; mixed is watch.
+min_share: 0.5
+
+# The workflow step the ledger records this at (owner, 2026-09-26: same level as the WFC
+# and the CSCV, read blind at step 20).
+step: 18.5
