@@ -5,6 +5,7 @@
 - `data-all-crossmarket` — export cross-market retest trades; data=all additional markets one CSV per strategy; Symbol separator; where OOS starts in retest export; missing market file; export_retest --limit sample; long-only fleet
 - `databank-metrics-is-oos` — export databank metrics IS OOS columns; sampleType 10 20 127; custom .vw view paired columns; which block (IS) (OOS) is filled single-window task; export_metrics header-only CSV empty; --role worker
 - `exits-and-m1-library` — exit types Close type in XAUUSD corpus; any stop loss take profit; long only; path-independent exits; M1 bar library size load time flat bars OHLC consistency
+- `exposure-and-edgecost-input-contracts` — exposure.report KeyError strategy identity verdict empty table; Sample type OOS1 required; edgeCost report --strategy IndexError out of bounds; stopgrid variant names S00Vxxx not original strategy name
 - `feed-clock-timezones` — what timezone are SQX bars and trade times in, is Open time UTC, broker time, EET, Asia/Jerusalem, EETUS, convert trade times to UTC, session of day, feed timezone
 - `fill-and-pricing` — SQX fill convention open-to-open; entry price offset spread above bar open; how much of the spread is in the fill price; intrabar entries pending fills or clock; zero-duration trades; rebuild P/L from bars; point value per market regression; M1 execution grid
 - `orderstocsv-schema` — how to export trades from SQX; orderstocsv columns schema; MAE MFE units points or dollars; Sample type IST OOS1; unfilled pending order EndTest; recover commission per trade
