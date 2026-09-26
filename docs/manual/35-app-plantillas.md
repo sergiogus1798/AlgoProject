@@ -232,11 +232,12 @@ de paletas no puede hacer nada por esa plantilla y hay que tocar el grupo.
 
 ![Una zona todavía sin construir](assets/ui-zona-pendiente.png)
 
-**Datos, Generación, Estudios, Estrategias y Carteras se pueden abrir, y no hacen nada todavía.**
-Cada una dice qué irá ahí, cómo se hace ese trabajo hoy mientras tanto, y qué pasos del workflow
-cubre. Están en la barra lateral desde el primer día a propósito: este módulo es la primera rebanada
-de un producto, y las zonas que faltan llegarán como una vista más de esta misma ventana, nunca como
-una segunda aplicación.
+**Datos y Carteras se pueden abrir, y no hacen nada todavía** — cada una dice qué irá ahí, cómo se
+hace ese trabajo hoy mientras tanto, y qué pasos del workflow cubre. Generación, Estrategias y
+Puerta IS/OOS ya están construidas y tienen su propia página: `48-app-generacion.md`,
+`44-app-estrategias.md` y `45-app-puerta.md`. Las zonas pendientes están en la barra lateral desde
+el primer día a propósito: este módulo es la primera rebanada de un producto, y las zonas que faltan
+llegarán como una vista más de esta misma ventana, nunca como una segunda aplicación.
 
 Se pulsan en vez de estar apagadas por un motivo concreto: en Qt un botón deshabilitado no recibe el
 ratón, así que **su tooltip no se muestra nunca**. Cinco entradas grises con una explicación que

@@ -18,14 +18,6 @@ ZONES = {
         "today": "Leer a mano ~/Desktop/AlgoData/INDEX.md, y correr python3 -m core.barstore "
                  "cuando hay dudas de si las velas están al día.",
     },
-    "Estudios": {
-        "steps": "pasos 8, 10, 12, 14, 16, 17 y 18",
-        "what": "Monte Carlo, Retest, Cross-market y Cross-timeframe como pestañas de UNA vista, "
-                "compartiendo la estrategia seleccionada, los filtros y la escala de color. "
-                "Que dejen de ser cuatro aplicaciones es el motivo de que exista el demonio.",
-        "today": "Tres serve.py distintos en strategies/*/explorer/, cada uno con su puerto y su "
-                 "pestaña de navegador, sin estado compartido entre ellos.",
-    },
     "Carteras": {
         "steps": "después del 20",
         "what": "Composición de una cartera, correlaciones entre sus estrategias y riesgo "
