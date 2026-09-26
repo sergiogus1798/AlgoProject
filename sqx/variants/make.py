@@ -43,6 +43,9 @@ def main() -> None:
     ap.add_argument("--sample", type=int,
                     help="fabricate N rows SPREAD across the plan instead of its first N: "
                          "the controls, then evenly spaced picks from every stratum")
+    ap.add_argument("--min-variants", type=int,
+                    help="the fewest distinct variants a mother may get; config minimum.variants "
+                         "(1000) when absent. Integer spans widen past +/-30 %% to reach it")
     ap.add_argument("--design-only", action="store_true",
                     help="write the plan and stop, without fabricating anything")
     ap.add_argument("--out", type=Path,
@@ -52,6 +55,8 @@ def main() -> None:
 
     design = inputs.brief(args.brief)
     settings = inputs.load()
+    if args.min_variants:
+        settings["minimum"]["variants"] = args.min_variants
     parent = inputs.source(design)
     preflight(parent)
 
@@ -66,6 +71,10 @@ def main() -> None:
     print(f"  {'controls':14s}              kept {report['controls']:5,d}")
     print(f"  planned {report['n']:,} of a target {design['n_target']:,} "
           f"(shortfall {report['shortfall']:,})")
+    if report["live_space"] < settings["minimum"]["variants"]:
+        print(f"  ⚠️ only {report['live_space']:,} distinct tuples even at "
+              f"+/-{settings['minimum']['max_span']:.0%}: below the minimum of "
+              f"{settings['minimum']['variants']:,}")
     # The plan report is written whether or not fabrication follows, so `--design-only` is a
     # complete stage rather than a preview: what it leaves behind is what the next stage and
     # the pipeline ledger read.

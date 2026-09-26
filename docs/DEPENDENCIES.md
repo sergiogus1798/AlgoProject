@@ -211,7 +211,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/variants/build/rewrite.py` | 222 | Write one .sqx into another: new values, new name, no inherited fingerprint. Decides nothing. | — | — |
 | `sqx/variants/collect.py` | 185 | Join the three legs' metrics onto the manifest and write contract C3, metrics.parquet. | core, sqx | pandas |
 | `sqx/variants/design/canaries.py` | 85 | The controls: tuples whose result is known before the retest runs, and the pairs that must tie. | — | pandas |
-| `sqx/variants/design/levels.py` | 110 | The values each parameter may take: the brief's own for the live ones, a rebuilt range for the frozen. | — | numpy |
+| `sqx/variants/design/levels.py` | 135 | The values each parameter may take: the brief's own for the live ones, a rebuilt range for the frozen. | — | numpy |
 | `sqx/variants/design/plan.py` | 151 | Turn one design brief into the list of tuples to fabricate. Pure maths; touches no file. | sqx | numpy, pandas |
 | `sqx/variants/design/strata.py` | 137 | The three ways a tuple gets into the design. One signature, one registry, one table each. | — | numpy, scipy |
 | `sqx/variants/equity.py` | 234 | Harvest every variant's per-day P&L from the three legs, per market, and join them. | core, sqx | pandas, pyarrow |
@@ -219,7 +219,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/variants/harness.py` | 237 | Build a worker's one-task retest harness from a donor task that is known to have run. | core, sqx | — |
 | `sqx/variants/inputs.py` | 90 | What the factory reads: its own settings, the design brief, the known results, where it writes. | core | pandas, yaml |
 | `sqx/variants/legs.py` | 79 | The three legs of the WFC/CSCV retest: what each one is called and where its output lands. | core, sqx | — |
-| `sqx/variants/make.py` | 100 | The command: one design brief in, the .sqx batch and its manifest out. Never touches SQX. | core, sqx | — |
+| `sqx/variants/make.py` | 109 | The command: one design brief in, the .sqx batch and its manifest out. Never touches SQX. | core, sqx | — |
 | `sqx/variants/manifest.py` | 137 | Contract C2: what was fabricated, read back off the disk. Never what the plan meant to fabricate. | core, sqx | pandas |
 | `sqx/variants/scale.py` | 190 | Rescale one strategy's bar-unit parameters to another timeframe, as a sibling .sqx. | core, sqx | pandas, yaml |
 | `sqx/variants/spp.py` | 142 | Run one mother's SPP reconnaissance on the custodian and export the permutation table. | core, sqx | — |
