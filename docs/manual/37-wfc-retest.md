@@ -46,6 +46,7 @@ python3 -m sqx.projects.wfc XAUUSD \
 | `--cfx` | sí | el proyecto custom donde se escriben las tres tareas |
 | `--timeframe` | sí | el timeframe del proyecto; es el que llevan los mercados adicionales |
 | `--tasks` | sí | tres ficheros de tarea **en el orden de `wfc.tasks`**: build, oos1, oos2. Se les cambia el título al de la doctrina y se activan |
+| `--no-markets` | no | deja fuera los mercados adicionales en las tres patas de **este** proyecto, diga lo que diga `wfc.markets`. Para un estudio que sólo lee el mercado principal (el paso 24, `54-atr-calculator.md`) |
 | `--json` | no | la misma salida en JSON |
 
 Salida real sobre una copia del donante congelado:

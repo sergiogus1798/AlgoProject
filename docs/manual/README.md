@@ -66,6 +66,7 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `51-estructura.md` | paso 23: qué condición sostiene el edge —cada una quitada de una en una— y si invertir la dirección lo destruye, corrido en el custodio y leído por operación |
 | `52-superficies-mercado.md` | paso 18.5: si la zona buena de parámetros de la madre es también la buena en los 9 mercados de `_markets.yaml` — rho de Spearman y Jaccard del decil superior entre cada par, con la lectura sin la exposición al lado, costes provisionales marcados y sin mirar `oos2` |
 | `53-mapa-condicional.md` | paso 22: el rendimiento por estado del mercado al entrar —volatilidad, tendencia y día—, descriptivo y con el aviso de comparaciones múltiples delante |
+| `54-atr-calculator.md` | el stop loss ATR del paso 24: X leído del MAE de las ganadoras del IS a los percentiles que elijas (80, 85, 90 y 95 por defecto) sin elegir ninguno, el injerto del stop en el `.sqx`, y lo que SQX dice que cuesta y lo plano que es alrededor de X |
 | `_PLANTILLA.md` | **la plantilla obligatoria.** Se copia para documentar cada módulo nuevo |
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |

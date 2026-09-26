@@ -9,6 +9,7 @@ from portfolio.common.monteCarlo import run
 from portfolio.common.monteCarlo.inputs import config as mc_config, costs, stream
 from engines.inference.snooping import superior
 from studies.breakage.mcRetest.measure import store
+from studies.closing.atrCalculator import inputs as atr_inputs, load as atr_load, one as atr_one
 from studies.screening.snoopingScreen import inputs as snooping
 from studies.transfer.crossmarket.simulate import paired
 
@@ -107,6 +108,25 @@ def crossmarket_paired(cfg: dict) -> dict:
     for hold in (8, 16, 32, 64, 128):
         paired.centered_means(enter, leave, hold, half=1000)
     return {"scale": len(frame), "bytes_in": sample.weight([path])}
+
+
+def atrcalculator_reading(cfg: dict) -> dict:
+    """The ATR stop study's reading (§2) on every strategy of one export, bootstrap included.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        Trades read and bytes read. The bootstrap of the percentiles is the cost that
+        grows, linear in winners times resamples.
+    """
+    s = cfg["sample"]
+    study = atr_inputs.config([])
+    got = atr_load.load(s["project"], [s["atr_databank"]], s["bars_feed"], s["asset"],
+                        s["atr_timeframe"], None, study)
+    for name in got["strategies"]:
+        atr_one.run(name, got, study)
+    return {"scale": len(got["trades"]), "bytes_in": sample.weight(got["packed"])}
 
 
 def snooping_superior(cfg: dict) -> dict:

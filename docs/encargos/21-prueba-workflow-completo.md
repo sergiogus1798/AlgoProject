@@ -49,6 +49,7 @@ deja el plan escrito en el informe y termina.
    | 18.5 | superficies por mercado | `52-superficies-mercado.md` | `python3 -m studies.optimisation.marketSurfaces.report --work <carpeta del lote> --family …` |
    | 22 | mapa condicional (sesiones y días) | `53-mapa-condicional.md` | `python3 -m studies.readings.conditionalMap.report --harvest … --strategy …` |
    | 23 | tests estructurales | `51-estructura.md` | `python3 -m sqx.structural.make …`, el run en el custodio y `python3 -m studies.readings.structure.report …` |
+   | 24 | stop ATR | `54-atr-calculator.md` | el de la página: la X leída del MAE, el lote de variantes con stop y su retest en el custodio |
    | todos | el ledger | `43-ledger.md` | `python3 -m ledger.report` al final, para ver el embudo registrado |
 
 **Dónde trabajas:** `~/Desktop/AlgoProject`, rama `docs/knowhow-fichas`, en el commit que diga
@@ -68,8 +69,8 @@ carpeta.
   y anótalo. Hasta el paso 15 lleva como máximo **8** estrategias; del 15 en adelante, como máximo
   **3 madres**. Antes de lanzar cada paso de SQX, **estima su duración** con el catálogo de `perf/` y
   los tiempos del 24-09, y escríbela; si un paso fuese a pasar de ~6 h, reduce su población y dilo.
-- **`oos2`:** los pasos 17, 18, 18.5 y 19 lo leen. Está autorizado (dueño, 2026-09-26), y el ledger
-  lo permite para esos cuatro. El paso 20
+- **`oos2`:** los pasos 17, 18, 18.5, 19 y 24 lo leen. Está autorizado (dueño, 2026-09-26), y el ledger
+  lo permite para esos cinco. El paso 20
   es la lectura conjunta ciega: haz la lectura de 17, 18, 18.5 y 19 **sólo cuando los cuatro hayan
   corrido**.
 
@@ -90,7 +91,7 @@ carpeta.
 | 21 | exposición |
 | 22 | mapa condicional (por sesiones y por día de la semana) |
 | 23 | tests estructurales (`sqx/structural/` en el custodio + `studies/readings/structure/`) |
-| 24 | stop ATR: está en la rama `feat/atr-calculator`, **sin fusionar**. Si en `docs/knowhow-fichas` no existe `studies/closing/atrCalculator/`, **sáltalo** y dilo |
+| 24 | stop ATR (`studies/closing/atrCalculator/` + el lote `stopgrid` en el custodio), fusionado el 26-09: sigue `docs/manual/54-atr-calculator.md` sobre cada superviviente |
 | 25 | edge por coste sobre la versión que se operaría |
 | —  | el 17 de calidad del feed y el 9 de monos **no se corren** (en pausa por decisión del dueño) |
 

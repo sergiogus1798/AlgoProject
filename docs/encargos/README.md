@@ -69,7 +69,7 @@ el tier 1 del 4) y `studies/readings/conditionalMap/` (item 6, paso 22). Quedan 
 
 | fichero | qué construye | qué lo bloquea |
 |---|---|---|
-| `20-atr-calculator.md` | el paso 24 (era el 22 antes del 26-09): el stop X·ATR de cada superviviente, leído del MAE de sus operaciones, **sin optimizar** — MT5 lo exige y la cadena genera sin stop | ✅ construido y probado en SQX (rama `feat/atr-calculator`, sin fusionar); falta correrlo sobre una superviviente real |
+| `20-atr-calculator.md` | el paso 24 (era el 22 antes del 26-09): el stop X·ATR de cada superviviente, leído del MAE de sus operaciones, **sin optimizar** — MT5 lo exige y la cadena genera sin stop | ✅ construido y probado en SQX; falta correrlo sobre una superviviente real |
 
 ## La prueba del workflow entero, 2026-09-26
 

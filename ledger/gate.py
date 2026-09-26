@@ -6,7 +6,7 @@ from core import assetdata
 
 # Which workflow step each name in `_policy.yaml`'s `reserved_for` refers to. The policy
 # file names tests, not numbers, and the numbers are what a caller has.
-STEPS = {"WFC": 17, "CSCV": 18, "MarketSurfaces": 18.5, "WFM": 19}
+STEPS = {"WFC": 17, "CSCV": 18, "MarketSurfaces": 18.5, "WFM": 19, "ATRStop": 24}
 BLIND = (17, 18, 19)
 
 
@@ -30,7 +30,7 @@ def allow(step: int, segment: str, symbol: str) -> None:
     """Refuse a search that would spend a segment it has no claim on.
 
     Args:
-        step: Workflow step, 1 to 21.
+        step: Workflow step, 1 to 25.
         segment: The segment the search reads -- "build", "oos1", "oos2".
         symbol: The asset.
 

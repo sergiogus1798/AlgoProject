@@ -43,7 +43,7 @@ que sólo el dueño puede dar.
 | 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/38-exposicion.md` | ✅ |
 | 22 | **Mapa condicional** — clasifica cada operación por el estado del mercado al entrar (volatilidad realizada, tendencia, día de la semana) y lee el P&L celda a celda; fabrica hipótesis, no filtra | `studies/readings/conditionalMap/`, manual `53-mapa-condicional.md` | 🟡 · ⬜ sesión (Asia/Londres/Nueva York/solape) pendiente de que el dueño fije las horas UTC — ver `_coord/BOARD.md` |
 | 23 | **Estructura** — por superviviente: una ablación por condición de entrada y la inversión de la orden en las mismas entradas. ¿Qué condición aporta por operación contra un recorte al azar, cuál es redundante, y vive el filo en la dirección? Diagnóstico, nunca selección | `sqx.structural.make` → `sqx.variants.execute` (custodio) → `sqx.structural.keep` → `sqx.export.export_retest` → `studies/readings/structure/report.py`, manual `51-estructura.md` | ✅ · lee `build` y `oos1`; `oos2` lo rechaza `ledger.gate` · sin stops: la inversión se niega si la madre ya lleva stop/target (por eso va antes del 24) · D3 (mono dentro de SQX) cerrado como imposible |
-| 24 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, `sqx/variants/stopgrid.py`, encargo `docs/encargos/20-atr-calculator.md` | 🟡 construido y probado en SQX sobre una estrategia de desarrollo; falta una superviviente real (rama `feat/atr-calculator`, sin fusionar) |
+| 24 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, `sqx/variants/stopgrid.py`, manual `54-atr-calculator.md` | 🟡 construido y probado en SQX sobre una estrategia de desarrollo; falta una superviviente real · lee `build`, `oos1` y `oos2` (reservado también para este paso, dueño 2026-09-26) |
 | 25 | **Edge por coste, por estrategia** — la misma lectura sobre el export de trades de la versión que se va a operar, para confirmar que el edge sigue por encima del umbral con el stop puesto | `studies/readings/edgeCost/report.py ... --strategy "<nombre>"`, mismo manual `50-edge-por-coste.md` | ✅ · misma forma de columnas que el export de la puerta, ningún cambio de código entre los dos usos |
 
 **Tres lecturas adicionales que no son pasos nuevos y no renumeran nada.** Dos sobre una
@@ -93,9 +93,11 @@ El stop es un **colchón**: corta las pérdidas largas que ya no se recuperan y 
 el aire que necesita contra el ruido. Su distancia, `SL = X·ATR`, se **lee** del MAE de las
 operaciones —cuánto se fueron en contra las ganadoras, a partir de dónde ya no se recupera casi
 ninguna— con una regla fijada antes de mirar. No se barre una rejilla ni se elige la X que más
-gana. X sale **sólo del IS**, como percentil de las ganadoras (80, 85, 90 y 95, cuatro sub-estudios), con
-ATR(20). `oos1` y `oos2` dicen si se transfiere. El coste y la estabilidad los mide SQX con sus propios
-spread y slippage: variantes un poco por encima y por debajo de cada X, buscando meseta, no máximo.
+gana. X sale **sólo del IS**, como percentil de las ganadoras (por defecto 80, 85, 90 y 95; tantos como se quiera con
+`--percentiles`, un sub-estudio cada uno), con ATR(20). `oos1` y `oos2` dicen si se transfiere. El coste y la estabilidad los mide SQX con sus propios
+spread y slippage: variantes un poco por encima y por debajo de cada X (±20 % por defecto),
+buscando meseta, no máximo. «Meseta» se lee con la puntuación del dueño —40 % PF, 30 % neto,
+30 % DD máximo, cada uno contra la original sin stop—, que sólo describe la forma y no ordena X.
 Después, si hace falta, se repite alguno de los tests anteriores sobre la versión con stop, y nada
 más. Detalle en `docs/encargos/20-atr-calculator.md`.
 
@@ -126,7 +128,9 @@ Sale de `assets/_policy.yaml` y no se negocia por paso:
 - `oos2` — **RESERVADO** para 17, 18.5 y 19 (WFC, superficies por mercado y WFM; el 18.5 por
   decisión del dueño del 2026-09-26) — el 18.5 lee los tres tramos. Es una puerta de un solo
   sentido: cada mirada lo gasta. El paso 23 no lo pide y `ledger.gate` se lo rechaza. Ningún otro
-  paso anterior a 20 lo toca.
+  paso anterior a 20 lo toca. **El paso 24** (stop loss ATR) sí lo lee, sobre la superviviente, para
+  ver si la X del IS se transfiere: el dueño lo añadió a `reserved_for` el 2026-09-26 y cada
+  ejecución deja su fila en el ledger.
 
 ## El contrato que une los pasos pares
 

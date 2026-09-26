@@ -1,5 +1,7 @@
 """What running one analysis module on one strategy means: the command, given what exists on disk."""
 
+import json
+
 import pyarrow.parquet as pq
 
 from core import assetdata
@@ -87,6 +89,20 @@ def exposure(c: dict) -> list[str] | str:
             c["strategy"]]
 
 
+def atr_calculator(c: dict) -> list[str] | str:
+    """Step 22: the stop's X read from the MAE of the IS winners; SQX's half needs /variants."""
+    if not c["export"]:
+        return NO_TRADES
+    folder = DATA / "raw" / c["project"] / c["databank"] / c["export"]
+    said = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+    frames = said.get("source", {}).get("timeframes") or []
+    if len(frames) != 1:
+        return "el export no dice en qué timeframe corre la estrategia; pásalo a mano con --timeframe"
+    return ["-m", "studies.closing.atrCalculator.report", "--project", c["project"],
+            "--databank", c["databank"], "--feed", c["feed"], "--symbol", c["asset"],
+            "--timeframe", frames[0], "--strategy", c["strategy"]]
+
+
 def profitshape(c: dict) -> list[str] | str:
     """Which few trades and months the result depends on; prints, writes nothing."""
     if own_trades(c):
@@ -128,6 +144,7 @@ def crossmarket(c: dict) -> list[str] | str:
 
 
 RUNS = {"gate": gate, "monteCarlo": monte_carlo, "monkey": nulls, "exposure": exposure,
+        "atrCalculator": atr_calculator,
         "profitShape": profitshape, "entryQuality": entryquality, "decay": decay,
         "mcRetest": mc_retest, "wfm": wfm, "crossmarket": crossmarket,
         "curate": lambda c: "es una skill: /curate, desde Claude Code",

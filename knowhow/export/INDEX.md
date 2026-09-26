@@ -12,6 +12,7 @@
 - `spp-export` — export SPP system parameter permutation results; SPP trades; permutation table 152 statistics; Don't store data for 3D charts; spp.parquet; export_spp
 - `spp-pairing-for-wfc` — pair SPP IS and SPP OOS permutations for walk forward correlation WFC; SPP grid size coverage; Steps MaxTests shifts saturate grid; birthday collisions
 - `spp-parameter-importance` — which parameters matter SPP eta-squared sensitivity; marginal profile WFC without pairing; freeze parameters shrink grid; unpaired SPP runs
+- `sqx-atr-is-wilder` — how SQX computes ATR; Wilder or simple mean; ATR-based stop loss formula; ATRBasedValue getATRValue shift 1 round 6; reproduce the ATR SQX used for a stop; calibrate.atr is a rolling mean; Close type SL
 - `storage-format` — storage format parquet vs CSV for exports; which columns to drop SPP export; redundant metrics; RExpectancy 99999 sentinel; CalmarRatio? question mark column name
 - `trade-export-columns` — which trade export columns can be dropped; Ticket Balance Time in trade Comment Symbol derivable; Close type needed; trade parquet packing size speed memory; categorical columns
 - `wfm-export` — Walk-Forward Matrix WFM export cells steps; is_Fitness oos_Fitness zero; future steps past end of data; pool steps or cells; params.parquet NaN parameter drift
