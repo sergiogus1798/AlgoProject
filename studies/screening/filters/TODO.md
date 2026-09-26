@@ -1,6 +1,6 @@
 # tasks — improvement: BUILT 2026-09-04, and what is still open
 
-Built as `analysis/improvement.py` + `reports/filters.py`, documented in
+Built as `../analysis/improvement.py` + `report.py` (this folder), documented in
 `docs/manual/02-filtros.md`. The three questions this brief left for the owner were decided on
 2026-09-04:
 
@@ -61,7 +61,7 @@ intervals — two overlapping intervals do not mean the difference is insignific
 
 Sweeping 40 candidate filters and reporting the best one is the multiple-testing trap that
 `studies/CLAUDE.md` warns about, except the searcher is now the analyst. Apply Benjamini-Hochberg
-across the whole sweep exactly as `analysis/correlations.py:discoveries` already does, and **report
+across the whole sweep exactly as `engines/inference/fdr.py:discoveries` already does, and **report
 how many filters were tried** in the output. A result that does not say what the search space was is
 not a result.
 
@@ -97,8 +97,8 @@ optional. Take the metrics from `metrics.measured(columns, metrics.IS)` so nothi
 
 ## Beyond that
 
-**Comparing samples is built** — `analysis/replication.py` + `reports/compare.py`, page 3 of the
-manual — but it compares databanks *of one project*. It was written for the owner's replication
+**Comparing samples is built** — `../analysis/replication.py` + `../replication/report.py`, page 3 of
+the manual — but it compares databanks *of one project*. It was written for the owner's replication
 study: generate again under the recommended filters, then check the promised uplift actually
 arrives. Pointing it across projects is a naming and reporting job, not new maths.
 
