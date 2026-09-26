@@ -18,7 +18,8 @@ TIPS = {
     "transfer.min_winners": "Con menos ganadoras fuera de muestra, sólo se enseña.",
     "grid.band": "Cuánto se mueve X arriba y abajo en la rejilla de estabilidad.",
     "grid.steps": "Cuántos pasos a cada lado: 2 con ±20 % da X·{0,8 0,9 1 1,1 1,2}.",
-    "shape.tolerance": "Un neto que no se mueve más que esta parte del de X es meseta.",
+    "shape.tolerance": "Una puntuación que no se mueve más que esta parte de la de X es meseta.",
+    "shape.weights": "La puntuación del dueño: 40 % PF, 30 % neto y 30 % DD máximo, cada uno contra la original sin stop (el DD invertido). 1 = igual que sin stop. Sólo lee la forma, no elige.",
     "proof.pl_tolerance": "USD: la sonda X = 1000 tiene que reproducir cada P/L a esto.",
     "proof.atr_spread": "Cuánto puede separarse, del p5 al p95, la distancia de cada stop "
                         "partida por X·ATR: en la barra buena sólo la mueve el slippage."}

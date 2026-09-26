@@ -83,31 +83,55 @@ def measure(strategy: str, inputs: dict, cfg: dict) -> dict:
             else pd.DataFrame(), "shape": shape(metrics, cfg) if len(metrics) else metrics}
 
 
+def score(metrics: pd.DataFrame, cfg: dict) -> pd.Series:
+    """The owner's weighted fitness of each variant, against the original without a stop.
+
+    Args:
+        metrics: What `measure` built.
+        cfg: The study's config; `shape.weights` holds the weights.
+
+    Returns:
+        weight_pf * PF / PF original + weight_net * net / net original + weight_maxdd *
+        max DD original / max DD, so 1.0 is "the same as without a stop" and every term reads
+        higher-is-better. Each metric enters as a ratio to the original, so none weighs more
+        because of its units. NaN where the original's net or PF is not positive: a ratio
+        to a losing original says nothing about the shape.
+    """
+    w = cfg["shape"]["weights"]
+    ok = (metrics["net_original"] > 0) & (metrics["pf_original"] > 0)
+    got = (w["pf"] * metrics["pf"] / metrics["pf_original"]
+           + w["net"] * metrics["net"] / metrics["net_original"]
+           + w["maxdd"] * metrics["maxdd_original"] / metrics["maxdd"].where(metrics["maxdd"] > 0))
+    return got.where(ok)
+
+
 def shape(metrics: pd.DataFrame, cfg: dict) -> pd.DataFrame:
-    """Plateau or edge: how far the net result moves along the grid around each X.
+    """Plateau or edge: how far the weighted score moves along the grid around each X.
 
     Args:
         metrics: What `measure` built, one row per grid variant and window.
         cfg: The study's config.
 
     Returns:
-        One row per percentile and window: the largest move on the tighter side (steps
-        below 0) and on the looser side, each as a share of the centre's net, and `shape` —
-        "meseta" when both stay within `shape.tolerance`, otherwise which side falls away.
-        It reads the form, never the maximum.
+        One row per percentile and window: the centre's score, the largest move of the
+        score on the tighter side (steps below 0) and on the looser side, each as a share of
+        the centre's, and `shape` — "meseta" when both stay within `shape.tolerance`,
+        otherwise which side falls away. It reads the form, never the maximum: the score is
+        the owner's yardstick for "flat", not a ranking of the X.
     """
     tol, rows = cfg["shape"]["tolerance"], []
+    metrics = metrics.assign(score=score(metrics, cfg))
     for (p, s), g in metrics.groupby(["percentile", "segment"]):
-        centre = g.loc[g["step"] == 0, "net"].iloc[0]
-        rel = (g.set_index("step")["net"] - centre) / abs(centre) if centre else g["net"] * np.nan
+        centre = g.loc[g["step"] == 0, "score"].iloc[0]
+        rel = (g.set_index("step")["score"] - centre) / abs(centre)
         tight, loose = rel[rel.index < 0].abs().max(), rel[rel.index > 0].abs().max()
-        label = ("meseta" if tight <= tol and loose <= tol else
+        label = ("sin referencia" if not np.isfinite(centre) else
+                 "meseta" if tight <= tol and loose <= tol else
                  "borde al apretar" if loose <= tol else
                  "borde al aflojar" if tight <= tol else "borde por los dos lados")
-        rows.append({"percentile": p, "segment": s, "centre_net": centre,
+        rows.append({"percentile": p, "segment": s, "centre_score": centre,
                      "tighter": tight, "looser": loose, "shape": label})
     return pd.DataFrame(rows)
-
 
 def summary(measured: dict) -> dict:
     """The flat numbers verdict.csv carries from the SQX side: the proofs and the shapes."""

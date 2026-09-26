@@ -265,10 +265,10 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/closing/atrCalculator/proofs.py` | 74 | The two proofs a stop retest has to pass before anything in it is read: the graft, and the ATR. | studies | numpy, pandas |
 | `studies/closing/atrCalculator/report.py` | 66 | Read an ATR stop loss from the MAE of the IS winners, four percentiles side by side, and what SQX says it costs. | core, studies | pandas |
 | `studies/closing/atrCalculator/spend.py` | 50 | The ledger's side of step 22: ask the door before reading oos2, and leave a row per segment read. | ledger | — |
-| `studies/closing/atrCalculator/sqxview.py` | 110 | The SQX retest drawn as the contract's tabs: the two proofs, the cost per X and the shape. | core | pandas |
-| `studies/closing/atrCalculator/stability.py` | 120 | §3 — what SQX says each X costs against the original, in each window, and the shape around it. | studies | numpy, pandas |
+| `studies/closing/atrCalculator/sqxview.py` | 113 | The SQX retest drawn as the contract's tabs: the two proofs, the cost per X and the shape. | core | pandas |
+| `studies/closing/atrCalculator/stability.py` | 144 | §3 — what SQX says each X costs against the original, in each window, and the shape around it. | studies | numpy, pandas |
 | `studies/closing/atrCalculator/threshold.py` | 48 | §2.1 — the air the IS winners need: X per percentile, with its bootstrap interval. | — | numpy, pandas |
-| `studies/closing/atrCalculator/tooltips.py` | 24 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
+| `studies/closing/atrCalculator/tooltips.py` | 25 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
 | `studies/closing/atrCalculator/transfer.py` | 55 | §2.3 — does the IS X transfer to oos1 and oos2? Described, never recomputed out of sample. | — | numpy, pandas, scipy |
 | `studies/closing/atrCalculator/view.py` | 127 | The §2 reading drawn as the contract's tabs: X, the point of no return, the transfer. | core | numpy, pandas |
 | `studies/closing/exposure/benchmark.py` | 119 | What "buy and hold" means here: three sizing conventions, and the P&L each one earns. | — | numpy, pandas |

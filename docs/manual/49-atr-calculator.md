@@ -142,8 +142,11 @@ original.
 ![Lo que cuesta](assets/atr-coste.png)
 
 **Estabilidad.** El neto a lo largo de `X·{0,8 0,9 1 1,1 1,2}` para cada percentil, con la original
-de referencia. «meseta» si nada se mueve más del 10 % del neto en X; si no, en qué lado está el borde.
-Se lee la forma, **nunca el máximo**.
+de referencia. La forma la decide **tu puntuación**: 40 % PF + 30 % neto + 30 % DD máximo, cada uno
+contra la original sin stop (el DD invertido, para que más sea mejor), de modo que 1 es «igual que sin
+stop». «meseta» si la puntuación no se mueve más del 10 % de la de X a lo largo de la rejilla; si no,
+en qué lado está el borde. Pesos y tolerancia en `config.yaml` (`shape.weights`, `shape.tolerance`).
+Se lee la forma, **nunca el máximo**: la puntuación no ordena las X.
 
 ![Estabilidad](assets/atr-estabilidad.png)
 
@@ -188,9 +191,10 @@ original −4.842, −4.924, −4.584):
 | oos2 | 95 | 19 | 6 | 14.111 | 1,18 (1,26) | −1.316 |
 
 El stop corta la peor operación de ~4.800 a ~800–1.400 USD en las tres ventanas. En el IS el neto
-queda a un 3–9 % de la original y la forma es meseta en p85, p90 y p95 (borde al aflojar en p80).
-Fuera de muestra el neto cae más con las X más apretadas y **ningún percentil es meseta**: con
-netos de 5–14 mil USD, un 10 % son pocos cientos de dólares y el ruido de 250 operaciones los mueve.
+queda a un 3–9 % de la original y, con la puntuación 40/30/30, la forma es **meseta en los cuatro
+percentiles** (puntuación en X entre 0,99 y 1,05). Fuera de muestra **ninguno es meseta**: la
+puntuación en X cae a 0,73–1,08 en oos1 y 0,59–0,90 en oos2, y se mueve entre un 5 % y un 47 % a lo
+largo de la rejilla. Con 200–250 operaciones por ventana, parte de ese movimiento es ruido.
 
 ### Qué NO te dice
 
@@ -199,8 +203,8 @@ netos de 5–14 mil USD, un 10 % son pocos cientos de dólares y el ruido de 250
   más. Si en una ventana gana más con stop, no es un argumento para apretarlo.
 - **Lo que haría en MT5.** Ni `StopsLevel` ni mínimos del bróker.
 - **Nada sobre el edge.** Qué tests se repiten sobre la versión con stop lo decide el dueño.
-- La etiqueta «meseta/borde» mide contra el neto en X: con netos pequeños (oos) casi todo sale
-  «borde». Mira las curvas, no sólo la palabra.
+- La etiqueta «meseta/borde» es tan buena como la tolerancia del 10 %, que es provisional hasta que
+  fijes tus criterios. Mira las curvas, no sólo la palabra.
 
 ### Si algo falla
 

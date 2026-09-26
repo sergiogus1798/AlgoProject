@@ -88,12 +88,15 @@ def shape_tab(measured: dict, cfg: dict) -> dict:
         lines = {"kind": "lines", "title": f"{WINDOWS[s]}: neto a lo largo de la rejilla",
                  "unit": "USD", "x": x, "series": series, "select": {"ventana": WINDOWS[s]}}
         here_shape = sh[sh["segment"] == s]
+        w = cfg["shape"]["weights"]
         t = blocks.table(f"{WINDOWS[s]}: meseta o borde", pd.DataFrame({
-            "percentil": here_shape["percentile"], "neto en X": here_shape["centre_net"],
+            "percentil": here_shape["percentile"], "puntuación en X (1 = sin stop)": here_shape["centre_score"],
             "mayor cambio al apretar": here_shape["tighter"],
             "mayor cambio al aflojar": here_shape["looser"], "forma": here_shape["shape"]}),
-            f"Cambios como parte del neto en X; meseta si ninguno pasa de "
-            f"{cfg['shape']['tolerance']:.0%}. Se lee la forma, nunca el máximo.")
+            f"Puntuación = {w['pf']:.0%} PF + {w['net']:.0%} neto + {w['maxdd']:.0%} DD máx, "
+            f"cada uno contra la original sin stop. Cambios como parte de la puntuación en X; "
+            f"meseta si ninguno pasa de {cfg['shape']['tolerance']:.0%}. Se lee la forma, "
+            f"nunca el máximo.")
         t["select"] = {"ventana": WINDOWS[s]}
         out += [lines, t]
     return envelope.tab("shape", "Estabilidad", out,
