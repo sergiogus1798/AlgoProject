@@ -18,7 +18,7 @@ family: the unit the multiple-testing correction is owed to.
 | `thresholds.py` | **The accessor**: `value(key)` and `fill(cfg)`, which a module's `config()` runs over its parsed `config.yaml` to replace every `ledger:<key>`; and the check of which rows are read through it | imported | register → numbers, divergences |
 | `backfill.py` | Rebuilds a study's ledger backwards from artefacts a run already left | `python3 -m ledger.backfill --gate <dir> --symbol XAUUSD --timeframe M30 --family <name>` | a gate report → rows |
 | `report.py` | **The command**: the funnel, what was spent, the blind door, and what the whole search costs the Sharpe | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
-| `thresholds.yaml` | Every threshold of the chain, with who set it and when. **Read, never written** | edited by the owner | — |
+| `thresholds.yaml` | Every threshold of the chain, with who set it and when — **the source**: a module's `config.yaml` holds `ledger:<key>` in its place. Read, never written by code | edited by the owner | — |
 
 Manual page, in Spanish: `docs/manual/43-ledger.md`. Commission: `docs/encargos/8-ledger-global.md`.
 
@@ -57,8 +57,9 @@ informative count in the note.
 `config.yaml` holds `ledger:<key>` where the number was, and its `config()` runs
 `thresholds.fill` over the parsed file *before* any `--set` override, so an override is still held
 to the number's type and the window's drawer still shows the knob. The placeholder keeps the key in
-its place: the gate prints a screen's thresholds in row order, and 🔬 its scorecard, funnel,
-verdict, pages and config fingerprint came out byte-identical after the move. A key missing from
+its place: the gate prints a screen's thresholds in row order. 🔬 All six modules that declare one
+(gate, snoopingScreen, profitShape, entryQuality, cloud, cscv — 14 keys) came out byte-identical on
+real data after the move, fingerprint included (`knowhow/eng/thresholds-live-in-the-ledger.md`). A key missing from
 the register, or appended twice by two branches, raises on read. `ledger.report
 --check-thresholds` says of each row whether its module reads it from here (`ledger`) or still
 keeps a copy (`copia`), and fails on a copy that diverges; `tests/test_thresholds.py` swaps every

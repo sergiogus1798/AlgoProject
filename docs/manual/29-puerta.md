@@ -97,6 +97,11 @@ conductor.
 mono cuesta 0,1 s por estrategia con 2.000 corridas nulas. Puedes reejecutarlo con otros umbrales
 todas las veces que quieras.
 
+**Dónde están los umbrales.** Los números de las cribas no están en `config.yaml`: allí pone
+`ledger:gate.<criba>.<umbral>`, y el valor, con quién lo puso y cuándo, está en
+`ledger/thresholds.yaml`. Moverlo de verdad es editar esa fila; `--set` sólo prueba otro valor en
+una corrida.
+
 ## Qué produce
 
 **La cosecha** — `~/Desktop/AlgoData/harvest/<proyecto>/<databank de build>/<fecha>/`, fechada e

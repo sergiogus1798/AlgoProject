@@ -12,4 +12,5 @@
 - `pipeline-run-guards` — gate vs threshold, canary failure stops the run, brief_hash fingerprint design, gates.unchanged, provisional costs block pipeline?, core.assets.pending, costs_provisional
 - `practices-that-bit` — python heredoc bash -c SyntaxError, verify SQX write, session names unstable, forkserver ProcessPoolExecutor fork deadlock threads, set_forkserver_preload, ELECTRON_RUN_AS_NODE bad option --no-sandbox
 - `resumable-jobs` — resumable pipeline job, ledger vs outputs on disk vs sha256, skip a finished stage, atomic write os.replace same directory, kill test SIGKILL process group killpg, progress bar test monotonic, shlex.split template spaces, PROGRESS stdout protocol
+- `thresholds-live-in-the-ledger` — where does a study's threshold live, config.yaml or ledger/thresholds.yaml? ledger:<key> placeholder, add or change a threshold, migrate a module, --set override of a threshold, check-thresholds copia
 - `windows-portability` — does the project run on Windows? portable, Linux-only, encoding utf-8 cp1252 UnicodeDecodeError, PyYAML wheel, python version 3.14, require_posix

@@ -83,7 +83,8 @@ Cuánto tarda, medido el 2026-09-23 sobre 962 variantes y 786 semanas:
 | `pbo` con 12 bloques (3 reglas × 924 particiones + agrupamiento + bootstrap) | **9,5 s** (medido 2026-09-25; antes 31 s): las tres reglas corren a la vez y los vecinos de la rejilla se calculan una sola vez |
 | `pbo --blocks 10` (las 252 particiones de antes) | **6 s** |
 
-Los mandos están todos en `studies/optimisation/wfc/config.yaml`, bloque `cscv`: el
+Los mandos están todos en `studies/optimisation/cscv/config.yaml`, bloque `cscv` (el número de
+bloques vive en `ledger/thresholds.yaml`, porque es un umbral tuyo): el
 periodo de agregación, con qué métrica se ordena (`score`), cuántos bloques, qué reglas comparar y
 cuántos remuestreos. **`score` admite `sharpe` o `sortino`**, y no admite Ret/DD a propósito: el
 Ret/DD crece con la longitud de la ventana (el retorno crece con el tiempo y el drawdown solo con

@@ -146,6 +146,6 @@ semillas. Esa diferencia es lo que este test te ahorra.
 |---|---|---|
 | `study.segment` | `oos1` | el tramo; el mismo que lee la puerta |
 | `benchmark.sizing` | `equal_risk` | el buy & hold a igual riesgo |
-| `stepm.fwer` | `0.05` | tu umbral; también está en `ledger/thresholds.yaml` |
+| `stepm.fwer` | `0.05` | tu umbral; el número vive en `ledger/thresholds.yaml` (el `config.yaml` sólo dice `ledger:snoopingScreen.stepm.fwer`) |
 | `bootstrap.reps` | `1000` | remuestreos del bootstrap |
 | `bootstrap.seed` | `0` | fija: la misma cosecha nombra siempre las mismas |

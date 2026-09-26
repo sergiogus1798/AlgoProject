@@ -48,7 +48,7 @@ paso que venga.
 python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum
 ```
 
-**Comprobar que los umbrales escritos siguen siendo los que el código usa:**
+**Comprobar que cada umbral llega a su módulo desde el ledger:**
 
 ```bash
 python3 -m ledger.report --check-thresholds
@@ -65,7 +65,7 @@ python3 -m ledger.backfill \
 | flag | obligatorio | qué hace |
 |---|---|---|
 | `--study` | sí (en `report`) | el identificador del estudio |
-| `--check-thresholds` | — | compara el registro con el código y sale con error si divergen |
+| `--check-thresholds` | — | dice de cada umbral si su módulo lo lee del ledger o de una copia, y sale con error si una copia diverge |
 | `--equity` + `--identity` | no | añade el Sharpe desinflado de una superviviente concreta |
 | `--gate` | sí (en `backfill`) | el directorio del informe de la puerta |
 | `--write` | no | sin él, `backfill` enseña lo que haría y no escribe |
@@ -138,34 +138,38 @@ candidatos, y agrupar dos unidades distintas **lanza** en vez de dar un número 
 La comprobación de umbrales, con salida real:
 
 ```
-                               key  declarado  en_código  coincide fijado_por         el
-           gate.sanidad.min_trades      20.00      20.00      True      dueño 2026-09-23
-    gate.degradacion.min_retention       0.00       0.00      True      dueño 2026-09-23
-gate.degradacion.max_concentration       1.00       1.00      True      dueño 2026-09-23
-           gate.forma.max_dd_ratio       5.00       5.00      True      dueño 2026-09-23
-                   gate.mono.max_p       0.50       0.50      True      dueño 2026-09-23
-                gate.familia.alpha       0.05       0.05      True      dueño 2026-09-23
-              profitShape.max_top5       0.60       0.60      True     agente 2026-09-24
-                 profitShape.alpha       0.05       0.05      True     agente 2026-09-24
-             entryQuality.dcr_high       0.30       0.30      True     agente 2026-09-24
-          parameterCloud.rank_high       0.95       0.95      True     agente 2026-09-24
-        parameterCloud.plateau_low       0.15       0.15      True     agente 2026-09-24
-            parameterCloud.rho_low       0.20       0.20      True     agente 2026-09-24
-                       cscv.blocks      12.00      12.00      True      dueño 2026-09-23
+                               key  declarado lee_de  coincide fijado_por         el
+           gate.sanidad.min_trades      20.00 ledger      True      dueño 2026-09-23
+    gate.degradacion.min_retention       0.00 ledger      True      dueño 2026-09-23
+gate.degradacion.max_concentration       1.00 ledger      True      dueño 2026-09-23
+           gate.forma.max_dd_ratio       5.00 ledger      True      dueño 2026-09-23
+                   gate.mono.max_p       0.50 ledger      True      dueño 2026-09-23
+                gate.familia.alpha       0.05 ledger      True      dueño 2026-09-23
+         snoopingScreen.stepm.fwer       0.05 ledger      True      dueño 2026-09-25
+              profitShape.max_top5       0.60 ledger      True     agente 2026-09-24
+                 profitShape.alpha       0.05 ledger      True     agente 2026-09-24
+             entryQuality.dcr_high       0.30 ledger      True     agente 2026-09-24
+          parameterCloud.rank_high       0.95 ledger      True     agente 2026-09-24
+        parameterCloud.plateau_low       0.15 ledger      True     agente 2026-09-24
+            parameterCloud.rho_low       0.20 ledger      True     agente 2026-09-24
+                       cscv.blocks      12.00 ledger      True      dueño 2026-09-23
 
-el registro y el código dicen lo mismo en los 13 umbrales declarados
+14 umbrales declarados: 14 los lee su módulo del ledger y 0 son copias que coinciden
 ```
 
-Cada fila apunta a dónde lee el código ese número. Si alguien lo cambia en su `config.yaml` y no
-aquí, esta orden lo caza y sale con error — que es como está pensado para meterse en un guion.
+Desde el 2026-09-26 **los módulos leen cada umbral de aquí**: donde su `config.yaml` tenía el
+número ahora pone `ledger:<clave>`, y el módulo lo sustituye al leer. La columna `lee_de` dice
+`ledger` cuando es así y `copia` cuando un módulo todavía guarda su propio número; una copia que no
+coincide, o un hueco que apunta a otra clave, sale como divergencia y la orden termina con error —
+que es como está pensado para meterse en un guion. Con los seis módulos migrados no queda ninguna
+copia. **Para cambiar un umbral, cámbialo aquí**, con tu nombre y la fecha: el `config.yaml` ya no
+tiene el número. `--set` sigue sirviendo para probar otro valor en una corrida sin tocar nada.
 
 ### Qué NO te dice
 
 - **No sabe lo que no se registró.** Una búsqueda que no llamó al ledger no existió para él, y los
   pasos anteriores a que esto existiera sólo se recuperan si dejaron un artefacto por escrito. Las
   líneas reconstruidas van marcadas `backfill` y llevan la fecha del informe, no la de hoy.
-- **No es la fuente de los umbrales todavía.** `thresholds.yaml` es hoy el **registro**: el código
-  sigue leyendo cada número de su propio `config.yaml`, y esta orden comprueba que dicen lo mismo.
 - **No decide nada.** No puntúa, no descarta y no ordena.
 
 ### Si algo falla
@@ -175,5 +179,8 @@ aquí, esta orden lo caza y sale con error — que es como está pensado para me
   comprobación.
 - `ValueError: las búsquedas mezclan unidades de score` — alguien registró Sharpes anualizados y
   otro por observación en el mismo estudio. Hay que decidir cuál y rehacer el registro de esa fase.
+- `KeyError: '<clave>: declared 0 times in thresholds.yaml'` (o `2 times`) — un módulo pide un umbral
+  que el registro no tiene, o que dos ramas añadieron dos veces. Se arregla en `ledger/thresholds.yaml`:
+  una fila por clave. No se arregla poniendo el número en el `config.yaml`.
 - `sin búsquedas registradas todavía` — el estudio no tiene fichero: o el identificador no coincide
   (mira `~/Desktop/AlgoData/ledger/`) o nadie ha escrito nada aún.
