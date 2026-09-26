@@ -31,9 +31,10 @@ del 16.5, y su resultado se lee junto a ellos, a ciegas, en el paso 20. Es grati
 **No lo usas** para elegir una variante, ni para decidir que el edge funciona en otro mercado
 (eso es el crossmarket, `39-crossmarket-lote.md`): aquí sólo se pregunta si **el orden** viaja.
 
-**No lee `oos2`.** Está reservado para el WFC y el WFM, y el ledger lo rechaza antes de abrir ningún
-fichero. Si quieres que este paso entre en el grupo del `oos2`, es decisión tuya: se añade a
-`reserved_for` en `assets/_policy.yaml`.
+**Lee `oos2`, como el WFC y el WFM** (dueño, 2026-09-26): los tres tramos por defecto, y su lectura
+se hace a ciegas en el paso 20 junto a 17, 18 y 19. Con `--set segments=[build,oos1]` lee sólo los
+dos primeros. Los números de ejemplo de esta página son de antes de ese cambio y cubren `build` y
+`oos1`.
 
 ### Antes de empezar
 
@@ -173,7 +174,6 @@ la columna «contra el mercado equivocado», no 0,99.
 
 ### Qué NO te dice
 
-- **Nada de `oos2`.** No lo lee.
 - **Si el edge paga en otro mercado.** Sólo si el orden de las variantes viaja. Con costes de fábrica
   y comisión cero, además, el nivel del beneficio no vale nada; el orden algo más, pero un coste por
   operación distinto castiga más a las variantes que más operan, y puede reordenar.
@@ -185,8 +185,8 @@ la columna «contra el mercado equivocado», no 0,99.
 
 ### Si algo falla
 
-- **`PermissionError: ledger: el paso 18.5 no puede mirar oos2`** — has pedido `oos2` con `--set`.
-  Es la puerta de un solo sentido funcionando; no se ha leído nada.
+- **`PermissionError: ledger: el paso 18.5 no puede mirar oos2`** — el activo no reserva `oos2` para
+  `MarketSurfaces` en `assets/_policy.yaml`. No se ha leído nada.
 - **Aviso `market_absent`** — un mercado de `_markets.yaml` no está en el lote: el retest se hizo sin
   él (por ejemplo, porque le faltaban costes en `assets/symbols/`). Cuenta como no superado.
 - **Aviso `verification`** — alguna curva no ordena como su beneficio, o la diagonal no es 1: la

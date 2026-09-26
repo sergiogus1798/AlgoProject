@@ -1246,12 +1246,12 @@ Its batch predates the per-segment columns: `cscv.report` fails with `KeyError: 
 real batch as a CSCV regression test anyway — every run reads `oos2`
 (`knowhow/research/cscv-always-reads-oos2.md`).
 
-## 46. 🟡 Steps 18.5 and 23 read `build` + `oos1` only — whether they may read `oos2` is the owner's call
+## 46. ✅ Step 18.5 reads `oos2`, step 23 does not — owner, 2026-09-26
 
-Market surfaces (18.5) and the structural tests (23) call `ledger.gate.allow` before reading a leg;
-with today's `assets/_policy.yaml` `oos2` is refused for both. Both agents recommend keeping it so:
-18.5 already has 15 years and 5,000 variants, and its costs are provisional; 23 is a diagnostic, not a
-selection. To open it: the step in `reserved_for` **and** in `ledger/gate.py` `STEPS`.
+Market surfaces joined `reserved_for` (`assets/_policy.yaml`) and `ledger/gate.py` `STEPS` as
+`MarketSurfaces: 18.5`, and read `build`, `oos1` and `oos2` by default. The structural tests (23)
+stay on `build` + `oos1`; the gate refuses them `oos2`. The owner trusts his own discipline over a
+stricter lock: 18.5 is not added to the blind set that withholds 17/18/19 until all have run.
 
 ## 47. ✅ The conditional map has trading sessions — owner's hours, 2026-09-26
 

@@ -6,7 +6,7 @@ from core import assetdata
 
 # Which workflow step each name in `_policy.yaml`'s `reserved_for` refers to. The policy
 # file names tests, not numbers, and the numbers are what a caller has.
-STEPS = {"WFC": 17, "CSCV": 18, "WFM": 19}
+STEPS = {"WFC": 17, "CSCV": 18, "MarketSurfaces": 18.5, "WFM": 19}
 BLIND = (17, 18, 19)
 
 

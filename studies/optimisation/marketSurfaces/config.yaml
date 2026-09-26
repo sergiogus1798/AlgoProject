@@ -3,10 +3,10 @@
 # readings of one set of points, so which points cannot live in two files.
 
 # Which segments of the batch are read, one surface per market per segment.
-# ⚠️ `oos2` is reserved (assets/_policy.yaml) and `ledger.gate.allow` is asked BEFORE any
-# file is opened: asking for it here is refused, not read. Whether this step should join
-# the oos2 group is the owner's call (BOARD 2026-09-26), not a knob to flip.
-segments: [build, oos1]
+# `oos2` is reserved (assets/_policy.yaml) and this step is one it is reserved for (owner,
+# 2026-09-26: same group as the WFC and the WFM, read blind at step 20). `ledger.gate.allow`
+# is still asked before any file is opened, so a step without the claim is refused.
+segments: [build, oos1, oos2]
 
 # The metric each surface is made of. The WFC reads net profit per segment
 # (engines/variants/panel.columns), so the surfaces do too: a rho here and the WFC's rho

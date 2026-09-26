@@ -33,10 +33,11 @@ segments_default:
     spread: oos
   oos2:
     purpose: >-
-      RESERVADO para Walk Forward Correlation y Walk Forward Matrix, que son las últimas
-      pruebas. No usar antes: cada mirada a este tramo lo gasta.
+      RESERVADO para Walk Forward Correlation, las superficies por mercado (paso 18.5, dueño
+      2026-09-26) y Walk Forward Matrix, que son las últimas pruebas. No usar antes: cada
+      mirada a este tramo lo gasta.
     spread: oos
-    reserved_for: [WFC, WFM]
+    reserved_for: [WFC, MarketSurfaces, WFM]
 
 segments:
   BRENT:

@@ -37,7 +37,7 @@ que sólo el dueño puede dar.
 | 16.5 | **Preparación de variantes para el WFC** | `sqx/variants/make.py`, `/variants` | ✅ · ⚠️ corre en el `Retester` de serie, OPEN.md §38 |
 | 17 | **Walk Forward Correlation** | `studies/optimisation/wfc/report.py` | ✅ |
 | 18 | **CSCV** | `studies/optimisation/cscv/report.py` | ✅ |
-| 18.5 | **Superficies por mercado** — la misma región de parámetros, ¿es la buena en los 9 mercados de `_markets.yaml`? `rho` de Spearman y Jaccard del decil superior entre cada par, sobre el lote del 16.5 retesteado con los cross-checks | `studies/optimisation/marketSurfaces/report.py`, manual `52-superficies-mercado.md` | ✅ · ⚠️ costes de los 9 pares = defaults de SQX con comisión CERO (`costs_provisional`) · lee `build` y `oos1`, **no** `oos2` |
+| 18.5 | **Superficies por mercado** — la misma región de parámetros, ¿es la buena en los 9 mercados de `_markets.yaml`? `rho` de Spearman y Jaccard del decil superior entre cada par, sobre el lote del 16.5 retesteado con los cross-checks | `studies/optimisation/marketSurfaces/report.py`, manual `52-superficies-mercado.md` | ✅ · ⚠️ costes de los 9 pares = defaults de SQX con comisión CERO (`costs_provisional`) · lee `build`, `oos1` y `oos2`, este último a ciegas hasta el 20 |
 | 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `studies/optimisation/wfm/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
 | 20 | **Análisis conjunto de 17, 18, 18.5 y 19 — CIEGO hasta tener los cuatro** | — | ⬜ |
 | 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/38-exposicion.md` | ✅ |
@@ -121,12 +121,12 @@ Sale de `assets/_policy.yaml` y no se negocia por paso:
 - `build` — sólo el paso 6. Es la única muestra que el generador ve. El paso 22 (mapa condicional)
   también lo lee, pero sólo para congelar sus cortes de tercil — clasifica la muestra de
   `run.sample` (por defecto `oos1`), nunca la construye contra ella.
-- `oos1` — del 7 al 16, el paso 18.5 (superficies por mercado, junto con `build`), el paso 22
+- `oos1` — del 7 al 16, el paso 22
   (mapa condicional) y el paso 23 (tests estructurales, junto con `build`).
-- `oos2` — **RESERVADO** para 17 y 19 (WFC y WFM). Es una puerta de un solo sentido: cada mirada
-  lo gasta. El paso 18.5 lee `build` y `oos1` deliberadamente y **no** pide `oos2` (front D,
-  recomendación 2026-09-26); el paso 23 tampoco: `ledger.gate` se lo rechaza. Ningún otro paso
-  anterior a 20 lo toca.
+- `oos2` — **RESERVADO** para 17, 18.5 y 19 (WFC, superficies por mercado y WFM; el 18.5 por
+  decisión del dueño del 2026-09-26) — el 18.5 lee los tres tramos. Es una puerta de un solo
+  sentido: cada mirada lo gasta. El paso 23 no lo pide y `ledger.gate` se lo rechaza. Ningún otro
+  paso anterior a 20 lo toca.
 
 ## El contrato que une los pasos pares
 
