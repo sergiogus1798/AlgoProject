@@ -14,6 +14,7 @@
 - `three-install-topology` — master conductor custodian roles; why two workers; custodian sync rule only status between start and collect; which install exports a databank; opening a worker GUI syncs; core split elastic coreUsage
 - `variant-chain-custom-project` — variant chain in a custom project sqx.variants; WFC databank names underscores; config.xml must declare databanks; task conditions block additional markets; retest-only project no Total tested In databank; holding() misses workers cwd; result key vs Results folder name
 - `variant-route` — retest an arbitrary parameter set; set strategy parameters no CLI verb; write variant .sqx; strip members disk cost; one retest gives IS and OOS; variant throughput; retested .sqx missing on disk synctofiles; harvest dailyEquity vs trades
+- `variants-minimum-is-a-floor-not-a-target` — sqx.variants.make produces way more than 1000 variants; minimum variants config is a floor not a target; how many variants will one mother produce; estimate WFC cost before running variants.execute
 - `version-stamps-stale` — sqx-worker.sh check reports STALE; data_futures.version data_stock.version restamped by sqcli; worker bars freshness check; restamp 202609201214
 - `wfm-end-to-end` — how long does a Walk-Forward Matrix take on a worker, end to end? WFM progress, status, export_wfm --role, step 19 cost
 - `which-endpoint` — which port/endpoint to call SQX on; 5050 vs 5060 vs 8080; "CLI not ready"; worker project not visible on master; can I edit project.cfx; read vs write boundary

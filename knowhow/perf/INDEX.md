@@ -8,5 +8,5 @@
 - `ram-budget` — RAM budget SQX installs vs Python, -Xmx per install master W1 W2, jstat -gc live set vs RSS, JDK tools in install j64/bin, -Xms idle worker, PC-A PC-B, how much heap does SQX need
 - `server-cores-and-ram` — how many cores does the server have, 48 physical 96 logical SMT siblings, os.cpu_count lies, max_workers, STREAM bandwidth oversubscription, SQX Xmx108g memory reserved, comput threads
 - `smt-in-sqx-retest` — SQX coreUsage how many threads for a retest, 48 vs 95 threads, SMT in SQX, idle sqcli memory, jstat jcmd AttachNotSupportedException, sqcli loads strategies lazily count Records 0, databank load folder, loadconfig name=, Retest status Total tested missing, two sessions on the custodian
-- `workflow-step-durations` — how long does each workflow step take, MC Retest share of SQX time, MCR 7 OHLC MCR 8 Stress, crossmarket.report bottleneck, retest.ingest memory, custodian stop start cost, startOnlyTask
+- `workflow-step-durations` — how long does each workflow step take, MC Retest share of SQX time, MCR 7 OHLC MCR 8 Stress, crossmarket.report bottleneck, retest.ingest memory, custodian stop start cost, startOnlyTask, WFC per-mother cost, WFM duration, crossmarket.report parallel speed
 - `yaml-parsing-cost` — YAML parsing slow in a loop, assetdata.symbol_for cache, crossTF slow, cache by mtime and size, assets/ parsed every call
