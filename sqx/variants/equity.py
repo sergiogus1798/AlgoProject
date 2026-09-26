@@ -20,6 +20,14 @@ from sqx.variants import legs as legmod
 
 ROUNDING = 1.0        # dollars: the curve is stored at float32 precision
 BLOCK = 100           # files per worker task
+# An open position at a leg's last bar leaves the curve ahead of NetProfit by at most about
+# one trade's own size. 2026-09-26, USDJPY WFC on 1,093 variants of one mother: every variant
+# shared an open USDCAD position at the `build` boundary (they all trade the same fixed
+# condition on the same market, only periods differ) -- the gap was $447-$840 against an
+# AvgWin of $640-$720, nowhere near "the wrong result", but 100% of the block was "off" and
+# tripped the fatal gate below written for a *handful* being off. PLAUSIBLE widens the
+# tolerance to "at most a few trades' worth" before calling a fully-off block a real misread.
+PLAUSIBLE_TRADES = 3
 SCHEMA = pa.schema([("date", pa.timestamp("ns")), ("variant_id", pa.string()),
                     ("pnl", pa.float64()), ("market", pa.string()), ("segment", pa.string())])
 
@@ -35,14 +43,19 @@ def _block(start: int) -> tuple[dict, dict]:
 
     Returns:
         ({market: cumulative curves of the block, dates down and variant across},
-        {market: the variants whose curve does not end where SQX says the result ended}).
+        {market: (the variants whose curve does not end where SQX says the result ended,
+        the ones among those where the gap is too big to be one open position)}).
         ⚠️ A few off are expected and NOT a fault: SQX marks an open position to market in
         the curve and counts only closed trades in net profit, so the two differ when a
-        trade is open on a leg's last bar. The failure this catches -- the wrong result read
-        out of a .sqx that carries several -- shows up as every variant off, not a handful.
+        trade is open on a leg's last bar. A *handful* off used to be the only case this
+        module had seen; on a large population sharing one fixed condition and one market,
+        every variant can land there together (🔬 2026-09-26, see PLAUSIBLE_TRADES) -- so
+        "off" alone no longer means broken. What still means broken: the gap being bigger
+        than a few trades' worth, which is the wrong-result read out of a .sqx that carries
+        several, not an open position.
     """
     files, keys = _SHARED["files"], _SHARED["keys"]
-    found, off = {m: {} for m in keys}, {m: [] for m in keys}
+    found, off, implausible = {m: {} for m in keys}, {m: [] for m in keys}, {m: [] for m in keys}
     for path in files[start:start + BLOCK]:
         for market, key in keys.items():
             try:
@@ -50,10 +63,15 @@ def _block(start: int) -> tuple[dict, dict]:
             except StopIteration:
                 continue
             found[market][path.stem] = curve
-            stored = sqxstats.stats(path, key)[sqxstats.FULL]["NetProfit"]
-            if abs(float(curve.iloc[-1]) - stored) > ROUNDING:
+            stats = sqxstats.stats(path, key)[sqxstats.FULL]
+            diff = abs(float(curve.iloc[-1]) - stats["NetProfit"])
+            if diff > ROUNDING:
                 off[market].append(path.stem)
-    return {m: pd.DataFrame(c) for m, c in found.items()}, off
+                bound = PLAUSIBLE_TRADES * max(abs(stats.get("MaxProfit") or 0),
+                                               abs(stats.get("MaxLoss") or 0))
+                if bound == 0 or diff > bound:
+                    implausible[market].append(path.stem)
+    return {m: pd.DataFrame(c) for m, c in found.items()}, off, implausible
 
 
 def leg_curves(folder: Path, keys: dict) -> dict:
@@ -64,11 +82,11 @@ def leg_curves(folder: Path, keys: dict) -> dict:
         keys: What markets_of() returned for it.
 
     Returns:
-        {market: (curves, dates down and `variant_id` across in file order, off-list)}. Gaps
-        are carried forward rather than zeroed: a date another variant traded on and this
-        one did not is a day this one's total did not move, not a day it lost everything.
-        Read in blocks on every core: 🔬 2026-09-25, 15,000 files x 10 results took 385 s
-        on one.
+        {market: (curves, dates down and `variant_id` across in file order, off-list,
+        implausible-list)}. Gaps are carried forward rather than zeroed: a date another
+        variant traded on and this one did not is a day this one's total did not move, not
+        a day it lost everything. Read in blocks on every core: 🔬 2026-09-25, 15,000 files
+        x 10 results took 385 s on one.
     """
     files = sorted(folder.glob("*.sqx"))
     _SHARED.update(files=files, keys=keys)
@@ -79,7 +97,8 @@ def leg_curves(folder: Path, keys: dict) -> dict:
         frames = [parts[i][0][market] for i in sorted(parts) if not parts[i][0][market].empty]
         cum = (pd.concat(frames, axis=1).sort_index().ffill().fillna(0.0) if frames
                else pd.DataFrame())
-        out[market] = (cum, [v for i in sorted(parts) for v in parts[i][1][market]])
+        out[market] = (cum, [v for i in sorted(parts) for v in parts[i][1][market]],
+                       [v for i in sorted(parts) for v in parts[i][2][market]])
     return out
 
 
@@ -156,13 +175,14 @@ def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> di
     for i, leg in enumerate(legs):
         folder = Path(leg["databank_dir"])
         say(i * 30, f"leyendo {leg['segment']} en paralelo")
-        for name, (cum, off) in leg_curves(folder, markets_of(folder)).items():
+        for name, (cum, off, implausible) in leg_curves(folder, markets_of(folder)).items():
             if cum.empty:
                 continue
             report.append({"segment": leg["segment"], "market": name, "n": cum.shape[1],
                            "days": cum.shape[0], "first": str(cum.index[0].date()),
                            "last": str(cum.index[-1].date()), "open_at_end": len(off),
-                           "all_off": bool(off and len(off) == cum.shape[1])})
+                           "implausible": len(implausible),
+                           "all_off": bool(implausible and len(implausible) == cum.shape[1])})
             if name == legmod.MAIN:
                 main[leg["segment"]] = daily(cum)
                 continue
@@ -194,8 +214,10 @@ def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> di
             "markets": sorted({r["market"] for r in report if r["market"] != legmod.MAIN}),
             # Lifted to the top level for the pipeline's `must` gate, which reads one
             # number out of this file by name. `unreadable` is the one that must be zero:
-            # a whole block where no curve reconciles is the wrong-result bug. Positions
-            # open at a leg boundary are expected and only counted.
+            # a whole block where no curve reconciles WITHIN PLAUSIBLE_TRADES trades' worth
+            # is the wrong-result bug. Positions open at a leg boundary are expected --
+            # even every variant of one market sharing one, on a large population -- and
+            # only counted, via `open_at_end`.
             "open_at_end": sum(r["open_at_end"] for r in report),
             "unreadable": sum(1 for r in report if r["all_off"]),
             "bytes": (work / "equity.parquet").stat().st_size,
@@ -222,10 +244,13 @@ def main() -> None:
           f"{', '.join(done['markets']) or 'ninguno'}, {done['wall_s']:.0f} s", flush=True)
     for row in done["blocks"]:
         print(f"  {row['segment']:<6} {row['market']:<24} {row['n']:>5} curvas  "
-              f"{row['first']} a {row['last']}  {row['open_at_end']} con posicion abierta")
+              f"{row['first']} a {row['last']}  {row['open_at_end']} con posicion abierta"
+              + (f", {row['implausible']} de sobra para una sola operacion abierta"
+                 if row["implausible"] else ""))
     broken = [r for r in done["blocks"] if r["all_off"]]
     if broken:
-        sys.exit(f"{len(broken)} bloques donde NINGUNA curva cuadra con lo que SQX guardo: "
+        sys.exit(f"{len(broken)} bloques donde NINGUNA curva cuadra con lo que SQX guardo, "
+                 f"ni siquiera dejando margen de {PLAUSIBLE_TRADES} operaciones abiertas: "
                  f"{[(r['segment'], r['market']) for r in broken]}. El lector esta leyendo "
                  "el resultado equivocado del .sqx, o el databank no es el de este lote.")
 
