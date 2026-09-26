@@ -18,11 +18,11 @@ comprobación.
 | `python3 -m sqx.export.archive_logs` | copia los logs de SQX antes de que SQX los borre | baja |
 | `python3 -m sqx.inspect.index_sqx` | indexa todos los `.sqx` de la máquina por el hash de su XML interno | baja |
 | `python3 -m sqx.inspect.keep_tasks` | genera una variante de un `project.cfx` conservando solo ciertas tareas | baja |
-| `python3 -m sqx.repair.graft_tasks` | repara un `project.cfx` al que le faltan archivos de tarea | baja — es peligroso y necesita SQX cerrado, así que su página tiene que ser especialmente clara |
 
 ## Orden sugerido
 
 Primero el grupo de `inspect/`, que se puede documentar en una sola página común porque todos son de
 solo lectura y se usan igual.
 
-`graft_tasks.py` el último y con cuidado: es el único que modifica archivos de SQX.
+`sqx.repair.graft_tasks` salió de esta lista al retirarse la herramienta (`OPEN.md` issue 3, el
+dueño no la quiso correr): no hay página que le falte porque no hay comando.

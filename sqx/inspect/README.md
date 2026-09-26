@@ -16,13 +16,15 @@ running instance, so these are safe at any time, including while the owner's GUI
 | `vocabulary.py` | What one install can express: its blocks, its random groups, and what each pools | `python3 -m sqx.inspect.vocabulary [TERM] [--role ROLE] [--diff ROLE] [--snapshot]` |
 | `template_check.py` | Whether the strategies a project built really carry the blocks its template fixes | `python3 -m sqx.inspect.template_check [PROJECT ...]` |
 
-`instruments.py` is what keeps `assets/*.yaml` honest: it reports what SQX carries today, which is
-the `sqx_default` side of every override.
+`instruments.py` is what keeps `assets/symbols/*.yaml` honest: it reports what SQX carries today,
+which is the `sqx_default` side of every override.
 
 A project whose `config.xml` references a task file its archive lacks makes `dump_project.py` raise
 `KeyError`. That is not a bug here — it is how a project corrupted in the way `OPEN.md` issue 3
 describes announces itself, and the GUI hides it. `project_health.py` reports the same thing across
-every project at once, without the traceback; `sqx/repair/graft_tasks.py` is the cure.
+every project at once, without the traceback. The one project on this install broken that way,
+`Infinox_SP500ft_H4_HighPrecision`, has a written repair that the owner withdrew (issue 3) — the
+tool is not kept around unused.
 
 `template_check.py` ignores what a template's random blocks will contain — the builder chooses those
 — and compares only the blocks the template fixes. A template made entirely of random groups fixes

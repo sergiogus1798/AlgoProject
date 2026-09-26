@@ -36,7 +36,6 @@ recoverable — owner's decision was to accept the loss and regenerate), still o
 | `sqx/inspect/keep_tasks.py` | `.cfx` variant keeping chosen task types |
 | `sqx/inspect/project_health.py` | broken task refs, version drift, mangled fields per project |
 | `sqx/inspect/template_check.py` | do built strategies carry their template's fixed blocks |
-| `sqx/repair/graft_tasks.py` | heal an archive missing task files, SQX closed |
 | `sqx/inspect/vocabulary.py` | blocks, groups, what pools what, gap vs another install |
 | `sqx/export/archive_logs.py` | copy installs' logs to `AlgoData/logs/` before pruning |
 | `sqx/export/export_metrics.py` | databank metrics, paired IS/OOS, via worker |

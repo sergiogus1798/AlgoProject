@@ -15,7 +15,8 @@ The strategy template is `<StrategyType templateFile=>` in the Build task; `<Pro
 - A `.cfx` with **only** `config.xml` is not a loadable template (`~/Desktop/Benchmark.cfx`, anything
   from `saveconfig`) — rejected.
 - `config.xml` declaring task files the archive lacks → GUI drops the project, no error. Scan:
-  `sqx/inspect/project_health.py`; heal: `sqx/repair/graft_tasks.py`.
+  `sqx/inspect/project_health.py`. The one instance found (`OPEN.md` issue 3) has a written repair
+  the owner withdrew; the tool was removed rather than kept unused.
 - `<Project templateFile=>` records the `.cfx` it was imported from; on Windows imports it is
   UTF-8-as-CP1252 re-encoded **seven times**, decoding to
   `C:\Users\Rubén Martínez\OneDrive\Escritorio\FILTROS\Build strategies.cfx`, on 11 of 16 projects,

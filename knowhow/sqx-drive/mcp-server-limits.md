@@ -12,9 +12,10 @@ Known permanent gap (owner, 2026-09-21: not repaired): 14 listed vs 15 dirs, hou
 - Missing one: `Infinox_SP500ft_H4_HighPrecision` (`OPEN.md` issue 3).
 - Cause class: `config.xml` references task XML members the archive lacks (declares 8 tasks, ships 3).
   `sqx/inspect/project_health.py` scans all projects in one pass; only broken one on this install.
-- If ever repaired (kept for a change of mind): graft, don't restore the backup.
-  `project_backup.cfx` (2025-10-13) has the old spaced name `Infinox - SP500ft - H4 (High Precision)`
-  (breaks the API, hard rule 6), a since-removed `OOS` databank registration, and a `Retest-Task2.xml`
-  reading stale `Complete Data Uncorrelated` instead of `Results`. `sqx/repair/graft_tasks.py` keeps
-  every live member, copies in only the 5 absent ones, verifies nothing missing and every named
-  databank registered. SQX closed.
+- If ever repaired (owner withdrew the repair 2026-09-21, "not to be run"; the tool itself,
+  `sqx/repair/graft_tasks.py`, was removed as dead code once the decision stood — this is what it
+  did, for whoever writes it again): graft, don't restore the backup. `project_backup.cfx`
+  (2025-10-13) has the old spaced name `Infinox - SP500ft - H4 (High Precision)` (breaks the API,
+  hard rule 6), a since-removed `OOS` databank registration, and a `Retest-Task2.xml` reading stale
+  `Complete Data Uncorrelated` instead of `Results`. The fix keeps every live member, copies in only
+  the 5 absent ones, verifies nothing missing and every named databank registered. SQX closed.

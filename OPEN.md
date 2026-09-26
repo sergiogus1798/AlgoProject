@@ -30,7 +30,7 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 16 | — | 🟠 | new: an export has no manifest, and the trade-dedup gap now spans three live reports |
 | 17 | — | 🟠 | new: `Param Count` corrected, but every existing strategy keeps the old stored value |
 | 19 | — | 🔴 | new: three Monte Carlo thresholds are placeholders and need the owner's decision |
-| 20 | — | 🟡 | new: `.claude/settings.json` gates one destructive repair script but not the other |
+| 20 | — | 🟢 | moot 2026-09-26: the ungated script was deleted; ⚠️ nothing is gated on this machine's settings today |
 | 21 | — | 🟡 | new: `bin/sqx-worker.sh` is bash, so half the project cannot run on Windows |
 | 22 | — | 🟡 | new: `crossmarket` rebuilt as a one-strategy panel; four threads left open |
 | 23 | — | 🟡 | topology **settled**; design unblocked, execution still waiting on lane P and W2 |
@@ -183,21 +183,15 @@ member:
 | databanks | 10 registered | also registers `OOS`, since removed |
 | `Retest-Task2.xml` | input `Results` | input `Complete Data Uncorrelated` |
 
-**The repair, built and verified 2026-09-04:** `sqx/repair/graft_tasks.py` keeps every live member
-and copies in only the five absent ones. Rehearsed on a copy in the scratchpad: the result is a valid
-9-member archive, nothing still missing, the underscore name kept, and every databank the five
-grafted tasks name (`SPP`, `WFM LaCity`, `MC Trades`) already registered in the live `config.xml`.
-
-**Not to be run** (owner's decision, above). Kept only so a future change of mind does not start from
-scratch. The tool reads `/proc` and refuses to write while any process runs out of the install:
-
-```bash
-python3 -m sqx.repair.graft_tasks Infinox_SP500ft_H4_HighPrecision           # dry run
-python3 -m sqx.repair.graft_tasks Infinox_SP500ft_H4_HighPrecision --apply   # then reopen SQX
-```
-
-It backs the old archive up to `AlgoData/backups/projects/` first. Confirm afterwards that the
-master's project list returns 15.
+**The repair was built and verified 2026-09-04, then removed as dead code 2026-09-26** (the owner's
+"not to be run" is permanent, not a pause — a tool nobody may run is not worth keeping around to go
+stale). `sqx/repair/graft_tasks.py` kept every live member and copied in only the five absent ones.
+Rehearsed on a copy in the scratchpad: the result was a valid 9-member archive, nothing still
+missing, the underscore name kept, and every databank the five grafted tasks name (`SPP`,
+`WFM LaCity`, `MC Trades`) already registered in the live `config.xml`. The reasoning that would
+have to be rebuilt is above (why graft and not restore); the tool read `/proc` and refused to write
+while any process ran out of the install, backed the old archive up to `AlgoData/backups/projects/`
+first, and its verification was: confirm the master's project list returns 15.
 
 ## 4. 🟡 Projects are older than the app — measured, restamping is GUI work
 
@@ -734,19 +728,20 @@ Still unverified underneath all of it: whether SQX applies `PercentageBased` per
 - `project.cfx` is a plain ZIP: `config.xml` + one `<Type>-Task<N>.xml` per task. Safe to *read*
   at any time.
 
-## 20. 🟡 `.claude/settings.json` gates one destructive repair script but not the other
+## 20. 🟢 `.claude/settings.json` gates one destructive repair script but not the other — moot, tool removed
 
-Found by the auditor 2026-09-11. The broadened permission set added this session allows any
-`python3:*` command without asking, then carves `sqx.curate.apply_verdict` (moves strategies between
-databanks) back out into `ask` — appropriately, it rewrites a live databank. `sqx.repair.graft_tasks`
-does the same class of thing to a project archive (issue 3) and takes the same `--apply` flag, but
-has no matching `ask`/`deny` entry, so it now runs under the blanket `python3:*` allow with no
-confirmation prompt. It still refuses to write while the master GUI is up (its own `/proc` guard), so
-this is not a path to silent corruption today, but the two scripts are the same shape of risk and
-only one is gated.
+Found by the auditor 2026-09-11. `sqx.repair.graft_tasks` took the same `--apply` flag as
+`sqx.curate.apply_verdict` but had no matching `ask`/`deny` entry, so it ran under the blanket
+`python3:*` allow with no confirmation prompt while `apply_verdict` was carved back out into `ask`.
 
-**Fix:** add `Bash(python3 -m sqx.repair.graft_tasks:*)` to `ask` alongside `apply_verdict`, or gate
-on `--apply` generally.
+**Resolved 2026-09-26 by removing the asymmetry's cause**, not by adding the entry: `graft_tasks.py`
+was deleted along with the rest of `sqx/repair/` (issue 3, "not to be run" is permanent).
+
+⚠️ **Found while closing this out, and worth a separate look**: today's `.claude/settings.json` has
+`"defaultMode": "bypassPermissions"` and an empty `"ask": []` — so `apply_verdict` is not actually
+gated either anymore, on this machine's current settings. The asymmetry this issue named is gone, but
+not because anything got gated; nothing is. Not investigated further here — outside what this pass
+was asked to do.
 
 ---
 
