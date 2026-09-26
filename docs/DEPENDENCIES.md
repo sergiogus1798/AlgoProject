@@ -292,7 +292,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/optimisation/marketSurfaces/measure/pairs.py` | 142 | Between two markets' surfaces: the rank correlation and the overlap of their top shares. | core | numpy, pandas, scipy |
 | `studies/optimisation/marketSurfaces/measure/verify.py` | 123 | The three checks that the surfaces were read from the right result and paired by identity. | studies | numpy, pandas, pyarrow |
 | `studies/optimisation/marketSurfaces/one.py` | 153 | One variant batch read as one surface per market, compared pair by pair, as the contract's data. | core, studies | numpy, pandas |
-| `studies/optimisation/marketSurfaces/report.py` | 100 | The market surfaces of one variant batch: one per market, compared pair by pair, and the call. | core, ledger, studies | pandas |
+| `studies/optimisation/marketSurfaces/report.py` | 101 | The market surfaces of one variant batch: one per market, compared pair by pair, and the call. | core, ledger, studies | pandas |
 | `studies/optimisation/marketSurfaces/tooltips.py` | 17 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
 | `studies/optimisation/marketSurfaces/verdict/call.py` | 70 | What each pair's two numbers mean, and whether the mother's region travels to the other markets. | — | pandas |
 | `studies/optimisation/wfc/contract/__init__.py` | 1 | The walk forward correlation and the CSCV read as the contract's blocks. | — | — |

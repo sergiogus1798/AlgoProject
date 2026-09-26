@@ -10,6 +10,7 @@ import pandas as pd
 
 from core import assetdata
 from core.study import output, result as envelope, verdicts
+from core.study.config import fingerprint
 from ledger import gate, record, study
 from studies.optimisation.marketSurfaces import one
 from studies.optimisation.marketSurfaces.contract.tabs import short
@@ -39,7 +40,7 @@ def ledger_rows(m: dict, cfg: dict, symbol: str, family: str, command: str,
     for segment in cfg["segments"]:
         passed = int((m["rows"].query("segment == @segment")["state"] == "pass").sum())
         rows.append(record.log(sid, {
-            "step": cfg["step"], "launched_by": command, "config_hash": None,
+            "step": cfg["step"], "launched_by": command, "config_hash": fingerprint(cfg),
             "symbol": symbol, "timeframe": m["timeframe"], "segment": segment,
             "n_in": n, "n_out": n,
             "criterion": f"marketSurfaces: {len(m['order'])} mercados (principal + "

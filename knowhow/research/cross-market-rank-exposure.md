@@ -9,9 +9,11 @@ the rho with each market's own exposure removed (`marketSurfaces` `rho_neutral`)
 alone over-reads the negative pairs. Within one market the WFC does not suffer this (one drift).
 
 ## Evidence
-- 🔬 2026-09-26, 3 USDJPY mothers × 5,000 variants × 9 pairs, build/oos1, provisional costs:
-  23-1-46 oos1 USDJPY net profit vs its own exposure −0.73; USDJPY vs AUDUSD −0.70 raw (−0.87 on
-  distinct results), −0.39 once each side's exposure rank is regressed out. 6-1-69 build EURUSD −0.36 → −0.10.
+- 🔬 2026-09-26, 3 USDJPY mothers × 5,000 variants × 9 pairs, build/oos1, provisional costs,
+  distinct results (`profiling/variantes-2026-09-25/marketSurfaces/<mother>/pairs.csv`):
+  23-1-46 oos1 USDJPY net profit vs its own exposure −0.73; vs AUDUSD −0.87 raw → −0.54 neutral;
+  vs GBPJPY **+0.62 → −0.06** and CADJPY +0.35 → −0.03 — that mother's only two passes were
+  exposure alone. 6-1-69 build EURUSD −0.36 → −0.11.
 - Synthetic (tests/test_marketsurfaces.py): two markets rewarding only exposure with opposite
   drifts read rho −0.92 raw and −0.02 neutral.
 - The call of all three mothers (region does not travel) holds under both readings.

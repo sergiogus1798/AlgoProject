@@ -65,6 +65,7 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |
 | `AlgoProject-Manual.pdf` | generado, no está en git. Se reconstruye en segundos |
+| `52-superficies-mercado.md` | paso 18.5: si la zona buena de parámetros de la madre es también la buena en los 9 mercados de `_markets.yaml` — rho de Spearman y Jaccard del decil superior entre cada par, con la lectura sin la exposición al lado, costes provisionales marcados y sin mirar `oos2` |
 
 ## La regla
 
