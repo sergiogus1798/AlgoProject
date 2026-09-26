@@ -13,7 +13,7 @@ from ledger import thresholds
 # Every threshold these modules' config.yaml points at must be read through the ledger.
 # A module joins the list the commit it is migrated; it never leaves it.
 MIGRATED = ("studies/screening/gate/", "studies/screening/snoopingScreen/",
-            "studies/readings/profitShape/")
+            "studies/readings/profitShape/", "studies/readings/entryQuality/")
 
 
 def reader(source: str) -> object:
