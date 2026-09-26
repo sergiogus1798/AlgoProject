@@ -18,7 +18,8 @@ live deeper add the root to `sys.path` in their first lines.
 | `bars.py` | Read an OHLC export into a frame indexed by bar open time | CSV → frame |
 | `barstore.py` | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it on first use and cached under the M1's fingerprint | feed, timeframe → frame |
 | `tradestore.py` | The trade library: one typed Parquet per export, carrying only the columns that cannot be derived back, and the guard that decides when `Ticket` still has to be kept | CSVs → Parquet → frames |
-| `fanout.py` | Independent tasks across forked processes, the costliest first (LPT), one BLAS thread each, results as they land | tasks + costs → results |
+| `tradepack.py` | Packs one export's CSVs into that Parquet: parsed across processes, spilled per strategy and written a strategy at a time, so 500 × 9 markets is never one frame | CSVs → Parquet |
+| `fanout.py` | Independent tasks across forked processes, the costliest first (LPT), one BLAS thread each, never more processes than physical cores, results as they land | tasks + costs → results |
 | `cfx.py` | Read a `project.cfx`: task chain, output databanks, acceptance conditions | project → dicts |
 | `worker.py` | Start, stop and command a headless worker over its HTTP API; every call takes the role, conductor by default. `holding()` reports which PIDs run out of an install, the guard every write to a live install must pass | command, role → reply |
 | `exportdrv.py` | The three exports SQX offers: trades, databank metrics, bars | request → files |

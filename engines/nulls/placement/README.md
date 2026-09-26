@@ -21,7 +21,7 @@ about this layer and should be read before changing anything in it.
 | `trade_models.py` | **How random trades are drawn.** The registry, the Friday truncation every model gets, the re-cut at the next trade, and the two that randomise placement only — `block_shift` and `regime_strata` | imported | envelope → entries, holds |
 | `free_models.py` | The free-placement family: the three that re-lay the whole run anywhere in the window | imported | envelope → entries, holds |
 | `holdfit.py` | Fits a discrete distribution to the real holds and gaps, and says whether it fits | imported | counts → sampler, goodness |
-| `bootstrap.py` | Block-bootstrap resampling and percentile confidence intervals | imported | a sequence → resampled positions, a CI |
+| `bootstrap.py` | Block-bootstrap resampling, laid out by row blocks, and percentile confidence intervals | imported | a sequence → resampled positions, a CI |
 
 ## Adding a placement model — three things, and nothing else
 
@@ -104,8 +104,10 @@ which a null can reproduce exactly. `Exit Signal` — 16.6% of trades — is not
     because trades in different weekday-hour groups wrap by different numbers of weeks. Left as it is
     **on purpose** — the owner fixed it as the reference the window sweep is read against — and
     recorded rather than changed.
-- **`bootstrap.block_bootstrap` is a deliberate copy** of `engines.resample.draws`'s. Two
-  callers here need it, which under `CODESTYLE.md` rule 5 is not yet "shared"; crossmarket keeps its
+- **`bootstrap.block_rows` is a deliberate copy** of `engines.resample.draws`'s block bootstrap,
+  laid out a few rows at a time: every block start is drawn first, so the draws do not depend on
+  how many rows come out together, and a 20,000-trade market no longer holds a 650 MB index matrix.
+  Three callers here need it, which under `CODESTYLE.md` rule 5 is not yet "shared"; crossmarket keeps its
   own rather than importing across studies. `simulate/portfolio.py` is the one place that does import
   monteCarlo, for the reordering family it owns.
 - **`holdfit.MIN_HOLD` is 1**: a trade that opens and closes on the same bar is not a trade. Both the

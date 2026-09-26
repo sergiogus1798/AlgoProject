@@ -7,7 +7,7 @@ import shutil
 from datetime import date
 from pathlib import Path
 
-from core import exportdrv, manifest, sqxfile, tradestore
+from core import exportdrv, manifest, sqxfile, tradepack
 from core.paths import MASTER, databank_dir, export_dir, worker_dir
 
 
@@ -15,7 +15,7 @@ SAMPLE_SEED = 20260914   # a subset export is a sample, and a sample has to be r
 
 
 def stage(project: str, databank: str, dest: Path, limit: int = 0,
-          install: Path = MASTER) -> dict[str, str]:
+          install: Path = MASTER, prefix: str = "") -> dict[str, str]:
     """Copy a databank's strategies aside and read each one's timeframe.
 
     Args:
@@ -28,6 +28,8 @@ def stage(project: str, databank: str, dest: Path, limit: int = 0,
         install: Which install holds the project. Defaults to the master, which is where
             it lived before builds moved to the headless workers — a project built on the
             custodian is invisible from here without this.
+        prefix: Put before each copy's file name, so several databanks can share one
+            folder and one export.
 
     Returns:
         Strategy name to timeframe, e.g. {"Strategy 1.2.3": "M30"}. Copies rather than
@@ -39,7 +41,7 @@ def stage(project: str, databank: str, dest: Path, limit: int = 0,
         found = sorted(random.Random(SAMPLE_SEED).sample(found, limit))
     timeframes = {}
     for f in found:
-        shutil.copy(f, dest / f.name)
+        shutil.copy(f, dest / f"{prefix}{f.name}")
         timeframes[f.stem] = sqxfile.symbol(f)[1].rsplit("_", 1)[-1]
     return timeframes
 
@@ -67,7 +69,7 @@ def main() -> None:
     # The CSVs are an intermediate, not the export: nine tenths of their bytes are quoting,
     # repeated text and four columns that are derivable back. Bars are not copied here at
     # all — they live once in the M1 library, which covers more history than this window did.
-    packed = tradestore.pack(sorted((out / "trades").glob("*.csv")),
+    packed = tradepack.pack(sorted((out / "trades").glob("*.csv")),
                              out / "trades.parquet", per_market=False)
     shutil.rmtree(out / "trades")
     # The staged .sqx are copies of what the databank holds; the manifest names the

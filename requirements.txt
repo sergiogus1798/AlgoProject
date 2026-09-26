@@ -18,6 +18,8 @@ diptest==0.11.0
 # The null studies' compiled kernels, and the one BLAS thread each worker process gets.
 numba==0.67.0
 threadpoolctl==3.7.0
+# Physical cores, which is how many worker processes are worth starting.
+psutil==7.2.2
 
 # The desktop app (ui/). Qt for the window, FastAPI+uvicorn for the local daemon,
 # httpx for the one hop between them.

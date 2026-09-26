@@ -188,8 +188,9 @@ def bootstrap_a(held: pd.DataFrame, per_trade: np.ndarray, mu_m: float, cfg: dic
     """
     b = cfg["bootstrap"]
     weight = held["hold"].to_numpy().astype(float)
-    picks = bootstrap.block_bootstrap(b["draws"], len(per_trade), rng, b["block"])
-    pooled = ((per_trade[picks] * weight[picks]).sum(axis=1) / weight[picks].sum(axis=1))
+    pooled = np.concatenate([(per_trade[p] * weight[p]).sum(axis=1) / weight[p].sum(axis=1)
+                             for p in bootstrap.block_rows(b["draws"], len(per_trade), rng,
+                                                           b["block"])])
     return bootstrap.percentile_ci(pooled - mu_m, *b["ci"])
 
 

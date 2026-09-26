@@ -27,7 +27,7 @@ def ordered(frame: pd.DataFrame) -> bool:
         True when the rows are in open-time order, no two trades open at the same instant,
         and none opens before the previous closes. Parquet preserves row order, so under
         those three the ticket is the file itself. A pyramiding strategy breaks the second
-        and `Ticket` has to be kept for it — pack() checks rather than assumes.
+        and `Ticket` has to be kept for it — core.tradepack.pack() checks rather than assumes.
     """
     opens, closes = frame["Open time"], frame["Close time"]
     return bool(opens.is_monotonic_increasing and not opens.duplicated().any()
@@ -116,28 +116,11 @@ def frame(files: list[Path], per_market: bool) -> tuple[pd.DataFrame, dict]:
                     "torn_blocks": [f.stem for f, (_, _, torn) in zip(files, parts) if torn]}
 
 
-def pack(files: list[Path], out: Path, per_market: bool) -> dict:
-    """Every strategy of one export as a single typed Parquet.
-
-    Args:
-        files: One CSV per strategy, as orderstocsv wrote them.
-        out: Parquet file to write.
-        per_market: As in frame().
-
-    Returns:
-        What frame() counted.
-    """
-    packed, counts = frame(files, per_market)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    packed.to_parquet(out, compression="zstd", index=False)
-    return counts
-
-
 def names(path: Path) -> list[str]:
     """Which strategies one packed export holds.
 
     Args:
-        path: A Parquet written by pack().
+        path: A Parquet written by core.tradepack.pack().
 
     Returns:
         Strategy names, sorted. Reads the one column rather than the file.
@@ -163,14 +146,14 @@ def read(path: Path, strategy: str = "") -> pd.DataFrame:
     """One strategy's trades, or every trade of the export.
 
     Args:
-        path: A Parquet written by pack().
+        path: A Parquet written by core.tradepack.pack().
         strategy: Which strategy to read; empty for all of them.
 
     Returns:
         The same frame core.trades.read() returns, plus a `strategy` column, minus the
-        columns pack() dropped. Row order is the order SQX wrote, which is the ticket. The
-        text columns stay categorical: widening them to object costs 326 MB against 74 MB
-        on a 960,705-trade export, and nothing downstream needs object dtype — `.to_numpy()`
+        columns core.tradepack.pack() dropped. Row order is the order SQX wrote, which is
+        the ticket. The text columns stay categorical: widening them to object costs 326 MB
+        against 74 MB on a 960,705-trade export, and nothing downstream needs object dtype — `.to_numpy()`
         and `core.trades.cost()` both handle a category.
     """
     filters = [("strategy", "==", strategy)] if strategy else None

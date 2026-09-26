@@ -1,7 +1,5 @@
 """Puts one strategy through the four questions and returns the single result everything reads."""
 
-import os
-
 import numpy as np
 import pandas as pd
 
@@ -16,6 +14,10 @@ from studies.breakage.mcRetest.verdict import (attribution, evidence, fragility,
 # five strategies and a great deal at seven hundred.
 NEEDED = ("NetProfit", "ProfitFactor", "DrawdownPct", "NumberOfTrades", "AvgTrade", "StandardDev")
 
+# 🔬 2026-09-26: a worker keeps ~0.3 GB resident once it has read one strategy's seven P&L
+# partitions (0.45 GB with its imports), and a strategy takes about a second. 48 of them on 500
+# strategies would be ~21 GB for no wall clock worth having; 16 keep it near 7 GB.
+WORKERS = 16
 # What the per-strategy workers read, set before the fork.
 _SHARED: dict = {}
 
@@ -139,7 +141,7 @@ def battery(keys: dict, provenance: dict, cfg: dict) -> dict:
     # P&L partitions and nothing crosses between them until the pool below.
     _SHARED.update(keys=keys, sims=sims, original=original, provenance=provenance, cfg=cfg)
     got = dict(fanout.run(_one, {n: int((sims["strategy"] == n).sum()) for n in names},
-                          os.cpu_count()))
+                          WORKERS))
     per = {name: got[name] for name in names}
 
     pool = {f"{task}/{name}": got[task]["modes"]["bimodality"]["p"]

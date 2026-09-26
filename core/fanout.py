@@ -4,7 +4,13 @@ from collections.abc import Callable, Iterator
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import get_context
 
+import psutil
 from threadpoolctl import threadpool_limits
+
+# 🔬 2026-09-26: two SMT threads of one core get in each other's way, so the logical count is
+# never worth using: crossmarket at 96 processes took the same 17 s as at 48 and held 1.2 GB
+# more (knowhow/perf/python-parallelism.md).
+CORES = psutil.cpu_count(logical=False)
 
 
 def run(work: Callable, costs: dict, workers: int) -> Iterator[tuple]:
@@ -15,7 +21,7 @@ def run(work: Callable, costs: dict, workers: int) -> Iterator[tuple]:
             module state the caller set before calling this, which `fork` hands every worker
             without pickling.
         costs: Task key to its expected cost, in any unit; only the order matters.
-        workers: Most processes to use.
+        workers: Most processes to use; never more than the physical cores, CORES.
 
     Returns:
         (key, result) pairs in the order they finish. The queue is fed longest-first, the
@@ -28,7 +34,7 @@ def run(work: Callable, costs: dict, workers: int) -> Iterator[tuple]:
     """
     order = sorted(costs, key=costs.get, reverse=True)
     with threadpool_limits(1), ProcessPoolExecutor(
-            max_workers=max(1, min(workers, len(order))), mp_context=get_context("fork")) as pool:
+            max_workers=max(1, min(workers, CORES, len(order))), mp_context=get_context("fork")) as pool:
         pending = {pool.submit(work, key): key for key in order}
         for done in as_completed(pending):
             yield pending[done], done.result()

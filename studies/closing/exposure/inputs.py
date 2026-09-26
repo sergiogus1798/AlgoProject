@@ -51,8 +51,17 @@ def sample(packed: Path, which: str) -> pd.DataFrame:
         The export cut to that sample, in the order SQX reported it. Read once and grouped
         by caller: the file is one frame of a million rows, and re-reading it per strategy
         is the difference between seconds and an hour.
+
+    Raises:
+        SystemExit: The export holds no trade of that sample -- 📓 2026-09-26, the `Results`
+            databank carries only IST, and reading it for OOS1 ended in a KeyError that
+            named neither the sample nor the databank.
     """
     frame = pd.read_parquet(packed)
+    if not (frame["Sample type"] == which).any():
+        raise SystemExit(f"{packed} no tiene ni una operación de la muestra {which}, sólo "
+                         f"{sorted(frame['Sample type'].astype(str).unique())}: exporta el "
+                         f"databank que la corrió (para OOS1, `OOS`, no `Results`)")
     return frame[frame["Sample type"] == which]
 
 

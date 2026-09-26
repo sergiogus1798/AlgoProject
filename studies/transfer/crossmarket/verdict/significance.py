@@ -26,8 +26,9 @@ def bootstrap_metric(returns: np.ndarray, metric: Callable[[np.ndarray], float],
         What bootstrap.percentile_ci() returned, over `metric` applied to each draw.
     """
     b = cfg["bootstrap"]
-    picks = bootstrap.block_bootstrap(b["draws"], len(returns), rng, b["block"])
-    values = np.array([metric(returns[p]) for p in picks])
+    values = np.array([metric(returns[p])
+                       for rows in bootstrap.block_rows(b["draws"], len(returns), rng, b["block"])
+                       for p in rows])
     return bootstrap.percentile_ci(values, *b["ci"])
 
 

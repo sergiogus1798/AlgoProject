@@ -11,6 +11,12 @@ COLUMNS = {int(k): v for k, v in
            json.loads((Path(__file__).parent / "optprofile_columns.json").read_text(encoding="utf-8")).items()}
 STATS = json.loads((Path(__file__).parent / "sqxstats_columns.json").read_text(encoding="utf-8"))
 ARRAY = {1: "i", 2: "l", 3: "f"}
+_SLOT = {(kind, slot): STATS.get(f"{code}:{slot}", f"stat:{code}:{slot}")
+         for kind, code in ARRAY.items() for slot in range(256)}
+# Bound once: a profile of 10,000 permutations is ~5 M of these reads, and slicing a new bytes
+# object for each one was 38 M calls and 15 s for eight strategies (🔬 2026-09-26).
+_I32, _I64, _F64, _F32, _U16 = (struct.Struct(f).unpack_from
+                                for f in (">i", ">q", ">d", ">f", ">H"))
 
 
 def _payload(path: Path) -> bytes:
@@ -39,6 +45,15 @@ def _payload(path: Path) -> bytes:
     return bytes(buf)
 
 
+def _sq_text(data: bytes, at: int) -> tuple[str, int]:
+    """One `SQUtils.writeUTF` string at `at`, and the offset just past it."""
+    if data[at] == 1:
+        size, at = _U16(data, at + 1)[0], at + 3
+    else:
+        size, at = _I32(data, at + 1)[0], at + 5
+    return data[at:at + size].decode("utf8"), at + size
+
+
 class _Reader:
     """A cursor over the payload, one Java ObjectInput primitive per method."""
 
@@ -48,40 +63,32 @@ class _Reader:
         """
         self.data, self.at = data, 0
 
-    def take(self, count: int) -> bytes:
-        """Advance over count bytes.
-
-        Args:
-            count: How many bytes to consume.
-
-        Returns:
-            The bytes consumed.
-        """
-        self.at += count
-        return self.data[self.at - count:self.at]
-
     def int32(self) -> int:
         """Returns: The next big-endian signed 4-byte integer."""
-        return struct.unpack(">i", self.take(4))[0]
+        self.at += 4
+        return _I32(self.data, self.at - 4)[0]
 
     def double(self) -> float:
         """Returns: The next big-endian 8-byte float."""
-        return struct.unpack(">d", self.take(8))[0]
+        self.at += 8
+        return _F64(self.data, self.at - 8)[0]
 
     def boolean(self) -> bool:
         """Returns: The next single byte read as a flag."""
-        return self.take(1)[0] != 0
+        self.at += 1
+        return self.data[self.at - 1] != 0
 
     def text(self) -> str:
         """Returns: The next writeUTF string — a 2-byte length then UTF-8."""
-        return self.take(struct.unpack(">H", self.take(2))[0]).decode("utf8")
+        size = _U16(self.data, self.at)[0]
+        self.at += 2 + size
+        return self.data[self.at - size:self.at].decode("utf8")
 
     def sq_text(self) -> str:
         """Returns: The next `SQUtils.writeUTF` string — a marker byte, then a 2-byte
         length when the marker is 1 and a 4-byte one otherwise, then UTF-8."""
-        wide = self.take(1)[0] != 1
-        size = struct.unpack(">i" if wide else ">H", self.take(4 if wide else 2))[0]
-        return self.take(size).decode("utf8")
+        text, self.at = _sq_text(self.data, self.at)
+        return text
 
     def stats(self) -> dict:
         """Read one `SQStats` blob.
@@ -91,21 +98,25 @@ class _Reader:
             through the calibrated STATS table; the rest carry their own name. Format 1
             stores the float array as doubles, format 2 as floats.
         """
-        wide = self.int32() == 1
+        data, at = self.data, self.at
+        wide, count = _I32(data, at)[0] == 1, _I32(data, at + 4)[0]
+        at += 8
         out = {}
-        for _ in range(self.int32()):
-            kind = struct.unpack(">b", self.take(1))[0]
+        for _ in range(count):
+            kind = data[at] - 256 if data[at] > 127 else data[at]
             if kind < 100:
-                slot = f"{ARRAY[kind]}:{self.take(1)[0]}"
-                key = STATS.get(slot, f"stat:{slot}")
+                key, at = _SLOT[kind, data[at + 1]], at + 2
             else:
-                key = self.sq_text()
+                key, at = _sq_text(data, at + 1)
             if kind in (1, 101):
-                out[key] = self.int32()
+                out[key], at = _I32(data, at)[0], at + 4
             elif kind in (2, 102):
-                out[key] = struct.unpack(">q", self.take(8))[0]
+                out[key], at = _I64(data, at)[0], at + 8
+            elif wide:
+                out[key], at = _F64(data, at)[0], at + 8
             else:
-                out[key] = self.double() if wide else struct.unpack(">f", self.take(4))[0]
+                out[key], at = _F32(data, at)[0], at + 4
+        self.at = at
         return out
 
     def result(self) -> dict:

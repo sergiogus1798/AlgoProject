@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from core.assetdata import load as load_asset, window as asset_window
-from core.barstore import read as read_bars
+from core.barstore import source as read_bars
 from core.paths import DATA, report_dir
 from core.study import config as study_config
 from ledger import thresholds
@@ -113,7 +113,7 @@ def moves(feed: str, days: pd.DatetimeIndex) -> pd.Series:
         which lags the benchmark one day behind. Sampling on the panel's own days also
         keeps every day the strategies have, weekends and holidays of the feed included.
     """
-    closes = read_bars(feed, "M1")["Close"]
+    closes = read_bars(feed, ["Close"])["Close"]
     return pd.Series(closes.asof(days).values, index=days).diff()
 
 

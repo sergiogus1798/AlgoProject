@@ -149,11 +149,12 @@ def one(fixed: dict, bars: pd.DataFrame, market: dict, cfg: dict, reference: str
     """
     d = differences(fixed, bars, market, reference)
     b = cfg["bootstrap"]
-    picks = bootstrap.block_bootstrap(b["draws"], len(d), rng, b["block"])
+    means = np.concatenate([d[p].mean(axis=1)
+                            for p in bootstrap.block_rows(b["draws"], len(d), rng, b["block"])])
     return {"reference": reference, "mean": float(d.mean()), "median": float(np.median(d)),
             "p": float(stats.wilcoxon(d, alternative=cfg["paired"]["alternative"]).pvalue),
             "beat_share": float((d > 0).mean()), "trades": len(d),
-            "ci": bootstrap.percentile_ci(d[picks].mean(axis=1), *b["ci"]),
+            "ci": bootstrap.percentile_ci(means, *b["ci"]),
             **units.spread(d, fixed)}
 
 

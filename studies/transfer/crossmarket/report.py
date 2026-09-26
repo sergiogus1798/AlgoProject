@@ -3,9 +3,9 @@
 
 import argparse
 from datetime import date
-import os
 import sys
 
+from core import fanout
 from core.paths import report_dir
 from core.study import output, verdicts
 from studies.transfer.crossmarket import load, many, one
@@ -28,7 +28,7 @@ def main() -> None:
                     help="fraction of markets whose expectancy must clear zero to keep it; "
                          "the same as --set verdict.breadth_floor=")
     ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="KEY=VALUE")
-    ap.add_argument("--workers", type=int, default=os.cpu_count(),
+    ap.add_argument("--workers", type=int, default=fanout.CORES,
                     help="markets studied at once; each holds its own null batches, so "
                          "this is the knob that trades RAM for wall clock")
     a = ap.parse_args()
@@ -44,8 +44,8 @@ def main() -> None:
         return
 
     print(f"{len(inputs['strategies'])} estrategias x {len(inputs['universe']['markets'])} "
-          f"mercados a {cfg['nulls']['draws']:,} sorteos — minutos por estrategia. Bájalos con "
-          f"--set nulls.draws=2000 para una prueba.", flush=True)
+          f"mercados a {cfg['nulls']['batch_draws']:,} sorteos — minutos por estrategia. Bájalos con "
+          f"--set nulls.batch_draws=2000 para una prueba.", flush=True)
     got = many.run(inputs, cfg, a.workers)
     output.population(out, "crossmarket", got["population"],
                       f"Cross-market — {a.project} / {a.databank}", LEDE)

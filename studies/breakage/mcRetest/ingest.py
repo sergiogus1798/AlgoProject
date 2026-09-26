@@ -2,7 +2,6 @@
 """The command: read each .sqx once, reconcile it against SQX, and write the study's parquet."""
 
 import argparse
-import os
 import shutil
 import sys
 from concurrent.futures import ProcessPoolExecutor
@@ -12,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from core import manifest, sqxfile, sqxretest, sqxstats
+from core import fanout, manifest, sqxfile, sqxretest, sqxstats
 from core.paths import MASTER, databank_dir, worker_dir
 from studies.breakage.mcRetest.inputs import config, tasks
 from studies.breakage.mcRetest.measure import integrity, store
@@ -122,7 +121,7 @@ def collect(project: str, cfg: dict, limit: int | None, staging: Path,
     if absent:
         print(f"sin correr, se leen las demás: {', '.join(absent)}")
     with ProcessPoolExecutor(max_workers=min(len(jobs), cfg["ingest"]["workers"]
-                                             or os.cpu_count())) as pool:
+                                             or fanout.CORES)) as pool:
         return list(pool.map(_job, jobs))
 
 

@@ -9,30 +9,66 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import manifest, optprofile
+from core import fanout, manifest, optprofile
 from core.paths import MASTER, databank_dir, export_dir, worker_dir
+from sqx.export import spp_table
 
 RUN = ["strategy", "permutations", "profitable", "losing", "zero", "profitable_pct",
        "avg_profit", "top_profit", "stdev", "uniform_changes", "parameters"]
 
 
-def profiles(project: str, databank: str, install: Path = MASTER) -> dict:
-    """Read every SPP profile a databank's strategies carry.
+# 🔬 2026-09-26: one reader holds ~0.34 GB for a 12,000-permutation profile, so 48 of them
+# would be 16 GB of the 20 the RAM budget gives Python; 16 keep it near 5.5 GB and still read
+# 500 strategies in about a minute.
+WORKERS = 16
+# Where the workers spill their permutation rows, set before the fork.
+_SPILL: dict = {}
+
+
+def _read(path: Path) -> tuple[dict, dict | None]:
+    """One strategy's profile, its permutations already spilled as its rows of the table.
 
     Args:
-        project: Project name on the master.
-        databank: Databank name as SQX shows it, e.g. "SPP IS".
-        install: Which SQX install holds it. The master by default; a worker when the SPP
-            was run on a harness there, which is the only way to run one without touching
-            the owner's own projects.
+        path: A .sqx holding an optimization profile.
 
     Returns:
-        Strategy name to the profile `core.optprofile.read` returns. Strategies whose .sqx
-        holds no profile were never cross-checked with SPP and are skipped silently.
+        (the profile without `original` and `results`, what spp_table.spill() returned or
+        None when SQX kept no permutation). Done in the worker: handing 10,000 dicts of 170
+        keys back to the parent cost more than reading them.
     """
-    return {f.stem: optprofile.read(f)
-            for f in sorted(databank_dir(project, databank, install).glob("*.sqx"))
-            if optprofile.MEMBER in zipfile.ZipFile(f).namelist()}
+    profile = optprofile.read(path)
+    if not profile["permutation_results"]:
+        return profile, None
+    got = spp_table.spill(path.stem, profile, _SPILL["folder"])
+    del profile["original"], profile["results"]
+    return profile, got
+
+
+def profiles(project: str, databank: str, install: Path, spill: Path) -> tuple[dict, dict]:
+    """Read every SPP profile a databank's strategies carry, one process per file.
+
+    Args:
+        project: Project name.
+        databank: Databank name as SQX shows it, e.g. "SPP IS".
+        install: Which SQX install holds it: the master, or a worker when the SPP was run
+            on a harness there, which is the only way to run one without touching the
+            owner's own projects.
+        spill: Scratch directory the permutation rows are written into.
+
+    Returns:
+        (strategy name to the profile `core.optprofile.read` returns, minus its permutations;
+        strategy name to what spp_table.spill() returned, for the strategies SQX kept them
+        for). Strategies whose .sqx holds no profile were never cross-checked with SPP and
+        are skipped silently.
+    """
+    found = {f: f.stat().st_size
+             for f in sorted(databank_dir(project, databank, install).glob("*.sqx"))
+             if optprofile.MEMBER in zipfile.ZipFile(f).namelist()}
+    spill.mkdir(parents=True, exist_ok=True)
+    _SPILL["folder"] = spill
+    got = dict(fanout.run(_read, found, WORKERS))
+    return ({f.stem: got[f][0] for f in found},
+            {f.stem: got[f][1] for f in found if got[f][1] is not None})
 
 
 def write_runs(found: dict, path: Path) -> int:
@@ -86,68 +122,6 @@ def write_histograms(found: dict, path: Path) -> int:
     return len(rows)
 
 
-def runs_of(profile: dict) -> list[tuple[int, dict]]:
-    """The original result and every permutation of one profile, numbered.
-
-    Args:
-        profile: Output of `core.optprofile.read` with `permutation_results` true.
-
-    Returns:
-        `(-1, original)` first, then `(0, first permutation)` onwards. The original is the
-        strategy as SQX saved it, so it is the row every permutation is compared against.
-    """
-    return [(-1, profile["original"])] + list(enumerate(profile["results"]))
-
-
-def table(found: dict) -> pd.DataFrame:
-    """One row per permutation: its parameter values wide, then every statistic SQX kept.
-
-    Args:
-        found: Output of `profiles`, holding profiles with `permutation_results` true.
-
-    Returns:
-        Columns `strategy` (categorical), `permutation` (-1 is the original, the row every
-        permutation is compared against), one column per parameter any strategy permuted
-        (NaN where this strategy did not), then the statistics. Wide on purpose: the long
-        form measured 34 MB in memory for 21,205 x 8 numbers that fit in 6 MB wide, and a
-        reader that needs four of 154 columns can ask Parquet for just those.
-
-    Raises:
-        SystemExit: A parameter and a statistic share a name, which would silently merge
-            two columns.
-    """
-    rows = []
-    for name, p in found.items():
-        for i, r in runs_of(p):
-            params = {k: v for k, _, v in (kv.partition("=") for kv in r["params"].split(",") if kv)}
-            rows.append({"strategy": name, "permutation": i, **params, **r["stats"]})
-    names = sorted({k for p in found.values() for _, r in runs_of(p)
-                    for k in (kv.partition("=")[0] for kv in r["params"].split(",") if kv)})
-    stats = sorted({m for p in found.values() for _, r in runs_of(p) for m in r["stats"]})
-    if set(names) & set(stats):
-        raise SystemExit(f"parameter and statistic share a name: {sorted(set(names) & set(stats))}")
-    frame = pd.DataFrame(rows, columns=["strategy", "permutation", *names, *stats])
-    frame[names] = frame[names].apply(pd.to_numeric, errors="coerce")
-    frame["strategy"] = frame["strategy"].astype("category")
-    frame["permutation"] = frame["permutation"].astype("int32")
-    return frame
-
-
-def write_table(found: dict, path: Path) -> int:
-    """Write `table(found)` as one zstd Parquet.
-
-    Args:
-        found: Output of `profiles`, holding profiles with `permutation_results` true.
-        path: Parquet to write.
-
-    Returns:
-        Rows written.
-    """
-    frame = table(found)
-    frame.to_parquet(path, compression="zstd", index=False)
-    return len(frame)
-
-
 def copy_mothers(project: str, databank: str, install: Path, out: Path) -> int:
     """Put each profiled strategy's own .sqx beside its profile.
 
@@ -180,18 +154,19 @@ def main() -> None:
     a = ap.parse_args()
 
     install = worker_dir(a.role) if a.role else MASTER
-    found = profiles(a.project, a.databank, install)
-    kept = [n for n, p in found.items() if p["permutation_results"]]
     out = export_dir(a.project, a.out_databank or a.databank,
                      date.today().isoformat()) / "spp"
     out.mkdir(parents=True, exist_ok=True)
+    found, spilled = profiles(a.project, a.databank, install, out / "_permutations")
+    kept = list(spilled)
 
     counts = {"runs.parquet": write_runs(found, out / "runs.parquet"),
               "metrics.parquet": write_metrics(found, out / "metrics.parquet"),
               "histograms.parquet": write_histograms(found, out / "histograms.parquet")}
     if kept:
-        full = {n: p for n, p in found.items() if p["permutation_results"]}
-        counts["spp.parquet"] = write_table(full, out / "spp.parquet")
+        counts["spp.parquet"] = spp_table.write(spilled, out / "_permutations",
+                                                out / "spp.parquet")
+    shutil.rmtree(out / "_permutations")
     manifest.write(out,
                    {"install": str(install), "project": a.project, "databank": a.databank,
                     "profiles_found": len(found),

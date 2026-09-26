@@ -45,11 +45,14 @@ def _market(task: tuple[str, str]) -> dict:
     markets are independent — every model and test seeds its own generator.
     """
     name, feed = task
-    got = _SHARED["inputs"]
+    got, cfg = _SHARED["inputs"], _SHARED["cfg"]
     market = next(m for m in got["universe"]["markets"] if m["feed"] == feed)
-    return market_run.verdict_row(_SHARED["cfg"], market,
-                                  tradestore.market(got["trades"], name, feed),
-                                  got["bars"][feed], _base(name))
+    trades = tradestore.market(got["trades"], name, feed)
+    # Fewer draws per batch on a long market, the same draws: block_shift's are keyed by the
+    # calendar, and 🔬 2026-09-26 its rows came out identical at chunks of 500 and 137.
+    n = cfg["nulls"]
+    cfg = {**cfg, "nulls": {**n, "chunk": max(1, min(n["chunk"], n["batch_cells"] // len(trades)))}}
+    return market_run.verdict_row(cfg, market, trades, got["bars"][feed], _base(name))
 
 
 def row(name: str, rows: list[dict], missing: int, inputs: dict, cfg: dict) -> dict:
@@ -97,9 +100,14 @@ def run(inputs: dict, cfg: dict, workers: int = 0) -> dict:
     Returns:
         {"population": the export's result, "table": one row per strategy}. No per-strategy
         contract: judging breadth needs the headline null only, and the full analysis of a
-        strategy — one.run() — is minutes of simulation the verdict never reads.
+        strategy — one.run() — is minutes of simulation the verdict never reads. The null
+        runs `nulls.batch_draws`, not `nulls.draws`: here its p is reported, never judged.
     """
     started = time.time()
+    assert cfg["nulls"]["headline"] == "block_shift", (
+        "el lote adapta el tamaño de tanda a cada mercado, y sólo block_shift da los mismos "
+        "sorteos con cualquier tanda; los otros modelos cambiarían con ella")
+    cfg = {**cfg, "nulls": {**cfg["nulls"], "draws": cfg["nulls"]["batch_draws"]}}
     feeds = {m["feed"] for m in inputs["universe"]["markets"]}
     trades = inputs["trades"][inputs["trades"]["Symbol"].isin(feeds)]
     counts = trades.groupby(["strategy", "Symbol"], observed=True).size()

@@ -7,6 +7,10 @@
 
 nulls:
   draws: 25000                # random runs **per market and per model**; the smallest p observable is 1/(draws+1)
+  batch_draws: 10000          # the same, in the whole-export batch: its verdict reads the expectancy
+                              # interval, not p, and the null was 84 % of its CPU (owner, 2026-09-26)
+  batch_cells: 1000000        # the batch prices at most this many draws x trades at once, ~90 bytes
+                              # each: a 20,000-trade market at `chunk` draws was 0.9 GB per worker
   seed: 20260908              # fixed and shared across markets, so one draw is one displacement everywhere
   block_months: 6             # regime blocks; six months keeps enough trades in each to move them
   models: [segment_permute, resampled_holds, fitted_holds, block_shift]
