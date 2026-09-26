@@ -20,12 +20,17 @@ def proofs_tab(measured: dict) -> dict:
     out = [graft]
     if len(measured["atr"]):
         a = measured["atr"]
-        out.append(blocks.table("Prueba del ATR: la distancia de cada stop contra X · ATR(20)",
-                                pd.DataFrame({"barra": a["bar"], "stops": a["n"],
-                                              "residuo mediano (precio)": a["median_residual"],
-                                              "residuo p90 (precio)": a["p90_residual"]}),
+        out.append(blocks.table("Prueba del ATR: la distancia de cada stop partida por X · ATR(20)",
+                                pd.DataFrame({"ventana": [WINDOWS[s] for s in a["segment"]],
+                                              "barra": a["bar"], "stops": a["n"], "p5": a["p5"],
+                                              "mediana": a["median"], "p95": a["p95"],
+                                              "p95 − p5": a["spread"],
+                                              "exceso mediano (precio)": a["slip"],
+                                              "coincide": ["sí" if v else "no"
+                                                           for v in a["matches"]]}),
                                 "El stop se pone desde el precio de entrada y resbala al salir: "
-                                "en la barra buena el residuo es sólo spread y slippage."))
+                                "en la barra buena el cociente es 1 más el slippage, igual para "
+                                "todas las operaciones; en una barra equivocada se dispersa."))
     ok = bool(g["identical"].all())
     return envelope.tab("proofs", "Pruebas", out,
                         note="El injerto reproduce la original." if ok else
@@ -40,18 +45,24 @@ def cost_tab(measured: dict) -> dict:
     out = []
     for s in dict.fromkeys(centre["segment"]):
         c = centre[centre["segment"] == s]
-        t = blocks.table(f"{WINDOWS[s]}: cada X contra la original sin stop", pd.DataFrame({
+        what = blocks.table(f"{WINDOWS[s]}: lo que hace el stop en cada X", pd.DataFrame({
             "percentil": c["percentile"], "X (ATR)": c["x"], "operaciones": c["n"],
-            "paradas por el stop": c["stopped"], "% paradas": c["stopped_pct"],
-            "ganadoras que mata": c["killed"], "pérdida ahorrada (USD)": c["saved"],
-            "ganancia perdida (USD)": c["given_up"], "entradas nuevas": c["new"],
-            "neto (USD)": c["net"], "neto original": c["net_original"], "PF": c["pf"],
-            "PF original": c["pf_original"], "max DD (USD)": c["maxdd"],
+            "paradas": c["stopped"], "% paradas": c["stopped_pct"],
+            "ganadoras muertas": c["killed"], "pérdida ahorrada": c["saved"],
+            "ganancia perdida": c["given_up"], "entradas nuevas": c["new"]}),
+            "USD. Emparejadas con la original por la hora de entrada. Entradas nuevas: señales "
+            "que la original no tomó porque seguía dentro.")
+        result = blocks.table(f"{WINDOWS[s]}: el resultado contra la original sin stop",
+                              pd.DataFrame({
+            "percentil": c["percentile"], "neto (USD)": c["net"], "neto original": c["net_original"],
+            "PF": c["pf"], "PF original": c["pf_original"], "max DD (USD)": c["maxdd"],
             "max DD original": c["maxdd_original"], "peor operación": c["worst"],
             "peor original": c["worst_original"]}),
-            "Costes y slippage los de SQX en esa ventana. Si Python y SQX discrepan, manda SQX.")
-        t["select"] = {"ventana": WINDOWS[s]}
-        out.append(t)
+            "Costes y slippage los de SQX en esa ventana; DD sobre operaciones cerradas. Si "
+            "Python y SQX discrepan, manda SQX.")
+        for block in (what, result):
+            block["select"] = {"ventana": WINDOWS[s]}
+        out += [what, result]
     return envelope.tab("cost", "Lo que cuesta en SQX", out,
                         [{"key": "ventana", "label": "Ventana", "options": options,
                           "default": options[0]}],
@@ -93,5 +104,7 @@ def shape_tab(measured: dict, cfg: dict) -> dict:
 
 
 def tabs(measured: dict, cfg: dict) -> list[dict]:
-    """The three SQX tabs, in reading order."""
+    """The SQX tabs, in reading order; only the proofs on a first pass, which has no grid."""
+    if not len(measured["metrics"]):
+        return [proofs_tab(measured)]
     return [proofs_tab(measured), cost_tab(measured), shape_tab(measured, cfg)]

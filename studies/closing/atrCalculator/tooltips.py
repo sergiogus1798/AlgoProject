@@ -19,4 +19,6 @@ TIPS = {
     "grid.band": "Cuánto se mueve X arriba y abajo en la rejilla de estabilidad.",
     "grid.steps": "Cuántos pasos a cada lado: 2 con ±20 % da X·{0,8 0,9 1 1,1 1,2}.",
     "shape.tolerance": "Un neto que no se mueve más que esta parte del de X es meseta.",
-    "proof.pl_tolerance": "USD: la sonda X = 1000 tiene que reproducir cada P/L a esto."}
+    "proof.pl_tolerance": "USD: la sonda X = 1000 tiene que reproducir cada P/L a esto.",
+    "proof.atr_spread": "Cuánto puede separarse, del p5 al p95, la distancia de cada stop "
+                        "partida por X·ATR: en la barra buena sólo la mueve el slippage."}

@@ -82,7 +82,7 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
         "cuatro X, sin elegir", "info",
         "El estudio lee X del MAE de las ganadoras del IS con una regla fijada antes de mirar "
         "(un percentil) y no elige: los cuatro percentiles van lado a lado y decide el dueño.",
-        None, [{"label": f"p{r.percentile}: X = {r.x:.2f}", "state":
+        None, [{"label": f"p{r.percentile}: X", "state":
                 "watch" if r.unreliable else "info", "value": r.x,
                 "note": f"intervalo {r.low:.2f}–{r.high:.2f}, zona {r.zone}"}
                for r in found["xs"].itertuples()])

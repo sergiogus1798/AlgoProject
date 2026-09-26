@@ -70,15 +70,17 @@ def measure(strategy: str, inputs: dict, cfg: dict) -> dict:
         for s in SEGMENTS:
             here, base = got[got["segment"] == s], ref[ref["segment"] == s]
             original = stats(base)
-            rows.append({"percentile": v.percentile, "step": v.step, "x": v.x, "segment": s,
+            rows.append({"percentile": int(v.percentile), "step": int(v.step), "x": v.x,
+                         "segment": s,
                          **stats(here), **against(here, base),
                          **{f"{k}_original": original[k] for k in ("net", "pf", "maxdd",
                                                                    "worst")}})
     metrics = pd.DataFrame(rows)
     stops = pd.concat(stopped, ignore_index=True) if stopped else pd.DataFrame()
+    # The first pass carries no grid yet: the reference and the probe, for the graft proof.
     return {"graft": proofs.graft(ref, probe, cfg), "metrics": metrics,
-            "atr": proofs.atr(stops, inputs["bars_index"], inputs["atr"]) if len(stops)
-            else pd.DataFrame(), "shape": shape(metrics, cfg)}
+            "atr": proofs.atr(stops, inputs["bars_index"], inputs["atr"], cfg) if len(stops)
+            else pd.DataFrame(), "shape": shape(metrics, cfg) if len(metrics) else metrics}
 
 
 def shape(metrics: pd.DataFrame, cfg: dict) -> pd.DataFrame:
@@ -110,6 +112,9 @@ def shape(metrics: pd.DataFrame, cfg: dict) -> pd.DataFrame:
 def summary(measured: dict) -> dict:
     """The flat numbers verdict.csv carries from the SQX side: the proofs and the shapes."""
     row = {"graft_identical": bool(measured["graft"]["identical"].all())}
+    if len(measured["atr"]):
+        a = measured["atr"]
+        row["atr_matches"] = bool(a.loc[a["bar"].str.contains("shift 1"), "matches"].all())
     for r in measured["shape"].itertuples():
         row[f"shape_{r.segment}_p{r.percentile}"] = r.shape
     return row

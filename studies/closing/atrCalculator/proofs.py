@@ -6,7 +6,7 @@ import pandas as pd
 from studies.closing.atrCalculator.mae import before_entry
 
 SAME = ("Open time", "Close time", "Open price", "Close price")
-STOP = "Stop Loss"          # the `Close type` SQX writes for a trade its stop closed
+STOP = "SL"          # the `Close type` SQX writes for a trade its stop closed (🔬 2026-09-26)
 
 
 def graft(reference: pd.DataFrame, probe: pd.DataFrame, cfg: dict) -> pd.DataFrame:
@@ -40,29 +40,35 @@ def graft(reference: pd.DataFrame, probe: pd.DataFrame, cfg: dict) -> pd.DataFra
     return pd.DataFrame(rows)
 
 
-def atr(stopped: pd.DataFrame, index: pd.DatetimeIndex, values: np.ndarray) -> pd.DataFrame:
+def atr(stopped: pd.DataFrame, index: pd.DatetimeIndex, values: np.ndarray,
+        cfg: dict) -> pd.DataFrame:
     """The ATR each stop implies against the ATR this study computes, bar by bar around the entry.
 
     Args:
-        stopped: Trades closed by the stop, with the `x` their variant carried.
+        stopped: Trades closed by the stop, with `segment` and the `x` their variant carried.
         index: Bar open times of the strategy's timeframe.
         values: `engines.market.atr.sqx` on those bars.
+        cfg: The study's config.
 
     Returns:
-        One row per candidate bar — the entry bar, the bar before it (what shift 1 should
-        mean) and the one before that: the median and the 90th percentile of the absolute
-        residual `|close - open| - x * ATR` in price. The stop is placed from the fill and
-        slips on exit, so the residual of the right bar is the fill's spread and the exit's
-        slippage, the same for every trade; a wrong bar or a wrong recurrence scatters it
-        by a share of the ATR.
+        One row per window and candidate bar — the entry bar, the bar before it (what SQX's
+        shift 1 should mean) and the one before that: the ratio `|close - open| / (x * ATR)`
+        at its 5th, 50th and 95th percentile, the `spread` between those two tails, and
+        `matches` when the spread is within `proof.atr_spread`, and `slip`, the median of
+        `|close - open| - x * ATR` in price, which on the right bar is the exit's slippage. The stop slips on exit by a
+        fixed amount per window, so the right bar gives a ratio a hair above 1 for every
+        trade; a wrong bar or a wrong recurrence scatters it by a share of the ATR.
     """
-    distance = (stopped["Close price"] - stopped["Open price"]).abs().to_numpy()
-    before = before_entry(index, stopped["Open time"])
     rows = []
-    for label, shift in (("barra de la entrada", 1), ("barra anterior (shift 1)", 0),
-                         ("dos barras antes", -1)):
-        residual = np.abs(distance - stopped["x"].to_numpy() * values[before + shift])
-        rows.append({"bar": label, "n": len(stopped),
-                     "median_residual": float(np.median(residual)),
-                     "p90_residual": float(np.percentile(residual, 90))})
+    for s, here in stopped.groupby("segment"):
+        distance = (here["Close price"] - here["Open price"]).abs().to_numpy()
+        before = before_entry(index, here["Open time"])
+        for label, shift in (("barra de la entrada", 1), ("barra anterior (shift 1)", 0),
+                             ("dos barras antes", -1)):
+            stop = here["x"].to_numpy() * values[before + shift]
+            p5, p50, p95 = np.percentile(distance / stop, [5, 50, 95])
+            rows.append({"segment": s, "bar": label, "n": len(here), "p5": p5, "median": p50,
+                         "p95": p95, "spread": p95 - p5,
+                         "slip": float(np.median(distance - stop)),
+                         "matches": bool(p95 - p5 <= cfg["proof"]["atr_spread"])})
     return pd.DataFrame(rows)

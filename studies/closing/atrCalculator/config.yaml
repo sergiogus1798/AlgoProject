@@ -40,3 +40,6 @@ shape:
 
 proof:
   pl_tolerance: 0.01          # USD: the X = 1000 probe must reproduce every trade's P/L to this
+  atr_spread: 0.02            # |close - open| / (X * ATR) of the stopped trades, p95 minus p5: the
+                              # right bar spreads 0.005-0.011 (XAUUSD M30, 2026-09-26: a fixed exit
+                              # slippage over stops of different size), a wrong one 0.10-0.20

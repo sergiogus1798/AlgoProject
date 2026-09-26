@@ -1,6 +1,6 @@
 ---
 q: add a stop loss to a strategy without one; graft ATR stop into sqx; SLPT.None to ATRBasedValue; StopLossCoef1 ParamTypeExitUsed; variant factory cannot add a parameter; X = 1000 probe reproduces trades
-tag: 📓  date: 2026-09-26  see: sqx-format/writing-a-variant, export/sqx-atr-is-wilder
+tag: 🔬  date: 2026-09-26  see: sqx-format/writing-a-variant, export/sqx-atr-is-wilder
 ---
 # A stop is grafted by two text substitutions: the entry's SLPT.None → ATRBasedValue, plus one variable
 - Inside each entry's `<Param key="#StopLoss.StopLoss#">`, `SLPT.None` → the `ATRBasedValue` formula
@@ -15,5 +15,6 @@ tag: 📓  date: 2026-09-26  see: sqx-format/writing-a-variant, export/sqx-atr-i
   undoing the two insertions returns the original file exactly.
 - `Strategy 19.8.78` (XAUUSD M30, TestXAU_crossTF): settings carry `MinMaxSLPT.* = 0`,
   `UseInitialSLPT = false`.
-- Pending: SQX loading the grafted file and the `X = 1000` retest reproducing the original trade for
-  trade (`docs/manual/49-atr-calculator.md`). Until then the tag stays 📓.
+- SQX proof 2026-09-26 (`ATRCalc_XAUUSD_M30_dev`, custodian): the grafted `.sqx` (five-member shape)
+  loads and retests; `X = 1000` reproduces the original trade for trade — IS 576/576, oos1 253/253,
+  oos2 200/200, 0 differing, max |ΔP/L| 0. The ATR proof is in `export/sqx-atr-is-wilder`.
