@@ -5,7 +5,8 @@ criba) · **Sustituye a** la consulta del mismo día, que preguntaba lo mismo a 
 
 **Qué es esto.** El módulo de calidad del feed no se puede construir hasta que alguien tome
 dieciséis decisiones: números y criterios. La consulta los preguntaba en abstracto. Aquí van **medidos sobre el
-propio feed** —XAUUSD, USDJPY y EURUSD, sin mirar ninguna estrategia, como exige la regla— y con una
+propio feed** —XAUUSD, USDJPY y EURUSD a fondo, y los 13 feeds de la librería con el mismo criterio
+(§1.6)—, sin mirar ninguna estrategia, como exige la regla— y con una
 propuesta concreta para cada uno. Tú sólo tienes que decir **sí, o cambia esto**.
 
 ---
@@ -16,7 +17,7 @@ propuesta concreta para cada uno. Tú sólo tienes que decir **sí, o cambia est
 |---|---|---|---|
 | 1 | qué movimiento se mira | **el cierre y la mecha, por separado** | ☐ |
 | 2 | contra qué se mide «grande» | **la volatilidad típica de esa hora de esa semana, en las últimas 52 semanas** | ☐ |
-| 3 | `K`, cuántas veces esa volatilidad | **20** | ☐ |
+| 3 | `K`, cuántas veces esa volatilidad | **el menor de {15, 20, 25, 30} con menos de un pico por semana en los años tranquilos**: 20 en 12 de los 13 feeds, 25 en GBPUSD | ☐ |
 | 4 | `m`, en cuántos minutos tiene que volver | **3** | ☐ |
 | 5 | cuánto tiene que volver | **80 % del salto** | ☐ |
 | 6 | picos que no vuelven | **se cuentan aparte, no entran en la atribución** | ☐ |
@@ -28,7 +29,7 @@ propuesta concreta para cada uno. Tú sólo tienes que decir **sí, o cambia est
 | 12 | cuándo salta la alarma | **test de permutación, p < 0,01, con al menos 10 operaciones marcadas** | ☐ |
 | 13 | métricas recalculadas sin las marcadas | **no se enseñan**: sólo «% del beneficio en riesgo» | ☐ |
 | 14 | qué hace la alarma en el paso 8 | **configurable, `marcar` por defecto** (como el edge por coste) | ☐ |
-| 15 | umbrales por símbolo o globales | **globales** en unidades relativas | ☐ |
+| 15 | umbrales por símbolo o globales | **el mismo criterio para todos**; el `K` de cada activo se calcula al entrar en la librería y se congela en `ledger/thresholds.yaml`. `m` y `L`, iguales para todos | ☐ |
 | 16 | cómo se comprueba que el detector funciona | **picos sintéticos inyectados (imprescindible) + revisar a mano los 20 más extremos** | ☐ |
 
 Si marcas todo, el módulo se puede construir tal cual. Lo que no marques, dime el número que
@@ -36,7 +37,7 @@ quieres; la sección 2 dice qué cambia con cada opción.
 
 ---
 
-## 1 · Lo que dice el feed — cinco hallazgos que deciden casi todo
+## 1 · Lo que dice el feed — seis hallazgos que deciden casi todo
 
 Medido hoy sobre las velas M1 de `~/Desktop/AlgoData/bars/`, de 2003-05 a 2026-09
 (7,9 M velas del oro, 8,7 M de cada par).
@@ -100,6 +101,47 @@ del 3 de enero. Las velas planas (`H == L`) se concentran justo ahí: el **10 %*
 hora 0 de USDJPY son planas, contra el 0,4 % a media sesión europea. Son el mercado parado en el
 rollover de Nueva York, no un feed caído. De ahí la propuesta 8.
 
+### 1.6 · Los 13 feeds con el mismo criterio: casi todos se parecen, tres no
+
+| feed | picos al año, `K` = 15 | **`K` = 20** | `K` = 25 | picos que vuelven en 3 min, al año | rachas congeladas ≥ 10 min, al año | huecos ≥ 5 min entre semana, al año (desde 2013) |
+|---|---|---|---|---|---|---|
+| XAUUSD | 63 | **24** | 11 | 10 | 0,7 | 214 |
+| USDJPY | 94 | **38** | 26 | 19 | 3,3 | 36 |
+| EURUSD | 55 | **20** | 11 | 9 | 4,7 | 34 |
+| AUDJPY | 87 | **39** | 17 | 22 | 1,2 | 43 |
+| AUDUSD | 70 | **36** | 22 | 11 | 1,1 | 47 |
+| EURJPY | 43 | **24** | 15 | 31 | 1,0 | 68 |
+| GBPJPY | 89 | **40** | 26 | 19 | 0,2 | 84 |
+| **GBPUSD** | 139 | **65** | 34 | 23 | 4,7 | 36 |
+| USDCAD | 57 | **29** | 15 | 18 | 11,8 | 51 |
+| USDCHF | 82 | **29** | 11 | 33 | 7,4 | 74 |
+| **CADJPY** | 55 | **26** | 12 | **115** | 7,3 | 35 |
+| **XAGUSD** | 21 | **10** | 7 | **720** | 5,4 | 404 |
+| **BRENT** (FTMO, desde 2013) | 47 | **20** | 11 | 24 | 5,0 | **901** |
+
+*Picos al año: mediana de los años tranquilos (2013–2019). Picos que vuelven: `K` = 20, vuelta
+≥ 80 % en 3 minutos, sobre toda la historia del feed. Huecos: ≥ 5 minutos entre semana, sin separar
+todavía la pausa diaria de cada activo.*
+
+**Qué se traslada tal cual:**
+
+- **`m` = 3 y `L` = 10 sirven para todos:** las rachas congeladas quedan entre 0 y 12 al año en los 13.
+- **`K` = 20 cumple el criterio en 12 de 13.** GBPUSD da 65 al año, por encima de uno por semana; el
+  mismo criterio le asigna `K` = 25 (34 al año). Por eso la decisión 15 fija el **criterio**, no el
+  número.
+
+**Qué no se traslada, y ya es un resultado:**
+
+- **XAGUSD: unos 720 picos al año que se deshacen en 3 minutos, 70 veces más que el oro.** Puede ser
+  un feed malo o un precio que rebota entre dos niveles de cotización; en los dos casos, **hay que
+  revisarlo antes de fiarse de la plata** como mercado de contraste del oro.
+- **CADJPY: 115 al año**, unas cinco veces lo normal en los pares. Merece la misma revisión.
+- **BRENT: unos 900 huecos al año.** Viene de otro proveedor, con pausas diarias: su sesión declarada
+  tiene que cubrirlas, o el detector las marcará como fallos. Lo mismo, en menor medida, la plata
+  (404) y el oro (214).
+- **Los seis índices todavía no están en la librería de barras**: se miden cuando entren, con este
+  mismo criterio.
+
 ---
 
 ## 2 · Cada decisión, con lo que cambia según elijas
@@ -120,7 +162,7 @@ para una mediana estable, y lo bastante corto para seguir un cambio de régimen 
 (hallazgo 1.3). **Si prefieres 26 semanas**, el detector se adapta antes, pero es más ruidoso en
 las horas muertas.
 
-### 3 · `K` = 20
+### 3 · `K` = 20 en casi todos, calculado por activo
 
 Con `K` = 20 el oro da unos **60 picos al año** (1.379 en 23 años), el yen unos 100 y el euro unos 55.
 Con `K` = 10, de 500 a 1.000 al año cada uno: demasiados para que la atribución signifique algo,
@@ -136,6 +178,7 @@ debajo de **uno por semana** en los tres símbolos:
 | EURUSD | 199 | 117 | 55 | **20** | 11 |
 
 Con `K` = 15 los tres aún pasan de 52 al año; con `K` = 20 los tres quedan por debajo. **Sale 20.**
+Aplicado a los 13 feeds (§1.6), sale 20 en doce y 25 en GBPUSD.
 
 ### 4 y 5 · Pico-y-vuelta: `m` = 3 minutos, 80 % del salto
 
@@ -216,12 +259,15 @@ gana con ticks malos no debería seguir nunca), pero el hallazgo 1.2 dice que ca
 detector marca es **real**: descartar automáticamente mataría estrategias que ganaron en un día
 histórico de verdad. Que lo decidas tú en cada corrida.
 
-### 15 · Globales en unidades relativas
+### 15 · El mismo criterio para todos, el `K` de cada uno calculado una vez
 
-`K` se mide en múltiplos de la volatilidad de la propia hora; `m` y `L` en minutos. Con eso, los tres
-símbolos dan recuentos del mismo orden (tablas de arriba), así que sirven los mismos números para
-todos. Un símbolo se sale de la regla sólo si su tabla de sensibilidad lo pide, y se escribe como
-excepción declarada.
+`K` se mide en múltiplos de la volatilidad de la propia hora, pero eso no basta para que un mismo
+número sirva en todos: GBPUSD tiene colas más gruesas y con `K` = 20 marca 65 picos al año (§1.6).
+Así que lo global es **el criterio**: cuando un activo entra en la librería de barras, se calcula su
+`K` —el menor de {15, 20, 25, 30} con menos de un pico por semana en sus años tranquilos—, se escribe
+en `ledger/thresholds.yaml` y **no se vuelve a mover**. Sigue fijándose antes de mirar ninguna
+estrategia. `m` (3 minutos) y `L` (10 minutos) son iguales para todos: §1.6 muestra que funcionan
+en los 13 feeds.
 
 ### 16 · Cómo se sabe que funciona — inyección sintética, y los 20 peores a mano
 
@@ -241,7 +287,9 @@ excepción declarada.
    que el preflight avise si la ventana de construcción de un símbolo empieza antes.
 2. **Los episodios del proveedor** (EURUSD 2021–2023) se ven mejor contando **por mes**, no por año:
    el informe debería tener esa tabla.
-3. **La mecha y las órdenes stop.** Hoy las estrategias entran a mercado. Si una plantilla usa órdenes
+3. **La plata, CADJPY y el Brent** (§1.6) necesitan una revisión propia antes de usar el detector
+   con ellos: la plata y CADJPY por su exceso de picos que vuelven, el Brent por sus huecos.
+4. **La mecha y las órdenes stop.** Hoy las estrategias entran a mercado. Si una plantilla usa órdenes
    stop o límite, un tick malo en la mecha **llena la orden**: esas estrategias deberían mirar la
    columna de la mecha antes que la del cierre.
 
@@ -250,4 +298,6 @@ excepción declarada.
 Script de un solo uso sobre `core.barstore.source`, velas M1 contiguas (ningún retorno cruza un
 hueco), escala por hora de la semana calculada sobre toda la historia. Es la versión de exploración:
 el módulo usará la de 52 semanas (propuesta 2), que dará recuentos más bajos en los años volátiles.
-Ninguna estrategia, ninguna operación y ningún resultado se ha mirado para escribir esto.
+La tabla de §1.6 aplica el mismo cálculo a los 13 feeds de `~/Desktop/AlgoData/bars/`; la de
+Brent empieza en 2013, que es donde empieza su feed. Ninguna estrategia, ninguna operación y ningún
+resultado se ha mirado para escribir esto.
