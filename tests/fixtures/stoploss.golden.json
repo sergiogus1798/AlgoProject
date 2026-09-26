@@ -1,0 +1,6 @@
+{
+  "sha256": "c39ed6da1ddc7b81",
+  "declared": "double",
+  "value": "2.5",
+  "formula": "<Formula key=\"SQ.Formulas.SLPT.ATRBasedValue\"><Param key=\"#Value#\" controlType=\"jspinnerVar\" type=\"double\" variable=\"true\">StopLossCoef1</Param><Param key=\"#AtrPeriod#\" controlType=\"jspinnerVar\" type=\"int\">20</Param></Formula>"
+}

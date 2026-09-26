@@ -141,7 +141,8 @@ def declare(config: str, names: list[str]) -> str:
     return config.replace("</Databanks>", new + "  </Databanks>", 1)
 
 
-def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str]) -> dict:
+def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str],
+              markets: bool = True) -> dict:
     """Write the three legs of the WFC/CSCV retest into one custom project.
 
     Args:
@@ -150,13 +151,15 @@ def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str
         timeframe: The project's timeframe.
         members_in_order: Three task XML files, in the doctrine's task order — build, oos1,
             oos2. They are renamed to the doctrine's titles and switched on.
+        markets: False leaves the extra markets out of this project's legs only, whatever
+            `wfc.markets` says — for a study that reads the main market alone (step 22).
 
     Returns:
         One row per leg, plus the project name and the input databank they all read. The
         three do NOT chain: the same batch of variants goes into each, so the three panels
         are three readings of one population and not a funnel.
     """
-    study = doctrine()["wfc"]
+    study = doctrine()["wfc"] | ({} if markets else {"markets": False})
     engine = doctrine()["engine"]
     if study["conditions"]:
         raise SystemExit("`wfc.conditions` de assets/_build.yaml ya no esta vacio: una "
@@ -198,6 +201,8 @@ def main() -> None:
                     help="tres ficheros de tarea separados por comas, en el orden de "
                          "`wfc.tasks`: build, oos1, oos2. Sin el, las que ya llevan esos "
                          "titulos (un proyecto de `builder --workflow`)")
+    ap.add_argument("--no-markets", action="store_true",
+                    help="sin los mercados adicionales en las tres patas de ESTE proyecto")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
@@ -209,7 +214,7 @@ def main() -> None:
         config = z.read("config.xml").decode("utf-8")
     members = (a.tasks.split(",") if a.tasks else
                [member_of(config, t["title"]) for t in doctrine()["wfc"]["tasks"]])
-    done = configure(a.cfx, a.symbol, a.timeframe, members)
+    done = configure(a.cfx, a.symbol, a.timeframe, members, not a.no_markets)
     staged = own(a.cfx, "wfc")
     if a.json:
         print(json.dumps(done, indent=2, default=str))
