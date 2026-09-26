@@ -18,8 +18,9 @@ cscv:
   # Blocks the history is cut into, following Lopez de Prado. Twelve gives C(12,6) = 924
   # partitions. Ten gives 252 and is the cheap setting; sixteen gives 12,870 and costs
   # fourteen times as much for a third-decimal improvement on a statistic whose null
-  # standard deviation is 0.21. Overridable per run with `pbo.py --blocks`.
-  blocks: 12
+  # standard deviation is 0.21. Overridable per run with `report.py --blocks`. The number
+  # lives in ledger/thresholds.yaml, with who set it and when.
+  blocks: ledger:cscv.blocks
   # The ways of choosing parameters that get compared. The point of the study is the
   # difference between them, so a run with one rule answers half the question.
   rules: [argmax, plateau_centre, random_profitable]

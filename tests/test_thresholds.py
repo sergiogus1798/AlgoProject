@@ -14,7 +14,7 @@ from ledger import thresholds
 # A module joins the list the commit it is migrated; it never leaves it.
 MIGRATED = ("studies/screening/gate/", "studies/screening/snoopingScreen/",
             "studies/readings/profitShape/", "studies/readings/entryQuality/",
-            "studies/optimisation/cloud/")
+            "studies/optimisation/cloud/", "studies/optimisation/cscv/")
 
 
 def reader(source: str) -> object:
@@ -29,7 +29,8 @@ def reader(source: str) -> object:
     folder = Path(source.split("#", 1)[0]).parent
     dotted = ".".join(folder.parts)
     split = (ROOT / folder / "inputs" / "config.py").exists()
-    return importlib.import_module(f"{dotted}.inputs{'.config' if split else ''}").config
+    module = importlib.import_module(f"{dotted}.inputs{'.config' if split else ''}")
+    return getattr(module, "config", None) or module.load   # the CSCV names it load()
 
 
 def main() -> None:
