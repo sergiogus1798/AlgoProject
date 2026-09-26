@@ -20,15 +20,15 @@ top_share: 0.10
 # The Spearman that the whole Fisher interval must clear to call two markets' rankings the
 # same. The WFC's floor, for the same reason: below 0.30 the ranks share under 9 % of
 # their variance, and a region "shared" at that level is not one a person would pick twice.
-rho_floor: 0.30
+rho_floor: "ledger:marketSurfaces.rho_floor"
 
 # The quantile of the Jaccard under independence (hypergeometric overlap) that the observed
 # one must exceed. ⚠️ Optimistic: the design clusters variants, so the true null is wider.
-j_quantile: 0.975
+j_quantile: "ledger:marketSurfaces.j_quantile"
 
 # The share of the declared markets that must pass, in EVERY segment read, for the region
 # to be called one that travels. Below it in every segment is a fail; mixed is watch.
-min_share: 0.5
+min_share: "ledger:marketSurfaces.min_share"
 
 # The workflow step the ledger records this at (owner, 2026-09-26: same level as the WFC
 # and the CSCV, read blind at step 20).

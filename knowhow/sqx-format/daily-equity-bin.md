@@ -3,15 +3,12 @@ q: parse dailyEquity.bin, daily equity curve without SQX, sub-period / split OOS
 tag: 🔬  date: 2026-09-26  see: sqx-format/result-sections, sqx-format/sqx-zip-members, sqx-format/leg-curve-warmup
 ---
 # dailyEquity.bin parses: cumulative P&L per trading day; take `Main`, reconcile at window boundaries
-`core/sqxstats.equity(path, result="Main")` reads it. Value = **cumulative P&L in account currency**
-(not balance), one point per calendar trading day. With a cross-check the `.sqx` holds several
-curves (`Portfolio`, `Main: …`, `AdditionalMarket: …`) — only `Main` matches the databank's net profit.
-Reconcile a curve at a window boundary, never at end of file; drop the last period when aggregating.
-It is **marked to market** (it moves on days nothing closed), and **day D holds the equity carried
-into D**, not the one D ended with: to set a price series beside it, sample the close at each
-label's own instant, never `resample("D").last()`, which lags the price one day behind.
-**On a cross-check market's leg the curve's total misses SQX's net profit on most variants** (one-sided,
-curve below, median up to ~475 $) — rank the stored `NetProfit`, and check a curve by rank, not dollars.
+`core/sqxstats.equity(path, result="Main")`: **cumulative P&L in account currency**, one point per
+trading day. Of the curves in a cross-checked `.sqx` (`Portfolio`, `Main: …`, `AdditionalMarket: …`)
+only `Main` matches the databank's net profit. Reconcile at a window boundary, never at end of file;
+drop the last period. **Marked to market**, and **day D holds the equity carried into D**: sample a
+price at each label's own instant, never `resample("D").last()` (one day late). On a **cross-check
+market's leg** the curve's total misses SQX's net profit (one-sided, median up to ~475 $): check by rank.
 
 ## Evidence
 - Mark-to-market and day stamp (2026-09-25, `XAU_ISOOS_ejemplo` OOS, 115 curves, 2018–2022): one
