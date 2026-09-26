@@ -61,6 +61,16 @@ def main() -> None:
     if rows["x"].tolist() != [1.6, 1.8, 2.0, 2.2, 2.4]:
         failures.append(f"grid: ±20 % en dos pasos de 2.0 da {rows['x'].tolist()}")
 
+    # Percentiles are the owner's input: as many as he wants, printed as he wrote them.
+    if inputs.percentiles([95, 80, 85.0, 97.5, 80]) != [80, 85, 95, 97.5]:
+        failures.append("percentiles: no ordena, no quita duplicados o no deja 85.0 como 85")
+    for bad in ([], [0, 50], [50, 100]):
+        try:
+            inputs.percentiles(bad)
+            failures.append(f"percentiles: acepta {bad}")
+        except SystemExit:
+            pass
+
     if failures:
         raise SystemExit("\n".join(failures))
     print("test_atrcalculator: ok")

@@ -40,7 +40,7 @@ def zone_of(x: float, table: pd.DataFrame) -> str:
     """The zone the curve gives the step at or just below x.
 
     Args:
-        x: One of the four X.
+        x: One of the X, one per percentile.
         table: What `curve` returned.
 
     Returns:

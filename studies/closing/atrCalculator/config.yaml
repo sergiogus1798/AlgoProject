@@ -3,11 +3,13 @@
 # This is NOT an optimisation. X is read from the in-sample winners with a rule fixed before
 # looking (a percentile of their MAE in ATR units), and SQX then measures what that stop costs
 # and whether the result is flat around it. Nothing here picks the best X or the best
-# percentile: the report puts the four side by side and the owner decides.
+# percentile: the report puts every percentile side by side and the owner decides.
 
 stop:
   atr_period: 20              # the stop is X * ATR(20) of the bar closed before the entry, always
-  percentiles: [80, 85, 90, 95]   # one sub-study each: the X that leaves this share of IS winners untouched
+  percentiles: [80, 85, 90, 95]   # default; as many as wanted, each strictly between 0 and 100
+                              # (--percentiles 75 80 85 90 95 97.5). One sub-study each: the X that
+                              # leaves this share of IS winners untouched, and its own SQX grid
 
 bootstrap:
   n: 9999                     # resamples of the IS winners, for the interval around each X

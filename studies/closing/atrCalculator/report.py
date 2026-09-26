@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read an ATR stop loss from the MAE of the IS winners, four percentiles side by side, and what SQX says it costs."""
+"""Read an ATR stop loss from the MAE of the IS winners, every percentile side by side, and what SQX says it costs."""
 
 import argparse
 import sys
@@ -26,6 +26,10 @@ def main() -> None:
     ap.add_argument("--symbol", required=True, help="asset file name, e.g. XAUUSD")
     ap.add_argument("--timeframe", required=True, help="the strategy's timeframe, e.g. M30")
     ap.add_argument("--strategy", default="", help="one strategy; every one when omitted")
+    ap.add_argument("--percentiles", type=float, nargs="+", metavar="P",
+                    help="one sub-study per percentile of the IS winners' MAE/ATR, as many as "
+                         "wanted, e.g. --percentiles 75 80 85 90 95 97.5; config.yaml when "
+                         "omitted (80 85 90 95)")
     ap.add_argument("--family", default="",
                     help="template family, which names the ledger study with the asset and the "
                          "timeframe; the project's name when omitted")
@@ -36,6 +40,8 @@ def main() -> None:
     args = ap.parse_args()
 
     cfg = inputs.config(args.set)
+    if args.percentiles:
+        cfg["stop"]["percentiles"] = inputs.percentiles(args.percentiles)
     spend.allow(args.symbol, list(inputs.SEGMENTS))
     got = load.load(args.project, args.databank, args.feed, args.symbol, args.timeframe,
                     args.work, cfg)

@@ -1,4 +1,4 @@
-"""One strategy's stop read from its MAE — four X side by side, never one chosen — as the contract's data."""
+"""One strategy's stop read from its MAE — every X side by side, never one chosen — as the contract's data."""
 
 import time
 
@@ -13,7 +13,7 @@ OOS = ("oos1", "oos2")
 
 
 def reading(trades: pd.DataFrame, inputs: dict, cfg: dict) -> dict:
-    """§2 on one strategy's trades without a stop: the four X, their zone, their transfer.
+    """§2 on one strategy's trades without a stop: every X, its zone, their transfer.
 
     Args:
         trades: The reference trades of one strategy, every segment.
@@ -79,9 +79,9 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
         tabs += sqxview.tabs(measured, cfg)
         row |= stability.summary(measured)
     said = blocks.verdict(
-        "cuatro X, sin elegir", "info",
+        f"{len(cfg['stop']['percentiles'])} X, sin elegir", "info",
         "El estudio lee X del MAE de las ganadoras del IS con una regla fijada antes de mirar "
-        "(un percentil) y no elige: los cuatro percentiles van lado a lado y decide el dueño.",
+        "(un percentil) y no elige: todos los percentiles van lado a lado y decide el dueño.",
         None, [{"label": f"p{r.percentile}: X", "state":
                 "watch" if r.unreliable else "info", "value": r.x,
                 "note": f"intervalo {r.low:.2f}–{r.high:.2f}, zona {r.zone}"}

@@ -11,7 +11,7 @@ resultado es plano alrededor de X.
 
 > *«No quiero que sea una optimización ni nada.»* — el dueño, 2026-09-26
 
-**No elige nada.** Los cuatro percentiles salen uno al lado del otro y decides tú. Es el **paso 22**
+**No elige nada.** Los percentiles (por defecto 80, 85, 90 y 95; tantos como quieras con `--percentiles`) salen uno al lado del otro y decides tú. Es el **paso 22**
 del `WORKFLOW.md`, tras la exposición y antes de la cartera.
 
 ### Cuándo lo usas, y cuándo no
@@ -80,6 +80,7 @@ Cada ejecución del informe **deja una fila en el ledger por tramo leído** (bui
 | `--symbol` | sí | el activo de `assets/`: da el point value y las fechas de cada ventana |
 | `--timeframe` | sí | el de la estrategia: el ATR se calcula sobre sus barras |
 | `--strategy` | no | una sola; sin él, todas las del export |
+| `--percentiles` | no | los percentiles de las ganadoras del IS, **tantos como quieras**, cada uno entre 0 y 100 (p. ej. `--percentiles 75 80 85 90 95 97.5`). Cada uno es un sub-estudio con su X, su intervalo y su rejilla en SQX (5 variantes más por estrategia con la rejilla por defecto). Sin él: 80, 85, 90 y 95 |
 | `--work` | no | el lote de `stopgrid`. Sin él sólo lee X (§2); con él añade las pruebas y lo que dice SQX |
 | `--set` | no | `seccion.clave=valor` sobre `config.yaml`, p. ej. `--set grid.band=0.3` |
 
@@ -108,7 +109,7 @@ el custodio: una estrategia, 22 variantes y tres ventanas son un par de minutos.
 ### Cómo se lee el resultado
 
 **X.** El histograma es lo que fueron en contra las ganadoras del IS, en ATR; la línea es la X del
-percentil elegido en el selector. La tabla pone las cuatro con su **intervalo por bootstrap**: si el
+percentil elegido en el selector. La tabla pone todas con su **intervalo por bootstrap**: si el
 ancho pasa de la mitad de X, sale «poco fiable» — con 60 ganadoras el p95 lo deciden las tres más
 extremas.
 
@@ -198,7 +199,7 @@ largo de la rejilla. Con 200–250 operaciones por ventana, parte de ese movimie
 
 ### Qué NO te dice
 
-- **Cuál elegir.** Ni el percentil ni la X. Lo decides tú mirando las cuatro.
+- **Cuál elegir.** Ni el percentil ni la X. Lo decides tú mirándolas todas.
 - **Que el stop mejora la estrategia.** Se pone para cortar las colas y dejar aire, no para ganar
   más. Si en una ventana gana más con stop, no es un argumento para apretarlo.
 - **Lo que haría en MT5.** Ni `StopsLevel` ni mínimos del bróker.

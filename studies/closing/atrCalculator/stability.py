@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from studies.closing.atrCalculator import proofs
-from studies.closing.atrCalculator.inputs import SEGMENTS
+from studies.closing.atrCalculator.inputs import SEGMENTS, number
 
 
 def stats(trades: pd.DataFrame) -> dict:
@@ -70,7 +70,7 @@ def measure(strategy: str, inputs: dict, cfg: dict) -> dict:
         for s in SEGMENTS:
             here, base = got[got["segment"] == s], ref[ref["segment"] == s]
             original = stats(base)
-            rows.append({"percentile": int(v.percentile), "step": int(v.step), "x": v.x,
+            rows.append({"percentile": number(v.percentile), "step": int(v.step), "x": v.x,
                          "segment": s,
                          **stats(here), **against(here, base),
                          **{f"{k}_original": original[k] for k in ("net", "pf", "maxdd",

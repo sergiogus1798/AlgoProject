@@ -24,7 +24,35 @@ def config(overrides: list[str]) -> dict:
     Returns:
         What config.yaml holds.
     """
-    return study_config.load(CONFIG, overrides)
+    cfg = study_config.load(CONFIG, overrides)
+    cfg["stop"]["percentiles"] = percentiles(cfg["stop"]["percentiles"])
+    return cfg
+
+
+def number(p: float) -> float | int:
+    """A percentile as it should print: 80 rather than 80.0, 97.5 kept as it is."""
+    return int(p) if float(p).is_integer() else float(p)
+
+
+def percentiles(values: list[float]) -> list[float | int]:
+    """The owner's percentiles, as many as he wants: checked, deduplicated, ascending.
+
+    Args:
+        values: Whatever config.yaml or `--percentiles` gave, e.g. [80, 85, 90, 95].
+
+    Returns:
+        Each strictly between 0 and 100, once, in order. Each is one sub-study: one X, one
+        interval, one stability grid in SQX, so every extra percentile costs `2 * steps + 1`
+        more variants per strategy.
+
+    Raises:
+        SystemExit: Empty, or a value outside (0, 100).
+    """
+    got = sorted({number(v) for v in values})
+    if not got or not all(0 < v < 100 for v in got):
+        raise SystemExit(f"atrCalculator: los percentiles van entre 0 y 100, sin incluirlos "
+                         f"(recibido {values})")
+    return got
 
 
 def newest(project: str, databank: str) -> Path:

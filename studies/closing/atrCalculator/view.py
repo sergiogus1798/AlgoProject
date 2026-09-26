@@ -37,7 +37,7 @@ def _yes(value: object) -> str:
 
 
 def x_tab(found: dict) -> dict:
-    """The winners' MAE/ATR with each percentile's X marked, and the four side by side."""
+    """The winners' MAE/ATR with each percentile's X marked, and all of them side by side."""
     xs, won = found["xs"], found["winners"]["build"]
     options = [str(p) for p in xs["percentile"]]
     dists = []
@@ -49,7 +49,7 @@ def x_tab(found: dict) -> dict:
         d["mark"] = f"X del p{r.percentile}"
         d["select"] = {"percentil": str(r.percentile)}
         dists.append(d)
-    table = blocks.table("Las cuatro X, lado a lado", pd.DataFrame({
+    table = blocks.table("Las X de cada percentil, lado a lado", pd.DataFrame({
         "percentil": xs["percentile"], "X (ATR)": xs["x"], "desde": xs["low"],
         "hasta": xs["high"], "ancho / X": xs["width"],
         "poco fiable": [_yes(v) for v in xs["unreliable"]], "zona": xs["zone"],

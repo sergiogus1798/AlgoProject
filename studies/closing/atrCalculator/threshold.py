@@ -15,7 +15,7 @@ def intervals(values: np.ndarray, percentiles: list[int], cfg: dict) -> np.ndarr
         cfg: The `bootstrap` section of the config.
 
     Returns:
-        Shape (len(percentiles), 2): the low and high end of each interval. All four
+        Shape (len(percentiles), 2): the low and high end of each interval. All the
         percentiles read the same draws, so their intervals are comparable. Vectorised in
         chunks: one np.percentile per resample cost 5 s a strategy (perf, 2026-09-26).
     """
@@ -44,5 +44,5 @@ def x_values(mae_winners: np.ndarray, cfg: dict) -> pd.DataFrame:
     xs = np.percentile(mae_winners, ps)
     bounds = intervals(mae_winners, ps, cfg["bootstrap"])
     width = (bounds[:, 1] - bounds[:, 0]) / xs
-    return pd.DataFrame({"percentile": ps, "x": xs, "low": bounds[:, 0], "high": bounds[:, 1],
+    return pd.DataFrame({"percentile": pd.Series(ps, dtype=object), "x": xs, "low": bounds[:, 0], "high": bounds[:, 1],
                          "width": width, "unreliable": width > cfg["bootstrap"]["wide"]})

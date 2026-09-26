@@ -3,6 +3,7 @@
 import pandas as pd
 
 from core.study import blocks, result as envelope
+from studies.closing.atrCalculator.inputs import number
 
 WINDOWS = {"build": "IS", "oos1": "oos1", "oos2": "oos2"}
 
@@ -66,7 +67,7 @@ def cost_tab(measured: dict) -> dict:
     return envelope.tab("cost", "Lo que cuesta en SQX", out,
                         [{"key": "ventana", "label": "Ventana", "options": options,
                           "default": options[0]}],
-                        "Los cuatro percentiles lado a lado; ninguno es el elegido.")
+                        "Todos los percentiles lado a lado; ninguno es el elegido.")
 
 
 def shape_tab(measured: dict, cfg: dict) -> dict:
@@ -79,7 +80,7 @@ def shape_tab(measured: dict, cfg: dict) -> dict:
         steps = sorted(here["step"].unique())
         band = cfg["grid"]["band"] / cfg["grid"]["steps"]
         x = [f"X·{1 + band * k:.2f}" for k in steps]
-        series = [{"label": f"p{p}", "role": "real",
+        series = [{"label": f"p{number(p)}", "role": "real",
                    "values": [float(g.loc[g["step"] == k, "net"].iloc[0]) for k in steps]}
                   for p, g in here.groupby("percentile")]
         original = float(here["net_original"].iloc[0])

@@ -8,7 +8,7 @@ overfit — but a strategy that is going to trade needs one. Owner, 2026-09-26:
 So `SL = X · ATR(20)`, fixed at entry, and **X is read from the trades with a rule fixed before
 looking**: a percentile of the in-sample winners' MAE in ATR units. SQX then measures, with its own
 spread and slippage, what that stop costs and whether the result is flat around it. The report puts
-the four percentiles (80, 85, 90, 95) side by side and **never picks one**. Brief:
+every percentile side by side — 80, 85, 90 and 95 by default, as many as wanted with `--percentiles`, and **never picks one**. Brief:
 `docs/encargos/20-atr-calculator.md`; manual: `docs/manual/49-atr-calculator.md`.
 
 ```
@@ -28,17 +28,17 @@ config.yaml ─▶ inputs/load ─▶ mae ─▶ threshold ─▶ noreturn ─�
 | `inputs.py` | The knobs, the trades of one or more exports cut into build/oos1/oos2 by `Open time`, the bars, the point value, the batch's manifest | imported | exports + asset → trades, windows |
 | `load.py` | Everything one run reads, once: trades, SQX's ATR on the strategy's timeframe, and which export name holds each mother's trades without a stop | imported | exports (+ batch) → inputs |
 | `mae.py` | Per trade: the ATR of the bar closed before the entry, MAE and net result in that ATR, winner = net P/L > 0 | imported | trades + ATR → per-trade table |
-| `threshold.py` | §2.1: X per percentile of the IS winners' MAE/ATR, its bootstrap interval (the four percentiles on the same resamples, vectorised in chunks: 36 strategies 182 s → 5.6 s), and the `poco fiable` mark | imported | winners → four X |
+| `threshold.py` | §2.1: X per percentile of the IS winners' MAE/ATR, its bootstrap interval (every percentile on the same resamples, vectorised in chunks: 36 strategies 182 s → 5.6 s), and the `poco fiable` mark | imported | winners → one X per percentile |
 | `noreturn.py` | §2.2: for each distance, how many IS trades that got there still won and their mean final result; the zone each X falls in | imported | IS trades → curve, zones |
 | `transfer.py` | §2.3: each IS X's effective percentile among the oos1/oos2 winners; KS and Anderson-Darling with D and the median ratio | imported | winners per window → table |
-| `grid.py` | The stability grid `X·(1 ± band·k/steps)` written as `stopgrid.csv` | imported | four X → grid rows |
+| `grid.py` | The stability grid `X·(1 ± band·k/steps)` written as `stopgrid.csv` | imported | X per percentile → grid rows |
 | `proofs.py` | The graft proof (X = 1000 ≡ original, trade for trade) and the ATR proof (each stop's distance against X·ATR at the entry bar, the bar before, and two before) | imported | retested trades → two tables |
 | `stability.py` | §3: every grid variant against the original, per window — PF, net, DD, stops, winners killed, loss saved, new entries, worst trade — and the shape (plateau or edge) | imported | retested batch → metrics, shape |
 | `view.py` | The §2 tabs: X, punto sin retorno, transferencia | imported | reading → tabs |
 | `sqxview.py` | The SQX tabs: pruebas, lo que cuesta, estabilidad | imported | stability → tabs |
 | `spend.py` | The ledger: asks the door before reading (oos2 is reserved for WFC, WFM and step 22 — owner, 2026-09-26) and writes one row per segment read, `n_in = n_out` because nothing is chosen | imported | run → ledger rows |
 | `one.py` | One strategy, as the contract's dict; verdict `info`, never a choice | imported — the window calls it | inputs → result |
-| `report.py` | **The command**. Without `--work` it reads the exports, writes one page per strategy and `stopgrid.csv`; with `--work` it adds the proofs and SQX's cost and stability | `python3 -m studies.closing.atrCalculator.report --project P --databank D [D …] --feed F --symbol S --timeframe TF [--strategy N] [--work DIR]` | exports → reports + `stopgrid.csv` |
+| `report.py` | **The command**. Without `--work` it reads the exports, writes one page per strategy and `stopgrid.csv`; with `--work` it adds the proofs and SQX's cost and stability | `python3 -m studies.closing.atrCalculator.report --project P --databank D [D …] --feed F --symbol S --timeframe TF [--strategy N] [--percentiles P …] [--work DIR]` | exports → reports + `stopgrid.csv` |
 | `tooltips.py` | One Spanish sentence per knob, for the window's drawer | imported | — |
 
 ## The three things this module exists to get right
@@ -48,7 +48,7 @@ an averaged start — and the stop formula's rounding. `engines.market.calibrate
 and would put every X off by the gap between the two. The ATR proof checks it against the stops SQX
 actually placed (`knowhow/export/sqx-atr-is-wilder.md`).
 
-**Nothing is chosen.** No knob picks the best X or the best percentile; the tables put the four side
+**Nothing is chosen.** No knob picks the best X or the best percentile; the tables put every percentile side
 by side, the stability grid is read for its *shape*, and the verdict block is `info`. The labels
 (`ruido`/`sin retorno`, `se transfiere`, `meseta`/`borde`) describe; the curves under them are drawn
 whole so a label can be checked by eye.
