@@ -23,7 +23,7 @@ ones you applied:
 | direction | long |
 | extra conditions | ONE random condition, **free**: `#Group#` empty, the whole vocabulary |
 | what he named | **fixed** exactly as said, never parametrised |
-| periods, deviations he did not name | optimizable |
+| periods, deviations — any number he did not name | **random**: the builder draws a value per strategy |
 | `Shift` | 1 |
 
 The vendor's thesis-driven shapes — filter + trigger bound to clean groups, stop/limit entries,
@@ -36,7 +36,10 @@ owner asks for one**. Do not launch the research agent for a default template.
 python3 -m sqx.inspect.vocabulary <term>         # does the exact block exist? native or his own
 # missing -> author it with sqx-custom-block (its own overlay says how to install it)
 python3 -m sqx.templates.build <name> <library>/<name>/deps/blocks.xml <CBlock_key> \
-    <library>/<name>/template.sqx                 # market_long skeleton: fixed block AND free hole
+    <library>/<name>/template.sqx                 # market_long: his condition AND a free hole
+# the condition goes in a one-item group, <name>Signal, whose numeric params the builder draws at
+# random (owner, 2026-09-25) — also written to <library>/<name>/deps/groups.xml: install it (step 6).
+# A frozen block would carry ONE period in every strategy; SQX refuses random params on it.
 # a NATIVE block: pass the conductor's AlgoWizard config.xml instead of deps/blocks.xml —
 #   ~/Desktop/SQX_w1/internal/web/SQWIZARD/branding/global/config.xml
 # fix what the owner named with --param, e.g. an EMA: --param '#Type#=1'

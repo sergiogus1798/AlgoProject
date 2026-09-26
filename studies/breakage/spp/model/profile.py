@@ -60,7 +60,7 @@ def plateau(profile: pd.DataFrame, share: float = 0.5) -> dict:
 
 
 def design_levels(profile: pd.DataFrame, plateau_call: dict, original: float,
-                  count: int) -> list[float]:
+                  count: int, min_span: float) -> list[float]:
     """Where to place the variant grid's levels for this parameter.
 
     Args:
@@ -68,6 +68,9 @@ def design_levels(profile: pd.DataFrame, plateau_call: dict, original: float,
         plateau_call: Output of `plateau`.
         original: The value the strategy was built with.
         count: How many levels the budget allows this parameter.
+        min_span: The least the levels must cover on each side of the original, as a
+            fraction — 0.30 is +/-30 %. Owner, 2026-09-26: a grid around the plateau alone
+            covered EMA 20..27 and exit 12..17, a sliver; every study reaches at least this.
 
     Returns:
         Levels spanning symmetrically around the plateau centre, **widened when necessary
@@ -90,7 +93,8 @@ def design_levels(profile: pd.DataFrame, plateau_call: dict, original: float,
     must = [original, plateau_call["argmax"], plateau_call["from"], plateau_call["to"]]
     reach = max(abs(centre - m) for m in must)
     levels = profile["level"].to_numpy()
-    lo, hi = max(centre - reach, levels.min()), min(centre + reach, levels.max())
+    lo = max(min(centre - reach, original * (1 - min_span)), levels.min())
+    hi = min(max(centre + reach, original * (1 + min_span)), levels.max())
     inside = levels[(levels >= lo) & (levels <= hi)]
     wanted = np.linspace(lo, hi, count)
     snapped = inside[np.abs(inside[None, :] - wanted[:, None]).argmin(axis=1)]

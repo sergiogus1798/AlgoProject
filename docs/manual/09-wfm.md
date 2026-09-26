@@ -55,6 +55,7 @@ En `~/Desktop/AlgoData/raw/<proyecto>/<databank>/<fecha>/wfm/`:
 | `params.parquet` | una fila por tramo, una columna por parámetro, con el valor que eligió el optimizador en ese tramo |
 | `check.parquet` | la comprobación del reparto de trades: trades asignados contra trades que SQX dice que hubo, tramo a tramo |
 | `trades.parquet` | **todos** los trades de todas las estrategias en un fichero, con tres columnas añadidas: `result` (la celda), `period` (el tramo) y `sample` (`IS` o `OOS`). Se lee con `pandas.read_parquet` y se filtra por `strategy` y `result` |
+| `status.parquet` | una fila por estrategia: `sqx_filter` (lo que SQX anotó: `Passed` o el motivo) y `sqx_failed`. Una estrategia que suspendió el criterio de la matriz **sigue aquí**, marcada; el manifest la lista en `failed_in_sqx` |
 | `raw/`, `strategies/` | lo que escupió SQX antes de trocearlo, y las copias que se le pasaron. **Se borran solos** cuando la comprobación cuadra; si no cuadra, se quedan para mirarlos |
 
 La carpeta lleva fecha, así que **no sobrescribe** una exportación anterior.

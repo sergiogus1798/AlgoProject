@@ -122,11 +122,11 @@ python3 -m sqx.export.export_retest --project XAUUSD --databank "Retest Markets 
 
 # 3a. El databank entero: amplitud entre mercados y un veredicto por estrategia
 python3 -m studies.transfer.crossmarket.report --project XAUUSD \
-    --databank "Retest Markets - Family" --asset XAUUSD --export 2026-09-14
+    --databank "Retest Markets - Family" --asset XAUUSD --day 2026-09-14
 
 # 3b. Una estrategia, con todas las pestañas (y, con --only, un solo mercado)
 python3 -m studies.transfer.crossmarket.report --project XAUUSD \
-    --databank "Retest Markets - Family" --asset XAUUSD --export 2026-09-14 \
+    --databank "Retest Markets - Family" --asset XAUUSD --day 2026-09-14 \
     --strategy "Strategy 24.14.35"
 ```
 
@@ -135,7 +135,7 @@ python3 -m studies.transfer.crossmarket.report --project XAUUSD \
 | `--asset` | sí | activo base. Es la clave que se busca en `assets/_markets.yaml` |
 | `--project` | sí | proyecto en el master |
 | `--databank` | sí | la databank donde dejaste el retest |
-| `--export` | sí (paso 3) | la fecha del export del paso 2, `AAAA-MM-DD` |
+| `--day` | no (paso 3) | la fecha del export del paso 2, `AAAA-MM-DD`; hoy si no se pone |
 | `--limit` | no (paso 2) | exporta una muestra aleatoria reproducible de N estrategias en vez de todas |
 | `--strategy` | no (paso 3) | estudia esa estrategia entera en vez del databank |
 | `--only` | no (paso 3, con `--strategy`) | sólo ese mercado, por su nombre de feed |

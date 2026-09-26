@@ -217,11 +217,16 @@ cadena está rota en algún punto — y te enteras antes de mirar cinco mil resu
   otra historia falla todos los centinelas por un motivo que no tiene nada que ver con la fábrica.
 - **Los niveles de un parámetro congelado son una reconstrucción, no un dato.** El diseño congela
   un parámetro y da su valor, no un rango; el estrato de cobertura necesita variarlo y el rango se
-  rehace igual que lo hace SQX en sus propias permutaciones (±30 %, y 0..6 si es un *shift*). Es la
+  rehace igual que lo hace SQX en sus propias permutaciones (±30 %; un *shift* no se mueve nunca). Es la
   suposición más discutible del módulo y está anotada como tal.
-- **Que el diseño contenga la combinación buena no está garantizado.** La rejilla se centra en la
-  meseta que se vio dentro de muestra y se ensancha hasta contener el original y el mejor punto IS,
-  pero una meseta que se haya movido mucho fuera de muestra puede quedarse fuera.
+- **La rejilla cubre SIEMPRE al menos ±30 % del valor original** (dueño, 2026-09-26), con hasta 9
+  niveles por parámetro vivo, sacados de valores que el SPP exploró de verdad. Los *shift* se quedan
+  en su valor. Antes se quedaba en la meseta: EMA 20–27 y salidas 12–17, una franja. Un parámetro
+  entero pequeño da menos niveles (un fractal de 5 sólo tiene 4, 5 y 6 dentro del ±30 %), así que una
+  estrategia con pocos parámetros así tiene un techo de variantes distintas: USDJPY `Strategy
+  15.12.75` llega a 216, y ninguna rejilla dentro del ±30 % da más.
+- **Que el diseño contenga la combinación buena no está garantizado.** Una meseta que se haya movido
+  más allá del ±30 % fuera de muestra se queda fuera.
 
 ### Si algo falla
 

@@ -58,7 +58,7 @@ python3 -m sqx.variants.scale \
 | `--project` | sí | de qué proyecto vienen; da nombre al árbol de salida |
 | `--out` | no | solo para sacarlo fuera del sitio declarado; normalmente no se usa |
 | `--source` | no (H1) | el timeframe en el que se construyeron las madres |
-| `--targets` | no (H4) | a qué timeframes se escalan; acepta varios |
+| `--targets` | no | a qué timeframes se escalan; por defecto los de la doctrina según `--source`: desde M30, H1 y H4; desde H1, H4 y **H12** |
 
 Segundos. No toca SQX, se puede lanzar con la GUI abierta.
 
@@ -78,7 +78,7 @@ python3 -m sqx.projects.crosstf XAUUSD \
 | `--timeframes` | no | los timeframes extra, **en el orden en que serán los bloques 1, 2...**; por defecto, los de la doctrina |
 
 Lo demás sale de `crosstf:` en `assets/_build.yaml` y no se pasa por línea de comandos:
-`timeframes: [H4]`, `segment: build..oos1`, `precision: 2` y `conditions: []`.
+`timeframes` por timeframe de origen (M30 → H1, H4; H1 → H4, H12 — dueño, 2026-09-26), `segment: build..oos1`, `precision: 2` y `conditions: []`. **H12 es un timeframe "custom" de SQX y funciona solo**: basta con nombrarlo en la tarea (comprobado el 2026-09-26).
 
 ⚠️ **Las fechas de los `<Setup>` extra son inertes.** La máscara `<MainTestValues>` lleva
 `dates="true"`, así que la ventana que se corre de verdad es la del **test principal de esa tarea**.
@@ -108,15 +108,16 @@ cada celda se valora sobre las barras equivocadas y no falla nada.
 Luego cargas las madres *y* las hermanas en el databank, corres la tarea, y exportas con:
 
 ```bash
-python3 sqx/export/export_retest.py --project XAUUSD --databank CrossTF
+python3 -m sqx.export.export_retest --project XAUUSD --databank CrossTF --role custodian
 ```
 
 **3 · Leer**
 
 ```bash
-python3 -m studies.transfer.crossTF.report \
-  --export  ~/Desktop/AlgoData/exports/XAUUSD/CrossTF/2026-09-23/trades.parquet \
-  --scaling ~/Desktop/AlgoData/crosstf/madres-2026-09-22/scaling.parquet
+python3 -m studies.transfer.crossTF.report --project XAUUSD --asset XAUUSD --day 2026-09-23 \
+    --fabricated 2026-09-22
+# la misma firma que los demás estudios: proyecto, databank (CrossTF por defecto), activo y día.
+# El export y el scaling.parquet salen de ahí; el feed, del activo en assets/.
 ```
 
 ### Qué produce

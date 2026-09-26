@@ -119,11 +119,12 @@ encuentran el área 4x4 con 12 y 3 no.
 esas casillas —la mediana está en 8,6 %, porque el tramo de optimización es justo el que se eligió
 por ser el mejor— y su `% de pasadas rentables > 70`, el 9 %.
 
-⚠️ **Y esto YA FILTRA.** Con condiciones activas SQX descarta a quien no encuentre el área y no lo
-escribe en el databank de salida (`Cross Check filter in 'WF matrix'`), sin que
-`DeleteFailedStrategies` tenga nada que decir. Es distinto del resto del proyecto, donde el veredicto
-se toma en Python. Para volver al modo mapa —puntuar las 30 casillas y no tirar a nadie— se pone
-`min_squares: 0` en `_build.yaml`: el rectángulo siempre cumple "0 o más".
+**El criterio marca, no borra** (comprobado el 2026-09-26). El comando deja
+`DeleteFailedStrategies` en `false`, así que la estrategia que no encuentra el área **se queda** en el
+databank, marcada por SQX: `Cross Check filter in 'Walk-Forward Matrix': Robustness score didn't
+pass.` El export lo guarda (`status.parquet`, y `failed_in_sqx` en el manifest) y el análisis lo
+muestra como aviso **"SQX la marcó como FAILED"** en la ficha de esa estrategia. El veredicto se toma
+en Python, como en el resto del proyecto. El mínimo de 12 casillas se queda (dueño, 2026-09-26).
 
 Los umbrales se tocan en `assets/_build.yaml`, bloque `wfm.conditions`. Cada línea es
 `{read, metric, op, value}`, donde `read` elige de dónde sale el número: `oos` (las pasadas fuera de
@@ -176,8 +177,8 @@ XAUUSD  XAUUSD  SPP OOS → WFM
       13 condicion(es) del donante apagadas y 10 propias escritas: una casilla aprueba con
          80 % de ellas cumplidas
       la estrategia pasa si encuentra 12 casillas aprobadas en un area de 4x4 — 6 posiciones
-         posibles. ⚠️ ESTO FILTRA: SQX descarta a quien no lo encuentre y no lo escribe en el
-         databank de salida
+         posibles. Quien no lo encuentre queda marcada FAILED en SQX, NO se borra
+         (DeleteFailedStrategies=false): el export lo anota y la ventana lo avisa
 
 ⚠️ build..oos2 acaba en un tramo RESERVADO para WFC, WFM: cada mirada lo gasta y no se repite.
 ⚠️ Y no se LEE hasta que 17, 18 y 19 esten los tres hechos.
@@ -193,8 +194,8 @@ XAUUSD  XAUUSD  SPP OOS → WFM
 - **`13 del donante apagadas y 10 propias escritas`** — el 13 es lo normal en un clon del donante y
   un **0 es un aviso**: ese `.cfx` no viene del donante o alguien ya lo editó. Si el segundo número
   no es el de `wfm.conditions`, la matriz está juzgando con otra cosa.
-- **`⚠️ ESTO FILTRA`** — con `min_squares` distinto de 0 la tarea tira estrategias. Si lo que
-  querías era el mapa, para y pon `min_squares: 0`.
+- **`queda marcada FAILED en SQX, NO se borra`** — lo normal. Si alguna vez falta una estrategia
+  en el databank de salida, es que `DeleteFailedStrategies` no estaba en `false`.
 - **`⚠️ esta tarea corre ademas: …`** — ese `.cfx` no pasó por la doctrina y correría otros
   crosschecks a la vez, cada uno con su factura. Vuelve a clonar con `sqx.projects.builder`.
 

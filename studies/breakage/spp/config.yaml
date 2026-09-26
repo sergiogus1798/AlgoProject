@@ -24,6 +24,10 @@ design:
   # duplicate test alone, which is proof; eta-squared on an unbalanced sampled grid is
   # confounded and biased upward, so an inert parameter still scores above any threshold
   # you would pick. See run.brief(). Eta-squared allocates levels instead.
-  min_levels: 3           # a live parameter never gets fewer
+  min_span: 0.30          # levels cover at least +/-30 % of the original (owner, 2026-09-26)
+  # Every live parameter gets up to nine levels across its +/-30 % (owner, 2026-09-26: coverage
+  # first, "no nos vale un pequeño rango"). Integer parameters get fewer when the span holds
+  # fewer distinct values — Fractal 5 has only 4, 5, 6 inside +/-30 %.
+  min_levels: 9           # a live parameter never gets fewer
   max_levels: 9           # nor more, however much variance it explains
   plateau_share: 0.5      # how far below the best level still counts as plateau

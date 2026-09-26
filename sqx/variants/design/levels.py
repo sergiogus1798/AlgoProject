@@ -34,14 +34,14 @@ def frozen(design: dict, settings: dict) -> dict[str, list[float]]:
 
         The range is the one SQX uses for its own permutations, measured and recorded in
         `knowhow/sqx-format/declared-parameters.md`: +/-30 % of the value stepped and rounded, except a
-        shift, which gets a flat 0..6 whatever its value. Rounding follows the value:
+        shift, which stays at its value (owner, 2026-09-26). Rounding follows the value:
         integral in, integral out.
     """
     out = {}
     for item in design["frozen"]:
         value = float(item["value"])
-        if item["name"].lower().endswith(SHIFT):
-            out[item["name"]] = [float(v) for v in settings["shift_levels"]]
+        if item["name"].lower().endswith(SHIFT):   # owner, 2026-09-26: a shift never moves
+            out[item["name"]] = [value]
             continue
         span = np.linspace(value * (1 - settings["span"]), value * (1 + settings["span"]),
                            settings["steps"])

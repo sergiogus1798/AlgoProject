@@ -78,28 +78,6 @@ def silence(text: str) -> tuple[str, int]:
     return re.subn(r'(<Condition\s+)use="true"', r'\g<1>use="false"', text)
 
 
-def silence_block(text: str, name: str) -> tuple[str, int]:
-    """Leave ONE cross-check unable to drop a strategy, without touching the others.
-
-    Args:
-        text: A task XML.
-        name: Element name, e.g. "RetestOnAdditionalMarkets".
-
-    Returns:
-        The task and how many acceptance conditions were turned off. `silence` above wipes
-        every condition of the task; this one is scoped to a single cross-check, which is
-        what a task hosting one reading wants. `assets/_build.yaml` declares
-        `conditions: []` for the cross-market and the cross-timeframe checks: with a live
-        condition SQX does not write the failing strategy into the output databank, and an
-        analysis that never sees the dead ones cannot say which market killed which
-        strategy. The verdict is taken in Python and applied with `/curate`.
-    """
-    found = re.search(rf"<{name}\b.*?</{name}>", text, re.S)
-    silenced, n = re.subn(r'(<Condition\s+)use="true"', r'\g<1>use="false"', found.group(0))
-    return DELETE_FAILED.sub("<DeleteFailedStrategies>false",
-                             text[:found.start()] + silenced + text[found.end():]), n
-
-
 def recommended(block: str) -> str:
     """Permute SQX's recommended parameters, and nothing else.
 

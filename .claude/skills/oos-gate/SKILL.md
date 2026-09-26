@@ -10,7 +10,7 @@ Build → retest → **this** → the next task. Python decides, SQX obeys.
 ```
 Results (IS)  ┐                                              ┌ verdict.csv ┐
               ├─ studies.screening.gate.harvest ─▶ studies.screening.gate.report ─▶ scorecard ───┤             ├─▶ curate ─▶ next task
-OOS (retest)  ┘   join on identity   seven screens           └ gate.md     ┘
+OOS (retest)  ┘   join on name       seven screens           └ gate.md     ┘
 ```
 
 Two databanks, not one. SQX charges one spread and one slippage per backtest and these windows
@@ -24,16 +24,10 @@ bin/sqx-worker.sh --role custodian stop
 python3 -m studies.screening.gate.harvest --project <P> --databank Results --oos-databank OOS --role custodian
 ```
 
-**Pairs on identity, and on file name only for what identity missed.** SQX renames on collision,
-so two databanks of one project can hold different strategies under one name — the name is not an
-identity. The identity is the SHA-256 of the inner `strategy_Portfolio.xml` **with SQX's own
-bookkeeping stripped**, and the stripping is the whole trick: a retest flips `makeExternal` on every
-variable, so the raw hash matched 0 of 115 pairs while the normalised one matches 115 of 115.
-
-The name fallback (`studies/screening/gate/pairing.py`, owner's decision) only takes names that appear exactly once
-on each side. With the identity fixed it rescues nothing — it is a safety net, not a mechanism, and
-a strategy whose normalised identity really did change between the two databanks is a different
-strategy. If it ever starts rescuing pairs, that is a finding to chase, not a success.
+**Pairs by strategy name** (owner, 2026-09-26). The OOS databank is the retest of `Results` in the
+same project, so each strategy keeps its name; within a databank names are unique. The harvest prints
+how many pairs changed identity on the way — that is information, not a failure. ⚠️ Never pair a
+retest with a build it did not retest: across builds, one name can be two different strategies.
 
 A strategy in the build with no twin in the retest is dropped: SQX already judged it, by its own
 red flags.

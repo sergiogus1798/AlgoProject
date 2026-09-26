@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from core.assetdata import doctrine
 from core.datapaths import crosstf_dir
 from core.paths import ROOT
 from sqx.variants.build import rewrite
@@ -16,7 +17,7 @@ from sqx.variants.build import rewrite
 CONFIG = ROOT / "sqx" / "variants" / "config.yaml"
 
 # A timeframe is only ever a number of minutes here, which is what makes a ratio meaningful.
-MINUTES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440}
+MINUTES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "H12": 720, "D1": 1440}
 
 
 def knobs() -> dict:
@@ -154,8 +155,10 @@ def main() -> None:
     parser.add_argument("--out", type=Path,
                         help="override the declared location under the data root")
     parser.add_argument("--source", default="H1", choices=sorted(MINUTES))
-    parser.add_argument("--targets", nargs="+", default=["H4"], choices=sorted(MINUTES))
+    parser.add_argument("--targets", nargs="+", choices=sorted(MINUTES),
+                        help="default: the doctrine's list for --source (crosstf.timeframes)")
     args = parser.parse_args()
+    args.targets = args.targets or doctrine()["crosstf"]["timeframes"][args.source]
 
     cfg = knobs()
     out = args.out or crosstf_dir(args.project, date.today().isoformat())

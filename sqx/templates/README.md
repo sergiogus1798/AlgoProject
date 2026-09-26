@@ -2,7 +2,7 @@
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `build.py` | Fix one concrete block — authored, or native read from the install's AlgoWizard `config.xml` — into a build-confirmed skeleton and emit the template; `--param` fixes what the owner named | `python3 -m sqx.templates.build <name> <blocks.xml\|config.xml> <key> <out.sqx> [--param '#Type#=1'] [--install ROLE]` | a skeleton + one block → an importable `.sqx` |
+| `build.py` | Put one concrete condition — authored, or native from the install's AlgoWizard `config.xml` — into a proven skeleton, inside a one-item group so the builder draws its periods at random; `--param` fixes what the owner named | `python3 -m sqx.templates.build <name> <blocks.xml\|config.xml> <key> <out.sqx> [--param '#Type#=1']` | a skeleton + one block → `.sqx` + `deps/groups.xml` |
 | `registry.py` | Record a template in the library, and each market it has been tried on | `python3 -m sqx.templates.registry --help` | a template or a run → a row in `registry.csv` / `runs.csv` |
 | `holes.py` | Which parts of a template the builder fills at random, which are bound to a group, and which the template fixes | imported | a `.sqx` → its holes and its fixed blocks |
 
@@ -23,7 +23,7 @@ What the owner means by "create a strategy", in his words (2026-09-22). Three st
 | the random condition | **free**: `#Group#` empty, sampling the whole 500-block Conditions vocabulary |
 | how many extra conditions | **one** |
 | `Shift` | **1**, the last closed bar — SQX's own default |
-| indicator periods, deviations and the like | **optimizable**: "the same logic, but flexible" |
+| indicator periods, deviations and the like | **random**: the builder draws one per strategy — "the same logic, but flexible" |
 | anything he named explicitly (the upper band, say) | **fixed**, never parametrised |
 
 The last row is the one that gets read backwards. His words: *"fix it to what I said, we don't want

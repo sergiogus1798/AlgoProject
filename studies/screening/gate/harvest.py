@@ -33,7 +33,7 @@ def main() -> None:
     pairs, alias, missing = pairing.pair(build, after)
     matched = sorted(pairs)
     print(f"{a.databank}: {len(build)} · {a.oos_databank}: {len(after)} · "
-          f"emparejadas {len(matched)} ({len(alias)} por nombre) · sin OOS {len(missing)} · "
+          f"emparejadas por nombre {len(matched)} ({len(alias)} con identidad distinta) · sin OOS {len(missing)} · "
           f"solo en OOS {len(set(after) - set(build) - set(alias))}")
     if a.limit and a.limit < len(matched):
         matched = sorted(random.Random(SAMPLE_SEED).sample(matched, a.limit))
@@ -42,8 +42,8 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     sides = collect.tables({side: [pairs[i][n] for i in matched]
                             for n, side in enumerate(("IS", "OOS"))}, out / "_work", a.view)
-    # A pair the names rescued carries two different identities, so the retest side is
-    # re-keyed to the build's before anything is joined on it.
+    # A pair whose identity changed in the retest carries two identities, so the retest side
+    # is re-keyed to the build's before anything is joined on it.
     if alias:
         sides["OOS"]["metrics"] = sides["OOS"]["metrics"].rename(index=alias)
         for frame in ("trades", "equity"):

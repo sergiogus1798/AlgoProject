@@ -66,16 +66,16 @@ por separado y actúa después.
 python3 -m sqx.variants.make --brief <design_brief_<Estrategia>.json> --project <PROYECTO> \
     [--out <work>] [--sample N | --limit N] [--design-only]
 python3 -m sqx.variants.execute --work <work> --project <PROYECTO>   # ⏰ el único que ocupa el custodio
+python3 -m sqx.variants.equity   --work <work>    # antes que collect: collect lee equity.parquet
 python3 -m sqx.variants.collect  --work <work>
-python3 -m sqx.variants.equity   --work <work>
 ```
 
 | comando | qué deja | toca SQX |
 |---|---|---|
 | `make` | `plan.csv`, `design.json`, `sqx/` con las N variantes, `manifest.parquet` | no |
 | `execute` | `retest.csv`, `ran.json`, el databank volcado a disco | **sí** |
-| `collect` | `metrics.parquet` — el panel unido al manifiesto | no |
 | `equity` | `equity.parquet` — el P&L **por día** de cada variante | no |
+| `collect` | `metrics.parquet` — el panel unido al manifiesto | no |
 
 `--sample N` fabrica N filas **repartidas** por todo el plan (los controles y luego picks
 espaciados de cada estrato); `--limit N` coge las N primeras y sesga el lote hacia un estrato. Para

@@ -102,7 +102,11 @@ def brief(result: dict, settings: dict) -> dict:
         parameters.append({
             "name": name, "eta2": float(eta2[name]), "inert": bool(dup.loc[name, "inert"]),
             "center": shape["center"], "center_rule": "plateau_midpoint",
-            "levels": profile.design_levels(curve, shape, result["original"][name], count),
+            # A shift stays where it was built (owner, 2026-09-26): it changes which bar the
+            # rule reads, not how sensitive the rule is.
+            "levels": ([float(result["original"][name])] if name.lower().endswith("shift1") else
+                       profile.design_levels(curve, shape, result["original"][name], count,
+                                             design["min_span"])),
             "original": float(result["original"][name]), "argmax_is": shape["argmax"],
             "plateau_width": shape["width"],
             # Width 1 means there is no plateau on this axis: the "centre" is the argmax

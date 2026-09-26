@@ -46,7 +46,7 @@ python3 -u -m studies.transfer.crossmarket.report \
     --project TestUSDJPY_Workflow_v1 \
     --databank Retest_Markets_-_Family \
     --asset USDJPY \
-    --export 2026-09-24 \
+    --day 2026-09-24 \
     --set nulls.draws=2000
 ```
 
@@ -55,7 +55,7 @@ python3 -u -m studies.transfer.crossmarket.report \
 | `--project` | sí | el proyecto tal y como aparece en SQX |
 | `--databank` | sí | la carpeta de la exportación, **con guiones bajos** donde el databank lleva espacios |
 | `--asset` | sí | el activo base, p. ej. `USDJPY`. Decide la lista de mercados |
-| `--export` | sí | la fecha de la exportación, `AAAA-MM-DD` |
+| `--day` | no | la fecha de la exportación, `AAAA-MM-DD`; hoy si no se pone |
 | `--floor` | no | fracción de mercados que tienen que superar cero para conservarla. Por defecto `0.5` |
 | `--set` | no | cualquier knob de `config.yaml`, p. ej. `nulls.draws=2000` |
 | `--workers` | no | cuántos **mercados** se estudian a la vez. Pon **48**: con más va más lento |
@@ -165,7 +165,7 @@ python3 -m sqx.export.sync_bars --check
 
 # 3. juzga la población entera
 python3 -u -m studies.transfer.crossmarket.report --project TestUSDJPY_Workflow_v1 \
-    --databank Retest_Markets_-_Family --asset USDJPY --export 2026-09-24 \
+    --databank Retest_Markets_-_Family --asset USDJPY --day 2026-09-24 \
     --set nulls.draws=2000
 
 # 4. aplica el veredicto para que el MC Retest sólo vea a los supervivientes

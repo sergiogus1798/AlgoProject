@@ -9,7 +9,7 @@ import pandas as pd
 
 import shutil
 
-from core import exportdrv, manifest, trades, tradestore, wfmatrix, wftrades
+from core import exportdrv, manifest, sqxfile, trades, tradestore, wfmatrix, wftrades
 from core.paths import MASTER, databank_dir, export_dir, worker_dir
 from sqx.export.export_trades import stage
 
@@ -26,17 +26,21 @@ def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.
 
     Returns:
         `cells` (one row per matrix cell), `steps` (one per walk-forward step of every
-        cell) and `params` (long form: one row per step and parameter). A cell's statistics
+        cell), `params` (long form: one row per step and parameter) and `status` (one per
+        strategy: whether SQX marked it failed, and why — it is kept, never deleted). A cell's statistics
         come three times -- `is_`, `oos_`, `all_`; a step's twice, `is_` from its
         optimisation window and `oos_` from its run window.
         A strategy the databank holds without a matrix result was never cross-checked with
         WFM and is skipped -- a stripped copy carries the rules and no cross-check at all.
     """
-    cells, steps = [], []
+    cells, steps, status = [], [], []
     for f in sorted(databank_dir(project, databank, install).glob("*.sqx")):
         node = wfmatrix.matrix(f)
         if node is None:
             continue
+        note = sqxfile.sqx_filter(f)
+        status.append({"strategy": f.stem, "sqx_filter": note,
+                       "sqx_failed": note is not None and note != "Passed"})
         cells += [{"strategy": f.stem} | c for c in wfmatrix.cells(node, wfmatrix.results(f))]
         steps += [{"strategy": f.stem} | s for s in wfmatrix.periods(node)]
     params = [{**{k: s[k] for k in KEYS}, "index": s["index"], "parameter": k, "value": v}
@@ -54,7 +58,8 @@ def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.
         number = pd.to_numeric(wide[name], errors="coerce")
         if number.notna().sum() == wide[name].notna().sum():
             wide[name] = number
-    return {"cells": frame(cells), "steps": frame(steps), "params": wide}
+    return {"cells": frame(cells), "steps": frame(steps), "params": wide,
+            "status": pd.DataFrame(status)}
 
 
 def split(raw_dir: Path, steps: pd.DataFrame, out: Path) -> pd.DataFrame:
@@ -128,6 +133,7 @@ def main() -> None:
                    f"export_wfm.py --project {a.project} --databank {a.databank}",
                    {"strategies": len(staged), "unaccounted_trades": off,
                     "trades_in_steps": int(checked["assigned"].sum()),
+                    "failed_in_sqx": sorted(written["status"].query("sqx_failed")["strategy"]),
                     **{f"{k}.parquet": len(v) for k, v in written.items()}})
     print(f"wrote {out}")
 

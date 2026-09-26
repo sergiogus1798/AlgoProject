@@ -14,10 +14,10 @@ design:
     # check on the freezing decision instead of a restatement of it. The brief carries no
     # range for a frozen parameter, only the value it is pinned at, so the range is
     # rebuilt the way SQX builds its own permutation ranges (knowhow/sqx-format/declared-parameters.md,
-    # measured): +/-30 % of the value, and a flat 0..6 for anything that is a shift.
+    # measured): +/-30 % of the value. A shift is never varied (owner, 2026-09-26): it stays at
+    # the value the strategy was built with.
     span: 0.30
     steps: 5
-    shift_levels: [0, 1, 2, 3, 4, 5, 6]
 
 canaries:
   # Controls whose result is known before the retest runs. They are chosen at the extremes

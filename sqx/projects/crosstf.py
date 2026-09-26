@@ -8,7 +8,7 @@ from pathlib import Path
 
 from core.assetdata import doctrine, load, sqx_settings
 from sqx.projects.configure import running_install
-from sqx.projects.crosschecks import member_of, silence_block
+from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.setups import set_span, span
 from sqx.projects.stage import own
 
@@ -102,7 +102,7 @@ def set_timeframes(text: str, symbol: str,
         text: A task XML.
         symbol: The asset, for its declared costs.
         timeframes: The extra timeframes, in the order they become blocks 1, 2, ... None
-            takes the doctrine's list.
+            takes the doctrine's list for the task's own timeframe.
 
     Returns:
         The task, the timeframe of every result block in order (block 0 first), how many
@@ -117,8 +117,8 @@ def set_timeframes(text: str, symbol: str,
         raise SystemExit("`crosstf.conditions` de assets/_build.yaml ya no esta vacio: esta "
                          "prueba es una medicion, no una puerta, y escribir condiciones no "
                          "esta implementado. Quitalas o dilo explicitamente.")
-    timeframes = timeframes or study["timeframes"]
     feed, native = main_chart(text)
+    timeframes = timeframes or study["timeframes"][native]
     data = load(symbol)
     start, end, costs = span(data, study["segment"])
     # The extra timeframes inherit the main test's dates, so the main test carries the span.
@@ -129,7 +129,10 @@ def set_timeframes(text: str, symbol: str,
     text = SETUPS.sub(rf'\g<1><Setups detailed="true">{body}</Setups>', text, count=1)
     text = re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"',
                   r'\g<1>use="true"', text, count=1)
-    text, silenced = silence_block(text, "RetestOnAdditionalMarkets")
+    # Every condition of the task, not only this check's: 🔬 2026-09-25 a clone carried live
+    # conditions elsewhere in the task (the OOS copy three, with DeleteFailedStrategies true),
+    # and one live condition under evaluateAll="false" makes SQX skip the extra blocks.
+    text, silenced = silence(text)
     live = main_window(text)
     warning = ("" if live == (start, end) else
                f"⚠️  la tarea corre {live[0]} a {live[1]}, no {start} a {end}. Las fechas de "

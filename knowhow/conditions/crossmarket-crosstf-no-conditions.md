@@ -1,10 +1,10 @@
 ---
-q: cross-market cross-timeframe check acceptance conditions empty; crossmarket.conditions crosstf.conditions _build.yaml; silence_block; Setup missing dateFrom fails task; crossTF block names LOM
+q: cross-market cross-timeframe check acceptance conditions empty; crossmarket.conditions crosstf.conditions _build.yaml; silence whole task; Setup missing dateFrom fails task; crossTF block names LOM
 tag: 🔬  date: 2026-09-24  see: conditions/retest-additional-markets, conditions/active-conditions-in-crosschecks
 ---
 # Cross-market / crossTF checks run with zero conditions; the verdict is taken in Python
 - Doctrine: `crossmarket.conditions: []`, `crosstf.conditions: []` in `assets/_build.yaml`; verdict applied with `/curate`.
-  `sqx/projects/crosschecks.silence_block()` enforces it and reports the count; both commands refuse if the list is not empty.
+  `sqx/projects/crosschecks.silence()` enforces it over the WHOLE task (since 2026-09-25: a cloned task carried live conditions outside the check) and reports the count; both commands refuse if the list is not empty.
 - ⚠️ Every field a `<Setup>` inherits must still be present as an attribute (`dateFrom`/`dateTo` etc.); the mask picks the winner, not which exist.
 - 🤔 With zero live conditions `MinConditions`/`MinMarkets` are left untouched (WFM precedent: score 100 → all pass). Unverified here — check output count = input count on the first real run.
 
