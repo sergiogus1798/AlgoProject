@@ -68,6 +68,8 @@ sample:
   trades_databank: null           # MC_Trades was deleted 2026-09-25; name an export that holds
                                   # both trades/ CSVs and the strategies/ .sqx they came from
   retest_databank: MCR_All        # the ingested parquet the retest study reads back
+  atr_databank: Results           # an export spanning IS and oos1, for the ATR stop study (step 22)
+  atr_timeframe: H1               # the timeframe that export's strategies run on
   bars_feed: XAUUSD_DukasM1_Infinox
   bars_timeframe: M30
   files: 20                       # how many files the per-file parsing targets chew through

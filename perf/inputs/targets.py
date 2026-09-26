@@ -18,6 +18,8 @@ TARGETS: dict[str, dict] = {
                          "call": workloads.retest_load_sims},
     "crossmarket.paired": {"area": "strategies", "unit": "bars",
                            "call": workloads.crossmarket_paired},
+    "atrcalculator.reading": {"area": "strategies", "unit": "trades",
+                              "call": workloads.atrcalculator_reading},
     "core.trades_read": {"area": "core", "unit": "rows", "call": parsers.trades_read},
     "core.bars_read": {"area": "core", "unit": "bars", "call": parsers.bars_read},
     "core.sqx_xml": {"area": "core", "unit": "files", "call": parsers.sqx_xml},

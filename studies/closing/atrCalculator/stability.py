@@ -1,0 +1,115 @@
+"""§3 — what SQX says each X costs against the original, in each window, and the shape around it."""
+
+import numpy as np
+import pandas as pd
+
+from studies.closing.atrCalculator import proofs
+from studies.closing.atrCalculator.inputs import SEGMENTS
+
+
+def stats(trades: pd.DataFrame) -> dict:
+    """Net, profit factor, closed-trade drawdown and the worst trade of one run in one window."""
+    pl = trades.sort_values("Close time")["Profit/Loss"].to_numpy()
+    equity = np.cumsum(pl)
+    loss = -pl[pl < 0].sum()
+    return {"n": len(pl), "net": float(pl.sum()),
+            "pf": float(pl[pl > 0].sum() / loss) if loss else np.nan,
+            "maxdd": float(np.max(np.maximum.accumulate(np.maximum(equity, 0)) - equity))
+            if len(pl) else 0.0,
+            "worst": float(pl.min()) if len(pl) else np.nan}
+
+
+def against(variant: pd.DataFrame, reference: pd.DataFrame) -> dict:
+    """What the stop did to the original's trades, matched by entry time.
+
+    Args:
+        variant: One window's trades with the stop.
+        reference: The same window's trades without it.
+
+    Returns:
+        `stopped` (trades the stop closed) and their share, `killed` (of those, trades that
+        were winners in the original), `saved` (loss avoided on stopped trades the original
+        lost on), `given_up` (profit lost on stopped trades the original won), and `new`
+        (entries the original never took — the stop freed the strategy earlier).
+    """
+    ref = reference.set_index("Open time")["Profit/Loss"]
+    hit = variant[variant["Close type"].astype(str) == proofs.STOP]
+    before = ref.reindex(hit["Open time"]).to_numpy()
+    after = hit["Profit/Loss"].to_numpy()
+    won, lost = before > 0, before <= 0
+    return {"stopped": len(hit), "stopped_pct": 100 * len(hit) / len(variant) if len(variant)
+            else np.nan, "killed": int(won.sum()),
+            "saved": float((after - before)[lost].sum()),
+            "given_up": float((before - after)[won].sum()),
+            "new": int((~variant["Open time"].isin(ref.index)).sum())}
+
+
+def measure(strategy: str, inputs: dict, cfg: dict) -> dict:
+    """Every variant of one mother in every window, the two proofs, and the shape per percentile.
+
+    Args:
+        strategy: The mother's name.
+        inputs: What load.load() returned, with a batch.
+        cfg: The study's config.
+
+    Returns:
+        `graft` (proofs.graft), `atr` (proofs.atr over every stopped trade of the grid),
+        `metrics` (one row per grid variant and window, with the original's own numbers
+        beside) and `shape` (one row per percentile and window).
+    """
+    batch = inputs["batch"]
+    mine = batch[batch["strategy"] == strategy]
+    trades = inputs["trades"]
+    by_id = {v: trades[trades["strategy"] == v] for v in mine["variant_id"]}
+    ref = by_id[mine.loc[mine["stratum"] == "reference", "variant_id"].iloc[0]]
+    probe = by_id[mine.loc[mine["stratum"] == "probe", "variant_id"].iloc[0]]
+    rows, stopped = [], []
+    for v in mine[mine["stratum"] == "grid"].itertuples():
+        got = by_id[v.variant_id]
+        stopped.append(got[got["Close type"].astype(str) == proofs.STOP].assign(x=v.x))
+        for s in SEGMENTS:
+            here, base = got[got["segment"] == s], ref[ref["segment"] == s]
+            original = stats(base)
+            rows.append({"percentile": v.percentile, "step": v.step, "x": v.x, "segment": s,
+                         **stats(here), **against(here, base),
+                         **{f"{k}_original": original[k] for k in ("net", "pf", "maxdd",
+                                                                   "worst")}})
+    metrics = pd.DataFrame(rows)
+    stops = pd.concat(stopped, ignore_index=True) if stopped else pd.DataFrame()
+    return {"graft": proofs.graft(ref, probe, cfg), "metrics": metrics,
+            "atr": proofs.atr(stops, inputs["bars_index"], inputs["atr"]) if len(stops)
+            else pd.DataFrame(), "shape": shape(metrics, cfg)}
+
+
+def shape(metrics: pd.DataFrame, cfg: dict) -> pd.DataFrame:
+    """Plateau or edge: how far the net result moves along the grid around each X.
+
+    Args:
+        metrics: What `measure` built, one row per grid variant and window.
+        cfg: The study's config.
+
+    Returns:
+        One row per percentile and window: the largest move on the tighter side (steps
+        below 0) and on the looser side, each as a share of the centre's net, and `shape` —
+        "meseta" when both stay within `shape.tolerance`, otherwise which side falls away.
+        It reads the form, never the maximum.
+    """
+    tol, rows = cfg["shape"]["tolerance"], []
+    for (p, s), g in metrics.groupby(["percentile", "segment"]):
+        centre = g.loc[g["step"] == 0, "net"].iloc[0]
+        rel = (g.set_index("step")["net"] - centre) / abs(centre) if centre else g["net"] * np.nan
+        tight, loose = rel[rel.index < 0].abs().max(), rel[rel.index > 0].abs().max()
+        label = ("meseta" if tight <= tol and loose <= tol else
+                 "borde al apretar" if loose <= tol else
+                 "borde al aflojar" if tight <= tol else "borde por los dos lados")
+        rows.append({"percentile": p, "segment": s, "centre_net": centre,
+                     "tighter": tight, "looser": loose, "shape": label})
+    return pd.DataFrame(rows)
+
+
+def summary(measured: dict) -> dict:
+    """The flat numbers verdict.csv carries from the SQX side: the proofs and the shapes."""
+    row = {"graft_identical": bool(measured["graft"]["identical"].all())}
+    for r in measured["shape"].itertuples():
+        row[f"shape_{r.segment}_p{r.percentile}"] = r.shape
+    return row

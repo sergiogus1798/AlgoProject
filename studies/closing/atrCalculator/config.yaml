@@ -1,0 +1,42 @@
+# Every tunable of the ATR stop-loss study (step 22), in one place. Nothing below is hidden in code.
+#
+# This is NOT an optimisation. X is read from the in-sample winners with a rule fixed before
+# looking (a percentile of their MAE in ATR units), and SQX then measures what that stop costs
+# and whether the result is flat around it. Nothing here picks the best X or the best
+# percentile: the report puts the four side by side and the owner decides.
+
+stop:
+  atr_period: 20              # the stop is X * ATR(20) of the bar closed before the entry, always
+  percentiles: [80, 85, 90, 95]   # one sub-study each: the X that leaves this share of IS winners untouched
+
+bootstrap:
+  n: 9999                     # resamples of the IS winners, for the interval around each X
+  confidence: 0.95
+  seed: 20260926
+  wide: 0.5                   # an interval wider than this share of X marks the X "poco fiable":
+                              # with 60 winners the p95 is decided by the three most extreme, and
+                              # another handful of trades would have given another X
+
+noreturn:
+  x_max: 8.0                  # the distances x (in ATR) the check walks, from x_step to x_max
+  x_step: 0.25
+  recover_max: 0.10           # "casi ninguna se recupera": at most this share of the trades that
+                              # reached x ended as winners. Descriptive, it picks nothing: the
+                              # curve is drawn whole and this only names the zone each X falls in
+  min_reached: 10             # fewer trades than this reaching x and the zone is not read
+
+transfer:
+  tolerance: 5.0              # percentile points: the IS X still sits within this of its own
+                              # percentile among the winners of oos1/oos2 -> "se transfiere"
+  min_winners: 30             # fewer OOS winners than this and the comparison is only shown
+
+grid:
+  band: 0.20                  # the stability variants: X * (1 +- band * k / steps), k = 1..steps
+  steps: 2                    # -> by default X * {0.8, 0.9, 1, 1.1, 1.2}
+
+shape:
+  tolerance: 0.10             # along the grid, a net result within this share of the centre's is
+                              # flat; beyond it on one side the X is on an edge, not a plateau
+
+proof:
+  pl_tolerance: 0.01          # USD: the X = 1000 probe must reproduce every trade's P/L to this

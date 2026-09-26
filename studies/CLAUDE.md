@@ -10,7 +10,7 @@ and the catalogue of the window (`docs/AgentPDFs/catalogo-para-la-ui-2026-09-25.
 | `transfer/` | does the edge work away from where it was built? | 9–12 | `crossmarket`, `crossTF` |
 | `breakage/` | had the world been slightly different, what breaks it? | 13–16 | `mcRetest`, `spp` |
 | `optimisation/` | does optimising buy anything, or is choosing parameters overfitting? | 16.5–19 | `cloud`, `wfc`, `cscv`, `wfm`; *to build:* `marketSurfaces` |
-| `closing/` | the final call and the shape of the edge | 20–21 | `exposure`; *to build:* `blindJoint` |
+| `closing/` | the final call, the shape of the edge, and the stop it trades with | 20–22 | `exposure`, `atrCalculator`; *to build:* `blindJoint` |
 | `readings/` | what one strategy's result is made of; no step | — | `monkey`, `profitShape`, `entryQuality`; *to build:* `edgeCost`, `structure`, `conditionalMap` |
 | `data/` | are the inputs fit to judge with? | — | *to build:* `feedQuality` |
 

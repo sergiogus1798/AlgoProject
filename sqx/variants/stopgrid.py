@@ -83,7 +83,7 @@ def main() -> None:
     rows = plan(mothers, pd.read_csv(a.grid) if a.grid else None)
     write(rows, a.out / "sqx", inputs.load()["build"]["shape"])
     frame, report = manifest.write(rows, a.out / "sqx", [stoploss.VARIABLE])
-    frame.merge(rows[["variant_id", "strategy", "percentile", "step", "x"]], on="variant_id") \
+    frame.merge(rows[["variant_id", "strategy", "mother", "percentile", "step", "x"]], on="variant_id") \
          .to_parquet(a.out / manifest.FILE, compression="zstd", index=False)
     broken = report["missing"] or report["unexpected"] or report["tuple_mismatch"]
     if broken:
