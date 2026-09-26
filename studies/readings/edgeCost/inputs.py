@@ -63,3 +63,17 @@ def names(folder: Path) -> pd.Series:
         Series indexed by identity; the retest (OOS) databank's own name for it.
     """
     return pd.read_parquet(folder / "metrics.parquet", columns=["strategy"])["strategy"]
+
+
+def timeframe(folder: Path) -> str:
+    """The bars this harvest's strategies were priced on, e.g. "M30".
+
+    Args:
+        folder: A harvest directory.
+
+    Returns:
+        The build databank's `TimeFrame [IS]` column — the whole point of one project is
+        one timeframe, so a single value is expected and read once, not per strategy.
+    """
+    col = pd.read_parquet(folder / "metrics.parquet", columns=["TimeFrame [IS]"])
+    return col["TimeFrame [IS]"].iloc[0]

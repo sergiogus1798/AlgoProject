@@ -4,18 +4,23 @@ The spread is never a charge in the trade export (`knowhow/costs/where-the-sprea
 it sits inside the fill price, so `(Close price - Open price)` already has it baked in.
 `price_pnl` recovers that raw price move; adding the spread and commission back to the
 *reported* net P/L is what turns it into the gross the owner asked for.
+
+Two different spread numbers are used on purpose, and they must never be swapped:
+`spread_share.measure()` gives the round-trip cost the historical fill ACTUALLY embedded
+(measured against the bars, per feed and segment) — that is what gross has to remove.
+`_spread_points()` gives what `assets/symbols/*.yaml` says the cost is TODAY — that is the
+"coste modelado hoy" the encargo asks the edge to be expressed in multiples of. A run built
+years ago may not have carried today's declared spread; the two are kept apart precisely so
+one is never mistaken for the other (review BLOCKER, 2026-09-26).
 """
 
 import numpy as np
 import pandas as pd
 
 from core import assetcheck, assetdata
+from studies.readings.edgeCost import spread_share
 
 DIRECTION = {"Buy": 1, "Sell": -1}
-# 🔬 knowhow/export/fill-and-pricing.md: SQX prices the entry a HALF spread away from the
-# bar open and the exit clean — measured entry offset 0.05 against a configured 10-point
-# (0.10 price) spread. The round-trip cost this study adds back is that half, not the whole.
-SPREAD_SHARE = 0.5
 
 
 def asset_for(feed: str) -> dict:
@@ -35,7 +40,7 @@ def asset_for(feed: str) -> dict:
 
 
 def _spread_points(asset: dict, sample: pd.Series) -> pd.Series:
-    """The spread each trade's segment carries, in points."""
+    """The spread each trade's segment carries TODAY, in points (assets/symbols/*.yaml)."""
     fields = assetdata.schema(asset)["spread"]["fields"]
     by_sample = {"IS": asset["costs"][fields[0]]["use"], "OOS": asset["costs"][fields[-1]]["use"]}
     return sample.map(by_sample)
@@ -55,28 +60,34 @@ def _commission(asset: dict, size: pd.Series, open_price: pd.Series, point_value
     return (use / 100) * size * open_price * point_value
 
 
-def per_trade(trades: pd.DataFrame, asset: dict) -> pd.DataFrame:
-    """Every trade with its price-only P&L, its modelled cost, and the gross it implies.
+def per_trade(trades: pd.DataFrame, asset: dict, feed: str, timeframe: str) -> pd.DataFrame:
+    """Every trade with its price-only P&L, the ACTUAL cost it paid, and today's modelled cost.
 
     Args:
         trades: One harvest's trades (`inputs.trades`), carrying `sample` ("IS"/"OOS").
         asset: `asset_for()`'s dict.
+        feed: SQX feed, for `spread_share.measure()`.
+        timeframe: The bars the strategies were priced on, e.g. "M30".
 
     Returns:
-        `trades` plus `price_pnl` (the raw price move at the fill prices), `spread_cost`,
-        `commission_cost`, `cost_total` and `gross` = `Profit/Loss` + `commission_cost` +
-        `spread_cost` — the P&L before either cost was paid.
+        `trades` plus `price_pnl` (the raw price move at the fill prices), `spread_cost`
+        (the round-trip spread ACTUALLY embedded, measured against the bars — never
+        assumed), `commission_cost`, `gross` = `Profit/Loss` + `commission_cost` +
+        `spread_cost`, and `cost_today` = today's declared spread (assets/symbols/) plus
+        commission — the denominator `one.measure()` reads the edge in multiples of.
     """
     tick = asset["instrument"]["tick_size"]
     point_value = asset["instrument"]["point_value"]
     direction = trades["Type"].astype(str).map(DIRECTION)
     price_pnl = (trades["Close price"] - trades["Open price"]) * direction * trades["Size"] * point_value
-    spread_cost = SPREAD_SHARE * _spread_points(asset, trades["sample"]) * tick * point_value * trades["Size"]
+    measured = spread_share.measure(trades, feed, timeframe)
+    spread_cost = trades["sample"].map(measured) * point_value * trades["Size"]
     commission_cost = _commission(asset, trades["Size"], trades["Open price"], point_value)
     gross = trades["Profit/Loss"] + commission_cost + spread_cost
+    spread_today = _spread_points(asset, trades["sample"]) * tick * point_value * trades["Size"]
     return trades.assign(direction=direction, price_pnl=price_pnl, spread_cost=spread_cost,
-                         commission_cost=commission_cost, cost_total=spread_cost + commission_cost,
-                         gross=gross)
+                         commission_cost=commission_cost, gross=gross,
+                         cost_today=spread_today + commission_cost)
 
 
 def warnings(asset: dict) -> list[dict]:

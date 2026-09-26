@@ -14,7 +14,7 @@ from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import output
 from core.study.render import markdown
-from studies.readings.edgeCost import costs, inputs, many, one
+from studies.readings.edgeCost import costs, inputs, many, one, spread_share
 
 
 def main() -> None:
@@ -30,7 +30,8 @@ def main() -> None:
     cfg = inputs.config(a.set)
     folder = inputs.newest(a.project, a.databank)
     asset = costs.asset_for(a.feed)
-    priced = costs.per_trade(inputs.trades(folder), asset)
+    timeframe = inputs.timeframe(folder)
+    priced = costs.per_trade(inputs.trades(folder), asset, a.feed, timeframe)
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "edgeCost"
 
     if a.strategy:
@@ -44,6 +45,8 @@ def main() -> None:
         print(f"-> {output.member(out, got, title, lede)}")
         return
 
+    print(f"spread realmente cobrado, medido contra la barra {timeframe}: "
+         f"{spread_share.measure(inputs.trades(folder), a.feed, timeframe)}")
     names = inputs.names(folder)
     got = many.run(priced, names, cfg, asset)
     recon = costs.reconcile(priced)

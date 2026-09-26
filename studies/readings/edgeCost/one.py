@@ -11,7 +11,8 @@ from studies.readings.edgeCost import costs
 MODULE = "edgeCost"
 GLOSSARY = [
     {"term": "P&L bruto", "text": "Lo que dejó el movimiento de precio antes de pagar el "
-     "spread y la comisión: `Profit/Loss` + comisión + coste de spread modelado."},
+     "spread y la comisión: `Profit/Loss` + comisión + el spread REALMENTE cobrado, medido "
+     "contra la barra (nunca el declarado hoy en assets/)."},
     {"term": "Edge en spreads", "text": "El bruto medio (o mediano) por operación, dividido "
      "entre el coste de ida y vuelta que se modela hoy — cuántas veces ese coste cabe en la "
      "ventaja."},
@@ -30,7 +31,7 @@ def measure(priced: pd.DataFrame) -> dict:
     Returns:
         Flat numbers plus `by_hour` and `by_dow`, each a Series of mean gross per bucket.
     """
-    mean_cost = priced["cost_total"].mean()
+    mean_cost = priced["cost_today"].mean()
     mean_gross, median_gross = priced["gross"].mean(), priced["gross"].median()
     edge_mean = mean_gross / mean_cost
     edge_median = median_gross / mean_cost
@@ -76,8 +77,10 @@ def tabs(got: dict, recon: dict) -> list[dict]:
              "items": [{"label": DOW_ES[d], "value": float(v), "error": None, "state": "info"}
                        for d, v in got["by_dow"].items()],
              "note": ""}
-    return [envelope.tab("headline", "Edge y breakeven", [headline]),
-            envelope.tab("reconcile", "Reconciliación", [rec]),
+    # Reconciliation FIRST (review FIX, 2026-09-26): a reader must see whether the bruto is
+    # trustworthy before the headline table that uses it — never the other way round.
+    return [envelope.tab("reconcile", "Reconciliación", [rec]),
+            envelope.tab("headline", "Edge y breakeven", [headline]),
             envelope.tab("sessions", "Por sesión y hora", [by_hour, by_dow])]
 
 
@@ -103,9 +106,10 @@ def run(strategy: str, priced: pd.DataFrame, recon: dict, cfg: dict, asset: dict
     label = "por encima del umbral" if passed else "por debajo del umbral"
     said = blocks.verdict(
         label, "pass" if passed else "fail",
+        f"Reconciliación {recon['corr']:.6f} sobre {recon['n']} operaciones — "
+        f"{'el bruto se puede leer' if recon['corr'] >= 0.99 else 'el bruto NO se debe leer'}. "
         f"Edge medio {got['edge_mean']:.2f} spreads contra un umbral de {bar} "
-        f"({'no elimina, sólo marca' if action == 'mark' else 'elimina en curate'}); "
-        f"reconciliación {recon['corr']:.6f} sobre {recon['n']} operaciones.",
+        f"({'no elimina, sólo marca' if action == 'mark' else 'elimina en curate'}).",
         got["edge_mean"])
     warn = list(costs.warnings(asset))
     provisional = bool(warn)
