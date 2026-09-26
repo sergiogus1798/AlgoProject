@@ -24,7 +24,7 @@ porque un tick no es una barra y aquí no se remuestrea nada desde ahí.
 
 - **El worker tiene que poder arrancar.** El comando lo levanta él solo y lo deja parado al acabar.
   No toca el master, así que **puedes lanzarlo con la GUI de SQX abierta**.
-- **El mercado tiene que estar declarado** en `studies/transfer/crossmarket/assets/_markets.yaml`, o ya estar en la
+- **El mercado tiene que estar declarado** en `assets/_markets.yaml`, o ya estar en la
   librería. Si añades un activo nuevo ahí, el siguiente `sync_bars` lo baja sin que hagas nada más.
 - No hace falta que exportes nada antes. Las barras son un hecho del mercado, no de un backtest.
 

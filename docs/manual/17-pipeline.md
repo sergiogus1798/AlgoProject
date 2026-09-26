@@ -132,7 +132,7 @@ cat ~/Desktop/AlgoData/pipeline/XAUUSD/Strategy_17-9-39/state.json
 fallo y el programa se para solo.
 
 **`costs_provisional: true`** quiere decir que los costes con los que se ha calculado todo son los
-que trae SQX por defecto, no los reales de tu bróker. Sale de `assets/XAUUSD.yaml`, y dejará de
+que trae SQX por defecto, no los reales de tu bróker. Sale de `assets/symbols/XAUUSD.yaml`, y dejará de
 salir cuando pongas ahí las cifras buenas.
 
 Y el veredicto, cuando falla:
@@ -269,7 +269,7 @@ No es que la estrategia sea mala: es que el experimento no vale. Las variantes q
 no son las que se le dieron — renombrado en colisión, un databank que se sincronizó por medio, algo
 así. Se para ahí aposta, para no gastar horas midiendo algo que no significa nada.
 
-**`assets/XAUUSD.yaml: spread, commission sin valor acordado`**
+**`assets/symbols/XAUUSD.yaml: spread, commission sin valor acordado`**
 El activo no tiene costes decididos y no se arranca sin ellos. Corre
 `python3 -m core.assets XAUUSD` para ver qué falta. Ojo: un valor **provisional** no bloquea —
 es una decisión tuya, y el registro la sella con `costs_provisional: true`.

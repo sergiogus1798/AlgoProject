@@ -4,8 +4,8 @@
 
 Si una población entera de estrategias sigue ganando en los mercados que **nunca vio**, y escribe la
 respuesta como una lista de supervivientes que el paso siguiente de SQX puede leer. Es la mitad
-automática del paso 10 del workflow: el panel de `studies/transfer/crossmarket/explorer/` sigue siendo
-donde se mira **una** estrategia con lupa; esto es para cribar las ochenta.
+automática del paso 10 del workflow: la zona Estrategias de la ventana (`ui/desktop/studies.py`)
+sigue siendo donde se mira **una** estrategia con lupa; esto es para cribar las ochenta.
 
 La pregunta concreta que contesta es **amplitud**: en cuántos de los mercados declarados el
 intervalo de confianza de la esperanza por operación queda por encima de cero. Se eligió ésa y no un

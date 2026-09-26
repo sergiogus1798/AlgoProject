@@ -16,7 +16,7 @@ tag: 🔬  date: 2026-09-21  see: export/data-all-blocks, export/fill-and-pricin
 - Block order = result order (main first). ⚠️ Contiguity is not guaranteed in general (crossTF interleaves) → `export/data-all-blocks`.
 - No OOS: `XAUUSD / Retest Markets - Family`, `Strategy 24.14.35`: 1,124 gold, 913 silver, 842 Brent rows all `IST`, incl. 351 gold
   trades inside the OOS. Boundary: `<OutOfSample><Range dateFrom="2018.01.01" dateTo="2022.12.31"/>` in `Build-Task3.xml`
-  inside `XAUUSD/project.cfx`; declared as `out_of_sample` in `studies/transfer/crossmarket/assets/_markets.yaml`.
+  inside `XAUUSD/project.cfx`; declared as `out_of_sample` in `assets/_markets.yaml`.
 - Missing files: 30-strategy sample, 2 have no `XAGUSD_DukasM1_Infinox` file (all have gold, Brent); expect ~50 on 757.
   `crossmarket/orchestrate/strategy.py` records `missing`.
 - `export_retest.py --limit 30`: reproducible random sample (seed 20260914) — a databank is in build order, first N = one generation run.
