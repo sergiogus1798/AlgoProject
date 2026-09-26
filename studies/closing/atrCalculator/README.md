@@ -36,6 +36,7 @@ config.yaml ─▶ inputs/load ─▶ mae ─▶ threshold ─▶ noreturn ─�
 | `stability.py` | §3: every grid variant against the original, per window — PF, net, DD, stops, winners killed, loss saved, new entries, worst trade — and the shape (plateau or edge) | imported | retested batch → metrics, shape |
 | `view.py` | The §2 tabs: X, punto sin retorno, transferencia | imported | reading → tabs |
 | `sqxview.py` | The SQX tabs: pruebas, lo que cuesta, estabilidad | imported | stability → tabs |
+| `spend.py` | The ledger: asks the door before reading (oos2 is reserved for WFC, WFM and step 22 — owner, 2026-09-26) and writes one row per segment read, `n_in = n_out` because nothing is chosen | imported | run → ledger rows |
 | `one.py` | One strategy, as the contract's dict; verdict `info`, never a choice | imported — the window calls it | inputs → result |
 | `report.py` | **The command**. Without `--work` it reads the exports, writes one page per strategy and `stopgrid.csv`; with `--work` it adds the proofs and SQX's cost and stability | `python3 -m studies.closing.atrCalculator.report --project P --databank D [D …] --feed F --symbol S --timeframe TF [--strategy N] [--work DIR]` | exports → reports + `stopgrid.csv` |
 | `tooltips.py` | One Spanish sentence per knob, for the window's drawer | imported | — |
@@ -61,6 +62,3 @@ Pruebas tab says so and nothing after it means anything.
 
 - **No MT5, no `StopsLevel`, no broker minimum** (owner, 2026-09-26).
 - **No recomputing X out of sample.** If the IS X does not transfer, the report says so and stops.
-- **No ledger row for oos2.** `assets/_policy.yaml` reserves oos2 for the WFC and the WFM and the
-  ledger's door refuses step 22 on it; whether step 22 may read oos2 on the record is the owner's
-  line in the policy, not a wider check here.

@@ -10,8 +10,9 @@ import pandas as pd
 
 from core.paths import report_dir
 from core.study import output, result as envelope, verdicts
+from core.study.config import fingerprint
 from core.study.render import markdown
-from studies.closing.atrCalculator import grid, inputs, load, one
+from studies.closing.atrCalculator import grid, inputs, load, one, spend
 
 
 def main() -> None:
@@ -25,6 +26,9 @@ def main() -> None:
     ap.add_argument("--symbol", required=True, help="asset file name, e.g. XAUUSD")
     ap.add_argument("--timeframe", required=True, help="the strategy's timeframe, e.g. M30")
     ap.add_argument("--strategy", default="", help="one strategy; every one when omitted")
+    ap.add_argument("--family", default="",
+                    help="template family, which names the ledger study with the asset and the "
+                         "timeframe; the project's name when omitted")
     ap.add_argument("--work", type=Path,
                     help="the stop-loss batch the exports came from (sqx.variants.stopgrid); "
                          "adds the proofs and SQX's cost and stability")
@@ -32,6 +36,7 @@ def main() -> None:
     args = ap.parse_args()
 
     cfg = inputs.config(args.set)
+    spend.allow(args.symbol, list(inputs.SEGMENTS))
     got = load.load(args.project, args.databank, args.feed, args.symbol, args.timeframe,
                     args.work, cfg)
     out = (args.work / "estudios" / "atrCalculator" if args.work else
@@ -49,6 +54,10 @@ def main() -> None:
     stopgrid = pd.concat(grids, ignore_index=True)
     stopgrid.to_csv(out / grid.FILE, index=False)
     verdicts.write(out, pd.DataFrame(rows), got["packed"][0], " ".join(sys.argv), args.set)
+    read = sorted(set(got["trades"]["segment"].astype(str)))
+    spend.log(args.symbol, args.timeframe, args.family or args.project, got["spans"], read,
+              len(names), cfg, fingerprint(cfg))
+    print(f"-> ledger: paso 22, {', '.join(read)} ({len(names)} estrategias)")
     print(f"-> {out / grid.FILE}  ({len(stopgrid)} X para sqx.variants.stopgrid --grid)")
     print(f"-> {out / 'verdict.csv'}")
 

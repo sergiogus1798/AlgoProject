@@ -67,12 +67,15 @@ for d in $LEGS; do python3 -m sqx.export.export_retest --project $P --databank $
 python3 -m studies.closing.atrCalculator.report $COMMON --work $W/pass2
 ```
 
+Cada ejecución del informe **deja una fila en el ledger por tramo leído** (build, oos1, oos2), con `n_in = n_out` porque no elige nada. El oos2 está reservado para el WFC, el WFM y este paso 22 (`assets/_policy.yaml`, dueño, 2026-09-26): mirarlo lo gasta, y queda apuntado.
+
 `studies.closing.atrCalculator.report`:
 
 | flag | obligatorio | qué hace |
 |---|---|---|
 | `--project` | sí | el proyecto de donde salen los exports |
 | `--databank` | sí | uno o varios: las tres patas WFC, o un export que ya cubra IS, oos1 y oos2. Lee el export más reciente de cada uno |
+| `--family` | no | la familia de plantillas; junto con el activo y el timeframe nombra el estudio en el ledger. Si falta, el nombre del proyecto |
 | `--feed` | sí | el feed del mercado principal; las operaciones de otros mercados se descartan |
 | `--symbol` | sí | el activo de `assets/`: da el point value y las fechas de cada ventana |
 | `--timeframe` | sí | el de la estrategia: el ATR se calcula sobre sus barras |
