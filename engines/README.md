@@ -9,7 +9,7 @@ engines and never another study — that is the rule this folder exists to keep.
 | `studies/readings/monkey/` | Random traders with the same opportunity set: the ladder on its own bars, and placement on other markets | monkey, gate, crossTF, entry quality, cross-market |
 | `resample/` | Reorderings and resamplings of a trade sequence | Monte Carlo, the cross-market portfolio |
 | `regimes/` | The volatility state a trade was opened into | Monte Carlo |
-| `inference/` | Correcting for the search: Benjamini-Hochberg, the excess over chance | the gate, the population readings |
+| `inference/` | Correcting for the search: Benjamini-Hochberg, the excess over chance, SPA and StepM | the gate, the population readings, the snooping screen |
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

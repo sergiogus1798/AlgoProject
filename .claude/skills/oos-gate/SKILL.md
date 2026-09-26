@@ -11,6 +11,7 @@ Build → retest → **this** → the next task. Python decides, SQX obeys.
 Results (IS)  ┐                                              ┌ verdict.csv ┐
               ├─ studies.screening.gate.harvest ─▶ studies.screening.gate.report ─▶ scorecard ───┤             ├─▶ curate ─▶ next task
 OOS (retest)  ┘   join on name       seven screens           └ gate.md     ┘
+                                                     └─▶ snoopingScreen: SPA/StepM vs buy & hold (annotates)
 ```
 
 Two databanks, not one. SQX charges one spread and one slippage per backtest and these windows
@@ -52,6 +53,25 @@ Two things that are easy to get wrong when reporting:
   strategies. Say so.
 - **`redundancia` is `soft`**: it groups and names, it does not drop. Do not report its groups as
   rejections.
+
+## 2b · Against buy and hold, with the search paid for — SPA and StepM
+
+```bash
+python3 -m studies.screening.snoopingScreen.report --project <P> --databank Results --feed <FEED> \
+    --symbol <SYMBOL> --timeframe <TF> --family <TEMPLATE_FAMILY>
+```
+
+Right after the gate, over the same harvest; ~5 s for 115 strategies, no SQX. It refuses a
+harvest the newest gate did not judge — run step 2 first. **It annotates and removes nobody**
+(owner, 2026-09-25): its `verdict.csv` is all MANTENER, so do not hand it to `/curate`; step 3
+applies the gate's own. It records a step-8 row in the ledger; `--family` must be the one the
+study's ledger already uses (`python3 -m ledger.report` lists them), or the look lands in a new study.
+
+Report three things, always together: buy and hold's Sharpe, how many strategies beat it before
+the correction, and how many the StepM names at FWER 0.05 — with the SPA's `consistent` p.
+**None named is a result**, not a failure; say which of the gate's survivors beat buy and hold only
+before the correction. Its K is every paired strategy, not the survivors, on purpose — the manual
+page (`docs/manual/49-snooping.md`) says why.
 
 ## 3 · Put it back — `/curate`
 

@@ -5,6 +5,22 @@ colocas donde dice el §2.
 
 Lee `CODESTYLE.md` · `studies/screening/gate/README.md` · `studies/optimisation/wfc/README.md`.
 
+## ✅ ESTADO — la parte A, construida el 2026-09-25; queda la B
+
+| pedido | estado |
+|---|---|
+| el motor, SPA y StepM con bootstrap estacionario (Politis–White) | ✅ `engines/inference/snooping/superior.py` |
+| **A** · pegado al paso 8, detrás de la puerta | ✅ `studies/screening/snoopingScreen/`, paso 2b de `/oos-gate`, manual `docs/manual/49-snooping.md`. **Anota y no corta** (dueño, 2026-09-25) |
+| benchmark | ✅ buy & hold **a igual riesgo** (dueño, 2026-09-25): exceso positivo ⇔ Sharpe mayor que el del activo |
+| FWER | ✅ 0,05, en `ledger/thresholds.yaml` |
+| una fila en el ledger | ✅ paso 8, blanda: `n_out = n_in`, lo que nombra va en la nota |
+| §4.1 control negativo y §4.2 positivo | ✅ `tests/test_snooping.py`: ruido 0 de 20 semillas, edge plantado 20 de 20 |
+| §4.3 contra el CSCV sobre la misma población | ⚪ no aplica tal cual: el CSCV corre sobre las variantes de una madre y esta población no tiene lote de variantes. Se hace el día que una madre de aquí llegue al paso 18 |
+| **B** · la prueba conjunta ciega del paso 20 | 🔴 **lo que queda**: `studies/closing/blindJoint/`, sobre las supervivientes de 17-18-19 y datos que nadie miró. Espera a que una población llegue al paso 20 |
+
+🔬 Primera lectura, `XAU_ISOOS_ejemplo` sobre `oos1`: el Sharpe del oro es 0,405; 4 de 115 lo
+superan antes de corregir y el StepM no nombra a ninguna (SPA consistente p = 0,892).
+
 ---
 
 ## 0 · Qué pregunta añade, y por qué no la contesta el CSCV

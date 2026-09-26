@@ -6,7 +6,7 @@ and the catalogue of the window (`docs/AgentPDFs/catalogo-para-la-ui-2026-09-25.
 
 | family | the question | steps | studies |
 |---|---|---|---|
-| `screening/` | of thousands, which deserve to go on? | 7–8 | `gate`, `isOos`, `filters`, `replication`, `decay`, `monkeyExcess` (+ `analysis/`, their shared maths); *to build:* `falsePositives`, `snoopingScreen` |
+| `screening/` | of thousands, which deserve to go on? | 7–8 | `gate`, `isOos`, `filters`, `replication`, `decay`, `monkeyExcess`, `snoopingScreen` (+ `analysis/`, their shared maths); *to build:* `falsePositives` |
 | `transfer/` | does the edge work away from where it was built? | 9–12 | `crossmarket`, `crossTF` |
 | `breakage/` | had the world been slightly different, what breaks it? | 13–16 | `mcRetest`, `spp` |
 | `optimisation/` | does optimising buy anything, or is choosing parameters overfitting? | 16.5–19 | `cloud`, `wfc`, `cscv`, `wfm`; *to build:* `marketSurfaces` |

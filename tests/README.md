@@ -24,6 +24,8 @@ overlapping 2.8-5.4% of its own trades on 2026-09-17, against a docstring that s
 
 | `test_ledger.py` | the global ledger's two guarantees: the one-way door refuses step 8 on the reserved segment and refuses to serve 17/18/19 until all three have run; the pooled sigma reproduces the union of two searches exactly; two score units are never averaged; and widening N from one search to the whole study raises the deflated Sharpe's benchmark and lowers the DSR | `python3 tests/test_ledger.py` |
 
+| `test_snooping.py` | SPA and StepM on panels whose answer is known: over 20 seeds of fat-tailed, correlated noise the StepM names someone no more often than its FWER allows; one planted edge among the noise is named every time; and at equal risk a positive mean excess is exactly a Sharpe above buy and hold's | `python3 tests/test_snooping.py` |
+
 `fixtures/optimizer.cfx` is a real 2.4 KB project copied from the master. `--bless` rewrites the
 golden file: only do that when the change in output is intended, and say in the commit why.
 

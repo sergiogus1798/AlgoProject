@@ -58,6 +58,7 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `46-knowhow.md` | el knowhow en fichas: cómo encontrar un hecho leyendo lo mínimo (grep de `q:` y la cabecera), cómo escribir uno nuevo sin volver al diario, y lo que se ahorra: 43× menos tokens por consulta, medido
 | `47-proyecto-workflow.md` | el proyecto del workflow: todas las tareas de una población —build, OOS, mercados, crossTF, MC Retest, SPP, WFC y WFM— en un solo custom project, y `stage`, que enciende sólo las del paso que toca antes de cada `start` |
 | `44-app-estrategias.md` | la zona de estrategias de la ventana: los databanks exportados como los agrupa SQX, las estrategias de cada uno, y al pulsar una, qué dijo ya cada módulo de análisis sobre ella y el comando de lo que falta |
+| `49-snooping.md` | SPA y StepM detrás de la puerta OOS: si alguna estrategia bate al buy & hold a igual riesgo una vez pagada toda la búsqueda, y cuáles; anota y no corta |
 | `38-app-activos.md` | la zona de activos de la ventana: los diecinueve instrumentos y los cuatro ficheros compartidos, con sus costes, tramos y rangos editables sin abrir un YAML |
 | `37-wfc-retest.md` | el retest de las variantes para el WFC y el CSCV: tres tareas de SQX, una por tramo (`build`, `oos1`, `oos2`), cada una a sus costes y con los mercados adicionales dentro |
 | `38-exposicion.md` | la exposición: cuánto tiempo de mercado le costó a la estrategia lo que ganó, contra el buy and hold al mismo riesgo — el paso 21, el último de la secuencia |
