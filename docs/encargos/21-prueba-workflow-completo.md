@@ -10,19 +10,11 @@ lo más conservador, lo escribes en el informe como decisión tomada por ti, y s
 
 ---
 
-## 0 · Espera a la señal — no arranques antes
+## 0 · Espera a la señal — cumplida
 
-Otra sesión (`algoproject-f8`) está terminando dos cambios que este encargo prueba: las **sesiones**
-en el mapa condicional (paso 22) y que el **paso 18.5 pueda leer `oos2`**. **No lances nada de SQX
-ni de Python del workflow hasta que exista el fichero**
-`~/Desktop/AlgoProject_worktrees/_coord/LISTO-workflow.md`. Lo que sí puedes hacer mientras: leer
-todo lo de §0.1 en adelante y preparar el plan y las estimaciones de tiempo.
-
-Para esperar sin gastar: carga la herramienta Monitor (`ToolSearch "select:Monitor"`) y vigila con un
-bucle `until [ -f ~/Desktop/AlgoProject_worktrees/_coord/LISTO-workflow.md ]; do sleep 60; done`,
-y vuelve a armarla si caduca. Cuando aparezca, **léelo**: dice el commit de `docs/knowhow-fichas`
-sobre el que corres y cualquier cambio de última hora. Si en 4 horas no ha aparecido, no corras nada:
-deja el plan escrito en el informe y termina.
+La señal que esperaba este encargo (`LISTO-workflow.md` en la carpeta de coordinación de los
+worktrees) se dio el 2026-09-26; esa carpeta ya no existe y sus notas están en
+`~/Desktop/AlgoData/notes/coord-frentes-2026-09-26/`. Si vuelves a correrlo, empieza directamente.
 
 ## 0.1 · Lee antes de tocar nada
 
@@ -52,9 +44,8 @@ deja el plan escrito en el informe y termina.
    | 24 | stop ATR | `54-atr-calculator.md` | el de la página: la X leída del MAE, el lote de variantes con stop y su retest en el custodio |
    | todos | el ledger | `43-ledger.md` | `python3 -m ledger.report` al final, para ver el embudo registrado |
 
-**Dónde trabajas:** `~/Desktop/AlgoProject`, rama `docs/knowhow-fichas`, en el commit que diga
-`LISTO-workflow.md` o uno posterior. **No cambies de rama ahí**: otras sesiones commitean en esa
-carpeta.
+**Dónde trabajas:** `~/Desktop/AlgoProject`, rama `master`. **No cambies de rama ni crees
+worktrees**: otras sesiones trabajan en esa misma carpeta (regla 12 de `CLAUDE.md`).
 
 ## 1 · Qué corres
 
@@ -139,9 +130,9 @@ pasos que no dependan de él. Lo que se rompa va al informe con lo mínimo para 
 - Un hecho no obvio que descubras → una ficha en `knowhow/<dominio>/` en la misma tarea
   (formato en `knowhow/INDEX.md`).
 
-**No commitees en `docs/knowhow-fichas` sin decirlo:** haz tus commits en una rama propia en un
-worktree (`git worktree add ~/Desktop/AlgoProject_worktrees/workflow-profiling -b
-docs/profiling-workflow`), sólo el informe y las fichas. Nada de código.
+**Sin ramas ni worktrees, y sin commit por tu cuenta** (regla 12 de `CLAUDE.md`): trabaja en
+`~/Desktop/AlgoProject` sobre `master`, sólo el informe y las fichas, nada de código, y termina
+preguntando «¿Quieres hacer el commit?».
 
 ## 4 · Cómo cierras
 

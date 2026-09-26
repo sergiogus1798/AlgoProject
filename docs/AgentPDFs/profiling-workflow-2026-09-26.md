@@ -268,9 +268,8 @@ problemas reales, uno detrás de otro:
    periodos. **Autorizado por el dueño, se corrigió el código** (`sqx/variants/equity.py`): el gate
    fatal ahora exige que el hueco supere 3 veces la mayor operación de ese resultado antes de
    llamarlo lectura equivocada. Verificado: exit 0 y 0 bloques implausibles en las 2 madres tras el
-   parche. **Commit en su propia rama, `fix/wfc-equity-open-position-boundary`
-   (`~/Desktop/AlgoProject_worktrees/fix-wfc-equity`), sin fusionar** — el dueño decide cuándo
-   integrarlo.
+   parche. **Fusionado en `master` el 2026-09-26** (venía de la rama
+   `fix/wfc-equity-open-position-boundary`, ya borrada).
 
 Con eso resuelto, se completaron de verdad los pasos que faltaban:
 
@@ -418,8 +417,8 @@ comando exacto y sobre qué datos, en orden de impacto esperado.**
 - **Datos crudos:** `~/Desktop/AlgoData/profiling/workflow-2026-09-26/` — `steps.csv` (una fila por
   paso), `run.log` (pulsos), `mem-samples/` (intentos de muestreo del árbol completo — ver
   limitación abajo).
-- **Este informe:** `docs/AgentPDFs/profiling-workflow-2026-09-26.md`, en la rama
-  `docs/profiling-workflow` (worktree `~/Desktop/AlgoProject_worktrees/workflow-profiling`).
+- **Este informe:** `docs/AgentPDFs/profiling-workflow-2026-09-26.md`, fusionado en `master`
+  el 2026-09-26.
 - **Fichas nuevas en `knowhow/`:**
   `authoring/cloned-custom-block-native-key.md`,
   `sqx-drive/mcr-nullpointer-fastutil-transient.md`,
@@ -429,9 +428,7 @@ comando exacto y sobre qué datos, en orden de impacto esperado.**
   `databanks/curate-verdict-identity-per-databank.md`,
   `export/exposure-and-edgecost-input-contracts.md`.
 - **Plantilla nueva:** `~/Desktop/AlgoData/templates/library/crossAboveHMA_v1/`.
-- **Arreglo de código, sin fusionar:** `sqx/variants/equity.py`, rama
-  `fix/wfc-equity-open-position-boundary` (`~/Desktop/AlgoProject_worktrees/fix-wfc-equity`) — el
-  dueño decide cuándo integrarlo. El `main` checkout sigue con la versión original.
+- **Arreglo de código:** `sqx/variants/equity.py`, fusionado en `master` el 2026-09-26.
 
 ### Resumen de hasta dónde llegó la cadena
 

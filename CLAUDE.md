@@ -69,6 +69,13 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
     carry on: a silent assumption in an entry propagates into the build and everything after it,
     and the CPU it burnt does not come back. In a skill, ambiguity is a stop with a question, never
     a documented default.
+12. **One folder, one branch, and the owner commits.** Owner, 2026-09-26. Every session and every
+    agent — subagents and the nightly ones included — works in `~/Desktop/AlgoProject` on `master`.
+    Never `git worktree`, never `isolation: "worktree"`, never a second clone, never switch or
+    create a branch: git is the version control, not the folder. Never commit on your own: a
+    task that changed anything ends with the list of files changed and, as its last line,
+    **¿Quieres hacer el commit?** — commit only after he says yes, staging only the files of that
+    task (never `git add -A`: other sessions leave their own changes in the same tree).
 
 ## ROUTER — read only what the task needs
 

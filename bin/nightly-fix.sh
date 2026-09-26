@@ -4,11 +4,9 @@
 #   03:00 audit  →  03:30 documenter  →  04:00 fixer
 #
 # Cron starts it at 04:00, but it first waits for the documenter's lock, which in turn waited for
-# the audit's. It never works in the main checkout: it adds a git worktree on a new branch
-# `fix/nocturno-YYYY-MM-DD` from whatever the main checkout has checked out (what the audit read),
-# lets the agent commit one fix per finding there, and removes the worktree. The branch stays for
-# the owner to review and merge; nothing is pushed. A night with no commit deletes its branch.
-# The report is copied into the main checkout's audit/ so it is where the audit's is.
+# the audit's. It works in the one checkout, on the branch it has, like the documenter, and
+# commits nothing: the owner reads `git diff` and audit/YYYY-MM-DD-fixes.md in the morning and
+# commits what he wants (owner, 2026-09-26: one folder, no worktrees, no agent commits unasked).
 #
 # Usage:
 #   nightly-fix            run it
@@ -24,8 +22,6 @@ LOG="$DATA/logs/nightly-fix.log"
 LOCK="$DATA/logs/.nightly-fix.lock"
 DOCS_LOCK="$DATA/logs/.nightly-docs.lock"
 TODAY=$(date +%F)
-BRANCH="fix/nocturno-$TODAY"
-WT="${TMPDIR:-/tmp}/algoproject-fix-$TODAY"
 
 CLAUDE="${CLAUDE_BIN:-$(command -v claude || true)}"
 if [ -z "$CLAUDE" ]; then
@@ -34,8 +30,8 @@ if [ -z "$CLAUDE" ]; then
 fi
 
 if [ "${1:-}" = "--dry-run" ]; then
-  printf 'root   %s\nbranch %s from %s\nwt     %s\nlog    %s\nclaude %s\n' "$ROOT" "$BRANCH" \
-    "$(git rev-parse --abbrev-ref HEAD)" "$WT" "$LOG" "${CLAUDE:-NOT FOUND}"
+  printf 'root   %s\nbranch %s\nlog    %s\nclaude %s\n' "$ROOT" \
+    "$(git rev-parse --abbrev-ref HEAD)" "$LOG" "${CLAUDE:-NOT FOUND}"
   exit 0
 fi
 
@@ -54,37 +50,20 @@ fi
 if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
   echo "--- no claude binary found; skipped"; exit 1
 fi
-if git show-ref --quiet "refs/heads/$BRANCH"; then
-  echo "--- branch $BRANCH already exists; not overwriting it"; exit 1
-fi
+echo "--- already modified before the fixer, not its to touch:"
+git status --short
 
-BASE=$(git rev-parse --abbrev-ref HEAD)
-BASE_SHA=$(git rev-parse HEAD)   # fixed now: another session may switch branch overnight
-git worktree add -q -b "$BRANCH" "$WT" "$BASE_SHA" || { echo "--- worktree failed"; exit 1; }
-echo "--- worktree $WT on $BRANCH from $BASE ${BASE_SHA:0:7}"
-
-# What git does not carry: the machine's paths, the agent itself until it is committed, and
-# today's audit reports, which may still be uncommitted in the main checkout.
-cp config/machine.yaml "$WT/config/machine.yaml"
-[ -f "$WT/.claude/agents/fixer.md" ] || cp .claude/agents/fixer.md "$WT/.claude/agents/fixer.md"
 IN=$(mktemp -d)
 cp "audit/$TODAY.md" "$IN/"
 [ -f "audit/$TODAY-mechanical.md" ] && cp "audit/$TODAY-mechanical.md" "$IN/"
 
-(cd "$WT" && timeout 3h "$CLAUDE" -p --agent fixer --model opus \
+timeout 3h "$CLAUDE" -p --agent fixer --model opus \
   --permission-mode acceptEdits --add-dir "$DATA" --add-dir "$IN" \
   --allowedTools=Bash,Read,Grep,Glob,Write,Edit \
-  "Fix what today's audit found. The reports are in $IN. You are in a worktree on branch \
-$BRANCH; commit there only. Unattended from cron: never ask. Write and commit \
-audit/${TODAY}-fixes.md last.")
+  "Fix what today's audit found. The reports are in $IN. Work in this checkout on the branch it \
+has; never commit, stash, switch branch or create a worktree — leave every change uncommitted. \
+Unattended from cron: never ask. Write audit/${TODAY}-fixes.md last."
 echo "--- agent exit $?"
-
-n=$(git rev-list --count "$BASE_SHA..$BRANCH")
-echo "--- $n commit(s) on $BRANCH:"
-git log --oneline "$BASE_SHA..$BRANCH"
-[ -f "$WT/audit/$TODAY-fixes.md" ] && cp "$WT/audit/$TODAY-fixes.md" "audit/$TODAY-fixes.md"
-
-git worktree remove --force "$WT"
-[ "$n" -eq 0 ] && { git branch -q -D "$BRANCH"; echo "--- nothing committed; branch removed"; }
+git status --short
 rm -rf "$IN"
 echo "=== $(date -Is) nightly fix end"

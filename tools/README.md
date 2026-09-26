@@ -16,8 +16,8 @@ It involves no model. **It is installed**, as the first half of `bin/nightly-aud
 runs at 03:00 and which then runs the `auditor` agent headless on Sonnet for the judgement half.
 `bin/nightly-docs.sh` runs the `documenter` the same way at 03:30, after waiting for the audit's
 lock, and leaves its repairs uncommitted. `bin/nightly-fix.sh` runs the `fixer` on Opus at 04:00,
-after the documenter, in a throwaway worktree on its own branch `fix/nocturno-<date>` — one commit
-per finding, never pushed or merged. `bin/nightly-sync.sh` is the same shape for `/sync`. Why the `claude` they call is found the way it
+after the documenter, in the one checkout, and leaves its fixes uncommitted too — the owner commits
+what he wants. `bin/nightly-sync.sh` is the same shape for `/sync`. Why the `claude` they call is found the way it
 is: `knowhow/eng/headless-claude-from-cron.md`.
 
 `sqx-lab/` is a vendored plugin, not project code: four skills that author custom blocks, random

@@ -1,6 +1,6 @@
 # 20 · ATRCalculator — el stop loss leído del MAE, sin optimizar — encargo autocontenido
 
-> **ESTADO 2026-09-26: construido y fusionado** en `docs/knowhow-fichas`. §2 completo, injerto §3.1
+> **ESTADO 2026-09-26: construido y fusionado** en `master`. §2 completo, injerto §3.1
 > probado en SQX (X = 1000 idéntico operación a operación en IS, oos1 y oos2; el ATR de Python es el
 > del stop de SQX), rejilla §3.2 retesteada con la puntuación del dueño (40 % PF, 30 % neto, 30 % DD).
 > Percentiles como parámetro (`--percentiles`, por defecto 80 85 90 95). oos2 abierto a este paso en

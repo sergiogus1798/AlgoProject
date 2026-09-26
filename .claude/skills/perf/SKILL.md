@@ -1,6 +1,6 @@
 ---
 name: perf
-description: Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement on a branch. Use when the owner asks how fast something is, why something is slow, whether a change made it worse, what AlgoData is storing, or asks to optimise a module or update the performance catalogue.
+description: Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement, left uncommitted for the owner. Use when the owner asks how fast something is, why something is slow, whether a change made it worse, what AlgoData is storing, or asks to optimise a module or update the performance catalogue.
 ---
 
 # /perf
@@ -10,7 +10,7 @@ perf/ (los instrumentos)  →  history.csv  →  rendimiento.html  →  una rama
      mide                    sólo crece      el panel             y su número antes/después
 ```
 
-Nothing here touches StrategyQuant X, and nothing here merges to master.
+Nothing here touches StrategyQuant X, and nothing here commits: the owner does (CLAUDE.md rule 12).
 
 You do the work in this session — there are no perf subagents (retired 2026-09-25: never used, and
 a cold agent re-derives what the session already knows). Read `docs/manual/12-rendimiento.md` first.
@@ -50,14 +50,15 @@ rewritten.**
 
 ## `/perf mejorar <módulo>` — idear y codear
 
-1. `git status --porcelain` clean; `python3 -m perf.catalogue --only <target>` and `--hotspots`.
-   No target in `perf/inputs/targets.py`? The first commit adds one — without a before, no after.
-2. `git checkout -b perf/<module>-<what>`. **One idea per branch.**
+1. Note what `git status --porcelain` already shows — those files are someone else's, do not
+   touch them. `python3 -m perf.catalogue --only <target>` and `--hotspots`. No target in
+   `perf/inputs/targets.py`? Add one first — without a before, no after.
+2. One idea per task, in the one checkout on `master` — no branch, no worktree.
 3. Correctness before speed: `for t in tests/test_*.py; do python3 "$t" || break; done` (no pytest),
    and compare the numbers **that decide something** — the percentiles a gate reads, the verdict —
    not a checksum. Unseeded simulation: compare distributions and say which statistic.
-4. Measure again, `python3 tools/depmap.py && python3 tools/checks.py` green, commit with the
-   before/after in the message. **Stop: no merge, no rebase, no second branch.** The merge is his.
+4. Measure again, `python3 tools/depmap.py && python3 tools/checks.py` green. **Stop:** list the
+   files changed with the before/after, and end with **¿Quieres hacer el commit?** The commit is his.
 
 The non-obvious thing learned goes into a card in `knowhow/perf/`, tagged 🔬, in the same task.
 
