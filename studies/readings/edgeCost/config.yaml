@@ -1,0 +1,8 @@
+# encargo 11 — edge por operación y coste de breakeven (docs/encargos/11-edge-por-coste.md).
+#
+# `min_edge_spreads` y `action` son decisión del DUEÑO, no de este código — regla dura 11 y
+# owner 2026-09-26. Se fijan ANTES de mirar resultados: un umbral ajustado después de verlos
+# no es un umbral. Orden de magnitud de partida del encargo: 2-3 spreads por operación.
+verdict:
+  min_edge_spreads: 2.0   # dueño, 2026-09-26 — edge bruto medio, en múltiplos del coste de hoy
+  action: mark             # dueño, 2026-09-26 — mark (no destructivo) o drop (elimina en curate)

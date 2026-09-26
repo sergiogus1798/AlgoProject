@@ -111,3 +111,22 @@ thresholds:
     set_by: dueño
     set_on: 2026-09-23
     why: C(12,6) = 924 particiones, los números de López de Prado
+
+  # ── Paso 8 y paso 25 · edge por coste (encargo 11) ────────────────────────────────────
+  - key: edgeCost.min_edge_spreads
+    value: 2.0
+    source: studies/readings/edgeCost/config.yaml#verdict.min_edge_spreads
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      orden de magnitud de partida del encargo 11 (2-3 spreads por operación); fijado antes
+      de mirar resultados. action: mark, no destructivo, hasta que el dueño diga lo contrario
+
+  - key: edgeCost.action
+    value: mark
+    source: studies/readings/edgeCost/config.yaml#verdict.action
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      mark (no elimina) frente a drop (elimina en curate); el dueño elige cuándo pasar a
+      drop, no este código
