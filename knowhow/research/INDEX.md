@@ -16,6 +16,7 @@
 - `hardest-null` — which random-entry null is hardest to beat / most conservative, block_shift vs other nulls, crossmarket four nulls, null spread sigma, docstring contradicted by measurement
 - `is-optimisation-vs-oos` — does in-sample parameter optimisation predict OOS? walk-forward correlation rho IS vs OOS, how many parameter tuples, unusable tuples fewer than 30 trades, report interval not coefficient
 - `is-proxies-top-decile` — IS proxies inside top Sharpe decile, TRL Ratio SQN ZScore R Expectancy, Param Count negative, second filter after Sharpe, regression to the mean stratify
+- `m1-feed-anomaly-statistics` — feed quality M1 anomalies; bad tick vs flash crash; spike threshold K MAD fat tails; K per feed 20 25 30; frozen price runs; gaps; rollover gaps 00:00; Dukascopy early years; stable year; feed tick vs SQX tick; silver CADJPY spike-and-revert
 - `pooling-moments` — pool variance of many searches, mixture variance from counts means spreads, ddof conversion, ledger trials.accumulated, deflated Sharpe sigma
 - `post-selection-bias` — decay measured after OOS filter, selection bias, strategies improve out of sample?, Sharpe retention 1.00 vs 0.45, gate reads inert on selected population, monkey p-values selected sample, generator decay
 - `random-entry-nulls` — monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed reproducible hash PYTHONHASHSEED

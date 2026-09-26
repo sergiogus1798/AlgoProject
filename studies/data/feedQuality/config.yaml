@@ -1,0 +1,76 @@
+# Calidad del feed M1 (encargo 17; manual docs/manual/03-datos-costes-y-registro.pdf, cap. 57-calidad-del-feed).
+#
+# TODOS los números son del DUEÑO: sus respuestas del 2026-09-26 a las dieciséis decisiones
+# (docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md, «Respuestas del dueño»), más
+# dos preguntas del mismo día: la sesión se DEDUCE del feed y la alarma lee IS y OOS juntas.
+# `ledger:<clave>` = el número vive en ledger/thresholds.yaml, con quién lo puso y cuándo;
+# inputs.config() lo sustituye al leer. Cambiarlo es del dueño, allí, y ANTES de mirar
+# ninguna estrategia.
+scale:
+  window_weeks: ledger:feedQuality.scale.window_weeks      # escala retrospectiva, por hora de la semana
+  min_weeks: ledger:feedQuality.scale.min_weeks            # arranque: antes, «sin escala»
+  floor_ticks: ledger:feedQuality.scale.floor_ticks        # suelo absoluto, en ticks
+  floor_rel: ledger:feedQuality.scale.floor_rel            # suelo relativo a la mediana de las horas
+spike:
+  m: ledger:feedQuality.spike.m                            # velas para volver
+  rho: ledger:feedQuality.spike.rho                        # parte del salto que tiene que deshacerse
+  m_sensitivity: [1, 5]                                    # columnas de sensibilidad, sin efecto en la atribución
+  include_non_reverting: ledger:feedQuality.spike.include_non_reverting
+rollover_hours: ledger:feedQuality.rollover_hours          # horas del feed que no cuentan ni para congelados ni para huecos
+frozen:
+  length: ledger:feedQuality.frozen.length                 # velas idénticas seguidas
+gap:
+  minutes: ledger:feedQuality.gap.minutes                  # hueco mínimo, en minutos de sesión
+  partial_close_minutes: ledger:feedQuality.gap.partial_close_minutes
+  max_residual_per_year: ledger:feedQuality.gap.max_residual_per_year
+session:
+  share: ledger:feedQuality.session.share                  # un minuto es de sesión si hay vela en esta parte de las semanas
+  years: ledger:feedQuality.session.years                  # de qué años se deduce
+k:
+  candidates: ledger:feedQuality.k.candidates
+  quiet_years: ledger:feedQuality.k.quiet_years
+  max_per_year: ledger:feedQuality.k.max_per_year          # menos de uno por semana
+stable:
+  base_year: ledger:feedQuality.stable.base_year
+  factor: ledger:feedQuality.stable.factor                 # año estable: huecos <= factor x mediana
+  b_factor: ledger:feedQuality.stable.b_factor             # «calidad B» hasta este factor
+  floor: ledger:feedQuality.stable.floor                   # ningún listón por debajo de esto
+episode:
+  factor: ledger:feedQuality.episode.factor                # un mes es episodio si supera factor x mediana
+  months: ledger:feedQuality.episode.months                # de los meses anteriores
+  min_events: ledger:feedQuality.episode.min_events
+alarm:
+  shuffles: ledger:feedQuality.alarm.shuffles
+  p_max: ledger:feedQuality.alarm.p_max
+  min_flagged: ledger:feedQuality.alarm.min_flagged
+  action: ledger:feedQuality.action                        # mark | drop, como el edge por coste
+review:
+  extreme_per_column: 20                                   # los más extremos por columna, para revisarlos a mano
+K:                                                         # por feed, criterio de la decisión 3
+  BRENTCMDUSD_ftmo: ledger:feedQuality.K.BRENTCMDUSD_ftmo
+  XAGUSD_DukasM1_Infinox: ledger:feedQuality.K.XAGUSD_DukasM1_Infinox
+  XAUUSD_DukasM1_Infinox: ledger:feedQuality.K.XAUUSD_DukasM1_Infinox
+  USDJPY_DukasM1_the5ers: ledger:feedQuality.K.USDJPY_DukasM1_the5ers
+  AUDJPY_DukasM1_the5ers: ledger:feedQuality.K.AUDJPY_DukasM1_the5ers
+  AUDUSD_DukasM1_the5ers: ledger:feedQuality.K.AUDUSD_DukasM1_the5ers
+  CADJPY_DukasM1_the5ers: ledger:feedQuality.K.CADJPY_DukasM1_the5ers
+  EURJPY_DukasM1_the5ers: ledger:feedQuality.K.EURJPY_DukasM1_the5ers
+  EURUSD_DukasM1_the5ers: ledger:feedQuality.K.EURUSD_DukasM1_the5ers
+  GBPJPY_DukasM1_the5ers: ledger:feedQuality.K.GBPJPY_DukasM1_the5ers
+  GBPUSD_DukasM1_the5ers: ledger:feedQuality.K.GBPUSD_DukasM1_the5ers
+  USDCAD_DukasM1_the5ers: ledger:feedQuality.K.USDCAD_DukasM1_the5ers
+  USDCHF_DukasM1_the5ers: ledger:feedQuality.K.USDCHF_DukasM1_the5ers
+sessions:                                                  # por feed, deducida del feed
+  BRENTCMDUSD_ftmo: ledger:feedQuality.sessions.BRENTCMDUSD_ftmo
+  XAGUSD_DukasM1_Infinox: ledger:feedQuality.sessions.XAGUSD_DukasM1_Infinox
+  XAUUSD_DukasM1_Infinox: ledger:feedQuality.sessions.XAUUSD_DukasM1_Infinox
+  USDJPY_DukasM1_the5ers: ledger:feedQuality.sessions.USDJPY_DukasM1_the5ers
+  AUDJPY_DukasM1_the5ers: ledger:feedQuality.sessions.AUDJPY_DukasM1_the5ers
+  AUDUSD_DukasM1_the5ers: ledger:feedQuality.sessions.AUDUSD_DukasM1_the5ers
+  CADJPY_DukasM1_the5ers: ledger:feedQuality.sessions.CADJPY_DukasM1_the5ers
+  EURJPY_DukasM1_the5ers: ledger:feedQuality.sessions.EURJPY_DukasM1_the5ers
+  EURUSD_DukasM1_the5ers: ledger:feedQuality.sessions.EURUSD_DukasM1_the5ers
+  GBPJPY_DukasM1_the5ers: ledger:feedQuality.sessions.GBPJPY_DukasM1_the5ers
+  GBPUSD_DukasM1_the5ers: ledger:feedQuality.sessions.GBPUSD_DukasM1_the5ers
+  USDCAD_DukasM1_the5ers: ledger:feedQuality.sessions.USDCAD_DukasM1_the5ers
+  USDCHF_DukasM1_the5ers: ledger:feedQuality.sessions.USDCHF_DukasM1_the5ers

@@ -12,7 +12,7 @@ and the catalogue of the window (`docs/AgentPDFs/catalogo-para-la-ui-2026-09-25.
 | `optimisation/` | does optimising buy anything, or is choosing parameters overfitting? | 16.5–19 | `cloud`, `wfc`, `cscv`, `marketSurfaces` (18.5), `wfm` |
 | `closing/` | the final call, the shape of the edge, and the stop it trades with | 20–21, 24 | `blindJoint` (20), `exposure`, `atrCalculator` (24) |
 | `readings/` | what one strategy's result is made of | 8, 22, 23, 25 | `monkey`, `profitShape`, `entryQuality`, `edgeCost` (8 and 25), `conditionalMap` (22), `structure` (23) |
-| `data/` | are the inputs fit to judge with? | 4, 8 | *on hold:* `feedQuality` (encargo 17, owner's consultation pending) |
+| `data/` | are the inputs fit to judge with? | 4, 8 | `feedQuality` (encargo 17) |
 
 The trade-level Monte Carlo is not here: the WORKFLOW keeps it out of the sequence and its
 question is a portfolio's, so it lives in `portfolio/common/monteCarlo`. What each old path

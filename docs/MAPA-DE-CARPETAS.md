@@ -23,7 +23,7 @@ portfolio/common/monteCarlo/   el Monte Carlo de operaciones, que es una pregunt
 | `studies/optimisation/` | ¿optimizar compra algo, o elegir parámetros es sobreajustar? | 16.5–19 |
 | `studies/closing/` | la decisión final y la forma del filo | 20–21 |
 | `studies/readings/` | de qué está hecho el resultado de una estrategia; sin paso fijo | — |
-| `studies/data/` | ¿los datos son de fiar? (reservada para el encargo 17) | — |
+| `studies/data/` | ¿los datos son de fiar? `feedQuality/`, el encargo 17 | — |
 
 ## Módulos de Python: ruta vieja → ruta nueva
 

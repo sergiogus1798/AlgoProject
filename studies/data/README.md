@@ -4,4 +4,4 @@ Studies of the inputs rather than of a strategy. `feedQuality/` (encargo 17) is 
 
 | folder | what it answers |
 |---|---|
-| `feedQuality/` | on hold — the owner is answering the 16 threshold decisions in `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md`, each with a proposal measured on the feed |
+| `feedQuality/` | Is each M1 feed sound, and from which year (step 4, the preflight's warning); how much of a strategy's profit sits on anomalous minutes (step 8, after the gate). Built 2026-09-26 on the owner's answers to the 16 decisions |

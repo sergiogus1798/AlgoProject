@@ -18,7 +18,8 @@ tables contradicted the code) and the 2026-09-22 review. All are in git history.
 | `profiling-workflow-2026-09-26` | the 25 steps run end to end on USDJPY H1, with time, CPU, memory and disk | report of encargo 21 |
 | `catalogo-para-la-ui-2026-09-25` (+pdf) | outbound brief: everything the toolchain does, for whoever designs the window | inventory — goes stale |
 | `paneles-flask-inventario-2026-09-25` | outbound brief: the depth of the three retired Flask panels, with the ten-point contract the «Estrategias» zone keeps | the bar for that zone |
-| `calidad-del-feed-decisiones-2026-09-26` (+pdf) | the 16 decisions the feed-quality module needs, each with a proposal measured on the M1 feed itself — replaces the outbound consultation | open — encargo 17 waits on the owner's answers |
+| `respuestas-calidad-del-feed-2026-09-26` (pdf) | the owner's answers to the 16 decisions, with formulas | source of `ledger/thresholds.yaml` `feedQuality.` |
+| `calidad-del-feed-decisiones-2026-09-26` (+pdf) | the 16 decisions the feed-quality module needs, each with a proposal measured on the M1 feed itself — replaces the outbound consultation | answered 2026-09-26 — the owner's answers and what the built module measured are its last section; the thresholds live in `ledger/thresholds.yaml` |
 
 ## Conventions
 

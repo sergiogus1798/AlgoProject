@@ -200,6 +200,20 @@ def bar_cache(feed: str, timeframe: str, version: str) -> Path:
     return DATA / "barsDerived" / feed / f"{timeframe}-{version}.parquet"
 
 
+def feed_quality_dir(feed: str = "") -> Path:
+    """Where the feed-quality detector keeps one feed's anomalies and report.
+
+    Args:
+        feed: SQX symbol without the timeframe suffix; empty for the library-wide folder
+            that holds the calendar and the calibration.
+
+    Returns:
+        Path under the data root. The step-4 preflight reads the summary written here, so a
+        feed that was never scanned simply has no warning to give.
+    """
+    return DATA / "feedQuality" / feed
+
+
 def perf_dir() -> Path:
     """Where the performance catalogue keeps its history.
 

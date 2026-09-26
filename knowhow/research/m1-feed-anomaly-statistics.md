@@ -1,19 +1,22 @@
 ---
-q: feed quality M1 anomalies; bad tick vs flash crash; spike threshold K MAD fat tails; frozen price runs; gaps; Dukascopy early years; feed timezone UTC+2 rollover
-tag: 🔬  date: 2026-09-26  see: export/bars, costs/sessions-per-asset
+q: feed quality M1 anomalies; bad tick vs flash crash; spike threshold K MAD fat tails; K per feed 20 25 30; frozen price runs; gaps; rollover gaps 00:00; Dukascopy early years; stable year; feed tick vs SQX tick; silver CADJPY spike-and-revert
+tag: 🔬  date: 2026-09-26  see: export/bars, export/feed-clock-timezones, costs/sessions-per-asset
 ---
-# On the Dukascopy M1 feed, extreme moves are mostly real events, and a Gaussian K is meaningless
-- Beyond 10 hour-of-week MADs: 22,660 XAUUSD closes (normal expects 0). Pick `K` by marks per year, not by probability.
-- Top |z| moves are history (Brexit, JPY flash crash 2019-01-03, 2011 quake, gold 2013/2021-08-09) and revert like bad ticks; only USDJPY 2009-01-01 19:43 (±1.9 % in 3 min, New Year) looks like an error.
-- ⚠️ A whole-history scale flags volatile years, not bad ones: XAUUSD K10 = 33 in 2018 vs 2,758 in 2026 (9 months). Use a trailing scale.
-- ⚠️ XAUUSD before 2006 is a different feed: 5.8–11.6 k in-week gaps ≥ 5 min/yr vs ~210/yr since 2013 (the daily break).
-- Feed clock is UTC+2 (JPY flash crash at 00:35 feed = 22:35 UTC); flat bars peak at feed hour 0 (USDJPY 10 %) = NY rollover.
-- 13 feeds: K = 20 keeps calm years < 1 mark/week in 12 (GBPUSD needs 25); m = 3, L = 10 hold for all. ⚠️ Outliers:
-  XAGUSD ~720 and CADJPY ~115 K20 spike-and-reverts/yr (others 9–33); Brent ~900 gaps/yr; EURUSD frozen runs cluster in 2021–23.
+# On the Dukascopy M1 feed, extreme moves are mostly real events; measure K per feed on a trailing scale
+- Top |z| moves are history (flash crashes, Brexit, SNB, BoJ/MoF, FOMC): of 520 reviewed, 383 identified, 42 suspect (38 = CADJPY 2006–08). Mark, never clean.
+- ⚠️ A trailing 52-week scale gives MORE calm-year marks than a whole-history one (EURUSD K20: 60 vs 20/yr): K* = 20 in 4 feeds, 25 in 7, 30 in USDJPY/GBPUSD.
+- ⚠️ The feed's tick is its smallest move, NOT `assets/` `tick_size`: forex feeds quote a tenth of SQX's pip-tick. A 3-SQX-tick floor hides every forex spike.
+- Silver's ~720/yr spike-and-reverts were scale collapse in dead hours (unfloored σ 1.4 ticks): floor → 2/yr. CADJPY's 115/yr was a 2006–08 episode (423 in 2007), not quantisation.
+- ⚠️ Since 2020 most in-session "gaps" of the pairs are 5-min silences at 00:00 (AUDJPY 95 of 103 in 2025); EURUSD's 2021–23 frozen episode is all at hour 00. Count the rollover apart.
+- Daily pause 00:00–01:00 gold/silver, 00:00–03:00 Brent, all year; it shifts an hour in March (US/EU DST mismatch).
+- Gold ≤ 2005 and AUDUSD 2007 (1,293 gaps) are other feeds; Brent 2013 has a 55-day hole.
 
 ## Evidence
-- 🔬 2026-09-26, `core.barstore.source`, contiguous M1 closes, MAD × 1.4826 per (weekday, hour) over the whole history.
-  Calm-year (2013–2019) median marks/yr at K = 15 / 20: XAU 63 / 24, USDJPY 94 / 38, EURUSD 55 / 20.
-  K20 spike-and-revert (≥ 80 % back) in 1 / 3 / 5 min: XAU 69 / 239 / 356 of 1,379; no plateau.
-- Identical-OHLC runs ≥ 10 min: XAU 16, USDJPY 77, EURUSD 109 (85 of them in 2021–2023).
-- Full tables and the 16 proposed thresholds: `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md`.
+- 🔬 2026-09-26, `studies/data/feedQuality` (`calibrate`, `scan`, `inject`), 13 feeds of `AlgoData/bars/`.
+  Whole-history scale reproduces the report exactly: K20 calm medians XAU 24 / USDJPY 38 / EURUSD 20.
+  52 w + floor: XAU N20 76 → K 25; USDJPY 97 → 30; EURUSD 60 → 25; GBPUSD 129 → 30.
+- Injection (owner's 2.16 grid, ~12,300 events/feed): recall 100 % at ≥ 1.25 K in all 13 feeds;
+  frozen 9|10 and gap 4|5 cut exactly; revert 80 %|70 % separated 100 %|0 %. Real count changes
+  ≤ 0.4 %; 1–37 new marks per feed, most a real spike already within 5 % of K (MAD shifts ~1 %). Owner accepted.
+- Planted runs merge with adjacent identical real bars; unpaired level-shifts walk the tick floor.
+- Tick: EURUSD smallest |ΔC| 0.00001 vs `tick_size` 0.0001; USDJPY 0.001 vs 0.01; metals/Brent equal.

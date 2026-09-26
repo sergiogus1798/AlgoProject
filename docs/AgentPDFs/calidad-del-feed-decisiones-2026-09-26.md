@@ -1,6 +1,6 @@
 # Calidad del feed M1 — lo que el módulo necesita que decidas, con mi propuesta para cada cosa
 
-**Fecha:** 2026-09-26 · **Encargo:** `docs/encargos/17-calidad-del-feed.md` (paso 4 aviso, paso 8
+**Fecha:** 2026-09-26 · **Encargo:** 17, cumplido el 2026-09-26 — `studies/data/feedQuality/` (paso 4 aviso, paso 8
 criba) · **Sustituye a** la consulta del mismo día, que preguntaba lo mismo a un agente externo.
 
 **Qué es esto.** El módulo de calidad del feed no se puede construir hasta que alguien tome
@@ -301,3 +301,84 @@ el módulo usará la de 52 semanas (propuesta 2), que dará recuentos más bajos
 La tabla de §1.6 aplica el mismo cálculo a los 13 feeds de `~/Desktop/AlgoData/bars/`; la de
 Brent empieza en 2013, que es donde empieza su feed. Ninguna estrategia, ninguna operación y ningún
 resultado se ha mirado para escribir esto.
+
+---
+
+## Respuestas del dueño — 2026-09-26
+
+**Dónde están.** Las dieciséis respuestas, con sus fórmulas, están en
+`docs/AgentPDFs/respuestas-calidad-del-feed-2026-09-26.pdf`: **13 aceptadas tal cual y 3 con
+ajuste** (el suelo y el arranque de la escala, K recalculado con la escala de 52 semanas y el
+umbral de 180 minutos entre caída del proveedor y cierre parcial). Al construir el módulo
+salieron **cinco preguntas más**, que contestaste el mismo día:
+
+| # | pregunta | tu respuesta |
+|---|---|---|
+| A | ¿Con qué horario se decide «en sesión»? Sólo el oro tenía una sesión con horas legibles en SQX | **Deducida del feed**: los minutos con vela en al menos la mitad de las semanas de 2015–2019 |
+| B | ¿Sobre qué operaciones corre la alarma? | **IS y OOS juntas**, con el desglose de lo marcado por muestra |
+| C | ¿El rollover (23:00–01:59) tampoco cuenta para los huecos? | **Sí, se excluye también de los huecos** |
+| D | El año estable salía 2024–2026 en 9 pares por una Navidad a trozos | **Suelo de 30**: estable si los huecos ≤ max(3 × mediana, 30) |
+| E | El episodio de EURUSD 2021–2023 cae entero en el rollover | **Contarlo aparte**: congelados y huecos del rollover se cuentan y dan episodios, pero no marcan |
+
+Todo está en `ledger/thresholds.yaml`, sección `feedQuality.`, fijado **antes de mirar
+ninguna estrategia**.
+
+### Lo que salió al medir con la escala definitiva
+
+**K por activo.** Con la escala de 52 semanas y el suelo, K sube más de lo que esperabas (tu
+respuesta 1.2 anticipaba «uno o dos feeds a 25»): en un año tranquilo la escala local es mucho
+menor que la de 23 años. Con la escala de toda la historia el módulo reproduce exactamente las
+cifras de este documento (24 / 38 / 20); la diferencia es sólo la escala.
+
+| feed | N15 | N20 | N25 | N30 | **K** | estable desde |
+|---|---|---|---|---|---|---|
+| XAUUSD | 165 | 76 | 37 | 21 | **25** | 2014 |
+| USDJPY | 206 | 97 | 57 | 40 | **30** | 2005 |
+| EURUSD | 142 | 60 | 31 | 15 | **25** | 2005 |
+| AUDJPY | 136 | 53 | 28 | 14 | **25** | 2003 |
+| AUDUSD | 179 | 81 | 45 | 27 | **25** | 2025 |
+| EURJPY | 90 | 42 | 27 | 19 | **20** | 2005 |
+| GBPJPY | 133 | 58 | 30 | 19 | **25** | 2005 |
+| GBPUSD | 324 | 129 | 69 | 45 | **30** | 2005 |
+| USDCAD | 194 | 79 | 33 | 19 | **25** | 2005 |
+| USDCHF | 277 | 107 | 46 | 27 | **25** | 2005 |
+| CADJPY | 116 | 47 | 25 | 15 | **20** | 2008 |
+| XAGUSD | 96 | 30 | 11 | 7 | **20** | 2020 |
+| BRENT | 71 | 29 | 12 | 9 | **20** | 2018 |
+
+*Mediana de picos de cierre al año, 2013–2019. AUDUSD sale estable desde 2025 porque 2024 suma
+35 huecos (17 en Navidad, el resto en festivos de EE. UU.), 5 por encima del suelo de 30.*
+
+**El tick es el del feed, no el de SQX.** En los pares, SQX llama tick al pip y el feed cotiza
+a una décima (EURUSD se mueve de 0,00001 en 0,00001). Con el tick de SQX, el suelo de 3 ticks
+era de 3 pips y tapaba casi todos los picos de los pares. Tu respuesta 2.2 dice «el incremento
+mínimo de precio del feed», y eso es lo que se usa.
+
+**La plata y CADJPY (3.3).** La plata era lo que decías: sin suelo su escala cae hasta 1,4
+ticks en las horas muertas; con el suelo, sus picos-y-vuelta bajan de ~720 a **2 al año**.
+CADJPY no era cuantización: sus 115 al año venían de un episodio de 2006–2008 (423 sólo en
+2007); en los años tranquilos da de 0 a 21. Los dos quedan por debajo de 40.
+
+**El Brent (3.3) no pasa.** Con la sesión deducida quedan 109 huecos propios al año, por encima
+de 30: tiene pausas (06–08 h y 20–21 h en 2022–2025) que la regla del 50 % no recoge. Queda en
+revisión hasta que declares su sesión de FTMO. La plata queda justo por encima (33).
+
+**La inyección (2.16).** En los 13 feeds, recall del 100 % desde 1,25·K en cierre y mecha;
+congelados de 9 frente a 10 minutos y huecos de 4 frente a 5 cortan exactamente donde deben; la
+vuelta del 80 % frente a la del 70 % se separa al 100 % / 0 %; el recuento real cambia como
+mucho un 0,4 %. **Falla el criterio de «cero detecciones nuevas»**: entre 1 (oro) y 37 (Brent)
+por feed sobre ~12.300 plantadas, casi todas picos reales que ya estaban a menos del 5 % de K y
+que la contaminación de la escala empuja por encima. Se explica en `studies/data/feedQuality/POSSIBLE_IMPROVEMENTS.md`. **Lo diste por bueno el
+mismo día**: el detector queda como está.
+
+**Los 20 más extremos, a mano.** De 520 picos (los 20 mayores de cierre y de mecha de los 13
+feeds), 383 son sucesos identificados (flash crashes, Brexit, SNB, BoJ y MoF, FOMC, el crash de la
+libra de 2016, el petróleo en negativo, aranceles de 2025), 95 sin identificar (muchos en la
+reapertura del oro o en el rollover) y 42 sospechosos: 38 son el episodio de CADJPY de 2006–2008,
+que llena todo su top 20; el resto, la mecha de USDJPY del 25-08-2006 y días de Navidad. El veredicto de cada uno está en
+`~/Desktop/AlgoData/feedQuality/review.csv`.
+
+**Lo que da el paso 8 con estos umbrales.** Sobre la cosecha de ejemplo del oro (115
+estrategias M30, ~1.000 operaciones cada una), la media toca 7 anomalías: 102 salen
+«insuficiente», 13 «sin alarma» y ninguna alarma. **Hoy esta criba no cambia ninguna decisión**;
+cuesta cero estrategias y avisará el día que una dependa de minutos anómalos.

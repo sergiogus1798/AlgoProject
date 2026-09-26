@@ -28,7 +28,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `assetcheck.py` | What is missing or wrong about an asset: undecided values, and windows the data cannot fill | dict → problems |
 | `assetyaml.py` | The `assets/` YAML files read and written without losing a comment: the round trip, and every editable value of a file with what the file itself says about it | file → leaves |
 | `assetwrite.py` | The only writer of `assets/`: one value, one cost with its `why`, or a whole asset into the library or onto the retired shelf | change → file |
-| `assets.py` | The preflight read out loud; `python3 -m core.assets <SYMBOL>` | symbol → report |
+| `assets.py` | The preflight read out loud, with the feed-quality warning the last `studies.data.feedQuality.scan` left for the asset's feeds; `python3 -m core.assets <SYMBOL>` | symbol → report |
 | `significance.py` | Could this edge be zero: Sharpe and its shape, the variance factor both formulas below share, the Probabilistic Sharpe Ratio and the minimum track-record length | returns → probabilities |
 
 Three rules specific to this folder:

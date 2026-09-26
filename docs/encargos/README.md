@@ -62,12 +62,13 @@ dueño, 2026-09-24: **«monos se ha dicho»**.
 
 Siete tests sobre listas de operaciones y datos M1, ninguno necesita SQX. **Seis están
 construidos** — `studies/readings/profitShape/` (items 1, 2 y 7), `studies/readings/entryQuality/` (item 3 y
-el tier 1 del 4) y `studies/readings/conditionalMap/` (item 6, paso 22). Quedan dos:
+el tier 1 del 4), `studies/readings/conditionalMap/` (item 6, paso 22) y, el 2026-09-26,
+`studies/data/feedQuality/` (item 5, el **17**: calidad del feed, pasos 4 y 8, sobre las respuestas
+del dueño a las 16 decisiones; lo que quedó abierto está en su `POSSIBLE_IMPROVEMENTS.md`). Queda uno:
 
 | fichero | qué construye | qué lo bloquea |
 |---|---|---|
 | `16-replay-de-operaciones.md` | el tier 2 del retraso: reejecutar cada operación desde una entrada desplazada | hay que recalcular stops, y **esta población no tiene ninguno** con el que validarlo |
-| `17-calidad-del-feed.md` | anomalías del M1 y qué parte del beneficio las toca: detección como aviso en el paso 4, atribución como criba en el 8 | **en pausa**: espera a que el dueño conteste la hoja de respuestas de `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md` — 16 decisiones, cada una con propuesta |
 
 ## Encargos vivos de tandas anteriores
 

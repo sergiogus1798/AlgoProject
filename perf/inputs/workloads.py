@@ -10,6 +10,7 @@ from portfolio.common.monteCarlo.inputs import config as mc_config, costs, strea
 from engines.inference.snooping import superior
 from studies.breakage.mcRetest.measure import store
 from studies.closing.atrCalculator import inputs as atr_inputs, load as atr_load, one as atr_one
+from studies.data.feedQuality import detect as fq_detect, inputs as fq_inputs
 from studies.screening.snoopingScreen import inputs as snooping
 from studies.transfer.crossmarket.simulate import paired
 
@@ -148,3 +149,21 @@ def snooping_superior(cfg: dict) -> dict:
     superior.spa(panel, block, boot["reps"], boot["seed"])
     superior.stepm(panel, fwer, block, boot["reps"], boot["seed"])
     return {"scale": int(panel.size), "bytes_in": sample.weight([folder / "equity.parquet"])}
+
+
+def feedquality_detect(cfg: dict) -> dict:
+    """One feed through the feed-quality detector: the trailing scale, the spikes, the runs.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        Bars read. The scale is the cost that grows: one median per hour of the week per
+        week of history, linear in the feed's length.
+    """
+    feed = cfg["sample"]["bars_feed"]
+    study = fq_inputs.config([])
+    b = fq_inputs.bars(feed)
+    got = fq_detect.measure(b, fq_inputs.tick(b, study["session"]["years"]), study)
+    fq_detect.events(b, got, study["K"][feed], fq_inputs.week_mask(study, feed), study)
+    return {"scale": len(b["c"]), "bytes_in": int(sum(b[x].nbytes for x in "ohlc"))}

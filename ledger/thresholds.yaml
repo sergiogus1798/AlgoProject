@@ -167,3 +167,511 @@ thresholds:
     why: >-
       mark (no elimina) frente a drop (elimina en curate); el dueño elige cuándo pasar a
       drop, no este código
+
+  # ── Pasos 4 y 8 · calidad del feed (encargo 17) ────────────────────────────────────────
+  # Respuestas del dueño del 2026-09-26 a las 16 decisiones, fijadas antes de mirar ninguna
+  # estrategia. Las K por activo y las sesiones se añaden tras recalcularlas (respuesta 1.2).
+
+  - key: feedQuality.scale.window_weeks
+    value: 52
+    source: studies/data/feedQuality/config.yaml#scale.window_weeks
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 2 — hora de la semana, 52 semanas retrospectivas, MAD × 1,4826
+
+  - key: feedQuality.scale.min_weeks
+    value: 13
+    source: studies/data/feedQuality/config.yaml#scale.min_weeks
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 2, ajuste — arranque: ventana creciente desde 13 semanas; antes, «sin escala»
+
+  - key: feedQuality.scale.floor_ticks
+    value: 3
+    source: studies/data/feedQuality/config.yaml#scale.floor_ticks
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 2, ajuste — suelo: σh nunca por debajo de 3 ticks (la plata y CADJPY, §1.1 de las respuestas)
+
+  - key: feedQuality.scale.floor_rel
+    value: 0.25
+    source: studies/data/feedQuality/config.yaml#scale.floor_rel
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 2, ajuste — ni por debajo de 0,25 × la mediana de las casillas de esa semana
+
+  - key: feedQuality.spike.m
+    value: 3
+    source: studies/data/feedQuality/config.yaml#spike.m
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 4 — m = 3 minutos, convención fijada y no optimizada; m = 1 y 5 sólo como sensibilidad
+
+  - key: feedQuality.spike.rho
+    value: 0.80
+    source: studies/data/feedQuality/config.yaml#spike.rho
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 5 — vuelta del 80 %, de cierre a cierre contra C[t-1]
+
+  - key: feedQuality.spike.include_non_reverting
+    value: false
+    source: studies/data/feedQuality/config.yaml#spike.include_non_reverting
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 6 — los picos sin vuelta son «movimiento extremo»: al informe, fuera de la atribución
+
+  - key: feedQuality.frozen.length
+    value: 10
+    source: studies/data/feedQuality/config.yaml#frozen.length
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 7 — L = 10 velas M1 seguidas con OHLC idéntico, global; se cuenta la racha
+
+  - key: feedQuality.rollover_hours
+    value: [23, 0, 1]
+    source: studies/data/feedQuality/config.yaml#rollover_hours
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 8 — fuera de sesión y la franja 23:00–01:59 del feed (rollover de Nueva York)
+      no cuentan para congelados; y, por pregunta del mismo día, tampoco para huecos: desde
+      2020 casi todos los huecos propios de los pares son silencios de 5 min a las 00:00
+
+  - key: feedQuality.gap.minutes
+    value: 5
+    source: studies/data/feedQuality/config.yaml#gap.minutes
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 9 — hueco = ausencia de vela ≥ 5 minutos dentro de la sesión
+
+  - key: feedQuality.gap.partial_close_minutes
+    value: 180
+    source: studies/data/feedQuality/config.yaml#gap.partial_close_minutes
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 10, ajuste — todos callan ≥ 180 min = cierre parcial (se anota); 5–179 = caída del proveedor (se marca)
+
+  - key: feedQuality.gap.max_residual_per_year
+    value: 30
+    source: studies/data/feedQuality/config.yaml#gap.max_residual_per_year
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      respuesta 2.10 — más de 30 huecos residuales al año = sesión mal declarada
+
+  - key: feedQuality.session.share
+    value: 0.5
+    source: studies/data/feedQuality/config.yaml#session.share
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      pregunta del 2026-09-26 — sesión deducida del feed: minutos con vela en la mayoría de las semanas
+
+  - key: feedQuality.session.years
+    value: [2015, 2019]
+    source: studies/data/feedQuality/config.yaml#session.years
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      pregunta del 2026-09-26 — los años de los que se deduce la sesión
+
+  - key: feedQuality.k.candidates
+    value: [15, 20, 25, 30]
+    source: studies/data/feedQuality/config.yaml#k.candidates
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 3 — K* es el menor de estos que cumple el criterio
+
+  - key: feedQuality.k.quiet_years
+    value: [2013, 2019]
+    source: studies/data/feedQuality/config.yaml#k.quiet_years
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 3 — años tranquilos, por fecha (la alternativa por escala quedó como opción, no como propuesta)
+
+  - key: feedQuality.k.max_per_year
+    value: 52
+    source: studies/data/feedQuality/config.yaml#k.max_per_year
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 3 — mediana de picos de cierre en los años tranquilos < 52 al año, medida con la escala de 52 semanas y el suelo
+
+  - key: feedQuality.stable.base_year
+    value: 2013
+    source: studies/data/feedQuality/config.yaml#stable.base_year
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      respuesta 3.1 — la mediana de huecos se toma desde este año
+
+  - key: feedQuality.stable.factor
+    value: 3
+    source: studies/data/feedQuality/config.yaml#stable.factor
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      respuesta 3.1 — año estable: huecos del año ≤ 3 × la mediana; el preflight avisa, no bloquea
+
+  - key: feedQuality.stable.b_factor
+    value: 10
+    source: studies/data/feedQuality/config.yaml#stable.b_factor
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      respuesta 3.1 — hasta 10 × la mediana el año es «calidad B»
+
+  - key: feedQuality.episode.factor
+    value: 5
+    source: studies/data/feedQuality/config.yaml#episode.factor
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      respuesta 3.2 — un mes es episodio si sus congelados o huecos superan 5 × la mediana
+
+  - key: feedQuality.episode.months
+    value: 36
+    source: studies/data/feedQuality/config.yaml#episode.months
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      respuesta 3.2 — de los 36 meses anteriores
+
+  - key: feedQuality.episode.min_events
+    value: 5
+    source: studies/data/feedQuality/config.yaml#episode.min_events
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      respuesta 3.2 — y al menos 5 sucesos, para que 1 contra 0 no salte
+
+  - key: feedQuality.alarm.shuffles
+    value: 10000
+    source: studies/data/feedQuality/config.yaml#alarm.shuffles
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 12 — B = 10.000 barajadas, unilateral, sobre la suma del neto de las marcadas
+
+  - key: feedQuality.alarm.p_max
+    value: 0.01
+    source: studies/data/feedQuality/config.yaml#alarm.p_max
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 12 — p < 0,01, sin corrección por múltiples estrategias (es un aviso)
+
+  - key: feedQuality.alarm.min_flagged
+    value: 10
+    source: studies/data/feedQuality/config.yaml#alarm.min_flagged
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 12 — con menos de 10 marcadas, «insuficiente»
+
+  - key: feedQuality.action
+    value: mark
+    source: studies/data/feedQuality/config.yaml#alarm.action
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      decisión 14 — mark por defecto, drop lo elige el dueño; nunca descarte automático
+
+  - key: feedQuality.stable.floor
+    value: 30
+    source: studies/data/feedQuality/config.yaml#stable.floor
+    set_by: dueño
+    set_on: 2026-09-26
+    why: >-
+      pregunta del 2026-09-26 — un año es estable si sus huecos quedan ≤ max(3 × mediana, 30):
+      con medianas de 2–5 huecos al año en los pares, una Navidad a trozos (EURUSD 22 huecos
+      el 25-12-2025) triplicaba la mediana y tumbaba el año. 30 es el listón de la respuesta 2.10
+
+  # K y sesión por feed: medidos por studies.data.feedQuality.calibrate con el criterio del dueño
+  # (decisiones 3 y 15; sesión deducida del feed por pregunta del 2026-09-26), el mismo día y
+  # antes de mirar ninguna estrategia. Se recalculan sólo si cambia el proveedor del feed.
+  - key: feedQuality.K.BRENTCMDUSD_ftmo
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.BRENTCMDUSD_ftmo
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=71, N20=29, N25=12, N30=9; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2018. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.BRENTCMDUSD_ftmo
+    value: "Mon 03:00-Tue 00:00, Tue 03:00-Wed 00:00, Wed 03:00-Thu 00:00, Thu 03:00-Fri 00:00, Fri 03:00-Fri 23:46, Fri 23:59-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.BRENTCMDUSD_ftmo
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.XAGUSD_DukasM1_Infinox
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.XAGUSD_DukasM1_Infinox
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=96, N20=30, N25=11, N30=7; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2020. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.XAGUSD_DukasM1_Infinox
+    value: "Mon 01:00-Tue 00:00, Tue 01:00-Wed 00:00, Wed 01:00-Thu 00:00, Thu 01:00-Fri 00:00, Fri 01:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.XAGUSD_DukasM1_Infinox
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.XAUUSD_DukasM1_Infinox
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.XAUUSD_DukasM1_Infinox
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=165, N20=76, N25=37, N30=21; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2014. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.XAUUSD_DukasM1_Infinox
+    value: "Mon 01:00-Tue 00:00, Tue 01:00-Wed 00:00, Wed 01:00-Thu 00:00, Thu 01:00-Fri 00:00, Fri 01:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.XAUUSD_DukasM1_Infinox
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.USDJPY_DukasM1_the5ers
+    value: 30
+    source: studies/data/feedQuality/config.yaml#K.USDJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=206, N20=97, N25=57, N30=40; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2005. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.USDJPY_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.USDJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.AUDJPY_DukasM1_the5ers
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.AUDJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=136, N20=53, N25=28, N30=14; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2003. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.AUDJPY_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.AUDJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.AUDUSD_DukasM1_the5ers
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.AUDUSD_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=179, N20=81, N25=45, N30=27; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2025. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.AUDUSD_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.AUDUSD_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.CADJPY_DukasM1_the5ers
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.CADJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=116, N20=47, N25=25, N30=15; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2008. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.CADJPY_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.CADJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.EURJPY_DukasM1_the5ers
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.EURJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=90, N20=42, N25=27, N30=19; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2005. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.EURJPY_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.EURJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.EURUSD_DukasM1_the5ers
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.EURUSD_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=142, N20=60, N25=31, N30=15; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2005. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.EURUSD_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.EURUSD_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.GBPJPY_DukasM1_the5ers
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.GBPJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=133, N20=58, N25=30, N30=19; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2005. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.GBPJPY_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.GBPJPY_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.GBPUSD_DukasM1_the5ers
+    value: 30
+    source: studies/data/feedQuality/config.yaml#K.GBPUSD_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=324, N20=129, N25=69, N30=45; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2005. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.GBPUSD_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.GBPUSD_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.USDCAD_DukasM1_the5ers
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.USDCAD_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=194, N20=79, N25=33, N30=19; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2005. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.USDCAD_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.USDCAD_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.USDCHF_DukasM1_the5ers
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.USDCHF_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=277, N20=107, N25=46, N30=27; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2005. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.USDCHF_DukasM1_the5ers
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.USDCHF_DukasM1_the5ers
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019

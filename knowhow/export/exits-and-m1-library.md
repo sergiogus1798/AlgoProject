@@ -5,7 +5,7 @@ tag: 🔬  date: 2026-09-24  see: export/fill-and-pricing, export/bars, export/t
 # XAUUSD corpus exits are 3 types, none a stop; the M1 library loads whole in 0.4 s
 - `Close type` ∈ {`Exit After X Bars`, `Exit Signal`, `End Of Friday (Time)`}; no SL/TP; 100 % `Buy`. Delay analyses holding exits fixed are legitimate here.
 - ⚠️ Property of these templates, not the world: a population with barriers needs intrabar convention calibration first.
-- M1 library: read whole, no mmap/chunking needed. OHLC-consistent; open issue is flat bars → `docs/encargos/17-calidad-del-feed.md`.
+- M1 library: read whole, no mmap/chunking needed. OHLC-consistent; spikes, frozen runs and gaps → `research/m1-feed-anomaly-statistics`.
 
 ## Evidence
 - `XAUUSD/MC_Trades`, 960,705 trades: `Exit After X Bars` 720,874 (75.04 %), `Exit Signal` 187,853 (19.55 %), `End Of Friday (Time)` 51,978 (5.41 %).

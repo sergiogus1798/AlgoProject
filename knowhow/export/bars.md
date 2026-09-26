@@ -1,11 +1,12 @@
 ---
-q: export OHLC bars from SQX; data action=export symbol name timeframe; Symbol not found; sync_bars check feeds; bar library M1
+q: export OHLC bars from SQX; data action=export symbol name timeframe; Symbol not found; sync_bars check feeds; bar library M1; feed price increment vs tick_size
 tag: 🔬  date: 2026-09-24  see: export/what-a-project-stores, export/exits-and-m1-library
 ---
 # Export bars with the bare symbol and a separate timeframe, one timeframe per JVM
 `-data action=export symbols=XAUUSD_DukasM1_Infinox timeframe=<TF> ...` — not `..._M30` (fails `Symbol ... not found.`).
 Output `<symbol>-<TF>-No Session.csv`; a second export in the same JVM overwrites (`-run file=cmds.txt` names both the same).
 Library refresh: `python3 -m sqx.export.sync_bars --check`; feed list = `assetdata.symbols()` + `markets(symbol)`.
+⚠️ A feed's price step is its smallest close-to-close move, not `assets/` `tick_size`: the Dukascopy forex feeds quote a tenth of SQX's tick (EURUSD 0.00001, USDJPY 0.001) → `research/m1-feed-anomaly-statistics`.
 
 ## Evidence
 - `sync_bars.wanted()` read `markets.FILE`, removed when `studies/transfer/crossmarket/inputs/markets.py` began delegating to `core.assets` → `AttributeError`; fixed 2026-09-24.

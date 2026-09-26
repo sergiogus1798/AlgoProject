@@ -2,6 +2,7 @@
 
 import csv
 import io
+import json
 import re
 import sys
 
@@ -9,7 +10,7 @@ from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pendi
                              segments_pending, validate)
 from core.assetdata import (MARKETS, POLICY, RESERVED, classes, fields, load, markets, mc_retest,
                             policy, schema, special_notes, sqx_settings, symbols, window)
-from core.paths import ASSETS
+from core.paths import ASSETS, feed_quality_dir
 
 
 def _day(bound: int | object, end: bool) -> str:
@@ -72,6 +73,39 @@ def report(symbol: str) -> str:
     return "\n".join(lines)
 
 
+def feed_quality(data: dict) -> list[str]:
+    """Step 4's warning about the feeds this asset builds on, from the last feed-quality scan.
+
+    Args:
+        data: load()'s dict.
+
+    Returns:
+        One line per feed with its anomalies per year and its stable year, a warning when the
+        build segment starts before that year, and its provider episodes by month. Warns, never
+        blocks (owner's answer 3.1). Nothing for a feed never scanned.
+    """
+    lines = []
+    for feed in data["feeds"]:
+        path = feed_quality_dir(feed) / "summary.json"
+        if not path.exists():
+            continue
+        q = json.loads(path.read_text(encoding="utf-8"))
+        lines.append(f"calidad del feed {feed}: {q['marked_per_year']:g} anomalías marcadas por año "
+                     f"(mediana desde 2013, K = {q['K']}), estable desde {q['stable_from']} "
+                     f"(escaneado {q['scanned_on']}).")
+        start = data["segments"]["build"]["from"]
+        year = start if isinstance(start, int) else start.year
+        if year < q["stable_from"]:
+            worse = sorted({g for y, g in q["grade"].items() if year <= int(y) < q["stable_from"]})
+            lines.append(f"AVISO: la construcción empieza en {year}, antes del año estable "
+                         f"{q['stable_from']}: esos años son {' y '.join(worse)}.")
+        for col in sorted({e["columna"] for e in q["episodes"]}):
+            months = [e["mes"] for e in q["episodes"] if e["columna"] == col]
+            lines.append(f"episodios de {col}: {', '.join(months[:12])}"
+                         f"{f' y {len(months) - 12} más' if len(months) > 12 else ''}.")
+    return lines
+
+
 def main() -> None:
     """Print one asset's overrides; exit non-zero if the asset is unknown or undecided."""
     if sys.argv[1] == "--index":
@@ -88,6 +122,9 @@ def main() -> None:
         print(f"ESQUEMA ROTO en assets/symbols/{symbol}.yaml: " + "; ".join(broken))
         sys.exit(3)
     print(report(symbol))
+    quality = feed_quality(data)
+    if quality:
+        print("\n" + "\n".join(quality))
     for line in past_data(data):
         print(f"AVISO: {line}", file=sys.stderr)
     if segments_pending(data):
