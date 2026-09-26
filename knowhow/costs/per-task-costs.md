@@ -25,4 +25,4 @@ tag: 🔬  date: 2026-09-23  see: costs/commission-methods, costs/swap-types, co
 - Changing `defaultSpread`/`defaultSlippage` inside `InstrumentInfo` makes the project unresolvable; rewriting the same value is fine.
 - `-instrument action=edit` works; `defaultslippage` works though `internal/web/SQUANT/help.txt` (12 params) omits it; `commissions=` and `swap=` did not take in three forms.
 - Registry = `user/data/data.db`; `bin/sqx-worker.sh start` copies it from the master only when the master fingerprint changed (`--force-sync` overrides).
-- Dropping a `.cfx` on disk also loads; `loadconfig` is the supported path (`docs/project-config-workflow.md`).
+- Dropping a `.cfx` on disk also loads; `loadconfig` is the supported path (`sqx-drive/project-verb`).
