@@ -441,7 +441,8 @@ This project is also the natural control group for issue 9, so keeping it workin
 figures — comes from the previous project's export. `~/Desktop/AlgoData/` holds **36** strategies'
 trades. The generating scripts are parked in `archive/studies/` against the old data layout
 (issue 8), so nothing cited can be re-run, checked or challenged today, and both current manifests
-say `code_version: "migrated from AlgoProject_Old, pre-git"` rather than naming a commit.
+say `code_version: "migrated from AlgoProject_Old, pre-git"` rather than naming a commit. The old
+project itself was deleted on 2026-09-26, so those figures can no longer be traced to their source.
 
 **Fix:** either re-export the corpus with a proper manifest, or mark the affected bullets "from the
 old project, not reproducible here", so nobody builds on them assuming they can.

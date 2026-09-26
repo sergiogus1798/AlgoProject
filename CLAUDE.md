@@ -142,4 +142,4 @@ generators · `bin/` worker scripts · `config/` machine settings (the real one 
 
 master `~/Desktop/SQX` (5050) · conductor `~/Desktop/SQX_w1` (5060) · custodian `~/Desktop/SQX_w2`
 (5070) · data `~/Desktop/AlgoData` ·
-archive `~/Desktop/AlgoProject_Old` (read-only). Machine-specific paths: `config/machine.yaml`.
+machine-specific paths: `config/machine.yaml`.

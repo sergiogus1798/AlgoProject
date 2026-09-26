@@ -47,8 +47,7 @@
     "additionalDirectories": [
       "~/Desktop/AlgoData",
       "~/Desktop/SQX",
-      "~/Desktop/SQX_w1",
-      "~/Desktop/AlgoProject_Old"
+      "~/Desktop/SQX_w1"
     ],
     "ask": [],
     "deny": [

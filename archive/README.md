@@ -7,8 +7,8 @@ are cited elsewhere and someone may want to reproduce them. **`CODESTYLE.md` doe
 Nothing new goes here. If a script here is worth using again, rewrite it under `CODESTYLE.md` in the
 phase folder where it belongs, and delete the copy here.
 
-Everything here was written against the **old** data layout (`AlgoProject_Old/src/out`), not against
-the data root. Reusing one means rewriting it over `core/` anyway, so it is parked rather than
+Everything here was written against the **old** data layout (`AlgoProject_Old/src/out`, deleted
+2026-09-26), not against the data root. Reusing one means rewriting it over `core/` anyway, so it is parked rather than
 polished. The findings themselves are already in `knowhow/`, which is what actually had to survive.
 
 | file | what it answered |

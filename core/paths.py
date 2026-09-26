@@ -14,9 +14,7 @@ _CFG = yaml.safe_load(_FILE.read_text(encoding="utf-8"))
 MASTER = Path(_CFG["sqx_master"]).expanduser()
 WORKER = Path(_CFG["sqx_worker"]).expanduser()
 DATA = Path(_CFG["data_root"]).expanduser()
-# Optional on a machine that only analyses exported data: the archive may not be there,
-# and no browser is needed unless the manual is rendered to PDF.
-ARCHIVE = Path(_CFG.get("archive", "")).expanduser()
+# Optional: no browser is needed unless the manual is rendered to PDF.
 BROWSER = Path(_CFG.get("browser", "")).expanduser()
 WORKER_PORT = _CFG["worker_port"]
 # The desktop app's local daemon. Loopback only, never exposed; a machine that never

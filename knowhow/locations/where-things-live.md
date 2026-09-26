@@ -14,7 +14,6 @@ Exclude `~/.local/share/Trash/` from strategy searches (owner's request).
 | `~/Desktop/AddonsSQX/` | 68 `.sqx`, `Templates/`, `CustomBlocks/`, `RandomGroups/` |
 | `~/Desktop/StratsProblem/` | 6 `.sqx` |
 | `~/Desktop/user/` | 12 Jun project tree, only copy of XAUUSD/Results |
-| `~/Desktop/AlgoProject_Old/` | previous project, read-only, incl. 8.5 GB `snapshots/` |
 | `~/.local/share/Trash/` | 11,440 `.sqx`, mostly June-tree duplicates |
 | `~/Desktop/SQX.zip` | 1.28 GB June install backup, 32 example `.sqx` — not a strategy archive |
 Template sets: `TemplatesSergiogus`, `TemplatesClaude`, `TemplatesLaCity`, `TemplatesBook`.
