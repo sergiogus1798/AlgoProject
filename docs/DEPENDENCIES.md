@@ -262,12 +262,12 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/closing/atrCalculator/mae.py` | 44 | Each trade's adverse excursion and final result in units of the ATR the stop would have used. | core | numpy, pandas |
 | `studies/closing/atrCalculator/noreturn.py` | 50 | §2.2 — the point of no return: how many trades that went x ATR against still came back. | — | numpy, pandas |
 | `studies/closing/atrCalculator/one.py` | 92 | One strategy's stop read from its MAE — four X side by side, never one chosen — as the contract's data. | core, studies | pandas |
-| `studies/closing/atrCalculator/proofs.py` | 68 | The two proofs a stop retest has to pass before anything in it is read: the graft, and the ATR. | studies | numpy, pandas |
+| `studies/closing/atrCalculator/proofs.py` | 74 | The two proofs a stop retest has to pass before anything in it is read: the graft, and the ATR. | studies | numpy, pandas |
 | `studies/closing/atrCalculator/report.py` | 57 | Read an ATR stop loss from the MAE of the IS winners, four percentiles side by side, and what SQX says it costs. | core, studies | pandas |
-| `studies/closing/atrCalculator/sqxview.py` | 97 | The SQX retest drawn as the contract's tabs: the two proofs, the cost per X and the shape. | core | pandas |
-| `studies/closing/atrCalculator/stability.py` | 115 | §3 — what SQX says each X costs against the original, in each window, and the shape around it. | studies | numpy, pandas |
+| `studies/closing/atrCalculator/sqxview.py` | 110 | The SQX retest drawn as the contract's tabs: the two proofs, the cost per X and the shape. | core | pandas |
+| `studies/closing/atrCalculator/stability.py` | 120 | §3 — what SQX says each X costs against the original, in each window, and the shape around it. | studies | numpy, pandas |
 | `studies/closing/atrCalculator/threshold.py` | 48 | §2.1 — the air the IS winners need: X per percentile, with its bootstrap interval. | — | numpy, pandas |
-| `studies/closing/atrCalculator/tooltips.py` | 22 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
+| `studies/closing/atrCalculator/tooltips.py` | 24 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
 | `studies/closing/atrCalculator/transfer.py` | 55 | §2.3 — does the IS X transfer to oos1 and oos2? Described, never recomputed out of sample. | — | numpy, pandas, scipy |
 | `studies/closing/atrCalculator/view.py` | 127 | The §2 reading drawn as the contract's tabs: X, the point of no return, the transfer. | core | numpy, pandas |
 | `studies/closing/exposure/benchmark.py` | 119 | What "buy and hold" means here: three sizing conventions, and the P&L each one earns. | — | numpy, pandas |

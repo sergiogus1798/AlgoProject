@@ -61,6 +61,7 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `38-app-activos.md` | la zona de activos de la ventana: los diecinueve instrumentos y los cuatro ficheros compartidos, con sus costes, tramos y rangos editables sin abrir un YAML |
 | `37-wfc-retest.md` | el retest de las variantes para el WFC y el CSCV: tres tareas de SQX, una por tramo (`build`, `oos1`, `oos2`), cada una a sus costes y con los mercados adicionales dentro |
 | `38-exposicion.md` | la exposición: cuánto tiempo de mercado le costó a la estrategia lo que ganó, contra el buy and hold al mismo riesgo — el paso 21, el último de la secuencia |
+| `49-atr-calculator.md` | el stop loss ATR del paso 22: X leído del MAE de las ganadoras del IS a cuatro percentiles sin elegir ninguno, el injerto del stop en el `.sqx`, y lo que SQX dice que cuesta y lo plano que es alrededor de X |
 | `_PLANTILLA.md` | **la plantilla obligatoria.** Se copia para documentar cada módulo nuevo |
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |
