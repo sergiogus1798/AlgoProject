@@ -1203,3 +1203,39 @@ produce silence are known before the budget is spent, which is close to what
 `docs/AgentPDFs/revision-proyecto-2026-09-22.md` already proposes for the sampling.
 
 **Whose call:** the owner's, because it changes what a batch contains.
+
+## 49. ✅ Periodic review jobs added — knowhow, dependency map, audit/, docs health — 2026-09-26
+
+Four new cron jobs, asked by the owner: a weekly quality pass over `knowhow/`, plus three more
+found by looking for other project parts that age the same way and were not yet on any schedule.
+
+**`bin/weekly-knowhow-review.sh`** — the nightly `documenter` (`bin/nightly-docs.sh`) repairs drift
+the daily audit found; it never reads `knowhow/` end to end for what only the prose catches — two
+cards answering the same `q:`, a 🔬 tag that oversells its evidence, a card a later one
+contradicted without either being rewritten. `tools/checks.py`
+(`knowhowmap.bad_cards` / `broken_links` / `stale_indexes`) already enforces card shape
+mechanically, so this pass is scoped to the semantic half checks.py cannot see. Runs the
+`documenter` agent on Sonnet the same way `nightly-docs.sh` does. **Sundays 05:00.**
+
+**`bin/weekly-docs-health.sh`** — same agent, same day, waits on the knowhow review's lock so the
+two never touch OPEN.md at once. Covers what `weekly-knowhow-review.sh` does not: OPEN.md's own
+status table against its issues, `docs/SKILLS.md` retirement candidates (reported as a new OPEN.md
+issue, never deleted by the agent — the owner's call), `docs/encargos/` against its own "un encargo
+cumplido se borra" rule, and a general stale-doc sweep. **Sundays 05:00**, chained after the
+knowhow review.
+
+**`docs/DEPENDENCIES.md` regeneration** — `tools/checks.py`'s dependency-map check only ever
+flagged staleness, never fixed it (it was stale when this issue was opened); `tools/depmap.py` is
+deterministic, so no agent is needed, just a daily run. **Daily 02:40.**
+
+**`bin/audit-prune.sh`** — `audit/` gets two files a day, forever, with no retention job of its
+own (unlike SQX's logs, `knowhow/eng/log-retention.md`). Gzips reports older than 60 days in
+place; deletes nothing, never touches today's. **Sundays 02:45.**
+
+All four leave their changes uncommitted (the two agent runs) or touch only their own generated
+file (the two mechanical ones) — nothing here runs `git add` or `commit`.
+
+Installing the crontab lines hit the classic vixie-cron bug: `crontab <file>` truncates a long
+`TMPDIR`-based temp path and fails with a "No such file or directory" that names the wrong file —
+worked once the file was copied to a short `/tmp` path first. 🔬 reproduced 2026-09-26,
+`knowhow/eng/crontab-long-tmpdir-path.md`.
