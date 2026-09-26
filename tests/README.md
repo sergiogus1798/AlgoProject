@@ -24,6 +24,8 @@ overlapping 2.8-5.4% of its own trades on 2026-09-17, against a docstring that s
 
 | `test_ledger.py` | the global ledger's two guarantees: the one-way door refuses step 8 on the reserved segment and refuses to serve 17/18/19 until all three have run; the pooled sigma reproduces the union of two searches exactly; two score units are never averaged; and widening N from one search to the whole study raises the deflated Sharpe's benchmark and lowers the DSR | `python3 tests/test_ledger.py` |
 
+| `test_marketsurfaces.py` | the market surfaces' rho and J on panels built to have one answer: a market against itself and an exact copy read 1 and 1, the same region on another scale passes, the inverse reads −1 and 0, a rho carried by the bad half with unshared tops does not pass, a triplicated backtest counts once, independent rankings read J ≈ 10/190 and sit above the band ≤ 2.5 % of the time, exposure-times-drift reads −0.9 raw and ≈ 0 neutral, and a missing declared market counts as not passing | `python3 tests/test_marketsurfaces.py` |
+
 `fixtures/optimizer.cfx` is a real 2.4 KB project copied from the master. `--bless` rewrites the
 golden file: only do that when the change in output is intended, and say in the commit why.
 

@@ -111,3 +111,31 @@ thresholds:
     set_by: dueño
     set_on: 2026-09-23
     why: C(12,6) = 924 particiones, los números de López de Prado
+
+  # ── Paso 18.5 · superficies por mercado ───────────────────────────────────────────────
+  - key: marketSurfaces.rho_floor
+    value: 0.30
+    source: studies/optimisation/marketSurfaces/config.yaml#rho_floor
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      el mismo suelo que el WFC y por la misma razón: por debajo de 0,30 dos rankings comparten
+      menos del 9 % de su varianza. Fijado antes de mirar ningún lote
+
+  - key: marketSurfaces.j_quantile
+    value: 0.975
+    source: studies/optimisation/marketSurfaces/config.yaml#j_quantile
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      percentil del Jaccard de dos órdenes independientes (hipergeométrica) que el observado
+      tiene que superar. Optimista: el diseño agrupa variantes y el nulo real es más ancho
+
+  - key: marketSurfaces.min_share
+    value: 0.5
+    source: studies/optimisation/marketSurfaces/config.yaml#min_share
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      la mitad de los mercados declarados, en cada tramo leído, para decir que la región viaja.
+      PROVISIONAL hasta que el dueño lo fije
