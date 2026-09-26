@@ -250,11 +250,12 @@ in issue 1 was recorded — is **4.66 GB** on its own, and compresses to 105 MB.
 
 It is safe while the GUI is up: it reads files and drives no instance.
 
-**Scheduled 2026-09-04**, daily at 08:00, as the machine's only crontab entry. Updated the same day
+**Scheduled 2026-09-04**, daily at 08:00, as the machine's only crontab entry; moved to 04:00 on
+2026-09-25 by the owner. Updated the same day
 when the layout refactor moved invocation to `python3 -m`:
 
 ```cron
-0 8 * * * cd /home/sergioguslw/Desktop/AlgoProject && /usr/bin/python3 -m sqx.export.archive_logs \
+0 4 * * * cd /home/sergioguslw/Desktop/AlgoProject && /usr/bin/python3 -m sqx.export.archive_logs \
           >> /home/sergioguslw/Desktop/AlgoData/logs/cron.log 2>&1
 ```
 

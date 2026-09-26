@@ -388,7 +388,7 @@ solo con los canarios. **Esta prueba va primero, antes de fabricar 5.000.**
 
 **Export masivo — medir con 100 antes de comprometerse a 5.000** (ABIERTO del §2). Streaming: el CSV
 por estrategia que suelta SQX se lee y se anexa a Parquet particionado por bloques de ~500; la memoria
-queda acotada por estrategia, no por databank. Perfilar con `perf` / `perf-profiler`.
+queda acotada por estrategia, no por databank. Perfilar con `/perf`.
 
 **Borrado**: solo tras verificar completitud + canarios + hashes escritos en el ledger. Nunca la madre
 (`origin: true`). Por defecto **conserva el databank de la estrategia anterior** mientras corre la

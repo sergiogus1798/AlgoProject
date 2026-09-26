@@ -40,6 +40,7 @@ que sólo el dueño puede dar.
 | 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `studies/optimisation/wfm/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
 | 20 | **Análisis conjunto de 17, 18 y 19 — CIEGO hasta tener los tres** | — | ⬜ |
 | 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/38-exposicion.md` | ✅ |
+| 22 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, encargo `docs/encargos/20-atr-calculator.md` | ⬜ |
 
 **Tres lecturas adicionales que no son pasos nuevos y no renumeran nada.** Dos sobre una
 estrategia y su lista de operaciones, gratis y sin SQX: `studies/readings/profitShape/` (manual
@@ -55,7 +56,7 @@ si hay superficie que leer y si su forma aguanta año a año. Es gratis, no toca
 curvas donde empieza `oos2`** y no elige nada: sale del PDF `PARAMETER_SPACE_TESTS.pdf` del dueño,
 cuya sección E prohíbe expresamente sustituir la madre por el mejor clon.
 
-Del 22 en adelante empieza la cartera. **Primero las estrategias individuales.**
+Del 23 en adelante empieza la cartera. **Primero las estrategias individuales.**
 
 ## El paso 21 — la dicotomía rendimiento/exposición
 
@@ -75,6 +76,24 @@ tenía posición — que es lo que separa una ventaja propia de estar presente e
 **La alfa y la beta están aparcadas ahí, a propósito.** Decisión del dueño del mismo día: primero
 se cierra la secuencia individual. Si algún día se construye la regresión, va en
 `studies/closing/exposure/`, que ya tiene montada su antesala.
+
+## El paso 22 — el stop loss que MT5 exige
+
+Encargo del dueño, 2026-09-25/26. La cadena construye **sin stop a propósito**: un stop es un
+parámetro más y cada parámetro es sitio para el sobreajuste. Pero MT5 lo exige, así que al final
+de la secuencia individual se le pone uno a la estrategia que ya sobrevivió todo.
+
+> *«No quiero que sea una optimización ni nada.»*
+
+El stop es un **colchón**: corta las pérdidas largas que ya no se recuperan y deja a la estrategia
+el aire que necesita contra el ruido. Su distancia, `SL = X·ATR`, se **lee** del MAE de las
+operaciones —cuánto se fueron en contra las ganadoras, a partir de dónde ya no se recupera casi
+ninguna— con una regla fijada antes de mirar. No se barre una rejilla ni se elige la X que más
+gana. X sale **sólo del IS**, como percentil de las ganadoras (80, 85, 90 y 95, cuatro sub-estudios), con
+ATR(20). `oos1` y `oos2` dicen si se transfiere. El coste y la estabilidad los mide SQX con sus propios
+spread y slippage: variantes un poco por encima y por debajo de cada X, buscando meseta, no máximo.
+Después, si hace falta, se repite alguno de los tests anteriores sobre la versión con stop, y nada
+más. Detalle en `docs/encargos/20-atr-calculator.md`.
 
 ## El Monte Carlo de bootstrap está FUERA, a propósito
 

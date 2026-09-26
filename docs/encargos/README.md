@@ -78,6 +78,12 @@ el tier 1 del 4). Quedan tres:
 | `17-calidad-del-feed.md` | anomalías del M1 y qué parte del beneficio las toca | los umbrales `K`, `m`, `L`, `w` son del dueño |
 | `14-mapa-condicional.md` | rendimiento por régimen, sesión y día | nada técnico; va el último **a propósito**: es el único que fabrica hipótesis |
 
+## El stop loss para MT5, 2026-09-25
+
+| fichero | qué construye | qué lo bloquea |
+|---|---|---|
+| `20-atr-calculator.md` | el paso 22: el stop X·ATR de cada superviviente, leído del MAE de sus operaciones, **sin optimizar** — MT5 lo exige y la cadena genera sin stop | injertar un stop ATR en un `.sqx` que no lo tiene (sin investigar); decisiones del dueño cerradas; y hace falta alguna superviviente |
+
 ## Encargos vivos de tandas anteriores
 
 | fichero | agente | posee | estado |
