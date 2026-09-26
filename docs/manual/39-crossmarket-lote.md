@@ -179,7 +179,7 @@ python3 -m sqx.curate.apply_verdict --project TestUSDJPY_Workflow_v1 \
 - **No dice que el edge sea real.** Dice que sobrevive a cambiar de mercado, que es una condición
   necesaria y nada más. Un mono largo en nueve pares correlacionados también puede pasarlo.
 - **No corrige por multiplicidad entre estrategias.** Cribar ochenta estrategias con este suelo es
-  ochenta pruebas, y el CSV no lo paga. Eso es el ledger global (`docs/encargos/8-ledger-global.md`).
+  ochenta pruebas, y el CSV no lo paga. Eso es el ledger global (`docs/manual/43-ledger.md`).
 - **No es una prueba del timing de entrada** cuando `family` dice `entry+exit`.
 - **No sustituye al panel.** Sin la curva y la matriz de correlación no se ve si los nueve mercados
   son nueve observaciones o una repetida nueve veces.

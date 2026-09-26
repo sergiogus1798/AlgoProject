@@ -61,8 +61,11 @@ GitHub o en el editor: son el original, el PDF es solo el resultado.
 | `49-snooping.md` | SPA y StepM detrás de la puerta OOS: si alguna estrategia bate al buy & hold a igual riesgo una vez pagada toda la búsqueda, y cuáles; anota y no corta |
 | `38-app-activos.md` | la zona de activos de la ventana: los diecinueve instrumentos y los cuatro ficheros compartidos, con sus costes, tramos y rangos editables sin abrir un YAML |
 | `37-wfc-retest.md` | el retest de las variantes para el WFC y el CSCV: tres tareas de SQX, una por tramo (`build`, `oos1`, `oos2`), cada una a sus costes y con los mercados adicionales dentro |
-| `38-exposicion.md` | la exposición: cuánto tiempo de mercado le costó a la estrategia lo que ganó, contra el buy and hold al mismo riesgo — el paso 21, el último de la secuencia |
+| `38-exposicion.md` | la exposición: cuánto tiempo de mercado le costó a la estrategia lo que ganó, contra el buy and hold al mismo riesgo — el paso 21 |
+| `50-edge-por-coste.md` | pasos 8 y 25: el edge por operación en unidades de spread y el coste al que la ventaja se acaba, con la conciliación del neto por delante y el reparto del spread medido por mercado |
+| `51-estructura.md` | paso 23: qué condición sostiene el edge —cada una quitada de una en una— y si invertir la dirección lo destruye, corrido en el custodio y leído por operación |
 | `52-superficies-mercado.md` | paso 18.5: si la zona buena de parámetros de la madre es también la buena en los 9 mercados de `_markets.yaml` — rho de Spearman y Jaccard del decil superior entre cada par, con la lectura sin la exposición al lado, costes provisionales marcados y sin mirar `oos2` |
+| `53-mapa-condicional.md` | paso 22: el rendimiento por estado del mercado al entrar —volatilidad, tendencia y día—, descriptivo y con el aviso de comparaciones múltiples delante |
 | `_PLANTILLA.md` | **la plantilla obligatoria.** Se copia para documentar cada módulo nuevo |
 | `PENDIENTE.md` | los comandos que aún no tienen página. Solo atraso heredado; no crece |
 | `assets/` | las capturas. Salidas reales, nunca inventadas |

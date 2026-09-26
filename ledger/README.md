@@ -20,7 +20,7 @@ family: the unit the multiple-testing correction is owed to.
 | `report.py` | **The command**: the funnel, what was spent, the blind door, and what the whole search costs the Sharpe | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
 | `thresholds.yaml` | Every threshold of the chain, with who set it and when — **the source**: a module's `config.yaml` holds `ledger:<key>` in its place. Read, never written by code | edited by the owner | — |
 
-Manual page, in Spanish: `docs/manual/43-ledger.md`. Commission: `docs/encargos/8-ledger-global.md`.
+Manual page, in Spanish: `docs/manual/43-ledger.md`.
 
 ## The three things this module exists to get right
 

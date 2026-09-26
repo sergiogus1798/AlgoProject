@@ -71,8 +71,8 @@ low r² describes a shape the data only half supports, which is why the r² is p
 - **Nothing about a market it was not run on.** The multi-market surfaces (A4) and the cross-market
   transfer of the optimal region (B3) need a variant retest carrying the cross-checks of
   `assets/_markets.yaml`. `sqx.variants.equity` already writes `equity_markets.parquet` when they
-  are there; no batch on this install has them yet. `docs/encargos/15-superficies-multimercado.md`.
+  are there, and `studies/optimisation/marketSurfaces/` reads them (step 18.5).
 - **Nothing about rules**, only about parameter values. Ablation and inversion need the strategy's
-  logic edited, not its variables: `docs/encargos/12-tests-estructurales.md`.
+  logic edited, not its variables: `sqx/structural/` and `studies/readings/structure/` (step 23).
 - **`active` is days, not trades.** A per-period trade count needs the trade export, ninety minutes
   against this file's 1.5 seconds. Periods below `min_active_days` are dropped rather than read.

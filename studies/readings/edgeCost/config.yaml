@@ -1,4 +1,4 @@
-# encargo 11 — edge por operación y coste de breakeven (docs/encargos/11-edge-por-coste.md).
+# Edge per trade and breakeven cost (encargo 11, built 2026-09-26; manual docs/manual/50-edge-por-coste.md).
 #
 # `min_edge_spreads` y `action` son decisión del DUEÑO, no de este código — regla dura 11 y
 # owner 2026-09-26. Se fijan ANTES de mirar resultados: un umbral ajustado después de verlos

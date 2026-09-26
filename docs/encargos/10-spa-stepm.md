@@ -14,7 +14,7 @@ Lee `CODESTYLE.md` · `studies/screening/gate/README.md` · `studies/optimisatio
 | benchmark | ✅ buy & hold **a igual riesgo** (dueño, 2026-09-25): exceso positivo ⇔ Sharpe mayor que el del activo |
 | FWER | ✅ 0,05, en `ledger/thresholds.yaml` |
 | una fila en el ledger | ✅ paso 8, blanda: `n_out = n_in`, lo que nombra va en la nota |
-| §4.1 control negativo y §4.2 positivo | ✅ `tests/test_snooping.py`: ruido 0 de 20 semillas, edge plantado 20 de 20 |
+| §4.1 control negativo y §4.2 positivo | ✅ `tests/test_snooping.py`: ruido 0 de 20 semillas —y 5 de 100 semillas más (20–119), justo el FWER declarado—, edge plantado 20 de 20 |
 | §4.3 contra el CSCV sobre la misma población | ⚪ no aplica tal cual: el CSCV corre sobre las variantes de una madre y esta población no tiene lote de variantes. Se hace el día que una madre de aquí llegue al paso 18 |
 | **B** · la prueba conjunta ciega del paso 20 | 🔴 **lo que queda**: `studies/closing/blindJoint/`, sobre las supervivientes de 17-18-19 y datos que nadie miró. Espera a que una población llegue al paso 20 |
 

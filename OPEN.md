@@ -942,7 +942,15 @@ that **thresholds do not block anything**: the user decides them and they are ch
 pre-registration records whichever number is current, and records the change when it changes. That
 is what keeps it honest while the criteria are still moving.
 
-## 26. 🔴 `PercentageBased` may charge per leg or per trade, and nobody has measured which
+## 26. 🟠 `PercentageBased` charges ~twice per trade — MEASURED 2026-09-26, the fix is the owner's
+
+🔬 Measured by encargo 11 on existing harvest data, no SQX run: least squares of
+`price_pnl − Profit/Loss = k · commission_once` over **45,488 same-day XAUUSD trades** (no swap to
+confound) gives **k = 1.87**, not 1 — k = 1 sits 31 standard errors off. The commission is charged
+close to once per leg, so today's `no_forex` formula (`_classes.yaml`) understates gold's commission
+by nearly half. `knowhow/costs/commission-methods.md` has the fit. **Not applied**: changing
+`assets/symbols/XAUUSD.yaml` (and every index) is the owner's decision; until then every gold result
+with costs carries `costs_provisional`. What follows is the original entry.
 
 Every `no_forex` asset in `assets/` now declares its commission as a **percentage of notional**,
 applied by SQX's `PercentageBased` method. Reading the snippet
@@ -1214,3 +1222,54 @@ and `AlgoData/profiling/bench-2026-09-25`, outputs identical. What it could not 
 `walkForwardMatrix/report.py` (step 19) — running them spends the reserved window, which is the
 owner's one-way door. Measure them the first time the owner runs 17-19 for real, not before.
 The MC Retest and the SPP were not measured at 500 either: their cost is SQX's (~34 h and ~2.8 h).
+
+## 43. 🟠 A retest drops the `<!--variant_id-->` stamp — the file name is the only join key
+
+🔬 Encargo 12, 2026-09-26: the retested `strategy_Portfolio.xml` is the fabricated one minus that
+comment. After a run, a variant is found by its file name only. Check that `sqx.variants.collect`
+and `equity` never relied on the stamp; `sqx/variants/README.md` failure mode 1 describes it as a
+join key and is now inaccurate. Card: `knowhow/sqx-format/writing-a-variant.md`.
+
+## 44. 🔴 The CSCV puts two months of `oos1` P&L on its OOS side — each leg's curve starts early
+
+🔬 Encargo 15, 2026-09-26: each leg's daily curve starts ~2 months before its segment with zero P&L
+(warm-up), and `equity.json` `splits`/`windows` record that warm-up start (`splits.oos2 =
+2022-11-03`). `engines/variants/panel.split(work, "oos2_only")` returns that date, so `windows()`
+puts Nov–Dec 2022 of the **oos1** leg's real P&L on the OOS side of the CSCV's chronological
+numbers. It changes computed CSCV/WFC figures, so the fix (split at the segment's own start from
+`assets/_policy.yaml`) needs a golden before and after. Card: `knowhow/sqx-format/leg-curve-warmup.md`.
+
+## 45. 🟡 `pipeline/XAUUSD/Strategy_17-9-39` no longer runs in the CSCV
+
+Its batch predates the per-segment columns: `cscv.report` fails with `KeyError: NetProfit
+(build+oos1)`. It is still usable by the parameter cloud. Re-harvest it or retire it; never use a
+real batch as a CSCV regression test anyway — every run reads `oos2`
+(`knowhow/research/cscv-always-reads-oos2.md`).
+
+## 46. 🟡 Steps 18.5 and 23 read `build` + `oos1` only — whether they may read `oos2` is the owner's call
+
+Market surfaces (18.5) and the structural tests (23) call `ledger.gate.allow` before reading a leg;
+with today's `assets/_policy.yaml` `oos2` is refused for both. Both agents recommend keeping it so:
+18.5 already has 15 years and 5,000 variants, and its costs are provisional; 23 is a diagnostic, not a
+selection. To open it: the step in `reserved_for` **and** in `ledger/gate.py` `STEPS`.
+
+## 47. 🟡 The conditional map has no trading sessions — nothing in the repo defines their hours
+
+Encargo 14 asked for Asia / London / New York / overlap from `assets/symbols/<SYMBOL>.yaml`
+`session`. That field resolves to the broker's trading WEEK (`<Resources><Sessions>` in the donor's
+XML), not to a partition of the day, and no UTC boundaries exist anywhere. The map uses weekday
+instead. The owner gives the UTC hours, or the cut stays out. Card: `knowhow/costs/sessions-per-asset.md`.
+
+## 48. 🟡 Loose ends of the 2026-09-26 batch — each the owner's word, none blocking
+
+- `assets/_markets.yaml` says USDJPY is **M30**; every USDJPY mother and batch is **H1**.
+- Market surfaces: the call uses the raw rho; `rho_neutral` (each market's exposure × drift
+  removed) is shown beside it. Which one should decide is open. Its Fisher interval and J band are
+  optimistic because the design clusters variants.
+- Edge per cost: no Sharpe-vs-cost-multiplier curve — the MC Retest keeps no daily equity per
+  simulation, so it cannot be rebuilt. `min_edge_spreads = 2` and `action = mark` are defaults set by
+  the agent at the owner's request that they be parameters.
+- The `/oos-gate` skill says the harvest joins "on name"; the gate README and `harvest.py` say identity.
+- `engines/nulls/filter.benchmark` needs an observed-value override for path-dependent strategies;
+  `studies/readings/structure/` carries its own `subset_null` meanwhile.
+

@@ -13,7 +13,13 @@ aprendió haciéndolo ya está en `knowhow/`, en el manual y en el código. Limp
 salieron los encargos 1, 2, 3, 4 y 7, verificados uno a uno contra el repositorio. El 25-09 salió
 el 19 (el contrato de datos de la ventana): vive en `core/study/CONTRACT.md` y `studies/CLAUDE.md`.
 Y el 18 (perfilado de Python): hecho en los commits `c9011a2` y `3923010`; lo que no pudo medirse
-porque gasta `oos2` está en `OPEN.md` §42.
+porque gasta `oos2` está en `OPEN.md` §42. El 26-09, en una tanda de cinco frentes en paralelo con
+un revisor detrás de cada uno, salieron el **8** (los 19 umbrales se leen de `ledger/thresholds.yaml`),
+el **11** (`studies/readings/edgeCost/`, pasos 8 y 25), el **12** (`sqx/structural/` +
+`studies/readings/structure/`, paso 23; el mono dentro de SQX es imposible,
+`knowhow/conditions/no-seeded-hash-in-sqx.md`), el **14** (`studies/readings/conditionalMap/`, paso 22)
+y el **15** (`studies/optimisation/marketSurfaces/`, paso 18.5). Lo que dejaron abierto está en
+`OPEN.md` §43–§48.
 
 ## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
 
@@ -22,25 +28,15 @@ escriben en él.
 
 | fichero | qué construye | depende de |
 |---|---|---|
-| `8-ledger-global.md` | ✅ **construido el 2026-09-24** salvo la migración de umbrales; ver su §ESTADO | — |
-| `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 20 pasos, y cuántos llegan | 8 |
-| `10-spa-stepm.md` | ✅ **parte A construida el 2026-09-25** (detrás de la puerta, anota); queda la B, la prueba ciega del paso 20 | 8 · gate |
-| `11-edge-por-coste.md` | edge en unidades de spread y coste de breakeven | 8 |
+| `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 25 pasos, y cuántos llegan. **No se implementa por ahora** (dueño, 2026-09-26) | — |
+| `10-spa-stepm.md` | ✅ **parte A construida el 2026-09-25** (detrás de la puerta, anota); queda la B, la prueba ciega del paso 20, que espera a una población que llegue allí | gate |
 | `13-alfa-beta.md` | **interrogante aparcado**, no encargo: nadie lo coge hasta cerrar la secuencia individual | — |
 
 ## La tanda del PDF `PARAMETER_SPACE_TESTS`, 2026-09-24
 
 Del PDF del dueño sobre la nube de clones. Lo implementable **ya está implementado** y vive en
 `studies/optimisation/cloud/` (A1, A2, A3, B2, C1) y en `engines/nulls/filter.py` (la mitad del D1 que no
-necesita SQX). Aquí quedan los dos que exigen cosas que hoy no tenemos:
-
-| fichero | qué construye | qué lo bloquea |
-|---|---|---|
-| `12-tests-estructurales.md` | ablación de reglas, inversión de señal y el mono dentro de SQX | hace falta editar la *lógica* del `.sqx`; la ruta XML ya está investigada dentro |
-| `15-superficies-multimercado.md` | una superficie de parámetros por mercado, y si la región buena coincide | los costes de 16 activos (`OPEN.md` §27) y CPU del custodio |
-
-**Orden recomendado: 8 → 10 → 11 → 9**; el 8 y la parte A del 10 ya están. Los tres primeros leen de la misma cosecha que la puerta ya
-hace y no gastan CPU de SQX.
+necesita SQX). Los dos que quedaban —el 12 y el 15— se construyeron el 2026-09-26.
 
 **El punto 5 del PDF (perturbación de zona horaria) se ha retirado.** Decisión del dueño,
 2026-09-24: no le sirve. Su encargo se ha borrado.
@@ -60,21 +56,20 @@ dueño, 2026-09-24: **«monos se ha dicho»**.
 
 ## La tanda del PDF `TRADE_LEVEL_TESTS`, 2026-09-24
 
-Siete tests sobre listas de operaciones y datos M1, ninguno necesita SQX. **Cinco están
-construidos** — `studies/readings/profitShape/` (items 1, 2 y 7) y `studies/readings/entryQuality/` (item 3 y
-el tier 1 del 4). Quedan tres:
+Siete tests sobre listas de operaciones y datos M1, ninguno necesita SQX. **Seis están
+construidos** — `studies/readings/profitShape/` (items 1, 2 y 7), `studies/readings/entryQuality/` (item 3 y
+el tier 1 del 4) y `studies/readings/conditionalMap/` (item 6, paso 22). Quedan dos:
 
 | fichero | qué construye | qué lo bloquea |
 |---|---|---|
 | `16-replay-de-operaciones.md` | el tier 2 del retraso: reejecutar cada operación desde una entrada desplazada | hay que recalcular stops, y **esta población no tiene ninguno** con el que validarlo |
-| `17-calidad-del-feed.md` | anomalías del M1 y qué parte del beneficio las toca | los umbrales `K`, `m`, `L`, `w` son del dueño |
-| `14-mapa-condicional.md` | rendimiento por régimen, sesión y día | nada técnico; va el último **a propósito**: es el único que fabrica hipótesis |
+| `17-calidad-del-feed.md` | anomalías del M1 y qué parte del beneficio las toca: detección como aviso en el paso 4, atribución como criba en el 8 | **en pausa**: sus umbrales están en consulta, `docs/AgentPDFs/consulta-calidad-del-feed-2026-09-26.md` |
 
 ## El stop loss para MT5, 2026-09-25
 
 | fichero | qué construye | qué lo bloquea |
 |---|---|---|
-| `20-atr-calculator.md` | el paso 22: el stop X·ATR de cada superviviente, leído del MAE de sus operaciones, **sin optimizar** — MT5 lo exige y la cadena genera sin stop | injertar un stop ATR en un `.sqx` que no lo tiene (sin investigar); decisiones del dueño cerradas; y hace falta alguna superviviente |
+| `20-atr-calculator.md` | el paso 24 (era el 22 antes del 26-09): el stop X·ATR de cada superviviente, leído del MAE de sus operaciones, **sin optimizar** — MT5 lo exige y la cadena genera sin stop | injertar un stop ATR en un `.sqx` que no lo tiene (sin investigar); decisiones del dueño cerradas; y hace falta alguna superviviente |
 
 ## Encargos vivos de tandas anteriores
 
@@ -97,7 +92,7 @@ nombrados con `unlabelled: off` — y por eso ya no está aquí.
 
 ## Cómo se despacha
 
-> Lee `docs/encargos/8-ledger-global.md` y ejecútalo entero. Es tu encargo completo: no necesitas
+> Lee `docs/encargos/16-replay-de-operaciones.md` y ejecútalo entero. Es tu encargo completo: no necesitas
 > leer el plan grande ni los otros encargos. Si algo te bloquea, párate y dímelo.
 
 ## Protocolo anticolisión
@@ -107,8 +102,8 @@ Tres ficheros son compartidos y los tocan varios agentes:
 - **`docs/DEPENDENCIES.md` se regenera, nunca se fusiona.** Si hay conflicto, `python3
   tools/depmap.py` y se queda lo que salga.
 - **`requirements.txt`: se añade línea, nunca se reordena.**
-- **`ledger/thresholds.yaml` (encargo 8) lo leen todos y no lo escribe ninguno.** Mover un umbral
-  es del dueño.
+- **`ledger/thresholds.yaml`: un módulo nuevo añade sus filas al final de su sección y lee el valor
+  con `ledger:<clave>`** (`knowhow/eng/thresholds-live-in-the-ledger.md`). Mover un umbral es del dueño.
 
 ## Qué devuelve cada agente
 

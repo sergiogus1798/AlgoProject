@@ -4,4 +4,4 @@ Studies of the inputs rather than of a strategy. `feedQuality/` (encargo 17) is 
 
 | folder | what it answers |
 |---|---|
-| `feedQuality/` | not built yet — see its README |
+| `feedQuality/` | on hold — the thresholds are out for consultation (`docs/AgentPDFs/consulta-calidad-del-feed-2026-09-26.md`) |
