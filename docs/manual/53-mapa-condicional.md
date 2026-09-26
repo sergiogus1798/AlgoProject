@@ -22,8 +22,7 @@ régimen vuelva: es una propiedad del objeto, no un defecto a corregir.
 concentración temporal que ya mide `studies/readings/profitShape/` (la misma idea sobre el eje del
 calendario). Es lectura, no criba.
 
-**No lo uses** para decidir un filtro sin pasar por el ledger. Y **no** enseña la sesión del día
-(Asia/Londres/Nueva York/solape) todavía: ver «Qué no te dice».
+**No lo uses** para decidir un filtro sin pasar por el ledger.
 
 ### Antes de empezar
 
@@ -86,7 +85,18 @@ que una barra que llega después de la entrada, en el propio día de la entrada,
 celda. Los números de los dos ejemplos de abajo son los de la versión corregida y no coinciden con
 los de una ejecución anterior a esa fecha.
 
-**Pestaña «Día de la semana».** Lo mismo por día, lunes a viernes, con el mismo suelo.
+**Pestaña «Sesión y día de la semana».** Lo mismo por sesión de mercado y por día, con el mismo
+suelo, en tres vistas: sesión x día, sólo sesiones y sólo días (la ventana cambia entre ellas).
+Las sesiones son las horas de trabajo de cada ciudad **en su propia hora local** —Tokio 9–18,
+Londres 8–17, Nueva York 8–17—, así que el cambio de horario de cada una mueve sus bordes en su
+fecha: Asia, solape Asia-Londres, Londres, solape Londres-NY, Nueva York y fuera de sesión.
+
+⚠️ **Las horas de SQX no son UTC.** Cada feed viene en la hora de su broker: los de Infinox en
+`EET`, los de the5ers en hora de Israel, el Brent en `EETUS` (la de Nueva York más 7 horas). El
+mapa lee la zona de cada feed del registro de SQX y pasa cada entrada a UTC antes de asignarle
+sesión; sin eso, todas caerían dos o tres horas desplazadas. La hora que el cambio de horario
+repite o salta no se asigna a ninguna sesión, y la nota de la pestaña dice cuántas son. El día
+de la semana es el del reloj del feed.
 
 Ejemplo real, `XAU_ISOOS_ejemplo / Strategy 5.16.81` (361 operaciones OOS1, tramo build
 2008–2017; las 331 de la tabla son las que caen en las seis celdas con población — el resto se
@@ -132,6 +142,18 @@ esa fila:
 | baja | alta  | 59 |   1.48 | -122.79 | 126.54 | 0.508 |
 ```
 
+Por sesión, `USDJPY_emaCross_H1 / Strategy 14.19.58` (256 operaciones OOS1; ninguna casilla
+sesión x día llega a 30, así que el cruce no se enseña):
+
+```
+| sesión            | operaciones | pnl_medio | acierto |
+|---|---|---|---|
+| Asia              | 90 |   33.33 | 0.567 |
+| Londres           | 42 |  -99.72 | 0.452 |
+| Solape Londres-NY | 54 |  -13.95 | 0.537 |
+| Nueva York        | 42 |  -21.75 | 0.452 |
+```
+
 Y por día de la semana:
 
 ```
@@ -154,14 +176,9 @@ avisa que va a aparecer por azar, no una que se pueda usar para excluir el viern
 - **No es un filtro, y ninguna celda lo es** por sí sola: es una descripción con comparaciones
   múltiples sin corregir. Aplicar una sin pasar por el ledger y sin revalidar sobre datos nuevos
   es la forma más barata de sobreajustar la cadena entera.
-- **La sesión (Asia / Londres / Nueva York / solape) no está construida.** El campo `session` de
-  `assets/symbols/<SÍMBOLO>.yaml` nombra una sesión de SQX (`USDJPY_ftmo`, `XAUUSD_ftmo`); lo que
-  esa sesión define dentro del proyecto (`<Resources><Sessions>`, comprobado 2026-09-26 sobre el
-  donante congelado de XAUUSD) es la semana de mercado abierto — lunes a viernes, 01:05 a 23:50 —,
-  no una partición del día en zonas horarias. Inventar esos cortes está prohibido (CLAUDE.md regla
-  11): se necesitan las horas UTC de cada sesión, que hoy no están decididas en ningún sitio de
-  este repositorio. Día de la semana se construye en su lugar; la sesión queda pendiente en
-  `_coord/BOARD.md` hasta que el dueño las fije.
+- **Las sesiones son una convención, no un dato del mercado.** Las horas de cada ciudad las fijó el
+  dueño el 2026-09-26; con otras horas, otras celdas. Se cambian en `config.yaml`, bloque
+  `sessions`.
 - **Nada sobre las salidas.** Sólo mira el estado del mercado al entrar; el resto de la estrategia
   (salida, tamaño, gestión) no está aquí.
 - **No corrige por comparaciones múltiples entre celdas.** El aviso lo dice, no lo esconde: leer

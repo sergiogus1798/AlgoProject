@@ -9,7 +9,8 @@ hypotheses instead of testing one** — descriptive, never a filter, never a ver
 |---|---|---|---|
 | `report.py` | **The command**: one strategy's map, printed and written to `reports/<P>/<D>/<day>/conditionalMap/estrategias/` | `python3 -m studies.readings.conditionalMap.report --harvest ~/Desktop/AlgoData/harvest/<project>/<databank>/<day> --strategy "Strategy 14.19.58"` | harvest + bars → map |
 | `one.py` | The measurements — trades located, tercile at entry, cell stats — as the contract's data | imported — the window calls it | harvest + bars → result |
-| `contract.py` | The two tabs (volatilidad x tendencia, día de la semana), the multiple-comparisons warning and the glossary | imported | numbers → tabs |
+| `contract.py` | The two tabs (volatilidad x tendencia; sesión y día de la semana), the multiple-comparisons warning and the glossary | imported | numbers → tabs |
+| `sessions.py` | Each entry's session: feed clock → UTC → Tokyo, London and New York local hours | imported | entry times → session labels |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `inputs.py` | The knobs, one strategy's trades located on the harvest, its identity | imported | harvest + bars → located trades |
 | `regime.py` | Daily volatility (ATR) and trend (efficiency ratio), and the tercile edges frozen on the asset's build segment | imported | bars → terciles |
@@ -37,17 +38,17 @@ before reading anything else in it.**
    "info"`. A cell that looks striking is a question for the owner, and a filter built on it
    is a new entry in `ledger/thresholds.yaml`, revalidated on data this map has not touched.
 
-## What is not built, and why
+## Sessions — and the clock they are read in
 
-**Session (Asia / Londres / Nueva York / solape) is not one of the two cuts.** The asset's
-`session` field (`assets/symbols/<SYMBOL>.yaml`) names an SQX session — `USDJPY_ftmo`,
-`XAUUSD_ftmo` — and what that resolves to inside the project (`<Resources><Sessions>`, read
-2026-09-26 off the frozen XAUUSD donor) is the broker's trading week: Monday to Friday,
-01:05–23:50, not a partition of the day into Asia/London/New York/overlap. Building that
-partition needs UTC hour boundaries this repository does not hold anywhere, and CLAUDE.md rule
-11 forbids inventing them. **Weekday is built in its place**, from the same field's week; the
-session cut is flagged on `_coord/BOARD.md` and left for the owner to fix the hours before it
-is added.
+The third cut (owner, 2026-09-26) splits the day by where Tokyo (09–18), London (08–17) and New
+York (08–17) are open, each in its own local time: Asia · Asia-London overlap · London ·
+London-NY overlap · New York · out of session (`sessions.py`). **Trade times are not UTC**: SQX
+stamps a feed in the broker's zone — `EET` for Infinox, `Asia/Jerusalem` for the5ers, `EETUS`
+(New York + 7 h, no IANA name) for Brent — read from SQX's data registry by
+`sqx.inspect.feeds.timezone`, so each entry goes feed clock → UTC → city clock. An hour the feed's
+clock repeats or skips at a change of time is left unassigned, not guessed. The weekday stays the
+feed's own. The tab carries three views — session x weekday, sessions alone, weekdays alone — for
+the window to switch between; the crossed grid is shown only when some cell clears the floor.
 
 ## What it reuses
 

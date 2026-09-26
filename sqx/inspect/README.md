@@ -10,6 +10,7 @@ running instance, so these are safe at any time, including while the owner's GUI
 | `project_parts.py` | Reads one task's XML: databanks, conditions, rankings, cross-checks | imported |
 | `index_sqx.py` | Index every `.sqx` in the configured pools by inner-XML hash | `python3 -m sqx.inspect.index_sqx out.json` |
 | `keep_tasks.py` | Emit a variant of a `.cfx` keeping only the chosen task types | `python3 -m sqx.inspect.keep_tasks in.cfx out.cfx --types Build` |
+| `feeds.py` | The clock SQX stamps a feed's bars and trades in (`EET`, `Asia/Jerusalem`, `EETUS`…), read-only from its data registry | imported (`sqx.inspect.feeds.timezone(feed)`) |
 | `instruments.py` | List the spread, commission, point value and swap every project has configured | `python3 -m sqx.inspect.instruments [--json]` |
 | `project_health.py` | Every project's broken task references, version drift and mangled text fields | `python3 -m sqx.inspect.project_health [--json]` |
 | `vocabulary.py` | What one install can express: its blocks, its random groups, and what each pools | `python3 -m sqx.inspect.vocabulary [TERM] [--role ROLE] [--diff ROLE] [--snapshot]` |

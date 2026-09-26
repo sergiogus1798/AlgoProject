@@ -6,8 +6,7 @@
 
 run:
   symbol: USDJPY              # assets/symbols/<symbol>.yaml — source of the frozen build
-                              # segment the tercile cut-offs are measured on, and of the
-                              # declared session (§ session below)
+                              # segment the tercile cut-offs are measured on
   feed: USDJPY_DukasM1_the5ers
   timeframe: H1                # the grid the strategy was built on
   sample: OOS1                 # which `Sample type` is classified and read cell by cell
@@ -25,10 +24,12 @@ bootstrap:
   confidence: 0.95
   seed: 0
 
-# session (Asia / Londres / Nueva York / solape) is NOT built. `assets/symbols/<symbol>.yaml`
-# field `session` names an SQX session ("USDJPY_ftmo"), and what that resolves to inside the
-# project (`<Resources><Sessions>`) is the broker's market-open week — 01:05 to 23:50 Monday
-# to Friday, the same five days weekday already reads — not a partition of the day into
-# Asia/London/New York/overlap. Cutting the day into those requires UTC hour boundaries this
-# file does not hold and the rules forbid inventing (CLAUDE.md rule 11, `docs/manual/
-# 53-mapa-condicional.md`). Flagged on `_coord/BOARD.md`; weekday is built in its place.
+# Trading sessions (owner, 2026-09-26). Each city's working hours in its OWN local time, so
+# daylight saving moves each boundary on its own date; where two cities are open at once the
+# hour is their overlap (sessions.py). Entry times are first moved from the feed's clock to UTC:
+# SQX stamps bars in the broker's zone (EET for Infinox, Asia/Jerusalem for the5ers), read from
+# its data registry by sqx.inspect.feeds — never assumed.
+sessions:
+  asia: {zone: Asia/Tokyo, open: 9, close: 18}
+  london: {zone: Europe/London, open: 8, close: 17}
+  new_york: {zone: America/New_York, open: 8, close: 17}

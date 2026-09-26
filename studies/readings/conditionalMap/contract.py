@@ -3,7 +3,7 @@
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.readings.conditionalMap import cells, regime
+from studies.readings.conditionalMap import cells, regime, sessions
 
 MULTIPLE_COMPARISONS = {
     "code": "multiple_comparisons", "state": "info",
@@ -56,21 +56,48 @@ def regime_tab(got: dict, cfg: dict) -> dict:
              f"{[round(float(e), 4) for e in got['trend_edges']]}.")
 
 
+def _bars(title: str, rows: list[dict], names: dict | None = None) -> dict:
+    """One bar per populated label, with its interval — the shape both one-cut views share."""
+    return {"kind": "bars", "title": title, "unit": "USD", "reference": None,
+            "items": [{"label": (names or {}).get(r["label"], r["label"]),
+                       "value": round(r["mean"], 2),
+                       "error": [round(r["ci_lo"], 2), round(r["ci_hi"], 2)], "state": "info"}
+                      for r in rows]}
+
+
+def _rows(rows: list[dict], key: str, names: dict | None = None) -> pd.DataFrame:
+    """The table behind one bars block."""
+    return _table([{key: (names or {}).get(r["label"], r["label"]), "operaciones": r["n"],
+                    "pnl_medio": round(r["mean"], 2), "acierto": round(r["hit_rate"], 3)}
+                   for r in rows], [key, "operaciones", "pnl_medio", "acierto"])
+
+
 def calendar_tab(got: dict, cfg: dict) -> dict:
-    """Mean P&L per trade by weekday; days below the floor left out."""
-    rows = cells.by_weekday(got["pnl"], got["found"]["weekday"], cfg["bootstrap"])
-    return envelope.tab("calendario", "Día de la semana", [
-        {"kind": "bars", "title": "P&L medio por operación (USD)", "unit": "USD",
-         "reference": None,
-         "items": [{"label": WEEKDAY_ES[r["weekday"]], "value": round(r["mean"], 2),
-                    "error": [round(r["ci_lo"], 2), round(r["ci_hi"], 2)], "state": "info"}
-                   for r in rows]},
-        blocks.table("Cada día", _table(
-            [{"día": WEEKDAY_ES[r["weekday"]], "operaciones": r["n"],
-              "pnl_medio": round(r["mean"], 2), "acierto": round(r["hit_rate"], 3)}
-             for r in rows], ["día", "operaciones", "pnl_medio", "acierto"]))],
-        note="Sesión (Asia/Londres/Nueva York/solape) no está aquí todavía: el campo "
-             "`session` del activo nombra una sesión de SQX que resuelve a la semana de "
-             "mercado abierto (p. ej. lunes a viernes 01:05–23:50), no a una partición del "
-             "día en zonas horarias — inventar esos cortes está prohibido (CLAUDE.md regla "
-             "11). Pendiente de que el dueño fije las horas; ver `_coord/BOARD.md`.")
+    """Mean P&L per trade by session and by weekday — together, and each on its own.
+
+    The three blocks are the three views the window switches between: session x weekday,
+    sessions alone, weekdays alone. Cells and labels below the floor are left out.
+    """
+    pnl, found, boot = got["pnl"], got["found"], cfg["bootstrap"]
+    both = cells.session_by_weekday(pnl, found["session"], found["weekday"], boot)
+    by_session = cells.by_label(pnl, found["session"], sessions.ORDER, boot)
+    by_day = cells.by_label(pnl, found["weekday"], cells.WEEKDAYS, boot)
+    hours = cfg["sessions"]
+    unplaced = int((found["session"] == "").sum())
+    grid = [{"kind": "grid", "title": "P&L medio por operación (USD) — sesión x día",
+             "rows": list(sessions.ORDER), "cols": [WEEKDAY_ES[d] for d in cells.WEEKDAYS],
+             "values": both["mean"], "scale": "diverging", "levels": None,
+             "labels": None}] if both["cells"] else []
+    crossed = "" if both["cells"] else (f" Ninguna casilla sesión x día llega a {cells.MIN_CELL} "
+                                         "operaciones: el cruce no se enseña.")
+    return envelope.tab("calendario", "Sesión y día de la semana", grid + [
+        _bars("Por sesión (USD)", by_session),
+        blocks.table("Cada sesión", _rows(by_session, "sesión")),
+        _bars("Por día de la semana (USD)", by_day, WEEKDAY_ES),
+        blocks.table("Cada día", _rows(by_day, "día", WEEKDAY_ES))],
+        note=f"Hora de entrada llevada del reloj del feed a UTC y de ahí a la hora local de "
+             f"cada ciudad: Tokio {hours['asia']['open']}-{hours['asia']['close']}, Londres "
+             f"{hours['london']['open']}-{hours['london']['close']}, Nueva York "
+             f"{hours['new_york']['open']}-{hours['new_york']['close']}. El día de la semana "
+             f"es el del reloj del feed. {unplaced} operaciones caen en una hora que el cambio "
+             f"de horario repite o salta, y no se asignan a ninguna sesión.{crossed}")

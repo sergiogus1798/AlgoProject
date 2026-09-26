@@ -9,7 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.readings.conditionalMap import cells, regime  # noqa: E402
+from studies.readings.conditionalMap import cells, inputs, regime, sessions  # noqa: E402
 
 
 def main() -> None:
@@ -97,9 +97,30 @@ def main() -> None:
         failures.append(f"una celda de {len(full)} operaciones (= MIN_CELL) sí debería "
                         "producir estadísticos")
 
+    # Sessions, worked by hand: feed clock -> UTC -> each city's own local hours.
+    cities = inputs.config([])["sessions"]
+    cases = [  # (feed clock, zone, expected, why)
+        ("2021-01-12 10:00", "Asia/Jerusalem", "Solape Asia-Londres",
+         "invierno: 08:00 UTC, Tokio 17 h y Londres 8 h"),
+        ("2021-07-13 15:00", "Asia/Jerusalem", "Solape Londres-NY",
+         "verano: 12:00 UTC, Londres 13 h y Nueva York 8 h"),
+        ("2021-01-12 03:00", "EET", "Asia", "01:00 UTC, sólo Tokio (10 h)"),
+        ("2021-03-20 23:30", "EETUS", "Nueva York",
+         "EETUS es Nueva York + 7 h: 16:30 en NY; leído como EET serían las 17:30, cerrado"),
+        ("2021-01-13 01:30", "Asia/Jerusalem", "Fuera de sesión",
+         "23:30 UTC: Nueva York cerró (18:30) y Tokio no ha abierto (08:30)"),
+        ("2021-10-31 01:30", "Asia/Jerusalem", "",
+         "hora que el reloj repite al acabar el verano: no se adivina"),
+    ]
+    for clock, zone, expected, why in cases:
+        got = sessions.label(sessions.to_utc(pd.Series([pd.Timestamp(clock)]), zone), cities)[0]
+        if got != expected:
+            failures.append(f"sesión de {clock} {zone}: {got!r}, se esperaba {expected!r} ({why})")
+
     print("\n".join(failures) or
-          "ok: los cortes de tercil no ven nada fuera del tramo de build, y una celda por "
-          "debajo del suelo nunca llega a la rejilla")
+          "ok: los cortes de tercil no ven nada fuera del tramo de build, una celda por "
+          "debajo del suelo nunca llega a la rejilla, y cada sesión sale de la hora local "
+          "de su ciudad tras pasar el reloj del feed a UTC")
     sys.exit(1 if failures else 0)
 
 

@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 
 from core.study import config as study_config
+from sqx.inspect import feeds
+from studies.readings.conditionalMap import sessions
 
 CONFIG = Path(__file__).with_name("config.yaml")
 
@@ -38,7 +40,7 @@ def identity_of(folder: Path, strategy: str) -> str:
     return metrics.index[metrics["strategy"] == strategy][0]
 
 
-def located(folder: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> dict:
+def located(folder: Path, strategy: str, cfg: dict, frame: pd.DataFrame, cities: dict) -> dict:
     """One strategy's trades on the sample being read, placed on the bar grid.
 
     Args:
@@ -46,11 +48,13 @@ def located(folder: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> dict
         strategy: Its name exactly as the harvest spells it.
         cfg: The `run` block of config.yaml.
         frame: The bars of the timeframe the strategy was built on.
+        cities: The `sessions` block of config.yaml.
 
     Returns:
         `identity`, `trades` (one sample, open-time order), `entry` bar index, `day`
         (entry's calendar day, normalised) and `weekday` (its English day name — Monday
-        through Friday on every asset seen so far).
+        through Friday on every asset seen so far) and `session` (sessions.ORDER, "" where
+        the feed's clock repeats or skips the hour).
     """
     identity = identity_of(folder, strategy)
     trades = pd.read_parquet(folder / "trades.parquet")
@@ -59,5 +63,6 @@ def located(folder: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> dict
     trades = trades.reset_index(drop=True)
     entry = frame.index.searchsorted(trades["Open time"].to_numpy())
     day = pd.DatetimeIndex(trades["Open time"]).normalize()
+    utc = sessions.to_utc(trades["Open time"], feeds.timezone(cfg["feed"]))
     return {"identity": identity, "trades": trades, "entry": entry, "day": day,
-            "weekday": day.day_name().to_numpy()}
+            "weekday": day.day_name().to_numpy(), "session": sessions.label(utc, cities)}

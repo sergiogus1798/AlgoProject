@@ -1253,12 +1253,12 @@ with today's `assets/_policy.yaml` `oos2` is refused for both. Both agents recom
 18.5 already has 15 years and 5,000 variants, and its costs are provisional; 23 is a diagnostic, not a
 selection. To open it: the step in `reserved_for` **and** in `ledger/gate.py` `STEPS`.
 
-## 47. 🟡 The conditional map has no trading sessions — nothing in the repo defines their hours
+## 47. ✅ The conditional map has trading sessions — owner's hours, 2026-09-26
 
-Encargo 14 asked for Asia / London / New York / overlap from `assets/symbols/<SYMBOL>.yaml`
-`session`. That field resolves to the broker's trading WEEK (`<Resources><Sessions>` in the donor's
-XML), not to a partition of the day, and no UTC boundaries exist anywhere. The map uses weekday
-instead. The owner gives the UTC hours, or the cut stays out. Card: `knowhow/costs/sessions-per-asset.md`.
+Tokyo 9–18, London 8–17, New York 8–17, each local; entries go feed clock → UTC → city clock,
+because SQX stamps feeds in the broker's zone (`knowhow/export/feed-clock-timezones.md`). The
+on/off switch between sessions and weekdays belongs to the window (`ui/`), which gets all three
+views from the study.
 
 ## 48. 🟡 Loose ends of the 2026-09-26 batch — each the owner's word, none blocking
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from core.surface import dedupe
 from engines.nulls import inputs as nullinputs
-from studies.readings.conditionalMap import regime
+from studies.readings.conditionalMap import regime, sessions
 
 # The same floor the OOS gate reads (engines/nulls/config.yaml#verdict.min_trades): read
 # here, not copied, so the two can never quietly drift apart (encargo 14 rule 2).
@@ -57,20 +57,47 @@ def grid(pnl: np.ndarray, vol_idx: np.ndarray, trend_idx: np.ndarray, cfg: dict)
     return {"mean": mean, "cells": found}
 
 
-def by_weekday(pnl: np.ndarray, weekday: np.ndarray, cfg: dict) -> list[dict]:
-    """Every weekday that clears the floor, in week order.
+def by_label(pnl: np.ndarray, labels: np.ndarray, order: tuple, cfg: dict) -> list[dict]:
+    """Every label that clears the floor, in the given order.
 
     Args:
         pnl: Profit/Loss per trade.
-        weekday: One English day name per trade (inputs.located).
+        labels: One label per trade — a weekday (inputs.located) or a session.
+        order: The labels to try, in display order: WEEKDAYS or sessions.ORDER.
         cfg: The `bootstrap` block.
 
     Returns:
-        One dict per populated weekday, `cell_stats()` plus `weekday`.
+        One dict per populated label, `cell_stats()` plus `label`.
     """
     out = []
-    for name in WEEKDAYS:
-        stats = cell_stats(pnl[weekday == name], cfg)
+    for name in order:
+        stats = cell_stats(pnl[labels == name], cfg)
         if stats is not None:
-            out.append({"weekday": name, **stats})
+            out.append({"label": name, **stats})
     return out
+
+
+def session_by_weekday(pnl: np.ndarray, session: np.ndarray, weekday: np.ndarray,
+                       cfg: dict) -> dict:
+    """Every (session, weekday) cell that clears the floor — the two cuts read together.
+
+    Args:
+        pnl: Profit/Loss per trade.
+        session: One sessions.ORDER label per trade.
+        weekday: One English day name per trade.
+        cfg: The `bootstrap` block.
+
+    Returns:
+        `mean`: sessions x weekdays matrix, None where below the floor. `cells`: the same,
+        flat, with every stat.
+    """
+    mean = [[None] * len(WEEKDAYS) for _ in sessions.ORDER]
+    found = []
+    for i, sname in enumerate(sessions.ORDER):
+        for j, dname in enumerate(WEEKDAYS):
+            stats = cell_stats(pnl[(session == sname) & (weekday == dname)], cfg)
+            if stats is None:
+                continue
+            mean[i][j] = round(stats["mean"], 6)
+            found.append({"sesión": sname, "weekday": dname, **stats})
+    return {"mean": mean, "cells": found}

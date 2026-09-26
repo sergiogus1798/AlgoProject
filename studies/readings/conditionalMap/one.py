@@ -26,7 +26,7 @@ def read(folder: Path, strategy: str, cfg: dict) -> dict:
     """
     run = cfg["run"]
     frame = barstore.read(run["feed"], run["timeframe"])
-    found = inputs.located(folder, strategy, run, frame)
+    found = inputs.located(folder, strategy, run, frame, cfg["sessions"])
     day = regime.daily(frame)
     span = regime.build_span(run["symbol"])
     vol = regime.volatility(day, cfg["volatility"]["atr_period"])
