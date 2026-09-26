@@ -6,6 +6,8 @@
 - `gui-web-surface` — SQX GUI is Electron + Jetty web app; live progress websocket getWebSocketPort; Remote access disabled; ProgressEngine log progress; tail log for progress percent; control SQX from outside
 - `install-ports-and-heap` — where is the SQX CLI port set AppSettings.txt; WebServerPortUsed; coreUsage missing means all cores; -Xms -Xmx per install; worker answering on 5050; History symlink; disk cost of an install
 - `mcp-server-limits` — what can the sqx MCP server do; load a project into the running master; project missing from list silently; config.xml references missing task files; Infinox_SP500ft_H4_HighPrecision; graft_tasks
+- `mcr-nullpointer-fastutil-transient` — MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 1 Bar Error while running project; project hangs after MCR crash no Project finished; transient SQX engine bug
+- `monitor-tail-trips-worker-holding-check` — sqx.structural.keep refuses custodian sigue arriba PID is tail not sqcli; worker.holding false positive; Monitor tail -F on SQX log blocks safety check
 - `only-flag-wrong-databank` — builder --only drops tasks wrong input databank; task Input Output databank matched by string; chain_databanks; phantom Results-Rexpect input on build task
 - `project-verb` — sqcli -project verb actions; loadconfig saveconfig traps; create/modify project programmatically; URL encoding in /call; full sqcli verb reference help.txt
 - `running-a-task-headless` — startOnlyTask does nothing Total tested 0; action=start runs whole chain; inactive task active=false SKIPPED; Project finished in log; second start does nothing needs stop; retestSelected missing retests nothing; DeleteFailedStrategies in harness
@@ -14,6 +16,7 @@
 - `three-install-topology` — master conductor custodian roles; why two workers; custodian sync rule only status between start and collect; which install exports a databank; opening a worker GUI syncs; core split elastic coreUsage
 - `variant-chain-custom-project` — variant chain in a custom project sqx.variants; WFC databank names underscores; config.xml must declare databanks; task conditions block additional markets; retest-only project no Total tested In databank; holding() misses workers cwd; result key vs Results folder name
 - `variant-route` — retest an arbitrary parameter set; set strategy parameters no CLI verb; write variant .sqx; strip members disk cost; one retest gives IS and OOS; variant throughput; retested .sqx missing on disk synctofiles; harvest dailyEquity vs trades
+- `variants-execute-needs-worker-it-started` — sqx.variants.execute hangs after Project finished; WFC_OOS1 WFC_OOS2 databank 0 files on disk; execute.py waiting forever; who stops the custodian after variants execute
 - `version-stamps-stale` — sqx-worker.sh check reports STALE; data_futures.version data_stock.version restamped by sqcli; worker bars freshness check; restamp 202609201214
 - `wfm-end-to-end` — how long does a Walk-Forward Matrix take on a worker, end to end? WFM progress, status, export_wfm --role, step 19 cost
 - `which-endpoint` — which port/endpoint to call SQX on; 5050 vs 5060 vs 8080; "CLI not ready"; worker project not visible on master; can I edit project.cfx; read vs write boundary
