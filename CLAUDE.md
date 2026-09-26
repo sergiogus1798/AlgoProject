@@ -42,7 +42,12 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
    and the change is silently lost. Use the `-project` API on the worker.
 5. **Before authoring or modifying any project, task or template:** run
    `python3 -m core.assets <SYMBOL>`, report the overrides applied, and stop if it exits non-zero.
-6. **Project names: underscores only.** The HTTP API splits its command on whitespace.
+6. **Project names: `Test_<...>` or `Trade_<...>`, underscores only.** The HTTP API splits its
+   command on whitespace. `Test_` is a functional test, thrown away when it has answered; `Trade_`
+   is meant to bear real fruit (owner, 2026-09-26). The builder refuses any other name and records
+   every project in `AlgoData/projects/registry.csv`. **Whoever creates a `Test_` project retires it
+   when the task ends:** `python3 -m sqx.projects.retire <P> --role <role> --yes`, worker stopped.
+   The `projectJanitor` agent sweeps what was forgotten every Monday at 03:00 (`sqx/projects/sweep.py`).
 7. **Heavy data goes to the data root** (`~/Desktop/AlgoData`). Never write data into the repo.
 8. **A new command ships with its manual page, in the same task.** Copy
    `docs/manual/_PLANTILLA.md` to `docs/manual/NN-<name>.md`, in Spanish, with screenshots of

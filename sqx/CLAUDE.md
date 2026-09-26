@@ -19,8 +19,8 @@ treat one as a scratch harness — the knowhow pages that used `Retester` that w
 One command builds the project:
 
 ```bash
-python3 -m sqx.projects.builder <name> --template <lib>/template.sqx --symbol <SYM> \
-    --role custodian --timeframe <TF> --workflow
+python3 -m sqx.projects.builder Test_<name>|Trade_<name> --purpose "<what for>" \
+    --template <lib>/template.sqx --symbol <SYM> --role custodian --timeframe <TF> --workflow
 ```
 
 It clones the frozen donor and prices each task from `assets/` by its own segment. With
@@ -30,6 +30,17 @@ configurator (`crossmarket`, `crosstf`, `mcretest`, `spp`, `wfc`, `wfm`) writes 
 only its own step active, because `action=start` runs every active task and skips the rest; by
 hand it is `python3 -m sqx.projects.stage --cfx <cfx> --step <step>`. Without `--workflow`,
 `--tasks`/`--only` keep a subset, for a study run on its own. A stock project is never borrowed.
+
+**Name it `Test_` or `Trade_`, say what it is for, and retire it when it has answered** (owner,
+2026-09-26). The builder refuses any other prefix and needs `--purpose`; both land in
+`AlgoData/projects/registry.csv`. A `Test_` project dies with the task that made it:
+`python3 -m sqx.projects.retire <P> --role <role> --yes`, with that worker stopped — it keeps the
+`project.cfx` in `AlgoData/projects/retired/` and nothing else, because what the run found is already
+parquet in `raw/`, `harvest/` and `reports/`. `--keep WFM` archives a databank too. A `Trade_`
+project stays until the owner says. `--list` shows every custom project of the three installs.
+What a session forgets, the **projectJanitor** agent retires every Monday at 03:00
+(`bin/weekly-project-cleanup.sh`, the rule in `sqx/projects/sweep.py`): `Test_`, anything under 10
+tasks, and the owner's queue `AlgoData/projects/retire-queue.txt` — the only way a master project goes.
 
 ## Lanes — one owner each, because this state is shared and not reversible
 

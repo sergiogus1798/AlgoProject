@@ -37,7 +37,7 @@ la de `build`, ese tramo volvía sin los mercados y sin avisar) y las deja **com
 activas**. `execute` exige `--project` y se niega con un proyecto de serie (regla dura 10) o si hay
 activa otra cosa que esas tres. Manual: `docs/manual/37-wfc-retest.md`.
 
-Un proyecto hecho sólo para esto (el viejo `USDJPY_variantes`) sigue valiendo: `wfc` con
+Un proyecto hecho sólo para esto (`Test_<SIM>_variantes`, clonado con `--tasks Retest`) sigue valiendo: `wfc` con
 `--tasks <tres ficheros>` en el orden build, oos1, oos2.
 
 ⚠️ **Entre una madre y la siguiente, vaciar los cuatro databanks** —`clear` y `synctofiles` de cada

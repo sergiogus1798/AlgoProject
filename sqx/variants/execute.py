@@ -179,7 +179,7 @@ def main() -> None:
                     help="the batch directory: holds sqx/ and manifest.parquet")
     ap.add_argument("--project", required=True,
                     help="the custom project holding the three WFC legs: the workflow's own "
-                         "(`builder --workflow`), or e.g. USDJPY_variantes")
+                         "(`builder --workflow`), or one built with --tasks Retest")
 
     ap.add_argument("--clear", action="store_true",
                     help="empty the four databanks off the disk, install stopped, and exit")

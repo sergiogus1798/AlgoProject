@@ -30,7 +30,7 @@ Decisión del dueño, 2026-09-25: "que se creen todas las tasks dentro del mismo
 Crear el proyecto (paso 5):
 
 ```bash
-python3 -m sqx.projects.builder XAUUSD_keltner_H1 \
+python3 -m sqx.projects.builder Trade_XAUUSD_keltner_H1 --purpose "workflow entero de la keltner en H1" \
     --template ~/Desktop/AlgoData/templates/library/keltnerUpperCrossUp/template.sqx \
     --symbol XAUUSD --timeframe H1 --role custodian --workflow --max-strategies 2000 --minutes 90
 ```

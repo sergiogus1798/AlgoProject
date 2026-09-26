@@ -1146,7 +1146,7 @@ que él decida, no para que la siguiente sesión las "arregle".
 3. **La fábrica de variantes sigue corriendo sobre el `Retester` de serie.**
    `sqx/variants/config.yaml`, `execute.project: Retester`, incumple la regla dura 10. Es anterior a
    la regla. La migración es crear un custom project de una sola tarea Retest
-   (`sqx.projects.builder <SIM>_variantes --tasks Retest --only Retest-Task1.xml`) y poner su nombre
+   (`sqx.projects.builder Test_<SIM>_variantes --purpose "..." --tasks Retest --only Retest-Task1.xml`) y poner su nombre
    ahí. No se ha cambiado el default para no romper una cadena que hoy funciona sin que él lo sepa.
 
 ## 39. ✅ El WFC en tres tramos — hecho el 2026-09-24

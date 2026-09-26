@@ -13,7 +13,7 @@ from core.assetdata import doctrine, load
 from core.datapaths import projects_backup
 from core.paths import worker_dir
 from sqx.inspect.keep_tasks import keep
-from sqx.projects import crosschecks, summary
+from sqx.projects import crosschecks, registry, summary
 from sqx.projects.configure import configure, ignored_templates, running_install
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session
@@ -23,7 +23,6 @@ from xml.etree import ElementTree
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 TEMPLATES_REL = "user/settings/StrategyTemplates"
-NAME_OK = re.compile(r"^[A-Za-z0-9_]+$")
 SYNCED = "Auto-sync every 1 hour"
 
 
@@ -184,7 +183,8 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
 def main() -> None:
     """Build and install one Builder project, refusing on anything undecided."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("name", help="project name, underscores only")
+    ap.add_argument("name", help="Test_<...> (functional test) or Trade_<...> (real work)")
+    ap.add_argument("--purpose", required=True, help="one sentence: what this project is for")
     ap.add_argument("--template", type=Path, required=True)
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--role", default="custodian")
@@ -209,9 +209,8 @@ def main() -> None:
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
     a = ap.parse_args()
 
-    if not NAME_OK.match(a.name):
-        raise SystemExit(f"'{a.name}': project names are underscores only — the HTTP API "
-                         "splits its command on whitespace.")
+    if registry.check_name(a.name):
+        raise SystemExit(registry.check_name(a.name))
     if not a.template.exists():
         raise SystemExit(f"{a.template} does not exist.")
     missing = pending(load(a.symbol))
@@ -240,6 +239,7 @@ def main() -> None:
                          f"{done['feed']}: esas tareas operarían el mercado del donante a "
                          "sus costes. Pasa --session-from con un proyecto que defina el feed.")
 
+    registry.record(done, a.purpose, a.symbol, str(a.template))
     if a.json:
         print(json.dumps(done, indent=2))
         return

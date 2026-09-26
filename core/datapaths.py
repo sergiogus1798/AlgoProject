@@ -156,3 +156,38 @@ def cache_dir(name: str) -> Path:
         Path under the data root. Deleting it costs a recomputation and nothing else.
     """
     return DATA / "cache" / name
+
+
+def project_registry() -> Path:
+    """The CSV of every custom SQX project the builder created, and whether it was retired.
+
+    Returns:
+        Path under the data root. CSV because a human reads it; written by
+        `sqx.projects.registry`, never hand-edited.
+    """
+    return DATA / "projects" / "registry.csv"
+
+
+def retired_project(install: str, name: str, day: str) -> Path:
+    """Where a retired project's `project.cfx` (and any databank kept with it) is archived.
+
+    Args:
+        install: Install folder name, e.g. "SQX_w2".
+        name: Project name.
+        day: ISO date of the retirement.
+
+    Returns:
+        Path of a .tar.gz under the data root. The databanks are not archived unless named:
+        what a run found already lives in `raw/`, `harvest/` and `reports/` as parquet.
+    """
+    return DATA / "projects" / "retired" / install / f"{name}-{day}.tar.gz"
+
+
+def retire_queue() -> Path:
+    """Projects the owner named for retirement, one `<role> <name>` per line.
+
+    Returns:
+        Path under the data root. The weekly cleanup retires what it lists — the only way a
+        master project is ever retired unattended — and removes each line once done.
+    """
+    return DATA / "projects" / "retire-queue.txt"

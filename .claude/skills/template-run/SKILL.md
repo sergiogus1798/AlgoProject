@@ -47,7 +47,7 @@ Owner, 2026-09-25: a template run is step 5 of the workflow, so the project it c
 ## Set the project up — one command
 
 ```bash
-python3 -m sqx.projects.builder <name> --template <library>/template.sqx --symbol <SYMBOL> \
+python3 -m sqx.projects.builder Test_<name>|Trade_<name> --purpose "<what for>" --template <library>/template.sqx --symbol <SYMBOL> \
     --timeframe <TF> --role custodian --workflow --max-strategies <n> --minutes <m> [--json]
 ```
 

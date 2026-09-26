@@ -26,7 +26,7 @@ la fábrica se niega a invertirlas, porque la vuelta sólo es un espejo sin ello
 3. Un **proyecto custom** en el custodio con las tres patas WFC (regla dura 10):
 
    ```bash
-   python3 -m sqx.projects.builder USDJPY_structural_v1 \
+   python3 -m sqx.projects.builder Test_USDJPY_structural_v1 --purpose "variantes estructurales" \
        --template ~/Desktop/AlgoData/templates/library/emaCloseAbove/template.sqx \
        --symbol USDJPY --role custodian --timeframe H1 --workflow \
        --session-from ~/Desktop/SQX_w2/user/projects/USDJPY_emaCross_H1/project.cfx

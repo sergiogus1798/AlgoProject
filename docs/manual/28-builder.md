@@ -26,14 +26,15 @@ una decisión aparte porque cuesta CPU.
 ### Cómo se ejecuta
 
 ```bash
-python3 -m sqx.projects.builder chat_v2 \
+python3 -m sqx.projects.builder Test_chat_v2 --purpose "probar la plantilla keltner" \
     --template ~/Desktop/AlgoData/templates/library/keltnerUpperCrossUp/template.sqx \
     --symbol XAUUSD --role custodian --max-strategies 25 --minutes 8
 ```
 
 | flag | obligatorio | qué hace |
 |---|---|---|
-| `name` | sí | nombre del proyecto, **solo guiones bajos** — la API parte por espacios |
+| `name` | sí | `Test_<...>` para una prueba de funcionamiento que se tira al acabar, `Trade_<...>` para un proyecto que tiene que dar fruto de verdad; **solo guiones bajos** — la API parte por espacios. Cualquier otro nombre se rechaza |
+| `--purpose` | sí | una frase: para qué es el proyecto. Queda en `AlgoData/projects/registry.csv`, y es lo que lee quien encuentre el proyecto semanas después |
 | `--template` | sí | el `.sqx` de la librería |
 | `--symbol` | sí | activo de `assets/`; de ahí salen la ventana, la sesión y los costes. ⚠️ **NO cambia el mercado que se construye** — ver el aviso de abajo |
 | `--role` | no | instalación destino; `custodian` por defecto |
@@ -125,7 +126,7 @@ cuesta la construcción entera.
 ### Un ejemplo completo
 
 ```bash
-python3 -m sqx.projects.builder chat_v2 --template .../keltnerUpperCrossUp/template.sqx \
+python3 -m sqx.projects.builder Test_chat_v2 --purpose "humo" --template .../keltnerUpperCrossUp/template.sqx \
     --symbol XAUUSD --role custodian --max-strategies 25 --minutes 8
 bin/sqx-worker.sh --role custodian start
 python3 -c "from core import worker; print(worker.call('-project action=start name=chat_v2','custodian'))"
@@ -181,7 +182,7 @@ El timeframe es obligatorio y va en `--timeframe`. Todas las tareas lo comparten
 timeframe no está probando la estrategia que se construyó.
 
 ```bash
-python3 -m sqx.projects.builder algo_XAU_doctrina --timeframe M30 \
+python3 -m sqx.projects.builder Test_XAU_doctrina --purpose "ver la doctrina aplicada" --timeframe M30 \
     --template ~/Desktop/AlgoData/templates/library/keltnerUpperCrossUp/template.sqx \
     --symbol XAUUSD --role custodian --tasks Build,Retest
 ```
@@ -201,7 +202,7 @@ El donante lleva catorce. `--tasks Retest` las conserva todas, que es la cadena 
 proyecto de dos pasos —construir y cruzar la puerta del OOS— se nombra la que se quiere:
 
 ```bash
-python3 -m sqx.projects.builder XAU_ISOOS_ejemplo --timeframe M30 --symbol XAUUSD \
+python3 -m sqx.projects.builder Test_XAU_ISOOS_ejemplo --purpose "ejemplo IS/OOS" --timeframe M30 --symbol XAUUSD \
     --template <plantilla> --role custodian \
     --tasks Build,Retest --only Build-Task3.xml,Retest-Task1.xml
 ```

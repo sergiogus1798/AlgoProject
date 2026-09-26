@@ -36,7 +36,7 @@ spread de construcción (5.0 / 2.5) y el OOS con el suyo (10.0 / 5).
 ## Cómo se hizo, por si hay que rehacerlo
 
 ```bash
-python3 -m sqx.projects.builder XAU_ISOOS_ejemplo --timeframe M30 --symbol XAUUSD \
+python3 -m sqx.projects.builder Test_XAU_ISOOS_ejemplo --purpose "ejemplo IS/OOS" --timeframe M30 --symbol XAUUSD \
     --template ~/Desktop/AlgoData/templates/library/keltnerUpperCrossUp/template.sqx \
     --role custodian --tasks Build,Retest --only Build-Task3.xml,Retest-Task1.xml \
     --max-strategies 120 --minutes 12

@@ -128,7 +128,7 @@ SQX. La columna «UI» dice cómo se hace hoy desde la aplicación.
 | `python3 -m sqx.templates.build <nombre> …` | Escribir una plantilla fijando un bloque en un esqueleto probado | bloques → `.sqx` | no | — |
 | `python3 -m sqx.templates.registry` | Qué plantillas hay y en qué mercados se han probado | — → `registry.csv` | no | zonas **Cobertura** y **Plantillas** |
 | **`python3 -m core.assets <SÍMBOLO>`** | **Preflight bloqueante**: costes, ventanas y rangos del activo, leídos en voz alta | `assets/` → informe, sale ≠0 si falta algo | no | zona **Activos** los edita |
-| `python3 -m sqx.projects.builder <nombre> --template … --symbol …` | Crear el custom project clonado del donante congelado, con sus tareas | plantilla + activo → proyecto instalado | **escribe en un worker** | — |
+| `python3 -m sqx.projects.builder Test_<nombre>\|Trade_<nombre> --purpose "…" --template … --symbol …` | Crear el custom project clonado del donante congelado, con sus tareas | plantilla + activo → proyecto instalado | **escribe en un worker** | — |
 | `python3 -m sqx.projects.configure <cfx> <símbolo>` | Escribir los costes declarados y la ventana de un tramo en cada tarea | activo → `project.cfx` | escribe | — |
 | `/template-run` (skill) | Probar una plantilla en un mercado de punta a punta, y comprobar que las estrategias llevan de verdad el bloque fijo | plantilla + símbolo → build + registro | **quema CPU** | — |
 

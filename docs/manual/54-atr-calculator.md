@@ -34,7 +34,7 @@ stop se pone **sin cambiar la estrategia**, y lo esperable es que salte poco y c
    lee el mercado principal, **sin los mercados adicionales**:
 
    ```bash
-   python3 -m sqx.projects.builder ATRCalc_XAUUSD_M30_dev --template <plantilla.sqx> \
+   python3 -m sqx.projects.builder Test_ATRCalc_XAUUSD_M30 --purpose "calibrar el stop ATR" --template <plantilla.sqx> \
        --symbol XAUUSD --role custodian --timeframe M30 --workflow
    python3 -m sqx.projects.wfc XAUUSD --timeframe M30 --no-markets \
        --cfx ~/Desktop/SQX_w2/user/projects/ATRCalc_XAUUSD_M30_dev/project.cfx
