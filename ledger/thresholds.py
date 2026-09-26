@@ -9,6 +9,7 @@ from core.paths import ROOT
 
 FILE = ROOT / "ledger" / "thresholds.yaml"
 SELECTOR = re.compile(r"^(\w+)\[(\w+)=([^\]]+)\]$")
+PLACEHOLDER = "ledger:"   # what a module's config.yaml writes where the ledger owns the number
 
 
 def declared() -> list[dict]:
@@ -18,6 +19,44 @@ def declared() -> list[dict]:
         The rows of `thresholds.yaml`. Read by whoever needs a number; written by nobody.
     """
     return yaml.safe_load(FILE.read_text(encoding="utf-8"))["thresholds"]
+
+
+def value(key: str) -> object:
+    """The number the ledger declares for one threshold.
+
+    Args:
+        key: As `thresholds.yaml` spells it, e.g. "gate.sanidad.min_trades".
+
+    Returns:
+        Its `value`. Raises KeyError unless the key is declared exactly once: a missing
+        threshold must stop the run, and a key appended twice by two branches must not
+        quietly resolve to whichever came last.
+    """
+    found = [row["value"] for row in declared() if row["key"] == key]
+    if len(found) != 1:
+        raise KeyError(f"{key}: declared {len(found)} times in {FILE.name}, "
+                       "a module reading it needs exactly one")
+    return found[0]
+
+
+def fill(node: object) -> object:
+    """A parsed config.yaml with every "ledger:<key>" replaced by the ledger's value.
+
+    Args:
+        node: The parsed YAML, before any command-line override is applied, so an
+            override is still held to the type of the number it replaces.
+
+    Returns:
+        A copy, keys in their original order: the gate prints a screen's thresholds in
+        the order its row lists them, and a report must not change because a number moved.
+    """
+    if isinstance(node, dict):
+        return {k: fill(v) for k, v in node.items()}
+    if isinstance(node, list):
+        return [fill(v) for v in node]
+    if isinstance(node, str) and node.startswith(PLACEHOLDER):
+        return value(node.removeprefix(PLACEHOLDER))
+    return node
 
 
 def resolve(source: str) -> float:
@@ -33,7 +72,19 @@ def resolve(source: str) -> float:
         silent default would hide.
     """
     path, dotted = source.split("#", 1)
-    node = yaml.safe_load((ROOT / path).read_text(encoding="utf-8"))
+    return walk(yaml.safe_load((ROOT / path).read_text(encoding="utf-8")), dotted)
+
+
+def walk(node: object, dotted: str) -> object:
+    """Follow the part of a pointer after the `#` through a parsed config.
+
+    Args:
+        node: A parsed config, raw or as a module's config() returns it.
+        dotted: `key.sub.key`, a step possibly `list[field=value]`.
+
+    Returns:
+        Whatever sits at the end of the path.
+    """
     for step in dotted.split("."):
         picked = SELECTOR.match(step)
         if picked:
@@ -48,15 +99,18 @@ def divergences() -> pd.DataFrame:
     """Where the register and the code disagree.
 
     Returns:
-        One row per declared threshold: what it says, what the code uses, and whether they
-        match. While `thresholds.yaml` is a register rather than the source, this is the
-        only thing standing between two copies of a number and a study that quietly ran
-        under a threshold nobody recorded.
+        One row per declared threshold, and where its module takes it from. `ledger`: the
+        module's config.yaml holds `ledger:<this key>` and the number comes from here, so
+        the two cannot diverge. `copia`: the config still holds its own number, which must
+        equal the declared one. A placeholder naming another key is a divergence too.
     """
     rows = []
     for row in declared():
         live = resolve(row["source"])
-        rows.append({"key": row["key"], "declarado": row["value"], "en_código": live,
-                     "coincide": bool(live == row["value"]), "fijado_por": row["set_by"],
-                     "el": row["set_on"]})
+        migrated = isinstance(live, str) and live.startswith(PLACEHOLDER)
+        rows.append({"key": row["key"], "declarado": row["value"],
+                     "lee_de": "ledger" if migrated else "copia",
+                     "coincide": bool(live == PLACEHOLDER + row["key"] if migrated
+                                      else live == row["value"]),
+                     "fijado_por": row["set_by"], "el": row["set_on"]})
     return pd.DataFrame(rows)

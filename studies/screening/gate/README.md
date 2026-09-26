@@ -31,7 +31,7 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 | `many.py` | The cascade and the funnel as one result, and every strategy's own | imported | harvest → results |
 | `report.py` | **The gate over one harvest** | `python3 -m studies.screening.gate.report --project P --databank build --feed XAUUSD_DukasM1_Infinox` | harvest → `scorecard.parquet`, `funnel.csv`, two `verdict.csv`, `gate.md`/`.html`/`.json`, one page per strategy |
 | `tooltips.py` | One sentence per `config.yaml` knob, addressed by the screen's name, for the window's configuration drawer | imported | — |
-| `config.yaml` | The screens as data: order, kind, thresholds, and why each exists | edited | — |
+| `config.yaml` | The screens as data: order, kind, and why each exists. Each threshold is a `ledger:<key>` placeholder: the number lives in `ledger/thresholds.yaml`, and `inputs.config()` fills it in before applying `--set` | edited | — |
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/29-puerta.md`.
 Design dossier: `docs/AgentPDFs/puerta-oos-2026-09-23.md`.

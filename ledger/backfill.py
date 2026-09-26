@@ -10,9 +10,9 @@ import pandas as pd
 import yaml
 
 from core.paths import ROOT
-from ledger import record, study as studymod
+from ledger import record, study as studymod, thresholds
 
-GATE_CONFIG = ROOT / "gate" / "config.yaml"
+GATE_CONFIG = ROOT / "studies" / "screening" / "gate" / "config.yaml"
 SCORE = "Sharpe Ratio [OOS]"   # what counts as a candidate's score, in SQX's own units
 
 
@@ -24,9 +24,10 @@ def thresholds_of(screen: str) -> dict:
 
     Returns:
         Its row of `studies/screening/gate/config.yaml` minus the prose, so a funnel row carries the numbers
-        it was produced under. A funnel read without its thresholds says nothing.
+        it was produced under, with the ledger's numbers in place of its `ledger:` keys. A
+        funnel read without its thresholds says nothing.
     """
-    screens = yaml.safe_load(GATE_CONFIG.read_text(encoding="utf-8"))["screens"]
+    screens = thresholds.fill(yaml.safe_load(GATE_CONFIG.read_text(encoding="utf-8")))["screens"]
     row = next(s for s in screens if s["name"] == screen)
     return {k: v for k, v in row.items() if k not in ("name", "kind", "why")}
 
