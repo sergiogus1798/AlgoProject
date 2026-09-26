@@ -18,6 +18,7 @@
 - `variant-route` — retest an arbitrary parameter set; set strategy parameters no CLI verb; write variant .sqx; strip members disk cost; one retest gives IS and OOS; variant throughput; retested .sqx missing on disk synctofiles; harvest dailyEquity vs trades
 - `variants-execute-needs-worker-it-started` — sqx.variants.execute hangs after Project finished; WFC_OOS1 WFC_OOS2 databank 0 files on disk; execute.py waiting forever; who stops the custodian after variants execute
 - `version-stamps-stale` — sqx-worker.sh check reports STALE; data_futures.version data_stock.version restamped by sqcli; worker bars freshness check; restamp 202609201214
+- `wfc-databank-overwritten-by-next-batch` — sqx.variants.equity 17 bloques donde ninguna curva cuadra con lo que SQX guardo; equity.py reads live databank not export; running structural or atrCalculator after variants execute destroys WFC equity data
 - `wfm-end-to-end` — how long does a Walk-Forward Matrix take on a worker, end to end? WFM progress, status, export_wfm --role, step 19 cost
 - `which-endpoint` — which port/endpoint to call SQX on; 5050 vs 5060 vs 8080; "CLI not ready"; worker project not visible on master; can I edit project.cfx; read vs write boundary
 - `worker-process-lifecycle` — worker did not stop but still up; sqx-worker.sh stop lies; find worker pid; process named sqcli; worker up then Connection refused; licence check exit; worker-daemon.log

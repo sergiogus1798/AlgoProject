@@ -61,8 +61,11 @@ se sortea por estrategia, tal y como pidió el dueño.
 | 16.5 | fábrica de variantes, mínimo 1.000/madre | 3 | 7.549 | 1.23.51→4999, 1.28.59→1457, 1.29.55→1093 |
 | 16.5 | retest WFC (3 patas × 3 madres, gasta `oos2`) | 7.549×3 tramos | **2 madres completas, la 3ª cortada** | 1.29.55 y 1.28.59 completas (3.279 y 4.371 backtests); 1.23.51 (4.999 variantes) cortada a mitad de `WFC 1 IS` por decisión de tiempo — ver §4.5 |
 | **corrección** | alinear `Results`/`OOS` con las 3 madres del 16.5 | 8 | **3** | las 5 estrategias fuera del corte de variantes seguían en los databanks SQX; curadas para que 21–25 lean la misma población |
-| 17–19 | WFC / CSCV / WFM | — | — | **no leídos**: el encargo pide leer 17+18+18.5+19 juntos (paso 20) y sólo se ha fabricado el insumo del 17 (parcial); no se ha corrido 18, 18.5 ni 19 |
-| 20 | lectura conjunta ciega | — | — | **no alcanzado**: la puerta sigue intacta, nada de 17/18/18.5/19 se ha mirado |
+| 17 | Walk Forward Correlation | 2 madres (1.29.55, 1.28.59) | 2 | 1.29.55: rho 0,21 `no_fiable`; 1.28.59: rho 0,25 `indeciso` (cruza 0,3) — ninguna compra nada optimizando en IS |
+| 18 | CSCV | 2 madres | 2 | 1.29.55: PBO 15 %, DSR 0,98; 1.28.59: PBO 9 %, DSR 0,98 |
+| 18.5 | superficies por mercado | 2 madres | 2 | **0/9 mercados** comparten la región del decil superior en build, oos1 u oos2, en ninguna de las dos madres |
+| 19 | Walk Forward Matrix | 3 madres (las 3 llegaron: no depende del WFC de variantes) | 3 | **0/3 predicen**: 1.23.51 y 1.28.59 `blind` (rho +0,08 y −0,08, IC cruza cero); 1.29.55 `perverse` (rho −0,25, IC no cruza cero — reoptimizar predice PEOR que no hacerlo). 1/3 (1.23.51) marcada `FAILED` por el criterio de área 4×4, sin borrar |
+| 20 | lectura conjunta ciega, a mano (el módulo no existe, por diseño) | 2 madres con las 4 piezas (1.29.55, 1.28.59) | 2 veredictos | ver §4.7 — ninguna de las dos pasa |
 | 21 | exposición (`exposure.report`) | 3 | 3 | **3/3 `worth_it`**, eficiencia 2,33×–3,49× el buy&hold por hora expuesta |
 | 22 | mapa condicional (sesiones + días) | 3 | 3 | 3 informes, sin veredicto — describe, no filtra |
 | 23 | estructural (ablación + inversión) | 3 madres → 12 variantes | 12 | control «madre reconstruida == guardada» da **no** para el tramo build (846 vs 423 operaciones) — hallazgo real, no investigado a fondo |
@@ -239,6 +242,64 @@ resultado de WFC utilizable para esa madre — ni completo ni parcial-legible.
   interpreta como instalación viva. Se resolvió parando ese Monitor. Ficha:
   `knowhow/sqx-drive/monitor-tail-trips-worker-holding-check.md`.
 
+### 4.7 · Continuación tras el informe — el dueño preguntó por qué el ledger «saltaba» el WFM
+
+El dueño leyó el primer informe y preguntó por qué el ledger parecía decir que todo estaba hecho
+menos el WFM. **No era así**: el ledger real (`ledger/*.jsonl` y `python3 -m ledger.report`) no
+tenía ninguna entrada para 17, 18 ni 19 — los tres seguían en cero. Lo que probablemente se leyó fue
+`WORKFLOW.md`, que marca ✅ si el **módulo existe y funciona**, no si esta corrida lo usó (queda
+dicho para que no se repita la confusión).
+
+El dueño pidió arreglarlo y seguir corriendo lo que hiciera falta. Al intentarlo aparecieron dos
+problemas reales, uno detrás de otro:
+
+1. **Los datos de las 2 madres con el WFC completo ya no existían.** `sqx.variants.equity` lee los
+   `.sqx` en vivo de `databanks/WFC_Build/OOS1/OOS2`, no un export — y los pasos 23 y 24, corridos
+   después reutilizando el mismo proyecto, habían vaciado y vuelto a llenar esos mismos tres
+   databanks con sus propios lotes. Hubo que **rehacer el WFC de las 2 madres** en el custodio
+   (641 s y 657 s, una segunda lectura de `oos2` por madre — asumida, ya autorizada). Ficha:
+   `knowhow/sqx-drive/wfc-databank-overwritten-by-next-batch.md`.
+2. **Con los datos correctos, `sqx.variants.equity` seguía rehusando**: 8 de 30 bloques
+   (segmento×mercado) donde el 100 % de las variantes tenían la curva desalineada de su `NetProfit`
+   guardado — el propio código asumía que eso sólo podía ser una lectura equivocada. Diagnosticado a
+   fondo: el hueco (447-840 USD) coincidía con el `AvgWin` del propio fichero (640-720 USD) — una
+   posición abierta en la última barra, compartida por casi toda la población porque 1.093-1.457
+   variantes de UNA madre comparten la misma condición fija y el mismo mercado, y sólo difieren en
+   periodos. **Autorizado por el dueño, se corrigió el código** (`sqx/variants/equity.py`): el gate
+   fatal ahora exige que el hueco supere 3 veces la mayor operación de ese resultado antes de
+   llamarlo lectura equivocada. Verificado: exit 0 y 0 bloques implausibles en las 2 madres tras el
+   parche. **Commit en su propia rama, `fix/wfc-equity-open-position-boundary`
+   (`~/Desktop/AlgoProject_worktrees/fix-wfc-equity`), sin fusionar** — el dueño decide cuándo
+   integrarlo.
+
+Con eso resuelto, se completaron de verdad los pasos que faltaban:
+
+- **17 (WFC)** sobre las 2 madres: `studies.optimisation.wfc.report` — 1.29.55 rho 0,21 `no_fiable`;
+  1.28.59 rho 0,25 `indeciso` (el intervalo cruza 0,3, hacen falta más puntos para decidir).
+- **18 (CSCV)**: 1.29.55 PBO 15 % con DSR 0,98; 1.28.59 PBO 9 % con DSR 0,98 — probabilidad de
+  sobreajuste de backtest moderada-baja en las dos, ninguna alarmante pero ninguna despreciable.
+- **18.5 (superficies por mercado)**: 0 de 9 mercados comparten la región del decil superior con el
+  mercado principal, en ningún tramo, en ninguna madre — la región buena en USDJPY no es la región
+  buena en ningún otro par de la familia.
+- **19 (WFM)**, corrida sobre las 3 madres (no depende del WFC de variantes, así que la 3ª —cortada
+  en el paso 16.5— sí pudo correr aquí): **0 de 3 predicen**. Dos `blind` (el intervalo de confianza
+  de rho cruza cero: reoptimizar en el walk-forward no distingue de azar) y una **`perverse`**
+  (1.29.55, rho −0,25 con el intervalo entero negativo: reoptimizar predice **peor** que no
+  reoptimizar). 1 de 3 (1.23.51) quedó además marcada `FAILED` por el criterio de área 4×4 de SQX,
+  sin borrarse (`DeleteFailedStrategies=false`, como manda la doctrina).
+- **20 (lectura conjunta ciega)**, a mano, sobre las 2 madres con las cuatro piezas —
+  `studies/closing/blindJoint/` no existe, por diseño, así que esto no es código, es la lectura:
+
+  | madre | 17 (WFC) | 18 (CSCV) | 18.5 (superficies) | 19 (WFM) | veredicto |
+  |---|---|---|---|---|---|
+  | Strategy 1.29.55 | rho 0,21, `no_fiable` | PBO 15 %, DSR 0,98 | 0/9 | `perverse` (rho −0,25) | **No.** El WFM en `perverse` ya basta para descartar: la única prueba que mide si la búsqueda encontró algo estable dice que reoptimizar activamente perjudica. El WFC y las superficies sólo confirman que no hay nada que perder. |
+  | Strategy 1.28.59 | rho 0,25, `indeciso` | PBO 9 %, DSR 0,98 | 0/9 | `blind` (rho −0,08) | **No, pero por una razón más floja.** Nada aquí es catastrófico — el WFC está indeciso, no en contra, y el WFM es ciego, no perverso — pero **nada apoya que haya una región de parámetros estable** tampoco: cuatro pruebas independientes, cuatro «no hay señal». Con el paso 21 ya a favor (`worth_it`, §2), esta sería la candidata a seguir mirando si hubiera que elegir una, pero no hay base para llamarla superviviente. |
+
+  **Lo que yo haría, si tuviera que decidir**: ninguna de las dos estrategias pasa. Coherente con
+  crossmarket (0/8), crossTF (0/16) y MC Retest (0/8) más arriba en el embudo — la plantilla
+  `crossAboveHMA_v1` no muestra edge transferible en ninguna prueba de robustez independiente que se
+  ha corrido en esta población, y el paso 20 es la quinta confirmación, no la primera sospecha.
+
 ---
 
 ## 5 · Decisiones tomadas por no poder preguntar
@@ -332,12 +393,15 @@ comando exacto y sobre qué datos, en orden de impacto esperado.**
    125 GB) — no hay nada urgente que optimizar en RAM con esta población. Si se corre con una
    población de miles de madres (en vez de 3), revisar `snoopingScreen.report` y `export_retest`
    primero: son los dos picos más altos y ambos escalan con el número de trades exportados.
-6. **Faltan por medir**: el WFC de la 3ª madre (cortado, §4.5), CSCV, superficies por mercado, WFM, y
-   la lectura conjunta del paso 20. Antes de medirlos, **hay que decidir con el dueño** si esta misma
-   corrida (misma plantilla, mismo proyecto, mismas 3 madres) continúa, o si se lanza una corrida
-   nueva — el ledger ya ha registrado `oos2` varias veces para estas madres (WFC de 2 de 3, más el
-   paso 24 sobre otra), así que repetir el WFC sobre las mismas madres consumiría una mirada más a
-   una ventana que la doctrina trata como de un solo uso por variante.
+6. **17, 18, 18.5, 19 y 20 ya están medidos** (§4.7) — lo único que falta del WFC es la 3ª madre
+   (1.23.51, cortada en el 16.5). Antes de rehacerla, **decidir con el dueño**: el ledger ya ha
+   registrado `oos2` varias veces para las otras dos madres (WFC completo + su rehecho tras el
+   borrado accidental, más el paso 24 sobre una tercera), así que una mirada más gasta otra vez una
+   ventana que la doctrina trata como de un solo uso por variante.
+6b. **`sqx.variants.equity` necesita gestionarse con cuidado si el proyecto se reutiliza para otra
+   cosa** (§4.7, `knowhow/sqx-drive/wfc-databank-overwritten-by-next-batch.md`): corre `equity` +
+   `collect` inmediatamente después de cada `execute`, antes de tocar los mismos databanks con
+   structural, ATR o cualquier otro lote — si no, los `.sqx` de ese lote desaparecen sin aviso.
 7. **El control de reconstrucción fallido del paso 23 (§6) merece una mirada antes de fiarse de sus
    ablaciones**: comparar a mano, sobre la misma madre, qué exporta `sqx.export.export_retest` de su
    `.sqx` original contra lo que reconstruye `sqx.structural.make` — 846 contra 423 operaciones es
@@ -361,18 +425,24 @@ comando exacto y sobre qué datos, en orden de impacto esperado.**
   `sqx-drive/mcr-nullpointer-fastutil-transient.md`,
   `sqx-drive/variants-execute-needs-worker-it-started.md`,
   `sqx-drive/monitor-tail-trips-worker-holding-check.md`,
+  `sqx-drive/wfc-databank-overwritten-by-next-batch.md`,
   `databanks/curate-verdict-identity-per-databank.md`,
   `export/exposure-and-edgecost-input-contracts.md`.
 - **Plantilla nueva:** `~/Desktop/AlgoData/templates/library/crossAboveHMA_v1/`.
+- **Arreglo de código, sin fusionar:** `sqx/variants/equity.py`, rama
+  `fix/wfc-equity-open-position-boundary` (`~/Desktop/AlgoProject_worktrees/fix-wfc-equity`) — el
+  dueño decide cuándo integrarlo. El `main` checkout sigue con la versión original.
 
 ### Resumen de hasta dónde llegó la cadena
 
-**Corrida del paso 1 al 16.5 completa (salvo la 3ª madre del WFC, cortada), y además 21, 22, 23, 24 y
-25**, saltándose 17, 18, 18.5, 19 y 20 por la puerta ciega y el tiempo. De los pasos que sí dieron un
-veredicto real (no un corte artificial de aforo): **0/8 crossmarket, 0/16 crossTF, 0/8 MC Retest,
-3/3 exposición, 4/4 percentiles ATR estables** — la plantilla `crossAboveHMA_v1` no muestra edge real
-en ninguna de las pruebas de robustez que sí corrieron, y eso es exactamente lo que se esperaba de
-una corrida pensada para probar el andamiaje, no para encontrar una estrategia.
+**Los 25 pasos se han tocado todos.** El primer informe cerraba en el 16.5 (más 21-25 adelantados);
+tras la pregunta del dueño sobre el ledger, esta continuación completó 17, 18, 18.5, 19 y 20 sobre
+las 2-3 madres que lo permitían, arreglando por el camino un bug real en `sqx/variants/equity.py`
+(§4.7). De los pasos que dieron un veredicto real (no un corte artificial de aforo):
+**0/8 crossmarket, 0/16 crossTF, 0/8 MC Retest, 3/3 exposición, 0/3 WFM predicen, 0/2 pasan la
+lectura conjunta del paso 20, 4/4 percentiles ATR estables** — la plantilla `crossAboveHMA_v1` no
+muestra edge transferible en ninguna prueba de robustez independiente corrida en esta población.
+Coherente de punta a punta: cinco pruebas distintas, cinco «no hay señal».
 
 ### Limitación de medición, dicha sin adornos
 
