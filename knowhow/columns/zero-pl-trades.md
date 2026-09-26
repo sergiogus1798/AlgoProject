@@ -1,14 +1,18 @@
 ---
-q: zero P/L trade flat trade, Winning Percent half win, ZScore flat counts as win, WinningPct formula, KellyFormula error flat trades, reconstruction mismatch USDJPY
-tag: 🔬  date: 2026-09-24  see: sqx-format/mc-retest-reconstruction
+q: zero P/L trade flat trade, Winning Percent half win, ZScore flat counts as win, WinningPct formula, KellyFormula win rate excludes flats wins/(wins+losses), reconstruction mismatch USDJPY
+tag: 🔬  date: 2026-09-25  see: sqx-format/mc-retest-reconstruction
 ---
-# A zero-P/L trade is half a win in `WinningPct` and a full win in `ZScore`
+# A zero-P/L trade is half a win in `WinningPct`, a full win in `ZScore`, and left out of `KellyFormula`
 `WinningPct = (wins + 0.5 × flats) / n`. In the Wald–Wolfowitz runs `ZScore`, a flat trade counts as a
-win. Neither is documented by SQX. Fixed in `studies/breakage/mcRetest/model/` (71 disagreements → 2).
+win. `KellyFormula` takes its win rate as `wins / (wins + losses)` — flats dropped. None is documented by SQX. Fixed in `studies/breakage/mcRetest/model/` (71 disagreements → 2).
 ⚠️ Keep `n` and the run counter consistent: excluding flats from `n` while the run counter sees their
 sign changes adds two phantom runs per flat.
 
 ## Evidence
+- 2026-09-25, `KellyFormula`, MC Retest of USDJPY H1 `Strategy 15.12.75` (task Exits, ~1.7 flats per 511
+  trades): SQX's 11 stored levels 12.26 / 11.77 / 10.81 / 10.34 match `wins/(wins+losses)` (12.2594,
+  11.7715, 10.8155, 10.3401) at every level; the half-win rate gives 12.245 / 11.729 / 10.777 / 10.273 and
+  flat=loss 11.89 / 11.53 / 10.38 / 9.66. The ingest refused on 20 runs before; 0 disagreements after.
 USDJPY H1, SQX `metrics.csv` vs exported trades of the same backtest.
 
 | strategy | flats | `>0`/n | `>=0`/n | SQX WinPct |

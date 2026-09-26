@@ -250,11 +250,12 @@ in issue 1 was recorded — is **4.66 GB** on its own, and compresses to 105 MB.
 
 It is safe while the GUI is up: it reads files and drives no instance.
 
-**Scheduled 2026-09-04**, daily at 08:00, as the machine's only crontab entry. Updated the same day
+**Scheduled 2026-09-04**, daily at 08:00, as the machine's only crontab entry; moved to 04:00 on
+2026-09-25 by the owner. Updated the same day
 when the layout refactor moved invocation to `python3 -m`:
 
 ```cron
-0 8 * * * cd /home/sergioguslw/Desktop/AlgoProject && /usr/bin/python3 -m sqx.export.archive_logs \
+0 4 * * * cd /home/sergioguslw/Desktop/AlgoProject && /usr/bin/python3 -m sqx.export.archive_logs \
           >> /home/sergioguslw/Desktop/AlgoData/logs/cron.log 2>&1
 ```
 
@@ -941,7 +942,15 @@ that **thresholds do not block anything**: the user decides them and they are ch
 pre-registration records whichever number is current, and records the change when it changes. That
 is what keeps it honest while the criteria are still moving.
 
-## 26. 🔴 `PercentageBased` may charge per leg or per trade, and nobody has measured which
+## 26. 🟠 `PercentageBased` charges ~twice per trade — MEASURED 2026-09-26, the fix is the owner's
+
+🔬 Measured by encargo 11 on existing harvest data, no SQX run: least squares of
+`price_pnl − Profit/Loss = k · commission_once` over **45,488 same-day XAUUSD trades** (no swap to
+confound) gives **k = 1.87**, not 1 — k = 1 sits 31 standard errors off. The commission is charged
+close to once per leg, so today's `no_forex` formula (`_classes.yaml`) understates gold's commission
+by nearly half. `knowhow/costs/commission-methods.md` has the fit. **Not applied**: changing
+`assets/symbols/XAUUSD.yaml` (and every index) is the owner's decision; until then every gold result
+with costs carries `costs_provisional`. What follows is the original entry.
 
 Every `no_forex` asset in `assets/` now declares its commission as a **percentage of notional**,
 applied by SQX's `PercentageBased` method. Reading the snippet
@@ -1202,3 +1211,99 @@ produce silence are known before the budget is spent, which is close to what
 `docs/AgentPDFs/revision-proyecto-2026-09-22.md` already proposes for the sampling.
 
 **Whose call:** the owner's, because it changes what a batch contains.
+
+## 42. 🟡 Three Python entry points were never profiled, because they spend `oos2`
+
+Encargo 18 (profiling the Python layer) closed on 2026-09-25 with commits `c9011a2` and
+`3923010`: nulls, crossmarket, Monte Carlo, filters, CSCV, crossTF, variants, sppUltra, retest and
+the gate's harvest, each measured before and after under `AlgoData/reports/perf-optim-2026-09-25`
+and `AlgoData/profiling/bench-2026-09-25`, outputs identical. What it could not reach:
+`walkForwardCorrelation/report.py` (step 17), its `pbo.py` path over `oos2` (step 18) and
+`walkForwardMatrix/report.py` (step 19) — running them spends the reserved window, which is the
+owner's one-way door. Measure them the first time the owner runs 17-19 for real, not before.
+The MC Retest and the SPP were not measured at 500 either: their cost is SQX's (~34 h and ~2.8 h).
+
+## 43. 🟠 A retest drops the `<!--variant_id-->` stamp — the file name is the only join key
+
+🔬 Encargo 12, 2026-09-26: the retested `strategy_Portfolio.xml` is the fabricated one minus that
+comment. After a run, a variant is found by its file name only. Check that `sqx.variants.collect`
+and `equity` never relied on the stamp; `sqx/variants/README.md` failure mode 1 describes it as a
+join key and is now inaccurate. Card: `knowhow/sqx-format/writing-a-variant.md`.
+
+## 44. 🔴 The CSCV puts two months of `oos1` P&L on its OOS side — each leg's curve starts early
+
+🔬 Encargo 15, 2026-09-26: each leg's daily curve starts ~2 months before its segment with zero P&L
+(warm-up), and `equity.json` `splits`/`windows` record that warm-up start (`splits.oos2 =
+2022-11-03`). `engines/variants/panel.split(work, "oos2_only")` returns that date, so `windows()`
+puts Nov–Dec 2022 of the **oos1** leg's real P&L on the OOS side of the CSCV's chronological
+numbers. It changes computed CSCV/WFC figures, so the fix (split at the segment's own start from
+`assets/_policy.yaml`) needs a golden before and after. Card: `knowhow/sqx-format/leg-curve-warmup.md`.
+
+## 45. 🟡 `pipeline/XAUUSD/Strategy_17-9-39` no longer runs in the CSCV
+
+Its batch predates the per-segment columns: `cscv.report` fails with `KeyError: NetProfit
+(build+oos1)`. It is still usable by the parameter cloud. Re-harvest it or retire it; never use a
+real batch as a CSCV regression test anyway — every run reads `oos2`
+(`knowhow/research/cscv-always-reads-oos2.md`).
+
+## 46. 🟡 Steps 18.5 and 23 read `build` + `oos1` only — whether they may read `oos2` is the owner's call
+
+Market surfaces (18.5) and the structural tests (23) call `ledger.gate.allow` before reading a leg;
+with today's `assets/_policy.yaml` `oos2` is refused for both. Both agents recommend keeping it so:
+18.5 already has 15 years and 5,000 variants, and its costs are provisional; 23 is a diagnostic, not a
+selection. To open it: the step in `reserved_for` **and** in `ledger/gate.py` `STEPS`.
+
+## 47. 🟡 The conditional map has no trading sessions — nothing in the repo defines their hours
+
+Encargo 14 asked for Asia / London / New York / overlap from `assets/symbols/<SYMBOL>.yaml`
+`session`. That field resolves to the broker's trading WEEK (`<Resources><Sessions>` in the donor's
+XML), not to a partition of the day, and no UTC boundaries exist anywhere. The map uses weekday
+instead. The owner gives the UTC hours, or the cut stays out. Card: `knowhow/costs/sessions-per-asset.md`.
+
+## 48. 🟡 Loose ends of the 2026-09-26 batch — each the owner's word, none blocking
+
+- Market surfaces: the call uses the raw rho; `rho_neutral` (each market's exposure × drift
+  removed) is shown beside it. Which one should decide is open. Its Fisher interval and J band are
+  optimistic because the design clusters variants.
+- Edge per cost: no Sharpe-vs-cost-multiplier curve — the MC Retest keeps no daily equity per
+  simulation, so it cannot be rebuilt. `min_edge_spreads = 2` and `action = mark` are defaults set by
+  the agent at the owner's request that they be parameters.
+- The `/oos-gate` skill says the harvest joins "on name"; the gate README and `harvest.py` say identity.
+- `engines/nulls/filter.benchmark` needs an observed-value override for path-dependent strategies;
+  `studies/readings/structure/` carries its own `subset_null` meanwhile.
+
+## 49. ✅ Periodic review jobs added — knowhow, dependency map, audit/, docs health — 2026-09-26
+
+Four new cron jobs, asked by the owner: a weekly quality pass over `knowhow/`, plus three more
+found by looking for other project parts that age the same way and were not yet on any schedule.
+
+**`bin/weekly-knowhow-review.sh`** — the nightly `documenter` (`bin/nightly-docs.sh`) repairs drift
+the daily audit found; it never reads `knowhow/` end to end for what only the prose catches — two
+cards answering the same `q:`, a 🔬 tag that oversells its evidence, a card a later one
+contradicted without either being rewritten. `tools/checks.py`
+(`knowhowmap.bad_cards` / `broken_links` / `stale_indexes`) already enforces card shape
+mechanically, so this pass is scoped to the semantic half checks.py cannot see. Runs the
+`documenter` agent on Sonnet the same way `nightly-docs.sh` does. **Sundays 05:00.**
+
+**`bin/weekly-docs-health.sh`** — same agent, same day, waits on the knowhow review's lock so the
+two never touch OPEN.md at once. Covers what `weekly-knowhow-review.sh` does not: OPEN.md's own
+status table against its issues, `docs/SKILLS.md` retirement candidates (reported as a new OPEN.md
+issue, never deleted by the agent — the owner's call), `docs/encargos/` against its own "un encargo
+cumplido se borra" rule, and a general stale-doc sweep. **Sundays 05:00**, chained after the
+knowhow review.
+
+**`docs/DEPENDENCIES.md` regeneration** — `tools/checks.py`'s dependency-map check only ever
+flagged staleness, never fixed it (it was stale when this issue was opened); `tools/depmap.py` is
+deterministic, so no agent is needed, just a daily run. **Daily 02:40.**
+
+**`bin/audit-prune.sh`** — `audit/` gets two files a day, forever, with no retention job of its
+own (unlike SQX's logs, `knowhow/eng/log-retention.md`). Gzips reports older than 60 days in
+place; deletes nothing, never touches today's. **Sundays 02:45.**
+
+All four leave their changes uncommitted (the two agent runs) or touch only their own generated
+file (the two mechanical ones) — nothing here runs `git add` or `commit`.
+
+Installing the crontab lines hit the classic vixie-cron bug: `crontab <file>` truncates a long
+`TMPDIR`-based temp path and fails with a "No such file or directory" that names the wrong file —
+worked once the file was copied to a short `/tmp` path first. 🔬 reproduced 2026-09-26,
+`knowhow/eng/crontab-long-tmpdir-path.md`.

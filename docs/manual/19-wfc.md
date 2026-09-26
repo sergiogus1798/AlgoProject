@@ -89,8 +89,8 @@ La corrida entera de 2.000, arrancando con el custodio apagado: **2 min 16 s y 2
 ```bash
 python3 -m sqx.variants.make    --brief <design_brief.json> --project XAUUSD --sample 11
 python3 -m sqx.variants.execute --work <dir>     # carga en el custodio, retestea, exporta
-python3 -m sqx.variants.collect --work <dir>     # une el panel al manifiesto → metrics.parquet
 python3 -m sqx.variants.equity  --work <dir>     # las curvas diarias de los 3 tramos, unidas
+python3 -m sqx.variants.collect --work <dir>     # une el panel al manifiesto → metrics.parquet (lee equity.parquet)
 python3 -m studies.optimisation.wfc.report --work <dir> [--split oos2_only]
 ```
 

@@ -32,8 +32,9 @@ def grid(cells: pd.DataFrame, strategy: str) -> dict:
             "labels": None, "note": "Filas: número de tramos. Columnas: parte fuera de muestra."}
 
 
-def member(strategy: str, got: dict, result: dict, cfg: dict, started: float) -> dict:
-    """One strategy's verdict and its matrix."""
+def member(strategy: str, got: dict, result: dict, cfg: dict, started: float,
+           failed: str | None) -> dict:
+    """One strategy's verdict and its matrix, flagged when SQX itself failed it."""
     comp = result["companions"]
     return envelope.envelope(
         MODULE, strategy, None, cfg, started,
@@ -50,8 +51,12 @@ def member(strategy: str, got: dict, result: dict, cfg: dict, started: float) ->
                         {"label": "parámetros que cambian por tramo",
                          "state": "watch" if got["drift_high"] else "info",
                          "value": got["share_changed"], "note": ""}]),
+        # SQX's own area rule failed it and, with nothing deleted, it is still here: the
+        # owner wants that raised wherever the strategy is read (2026-09-26).
+        [{"code": "failed_en_sqx", "state": "fail",
+          "text": f"SQX la marcó como FAILED en la Walk-Forward Matrix: {failed}"}] if failed else None,
         glossary=GLOSSARY, summary={k: v for k, v in got.items() if k != "verdict"}
-        | {"verdict": got["verdict"]})
+        | {"verdict": got["verdict"], "sqx_failed": bool(failed)})
 
 
 def run(directory: Path, cfg: dict) -> dict:
@@ -70,7 +75,12 @@ def run(directory: Path, cfg: dict) -> dict:
     i = result["independence"]
     names = list(result["verdicts"])
     ident = output.identify(directory, names)
-    members = [member(s, g, result, cfg, started) for s, g in result["verdicts"].items()]
+    status = directory / "status.parquet"
+    failed = ({} if not status.exists() else
+              pd.read_parquet(status).query("sqx_failed").set_index("strategy")["sqx_filter"]
+              .to_dict())
+    members = [member(s, g, result, cfg, started, failed.get(s))
+               for s, g in result["verdicts"].items()]
     table = pd.DataFrame([{"strategy": s, "identity": ident.get(s), **g}
                           for s, g in result["verdicts"].items()])
     table = table[["strategy", "identity", "verdict"]

@@ -22,7 +22,7 @@ def main() -> None:
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
     ap.add_argument("--asset", required=True, help="asset name in assets/, e.g. XAUUSD")
-    ap.add_argument("--export", required=True, help="export date, YYYY-MM-DD")
+    ap.add_argument("--day", default=date.today().isoformat(), help="export date, YYYY-MM-DD")
     ap.add_argument("--bars-timeframe", default="M30",
                     help="which exported bars the daily volatility is built from")
     ap.add_argument("--portfolio", action="store_true",
@@ -33,7 +33,7 @@ def main() -> None:
 
     print(assets.report(a.asset))
     cfg = config.load(a.set)
-    inputs = load.load(a.project, a.databank, a.asset, a.export, cfg, a.bars_timeframe,
+    inputs = load.load(a.project, a.databank, a.asset, a.day, cfg, a.bars_timeframe,
                          a.portfolio)
     print(f"{len(inputs['streams'])} streams · estabilidad sobre {inputs['reference']}",
           flush=True)
@@ -52,7 +52,7 @@ def main() -> None:
     pd.DataFrame(fired, columns=["strategy", "family", "test", "value", "limit", "gate"]
                  ).to_csv(out / "flags.csv", index=False)
     command = (f"python3 -m portfolio.common.monteCarlo.report --project {a.project} --databank "
-               f"{a.databank} --asset {a.asset} --export {a.export}"
+               f"{a.databank} --asset {a.asset} --day {a.day}"
                + (" --portfolio" if a.portfolio else "")
                + "".join(f" --set {s}" for s in a.set))
     table = many.table(got["members"])

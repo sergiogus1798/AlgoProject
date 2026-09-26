@@ -41,7 +41,7 @@ clock", and nothing downstream should describe it as one.
 | `cells.py` | What each cell earned and where it sits among its own timeframe's nulls | imported | trades + bars → statistic, p |
 | `verdict.py` | What a scaled cell means, once the control and the rounding have had their say | imported | panel → one of five readings |
 | `many.py` | What the study reads, every cell measured and every scaled cell read, as one result the window paints | imported | export + scaling → result |
-| `report.py` | **The command**: prints the result and writes it to `reports/<P>/<D>/<export day>/crossTF/` — the page, `verdict.csv` (one row per scaled sibling, its reading as `verdict`) and `cells.parquet` | `python3 -m studies.transfer.crossTF.report --export <trades.parquet> --scaling <scaling.parquet> --feed <SYMBOL>` | export → reports |
+| `report.py` | **The command**: prints the result and writes it to `reports/<P>/<D>/<export day>/crossTF/` — the page, `verdict.csv` (one row per scaled sibling, its reading as `verdict`) and `cells.parquet` | `python3 -m studies.transfer.crossTF.report --project P --asset USDJPY [--databank CrossTF] [--day DAY] [--fabricated DAY]` | export → reports |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `config.yaml` | Every tunable, grouped by section | edited, or `--set section.key=value` | — |
 

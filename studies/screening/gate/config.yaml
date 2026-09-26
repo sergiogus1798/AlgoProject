@@ -6,6 +6,8 @@
 #   kind   hard = elimina a quien no pasa · soft = mide y no elimina a nadie
 #   why    por que existe, en una frase; se copia al informe
 #   resto  los umbrales que lee su propia funcion
+#          `ledger:<clave>` = el numero vive en ledger/thresholds.yaml, con quien lo puso y
+#          cuando; inputs.config() lo sustituye al leer. Cambiarlo es del dueño, alli.
 #
 # ⚠️ TODOS LOS UMBRALES DE AQUI SON DELIBERADAMENTE LAXOS. Decision del dueño, 2026-09-23:
 # estan puestos para VER cuanta poblacion mata cada criba sobre datos reales, no para
@@ -27,7 +29,7 @@ screens:
 
   - name: sanidad
     kind: hard
-    min_trades: 20
+    min_trades: ledger:gate.sanidad.min_trades
     why: >-
       una estrategia con cuatro trades fuera de muestra no tiene error estandar que leer, y
       una que repite los trades de otra no es una segunda observacion
@@ -42,17 +44,17 @@ screens:
 
   - name: degradacion
     kind: hard
-    min_retention: 0.0
+    min_retention: ledger:gate.degradacion.min_retention
     min_t: 0.0
     min_years_positive: 1
-    max_concentration: 1.0
+    max_concentration: ledger:gate.degradacion.max_concentration
     why: >-
       cuanto del filo dentro de muestra sobrevivio, y si lo que queda bate a su propio error
       estandar. Laxo a proposito: hoy solo pide que la pendiente fuera de muestra sea positiva
 
   - name: forma
     kind: hard
-    max_dd_ratio: 5.0
+    max_dd_ratio: ledger:gate.forma.max_dd_ratio
     why: >-
       si el peor descenso fuera de muestra cabe en lo que dentro de muestra hacia esperar.
       Un multiplo de 5 es casi no pedir nada
@@ -61,14 +63,14 @@ screens:
     kind: hard
     statistic: sharpe
     rung: timing
-    max_p: 0.50
+    max_p: ledger:gate.mono.max_p
     why: >-
       si bate a un aleatorio con la misma oportunidad de mercado. max_p 0.50 es la mediana
       del mono: hoy solo pide estar en la mitad buena
 
   - name: familia
     kind: soft
-    alpha: 0.05
+    alpha: ledger:gate.familia.alpha
     why: >-
       de los que pasan el mono, cuantos daria el azar. Corrige Benjamini-Hochberg sobre la
       familia superviviente. SOFT: informa, no elimina, hasta que el dueño vea el exceso

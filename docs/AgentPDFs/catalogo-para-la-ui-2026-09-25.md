@@ -49,7 +49,7 @@ por abajo.
 | 20 | **Lectura conjunta de 17, 18 y 19 — CIEGA hasta tener los tres** | — | ❌ **no existe** |
 | 21 | **Exposición contra buy & hold** | Python | qué tiempo de mercado costó lo ganado |
 
-Del 22 en adelante empieza la cartera, que está casi sin empezar.
+Del 26 en adelante empieza la cartera, que está casi sin empezar (el 24 es el stop loss para MT5).
 
 **Tres reglas de la secuencia que la interfaz tiene que respetar o hacer daño:**
 

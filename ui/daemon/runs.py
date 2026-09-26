@@ -69,7 +69,7 @@ def monte_carlo(c: dict) -> list[str] | str:
     if own_trades(c):
         return own_trades(c)
     return ["-m", "portfolio.common.monteCarlo.report", "--project", c["project"], "--databank",
-            c["databank"], "--asset", c["asset"], "--export", c["export"]]
+            c["databank"], "--asset", c["asset"], "--day", c["export"]]
 
 
 def nulls(c: dict) -> list[str] | str:
@@ -140,7 +140,7 @@ def crossmarket(c: dict) -> list[str] | str:
     if not c["multimarket"]:
         return "necesita el export del retest cross-market (skill /crossmarket)"
     return ["-m", "studies.transfer.crossmarket.report", "--project", c["project"], "--databank",
-            c["databank"], "--asset", c["asset"], "--export", c["export"]]
+            c["databank"], "--asset", c["asset"], "--day", c["export"]]
 
 
 RUNS = {"gate": gate, "monteCarlo": monte_carlo, "monkey": nulls, "exposure": exposure,

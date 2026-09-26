@@ -11,7 +11,10 @@ You audit this project. You **change nothing except your own report and `OPEN.md
 stop or reconfigure StrategyQuant X, never run a build, never write into `~/Desktop/AlgoData`, and
 never "fix" code you find broken — you report it.
 
-Read `CLAUDE.md` first. Then work the four areas below. Budget your reading: use the router, the
+Read `CLAUDE.md` first. Then work the four areas below. You may be running unattended from cron
+(`bin/nightly-audit.sh`): nobody can answer a question, so never ask one — decide, and say in the
+report what you could not check and why. Start from today's `audit/*-mechanical.md` and do not
+repeat what it already says; spend your effort on what a script cannot see. Budget your reading: use the router, the
 folder READMEs and `docs/DEPENDENCIES.md` rather than opening every file.
 
 ## 1. Documentation against reality
@@ -20,7 +23,9 @@ folder READMEs and `docs/DEPENDENCIES.md` rather than opening every file.
   `knowhow/*` — does it still exist and still work?
 - Claims that contradict each other across files, or that the code disproves.
 - `knowhow/` entries tagged 🤔 that could now be settled by a cheap test. Say which test.
-- Line budgets: root `CLAUDE.md` ≤ 55 lines, each phase `CLAUDE.md` ≤ 40.
+- `CLAUDE.md` files (root, `sqx/`, `studies/`, `portfolio/`) hold only hard rules and router rows.
+  Report a paragraph that belongs in a README or a knowhow card. **Length alone is not a finding**:
+  the owner writes the hard rules, and there is no line budget.
 
 ## 2. StrategyQuant X — only what is actually broken
 
@@ -33,7 +38,8 @@ templates a project names. Do not report any of it, do not rank it, do not open 
 for it. He knows, and it is deliberate. On SQX you report only these three things:
 
 - **The export path is not working.** The route data takes out of SQX: `sqx/export/*` run against
-  a real databank, the worker's HTTP API on 5060, exports written truncated or empty, columns
+  a real databank, the conductor's HTTP API on 5060 **only if it is already up** — never start a
+  worker to test it; with none up, judge the newest export on disk instead —, exports written truncated or empty, columns
   missing or renamed, a row count that does not match the databank, an export the analyses read as
   current that is in fact stale or unreadable.
 - **Log files too large.** `~/Desktop/SQX/user/logs` and the worker's equivalent: total size, the
@@ -52,8 +58,12 @@ Anything else about SQX is out of scope unless the owner asks for it by name.
 - Run `python3 tools/depmap.py && python3 tools/checks.py` and report what fails.
 - Then add what no script can see: duplicated logic across scripts, dead code, a tool whose README
   row no longer describes what it does.
-- Data: every export directory under the data root must carry a `manifest.json`. Report the ones that
-  do not, and any manifest whose `code_version` names a commit that no longer exists.
+- Data: every export under `raw/<project>/<databank>/<date>/` must carry a `manifest.json` at that
+  root (partition subfolders share it). The mechanical report already lists the ones that do not;
+  add any manifest whose `code_version` names a commit that no longer exists.
+- The unattended jobs: the last entry of `nightly-audit.log`, `nightly-docs.log`, `nightly-fix.log`, `disk-nightly.log` (a broken budget)
+  and `weekly-data-update.log` (a refused update, a `.sqx` count that fell, days a feed refused)
+  under the data root's `logs/`. Report a job that failed or did not run when cron says it should.
 - Results cited in `knowhow/` or `docs/` whose generating script has since changed.
 - **Asset overrides**: compare `assets/*.yaml` against `python3 -m sqx.inspect.instruments`.
   Report where SQX changed under a recorded `sqx_default`, and every asset still carrying

@@ -130,3 +130,21 @@ def parameters(path: Path) -> dict[str, str]:
     """
     return {p.get("key"): (p.text or "").strip()
             for p in xml(path).iter("Param") if p.get("key")}
+
+
+def sqx_filter(path: Path) -> str | None:
+    """SQX's own pass or fail note on a strategy, as its last filtering task left it.
+
+    Args:
+        path: A .sqx file.
+
+    Returns:
+        The text of `<FiltersResultFailedReason>` in settings.xml — "Passed", or the reason,
+        e.g. "Cross Check filter in 'Walk-Forward Matrix': Robustness score didn't pass." —
+        and None when no task ever filtered it. 🔬 2026-09-26: with DeleteFailedStrategies
+        false a strategy that fails the WFM area rule stays in the databank carrying this.
+    """
+    with zipfile.ZipFile(path) as z:
+        found = re.search(r"<FiltersResultFailedReason[^>]*>([^<]*)<",
+                          z.read("settings.xml").decode("utf-8", "replace"))
+    return found.group(1).strip() if found else None

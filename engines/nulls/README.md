@@ -65,7 +65,7 @@ strategy, never assumed, and `verdict.distrust()` says so out loud when it fails
 `filter.py` does not place any trade. It takes the trades of a strategy **without** one condition
 and the trades of the same strategy **with** it, and asks whether the condition beat removing the
 same number of trades at random — the cheap half of the ablation test (`D1` of
-`docs/encargos/12-tests-estructurales.md`), which needs no SQX run at all. The statistics are per
+`sqx/structural/` + `studies/readings/structure/`), which needs no SQX run at all. The statistics are per
 trade, never total profit: a filter changes the trade count, and totals always flatter whichever
 version traded more.
 

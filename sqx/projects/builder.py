@@ -102,8 +102,8 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             a selection, and then the only thing the study can say is how many survived.
         session_from: A project.cfx that defines the asset's session, for when the donor does
             not. Read only. Omit when the donor already carries it.
-        workflow: Every workflow step's task in this one project, only Build and OOS on
-            (owner, 2026-09-25). Overrides `tasks` and `only`.
+        workflow: Every workflow step's task in this one project, only Build and OOS on, every
+            retest's acceptance silenced (owner, 2026-09-25/26). Overrides `tasks` and `only`.
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
@@ -121,8 +121,9 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
 
     with zipfile.ZipFile(donor) as z:
         members = {n: z.read(n) for n in z.namelist()}
-    if workflow:
+    if workflow:   # every retest measures and none filters, unless the owner names a filter
         tasks, only = ("Build", "Retest"), wf.kept_members(members["config.xml"].decode("utf-8"))
+        silence = tuple(set(silence) | {"Retest"})
     members, kept = keep(members, set(tasks), only=only)
     added = wf.complete(members) if workflow else []
 

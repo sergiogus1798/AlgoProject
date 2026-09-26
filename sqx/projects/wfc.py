@@ -152,7 +152,7 @@ def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str
         members_in_order: Three task XML files, in the doctrine's task order — build, oos1,
             oos2. They are renamed to the doctrine's titles and switched on.
         markets: False leaves the extra markets out of this project's legs only, whatever
-            `wfc.markets` says — for a study that reads the main market alone (step 22).
+            `wfc.markets` says — for a study that reads the main market alone (step 24).
 
     Returns:
         One row per leg, plus the project name and the input databank they all read. The

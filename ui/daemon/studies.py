@@ -31,7 +31,7 @@ MODULES = {
     "profitShape": ("Forma del beneficio", "lectura extra"),
     "entryQuality": ("Calidad de la entrada", "lectura extra"),
     "exposure": ("Exposición", "21"),
-    "atrCalculator": ("Stop loss ATR", "22"),
+    "atrCalculator": ("Stop loss ATR", "24"),
     "wfc": ("Walk Forward Correlation", "17"),
     "wfm": ("Walk Forward Matrix", "19"),
     "decay": ("Decaimiento IS→OOS", "8"),

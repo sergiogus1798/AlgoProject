@@ -12,38 +12,54 @@ perf/ (los instrumentos)  →  history.csv  →  rendimiento.html  →  una rama
 
 Nothing here touches StrategyQuant X, and nothing here merges to master.
 
+You do the work in this session — there are no perf subagents (retired 2026-09-25: never used, and
+a cold agent re-derives what the session already knows). Read `docs/manual/12-rendimiento.md` first.
+
 ## Sin argumento — la revisión completa
 
-Launch **`perf-profiler`** and **`perf-storage`** in the background, in parallel. They do not share
-state: one measures code, the other measures disk. When both return:
-
-1. Read the profiler's regressions and the storage review's proposals.
-2. Give the owner, in Spanish: the regressions with their cause, how close the heaviest target is to
-   not fitting in memory, and **the single change with the best measured prize per unit of work**.
-3. Ask whether to build that one. Only on a yes, launch `perf-optimizer` with the target named.
-
-Never launch the optimizer without the owner saying which change. Choosing what to optimise is his
-call; measuring what it would be worth is yours.
+`/perf catalogo`, then `/perf datos`. Give the owner, in Spanish: the regressions with their cause,
+how close the heaviest target is to not fitting in memory, and **the single change with the best
+measured prize per unit of work**. Ask whether to build that one; only on a yes, `/perf mejorar`.
+Choosing what to optimise is his call; measuring what it would be worth is yours.
 
 ## `/perf catalogo` — sólo medir
 
-`perf-profiler`. Measures, updates `history.csv`, renders the page, explains what moved.
+```bash
+uptime && free -g
+ps -eo pid,ppid,etime,rss,cmd | grep -E 'forkserver|resource_tracker' | grep -v grep
+python3 -m perf.catalogue --scaling                  # sale != 0 si algo empeoró: es un dato
+python3 -m perf.catalogue --hotspots <target>        # por cada regression / improvement
+python3 -m perf.render.panel
+```
 
-Check the machine is idle first — `uptime`, `free -g`, and orphaned worker pools — because a
-measurement taken on a busy machine goes into an append-only file and stays wrong forever.
+A load average not near zero, or orphaned pools holding gigabytes, **invalidates the measurement** —
+it goes into an append-only file and stays wrong forever. Report that instead of measuring through
+it; orphans are killed by PID, parent first, after telling the owner. For each thing that moved,
+find the commit in `git log` that touched what the profile blames; a regression you cannot attribute
+is probably the machine — say so. Change nothing outside `perf/`.
 
 ## `/perf datos` — sólo el disco
 
-`perf-storage`. Inventory, duplicates, format costs, proposals. Read-only over the data root.
+`python3 -m perf.disk.report` (cron already runs `--quick` nightly; its log is
+`AlgoData/logs/disk-nightly.log`). For each big branch, `grep -rn "<branch>" --include="*.py" .` —
+a branch nothing reads is a different finding from one every run reads. Every proposal carries
+**what it saves** (measured), **what it costs** (which code changes) and **what is lost** (CSV is
+greppable and opens in a spreadsheet; that is worth real megabytes). An export under `raw/` is
+immutable and dated on purpose. **Read-only: nothing under the data root is deleted, moved or
+rewritten.**
 
 ## `/perf mejorar <módulo>` — idear y codear
 
-`perf-optimizer`, on the named module. It measures on master, branches, changes **one** thing,
-proves the output did not change, measures again, and stops with the branch unmerged. Report the two
-numbers and the branch name. The merge is the owner's.
+1. `git status --porcelain` clean; `python3 -m perf.catalogue --only <target>` and `--hotspots`.
+   No target in `perf/inputs/targets.py`? The first commit adds one — without a before, no after.
+2. `git checkout -b perf/<module>-<what>`. **One idea per branch.**
+3. Correctness before speed: `for t in tests/test_*.py; do python3 "$t" || break; done` (no pytest),
+   and compare the numbers **that decide something** — the percentiles a gate reads, the verdict —
+   not a checksum. Unseeded simulation: compare distributions and say which statistic.
+4. Measure again, `python3 tools/depmap.py && python3 tools/checks.py` green, commit with the
+   before/after in the message. **Stop: no merge, no rebase, no second branch.** The merge is his.
 
-If the module has no target in `perf/inputs/targets.py`, the optimizer's first commit adds one —
-without a before, there is no after.
+The non-obvious thing learned goes into a card in `knowhow/perf/`, tagged 🔬, in the same task.
 
 ## Sin modelo: los tres comandos
 

@@ -1,6 +1,6 @@
 ---
-q: Walk Forward Matrix acceptance decoded; where WFM conditions live; cell score robustness thresholdPct robCombRows robCombCols robMinComb; subresult 30 31 32 33 Stability Score WFScore; WFM filters strategies; calibration of SQX default WFM conditions
-tag: 🔬  date: 2026-09-24  see: conditions/wf-type, export/wfm-export, conditions/active-conditions-in-crosschecks
+q: Walk Forward Matrix acceptance decoded; where WFM conditions live; cell score robustness thresholdPct robCombRows robCombCols robMinComb; subresult 30 31 32 33 Stability Score WFScore; WFM failed strategy kept with DeleteFailedStrategies false FiltersResultFailedReason; calibration of SQX default WFM conditions
+tag: 🔬  date: 2026-09-26  see: conditions/wf-type, export/wfm-export, conditions/active-conditions-in-crosschecks
 ---
 # WFM acceptance: only `<WalkForwardMatrix><AcceptanceSettings><Conditions>` counts; cell score = % active conditions met
 - Cell passes if `round(met / active * 100) >= thresholdPct`; strategy passes if some `robCombRows × robCombCols` rectangle has ≥ `robMinComb` passed cells.
@@ -16,6 +16,11 @@ Decompiled `internal/libs/SQTradingLib.jar` (SQX's `j64/bin/javap`) + `internal/
   Rows = number of runs (Param2), columns = OOS % (Param1) (`createMatrix`); 4×4 on 6×5 fits 6 positions. Rectangle doesn't fit → best cell counted as one → only `robMinComb <= 1` passes, silently.
   Centre of best rectangle = GUI "Recommended combination: reoptimizing every X days on history of Y days".
   Filter message: `Cross Check filter in 'WF matrix': Robustness score didn't pass.` (`WalkForwardCrossCheckMethod.checkConditions`, `dismissalReason`).
+- 🔬 2026-09-26, custodian, 2 strategies, area forced impossible (16 of 16 at 100 %) and
+  `DeleteFailedStrategies=false`: **both stayed in the output databank**, each with
+  `settings.xml <FiltersResultFailedReason>Cross Check filter in 'Walk-Forward Matrix': Robustness
+  score didn't pass.`; with the real 12-of-16 they carried `Passed`. A fail marks, it does not delete
+  — `core.sqxfile.sqx_filter()` reads it, `export_wfm` stores it (`status.parquet`, `failed_in_sqx`).
   Cosmetic bug: printed `MinResults:` reads `robCombCols` not `robMinComb` (log text only).
 - `getStatsValue` reads `subresult` (def 30), `direction` (0), `sampleType` (def 127), `plType` (10):
 

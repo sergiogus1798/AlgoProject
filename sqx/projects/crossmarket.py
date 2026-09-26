@@ -9,7 +9,7 @@ from datetime import date
 
 from core.assetdata import doctrine, load, markets, sqx_settings, symbols
 from sqx.projects.configure import running_install
-from sqx.projects.crosschecks import member_of, silence_block
+from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.setups import span
 from sqx.projects.stage import own
 
@@ -150,7 +150,10 @@ def set_markets(text: str, symbol: str, timeframe: str,
         raise SystemExit("`crossmarket.conditions` de assets/_build.yaml ya no esta vacio: "
                          "esta prueba es una medicion, no una puerta, y escribir condiciones "
                          "no esta implementado. Quitalas o dilo explicitamente.")
-    text, silenced = silence_block(text, "RetestOnAdditionalMarkets")
+    # Every condition of the task, not only this check's: 🔬 2026-09-25 a clone carried live
+    # conditions elsewhere in the task (the OOS copy three, with DeleteFailedStrategies true),
+    # and one live condition under evaluateAll="false" makes SQX skip the extra blocks.
+    text, silenced = silence(text)
     return text, used, blocked, silenced
 
 

@@ -37,7 +37,7 @@ Only these sit in the root, because they are the only things that get called or 
 | `load.py` | Everything a run reads, once: the export, its market universe, every feed's bars, the strategy names and their identity | imported |
 | `one.py` | **One strategy across every market, as the contract's data** — twelve tabs, the breadth verdict, warnings, glossary; `only=` runs one market alone | imported — the window calls it |
 | `many.py` | Every strategy judged on breadth, one (strategy, market) task per process: the verdict `/curate` applies | imported |
-| `report.py` | The command: the batch to `verdict.csv` and the export's page, or `--strategy NAME` for one strategy's whole study | `python3 -m studies.transfer.crossmarket.report --project P --databank D --asset USDJPY --export DAY [--strategy S]` |
+| `report.py` | The command: the batch to `verdict.csv` and the export's page, or `--strategy NAME` for one strategy's whole study | `python3 -m studies.transfer.crossmarket.report --project P --databank D --asset USDJPY [--day DAY] [--strategy S]` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable of the study, grouped by section | edited, or `--set section.key=value` |
 | `assets/_markets.yaml` | What each base asset's markets are called, how they are grouped, and where its backtest's out-of-sample stretch starts | edited |

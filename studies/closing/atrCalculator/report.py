@@ -63,7 +63,7 @@ def main() -> None:
     read = sorted(set(got["trades"]["segment"].astype(str)))
     spend.log(args.symbol, args.timeframe, args.family or args.project, got["spans"], read,
               len(names), cfg, fingerprint(cfg))
-    print(f"-> ledger: paso 22, {', '.join(read)} ({len(names)} estrategias)")
+    print(f"-> ledger: paso 24, {', '.join(read)} ({len(names)} estrategias)")
     print(f"-> {out / grid.FILE}  ({len(stopgrid)} X para sqx.variants.stopgrid --grid)")
     print(f"-> {out / 'verdict.csv'}")
 

@@ -5,19 +5,44 @@ import numpy as np
 SHIFT = "shift1"
 
 
-def live(design: dict) -> dict[str, list[float]]:
-    """Levels the brief chose for the parameters that move the result.
+def live(design: dict, minimum: dict) -> dict[str, list[float]]:
+    """The values each parameter that moves the result may take.
 
     Args:
         design: A parsed brief.
+        minimum: The `minimum` block of `config.yaml`: `variants`, `widen_step`, `max_span`.
 
     Returns:
-        Parameter name to its levels, ascending. They are taken as given: the span was
-        already widened to contain the original tuple and the in-sample argmax, and
-        narrowing it here would undo the one property that lets the study see a plateau
-        that moved.
+        Parameter name to its values, ascending. An integer parameter takes EVERY integer
+        across the brief's span (at least +/-30 %, never narrowed), not only the brief's
+        nine levels — a period 14..26 is thirteen values, not nine. A decimal one keeps the
+        brief's levels. If the product still holds fewer than `minimum["variants"]` tuples,
+        the integer spans widen symmetrically around the original, `widen_step` at a time,
+        up to `max_span` (owner, 2026-09-26: never fewer than a thousand variants).
     """
-    return {p["name"]: sorted(float(v) for v in p["levels"]) for p in design["parameters"]}
+    briefed = {p["name"]: (float(p["original"]), sorted(float(v) for v in p["levels"]))
+               for p in design["parameters"]}
+    integral = {n for n, (_, v) in briefed.items() if all(x.is_integer() for x in v)}
+
+    def fill(span: float) -> dict[str, list[float]]:
+        """Every parameter's values with the integer spans at least +/-`span` of the original."""
+        out = {}
+        for name, (origin, values) in briefed.items():
+            if name not in integral or len(values) == 1:
+                out[name] = values
+                continue
+            lo = min(values[0], np.floor(origin * (1 - span)))
+            hi = max(values[-1], np.ceil(origin * (1 + span)))
+            out[name] = [float(v) for v in range(int(max(lo, 1)), int(hi) + 1)]
+        return out
+
+    span = 0.0
+    got = fill(span)
+    while (np.prod([len(v) for v in got.values()]) < minimum["variants"]
+           and span < minimum["max_span"] and integral):
+        span = round(span + minimum["widen_step"], 6)
+        got = fill(span)
+    return got
 
 
 def frozen(design: dict, settings: dict) -> dict[str, list[float]]:
@@ -34,14 +59,14 @@ def frozen(design: dict, settings: dict) -> dict[str, list[float]]:
 
         The range is the one SQX uses for its own permutations, measured and recorded in
         `knowhow/sqx-format/declared-parameters.md`: +/-30 % of the value stepped and rounded, except a
-        shift, which gets a flat 0..6 whatever its value. Rounding follows the value:
+        shift, which stays at its value (owner, 2026-09-26). Rounding follows the value:
         integral in, integral out.
     """
     out = {}
     for item in design["frozen"]:
         value = float(item["value"])
-        if item["name"].lower().endswith(SHIFT):
-            out[item["name"]] = [float(v) for v in settings["shift_levels"]]
+        if item["name"].lower().endswith(SHIFT):   # owner, 2026-09-26: a shift never moves
+            out[item["name"]] = [value]
             continue
         span = np.linspace(value * (1 - settings["span"]), value * (1 + settings["span"]),
                            settings["steps"])

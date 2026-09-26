@@ -6,6 +6,7 @@ import pandas as pd
 
 from core.paths import DATA
 from core.study import config as study_config
+from ledger import thresholds
 
 CONFIG = Path(__file__).with_name("config.yaml")
 
@@ -18,12 +19,13 @@ def config(overrides: list[str]) -> dict:
             is addressed by its own name, e.g. "degradacion.min_retention=0.5".
 
     Returns:
-        The parsed config.yaml. Each override keeps the type of the value it replaces
-        (core.study.config), so a threshold typed on the command line cannot silently
-        become a string.
+        The parsed config.yaml, every `ledger:<key>` replaced by the number
+        `ledger/thresholds.yaml` declares. Each override keeps the type of the value it
+        replaces (core.study.config), so a threshold typed on the command line cannot
+        silently become a string.
     """
-    return study_config.load(CONFIG, overrides,
-                             lambda cfg: {s["name"]: s for s in cfg["screens"]})
+    cfg = thresholds.fill(study_config.load(CONFIG, []))
+    return study_config.apply(cfg, overrides, {s["name"]: s for s in cfg["screens"]})
 
 
 def newest(project: str, databank: str) -> Path:

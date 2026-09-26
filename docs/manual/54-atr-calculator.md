@@ -11,7 +11,7 @@ resultado es plano alrededor de X.
 
 > *«No quiero que sea una optimización ni nada.»* — el dueño, 2026-09-26
 
-**No elige nada.** Los percentiles (por defecto 80, 85, 90 y 95; tantos como quieras con `--percentiles`) salen uno al lado del otro y decides tú. Es el **paso 22**
+**No elige nada.** Los percentiles (por defecto 80, 85, 90 y 95; tantos como quieras con `--percentiles`) salen uno al lado del otro y decides tú. Es el **paso 24**
 del `WORKFLOW.md`, tras la exposición y antes de la cartera.
 
 ### Cuándo lo usas, y cuándo no
@@ -67,7 +67,7 @@ for d in $LEGS; do python3 -m sqx.export.export_retest --project $P --databank $
 python3 -m studies.closing.atrCalculator.report $COMMON --work $W/pass2
 ```
 
-Cada ejecución del informe **deja una fila en el ledger por tramo leído** (build, oos1, oos2), con `n_in = n_out` porque no elige nada. El oos2 está reservado para el WFC, el WFM y este paso 22 (`assets/_policy.yaml`, dueño, 2026-09-26): mirarlo lo gasta, y queda apuntado.
+Cada ejecución del informe **deja una fila en el ledger por tramo leído** (build, oos1, oos2), con `n_in = n_out` porque no elige nada. El oos2 está reservado para el WFC, el WFM y este paso 24 (`assets/_policy.yaml`, dueño, 2026-09-26): mirarlo lo gasta, y queda apuntado.
 
 `studies.closing.atrCalculator.report`:
 

@@ -2,6 +2,7 @@
 """The cross-market study's command: every strategy's breadth verdict, or one strategy in full."""
 
 import argparse
+from datetime import date
 import os
 import sys
 
@@ -20,7 +21,7 @@ def main() -> None:
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True, help="the databank export_retest exported")
     ap.add_argument("--asset", required=True, help="base asset, e.g. USDJPY")
-    ap.add_argument("--export", required=True, help="export date, YYYY-MM-DD")
+    ap.add_argument("--day", default=date.today().isoformat(), help="export date, YYYY-MM-DD")
     ap.add_argument("--strategy", help="study this one strategy in full instead of the batch")
     ap.add_argument("--only", help="with --strategy: this one market feed alone")
     ap.add_argument("--floor", type=float,
@@ -34,8 +35,8 @@ def main() -> None:
 
     overrides = a.set + ([f"verdict.breadth_floor={a.floor}"] if a.floor is not None else [])
     cfg = config.load(overrides)
-    inputs = load.load(a.project, a.databank, a.asset, a.export)
-    out = report_dir(a.project, a.databank, a.export) / "crossmarket"
+    inputs = load.load(a.project, a.databank, a.asset, a.day)
+    out = report_dir(a.project, a.databank, a.day) / "crossmarket"
     if a.strategy:
         got = one.run(a.strategy, inputs, cfg, a.only)
         path = output.member(out, got, f"Cross-market — {a.strategy}", LEDE)

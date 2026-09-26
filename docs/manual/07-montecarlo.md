@@ -63,7 +63,7 @@ las mismas pruebas sobre él.
 
 ```bash
 python3 -m portfolio.common.monteCarlo.report --project XAUUSD --databank Results \
-        --asset XAUUSD --export 2026-09-03
+        --asset XAUUSD --day 2026-09-03
 ```
 
 | flag | obligatorio | qué hace |
@@ -71,7 +71,7 @@ python3 -m portfolio.common.monteCarlo.report --project XAUUSD --databank Result
 | `--project` | sí | nombre del proyecto tal y como aparece en SQX |
 | `--databank` | sí | nombre del databank, con sus espacios si los tiene |
 | `--asset` | sí | nombre del activo en `assets/`, por ejemplo `XAUUSD` |
-| `--export` | sí | la fecha de la carpeta de exportación, **no** la de hoy |
+| `--day` | no | la fecha de la carpeta de exportación; hoy si no se pone, así que pásala si el export es de otro día |
 | `--portfolio` | no | analiza todas las estrategias como una sola cartera |
 | `--bars-timeframe` | no | de qué barras sale la volatilidad diaria; `M30` por defecto |
 | `--set` | no | cambia cualquier valor del config: `--set global.n_sims=100000` |
@@ -184,7 +184,7 @@ Las 36 estrategias del databank `Results` del proyecto `XAUUSD`, con la configur
 
 ```
 python3 -m portfolio.common.monteCarlo.report --project XAUUSD --databank Results \
-        --asset XAUUSD --export 2026-09-03
+        --asset XAUUSD --day 2026-09-03
 ```
 
 El resumen escrito que deja en `monteCarlo.md`:

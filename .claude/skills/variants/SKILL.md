@@ -66,16 +66,21 @@ por separado y actúa después.
 python3 -m sqx.variants.make --brief <design_brief_<Estrategia>.json> --project <PROYECTO> \
     [--out <work>] [--sample N | --limit N] [--design-only]
 python3 -m sqx.variants.execute --work <work> --project <PROYECTO>   # ⏰ el único que ocupa el custodio
+python3 -m sqx.variants.equity   --work <work>    # antes que collect: collect lee equity.parquet
 python3 -m sqx.variants.collect  --work <work>
-python3 -m sqx.variants.equity   --work <work>
 ```
 
 | comando | qué deja | toca SQX |
 |---|---|---|
 | `make` | `plan.csv`, `design.json`, `sqx/` con las N variantes, `manifest.parquet` | no |
 | `execute` | `retest.csv`, `ran.json`, el databank volcado a disco | **sí** |
-| `collect` | `metrics.parquet` — el panel unido al manifiesto | no |
 | `equity` | `equity.parquet` — el P&L **por día** de cada variante | no |
+| `collect` | `metrics.parquet` — el panel unido al manifiesto | no |
+
+**El espacio de variantes** (dueño, 2026-09-26): cada parámetro cubre al menos ±30 %, los enteros con
+todos sus valores, los *shift* fijos, y cada madre tiene **al menos 1.000 variantes distintas**
+(`--min-variants`, `minimum:` en `sqx/variants/config.yaml`) — si no caben en el ±30 %, los enteros se
+ensanchan hasta ±60 %. Si `make` imprime `⚠️ only N distinct tuples`, dilo al dueño antes de correr.
 
 `--sample N` fabrica N filas **repartidas** por todo el plan (los controles y luego picks
 espaciados de cada estrato); `--limit N` coge las N primeras y sesga el lote hacia un estrato. Para

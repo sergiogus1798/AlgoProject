@@ -45,7 +45,14 @@ python3 -m sqx.templates.registry --run --set template=<nombre> --set symbol=XAU
 | `install.py --role` | no | `conductor` (por defecto) o `custodian`. El maestro está prohibido |
 | `build.py --shape` | no | esqueleto a transplantar; por defecto `market_long` |
 | `build.py --install ROLE` | no | además copia el `.sqx` a `StrategyTemplates/` de esa instalación |
-| `build.py --param '#Type#=1'` | no | fija un parámetro que nombraste (una EMA: `#Type#=1`); el resto se queda optimizable. Repetible |
+| `build.py --param '#Type#=1'` | no | fija un parámetro que nombraste (una EMA: `#Type#=1`); el resto de números —periodos, desviaciones— los **sortea el builder** en cada estrategia. Repetible |
+
+**Los periodos son aleatorios, siempre salvo que des un valor** (dueño, 2026-09-26). SQX no deja
+sortear los parámetros de un bloque fijo, así que `build.py` mete tu condición en un **grupo de un solo
+ítem** (`<nombre>Signal`) y ata a él el primer hueco: todas las estrategias llevan tu condición, cada
+una con su periodo. El grupo se escribe también en `deps/groups.xml`, y hay que instalarlo en los dos
+workers con `python3 -m sqx.blocks.install deps/groups.xml --role conductor` (y `--role custodian`).
+Comprobado 2026-09-26 en USDJPY H1: 15 periodos distintos de la EMA en 20 estrategias.
 
 **Un bloque nativo** (no autorado) se fija igual, pasando en lugar de `deps/blocks.xml` el
 `config.xml` de AlgoWizard del conductor. Salida real, 2026-09-25, que reproduce la `emaCloseAbove`

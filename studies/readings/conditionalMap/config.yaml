@@ -1,0 +1,34 @@
+# Every tunable of the conditional map, in one place. Nothing below is hidden in code.
+#
+# Descriptive only: this module fabricates hypotheses rather than testing one (encargo 14 §1).
+# It carries no verdict and touches no databank verdict; a filter is never derived from it
+# without registering it in the ledger (encargo 8) and revalidating on data not yet looked at.
+
+run:
+  symbol: USDJPY              # assets/symbols/<symbol>.yaml — source of the frozen build
+                              # segment the tercile cut-offs are measured on, and of the
+                              # declared session (§ session below)
+  feed: USDJPY_DukasM1_the5ers
+  timeframe: H1                # the grid the strategy was built on
+  sample: OOS1                 # which `Sample type` is classified and read cell by cell
+
+volatility:
+  atr_period: 20               # trading days of daily true range the tercile is cut on
+                              # (engines.regimes.regime.atr, zero fitted parameters)
+
+trend:
+  window: 20                   # trading days behind each entry the efficiency ratio is
+                              # measured over: |close_t - close_t-n| / sum|close_i - close_i-1|
+
+bootstrap:
+  resamples: 9999              # draws behind each cell's confidence interval
+  confidence: 0.95
+  seed: 0
+
+# session (Asia / Londres / Nueva York / solape) is NOT built. `assets/symbols/<symbol>.yaml`
+# field `session` names an SQX session ("USDJPY_ftmo"), and what that resolves to inside the
+# project (`<Resources><Sessions>`) is the broker's market-open week — 01:05 to 23:50 Monday
+# to Friday, the same five days weekday already reads — not a partition of the day into
+# Asia/London/New York/overlap. Cutting the day into those requires UTC hour boundaries this
+# file does not hold and the rules forbid inventing (CLAUDE.md rule 11, `docs/manual/
+# 53-mapa-condicional.md`). Flagged on `_coord/BOARD.md`; weekday is built in its place.

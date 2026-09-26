@@ -27,7 +27,7 @@ config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ cont
 | `contract.py` | The four tabs — A1, A2 and A3, B2, C1 — each with its readings | imported | numbers → tabs |
 | `report.py` | **The command**: prints the result and writes `cloud.json`, `cloud.html` and `cloud.md` into the batch; `--out` also writes the numbers alone | `python3 -m studies.optimisation.cloud.report --work <dir>` | batch → four readings |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` | — |
+| `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
 
 Manual page, in Spanish: `docs/manual/39-nube-de-parametros.md`.
 
@@ -71,8 +71,8 @@ low r² describes a shape the data only half supports, which is why the r² is p
 - **Nothing about a market it was not run on.** The multi-market surfaces (A4) and the cross-market
   transfer of the optimal region (B3) need a variant retest carrying the cross-checks of
   `assets/_markets.yaml`. `sqx.variants.equity` already writes `equity_markets.parquet` when they
-  are there; no batch on this install has them yet. `docs/encargos/15-superficies-multimercado.md`.
+  are there, and `studies/optimisation/marketSurfaces/` reads them (step 18.5).
 - **Nothing about rules**, only about parameter values. Ablation and inversion need the strategy's
-  logic edited, not its variables: `docs/encargos/12-tests-estructurales.md`.
+  logic edited, not its variables: `sqx/structural/` and `studies/readings/structure/` (step 23).
 - **`active` is days, not trades.** A per-period trade count needs the trade export, ninety minutes
   against this file's 1.5 seconds. Periods below `min_active_days` are dropped rather than read.

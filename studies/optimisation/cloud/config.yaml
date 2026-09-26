@@ -32,12 +32,13 @@ stability:                  # B2
 ensemble:                   # C1
   k: 8                      # plateau members in the diagnostic blend
 
+# `ledger:<key>`: the number lives in ledger/thresholds.yaml, with who set it and when.
 verdict:
-  rank_high: 0.95           # above this the origin is top of its neighbourhood
-  plateau_low: 0.15         # below this it has no company there
+  rank_high: ledger:parameterCloud.rank_high  # above this the origin is top of its neighbourhood
+  plateau_low: ledger:parameterCloud.plateau_low  # below this it has no company there
   roughness_high: 0.35      # 1 - r2 of the smooth model
   local_roughness_high: 0.35  # neighbour disagreement, in IQRs
   slope_high: 1.0           # gradient norm at theta-zero, metric per unit range
-  rho_low: 0.20             # median period-to-period Spearman
+  rho_low: ledger:parameterCloud.rho_low  # median period-to-period Spearman
   drift_high: 0.20          # median centroid movement, share of each parameter's range
   fraction_low: 0.50        # the worst period's share of profitable clones

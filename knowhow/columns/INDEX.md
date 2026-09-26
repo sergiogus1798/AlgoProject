@@ -3,4 +3,4 @@
 - `custom-columns-stored` — custom databank column snippet, DatabankColumn java where, compile snippet, column value frozen stored, rewrite column no effect old strategies, new column reads 0, recompute stats verb
 - `edge-decay-retired` — EdgeDecayRatio EdgeDecayFilter, edge decay score IS vs OOS, net profit decay calendar artifact, decay ratio near zero, why edge decay retired
 - `param-count` — Param Count column meaning, ParameterCount snippet counts, ParamTypeShift noise, MagicNumber counted, ParametrizationTypes list, transformToVariables, hardcoded strategies no variables
-- `zero-pl-trades` — zero P/L trade flat trade, Winning Percent half win, ZScore flat counts as win, WinningPct formula, KellyFormula error flat trades, reconstruction mismatch USDJPY
+- `zero-pl-trades` — zero P/L trade flat trade, Winning Percent half win, ZScore flat counts as win, WinningPct formula, KellyFormula win rate excludes flats wins/(wins+losses), reconstruction mismatch USDJPY

@@ -236,6 +236,9 @@ def kelly_formula(p: dict) -> np.ndarray:
     Returns:
         Percent per simulation, from the win rate and PayoutRatio. A theoretical ceiling on
         sizing and never a sizing: the fractional variant is what anyone actually uses.
+        Its win rate leaves flat trades out — wins / (wins + losses) — unlike WinningPct's
+        half-a-win: 🔬 2026-09-25 on USDJPY (~1.7 flat trades per 511) that is the only form
+        that lands on SQX's stored level at all eleven confidence levels.
     """
-    r, w = payout_ratio(p), p["wins_rate_n"] / p["n"]
+    r, w = payout_ratio(p), p["wins_n"] / (p["wins_n"] + p["losses_n"])
     return 100.0 * np.divide(w * r - (1 - w), r, out=np.zeros_like(r), where=np.isfinite(r) & (r > 0))

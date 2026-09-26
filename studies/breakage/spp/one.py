@@ -35,7 +35,7 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict:
     found = reading.read(directory, strategy, cfg)
     brief = reading.brief(found, cfg)
     return envelope.envelope(
-        MODULE, strategy, output.identify(directory.parent, [strategy])[strategy], cfg, started,
+        MODULE, strategy, output.identify(directory, [strategy])[strategy], cfg, started,
         [contract.influence(found), contract.plateaus(found), contract.design(brief)],
         contract.verdict(found),
         [{"code": "sin_emparejar", "state": "info",

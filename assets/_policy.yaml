@@ -34,7 +34,7 @@ segments_default:
   oos2:
     purpose: >-
       RESERVADO para Walk Forward Correlation y Walk Forward Matrix, que son las últimas
-      pruebas, y para el stop loss ATR del paso 22, que se corre sobre la superviviente
+      pruebas, y para el stop loss ATR del paso 24, que se corre sobre la superviviente
       (dueño, 2026-09-26). No usar antes: cada mirada a este tramo lo gasta.
     spread: oos
     reserved_for: [WFC, WFM, ATRStop]

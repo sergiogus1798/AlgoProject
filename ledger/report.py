@@ -34,7 +34,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--study", help="study id, as ledger/study.py builds it")
     ap.add_argument("--check-thresholds", action="store_true", dest="check",
-                    help="compare ledger/thresholds.yaml against the numbers the code reads")
+                    help="say, per declared threshold, whether its module reads it from the ledger "
+                         "or from a copy, and whether the copy still matches")
     ap.add_argument("--equity", type=Path, help="a harvest equity.parquet, to deflate a Sharpe")
     ap.add_argument("--identity", help="which strategy in it")
     a = ap.parse_args()
@@ -43,9 +44,10 @@ def main() -> None:
         table = thresholds.divergences()
         print(table.to_string(index=False))
         off = table[~table["coincide"]]
+        read = int((table["lee_de"] == "ledger").sum())
         print(f"\n{len(off)} divergencia(s)" if len(off) else
-              "\nel registro y el código dicen lo mismo en los "
-              f"{len(table)} umbrales declarados")
+              f"\n{len(table)} umbrales declarados: {read} los lee su módulo del ledger y "
+              f"{len(table) - read} son copias que coinciden")
         raise SystemExit(1 if len(off) else 0)
     if not a.study:
         raise SystemExit("ledger: hace falta --study, o --check-thresholds")

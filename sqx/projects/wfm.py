@@ -230,8 +230,8 @@ def main() -> None:
     if done["min_squares"]:
         print(f"      la estrategia pasa si encuentra {done['min_squares']} casillas "
               f"aprobadas en un area de {done['area']} — {done['positions']} posiciones "
-              "posibles. ⚠️ ESTO FILTRA: SQX descarta a quien no lo encuentre y no lo "
-              "escribe en el databank de salida")
+              "posibles. Quien no lo encuentre queda marcada FAILED en SQX, NO se borra "
+              "(DeleteFailedStrategies=false): el export lo anota y la ventana lo avisa")
     else:
         print("      min_squares 0 — modo mapa: puntua cada casilla y no descarta a nadie")
     if done["others_on"]:

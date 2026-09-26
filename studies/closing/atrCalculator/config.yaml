@@ -1,4 +1,4 @@
-# Every tunable of the ATR stop-loss study (step 22), in one place. Nothing below is hidden in code.
+# Every tunable of the ATR stop-loss study (step 24), in one place. Nothing below is hidden in code.
 #
 # This is NOT an optimisation. X is read from the in-sample winners with a rule fixed before
 # looking (a percentile of their MAE in ATR units), and SQX then measures what that stop costs

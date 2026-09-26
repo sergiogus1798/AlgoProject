@@ -58,6 +58,7 @@ python3 -m sqx.variants.make \
 | flag | obligatorio | qué hace |
 |---|---|---|
 | `--brief` | sí | ruta del `design_brief_<Estrategia>.json`. De él salen los parámetros, sus niveles, los congelados y el objetivo de 5.000 |
+| `--min-variants` | no | el mínimo de variantes distintas por madre; **1.000** si no se pone (`minimum.variants` en `sqx/variants/config.yaml`). Si el ±30 % no da tantas, los parámetros enteros se ensanchan en pasos del 5 % hasta llegar, como mucho a ±60 %, y si aun así no llega lo avisa con ⚠️ |
 | `--project` | sí | nombre del proyecto, sólo para decidir la carpeta de salida |
 | `--limit N` | no | fabrica sólo las N primeras filas. **El diseño no cambia**: se calculan las 5.000 y se escriben N. Es lo que se usa para probar la cadena con tres archivos antes de comprometerse a un lote entero |
 | `--design-only` | no | calcula el diseño, escribe `plan.csv` y para. No escribe ningún `.sqx` |
@@ -217,11 +218,17 @@ cadena está rota en algún punto — y te enteras antes de mirar cinco mil resu
   otra historia falla todos los centinelas por un motivo que no tiene nada que ver con la fábrica.
 - **Los niveles de un parámetro congelado son una reconstrucción, no un dato.** El diseño congela
   un parámetro y da su valor, no un rango; el estrato de cobertura necesita variarlo y el rango se
-  rehace igual que lo hace SQX en sus propias permutaciones (±30 %, y 0..6 si es un *shift*). Es la
+  rehace igual que lo hace SQX en sus propias permutaciones (±30 %; un *shift* no se mueve nunca). Es la
   suposición más discutible del módulo y está anotada como tal.
-- **Que el diseño contenga la combinación buena no está garantizado.** La rejilla se centra en la
-  meseta que se vio dentro de muestra y se ensancha hasta contener el original y el mejor punto IS,
-  pero una meseta que se haya movido mucho fuera de muestra puede quedarse fuera.
+- **La rejilla cubre SIEMPRE al menos ±30 % del valor original** (dueño, 2026-09-26). Un parámetro
+  entero toma **todos** los valores enteros de su rango (un período 14–26 son 13 valores); uno
+  decimal, hasta 9 niveles que el SPP exploró. Y cada madre tiene **al menos 1.000 variantes
+  distintas**: si el ±30 % no las contiene, los enteros se ensanchan solos (USDJPY `Strategy
+  15.12.75`: de 216 a 1.105, EMA 12–28, salidas 7–19, fractal 3–7). Sobol reparte el estrato de
+  cobertura por todo ese espacio. Los *shift* se quedan
+  en su valor. Antes se quedaba en la meseta: EMA 20–27 y salidas 12–17, una franja.
+- **Que el diseño contenga la combinación buena no está garantizado.** Una meseta que se haya movido
+  más allá del ±30 % fuera de muestra se queda fuera.
 
 ### Si algo falla
 

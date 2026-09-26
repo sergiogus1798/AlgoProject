@@ -4,13 +4,13 @@
 # fabrication owns it. This file only says what to read and how to judge it.
 
 run:
-  project: XAUUSD
-  feed: XAUUSD_DukasM1_Infinox
+  # project and feed come from the command line (--project, --asset): a default here belonged to
+  # whichever asset was studied last, and scored USDJPY against gold bars once (OPEN.md #34).
   source_tf: H1              # the timeframe every mother was built on
   # The <Setup> order of the retest task, which is the order the result blocks come back in.
   # Block 0 is always the main test. Change this and the cells are read off the wrong bars,
   # silently -- `report.py` prints the mapping every run so it can be eyeballed.
-  blocks: [H1, H4]
+  blocks: [H1, H4, H12]
 
 usable:
   # A scaled cell whose parameters were mangled by rounding does not answer the question:

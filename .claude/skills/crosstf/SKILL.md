@@ -41,7 +41,7 @@ whitelist in `sqx/variants/config.yaml` (`crosstf:`) is positive — an unrecogn
 written through untouched, never reinterpreted.
 
 ```bash
-python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1 --targets H4
+python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1   # H4 + H12
 ```
 
 **The batch has a declared home** (hard rule 7 — heavy data never in the repo):
@@ -87,7 +87,12 @@ python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/proje
 ```
 
 The timeframes, the window and the precision come from `crosstf:` in `assets/_build.yaml`
-(`timeframes: [H4]`, `segment: build..oos1`, `precision: 2`). `--timeframes` overrides the list for
+(`segment: build..oos1`, `precision: 2`). The timeframes depend on the one the strategy was built
+on (owner, 2026-09-26): **from M30, H1 and H4; from H1, H4 and H12** — H12 is a custom SQX
+timeframe and works as-is in the task (🔬 2026-09-26). `sqx.variants.scale --source H1` fabricates
+both siblings by default. `run.blocks` in `studies/transfer/crossTF/config.yaml` must match:
+`[H1, H4, H12]` for an H1 population, `[M30, H1, H4]` for an M30 one. H12 siblings of short
+periods come back `clamped` (÷12 moves them too far) — they are read only as the unscaled row. `--timeframes` overrides the list for
 a one-off; the window and the precision are not overridable on purpose.
 
 Each `<Setup>` overrides **only** `timeframe`; the window, costs, precision and session all come from
@@ -114,7 +119,7 @@ python3 -m sqx.export.export_retest --project <P> --databank CrossTF --role cust
 **4 · Read.**
 
 ```bash
-python3 -m studies.transfer.crossTF.report --export <trades.parquet> --scaling <scaling.parquet>
+python3 -m studies.transfer.crossTF.report --project <P> --asset <SYMBOL> [--day <export>] [--fabricated <scale day>]
 ```
 
 Five readings: `survives` (beats its own timeframe's null — the edge is its own), `inherited`

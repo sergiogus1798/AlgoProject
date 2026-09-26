@@ -21,7 +21,7 @@ They share one kernel — the forward path from an entry — which is why they a
 | `eratio.py` | e(k), the matched random benchmark and its 5-95% band | imported | paths → curve, band |
 | `delay.py` | The price given up by a late entry, and what it is worth against the edge and the costs | imported | bars → delay tables |
 | `verdict.py` | What the two curves mean | imported | numbers → readings |
-| `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` | — |
+| `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
 
 Manual page, in Spanish: `docs/manual/42-calidad-de-la-entrada.md`.
 

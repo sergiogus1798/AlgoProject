@@ -2,7 +2,6 @@
 
 TIPS = {
     "run.project": "El proyecto por defecto; el comando lo toma del export.",
-    "run.feed": "El símbolo de SQX por defecto; --feed lo sustituye y es lo correcto.",
     "run.source_tf": "El timeframe sobre el que se construyeron todas las madres.",
     "run.blocks": "El orden de los <Setup> de la tarea de retest, que es el orden en que "
                   "vuelven los bloques de resultado. Si no coincide, cada celda se valora "

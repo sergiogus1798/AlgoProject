@@ -60,7 +60,11 @@ def rows(design: dict, levels: dict[str, list[float]], origin: dict[str, float],
     out = [{"values": dict(origin), "stratum": ORIGIN, "origin": True,
             "expect_netprofit": None, "expect_trades": None, "expect_same_as": None}]
 
-    for permutation in _picks(table, settings["n"]):
+    # A canary's expectation is SQX's own result for that exact tuple, so only permutations
+    # with every shift where the strategy built it qualify: shifts never move (2026-09-26).
+    shifts = [n for n in names if n.lower().endswith("shift1")]
+    table = table[(table[shifts] == pd.Series({n: origin[n] for n in shifts})).all(axis=1)]
+    for permutation in (_picks(table, settings["n"]) if len(table) else []):
         row = table.loc[permutation]
         values = dict(origin)
         values.update({n: float(row[n]) for n in names})

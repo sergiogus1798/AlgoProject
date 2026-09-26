@@ -14,10 +14,19 @@ design:
     # check on the freezing decision instead of a restatement of it. The brief carries no
     # range for a frozen parameter, only the value it is pinned at, so the range is
     # rebuilt the way SQX builds its own permutation ranges (knowhow/sqx-format/declared-parameters.md,
-    # measured): +/-30 % of the value, and a flat 0..6 for anything that is a shift.
+    # measured): +/-30 % of the value. A shift is never varied (owner, 2026-09-26): it stays at
+    # the value the strategy was built with.
     span: 0.30
     steps: 5
-    shift_levels: [0, 1, 2, 3, 4, 5, 6]
+
+minimum:
+  # Owner, 2026-09-26: every mother is studied with at least this many distinct variants. When
+  # its +/-30 % holds fewer (integer parameters with small values), the integer spans widen by
+  # `widen_step` of the original value per side until it does, up to `max_span`, and whatever
+  # is still missing is printed as a shortfall. `make --min-variants` overrides `variants`.
+  variants: 1000
+  widen_step: 0.05
+  max_span: 0.60
 
 canaries:
   # Controls whose result is known before the retest runs. They are chosen at the extremes

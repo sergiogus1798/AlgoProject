@@ -58,7 +58,7 @@ def build(design: dict, settings: dict, table: pd.DataFrame) -> tuple[pd.DataFra
         strategy after SQX is done with them, so a duplicate is not a wasted slot, it is a
         row of the manifest with no file behind it.
     """
-    live = levels.live(design)
+    live = levels.live(design, settings["minimum"])
     fixed = levels.frozen(design, settings["design"]["frozen"])
     everything = {**live, **fixed}
     origin = levels.origin(design)

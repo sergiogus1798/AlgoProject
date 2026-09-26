@@ -48,10 +48,12 @@ casillas con 12 aprobadas. Están en `assets/_build.yaml`, `wfm.conditions`, con
 casillas reales del maestro que cumple cada umbral al lado; la disección de las fórmulas de SQX está
 en `knowhow/conditions/wfm-acceptance.md`.
 
-⚠️ **Con condiciones activas esto FILTRA**: SQX descarta a quien no encuentre el área y no lo
-escribe en el databank de salida, al margen de `DeleteFailedStrategies`. Es la excepción a "el
-veredicto se toma en Python". Para el modo mapa —puntuar las 30 casillas sin tirar a nadie—,
-`min_squares: 0`.
+**El criterio marca, no borra** (🔬 2026-09-26, dueño). Con `DeleteFailedStrategies=false` —el
+comando lo fuerza— una estrategia que no encuentra el área de 12 casillas se queda en el databank
+con `FiltersResultFailedReason = "Cross Check filter in 'Walk-Forward Matrix': Robustness score
+didn't pass."`. `export_wfm` lo guarda en `status.parquet` y en el manifest (`failed_in_sqx`), y el
+análisis lo pone como aviso `failed_en_sqx` en la ficha de la estrategia. El veredicto sigue siendo
+de Python. No uses el modo mapa (`min_squares: 0`) salvo que el dueño lo pida.
 
 Cuenta la factura antes de lanzar: 5.000 backtests por paso × 6–16 pasos por celda × 30 celdas ×
 estrategia, a precisión 2. La WFM del maestro terminó con 500 sobre cinco años.
@@ -94,7 +96,7 @@ bin/sqx-worker.sh --role custodian stop
 - **`13 del donante apagadas y 10 propias escritas`** — el 13 es lo normal en un clon del donante y
   un 0 avisa de que ese `.cfx` no viene de él. Si el segundo número no es el de `wfm.conditions`, la
   matriz juzga con otra cosa.
-- **`⚠️ ESTO FILTRA`** — con `min_squares` distinto de 0 la tarea tira estrategias.
+- **`queda marcada FAILED en SQX, NO se borra`** — lo normal. Si alguna vez falta una estrategia en el databank de salida, `DeleteFailedStrategies` no estaba en `false`.
 - **`⚠️ esta tarea corre ademas: …`** — ese `.cfx` no pasó por la doctrina y correría otros
   crosschecks a la vez, cada uno con su factura.
 

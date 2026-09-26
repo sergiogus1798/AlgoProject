@@ -49,6 +49,7 @@ SQX to restart.
 
 `inspect/` read-only tools · `repair/` writes to a project on disk, guarded, only with SQX closed ·
 `variants/` the variant factory: a design brief in, a batch of `.sqx` and its manifest out, touching no SQX ·
+`structural/` rewrites a strategy's logic — one condition ablated, or the direction inverted — for step 23 ·
 `export/` the three exports plus the log archiver · `projects/` authored `.cfx` for GUI import ·
 `templates/`, `blocks/`, `groups/` authoring sources · `views/` `.vw` definitions.
 

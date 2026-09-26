@@ -1,6 +1,6 @@
 # studies/closing/atrCalculator — the stop loss read from the MAE, not optimised
 
-Step 22 of the workflow. The chain builds **without a stop** on purpose — one parameter fewer to
+Step 24 of the workflow. The chain builds **without a stop** on purpose — one parameter fewer to
 overfit — but a strategy that is going to trade needs one. Owner, 2026-09-26:
 
 > *«No quiero que sea una optimización ni nada.»*
@@ -9,7 +9,7 @@ So `SL = X · ATR(20)`, fixed at entry, and **X is read from the trades with a r
 looking**: a percentile of the in-sample winners' MAE in ATR units. SQX then measures, with its own
 spread and slippage, what that stop costs and whether the result is flat around it. The report puts
 every percentile side by side — 80, 85, 90 and 95 by default, as many as wanted with `--percentiles`, and **never picks one**. Brief:
-`docs/encargos/20-atr-calculator.md`; manual: `docs/manual/49-atr-calculator.md`.
+`docs/encargos/20-atr-calculator.md`; manual: `docs/manual/54-atr-calculator.md`.
 
 ```
 config.yaml ─▶ inputs/load ─▶ mae ─▶ threshold ─▶ noreturn ─▶ transfer ─▶ grid ──▶ stopgrid.csv
@@ -36,7 +36,7 @@ config.yaml ─▶ inputs/load ─▶ mae ─▶ threshold ─▶ noreturn ─�
 | `stability.py` | §3: every grid variant against the original, per window — PF, net, DD, stops, winners killed, loss saved, new entries, worst trade — and the shape (plateau or edge) | imported | retested batch → metrics, shape |
 | `view.py` | The §2 tabs: X, punto sin retorno, transferencia | imported | reading → tabs |
 | `sqxview.py` | The SQX tabs: pruebas, lo que cuesta, estabilidad | imported | stability → tabs |
-| `spend.py` | The ledger: asks the door before reading (oos2 is reserved for WFC, WFM and step 22 — owner, 2026-09-26) and writes one row per segment read, `n_in = n_out` because nothing is chosen | imported | run → ledger rows |
+| `spend.py` | The ledger: asks the door before reading (oos2 is reserved for WFC, WFM and step 24 — owner, 2026-09-26) and writes one row per segment read, `n_in = n_out` because nothing is chosen | imported | run → ledger rows |
 | `one.py` | One strategy, as the contract's dict; verdict `info`, never a choice | imported — the window calls it | inputs → result |
 | `report.py` | **The command**. Without `--work` it reads the exports, writes one page per strategy and `stopgrid.csv`; with `--work` it adds the proofs and SQX's cost and stability | `python3 -m studies.closing.atrCalculator.report --project P --databank D [D …] --feed F --symbol S --timeframe TF [--strategy N] [--percentiles P …] [--work DIR]` | exports → reports + `stopgrid.csv` |
 | `tooltips.py` | One Spanish sentence per knob, for the window's drawer | imported | — |

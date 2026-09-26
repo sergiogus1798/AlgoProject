@@ -1,0 +1,13 @@
+{
+  "conditions": [
+    "MABarClosesAbove",
+    "QQEValue1CrossAbove"
+  ],
+  "nested": [
+    "MABarClosesAbove",
+    "IsGreater"
+  ],
+  "ablate_0": "e81a53141d57e1f5",
+  "ablate_1": "ebe434c909cd5c98",
+  "invert": "0713cf74cbdaffce"
+}

@@ -1,20 +1,20 @@
-"""The ledger's side of step 22: ask the door before reading oos2, and leave a row per segment read."""
+"""The ledger's side of step 24: ask the door before reading oos2, and leave a row per segment read."""
 
 from ledger import gate, record, study as studymod
 
-STEP = 22
+STEP = 24
 LAUNCHED_BY = "studies.closing.atrCalculator.report"
 
 
 def allow(symbol: str, segments: list[str]) -> None:
-    """Refuse the run before it reads a segment step 22 has no claim on.
+    """Refuse the run before it reads a segment step 24 has no claim on.
 
     Args:
         symbol: The asset.
         segments: The segments the run is about to read.
 
     Raises:
-        PermissionError: From `ledger.gate.allow`. oos2 is open to step 22 because the owner
+        PermissionError: From `ledger.gate.allow`. oos2 is open to step 24 because the owner
             added it to `reserved_for` on 2026-09-26; the look is still spent and recorded.
     """
     for segment in segments:
@@ -36,7 +36,7 @@ def log(symbol: str, timeframe: str, family: str, spans: dict, segments: list[st
         config_hash: The configuration's fingerprint.
 
     Returns:
-        The rows written. Step 22 chooses no strategy, so no scores are passed: the row
+        The rows written. Step 24 chooses no strategy, so no scores are passed: the row
         exists to count the look at the segment, not a search among candidates.
     """
     study = studymod.study_id(symbol, timeframe, family)

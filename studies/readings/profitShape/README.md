@@ -23,7 +23,7 @@ than the trade count suggests, and each does it from a different angle.
 | `dependence.py` | Wald-Wolfowitz runs, Ljung-Box, and the losing streak against shuffling | imported | P&L → statistics |
 | `breaks.py` | OLS-CUSUM, the two sides of the break, and a rolling Sharpe with a non-normal band | imported | P&L → break |
 | `verdict.py` | What each of the three means, against frozen thresholds | imported | numbers → readings |
-| `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` | — |
+| `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
 
 Manual page, in Spanish: `docs/manual/40-forma-del-beneficio.md`.
 

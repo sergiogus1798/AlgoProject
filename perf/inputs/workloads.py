@@ -7,8 +7,10 @@ from engines.regimes import regime
 from perf.inputs import sample
 from portfolio.common.monteCarlo import run
 from portfolio.common.monteCarlo.inputs import config as mc_config, costs, stream
+from engines.inference.snooping import superior
 from studies.breakage.mcRetest.measure import store
 from studies.closing.atrCalculator import inputs as atr_inputs, load as atr_load, one as atr_one
+from studies.screening.snoopingScreen import inputs as snooping
 from studies.transfer.crossmarket.simulate import paired
 
 
@@ -115,7 +117,7 @@ def atrcalculator_reading(cfg: dict) -> dict:
         cfg: What config.load() returned.
 
     Returns:
-        Trades read and bytes read. The bootstrap of the four percentiles is the cost that
+        Trades read and bytes read. The bootstrap of the percentiles is the cost that
         grows, linear in winners times resamples.
     """
     s = cfg["sample"]
@@ -125,3 +127,24 @@ def atrcalculator_reading(cfg: dict) -> dict:
     for name in got["strategies"]:
         atr_one.run(name, got, study)
     return {"scale": len(got["trades"]), "bytes_in": sample.weight(got["packed"])}
+
+
+def snooping_superior(cfg: dict) -> dict:
+    """The SPA and the StepM over one gate harvest's daily panel, at the study's own settings.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        Panel cells (days × strategies) tested and bytes read. The panel is the raw one,
+        without the benchmark subtracted: the cost is the bootstrap's, and it does not
+        depend on what the columns hold.
+    """
+    project, databank, asset = cfg["sample"]["harvest"]
+    folder = snooping.harvest(project, databank)
+    panel = snooping.panel(folder, snooping.window(asset, "oos1"))
+    boot, fwer = snooping.config([])["bootstrap"], snooping.config([])["stepm"]["fwer"]
+    block = superior.block_length(panel)
+    superior.spa(panel, block, boot["reps"], boot["seed"])
+    superior.stepm(panel, fwer, block, boot["reps"], boot["seed"])
+    return {"scale": int(panel.size), "bytes_in": sample.weight([folder / "equity.parquet"])}

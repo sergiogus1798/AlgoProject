@@ -4,11 +4,13 @@
 # cadena entera, y sin fecha no se distingue de uno fijado de antemano. Por eso cada fila
 # lleva quién lo puso, cuándo y por qué.
 #
-# ⚠️ ESTADO, 2026-09-24: este fichero es hoy el REGISTRO, no todavía la FUENTE. Cada fila
-# apunta con `source` al sitio donde el código lee ese número, y
-# `python3 -m ledger.report --check-thresholds` compara los dos y grita si divergen.
-# Migrar cada módulo a leer de aquí es el trabajo que queda; hacerlo de golpe tocaría siete
-# módulos en funcionamiento y ninguno tendría prueba de que sigue haciendo lo mismo.
+# CÓMO LLEGA UN NÚMERO A SU MÓDULO. El `config.yaml` del módulo escribe `ledger:<key>` donde
+# antes ponía el número, y su `config()` lo sustituye por el `value` de aquí al leer
+# (`ledger.thresholds.fill`). Una clave ausente o repetida hace fallar la lectura. `source`
+# apunta a ese hueco del `config.yaml`; una fila cuyo módulo aún guarda su propio número es una
+# COPIA, y `python3 -m ledger.report --check-thresholds` dice de cada fila si se lee del ledger
+# o es copia, y grita si una copia diverge. `tests/test_thresholds.py` prueba que un módulo
+# migrado no lee el número de ningún otro sitio.
 
 version: 2026-09-24
 
@@ -55,6 +57,13 @@ thresholds:
     set_by: dueño
     set_on: 2026-09-23
     why: Benjamini-Hochberg sobre la familia superviviente; SOFT hasta que el dueño vea el exceso
+
+  - key: snoopingScreen.stepm.fwer
+    value: 0.05
+    source: studies/screening/snoopingScreen/config.yaml#stepm.fwer
+    set_by: dueño
+    set_on: 2026-09-25
+    why: probabilidad de nombrar al menos una que no bate al buy & hold a igual riesgo; anota, no corta
 
   # ── Lecturas por estrategia ───────────────────────────────────────────────────────────
   - key: profitShape.max_top5
@@ -111,3 +120,50 @@ thresholds:
     set_by: dueño
     set_on: 2026-09-23
     why: C(12,6) = 924 particiones, los números de López de Prado
+
+  # ── Paso 18.5 · superficies por mercado ───────────────────────────────────────────────
+  - key: marketSurfaces.rho_floor
+    value: 0.30
+    source: studies/optimisation/marketSurfaces/config.yaml#rho_floor
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      el mismo suelo que el WFC y por la misma razón: por debajo de 0,30 dos rankings comparten
+      menos del 9 % de su varianza. Fijado antes de mirar ningún lote
+
+  - key: marketSurfaces.j_quantile
+    value: 0.975
+    source: studies/optimisation/marketSurfaces/config.yaml#j_quantile
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      percentil del Jaccard de dos órdenes independientes (hipergeométrica) que el observado
+      tiene que superar. Optimista: el diseño agrupa variantes y el nulo real es más ancho
+
+  - key: marketSurfaces.min_share
+    value: 0.5
+    source: studies/optimisation/marketSurfaces/config.yaml#min_share
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      la mitad de los mercados declarados, en cada tramo leído, para decir que la región viaja.
+      PROVISIONAL hasta que el dueño lo fije
+
+  # ── Paso 8 y paso 25 · edge por coste (encargo 11) ────────────────────────────────────
+  - key: edgeCost.min_edge_spreads
+    value: 2.0
+    source: studies/readings/edgeCost/config.yaml#verdict.min_edge_spreads
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      orden de magnitud de partida del encargo 11 (2-3 spreads por operación); fijado antes
+      de mirar resultados; el dueño pidió que fuera parámetro (2026-09-26), el valor es por defecto. action: mark, no destructivo, hasta que el dueño diga lo contrario
+
+  - key: edgeCost.action
+    value: mark
+    source: studies/readings/edgeCost/config.yaml#verdict.action
+    set_by: agente
+    set_on: 2026-09-26
+    why: >-
+      mark (no elimina) frente a drop (elimina en curate); el dueño elige cuándo pasar a
+      drop, no este código
