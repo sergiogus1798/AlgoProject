@@ -5,8 +5,11 @@ import pandas as pd
 from core import assetdata
 
 # Which workflow step each name in `_policy.yaml`'s `reserved_for` refers to. The policy
-# file names tests, not numbers, and the numbers are what a caller has.
-STEPS = {"WFC": 17, "CSCV": 18, "MarketSurfaces": 18.5, "WFM": 19, "ATRStop": 24}
+# file names tests, not numbers, and the numbers are what a caller has. A name here that the
+# policy does not list is refused on the reserved segment all the same: `BlindJoint` (step 20's
+# SPA on oos2) is only the word the owner would add, not a permission.
+STEPS = {"WFC": 17, "CSCV": 18, "MarketSurfaces": 18.5, "WFM": 19, "BlindJoint": 20,
+         "ATRStop": 24}
 BLIND = (17, 18, 19)
 
 

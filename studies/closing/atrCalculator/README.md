@@ -8,8 +8,7 @@ overfit — but a strategy that is going to trade needs one. Owner, 2026-09-26:
 So `SL = X · ATR(20)`, fixed at entry, and **X is read from the trades with a rule fixed before
 looking**: a percentile of the in-sample winners' MAE in ATR units. SQX then measures, with its own
 spread and slippage, what that stop costs and whether the result is flat around it. The report puts
-every percentile side by side — 80, 85, 90 and 95 by default, as many as wanted with `--percentiles`, and **never picks one**. Brief:
-`docs/encargos/20-atr-calculator.md`; manual: `docs/manual/10-cierre.pdf` (cap. 54-atr-calculator).
+every percentile side by side — 80, 85, 90 and 95 by default, as many as wanted with `--percentiles`, and **never picks one**. Manual: `docs/manual/10-cierre.pdf` (cap. 54-atr-calculator).
 
 ```
 config.yaml ─▶ inputs/load ─▶ mae ─▶ threshold ─▶ noreturn ─▶ transfer ─▶ grid ──▶ stopgrid.csv

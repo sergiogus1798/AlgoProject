@@ -15,7 +15,7 @@ Python does the mathematics that decides which of them are real.
 
 Supporting them: `core/` shared library · `assets/` per-asset cost overrides that must be read before
 authoring anything · `knowhow/` the facts that cost time to discover · `docs/` generated reference ·
-`audit/` daily reports · `archive/` finished work, no longer maintained.
+`audit/` daily reports.
 
 ## Setting up on a new machine
 

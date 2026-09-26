@@ -5,7 +5,7 @@ colocas donde dice el §2.
 
 Lee `CODESTYLE.md` · `studies/screening/gate/README.md` · `studies/optimisation/wfc/README.md`.
 
-## ✅ ESTADO — la parte A, construida el 2026-09-25; queda la B
+## ✅ ESTADO — la A construida el 2026-09-25, la B el 2026-09-26; quedan tres decisiones del dueño
 
 | pedido | estado |
 |---|---|
@@ -16,7 +16,14 @@ Lee `CODESTYLE.md` · `studies/screening/gate/README.md` · `studies/optimisatio
 | una fila en el ledger | ✅ paso 8, blanda: `n_out = n_in`, lo que nombra va en la nota |
 | §4.1 control negativo y §4.2 positivo | ✅ `tests/test_snooping.py`: ruido 0 de 20 semillas —y 5 de 100 semillas más (20–119), justo el FWER declarado—, edge plantado 20 de 20 |
 | §4.3 contra el CSCV sobre la misma población | ⚪ no aplica tal cual: el CSCV corre sobre las variantes de una madre y esta población no tiene lote de variantes. Se hace el día que una madre de aquí llegue al paso 18 |
-| **B** · la prueba conjunta ciega del paso 20 | 🔴 **lo que queda**: `studies/closing/blindJoint/`, sobre las supervivientes de 17-18-19 y datos que nadie miró. Espera a que una población llegue al paso 20 |
+| **B** · la prueba conjunta ciega del paso 20 | ✅ `studies/closing/blindJoint/`, manual `docs/manual/10-cierre.pdf` (cap. 56-paso-20). Abre 17, 18, 18.5 y 19 por la puerta del ledger, lee el estado que dijo cada estudio y corre el SPA y el StepM de cada madre contra el buy & hold a igual riesgo sobre `oos2`. **Anota y no corta** mientras el dueño no elija lectura |
+| §4.1 y §4.2 de la B | ✅ `tests/test_blindjoint.py`: ruido 1 de 20 semillas —y 6 de 100 más—, edge plantado 20 de 20, y una pieza en `fail` lo veta igual |
+| corrida real | ✅ `USDJPY_workflow_profiling_v1`, 2026-09-26: las dos madres completas NO PASAN bajo cualquier lectura que use las piezas (las superficies fallan en las dos), igual que la lectura a mano del §4.7 del informe de profiling. El StepM, sin leer |
+| el motor | 🔬 arreglado: `arch` 7.2.0 `StepM` revienta cuando sus rondas nombran a todas las columnas (pasa con K pequeña); `superior.stepm` es ahora el mismo step-down sobre el `SPA` de `arch`, idéntico en 80 de 80 paneles |
+| 🟡 **decisión del dueño 1** | la política: `oos2` no está reservado para el paso 20, así que su SPA no se lee y no gasta nada. Para leerlo, `BlindJoint` en `reserved_for` de `assets/_policy.yaml` |
+| 🟡 **decisión del dueño 2** | qué es «pasar el paso 20»: `joint.pieces` = `unanimidad` / `sin_fallo` / `ninguna` y `joint.population` = `supervivientes` / `entrantes` (`studies/closing/blindJoint/config.yaml`) |
+| 🟡 **decisión del dueño 3** | el CSCV lee `oos2` (sus 924 particiones cortan toda la historia) y la política no lo lista en `reserved_for`: o se añade, o el CSCV se corta a `build+oos1` |
+| ⚠️ el ledger | 17, 18 y 19 no se apuntan solos: `python3 -m ledger.backfill --blind <proyecto>` los reconstruye. Mientras no escriban su fila, la puerta ciega no se abre sin ese paso |
 
 🔬 Primera lectura, `XAU_ISOOS_ejemplo` sobre `oos1`: el Sharpe del oro es 0,405; 4 de 115 lo
 superan antes de corregir y el StepM no nombra a ninguna (SPA consistente p = 0,892).

@@ -1,0 +1,37 @@
+# Every tunable of step 20, the blind joint reading. Nothing below is hidden in code.
+#
+# Step 20 opens the four results that were withheld until all of them existed — the WFC (17),
+# the CSCV (18), the market surfaces (18.5) and the WFM (19) — and puts beside them the one
+# question none of them asks: does the mother beat buy and hold on oos2, once every mother that
+# reached this step is paid for (SPA and StepM, encargo 10 part B).
+#
+# The segment is not a knob: it is oos2, the only stretch no selection step looked at. The
+# joined curve the batch keeps repeats two months of dates where each leg's warm-up overlaps the
+# leg before it; oos2 from its policy start is clear of them (knowhow/sqx-format/leg-curve-warmup.md).
+
+benchmark:
+  sizing: equal_risk          # owner, 2026-09-25, kept from part A. Buy and hold sized, per
+                              # mother, so its daily P&L is as volatile as the mother's: a
+                              # positive mean excess is exactly a Sharpe above buy and hold's
+
+stepm:
+  fwer: ledger:snoopingScreen.stepm.fwer
+                              # the same FWER the owner set for part A, read from the same row
+                              # of ledger/thresholds.yaml: one test, one error rate
+
+joint:
+  # OPEN DECISIONS OF THE OWNER (hard rule 11). While either is null the study shows the
+  # verdict under every reading side by side, cuts nobody (every row MANTENER) and records a
+  # soft row. Set both to make one reading the call.
+  pieces: null                # how the four pieces combine: unanimidad (all four pass) or
+                              # sin_fallo (none fails; indeciso/ciego tolerated) or ninguna
+                              # (the pieces are context and the StepM decides alone)
+  population: null            # over whom the StepM counts its search: supervivientes (the
+                              # mothers the pieces kept, as the encargo reads) or entrantes
+                              # (every mother that reached step 20, as part A reads: the pieces
+                              # chose on oos2 too, and a test on what a choice kept cannot pay
+                              # for the choice)
+
+bootstrap:
+  reps: 1000                  # stationary-bootstrap replications, for the SPA and the StepM alike
+  seed: 0                     # fixed, so a rerun on the same mothers names the same ones

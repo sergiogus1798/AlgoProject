@@ -2,7 +2,7 @@
 
 StrategyQuant X generates and robustness-tests strategies for MetaTrader 5; Python does the maths on
 top. **Talk to the owner in Spanish.** The language follows the reader: **what the owner reads is in
-Spanish** — `docs/manual/`, `docs/AgentPDFs/`, `docs/preregistro/`, `docs/encargos/`, the window's
+Spanish** — `docs/manual/`, `docs/AgentPDFs/`, `docs/encargos/`, the window's
 text; **what code or an agent reads is in English** — code, `knowhow/`, the `README.md` of code
 folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix" either side.
 
@@ -140,7 +140,7 @@ portfolios, and the trade-level Monte Carlo · `pipeline/` one mother in, one ve
 `mt5/` reserved · `assets/` cost overrides · `knowhow/` facts · `docs/` manual and owner's
 dossiers · `audit/` daily reports · `tests/` golden and known-answer tests · `tools/` checks and
 generators · `bin/` worker scripts · `config/` machine settings (the real one is not in git) ·
-`scratch/` throwaway, not in git · `archive/` finished work, unmaintained.
+`scratch/` throwaway, not in git.
 
 master `~/Desktop/SQX` (5050) · conductor `~/Desktop/SQX_w1` (5060) · custodian `~/Desktop/SQX_w2`
 (5070) · data `~/Desktop/AlgoData` ·

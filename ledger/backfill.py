@@ -10,7 +10,7 @@ import pandas as pd
 import yaml
 
 from core.paths import ROOT
-from ledger import record, study as studymod, thresholds
+from ledger import blind, record, study as studymod, thresholds
 
 GATE_CONFIG = ROOT / "studies" / "screening" / "gate" / "config.yaml"
 SCORE = "Sharpe Ratio [OOS]"   # what counts as a candidate's score, in SQX's own units
@@ -91,10 +91,14 @@ def from_gate(folder: Path, study: str, symbol: str, timeframe: str) -> list[dic
 
 
 def main() -> None:
-    """Reconstruct one study's ledger from a gate report and append it."""
+    """Reconstruct one study's ledger from a gate report, or its blind steps, and append it."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--gate", required=True, type=Path,
-                    help="a reports/<project>/<databank>/<date>/gate/ directory")
+    source = ap.add_mutually_exclusive_group(required=True)
+    source.add_argument("--gate", type=Path,
+                        help="a reports/<project>/<databank>/<date>/gate/ directory")
+    source.add_argument("--blind", metavar="PROJECT",
+                        help="rebuild steps 17, 18 and 19 from this project's results")
+    ap.add_argument("--wfm-databank", default="WFM", help="with --blind: the WFM databank")
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--timeframe", required=True)
     ap.add_argument("--family", required=True, help="template or family the population came from")
@@ -102,14 +106,19 @@ def main() -> None:
     a = ap.parse_args()
 
     study = studymod.study_id(a.symbol, a.timeframe, a.family)
-    rows = from_gate(a.gate, study, a.symbol, a.timeframe)
-    frame = pd.DataFrame(rows)[["criterion", "n_in", "n_out"]]
-    print(f"{study}: {len(rows)} búsquedas reconstruidas de {a.gate}")
+    rows = (from_gate(a.gate, study, a.symbol, a.timeframe) if a.gate else
+            blind.rebuild(a.blind, a.wfm_databank, study, a.symbol, a.timeframe))
+    frame = pd.DataFrame(rows)[["step", "segment", "criterion", "n_in", "n_out", "ts"]]
+    print(f"{study}: {len(rows)} búsquedas reconstruidas de {a.gate or a.blind}")
     print(frame.to_string(index=False))
-    print(f"embudo: {rows[0]['n_in']} -> {rows[-1]['n_out']}")
     if not a.write:
         print("\n(sin --write no se ha escrito nada)")
         return
+    # The ledger is append-only: a second backfill of the blind steps would count every
+    # look at oos2 twice, and nothing can take a line back out.
+    twice = sorted(set(studymod.read(study)["step"]) & set(frame["step"])) if a.blind else []
+    if twice:
+        raise SystemExit(f"{study} ya tiene filas de los pasos {twice}: no se reescriben")
     for row in rows:
         scores = row.pop("scores", None)
         record.append(study, record.search(study, row, scores))

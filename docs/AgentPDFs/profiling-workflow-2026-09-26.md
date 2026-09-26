@@ -64,7 +64,7 @@ se sortea por estrategia, tal y como pidió el dueño.
 | 17 | Walk Forward Correlation | 2 madres (1.29.55, 1.28.59) | 2 | 1.29.55: rho 0,21 `no_fiable`; 1.28.59: rho 0,25 `indeciso` (cruza 0,3) — ninguna compra nada optimizando en IS |
 | 18 | CSCV | 2 madres | 2 | 1.29.55: PBO 15 %, DSR 0,98; 1.28.59: PBO 9 %, DSR 0,98 |
 | 18.5 | superficies por mercado | 2 madres | 2 | **0/9 mercados** comparten la región del decil superior en build, oos1 u oos2, en ninguna de las dos madres |
-| 19 | Walk Forward Matrix | 3 madres (las 3 llegaron: no depende del WFC de variantes) | 3 | **0/3 predicen**: 1.23.51 y 1.28.59 `blind` (rho +0,08 y −0,08, IC cruza cero); 1.29.55 `perverse` (rho −0,25, IC no cruza cero — reoptimizar predice PEOR que no hacerlo). 1/3 (1.23.51) marcada `FAILED` por el criterio de área 4×4, sin borrar |
+| 19 | Walk Forward Matrix | 3 madres (las 3 llegaron: no depende del WFC de variantes) | 3 | **0/3 predicen**: 1.23.51 y 1.28.59 `blind` (rho +0,08 y −0,08, IC cruza cero); 1.29.55 `perverse` (rho −0,25, IC no cruza cero — reoptimizar predice PEOR que no hacerlo). 1/3 (**1.28.59**, no 1.23.51 — corregido el 2026-09-26 leyendo `status.parquet` del export) marcada `FAILED` por el criterio de área 4×4, sin borrar |
 | 20 | lectura conjunta ciega, a mano (el módulo no existe, por diseño) | 2 madres con las 4 piezas (1.29.55, 1.28.59) | 2 veredictos | ver §4.7 — ninguna de las dos pasa |
 | 21 | exposición (`exposure.report`) | 3 | 3 | **3/3 `worth_it`**, eficiencia 2,33×–3,49× el buy&hold por hora expuesta |
 | 22 | mapa condicional (sesiones + días) | 3 | 3 | 3 informes, sin veredicto — describe, no filtra |
@@ -284,7 +284,7 @@ Con eso resuelto, se completaron de verdad los pasos que faltaban:
   en el paso 16.5— sí pudo correr aquí): **0 de 3 predicen**. Dos `blind` (el intervalo de confianza
   de rho cruza cero: reoptimizar en el walk-forward no distingue de azar) y una **`perverse`**
   (1.29.55, rho −0,25 con el intervalo entero negativo: reoptimizar predice **peor** que no
-  reoptimizar). 1 de 3 (1.23.51) quedó además marcada `FAILED` por el criterio de área 4×4 de SQX,
+  reoptimizar). 1 de 3 (**1.28.59**; aquí ponía 1.23.51, corregido el 2026-09-26 con `status.parquet`) quedó además marcada `FAILED` por el criterio de área 4×4 de SQX,
   sin borrarse (`DeleteFailedStrategies=false`, como manda la doctrina).
 - **20 (lectura conjunta ciega)**, a mano, sobre las 2 madres con las cuatro piezas —
   `studies/closing/blindJoint/` no existe, por diseño, así que esto no es código, es la lectura:
@@ -293,6 +293,12 @@ Con eso resuelto, se completaron de verdad los pasos que faltaban:
   |---|---|---|---|---|---|
   | Strategy 1.29.55 | rho 0,21, `no_fiable` | PBO 15 %, DSR 0,98 | 0/9 | `perverse` (rho −0,25) | **No.** El WFM en `perverse` ya basta para descartar: la única prueba que mide si la búsqueda encontró algo estable dice que reoptimizar activamente perjudica. El WFC y las superficies sólo confirman que no hay nada que perder. |
   | Strategy 1.28.59 | rho 0,25, `indeciso` | PBO 9 %, DSR 0,98 | 0/9 | `blind` (rho −0,08) | **No, pero por una razón más floja.** Nada aquí es catastrófico — el WFC está indeciso, no en contra, y el WFM es ciego, no perverso — pero **nada apoya que haya una región de parámetros estable** tampoco: cuatro pruebas independientes, cuatro «no hay señal». Con el paso 21 ya a favor (`worth_it`, §2), esta sería la candidata a seguir mirando si hubiera que elegir una, pero no hay base para llamarla superviviente. |
+
+  ✅ **Rehecho con el módulo el 2026-09-26** (`studies/closing/blindJoint/`, cap. 56-paso-20): mismo
+  veredicto, las dos NO PASAN bajo cualquier lectura que use las piezas (las superficies fallan en las
+  dos). Dos matices que la lectura a mano no vio: el `FAILED` de SQX es de 1.28.59, lo que debilita
+  que fuera «la candidata a seguir mirando», y las dos madres llevan los mismos cinco parámetros y
+  el 98,8 % de sus días de `oos2` con el mismo P&L: son una estrategia, no dos.
 
   **Lo que yo haría, si tuviera que decidir**: ninguna de las dos estrategias pasa. Coherente con
   crossmarket (0/8), crossTF (0/16) y MC Retest (0/8) más arriba en el embudo — la plantilla

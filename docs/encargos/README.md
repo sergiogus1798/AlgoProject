@@ -21,7 +21,9 @@ y el **15** (`studies/optimisation/marketSurfaces/`, paso 18.5). Lo que dejaron 
 `OPEN.md` §43–§48. Y en la limpieza de `docs/` del mismo día salió el **21** (la prueba
 del workflow entero): su informe es `docs/AgentPDFs/profiling-workflow-2026-09-26.md`. Con él
 salieron el ejemplo USDJPY del 24-09, al que ese informe supera, y los dos `CONTEXTO-*`: las
-skills de SQX y `/curate` ya existen.
+skills de SQX y `/curate` ya existen. Ese mismo día salieron también el **20** (el ATR calculator,
+paso 24: lo que decía vive en `docs/manual/10-cierre.pdf`, cap. 54-atr-calculator) y la ficha del
+proyecto de ejemplo IS/OOS, que ahora es `knowhow/locations/xau-isoos-example-project.md`.
 
 ## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
 
@@ -31,7 +33,7 @@ escriben en él.
 | fichero | qué construye | depende de |
 |---|---|---|
 | `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 25 pasos, y cuántos llegan. **No se implementa por ahora** (dueño, 2026-09-26) | — |
-| `10-spa-stepm.md` | ✅ **parte A construida el 2026-09-25** (detrás de la puerta, anota); queda la B, la prueba ciega del paso 20, que espera a una población que llegue allí | gate |
+| `10-spa-stepm.md` | ✅ **A (2026-09-25) y B (2026-09-26) construidas**: la B es el paso 20, `studies/closing/blindJoint/`, corrida sobre USDJPY (ninguna madre pasa). Quedan tres decisiones del dueño: qué es pasar el 20, si el 20 puede leer `oos2`, y el CSCV leyendo `oos2` fuera de la política | gate |
 | `13-alfa-beta.md` | **interrogante aparcado**, no encargo: nadie lo coge hasta cerrar la secuencia individual | — |
 
 ## La tanda del PDF `PARAMETER_SPACE_TESTS`, 2026-09-24
@@ -67,12 +69,6 @@ el tier 1 del 4) y `studies/readings/conditionalMap/` (item 6, paso 22). Quedan 
 | `16-replay-de-operaciones.md` | el tier 2 del retraso: reejecutar cada operación desde una entrada desplazada | hay que recalcular stops, y **esta población no tiene ninguno** con el que validarlo |
 | `17-calidad-del-feed.md` | anomalías del M1 y qué parte del beneficio las toca: detección como aviso en el paso 4, atribución como criba en el 8 | **en pausa**: espera a que el dueño conteste la hoja de respuestas de `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md` — 16 decisiones, cada una con propuesta |
 
-## El stop loss para MT5, 2026-09-25
-
-| fichero | qué construye | qué lo bloquea |
-|---|---|---|
-| `20-atr-calculator.md` | el paso 24 (era el 22 antes del 26-09): el stop X·ATR de cada superviviente, leído del MAE de sus operaciones, **sin optimizar** — MT5 lo exige y la cadena genera sin stop | ✅ construido y probado en SQX; falta correrlo sobre una superviviente real |
-
 ## Encargos vivos de tandas anteriores
 
 | fichero | agente | posee | estado |
@@ -88,7 +84,6 @@ nombrados con `unlabelled: off` — y por eso ya no está aquí.
 | fichero | qué es |
 |---|---|
 | `5-nulos.md` | informe de cierre del módulo `studies/readings/monkey/`, con cinco cosas pendientes en su §6. Se queda hasta que esas cinco estén resueltas o descartadas |
-| `ejemplo-IS-OOS-XAUUSD.md` | el proyecto de ejemplo con IS y OOS en dos databanks, citado desde `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 28-builder) |
 
 ## Cómo se despacha
 

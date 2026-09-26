@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from arch.bootstrap import SPA, StepM, optimal_block_length
+from arch.bootstrap import SPA, optimal_block_length
 
 
 def block_length(excess: pd.DataFrame) -> int:
@@ -55,9 +55,23 @@ def stepm(excess: pd.DataFrame, fwer: float, block: int, reps: int, seed: int) -
         seed: Seed of the bootstrap.
 
     Returns:
-        The column names it can name at that error rate, possibly none.
+        The column names it can name at that error rate, possibly none, sorted.
+
+        The step-down is written here on `arch`'s own SPA instead of calling its `StepM`:
+        🔬 `arch` 7.2.0 loops while the *last* round named fewer than K, not the rounds
+        together, so a panel whose rounds name every column between them re-runs the SPA
+        on zero columns and raises. At K = 200 it never happens; at the handful of mothers
+        step 20 tests it does. Same seed, same draws: on 80 panels where `StepM` does not
+        raise, this names exactly what it names.
     """
-    test = StepM(np.zeros(len(excess)), -excess, size=fwer, block_size=block, reps=reps,
-                 bootstrap="stationary", seed=seed)
-    test.compute()
-    return list(test.superior_models)
+    named, left = [], list(excess.columns)
+    while left:
+        test = SPA(np.zeros(len(excess)), -excess[left], block_size=block, reps=reps,
+                   bootstrap="stationary", seed=seed)
+        test.compute()
+        found = list(test.better_models(fwer))
+        if not found:
+            break
+        named += found
+        left = [c for c in left if c not in found]
+    return sorted(named)

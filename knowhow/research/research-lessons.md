@@ -10,7 +10,7 @@ tag: 🔬  date: 2026-09-04  see: research/post-selection-bias, research/is-prox
 - At n≈10,000 report FDR/family-wise correction and argue from effect size, never from p.
 
 ## Evidence
-- ATR-stop study (`archive/studies/atr_stop_study.py`): fill at stop → PF 2.09 at 0.5×ATR; 0.25×ATR slippage → PF 1.49, net −37 %; a 3×ATR stop lost only 11 %.
+- ATR-stop study (old `archive/studies/atr_stop_study.py`, deleted 2026-09-26, in git history): fill at stop → PF 2.09 at 0.5×ATR; 0.25×ATR slippage → PF 1.49, net −37 %; a 3×ATR stop lost only 11 %.
 - Range restriction, `XAUUSD/OOS` 10,000 strategies (`AlgoData/metrics/XAUUSD/OOS/metrics.csv`, report
   `AlgoData/reports/XAUUSD/OOS/2026-09-04/`; `python3 -m studies.screening.isOos.report --project XAUUSD --databank OOS`).
   Dedup checked: 10,000 distinct names, 2 byte-identical metric vectors. `Sharpe Ratio (IS)` → `Profit factor (OOS)`

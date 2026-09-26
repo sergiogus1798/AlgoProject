@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "DEPENDENCIES.md"
-SKIP_DIRS = {".venv", "__pycache__", ".git", "scratch", "sqx-lab", "snapshots", "archive"}
+SKIP_DIRS = {".venv", "__pycache__", ".git", "scratch", "sqx-lab", "snapshots"}
 STDLIB = sys.stdlib_module_names
 
 

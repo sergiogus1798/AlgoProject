@@ -34,6 +34,8 @@ overlapping 2.8-5.4% of its own trades on 2026-09-17, against a docstring that s
 
 | `test_snooping.py` | SPA and StepM on panels whose answer is known: over 20 seeds of fat-tailed, correlated noise the StepM names someone no more often than its FWER allows; one planted edge among the noise is named every time; and at equal risk a positive mean excess is exactly a Sharpe above buy and hold's | `python3 tests/test_snooping.py` |
 
+| `test_blindjoint.py` | step 20 on mothers whose answer is known: over 20 seeds of noise the StepM names a mother no more often than its FWER allows (and 6 of 100 more); one planted edge is named every time, yet a piece in `fail` vetoes it under `unanimidad` and `sin_fallo`; a mother missing a piece is never read; without oos2 no reading is decided; and the blind door refuses a study without 17, 18 and 19 | `python3 tests/test_blindjoint.py` |
+
 | `test_marketsurfaces.py` | the market surfaces' rho and J on panels built to have one answer: a market against itself and an exact copy read 1 and 1, the same region on another scale passes, the inverse reads −1 and 0, a rho carried by the bad half with unshared tops does not pass, a triplicated backtest counts once, independent rankings read J ≈ 10/190 and sit above the band ≤ 2.5 % of the time, exposure-times-drift reads −0.9 raw and ≈ 0 neutral, and a missing declared market counts as not passing | `python3 tests/test_marketsurfaces.py` |
 
 `fixtures/optimizer.cfx` is a real 2.4 KB project copied from the master. `--bless` rewrites the

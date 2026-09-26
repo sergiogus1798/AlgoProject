@@ -39,7 +39,7 @@ que sólo el dueño puede dar.
 | 18 | **CSCV** | `studies/optimisation/cscv/report.py` | ✅ |
 | 18.5 | **Superficies por mercado** — la misma región de parámetros, ¿es la buena en los 9 mercados de `_markets.yaml`? `rho` de Spearman y Jaccard del decil superior entre cada par, sobre el lote del 16.5 retesteado con los cross-checks | `studies/optimisation/marketSurfaces/report.py`, manual `52-superficies-mercado.md` | ✅ · ⚠️ costes de los 9 pares = defaults de SQX con comisión CERO (`costs_provisional`) · lee `build`, `oos1` y `oos2`, este último a ciegas hasta el 20 |
 | 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `studies/optimisation/wfm/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
-| 20 | **Análisis conjunto de 17, 18, 18.5 y 19 — CIEGO hasta tener los cuatro** | — | ⬜ |
+| 20 | **Análisis conjunto de 17, 18, 18.5 y 19 — CIEGO hasta tener los cuatro** — y el SPA/StepM de cada madre contra el buy & hold a igual riesgo sobre `oos2` (encargo 10 B) | `studies/closing/blindJoint/report.py`, manual `56-paso-20.md`; antes, `ledger.backfill --blind` (17-19 no se apuntan solos) | ✅ · 🟡 anota y no corta: **qué es pasar** (`joint.pieces` y `joint.population`) es del dueño · el SPA sobre `oos2` sin leer: la política no reserva `oos2` para el 20 (`BlindJoint` en `reserved_for`, del dueño) |
 | 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/10-cierre.pdf` (cap. 38-exposicion) | ✅ |
 | 22 | **Mapa condicional** — clasifica cada operación por el estado del mercado al entrar (volatilidad realizada, tendencia, día de la semana) y lee el P&L celda a celda; fabrica hipótesis, no filtra | `studies/readings/conditionalMap/`, manual `53-mapa-condicional.md` | 🟡 · ⬜ sesión (Asia/Londres/Nueva York/solape) pendiente de que el dueño fije las horas UTC — ver `_coord/BOARD.md` |
 | 23 | **Estructura** — por superviviente: una ablación por condición de entrada y la inversión de la orden en las mismas entradas. ¿Qué condición aporta por operación contra un recorte al azar, cuál es redundante, y vive el filo en la dirección? Diagnóstico, nunca selección | `sqx.structural.make` → `sqx.variants.execute` (custodio) → `sqx.structural.keep` → `sqx.export.export_retest` → `studies/readings/structure/report.py`, manual `51-estructura.md` | ✅ · lee `build` y `oos1`; `oos2` lo rechaza `ledger.gate` · sin stops: la inversión se niega si la madre ya lleva stop/target (por eso va antes del 24) · D3 (mono dentro de SQX) cerrado como imposible |
@@ -99,7 +99,7 @@ spread y slippage: variantes un poco por encima y por debajo de cada X (±20 % p
 buscando meseta, no máximo. «Meseta» se lee con la puntuación del dueño —40 % PF, 30 % neto,
 30 % DD máximo, cada uno contra la original sin stop—, que sólo describe la forma y no ordena X.
 Después, si hace falta, se repite alguno de los tests anteriores sobre la versión con stop, y nada
-más. Detalle en `docs/encargos/20-atr-calculator.md`.
+más. Detalle en `docs/manual/10-cierre.pdf` (cap. 54-atr-calculator).
 
 ## El Monte Carlo de bootstrap está FUERA, a propósito
 
@@ -209,6 +209,6 @@ número de monos se convierte en una cifra que se compara con un resultado conoc
 | 🔴 | **`assets/_study.yaml`** — los umbrales de aceptación del paso 6 y sobre qué muestra (`sampleType`) se miden. Del dueño |
 | 🔴 | **costes de `XAGUSD_DukasM1_Infinox` y `BRENTCMDUSD_ftmo`**, y el `data_from` del Brent. Sin ellos el paso 9 se niega a escribirse. Del dueño |
 | ⬜ | **los building blocks** del paso 6: qué indicadores entran en el hueco aleatorio |
-| ⬜ | el paso 20, que no existe |
+| 🟡 | **el paso 20 construido, sin decidir**: qué es «pasar» (unanimidad / sin_fallo / sólo el StepM, y K = supervivientes o entrantes) y si el 20 puede leer `oos2` (`_policy.yaml`). Del dueño — `docs/encargos/10-spa-stepm.md` |
 | ⬜ | **las horas UTC de cada sesión** (Asia/Londres/Nueva York/solape) — sin ellas el paso 22 no puede añadir el corte de sesión; el campo `session` de `assets/symbols/` sólo da la semana de mercado abierto, no la partición del día. Del dueño |
 | 🔴 | **calidad del feed** (encargo 17) — EN PAUSA hasta que el dueño conteste la hoja de respuestas de `docs/AgentPDFs/calidad-del-feed-decisiones-2026-09-26.md` (16 decisiones, cada una con propuesta medida sobre el feed); afecta el aviso del paso 4 y la criba de atribución del paso 8. Del dueño |

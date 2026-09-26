@@ -11,7 +11,7 @@ para que dos fechas se puedan comparar.
 | `config.yaml` | every tunable: repeats, thresholds, worker counts, sample data | read | — |
 
 Subfolders: `inputs/` what is measured · `measure/` how it is measured · `disk/` what the data root
-holds · `render/` the page.
+holds.
 
 ## The three commands
 
@@ -21,7 +21,6 @@ python3 -m perf.catalogue --only strategies    # one area, or one target name
 python3 -m perf.catalogue --hotspots montecarlo.analyse   # where that target's time and memory go
 python3 -m perf.catalogue --scaling            # also re-measure the machine's memory ceiling
 python3 -m perf.disk.report                    # inventory AlgoData: size, duplicates, formats
-python3 -m perf.render.panel                   # render the page from what is stored
 ```
 
 `catalogue` **exits non-zero when anything regressed**, so it can sit in cron unattended.

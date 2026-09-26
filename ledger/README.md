@@ -16,7 +16,8 @@ family: the unit the multiple-testing correction is owed to.
 | `trials.py` | N and the pooled sigma over every search, the population's n_eff, and the deflated Sharpe that follows | imported | ledger → N, sigma, DSR |
 | `spend.py` | The map of spent data: how often each segment has been read, and what is left virgin | imported | ledger → segments |
 | `thresholds.py` | **The accessor**: `value(key)` and `fill(cfg)`, which a module's `config()` runs over its parsed `config.yaml` to replace every `ledger:<key>`; and the check of which rows are read through it | imported | register → numbers, divergences |
-| `backfill.py` | Rebuilds a study's ledger backwards from artefacts a run already left | `python3 -m ledger.backfill --gate <dir> --symbol XAUUSD --timeframe M30 --family <name>` | a gate report → rows |
+| `backfill.py` | Rebuilds a study's ledger backwards from artefacts a run already left: a gate report, or (`--blind`) the results of 17, 18 and 19 | `python3 -m ledger.backfill --gate <dir> --symbol XAUUSD --timeframe M30 --family <name>` · `python3 -m ledger.backfill --blind <project> --symbol USDJPY --timeframe H1 --family <name>` | a gate report, or WFC/CSCV/WFM results → rows |
+| `blind.py` | The rows steps 17, 18 and 19 never wrote, rebuilt from `wfc.json`, `cscv.json` and the WFM reading, one per segment each read | imported by `backfill` | results → rows |
 | `report.py` | **The command**: the funnel, what was spent, the blind door, and what the whole search costs the Sharpe | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
 | `thresholds.yaml` | Every threshold of the chain, with who set it and when — **the source**: a module's `config.yaml` holds `ledger:<key>` in its place. Read, never written by code | edited by the owner | — |
 
@@ -28,6 +29,14 @@ Manual page, in Spanish: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 43-l
 written, reads `assets/_policy.yaml` every call, and raises. 🔬 Step 8 asking for `oos2` on XAUUSD
 is refused; step 17 passes. And `gate.allow_read` refuses to serve steps 17, 18 and 19 until all
 three have run, which is what makes step 20 blind by construction instead of by discipline.
+
+⚠️ **The WFC, the CSCV and the WFM write no row of their own** (🔬 2026-09-26), so on a real
+population the door stays shut however much has run. Until they do, `backfill --blind` rebuilds
+their rows from the results on disk, marked `backfill`, and refuses to write them twice. Its CSCV
+row on `oos2` is written although the policy does not list the CSCV there: the ledger records
+what was read, the door decides what may be (`knowhow/eng/blind-steps-write-no-ledger-rows.md`).
+`BlindJoint` in `STEPS` is step 20's SPA on `oos2` (`studies/closing/blindJoint/`) — the word the
+owner would add to `reserved_for`, not a permission.
 
 ⚠️ The policy names *tests*, so a step it does not list is refused even where it looks harmless —
 the CSCV included. If the CSCV should be allowed to read the reserved stretch, the fix is a line in

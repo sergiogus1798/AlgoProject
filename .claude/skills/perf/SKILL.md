@@ -6,8 +6,8 @@ description: Measure what the project costs in time, memory and disk, find where
 # /perf
 
 ```
-perf/ (los instrumentos)  →  history.csv  →  rendimiento.html  →  una rama con la mejora
-     mide                    sólo crece      el panel             y su número antes/después
+perf/ (los instrumentos)  →  history.csv  →  una mejora sin commitear
+     mide                    sólo crece      y su número antes/después
 ```
 
 Nothing here touches StrategyQuant X, and nothing here commits: the owner does (CLAUDE.md rule 12).
@@ -29,7 +29,6 @@ uptime && free -g
 ps -eo pid,ppid,etime,rss,cmd | grep -E 'forkserver|resource_tracker' | grep -v grep
 python3 -m perf.catalogue --scaling                  # sale != 0 si algo empeoró: es un dato
 python3 -m perf.catalogue --hotspots <target>        # por cada regression / improvement
-python3 -m perf.render.panel
 ```
 
 A load average not near zero, or orphaned pools holding gigabytes, **invalidates the measurement** —
@@ -70,7 +69,6 @@ The owner can run all of this himself, and should when he just wants the number:
 python3 -m perf.catalogue                                 # mide todo y compara con la vez anterior
 python3 -m perf.catalogue --hotspots montecarlo.analyse   # dónde se le va el tiempo a uno
 python3 -m perf.disk.report                               # qué hay en AlgoData
-python3 -m perf.render.panel                              # redibuja la página
 ```
 
 `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento) explains every column. `catalogue` exits non-zero on a regression,

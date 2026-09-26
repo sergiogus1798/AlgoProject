@@ -44,8 +44,8 @@ FAMILIES = {
         "33-spp", "08-spp", "09-diccionario-spp", "15-sppultra", "18-variantes",
         "37-wfc-retest", "19-wfc", "25-cscv", "39-nube-de-parametros",
         "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix"]),
-    "10-cierre": ("El cierre: exposición y stop para MT5", [
-        "38-exposicion", "54-atr-calculator"]),
+    "10-cierre": ("El cierre: paso 20, exposición y stop para MT5", [
+        "56-paso-20", "38-exposicion", "54-atr-calculator"]),
 }
 
 STYLE = """

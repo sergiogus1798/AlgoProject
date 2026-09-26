@@ -10,7 +10,7 @@ HEADER_LINES = 12
 MAX_BYTES = 6 * 1024
 REFERENCE = re.compile(r"knowhow/[\w./-]*[\w/]")
 SCANNED = {".md", ".py", ".yaml", ".sh"}
-SKIPPED = {"archive", "audit", "scratch", ".git", "sqx-lab"}
+SKIPPED = {"audit", "scratch", ".git", "sqx-lab"}
 
 
 def cards() -> list[Path]:

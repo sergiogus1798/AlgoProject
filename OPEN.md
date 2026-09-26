@@ -34,7 +34,7 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 21 | — | 🟡 | new: `bin/sqx-worker.sh` is bash, so half the project cannot run on Windows |
 | 22 | — | 🟡 | new: `crossmarket` rebuilt as a one-strategy panel; four threads left open |
 | 23 | — | 🟡 | topology **settled**; design unblocked, execution still waiting on lane P and W2 |
-| 24 | — | 🔴 | new: **the holdout pre-registration is a one-way door** — scaffolded, unsigned |
+| 24 | — | ⚪ | closed 2026-09-26: the owner declined the holdout pre-registration; `oos2` + `ledger.gate` hold the line |
 | 25 | — | 🟢 | new: the authoring chain is proven headless end to end; `OPEN.md` issue 9 now has its positive control |
 | 26 | — | 🔴 | new: the `%` commission may charge per leg or per trade — a factor of 2, unmeasured |
 | 27 | — | 🟠 | new: 16 of 17 assets still have no agreed cost, now in the owner's new units |
@@ -288,26 +288,14 @@ daily equity curve — how much *result* a strategy carries — not its complexi
 committed, and it still exercises everything the parser reads. `.gitignore` keeps `*.sqx` excluded
 and makes `tests/fixtures/` the single exception.
 
-## 8. 🟡 Migrated analyses are parked, not converted — partly done
+## 8. ⚪ Migrated analyses from the old project — CLOSED 2026-09-26
 
-`archive/studies/` held eight scripts from the previous project. They were written against the old
-data layout, so reusing one means rewriting it over `core/` and the data root.
-
-**Converted 2026-09-04:** the IS→OOS predictor study is now `studies/screening/analysis/` plus
-`studies/screening/isOos/report.py`. It is a rewrite, not a port — the old `is_oos_analysis.py` would crash on
-the current export, because its hard-coded `PAIRED` list names columns this view does not have. The
-new code derives the pairs from the header, deduplicates nothing (this export is one databank, so the
-cross-databank duplicate trap does not apply) and adds a Benjamini-Hochberg correction the old study
-lacked. The interactive panel is a fresh `panel.html`, not the old `scatter_page.html`.
-
-**Still parked:** `atr_stop.py`, `atr_stop_study.py`, `scan_strategies.py`, `validate_trades.py`,
-`plots.py`. `plots_is_oos.py` and `scatter_page.py` are superseded in purpose but kept, because the
-new panel draws to canvas and produces no static PNG figures — if a report ever needs those, the
-matplotlib styling in `plots_is_oos.py` is the starting point.
-
-`scan_strategies.py` is the one worth converting next: it reads exit configuration straight out of
-each `.sqx` with no SQX process, which is how the "two structurally different populations in one
-databank" trap gets detected before anything is pooled.
+`archive/` was deleted on 2026-09-26 (owner). Its eight scripts were written against the old data
+layout and could not run. Two had been rewritten: `is_oos_analysis.py` became
+`studies/screening/isOos/` and `atr_stop*.py` became `studies/closing/atrCalculator/` (step 24). The
+rest (`scan_strategies.py`, `validate_trades.py`, the plots) are in git history before that date;
+`scan_strategies.py` read exit configuration straight out of each `.sqx`, the idea worth reusing if
+the two-populations trap ever needs detecting again.
 
 ## 9. 🟡 Nine projects ARE ignoring their strategy templates — confirmed, fix is the owner's call
 
@@ -439,8 +427,7 @@ This project is also the natural control group for issue 9, so keeping it workin
 🔬 Found 2026-09-04. Every quantitative claim in `knowhow/locations/xauusd-corpus.md` and
 `knowhow/research/research-lessons.md` — the 231-strategy corpus, the ~129/~11 population split, the ATR-stop PF
 figures — comes from the previous project's export. `~/Desktop/AlgoData/` holds **36** strategies'
-trades. The generating scripts are parked in `archive/studies/` against the old data layout
-(issue 8), so nothing cited can be re-run, checked or challenged today, and both current manifests
+trades. The generating scripts were in `archive/studies/`, deleted 2026-09-26 (issue 8), so nothing cited can be re-run, checked or challenged today, and both current manifests
 say `code_version: "migrated from AlgoProject_Old, pre-git"` rather than naming a commit. The old
 project itself was deleted on 2026-09-26, so those figures can no longer be traced to their source.
 
@@ -449,7 +436,7 @@ old project, not reproducible here", so nobody builds on them assuming they can.
 
 ## 13. 🟠 Two analyses state conclusions their samples do not support
 
-🔬 Found 2026-09-04, reading `knowhow/` against `archive/studies/`.
+🔬 Found 2026-09-04, reading `knowhow/` against `archive/studies/` (deleted 2026-09-26, in git history).
 
 - **ATR-stop study.** `knowhow/research/research-lessons.md` quotes PF 2.09 at 0.5×ATR. That figure is **in-sample**: the pool
   was selected by SQX search over 2008–2017 and `atr_stop_study.py` restricts to 2008–2017. The
@@ -560,7 +547,7 @@ package names, forcing 12 `sys.path.insert` hacks; every documented command now 
 `python3 -m package.module` from the repo root instead of by path. Full plan and verification ladder
 in `scratch/refactor-plan.md`.
 
-**Everything under `audit/` and `archive/` from before this date keeps the old numbered names on
+**Everything under `audit/` from before this date keeps the old numbered names on
 purpose and is not rewritten** — those are dated records of a tree that, on that date, really was
 named that way. `mt5/README.md` lost the `5_` in its own title; it is still a reserved, empty
 directory, just now a valid package name for whenever it is built.
@@ -906,9 +893,7 @@ Three things block it, and only the last is technical:
    `sqx/variants/` is built, since that layer is being touched anyway. ⚠️ Related debt found the
    same day: `bin/sqx-worker.sh` and `bin/clone-sqx-worker.sh` carry this machine's paths hard-coded
    and `checks.py` does not see them, because it only scans `.py`.
-3. **The holdout pre-registration.** 2022–2026 is read by the WFM study and the variant study at
-   once, so what would count as approved has to be written, with a date, **before** either runs.
-   Nothing has been written. `studies/optimisation/wfc/` must not run until it exists.
+3. ~~The holdout pre-registration~~ — declined by the owner 2026-09-26 (issue 24).
 
 Also pending the owner: the WFC verdict thresholds are PROPOSED, not approved; and the costs in
 `assets/XAUUSD.yaml` are SQX defaults, not agreed Infinox figures, so every cost-bearing result
@@ -917,26 +902,12 @@ produced before he replaces them carries that caveat.
 
 ---
 
-## 24. 🔴 The holdout pre-registration does not exist, and it is a one-way door
+## 24. ⚪ The holdout pre-registration — CLOSED 2026-09-26, the owner declined it
 
-Split out of issue 23's blocker list on 2026-09-21 because it is not a variant-study problem: it
-gates every study that reads **2022–2026**, and unlike everything else here it **cannot be fixed
-retroactively**. The first analysis that looks at that window without it burns the holdout
-permanently, and no later result over that window is defensible.
-
-Scaffolding written 2026-09-21 to `docs/preregistro/holdout-XAUUSD-2026-09-21.md` — **in the
-repo, not in `AlgoData`**: it has to be under version control to be worth anything, and hard rule 7
-governs heavy data, not a governance document. **It is not
-in force until the owner fills in the four decisions and signs it** — the file names them
-explicitly and says so at the top.
-
-Until it is signed, no module reads 2022–2026. Lots build and verify against the SPP Phase 0 export
-already on disk (`raw/XAUUSD/SPP_IS/2026-09-10/`).
-
-Related: the WFC verdict thresholds are PROPOSED, not approved — but the owner decided 2026-09-21
-that **thresholds do not block anything**: the user decides them and they are changeable. The
-pre-registration records whichever number is current, and records the change when it changes. That
-is what keeps it honest while the criteria are still moving.
+The unsigned scaffolding `docs/preregistro/holdout-XAUUSD-2026-09-21.md` was deleted on 2026-09-26.
+Owner: *«yo me controlo a la hora de mirar»*. What protects the last untouched window is the
+WORKFLOW's `oos2` reservation, enforced by `ledger.gate` and `assets/_policy.yaml`; thresholds live
+in `ledger/thresholds.yaml` with who set them and when. The file is in git history.
 
 ## 26. 🟠 `PercentageBased` charges ~twice per trade — MEASURED 2026-09-26, the fix is the owner's
 
@@ -1307,3 +1278,16 @@ Installing the crontab lines hit the classic vixie-cron bug: `crontab <file>` tr
 `TMPDIR`-based temp path and fails with a "No such file or directory" that names the wrong file —
 worked once the file was copied to a short `/tmp` path first. 🔬 reproduced 2026-09-26,
 `knowhow/eng/crontab-long-tmpdir-path.md`.
+
+## 50. 🟡 Step 20 is built but decides nothing yet — three owner's calls, and 17-19 do not record themselves
+
+`studies/closing/blindJoint/` (encargo 10 B, 2026-09-26) reads the four pieces and puts every
+reading of "passes step 20" side by side; it cuts nobody until the owner chooses. Open, all his:
+(1) `joint.pieces` × `joint.population` in its `config.yaml`; (2) `BlindJoint` in oos2's
+`reserved_for` (`assets/_policy.yaml`) — without it the SPA on oos2 is never read; (3) the CSCV
+reads oos2 and the policy does not list it. Engineering, not his: the WFC, CSCV and WFM reports
+write no ledger row, so the blind door opens only after `python3 -m ledger.backfill --blind`
+(`knowhow/eng/blind-steps-write-no-ledger-rows.md`); wiring them needs (3) first, or the CSCV's own
+row would be refused. ⚠️ On 2026-09-26, exploring the USDJPY batches before the module existed,
+the session read the two mothers' oos2 daily P&L (sums, correlation) outside the door; no ledger row
+records that look — the owner decides whether to add one.
