@@ -3,10 +3,17 @@ q: exposure.report KeyError strategy identity verdict empty table; Sample type O
 tag: 🔬  date: 2026-09-26  see: databanks/curate-verdict-identity-per-databank
 ---
 # Two Python readers of `sqx.export.export_retest` output need a SPECIFIC databank/name, not just any export
+- `studies.closing.exposure.report` keeps `Sample type == "OOS1"`: pass the **OOS** databank's export.
+  The build one (`IST`) leaves an empty frame and a `KeyError` on `['strategy', 'identity', 'verdict']`.
+- `studies.readings.edgeCost.report --strategy` needs the export's own names: a `stopgrid`/`variants`
+  batch renames to `S00V000…`, so the mother's name gives `IndexError: index 0 is out of bounds`.
+  Omit `--strategy`, or take the name from the batch's `manifest.parquet`/`plan.csv`.
+
+## Evidence
 `studies.closing.exposure.report` and `studies.readings.edgeCost.report --strategy` both look like
 generic "point at an export" tools, and both fail confusingly when pointed at the wrong one.
 
-## `exposure.report` needs an OOS-sample-type export, not the build one
+### `exposure.report` needs an OOS-sample-type export, not the build one
 `load.py` hard-filters `frame[frame["Sample type"] == cfg["study"]["sample"]]`, default `"OOS1"`.
 Pointing `--databank Results` (the build/IS databank) at it gives an export whose `Sample type`
 column is `"IST"` everywhere, so the filtered frame is empty, `inputs["strategies"]` is `[]`, and the
@@ -15,7 +22,7 @@ are in the [columns]"` — nothing in the message points at "wrong databank". Fi
 **OOS** databank (`sqx.export.export_retest --databank OOS`), matching `segment: oos1` in
 `studies/closing/exposure/config.yaml`.
 
-## `edgeCost.report --strategy <name>` needs the export's OWN names, not the mother's
+### `edgeCost.report --strategy <name>` needs the export's OWN names, not the mother's
 Run against a `stopgrid`/`variants` batch export (e.g. `WFC_Build` after `sqx.variants.stopgrid` +
 `sqx.variants.execute`), the strategies are renamed to the batch's variant IDs (`S00V000`,
 `S00V001`, ... — stopgrid's own scheme; `sqx.variants.make`'s general fabricator uses a different
@@ -25,7 +32,6 @@ a.strategy].index[0]` — the name simply isn't in that export. Fix: omit `--str
 whole population (it does, produces one report per name), or look up the batch's own name from its
 `manifest.parquet`/`plan.csv` first.
 
-## Evidence
 - 2026-09-26, `USDJPY_workflow_profiling_v1`: `exposure.report --databank Results` → the `KeyError`
   above in 0.51 s; re-run with `--databank OOS` (same project, freshly exported) → clean, 3/3
   `worth_it`, 0.59 s.

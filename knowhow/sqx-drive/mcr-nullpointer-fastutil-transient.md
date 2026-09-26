@@ -3,6 +3,12 @@ q: MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 
 tag: 🔬  date: 2026-09-26  see: authoring/cloned-custom-block-native-key
 ---
 # MCR 1 Bar can crash SQX's own engine with a NullPointerException — transient, not caused by project config, and the project hangs silently afterwards
+Right after `Task finished`, the log shows `Error while running project` with a `NullPointerException`
+in fastutil (`IntArrayList.getInt ... "this.wrapped" is null`) — SQX's own code, not the project.
+`action=status` then repeats frozen numbers forever: tell dead from slow by `ps` on the `sqcli` PID,
+whose CPU `TIME` stops climbing. `action=stop` then `action=start` reran clean.
+
+## Evidence
 Running the eight MC Retest tasks (`/mcretest`, paso 13) on `USDJPY_workflow_profiling_v1` (8
 strategies, market entries, `RandomizeStartingBar` first): `MCR 1 Bar` printed
 `Task finished in 27.96 s.` and immediately after, the SAME thread logged
@@ -25,7 +31,6 @@ seconds even while `action=status` itself does not refresh mid-task (see caveat 
 all eight strategies retested across all seven configured MCR tasks (`MinDist` correctly unconfigured,
 market entries) with no repeat of the exception anywhere in a fresh multi-thousand-line log window.
 
-## Evidence
 - Crash: 2026-09-26 09:57:17, custodian, first `action=start` of the MC Retest step, right after
   `MCR 1 Bar : Task finished in 27.96 s.` (log line 562112 → 562124/562129,
   `log_2026_09_26.log`). `MCR 1 Bar`'s own databank had already been written to disk (8/8 `.sqx`

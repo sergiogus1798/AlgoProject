@@ -40,14 +40,13 @@ hand it is `python3 -m sqx.projects.stage --cfx <cfx> --step <step>`. Without `-
 | authoring blocks, groups, templates, projects | **conductor** `SQX_w1` / 5060 | 8 cores, always awake. Start it for the job, then `bin/sqx-worker.sh stop` |
 | reading configs, `.cfx`, task chains | anyone | read-only, never triggers a restart |
 | snapshots and recovery | one session | snapshot before anything destructive |
-| repairing a project on disk | SQX-lifecycle lane | `repair/` refuses to run while a process holds the install |
 
 If you were not told you own the lifecycle lane, you do not. Read freely; change nothing that needs
 SQX to restart.
 
 ## What lives here
 
-`inspect/` read-only tools · `repair/` writes to a project on disk, guarded, only with SQX closed ·
+`inspect/` read-only tools ·
 `variants/` the variant factory: a design brief in, a batch of `.sqx` and its manifest out, touching no SQX ·
 `structural/` rewrites a strategy's logic — one condition ablated, or the direction inverted — for step 23 ·
 `export/` the three exports plus the log archiver · `projects/` authored `.cfx` for GUI import ·

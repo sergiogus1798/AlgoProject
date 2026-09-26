@@ -3,6 +3,13 @@ q: sqx.variants.equity 17 bloques donde ninguna curva cuadra con lo que SQX guar
 tag: 🔬  date: 2026-09-26  see: sqx-drive/variants-execute-needs-worker-it-started
 ---
 # `sqx.variants.equity` reads the LIVE `WFC_Build/OOS1/OOS2` databank folders, not an export — running any later batch through the same project erases the previous one's equity data
+Every `sqx.variants.execute` clears and reloads the project's three WFC databanks, and `equity.py`
+globs `*.sqx` straight from them (`ran.json` → `databank_dir`), not from `export_retest`'s parquet.
+Run `equity` and `collect` right after `execute`, before a structural (step 23) or stopgrid (step 24)
+batch touches the same project — otherwise they read another batch ("17 bloques donde ninguna curva
+cuadra con lo que SQX guardo").
+
+## Evidence
 `sqx.variants.execute --work <batch>` always retests into the workflow project's own three WFC
 databanks (`WFC_Build`, `WFC_OOS1`, `WFC_OOS2`) — that is the whole point of "one project holds
 everything" (hard rule 10). But `sqx.variants.equity` (`leg_curves()`, `harvest()`) reads
@@ -21,7 +28,6 @@ later". The four-command pipeline in the `/variants` skill (`make` → `execute`
 (structural, ATR) after `execute` and coming back later finds the well-known WFC 1/2/3 databanks
 holding someone else's strategies.
 
-## Evidence
 - 2026-09-26, `USDJPY_workflow_profiling_v1`. Order of operations: `variants.execute` for mother
   `1.29.55` (1.093 variants, WFC 1/2/3 complete) → `variants.execute` for mother `1.28.59` (1.457
   variants) → `sqx.structural.make`/`execute` (12 files, reused the same three databanks) →

@@ -3,6 +3,13 @@ q: cloning a custom block for another indicator; sed rename EMA to HMA; Cannot f
 tag: 🔬  date: 2026-09-26  see: authoring/block-vocabulary, authoring/fixed-native-block-params
 ---
 # Cloning a custom block for another indicator: the nested `key` must stay the CATALOGUE key, not the display abbreviation
+A nested indicator's `<Item key=...>` must equal its key in `config.xml`/`customBlocks.xml`
+(`HullMovingAverage`, not `HMA`); the short label matches the key only by accident (`EMA`). A blind
+`sed EMA→HMA` passes `sqx.blocks.install` and `sqx.templates.build` and fails only at build:
+`XmlStrategyException ... Cannot find block 'HMA'` per candidate, `Failed` stays 0, and a
+`--minutes` cap burns the budget generating nothing. After cloning, check every `key=` and `mI=`.
+
+## Evidence
 Building `crossAboveHMA_v1` (encargo 21) by copying `emaCloseCrossUp`'s `deps/blocks.xml` and
 blind-renaming `EMA`→`HMA` broke the block: the nested price-value `<Item key="EMA" ...>` (the
 right-hand side of `Close crosses above EMA`) became `<Item key="HMA" ...>`. `key` is not free text —
@@ -23,7 +30,6 @@ one exception per candidate, `Failed` stays 0 and `Strategies generated` keeps c
 silently drops every candidate that hits the broken rule and moves on, so a `--minutes` cap can burn
 the whole budget generating nothing before anyone notices.
 
-## Evidence
 - 2026-09-26, custodian, first `USDJPY_workflow_profiling_v1` build attempt (09:33): 8000+ candidates
   generated in ~5 s, `Strategies generated 49` after 35 s, `In databank 0`; log flooded with
   `ERROR BacktestEvaluator ... Cannot find block 'HMA'` (hundreds of lines/s) from
