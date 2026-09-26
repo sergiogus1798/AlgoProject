@@ -10,7 +10,21 @@ lo más conservador, lo escribes en el informe como decisión tomada por ti, y s
 
 ---
 
-## 0 · Lee antes de tocar nada
+## 0 · Espera a la señal — no arranques antes
+
+Otra sesión (`algoproject-f8`) está terminando dos cambios que este encargo prueba: las **sesiones**
+en el mapa condicional (paso 22) y que el **paso 18.5 pueda leer `oos2`**. **No lances nada de SQX
+ni de Python del workflow hasta que exista el fichero**
+`~/Desktop/AlgoProject_worktrees/_coord/LISTO-workflow.md`. Lo que sí puedes hacer mientras: leer
+todo lo de §0.1 en adelante y preparar el plan y las estimaciones de tiempo.
+
+Para esperar sin gastar: carga la herramienta Monitor (`ToolSearch "select:Monitor"`) y vigila con un
+bucle `until [ -f ~/Desktop/AlgoProject_worktrees/_coord/LISTO-workflow.md ]; do sleep 60; done`,
+y vuelve a armarla si caduca. Cuando aparezca, **léelo**: dice el commit de `docs/knowhow-fichas`
+sobre el que corres y cualquier cambio de última hora. Si en 4 horas no ha aparecido, no corras nada:
+deja el plan escrito en el informe y termina.
+
+## 0.1 · Lee antes de tocar nada
 
 1. `CLAUDE.md` entero — **las reglas duras 1 a 11 mandan sobre este encargo**. Sobre todo: la 1
    (snapshot de `user/projects` antes de cualquier cosa que reinicie SQX), la 2 y la 3 (nunca el
@@ -25,13 +39,21 @@ lo más conservador, lo escribes en el informe como decisión tomada por ti, y s
    y `perf/README.md` (cómo mide el proyecto: memoria de todo el árbol de procesos, no `ru_maxrss`).
 5. `docs/SKILLS.md` — cada paso de SQX tiene su skill (`/template-run`, `/oos-gate`, `/crossmarket`,
    `/crosstf`, `/mcretest`, `/spp`, `/variants`, `/wfm`). **Úsalos**: son el procedimiento probado.
-6. La página de manual de cada paso antes de correrlo.
+6. La página de manual de cada paso antes de correrlo. **Los módulos nuevos del 26-09 y su
+   comando** (la página trae el ejemplo completo, con sus argumentos):
 
-**Comprobación de partida:** `grep -c "25 pasos" docs/AgentPDFs/WORKFLOW.md` en
-`~/Desktop/AlgoProject` (rama `docs/knowhow-fichas`) tiene que dar ≥ 1. Si da 0, la integración de
-la tanda del 26-09 todavía no está fusionada: trabaja desde el worktree
-`~/Desktop/AlgoProject_worktrees/integration` (rama `integration/seis-frentes`) y dilo en el informe.
-**No cambies de rama en `~/Desktop/AlgoProject`**: otras sesiones commitean ahí.
+   | paso | módulo | manual | comando |
+   |---|---|---|---|
+   | 8 | snooping (SPA/StepM), tras la puerta | `49-snooping.md` | `python3 -m studies.screening.snoopingScreen.report --project … --databank …` |
+   | 8 y 25 | edge por coste | `50-edge-por-coste.md` | `python3 -m studies.readings.edgeCost.report --project … --databank … --feed …` (con `--strategy` en el 25) |
+   | 18.5 | superficies por mercado | `52-superficies-mercado.md` | `python3 -m studies.optimisation.marketSurfaces.report --work <carpeta del lote> --family …` |
+   | 22 | mapa condicional (sesiones y días) | `53-mapa-condicional.md` | `python3 -m studies.readings.conditionalMap.report --harvest … --strategy …` |
+   | 23 | tests estructurales | `51-estructura.md` | `python3 -m sqx.structural.make …`, el run en el custodio y `python3 -m studies.readings.structure.report …` |
+   | todos | el ledger | `43-ledger.md` | `python3 -m ledger.report` al final, para ver el embudo registrado |
+
+**Dónde trabajas:** `~/Desktop/AlgoProject`, rama `docs/knowhow-fichas`, en el commit que diga
+`LISTO-workflow.md` o uno posterior. **No cambies de rama ahí**: otras sesiones commitean en esa
+carpeta.
 
 ## 1 · Qué corres
 
@@ -46,7 +68,8 @@ la tanda del 26-09 todavía no está fusionada: trabaja desde el worktree
   y anótalo. Hasta el paso 15 lleva como máximo **8** estrategias; del 15 en adelante, como máximo
   **3 madres**. Antes de lanzar cada paso de SQX, **estima su duración** con el catálogo de `perf/` y
   los tiempos del 24-09, y escríbela; si un paso fuese a pasar de ~6 h, reduce su población y dilo.
-- **`oos2`:** los pasos 17, 18, 18.5 y 19 lo leen. Está autorizado (dueño, 2026-09-26). El paso 20
+- **`oos2`:** los pasos 17, 18, 18.5 y 19 lo leen. Está autorizado (dueño, 2026-09-26), y el ledger
+  lo permite para esos cuatro. El paso 20
   es la lectura conjunta ciega: haz la lectura de 17, 18, 18.5 y 19 **sólo cuando los cuatro hayan
   corrido**.
 
