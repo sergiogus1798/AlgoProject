@@ -1,5 +1,12 @@
 # 20 · ATRCalculator — el stop loss leído del MAE, sin optimizar — encargo autocontenido
 
+> **ESTADO 2026-09-26: construido** en la rama `feat/atr-calculator` (5 commits, sin fusionar).
+> §2 completo, injerto §3.1 probado en SQX (X = 1000 idéntico operación a operación en IS, oos1 y
+> oos2; el ATR de Python es el del stop de SQX), rejilla §3.2 retesteada. Probado sobre
+> `Strategy 19.8.78` XAUUSD M30 (proyecto `ATRCalc_XAUUSD_M30_dev`). **No se borra** hasta correrlo
+> sobre una superviviente real. Manual: `docs/manual/49-atr-calculator.md` en esa rama — choca con
+> `49-snooping.md` y hay que renumerarlo al fusionar. Desde el 26-09 es el **paso 24** del WORKFLOW.
+
 **Tu oficio:** Python numérico sobre operaciones y barras M1, más la fábrica de variantes y un
 retest en SQX sobre el custodio. Es el **paso 22 del `WORKFLOW.md`**: se corre sobre una estrategia
 que ya pasó la secuencia entera, nunca sobre una población.
