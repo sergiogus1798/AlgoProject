@@ -50,6 +50,41 @@ def main() -> None:
     if not np.array_equal(idx, np.array([2, 2])):
         failures.append(f"bucket no aplica los cortes congelados a días fuera del tramo: {idx}")
 
+    # A trade entering day D must not be classified off anything that happens on day D
+    # itself: volatility() and efficiency() have to read through D-1's close only. Found
+    # by review 2026-09-26 (F-review.md) on the pre-fix code, which resampled the WHOLE
+    # calendar day (bars after the entry included) into the candle that tagged it.
+    idx = pd.date_range("2020-01-01", periods=12, freq="1D")
+    rng2 = np.random.default_rng(1)
+    close = 100 + np.cumsum(rng2.normal(0, 1, len(idx)))
+    day = pd.DataFrame({"Open": close, "High": close + 1, "Low": close - 1, "Close": close},
+                       index=idx)
+    d = idx[6]  # far enough past the warm-up of a period-3 lookback
+
+    vol_before = regime.volatility(day, 3).loc[d]
+    trend_before = regime.efficiency(day, 3).loc[d]
+
+    # Simulate a huge bar arriving on day D itself, AFTER the trade already entered:
+    # a real future move a same-day classification must never see.
+    spiked = day.copy()
+    spiked.loc[d, "High"] = close[idx.get_loc(d)] + 10_000.0
+
+    vol_after = regime.volatility(spiked, 3).loc[d]
+    trend_after = regime.efficiency(spiked, 3).loc[d]
+    if vol_before != vol_after:
+        failures.append(f"volatility() del día D cambia con una barra que llega DESPUÉS de "
+                        f"la entrada de ese mismo día: {vol_before} -> {vol_after}")
+    if trend_before != trend_after:
+        failures.append(f"efficiency() del día D cambia con una barra que llega DESPUÉS de "
+                        f"la entrada de ese mismo día: {trend_before} -> {trend_after}")
+
+    # Sanity check the perturbation is not simply inert: it must move the FOLLOWING day's
+    # reading, since a period-3 lookback that includes D legitimately sees it from D+1 on.
+    next_day = idx[list(idx).index(d) + 1]
+    if regime.volatility(day, 3).loc[next_day] == regime.volatility(spiked, 3).loc[next_day]:
+        failures.append("el spike de prueba no mueve nada ni siquiera al día siguiente — "
+                        "el test no comprobaría lo que dice comprobar")
+
     # The minimum cell size is read from engines.nulls, not a private number, and a cell
     # under it must not reach the grid or the table.
     rng = np.random.default_rng(0)

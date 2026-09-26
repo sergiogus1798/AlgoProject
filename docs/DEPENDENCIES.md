@@ -306,7 +306,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/readings/conditionalMap/contract.py` | 76 | The conditional map's two tabs — both descriptive, neither carries a verdict. | core, studies | pandas |
 | `studies/readings/conditionalMap/inputs.py` | 63 | What the study is run on: its knobs, one strategy's trades on the harvest, and its identity. | core | numpy, pandas |
 | `studies/readings/conditionalMap/one.py` | 62 | One strategy's conditional map, returned as the contract's data: descriptive, no verdict. | core, studies | numpy |
-| `studies/readings/conditionalMap/regime.py` | 104 | Volatility and trend at entry, cut into terciles whose edges never see the sample they tag. | core, engines | numpy, pandas |
+| `studies/readings/conditionalMap/regime.py` | 119 | Volatility and trend at entry, cut into terciles whose edges never see the sample they tag. | core, engines | numpy, pandas |
 | `studies/readings/conditionalMap/report.py` | 37 | The command: where on the market-state grid one strategy earns, if anywhere in particular. | core, studies | — |
 | `studies/readings/conditionalMap/tooltips.py` | 14 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
 | `studies/readings/entryQuality/contract.py` | 58 | The two readings as the contract's tabs: the entry against random entries, and the delay. | core, studies | — |
@@ -405,7 +405,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/transfer/crossmarket/verdict/inference.py` | 121 | Judge the runs: where the real one sits in its null, and what there is to distrust about it. | — | pandas |
 | `studies/transfer/crossmarket/verdict/significance.py` | 56 | Honest significance on the real trades: minimum track-record length, bootstrap CIs. No DSR: | core, engines | numpy |
 | `tests/test_cfx.py` | 47 | Golden-file test for core.cfx: a parser that breaks silently poisons every analysis. | core | — |
-| `tests/test_conditionalmap.py` | 72 | The conditional map's tercile edges never move when the sample they classify does. | studies | numpy, pandas |
+| `tests/test_conditionalmap.py` | 107 | The conditional map's tercile edges never move when the sample they classify does. | studies | numpy, pandas |
 | `tests/test_cscv.py` | 168 | Property test for the CSCV on panels whose answer is known by construction — above all | core, studies | numpy, pandas |
 | `tests/test_ledger.py` | 100 | The ledger's two guarantees: the door refuses, and pooling widens what the DSR must clear. | core, ledger | numpy, pandas |
 | `tests/test_models.py` | 85 | Regression test for the null models: block_shift must not overlap, and must move the same | engines, studies | numpy, pandas |

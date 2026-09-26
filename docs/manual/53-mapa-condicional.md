@@ -66,17 +66,30 @@ lo que pinta la ventana.
 ### Cómo se lee el resultado
 
 **Pestaña «Volatilidad x tendencia en la entrada».** Una rejilla 3x3: filas el tercil de
-volatilidad realizada (ATR diario) en el día de la entrada, columnas el tercil de tendencia (ratio
-de eficiencia de Kaufman) del mismo día — los dos cortados **una sola vez**, sobre el tramo
-`build` del activo, y aplicados sin cambios a la muestra que se lee. Una celda vacía (`—`) no es
-cero: es que tiene menos operaciones que el suelo de la puerta OOS
-(`engines/nulls/config.yaml#verdict.min_trades`, hoy 30) y no se enseña ni se juzga. La tabla de
-abajo trae, celda a celda, operaciones, P&L medio, su intervalo por bootstrap y el acierto.
+volatilidad realizada (ATR diario) **del día anterior a la entrada**, columnas el tercil de
+tendencia (ratio de eficiencia de Kaufman) **del mismo día anterior** — nunca el día de la propia
+entrada, porque ese día incluye barras que todavía no habían pasado en el momento de entrar. Los
+dos tipos de corte salen **una sola vez**, sobre el tramo `build` del activo, y se aplican sin
+cambios a la muestra que se lee. Una celda vacía (`—`) no es cero: es que tiene menos operaciones
+que el suelo de la puerta OOS (`engines/nulls/config.yaml#verdict.min_trades`, hoy 30) y no se
+enseña ni se juzga. La tabla de abajo trae, celda a celda, operaciones, P&L medio, su intervalo por
+bootstrap y el acierto.
+
+⚠️ **Corregido 2026-09-26** (revisión de esta misma tanda): la primera versión clasificaba cada
+operación con el candil diario de **su propio** día de entrada, que `engines.regimes.regime.daily()`
+construye con la sesión entera — en una operación real verificada, el 79 % de las barras de ese día
+llegaban **después** de la entrada, incluida la que ponía el máximo del día. Los cortes de tercil
+congelados sobre `build` heredaban el mismo defecto. `studies/readings/conditionalMap/regime.py`
+ahora desplaza la volatilidad y la tendencia un día completo antes de clasificar nada — una entrada
+del día D lee siempre lo que se sabía al cierre de D-1 —, y `tests/test_conditionalmap.py` prueba
+que una barra que llega después de la entrada, en el propio día de la entrada, no puede mover su
+celda. Los números de los dos ejemplos de abajo son los de la versión corregida y no coinciden con
+los de una ejecución anterior a esa fecha.
 
 **Pestaña «Día de la semana».** Lo mismo por día, lunes a viernes, con el mismo suelo.
 
 Ejemplo real, `XAU_ISOOS_ejemplo / Strategy 5.16.81` (361 operaciones OOS1, tramo build
-2008–2017; las 333 de la tabla son las que caen en las seis celdas con población — el resto se
+2008–2017; las 331 de la tabla son las que caen en las seis celdas con población — el resto se
 reparte en las tres celdas de volatilidad media, ninguna de las cuales llega a 30):
 
 ```
@@ -86,37 +99,37 @@ cortes [16.6062, 20.7802]. Ratio de eficiencia a 20 días para la tendencia — 
 
 | volatilidad | tendencia | operaciones | pnl_medio | ci_baja | ci_alta | acierto |
 |---|---|---|---|---|---|---|
-| baja  | baja  | 45 | -445.35 | -785.65 | -126.30 | 0.378 |
-| baja  | media | 42 |   36.01 | -317.19 |  395.48 | 0.524 |
-| baja  | alta  | 54 |  168.82 | -120.17 |  466.24 | 0.556 |
-| alta  | baja  | 59 |  -84.28 | -341.55 |  158.42 | 0.542 |
-| alta  | media | 62 |   87.02 | -266.50 |  430.45 | 0.500 |
-| alta  | alta  | 71 |  -24.99 | -254.17 |  210.73 | 0.451 |
+| baja  | baja  | 46 | -244.22 | -584.40 |  104.63 | 0.391 |
+| baja  | media | 47 |  -55.25 | -398.26 |  269.87 | 0.553 |
+| baja  | alta  | 47 |  123.11 | -194.50 |  446.41 | 0.532 |
+| alta  | baja  | 59 |  -94.38 | -457.18 |  247.35 | 0.508 |
+| alta  | media | 63 |   84.21 | -174.38 |  337.98 | 0.540 |
+| alta  | alta  | 69 |  -14.68 | -253.98 |  221.13 | 0.449 |
 ```
 
 (La celda «media» de volatilidad no aparece: ninguna de sus tres combinaciones llegó a 30
-operaciones en esta muestra — 322 operaciones repartidas en 9 celdas se quedan cortas casi
+operaciones en esta muestra — 361 operaciones repartidas en 9 celdas se quedan cortas casi
 siempre, y es la razón de que el mapa esté pensado para leerse, no para recortar.)
 
-Léelo así: seis de las nueve celdas posibles tienen población, y **ninguna** de ellas tiene el
-intervalo del P&L medio enteramente por encima o por debajo de cero salvo `baja x baja`
-(-785.65 a -126.30, la única que no cruza cero). Eso es exactamente lo que el aviso de arriba
-predice — con seis celdas mirando, una sale «significativa» sin que signifique nada — y es una
-candidata a **anotar y revalidar**, nunca a aplicar tal cual.
+Léelo así: seis de las nueve celdas posibles tienen población, y **ninguna** tiene el intervalo del
+P&L medio enteramente por encima o por debajo de cero — ni siquiera `baja x baja` (-584.40 a
+104.63), la más negativa de las seis. Eso es exactamente lo que el aviso de arriba predice: con
+seis celdas mirando y ninguna cruzando el listón con margen, no hay aquí ni un candidato razonable
+a anotar en el ledger, sólo una descripción sin nada que sostenga un filtro.
 
 ### Un ejemplo completo
 
 Con `USDJPY_emaCross_H1 / Strategy 14.19.58` (256 operaciones OOS1, todas con día y tercil
 válidos), sólo la fila `baja` de volatilidad tiene población — las otras dos terciles no llegan a
-30 operaciones en ninguna de sus tres combinaciones de tendencia; las 205 de la tabla son las de
+30 operaciones en ninguna de sus tres combinaciones de tendencia; las 207 de la tabla son las de
 esa fila:
 
 ```
 | volatilidad | tendencia | operaciones | pnl_medio | ci_baja | ci_alta | acierto |
 |---|---|---|---|---|---|---|
-| baja | baja  | 78 | -56.31 | -156.67 |  42.40 | 0.487 |
-| baja | media | 71 | -33.51 | -146.08 |  79.22 | 0.493 |
-| baja | alta  | 56 | -41.35 | -168.36 |  92.17 | 0.464 |
+| baja | baja  | 81 | -47.64 | -149.45 |  53.11 | 0.469 |
+| baja | media | 67 | -61.37 | -171.36 |  48.51 | 0.507 |
+| baja | alta  | 59 |   1.48 | -122.79 | 126.54 | 0.508 |
 ```
 
 Y por día de la semana:

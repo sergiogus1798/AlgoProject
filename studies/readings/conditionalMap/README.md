@@ -21,8 +21,13 @@ before reading anything else in it.**
 
 ## The three rules, and how this module keeps them (encargo 14 §1)
 
-1. **No look-ahead.** The tercile edges of volatility and trend are measured once, on the
-   asset's `build` segment (`assets/_policy.yaml`), and frozen. Every trade of every sample —
+1. **No look-ahead.** Two layers. First, `regime.volatility()` and `regime.efficiency()` are
+   lagged one full day (`regime._shift`): a trade entering day D reads the value as it stood
+   at D-1's close, never D's own candle — `engines.regimes.regime.daily()` folds a whole
+   session into that candle, so D's own would otherwise include bars the entry could not
+   have seen (found by review, 2026-09-26: 79% of one real entry day's bars postdated the
+   trade). Second, the tercile edges of both series are measured once, on the asset's
+   `build` segment (`assets/_policy.yaml`), and frozen. Every trade of every sample —
    `build`, `oos1`, whatever `run.sample` names — is compared against that one fixed pair of
    numbers, never against the distribution of the sample being described.
 2. **Minimum cell size**, read from `engines/nulls/config.yaml#verdict.min_trades` rather than

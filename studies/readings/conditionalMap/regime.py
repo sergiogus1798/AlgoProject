@@ -42,34 +42,49 @@ def daily(bars: pd.DataFrame) -> pd.DataFrame:
     return vol_engine.daily(bars)
 
 
+def _shift(series: pd.Series) -> pd.Series:
+    """Push a daily series one day into the future, so day D reads through D-1's close.
+
+    `engines.regimes.regime.daily()` folds a whole calendar day into one candle — high,
+    low and close all include bars that have not happened yet for a trade entering that
+    same day. A trade on day D never sees D's own candle here: it reads the value the
+    series carried on D-1, the last day that had fully closed before D opened. Found by
+    review 2026-09-26 (`_coord/F-review.md`): 79% of USDJPY 2018-01-03's bars, including
+    the one setting that day's high, postdate a trade that entered at 05:00 the same day.
+    """
+    return series.shift(1)
+
+
 def volatility(day: pd.DataFrame, atr_period: int) -> pd.Series:
-    """Daily realised volatility, causal by construction (engines.regimes.regime.atr).
+    """Daily realised volatility, lagged one day so a trade never reads its own entry day.
 
     Args:
         day: One candle per day (engines.regimes.regime.daily).
         atr_period: Lookback in trading days.
 
     Returns:
-        One value per day; the first atr_period are NaN.
+        One value per day — the ATR as it stood at the PREVIOUS day's close. The first
+        atr_period + 1 are NaN.
     """
-    return vol_engine.atr(day, {"atr_period": atr_period})["vol"]
+    return _shift(vol_engine.atr(day, {"atr_period": atr_period})["vol"])
 
 
 def efficiency(day: pd.DataFrame, window: int) -> pd.Series:
-    """Kaufman's efficiency ratio of daily closes: net move over path length, causal at t.
+    """Kaufman's efficiency ratio of daily closes, lagged one day for the same reason.
 
     Args:
         day: One candle per day.
         window: Trading days behind t the ratio looks.
 
     Returns:
-        One value per day in [0, 1]; the first `window` are NaN. 1 is a straight run, near 0
-        is noise round a flat mean.
+        One value per day in [0, 1] — the ratio as it stood at the PREVIOUS day's close.
+        The first `window` + 1 are NaN. 1 is a straight run, near 0 is noise round a flat
+        mean.
     """
     close = day["Close"]
     net = (close - close.shift(window)).abs()
     path = close.diff().abs().rolling(window).sum()
-    return (net / path).replace([np.inf, -np.inf], np.nan)
+    return _shift((net / path).replace([np.inf, -np.inf], np.nan))
 
 
 def frozen_edges(series: pd.Series, span: tuple[pd.Timestamp, pd.Timestamp]) -> np.ndarray:
