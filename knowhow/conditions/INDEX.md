@@ -4,6 +4,7 @@
 - `condition-xml-shapes` — parse acceptance condition XML; Condition shapes Column-Value Numeric-Value GoToTask ResultsCount; use="false" disabled condition; subresult sampleType plType; condition count XAUUSD
 - `crossmarket-crosstf-no-conditions` — cross-market cross-timeframe check acceptance conditions empty; crossmarket.conditions crosstf.conditions _build.yaml; silence whole task; Setup missing dateFrom fails task; crossTF block names LOM
 - `mc-retest-task` — MonteCarloRetest task XML; MCR tasks silently run a plain retest; doctrine apply_doctrine turns off crosscheck; MCBacktestPrecision vs testPrecision; MCUseFullSample; MCR task names contract; RandomizeMinDistance; set_crosschecks regex kills conditions
+- `no-seeded-hash-in-sqx` — monkey test inside SQX, random entry custom block, seeded hash timestamp seed, XOR modulo bit shift in SQX vocabulary, RandomCondition runtime random, sin hash, D3 encargo 12, always true block
 - `retest-additional-markets` — RetestOnAdditionalMarkets Setup XML; per-market costs timeframe; MainTestValues inheritance mask override; cross-timeframe retest in one task; AcceptanceSettings MinMarkets market="1"
 - `selection-window` — which window was a strategy selected on; is 2018-2022 out of sample; untouched data start 2023; selection bias cross-market retest as filter; sampleType per resultType Build task
 - `wf-type` — walk-forward type attribute 0 1 2 simulated exact IS OOS; WalkForwardMatrix type meaning; period optimization attribute codes floating fixed
