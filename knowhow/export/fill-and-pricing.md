@@ -1,11 +1,12 @@
 ---
-q: SQX fill convention open-to-open; entry price offset spread above bar open; intrabar entries pending fills or clock; zero-duration trades; rebuild P/L from bars; point value per market regression; M1 execution grid
-tag: 🔬  date: 2026-09-22  see: export/data-all-crossmarket, export/exits-and-m1-library, research/zero-duration-trades
+q: SQX fill convention open-to-open; entry price offset spread above bar open; how much of the spread is in the fill price; intrabar entries pending fills or clock; zero-duration trades; rebuild P/L from bars; point value per market regression; M1 execution grid
+tag: 🔬  date: 2026-09-26  see: export/data-all-crossmarket, export/exits-and-m1-library, research/zero-duration-trades, costs/where-the-spread-is
 ---
 # SQX fills this fleet at the logic-TF bar opens (entry and exit); nothing happens inside a bar
 - Reprice on the logic timeframe's bar grid; M1 would create a fill mismatch. Switch to M1 only when exit-side median error ≠ 0 (stops/targets) — `crossmarket/mechanics/pricing.reconcile()` decides.
-- Entry sits a constant spread above the bar open on gold; exits on the open. Judge price vs bar open, never the clock.
-- Rebuild P/L as `(Open[exit]-Open[entry]) * Size * pointValue`; cost = `gross - reported` per trade; `pointValue` by regression.
+- Entry sits a constant offset above the bar open; exits on the open. Judge price vs bar open, never the clock.
+- ⚠️ **That entry offset, AS A FRACTION OF THE DECLARED SPREAD, is not one universal constant** — measured per feed, 2026-09-26 (`studies/readings/edgeCost/spread_share.py`, review BLOCKER): `USDJPY_DukasM1_the5ers` H1 offset 0.002 against a declared 0.001 (ratio 2.0, i.e. MORE than the full declared spread); `XAUUSD_DukasM1_Infinox` M30 offset 0.08 IS / 0.15 OOS against declared 0.05 / 0.10 (ratio 1.6 / 1.5). None of the three is the 0.5 an earlier reading of this card's gold-only evidence (below) generalised into a universal "half spread" convention. **Measure the offset per feed and segment directly; never assume a ratio carries over.**
+- Rebuild P/L as `(Open[exit]-Open[entry]) * Size * pointValue`; cost = `gross - reported` per trade; `pointValue` by regression. To recover the ACTUAL round-trip cost a fill embedded (as opposed to what a task's `assets/` file declares today, which a historical build may not have carried), measure the entry offset in price units directly against the bar open — do not multiply the declared spread by any fraction.
 - Check bar-open alignment against the bar index (`core.trades.on_bar_open()`), not `minute == 0` (wrong on M30).
 
 ## Evidence
@@ -24,3 +25,16 @@ tag: 🔬  date: 2026-09-22  see: export/data-all-crossmarket, export/exits-and-
   Used by `studies/transfer/crossmarket/simulate/metrics.py` to price nulls in account currency (net profit, DD, Ret/DD, Sharpe, PF).
 - Point value = slope of P/L on `(close−open) × Size`, R² ≈ 0.999, residual = swap: XAUUSD 99.8 (configured 100), XAGUSD 5002 (5,000-oz contract),
   BRENTCMDUSD 100.0. `pricing.point_value()` — silver/Brent have no `assets/` file.
+- 🔬 Per-feed entry-offset measurement (2026-09-26), median `Open price − bar Open` at the entry bar, `core.barstore`:
+
+  | feed | timeframe | segment | n | median offset | declared spread (price units) | ratio |
+  |---|---|---|---|---|---|---|
+  | `USDJPY_DukasM1_the5ers` | H1 | IS+OOS | 92,502 | 0.002 | 0.001 | 2.0 |
+  | `XAUUSD_DukasM1_Infinox` | M30 | IS | 78,479 | 0.08 | 0.05 | 1.6 |
+  | `XAUUSD_DukasM1_Infinox` | M30 | OOS | 39,778 | 0.15 | 0.10 | 1.5 |
+
+  Confirms the "Silver, Brent median 0" line above rather than contradicting it: the ratio is a
+  property of the feed (and, on XAUUSD, of which segment's task ran), never a single number
+  this project can bake into a formula once. `studies/readings/edgeCost/costs.py` now reads
+  this measurement per report call instead of a stored constant; `spread_share.py` refuses
+  outright on a feed it has not measured rather than defaulting to any of the ratios above.

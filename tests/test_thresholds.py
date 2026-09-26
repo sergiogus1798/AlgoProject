@@ -15,7 +15,7 @@ from ledger import thresholds
 MIGRATED = ("studies/screening/gate/", "studies/screening/snoopingScreen/",
             "studies/readings/profitShape/", "studies/readings/entryQuality/",
             "studies/optimisation/cloud/", "studies/optimisation/cscv/",
-            "studies/optimisation/marketSurfaces/")
+            "studies/optimisation/marketSurfaces/", "studies/readings/edgeCost/")
 
 
 def reader(source: str) -> object:

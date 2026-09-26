@@ -1,0 +1,11 @@
+# encargo 11 — edge por operación y coste de breakeven (docs/encargos/11-edge-por-coste.md).
+#
+# `min_edge_spreads` y `action` son decisión del DUEÑO, no de este código — regla dura 11 y
+# owner 2026-09-26. Se fijan ANTES de mirar resultados: un umbral ajustado después de verlos
+# no es un umbral. Orden de magnitud de partida del encargo: 2-3 spreads por operación.
+#
+# `ledger:<clave>` = el número vive en ledger/thresholds.yaml, con quién lo puso y cuándo;
+# inputs.config() lo sustituye al leer (ledger.thresholds.fill). Cambiarlo es del dueño, allí.
+verdict:
+  min_edge_spreads: ledger:edgeCost.min_edge_spreads
+  action: ledger:edgeCost.action
