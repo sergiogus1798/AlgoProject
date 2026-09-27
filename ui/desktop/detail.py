@@ -1,6 +1,6 @@
 """One template's page: what it is, what is on disk, where it ran, and the two writes."""
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QHeaderView, QLabel,
                                QPlainTextEdit, QPushButton, QScrollArea, QTableWidget,
                                QTableWidgetItem, QVBoxLayout, QWidget)
@@ -160,8 +160,7 @@ class Detail(QWidget):
             notes: The note as typed; it replaces whatever was stored.
         """
         client.post(f"template/{self.name}/status", {"status": status, "notes": notes})
-        self.load(self.name)
-        self.changed.emit()
+        self.redraw()
 
     def runs(self, t: dict) -> QTableWidget:
         """Every market this template was tried on, with an editable verdict.
@@ -225,8 +224,12 @@ class Detail(QWidget):
         """
         client.post("verdict", {"template": run["template"], "symbol": run["symbol"],
                                 "timeframe": run["timeframe"], "verdict": verdict})
-        self.load(self.name)
-        self.changed.emit()
+        self.redraw()
+
+    def redraw(self) -> None:
+        """Reload the page after the signal that asked for it returns: `setWidget` frees the
+        old page at once, and with it the combo or button still inside its own signal."""
+        QTimer.singleShot(0, lambda: (self.load(self.name), self.changed.emit()))
 
     def brief(self, text: str) -> QPlainTextEdit:
         """The Spanish brief, shown verbatim and read-only.

@@ -4,15 +4,23 @@ PySide6. Draws what the daemon says, and asks the daemon for every change. **No 
 file, reads a CSV or imports `core/` for anything but the port.**
 
 ```
-launch ─▶ shell ─▶ coverage  (la matriz, lo primero que se ve)
+launch ─▶ shell ─▶ nav (the sidebar in four groups) · contextbar (Proyecto › Población › Estrategia)
+                   BIBLIOTECA
+                   coverage  (la matriz, lo primero que se ve)
                    catalogue ─▶ detail   (la lista y la ficha)
                    chat                  (la entrevista → borrador + comando)
                    palettes ─▶ palettebar · blocktable   (la librería de paletas)
                    assets ─▶ assetlist · assetcard · assetspans · yamltree   (la librería de activos)
-                   studies ─▶ strategytable · resultspanel   (los databanks y la ficha de una estrategia)
+                   PROYECTO
+                   workflow/ ─▶ WorkflowRail   (los pasos de WORKFLOW.md de un proyecto)
+                   matrix/ ─▶ Matrix   (Población: estrategias × estudios)
+                   studypage/ ─▶ PopulationStudy · StrategyPage ─▶ blocks/ResultView
+                   studies ─▶ strategytable · resultspanel   (la zona anterior de estrategias)
                    gate ─▶ funnel · scorecard · gatedetail ─▶ equitychart   (la puerta IS/OOS)
+                   OPERACIÓN
+                   ops/ ─▶ Pulse · Ledger · JobsBar (en la barra de estado)
                    generation   (por dónde va el proyecto que corre, cada 3 s)
-             all of them ─▶ client ─▶ the daemon
+             all of them ─▶ client ─▶ the daemon · the study viewer also ─▶ selection
 ```
 
 **Imports from:** `ui/daemon` never — only its HTTP surface · **Consumed by:** nobody
@@ -20,7 +28,12 @@ launch ─▶ shell ─▶ coverage  (la matriz, lo primero que se ve)
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `launch.py` | Start the daemon if absent, then open the window | `bin/algoui` | — |
-| `shell.py` | The single window: side navigation, the stack of views, the status line | imported | — |
+| `shell.py` | The single window: every zone built and wired (matrix → strategy page, headers → population study, rail → a step's study), the context bar, the stack, the status line with the jobs strip; `open_zone(name)` for the launchers | imported | — |
+| `nav.py` | The sidebar: the four groups (BIBLIOTECA, PROYECTO, OPERACIÓN, CARTERAS), one checkable button per zone, the unbuilt ones included | imported | — |
+| `contextbar.py` | The fixed bar on top: `Proyecto › Población › Estrategia (identidad)` from `SELECTION`, each crumb opening its zone | imported | selection → crumbs |
+| `loadbar.py` | Beside the crumbs: the selected databank's metrics, trades and cosecha as three chips. Choosing a databank loads what it lacks; polls while loading; `loaded(piece)` makes the shell redraw; ↻ retries what failed | imported | selection → `/api/load` |
+| `selection.py` | `SELECTION`: the one global project/databank/strategy/identity/asset, signal `changed(dict)`; a new project clears what hangs below it | imported | choose → signal |
+| `cmdpalette.py` | The command palette on **Ctrl+K** — the app's first QShortcut, bound in `shell.py`. Fuzzy search over zones, projects, databanks, the chosen databank's strategies and the studies, read from the daemon when it opens; Enter goes through `Shell.go_to` (`open_zone`, `SELECTION`, `open_study`); the last ten choices first, in `QSettings`. A focused text field (the chat included) keeps Ctrl+K | Ctrl+K | projects/matrix/catalogue → navigation |
 | `theme.py` | The one design system: the palette and the stylesheet | imported | — |
 | `client.py` | The only way out to the daemon | imported | path → JSON |
 | `coverage.py` | The matrix of what has been tried, and the counts above it | imported | — |
@@ -47,7 +60,19 @@ launch ─▶ shell ─▶ coverage  (la matriz, lo primero que se ve)
 | `equitychart.py` | One strategy's daily P&L, build and retest, the retest lifted to the build's last level | imported | — |
 | `generation.py` | The generation zone: one install, one project, its tasks with their state, the running task's percentage and the log tail, refreshed every three seconds while on screen | imported | — |
 | `durations.py` | How the generation zone prints a duration, a processed-over-total and a time per strategy | imported | — |
-| `soon.py` | The page a zone shows before it is built: what goes there, and how the job is done today | imported | — |
+| `soon.py` | The page a zone shows before it is built (Datos, Carteras): what goes there, and how the job is done today | imported | — |
+
+The study viewer's packages, each with its own README:
+
+| folder | what it holds |
+|---|---|
+| `blocks/` | One widget per contract block kind, `ResultView` (a result, or two compared), the state → colour map every view imports |
+| `matrix/` | «Población»: the strategies of one databank × the studies, cells in state colour, ⊘/◉ headers, batch run, the `/curate` line |
+| `studypage/` | «Estrategia» and «Estudio de población»: family and study tabs, the result, config drawer, run bar, history, compare |
+| `workflow/` | «Workflow»: the rail of WORKFLOW.md for one project, the oos2 gauge and the 17·18·19 envelope |
+| `ops/` | «Custodio» (pulse), «Ledger» (read-only) and the jobs strip of the status bar |
+| `tradegallery/` | The Ficha's «Operaciones»: five trades by P&L quantile, or five seeded at random, each on its bars |
+| `batchview/` | The Ficha's «Lote»: a mother's variant batch in parallel coordinates, coloured by NetProfit oos1 or build; shown only when the batch exists |
 
 ## Contracts and traps
 
@@ -100,5 +125,15 @@ launch ─▶ shell ─▶ coverage  (la matriz, lo primero que se ve)
 - **The asset zone writes `assets/` and nothing else.** It reaches SQX for nothing: `sqx_now` and
   `instrument` are read from the files, which `sqx.inspect.instruments` refreshes. A window that
   queried the master would make opening a list a job that can block.
-- **`Shell.sidebar()` is built last and inserted first.** It selects a view, and selecting one needs
-  the stack to exist.
+- **The sidebar is built last and inserted first.** It opens a zone, and opening one needs the
+  stack to exist. Zones are addressed by name (`nav.ZONES`), never by index: a launcher's
+  `--zone Estrategias` survives a regrouping.
+- **The study viewer follows `SELECTION`; the older zones do not.** Workflow, Población, Estrategia
+  and Estudio de población move together when the matrix pickers or a cell change the selection;
+  Estrategias, Puerta IS/OOS and Generación keep their own pickers. The context bar shows the
+  selection, so a crumb that reads «elige …» is the honest state of the viewer, not of those zones.
+- **What the new zones duplicate.** Estrategias (`studies.py` + `resultspanel.py`) is Población +
+  Estrategia for everything a module already wrote; it alone still shows the databank's metric
+  table (net profit IS/OOS, trades). Puerta IS/OOS is the gate study on Estudio de población; it
+  alone still shows a strategy's paired IS/OOS equity curve and runs the gate over a cosecha
+  with typed thresholds. Neither is folded in until those pieces exist in the viewer.

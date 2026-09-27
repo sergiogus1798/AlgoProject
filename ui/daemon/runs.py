@@ -2,10 +2,9 @@
 
 import json
 
-import pyarrow.parquet as pq
-
 from core import assetdata
 from core.paths import DATA
+from ui.daemon.runner import where
 
 # Module -> the argv after `python3`, or a sentence saying why the window cannot start it.
 # Every entry reads only `ctx`, which `context()` fills from the data root and the asset file;
@@ -24,18 +23,22 @@ def context(project: str, databank: str, strategy: str, asset: str) -> dict:
     Returns:
         `feed`, the asset's SQX symbol; `export`, the newest `raw/` day of this databank
         holding trades, or None; `trades`, that parquet; `multimarket`, whether it is a
-        cross-market retest (a `Symbol` column) rather than the strategy on its own market;
-        `harvest`, whether a cosecha exists; `split` and `end`, the first out-of-sample day
-        and the last day of `oos1`.
+        cross-market retest (its `Symbol` column names more than one feed — every export
+        carries the column since 2026-09-24) rather than the strategy on its own market, and
+        `markets`, those feeds; `harvest`, whether a cosecha exists, and `harvest_dir`, the
+        newest one; `split` and `end`, the first out-of-sample day and the last day of `oos1`.
     """
     a = assetdata.load(asset)
     days = sorted((DATA / "raw" / project / databank).glob("*/trades.parquet"))
+    harvests = sorted((DATA / "harvest" / project / databank).glob("*/metrics.parquet"))
     oos = a["segments"]["oos1"]
+    feeds = where.markets(days[-1]) if days else []
     return {"project": project, "databank": databank, "strategy": strategy, "asset": asset,
             "feed": a["sqx_symbol"], "export": days[-1].parts[-2] if days else None,
             "trades": str(days[-1]) if days else None,
-            "multimarket": bool(days) and "Symbol" in pq.read_schema(days[-1]).names,
-            "harvest": any((DATA / "harvest" / project / databank).glob("*/metrics.parquet")),
+            "markets": feeds, "multimarket": len(feeds) > 1,
+            "harvest": bool(harvests),
+            "harvest_dir": harvests[-1].parent if harvests else None,
             "split": f"{oos['from']}-01-01", "end": f"{oos['to']}-12-31"}
 
 

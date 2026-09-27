@@ -128,8 +128,10 @@ para confirmar lo que P1 seleccione.
 4. **Calibrar `barrier.intrabar` el día que haya SL/TP.** El escaneo está probado contra un bucle
    explícito (0 discrepancias sobre barreras sintéticas), pero *qué barrera gana cuando una vela
    toca las dos* no se puede leer de un corpus que no lleva barreras.
-5. **Los issues 17 y 18 de `OPEN.md`**, que son para `crossmarket`, `monteCarlo` y `retest`.
-   Módulos terminados: cambiar lo que reporta un estudio cerrado es decisión del dueño.
+5. **Los issues 71 y 72 de `OPEN.md`** (renumerados desde 17 y 18 el 2026-09-27 por colisión con
+   los issues 17 y 18 originales — Param Count y EdgeDecayRatio), que son para `crossmarket`,
+   `monteCarlo` y `retest`. Módulos terminados: cambiar lo que reporta un estudio cerrado es
+   decisión del dueño.
 
 ## 6bis · El hallazgo que condiciona el punto 2
 

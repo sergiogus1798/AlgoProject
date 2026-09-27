@@ -174,6 +174,10 @@ def main() -> None:
                    f"export_spp.py --project {a.project} --databank {a.databank}",
                    counts)
     mothers = copy_mothers(a.project, a.databank, install, out.parent)
+    manifest.write(out.parent / "strategies",
+                   {"install": str(install), "project": a.project, "databank": a.databank},
+                   f"export_spp.py --project {a.project} --databank {a.databank}",
+                   {"sqx": mothers})
     print(f"{len(found)} profiles -> {out}")
     print(f"  strategies/      {mothers} madres, que es lo que abre la fábrica de variantes")
     for name, n in counts.items():

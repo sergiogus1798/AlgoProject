@@ -224,7 +224,8 @@ The project splits cleanly in two, and only one half is tied to Linux.
 | half | modules | Windows |
 |---|---|---|
 | export, authoring, curation | `core/worker.py`, `core/exportdrv.py`, `sqx/export/`, `sqx/curate/` | **no** |
-| analysis | `core/surface/`, `tasks/`, `strategies/`, `portfolio/`, all reports and panels | **yes** |
+| analysis | `studies/`, `engines/`, `portfolio/`, all reports | **yes** |
+| the desktop app | `ui/`, launched by `bin\algoui.cmd` | **yes**, with no install at all |
 
 The blocker is `bin/sqx-worker.sh`: bash, needing `rsync`, `ss`, `curl` and `setsid`.
 `core/worker.require_posix()` raises a clear `RuntimeError` on Windows rather than failing

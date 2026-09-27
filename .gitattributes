@@ -1,0 +1,2 @@
+# Windows batch files need CRLF, whatever core.autocrlf says on the machine that clones.
+*.cmd text eol=crlf

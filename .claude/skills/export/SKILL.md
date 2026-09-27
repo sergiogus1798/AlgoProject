@@ -11,11 +11,12 @@ these commands; the traps in it are the reason they look the way they do.
 ## Metrics — one row per strategy
 
 ```bash
-python3 -m sqx.export.export_metrics --project XAUUSD --databank OOS --view "Export Data View"
+python3 -m sqx.export.export_metrics --project XAUUSD --databank OOS   # read off the .sqx, no SQX
 ```
 
-The view decides the columns and their sample types; the script tags each header (IS)/(OOS)/(Full).
-It stages the strategies into the worker, starts it, waits for `Records:`, exports, and stops it.
+The columns are the owner's «Export Data View», rebuilt from each file's SQStats
+(`core/sqxview.py`, 2026-09-27: equal to the view's export within float32); both sample blocks
+come out tagged (IS)/(OOS). No install is started — 100 strategies in half a second.
 
 **A workflow project lives on the custodian** (`/template-run --workflow`): add `--role custodian`
 to every export here, or the command looks for the project on the master and finds nothing.

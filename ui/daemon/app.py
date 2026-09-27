@@ -1,17 +1,30 @@
 """The daemon's HTTP surface: everything the window knows, it asks for here."""
 
+import os
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from ui.daemon import brief, coverage, interview, library, palettes, writes
+from ui.daemon import brief, coverage, interview, jobs, library, palettes, version, writes
 from ui.daemon.assetapi import ROUTER
+from ui.daemon.batch.api import ROUTER as BATCH
+from ui.daemon.loader.api import ROUTER as LOADER
+from ui.daemon.ops.api import ROUTER as OPS
+from ui.daemon.results.api import ROUTER as RESULTS
+from ui.daemon.runner.api import ROUTER as RUNNER
 from ui.daemon.studyapi import ROUTER as STUDIES
+from ui.daemon.tearmarket.api import ROUTER as TEARMARKET
+from ui.daemon.tearsheet.api import ROUTER as TEARSHEET
+from ui.daemon.workflow.api import ROUTER as WORKFLOW
 
 APP = FastAPI(title="AlgoDaemon", docs_url=None, redoc_url=None)
-# The asset library is a surface of its own and would double this file; it arrives
-# as a router rather than as a second daemon.
-APP.include_router(ROUTER)
-APP.include_router(STUDIES)
+# Taken once at import: the code this process is actually running, not what is on disk now.
+CODE = version.fingerprint()
+# Each surface that would double this file arrives as a router rather than as a second
+# daemon: the asset library, the older strategies/gate zones, and the study viewer's four
+# (results, runner, workflow, operation), and the Ficha's market and the variant batch.
+for router in (ROUTER, STUDIES, RESULTS, RUNNER, WORKFLOW, OPS, TEARSHEET, TEARMARKET, BATCH, LOADER):
+    APP.include_router(router)
 
 
 class StatusChange(BaseModel):
@@ -59,9 +72,12 @@ def health() -> dict[str, object]:
     """Whether the daemon is up and what it is serving.
 
     Returns:
-        A fixed marker the window polls on startup to know the daemon has bound its port.
+        A fixed marker the window polls on startup to know the daemon has bound its port,
+        plus the code it serves, its pid and how many jobs it runs — what the launcher
+        needs to replace a daemon left over from older code without killing a job.
     """
-    return {"ok": True, "module": "templates"}
+    busy = sum(j["rc"] is None for j in jobs.listing())
+    return {"ok": True, "module": "templates", "code": CODE, "pid": os.getpid(), "busy": busy}
 
 
 @APP.get("/api/templates")

@@ -40,16 +40,23 @@ The project splits in two, and only one half is tied to Linux.
 | half | what it does | Windows |
 |---|---|---|
 | export and curation | `core/worker.py`, `core/exportdrv.py`, `sqx/export/`, `sqx/curate/` | **no** — they all shell out to `bin/sqx-worker.sh`, which needs `rsync`, `ss`, `curl` and `setsid`. They raise a clear `RuntimeError` instead of failing obscurely |
-| analysis | `tasks/`, `strategies/`, `portfolio/`, the panels and reports | **yes** — pure Python over CSVs that are already exported |
+| analysis | `studies/`, `engines/`, `portfolio/`, over CSVs already in the data root | **yes** |
+| the desktop app | `ui/` | **yes**, with no SQX install — `bin\algoui.cmd` |
 
-So the working split is: export on the Linux machine, then analyse the CSVs on either. Set up on
-Windows exactly as above, with forward slashes in `machine.yaml`:
+Set up exactly as above, with forward slashes in `machine.yaml`, and drop the `sqx_workers` and
+`strategy_pools` blocks:
 
 ```yaml
 data_root: C:/Users/<you>/Desktop/AlgoData
 sqx_master: C:/none      # required to be present, never opened on Windows
 sqx_worker: C:/none
 ```
+
+`bin\algoui.cmd` sets `PYTHONUTF8=1` before starting the window, and the daemon's jobs get it too:
+without it Python on Windows reads and prints in cp1252. With no install, a template's page shows
+its bound holes as bound to a group this install lacks — the group names live in the install's
+`blockGroups.xml`. Verified on 2026-09-26 by a clean copy of the tree with no SQX path, every zone
+walked offscreen; not yet on a real Windows box.
 
 Porting `sqx-worker.sh` to cross-platform Python would remove the split; it is not done.
 

@@ -10,13 +10,14 @@ app ─▶ library ─▶ registry.csv · runs.csv · library/<name>/
  └──   interview ─▶ brief ─▶ AlgoData/templates/drafts/<name>.json
 ```
 
-**Imports from:** `core/`, `sqx/templates/` · **Consumed by:** `ui/desktop/`
+**Imports from:** `core/`, `sqx/templates/`, and through the packages `ledger/`, `pipeline/ledger`, `sqx/projects/stage` and each study's config loader · **Consumed by:** `ui/desktop/`
 **Must not contain:** a Qt widget, an SQX command, or a second way of writing a CSV. `jobs.py` starts
 `python3 -m` analysis modules and nothing else: never `sqcli`, never a worker.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `app.py` | The routes. One per question the window asks | imported | request → JSON |
+| `app.py` | The routes. One per question the window asks; every other surface is a router it includes (assets, the older studies/gate zones, results, runner, workflow, ops) | imported | request → JSON |
+| `version.py` | Fingerprint of the daemon's own code, served by `/api/health` so the launcher replaces an idle daemon left over from older code | imported | files → 16 hex |
 | `serve.py` | Bind to 127.0.0.1 and serve | `python3 -m ui.daemon.serve` | — |
 | `library.py` | What the library holds: registry rows, runs, and what is really on disk | imported | disk → dicts |
 | `coverage.py` | The matrix of runs and the headline counts | imported | catalogue → grid |
@@ -33,6 +34,19 @@ app ─▶ library ─▶ registry.csv · runs.csv · library/<name>/
 | `assetapi.py` | The asset library's routes, as a router. They would double `app.py`, and a zone is not a reason for a second daemon | imported | request → JSON |
 | `interview.py` | The questions the chat asks, and which is next | imported | answers → question |
 | `brief.py` | A finished interview into a draft brief, a prompt and the commands | imported | answers → files |
+
+The study viewer's routers, each a package with its own README, all included by `app.py`:
+
+| folder | routes | what it reads |
+|---|---|---|
+| `results/` | `/api/catalogue`, `/api/result`, `/api/history`, `/api/config`, `/api/config/hash`, `/api/matrix`, `/api/projects` | `AlgoData/reports/<P>/<D>/<day>/<study>/` as the study contract; the catalogue's run fields come from `runner/table.py` |
+| `runner/` | `POST /api/study/run`, `/api/study/only`, `POST /api/jobs/{id}/cancel` | the data root, to build each study's `python3 -m` command or say why not; queued in `jobs.py` |
+| `workflow/` | `/api/workflow` | the steps of WORKFLOW.md for one project, from files, logs and the ledger |
+| `ops/` | `/api/pulse`, `/api/ledger` | `/proc`, the custodian's log and `sqcli.config`, `AlgoData/ledger/*.jsonl` — no command to any install |
+| `tearsheet/` | `/api/tearsheet`, `/api/tearsheet/exits` | the newest `harvest/<P>/<D>/<day>/{equity,trades,metrics}.parquet`, filtered on identity; IS and OOS apart, any other sample refused |
+| `tearmarket/` | `/api/tearsheet/market`, `/api/tearsheet/trades` | the same harvest plus the asset's bars through `core.barstore`, cut at the end of oos1 |
+| `batch/` | `/api/batch`, `/api/batch/has` | a mother's `strategyPermutations/` or `pipeline/` `metrics.parquet` — only labels, `param_*`, `NetProfit (build)` and `NetProfit (oos1)`; every oos2/ALL column dropped before reading |
+| `loader/` | `GET`/`POST /api/load` | a databank chosen in the window: its files on whichever install holds it, the `project.cfx` for its OOS partner, the `metrics/`, `raw/` and `harvest/` manifests; queues what is missing or stale — metrics on the python lane (no SQX), trades and cosecha on the one-at-a-time conductor lane |
 
 ## Contracts and traps
 

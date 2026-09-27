@@ -8,6 +8,7 @@
 - `exposure-and-edgecost-input-contracts` — exposure.report KeyError strategy identity verdict empty table; Sample type OOS1 required; edgeCost report --strategy IndexError out of bounds; stopgrid variant names S00Vxxx not original strategy name
 - `feed-clock-timezones` — what timezone are SQX bars and trade times in, is Open time UTC, broker time, EET, Asia/Jerusalem, EETUS, convert trade times to UTC, session of day, feed timezone
 - `fill-and-pricing` — SQX fill convention open-to-open; entry price offset spread above bar open; how much of the spread is in the fill price; intrabar entries pending fills or clock; zero-duration trades; rebuild P/L from bars; point value per market regression; M1 execution grid
+- `harvest-equity-vs-trades` — harvest equity.parquet final value differs from sum of trades Profit/Loss; daily curve vs trade list mismatch; which total to show; tearsheet totals
 - `orderstocsv-schema` — how to export trades from SQX; orderstocsv columns schema; MAE MFE units points or dollars; Sample type IST OOS1; unfilled pending order EndTest; recover commission per trade
 - `sequential-opt-not-wfc` — sequential optimisation IS vs OOS walk forward correlation; Seq. Opt. chained scan BestValue; Fitness equals Ret/DD; how to get a real WFC paired tuples
 - `spp-export` — export SPP system parameter permutation results; SPP trades; permutation table 152 statistics; Don't store data for 3D charts; spp.parquet; export_spp
@@ -15,6 +16,6 @@
 - `spp-parameter-importance` — which parameters matter SPP eta-squared sensitivity; marginal profile WFC without pairing; freeze parameters shrink grid; unpaired SPP runs
 - `sqx-atr-is-wilder` — how SQX computes ATR; Wilder or simple mean; ATR-based stop loss formula; ATRBasedValue getATRValue shift 1 round 6; reproduce the ATR SQX used for a stop; calibrate.atr is a rolling mean; Close type SL
 - `storage-format` — storage format parquet vs CSV for exports; which columns to drop SPP export; redundant metrics; RExpectancy 99999 sentinel; CalmarRatio? question mark column name
-- `trade-export-columns` — which trade export columns can be dropped; Ticket Balance Time in trade Comment Symbol derivable; Close type needed; trade parquet packing size speed memory; categorical columns
+- `trade-export-columns` — which trade export columns can be dropped; is an export cross-market; Symbol column present on one-market exports; Ticket Balance Time in trade Comment Symbol derivable; Close type needed; trade parquet packing size speed memory; categorical columns
 - `wfm-export` — Walk-Forward Matrix WFM export cells steps; is_Fitness oos_Fitness zero; future steps past end of data; pool steps or cells; params.parquet NaN parameter drift
 - `what-a-project-stores` — which bar data to store; M1 resample equals SQX M30 H1 export; float32 vs float64 zstd size; bars/ directory per export; duplicate strategies SPP OOS WFM dedupe by name or hash

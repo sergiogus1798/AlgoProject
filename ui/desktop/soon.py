@@ -5,7 +5,8 @@ from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from ui.desktop.theme import C, chip
 
-# One entry per zone of the unified platform that has no view yet. `today` is the honest
+# One entry per zone of the unified platform that has no view yet (2026-09-26: Datos and
+# Carteras; every other zone of the sidebar is built). `today` is the honest
 # half: a page that only promised something would be an advert, and the reader needs to
 # know what to open meanwhile. Sources: the six zones of
 # docs/AgentPDFs/plataforma-unificada-2026-09-20.md §10 and the steps of WORKFLOW.md.
@@ -22,7 +23,9 @@ ZONES = {
         "steps": "después del 20",
         "what": "Composición de una cartera, correlaciones entre sus estrategias y riesgo "
                 "agregado.",
-        "today": "Nada: portfolio/ está vacío. Es la zona que menos existe de las cinco.",
+        "today": "Casi nada: portfolio/funded y portfolio/real están vacíos. Sólo existe el "
+                 "Monte Carlo de operaciones de portfolio/common, que se lee como estudio en "
+                 "Estudio de población (familia Lecturas).",
     },
 }
 
@@ -84,9 +87,8 @@ def page(name: str) -> QWidget:
         inner.addWidget(head)
         inner.addWidget(wrapped(body, C["muted"]))
 
-    inner.addWidget(wrapped("Esta entrega es solo el módulo de plantillas. Las zonas llegan como "
-                            "una vista más de esta misma ventana, nunca como una segunda "
-                            "aplicación.", C["faint"], faint=True))
+    inner.addWidget(wrapped("Cuando se construya llegará como una vista más de esta misma "
+                            "ventana, nunca como una segunda aplicación.", C["faint"], faint=True))
     # Fixed and not maximum: a word-wrapped QLabel can only compute its height against a
     # width the layout already knows, and a card left to its own sizeHint clips the text.
     card.setFixedWidth(CARD_WIDTH)

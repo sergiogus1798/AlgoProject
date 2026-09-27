@@ -1,6 +1,7 @@
 """The versioned thresholds, and whether the code still uses the numbers they declare."""
 
 import re
+from functools import lru_cache
 
 import pandas as pd
 import yaml
@@ -17,7 +18,16 @@ def declared() -> list[dict]:
 
     Returns:
         The rows of `thresholds.yaml`. Read by whoever needs a number; written by nobody.
+        Parsed once per state of the file: 🔬 2026-09-27, `fill()` asked for it once per
+        placeholder, 66 parses and ~5 s of a cold config load, the most of a 1-2 s study.
     """
+    stat = FILE.stat()
+    return _parsed(stat.st_mtime_ns, stat.st_size)
+
+
+@lru_cache(maxsize=4)
+def _parsed(stamp: int, size: int) -> list[dict]:
+    """`declared()` for one state of the file; the key changes the moment anyone edits it."""
     return yaml.safe_load(FILE.read_text(encoding="utf-8"))["thresholds"]
 
 

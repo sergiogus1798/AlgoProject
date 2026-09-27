@@ -1,10 +1,11 @@
 ---
-q: which trade export columns can be dropped; Ticket Balance Time in trade Comment Symbol derivable; Close type needed; trade parquet packing size speed memory; categorical columns
-tag: 🔬  date: 2026-09-21  see: export/orderstocsv-schema, export/storage-format
+q: which trade export columns can be dropped; is an export cross-market; Symbol column present on one-market exports; Ticket Balance Time in trade Comment Symbol derivable; Close type needed; trade parquet packing size speed memory; categorical columns
+tag: 🔬  date: 2026-09-26  see: export/orderstocsv-schema, export/storage-format
 ---
 # Of 16 trade columns, 12 carry everything; Ticket/Time in trade/Comment/Symbol are derivable
 - Drop `Ticket` only if the file passes `tradestore.ordered()` (open-time sorted, no dup open times, no overlaps); else keep it.
 - Drop `Symbol` only under `data=main`; under `data=all` it is the sole market separator (`tradestore.pack(per_market=True)` keeps it).
+- Every export carries `Symbol` since 2026-09-24, one-market too: cross-market means **more than one distinct feed** in it, never "the column exists". Filter on `Symbol` only with a feed in hand.
 - `Balance` is derivable but kept (owner's decision). `Close type` is NOT disposable.
 - Keep packed text columns categorical. Per-strategy work: read once, split with `tradestore.by_strategy()`.
 
@@ -25,3 +26,5 @@ Measured on `Strategy 1.19.29` (763 trades), 5 XAUUSD strategies (4,115 trades),
 - Memory trade: monteCarlo load 5.2 s / 266 MB peak RSS (CSVs) → 1.0 s / ~620 MB (Parquet). Frames 74 MB vs 406 MB, but Arrow
   decompression ~270 MB transient RSS; `to_pandas(split_blocks=True, self_destruct=True)` recovers only 30 MB. Memory-bound readers: `tradestore.read(path, name)`.
 - ⚠️ Object text columns: 326 MB vs 74 MB categorical. `core.trades.cost()` does `.astype("object").map(SIDE)` on `Type` — mapping a categorical returns a categorical that refuses to multiply.
+
+📓 2026-09-26: `engines/nulls/inputs.trades()` filtered `Symbol == ""` on a one-market export read without a feed → 0 rows, profitShape crashed on every current export (fixed: filter only `if held and feed`); `ui/daemon/runs.py` refused every one-market study for the column alone (fixed: `runner.where.markets`). `CrossTF/2026-09-26/trades.parquet` of `USDJPY_workflow_profiling_v1`: 1 feed, 190,724 OOS1 rows after the fix.

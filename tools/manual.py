@@ -23,8 +23,8 @@ FAMILIES = {
         "00-empezar", "20-donde-esta-todo", "21-vocabulario", "46-knowhow", "23-skills",
         "10-github"]),
     "02-la-ventana": ("La ventana de escritorio", [
-        "35-app-plantillas", "38-app-activos", "48-app-generacion", "44-app-estrategias",
-        "45-app-puerta"]),
+        "35-app-plantillas", "38-app-activos", "58-app-estudios", "48-app-generacion",
+        "44-app-estrategias", "45-app-puerta"]),
     "03-datos-costes-y-registro": ("Datos, costes y registro de la búsqueda", [
         "13-barras", "57-calidad-del-feed", "59-spread-real", "25-actualizar-datos", "24-costes", "43-ledger",
         "12-rendimiento"]),

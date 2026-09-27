@@ -1,6 +1,6 @@
 ---
-q: decode SQStats blob, settings.xml base64 stats, 152 statistics, sqxstats KEYS, metric key mapping, read databank metrics off disk without SQX, sample type 10 20
-tag: 🔬  date: 2026-09-10  see: sqx-format/result-sections, sqx-format/optimization-profile-bin, sqx-format/daily-equity-bin, columns/custom-columns-stored
+q: decode SQStats blob, settings.xml base64 stats, 152 statistics, sqxstats KEYS, metric key mapping, read databank metrics off disk without SQX, sample type 10 20, replace view export, Export Data View columns, harvest metrics without conductor
+tag: 🔬  date: 2026-09-27  see: sqx-format/result-sections, sqx-format/optimization-profile-bin, sqx-format/daily-equity-bin, columns/custom-columns-stored
 ---
 # SQStats decodes completely: 152 stats, readable off disk with no SQX running
 Each `<SQStats version="2" e="b64">` in `settings.xml` sits under
@@ -8,6 +8,8 @@ Each `<SQStats version="2" e="b64">` in `settings.xml` sits under
 then 1-byte id — or, if type > 100, a `writeUTF` name — then value (1 int, 2 long, 3 float; big-endian).
 `core/sqxstats.records()` reads all; ids named by `core/sqxstats_columns.json` (shared with
 `core/optprofile.py`). Values are frozen stored numbers; for another window use `dailyEquity.bin`.
+It replaces the view export: `core/sqxview.VIEW` rebuilds «Export Data View» equal within float32
+(`R Expectancy`: the view rounds to 2 decimals) — metrics exports and cosechas need no conductor.
 
 ## Evidence
 - Every blob on this install: 116 id-keyed records + 36 self-naming (`SortinoRatio`, `RecoveryFactor`,
@@ -34,3 +36,6 @@ then 1-byte id — or, if type > 100, a `writeUTF` name — then value (1 int, 2
   see `knowhow/export/`) — useless as OOS-side calibration.
 - `core/sqxstats.py` (`stats()`, `equity()`) made `studies/screening/decay/report.py` possible with the master GUI up
   and no worker started.
+- 2026-09-27, `USDJPY_emaCross_H1` Results (100) + OOS (32 paired), every view column against the view's
+  export: max relative error 6e-8, `R Expectancy` 4.9e-2 (rounding). Harvest rerun: trades and equity `==`
+  row for row, 18 s instead of a conductor start/stop per side.

@@ -25,8 +25,12 @@ def group_names(install: Path) -> dict[str, str]:
 
     Returns:
         The map a template needs to be read: a hole stores its group as the group's id,
-        not its name, so a template alone cannot say what it is bound to.
+        not its name, so a template alone cannot say what it is bound to. Empty when the
+        install is absent — a machine with no SQX, Windows included — and every bound hole
+        then reads as bound to a group this install does not have.
     """
+    if not (install / GROUPS_REL).exists():
+        return {}
     root = ElementTree.parse(install / GROUPS_REL).getroot()
     return {g.get("id"): g.get("name") for g in root}
 
@@ -56,7 +60,7 @@ def shape(path: Path, install: Path = MASTER) -> dict:
         found.append({"id": next((p.text for p in item if p.get("key") == "#Identification#"),
                                  item.get("key")),
                       "kind": HOLES[item.get("key")],
-                      "group": names.get(group) if group else None,
+                      "group": names.get(group, group) if group else None,
                       "unknown_group": bool(group) and group not in names})
     return {"holes": found, "fixed": sorted(blocks(rules(path)))}
 

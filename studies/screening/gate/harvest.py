@@ -21,7 +21,6 @@ def main() -> None:
     ap.add_argument("--databank", required=True, help="the build databank, in sample")
     ap.add_argument("--oos-databank", required=True, help="the retest databank, out of sample")
     ap.add_argument("--role", help="worker role holding the project; the master if absent")
-    ap.add_argument("--view", default="Export Data View", help="databank view on the master")
     ap.add_argument("--limit", type=int, default=0, help="a random sample of N pairs, for a trial")
     a = ap.parse_args()
 
@@ -41,7 +40,7 @@ def main() -> None:
     out = harvest_dir(a.project, a.databank, date.today().isoformat())
     out.mkdir(parents=True, exist_ok=True)
     sides = collect.tables({side: [pairs[i][n] for i in matched]
-                            for n, side in enumerate(("IS", "OOS"))}, out / "_work", a.view)
+                            for n, side in enumerate(("IS", "OOS"))}, out / "_work")
     # A pair whose identity changed in the retest carries two identities, so the retest side
     # is re-keyed to the build's before anything is joined on it.
     if alias:
@@ -73,7 +72,8 @@ def main() -> None:
     print(f"bloque con datos: build={blocks['IS']} · retesteo={blocks['OOS']}")
     manifest.write(out,
                    {"install": str(install), "project": a.project, "databank": a.databank,
-                    "oos_databank": a.oos_databank, "view": a.view, "role": a.role or "master",
+                    "oos_databank": a.oos_databank, "role": a.role or "master",
+                    "metrics": "SQStats of each .sqx, the columns of «Export Data View» (collect.VIEW)",
                     "join": "identity (sha256 of strategy_Portfolio.xml), file name as fallback",
                     "sample_blocks": blocks},
                    f"python3 -m studies.screening.gate.harvest --project {a.project} --databank "

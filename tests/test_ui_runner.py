@@ -1,0 +1,128 @@
+"""The window's run side: a real study run end to end, the python queue, cancel, and the refusals."""
+
+import sys
+import tempfile
+import time
+from datetime import date
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from core.paths import DATA, report_dir  # noqa: E402
+from ui.daemon import jobs, studyapi  # noqa: E402
+from ui.daemon.runner import api  # noqa: E402
+
+PROJECT, DATABANK, STRATEGY = "USDJPY_workflow_profiling_v1", "Results", "Strategy 1.23.51"
+# Job logs go here, not to AlgoData/logs/ui, and vanish with the test.
+SCRATCH = tempfile.TemporaryDirectory(prefix="ui-runner-")
+SLEEPER = ["-c", "import time; print('PROGRESS 40 a medias', flush=True); time.sleep(30)"]
+
+
+def client() -> TestClient:
+    """A local app with only the run routes and the job listing, logs in a scratch folder."""
+    app = FastAPI()
+    app.include_router(api.ROUTER)
+    app.include_router(studyapi.ROUTER)
+    jobs.LOGS = Path(SCRATCH.name)
+    jobs.JOBS.clear()
+    return TestClient(app)
+
+
+def listed(http: TestClient) -> dict[str, dict]:
+    """Every job by id, as GET /api/jobs gives it."""
+    return {j["id"]: j for j in http.get("/api/jobs").json()["jobs"]}
+
+
+def wait(http: TestClient, job_id: str, seconds: float = 30) -> dict:
+    """Poll one job until it has ended."""
+    end = time.time() + seconds
+    while time.time() < end:
+        job = listed(http)[job_id]
+        if job["rc"] is not None:
+            return job
+        time.sleep(0.2)
+    raise AssertionError(f"{job_id} did not end in {seconds} s")
+
+
+def test_real_run() -> None:
+    """edgeCost on one strategy of a real harvest: percent reaches 100 and the result lands."""
+    http = client()
+    before = time.time()
+    got = http.post("/api/study/run", json={
+        "study": "edgeCost", "scope": "one", "project": PROJECT, "databank": DATABANK,
+        "strategies": [STRATEGY], "asset": "USDJPY"}).json()
+    assert "jobs" in got, got
+    job = wait(http, got["jobs"][0]["id"])
+    assert job["rc"] == 0 and job["percent"] == 100, job["tail"]
+    assert (job["lane"], job["study"], job["scope"]) == ("python", "edgeCost", "one")
+    landed = (report_dir(PROJECT, DATABANK, date.today().isoformat()) / "edgeCost"
+              / "estrategias" / f"{STRATEGY}.json")
+    assert landed.stat().st_mtime >= before, landed
+
+
+def test_queue_and_cancel() -> None:
+    """Two wide jobs fill the budget, the third waits; cancelling a runner starts the waiting
+    one. Light jobs run sixteen at once and the seventeenth waits."""
+    http = client()
+    ids = [jobs.start("crossmarket", SLEEPER, {"project": "p", "databank": "d", "strategy": ""})["id"]
+           for _ in range(3)]
+    time.sleep(1)
+    now = listed(http)
+    assert [now[i]["queued"] for i in ids] == [None, None, 1], now
+    assert now[ids[0]]["percent"] == 40 and now[ids[0]]["state"] == "a medias"
+    assert now[ids[2]]["state"] == "en cola"
+    assert http.post(f"/api/jobs/{ids[0]}/cancel").json() == {"ok": True}
+    time.sleep(0.5)
+    now = listed(http)
+    assert now[ids[0]]["rc"] == jobs.CANCELLED and now[ids[0]]["state"] == "cancelado"
+    assert now[ids[2]]["queued"] is None and now[ids[2]]["rc"] is None
+    queued = jobs.start("crossmarket", SLEEPER, {"project": "p", "databank": "d", "strategy": ""})
+    assert queued["queued"] == 1
+    assert http.post(f"/api/jobs/{queued['id']}/cancel").json() == {"ok": True}
+    assert http.post(f"/api/jobs/{queued['id']}/cancel").json() == {"ok": False}
+    assert http.post("/api/jobs/nope/cancel").json() == {"ok": False}
+    for i in ids[1:]:
+        http.post(f"/api/jobs/{i}/cancel")
+    light = [jobs.start("profitShape", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"})["id"]
+             for _ in range(jobs.SLOTS // jobs.LIGHT + 1)]
+    now = listed(http)
+    assert [now[i]["queued"] for i in light].count(None) == jobs.SLOTS // jobs.LIGHT, now
+    assert now[light[-1]]["queued"] == 1
+    for i in light:
+        http.post(f"/api/jobs/{i}/cancel")
+    assert all(j["rc"] is not None for j in listed(http).values())
+
+
+def test_refusals() -> None:
+    """What cannot run answers with a sentence and starts nothing."""
+    http = client()
+    body = {"project": PROJECT, "databank": DATABANK, "strategies": [STRATEGY], "asset": "USDJPY"}
+    for study, scope, extra in [("profitShape", "many", {}), ("gate", "one", {}),
+                                ("blindJoint", "many", {}), ("isOos", "many", {"overrides": ["a.b=1"]}),
+                                ("gate", "many", {"only": "x"}), ("edgeCost", "one", {"asset": ""}),
+                                ("edgeCost", "one", {"asset": "NOPE"}), ("nope", "many", {})]:
+        got = http.post("/api/study/run", json=body | {"study": study, "scope": scope} | extra)
+        assert set(got.json()) == {"error"}, (study, got.json())
+    assert jobs.JOBS == []
+
+
+def test_only_options() -> None:
+    """crossmarket offers each non-base market of the export; other studies offer none."""
+    http = client()
+    got = http.get("/api/study/only", params={
+        "study": "crossmarket", "project": PROJECT, "databank": "Retest_Markets_-_Family",
+        "asset": "USDJPY"}).json()["options"]
+    keys = [o["key"] for o in got]
+    assert keys and "USDJPY_DukasM1_the5ers" not in keys, keys
+    assert http.get("/api/study/only", params={"study": "gate"}).json() == {"options": []}
+
+
+if __name__ == "__main__":
+    assert DATA.exists()
+    for test in (test_refusals, test_only_options, test_queue_and_cancel, test_real_run):
+        started = time.time()
+        test()
+        print(f"ok  {test.__name__}  {time.time() - started:.1f} s")

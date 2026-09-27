@@ -100,7 +100,11 @@ def main() -> None:
     src = metrics_export(a.project, a.databank)
     columns, names = metrics.load(src / "metrics.csv")
     made = manifest.read(src)
-    source = {"project": a.project, "databank": a.databank, "view": made["source"]["view"],
+    # Exports before 2026-09-27 went through the view on the conductor and name it; since
+    # then they are read off the .sqx and say so under `metrics`.
+    origin = (f"vista «{made['source']['view']}»" if "view" in made["source"]
+              else "métricas leídas de cada .sqx")
+    source = {"project": a.project, "databank": a.databank, "origin": origin,
               "exported": made["date"], "reported": date.today().isoformat(),
               "code_version": manifest.code_version()}
     is_metrics = metrics.measured(columns, metrics.IS)
@@ -109,7 +113,7 @@ def main() -> None:
     out = report_dir(a.project, a.databank, source["reported"]) / "isOos"
     title = f"{a.project} / {a.databank} — dentro de muestra contra fuera"
     output.population(out, "isOos", got, title,
-                      f"{len(names):,} estrategias · vista «{source['view']}» · exportado "
+                      f"{len(names):,} estrategias · {source['origin']} · exportado "
                       f"{source['exported']}.")
     # The explorer recomputes every statistic in the browser as a filter changes; it stays
     # until the window has an IS/OOS zone that filters, and is the last page that needs one.

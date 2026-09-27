@@ -61,7 +61,7 @@ def trades(packed: Path, which: str, feed: str = "", strategy: str = "") -> pd.D
         raise SystemExit(f"{packed} tiene {len(held)} mercados ({', '.join(held)}): di cuál "
                          f"con --feed, o córrelo por mercado")
     filters = [("Sample type", "==", which)]
-    filters += [("Symbol", "==", feed)] if held else []
+    filters += [("Symbol", "==", feed)] if held and feed else []
     filters += [("strategy", "==", strategy)] if strategy else []
     return pd.read_parquet(packed, filters=filters).reset_index(drop=True)
 

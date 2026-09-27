@@ -1,0 +1,102 @@
+"""The databank loader: what it finds stale, the lane each piece takes, failures never retried alone."""
+
+import os
+import sys
+import time
+from pathlib import Path
+from types import SimpleNamespace
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from ui.daemon import jobs  # noqa: E402
+from ui.daemon.loader import api, find, state  # noqa: E402
+
+# A build databank with its oos1 retest, and a cross-market one, both on the custodian.
+BUILD = ("USDJPY_emaCross_H1", "Results")
+CROSS = ("USDJPY_workflow_profiling_v1", "Retest_Markets_-_Family")
+SLEEPER = ["-c", "import time; time.sleep(30)"]
+
+
+def fake_jobs(listed: list[dict]) -> list:
+    """Point the loader at a job list of our own and record what it starts instead."""
+    started = []
+    state.jobs = SimpleNamespace(listing=lambda: listed,
+                                 start=lambda *a, **k: started.append((a, k)))
+    return started
+
+
+def test_status_and_lanes() -> None:
+    """A build databank pairs with OOS and needs the conductor for trades and cosecha only;
+    a cross-market one exports with data=all; the metrics never touch SQX."""
+    fake_jobs([])
+    now = state.status(*BUILD)
+    assert (now["partner"], now["role"], now["strategies"]) == ("OOS", "custodian", 100), now
+    todo = state.commands(BUILD[0], {**now, "pieces": {k: {"state": "missing"} for k in state.PIECES}})
+    assert {k: lane for k, (lane, _) in todo.items()} == {
+        "metrics": "python", "trades": "conductor", "harvest": "conductor"}, todo
+    assert "sqx.export.export_trades" in todo["trades"][1] and "--symbol" in todo["trades"][1]
+    cross = state.status(*CROSS)
+    assert cross["databank"] == "Retest Markets - Family" and cross["pieces"]["harvest"]["state"] == "none"
+    todo = state.commands(CROSS[0], {**cross, "pieces": {k: {"state": "missing"} for k in state.PIECES}})
+    assert "sqx.export.export_retest" in todo["trades"][1], todo
+
+
+def test_failure_and_retry() -> None:
+    """A failed load stays failed and is not queued again until the owner retries."""
+    failed = {"loader": "trades", "project": BUILD[0], "databank": BUILD[1], "rc": 1,
+              "cancelled": False, "tail": ["REFUSING: another sqcli already holds SQX_w1."]}
+    started = fake_jobs([failed])
+    got = state.load(*BUILD)
+    assert got["pieces"]["trades"]["state"] == "failed" and "REFUSING" in got["pieces"]["trades"]["why"]
+    assert "trades" not in {a[2]["loader"] for a, _ in started}, started
+    started.clear()
+    state.load(*BUILD, retry=True)
+    assert "trades" in {a[2]["loader"] for a, _ in started}, started
+
+
+def test_writing_waits() -> None:
+    """While SQX writes the project nothing is read or queued, and the roster is empty."""
+    started = fake_jobs([])
+    real = find.writing
+    find.writing = lambda top, project: True
+    try:
+        got = state.load(*BUILD)
+        assert got["writing"] and not started and not find.roster(*BUILD)
+    finally:
+        find.writing = real
+
+
+def test_route_and_roster() -> None:
+    """The routes answer, an unknown databank is a sentence, and the roster lists the files."""
+    fake_jobs([])
+    app = FastAPI()
+    app.include_router(api.ROUTER)
+    http = TestClient(app)
+    assert http.get("/api/load", params={"project": BUILD[0], "databank": BUILD[1]}).json()["strategies"] == 100
+    assert "error" in http.get("/api/load", params={"project": "nope", "databank": "x"}).json()
+    assert len(find.roster(*BUILD)) == 100
+
+
+def test_conductor_one_at_a_time() -> None:
+    """Two conductor jobs: the first runs, the second waits; python jobs are not held back."""
+    ids = [jobs.start("cargar trades", SLEEPER, {"project": "p", "databank": "d", "strategy": ""},
+                      lane="conductor")["id"] for _ in range(2)]
+    light = jobs.start("profitShape", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"})["id"]
+    time.sleep(0.5)
+    now = {j["id"]: j for j in jobs.listing()}
+    assert now[ids[0]]["queued"] is None and now[ids[1]]["queued"] is not None, now
+    assert now[light]["queued"] is None
+    for i in (*ids, light):
+        jobs.cancel(i)
+
+
+if __name__ == "__main__":
+    for test in (test_status_and_lanes, test_failure_and_retry, test_writing_waits,
+                 test_route_and_roster, test_conductor_one_at_a_time):
+        started = time.time()
+        test()
+        print(f"ok  {test.__name__}  {time.time() - started:.1f} s")

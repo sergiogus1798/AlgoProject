@@ -53,3 +53,19 @@ def awake(port: int) -> bool:
         return httpx.get(f"http://127.0.0.1:{port}/api/health", timeout=1.0).json()["ok"]
     except httpx.HTTPError:
         return False
+
+
+def health(port: int) -> dict | None:
+    """What the daemon on this port says about itself, or None when nothing answers.
+
+    Args:
+        port: Loopback port to probe.
+
+    Returns:
+        The /api/health body: `code` (the fingerprint of the daemon code it runs), `pid`
+        and `busy` (jobs running or queued). A daemon older than those fields lacks them.
+    """
+    try:
+        return httpx.get(f"http://127.0.0.1:{port}/api/health", timeout=1.0).json()
+    except httpx.HTTPError:
+        return None

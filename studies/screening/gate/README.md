@@ -69,7 +69,7 @@ changing a threshold re-judges without recomputing anything that costs machine t
   the data, never assumed**: 🔬 a task that ran one window fills the block SQX designated it as, and
   two real retest databanks over the same window disagree — `XAUUSD/SPP OOS` puts its numbers under
   `(IS)` and `XAU_ISOOS_ejemplo/OOS` under `(OOS)` (`knowhow/export/databank-metrics-is-oos.md`). `collect.measured()`
-  compares only the metrics the view emits at both types, because structural columns like
+  compares only the metrics the view emits at both sample types, because structural columns like
   `Param Count (IS)` carry a number whatever ran, and **refuses** when both blocks are filled: that
   databank ran its own split and no half of it can be called "the retest" from outside.
 - **The equity curve is glued on daily returns, not on levels.** The two runs start from their own
@@ -122,14 +122,13 @@ screen that needs new maths **extends that module** rather than growing a second
 
 ## Where `studies.screening.gate.harvest` spends its time
 
-🤔 Inferred from the code and the catalogue's timings, not yet broken down by phase (2026-09-25).
-Per databank side, `collect.tables()` starts and stops the conductor once for the metrics export
-(~21.5 s until the CLI answers, 14.7 s to stop) and launches one more `sqcli` for `orderstocsv`.
-Two sides make two worker cycles and two JVM starts, which is most of the 112 s measured on
-500 + 500 files. The Python part (packing, curves read from the `.sqx`) is seconds.
+🔬 2026-09-27: **the metrics no longer need SQX.** `collect.metrics()` reads each file's SQStats
+through `core/sqxview.VIEW`, the owner's «Export Data View» column for column — checked on
+`USDJPY_emaCross_H1` Results/OOS against the view's own export: every column equal within 6e-8
+relative (float32), `R Expectancy` more precise (the view rounds it to two decimals). That removes
+the conductor cycle the metrics export cost per harvest (~21.5 s until the CLI answered, 14.7 s to
+stop). The one JVM left is `orderstocsv`, a one-shot `sqcli` for both sides at once. The Python part
+(SQStats, packing, curves read from the `.sqx`) is seconds.
 
-🔬 **Of the whole metrics export, the cascade reads one column**: `Net profit [OOS]`, in the
-`estaticas` screen. Everything else it reads comes from the trades and the curves. The rest of
-`metrics.parquet` is kept for the owner, not for a screen. `core.sqxstats.stats()` decodes the same
-frozen `SQStats` from the `.sqx` with no JVM, so the metrics side can be replaced once its columns
-are checked against a view export.
+The cascade still reads one metrics column, `Net profit [OOS]`, in `estaticas`; the rest of
+`metrics.parquet` is kept for the owner and the window's Ficha.

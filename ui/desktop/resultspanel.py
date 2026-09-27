@@ -1,6 +1,7 @@
 """One strategy's page: what every module already said about it, and the command for what none did."""
 
 import webbrowser
+from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QResizeEvent
@@ -96,7 +97,7 @@ class ResultsPanel(QScrollArea):
         for path in data["pages"]:
             b = QPushButton("abrir informe html")
             b.setToolTip(path)
-            b.clicked.connect(lambda _, p=path: webbrowser.open(f"file://{p}"))
+            b.clicked.connect(lambda _, p=path: webbrowser.open(Path(p).as_uri()))
             lay.addWidget(b, alignment=Qt.AlignLeft)
         if data["stages"]:
             lay.addWidget(rule())

@@ -13,6 +13,10 @@
 - `no-slicing-xml-yaml-by-index` — edit SQX XML project.cfx by str.index, silence conditions, Project does not exist after sync, broken XML, rewrite YAML section lost other session's blocks, git diff shows no deletions, recover lost assets block
 - `pipeline-run-guards` — gate vs threshold, canary failure stops the run, brief_hash fingerprint design, gates.unchanged, provisional costs block pipeline?, core.assets.pending, costs_provisional
 - `practices-that-bit` — python heredoc bash -c SyntaxError, verify SQX write, session names unstable, forkserver ProcessPoolExecutor fork deadlock threads, set_forkserver_preload, ELECTRON_RUN_AS_NODE bad option --no-sandbox
+- `qt-painting-traps` — PySide6 paintEvent exception swallowed, grab() raises, deleteLater old widget still paints, QStackedWidget tallest page height, QSizePolicy Ignored, emoji glyph missing font ⛔ 👁 empty box, offscreen widget test, attribute named metric segfault
+- `qt-reload-inside-own-signal` — PySide6 segfault when a combo or button reloads the page, QScrollArea setWidget destroys old widget, reload inside signal, QTimer.singleShot
 - `resumable-jobs` — resumable pipeline job, ledger vs outputs on disk vs sha256, skip a finished stage, atomic write os.replace same directory, kill test SIGKILL process group killpg, progress bar test monotonic, shlex.split template spaces, PROGRESS stdout protocol
+- `stale-ui-daemon` — desktop shortcut window does not open after an update; ui daemon outlives the window; stale daemon 404 on new routes; /api/health code fingerprint
 - `thresholds-live-in-the-ledger` — where does a study's threshold live, config.yaml or ledger/thresholds.yaml? ledger:<key> placeholder, add or change a threshold, migrate a module, --set override of a threshold, check-thresholds copia
-- `windows-portability` — does the project run on Windows? portable, Linux-only, encoding utf-8 cp1252 UnicodeDecodeError, PyYAML wheel, python version 3.14, require_posix
+- `tmp-partition-fills-with-scratchpads` — No space left on device /tmp; pwd write error; /tmp full; Claude scratchpads never deleted; /tmp/claude-1000 size; clean old sessions
+- `windows-portability` — does the project run on Windows? portable, Linux-only, desktop app ui on Windows, algoui.cmd, PYTHONUTF8, encoding utf-8 cp1252 UnicodeDecodeError, PyYAML wheel, python version 3.14, require_posix
