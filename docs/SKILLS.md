@@ -81,9 +81,10 @@ veredicto de dos columnas** que `/curate` ya sabe aplicar (acordado con el dueñ
 
 ## Candidatas a retirar
 
-**Las cuatro globales de sqx-lab** (`sqx-custom-block`, `sqx-random-group`, `sqx-strategy-template`,
-`sqx-strategy-project`). Son producto genérico: no conocen los defaults del dueño, ni el reparto
-conductor/custodio, ni `registry.csv`. Pesan entre 2.700 y 6.000 tokens cada una.
+**Las tres globales de sqx-lab que quedan instaladas** (`sqx-custom-block`, `sqx-random-group`,
+`sqx-strategy-template`; `sqx-strategy-project` ya no está en `~/.claude/skills/`). Son producto
+genérico: no conocen los defaults del dueño, ni el reparto conductor/custodio, ni `registry.csv`.
+Pesan entre 3.000 y 6.500 tokens cada una.
 
 El riesgo no es el gasto, es **el enrutado**: una petición de plantilla puede caer en
 `sqx-strategy-template` en vez de en la nuestra, y salir una plantilla que no sigue las reglas de
@@ -103,36 +104,37 @@ esta casa. Lo único suyo que hoy se usa son los esqueletos, y esos viven dentro
 
 <!-- generado por tools/skillmap.py — no editar debajo de esta linea -->
 
-Regenerado 2026-09-25 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
+Regenerado 2026-09-27 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
 
 ## Skills de proyecto — `/home/sergioguslw/Desktop/AlgoProject/.claude/skills`
 
 | skill | ~tokens al invocar | ficheros | último cambio | para qué |
 |---|---:|---:|---|---|
-| `crosstf` | 2,094 | 1 | 2026-09-25 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
+| `crosstf` | 2,282 | 1 | 2026-09-27 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
+| `variants` | 2,007 | 1 | 2026-09-26 | Run the variant factory in SQX — turn one mother's SPP design brief into a batch of parameter variants, load and retest them on the custodian, and harvest the metrics panel and the per-day equity the WFC and the CSCV read |
+| `wfm` | 1,994 | 1 | 2026-09-26 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in the reserved oos2, the ten per-cell conditions and the area rule that decide whether a strategy survives, and the two owner's rules it enforces (every look spends the window, and nothing is read until steps 17, 18 and 19 are all done) |
 | `curate` | 1,904 | 1 | 2026-09-25 | Apply a Python verdict back into SQX — move the strategies a filter, a test or an analysis rejected out of a databank, so the next task in the chain only sees the survivors. Works between any two tasks and with any module that can name what it drops |
-| `wfm` | 1,889 | 1 | 2026-09-25 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in the reserved oos2, the ten per-cell conditions and the area rule that decide whether a strategy survives, and the two owner's rules it enforces (every look spends the window, and nothing is read until steps 17, 18 and 19 are all done) |
-| `variants` | 1,857 | 1 | 2026-09-25 | Run the variant factory in SQX — turn one mother's SPP design brief into a batch of parameter variants, load and retest them on the custodian, and harvest the metrics panel and the per-day equity the WFC and the CSCV read |
-| `template-run` | 1,779 | 1 | 2026-09-25 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
-| `sync` | 1,550 | 1 | 2026-09-25 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
+| `template-run` | 1,790 | 1 | 2026-09-26 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
+| `sync` | 1,562 | 1 | 2026-09-26 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
+| `mcretest` | 1,351 | 1 | 2026-09-26 | Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders |
+| `spp` | 1,343 | 1 | 2026-09-26 | Configure and run the two SPP tasks of a custom SQX project — the System Parameter Permutation grid over the in-sample and the out-of-sample window, at the owner's spread and steps, with every acceptance silenced so the profile is a map and not a filter |
 | `crossmarket` | 1,341 | 1 | 2026-09-25 | Retest surviving strategies on other markets with SQX's Retest on additional markets cross-check — the markets from assets/_markets.yaml, each over its own window and at its own declared costs. Configures and runs a task on the custodian |
-| `mcretest` | 1,340 | 1 | 2026-09-25 | Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders |
-| `spp` | 1,325 | 1 | 2026-09-25 | Configure and run the two SPP tasks of a custom SQX project — the System Parameter Permutation grid over the in-sample and the out-of-sample window, at the owner's spread and steps, with every acceptance silenced so the profile is a map and not a filter |
-| `perf` | 1,236 | 1 | 2026-09-25 | Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement on a branch |
-| `oos-gate` | 1,068 | 1 | 2026-09-25 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
-| `export` | 500 | 1 | 2026-09-25 | Export data out of StrategyQuant X — a databank's metrics with IS/OOS columns, every trade of every strategy, or OHLC bars |
+| `oos-gate` | 1,274 | 1 | 2026-09-26 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
+| `perf` | 1,249 | 1 | 2026-09-26 | Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement, left uncommitted for the owner |
+| `asset-onboard` | 1,197 | 1 | 2026-09-27 | Add a new asset to assets/ with its whole cost card worked out from data — Darwinex's real spread per segment (measured, modelled back where there are no ticks), slippage at half of it, the owner's default commission and swap for its kind, the triple-swap night, and the MC Retest spread range from the real dispersion. Also refreshes the spreads of an existing asset |
+| `export` | 518 | 1 | 2026-09-27 | Export data out of StrategyQuant X — a databank's metrics with IS/OOS columns, every trade of every strategy, or OHLC bars |
 | `translate` | 443 | 1 | 2026-09-12 | Turn a .sqx strategy into readable pseudocode and an executable Python backtest, reconciled against the trades SQX exported |
 | `audit` | 401 | 1 | 2026-09-12 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 247 | 1 | 2026-09-25 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-15 skills, 18,981 tokens de cuerpo en total, 74 KB en disco.
+16 skills, 20,909 tokens de cuerpo en total, 81 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 
 | skill | ~tokens al invocar | ficheros | último cambio | para qué |
 |---|---:|---:|---|---|
-| `sqx-custom-block` | 6,488 | 43 | 2026-09-25 | Author StrategyQuant X / AlgoWizard custom blocks (trading rules) as importable XML, from a plain-English idea. Discovers the indicator vocabulary from the user's OWN install (config.xml + optional customBlocksExport.xml) and builds both Condition blocks (true/false rules) and Price-level blocks (that return a price — stops, targets, bands, breakout references), validating them before import |
-| `sqx-strategy-template` | 5,657 | 50 | 2026-09-25 | Turn a trading idea into a StrategyQuant X strategy template for this project — ask the exact logic, check the block exists (authoring it with sqx-custom-block if not), emit the .sqx with the owner's defaults (his condition fixed plus one free random condition) or, when asked, one of the vendor's build-confirmed shapes, file it in the template library and install its blocks on both workers. Authoring only, no SQX run and no CPU burnt |
-| `sqx-random-group` | 3,022 | 26 | 2026-09-25 | Author StrategyQuant X / AlgoWizard random groups (the pools the strategy builder samples from) as importable XML. Discovers what THIS install can pool from its own config.xml + customBlocks.xml, and builds both Condition groups (boolean rule pools) and Value groups (price/level pools), in two item modes — hybrid (re-export existing custom blocks by reference) and inline (fresh rules / value atoms / comparisons) — validating before import |
+| `sqx-custom-block` | 6,488 | 46 | 2026-09-27 | Author StrategyQuant X / AlgoWizard custom blocks (trading rules) as importable XML, from a plain-English idea. Discovers the indicator vocabulary from the user's OWN install (config.xml + optional customBlocksExport.xml) and builds both Condition blocks (true/false rules) and Price-level blocks (that return a price — stops, targets, bands, breakout references), validating them before import |
+| `sqx-strategy-template` | 5,744 | 50 | 2026-09-27 | Turn a trading idea into a StrategyQuant X strategy template for this project — ask the exact logic, check the block exists (authoring it with sqx-custom-block if not), emit the .sqx with the owner's defaults (his condition fixed plus one free random condition) or, when asked, one of the vendor's build-confirmed shapes, file it in the template library and install its blocks on both workers. Authoring only, no SQX run and no CPU burnt |
+| `sqx-random-group` | 3,022 | 28 | 2026-09-27 | Author StrategyQuant X / AlgoWizard random groups (the pools the strategy builder samples from) as importable XML. Discovers what THIS install can pool from its own config.xml + customBlocks.xml, and builds both Condition groups (boolean rule pools) and Value groups (price/level pools), in two item modes — hybrid (re-export existing custom blocks by reference) and inline (fresh rules / value atoms / comparisons) — validating before import |
 
-3 skills, 15,167 tokens de cuerpo en total, 2,730 KB en disco.
+3 skills, 15,254 tokens de cuerpo en total, 2,779 KB en disco.

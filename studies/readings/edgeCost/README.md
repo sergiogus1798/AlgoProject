@@ -76,13 +76,9 @@ to stay silent about it (a `reconciliation` warning fires).
 
 Every asset's spread, commission, slippage and swap are the owner's stand-ins until the
 broker's real figures replace them (`assets/symbols/*.yaml`, `why: PROVISIONAL`) — this
-module inherits that, and says so in its warnings. On top of that, **OPEN.md issue 26** is
-open specifically for `no_forex` assets (XAUUSD, the metals and index CFDs): whether the
-percentage commission is charged once per trade or once per leg is unverified, a factor of
-two this module cannot resolve without a SQX run it is not allowed to make on its own
-(`knowhow/costs/commission-methods.md`). Every XAUUSD result this module produces is
-`costs_provisional` for that reason; USDJPY is not, because its commission is `0.0` either
-way.
+module inherits that, and says so in its warnings. The percentage commission of the
+`no_forex` assets is charged once per trade, on the open price (OPEN.md issue 26, settled
+2026-09-27 — `knowhow/costs/commission-methods.md`).
 
 ## What this module deliberately does not do
 

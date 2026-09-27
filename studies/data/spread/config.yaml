@@ -1,0 +1,102 @@
+# El spread real de Darwinex contra el que se declara en SQX (manual docs/manual/03-datos-costes-y-registro.pdf,
+# cap. 59-spread-real). Dueño, 2026-09-27: empezar por XAUUSD y USDJPY, un activo cuyo precio y
+# spread se disparan y un forex que en teoría no.
+# `ledger:<clave>` = el número vive en ledger/thresholds.yaml, con quién lo puso y cuándo.
+assets:                         # activo -> su feed de ticks (Darwinex) y su feed de velas M1 (Dukascopy)
+  XAUUSD:
+    ticks: XAUUSD_DarwTick_Infinox
+    bars: XAUUSD_DukasM1_Infinox
+  USDJPY:
+    ticks: USDJPY_DarwTick_the5ers
+    bars: USDJPY_DukasM1_the5ers
+  DAX40: {ticks: DAX40_DarwTick_Infinox, bars: DAX40_DukasM1_Infinox}
+  DJ30: {ticks: DJ30_DarwTick_Infinox, bars: DJ30_DukasM1_Infinox}
+  NIKKEI225: {ticks: NIKKEI225_DarwTick_Infinox, bars: NIKKEI225_DukasM1_Infinox}
+  USA500: {ticks: USA500_DarwTick_Infinox, bars: USA500_DukasM1_Infinox}
+  USATEC: {ticks: USATEC_DarwTick_Infinox, bars: USATEC_DukasM1_Infinox}
+  AUDJPY:
+    ticks: AUDJPY_DarwTick_the5ers
+    bars: AUDJPY_DukasM1_the5ers
+  AUDUSD:
+    ticks: AUDUSD_DarwTick_the5ers
+    bars: AUDUSD_DukasM1_the5ers
+  CADJPY:
+    ticks: CADJPY_DarwTick_the5ers
+    bars: CADJPY_DukasM1_the5ers
+  EURJPY:
+    ticks: EURJPY_DarwTick_the5ers
+    bars: EURJPY_DukasM1_the5ers
+  EURUSD:
+    ticks: EURUSD_DarwTick_the5ers
+    bars: EURUSD_DukasM1_the5ers
+  GBPJPY:
+    ticks: GBPJPY_DarwTick_the5ers
+    bars: GBPJPY_DukasM1_the5ers
+  GBPUSD:
+    ticks: GBPUSD_DarwTick_the5ers
+    bars: GBPUSD_DukasM1_the5ers
+  USDCAD:
+    ticks: USDCAD_DarwTick_the5ers
+    bars: USDCAD_DukasM1_the5ers
+  USDCHF:
+    ticks: USDCHF_DarwTick_the5ers
+    bars: USDCHF_DukasM1_the5ers
+day:
+  min_minutes: 300              # un día con menos minutos cotizados (festivo, medio día) no entra en el modelo
+constancy:
+  tolerance: ledger:spread.constancy.tolerance   # ±: el relativo es «constante» si cada año cae dentro
+model:
+  candidates: [relativo, puntos, volatilidad, volatilidad_precio]
+  split: 2022                   # la validación ajusta en los años de antes y predice desde este, y al revés
+  fixed:                        # modelo decidido por el dueño, por encima del que mejor valida (2026-09-27, opción A)
+    DAX40: relativo
+    DJ30: relativo
+    NIKKEI225: relativo
+    USA500: relativo
+    USATEC: relativo
+safety:
+  factor: ledger:spread.safety.factor            # multiplica el spread medido al declararlo en SQX
+reprice:
+  near_minutes: 5               # un tick a más de estos minutos de la hora de la operación no vale: se usa el modelo
+  judge: spread_slippage        # spread | spread_slippage: contra qué versión se dice «se rompe»
+  action: mark                  # mark | drop: si el reajuste que no cubre el spread real escribe DESCARTAR
+band:                           # la curva spread = a · precio^b y sus límites (dueño, 2026-09-27), un informe por activo
+  assets:                       # activo -> su feed de ticks; sólo hacen falta los ticks
+    DAX40: DAX40_DarwTick_Infinox
+    DJ30: DJ30_DarwTick_Infinox
+    NIKKEI225: NIKKEI225_DarwTick_Infinox
+    USA500: USA500_DarwTick_Infinox
+    USATEC: USATEC_DarwTick_Infinox
+    XAUUSD: XAUUSD_DarwTick_Infinox
+    USDJPY: USDJPY_DarwTick_the5ers
+    AUDJPY: AUDJPY_DarwTick_the5ers
+    AUDUSD: AUDUSD_DarwTick_the5ers
+    CADJPY: CADJPY_DarwTick_the5ers
+    EURJPY: EURJPY_DarwTick_the5ers
+    EURUSD: EURUSD_DarwTick_the5ers
+    GBPJPY: GBPJPY_DarwTick_the5ers
+    GBPUSD: GBPUSD_DarwTick_the5ers
+    USDCAD: USDCAD_DarwTick_the5ers
+    USDCHF: USDCHF_DarwTick_the5ers
+  quantiles: [0.025, 0.5, 0.975]   # los extremos son el Min y el Max del MC Retest de spread
+  min_minutes: 300              # un día con menos minutos cotizados no entra
+onboard:                        # alta de un activo nuevo: las reglas por defecto del dueño (2026-09-27), por tipo
+  commission_usd_per_lot: 8     # ida y vuelta por lote; en no_forex se pasa a % del nocional al último precio de Darwinex
+  index:
+    segments: {build: data, build_to: 2019, oos1: [2020, 2023], oos2: [2024, 2026-08-31]}
+    commission: 0               # cuenta raw: los índices no pagan comisión
+    swap: [-8, -8]              # % anual, largo y corto
+    triple_swap_on: FRIDAY
+    model: relativo             # spread proporcional al precio en el build (opción A)
+  metal:
+    segments: {build: 2008, build_to: 2017, oos1: [2018, 2022], oos2: [2023, 2026-08-30]}
+    commission: usd_per_lot
+    swap: [-7, -7]
+    triple_swap_on: WEDNESDAY
+    model: null                 # null = el que mejor valida
+  forex:
+    segments: {build: 2008, build_to: 2017, oos1: [2018, 2022], oos2: [2023, 2026-08-30]}
+    commission: usd_per_lot
+    swap: brokers               # media en puntos de todas las variantes del par en el registro de SQX
+    triple_swap_on: WEDNESDAY
+    model: null

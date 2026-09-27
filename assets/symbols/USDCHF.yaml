@@ -28,44 +28,40 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread:
-    use: 0.2                 # points
+    use: 1.22                # points
     sqx_now: 0.2              # points
-    why: "PROVISIONAL 2026-09-23 — `defaultSpread` que el maestro lleva HOY, leido de los project.cfx con `sqx.inspect.instruments`. NO es una cifra pactada con the5ers: es el default de fabrica de SQX, y su ordenacion relativa entre pares no es creible (CADJPY 0.1 contra GBPJPY 1.2 con el mismo point_value; CADJPY seis veces mas barato que EURJPY siendo menos liquido). Sirve para montar la cadena y medir la correlacion entre mercados, que apenas depende del nivel de coste; NO sirve para juzgar si un edge es real."
+    why: "onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `puntos` donde no hay ticks (USDCHF_DarwTick_the5ers). studies.data.spread.onboard"
   commission:
-    use: 0.0                 # $ por lote
+    use: 8.0                 # $ por lote
     sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
-    why: "PROVISIONAL 2026-09-23 — `SizeBased 0.00` es lo que el maestro lleva hoy: comision CERO en los diez pares. the5ers cobra del orden de 8 $/lote round-turn, que en un par con point_value 100000 equivalen a 0.8 pips. Con este valor el coste modelado infravalora el real unas 10 veces. Se escribe para desbloquear la autoria (regla dura 5), no porque sea creible."
+    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (cuenta raw). SizeBased cobra una vez por operación; el nocional de un par apenas se mueve con los años, así que en USD por lote sigue siendo representativo."
   slippage_is:
-    use: 0.1                 # points — tramo(s) build
+    use: 0.61                # points — tramo(s) build
     sqx_now: 0.0
-    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
+    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
   slippage_oos:
-    use: 0.1                 # points — tramo(s) oos1 y oos2
+    use: 0.61                # points — tramo(s) oos1 y oos2
     sqx_now: 0.0
-    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
+    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
   swap_long:
-    use: 0.04                 # points por noche
+    use: 5.91                 # points por noche
     sqx_now: {type: points, value: 0.04}
-    why: "PROVISIONAL 2026-09-23 — `<Swap use=true type=points>` del maestro, leido de los project.cfx. No pactado con the5ers. Rollout 23:00, triple swap el miercoles. Mismo valor en todos los proyectos que tocan el par, sin conflictos."
+    why: "2026-09-27 — decisión del dueño: media del swap en puntos por noche de las 7 variantes de USDCHF con swap activo en el registro de instrumentos de SQX (dukascopy, ftmo, roboforex, the5ers, icmarkets, pepperstone, darwinex); mediana 6.3. Fuera: USDCHF_monevis(off), USDCHF.pro_oanda(percent) (desactivado o en %). Antes 0.04 (the5ers). Valor por defecto: el swap real cambia con los tipos."
   swap_short:
-    use: -5.04                 # points por noche
+    use: -11.91                # points por noche
     sqx_now: {type: points, value: -5.04}
-    why: "PROVISIONAL 2026-09-23 — `<Swap use=true type=points>` del maestro, leido de los project.cfx. No pactado con the5ers. Rollout 23:00, triple swap el miercoles. Mismo valor en todos los proyectos que tocan el par, sin conflictos."
+    why: "2026-09-27 — decisión del dueño: media del swap en puntos por noche de las 7 variantes de USDCHF con swap activo en el registro de instrumentos de SQX (dukascopy, ftmo, roboforex, the5ers, icmarkets, pepperstone, darwinex); mediana -11.45. Fuera: USDCHF_monevis(off), USDCHF.pro_oanda(percent) (desactivado o en %). Antes -5.04 (the5ers). Valor por defecto: el swap real cambia con los tipos."
 
 notes:
-  - "2026-09-23: spread, commission y los dos swap rellenados con lo que el MAESTRO lleva hoy
-     (leido de los project.cfx con `sqx.inspect.instruments`), para desbloquear la regla dura 5
-     sin esperar a las cifras de the5ers. Son defaults de fabrica de SQX, comision CERO incluida:
-     el coste modelado infravalora el real ~10x y su ordenacion entre pares no es creible. Todo
-     resultado con coste producido antes de que el dueno los sustituya arrastra esa advertencia."
+  - "2026-09-23: spread, commission y los dos swap rellenados con lo que el MAESTRO lleva hoy (leido de los project.cfx con `sqx.inspect.instruments`), para desbloquear la regla dura 5 sin esperar a las cifras de the5ers. Son defaults de fabrica de SQX, comision CERO incluida: el coste modelado infravalora el real ~10x y su ordenacion entre pares no es creible. Todo resultado con coste producido antes de que el dueno los sustituya arrastra esa advertencia."
 
 # Rangos que sortea la tarea MC Retest, en PUNTOS y por activo. `min`/`max` null =
 # sin decidir. `sqx_now` es lo que el maestro lleva hoy para este símbolo; una lista
 # significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
 mc_retest:
   spread:
-    min: null
-    max: null
+    min: 0.74
+    max: 2.01
     sqx_now: {min: 1, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
   slippage:
     min: null

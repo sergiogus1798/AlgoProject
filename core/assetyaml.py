@@ -35,8 +35,11 @@ def write(path: Path, data: object) -> None:
         path: The file.
         data: The CommentedMap, with whatever was changed in it.
     """
-    with path.open("w", encoding="utf-8") as f:
+    # Dumped aside first: a value YAML cannot represent must not leave the file empty.
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
         _Y.dump(data, f)
+    tmp.replace(path)
 
 
 def hint(lines: list[str], line: int) -> str:

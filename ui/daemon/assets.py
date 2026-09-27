@@ -23,9 +23,9 @@ def units(data: dict) -> dict:
         by omission.
     """
     s = schema(data)
-    return {**{f: s["spread"]["unit"] for f in s["spread"]["fields"]},
+    return {**{f: s["spread"]["unit"] for f in fields(data) if f.startswith("spread")},
             s["commission"]["field"]: s["commission"]["unit"],
-            **{f: s["slippage"]["unit"] for f in s["slippage"]["fields"]},
+            **{f: s["slippage"]["unit"] for f in fields(data) if f.startswith("slippage")},
             **{f: s["swap"]["unit"] for f in s["swap"]["fields"]}}
 
 

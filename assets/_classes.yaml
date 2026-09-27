@@ -39,7 +39,7 @@ forex:
     formula: "coste_noche = size × pointValue × tick_size × puntos"
 
 no_forex:
-  what: "Todo lo demás: índices CFD y metales. Hoy: DAX40, DJ30, NIKKEI225, SP500ft, USA500, USATEC, XAUUSD."
+  what: "Todo lo demás: índices CFD y metales. Hoy: DAX40, DJ30, NIKKEI225, USA500, USATEC, XAUUSD, XAGUSD, BRENT."
   # DOS spreads. El precio de estos activos se multiplica a lo largo del histórico — el oro va
   # de 800 a 3500 — así que un spread fijo en puntos cuesta, en % del nocional, el triple en
   # 2010 que hoy. Declarar uno para el tramo de construcción y otro para los dos fuera de

@@ -63,14 +63,14 @@ segments:
     oos2: {from: 2023, to: 2026-08-30}
   DAX40:
     data: {from: 2013-09-30, to: 2026-09-25}   # DAX40_DukasM1_Infinox, 3.911.957 barras M1
-    build: {from: null, to: null}
-    oos1: {from: null, to: null}
-    oos2: {from: null, to: null}
+    build: {from: 2013-09-30, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   DJ30:
     data: {from: 2013-09-30, to: 2026-09-25}   # DJ30_DukasM1_Infinox, 3.999.606 barras M1
-    build: {from: null, to: null}
-    oos1: {from: null, to: null}
-    oos2: {from: null, to: null}
+    build: {from: 2013-09-30, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   EURJPY:
     data: {from: 2003-08-04, to: 2026-09-25}   # EURJPY_DukasM1_the5ers, 8.654.801 barras M1
     build: {from: 2008, to: 2017}
@@ -93,9 +93,9 @@ segments:
     oos2: {from: 2023, to: 2026-08-30}
   NIKKEI225:
     data: {from: 2011-09-19, to: 2026-09-25}   # NIKKEI225_DukasM1_Infinox, 4.082.974 barras M1
-    build: {from: null, to: null}
-    oos1: {from: null, to: null}
-    oos2: {from: null, to: null}
+    build: {from: 2011-09-19, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   SP500ft:
     data: null   # ⚠️ SP500ft_Plus02_Infinox NO EXISTE en SQX — no hay histórico que partir
     build: {from: null, to: null}
@@ -108,14 +108,14 @@ segments:
     oos2: {from: null, to: null}
   USA500:
     data: {from: 2012-01-19, to: 2026-09-25}   # USA500_DukasM1_Infinox, 4.051.618 barras M1
-    build: {from: null, to: null}
-    oos1: {from: null, to: null}
-    oos2: {from: null, to: null}
+    build: {from: 2012-01-19, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   USATEC:
     data: {from: 2012-01-19, to: 2026-09-25}   # USATEC_DukasM1_Infinox, 4.213.892 barras M1
-    build: {from: null, to: null}
-    oos1: {from: null, to: null}
-    oos2: {from: null, to: null}
+    build: {from: 2012-01-19, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   USDCAD:
     data: {from: 2003-08-04, to: 2026-09-25}   # USDCAD_DukasM1_the5ers, 8.628.639 barras M1
     build: {from: 2008, to: 2017}
@@ -135,11 +135,13 @@ segments:
     data: {from: 2003-05-05, to: 2026-09-25}   # XAUUSD_DukasM1_Infinox, 7.953.422 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-08-30, spread: oos2}
 
 # ─── Convenciones de swap ──────────────────────────────────────────────────────────────
 # Las lleva el atributo <Swap> de cada InstrumentInfo. Son iguales en los 142 instrumentos
 # configurados hoy en el maestro, así que viven aquí en vez de repetirse 17 veces.
+# Dueño, 2026-09-27: el triple swap cae el miércoles por la noche en todo salvo los índices,
+# que lo llevan el viernes en su propio fichero (`swap:` de cada índice).
 swap:
   triple_swap_on: WEDNESDAY
   rollout_hour: "23:00"

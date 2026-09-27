@@ -99,13 +99,14 @@ def main() -> None:
     assert "Reconciliación" in result["verdict"]["meaning"], "the verdict text must lead with it"
     assert result["summary"]["costs_provisional"] is False, "forex with no PROVISIONAL why"
 
-    # A no_forex asset always carries the issue-26 warning, unresolved by this module.
+    # A no_forex asset carries no commission warning: issue 26 settled once per trade (2026-09-27).
     no_forex = {**FOREX, "class": "no_forex",
+               "segments": {"build": {"spread": "is"}, "oos1": {"spread": "oos"}},
                "costs": {**FOREX["costs"], "spread_is": FOREX["costs"]["spread"],
                         "spread_oos": FOREX["costs"]["spread"]}}
     del no_forex["costs"]["spread"]
     warn_codes = {w["code"] for w in costs.warnings(no_forex)}
-    assert "issue26" in warn_codes, warn_codes
+    assert "issue26" not in warn_codes, warn_codes
 
     # A PROVISIONAL cost stamps the result, forex or not.
     stood_in = {**FOREX, "costs": {**FOREX["costs"],

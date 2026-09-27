@@ -38,9 +38,9 @@ def report(symbol: str) -> str:
     """
     data = load(symbol)
     s = schema(data)
-    units = {**{f: s["spread"]["unit"] for f in s["spread"]["fields"]},
+    units = {**{f: s["spread"]["unit"] for f in fields(data) if f.startswith("spread")},
              s["commission"]["field"]: s["commission"]["unit"],
-             **{f: s["slippage"]["unit"] for f in s["slippage"]["fields"]},
+             **{f: s["slippage"]["unit"] for f in fields(data) if f.startswith("slippage")},
              **{f: s["swap"]["unit"] for f in s["swap"]["fields"]}}
     lines = [f"# {symbol} — clase `{data['class']}`, overrides a aplicar", "",
              f"SQX symbol: {data['sqx_symbol']}   verificado: {data['verified']}", ""]

@@ -1,6 +1,7 @@
 """The reading work the catalogue times: the formats every study opens before it can start."""
 
-from core import barstore, sqxfile, sqxstats, trades
+from core import barstore, sqxfile, sqxstats, tickfile, trades
+from core.datapaths import tick_file
 from perf.inputs import sample
 
 
@@ -63,3 +64,19 @@ def bars_read(cfg: dict) -> dict:
     path = sample.bars(cfg)
     return {"scale": len(barstore.source(cfg["sample"]["bars_feed"])),
             "bytes_in": sample.weight([path])}
+
+
+def ticks_read(cfg: dict) -> dict:
+    """Decode one SQX tick file into its minute table of spread, as the spread study does.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        Ticks decoded and bytes read. USDJPY's Darwinex history, the lighter of the two the
+        study reads (368 M ticks, 2.6 GB): the cost grows with the file, one pass, no ticks held.
+    """
+    feed = "USDJPY_DarwTick_the5ers"
+    _, ticks = tickfile.minutes(feed)
+    return {"scale": ticks, "bytes_in": tick_file(feed).stat().st_size}
+

@@ -4,7 +4,7 @@ tag: 🔬  date: 2026-09-22  see: costs/refreshing-sqx-costs, locations/logs-and
 ---
 # Use the `DukasM1` feed, not `DarwTick`: tick feeds start 2017–2018, M1 reaches 2003–2012
 Six assets were switched to `DukasM1` (owner, 2026-09-22); no cost changed — `InstrumentInfo` is byte-identical between each pair.
-⚠️ `SP500ft_Plus02_Infinox` does not exist in SQX (no feed has that prefix): the asset can't be built/tested; its `data` is null.
+`SP500ft` (feed `SP500ft_Plus02_Infinox`, absent from SQX) was retired 2026-09-27: the same index as `USA500` (owner). Back with `core.assetwrite.restore`.
 
 ## Evidence
 `-symbol action=list` on the conductor; 6 of 17 assets affected:

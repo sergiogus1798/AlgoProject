@@ -37,9 +37,9 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 24 | — | ⚪ | closed 2026-09-26: the owner declined the holdout pre-registration; `oos2` + `ledger.gate` hold the line |
 | 25 | — | 🟢 | new: the authoring chain is proven headless end to end; `OPEN.md` issue 9 now has its positive control |
 | 26 | — | 🟢 | **settled 2026-09-27**: the `%` commission is charged ONCE per trade, on the open — the 2026-09-26 «twice» was swap leaking into the fit |
-| 27 | — | 🟠 | new: 16 of 17 assets still have no agreed cost, now in the owner's new units |
+| 27 | — | 🟡 | **2026-09-27, costes por defecto del dueño aplicados**: índices comisión 0 y swap −8 %/−8 %; oro y plata 8 USD por lote ida y vuelta en % (oro a 4.500, plata a 63,59) y swap −7 %/−7 %; forex 8 USD/lote y swap = media de los brokers del registro de SQX (7–8 por par, en puntos). Falta: verificar que `SizeBased` cobra una vez (como `PercentageBased`) |
 | 28 | — | 🟠 | new: `DAX40`'s feed is in no project on the master, so its file cannot be refreshed |
-| 29 | — | 🟡 | forex and metals filled 2026-09-22; the 6 index CFDs still have no IS/OOS window |
+| 29 | — | 🟢 | **closed 2026-09-27**: the five index CFDs have their windows (build–2019 / 2020–2023 / 2024–2026-08-31); `SP500ft` retired as a duplicate of `USA500` |
 | 30 | — | 🟡 | new: the data-update command is guarded and documented; its download awaits a GUI-closed run |
 | 31 | 🔴 | ⚪ | **cerrado 2026-09-26**: la revisión del 22-09 quedó superada — el arnés heredado desapareció con la regla dura 10 (proyectos custom, `stage`); el candado del custodio sigue abierto en el §32. Documento borrado (en el historial de git) |
 | 37 | 🔴 | 🟢 | **hecho 2026-09-24**: el lector salta la tarea que no corrió (MinDist nunca aplica a órdenes a mercado), los rangos de spread/slippage salen de `mc_retest.default_multiples` (1x–4x el coste del backtest, dueño 2026-09-24) y tres fórmulas mal reconstruidas están corregidas. 71 desacuerdos → 2 celdas sueltas |
@@ -70,7 +70,7 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 63 | 🟡 | 🟢 | **arreglado 2026-09-27**: builder busca solo la sesión, crossTF deduce sus bloques, registry actualiza en sitio, `holding` sin falsos positivos, puerta y estructura cortan por el tramo correcto |
 | 74 | — | 🟠 | new 2026-09-27: **los pasos 23, 24 y 25 exportan a la misma carpeta del día y se pisan**; el informe del 23 ya no se puede rehacer |
 | 75 | — | 🟡 | new 2026-09-27: un `stop` justo después de `start` se pierde (la CLI aún no está lista) |
-| 76 | — | 🔴 | new 2026-09-27: **el spread real de Darwinex es 3–8× el declarado en XAUUSD y USDJPY** (`studies/data/spread`); **índices aplicados 2026-09-27** (tramos, un spread por tramo, slippage = la mitad; falta su comisión); XAUUSD/USDJPY sin aplicar; el reajuste aún no se ha contrastado con un retest DATATICK. Estudio: `docs/AgentPDFs/spread-real-2026-09-27.pdf` |
+| 76 | — | 🔴 | new 2026-09-27: **el spread real de Darwinex es 3–8× el declarado en XAUUSD y USDJPY** (`studies/data/spread`); **índices aplicados 2026-09-27** (tramos, un spread por tramo, slippage = la mitad; falta su comisión); oro y forex aplicados con `studies.data.spread.onboard --spread-only`; el reajuste aún no se ha contrastado con un retest DATATICK. Estudio: `docs/AgentPDFs/spread-real-2026-09-27.pdf` |
 | 68 | — | 🟢 | new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y **el núcleo mató la ventana de VSCode** |
 | 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `engines/nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `studies.screening.gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/perf/python-parallelism.md` |
 | 44 | 🔴 | 🔴 | new 2026-09-26: el CSCV mete dos meses de P&L de `oos1` en el lado OOS — la curva de cada pata empieza antes de su segmento (warm-up); cambia cifras CSCV/WFC ya calculadas |
@@ -957,6 +957,21 @@ draws from, in points, per asset. **All 34 of them are undecided.** These do not
 preflight warns and exits 0, because an undecided range only makes that one MC Retest task
 uninterpretable. `core.assetdata.mc_pending()` names them.
 
+
+**Update 2026-09-27 — the owner's defaults, applied.** Real broker figures cannot be used as they
+are: 8 USD on a 100-oz gold lot at 4,500 is not 8 USD at 500. So:
+
+- **Indices:** commission 0 (raw account); swap −8 % annual on both sides.
+- **XAUUSD and XAGUSD:** commission of 8 USD per lot round trip, as % of notional (gold at
+  4,500 → 0.001778 %, silver at Darwinex's 63.5907 → 0.002516 %), which scales with each era's
+  price; swap −7 % on both sides.
+- **Forex:** 8 USD per lot round trip (`SizeBased`); swap = the mean, in points per night, of
+  every variant of the pair with an active swap in SQX's instrument registry (7–8 brokers each;
+  `monevis` is off and `oanda` is in %, both left out). Still a snapshot of today's rates.
+
+Still open: `SizeBased` is assumed to charge once per trade, as `PercentageBased` was measured to
+(#26). If it charges per fill, forex pays 16. Check it with `edgeCost`'s reconciliation on the
+first forex harvest built with it. A forex swap model by date (rate differentials) remains possible if the owner wants one.
 ## 30. ✅ `sqx.data.update` ran end to end on 2026-09-25
 
 `python3 -m sqx.data.update --apply` drives `-data action=update` on the master — the CLI form of
@@ -1548,7 +1563,7 @@ points against 0.1. Neither is constant relative to price (owner's ±20 %: gold'
 USDJPY's 1.44×), so the study models the years before October 2017 and proposes, with the owner's
 factor 1.25, a `%` commission per segment — XAUUSD 0.0131 / 0.0138 / 0.0118 % (build / oos1 /
 oos2), USDJPY 0.0048 / 0.0052 / 0.0078 % — or 16 / 24 / 31 and 0.5 / 0.6 / 1.2 points.
-`AlgoData/spread/<tick feed>/spread.html` has the table. **Not applied** for XAUUSD/USDJPY. **Applied 2026-09-27 to the five index CFDs** on the owner's order: build data start–2019, oos1 2020–2023, oos2 2024–2026-08-31 with its own `spread_oos2` (the schema now allows a segment-named half), oos1/oos2 = Darwinex's mean daily spread in that segment × 1.25; build = the spread PROPORTIONAL to price (owner's option A, `model.fixed`) × 1.25, although fixed-points validates better; slippage = half; MC Retest spread range = the 2.5–97.5 % multiples of measured ÷ proportional mean, times the build spread. Their commission is still null and blocks authoring. Study: `docs/AgentPDFs/spread-real-2026-09-27.pdf`.
+`AlgoData/spread/<tick feed>/spread.html` has the table. **Applied 2026-09-27** to XAUUSD and the ten pairs too (`onboard --spread-only`: spreads, slippage = half, MC spread range; commission and swap kept). **Applied 2026-09-27 to the five index CFDs** on the owner's order: build data start–2019, oos1 2020–2023, oos2 2024–2026-08-31 with its own `spread_oos2` (the schema now allows a segment-named half), oos1/oos2 = Darwinex's mean daily spread in that segment × 1.25; build = the spread PROPORTIONAL to price (owner's option A, `model.fixed`) × 1.25, although fixed-points validates better; slippage = half; MC Retest spread range = the 2.5–97.5 % multiples of measured ÷ proportional mean, times the build spread. Their commission is still null and blocks authoring. Study: `docs/AgentPDFs/spread-real-2026-09-27.pdf`.
 
 Three things are still open:
 - **The repricing against SQX itself.** `studies.data.spread.report` swaps SQX's flat spread for

@@ -75,3 +75,23 @@ run from 28 KB to 15 MB on this machine, and the smallest carries everything the
 draws ran from 0.25 to 0.92: the 252 partitions overlap heavily and are nothing like 252
 independent observations. A single-panel assertion would have passed or failed on the seed. That
 same spread is why the pipeline's 50 % gate on the PBO is documented as a coarse filter.
+
+The window's tests (`ui/`), all offscreen (`QT_QPA_PLATFORM=offscreen`) over the daemon's routes in-process through `fastapi.testclient` — never port 8765, never `bin/algoui`, never an SQX install. Grabs land in `scratch/ui-plan/shots/`.
+
+| file | what it protects | run it |
+|---|---|---|
+| `test_ui_blocks.py` | every block kind draws: every population result and three strategy results per study under `AlgoData/reports/` go through `ResultView` without an exception; selectors filter without recomputing; compare puts each block beside its counterpart (~3 s) | `python3 tests/test_ui_blocks.py` |
+| `test_ui_results.py` | the results routes: the catalogue in family order with its roles, a result paired by identity and never borrowed from a same-named strategy, the history, the matrix, older reports skipped with a reason, the config drawer's hash equal to what the study signs | `python3 tests/test_ui_results.py` |
+| `test_ui_runner.py` | the run side: a real study run end to end, the python queue (two at once, the rest queued), cancel killing the whole tree, the `only` options, and each refusal sentence | `python3 tests/test_ui_runner.py` |
+| `test_ui_workflow.py` | the workflow rail: the route on real projects, 17·18·19 sealed until all three ran, an unknown project refused, and the widget offscreen | `python3 tests/test_ui_workflow.py` |
+| `test_ui_ops.py` | `/api/pulse` and `/api/ledger` read-only, and the jobs strip, pulse and ledger widgets offscreen | `python3 tests/test_ui_ops.py` |
+| `test_ui_studypage.py` | the study page: result, drawer signing the same hash, one real `edgeCost` run reloading the page, history, compare two days and two strategies (~5 s) | `python3 tests/test_ui_studypage.py` |
+| `test_ui_matrix.py` | the population matrix on a real databank, a batch run, the `/curate` strip, and 5,000 rows loaded, sorted and filtered in time | `python3 tests/test_ui_matrix.py` |
+| `test_ui_shell.py` | the whole window over the whole daemon (`ui.daemon.app.APP`): every sidebar zone opens and marks only its button; the matrix pickers set `SELECTION` and the context bar; a cell opens Estrategia on that study, a header opens Estudio de población, a workflow step opens its first study or the matrix, each crumb opens its zone; one grab per zone (`G-*.png`, ~10 s) | `python3 tests/test_ui_shell.py` |
+| `test_ui_tearsheet.py` | the Ficha: `/api/tearsheet` and `/exits` on the real USDJPY harvest (deepest IS drawdown episode checked by hand, monthly cells summing to the final equity to the cent, exit rows summing to the totals, refusal of any sample but IS/OOS) drawn offscreen; «Lote» shown only for a mother with a batch folder | `python3 tests/test_ui_tearsheet.py` |
+| `test_ui_tearmarket.py` | the Ficha's market routes: the month 2×2 cells plus flat plus no-market summing to the months, quantile picks deterministic, a seed redrawing the same five, refusals, no bar past oos1; gallery drawn offscreen | `python3 tests/test_ui_tearmarket.py` |
+| `test_ui_cmdpalette.py` | Ctrl+K over the whole daemon in-process: matching and ranking, nothing read at start, Enter to a zone, a strategy and a study, recents capped at ten, a broken QSettings store, a focused text field keeping Ctrl+K | `python3 tests/test_ui_cmdpalette.py` |
+| `test_ui_batch.py` | `/api/batch` never lets an oos2/ALL key or label out (real and synthetic parquet); «Lote» offscreen on 57 and 1,093 variants | `python3 tests/test_ui_batch.py` |
+| `test_ui_loader.py` | the databank loader: a build databank pairs with OOS and sends only trades and cosecha to the conductor, a cross-market one exports with data=all, a failed load is never queued again alone and ↻ requeues it, nothing is read while SQX writes the project, one conductor job at a time | `python3 tests/test_ui_loader.py` |
+
+| `test_spread.py` | `core.tickfile` on a `*_TICK.dat` written by hand in SQX's 4.2 format: the header, a magic chain crossed at 1,000 ticks, deltas of 1, 2 and 4 bytes both ways, each minute's opening, time-weighted, min and max spread and bid; then `studies.data.spread.reprice` — a long pays the spread at its entry, a short at its exit, P/L adjusted by hand | `python3 tests/test_spread.py` |

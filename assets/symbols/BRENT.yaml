@@ -63,13 +63,9 @@ notes:
      coste de financiacion caia la noche equivocada. Se corrige con el bloque `swap:` de abajo:
      `load()` hace {**politica, **activo}, asi que un `swap:` propio pisa el global entero — por
      eso hay que repetir tambien `rollout_hour`. Verificado en el <Setup> escrito."
-
-# ⚠️ PISA el bloque `swap` de `../_policy.yaml` ENTERO, no campo a campo: `load()` fusiona con
-# {**politica, **activo}. Por eso `rollout_hour` se repite aunque no cambie. Unico activo de los
-# diecinueve con triple swap en viernes, leido del <Swap tripleSwapOn> del maestro.
-swap:
-  triple_swap_on: FRIDAY
-  rollout_hour: "23:00"
+  - "2026-09-27: el dueño fija el triple swap en VIERNES solo para los índices y en MIÉRCOLES
+     para todo lo demás, Brent incluido: se quita el bloque `swap:` propio y hereda el
+     miércoles de `../_policy.yaml`, aunque el feed de FTMO lleve FRIDAY."
 
 mc_retest:
   spread:

@@ -49,9 +49,8 @@ def _spread_points(asset: dict, sample: pd.Series) -> pd.Series:
 def _commission(asset: dict, size: pd.Series, open_price: pd.Series, point_value: float) -> pd.Series:
     """Commission per trade, by the method the asset's class declares.
 
-    ⚠️ `PercentageBased` (no_forex, e.g. XAUUSD) is OPEN.md issue 26: unverified whether SQX
-    charges it once per trade or once per leg — a factor of two this function does not
-    resolve. Callers on a `no_forex` asset must mark their result `costs_provisional`.
+    `PercentageBased` (no_forex, e.g. XAUUSD) is charged once per trade, on the open price
+    (OPEN.md issue 26, settled 2026-09-27, `knowhow/costs/commission-methods.md`).
     """
     schema = assetdata.schema(asset)["commission"]
     use = asset["costs"][schema["field"]]["use"]
@@ -97,10 +96,7 @@ def warnings(asset: dict) -> list[dict]:
         asset: `asset_for()`'s dict.
 
     Returns:
-        One warning per stand-in cost field (`core.assetcheck.provisional`), plus, on a
-        `no_forex` asset, OPEN.md issue 26: whether `PercentageBased` charges once per
-        trade or once per leg is unverified, and this study cannot resolve it without a
-        SQX run — every gross figure it produces there is `costs_provisional`.
+        One warning per stand-in cost field (`core.assetcheck.provisional`).
     """
     stood_in = assetcheck.provisional(asset)
     out = [{"code": "provisional", "state": "watch",
@@ -108,11 +104,6 @@ def warnings(asset: dict) -> list[dict]:
                     "dueño para desbloquear la autoría, no cifras pactadas con el bróker "
                     "(assets/symbols/*.yaml). Todo bruto de este resultado los hereda."}
           ] if stood_in else []
-    if asset["class"] == "no_forex":
-        out.append({"code": "issue26", "state": "watch",
-                    "text": "OPEN.md #26: sin verificar si la comisión porcentual se cobra "
-                            "una vez por operación o una vez por pata (factor 2 sin medir). "
-                            "costs_provisional para todo bruto y coste de este activo."})
     return out
 
 

@@ -1,10 +1,10 @@
-"""The data root's secondary trees: template library, pipeline, permutations, logs, backups, caches.
+"""The data root's secondary trees: template library, pipeline, permutations, logs, backups, caches, spread.
 
 Split out of core/paths.py, which keeps the installs and the primary exports."""
 
 from pathlib import Path
 
-from core.paths import DATA
+from core.paths import DATA, MASTER
 
 
 def template_dir(name: str) -> Path:
@@ -191,3 +191,34 @@ def retire_queue() -> Path:
         master project is ever retired unattended — and removes each line once done.
     """
     return DATA / "projects" / "retire-queue.txt"
+
+
+def tick_file(feed: str) -> Path:
+    """The tick history SQX keeps for one tick feed, read in place and never copied.
+
+    Args:
+        feed: SQX symbol, e.g. "XAUUSD_DarwTick_Infinox".
+
+    Returns:
+        The master's `.dat`: several GB of delta-coded ask/bid ticks that only
+        `core.tickfile` reads. Read-only; SQX rewrites it on a data update.
+    """
+    return MASTER / "user" / "data" / "History" / feed / f"{feed}_TICK.dat"
+
+
+def bar_file(feed: str) -> Path:
+    """The M1 history SQX keeps for one bar feed, read in place: `core.tickfile.bars` decodes it."""
+    return MASTER / "user" / "data" / "History" / feed / f"{feed}_M1.dat"
+
+
+def spread_dir(feed: str = "") -> Path:
+    """Where the spread study keeps one tick feed's minute table and its reports.
+
+    Args:
+        feed: SQX tick feed; empty for the study's own folder.
+
+    Returns:
+        Path under the data root. The minute table is derived from `tick_file(feed)` and
+        stamped with that file's size and date, so a refreshed history orphans it.
+    """
+    return DATA / "spread" / feed

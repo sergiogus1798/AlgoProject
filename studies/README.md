@@ -11,4 +11,4 @@ its results land and the traps that already produced wrong answers: `CLAUDE.md` 
 | `optimisation/` | does optimising buy anything, or is choosing parameters overfitting? | 16.5–19 |
 | `closing/` | the final call and the shape of the edge | 20–21 |
 | `readings/` | what one strategy's result is made of | — |
-| `data/` | whether the inputs are fit to judge with: `feedQuality` (encargo 17) | 4, 8 |
+| `data/` | whether the inputs are fit to judge with: `feedQuality` (encargo 17), `spread` | 4, 8 |

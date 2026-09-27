@@ -38,9 +38,9 @@ costs:
     sqx_now: 22.0            # points, el unico que hay hoy
     why: "PROVISIONAL 2026-09-23 — el defaultSpread que el maestro lleva hoy, leido de los project.cfx con `sqx.inspect.instruments`. Default de fabrica de SQX, NO pactado con Infinox."
   commission:
-    use: 0.001776            # % del nocional
+    use: 0.002516            # % del nocional
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
-    why: "PROVISIONAL 2026-09-23 — conversion de unidad del default de SQX. 8 $/lote sobre el nocional de 1 lote al ultimo cierre real (90.078 x point_value 5000 = 450.390 $) son 8/450390 = 0.001776 %. ⚠️ DEPENDE DEL PRECIO DE REFERENCIA: con la mediana de la plata en el tramo oos1 (18.535) el nocional es 92.675 $ y la comision 0.00863 %, casi CINCO VECES mas. Se usa el ultimo cierre por coherencia con XAUUSD.yaml, no porque sea mejor. Y sigue sin verificarse si SQX cobra el % por pata o por operacion."
+    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (Infinox raw), pasados a % del nocional al último precio Darwinex (63.5907 el 2026-09-25) × 5.000 onzas = 0.002516 %. SQX cobra PercentageBased una vez por operación sobre la apertura (OPEN.md #26)."
   slippage_is:
     use: 5.5                 # points — tramo `build`
     sqx_now: 0.0
@@ -50,21 +50,16 @@ costs:
     sqx_now: 0.0
     why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
   swap_long:
-    use: -6.3545             # % ANUAL (SQX divide /100 y /360)
+    use: -7.0                # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: -15.9}
-    why: "PROVISIONAL 2026-09-23 — conversion de unidad del swap en puntos del maestro: 5000 x 0.001 x -15.9 = -79.50 $/noche; sobre el nocional de 450.390 $ son -6.3545 % anual. ⚠️ Con la mediana de oos1 (18.535) saldria -30.9 % anual, cinco veces mas. Mismo precio de referencia que la comision, por coherencia."
+    why: "2026-09-27 — decisión del dueño: -7 % anual, el mismo en largo y en corto. Valor por defecto: el swap real cambia con los tipos y no hay histórico."
   swap_short:
-    use: 0.3117              # % ANUAL (SQX divide /100 y /360)
+    use: -7.0                # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: 0.78}
-    why: "PROVISIONAL 2026-09-23 — conversion del swap en puntos del maestro: 5000 x 0.001 x 0.78 = +3.90 $/noche sobre 450.390 $ son +0.3117 % anual. ⚠️ SIGNO POSITIVO: el corto COBRA. XAUUSD.yaml aplica la convencion contraria del dueno (mismo signo en los dos lados, ambos pagan). Aqui se conserva el signo de SQX porque el dueno pidio usar sus valores; los dos ficheros NO comparten doctrina de swap y hay que unificarlos."
+    why: "2026-09-27 — decisión del dueño: -7 % anual, el mismo en largo y en corto. Valor por defecto: el swap real cambia con los tipos y no hay histórico."
 
 notes:
-  - "2026-09-23: fichero creado para que XAUUSD pueda escribir su cross-check de mercados
-     adicionales, que se negaba porque ningun fichero declaraba el feed XAGUSD_DukasM1_Infinox.
-     Todos los costes salen de lo que el MAESTRO lleva hoy, con las conversiones de unidad que
-     exige la clase no_forex (% del nocional y % anual) hechas al ultimo cierre real. No hay
-     ninguna cifra pactada con Infinox. El swap y la comision se mueven ~5x segun el precio de
-     referencia que se elija; esta escrito en cada `why:`."
+  - "2026-09-23: fichero creado para que XAUUSD pueda escribir su cross-check de mercados adicionales, que se negaba porque ningun fichero declaraba el feed XAGUSD_DukasM1_Infinox. Todos los costes salen de lo que el MAESTRO lleva hoy, con las conversiones de unidad que exige la clase no_forex (% del nocional y % anual) hechas al ultimo cierre real. No hay ninguna cifra pactada con Infinox. El swap y la comision se mueven ~5x segun el precio de referencia que se elija; esta escrito en cada `why:`."
 
 # Rangos que sortea la tarea MC Retest, en PUNTOS y por activo. Sin decidir: este activo no es
 # main y no corre MC Retest. Ver `../_policy.yaml`.

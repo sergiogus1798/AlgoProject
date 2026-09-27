@@ -29,33 +29,41 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: null                 # points — tramo `build`
+    use: 606.7                # points — tramo `build`
     sqx_now: 1100             # points, el unico que hay hoy
-    why: ""
+    why: "2026-09-27 — opción A del dueño: spread proporcional al precio (modelo `relativo`: el spread medio en % del precio de los días Darwinex × el precio Dukascopy de cada día del build; medido donde hay ticks, 29 % del tramo). Media del tramo 485.3 puntos × factor 1.25 (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27."
   spread_oos:
-    use: null                 # points — tramos `oos1` y `oos2`
+    use: 915.5                # points — tramo `oos1` (oos2 lleva `spread_oos2`)
     sqx_now: 1100             # points, el unico que hay hoy
-    why: ""
+    why: "2026-09-27 — media del spread medio diario de Darwinex (NIKKEI225_DarwTick_Infinox) en oos1, 2020-01-02 a 2023-12-29 (1034 días), 732.4 puntos × factor 1.25 del dueño (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27."
+  spread_oos2:
+    use: 559.1
+    sqx_now: null
+    why: 2026-09-27 — media del spread medio diario de Darwinex (NIKKEI225_DarwTick_Infinox) en oos2, 2024-01-02 a 2026-08-31 (687 días), 447.3 puntos × factor 1.25 del dueño (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27.
   commission:
-    use: null                 # % del nocional
+    use: 0.0                  # % del nocional
     sqx_now: {method: SizeBased, value: 1}   # $ por lote — HAY QUE PASARLO A %
-    why: ""
+    why: "2026-09-27 — decisión del dueño: los índices en la cuenta raw no pagan comisión."
   slippage_is:
-    use: 550                 # points — tramo(s) build
+    use: 303.4               # points — tramo(s) build
     sqx_now: 0.0
-    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
+    why: "2026-09-27 — la mitad del spread de su tramo (606.7), default del dueño."
   slippage_oos:
-    use: 550                 # points — tramo(s) oos1 y oos2
+    use: 457.8               # points — tramo oos1 (oos2 lleva `slippage_oos2`)
     sqx_now: 0.0
-    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
+    why: "2026-09-27 — la mitad del spread de su tramo (915.5), default del dueño."
+  slippage_oos2:
+    use: 279.6
+    sqx_now: null
+    why: 2026-09-27 — la mitad del spread de su tramo (559.1), default del dueño.
   swap_long:
-    use: -8                   # % ANUAL (SQX divide /100 y /360)
+    use: -8.0                 # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: money, value: -2.454}
-    why: "PROVISIONAL 2026-09-22 — cifra de trabajo puesta por el dueno, no pactada con el broker. Mismo signo en largo y corto: ambos lados pagan."
+    why: "2026-09-27 — decisión del dueño: -8 % anual aproximado, el mismo en largo y en corto (ambos lados pagan). Valor por defecto: el swap real cambia con los tipos y no hay histórico."
   swap_short:
-    use: -8                   # % ANUAL (SQX divide /100 y /360)
+    use: -8.0                 # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: money, value: 1.338}
-    why: "PROVISIONAL 2026-09-22 — cifra de trabajo puesta por el dueno, no pactada con el broker. Mismo signo en largo y corto: ambos lados pagan."
+    why: "2026-09-27 — decisión del dueño: -8 % anual aproximado, el mismo en largo y en corto (ambos lados pagan). Valor por defecto: el swap real cambia con los tipos y no hay histórico."
 
 notes: []
 
@@ -72,8 +80,8 @@ swap:
 
 mc_retest:
   spread:
-    min: null
-    max: null
+    min: 165.5
+    max: 1206.6
     sqx_now: [{min: 1, max: 5}, {min: 80, max: 200}, {min: 120, max: 400}]   # varias tareas, rangos distintos
   slippage:
     min: null

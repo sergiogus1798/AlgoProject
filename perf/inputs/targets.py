@@ -26,6 +26,7 @@ TARGETS: dict[str, dict] = {
                            "call": workloads.feedquality_detect},
     "core.trades_read": {"area": "core", "unit": "rows", "call": parsers.trades_read},
     "core.bars_read": {"area": "core", "unit": "bars", "call": parsers.bars_read},
+    "core.ticks_read": {"area": "core", "unit": "ticks", "call": parsers.ticks_read},
     "core.sqx_xml": {"area": "core", "unit": "files", "call": parsers.sqx_xml},
     "core.sqx_stats": {"area": "core", "unit": "files", "call": parsers.sqx_stats},
 }

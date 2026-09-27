@@ -58,6 +58,12 @@ both out-of-sample segments removes it. It is expressible because **SQX stores c
 inside each task**, not once per project: the build task carries one `defaultSpread` and the retest
 tasks another. `sqx_settings(data, segment)` picks the right one.
 
+**A third spread, when oos1 and oos2 differ.** An asset's own block in `_policy.yaml` may give a
+segment its own half — `oos2: {from: 2024, to: 2026-08-31, spread: oos2}` — and its file then
+carries `spread_oos2` and `slippage_oos2` (required once named, `fields()` asks for them). The five
+index CFDs do since 2026-09-27: their spread fell or rose between the two OOS windows by up to 40 %
+(`studies/data/spread`, `docs/AgentPDFs/spread-real-2026-09-27`).
+
 **Why % off forex.** A percentage scales with the price on its own, which is the whole point.
 ⚠️ Two traps, both in `_classes.yaml` and both verified against the install on 2026-09-22:
 
@@ -207,7 +213,8 @@ mismo día.
 FTMO nombra los índices distinto que el feed, así que el mapeo no es mecánico y está escrito
 activo por activo: `DAX40 → GER40.cash_ftmo`, `DJ30 → US30.cash_ftmo`,
 `NIKKEI225 → JP225.cash_ftmo`, `USA500 → US500.cash_ftmo`, `USATEC → US100.cash_ftmo`.
-`SP500ft` se queda en `null` porque SQX no tiene su feed.
+`SP500ft` se retiró el 2026-09-27 (`symbols/_retired/`): era el mismo índice que `USA500` y SQX
+no tiene su feed (dueño).
 
 ⚠️ **Una sesión se define DENTRO del proyecto**, en `<Resources><Sessions>`. Una tarea que nombra
 una sesión que su proyecto no lleva carga sin quejarse y opera otro horario.

@@ -97,11 +97,15 @@ def fields(data: dict) -> list[str]:
         data: One asset as load() returned it.
 
     Returns:
-        Field names. A forex asset carries one spread, a no_forex asset two.
+        Field names. A forex asset carries one spread, a no_forex asset two — plus one
+        spread and one slippage per extra half its own segments name in `_policy.yaml`
+        (`oos2: {spread: oos2}` asks for `spread_oos2` and `slippage_oos2`).
     """
     s = schema(data)
-    return (s["spread"]["fields"] + [s["commission"]["field"]] + s["slippage"]["fields"]
-            + s["swap"]["fields"])
+    extra = [] if data["class"] == "forex" else sorted(
+        {seg["spread"] for seg in data["segments"].values()} - {"is", "oos"})
+    return (s["spread"]["fields"] + [f"spread_{h}" for h in extra] + [s["commission"]["field"]]
+            + s["slippage"]["fields"] + [f"slippage_{h}" for h in extra] + s["swap"]["fields"])
 
 
 def _ms(bound: int | date, end: bool) -> int:

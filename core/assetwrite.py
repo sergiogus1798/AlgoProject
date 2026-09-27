@@ -67,21 +67,26 @@ def set_value(name: str, keys: list, value: object) -> dict:
     return {"file": str(path), "path": keys, "value": value}
 
 
-def set_cost(symbol: str, field: str, value: object, why: str) -> dict:
+def set_cost(symbol: str, field: str, value: object, why: str, after: str | None = None) -> dict:
     """Change what an asset really costs, and say why in the same write.
 
     Args:
         symbol: Asset name.
-        field: Cost field of its class, e.g. "spread_is".
+        field: Cost field of its class, e.g. "spread_is", or one its segments name
+            ("spread_oos2"), created on first write.
         value: The figure to apply, or None to hand the field back to «undecided».
         why: The line that replaces the stored one. A `use` under the previous `why` would
             claim a justification that is no longer the reason for the number.
+        after: For a field the file lacks, the sibling it goes after, e.g. "spread_oos".
 
     Returns:
         The field as written.
     """
     path = path_of(symbol)
     doc = read(path)
+    if field not in doc["costs"]:
+        doc["costs"].insert(list(doc["costs"]).index(after) + 1, field,
+                            CommentedMap(use=None, sqx_now=None, why=""))
     doc["costs"][field].update({"use": value, "why": why})
     write(path, doc)
     reindex()

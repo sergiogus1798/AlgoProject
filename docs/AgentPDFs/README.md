@@ -16,11 +16,14 @@ tables contradicted the code) and the 2026-09-22 review. All are in git history.
 | `plataforma-unificada-2026-09-20` (+pdf) | feasibility study for one app over SQX and AlgoProject; `ui/` is its descendant | design reference of `ui/` |
 | `puerta-oos-2026-09-23` | design dossier of `studies/screening/gate/` | cited by its README and config |
 | `profiling-workflow-2026-09-26` | the 25 steps run end to end on USDJPY H1, with time, CPU, memory and disk | report of encargo 21 |
+| `spread-real-2026-09-27` (+pdf) | the owner's study of Darwinex's real spread: objectives, method, results and conclusions — XAUUSD, USDJPY and the five index CFDs, the spread band against price for the MC Retest, the repricing of harvests, the `%` commission charged once | **applied to the indices** (segments, spread per segment, slippage = half); XAUUSD/USDJPY proposal pending; source `studies/data/spread` |
 | `workflow-usdjpy-m30-2026-09-27` (+pdf) | the 25 steps run end to end on USDJPY M30 with the new `donchianUpperCrossUp` template, every test, and the incidents found (OPEN.md §57-§63) | report of the owner's 2026-09-26 night request; the template's reading awaits his confirmation |
 | `catalogo-para-la-ui-2026-09-25` (+pdf) | outbound brief: everything the toolchain does, for whoever designs the window | inventory — goes stale |
 | `paneles-flask-inventario-2026-09-25` | outbound brief: the depth of the three retired Flask panels, with the ten-point contract the «Estrategias» zone keeps | the bar for that zone |
 | `respuestas-calidad-del-feed-2026-09-26` (pdf) | the owner's answers to the 16 decisions, with formulas | source of `ledger/thresholds.yaml` `feedQuality.` |
 | `calidad-del-feed-decisiones-2026-09-26` (+pdf) | the 16 decisions the feed-quality module needs, each with a proposal measured on the M1 feed itself — replaces the outbound consultation | answered 2026-09-26 — the owner's answers and what the built module measured are its last section; the thresholds live in `ledger/thresholds.yaml` |
+| `ideas-de-edge-2026-09-26` (+pdf) | the owner's dossier: what the project lacks to reach a quant desk's level — six ideas he accepted (full pass, positive controls, hypothesis space, ledger yield table, second data provider, cross-study multiplicity) and eight more | **accepted, no encargo yet** — an idea that becomes work moves to `docs/encargos/` |
+| `ideas-de-internet-y-libros-2026-09-27` (+pdf) | the owner's dossier: 390 ideas from a web sweep and 24 of his algorithmic-trading books (eight reading agents), merged and explained in Spanish — what contradicts the project, a top 30, validation, hypotheses and data, costs/risk/live, process and UI | **catalogue, nothing accepted** — the 7 UI-only items were commissioned to the UI session (`scratch/ui-order-2026-09-27.md`) |
 
 ## Conventions
 

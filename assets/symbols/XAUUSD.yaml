@@ -28,33 +28,41 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 5.0                 # points — tramo `build`
+    use: 16.37               # points — tramo `build`
     sqx_now: 5               # points, el unico que hay hoy
-    why: "PROVISIONAL 2026-09-21 — default de SQX, no una cifra pactada con Infinox."
+    why: "onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_DarwTick_Infinox). studies.data.spread.onboard"
   spread_oos:
-    use: 10.0                 # points — tramos `oos1` y `oos2`
+    use: 22.54                # points — tramos `oos1` y `oos2`
     sqx_now: 10               # points, el unico que hay hoy
-    why: "PROVISIONAL 2026-09-21 — default de SQX, no una cifra pactada con Infinox."
+    why: "onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_DarwTick_Infinox). studies.data.spread.onboard"
+  spread_oos2:
+    use: 37.49
+    sqx_now: null
+    why: onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_DarwTick_Infinox). studies.data.spread.onboard
   commission:
-    use: 0.001              # % del nocional
+    use: 0.001778           # % del nocional
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
-    why: "PROVISIONAL 2026-09-22 — conversion de unidad del default de SQX, no una cifra pactada. 8 $/lote/pata sobre el nocional de 1 lote al ultimo cierre real (4595.52 x point_value 100 = 459.552 $) son 8/459552 = 0.00174 %. Antes decia 0.00229 con un precio de referencia supuesto de 3500; el cierre real del 2026-01-16 es 4595.52. Depende del precio de referencia elegido y de si SQX cobra el % por pata o por operacion, SIN VERIFICAR."
+    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (Infinox raw), pasados a % del nocional a 4.500 USD/onza × 100 onzas = 0.001778 %. SQX cobra PercentageBased una vez por operación sobre la apertura (OPEN.md #26), así que escala con el precio de cada época."
   slippage_is:
-    use: 2.5                 # points — tramo(s) build
+    use: 8.19                # points — tramo(s) build
     sqx_now: 0.0
-    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
+    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
   slippage_oos:
-    use: 5                 # points — tramo(s) oos1 y oos2
+    use: 11.27             # points — tramo(s) oos1 y oos2
     sqx_now: 0.0
-    why: "PROVISIONAL 2026-09-23 — la mitad del spread de su tramo, convencion elegida por el dueno. No es una medicion: SQX lleva defaultSlippage 0.0 en los 17 y un backtest no devuelve slippage, aplica el que se le da."
+    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
+  slippage_oos2:
+    use: 18.75
+    sqx_now: null
+    why: onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño.
   swap_long:
-    use: -7                   # % ANUAL (SQX divide /100 y /360)
+    use: -7.0                 # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: -73.42}
-    why: "PROVISIONAL 2026-09-22 — cifra de trabajo puesta por el dueno, no pactada con el broker. Mismo signo en largo y corto: ambos lados pagan."
+    why: "2026-09-27 — decisión del dueño: -7 % anual, el mismo en largo y en corto. Valor por defecto: el swap real cambia con los tipos y no hay histórico."
   swap_short:
-    use: -7                   # % ANUAL (SQX divide /100 y /360)
+    use: -7.0                 # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: 38.76}
-    why: "PROVISIONAL 2026-09-22 — cifra de trabajo puesta por el dueno, no pactada con el broker. Mismo signo en largo y corto: ambos lados pagan."
+    why: "2026-09-27 — decisión del dueño: -7 % anual, el mismo en largo y en corto. Valor por defecto: el swap real cambia con los tipos y no hay histórico."
 
 notes:
   - "2026-09-21: spread, commission and point_value filled with SQX's own defaults so authoring is not blocked while the protocol is built. They are NOT agreed Infinox figures. Every cost-bearing result produced before the owner replaces them carries that caveat."
@@ -64,8 +72,8 @@ notes:
 # significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
 mc_retest:
   spread:
-    min: 5
-    max: 30
+    min: 8.7
+    max: 31.98
     sqx_now: [{min: 1, max: 5}, {min: 5, max: 12}]   # varias tareas, rangos distintos
   slippage:
     min: 5

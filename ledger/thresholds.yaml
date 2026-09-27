@@ -675,3 +675,22 @@ thresholds:
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
+
+  # ── Paso 4 · el spread real de Darwinex ───────────────────────────────────────────────
+  - key: spread.constancy.tolerance
+    value: 0.20
+    source: studies/data/spread/config.yaml#constancy.tolerance
+    set_by: dueño
+    set_on: 2026-09-27
+    why: >-
+      el spread relativo al precio se da por constante si la media de cada año completo
+      queda a ±20 % de la mediana de los años; si no, se modela para los años sin Darwinex
+
+  - key: spread.safety.factor
+    value: 1.25
+    source: studies/data/spread/config.yaml#safety.factor
+    set_by: dueño
+    set_on: 2026-09-27
+    why: >-
+      margen sobre el spread medido al declararlo en SQX: «es mejor hacer overkill en SQX
+      que en tu portfolio live»
