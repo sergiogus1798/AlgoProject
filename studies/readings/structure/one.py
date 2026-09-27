@@ -53,7 +53,7 @@ def legs_of(got: dict, rows: dict, cfg: dict) -> dict:
         inv["label"] = reading.direction(inv, cfg["controls"]["min_paired"])
         out[leg] = {"ablations": ablations, "inversion": inv,
                     "identity": measure.identity(mother, origin["mother"],
-                                                 cfg["controls"]["identity_tolerance"]),
+                                                 cfg["controls"]["identity_tolerance"], leg),
                     "identity_retained": retained[(leg, origin["variant_id"])]}
     return out
 

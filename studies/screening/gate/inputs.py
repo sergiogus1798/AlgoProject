@@ -55,17 +55,20 @@ def load(folder: Path) -> dict:
         databank holds and the retest databank does not.
 
         The two windows are two separate backtests with their own spread and slippage, so
-        the curve is glued on daily returns rather than on levels: the boundary is the
-        first day the retest covers, and whatever the build window ran past it is dropped
-        rather than double counted.
+        the curve is glued on daily returns rather than on levels. The boundary is the last
+        day the build curve covers: the retest's curve opens ~2 months before its segment
+        with zero P&L (knowhow/sqx-format/leg-curve-warmup.md), so its first day would cut
+        the build window short and drop its last weeks.
     """
     metrics = pd.read_parquet(folder / "metrics.parquet")
     trades = pd.read_parquet(folder / "trades.parquet")
     equity = pd.read_parquet(folder / "equity.parquet")
     wide = {side: block.pivot(index="day", columns="identity", values="equity")
             for side, block in equity.groupby("sample")}
-    split = wide["OOS"].index.min()
-    daily = pd.concat([wide["IS"][wide["IS"].index < split].diff(), wide["OOS"].diff()])
+    last = wide["IS"].index.max()
+    after = wide["OOS"].diff()[wide["OOS"].index > last]
+    split = after.index.min()
+    daily = pd.concat([wide["IS"].diff(), after])
     return {"metrics": metrics, "trades": trades, "equity": equity,
             "curve": daily.cumsum(), "missing": pd.read_csv(folder / "missing_oos.csv"),
             "split": split.date().isoformat(),

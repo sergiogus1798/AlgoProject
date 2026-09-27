@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from core.assetdata import doctrine
 from core.barstore import read as read_bars
 from core.study import config as study_config
 
@@ -21,6 +22,24 @@ def config(overrides: list[str]) -> dict:
         What config.yaml holds.
     """
     return study_config.load(CONFIG, overrides)
+
+
+def blocks(scaling: pd.DataFrame, given: list[str] | None) -> list[str]:
+    """The task's <Setup> order: which timeframe each result block was run on.
+
+    Args:
+        scaling: The manifest `sqx.variants.scale` wrote; its `source_tf` is the mothers'.
+        given: `run.blocks` from config.yaml, a list only for a task written with
+            `--timeframes`.
+
+    Returns:
+        The source timeframe, then the extra ones in the order `sqx.projects.crosstf` writes
+        them for it — the same `crosstf.timeframes` of assets/_build.yaml, read here.
+    """
+    if given:
+        return given
+    (source,) = scaling["source_tf"].unique()
+    return [source] + doctrine()["crosstf"]["timeframes"][source]
 
 
 def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:

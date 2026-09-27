@@ -13,7 +13,7 @@ from core.assetdata import doctrine, load
 from core.datapaths import projects_backup
 from core.paths import worker_dir
 from sqx.inspect.keep_tasks import keep
-from sqx.projects import crosschecks, registry, summary
+from sqx.projects import crosschecks, registry, source, summary
 from sqx.projects.configure import configure, ignored_templates, running_install
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session
@@ -193,9 +193,8 @@ def main() -> None:
                     default=doctrine()["databank"]["max_strategies"])
     ap.add_argument("--minutes", type=int, default=10)
     ap.add_argument("--donor", type=Path, default=DONOR)
-    ap.add_argument("--session-from", type=Path,
-                    help="a project.cfx that defines the asset's session, when the donor "
-                         "does not — read only, never written")
+    ap.add_argument("--session-from", type=Path, help="project.cfx to borrow the asset's session "
+                    "and feed from; default the newest one defining both — read only")
     ap.add_argument("--segment", choices=("build", "oos1"),
                     help="force one segment on every task; omit to take each task's own")
     ap.add_argument("--tasks", default="Build",
@@ -213,7 +212,8 @@ def main() -> None:
         raise SystemExit(registry.check_name(a.name))
     if not a.template.exists():
         raise SystemExit(f"{a.template} does not exist.")
-    missing = pending(load(a.symbol))
+    asset = load(a.symbol)
+    missing = pending(asset)
     if missing:
         raise SystemExit(f"{a.symbol}: {', '.join(missing)} have no agreed value. Ask the owner "
                          "before authoring anything for it (hard rule 5).")
@@ -221,13 +221,13 @@ def main() -> None:
     if held:
         raise SystemExit(f"the {held} is running and rewrites a project.cfx on exit. "
                          f"Stop it: bin/sqx-worker.sh --role {held} stop")
-
-    stop = blockers(load(a.symbol), a.timeframe)
+    stop = blockers(asset, a.timeframe)
     if stop:
         raise SystemExit("\n".join(stop))
+    borrow = a.session_from or source.pick(a.donor, asset["session"], asset["sqx_symbol"])
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe, a.max_strategies,
                  a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')),
-                 set(a.only.split(',')) if a.only else None, a.session_from,
+                 set(a.only.split(',')) if a.only else None, borrow,
                  tuple(x for x in a.silence.split(',') if x), a.workflow)
     if done["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))

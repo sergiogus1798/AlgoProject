@@ -6,11 +6,12 @@
 run:
   # project and feed come from the command line (--project, --asset): a default here belonged to
   # whichever asset was studied last, and scored USDJPY against gold bars once (OPEN.md #34).
-  source_tf: H1              # the timeframe every mother was built on
   # The <Setup> order of the retest task, which is the order the result blocks come back in.
-  # Block 0 is always the main test. Change this and the cells are read off the wrong bars,
-  # silently -- `report.py` prints the mapping every run so it can be eyeballed.
-  blocks: [H1, H4, H12]
+  # Block 0 is always the main test. null = derived like sqx.projects.crosstf writes it: the
+  # batch's source timeframe (scaling.parquet), then `crosstf.timeframes` of
+  # assets/_build.yaml for it. Set a list only for a task written with --timeframes; a wrong
+  # list reads every cell off the wrong bars, silently -- `report.py` prints the mapping.
+  blocks: null
 
 usable:
   # A scaled cell whose parameters were mangled by rounding does not answer the question:

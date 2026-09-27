@@ -1,5 +1,6 @@
 """What the study runs on: the export says which markets exist, assets/ says what they are."""
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -91,7 +92,11 @@ def universe(symbol: str, trades: Path) -> dict:
         trades: The export's `trades.parquet`.
 
     Returns:
-        Keys main, timeframe, markets and absent. `markets` is one row per feed the export
+        Keys main, timeframe, markets and absent. The timeframe is the one the export ran
+        on, from its manifest, never the one `_markets.yaml` declares: 2026-09-27 an M30
+        export was priced on the declared H1 bars, every trade at :30 matched the bar half
+        an hour early, and 8 strategies losing on 8 of 9 markets were read as profitable on
+        all 9. `markets` is one row per feed the export
         carries besides the base asset, each with its category and data_from — a feed the
         declaration does not name is kept and marked UNCLASSIFIED rather than dropped, so a
         mismatch is visible instead of silently shrinking the study. `absent` names the
@@ -101,7 +106,9 @@ def universe(symbol: str, trades: Path) -> dict:
     spec = load(symbol)
     known, first = classify(symbol), dates(symbol)
     present = [f for f in discovered(trades) if f != spec["main"]]
-    return {"main": spec["main"], "timeframe": spec["timeframe"],
+    (timeframe,) = json.loads((trades.parent / "manifest.json").read_text(
+        encoding="utf-8"))["source"]["timeframes"]
+    return {"main": spec["main"], "timeframe": timeframe,
             "markets": [{"feed": f, "category": known.get(f, UNCLASSIFIED),
                          "data_from": first.get(f, "unknown")} for f in present],
             "absent": sorted(set(known) - set(present))}

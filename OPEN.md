@@ -36,7 +36,7 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 23 | — | 🟡 | topology **settled**; design unblocked, execution still waiting on lane P and W2 |
 | 24 | — | ⚪ | closed 2026-09-26: the owner declined the holdout pre-registration; `oos2` + `ledger.gate` hold the line |
 | 25 | — | 🟢 | new: the authoring chain is proven headless end to end; `OPEN.md` issue 9 now has its positive control |
-| 26 | — | 🔴 | new: the `%` commission may charge per leg or per trade — a factor of 2, unmeasured |
+| 26 | — | 🟢 | **settled 2026-09-27**: the `%` commission is charged ONCE per trade, on the open — the 2026-09-26 «twice» was swap leaking into the fit |
 | 27 | — | 🟠 | new: 16 of 17 assets still have no agreed cost, now in the owner's new units |
 | 28 | — | 🟠 | new: `DAX40`'s feed is in no project on the master, so its file cannot be refreshed |
 | 29 | — | 🟡 | forex and metals filled 2026-09-22; the 6 index CFDs still have no IS/OOS window |
@@ -48,7 +48,7 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 48 | — | 🟡 | new 2026-09-25: **dos parches locales al código de sqx-lab 1.2.0**, marcados `LOCAL PATCH` y listados en `tools/sqx-lab/LOCAL_PATCHES.md` — `sqx-random-group` reexportaba bloques sin `categoryType="Custom blocks"`, y la verificación de `sqx-strategy-project` exigía un databank que los proyectos de serie de los workers no traen. Una versión nueva descomprimida encima los borra: `bin/sqx-lab-install.sh` avisa si faltan |
 | 39 | 🔴 | 🟢 | **hecho 2026-09-25**: el bucle sobre estrategias de `crossmarket.report` se reparte entre los núcleos con `fork` (`--workers`, por defecto todos). 8×9 a 500 sorteos: **623,5 s → 156,1 s con 7 procesos**, `verdict.csv` idéntico byte a byte. `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento) |
 | 40 | 🔴 | 🟢 | **hecho 2026-09-25**: el ATR se cachea por `(barras, ventana)` (`engines/market/calibrate.py`) y la tabla OOS se agrupa una vez por identidad (`studies/screening/gate/monkey.py`), y el mono va en paralelo. `studies.screening.gate.report` a 500: **31,1 s → 6,1 s**, `scorecard` de 500×29 idéntico columna a columna |
-| 41 | — | 🟢 | new 2026-09-24: **`sqx-worker.sh stop` volvía a los 20 s diciendo «did not stop»** mientras la JVM seguía escribiendo databanks, y quien leía después veía 211 de 500 `.sqx`. Ahora espera hasta 5 min a que el proceso se vaya de verdad. **No se perdió nada**: la sincronización acabó sola |
+| 66 | — | 🟢 | new 2026-09-24: **`sqx-worker.sh stop` volvía a los 20 s diciendo «did not stop»** mientras la JVM seguía escribiendo databanks, y quien leía después veía 211 de 500 `.sqx`. Ahora espera hasta 5 min a que el proceso se vaya de verdad. **No se perdió nada**: la sincronización acabó sola |
 | 42 | — | 🟢 | new 2026-09-24: una estrategia que **no dispara en ningún mercado ajeno** tumbaba el lote entero del paso 10 con `KeyError: 'bar_cap'`. Ahora se anota como veredicto propio. Salió a la primera con 8 estrategias reales |
 | 43 | — | 🔴 | new 2026-09-24: **la mitad de los análisis de Python no está ejercitada.** De 23 puntos de entrada se han medido 7; de los 5 primeros que se probaron a mano, 4 fallaron por prerrequisitos o por entrada de la forma equivocada. El peor: **`studies.readings.monkey.report` escribe «0 estrategias» y sale con éxito** cuando `--sample OOS1` no casa con el export (los de crossmarket sólo llevan `IST`). `tasks.is_oos` muere con `StopIteration` en un databank sin OOS y funciona perfecto (0,57 s) en el correcto; `exposure.report` y `tasks.nulls` mueren con `IndexError` en vez de nombrar el fichero que les falta |
 | 33 | — | 🟢 | new: **un clon del donante seguía operando ORO** para cualquier activo que no fuese XAUUSD. Arreglado el 2026-09-24 con `sqx/projects/resources.py` y un guardia; `knowhow/authoring/donor-clone-market.md` |
@@ -56,11 +56,31 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 35 | — | 🟢 | new: `export_metrics` sólo leía el maestro y `sync_bars` moría en un `markets.FILE` inexistente. Los dos arreglados el 2026-09-24; `knowhow/export/bars.md` |
 | 36 | 🔴 | 🟢 | **hecho 2026-09-24**: `studies/transfer/crossmarket/report.py` juzga la población entera por amplitud y escribe el `verdict.csv` de `/curate`. ⚠️ Revierte la decisión del 2026-09-15 de no guardar resultados; el panel sigue siendo donde se mira UNA estrategia |
 | 41 | — | 🟠 | new: **el diseño de variantes gasta la mitad del presupuesto en combinaciones que apenas operan** — 1.002 de 2.000 filas de `Strategy 17-9-39` quedan bajo 30 operaciones, y el filtro colapsa `DICrossShift1` a un valor. Medido 2026-09-24 con `studies/optimisation/cloud/` |
-| 46 | — | 🔴 | new 2026-09-25: **la tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado**. En un lote de 96 la mayor lleva 117.612 operaciones y cuesta **453 s ella sola**: es el suelo de cualquier reparto a partir de 24 procesos, y por eso 96 procesos sólo dan 14,2x. Los 9 mercados son independientes dentro de `analyse_market` — repartir por ahí divide la tarea más larga por ~9. Toca la forma de `analyse_strategy`, que es la puerta del panel: decisión de diseño. `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento) |
-| 47 | — | 🟠 | new 2026-09-25: **el lote del paso 10 no deja ver por dónde va** — `pool.map` devuelve en orden y la corrida de 499 estuvo **38 min sin imprimir una línea**, indistinguible de un cuelgue. Desde fuera tampoco: `py-spy` necesita ptrace y está bloqueado. Se arregla imprimiendo por orden de terminación |
-| 44 | — | 🟢 | new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y **el núcleo mató la ventana de VSCode** |
+| 69 | — | 🔴 | new 2026-09-25: **la tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado**. En un lote de 96 la mayor lleva 117.612 operaciones y cuesta **453 s ella sola**: es el suelo de cualquier reparto a partir de 24 procesos, y por eso 96 procesos sólo dan 14,2x. Los 9 mercados son independientes dentro de `analyse_market` — repartir por ahí divide la tarea más larga por ~9. Toca la forma de `analyse_strategy`, que es la puerta del panel: decisión de diseño. `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento) |
+| 70 | — | 🟠 | new 2026-09-25: **el lote del paso 10 no deja ver por dónde va** — `pool.map` devuelve en orden y la corrida de 499 estuvo **38 min sin imprimir una línea**, indistinguible de un cuelgue. Desde fuera tampoco: `py-spy` necesita ptrace y está bloqueado. Se arregla imprimiendo por orden de terminación |
+| 56 | — | 🟢 | **arreglado, corriendo desde la noche del 26→27**: 16 días sin la mitad con criterio, verificado con evidencia fresca — `audit/2026-09-27.md` y `-fixes.md` completos, `exit 0` en ambos logs |
+| 57 | 🔴 | 🟢 | **arreglado 2026-09-27**: el paso 10 valoraba el export con el timeframe de `_markets.yaml` (H1 sobre un export M30) y sin el spread de entrada; ahora 0/8, como dice SQX. Veredictos guardados con timeframe distinto: rehacer |
+| 58 | 🟠 | 🟢 | **arreglado 2026-09-27** (decisión del dueño): la huella ignora también `autoGenerated`; ya no cambia tras el MC Retest |
+| 59 | 🟠 | 🟠 | **medido 2026-09-27**: SQX sortea en escalones de ~0,1 punto; el 1x–4x del spread provisional de forex cabe en 2-3 escalones. Decisión del dueño: ensanchar o esperar a los costes pactados |
+| 64 | — | 🟡 | new 2026-09-27 (audit): **`export_spp.py` no escribe manifiesto para las madres copiadas en `strategies/`**, solo para las tablas de `spp/` — hallazgo real, no punto ciego del checker |
+| 65 | — | 🟠 | new 2026-09-27 (audit): **`snapshots/` pasó de 103 % a 188 % de presupuesto en una noche**, `profiling/` sigue en 200 %; nada aquí borra solo — decisión del dueño |
+| 60 | 🟠 | 🟢 | **arreglado 2026-09-27**: `template_check` ve la condición del grupo de un ítem y abre todas las estrategias |
+| 61 | 🟠 | 🟢 | **arreglado 2026-09-27**: `cloud` lee los nombres de columna de `collect` |
+| 62 | 🟠 | 🟢 | **arreglado 2026-09-27**: el injerto del stop (y `feedQuality`) no dependen del orden de atributos; test añadido |
+| 63 | 🟡 | 🟢 | **arreglado 2026-09-27**: builder busca solo la sesión, crossTF deduce sus bloques, registry actualiza en sitio, `holding` sin falsos positivos, puerta y estructura cortan por el tramo correcto |
+| 74 | — | 🟠 | new 2026-09-27: **los pasos 23, 24 y 25 exportan a la misma carpeta del día y se pisan**; el informe del 23 ya no se puede rehacer |
+| 75 | — | 🟡 | new 2026-09-27: un `stop` justo después de `start` se pierde (la CLI aún no está lista) |
+| 76 | — | 🔴 | new 2026-09-27: **el spread real de Darwinex es 3–8× el declarado en XAUUSD y USDJPY** (`studies/data/spread`); **índices aplicados 2026-09-27** (tramos, un spread por tramo, slippage = la mitad; falta su comisión); XAUUSD/USDJPY sin aplicar; el reajuste aún no se ha contrastado con un retest DATATICK. Estudio: `docs/AgentPDFs/spread-real-2026-09-27.pdf` |
+| 68 | — | 🟢 | new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y **el núcleo mató la ventana de VSCode** |
 | 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `engines/nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `studies.screening.gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/perf/python-parallelism.md` |
+| 44 | 🔴 | 🔴 | new 2026-09-26: el CSCV mete dos meses de P&L de `oos1` en el lado OOS — la curva de cada pata empieza antes de su segmento (warm-up); cambia cifras CSCV/WFC ya calculadas |
+| 67 | — | 🟡 | new 2026-09-26: `pipeline/XAUUSD/Strategy_17-9-39` ya no corre en el CSCV — batch anterior a las columnas por segmento |
+| 46 | — | 🟢 | hecho 2026-09-26 (dueño): el paso 18.5 (Market Surfaces) lee `oos2`; el paso 23 (structural) no — decisión registrada, no bloquea |
+| 47 | — | 🟢 | hecho 2026-09-26 (dueño): el mapa condicional lleva sesiones horarias (Tokio/Londres/Nueva York); el on/off es de la ventana |
 | 32 | — | 🟡 | **mitad cerrada**: `sqx-worker.sh` ya rechaza un segundo lanzamiento sobre el mismo install y un puerto derivado (2026-09-23). Falta el candado de propietario: **el custodio no tiene candado** — 2026-09-23 dos sesiones se pisaron en W2: `stop` mató corridas ajenas. Evidencia en vivo del §2.D de la revisión. `knowhow/perf/smt-in-sqx-retest.md` «dos sesiones sobre el custodio a la vez» |
+| 71 | — | 🟠 | new 2026-09-22: `benchmark=0` no es el nulo honesto para el PSR en tres estudios ya terminados — negativo en el 100 % de 757 estrategias de XAUUSD OOS1, así que hoy es el más estricto de los dos, no el equivocado; cambiarlo es del dueño |
+| 72 | — | 🟠 | new 2026-09-22: `crossmarket` ya calcula lo que falta decir (Sharpe frente a neto, MinTRL frente a los nulos, el múltiplo de equilibrio de `stress.py`) pero no lo relaciona en una frase — aditivo, decisión del dueño |
+| 73 | — | 🟠 | new 2026-09-27 (docs-health): tres skills globales de `sqx-lab` son candidatas a retirar — producto genérico, riesgo de enrutado, ya documentado en `docs/SKILLS.md`; decisión del dueño |
 
 ---
 
@@ -704,8 +724,7 @@ being charged, or the median of the whole history. It changes cost-bearing resul
 asset, and until it is made, no absolute profitability figure on gold, silver or Brent means much —
 relative comparisons between strategies on the *same* asset are unaffected.
 
-Still unverified underneath all of it: whether SQX applies `PercentageBased` per leg or per trade
-(issue 26).
+Settled 2026-09-27 (issue 26): SQX applies `PercentageBased` once per trade, on the open price.
 
 ## Constraints discovered while investigating
 
@@ -909,30 +928,17 @@ Owner: *«yo me controlo a la hora de mirar»*. What protects the last untouched
 WORKFLOW's `oos2` reservation, enforced by `ledger.gate` and `assets/_policy.yaml`; thresholds live
 in `ledger/thresholds.yaml` with who set them and when. The file is in git history.
 
-## 26. 🟠 `PercentageBased` charges ~twice per trade — MEASURED 2026-09-26, the fix is the owner's
+## 26. 🟢 `PercentageBased` is charged ONCE per trade — settled 2026-09-27
 
-🔬 Measured by encargo 11 on existing harvest data, no SQX run: least squares of
-`price_pnl − Profit/Loss = k · commission_once` over **45,488 same-day XAUUSD trades** (no swap to
-confound) gives **k = 1.87**, not 1 — k = 1 sits 31 standard errors off. The commission is charged
-close to once per leg, so today's `no_forex` formula (`_classes.yaml`) understates gold's commission
-by nearly half. `knowhow/costs/commission-methods.md` has the fit. **Not applied**: changing
-`assets/symbols/XAUUSD.yaml` (and every index) is the owner's decision; until then every gold result
-with costs carries `costs_provisional`. What follows is the original entry.
-
-Every `no_forex` asset in `assets/` now declares its commission as a **percentage of notional**,
-applied by SQX's `PercentageBased` method. Reading the snippet
-(`internal/extend/Snippets/SQ/Trading/Commissions/PercentageBased.java`, 2026-09-22) it charges in
-`computeCommissionsOnOpen` only and returns 0 on close. But `knowhow/costs/commission-methods.md` measures **$8 per
-lot per side, $16 round turn** against `SizeBased 8`, which only fits if the engine applies the
-method to each leg.
-
-**It is a factor of two on the commission of gold and every index.** Until it is settled, any figure
-written into a `no_forex` `commission` field is uncertain by 2×, and XAUUSD's carries the caveat in
-its own `why`.
-
-The test is cheap and needs no new code: build or retest one strategy with `PercentageBased` at a
-known percentage, export its trades, and recover `gross − reported P/L` per trade — the same
-residual `portfolio/common/monteCarlo/inputs/costs.py` already computes. One worker job.
+🔬 Re-measured trade by trade on the same harvest (`XAU_ISOOS_ejemplo`, `PercentageBased 0.001` on
+both tasks): of 45,488 same-date XAUUSD trades, **every one that does not cross the 23:00 rollover
+matches a single charge `(pct/100) × size × openPrice × pointValue` to the cent, and none matches
+two**. The 2026-09-26 fit (k = 1.87, «charged twice») kept 1,566 trades that cross 23:00 on the same
+date and carry swap (18–75 $/lot); a least-squares k absorbed it. `_classes.yaml`'s formula was right.
+Consequence: a `%` in a `no_forex` asset file is the round-turn cost, and the «SIN VERIFICAR» in
+`XAUUSD.yaml` / `XAGUSD.yaml` `why` can go (the owner's files). `studies/readings/edgeCost` no longer
+warns about it. Card: `knowhow/costs/commission-methods.md`. Still unreconciled the same way: the
+older «$16 round turn under `SizeBased 8`».
 
 ## 27. 🟠 Sixteen of seventeen assets have no agreed cost, and the schema changed under them
 
@@ -962,8 +968,11 @@ after (full copy taken first in `AlgoData/snapshots/2026-09-25-master-antes-upda
 seventeen assets' ranges moved from `2026-09-22` to `2026-09-25` (BRENT to `2026-09-24`). Log kept
 at `AlgoData/backups/data-update/2026-09-25T194240Z.log`.
 
-**Left open:** two days of `MSFT_DukasM1_ICMarkets` (2026-09-21, 2026-09-23) failed with HTTP 429 —
-the feed's rate limit. The next run fetches them; nothing to fix in the code.
+**Left open:** the weekly run keeps hitting HTTP 429 (rate limit) on the same feeds — as of the
+2026-09-27 log, `MSFT_DukasM1_ICMarkets` failed on four dates (2026.09.18, 20, 21, 23) and
+`HK50_DukasTick_Infinox` on one (2026.09.25). `.sqx` count held (rule 1) both times checked. The
+next run fetches the missing dates; nothing to fix in the code unless it starts costing a project
+that actually uses MSFT or HK50.
 
 **Scheduled since 2026-09-25:** `bin/weekly-data-update.sh`, Saturdays 03:00 from cron — full copy
 of `user/projects` first (last three kept), then the update. Not guarded: a worker **started**
@@ -1007,7 +1016,24 @@ that this one file cannot be refreshed from `sqx.inspect.instruments` until the 
 
 ---
 
-## 17 · 🟠 `benchmark=0` is the wrong null for PSR, in three finished studies
+## 73. 🟠 Three global `sqx-lab` skills are retirement candidates — owner's call
+
+Found by the 2026-09-27 weekly docs-health pass, reading `docs/SKILLS.md` (regenerated the same
+day with `tools/skillmap.py`). The three skills left in `~/.claude/skills/`
+(`sqx-custom-block` 6,488 tokens, `sqx-strategy-template` 5,744, `sqx-random-group` 3,022 — a
+fourth, `sqx-strategy-project`, is no longer installed there) are generic SQX/AlgoWizard authoring
+product: none of them know the owner's defaults, the conductor/custodian split or
+`registry.csv`. The risk `SKILLS.md` already names is routing, not spend — a template request can
+land in `sqx-strategy-template` instead of this project's own `/strategy-template` and produce a
+template that does not follow this house's rules. The only thing from `sqx-lab` actually used today
+is its skeletons, and those already live in `tools/sqx-lab/`, so uninstalling the three globals
+would lose nothing project-specific.
+
+Not retired here — `docs/SKILLS.md` already says "Decisión pendiente del dueño" and this issue only
+gives that pending decision an `OPEN.md` entry, per the weekly docs-health pass's own rule (never
+delete a skill unattended, only list candidates for the owner).
+
+## 71 · 🟠 `benchmark=0` is the wrong null for PSR, in three finished studies
 
 **Opened 2026-09-22, out of the `studies/readings/monkey/` work.** `core/significance.psr()` takes a `benchmark`
 and its docstring says *"Zero asks whether there is any edge"*. All three callers pass zero —
@@ -1026,7 +1052,7 @@ the fix is one argument. **Not done here on purpose**: all three modules are fin
 changing what a finished study reports is the owner's call, not a side effect of building a
 fourth one.
 
-## 18 · 🟠 `crossmarket` already computes the answer to a question it does not ask
+## 72 · 🟠 `crossmarket` already computes the answer to a question it does not ask
 
 **Opened 2026-09-22.** `simulate/metrics.py` computes nine statistics for the real run and every
 null run, and the panel prints them side by side. What is missing is the sentence that makes the
@@ -1043,7 +1069,7 @@ spread between them readable:
   null's mean is negative at all. Neither number cites the other.
 
 All three are additive — a README section, a tooltip, one extra column. None changes a computed
-number. Same reasoning as issue 17: `crossmarket` is finished and this is the owner's call.
+number. Same reasoning as issue 71: `crossmarket` is finished and this is the owner's call.
 
 ## 31. ⚪ Revisión completa del proyecto — 2026-09-22 — CERRADO 2026-09-26
 
@@ -1210,12 +1236,12 @@ puts Nov–Dec 2022 of the **oos1** leg's real P&L on the OOS side of the CSCV's
 numbers. It changes computed CSCV/WFC figures, so the fix (split at the segment's own start from
 `assets/_policy.yaml`) needs a golden before and after. Card: `knowhow/sqx-format/leg-curve-warmup.md`.
 
-## 45. 🟡 `pipeline/XAUUSD/Strategy_17-9-39` no longer runs in the CSCV
+## 45. 🔴 `nulls.seed` no fija nada
 
-Its batch predates the per-segment columns: `cscv.report` fails with `KeyError: NetProfit
-(build+oos1)`. It is still usable by the parameter cloud. Re-harvest it or retire it; never use a
-real batch as a CSCV regression test anyway — every run reads `oos2`
-(`knowhow/research/cscv-always-reads-oos2.md`).
+new 2026-09-25: `engines/nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena
+está aleatorizado por proceso: dos `studies.screening.gate.report` sobre los mismos ficheros dieron
+**227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p
+almacenados** — decisión del dueño. `knowhow/perf/python-parallelism.md`.
 
 ## 46. ✅ Step 18.5 reads `oos2`, step 23 does not — owner, 2026-09-26
 
@@ -1291,3 +1317,265 @@ write no ledger row, so the blind door opens only after `python3 -m ledger.backf
 row would be refused. ⚠️ On 2026-09-26, exploring the USDJPY batches before the module existed,
 the session read the two mothers' oos2 daily P&L (sums, correlation) outside the door; no ledger row
 records that look — the owner decides whether to add one.
+
+## 51. 🟠 The study viewer cannot reach cloud, wfc and cscv — they write into the variant batch
+
+The unified window (2026-09-26) reads results only under `reports/<P>/<D>/<day>/<study>/`
+(`ui/daemon/results/`). `cloud`, `wfc` and `cscv` write into the mother's batch
+(`{strategyPermutations,pipeline}/<P>/<batch>/estudios/`), so `/api/result` and `/api/history`
+never find them: the catalogue marks them `source: "batch"` and the page says «aún no conectado».
+The runner does start them (one mother, refusing when she has two batches). Needs a batch-keyed
+query in `ui/daemon/results/runs.py`; then `notes.absent` needs nothing, the catalogue changes.
+
+## 52. 🟠 Every stored crossmarket result reads stale in the window
+
+🔬 2026-09-26: of the 11 `crossmarket/` report folders only 10 cells carry an identity
+(`USDJPY_workflow_profiling_v1` 8, `USDJPY_emaCross_H1` 2) and **all 10** are `stale`: the
+`config_hash` they signed differs from what `ui/daemon/results/knobs.py` computes for today's
+config. Cause not investigated — either the config changed since, or knobs' loader for crossmarket
+does not reproduce what `studies/transfer/crossmarket` signs (compare the two hashes on a fresh
+run before trusting the ◷ mark on this study). The other 9 folders have no identity column and are
+skipped («sin identidad»).
+
+## 53. 🟠 `edgeCost`'s verdict.csv has no identity column
+
+`reports/<P>/<D>/<day>/edgeCost/verdict.csv` is `strategy, edge_mean, edge_median, n, verdict`.
+Without `identity` the matrix cannot place its rows (199 skipped on `USDJPY_workflow_profiling_v1/
+Results`), and `/curate` cannot check that it deletes the strategy that was judged once
+`verdict.action: drop` makes edgeCost a gate. Add `identity` as the other studies do.
+
+## 54. 🟠 A partial re-run (`only`) is not merged beside the stored result — it replaces it
+
+`POST /api/study/run` with `only=<market>` becomes `studies.transfer.crossmarket.report --strategy
+S --only <feed>`, which writes `reports/<P>/<D>/<day>/crossmarket/estrategias/<S>.json` holding
+that one market — the same file the full run wrote for `S` that day (`--day` is both the export
+date and the report folder). The full per-strategy result is overwritten, not merged; the
+population JSON and `verdict.csv` still describe the full run. `core/study/CONTRACT.md` §1 names
+partial runs; nobody merges them yet. Until then, `↻ solo …` on a day that already holds a full
+run loses that strategy's other markets.
+
+## 55. 🟡 The custodian pulse shows no progress for runs started outside the window
+
+`/api/pulse` (`ui/daemon/ops/pulse.py`) takes `done/total` from a daemon job's
+`PROGRESS <pct> <n> de <N>` line; SQX's own log carries no backtest count. A run launched from a
+terminal or another session shows `avance ?` — JVM, CPU and free RAM are still read. Fix: have
+`sqx.variants.execute` (and whatever else starts long custodian runs) write its PROGRESS lines to
+a file the pulse can find, not only to its own stdout.
+
+## 56. 🟢 The nightly audit and docs agents did not run for 16 days — fixed, running again since the night of 2026-09-26→27
+
+🔬 Found by the 2026-09-27 audit: `AlgoData/logs/nightly-audit.log` and `nightly-docs.log` had
+failed every night since 2026-09-11 with "this workspace has not been trusted" followed by (for
+docs) "Error: Input must be provided either through stdin or as a prompt argument when using
+`--print`". Only `tools/daily_audit.py` (the mechanical half, no model) had actually run — no full
+`audit/YYYY-MM-DD.md` was written for any night in between, so `nightly-fix.sh` also had nothing to
+act on ("no audit/2026-09-26.md: the audit did not finish; nothing to fix").
+
+**Verified fixed 2026-09-27 (🔬):** both scripts already pass the prompt as a `claude -p` argument
+(not stdin, not an empty flag), and last night's run produced real output despite
+`hasTrustDialogAccepted` still being `false` in `~/.claude.json` — the trust warning is printed but
+no longer fatal. `audit/2026-09-27.md` (6.7 KB, real findings), `audit/2026-09-27-fixes.md` (the
+fixer agent, 3.7 KB) and a real documenter run (this same pass's predecessor, which regenerated the
+`knowhow/` indexes and added issues #64/#65) all exist with full content, `exit 0` in both logs.
+Whatever broke it was fixed by commit `0845d21` (2026-09-26 16:22 UTC, "docs: manual only as PDF,
+docs/ pruned, feed-quality decisions, weekly /tmp cleanup"), which touched `bin/nightly-docs.sh`;
+not investigated further here since the symptom is gone. `knowhow/sqx-format/INDEX.md`'s staleness
+was the visible casualty and was repaired the same night.
+
+## 57. 🟢 Step 10 (`crossmarket`) priced exports on the wrong bars and left out the entry spread — fixed 2026-09-27
+
+On `Test_USDJPY_donchianUpperCrossUp_M30` the report kept 8/8 with `worst_pf` 1.31–1.51 while SQX's own
+net P/L gave PF 0.79–1.07. Two causes: `inputs/markets.universe()` priced every export on the timeframe
+`_markets.yaml` declares (USDJPY: H1) — an M30 export matched each :30 trade to the bar half an hour
+early — and `cost_rate()` was measured from the fill prices, leaving out the offset where SQX puts
+spread and slippage. Now the timeframe comes from the export's `manifest.json` and the cost from
+`setting()["charged"]`; the same run gives 0/8, returns PF within 0.02 of SQX's, correlation 0.995+.
+**Stored step-10 verdicts are wrong wherever the export's timeframe differed from `_markets.yaml`**
+(USDJPY at M30, XAUUSD at H1) — rerun those. `_markets.yaml` `timeframe:` is now read by nothing.
+`engines/nulls` (the gate's monkey) recovers its cost the same fill-based way but prices real and
+random runs alike, so its comparison is fair and only its absolute levels are gross; changing it moves
+every stored p (like §45), the owner's call. `knowhow/research/crossmarket-returns-miss-entry-offset.md`.
+
+## 58. 🟢 A strategy's identity changed in place after the MC Retest — fixed 2026-09-27 (owner's call)
+
+After the MC Retest SQX rewrote the databank it read without `autoGenerated="true"` on each
+`<variable>`; `core.sqxfile.COSMETIC` stripped only `makeExternal`, so all 8 identities changed and
+`/curate` refused the next cut. The owner chose to strip `autoGenerated` too. Pre- and post-MCR copies
+of the same strategy now hash alike; on `USDJPY_workflow_profiling_v1` every databank still matches
+`Results` as before (WFM excepted, as before: it rewrites parameters). Identities stored before
+2026-09-27 for strategies that still carried the attribute use the old formula — no `Trade_` project
+exists yet, so nothing needed regenerating. `knowhow/sqx-format/strategy-identity.md`.
+
+## 59. 🟠 MC Retest spread and slippage barely perturb forex at today's provisional costs — measured 2026-09-27
+
+SQX draws the MC spread and slippage on a ~0.1-point grain (one USDJPY tick), not continuously: on
+`Test_USDJPY_mcrRanges` spread 0.1–2.0 gave 17 distinct outcomes, 0.1–1.0 gave 8; slippage 0.05–2.0
+gave 19, 0.05–0.5 gave 4. The declared 1x–4x (`mc_retest.default_multiples`) of the provisional
+USDJPY spread 0.1 / slippage 0.05 spans 0.3 / 0.15 points, so 2 and 1 outcomes: those two axes are
+not tested. With a realistic spread (~1 point) 1x–4x would span ~30 steps and work as designed.
+**The owner's call**: widen the forex multiples, or wait for the agreed costs. `knowhow/costs/mc-retest-ranges.md`.
+
+## 60. 🟢 `template_check` no longer checked the owner's condition — fixed 2026-09-27
+
+Since 2026-09-26 the fixed condition sits in a one-item random group, a `randomBlock` the check skipped,
+so it signed `MarketPositionIsLong` and passed about the wrong block. `signature()` now adds the only
+item of a hole's one-item group, `carried()` counts every block key of a strategy (a drawn block carries
+no `categoryType`), and every strategy is opened by default (`-n` still samples). On the custodian's
+projects: Donchian 3/3, Keltner 115/115 and 120/120; the only "NOT APPLIED" are step-23 ablations,
+which remove the block on purpose.
+
+## 61. 🟢 The parameter cloud could not read `collect`'s panel — fixed 2026-09-27
+
+`cloud/inputs/cloud.py` read `# of trades (IS)` and `config.yaml` `Ret/DD Ratio (IS)`; `collect` writes
+`NumberOfTrades (build)` and `ReturnDDRatio (build)`. Renamed both; the three mothers of the M30 run give
+the same reading unpatched as they did patched in memory.
+
+## 62. 🟢 `stoploss.graft` needed `key=` to be the first attribute — fixed 2026-09-27
+
+SQX wrote `<Param generated=… gid=… key="#StopLoss.StopLoss#">` in 2 of 3 mothers and step 24 refused
+them. The pattern is order-agnostic now; `tests/test_stoploss.py` has the reordered case (fails without
+the fix). The same assumption sat in `studies/data/feedQuality/template.py` `EXIT`, which would have
+missed a live stop and read the strategy on the wrong column, silently: fixed the same way.
+
+## 63. 🟢 Minor frictions of the 2026-09-26 USDJPY M30 workflow run — fixed 2026-09-27
+
+- `builder` needed `--session-from` for any asset the donor does not trade: `sqx/projects/source.py`
+  now picks the newest project on any install that defines both the asset's session and feed (still
+  refusing when none does — EURUSD today). Tested with `Test_USDJPY_builderSessionAuto`.
+- crossTF `run.blocks` was fixed at `[H1, H4, H12]`: `inputs.blocks()` derives it from the siblings'
+  `source_tf` and `_build.yaml` `crosstf.timeframes`; a list is set only for a `--timeframes` task.
+- `sqx.templates.registry --set` replaced the whole row: it now updates only the columns named.
+- `worker.holding` matched the install path anywhere in a command line (the nightly auditor's prompt):
+  only a process whose executable lives in the install counts now.
+- The gate stitched IS and OOS at the first day of the retest's curve, which opens ~2 months early:
+  the build window lost its last weeks (degradation figures moved in the 3rd decimal, no verdict
+  changed). It now joins at the build curve's last day.
+- The structure report compared a build rebuild with a stored OOS result: each leg now meets its own
+  window only. SQX logged an error loading `scaling.parquet`: the siblings go to `<day>/sqx/` now.
+- Left as they are, SQX's own: `synctofiles` at ~6 files/s, and 3 MCR runs that stored 999 of 1,000.
+
+## 64. 🟡 `export_spp.py` never manifests the `strategies/` copies
+
+Found by the 2026-09-27 audit's "exports without a manifest" list, which named only `SPP_IS` and
+`SPP_OOS` export roots (never `MCR_*`, `CrossTF`, `WFC_*`, `WFM`, `Results`, `Retest_Markets_-_Family`
+in the same runs) — narrow enough to check by hand instead of blaming the checker.
+
+🔬 Verified 2026-09-27 on disk: every `SPP_IS/<date>/` and `SPP_OOS/<date>/` holds two sibling
+folders, `spp/` (the profile tables) and `strategies/` (the mother `.sqx` copies, so
+`sqx/variants/inputs.py` can resolve them at step 16.5). `sqx/export/export_spp.py` calls
+`manifest.write(out, ...)` with `out = export_dir(...) / "spp"` — the manifest lands **inside**
+`spp/`, one level deeper than `tools/daily_audit.py`'s `exports_without_manifest()` assumes ("one
+manifest at its dated root"). `copy_mothers()` then writes `strategies/` as a *sibling* of `spp/`,
+via `out.parent`, and never calls `manifest.write` for it. `strategies/` has no manifest anywhere in
+its ancestor chain, so the checker's warning for `SPP_IS`/`SPP_OOS` is correct, not the doubted
+blind spot — `manifest_check_blind_spots` does not apply here. `WFM`'s export is not affected: its
+tables and the manifest both live inside the same `wfm/` subfolder, so nothing there is uncovered.
+
+**Fix:** either move `manifest.write()` in `export_spp.py` to `out.parent` (covering both `spp/`
+and `strategies/` with one manifest naming both), or write a second, smaller manifest inside
+`strategies/` recording which project/databank/date the copies came from. Code change — not done
+here (Documenter does not touch code).
+
+## 65. 🟠 `snapshots/` disk budget nearly doubled in one night, `profiling/` still pinned at 200 %
+
+📓 `AlgoData/logs/disk-nightly.log`, last entry 2026-09-27 02:30: `snapshots` went from 8.25 GB / 8 GB
+(103 %) on 2026-09-26 to 15.02 GB / 8 GB (188 %) on 2026-09-27; `profiling` stayed at 2.00 GB / 1 GB
+(200 %), unchanged since at least the 26th. `perf/disk/report.py`'s own duplicate pass names part of
+the cause: 925 duplicate groups, 5.6 GB reclaimable, mostly matching project-log pairs between
+`snapshots/2026-09-25-master-antes-update-data/` and `snapshots/weekly-data-update-2026-09-26/`.
+
+`perf/disk/README.md` is explicit that nothing here deletes anything — a budget breach is a number
+attached to a decision that stays the owner's, not a bug to silently fix. This entry exists so the
+breach is visible outside the daily log instead of scrolling off after `disk-nightly.log` rotates.
+
+**Needs the owner:** prune or deduplicate `snapshots/` (the report already lists candidates), and
+decide whether `profiling`'s ceiling in `config.yaml` is wrong for what it actually holds or the
+branch itself needs trimming.
+
+## 66. 🟢 `sqx-worker.sh stop` gave up at 20 s while the JVM was still saving — fixed 2026-09-24
+
+new 2026-09-24: **`sqx-worker.sh stop` volvía a los 20 s diciendo «did not stop»** mientras la JVM
+seguía escribiendo databanks, y quien leía después veía 211 de 500 `.sqx`. Ahora espera hasta 5 min
+a que el proceso se vaya de verdad. **No se perdió nada**: la sincronización acabó sola.
+
+## 67. 🟡 `pipeline/XAUUSD/Strategy_17-9-39` no longer runs in the CSCV
+
+Its batch predates the per-segment columns: `cscv.report` fails with `KeyError: NetProfit
+(build+oos1)`. It is still usable by the parameter cloud. Re-harvest it or retire it; never use a
+real batch as a CSCV regression test anyway — every run reads `oos2`
+(`knowhow/research/cscv-always-reads-oos2.md`).
+
+## 68. 🟢 `stress.simulate` reservaba 816 MB por mercado — troceado 2026-09-25
+
+new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas
+entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras
+idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y
+**el núcleo mató la ventana de VSCode**.
+
+## 69. 🔴 La tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado
+
+new 2026-09-25: en un lote de 96 la mayor lleva 117.612 operaciones y cuesta **453 s ella sola**: es
+el suelo de cualquier reparto a partir de 24 procesos, y por eso 96 procesos sólo dan 14,2x. Los 9
+mercados son independientes dentro de `analyse_market` — repartir por ahí divide la tarea más larga
+por ~9. Toca la forma de `analyse_strategy`, que es la puerta del panel: decisión de diseño.
+`docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento).
+
+## 70. 🟠 El lote del paso 10 no deja ver por dónde va
+
+new 2026-09-25: `pool.map` devuelve en orden y la corrida de 499 estuvo **38 min sin imprimir una
+línea**, indistinguible de un cuelgue. Desde fuera tampoco: `py-spy` necesita ptrace y está
+bloqueado. Se arregla imprimiendo por orden de terminación.
+
+## 74. 🟠 Steps 23, 24 and 25 export into the same `raw/<P>/WFC_*/<day>/` and overwrite each other
+
+The structural batch (23), the stop grid (24) and its harvest (25) all retest in the WFC legs and export
+with `export_retest --databank WFC_Build …`, which writes `raw/<project>/WFC_Build/<today>/`. Run the
+same day, each export replaces the previous: on 2026-09-27 the step-23 report could not be rerun,
+because its trades had been overwritten by step 24's. A batch should export under its own name (e.g.
+`--out <batch>/export`), and `structure.report` / `atrCalculator.report` read from there.
+
+## 75. 🟡 `sqx-worker.sh stop` sent right after `start` is lost
+
+`start` returns once the port answers; the CLI takes ~20 s more. A `stop` in that gap is swallowed and
+the script waits 5 minutes before saying `STILL RUNNING` (2026-09-27, conductor). A second `stop`
+works. `stop` could wait for "CLI is now ready" in the worker log before sending.
+
+## 76. 🔴 Darwinex's real spread is 3–8× what `assets/` declares — the proposal is the owner's to apply
+
+`python3 -m studies.data.spread.scan` (2026-09-27), mean opening spread of Darwinex's ticks:
+XAUUSD 9 → 63 points 2017 → 2026 against the declared 5 (build) / 10 (oos); USDJPY 4.7 → 10.4
+points against 0.1. Neither is constant relative to price (owner's ±20 %: gold's worst year 1.96×,
+USDJPY's 1.44×), so the study models the years before October 2017 and proposes, with the owner's
+factor 1.25, a `%` commission per segment — XAUUSD 0.0131 / 0.0138 / 0.0118 % (build / oos1 /
+oos2), USDJPY 0.0048 / 0.0052 / 0.0078 % — or 16 / 24 / 31 and 0.5 / 0.6 / 1.2 points.
+`AlgoData/spread/<tick feed>/spread.html` has the table. **Not applied** for XAUUSD/USDJPY. **Applied 2026-09-27 to the five index CFDs** on the owner's order: build data start–2019, oos1 2020–2023, oos2 2024–2026-08-31 with its own `spread_oos2` (the schema now allows a segment-named half), oos1/oos2 = Darwinex's mean daily spread in that segment × 1.25; build = the spread PROPORTIONAL to price (owner's option A, `model.fixed`) × 1.25, although fixed-points validates better; slippage = half; MC Retest spread range = the 2.5–97.5 % multiples of measured ÷ proportional mean, times the build spread. Their commission is still null and blocks authoring. Study: `docs/AgentPDFs/spread-real-2026-09-27.pdf`.
+
+Three things are still open:
+- **The repricing against SQX itself.** `studies.data.spread.report` swaps SQX's flat spread for
+  the real one trade by trade (3 of 115 gold and 3 of 100 USDJPY strategies stop earning OOS). It
+  has not been compared with a real DATATICK retest on `*_DarwTick_*` — one short worker job on
+  a few strategies of an existing harvest licenses it as that retest's stand-in.
+- **USDJPY's model leans on the price level** (`studies/data/spread/POSSIBLE_IMPROVEMENTS.md`):
+  back in 2011–2012 it predicts the thinnest spreads of the history.
+- **The «poquito de spread»** the owner keeps on top of the `%` is his to name.
+
+## 77. 🟡 A one-item random group's hole can still drift to a different block
+
+Re-running the USDJPY M30 workflow end to end on 2026-09-27 to verify §57–§63, `template_check`
+(fixed by §60) reported **197/200** on a fresh `Results`, not 200/200: 3 strategies —
+`Strategy 19.14.48`, `Strategy 19.16.66`, `Strategy 8.25.70` — carry no
+`CBlock_CloseCrossesAboveDCUpper` at all. Their `RandomCondition1` slot, the one the template binds
+to `donchianUpperCrossUpSignal` (a group holding exactly that one block), resolved instead to an
+unrelated native condition (e.g. `AroonCrossesAbove`) with `retries="0"` — not a build-time failure,
+not a missing-block case (`sqx.inspect.vocabulary` shows the block installed and pooled on both
+workers throughout). §60's fix is not in question: `template_check` correctly flagged the 3 as
+`TEMPLATE NOT APPLIED` over the full N=200, which is what it was fixed to do.
+
+The population is generated across many generations (55,908 strategies evaluated for 200 accepted
+in this run), so this reads as SQX's own genetic mutation occasionally moving a slot's block choice
+outside the group it was seeded from, at roughly 1.5% of the accepted population. `knowhow/authoring/one-item-group-can-drift.md`
+has the reproduction. **Not investigated further**: whether this is expected AlgoWizard behavior,
+a mutation operator that ignores group membership, or something specific to a one-item group —
+the owner's call on whether it is worth a repair or just a rate to watch in `template_check`'s own
+output on every build.
+

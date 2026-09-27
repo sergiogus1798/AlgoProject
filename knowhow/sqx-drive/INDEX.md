@@ -7,7 +7,7 @@
 - `install-ports-and-heap` — where is the SQX CLI port set AppSettings.txt; WebServerPortUsed; coreUsage missing means all cores; -Xms -Xmx per install; worker answering on 5050; History symlink; disk cost of an install
 - `mcp-server-limits` — what can the sqx MCP server do; load a project into the running master; project missing from list silently; config.xml references missing task files; Infinox_SP500ft_H4_HighPrecision; graft_tasks
 - `mcr-nullpointer-fastutil-transient` — MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 1 Bar Error while running project; project hangs after MCR crash no Project finished; transient SQX engine bug
-- `monitor-tail-trips-worker-holding-check` — sqx.structural.keep refuses custodian sigue arriba PID is tail not sqcli; worker.holding false positive; Monitor tail -F on SQX log blocks safety check
+- `monitor-tail-trips-worker-holding-check` — sqx.structural.keep refuses custodian sigue arriba PID is tail not sqcli; worker.holding false positive; Monitor tail -F on SQX log blocks safety check; nightly auditor claude -p blocks execute --clear
 - `only-flag-wrong-databank` — builder --only drops tasks wrong input databank; task Input Output databank matched by string; chain_databanks; phantom Results-Rexpect input on build task
 - `project-verb` — sqcli -project verb actions; loadconfig saveconfig traps; create/modify project programmatically; URL encoding in /call; full sqcli verb reference help.txt
 - `running-a-task-headless` — startOnlyTask does nothing Total tested 0; action=start runs whole chain; inactive task active=false SKIPPED; Project finished in log; second start does nothing needs stop; retestSelected missing retests nothing; DeleteFailedStrategies in harness

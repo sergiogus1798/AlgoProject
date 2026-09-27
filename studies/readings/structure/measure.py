@@ -7,7 +7,9 @@ from core import sqxstats, trades as tradecalc
 from engines.nulls import filter as randomfilter
 
 STATS = tuple(randomfilter.STATISTICS)          # expectancy, sharpe — both per trade
-SAMPLES = {10: "IS", 20: "OOS"}                 # the stored samples a leg can be checked against
+# The stored sample each leg can be checked against: SQX's sample code and its name. A leg is
+# compared with its own window only -- a build rebuild against a stored OOS result says nothing.
+SAMPLES = {"build": (10, "IS"), "oos1": (20, "OOS")}
 
 
 def per_trade(pnl: np.ndarray) -> dict:
@@ -130,27 +132,27 @@ def inversion(mother: pd.DataFrame, inverted: pd.DataFrame, point_value: float) 
             "exp_inverted": float(inverted["Profit/Loss"].mean())}
 
 
-def identity(rebuilt: pd.DataFrame, mother: str, tolerance: float) -> list[dict]:
-    """The rebuilt mother's backtest on one leg against every result the mother file stored.
+def identity(rebuilt: pd.DataFrame, mother: str, tolerance: float, leg: str) -> list[dict]:
+    """The rebuilt mother's backtest on one leg against the result the mother file stored for it.
 
     Args:
         rebuilt: The identity rebuild's trades on the leg.
         mother: Path of the mother `.sqx` as the plan recorded it.
         tolerance: Relative net-profit gap still called the same backtest.
+        leg: "build" or "oos1", which picks the stored sample of the same window.
 
     Returns:
-        One row per stored sample with trades: its trade count and net profit, and `match`
-        when both agree with the rebuild. A leg with no stored counterpart (the mother was
-        never tested on that window) returns no row: nothing to compare is not a pass.
+        One row when the mother stored that window with trades: its trade count and net
+        profit, and `match` when both agree with the rebuild. A leg with no stored
+        counterpart (the mother was never tested on that window) returns no row: nothing to
+        compare is not a pass.
     """
-    stored = sqxstats.stats(mother, "Main")
+    code, name = SAMPLES[leg]
+    s = sqxstats.stats(mother, "Main").get(code, {})
+    if not s.get("NumberOfTrades", 0):
+        return []
     net = float(rebuilt["Profit/Loss"].sum())
-    out = []
-    for sample, name in SAMPLES.items():
-        s = stored.get(sample, {})
-        if s.get("NumberOfTrades", 0):
-            out.append({"sample": name, "stored_trades": int(s["NumberOfTrades"]),
-                        "stored_net": float(s["NetProfit"]), "trades": len(rebuilt), "net": net,
-                        "match": bool(s["NumberOfTrades"] == len(rebuilt)
-                                      and abs(s["NetProfit"] - net) <= tolerance * abs(net))})
-    return out
+    return [{"sample": name, "stored_trades": int(s["NumberOfTrades"]),
+             "stored_net": float(s["NetProfit"]), "trades": len(rebuilt), "net": net,
+             "match": bool(s["NumberOfTrades"] == len(rebuilt)
+                           and abs(s["NetProfit"] - net) <= tolerance * abs(net))}]

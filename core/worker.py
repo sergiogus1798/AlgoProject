@@ -92,13 +92,17 @@ def holding(install: Path) -> list[int]:
         install: Top-level SQX folder.
 
     Returns:
-        Every PID whose command line names that folder, or that is SQX itself running with
-        that folder as its working directory. Writing to user/projects while one of these
-        is alive is silently undone: SQX rewrites the file on save and exit.
+        Every PID whose executable lives in that folder — by absolute path, or relative
+        (`./sqcli`, `./StrategyQuantX`) with the folder as working directory. Writing to
+        user/projects while one of these is alive is silently undone: SQX rewrites the file
+        on save and exit.
 
         🔬 2026-09-25: a worker's JVM runs as `./sqcli` from inside the install, so its
         command line names no folder at all, and this found nothing while the custodian
         held 16.5 GB -- the guard of hard rule 4 was open for every worker.
+        🔬 2026-09-27: matching the folder anywhere in the command line took the nightly
+        auditor (`claude -p`, whose prompt names the custodian) for a live SQX, and
+        `execute --clear` refused for its whole run. Only the executable counts.
     """
     found = []
     for d in PROC.iterdir():
@@ -109,7 +113,7 @@ def holding(install: Path) -> list[int]:
             here = (d / "cwd").resolve()
         except OSError:
             continue
-        if str(install) in line or (here == install.resolve()
-                                    and ("sqcli" in line or "StrategyQuant" in line)):
+        exe = line.split("\0")[0]
+        if exe.startswith(str(install)) or (here == install.resolve() and not exe.startswith("/")):
             found.append(int(d.name))
     return found

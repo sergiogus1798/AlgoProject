@@ -65,6 +65,11 @@ def invariants() -> list[str]:
         bad.append("injertar dos veces no se niega")
     except ValueError:
         pass
+    # SQX does not always write `key=` first (2026-09-27: `generated=… gid=… key=…`).
+    shuffled = before.replace('<Param key="#StopLoss.StopLoss#" name="Stop Loss"',
+                              '<Param name="Stop Loss" key="#StopLoss.StopLoss#"', 1)
+    if formula(stoploss.graft(shuffled, X)) != formula(after):
+        bad.append("el injerto depende del orden de los atributos del <Param>")
     return bad
 
 

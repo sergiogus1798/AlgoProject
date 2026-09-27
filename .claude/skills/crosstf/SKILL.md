@@ -48,14 +48,15 @@ python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1 
 `AlgoData/crosstf/<project>/<date>/`, from `core.datapaths.crosstf_dir`. Dated and immutable,
 because a verdict is only readable against the exact scaling that produced it.
 
-**That folder IS the databank load.** The mothers are copied in beside the siblings, verbatim,
-because the study needs their baseline and control cells too — so step 3 loads one folder and
-not two, and nothing has to be assembled by hand:
+**Its `sqx/` subfolder IS the databank load.** The mothers are copied in beside the siblings,
+verbatim, because the study needs their baseline and control cells too — so step 3 loads one
+folder and not two, and nothing has to be assembled by hand. `scaling.parquet` sits one level up
+(since 2026-09-27): SQX loads every file of the folder it is given and logged an error for it.
 
 ```
 AlgoData/crosstf/XAUUSD/2026-09-23/
-  Strategy 10.13.25.sqx             <- mother, untouched
-  Strategy 10.13.25_ScaledH4.sqx    <- sibling
+  sqx/Strategy 10.13.25.sqx         <- mother, untouched
+  sqx/Strategy 10.13.25_ScaledH4.sqx <- sibling
   ...
   scaling.parquet                   <- the only record of what was divided and how far
                                        rounding moved it; step 4 reads it
@@ -90,10 +91,12 @@ The timeframes, the window and the precision come from `crosstf:` in `assets/_bu
 (`segment: build..oos1`, `precision: 2`). The timeframes depend on the one the strategy was built
 on (owner, 2026-09-26): **from M30, H1 and H4; from H1, H4 and H12** — H12 is a custom SQX
 timeframe and works as-is in the task (🔬 2026-09-26). `sqx.variants.scale --source H1` fabricates
-both siblings by default. `run.blocks` in `studies/transfer/crossTF/config.yaml` must match:
-`[H1, H4, H12]` for an H1 population, `[M30, H1, H4]` for an M30 one. H12 siblings of short
+both siblings by default. The study derives the same block order itself — the siblings'
+`source_tf` in `scaling.parquet`, then this list (2026-09-27; it used to be a hand-edited
+`run.blocks`). H12 siblings of short
 periods come back `clamped` (÷12 moves them too far) — they are read only as the unscaled row. `--timeframes` overrides the list for
-a one-off; the window and the precision are not overridable on purpose.
+a one-off — then, and only then, the command prints the `--set run.blocks=[…]` the study needs;
+the window and the precision are not overridable on purpose.
 
 Each `<Setup>` overrides **only** `timeframe`; the window, costs, precision and session all come from
 the main test through `<MainTestValues>` — the same instrument does not get a different spread for
@@ -104,15 +107,14 @@ It **silences every acceptance condition** of the cross-check and forces `Delete
 to false, and says how many — `crosstf.conditions: []` (owner, 2026-09-24): with them live SQX drops
 the failing strategy and Python never sees the dead ones
 (`knowhow/conditions/crossmarket-crosstf-no-conditions.md`). It leaves `CrossTF` the only active
-task, refuses while the install is up (hard rule 4), and ends by printing the `run.blocks` line.
-**Paste it into `studies/transfer/crossTF/config.yaml`.**
+task, refuses while the install is up (hard rule 4), and ends by printing the block order.
 
 **3 · Run and export.** On the custodian, stopped at first. Start it, load the folder into the
 task's input, then the run half of `/template-run` — `stop` then `start`, only `status` while it
 runs, always end stopped:
 
 ```bash
-python3 -c "from core import worker; print(worker.call('-databank action=load project=<P> name=CrossTF_Input folder=<the crosstf dir>','custodian'))"
+python3 -c "from core import worker; print(worker.call('-databank action=load project=<P> name=CrossTF_Input folder=<the crosstf dir>/sqx','custodian'))"
 python3 -m sqx.export.export_retest --project <P> --databank CrossTF --role custodian
 ```
 
@@ -128,9 +130,9 @@ change broke it, not the timeframe), `unusable` (rounding or clamping moved the 
 
 ## The trap that is silent
 
-`run.blocks` must match the `<Setup>` order of the task. Wrong, and every cell is priced on the wrong
-bars with no error anywhere — `report.py` prints the mapping as its first line for that reason, and
-step 2 hands you the correct line. The blocks are separated by the ticket restarting at 1, **not** by
+The block order must match the `<Setup>` order of the task. Wrong, and every cell is priced on the
+wrong bars with no error anywhere — `report.py` prints the mapping for that reason. It is derived,
+so only a task written with `--timeframes` can break it. The blocks are separated by the ticket restarting at 1, **not** by
 the `Symbol` column, which is identical across the timeframes of one asset.
 
 ## Say this when reporting

@@ -34,6 +34,7 @@ def load(export: Path, scaling: Path, feed: str, cfg: dict) -> dict:
         {"plan", "trades", "frames", "scaling", "nullcfg", "feed", "identity"}.
     """
     table = pd.read_parquet(scaling)
+    cfg["run"]["blocks"] = inputs.blocks(table, cfg["run"]["blocks"])
     plan = inputs.plan(table, cfg["run"]["blocks"])
     nullcfg = nullinputs.config([])
     # The null layer names whose costs its p-values carry, and the feed is the only thing

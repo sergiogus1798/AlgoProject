@@ -108,7 +108,7 @@ def set_timeframes(text: str, symbol: str,
         The task, the timeframe of every result block in order (block 0 first), how many
         acceptance conditions were silenced, and a warning about the window — empty when
         the task already runs the declared span. The block order is what
-        `studies/transfer/crossTF/config.yaml` has to agree with, and getting it wrong prices
+        `studies/transfer/crossTF` derives from the same doctrine; getting it wrong prices
         every cell on the wrong bars with no error anywhere.
     """
     d = doctrine()
@@ -173,8 +173,9 @@ def main() -> None:
     if warning:
         print(warning)
     print(own(a.cfx, "crosstf"))
-    print("\nPon esto en studies/transfer/crossTF/config.yaml, run.blocks:")
-    print(f"  blocks: [{', '.join(blocks)}]")
+    print(f"bloques: {', '.join(blocks)}")
+    if a.timeframes:   # the study derives the doctrine's order itself; a one-off list it cannot
+        print(f"el estudio necesitara: --set run.blocks=[{','.join(blocks)}]")
 
 
 if __name__ == "__main__":

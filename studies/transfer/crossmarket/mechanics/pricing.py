@@ -3,7 +3,6 @@
 import numpy as np
 import pandas as pd
 
-from core import trades as tradeio
 from engines.market.calibrate import CONVENTIONS, atr, point_value
 
 # The ATR, the point value and the fill conventions are the null engine's own
@@ -122,21 +121,25 @@ def fill_profile(trades: pd.DataFrame, bars: pd.DataFrame, held: pd.DataFrame,
             "at_open": float(np.mean(np.abs(a - offset) <= tolerance))}
 
 
-def cost_rate(trades: pd.DataFrame, value: float) -> float:
+def cost_rate(charged: np.ndarray, size: np.ndarray, open_price: pd.Series) -> float:
     """The cost SQX charged, as a fraction of price, for use inside the return.
 
     Args:
-        trades: One market's trades.
-        value: What point_value() measured for this market.
+        charged: Per trade, the gross rebuilt from the bars minus the P/L SQX reported.
+        size: Per trade, lots times point value.
+        open_price: The trades' fill prices.
 
     Returns:
         Median round-turn cost divided by median entry price. Recovered from the trades rather
         than read from the asset file, because what matters is reproducing the simulation SQX
-        already ran, not what the broker ought to charge. Swap is inside this residual for
-        trades held overnight.
+        already ran, not what the broker ought to charge. It is measured against the BARS,
+        like the returns it is subtracted from: SQX fills the entry a spread-and-slippage
+        offset above the bar open, and a cost measured from the fill prices (`core.trades.cost`)
+        leaves that offset out -- 2026-09-27 that judged 8 USDJPY-family strategies with PF
+        0.79-1.07 as PF 1.31-1.51 (knowhow/research/crossmarket-returns-miss-entry-offset.md).
+        Swap is inside this residual for trades held overnight.
     """
-    charged = tradeio.cost(trades, value) / (trades["Size"] * value)
-    return float(charged.median() / trades["Open price"].median())
+    return float(np.median(charged / size) / open_price.median())
 
 
 def trade_returns(fixed: dict, bars: pd.DataFrame) -> np.ndarray:

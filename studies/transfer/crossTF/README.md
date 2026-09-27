@@ -50,9 +50,11 @@ nothing inside the module; `report` orchestrates.
 
 ## The trap a future session will step in
 
-`run.blocks` in `config.yaml` says which result block is which timeframe, and it has to
-match the `<Setup>` order of the retest task. Get it wrong and every cell is priced on the
-wrong bars, with no error anywhere. `report.py` prints the mapping before any number for
+Which result block is which timeframe has to match the `<Setup>` order of the retest task.
+`inputs.blocks()` derives it the way `sqx.projects.crosstf` writes it — the siblings'
+`source_tf`, then `crosstf.timeframes` of `assets/_build.yaml`; `run.blocks` in `config.yaml`
+is a list only for a task written with `--timeframes`. Get it wrong and every cell is priced on
+the wrong bars, with no error anywhere. `report.py` prints the mapping before any number for
 exactly that reason. The blocks are separated by the ticket restarting at 1
 (`core.tradestore.block`) and **not** by the `Symbol` column, which is identical across the
 timeframes of one asset.

@@ -6,10 +6,11 @@
 
 run:
   symbol: XAUUSD            # whose segments say where the reserved oos2 starts
-  # The column every reading is taken on. Ret/DD is SQX's own Fitness, so it is the axis
-  # the builder optimised; (IS) because A1, A2 and A3 describe the search space, and the
-  # search happened in sample. It is not comparable between windows -- nothing here does.
-  metric: "Ret/DD Ratio (IS)"
+  # The column every reading is taken on, as `sqx.variants.collect` names it. Ret/DD is SQX's
+  # own Fitness, so it is the axis the builder optimised; (build) because A1, A2 and A3
+  # describe the search space, and the search happened in sample. It is not comparable
+  # between windows -- nothing here does.
+  metric: "ReturnDDRatio (build)"
   min_trades: 30            # a variant trading less than this is not a point on a surface
   exclude_strata: [canary]  # placed at the extremes on purpose; see inputs/README.md
 

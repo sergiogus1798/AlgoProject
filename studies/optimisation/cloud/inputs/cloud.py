@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-TRADES = "# of trades (IS)"
+TRADES = "NumberOfTrades (build)"
 
 
 def cloud(work: Path, cfg: dict) -> dict:

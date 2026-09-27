@@ -2,10 +2,11 @@
 
 TIPS = {
     "run.project": "El proyecto por defecto; el comando lo toma del export.",
-    "run.source_tf": "El timeframe sobre el que se construyeron todas las madres.",
     "run.blocks": "El orden de los <Setup> de la tarea de retest, que es el orden en que "
-                  "vuelven los bloques de resultado. Si no coincide, cada celda se valora "
-                  "sobre las barras equivocadas y nada falla.",
+                  "vuelven los bloques de resultado. Vacío, se deduce del timeframe de las "
+                  "madres y de assets/_build.yaml; una lista sólo si la tarea se escribió con "
+                  "--timeframes. Si no coincide, cada celda se valora sobre las barras "
+                  "equivocadas y nada falla.",
     "usable.max_rounding_shift": "Cuánto puede mover el redondeo un parámetro escalado antes "
                                  "de que la celda deje de poder atribuirse al timeframe.",
     "usable.reject_clamped": "Descarta las hermanas con algún periodo recortado a su mínimo.",

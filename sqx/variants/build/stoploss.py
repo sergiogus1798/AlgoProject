@@ -7,7 +7,8 @@ PERIOD = 20
 
 # The #StopLoss.StopLoss# parameter of an entry, holding the "no stop" formula. Only that one:
 # #ProfitTarget.ProfitTarget# carries the very same SLPT.None and must stay untouched.
-EMPTY = re.compile(r'(<Param key="#StopLoss\.StopLoss#"[^>]*>\s*)<Formula key="SQ\.Formulas\.SLPT\.None" />')
+# SQX writes the attributes in no fixed order: `key=` is not always the first one.
+EMPTY = re.compile(r'(<Param\b[^>]*\bkey="#StopLoss\.StopLoss#"[^>]*>\s*)<Formula key="SQ\.Formulas\.SLPT\.None" />')
 ENTRY = re.compile(r'<Item\b[^>]*key="Enter(?:AtMarket|AtStop|AtLimit)"')
 # What SQX itself writes for `SL = X * ATR(20)`, copied from tests/fixtures/strategy.sqx.
 FORMULA = ('<Formula key="SQ.Formulas.SLPT.ATRBasedValue">\n'

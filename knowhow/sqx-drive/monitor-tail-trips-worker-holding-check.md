@@ -1,31 +1,18 @@
 ---
-q: sqx.structural.keep refuses custodian sigue arriba PID is tail not sqcli; worker.holding false positive; Monitor tail -F on SQX log blocks safety check
-tag: 🔬  date: 2026-09-26  see: sqx-drive/variants-execute-needs-worker-it-started
+q: sqx.structural.keep refuses custodian sigue arriba PID is tail not sqcli; worker.holding false positive; Monitor tail -F on SQX log blocks safety check; nightly auditor claude -p blocks execute --clear
+tag: 🔬  date: 2026-09-27  see: sqx-drive/variants-execute-needs-worker-it-started
 ---
-# `worker.holding()` can be tripped by a `tail -F` on the SQX log, not just a live `sqcli`
-`sqx.structural.keep` (and presumably anything else using `core.worker.holding()` as its "is the
-install still up" guard) refused to run with `custodian sigue arriba (PID <n>): espera a que
-'execute' lo pare` — but `ps -p <n>` showed that PID was a plain `tail` process, not `sqcli`, and
-`ss -ltnp | grep 5070` showed nothing listening. The custodian really was stopped.
+# `worker.holding()` counts only a process whose executable lives in the install — fixed 2026-09-27
+It used to match the install path ANYWHERE in a command line, so a `tail -F <install>/user/log/…`
+(a Monitor) or a `claude -p` whose prompt names the install (the nightly auditor) read as a live SQX,
+and `structural.keep` / `execute --clear` refused. Now: executable path inside the install, or a
+relative executable (`./sqcli`, `./StrategyQuantX`) run from it. If a guard still names a PID, `ps -p`
+it — it should now always be SQX.
 
 ## Evidence
-- 2026-09-26, right after `sqx.variants.execute` finished and manually stopped the custodian
-  (confirmed no `sqcli` process, no listener on 5070), `sqx.structural.keep --work <batch>` still
-  refused, naming a PID that `ps` identified as `tail` — the process behind a Monitor tool call
-  running `tail -n0 -F "$LOG" | grep ...` against the custodian's own SQX log file
-  (`~/Desktop/SQX_w2/user/log/StrategyQuant/log_2026_09_26.log`), used all session to watch for
-  `Task finished`/`Project finished` lines.
-- Stopping that Monitor task (which kills the `tail -F`) made `sqx.structural.keep` proceed cleanly
-  on the very next attempt, no other change.
-- Read as: the holding-check likely walks open file descriptors under the install directory (or the
-  log specifically) rather than checking for the `sqcli` process by name/cwd — a `tail -F` on the
-  log holds exactly such a descriptor, and the check cannot tell "watching, harmless" from
-  "SQX itself, still writing".
-- 🤔 Untested whether this is `core.worker.holding()`'s general behavior or specific to how it
-  resolves the log path; also untested whether an ordinary `grep -f` (not `-F`) or a one-shot `cat`
-  of the log would trip it too, or only a long-lived open handle does.
-
-**Practical consequence**: kill any `tail -F`/Monitor watching a worker's own SQX log **before**
-calling a command that checks `worker.holding()` on that role (`sqx.structural.keep`, and likely
-anything gated the same way) — otherwise the refusal looks like a real stuck process and wastes time
-chasing a `ps` that comes back empty.
+- 2026-09-26: `structural.keep` refused naming a PID that was `tail -n0 -F "$LOG"` on the custodian's
+  own SQX log; killing the Monitor let it through.
+- 2026-09-27 03:07: `execute --clear` refused for the nightly auditor's two PIDs
+  (`timeout 2h claude -p --agent auditor …`, cwd `AlgoProject`), for the whole 2 h of its run.
+- After the fix: `bash -c "sleep 40; echo /…/SQX_w1/user/log"` → `holding(SQX_w1) == []`; conductor
+  started → `[<sqcli pid>]`; stopped → `[]`.

@@ -162,10 +162,13 @@ def main() -> None:
 
     cfg = knobs()
     out = args.out or crosstf_dir(args.project, date.today().isoformat())
-    out.mkdir(parents=True, exist_ok=True)
+    # The .sqx go in a folder of their own: SQX loads every file of the folder it is given,
+    # and logged "No plugin loader was able to recognize" for scaling.parquet beside them.
+    load = out / "sqx"
+    load.mkdir(parents=True, exist_ok=True)
     mothers = sorted(args.mothers.glob("*.sqx"))
 
-    rows = [sibling(m, out, args.source, t, cfg, i)
+    rows = [sibling(m, load, args.source, t, cfg, i)
             for t in args.targets for i, m in enumerate(mothers)]
     frame = pd.DataFrame(rows)
     frame.to_parquet(out / "scaling.parquet", index=False)
@@ -174,8 +177,8 @@ def main() -> None:
     # are copied rather than rewritten -- a mother stripped of its fingerprint or its
     # results is no longer the thing the siblings are being compared against.
     for m in mothers:
-        shutil.copy2(m, out / m.name)
-    print(f"-> {out}  ({len(mothers)} madres copiadas con ellas; la carpeta es la carga)")
+        shutil.copy2(m, load / m.name)
+    print(f"-> {load}  ({len(mothers)} madres copiadas con ellas; esta carpeta es la carga)")
 
     print(f"{len(mothers)} mothers x {len(args.targets)} targets -> {len(rows)} siblings")
     print(frame[["name", "ratio", "n_scaled", "max_rounding_shift", "clamped"]]

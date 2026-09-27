@@ -23,7 +23,7 @@ BLOCK_CATEGORIES = ("indicator", "simpleRules", "priceValue", "priceRange", "Cus
 # template and must not enter the signature.
 RANDOM_CATEGORY = "randomBlock"
 
-SAMPLE = 25
+SAMPLE = 0          # strategies opened per databank; 0 is all of them
 
 
 def blocks(node: ElementTree.Element) -> set[str]:
@@ -59,6 +59,42 @@ def rules(path: Path) -> ElementTree.Element:
     with zipfile.ZipFile(path) as z:
         inner = next(n for n in z.namelist() if n.endswith(INNER))
         return ElementTree.fromstring(z.read(inner)).find(".//Rules")
+
+
+def signature(template: Path) -> set[str]:
+    """The blocks a template fixes: written in literally, or as the only item of its hole's group.
+
+    Args:
+        template: A template .sqx.
+
+    Returns:
+        Item keys every strategy it builds must carry. Since 2026-09-26 the owner's condition
+        sits in a one-item random group, so its period is drawn per strategy (a frozen block
+        would carry one period everywhere): that hole is random in form and fixed in content.
+        Without it the only fixed block left was MarketPositionIsLong, which every strategy
+        carries, and the check passed about the wrong block.
+    """
+    with zipfile.ZipFile(template) as z:
+        root = ElementTree.fromstring(z.read(next(n for n in z.namelist() if n.endswith(INNER))))
+    groups = {g.get("id"): [i.get("key") for i in g.findall("Item")]
+              for g in root.iter("Group")}
+    bound = {p.text for p in root.find(".//Rules").iter("Param")
+             if p.get("key") == "#Group#" and p.text}
+    return blocks(root.find(".//Rules")) | {groups[g][0] for g in bound
+                                            if len(groups.get(g, [])) == 1}
+
+
+def carried(path: Path) -> set[str]:
+    """Every block key a built strategy's rules hold, filled holes included.
+
+    Args:
+        path: A strategy .sqx.
+
+    Returns:
+        Item keys. A block the builder drew into a hole carries no categoryType, so
+        `blocks()` would not see the owner's condition in the very strategies it built.
+    """
+    return {i.get("key") for i in rules(path).iter("Item")}
 
 
 def build_settings(project: str) -> dict:
@@ -102,7 +138,7 @@ def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dic
 
     Args:
         project: Project name on the master.
-        sample: How many strategies to open per databank, drawn at random.
+        sample: How many strategies to open per databank, drawn at random; 0 opens all.
         seed: Seed for that draw, so a rerun reports the same figure.
         install: Which install holds the project; the master by default. A template built
             on a worker has to be checked on that worker — the master knows nothing of it.
@@ -119,9 +155,9 @@ def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dic
     if not template.is_absolute() or not template.exists():
         return {**row, "note": "template file missing"}
 
-    signature = blocks(rules(template))
-    row["signature"] = sorted(signature)
-    if not signature:
+    fixed = signature(template)
+    row["signature"] = sorted(fixed)
+    if not fixed:
         return {**row, "note": "template fixes no blocks, only random groups"}
     found = databanks(project, install)
     if not found:
@@ -130,9 +166,9 @@ def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dic
     rng = random.Random(seed)
     row["databanks"] = {}
     for name, pool in found.items():
-        picked = rng.sample(pool, min(sample, len(pool)))
+        picked = rng.sample(pool, min(sample, len(pool))) if sample else pool
         row["databanks"][name] = {"checked": len(picked),
-                                  "carrying": sum(signature <= blocks(rules(p)) for p in picked)}
+                                  "carrying": sum(fixed <= carried(p) for p in picked)}
     return row
 
 

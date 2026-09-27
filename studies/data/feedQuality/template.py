@@ -7,8 +7,9 @@ from pathlib import Path
 from core.paths import MASTER, WORKERS, databank_dir
 from sqx.projects.orders import PENDING, PORTFOLIO, carried
 
-# An exit parameter is live when its formula is anything but SQX's `.None`.
-EXIT = re.compile(r'<Param key="#(StopLoss\.StopLoss|ProfitTarget\.ProfitTarget|'
+# An exit parameter is live when its formula is anything but SQX's `.None`. SQX writes the
+# attributes in no fixed order, so `key=` is not always the first one.
+EXIT = re.compile(r'<Param\b[^>]*\bkey="#(StopLoss\.StopLoss|ProfitTarget\.ProfitTarget|'
                   r'TrailingStop\.TrailingStop)#"[^>]*>\s*<Formula key="SQ\.Formulas\.[\w.]*?(\.None)?"')
 
 

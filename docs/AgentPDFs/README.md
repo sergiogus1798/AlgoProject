@@ -16,6 +16,7 @@ tables contradicted the code) and the 2026-09-22 review. All are in git history.
 | `plataforma-unificada-2026-09-20` (+pdf) | feasibility study for one app over SQX and AlgoProject; `ui/` is its descendant | design reference of `ui/` |
 | `puerta-oos-2026-09-23` | design dossier of `studies/screening/gate/` | cited by its README and config |
 | `profiling-workflow-2026-09-26` | the 25 steps run end to end on USDJPY H1, with time, CPU, memory and disk | report of encargo 21 |
+| `workflow-usdjpy-m30-2026-09-27` (+pdf) | the 25 steps run end to end on USDJPY M30 with the new `donchianUpperCrossUp` template, every test, and the incidents found (OPEN.md §57-§63) | report of the owner's 2026-09-26 night request; the template's reading awaits his confirmation |
 | `catalogo-para-la-ui-2026-09-25` (+pdf) | outbound brief: everything the toolchain does, for whoever designs the window | inventory — goes stale |
 | `paneles-flask-inventario-2026-09-25` | outbound brief: the depth of the three retired Flask panels, with the ten-point contract the «Estrategias» zone keeps | the bar for that zone |
 | `respuestas-calidad-del-feed-2026-09-26` (pdf) | the owner's answers to the 16 decisions, with formulas | source of `ledger/thresholds.yaml` `feedQuality.` |

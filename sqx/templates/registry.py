@@ -15,30 +15,34 @@ RUN_COLUMNS = ("template", "symbol", "timeframe", "project", "date", "strategies
 
 def append(csv_path: Path, columns: tuple[str, ...], row: dict[str, str],
            key: tuple[str, ...]) -> str:
-    """Add a row, replacing any row that already carries the same key.
+    """Add a row, or update in place the row that already carries the same key.
 
     Args:
         csv_path: The CSV to write.
         columns: Its header, in order.
-        row: Values by column name; missing columns are written empty.
+        row: Values by column name. On an update the columns it does not name keep their
+            value, so `--set name=X --set status=Y` flips a status without blanking the row;
+            on a new row they are written empty.
         key: Columns that together identify a row. For a run that is template, symbol and
             timeframe — one template is tried on many markets, so keying on the template
             alone would make each new market delete the previous one's result.
 
     Returns:
-        "added" or "replaced". Replacing rather than appending twice is what keeps the
+        "added" or "updated". Updating rather than appending twice is what keeps the
         file answerable: two rows for one key make "have I tried this" ambiguous.
     """
     rows = list(csv.DictReader(csv_path.open(encoding="utf-8"))) if csv_path.exists() else []
-    was = len(rows)
     ident = tuple(row.get(c, "") for c in key)
-    rows = [r for r in rows if tuple(r[c] for c in key) != ident]
-    rows.append({c: row.get(c, "") for c in columns})
+    old = next((r for r in rows if tuple(r[c] for c in key) == ident), None)
+    if old:
+        old.update({c: v for c, v in row.items() if c in columns})
+    else:
+        rows.append({c: row.get(c, "") for c in columns})
     with csv_path.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=columns)
         w.writeheader()
         w.writerows(rows)
-    return "replaced" if len(rows) == was else "added"
+    return "updated" if old else "added"
 
 
 def main() -> None:

@@ -6,6 +6,7 @@
 - `cloud-ranking-stability` — parameter cloud smooth but ranking reshuffles each year, in-sample tuning useless, period-to-period Spearman, Sobol DICrossPeriod1, CSCV vs chronological walk-forward correlation f_y rho
 - `contemporaneous-dependence-bootstrap` — portfolio drawdown bootstrap multiple markets, trade-level bootstrap destroys co-occurrence, calendar block resampling, concurrent positions counted twice close before open lexsort
 - `cross-market-rank-exposure` — cross-market parameter surface, same parameter region on two markets, Spearman between markets confounded, exposure times drift, long-only net profit ranks, rho_neutral, market surfaces encargo 15
+- `crossmarket-returns-miss-entry-offset` — crossmarket verdict too optimistic; worst_pf above SQX's own profit factor; crossmarket wrong timeframe bars; _markets.yaml timeframe vs export timeframe; M30 export priced on H1 bars; cost_rate near zero; spread not subtracted in crossmarket trade_returns; entry offset above bar open
 - `cscv-always-reads-oos2` — can I run the CSCV on a real variant batch to test a change, golden, regression? split_mode oos1_oos2 oos2_only, spends oos2, old batch KeyError NetProfit (build+oos1)
 - `cusum-blind-spot` — CUSUM stability test did not reject but halves differ, OLS-CUSUM break, profitShape, non-rejection is not stability, concentration few_periods
 - `entry-vs-chance` — entry quality e-ratio MFE/MAE vs random entries, entryQuality, entries carry least edge, long gold 2020 bar-count exit, no SL TP in corpus

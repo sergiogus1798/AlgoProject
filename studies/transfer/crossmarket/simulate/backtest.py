@@ -43,6 +43,7 @@ def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
     enter_px, leave_px = bars[enter_col].to_numpy(), bars[leave_col].to_numpy()
     size = aligned["Size"].to_numpy() * value
     gross = (leave_px[held["exit"].to_numpy()] - enter_px[held["entry"].to_numpy()]) * size
+    charged = gross - aligned["Profit/Loss"].to_numpy()
     # What SQX charged, recovered per trade rather than assumed: gross reconstructed from
     # the bars minus the P/L it reported. Measured correlation 0.9996 over three markets, so
     # the residual is the cost and the swap and nothing else.
@@ -58,9 +59,9 @@ def setting(trades: pd.DataFrame, bars: pd.DataFrame, cfg: dict) -> dict:
                     "dropped_pnl": float(trades["Profit/Loss"].sum()
                                          - aligned["Profit/Loss"].sum())},
             "enter_px": enter_px, "leave_px": leave_px, "size": size,
-            "cost": pricing.cost_rate(aligned, value), "scale": pricing.unit(bars),
-            "pnl": aligned["Profit/Loss"].to_numpy(),
-            "charged": gross - aligned["Profit/Loss"].to_numpy(),
+            "cost": pricing.cost_rate(charged, size, aligned["Open price"]),
+            "scale": pricing.unit(bars), "pnl": aligned["Profit/Loss"].to_numpy(),
+            "charged": charged,
             "off_grid": len(trades) - len(held),
             "market": {**envelope.describe(bars, held, cfg["nulls"]["block_months"]),
                        "strata": strata.index(bars, cfg["strata"]),
