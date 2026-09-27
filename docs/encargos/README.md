@@ -70,6 +70,13 @@ del dueño a las 16 decisiones; lo que quedó abierto está en su `POSSIBLE_IMPR
 |---|---|---|
 | `16-replay-de-operaciones.md` | el tier 2 del retraso: reejecutar cada operación desde una entrada desplazada | hay que recalcular stops, y **esta población no tiene ninguno** con el que validarlo |
 
+## El rediseño de la ventana, 2026-09-27
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `22-ventana-rediseno.md` | dictado del dueño con la ventana delante, revisado con él: PROYECTO pasa a tres zonas (Proyectos → Proyecto → Estrategia), panel de databanks estilo SQX, filtros apuntados en el Ledger con curate diferido a «Continuar workflow», BIBLIOTECA y OPERACIÓN reordenadas, modo lectura en Windows, y tres piezas de motor. En seis fases, con parada tras la maqueta | `23` para PORTFOLIOS |
+| `23-archivo-de-estrategias.md` | archivar a mano una estrategia con todos sus resultados, sus costes y su cuenta del Ledger, e importarla en PORTFOLIOS sin recalcular nada | — |
+
 ## Encargos vivos de tandas anteriores
 
 | fichero | agente | posee | estado |
