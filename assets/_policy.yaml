@@ -38,7 +38,9 @@ segments_default:
       corre sobre la superviviente (dueño, 2026-09-26, los dos añadidos). No usar antes: cada
       mirada a este tramo lo gasta.
     spread: oos
-    reserved_for: [WFC, MarketSurfaces, WFM, ATRStop]
+    # CSCV añadido por el dueño el 2026-09-27 (encargo 24, Q11): el CSCV tiene que ver
+    # build+oos1+oos2, y apunta en el Ledger un renglón por tramo que lee.
+    reserved_for: [WFC, CSCV, MarketSurfaces, WFM, ATRStop]
 
 segments:
   BRENT:

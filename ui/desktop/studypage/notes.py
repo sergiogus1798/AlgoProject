@@ -32,21 +32,18 @@ def headline(entry: dict) -> str:
 
 
 def context(where: dict, strategy_page: bool) -> str:
-    """The breadcrumb: project › databank › strategy (identity).
+    """The breadcrumb: project › databank › strategy.
 
     Args:
         where: project, databank, strategy, identity, asset.
         strategy_page: False on the population page.
 
     Returns:
-        Rich text.
+        Rich text. The identity is never printed (encargo 22 §10); the context bar's
+        strategy crumb carries it on hover.
     """
-    tail = ""
     if strategy_page:
-        who = where.get("strategy") or "— ninguna estrategia elegida —"
-        ident = where.get("identity") or ""
-        tail = f" › <b>{who}</b>" + (f' <span style="color:{T["faint"]}">({ident[:12]})</span>'
-                                    if ident else "")
+        tail = f" › <b>{where.get('strategy') or '— ninguna estrategia elegida —'}</b>"
     else:
         tail = " › <b>población</b>"
     return (f"{where.get('project') or '—'} › {where.get('databank') or '—'}{tail}"
@@ -68,7 +65,7 @@ def absent(entry: dict, strategy_page: bool) -> str:
                 "reports/: se lee desde el lote de variantes — aún no conectado.")
     if strategy_page and not entry["one"] and entry["many"]:
         return ("Este estudio juzga la población y no dejó ficha de esta estrategia aquí: "
-                "su resultado está en la página de Población.")
+                "su resultado está en el panel de databanks de Proyecto.")
     return ("Sin resultado de este estudio en este databank. No se toma el de otro databank: "
             "allí una estrategia con el mismo nombre tiene otra identidad.")
 

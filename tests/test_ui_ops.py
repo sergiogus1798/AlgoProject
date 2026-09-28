@@ -1,4 +1,4 @@
-"""The operation zone: /api/pulse and /api/ledger read-only, and its three widgets offscreen."""
+"""The operation zone: /api/pulse, /api/ops/sqx and /api/ledger read-only, and its widgets offscreen."""
 
 import os
 import sys
@@ -17,7 +17,8 @@ from fastapi.testclient import TestClient
 from PySide6.QtWidgets import QApplication
 
 from core.paths import ROOT
-from ui.daemon.ops import api, pulse
+from ui.daemon.ops import api, pulse, runs
+from ui.desktop.durations import share
 
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 PULSE_KEYS = {"up", "project", "done", "total", "rate_per_min", "eta_min", "jvm_gb", "xmx_gb",
@@ -75,7 +76,7 @@ def test_pulse_up_reads_proc_and_logs() -> None:
     assert p["up"] and p["project"] == "Test_pulse" and p["xmx_gb"] == 80
     assert (p["done"], p["total"]) == (3987, 15000) and p["rate_per_min"] > 0
     assert p["jvm_gb"] > 0 and p["cpu_pct"] >= 0 and not p["slope_measured"]
-    assert " 3987 de 15000 | JVM " in p["line"] and "libre 12 GB" in p["line"]
+    assert " 3 987 de 15 000 | JVM " in p["line"] and "libre 12 GB" in p["line"]
     assert any("por debajo de 15 GB" in w for w in p["warn"])
     assert any("faltan 11013" in w for w in p["warn"])     # 12 GB at 10 MB fits ~1228
 
@@ -87,6 +88,58 @@ def test_slope_is_measured_once_the_run_has_moved() -> None:
     slope, measured = pulse.slope_mb("P", 2000, 30.0)
     assert measured and abs(slope - 10.24) < 1e-9
     assert pulse.slope_mb("Q", None, 5.0) == (pulse.SLOPE_MB, False)
+
+
+def test_runs_say_nothing_unless_a_project_runs() -> None:
+    """A worker down, a finished run and a retired project give None; a running task counts."""
+    workers = {"custodian": {"path": Path("/nowhere"), "port": 0}}
+    started = ["10:00:00.000 x ProjectEngine - Starting project 'Test_X'",
+               "10:00:01.000 x ProgressEngine - MCR 3 : Loading backtest data"]
+    live = {"run": {"percent": None}, "tasks": [
+        {"status": "done", "title": "MCR 1"},
+        {"status": "running", "title": "MCR 3", "done": 7, "total": 20}]}
+    with mock.patch.object(runs, "WORKERS", workers), \
+            mock.patch.object(runs.progress, "projects", lambda _: ["Test_X"]), \
+            mock.patch.object(runs.progress, "state", lambda r, p: live):
+        with mock.patch.object(runs.worker, "holding", lambda _: []):
+            assert runs.running("custodian") is None and runs.runs() == []
+        with mock.patch.object(runs.worker, "holding", lambda _: [1]):
+            ended = started + ["10:05:00.000 x ProgressEngine - Project finished"]
+            with mock.patch.object(runs.progress, "log_lines", lambda _: (ended, 0.0)):
+                assert runs.running("custodian") is None
+            with mock.patch.object(runs.progress, "log_lines", lambda _: (started, 0.0)):
+                got = runs.running("custodian")
+                assert (got["project"], got["task"], got["done"], got["total"],
+                        got["percent"]) == ("Test_X", "MCR 3", 7, 20, 35)
+                with mock.patch.object(runs.progress, "projects", lambda _: []):
+                    assert runs.count("custodian", "Test_X") is None
+                    assert runs.running("custodian")["done"] is None
+
+
+def test_pulse_counts_an_outside_run_by_its_task() -> None:
+    """No job log with PROGRESS: the worker's task count shows, without rate or ETA."""
+    with running(0, 0):
+        with mock.patch.object(pulse, "job_progress", lambda *_: None), \
+                mock.patch.object(pulse.runs, "count",
+                                  lambda r, p: {"task": "MCR 3", "done": 1234, "total": 5000,
+                                                "percent": 25}):
+            p = pulse.custodian()
+        assert (p["done"], p["total"]) == (1234, 5000)
+        assert p["rate_per_min"] is None and p["eta_min"] is None
+        assert p["progress_from"] == "estado del custodio · MCR 3"
+        assert " 1 234 de 5 000 | JVM " in p["line"]
+        with mock.patch.object(pulse, "job_progress", lambda *_: None), \
+                mock.patch.object(pulse.runs, "count",
+                                  lambda r, p: {"task": "Build", "done": 1400, "total": None,
+                                                "percent": None}):
+            p = pulse.custodian()
+        assert " 1 400 hechos | JVM " in p["line"] and p["eta_min"] is None
+
+
+def test_share() -> None:
+    """SQX's own percent wins; else done over total, capped; no total means no figure."""
+    assert share(7, 20) == 35 and share(7, 20, 60) == 60 and share(30, 20) == 100
+    assert share(None, 20) is None and share(140, None) is None and share(5, 0) is None
 
 
 def test_ledger_route_over_the_real_ledger() -> None:
@@ -107,7 +160,8 @@ def test_widgets_paint_offscreen() -> None:
     app = QApplication.instance() or QApplication([])
     app.setStyleSheet(QSS)
     client = http()
-    from ui.desktop.ops.jobsbar import JobsBar
+    from PySide6.QtWidgets import QLabel, QProgressBar, QPushButton
+    from ui.desktop.ops.jobsbar import JobsBar, sqx_text
     from ui.desktop.ops.ledger import Ledger
     from ui.desktop.ops.pulse import Pulse
     SHOTS.mkdir(parents=True, exist_ok=True)
@@ -120,6 +174,17 @@ def test_widgets_paint_offscreen() -> None:
         {"id": "3", "label": "gate", "study": "gate", "queued": 1, "started": "21:00:09",
          "rc": None, "tail": []},
         {"id": "0", "label": "wfc", "started": "20:00:00", "rc": 1, "tail": []}])
+    bar.sqx = [{"role": "custodian", "project": "Test_X", "task": "MCR 3", "done": 7,
+                "total": 20, "percent": 35}]
+    chip = bar.sqx_chip(bar.sqx[0])
+    progress = chip.findChild(QProgressBar)
+    assert progress.value() == 35 and chip.findChild(QPushButton) is None   # no ✕ for SQX
+    assert sqx_text(bar.sqx[0]) == "SQX custodio · MCR 3 · 7 / 20"
+    build = bar.sqx_chip({"role": "conductor", "project": "P", "task": "Build", "done": 9,
+                          "total": None, "percent": None})
+    assert build.findChild(QProgressBar).maximum() == 0                   # busy, no figure
+    bar.show_jobs([])
+    assert any("1 en marcha" in w.text() for w in bar.findChildren(QLabel))
     bar.resize(1100, 34)
     assert bar.grab().save(str(SHOTS / "D-jobsbar.png"))
 

@@ -44,8 +44,8 @@ class RunBar(QWidget):
         self.many.setToolTip("Corre el estudio sobre el databank entero, con el cajón de ahora.")
         self.many.clicked.connect(lambda: self.run("many"))
         self.only = QComboBox()
-        self.only.setToolTip("La subprueba que se corre sola; se escribe como una corrida más "
-                             "del día y se compara con la anterior desde el historial.")
+        self.only.setToolTip("La subprueba que se corre sola; se escribe aparte, en "
+                             "<estudio>/parciales/, al lado de la corrida entera, que no se toca.")
         self.solo = QPushButton("↻ solo")
         self.solo.clicked.connect(lambda: self.run("one", self.only.currentData()))
         self.cancel = QPushButton("■ cancelar")
@@ -76,7 +76,8 @@ class RunBar(QWidget):
         self.one.setVisible(can and entry["one"] and strategy_page)
         self.many.setVisible(can and entry["many"])
         options = (fetch("study/only", study=entry["key"], project=where["project"],
-                         databank=where["databank"], asset=where["asset"] or "")
+                         databank=where["databank"], asset=where["asset"] or "",
+                         strategy=where["strategy"] or "")
                    .get("options") or []) if can and strategy_page and where["project"] else []
         self.only.clear()
         for o in options:

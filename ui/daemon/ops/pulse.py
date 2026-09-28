@@ -10,6 +10,8 @@ from core import worker
 from core.paths import WORKERS
 from ui.daemon import progress
 from ui.daemon.jobs import LOGS
+from ui.daemon.ops import runs
+from ui.text.numbers import num
 
 FREE_FLOOR_GB = 15          # owner, 2026-09-25: warn below this much MemAvailable
 SLOPE_MB = 10               # middle of the 8–12 MB per retest measured on the 5,000-variant run
@@ -167,12 +169,13 @@ def line(p: dict, now: datetime) -> str:
         now: The reading's time.
 
     Returns:
-        `13:38:32 3987 de 15000 | JVM 63.2 GB | CPU 6845% | libre 55 GB | caben 900 más`.
+        `13:38:32 3 987 de 15 000 | JVM 63.2 GB | CPU 6845% | libre 55 GB | caben 900 más`.
     """
     clock = f"{now:%H:%M:%S}"
     if not p["up"]:
         return f"{clock} custodio parado | libre {p['free_gb']:.0f} GB"
-    count = f"{p['done']} de {p['total']}" if p["total"] is not None else "avance ?"
+    count = (f"{num(p['done'])} de {num(p['total'])}" if p["total"] is not None else
+             f"{num(p['done'])} hechos" if p["done"] is not None else "avance ?")
     return (f"{clock} {count} | JVM {p['jvm_gb']:.1f} GB | CPU {p['cpu_pct']:.0f}% | "
             f"libre {p['free_gb']:.0f} GB | caben {p['fits_more']} más")
 
@@ -181,9 +184,10 @@ def custodian() -> dict:
     """Everything the pulse line says about the custodian, read from /proc and files only.
 
     Returns:
-        The `/api/pulse` `custodian` block (ui/README.md). Never a command to the install:
-        between start and collect it receives nothing but `action=status` (CLAUDE.md rule 3),
-        and not even that from here.
+        The `/api/pulse` `custodian` block (ui/README.md). The count comes from a daemon
+        job's PROGRESS line, or else from the worker's status line (`runs.count`): between
+        start and collect the custodian receives nothing but `action=status` (CLAUDE.md
+        rule 3), and nothing at all when its log says no project runs.
     """
     now = datetime.now()
     base = {"up": False, "project": None, "task": None, "done": None, "total": None,
@@ -200,6 +204,13 @@ def custodian() -> dict:
         run = progress.run_state(lines)
         project, started = project_start(lines)
         got = job_progress(LOGS, now.timestamp()) if not run["finished"] else None
+        if got is None and project and not run["finished"]:
+            # A run started outside the window prints no PROGRESS line the daemon can
+            # find (OPEN §55): the worker's own status line counts the running task.
+            live = runs.count("custodian", project)
+            if live and live["done"] is not None:
+                got = {"done": live["done"], "total": live["total"], "task_only": True,
+                       "log": f"estado del custodio · {live['task']}"}
         jvm = pss_gb(pids)
         slope, measured = slope_mb(project or "", got["done"] if got else None, jvm)
         p |= {"project": project, "task": run["current"], "jvm_gb": jvm,
@@ -208,9 +219,12 @@ def custodian() -> dict:
               "log_silent_s": None if run["finished"] or not mtime
               else round(now.timestamp() - mtime)}
         if got:
-            minutes = (now - started).total_seconds() / 60 if started else None
+            # A task's count over the project's minutes would be no rate at all.
+            minutes = ((now - started).total_seconds() / 60
+                       if started and not got.get("task_only") else None)
             rate = got["done"] / minutes if minutes else None
             p |= {"done": got["done"], "total": got["total"], "progress_from": got["log"],
                   "rate_per_min": rate,
-                  "eta_min": (got["total"] - got["done"]) / rate if rate else None}
+                  "eta_min": (got["total"] - got["done"]) / rate
+                  if rate and got["total"] is not None else None}
     return p | {"line": line(p, now), "warn": warnings(p)}

@@ -1,4 +1,5 @@
-"""The window's run side: a real study run end to end, the python queue, cancel, and the refusals."""
+"""The window's run side: the python queue, cancel, the refusals, and with `--run` a real study
+run end to end (it writes a report under AlgoData/reports/)."""
 
 import sys
 import tempfile
@@ -12,10 +13,12 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.paths import DATA, report_dir  # noqa: E402
-from ui.daemon import jobs, studyapi  # noqa: E402
+from ui.daemon import jobs, jobsapi  # noqa: E402
 from ui.daemon.runner import api  # noqa: E402
 
-PROJECT, DATABANK, STRATEGY = "USDJPY_workflow_profiling_v1", "Results", "Strategy 1.23.51"
+# Since F13 (2026-09-28): the USDJPY Donchian project.
+PROJECT, DATABANK, STRATEGY = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results",
+                               "Strategy 1.15.54")
 # Job logs go here, not to AlgoData/logs/ui, and vanish with the test.
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-runner-")
 SLEEPER = ["-c", "import time; print('PROGRESS 40 a medias', flush=True); time.sleep(30)"]
@@ -25,7 +28,7 @@ def client() -> TestClient:
     """A local app with only the run routes and the job listing, logs in a scratch folder."""
     app = FastAPI()
     app.include_router(api.ROUTER)
-    app.include_router(studyapi.ROUTER)
+    app.include_router(jobsapi.ROUTER)
     jobs.LOGS = Path(SCRATCH.name)
     jobs.JOBS.clear()
     return TestClient(app)
@@ -97,16 +100,24 @@ def test_queue_and_cancel() -> None:
 
 
 def test_refusals() -> None:
-    """What cannot run answers with a sentence and starts nothing."""
+    """What cannot run answers with a sentence and starts nothing. `jobs.start` is swapped for
+    a recorder while this runs: a case the daemon wrongly accepted must not start a real study
+    on a real project (📓 2026-09-28: blindJoint on the Donchian project was accepted and began).
+    blindJoint is not asked here: whether it may run is the ledger's door on the data of the
+    day, not a fixed refusal."""
     http = client()
+    started, real = [], jobs.start
+    jobs.start = lambda *a, **k: started.append(a) or {"id": "x"}
     body = {"project": PROJECT, "databank": DATABANK, "strategies": [STRATEGY], "asset": "USDJPY"}
-    for study, scope, extra in [("profitShape", "many", {}), ("gate", "one", {}),
-                                ("blindJoint", "many", {}), ("isOos", "many", {"overrides": ["a.b=1"]}),
-                                ("gate", "many", {"only": "x"}), ("edgeCost", "one", {"asset": ""}),
-                                ("edgeCost", "one", {"asset": "NOPE"}), ("nope", "many", {})]:
-        got = http.post("/api/study/run", json=body | {"study": study, "scope": scope} | extra)
-        assert set(got.json()) == {"error"}, (study, got.json())
-    assert jobs.JOBS == []
+    try:
+        for study, scope, extra in [("profitShape", "many", {}), ("gate", "one", {}),
+                                    ("gate", "many", {"only": "x"}), ("edgeCost", "one", {"asset": ""}),
+                                    ("edgeCost", "one", {"asset": "NOPE"}), ("nope", "many", {})]:
+            got = http.post("/api/study/run", json=body | {"study": study, "scope": scope} | extra)
+            assert set(got.json()) == {"error"}, (study, got.json())
+    finally:
+        jobs.start = real
+    assert started == [] and jobs.JOBS == []
 
 
 def test_only_options() -> None:
@@ -122,7 +133,13 @@ def test_only_options() -> None:
 
 if __name__ == "__main__":
     assert DATA.exists()
-    for test in (test_refusals, test_only_options, test_queue_and_cancel, test_real_run):
+    tests = [test_refusals, test_only_options, test_queue_and_cancel]
+    if "--run" in sys.argv:
+        tests.append(test_real_run)
+    else:
+        print("    (sin --run: test_real_run no corre edgeCost de verdad; escribiría un informe "
+              "del día en AlgoData/reports/ de este proyecto)")
+    for test in tests:
         started = time.time()
         test()
         print(f"ok  {test.__name__}  {time.time() - started:.1f} s")

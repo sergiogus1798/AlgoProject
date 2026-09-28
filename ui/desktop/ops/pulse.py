@@ -1,4 +1,4 @@
-"""The custodian zone: the pulse line of a long run, its figures explained, and the last readings."""
+"""The custodian's pulse inside «En marcha»: the line of a long run, its figures explained, the last readings."""
 
 import httpx
 from PySide6.QtCore import QTimer
@@ -7,10 +7,13 @@ from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QListWi
                                QListWidgetItem, QPushButton, QVBoxLayout)
 
 from ui.desktop import client
+from ui.text.glossary import label
+from ui.text.numbers import num
 from ui.desktop.theme import C, MONO, T
 
 POLL_MS = 60_000            # each reading costs the daemon half a second of CPU sampling
 KEPT = 30                   # readings the history keeps, newest first
+HISTORY_PX = 120            # the history is a strip under the figures, not the zone's body
 
 # Every figure on screen carries what it is and where it comes from.
 FIGURES = [
@@ -26,9 +29,11 @@ FIGURES = [
     ("pendiente", "slope", "MB que crece el JVM por backtest. «medida» sale de las lecturas "
                            "de este run; «supuesta» es 10 MB, el centro de los 8–12 MB "
                            "medidos en el retest de 5.000 variantes."),
-    ("avance de", "progress_from", "El log del trabajo que imprimió la última línea «PROGRESS "
-                                   "n de N». SQX no escribe la cuenta en su log: sin un "
-                                   "trabajo lanzado desde la ventana, el avance es «?»."),
+    ("avance de", "progress_from", "De dónde sale la cuenta: el log del trabajo de la ventana "
+                                   "que imprimió la última línea «PROGRESS n de N», o, para un "
+                                   "run lanzado fuera de la ventana, el estado del custodio "
+                                   "(action=status) de la tarea en curso. «?» cuando ninguno "
+                                   "da cuenta."),
 ]
 
 
@@ -43,17 +48,21 @@ def figure(p: dict, key: str) -> str:
         The text, «—» when the reading has no such figure.
     """
     if key == "jvm":
-        return "—" if p.get("jvm_gb") is None else f"{p['jvm_gb']:.1f} de {p['xmx_gb']:.0f} GB"
+        return ("—" if p.get("jvm_gb") is None else
+                f"{num(round(p['jvm_gb'], 1))} de {num(round(p['xmx_gb']))} GB")
     if key == "slope":
         return ("—" if p.get("slope_mb") is None else
-                f"{p['slope_mb']:.1f} MB ({'medida' if p['slope_measured'] else 'supuesta'})")
+                f"{num(round(p['slope_mb'], 1))} MB "
+                f"({'medida' if p['slope_measured'] else 'supuesta'})")
     value = p.get(key)
     if value is None:
         return "—"
     if key == "rate_per_min":
-        return f"{value:.0f} / min"
+        return f"{num(round(value))} / min"
     if key == "eta_min":
-        return f"{value:.0f} min"
+        return f"{num(round(value))} min"
+    if key == "fits_more":
+        return num(value)
     return str(value)
 
 
@@ -63,15 +72,15 @@ class Pulse(QFrame):
     def __init__(self) -> None:
         """Build the line, the figures, the warnings and the history."""
         super().__init__(objectName="term")
+        self.last: dict = {}            # the newest reading, for «En marcha»'s own line
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(16, 12, 16, 12)
-        lay.setSpacing(10)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
         head = QHBoxLayout()
-        head.addWidget(QLabel("Custodio", objectName="h1"))
-        head.addWidget(QLabel("PULSO DEL RUN LARGO · SÓLO LECTURA DE /proc Y LOGS",
+        head.addWidget(QLabel("PULSO DEL CUSTODIO · SQX_w2 · /proc, LOGS Y SU LÍNEA DE ESTADO",
                               objectName="kicker"))
         head.addStretch(1)
-        now = QPushButton("leer ahora")
+        now = QPushButton("Leer ahora")
         now.clicked.connect(self.refresh)
         head.addWidget(now)
         lay.addLayout(head)
@@ -88,16 +97,17 @@ class Pulse(QFrame):
         grid.setHorizontalSpacing(18)
         self.values: dict[str, QLabel] = {}
         for i, (name, key, tip) in enumerate(FIGURES):
-            label = QLabel(name.upper(), objectName="kicker", toolTip=tip)
+            title = QLabel(label(name), objectName="kicker", toolTip=tip)
             value = QLabel("—", objectName="mono", toolTip=tip)
-            grid.addWidget(label, i // 4 * 2, i % 4)
+            grid.addWidget(title, i // 4 * 2, i % 4)
             grid.addWidget(value, i // 4 * 2 + 1, i % 4)
             self.values[key] = value
         lay.addLayout(grid)
         lay.addWidget(QLabel("ÚLTIMAS LECTURAS · EN MEMORIA, SE PIERDEN AL CERRAR",
                              objectName="kicker"))
         self.history = QListWidget()
-        lay.addWidget(self.history, 1)
+        self.history.setMaximumHeight(HISTORY_PX)
+        lay.addWidget(self.history)
         self.poll = QTimer(self)
         self.poll.setInterval(POLL_MS)
         self.poll.timeout.connect(self.refresh)
@@ -132,6 +142,7 @@ class Pulse(QFrame):
         Args:
             p: The `custodian` block of `/api/pulse`.
         """
+        self.last = p
         colour = C["dead"] if p["warn"] else (C["promising"] if p["up"] else T["muted"])
         self.line.setText(p["line"])
         self.line.setStyleSheet(f"font-family: {MONO}; font-size: 20px; font-weight: 700; "

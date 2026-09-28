@@ -46,6 +46,27 @@ def stage(project: str, databank: str, dest: Path, limit: int = 0,
     return timeframes
 
 
+def sign(staged: Path, out: Path, prefix: str = "") -> int:
+    """Write `out/identity.csv` (strategy, identity) from the staged .sqx before they go.
+
+    Args:
+        staged: The staged copies, named after their strategies.
+        out: The export directory.
+        prefix: Only the copies carrying it, named without it (export_retest stages
+            several databanks in one folder as `<i>__<name>.sqx`).
+
+    Returns:
+        Rows written. A few KB in place of the files, which weigh six times the Parquet;
+        `core.study.identity.from_export` reads it once no install holds the databank.
+    """
+    found = sorted(staged.glob(f"{prefix}*.sqx"))
+    (out / "identity.csv").write_text(
+        "strategy,identity\n" + "".join(f"{f.stem[len(prefix):]},{sqxfile.identity(f)}\n"
+                                         for f in found),
+        encoding="utf-8")
+    return len(found)
+
+
 def main() -> None:
     """Stage a databank, export every trade of it, and pack them into one Parquet."""
     ap = argparse.ArgumentParser()
@@ -73,7 +94,9 @@ def main() -> None:
                              out / "trades.parquet", per_market=False)
     shutil.rmtree(out / "trades")
     # The staged .sqx are copies of what the databank holds; the manifest names the
-    # databank, and 757 of them weighed 119 MB beside a 20 MB Parquet.
+    # databank, and 757 of them weighed 119 MB beside a 20 MB Parquet. Their identities
+    # stay, in identity.csv.
+    sign(out / "strategies", out)
     shutil.rmtree(out / "strategies")
 
     manifest.write(out,

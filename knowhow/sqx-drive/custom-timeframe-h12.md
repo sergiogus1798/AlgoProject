@@ -1,11 +1,14 @@
 ---
 q: H12 custom timeframe SQX retest Setup timeframe="H12"; cross-timeframe H1 to H4 and H12; H8 H12 support; 12h resample
-tag: 🔬  date: 2026-09-26  see: sqx-drive/running-a-task-headless, conditions/crossmarket-crosstf-no-conditions
+tag: 🔬  date: 2026-09-27  see: sqx-drive/running-a-task-headless, conditions/crossmarket-crosstf-no-conditions
 ---
 # SQX runs a custom timeframe like H12 when a task's `<Setup>` just names it
 `<Chart symbol="…" timeframe="H12">` in a cross-timeframe `<Setup>` is enough: SQX builds the bars
 itself from M1, no GUI step. The Python side resamples M1 with pandas `12h` (`core.barstore.RULE`).
 Default cross-timeframe targets (owner): from M30 → H1, H4; from H1 → H4, H12.
+⚠️ Two timeframe lists in code: `sqx.projects.buildrules.TF_MINUTES` (what a project may be BUILT on:
+no H12, has H2) and `sqx.variants.scale.MINUTES` (what CrossTF rescales to: has H12, no H2). A CrossTF
+target list offered from `TF_MINUTES` cannot hold H12 — use `scale.MINUTES` (as the Configuración SQX zone does).
 
 ## Evidence
 - 2026-09-26, custodian, project `USDJPY_emaCross_H1`, task CrossTF with blocks H1/H4/H12: log

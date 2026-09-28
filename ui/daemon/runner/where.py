@@ -11,6 +11,7 @@ import pyarrow.parquet as pq
 from core.datapaths import variants_dir
 from core.paths import DATA
 from pipeline.ledger.state import work_dir
+from sqx.projects import registry
 
 
 def newest(root: Path, pattern: str) -> Path | None:
@@ -122,3 +123,42 @@ def scaling_day(project: str, trades: Path) -> str | None:
                 pd.read_parquet(found, columns=["name"])["name"]):
             return found.parent.name
     return None
+
+
+def enrolled(project: str) -> dict | None:
+    """The project's newest row of `AlgoData/projects/registry.csv` that names a template.
+
+    Args:
+        project: Project name.
+
+    Returns:
+        The row (symbol, timeframe, template, install…), or None when the builder never
+        recorded it with a template.
+    """
+    return next((r for r in reversed(registry.rows())
+                 if r["name"] == project and r["template"]), None)
+
+
+def family(project: str) -> str | None:
+    """The template family a project's ledger rows are signed under (owner, Q9 of plan 24).
+
+    Args:
+        project: Project name.
+
+    Returns:
+        The template's name — its folder in the library, since every library template is
+        `<name>/template.sqx` and the file's own stem would sign every project "template" —
+        or None when the registry names no template: then nothing is signed.
+    """
+    row = enrolled(project)
+    if row is None:
+        return None
+    path = Path(row["template"])
+    return path.parent.name if path.name == "template.sqx" else path.stem
+
+
+def no_family(project: str) -> str:
+    """The sentence a study that signs the ledger answers when the project has no template."""
+    return (f"el proyecto {project} no tiene plantilla en projects/registry.csv: sin familia "
+            "no se apunta la mirada en el ledger, así que no se corre (córrelo desde la "
+            "terminal con --family si sabes cuál es)")

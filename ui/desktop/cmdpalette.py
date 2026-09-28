@@ -1,98 +1,22 @@
-"""Ctrl+K: type a few letters, Enter opens that zone, project, databank, strategy or study."""
+"""Ctrl+K: type a few letters, Enter opens that zone, project, databank, strategy or study.
 
-import json
-import unicodedata
+The PROYECTO zones are three — Proyectos, Proyecto, Estrategia —: a project opens Proyecto, a
+databank selects it and opens Proyecto, a strategy opens its ficha and a study opens it on the
+ficha of the strategy chosen.
+"""
 
 import httpx
-from PySide6.QtCore import QEvent, QPoint, QSettings, Qt
+from PySide6.QtCore import QEvent, QPoint, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QApplication, QFrame, QLabel, QLineEdit, QListWidget,
                                QListWidgetItem, QPlainTextEdit, QTextEdit, QVBoxLayout)
 
 from ui.desktop import client
+from ui.desktop.cmdrank import ALIASES, SHOWN, TAG, load_recent, rank, save_recent
 from ui.desktop.nav import ZONES
 from ui.desktop.selection import SELECTION
 from ui.desktop.theme import MONO, T
-
-# Recent choices: the per-viewer QSettings of the app (organisation, application), never AlgoData.
-RECENT_KEY, RECENT_MAX, SHOWN = "cmdpalette/recent", 10, 60
-STORE = ("AlgoProject", "AlgoProject")
-TAG = {"zone": "zona", "project": "proyecto", "databank": "databank", "strategy": "estrategia",
-       "study": "estudio"}
-ORDER = list(TAG)
-
-
-def fold(s: str) -> str:
-    """Lower case without accents, so «poblacion» finds «Población»."""
-    return "".join(c for c in unicodedata.normalize("NFD", s.lower())
-                   if unicodedata.category(c) != "Mn")
-
-
-def match(query: str, label: str) -> int | None:
-    """Fuzzy subsequence score of a query against a label.
-
-    Args:
-        query: What the owner typed.
-        label: The candidate's name.
-
-    Returns:
-        None when the query's letters do not appear in order; otherwise the letters skipped
-        between the first and last hit plus where the first hit sits (lower is better).
-    """
-    q, s = fold(query).replace(" ", ""), fold(label)
-    at, first, gaps = -1, None, 0
-    for ch in q:
-        nxt = s.find(ch, at + 1)
-        if nxt < 0:
-            return None
-        if first is None:
-            first = nxt
-        else:
-            gaps += nxt - at - 1
-        at = nxt
-    return gaps * 2 + (first or 0)
-
-
-def ident(item: dict) -> tuple:
-    """What makes two items the same choice, for the recent list."""
-    return item["kind"], item["label"], item.get("project"), item.get("databank")
-
-
-def rank(query: str, items: list[dict], recent: list[dict]) -> list[dict]:
-    """The items to list for a query: recent matches first, newest on top, then by score and kind.
-
-    Args:
-        query: What the owner typed; "" lists everything.
-        items: Every candidate.
-        recent: The last choices, newest first.
-
-    Returns:
-        The matching items, a recent one carrying `recent: True`.
-    """
-    seen = {ident(r) for r in recent}
-    pool = [{**r, "recent": True} for r in recent] + [i for i in items if ident(i) not in seen]
-    kept = [(s, i) for s, i in ((match(query, i["label"]), i) for i in pool) if s is not None]
-    return [i for _, i in sorted(kept, key=lambda p: (0, 0, 0) if p[1].get("recent") else
-                                 (1, p[0], ORDER.index(p[1]["kind"])))]
-
-
-def load_recent() -> list[dict]:
-    """The last choices, newest first; a broken store reads as none."""
-    try:
-        got = json.loads(QSettings(*STORE).value(RECENT_KEY, "[]") or "[]")
-        return [r for r in got if r.get("kind") in TAG and r.get("label")][:RECENT_MAX]
-    except Exception:  # noqa: BLE001 — a per-viewer convenience must never break the window
-        return []
-
-
-def save_recent(item: dict) -> None:
-    """Put one choice at the head of the recent list; a store that refuses is ignored."""
-    clean = {k: v for k, v in item.items() if k != "recent"}
-    rest = [r for r in load_recent() if ident(r) != ident(clean)]
-    try:
-        QSettings(*STORE).setValue(RECENT_KEY, json.dumps([clean, *rest][:RECENT_MAX]))
-    except Exception:  # noqa: BLE001 — same as above
-        pass
+from ui.text.numbers import num
 
 
 class CmdPalette(QFrame):
@@ -146,40 +70,53 @@ class CmdPalette(QFrame):
         self.field.setFocus()
 
     def gather(self) -> tuple[list[dict], str]:
-        """Every candidate, read from the daemon; the matrix only for the chosen databank.
+        """Every candidate: projects and databanks from the gallery, the rest from the daemon.
+
+        The gallery fetches its rows off the GUI thread; asking `/api/projects/all` here
+        would freeze the window ~12 s on a cold daemon. Until they land, projects are missing
+        and the hint says so.
 
         Returns:
             The items, and one sentence naming what could not be read ("" when all was).
         """
-        items = [{"kind": "zone", "label": z, "hint": "zona"} for z in ZONES]
+        items = [{"kind": "zone", "label": z, "hint": "zona", "also": ALIASES.get(z, ())}
+                 for z in ZONES]
         now, trouble = SELECTION.now, []
         here = (now["project"], now["databank"])
+        projects = list(self.shell.gallery.rows.values())
+        if not projects:
+            trouble.append("Los proyectos aún se están leyendo: vuelve a abrir Ctrl+K en unos "
+                           "segundos.")
         try:
-            projects = client.get("projects")["projects"]
             if not self.catalogue:
                 self.catalogue = client.get("catalogue")["studies"]
             if all(here) and self.matrix[0] != here:
                 got = client.get("matrix", project=here[0], databank=here[1])
                 self.matrix = (here, got.get("strategies", []))
         except (httpx.HTTPError, KeyError) as e:
-            projects, trouble = [], [f"El demonio no respondió: {e}"]
+            trouble.append(f"El demonio no respondió: {e}")
         for p in projects:
-            items.append({"kind": "project", "label": p["project"], "project": p["project"],
-                          "asset": p["asset"], "hint": f"{len(p['databanks'])} databanks"})
-            items += [{"kind": "databank", "label": f"{p['project']} / {d}", "databank": d,
-                       "project": p["project"], "asset": p["asset"], "hint": "databank"}
-                      for d in p["databanks"]]
+            items.append({"kind": "project", "label": p["name"], "project": p["name"],
+                          "asset": p["symbol"],
+                          "hint": f"{p['symbol'] or '—'} · {p['timeframe'] or '—'} · "
+                                  f"{num(p['strategies'])} estrategias · {p['state']}"})
+            items += [{"kind": "databank", "label": f"{p['name']} / {d}", "databank": d,
+                       "project": p["name"], "asset": p["symbol"],
+                       "hint": f"databank · {num(n)} estrategias"}
+                      for d, n in p["databanks"].items() if n]
         if not all(here):
             trouble.append("Sin databank elegido: no hay estrategias que listar.")
         elif self.matrix[0] == here:
             items += [{"kind": "strategy", "label": s["strategy"], "project": now["project"],
                        "databank": now["databank"], "asset": now["asset"],
-                       "identity": s["identity"], "hint": f"{now['databank']} · "
-                                                          f"{s['identity'][:8]}"}
+                       "identity": s["identity"], "hint": now["databank"]}
                       for s in self.matrix[1]]
-        items += [{"kind": "study", "label": f"{e['title']} ({e['key']})", "study": e["key"],
-                   "one": e["one"], "many": e["many"], "hint": e["family"]}
-                  for e in self.catalogue]
+        # A study opens on the ficha of the chosen strategy: only then, and only one that
+        # speaks per strategy — a population-only study lives in Proyecto's databank panel.
+        if now["strategy"]:
+            items += [{"kind": "study", "label": f"{e['title']} ({e['key']})", "study": e["key"],
+                       "hint": f"{e['family']} · en la ficha"}
+                      for e in self.catalogue if e["one"]]
         return items, " ".join(trouble)
 
     def fill(self, query: str) -> None:
@@ -194,7 +131,9 @@ class CmdPalette(QFrame):
         for i in self.shown:
             row = QListWidgetItem(f"{'↺' if i.get('recent') else ' '} {TAG[i['kind']]:<10} "
                                   f"{i['label']}   · {i['hint']}")
-            row.setToolTip("Elegido hace poco" if i.get("recent") else TAG[i["kind"]])
+            # The identity is never printed on a row (encargo 22 §10); only its tooltip names it.
+            row.setToolTip(("Elegido hace poco" if i.get("recent") else TAG[i["kind"]])
+                           + (f" · identidad {i['identity']}" if i.get("identity") else ""))
             if i.get("recent"):
                 row.setForeground(QColor(T["muted"]))
             self.list.addItem(row)

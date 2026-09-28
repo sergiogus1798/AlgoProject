@@ -5,7 +5,8 @@ from datetime import date
 from core import assetwrite
 from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending, provisional,
                              segments_pending, validate)
-from core.assetdata import RESERVED, classes, fields, load, markets, schema, special_notes, symbols
+from core.assetdata import (RESERVED, classes, fields, load, markets, policy, schema, special_notes,
+                            symbols)
 from core.assets import report
 from core.assetyaml import leaves
 from core.paths import ASSETS
@@ -68,7 +69,7 @@ def one(symbol: str) -> dict:
 
     Returns:
         The costs with their units and what SQX carries today, the segments already turned
-        into the dates they mean, the MC Retest ranges, the retest universe, everything the
+        into the dates they mean, the MC Retest ranges, the Cross Market check, everything the
         preflight would complain about, and the file's own leaves for the raw editor.
     """
     data = load(symbol)
@@ -82,11 +83,38 @@ def one(symbol: str) -> dict:
             "sqx_symbol": data["sqx_symbol"], "feeds": data["feeds"],
             "session": data.get("session"), "verified": str(data["verified"]),
             "instrument": dict(data["instrument"]), "costs": costs, "segments": segments,
-            "data": data["data"], "mc_retest": mc, "markets": markets(symbol),
+            "data": data["data"], "mc_retest": mc, "markets": universe(symbol),
             "notes": list(data.get("notes") or []),
             "projects": list(data.get("projects_using_it") or []),
             "problems": problems(data), "report": report(symbol),
             "leaves": _leaves(symbol)}
+
+
+def universe(symbol: str) -> dict:
+    """One main asset's Cross Market check, with every market named by its asset.
+
+    Args:
+        symbol: Asset name.
+
+    Returns:
+        main, timeframe, categories ({family, structural} → [{feed, data_from, asset}]) and
+        `candidates`: every other asset not yet in a category, with the feed and the first
+        date with data a row added from the window writes. Empty categories and no
+        candidates when the asset is not a declared main — a new main block needs its own
+        feed and timeframe, which is not a row to add.
+    """
+    declared = markets(symbol)
+    owner = {feed: s for s in symbols() for feed in [load(s)["sqx_symbol"], *load(s)["feeds"]]}
+    cats = {c: [{**f, "data_from": f["data_from"] and str(f["data_from"]),
+                 "asset": owner.get(f["feed"], f["feed"])}
+                for f in rows] for c, rows in (declared.get("categories") or {}).items()}
+    taken = {f["feed"] for rows in cats.values() for f in rows} | {declared.get("main")}
+    spans = policy()["segments"]
+    free = [{"asset": s, "feed": load(s)["sqx_symbol"],
+             "data_from": str(((spans.get(s) or {}).get("data") or {}).get("from") or "")}
+            for s in symbols() if s != symbol and not taken & {load(s)["sqx_symbol"]}]
+    return {"main": declared.get("main"), "timeframe": declared.get("timeframe"),
+            "categories": cats, "candidates": free if declared else []}
 
 
 def problems(data: dict) -> dict:

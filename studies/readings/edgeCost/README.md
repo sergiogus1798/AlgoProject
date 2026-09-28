@@ -29,7 +29,7 @@ inputs ─▶ spread_share ─▶ costs ─▶ one / many ─▶ report
 | `costs.py` | Rebuilds gross P&L per trade from the fill prices and the ACTUAL measured cost, reconciles it against what SQX reported, and separately prices today's modelled cost (`assets/symbols/*.yaml`, undiluted) for the edge's denominator; the provisional-cost and issue-26 warnings | imported | trades + asset + feed → priced trades, reconciliation |
 | `one.py` | **One strategy against its own edge-per-cost bar, as the contract's data**: the reconciliation (shown first), the headline numbers, the by-hour and by-weekday breakdown | imported — the window calls it | one strategy's priced trades → result |
 | `many.py` | Every strategy of one harvest, judged against the same bar, as one panel | imported | priced trades → panel |
-| `report.py` | **The command**: every strategy of one harvest to `verdict.csv` and its page, or `--strategy` for one read in full | `python3 -m studies.readings.edgeCost.report --project USDJPY_emaCross_H1 --databank Results --feed USDJPY_DukasM1_the5ers [--strategy "Strategy 10.9.51"]` | harvest → reports |
+| `report.py` | **The command**: every strategy of one harvest to `verdict.csv` (`strategy, identity, …, verdict`, identity the harvest's own) and its page, or `--strategy` for one read in full | `python3 -m studies.readings.edgeCost.report --project USDJPY_emaCross_H1 --databank Results --feed USDJPY_DukasM1_the5ers [--strategy "Strategy 10.9.51"]` | harvest → reports |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 
 ## What is the owner's, not this code's

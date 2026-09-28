@@ -8,6 +8,7 @@
 | `knowhowmap.py` | Regenerate each `knowhow/<domain>/INDEX.md` from its cards' `q:` lines; `checks.py` uses it to check the cards, the `knowhow/` links and the indexes | `python3 tools/knowhowmap.py` |
 | `manual.py` | Build the user manual as one PDF per workflow family, from the chapters in `AlgoData/manual-fuentes/` | `python3 tools/manual.py` |
 | `daily_audit.py` | The half of the audit a machine can do alone: checks, tests, corrupt projects, missing manifests, undecided asset costs | `python3 tools/daily_audit.py` |
+| `uiwalk.py` | Dev-only: open every zone of the window offscreen against a running daemon, drive its combos, tabs and tables with every write refused (POSTs answered here, `/api/load` read as its GET, modals «No»), and report each exception by zone; exits 1 when anything raised | `QT_QPA_PLATFORM=offscreen python3 tools/uiwalk.py --port P` |
 
 `manual.py` renders the chapters to `docs/manual/NN-<family>.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. The owner reads only PDFs (2026-09-26): the PDFs are in git and are the only thing in `docs/manual/`; the `.md` chapters and their `assets/` are the original and live in `AlgoData/manual-fuentes/`, out of the repo. `FAMILIES` decides which chapter goes in which PDF, and a chapter in no family stops the build.
 

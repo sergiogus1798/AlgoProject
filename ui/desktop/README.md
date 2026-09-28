@@ -4,38 +4,51 @@ PySide6. Draws what the daemon says, and asks the daemon for every change. **No 
 file, reads a CSV or imports `core/` for anything but the port.**
 
 ```
-launch ─▶ shell ─▶ nav (the sidebar in four groups) · contextbar (Proyecto › Población › Estrategia)
+launch ─▶ shell ─▶ nav (the sidebar in four groups) · contextbar (Proyectos › proyecto › estrategia)
                    BIBLIOTECA
                    coverage  (la matriz, lo primero que se ve)
-                   catalogue ─▶ detail   (la lista y la ficha)
+                   catalogue ─▶ detail · shape   (la lista y la ficha de una plantilla)
                    chat                  (la entrevista → borrador + comando)
                    palettes ─▶ palettebar · blocktable   (la librería de paletas)
-                   assets ─▶ assetlist · assetcard · assetspans · yamltree   (la librería de activos)
+                   assets ─▶ assetlist · assetcard · assetspans · assetforms · yamltree
+                   sqxconfig/ (Configuración SQX) · datazone/ (Datos)
                    PROYECTO
-                   workflow/ ─▶ WorkflowRail   (los pasos de WORKFLOW.md de un proyecto)
-                   matrix/ ─▶ Matrix   (Población: estrategias × estudios)
-                   studypage/ ─▶ PopulationStudy · StrategyPage ─▶ blocks/ResultView
-                   studies ─▶ strategytable · resultspanel   (la zona anterior de estrategias)
-                   gate ─▶ funnel · scorecard · gatedetail ─▶ equitychart   (la puerta IS/OOS)
+                   workspace/ ─▶ Gallery (Proyectos) · WorkspaceZone (Proyecto: rail, embudo,
+                                 panel de databanks, filtros, «Continuar workflow»)
+                   projectflow.StrategyZone (Estrategia) ─▶ workspace.Ficha ─▶ studypage/ · blocks/
+                                                         └▶ portfolios.ImportedFicha (archivada)
                    OPERACIÓN
-                   ops/ ─▶ Pulse · Ledger · JobsBar (en la barra de estado)
-                   generation   (por dónde va el proyecto que corre, cada 3 s)
-             all of them ─▶ client ─▶ the daemon · the study viewer also ─▶ selection
+                   ops/ ─▶ Running (En marcha) · Ledger (Registro de búsquedas) · JobsBar (barra de estado)
+                   PORTFOLIOS
+                   portfolios/ ─▶ PortfoliosZone ─▶ «Importar» ─▶ Estrategia
+             all of them ─▶ client ─▶ the daemon · labels and figures ─▶ ui/text
 ```
 
-**Imports from:** `ui/daemon` never — only its HTTP surface · **Consumed by:** nobody
+**Imports from:** `ui/text` (labels, figures); `ui/daemon` never — only its HTTP surface ·
+**Consumed by:** nobody
+
+The PROYECTO group was six zones and is three since F13 of plan 24 (2026-09-28). The five older
+zones — the step rail, the strategies × studies matrix, the population's study page, the first
+strategies zone and the step-8 gate zone — were retired with their files (`studies.py`,
+`strategytable.py`, `resultspanel.py`, `gate.py`, `scorecard.py`, `gatedetail.py`,
+`equitychart.py`, `funnel.py`, `soon.py`, `matrix/`, `workflow/`, and `generation.py`, which F11
+folded into En marcha); their content lives in Proyecto
+(the rail, the funnel, the databank panel with every study's columns) and Estrategia (the ficha
+and the study tabs). The mock on invented data (`workspace/mock.py`, `fake.py`) went with them.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `launch.py` | Start the daemon if absent, then open the window | `bin/algoui` | — |
-| `shell.py` | The single window: every zone built and wired (matrix → strategy page, headers → population study, rail → a step's study), the context bar, the stack, the status line with the jobs strip; `open_zone(name)` for the launchers | imported | — |
-| `nav.py` | The sidebar: the four groups (BIBLIOTECA, PROYECTO, OPERACIÓN, CARTERAS), one checkable button per zone, the unbuilt ones included | imported | — |
-| `contextbar.py` | The fixed bar on top: `Proyecto › Población › Estrategia (identidad)` from `SELECTION`, each crumb opening its zone | imported | selection → crumbs |
+| `launch.py` | Start the daemon if absent (replacing an idle one on older code), then open the window; `--zone Z` opens on a zone, `--shot DIR` saves `DIR/<zone>.png` and exits, `--port P` talks to (or starts) the daemon on another port so a shot never touches the owner's | `bin/algoui` | — |
+| `shell.py` | The single window: every zone built by name and wired (gallery → Proyecto, panel → Estrategia, PORTFOLIOS' «Importar» → the archived ficha), the context bar, the stack, the read-only banner, the status line with the jobs strip; `open_zone(name)` for the launchers, `go_to(item)` for Ctrl+K | imported | — |
+| `nav.py` | The sidebar: the four groups (BIBLIOTECA, PROYECTO, OPERACIÓN, PORTFOLIOS), one checkable button per zone with its tooltip; «Recargar» at the foot, its tooltip naming what it reloads (`reload_tip`) | imported | — |
+| `contextbar.py` | The fixed bar on top: `Proyectos › proyecto › estrategia` from `SELECTION`, each crumb opening its zone (the gallery when no project is chosen); databank and asset beside them; the identity only in the strategy crumb's tooltip | imported | selection → crumbs |
 | `loadbar.py` | Beside the crumbs: the selected databank's metrics, trades and cosecha as three chips. Choosing a databank loads what it lacks; polls while loading; `loaded(piece)` makes the shell redraw; ↻ retries what failed | imported | selection → `/api/load` |
 | `selection.py` | `SELECTION`: the one global project/databank/strategy/identity/asset, signal `changed(dict)`; a new project clears what hangs below it | imported | choose → signal |
-| `cmdpalette.py` | The command palette on **Ctrl+K** — the app's first QShortcut, bound in `shell.py`. Fuzzy search over zones, projects, databanks, the chosen databank's strategies and the studies, read from the daemon when it opens; Enter goes through `Shell.go_to` (`open_zone`, `SELECTION`, `open_study`); the last ten choices first, in `QSettings`. A focused text field (the chat included) keeps Ctrl+K | Ctrl+K | projects/matrix/catalogue → navigation |
-| `theme.py` | The one design system: the palette and the stylesheet | imported | — |
-| `client.py` | The only way out to the daemon | imported | path → JSON |
+| `projectflow.py` | Proyectos → Proyecto → Estrategia: `StrategyZone` (the live ficha, or `portfolios.ImportedFicha` for the version PORTFOLIOS imported: `show_archived(identity, version)` after `/api/archive/show`), a strategy found by identity (`/api/projects/find`, else the row the panel shows), and the two zones refilled when SELECTION moved on | imported | — |
+| `cmdpalette.py` | The command palette on **Ctrl+K**, bound in `shell.py`: zones (with aliases: «ledger» finds Registro de búsquedas), projects and databanks from the gallery, the chosen databank's strategies, and — with a strategy chosen — the studies that speak per strategy, opened on its ficha; Enter goes through `Shell.go_to`. A focused text field keeps Ctrl+K | Ctrl+K | gallery/matrix/catalogue → navigation |
+| `cmdrank.py` | What Ctrl+K lists and in which order: the accent-blind fuzzy match, the zones' `ALIASES`, and the last ten choices in `QSettings` (per viewer, never AlgoData) | imported | query → ranked items |
+| `theme.py` | The one design system: the palette `C`, the terminal look `T`, the stylesheet, and the two smallest pieces every zone draws with (`rule()`, `kicker(text)`) | imported | — |
+| `client.py` | The only way out to the daemon; `aim(port)` points it at another port (`launch --port`, `tools/uiwalk.py`) | imported | path → JSON |
 | `coverage.py` | The matrix of what has been tried, and the counts above it | imported | — |
 | `catalogue.py` | The list of templates and drafts, filtered | imported | — |
 | `detail.py` | One template's page, and the two writes it makes | imported | — |
@@ -44,35 +57,31 @@ launch ─▶ shell ─▶ nav (the sidebar in four groups) · contextbar (Proye
 | `palettes.py` | The palette library: the open palette, its blocks by category, and the writes | imported | — |
 | `palettebar.py` | The palette view's top bar: the picker, the policy, the search and the library actions | imported | — |
 | `blocktable.py` | The table of blocks under one palette, and the override picker on each row | imported | — |
-| `assets.py` | The asset zone: the library of instruments, the four shared files, and the three pages one can open | imported | — |
-| `assetlist.py` | The column down the left: the instruments coloured by what they still need, the shared files, the retired shelf | imported | — |
+| `assets.py` | The asset zone: one page per instrument (`AssetPage`), two per row from 880 px of viewport, the index down the left scrolling to them | imported | — |
+| `assetlist.py` | The index down the left: the instruments coloured by what they still need | imported | — |
 | `assetcard.py` | One asset's costs, its chips and everything the preflight would complain about | imported | — |
-| `assetspans.py` | The same asset's windows: the three segments, the MC Retest ranges and the retest universe | imported | — |
-| `assetforms.py` | The three boxes the zone opens: a text, a cost with its `why`, a new asset | imported | — |
+| `assetspans.py` | The same asset's windows: its data range, a date selector per segment, the MC Retest ranges and the Cross Market check by rows | imported | — |
+| `assetforms.py` | The boxes the zone opens: a text, a cost with its `why`, a Cross Market row, a new asset | imported | — |
 | `yamltree.py` | Any `assets/` file as a table of its values, each one beside its own comment | imported | — |
-| `studies.py` | The strategies zone: the databanks as SQX groups them, one's strategies, one strategy's results | imported | — |
-| `strategytable.py` | The table of one databank's strategies: the name and the handful of metrics that rank them | imported | — |
-| `resultspanel.py` | One strategy's page: what every module already said about it, and the command for what none did | imported | — |
-| `gate.py` | The IS/OOS gate zone: the cosechas, one gate's funnel and scorecard, one strategy in full, and the run | imported | — |
-| `funnel.py` | The funnel: one bar per screen, passed and died to scale, the why on hover | imported | — |
-| `scorecard.py` | The scorecard: one row per strategy, one column per screen, coloured by its pass | imported | — |
-| `gatedetail.py` | One strategy after the gate: its curve, its IS/OOS pairs, each screen's value and note | imported | — |
-| `equitychart.py` | One strategy's daily P&L, build and retest, the retest lifted to the build's last level | imported | — |
-| `generation.py` | The generation zone: one install, one project, its tasks with their state, the running task's percentage and the log tail, refreshed every three seconds while on screen | imported | — |
-| `durations.py` | How the generation zone prints a duration, a processed-over-total and a time per strategy | imported | — |
-| `soon.py` | The page a zone shows before it is built (Datos, Carteras): what goes there, and how the job is done today | imported | — |
+| `durations.py` | How «En marcha» prints a duration, a processed-over-total, a time per strategy, and the 0-100 share a task's bar shows (`share`) | imported | — |
 
-The study viewer's packages, each with its own README:
+The zones' packages, each with its own README:
 
 | folder | what it holds |
 |---|---|
+| `workspace/` | «Proyectos», «Proyecto» and the live «Estrategia» (encargo 22 §3-§5): the gallery on `/api/projects/all`; the workspace zone (rail, funnel, databank panel, F6's filters, F7's «Continuar workflow»); the ficha (curves, IS/OOS1/OOS2 statistics, metadata, «Archivar», and the study tabs below) |
+| `studypage/` | The study tabs the ficha embeds (`StrategyPage`): family and study tabs, the result, config drawer, run bar, history, compare; the «Ficha» sub-tabs (IS/OOS, Salidas, Contra el subyacente, Operaciones, Lote) |
 | `blocks/` | One widget per contract block kind, `ResultView` (a result, or two compared), the state → colour map every view imports |
-| `matrix/` | «Población»: the strategies of one databank × the studies, cells in state colour, ⊘/◉ headers, batch run, the `/curate` line |
-| `studypage/` | «Estrategia» and «Estudio de población»: family and study tabs, the result, config drawer, run bar, history, compare |
-| `workflow/` | «Workflow»: the rail of WORKFLOW.md for one project, the oos2 gauge and the 17·18·19 envelope |
-| `ops/` | «Custodio» (pulse), «Ledger» (read-only) and the jobs strip of the status bar |
 | `tradegallery/` | The Ficha's «Operaciones»: five trades by P&L quantile, or five seeded at random, each on its bars |
 | `batchview/` | The Ficha's «Lote»: a mother's variant batch in parallel coordinates, coloured by NetProfit oos1 or build; shown only when the batch exists |
+| `ops/` | «En marcha» (the custodian's pulse and one project's tasks on one screen), «Registro de búsquedas» (the ledger, read-only) and the jobs strip with a 0-100 % bar per job and per SQX run |
+| `datazone/` | «Datos» (BIBLIOTECA): the catalogue of AlgoData, each asset's bars at D1/H4/H1, and its real spread, spread band and feed quality drawn with `ResultView`; `DataZone` is what the sidebar wires |
+| `sqxconfig/` | «Configuración SQX» (BIBLIOTECA): every setting a new project is built and tested with, one foldable section per test, dropdowns where the values are fixed, writes through the daemon to `assets/`; `SqxConfigZone` is what the sidebar wires |
+| `portfolios/` | «Portfolios» (PORTFOLIOS): the archived strategies and their versions; «Importar» emits `import_requested(identity, version)` and `ImportedFicha` shows the version as the Estrategia page, every read on `source=archive`, nothing computed; `PortfoliosZone` is what the sidebar wires |
+
+Dev-only: `QT_QPA_PLATFORM=offscreen python3 tools/uiwalk.py --port P` opens every zone against
+the daemon on port P, drives its combos, tabs and tables with every write refused, and reports
+each exception.
 
 ## Contracts and traps
 
@@ -83,29 +92,22 @@ The study viewer's packages, each with its own README:
   sentence that says what they count. A figure nobody can define is a figure nobody should act on.
 - **A cell's colour is the best verdict inside it**, not an average. A cell is an invitation to
   open it; averaging would make it argue against being opened.
-- **An unbuilt zone is reachable, not greyed out.** A disabled QPushButton never receives mouse
-  events, so its tooltip never shows: five disabled entries would carry an explanation nobody can
-  read. They open `soon.py` instead, which also states how the job is done today — a page that only
-  promised something would be an advert.
-- **The strategies zone wears the second look, `theme.T`.** A frame named `term` switches its
-  whole subtree to the near-black, monospace, rule-separated style; the five colours keep their
-  meanings from `C`. New zones are built inside a `term` frame; the two older zones migrate when
-  they are next touched, never in passing.
-- **The strategies zone runs Python through the daemon, never SQX.** A module's «correr» button
-  posts to `/api/run`; the daemon owns the process and the view polls `/api/jobs` every two
-  seconds only while one of its own runs, redrawing the strategy when it ends. A module that
-  cannot run here says why on its own line, from `runs.py`, and shows no button.
-- **The equity chart lifts the retest onto the build's last level.** On disk each side starts
-  from zero because each was its own backtest; drawn from zero the retest is a flat line at the
-  bottom of a chart the build filled. The lift is for reading the shape, and the legend says so.
-- **The generation zone polls only while visible.** `showEvent` starts the three-second timer
+- **Every zone built since 2026-09-25 wears the second look, `theme.T`.** A frame named `term`
+  switches its whole subtree to the near-black, monospace, rule-separated style; the five colours
+  keep their meanings from `C`. The library zones migrate when they are next touched, never in
+  passing.
+- **Studies run as Python through the daemon, never SQX.** «calcular» and the run bar post to
+  `/api/study/run`; the daemon owns the process and the view polls `/api/jobs` only while one of
+  its own runs, redrawing when it ends. A study that cannot run here says why on its own line and
+  shows no button. The one exception that reaches SQX is «Continuar workflow» (see `ui/README.md`).
+- **«En marcha» polls only while visible.** `showEvent` starts the three-second timer
   and `hideEvent` stops it: a hidden zone tailing a 40 MB log every three seconds would be paid
   by every other zone.
-- **One project at a time.** The left column is a project picker over its databanks, not every
-  databank of every project: the owner's decision of 2026-09-24.
+- **One project at a time.** Proyecto shows one project and its databanks, not every databank of
+  every project: the owner's decision of 2026-09-24.
 - **A wrapped `QLabel` needs its height asked for.** It reports a one-line sizeHint and the layout
-  believes it, clipping the paragraph. `soon.wrapped()` fixes the width and computes the height
-  with `heightForWidth`.
+  believes it, clipping the paragraph: fix the width and ask `heightForWidth`, or give it an
+  ignored horizontal size policy (`workspace/README.md`).
 - **The palette view writes palettes, never the taxonomy.** `taxonomy.yaml` holds the labels and
   is somebody else's job (`docs/encargos/6-taxonomia-bloques.md`); the window only writes
   `sqx/blocks/palettes/<slug>.yaml`. Two writers on one file is how a column drifts.
@@ -127,13 +129,27 @@ The study viewer's packages, each with its own README:
   queried the master would make opening a list a job that can block.
 - **The sidebar is built last and inserted first.** It opens a zone, and opening one needs the
   stack to exist. Zones are addressed by name (`nav.ZONES`), never by index: a launcher's
-  `--zone Estrategias` survives a regrouping.
-- **The study viewer follows `SELECTION`; the older zones do not.** Workflow, Población, Estrategia
-  and Estudio de población move together when the matrix pickers or a cell change the selection;
-  Estrategias, Puerta IS/OOS and Generación keep their own pickers. The context bar shows the
-  selection, so a crumb that reads «elige …» is the honest state of the viewer, not of those zones.
-- **What the new zones duplicate.** Estrategias (`studies.py` + `resultspanel.py`) is Población +
-  Estrategia for everything a module already wrote; it alone still shows the databank's metric
-  table (net profit IS/OOS, trades). Puerta IS/OOS is the gate study on Estudio de población; it
-  alone still shows a strategy's paired IS/OOS equity curve and runs the gate over a cosecha
-  with typed thresholds. Neither is folded in until those pieces exist in the viewer.
+  `--zone Proyectos` survives a regrouping, and a name no longer in `nav.ZONES` fails loudly.
+- **Proyecto and Estrategia follow `SELECTION`; the others do not.** `projectflow.catch_up`
+  refills them when the selection moved on since they last painted. En marcha keeps its own
+  pickers (falling back to the selected project when no worker runs one). The context bar shows
+  the selection, so a crumb that reads «elige …» is the honest state of PROYECTO.
+- **An imported strategy never changes `SELECTION`.** PORTFOLIOS' «Importar» shows the archived
+  version on the Estrategia zone's second page; the crumbs still name the live selection, and
+  opening a live strategy (panel, Ctrl+K) brings the live ficha back. An archived strategy may
+  belong to no project on any install.
+- **A panel row whose databank left every install still opens.** `/api/projects/find` answers
+  «ninguna databank guarda esa estrategia» when the install kept only later databanks (the
+  custodian held only WFM of the USDJPY project on 2026-09-28); the shell then takes the
+  databank and name the panel shows, and the ficha reads the cosecha and the reports by identity.
+- **Read-only mode is decided by the daemon, not guessed by the window.** `/api/health` carries
+  `sqx.installs` (role → its folder exists). When none exists, `shell.guard` shows the banner
+  «Esta máquina no tiene SQX: modo lectura» and disables the one button that reaches SQX, the
+  load bar's ↻, with the reason in its own text — a disabled button shows no tooltip. No zone
+  is greyed out. Linux only (plan 24 §10, Q2): nothing adapts to Windows.
+- **Every label through `glossary.label`, every figure through `numbers.num`** (encargo 22 §10).
+  Both live in `ui/text/` so the daemon can use them too. The identity is never printed: it
+  lives in tooltips (the context bar's strategy crumb, the palette's rows, the archived ficha's
+  origin) and underneath. `bin/algoui --shot DIR` (i.e.
+  `python3 -m ui.desktop.launch --shot DIR [--zone Z]`) saves the window as `DIR/<zone>.png`
+  and exits — run it with `QT_QPA_PLATFORM=offscreen` for every visual check.

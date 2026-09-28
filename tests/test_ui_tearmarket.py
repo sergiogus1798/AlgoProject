@@ -21,8 +21,9 @@ from ui.desktop.blocks.result import ResultView  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 from ui.desktop.tradegallery import TradeGallery  # noqa: E402
 
-PROJECT, DATABANK = "USDJPY_workflow_profiling_v1", "Results"
-HARVEST = DATA / "harvest" / PROJECT / DATABANK / "2026-09-26"
+# Since F13 (2026-09-28): the USDJPY Donchian project's cosecha of 09-27.
+PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
+HARVEST = DATA / "harvest" / PROJECT / DATABANK / "2026-09-27"
 XAU = "XAU_ISOOS_ejemplo"            # a project whose name holds no asset symbol
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 
@@ -71,12 +72,17 @@ def test_refusals(http: TestClient) -> None:
     ident = identities(1)[0]
     base = {"project": PROJECT, "databank": DATABANK, "identity": ident}
     cases = [("/api/tearsheet/market", {**base, "asset": "NOPE"}, "No conozco el activo"),
-             ("/api/tearsheet/market", {**base, "project": XAU, "identity": identities(
-                 1, max((DATA / "harvest" / XAU / DATABANK).iterdir()))[0]}, "No sé qué activo"),
              ("/api/tearsheet/trades", {**base, "sample": "oos2"}, "solo IS u OOS"),
              ("/api/tearsheet/market", {**base, "databank": "Nada"}, "no tiene cosecha"),
              ("/api/tearsheet/trades", {**base, "identity": "0" * 64}, "no está en la cosecha"),
              ("/api/tearsheet/trades", {**base, "project": "../x"}, "Nombre no válido")]
+    xau = DATA / "harvest" / XAU / DATABANK
+    if xau.is_dir():
+        cases.append(("/api/tearsheet/market", {**base, "project": XAU, "identity": identities(
+            1, max(xau.iterdir()))[0]}, "No sé qué activo"))
+    else:
+        print(f"    (sin la cosecha {XAU}/{DATABANK}: no se comprueba el proyecto cuyo nombre "
+              "no dice su activo; hace falta una cosecha de un proyecto así)")
     for path, params, words in cases:
         r = http.get(path, params=params)
         assert r.status_code == 200 and words in r.json().get("error", ""), (params, r.json())

@@ -8,7 +8,7 @@ import pandas as pd
 
 from core import assetdata
 from core.study import blocks, result as envelope
-from studies.optimisation.marketSurfaces.contract import tabs
+from studies.optimisation.marketSurfaces.contract import grids, tabs
 from studies.optimisation.marketSurfaces.inputs import surfaces
 from studies.optimisation.marketSurfaces.measure import pairs, verify
 from studies.optimisation.marketSurfaces.verdict import call
@@ -45,8 +45,9 @@ def measure(work: Path, cfg: dict, symbol: str) -> dict:
         symbol: The main asset, whose `_markets.yaml` block fixes the markets.
 
     Returns:
-        The cells, the pairs of every segment, the main-against-each rows, the checks, the
-        declared and absent markets and the cost flag of each.
+        The cells, the variants' parameters, the pairs of every segment, the
+        main-against-each rows, the checks, the declared and absent markets and the cost
+        flag of each.
     """
     feed, timeframe = surfaces.main_feed(work)
     declared = surfaces.declared(symbol)
@@ -69,7 +70,8 @@ def measure(work: Path, cfg: dict, symbol: str) -> dict:
                          verify.markets(work, cells, order[1:])], ignore_index=True)
     envelope.progress(90, "verificado")
     return {"feed": feed, "timeframe": timeframe, "declared": declared, "absent": absent,
-            "order": order, "cells": cells, "pairs": found, "rows": rows, "checks": checked,
+            "order": order, "cells": cells, "params": surfaces.parameters(work),
+            "pairs": found, "rows": rows, "checks": checked,
             "diagonal": verify.diagonal(found),
             "provisional": {m: surfaces.provisional(m) for m in [feed] + declared}}
 
@@ -92,6 +94,9 @@ def warnings(m: dict) -> list[dict]:
         out.append({"code": "verification", "state": "fail",
                     "text": f"{len(bad)} comprobaciones de curva y {len(diag)} de diagonal "
                             f"fallan: la superficie puede no ser la del mercado que dice."})
+    why = grids.missing(m["params"], ORIGIN)
+    if why:
+        out.append({"code": "no_pair_grids", "state": "info", "text": why})
     out.append({"code": "family_only", "state": "info",
                 "text": "Los 9 mercados son de la misma familia macro que el principal "
                         "(_markets.yaml, sin structural): pasar aquí es la prueba fácil; "
@@ -123,6 +128,9 @@ def result(m: dict, cfg: dict, started: float, strategy: str) -> dict:
         [tabs.reading(m["rows"], cfg["segments"], cfg["rho_floor"]),
          tabs.matrices(m["pairs"], cfg["segments"], m["order"]),
          tabs.surfaces(usable, cfg["segments"], m["order"], ORIGIN),
+         *([] if grids.missing(m["params"], ORIGIN) else
+           grids.tabs(usable, m["params"], cfg["segments"], m["order"], ORIGIN,
+                      cfg["top_share"])),
          tabs.checks(m["checks"], m["diagonal"], verify.RANK_AGREES)],
         verdict, warnings(m),
         [{"term": "rho_ab", "text": "Spearman del beneficio neto entre las variantes de dos "

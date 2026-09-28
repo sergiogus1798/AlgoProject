@@ -8,12 +8,12 @@ from core.paths import DATA
 
 SAMPLES = ("IS", "OOS")      # the one-way door: a harvest holds these two and nothing else
 EQUITY = ["day", "equity", "sample"]
-TRADES = ["Open time", "Close time", "Profit/Loss", "Balance", "Close type", "MAE ($)",
+TRADES = ["Open time", "Close time", "Profit/Loss", "Size", "Balance", "Close type", "MAE ($)",
           "MFE ($)", "sample"]
 
 
 def newest(project: str, databank: str) -> Path | None:
-    """The newest cosecha folder of (project, databank), as `gateview.harvests()` dates them.
+    """The newest cosecha folder of (project, databank), by its folder date.
 
     Args:
         project, databank: Where the build databank lives.

@@ -30,6 +30,9 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
      `-project action=status` (owner, 2026-09-25) — never `count`, a load or an export: `count`
      syncs **from** files and wipes what is only in memory, which is rule 1 firing
      (`knowhow/databanks/databank-verbs.md`). The end is `Project finished` in SQX's own log.
+     The window's «Continuar workflow» is the one launcher outside a session (owner, 2026-09-27):
+     after a confirmation screen it curates, stages the next task and starts it on a worker only,
+     refuses a worker already up and stops only the one it started (`ui/daemon/advance/`).
    - **Other sessions share the workers, and `stop` kills anyone's run** (`OPEN.md` #32, no lock
      yet). Before starting, stopping or reconfiguring one: `ListAgents`, `ls -lt
      <worker>/user/projects | head`, the tail of the day's log. Someone else's recent project or a
@@ -96,6 +99,7 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
 | how something is computed and shared: pricing, nulls, resampling, regimes, multiple testing | `engines/README.md` |
 | where an old path went (`strategies/…`, `tasks/…`, `nulls/`, `gate/`) | `docs/MAPA-DE-CARPETAS.md` |
 | portfolios | `portfolio/CLAUDE.md` |
+| MetaTrader 5: install under Wine, backtest an SQX EA in its tester, compare with SQX, read the terminal (MCP `mt5`, no order tools) | `mt5/README.md`, then OPEN.md #78 |
 | whether a result beats random entry, and which channel the edge lives in | `studies/readings/monkey/README.md` |
 | cribar una poblacion OOS entera hasta una lista de supervivientes | `studies/screening/gate/README.md` |
 | running something, or explaining to a human how to | the chapter in `AlgoData/manual-fuentes/` (`00-empezar.md`, then that module's); the owner gets the PDF in `docs/manual/` |
@@ -116,7 +120,8 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
 daemon. Owner, 2026-09-24: no new `serve.py`, no panel in the browser. The three Flask
 explorers were retired on 2026-09-25 (encargo 19): a study returns data and the window paints it. A new zone opens in
 the terminal style (`theme.T`, a `QFrame` named `term`); do not start a second theme or a second
-app. → `ui/README.md`
+app. The window may launch the next SQX task — «Continuar workflow», after a confirmation screen,
+on a worker only, never the master (owner, 2026-09-27). → `ui/README.md`
 
 **An analysis ends in a decision, not a description.** "ρ = +0.22 between Sharpe IS and PF OOS"
 is unfinished. The result the owner acts on is one of: a filter to set when generating in SQX, a
@@ -137,7 +142,7 @@ contract every study speaks · `sqx/` SQX surface · `studies/` every question a
 a population, by WORKFLOW family · `engines/` what the studies compute with · `portfolio/`
 portfolios, and the trade-level Monte Carlo · `pipeline/` one mother in, one verdict out, unattended ·
 `ledger/` the global search ledger and the frozen thresholds · `perf/` cost catalogue ·
-`mt5/` reserved · `assets/` cost overrides · `knowhow/` facts · `docs/` manual and owner's
+`mt5/` MetaTrader 5 under Wine and its MCP server · `assets/` cost overrides · `knowhow/` facts · `docs/` manual and owner's
 dossiers · `audit/` daily reports · `tests/` golden and known-answer tests · `tools/` checks and
 generators · `bin/` worker scripts · `config/` machine settings (the real one is not in git) ·
 `scratch/` throwaway, not in git.

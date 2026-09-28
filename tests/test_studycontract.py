@@ -37,6 +37,42 @@ def every_kind() -> list[dict]:
     ]
 
 
+def refused(block: dict) -> bool:
+    """Whether the validator turns one block away."""
+    try:
+        blocks.validate({"tabs": [{"name": "t", "blocks": [block]}]})
+    except ValueError:
+        return True
+    return False
+
+
+def extensions(got: list[dict]) -> None:
+    """Two series as densities of area 1 on shared bins, and a grid with a mark and a range.
+
+    Args:
+        got: The eight kinds from every_kind(); the old blocks must still pass as they are.
+    """
+    rng = np.random.default_rng(1)
+    a, b = rng.normal(0, 1, 3_000), rng.normal(0.5, 2, 700)
+    d = blocks.distribution("d", "USD", np.concatenate([a, b]), None, "n", p=0.02,
+                            series={"IS": a, "OOS": b}, shift={"median": 0.5, "ks_p": 0.02},
+                            span=(-3, 5), bins=40)
+    r = result.envelope("test", "S", None, {}, time.time(), [result.tab("t", "T", [d])])
+    width = np.diff(r["tabs"][0]["blocks"][0]["bins"])
+    for s in r["tabs"][0]["blocks"][0]["series"]:
+        assert abs(np.dot(s["counts"], width) - 1) < 1e-6, f"{s['label']} is not a density"
+    assert [s["n"] for s in d["series"]] == [3_000, 700] and sum(d["counts"]) == 3_700
+    assert page.page(r, "T").count("<path") == 2, "the two series were not overlaid"
+    assert refused({**d, "series": [{**d["series"][0], "counts": [1.0] * 40}]})
+    assert refused({**d, "shift": {"median": 0.5}})
+    g = {**got[2], "mark": {"row": "a", "col": "2", "label": "θ₀"}, "scale_range": [-1, 1]}
+    blocks.validate({"tabs": [{"name": "t", "blocks": [g]}]})
+    assert "θ₀: fila a" in page.block(g)
+    assert refused({**g, "mark": {"row": "z", "col": "2", "label": "θ₀"}})
+    assert refused({**g, "scale_range": [1, -1]})
+    assert not refused({**got[2], "mark": None, "scale_range": None})
+
+
 def main() -> None:
     """Build, validate, serialise and draw; then check what must be refused is refused."""
     got = every_kind()
@@ -58,6 +94,8 @@ def main() -> None:
             continue
         raise AssertionError(f"accepted {bad.get('kind')}")
 
+    extensions(got)
+
     cfg = {"s": {"n": 1, "f": 0.5, "x": None}, "top": 7}
     config.apply(cfg, ["s.n=3", "s.f=2", "s.x=[1, 2]", "top=9"])
     assert cfg == {"s": {"n": 3, "f": 2.0, "x": [1, 2]}, "top": 9}, cfg
@@ -67,6 +105,11 @@ def main() -> None:
         print("ok")
         return
     raise AssertionError("a string replaced an int")
+
+
+def test_contract() -> None:
+    """The same check, for `python3 -m pytest tests/test_studycontract.py`."""
+    main()
 
 
 if __name__ == "__main__":

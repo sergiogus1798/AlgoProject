@@ -145,3 +145,13 @@ def roster(project: str, databank: str) -> dict[str, str]:
 def _roster(folder: str, stamp: float) -> dict[str, str]:
     """`roster()` for one state of a folder: its mtime changes when a file comes or goes."""
     return {sqxfile.identity(f): f.stem for f in sorted(Path(folder).glob("*.sqx"))}
+
+
+def forget() -> None:
+    """Drop every cached roster, so the next read lists the folders again.
+
+    The cache is keyed by the folder's mtime, which a file added or removed moves; but a
+    strategy SQX rewrote in place keeps the folder's mtime, and «Recargar databank» must
+    see it too.
+    """
+    _roster.cache_clear()

@@ -8,7 +8,7 @@ from datetime import date
 from core import fanout
 from core.manifest import write as write_manifest
 from core.paths import report_dir
-from core.study import output
+from core.study import identity, output
 from core.study.render import markdown
 from engines.nulls import inputs, model
 from studies.readings.monkey import many, one
@@ -45,8 +45,8 @@ def main() -> None:
     if a.strategy:
         assert len(feeds) == 1, "--strategy lee un mercado: di cuál con --feed"
         got = one.run(a.strategy, {"trades": inputs.sample(packed, a.strategy, a.sample, a.feed),
-                                   "frame": frames[a.feed], "project": a.project,
-                                   "databank": a.databank}, cfg, a.statistic)
+                                   "frame": frames[a.feed], "folder": packed.parent},
+                     cfg, a.statistic)
         title = f"Contra el mono — {a.strategy}"
         print(markdown.render(got, title))
         print(f"-> {output.member(out, got, title, f'Muestra {a.sample}.')}")
@@ -64,6 +64,12 @@ def main() -> None:
     got = many.run(sample, frames, cfg, a.workers)
     output.population(out, "monkey", got["population"],
                       f"Contra el mono — {a.project} / {a.databank}")
+    signed = output.identify(packed.parent, sorted(set(got["panel"].index)))
+    if identity.note(signed):
+        print(identity.note(signed))
+    got["panel"].insert(0, "identity", got["panel"].index.map(signed))
+    got["panel"].insert(1, "note", got["panel"]["identity"].isna().map({True: identity.NOTE,
+                                                                        False: ""}))
     got["panel"].to_csv(out / "nulls.csv")
     (out / "rungs.json").write_text(json.dumps(model.RANDOMISES, indent=2), encoding="utf-8")
     write_manifest(out,

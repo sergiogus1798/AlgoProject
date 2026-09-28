@@ -27,11 +27,19 @@ def shell(title: str, sections: list[str]) -> str:
 
 
 def block(b: dict) -> str:
-    """One block, drawn by its kind; a block from a selector combination says which."""
+    """One block, drawn by its kind; a block from a selector combination says which, and a
+    grid's marked cell and shared colour extent are written under it."""
     where = b.get("select")
     head = ("<p class='select'>" + " · ".join(f"{escape(k)}: {escape(str(v))}"
                                              for k, v in where.items()) + "</p>") if where else ""
-    return head + DRAW[b["kind"]](b)
+    foot = []
+    if b["kind"] == "grid" and b.get("mark"):
+        m = b["mark"]
+        foot.append(f"{escape(m['label'])}: fila {escape(m['row'])}, columna {escape(m['col'])}")
+    if b["kind"] == "grid" and b.get("scale_range"):
+        foot.append("escala común a varias rejillas: {} a {}".format(*b["scale_range"]))
+    tail = f"<p class='select'>{' · '.join(foot)}</p>" if foot else ""
+    return head + DRAW[b["kind"]](b) + tail
 
 
 def shown(tab: dict) -> list[dict]:

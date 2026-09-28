@@ -16,7 +16,7 @@ def short(feed: str) -> str:
     return feed.split("_")[0]
 
 
-def _selector(segments: list[str]) -> dict:
+def selector(segments: list[str]) -> dict:
     """The segment drop-down every tab shares."""
     return {"key": "segment", "label": "Tramo", "options": segments, "default": segments[0]}
 
@@ -57,7 +57,7 @@ def reading(rows: pd.DataFrame, segments: list[str], floor: float) -> dict:
                                                          one["rho_lo"], one["rho_hi"],
                                                          one["state"])],
                     "reference": floor, "select": {"segment": segment}})
-    return result.tab("lectura", "La lectura", out, [_selector(segments)],
+    return result.tab("lectura", "La lectura", out, [selector(segments)],
                       "¿La región buena de parámetros en el mercado principal es también la "
                       "buena en los otros? " + COSTS)
 
@@ -87,7 +87,7 @@ def matrices(pairs: pd.DataFrame, segments: list[str], order: list[str]) -> dict
                         "scale": "discrete",
                         "levels": levels or [round(j0, 3), round(2 * j0, 3), 0.2, 0.3, 0.5],
                         "labels": None, "select": {"segment": segment}})
-    return result.tab("matrices", "Todos los pares", out, [_selector(segments)],
+    return result.tab("matrices", "Todos los pares", out, [selector(segments)],
                       "Cada casilla compara dos mercados sobre las mismas variantes. La "
                       "diagonal es 1 por construcción: es el control de que las variantes se "
                       "emparejaron por su identificador.")
@@ -120,7 +120,7 @@ def surfaces(cells: pd.DataFrame, segments: list[str], order: list[str],
     markets = {"key": "market", "label": "Mercado", "options": [short(m) for m in order],
                "default": short(order[0])}
     return result.tab("superficies", "Una superficie por mercado", out,
-                      [markets, _selector(segments)],
+                      [markets, selector(segments)],
                       "La superficie es el beneficio neto de las variantes en un mercado. "
                       "Su nivel depende del coste (provisional); lo que se compara entre "
                       "mercados es el orden, no el nivel.")

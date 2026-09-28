@@ -18,27 +18,15 @@ DROP = "DESCARTAR"
 
 
 def install_of(role: str) -> Path:
-    """The install one role names.
-
-    Args:
-        role: "master", or a headless role from machine.yaml.
-
-    Returns:
-        Its top-level folder.
-    """
+    """The top-level folder of the install one role ("master" or a headless role) names."""
     return MASTER if role == "master" else WORKERS[role]["path"]
 
 
 def is_up(role: str) -> bool:
-    """Whether anything is holding that install.
+    """Whether anything holds that install ("master" or a headless role).
 
-    Args:
-        role: "master" or a headless role.
-
-    Returns:
-        True when it is running. Nothing here may run against a live install: SQX holds a
-        databank's records in memory and rewrites the files from them, so a file moved
-        underneath it is undone by the next sync.
+    Nothing here may run against a live install: SQX holds a databank's records in memory
+    and rewrites the files from them, so a file moved underneath it is undone by the next sync.
     """
     if role == "master":
         worker.require_posix()
@@ -71,15 +59,11 @@ def rejected(verdict: Path) -> dict[str, str]:
 
 
 def mismatched(source: Path, names: dict[str, str]) -> list[str]:
-    """Strategies whose file on disk is not the one the verdict judged.
+    """Names whose file exists but hashes differently from the identity the verdict gave.
 
     Args:
         source: Databank directory.
-        names: Name to expected identity; "" skips the check for that name.
-
-    Returns:
-        Names whose file exists but hashes differently. Safe with the install running: it
-        only reads.
+        names: Name to expected identity; "" skips the check for that name. Only reads.
     """
     return [n for n, i in names.items()
             if i and (source / f"{n}.sqx").exists() and sqxfile.identity(source / f"{n}.sqx") != i]
@@ -116,9 +100,9 @@ def record(source: Path, names: dict[str, str], why: dict[str, str], out: Path, 
 
     Two files: `before-<stamp>.csv`, every strategy on disk with identity, size, whether
     this cut drops it and why; `rejected-<stamp>.csv`, the dropped ones' rows of the
-    databank's metrics export, when there is one, with the reason as its first column. The .sqx themselves are deleted, not
-    kept: at ~5 MB each, 8k rejects are 40 GB for a strategy nobody will revisit. Owner's
-    decision, 2026-09-23.
+    databank's metrics export, when there is one, with the reason as its first column. Here the
+    .sqx are deleted, not kept (~5 MB each; owner, 2026-09-23); the window's «Continuar
+    workflow» copies them to `AlgoData/projects/discards/` before calling (owner, Q7, 2026-09-27).
     """
     files = sorted(source.glob("*.sqx"))
     pd.DataFrame({"strategy": [f.stem for f in files],
@@ -147,10 +131,8 @@ def remove(source: Path, into: Path | None, names: list[str]) -> tuple[int, list
         names: Strategy names, without the .sqx suffix.
 
     Returns:
-        How many went, and the names that had no file. A file per strategy is the only
-        handle there is: the CLI's own `strategies=` selector cannot be used — over the
-        worker's HTTP API the name is cut at its first space, and a one-shot sqcli never
-        loads the records, so both report success and change nothing.
+        How many went, and the names with no file. Files are the only handle: over the HTTP
+        API a name is cut at its first space and a one-shot sqcli never loads the records.
     """
     if into:
         into.mkdir(parents=True, exist_ok=True)
@@ -165,6 +147,70 @@ def remove(source: Path, into: Path | None, names: list[str]) -> tuple[int, list
     return gone, absent
 
 
+EMPTY = ("{source} holds no .sqx at all: a databank on `Auto-sync never` keeps its records in "
+         "memory only. Set it to `Auto-sync every 1 hour` in project.cfx, or run `-databank "
+         "action=synctofiles` on the instance that holds them, before stopping it.")
+
+
+def refuse_mismatch(source: Path, names: dict[str, str]) -> None:
+    """Stop, with nothing moved, when a file is not the strategy the verdict judged."""
+    wrong = mismatched(source, names)
+    if wrong:
+        sys.exit(f"  ✗ {len(wrong)} carry a different strategy than the verdict judged: "
+                 f"{', '.join(wrong[:5])}. The databank changed under that name since the "
+                 f"verdict was written; re-export and judge again. Nothing was moved.")
+
+
+def apply(project: str, databank: str, verdict_csv: Path, role: str,
+          into: str | None = None) -> dict:
+    """Cut a databank by a verdict: check, record, then delete (or move) the rejected files.
+
+    Args:
+        project: Project name in that install.
+        databank: Databank to cut.
+        verdict_csv: The verdict, as `rejected` reads it.
+        role: Which install holds the project, "master" or a headless role; never defaulted.
+        into: A databank of the same project to move the rejected into; None deletes them.
+
+    Returns:
+        `install`, `before`, `after`, `removed` and `out` (the folder of the records).
+        SystemExit, nothing touched, on an empty databank, a changed file or a live install.
+    """
+    install = install_of(role)
+    source = databank_dir(project, databank, install)
+    names = rejected(verdict_csv)
+    on_disk = sorted(f.stem for f in source.glob("*.sqx"))
+    if not on_disk:
+        sys.exit(EMPTY.format(source=source))
+    refuse_mismatch(source, names)
+    if is_up(role):
+        sys.exit(f"the {role} is running. It holds this databank in memory and rewrites the "
+                 f"files from it, so the move would be undone. Stop it first"
+                 + ("." if role == "master" else f": bin/sqx-worker.sh --role {role} stop"))
+    now = datetime.now()
+    out, stamp = report_dir(project, databank, now.date().isoformat()) / "curate", f"{now:%H%M%S}"
+    out.mkdir(parents=True, exist_ok=True)
+    record(source, names, reasons(verdict_csv), out, stamp, project, databank)
+    print(f"  what was here is listed in {out / f'before-{stamp}.csv'}")
+    target = databank_dir(project, into, install) if into else None
+    gone, absent = remove(source, target, list(names))
+    after = len(list(source.glob("*.sqx")))
+    print(f"{databank}: {len(on_disk)} → {after}   "
+          + (f"{target}: +{gone}" if target else f"deleted {gone}"))
+    if len(on_disk) - after != gone or absent:
+        sys.exit(f"{len(absent)} had no file and {len(on_disk) - after} left against {gone} "
+                 f"gone. Compare the directory with {out / f'before-{stamp}.csv'} before "
+                 "running anything else.")
+    manifest.write(out,
+                   {"install": install.name, "project": project, "databank": databank,
+                    "into": str(target), "verdict": str(verdict_csv), "stamp": stamp},
+                   f"apply_verdict.py --project {project} --databank {databank} "
+                   f"--role {role} --apply" + (f" --into {into}" if into else ""),
+                   {"judged": len(on_disk), "kept": after, "removed": gone})
+    return {"install": install.name, "before": len(on_disk), "after": after, "removed": gone,
+            "out": out}
+
+
 def main() -> None:
     """Print what would move; move it only with --apply and the install stopped."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -174,7 +220,8 @@ def main() -> None:
     ap.add_argument("--into", help="databank of the same project to move the rejected into "
                                    "instead of deleting them. A databank inside the project is "
                                    "loaded into memory on the next start, so this costs RAM")
-    ap.add_argument("--role", default="master", choices=["master", *sorted(WORKERS)])
+    # Required since 2026-09-28 (F7): its old default, the master, made a forgotten flag cut his.
+    ap.add_argument("--role", required=True, choices=["master", *sorted(WORKERS)])
     ap.add_argument("--apply", action="store_true", help="without it nothing is touched")
     a = ap.parse_args()
 
@@ -185,54 +232,18 @@ def main() -> None:
     print(f"{install.name} · {a.project}/{a.databank}: {len(on_disk)} strategies on disk")
     print(f"  the verdict drops {len(names)}, keeping {len(on_disk) - len(names)}")
     if not on_disk:
-        sys.exit(f"{source} holds no .sqx at all. A databank set to `Auto-sync never` keeps its "
-                 "records in memory and leaves the directory empty, so there is nothing here to "
-                 "curate and nothing for Python to have filtered. Set it to `Auto-sync every 1 "
-                 "hour` in project.cfx, or run `-databank action=synctofiles` on the instance "
-                 "that holds them, before stopping it.")
+        sys.exit(EMPTY.format(source=source))
     unknown = [n for n in names if n not in set(on_disk)]
     if unknown:
         print(f"  ⚠️ {len(unknown)} named by the verdict are not here: {', '.join(unknown[:5])}")
-    wrong = mismatched(source, names)
-    if wrong:
-        sys.exit(f"  ✗ {len(wrong)} carry a different strategy than the verdict judged: "
-                 f"{', '.join(wrong[:5])}. The databank changed under that name since the "
-                 f"verdict was written; re-export and judge again. Nothing was moved.")
     print(f"  identity checked on {sum(1 for i in names.values() if i)} of {len(names)}")
     if not a.apply:
+        refuse_mismatch(source, names)
         print(f"\ndry run. Re-run with --apply, with the {a.role} stopped.")
         return
-
-    if is_up(a.role):
-        sys.exit(f"the {a.role} is running. It holds this databank in memory and rewrites the "
-                 f"files from it, so the move would be undone. Stop it first"
-                 + ("." if a.role == "master" else f": bin/sqx-worker.sh --role {a.role} stop"))
-
-    now = datetime.now()
-    out = report_dir(a.project, a.databank, now.date().isoformat()) / "curate"
-    out.mkdir(parents=True, exist_ok=True)
-    stamp = f"{now:%H%M%S}"
-    record(source, names, reasons(a.verdict), out, stamp, a.project, a.databank)
-    before = len(on_disk)
-    print(f"  what was here is listed in {out / f'before-{stamp}.csv'}")
-
-    into = databank_dir(a.project, a.into, install) if a.into else None
-    gone, absent = remove(source, into, list(names))
-    after = len(list(source.glob("*.sqx")))
-    print(f"{a.databank}: {before} → {after}   " + (f"{into}: +{gone}" if into else f"deleted {gone}"))
-    if before - after != gone or absent:
-        sys.exit(f"{len(absent)} had no file and {before - after} left against {gone} gone. "
-                 f"Compare the directory with {out / f'before-{stamp}.csv'} before running "
-                 "anything else.")
+    done = apply(a.project, a.databank, a.verdict, a.role, a.into)
     print(f"start the {a.role} and the sync from files makes memory match: the next task "
-          f"reads {after}.")
-
-    manifest.write(out,
-                   {"install": install.name, "project": a.project, "databank": a.databank,
-                    "into": str(into), "verdict": str(a.verdict), "stamp": stamp},
-                   f"apply_verdict.py --project {a.project} --databank {a.databank} "
-                   f"--role {a.role} --apply" + (f" --into {a.into}" if a.into else ""),
-                   {"judged": before, "kept": after, "removed": gone})
+          f"reads {done['after']}.")
 
 
 if __name__ == "__main__":

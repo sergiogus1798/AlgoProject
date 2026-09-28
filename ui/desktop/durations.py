@@ -1,4 +1,6 @@
-"""How the generation zone prints a duration, a processed-over-total and a time per strategy."""
+"""How «En marcha» prints a duration, a processed-over-total and a time per strategy."""
+
+from ui.text.numbers import num
 
 
 def clock(seconds: int | None) -> str:
@@ -26,10 +28,10 @@ def ratio(t: dict) -> str:
         t: A task row of `/api/progress`.
 
     Returns:
-        `300 / 1000`, `100 / ·` for a build (no total), «·» before it started.
+        `300 / 1 000`, `100 / ·` for a build (no total), «·» before it started.
     """
-    done = "·" if t["done"] is None else str(t["done"])
-    total = "·" if t["total"] is None else str(t["total"])
+    done = "·" if t["done"] is None else num(t["done"])
+    total = "·" if t["total"] is None else num(t["total"])
     return f"{done} / {total}"
 
 
@@ -45,4 +47,22 @@ def per(t: dict) -> str:
     ms = t["per_strategy_ms"]
     if not ms:
         return "·"
-    return f"{ms:.0f} ms" if ms < 1000 else f"{ms / 1000:.1f} s"
+    return f"{num(round(ms))} ms" if ms < 1000 else f"{num(round(ms / 1000, 1))} s"
+
+
+def share(done: int | None, total: int | None, percent: int | None = None) -> int | None:
+    """How far a task is, 0-100, for a progress bar.
+
+    Args:
+        done: Processed so far, or None.
+        total: Its input, or None (a build has none).
+        percent: SQX's own figure when its log carries one; it wins.
+
+    Returns:
+        The percentage, or None when nothing says how far: the bar then only shows motion.
+    """
+    if percent is not None:
+        return int(percent)
+    if done is None or not total:
+        return None
+    return min(100, round(100 * done / total))

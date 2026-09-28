@@ -18,24 +18,29 @@
 # aquí y no toques el duro.
 min_trades: 30
 
-# ─── Las dos lecturas de un mismo lote ────────────────────────────────────────────────
-# Decisión del dueño, 2026-09-24, y es exactamente la razón de tener `oos2` en un pedestal:
-# el mismo lote retesteado una vez se puede leer de dos maneras, y las dos son legítimas.
+# ─── La composición del corte ─────────────────────────────────────────────────────────
+# Dueño, 2026-09-27 (encargo 24, Q11): `build` va SIEMPRE dentro de muestra; dentro es
+# `build` o `build+oos1`; fuera es lo que queda, y `oos1` puede quedarse fuera de las dos.
+# Las cuatro composiciones admitidas, y las dos que tienen nombre desde el 2026-09-24:
 #
-#   oos1_oos2   IS = build,        OOS = oos1 + oos2   la pregunta normal: ¿lo que se
-#                                                       construyó predice todo lo que vino
-#                                                       después?
-#   oos2_only   IS = build + oos1, OOS = oos2          la estricta: dando por vistos los
-#                                                       dos primeros tramos, ¿sigue
-#                                                       apareciendo en el que no ha mirado
-#                                                       nadie? Es la que gasta el reservado.
+#   IS build        OOS oos1          (el WFC con --inside build --outside oos1)
+#   IS build        OOS oos2          (oos1 apagado)
+#   IS build        OOS oos1 + oos2   = oos1_oos2   la pregunta normal: ¿lo construido
+#                                                   predice todo lo que vino después?
+#   IS build + oos1 OOS oos2          = oos2_only   la estricta: dando por vistos los dos
+#                                                   primeros tramos, ¿sigue apareciendo en el
+#                                                   que no ha mirado nadie?
 #
-# Cambiar esto NO re-corre ningún backtest: `sqx.variants.collect` deja las columnas de los
-# dos en `metrics.parquet`. `report.py --split <modo>` lo pisa para una ejecución suelta.
+# Aquí sólo cabe un nombre. `studies.optimisation.wfc.report --inside/--outside` o `--split`
+# lo pisa para una ejecución suelta, y cada composición leída escribe su renglón en el Ledger
+# (uno por tramo) y sus propios ficheros `estudios/wfc_<dentro>__<fuera>.*`. Ninguna vuelve a
+# hacer un backtest: `sqx.variants.collect` deja en `metrics.parquet` las columnas de todas.
+# Una que toque `oos2` pasa antes por la puerta (`ledger.gate.allow`).
 #
-# ⚠️ El CSCV no cambia con esto, y está comprobado leyendo el código: `cscv.run` parte la
-# historia de sus 924 maneras y no mira la frontera declarada, así que el PBO es el MISMO
-# número en los dos modos. Lo que sí se mueve son los cuatro números cronológicos que van
-# al lado en el mismo informe: el coste de cada regla de selección, el Sharpe desinflado,
-# el número de pruebas independientes y el drift.
+# ⚠️ El CSCV no cambia con esto: `cscv.run` parte el historial en 12 bloques y lee sus 924
+# particiones (C(12,6)); no mira la frontera declarada, así que el PBO es el MISMO número en
+# todas las composiciones, y siempre lee build+oos1+oos2 (dueño, 2026-09-27). Lo que sí se
+# mueve son los cuatro números cronológicos que van al lado en el mismo informe: el coste de
+# cada regla de selección, el Sharpe desinflado, el número de pruebas independientes y el
+# drift — y ésos se leen en ESTE nombre.
 split_mode: oos2_only

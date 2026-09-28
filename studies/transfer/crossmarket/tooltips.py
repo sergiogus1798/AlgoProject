@@ -1,6 +1,21 @@
 """One sentence per config.yaml knob, for the config drawer's hover text."""
 
 TIPS = {
+    "nulls.batch_draws": "Corridas nulas por mercado en el lote de toda la exportación: su "
+                         "veredicto lee el intervalo de la esperanza, no la p, y el nulo era "
+                         "el 84 % de su CPU.",
+    "nulls.batch_cells": "Máximo de corridas × operaciones que el lote valora de una vez, unos "
+                         "90 bytes cada una: es el mando de la memoria.",
+    "nulls.headline": "El modelo nulo cuya p resume la tabla: block_shift es el único que cambia "
+                      "una sola cosa, así que su p baja sólo se atribuye al momento de entrar.",
+    "nulls.chunk": "Corridas aleatorias valoradas por tanda; es memoria, no estadística.",
+    "equity.starting": "Cuenta, en USD, desde la que arranca la curva de equity aditiva.",
+    "equity.steps": "Puntos por curva; un SVG no puede enseñar más.",
+    "equity.bands": "Los percentiles del cono que se dibuja alrededor de la curva real.",
+    "equity.percentiles": "Los percentiles que se dan en las tablas de métricas.",
+    "verdict.breadth_floor": "Parte de los mercados cuyo intervalo de la esperanza tiene que "
+                             "quedar por encima de cero para MANTENER la estrategia; es la única "
+                             "criba que aplica este estudio.",
     "nulls.draws": "Backtests aleatorios por mercado y modelo. El p-valor más pequeño que se "
                    "puede observar es 1/(draws+1): con 5.000, 0,0002.",
     "nulls.seed": "Semilla fija: dos ejecuciones con la misma configuración dan los mismos "

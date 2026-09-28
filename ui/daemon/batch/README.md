@@ -5,7 +5,7 @@ What «Lote» draws: every variant of one mother's batch with its `param_*` valu
 optimisation runner would pick (`runner/where.batch`), nothing else.
 
 **Imports from:** `core/datapaths`, `pipeline/ledger/state`, `ui/daemon/runner/where` ·
-**Consumed by:** `ui/daemon/app.py` (`ROUTER`) → `ui/desktop/batchview/`
+**Consumed by:** `ui/daemon/routers.py` (`ROUTER`) → `ui/desktop/batchview/`
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

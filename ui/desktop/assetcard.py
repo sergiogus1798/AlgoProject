@@ -1,11 +1,12 @@
 """One asset's costs: what it applies, what SQX carries, and what leaving it undecided costs."""
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QAbstractItemView, QHeaderView, QLabel, QTableWidget,
-                               QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QLayout,
+                               QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from ui.desktop import client
-from ui.desktop.assetforms import CostBox, explain
+from ui.desktop.assetforms import CostBox, now, word
+from ui.text.numbers import num
 from ui.desktop.theme import C, chip
 
 # What each complaint of the preflight means and what it actually does, in the order the
@@ -36,7 +37,7 @@ def grid(headers: list[str], stretch: int) -> QTableWidget:
     """An empty table in the house style.
 
     Args:
-        headers: Column titles.
+        headers: Column keys, shown through the glossary.
         stretch: Which column takes the leftover width.
 
     Returns:
@@ -44,7 +45,7 @@ def grid(headers: list[str], stretch: int) -> QTableWidget:
         stray keystroke cannot change what an instrument costs.
     """
     t = QTableWidget(0, len(headers))
-    t.setHorizontalHeaderLabels(headers)
+    t.setHorizontalHeaderLabels([word(h) for h in headers])
     t.verticalHeader().setVisible(False)
     t.setSelectionBehavior(QAbstractItemView.SelectRows)
     t.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -74,10 +75,10 @@ def val(value: object) -> str:
         value: Anything the daemon sent.
 
     Returns:
-        `null` for an undecided value — the word the file itself uses, so what is on screen
-        is what is on disk — and the text otherwise.
+        «sin decidir» for an undecided value (`null` in the file), the figure through
+        `numbers.num` otherwise.
     """
-    return "null" if value is None else str(value)
+    return "sin decidir" if value is None else num(value)
 
 
 def fit(table: QTableWidget) -> None:
@@ -95,6 +96,16 @@ def fit(table: QTableWidget) -> None:
     # the widget below is drawn over the last row.
     height = table.horizontalHeader().height() + 2 * table.frameWidth() + 4
     table.setFixedHeight(height + sum(table.rowHeight(i) for i in range(table.rowCount())))
+
+
+def clear(layout: QLayout) -> None:
+    """Empty a layout of every widget and sub-layout it holds, before drawing it again."""
+    while layout.count():
+        item = layout.takeAt(0)
+        if item.widget():
+            item.widget().deleteLater()
+        elif item.layout():
+            clear(item.layout())
 
 
 def send(name: str, path: list, text: str) -> None:
@@ -123,17 +134,27 @@ class AssetCard(QWidget):
         lay.setSpacing(10)
 
         self.title = QLabel(objectName="h1")
+        self.actions = QHBoxLayout()   # the page puts its buttons here, beside the name
+        self.actions.addWidget(self.title)
+        self.actions.addStretch()
+        lay.addLayout(self.actions)
         self.chips = QLabel()
+        self.chips.setWordWrap(True)
         self.trouble = QLabel()
         self.trouble.setWordWrap(True)
-        for w in (self.title, self.chips, self.trouble):
+        for w in (self.chips, self.trouble):
             lay.addWidget(w)
 
-        lay.addWidget(QLabel("Costes — doble clic en una fila para cambiarla", objectName="h2"))
-        self.costs = grid(["campo", "usar", "unidad", "SQX hoy", "por qué"], 4)
+        head = QLabel("Costes — doble clic para cambiar", objectName="h2")
+        head.setToolTip("El ratón encima de una fila dice por qué vale lo que vale.")
+        lay.addWidget(head)
+        # The `why` is a paragraph: a column for it would take half a page that sits beside
+        # another one, so it rides on every cell of its row and in the box that edits it.
+        self.costs = grid(["field", "use", "unit", "sqx_now"], 3)
         self.costs.cellDoubleClicked.connect(self.on_cost)
         lay.addWidget(self.costs)
-        self.footer = explain("")
+        self.footer = QLabel(objectName="muted")
+        self.footer.setWordWrap(True)
         lay.addWidget(self.footer)
 
     def fill(self, data: dict) -> None:
@@ -146,11 +167,11 @@ class AssetCard(QWidget):
         self.title.setText(data["symbol"])
         span = data["data"]
         self.chips.setText("  ".join([
-            chip(data["class"], C["accent"]), chip(data["broker"], C["muted"]),
+            chip(word(data["class"]), C["accent"]), chip(data["broker"], C["muted"]),
             chip(data["sqx_symbol"], C["muted"]),
-            chip(f"sesión {data['session'] or 'SIN DECIDIR'}",
+            chip(f"Sesión {data['session'] or 'SIN DECIDIR'}",
                  C["muted"] if data["session"] else C["dead"]),
-            chip(f"datos {span['from']} → {span['to']}" if span else "SQX no tiene este feed",
+            chip(f"Datos {span['from']} → {span['to']}" if span else "SQX no tiene este feed",
                  C["muted"] if span else C["dead"])]))
         self.trouble.setText(self.complaints())
         self.fill_costs()
@@ -170,7 +191,7 @@ class AssetCard(QWidget):
             return chip("al día", C["promising"]) + "  Nada sin decidir y nada provisional."
         return "<br>".join(
             f"{chip(TROUBLE[k][0], TROUBLE[k][1])}  "
-            f"<span style='color:{C['muted']}'>{', '.join(str(x) for x in v)} — "
+            f"<span style='color:{C['muted']}'>{', '.join(word(x) for x in v)} — "
             f"{TROUBLE[k][2]}</span>" for k, v in bad)
 
     def fill_costs(self) -> None:
@@ -183,10 +204,10 @@ class AssetCard(QWidget):
             if c["use"] is None and c["required"]:
                 use.setForeground(Qt.GlobalColor.red)
             for j, item in enumerate([
-                    cell(c["field"]), use, cell(c["unit"]),
-                    cell(val(c["sqx_now"]), "Lo que el maestro lleva HOY, en SU unidad, que no "
-                                            "siempre es la de `usar`."),
-                    cell(c["why"])]):
+                    cell(word(c["field"])), use, cell(word(c["unit"])),
+                    cell(now(c["sqx_now"]), "Lo que el maestro lleva HOY, en SU unidad, que no "
+                                            "siempre es la de «Usar».")]):
+                item.setToolTip(f"{item.toolTip()}\n\nPor qué: {c['why']}")
                 self.costs.setItem(i, j, item)
         fit(self.costs)
 

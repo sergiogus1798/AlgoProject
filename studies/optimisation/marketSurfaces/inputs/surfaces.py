@@ -73,6 +73,21 @@ def universe(work: Path) -> pd.Series:
     return pq.read_table(work / "metrics.parquet", columns=["variant_id"]).column(0).to_pandas()
 
 
+def parameters(work: Path) -> pd.DataFrame:
+    """The parameters each variant of the batch was built with.
+
+    Args:
+        work: The batch directory.
+
+    Returns:
+        `variant_id` and every `param_*` column of `metrics.parquet`, one row per variant
+        the WFC reads — the axes of the surfaces the contract draws.
+    """
+    names = [c for c in pq.read_schema(work / "metrics.parquet").names
+             if c == "variant_id" or c.startswith("param_")]
+    return pq.read_table(work / "metrics.parquet", columns=names).to_pandas()
+
+
 def long(work: Path, segments: list[str], metric: str, min_trades: int,
          main: str) -> pd.DataFrame:
     """Every (variant, market, segment) cell of the segments asked for, and whether it counts.

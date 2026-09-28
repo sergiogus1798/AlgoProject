@@ -11,14 +11,19 @@ import pandas as pd
 
 from core import fanout
 from core.study import output, result as envelope
+from core.study.config import fingerprint
 from core.surface import trials as counting
-from engines.variants import panel
+from engines.variants import look, panel
 from studies.optimisation.cscv import contract
 from studies.optimisation.cscv.inputs import config
 from studies.optimisation.cscv.measure import cscv, rules
 from studies.optimisation.cscv.verdict import cost, summary, trials
 
 PARAM = "param_"
+STEP = 18
+# The CSCV cuts the whole joined curve, so every look reads all three segments — oos2 included,
+# which `assets/_policy.yaml` grants it since 2026-09-27 (owner, encargo 24 Q11).
+READS = panel.SEGMENTS
 
 # What the rule workers read, set before the fork.
 _SHARED: dict = {}
@@ -79,6 +84,9 @@ def main() -> None:
     ap.add_argument("--blocks", type=int,
                     help="blocks to cut the history into, overriding config.yaml. "
                          "12 gives C(12,6) = 924 partitions, 10 gives 252, 16 gives 12,870")
+    ap.add_argument("--family", required=True,
+                    help="la familia de plantillas del lote: la tercera parte del estudio del "
+                         "ledger, donde se apunta la mirada, un renglón por tramo")
     ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[])
     a = ap.parse_args()
 
@@ -88,16 +96,21 @@ def main() -> None:
     if a.blocks:
         knobs["blocks"] = a.blocks
     score = cscv.SCORES[knobs["score"]]
+    comp = panel.SHORTCUTS[cfg["split_mode"]]
+    symbol, timeframe = look.market(a.work)
+    look.admit(STEP, READS, symbol)
+    print(f"PROGRESS 5 {symbol} {timeframe}: {', '.join(READS)} permitidos por el ledger",
+          flush=True)
     print("PROGRESS 10 construyendo la matriz de rendimientos por periodo", flush=True)
     metrics = pd.read_parquet(a.work / "metrics.parquet")
-    cols = panel.columns(cfg["split_mode"])
+    cols = panel.columns(comp)
     wide = panel.usable(panel.panel(a.work, knobs["period"]), metrics, cfg["min_trades"],
                         cols)
     grid = grid_of(metrics, wide.columns)
     # The PBO itself ignores this boundary: `cscv.run` cuts the history its own way.
     # It is the four chronological numbers below -- rule cost, deflated Sharpe, trial
     # count, drift -- that are read at the split the config declares.
-    inside, outside = panel.windows(wide, panel.split(a.work, cfg["split_mode"]))
+    inside, outside = panel.windows(wide, panel.split(a.work, comp))
 
     print(f"PROGRESS 20 {', '.join(knobs['rules'])}: "
           f"{len(cscv.partitions(knobs['blocks']))} particiones sobre {wide.shape[1]} "
@@ -135,8 +148,15 @@ def main() -> None:
         "studies.optimisation.cscv.report", a.work.name, None, cfg, started,
         contract.tabs(runs, found, result), contract.verdict(found, result),
         glossary=contract.GLOSSARY), f"CSCV — {a.work.name.replace('_', ' ')}")
-
     head = knobs["rules"][0]
+    look.log(a.work, a.family, {
+        "step": STEP, "launched_by": "cscv", "config_hash": fingerprint(cfg),
+        "n_in": len(metrics), "n_out": len(metrics), "criterion": "cscv/pbo",
+        "thresholds": {"blocks": knobs["blocks"], "min_trades": cfg["min_trades"]},
+        "note": f"PBO {head} {found[head]['pbo']:.3f} DSR {deflated['dsr']:.3f} sobre "
+                f"{wide.shape[1]} variantes · {result['periods']} periodos {knobs['period']} · "
+                f"cronología {panel.label(comp)}"}, READS)
+
     print(f"PROGRESS 100 PBO {found[head]['pbo']:.0%} con {head}, DSR {deflated['dsr']:.2f}",
           flush=True)
     for name in knobs["rules"]:

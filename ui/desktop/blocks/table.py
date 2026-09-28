@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTab
 
 from ui.desktop.blocks import chart
 from ui.desktop.blocks.card import card, text
+from ui.text.glossary import label
 from ui.desktop.theme import T
 
 VISIBLE = 16        # rows shown before the table scrolls inside itself
@@ -57,7 +58,7 @@ def widget(block: dict) -> QWidget:
     if not b["rows"]:
         return card(b, text("(vacía: el estudio no dejó ninguna fila aquí)", T["faint"]))
     table = QTableWidget(len(b["rows"]), len(b["columns"]))
-    table.setHorizontalHeaderLabels([str(c) for c in b["columns"]])
+    table.setHorizontalHeaderLabels([label(c) for c in b["columns"]])
     table.verticalHeader().setVisible(False)
     table.setEditTriggers(QAbstractItemView.NoEditTriggers)
     table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -68,7 +69,8 @@ def widget(block: dict) -> QWidget:
             cell = Cell(v)
             cell.setTextAlignment((Qt.AlignRight if align[j] == "right" else Qt.AlignLeft)
                                   | Qt.AlignVCenter)
-            cell.setToolTip(f"{b['columns'][j]}: {v if v is not None else '—'}")
+            full = v if isinstance(v, str) else chart.num(v)       # never 1e-05, even on hover
+            cell.setToolTip(f"{label(b['columns'][j])}: {full}")
             table.setItem(i, j, cell)
     # Enabling sorting sorts at once by column 0; the study's own order is the reading order.
     table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)

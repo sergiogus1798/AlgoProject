@@ -1,6 +1,29 @@
 """One sentence per config.yaml knob, for the drawer's hover text."""
 
 TIPS = {
+    "ingest.cents_per_usd": "Céntimos por dólar: el .bin de SQX guarda el resultado de cada "
+                            "operación en céntimos enteros.",
+    "ingest.workers": "Procesos que leen las simulaciones a la vez; cambia RAM por tiempo "
+                      "(16 tarda 1,9 s y ocupa 1,9 GB en 40 corridas).",
+    "ingest.min_sims": "Simulaciones mínimas de una tarea para que sus cuantiles se lean.",
+    "ingest.compression": "Compresión de los ficheros intermedios que escribe la ingesta.",
+    "levels": "Los niveles de confianza que produce SQX; son los únicos que existen.",
+    "recon.tolerance": "Diferencia relativa máxima entre una métrica reconstruida y la de SQX.",
+    "recon.absolute_floor": "Por debajo de esta diferencia absoluta manda el redondeo a "
+                            "céntimos y la métrica se da por igual.",
+    "recon.systematic_share": "Si una métrica falla en esta parte de las corridas es una "
+                              "fórmula mal hecha y la ingesta se para; por debajo, la celda se "
+                              "excluye y se apunta.",
+    "scenario.ordering_metric": "La métrica que ordena las simulaciones cuando un nivel se lee "
+                                "como un escenario.",
+    "scenario.show_levels": "Los niveles que se enseñan como escenario.",
+    "fragility.fan_points": "Puntos de progreso normalizado del abanico de equity: las "
+                            "simulaciones tienen longitudes distintas.",
+    "fragility.n_resamples": "Remuestreos BCa para los estadísticos suaves; un cuantil usa el "
+                             "intervalo exacto.",
+    "attribution.dispersion_center": "Centro de la dispersión: median es Brown-Forsythe, "
+                                     "robusto; mean sería Levene, que aquí no lo es.",
+    "evidence.psr_benchmark": "El Sharpe de referencia contra el que el PSR mide la ventaja.",
     "ingest.capital": "La cuenta contra la que se miden los drawdowns. Es la convención de SQX, "
                       "no una elección: cambiarla deja de reproducir sus tablas.",
     "fragility.cvar_alpha": "Qué parte de la cola entra en el drawdown condicional. 0.05 es la "

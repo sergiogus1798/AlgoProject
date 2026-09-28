@@ -25,17 +25,18 @@ def folder(export: Path, module: str) -> Path:
 
 
 def identify(folder: Path, names: list[str]) -> dict[str, str | None]:
-    """The identity of each strategy an export names, read from its databank's .sqx files.
+    """The identity of each strategy an export names: installs, then cosecha, then kept .sqx.
 
     Args:
         folder: The export folder that holds its manifest.json.
         names: Strategy names as the export spells them.
 
     Returns:
-        name -> identity, None where no install still holds the .sqx.
+        name -> identity, None where no source names it (`identity.resolve`).
     """
-    source = manifest.read(folder)["source"]
-    return identity.lookup(source["project"], source["databank"], names)
+    doc = manifest.read(folder)
+    source = doc["source"]
+    return identity.resolve(source["project"], source["databank"], names, folder, doc["date"])
 
 
 def member(out: Path, result: dict, title: str, lede: str = "") -> Path:

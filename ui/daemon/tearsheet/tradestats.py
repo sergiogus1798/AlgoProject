@@ -89,3 +89,44 @@ def exit_paths(trades: pd.DataFrame) -> tuple[list[str], dict[str, list[float]]]
     paths = {t: trades["Profit/Loss"].where(trades["Close type"] == t, 0.0).cumsum().round(2)
              .tolist() for t in trades["Close type"].unique()}
     return x, paths
+
+
+# How one trade's return is counted (plan 24 §10: «USD por lote» by default). Per lot takes the
+# position size out, so a sizing rule that grows with the account does not fatten the tails.
+UNITS = {"USD por lote": lambda t: t["Profit/Loss"] / t["Size"],
+         "USD por operación": lambda t: t["Profit/Loss"]}
+PERCENTILES = (5, 25, 75, 95)
+
+
+def returns(trades: pd.DataFrame, unit: str) -> pd.Series:
+    """Every trade's return in one of `UNITS`.
+
+    Args:
+        trades: One sample's trades, with `Profit/Loss` and `Size` (lots).
+        unit: A key of `UNITS`.
+
+    Returns:
+        One value per trade, in close-time order.
+    """
+    return UNITS[unit](trades).astype(float)
+
+
+def shape(values: pd.Series) -> dict[str, float | None]:
+    """The distribution of per-trade returns: centre, spread, tails, percentiles.
+
+    Args:
+        values: One return per trade.
+
+    Returns:
+        mean, median, standard deviation, skewness and excess kurtosis (pandas' bias-corrected
+        estimators, 0 for a normal), and the `PERCENTILES`; None where the sample is too short
+        (skew needs 3 trades, kurtosis 4).
+    """
+    n = len(values)
+    out = {"media": float(values.mean()) if n else None,
+           "mediana": float(values.median()) if n else None,
+           "desviación típica": float(values.std()) if n > 1 else None,
+           "asimetría": float(values.skew()) if n > 2 else None,
+           "curtosis (exceso)": float(values.kurt()) if n > 3 else None}
+    return out | {f"percentil {q}": float(values.quantile(q / 100)) if n else None
+                  for q in PERCENTILES}

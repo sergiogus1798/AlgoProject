@@ -104,7 +104,7 @@ esta casa. Lo único suyo que hoy se usa son los esqueletos, y esos viven dentro
 
 <!-- generado por tools/skillmap.py — no editar debajo de esta linea -->
 
-Regenerado 2026-09-27 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
+Regenerado 2026-09-28 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
 
 ## Skills de proyecto — `/home/sergioguslw/Desktop/AlgoProject/.claude/skills`
 

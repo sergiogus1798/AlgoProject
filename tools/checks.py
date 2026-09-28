@@ -179,6 +179,30 @@ def stale_depmap(files: list[Path]) -> list[str]:
     return []
 
 
+def workflow_drift(files: list[Path]) -> list[str]:
+    """Whether the window's rail and WORKFLOW.md's table name the same steps (plan 24, Q4).
+
+    Args:
+        files: Project Python files, unused: the two sources are fixed.
+
+    Returns:
+        One message per step whose number or title differs, in either direction. The rail
+        stays a list in code (`ui/daemon/workflow/steps.py`, its `doc` field) so that a
+        person editing the table cannot break the window; this check makes the drift loud.
+    """
+    table = ROOT / "docs" / "AgentPDFs" / "WORKFLOW.md"
+    doc = re.findall(r"^\|\s*([0-9.]+)\s*\|\s*\*\*(.+?)\*\*", table.read_text(encoding="utf-8"),
+                     re.M)
+    tree = ast.parse((ROOT / "ui" / "daemon" / "workflow" / "steps.py").read_text(encoding="utf-8"))
+    rows = next(ast.literal_eval(n.value) for n in tree.body
+                if isinstance(n, ast.Assign) and n.targets[0].id == "S")
+    code = [(r[0], r[2]) for r in rows]
+    if [n for n, _ in doc] != [n for n, _ in code]:
+        return [f"steps.py numbers {[n for n, _ in code]} != WORKFLOW.md {[n for n, _ in doc]}"]
+    return [f"step {n}: steps.py says «{c}», WORKFLOW.md says «{d}»"
+            for (n, d), (_, c) in zip(doc, code) if d != c]
+
+
 def main() -> None:
     """Run every check and exit non-zero if anything fails."""
     files = depmap.py_files()
@@ -187,7 +211,8 @@ def main() -> None:
               ("folder READMEs", unlisted_in_readme), ("manual pages", no_manual_page),
               ("dependency map", stale_depmap), ("knowhow cards", knowhowmap.bad_cards),
               ("knowhow links", knowhowmap.broken_links),
-              ("knowhow indexes", knowhowmap.stale_indexes)]
+              ("knowhow indexes", knowhowmap.stale_indexes),
+              ("workflow table", workflow_drift)]
     total = 0
     for name, check in checks:
         problems = check(files)

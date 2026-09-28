@@ -11,12 +11,12 @@ api ─▶ source.newest · described · rows (equity | trades, filtered) · mar
     └▶ trades.gallery  → five tiles, each with its bar window
 ```
 
-**Imports from:** `core/` (`barstore`, `assetdata`, `paths`, `study.blocks.validate`), `ui/daemon/runs` · **Consumed by:** `ui/daemon/app.py` (router), `ui/desktop/tradegallery`, the Ficha's «Contra el subyacente» tab (ResultView)
+**Imports from:** `core/` (`barstore`, `assetdata`, `paths`, `study.blocks.validate`), `ui/daemon/runs` · **Consumed by:** `ui/daemon/routers.py` (router), `ui/desktop/tradegallery`, the Ficha's «Contra el subyacente» tab (ResultView)
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Package marker | imported | — |
-| `api.py` | `ROUTER`: `GET /api/tearsheet/market?project&databank&identity&asset=` and `GET /api/tearsheet/trades?project&databank&identity&sample=IS\|OOS&pick=quantile\|random&seed=&asset=` | imported | request → JSON or `{"error"}` |
+| `api.py` | `ROUTER`: `GET /api/tearsheet/market?project&databank&identity&asset=` and `GET /api/tearsheet/trades?project&databank&identity&sample=IS\|OOS&pick=quantile\|random&seed=&asset=`; both take `source=live\|archive&version=` — archive reads the version's frozen `harvest/` rows, the bars stay the library's | imported | request → JSON or `{"error"}` |
 | `source.py` | Newest harvest, one strategy's rows, its name and timeframe, the asset and feed as the run buttons find them, bars cut after the last day of oos1 | imported | disk → frames |
 | `months.py` | Monthly P&L of the strategy and month return of the market, counted into four cells, a flat line and a no-market line, per sample | imported | frames → contract dict |
 | `trades.py` | Picks at P&L quantiles 0/25/50/75/100 % (or seeded random), and each trade's bar window | imported | frames → tiles |

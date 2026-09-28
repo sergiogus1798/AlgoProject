@@ -22,15 +22,21 @@ FAMILIES = {
     "01-empezar": ("Empezar", [
         "00-empezar", "20-donde-esta-todo", "21-vocabulario", "46-knowhow", "23-skills",
         "10-github"]),
+    # The window in the order a newcomer walks it: PROYECTO first (gallery -> project -> its
+    # filters -> one strategy -> one study), then what runs, the archive, the library zones, and
+    # the reading conventions last, as reference.
     "02-la-ventana": ("La ventana de escritorio", [
-        "35-app-plantillas", "38-app-activos", "58-app-estudios", "48-app-generacion",
-        "44-app-estrategias", "45-app-puerta"]),
+        "61-app-proyectos", "65-app-proyecto", "69-app-filtros-y-continuar",
+        "68-app-estrategia", "58-app-estudios", "70-app-operacion", "71-app-portfolios",
+        "35-app-plantillas", "38-app-activos", "66-app-configuracion-sqx", "67-app-datos",
+        "60-app-pulido"]),
     "03-datos-costes-y-registro": ("Datos, costes y registro de la búsqueda", [
         "13-barras", "57-calidad-del-feed", "59-spread-real", "25-actualizar-datos", "24-costes", "43-ledger",
-        "12-rendimiento"]),
+        "12-rendimiento", "64-archivo"]),
     "04-sqx-plantillas-y-proyectos": ("SQX: bloques, plantillas y proyectos", [
         "40-sqx-lab", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
-        "06-mover-estrategias", "27-curar", "17-pipeline", "55-retirar-proyectos"]),
+        "06-mover-estrategias", "27-curar", "17-pipeline", "55-retirar-proyectos",
+        "62-metadatos-estrategia"]),
     "05-cribado-oos": ("Cribado fuera de muestra", [
         "01-analisis-is-oos", "02-filtros", "03-comparar-muestras", "04-decaimiento",
         "29-puerta", "49-snooping"]),
@@ -45,8 +51,8 @@ FAMILIES = {
         "33-spp", "08-spp", "09-diccionario-spp", "15-sppultra", "18-variantes",
         "37-wfc-retest", "19-wfc", "25-cscv", "39-nube-de-parametros",
         "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix"]),
-    "10-cierre": ("El cierre: paso 20, exposición y stop para MT5", [
-        "56-paso-20", "38-exposicion", "54-atr-calculator"]),
+    "10-cierre": ("El cierre: paso 20, exposición, stop y MetaTrader 5", [
+        "56-paso-20", "38-exposicion", "54-atr-calculator", "60-mt5"]),
 }
 
 STYLE = """

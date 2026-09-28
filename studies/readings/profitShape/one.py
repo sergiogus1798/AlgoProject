@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from core.study import output, result as envelope
+from core.study import identity, output, result as envelope
 from studies.readings.profitShape import breaks, concentration, contract, dependence, inputs
 
 MODULE = "studies.readings.profitShape"
@@ -68,13 +68,14 @@ def run(strategy: str, export: Path, cfg: dict) -> dict:
     """
     started = time.time()
     found = read(export, strategy, cfg)
+    ident = output.identify(export.parent, [strategy])[strategy]
     return envelope.envelope(
-        MODULE, strategy, output.identify(export.parent, [strategy])[strategy], cfg, started,
+        MODULE, strategy, ident, cfg, started,
         [contract.concentration_tab(found["concentration"], cfg),
          contract.dependence_tab(found["dependence"], cfg), contract.breaks_tab(found["breaks"])],
         warnings=[{"code": "descriptivo", "state": "info",
                    "text": "Con siete diagnósticos alguno falla por azar incluso en una "
                            "estrategia buena. Un filtro sacado de aquí es una búsqueda nueva "
-                           "y se anota en el ledger."}],
+                           "y se anota en el ledger."}] + identity.warning(ident),
         glossary=GLOSSARY,
         summary={"trades": int(found["data"]["pnl"].size), "sample": cfg["run"]["sample"]})

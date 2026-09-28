@@ -1,4 +1,4 @@
-"""The workflow rail, both sides: the route on real projects, the blind door, and the widget offscreen."""
+"""The workflow rail, both sides: the route on a real project, the blind door, Proyecto's rail."""
 
 import os
 import sys
@@ -16,7 +16,8 @@ from ui.daemon.workflow import derive  # noqa: E402
 from ui.daemon.workflow.api import ROUTER  # noqa: E402
 from ui.daemon.workflow.steps import STEPS  # noqa: E402
 
-PROJECT = "USDJPY_workflow_profiling_v1"
+# Since F13 (2026-09-28): the USDJPY Donchian project — 8 done, 17-19 not all run.
+PROJECT = "Test_USDJPY_donchianUpperCrossUp_M30"
 STATES = {"done", "running", "pending", "blocked", "sealed", "missing"}
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 
@@ -38,19 +39,22 @@ def test_route() -> dict:
         assert set(s) >= {"n", "title", "kind", "studies", "state", "why", "in", "out", "day"}
         assert s["state"] in STATES and s["why"], s
     by = {s["n"]: s for s in data["steps"]}
-    assert by["8"]["state"] == "done" and (by["8"]["in"], by["8"]["out"]) == (200, 96)
-    assert data["blind"]["sealed"] is False and data["blind"]["done"] == ["17", "18", "19"]
+    assert by["8"]["state"] == "done" and (by["8"]["in"], by["8"]["out"]) == (200, 160)
+    assert data["blind"]["sealed"] is True and by["20"]["state"] == "blocked"
+    assert by["17"]["state"] == "sealed" and by["17"]["in"] is None
     assert data["oos2"]["looks"] > 0 and not data["oos2"]["virgin"]
     assert data["oos2"]["allowed"] is None
     return data
 
 
 def test_unknown_project() -> None:
-    """A project nothing knows: no crash, 1-3 missing, 20 blocked by the gate's own sentence."""
+    """A project nothing knows: no crash, 1-3 missing, 20 blocked — no template in the registry,
+    so no Q9 study whose ledger could open the door (`ledgerview.door`)."""
     data = route("Test_no_such_project")
     by = {s["n"]: s for s in data["steps"]}
     assert by["1"]["state"] == "missing" and by["5"]["state"] == "missing"
-    assert by["20"]["state"] == "blocked" and "ciego" in by["20"]["why"]
+    assert by["20"]["state"] == "blocked" and "sin plantilla" in by["20"]["why"]
+    assert data["blind"]["sealed"] and data["blind"]["study"] is None
 
 
 def test_seal() -> None:
@@ -66,34 +70,20 @@ def test_seal() -> None:
 
 
 def test_widget(data: dict) -> None:
-    """The rail draws the real project, a click emits the step, and two grabs are saved."""
+    """Proyecto's rail draws the real project and its cards, and one grab is saved."""
     from ui.desktop.theme import QSS
-    from ui.desktop.workflow.rail import WorkflowRail
+    from ui.desktop.workspace.rail import Rail
     app = QApplication.instance() or QApplication([])
     app.setStyleSheet(QSS)
     SHOTS.mkdir(parents=True, exist_ok=True)
-    rail = WorkflowRail()
+    rail = Rail()
     rail.project = PROJECT
-    rail.resize(440, 1680)
-    rail.show_workflow(data)
-    opened = []
-    rail.open_step.connect(opened.append)
-    rail.rows[7].mouseReleaseEvent(None)
-    assert opened and opened[0]["n"] == "8" and rail.rows[7].chosen
-    assert "Paso 8" in rail.rows[7].toolTip()
+    rail.resize(1400, 420)
+    rail.fill(data)
     rail.show()
     app.processEvents()
+    assert rail.data is data
     rail.grab().save(str(SHOTS / "C-workflow.png"))
-    shut = {**data, "blind": {"sealed": True, "done": ["17", "18"],
-                              "text": "faltan [19]"},
-            "steps": [{**s, "state": "sealed", "in": None, "out": None}
-                      if s["n"] in ("17", "18") else
-                      {**s, "state": "running"} if s["n"] == "19" else
-                      {**s, "state": "blocked"} if s["n"] == "20" else s
-                      for s in data["steps"]]}
-    rail.show_workflow(shut)
-    app.processEvents()
-    rail.grab().save(str(SHOTS / "C-workflow-sealed.png"))
 
 
 if __name__ == "__main__":

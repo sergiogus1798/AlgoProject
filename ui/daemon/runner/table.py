@@ -35,7 +35,8 @@ def jobs(req: dict) -> list[dict] | str:
 
     Returns:
         One `{label, argv, about}` per job — one per strategy for `one`, a single one for
-        `many` — or the sentence the window shows instead.
+        `many`, identical commands folded into one — or the sentence the window shows
+        instead.
     """
     study, scope = req["study"], req["scope"]
     if why_not(study):
@@ -66,6 +67,8 @@ def jobs(req: dict) -> list[dict] | str:
             return f"{study}: {argv}"
         argv += ["--only", req["only"]] if req["only"] else []
         argv += ["--set", *req["overrides"]] if req["overrides"] else []
+        if any(o["argv"] == argv for o in out):
+            continue   # a command without --strategy (isOos) runs the databank once
         out.append({"label": study, "argv": argv,
                     "about": {"project": req["project"], "databank": req["databank"],
                               "strategy": strategy, "study": study, "scope": scope}})

@@ -7,6 +7,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QMouseEvent, QPainter, QPaintEvent, QPen
 from PySide6.QtWidgets import QLabel, QToolTip, QWidget
 
+from ui.text import numbers
 from ui.desktop.theme import T
 
 HEIGHT = 340                      # the owner reads these from across the desk: never below 320
@@ -30,7 +31,7 @@ def font(size: int = 11, bold: bool = False) -> QFont:
 
 
 def num(v: float | str | None) -> str:
-    """A figure as the window prints it: thousands grouped, four significant digits below.
+    """A figure as the window prints it — `numbers.num`, kept here for the blocks that import it.
 
     Args:
         v: The value, None for a missing one; text passes through.
@@ -38,18 +39,7 @@ def num(v: float | str | None) -> str:
     Returns:
         The text; an em dash for a missing value.
     """
-    if v is None:
-        return "—"
-    if isinstance(v, str):
-        return v
-    a = abs(v)
-    if float(v).is_integer() and a < 1e15:
-        return f"{int(v):,}".replace(",", " ")
-    if a >= 1000:
-        return f"{v:,.0f}".replace(",", " ")
-    if a >= 100:
-        return f"{v:.1f}"
-    return f"{v:.4g}"
+    return numbers.num(v)
 
 
 def area(rect: QRectF) -> QRectF:

@@ -6,4 +6,4 @@ window paints and `core/study/render` draws into the batch's `estudios/` folder.
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names what the package is; holds no code | — | — |
-| `wfc.py` | The WFC: its call, the cloud of tuples with the fit, the correlation and the ends of the in-sample ranking | imported | kept points → tab |
+| `wfc.py` | The WFC: its call, the cloud of tuples with the fit, the correlation and the ends of the in-sample ranking, and the glossary that says the PBO does not move with the composition | imported | kept points → tab |

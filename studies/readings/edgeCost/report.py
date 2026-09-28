@@ -54,7 +54,8 @@ def main() -> None:
     print(json.dumps(recon["example"], indent=2, ensure_ascii=False))
     output.population(out, "edgeCost", got["population"],
                       f"Edge por coste — {a.project} / {a.databank}")
-    got["panel"].to_csv(out / "verdict.csv", columns=["edge_mean", "edge_median", "n", "verdict"])
+    got["panel"].to_csv(out / "verdict.csv",
+                        columns=["identity", "edge_mean", "edge_median", "n", "verdict"])
     write_manifest(out,
                    {"project": a.project, "databank": a.databank, "feed": a.feed,
                     "input": str((folder / "trades.parquet").resolve())},

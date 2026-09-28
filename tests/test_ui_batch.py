@@ -20,9 +20,12 @@ from ui.daemon.batch import api, panel
 from ui.desktop.batchview import tab
 
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
-REAL = ("USDJPY_emaCross_H1", "Strategy_18.13.59")
-EMPTY = ("USDJPY_workflow_profiling_v1", "Strategy_1.23.51")
-LARGE = ("USDJPY_workflow_profiling_v1", "Strategy_1.28.59")
+# Since F13 (2026-09-28): the one batch on disk, the Donchian mother's 150 variants over five
+# axes. The batch folder without metrics.parquet and the 1,093-variant batch of the retired
+# fixture (USDJPY_workflow_profiling_v1) have no counterpart: that refusal is built in a
+# temporary folder, and the view is drawn on this batch only.
+REAL = ("Test_USDJPY_donchianUpperCrossUp_M30", "Strategy_9.27.83")
+VARIANTS, AXES = 150, 5
 
 
 def http() -> TestClient:
@@ -48,14 +51,15 @@ def sealed_free(out: dict) -> None:
 
 
 def test_real(c: TestClient) -> dict:
-    """The 57-variant batch: its axes, both outcomes, the mother, and nothing sealed."""
+    """The real batch: its axes, both outcomes, the mother, and nothing sealed."""
     out = c.get("/api/batch", params=dict(zip(("project", "strategy"), REAL))).json()
     sealed_free(out)
     assert out["has_batch"] and "error" not in out, out.get("error")
-    assert len(out["variants"]) == 57 and set(out["outcomes"]) == set(panel.OUTCOMES)
-    assert all(len(a["values"]) == 57 for a in out["axes"]) and len(out["axes"]) == 6
+    assert len(out["variants"]) == VARIANTS and set(out["outcomes"]) == set(panel.OUTCOMES)
+    assert all(len(a["values"]) == VARIANTS for a in out["axes"]) and len(out["axes"]) == AXES
     assert out["variants"][out["mother"]] == "P00000"
-    spaced = c.get("/api/batch", params={"project": REAL[0], "strategy": "Strategy 18.13.59"})
+    spaced = c.get("/api/batch", params={"project": REAL[0],
+                                         "strategy": REAL[1].replace("_", " ")})
     assert spaced.json()["variants"] == out["variants"]
     assert c.get("/api/batch/has", params=dict(zip(("project", "strategy"), REAL))).json() == \
         {"has_batch": True}
@@ -64,7 +68,13 @@ def test_real(c: TestClient) -> dict:
 
 def test_refusals(c: TestClient) -> None:
     """A folder without metrics.parquet and a mother without a batch each get a sentence."""
-    out = c.get("/api/batch", params=dict(zip(("project", "strategy"), EMPTY))).json()
+    with tempfile.TemporaryDirectory() as tmp:
+        work = Path(tmp) / "Strategy_9.9.9"
+        work.mkdir()
+        with mock.patch.object(panel, "folders", lambda p, s: [work]), \
+                mock.patch.object(panel.where, "batch", lambda p, s, n: work):
+            out = c.get("/api/batch", params={"project": "Fake", "strategy": "Strategy 9.9.9"})
+    out = out.json()
     assert out["has_batch"] and "metrics.parquet" in out["error"], out
     none = c.get("/api/batch", params={"project": REAL[0], "strategy": "Strategy 0.0.0"}).json()
     assert none == {"has_batch": False, "error": none["error"]} and "no tiene lote" in none["error"]
@@ -97,8 +107,8 @@ def test_synthetic(c: TestClient) -> None:
     assert set(leak) == {"has_batch", "error"}, leak
 
 
-def test_view(real: dict, large: dict) -> None:
-    """«Lote» offscreen: the real batch with hover and the selector, a thousand lines, a refusal."""
+def test_view(real: dict) -> None:
+    """«Lote» offscreen: the real batch with hover and the selector, and a refusal."""
     app = QApplication.instance() or QApplication([])
     from ui.desktop.theme import QSS
     app.setStyleSheet(QSS)
@@ -123,9 +133,6 @@ def test_view(real: dict, large: dict) -> None:
     app.processEvents()
     SHOTS.mkdir(parents=True, exist_ok=True)
     assert view.grab().save(str(SHOTS / "K-batch.png"))
-    view.show_batch(large)
-    app.processEvents()
-    assert view.grab().save(str(SHOTS / "K-batch-1093.png"))
     view.show_batch({"has_batch": True, "error": "el lote existe pero aún no tiene metrics.parquet"})
     assert not view.chart.isVisible() and "metrics.parquet" in view.note.text()
 
@@ -137,9 +144,7 @@ def main() -> None:
     real = test_real(c)
     test_refusals(c)
     test_synthetic(c)
-    large = c.get("/api/batch", params=dict(zip(("project", "strategy"), LARGE))).json()
-    sealed_free(large)
-    test_view(real, large)
+    test_view(real)
     print("ok — /api/batch and «Lote»")
 
 

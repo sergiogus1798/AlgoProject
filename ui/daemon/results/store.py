@@ -1,6 +1,7 @@
-"""The stored reports of one databank: which days hold a study, one result read, and slim cached rows."""
+"""The stored reports of one databank: which days hold a study, one result read with its partial re-runs, and slim cached rows."""
 
 import csv
+import glob
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -20,9 +21,9 @@ WORDS = {
     "control_failed": "watch", "silent": "none", "unusable": "none",
 }
 
-# (path, mtime) -> what was read. A report is written once and never edited, so a file's
+# (path, mtime, reader) -> what was read. A report is written once and never edited, so a file's
 # mtime is its version; the matrix of a 5,000-strategy databank parses each JSON once.
-_CACHE: dict[tuple[str, float], object] = {}
+_CACHE: dict[tuple[str, float, str], object] = {}
 
 
 def bank(project: str, databank: str) -> Path:
@@ -53,16 +54,8 @@ def days(project: str, databank: str, study: str) -> list[str]:
                    if d.is_dir()), reverse=True)
 
 
-def load(path: Path) -> tuple[dict | None, str | None]:
-    """One stored result, if it is a contract result.
-
-    Args:
-        path: A `<study>.json` or `estrategias/<name>.json`.
-
-    Returns:
-        (result, None), or (None, the reason in Spanish) for a missing file, a file that is
-        not JSON or JSON that predates the contract — older reports are data here, not errors.
-    """
+def _read(path: Path) -> tuple[dict | None, str | None]:
+    """One result file, if it is a contract result; as `load`, without the partial re-runs."""
     if not path.is_file():
         return None, "no hay resultado guardado"
     try:
@@ -72,6 +65,43 @@ def load(path: Path) -> tuple[dict | None, str | None]:
     if not isinstance(got, dict) or "tabs" not in got or "config_hash" not in got:
         return None, "informe anterior al contrato de estudios (sin tabs ni config_hash)"
     return got, None
+
+
+def partials(path: Path) -> list[dict]:
+    """The partial re-runs kept beside one strategy's stored result (OPEN §54), newest first.
+
+    Args:
+        path: `<study>/estrategias/<name>.json`.
+
+    Returns:
+        `[{only, computed_at, path, result}]` from `<study>/parciales/<stamp>_<only>/estrategias/
+        <name>.json` — `ui.daemon.results.rerun` writes them there so a sub-test run alone
+        never overwrites the full result. Empty for a population result.
+    """
+    if path.parent.name != "estrategias":
+        return []
+    found = sorted(path.parent.parent.glob(f"parciales/*/estrategias/{glob.escape(path.name)}"),
+                   reverse=True)
+    return [{"only": got.get("only"), "computed_at": got.get("computed_at"), "path": str(p),
+             "result": got} for p in found for got in [_read(p)[0]] if got is not None]
+
+
+def load(path: Path) -> tuple[dict | None, str | None]:
+    """One stored result, if it is a contract result, with its partial re-runs beside it.
+
+    Args:
+        path: A `<study>.json` or `estrategias/<name>.json`.
+
+    Returns:
+        (result, None), or (None, the reason in Spanish) for a missing file, a file that is
+        not JSON or JSON that predates the contract — older reports are data here, not errors.
+        A strategy's result carries `partials` (see `partials`): both runs, never one over
+        the other; the window lays the new one beside the stored one or merges it on screen.
+    """
+    got, why = _read(path)
+    if got is not None and path.parent.name == "estrategias":
+        got["partials"] = partials(path)
+    return got, why
 
 
 def _cached(path: Path, read: Callable[[Path], object]) -> object:
@@ -84,7 +114,7 @@ def _cached(path: Path, read: Callable[[Path], object]) -> object:
     Returns:
         Its result, computed once per (path, mtime).
     """
-    key = (str(path), path.stat().st_mtime)
+    key = (str(path), path.stat().st_mtime, read.__name__)    # one file, several readers
     if key not in _CACHE:
         _CACHE[key] = read(path)
     return _CACHE[key]
@@ -100,7 +130,7 @@ def _slim(path: Path) -> dict | None:
         strategy, identity, config_hash, computed_at, state, label — or None when the
         file is not a contract result.
     """
-    got, _ = load(path)
+    got, _ = _read(path)
     if got is None:
         return None
     said = got.get("verdict") or {}
@@ -150,3 +180,44 @@ def verdicts(folder: Path) -> dict[str, dict] | None:
     """
     path = folder / "verdict.csv"
     return _cached(path, _verdicts) if path.is_file() else None
+
+
+def _rows(path: Path) -> list[dict]:
+    """A verdict.csv as its rows, every column kept as text."""
+    with path.open(encoding="utf-8", newline="") as fh:
+        return list(csv.DictReader(fh))
+
+
+def rows(folder: Path) -> list[dict]:
+    """Every row of the study folder's verdict.csv, cached by the file's version.
+
+    Args:
+        folder: reports/<P>/<D>/<day>/<study>/.
+
+    Returns:
+        The rows with all their columns — what the databank table shows beside the verdict
+        word — or [] when the folder wrote no verdict.csv.
+    """
+    path = folder / "verdict.csv"
+    return _cached(path, _rows) if path.is_file() else []
+
+
+def _tables(path: Path) -> dict[str, dict] | None:
+    """Every `table` block of one result, by its title: columns and rows."""
+    got, _ = _read(path)
+    if got is None:
+        return None
+    return {b["title"]: {"columns": b["columns"], "rows": b["rows"]}
+            for tab in got["tabs"] for b in tab["blocks"] if b.get("kind") == "table"}
+
+
+def tables(path: Path) -> dict[str, dict] | None:
+    """`_tables`, cached by the file's version.
+
+    Args:
+        path: A per-strategy result JSON.
+
+    Returns:
+        Title → {columns, rows}, or None when the file is not a contract result.
+    """
+    return _cached(path, _tables)

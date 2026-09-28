@@ -19,6 +19,6 @@ nothing of it is read or queued.
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | The package's one-line purpose | imported | — |
-| `find.py` | Where a databank lives (workers first), its `OOS` partner from the `project.cfx`, whether its files carry cross-check markets, whether SQX is writing the project, and its roster (identity → name, cached per folder state) | imported | project, databank → paths, facts |
+| `find.py` | Where a databank lives (workers first), its `OOS` partner from the `project.cfx`, whether its files carry cross-check markets, whether SQX is writing the project, and its roster (identity → name, cached per folder state; `forget()` drops the cache for «Recargar databank») | imported | project, databank → paths, facts |
 | `state.py` | Each piece's state, the command that refreshes it and the lane, and `load()`, which queues what is missing once | imported | project, databank → status, jobs |
 | `api.py` | `GET /api/load` (state only) and `POST /api/load` (queue what is missing; `retry` for what failed) | imported | request → JSON |

@@ -23,9 +23,10 @@ TAIL = 25
 SLOTS = fanout.CORES
 WIDE = {"crossmarket", "monkey", "gate", "mcRetest", "feedQuality", "cscv", "monteCarlo"}
 LIGHT = 3
-# Nothing new starts below this much free RAM unless the lane is empty: the custodian's
-# JVM grows while it runs, and the pulse warns at the same line.
-FLOOR_GB = 15
+# Nothing new starts below this much free RAM unless the lane is empty. 20 GB is the owner's
+# reserve for Python (knowhow/perf/ram-budget.md, 125 GB = heaps + Python 20 + OS 10-12):
+# below it a new study would eat into what the custodian's JVM grows into while it runs.
+FLOOR_GB = 20
 PROGRESS = re.compile(r"^PROGRESS (\d+(?:\.\d+)?) ?(.*)$")
 CANCELLED = -15
 

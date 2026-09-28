@@ -88,11 +88,13 @@ def sqx(spec: dict, ctx: dict) -> dict:
                 n_in, n_out, day)
 
 
-def running_job(ctx: dict, keys: list[str]) -> dict | None:
-    """A job of this daemon still running one of these studies on this project."""
+def running_job(ctx: dict, spec: dict) -> dict | None:
+    """A job of this daemon still running one of the step's studies on this project; a job
+    the rail started names its step, so edgeCost of step 8 does not light step 25."""
     return next((j for j in jobs.listing() if j["rc"] is None
                  and j.get("project") == ctx["project"]
-                 and any(k in " ".join(j["argv"]) for k in keys)), None)
+                 and j.get("step", spec["n"]) == spec["n"]
+                 and any(k in " ".join(j["argv"]) for k in spec["studies"])), None)
 
 
 def study(spec: dict, ctx: dict) -> dict:
@@ -102,7 +104,7 @@ def study(spec: dict, ctx: dict) -> dict:
              for k in spec["studies"]}
     key = next((k for k in spec["studies"] if found[k]), None)
     if key is None:
-        job = running_job(ctx, spec["studies"])
+        job = running_job(ctx, spec)
         if job:
             return step("running", f"La ventana corre {job['label']} desde {job['started']}.")
         return step("pending", f"Ningún resultado de {', '.join(spec['studies'])} "

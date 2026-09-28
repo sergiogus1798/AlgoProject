@@ -1,4 +1,4 @@
-"""The distribution block: the null's histogram, its band, its median and the real value marked."""
+"""The distribution block: the null's histogram, its band, its median and the real value marked — or several samples as densities."""
 
 from collections.abc import Callable
 
@@ -6,9 +6,10 @@ from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget
 
-from ui.desktop.blocks import axis, chart
+from ui.desktop.blocks import axis, chart, density
 from ui.desktop.blocks.card import card, text
 from ui.desktop.blocks.states import MEDIAN, REAL, SIM
+from ui.text.numbers import num
 from ui.desktop.theme import T
 
 
@@ -109,13 +110,16 @@ def widget(block: dict) -> QWidget:
         block: A contract `distribution` block.
 
     Returns:
-        The framed chart, its key, the headline figures and the percentile row.
+        The framed chart, its key, the headline figures and the percentile row; with
+        `series`, the samples overlaid as densities (`density.widget`) over the same row.
     """
     b = block
+    if b.get("series"):
+        return density.widget(b, _percentiles(b))
     unit = f" {b['unit']}" if b["unit"] else ""
     lo, hi = b["band"]
     mark = b.get("mark") or "real"
-    p = "" if b["p"] is None else f" · p = {b['p']:.4g}"
+    p = "" if b["p"] is None else f" · p = {num(b['p'], 'p')}"
     key = chart.key([("box", SIM, "distribución"), ("box", chart.blend(SIM, 0.3), "banda"),
                      ("dash", MEDIAN, "mediana"), ("line", REAL, mark)])
     head = text(f"<b>{mark}</b> {chart.num(b['real'])}{unit} · mediana "

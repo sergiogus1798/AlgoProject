@@ -1,15 +1,16 @@
-"""The grid block: a heat map on a discrete scale, every cell labelled, the scale's key beneath."""
+"""The grid block: a heat map on a discrete scale, every cell labelled, θ₀ marked, the scale's key beneath."""
 
 from bisect import bisect_right
 from collections.abc import Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFontMetrics, QPainter
+from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 from ui.desktop.blocks import chart
 from ui.desktop.blocks.card import card, text
-from ui.desktop.blocks.states import DIVERGING, SEQUENTIAL
+from ui.desktop.blocks.states import DIVERGING, REAL, SEQUENTIAL
+from ui.text.glossary import label
 from ui.desktop.theme import T
 
 HEAD = 30
@@ -22,12 +23,16 @@ def levels(b: dict) -> list[float]:
         b: A grid block.
 
     Returns:
-        Ascending cuts; n cuts make n + 1 colours. A diverging scale without cuts is made
-        symmetric around zero on the 95th percentile of |value|, so one outlier does not
-        wash every other cell into the middle colour.
+        Ascending cuts; n cuts make n + 1 colours. With `scale_range` the eight steps span
+        that shared extent, so several grids read on one scale. A diverging scale without
+        either is made symmetric around zero on the 95th percentile of |value|, so one outlier
+        does not wash every other cell into the middle colour.
     """
     if b["levels"]:
         return b["levels"]
+    if b.get("scale_range"):
+        lo, hi = b["scale_range"]
+        return [lo + (hi - lo) * i / 9 for i in range(1, 9)]
     v = sorted(c for r in b["values"] for c in r if c is not None)
     if b["scale"] == "diverging":
         mags = sorted(abs(c) for c in v)
@@ -88,9 +93,32 @@ def _draw(b: dict) -> Callable:
                 p.fillRect(cell, QColor(fill))
                 p.setPen(QColor(T["faint"] if v is None else _ink(fill)))
                 text = b["labels"][i][j] if b["labels"] else chart.num(v)
-                p.drawText(cell.adjusted(4, 0, -4, 0), Qt.AlignCenter | Qt.TextWordWrap, text)
+                # Three maps side by side leave ~30 px a cell: a figure that does not fit is
+                # left to the hover sentence rather than cut into an unreadable stub.
+                if b["labels"] or p.fontMetrics().horizontalAdvance(text) < cw - 6:
+                    p.drawText(cell.adjusted(4, 0, -4, 0), Qt.AlignCenter | Qt.TextWordWrap, text)
+        if b.get("mark"):
+            _mark(p, b, left, cw, ch)
 
     return draw
+
+
+def _mark(p: QPainter, b: dict, left: float, cw: float, ch: float) -> None:
+    """The marked cell (θ₀, the mother's parameters) outlined in the real ink, its label on it."""
+    m = b["mark"]
+    i, j = b["rows"].index(m["row"]), b["cols"].index(m["col"])
+    cell = QRectF(left + j * cw, HEAD + i * ch, cw, ch)
+    p.setBrush(Qt.NoBrush)
+    p.setPen(QPen(QColor(T["bg"]), 5))
+    p.drawRect(cell.adjusted(1, 1, -1, -1))
+    p.setPen(QPen(QColor(REAL), 3))
+    p.drawRect(cell.adjusted(1, 1, -1, -1))
+    p.setFont(chart.font(10, True))
+    tag = QRectF(cell.left() + 3, cell.top() + 2, p.fontMetrics().horizontalAdvance(m["label"]) + 6,
+                 p.fontMetrics().height())
+    p.fillRect(tag, QColor(T["bg"]))
+    p.setPen(QColor(REAL))
+    p.drawText(tag, Qt.AlignCenter, m["label"])
 
 
 def _tip(b: dict) -> Callable:
@@ -103,6 +131,9 @@ def _tip(b: dict) -> Callable:
         if not (0 <= i < len(b["rows"]) and 0 <= j < len(b["cols"])) or pos.y() < HEAD:
             return None
         out = f"{b['rows'][i]} × {b['cols'][j]}\nvalor: {chart.num(b['values'][i][j])}"
+        m = b.get("mark")
+        if m and (m["row"], m["col"]) == (b["rows"][i], b["cols"][j]):
+            out += f"\n{m['label']}: {label('grid.mark')}"
         return out + (f"\n{b['labels'][i][j]}" if b["labels"] else "")
 
     return tip
@@ -116,7 +147,13 @@ def _key(b: dict) -> QWidget:
               + [(a < z, f"{chart.num(a)} … {chart.num(z)}") for a, z in zip(cuts, cuts[1:])]
               + [(True, f"≥ {chart.num(cuts[-1])}")])
     items = [("box", c, t) for c, (live, t) in zip(colours, bounds) if live]
-    return chart.key(items + [("box", T["rule"], "sin dato")])
+    items.append(("box", T["rule"], label("grid.empty")))
+    if b.get("mark"):
+        items.append(("line", REAL, f"{b['mark']['label']} — {label('grid.mark')}"))
+    if b.get("scale_range"):
+        lo, hi = b["scale_range"]
+        items.append(("box", T["faint"], f"{label('grid.shared')} {chart.num(lo)} … {chart.num(hi)}"))
+    return chart.key(items)
 
 
 def widget(block: dict) -> QWidget:

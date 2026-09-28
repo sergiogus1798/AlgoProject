@@ -7,7 +7,7 @@ import sys
 
 from core import fanout
 from core.paths import report_dir
-from core.study import output, verdicts
+from core.study import identity, output, verdicts
 from studies.transfer.crossmarket import load, many, one
 from studies.transfer.crossmarket.inputs import config
 
@@ -37,6 +37,8 @@ def main() -> None:
     cfg = config.load(overrides)
     inputs = load.load(a.project, a.databank, a.asset, a.day)
     out = report_dir(a.project, a.databank, a.day) / "crossmarket"
+    if identity.note(inputs["identity"]):
+        print(identity.note(inputs["identity"]), flush=True)
     if a.strategy:
         got = one.run(a.strategy, inputs, cfg, a.only)
         path = output.member(out, got, f"Cross-market — {a.strategy}", LEDE)
@@ -49,7 +51,9 @@ def main() -> None:
     got = many.run(inputs, cfg, a.workers)
     output.population(out, "crossmarket", got["population"],
                       f"Cross-market — {a.project} / {a.databank}", LEDE)
-    verdicts.write(out, got["table"], inputs["path"], " ".join(sys.argv), overrides)
+    table = got["table"].assign(note=lambda t: t["identity"].isna().map({True: identity.NOTE,
+                                                                        False: ""}))
+    verdicts.write(out, table, inputs["path"], " ".join(sys.argv), overrides)
     kept = int((got["table"].verdict != "DESCARTAR").sum())
     print(f"\n{kept} de {len(got['table'])} pasan el suelo de amplitud -> {out / 'verdict.csv'}")
 

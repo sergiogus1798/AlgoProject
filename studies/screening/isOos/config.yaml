@@ -1,0 +1,7 @@
+# IS contra OOS operación por operación (encargo 24 E3; dueño Q14, 2026-09-27): retorno,
+# duración, MAE y MFE de cada estrategia de una cosecha, las dos muestras superpuestas como
+# densidades. El múltiplo R no: se salta hasta que la estrategia lleve stop (paso 24).
+# La parte de población (mapa de correlaciones) no tiene ningún ajuste.
+trades:
+  bins: 40            # barras del histograma, compartidas por IS y OOS
+  tail_pct: 0.5       # las barras cubren del percentil 0,5 al 99,5 de las dos muestras juntas; las colas caen en la primera y la última barra

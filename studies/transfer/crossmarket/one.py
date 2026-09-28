@@ -2,7 +2,7 @@
 
 import time
 
-from core.study import blocks, result as envelope
+from core.study import blocks, identity, result as envelope
 from studies.transfer.crossmarket.contract import (backtest, nulls, portfolio, shared, sweep,
                                                    tests, words)
 from studies.transfer.crossmarket.orchestrate import strategy
@@ -47,6 +47,7 @@ def run(name: str, inputs: dict, cfg: dict, only: str | None = None) -> dict:
     rows = record["rows"]
     warn = [{"code": f"{r['feed']}:{k}", "state": "watch",
              "text": shared.text(alerts.TEXTS[k][0])} for r in rows for k in r["warnings"]]
+    warn += identity.warning(inputs["identity"].get(name))
     if only:
         warn.append({"code": "parcial", "state": "info",
                      "text": f"Sólo se recorrió {only}. Correlación, portfolio, nulo conjunto y "

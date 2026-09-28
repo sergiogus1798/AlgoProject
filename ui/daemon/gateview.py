@@ -1,14 +1,13 @@
-"""What the gate zone draws: every cosecha, one gate's funnel and scorecard, one strategy's curve."""
+"""A gate report read off disk — its funnel and scorecard, one strategy's paired metrics and curve —
+for the databank panel's funnel and the archive (`core.archive.view`)."""
 
 import json
 from pathlib import Path
 
 import pandas as pd
 
-from core import assetdata
 from core.paths import DATA
 from studies.screening.gate.inputs import config
-from ui.daemon.runs import guess_asset
 
 META = ("name", "kind", "why")
 
@@ -59,30 +58,6 @@ def judged(harvest: Path) -> tuple[str, dict]:
         if m.get("source", {}).get("harvest") == str(harvest):
             return folder.parts[-2], m
     return "", {}
-
-
-def harvests() -> list[dict]:
-    """Every cosecha in the data root, and whether the gate has judged it.
-
-    Returns:
-        One dict per harvest day: project, databank, day, the harvest's counts, `gate` —
-        the newest report's counts over it, or None — `report_day`, when that report ran,
-        and `asset`: the one whose feed the report was priced with, else the one the
-        project's name says, else None. Newest first.
-    """
-    out = []
-    for f in sorted((DATA / "harvest").glob("*/*/*/metrics.parquet"), reverse=True):
-        project, databank, day = f.parts[-4:-1]
-        m = manifest(f.parent)
-        report_day, g = judged(f.parent)
-        feed = g.get("source", {}).get("feed")
-        out.append({"project": project, "databank": databank, "day": day,
-                    "counts": m.get("counts", {}), "oos_databank": m.get("source", {})
-                    .get("oos_databank", "?"), "gate": g.get("counts") if g else None,
-                    "report_day": report_day,
-                    "asset": (assetdata.symbol_for(feed) if feed else None)
-                    or guess_asset(project)})
-    return out
 
 
 def gate(project: str, databank: str, day: str) -> dict:

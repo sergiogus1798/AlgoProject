@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from core.paths import DATA
 from ui.daemon import runs as launch
 from ui.daemon.results import catalogue, knobs, matrix, runs
+from ui.daemon.strategy import archived
 
 ROUTER = APIRouter()
 
@@ -43,7 +44,7 @@ def catalogue_list() -> dict[str, object]:
 
 @ROUTER.get("/api/result")
 def result(project: str, databank: str, study: str, strategy: str = "", identity: str = "",
-           day: str = "") -> dict[str, object]:
+           day: str = "", source: str = "live", version: str = "") -> dict[str, object]:
     """One stored result and whether today's config would still sign it.
 
     Args:
@@ -54,16 +55,24 @@ def result(project: str, databank: str, study: str, strategy: str = "", identity
         identity: The strategy's identity; when given, a result of another strategy that
             shares the name is refused instead of shown.
         day: Report day; empty for the newest.
+        source: "live" reads `reports/`; "archive" answers from the archived version of
+            `identity`, computing nothing (its `stale` is the day of archiving's).
+        version: The archived version, "" for the newest.
 
     Returns:
         As `runs.result`.
     """
-    return _unknown(study) or runs.result(project, databank, study, strategy, identity, day)
+    refused = _unknown(study) or archived.bad_source(source)
+    if refused:
+        return refused
+    if source == "archive":
+        return archived.result(identity, databank, study, strategy, version)
+    return runs.result(project, databank, study, strategy, identity, day)
 
 
 @ROUTER.get("/api/history")
 def history(project: str, databank: str, study: str, strategy: str = "",
-            identity: str = "") -> dict[str, object]:
+            identity: str = "", source: str = "live", version: str = "") -> dict[str, object]:
     """Every run of a study on a databank or one of its strategies, newest first.
 
     Args:
@@ -72,11 +81,17 @@ def history(project: str, databank: str, study: str, strategy: str = "",
         study: Study key.
         strategy: Strategy name; empty for the population.
         identity: The strategy's identity, as for `/api/result`.
+        source, version: As for `/api/result`; the archive holds one run per study.
 
     Returns:
         As `runs.history`.
     """
-    return _unknown(study) or runs.history(project, databank, study, strategy, identity)
+    refused = _unknown(study) or archived.bad_source(source)
+    if refused:
+        return refused
+    if source == "archive":
+        return archived.history(identity, databank, study, strategy, version)
+    return runs.history(project, databank, study, strategy, identity)
 
 
 @ROUTER.get("/api/config")
@@ -113,16 +128,24 @@ def config_hash(req: Overrides) -> dict[str, object]:
 
 
 @ROUTER.get("/api/matrix")
-def population(project: str, databank: str) -> dict[str, object]:
+def population(project: str, databank: str, identity: str = "", source: str = "live",
+               version: str = "") -> dict[str, object]:
     """Every strategy of one databank against every study.
 
     Args:
         project: SQX project name.
         databank: Databank name.
+        identity: With `source=archive`, the archived strategy whose row is served.
+        source, version: As for `/api/result`; the archive holds that one row only.
 
     Returns:
         As `matrix.matrix`.
     """
+    refused = archived.bad_source(source)
+    if refused:
+        return refused
+    if source == "archive":
+        return archived.matrix(identity, databank, version)
     return matrix.matrix(project, databank)
 
 

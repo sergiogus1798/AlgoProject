@@ -3,48 +3,17 @@
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QPushButton, QScrollArea, QSizePolicy,
                                QTabWidget, QVBoxLayout, QWidget)
 
-from ui.desktop.blocks import chart, verdict
+from ui.desktop.blocks import fuse, tools
 from ui.desktop.blocks.card import text
+from ui.desktop.blocks.head import head as _head
+from ui.desktop.blocks.head import stale as _stale
+from ui.desktop.blocks.pick import selectors
 from ui.desktop.blocks.states import colour, label
 from ui.desktop.blocks.tabpage import TabPage
+from ui.text.glossary import label as words
 from ui.desktop.theme import T
 
 FOLD = 8        # warnings shown before the rest fold behind a button
-
-
-def _stamp(result: dict) -> str:
-    """The line saying what was computed, when, under which configuration and how fast."""
-    parts = [result.get("strategy") or "población", f"calculado {result.get('computed_at', '—')}",
-             f"config {result.get('config_hash', '—')}"]
-    if result.get("wall_s") is not None:
-        parts.append(f"{chart.num(result['wall_s'])} s")
-    return " · ".join(parts)
-
-
-def _head(result: dict, title: str | None) -> QWidget:
-    """One side's header: its title in a comparison, its verdict and its stamp."""
-    box = QWidget()
-    lay = QVBoxLayout(box)
-    lay.setContentsMargins(0, 0, 0, 0)
-    if title:
-        lay.addWidget(text(title, T["text"], 17, True))
-    if result.get("verdict"):
-        lay.addWidget(verdict.widget(result["verdict"]))
-    else:
-        lay.addWidget(text("Este estudio describe y no juzga: no hay veredicto.", T["muted"], 14))
-    lay.addWidget(text(_stamp(result), T["faint"], 12))
-    return box
-
-
-def _stale(meta: dict) -> QWidget:
-    """The red banner of a result computed under another configuration than the drawer's."""
-    banner = text(f"CADUCADO — este resultado se calculó con la configuración "
-                  f"{meta.get('config_hash', '—')} y la de ahora firma "
-                  f"{meta.get('current_hash', '—')}. Responde a otra pregunta: vuelve a "
-                  f"correrlo antes de leerlo como respuesta.", colour("fail"), 14, True)
-    banner.setStyleSheet(banner.styleSheet() + f" border: 2px solid {colour('fail')}; "
-                         "padding: 8px;")
-    return banner
 
 
 def _warnings(results: list[dict], titles: list[str]) -> list[QWidget]:
@@ -90,6 +59,10 @@ class ResultView(QWidget):
         self.memory: dict[str, dict] = {}
         self.tab = ""
         self.results: list[dict] = []
+        self.titles: list[str] = []
+        self.stored: dict | None = None     # the result as read, whatever is drawn from it
+        self.meta: dict | None = None
+        self.showing = "stored"
         self.pages: dict[int, TabPage] = {}
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -121,12 +94,13 @@ class ResultView(QWidget):
             result: A contract result, None when the study has not run on this strategy.
             meta: The daemon's `meta` (config_hash, current_hash, stale, day…), may be None.
         """
+        self.stored, self.meta, self.showing = result, meta, "stored"
         if result is None:
             self._build([], [], [text("Sin resultado todavía: este estudio no ha corrido aquí.",
                                       T["muted"], 15)])
             return
         top = [_head(result, None)] + ([_stale(meta)] if meta and meta.get("stale") else [])
-        self._build([result], [""], top)
+        self._build([result], [""], top + [self._tools()])
 
     def compare(self, left: dict, right: dict, titles: tuple[str, str]) -> None:
         """Draw two results in two columns, the same tab open in both, block beside block.
@@ -141,11 +115,60 @@ class ResultView(QWidget):
         lay.setSpacing(24)
         for r, t in zip((left, right), titles):
             lay.addWidget(_head(r, t), 1)
-        self._build([left, right], list(titles), [row])
+        self._build([left, right], list(titles), [row, self._tools()])
+
+    def beside(self, index: int) -> None:
+        """A partial re-run beside the stored result, on the sub-test it re-ran.
+
+        Args:
+            index: Its position in the stored result's `partials`.
+        """
+        part = self.stored["partials"][index]["result"]
+        for tab in part["tabs"]:            # open the stored side on the same market or test
+            for s in selectors(tab):
+                if len(s["options"]) == 1:
+                    self.memory.setdefault(tab["name"], {})[s["key"]] = s["options"][0]
+        self.showing = f"beside:{index}"
+        self.compare(self.stored, part, (f"guardado · {self.stored.get('computed_at')}",
+                                         f"solo {part.get('only')} · {part.get('computed_at')}"))
+
+    def merged(self, index: int) -> None:
+        """The stored result with one sub-test taken from a partial re-run (`fuse.merge`).
+
+        Args:
+            index: Its position in the stored result's `partials`.
+        """
+        part = self.stored["partials"][index]["result"]
+        got = fuse.merge(self.stored, part)
+        self.showing = f"merged:{index}"
+        said = text(fuse.notice(self.stored, part), T["text"], 14, True)
+        said.setStyleSheet(said.styleSheet() + f" border-left: 4px solid {colour('info')}; "
+                           "padding: 4px 10px;")
+        self._build([got], [""], [_head(got, None), said, self._tools()])
+
+    def _tools(self) -> QWidget:
+        """The report button with its line, and the strip of partial re-runs when there are any."""
+        box = QWidget()
+        lay = QVBoxLayout(box)
+        lay.setContentsMargins(0, 0, 0, 0)
+        said = text("", T["muted"], 12)
+        button = QPushButton(words("screen.report"))
+        button.setToolTip("Escribe una página HTML con exactamente lo que ves: las pestañas, la "
+                          "combinación de cada selector, los mercados elegidos, los avisos y el "
+                          "glosario, dibujados por core.study.render desde el mismo resultado.")
+        button.clicked.connect(lambda: said.setText(tools.report(
+            self.results, self.titles, self.memory, (self.meta or {}).get("path"))))
+        lay.addWidget(button)
+        lay.addWidget(said)
+        if self.stored and self.stored.get("partials"):
+            lay.addWidget(tools.strip(self.stored["partials"], self.beside, self.merged,
+                                      lambda: self.show_result(self.stored, self.meta),
+                                      self.showing))
+        return box
 
     def _build(self, results: list[dict], titles: list[str], top: list[QWidget]) -> None:
         """Lay the page out again: header widgets, the tabs, the warnings, the glossary."""
-        self.results, self.pages = results, {}
+        self.results, self.titles, self.pages = results, titles, {}
         self.content = QFrame()
         self.content.setObjectName("term")
         lay = QVBoxLayout(self.content)
@@ -196,7 +219,9 @@ class ResultView(QWidget):
         name = self.names[index]
         if index not in self.pages:
             sides = [next((t for t in r["tabs"] if t["name"] == name), None) for r in self.results]
-            page = TabPage(sides, self.memory.setdefault(name, {}))
+            pool = ([b for t in self.results[0]["tabs"] for b in t["blocks"]]
+                    if len(self.results) == 1 else None)
+            page = TabPage(sides, self.memory.setdefault(name, {}), pool)
             self.memory[name] = page.chosen
             self.pages[index] = page
             self.tabs.widget(index).layout().addWidget(page)

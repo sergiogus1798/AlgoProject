@@ -6,7 +6,7 @@ and every cut leaves a record of what it removed next to the verdict that asked 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `verdict.py` | Write a `verdict.csv` from the databank's metrics export: keep what passes a pandas filter, or drop the names given; identities read from the files | `python3 -m sqx.curate.verdict --project P --databank Results --role custodian --keep "net_profit_oos > 0"` · `--drop "Strategy 11.4.39"` · `--columns` | `metrics.csv` → `AlgoData/reports/P/Results/<day>/curate/verdict-HHMMSS.csv` |
-| `apply_verdict.py` | Delete the strategies a verdict rejected from a databank (or move them into another databank with `--into`), after checking each file's identity and recording what was there | `python3 -m sqx.curate.apply_verdict --project P --databank Results --verdict <path>/verdict.csv --role custodian --apply` | `verdict.csv` → files deleted, `before-HHMMSS.csv` + `rejected-HHMMSS.csv` beside the verdict |
+| `apply_verdict.py` | Delete the strategies a verdict rejected from a databank (or move them into another databank with `--into`), after checking each file's identity and recording what was there. `--role` is **required** (it used to default to the master). The cut itself is `apply(project, databank, verdict_csv, role, into=None)`, importable: the window's «Continuar workflow» (`ui/daemon/advance/`) calls it | `python3 -m sqx.curate.apply_verdict --project P --databank Results --verdict <path>/verdict.csv --role custodian --apply` | `verdict.csv` → files deleted, `before-HHMMSS.csv` + `rejected-HHMMSS.csv` beside the verdict |
 
 ## The contract between Python and SQX
 
@@ -37,15 +37,18 @@ and memory is what the next task reads.
 ## The three guards
 
 1. **The install must be stopped.** It holds the records in memory and rewrites the files from them,
-   so a file removed underneath a live instance comes back on the next sync. `--role` picks which
-   install; the check is the GUI process for the master and the port for a worker.
+   so a file removed underneath a live instance comes back on the next sync. `--role` (required)
+   picks which install; the check is the GUI process for the master and the port for a worker.
+   The window never passes `master`: its preflight refuses a project the registry puts there.
 2. **A record first.** `before-<stamp>.csv` lists every strategy on disk with identity, size,
    this cut's verdict and **why** (the verdict's `reason`: the filter it failed, the test, or the
    verdict file's name when the judging module wrote no reason); `rejected-<stamp>.csv` keeps the
    dropped ones' rows of the metrics export with that reason as its first column.
    Both land in `AlgoData/reports/<P>/<databank>/<day>/curate/`, beside the verdict. The `.sqx`
    themselves are deleted: at ~5 MB each, 8k rejects would be 40 GB kept for a strategy nobody
-   will revisit (owner's decision, 2026-09-23). A `Rejected` databank inside the project would be
+   will revisit (owner's decision, 2026-09-23). The window's «Continuar workflow» is the exception
+   the owner asked for (Q7, 2026-09-27): it copies them to `AlgoData/projects/discards/<P>/<D>/<stamp>/`
+   before calling `apply`. A `Rejected` databank inside the project would be
    worse: SQX loads every databank of a project on start, so they would cost RAM as well.
 3. **Counted back, not trusted.** If the number that left does not match the number removed, or the
    verdict named a strategy with no file, it stops and says which list to compare the directory

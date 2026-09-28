@@ -5,8 +5,10 @@ import argparse
 import json
 from datetime import date
 
+import pandas as pd
+
 from core.paths import report_dir
-from core.study import output
+from core.study import identity, output
 from core.study.render import markdown
 from studies.breakage.spp import one
 from studies.breakage.spp.inputs import config, export
@@ -31,8 +33,12 @@ def main() -> None:
     directory = config.export(args.project, args.databank, args.day)
     cfg = config.load(args.overrides)
     out = report_dir(args.project, args.databank, date.today().isoformat()) / "spp"
+    signed = []
     for name in args.strategy or export.strategies(directory):
         got = one.run(name, directory, cfg)
+        signed.append({"strategy": name, "identity": got["identity"],
+                       "brief": got["summary"]["verdict"],
+                       "note": "" if got["identity"] else identity.NOTE})
         output.member(out, got, f"SPP — {name}", LEDE)
         brief = got["summary"]["brief"]
         safe = name.replace(" ", "_").replace(".", "-")
@@ -42,6 +48,8 @@ def main() -> None:
         print(f"{name:24s} {brief['verdict']:8s} n_eff={brief['n_eff']:6,d}  "
               f"max {brief['observed_max']:.2f} vs nulo {brief['noise_max']:.2f}  "
               f"vivos={len(brief['parameters'])} congelados={len(brief['frozen'])}")
+    # The briefs are named by a mangled name; this table is what pairs the folder by identity.
+    pd.DataFrame(signed).to_csv(out / "strategies.csv", index=False)
     print(f"\n-> {out}")
 
 

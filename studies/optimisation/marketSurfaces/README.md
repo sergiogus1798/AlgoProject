@@ -20,7 +20,7 @@ size of move drop out.
 
 ```
 config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ contract
- every knob    cells per  rho, J,    pair       the four
+ every knob    cells per  rho, J,    pair       the six
                market and the three  states,    tabs
                segment    checks     the call
 ```
@@ -68,6 +68,18 @@ and the warnings. A per-trade cost moves high-frequency variants most, so it can
 apart rank the variants against each other by time-in-market alone. `rho_neutral` removes each
 market's exposure from its own ranks; 🔬 23-1-46 `oos1`, USDJPY against AUDUSD, reads −0.87 raw and
 much less without it. The call is on the raw rho (the WFC's metric); the table carries both.
+
+## The surfaces the window draws (encargo 24 E4, 22 §6.2)
+
+Beside the distribution per market, the contract draws the surface itself: for **every ordered
+pair of parameters** a `grid` per market and segment — the median net profit of the variants that
+used each pair of levels, the mother left out — with θ₀ marked and **one colour scale across the
+markets** of that pair and segment (`scale_range`). The owner picks the pair on two drop-downs,
+«Eje X» and «Eje Y» (owner, 2026-09-27, Q13). The **consensus map** sums them: per cell, in how many
+markets it is in that market's top decile (`top_share`, the plateau), `levels` 0..N. A region that
+travels is a high, continuous patch with θ₀ inside it. 🔬 On the 150-variant `minimal` batch of
+`Test_USDJPY_donchianUpperCrossUp_M30` most cells hold one variant or none: a consensus map needs the
+full design, not a minimal one.
 
 ## What it does not tell you
 

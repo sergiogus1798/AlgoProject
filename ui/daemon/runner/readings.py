@@ -81,6 +81,17 @@ def monte_carlo(c: dict, strategy: str) -> list[str] | str:
         c["databank"], "--asset", c["asset"], "--day", c["export"]]
 
 
+def blind_joint(c: dict, strategy: str) -> list[str] | str:
+    """Step 20 over the WFM databank, signed under the family; its report asks the ledger's
+    door itself and refuses while 17, 18 and 19 are not all recorded."""
+    row, family = where.enrolled(c["project"]), where.family(c["project"])
+    if family is None:
+        return where.no_family(c["project"])
+    return ["-m", "studies.closing.blindJoint.report", "--project", c["project"],
+            "--wfm-databank", c["databank"], "--feed", c["feed"], "--symbol", c["asset"],
+            "--timeframe", row["timeframe"], "--family", family]
+
+
 STUDIES = {
     "monkey": {"plan": monkey, "one": True, "many": True, "sets": True},
     "profitShape": {"plan": profit_shape, "one": True, "many": False, "sets": True},
@@ -92,6 +103,5 @@ STUDIES = {
     "monteCarlo": {"plan": monte_carlo, "one": False, "many": True, "sets": True},
     "structure": {"why": "lee un lote estructural ya retesteado y elige sus piernas (--work, "
                          "--databank): desde la terminal, tras sqx.structural"},
-    "blindJoint": {"why": "es el paso 20, la lectura ciega que abre oos2 una sola vez y firma "
-                          "bajo la familia de plantillas: desde la terminal con --family"},
+    "blindJoint": {"plan": blind_joint, "one": False, "many": True, "sets": True},
 }

@@ -7,6 +7,19 @@ from core.study import blocks, result as envelope
 
 STATE = {"fiable": "pass", "no_fiable": "fail", "indeciso": "watch", "sin_dato": "none"}
 
+# The corrected sentence of encargo 24 §3 E1: encargo 22 §12.1 spoke of "924 trozos", and 924 are
+# the partitions of 12 blocks, not pieces of the history.
+GLOSSARY = [
+    {"term": "composición",
+     "text": "Qué tramos cuentan como dentro de muestra (IS) y cuáles como fuera (OOS). build va "
+             "siempre dentro; dentro es build o build+oos1; fuera es lo que queda, y oos1 puede "
+             "quedarse fuera de las dos. Cada composición leída se apunta en el Ledger, un "
+             "renglón por tramo, y una que toque oos2 solo corre si la política lo permite."},
+    {"term": "PBO y composición",
+     "text": "El PBO del CSCV no cambia con la composición: parte el historial en 12 bloques y "
+             "lee sus 924 particiones (C(12,6)). Solo cambian sus cuatro números cronológicos. "
+             "El WFC depende entero de la composición."}]
+
 
 def shown(kept: pd.DataFrame, ends: int, cols: dict) -> tuple[pd.DataFrame, int]:
     """The rows worth tabulating when the batch is too big to tabulate.

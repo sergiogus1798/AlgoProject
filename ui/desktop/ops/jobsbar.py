@@ -1,14 +1,21 @@
-"""The status-bar strip of jobs: what runs, how far, what waits, and a cancel for each."""
+"""The status-bar strip of jobs: what runs, a 0-100 % bar for each, what waits, and a cancel."""
 
 import httpx
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
 from ui.desktop import client
+from ui.desktop.durations import share
+from ui.text.numbers import num
+from ui.desktop.ops.progressbar import bar
 from ui.desktop.theme import C, MONO, T
 
 POLL_MS = 2000
-SHOWN = 5                   # chips beyond this collapse into «+N»
+SQX_EVERY = 8               # the SQX runs are read every 8th poll (16 s): each read may ask a
+#                             running worker for its status line, and a task moves slowly
+SHOWN = 4                   # chips beyond this collapse into «+N»
+BAR_PX = 64
+ROLE = {"custodian": "custodio", "conductor": "conductor"}
 
 
 def waiting(job: dict) -> bool:
@@ -30,14 +37,26 @@ def chip_text(job: dict) -> str:
         job: One `/api/jobs` record, with or without `percent`, `state`, `study`, `lane`.
 
     Returns:
-        `study · 45% · state`, or `en cola #2` for a waiting one.
+        `study · state` (the percentage is the chip's bar), or `en cola #2` for a waiting one.
     """
     name = job.get("study") or job["label"]
     if waiting(job):
         return f"{name} · en cola #{job['queued']}"
-    percent = job.get("percent")
-    parts = [name, f"{percent}%" if percent is not None else "…", job.get("state") or ""]
-    return " · ".join(p for p in parts if p)
+    return f"{name} · {job.get('state') or '…'}" if job.get("state") else name
+
+
+def sqx_text(run: dict) -> str:
+    """What one SQX run's chip says.
+
+    Args:
+        run: One `/api/ops/sqx` record.
+
+    Returns:
+        `SQX custodio · MCR 3 Slippage · 7 / 20`, the count only when the worker gave one.
+    """
+    count = (f" · {num(run['done'])} / {num(run['total']) if run['total'] else '·'}"
+             if run.get("done") is not None else "")
+    return f"SQX {ROLE.get(run['role'], run['role'])} · {run.get('task') or '…'}{count}"
 
 
 class JobsBar(QWidget):
@@ -54,11 +73,16 @@ class JobsBar(QWidget):
         self.poll.setInterval(POLL_MS)
         self.poll.timeout.connect(self.refresh)
         self.poll.start()
+        self.sqx: list[dict] = []           # the SQX runs as last read
+        self.ticks = 0
         self.show_jobs([])
 
     def refresh(self) -> None:
-        """Read the job list, or say the daemon is not answering."""
+        """Read the job list, and every few polls what SQX runs, or say the daemon is down."""
         try:
+            if self.ticks % SQX_EVERY == 0:
+                self.sqx = client.get("ops/sqx")["runs"]
+            self.ticks += 1
             self.show_jobs(client.get("jobs")["jobs"])
         except httpx.HTTPError as down:
             self.show_message(f"demonio no responde: {type(down).__name__}", C["dead"])
@@ -90,20 +114,25 @@ class JobsBar(QWidget):
         """
         self.clear()
         live = [j for j in jobs if j.get("rc") is None]
-        running = [j for j in live if not waiting(j)]
+        # The furthest first: a job that prints no PROGRESS sits at 0 % until it ends, and
+        # four of those must not hide the one whose bar moves.
+        running = sorted((j for j in live if not waiting(j)),
+                         key=lambda j: -(j.get("percent") or 0))
         queued = sorted((j for j in live if waiting(j)), key=lambda j: j["queued"])
         failed = sum(1 for j in jobs if j.get("rc") not in (None, 0))
         self.lay.addWidget(QLabel("TRABAJOS", styleSheet=f"color: {T['faint']}; "
                                                           "font-weight: 700;"))
-        head = f"{len(running)} en marcha · {len(queued)} en cola"
+        head = f"{num(len(running) + len(self.sqx))} en marcha · {num(len(queued))} en cola"
         self.lay.addWidget(QLabel(head, styleSheet=f"color: {T['text']};"))
+        for run in self.sqx:
+            self.lay.addWidget(self.sqx_chip(run))
         for job in (running + queued)[:SHOWN]:
             self.lay.addWidget(self.chip(job))
         if len(live) > SHOWN:
-            self.lay.addWidget(QLabel(f"+{len(live) - SHOWN}"))
+            self.lay.addWidget(QLabel(f"+{num(len(live) - SHOWN)}"))
         self.lay.addStretch(1)
         if failed:
-            self.lay.addWidget(QLabel(f"{failed} terminaron con error",
+            self.lay.addWidget(QLabel(f"{num(failed)} terminaron con error",
                                       styleSheet=f"color: {C['dead']};"))
 
     def chip(self, job: dict) -> QWidget:
@@ -129,7 +158,36 @@ class JobsBar(QWidget):
                            styleSheet="padding: 0;")
         stop.clicked.connect(lambda: self.cancel(job["id"]))
         row.addWidget(text)
+        if not waiting(job):
+            progress = bar(job.get("percent"), BAR_PX, colour)
+            progress.setToolTip("Avance del trabajo: la última línea «PROGRESS <0-100>» que "
+                                "imprimió; 100 % al acabar bien.")
+            row.addWidget(progress)
         row.addWidget(stop)
+        return box
+
+    def sqx_chip(self, run: dict) -> QWidget:
+        """One SQX run on a worker: its task, count and bar. No ✕: the window never stops SQX.
+
+        Args:
+            run: One `/api/ops/sqx` record.
+
+        Returns:
+            The chip.
+        """
+        box = QWidget()
+        row = QHBoxLayout(box)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(2)
+        colour = C["weak"]
+        text = QLabel(sqx_text(run), styleSheet=f"color: {colour}; border: 1px solid "
+                                                 f"{colour}; border-radius: 3px; padding: 1px 6px;")
+        text.setToolTip(f"{run['project']} en el {ROLE.get(run['role'], run['role'])}: la tarea "
+                        "que su log da por empezada. El avance es el que SQX escribe en su log, "
+                        "o hechas ÷ total del estado del worker. Detalle en «En marcha».")
+        row.addWidget(text)
+        row.addWidget(bar(share(run.get("done"), run.get("total"), run.get("percent")),
+                          BAR_PX, colour))
         return box
 
     def cancel(self, job_id: str) -> None:

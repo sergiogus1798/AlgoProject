@@ -15,6 +15,7 @@ running instance, so these are safe at any time, including while the owner's GUI
 | `project_health.py` | Every project's broken task references, version drift and mangled text fields | `python3 -m sqx.inspect.project_health [--json]` |
 | `vocabulary.py` | What one install can express: its blocks, its random groups, and what each pools | `python3 -m sqx.inspect.vocabulary [TERM] [--role ROLE] [--diff ROLE] [--snapshot]` |
 | `template_check.py` | Whether the strategies a project built really carry the blocks its template fixes | `python3 -m sqx.inspect.template_check [PROJECT ...]` |
+| `strategymeta/` | One strategy's metadata as fields — direction, entry/exit conditions with values, orders and stops, money management, Friday close, the last test's and the task's costs, today's asset card hash | `python3 -m sqx.inspect.strategymeta <file.sqx> [--cfx <project.cfx>]` |
 
 `instruments.py` is what keeps `assets/symbols/*.yaml` honest: it reports what SQX carries today,
 which is the `sqx_default` side of every override.

@@ -10,7 +10,7 @@ from ui.daemon.tearsheet import drawdowns, facts, months, tradestats
 
 MODULE = "ui.daemon.tearsheet"
 MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
-SAMPLE = {"IS": "IS (build)", "OOS": "OOS (retest)"}
+SAMPLE = {"IS": "IS (build)", "OOS": "OOS (retest)", "OOS2": "OOS2 (reservado)"}
 
 
 def _days(index: pd.Index) -> list[str]:
@@ -74,7 +74,7 @@ def tab(sample: str, equity: pd.Series, trades: pd.DataFrame, sharpe: float | No
     """One sample's tab.
 
     Args:
-        sample: "IS" or "OOS".
+        sample: "IS", "OOS" or, once the door opened, "OOS2".
         equity: Its cumulative P&L per day, indexed by day, starting at 0.
         trades: Its trades, ascending in close time.
         sharpe: SQX's Sharpe of this sample.
@@ -114,10 +114,10 @@ def build(data: dict) -> dict:
         data: What `harvest.read` returned.
 
     Returns:
-        A contract result (validated) with tabs «IS» and «OOS» and `harvest_day`.
+        A contract result (validated) with a tab per sample present and `harvest_day`.
     """
     tabs = []
-    for s in ("IS", "OOS"):
+    for s in SAMPLE:
         e = data["equity"][data["equity"]["sample"] == s]
         if e.empty:
             continue

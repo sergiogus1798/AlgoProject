@@ -39,7 +39,7 @@ class NewAsset(BaseModel):
 
 
 class MarketChange(BaseModel):
-    """One category of one asset's retest universe, complete."""
+    """One category of one asset's Cross Market check, complete."""
 
     symbol: str
     category: str
@@ -166,10 +166,11 @@ def restore_asset(symbol: str) -> dict[str, object]:
 
 @ROUTER.post("/api/assets/market")
 def set_market(change: MarketChange) -> dict[str, object]:
-    """Replace one category of one asset's retest universe.
+    """Make one category of one asset's Cross Market check hold exactly these markets.
 
     Args:
-        change: The main asset, the category and the complete list of feeds.
+        change: The main asset, the category and the complete list of feeds; the file is
+            edited in place (`assetwrite.set_market`), so adding or removing one is one line.
 
     Returns:
         The category as written.

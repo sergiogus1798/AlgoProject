@@ -51,7 +51,7 @@ def build(data: dict) -> dict:
     Returns:
         A contract result (validated); a sample without trades has no tab.
     """
-    tabs = [tab(s, t, data["day"]) for s in ("IS", "OOS")
+    tabs = [tab(s, t, data["day"]) for s in SAMPLE
             if not (t := data["trades"][data["trades"]["sample"] == s]).empty]
     return blocks.validate({
         "module": MODULE, "strategy": data["strategy"], "identity": data["identity"],

@@ -1,9 +1,12 @@
-"""The one design system: the palette every view reads, and the stylesheet it becomes."""
+"""The one design system: the palette every view reads, the stylesheet it becomes, and the two
+smallest pieces every zone draws with (a rule, a kicker)."""
+
+from PySide6.QtWidgets import QFrame, QLabel
 
 # One colour, one meaning, everywhere. The verdict scale is discrete and only ever has
 # these five steps: a verdict is a decision the owner took, not a number to interpolate.
 C = {"bg": "#0f1219", "panel": "#171c26", "raised": "#1e2431", "line": "#2a3140",
-     "text": "#e7eaf0", "muted": "#8d96aa", "faint": "#5c6678", "accent": "#4c8dff",
+     "text": "#e7eaf0", "muted": "#8d96aa", "faint": "#5c6678", "accent": "#8a7dff",
      "promising": "#2fb98a", "weak": "#d9a441", "dead": "#c2515e",
      "pending": "#8390a8", "untried": "#141922"}
 
@@ -49,13 +52,18 @@ STATUS_HELP = {
     "archived": "Fuera del trabajo diario. Su fila y sus corridas se conservan.",
 }
 
+# Owner, 2026-09-27 (encargo 22 §10): one step larger everywhere, a livelier accent (violet: it
+# collides with none of the verdict colours), a little more separation between sections, and
+# the active tab drawn as a rounded box instead of Qt's underline.
 QSS = f"""
 QWidget {{ background: {C['bg']}; color: {C['text']};
-           font-family: "Inter", "DejaVu Sans", sans-serif; font-size: 13px; }}
-QLabel#h1 {{ font-size: 21px; font-weight: 600; }}
-QLabel#h2 {{ font-size: 15px; font-weight: 600; }}
+           font-family: "Inter", "DejaVu Sans", sans-serif; font-size: 14px; }}
+QLabel#h1 {{ font-size: 22px; font-weight: 600; }}
+QLabel#h2 {{ font-size: 16px; font-weight: 600; }}
 QLabel#muted {{ color: {C['muted']}; }}
-QLabel#faint {{ color: {C['faint']}; font-size: 12px; }}
+QLabel#faint {{ color: {C['faint']}; font-size: 13px; }}
+QLabel#readonly {{ background: {C['raised']}; color: {C['weak']}; border: 1px solid {C['weak']};
+                   border-radius: 6px; padding: 6px 12px; font-weight: 700; }}
 QFrame QLabel {{ background: transparent; }}
 
 QFrame#sidebar {{ background: {C['panel']}; border-right: 1px solid {C['line']}; }}
@@ -69,7 +77,6 @@ QPushButton:disabled {{ color: {C['faint']}; border-color: {C['line']}; }}
 QPushButton#nav {{ background: transparent; border: none; text-align: left;
                    padding: 10px 16px; border-radius: 0; color: {C['muted']}; }}
 QPushButton#nav:hover {{ background: {C['raised']}; color: {C['text']}; }}
-QPushButton#nav[soon="true"] {{ color: {C['faint']}; }}
 QPushButton#nav:checked {{ background: {C['raised']}; color: {C['text']};
                            border-left: 3px solid {C['accent']}; font-weight: 600; }}
 QPushButton#primary {{ background: {C['accent']}; border-color: {C['accent']};
@@ -99,6 +106,14 @@ QScrollBar::handle:vertical {{ background: {C['line']}; border-radius: 5px; min-
 QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; }}
 QToolTip {{ background: {C['raised']}; color: {C['text']}; border: 1px solid {C['accent']};
             padding: 6px; }}
+
+QTabWidget::pane {{ border: none; border-top: 1px solid {C['line']}; }}
+QTabBar {{ qproperty-drawBase: 0; }}
+QTabBar::tab {{ background: transparent; color: {C['muted']}; border: 1px solid transparent;
+                border-radius: 7px; padding: 5px 14px; margin: 3px 3px 5px 0; }}
+QTabBar::tab:hover {{ color: {C['text']}; border-color: {C['line']}; }}
+QTabBar::tab:selected {{ background: {C['raised']}; color: {C['text']};
+                         border: 1px solid {C['accent']}; font-weight: 700; }}
 """
 
 
@@ -117,50 +132,61 @@ def chip(text: str, colour: str) -> str:
             f'padding:1px 8px; font-size:11px;">{text}</span>')
 
 
-# The second look, for the zones from «Estrategias» on: a terminal of analysis rather than a
+# The second look, for every zone built since 2026-09-25: a terminal of analysis rather than a
 # dashboard. Neutral near-black with no blue cast, one monospace face for every figure and
 # identifier, tabular digits so columns read without being looked at, rows of 24 px and thin
 # rules instead of cards. Colour keeps the same five meanings as `C`; nothing here is decorative.
 # Owner, 2026-09-25: the greys were unreadable. `muted` and `faint` are now light enough to
 # read as text, not as decoration; hierarchy comes from weight, not from fading.
-T = {"bg": "#0b0b0c", "panel": "#111113", "line": "#232326", "rule": "#34343a",
-     "text": "#f0f0ec", "muted": "#c2c2c8", "faint": "#9a9aa2", "select": "#1f1f24"}
+# 2026-09-27: `rule` one step lighter, so sections part visibly, and `accent` — the touch of
+# colour inside the terminal look: kickers and the active tab, never a meaning.
+T = {"bg": "#0b0b0c", "panel": "#111113", "line": "#232326", "rule": "#3e3e46",
+     "text": "#f0f0ec", "muted": "#c2c2c8", "faint": "#9a9aa2", "select": "#1f1f24",
+     "accent": C["accent"]}
 MONO = '"JetBrains Mono", "DejaVu Sans Mono", monospace'
 
 QSS += f"""
 QFrame#term {{ background: {T['bg']}; border: none; }}
 QFrame#term QWidget {{ background: {T['bg']}; color: {T['text']}; }}
-QFrame#term QLabel#kicker {{ color: {T['text']}; font-size: 11px; font-weight: 700;
+QFrame#term QLabel#kicker {{ color: {T['accent']}; font-size: 12px; font-weight: 700;
                              letter-spacing: 1.5px; }}
-QFrame#term QLabel#mono {{ font-family: {MONO}; font-size: 12px; font-weight: 600; }}
+QFrame#term QLabel#mono {{ font-family: {MONO}; font-size: 13px; font-weight: 600; }}
 QFrame#term QLabel#figure {{ font-family: {MONO}; font-size: 26px; font-weight: 700; }}
-QFrame#term QLabel#dim {{ color: {T['faint']}; font-family: {MONO}; font-size: 12px; }}
+QFrame#term QLabel#dim {{ color: {T['faint']}; font-family: {MONO}; font-size: 13px; }}
 QFrame#term QLabel#h1 {{ font-weight: 700; }}
 QFrame#term QFrame#rule {{ background: {T['rule']}; max-height: 1px; min-height: 1px; }}
 QFrame#term QTableWidget, QFrame#term QListWidget {{
     background: {T['bg']}; border: none; border-top: 1px solid {T['rule']};
-    border-radius: 0; gridline-color: {T['line']}; font-family: {MONO}; font-size: 12px;
+    border-radius: 0; gridline-color: {T['line']}; font-family: {MONO}; font-size: 13px;
     padding: 0; }}
 QFrame#term QHeaderView::section {{ background: {T['bg']}; color: {T['text']};
     border: none; border-bottom: 1px solid {T['rule']}; padding: 4px 6px;
-    font-family: {MONO}; font-size: 11px; font-weight: 700; }}
+    font-family: {MONO}; font-size: 12px; font-weight: 700; }}
 QFrame#term QTableWidget::item {{ padding: 0 6px; }}
 QFrame#term QTableWidget::item:selected, QFrame#term QListWidget::item:selected {{
     background: {T['select']}; color: {T['text']}; }}
 QFrame#term QListWidget::item {{ padding: 3px 8px; border-radius: 0; }}
 QFrame#term QPushButton {{ background: transparent; border: 1px solid {T['muted']};
-    border-radius: 2px; padding: 3px 10px; font-family: {MONO}; font-size: 11px;
+    border-radius: 2px; padding: 3px 10px; font-family: {MONO}; font-size: 12px;
     font-weight: 700; }}
 QFrame#term QPushButton:hover {{ border-color: {T['text']}; }}
 QFrame#term QComboBox {{ background: {T['panel']}; border: 1px solid {T['rule']};
     border-radius: 2px; padding: 3px 8px; font-family: {MONO}; font-weight: 700; }}
 QFrame#term QCheckBox {{ font-weight: 600; }}
 QFrame#term QLineEdit {{ background: {T['panel']}; border: 1px solid {T['rule']};
-    border-radius: 2px; padding: 4px 8px; font-family: {MONO}; font-size: 12px; }}
+    border-radius: 2px; padding: 4px 8px; font-family: {MONO}; font-size: 13px; }}
 QFrame#term QScrollBar::handle:vertical, QFrame#term QScrollBar::handle:horizontal {{
     background: {T['rule']}; }}
 QFrame#term QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 2px; }}
 QFrame#term QScrollBar::handle:horizontal {{ border-radius: 5px; min-width: 30px; }}
+QFrame#term QTabWidget::pane {{ border: none; border-top: 1px solid {T['rule']}; }}
+QFrame#term QTabBar::tab {{ background: transparent; color: {T['muted']};
+    border: 1px solid transparent; border-radius: 7px; padding: 4px 12px;
+    margin: 3px 3px 5px 0; font-family: {MONO}; font-size: 13px; font-weight: 600; }}
+QFrame#term QTabBar::tab:hover {{ color: {T['text']}; border-color: {T['rule']}; }}
+QFrame#term QTabBar::tab:selected {{ background: {T['select']}; color: {T['text']};
+    border: 1px solid {T['accent']}; font-weight: 700; }}
+QFrame#term QTabBar::tab:disabled {{ color: {T['faint']}; }}
 """
 
 
@@ -182,3 +208,17 @@ def state_colour(value: str) -> str:
     if v in {"marginal", "dudosa", "provisional", "weak"}:
         return C["weak"]
     return C["pending"]
+
+
+def rule() -> QFrame:
+    """A one-pixel horizontal line, which the stylesheet paints as a rule."""
+    return QFrame(objectName="rule")
+
+
+def kicker(text: str) -> QLabel:
+    """A small spaced-out heading, upper-cased on screen.
+
+    Args:
+        text: The heading.
+    """
+    return QLabel(text.upper(), objectName="kicker")

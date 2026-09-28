@@ -1,22 +1,59 @@
-# ui/daemon/workflow — the rail's route: every step of one project, read from disk
+# ui/daemon/workflow — the rail's routes: every step of one project, read from disk, and its run buttons
 
-`GET /api/workflow?project=<P>` → `{project, asset, steps[], oos2, blind}` (SPEC §2 of the
-unified UI). One row per line of `docs/AgentPDFs/WORKFLOW.md`'s table — the half steps included,
-28 today — each with `state` (`done|running|pending|blocked|sealed|missing`), a Spanish `why`,
-the funnel `in`/`out` and the `day`. Read only: files under the data root, the install's
-`project.cfx`, logs and databank folders, and the ledger. **No command to any install**, not
-even `-project action=status` (`progress.state` sends that one; the rail does not call it).
+`GET /api/workflow?project=<P>` → `{project, asset, family, steps[], tabs, oos2, blind, backfill}`.
+One row per line of `docs/AgentPDFs/WORKFLOW.md`'s table — the half steps included, 28 today —
+each with `state` (`done|running|pending|blocked|sealed|missing`), a Spanish `why`, the funnel
+`in`/`out`, the `day`, the databank panel's `tab`/`sub` where its result is read, and `tests`:
+every study that belongs to the step (its evidence, the catalogue's studies filed under its
+number, and step 8's off-sequence readings), each with its own state, a one-line `config` from
+`results/knobs`, `runnable` and the `databank` of its newest result. `backfill` says whether to
+offer «rehacer las filas de 17-19» and the command.
 
-**Imports from:** `core/`, `ledger/`, `sqx/projects/stage`, `ui/daemon/{progress,tasklog,jobs,runs}` ·
-**Consumed by:** `ui/daemon/app.py` (includes `ROUTER`), `ui/desktop/workflow/`
+`POST /api/workflow/run {project, tests: [{n, key}], databank, strategies}` queues the ticked
+tests in `ui/daemon/jobs.py` → `{jobs, refused: [{n, key, why}]}`. `POST /api/workflow/backfill
+{project}` queues `python3 -m ledger.backfill --blind <P> … --write` when offered.
+
+Reading is files only: the data root, the install's `project.cfx`, logs and databank folders, and
+the ledger. **No command to any install**, not even `-project action=status`. The run routes
+start Python studies and nothing else: an SQX step's own task is never a test.
+
+**Imports from:** `core/`, `ledger/`, `sqx/projects/{stage,registry}`,
+`ui/daemon/{progress,tasklog,jobs,runs,results,runner}` ·
+**Consumed by:** `ui/daemon/routers.py` (includes `ROUTER`), `ui/desktop/workspace/rail.py` ·
+**Checked by:** `tools/checks.py` («workflow table»):
+the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, word for word.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `api.py` | `ROUTER` and the route; gathers the context once and runs every step's reader | imported | project → JSON |
-| `steps.py` | The step table: number, title, kind, study keys and which evidence proves it | imported | — |
+| `api.py` | `ROUTER` and the three routes; gathers the context once and runs every step's reader | imported | project → JSON |
+| `steps.py` | The step table: number, short title, WORKFLOW.md title, kind, evidence, study keys, tab and sub-panel, the stages its tests read | imported | — |
 | `derive.py` | One reader per kind of evidence: state, why, funnel; and the seal on 17-19 | imported | context → step |
+| `tests.py` | The tests of each step, generated from the catalogue: state, one-line configuration, whether the window may start it | imported | step → tests |
+| `run.py` | Ticked tests into the runner's jobs — the databank each reads and the strategies — and the backfill offer | imported | request → jobs |
 | `sources.py` | What the disk holds: the install, its tasks and runs, a study's results, the template link | imported | disk → dicts |
-| `ledgerview.py` | The project's ledger studies, the oos2 budget and the blind door — asked of `ledger.gate`/`spend` | imported | ledger → dicts |
+| `ledgerview.py` | The project's ledger studies, the oos2 budget, and the blind door over the one Q9 study — asked of `ledger.gate`/`spend` | imported | ledger → dicts |
+
+## Where a test runs
+
+- **The databank.** From the panel, the one it shows. From the rail, the databank of the study's
+  newest result on this project, then the output databanks of the SQX stages the step `feeds`
+  on (8: oos, build · 10: crossmarket · 12: crosstf · 14: mcretest · 16: spp · 19-20: wfm), as
+  the data root spells them (spaces become `_`); the first where the study finds its input wins.
+  Steps 21-25 read survivors whose databank the rail cannot know: they run from the panel.
+- **The strategies.** A study with a population command runs once; a one-strategy study runs
+  once per strategy of the databank's newest export (else its cosecha), all queued at once;
+  17, 18, 18.5 and the cloud run once per mother batch in `strategyPermutations/<P>/`.
+- **What the run route refuses first** (`run.refusal`): an unknown step, any test of an SQX
+  step — its task is SQX's, and the analysis hanging from it (the WFM study of 19, the cloud of
+  16.5) is read after the task, from the databank panel, never from the rail — a study that is
+  not a test of that step, and a test `tests.one` does not mark runnable.
+- **What costs more than CPU** (`tests.SPENDS`: wfc, cscv, marketSurfaces, wfm, blindJoint read
+  oos2; snoopingScreen writes a ledger row) carries `spends`; with steps 21-25 it has
+  `auto` false: never ticked by default, never in «correr todo», and the window asks before
+  each run.
+- **Step 20** is refused while `ledger.gate.allow_read` refuses, before the runner is asked.
+- **The family** the studies of 8 (snooping), 17, 18, 18.5 and 20 sign the ledger under is the
+  template's name in `projects/registry.csv` (`runner/where.family`); no template, no run.
 
 ## How each state is derived
 
@@ -28,12 +65,19 @@ even `-project action=status` (`progress.state` sends that one; the rail does no
   `running` when the install log's last start is this project and its current task is one of
   them; `done` when their output databank holds `.sqx` or today's project log shows a finished
   run; the funnel from that run's tested/passed, else the databank counts on disk.
+- **Tests** `running` when a daemon job of this project runs that study, `blocked` when the
+  runner never starts it (`why`) or it signs the ledger and the project has no template, `done`
+  when a result exists, else `pending`.
 - **Python steps** — the newest contract result of the step's studies under
   `reports/<P>/<databank>/<day>/<key>/` or `{strategyPermutations,structural,atrCalculator}/<P>/<batch>/estudios/`;
   `running` when a daemon job runs one of them on this project. Funnel: the gate manifest's
   `entered/survives`, else `verdict.csv` rows with `out` = verdicts not in `steps.DROP`, else
   the per-strategy JSONs; a batch study counts batches.
 - **10.5** the `CrossTF_Input` databank; **16.5** the mothers' batches with `collected.json`.
+- **The blind door** (`ledgerview.door`) asks `ledger.gate` over exactly one study, the one
+  blindJoint signs and reads: `<symbol>_<timeframe>_<template folder>` from the registry row
+  (Q9). Rows signed under the project's own name (E1's tests) never open it; no template, it
+  stays shut. Its sentence names the study. `ledgerview.blind(rows)` remains for older callers.
 - **17, 18, 19** while `ledger.gate.allow_read` refuses: a finished one is `sealed` with no
   numbers and no verdict in `why`. **20** is `blocked` with the gate's own sentence until then.
 - **oos2** `looks` = this project's ledger rows on `oos2` (`ledger.spend.virgin`), `allowed` is

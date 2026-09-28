@@ -5,8 +5,6 @@ from ui.daemon.runner import where
 
 NO_HARVEST = "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
 NO_METRICS = "necesita el export de métricas de este databank (skill /export, metrics/)"
-FAMILY = ("escribe una fila en el ledger bajo símbolo × timeframe × familia de plantillas, y la "
-          "ventana no sabe la familia: córrelo desde la terminal con --family")
 
 
 def gate(c: dict, strategy: str) -> list[str] | str:
@@ -18,9 +16,12 @@ def gate(c: dict, strategy: str) -> list[str] | str:
 
 
 def is_oos(c: dict, strategy: str) -> list[str] | str:
-    """In sample against out of sample over the databank's metrics export."""
-    if not (metrics_export(c["project"], c["databank"]) / "metrics.csv").exists():
-        return NO_METRICS
+    """In sample against out of sample: the population half over the metrics export, the
+    per-trade half over the newest cosecha; either input is enough. It has no --strategy, so
+    one strategy runs the whole databank once (`table.jobs` folds identical commands)."""
+    if not ((metrics_export(c["project"], c["databank"]) / "metrics.csv").exists()
+            or c["harvest"]):
+        return f"{NO_METRICS}, o su cosecha (skill /oos-gate)"
     return ["-m", "studies.screening.isOos.report", "--project", c["project"], "--databank",
             c["databank"]]
 
@@ -65,11 +66,23 @@ def spread(c: dict, strategy: str) -> list[str] | str:
              c["databank"], "--feed", c["feed"]] + (["--strategy", strategy] if strategy else []))
 
 
+def snooping_screen(c: dict, strategy: str) -> list[str] | str:
+    """SPA and StepM of the gate's survivors against buy and hold, signed under the family."""
+    row, family = where.enrolled(c["project"]), where.family(c["project"])
+    if family is None:
+        return where.no_family(c["project"])
+    if not c["harvest"]:
+        return NO_HARVEST
+    return ["-m", "studies.screening.snoopingScreen.report", "--project", c["project"],
+            "--databank", c["databank"], "--feed", c["feed"], "--symbol", c["asset"],
+            "--timeframe", row["timeframe"], "--family", family]
+
+
 # key -> {"plan", "one", "many", "sets"}; `sets` says whether the command takes --set. A
 # study the window never starts carries only "why".
 STUDIES = {
     "gate": {"plan": gate, "one": False, "many": True, "sets": True},
-    "isOos": {"plan": is_oos, "one": False, "many": True, "sets": False},
+    "isOos": {"plan": is_oos, "one": True, "many": True, "sets": True},
     "filters": {"plan": filters, "one": False, "many": True, "sets": False},
     "decay": {"plan": decay, "one": False, "many": True, "sets": False},
     "monkeyExcess": {"plan": monkey_excess, "one": False, "many": True, "sets": False},
@@ -77,7 +90,7 @@ STUDIES = {
     "spread": {"plan": spread, "one": True, "many": True, "sets": True},
     "replication": {"why": "compara varios databanks contra uno de referencia y la ventana "
                            "corre uno: desde la terminal con --reference y --databank"},
-    "snoopingScreen": {"why": FAMILY},
+    "snoopingScreen": {"plan": snooping_screen, "one": False, "many": True, "sets": True},
     "falsePositives": {"why": "aún no existe: sólo su README"},
     "analysis": {"why": "no es un estudio: son las matemáticas que comparten los del cribado"},
 }

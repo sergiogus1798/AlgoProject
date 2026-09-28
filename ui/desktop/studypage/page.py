@@ -1,7 +1,6 @@
 """The generic study page: family tabs, study tabs with their state dots, the result, the drawer, the runs."""
 
-from PySide6.QtCore import QSize, Qt, QUrl, Signal
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QPushButton, QSplitter, QTabBar, QTabWidget,
                                QVBoxLayout)
 
@@ -20,8 +19,6 @@ from ui.desktop.theme import T
 class StudyPage(QFrame):
     """One study of one strategy (`strategy_page`) or of the population, following SELECTION.
     The wiring lives here; what is said comes from `notes`, what is drawn from `ResultView`."""
-
-    population_wanted = Signal(str)     # a population-only study: open it on the other page
 
     def __init__(self, strategy_page: bool) -> None:
         """Build the page and read the catalogue once.
@@ -62,14 +59,9 @@ class StudyPage(QFrame):
         row = QHBoxLayout()
         self.note = text("", T["muted"], 14)
         row.addWidget(self.note, 1)
-        self.jump = QPushButton("ver en Población")
-        self.jump.clicked.connect(lambda: self.population_wanted.emit(self.key))
-        self.report = QPushButton("abrir informe HTML")
-        self.report.clicked.connect(self._open_report)
         self.back = QPushButton("volver a una sola corrida")
         self.back.clicked.connect(lambda: self.load())
-        for b in (self.jump, self.report, self.back):
-            row.addWidget(b, 0, Qt.AlignTop)
+        row.addWidget(self.back, 0, Qt.AlignTop)
         lay.addLayout(row)
         self.skipped = text("", T["text"], 13)
         lay.addWidget(self.skipped)
@@ -176,12 +168,11 @@ class StudyPage(QFrame):
         self.drawer.load(self.key, entry["title"])
         self.bar.aim(entry, w, self.strategy_page)
         self.back.hide()
-        self.jump.hide()
         self.skipped.hide()
         if not (w["project"] and w["databank"]):
             return self._empty("Elige un proyecto y un databank.")
         if self.strategy_page and not w["strategy"]:
-            return self._empty("Elige una estrategia en Población o en la matriz.")
+            return self._empty("Elige una estrategia en el panel de databanks de Proyecto.")
         query = compare.query(w, self.key)
         got = fetch("result", **query, day=day)
         self.history.fill(fetch("history", **query),
@@ -195,10 +186,8 @@ class StudyPage(QFrame):
         self.history.mark(self.meta["day"])
         self.skipped.setText(notes.skipped(self.meta["skipped"]))
         self.skipped.setVisible(bool(self.meta["skipped"]))
-        self.report.setVisible(bool(self.meta["path"]))
         if got["result"] is None:
             self.note.setText(notes.absent(entry, self.strategy_page))
-            self.jump.setVisible(self.strategy_page and entry["many"])
         else:
             self.note.setText(notes.shown(self.meta["day"], bool(day), self.strategy_page))
 
@@ -206,7 +195,6 @@ class StudyPage(QFrame):
         """No result to show, and why."""
         self.meta = {"path": None}
         self.note.setText(f'<span style="color:{ink}">{sentence}</span>')
-        self.report.hide()
         self.history.fill({}, None)
         self.view.show_result(None, None)
         self.drawer.set_shown(None)
@@ -243,8 +231,3 @@ class StudyPage(QFrame):
         """A run of this page ended: re-read the dots and the newest result."""
         self._states()
         self.open_study(self.key)
-
-    def _open_report(self) -> None:
-        """Open the HTML page the run wrote beside its JSON — the same dict, drawn statically."""
-        html = self.meta["path"][:-len(".json")] + ".html"
-        QDesktopServices.openUrl(QUrl.fromLocalFile(html))

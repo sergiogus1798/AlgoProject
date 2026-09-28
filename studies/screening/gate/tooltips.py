@@ -3,6 +3,14 @@
 A screen's knob is addressed by the screen's own name, as `--set` takes it."""
 
 TIPS = {
+    "presencia.kind": "Dura: la estrategia que no pasa esta criba muere aquí y no llega a la siguiente.",
+    "sanidad.kind": "Dura: la estrategia que no pasa esta criba muere aquí y no llega a la siguiente.",
+    "estaticas.kind": "Dura: la estrategia que no pasa esta criba muere aquí y no llega a la siguiente.",
+    "degradacion.kind": "Dura: la estrategia que no pasa esta criba muere aquí y no llega a la siguiente.",
+    "forma.kind": "Dura: la estrategia que no pasa esta criba muere aquí y no llega a la siguiente.",
+    "mono.kind": "Dura: la estrategia que no pasa esta criba muere aquí y no llega a la siguiente.",
+    "familia.kind": "Blanda: esta criba mide y avisa, pero no elimina a nadie.",
+    "redundancia.kind": "Blanda: esta criba mide y avisa, pero no elimina a nadie.",
     "sanidad.min_trades": "Operaciones mínimas en la cosecha para que la estrategia se lea.",
     "estaticas.keep": "La condición sobre las métricas fuera de muestra que tiene que cumplir, "
                       "escrita como la lee la criba.",

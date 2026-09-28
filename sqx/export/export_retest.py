@@ -10,7 +10,7 @@ import pandas as pd
 
 from core import exportdrv, manifest, tradepack
 from core.paths import MASTER, export_dir, worker_dir
-from sqx.export.export_trades import SAMPLE_SEED, stage
+from sqx.export.export_trades import SAMPLE_SEED, sign, stage
 
 
 def pack(raw: Path, staged: int, out: Path, meta: dict, command: str) -> None:
@@ -73,7 +73,9 @@ def main() -> None:
               "sample_seed": SAMPLE_SEED if a.limit else None},
              f"export_retest.py --project {a.project} --databank {db}"
              + (f" --limit {a.limit}" if a.limit else ""))
-    # The CSVs orderstocsv wrote and the .sqx copies are intermediates; they do not outlive it.
+        sign(work / "strategies", export_dir(a.project, db, day), f"{i}__")
+    # The CSVs orderstocsv wrote and the .sqx copies are intermediates; only identity.csv
+    # outlives them — a WFC batch of 5000 variants must not keep its .sqx three times.
     shutil.rmtree(work)
 
 

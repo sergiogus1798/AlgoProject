@@ -1,6 +1,6 @@
 ---
-q: project.cfx format, cfx zip config.xml task xml, edit project.cfx while running, task output databank, Databank value null, cfx only config.xml rejected, missing task files project dropped, templateFile Project vs StrategyType
-tag: 🔬  date: 2026-09-02  see: sqx-drive/project-verb, sqx-format/retest-rewrites-sqstats
+q: project.cfx format, cfx zip config.xml task xml, edit project.cfx while running, task output databank, Databank value null, cfx only config.xml rejected, missing task files project dropped, templateFile Project vs StrategyType, project symbol timeframe, main chart of a project
+tag: 🔬  date: 2026-09-27  see: sqx-drive/project-verb, sqx-format/retest-rewrites-sqstats
 ---
 # project.cfx is a ZIP (`config.xml` + `<TaskType>-Task<N>.xml`); SQX rewrites it on save and exit
 Reading is always safe (no SQX needed); `sqx/inspect/dump_project.py` renders one. **Never edit a cfx a
@@ -23,4 +23,8 @@ The strategy template is `<StrategyType templateFile=>` in the Build task; `<Pro
   always the same string. Nothing resolves it — it is a Windows path on a Linux box, and it is not a
   strategy template (that is `<StrategyType templateFile=>`, above). Not worth repairing: it would
   mean rewriting eleven archives offline for a field nothing reads. `project_health.py` decodes it.
+- A project's symbol and timeframe: the first `<Setup><Chart symbol= timeframe=>` of the first
+  `<Task>` of `config.xml` (symbol = text before the first `_`). It can contradict the name:
+  `EURJPY_H1` on the master is H4. Search it with a regex — a task XML runs to MB and parsing one
+  per project cost the gallery ~1 s for 14 projects (`ui/daemon/projects/sources.chart`, 2026-09-27).
 - Rewrite-on-exit is also how `-project action=loadconfig` becomes permanent (see retest-rewrites-sqstats).

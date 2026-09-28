@@ -1,4 +1,4 @@
-"""The fixed bar on top: Proyecto › Población › Estrategia, bound to SELECTION, each crumb a way back."""
+"""The bar on top: Proyectos › proyecto › estrategia, bound to SELECTION; each crumb goes back."""
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton
@@ -7,9 +7,10 @@ from ui.desktop.loadbar import LoadBar
 from ui.desktop.selection import SELECTION
 from ui.desktop.theme import MONO, T
 
-# Which zone each crumb opens. With no project chosen every crumb opens «Población», the only
-# zone with the project and databank pickers.
-TARGET = {"project": "Workflow", "databank": "Población", "strategy": "Estrategia"}
+# Which zone each crumb opens (encargo 22 §2: the bar follows the three new zones). With no
+# project chosen every crumb opens the gallery, where a project is chosen. The databank is not
+# a crumb: it is where the strategy lives, written beside the asset.
+TARGET = {"projects": "Proyectos", "project": "Proyecto", "strategy": "Estrategia"}
 
 
 def crumb_text(now: dict) -> dict[str, str]:
@@ -19,12 +20,11 @@ def crumb_text(now: dict) -> dict[str, str]:
         now: SELECTION's fields.
 
     Returns:
-        `{project, databank, strategy}` → text; a field not chosen reads «elige …».
+        `{projects, project, strategy}` → text; a field not chosen reads «elige …». The
+        identity is never printed (encargo 22 §10): it lives in the strategy crumb's tooltip.
     """
-    ident = f"  ({now['identity'][:8]})" if now["identity"] else ""
-    return {"project": now["project"] or "elige proyecto",
-            "databank": now["databank"] or "elige databank",
-            "strategy": f"{now['strategy']}{ident}" if now["strategy"] else "elige estrategia"}
+    return {"projects": "Proyectos", "project": now["project"] or "elige proyecto",
+            "strategy": now["strategy"] or "elige estrategia"}
 
 
 class ContextBar(QFrame):
@@ -46,11 +46,11 @@ class ContextBar(QFrame):
                 lay.addWidget(sep)
             b = QPushButton()
             b.clicked.connect(lambda _, k=key: self.zone.emit(
-                TARGET[k] if SELECTION.now["project"] else "Población"))
+                TARGET[k] if SELECTION.now["project"] else "Proyectos"))
             lay.addWidget(b)
             self.crumbs[key] = b
         self.asset = QLabel("")
-        self.asset.setStyleSheet(f"color:{T['faint']}; font-family:{MONO}; font-size:12px;")
+        self.asset.setStyleSheet(f"color:{T['faint']}; font-family:{MONO}; font-size:13px;")
         lay.addWidget(self.asset)
         lay.addStretch()
         # The selected databank's data, loaded the moment it is chosen (owner, 2026-09-27).
@@ -68,11 +68,12 @@ class ContextBar(QFrame):
         for key, text in crumb_text(now).items():
             b = self.crumbs[key]
             b.setText(text)
-            ink = T["text"] if now[key] else T["faint"]
+            ink = T["text"] if key == "projects" or now[key] else T["faint"]
             weight = 700 if key == "strategy" and now[key] else 500
-            b.setStyleSheet(f"font-family:{MONO}; font-size:13px; border:none; padding:3px 6px; "
+            b.setStyleSheet(f"font-family:{MONO}; font-size:14px; border:none; padding:3px 6px; "
                             f"color:{ink}; font-weight:{weight};")
             b.setToolTip(f"Abrir {TARGET[key]}" + (f" · identidad {now['identity']}"
                                                    if key == "strategy" and now["identity"]
                                                    else ""))
-        self.asset.setText(f"· activo {now['asset']}" if now["asset"] else "")
+        self.asset.setText("   ".join(f"· {word} {now[key]}" for key, word in
+                                      (("databank", "databank"), ("asset", "activo")) if now[key]))

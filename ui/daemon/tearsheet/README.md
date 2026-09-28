@@ -15,13 +15,14 @@ api ─▶ harvest.read (newest harvest/<P>/<D>/<day>/, pyarrow filter on identi
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names the package; holds no code | — | — |
-| `api.py` | `ROUTER`: `GET /api/tearsheet` and `GET /api/tearsheet/exits`, `?project&databank&identity`; a refusal is `{"error"}`, never a 500 | imported | request → contract dict |
+| `api.py` | `ROUTER`: `GET /api/tearsheet` and `GET /api/tearsheet/exits`, `?project&databank&identity&sample=&source=live\|archive&version=`; `sample` IS, OOS1 (or OOS) keeps one tab, OOS2 goes through `oos2`; a refusal is `{"error"}`, never a 500 | imported | request → contract dict |
 | `harvest.py` | The newest cosecha of (P, D), one identity's equity, trades and metrics row; refuses a sample outside IS/OOS; the sentence naming the harvest command when there is none | imported | disk → dict · sentence |
 | `drawdowns.py` | Underwater in money and in % of the account's peak, the deepest episodes, the longest flat spell, each year's max DD, days to the first close above 0 | imported | daily curve → numbers |
 | `months.py` | Monthly P&L exact to the cent, years, rolling 3/6/12/24-month windows, the year × month layout | imported | daily curve → months |
-| `tradestats.py` | Starting capital, win rate with its 95 % Wilson interval, the best 5 %'s share of the net, the per-exit table and one cumulative path per exit type | imported | trades → numbers |
+| `tradestats.py` | Starting capital, win rate with its 95 % Wilson interval, the best 5 %'s share of the net, the per-exit table and one cumulative path per exit type; per-trade returns in USD per lot or per trade, and their shape (mean, median, std, skew, excess kurtosis, percentiles 5/25/75/95) | imported | trades → numbers |
 | `facts.py` | The facts table (months, years, SQX Sharpe, flat spell, annual DD, first high, win rate, both P&L totals), the rolling table, the concentration bar with Dennis' 95 % | imported | numbers → blocks |
 | `sheet.py` | The Ficha: one tab per sample — curve, underwater ×2, episodes, monthly grid, yearly bars, facts, windows, concentration | imported | harvest rows → result |
+| `oos2.py` | The step-20 door (`ledgerview.door`) and, once open, one strategy's OOS2 rows from the newest cosecha of the project that carries them — or the sentence «OOS2 abierto, sin export» | imported | project, identity → dict · sentence |
 | `exits.py` | «Salidas»: one tab per sample — the per-exit table and the cumulative line per exit type | imported | harvest rows → result |
 
 Test: `python3 tests/test_ui_tearsheet.py` — both routes on
@@ -33,7 +34,11 @@ synthetic cosechas, and the Ficha drawn offscreen (grabs `scratch/ui-plan/shots/
 
 - **IS and OOS never meet.** Each sample is filtered first and computed alone; each starts at 0.
   A sample value other than `IS`/`OOS` in the identity's rows refuses the whole answer (the
-  one-way door: oos2 is never read).
+  one-way door: `harvest.read` never reads oos2). OOS2 has its own reader, `oos2.read`, called
+  only after `oos2.blocked` said the ledger holds steps 17, 18 and 19; sealed, the route answers
+  `{"blocked": "reservado: se abre tras los pasos 17, 18 y 19"}`.
+- **`source=archive` recomputes arithmetic, never a study**: the frozen `harvest.read` dict of
+  `core.archive.read` goes through the same `sheet.build`/`exits.build`.
 - **An identity pairs only inside its databank** (`knowhow/sqx-format/identity-differs-across-databanks.md`).
   The harvest is keyed by the build databank's identity; asked with another databank's, the
   route says the strategy is not in the cosecha, it never looks elsewhere.

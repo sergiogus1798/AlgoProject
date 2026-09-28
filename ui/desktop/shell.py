@@ -3,27 +3,25 @@
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedWidget, QVBoxLayout, QWidget
 
+from ui.desktop import client, projectflow as flow
 from ui.desktop.assets import Assets
 from ui.desktop.catalogue import Catalogue
 from ui.desktop.chat import Chat
 from ui.desktop.cmdpalette import CmdPalette
 from ui.desktop.contextbar import ContextBar
 from ui.desktop.coverage import Matrix as Coverage
-from ui.desktop.gate import Gate
-from ui.desktop.generation import Generation
-from ui.desktop.matrix.view import Matrix
+from ui.desktop.datazone.zone import DataZone
 from ui.desktop.nav import ZONES, sidebar
 from ui.desktop.ops.jobsbar import JobsBar
 from ui.desktop.ops.ledger import Ledger
-from ui.desktop.ops.pulse import Pulse
+from ui.desktop.ops.running import Running
 from ui.desktop.palettes import Palettes
+from ui.desktop.portfolios.zone import PortfoliosZone
 from ui.desktop.selection import SELECTION
-from ui.desktop.soon import ZONES as SOON, page as soon_page
-from ui.desktop.studies import Studies
-from ui.desktop.studypage.views import PopulationStudy, StrategyPage
+from ui.desktop.sqxconfig.zone import SqxConfigZone
 from ui.desktop.theme import C
-from ui.desktop.workflow.rail import WorkflowRail
-
+from ui.desktop.workspace.gallery import Gallery
+from ui.desktop.workspace.zone import WorkspaceZone
 
 class Shell(QWidget):
     """The single window. Everything else is a view inside it."""
@@ -42,27 +40,25 @@ class Shell(QWidget):
         self.chat = Chat()
         self.palettes = Palettes()
         self.assets = Assets()
-        self.rail = WorkflowRail()
-        self.population = Matrix()
-        self.popstudy = PopulationStudy()
-        self.strategy = StrategyPage()
-        self.studies = Studies()
-        self.gate = Gate()
-        self.pulse = Pulse()
-        self.ledger = Ledger()
-        self.generation = Generation()
+        self.ledger, self.running = Ledger(), Running()
+        self.gallery, self.workspace = Gallery(), WorkspaceZone()
+        self.estrategia = flow.StrategyZone()
+        self.ficha = self.estrategia.ficha
         self.zones = {
             "Cobertura": self.coverage, "Plantillas": self.catalogue, "Nueva plantilla": self.chat,
-            "Paletas": self.palettes, "Activos": self.assets, "Workflow": self.rail,
-            "Población": self.population, "Estudio de población": self.popstudy,
-            "Estrategia": self.strategy, "Estrategias": self.studies, "Puerta IS/OOS": self.gate,
-            "Custodio": self.pulse, "Ledger": self.ledger, "Generación": self.generation,
-            **{name: soon_page(name) for name in SOON}}
+            "Paletas": self.palettes, "Activos": self.assets, "Proyectos": self.gallery,
+            "Proyecto": self.workspace, "Estrategia": self.estrategia,
+            "En marcha": self.running, "Registro de búsquedas": self.ledger,
+            "Configuración SQX": SqxConfigZone(), "Datos": DataZone(),
+            "Portfolios": PortfoliosZone()}
         self.wire()
 
         right = QVBoxLayout()
         right.setContentsMargins(0, 0, 0, 0)
         right.setSpacing(0)
+        self.readonly = QLabel("Esta máquina no tiene SQX: modo lectura", objectName="readonly")
+        self.readonly.hide()
+        right.addWidget(self.readonly)
         self.context = ContextBar()
         self.context.zone.connect(self.open_zone)
         self.context.load.loaded.connect(self.data_landed)
@@ -84,11 +80,17 @@ class Shell(QWidget):
         right.addLayout(foot)
         # The sidebar is built after the stack because opening a zone needs the stack; it is
         # inserted first so it still sits down the left.
-        bar, self.nav = sidebar(self.open_zone, self.refresh)
+        # What «Recargar» reloads, by zone name: the zones that load once. Its tooltip is
+        # written from these keys, so the button never promises a zone it does not reload.
+        self.reloads = {"Cobertura": self.coverage.reload, "Plantillas": self.catalogue.reload,
+                        "Paletas": self.palettes.reload, "Activos": self.assets.reload,
+                        "Proyectos": self.gallery.load, "En marcha": self.running.reload}
+        bar, self.nav = sidebar(self.open_zone, self.refresh, list(self.reloads))
         lay.insertWidget(0, bar)
         lay.addLayout(right, 1)
         self.open_zone(ZONES[0])
         self.refresh()
+        self.guard(client.get("health")["sqx"]["installs"])
         # The app's only shortcut. A text field that has the focus keeps Ctrl+K (Qt's «delete
         # to end of line»), the chat's answer box included: the palette never eats typing.
         self.cmdpalette = CmdPalette(self)
@@ -98,10 +100,9 @@ class Shell(QWidget):
         """Connect the zones that hand the owner on to another zone."""
         self.coverage.picked.connect(self.open_template)
         self.chat.authored.connect(self.catalogue.reload)
-        self.population.open_study.connect(lambda key: self.show_study(self.strategy, key))
-        self.population.open_population.connect(lambda key: self.show_study(self.popstudy, key))
-        self.strategy.population_wanted.connect(lambda key: self.show_study(self.popstudy, key))
-        self.rail.open_step.connect(self.open_step)
+        self.gallery.opened.connect(self.open_project)
+        self.workspace.strategy_chosen.connect(self.open_strategy)
+        self.zones["Portfolios"].import_requested.connect(self.open_archived)
 
     def data_landed(self, piece: str) -> None:
         """A piece of the selected databank finished loading: redraw what reads it.
@@ -110,32 +111,43 @@ class Shell(QWidget):
             piece: `metrics`, `trades` or `harvest`.
         """
         now = SELECTION.now
-        self.population.load(now["project"], now["databank"])
-        self.rail.load(now["project"])
-        self.strategy.ficha.where = {}          # its sub-tabs read the cosecha: fill again
-        if self.strategy.on_ficha():
-            self.strategy.ficha.load(self.strategy.where)
+        if now["project"] and flow.SHOWN["Proyecto"] == now["project"]:
+            self.workspace.fill(now["project"])
+        if self.ficha.where and self.ficha.where.get("project") == now["project"]:
+            self.ficha.reload()
+
+    def guard(self, installs: dict[str, bool]) -> None:
+        """Enter read-only mode when this machine has no SQX install at all.
+
+        Args:
+            installs: Role → whether its folder exists, from `/api/health`.
+
+        The only button that reaches SQX today is the load bar's ↻ (a retry queues
+        `orderstocsv` on the conductor); the automatic load finds no databank on any install
+        and asks nothing. The button is disabled with its reason in its own text, because a
+        disabled button never shows its tooltip; no zone is greyed out (encargo 22 §11).
+        """
+        found = ", ".join(role for role, ok in installs.items() if ok) or "ninguno"
+        self.readonly.setToolTip(f"Installs de SQX encontrados en esta máquina: {found}. "
+                                 "Se lee todo; nada que llegue a SQX se puede lanzar.")
+        if any(installs.values()):
+            return
+        self.readonly.show()
+        self.context.load.again.setEnabled(False)
+        self.context.load.again.setText("↻ sin SQX: modo lectura")
 
     def open_zone(self, name: str) -> None:
-        """Switch to a zone by the name the sidebar shows.
+        """Switch to a zone by the name the sidebar shows; Proyecto and Estrategia first catch
+        up with SELECTION when another zone changed it.
 
         Args:
             name: One of `nav.ZONES`; a desktop launcher opens the window straight on it
-                (`bin/algoui --zone Estrategias`).
+                (`bin/algoui --zone Proyectos`).
         """
+        flow.catch_up(self, name)
         self.stack.setCurrentWidget(self.zones[name])
         for zone, b in self.nav.items():
             b.setChecked(zone == name)
-
-    def show_study(self, page: StrategyPage | PopulationStudy, key: str) -> None:
-        """Open one study on the strategy page or on the population-study page.
-
-        Args:
-            page: `self.strategy` or `self.popstudy`.
-            key: Study key.
-        """
-        page.open_study(key)
-        self.open_zone("Estrategia" if page is self.strategy else "Estudio de población")
 
     def go_to(self, item: dict) -> None:
         """Open what one palette row points at: by zone name and SELECTION, never by stack index.
@@ -148,25 +160,44 @@ class Shell(QWidget):
         if kind == "zone":
             self.open_zone(item["label"])
         elif kind == "study":
-            one = item["one"] and (SELECTION.now["strategy"] or not item["many"])
-            self.show_study(self.strategy if one else self.popstudy, item["study"])
+            self.open_zone("Estrategia")
+            self.estrategia.show_live()
+            if self.ficha.page is not None:
+                self.ficha.page.open_study(item["study"])
         elif kind == "strategy":
             SELECTION.choose(**fields, strategy=item["label"], identity=item["identity"])
+            self.estrategia.show_live()
             self.open_zone("Estrategia")
+        elif kind == "project":
+            self.open_project(item["project"])
         else:
             SELECTION.choose(**fields)
-            self.open_zone("Workflow" if kind == "project" else "Población")
+            self.open_zone("Proyecto")
 
-    def open_step(self, step: dict) -> None:
-        """A workflow step was clicked: its first study on the population, or the matrix.
+    def open_project(self, name: str) -> None:
+        """A card or a palette row chose a project: select it, load it if confirmed, show it."""
+        self.status.setText(self.gallery.choose(name))
+        self.open_zone("Proyecto")
+
+    def open_strategy(self, identity: str) -> None:
+        """Proyecto's panel chose a strategy by identity: select it and show its ficha."""
+        said = flow.select_strategy(identity, flow.in_panel(self, identity))
+        self.status.setText(said)
+        if not said:
+            self.estrategia.show_live()
+            self.open_zone("Estrategia")
+
+    def open_archived(self, identity: str, version: str) -> None:
+        """PORTFOLIOS' «Importar»: the Estrategia page of one archived version, nothing run.
 
         Args:
-            step: The step as `GET /api/workflow` sent it; `studies` may be empty (SQX steps).
+            identity: The strategy's identity.
+            version: The archived version; "" for the newest.
         """
-        if step["studies"]:
-            self.show_study(self.popstudy, step["studies"][0])
-        else:
-            self.open_zone("Población")
+        said = self.estrategia.show_archived(identity, version)
+        self.status.setText(said)
+        if not said:
+            self.open_zone("Estrategia")
 
     def open_template(self, name: str) -> None:
         """Jump from a coverage cell to that template's page.
@@ -178,14 +209,12 @@ class Shell(QWidget):
         self.catalogue.select(name)
 
     def refresh(self) -> None:
-        """Reload the library views from the daemon and restate what is on screen.
+        """Reload the zones that load once (`self.reloads`) and restate what is on screen.
 
-        The study viewer's zones follow SELECTION and read on their own; `Recargar` covers
-        the zones that load once.
+        Proyecto and Estrategia follow SELECTION and read on their own.
         """
-        for view in (self.coverage, self.catalogue, self.palettes, self.assets, self.studies,
-                     self.gate, self.generation):
-            view.reload()
+        for reload in self.reloads.values():
+            reload()
         totals = self.coverage.data
         self.status.setText(
             f"registry.csv · runs.csv · library/  —  {len(totals['rows'])} filas × "

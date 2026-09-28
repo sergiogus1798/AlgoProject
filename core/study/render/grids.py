@@ -17,9 +17,13 @@ DARK = {"#2166ac", "#b2182b", "#d6604d", "#2171b5", "#08519c", "#08306b", "#4292
 
 
 def _levels(b: dict) -> list[float]:
-    """The cut points of the colour scale: the block's own, or nine even steps of its range."""
+    """The cut points of the colour scale: the block's own, nine even steps of the extent it
+    shares with other grids (`scale_range`), or nine even steps of its own range."""
     if b["levels"]:
         return b["levels"]
+    if b.get("scale_range"):
+        colours = DIVERGING if b["scale"] == "diverging" else SEQUENTIAL
+        return list(np.linspace(*b["scale_range"], len(colours) + 1)[1:-1])
     v = np.array([c for r in b["values"] for c in r if c is not None], dtype=float)
     if b["scale"] == "diverging":
         top = float(np.percentile(np.abs(v), 95)) or 1.0
@@ -28,7 +32,7 @@ def _levels(b: dict) -> list[float]:
 
 
 def grid(b: dict) -> str:
-    """One cell per (row, col), filled by its step on a discrete scale, its label written in."""
+    """One cell per (row, col), filled by its step on a discrete scale, its label written in, θ₀ outlined."""
     rows, cols = b["rows"], b["cols"]
     cut = _levels(b)
     colours = DIVERGING if b["scale"] == "diverging" else SEQUENTIAL
@@ -50,8 +54,16 @@ def grid(b: dict) -> str:
                         f'height="{ch - 1}" fill="{fill}"/><text class="{ink}" '
                         f'x="{left + (j + .5) * cw:.1f}" y="{y + 17}" text-anchor="middle">'
                         f"{escape(str(text))}</text>")
+    mark = b.get("mark")
+    if mark:
+        i, j = rows.index(mark["row"]), cols.index(mark["col"])
+        body.append(f'<rect x="{left + j * cw:.1f}" y="{top + i * ch}" width="{cw - 1:.1f}" '
+                    f'height="{ch - 1}" fill="none" stroke="{REAL}" stroke-width="3"/>'
+                    f'<text class="tick" x="{left + j * cw + 3:.1f}" y="{top + i * ch + 10}" '
+                    f'fill="{REAL}">{escape(mark["label"])}</text>')
     height = top + ch * len(rows) + 12
     bounds = ["<"] + [svg.num(c) for c in cut]
+    # The marked cell and the shared extent are named in words under the figure (page.block).
     key = svg.legend([(svg.box(c), f"{a}") for c, a in zip(colours, bounds)])
     return svg.figure(b["title"], b.get("note", ""), svg.canvas("".join(body), height), key)
 

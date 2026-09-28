@@ -8,6 +8,17 @@ BASE = f"http://127.0.0.1:{UI_PORT}"
 _HTTP = httpx.Client(base_url=BASE, timeout=20.0)
 
 
+def aim(port: int) -> None:
+    """Talk to the daemon on another loopback port — a scratch daemon for shots and walks.
+
+    Args:
+        port: Its port; the default is `ui_port` of `config/machine.yaml`.
+    """
+    global BASE, _HTTP
+    BASE = f"http://127.0.0.1:{port}"
+    _HTTP = httpx.Client(base_url=BASE, timeout=20.0)
+
+
 def get(path: str, **params: str) -> dict:
     """Read something from the daemon.
 

@@ -1,8 +1,9 @@
-"""One strategy's SPP reconnaissance as the contract's tabs: the call, influence, plateaus, design."""
+"""One strategy's SPP reconnaissance as the contract's tabs: the call, influence, plateaus, surfaces, design."""
 
 import pandas as pd
 
 from core.study import blocks, result as envelope
+from studies.breakage.spp.surface import label, origin_table
 
 VERDICT = {"proceed": ("SEGUIR", "pass", "el máximo supera lo que daría una rejilla de ruido"),
            "noise": ("RUIDO", "fail", "el máximo no supera lo que daría una rejilla de ruido")}
@@ -63,6 +64,55 @@ def plateaus(result: dict) -> dict:
         note="El centro es el punto medio de la meseta contigua, no el argmax — lo que hace "
              "el BestValue de SQX. Donde centro y argmax se separan, el pico está en el "
              "borde de lo estable.")
+
+
+def _origin(cell: dict) -> str:
+    """What θ₀'s cell says, θ₀ itself left out of it."""
+    if not cell["n"]:
+        return ("θ₀ está solo en su celda: ninguna otra tupla probó esa pareja de niveles, así "
+                "que la rejilla no dice nada de su vecindad.")
+    return (f"Sin contar a θ₀, su celda ({cell['n']} tuplas) vale {cell['value']:.3g}, por "
+            f"encima del {cell['rank']:.0f} % de las celdas, "
+            + ("dentro" if cell["plateau"] else "fuera") + " de la meseta.")
+
+
+def surfaces(found: list[dict], metric: str, top_share: float) -> dict:
+    """Two parameters at a time, picked on two drop-downs, with θ₀ marked on every grid.
+
+    Args:
+        found: What `surface.pairs` returned.
+        metric: The verdict metric the cells are the median of.
+        top_share: The plateau's share of the cells, for the notes.
+
+    Returns:
+        One tab: a `grid` per ordered pair tagged {"x", "y"}, then θ₀'s table.
+    """
+    grids = [{"kind": "grid", "title": f"{p['y']} contra {p['x']} — mediana de {metric}",
+              "rows": [label(v) for v in p["surface"].index],
+              "cols": [label(v) for v in p["surface"].columns],
+              "values": p["surface"].to_numpy(dtype=float).tolist(),
+              "scale": "discrete", "levels": p["levels"], "labels": None,
+              "mark": {"row": label(p["origin"]["y"]), "col": label(p["origin"]["x"]),
+                       "label": "θ₀"},
+              "scale_range": None,
+              "note": f"Cada celda es la mediana de {metric} de todas las tuplas que usaron esa "
+                      f"pareja de niveles, sean cuales sean los demás parámetros, θ₀ fuera. Cortes en los "
+                      f"cuartiles y en el percentil {100 * (1 - top_share):g}: la banda de "
+                      f"arriba es la meseta (≥ {p['cut']:.3g}). {_origin(p['origin'])}",
+              "select": {"x": p["x"], "y": p["y"]}} for p in found]
+    names = list(dict.fromkeys(p["x"] for p in found))
+    return envelope.tab(
+        "surfaces", "Superficies por pareja",
+        grids + [blocks.table("θ₀ en cada pareja", origin_table(found),
+                              "Una fila por pareja sin orden: (Y, X) es la misma rejilla "
+                              "traspuesta.")],
+        selectors=[{"key": "x", "label": "Eje X", "options": names, "default": names[0]},
+                   {"key": "y", "label": "Eje Y", "options": names, "default": names[1]}],
+        note=f"Elige un parámetro para cada eje. Meseta = el decil superior de las celdas de "
+             f"esa rejilla ({100 * top_share:g} %), la misma definición que la nube de "
+             f"parámetros. Una celda con pocas tuplas pesa lo mismo que una llena: una SPP "
+             f"muestrea desequilibrado. Si eliges el mismo parámetro en los dos ejes no hay "
+             f"rejilla.")
 
 
 def design(brief: dict) -> dict:

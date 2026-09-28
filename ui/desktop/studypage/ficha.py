@@ -105,7 +105,7 @@ class Ficha(QFrame):
         self.done.add(index)
         w, sub = self.where, self.subs[index]
         if not (w.get("project") and w.get("databank") and w.get("identity")):
-            return sub.say("Elige una estrategia en Población o en la matriz.")
+            return sub.say("Elige una estrategia en el panel de databanks de Proyecto.")
         _, route, asset = SUBS[index]
         if index == LOTE:
             return self._batch(sub)

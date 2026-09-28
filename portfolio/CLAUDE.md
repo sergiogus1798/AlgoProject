@@ -14,7 +14,13 @@ inventing an answer. What is agreed so far:
 
 - Correlation is measured between **equity curves**, not between metrics.
 - A portfolio's drawdown is computed on the aggregated curve, never summed from the parts.
-- Strategies enter the pool only after `tasks/` and `strategies/` have passed them.
+
+**Where a strategy comes from: the archive.** A strategy enters from `AlgoData/archive/<identity>/<version>/`
+(`core/archive/`, encargo 23), frozen with its `.sqx`, its cosecha rows, every study result, the
+asset card of that day and the ledger count (N strategies tried) that deflates its Sharpe. The
+window's PORTFOLIOS zone lists it and «Importar» shows it as the Estrategia page, read from the
+archive with nothing recomputed (`ui/desktop/portfolios/`). Importing from a live databank waits
+for the owner. The portfolio maths itself is not built yet.
 
 A funded account's rules (daily loss cap, total drawdown, minimum days) are constraints on the
 portfolio, not filters applied afterwards. When that work starts, they get written down here first.

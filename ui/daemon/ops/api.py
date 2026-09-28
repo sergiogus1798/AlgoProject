@@ -1,8 +1,8 @@
-"""The operation routes: the custodian's pulse and the search ledger, both read-only."""
+"""The operation routes: the custodian's pulse, what each worker runs, and the search ledger."""
 
 from fastapi import APIRouter
 
-from ui.daemon.ops import ledgerview, pulse
+from ui.daemon.ops import ledgerview, pulse, runs
 
 ROUTER = APIRouter()
 
@@ -17,6 +17,17 @@ def get_pulse() -> dict:
         is two samples of the process's clock ticks.
     """
     return {"custodian": pulse.custodian()}
+
+
+@ROUTER.get("/api/ops/sqx")
+def get_sqx_runs() -> dict:
+    """What each SQX worker runs right now, for the jobs strip and «En marcha».
+
+    Returns:
+        `{"runs": [...]}` as `runs.runs` builds them: project, task, done, total, percent.
+        Files, plus `-project action=status` to a worker only while its log says it runs.
+    """
+    return {"runs": runs.runs()}
 
 
 @ROUTER.get("/api/ledger")

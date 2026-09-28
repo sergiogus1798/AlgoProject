@@ -183,9 +183,11 @@ there is surfaced by the preflight, so a case written once is seen by every futu
 
 ## Editing all of this from the window
 
-Since 2026-09-24 the desktop app's **Activos** zone reads and writes everything described here:
-the costs with their units, the windows, the MC Retest ranges, the retest universe and the two
-shared schemas. It keeps every comment in place — `core.assetyaml` round-trips the file and only
+Since 2026-09-24 the desktop app's **Activos** zone reads and writes each asset's own part: the
+costs with their units, the segment dates (a date selector per segment), the MC Retest ranges and
+the «Check de Cross Market» (the retest universe of `_markets.yaml`, row by row). The shared
+schemas — `_build.yaml`, `_classes.yaml` and the globals of `_policy.yaml` — moved to the
+**Configuración SQX** zone on 2026-09-27 (plan 24, F9). It keeps every comment in place — `core.assetyaml` round-trips the file and only
 the changed line moves — and regenerates `INDEX.md` after each write. `docs/manual/02-la-ventana.pdf` (cap. 38-app-activos)
 is its page. The rule above does not change: **the window is not the preflight**. What stops work
 is `python3 -m core.assets <SYMBOL>` and its exit code.

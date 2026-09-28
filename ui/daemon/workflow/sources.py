@@ -132,7 +132,9 @@ def template(project: str, studies: list[str]) -> tuple[str | None, str]:
             with path.open(newline="", encoding="utf-8") as f:
                 rows = [r for r in csv.DictReader(f) if r.get("project", r.get("name")) == project]
             if rows and rows[-1].get("template"):
-                return Path(rows[-1]["template"]).stem, source
+                path = Path(rows[-1]["template"])
+                # a library template is <name>/template.sqx: its name is the folder's
+                return (path.parent.name if path.name == "template.sqx" else path.stem), source
     for study in studies:
         family = study.split("_", 2)[-1]   # a study id is <symbol>_<timeframe>_<family>
         if template_dir(family).is_dir():

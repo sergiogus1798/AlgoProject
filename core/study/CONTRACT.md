@@ -37,9 +37,12 @@ study asks before inventing one.**
 # distribution — histogram with the real value marked: every MC test, every null model
 {"kind": "distribution", "title": str, "unit": str,             # "USD", "%", "R", ""
  "bins": [float, ...], "counts": [int, ...],                     # aggregated, NEVER the draws
- "real": float, "median": float, "band": [float|None, float|None],
+ "real": float | None, "median": float, "band": [float|None, float|None],
  "percentiles": {"1": float, "5": float, ..., "99": float},
- "p": float | None, "note": str, "mark": str}                    # mark (optional): what the line at `real` is, when not a real run
+ "p": float | None, "note": str, "mark": str,                    # mark (optional): what the line at `real` is, when not a real run
+ "series": [{"label": str, "counts": [float, ...],               # optional (encargo 24 E3): overlaid samples on the SAME bins,
+             "n": int, "median": float}, ...],                   #   counts as a DENSITY — sum(counts × bin width) = 1 per series
+ "shift": {"median": float, "ks_p": float} | None}               # optional: median(last) − median(first) and the two-sample KS p
 
 # cone — equity cone with the real curve on top
 {"kind": "cone", "title": str, "unit": str,
@@ -52,7 +55,9 @@ study asks before inventing one.**
  "values": [[float | None, ...], ...],
  "scale": "discrete" | "diverging" | "sequential",
  "levels": [float, ...] | None,                                  # cuts of a discrete scale; the owner wants discrete scales
- "labels": [[str, ...], ...] | None}
+ "labels": [[str, ...], ...] | None,
+ "mark": {"row": str, "col": str, "label": str} | None,          # optional (E3): one cell marked, e.g. θ₀; row ∈ rows, col ∈ cols
+ "scale_range": [lo, hi] | None}                                 # optional (E3): colour extent shared by several grids, lo < hi
 
 # scatter — WFC in against out, any x/y per combination
 {"kind": "scatter", "title": str, "x_label": str, "y_label": str,
@@ -87,6 +92,15 @@ Rules of the blocks:
   `verdict.csv`, which is for `/curate`, never in a block.
 - **No colour in the data.** The data says `state`; the window picks the colour.
 - Numbers are rounded to six significant digits on the way out (`result.DIGITS`).
+- **Two samples, one histogram** (encargo 24 E3, for 22 §6.1). A `distribution` with `series`
+  still carries every required key: `counts`, `median`, `band` and `percentiles` describe the
+  union of the series, `real` is None when nothing real is marked, `p` repeats `shift.ks_p`.
+  A reader that knows no `series` draws the union and is not wrong; one that knows draws each
+  series as a density, because IS and OOS have different lengths. Only per-trade metrics go
+  there — never Net Profit or drawdown, which grow with the window.
+- **Optional keys are absent or null**, never a different shape: an old block validates
+  unchanged, and `blocks.validate` checks the new ones (area 1 within 1e-3, the mark on a
+  real cell, `lo < hi`).
 
 ## 3. What a study module owes the window
 
@@ -107,7 +121,7 @@ Rules of the blocks:
 | `studies.screening.gate.inputs.config`, `studies/screening/gate/config.yaml` | `ui/daemon/gateview.py` |
 | `core.assetdata`, `core.datapaths`, `core.paths` | the whole daemon |
 | `sqx.templates.holes`, `sqx.templates.registry`, `sqx.blocks.palette`, `sqx.blocks.taxonomy` | the template and palette zones |
-| `reports/<P>/<D>/<day>/<study>/*.csv` with a `strategy` column | `ui/daemon/studies.py` |
+| `reports/<P>/<D>/<day>/<study>/*.csv` and `estrategias/*.json`, paired by identity | `ui/daemon/results/`, `ui/daemon/databank/` |
 | `harvest/<P>/<D>/<day>/{metrics,equity,trades}.parquet`, `missing_oos.csv`, `manifest.json` | `ui/daemon/gateview.py` |
 | `reports/.../gate/{scorecard.parquet,funnel.csv,manifest.json}` | `ui/daemon/gateview.py` |
 | every study's `python3 -m ….report` and its flags | `ui/daemon/runs.py` |

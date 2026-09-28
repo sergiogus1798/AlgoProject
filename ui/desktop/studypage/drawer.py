@@ -3,13 +3,14 @@
 import json
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QCheckBox, QFrame, QGridLayout, QHBoxLayout, QLineEdit,
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QFrame, QGridLayout, QHBoxLayout, QLineEdit,
                                QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.states import colour
 from ui.desktop.studypage.net import fetch, send
 from ui.desktop.theme import T
+from ui.text.glossary import knob as knob_words
 
 EDITED = f"border: 2px solid {colour('info')};"
 
@@ -30,15 +31,21 @@ def editor(knob: dict) -> QWidget:
     """The widget one knob is edited with, by its type.
 
     Args:
-        knob: `{"key", "value", "default", "type", "tip"}` from `/api/config`.
+        knob: `{"key", "value", "default", "type", "tip"}` from `/api/config`, and `choices`
+            when the knob only takes a fixed list of values.
 
     Returns:
-        A check box for a bool, a line for anything else.
+        A check box for a bool, a drop-down for a fixed list, a line for anything else.
     """
     if knob["type"] == "bool":
         box = QCheckBox("sí")
         box.setChecked(bool(knob["value"]))
         return box
+    if knob.get("choices"):
+        pick = QComboBox()
+        pick.addItems([as_text(c) for c in knob["choices"]])
+        pick.setCurrentText(as_text(knob["value"]))
+        return pick
     line = QLineEdit(as_text(knob["value"]))
     line.setMinimumWidth(140)
     line.setCursorPosition(0)         # a long value shows its start, not its end
@@ -56,6 +63,8 @@ def read(widget: QWidget) -> str:
     """
     if isinstance(widget, QCheckBox):
         return "true" if widget.isChecked() else "false"
+    if isinstance(widget, QComboBox):
+        return widget.currentText()
     return widget.text().strip()
 
 
@@ -68,6 +77,8 @@ def put(widget: QWidget, value: str) -> None:
     """
     if isinstance(widget, QCheckBox):
         widget.setChecked(value == "true")
+    elif isinstance(widget, QComboBox):
+        widget.setCurrentText(value)
     else:
         widget.setText(value)
 
@@ -130,21 +141,22 @@ class Drawer(QFrame):
             grid.addWidget(text("Este estudio no tiene config.yaml: no hay mandos que cambiar.",
                                 T["muted"], 13))
         for section in got.get("sections", []):
-            grid.addWidget(text(section["name"].upper(), T["text"], 11, True))
+            grid.addWidget(text(knob_words(section["name"]).upper(), T["text"], 11, True))
             for knob in section["knobs"]:
-                grid.addWidget(self._knob(knob))
+                grid.addWidget(self._knob(knob, section["name"]))
         grid.addStretch(1)
         self.scroll.setWidget(self.body)
         self.refresh()
 
-    def _knob(self, knob: dict) -> QWidget:
-        """One knob: its key and editor on a line, its sentence visible under them."""
+    def _knob(self, knob: dict, section: str) -> QWidget:
+        """One knob: its words and editor on a line, its sentence visible under them. The
+        words drop the section its header already says; the raw key, which `--set` takes,
+        stays in the tooltip."""
         box = QWidget()
         lay = QGridLayout(box)
         lay.setContentsMargins(0, 2, 0, 6)
         lay.setVerticalSpacing(2)
-        key = text(knob["key"], T["text"], 12, True)
-        key.setStyleSheet(key.styleSheet() + ' font-family: "DejaVu Sans Mono", monospace;')
+        key = text(knob_words(knob["key"].removeprefix(f"{section}.")), T["text"], 12, True)
         widget = editor(knob)
         default = as_text(knob["default"]) if knob["type"] != "bool" else \
             ("true" if knob["default"] else "false")
@@ -156,6 +168,8 @@ class Drawer(QFrame):
             w.setToolTip(f"{knob['key']} ({knob['type']}) — {tip}\nDe fábrica: {default}")
         if isinstance(widget, QCheckBox):
             widget.toggled.connect(self._edited)
+        elif isinstance(widget, QComboBox):
+            widget.currentTextChanged.connect(self._edited)
         else:
             widget.editingFinished.connect(self._edited)
         self.editors[knob["key"]] = (widget, default)

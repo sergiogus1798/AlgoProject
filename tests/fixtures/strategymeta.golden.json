@@ -1,0 +1,865 @@
+{
+  "template": {
+    "file": "strategy.sqx",
+    "name": "Strategy 1.25.215",
+    "identity": "7c287c8609c3c6ff7c5888cfa5ca820b13f61439705cc56eb4518f2502d478d4",
+    "feed": "USDCHF_DarwTick_the5ers",
+    "timeframe": "H1",
+    "direction": "short",
+    "entries": [
+      {
+        "signal": "ShortEntrySignal",
+        "operator": "AND",
+        "index": 0,
+        "block": "AroonCrossesBelow",
+        "params": {
+          "Period": "95",
+          "Shift": "1"
+        },
+        "text": "AroonCrossesBelow(Period=95, Shift=1)"
+      },
+      {
+        "signal": "ShortEntrySignal",
+        "operator": "AND",
+        "index": 1,
+        "block": "IsFalling",
+        "params": {
+          "Indicator": "Stochastic(KPeriod=14, DPeriod=3, Slowing=45, MAMethod=3, PriceField=1, Shift=1, Line=0)",
+          "Bars": "2",
+          "NotStrict": "false",
+          "Shift": "1"
+        },
+        "text": "IsFalling(Indicator=Stochastic(KPeriod=14, DPeriod=3, Slowing=45, MAMethod=3, PriceField=1, Shift=1, Line=0), Bars=2, NotStrict=false, Shift=1)"
+      }
+    ],
+    "exits": [],
+    "signals": {
+      "ShortEntrySignal": "AroonCrossesBelow(Period=95, Shift=1) AND IsFalling(Indicator=Stochastic(KPeriod=14, DPeriod=3, Slowing=45, MAMethod=3, PriceField=1, Shift=1, Line=0), Bars=2, NotStrict=false, Shift=1)"
+    },
+    "indicators": {
+      "entry": [],
+      "exit": []
+    },
+    "orders": [
+      {
+        "type": "EnterAtMarket",
+        "direction": "short",
+        "stop_loss": {
+          "formula": "ATRBasedValue",
+          "Value": "9.2",
+          "AtrPeriod": "20"
+        },
+        "profit_target": {
+          "formula": "ATRBasedValue",
+          "Value": "11.6",
+          "AtrPeriod": "20"
+        },
+        "trailing_stop": {
+          "formula": "FixedValue",
+          "Value": "50"
+        },
+        "break_even": null,
+        "exit_after_bars": null
+      }
+    ],
+    "order_types": [
+      "EnterAtMarket"
+    ],
+    "money_management": {
+      "from": "task",
+      "method": "FixedAmount",
+      "params": {
+        "RiskedMoney": "10000",
+        "Decimals": "2",
+        "LotsIfNoMM": "0.01",
+        "MaxLots": "500"
+      },
+      "initial_capital": "1000000",
+      "max_drawdown": null
+    },
+    "friday_close": {
+      "on": true,
+      "key": "ExitOnFriday",
+      "time": "21:00"
+    },
+    "trading_options": {
+      "weekend": {
+        "on": false,
+        "key": "DontTradeOnWeekends",
+        "friday_close": "00:38",
+        "sunday_open": "00:38"
+      },
+      "end_of_day": {
+        "on": false,
+        "key": "ExitAtEndOfDay",
+        "time": "15:15"
+      },
+      "time_range": {
+        "on": false,
+        "key": "LimitTimeRange",
+        "from": "14:30",
+        "to": "22:30",
+        "exit_at_end": true
+      },
+      "max_trades_per_day": 1,
+      "session": "USDCHF_the5ers"
+    },
+    "last_test": {
+      "input": "WFM",
+      "output": "null",
+      "setup_from": "Data",
+      "window": [
+        "2023.01.01",
+        "2025.12.31"
+      ],
+      "oos": [],
+      "chart": "USDCHF_DarwTick_the5ers",
+      "timeframe": "H1",
+      "precision": "4",
+      "engine": "MetaTrader5 (hedged)",
+      "costs": {
+        "spread": "0.8",
+        "slippage": "0.1",
+        "min_distance": "0.0",
+        "commission": [],
+        "swap": {
+          "use": "true",
+          "type": "points",
+          "long": "0.04",
+          "short": "-5.04",
+          "tripleSwapOn": "WEDNESDAY",
+          "rolloutHour": "23:00"
+        }
+      },
+      "money_management": {
+        "method": "FixedAmount",
+        "params": {
+          "RiskedMoney": "10000",
+          "Decimals": "2",
+          "LotsIfNoMM": "0.01",
+          "MaxLots": "500"
+        },
+        "initial_capital": "1000000",
+        "max_drawdown": null
+      }
+    },
+    "asset": null,
+    "notes": [
+      "asset_card_sha256: ficha de costes actual, no la del backtest (no existe la histórica)"
+    ]
+  },
+  "oos_with_cfx": {
+    "file": "strategymeta_oos.sqx",
+    "name": "Strategy 10.13.25",
+    "identity": "c9c97f0fe71b87014f96a15dadbfc3f78140ca9695c0e44fc88cd7a57ab795c7",
+    "feed": "XAUUSD_DukasM1_Infinox",
+    "timeframe": "M30",
+    "direction": "long",
+    "entries": [
+      {
+        "signal": "LongEntrySignal",
+        "operator": "AND",
+        "index": 0,
+        "block": "CBlock_WassersteinShiftLow",
+        "params": {
+          "Int2": "50",
+          "Double3": "16.8"
+        },
+        "text": "CBlock_WassersteinShiftLow(Int2=50, Double3=16.8)"
+      },
+      {
+        "signal": "LongEntrySignal",
+        "operator": "AND",
+        "index": 1,
+        "block": "BBBarOpensAboveUp",
+        "params": {
+          "Period": "20",
+          "Deviation": "1.9",
+          "ComputedFrom": "0",
+          "Shift": "1"
+        },
+        "text": "BBBarOpensAboveUp(Period=20, Deviation=1.9, ComputedFrom=0, Shift=1)"
+      }
+    ],
+    "exits": [],
+    "signals": {
+      "LongEntrySignal": "CBlock_WassersteinShiftLow(Int2=50, Double3=16.8) AND BBBarOpensAboveUp(Period=20, Deviation=1.9, ComputedFrom=0, Shift=1)"
+    },
+    "indicators": {
+      "entry": [
+        "(BB) Bar opens above Upper band",
+        "WassersteinShiftLow"
+      ],
+      "exit": [
+        "ExitAfterXBars"
+      ]
+    },
+    "orders": [
+      {
+        "type": "EnterAtMarket",
+        "direction": "long",
+        "stop_loss": null,
+        "profit_target": null,
+        "trailing_stop": null,
+        "break_even": null,
+        "exit_after_bars": 22
+      }
+    ],
+    "order_types": [
+      "EnterAtMarket"
+    ],
+    "money_management": {
+      "from": "task",
+      "method": "ATRRiskBasedSizingFixedRisk",
+      "params": {
+        "Amount": "1000",
+        "ATRPeriod": "20",
+        "ATRMult": "5",
+        "Decimals": "2",
+        "LotsIfNoMM": "0.01",
+        "MaxLots": "5000"
+      },
+      "initial_capital": "100000",
+      "max_drawdown": "30"
+    },
+    "friday_close": {
+      "on": true,
+      "key": "ExitOnFriday",
+      "time": "21:00"
+    },
+    "trading_options": {
+      "weekend": {
+        "on": false,
+        "key": "DontTradeOnWeekends",
+        "friday_close": "00:38",
+        "sunday_open": "00:38"
+      },
+      "end_of_day": {
+        "on": false,
+        "key": "ExitAtEndOfDay",
+        "time": "23:04"
+      },
+      "time_range": {
+        "on": false,
+        "key": "LimitTimeRange",
+        "from": "08:00",
+        "to": "16:00",
+        "exit_at_end": false
+      },
+      "max_trades_per_day": 0,
+      "session": "XAUUSD_ftmo"
+    },
+    "last_test": {
+      "input": "Results",
+      "output": "OOS",
+      "setup_from": "Data",
+      "window": [
+        "2008.01.01",
+        "2022.12.31"
+      ],
+      "oos": [
+        [
+          "2018.01.01",
+          "2022.12.31"
+        ]
+      ],
+      "chart": "XAUUSD_DukasM1_Infinox",
+      "timeframe": "M30",
+      "precision": "2",
+      "engine": "MetaTrader5 (hedged)",
+      "costs": {
+        "spread": "0",
+        "slippage": "0",
+        "min_distance": "10",
+        "commission": [
+          {
+            "method": "PercentageBased",
+            "value": "0.01"
+          }
+        ],
+        "swap": {
+          "use": "true",
+          "type": "percent",
+          "long": "-8",
+          "short": "38.76",
+          "tripleSwapOn": "WEDNESDAY",
+          "rolloutHour": "23:00"
+        }
+      },
+      "money_management": {
+        "method": "ATRRiskBasedSizingFixedRisk",
+        "params": {
+          "Amount": "1000",
+          "ATRPeriod": "20",
+          "ATRMult": "5",
+          "Decimals": "2",
+          "LotsIfNoMM": "0.01",
+          "MaxLots": "5000"
+        },
+        "initial_capital": "100000",
+        "max_drawdown": "30"
+      }
+    },
+    "backtest": [
+      {
+        "project": "fixtures",
+        "task": "Retest strategies",
+        "type": "Retest",
+        "active": true,
+        "input": "Results",
+        "output": "OOS",
+        "setup_from": "Data",
+        "window": [
+          "2008.01.01",
+          "2022.12.31"
+        ],
+        "oos": [
+          [
+            "2018.01.01",
+            "2022.12.31"
+          ]
+        ],
+        "chart": "XAUUSD_DukasM1_Infinox",
+        "timeframe": "M30",
+        "precision": "2",
+        "engine": "MetaTrader5 (hedged)",
+        "costs": {
+          "spread": "0",
+          "slippage": "0",
+          "min_distance": "10",
+          "commission": [
+            {
+              "method": "PercentageBased",
+              "value": "0.01"
+            }
+          ],
+          "swap": {
+            "use": "true",
+            "type": "percent",
+            "long": "-8",
+            "short": "38.76",
+            "tripleSwapOn": "WEDNESDAY",
+            "rolloutHour": "23:00"
+          }
+        },
+        "money_management": {
+          "method": "ATRRiskBasedSizingFixedRisk",
+          "params": {
+            "Amount": "1000",
+            "ATRPeriod": "20",
+            "ATRMult": "5",
+            "Decimals": "2",
+            "LotsIfNoMM": "0.01",
+            "MaxLots": "5000"
+          },
+          "initial_capital": "100000",
+          "max_drawdown": "30"
+        }
+      },
+      {
+        "project": "fixtures",
+        "task": "Retest strategies twin",
+        "type": "Retest",
+        "active": false,
+        "input": "Results",
+        "output": "OOS",
+        "setup_from": "Data",
+        "window": [
+          "2008.01.01",
+          "2022.12.31"
+        ],
+        "oos": [
+          [
+            "2018.01.01",
+            "2022.12.31"
+          ]
+        ],
+        "chart": "XAUUSD_DukasM1_Infinox",
+        "timeframe": "M30",
+        "precision": "2",
+        "engine": "MetaTrader5 (hedged)",
+        "costs": {
+          "spread": "7",
+          "slippage": "0",
+          "min_distance": "10",
+          "commission": [
+            {
+              "method": "PercentageBased",
+              "value": "0.01"
+            }
+          ],
+          "swap": {
+            "use": "true",
+            "type": "percent",
+            "long": "-8",
+            "short": "38.76",
+            "tripleSwapOn": "WEDNESDAY",
+            "rolloutHour": "23:00"
+          }
+        },
+        "money_management": {
+          "method": "ATRRiskBasedSizingFixedRisk",
+          "params": {
+            "Amount": "1000",
+            "ATRPeriod": "20",
+            "ATRMult": "5",
+            "Decimals": "2",
+            "LotsIfNoMM": "0.01",
+            "MaxLots": "5000"
+          },
+          "initial_capital": "100000",
+          "max_drawdown": "30"
+        }
+      },
+      {
+        "project": "fixtures",
+        "task": "Custom analysis 1",
+        "type": "CustomAnalysis",
+        "active": true,
+        "input": "OOS",
+        "output": "OOS",
+        "setup_from": null,
+        "window": null,
+        "oos": [],
+        "chart": null,
+        "timeframe": null,
+        "precision": null,
+        "engine": null,
+        "costs": null,
+        "money_management": null
+      },
+      {
+        "project": "fixtures",
+        "task": "Automatic retest 2",
+        "type": "AutomaticRetest",
+        "active": true,
+        "input": "SPP OOS",
+        "output": "OOS",
+        "setup_from": "CustomData",
+        "window": [
+          "2008.01.01",
+          "2025.12.31"
+        ],
+        "oos": [],
+        "chart": "EURUSD_DukasM1_the5ers",
+        "timeframe": "D1",
+        "precision": "1",
+        "engine": "MetaTrader4",
+        "costs": {
+          "spread": "0.5",
+          "slippage": "0.2",
+          "min_distance": "10",
+          "commission": [
+            {
+              "method": "SizeBased",
+              "value": "5"
+            }
+          ],
+          "swap": null
+        },
+        "money_management": {
+          "method": "FixedAmount",
+          "params": {
+            "RiskedMoney": "100",
+            "Decimals": "2",
+            "LotsIfNoMM": "0.01",
+            "MaxLots": "5"
+          },
+          "initial_capital": "10000",
+          "max_drawdown": null
+        }
+      },
+      {
+        "project": "fixtures",
+        "task": "Retest strategies 7",
+        "type": "Retest",
+        "active": true,
+        "error": "falta Retest-Task8.xml en el .cfx"
+      }
+    ],
+    "asset": "XAUUSD",
+    "notes": [
+      "asset_card_sha256: ficha de costes actual, no la del backtest (no existe la histórica)",
+      "la tarea «Retest strategies 7» no se pudo leer (falta Retest-Task8.xml en el .cfx): no se sabe si escribe en este databank",
+      "4 tareas escriben en este databank: Retest strategies (activa), Retest strategies twin (inactiva), Custom analysis 1 (activa), Automatic retest 2 (activa)",
+      "la tarea «Custom analysis 1» (CustomAnalysis) no lleva costes en su XML: valen los de last_test",
+      "la tarea «Automatic retest 2» (AutomaticRetest) lee sus costes de CustomData",
+      "los costes de «Retest strategies twin» hoy no son los del último test guardado en el .sqx",
+      "los costes de «Automatic retest 2» hoy no son los del último test guardado en el .sqx"
+    ]
+  },
+  "generic": {
+    "file": "strategymeta_generic.sqx",
+    "name": "Strategy 1.10.206",
+    "identity": "293f806fd420dfc27d33807ac967b64ed236b30264e59b3645fcc7560c24d125",
+    "feed": "GBPJPY_DarwTick_the5ers",
+    "timeframe": "H1",
+    "direction": "long",
+    "entries": [
+      {
+        "signal": "LongEntrySignal",
+        "operator": "AND",
+        "index": 0,
+        "block": "IndicatorCrossesAboveMA",
+        "params": {
+          "Indicator": "BarHour(Shift=1)",
+          "Period": "21",
+          "MAType": "1",
+          "Shift": "1"
+        },
+        "text": "IndicatorCrossesAboveMA(Indicator=BarHour(Shift=1), Period=21, MAType=1, Shift=1)"
+      },
+      {
+        "signal": "LongEntrySignal",
+        "operator": "AND",
+        "index": 1,
+        "block": "IsGreater",
+        "params": {
+          "Left": "CloseD(Shift=1)",
+          "Right": "HeikenAshiClose(Shift=1)"
+        },
+        "text": "IsGreater(Left=CloseD(Shift=1), Right=HeikenAshiClose(Shift=1))"
+      },
+      {
+        "signal": "ShortEntrySignal",
+        "operator": "",
+        "index": 0,
+        "block": "Boolean",
+        "params": {
+          "Value": "false"
+        },
+        "text": "Boolean(Value=false)"
+      }
+    ],
+    "exits": [
+      {
+        "signal": "LongExitSignal",
+        "operator": "AND",
+        "index": 0,
+        "block": "IndicatorBelowMA",
+        "params": {
+          "Indicator": "BarDayOfWeek(Shift=1)",
+          "Period": "10",
+          "MAType": "2",
+          "Shift": "1"
+        },
+        "text": "IndicatorBelowMA(Indicator=BarDayOfWeek(Shift=1), Period=10, MAType=2, Shift=1)"
+      },
+      {
+        "signal": "LongExitSignal",
+        "operator": "AND",
+        "index": 1,
+        "block": "MACDMainRising",
+        "params": {
+          "ComputedFrom": "2",
+          "Fast": "16",
+          "Slow": "91",
+          "Smooth": "6",
+          "Shift": "1"
+        },
+        "text": "MACDMainRising(ComputedFrom=2, Fast=16, Slow=91, Smooth=6, Shift=1)"
+      },
+      {
+        "signal": "ShortExitSignal",
+        "operator": "",
+        "index": 0,
+        "block": "Boolean",
+        "params": {
+          "Value": "false"
+        },
+        "text": "Boolean(Value=false)"
+      }
+    ],
+    "signals": {
+      "LongEntrySignal": "IndicatorCrossesAboveMA(Indicator=BarHour(Shift=1), Period=21, MAType=1, Shift=1) AND IsGreater(Left=CloseD(Shift=1), Right=HeikenAshiClose(Shift=1))",
+      "ShortEntrySignal": "Boolean(Value=false)",
+      "LongExitSignal": "IndicatorBelowMA(Indicator=BarDayOfWeek(Shift=1), Period=10, MAType=2, Shift=1) AND MACDMainRising(ComputedFrom=2, Fast=16, Slow=91, Smooth=6, Shift=1)",
+      "ShortExitSignal": "Boolean(Value=false)"
+    },
+    "indicators": {
+      "entry": [
+        "BarHour",
+        "CloseD",
+        "HeikenAshiClose"
+      ],
+      "exit": [
+        "BarDayOfWeek",
+        "MACD"
+      ]
+    },
+    "orders": [
+      {
+        "type": "EnterAtStop",
+        "direction": "long",
+        "stop_loss": {
+          "formula": "ATRBasedValue",
+          "Value": "4.4",
+          "AtrPeriod": "20"
+        },
+        "profit_target": {
+          "formula": "ATRBasedValue",
+          "Value": "3.3",
+          "AtrPeriod": "20"
+        },
+        "trailing_stop": null,
+        "break_even": {
+          "formula": "ATRBasedValue",
+          "Value": "0.92",
+          "AtrPeriod": "57"
+        },
+        "exit_after_bars": null
+      }
+    ],
+    "order_types": [
+      "EnterAtStop"
+    ],
+    "money_management": {
+      "from": "task",
+      "method": "FixedAmount",
+      "params": {
+        "RiskedMoney": "10000",
+        "Decimals": "2",
+        "LotsIfNoMM": "0.01",
+        "MaxLots": "500"
+      },
+      "initial_capital": "1000000",
+      "max_drawdown": null
+    },
+    "friday_close": {
+      "on": false,
+      "key": "ExitOnFriday",
+      "time": "21:00"
+    },
+    "trading_options": {
+      "weekend": {
+        "on": false,
+        "key": "DontTradeOnWeekends",
+        "friday_close": "00:38",
+        "sunday_open": "00:38"
+      },
+      "end_of_day": {
+        "on": false,
+        "key": "ExitAtEndOfDay",
+        "time": "15:15"
+      },
+      "time_range": {
+        "on": false,
+        "key": "LimitTimeRange",
+        "from": "14:30",
+        "to": "22:30",
+        "exit_at_end": true
+      },
+      "max_trades_per_day": 1,
+      "session": "GBPJPY_the5ers"
+    },
+    "last_test": {
+      "input": "FinalOOS",
+      "output": "null",
+      "setup_from": "Data",
+      "window": [
+        "2018.01.01",
+        "2022.12.31"
+      ],
+      "oos": [],
+      "chart": "GBPJPY_DarwTick_the5ers",
+      "timeframe": "H1",
+      "precision": "4",
+      "engine": "MetaTrader5 (hedged)",
+      "costs": {
+        "spread": "1.5",
+        "slippage": "0.2",
+        "min_distance": "10",
+        "commission": [
+          {
+            "method": "SizeBased",
+            "value": "5"
+          }
+        ],
+        "swap": {
+          "use": "true",
+          "type": "points",
+          "long": "-1.71",
+          "short": "-12.22",
+          "tripleSwapOn": "WEDNESDAY",
+          "rolloutHour": "23:00"
+        }
+      },
+      "money_management": {
+        "method": "FixedAmount",
+        "params": {
+          "RiskedMoney": "10000",
+          "Decimals": "2",
+          "LotsIfNoMM": "0.01",
+          "MaxLots": "500"
+        },
+        "initial_capital": "1000000",
+        "max_drawdown": null
+      }
+    },
+    "asset": null,
+    "notes": [
+      "asset_card_sha256: ficha de costes actual, no la del backtest (no existe la histórica)"
+    ]
+  },
+  "grafted": {
+    "file": "grafted.sqx",
+    "name": "Strategy 10.13.25",
+    "identity": "bb5e6a724c58fa2e7ecc37e8ae85fd1717c82ae5cb374e282bd9f0689aeeda43",
+    "feed": "XAUUSD_DukasM1_Infinox",
+    "timeframe": "M30",
+    "direction": "long",
+    "entries": [
+      {
+        "signal": "LongEntrySignal",
+        "operator": "AND",
+        "index": 0,
+        "block": "CBlock_WassersteinShiftLow",
+        "params": {
+          "Int2": "50",
+          "Double3": "16.8"
+        },
+        "text": "CBlock_WassersteinShiftLow(Int2=50, Double3=16.8)"
+      },
+      {
+        "signal": "LongEntrySignal",
+        "operator": "AND",
+        "index": 1,
+        "block": "BBBarOpensAboveUp",
+        "params": {
+          "Period": "20",
+          "Deviation": "1.9",
+          "ComputedFrom": "0",
+          "Shift": "1"
+        },
+        "text": "BBBarOpensAboveUp(Period=20, Deviation=1.9, ComputedFrom=0, Shift=1)"
+      }
+    ],
+    "exits": [],
+    "signals": {
+      "LongEntrySignal": "CBlock_WassersteinShiftLow(Int2=50, Double3=16.8) AND BBBarOpensAboveUp(Period=20, Deviation=1.9, ComputedFrom=0, Shift=1)"
+    },
+    "indicators": {
+      "entry": [
+        "(BB) Bar opens above Upper band",
+        "WassersteinShiftLow"
+      ],
+      "exit": [
+        "ExitAfterXBars"
+      ]
+    },
+    "orders": [
+      {
+        "type": "EnterAtMarket",
+        "direction": "long",
+        "stop_loss": {
+          "formula": "ATRBasedValue",
+          "Value": "2.5",
+          "AtrPeriod": "20"
+        },
+        "profit_target": null,
+        "trailing_stop": null,
+        "break_even": null,
+        "exit_after_bars": 22
+      }
+    ],
+    "order_types": [
+      "EnterAtMarket"
+    ],
+    "money_management": {
+      "from": "task",
+      "method": "ATRRiskBasedSizingFixedRisk",
+      "params": {
+        "Amount": "1000",
+        "ATRPeriod": "20",
+        "ATRMult": "5",
+        "Decimals": "2",
+        "LotsIfNoMM": "0.01",
+        "MaxLots": "5000"
+      },
+      "initial_capital": "100000",
+      "max_drawdown": "30"
+    },
+    "friday_close": {
+      "on": true,
+      "key": "ExitOnFriday",
+      "time": "21:00"
+    },
+    "trading_options": {
+      "weekend": {
+        "on": false,
+        "key": "DontTradeOnWeekends",
+        "friday_close": "00:38",
+        "sunday_open": "00:38"
+      },
+      "end_of_day": {
+        "on": false,
+        "key": "ExitAtEndOfDay",
+        "time": "23:04"
+      },
+      "time_range": {
+        "on": false,
+        "key": "LimitTimeRange",
+        "from": "08:00",
+        "to": "16:00",
+        "exit_at_end": false
+      },
+      "max_trades_per_day": 0,
+      "session": "XAUUSD_ftmo"
+    },
+    "last_test": {
+      "input": "Results",
+      "output": "OOS",
+      "setup_from": "Data",
+      "window": [
+        "2008.01.01",
+        "2022.12.31"
+      ],
+      "oos": [
+        [
+          "2018.01.01",
+          "2022.12.31"
+        ]
+      ],
+      "chart": "XAUUSD_DukasM1_Infinox",
+      "timeframe": "M30",
+      "precision": "2",
+      "engine": "MetaTrader5 (hedged)",
+      "costs": {
+        "spread": "0",
+        "slippage": "0",
+        "min_distance": "10",
+        "commission": [
+          {
+            "method": "PercentageBased",
+            "value": "0.01"
+          }
+        ],
+        "swap": {
+          "use": "true",
+          "type": "percent",
+          "long": "-8",
+          "short": "38.76",
+          "tripleSwapOn": "WEDNESDAY",
+          "rolloutHour": "23:00"
+        }
+      },
+      "money_management": {
+        "method": "ATRRiskBasedSizingFixedRisk",
+        "params": {
+          "Amount": "1000",
+          "ATRPeriod": "20",
+          "ATRMult": "5",
+          "Decimals": "2",
+          "LotsIfNoMM": "0.01",
+          "MaxLots": "5000"
+        },
+        "initial_capital": "100000",
+        "max_drawdown": "30"
+      }
+    },
+    "asset": "XAUUSD",
+    "notes": [
+      "asset_card_sha256: ficha de costes actual, no la del backtest (no existe la histórica)"
+    ]
+  }
+}

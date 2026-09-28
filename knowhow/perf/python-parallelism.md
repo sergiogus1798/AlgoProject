@@ -33,4 +33,4 @@ Full tables: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento).
   one after another on 1.0 core, 883 s; each market and the OOS stretch a `core.fanout` task: 116 s, 7.9
   cores, same 3.8 GB peak; at 2,000 draws 136 → 26 s, contract JSON `==`. Next split: (market, model).
   Other studies' one-strategy runs: 0.6-7 s, so for 1,000 strategies the limit was the window's queue:
-  `ui/daemon/jobs.py` weighs jobs on 48 cores (fan-out 24, light 3, none below 15 GB free).
+  `ui/daemon/jobs.py` weighs jobs on 48 cores (fan-out 24, light 3, none below 20 GB free — the Python reserve of `perf/ram-budget.md`, since 2026-09-27).

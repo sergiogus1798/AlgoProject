@@ -15,9 +15,11 @@ from fastapi.testclient import TestClient  # noqa: E402
 from ui.daemon import jobs  # noqa: E402
 from ui.daemon.loader import api, find, state  # noqa: E402
 
-# A build databank with its oos1 retest, and a cross-market one, both on the custodian.
-BUILD = ("USDJPY_emaCross_H1", "Results")
-CROSS = ("USDJPY_workflow_profiling_v1", "Retest_Markets_-_Family")
+# A build databank with its oos1 retest, and a cross-market one, both on the custodian. Since
+# F13 (2026-09-28) the fixture is the USDJPY Donchian project; when an install no longer holds
+# them (the custodian kept only its WFM that day) the tests that read them say so and skip.
+BUILD = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results")
+CROSS = ("Test_USDJPY_donchianUpperCrossUp_M30", "Retest_Markets_-_Family")
 SLEEPER = ["-c", "import time; time.sleep(30)"]
 
 
@@ -34,7 +36,7 @@ def test_status_and_lanes() -> None:
     a cross-market one exports with data=all; the metrics never touch SQX."""
     fake_jobs([])
     now = state.status(*BUILD)
-    assert (now["partner"], now["role"], now["strategies"]) == ("OOS", "custodian", 100), now
+    assert (now["partner"], now["role"]) == ("OOS", "custodian") and now["strategies"], now
     todo = state.commands(BUILD[0], {**now, "pieces": {k: {"state": "missing"} for k in state.PIECES}})
     assert {k: lane for k, (lane, _) in todo.items()} == {
         "metrics": "python", "trades": "conductor", "harvest": "conductor"}, todo
@@ -76,9 +78,9 @@ def test_route_and_roster() -> None:
     app = FastAPI()
     app.include_router(api.ROUTER)
     http = TestClient(app)
-    assert http.get("/api/load", params={"project": BUILD[0], "databank": BUILD[1]}).json()["strategies"] == 100
+    held = http.get("/api/load", params={"project": BUILD[0], "databank": BUILD[1]}).json()
     assert "error" in http.get("/api/load", params={"project": "nope", "databank": "x"}).json()
-    assert len(find.roster(*BUILD)) == 100
+    assert len(find.roster(*BUILD)) == held["strategies"] > 0
 
 
 def test_conductor_one_at_a_time() -> None:
@@ -94,9 +96,22 @@ def test_conductor_one_at_a_time() -> None:
         jobs.cancel(i)
 
 
+def held() -> bool:
+    """Whether an install holds both fixture databanks today."""
+    fake_jobs([])
+    return not any(state.status(*bank).get("error") for bank in (BUILD, CROSS))
+
+
 if __name__ == "__main__":
-    for test in (test_status_and_lanes, test_failure_and_retry, test_writing_waits,
-                 test_route_and_roster, test_conductor_one_at_a_time):
+    tests = [test_conductor_one_at_a_time]
+    if held():
+        tests = [test_status_and_lanes, test_failure_and_retry, test_writing_waits,
+                 test_route_and_roster, *tests]
+    else:
+        print(f"    (ninguna instalación guarda {BUILD[0]} / {BUILD[1]} y {CROSS[1]}: los cuatro "
+              "tests que leen un databank vivo con su OOS no corren; hace falta un proyecto "
+              "con build + OOS + cross-market en el custodio)")
+    for test in tests:
         started = time.time()
         test()
         print(f"ok  {test.__name__}  {time.time() - started:.1f} s")

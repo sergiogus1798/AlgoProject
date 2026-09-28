@@ -17,7 +17,8 @@ def load(project: str, databank: str, asset: str, export: str) -> dict:
 
     Returns:
         The export, its market universe, every feed's bars, the strategy names on the base
-        asset and their identity. The whole export is one read: every view slices it with
+        asset and their identity (`identity.resolve`: installs, cosecha, kept .sqx; None
+        where none names it). The whole export is one read: every view slices it with
         `tradestore.market` rather than opening a file per strategy and market.
     """
     packed = export_dir(project, databank, export) / "trades.parquet"
@@ -26,6 +27,6 @@ def load(project: str, databank: str, asset: str, export: str) -> dict:
     names = sorted(trades.loc[trades["Symbol"] == universe["main"], "strategy"].unique())
     return {"project": project, "databank": databank, "export": export, "asset": asset,
             "path": packed, "universe": universe, "trades": trades, "strategies": names,
-            "identity": identity.lookup(project, databank, names),
+            "identity": identity.resolve(project, databank, names, packed.parent, export),
             "bars": {feed: barstore.read(feed, universe["timeframe"])
                      for feed in markets.feeds(universe)}}

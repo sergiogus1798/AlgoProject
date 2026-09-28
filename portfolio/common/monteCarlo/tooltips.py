@@ -1,6 +1,10 @@
 """One sentence per config.yaml and asset knob, for the config drawer's hover text."""
 
 TIPS = {
+    "global.tile_bytes": "Memoria de trabajo de una franja dentro de cada worker, en bytes; "
+                         "es el mando de la memoria.",
+    "family_d.stitch_quantiles": "Gravedad del mal sorteo cosido de cada bloque, como "
+                                 "cuantiles; ninguno solo es «la» respuesta.",
     "global.starting_equity": "Cuenta desde la que arranca la curva de equity aditiva.",
     "global.risk_per_trade": "USD arriesgados por operación; el divisor que convierte el "
                              "P&L en R.",

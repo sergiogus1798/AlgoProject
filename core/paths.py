@@ -20,6 +20,10 @@ WORKER_PORT = _CFG["worker_port"]
 # The desktop app's local daemon. Loopback only, never exposed; a machine that never
 # opens the app never sets it, so it carries a default rather than being required.
 UI_PORT = _CFG.get("ui_port", 8765)
+# MetaTrader 5 under Wine: the Wine prefix that holds the terminal. Optional until MT5 is
+# installed; its tester reports and exports go under the data root, never into the prefix.
+MT5_PREFIX = Path(_CFG.get("mt5_prefix", "~/Desktop/MT5")).expanduser()
+MT5_DATA = DATA / "mt5"
 STRATEGY_POOLS = {name: Path(p).expanduser()
                   for name, p in (_CFG.get("strategy_pools") or {}).items()}
 
@@ -237,3 +241,8 @@ def ledger_file(study: str) -> Path:
         and because it is a record of what happened on this machine, not source.
     """
     return DATA / "ledger" / f"{study}.jsonl"
+
+
+def archive_dir() -> Path:
+    """The strategy archive's root: one read-only `<identity>/<YYYY-MM-DDTHHMM>/` per version."""
+    return DATA / "archive"

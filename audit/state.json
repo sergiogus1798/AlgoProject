@@ -1,18 +1,12 @@
 {
-  "last_audit": "2026-09-27",
+  "last_audit": "2026-09-28",
   "scope_note": "SQX scope narrowed 2026-09-04: report only broken exports, oversized logs, corrupt blocks/archives. Project configuration (inactive tasks, template usage, databanks a task clears, loops, GoToTask targets, which templates a project names) is the owner's decision and is never a finding, never tracked here. 2026-09-27: length of a CLAUDE.md alone is no longer a finding (only misplaced content is); the repo layout changed completely between 2026-09-11 and 2026-09-27 (tasks/ and strategies/ became studies/, portfolio/, ledger/, pipeline/) so most 09-11 findings against the old paths were dropped rather than rechecked against code that no longer exists.",
   "findings": {
-    "ops.nightly_agent_halves_broken": {
-      "severity": "red",
+    "docs.sqxconfig_stale_readme_and_dangling_link": {
+      "severity": "yellow",
       "status": "open",
-      "first_seen": "2026-09-27",
-      "note": "bin/nightly-audit.sh's auditor half and bin/nightly-docs.sh both fail every night: 'this workspace has not been trusted' followed by 'Error: Input must be provided either through stdin or as a prompt argument when using --print'. Only tools/daily_audit.py (mechanical, no model) has run since 2026-09-11 -- no full audit/YYYY-MM-DD.md was written between 2026-09-11 and 2026-09-27, so nightly-fix.sh also had nothing to act on every day in between ('no audit/2026-09-26.md: the audit did not finish'). Visible downstream effect: knowhow/sqx-format/INDEX.md has been stale since 2026-09-26 because nightly-fix never ran to regenerate it."
-    },
-    "data.disk_budget_snapshots_profiling": {
-      "severity": "orange",
-      "status": "open",
-      "first_seen": "2026-09-27",
-      "note": "AlgoData/logs/disk-nightly.log: snapshots 8.25 GB/8 GB (103%) on the prior run -> 15.02 GB/8 GB (188%) today, profiling steady at 2.00 GB/1 GB (200%). 925 duplicate file groups, 5.6 GB recoverable, largely twin copies of the same master project logs across snapshots/2026-09-25-master-antes-update-data/ and snapshots/weekly-data-update-2026-09-26/. Nothing is deleted automatically ('nada se borra aqui')."
+      "first_seen": "2026-09-28",
+      "note": "tools/checks.py failed today (2 problems, 0 on 2026-09-27) purely from documentation drift in the new (encargo 22) ui/daemon/sqxconfig/ folder: its README's file table omits lists.py, and lists.py:28's comment links knowhow/conditions/wfm-acceptance without the .md suffix, so knowhowmap.broken_links flags it as missing even though knowhow/conditions/wfm-acceptance.md exists. Two one-line edits."
     },
     "data.export_manifest_gap_perf_harness": {
       "severity": "yellow",
@@ -36,7 +30,10 @@
   "resolved_since_2026_09_11": {
     "code.archived_analyses_unconverted": "archive/ (atr_stop.py, atr_stop_study.py, scan_strategies.py, validate_trades.py, plots.py) deleted 2026-09-26 by the owner, per OPEN.md #8; scan_strategies.py's read-exit-config-from-.sqx idea is still in git history if ever needed.",
     "sqx.master_log_still_large": "Fixed 2026-09-23 (log retention rework, knowhow/eng/log-retention.md). Confirmed 2026-09-27: ~/Desktop/SQX/user/log is 58 MB total, largest file 55.5 MB for one day -- no multi-GB file left.",
-    "stats.atr_stop_in_sample_grid_selected": "knowhow/research/research-lessons.md now gives the full slippage sensitivity (0.25xATR -> PF 1.49, -37% net; 3xATR -> -11%) and marks the underlying study as historical/deleted rather than presenting PF 2.09 bare."
+    "stats.atr_stop_in_sample_grid_selected": "knowhow/research/research-lessons.md now gives the full slippage sensitivity (0.25xATR -> PF 1.49, -37% net; 3xATR -> -11%) and marks the underlying study as historical/deleted rather than presenting PF 2.09 bare.",
+    "ops.nightly_agent_halves_broken": "Confirmed sound two nights running: nightly-audit.log/nightly-docs.log for 09-27 end with real Spanish content and exit 0; the 09-28 run (this one) produced the mechanical report and started the auditor agent normally. The 'this workspace has not been trusted' line is cosmetic stderr noise, not a blocker, since 2026-09-26/27.",
+    "data.disk_budget_snapshots_profiling": "Owner emptied snapshots/ by hand on 2026-09-27 13:38 (now 4 KB) and profiling/ dropped to 1.2 MB. disk-nightly.log for 2026-09-28 shows neither over budget; the 925 duplicate groups went with the folder.",
+    "data.assets_undecided_six_symbols": "python3 -m core.assets exits 0 for DAX40, DJ30, NIKKEI225, USA500, USATEC today (SP500ft retired as a duplicate of USA500, OPEN.md #29); no assets/symbols/*.yaml carries use: null as an actual value any more. Today's mechanical report says 'assets in use, cost still undecided: none'."
   },
   "dropped_2026_09_27": {
     "reason": "Either now the owner's declared decision (out of scope per the standing rule), or the code/finding it was about no longer exists after the 09-11 to 09-27 rebuild, or the current audit scope explicitly excludes it (CLAUDE.md length alone).",
@@ -51,20 +48,21 @@
   },
   "mechanical": {
     "exit_code": 1,
-    "exit_drivers": ["Infinox_SP500ft_H4_HighPrecision fails to render (owner withdrew the repair, OPEN.md #3)", "knowhow/sqx-format/INDEX.md stale (downstream of ops.nightly_agent_halves_broken)", "exports without a manifest, see data.export_manifest_gap_perf_harness"],
-    "checks_py": "658 files checked, 1 problem (knowhow index staleness)",
-    "depmap": "current, regenerated 2026-09-27",
-    "assets_undecided": 6,
-    "assets_undecided_symbols": ["DAX40", "DJ30", "NIKKEI225", "SP500ft", "USA500", "USATEC"],
-    "assets_in_a_live_project": "none of the six appear in AlgoData/projects/registry.csv today",
-    "sqx_ports_up_at_audit_time": ["5070 (custodian, sqcli)"],
-    "sqx_ports_down_at_audit_time": ["5050 (master)", "5060 (conductor)"]
+    "exit_drivers": ["Infinox_SP500ft_H4_HighPrecision fails to render (owner withdrew the repair, OPEN.md #3)", "checks.py: 2 problems, docs.sqxconfig_stale_readme_and_dangling_link", "exports without a manifest, see data.export_manifest_gap_perf_harness"],
+    "checks_py": "766 files checked, 2 problems (sqxconfig README + dangling knowhow link, both docs.sqxconfig_stale_readme_and_dangling_link)",
+    "depmap": "current, regenerated 2026-09-28",
+    "assets_undecided": 0,
+    "assets_in_a_live_project": "n/a, none undecided today",
+    "sqx_ports_up_at_audit_time": [],
+    "sqx_ports_down_at_audit_time": ["5050 (master)", "5060 (conductor)", "5070 (custodian)"],
+    "custom_blocks_parse_clean": "SQX 171, SQX_w1 179, SQX_w2 179 -- no corrupt blocks",
+    "dump_project_all_installs": "27 projects across SQX/SQX_w1/SQX_w2, only Infinox_SP500ft_H4_HighPrecision fails (known, withdrawn)"
   },
   "next_audit_should_check": [
-    "whether bin/nightly-audit.sh / bin/nightly-docs.sh have been fixed and a full audit.md is appearing daily again",
-    "whether snapshots/ and profiling/ are back under budget, and whether the 5.6 GB of duplicates were pruned",
-    "whether the SPP_IS/MCR_perf/MCR_All manifest gap is the checker's blind spot or a real exporter gap (look at a manifest.json two directories up by hand)",
+    "whether the SPP_IS/MCR_perf/MCR_All manifest gap (data.export_manifest_gap_perf_harness, OPEN.md #64) is the checker's blind spot or a real exporter gap -- look at a manifest.json two directories up by hand",
     "whether studies/screening/{isOos,filters,gate}/ and studies/screening/analysis/decay.py deduplicate on the exported trade list, not on name or XML hash",
-    "OPEN.md's own live table (#19, #26, #43, #45 and any new ones) for anything that has gone stale there too"
+    "whether studies/data/spread/ has been contrasted against a real DATATICK retest yet (OPEN.md #76)",
+    "OPEN.md's own live table (#19, #26, #43, #45 and any new ones) for anything that has gone stale there too",
+    "the ~50 knowhow cards tagged 🤔 -- not reviewed today, volume too large for one pass"
   ]
 }

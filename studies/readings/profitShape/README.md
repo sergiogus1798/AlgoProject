@@ -14,7 +14,7 @@ than the trade count suggests, and each does it from a different angle.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `report.py` | **The command**: one strategy's three readings, printed and written to `reports/<P>/<D>/<export day>/profitShape/estrategias/` | `python3 -m studies.readings.profitShape.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades → three readings |
+| `report.py` | **The command**: one strategy's three readings, printed and written to `reports/<P>/<D>/<export day>/profitShape/estrategias/`, signed with `identity` (`output.identify`; a `identidad` warning when no source names it) | `python3 -m studies.readings.profitShape.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades → three readings |
 | `one.py` | The measurements, and the three readings as the contract's data the window paints | imported — the window calls it | trades → result |
 | `contract.py` | The three tabs: concentration, independence, a break, each with its reading | imported | numbers → tabs |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |

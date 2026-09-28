@@ -23,8 +23,7 @@ def path_of(name: str) -> Path:
         name: A key of SHARED, or an asset name.
 
     Returns:
-        The file. An asset name always resolves under symbols/, so a caller cannot reach
-        anything else in the repository by asking for an odd name.
+        The file; an asset name always resolves under symbols/, never elsewhere.
     """
     return ASSETS / SHARED[name] if name in SHARED else SYMBOLS / f"{name}.yaml"
 
@@ -106,9 +105,8 @@ def create(symbol: str, cls: str, broker: str, sqx_symbol: str, session: str,
         instrument: tick_size, point_value and min_distance, read from SQX.
 
     Returns:
-        The file written and the `_policy.yaml` block added beside it. Every cost lands as
-        `use: null`, which blocks authoring until the owner decides it — a file with
-        invented values is worse than no file, because it looks decided.
+        The file written, with its `_policy.yaml` block. Every cost lands `use: null` and
+        blocks authoring: invented values are worse than none, because they look decided.
     """
     schema = classes()[cls]
     fields = (schema["spread"]["fields"] + [schema["commission"]["field"]]
@@ -146,8 +144,7 @@ def add_segments(symbol: str) -> None:
         symbol: Asset name.
 
     Returns:
-        Nothing. Without this block `load()` hands back segments with no dates at all and
-        every reader of a window raises a KeyError instead of saying «sin decidir».
+        Nothing. Without it every reader of a window raises instead of saying «sin decidir».
     """
     path = ASSETS / POLICY
     doc = read(path)
@@ -164,9 +161,8 @@ def retire(symbol: str) -> dict:
         symbol: Asset name.
 
     Returns:
-        Where the file went. `symbols()` globs `symbols/*.yaml` and stops seeing it, while
-        its `_policy.yaml` block stays put: the windows it holds are decisions, and
-        restoring an asset that came back without them would be a silent loss.
+        Where the file went. `symbols()` stops seeing it; its `_policy.yaml` block stays,
+        since restoring an asset without the windows it held would be a silent loss.
     """
     RETIRED.mkdir(exist_ok=True)
     dest = RETIRED / f"{symbol}.yaml"
@@ -198,21 +194,31 @@ def retired() -> list[str]:
 
 
 def set_market(symbol: str, category: str, feeds: list[dict]) -> dict:
-    """Replace one category of one asset's retest universe.
+    """Make one category of one asset's Cross Market check hold exactly these markets.
 
     Args:
         symbol: The main asset.
         category: "family" or "structural".
-        feeds: The complete list of {feed, data_from}. It replaces the stored one whole —
-            the window holds the whole list, so merging here would make a removal
-            impossible to express.
+        feeds: Every {feed, data_from} it must hold; a removal is a market left out.
 
     Returns:
-        The category as written.
+        The category as written. The list is edited in place, not replaced: a market that
+        stays keeps its line and its comments, so adding or removing one is a one-line diff.
     """
     path = ASSETS / MARKETS
     doc = read(path)
-    doc[symbol]["categories"][category] = [flow(f) for f in feeds]
+    cats = doc[symbol]["categories"]
+    rows = cats[category]
+    wanted = [f["feed"] for f in feeds]
+    for i in reversed(range(len(rows))):
+        if rows[i]["feed"] not in wanted:
+            del rows[i]
+    rows.extend([flow(f) for f in feeds if f["feed"] not in {r["feed"] for r in rows}])
+    rows.fa.set_block_style() if rows else rows.fa.set_flow_style()
+    if not rows and rows.ca.end:   # an emptied list drops the lines after it: its key keeps them
+        rows.ca.end[0].value = "\n" + "".join(" " * t.column * t.value.startswith("#") + t.value
+                                               for t in rows.ca.end)
+        cats.ca.items.setdefault(category, [None] * 4)[2] = rows.ca.end[0]   # keep its comment above
     write(path, doc)
     return {"symbol": symbol, "category": category, "feeds": feeds}
 
@@ -221,13 +227,14 @@ def flow(feed: dict) -> CommentedMap:
     """One market as this file writes them: a flow mapping carrying a real date.
 
     Args:
-        feed: {feed, data_from} as the window sends it, both as text.
+        feed: {feed, data_from} as the window sends it, both as text; no date is `null`.
 
     Returns:
-        A one-line mapping. The file already holds every market on a line of its own, and
-        a block mapping here would make the diff of one added market unreadable.
+        A one-line mapping, like every market the file already holds: a block mapping
+        would make the diff of one added market unreadable.
     """
-    one = CommentedMap({"feed": feed["feed"], "data_from": yaml.safe_load(feed["data_from"])})
+    since = feed["data_from"] and yaml.safe_load(str(feed["data_from"]))
+    one = CommentedMap({"feed": feed["feed"], "data_from": since or None})
     one.fa.set_flow_style()
     return one
 
@@ -238,8 +245,6 @@ def reindex() -> int:
     Returns:
         How many assets it listed.
     """
-    # Imported here and not at the top: core.assets imports this module's neighbours and
-    # pulls in the whole preflight, which nothing writing one value needs loaded.
-    from core.assets import write_index
+    from core.assets import write_index   # here: it pulls in the whole preflight
 
     return write_index()

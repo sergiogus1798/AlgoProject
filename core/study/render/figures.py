@@ -1,4 +1,4 @@
-"""The four drawings over a continuous axis: distribution, cone, lines and bars."""
+"""The four drawings over a continuous axis: distribution (one sample or several overlaid), cone, lines and bars."""
 
 from collections.abc import Callable
 from html import escape
@@ -16,8 +16,38 @@ def _xfmt(labels: list) -> Callable:
     return lambda v: labels[min(int(round(v)), len(labels) - 1)]
 
 
+def overlay(b: dict) -> str:
+    """Several samples on the same bins, each a density outlined in its colour, its median dashed."""
+    edges = b["bins"]
+    top = max(c for s in b["series"] for c in s["counts"]) or 1
+    x = svg.scale(edges[0], edges[-1], PAD["l"], W - PAD["r"])
+    y = svg.scale(0, top, H - PAD["b"], PAD["t"])
+    body = [svg.axes(x, y, svg.ticks(edges[0], edges[-1]), svg.ticks(0, top))]
+    key = []
+    for colour, s in zip(SERIES, b["series"]):
+        steps = " ".join(f"L{x(a):.1f},{y(c):.1f} L{x(z):.1f},{y(c):.1f}"
+                         for a, z, c in zip(edges, edges[1:], s["counts"]))
+        body.append(f'<path d="M{x(edges[0]):.1f},{y(0):.1f} {steps} L{x(edges[-1]):.1f},'
+                    f'{y(0):.1f} Z" fill="{colour}" fill-opacity=".18" stroke="{colour}" '
+                    f'stroke-width="2"><title>{escape(s["label"])}</title></path>')
+        if s["median"] is not None:
+            body.append(f'<line x1="{x(s["median"]):.1f}" x2="{x(s["median"]):.1f}" '
+                        f'y1="{PAD["t"]}" y2="{H - PAD["b"]}" stroke="{colour}" '
+                        f'stroke-dasharray="4 3"/>')
+        key.append((svg.box(colour, .5), f"{s['label']} · n {svg.num(s['n'])} · mediana "
+                                         f"{svg.num(s['median'])}"))
+    shift = b.get("shift")
+    if shift:
+        p = "—" if shift["ks_p"] is None else f"{shift['ks_p']:.4f}"
+        key.append((svg.line(svg.INK2, "dashed"),
+                    f"desplazamiento de la mediana {svg.num(shift['median'])} · KS p = {p}"))
+    return svg.figure(b["title"], b["note"], svg.canvas("".join(body)), svg.legend(key))
+
+
 def distribution(b: dict) -> str:
     """Histogram of the null, its band shaded, the median dashed and the real value marked."""
+    if b.get("series"):
+        return overlay(b)
     edges, counts = b["bins"], b["counts"]
     x = svg.scale(edges[0], edges[-1], PAD["l"], W - PAD["r"])
     y = svg.scale(0, max(counts) or 1, H - PAD["b"], PAD["t"])

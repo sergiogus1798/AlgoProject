@@ -82,9 +82,9 @@ precision:
 # a 0 con CustomSpread=true, o sea gratis, que es la versión optimista.
 # Cualquier otro se enciende sólo si el dueño lo pide.
 crosschecks:
-  build: [RetestWithHigherPrecision]
+  build: [MonteCarloManipulation]
   default: []
-  precision: 2
+  precision: 3
 
 # ─── Genético ──────────────────────────────────────────────────────────────────────────
 # No se parametriza: el bloque <BuildMode> entero se copia verbatim del proyecto modelo,

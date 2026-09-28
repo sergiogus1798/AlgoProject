@@ -7,7 +7,8 @@ TIPS = {
               "WFC.",
     "min_trades": "Una celda (variante, mercado, tramo) con menos operaciones que esto no "
                   "entra en ese par. Compartido con el WFC y el CSCV.",
-    "top_share": "Qué parte de arriba de cada superficie compara el Jaccard: 0.10 es el decil.",
+    "top_share": "Qué parte de arriba de cada superficie compara el Jaccard y cuenta como "
+                 "meseta en el mapa de consenso: 0.10 es el decil.",
     "rho_floor": "El rho que el intervalo entero tiene que superar para decir que dos mercados "
                  "ordenan igual las variantes.",
     "j_quantile": "El percentil del Jaccard de dos órdenes independientes que el observado "

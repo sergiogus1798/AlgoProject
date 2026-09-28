@@ -5,7 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from core.study import blocks, identity, result as envelope
+from core.study import blocks, identity, output, result as envelope
 from engines.nulls import simulate, verdict
 
 MODULE = "nulls"
@@ -96,8 +96,8 @@ def run(strategy: str, given: dict, cfg: dict, statistic: str = "net") -> dict:
 
     Args:
         strategy: Its name in the export.
-        given: {"trades": its trades on the sample, "frame": the bars, "project",
-            "databank", "sample"}.
+        given: {"trades": its trades on the sample, "frame": the bars, "folder": the export
+            folder, whose manifest names project and databank for the identity}.
         cfg: What inputs.config() returned, with `feed` set.
         statistic: Which statistic the headline call and the channels read.
 
@@ -118,10 +118,10 @@ def run(strategy: str, given: dict, cfg: dict, statistic: str = "net") -> dict:
     warn = [{"code": line.split(":")[0].lower(), "state": "watch",
              "text": line.split(":", 1)[1].strip()}
             for line in verdict.distrust(got["kept"], got["found"], len(trades), cfg)]
+    ident = output.identify(given["folder"], [strategy])[strategy]
     return envelope.envelope(
-        MODULE, strategy, identity.lookup(given["project"], given["databank"],
-                                          [strategy])[strategy], cfg, started,
-        tabs(got, cfg, statistic), said, warn, GLOSSARY,
+        MODULE, strategy, ident, cfg, started,
+        tabs(got, cfg, statistic), said, warn + identity.warning(ident), GLOSSARY,
         summary={"n": len(trades), "reconcile": got["kept"]["checks"]["corr"],
                  **{f"p_{n}": v for n, v in got["found"].items()}})
 

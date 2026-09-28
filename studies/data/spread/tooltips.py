@@ -25,4 +25,20 @@ TIPS = {
     "band.quantiles": "Los cuantiles del spread diario que se ajustan como curvas del precio; el "
                       "primero y el último dan el Min y el Max del MC Retest de spread.",
     "band.min_minutes": "Un día con menos minutos cotizados que esto no entra en el ajuste.",
+    "onboard.commission_usd_per_lot": "Comisión por defecto de un activo nuevo, USD por lote "
+                                      "ida y vuelta; en no forex se pasa a % del nocional al "
+                                      "último precio de Darwinex.",
+    **{f"onboard.{kind}.{knob}": tip for kind in ("index", "metal", "forex") for knob, tip in {
+        "segments.build": "Primer año del tramo de construcción; «data» es desde el primer dato.",
+        "segments.build_to": "Último año del tramo de construcción.",
+        "segments.oos1": "Primer y último año del primer fuera de muestra.",
+        "segments.oos2": "Primer año y último día del fuera de muestra reservado (oos2).",
+        "commission": "Comisión de este tipo de activo: 0 en cuenta raw, o usd_per_lot para "
+                      "usar la comisión por lote de arriba.",
+        "swap": "Swap largo y corto en % anual, o brokers para la media en puntos de todas "
+                "las variantes del par en el registro de SQX.",
+        "triple_swap_on": "El día de la semana que cobra tres noches de swap.",
+        "model": "El modelo de spread fijado para este tipo de activo; vacío (null) es el que "
+                 "mejor valida.",
+    }.items()},
 }

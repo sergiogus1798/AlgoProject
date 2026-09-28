@@ -1,4 +1,4 @@
-"""The two pages the shell opens: one strategy's Ficha and studies, and the population's studies."""
+"""The study page of one strategy, with its Ficha as the first tab — what the Estrategia zone embeds."""
 
 from ui.desktop.studypage.ficha import Ficha
 from ui.desktop.studypage.page import StudyPage
@@ -38,7 +38,7 @@ class StrategyPage(StudyPage):
         for w in (self.studies, self.head, self.bar, self.note, self.view.parentWidget()):
             w.setVisible(not ficha)
         if ficha:
-            for w in (self.jump, self.report, self.back, self.skipped):
+            for w in (self.back, self.skipped):
                 w.hide()
 
     def _family(self, index: int) -> None:
@@ -68,29 +68,25 @@ class StrategyPage(StudyPage):
         self.hold = False
         self.ficha.load(self.where)
 
+    def open_family(self, name: str) -> None:
+        """Show one family tab by the name it shows (Estrategia opens on its origin's family).
+
+        Args:
+            name: «Ficha», «Cribado», «Transferencia»…; a name with no tab leaves the bar be.
+        """
+        for i in range(self.families.count()):
+            if self.families.tabText(i) == name:
+                self.families.setCurrentIndex(i)
+                return
+
     def open_study(self, key: str) -> None:
-        """Show one study, leaving the Ficha — except while a selection is being followed.
+        """Show one study, leaving the Ficha — except while a selection is being followed, or
+        when the daemon did not answer the catalogue (its error is on the page already).
 
         Args:
             key: Study key.
         """
-        if self.hold:
+        if self.hold or key not in self.catalogue:
             self.key = key
             return
         super().open_study(key)
-
-
-class PopulationStudy(StudyPage):
-    """The study page of the whole databank SELECTION holds."""
-
-    def __init__(self) -> None:
-        """Build it for scope many."""
-        super().__init__(strategy_page=False)
-
-    def open_population(self, key: str) -> None:
-        """Show one study's population result.
-
-        Args:
-            key: Study key.
-        """
-        self.open_study(key)

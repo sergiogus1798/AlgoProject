@@ -9,6 +9,7 @@ import sys
 import time
 from pathlib import Path
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -17,6 +18,8 @@ from ui.daemon import version
 from ui.desktop import client
 from ui.desktop.shell import Shell
 from ui.desktop.theme import QSS
+
+SHOT_MS = 2500      # the zones read the daemon when built; this lets the last paint land
 
 
 def replace_stale(port: int, info: dict) -> None:
@@ -82,15 +85,36 @@ def ensure_daemon(port: int) -> subprocess.Popen | None:
                      f"python3 -m ui.daemon.serve para ver el error")
 
 
+def shoot(window: Shell, folder: Path, zone: str) -> None:
+    """Save the window as it looks now and close the app — every front's evidence.
+
+    Args:
+        window: The open window.
+        folder: Where the PNG goes; created if absent.
+        zone: The zone on screen, which names the file.
+    """
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{zone.replace(' ', '_').replace('/', '-')}.png"
+    window.grab().save(str(path))
+    print(path)
+    QApplication.quit()
+
+
 def main() -> None:
     """Open the window and run until it is closed."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--zone", default="Cobertura",
                     help="la zona que se abre al arrancar, por su nombre en la barra lateral")
+    ap.add_argument("--port", type=int, default=UI_PORT,
+                    help=f"el puerto del demonio (por defecto {UI_PORT}); otro para no tocar el "
+                         "de la ventana del dueño")
+    ap.add_argument("--shot", type=Path, metavar="DIR",
+                    help="guarda una captura PNG de la ventana en esa carpeta y sale")
     args = ap.parse_args()
 
     app = QApplication(sys.argv)
-    owned = ensure_daemon(UI_PORT)
+    owned = ensure_daemon(args.port)
+    client.aim(args.port)
     app.setApplicationName("AlgoProject")
     # The same icon the menu entry uses, so the taskbar and alt-tab show it too.
     app.setWindowIcon(QIcon(str(Path(__file__).with_name("icon-256.png"))))
@@ -98,6 +122,8 @@ def main() -> None:
     window = Shell()
     window.open_zone(args.zone)
     window.show()
+    if args.shot:
+        QTimer.singleShot(SHOT_MS, lambda: shoot(window, args.shot, args.zone))
     code = app.exec()
     if owned:
         owned.terminate()

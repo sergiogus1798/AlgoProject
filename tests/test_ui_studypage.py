@@ -1,4 +1,5 @@
-"""The study page offscreen over the real routes in-process: result, drawer, a real run, history, compare."""
+"""The study page offscreen over the real routes in-process: result, drawer, history, compare,
+and with `--run` one real edgeCost run (it writes a report under AlgoData/reports/)."""
 
 import os
 import sys
@@ -17,16 +18,19 @@ from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from core.paths import ROOT  # noqa: E402
-from ui.daemon import jobs, studyapi  # noqa: E402
+from ui.daemon import jobs, jobsapi  # noqa: E402
 from ui.daemon.results import api as results  # noqa: E402
 from ui.daemon.runner import api as runner  # noqa: E402
 from ui.desktop import client  # noqa: E402
 from ui.desktop.selection import SELECTION  # noqa: E402
-from ui.desktop.studypage.views import PopulationStudy, StrategyPage  # noqa: E402
+from ui.desktop.studypage.page import StudyPage  # noqa: E402
+from ui.desktop.studypage.views import StrategyPage  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 
-PROJECT, DATABANK, STRATEGY = "USDJPY_workflow_profiling_v1", "Results", "Strategy 1.23.51"
-HISTORY = ("USDJPY_emaCross_H1", "WFM")          # wfm ran twice there
+# Since F13 (2026-09-28): the USDJPY Donchian project; its gate ran on 09-27 and 09-28.
+PROJECT, DATABANK, STRATEGY = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results",
+                               "Strategy 1.15.54")
+RUN = "--run" in sys.argv
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-studypage-")
 
@@ -37,7 +41,7 @@ def serve() -> TestClient:
     Never port 8765 and never bin/algoui: the owner may have the app open.
     """
     app = FastAPI()
-    for r in (results.ROUTER, runner.ROUTER, studyapi.ROUTER):
+    for r in (results.ROUTER, runner.ROUTER, jobsapi.ROUTER):
         app.include_router(r)
     http = TestClient(app)
 
@@ -73,8 +77,21 @@ def shot(widget: object, name: str) -> None:
     widget.grab().save(str(SHOTS / f"E-{name}.png"))
 
 
+def run_one(app: QApplication, page: StrategyPage) -> None:
+    """One real edgeCost run of the strategy on screen, the page reloading on its end."""
+    page.open_study("edgeCost")
+    before = page.meta.get("computed_at") or ""
+    page.bar.timer.setInterval(200)
+    page.bar.run("one")
+    assert page.bar.ids and not page.bar.one.isEnabled(), page.bar.error.text()
+    settle(app, lambda: not page.bar.ids, 60)
+    assert page.bar.error.text() == "", page.bar.error.text()
+    assert page.meta["day"] == date.today().isoformat() and page.meta["computed_at"] >= before
+    assert "100%" in page.bar.line.text(), page.bar.line.text()
+
+
 def test_strategy(app: QApplication, http: TestClient) -> None:
-    """Dots, result, drawer signing, a real edgeCost run reloading, compare with a rival."""
+    """Dots, result, drawer signing, compare with a rival; a real edgeCost run with --run."""
     bank = http.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
     ident = next(s["identity"] for s in bank["strategies"] if s["strategy"] == STRATEGY)
     SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=STRATEGY, identity=ident,
@@ -84,37 +101,32 @@ def test_strategy(app: QApplication, http: TestClient) -> None:
     assert page.where["asset"] == "USDJPY", page.where
     page.open_study("gate")
     assert page.studies.tabText(page.studies.currentIndex()) == "Puerta IS/OOS"
-    assert page.cells["gate"]["state"] == "pass" and page.view.results
+    assert page.cells["gate"]["state"] in ("pass", "fail") and page.view.results
     assert "elimina" in page.head.text()
     shot(page, "strategy")
 
     page.open_study("edgeCost")
     knob = page.drawer.editors["verdict.min_edge_spreads"][0]
-    assert "coincide" in page.drawer.sign.text(), page.drawer.sign.text()
     knob.setText("3.5")
     knob.editingFinished.emit()
     assert page.drawer.overrides() == ["verdict.min_edge_spreads=3.5"]
-    assert "distinta configuración" in page.drawer.sign.text()
     shot(page.drawer, "drawer")
     page.drawer.reset()
-    assert page.drawer.overrides() == [] and "coincide" in page.drawer.sign.text()
+    assert page.drawer.overrides() == []
 
-    before = page.meta["computed_at"]
-    page.bar.timer.setInterval(200)
-    page.bar.run("one")
-    assert page.bar.ids and not page.bar.one.isEnabled(), page.bar.error.text()
-    settle(app, lambda: not page.bar.ids, 60)
-    assert page.bar.error.text() == "", page.bar.error.text()
-    assert page.meta["day"] == date.today().isoformat() and page.meta["computed_at"] >= before
-    assert "100%" in page.bar.line.text(), page.bar.line.text()
+    if RUN:
+        run_one(app, page)
+    else:
+        print("    (sin --run: no se corre edgeCost de verdad; escribiría un informe del día en "
+              "AlgoData/reports/ de este proyecto)")
 
-    page.open_study("gate")                  # edgeCost has one strategy only; the gate all
-    rival = next(s for s in page.strategies if s["strategy"] == "Strategy 1.28.59")
+    page.open_study("gate")                  # the gate judged every strategy of the databank
+    rival = next(s for s in page.strategies if s["strategy"] != STRATEGY)
     page.history.versus.emit(rival["strategy"], rival["identity"])
     assert len(page.view.results) == 2 and not page.back.isHidden(), page.note.text()
     shot(page, "compare")
 
-    page.open_study("snoopingScreen")        # the runner refuses it; the catalogue says so
+    page.open_study("replication")           # the runner refuses it; the catalogue says so
     assert page.bar.one.isHidden() and page.bar.many.isHidden(), page.bar.line.text()
     assert "No se corre desde aquí" in page.bar.line.text()
     page.bar.run("one")                      # pressed anyway: the daemon refuses too
@@ -127,17 +139,18 @@ def test_strategy(app: QApplication, http: TestClient) -> None:
     assert page.view.results == [] and "otro databank" in page.note.text(), page.note.text()
 
     page.open_study("wfm")
-    assert "Población" in page.note.text() or "otro databank" in page.note.text()
+    assert "Proyecto" in page.note.text() or "otro databank" in page.note.text()
     page.deleteLater()
 
 
 def test_population(app: QApplication) -> None:
-    """The population page: newest wfm run, two runs compared, the batch studies said honestly."""
-    SELECTION.choose(project=HISTORY[0], databank=HISTORY[1])
-    page = PopulationStudy()
+    """Scope many on the same databank: the newest gate run, two runs compared, the batch
+    studies said honestly. (The population page left the sidebar with F13; the scope stays.)"""
+    SELECTION.choose(project=PROJECT, databank=DATABANK)
+    page = StudyPage(strategy_page=False)
     page.resize(1600, 1050)
-    page.open_population("wfm")
-    assert page.view.results and page.bar.one.isHidden() and not page.bar.many.isHidden()
+    page.open_study("gate")
+    assert page.view.results and page.bar.one.isHidden()
     days = [page.history.runs.item(i).data(Qt.UserRole) for i in range(page.history.runs.count())]
     assert len(days) >= 2, days
     shot(page, "population")

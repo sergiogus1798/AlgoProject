@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from core.paths import DATA, ROOT  # noqa: E402
-from ui.daemon import studyapi  # noqa: E402
+from ui.daemon import jobsapi  # noqa: E402
 from ui.daemon.batch import api as batch  # noqa: E402
 from ui.daemon.results import api as results  # noqa: E402
 from ui.daemon.runner import api as runner  # noqa: E402
@@ -25,19 +25,22 @@ from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.studypage.views import StrategyPage  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 
-PROJECT, DATABANK, STRATEGY = "USDJPY_workflow_profiling_v1", "Results", "Strategy 1.23.51"
-IDENTITY = "0b91ad2b2354a2fdab752e3f500968b1de2b1981cc6d961b4fd680038a2bcce7"
-FOLDER = DATA / "harvest" / PROJECT / DATABANK / "2026-09-26"
-# Deepest IS episode of Strategy 1.23.51, read off the parquet by hand (2026-09-26): last day
-# at the peak, lowest close, first close back at the peak, and the two spans in days.
-EPISODE = [-9584.84, "2011-04-07", "2011-11-30", "2012-04-02", 361, 124]
+# Since F13 (2026-09-28): the USDJPY Donchian project's cosecha of 09-27. The hand-measured
+# drawdown episode of the retired fixture (USDJPY_workflow_profiling_v1) has
+# no counterpart here yet: re-measure one by hand before asserting it again.
+PROJECT, DATABANK, STRATEGY = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results",
+                               "Strategy 1.15.54")
+IDENTITY = "5681a84aea49d41b023f223c9dd881f878e0a0040475364a15076812f43116a4"
+DAY = "2026-09-27"
+FOLDER = DATA / "harvest" / PROJECT / DATABANK / DAY
+MOTHER = "Strategy 9.27.83"          # the one with a variant batch (strategyPermutations/)
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 
 
 def serve() -> TestClient:
     """The Ficha's router plus what the strategy page reads, in-process; never port 8765."""
     app = FastAPI()
-    for r in (tearsheet.ROUTER, results.ROUTER, runner.ROUTER, studyapi.ROUTER, batch.ROUTER):
+    for r in (tearsheet.ROUTER, results.ROUTER, runner.ROUTER, jobsapi.ROUTER, batch.ROUTER):
         app.include_router(r)
     http = TestClient(app)
 
@@ -79,7 +82,7 @@ def test_sheet(http: TestClient) -> None:
     got = ask(http, "tearsheet")
     warm = time.time() - started
     assert warm < 1.0, warm
-    assert [t["name"] for t in got["tabs"]] == ["IS", "OOS"] and got["harvest_day"] == "2026-09-26"
+    assert [t["name"] for t in got["tabs"]] == ["IS", "OOS"] and got["harvest_day"] == DAY
     for s in ("IS", "OOS"):
         equity, _ = own(s)
         grid = block(got, s, "P&L por mes")
@@ -89,7 +92,7 @@ def test_sheet(http: TestClient) -> None:
         assert curve["x"][0] == f"{equity['day'].iloc[0]:%Y-%m-%d}", s   # nothing of the other
         assert len(curve["x"]) == len(equity), s
     deepest = block(got, "IS", "Los 5 episodios de drawdown más profundos")["rows"][0]
-    assert [round(deepest[0], 2)] + deepest[1:] == EPISODE, deepest
+    assert deepest[0] < 0 and deepest[1] <= deepest[2], deepest
     print(f"    tearsheet warm {warm:.2f} s")
 
 
@@ -117,7 +120,8 @@ def synthetic(root: Path, samples: tuple[str, ...], exits: tuple[str, ...]) -> N
     pd.concat([pd.DataFrame({
         "Open time": days[:n], "Close time": days[1:n + 1], "Profit/Loss": [10.0, -5.0] * 3,
         "Balance": 100000.0, "Close type": [exits[k % len(exits)] for k in range(n)],
-        "MAE ($)": -1.0, "MFE ($)": 1.0, "identity": "x", "sample": s}) for s in samples]
+        "MAE ($)": -1.0, "MFE ($)": 1.0, "Size": 1.0, "identity": "x", "sample": s})
+        for s in samples]
     ).to_parquet(folder / "trades.parquet")
 
 
@@ -153,7 +157,7 @@ def test_draw(app: QApplication) -> None:
     assert page.on_ficha() and page.ficha.isVisibleTo(page) and not page.bar.isVisibleTo(page)
     view = page.ficha.subs[0].body
     assert len(view.results) == 2, page.ficha.subs[0].line.text()
-    assert "2026-09-26" in page.ficha.note.text(), page.ficha.note.text()
+    assert DAY in page.ficha.note.text(), page.ficha.note.text()
     app.processEvents()
     shot(page, "ficha")
     view.scroll.verticalScrollBar().setValue(1400)
@@ -180,13 +184,12 @@ def test_lote(http: TestClient) -> None:
     names = {s["strategy"]: s["identity"] for s in ask(http, "matrix", project=PROJECT,
                                                          databank=DATABANK)["strategies"]}
     ficha = Ficha()
-    for name, shown in (("Strategy 1.28.59", True), ("Strategy 1.23.51", True),
-                        ("Strategy 21.8.70", False)):
+    for name, shown in ((MOTHER, True), (STRATEGY, False)):
         ficha.load({"project": PROJECT, "databank": DATABANK, "strategy": name,
                     "identity": names[name], "asset": "USDJPY"})
         assert ficha.tabs.isTabVisible(LOTE) == shown, name
-    ficha.load({"project": PROJECT, "databank": DATABANK, "strategy": "Strategy 1.28.59",
-                "identity": names["Strategy 1.28.59"], "asset": "USDJPY"})
+    ficha.load({"project": PROJECT, "databank": DATABANK, "strategy": MOTHER,
+                "identity": names[MOTHER], "asset": "USDJPY"})
     ficha.tabs.setCurrentIndex(LOTE)
     ficha.resize(1400, 900)
     shot(ficha, "lead-ficha-lote")

@@ -35,13 +35,28 @@ def block(b: dict) -> list[str]:
         body = [f"**{b['label']}**" + ("" if b["score"] is None else f" ({num(b['score'])})")
                 + f" — {b['meaning']}", ""]
         body += [f"- {p['label']}: {num(p.get('value'))} {p.get('note', '')}" for p in b["parts"]]
+    elif kind == "distribution" and b.get("series"):
+        body = _table(["muestra", "n", "mediana"],
+                      [[s["label"], s["n"], s["median"]] for s in b["series"]])
+        if b.get("shift"):
+            p = "—" if b["shift"]["ks_p"] is None else f"{b['shift']['ks_p']:.4f}"
+            body += ["", f"desplazamiento de la mediana ({b['series'][-1]['label']} − "
+                         f"{b['series'][0]['label']}) {num(b['shift']['median'])} · KS p {p}"]
     elif kind == "distribution":
         p = "" if b["p"] is None else f" · p {b['p']:.4f}"
         body = [f"real {num(b['real'])} · mediana {num(b['median'])} · banda "
                 f"{num(b['band'][0])} a {num(b['band'][1])}{p}"]
     elif kind == "grid":
+        m = b.get("mark") or {}
         body = _table([""] + [str(c) for c in b["cols"]],
-                      [[r] + v for r, v in zip(b["rows"], b["values"])])
+                      [[r] + [f"**[{num(x)}]**" if (r, c) == (m.get("row"), m.get("col"))
+                              else x for c, x in zip(b["cols"], v)]
+                       for r, v in zip(b["rows"], b["values"])])
+        if m:
+            body += ["", f"{m['label']}: fila {m['row']}, columna {m['col']} (entre corchetes)"]
+        if b.get("scale_range"):
+            body += ["", "escala común a varias rejillas: {} a {}".format(
+                *(num(v) for v in b["scale_range"]))]
     else:
         body = [f"({kind}: se ve en la página HTML)"]
     note = [b["note"]] if b.get("note") else []

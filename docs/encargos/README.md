@@ -70,12 +70,14 @@ del dueño a las 16 decisiones; lo que quedó abierto está en su `POSSIBLE_IMPR
 |---|---|---|
 | `16-replay-de-operaciones.md` | el tier 2 del retraso: reejecutar cada operación desde una entrada desplazada | hay que recalcular stops, y **esta población no tiene ninguno** con el que validarlo |
 
-## El rediseño de la ventana, 2026-09-27
+## El rediseño de la ventana, 2026-09-27 — retirado el 2026-09-28
 
-| fichero | qué construye | depende de |
-|---|---|---|
-| `22-ventana-rediseno.md` | dictado del dueño con la ventana delante, revisado con él: PROYECTO pasa a tres zonas (Proyectos → Proyecto → Estrategia), panel de databanks estilo SQX, filtros apuntados en el Ledger con curate diferido a «Continuar workflow», BIBLIOTECA y OPERACIÓN reordenadas, modo lectura en Windows, y tres piezas de motor. En seis fases, con parada tras la maqueta | `23` para PORTFOLIOS |
-| `23-archivo-de-estrategias.md` | archivar a mano una estrategia con todos sus resultados, sus costes y su cuenta del Ledger, e importarla en PORTFOLIOS sin recalcular nada | — |
+Los encargos **22** (rediseño de la ventana), **23** (archivo de estrategias) y el plan **24** que los
+ejecutó se retiraron el 2026-09-28: 21 frentes en cuatro olas, cada uno con un revisor detrás, y una
+auditoría final contra los dos encargos. Lo que enseñaron vive en `ui/README.md` (las zonas y las
+seis decisiones del dueño), `core/archive/README.md`, `docs/manual/02-la-ventana.pdf`, `knowhow/`
+(eng, locations, sqx-drive, research) y `OPEN.md` §81-§82 (las decisiones que quedan en manos del
+dueño y la prueba en vivo de «Continuar workflow», pendiente de su autorización).
 
 ## La tanda de las ideas de internet y de los libros, 2026-09-28
 

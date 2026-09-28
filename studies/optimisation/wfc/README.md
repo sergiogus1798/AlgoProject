@@ -10,9 +10,16 @@ means the surface carries information and the in-sample ranking is worth trustin
 
 **The other question — is the way I pick parameters prone to overfitting at all? — is `../cscv/`.**
 
-Reads contract **C3** (`metrics.parquet`, from `sqx.variants.collect`). Writes `wfc.json` beside
-it — the pipeline reads its scalars, so it does not change shape — and the result the window
-paints into the batch's `estudios/wfc.*`.
+Reads contract **C3** (`metrics.parquet`, from `sqx.variants.collect`) under one **composition** of
+the split: `build` always in sample, in sample `build` or `build+oos1`, out of sample what is left
+(`--inside build --outside oos1`, `--inside build,oos1 --outside oos2`, or the named shortcuts
+`--split oos1_oos2|oos2_only`; owner, 2026-09-27). Each composition writes its own
+`estudios/wfc_<inside>__<outside>.*`, so two never overwrite each other; `estudios/wfc.*` and the
+root `wfc.json` (the pipeline's scalars, now with `composition`) are the newest. **Every read is a
+ledger row per segment** (step 17, `launched_by: wfc`, `criterion: wfc/<composition>`), written
+after `ledger.gate.allow` passed for each segment before anything was opened — a composition the
+policy refuses stops before the parquet is read. `--family` names the template family of the
+study id; asset and timeframe come off the batch.
 
 ```
 config.yaml ─▶ engines/variants ─▶ measure ─▶ contract
@@ -28,8 +35,8 @@ config.yaml ─▶ engines/variants ─▶ measure ─▶ contract
 
 | file | what it does | run it |
 |---|---|---|
-| `report.py` | The correlation | `python3 -m studies.optimisation.wfc.report --work <dir>` |
-| `config.yaml` | The rho floor and the table; the trade floor and the split are in `engines/variants/config.yaml` | edited, or `--set section.key=value` |
+| `report.py` | The correlation, under one composition, recorded in the ledger | `python3 -m studies.optimisation.wfc.report --work <dir> --family <F> --inside build,oos1 --outside oos2` |
+| `config.yaml` | The rho floor and the table; the trade floor and the default composition are in `engines/variants/config.yaml` | edited, or `--set section.key=value` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 
 **The interval is the point, not the coefficient.** With a dozen tuples the sampling error on a

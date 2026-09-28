@@ -16,7 +16,7 @@ Report folders are per project, not per databank. A gate report is dated the day
   to new ones in `docs/MAPA-DE-CARPETAS.md` (`retest`→`mcRetest`, `montecarlo`→`monteCarlo`,
   `nulls`→`monkey`, loose `exposure.csv`→`exposure/verdict.csv`, `decay.csv`→`decay/verdict.csv`).
 - Verdict words: `MANTENER · DESCARTAR · DUDOSA · NO EVALUABLE · FAIL · MARGINAL · worth_it · not_worth_it`.
-  `ui/desktop/theme.state_colour` names any word outside the list instead of hiding it. `ui/daemon/studies.py` relies on the column.
+  `ui/desktop/theme.state_colour` names any word outside the list instead of hiding it. The databank panel (`ui/daemon/databank/`) pairs rows by identity; the column is still how a person reads them.
 - A strategy built in `Results` is judged under `OOS`, `SPP_IS` or `MC_Trades`.
 - `reports/P/D/2026-09-25/gate` can judge `harvest/P/D/2026-09-24`; a harvest judged twice has two report
   folders. `ui/daemon/gateview.judged` pairs by manifest (absolute harvest path), keeps the newest.

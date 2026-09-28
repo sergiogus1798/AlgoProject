@@ -11,18 +11,43 @@ def cloud(c: dict, strategy: str) -> list[str] | str:
         "-m", "studies.optimisation.cloud.report", "--work", str(work)]
 
 
-def wfc(c: dict, strategy: str) -> list[str] | str:
-    """Step 17: in against out over one mother's variant batch."""
-    work = where.batch(c["project"], strategy, ("metrics.parquet", "collected.json"))
+def signed(c: dict, strategy: str, module: str, needs: tuple[str, ...]) -> list[str] | str:
+    """A batch study that signs its look in the ledger under the project's template family.
+
+    Args:
+        c: What `runs.context` built.
+        strategy: The mother.
+        module: The study's report module.
+        needs: Files the study reads inside the batch.
+
+    Returns:
+        The argv with `--work` and `--family`, or why not: no batch, two batches, or no
+        template in the registry (owner, Q9 of plan 24: no template, nothing signed).
+    """
+    family = where.family(c["project"])
+    if family is None:
+        return where.no_family(c["project"])
+    work = where.batch(c["project"], strategy, needs)
     return work if isinstance(work, str) else [
-        "-m", "studies.optimisation.wfc.report", "--work", str(work)]
+        "-m", module, "--work", str(work), "--family", family]
+
+
+def wfc(c: dict, strategy: str) -> list[str] | str:
+    """Step 17: in against out over one mother's variant batch, the composition config.yaml says."""
+    return signed(c, strategy, "studies.optimisation.wfc.report",
+                  ("metrics.parquet", "collected.json"))
 
 
 def cscv(c: dict, strategy: str) -> list[str] | str:
     """Step 18: the probability the selection overfits, over one mother's variant batch."""
-    work = where.batch(c["project"], strategy, ("metrics.parquet", "equity.parquet"))
-    return work if isinstance(work, str) else [
-        "-m", "studies.optimisation.cscv.report", "--work", str(work)]
+    return signed(c, strategy, "studies.optimisation.cscv.report",
+                  ("metrics.parquet", "equity.parquet"))
+
+
+def market_surfaces(c: dict, strategy: str) -> list[str] | str:
+    """Step 18.5: the same parameter region on every market, over one mother's batch."""
+    return signed(c, strategy, "studies.optimisation.marketSurfaces.report",
+                  ("metrics.parquet", "segments.parquet", "equity_markets.parquet"))
 
 
 def wfm(c: dict, strategy: str) -> list[str] | str:
@@ -34,14 +59,12 @@ def wfm(c: dict, strategy: str) -> list[str] | str:
             c["databank"], "--day", found.parent.name]
 
 
-# The three batch studies take the mother as their strategy; `many` would be every mother at
-# once, which none of their commands does.
+# The batch studies take the mother as their strategy; `many` would be every mother at once,
+# which none of their commands does.
 STUDIES = {
     "cloud": {"plan": cloud, "one": True, "many": False, "sets": True},
     "wfc": {"plan": wfc, "one": True, "many": False, "sets": True},
     "cscv": {"plan": cscv, "one": True, "many": False, "sets": True},
+    "marketSurfaces": {"plan": market_surfaces, "one": True, "many": False, "sets": True},
     "wfm": {"plan": wfm, "one": False, "many": True, "sets": True},
-    "marketSurfaces": {"why": "escribe su mirada en el ledger bajo la familia de plantillas, que "
-                              "la ventana no sabe: córrelo desde la terminal con --work y "
-                              "--family"},
 }

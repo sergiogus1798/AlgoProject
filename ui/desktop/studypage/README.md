@@ -12,22 +12,22 @@ and talks to the daemon only (`/api/catalogue`, `/api/result`, `/api/history`, `
 ```
 views.StrategyPage ─▶ ficha.Ficha ─▶ IS/OOS · Salidas · Contra el subyacente (ResultView, IS beside OOS)
                    │                 └ Operaciones (tradegallery.TradeGallery, imported lazily)
-views.StrategyPage · views.PopulationStudy ─▶ page.StudyPage ─▶ blocks.ResultView
+views.StrategyPage ─▶ page.StudyPage ─▶ blocks.ResultView
                                                ├ drawer.Drawer   (knobs, reset, hash match)
                                                ├ runbar.RunBar   (▶ ▶▶ ↻, one job, polling)
                                                ├ history.History (runs, compare, rival picker)
                                                └ dots · notes · compare ─▶ net ─▶ client
 ```
 
-**Imports from:** `ui/desktop/blocks`, `selection`, `theme`, `client` · **Consumed by:** `ui/desktop/shell.py` (wave 3)
+**Imports from:** `ui/desktop/blocks`, `selection`, `theme`, `client` · **Consumed by:** `ui/desktop/workspace/ficha.py` (the family tabs under Estrategia's basic panel)
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names the package; holds no code | — | — |
-| `views.py` | `StrategyPage` (scope one, the «Ficha» as its first family tab) and `PopulationStudy` (scope many, `open_population(key)`) | imported | — |
+| `views.py` | `StrategyPage` (scope one, the «Ficha» as its first family tab, `open_family(name)` for Estrategia's origin). The population page (`PopulationStudy`) and its zone were retired by F13 of plan 24: a population's result lives in Proyecto's databank panel. `StudyPage(strategy_page=False)` stays only because its branches run through `page`, `notes`, `dots`, `runbar` and `history`: no zone builds it, `tests/test_ui_studypage.py` keeps it working, and removing it is a refactor of this package, not a cut | imported | — |
 | `ficha.py` | `Ficha`: the harvest's sheet of the selected strategy in five sub-tabs (the fifth, «Lote», only for the mother of a variant batch), each filled on first opening; «pendiente» for a route or module not there yet | imported | SELECTION → `/api/tearsheet*` → page |
-| `page.py` | `StudyPage`: tabs, dots, the result, drawer + history on the right, `open_study(key)`, signal `population_wanted(str)` | imported | SELECTION → page |
-| `drawer.py` | Every knob by section, its sentence visible and on hover, typed editors, reset, the next run's hash against the shown result's | imported | `/api/config` → `--set` list |
+| `page.py` | `StudyPage`: tabs, dots, the result, drawer + history on the right, `open_study(key)` | imported | SELECTION → page |
+| `drawer.py` | Every knob by section, in the glossary's words (`glossary.knob`; the raw key `--set` takes in its tooltip), its sentence visible and on hover, typed editors, reset, the next run's hash against the shown result's | imported | `/api/config` → `--set` list |
 | `runbar.py` | ▶ esta estrategia · ▶▶ toda la población · ↻ solo …; one job at a time, percent/state every 2 s while it runs, cancel, errors | imported | press → job → `finished` |
 | `history.py` | The runs newest first (day, state, hash, caducado), two chosen → compare, a picker of the databank's other strategies | imported | `/api/history` → signals |
 | `compare.py` | The two results a comparison needs: two days, or two strategies of one databank | imported | where → results, titles |
@@ -45,7 +45,7 @@ Grabs in `scratch/ui-plan/shots/E-*.png`. The Ficha: `python3 tests/test_ui_tear
 - **The Ficha is a family tab, not a study.** Its tab data is `"ficha"`; on it the study
   widgets (study tabs, headline, run bar, notes, result + side panel) hide. Following a new
   SELECTION there refills the Ficha and only records the study key, so the page does not load a
-  study nobody is looking at; `open_study` (the matrix, the shell) leaves the Ficha.
+  study nobody is looking at; `open_study` (Ctrl+K, the shell) leaves the Ficha.
 - **IS beside OOS by splitting, not by recomputing.** A result whose tabs are exactly «IS»,
   «OOS» is split into two one-tab results under one name and drawn with `ResultView.compare`;
   the tab notes move above the columns and compare's verdict header row is hidden (the Ficha
@@ -70,5 +70,6 @@ Grabs in `scratch/ui-plan/shots/E-*.png`. The Ficha: `python3 tests/test_ui_tear
   `/api/jobs` only then, and when every job ended reloads the dots and the newest result. The
   last run's line stays on screen until another study or place is chosen.
 - **⛔ and 👁 are in no installed font** (2026-09-26): the role is drawn as ⊘ elimina / ◉ describe.
-- **«abrir informe HTML»** opens the `.html` the study wrote beside the JSON (same dict, static
-  render) with the desktop's browser; the page reads no file itself.
+- **One report button: ResultView's «Informe de lo que ves»** (`POST /api/study/screen`, F5).
+  The old «abrir informe HTML», which opened the study's default `.html` rather than what the
+  page shows, was removed on 2026-09-28 (F4).

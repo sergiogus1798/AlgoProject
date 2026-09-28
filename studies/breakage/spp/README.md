@@ -24,9 +24,10 @@ config.yaml ─▶ inputs ─▶ model ─▶ verdict ─▶ contract
 | file | what it does | run it |
 |---|---|---|
 | `run.py` | One strategy's whole reading, and the brief derived from it | imported |
-| `contract.py` | The reading as the contract's tabs: the noise call, influence, plateaus and the design | imported |
+| `surface.py` | Two parameters at a time: the verdict metric's median on every cell of each ordered pair's grid, θ₀ left out of the cells, the top decile as plateau, and where θ₀ sits | imported |
+| `contract.py` | The reading as the contract's tabs: the noise call, influence, plateaus, the pair surfaces (a `grid` per ordered pair, «Eje X» / «Eje Y» selectors, θ₀ as `mark`) and the design | imported |
 | `one.py` | **One strategy as the contract's data**, its brief carried in the summary | imported — the window calls it |
-| `report.py` | The command: every strategy of one export to `reports/<P>/<D>/<day>/spp/` — a page and a JSON each, and the `design_brief_<strategy>.json` the fabrication reads | `python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS` |
+| `report.py` | The command: every strategy of one export to `reports/<P>/<D>/<day>/spp/` — a page and a JSON each, and the `design_brief_<strategy>.json` the fabrication reads — plus `strategies.csv` (`strategy, identity, brief, note`), what pairs the folder by identity (the archive, the matrix); a `--strategy` run rewrites it with those strategies only | `python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` |
 
@@ -47,6 +48,12 @@ one place where following the obvious rule would have silently shrunk every desi
 estimate. Centre the variant grid on it and trim, and an out-of-sample plateau that shifted falls
 outside the grid and nobody finds out. `design_levels` spans symmetrically and widens until it
 contains the original tuple and the in-sample argmax as well.
+
+**θ₀ never vouches for itself on a surface.** A two-parameter cell is the median of every tuple
+that used that pair of levels — *other than θ₀*. 🔬 SQX's step grid missed θ₀'s own level of
+`BBerDeviation1` on all three USDJPY M30 SPPs (2026-09-27), so its cell held θ₀ alone and read "on
+the plateau" by construction; now it is empty and says so (`knowhow/research/spp-origin-level-sampled-once.md`).
+The one-parameter profiles in `model/` still include it: `OPEN.md` §79.
 
 ## Open, and deliberate
 

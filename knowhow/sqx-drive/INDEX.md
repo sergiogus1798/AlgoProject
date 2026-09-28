@@ -22,4 +22,5 @@
 - `wfc-databank-overwritten-by-next-batch` — sqx.variants.equity 17 bloques donde ninguna curva cuadra con lo que SQX guardo; equity.py reads live databank not export; running structural or atrCalculator after variants execute destroys WFC equity data
 - `wfm-end-to-end` — how long does a Walk-Forward Matrix take on a worker, end to end? WFM progress, status, export_wfm --role, step 19 cost
 - `which-endpoint` — which port/endpoint to call SQX on; 5050 vs 5060 vs 8080; "CLI not ready"; worker project not visible on master; can I edit project.cfx; read vs write boundary
+- `window-advances-workflow` — Continuar workflow from the window; window deletes discards in SQX; advance next task; curate then start; ui/daemon/advance; preflight refuses busy worker; watcher Project finished; only action=status after start; stop only what it started
 - `worker-process-lifecycle` — worker did not stop but still up; sqx-worker.sh stop lies; find worker pid; process named sqcli; worker up then Connection refused; licence check exit; worker-daemon.log

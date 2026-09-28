@@ -2,35 +2,44 @@
 
 import time
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from core import barstore
 from core.study.blocks import validate
+from ui.daemon.strategy import archived
 from ui.daemon.tearmarket import months, source, trades
 
 ROUTER = APIRouter()
 
 
-def _strategy(project: str, databank: str, identity: str) -> dict | str:
+def _strategy(project: str, databank: str, identity: str, origin: str = "live",
+              version: str = "") -> dict | str:
     """The newest harvest and the strategy's name and timeframe, or the refusal sentence.
 
     Args:
         project, databank, identity: As the window sent them.
+        origin: "live" for the newest cosecha, "archive" for the rows the archive froze
+            (`<version>/harvest/`, the same three files cut to this identity).
+        version: The archived version, "" for the newest.
 
     Returns:
-        `{harvest, name, tf}` or the sentence.
+        `{harvest, day, name, tf}` (day: the cosecha's, or the archived version) or the sentence.
     """
-    wrong = source.bad_name(project, databank, identity)
+    wrong = source.bad_name(project, databank, identity) or archived.bad_source(origin)
     if wrong:
-        return wrong
-    harvest = source.newest(project, databank)
+        return wrong if isinstance(wrong, str) else wrong["error"]
+    harvest = (source.newest(project, databank) if origin == "live"
+               else archived.harvest_folder(identity, version))
+    if isinstance(harvest, str):
+        return harvest
     if harvest is None:
         return source.NO_HARVEST
     got = source.described(harvest, identity)
     if got is None:
         return (f"La identidad {identity[:12]}… no está en la cosecha {harvest.name} de "
                 f"{databank}: las identidades solo casan dentro de un databank.")
-    return {"harvest": harvest, **got}
+    return {"harvest": harvest, "day": harvest.parent.name if origin == "archive" else harvest.name,
+            **got}
 
 
 def _bars(project: str, databank: str, asset: str, tf: str) -> tuple[dict | str, object]:
@@ -53,12 +62,15 @@ def _bars(project: str, databank: str, asset: str, tf: str) -> tuple[dict | str,
 
 
 @ROUTER.get("/api/tearsheet/market")
-def market(project: str = "", databank: str = "", identity: str = "", asset: str = "") -> dict:
+def market(project: str = "", databank: str = "", identity: str = "", asset: str = "",
+           source_: str = Query("live", alias="source"), version: str = "") -> dict:
     """Item 5: how many months the strategy and its market moved each way, IS and OOS apart.
 
     Args:
         project, databank, identity: One strategy inside one databank.
         asset: The owner's override of the asset, empty to read it off the project's name.
+        source_: `source=live|archive`; archive reads the frozen rows, the bars stay live.
+        version: The archived version, "" for the newest.
 
     Returns:
         A contract dict (tabs «IS», «OOS»: a 2×2 table and the same counts as bars with the
@@ -66,7 +78,7 @@ def market(project: str = "", databank: str = "", identity: str = "", asset: str
     """
     t0 = time.perf_counter()
     try:
-        s = _strategy(project, databank, identity)
+        s = _strategy(project, databank, identity, source_, version)
         if isinstance(s, str):
             return {"error": s}
         m, bars = _bars(project, databank, asset, s["tf"])
@@ -77,7 +89,7 @@ def market(project: str = "", databank: str = "", identity: str = "", asset: str
         if foreign:
             return {"error": foreign}
         meta = {"project": project, "databank": databank, "identity": identity,
-                "name": s["name"], "tf": s["tf"], "day": s["harvest"].name, **m,
+                "name": s["name"], "tf": s["tf"], "day": s["day"], **m,
                 "wall_s": round(time.perf_counter() - t0, 3)}
         return validate(months.result(meta, equity, bars))
     except Exception as e:  # noqa: BLE001 — the boundary with a person: a sentence, never a 500
@@ -86,7 +98,8 @@ def market(project: str = "", databank: str = "", identity: str = "", asset: str
 
 @ROUTER.get("/api/tearsheet/trades")
 def trade_gallery(project: str = "", databank: str = "", identity: str = "", sample: str = "IS",
-                  pick: str = "quantile", seed: str = "", asset: str = "") -> dict:
+                  pick: str = "quantile", seed: str = "", asset: str = "",
+                  source_: str = Query("live", alias="source"), version: str = "") -> dict:
     """Item 6: five trades of one sample with the bars around each.
 
     Args:
@@ -95,6 +108,8 @@ def trade_gallery(project: str = "", databank: str = "", identity: str = "", sam
         pick: "quantile" (P&L quantiles 0/25/50/75/100 %) or "random".
         seed: For "random", a seed to redraw the same five; empty draws a new one.
         asset: The owner's override of the asset, empty to read it off the project's name.
+        source_: `source=live|archive`, as for `/market`.
+        version: The archived version, "" for the newest.
 
     Returns:
         `{project, databank, identity, name, sample, tf, harvest_day, asset, feed,
@@ -108,7 +123,7 @@ def trade_gallery(project: str = "", databank: str = "", identity: str = "", sam
     if seed and not seed.isdigit():
         return {"error": f"La semilla «{seed}» no es un entero."}
     try:
-        s = _strategy(project, databank, identity)
+        s = _strategy(project, databank, identity, source_, version)
         if isinstance(s, str):
             return {"error": s}
         rows = source.rows(s["harvest"], "trades", identity)
@@ -122,7 +137,7 @@ def trade_gallery(project: str = "", databank: str = "", identity: str = "", sam
         got = trades.gallery(rows, bars, pick, int(seed) if seed else None)
         return {"project": project, "databank": databank, "identity": identity,
                 "name": s["name"], "sample": sample, "tf": s["tf"],
-                "harvest_day": s["harvest"].name,
+                "harvest_day": s["day"],
                 "asset": m.get("asset") if isinstance(m, dict) else None,
                 "feed": m.get("feed") if isinstance(m, dict) else None,
                 "bars_note": m if isinstance(m, str) else "", **got}

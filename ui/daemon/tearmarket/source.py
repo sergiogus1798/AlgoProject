@@ -15,7 +15,7 @@ NO_HARVEST = ("Este databank no tiene cosecha: la crea studies.screening.gate.ha
 
 
 def newest(project: str, databank: str) -> Path | None:
-    """The newest harvest day of one databank, as `gateview.harvests()` orders them.
+    """The newest harvest day of one databank, by its folder date.
 
     Args:
         project: SQX project name.
