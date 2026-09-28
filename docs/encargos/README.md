@@ -77,6 +77,19 @@ del dueño a las 16 decisiones; lo que quedó abierto está en su `POSSIBLE_IMPR
 | `22-ventana-rediseno.md` | dictado del dueño con la ventana delante, revisado con él: PROYECTO pasa a tres zonas (Proyectos → Proyecto → Estrategia), panel de databanks estilo SQX, filtros apuntados en el Ledger con curate diferido a «Continuar workflow», BIBLIOTECA y OPERACIÓN reordenadas, modo lectura en Windows, y tres piezas de motor. En seis fases, con parada tras la maqueta | `23` para PORTFOLIOS |
 | `23-archivo-de-estrategias.md` | archivar a mano una estrategia con todos sus resultados, sus costes y su cuenta del Ledger, e importarla en PORTFOLIOS sin recalcular nada | — |
 
+## La tanda de las ideas de internet y de los libros, 2026-09-28
+
+Salen del dossier `docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md`, elegidas por el dueño.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `27-criba-mae-profundo.md` | en el paso 8, sobre `build` y `oos1`: qué estrategias viven de operaciones anómalas, las que se fueron 3-4 ATR en contra y además duraron más de media + 2,5 desviaciones (dueño, 2026-09-28); marca antes de que el paso 24 dé sorpresas | — |
+| `28-hueco-aleatorio-a-prueba.md` | ¿aporta el hueco aleatorio de SQX? A: A/B fija contra fija + hueco, automatizado con la skill `/ab-hueco`; B: atribución fija contra hueco en el paso 23; C: bloque de ruido y barrido de complejidad | el custodio libre para A y C |
+| `29-meseta-en-el-tiempo.md` | la región buena de parámetros, ¿en el mismo sitio en `build`, `oos1` y `oos2` por separado? Ampliación del paso 18.5, de mercado contra mercado a tramo contra tramo; y la tabla que dirá si la meseta predice supervivencia | un lote de variantes retesteado; lectura ciega del paso 20 |
+| `30-monos-seleccionados-en-sqx.md` | monos de entrada aleatoria construidos y seleccionados por el Builder de SQX con el bloque RAND, pasados por la cadena real: la tasa de falsos positivos con la selección incluida. Construye además `RandomEntrySeeded`, el bloque con semilla. Reabierto por el dueño el 2026-09-28 | instalar los bloques en el custodio; 28 C depende de él |
+| `31-mapa-ventaja-sobre-el-mono.md` | una capa nueva del paso 18.5: la rejilla mercado × parámetro coloreada por la ventaja sobre el mono de cada celda, no por el beneficio neto, con corrección por pruebas múltiples. Necesita exportar operaciones del lote por mercado: medir antes lo que cuesta | un lote de variantes retesteado en los mercados; un worker libre para el export |
+| `32-registrar-todo-lo-probado.md` | que todo barrido de parámetros, umbrales o configuraciones deje escrito lo que probó y cuál eligió: contrato L2 del ledger, detección de reejecuciones con `--set`, orden `ledger.tried` para barridos a mano y procedencia de cada idea; el N del Sharpe deflactado lo usa | — |
+
 ## Encargos vivos de tandas anteriores
 
 | fichero | agente | posee | estado |

@@ -131,9 +131,10 @@ Lo que se opera ya no es lo que se validó.
   series simuladas con AR y GARCH. Si la ventaja sobrevive ahí, la agrupación de volatilidad basta para
   explicarla.
 
-**Qué hacer.** Monos seleccionados como en SQX, y un nulo de mercado sustituto (sección 3). SQX puede
-importar series propias como símbolos, así que las series sintéticas se retestean dentro de SQX con la
-maquinaria del cruce de mercados, sin motor propio.
+**Qué hacer.** Monos seleccionados, que son Python puro y no tocan SQX (sección 3). El nulo de mercado
+sustituto **no se puede hacer dentro de SQX**: el API no tiene verbo de importación, y un símbolo nuevo
+exige la GUI del maestro y toca el almacén de datos compartido (encargo 9, §1; corrección del 2026-09-28).
+Sólo es viable con un backtest propio en Python, y hoy sólo para las pocas madres que ya se han traducido.
 
 #### 1.3 · Meseta no es robustez
 
@@ -345,9 +346,9 @@ que se indica. Las seis primeras cuestan poco y cambian decisiones que hoy se to
    limitados a 2, 4, 6 y 8 condiciones. Mide cuánto «compra» un grado de libertad falso en esta cadena. De
    Eckhardt. Sección 3.
 6. **Un nulo de mercado sustituto.** Series sintéticas con los mismos momentos, bootstrap por bloques,
-   surrogados IAAFT o simulaciones GARCH, importadas en SQX como símbolos y retesteadas con la maquinaria del
-   cruce de mercados. Atrapa lo que el mono no ve en estrategias de tendencia. De Chan, Brock, Lakonishok y
-   LeBaron, y la web. Sección 3.
+   surrogados IAAFT o simulaciones GARCH. Atrapa lo que el mono no ve en estrategias de tendencia. De Chan,
+   Brock, Lakonishok y LeBaron, y la web. **No se puede hacer dentro de SQX**, porque no hay forma de
+   importar series; sólo con un backtest propio en Python. Sección 3.
 
 ### Lo que cambia cómo se lee una superviviente
 
@@ -4220,6 +4221,12 @@ parece: una plantilla lunar es el mejor control negativo de la cadena, porque no
 - **Abanico de curvas nulas detrás de la curva real, y el test ciego.** Entrada en 6.6.
 
 ## 8 · Lo que este dossier no verifica
+
+- **Nada se puede importar en SQX desde el proyecto.** Varias entradas de las secciones 3 y 4 proponen
+  cargar series propias en SQX como símbolos: surrogados, un mercado sintético, un DXY sintético, barras
+  de rango. La web dice que SQX importa datos desde su Data Manager, pero eso es la GUI. El API no tiene
+  verbo de importación, y un símbolo nuevo exige la GUI del maestro y toca el almacén compartido
+  (encargo 9, §1). Esas entradas sólo son viables con un backtest propio en Python.
 
 - **Ninguna cifra de los libros se ha reproducido aquí.** Son las que dan los autores, casi siempre
   optimizadas sobre la muestra entera. Aronson avisa de que una regla sacada de un libro trae dentro los

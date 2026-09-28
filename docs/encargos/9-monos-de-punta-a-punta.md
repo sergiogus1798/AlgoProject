@@ -48,7 +48,9 @@ Diez mil poblaciones de operaciones de **entrada aleatoria** sobre las mismas ba
 ventana y los mismos costes que la población real, generadas por `engines/nulls/model.py`, que ya hace
 exactamente esto y está reconciliado contra los precios reales (🔬 `open-open` a 0.999985).
 
-**Nada de hacer que SQX construya monos.** Se evaluó y el dueño lo descartó: un build con paleta
+**Nada de hacer que SQX construya monos *en este encargo*.** El 2026-09-28 el dueño reabrió esa vía
+como encargo aparte, el **30** (`30-monos-seleccionados-en-sqx.md`), con el bloque aleatorio que
+instaló en el maestro: aquí se queda el mono de Python sin selección. La decisión del 2026-09-24 decía: un build con paleta
 neutra cuesta horas de licencia, mide el generador además del filtro, y mete en el maestro
 estrategias que nadie quiere. En Python son ~35 minutos para 10.000 y no toca SQX.
 
