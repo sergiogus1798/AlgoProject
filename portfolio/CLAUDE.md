@@ -1,5 +1,11 @@
 # portfolio — combining strategies
 
+**Before building anything here, read `BUILD_COMPENDIUM.md` end to end** (owner, 2026-09-28). It
+holds every practice, test and trap gathered for this module: what to port from the owner's
+AlphaForge repo and what to redo, and every portfolio idea of the books-and-internet dossier
+(`docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md` §5). None of it is accepted yet; its
+§13 lists what the owner must decide first.
+
 Two destinations with different constraints: `funded/` for prop-firm accounts, `real/` for the
 owner's own capital. `common/` holds what both need.
 
