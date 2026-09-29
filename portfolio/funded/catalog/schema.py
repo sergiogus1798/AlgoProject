@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS snapshots (firm TEXT, fetched_on TEXT, source TEXT, r
                                       sha256 TEXT, plans INTEGER);
 CREATE TABLE IF NOT EXISTS changes (detected_on TEXT, tbl TEXT, key TEXT, field TEXT,
                                     old TEXT, new TEXT);
+CREATE TABLE IF NOT EXISTS deals (deal_id INTEGER PRIMARY KEY, firm TEXT, kind TEXT, code TEXT,
+    plan_key TEXT, list_price REAL, deal_price REAL, pct REAL, terms TEXT, source TEXT,
+    status TEXT, first_seen TEXT, last_seen TEXT, notified_on TEXT,
+    UNIQUE (firm, kind, code, plan_key));
 CREATE TABLE IF NOT EXISTS combos (plan_key TEXT, options TEXT, price REAL, price_ccy TEXT,
     firm TEXT, family TEXT, size REAL, eas_allowed INTEGER,
     p1_target_pct REAL, p2_target_pct REAL, p3_target_pct REAL, daily_loss_pct REAL,
@@ -45,7 +49,7 @@ CREATE TABLE IF NOT EXISTS combos (plan_key TEXT, options TEXT, price REAL, pric
 def connect(path: Path = DB) -> sqlite3.Connection:
     """Open the database, creating any missing table."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(path)
+    db = sqlite3.connect(path, timeout=60)  # the daily deals and the weekly refresh may meet
     for name, (keys, values) in TABLES.items():
         db.executescript(_DDL.format(name=name, cols=", ".join(keys + values),
                                      keys=", ".join(keys)))

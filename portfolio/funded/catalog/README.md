@@ -3,7 +3,9 @@
 The funding database: every plan (type × size × account currency) of every firm we trade with EAs,
 its list price, its rules per stage, its add-ons with their surcharge, **every add-on combination
 priced with the rules it leaves in force**, and a compendium of the rules no catalogue carries.
-Today: Hantec Trader and FTMO (owner, 2026-09-29). Encargo 33 reads it.
+Which firms: the register `AlgoData/funding/firms.yaml` (`firms.py`) — active ones are in the
+buying universe and the studies; candidates are followed while the `/firm-onboard` protocol runs.
+Today Hantec Trader and FTMO active, FundedNext and FundingPips candidates. Encargo 33 reads it.
 
 Where it lives (`core.datapaths.funding_dir()`, never in the repo):
 
@@ -11,6 +13,8 @@ Where it lives (`core.datapaths.funding_dir()`, never in the repo):
 |---|---|
 | `AlgoData/funding/funding.sqlite` | the database |
 | `AlgoData/funding/catalogs/<firm>/<date>.json` | the raw catalogue, kept only when it changed |
+| `AlgoData/funding/firms.yaml` | the register: each firm's status (candidate, active, rejected), catalogue kind, code check |
+| `AlgoData/funding/manual/<firm>.yaml` | the typed catalogue of a firm whose site blocks automated reading |
 | `AlgoData/funding/rules/<firm>.yaml` | the curated rules, edited by hand and by the `fundingWatcher` agent |
 | `AlgoData/funding/csv/{combos,plans,rules,changes}.csv` | the current picture for a spreadsheet, rewritten by every refresh — never edit, never read from code |
 
@@ -25,6 +29,7 @@ Where it lives (`core.datapaths.funding_dir()`, never in the repo):
 | `combos` | — (rebuilt each refresh) | one row per plan × subset of priced add-ons: price and the rules after them |
 | `changes` | — (appended) | every added, removed or changed value, by day |
 | `snapshots` | — (appended) | every fetch: when, source, hash, raw file |
+| `deals` | `firm`, `kind`, `code`, `plan_key` | the offers found daily, one row per deal × plan — `portfolio/funded/deals/README.md` |
 
 The four first tables are **versioned**: a row is current while `valid_to` is NULL; a change
 closes it and opens another, so any past price is a query away. In a numeric rule, **0 means the
@@ -38,6 +43,9 @@ value; a trailing `?` says it is unconfirmed. Discounts are ignored: prices are 
 | `schema.py` | the tables, their keys, the connection | — | → `funding.sqlite` |
 | `hantec.py` | Hantec's catalogue from `purchasechallenge?handler=InitState` | — | JSON → rows |
 | `ftmo.py` | FTMO's catalogue from the `ftmoPricingTable` inline in its home page | — | HTML → rows |
+| `fundednext.py` | FundedNext's CFD catalogue from the `packages` in its home page's Next.js payload; EAs only below 50k | — | HTML → rows |
+| `manual.py` | a firm's typed catalogue (`manual/<firm>.yaml`), for sites that block reading | — | YAML → rows |
+| `firms.py` | the register: which firms are followed and which are active | — | YAML → ids |
 | `overlay.py` | loads a firm's rules file and writes its known values over the scraped rows | — | YAML → rows |
 | `combos.py` | every add-on subset of every plan, priced, with its effect on the rules (`EFFECTS`) | — | rows → combos |
 | `store.py` | versioned write with change log | — | rows → tables |
@@ -46,6 +54,8 @@ value; a trailing `?` says it is unconfirmed. Discounts are ignored: prices are 
 
 ## Adding a firm
 
-A module with `SOURCE`, `fetch()` and `normalise(raw)` returning `plans`, `stages` and `options`
-rows in the schema above, one line in `refresh.FIRMS`, and `AlgoData/funding/rules/<firm>.yaml`.
+The `/firm-onboard` skill (`.claude/skills/firm-onboard/SKILL.md`): register as candidate, admission
+gates on the firm's own pages, an adapter in `refresh.ADAPTERS` (with `SOURCE`, `fetch()`,
+`normalise(raw)`) or a typed `manual/<firm>.yaml` when the site blocks reading — never forced — the
+rules file, the offer surfaces, the MT5 facts, and an admission sheet. Only the owner makes it active.
 A new add-on key gets its line in `combos.EFFECTS`; until then the refresh names it `UNMODELLED`.

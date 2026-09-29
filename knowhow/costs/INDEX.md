@@ -5,6 +5,8 @@
 - `mc-retest-ranges` — MC Retest RandomizeSpread RandomizeSlippage Min Max units points or multiples; factory default 1-5 0-5; mc_retest block assets; mc_pending; RandomizeMinDistance range; tarea_sin_dispersion; MC draw granularity tick
 - `per-task-costs` — where per-task costs live SQX project; Setup vs InstrumentInfo; different spread IS OOS per task; commission method flip use; project unresolved resources; instrument edit defaultslippage; setups.py
 - `prop-firm-catalogue-hantec` — where do Hantec Trader's challenge prices, rules and add-on surcharges come from, how is the price of a plan with add-ons computed, prop firm funded account catalogue scrape
+- `prop-firm-catalogue-sources` — where does each prop firm's catalogue come from, FundedNext packages Next.js payload, FundingPips blocked Vercel checkpoint Cloudflare, which firm sites can be read by code, manual catalogue
+- `prop-firm-discounts` — how to detect or verify a prop firm discount code or sale, Hantec CheckDiscount, FTMO discounted price, DROP50, coupon, promo code check without buying
 - `refreshing-sqx-costs` — update SQX bar data download; data action=update on worker lost; master to worker rsync user/data; core.assets --dataranges refresh data ranges
 - `sessions-per-asset` — session missing for asset builder refuses; unify_sessions; borrow session from another asset; --session-from; builder finds session automatically; --symbol does not switch market; GBPUSD AUDUSD USDCAD no session; Asia London New York overlap hours
 - `slippage` — slippage value per asset; defaultSlippage zero; can slippage be measured from export; half the spread convention; point value dollars per point

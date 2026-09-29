@@ -15,6 +15,10 @@ inventing an answer. What is agreed so far:
 - Correlation is measured between **equity curves**, not between metrics.
 - A portfolio's drawdown is computed on the aggregated curve, never summed from the parts.
 
+**Only validated strategies enter** (owner, 2026-09-29): a strategy that passed steps 1-25 and
+whose MT5 backtest on a prop firm's feed matched SQX's (step 26, encargo 34) joins that firm's
+**validated pool**, and the portfolio reads only from it. `oos2` is spent by then.
+
 **Where a strategy comes from: the archive.** A strategy enters from `AlgoData/archive/<identity>/<version>/`
 (`core/archive/`, encargo 23), frozen with its `.sqx`, its cosecha rows, every study result, the
 asset card of that day and the ledger count (N strategies tried) that deflates its Sharpe. The

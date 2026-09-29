@@ -8,10 +8,11 @@ import json
 import sqlite3
 
 from core.datapaths import funding_dir
-from portfolio.funded.catalog import combos, ftmo, hantec, overlay, store
+from portfolio.funded.catalog import combos, firms, ftmo, fundednext, hantec, manual, overlay, store
 from portfolio.funded.catalog.schema import connect
 
-FIRMS = {"hantec": hantec, "ftmo": ftmo}
+# A firm whose register entry says `catalogue: manual` has no adapter: `manual.py` reads its typed file.
+ADAPTERS = {"hantec": hantec, "ftmo": ftmo, "fundednext": fundednext}
 # The current picture as CSV for a spreadsheet; the database stays the source of truth.
 EXPORTS = {
     "combos": "SELECT * FROM combos ORDER BY firm, family, size, price",
@@ -23,7 +24,7 @@ EXPORTS = {
 
 def _snapshot(db: sqlite3.Connection, firm: str, source: str, raw: dict, plans: int, today: str) -> str:
     """Keep the raw catalogue when it differs from the last one kept; always log the fetch."""
-    text = json.dumps(raw, indent=1, ensure_ascii=False, sort_keys=True)
+    text = json.dumps(raw, indent=1, ensure_ascii=False, sort_keys=True, default=str)  # typed files carry dates
     sha = hashlib.sha256(text.encode()).hexdigest()
     last = db.execute("SELECT sha256, raw_path FROM snapshots WHERE firm = ? "
                       "ORDER BY rowid DESC LIMIT 1", (firm,)).fetchone()
@@ -40,14 +41,17 @@ def _snapshot(db: sqlite3.Connection, firm: str, source: str, raw: dict, plans: 
 
 def refresh(firm: str, today: str) -> dict:
     """Fetch, normalise, overlay the rules, store with history, rebuild the combinations."""
-    module = FIRMS[firm]
-    raw = module.fetch()
-    rows = module.normalise(raw)
+    if firm in ADAPTERS:
+        raw, source = ADAPTERS[firm].fetch(), ADAPTERS[firm].SOURCE
+        rows = ADAPTERS[firm].normalise(raw)
+    else:
+        raw = manual.fetch(firm)
+        source, rows = raw["source"], manual.normalise(raw, firm)
     rules = overlay.load(firm)
     overlay.apply(rows, rules)
     db = connect()
     with db:
-        note = _snapshot(db, firm, module.SOURCE, raw, len(rows["plans"]), today)
+        note = _snapshot(db, firm, source, raw, len(rows["plans"]), today)
         log = [line for table in ("plans", "stages", "options")
                for line in store.write(db, table, firm, rows[table], today)]
         log += store.write(db, "rules", firm, overlay.compendium(firm, rules), today)
@@ -74,7 +78,8 @@ def export_csv() -> None:
 def main() -> None:
     """Refresh the firms named, or all, and print each one's changes."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("firms", nargs="*", default=list(FIRMS), help="default: every firm")
+    parser.add_argument("firms", nargs="*", default=firms.named(*firms.FOLLOWED),
+                        help="default: every active or candidate firm of the register")
     args = parser.parse_args()
     today = dt.date.today().isoformat()
     for firm in args.firms:

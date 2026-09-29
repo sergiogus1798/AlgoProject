@@ -104,7 +104,7 @@ esta casa. Lo único suyo que hoy se usa son los esqueletos, y esos viven dentro
 
 <!-- generado por tools/skillmap.py — no editar debajo de esta linea -->
 
-Regenerado 2026-09-28 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
+Regenerado 2026-09-29 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
 
 ## Skills de proyecto — `/home/sergioguslw/Desktop/AlgoProject/.claude/skills`
 
@@ -112,9 +112,10 @@ Regenerado 2026-09-28 con `python3 tools/skillmap.py`. El coste en tokens es el 
 |---|---:|---:|---|---|
 | `crosstf` | 2,282 | 1 | 2026-09-27 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
 | `variants` | 2,007 | 1 | 2026-09-26 | Run the variant factory in SQX — turn one mother's SPP design brief into a batch of parameter variants, load and retest them on the custodian, and harvest the metrics panel and the per-day equity the WFC and the CSCV read |
-| `wfm` | 1,994 | 1 | 2026-09-26 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in the reserved oos2, the ten per-cell conditions and the area rule that decide whether a strategy survives, and the two owner's rules it enforces (every look spends the window, and nothing is read until steps 17, 18 and 19 are all done) |
 | `curate` | 1,904 | 1 | 2026-09-25 | Apply a Python verdict back into SQX — move the strategies a filter, a test or an analysis rejected out of a databank, so the next task in the chain only sees the survivors. Works between any two tasks and with any module that can name what it drops |
 | `template-run` | 1,790 | 1 | 2026-09-26 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
+| `wfm` | 1,764 | 1 | 2026-09-28 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in oos2, and the ten per-cell conditions and the area rule that decide whether a strategy survives |
+| `firm-onboard` | 1,754 | 1 | 2026-09-29 | Add a prop firm to the funding studies by the owner's admission protocol — register it as a candidate, check the admission gates on the firm's own pages (self-built EAs on MT5, Spain served, track record, modelable rules, EA traps), build its catalogue reader or typed catalogue, seed its rules file, find its offer surfaces, record its MT5 facts, and hand the owner an admission sheet; only the owner makes a firm active. Also re-runs the gates on a firm whose rules changed |
 | `sync` | 1,562 | 1 | 2026-09-26 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
 | `mcretest` | 1,351 | 1 | 2026-09-26 | Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders |
 | `spp` | 1,343 | 1 | 2026-09-26 | Configure and run the two SPP tasks of a custom SQX project — the System Parameter Permutation grid over the in-sample and the out-of-sample window, at the owner's spread and steps, with every acceptance silenced so the profile is a map and not a filter |
@@ -127,7 +128,7 @@ Regenerado 2026-09-28 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | `audit` | 401 | 1 | 2026-09-12 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 247 | 1 | 2026-09-25 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-16 skills, 20,909 tokens de cuerpo en total, 81 KB en disco.
+17 skills, 22,433 tokens de cuerpo en total, 87 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 

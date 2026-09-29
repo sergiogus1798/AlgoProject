@@ -14,7 +14,7 @@ Questions the owner has not settled yet. Nothing here is implemented; do not gue
 | 8 | Capped fractional Kelly, or pure fixed fractional risk? | Chan against Fitschen and Williams — §6.2-6.3 |
 | 9 | Trade the plateau (sibling variants together), or treat siblings as one position? | Clones multiply correlated risk (Turtles S1+S2) — §4.4 |
 | 10 | Keep the gate's near-survivors for confluence and portfolio, or keep deleting them? | Pieces that fail alone can pay combined — §3.1 |
-| 11 | Which segment may the portfolio selection read, with `oos2` reserved for steps 17-19? | Choosing a combination is a search; it needs unseen data to validate — §2.2 |
+| 11 | ~~Which segment may the portfolio selection read~~ — **partly settled (owner, 2026-09-29)**: strategies reach the portfolio only after steps 1-25 and the MT5 validation of step 26, so `oos2` is already spent and every segment may be read. **Still open:** with no unseen segment left, what validates the chosen combination (the firm-feed period, a live incubation, nothing)? | Choosing a combination is a search; it needs unseen data to validate — §2.2 |
 | 12 | Allow an "unexplained, on probation" category with small capital? | Renaissance did; the hypothesis-first protocol says no — dossier §1.20 |
 
 Answer one, and it moves from here into `portfolio/CLAUDE.md` as a settled rule.

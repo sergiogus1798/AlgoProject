@@ -1,4 +1,4 @@
-# EL WORKFLOW — los 25 pasos, de la idea a la estrategia superviviente
+# EL WORKFLOW — los 26 pasos, de la idea a la estrategia superviviente
 
 **Esto lo dictó el dueño el 2026-09-23 y es la espina dorsal del proyecto.** Documento vivo, sin
 fecha en el nombre: se actualiza, no se sustituye. Cualquier sesión que vaya a construir algo mira
@@ -45,6 +45,7 @@ que sólo el dueño puede dar.
 | 23 | **Estructura** — por superviviente: una ablación por condición de entrada y la inversión de la orden en las mismas entradas. ¿Qué condición aporta por operación contra un recorte al azar, cuál es redundante, y vive el filo en la dirección? Diagnóstico, nunca selección | `sqx.structural.make` → `sqx.variants.execute` (custodio) → `sqx.structural.keep` → `sqx.export.export_retest` → `studies/readings/structure/report.py`, manual `51-estructura.md` | ✅ · lee `build` y `oos1`; `oos2` lo rechaza `ledger.gate` · sin stops: la inversión se niega si la madre ya lleva stop/target (por eso va antes del 24) · D3 (mono dentro de SQX) cerrado como imposible |
 | 24 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, `sqx/variants/stopgrid.py`, manual `54-atr-calculator.md` | 🟡 construido y probado en SQX sobre una estrategia de desarrollo; falta una superviviente real · lee `build`, `oos1` y `oos2` (reservado también para este paso, dueño 2026-09-26) |
 | 25 | **Edge por coste, por estrategia** — la misma lectura sobre el export de trades de la versión que se va a operar, para confirmar que el edge sigue por encima del umbral con el stop puesto | `studies/readings/edgeCost/report.py ... --strategy "<nombre>"`, mismo manual `50-edge-por-coste.md` | ✅ · misma forma de columnas que el export de la puerta, ningún cambio de código entre los dos usos |
+| 26 | **Validación en MT5 con la feed de cada empresa de fondeo → pool validado** — sobre la estrategia ya dada por buena en 1-25: SQX traducido al reloj y los costes de la empresa contra el backtest de MT5 en el tramo común, comparando operaciones, P&L diario en el día del servidor, peor día y drawdown intradía con umbrales fijados antes; si coincide, entra en el pool de esa empresa, lo único que lee la cartera (dueño, 2026-09-29) | encargo 34, `mt5/compare.py` | ⬜ · umbrales aceptados como parámetros (dueño, 2026-09-29) · depende de OPEN.md #78 |
 
 **Tres lecturas adicionales que no son pasos nuevos y no renumeran nada.** Dos sobre una
 estrategia y su lista de operaciones, gratis y sin SQX: `studies/readings/profitShape/` (manual
@@ -60,7 +61,10 @@ si hay superficie que leer y si su forma aguanta año a año. Es gratis, no toca
 curvas donde empieza `oos2`** y no elige nada: sale del PDF `PARAMETER_SPACE_TESTS.pdf` del dueño,
 cuya sección E prohíbe expresamente sustituir la madre por el mejor clon.
 
-Del 26 en adelante empieza la cartera. **Primero las estrategias individuales.**
+Del 27 en adelante empieza la cartera, y sólo con estrategias del pool validado del paso 26.
+**Primero las estrategias individuales.** Todo lo que usa `oos2` para desarrollar una estrategia
+ocurre antes, en 1-25; el paso 26 no elige por rendimiento, sólo comprueba que SQX reproduce la
+cuenta de la empresa (dueño, 2026-09-29).
 
 ## El paso 21 — la dicotomía rendimiento/exposición
 

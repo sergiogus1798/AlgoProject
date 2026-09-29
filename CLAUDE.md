@@ -97,7 +97,8 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | how something is computed and shared: pricing, nulls, resampling, regimes, multiple testing | `engines/README.md` |
 | where an old path went (`strategies/…`, `tasks/…`, `nulls/`, `gate/`) | `docs/MAPA-DE-CARPETAS.md` |
 | portfolios | `portfolio/CLAUDE.md` |
-| what a prop firm's account costs with its add-ons, and its rules (Hantec, FTMO) | `python3 -m portfolio.funded.catalog.show <firm or plan>`, then `portfolio/funded/catalog/README.md` — refreshed every Sunday by the `fundingWatcher` agent |
+| what a prop firm's account costs with its add-ons, and its rules (the firms of `AlgoData/funding/firms.yaml`; adding one: `/firm-onboard`) | `python3 -m portfolio.funded.catalog.show <firm or plan>`, then `portfolio/funded/catalog/README.md` — refreshed every Sunday by the `fundingWatcher` agent |
+| prop-firm discounts: what is on today, and whether one is worth it | `python3 -m portfolio.funded.deals.worth [deal_id]`, then `portfolio/funded/deals/README.md` — hunted daily at 10:00 by the `dealHunter` agent, desktop notification |
 | MetaTrader 5: install under Wine, backtest an SQX EA in its tester, compare with SQX, read the terminal (MCP `mt5`, no order tools) | `mt5/README.md`, then OPEN.md #78 |
 | whether a result beats random entry, and which channel the edge lives in | `studies/readings/monkey/README.md` |
 | cribar una poblacion OOS entera hasta una lista de supervivientes | `studies/screening/gate/README.md` |

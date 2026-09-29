@@ -98,6 +98,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 81 | 🟡 | The window's cut-over (plan 24) left five owner's calls open | OPEN.md |
 | 82 | 🟠 | Crossmarket results of a retired project cannot be archived until the Family... | OPEN.md |
 | 83 | 🔴 | The window cannot launch a second project on the custodian for 24 h after the... | OPEN.md |
+| 85 | 🟠 | Prop-firm funding workstream — built 2026-09-29, the owner's calls still open | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -1379,6 +1380,51 @@ written before that is the window's (owner's choice). The 24-h rule is unchanged
   infer it; left as it is.
 - During the WFM SQX logs thousands of `StatsComputer - Exception computing databank column
   ParameterCount / DoFRatio` (SQX's own, harmless to the run; the watcher now ignores them).
+
+## 85. 🟠 Prop-firm funding workstream — built 2026-09-29, the owner's calls still open
+
+📓 2026-09-29, one session with the owner. Everything below exists; this section keeps what is open
+so it is not lost.
+
+**Built.** The catalogue database `AlgoData/funding/funding.sqlite` (`portfolio/funded/catalog/`,
+every plan, rule and add-on combination priced, with history; CSV copies in `AlgoData/funding/csv/`),
+refreshed Sundays 06:30 by the `fundingWatcher` agent. Offers: `portfolio/funded/deals/`, daily
+10:00 by the `dealHunter` agent, desktop notification, `python3 -m portfolio.funded.deals.worth`.
+The firm register `AlgoData/funding/firms.yaml` and the `/firm-onboard` protocol. Encargo 33 (the
+economics: bank cash flow, EV per plan), encargo 34 (step 26: MT5 validation on each firm's feed →
+validated pool). Manual chapters 73 and 74.
+
+**Decided by the owner, 2026-09-29** (written in the encargos; do not re-ask):
+- Prices are list prices; discounts live only in `deals`.
+- First iteration: accounts of **10k USD at most**, EAs allowed, **active firms only**.
+- Steps 1-25 use `oos2` first; then step 26 (MT5 on the firm's feed) and only its validated pool
+  reaches the portfolio. Step 26's thresholds are input parameters, his proposed values accepted.
+- Risk shape from the long SQX history translated to each firm; edge level from OOS with haircut `h`.
+- Only the owner makes a firm active. A deal notifies only if it beats the best known price.
+
+**Open — the owner's calls:**
+1. **Cash budget**: the most he will spend on challenges before a first payout (encargo 33 §3.5).
+2. **FundedNext** (candidate): the EA usage fee's amount; accepting one account per portfolio
+   (identical trades across accounts are banned); gates G3 Spain and G4 payout record; then activate
+   or not — `docs/AgentPDFs/fondeo-admision-fundednext-2026-09-29.md`.
+3. **FundingPips** (candidate, blocked): may a self-built SQX EA trade? Ask its support. If yes,
+   confirm the 8 typed prices and rules in the universe (`AlgoData/funding/manual/fundingpips.yaml`,
+   `confirmed: false`) — `docs/AgentPDFs/fondeo-admision-fundingpips-2026-09-29.md`.
+4. **FTMO**: is the 2-Step fee refund per account? Read as yes, unconfirmed — ask support
+   (`rules/ftmo.yaml`, `fee_refund_scope`).
+5. **Hantec**: whether the fee is refunded; whether the "Profit Target −2 %" add-on lowers every
+   phase or only phase 1; its prohibited-strategies article (the watcher has not found it).
+6. `portfolio/DECISIONS.md` #11, the remainder: with `oos2` spent, what validates the chosen
+   combination (the firm-feed period, a live incubation, nothing).
+7. The rest of encargo 33 §6 (risk per phase, re-buy policy, which `h` to show).
+
+**Open — to build:** encargo 33 (the EV model, then plug it into `deals.worth`, which today judges a
+deal only by the zero-edge floor); encargo 34 (waits on #78); a test of Hantec's price formula
+against its page's JS.
+
+**Known limits:** the notification only shows if the desktop session is up at 10:00 (the deal stays
+in the table); FundingPips' catalogue is typed and unconfirmed because its site blocks automated
+reading, which is not forced; codes of firms without a public check stay `unverified`.
 
 ## Constraints discovered while investigating
 

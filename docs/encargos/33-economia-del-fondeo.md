@@ -8,7 +8,8 @@ cuenta fondeada: la del flujo de caja real entre el banco del dueño y la empres
 
 Lee `CLAUDE.md` · `CODESTYLE.md` · `portfolio/CLAUDE.md` · `portfolio/BUILD_COMPENDIUM.md` (§2, §5-§7,
 §10) · `portfolio/DECISIONS.md` (#1, #6, #7) · `portfolio/common/monteCarlo/` · `mt5/README.md` ·
-`knowhow/costs/prop-firm-catalogue-hantec.md` · `studies/readings/monkey/README.md`.
+`knowhow/costs/prop-firm-catalogue-hantec.md` · `studies/readings/monkey/README.md` ·
+`docs/encargos/34-validacion-mt5-pool.md` (el pool del que lee y la traducción a cada empresa).
 
 ---
 
@@ -120,21 +121,33 @@ aguantan el fin de semana (o las obliga a cortar la operación, lo que cambia la
 dueño decide cuál), y la prohibición de noticias elimina o recorta las que operan en ventanas de
 noticias. Eso se cuenta y se enseña: «Instant24 deja fuera 7 de tus 12 estrategias».
 
-### 3.2 Los caminos
+### 3.2 Los caminos — qué histórico, y para qué
 
-La equity diaria de la cartera sale del archivo (`AlgoData/archive/`), a riesgo unitario. El camino
-simulado se genera con **bootstrap por bloques del P&L diario conjunto** (~20 días,
-`DECISIONS.md` #7 y `BUILD_COMPENDIUM.md` §7.1): barajar operaciones sueltas subestima el drawdown de
-una cartera. El intradía (lo que importa para la pérdida diaria sobre flotante) se reconstruye con las
-barras M1 que ya existen; donde no, se usa el MAE de cada operación como cota y se dice. El ciclo
-entero — compras, suspensos, recompras, fases, cobros cada N días, suspensión en fondeada — se
-simula completo, no fase a fase por separado.
+Decidido por el dueño el 2026-09-29. **Ni el histórico corto de la feed de fondeo ni el largo de
+SQX solos:**
 
-**El edge real es la mayor incertidumbre, no el azar de los caminos.** Los caminos se generan con
-el rendimiento **descontado**: el tramo OOS, no el IS, y un recorte del edge (`h` = 0 %, 25 %, 50 %,
-75 %, 100 %). El resultado se enseña como curva VE_banco(h) y su **recorte de equilibrio**: «este
-plan sigue siendo positivo si el edge en vivo es al menos el 40 % del OOS». Una decisión que sólo
-vale con h = 0 no es una decisión.
+- **Qué estrategias entran**: sólo las del **pool validado** de esa empresa (encargo 34, paso 26),
+  es decir, las que superaron los pasos 1-25 y cuyo backtest en MT5 con la feed de la empresa
+  coincide con el de SQX. El pool trae también la **traducción** de SQX a esa empresa (reloj de su
+  servidor, sus costes, flotante con M1).
+- **La forma del riesgo** — cómo se mueve la equity día a día, las colas, las rachas — sale del
+  **histórico largo de SQX traducido**. El tramo de fondeo es uno o dos regímenes: un Monte Carlo
+  sobre él remuestrea los mismos meses y da una P(suspender) optimista y estrecha, justo en lo que
+  más pesa en el VE. El camino se genera con **bootstrap por bloques del P&L diario conjunto** (~20
+  días, `DECISIONS.md` #7 y `BUILD_COMPENDIUM.md` §7.1), en el día del servidor de la empresa: barajar
+  operaciones sueltas subestima el drawdown de una cartera. El intradía se reconstruye con M1; donde
+  no, el MAE de cada operación como cota, y se dice.
+- **El nivel del edge** sale de los tramos **OOS**, nunca del IS: la búsqueda genética eligió la
+  estrategia por su poco drawdown en IS, así que el IS aporta variedad de regímenes pero no su
+  optimismo. Los caminos se recentran a ese nivel y se les aplica el recorte `h` (0 %, 25 %, 50 %,
+  75 %, 100 %). El resultado se enseña como curva VE_banco(h) y su **recorte de equilibrio**: «este
+  plan sigue siendo positivo si el edge en vivo es al menos el 40 % del OOS». Una decisión que sólo
+  vale con h = 0 no es una decisión.
+
+El ciclo entero — compras, suspensos, recompras, fases, cobros cada N días, suspensión en fondeada —
+se simula completo, no fase a fase por separado. `oos2` ya está gastado cuando se llega aquí (lo usan
+los pasos 17-25): no hay restricción de tramo, pero la elección de plan y cartera sigue siendo una
+búsqueda que cuenta en el ledger (§3.4).
 
 ### 3.3 El nulo: lo que vale el plan sin edge
 
@@ -154,7 +167,57 @@ paga según la cartera).
 
 Es una búsqueda sobre muchas casillas: **cada combinación evaluada va al ledger**
 (`BUILD_COMPENDIUM.md` §2.1, encargo 32) y la ganadora se valida sobre un tramo que no la eligió.
-Qué tramo puede leer la selección es `DECISIONS.md` #11: pregunta al dueño, no lo supongas.
+Qué tramo lee: todo, porque llega con `oos2` ya gastado (§3.2); lo que sigue abierto es con qué datos no vistos se valida la combinación elegida (`DECISIONS.md` #11).
+
+### 3.5 Cómo se elige — el plan que el dueño aceptó el 2026-09-29
+
+**Primera iteración: cuentas de 10k como máximo** (dueño, 2026-09-29: la caja no está para más).
+El universo es el de `plans` con `size` ≤ 10.000 y `account_ccy` = USD, nada más (dueño,
+2026-09-29) — hoy Hantec Express 2k/5k/10k, Enhanced, EnhancedX y Endurance 5k/10k, y FTMO 1-step y
+2-step de 10k USD (79 € y 89 €); las Instant de Hantec quedan fuera porque prohíben EAs. Dos consecuencias de ir pequeño que el modelo tiene
+que ver:
+
+- **El lote mínimo cuantiza el riesgo.** En 10k, un 0,5 % son 50 $; con 0,01 lotes y un stop ancho
+  (oro, stops por ATR del paso 24) el riesgo mínimo posible puede pasar del objetivo. El riesgo por
+  operación es discreto: se simula con lotes redondeados a lo que la cuenta admite, y una estrategia
+  cuyo lote mínimo ya excede el riesgo buscado queda fuera de ese plan.
+- **El precio por cada 1.000 $ es el más caro** en las cuentas pequeñas (Express 2k: 19,5 $/k; 10k:
+  9,9 $/k). Con el tope de 10k, casi siempre gana la de 10k frente a varias pequeñas, salvo que
+  varias pequeñas escalonadas en el tiempo diversifiquen algo.
+
+El **presupuesto de caja** (desembolso acumulado máximo) es una entrada del dueño y una restricción
+dura, no un informe: un plan cuyo p90 de desembolso antes del primer cobro la supera no se elige.
+
+Pasos:
+
+1. **La geometría de cada plan es el suelo.** Sin edge ni costes, P(tocar +a antes que −b) = b/(a+b):
+   Express +10/−6 ≤ 37,5 %; Express con +2 %/−2 % 50 %; dos pasos +10/−10 y +5/−10 → 33 %; Endurance
+   (+6/−8)³ → 19 %. Precio por cuenta aprobada sin edge = precio / esa P. Es un orden de magnitud; el
+   mono de §3.3, con límite diario, trailing y costes, da el suelo real.
+2. **Ficha de compatibilidad** estrategia (o cartera) × plan, antes de simular: posiciones de noche o
+   en fin de semana (FTMO Standard fondeada: ni overnight ni fin de semana → sólo Swing, 2-step);
+   operaciones o stops en ventanas de noticias; concentración del beneficio en pocos días
+   (`studies/readings/profitShape/`) contra las reglas de consistencia (FTMO 1-step 50 %, EnhancedX
+   35 %); colas diarias y gaps contra la pérdida diaria (3 % en FTMO 1-step); frecuencia contra días
+   mínimos, inactividad y ciclos de cobro; lote mínimo (arriba).
+3. **Sin límite de tiempo, el riesgo del challenge se baja**: con edge, menos riesgo sube P(aprobar)
+   a costa de tiempo; lo que lo frena es la degradación del edge y el VE por mes, no las reglas. Riesgo
+   por fase como variable, bajo en challenge y más alto en fondeada es la intuición a contrastar.
+4. **La fondeada es una opción de compra sobre el P&L**: cobras una parte de lo positivo y no pagas lo
+   negativo, así que la volatilidad tiene valor hasta la barrera. **La política de retiro es una
+   variable de decisión**: retirar todo o dejar colchón (en la Express la pérdida máxima queda fija en
+   el balance inicial tras el primer retiro).
+5. **Add-ons por ΔVE − precio, también por parejas** (el −2 % de objetivo y el +2 % de pérdida máxima
+   cambian la geometría juntos). Referencia: el 95 % en la Express de 25k (80 → 95 %, +59,70 $) sólo
+   compensa si el beneficio bruto esperado en fondeada supera 59,70 / 0,15 ≈ 398 $.
+6. **Criterio robusto**: el mayor VE_banco con un recorte pesimista (p. ej. `h` = 50 %), dentro del
+   presupuesto de caja, y cuyo puesto no cambie mucho al mover `h`. Nunca el máximo con edge completo.
+7. **Varias cuentas con la misma cartera son una sola apuesta**: el número de cuentas y su calendario
+   salen del presupuesto, contando las correlacionadas como una.
+
+Intuición a confirmar o tumbar, no a asumir: con edge modesto y fiable ganarán los planes de DD
+estático, cuota reembolsable y sin consistencia (FTMO 2-step, Hantec Enhanced); con edge dudoso, lo
+que ya vale algo sin edge (reembolso, barreras simétricas, reparto alto).
 
 ## 4 · Lo que el dueño recibe
 
@@ -192,9 +255,10 @@ Antes de simular, lista y pregunta al dueño, como mínimo:
 2. Cierre del viernes / sin noticias: ¿se descarta la estrategia o se modifica para cumplir?
 3. ¿Se puede cambiar el riesgo entre fase y fondeada (y dentro de la fondeada tras un cobro)?
 4. Tras un suspenso, ¿se recompra el mismo plan siempre, o la política de recompra es parte de la
-   decisión (con un presupuesto máximo de caja)?
-5. ¿El precio pagado es el de lista o con el descuento habitual, y cuál?
-6. Qué tramo lee la selección (`DECISIONS.md` #11) y qué recortes `h` quiere ver.
+   decisión? Y la cifra del presupuesto de caja (§3.5).
+5. ~~¿Otras divisas de cuenta?~~ Sólo cuentas en USD (dueño, 2026-09-29).
+6. ~~¿Precio de lista o con descuento?~~ De lista: los descuentos se ignoran (dueño, 2026-09-29).
+7. Con qué datos no vistos se valida la combinación elegida (`DECISIONS.md` #11) y qué recortes `h` quiere ver.
 
 ## 7 · Entregables
 
@@ -209,8 +273,11 @@ Antes de simular, lista y pregunta al dueño, como mínimo:
    tabla, la curva VE(h) y el drawdown de la caja; el dueño edita ahí los huecos del catálogo y el
    precio pagado (memoria: la configuración se edita desde la ventana).
 6. El capítulo del manual en `AlgoData/manual-fuentes/` (regla 8) y las cards de `knowhow/` que salgan.
-7. `portfolio/CLAUDE.md`: las reglas de fondeo quedan escritas ahí primero, y `DECISIONS.md` #6 se
+7. **Enchufar el VE en `python3 -m portfolio.funded.deals.worth`** (`portfolio/funded/deals/`, dueño
+   2026-09-29): hoy ese comando juzga una oferta sólo por el suelo sin edge; cuando exista el modelo,
+   una oferta se juzga por cuánto sube el VE_banco de cada plan del universo con el precio rebajado.
+8. `portfolio/CLAUDE.md`: las reglas de fondeo quedan escritas ahí primero, y `DECISIONS.md` #6 se
    cierra con lo que el dueño conteste.
 
-**Hecho es:** para la cartera que el dueño elija del archivo, la tabla de §4 sobre los 44 planes de
-Hantec con los add-ons que tengan sentido, contra el mono, con recortes, y una frase de decisión.
+**Hecho es:** para la cartera que el dueño elija del archivo, la tabla de §4 sobre los planes de
+10k como máximo de Hantec y FTMO (§3.5) con los add-ons que tengan sentido, contra el mono, con recortes, y una frase de decisión.

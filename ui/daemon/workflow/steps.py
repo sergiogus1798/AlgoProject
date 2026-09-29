@@ -67,6 +67,8 @@ S = [
      "Cierre", "Stop ATR", ()),
     ("25", "Edge por coste, por estrategia", "Edge por coste, por estrategia", "python",
      "study", ["edgeCost"], "Cierre", "Edge por coste", ()),
+    ("26", "Validación MT5", "Validación en MT5 con la feed de cada empresa de fondeo → pool validado",
+     "python", "study", ["mt5Validation"], "Cierre", "", ()),
 ]
 # The SQX stage each SQX step reads its tasks from (`sqx.projects.stage.titles`).
 STAGE = {"6": "build", "7": "oos", "9": "crossmarket", "11": "crosstf", "13": "mcretest",
