@@ -35,10 +35,13 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
      finished` in SQX's own log. The window's two confirmation-gated launchers start a worker task the
      same way — «Continuar workflow» (owner, 2026-09-27) and «Lanzar en SQX» (owner, 2026-09-28) — details
      in `ui/README.md`, `ui/daemon/advance/`, `ui/daemon/launch/`.
-   - **Other sessions share the workers, and `stop` kills anyone's run** (`OPEN.md` #32, no lock yet).
-     Before starting, stopping or reconfiguring one: `ListAgents`, `ls -lt <worker>/user/projects | head`,
-     the tail of the day's log. Someone else's recent project or a port already up → do not touch it;
-     message that session and wait. Start and stop only through `bin/sqx-worker.sh` or
+   - **Other sessions share the workers; each install now carries a real owner lock**
+     (`OPEN.md` #32, owner 2026-09-29): `start` writes `<install>/user/log/OWNER` (holder —
+     `$CLAUDE_CODE_SESSION_ID`, else `--owner`/`$SQX_OWNER`, else "owner" — PID, start time);
+     `stop` from a different holder refuses (`--force` overrides it), and a lock whose PID
+     is dead and port is down clears itself — but still `ListAgents`, `ls -lt
+     <worker>/user/projects | head` and the day's log before touching one. Start and stop
+     only through `bin/sqx-worker.sh` or
      `sqx.variants.execute.awake()`, never an ad hoc script — they refuse a second `sqcli` on the same
      install, which would otherwise rewrite its port to the master's.
    - The RAM split is the owner's (125 GB: heaps above, Python 20 GB, OS 10-12). Do not raise a heap
