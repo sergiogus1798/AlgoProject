@@ -34,7 +34,7 @@ Hechos de partida, contestados en la conversación:
 | 2 | **El código vive en este repo**, en una carpeta propia (propuesta: `mt5/fleet/`). A la VPS va sólo su subcarpeta `vps/`, autocontenida, copiada por un script de despliegue — ni git ni el repo entero. |
 | 3 | **La traducción de símbolos:** el Excel lleva el nombre **de SQX** (`XAUUSD`, `GER40`…), y una tabla del repo lo traduce por empresa: columnas `SQX \| Hantec \| FTMO`, una por empresa nueva. Un activo que no esté en la tabla **para el despliegue** y lo dice; nunca se adivina. |
 | 4 | **Cada EA ya trae su riesgo por operación en USD**, programado para una fondeada concreta (un EA de 10k no arriesga lo mismo que uno de 50k). El despliegue **no toca el riesgo**: sólo encuentra el EA en la carpeta por su nombre y le pone el activo y la temporalidad del Excel. |
-| 5 | **El Excel sigue sus tablitas:** por cada cuenta, los EAs que tiene. El dueño pasará la plantilla que ya usaba; el lector se adapta a ella, no al revés. |
+| 5 | **El Excel sigue sus tablitas:** por cada cuenta, los EAs que tiene. Hecho el 2026-09-29 sobre su plantilla antigua (`~/Desktop/RiskManagement_ChuckBerry.xlsx`, intacta): `AlgoData/fleet/Flota_de_cuentas.xlsx`, con una hoja «Cuentas» (cuenta, empresa, tamaño USD, fase, instancia MT5, estado, notas) y una hoja por cuenta, con su nombre, con `Activo · Temp. · Estrategia · Magic`. Activo y Temp. con desplegable; el activo con los nombres de `assets/symbols/` (`USATEC`, `USA500`, `NIKKEI225`…, no los `NAS100`/`US500`/`NIKKEI` de la plantilla antigua). Magic en gris: lo rellena el despliegue. Fuera la hoja de WalkForward y la columna Long/Short: no usará variaciones (dueño). **Requisito del dueño (2026-09-29): la plantilla se ha de rellenar automáticamente, no a mano.** De dónde sale queda abierto (§4 #7). |
 | 6 | **Magic number: uno por combinación estrategia × activo × temporalidad, el mismo en todas las cuentas**, sacado de un registro y nunca reutilizado. Así nunca chocan dentro de una cuenta y cualquier operación del vivo dice qué combinación la abrió en cualquier cuenta, que es lo que lee la conciliación. **Cortito**, como pidió el dueño: secuencial de 4 cifras (1001, 1002…). |
 | 7 | **El «play» es suyo:** el dueño se loguea y pulsa AutoTrading. Las contraseñas no pasan por el sistema. |
 
@@ -111,9 +111,16 @@ Depende de exportar el `.mq5` de SQX sin la interfaz: `OPEN.md` #78 punto 3, tod
 
 ## 4 · Lo que falta por decidir: pregúntalo, no lo supongas (regla 11)
 
-1. **Specs de la VPS:** RAM, CPUs y RAM libre con todos los terminales abiertos. Decide servicio
-   MQL5 o agente Python (§2 A).
-2. **La plantilla de Excel** del dueño (§1 #5).
+1. **Specs de la VPS** — contestado el 2026-09-29: Windows 10, 6 núcleos, 12 GB de RAM, 200 GB de
+   disco; el dueño está abierto a cambiarla. Falta la RAM libre con todos los terminales abiertos,
+   que decide servicio MQL5 o agente Python (§2 A). Lo que se le dijo: da para unas 10-15 instancias;
+   **no pasarla a Linux** (MT5 no tiene versión Linux nativa, bajo Wine no va más rápido y, con dinero
+   real, Windows es la plataforma soportada), pero Windows 10 dejó de recibir parches de seguridad
+   el 14-10-2025: pedir al proveedor Windows Server o Windows 11. **Medido por el dueño:** un terminal
+   Hantec con 15 gráficos ocupa ~450 MB, así que 10 terminales son ~4,5 GB y 15 ~7 GB, más ~3 GB de
+   Windows: caben 15-18 como techo, 12-14 con holgura. La RAM ya no obliga a nada; se propone el
+   servicio MQL5 más una tarea programada de Windows que reabre un terminal caído.
+2. ~~La plantilla de Excel~~ — hecha, §1 #5.
 3. **El patrón del nombre del archivo** que liga un EA a su fondeada (§3 punto 5), por ejemplo
    `Est17_FTMO100k.mq5`. ¿Para una empresa y un tamaño, o para una cuenta concreta?
 4. **El filtro de noticias:** qué noticias (impacto alto, de qué divisas), qué ventana antes y
@@ -123,6 +130,11 @@ Depende de exportar el `.mq5` de SQX sin la interfaz: `OPEN.md` #78 punto 3, tod
    que salga del encargo 33.
 6. **Pausar una cuenta:** si entra, cómo (un archivo de control que lea el servicio, o cerrar el
    terminal).
+7. **De dónde se rellena sola la plantilla** (§1 #5). El dueño aún no lo sabe. Candidatos, para
+   proponérselos: las hojas de cuenta (qué EAs lleva cada una) desde el exportador de carteras de §3,
+   que ya sabe qué estrategia va a qué cuenta; la hoja «Cuentas» (empresa, tamaño, fase, estado)
+   desde lo que envía el servicio de cada terminal y el catálogo de `portfolio/funded/`. Pregúntale
+   también si la ventana sustituye al Excel o si el Excel se sigue escribiendo para que él lo lea.
 
 ## 5 · Orden de trabajo propuesto
 
