@@ -40,18 +40,27 @@ costs:
     sqx_now: null
     why: onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_DarwTick_Infinox). studies.data.spread.onboard
   commission:
-    use: 0.005              # % del nocional
+    use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
+      build:
+        method: SizeBased
+        value: 8.0
+      oos1:
+        method: PercentageBased
+        value: 0.005
+      oos2:
+        method: PercentageBased
+        value: 0.005
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
-    why: "2026-09-29 — most_restrictive de los brokers confirmados (owner, 2026-09-29), a la mediana de precio real de cada tramo (AlgoData/spread/XAUUSD_DarwTick_Infinox/summary.json): Infinox $8/lote es el más caro en `build` (8.00 > Darwinex 6.26 > FundedNext 2.00), pero Darwinex ya lo supera en `oos1` (8.52 > 8.00 > 2.73) y lo dobla en `oos2` (13.21 > 8.00 > 4.23, la mayor separación entre los tres) — Darwinex gana ahí. Sustituye la conversión anterior (8 $/lote de Infinox a la mediana de oos1, que daba 0.004692 %) por el 0.005 % de Darwinex, ~7 % más caro. `core.commission.most_restrictive` + `use_value`. Sin confirmar: si el 0.005 % de Darwinex es real para oro y no sólo para forex (su página junta \"Forex & Commodities\" sin desglosar) — revisar antes de tratarlo como definitivo."
+    why: "2026-09-29 — el dueño fija Infinox 8 $/lote, FTMO 0.0014 % y Darwinex 0.005 % del nocional (todos confirmados, encargo 2026-09-29); `core.commission.per_segment` precia los tres en $/lote a la mediana de precio de cada tramo y escribe, POR TRAMO, el método y el valor propios del ganador — nunca convertido: build: infinox `SizeBased 8.0` ($8.0/lote equiv. a precio 1251.48); oos1: darwinex `PercentageBased 0.005` ($8.5236/lote equiv. a precio 1704.73); oos2: darwinex `PercentageBased 0.005` ($13.2072/lote equiv. a precio 2641.44). `sqx.projects.setups.one_setup` ya vuelca el método que le llegue en el `<Setup>`."
     brokers:
       darwinex:
         method: PercentageBased
         value: 0.005
         unit: pct_of_notional
-        source: https://help.darwinex.com/execution-costs
+        source: dueño, 2026-09-29
         date: '2026-09-29'
         confirmed: true
-        note: '"Forex & Commodities", 0.005 % del nocional ida y vuelta.'
+        note: confirmado por el dueño para metales/crudo (encargo 2026-09-29), ya no ambiguo entre forex y commodities
       fundednext:
         method: PercentageBased
         value: 0.0016
@@ -64,18 +73,18 @@ costs:
         method: SizeBased
         value: 8.0
         unit: usd_per_lot
-        source: decisión del dueño 2026-09-27 (why previo de este fichero)
-        date: '2026-09-27'
-        confirmed: true
-        note: cuenta raw de Infinox, la que este activo ya opera; infinox.com/*/pricing no confirmó la cifra de nuevo en esta sesión (redirecciones/JS)
-      ftmo:
-        method: null
-        value: null
-        unit: null
-        source: null
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dicen que cobra % del nocional en metales, sin cifra
+        confirmed: true
+        note: cuenta raw de Infinox; cifra confirmada por el dueño (encargo 2026-09-29)
+      ftmo:
+        method: PercentageBased
+        value: 0.0014
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
+        date: '2026-09-29'
+        confirmed: true
+        note: confirmado por el dueño para metales/crudo (encargo 2026-09-29)
       hantec:
         method: null
         value: null

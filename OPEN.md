@@ -40,7 +40,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 24 | ⚪ | The holdout pre-registration — CLOSED 2026-09-26, the owner declined it | docs/OPEN-closed.md |
 | 25 | 🟢 | The authoring chain is proven headless end to end — issue 9's positive control | docs/OPEN-closed.md |
 | 26 | 🟢 | `PercentageBased` is charged ONCE per trade — settled 2026-09-27 | docs/OPEN-closed.md |
-| 27 | 🟡 | Sixteen of seventeen assets have no agreed cost, and the schema changed under... | OPEN.md |
+| 27 | 🟢 | Sixteen of seventeen assets have no agreed cost, and the schema changed under... | docs/OPEN-closed.md |
 | 28 | 🟠 | `DAX40` has an asset file but the master configures no such feed | OPEN.md |
 | 29 | 🟠 | Six index assets have no IS/OOS window, and `SP500ft`'s feed does not exist | OPEN.md |
 | 30 | ✅ | `sqx.data.update` ran end to end on 2026-09-25 | docs/OPEN-closed.md |
@@ -206,45 +206,9 @@ after being deleted. It also cannot catch a call-site broken by a signature chan
 `sqx/export/export_bars.py` called `markets.feeds(asset)` for a day after that function started
 taking a universe dict, and only failed at runtime. Both classes of drift are cheap to check.
 
+**2026-09-29.** Owner, 2026-09-29: delete the 757 (the master XAUUSD project's `Retest Markets - Family` and `MC Trades`, 757 .sqx each, plus `AlgoData/raw|reports/XAUUSD/Retest_Markets_-_Family`). The master was closed; the deletion was refused by the session's safety classifier and waits on the owner running it or allowing it.
+
 ---
-
-
-## 27. 🟡 Sixteen of seventeen assets have no agreed cost, and the schema changed under them
-
-`python3 -m core.assets --index` shows one asset decided (XAUUSD, and provisionally) and sixteen
-blocked. That was already true before the 2026-09-22 reorganisation; what changed is that the units
-are now the ones the owner asked for, so **the numbers he gives have to be in the new unit**:
-
-- forex — one spread in points, commission in $/lot, swap in **points per night**;
-- everything else — two spreads in points (`build` and OOS), commission in **% of notional**, swap in
-  **% ANNUAL** (`knowhow/costs/swap-types.md` has the conversion; the annual/nightly confusion is 360×).
-
-Nothing is blocked that was not blocked before, and no invented value was written.
-
-The same file now also carries `mc_retest` — the spread and slippage ranges the MC Retest task
-draws from, in points, per asset. **All 34 of them are undecided.** These do not block: the
-preflight warns and exits 0, because an undecided range only makes that one MC Retest task
-uninterpretable. `core.assetdata.mc_pending()` names them.
-
-
-**Update 2026-09-27 — the owner's defaults, applied.** Real broker figures cannot be used as they
-are: 8 USD on a 100-oz gold lot at 4,500 is not 8 USD at 500. So:
-
-- **Indices:** commission 0 (raw account); swap −8 % annual on both sides.
-- **XAUUSD and XAGUSD:** commission of 8 USD per lot round trip, as % of notional (gold at
-  4,500 → 0.001778 %, silver at Darwinex's 63.5907 → 0.002516 %), which scales with each era's
-  price; swap −7 % on both sides.
-- **Forex:** 8 USD per lot round trip (`SizeBased`); swap = the mean, in points per night, of
-  every variant of the pair with an active swap in SQX's instrument registry (7–8 brokers each;
-  `monevis` is off and `oanda` is in %, both left out). Still a snapshot of today's rates.
-
-Still open: `SizeBased` is assumed to charge once per trade, as `PercentageBased` was measured to
-(#26). If it charges per fill, forex pays 16. Check it with `edgeCost`'s reconciliation on the
-first forex harvest built with it. A forex swap model by date (rate differentials) remains possible if the owner wants one.
-
-**2026-09-29.** Owner, 2026-09-29: settle SizeBased once-vs-per-fill on forex with `edgeCost` on the first forex harvest. Waits on that harvest.
-
-**2026-09-29.** Owner, 2026-09-29: every asset carries a commission per broker (`costs.commission.brokers`, source and date each; unconfirmed = null) for step 26 and the weekly reconciliation, and the development default is the MOST expensive of them (`core/commission.py`, `core/assetwrite/brokers.py`). The owner's own figures (Infinox 8 $/lot) count as confirmed. Applied: XAUUSD 0.004692 → 0.005 % (Darwinex); USDJPY stays 8 $/lot. Left: the gold figure (owner reviewing: 0.005 % charges ≈6 $/lot in 2010 and ≈23 $ in 2026); FTMO forex, Infinox pages, metals of Hantec/the5ers/FundedNext and FundingPips unconfirmed; nine forex pairs need `studies.data.spread.scan` before Darwinex's % can be compared; SizeBased once-vs-per-fill still waits on the first forex harvest.
 
 ## 28. 🟠 `DAX40` has an asset file but the master configures no such feed
 
@@ -420,6 +384,8 @@ HTTP call to the port — the terminal's own "prohibit AI trading" option is the
 
 **2026-09-29.** Compile works: `MetaEditor64.exe` was there (case bug in `mt5/wine.py`); Wine truncates any argument with a space, so `compile_path` now compiles by a relative path with `cwd`, and refuses while the terminal is up (they share the data-folder lock). 48/48 `Sq*` indicators compiled, 0 errors. Left: (1) no SQX-exported EA exists on disk — export one through a `Test_` project's SaveToFiles task (`SaveSourceCode`) on the conductor; (2) the tester and MetaEditor need the terminal closed, and it runs logged in to the owner's funded FTMO account — his call when. Proposed bar: matched ≥ 95 % both ways, open gap ≤ 1 bar, same exit ≥ 90 %, P&L corr ≥ 0.95. `knowhow/eng/metaeditor-compile-under-wine.md`.
 
+**2026-09-29.** Owner, 2026-09-29: MT5 is on hold until he says so — do not touch the terminal, the tester or MetaEditor meanwhile.
+
 ## 81. 🟡 The window's cut-over (plan 24) left five owner's calls open
 
 2026-09-28, closing F13 of `docs/encargos/24-plan-ventana.md` — the owner: «borra la UI anterior;
@@ -473,6 +439,8 @@ five are his, and nothing in the code decides them:
   ParameterCount / DoFRatio` (SQX's own, harmless to the run; the watcher now ignores them).
 
 **2026-09-29.** Owner, 2026-09-29: MCR 3's slippage stays at half the spread, his rule — `tarea_sin_dispersion` on USDJPY is an honest reading, not a range to widen. Still open: whether the workflow project clears an output before its task.
+
+**2026-09-29.** Owner, 2026-09-29: our tool never clears a databank before a retest — «en SQX se puede considerar, en nuestra herramienta ni de coña». The launch warning stays. Still open: the missing buttons for 10.5 and 16.5, Estrategia's width, the interview inference.
 
 ## 85. 🟠 Prop-firm funding workstream — built 2026-09-29, the owner's calls still open
 

@@ -41,66 +41,75 @@ costs:
     sqx_now: null
     why: 2026-09-27 — media del spread medio diario de Darwinex (NIKKEI225_DarwTick_Infinox) en oos2, 2024-01-02 a 2026-08-31 (687 días), 447.3 puntos × factor 1.25 del dueño (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27.
   commission:
-    use: 0.0                  # % del nocional
+    use:                      # % del nocional
+      build:
+        method: PercentageBased
+        value: 0.0
+      oos1:
+        method: PercentageBased
+        value: 0.0
+      oos2:
+        method: PercentageBased
+        value: 0.0
     sqx_now: {method: SizeBased, value: 1}   # $ por lote — HAY QUE PASARLO A %
-    why: "2026-09-29 — most_restrictive de los brokers confirmados (owner, 2026-09-29): FTMO es el único confirmado (comisión cero explícita en todos los símbolos de índice) a falta de cifra propia de Darwinex/Infinox/Hantec/the5ers/FundedNext/FundingPips en índices; se mantiene en 0, como ya llevaba, pero ahora respaldado por una fuente y no por \"usar el default de SQX\". Si algún bróker confirma una comisión > 0 en índices, este valor sube. `core.commission.most_restrictive` + `use_value`."
+    why: "2026-09-29 — el dueño fija comisión CERO para todos los brokers en índices (ya lo era en FTMO, explícito: \"zero-commission... all index symbols\"): se extiende esa cifra a cada firma de la tabla, así que build, oos1 y oos2 llevan los tres 0.0 % PercentageBased."
     brokers:
       ftmo:
-        method: SizeBased
+        method: PercentageBased
         value: 0.0
-        unit: usd_per_lot
-        source: https://ftmo.com/en/blog/zero-commissions-on-indices/
-        date: 2025-08-01 (publicado; comprobado 2026-09-29)
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
+        date: '2026-09-29'
         confirmed: true
-        note: '"this zero-commission advantage applies to all index symbols" — explícito, todos los índices'
+        note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
       darwinex:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: PercentageBased
+        value: 0.0
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: página propia dice que "hay diferencias importantes" por activo mas no da cifra para índices; la tabla de spreads de índices no cargó en el fetch
+        confirmed: true
+        note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
       infinox:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: PercentageBased
+        value: 0.0
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dan $2/lote en índices; sin página propia confirmable
+        confirmed: true
+        note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
       hantec:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: PercentageBased
+        value: 0.0
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: tabla propia sólo lista forex
+        confirmed: true
+        note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
       the5ers:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: PercentageBased
+        value: 0.0
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dicen comisión cero en índices; sin cifra en página propia
+        confirmed: true
+        note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
       fundednext:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: PercentageBased
+        value: 0.0
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: página propia confirmada sólo detalla cripto/metales/acciones
+        confirmed: true
+        note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
       fundingpips:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: PercentageBased
+        value: 0.0
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dicen comisión cero en índices; 403 en el fetch propio
+        confirmed: true
+        note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
   slippage_is:
     use: 303.4               # points — tramo(s) build
     sqx_now: 0.0

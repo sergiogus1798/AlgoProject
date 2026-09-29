@@ -66,9 +66,14 @@ def report(symbol: str) -> str:
              f"SQX symbol: {data['sqx_symbol']}   verificado: {data['verified']}", ""]
     for f in fields(data):
         spec = data["costs"][f]
-        use = spec["use"] if spec["use"] is not None else "SIN DECIDIR"
-        lines.append(f"- **{f}**: usar `{use}` {units[f]}"
-                     f" (SQX lleva hoy `{spec['sqx_now']}`) — {spec['why']}")
+        if f == "commission" and isinstance(spec["use"], dict):
+            per_seg = ", ".join(f"{seg}: `{v['method']} {v['value']}`"
+                                for seg, v in spec["use"].items())
+            lines.append(f"- **{f}**: {per_seg} (SQX lleva hoy `{spec['sqx_now']}`) — {spec['why']}")
+        else:
+            use = spec["use"] if spec["use"] is not None else "SIN DECIDIR"
+            lines.append(f"- **{f}**: usar `{use}` {units[f]}"
+                         f" (SQX lleva hoy `{spec['sqx_now']}`) — {spec['why']}")
         for row in broker_table(spec.get("brokers", {})):
             lines.append(f"    - {row}")
     span = data["data"]
@@ -117,6 +122,8 @@ def feed_quality(data: dict) -> list[str]:
                      f"(mediana desde 2013, K = {q['K']}), estable desde {q['stable_from']} "
                      f"(escaneado {q['scanned_on']}).")
         start = data["segments"]["build"]["from"]
+        if start is None:
+            continue   # tramo `build` sin decidir (activo de cross-check, nunca main) — nada que comparar
         year = start if isinstance(start, int) else start.year
         if year < q["stable_from"]:
             worse = sorted({g for y, g in q["grade"].items() if year <= int(y) < q["stable_from"]})

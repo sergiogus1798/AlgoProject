@@ -32,34 +32,43 @@ costs:
     sqx_now: 32.0            # points, el unico que hay hoy
     why: "PROVISIONAL 2026-09-23 — el defaultSpread que el maestro lleva hoy, leido de los project.cfx con `sqx.inspect.instruments`. Default de fabrica de SQX, NO pactado con FTMO. 32 puntos x tick 0.001 = 0.032 de precio, sobre un brent a ~70 son 0.046 % del nocional: mas de un orden de magnitud por encima de la plata en % — ojo al comparar mercados."
   commission:
-    use: 0.0                 # % del nocional
+    use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
+      build:
+        method: SizeBased
+        value: 8.0
+      oos1:
+        method: SizeBased
+        value: 8.0
+      oos2:
+        method: SizeBased
+        value: 8.0
     sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
-    why: "PROVISIONAL 2026-09-23 — el maestro lleva SizeBased 0.00: comision CERO. Se conserva porque el dueno pidio usar los valores de SQX, no porque sea creible que un CFD de brent no cobre comision."
+    why: "2026-09-29 — el dueño fija Infinox 8 $/lote, FTMO 0.0014 % y Darwinex 0.005 % del nocional (todos confirmados, encargo 2026-09-29); `core.commission.per_segment` precia los tres en $/lote a la mediana de precio de cada tramo y escribe, POR TRAMO, el método y el valor propios del ganador — nunca convertido: build: infinox `SizeBased 8.0` ($8.0/lote equiv. a precio 56.71); oos1: infinox `SizeBased 8.0` ($8.0/lote equiv. a precio 68.5); oos2: infinox `SizeBased 8.0` ($8.0/lote equiv. a precio 77.8845). `sqx.projects.setups.one_setup` ya vuelca el método que le llegue en el `<Setup>`."
     brokers:
       ftmo:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: PercentageBased
+        value: 0.0014
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dicen "energías sin comisión"; sin página propia con cifra
+        confirmed: true
+        note: confirmado por el dueño para metales/crudo (encargo 2026-09-29)
       darwinex:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: PercentageBased
+        value: 0.005
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: '"Forex & Commodities" 0.005 % no dice si el crudo cuenta como commodity a estos efectos o va con la tabla de índices/CFDs — ambiguo, no se aplica sin preguntar (regla 11)'
+        confirmed: true
+        note: confirmado por el dueño para metales/crudo (encargo 2026-09-29), ya no ambiguo entre forex y commodities
       infinox:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: SizeBased
+        value: 8.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dan $0.7/lote en crudo; sin página propia confirmable
+        confirmed: true
+        note: cuenta raw de Infinox; cifra confirmada por el dueño (encargo 2026-09-29)
       hantec:
         method: null
         value: null

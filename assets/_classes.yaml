@@ -26,8 +26,17 @@ forex:
     # — no es un campo nuevo que `fields()` exija, así que un activo sin él sigue validando.
     # Un broker por firma que este proyecto usa (owner, 2026-09-29): Darwinex, Infinox, FTMO,
     # Hantec Trader, the5ers, y las candidatas/activas de `AlgoData/funding/firms.yaml`
-    # (FundedNext, FundingPips). `use` es el más restrictivo de los CONFIRMADOS
-    # (`core.commission.most_restrictive` + `use_value`), nunca a mano — ver
+    # (FundedNext, FundingPips).
+    #
+    # `use` NO es un escalar: es un mapa POR TRAMO — {build: {method, value}, oos1: {...},
+    # oos2: {...}} — porque SQX cobra un método por tarea y el dueño pide el máximo de cada
+    # bróker "a la hora de buildear y testear" (owner, 2026-09-29): el bróker más caro puede
+    # cambiar de tramo a tramo, y con él su MÉTODO (oro: build gana Infinox `SizeBased 8`,
+    # oos1/oos2 gana Darwinex `PercentageBased 0.005`). Cada entrada se escribe en el método
+    # y el valor PROPIOS del bróker ganador de ese tramo, nunca convertida a un % fijo — es
+    # lo que `sqx.projects.setups.one_setup` ya sabe volcar en el `<Setup>` (voltea qué
+    # `<Method type=...>` lleva `use="true"`). `core.commission.per_segment` calcula el
+    # ganador de cada tramo; `core.assetwrite.set_cost("commission", ...)` lo escribe. Ver
     # `knowhow/costs/commission-per-broker.md`.
     brokers_schema: "{<broker>: {method, value, unit, source, date, confirmed, note?}}"
   slippage:

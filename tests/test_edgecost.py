@@ -20,10 +20,14 @@ from studies.readings.edgeCost import costs, many, one, spread_share  # noqa: E4
 TICK, POINT_VALUE, SPREAD = 0.1, 10.0, 2.0   # declared spread, in points, "today"
 FEED, TIMEFRAME = "TESTFEED_M1_test", "H1"
 
+# commission.use, owner 2026-09-29: one {method, value} per segment, never a flat figure.
+ZERO_COMMISSION = {"build": {"method": "SizeBased", "value": 0.0},
+                   "oos1": {"method": "SizeBased", "value": 0.0},
+                   "oos2": {"method": "SizeBased", "value": 0.0}}
 FOREX = {"symbol": "TESTX", "class": "forex", "instrument": {"tick_size": TICK,
          "point_value": POINT_VALUE},
         "costs": {"spread": {"use": SPREAD, "why": "test"},
-                  "commission": {"use": 0.0, "why": "test"},
+                  "commission": {"use": ZERO_COMMISSION, "why": "test"},
                   "slippage_is": {"use": 0.0, "why": "test"},
                   "slippage_oos": {"use": 0.0, "why": "test"},
                   "swap_long": {"use": 0.0, "why": "test"},

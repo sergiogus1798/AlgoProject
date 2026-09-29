@@ -183,19 +183,22 @@ def sqx_settings(data: dict, segment: str) -> dict:
         segment: Segment name, which picks the spread on a no_forex asset.
 
     Returns:
-        defaultSpread and defaultSlippage, and the commission and swap blocks with the
-        method and type their class declares. The segment picks both the spread and the
-        slippage: the slippage is half its segment's spread, so it follows the spread. Costs live per symbol INSIDE EACH TASK, not
-        once per project — that is what lets build carry one spread and the retest tasks
-        another.
+        defaultSpread and defaultSlippage (the slippage follows the spread's segment), and
+        the commission and swap blocks. `costs.commission.use` carries one `{method, value}`
+        per segment (owner, 2026-09-29): the most-restrictive CONFIRMED broker can differ by
+        segment and method both — gold's build is Infinox's `SizeBased 8`, its oos2 is
+        Darwinex's `PercentageBased 0.005` — so this segment's own winner is what gets
+        written, never the class's default method. Costs live INSIDE EACH TASK, not once per
+        project, which is what lets build carry one spread and the retest tasks another.
     """
     use = lambda k: data["costs"][k]["use"]
     s = schema(data)
     half = data["segments"][segment]["spread"]
     spread = "spread" if data["class"] == "forex" else f"spread_{half}"
+    commission = use("commission")[segment]
     return {"defaultSpread": use(spread),
             "defaultSlippage": use(f"slippage_{half}"),
-            "commission": {"method": s["commission"]["sqx_method"], "value": use("commission")},
+            "commission": {"method": commission["method"], "value": commission["value"]},
             "swap": {"type": s["swap"]["sqx_type"], "long": use("swap_long"),
                      "short": use("swap_short"), **data["swap"]}}
 

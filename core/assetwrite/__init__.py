@@ -88,6 +88,12 @@ def set_cost(symbol: str, field: str, value: object, why: str, after: str | None
     """
     path = path_of(symbol)
     doc = read(path)
+    if field == "commission" and isinstance(value, (int, float)):
+        # `commission.use` is one {method, value} per segment (owner, 2026-09-29): a bare figure
+        # from the window or the onboard applies to every segment in the class's own method.
+        method = "SizeBased" if classes()[doc["class"]]["commission"]["unit"] == "usd_per_lot" \
+            else "PercentageBased"
+        value = {seg: {"method": method, "value": float(value)} for seg in ("build", "oos1", "oos2")}
     if field not in doc["costs"]:
         doc["costs"].insert(list(doc["costs"]).index(after) + 1, field,
                             CommentedMap(use=None, sqx_now=None, why=""))

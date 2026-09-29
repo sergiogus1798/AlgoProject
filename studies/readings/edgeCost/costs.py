@@ -46,17 +46,23 @@ def _spread_points(asset: dict, sample: pd.Series) -> pd.Series:
     return sample.map(by_sample)
 
 
-def _commission(asset: dict, size: pd.Series, open_price: pd.Series, point_value: float) -> pd.Series:
-    """Commission per trade, by the method the asset's class declares.
+def _commission(asset: dict, size: pd.Series, open_price: pd.Series, point_value: float,
+                sample: pd.Series) -> pd.Series:
+    """Commission per trade, by the winning broker's OWN method for that trade's segment.
 
-    `PercentageBased` (no_forex, e.g. XAUUSD) is charged once per trade, on the open price
-    (OPEN.md issue 26, settled 2026-09-27, `knowhow/costs/commission-methods.md`).
+    `PercentageBased` is charged once per trade, on the open price (OPEN.md issue 26, settled
+    2026-09-27, `knowhow/costs/commission-methods.md`). Owner, 2026-09-29: `costs.commission
+    .use` carries one `{method, value}` per segment (build/oos1/oos2) rather than one flat
+    figure — the method itself can differ by segment. The trade export only tags a coarser
+    `sample` ("IS"/"OOS"), the same granularity `_spread_points()` already reads its two
+    spread fields at, so IS is priced at `build` and OOS at `oos1`.
     """
-    schema = assetdata.schema(asset)["commission"]
-    use = asset["costs"][schema["field"]]["use"]
-    if schema["sqx_method"] == "SizeBased":
-        return use * size
-    return (use / 100) * size * open_price * point_value
+    use = asset["costs"]["commission"]["use"]
+    by_sample = {"IS": use["build"], "OOS": use["oos1"]}
+    method = sample.map({k: v["method"] for k, v in by_sample.items()})
+    value = sample.map({k: v["value"] for k, v in by_sample.items()})
+    return np.where(method == "SizeBased", value * size,
+                    (value / 100) * size * open_price * point_value)
 
 
 def per_trade(trades: pd.DataFrame, asset: dict, feed: str, timeframe: str) -> pd.DataFrame:
@@ -81,7 +87,8 @@ def per_trade(trades: pd.DataFrame, asset: dict, feed: str, timeframe: str) -> p
     price_pnl = (trades["Close price"] - trades["Open price"]) * direction * trades["Size"] * point_value
     measured = spread_share.measure(trades, feed, timeframe)
     spread_cost = trades["sample"].map(measured) * point_value * trades["Size"]
-    commission_cost = _commission(asset, trades["Size"], trades["Open price"], point_value)
+    commission_cost = _commission(asset, trades["Size"], trades["Open price"], point_value,
+                                  trades["sample"])
     gross = trades["Profit/Loss"] + commission_cost + spread_cost
     spread_today = _spread_points(asset, trades["sample"]) * tick * point_value * trades["Size"]
     return trades.assign(direction=direction, price_pnl=price_pnl, spread_cost=spread_cost,

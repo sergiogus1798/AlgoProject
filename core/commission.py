@@ -1,4 +1,4 @@
-"""The owner's most-restrictive-broker rule: one dollar figure, method-agnostic, for comparison."""
+"""The owner's most-restrictive-broker rule: one winner PER SEGMENT, in its own method and value."""
 
 
 def commission_usd(method: str, value: float, price: float, point_value: float) -> float:
@@ -16,23 +16,31 @@ def commission_usd(method: str, value: float, price: float, point_value: float) 
     return value if method == "SizeBased" else value / 100 * price * point_value
 
 
-def most_restrictive(brokers: dict, prices: dict, point_value: float) -> dict:
-    """Which confirmed broker charges most, and in which segment they disagree most.
+def per_segment(brokers: dict, prices: dict, point_value: float) -> dict:
+    """The most expensive confirmed broker in EACH segment, kept in its own method and value.
 
-    Owner's rule, 2026-09-29: a `%` broker and a `$/lot` broker cannot be read off directly
-    against each other, so both are priced in dollars at each charged segment's own median
-    price (`build`, `oos1`, `oos2`) and the segment where they disagree MOST decides — not
-    the cheapest segment, which is the one least representative of the difference, and not a
-    flat average, which would hide a segment where one broker is actually the worst.
+    Owner's rule, 2026-09-29 — "aplica el máximo de cada a la hora de buildear y testear":
+    SQX takes one commission method per task, and a project prices each segment's task on
+    its own (`build`, `oos1`, `oos2`), so the winner is picked separately in each one rather
+    than at the single segment where brokers disagree most. A `%` broker and a `$/lot` broker
+    cannot be read off directly against each other, so both are priced in dollars at that
+    segment's own median price first — but the winner is written back in ITS OWN method and
+    value, never converted: gold's build can carry Infinox's `SizeBased 8` while its oos2
+    carries Darwinex's `PercentageBased 0.005`, because that is what SQX's `<Setup>` for
+    each of those tasks actually charges.
 
     Args:
         brokers: `{name: {method, value, confirmed, ...}}`; entries with `confirmed` falsy
             (unconfirmed, or a figure the owner has not decided to apply) are ignored.
-        prices: `{segment: median price}` over the window that segment charges.
-        point_value: The asset's own `instrument.point_value`.
+        prices: `{segment: median price}` over the window that segment charges. A segment
+            need not carry a real price when every confirmed broker is `SizeBased` (the
+            price cancels out of the comparison); it still requires an entry to know which
+            segments to produce.
 
     Returns:
-        `{"winner", "segment", "usd_per_lot", "by_segment": {segment: {broker: usd}}}`.
+        `{segment: {"broker", "method", "value", "usd_per_lot"}}`, one entry per key of
+        `prices`. `usd_per_lot` is only the figure the comparison was decided on; `method`
+        and `value` are the winner's own, ready to write into that segment's `<Setup>`.
 
     Raises:
         ValueError: No broker is confirmed — nothing to compare, `use` stays as it was.
@@ -40,32 +48,11 @@ def most_restrictive(brokers: dict, prices: dict, point_value: float) -> dict:
     confirmed = {n: b for n, b in brokers.items() if b.get("confirmed")}
     if not confirmed:
         raise ValueError("ningún broker confirmado: nada que comparar")
-    by_segment = {seg: {n: commission_usd(b["method"], b["value"], price, point_value)
-                         for n, b in confirmed.items()}
-                  for seg, price in prices.items()}
-    segment = max(by_segment, key=lambda s: max(by_segment[s].values()) - min(by_segment[s].values()))
-    winner = max(by_segment[segment], key=by_segment[segment].get)
-    return {"winner": winner, "segment": segment, "usd_per_lot": by_segment[segment][winner],
-            "by_segment": by_segment}
-
-
-def use_value(data_class: str, result: dict, prices: dict, point_value: float) -> float:
-    """The winning broker's cost, in the `use` field's own unit for this asset's class.
-
-    Args:
-        data_class: `"forex"` (`use` is $/lot flat) or `"no_forex"` (`use` is % of notional).
-        result: What `most_restrictive()` returned.
-        prices: The same `{segment: median price}` dict it was given.
-        point_value: The asset's own `instrument.point_value`.
-
-    Returns:
-        Forex: the winning segment's dollar figure, unchanged — SQX's forex commission is
-        one flat `SizeBased` value, not one per segment, so the segment that decided the
-        winner is also the one that prices it.
-        No_forex: that dollar figure turned back into a %, at the winning segment's own
-        price — a `PercentageBased` winner comes back out at its own declared %, unchanged.
-    """
-    if data_class == "forex":
-        return round(result["usd_per_lot"], 4)
-    price = prices[result["segment"]]
-    return round(result["usd_per_lot"] / (price * point_value) * 100, 6)
+    out = {}
+    for seg, price in prices.items():
+        usd = {n: commission_usd(b["method"], b["value"], price, point_value)
+               for n, b in confirmed.items()}
+        winner = max(usd, key=usd.get)
+        out[seg] = {"broker": winner, "method": confirmed[winner]["method"],
+                    "value": confirmed[winner]["value"], "usd_per_lot": round(usd[winner], 4)}
+    return out

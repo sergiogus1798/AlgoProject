@@ -39,8 +39,19 @@ def pending(data: dict) -> list[str]:
 
     Returns:
         Names of required fields still carrying a null `use` value, per the asset's class.
+        `commission` is a special shape (owner, 2026-09-29): its `use` is `null` until the
+        first broker table is written, and after that one `{method, value}` per segment —
+        blocked while ANY segment still carries a null `value`, not while the field itself
+        is null.
     """
-    return [k for k in REQUIRED[data["class"]] if data["costs"][k]["use"] is None]
+    def blocked(field: str) -> bool:
+        """Whether this field still has a real decision missing."""
+        use = data["costs"][field]["use"]
+        if isinstance(use, dict):
+            return any(v["value"] is None for v in use.values())
+        return use is None
+
+    return [k for k in REQUIRED[data["class"]] if blocked(k)]
 
 
 

@@ -26,9 +26,12 @@ SEGMENTS = ("build", "oos1", "oos2")
 
 def declared(data: dict) -> str:
     """What `assets/` declares today for the spread and the commission, in words."""
-    c, unit = data["costs"], assetdata.schema(data)["commission"]["unit"]
+    c = data["costs"]
     spreads = [f"{k} {c[k]['use']} puntos" for k in assetdata.fields(data) if k.startswith("spread")]
-    return ", ".join(spreads + [f"comisión {c['commission']['use']} ({unit})"])
+    use = c["commission"]["use"]
+    fees = (" / ".join(f"{seg} {m['method']} {m['value']}" for seg, m in use.items())
+            if isinstance(use, dict) else f"{use} ({assetdata.schema(data)['commission']['unit']})")
+    return ", ".join(spreads + [f"comisión {fees}"])
 
 
 def one(symbol: str, cfg: dict) -> dict:

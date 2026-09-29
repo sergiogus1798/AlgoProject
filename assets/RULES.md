@@ -210,37 +210,45 @@ step-26 final test on each firm's feed and for `weeklyReconciler`'s SQX-vs-live 
 ```yaml
 costs:
   commission:
-    use: 0.005            # the development default — computed, never typed by hand
+    use:                    # one {method, value} PER SEGMENT — never one flat figure
+      build: {method: SizeBased, value: 8.0}
+      oos1:  {method: PercentageBased, value: 0.005}
+      oos2:  {method: PercentageBased, value: 0.005}
     sqx_now: {...}
     why: "…"
     brokers:
       darwinex: {method: PercentageBased, value: 0.005, unit: pct_of_notional,
                  source: https://help.darwinex.com/execution-costs, date: 2026-09-29, confirmed: true}
-      infinox:  {method: null, value: null, unit: null, source: null, date: 2026-09-29,
-                 confirmed: false, note: "aggregators report $7/lot forex&gold; infinox.com's own
-                 pricing page redirects/renders client-side and would not confirm it"}
+      infinox:  {method: SizeBased, value: 8.0, unit: usd_per_lot,
+                 source: "dueño, 2026-09-29", date: 2026-09-29, confirmed: true}
 ```
 
-**A figure is `confirmed: true` only off the firm's own page** (never an aggregator, a review
-site or a forum), with its `source` URL and the `date` it was read. Read it once, in the same
-task as everything else that touches `assets/` — never guessed, never left half-typed.
+**A figure is `confirmed: true` only off the firm's own page, or the owner's own statement**
+(never an aggregator, a review site or a forum), with its `source` (a URL, or `"dueño, <date>"`)
+and the `date` it was read or decided. Read it once, in the same task as everything else that
+touches `assets/` — never guessed, never left half-typed.
 
-**Comparing a `%` broker against a `$/lot` one needs a price**, because only one of the two
-scales with it. `core.commission.most_restrictive(brokers, prices, point_value)` prices every
-confirmed broker in dollars at each charged segment's own median price (`build`, `oos1`, `oos2`
-— the same figures `studies.data.spread.onboard` already computes and caches under
-`AlgoData/spread/<feed>/summary.json`'s `proposal`) and takes whichever broker charges most in
-the segment where they disagree **most** — not the cheapest segment, and not an average, both of
-which can hide the segment that actually decides it. `core.commission.use_value` turns that
-winner back into `use`'s own unit: unchanged for a forex asset (`use` is already one flat $/lot),
-converted back to a % at the winning segment's price for a `no_forex` one — a `PercentageBased`
-winner returns its own declared % exactly, since a percentage does not need the round trip.
+**"Aplica el máximo de cada a la hora de buildear y testear"** (owner, 2026-09-29): SQX charges
+one commission method per TASK, and a project prices `build`, `oos1` and `oos2` on their own
+tasks, so the winner is picked separately in EACH segment rather than once for the whole asset —
+gold's build can carry Infinox's `SizeBased 8` while its oos1/oos2 carry Darwinex's
+`PercentageBased 0.005`, because the broker that charges most changes as gold's own price rises
+across the sixteen years. Comparing a `%` broker against a `$/lot` one still needs a price, since
+only one of the two scales with it: `core.commission.per_segment(brokers, prices, point_value)`
+prices every confirmed broker in dollars at THAT segment's own median price (`build`, `oos1`,
+`oos2` — the same figures `studies.data.spread.onboard` computes and caches under
+`AlgoData/spread/<feed>/summary.json`'s `proposal`, or `core.barstore`'s own D1 median where a
+main asset's own segment windows do not apply, e.g. XAGUSD/BRENT priced at XAUUSD's calendar
+windows) and, for each segment on its own, keeps the winner's OWN method and value — never
+converted into the class's usual unit, because that is exactly what a real `<Setup>` charges.
+`sqx.projects.setups.sqx_settings` reads `use[segment]` directly and `one_setup` already knows
+how to flip whichever `<Method type=...>` it is given.
 
 **Without a cached median price, the comparison does not run** rather than guess one: nine of the
-ten forex pairs (every the5ers pair but USDJPY) have no `summary.json` yet, so their `brokers:`
-table is written and their figures are ready to compare, but `use` is left as it was until
-`studies.data.spread.scan` gives them a price. `core.assets`' report prints the per-broker table
-so this gap is visible without opening the file. → `knowhow/costs/commission-per-broker.md`.
+ten forex pairs (every the5ers pair but USDJPY) have no `summary.json` yet — moot for forex today,
+since the owner fixed forex commission at a flat 5 USD/lot for every broker (2026-09-29, all three
+segments alike). `core.assets`' report prints the per-broker table so this gap is visible without
+opening the file. → `knowhow/costs/commission-per-broker.md`.
 
 ## Adding an asset
 

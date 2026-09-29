@@ -32,66 +32,75 @@ costs:
     sqx_now: 0.2              # points
     why: "onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `puntos` donde no hay ticks (USDCHF_DarwTick_the5ers). studies.data.spread.onboard"
   commission:
-    use: 8.0                 # $ por lote
+    use:                     # $ por lote
+      build:
+        method: SizeBased
+        value: 5.0
+      oos1:
+        method: SizeBased
+        value: 5.0
+      oos2:
+        method: SizeBased
+        value: 5.0
     sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
-    why: "2026-09-29 — se añade la tabla `brokers:` (owner, 2026-09-29): the5ers $4/lote y Hantec $5/lote confirmados en su propia página, ambos por debajo de los 8 $/lote que ya se aplicaban. Darwinex cobra 0.005 % del nocional en forex, que necesitaría el precio mediano de cada tramo para pasarlo a $/lote y compararlo — este par no tiene aún el `summary.json` de `studies.data.spread.scan`, así que la comparación no se completa y el valor SE MANTIENE en 8 (por encima de los dos brokers $/lote confirmados, así que sigue siendo conservador salvo que Darwinex resultara más caro, lo que no se puede descartar sin ese precio)."
+    why: "2026-09-29 — el dueño fija 5 USD/lote ida y vuelta como la comisión de TODOS los brokers de este par (baja el default anterior de 8, la cifra de Infinox): \"cada bróker cobra 5 USD/lote\", y ésa es también la cifra de desarrollo/test. Sustituye las cifras propias medidas antes (the5ers 4, Hantec 5, Infinox 8) por la decisión directa del dueño; el máximo de todos sigue siendo 5, así que build, oos1 y oos2 llevan la misma pareja método/valor. `core.commission.per_segment`."
     brokers:
       darwinex:
-        method: PercentageBased
-        value: 0.005
-        unit: pct_of_notional
-        source: https://help.darwinex.com/execution-costs
+        method: SizeBased
+        value: 5.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29
         date: '2026-09-29'
         confirmed: true
-        note: '"Forex & Commodities", 0.005 % del nocional ida y vuelta (misma cifra para todos los pares); necesita el precio mediano del tramo para compararla en $/lote — sin él no entra en el cómputo de most_restrictive.'
+        note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
       the5ers:
         method: SizeBased
-        value: 4.0
+        value: 5.0
         unit: usd_per_lot
-        source: https://the5ers.com/asset-specifications/
+        source: dueño, 2026-09-29
         date: '2026-09-29'
         confirmed: true
-        note: forex, $4/lote ida y vuelta; la pestaña de metales/índices no cargó contenido en el fetch
+        note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
       hantec:
         method: SizeBased
         value: 5.0
         unit: usd_per_lot
-        source: https://htrader.hmarkets.com/product-specifications/
+        source: dueño, 2026-09-29
         date: '2026-09-29'
         confirmed: true
-        note: tabla de forex, $5/lote ida y vuelta en los 8 pares listados
+        note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
       ftmo:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: SizeBased
+        value: 5.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dan $3-5/lote según el par; ftmo.com/en/symbols no renderizó la tabla en el fetch (contenido cargado por JS)
+        confirmed: true
+        note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
       infinox:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: SizeBased
+        value: 5.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dan $7/lote forex&oro; infinox.com/*/pricing devuelve demasiadas redirecciones y la home no enlaza una tabla estática
+        confirmed: true
+        note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
       fundednext:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: SizeBased
+        value: 5.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dan $3-7/lote según fuente y modelo; la página propia confirmada (help.fundednext.com) sólo detalla cripto/metales/acciones, no forex
+        confirmed: true
+        note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
       fundingpips:
-        method: null
-        value: null
-        unit: null
-        source: null
+        method: SizeBased
+        value: 5.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29
         date: '2026-09-29'
-        confirmed: false
-        note: agregadores dan $5/lote (modelos estándar) o $7 (Zero); help.fundingpips.com devolvió 403 en el fetch
+        confirmed: true
+        note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
   slippage_is:
     use: 0.61                # points — tramo(s) build
     sqx_now: 0.0

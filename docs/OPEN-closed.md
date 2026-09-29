@@ -671,6 +671,45 @@ warns about it. Card: `knowhow/costs/commission-methods.md`. Still unreconciled 
 older «$16 round turn under `SizeBased 8`».
 
 
+## 27. 🟢 Sixteen of seventeen assets have no agreed cost, and the schema changed under them
+
+`python3 -m core.assets --index` shows one asset decided (XAUUSD, and provisionally) and sixteen
+blocked. That was already true before the 2026-09-22 reorganisation; what changed is that the units
+are now the ones the owner asked for, so **the numbers he gives have to be in the new unit**:
+
+- forex — one spread in points, commission in $/lot, swap in **points per night**;
+- everything else — two spreads in points (`build` and OOS), commission in **% of notional**, swap in
+  **% ANNUAL** (`knowhow/costs/swap-types.md` has the conversion; the annual/nightly confusion is 360×).
+
+Nothing is blocked that was not blocked before, and no invented value was written.
+
+The same file now also carries `mc_retest` — the spread and slippage ranges the MC Retest task
+draws from, in points, per asset. **All 34 of them are undecided.** These do not block: the
+preflight warns and exits 0, because an undecided range only makes that one MC Retest task
+uninterpretable. `core.assetdata.mc_pending()` names them.
+
+
+**Update 2026-09-27 — the owner's defaults, applied.** Real broker figures cannot be used as they
+are: 8 USD on a 100-oz gold lot at 4,500 is not 8 USD at 500. So:
+
+- **Indices:** commission 0 (raw account); swap −8 % annual on both sides.
+- **XAUUSD and XAGUSD:** commission of 8 USD per lot round trip, as % of notional (gold at
+  4,500 → 0.001778 %, silver at Darwinex's 63.5907 → 0.002516 %), which scales with each era's
+  price; swap −7 % on both sides.
+- **Forex:** 8 USD per lot round trip (`SizeBased`); swap = the mean, in points per night, of
+  every variant of the pair with an active swap in SQX's instrument registry (7–8 brokers each;
+  `monevis` is off and `oanda` is in %, both left out). Still a snapshot of today's rates.
+
+Still open: `SizeBased` is assumed to charge once per trade, as `PercentageBased` was measured to
+(#26). If it charges per fill, forex pays 16. Check it with `edgeCost`'s reconciliation on the
+first forex harvest built with it. A forex swap model by date (rate differentials) remains possible if the owner wants one.
+
+**2026-09-29.** Owner, 2026-09-29: settle SizeBased once-vs-per-fill on forex with `edgeCost` on the first forex harvest. Waits on that harvest.
+
+**2026-09-29.** Owner, 2026-09-29: every asset carries a commission per broker (`costs.commission.brokers`, source and date each; unconfirmed = null) for step 26 and the weekly reconciliation, and the development default is the MOST expensive of them (`core/commission.py`, `core/assetwrite/brokers.py`). The owner's own figures (Infinox 8 $/lot) count as confirmed. Applied: XAUUSD 0.004692 → 0.005 % (Darwinex); USDJPY stays 8 $/lot. Left: the gold figure (owner reviewing: 0.005 % charges ≈6 $/lot in 2010 and ≈23 $ in 2026); FTMO forex, Infinox pages, metals of Hantec/the5ers/FundedNext and FundingPips unconfirmed; nine forex pairs need `studies.data.spread.scan` before Darwinex's % can be compared; SizeBased once-vs-per-fill still waits on the first forex harvest.
+
+**Closed 2026-09-29.** Owner, 2026-09-29, his figures: forex 5 $/lot at every broker; indices 0 everywhere; gold, silver and crude Infinox 8 $/lot, FTMO 0.0014 %, Darwinex 0.005 %. Building and testing apply the MAXIMUM per segment: `costs.commission.use` is one {method, value} per segment (`core/commission.per_segment`), so each task carries its own method — gold build Infinox SizeBased 8, oos1/oos2 Darwinex PercentageBased 0.005; silver and Brent Infinox 8 throughout. `core.assetwrite.set_cost` spreads a bare figure over the three segments in the class's method. `tests/test_commission_segments.py`. SizeBased once-vs-per-fill is checked on the first forex harvest with edgeCost.
+
 ## 30. ✅ `sqx.data.update` ran end to end on 2026-09-25
 
 `python3 -m sqx.data.update --apply` drives `-data action=update` on the master — the CLI form of
