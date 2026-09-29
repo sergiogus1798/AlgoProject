@@ -57,7 +57,7 @@ FAMILIES = {
         "37-wfc-retest", "19-wfc", "25-cscv", "39-nube-de-parametros",
         "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix"]),
     "10-cierre": ("El cierre: paso 20, exposición, stop y MetaTrader 5", [
-        "56-paso-20", "38-exposicion", "54-atr-calculator", "60-mt5"]),
+        "56-paso-20", "38-exposicion", "54-atr-calculator", "60-mt5", "75-filtro-noticias"]),
 }
 
 STYLE = """

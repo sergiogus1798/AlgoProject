@@ -38,6 +38,9 @@ relative to `cwd` does, and is how `metaeditor.py` calls MetaEditor now.
 
 `winside/` runs under the Windows Python inside the prefix, not under the project's Python.
 
+`newsfilter/` writes a prop firm's news rule into SQX's MQL5 export — two EAs per strategy, with and
+without the filter (`/ea-news`, its own README).
+
 `indicators/` is the project's MQL5 indicator set, in MQL5's own `Indicators/` and `Include/` layout: the
 add-on `Sq*` indicators SQX does not ship, and the owner's versions of `SqBBWidthRatio`,
 `SqSRPercentRank` and `SqSuperTrend` (no rounding to 6 decimals, a range check instead of
