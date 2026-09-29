@@ -4,7 +4,7 @@ Libraries, not commands. The entry points that use them live in `../reports/`.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `metrics.py` | Reads a metrics export and works out which columns are IS, which are OOS, and which pair up | imported | `metrics.csv` → numeric columns + metric name lists |
+| `metrics.py` | Reads a metrics export, works out which columns are IS, which are OOS, and which pair up, and drops rows that agree on every OOS metric -- the same backtest exported under a different strategy name | imported | `metrics.csv` → numeric columns + metric name lists |
 | `correlations.py` | Pearson/Spearman, the single-test significance floor, and Benjamini-Hochberg over a family of tests | imported | two columns → correlation rows |
 | `improvement.py` | Sweeps candidate IS filters: what each one does to an OOS outcome, with a bootstrap interval on the difference | imported | columns + one target → one row per filter |
 | `replication.py` | Whether a conclusion drawn on one sample holds on another independently generated one: outcome gaps, filter thresholds carried across, rank stability | imported | two samples' columns → gaps and agreement |
@@ -21,6 +21,12 @@ Two things these enforce, because both have already produced wrong answers:
 - **The significance floor is not the threshold.** At n=10,000 a correlation clears the ordinary 5%
   level at |r| > 0.02. Every in-sample metric is tested against the same outcome at once, so
   `discoveries()` controls the false discovery rate across the family instead.
+- **Rows are not strategies.** `metrics.csv` exports no trade list to hash, so `deduplicated()`
+  drops a row that agrees with an earlier one on every OOS metric at once before anything is
+  counted or correlated -- 🔬 52 of 9,948 on `XAUUSD/OOS` 2026-09-29, 0 of the compared `SPP_OOS`.
+  `isOos.report`, `filters.report` and `replication.report` all call it; `decay.report` does the
+  equivalent on the daily equity curve itself, since it reads `.sqx` directly and never loads
+  `metrics.csv`.
 
 Spearman leads every ranking. These metrics are heavy-tailed and one blow-up strategy moves Pearson
 a long way; where the two disagree, suspect outliers.

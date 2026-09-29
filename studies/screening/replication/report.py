@@ -33,7 +33,8 @@ def load(project: str, databanks: list[str]) -> dict:
     for databank in databanks:
         src = metrics_export(project, databank)
         columns, names = metrics.load(src / "metrics.csv")
-        out[databank] = {"columns": columns, "n": len(names),
+        columns, names, dropped = metrics.deduplicated(columns, names)
+        out[databank] = {"columns": columns, "n": len(names), "duplicates_dropped": dropped,
                          "exported": manifest.read(src)["date"]}
     return out
 
@@ -156,16 +157,20 @@ def main() -> None:
                            "resultado fuera de muestra. Una correlación medida dentro de una "
                            "muestra seleccionada sobre esa métrica está atenuada por "
                            "construcción."}])
+    dupes = ", ".join(f"{n} {s['duplicates_dropped']}" for n, s in samples.items())
     out = report_dir(a.project, "_comparison", date.today().isoformat()) / "replication"
     title = f"{a.project} — ¿se sostienen las conclusiones en otras muestras?"
     output.population(out, "replication", got, title,
-                      f"Referencia {a.reference}; contra " + ", ".join(names[1:]) + ".")
+                      f"Referencia {a.reference}; contra " + ", ".join(names[1:]) + f". "
+                      f"Duplicadas descartadas por muestra: {dupes}.")
     manifest.write(out, {"project": a.project, "reference": a.reference, "databanks": names,
                          "exported": {n: s["exported"] for n, s in samples.items()}},
                    f"compare.py --project {a.project} --reference {a.reference} "
                    + " ".join(f"--databank {n}" for n in names[1:]),
-                   {n: s["n"] for n, s in samples.items()})
+                   {n: {"strategies": s["n"], "duplicates_dropped": s["duplicates_dropped"]}
+                    for n, s in samples.items()})
     print(markdown.render(got, title))
+    print(f"Duplicadas descartadas por muestra: {dupes}")
     print(f"  {out / 'replication.md'}")
 
 

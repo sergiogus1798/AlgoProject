@@ -12,6 +12,7 @@ from core import sqxfile, sqxstats
 from core.paths import databank_dir, report_dir
 from core.study import blocks, output, result as envelope, verdicts
 from core.study.render import markdown
+from core.surface import dedupe
 from studies.screening.analysis import decay
 
 MODULE = "studies.screening.decay.report"
@@ -54,7 +55,9 @@ def result(rows: pd.DataFrame, source: dict, started: float) -> dict:
                 "Con t por debajo de 2 el Sharpe fuera de muestra no se distingue de cero."),
             blocks.table("Por plantilla", per_template),
             blocks.table("Las que pasan todo", kept[COLUMNS])],
-            note=f"IS hasta {source['split']} · OOS {source['split']} → {source['end']}.")],
+            note=f"IS hasta {source['split']} · OOS {source['split']} → {source['end']} · "
+                 f"{source['duplicates_dropped']} duplicadas (misma curva diaria de P&L bajo "
+                 f"otro nombre) descartadas antes de contar.")],
         blocks.verdict(f"{int(counts.get('MANTENER', 0))} de {len(rows)}",
                        "pass" if counts.get("MANTENER", 0) else "fail",
                        "Cuánto del filo dentro de muestra sobrevivió fuera, y si lo que queda "
@@ -73,9 +76,13 @@ def main() -> None:
     started = time.time()
     folder = databank_dir(a.project, a.databank)
     files = sorted(folder.glob("*.sqx"))
-    rows = decay.table({f.stem: sqxstats.equity(f) for f in files}, a.split, a.end)
+    curves = {f.stem: sqxstats.equity(f) for f in files}
+    clone = dedupe.curve_duplicates(curves)
+    dropped = int(clone.sum())
+    curves = {name: c for name, c in curves.items() if not clone[name]}
+    rows = decay.table(curves, a.split, a.end)
     identity = {f.stem: sqxfile.identity(f) for f in files}
-    source = {"split": a.split, "end": a.end}
+    source = {"split": a.split, "end": a.end, "duplicates_dropped": dropped}
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "decay"
     got = result(rows, source, started)
     title = f"Decaimiento — {a.project} / {a.databank}"
@@ -84,7 +91,8 @@ def main() -> None:
     table.insert(1, "identity", table["strategy"].map(identity))
     verdicts.write(out, table, folder, " ".join(sys.argv), [])
     print(markdown.render(got, title))
-    print(f"{len(rows)} estrategias → {out}")
+    print(f"{len(rows)} estrategias ({dropped} duplicadas de trades idénticos descartadas "
+          f"de {len(files)}) → {out}")
 
 
 if __name__ == "__main__":

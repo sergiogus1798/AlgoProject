@@ -8,7 +8,7 @@ statistics, which is the bar `core/README.md` sets for anything statistical livi
 | file | what it does | in → out |
 |---|---|---|
 | `__init__.py` | Names what the package is; holds no code | — |
-| `dedupe.py` | How many independent observations the grid really holds: sentinel removal, distinct tuples, the effective n, and a bootstrap that resamples tuples instead of rows | grid → counts, intervals |
+| `dedupe.py` | How many independent observations the grid really holds: sentinel removal, distinct tuples, the effective n, a bootstrap that resamples tuples instead of rows, and the same identity test applied to a trade export or a set of daily equity curves, for a population that is not a grid at all | grid, trades or curves → counts, intervals |
 | `shift.py` | How far the surface moved between two windows: Hodges-Lehmann in units, Cliff's delta in rank, the quantile-quantile curve, the tail excess, and the dispersion ratio adjusted for sample size | two windows → displacement |
 | `trials.py` | How many independent things were really tried: the correlation distance between result streams, the silhouette that picks a cluster count, and the count itself | daily or per-period streams → n_eff |
 | `plateau.py` | How much of the grid works, whether its best point beats what searching noise would have produced anyway, and where one chosen point sits in it: plateau area, half-max area, the noise maximum, the deflated Sharpe, and the rank / plateau fraction / shrunk expectation of a named tuple | grid → probabilities, thresholds |

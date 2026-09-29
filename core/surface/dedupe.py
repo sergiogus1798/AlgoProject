@@ -1,5 +1,7 @@
-"""How many independent observations a parameter grid really holds, and how to resample it."""
+"""How many independent observations a parameter grid really holds, and how to resample it;
+plus the one exact test for two strategies sharing one trade list under different names."""
 
+import hashlib
 from typing import Callable
 
 import numpy as np
@@ -8,6 +10,7 @@ import pandas as pd
 SENTINEL_LIMIT = 100.0
 SENTINEL_COLUMNS = ("RExpectancy",)
 IDENTITY = ("NetProfit", "NumberOfTrades")
+TRADE_COLUMNS = ("Open time", "Close time", "Profit/Loss")
 
 
 def drop_sentinels(frame: pd.DataFrame, columns: tuple[str, ...] = SENTINEL_COLUMNS,
@@ -86,3 +89,44 @@ def bootstrap_ci(values: np.ndarray, statistic: Callable[[np.ndarray], float],
     spread = np.array([statistic(values[row]) for row in draws])
     tail = (1 - confidence) / 2
     return float(np.quantile(spread, tail)), float(np.quantile(spread, 1 - tail))
+
+
+def trade_duplicates(trades: pd.DataFrame, by: str,
+                     columns: tuple[str, ...] = TRADE_COLUMNS) -> pd.Series:
+    """Which strategies of a trade export are the same trade list under a different identity.
+
+    Args:
+        trades: Trades of possibly many strategies, one row per trade, carrying `by` and
+            `columns`.
+        by: Column naming which strategy each row belongs to.
+        columns: Trade fields that decide identity. The default three are enough: two
+            strategies agreeing on every open time, close time and P/L of every trade ran
+            the same backtest, whatever their name or `.sqx` hash says (`studies/CLAUDE.md`'s
+            first trap -- 45 of 231 strategies once shared trades under different hashes).
+
+    Returns:
+        One bool per value of `by`, indexed by it: True for every member of a duplicate
+        group but its first. A strategy with zero trades reads False, not a false clone.
+    """
+    fingerprint = pd.util.hash_pandas_object(trades[list(columns)], index=False)
+    key = fingerprint.groupby(trades[by].values, observed=True).sum()
+    return key.duplicated(keep="first") & key.notna()
+
+
+def curve_duplicates(curves: dict[str, pd.Series]) -> pd.Series:
+    """Which strategies share another one's daily equity curve, values and dates alike.
+
+    Args:
+        curves: {strategy name: daily cumulative P&L}, e.g. from `core.sqxstats.equity`.
+
+    Returns:
+        One bool per name: True for every member of a duplicate group but its first. Two
+        strategies agreeing on every day's P&L ran the same trades -- a curve carries no
+        less information than the list that produced it, and hashing it needs no export
+        `trade_duplicates` would (`studies/CLAUDE.md`'s dedup trap). `hashlib`, not the
+        builtin `hash()`, because Python salts a bytes hash per process: the same input
+        would group differently in a report regenerated tomorrow.
+    """
+    key = pd.Series({name: hashlib.sha1(curve.to_numpy().tobytes()).digest()
+                     for name, curve in curves.items()})
+    return key.duplicated(keep="first")

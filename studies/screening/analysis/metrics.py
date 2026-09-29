@@ -4,6 +4,9 @@ import csv
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
+
+from core.surface import dedupe
 
 IS, OOS = " (IS)", " (OOS)"
 
@@ -41,6 +44,33 @@ def measured(columns: dict[str, np.ndarray], suffix: str) -> list[str]:
         population is excluded: it has no correlation to compute and would read as NaN.
     """
     return sorted(k for k, v in columns.items() if k.endswith(suffix) and v.std() > 0)
+
+
+def deduplicated(columns: dict[str, np.ndarray],
+                 names: list[str]) -> tuple[dict[str, np.ndarray], list[str], int]:
+    """Drop rows that are another strategy's trade list under a different name.
+
+    `metrics.csv` carries no trade list to hash (`studies/CLAUDE.md`'s first trap: 45 of 231
+    strategies once shared trades under different `.sqx` hashes), so identity here is
+    approximated by agreement on every OOS metric at once -- the same test
+    `core.surface.dedupe` uses for an SPP grid's inert parameters, at full column width so an
+    unrelated pair matching by chance is not a real risk.
+
+    Args:
+        columns: Numeric columns from load.
+        names: Strategy names in row order, from load.
+
+    Returns:
+        (columns, names, dropped): the same shapes with duplicate rows removed (first of each
+        group kept) and how many rows that was. 0 when the export carries no varying OOS
+        metric to check against.
+    """
+    oos = measured(columns, OOS)
+    frame = pd.DataFrame({k: columns[k] for k in oos}, index=range(len(names)))
+    kept = dedupe.distinct(frame, keys=tuple(oos)).index if oos else frame.index
+    dropped = len(names) - len(kept)
+    rows = kept.to_numpy()
+    return ({k: v[rows] for k, v in columns.items()}, [names[i] for i in kept], dropped)
 
 
 def paired(columns: dict[str, np.ndarray]) -> list[str]:

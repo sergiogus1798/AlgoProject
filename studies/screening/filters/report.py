@@ -71,6 +71,7 @@ def main() -> None:
     started = time.time()
     src = metrics_export(a.project, a.databank)
     columns, names = metrics.load(src / "metrics.csv")
+    columns, names, dropped = metrics.deduplicated(columns, names)
     is_metrics = metrics.measured(columns, metrics.IS)
     targets = [t for t in (a.target or TARGETS) if t in metrics.measured(columns, metrics.OOS)]
     tried = len(improvement.candidates(is_metrics))
@@ -87,13 +88,19 @@ def main() -> None:
                            f"los dos lados; sólo se juzgan los que dejan al menos "
                            f"{improvement.MIN_SURVIVORS} estrategias, y se corrigen juntos por "
                            f"Benjamini-Hochberg. El p del bootstrap no baja de "
-                           f"1/{improvement.DRAWS}: ahí lee el intervalo."}])
+                           f"1/{improvement.DRAWS}: ahí lee el intervalo."},
+                  {"code": "duplicados", "state": "info",
+                   "text": f"{dropped} filas descartadas por compartir todas sus métricas OOS "
+                           f"con otra estrategia -- probable mismo trade list bajo otro "
+                           f"nombre (studies/CLAUDE.md)."}])
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "filters"
     title = f"{a.project} / {a.databank} — qué compra un filtro"
-    output.population(out, "filters", got, title, f"{len(names):,} estrategias.")
+    output.population(out, "filters", got, title,
+                      f"{len(names):,} estrategias ({dropped} duplicadas descartadas).")
     manifest.write(out, {"input": str((src / "metrics.csv").resolve())},
                    f"filters.py --project {a.project} --databank {a.databank}",
-                   {"strategies": len(names), "candidates": tried, "targets": targets})
+                   {"strategies": len(names), "duplicates_dropped": dropped,
+                    "candidates": tried, "targets": targets})
     print(markdown.render(got, title))
     print(f"  {out / 'filters.md'}")
 

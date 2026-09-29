@@ -8,9 +8,21 @@ tag: 🔬  date: 2026-09-04  see: research/post-selection-bias, research/is-prox
 - Check a databank for two structurally different populations before pooling exit stats (`knowhow/locations/`).
 - A predictor ranking from the full population doesn't say what to filter on second: recompute inside the survivors.
 - At n≈10,000 report FDR/family-wise correction and argue from effect size, never from p.
+The rules stand on their own; the figures in the Evidence come from the old project's export and
+cannot be reproduced from today's data root (OPEN §12, closed 2026-09-29 by this label).
 
 ## Evidence
-- ATR-stop study (old `archive/studies/atr_stop_study.py`, deleted 2026-09-26, in git history): fill at stop → PF 2.09 at 0.5×ATR; 0.25×ATR slippage → PF 1.49, net −37 %; a 3×ATR stop lost only 11 %.
+- ATR-stop study (old `archive/studies/atr_stop_study.py`, deleted 2026-09-26, in git history) —
+  🤔 **restated 2026-09-29 (issue 13): only the slippage delta is defensible.** `PF 2.09 at
+  0.5×ATR` is an **in-sample** number: the pool was selected by SQX search over 2008–2017, the
+  script restricts to that same window, and 0.5×ATR is the argmax over an 11-point grid
+  (`N_GRID = 0.5…3.0 step 0.25`) landing on the grid's own edge — a selected maximum, with no
+  out-of-sample confirmation and no multiple-testing correction, on strategies themselves produced
+  by search. Do not quote `PF 2.09`, `PF 1.49` or `−37 %`/`−11 %` as levels. What survives: at a
+  single slippage value (`SLIP_REF = 0.25×ATR`, not a curve), the tighter stop degraded **more**
+  than the wider one (−37 % vs −11 %) — a within-study *relative* comparison, not a claim about
+  either stop's real profit factor. A curve over slippage, out of sample, would be needed before
+  this says more than that.
 - Range restriction, `XAUUSD/OOS` 10,000 strategies (`AlgoData/metrics/XAUUSD/OOS/metrics.csv`, report
   `AlgoData/reports/XAUUSD/OOS/2026-09-04/`; `python3 -m studies.screening.isOos.report --project XAUUSD --databank OOS`).
   Dedup checked: 10,000 distinct names, 2 byte-identical metric vectors. `Sharpe Ratio (IS)` → `Profit factor (OOS)`

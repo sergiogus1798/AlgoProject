@@ -14,6 +14,7 @@ from core.paths import harvest_dir, metrics_export, report_dir
 from core.study import config as study_config, output
 from core.study.render import markdown
 from core.study.result import progress
+from core.surface import dedupe
 from studies.screening.analysis import metrics
 from studies.screening.isOos import many, one
 
@@ -63,9 +64,10 @@ def population(project: str, databank: str, cfg: dict) -> dict:
     # then they are read off the .sqx and say so under `metrics`.
     origin = (f"vista «{made['source']['view']}»" if "view" in made["source"]
               else "métricas leídas de cada .sqx")
+    columns, names, dropped = metrics.deduplicated(columns, names)
     source = {"project": project, "databank": databank, "origin": origin,
               "exported": made["date"], "reported": date.today().isoformat(),
-              "code_version": manifest.code_version()}
+              "code_version": manifest.code_version(), "duplicates_dropped": dropped}
     is_metrics = metrics.measured(columns, metrics.IS)
     oos_metrics = metrics.measured(columns, metrics.OOS)
     got = many.run({"columns": columns, "n": len(names), "is": is_metrics,
@@ -75,7 +77,7 @@ def population(project: str, databank: str, cfg: dict) -> dict:
     return {"result": got, "source": source, "explorer": explorer,
             "input": str((src / "metrics.csv").resolve()),
             "counts": {"strategies": len(names), "is_metrics": len(is_metrics),
-                       "oos_metrics": len(oos_metrics)}}
+                       "oos_metrics": len(oos_metrics), "duplicates_dropped": dropped}}
 
 
 def per_trade(folder: Path, out: Path, title: str, cfg: dict) -> dict:
@@ -88,7 +90,9 @@ def per_trade(folder: Path, out: Path, title: str, cfg: dict) -> dict:
         cfg: The study's config.
 
     Returns:
-        Counts for the manifest: strategies written, and those skipped for lacking a sample.
+        Counts for the manifest: strategies written, those skipped for lacking a sample, and
+        those dropped for sharing another strategy's OOS trade list byte for byte
+        (`studies/CLAUDE.md`'s dedup trap; the first of a clone group is kept).
     """
     names = pd.read_parquet(folder / "metrics.parquet", columns=["strategy"])["strategy"]
     trades = pd.read_parquet(folder / "trades.parquet", columns=TRADES)
@@ -99,11 +103,14 @@ def per_trade(folder: Path, out: Path, title: str, cfg: dict) -> dict:
                          f"OOS2 is not read here")
     groups = dict(tuple(trades.groupby("identity")))
     full = [i for i, g in groups.items() if g["sample"].nunique() == 2]
-    for n, identity in enumerate(full):
+    clone = dedupe.trade_duplicates(trades[trades["sample"] == "OOS"], by="identity")
+    deduped = [i for i in full if not clone.get(i, False)]
+    for n, identity in enumerate(deduped):
         got = one.run(names[identity], {"identity": identity, "trades": groups[identity]}, cfg)
         output.member(out, got, f"{title} — {names[identity]}")
-        progress(5 + 95 * (n + 1) // len(full), names[identity])
-    return {"trade_strategies": len(full), "trade_skipped_one_sample": len(groups) - len(full)}
+        progress(5 + 95 * (n + 1) // len(deduped), names[identity])
+    return {"trade_strategies": len(deduped), "trade_skipped_one_sample": len(groups) - len(full),
+            "trade_duplicates_dropped": len(full) - len(deduped)}
 
 
 def main() -> None:
@@ -129,8 +136,10 @@ def main() -> None:
     if has_metrics:
         pop = population(a.project, a.databank, cfg)
         output.population(out, "isOos", pop["result"], title,
-                          f"{pop['counts']['strategies']:,} estrategias · "
-                          f"{pop['source']['origin']} · exportado {pop['source']['exported']}.")
+                          f"{pop['counts']['strategies']:,} estrategias "
+                          f"({pop['counts']['duplicates_dropped']} duplicadas por métricas OOS "
+                          f"descartadas) · {pop['source']['origin']} · "
+                          f"exportado {pop['source']['exported']}.")
         # The explorer recomputes every statistic in the browser as a filter changes; it stays
         # until the window has an IS/OOS zone that filters, and is the last page that needs one.
         (out / "explorer.html").write_text(pop["explorer"], encoding="utf-8")
@@ -144,8 +153,9 @@ def main() -> None:
         source["harvest"] = str(folder.resolve())
         inputs.append(str((folder / "trades.parquet").resolve()))
         print(f"{counts['trade_strategies']} estrategias IS contra OOS por operación "
-              f"({counts['trade_skipped_one_sample']} sin una de las dos muestras) "
-              f"-> {out / 'estrategias'}")
+              f"({counts['trade_skipped_one_sample']} sin una de las dos muestras, "
+              f"{counts['trade_duplicates_dropped']} con trades OOS idénticos a otra "
+              f"estrategia) -> {out / 'estrategias'}")
     manifest.write(out, dict(source, input=inputs[0], inputs=inputs, overrides=a.set),
                    " ".join(["python3 -m studies.screening.isOos.report", "--project",
                              a.project, "--databank", a.databank, *a.set]), counts)
