@@ -1,12 +1,14 @@
 ---
 q: export cross-market retest trades; data=all additional markets one CSV per strategy; Symbol separator; where OOS starts in retest export; missing market file; export_retest --limit sample; long-only fleet
-tag: 🔬  date: 2026-09-21  see: export/data-all-blocks, export/fill-and-pricing, conditions/retest-additional-markets
+tag: 🔬  date: 2026-09-21  see: export/data-all-blocks, export/fill-and-pricing, conditions/retest-additional-markets, export/export-retest-batch-tag
 ---
 # `data=all` writes main + every AdditionalMarket into one CSV per strategy; `Symbol` splits them
 - `sqx/export/export_retest.py` does the split; `orders.bin` never needs parsing. `Ticket` restarts per block — not a key across markets.
 - The export carries no OOS boundary (all rows `IST`): read it from the project and declare it.
 - No trades on a market → no file for it. Treat absence as a result (`missing`), not a missing input.
 - Both export commands drive the worker, never the master — safe with the master GUI open.
+- Two steps retesting the same databank the same day overwrite each other's `trades.parquet`
+  unless each passes its own `--batch` tag → `export/export-retest-batch-tag`.
 
 ## Evidence
 - In the `.sqx`: `Results/AdditionalMarket: <feed>: <feed>/dailyEquity.bin`, `<Result resultKey="AdditionalMarket: ...">`

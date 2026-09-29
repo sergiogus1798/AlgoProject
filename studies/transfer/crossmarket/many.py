@@ -8,6 +8,7 @@ import pandas as pd
 
 from core import fanout, tradestore
 from core.study import blocks, result as envelope
+from studies.transfer.crossmarket.inputs.config import batch as batch_cfg
 from studies.transfer.crossmarket.mechanics import envelope as window
 from studies.transfer.crossmarket.orchestrate import market as market_run
 from studies.transfer.crossmarket.simulate import backtest
@@ -107,7 +108,7 @@ def run(inputs: dict, cfg: dict, workers: int = 0) -> dict:
     assert cfg["nulls"]["headline"] == "block_shift", (
         "el lote adapta el tamaño de tanda a cada mercado, y sólo block_shift da los mismos "
         "sorteos con cualquier tanda; los otros modelos cambiarían con ella")
-    cfg = {**cfg, "nulls": {**cfg["nulls"], "draws": cfg["nulls"]["batch_draws"]}}
+    cfg = batch_cfg(cfg)
     feeds = {m["feed"] for m in inputs["universe"]["markets"]}
     trades = inputs["trades"][inputs["trades"]["Symbol"].isin(feeds)]
     counts = trades.groupby(["strategy", "Symbol"], observed=True).size()

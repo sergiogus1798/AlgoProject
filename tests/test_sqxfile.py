@@ -26,7 +26,11 @@ def parse() -> dict:
     return {"identity": sqxfile.identity(FIXTURE),
             "symbol": list(sqxfile.symbol(FIXTURE)),
             "parameters": sqxfile.parameters(FIXTURE),
-            "blocks": {f"{c}/{k}": n for (c, k), n in sorted(blocks.items(), key=str)}}
+            "blocks": {f"{c}/{k}": n for (c, k), n in sorted(blocks.items(), key=str)},
+            # Known-answer (OPEN #17): 4 ParamTypePeriod + 3 ParamTypeExitUsed by hand count
+            # in strategy_Portfolio.xml's <Variables>, MagicNumber and the two signal
+            # variables excluded — never SQX's frozen ParameterCount.
+            "param_count": sqxfile.param_count(FIXTURE)}
 
 
 def main() -> None:

@@ -41,5 +41,6 @@
     "other/EnterAtMarket": 1,
     "simpleRules/AroonCrossesBelow": 1,
     "None/AND": 1
-  }
+  },
+  "param_count": 7
 }

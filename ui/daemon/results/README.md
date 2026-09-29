@@ -14,16 +14,17 @@ the command a `↻ solo …` job runs, which writes one partial result beside th
 | `__init__.py` | Names the package; holds no code | — | — |
 | `catalogue.py` | Every study: family, Spanish title, WORKFLOW step, **role** (gate vs describe, one justified line each), `one/many/runnable/why_not` from `ui.daemon.runner.table` (one source with the runner), `source` (`reports` or `batch`) | imported | — → rows |
 | `knobs.py` | A study's config through **its own loader** (so the hash matches what the study signs), the drawer's knobs with their tooltips, the hash a run would sign | imported | study + overrides → config, hash |
+| `forproject.py` | The knobs as the window runs them for one project: `SET`, the ones the runner fills by `--set` (entryQuality, conditionalMap: feed, symbol, timeframe) shown with the project's value and a `note`; `KEPT`, the ones it leaves at the file's value (cloud's `run.symbol`, exposure's `study.timeframe`, the gate's `monkey.timeframe`) marked `warn` when the project differs | imported | study, sections, project → sections |
 | `store.py` | Which days hold a study, one result read (or the reason it is not a contract result) with its `partials` — the re-runs kept beside it —, slim rows, `verdict.csv` (verdicts and every column) and a result's table blocks cached by file version and reader, verdict words on the five-state scale | imported | disk → dicts |
 | `rerun.py` | One sub-test alone (crossmarket: a market; monteCarlo: a test by its title) written to `<study>/parciales/<stamp>_<only>/estrategias/<S>.json` beside the newest full result, never over it (OPEN §54) | `python3 -m ui.daemon.results.rerun --study crossmarket --project P --databank D --asset USDJPY --day YYYY-MM-DD --strategy S --only FEED` | export → partial JSON + HTML |
-| `runs.py` | One stored result with `stale`, and every run of a study, for the population or one strategy | imported | query → result + meta |
+| `runs.py` | One stored result with `stale`, and every run of a study, for the population or one strategy. For `cloud`/`wfc`/`cscv` on a mother it reads `<batch>/estudios/<study>.json` through `ui.daemon.databank.batches` instead of `reports/` (OPEN #51) | imported | query → result + meta |
 | `matrix.py` | The population matrix: every strategy of one databank × every study, keyed by identity | imported | databank → cells |
 | `api.py` | The seven routes, as `ROUTER` | imported | request → JSON |
 
 ## Routes
 
 `GET /api/catalogue` · `GET /api/result?project&databank&study&strategy=&identity=&day=` ·
-`GET /api/history?project&databank&study&strategy=&identity=` · `GET /api/config?study` ·
+`GET /api/history?project&databank&study&strategy=&identity=` · `GET /api/config?study&project=` (with a project, `forproject.apply`) ·
 `POST /api/config/hash {study, overrides}` · `GET /api/matrix?project&databank` ·
 `GET /api/projects`. Shapes as `scratch/ui-plan/SPEC.md` §2, plus these fields:
 `meta.skipped` and `history.skipped` (newer days passed over, each with its reason),
@@ -55,9 +56,12 @@ the strategy's archived version answers through `ui.daemon.strategy.archived`, c
   `verdict.csv` without `strategy`/`verdict` (the Monte Carlo's tier tables), a folder that is not
   a catalogue study (`curate`, `monteCarlo_portfolio`) or a row with no identity (`edgeCost` and
   the older `crossmarket` tables carry none) are skipped with a Spanish reason and a count.
-- **Studies that read a variant batch are not here.** `cloud`, `wfc` and `cscv` write into the
-  batch's `estudios/`, not under `reports/`, so `/api/result` and the matrix do not reach them;
-  the databank panel does (`ui/daemon/databank/batches.py`, by the mother's name).
+- **Studies that read a variant batch write into the batch's `estudios/`, not `reports/`.**
+  `cloud`, `wfc` and `cscv` are keyed by the mother's name, not by day. The databank panel reads
+  them across every mother (`ui/daemon/databank/batches.py`); `/api/result` and `/api/history`
+  reach the same folder for one mother (`runs._batch_path`, OPEN #51 — before 2026-09-29 they
+  always answered `None` for these three). The population matrix still does not: a databank's
+  population is not the set of its mothers.
 - **Caches are keyed by file version.** A result's JSON is parsed once per (path, mtime);
   a config once per newest mtime of any YAML under `studies/ engines/ ledger/ portfolio/
   assets/`. `feedQuality`'s loader costs ~2 s uncached, which is why.

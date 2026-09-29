@@ -46,11 +46,15 @@ def main() -> None:
     ap.add_argument("--role", help="headless install holding the project; the master if absent")
     ap.add_argument("--limit", type=int, default=0,
                     help="export a reproducible random sample of this many strategies")
+    ap.add_argument("--batch", default="",
+                    help="step tag, e.g. structure or stopgrid — several steps can retest the "
+                         "same databank the same day; without a tag the later export overwrites "
+                         "the earlier one's trades.parquet")
     a = ap.parse_args()
 
     install = worker_dir(a.role) if a.role else MASTER
     day = date.today().isoformat()
-    work = export_dir(a.project, "_staging", day)
+    work = export_dir(a.project, "_staging", day, a.batch)
     # Each databank's copies carry its position as a prefix: SQX names a CSV after its file
     # (knowhow/sqx-format/loaded-name-is-filename.md), and two legs of one batch hold the
     # same strategy names. The prefix is what splits the CSVs back afterwards.
@@ -67,13 +71,14 @@ def main() -> None:
         mine.mkdir()
         for csv in (work / "raw").glob(f"{i}__*.csv"):
             csv.rename(mine / csv.name[len(f"{i}__"):])
-        pack(mine, len(timeframes[i]), export_dir(a.project, db, day),
+        pack(mine, len(timeframes[i]), export_dir(a.project, db, day, a.batch),
              {"install": str(install), "project": a.project, "databank": db, "data": "all",
               "timeframes": sorted(set(timeframes[i].values())), "limit": a.limit,
-              "sample_seed": SAMPLE_SEED if a.limit else None},
+              "batch": a.batch or None, "sample_seed": SAMPLE_SEED if a.limit else None},
              f"export_retest.py --project {a.project} --databank {db}"
+             + (f" --batch {a.batch}" if a.batch else "")
              + (f" --limit {a.limit}" if a.limit else ""))
-        sign(work / "strategies", export_dir(a.project, db, day), f"{i}__")
+        sign(work / "strategies", export_dir(a.project, db, day, a.batch), f"{i}__")
     # The CSVs orderstocsv wrote and the .sqx copies are intermediates; only identity.csv
     # outlives them — a WFC batch of 5000 variants must not keep its .sqx three times.
     shutil.rmtree(work)

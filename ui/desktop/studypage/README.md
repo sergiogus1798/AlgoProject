@@ -6,12 +6,14 @@ configuration drawer, the run bar, the history and the two comparisons. It follo
 and talks to the daemon only (`/api/catalogue`, `/api/result`, `/api/history`, `/api/config`,
 `/api/config/hash`, `/api/matrix`, `/api/projects`, `/api/study/run`, `/api/study/only`,
 `/api/jobs`, `/api/jobs/{id}/cancel`). The strategy page opens on a fixed first tab «Ficha»
-(`/api/tearsheet`, `/api/tearsheet/exits`, `/api/tearsheet/market`, and H2's
-`ui.desktop.tradegallery`), which is not a study: no run bar, no drawer, no history.
+(`/api/tearsheet`), which is not a study: no run bar, no drawer, no history. Its «Salidas»,
+«Contra el subyacente» and «Operaciones» sub-tabs were removed by the owner on 2026-09-28; the
+routes and `ui.desktop.tradegallery` stay for PORTFOLIOS' archived sheets.
 
 ```
-views.StrategyPage ─▶ ficha.Ficha ─▶ IS/OOS · Salidas · Contra el subyacente (ResultView, IS beside OOS)
-                   │                 └ Operaciones (tradegallery.TradeGallery, imported lazily)
+views.StrategyPage ─▶ ficha.Ficha ─▶ «Excluir top X% de trades» · «Drawdown en % | $»
+                   │                 ├ IS/OOS (ResultView, IS beside OOS; the switches ask again)
+                   │                 └ Lote (batchview.BatchTab, only for a mother)
 views.StrategyPage ─▶ page.StudyPage ─▶ blocks.ResultView
                                                ├ drawer.Drawer   (knobs, reset, hash match)
                                                ├ runbar.RunBar   (▶ ▶▶ ↻, one job, polling)
@@ -25,7 +27,7 @@ views.StrategyPage ─▶ page.StudyPage ─▶ blocks.ResultView
 |---|---|---|---|
 | `__init__.py` | Names the package; holds no code | — | — |
 | `views.py` | `StrategyPage` (scope one, the «Ficha» as its first family tab, `open_family(name)` for Estrategia's origin). The population page (`PopulationStudy`) and its zone were retired by F13 of plan 24: a population's result lives in Proyecto's databank panel. `StudyPage(strategy_page=False)` stays only because its branches run through `page`, `notes`, `dots`, `runbar` and `history`: no zone builds it, `tests/test_ui_studypage.py` keeps it working, and removing it is a refactor of this package, not a cut | imported | — |
-| `ficha.py` | `Ficha`: the harvest's sheet of the selected strategy in five sub-tabs (the fifth, «Lote», only for the mother of a variant batch), each filled on first opening; «pendiente» for a route or module not there yet | imported | SELECTION → `/api/tearsheet*` → page |
+| `ficha.py` | `Ficha`: the harvest's sheet of the selected strategy — «IS/OOS» (P&L acumulado, Drawdown, P&L por año) and «Lote» only for the mother of a variant batch —, each filled on first opening; above them «Excluir top X% de trades» (X 5 by default) and «Drawdown en % / $», which ask `/api/tearsheet` again with `top` and `dd`; `sides` is also PORTFOLIOS' | imported | SELECTION → `/api/tearsheet` → page |
 | `page.py` | `StudyPage`: tabs, dots, the result, drawer + history on the right, `open_study(key)` | imported | SELECTION → page |
 | `drawer.py` | Every knob by section, in the glossary's words (`glossary.knob`; the raw key `--set` takes in its tooltip), its sentence visible and on hover, typed editors, reset, the next run's hash against the shown result's | imported | `/api/config` → `--set` list |
 | `runbar.py` | ▶ esta estrategia · ▶▶ toda la población · ↻ solo …; one job at a time, percent/state every 2 s while it runs, cancel, errors | imported | press → job → `finished` |
@@ -56,9 +58,13 @@ Grabs in `scratch/ui-plan/shots/E-*.png`. The Ficha: `python3 tests/test_ui_tear
   strategy (measured 2026-09-26). No result here says so; it never falls back elsewhere.
 - **`meta.skipped` is shown**, in amber, day by day with its reason — «otra estrategia con el
   mismo nombre» is how a name collision becomes visible instead of silently drawn.
-- **cloud, wfc, cscv write into the variant batch**, not `reports/`: the catalogue marks them
-  `source: "batch"` and the page says «se lee desde el lote de variantes — aún no conectado»
-  (`notes.absent`). When the daemon reads batches, the catalogue changes, not this page.
+- **cloud, wfc, cscv write into the variant batch**, not `reports/`: the catalogue still marks
+  them `source: "batch"`. On a mother's strategy page `ui.daemon.results.runs.result`/`.history`
+  now read `<batch>/estudios/<study>.json` through `ui.daemon.databank.batches.batches`
+  (OPEN #51, 2026-09-29), so the page shows the result like any other study and never reaches
+  `notes.absent`. On the population page, or a strategy that is not a mother (or is the mother of
+  two batches), there is still no result, and the page says «se lee desde el lote de variantes —
+  aún no conectado» (`notes.absent`).
 - **The drawer's edits reach only the next run**, as `--set`; they are kept per study while the
   page lives and forgotten by «restablecer». The hash shown is `POST /api/config/hash` of those
   edits; `entryQuality` and `conditionalMap` get extra `--set` from the runner (feed, timeframe),

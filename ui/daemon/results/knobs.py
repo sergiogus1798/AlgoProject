@@ -37,6 +37,14 @@ LOADERS = {
     "spread": "studies.data.spread.inputs:config",
 }
 
+# A study whose population run signs a config that differs from what LOADERS reads, because
+# it substitutes one knob before fingerprinting (crossmarket: `nulls.draws` -> `nulls.
+# batch_draws`, `many.run`'s own docstring). Absent here, the population and per-strategy
+# scopes sign the same config. OPEN #52: without this, a population result always read stale.
+LOADERS_POPULATION = {
+    "crossmarket": "studies.transfer.crossmarket.inputs.config:population",
+}
+
 # Prose copied into reports, not a knob: the gate's screens each carry a `why`.
 NOT_KNOBS = ("why",)
 
@@ -46,10 +54,10 @@ TYPES = {bool: "bool", int: "int", float: "float", str: "str", list: "list"}
 # the ledger's frozen thresholds. Any YAML there changing invalidates every cached config.
 SOURCES = ("studies", "engines", "ledger", "portfolio", "assets")
 
-# study -> (version, config with no overrides). The feed-quality loader re-reads the
-# ledger once per reference and takes ~2 s; the catalogue and every staleness check ask
-# for the same config again and again.
-_BASE: dict[str, tuple[float, dict | None]] = {}
+# (study, population) -> (version, config with no overrides). The feed-quality loader
+# re-reads the ledger once per reference and takes ~2 s; the catalogue and every staleness
+# check ask for the same config again and again.
+_BASE: dict[tuple[str, bool], tuple[float, dict | None]] = {}
 
 
 def _version() -> float:
@@ -61,28 +69,32 @@ def _version() -> float:
     return max(p.stat().st_mtime for d in SOURCES for p in (ROOT / d).rglob("*.yaml"))
 
 
-def _load(key: str, overrides: list[str]) -> dict | None:
+def _load(key: str, overrides: list[str], population: bool = False) -> dict | None:
     """The study's own loader, called.
 
     Args:
         key: Study key.
         overrides: "section.key=value" strings.
+        population: Use `LOADERS_POPULATION`'s loader when the study has one — what a
+            population run of it actually signs, if that differs from `LOADERS`'.
 
     Returns:
         The parsed config, None for a study without one.
     """
-    if key not in LOADERS:
+    table = LOADERS_POPULATION if population and key in LOADERS_POPULATION else LOADERS
+    if key not in table:
         return None
-    module, function = LOADERS[key].split(":")
+    module, function = table[key].split(":")
     return getattr(importlib.import_module(module), function)(overrides)
 
 
-def config(key: str, overrides: list[str]) -> dict | None:
+def config(key: str, overrides: list[str], population: bool = False) -> dict | None:
     """The study's config as its next run would read it.
 
     Args:
         key: Study key.
         overrides: "section.key=value" strings, as --set takes them.
+        population: As `_load`.
 
     Returns:
         The parsed config, or None for a study without one. A bad override raises, as
@@ -90,11 +102,12 @@ def config(key: str, overrides: list[str]) -> dict | None:
         changed, copied so no caller can alter the cached one.
     """
     if overrides:
-        return _load(key, overrides)
+        return _load(key, overrides, population)
     version = _version()
-    if key not in _BASE or _BASE[key][0] != version:
-        _BASE[key] = (version, _load(key, []))
-    return copy.deepcopy(_BASE[key][1])
+    cache_key = (key, population)
+    if cache_key not in _BASE or _BASE[cache_key][0] != version:
+        _BASE[cache_key] = (version, _load(key, [], population))
+    return copy.deepcopy(_BASE[cache_key][1])
 
 
 def _leaves(node: object, path: str) -> list[tuple[str, object]]:
@@ -159,15 +172,16 @@ def sections(key: str) -> dict:
             "hash": fingerprint(cfg)}
 
 
-def signed(key: str, overrides: list[str]) -> str | None:
+def signed(key: str, overrides: list[str], population: bool = False) -> str | None:
     """The hash the next run would sign with these overrides.
 
     Args:
         key: Study key.
         overrides: "section.key=value" strings.
+        population: As `config` — the population scope's loader when the study has one.
 
     Returns:
         16 hex characters, None for a study without a config.
     """
-    cfg = config(key, overrides)
+    cfg = config(key, overrides, population)
     return fingerprint(cfg) if cfg is not None else None

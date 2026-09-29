@@ -63,9 +63,15 @@ def newest(project: str, databank: str) -> Path:
         databank: Databank name as SQX shows it.
 
     Returns:
-        Its `trades.parquet`.
+        Its `trades.parquet`. Prefers an export tagged `--batch stopgrid`
+        (`sqx.export.export_retest`) over the untagged layout an older export used, so a
+        same-day structural export (step 23, tag `structure`) into the same databank cannot
+        shadow this one.
     """
     folder = DATA / "raw" / project / databank.replace(" ", "_")
+    tagged = sorted(folder.glob("*/stopgrid/trades.parquet"))
+    if tagged:
+        return tagged[-1]
     return sorted(folder.glob("*/trades.parquet"))[-1]
 
 

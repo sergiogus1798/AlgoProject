@@ -40,7 +40,10 @@ def frame(files: dict[str, Path]) -> pd.DataFrame:
         One row per strategy: `Strategy Name`, `Filters result` (SQX's own filter note, empty
         when no task filtered it; the readers drop text columns anyway), `TimeFrame (IS)`,
         then every column of both sample blocks with its ` (IS)`/` (OOS)` suffix, as the view
-        emits them — the block a task did not fill carries SQX's zeros.
+        emits them — the block a task did not fill carries SQX's zeros. `Param Count (IS)` is
+        overwritten with `sqxfile.param_count(f)` (OPEN #17: SQX's own value is frozen at
+        whichever `compute()` first ran under, often the old, inflated definition), and
+        `Param Count source` names where it came from.
     """
     rows = []
     for name, f in files.items():
@@ -49,5 +52,12 @@ def frame(files: dict[str, Path]) -> pd.DataFrame:
                "TimeFrame (IS)": sqxfile.symbol(f)[1].rsplit("_", 1)[-1]}
         for block, cols in VIEW.items():
             row.update({f"{col} {LABEL[block]}": st.get(block, {}).get(key, 0) for col, key in cols})
+        # SQX freezes ParameterCount into the result it was computed under and never
+        # recomputes it (OPEN #17): every strategy built before 2026-09-06 still carries the
+        # old, inflated count. Replaced with the Python mirror off the definition itself
+        # (core.sqxfile.param_count), right for a strategy of any age; `Param Count source`
+        # says so rather than passing the number off as SQX's own.
+        row["Param Count (IS)"] = sqxfile.param_count(f)
+        row["Param Count source"] = "python (core.sqxfile.param_count)"
         rows.append(row)
     return pd.DataFrame(rows)

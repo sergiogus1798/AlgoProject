@@ -24,6 +24,8 @@ UI_PORT = _CFG.get("ui_port", 8765)
 # installed; its tester reports and exports go under the data root, never into the prefix.
 MT5_PREFIX = Path(_CFG.get("mt5_prefix", "~/Desktop/MT5")).expanduser()
 MT5_DATA = DATA / "mt5"
+CLAUDE_BIN = Path(_CFG.get("claude_bin") or max(  # «Crear la plantilla con Claude»; else VS Code's
+    Path("~/.vscode/extensions").expanduser().glob("anthropic.claude-code-*/resources/native-binary/claude"), default="claude")).expanduser()
 STRATEGY_POOLS = {name: Path(p).expanduser()
                   for name, p in (_CFG.get("strategy_pools") or {}).items()}
 
@@ -116,18 +118,21 @@ def view_file(name: str, install: Path = MASTER) -> Path:
     return install / VIEWS_REL / f"{name}.vw"
 
 
-def export_dir(project: str, databank: str, day: str) -> Path:
+def export_dir(project: str, databank: str, day: str, batch: str = "") -> Path:
     """Where one export of one databank lands.
 
     Args:
         project: Project name.
         databank: Databank name.
         day: Export date as YYYY-MM-DD.
+        batch: Step tag so same-day exports of the same databank do not collide; "" is the
+            old flat layout.
 
     Returns:
         Path under the data root. Created by the caller, never by this module.
     """
-    return DATA / "raw" / project / databank.replace(" ", "_") / day
+    base = DATA / "raw" / project / databank.replace(" ", "_") / day
+    return base / batch if batch else base
 
 
 def metrics_export(project: str, databank: str) -> Path:
@@ -154,9 +159,8 @@ def harvest_dir(project: str, databank: str, day: str) -> Path:
         day: Harvest date as YYYY-MM-DD.
 
     Returns:
-        Path under the data root. Dated and immutable, like raw/, and separate from it
-        because the three files here were taken in one pass from one state of the
-        databank: a gate verdict is only reproducible against the set it was judged on.
+        Path under the data root. Dated and immutable like raw/, and separate from it: a
+        gate verdict is only reproducible against the set it was judged on.
     """
     return DATA / "harvest" / project / databank.replace(" ", "_") / day
 
@@ -212,8 +216,7 @@ def feed_quality_dir(feed: str = "") -> Path:
             that holds the calendar and the calibration.
 
     Returns:
-        Path under the data root. The step-4 preflight reads the summary written here, so a
-        feed that was never scanned simply has no warning to give.
+        Path under the data root; the step-4 preflight reads the summary written here.
     """
     return DATA / "feedQuality" / feed
 
@@ -222,9 +225,7 @@ def perf_dir() -> Path:
     """Where the performance catalogue keeps its history.
 
     Returns:
-        Path under the data root. It holds one row per measurement, appended forever: the
-        point of the catalogue is the comparison between dates, so nothing here is ever
-        overwritten.
+        Path under the data root. One row per measurement, appended forever, never rewritten.
     """
     return DATA / "profiling"
 

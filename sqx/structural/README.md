@@ -20,8 +20,10 @@ name fields and the `<Fingerprint>` removal are `sqx.variants.build.rewrite.vari
 ## The run is not here
 
 `python3 -m sqx.variants.execute --work <batch> --project <P>` retests the batch on the custodian's
-three WFC legs, one job, and stops it. `sqx.export.export_retest` then exports the three legs' trades with one SQX start (`--databank` repeated).
-The whole sequence, with a real output, is `docs/manual/06-lecturas.pdf` (cap. 51-estructura).
+three WFC legs, one job, and stops it. `sqx.export.export_retest` then exports the three legs' trades
+with one SQX start (`--databank` repeated), tagged `--batch structure` so step 24's stop-grid export
+into the same databanks the same day does not overwrite these (OPEN #74; `studies.readings.structure.inputs.latest`
+looks for that tag first). The whole sequence, with a real output, is `docs/manual/06-lecturas.pdf` (cap. 51-estructura).
 
 ## What was measured, 2026-09-26 (USDJPY `Strategy 23.1.53`, knowhow/sqx-format/rewriting-strategy-logic.md)
 
