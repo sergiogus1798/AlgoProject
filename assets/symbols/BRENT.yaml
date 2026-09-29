@@ -34,16 +34,16 @@ costs:
   commission:
     use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
       build:
-        method: PercentageBased
-        value: 0.005
+        method: SizeBased
+        value: 1.0
       oos1:
-        method: PercentageBased
-        value: 0.005
+        method: SizeBased
+        value: 1.0
       oos2:
-        method: PercentageBased
-        value: 0.005
+        method: SizeBased
+        value: 1.0
     sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
-    why: "2026-09-29 — el dueño corrige el reparto por tramo: en un activo no_forex con comisión confirmada TODO el workflow de SQX (build y cada retest — OOS, crossmarket, MC Retest, SPP, WFM, variantes...) usa la % de Darwinex, 0.005 % del nocional, en los tres tramos por igual. Ya no se elige el bróker más caro tramo a tramo (per_segment queda retirado de ese papel); Darwinex es la referencia del spread y la más citada en el árbol de costes, así que fija el desarrollo. Forex sigue en 5 USD/lote SizeBased en los tres tramos; índices en 0 %: ninguno de los dos cambia. core.commission.broker_pct sigue dando la % propia de cada bróker para el paso 26 y weeklyReconciler."
+    why: "2026-09-29 — decisión del dueño: en el Brent el workflow de SQX (build y cada retest) usa la comisión de Hantec, 1 USD por lote ida y vuelta (SizeBased), en los tres tramos. Es la más cara de sus brokers en el crudo (Infinox 1 $/lote, Darwinex 0,005 % ≈ 0,5 $/lote a 100 $, FTMO 0); el 0,005 % de Darwinex que usan oro y plata cobraría aquí la mitad."
     brokers:
       ftmo:
         method: SizeBased
