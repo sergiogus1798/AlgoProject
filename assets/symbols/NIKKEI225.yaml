@@ -43,7 +43,64 @@ costs:
   commission:
     use: 0.0                  # % del nocional
     sqx_now: {method: SizeBased, value: 1}   # $ por lote — HAY QUE PASARLO A %
-    why: "2026-09-27 — decisión del dueño: los índices en la cuenta raw no pagan comisión."
+    why: "2026-09-29 — most_restrictive de los brokers confirmados (owner, 2026-09-29): FTMO es el único confirmado (comisión cero explícita en todos los símbolos de índice) a falta de cifra propia de Darwinex/Infinox/Hantec/the5ers/FundedNext/FundingPips en índices; se mantiene en 0, como ya llevaba, pero ahora respaldado por una fuente y no por \"usar el default de SQX\". Si algún bróker confirma una comisión > 0 en índices, este valor sube. `core.commission.most_restrictive` + `use_value`."
+    brokers:
+      ftmo:
+        method: SizeBased
+        value: 0.0
+        unit: usd_per_lot
+        source: https://ftmo.com/en/blog/zero-commissions-on-indices/
+        date: 2025-08-01 (publicado; comprobado 2026-09-29)
+        confirmed: true
+        note: '"this zero-commission advantage applies to all index symbols" — explícito, todos los índices'
+      darwinex:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: página propia dice que "hay diferencias importantes" por activo mas no da cifra para índices; la tabla de spreads de índices no cargó en el fetch
+      infinox:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dan $2/lote en índices; sin página propia confirmable
+      hantec:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: tabla propia sólo lista forex
+      the5ers:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dicen comisión cero en índices; sin cifra en página propia
+      fundednext:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: página propia confirmada sólo detalla cripto/metales/acciones
+      fundingpips:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dicen comisión cero en índices; 403 en el fetch propio
   slippage_is:
     use: 303.4               # points — tramo(s) build
     sqx_now: 0.0

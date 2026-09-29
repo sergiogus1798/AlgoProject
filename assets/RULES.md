@@ -143,10 +143,11 @@ a SQX task carries, and **raises rather than inventing** when the dates are null
 |---|---|---|
 | `build` | generation. The only sample the builder ever sees | `is` |
 | `oos1` | everything from the retest through the SPPs | `oos` |
-| `oos2` | **reserved** for Walk Forward Correlation and Matrix, the last tests | `oos` |
+| `oos2` | the last out-of-sample: WFC, CSCV, market surfaces, WFM, ATR stop | `oos` |
 
-`reserved_for` marks a segment whose data is spent by looking at it. The preflight prints it with a
-warning, because pointing an ordinary task at a holdout is a one-way door.
+`reserved_for` binds only an autonomous agent (`ALGO_AUTONOMOUS=1`, `core.assetdata.enforced`):
+owner, 2026-09-28, a human may look at any segment whenever. Under that flag the preflight prints
+it with a warning and `ledger.gate` refuses other steps.
 
 **Why per asset.** Histories do not start together: gold has M1 from 2003-05-05 and is built from
 2008, while the DAX40 has nothing before 2013-09-30 and a 2008 window would silently run short.
@@ -194,6 +195,52 @@ is `python3 -m core.assets <SYMBOL>` and its exit code.
 
 The one writer is `core.assetwrite`. Nothing else in the project writes these files, and a second
 writer is how a comment gets lost.
+
+## The per-broker commission table, and the development default it decides
+
+Owner, 2026-09-29: every asset's `costs.commission` carries a `brokers:` table, one entry per
+firm this project trades or funds with — Darwinex (the spread reference), Infinox, FTMO, Hantec
+Trader, the5ers, and whichever of `AlgoData/funding/firms.yaml` is active or a candidate
+(FundedNext, FundingPips). `commission.use` is **not** any one broker's own figure: it is the
+**development default** SQX builds and retests against, computed as the **most restrictive**
+(most expensive) confirmed broker, so a strategy authored at it is never cheaper in SQX than the
+worst account it might actually run on. The per-broker figures still matter on their own for the
+step-26 final test on each firm's feed and for `weeklyReconciler`'s SQX-vs-live check.
+
+```yaml
+costs:
+  commission:
+    use: 0.005            # the development default — computed, never typed by hand
+    sqx_now: {...}
+    why: "…"
+    brokers:
+      darwinex: {method: PercentageBased, value: 0.005, unit: pct_of_notional,
+                 source: https://help.darwinex.com/execution-costs, date: 2026-09-29, confirmed: true}
+      infinox:  {method: null, value: null, unit: null, source: null, date: 2026-09-29,
+                 confirmed: false, note: "aggregators report $7/lot forex&gold; infinox.com's own
+                 pricing page redirects/renders client-side and would not confirm it"}
+```
+
+**A figure is `confirmed: true` only off the firm's own page** (never an aggregator, a review
+site or a forum), with its `source` URL and the `date` it was read. Read it once, in the same
+task as everything else that touches `assets/` — never guessed, never left half-typed.
+
+**Comparing a `%` broker against a `$/lot` one needs a price**, because only one of the two
+scales with it. `core.commission.most_restrictive(brokers, prices, point_value)` prices every
+confirmed broker in dollars at each charged segment's own median price (`build`, `oos1`, `oos2`
+— the same figures `studies.data.spread.onboard` already computes and caches under
+`AlgoData/spread/<feed>/summary.json`'s `proposal`) and takes whichever broker charges most in
+the segment where they disagree **most** — not the cheapest segment, and not an average, both of
+which can hide the segment that actually decides it. `core.commission.use_value` turns that
+winner back into `use`'s own unit: unchanged for a forex asset (`use` is already one flat $/lot),
+converted back to a % at the winning segment's price for a `no_forex` one — a `PercentageBased`
+winner returns its own declared % exactly, since a percentage does not need the round trip.
+
+**Without a cached median price, the comparison does not run** rather than guess one: nine of the
+ten forex pairs (every the5ers pair but USDJPY) have no `summary.json` yet, so their `brokers:`
+table is written and their figures are ready to compare, but `use` is left as it was until
+`studies.data.spread.scan` gives them a price. `core.assets`' report prints the per-broker table
+so this gap is visible without opening the file. → `knowhow/costs/commission-per-broker.md`.
 
 ## Adding an asset
 

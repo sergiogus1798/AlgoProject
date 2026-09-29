@@ -1,4 +1,7 @@
-"""The only writer of assets/: one value, one cost, or a whole asset in or out of the library."""
+"""The only writer of assets/: one value, one cost, or a whole asset in or out of the library.
+
+A folder since 2026-09-29 (rule 1): `brokers.py` holds `set_brokers()`, re-exported below.
+"""
 
 import shutil
 from datetime import date
@@ -8,6 +11,8 @@ import yaml
 from ruamel.yaml.comments import CommentedMap
 
 from core.assetdata import BUILD, CLASSES, MARKETS, POLICY, SYMBOLS, classes
+from core.assetwrite.brokers import set_brokers   # noqa: F401  (re-exported)
+from core.assetwrite.markets import flow, set_market   # noqa: F401  (re-exported)
 from core.assetyaml import read, write
 from core.paths import ASSETS
 
@@ -191,52 +196,6 @@ def restore(symbol: str) -> dict:
 def retired() -> list[str]:
     """Every asset withdrawn from the library, sorted."""
     return sorted(f.stem for f in RETIRED.glob("*.yaml")) if RETIRED.exists() else []
-
-
-def set_market(symbol: str, category: str, feeds: list[dict]) -> dict:
-    """Make one category of one asset's Cross Market check hold exactly these markets.
-
-    Args:
-        symbol: The main asset.
-        category: "family" or "structural".
-        feeds: Every {feed, data_from} it must hold; a removal is a market left out.
-
-    Returns:
-        The category as written. The list is edited in place, not replaced: a market that
-        stays keeps its line and its comments, so adding or removing one is a one-line diff.
-    """
-    path = ASSETS / MARKETS
-    doc = read(path)
-    cats = doc[symbol]["categories"]
-    rows = cats[category]
-    wanted = [f["feed"] for f in feeds]
-    for i in reversed(range(len(rows))):
-        if rows[i]["feed"] not in wanted:
-            del rows[i]
-    rows.extend([flow(f) for f in feeds if f["feed"] not in {r["feed"] for r in rows}])
-    rows.fa.set_block_style() if rows else rows.fa.set_flow_style()
-    if not rows and rows.ca.end:   # an emptied list drops the lines after it: its key keeps them
-        rows.ca.end[0].value = "\n" + "".join(" " * t.column * t.value.startswith("#") + t.value
-                                               for t in rows.ca.end)
-        cats.ca.items.setdefault(category, [None] * 4)[2] = rows.ca.end[0]   # keep its comment above
-    write(path, doc)
-    return {"symbol": symbol, "category": category, "feeds": feeds}
-
-
-def flow(feed: dict) -> CommentedMap:
-    """One market as this file writes them: a flow mapping carrying a real date.
-
-    Args:
-        feed: {feed, data_from} as the window sends it, both as text; no date is `null`.
-
-    Returns:
-        A one-line mapping, like every market the file already holds: a block mapping
-        would make the diff of one added market unreadable.
-    """
-    since = feed["data_from"] and yaml.safe_load(str(feed["data_from"]))
-    one = CommentedMap({"feed": feed["feed"], "data_from": since or None})
-    one.fa.set_flow_style()
-    return one
 
 
 def reindex() -> int:

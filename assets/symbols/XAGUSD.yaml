@@ -40,7 +40,64 @@ costs:
   commission:
     use: 0.008632            # % del nocional
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
-    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (Infinox raw), pasados a % del nocional a la mediana del precio Darwinex de oos1 (2018-2022) 18.535 × 5.000 onzas = 0.008632 %. SQX cobra PercentageBased una vez por operación sobre la apertura (OPEN.md #26). (2026-09-29 — decisión del dueño OPEN.md #36: el precio de referencia de una conversión no_forex es la MEDIANA del precio del tramo cargado, no el último cierre — aquí oos1 2018-2022, el mismo tramo que carga el cross-check de mercados. studies.data.spread.onboard._oos1_price)"
+    why: "2026-09-29 — se añade la tabla `brokers:` (owner, 2026-09-29); most_restrictive da el mismo resultado que ya estaba escrito: Infinox $8/lote sigue siendo el más caro a la única mediana de precio disponible (oos1 2018-2022, 18.535 — no hay `summary.json` de `studies.data.spread.scan` para plata, así que `build` y `oos2` no se pueden comparar todavía). Sin cambio de valor. `core.commission.most_restrictive` + `use_value`."
+    brokers:
+      darwinex:
+        method: PercentageBased
+        value: 0.005
+        unit: pct_of_notional
+        source: https://help.darwinex.com/execution-costs
+        date: '2026-09-29'
+        confirmed: true
+        note: '"Forex & Commodities", misma cifra que oro y forex.'
+      fundednext:
+        method: PercentageBased
+        value: 0.0016
+        unit: pct_of_notional
+        source: https://help.fundednext.com/en/articles/10701368-what-are-the-commission-charges-for-stellar-challenges-and-fundednext-accounts
+        date: '2026-09-29'
+        confirmed: true
+        note: 'metales: Lote x ContractSize x PrecioApertura x 0.0016 %; plata contract 5000'
+      infinox:
+        method: SizeBased
+        value: 8.0
+        unit: usd_per_lot
+        source: decisión del dueño 2026-09-27 (why previo de este fichero)
+        date: '2026-09-27'
+        confirmed: true
+        note: cuenta raw de Infinox, la que este activo ya opera; sin reconfirmar esta sesión (infinox.com no accesible)
+      ftmo:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dicen % del nocional en metales, sin cifra
+      hantec:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: sin cifra propia para plata
+      the5ers:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: sin cifra propia para plata
+      fundingpips:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dan $5/lote (forex y metales); 403 en el fetch propio
   slippage_is:
     use: 5.5                 # points — tramo `build`
     sqx_now: 0.0

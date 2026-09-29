@@ -35,7 +35,63 @@ costs:
   commission:
     use: 8.0                 # $ por lote
     sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
-    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (cuenta raw). SizeBased cobra una vez por operación; el nocional de un par apenas se mueve con los años, así que en USD por lote sigue siendo representativo."
+    why: "2026-09-29 — se mantiene 8 USD por lote ida y vuelta, decisión del dueño del 2026-09-27 (cuenta raw Infinox). La regla de desarrollo es la comisión MÁS cara de todos los brokers (dueño, 2026-09-29); los 8 USD de Infinox cuentan aunque su web no se haya podido leer, porque es la cifra real de su cuenta. Los brokers confirmados en su web (Hantec 5, the5ers 4, Darwinex ≈3,3-4,9) cobran menos, así que no bajan el default. SizeBased cobra una vez por operación."
+    brokers:
+      darwinex:
+        method: PercentageBased
+        value: 0.005
+        unit: pct_of_notional
+        source: https://help.darwinex.com/execution-costs
+        date: '2026-09-29'
+        confirmed: true
+        note: '"Forex & Commodities", 0.005 % del nocional ida y vuelta.'
+      the5ers:
+        method: SizeBased
+        value: 4.0
+        unit: usd_per_lot
+        source: https://the5ers.com/asset-specifications/
+        date: '2026-09-29'
+        confirmed: true
+        note: ''
+      hantec:
+        method: SizeBased
+        value: 5.0
+        unit: usd_per_lot
+        source: https://htrader.hmarkets.com/product-specifications/
+        date: '2026-09-29'
+        confirmed: true
+        note: ''
+      ftmo:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dan $3-5/lote; ftmo.com/en/symbols no renderizó la tabla
+      infinox:
+        method: SizeBased
+        value: 8.0
+        unit: usd_per_lot
+        source: decisión del dueño 2026-09-27 (cuenta raw, 8 USD por lote ida y vuelta)
+        date: '2026-09-27'
+        confirmed: true
+      fundednext:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: no cubre forex en la página propia confirmada
+      fundingpips:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: help.fundingpips.com devolvió 403
   slippage_is:
     use: 0.325                # points — tramo(s) build
     sqx_now: 0.0

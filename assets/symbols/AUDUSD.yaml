@@ -35,7 +35,64 @@ costs:
   commission:
     use: 8.0                 # $ por lote
     sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
-    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (cuenta raw). SizeBased cobra una vez por operación; el nocional de un par apenas se mueve con los años, así que en USD por lote sigue siendo representativo."
+    why: "2026-09-29 — se añade la tabla `brokers:` (owner, 2026-09-29): the5ers $4/lote y Hantec $5/lote confirmados en su propia página, ambos por debajo de los 8 $/lote que ya se aplicaban. Darwinex cobra 0.005 % del nocional en forex, que necesitaría el precio mediano de cada tramo para pasarlo a $/lote y compararlo — este par no tiene aún el `summary.json` de `studies.data.spread.scan`, así que la comparación no se completa y el valor SE MANTIENE en 8 (por encima de los dos brokers $/lote confirmados, así que sigue siendo conservador salvo que Darwinex resultara más caro, lo que no se puede descartar sin ese precio)."
+    brokers:
+      darwinex:
+        method: PercentageBased
+        value: 0.005
+        unit: pct_of_notional
+        source: https://help.darwinex.com/execution-costs
+        date: '2026-09-29'
+        confirmed: true
+        note: '"Forex & Commodities", 0.005 % del nocional ida y vuelta (misma cifra para todos los pares); necesita el precio mediano del tramo para compararla en $/lote — sin él no entra en el cómputo de most_restrictive.'
+      the5ers:
+        method: SizeBased
+        value: 4.0
+        unit: usd_per_lot
+        source: https://the5ers.com/asset-specifications/
+        date: '2026-09-29'
+        confirmed: true
+        note: forex, $4/lote ida y vuelta; la pestaña de metales/índices no cargó contenido en el fetch
+      hantec:
+        method: SizeBased
+        value: 5.0
+        unit: usd_per_lot
+        source: https://htrader.hmarkets.com/product-specifications/
+        date: '2026-09-29'
+        confirmed: true
+        note: tabla de forex, $5/lote ida y vuelta en los 8 pares listados
+      ftmo:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dan $3-5/lote según el par; ftmo.com/en/symbols no renderizó la tabla en el fetch (contenido cargado por JS)
+      infinox:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dan $7/lote forex&oro; infinox.com/*/pricing devuelve demasiadas redirecciones y la home no enlaza una tabla estática
+      fundednext:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dan $3-7/lote según fuente y modelo; la página propia confirmada (help.fundednext.com) sólo detalla cripto/metales/acciones, no forex
+      fundingpips:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dan $5/lote (modelos estándar) o $7 (Zero); help.fundingpips.com devolvió 403 en el fetch
   slippage_is:
     use: 0.425                # points — tramo(s) build
     sqx_now: 0.0

@@ -35,6 +35,63 @@ costs:
     use: 0.0                 # % del nocional
     sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
     why: "PROVISIONAL 2026-09-23 — el maestro lleva SizeBased 0.00: comision CERO. Se conserva porque el dueno pidio usar los valores de SQX, no porque sea creible que un CFD de brent no cobre comision."
+    brokers:
+      ftmo:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dicen "energías sin comisión"; sin página propia con cifra
+      darwinex:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: '"Forex & Commodities" 0.005 % no dice si el crudo cuenta como commodity a estos efectos o va con la tabla de índices/CFDs — ambiguo, no se aplica sin preguntar (regla 11)'
+      infinox:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dan $0.7/lote en crudo; sin página propia confirmable
+      hantec:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: sin cifra propia
+      the5ers:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: sin cifra propia
+      fundednext:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: página propia confirmada no cubre energías
+      fundingpips:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dicen sin comisión en energías; 403 en el fetch propio
   slippage_is:
     use: 8.0                 # points — tramo `build`
     sqx_now: 0.0

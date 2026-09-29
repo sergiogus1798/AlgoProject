@@ -22,6 +22,14 @@ forex:
     unit: usd_per_lot
     sqx_method: SizeBased
     formula: "coste = Commission × size"
+    # `brokers:` vive DENTRO de `costs.commission` de cada activo, junto a `use`/`sqx_now`/`why`
+    # — no es un campo nuevo que `fields()` exija, así que un activo sin él sigue validando.
+    # Un broker por firma que este proyecto usa (owner, 2026-09-29): Darwinex, Infinox, FTMO,
+    # Hantec Trader, the5ers, y las candidatas/activas de `AlgoData/funding/firms.yaml`
+    # (FundedNext, FundingPips). `use` es el más restrictivo de los CONFIRMADOS
+    # (`core.commission.most_restrictive` + `use_value`), nunca a mano — ver
+    # `knowhow/costs/commission-per-broker.md`.
+    brokers_schema: "{<broker>: {method, value, unit, source, date, confirmed, note?}}"
   slippage:
     fields: [slippage_is, slippage_oos]
     unit: points
@@ -56,6 +64,7 @@ no_forex:
     unit: pct_of_notional
     sqx_method: PercentageBased
     formula: "coste = (pct/100) × size × precio_apertura × pointValue"
+    brokers_schema: "{<broker>: {method, value, unit, source, date, confirmed, note?}} — ver forex"
     note: >-
       Escala con el precio sola, que es el motivo de usarla aquí. ⚠️ El snippet sólo cobra en
       computeCommissionsOnOpen; computeCommissionsOnClose devuelve 0. Si el motor la aplica a

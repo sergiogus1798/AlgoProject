@@ -8,8 +8,9 @@ import sys
 
 from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending, provisional,
                              segments_pending, validate)
-from core.assetdata import (MARKETS, POLICY, RESERVED, classes, fields, load, markets, mc_retest,
-                            policy, schema, special_notes, sqx_settings, symbols, window)
+from core.assetdata import (MARKETS, POLICY, RESERVED, classes, enforced, fields, load, markets,
+                            mc_retest, policy, schema, special_notes, sqx_settings, symbols,
+                            window)
 from core.paths import ASSETS, feed_quality_dir
 
 
@@ -25,6 +26,25 @@ def _day(bound: int | object, end: bool) -> str:
     """
     return f"{bound}-12-31" if isinstance(bound, int) and end else (
         f"{bound}-01-01" if isinstance(bound, int) else str(bound))
+
+
+def broker_table(brokers: dict) -> list[str]:
+    """One line per broker the commission table names, for the report.
+
+    Args:
+        brokers: `costs.commission.brokers` of one asset, or `{}` when not written yet.
+
+    Returns:
+        `"<broker>: <method> <value> <unit> — <source>, <date>"`, or `"sin confirmar — <note>"`
+        for an entry this session could not confirm on the firm's own page.
+    """
+    lines = []
+    for name, b in brokers.items():
+        if b.get("confirmed"):
+            lines.append(f"{name}: `{b['method']} {b['value']}` {b['unit']} — {b['source']}, {b['date']}")
+        else:
+            lines.append(f"{name}: sin confirmar — {b.get('note', 'sin fuente propia leída')}")
+    return lines
 
 
 def report(symbol: str) -> str:
@@ -49,11 +69,14 @@ def report(symbol: str) -> str:
         use = spec["use"] if spec["use"] is not None else "SIN DECIDIR"
         lines.append(f"- **{f}**: usar `{use}` {units[f]}"
                      f" (SQX lleva hoy `{spec['sqx_now']}`) — {spec['why']}")
+        for row in broker_table(spec.get("brokers", {})):
+            lines.append(f"    - {row}")
     span = data["data"]
     lines.append(f"- **datos en SQX**: {span['from']} a {span['to']}" if span else
                  f"- **datos en SQX**: ⚠️ NINGUNO — `{data['sqx_symbol']}` no existe")
     for name, seg in data["segments"].items():
-        mark = "  ⚠️ RESERVADO para " + ", ".join(seg[RESERVED]) if RESERVED in seg else ""
+        mark = ("  ⚠️ RESERVADO para " + ", ".join(seg[RESERVED])
+                if RESERVED in seg and enforced() else "")
         if seg["from"] is None or seg["to"] is None:
             lines.append(f"- **segmento {name}**: SIN DECIDIR{mark}")
             continue
