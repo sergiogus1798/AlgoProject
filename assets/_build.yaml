@@ -43,8 +43,9 @@ exits:
   move_sl_to_be: false
 
 # ─── Money management ──────────────────────────────────────────────────────────────────
-# Idéntico en todo el proyecto. ATRMult 4 es lo que lleva el proyecto modelo del dueño
-# (XAUUSD_Breakout_H1); el XAUUSD del maestro lleva 5. Debatible entre 3, 4 y 5.
+# Idéntico en todo el proyecto. ATRMult 4 es lo que llevaba el proyecto modelo del dueño
+# (XAUUSD_Breakout_H1, borrado del maestro 2026-09-29 — OPEN.md #11); el XAUUSD del maestro
+# lleva 5. Debatible entre 3, 4 y 5.
 money_management:
   method: ATRRiskBasedSizingFixedRisk
   params: {Amount: 1000, ATRPeriod: 20, ATRMult: 4, Decimals: 2, LotsIfNoMM: 0.01, MaxLots: 500}
@@ -67,7 +68,8 @@ databank:
 # ─── Precisión del backtest ────────────────────────────────────────────────────────────
 # `testPrecision` en cada <Setup>. 1 = sólo el timeframe elegido, 2 = 1 minuto. Medido
 # 2026-09-23 contra los proyectos del dueño: `Infinox_SP500ft_H4_HighPrecision` está
-# entero a 2 y `XAUUSD_Breakout_H1`, que es el modelo de construcción, entero a 1.
+# entero a 2 y `XAUUSD_Breakout_H1` (modelo de construcción, borrado del maestro
+# 2026-09-29 — OPEN.md #11) estaba entero a 1.
 #
 # El builder construye a timeframe elegido porque a 1 minuto no terminaría nunca, y se
 # apoya en el crosscheck de alta precisión para descartar lo que sólo existe en las barras
@@ -197,9 +199,9 @@ crosstf:
 #                             `oos`, el más caro de los dos declarados—, porque una ventana
 #                             que abarca las dos muestras se lee al precio pesimista.
 #
-#   Valen los nombres de `segments_default` de `_policy.yaml`: hoy `build` y `oos1`.
-#   ⛔ `oos2` NO vale, ni suelto ni en un rango: está reservado al WFC y a la WFM y cada
-#      mirada lo gasta. `sqx/projects/perturbations.py` se niega y dice por qué.
+#   Valen los nombres de `segments_default` de `_policy.yaml`: `build`, `oos1` y `oos2`.
+#   `oos2` sólo se rechaza a un agente autónomo (ALGO_AUTONOMOUS=1): un humano puede mirarlo
+#   cuando quiera (dueño, 2026-09-28).
 mc_retest:
   simulations: 1000            # por defecto; cada tarea puede llevar el suyo
   tasks:
@@ -283,9 +285,8 @@ mc_retest:
 # estudio que recorre el histórico entero, porque la pregunta del CSCV —¿mi forma de elegir
 # parámetros sobreajusta?— necesita toda la historia para poder partirla de 924 maneras.
 #
-# ⚠️ Toca `oos2`, que `_policy.yaml` reserva al WFC y a la WFM. Esto ES el WFC, así que es
-# uno de sus dos consumidores legítimos; `sqx.projects.setups.span` deja pasar el tramo sólo
-# aquí y en la WFM. Cada mirada lo gasta: no se corre "para ver qué sale".
+# Toca `oos2`. Cada lectura queda en el ledger; sólo a un agente autónomo se le limita a los
+# consumidores de `reserved_for` (dueño, 2026-09-28).
 #
 # ─── Por qué TRES tareas y no una ──────────────────────────────────────────────────────
 # Decisión del dueño, 2026-09-24. Una sola tarea que cubriera 2008-2026 llevaría UN spread y
@@ -333,7 +334,7 @@ wfc:
   # plata, y la celda de la plata es la que no vale. `sqx.variants.collect` deja fuera de
   # `metrics.parquet` lo que no llega, lo cuenta y lo canta; la evidencia completa —con
   # los descartados y su recuento— se queda en `segments.parquet`.
-  min_trades_total: 50
+  min_trades_total: 100
   input: WFC_Variants        # el databank donde se cargan las variantes fabricadas
   tasks:
     - {title: WFC 1 IS, segment: build, databank: WFC_Build}
@@ -384,9 +385,7 @@ spp:
 # de verdad —algo entre los 5 de `is` y los 10 de `oos`— haría falta declararlo en
 # `assets/symbols/<SIM>.yaml`, y esa es una cifra que pone el dueño, no el catálogo.
 #
-# ⚠️ `segment: build..oos2` acaba en `oos2`, y eso es una puerta de un solo sentido:
-# `_policy.yaml` reserva ese tramo para el WFC y la WFM, y cada mirada lo gasta. No se corre
-# para "ver qué sale". Los dos puntos significan una sola ventana continua desde el principio
+# `segment: build..oos2` acaba en `oos2`. Los dos puntos significan una sola ventana continua desde el principio
 # de `build` hasta el final de `oos2` —en XAUUSD, 2008.01.01 → 2026.08.30, 18,7 años— porque
 # un walk-forward necesita histórico delante para optimizar antes de correr nada.
 #

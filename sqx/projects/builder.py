@@ -5,6 +5,7 @@ import argparse
 import json
 import re
 import shutil
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -17,63 +18,13 @@ from sqx.projects import crosschecks, registry, source, summary
 from sqx.projects.configure import configure, ignored_templates, running_install
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session
-from sqx.projects.resources import borrow_symbol
+from sqx.projects.patch import set_caps, set_template, sync_databanks
+from sqx.projects.resources import borrow_symbol, main_feed, refuse
 from sqx.projects import workflow as wf
 from xml.etree import ElementTree
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 TEMPLATES_REL = "user/settings/StrategyTemplates"
-SYNCED = "Auto-sync every 1 hour"
-
-
-def set_template(text: str, path: Path) -> str:
-    """Point a Build task at one template and make it actually use it.
-
-    Args:
-        text: A task XML.
-        path: Absolute path of the .sqx inside the install that will build.
-
-    Returns:
-        The task XML with templateFile replaced and StrategyType forced to "template".
-        The second half is the free gate: with type="simple" SQX builds generically and
-        ignores the template, with no error anywhere (OPEN.md issue 9).
-    """
-    text = re.sub(r'templateFile="[^"]*"', f'templateFile="{path}"', text)
-    return re.sub(r'(<StrategyType[^>]*?)type="[^"]*"', r'\1type="template"', text)
-
-
-def set_caps(text: str, strategies: int, minutes: int) -> str:
-    """Cap how much the builder may produce and how long it may run.
-
-    Args:
-        text: A task XML.
-        strategies: MaxStrategies, the databank-full stop.
-        minutes: Wall-clock cap on the run.
-
-    Returns:
-        The task XML with both caps applied. A build with no cap inherits the donor's,
-        which on XAUUSD is 10,000 strategies and 90 minutes.
-    """
-    text = re.sub(r"<MaxStrategies>\d+</MaxStrategies>",
-                  f"<MaxStrategies>{strategies}</MaxStrategies>", text)
-    return re.sub(r'(<StopCondition[^>]*passedStrategies=")\d+("[^>]*hours=")\d+("[^>]*minutes=")\d+',
-                  rf"\g<1>{strategies}\g<2>{minutes // 60}\g<3>{minutes % 60}", text)
-
-
-def sync_databanks(config: str) -> tuple[str, list[str]]:
-    """Make every databank of the project write itself to disk.
-
-    Args:
-        config: The project's config.xml as text.
-
-    Returns:
-        The config and the databanks changed. The donor ships its build outputs as
-        "Auto-sync never", which builds fine and leaves the directory empty, so nothing
-        outside SQX can read the result and /curate has no files to act on.
-    """
-    changed = re.findall(r'<Databank name="([^"]*)"[^>]*syncType="Auto-sync never"', config)
-    return re.sub(r'(<Databank name="[^"]*"[^>]*syncType=")Auto-sync never',
-                  rf"\g<1>{SYNCED}", config), changed
 
 
 def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
@@ -132,6 +83,7 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
     # from any task: every task of a one-asset donor names the same chart.
     tasks = [m for m in members if m.endswith(".xml") and m != "config.xml"]
     build_member = next((m for m in tasks if m.startswith("Build-")), tasks[0])
+    donor_feed = main_feed(members, build_member)
     replaced = (borrow_symbol(members, load(symbol)["sqx_symbol"], build_member, session_from)
                 if session_from else None)
 
@@ -154,30 +106,43 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
         wf.rewire(members)
 
     out = install / "user/projects" / name / "project.cfx"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-        for member, blob in members.items():
-            z.writestr(member, blob)
+    # Staged outside the install first: `configure` can still refuse (a session no task
+    # defines) and the checks below can still refuse (a zero-Setup task, the donor's feed
+    # surviving the swap), and none of that may leave a half-built .cfx sitting in
+    # user/projects — that booby-trapped a USDJPY build on 2026-09-23 (OPEN.md issue 34).
+    # Nothing under `install` is touched until every gate here has passed.
+    with tempfile.TemporaryDirectory(prefix="sqx-builder-") as tmp:
+        staged = Path(tmp) / "project.cfx"
+        with zipfile.ZipFile(staged, "w", zipfile.ZIP_DEFLATED) as z:
+            for member, blob in members.items():
+                z.writestr(member, blob)
 
-    costs = configure(out, symbol, segment, timeframe)
-    if workflow:
-        wf.finish(out, symbol)
-    with zipfile.ZipFile(out) as z:
-        final = {n: z.read(n) for n in z.namelist()}
-    doc = next((c for _, c in costs.values() if c.get("generator")), {})
-    return {"project": name, "install": install.name, "cfx": str(out), "timeframe": timeframe,
-            "exit_bars": doc.get("exit_bars"), "session": load(symbol)["session"],
-            "session_borrowed_from": str(session_from) if session_from else None,
-            "session_borrowed_into": borrowed,
-            "feed": load(symbol)["sqx_symbol"], "feed_replaced": replaced,
-            "template": str(installed_template), "tasks": kept["kept"], "added": added,
-            "databanks": kept["databanks"], "synced_to_disk": synced,
-            "chain": chained,
-            "max_strategies": strategies, "minutes": minutes, "silenced": quiet,
-            "segments": {n: seg for n, (seg, _) in costs.items()},
-            "template_ignored": ignored_templates(final),
-            "provisional_costs": provisional(load(symbol)),
-            "setups": {n: c.get("setups", 0) for n, (_, c) in costs.items()}}
+        costs = configure(staged, symbol, segment, timeframe)
+        if workflow:
+            wf.finish(staged, symbol)
+        with zipfile.ZipFile(staged) as z:
+            final = {n: z.read(n) for n in z.namelist()}
+        doc = next((c for _, c in costs.values() if c.get("generator")), {})
+        result = {"project": name, "install": install.name, "cfx": str(out),
+                 "timeframe": timeframe,
+                 "exit_bars": doc.get("exit_bars"), "session": load(symbol)["session"],
+                 "session_borrowed_from": str(session_from) if session_from else None,
+                 "session_borrowed_into": borrowed,
+                 "feed": load(symbol)["sqx_symbol"], "feed_replaced": replaced,
+                 "template": str(installed_template), "tasks": kept["kept"], "added": added,
+                 "databanks": kept["databanks"], "synced_to_disk": synced,
+                 "chain": chained,
+                 "max_strategies": strategies, "minutes": minutes, "silenced": quiet,
+                 "segments": {n: seg for n, (seg, _) in costs.items()},
+                 "template_ignored": ignored_templates(final),
+                 "provisional_costs": provisional(load(symbol)),
+                 "setups": {n: c.get("setups", 0) for n, (_, c) in costs.items()}}
+
+        refuse(result, final, donor_feed, replaced)
+
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(staged), str(out))
+    return result
 
 
 def main() -> None:
@@ -225,19 +190,13 @@ def main() -> None:
     if stop:
         raise SystemExit("\n".join(stop))
     borrow = a.session_from or source.pick(a.donor, asset["session"], asset["sqx_symbol"])
+    # `build` stages the project outside any install and only moves it into
+    # user/projects/ once the doctrine, session, Setup-count and stray-feed gates have
+    # all passed (`refuse`, inside build()) — a raise here leaves nothing installed.
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe, a.max_strategies,
                  a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')),
                  set(a.only.split(',')) if a.only else None, borrow,
                  tuple(x for x in a.silence.split(',') if x), a.workflow)
-    if done["template_ignored"]:
-        raise SystemExit("the template would be IGNORED: " + "; ".join(done["template_ignored"]))
-    # A task with no priced Setup is one still trading the donor's market at the donor's
-    # costs: setups.py only rewrites a <Setup> whose <Chart> already names this feed.
-    unpriced = [m for m, n in done["setups"].items() if not n]
-    if unpriced:
-        raise SystemExit(f"{', '.join(unpriced)} no lleva ningún <Setup> sobre "
-                         f"{done['feed']}: esas tareas operarían el mercado del donante a "
-                         "sus costes. Pasa --session-from con un proyecto que defina el feed.")
 
     registry.record(done, a.purpose, a.symbol, str(a.template))
     if a.json:

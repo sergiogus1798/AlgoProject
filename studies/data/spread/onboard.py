@@ -34,6 +34,24 @@ def segments(rules: dict, start: date) -> dict:
             "oos2": {"from": s["oos2"][0], "to": s["oos2"][1]}}
 
 
+def _oos1_price(m: pd.DataFrame, oos1_window: tuple) -> float:
+    """The reference price for a `no_forex` unit conversion (owner, 2026-09-29): the MEDIAN
+    price of the OOS1 segment being charged, not the last close — a last-close reference swings
+    the converted % by up to 5× against what the tested window actually pays (OPEN.md #36).
+
+    Args:
+        m: `inputs.minutes()`'s tick-derived minute table, with `bid_close`.
+        oos1_window: (dateFrom, dateTo) in epoch ms, from `windows["oos1"]`.
+
+    Returns:
+        The median `bid_close` inside the window; the last close when the ticks do not
+        reach that far back (a brand-new onboard with no OOS1 ticks yet).
+    """
+    a, b = pd.Timestamp(oos1_window[0], unit="ms"), pd.Timestamp(oos1_window[1], unit="ms")
+    part = m["bid_close"][(m.index >= a) & (m.index < b)]
+    return float(part.median()) if len(part) else float(m["bid_close"].iloc[-1])
+
+
 def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
     """Everything the asset should carry, computed and not written."""
     rules, factor = cfg["onboard"][kind], cfg["safety"]["factor"]
@@ -61,7 +79,7 @@ def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
     else:
         spreads = {f"spread_{HALVES[k]}": v for k, v in per.items()}
         slips = {f"slippage_{HALVES[k]}": round(v / 2, 2) for k, v in per.items()}
-    price = float(m["bid_close"].iloc[-1])
+    price = _oos1_price(m, windows["oos1"])
     usd = cfg["onboard"]["commission_usd_per_lot"]
     commission = (float(rules["commission"]) if rules["commission"] != "usd_per_lot"
                   else float(usd) if forex else round(usd / (inst["point_value"] * price) * 100, 6))

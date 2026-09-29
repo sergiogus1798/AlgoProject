@@ -38,9 +38,9 @@ costs:
     sqx_now: 22.0            # points, el unico que hay hoy
     why: "PROVISIONAL 2026-09-23 — el defaultSpread que el maestro lleva hoy, leido de los project.cfx con `sqx.inspect.instruments`. Default de fabrica de SQX, NO pactado con Infinox."
   commission:
-    use: 0.002516            # % del nocional
+    use: 0.008632            # % del nocional
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
-    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (Infinox raw), pasados a % del nocional al último precio Darwinex (63.5907 el 2026-09-25) × 5.000 onzas = 0.002516 %. SQX cobra PercentageBased una vez por operación sobre la apertura (OPEN.md #26)."
+    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (Infinox raw), pasados a % del nocional a la mediana del precio Darwinex de oos1 (2018-2022) 18.535 × 5.000 onzas = 0.008632 %. SQX cobra PercentageBased una vez por operación sobre la apertura (OPEN.md #26). (2026-09-29 — decisión del dueño OPEN.md #36: el precio de referencia de una conversión no_forex es la MEDIANA del precio del tramo cargado, no el último cierre — aquí oos1 2018-2022, el mismo tramo que carga el cross-check de mercados. studies.data.spread.onboard._oos1_price)"
   slippage_is:
     use: 5.5                 # points — tramo `build`
     sqx_now: 0.0

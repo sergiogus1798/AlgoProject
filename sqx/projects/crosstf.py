@@ -2,11 +2,14 @@
 """Write the cross-timeframe check: the same asset and costs, read on other timeframes."""
 
 import argparse
+import json
 import re
 import zipfile
+from datetime import date
 from pathlib import Path
 
 from core.assetdata import doctrine, load, sqx_settings
+from core.datapaths import crosstf_dir
 from sqx.projects.configure import running_install
 from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.setups import set_span, span
@@ -150,6 +153,10 @@ def main() -> None:
     ap.add_argument("--task", help="task XML file; by default the one titled `CrossTF`")
     ap.add_argument("--timeframes", nargs="+",
                     help="los timeframes extra, en orden de bloque; por defecto, la doctrina")
+    ap.add_argument("--day", default=date.today().isoformat(),
+                    help="dia de fabricacion bajo el que se archiva blocks.json "
+                         "(core.datapaths.crosstf_dir); por defecto hoy, igual que "
+                         "sqx.variants.scale")
     a = ap.parse_args()
 
     held = running_install(a.cfx)
@@ -174,6 +181,13 @@ def main() -> None:
         print(warning)
     print(own(a.cfx, "crosstf"))
     print(f"bloques: {', '.join(blocks)}")
+    # The run's own record: assets/_build.yaml can change after this (Q17), and the study
+    # must score these cells on the bars this task actually holds, not on whatever
+    # `crosstf.timeframes` says the day someone reads the run (OPEN.md #80).
+    out = crosstf_dir(a.cfx.parent.name, a.day)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "blocks.json").write_text(json.dumps({"blocks": blocks}, indent=2), encoding="utf-8")
+    print(f"blocks.json -> {out}")
     if a.timeframes:   # the study derives the doctrine's order itself; a one-off list it cannot
         print(f"el estudio necesitara: --set run.blocks=[{','.join(blocks)}]")
 

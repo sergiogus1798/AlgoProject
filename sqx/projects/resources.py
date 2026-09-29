@@ -108,3 +108,35 @@ def borrow_symbol(members: dict[str, bytes], feed: str, build_member: str,
         members[member] = one_task(members[member].decode("utf-8"), donor_feed,
                                    blocks).encode("utf-8")
     return donor_feed
+
+
+def refuse(result: dict, final: dict[str, bytes], donor_feed: str, replaced: str | None) -> None:
+    """Stop before anything lands in an install when a gate the human summary would miss failed.
+
+    Args:
+        result: What `builder.build` is about to return.
+        final: The staged .cfx contents by member name, already through `configure`.
+        donor_feed: The SQX symbol the clone inherited from the donor before any swap.
+        replaced: What `borrow_symbol` actually replaced, or None when no swap ran.
+
+    Raises:
+        SystemExit: On a template that would be silently ignored, a task with zero Setups
+            costed on the target feed, or the donor's own feed still readable in the output
+            after a swap ran. `configure`'s per-task counts can each read as success while
+            the project as a whole still trades the wrong market — OPEN.md issues 34-35, the
+            USDJPY clone that built on gold with nothing in SQX complaining.
+    """
+    if result["template_ignored"]:
+        raise SystemExit("the template would be IGNORED: " + "; ".join(result["template_ignored"]))
+    unpriced = [m for m, n in result["setups"].items() if not n]
+    if unpriced:
+        raise SystemExit(f"{', '.join(unpriced)} no lleva ningún <Setup> sobre "
+                         f"{result['feed']}: esas tareas operarían el mercado del donante a "
+                         "sus costes. Pasa --session-from con un proyecto que defina el feed.")
+    if replaced:
+        stray = sorted(m for m, blob in final.items()
+                       if m.endswith(".xml") and donor_feed.encode("utf-8") in blob)
+        if stray:
+            raise SystemExit(f"{donor_feed} (el feed del donante) sigue apareciendo en "
+                             f"{', '.join(stray)} después del swap: el proyecto seguiría "
+                             "operando ese mercado en alguna tarea. No se instala nada.")

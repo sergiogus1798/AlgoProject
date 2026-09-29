@@ -26,6 +26,10 @@ def say(done: dict, role: str) -> None:
     print(f"  doctrina  {done['timeframe']} en todas las tareas, sesión {done['session']}"
           + (f", salida por barras {bars[0]}–{bars[1]}" if bars else ", sin tarea de construcción"))
     print("  segments  " + ", ".join(f"{m}={s}" for m, s in done["segments"].items()))
+    # A 0 here is the tell OPEN.md issue 35 went unread: `configure` counted it, but the
+    # human-readable summary never printed it, so a task still trading the donor's market
+    # at the donor's costs read as an ordinary silent success.
+    print("  setups    " + ", ".join(f"{m}={n}" for m, n in done["setups"].items()))
     if done["feed_replaced"]:
         print(f"  feed      {done['feed_replaced']} → {done['feed']} en {len(done['setups'])} "
               f"tarea(s), traído de {done['session_borrowed_from']}")

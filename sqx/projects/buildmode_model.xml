@@ -1,6 +1,9 @@
 <!-- Bloque de configuracion genetica copiado VERBATIM del proyecto modelo del dueno,
      SQX maestro / user/projects/XAUUSD_Breakout_H1 / Build-Task1.xml, 2026-09-23.
-     Es su configuracion genetica, no una decidida aqui. Para refrescarlo:
+     Es su configuracion genetica, no una decidida aqui. XAUUSD_Breakout_H1 fue borrado del
+     maestro el 2026-09-29 (OPEN.md #11, dueno: "elimínalo, me he cansado de él") y archivado en
+     AlgoData/projects/retired/SQX/; este bloque sigue siendo válido, sólo ya no hay proyecto vivo
+     del que releerlo. Para refrescarlo (comando aún no implementado):
      python3 -m sqx.projects.doctrine --refresh-genetic -->
 <BuildMode generationType="genetic-evolution">
       <PopulationSize>50</PopulationSize>

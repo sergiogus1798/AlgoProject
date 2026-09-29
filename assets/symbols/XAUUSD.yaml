@@ -40,9 +40,9 @@ costs:
     sqx_now: null
     why: onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_DarwTick_Infinox). studies.data.spread.onboard
   commission:
-    use: 0.001778           # % del nocional
+    use: 0.004692           # % del nocional
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
-    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (Infinox raw), pasados a % del nocional a 4.500 USD/onza × 100 onzas = 0.001778 %. SQX cobra PercentageBased una vez por operación sobre la apertura (OPEN.md #26), así que escala con el precio de cada época."
+    why: "2026-09-27 — decisión del dueño: 8 USD por lote ida y vuelta (Infinox raw), pasados a % del nocional a la mediana del precio Darwinex de oos1 (2018-2022) 1705.02 × 100 onzas = 0.004692 %. SQX cobra PercentageBased una vez por operación sobre la apertura (OPEN.md #26), así que escala con el precio de cada época. (2026-09-29 — decisión del dueño OPEN.md #36: el precio de referencia de una conversión no_forex es la MEDIANA del precio del tramo cargado, no el último cierre — aquí oos1 2018-2022, el mismo tramo que carga el cross-check de mercados. studies.data.spread.onboard._oos1_price)"
   slippage_is:
     use: 8.19                # points — tramo(s) build
     sqx_now: 0.0
@@ -97,4 +97,3 @@ projects_using_it:
   - Retester
   - USDJPY
   - XAUUSD
-  - XAUUSD_Breakout_H1

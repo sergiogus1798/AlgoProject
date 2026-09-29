@@ -27,8 +27,23 @@ def databank_table(cfg: Element) -> list[str]:
                   "`knowhow/databanks/sync-deletes-unloaded-files.md`.", ""]
 
 
+def is_active(task: Element) -> bool:
+    """Whether SQX will run this task — matches core.cfx: missing means active.
+
+    Args:
+        task: A task's entry in config.xml (not its own task XML).
+
+    Returns:
+        False only when the attribute is explicitly "false".
+    """
+    return task.get("active") != "false"
+
+
 def databank_flow(cfg: Element, task_xml: dict) -> dict:
     """Which task numbers read, write and clear each databank.
+
+    An inactive task runs nothing — SQX skips it — so it is left out here. Counting it
+    would overstate the databanks at risk of strategy loss (OPEN.md #10).
 
     Args:
         cfg: The project's config.xml root.
@@ -39,6 +54,8 @@ def databank_flow(cfg: Element, task_xml: dict) -> dict:
     """
     flow = {}
     for i, t in enumerate(cfg.findall("Tasks/Task"), 1):
+        if not is_active(t):
+            continue
         root = task_xml[i]
         din, dout = databanks_of(root)
         if din:
@@ -70,9 +87,9 @@ def tldr(cfg: Element, task_xml: dict, flow: dict) -> list[str]:
 
     out = ["## TL;DR", "",
            f"- **{len(tasks)} tasks**, "
-           f"{sum(1 for t in tasks if t.get('active') != 'true')} inactive."]
+           f"{sum(1 for t in tasks if not is_active(t))} inactive."]
     for i, t in enumerate(tasks, 1):
-        if t.get("type") != "GoToTask":
+        if t.get("type") != "GoToTask" or not is_active(t):
             continue
         g = task_xml[i].find("GoToTask")
         target = g.get("task")
@@ -136,7 +153,7 @@ def task_order(cfg: Element, task_xml: dict) -> list[str]:
     out = ["## Task order", "", "```"]
     for i, t in enumerate(tasks, 1):
         title = t.get("title") or t.get("name")
-        flag = "" if t.get("active") == "true" else "   [INACTIVE]"
+        flag = "" if is_active(t) else "   [INACTIVE]"
         out.append(f"{i:>2}. {title:<28} ({t.get('type')}){flag}")
         if t.get("type") == "GoToTask":
             g = task_xml[i].find("GoToTask")
