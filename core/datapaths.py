@@ -222,3 +222,8 @@ def spread_dir(feed: str = "") -> Path:
         stamped with that file's size and date, so a refreshed history orphans it.
     """
     return DATA / "spread" / feed
+
+
+def funding_dir() -> Path:
+    """The prop-firm catalogue: raw snapshots per firm, the curated rules, and `funding.sqlite`."""
+    return DATA / "funding"

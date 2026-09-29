@@ -24,3 +24,6 @@ for the owner. The portfolio maths itself is not built yet.
 
 A funded account's rules (daily loss cap, total drawdown, minimum days) are constraints on the
 portfolio, not filters applied afterwards. When that work starts, they get written down here first.
+**What each firm sells and under which rules is already a database**: `funded/catalog/`
+(`AlgoData/funding/funding.sqlite`, Hantec and FTMO, every add-on combination priced), refreshed
+every Sunday by the `fundingWatcher` agent. The economics on top of it is encargo 33.

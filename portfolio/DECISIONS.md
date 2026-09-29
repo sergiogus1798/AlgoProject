@@ -9,7 +9,7 @@ Questions the owner has not settled yet. Nothing here is implemented; do not gue
 | 3 | Fixed weights, volatility parity, or optimised? | Optimised weights on backtested curves overfit hard |
 | 4 | What counts as too correlated, and measured over what window? | A single threshold on the whole history hides regime clustering |
 | 5 | Rebalancing: never, on a schedule, or on degradation? | Changes what the backtest of the portfolio even means |
-| 6 | Prop-firm rules to encode: daily loss, total drawdown, minimum days, consistency — and which firm (static or trailing DD, news windows) | These are constraints, not post-hoc filters |
+| 6 | Prop-firm rules to encode: daily loss, total drawdown, minimum days, consistency — and which firm (static or trailing DD, news windows) | These are constraints, not post-hoc filters. Encargo 33 (`docs/encargos/33-economia-del-fondeo.md`) answers it from data; Hantec's catalogue is already extracted |
 | 7 | Size with the trade bootstrap, or with a block bootstrap (~20 days) of the joint daily P&L? | Faith and Fitschen: shuffling trades understates portfolio DD — `BUILD_COMPENDIUM.md` §7.1 |
 | 8 | Capped fractional Kelly, or pure fixed fractional risk? | Chan against Fitschen and Williams — §6.2-6.3 |
 | 9 | Trade the plateau (sibling variants together), or treat siblings as one position? | Clones multiply correlated risk (Turtles S1+S2) — §4.4 |

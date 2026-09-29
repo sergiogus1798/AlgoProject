@@ -32,7 +32,7 @@ FAMILIES = {
         "60-app-pulido"]),
     "03-datos-costes-y-registro": ("Datos, costes y registro de la búsqueda", [
         "13-barras", "57-calidad-del-feed", "59-spread-real", "25-actualizar-datos", "24-costes", "43-ledger",
-        "12-rendimiento", "64-archivo"]),
+        "12-rendimiento", "64-archivo", "73-fondeo-catalogo"]),
     "04-sqx-plantillas-y-proyectos": ("SQX: bloques, plantillas y proyectos", [
         "40-sqx-lab", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
         "06-mover-estrategias", "27-curar", "17-pipeline", "55-retirar-proyectos",

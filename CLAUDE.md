@@ -99,6 +99,7 @@ folders, the `CLAUDE.md` files. A new folder follows the same test. Do not "fix"
 | how something is computed and shared: pricing, nulls, resampling, regimes, multiple testing | `engines/README.md` |
 | where an old path went (`strategies/…`, `tasks/…`, `nulls/`, `gate/`) | `docs/MAPA-DE-CARPETAS.md` |
 | portfolios | `portfolio/CLAUDE.md` |
+| what a prop firm's account costs with its add-ons, and its rules (Hantec, FTMO) | `python3 -m portfolio.funded.catalog.show <firm or plan>`, then `portfolio/funded/catalog/README.md` — refreshed every Sunday by the `fundingWatcher` agent |
 | MetaTrader 5: install under Wine, backtest an SQX EA in its tester, compare with SQX, read the terminal (MCP `mt5`, no order tools) | `mt5/README.md`, then OPEN.md #78 |
 | whether a result beats random entry, and which channel the edge lives in | `studies/readings/monkey/README.md` |
 | cribar una poblacion OOS entera hasta una lista de supervivientes | `studies/screening/gate/README.md` |
