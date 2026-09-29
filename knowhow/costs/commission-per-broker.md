@@ -13,7 +13,7 @@ Every asset still carries `costs.commission.brokers: {<name>: {method, value, un
 **The owner's figures, 2026-09-29 (all `confirmed: true`, `source: "dueño, 2026-09-29"`), applied per class:**
 - **FOREX, all ten pairs** — every broker at **5 USD/lot, SizeBased**, all three segments alike. Unchanged by this correction.
 - **INDICES, DAX40/DJ30/NIKKEI225/USA500/USATEC** — every broker at **0 %, PercentageBased**, all three segments. Unchanged; `pct_now` is 0 % for all of them too (no bars synced for these five feeds yet, so `price_now`/`price_date` are `null` — a `PercentageBased` broker needs no price to convert).
-- **GOLD/SILVER/CRUDE, XAUUSD/XAGUSD/BRENT** — Infinox **8 USD/lot SizeBased**, FTMO **0.0014 % PercentageBased**, Darwinex **0.005 % PercentageBased**. `use` is now Darwinex's `PercentageBased 0.005` in build/oos1/oos2 alike, on all three assets. Each confirmed broker's `pct_now` at the last close `--refresh` found (2026-09-29 or 2026-09-22, per feed):
+- **GOLD/SILVER, XAUUSD/XAGUSD** — Infinox **8 USD/lot SizeBased**, FTMO **0.0014 % PercentageBased**, Darwinex **0.005 % PercentageBased**. **CRUDE, BRENT** (owner, 2026-09-29, corrected): FTMO **0**, Hantec **1 USD/lot**, Infinox **1 USD/lot**, Darwinex 0.005 %. `use` is Darwinex's `PercentageBased 0.005` in build/oos1/oos2 alike, on all three assets. Each confirmed broker's `pct_now` at the last close `--refresh` found (2026-09-29 or 2026-09-22, per feed):
 
 | asset | broker | pct_now | price_now | price_date |
 |---|---|---|---|---|
@@ -26,9 +26,10 @@ Every asset still carries `costs.commission.brokers: {<name>: {method, value, un
 | XAGUSD | fundednext | 0.0016 % | 66.639 | 2026-09-22 |
 | XAGUSD | infinox | 0.002401 % | 66.639 | 2026-09-22 |
 | BRENT | darwinex | 0.005 % | 100.044 | 2026-09-21 |
-| BRENT | ftmo | 0.0014 % | 100.044 | 2026-09-21 |
-| BRENT | infinox | 0.079965 % | 100.044 | 2026-09-21 |
+| BRENT | ftmo | 0 % | 100.044 | 2026-09-21 |
+| BRENT | hantec | 0.009996 % | 100.044 | 2026-09-21 |
+| BRENT | infinox | 0.009996 % | 100.044 | 2026-09-21 |
 
-Infinox's flat $8/lot reads as the cheapest of the three on gold and silver at today's price (it is what made it win `build` under the retired per-segment pick) and as by far the most expensive on Brent, whose price is too low relative to its point_value (100) for a flat $/lot figure to look small in percentage terms — exactly the comparison the retired per-segment logic used to make, now kept only for step 26/reconciliation and not for `use`.
+Infinox's flat $8/lot reads as the cheapest of the three on gold and silver at today's price (it is what made it win `build` under the retired per-segment pick) and, on Brent, Hantec's and Infinox's 1 USD/lot read ≈0.01 % at 100 $, twice Darwinex's 0.005 % — on crude the workflow charges about half of what they do — exactly the comparison the retired per-segment logic used to make, now kept only for step 26/reconciliation and not for `use`.
 
 **Superseded by this session**: the per-segment "max broker" pick (gold's `build` on Infinox `SizeBased 8.0`, `oos1`/`oos2` on Darwinex `PercentageBased 0.005`, `XAGUSD`/`BRENT` on Infinox `SizeBased 8.0` throughout, via `core.commission.per_segment` priced at each segment's own median price) is retired from deciding `use`; all three no_forex assets with commission now carry Darwinex's flat 0.005 % in every segment. The per-broker table and its per-segment median pricing remain accurate history, not `use`'s source any more.
