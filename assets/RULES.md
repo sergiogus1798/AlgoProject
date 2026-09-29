@@ -228,27 +228,30 @@ costs:
 and the `date` it was read or decided. Read it once, in the same task as everything else that
 touches `assets/` — never guessed, never left half-typed.
 
-**"Aplica el máximo de cada a la hora de buildear y testear"** (owner, 2026-09-29): SQX charges
-one commission method per TASK, and a project prices `build`, `oos1` and `oos2` on their own
-tasks, so the winner is picked separately in EACH segment rather than once for the whole asset —
-gold's build can carry Infinox's `SizeBased 8` while its oos1/oos2 carry Darwinex's
-`PercentageBased 0.005`, because the broker that charges most changes as gold's own price rises
-across the sixteen years. Comparing a `%` broker against a `$/lot` one still needs a price, since
-only one of the two scales with it: `core.commission.per_segment(brokers, prices, point_value)`
-prices every confirmed broker in dollars at THAT segment's own median price (`build`, `oos1`,
-`oos2` — the same figures `studies.data.spread.onboard` computes and caches under
-`AlgoData/spread/<feed>/summary.json`'s `proposal`, or `core.barstore`'s own D1 median where a
-main asset's own segment windows do not apply, e.g. XAGUSD/BRENT priced at XAUUSD's calendar
-windows) and, for each segment on its own, keeps the winner's OWN method and value — never
-converted into the class's usual unit, because that is exactly what a real `<Setup>` charges.
-`sqx.projects.setups.sqx_settings` reads `use[segment]` directly and `one_setup` already knows
-how to flip whichever `<Method type=...>` it is given.
+**Correction, same day (owner, 2026-09-29): no per-segment "max broker" pick.** The reading above
+— the broker that charges most changes segment to segment, so pick it separately in each — is
+wrong. For a `no_forex` asset with commission confirmed (XAUUSD, XAGUSD, BRENT), the WHOLE SQX
+workflow — build and every retest, OOS through WFM and the variants — prices at **Darwinex's own
+`PercentageBased 0.005 %`**, the same in `build`, `oos1` and `oos2`. `core.assetwrite.set_cost`
+already spreads one bare figure over the three segments in the class's own method, so this is
+written the ordinary way, with a `why` naming the decision. Forex stays 5 USD/lot `SizeBased`
+everywhere, indices stay 0 % — neither changes. `sqx.projects.setups.sqx_settings` still reads
+`use[segment]` directly; it is simply the same `{method, value}` in all three now.
 
-**Without a cached median price, the comparison does not run** rather than guess one: nine of the
-ten forex pairs (every the5ers pair but USDJPY) have no `summary.json` yet — moot for forex today,
-since the owner fixed forex commission at a flat 5 USD/lot for every broker (2026-09-29, all three
-segments alike). `core.assets`' report prints the per-broker table so this gap is visible without
-opening the file. → `knowhow/costs/commission-per-broker.md`.
+**The per-broker figures still matter, on their own, for step 26 and `weeklyReconciler`** — never
+for an SQX workflow task. Each broker in `costs.commission.brokers` keeps its native figure AND
+gets it converted to a percentage adjusted to itself: `core.commission.commission_pct(method,
+value, price, point_value)` turns a `$/lot` broker's flat figure into a % of notional at a given
+price (a `%` broker's own figure is returned unchanged), and `python3 -m core.commission --refresh`
+(weekly, after `bin/weekly-data-update.sh`'s data update) recomputes it for every confirmed broker
+of every asset from **the newest bar `core.barstore` holds for that asset's own feed** — its
+`Close`, not a segment median, because this is "what would I pay today", not a historical segment
+cost — and writes `pct_now`, `price_now` and `price_date` onto each broker entry through
+`core.assetwrite.set_brokers`. A `SizeBased` broker on a feed with no bars synced yet (the five
+indices) is left unpriced rather than guessed; a `PercentageBased` broker needs no price at all.
+`core.commission.broker_pct(asset, broker)` is the one accessor step 26 (encargo 34, the MT5
+validation on each firm's feed) and `weeklyReconciler` (OPEN.md #78) read `pct_now` through — SQX
+workflow tasks never call it, they read `costs.commission.use` instead. → `knowhow/costs/commission-per-broker.md`.
 
 ## Adding an asset
 

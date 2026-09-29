@@ -61,6 +61,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
+        pct_now: 0.0
+        price_now: null
+        price_date: null
       darwinex:
         method: PercentageBased
         value: 0.0
@@ -69,6 +72,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
+        pct_now: 0.0
+        price_now: null
+        price_date: null
       infinox:
         method: PercentageBased
         value: 0.0
@@ -77,6 +83,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
+        pct_now: 0.0
+        price_now: null
+        price_date: null
       hantec:
         method: PercentageBased
         value: 0.0
@@ -85,6 +94,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
+        pct_now: 0.0
+        price_now: null
+        price_date: null
       the5ers:
         method: PercentageBased
         value: 0.0
@@ -93,6 +105,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
+        pct_now: 0.0
+        price_now: null
+        price_date: null
       fundednext:
         method: PercentageBased
         value: 0.0
@@ -101,6 +116,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
+        pct_now: 0.0
+        price_now: null
+        price_date: null
       fundingpips:
         method: PercentageBased
         value: 0.0
@@ -109,6 +127,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
+        pct_now: 0.0
+        price_now: null
+        price_date: null
   slippage_is:
     use: 72.7               # points — tramo(s) build
     sqx_now: null

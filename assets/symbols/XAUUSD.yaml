@@ -42,8 +42,8 @@ costs:
   commission:
     use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
       build:
-        method: SizeBased
-        value: 8.0
+        method: PercentageBased
+        value: 0.005
       oos1:
         method: PercentageBased
         value: 0.005
@@ -51,7 +51,7 @@ costs:
         method: PercentageBased
         value: 0.005
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
-    why: "2026-09-29 — el dueño fija Infinox 8 $/lote, FTMO 0.0014 % y Darwinex 0.005 % del nocional (todos confirmados, encargo 2026-09-29); `core.commission.per_segment` precia los tres en $/lote a la mediana de precio de cada tramo y escribe, POR TRAMO, el método y el valor propios del ganador — nunca convertido: build: infinox `SizeBased 8.0` ($8.0/lote equiv. a precio 1251.48); oos1: darwinex `PercentageBased 0.005` ($8.5236/lote equiv. a precio 1704.73); oos2: darwinex `PercentageBased 0.005` ($13.2072/lote equiv. a precio 2641.44). `sqx.projects.setups.one_setup` ya vuelca el método que le llegue en el `<Setup>`."
+    why: "2026-09-29 — el dueño corrige el reparto por tramo: en un activo no_forex con comisión confirmada TODO el workflow de SQX (build y cada retest — OOS, crossmarket, MC Retest, SPP, WFM, variantes...) usa la % de Darwinex, 0.005 % del nocional, en los tres tramos por igual. Ya no se elige el bróker más caro tramo a tramo (per_segment queda retirado de ese papel); Darwinex es la referencia del spread y la más citada en el árbol de costes, así que fija el desarrollo. Forex sigue en 5 USD/lote SizeBased en los tres tramos; índices en 0 %: ninguno de los dos cambia. core.commission.broker_pct sigue dando la % propia de cada bróker para el paso 26 y weeklyReconciler."
     brokers:
       darwinex:
         method: PercentageBased
@@ -61,6 +61,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: confirmado por el dueño para metales/crudo (encargo 2026-09-29), ya no ambiguo entre forex y commodities
+        pct_now: 0.005
+        price_now: 4369.12
+        price_date: '2026-09-22'
       fundednext:
         method: PercentageBased
         value: 0.0016
@@ -69,6 +72,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: 'metales: Lote x ContractSize x PrecioApertura x 0.0016 %; oro contract 100'
+        pct_now: 0.0016
+        price_now: 4369.12
+        price_date: '2026-09-22'
       infinox:
         method: SizeBased
         value: 8.0
@@ -77,6 +83,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cuenta raw de Infinox; cifra confirmada por el dueño (encargo 2026-09-29)
+        pct_now: 0.001831
+        price_now: 4369.12
+        price_date: '2026-09-22'
       ftmo:
         method: PercentageBased
         value: 0.0014
@@ -85,6 +94,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: confirmado por el dueño para metales/crudo (encargo 2026-09-29)
+        pct_now: 0.0014
+        price_now: 4369.12
+        price_date: '2026-09-22'
       hantec:
         method: null
         value: null

@@ -53,6 +53,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
+        pct_now: 0.00496
+        price_now: 1.40334
+        price_date: '2026-09-22'
       the5ers:
         method: SizeBased
         value: 5.0
@@ -61,6 +64,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
+        pct_now: 0.00496
+        price_now: 1.40334
+        price_date: '2026-09-22'
       hantec:
         method: SizeBased
         value: 5.0
@@ -69,6 +75,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
+        pct_now: 0.00496
+        price_now: 1.40334
+        price_date: '2026-09-22'
       ftmo:
         method: SizeBased
         value: 5.0
@@ -77,6 +86,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
+        pct_now: 0.00496
+        price_now: 1.40334
+        price_date: '2026-09-22'
       infinox:
         method: SizeBased
         value: 5.0
@@ -85,6 +97,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
+        pct_now: 0.00496
+        price_now: 1.40334
+        price_date: '2026-09-22'
       fundednext:
         method: SizeBased
         value: 5.0
@@ -93,6 +108,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
+        pct_now: 0.00496
+        price_now: 1.40334
+        price_date: '2026-09-22'
       fundingpips:
         method: SizeBased
         value: 5.0
@@ -101,6 +119,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
+        pct_now: 0.00496
+        price_now: 1.40334
+        price_date: '2026-09-22'
   slippage_is:
     use: 0.5                 # points — tramo(s) build
     sqx_now: 0.0

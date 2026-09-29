@@ -8,6 +8,9 @@
 #   2. python3 -m sqx.data.update --apply — refuses by itself, killing nothing, if the master's
 #      GUI is up (hard rule 2), and refreshes assets/_policy.yaml when done.
 #   3. names any day a feed refused with HTTP 429; the next run fetches it.
+#   4. python3 -m core.commission --refresh — every confirmed broker's `pct_now` from the
+#      close the update just brought in (owner, 2026-09-29). Runs even if step 2 found nothing
+#      new; does not stop the script on failure, since it only affects step 26/weeklyReconciler.
 #
 # No model involved: nothing here needs judgement. First real run and its numbers: OPEN.md 30.
 #
@@ -71,5 +74,9 @@ echo "--- update exit $rc"
 fails=$(grep -c 'ERROR: download failed' "$OUT")
 [ "$fails" -gt 0 ] && { echo "--- $fails day(s) refused by the feed:"; grep 'ERROR: download failed' "$OUT"; }
 rm -f "$OUT"
+
+echo "--- refreshing broker commission percentages"
+python3 -m core.commission --refresh || echo "--- core.commission --refresh failed, continuing"
+
 echo "=== $(date -Is) weekly data update end"
 exit $rc
