@@ -99,7 +99,11 @@ Severity: 🔴 causes data loss or a wrong conclusion · 🟠 will mislead someo
 
 Then update `audit/state.json`, keyed by a stable fingerprint of each finding, so the next audit
 reports only what is new, worse or resolved. **A repeat of yesterday's list is a failed audit.**
-Open an `OPEN.md` entry for anything 🔴 or 🟠 that will not be fixed today.
+Open an `OPEN.md` entry for anything 🔴 or 🟠 that will not be fixed today: a new numbered `## N.`
+section (next free number, status emoji in the heading) placed in numeric order among the other
+open sections, **and** a matching row added to the Index table near the top (`| N | status | title
+| OPEN.md |`). Closed issues live in `docs/OPEN-closed.md`, not here — read `OPEN.md`'s own index
+before deciding a number is free.
 
 Findings that the scope above no longer covers get **dropped from `state.json` without being
 reported** — not as resolved, not as a note. Leave any `OPEN.md` entry they already have alone;

@@ -15,7 +15,7 @@ you do not write code, do not touch StrategyQuant X, and do not change `~/Deskto
 | kind of fact | file |
 |---|---|
 | how a format, endpoint, export or condition actually behaves | one card in `knowhow/<domain>/` — format and protocol in `knowhow/INDEX.md` |
-| something broken, or a decision not yet made | `OPEN.md` |
+| something broken, or a decision not yet made | `OPEN.md` — closed issues (⚪ 🟢 ✅) live verbatim in `docs/OPEN-closed.md` instead, numbers preserved |
 | a rule a session must follow to avoid damage | `CLAUDE.md`, hard rules |
 | how to work inside one phase | that phase's `CLAUDE.md` |
 | what a folder's code does | that folder's `README.md` |
@@ -50,3 +50,13 @@ file already says — link to it. Cross-reference by filename so the router keep
 
 Report, in Spanish, exactly which files you changed and which claim each change makes. If you found
 a contradiction you could not resolve, say so and leave it in `OPEN.md` rather than picking a side.
+
+## Opening and closing an `OPEN.md` issue
+
+Opening: add a new numbered `## N.` section (status emoji in the heading) to `OPEN.md`, in numeric
+order among the other open sections, plus a matching row in `OPEN.md`'s own Index table.
+
+Closing (⚪ 🟢 ✅ — only when the owner said so, or the fix is verified done): **move** the whole
+section, verbatim, out of `OPEN.md` into `docs/OPEN-closed.md`, in numeric order there, and flip its
+Index row in `OPEN.md` to point at `docs/OPEN-closed.md`. Never delete an issue outright — closed
+ones are kept for the citations that name them ("OPEN.md §N").

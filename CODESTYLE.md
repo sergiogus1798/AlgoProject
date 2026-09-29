@@ -125,6 +125,8 @@ never edit it by hand.** A hand-maintained map is wrong within two weeks.
 python3 tools/depmap.py && python3 tools/checks.py
 ```
 
+The lint config is `ruff.toml` (real bugs only, no formatter); `ruff check .` must be clean for its selected rules — `checks.py` runs it as its "lint" check.
+
 `checks.py` reports: files over 250 lines, `.py` missing from its folder README, missing module
 docstrings, functions without a docstring or without type hints, absolute paths outside
 `core/paths.py`, imports missing from `requirements.txt`, and a stale `DEPENDENCIES.md`. It blocks

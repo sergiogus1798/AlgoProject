@@ -3,6 +3,8 @@
 
 import ast
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -163,6 +165,25 @@ def no_manual_page(files: list[Path]) -> list[str]:
     return out
 
 
+def lint_bugs(files: list[Path]) -> list[str]:
+    """Real-bug findings from ruff.toml's rule set, over the whole project.
+
+    Args:
+        files: Project Python files, unused: ruff walks the tree itself.
+
+    Returns:
+        One message per finding; none when ruff is not installed.
+    """
+    if not shutil.which("ruff"):
+        return []
+    result = subprocess.run(
+        ["ruff", "check", "--select", "F821,F811,F823,E9", "--no-cache",
+         "--output-format", "concise", str(ROOT)],
+        capture_output=True, text=True)
+    return [line for line in result.stdout.splitlines()
+            if line and "Found" not in line and "All checks passed" not in line]
+
+
 def stale_depmap(files: list[Path]) -> list[str]:
     """Whether docs/DEPENDENCIES.md matches the code as it stands now.
 
@@ -209,6 +230,7 @@ def main() -> None:
     checks = [("file length", too_long), ("documentation", undocumented),
               ("hardcoded paths", hardcoded_paths), ("requirements", missing_requirements),
               ("folder READMEs", unlisted_in_readme), ("manual pages", no_manual_page),
+              ("lint", lint_bugs),
               ("dependency map", stale_depmap), ("knowhow cards", knowhowmap.bad_cards),
               ("knowhow links", knowhowmap.broken_links),
               ("knowhow indexes", knowhowmap.stale_indexes),
