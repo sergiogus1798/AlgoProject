@@ -7,7 +7,7 @@ from core.paths import MASTER, MT5_PREFIX
 
 INSTALL = MT5_PREFIX / "drive_c" / "Program Files" / "MetaTrader 5"
 TERMINAL = INSTALL / "terminal64.exe"
-METAEDITOR = INSTALL / "metaeditor64.exe"
+METAEDITOR = INSTALL / "MetaEditor64.exe"   # Linux is case-sensitive: the installer writes this case
 # The Windows Python bin/mt5-install.sh puts in the prefix, for the MetaTrader5 package.
 PYTHON = MT5_PREFIX / "drive_c" / "Python" / "python.exe"
 # What SQX's generated EAs call: its Sq* indicators and their include.
@@ -58,16 +58,23 @@ def terminal_running() -> bool:
     return bool(out.strip())
 
 
-def run(exe: Path, args: list[str], timeout: float) -> subprocess.CompletedProcess:
+def run(exe: Path, args: list[str], timeout: float, cwd: Path | None = None) -> subprocess.CompletedProcess:
     """Run a Windows program under Wine and wait for it.
 
     Args:
         exe: The .exe inside the prefix.
-        args: Its Windows-style arguments.
+        args: Its Windows-style arguments. Wine builds the child's command line by joining
+            these with spaces and does NOT requote one that itself contains a space (every
+            path under the prefix does: "Program Files", "MetaTrader 5") — the argument
+            silently splits in two and the program sees a truncated path. Pass `cwd` and a
+            path relative to it instead of an absolute one, wherever the callee allows it.
         timeout: Seconds before it is killed.
+        cwd: Working directory (Linux path) the child starts in, so a Windows-relative
+            argument resolves against it.
 
     Returns:
         The finished process, output captured as text.
     """
     return subprocess.run(["wine", str(exe), *args], env=env(), capture_output=True,
-                          text=True, errors="replace", timeout=timeout)
+                          text=True, errors="replace", timeout=timeout,
+                          cwd=str(cwd) if cwd else None)

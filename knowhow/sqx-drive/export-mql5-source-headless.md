@@ -7,8 +7,11 @@ tag: 📓  date: 2026-09-29  see: eng/mt5-under-wine
 - A custom project's **SaveToFiles** task does: `<SaveSourceCode type="<generator>" format="...">true</SaveSourceCode>` + `<DestDirectorySC>`; the generator is looked up by name (`SourceCodeGenerators.getGeneratorFromName`) — the MT5 name is unverified (code folders: `MetaTrader5`, `MetaTrader4`, `EasyLanguage`, `JForex`, `PseudoCode`).
 - Same task: `<MNActive>true</MNActive><MNValue>N</MNValue>` numbers the EAs' magic numbers from N — what a live↔backtest reconciliation keys on.
 - `sqcli -data action=exportToMT5 symbol=… timeframe=M1|Tick …` writes SQX's bars/ticks for MT5 — a way to backtest in MT5 on SQX's own data.
+- No already-exported strategy `.mq5` exists anywhere on disk (checked 2026-09-29) — every `.mq5`
+  found is SQX's own indicator/export-EA template or the terminal's stock content (OPEN.md #78 §2).
 
 ## Evidence
 `curl 'http://localhost:5060/call?cmd=-h'` on the conductor, 2026-09-29: verbs -project -databank -symbol -instrument -data -tools -stockgroup -brokerprofile -run -gui -deletefile -waitfor -execute -license -exit.
 `internal/plugins/SettingsSaveToFiles/SettingsSaveToFilesService.js` lines 40-60 (XML it writes), 88-92 (reads); `TaskSaveToFiles.jar` strings: SaveSourceCode, SourceCodeType, SourceCodeFormat, "Invalid source code generator".
 `strings mcpx/.../MCPTools.class`. Not yet run headless: OPEN.md #78.
+2026-09-29: `find ~/Desktop -iname '*.mq5'` → 497 files, none of them a strategy export; `grep -rl SaveSourceCode` over both workers' `user/projects` → none — no project has ever run this task on this machine.

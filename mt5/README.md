@@ -15,11 +15,20 @@ then `bin/mt5-install.sh` (prefix at `mt5_prefix` in `config/machine.yaml`, the 
 Python with the `MetaTrader5` package). Everything it writes goes to `core.paths.MT5_DATA`.
 Manual: chapter `60-mt5`, in `docs/manual/10-cierre.pdf`. State: OPEN.md #78.
 
+**Compiling needs the terminal closed**, exactly like the tester does: `MetaEditor64.exe` shares
+`terminal64.exe`'s data-folder lock and, while the terminal is up, still exits 0 but writes only
+the log's BOM and compiles nothing — `metaeditor.compile_path()` checks `wine.terminal_running()`
+first and raises instead of returning that silently-empty result.
+Every argument `wine.run()` hands a Windows program is joined into one command line **without
+requoting one that contains a space** — and every path under the prefix has one (`Program Files`,
+`MetaTrader 5`). Quoting the argument does not fix it; `wine.run(..., cwd=...)` plus a path
+relative to `cwd` does, and is how `metaeditor.py` calls MetaEditor now.
+
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `server.py` | The MCP server: status, compile, backtest start/result, runs, compare, and the read-only live tools | `python3 -m mt5.server` (Claude Code starts it) | tool calls → JSON |
-| `wine.py` | Where the terminal, MetaEditor and the Windows Python live in the prefix; Linux → Windows paths; the terminal's data folder (via `origin.txt`); running an .exe | imported | — |
-| `metaeditor.py` | Compile an .mq5 (or a folder) with MetaEditor and read its log; install SQX's `Sq*` indicators | imported | .mq5 → .ex5 + errors |
+| `wine.py` | Where the terminal, MetaEditor and the Windows Python live in the prefix; Linux → Windows paths; the terminal's data folder (via `origin.txt`); running an .exe (`cwd=` for a space-free relative argument) | imported | — |
+| `metaeditor.py` | Compile an .mq5 (or a folder) with MetaEditor and read its log; install SQX's `Sq*` indicators — refuses while the terminal is open | imported | .mq5 → .ex5 + errors |
 | `tester.py` | Write a tester ini, start the terminal detached, collect the report into `MT5_DATA/tests/<run>/` | imported | EA + window → report.htm, deals/trades.parquet |
 | `report.py` | Parse the tester's HTML report: summary cells, the deal rows (found by shape, not by language), trades paired from in/out deals | imported | report.htm → summary, deals, trades |
 | `compare.py` | Pair MT5 trades with SQX's (same side, nearest entry within a tolerance) and the figures of the gap | imported | two trade frames → pairs + figures |

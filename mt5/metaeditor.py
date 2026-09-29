@@ -22,11 +22,25 @@ def compile_path(target: Path) -> dict:
 
     Returns:
         {"ok", "errors", "warnings", "messages": the error and warning lines, "log": path}.
+
+    MetaEditor64.exe is run with cwd=MQL5/ and a path relative to it (`Indicators\\Foo.mq5`,
+    never `C:\\Program Files\\MetaTrader 5\\MQL5\\Indicators\\Foo.mq5`) — see wine.run()'s
+    docstring for why an absolute path silently truncates at the first space.
+
+    Raises:
+        SystemExit: the terminal is open on this data folder. MetaEditor shares its lock —
+            it still launches and exits 0, but writes only the log's BOM and compiles nothing,
+            which without this check reads as a mysterious "ok: False" with no messages.
     """
+    if wine.terminal_running():
+        raise SystemExit("the MT5 terminal is open: MetaEditor shares its data-folder lock "
+                          "and silently compiles nothing while it runs — close it first")
+    mql5 = wine.data_dir() / "MQL5"
+    rel = str(target.relative_to(mql5)).replace("/", "\\")
     log = target.with_suffix(".log") if target.is_file() else target / "compile.log"
     log.unlink(missing_ok=True)
-    wine.run(wine.METAEDITOR, [f"/compile:{wine.windows(target)}", f"/log:{wine.windows(log)}"],
-             timeout=600)
+    rel_log = str(log.relative_to(mql5)).replace("/", "\\")
+    wine.run(wine.METAEDITOR, [f"/compile:{rel}", f"/log:{rel_log}"], timeout=600, cwd=mql5)
     text = _log(log)
     totals = RESULT.findall(text)
     errors = sum(int(e) for e, _ in totals)
