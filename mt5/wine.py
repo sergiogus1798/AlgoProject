@@ -37,22 +37,25 @@ def windows(path: Path) -> str:
 
 
 def data_dir() -> Path:
-    """The terminal's data folder: AppData/.../Terminal/<hash>, the one whose origin.txt names INSTALL.
+    """The terminal's data folder: AppData/.../Terminal/<hash> whose origin.txt names INSTALL.
 
-    MT5 keeps MQL5/, tester/ and the logged-in account there, not in Program Files, unless it is
-    started /portable — which would lose the account the owner opened by hand, so it never is.
+    Unless that folder holds a portable.txt: then the terminal keeps MQL5/, logs/ and the
+    accounts in INSTALL itself — which is how mt5setup.exe left it under Wine (2026-09-29).
     """
     root = MT5_PREFIX / "drive_c" / "users"
     for origin in root.glob("*/AppData/Roaming/MetaQuotes/Terminal/*/origin.txt"):
         if origin.read_text(encoding="utf-16").strip().lower() == windows(INSTALL).lower():
-            return origin.parent
+            return INSTALL if (origin.parent / "portable.txt").exists() else origin.parent
     raise SystemExit(f"no data folder for {INSTALL}: start the terminal once (bin/mt5-install.sh)")
 
 
 def terminal_running() -> bool:
     """Whether a terminal64.exe of this prefix is up. MT5 refuses a second one on the same data."""
-    out = subprocess.run(["pgrep", "-af", "terminal64.exe"], capture_output=True, text=True).stdout
-    return any(str(MT5_PREFIX) in line or "MetaTrader 5" in line for line in out.splitlines())
+    # Wine shows the process as its Windows command line; matching only that keeps a shell
+    # whose command merely mentions terminal64.exe from reading as a running terminal.
+    out = subprocess.run(["pgrep", "-af", r"^C:\\.*terminal64\.exe"], capture_output=True,
+                         text=True).stdout
+    return bool(out.strip())
 
 
 def run(exe: Path, args: list[str], timeout: float) -> subprocess.CompletedProcess:

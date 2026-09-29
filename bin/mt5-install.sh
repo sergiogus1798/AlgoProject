@@ -61,7 +61,7 @@ echo "Install WebView2 Runtime"
 wine "$DL/webview2.exe" /silent /install
 
 echo "Install MetaTrader 5 (its installer opens a window)"
-wine "$DL/mt5setup.exe"
+wine "$DL/mt5setup.exe" || true   # it exits non-zero even when it installed; the check below decides
 
 [ -f "$TERMINAL" ] || { echo "installer closed without $TERMINAL"; exit 1; }
 echo "installed: $TERMINAL"

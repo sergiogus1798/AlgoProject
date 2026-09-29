@@ -1,5 +1,11 @@
 # mt5 — MetaTrader 5 under Wine, and its MCP server
 
+**Since 2026-09-29 the terminal's own MCP (`metatrader5`, MetaQuotes, local scope) is the main
+surface** — tester, charts, data, journals; its trading and EA/script tools are denied in
+`.claude/settings.json`. This folder keeps what it lacks: compiling (`metaeditor.py`), the comparison
+with SQX (`compare.py`), Parquet exports (`live.py`). `tester.py`/`report.py` go once its JSON report
+proves to carry every deal (OPEN.md #78).
+
 Test an SQX strategy's MQL5 export in MT5's Strategy Tester, pair its trades with SQX's, and read
 the terminal read-only. Claude drives it through the `mt5` MCP server (`.mcp.json`, stdio). There
 is **no tool that sends, modifies or closes an order** (owner, 2026-09-27).

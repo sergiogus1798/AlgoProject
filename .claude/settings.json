@@ -52,7 +52,15 @@
     "ask": [],
     "deny": [
       "Bash(pkill:*)",
-      "Bash(killall:*)"
+      "Bash(killall:*)",
+      "mcp__metatrader5__trade_send_market_order",
+      "mcp__metatrader5__trade_send_pending_order",
+      "mcp__metatrader5__trade_modify_sl_tp",
+      "mcp__metatrader5__trade_delete_order",
+      "mcp__metatrader5__trade_close_single_position",
+      "mcp__metatrader5__trade_close_by_position",
+      "mcp__metatrader5__chart_add_expert",
+      "mcp__metatrader5__chart_add_script"
     ],
     "defaultMode": "bypassPermissions"
   },

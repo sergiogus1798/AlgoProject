@@ -3,6 +3,7 @@
 - `api-no-auth` — is the SQX command API authenticated; listens on 0.0.0.0; firewall ports; drive worker over LAN
 - `custom-timeframe-h12` — H12 custom timeframe SQX retest Setup timeframe="H12"; cross-timeframe H1 to H4 and H12; H8 H12 support; 12h resample
 - `driving-a-role` — worker roles conductor custodian in Python and bash; core/paths WORKERS worker_dir worker_staging; --role flag; sync_bars rsync creates destination; port triple formula
+- `export-mql5-source-headless` — export strategy to MQL5 mq5 source code headless without GUI, sqcli code export verb, Save to files task SaveSourceCode generator, magic numbers MNActive, SQX data to MT5 exportToMT5, SQX MCP tools list
 - `gui-web-surface` — SQX GUI is Electron + Jetty web app; live progress websocket getWebSocketPort; Remote access disabled; ProgressEngine log progress; tail log for progress percent; control SQX from outside
 - `install-ports-and-heap` — where is the SQX CLI port set AppSettings.txt; WebServerPortUsed; coreUsage missing means all cores; -Xms -Xmx per install; worker answering on 5050; History symlink; disk cost of an install
 - `mcp-server-limits` — what can the sqx MCP server do; load a project into the running master; project missing from list silently; config.xml references missing task files; Infinox_SP500ft_H4_HighPrecision; graft_tasks

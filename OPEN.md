@@ -71,7 +71,7 @@ topology was built and verified that day (`knowhow/sqx-drive/three-install-topol
 | 74 | — | 🟠 | new 2026-09-27: **los pasos 23, 24 y 25 exportan a la misma carpeta del día y se pisan**; el informe del 23 ya no se puede rehacer |
 | 75 | — | 🟡 | new 2026-09-27: un `stop` justo después de `start` se pierde (la CLI aún no está lista) |
 | 76 | — | 🔴 | new 2026-09-27: **el spread real de Darwinex es 3–8× el declarado en XAUUSD y USDJPY** (`studies/data/spread`); **índices aplicados 2026-09-27** (tramos, un spread por tramo, slippage = la mitad; falta su comisión); oro y forex aplicados con `studies.data.spread.onboard --spread-only`; el reajuste aún no se ha contrastado con un retest DATATICK. Estudio: `docs/AgentPDFs/spread-real-2026-09-27.pdf` |
-| 78 | — | 🟡 | new 2026-09-27: **MT5 bajo Wine construido sin probar** — `mt5/` y su MCP escritos; falta Wine (sudo del dueño), el terminal y validar el tester con una estrategia real. El `.mq5` sale de la GUI de SQX: no se conoce verbo de `sqcli` que lo genere |
+| 78 | — | 🟡 | new 2026-09-27, act. 2026-09-29: **MT5 bajo Wine instalado y leyendo** (Hantec, fondeada, hedging); el tester pasa al MCP de MetaQuotes (`metatrader5`, trading bloqueado en `.claude/settings.json`); falta el primer backtest y ver si su informe JSON trae las operaciones |
 | 68 | — | 🟢 | new 2026-09-25: **`stress.simulate` reservaba 816 MB por mercado** — la matriz de 25.000 corridas entera, con tres arrays `float64` de valores booleanos. Troceada en lotes de 500: **140 MB**, cifras idénticas. Sin esto, 96 procesos no caben en 125 GB: un intento llegó a 94,5 GB y otro a 89 GB, y **el núcleo mató la ventana de VSCode** |
 | 45 | — | 🔴 | new 2026-09-25: **`nulls.seed` no fija nada**. `engines/nulls/simulate.py:nulls()` usa `abs(hash(rung))`, y `hash()` de una cadena está aleatorizado por proceso: dos `studies.screening.gate.report` sobre los mismos ficheros dieron **227 y 229 supervivientes**. Arreglo de una línea (hash estable) pero **cambia una vez todos los p almacenados** — decisión del dueño. `knowhow/perf/python-parallelism.md` |
 | 44 | 🔴 | 🔴 | new 2026-09-26: el CSCV mete dos meses de P&L de `oos1` en el lado OOS — la curva de cada pata empieza antes de su segmento (warm-up); cambia cifras CSCV/WFC ya calculadas |
@@ -1658,8 +1658,9 @@ Remains, in order:
 2. Verify against a real terminal what was written from the MT5 docs, unrun: the tester ini keys, the
    report's deal rows (13 cells, English `in`/`out`/`buy`/`sell` — a terminal in another language may
    write them translated), `origin.txt` naming the install, MetaEditor compiling a whole folder.
-3. The `.mq5` comes from SQX's GUI (Save → Source code). No `sqcli` verb for it is known — ask
-   `sqcli -help` on the conductor when no other session holds it.
+3. The `.mq5`: `sqcli -h` has no verb for it (checked 2026-09-29). Next: a `Test_` project with a
+   SaveToFiles task, `SaveSourceCode` + `MNActive` (`knowhow/sqx-drive/export-mql5-source-headless.md`);
+   the MT5 generator's name is still to find.
 4. The owner sets the bar for "the EA reproduces SQX" (`matched_of_sqx`, gaps) on the first real strategy.
 
 
@@ -1667,6 +1668,25 @@ Remains, in order:
 
 2026-09-27, found by encargo 24 E4 (`knowhow/research/spp-origin-level-sampled-once.md`). SQX's SPP
 step grid need not contain the original value; on the three USDJPY M30 SPPs it misses
+**2026-09-29.** Wine 11.18 staging (owner, sudo), terminal build 6231, the owner's funded account
+(Hantec, hedging, `trade_mode` real, symbols suffixed `.h`, terminal in English). `mt5/live.py` reads
+account, symbols, bars — verified. Build 6231 ships **MetaQuotes' own MCP** (67 tools, 127.0.0.1:22346,
+Bearer token): registered at **local** scope as `metatrader5` (token in `~/.claude.json`, never in git);
+its six `trade_*`, `chart_add_expert` and `chart_add_script` are **denied** in `.claude/settings.json`
+(owner's choice). Its tester (`tester_prepare_config` → `tester_run_backtest` → `tester_get_report` json)
+runs with the terminal open, so it replaces `mt5/tester.py` + `mt5/report.py` **once a real run shows
+its report carries every deal**; until then they stay. It has no compile tool: `mt5/metaeditor.py`
+stays. `mt5/compare.py` and the Parquet exports stay — MetaQuotes' MCP has neither.
+**Planned (owner, 2026-09-29), not built:** multi-account backtests from the one terminal
+(Hantec, FTMO; `mt5.login` with the saved password per job, symbol map per account, window and
+model chosen per request because some prop firms' data is poor — a per-account data probe first),
+then **`weeklyReconciler`**: each weekend, SQX backtests of the live strategies over the last week on
+the development data, against the live trades (live EAs run on a separate server; this machine
+reads, investor password recommended); a report, form to be decided. Cron slot after
+`weekly-data-update` (Sat 03:00).
+Note: `Bash(*)` is allowed in this project, so the deny list stops the MCP tools, not a hand-made
+HTTP call to the port — the terminal's own "prohibit AI trading" option is the lock that holds.
+
 `BBerDeviation1` 2.9 (and `BBerDeviation2` 2.8, `CBlc_ClsCrsDCerInt21` 29 on two of them), so θ₀
 (permutation −1) is the only tuple at its level. `model/profile.marginal` aggregates it with the rest:
 for those parameters `run.read` reports argmax = original and a width-1 plateau, and the design
