@@ -149,6 +149,40 @@ def one(source: dict, step: dict, cfg: dict) -> dict:
             "shapes": metrics.shapes(got, seen, cfg["global"]["report_percentile"])}
 
 
+def _family_e(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
+    """Family E, read on the out-of-sample trades alone (owner, 2026-09-29): the random-entry
+    benchmark and the PSR it feeds may only be compared against data the strategy was not
+    selected on, never the build. `_family_b` already reports the same OOS split for its own
+    ratio; this reruns it because Family E needs the cut stream itself, not a summary of it.
+
+    Args:
+        source: What stream.build() or stream.portfolio() returned -- IS and OOS together.
+        day: Daily candles, from regime.daily().
+        asset: What costs.load() returned.
+        cfg: What config.load() returned.
+
+    Returns:
+        `psr()`'s dict plus `benchmark` and `crosscheck()`'s two probabilities, all computed
+        on the OOS cut; or, when the OOS side has fewer trades than `confidence.average()`
+        calls reliable, the same shape with every number NaN (curve() below reads a NaN as
+        the floor, never as a pass) and a `warning` string -- reported honestly, never a
+        silent fall back to the IS trades sitting right there.
+    """
+    oos = stream.restrict(source, stream.samples(source)["OOS"])
+    n = int(oos["pnl"].size)
+    if n < confidence.MEAN_PROVISIONAL:
+        nan = float("nan")
+        return {"sharpe": nan, "skew": nan, "kurtosis": nan, "n": n, "psr": nan,
+                "benchmark": nan, "bootstrap": nan, "gap": nan,
+                "warning": f"sólo {n} operaciones OOS (mínimo {confidence.MEAN_PROVISIONAL}): "
+                           f"la PSR no se calcula sobre el build"}
+    benchmark = significance.footprint(oos, day, asset)
+    psr = significance.psr(oos["pnl"], benchmark)
+    boot = engine.sequential(engine.payload(oos), "draw", "iid_bootstrap", 0, cfg["global"]["n_sims"], cfg)
+    return {**psr, "benchmark": benchmark, **significance.crosscheck(psr["psr"], boot["sharpe"]),
+            "warning": None}
+
+
 def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
     """Put one trade stream through every family and return the whole result.
 
@@ -167,8 +201,6 @@ def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
     seen = metrics.observed(source["pnl"], g["starting_equity"])
     steps = sweeps.plan(n, cfg)
     runs = sweeps.execute(engine.payload(source), steps, g["n_sims"], cfg)
-    benchmark = significance.footprint(source, day, asset)
-    psr = significance.psr(source["pnl"], benchmark)
     return {"name": source["name"], "n_trades": n, "observed": seen,
             "blocks": sorted({s["block"] for s in steps if s["block"] > 1}),
             "titles": {s["label"]: s["title"] for s in steps},
@@ -177,7 +209,6 @@ def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
             "C": _family_c(source, cfg, g["n_sims"]),
             "D": family_d.run(source, day, cfg),
             "degrade": degrade.overlay(source, cfg),
-            "E": {**psr, "benchmark": benchmark,
-                  **significance.crosscheck(psr["psr"], runs[config.BASELINE]["sharpe"])},
+            "E": _family_e(source, day, asset, cfg),
             "cost_check": costs.crosscheck(source["frame"], asset),
             "overlap": stream.overlap(source)}

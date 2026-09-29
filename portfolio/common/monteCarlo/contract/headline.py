@@ -46,7 +46,7 @@ def glance(result: dict, verdict: dict) -> dict:
     rows += [["Inflación del drawdown", result["A"]["inflation"], None, None, None,
               verdict["tiers"]["dd_95"]],
              ["PSR", result["E"]["psr"], None, None, None,
-              confidence.average(result["n_trades"])]]
+              confidence.average(result["E"]["n"])]]
     return blocks.table("De un vistazo", pd.DataFrame(
         rows, columns=["", "backtest", "mediana simulada", "percentil 5",
                        "rango del backtest", "confianza"]),

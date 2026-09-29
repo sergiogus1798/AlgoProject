@@ -13,7 +13,11 @@ def footprint(source: dict, day: pd.DataFrame, asset: dict) -> float:
     """The Sharpe a same-footprint random trader would have scored, for `psr()`'s benchmark.
 
     Args:
-        source: What stream.build() or stream.portfolio() returned.
+        source: What stream.build() or stream.portfolio() returned, cut to the out-of-sample
+            trades alone (`stream.restrict(source, stream.samples(source)["OOS"])`) --
+            `run._family_e()`'s job, never this function's: the strategy was selected on the
+            build, so a random-entry comparison read there would score the search, not the
+            edge (owner, 2026-09-29).
         day: Daily candles, from regime.daily() -- `core.barstore`'s whole feed history;
             sliced here to the trades' own window, not read as already sliced.
         asset: What costs.load() returned.

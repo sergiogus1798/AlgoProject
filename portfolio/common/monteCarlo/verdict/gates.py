@@ -125,7 +125,10 @@ def check(result: dict, cfg: dict) -> list[dict]:
     if dd["regime"]["concentration"] > d["regime_concentration"]:
         out.append(_flag("D", "concentration", dd["regime"]["concentration"],
                          d["regime_concentration"], False))
-    if result["E"]["psr"] < e["psr_gate"]:
+    if result["E"]["warning"]:
+        out.append(_flag("data", "oos_thin", result["E"]["n"], confidence.MEAN_PROVISIONAL,
+                         True))
+    elif result["E"]["psr"] < e["psr_gate"]:
         out.append(_flag("E", "psr", result["E"]["psr"], e["psr_gate"], True))
     elif result["E"]["psr"] < e["psr_target"]:
         out.append(_flag("E", "psr_amber", result["E"]["psr"], e["psr_target"], False))

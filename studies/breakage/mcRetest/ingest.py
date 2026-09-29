@@ -171,8 +171,9 @@ def main() -> None:
     parser.add_argument("--role", help="headless install holding the project; "
                         "omit for the master")
     parser.add_argument("--harvest-databank", default="Results",
-                        help="the build databank studies.screening.gate.harvest paired, "
-                             "for the original trades footprint() benchmarks against")
+                        help="the build databank studies.screening.gate.harvest paired; only "
+                             "its OOS-tagged trades are kept, for the footprint() benchmark "
+                             "(owner, 2026-09-29: never the build's own trades)")
     parser.add_argument("--set", action="append", dest="overrides", metavar="KEY=VALUE")
     args = parser.parse_args()
 

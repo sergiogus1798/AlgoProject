@@ -57,13 +57,17 @@ def read(project: str, harvest_databank: str, identities: dict[str, str],
             cost `core.trades.cost()` recovers.
 
     Returns:
-        One row per trade of the strategies this ingest covers, `KEEP` only. A strategy the
-        MC Retest tasks ran but the harvest never paired (dropped OOS, `studies.screening.gate`)
-        is silently absent -- the caller has no window to benchmark it against either.
+        One row per **out-of-sample** trade of the strategies this ingest covers, `KEEP`
+        only -- `gate.harvest` tags every trade `sample` "IS" or "OOS", and the strategy was
+        selected on the "IS" side, so `run.benchmarks()`'s random-entry comparison may only
+        read the "OOS" one (owner, 2026-09-29): a footprint priced on the build would score
+        the search, not the edge. A strategy the MC Retest tasks ran but the harvest never
+        paired (dropped OOS, `studies.screening.gate`) is silently absent -- the caller has
+        no window to benchmark it against either.
     """
     frame = pd.read_parquet(newest_harvest(project, harvest_databank) / "trades.parquet")
     by_identity = {identity: strategy for strategy, identity in identities.items()}
-    got = frame[frame["identity"].isin(by_identity)].copy()
+    got = frame[(frame["identity"].isin(by_identity)) & (frame["sample"] == "OOS")].copy()
     got["strategy"] = got["identity"].map(by_identity)
     got["cost"] = core_trades.cost(got, point_value)
     return got[KEEP].reset_index(drop=True)

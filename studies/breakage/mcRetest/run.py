@@ -18,6 +18,9 @@ NEEDED = ("NetProfit", "ProfitFactor", "DrawdownPct", "NumberOfTrades", "AvgTrad
 # partitions (0.45 GB with its imports), and a strategy takes about a second. 48 of them on 500
 # strategies would be ~21 GB for no wall clock worth having; 16 keep it near 7 GB.
 WORKERS = 16
+# Below this, a strategy's own OOS trade count is too thin to trust the footprint benchmark
+# it feeds -- printed, never silently swapped for the build's trades (owner, 2026-09-29).
+MIN_OOS_TRADES = 5
 # What the per-strategy workers read, set before the fork.
 _SHARED: dict = {}
 
@@ -41,13 +44,16 @@ def benchmarks(trades: pd.DataFrame | None, asset: dict | None) -> dict[str, flo
     """Every strategy's same-footprint random-trader Sharpe, for `evidence.footprint()`.
 
     Args:
-        trades: What `store.load_trades()` returned, or None on an ingest written before
-            2026-09-29 (OPEN.md #71) or whose harvest never paired a strategy.
+        trades: What `store.load_trades()` returned -- already the out-of-sample side alone
+            (`measure.originals.read()`, owner 2026-09-29) -- or None on an ingest written
+            before 2026-09-29 (OPEN.md #71) or whose harvest never paired a strategy.
         asset: {"feed", "point_value"} from the ingest's manifest, or None to match.
 
     Returns:
         {strategy: benchmark}, absent -- read as 0.0 downstream -- for a strategy whose
-        window has fewer than two daily bars to measure a drift over.
+        window has fewer than two daily bars to measure a drift over. Printed, never
+        excluded, for a strategy whose OOS side has fewer than `MIN_OOS_TRADES`: the
+        benchmark is still the honest one to show, just a noisy one.
     """
     if trades is None or asset is None or trades.empty:
         return {}
@@ -56,6 +62,9 @@ def benchmarks(trades: pd.DataFrame | None, asset: dict | None) -> dict[str, flo
     for name, rows in trades.groupby("strategy", observed=True):
         window = day.loc[rows["Open time"].min():rows["Close time"].max()]
         if len(window) > 1:
+            if len(rows) < MIN_OOS_TRADES:
+                print(f"  aviso: {name} sólo tiene {len(rows)} operaciones OOS para el "
+                      f"benchmark aleatorio (mínimo {MIN_OOS_TRADES})")
             out[name] = evidence.footprint(rows, window, asset["point_value"])
     return out
 

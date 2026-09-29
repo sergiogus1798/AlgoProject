@@ -1,5 +1,5 @@
 ---
-q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed reproducible hash PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest, footprint no market noise bug law of total variance fix
+q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest, footprint noise bug total variance, random trader only vs OOS never vs build IS owner 2026-09-29
 tag: 🔬  date: 2026-09-29  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias
 ---
 # A monkey verdict depends on the statistic far more than on the null: report all five
@@ -8,9 +8,8 @@ being calmer than chance counts as edge under `sharpe` but not under `net`. Beat
 than beating zero (its mean is cost-negative). Use fill `open-open` (reconciled). Normal approximation (PSR/MinTRL)
 is fine for a gate at p≈0.05, not for the extreme tail after multiplicity — BH on the short list uses the simulation.
 
-**2026-09-29 (OPEN.md #71):** `benchmark=0` was the wrong null; `crossmarket`, `monteCarlo` and `mcRetest` all pass one monkey mean, `core.significance.footprint()`.
-**Same day, second bug in that function:** it gave the random trader the drift with no noise around it — only holding-time dispersion — so its Sharpe tracked the *market's own* (+2.0 to +2.2 on USDJPY, `p_positive` 1.0→0.0 for every strategy, see Evidence).
-**Fixed**: `footprint(h, d, s, c, mu, sigma, pv)` now combines per-trade mean/variance (`mean_i=d·mu·h·s·pv-c`, `var_i=sigma²·h·(s·pv)²`) by the law of total variance, `SR_b=mean(mean_i)/sqrt(mean(var_i)+var(mean_i))`; `sigma=0` reproduces the old value exactly (the known-answer test). Each caller also now reads direction (`core.trades.SIDE`) instead of assuming one.
+**2026-09-29 (OPEN.md #71):** `benchmark=0` was the wrong null; `footprint()` now prices a same-footprint random trader against the market's own bar-to-bar noise (law of total variance), shared by `crossmarket`, `monteCarlo` and `mcRetest`. See Evidence for the before/after numbers.
+**Same day, second rule (owner):** the random trader may only be read on OOS or on an additional market, never the main market's build — it already selected the strategy. Enforced in `monteCarlo`, `mcRetest`, `readings/monkey` (IST refused on the own market); `crossmarket`, `gate.monkey` already were. Audit below Evidence.
 
 ## Evidence
 
@@ -48,3 +47,16 @@ Seed: fixed 2026-09-25. Each block draws from `SeedSequence([seed, blake2b(strat
 Not: `default_rng([seed, abs(hash(rung)) % 2**32])` — `hash()` of a str is per-process randomised (3 runs: 810825080, 1328569471, 751024716),
 so `nulls.seed` fixed nothing; two `studies.screening.gate.report` runs gave 227 vs 229 survivors (identical with `PYTHONHASHSEED=0`).
 p-values stored before the fix came from other monkeys; vs new ones over 15,140 p, difference within Monte Carlo error.
+
+**OOS-only audit, 2026-09-29 (owner).** `monteCarlo.run._family_e()` restricts to
+`stream.restrict(source, stream.samples(source)["OOS"])` before `footprint()`/`psr()` (was: whole
+IS+OOS); < `confidence.MEAN_PROVISIONAL` OOS trades → NaN + `data`/`oos_thin` veto, never IS.
+`mcRetest.measure.originals.read()` keeps `sample == "OOS"` only from the harvest (was: both
+sides); < `run.MIN_OOS_TRADES` (5) → printed warning, still computed. KAT:
+`tests/test_montecarlo_oos.py`. `crossmarket` already compliant: additional markets run their
+whole window (never selected on); the main market's full backtest shows only as "referencia",
+excluded from the verdict; the OOS reading is `orchestrate/stretch.py`'s `oos_tab`.
+`gate.monkey` already filters `sample == "OOS"`. `monkey.report --sample` defaults `OOS1`; not a
+hard refusal — an additional market legitimately reads `IST` too (never selected on either
+sample), so its help text spells out the distinction. `crossTF` reads a retest task's own
+window, never a build task's — no mixing found.

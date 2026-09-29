@@ -56,7 +56,9 @@ FLAGS = {
     "cost_file": "El coste modelado desde assets/ es {value:.2f} veces el que SQX cobró de "
                  "verdad. Las pruebas de la familia C se leen con esa reserva.",
     "sample": "Con {value:.0f} operaciones alguno de los números que deciden no es fiable. "
-              "El veredicto se queda en INCONCLUSIVE."}
+              "El veredicto se queda en INCONCLUSIVE.",
+    "oos_thin": "Sólo {value:.0f} operaciones fuera de muestra (mínimo {limit:.0f}): la PSR no "
+                "se calcula sobre el build y el veredicto se queda en INCONCLUSIVE."}
 
 # What to call a check where it is named rather than explained, e.g. the verdict's failed
 # list. Family C reuses stress.TITLES so the name is not typed twice.
@@ -68,7 +70,7 @@ TITLES = {**stress.TITLES,
           "high_vol": "Volatilidad alta", "dead_block": "Bloque muerto",
           "windows": "Ventanas móviles", "concentration": "Concentración por régimen",
           "psr": "PSR", "psr_amber": "PSR (aviso)", "cost_file": "Coste modelado",
-          "sample": "Muestra insuficiente"}
+          "sample": "Muestra insuficiente", "oos_thin": "OOS insuficiente para la PSR"}
 
 
 def title(flag: dict) -> str:
