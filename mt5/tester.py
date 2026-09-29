@@ -49,7 +49,10 @@ def start(expert: str, symbol: str, timeframe: str, start_date: str, end_date: s
     ini = folder / "tester.ini"
     ini.write_text(_ini(expert, symbol, timeframe, start_date, end_date, model, deposit, leverage,
                         run), encoding="utf-16")
-    (wine.data_dir() / "reports" / f"{run}.htm").unlink(missing_ok=True)
+    # The terminal does not create Report='s folder: missing, the test passes and no report is written.
+    reports = wine.data_dir() / "reports"
+    reports.mkdir(exist_ok=True)
+    (reports / f"{run}.htm").unlink(missing_ok=True)
     with open(folder / "terminal.out", "w") as out:
         proc = subprocess.Popen(["wine", str(wine.TERMINAL), f"/config:{wine.windows(ini)}"],
                                 env=wine.env(), stdout=out, stderr=subprocess.STDOUT,

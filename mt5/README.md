@@ -15,6 +15,8 @@ then `bin/mt5-install.sh` (prefix at `mt5_prefix` in `config/machine.yaml`, the 
 Python with the `MetaTrader5` package). Everything it writes goes to `core.paths.MT5_DATA`.
 Manual: chapter `60-mt5`, in `docs/manual/10-cierre.pdf`. State: OPEN.md #78.
 
+**No window opens**: `wine.env()` sends every Wine program to an Xvfb on `:77` (in `~/.local/bin`, started on demand); `MT5_VISIBLE=1` shows them on the desktop. `knowhow/eng/mt5-tester-unattended.md`.
+
 **Compiling needs the terminal closed**, exactly like the tester does: `MetaEditor64.exe` shares
 `terminal64.exe`'s data-folder lock and, while the terminal is up, still exits 0 but writes only
 the log's BOM and compiles nothing — `metaeditor.compile_path()` checks `wine.terminal_running()`

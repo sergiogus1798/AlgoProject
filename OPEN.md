@@ -365,6 +365,8 @@ Remains, in order:
 (Hantec, hedging, `trade_mode` real, symbols suffixed `.h`, terminal in English). `mt5/live.py` reads
 account, symbols, bars — verified. Build 6231 ships **MetaQuotes' own MCP** (67 tools, 127.0.0.1:22346,
 Bearer token): registered at **local** scope as `metatrader5` (token in `~/.claude.json`, never in git);
+**2026-09-29, later — owner lifted the hold for this test.** The unattended backtest works: `metaeditor.expert()` → `tester.start()` → `tester.collect()` on the owner's `Strategy 3.48.75` (XAUUSD H1, `~/Desktop/FTMO_EAs_NoNews` and `FTMONewsFilter_Files`), 20 months in ~15 s each, 27 trades parsed from the report. One bug fixed: the terminal does not create the `reports\` folder of `Report=`, so no report was written (`tester.py` makes it now). The news filter is inert in the tester (the calendar is empty there), so both versions trade identically. → `knowhow/eng/mt5-tester-unattended.md`. Left: the tester has no way to pass EA inputs (a `[TesterInputs]` section); the MetaQuotes MCP tester is still unproven; there is still no SQX backtest of the same EA to compare against.
+
 its six `trade_*`, `chart_add_expert` and `chart_add_script` are **denied** in `.claude/settings.json`
 (owner's choice). Its tester (`tester_prepare_config` → `tester_run_backtest` → `tester_get_report` json)
 runs with the terminal open, so it replaces `mt5/tester.py` + `mt5/report.py` **once a real run shows

@@ -1,6 +1,8 @@
 """Where MetaTrader 5 lives inside its Wine prefix, and how to run a Windows program there."""
 import os
+import shutil
 import subprocess
+import time
 from pathlib import Path, PureWindowsPath
 
 from core.paths import MASTER, MT5_PREFIX
@@ -17,11 +19,37 @@ SQX_MQL5 = MASTER / "custom_indicators" / "MetaTrader5"
 PROJECT_MQL5 = Path(__file__).parent / "indicators"
 # Our EAs go in a folder of their own under MQL5/Experts, never mixed with the stock ones.
 EXPERTS_SUB = "AlgoProject"
+# The virtual X display the terminal and MetaEditor draw on, so no window opens on the desktop.
+# Xvfb is unpacked into ~/.local/bin (no sudo here). MT5_VISIBLE=1 shows the windows again.
+HEADLESS_DISPLAY = ":77"
+
+
+def _headless_display() -> str | None:
+    """HEADLESS_DISPLAY, starting Xvfb on it if it is not up; None when Xvfb is not installed."""
+    socket = Path("/tmp/.X11-unix") / f"X{HEADLESS_DISPLAY[1:]}"
+    if socket.exists():
+        return HEADLESS_DISPLAY
+    xvfb = shutil.which("Xvfb")
+    if xvfb is None:
+        return None
+    subprocess.Popen([xvfb, HEADLESS_DISPLAY, "-screen", "0", "1280x1024x24", "-nolisten", "tcp"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    for _ in range(50):
+        if socket.exists():
+            return HEADLESS_DISPLAY
+        time.sleep(0.1)
+    return None
 
 
 def env() -> dict:
-    """The process environment with WINEPREFIX pointing at the MT5 prefix and Wine's chatter off."""
-    return {**os.environ, "WINEPREFIX": str(MT5_PREFIX), "WINEDEBUG": "-all"}
+    """The process environment: WINEPREFIX at the MT5 prefix, Wine's chatter off, and the
+    virtual display unless MT5_VISIBLE=1 or Xvfb is missing (then the desktop's, windows show)."""
+    out = {**os.environ, "WINEPREFIX": str(MT5_PREFIX), "WINEDEBUG": "-all"}
+    display = None if os.environ.get("MT5_VISIBLE") == "1" else _headless_display()
+    if display:
+        out["DISPLAY"] = display
+        out.pop("WAYLAND_DISPLAY", None)
+    return out
 
 
 def windows(path: Path) -> str:
