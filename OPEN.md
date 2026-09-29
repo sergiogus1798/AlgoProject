@@ -34,7 +34,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 18 | ⚪ | `EdgeDecayRatio` / `EdgeDecayFilter` retired — waiting on the GUI to unwire it | docs/OPEN-closed.md |
 | 19 | 🟡 | Three Monte Carlo thresholds are placeholders | OPEN.md |
 | 20 | 🟢 | `.claude/settings.json` gates one destructive repair script but not the other... | docs/OPEN-closed.md |
-| 21 | 🟡 | `bin/sqx-worker.sh` keeps half the project off Windows | OPEN.md |
+| 21 | ⚪ | `bin/sqx-worker.sh` keeps half the project off Windows | docs/OPEN-closed.md |
 | 22 | 🟡 | `studies/transfer/crossmarket` — state of play after the 2026-09-14/15 rebuild | OPEN.md |
 | 23 | 🟢 | The XAUUSD robustness protocol is half built | docs/OPEN-closed.md |
 | 24 | ⚪ | The holdout pre-registration — CLOSED 2026-09-26, the owner declined it | docs/OPEN-closed.md |
@@ -51,7 +51,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 35 | 🟢 | `sqx.projects.builder --symbol` does not change the market — it cannot author... | docs/OPEN-closed.md |
 | 36 | 🟢 | Unit conversions in `no_forex` cost files swing ~5× with the reference price... | docs/OPEN-closed.md |
 | 37 | 🟢 | `studies/breakage/mcRetest/` assumes all eight MCR tasks always ran | docs/OPEN-closed.md |
-| 38 | 🟡 | Tres divergencias declaradas de los pasos 15, 16.5 y 19 — decisión del dueño | OPEN.md |
+| 38 | 🟢 | Tres divergencias declaradas de los pasos 15, 16.5 y 19 — decisión del dueño | docs/OPEN-closed.md |
 | 38b | 🟡 | `/plugin` does not exist here — sqx-lab installed by hand, does not auto-update | OPEN.md |
 | 39 | ✅ | El WFC en tres tramos — hecho el 2026-09-24 | docs/OPEN-closed.md |
 | 40 | ✅ | Los databanks del proyecto WFC hay que crearlos a mano — resuelto 2026-09-25 | docs/OPEN-closed.md |
@@ -135,34 +135,6 @@ changing one re-decides every strategy without touching code.
 **2026-09-29.** Owner, 2026-09-29: this is the trade-level Monte Carlo — deferred to the future. Not blocking.
 
 ---
-
-## 21. 🟡 `bin/sqx-worker.sh` keeps half the project off Windows
-
-Opened 2026-09-12 while making the project cloneable. Everything that drives StrategyQuant X —
-`core/worker.py`, `core/exportdrv.py`, `sqx/export/`, `sqx/curate/apply_verdict.py` — shells out to
-`bin/sqx-worker.sh`, which needs `rsync`, `ss`, `md5sum`, `curl`, `setsid` and `stat -c`;
-`apply_verdict.py` also uses `pgrep` and the bare `sqcli` name, where Windows ships `sqcli.bat`.
-The analysis half is pure Python over exported CSVs and runs anywhere, so the working split today is
-**export on Linux, analyse on either**, and `core.worker.require_posix()` makes the boundary fail
-with one clear sentence instead of a `FileNotFoundError` on a `.sh`.
-
-The script also hardcodes `MASTER` and `WORKER` as absolute paths, duplicating `config/machine.yaml`.
-`tools/checks.py` does not catch it because the rule only scans `.py`.
-
-**Fix, if it is ever wanted:** port it to `core/workerctl.py` — `socket.connect_ex` for the port
-check instead of `ss`, `shutil.copy2` instead of `rsync`, `hashlib` instead of `md5sum`,
-`urllib.request` instead of `curl`, `subprocess.Popen` with `CREATE_NEW_PROCESS_GROUP` /
-`start_new_session` instead of `setsid`, and the paths read from `core/paths.py`. That removes the
-split and the duplicated paths in one change. Not done: the owner only needs the analysis half on
-Windows today.
-
-**2026-09-28 (plan 24, F0 + F13): the window's half closed.** The owner answered Q2: the window is
-used on Linux only, so nothing of `ui/` is ported. What stays is a guard: `/api/health` carries
-`sqx.installs`, and on a machine without any install the window opens read-only (banner, the load
-bar's ↻ disabled with its reason — `ui/desktop/shell.py` `guard`, F0). «Continuar workflow» (F7)
-refuses too, through its preflight. The worker script's own port to Windows is still open, as
-above.
-
 
 ## 22. 🟡 `studies/transfer/crossmarket` — state of play after the 2026-09-14/15 rebuild
 
@@ -272,6 +244,8 @@ first forex harvest built with it. A forex swap model by date (rate differential
 
 **2026-09-29.** Owner, 2026-09-29: settle SizeBased once-vs-per-fill on forex with `edgeCost` on the first forex harvest. Waits on that harvest.
 
+**2026-09-29.** Owner, 2026-09-29: every asset carries a commission per broker (`costs.commission.brokers`, source and date each; unconfirmed = null) for step 26 and the weekly reconciliation, and the development default is the MOST expensive of them (`core/commission.py`, `core/assetwrite/brokers.py`). The owner's own figures (Infinox 8 $/lot) count as confirmed. Applied: XAUUSD 0.004692 → 0.005 % (Darwinex); USDJPY stays 8 $/lot. Left: the gold figure (owner reviewing: 0.005 % charges ≈6 $/lot in 2010 and ≈23 $ in 2026); FTMO forex, Infinox pages, metals of Hantec/the5ers/FundedNext and FundingPips unconfirmed; nine forex pairs need `studies.data.spread.scan` before Darwinex's % can be compared; SizeBased once-vs-per-fill still waits on the first forex harvest.
+
 ## 28. 🟠 `DAX40` has an asset file but the master configures no such feed
 
 `assets/DAX40.yaml` names `DAX40_DukasM1_Infinox`, and a sweep of every `project.cfx` on the master
@@ -313,34 +287,6 @@ describes a market that was never wired.
 **2026-09-29.** Also blocks index authoring (#35): no install defines a trading session for any index CFD, so `builder` refuses them until the session exists in SQX.
 
 **2026-09-29.** Windows were already set (build → 2019, oos1 2020-2023, oos2 2024 → 2026-08-31) for the five index CFDs; `core.assets` passes for all five. Left for the owner, later: SP500ft's feed and the index sessions in SQX.
-
-## 38. 🟡 Tres divergencias declaradas de los pasos 15, 16.5 y 19 — decisión del dueño
-
-📓 2026-09-23, al escribir `sqx/projects/spp.py`, `sqx/projects/wfm.py` y las skills `/spp`,
-`/variants` y `/wfm`. Ninguna es un bug: son tres sitios donde el código sigue lo que hacen las
-tareas del maestro y eso **no coincide con la letra** de un fichero de política. Están escritas para
-que él decida, no para que la siguiente sesión las "arregle".
-
-1. **La precisión del SPP es `1`, no el `2` de la doctrina.** `_build.yaml` dice
-   `precision.default: 2` (un minuto) de la construcción en adelante, y las dos tareas SPP del
-   donante corren a `1`. Un SPP son miles de backtests **por estrategia**: a un minuto no termina.
-   El catálogo `spp:` lo fija en 1 y lo canta en cada ejecución. Si el dueño quiere el 2, es cambiar
-   una línea — y medir antes cuánto tarda una madre real.
-
-2. **`SPP IS` corre sobre `build`.** `_policy.yaml` dice que `build` es «sólo el paso 6, la única
-   muestra que el generador ve». Esa frase habla de **selección**; el SPP de IS no selecciona nada
-   (las condiciones y los cuatro `Eval*Check` van apagados), sólo vuelve a leer una ventana ya
-   gastada, que es lo que significa "in sample" y lo que hacen las tareas del maestro. Si el dueño
-   prefiere que el paso 15 no toque `build` en absoluto, se queda sólo el `SPP OOS` y el paso 16
-   pierde la mitad de su entrada.
-
-3. **La fábrica de variantes sigue corriendo sobre el `Retester` de serie.**
-   `sqx/variants/config.yaml`, `execute.project: Retester`, incumple la regla dura 10. Es anterior a
-   la regla. La migración es crear un custom project de una sola tarea Retest
-   (`sqx.projects.builder Test_<SIM>_variantes --purpose "..." --tasks Retest --only Retest-Task1.xml`) y poner su nombre
-   ahí. No se ha cambiado el default para no romper una cadena que hoy funciona sin que él lo sepa.
-
-**2026-09-29.** Owner, 2026-09-29: (a) SPP precision stays 1, (b) SPP IS stays on `build`. (c) done in code: `sqx.variants.spp` requires `--project` and refuses the stock projects; `pipeline/config.yaml run.spp_project` = `Trade_XAUUSD_variantesSPP`. Left: build that one-Retest-task project once on the custodian (`python3 -m sqx.projects.builder Trade_XAUUSD_variantesSPP --tasks Retest --only Retest-Task1.xml ...`). `knowhow/sqx-drive/spp-harness-needs-its-own-project.md`.
 
 ## 38b. 🟡 `/plugin` does not exist here — sqx-lab installed by hand, does not auto-update
 
@@ -431,6 +377,8 @@ Three things are still open:
 
 **2026-09-29.** Owner, 2026-09-29: the «poquito de spread» is what `assets/` already carries — the measured spread × 1.25 as a spread on top of the commission (e.g. USDJPY 0.65 points + 8 $/lot). Left: the DATATICK retest that would license the repricing, and USDJPY's price-level model.
 
+**2026-09-29.** Owner: make the DATATICK check part of the workflow, once, at the end. Now encargo 36 (`docs/encargos/36-licencia-reprecio-datatick.md`) and step 25.5 of `WORKFLOW.md`, after 17-20 and 25, before 26: a real `*_DarwTick_*` retest of a few survivors compared trade by trade with `studies.data.spread.report`. Left: the owner's acceptance bar (R difference or verdict match), and building it.
+
 ## 78. 🟡 MetaTrader 5 under Wine: built, not yet run
 
 2026-09-27, owner: test the surviving strategies in MT5 before the portfolio, and give Claude an MCP
@@ -469,6 +417,8 @@ Note: `Bash(*)` is allowed in this project, so the deny list stops the MCP tools
 HTTP call to the port — the terminal's own "prohibit AI trading" option is the lock that holds.
 
 **2026-09-29.** Install and login DONE: the terminal runs under Wine (`~/Desktop/MT5`), connected, logged in to «$10k FTMO Account 2-Step» on FTMO-Server4 (owner: several funded accounts). Left, all ours: `metaeditor` is not installed (needed by `mt5_compile`), then backtest one SQX EA in the tester and compare it with SQX.
+
+**2026-09-29.** Compile works: `MetaEditor64.exe` was there (case bug in `mt5/wine.py`); Wine truncates any argument with a space, so `compile_path` now compiles by a relative path with `cwd`, and refuses while the terminal is up (they share the data-folder lock). 48/48 `Sq*` indicators compiled, 0 errors. Left: (1) no SQX-exported EA exists on disk — export one through a `Test_` project's SaveToFiles task (`SaveSourceCode`) on the conductor; (2) the tester and MetaEditor need the terminal closed, and it runs logged in to the owner's funded FTMO account — his call when. Proposed bar: matched ≥ 95 % both ways, open gap ≤ 1 bar, same exit ≥ 90 %, P&L corr ≥ 0.95. `knowhow/eng/metaeditor-compile-under-wine.md`.
 
 ## 81. 🟡 The window's cut-over (plan 24) left five owner's calls open
 
@@ -521,6 +471,8 @@ five are his, and nothing in the code decides them:
   infer it; left as it is.
 - During the WFM SQX logs thousands of `StatsComputer - Exception computing databank column
   ParameterCount / DoFRatio` (SQX's own, harmless to the run; the watcher now ignores them).
+
+**2026-09-29.** Owner, 2026-09-29: MCR 3's slippage stays at half the spread, his rule — `tarea_sin_dispersion` on USDJPY is an honest reading, not a range to widen. Still open: whether the workflow project clears an output before its task.
 
 ## 85. 🟠 Prop-firm funding workstream — built 2026-09-29, the owner's calls still open
 

@@ -539,6 +539,35 @@ was asked to do.
 ---
 
 
+## 21. ⚪ `bin/sqx-worker.sh` keeps half the project off Windows
+
+Opened 2026-09-12 while making the project cloneable. Everything that drives StrategyQuant X —
+`core/worker.py`, `core/exportdrv.py`, `sqx/export/`, `sqx/curate/apply_verdict.py` — shells out to
+`bin/sqx-worker.sh`, which needs `rsync`, `ss`, `md5sum`, `curl`, `setsid` and `stat -c`;
+`apply_verdict.py` also uses `pgrep` and the bare `sqcli` name, where Windows ships `sqcli.bat`.
+The analysis half is pure Python over exported CSVs and runs anywhere, so the working split today is
+**export on Linux, analyse on either**, and `core.worker.require_posix()` makes the boundary fail
+with one clear sentence instead of a `FileNotFoundError` on a `.sh`.
+
+The script also hardcodes `MASTER` and `WORKER` as absolute paths, duplicating `config/machine.yaml`.
+`tools/checks.py` does not catch it because the rule only scans `.py`.
+
+**Fix, if it is ever wanted:** port it to `core/workerctl.py` — `socket.connect_ex` for the port
+check instead of `ss`, `shutil.copy2` instead of `rsync`, `hashlib` instead of `md5sum`,
+`urllib.request` instead of `curl`, `subprocess.Popen` with `CREATE_NEW_PROCESS_GROUP` /
+`start_new_session` instead of `setsid`, and the paths read from `core/paths.py`. That removes the
+split and the duplicated paths in one change. Not done: the owner only needs the analysis half on
+Windows today.
+
+**2026-09-28 (plan 24, F0 + F13): the window's half closed.** The owner answered Q2: the window is
+used on Linux only, so nothing of `ui/` is ported. What stays is a guard: `/api/health` carries
+`sqx.installs`, and on a machine without any install the window opens read-only (banner, the load
+bar's ↻ disabled with its reason — `ui/desktop/shell.py` `guard`, F0). «Continuar workflow» (F7)
+refuses too, through its preflight. The worker script's own port to Windows is still open, as
+above.
+
+**Closed 2026-09-29.** Owner, 2026-09-29: he does not expect to run this script on Windows. Not ported; `bin/sqx-worker.sh` (with `bin/sqx-lock.sh`) stays the one implementation.
+
 ## 23. 🟢 The XAUUSD robustness protocol is half built
 
 **Where the plan lives:** `docs/AgentPDFs/WORKFLOW.md` (the protocol dossier of 2026-09-21 was
@@ -864,6 +893,36 @@ so many words rather than quietly averaging over what it found. `sqx.projects.mc
 already emits exactly that, per task, under `dropped`.
 
 **Closed 2026-09-29.** Already fixed in code: `studies/breakage/mcRetest/ingest.py` requires only `bar`,`stress`; `inputs/tasks.py` checks a subset.
+
+## 38. 🟢 Tres divergencias declaradas de los pasos 15, 16.5 y 19 — decisión del dueño
+
+📓 2026-09-23, al escribir `sqx/projects/spp.py`, `sqx/projects/wfm.py` y las skills `/spp`,
+`/variants` y `/wfm`. Ninguna es un bug: son tres sitios donde el código sigue lo que hacen las
+tareas del maestro y eso **no coincide con la letra** de un fichero de política. Están escritas para
+que él decida, no para que la siguiente sesión las "arregle".
+
+1. **La precisión del SPP es `1`, no el `2` de la doctrina.** `_build.yaml` dice
+   `precision.default: 2` (un minuto) de la construcción en adelante, y las dos tareas SPP del
+   donante corren a `1`. Un SPP son miles de backtests **por estrategia**: a un minuto no termina.
+   El catálogo `spp:` lo fija en 1 y lo canta en cada ejecución. Si el dueño quiere el 2, es cambiar
+   una línea — y medir antes cuánto tarda una madre real.
+
+2. **`SPP IS` corre sobre `build`.** `_policy.yaml` dice que `build` es «sólo el paso 6, la única
+   muestra que el generador ve». Esa frase habla de **selección**; el SPP de IS no selecciona nada
+   (las condiciones y los cuatro `Eval*Check` van apagados), sólo vuelve a leer una ventana ya
+   gastada, que es lo que significa "in sample" y lo que hacen las tareas del maestro. Si el dueño
+   prefiere que el paso 15 no toque `build` en absoluto, se queda sólo el `SPP OOS` y el paso 16
+   pierde la mitad de su entrada.
+
+3. **La fábrica de variantes sigue corriendo sobre el `Retester` de serie.**
+   `sqx/variants/config.yaml`, `execute.project: Retester`, incumple la regla dura 10. Es anterior a
+   la regla. La migración es crear un custom project de una sola tarea Retest
+   (`sqx.projects.builder Test_<SIM>_variantes --purpose "..." --tasks Retest --only Retest-Task1.xml`) y poner su nombre
+   ahí. No se ha cambiado el default para no romper una cadena que hoy funciona sin que él lo sepa.
+
+**2026-09-29.** Owner, 2026-09-29: (a) SPP precision stays 1, (b) SPP IS stays on `build`. (c) done in code: `sqx.variants.spp` requires `--project` and refuses the stock projects; `pipeline/config.yaml run.spp_project` = `Trade_XAUUSD_variantesSPP`. Left: build that one-Retest-task project once on the custodian (`python3 -m sqx.projects.builder Trade_XAUUSD_variantesSPP --tasks Retest --only Retest-Task1.xml ...`). `knowhow/sqx-drive/spp-harness-needs-its-own-project.md`.
+
+**Closed 2026-09-29.** Owner, 2026-09-29: (a) SPP precision stays 1, (b) SPP IS stays on `build`, (c) no separate harness project. `sqx/variants/harness.write()` finds its task by title (`SPP IS`/`SPP OOS`/`OOS`) inside the mother's own workflow project and `sqx.variants.spp` switches on only that task (`stage.just`); the harness databanks are `SPPRecon_In`/`SPPRecon_Out` (the old `Results` collided with the Build's). `run.spp_project` removed. `tests/test_variants_harness.py`; manual chapter 19-wfc.
 
 ## 39. ✅ El WFC en tres tramos — hecho el 2026-09-24
 
