@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import worker
 from core.paths import WORKERS, worker_dir
+from sqx.projects import stage as workflow_stage
 from sqx.variants import execute, harness, inputs
 
 STAGED = "spp_in"
@@ -94,14 +95,15 @@ def main() -> None:
     ap.add_argument("--chart", action="append", required=True,
                     help="repeatable, main first: SYMBOL=TIMEFRAME=SPREAD")
     ap.add_argument("--project", required=True,
-                    help="the dedicated single-Retest-task harness project on the custodian "
-                         "(hard rule 10; never Builder or Retester) -- built once with "
-                         "`sqx.projects.builder <name> --tasks Retest --only Retest-Task1.xml`")
+                    help="the mother's own workflow project (hard rule 10; never Builder or "
+                         "Retester) -- built with `sqx.projects.builder --workflow`, which "
+                         "already carries this kind's task (SPP IS or SPP OOS) as its own "
+                         "member. Never a project built just to hold this harness")
     a = ap.parse_args()
     if a.project in STOCK:
         raise SystemExit(f"{a.project} es un proyecto de serie: regla dura 10, el reconocimiento "
-                         "SPP necesita su propio proyecto de una tarea Retest. Créalo con "
-                         "`sqx.projects.builder <name> --tasks Retest --only Retest-Task1.xml`.")
+                         "SPP corre dentro del proyecto de workflow de la propia madre. "
+                         "Créalo con `sqx.projects.builder <name> --workflow` si no existe.")
 
     settings = inputs.load()
     cfg, spp = settings["execute"], settings["spp"]
@@ -116,7 +118,11 @@ def main() -> None:
         harness.donor_task(a.kind), charts, (cfg["input"], cfg["output"])))
     task = harness.cross_check(task, "OptProfileSysParamPermutation", True)
     task = harness.spp(task, spp["spread_pct"], spp["step_pct"], spp["max_tests"])
-    harness.write(cfg["project"], task, cfg["role"])
+    cfx = worker_dir(cfg["role"]) / "user/projects" / cfg["project"] / "project.cfx"
+    harness.write(cfx, task, a.kind, cfg["role"])
+    # Only this run's own task runs on the next `action=start` -- the project is the
+    # mother's, and it carries every other workflow step's task too (hard rule 10).
+    workflow_stage.just(cfx, [harness.TITLES[a.kind]])
 
     print("PROGRESS 5 despertando el custodio", flush=True)
     execute.awake(cfg)

@@ -85,23 +85,24 @@ execute:
   role: custodian
   # Neither this stage nor the SPP reconnaissance harness reads a project name from here
   # any more (OPEN.md §38, owner 2026-09-29): both take `--project` on the command line and
-  # both refuse a stock one (`sqx.variants.execute.STOCK`). The batch retest (`sqx.variants.execute`)
-  # takes the workflow's own project (owner, 2026-09-25); `sqx.variants.spp` needs a DEDICATED
-  # single-Retest-task project of its own, because `harness.write` overwrites that project's
-  # `Retest-Task1.xml` outright -- pointed at the multi-task workflow project it would silently
-  # clobber whichever task that file name is. Build it once per symbol:
-  #   python3 -m sqx.projects.builder Trade_<SYMBOL>_variantesSPP \
-  #       --purpose "SPP reconnaissance harness for sqx.variants.spp (step 16.5)" \
-  #       --tasks Retest --only Retest-Task1.xml
-  # `Trade_`, not `Test_`: it is reused for every mother of the family rather than retired
-  # per run. `pipeline/config.yaml#run.spp_project` names it for the unattended pipeline.
+  # both refuse a stock one (`sqx.variants.execute.STOCK`). Both now take the SAME project
+  # too -- the mother's own workflow project (hard rule 10) -- never one built just to hold
+  # a harness: `sqx.variants.spp` rewrites that project's own "SPP IS"/"SPP OOS" task by
+  # title (`sqx.variants.harness`, `sqx.projects.stage.just` leaves only that one active).
+  #
+  # ⚠️ `input`/`output` below are the reconnaissance's OWN staging databanks, not the
+  # project's real ones. A workflow project's Build task already writes its population
+  # into a databank literally named "Results" (`Build-Task3.xml` in the frozen donor) --
+  # reusing that name here would load the one mother being reconnoitred straight into the
+  # project's real build population. Picked to collide with nothing the workflow declares
+  # (`sqx/projects/stages.yaml`, `assets/_build.yaml#wfc.input`, `workflow.CROSSTF`).
   # ⚠️ Estos dos son los del harness de una sola tarea que usa `spp.py` (el reconocimiento
   # SPP de una madre). El RETEST DEL LOTE ya no los usa: sus databanks salen de `wfc:` en
   # assets/_build.yaml — el de entrada y uno de salida por tramo—, que es donde se declara
   # el estudio entero. `sqx.projects.wfc` escribe las tareas con esos nombres y
   # `sqx.variants.legs` los lee, para que no haya dos sitios donde se llamen distinto.
-  input: Results
-  output: RetestOut
+  input: SPPRecon_In
+  output: SPPRecon_Out
   poll_seconds: 5
   ready_tries: 40        # the port answers ~20 s before the CLI does; poll, do not conclude
   # How many polls to wait for `synctofiles` to finish writing, at poll_seconds each.

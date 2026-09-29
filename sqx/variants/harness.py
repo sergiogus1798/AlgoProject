@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a worker's one-task retest harness from a donor task that is known to have run."""
+"""Rewrite one already-configured task -- SPP IS, SPP OOS or OOS -- from a donor known to run."""
 
 import argparse
 import re
@@ -12,14 +12,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core.datapaths import projects_backup
 from core.paths import WORKERS, worker_dir
+from sqx.projects.crosschecks import member_of
 from sqx.variants import inputs
 
-TASK = "Retest-Task1.xml"
-# Donor tasks, by what they are for. These are the owner's own XAUUSD settings, frozen:
-# copying one is how a harness inherits a configuration that demonstrably works, instead of
-# being hand-assembled and silently missing an element (knowhow/conditions/active-conditions-in-crosschecks.md).
-DONOR = {"spp_is": "Retest-Task13.xml", "spp_oos": "Retest-Task14.xml",
-         "retest": "Retest-Task1.xml"}
+# Which task of the TARGET project each kind rewrites, by title -- never by file name. A
+# workflow project's "Retest-Task1.xml" is its real `OOS` task, not a spare slot (OPEN.md §38).
+TITLES = {"spp_is": "SPP IS", "spp_oos": "SPP OOS", "retest": "OOS"}
+# Donor tasks, by what they are for -- the owner's own XAUUSD settings, frozen: copying one
+# is how a harness inherits a configuration known to work (knowhow/conditions/active-conditions-in-crosschecks.md).
+DONOR = {"spp_is": "Retest-Task13.xml", "spp_oos": "Retest-Task14.xml", "retest": "Retest-Task1.xml"}
 CHART = re.compile(r'<Chart symbol="[^"]*" timeframe="[^"]*" spread="([^"]*)" ?/>')
 
 
@@ -165,27 +166,36 @@ def recommended(inner: str) -> str:
     return inner[:what.start()] + block + inner[what.end():]
 
 
-def write(project: str, task: str, role: str) -> Path:
-    """Replace the harness project's single task, on disk.
+def write(cfx: Path, task: str, kind: str, role: str) -> Path:
+    """Replace one task member of a project.cfx, found by title -- never any other task's.
 
     Args:
-        project: Project name on the worker.
+        cfx: The project.cfx to rewrite -- the mother's own workflow project (hard rule
+            10), which already carries "SPP IS" and "SPP OOS" (`sqx/projects/stages.yaml`,
+            kept from the donor by `sqx.projects.builder --workflow`). Never a separate
+            project built just to hold the harness.
         task: The finished task XML.
+        kind: A key of `TITLES` -- which of the project's own tasks this run owns.
         role: Worker role that owns the install.
 
     Returns:
-        The project.cfx that was rewritten.
+        The same `cfx`, rewritten.
 
     Raises:
-        SystemExit: The install is running. SQX rewrites a project.cfx on save and on exit,
-            so editing one an instance holds loses the change in silence -- hard rule 4.
+        SystemExit: The install is running (hard rule 4), or the project carries no task
+            titled `TITLES[kind]`.
     """
-    cfx = worker_dir(role) / "user/projects" / project / "project.cfx"
     listening = subprocess.run(["ss", "-ltn"], capture_output=True, text=True).stdout
     if f':{WORKERS[role]["port"]} ' in listening:
-        raise SystemExit(f"{role} esta levantado: paralo antes de reescribir {project}")
-    members = {n: z.read(n) for z in [zipfile.ZipFile(cfx)] for n in z.namelist()}
-    members[TASK] = task.encode("utf-8")
+        raise SystemExit(f"{role} esta levantado: paralo antes de reescribir {cfx.parent.name}")
+    with zipfile.ZipFile(cfx) as z:
+        members = {n: z.read(n) for n in z.namelist()}
+    member = member_of(members["config.xml"].decode("utf-8"), TITLES[kind])
+    if not member:
+        raise SystemExit(f"{cfx.parent.name} no lleva la tarea {TITLES[kind]!r}: un proyecto "
+                         "de workflow se crea con `sqx.projects.builder --workflow` "
+                         "(regla dura 10).")
+    members[member] = task.encode("utf-8")
     with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as out:
         for name, data in members.items():
             out.writestr(name, data)
@@ -196,7 +206,8 @@ def main() -> None:
     """Rewrite a worker harness for one kind of run."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--kind", required=True, choices=sorted(DONOR))
-    ap.add_argument("--project", required=True, help="harness project on the worker")
+    ap.add_argument("--project", required=True,
+                    help="project on the worker carrying the task --kind names by title")
     ap.add_argument("--input", default="Results")
     ap.add_argument("--output", required=True)
     ap.add_argument("--chart", action="append", default=[],
@@ -222,7 +233,8 @@ def main() -> None:
         task = cross_check(task, "OptProfileSysParamPermutation", True)
         task = spp(task, a.spp_spread, a.spp_step_pct, a.spp_max_tests)
 
-    cfx = write(a.project, task, inputs.load()["execute"]["role"])
+    role = inputs.load()["execute"]["role"]
+    cfx = write(worker_dir(role) / "user/projects" / a.project / "project.cfx", task, a.kind, role)
     print(f"{a.kind}: {a.input} -> {a.output}")
     for line in re.findall(
             r"<(?:Setup|Chart|Databanks|CrossChecks|OptProfileSysParamPermutation|"
