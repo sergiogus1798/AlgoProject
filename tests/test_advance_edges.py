@@ -1,6 +1,7 @@
 """«Continuar workflow» when things go wrong: every failure stops the worker it started."""
 
 import shutil
+import socket
 import sys
 import tempfile
 import time
@@ -15,7 +16,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from tests.test_advance import CALLS, P, fakes, tree, write  # noqa: E402
 from ui.daemon import progress  # noqa: E402
-from ui.daemon.advance import api, run, sqxlog  # noqa: E402
+from ui.daemon.advance import api, preflight, run, sqxlog  # noqa: E402
 
 
 def fails(built: dict, **how: object) -> str:
@@ -98,10 +99,74 @@ def test_copies_counted(root: Path) -> None:
                                               "otro nombre, y se borran todas las copias)"), got
 
 
+def test_ready_waits_for_the_load(root: Path) -> None:
+    """A task started while SQX still loads its databanks reads them empty (2026-09-29,
+    «WFM : No strategies to retest»): `syncing` holds the start until the load is done."""
+    f = sqxlog.path(root, date.today())
+    f.parent.mkdir(parents=True)
+    f.write_text("11:52:29 CLILogger - Syncing databank(s) from files\n"
+                 "11:52:30 CLILogger - Loaded 21 strategies to databank Results\n")
+    assert run.syncing(root), "loading: not ready"
+    with f.open("a") as fh:
+        fh.write("11:53:21 CLILogger - Synchronization finished.\n")
+    assert not run.syncing(root), "loaded: ready"
+
+
+def test_restore_after_sync_race(root: Path) -> None:
+    """A strategy SQX logged «Cannot process strategy» for and then deleted comes back from the
+    snapshot; one it did not name, and any in the run's own output, stay as they are."""
+    from ui.daemon.launch import run as launch
+    kept, live = root / "kept", root / "live"
+    for top in (kept, live):
+        for bank in ("Retest Markets - Family", "WFM"):
+            (top / "databanks" / bank).mkdir(parents=True)
+    for name in ("Strategy 9.11.67", "Strategy 1.1.1"):
+        (kept / "databanks" / "Retest Markets - Family" / f"{name}.sqx").write_text("x")
+    (kept / "databanks" / "WFM" / "Strategy 2.2.2.sqx").write_text("x")
+    lines = ["13:04:05 ERROR StrategiesSaver - Cannot process strategy 'Strategy 9.11.67'",
+             "13:04:06 ERROR StrategiesSaver - Cannot process strategy 'Strategy 2.2.2'"]
+    back = launch.restore(live, kept, {"Retest Markets - Family": 2, "WFM": 1}, {"WFM"}, lines)
+    assert back == ["Retest Markets - Family/Strategy 9.11.67"], back
+    assert not (live / "databanks" / "Retest Markets - Family" / "Strategy 1.1.1.sqx").exists()
+
+
+def test_busy_names_the_lock_holder(root: Path) -> None:
+    """A port up with an owner lock on disk (OPEN.md §32) names who holds it, and since when."""
+    built = tree(root)
+    fakes(built)
+    top = preflight.WORKERS["conductor"]["path"]
+    owner = top / "user" / "log" / "OWNER"
+    owner.parent.mkdir(parents=True, exist_ok=True)
+    owner.write_text('{"holder": "sess-42", "pid": 1, "since": "2026-09-29T10:00:00"}',
+                     encoding="utf-8")
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", built["port"]))
+        s.listen()
+        reasons = preflight.busy("conductor", P)
+    assert any("sess-42" in r and "2026-09-29T10:00:00" in r for r in reasons), reasons
+
+
+def test_own_release(root: Path) -> None:
+    """The 15-min quiet guard skips a log the window's own job last wrote (owner,
+    2026-09-29), and only that: a write after the release is anyone's again."""
+    from ui.daemon import workerguard
+    workerguard.MARKS = root / "marks"
+    assert not workerguard.own_last_write("custodian", time.time()), "no release yet"
+    workerguard.mark("custodian", P)
+    workerguard.release("custodian")
+    assert not (workerguard.MARKS / "custodian.json").exists(), "the marker goes"
+    assert workerguard.own_last_write("custodian", time.time() - 300), "written before"
+    assert workerguard.own_last_write("custodian", time.time() + 30), "within the slack"
+    assert not workerguard.own_last_write("custodian", time.time() + 120), "written after"
+    assert workerguard.orphans(set()) == [], "a release is not an orphaned launch"
+
+
 if __name__ == "__main__":
     for test in (test_start_refused, test_start_never_logged, test_start_fails_halfway,
                  test_across_midnight, test_no_template_skips_ledger,
-                 test_second_refused_while_queued, test_copies_counted):
+                 test_second_refused_while_queued, test_copies_counted,
+                 test_busy_names_the_lock_holder, test_own_release,
+                 test_ready_waits_for_the_load, test_restore_after_sync_race):
         with tempfile.TemporaryDirectory() as scratch:
             began = time.time()
             test(Path(scratch))

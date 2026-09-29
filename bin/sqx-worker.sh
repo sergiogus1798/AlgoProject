@@ -14,22 +14,36 @@
 # You never have to remember anything.
 #
 # Usage:
-#   sqx-worker [--role ROLE] [--force-sync] start   sync bars if the master moved, then run
-#   sqx-worker [--role ROLE] stop     shut the worker down cleanly
-#   sqx-worker [--role ROLE] check    report bar freshness; changes nothing
+#   sqx-worker [--role ROLE] [--owner NAME] [--force-sync] start   sync bars, then run
+#   sqx-worker [--role ROLE] [--force] stop     shut the worker down cleanly
+#   sqx-worker [--role ROLE] check    report bar freshness and who holds the lock; changes nothing
 #   sqx-worker [--role ROLE] sync     sync bars only
 #   sqx-worker [--role ROLE] run <args>   sync, then one-shot sqcli command, e.g.
 #                                           sqx-worker run -project action=list
 #   ROLE is conductor (default) or custodian.
+#
+# Every install carries an owner lock (OPEN.md #32): `start` writes user/log/OWNER
+# (holder, sqcli PID, start time); `stop` from a different holder refuses unless --force.
+# The holder is $CLAUDE_CODE_SESSION_ID when set, else --owner/$SQX_OWNER, else "owner".
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 ROLE=conductor
 FORCE_SYNC=0
-if [ "${1:-}" = "--role" ]; then ROLE="${2:?--role needs a role}"; shift 2; fi
-# The data copy is skipped when the master has not moved, so a worker keeps the
-# instruments it was given. --force-sync copies anyway.
-if [ "${1:-}" = "--force-sync" ]; then FORCE_SYNC=1; shift; fi
+OWNER_ARG=""
+FORCE_STOP=0
+while true; do
+  case "${1:-}" in
+    --role) ROLE="${2:?--role needs a role}"; shift 2 ;;
+    # The data copy is skipped when the master has not moved, so a worker keeps the
+    # instruments it was given. --force-sync copies anyway.
+    --force-sync) FORCE_SYNC=1; shift ;;
+    --owner) OWNER_ARG="${2:?--owner needs a name}"; shift 2 ;;
+    # stop only: override a different holder's lock.
+    --force) FORCE_STOP=1; shift ;;
+    *) break ;;
+  esac
+done
 
 # core/paths.py is the only place that knows where an install lives, so ask it
 # instead of parsing YAML in bash. One line each, so a path with a space survives.
@@ -49,6 +63,7 @@ LOG="$WORKER/user/log/worker-daemon.log"
 BARS=(data.db data_futures.h2.db data_stock.h2.db)
 
 running() { ss -ltn 2>/dev/null | grep -q ":${CLI_PORT} "; }
+source "$ROOT/bin/sqx-lock.sh"
 
 # Does any sqcli already have this install open? `running` only watches the port, and a
 # worker whose AppSettings drifted listens somewhere else -- so the port alone says "free"
@@ -166,10 +181,34 @@ sync_bars() {
 }
 
 case "${1:-}" in
-  check) check && echo "$ROLE bars are current" ;;
+  check)
+    clear_stale_lock
+    check && echo "$ROLE bars are current"
+    if [ -f "$(owner_file)" ]; then
+      printf 'owner: %s (sqcli PID %s) since %s\n' \
+        "$(owner_field holder)" "$(owner_field pid)" "$(owner_field since)"
+    else
+      echo "owner: none"
+    fi
+    ;;
   sync)  sync_bars ;;
   stop)
-    running || { echo "$ROLE not running"; exit 0; }
+    clear_stale_lock
+    running || { echo "$ROLE not running"; rm -f "$(owner_file)"; exit 0; }
+    refuse_stop_if_held || exit 1
+    # A stop sent in the ~20 s after `start` returns (port answering, CLI still booting) is
+    # silently swallowed, and the old code then waited the full 5 min before saying STILL
+    # RUNNING (OPEN.md #75, 2026-09-27, conductor). SQX itself logs the line below the moment
+    # its CLI can take a command; wait for it, bounded, before sending -exit. A worker that
+    # has been up for a while already has the line, so this costs nothing on a normal stop.
+    if ! grep -q 'CLI is now ready' "$LOG" 2>/dev/null; then
+      echo -n "waiting for the CLI to finish booting"
+      for _ in $(seq 1 30); do
+        grep -q 'CLI is now ready' "$LOG" 2>/dev/null && break
+        echo -n "."; sleep 1
+      done
+      echo
+    fi
     curl -sg -m 30 "http://localhost:${CLI_PORT}/call?cmd=-exit" >/dev/null 2>&1
     # The shutdown sync is what writes the databanks to disk, and it is NOT quick: a
     # 500-strategy databank took over 20 s on its own, and with three of them the JVM was
@@ -183,8 +222,14 @@ case "${1:-}" in
             || echo "$ROLE stopped"
     # The worker just released its log. Quiescent install = safe moment to prune.
     "$ROOT/bin/sqx-log-prune.sh" --auto || true
+    # Owner, 2026-09-28: every SQX run is exported the moment it ends — metrics, trades and
+    # the cosecha of each new or stale databank of the install's Test_/Trade_ projects.
+    # ALGO_NO_EXPORT=1 skips it. A failed export never fails the stop.
+    running || (cd "$ROOT" && python3 -m ui.daemon.loader.afterrun --role "$ROLE") || true
+    running || rm -f "$(owner_file)"
     ;;
   start)
+    clear_stale_lock
     running && { echo "$ROLE already running on :$CLI_PORT"; exit 0; }
     guard_launch
     # Nothing holds a log right now, and a start is about to write more of them.
@@ -193,14 +238,17 @@ case "${1:-}" in
     sync_bars || exit 1
     cd "$WORKER" || exit 1
     env -u ELECTRON_RUN_AS_NODE setsid nohup ./sqcli >"$LOG" 2>&1 </dev/null &
+    SQCLI_PID=$!
     echo -n "starting $ROLE"
     for _ in $(seq 1 60); do
       running && break; echo -n "."; sleep 2
     done
     echo
     if running; then
+      write_lock "$SQCLI_PID"
       echo "worker up:  http://localhost:${CLI_PORT}/call?cmd=-h"
       echo "log:        $LOG"
+      echo "owner:      $(resolve_holder)"
     else
       echo "worker failed to start — see $LOG"; exit 1
     fi

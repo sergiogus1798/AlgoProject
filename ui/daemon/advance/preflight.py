@@ -9,11 +9,18 @@ from core.datapaths import project_registry
 from core.paths import MASTER, WORKERS, databank_dir, project_dir
 from sqx.projects import registry, stage
 from sqx.projects.configure import BY_TASK, DEFAULT_SEGMENT
-from ui.daemon import progress
+from ui.daemon import progress, workerguard
 from ui.daemon.filters import discards
 from ui.daemon.workflow.steps import STEPS
 
-RECENT_H = 24       # another project of the worker touched this recently: someone works there
+# QUIET_MIN's job narrowed once the owner lock (OPEN.md #32) existed: a live holder is now
+# caught directly (the lock, the port, or a live PID below), so this heuristic is not what
+# decides "busy" any more. What it still catches: the tail of the export a `stop` runs after
+# the worker is already down and the lock already gone (`afterrun`, `export-after-every-stop`)
+# when it was started by something outside `workerguard` — a bare `bin/sqx-worker.sh stop` by
+# hand, not through the window or a Claude session's own `own_log`/release marker. A false
+# positive there costs a few minutes' wait; a missed one is rule 1 firing on a half-written
+# databank. Kept at 15 min (owner, 2026-09-29).
 QUIET_MIN = 15      # the install's SQX log written this recently: it just ran or is running
 # Where a cut's .sqx are copied before they go (owner, Q7): <P>/<D>/<stamp>/.
 DISCARDS = project_registry().parent / "discards"
@@ -49,43 +56,50 @@ def where(project: str) -> dict:
     return {"install": install, "role": role, "row": live[-1]}
 
 
-def busy(role: str, project: str) -> list[str]:
+def busy(role: str, project: str, own_log: bool = False) -> list[str]:
     """Why the worker cannot be taken now: every sign that someone else is on it.
 
     Args:
         role: A worker role.
-        project: The project about to run; its own recent changes do not count.
+        project: Unused now that "another project touched recently" is no longer a
+            refusal (OPEN.md §83, owner 2026-09-29: one task at a time per worker, and the
+            moment one finishes, launching another — of any project — is fine). Kept so
+            every caller's signature stays unchanged.
+        own_log: The caller itself just ran this project there (the chain between two SQX
+            steps): a log written in the last minutes is its own, not a sign of anyone.
+            Also true on its own when a window job released this worker after the log's
+            last write (`workerguard.own_last_write`).
 
     Returns:
-        The reasons, empty when the install is free. Read-only: a socket probe, /proc and
-        file dates. A worker that is up is refused, never stopped (owner, Q6): a `stop`
-        kills anyone's run (OPEN.md §32).
+        The reasons, empty when the install is free. Read-only: a socket probe, /proc, the
+        owner lock and file dates. A worker that is up is refused, never stopped (owner,
+        Q6): a `stop` kills anyone's run (OPEN.md §32). "Busy" is the lock held by a live
+        holder, or the port up, or a live SQX process — not merely a project's mtime.
     """
     top, port = WORKERS[role]["path"], WORKERS[role]["port"]
     out = []
+    held = worker.lock(top)
+    who = f" (lo tiene {held['holder']} desde {held['since']})" if held else ""
     with socket.socket() as s:
         s.settimeout(0.5)
         if s.connect_ex(("127.0.0.1", port)) == 0:
-            out.append(f"install ocupado: el puerto {port} de {top.name} responde")
+            out.append(f"install ocupado: el puerto {port} de {top.name} responde{who}")
     pids = worker.holding(top)
     if pids:
         out.append(f"install ocupado: {len(pids)} proceso(s) de SQX trabajan desde {top.name} "
-                   f"(PID {', '.join(map(str, pids))})")
+                   f"(PID {', '.join(map(str, pids))}){who}")
     now = time.time()
-    for cfx in sorted((top / "user" / "projects").glob("*/project.cfx")):
-        folder = cfx.parent
-        newest = max([folder.stat().st_mtime, cfx.stat().st_mtime]
-                     + [p.stat().st_mtime for sub in ("log", "databanks")
-                        for p in (folder / sub).glob("*")])
-        if folder.name != project and now - newest < RECENT_H * 3600:
-            out.append(f"{folder.name} se modificó en {top.name} hace "
-                       f"{(now - newest) / 3600:.1f} h: puede ser de otra sesión")
     lines, mtime = progress.log_lines(top)
     run = progress.run_state(lines)
-    if mtime and now - mtime < QUIET_MIN * 60:
+    # A log last written by a window job that has since released the worker is the
+    # window's own (owner, 2026-09-29): only a write after that release is a sign of anyone.
+    own_log = own_log or bool(mtime and workerguard.own_last_write(role, mtime))
+    if mtime and now - mtime < QUIET_MIN * 60 and not own_log:
         out.append(f"el log de hoy de {top.name} se escribió hace {(now - mtime) / 60:.0f} "
                    f"min (< {QUIET_MIN})")
-    if run["project"] and not run["finished"]:
+    # A run killed before «Project finished» leaves the log saying «started» all day: it is a
+    # sign of use only while an SQX process of the install is alive (2026-09-28).
+    if run["project"] and not run["finished"] and pids:
         out.append(f"el log de {top.name} dice que {run['project']} empezó y no ha terminado")
     return out
 
@@ -187,5 +201,12 @@ def check(project: str, databank: str) -> dict:
     following = next_task(tasks, databank)
     if "refuse" in following:
         reasons.append(following.pop("refuse"))
+    else:
+        # What the next task's output already holds: a retest appends beside it, so the
+        # confirmation says so (📓 2026-09-29, OOS 200 + 21 as «Strategy X(1)»).
+        out = next(t["output"] for t in tasks if t["title"] == following["task"])
+        following |= {"output": out,
+                      "n_out": len(list(databank_dir(project, out, top).glob("*.sqx")))
+                      if out else 0}
     return {"ok": not reasons, "reasons": reasons, **got, "cfx": cfx, "databank": databank,
             "source": source, "n": n, "files": files, "discards": rows, **following}

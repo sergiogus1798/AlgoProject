@@ -1,5 +1,7 @@
 """Drive the headless worker install. The master's CLI is dead while its GUI is up."""
 
+import json
+import os
 import subprocess
 import sys
 import urllib.request
@@ -44,24 +46,63 @@ def call(command: str, role: str = "conductor") -> str:
     return urllib.request.urlopen(url).read().decode()
 
 
-def start(role: str = "conductor") -> None:
+def start(role: str = "conductor", owner: str | None = None) -> None:
     """Start the worker as a daemon and sync bars from the master.
 
     Args:
         role: Which headless install to start.
+        owner: Who to record as the holder of `bin/sqx-worker.sh`'s owner lock (OPEN.md
+            #32). None leaves it to the script's own default: `$CLAUDE_CODE_SESSION_ID`
+            when set (inherited from this process' environment), else `$SQX_OWNER`, else
+            "owner" — so every start here goes through the one lock the shell script owns,
+            never a second implementation.
     """
     require_posix()
-    subprocess.run([str(WORKER_SH), "--role", role, "start"], check=True)
+    cmd = [str(WORKER_SH), "--role", role]
+    if owner:
+        cmd += ["--owner", owner]
+    subprocess.run([*cmd, "start"], check=True)
 
 
-def stop(role: str = "conductor") -> None:
+def stop(role: str = "conductor", export: bool = True, force: bool = False) -> None:
     """Stop the worker. Always call this when the job is done.
 
     Args:
         role: Which headless install to stop.
+        export: Export the install's new databanks once it is down (`bin/sqx-worker.sh stop`
+            runs `ui.daemon.loader.afterrun`); False inside an export's own start/stop, and on
+            a cancel that must end fast.
+        force: Stop it even if the owner lock says someone else holds it (`--force`). Only
+            for a human who has checked that holder is gone — never set by default.
     """
     require_posix()
-    subprocess.run([str(WORKER_SH), "--role", role, "stop"], check=True)
+    env = None if export else {**os.environ, "ALGO_NO_EXPORT": "1"}
+    cmd = [str(WORKER_SH), "--role", role]
+    if force:
+        cmd += ["--force"]
+    subprocess.run([*cmd, "stop"], check=True, env=env)
+
+
+def lock(install: Path) -> dict | None:
+    """Read the owner lock `bin/sqx-worker.sh start` wrote for one install, read-only.
+
+    Args:
+        install: Top-level SQX folder, as `holding()` also takes — so a caller that already
+            resolved a role to a path (and a test that points it at a scratch one) reads
+            the same install it just probed for pids and the port.
+
+    Returns:
+        `{"holder", "pid", "since"}`, or None when nothing has locked it. Does not judge
+        staleness (a dead PID with a down port): `busy()` callers already probe the port and
+        `holding()` for that, and only `bin/sqx-worker.sh` itself clears a stale lock.
+    """
+    f = install / "user" / "log" / "OWNER"
+    if not f.exists():
+        return None
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
 
 
 def wait_ready(project: str, databank: str, role: str = "conductor") -> int:

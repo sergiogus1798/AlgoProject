@@ -21,7 +21,7 @@ from core.paths import DATA  # noqa: E402
 from ledger import record  # noqa: E402
 from sqx.curate import apply_verdict  # noqa: E402
 from sqx.projects import registry, stage  # noqa: E402
-from ui.daemon import progress  # noqa: E402
+from ui.daemon import progress, workerguard  # noqa: E402
 from ui.daemon.advance import api, preflight, run, sqxlog  # noqa: E402
 from ui.daemon.filters import discards, ledgerrow  # noqa: E402
 
@@ -161,6 +161,7 @@ def fakes(built: dict, start_reply: str = "Project started", logs_start: bool = 
     record.log = lambda study, row, scores=None: CALLS.append(("ledger", study, row))
     ledgerrow.placed = lambda project, databank: (8, "build")
     run.POLL, run.START_WITHIN = 0, within
+    workerguard.MARKS = built["top"].parent / "workers"   # never the real AlgoData/logs/ui
     return up
 
 
@@ -183,12 +184,15 @@ def test_busy_port_refused(root: Path) -> None:
     assert not any(c[0] == "stop" for c in CALLS), CALLS
 
 
-def test_recent_project_refused(root: Path) -> None:
-    """Another project of that worker touched within 24 h is a refusal."""
-    tree(root)
+def test_recent_project_not_refused(root: Path) -> None:
+    """OPEN.md §83, owner 2026-09-29: another project of the worker touched a moment ago is
+    no longer a refusal — only a live lock, the port or a live PID make it busy."""
+    built = tree(root)
+    fakes(built)
     age(preflight.WORKERS["conductor"]["path"] / "user/projects" / OTHER, time.time() - 3600)
     got = preflight.check(P, "Results")
-    assert not got["ok"] and any(OTHER in r for r in got["reasons"]), got
+    assert got["ok"], got
+    assert not any(OTHER in r for r in got["reasons"]), got
 
 
 def test_happy_path(root: Path) -> None:
@@ -231,7 +235,7 @@ def test_happy_path(root: Path) -> None:
 
 
 if __name__ == "__main__":
-    for test in (test_master_refused_first, test_busy_port_refused, test_recent_project_refused,
+    for test in (test_master_refused_first, test_busy_port_refused, test_recent_project_not_refused,
                  test_happy_path):
         with tempfile.TemporaryDirectory() as scratch:
             began = time.time()

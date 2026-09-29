@@ -2,14 +2,14 @@
 
 One window, one daemon, and `core/` underneath. This is the unified platform described in
 `docs/AgentPDFs/plataforma-unificada-2026-09-20.md`, redrawn by the owner on 2026-09-27
-(`docs/encargos/22-ventana-rediseno.md`) and built by plan 24. It is the only window on this
+(encargo 22, in git history; the file is no longer in `docs/encargos/`) and built by plan 24. It is the only window on this
 machine: the older zones and the mock on invented data were deleted on 2026-09-28 (owner: «borra
 la UI anterior; quiero que en esta máquina esté solo la nueva»). The sidebar holds four groups:
 
 | group | zones | what it is for |
 |---|---|---|
 | BIBLIOTECA | Cobertura, Plantillas, Nueva plantilla, Paletas, Activos, Configuración SQX, Datos | what the owner builds from: the template library and its coverage, the palettes, every instrument's costs and windows, the SQX settings new projects get, the data root and the step-4 studies |
-| PROYECTO | Proyectos → Proyecto → Estrategia | one project judged: the gallery of every install's projects; one project's workflow rail, funnel and databank panel (with the filters and «Continuar workflow»); one strategy's ficha — curves, IS/OOS1/OOS2 statistics, metadata, «Archivar» and every study below |
+| PROYECTO | Proyectos → Proyecto → Databanks → Estrategia | one project judged: the gallery of every install's projects; one project's workflow — «Lanzar en SQX», «Continuar workflow» with its databank chooser, the rail and the population's funnel; the same project's databank panel on the whole height, with the filters; one strategy's ficha — curves, IS/OOS1/OOS2 statistics, metadata, «Archivar» and every study below. Proyecto and Databanks were one zone until 2026-09-28: together they did not fit a 1080-px screen |
 | OPERACIÓN | En marcha, Registro de búsquedas (+ the jobs strip in the status bar) | what runs: the custodian's pulse and the SQX project's tasks one by one; the ledger — one line per search that looked at data and reduced a population, the window's filters included |
 | PORTFOLIOS | Portfolios | the archived strategies; «Importar» opens one on the Estrategia page as it was frozen, nothing recomputed |
 
@@ -22,7 +22,7 @@ databank's strategies and, with a strategy chosen, its studies.
 **Studies are drawn by the contract, not by the study.** Every study returns the dict of
 `core/study/CONTRACT.md` (tabs, selectors, block kinds, verdict, `config_hash`), so the window has
 one widget per block kind (`desktop/blocks/`) and one generic page (`desktop/studypage/`) instead of
-a view per study. A new study appears in Proyecto's databank panel (its columns) and in
+a view per study. A new study appears in the Databanks panel (its columns) and in
 Estrategia's study tabs the day it writes that contract under
 `AlgoData/reports/<P>/<D>/<day>/<study>/` and gets a row in the daemon's catalogue
 (`daemon/results/catalogue.py`), runner (`daemon/runner/`) and panel layout
@@ -48,7 +48,8 @@ Each changed a rule written here before; this is where they now live.
 
 | decision | what it means in the code |
 |---|---|
-| The window **may launch the next SQX task** with «Continuar workflow», always after a confirmation screen | `daemon/advance/`, the one exception in «What it does not do» below |
+| The window **may launch the next SQX task** with «Continuar workflow», always after a confirmation screen | `daemon/advance/`, one of the two exceptions in «What it does not do» below |
+| The window **may launch any one task** of a project with «Lanzar en SQX» (owner, 2026-09-28: «un botón para lanzar la que yo quiera»), after a confirmation screen | `daemon/launch/`, `desktop/workspace/launch.py` |
 | PROYECTO goes from six zones to **three** | the table above; the five older zones and their files are gone (`desktop/README.md`) |
 | On a machine without SQX the window is **read-only** (the Windows reading of §11, answered «Linux only» in plan 24 Q2) | `/api/health` → `sqx.installs`; `shell.guard` shows the banner and disables what reaches SQX, with the reason in the button's own text |
 | **Every filter the owner applies is written in the Ledger** as a search | `daemon/filters/` writes one row per filter or manual deletion through `ledger.record.log`; Registro de búsquedas shows them |
@@ -88,14 +89,30 @@ The two exceptions, both the owner's (2026-09-27):
   `AlgoData/projects/discards/` first), switches on only the next task (`sqx.projects.stage`),
   starts the worker (`core.worker.start`), sends `-project action=start`, then only
   `-project action=status` until «Project finished», and stops the worker it started. The
-  preflight refuses the master always, a worker already up (never stopped: OPEN §32), a worker
-  another project touched in the last 24 h, and a project with nothing to cut.
+  preflight refuses the master always, a worker already up (its owner lock held by someone
+  else, its port answering, or a live SQX process — never stopped: OPEN §32), and a project
+  with nothing to cut. Another project touched a while ago is no longer a refusal (OPEN §83):
+  one task at a time per worker, and the moment one finishes, launching another is fine.
+- **«Lanzar en SQX» starts any one task the owner picks** (`daemon/launch/`,
+  `desktop/workspace/launch.py`, the row under Proyecto's title). Same worker preflight as
+  «Continuar»; a build only on the custodian; a retest refused when its input databank is empty
+  on disk. The job runs `core.assets` (hard rule 5), the step's configurator on a task still
+  unconfigured (owner, 2026-09-29; the confirmation says so), copies the project folder without `log/`
+  to `AlgoData/projects/snapshots/`, `stage.just` (only that task on), start, `action=status`
+  until «Project finished», stop; then compares every databank but the task's output — one
+  that fell keeps the copy, otherwise it is deleted — and a build writes its `runs.csv` row.
 
 **The daemon's lanes** (`daemon/jobs.py`): every job is a child of the daemon, in memory, logged
 under `AlgoData/logs/ui/`. The **python** lane runs analysis modules (`python3 -m studies…`)
-within a core budget — a fan-out study takes half the cores, a light one three — and starts
-nothing new below 20 GB of free RAM unless the lane is empty. The **conductor** lane runs one job
-at a time: the loader's `orderstocsv` exports and «Continuar workflow». Nothing else reaches an
+within a core budget — a fan-out study takes half the cores, a light one three, a batch its
+workers — and starts nothing new below 20 GB of free RAM unless the lane is empty. Every analysis
+runs at `nice 10`, and a population run of a one-strategy study is ONE batch job over the physical
+cores minus four (`daemon/runner/batch.py`). **The window never waits on the daemon for anything a
+timer or a finished job triggers**: those calls go through `desktop/background.py` and only the
+painting happens on the GUI thread (owner, 2026-09-28: «la UI se congela»; measured and fixed in
+`knowhow/perf/window-waits-off-gui-thread.md`). The **conductor** lane runs one job
+at a time: the loader's `orderstocsv` exports, «Continuar workflow» and «Lanzar en SQX» (the two
+launchers also refuse each other while one is queued or running). Nothing else reaches an
 install.
 
 The asset zone and Configuración SQX are the same rule from the other side: they write `assets/`,

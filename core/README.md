@@ -8,10 +8,10 @@ live deeper add the root to `sys.path` in their first lines.
 | `__init__.py` | Puts stdout/stderr in UTF-8 on import, so Windows' cp1252 console does not crash on this project's own accents and symbols | — |
 | `paths.py` | The only module that knows where anything lives. Reads `config/machine.yaml`; `WORKERS` maps a worker role (conductor, custodian) to its install and port | names, roles → `Path` |
 | `datapaths.py` | The data root's secondary trees: the template library, `pipeline/`, `strategyPermutations/`, `logs/`, `backups/`, `projectsBackup/`, `cache/` and `spread/`, and the master's tick files. Split out of `paths.py`, which keeps the installs and the primary exports | names → `Path` |
-| `sqxfile.py` | Read a `.sqx` without SQX: identity hash, symbol, inner XML, parameters | `.sqx` → values |
+| `sqxfile.py` | Read a `.sqx` without SQX: identity hash, symbol, inner XML, parameters, the corrected `Param Count` mirrored from `<Variables>` (OPEN #17) | `.sqx` → values |
 | `optprofile.py` | Read a `.sqx`'s Sys. Param Permutation profile without SQX: run counts, per-metric medians against the original value, the stored histograms, and every permutation's parameters and statistics when SQX kept them | `.sqx` → dicts |
 | `sqxstats.py` | Read a `.sqx` result without SQX: decode any `SQStats` blob into its 152 statistics, the stored metrics per sample, and the daily equity curve | `.sqx` → metrics, series |
-| `sqxview.py` | The owner's «Export Data View» as SQStats keys (`VIEW`): the metrics export and the cosecha rebuilt from the files with no SQX, equal to the view's export within float32 | `.sqx` → metrics table |
+| `sqxview.py` | The owner's «Export Data View» as SQStats keys (`VIEW`): the metrics export and the cosecha rebuilt from the files with no SQX, equal to the view's export within float32 — except `Param Count (IS)`, always `sqxfile.param_count`, never SQX's frozen `ParameterCount` (OPEN #17) | `.sqx` → metrics table |
 | `sqxretest.py` | Read a Monte Carlo Retest result without SQX: every simulation's P/L vector, the original it was perturbed from, the eleven-level confidence table, and the method settings that produced it | `.sqx` → P/L, levels, provenance |
 | `wfmatrix.py` | Read the Walk-Forward Matrix a WFM cross-check leaves in a `.sqx`: the axes, the 30 cells, and every cell's walk-forward steps with their windows, chosen parameters and paired IS/OOS statistics | `.sqx` → dicts |
 | `wftrades.py` | Cut a `data=all` export into one block per matrix cell and tag every trade with its walk-forward step, checked against the counts SQX stored | CSV → frames |
@@ -23,7 +23,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `tradepack.py` | Packs one export's CSVs into that Parquet: parsed across processes, spilled per strategy and written a strategy at a time, so 500 × 9 markets is never one frame | CSVs → Parquet |
 | `fanout.py` | Independent tasks across forked processes, the costliest first (LPT), one BLAS thread each, never more processes than physical cores, results as they land | tasks + costs → results |
 | `cfx.py` | Read a `project.cfx`: task chain, output databanks, acceptance conditions | project → dicts |
-| `worker.py` | Start, stop and command a headless worker over its HTTP API; every call takes the role, conductor by default. `holding()` reports which PIDs run out of an install, the guard every write to a live install must pass | command, role → reply |
+| `worker.py` | Start, stop and command a headless worker over its HTTP API; every call takes the role, conductor by default, and goes through `bin/sqx-worker.sh`'s owner lock (OPEN.md §32). `holding()` reports which PIDs run out of an install, the guard every write to a live install must pass; `lock()` reads who holds the owner lock, read-only | command, role → reply |
 | `exportdrv.py` | The three exports SQX offers: trades, databank metrics, bars | request → files |
 | `manifest.py` | Write and read the `manifest.json` every export must carry | facts → JSON |
 | `assetdata.py` | What `assets/` declares: costs and windows resolved against the shared policy | symbol → dict |
