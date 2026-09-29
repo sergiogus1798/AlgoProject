@@ -5,6 +5,8 @@ The owner reads only the PDFs (2026-09-26): docs/manual/ holds nothing else. The
 their screenshots live in MANUAL_SRC, out of the repo; edit a chapter there and rerun this.
 """
 
+import hashlib
+import json
 import re
 import subprocess
 import sys
@@ -16,6 +18,9 @@ import markdown
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.paths import BROWSER, MANUAL, MANUAL_SRC
+
+# What each family's PDF was last rendered from; delete it to force a full rebuild.
+RENDERED = MANUAL_SRC / ".rendered.json"
 
 # One PDF per family, chapters in reading order. A chapter missing from every family is an error.
 FAMILIES = {
@@ -29,7 +34,7 @@ FAMILIES = {
         "61-app-proyectos", "65-app-proyecto", "69-app-filtros-y-continuar",
         "68-app-estrategia", "58-app-estudios", "70-app-operacion", "71-app-portfolios",
         "35-app-plantillas", "38-app-activos", "66-app-configuracion-sqx", "67-app-datos",
-        "60-app-pulido"]),
+        "60-app-pulido", "72-app-crear"]),
     "03-datos-costes-y-registro": ("Datos, costes y registro de la búsqueda", [
         "13-barras", "57-calidad-del-feed", "59-spread-real", "25-actualizar-datos", "24-costes", "43-ledger",
         "12-rendimiento", "64-archivo", "73-fondeo-catalogo", "74-fondeo-ofertas"]),
@@ -134,8 +139,11 @@ def cover(name: str, chapters: list[Path]) -> str:
     rest = "".join(f"<li><b>{fam}.pdf</b> — {t}</li>" for fam, (t, _) in FAMILIES.items())
     index = f"<p style='margin-top:28px'>El manual entero:</p><ul>{rest}</ul>" \
         if chapters and chapters[0].stem == "00-empezar" else ""
+    # The chapters' own last change, not today: a rebuild with nothing new must render the same
+    # bytes, or every run commits ten fresh PDFs to git.
+    changed = date.fromtimestamp(max(p.stat().st_mtime for p in chapters)).isoformat()
     return (f'<div id="cover"><h1>{name}</h1>'
-            f'<p>AlgoProject — manual de uso. Generado el {date.today().isoformat()} '
+            f'<p>AlgoProject — manual de uso. Actualizado el {changed} '
             f'con <code>tools/manual.py</code>.</p><ol>{items}</ol>{index}</div>')
 
 
@@ -162,6 +170,28 @@ def render(name: str, chapters: list[Path], where: dict[str, str]) -> str:
             f"<body>{cover(name, chapters)}{''.join(body)}</body></html>")
 
 
+_SRC = re.compile(r'src="([^"]+)"')
+
+
+def fingerprint(html: str) -> str:
+    """A hash of everything a family's PDF is made of: its HTML and every picture it shows.
+
+    Chrome's output is not byte-stable — timestamps, and on some runs the image streams — so
+    the inputs, not the PDF, decide whether a family is rendered again.
+
+    Args:
+        html: The family's document, from render().
+
+    Returns:
+        A hex digest; equal digests render the same manual.
+    """
+    digest = hashlib.sha256(html.encode("utf-8"))
+    for src in sorted(set(_SRC.findall(html))):
+        picture = MANUAL_SRC / src
+        digest.update(src.encode("utf-8") + (picture.read_bytes() if picture.is_file() else b""))
+    return digest.hexdigest()
+
+
 def main() -> None:
     """Write one PDF per family into docs/manual/, from the chapters in MANUAL_SRC."""
     found = {p.stem for p in MANUAL_SRC.glob("*.md") if p.name[0].isdigit()}
@@ -169,15 +199,24 @@ def main() -> None:
     if found - set(where) or set(where) - found:
         raise SystemExit(f"chapters without a family: {sorted(found - set(where))}; "
                          f"families naming a missing chapter: {sorted(set(where) - found)}")
+    try:
+        done = json.loads(RENDERED.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        done = {}
     for fam, (name, stems) in FAMILIES.items():
         html, pdf = MANUAL_SRC / f"{fam}.html", MANUAL / f"{fam}.pdf"
-        html.write_text(render(name, [MANUAL_SRC / f"{s}.md" for s in stems], where),
-                        encoding="utf-8")
+        doc = render(name, [MANUAL_SRC / f"{s}.md" for s in stems], where)
+        if pdf.exists() and done.get(fam) == fingerprint(doc):
+            print(f"{len(stems):2d} chapters -> {pdf.name} unchanged")
+            continue
+        html.write_text(doc, encoding="utf-8")
         subprocess.run([str(BROWSER), "--headless=new", "--disable-gpu", "--no-sandbox",
                         "--no-pdf-header-footer", "--virtual-time-budget=10000",
                         f"--print-to-pdf={pdf}", html.as_uri()],
                        check=True, capture_output=True)
         html.unlink()
+        done[fam] = fingerprint(doc)
+        RENDERED.write_text(json.dumps(done, indent=1), encoding="utf-8")
         print(f"{len(stems):2d} chapters -> {pdf.name} ({pdf.stat().st_size // 1024} KB)")
 
 
