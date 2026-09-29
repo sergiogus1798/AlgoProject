@@ -111,11 +111,11 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ledger/trials.py` | 83 | How much was really tried, across every search of a study rather than inside the last one. | core | numpy, pandas |
 | `mt5/compare.py` | 72 | Pair the trades of an MT5 backtest with SQX's for the same strategy and window, and measure the gap. | — | pandas |
 | `mt5/live.py` | 59 | Ask the running MT5 terminal read-only questions through the Windows Python in its Wine prefix. | core, mt5 | pandas |
-| `mt5/metaeditor.py` | 88 | Compile MQL5 sources with MetaEditor under Wine, and install the Sq* indicators SQX's EAs call. | mt5 | — |
+| `mt5/metaeditor.py` | 94 | Compile MQL5 sources with MetaEditor under Wine, and install the Sq* indicators SQX's EAs call. | mt5 | — |
 | `mt5/report.py` | 79 | Read a Strategy Tester HTML report: its summary figures, its deals, and the trades they make. | — | lxml, pandas |
 | `mt5/server.py` | 163 | MCP server over MetaTrader 5 under Wine: compile, backtest, compare with SQX, and read-only data. | core, mt5 | mcp, pandas |
 | `mt5/tester.py` | 99 | Run one Strategy Tester pass: write its ini, start the terminal detached, and collect the report. | core, mt5 | — |
-| `mt5/wine.py` | 80 | Where MetaTrader 5 lives inside its Wine prefix, and how to run a Windows program there. | core | — |
+| `mt5/wine.py` | 83 | Where MetaTrader 5 lives inside its Wine prefix, and how to run a Windows program there. | core | — |
 | `mt5/winside/query.py` | 84 | Read-only queries to the running MT5 terminal; runs under the Windows Python inside the Wine prefix. | — | MetaTrader5 |
 | `perf/catalogue.py` | 87 | Measure every target, append it to the catalogue, and say what got worse since last time. | perf | pandas |
 | `perf/disk/budget.py` | 76 | Is the data root bigger than it is allowed to be? One verdict per branch, and an exit code. | — | — |

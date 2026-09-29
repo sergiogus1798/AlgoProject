@@ -71,18 +71,24 @@ def expert(source: Path) -> dict:
 
 
 def sqx_indicators() -> dict:
-    """Copy SQX's MT5 Indicators and Include into the terminal and compile the indicators.
+    """Copy SQX's MT5 Indicators and Include into the terminal, the project's set over them, and compile.
+
+    The project's set (wine.PROJECT_MQL5) goes second, so where both have a file its version wins.
 
     Returns:
         compile_path()'s dict for the Indicators folder, plus how many sources were copied.
     """
     mql5 = wine.data_dir() / "MQL5"
     copied = 0
-    for sub in ("Indicators", "Include"):
-        for f in (wine.SQX_MQL5 / sub).rglob("*"):
-            if f.is_file() and f.suffix in (".mq5", ".mqh"):
-                dest = mql5 / sub / f.relative_to(wine.SQX_MQL5 / sub)
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(f, dest)
-                copied += 1
+    for src in (wine.SQX_MQL5, wine.PROJECT_MQL5):
+        for sub in ("Indicators", "Include"):
+            for f in (src / sub).rglob("*"):
+                if f.is_file() and f.suffix in (".mq5", ".mqh"):
+                    dest = mql5 / sub / f.relative_to(src / sub)
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(f, dest)
+                    # A folder compile builds only the sources with no .ex5, whatever their
+                    # dates: without this, a changed indicator keeps its old build.
+                    dest.with_suffix(".ex5").unlink(missing_ok=True)
+                    copied += 1
     return {**compile_path(mql5 / "Indicators"), "copied": copied}

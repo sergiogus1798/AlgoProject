@@ -12,6 +12,9 @@ METAEDITOR = INSTALL / "MetaEditor64.exe"   # Linux is case-sensitive: the insta
 PYTHON = MT5_PREFIX / "drive_c" / "Python" / "python.exe"
 # What SQX's generated EAs call: its Sq* indicators and their include.
 SQX_MQL5 = MASTER / "custom_indicators" / "MetaTrader5"
+# The project's own set, laid over SQX's: the add-on indicators SQX does not ship, and the
+# owner's versions of some it does. Same Indicators/ and Include/ layout as MQL5/.
+PROJECT_MQL5 = Path(__file__).parent / "indicators"
 # Our EAs go in a folder of their own under MQL5/Experts, never mixed with the stock ones.
 EXPERTS_SUB = "AlgoProject"
 

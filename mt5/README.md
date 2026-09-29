@@ -28,10 +28,15 @@ relative to `cwd` does, and is how `metaeditor.py` calls MetaEditor now.
 |---|---|---|---|
 | `server.py` | The MCP server: status, compile, backtest start/result, runs, compare, and the read-only live tools | `python3 -m mt5.server` (Claude Code starts it) | tool calls → JSON |
 | `wine.py` | Where the terminal, MetaEditor and the Windows Python live in the prefix; Linux → Windows paths; the terminal's data folder (via `origin.txt`); running an .exe (`cwd=` for a space-free relative argument) | imported | — |
-| `metaeditor.py` | Compile an .mq5 (or a folder) with MetaEditor and read its log; install SQX's `Sq*` indicators — refuses while the terminal is open | imported | .mq5 → .ex5 + errors |
+| `metaeditor.py` | Compile an .mq5 (or a folder) with MetaEditor and read its log; install SQX's `Sq*` indicators and the project's `indicators/` over them — refuses while the terminal is open | imported | .mq5 → .ex5 + errors |
 | `tester.py` | Write a tester ini, start the terminal detached, collect the report into `MT5_DATA/tests/<run>/` | imported | EA + window → report.htm, deals/trades.parquet |
 | `report.py` | Parse the tester's HTML report: summary cells, the deal rows (found by shape, not by language), trades paired from in/out deals | imported | report.htm → summary, deals, trades |
 | `compare.py` | Pair MT5 trades with SQX's (same side, nearest entry within a tolerance) and the figures of the gap | imported | two trade frames → pairs + figures |
 | `live.py` | Run a verb of `winside/query.py` under the Windows Python; bars and ticks to Parquet | imported | verb → JSON / parquet |
 
 `winside/` runs under the Windows Python inside the prefix, not under the project's Python.
+
+`indicators/` is the project's MQL5 indicator set, in MQL5's own `Indicators/` and `Include/` layout: the
+add-on `Sq*` indicators SQX does not ship, and the owner's versions of `SqBBWidthRatio`,
+`SqSRPercentRank` and `SqSuperTrend` (no rounding to 6 decimals, a range check instead of
+`EMPTY_VALUE`). `mt5_install_sqx_indicators` copies it after SQX's, so it wins where both have a file.

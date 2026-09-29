@@ -41,7 +41,7 @@ def mt5_status() -> dict:
 
 @server.tool()
 def mt5_install_sqx_indicators() -> dict:
-    """Copy SQX's Sq* indicators and include into the terminal and compile them. Once per SQX update."""
+    """Copy SQX's Sq* indicators, then the project's set (mt5/indicators) over them, and compile. After an SQX update or a change there."""
     return metaeditor.sqx_indicators()
 
 
