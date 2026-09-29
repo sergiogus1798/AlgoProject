@@ -9,7 +9,22 @@ without fabricating anything, with `make.py --design-only`.
 | `levels.py` | The values each parameter may take: the brief's own for the live ones, a rebuilt range for the frozen ones | brief → levels |
 | `strata.py` | The three ways a tuple gets into the design, behind one signature | levels, budget → tuples |
 | `canaries.py` | The controls: the origin, the known-result canaries, the inert pairs | brief, known results → rows |
-| `plan.py` | Puts it together and assigns the identifiers | brief → the plan |
+| `plan.py` | Puts it together and assigns the identifiers; drops a pilot's banned levels first | brief, banned levels → the plan |
+| `pilot.py` | Which few hundred tuples the pilot samples (live parameters only, Sobol), and which levels its trade counts say do not trade enough (OPEN.md #41) | imported by `sqx.variants.pilot` | live levels, trade counts → banned levels |
+
+## The pilot, before any of it (OPEN.md #41, owner 2026-09-29)
+
+ON by default (`pilot.enabled`, `--no-pilot` to skip). Half a design's budget can go on
+combinations that barely trade (🔬 2026-09-24: 1,002 of 2,000 fabricated rows under 30 trades in
+sample) — a region nothing in this folder knew was silent until the whole batch had already been
+fabricated, loaded and retested. The pilot answers that cheaply, before `build`'s `live()` levels
+reach any stratum: `pilot.sample` draws a few hundred tuples over the live parameters (Sobol, the
+frozen ones untouched — whether a region trades is decided by what moves), `sqx.variants.pilot`
+fabricates and retests them on the same project the full batch will use, and `pilot.decide` reads
+back which live-parameter LEVELS (never a whole parameter, and never the origin's own value) traded
+below `pilot.min_trades` with enough support (`pilot.min_support`) to trust the median. `plan.build`
+then removes exactly those levels before any stratum samples from them, and names them in its own
+report (`pilot_dropped`) and in `pilot.json` — a batch is never smaller than what it says it is.
 
 ## The strata
 
@@ -38,8 +53,10 @@ duplicate test — proof that it never moved a backtest — and hands over a val
 coverage stratum has to vary it anyway or it is only restating the brief's own conclusion. The range
 is rebuilt the way SQX builds its own permutation ranges, which is measured in
 `knowhow/sqx-format/declared-parameters.md`: ±30 % of the value stepped and rounded, and a flat 0..6 for a shift,
-because a percentage of a small integer collapses to a handful of distinct values. **This is an
-assumption, and it is the one to revisit first** if a coverage row ever disagrees with the freezing.
+because a percentage of a small integer collapses to a handful of distinct values. **Confirmed final
+by the owner (OPEN.md §23, 2026-09-29):** the ±30 % span is not an open assumption to revisit — it
+is deliberately the same range SQX itself uses for a permutation, so a coverage row disagreeing with
+the freezing is read as a finding about the strategy, not as a prompt to widen the span.
 
 **`n_target` is a cap.** The controls go in first and count against it, then each stratum takes its
 share of what is left and hands any shortfall to the next. Tuples are deduplicated across strata and

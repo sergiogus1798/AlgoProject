@@ -33,6 +33,16 @@ run:
   # holds. MADRES.json beside them records each one's md5 and parameter count.
   mothers: donors/madres-2026-09-22
 
+  # The dedicated single-Retest-task project the `spp_is`/`spp_oos`/`spp_export` stages
+  # write their harness into (OPEN.md §38, owner 2026-09-29, hard rule 10) -- never the
+  # stock `Retester`, and never `{project}` (the mother's own build/retest project):
+  # `harness.write` overwrites that project's `Retest-Task1.xml` outright, which on a
+  # multi-task project is whichever real task happens to hold that file name. Built once,
+  # not by this pipeline: `python3 -m sqx.projects.builder Trade_XAUUSD_variantesSPP
+  # --purpose "SPP reconnaissance harness for sqx.variants.spp (step 16.5)" --tasks Retest
+  # --only Retest-Task1.xml`.
+  spp_project: Trade_XAUUSD_variantesSPP
+
 verdict:
   # Thresholds are the user's, they are changeable, and changing one re-runs the verdict
   # stage alone: the ledger stores the numbers, never the judgement. `number` is

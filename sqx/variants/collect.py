@@ -2,6 +2,7 @@
 """Join the three legs' metrics onto the manifest and write contract C3, metrics.parquet."""
 
 import argparse
+import hashlib
 import json
 import sys
 from collections.abc import Callable
@@ -12,6 +13,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core.assetdata import doctrine
+from core.paths import DATA
 from sqx.variants import legs as legmod, united
 
 NAME = "Strategy Name"
@@ -136,6 +138,29 @@ def canaries(merged: pd.DataFrame) -> dict:
             "all_identical": bool(len(profits) > 1 and profits.nunique() == 1)}
 
 
+def fingerprint(path: Path) -> dict:
+    """What `pipeline.cleanup` needs to prove a file is still what this stage wrote.
+
+    Args:
+        path: A file just written by this stage.
+
+    Returns:
+        Its path relative to the data root -- what `pipeline.cleanup.unchanged()` does
+        `DATA / entry["path"]` with -- its byte count and its sha256, hashed right now,
+        before any later stage in the chain gets a chance to touch it.
+
+        🔬 issue 33, 2026-09-23: `collected.json` carried neither the hash nor a
+        data-root-relative path -- `{"path": "metrics.parquet"}`, the bare file name --
+        so `unchanged()` either KeyErrored on `entry["sha256"]` or, once that was patched
+        in isolation, would have resolved `DATA / "metrics.parquet"` instead of the
+        strategy's own folder. Nothing rewrote the file after collect hashed it: collect
+        never recorded a hash `cleanup` could compare against in the first place. Fixed
+        here, not in `cleanup.py`, because this stage is the one holding the file open.
+    """
+    return {"path": str(path.relative_to(DATA)), "bytes": path.stat().st_size,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+
+
 def main() -> None:
     """Write C3 beside the batch, and refuse the batch if the controls did not move."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -161,9 +186,10 @@ def main() -> None:
                      "canaries_distinct": found["distinct_netprofit"],
                      "segments": sorted(set(rows["segment"])), "markets": markets}
     (a.work / "collected.json").write_text(
-        json.dumps(checks | {"files": [{"path": "metrics.parquet"},
-                                       {"path": "segments.parquet"}],
-                             "removable": [str((a.work / "sqx").name)]}, indent=2),
+        json.dumps(checks | {"files": [fingerprint(a.work / "metrics.parquet"),
+                                       fingerprint(a.work / "segments.parquet")],
+                             "removable": [str((a.work / "sqx").relative_to(DATA))]},
+                  indent=2),
         encoding="utf-8")
     print(f"PROGRESS 100 {found['distinct_netprofit']} resultados distintos entre "
           f"{found['n']} controles, mercados: {', '.join(markets) or 'ninguno'}", flush=True)

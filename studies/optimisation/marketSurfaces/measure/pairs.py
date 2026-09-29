@@ -99,24 +99,33 @@ def pair(a: pd.Series, b: pd.Series, share: float, quantile: float,
         ca, cb: Each market's exposure per variant, for `rho_neutral`.
 
     Returns:
-        n (rows both keep), n_eff (distinct result pairs), rho and its Fisher interval on
-        n_eff, `rho_neutral` (see `neutral`), J, its expectation and band under
-        independence, and the hypergeometric p of the overlap. Inert parameters duplicate a backtest under several tuples, and
-        counting it several times narrows every interval for nothing (`core.surface`).
-        ⚠️ Distinct is not independent: the design clusters tuples, so both the interval
-        and the band are still narrower than the truth.
+        n (rows both keep), n_eff (distinct result pairs), `rho` (raw Spearman, DISPLAYED
+        only) and its Fisher interval on n_eff, `rho_neutral` (see `neutral`) and its own
+        Fisher interval on the same n_eff — `rho_neutral_lo`/`rho_neutral_hi` are what
+        `verdict.call.pair_state` decides on (owner, OPEN.md §48, 2026-09-29): net profit is
+        partly time-in-market times drift, so the raw rho a call would have used can be
+        carried by exposure alone rather than by the region travelling — J, its expectation
+        and band under independence, and the hypergeometric p of the overlap. Inert
+        parameters duplicate a backtest under several tuples, and counting it several times
+        narrows every interval for nothing (`core.surface`).
+        ⚠️ Distinct is not independent: the design clusters tuples, so every interval and
+        band here is still narrower than the truth.
     """
     both = pd.DataFrame({"a": a, "b": b, "ca": ca, "cb": cb}).dropna(subset=["a", "b"])
     kept = dedupe.distinct(both, ("a", "b"))
     n = len(kept)
+    half = Z95 / math.sqrt(max(n - 3, 1))
     rho = spearman(kept["a"].to_numpy(), kept["b"].to_numpy())
-    z, half = np.arctanh(np.clip(rho, -0.999999, 0.999999)), Z95 / math.sqrt(max(n - 3, 1))
+    z = np.arctanh(np.clip(rho, -0.999999, 0.999999))
+    rho_neutral = neutral(*(kept[c].to_numpy() for c in ("a", "b", "ca", "cb")))
+    zn = np.arctanh(np.clip(rho_neutral, -0.999999, 0.999999))
     ta, tb = top(kept["a"], share), top(kept["b"], share)
     k, x = len(ta), len(ta & tb)
     j0, j_hi = chance(n, k, quantile)
     return {"n": len(both), "n_eff": n, "rho": rho,
             "rho_lo": float(np.tanh(z - half)), "rho_hi": float(np.tanh(z + half)),
-            "rho_neutral": neutral(*(kept[c].to_numpy() for c in ("a", "b", "ca", "cb"))),
+            "rho_neutral": rho_neutral,
+            "rho_neutral_lo": float(np.tanh(zn - half)), "rho_neutral_hi": float(np.tanh(zn + half)),
             "k": k, "overlap": x, "j": x / (2 * k - x), "j0": j0, "j_hi": j_hi,
             "p_overlap": float(hypergeom.sf(x - 1, n, k, k))}
 

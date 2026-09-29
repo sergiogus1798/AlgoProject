@@ -34,16 +34,25 @@ def _context(name: str, design: dict, settings: dict, live: dict) -> dict:
             "rng": np.random.default_rng(settings["seed"] + ORDER.index(name))}
 
 
-def build(design: dict, settings: dict, table: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+def build(design: dict, settings: dict, table: pd.DataFrame,
+         banned: dict[str, set] | None = None) -> tuple[pd.DataFrame, dict]:
     """The whole batch: which tuples, in which stratum, under which identifier.
 
     Args:
         design: A parsed brief, contract C1.
         settings: The parsed `config.yaml`.
         table: Output of `inputs.known`, the source of the canary expectations.
+        banned: `design.pilot.decide`'s first return value, or `None` when the pilot did
+            not run. A live parameter's dropped levels are removed from what every stratum
+            samples from -- never the whole parameter, and never applied if it would leave
+            fewer than two levels, which mirrors `pilot.decide`'s own floor so the two
+            never disagree about how much of a parameter survives.
 
     Returns:
-        The plan and a report of how it was filled.
+        The plan and a report of how it was filled. `report["pilot_dropped"]` names every
+        level actually removed by `banned`, so a batch fabricated after the pilot always
+        says in its own manifest what changed and why -- never a silent difference from one
+        fabricated without it.
 
         `n_target` is a **cap, never a quota**. A tuple is never repeated to reach it: the
         controls go in first and count against the target, then each stratum takes its
@@ -59,9 +68,24 @@ def build(design: dict, settings: dict, table: pd.DataFrame) -> tuple[pd.DataFra
         row of the manifest with no file behind it.
     """
     live = levels.live(design, settings["minimum"])
+    origin_values = levels.origin(design)
+    pilot_dropped = {}
+    for name, bad in (banned or {}).items():
+        if name not in live:
+            continue
+        # The origin tuple is already proven to trade -- the pilot never gets to remove it,
+        # whatever region its own value happened to sample into.
+        bad = bad - {origin_values.get(name)}
+        kept = [v for v in live[name] if v not in bad]
+        if len(kept) < 2:
+            continue
+        removed = sorted(set(live[name]) - set(kept))
+        if removed:
+            pilot_dropped[name] = removed
+            live[name] = kept
     fixed = levels.frozen(design, settings["design"]["frozen"])
     everything = {**live, **fixed}
-    origin = levels.origin(design)
+    origin = origin_values
     frozen_values = {f["name"]: float(f["value"]) for f in design["frozen"]}
 
     rows, seen = [], set()
@@ -97,6 +121,7 @@ def build(design: dict, settings: dict, table: pd.DataFrame) -> tuple[pd.DataFra
 
     report["n"] = len(rows)
     report["shortfall"] = design["n_target"] - len(rows)
+    report["pilot_dropped"] = pilot_dropped
     return _frame(rows), report
 
 

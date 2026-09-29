@@ -67,7 +67,9 @@ and the warnings. A per-trade cost moves high-frequency variants most, so it can
 **Long-only net profit is partly exposure times the market's drift.** Two markets that drifted
 apart rank the variants against each other by time-in-market alone. `rho_neutral` removes each
 market's exposure from its own ranks; 🔬 23-1-46 `oos1`, USDJPY against AUDUSD, reads −0.87 raw and
-much less without it. The call is on the raw rho (the WFC's metric); the table carries both.
+much less without it. **The call is on `rho_neutral`** (owner, OPEN.md §48, 2026-09-29) — the raw
+rho (the WFC's metric) is kept beside it in every table and bar chart, displayed but never decided
+on, because it is the one that exposure alone can carry.
 
 ## The surfaces the window draws (encargo 24 E4, 22 §6.2)
 

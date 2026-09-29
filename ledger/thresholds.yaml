@@ -1,5 +1,9 @@
 # Los umbrales de la cadena, versionados. LOS MÓDULOS LOS LEEN; NINGUNO LOS ESCRIBE.
 #
+# EXCEPCIÓN (dueño, 2026-09-28): la ventana, en Configuración SQX › CSCV, escribe `cscv.blocks`
+# cuando el dueño lo cambia, y en la misma escritura pone `set_by: dueño`, `set_on` de hoy y un
+# `why` propuesto que nombra el valor anterior; él lo corrige al lado (ui/daemon/sqxconfig/).
+#
 # Un umbral movido después de ver los resultados es la forma más barata de sobreajustar una
 # cadena entera, y sin fecha no se distingue de uno fijado de antemano. Por eso cada fila
 # lleva quién lo puso, cuándo y por qué.
@@ -157,7 +161,8 @@ thresholds:
     set_on: 2026-09-26
     why: >-
       orden de magnitud de partida del encargo 11 (2-3 spreads por operación); fijado antes
-      de mirar resultados; el dueño pidió que fuera parámetro (2026-09-26), el valor es por defecto. action: mark, no destructivo, hasta que el dueño diga lo contrario
+      de mirar resultados. Confirmado como umbral definitivo por el dueño (OPEN.md §48,
+      2026-09-29): no es un valor provisional a la espera de que lo fije, es el umbral.
 
   - key: edgeCost.action
     value: mark
@@ -165,8 +170,9 @@ thresholds:
     set_by: agente
     set_on: 2026-09-26
     why: >-
-      mark (no elimina) frente a drop (elimina en curate); el dueño elige cuándo pasar a
-      drop, no este código
+      mark (no elimina) frente a drop (elimina en curate). Confirmado como acción
+      definitiva por el dueño (OPEN.md §48, 2026-09-29): pasar a drop, si alguna vez pasa,
+      es una decisión nueva, no la corrección de un valor provisional.
 
   # ── Pasos 4 y 8 · calidad del feed (encargo 17) ────────────────────────────────────────
   # Respuestas del dueño del 2026-09-26 a las 16 decisiones, fijadas antes de mirar ninguna

@@ -16,6 +16,7 @@ from core.paths import WORKERS, worker_dir
 from sqx.variants import execute, harness, inputs
 
 STAGED = "spp_in"
+STOCK = execute.STOCK   # hard rule 10: never a stock project, here either
 
 
 def stop(role: str) -> None:
@@ -92,10 +93,19 @@ def main() -> None:
     # fills the placeholders, so an argument that contains one becomes three.
     ap.add_argument("--chart", action="append", required=True,
                     help="repeatable, main first: SYMBOL=TIMEFRAME=SPREAD")
+    ap.add_argument("--project", required=True,
+                    help="the dedicated single-Retest-task harness project on the custodian "
+                         "(hard rule 10; never Builder or Retester) -- built once with "
+                         "`sqx.projects.builder <name> --tasks Retest --only Retest-Task1.xml`")
     a = ap.parse_args()
+    if a.project in STOCK:
+        raise SystemExit(f"{a.project} es un proyecto de serie: regla dura 10, el reconocimiento "
+                         "SPP necesita su propio proyecto de una tarea Retest. Créalo con "
+                         "`sqx.projects.builder <name> --tasks Retest --only Retest-Task1.xml`.")
 
     settings = inputs.load()
     cfg, spp = settings["execute"], settings["spp"]
+    cfg["project"] = a.project
     folder = stage(a.mother, a.work)
 
     print(f"PROGRESS 2 preparando el arnes {a.kind}", flush=True)

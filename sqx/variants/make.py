@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""The command: one design brief in, the .sqx batch and its manifest out. Never touches SQX."""
+"""The command: one design brief in, the .sqx batch and its manifest out.
+
+Touches SQX only through the pilot (`--no-pilot` or `pilot.enabled: false` skip it, and
+`--design-only` never runs it): a few hundred tuples, retested on `--project` before the
+full batch is fabricated, so the parameter regions that never trade are known before the
+budget is spent on them (OPEN.md #41). Everything else here is pure computation and file
+writing, same as before the pilot existed.
+"""
 
 import argparse
 import json
@@ -9,9 +16,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import assets, sqxfile
-from sqx.variants import inputs, manifest
+from sqx.variants import inputs, manifest, pilot as pilotmod
 from sqx.variants.build import fabricate
-from sqx.variants.design import plan
+from sqx.variants.design import levels, plan
 
 SQX_DIR = "sqx"
 
@@ -37,7 +44,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--brief", required=True, type=Path,
                     help="design_brief_<strategy>.json from studies.breakage.spp")
-    ap.add_argument("--project", required=True, help="project name, for the output path")
+    ap.add_argument("--project", required=True,
+                    help="project name, for the output path -- and, unless the pilot is "
+                         "skipped, the custom project its short retest runs on")
     ap.add_argument("--limit", type=int,
                     help="fabricate only the first N rows of the plan; the design is unchanged")
     ap.add_argument("--sample", type=int,
@@ -47,7 +56,10 @@ def main() -> None:
                     help="the fewest distinct variants a mother may get; config minimum.variants "
                          "(1000) when absent. Integer spans widen past +/-30 %% to reach it")
     ap.add_argument("--design-only", action="store_true",
-                    help="write the plan and stop, without fabricating anything")
+                    help="write the plan and stop, without fabricating anything (and "
+                         "without running the pilot: it needs the full retest's project)")
+    ap.add_argument("--no-pilot", action="store_true",
+                    help="skip the trade-count pilot even when config.yaml has it on")
     ap.add_argument("--out", type=Path,
                     help="write here instead of the default variants/<project>/<strategy>; "
                          "the pipeline points both of its stages at one strategy's work dir")
@@ -59,10 +71,23 @@ def main() -> None:
         settings["minimum"]["variants"] = args.min_variants
     parent = inputs.source(design)
     preflight(parent)
-
-    table, report = plan.build(design, settings, inputs.known(design))
     out = args.out or inputs.out_dir(args.project, design["strategy"])
     out.mkdir(parents=True, exist_ok=True)
+
+    banned, pilot_report = {}, {"skipped": True}
+    if not args.design_only and not args.no_pilot and settings["pilot"]["enabled"]:
+        live = levels.live(design, settings["minimum"])
+        banned, pilot_report = pilotmod.run(
+            design, settings, live, out, args.project,
+            lambda pct, line: print(f"PROGRESS {pct} {line}", flush=True))
+        (out / "pilot.json").write_text(json.dumps(pilot_report, indent=2), encoding="utf-8")
+        dropped = sum(len(v) for v in banned.values())
+        print(f"\npiloto: {pilot_report['tested']} reteseadas de {pilot_report['pilot_n']}, "
+              f"{dropped} niveles descartados en {len(banned)} parametros "
+              f"(< {pilot_report['min_trades']} operaciones en {pilot_report['segment']})")
+
+    table, report = plan.build(design, settings, inputs.known(design), banned=banned)
+    report["pilot"] = pilot_report
     table.to_csv(out / "plan.csv", index=False)
     print(f"\n{design['strategy']}  verdict={design['verdict']}  "
           f"live space {report['live_space']:,} tuples, with the frozen {report['full_space']:,}")

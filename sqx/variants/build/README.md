@@ -42,7 +42,10 @@ test fixture), so `%g` is its convention, not an approximation of it.
 | `no_profile` | everything but `optimizationProfile.bin` | 98.7 KB | 505 MB | 49 s |
 | `full` | a copy of the parent's members | 123.3 KB | 631 MB | 65 s |
 
-Which one is right is **open** — whether SQX loads a 5-member file at all is not known on this
-install. `config.yaml` picks; nothing else changes. Note the numbers depend on the parent: this one
+**Settled 2026-09-29** (owner, OPEN.md §23): the default is `no_profile`. SQX does load a 5-member
+file (`minimal`) with nothing breaking, so the choice is no longer the open engineering question it
+was on 2026-09-21 — it is the owner's call to keep the parent's own bookkeeping intact beyond just
+its parameters, at the extra size that costs. `config.yaml` picks; nothing else changes. Note the
+numbers depend on the parent: this one
 carries a 306 KB optimization profile, and a parent whose SPP was run with 3D-chart data stored
 carries a 2.2 MB one, which makes `full` roughly twenty times worse.

@@ -64,7 +64,7 @@ por separado y actúa después.
 
 ```bash
 python3 -m sqx.variants.make --brief <design_brief_<Estrategia>.json> --project <PROYECTO> \
-    [--out <work>] [--sample N | --limit N] [--design-only]
+    [--out <work>] [--sample N | --limit N] [--design-only] [--no-pilot]
 python3 -m sqx.variants.execute --work <work> --project <PROYECTO>   # ⏰ el único que ocupa el custodio
 python3 -m sqx.variants.equity   --work <work>    # antes que collect: collect lee equity.parquet
 python3 -m sqx.variants.collect  --work <work>
@@ -72,10 +72,29 @@ python3 -m sqx.variants.collect  --work <work>
 
 | comando | qué deja | toca SQX |
 |---|---|---|
-| `make` | `plan.csv`, `design.json`, `sqx/` con las N variantes, `manifest.parquet` | no |
+| `make` | `plan.csv`, `design.json`, `sqx/` con las N variantes, `manifest.parquet`, `pilot.json` | **el piloto, sí** (por defecto) |
 | `execute` | `retest.csv`, `ran.json`, el databank volcado a disco | **sí** |
 | `equity` | `equity.parquet` — el P&L **por día** de cada variante | no |
 | `collect` | `metrics.parquet` — el panel unido al manifiesto | no |
+
+## El piloto, antes de fabricar el lote entero (OPEN.md #41, dueño 2026-09-29)
+
+Medido 2026-09-24 en `Strategy 17.9.39`: **1.002 de 2.000 filas operaron menos de 30 veces dentro de
+muestra** — la mitad del presupuesto se fue en combinaciones que no son un punto de una superficie.
+`make` ahora fabrica y retestea primero unos cientos de tuplas de muestra (Sobol, sólo los
+parámetros que se mueven) en el MISMO `--project`, cuenta sus operaciones y descarta los niveles de
+un parámetro cuyo piloto operó por debajo de `pilot.min_trades` (30 por defecto) — nunca un
+parámetro entero, y nunca el valor del origen. El lote grande se fabrica ya sin esas regiones.
+
+**ON por defecto** (`pilot.enabled` en `sqx/variants/config.yaml`). `--no-pilot` lo salta para una
+prueba rápida; `--design-only` nunca lo corre (no fabrica nada). Es el único momento en que `make`
+toca SQX: un retest corto, con los mismos `awake`/`load`/`run`/`synced` de `execute.py`, sobre el
+mismo proyecto y a los mismos costes por tarea — no crea ni necesita un proyecto propio.
+
+**Nunca es silencioso.** `pilot.json` (junto al lote) lleva, por parámetro y nivel, la mediana de
+operaciones del piloto, cuántos puntos la sostienen y si se descartó; `design.json` lleva el mismo
+recorte en `pilot_dropped`. Un lote fabricado con el piloto y otro sin él nunca deberían compararse
+como si fueran el mismo diseño — mira `pilot_dropped` antes de leer una superficie.
 
 **El espacio de variantes** (dueño, 2026-09-26): cada parámetro cubre al menos ±30 %, los enteros con
 todos sus valores, los *shift* fijos, y cada madre tiene **al menos 1.000 variantes distintas**

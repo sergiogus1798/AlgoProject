@@ -18,12 +18,15 @@
 #              reads to call a deletion proven rather than likely
 #   recompute  re-run it even when it is done; only the verdict, which is a judgement
 #
-# Placeholders: {project} {databank} {strategy} {safe} {day} {work} {reports}
+# Placeholders: {project} {databank} {strategy} {safe} {day} {work} {reports} {spp_project}
 #   {work}     pipeline/<project>/<safe>
 #   {reports}  reports/<project>/<databank>/<day>
 #   {sample}   how many variants to fabricate, from pipeline/config.yaml
 #   {safe}     the strategy name with spaces as _ and dots as -, the same spelling
 #              sppUltra already uses for its brief filenames
+#   {spp_project}  the SPP reconnaissance harness's own dedicated single-Retest-task
+#              project (pipeline/config.yaml#run.spp_project, OPEN.md §38, hard rule 10)
+#              -- NOT {project}, which is the mother's build/retest project
 #
 # All twelve rows drive real modules. `stubs/placeholder.py` is kept for verify/, which
 # swaps every command for it so the ledger can be tested without SQX or a real export.
@@ -34,13 +37,13 @@ stages:
   # shaped by what they find. ⚠️ Both run on the custodian, one at a time: the profile is
   # ~20 MB on disk but tens of gigabytes while it is built, so two at once do not fit.
   - name: spp_is
-    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_is --chart XAUUSD_DukasM1_Infinox=M30=5
+    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_is --chart XAUUSD_DukasM1_Infinox=M30=5 --project {spp_project}
     needs: []
     produces: ["{work}/spp_is.json"]
     record: [tested, wall_s, max_tests, spread_pct]
 
   - name: spp_oos
-    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_oos --chart XAUUSD_DukasM1_Infinox=M30=10
+    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_oos --chart XAUUSD_DukasM1_Infinox=M30=10 --project {spp_project}
     needs: ["{work}/spp_is.json"]
     produces: ["{work}/spp_oos.json"]
     record: [tested, wall_s]
@@ -49,7 +52,7 @@ stages:
   # reads it. The out-of-sample one is exported for comparison and is not what the grid is
   # built from: a design chosen on the data it will be judged against is not a design.
   - name: spp_export
-    command: python3 -m sqx.export.export_spp --project Retester --databank Results --role custodian --out-databank {databank}
+    command: python3 -m sqx.export.export_spp --project {spp_project} --databank Results --role custodian --out-databank {databank}
     needs: ["{work}/spp_oos.json"]
     produces: ["raw/{project}/{databank}/{day}/spp/spp.parquet"]
 

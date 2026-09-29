@@ -19,8 +19,8 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `harvest.py` | **The cosecha**: matches the build and retest databanks by strategy name, takes both, writes the joined tables | `python3 -m studies.screening.gate.harvest --project P --databank build --oos-databank oos1` | two databanks → four files + manifest |
-| `pairing.py` | Matches the two databanks by strategy name (owner, 2026-09-26); identity stays the key downstream | imported | two indexes → pairs, aliases, unpaired |
+| `harvest.py` | **The cosecha**: pairs the build and retest databanks by strategy name and joins them on identity, takes both, writes the joined tables | `python3 -m studies.screening.gate.harvest --project P --databank build --oos-databank oos1` | two databanks → four files + manifest |
+| `pairing.py` | Finds the correspondence by strategy name (owner, 2026-09-26); the join itself is on identity, which is what everything downstream keys on | imported | two indexes → pairs, aliases, unpaired |
 | `collect.py` | One side of it: stage a set of `.sqx` once and take its metrics, trades and equity | imported | files → three frames |
 | `inputs.py` | The knobs, one harvest read back, and the two windows glued into one curve | imported | folder → frames, split, end |
 | `screens.py` | The five cheap screens and the registry the cascade reads | imported | harvest + survivors → value, passed |
@@ -38,13 +38,16 @@ Design dossier: `docs/AgentPDFs/puerta-oos-2026-09-23.md`.
 
 ## The four things this module exists to get right
 
-**The join is on the strategy name** (owner, 2026-09-26). The retest databank is a retest of the build
-one inside the same project, and a strategy keeps its file name through it; within one databank a name
-is unique, because SQX renames on collision. The scorecard stays indexed by identity —
-`core.sqxfile.identity`, the SHA-256 of the inner `strategy_Portfolio.xml` normalised (a retest
-rewrites `makeExternal` on every `<variable>`) — and a pair whose identity changed is re-keyed to the
-build's. ⚠️ A name identifies nothing ACROSS projects or builds: two databanks of one project once held
-entirely different strategies under `Strategy 17.8.29`. Pair only a retest with the build it retested.
+**The join is on identity, found by the strategy name** (owner, 2026-09-26). The retest databank is
+a retest of the build one inside the same project, and a strategy keeps its file name through it;
+within one databank a name is unique, because SQX renames on collision, so the name is what pairs a
+build file with its retest file. Everything from there on — the scorecard, the screens, `verdict.csv`
+— is indexed by identity, never by name: `core.sqxfile.identity`, the SHA-256 of the inner
+`strategy_Portfolio.xml` normalised (a retest rewrites `makeExternal` on every `<variable>`) — and a
+pair whose identity changed is re-keyed to the build's. ⚠️ A name identifies nothing ACROSS projects
+or builds: two databanks of one project once held entirely different strategies under
+`Strategy 17.8.29`. Pair only a retest with the build it retested, which is exactly why the name is
+used only to find the correspondence and identity is what the join carries forward.
 
 **A strategy the retest databank does not hold is a reject, not a gap.** SQX drops a strategy when one
 of its own red flags fires there — too many ambiguous trades, and the rest — and that decision stands

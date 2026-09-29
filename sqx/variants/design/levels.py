@@ -59,7 +59,8 @@ def frozen(design: dict, settings: dict) -> dict[str, list[float]]:
 
         The range is the one SQX uses for its own permutations, measured and recorded in
         `knowhow/sqx-format/declared-parameters.md`: +/-30 % of the value stepped and rounded, except a
-        shift, which stays at its value (owner, 2026-09-26). Rounding follows the value:
+        shift, which stays at its value (owner, 2026-09-26). Confirmed final by the owner
+        (OPEN.md §23, 2026-09-29): not an open assumption. Rounding follows the value:
         integral in, integral out.
     """
     out = {}

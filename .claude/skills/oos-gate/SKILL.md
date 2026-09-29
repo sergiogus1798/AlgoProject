@@ -10,7 +10,7 @@ Build → retest → **this** → the next task. Python decides, SQX obeys.
 ```
 Results (IS)  ┐                                              ┌ verdict.csv ┐
               ├─ studies.screening.gate.harvest ─▶ studies.screening.gate.report ─▶ scorecard ───┤             ├─▶ curate ─▶ next task
-OOS (retest)  ┘   join on name       seven screens           └ gate.md     ┘
+OOS (retest)  ┘   join on identity    seven screens           └ gate.md     ┘
                                                      └─▶ snoopingScreen: SPA/StepM vs buy & hold (annotates)
 ```
 
@@ -25,10 +25,15 @@ bin/sqx-worker.sh --role custodian stop
 python3 -m studies.screening.gate.harvest --project <P> --databank Results --oos-databank OOS --role custodian
 ```
 
-**Pairs by strategy name** (owner, 2026-09-26). The OOS databank is the retest of `Results` in the
-same project, so each strategy keeps its name; within a databank names are unique. The harvest prints
-how many pairs changed identity on the way — that is information, not a failure. ⚠️ Never pair a
-retest with a build it did not retest: across builds, one name can be two different strategies.
+**The join is on identity** (`core.sqxfile.identity`, the SHA-256 of the inner
+`strategy_Portfolio.xml`), found by strategy name (owner, 2026-09-26). The OOS databank is the
+retest of `Results` in the same project, so each strategy keeps its file name through it, and that
+name is what pairs a build file with its retest file; within a databank names are unique. Everything
+after pairing — the scorecard, the screens, `verdict.csv` — is then keyed on identity, and a pair
+whose identity changed in the retest is re-keyed to the build's. The harvest prints how many pairs
+changed identity on the way — that is information, not a failure. ⚠️ Never pair a retest with a
+build it did not retest: across builds, one name can be two different strategies, which is exactly
+why identity, not name, is what the join carries forward.
 
 A strategy in the build with no twin in the retest is dropped: SQX already judged it, by its own
 red flags.

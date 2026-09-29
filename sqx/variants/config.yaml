@@ -28,6 +28,24 @@ minimum:
   widen_step: 0.05
   max_span: 0.60
 
+pilot:
+  # Owner, OPEN.md §41, 2026-09-29: half a batch can trade too little to be a point on a
+  # performance surface (🔬 2026-09-24, Strategy 17.9.39: 1,002 of 2,000 under 30 trades).
+  # ON by default, `--no-pilot` or `enabled: false` skip it: a few hundred tuples, sampled
+  # over the LIVE parameters only, are fabricated and retested before the full batch --
+  # one extra short SQX retest, on the same project and at the same per-task costs
+  # (`sqx.variants.execute.awake`/`load`/`run`/`synced`, reused, not reimplemented) -- and
+  # scored on trade count alone. A live parameter's level whose pilot points trade too
+  # little is dropped before the full design is built, never silently: `pilot.json` records
+  # every level's median trade count and whether it was dropped, and `design.json` carries
+  # the same drop under `pilot_dropped`.
+  enabled: true
+  sample: 300           # a few hundred tuples, per the issue's own wording
+  seed: 20260929         # its own draw, independent of `design.seed`
+  min_trades: 30         # the issue's own floor -- knowhow/research/trade-filter-parameter-space.md
+  min_support: 5         # a level's median is trusted only once this many pilot points used
+                         # it; fewer and the level is undersampled, not silent
+
 canaries:
   # Controls whose result is known before the retest runs. They are chosen at the extremes
   # of the SPP table on purpose: a miswired chain returns a plausible middling number, it
@@ -43,26 +61,40 @@ build:
   #   no_profile  98.7 KB -> 505 MB at 5,000   everything but the parent's optimizationProfile.bin
   #   full       123.3 KB -> 631 MB at 5,000   a byte-for-byte copy of the parent's members
   #
-  # SETTLED 2026-09-21: SQX loads, lists, exports and copies a five-member .sqx, and the
-  # databank does not de-duplicate on the inherited <Fingerprint> -- it does not de-duplicate
-  # at all on load or copy. So minimal is the shape, and it is 7x cheaper than the next one.
+  # SETTLED 2026-09-21 (engineering): SQX loads, lists, exports and copies a five-member
+  # .sqx, and the databank does not de-duplicate on the inherited <Fingerprint> -- it does
+  # not de-duplicate at all on load or copy. `minimal` is 7x cheaper than the next shape and
+  # nothing breaks on it.
   #
-  # ⚠️ minimal is cheaper, NOT safer. The parent's 36 <SQStats> blobs live in settings.xml,
-  # which every shape keeps, so a variant that never ran exports the parent's metrics rather
-  # than looking empty. The canaries are what catches that; the shape is not.
+  # DECIDED 2026-09-29 (owner, OPEN.md §23): the default is `no_profile`, not `minimal`.
+  # Cheaper is not the only cost that matters here -- `no_profile` keeps every member but
+  # the parent's `optimizationProfile.bin`, which is strictly more of the parent's own
+  # bookkeeping kept intact for the same retest, at 505 MB against 70 MB per 5,000. This is
+  # the owner's call, not a reopening of the size measurement above.
+  #
+  # ⚠️ Neither shape is safer on the canaries. The parent's 36 <SQStats> blobs live in
+  # settings.xml, which every shape keeps, so a variant that never ran exports the parent's
+  # metrics rather than looking empty. The canaries are what catches that; the shape is not.
   # knowhow/sqx-format/five-member-sqx.md, both 2026-09-21 sections.
-  shape: minimal
+  shape: no_profile
 
 execute:
   # Where the batch is retested. The custodian takes ONE long job at a time and receives no
   # other command while it runs, so a sync can never delete the .sqx it is holding -- which
   # is the whole reason the role exists (knowhow/sqx-drive/three-install-topology.md).
   role: custodian
-  # The batch retest (`sqx.variants.execute`) no longer reads this: it takes `--project`,
-  # the workflow's own project (owner, 2026-09-25), and refuses a stock one. Only the SPP
-  # reconnaissance harness of the unattended pipeline (`sqx.variants.spp`, pipeline/recipe.yaml)
-  # still runs here -- ⚠️ on the STOCK `Retester`, against hard rule 10. OPEN.md §38.
-  project: Retester
+  # Neither this stage nor the SPP reconnaissance harness reads a project name from here
+  # any more (OPEN.md §38, owner 2026-09-29): both take `--project` on the command line and
+  # both refuse a stock one (`sqx.variants.execute.STOCK`). The batch retest (`sqx.variants.execute`)
+  # takes the workflow's own project (owner, 2026-09-25); `sqx.variants.spp` needs a DEDICATED
+  # single-Retest-task project of its own, because `harness.write` overwrites that project's
+  # `Retest-Task1.xml` outright -- pointed at the multi-task workflow project it would silently
+  # clobber whichever task that file name is. Build it once per symbol:
+  #   python3 -m sqx.projects.builder Trade_<SYMBOL>_variantesSPP \
+  #       --purpose "SPP reconnaissance harness for sqx.variants.spp (step 16.5)" \
+  #       --tasks Retest --only Retest-Task1.xml
+  # `Trade_`, not `Test_`: it is reused for every mother of the family rather than retired
+  # per run. `pipeline/config.yaml#run.spp_project` names it for the unattended pipeline.
   # ⚠️ Estos dos son los del harness de una sola tarea que usa `spp.py` (el reconocimiento
   # SPP de una madre). El RETEST DEL LOTE ya no los usa: sus databanks salen de `wfc:` en
   # assets/_build.yaml — el de entrada y uno de salida por tramo—, que es donde se declara

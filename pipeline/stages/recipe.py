@@ -49,6 +49,10 @@ def context(project: str, databank: str, strategy: str, day: str) -> dict:
     return {"project": project, "databank": databank, "strategy": strategy,
             "safe": state.safe(strategy), "day": day, "work": str(work),
             "reports": str(report_dir(project, databank, day)),
+            # The SPP reconnaissance harness's own dedicated project (OPEN.md §38, hard
+            # rule 10) -- never `project` above, which is the mother's build/retest project
+            # and not a single-Retest-task harness.
+            "spp_project": settings()["run"]["spp_project"],
             # 0 means "the whole design": --sample 0 is falsy to the factory, which then
             # fabricates every planned row rather than a slice of them.
             "sample": settings()["run"]["sample"],

@@ -108,6 +108,14 @@ def main() -> None:
     check(failures, drift["rho"] < -0.7 and abs(drift["rho_neutral"]) < 0.08,
           f"dos mercados que sólo premian estar dentro con derivas opuestas: rho "
           f"{drift['rho']:+.2f} en bruto, {drift['rho_neutral']:+.2f} sin la exposición")
+    same_drift = time_in * 100 + rng.normal(0, 300, N)
+    same_drift2 = time_in * 100 + rng.normal(0, 300, N)
+    shared_exposure = pairs.pair(same_drift, same_drift2, SHARE, QUANTILE, time_in, time_in)
+    check(failures, shared_exposure["rho_lo"] > FLOOR
+          and call.pair_state(shared_exposure, FLOOR) != "pass",
+          f"dos mercados que sólo comparten la MISMA deriva: rho en bruto "
+          f"{shared_exposure['rho']:+.2f} (intervalo sobre el suelo) pero rho_neutral "
+          f"{shared_exposure['rho_neutral']:+.2f} decide, y no pasa por exposición sola")
 
     print("\n## la llamada de la madre")
     rows = pd.DataFrame({"segment": ["build"] * 4 + ["oos1"] * 4,

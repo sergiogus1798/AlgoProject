@@ -16,10 +16,15 @@ def pair_state(row: pd.Series, floor: float) -> str:
         `watch` otherwise. Both numbers are asked for because they fail differently: a
         rho can be carried by the bottom of the surface agreeing (both markets hate the
         same corner) while the tops share nothing, and that is not a shared good region.
+
+        **The decision is on `rho_neutral`, not the raw `rho`** (owner, OPEN.md §48,
+        2026-09-29): net profit is partly time-in-market times drift, so two markets that
+        merely drifted apart can carry a raw rho that is not the region travelling. The raw
+        rho and its own interval are still returned for display, never for this call.
     """
-    if row["rho_lo"] > floor and row["j"] > row["j_hi"]:
+    if row["rho_neutral_lo"] > floor and row["j"] > row["j_hi"]:
         return "pass"
-    if row["rho_hi"] < floor:
+    if row["rho_neutral_hi"] < floor:
         return "fail"
     return "watch"
 
