@@ -37,14 +37,15 @@ que sólo el dueño puede dar.
 | 16.5 | **Preparación de variantes para el WFC** | `sqx/variants/make.py`, `/variants` | ✅ · ⚠️ corre en el `Retester` de serie, OPEN.md §38 |
 | 17 | **Walk Forward Correlation** | `studies/optimisation/wfc/report.py` | ✅ |
 | 18 | **CSCV** | `studies/optimisation/cscv/report.py` | ✅ |
-| 18.5 | **Superficies por mercado** — la misma región de parámetros, ¿es la buena en los 9 mercados de `_markets.yaml`? `rho` de Spearman y Jaccard del decil superior entre cada par, sobre el lote del 16.5 retesteado con los cross-checks | `studies/optimisation/marketSurfaces/report.py`, manual `52-superficies-mercado.md` | ✅ · ⚠️ costes de los 9 pares = defaults de SQX con comisión CERO (`costs_provisional`) · lee `build`, `oos1` y `oos2`, este último a ciegas hasta el 20 |
+| 18.5 | **Superficies por mercado** — la misma región de parámetros, ¿es la buena en los 9 mercados de `_markets.yaml`? `rho` de Spearman y Jaccard del decil superior entre cada par, sobre el lote del 16.5 retesteado con los cross-checks | `studies/optimisation/marketSurfaces/report.py`, manual `52-superficies-mercado.md` | ✅ · ⚠️ costes de los 9 pares = defaults de SQX con comisión CERO (`costs_provisional`) · lee `build`, `oos1` y `oos2` |
 | 19 | **Walk Forward Matrix en SQX** | `sqx/projects/wfm.py`, `/wfm`; el análisis es `studies/optimisation/wfm/` | ✅ la tarea · 🔴 no se lee hasta tener 17 y 18 |
-| 20 | **Análisis conjunto de 17, 18, 18.5 y 19 — CIEGO hasta tener los cuatro** — y el SPA/StepM de cada madre contra el buy & hold a igual riesgo sobre `oos2` (encargo 10 B) | `studies/closing/blindJoint/report.py`, manual `56-paso-20.md`; antes, `ledger.backfill --blind` (17-19 no se apuntan solos) | ✅ · 🟡 anota y no corta: **qué es pasar** (`joint.pieces` y `joint.population`) es del dueño · el SPA sobre `oos2` sin leer: la política no reserva `oos2` para el 20 (`BlindJoint` en `reserved_for`, del dueño) |
+| 20 | **Análisis conjunto de 17, 18, 18.5 y 19** — y el SPA/StepM de cada madre contra el buy & hold a igual riesgo sobre `oos2` (encargo 10 B) | `studies/closing/blindJoint/report.py`, manual `56-paso-20.md`; antes, `ledger.backfill --blind` (17-19 no se apuntan solos) | ✅ · 🟡 anota y no corta: **qué es pasar** (`joint.pieces` y `joint.population`) es del dueño · el SPA sobre `oos2` se lee para un humano; sólo un agente autónomo lo encuentra cerrado (`BlindJoint` fuera de `reserved_for`) |
 | 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/10-cierre.pdf` (cap. 38-exposicion) | ✅ |
 | 22 | **Mapa condicional** — clasifica cada operación por el estado del mercado al entrar (volatilidad realizada, tendencia, día de la semana) y lee el P&L celda a celda; fabrica hipótesis, no filtra | `studies/readings/conditionalMap/`, manual `53-mapa-condicional.md` | 🟡 · ⬜ sesión (Asia/Londres/Nueva York/solape) pendiente de que el dueño fije las horas UTC — ver `_coord/BOARD.md` |
-| 23 | **Estructura** — por superviviente: una ablación por condición de entrada y la inversión de la orden en las mismas entradas. ¿Qué condición aporta por operación contra un recorte al azar, cuál es redundante, y vive el filo en la dirección? Diagnóstico, nunca selección | `sqx.structural.make` → `sqx.variants.execute` (custodio) → `sqx.structural.keep` → `sqx.export.export_retest` → `studies/readings/structure/report.py`, manual `51-estructura.md` | ✅ · lee `build` y `oos1`; `oos2` lo rechaza `ledger.gate` · sin stops: la inversión se niega si la madre ya lleva stop/target (por eso va antes del 24) · D3 (mono dentro de SQX) cerrado como imposible |
-| 24 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, `sqx/variants/stopgrid.py`, manual `54-atr-calculator.md` | 🟡 construido y probado en SQX sobre una estrategia de desarrollo; falta una superviviente real · lee `build`, `oos1` y `oos2` (reservado también para este paso, dueño 2026-09-26) |
+| 23 | **Estructura** — por superviviente: una ablación por condición de entrada y la inversión de la orden en las mismas entradas. ¿Qué condición aporta por operación contra un recorte al azar, cuál es redundante, y vive el filo en la dirección? Diagnóstico, nunca selección | `sqx.structural.make` → `sqx.variants.execute` (custodio) → `sqx.structural.keep` → `sqx.export.export_retest` → `studies/readings/structure/report.py`, manual `51-estructura.md` | ✅ · lee `build` y `oos1` · sin stops: la inversión se niega si la madre ya lleva stop/target (por eso va antes del 24) · D3 (mono dentro de SQX) cerrado como imposible |
+| 24 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, `sqx/variants/stopgrid.py`, manual `54-atr-calculator.md` | 🟡 construido y probado en SQX sobre una estrategia de desarrollo; falta una superviviente real · lee `build`, `oos1` y `oos2` |
 | 25 | **Edge por coste, por estrategia** — la misma lectura sobre el export de trades de la versión que se va a operar, para confirmar que el edge sigue por encima del umbral con el stop puesto | `studies/readings/edgeCost/report.py ... --strategy "<nombre>"`, mismo manual `50-edge-por-coste.md` | ✅ · misma forma de columnas que el export de la puerta, ningún cambio de código entre los dos usos |
+| 25.5 | **Licencia del reprecio** — se corre UNA VEZ, al final: un retest DATATICK real (`*_DarwTick_*`, precisión de tick) en el custodio sobre un puñado de supervivientes ya existentes, contra el reprecio de `studies.data.spread.report` (pasos 8 y 25) operación por operación; licencia el atajo que hoy sustituye a ese retest sin haberlo contrastado (OPEN.md #76), o dice qué le falta | encargo 36, `studies/data/spread/report.py`, `reprice.py` | ⬜ · umbral de aceptación, del dueño |
 | 26 | **Validación en MT5 con la feed de cada empresa de fondeo → pool validado** — sobre la estrategia ya dada por buena en 1-25: SQX traducido al reloj y los costes de la empresa contra el backtest de MT5 en el tramo común, comparando operaciones, P&L diario en el día del servidor, peor día y drawdown intradía con umbrales fijados antes; si coincide, entra en el pool de esa empresa, lo único que lee la cartera (dueño, 2026-09-29) | encargo 34, `mt5/compare.py` | ⬜ · umbrales aceptados como parámetros (dueño, 2026-09-29) · depende de OPEN.md #78 |
 
 **Tres lecturas adicionales que no son pasos nuevos y no renumeran nada.** Dos sobre una
@@ -129,12 +130,16 @@ Sale de `assets/_policy.yaml` y no se negocia por paso:
   `run.sample` (por defecto `oos1`), nunca la construye contra ella.
 - `oos1` — del 7 al 16, el paso 22
   (mapa condicional) y el paso 23 (tests estructurales, junto con `build`).
-- `oos2` — **RESERVADO** para 17, 18.5 y 19 (WFC, superficies por mercado y WFM; el 18.5 por
-  decisión del dueño del 2026-09-26) — el 18.5 lee los tres tramos. Es una puerta de un solo
-  sentido: cada mirada lo gasta. El paso 23 no lo pide y `ledger.gate` se lo rechaza. Ningún otro
-  paso anterior a 20 lo toca. **El paso 24** (stop loss ATR) sí lo lee, sobre la superviviente, para
-  ver si la X del IS se transfiere: el dueño lo añadió a `reserved_for` el 2026-09-26 y cada
-  ejecución deja su fila en el ledger.
+- `oos2` — lo leen 17, 18, 18.5 y 19 (WFC, CSCV, superficies por mercado y WFM) y **el paso 24**
+  (stop loss ATR), sobre la superviviente, para ver si la X del IS se transfiere. Cada lectura deja
+  su fila en el ledger.
+
+**Un humano puede mirar cualquier tramo cuando quiera** (dueño, 2026-09-28). La regla de «no quemar
+el oos2» —puerta de un solo sentido, `reserved_for` de `_policy.yaml`, paso 20 ciego— queda
+**sólo para un agente autónomo que tome solo las decisiones de desarrollo**, y aun ahí está por
+discutir. En código: `core.assetdata.enforced()` es falso salvo con `ALGO_AUTONOMOUS=1`, y sin él
+ni `ledger.gate`, ni la ventana, ni los configuradores de SQX rechazan ni sellan nada. El ledger
+sigue contando cada mirada: es información para el Sharpe desinflado, no un candado.
 
 ## El contrato que une los pasos pares
 
@@ -146,9 +151,26 @@ no identifica, SQX renombra en colisión.
 ⚠️ La identidad es el SHA-256 del `strategy_Portfolio.xml` **normalizado**. Un retest reescribe
 `makeExternal` en cada variable: con el hash crudo, el emparejamiento build↔retest casa 0 de 115.
 
+## Decisión del dueño — 2026-09-29: del 16 al final, todas las supervivientes por todos los pasos
+
+> «Se corren todos los steps con todo lo que sobreviva a los SPP y a su análisis. […] En un
+> workflow profesional, que corran los 4.»
+
+- **Workflow profesional**: el embudo corta hasta el paso 16 (8, 10, 12, 14 y 16 juzgan y su
+  veredicto se aplica antes de la siguiente tarea de SQX). Lo que sobrevive al 16 pasa **entero**
+  por 16.5, 17, 18, 18.5 y 19 —las cuatro piezas, sin filtrar una con otra— y el 20 las lee
+  juntas; 21-25 se corren sobre lo que salga del 20.
+- **No** se filtra con la WFM (ni con ninguna de las cuatro) antes de correr las demás.
+- **Excepción**: con otro fin que no sea sacar una estrategia rentable —probar o mejorar el
+  código—, se puede correr un solo paso suelto; la ventana lo permite con el ▶ de cada tarjeta.
+
 ## Decisiones del dueño sobre la secuencia — 2026-09-23
 
-### El paso 20 va ciego, y por eso el orden importa
+### El paso 20 va ciego, y por eso el orden importa — sólo para un agente autónomo
+
+> **Derogado para humanos el 2026-09-28.** Lo que sigue es la regla original; hoy sólo ata a un
+> agente autónomo (`ALGO_AUTONOMOUS=1`), y si debe seguir atándolo está por discutir. Con la
+> ventana o una sesión dirigida por el dueño, 17, 18 y 19 se leen cuando se quiera.
 
 Los pasos 17, 18 y 19 **no se miran hasta que los tres estén hechos**. La razón no es estética:
 
@@ -162,7 +184,7 @@ contaminada por lo que se vio, y la última bala se gasta en un test elegido a p
 
 **Esto ha de estar forzado por el ledger, no por la buena voluntad de quien lo corra.**
 
-✅ **Construido el 2026-09-24.** `ledger/gate.py` se niega: `allow(paso, segmento, activo)` lanza si
+✅ **Construido el 2026-09-24**, y desde el 2026-09-28 activo sólo con `ALGO_AUTONOMOUS=1`. `ledger/gate.py` se niega: `allow(paso, segmento, activo)` lanza si
 un paso mira un tramo que `_policy.yaml` reserva para otro, y `allow_read` lanza si se piden los
 resultados de 17, 18 o 19 sin que los tres estén registrados. Manual: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 43-ledger).
 
@@ -176,10 +198,9 @@ uno detrás de otro. Lo que tiene que ser simultáneo es **la lectura**:
 > resultados de las 3 pruebas se mostrarán a la vez, o al menos no ver uno mientras se está
 > simulando la siguiente prueba.
 
-Consecuencia para quien programe la ventana de `ui/`: los tres resultados se **retienen** hasta que
-los tres existen, y no se pinta ninguno mientras el siguiente está corriendo. Es la misma regla
-ciega del paso 20, pero dicha en términos de interfaz — y es la interfaz la que la tiene que forzar,
-no la disciplina de quien mira.
+~~Consecuencia para quien programe la ventana de `ui/`: los tres resultados se retienen hasta que
+los tres existen.~~ **Derogado el 2026-09-28:** la ventana la maneja un humano, así que no retiene
+nada; enseña cada resultado en cuanto existe.
 
 ## Un manifiesto global de la cadena — acordado
 
@@ -213,6 +234,6 @@ número de monos se convierte en una cifra que se compara con un resultado conoc
 | 🔴 | **`assets/_study.yaml`** — los umbrales de aceptación del paso 6 y sobre qué muestra (`sampleType`) se miden. Del dueño |
 | 🔴 | **costes de `XAGUSD_DukasM1_Infinox` y `BRENTCMDUSD_ftmo`**, y el `data_from` del Brent. Sin ellos el paso 9 se niega a escribirse. Del dueño |
 | ⬜ | **los building blocks** del paso 6: qué indicadores entran en el hueco aleatorio |
-| 🟡 | **el paso 20 construido, sin decidir**: qué es «pasar» (unanimidad / sin_fallo / sólo el StepM, y K = supervivientes o entrantes) y si el 20 puede leer `oos2` (`_policy.yaml`). Del dueño — `docs/encargos/10-spa-stepm.md` |
+| 🟡 | **el paso 20 construido, sin decidir**: qué es «pasar» (unanimidad / sin_fallo / sólo el StepM, y K = supervivientes o entrantes). Leer `oos2` ya no lo bloquea para un humano (2026-09-28). Del dueño — `docs/encargos/10-spa-stepm.md` |
 | ⬜ | **las horas UTC de cada sesión** (Asia/Londres/Nueva York/solape) — sin ellas el paso 22 no puede añadir el corte de sesión; el campo `session` de `assets/symbols/` sólo da la semana de mercado abierto, no la partición del día. Del dueño |
 | 🟡 | **calidad del feed** (encargo 17, construido 2026-09-26) — queda del dueño: la **sesión del Brent** con sus pausas (109 huecos propios al año con la deducida); la inyección la dio por buena el 2026-09-26. Tres detalles de diseño abiertos en `studies/data/feedQuality/POSSIBLE_IMPROVEMENTS.md` |

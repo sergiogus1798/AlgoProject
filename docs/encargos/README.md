@@ -94,6 +94,21 @@ Salen del dossier `docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md`, ele
 | `33-economia-del-fondeo.md` | el fondeo como flujo de caja banco ↔ empresa: catálogo de planes y add-ons extraído (Hantec ya, 44 planes), reglas como máquina de estados sobre equity flotante, ciclo compra → fases → fondeada → cobros simulado por bloques, contra el mono y con recorte del edge; devuelve qué plan, add-ons y riesgo comprar. Contesta `portfolio/DECISIONS.md` #6 | una cartera en el archivo; los huecos del catálogo confirmados por el dueño |
 | `34-validacion-mt5-pool.md` | el paso 26: la estrategia ya buena en 1-25 se backtestea en MT5 con la feed de cada empresa; SQX traducido a su reloj y sus costes se compara en operaciones, P&L diario del servidor, peor día y drawdown intradía con umbrales fijados antes; si coincide, entra en el pool validado de esa empresa, lo único que lee la cartera | OPEN.md #78 |
 
+## La flota en vivo, 2026-09-29
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `35-flota-mt5-en-la-vps.md` | las cuentas de fondeo en vivo de la VPS Windows, vistas desde la ventana del Linux (estado, semáforo contra los límites de cada empresa, conciliación con SQX por magic), y el despliegue de EAs desde una carpeta de `.mq5` y el Excel del dueño con perfiles de gráficos generados; más el exportador de carteras (magic, riesgo, noticias, comentario, nombre) | specs de la VPS y la plantilla de Excel del dueño; el exportador, de OPEN.md #78.3 |
+
+## La licencia del reprecio, 2026-09-29
+
+Sale de `OPEN.md` §76: `studies.data.spread.report` sustituye a un retest DATATICK real sin haber
+sido contrastado con uno.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `36-licencia-reprecio-datatick.md` | el paso 25.5 del `WORKFLOW.md`: un retest DATATICK real (`*_DarwTick_*`) en el custodio, sobre un puñado de supervivientes ya existentes, contra el reprecio de Python operación por operación — licencia el atajo o dice qué le falta. Nota de paso: el modelo de USDJPY se apoya en el nivel de precio (`studies/data/spread/POSSIBLE_IMPROVEMENTS.md`) | un worker libre; el umbral de aceptación, del dueño |
+
 ## Encargos vivos de tandas anteriores
 
 | fichero | agente | posee | estado |
