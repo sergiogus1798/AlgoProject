@@ -85,7 +85,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 68 | 🟢 | `stress.simulate` reservaba 816 MB por mercado — troceado 2026-09-25 | docs/OPEN-closed.md |
 | 69 | 🟢 | La tarea del paso 10 es una estrategia, y debería ser una estrategia-mercado | docs/OPEN-closed.md |
 | 70 | 🟢 | El lote del paso 10 no deja ver por dónde va | docs/OPEN-closed.md |
-| 71 | 🟡 | `benchmark=0` is the wrong null for PSR, in three finished studies | OPEN.md |
+| 71 | 🟢 | `benchmark=0` is the wrong null for PSR, in three finished studies | docs/OPEN-closed.md |
 | 72 | 🟢 | `crossmarket` already computes the answer to a question it does not ask | docs/OPEN-closed.md |
 | 73 | ⚪ | Three global `sqx-lab` skills are retirement candidates — owner's call | docs/OPEN-closed.md |
 | 74 | 🟢 | Steps 23, 24 and 25 export into the same `raw/<P>/WFC_*/<day>/` and overwrite... | docs/OPEN-closed.md |
@@ -297,27 +297,6 @@ human runs step 20. It stays open only for an autonomous agent (`ALGO_AUTONOMOUS
 whether such an agent should be held at all.
 
 
-## 71 · 🟡 `benchmark=0` is the wrong null for PSR, in three finished studies
-
-**Opened 2026-09-22, out of the `studies/readings/monkey/` work.** `core/significance.psr()` takes a `benchmark`
-and its docstring says *"Zero asks whether there is any edge"*. All three callers pass zero —
-`studies/transfer/crossmarket/verdict/significance.py`, `portfolio/common/monteCarlo/verdict/significance.py`
-and `studies/breakage/mcRetest/verdict/evidence.py`.
-
-Zero is not the null a trading strategy is measured against. The honest benchmark is what a
-random trader with the same footprint would have got: drift weighted by occupancy, minus cost.
-🔬 Measured on XAUUSD `OOS1` that benchmark is **negative in 100 % of 757 strategies** (median
-−4,698 $), because a 6-hour position captures ~2,867 $ of gold's rise and pays ~7,756 $ of cost.
-So `benchmark=0` is currently the **stricter** of the two, and the studies are conservative rather
-than wrong — but they are not answering the question they say they answer.
-
-With Sharpe the two are the same ruler with different centrings (`knowhow/research/`), so
-the fix is one argument. **Not done here on purpose**: all three modules are finished, and
-changing what a finished study reports is the owner's call, not a side effect of building a
-fourth one.
-
-**2026-09-29.** Done 2026-09-29 for crossmarket and the portfolio Monte Carlo: the benchmark is the Sharpe of the trades' own market footprint minus cost (`core/significance.py`, `tests/test_significance.py`). mcRetest keeps benchmark 0, documented: its ingest stores no bars or trade prices to compute the footprint. Open only for that — owner's call whether to add a bars ingest.
-
 ## 76. 🟡 Darwinex's real spread is 3–8× what `assets/` declares — the proposal is the owner's to apply
 
 `python3 -m studies.data.spread.scan` (2026-09-27), mean opening spread of Darwinex's ticks:
@@ -365,8 +344,6 @@ Remains, in order:
 (Hantec, hedging, `trade_mode` real, symbols suffixed `.h`, terminal in English). `mt5/live.py` reads
 account, symbols, bars — verified. Build 6231 ships **MetaQuotes' own MCP** (67 tools, 127.0.0.1:22346,
 Bearer token): registered at **local** scope as `metatrader5` (token in `~/.claude.json`, never in git);
-**2026-09-29, later — owner lifted the hold for this test.** The unattended backtest works: `metaeditor.expert()` → `tester.start()` → `tester.collect()` on the owner's `Strategy 3.48.75` (XAUUSD H1, `~/Desktop/FTMO_EAs_NoNews` and `FTMONewsFilter_Files`), 20 months in ~15 s each, 27 trades parsed from the report. One bug fixed: the terminal does not create the `reports\` folder of `Report=`, so no report was written (`tester.py` makes it now). The news filter is inert in the tester (the calendar is empty there), so both versions trade identically. → `knowhow/eng/mt5-tester-unattended.md`. Left: the tester has no way to pass EA inputs (a `[TesterInputs]` section); the MetaQuotes MCP tester is still unproven; there is still no SQX backtest of the same EA to compare against.
-
 its six `trade_*`, `chart_add_expert` and `chart_add_script` are **denied** in `.claude/settings.json`
 (owner's choice). Its tester (`tester_prepare_config` → `tester_run_backtest` → `tester_get_report` json)
 runs with the terminal open, so it replaces `mt5/tester.py` + `mt5/report.py` **once a real run shows
@@ -387,6 +364,8 @@ HTTP call to the port — the terminal's own "prohibit AI trading" option is the
 **2026-09-29.** Compile works: `MetaEditor64.exe` was there (case bug in `mt5/wine.py`); Wine truncates any argument with a space, so `compile_path` now compiles by a relative path with `cwd`, and refuses while the terminal is up (they share the data-folder lock). 48/48 `Sq*` indicators compiled, 0 errors. Left: (1) no SQX-exported EA exists on disk — export one through a `Test_` project's SaveToFiles task (`SaveSourceCode`) on the conductor; (2) the tester and MetaEditor need the terminal closed, and it runs logged in to the owner's funded FTMO account — his call when. Proposed bar: matched ≥ 95 % both ways, open gap ≤ 1 bar, same exit ≥ 90 %, P&L corr ≥ 0.95. `knowhow/eng/metaeditor-compile-under-wine.md`.
 
 **2026-09-29.** Owner, 2026-09-29: MT5 is on hold until he says so — do not touch the terminal, the tester or MetaEditor meanwhile.
+
+**2026-09-29, later — owner lifted the hold for this test.** The unattended backtest works: `metaeditor.expert()` → `tester.start()` → `tester.collect()` on the owner's `Strategy 3.48.75` (XAUUSD H1, `~/Desktop/FTMO_EAs_NoNews` and `FTMONewsFilter_Files`), 20 months in ~15 s each, 27 trades parsed from the report. One bug fixed: the terminal does not create the `reports\` folder of `Report=`, so no report was written (`tester.py` makes it now). The news filter is inert in the tester (the calendar is empty there), so both versions trade identically. → `knowhow/eng/mt5-tester-unattended.md`. Left: the tester has no way to pass EA inputs (a `[TesterInputs]` section); the MetaQuotes MCP tester is still unproven; there is still no SQX backtest of the same EA to compare against.
 
 ## 81. 🟡 The window's cut-over (plan 24) left five owner's calls open
 
@@ -480,6 +459,10 @@ validated pool). Manual chapters 73 and 74.
 6. `portfolio/DECISIONS.md` #11, the remainder: with `oos2` spent, what validates the chosen
    combination (the firm-feed period, a live incubation, nothing).
 7. The rest of encargo 33 §6 (risk per phase, re-buy policy, which `h` to show).
+
+**Open — to verify:** the news filter of `mt5/newsfilter` (`/ea-news`, 2026-09-29) compiles and
+sits where the hand FTMO patch did, but its live behaviour is unseen — the tester has no calendar. Put a
+`_Hantec` EA on a demo chart across one red-folder release and read the Experts tab for the close line.
 
 **Open — to build:** encargo 33 (the EV model, then plug it into `deals.worth`, which today judges a
 deal only by the zero-edge floor); encargo 34 (waits on #78); a test of Hantec's price formula

@@ -14,7 +14,7 @@ import pandas as pd
 from core import fanout, manifest, sqxfile, sqxretest, sqxstats
 from core.paths import MASTER, databank_dir, worker_dir
 from studies.breakage.mcRetest.inputs import config, tasks
-from studies.breakage.mcRetest.measure import integrity, store
+from studies.breakage.mcRetest.measure import integrity, originals, store
 from studies.breakage.mcRetest.model import recon
 
 
@@ -170,6 +170,9 @@ def main() -> None:
     parser.add_argument("--limit", type=int, help="strategies per task, for a smoke run")
     parser.add_argument("--role", help="headless install holding the project; "
                         "omit for the master")
+    parser.add_argument("--harvest-databank", default="Results",
+                        help="the build databank studies.screening.gate.harvest paired, "
+                             "for the original trades footprint() benchmarks against")
     parser.add_argument("--set", action="append", dest="overrides", metavar="KEY=VALUE")
     args = parser.parse_args()
 
@@ -204,11 +207,29 @@ def main() -> None:
     shutil.move(staging, out / store.PNL)
     counts["pnl"] = sum(entry["pnl"] for entry in results)
 
+    # The original trade list is a fact about the strategy, not about a task: one copy per
+    # strategy, priced from its own harvest (OPEN.md #71), never per (task, strategy) like
+    # everything above.
+    identities = {e["strategy"]: e["provenance"]["identity"]
+                 for e in results if e["task"] == "stress"}
+    sample = next(iter(sorted(databank_dir(args.project, tasks.DATABANK["stress"],
+                                           install).glob("*.sqx"))))
+    symbol, feed = originals.feed_of(sample)
+    point_value = originals.asset_point_value(symbol)
+    harvested = originals.read(args.project, args.harvest_databank, identities, point_value)
+    counts["trades"] = store.write(harvested, out / store.TRADES, ["strategy"], codec)
+    missing = sorted(set(identities) - set(harvested["strategy"].unique()))
+    if missing:
+        print(f"  sin operaciones originales (no emparejadas en su cosecha): "
+              f"{', '.join(missing)}")
+
     short = [f"{e['task']}/{e['strategy']}" for e in results if not e["provenance"]["usable"]]
     manifest.write(out,
                    {"install": str(install), "project": args.project,
                     "tasks": {e["task"] + "/" + e["strategy"]: e["provenance"] for e in results},
-                    "unusable_level_tables": short,
+                    "unusable_level_tables": short, "asset": {"symbol": symbol, "feed": feed,
+                                                              "point_value": point_value},
+                    "harvest_databank": args.harvest_databank,
                     "integrity": summary, "config": config.flatten(cfg)},
                    " ".join(sys.argv), counts)
     print(f"ingest: {len(results)} runs, {counts['sims']} simulations -> {out}")

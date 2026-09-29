@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from core import fanout
+from core import barstore, fanout
 
 from studies.breakage.mcRetest.inputs import tasks
 from studies.breakage.mcRetest.measure import store
@@ -37,8 +37,31 @@ def _arrays(sims: pd.DataFrame, task: str, strategy: str) -> dict:
     return {name: rows[name].to_numpy(dtype=np.float64) for name in NEEDED}
 
 
+def benchmarks(trades: pd.DataFrame | None, asset: dict | None) -> dict[str, float]:
+    """Every strategy's same-footprint random-trader Sharpe, for `evidence.footprint()`.
+
+    Args:
+        trades: What `store.load_trades()` returned, or None on an ingest written before
+            2026-09-29 (OPEN.md #71) or whose harvest never paired a strategy.
+        asset: {"feed", "point_value"} from the ingest's manifest, or None to match.
+
+    Returns:
+        {strategy: benchmark}, absent -- read as 0.0 downstream -- for a strategy whose
+        window has fewer than two daily bars to measure a drift over.
+    """
+    if trades is None or asset is None or trades.empty:
+        return {}
+    day = barstore.read(asset["feed"], "D1")
+    out = {}
+    for name, rows in trades.groupby("strategy", observed=True):
+        window = day.loc[rows["Open time"].min():rows["Close time"].max()]
+        if len(window) > 1:
+            out[name] = evidence.footprint(rows, window, asset["point_value"])
+    return out
+
+
 def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: str,
-             cfg: dict) -> dict:
+             benchmark: float, cfg: dict) -> dict:
     """Questions 1 and 2 for every task of one strategy.
 
     Args:
@@ -46,6 +69,7 @@ def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: s
         sims: What store.load_sims() returned.
         original: What store.load_original() returned.
         strategy: One strategy id.
+        benchmark: What benchmarks() returned for this strategy, 0.0 if absent.
         cfg: What inputs.config.load() returned.
 
     Returns:
@@ -63,7 +87,7 @@ def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: s
         out[task] = {
             "fragility": fragility.describe(metrics, pnl["pnl"].to_numpy(), offsets, cfg),
             "modes": modes.describe(metrics, float(row["NumberOfTrades"].iloc[0]), cfg),
-            "evidence": evidence.empirical_sharpe(metrics, cfg),
+            "evidence": evidence.empirical_sharpe(metrics, benchmark),
             "original_net": float(row["NetProfit"].iloc[0]),
             # Kept so the figures can draw the outcome itself, not only its summary. The
             # renderer must never reach back into the parquet: one source per number.
@@ -73,7 +97,7 @@ def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: s
 
 
 def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict,
-        strategy: str, cfg: dict) -> dict:
+        strategy: str, benchmark: float, cfg: dict) -> dict:
     """Everything the study concludes about one strategy.
 
     Args:
@@ -82,6 +106,7 @@ def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict
         original: What store.load_original() returned.
         provenance: The manifest's entries for this strategy, keyed by task.
         strategy: One strategy id.
+        benchmark: What benchmarks() returned for this strategy, 0.0 if absent.
         cfg: What inputs.config.load() returned.
 
     Returns:
@@ -89,10 +114,11 @@ def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict
         them: `gates` owns every threshold and computes nothing, and this owns the
         computation and decides nothing.
     """
-    by_task = per_task(keys, sims, original, strategy, cfg)
+    by_task = per_task(keys, sims, original, strategy, benchmark, cfg)
     pnl = store.load_pnl(**keys, task="stress", strategy=strategy)
     body = {**by_task,
-            "psr": evidence.analytic_sharpe(pnl.groupby("sim", observed=True)["pnl"].sum().to_numpy(), cfg),
+            "psr": evidence.analytic_sharpe(
+                pnl.groupby("sim", observed=True)["pnl"].sum().to_numpy(), benchmark),
             "attribution": attribution.describe(
                 {task: _arrays(sims, task, strategy)["NetProfit"] for task in by_task}, cfg)}
     flags = gates.check(body, provenance, cfg)
@@ -106,15 +132,19 @@ def _one(name: str) -> dict:
     got = _SHARED
     return one(got["keys"], got["sims"], got["original"],
                {task: got["provenance"][f"{task}/{name}"] for task in tasks.TASKS
-                if f"{task}/{name}" in got["provenance"]}, name, got["cfg"])
+                if f"{task}/{name}" in got["provenance"]}, name,
+               got["benchmarks"].get(name, 0.0), got["cfg"])
 
 
-def battery(keys: dict, provenance: dict, cfg: dict) -> dict:
+def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: dict | None,
+            cfg: dict) -> dict:
     """Every strategy of one ingest, plus what can only be said across them.
 
     Args:
         keys: project, databank and day.
         provenance: The manifest's task entries, keyed by "task/strategy".
+        trades: What `load.load()` returned as "trades".
+        asset: What `load.load()` returned as "asset".
         cfg: What inputs.config.load() returned.
 
     Returns:
@@ -125,6 +155,7 @@ def battery(keys: dict, provenance: dict, cfg: dict) -> dict:
     """
     sims = store.load_sims(**keys)
     original = store.load_original(**keys)
+    bench = benchmarks(trades, asset)
     # The eight tasks read one databank, so a strategy normally appears in all of them. One
     # that does not was curated out between two tasks, and it has no production run to be
     # read against -- reporting it would mean answering "what breaks it?" without the task
@@ -139,7 +170,8 @@ def battery(keys: dict, provenance: dict, cfg: dict) -> dict:
     names = [n for n in present if n not in partial]
     # One strategy per process, the one with most simulations first: each reads its own
     # P&L partitions and nothing crosses between them until the pool below.
-    _SHARED.update(keys=keys, sims=sims, original=original, provenance=provenance, cfg=cfg)
+    _SHARED.update(keys=keys, sims=sims, original=original, provenance=provenance,
+                  benchmarks=bench, cfg=cfg)
     got = dict(fanout.run(_one, {n: int((sims["strategy"] == n).sum()) for n in names},
                           WORKERS))
     per = {name: got[name] for name in names}

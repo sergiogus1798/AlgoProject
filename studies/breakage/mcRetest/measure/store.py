@@ -6,7 +6,8 @@ import pandas as pd
 
 from core.paths import export_dir
 
-SIMS, LEVELS, ORIGINAL, PNL, RETURNS = "sims", "levels", "original", "pnl", "returns"
+SIMS, LEVELS, ORIGINAL, PNL, RETURNS, TRADES = ("sims", "levels", "original", "pnl", "returns",
+                                                "trades")
 
 
 def root(project: str, databank: str, day: str) -> Path:
@@ -117,6 +118,26 @@ def load_pnl(project: str, databank: str, day: str, task: str, strategy: str) ->
     frame = pd.read_parquet(root(project, databank, day) / PNL,
                             filters=[("task", "==", task), ("strategy", "==", strategy)])
     return frame.assign(pnl=frame["pnl_cents"] / 100.0).drop(columns="pnl_cents")
+
+
+def load_trades(project: str, databank: str, day: str, strategy: str = "") -> pd.DataFrame:
+    """The unperturbed trade list each strategy actually produced, joined in from its harvest.
+
+    Args:
+        project: SQX project name.
+        databank: Ingest run name.
+        day: Ingest date.
+        strategy: One strategy id, or empty for all of them.
+
+    Returns:
+        One row per trade: Open time, Close time, Type, Size and cost (USD, `core.trades.cost`),
+        `strategy` naming it under this ingest's own key rather than the harvest's identity
+        (`measure/originals.py`). Never a simulation -- a perturbed run carries no times or
+        prices to price a random trader against, which is why this is a separate dataset from
+        `pnl` and is read only for `footprint()`'s benchmark (OPEN.md #71).
+    """
+    filters = [("strategy", "==", strategy)] if strategy else None
+    return pd.read_parquet(root(project, databank, day) / TRADES, filters=filters)
 
 
 def load_returns(project: str, databank: str, day: str) -> pd.DataFrame:

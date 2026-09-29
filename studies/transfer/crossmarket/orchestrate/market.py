@@ -37,9 +37,9 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
         rather than once per test.
 
         `min_track_benchmark` is the Sharpe `min_track_needed` was measured against -- the
-        same-footprint random trader's own mean-over-std, reusing exp["mu_m"] (OPEN.md #71).
-        Printed so a reader sees which of the two centrings (OPEN.md #72) produced the number,
-        instead of assuming zero.
+        same-footprint random trader's own Sharpe under the market's own noise, reusing
+        exp["mu_m"] and exp["sigma_m"] (OPEN.md #71). Printed so a reader sees which centring
+        produced the number, instead of assuming zero.
     """
     rng = np.random.default_rng(cfg["nulls"]["seed"])
     exp = exposure.run(fixed, bars, cfg, rng)
@@ -51,17 +51,24 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
     pair = paired.run(fixed, bars, fixed["market"], cfg, rng)
     returns = pricing.trade_returns(fixed, bars)
     # OPEN.md #71: zero is not the null a trading strategy is measured against. A
-    # same-footprint random trader captures the market's own mean bar return (exp["mu_m"],
-    # already measured for Test 1c) over the same bars this trade held, and pays the same
-    # cost; its own Sharpe, not zero, is the honest benchmark, and it is on the same log-return
-    # scale `returns` is (OPEN.md #72: benchmark and sharpe are one ruler, two centrings).
-    footprint = fixed["held"]["hold"].to_numpy() * exp["mu_m"] - fixed["cost"]
-    benchmark = significance.moments(footprint)[0]
+    # same-footprint random trader captures the market's own mean bar return (exp["mu_m"])
+    # over the same bars this trade held, WITH the market's own bar-to-bar noise
+    # (exp["sigma_m"]) around it -- the fix of 2026-09-29: the version this replaced gave the
+    # random trader the drift with no noise, so its only dispersion was holding time, and it
+    # scored an unrealistically high Sharpe. This study is long-only (pricing.require_long_only),
+    # so direction is +1 throughout, and size does not enter a log return. It is on the same
+    # log-return scale `returns` is (benchmark and sharpe are one ruler, two centrings).
+    # significance.footprint() is core.significance.footprint(), the one implementation this
+    # study, the portfolio Monte Carlo and mcRetest all call (OPEN.md #71, 2026-09-29).
+    hold = fixed["held"]["hold"].to_numpy()
+    benchmark = significance.footprint(hold, np.ones_like(hold), np.ones_like(hold),
+                                       fixed["cost"], exp["mu_m"], exp["sigma_m"], 1.0)
     mtr = significance.min_track_record(returns, cfg["diagnostics"]["alpha"], benchmark)
     pf_ci = significance.bootstrap_metric(returns, significance.profit_factor, cfg, rng)
     ex_ci = significance.bootstrap_metric(returns, significance.expectancy, cfg, rng)
     s = cfg["stress"]
-    return {"e": exp["e"], "a": exp["a"], "mu_m": exp["mu_m"], "mu_t": exp["mu_t"],
+    return {"e": exp["e"], "a": exp["a"], "mu_m": exp["mu_m"], "sigma_m": exp["sigma_m"],
+            "mu_t": exp["mu_t"],
             "e_meaningful": exp["e_meaningful"], "risk_normalised": exp["risk_normalised"],
             "a_ci_lo": exp["a_ci"]["lo"], "a_ci_hi": exp["a_ci"]["hi"],
             "e_ci": exp["e_ci"], "paired_sensitivity": pair["sensitivity"],

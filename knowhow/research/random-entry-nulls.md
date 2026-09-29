@@ -1,5 +1,5 @@
 ---
-q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed reproducible hash PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest
+q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed reproducible hash PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest, footprint no market noise bug law of total variance fix
 tag: 🔬  date: 2026-09-29  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias
 ---
 # A monkey verdict depends on the statistic far more than on the null: report all five
@@ -8,11 +8,15 @@ being calmer than chance counts as edge under `sharpe` but not under `net`. Beat
 than beating zero (its mean is cost-negative). Use fill `open-open` (reconciled). Normal approximation (PSR/MinTRL)
 is fine for a gate at p≈0.05, not for the extreme tail after multiplicity — BH on the short list uses the simulation.
 
-**2026-09-29 (OPEN.md #71):** `benchmark=0` was the wrong null. `crossmarket` and `monteCarlo` now
-pass this same monkey mean, closed form (occupancy × drift − cost); `mcRetest` has no bars for it
-and stays at 0 (`mcRetest/POSSIBLE_IMPROVEMENTS.md` #10).
+**2026-09-29 (OPEN.md #71):** `benchmark=0` was the wrong null; `crossmarket`, `monteCarlo` and `mcRetest` all pass one monkey mean, `core.significance.footprint()`.
+**Same day, second bug in that function:** it gave the random trader the drift with no noise around it — only holding-time dispersion — so its Sharpe tracked the *market's own* (+2.0 to +2.2 on USDJPY, `p_positive` 1.0→0.0 for every strategy, see Evidence).
+**Fixed**: `footprint(h, d, s, c, mu, sigma, pv)` now combines per-trade mean/variance (`mean_i=d·mu·h·s·pv-c`, `var_i=sigma²·h·(s·pv)²`) by the law of total variance, `SR_b=mean(mean_i)/sqrt(mean(var_i)+var(mean_i))`; `sigma=0` reproduces the old value exactly (the known-answer test). Each caller also now reads direction (`core.trades.SIDE`) instead of assuming one.
 
 ## Evidence
+
+**Footprint fix, 🔬 2026-09-29.** mcRetest, `Test_USDJPY_donchianUpperCrossUp_M30` (real ingest, read-only, session algoproject-36's data): before, benchmark +2.0 to +2.2/strategy, `p_positive` 1.0→0.0 for all five checked; after, benchmark +0.004 to +0.006, `p_positive` back to 1.0. `analytic_sharpe`'s own `psr` stays ≈1.0 either side — a separate scale mismatch (summed, not per-trade, `returns`), still open.
+crossmarket, real USDJPY M30 bars 2018–2022 through the study's own `backtest.setting()`/`exposure.run()` (no XAUUSD trade harvest on disk to run the real pipeline on): before, benchmark **-11.18** (mu_m≈+2e-6/bar, near-zero drift, so a near-constant series driven to an extreme Sharpe by holding-time alone), `psr=1.000000`; after (sigma_m≈7.1e-4/bar), benchmark **-0.070**, `psr=0.556` against an observed Sharpe of -0.062 — plausible instead of saturated.
+
 `studies/readings/monkey/` on `raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25/`: 757 strategies, 960,705 trades, sample `OOS1` (2018–2022, 320,423 trades),
 2,500 draws per rung, fill `open-open` reconciled (median 0.999983, min 0.99945). XAUUSD costs PROVISIONAL.
 - ⚠️ Not: close-close fill — 4–13 % lost correlation moved percentages by 10–26 pp with no alarm.

@@ -54,7 +54,8 @@ def run(inputs: dict, cfg: dict) -> dict:
     """
     started = time.time()
     envelope.progress(5, "leyendo el ingest y repartiendo estrategias")
-    result = study.battery(inputs["keys"], inputs["provenance"], cfg)
+    result = study.battery(inputs["keys"], inputs["provenance"], inputs["trades"],
+                          inputs["asset"], cfg)
     members = [one.contract(got, inputs, cfg, started)
                for _, got in sorted(result["strategies"].items())]
     envelope.progress(100, f"{len(members)} estrategias")

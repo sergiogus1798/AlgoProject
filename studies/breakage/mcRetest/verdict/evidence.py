@@ -5,39 +5,75 @@ import pandas as pd
 from scipy import stats
 
 from core import significance
+from core.trades import SIDE
 
 
-def empirical_sharpe(metrics: dict, cfg: dict) -> dict:
+def footprint(trades: pd.DataFrame, day: pd.DataFrame, point_value: float) -> float:
+    """The Sharpe a same-footprint random trader would have scored, for `psr()`'s benchmark.
+
+    Args:
+        trades: This strategy's own unperturbed trades -- Open time, Close time, Size, cost,
+            Type -- from its harvest (`measure/originals.py`). Never a simulation: a
+            perturbed run carries no times or prices to price a random trader against.
+        day: Daily candles spanning the trades' own window (`core.barstore`, sliced to
+            [first Open time, last Close time]) -- not the whole feed's history, so a
+            strategy that only traded a quiet stretch is not benchmarked against a drift it
+            never saw.
+        point_value: Account currency per 1.0 of price per 1.0 lot (`core.assets`).
+
+    Returns:
+        `core.significance.footprint()`'s SR_b: one hypothetical random trade per real trade,
+        each holding the same number of days, in the same direction and size, against the
+        window's own daily mean move and its own day-to-day noise -- the same recipe
+        `portfolio.common.monteCarlo.verdict.significance.footprint()` uses (OPEN.md #71),
+        computed here because this study's harvest, unlike that one's export, is read fresh
+        rather than kept as a ready-made stream. **Fixed 2026-09-29**: the version this
+        replaced weighted the window's whole move by each trade's share of it, with no noise
+        around that move, and scored every strategy's real per-trade Sharpe as zero against
+        it (`knowhow/research/random-entry-nulls.md`).
+    """
+    diffs = day["Close"].diff().dropna().to_numpy()
+    mu, sigma = float(diffs.mean()), float(diffs.std(ddof=1))
+    hold = ((trades["Close time"] - trades["Open time"]) / np.timedelta64(1, "D")).to_numpy()
+    direction = trades["Type"].astype("object").map(SIDE).to_numpy(dtype=float)
+    return significance.footprint(hold, direction, trades["Size"].to_numpy(),
+                                  trades["cost"].to_numpy(), mu, sigma, point_value)
+
+
+def empirical_sharpe(metrics: dict, benchmark: float) -> dict:
     """The Sharpe of every re-run, read straight off the simulations.
 
     Args:
         metrics: The reconstructed metrics of one task, one array per name.
-        cfg: What inputs.config.load() returned.
+        benchmark: Sharpe of a same-footprint random trader (`footprint()`), the honest bar
+            to clear (OPEN.md #71) -- 0 only for a strategy whose harvest could not be read.
 
     Returns:
-        The share of re-runs that kept a positive Sharpe, and the distribution's quantiles.
-        **This is a per-trade analogue on SQX's own ddof=0 basis, not SQX's SharpeRatio**,
-        which is computed over the daily equity curve no simulation carries. It travels
-        under its own name for that reason and must never be compared against the value
-        SQX stored for the original.
+        The share of re-runs that kept a Sharpe above the benchmark, and the distribution's
+        quantiles. **This is a per-trade analogue on SQX's own ddof=0 basis, not SQX's
+        SharpeRatio**, which is computed over the daily equity curve no simulation carries.
+        It travels under its own name for that reason and must never be compared against the
+        value SQX stored for the original.
         It answers the same question as the analytic route from the other direction: the
         analytic one asks how likely a single realisation's edge is to be zero, this one
         asks how often the edge survived a thousand plausible perturbations of the world.
     """
     sharpe = np.divide(metrics["AvgTrade"], metrics["StandardDev"],
                        out=np.zeros_like(metrics["AvgTrade"]), where=metrics["StandardDev"] > 0)
-    return {"p_positive": float(np.mean(sharpe > cfg["evidence"]["psr_benchmark"])),
+    return {"p_positive": float(np.mean(sharpe > benchmark)),
             "median": float(np.median(sharpe)),
             "p5": float(np.percentile(sharpe, 5)),
             "p95": float(np.percentile(sharpe, 95))}
 
 
-def analytic_sharpe(original_pnl: np.ndarray, cfg: dict) -> dict:
+def analytic_sharpe(original_pnl: np.ndarray, benchmark: float) -> dict:
     """The probability the unperturbed backtest's edge is above the benchmark.
 
     Args:
         original_pnl: The original backtest's P/L per trade, USD.
-        cfg: What inputs.config.load() returned.
+        benchmark: Sharpe of a same-footprint random trader (`footprint()`), on the same
+            per-observation scale as `original_pnl` (OPEN.md #71, #72) -- 0 only for a
+            strategy whose harvest could not be read.
 
     Returns:
         What core.significance.psr() returned. No Deflated Sharpe: it needs the population
@@ -45,15 +81,8 @@ def analytic_sharpe(original_pnl: np.ndarray, cfg: dict) -> dict:
         thousand retests of one strategy are not a thousand selection trials -- feeding them
         in as N would produce a credible, false number. Both sibling studies refuse it for
         the same reason.
-
-        `cfg["evidence"]["psr_benchmark"]` stays 0 here, unlike `crossmarket` and
-        `monteCarlo` (OPEN.md #71): the honest benchmark needs the market's own bars and the
-        trades' prices and times, which this study's ingest never reads (`measure/store.py`
-        keeps 30 reconstructed metrics and raw P/L, nothing that prices a trade). Recorded
-        rather than silently assumed correct: `POSSIBLE_IMPROVEMENTS.md` #10.
     """
-    return significance.psr(np.asarray(original_pnl, dtype=np.float64),
-                            cfg["evidence"]["psr_benchmark"])
+    return significance.psr(np.asarray(original_pnl, dtype=np.float64), benchmark)
 
 
 def effective_bets(returns: pd.DataFrame) -> dict:

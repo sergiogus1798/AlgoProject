@@ -1393,6 +1393,29 @@ bloqueado. Se arregla imprimiendo por orden de terminación.
 
 **Closed 2026-09-29.** Already shipped in `cd4503b`: `core.fanout.run` yields by completion; `many.run` prints PROGRESS per strategy; final table order stays deterministic.
 
+## 71 · 🟢 `benchmark=0` is the wrong null for PSR, in three finished studies
+
+**Opened 2026-09-22, out of the `studies/readings/monkey/` work.** `core/significance.psr()` takes a `benchmark`
+and its docstring says *"Zero asks whether there is any edge"*. All three callers pass zero —
+`studies/transfer/crossmarket/verdict/significance.py`, `portfolio/common/monteCarlo/verdict/significance.py`
+and `studies/breakage/mcRetest/verdict/evidence.py`.
+
+Zero is not the null a trading strategy is measured against. The honest benchmark is what a
+random trader with the same footprint would have got: drift weighted by occupancy, minus cost.
+🔬 Measured on XAUUSD `OOS1` that benchmark is **negative in 100 % of 757 strategies** (median
+−4,698 $), because a 6-hour position captures ~2,867 $ of gold's rise and pays ~7,756 $ of cost.
+So `benchmark=0` is currently the **stricter** of the two, and the studies are conservative rather
+than wrong — but they are not answering the question they say they answer.
+
+With Sharpe the two are the same ruler with different centrings (`knowhow/research/`), so
+the fix is one argument. **Not done here on purpose**: all three modules are finished, and
+changing what a finished study reports is the owner's call, not a side effect of building a
+fourth one.
+
+**2026-09-29.** Done 2026-09-29 for crossmarket and the portfolio Monte Carlo: the benchmark is the Sharpe of the trades' own market footprint minus cost (`core/significance.py`, `tests/test_significance.py`). mcRetest keeps benchmark 0, documented: its ingest stores no bars or trade prices to compute the footprint. Open only for that — owner's call whether to add a bars ingest.
+
+**Closed 2026-09-29.** All three studies (crossmarket, portfolio Monte Carlo, mcRetest) benchmark the PSR against a same-footprint random-entry trader: `core.significance.footprint(h, d, s, c, mu, sigma, pv)`, per-trade mean d·μ·h·s·pv − c and variance σ²·h·(s·pv)², combined by the law of total variance. mcRetest now ingests each strategy's own trades from its harvest (`measure/originals.py`). A first version the same day omitted the market noise (σ) and scored the random trader +2 per trade — caught and fixed before any result was computed with it. USDJPY mcRetest: benchmark +0.004 to +0.006, p_positive 1.0. `tests/test_significance.py`, `tests/test_mcretest_footprint.py`, `knowhow/research/random-entry-nulls.md`.
+
 ## 72 · 🟢 `crossmarket` already computes the answer to a question it does not ask
 
 **Opened 2026-09-22.** `simulate/metrics.py` computes nine statistics for the real run and every

@@ -46,7 +46,6 @@ attribution:
 evidence:
   method: by               # Benjamini-Yekutieli: four of five strategies share a template
   alpha: 0.05
-  psr_benchmark: 0.0
   ranks_min_strategies: 20   # Kendall tau below this is not measurable and is not printed
 
 gates:

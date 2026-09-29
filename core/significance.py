@@ -37,6 +37,59 @@ def variance_factor(sharpe: float, skew: float, kurtosis: float) -> float:
     return 1 - skew * sharpe + (kurtosis - 1) / 4 * sharpe ** 2
 
 
+def footprint(h: np.ndarray, d: np.ndarray, s: np.ndarray, c: np.ndarray, mu: float,
+             sigma: float, pv: float) -> float:
+    """Sharpe of a same-footprint random trader, under the market's own noise, for
+    `psr()`/`min_track_record()`'s `benchmark`. The one implementation three studies share:
+    `studies.transfer.crossmarket`, `portfolio.common.monteCarlo` and `studies.breakage.mcRetest`
+    each build `h`, `d`, `s`, `c`, `mu`, `sigma` and `pv` their own way -- a market's bars are
+    not a trade stream, and a trade stream is not a batch of simulations -- and call this once
+    for the arithmetic and the Sharpe both share.
+
+    **Fixed 2026-09-29 (OPEN.md #71):** the version this replaced fed the random trader the
+    market's mean move with no noise around it -- its only dispersion came from how long each
+    trade happened to hold -- so it scored a per-trade Sharpe near the market's own annualised
+    Sharpe (~+2 measured on USDJPY) instead of near zero, and every real strategy failed
+    against it (mcRetest's `p_positive` collapsed from 1.0 to 0.0 for every strategy checked,
+    `knowhow/research/random-entry-nulls.md`). This version puts the market's own bar-to-bar
+    noise back in: per trade i, with hold h_i (bars), direction d_i (+1/-1), size s_i, point
+    value pv and cost c_i, against the market's own per-bar mean mu and std sigma over the
+    trades' own window,
+
+        mean_i = d_i * mu * h_i * s_i * pv - c_i
+        var_i  = sigma**2 * h_i * (s_i * pv)**2
+
+    and the law of total variance -- Var(X) = E[Var(X|i)] + Var(E[X|i]) -- gives the
+    population of hypothetical same-footprint trades a combined variance of mean(var_i) (the
+    market's own noise, averaged over the holds actually seen) plus var(mean_i) (the
+    dispersion the footprints themselves add), rather than treating every hold as if it were
+    the same length.
+
+    Args:
+        h: Bars held per trade, or one scalar broadcast to all of them.
+        d: Direction per trade, +1 long / -1 short, or one scalar.
+        s: Size per trade, or one scalar -- 1.0 where the caller's own scale already prices
+            size in (crossmarket's log return).
+        c: What was actually charged, per trade or one scalar, on the same per-observation
+            scale `mean_i` is in.
+        mu: The market's own mean move per bar over the trades' own window -- price or log
+            return, whichever scale the caller's `psr()` sharpe sits on.
+        sigma: That same move's standard deviation over the same window.
+        pv: Account currency per 1.0 of price per 1.0 lot, or 1.0 where `mu`/`sigma` are
+            already on the caller's per-observation scale.
+
+    Returns:
+        SR_b = mean(mean_i) / sqrt(mean(var_i) + var(mean_i, ddof=1)), on whatever
+        per-observation scale the caller's own `returns`/`pnl` is on -- log return or USD --
+        so it is the same ruler `psr()`'s own `sharpe` sits on, only centred differently.
+    """
+    h, d, s, c = (np.asarray(h, dtype=np.float64), np.asarray(d, dtype=np.float64),
+                 np.asarray(s, dtype=np.float64), np.asarray(c, dtype=np.float64))
+    mean_i = d * mu * h * s * pv - c
+    var_i = sigma ** 2 * h * (s * pv) ** 2
+    return float(np.mean(mean_i) / np.sqrt(np.mean(var_i) + np.var(mean_i, ddof=1)))
+
+
 def psr(returns: np.ndarray, benchmark: float) -> dict:
     """Probabilistic Sharpe Ratio of a return series.
 
@@ -44,12 +97,11 @@ def psr(returns: np.ndarray, benchmark: float) -> dict:
         returns: One value per trade.
         benchmark: Sharpe to beat, per observation. Zero asks whether there is any edge; that
             is not the null a trading strategy is measured against (OPEN.md #71) -- the
-            honest one is what a same-footprint random trader would have scored: drift
-            weighted by occupancy, minus cost, computed on the same per-observation scale
-            (`moments()` of that random trader's own P/L) so it sits on the same ruler as
-            `sharpe` below, only centred differently (OPEN.md #72). Zero remains a legitimate
-            benchmark to pass explicitly; it is no longer the default any caller should reach
-            for without saying why.
+            honest one is what a same-footprint random trader would have scored under the
+            market's own noise (`footprint()`), computed on the same per-observation scale
+            so it sits on the same ruler as `sharpe` below, only centred differently. Zero
+            remains a legitimate benchmark to pass explicitly; it is no longer the default
+            any caller should reach for without saying why.
 
     Returns:
         The observed Sharpe, its skew and kurtosis, the observation count, and the
@@ -72,8 +124,8 @@ def min_track_record(returns: np.ndarray, alpha: float = 0.05, benchmark: float 
         alpha: Significance level for the one-sided test that Sharpe > benchmark.
         benchmark: Sharpe to beat, per observation. Zero asks whether there is any edge; the
             honest benchmark for a trading strategy is what a same-footprint random trader
-            would have scored (OPEN.md #71) -- the same ruler `psr()` uses, with the same
-            centring (OPEN.md #72).
+            would have scored under the market's own noise (`footprint()`, OPEN.md #71) --
+            the same ruler `psr()` uses, with the same centring.
 
     Returns:
         How many observations the observed shape would need before Sharpe > benchmark is

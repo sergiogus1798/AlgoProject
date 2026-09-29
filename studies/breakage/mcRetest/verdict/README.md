@@ -12,7 +12,7 @@ not added however standard it is.
 | `fragility.py` | **Question 1 — how much does it hurt?** Tail quantiles with exact intervals, the conditional drawdown the gate reads, the equity envelope, and the share of trades spent under water | imported | metrics + P/L → tail, fan |
 | `modes.py` | **Question 2 — does it decay, or collapse?** Whether the outcome is one regime or two, how far from normal it is, and whether the strategy still traded | imported | metrics → shape, collapse |
 | `attribution.py` | **Question 3 — what breaks it?** Which task's damage is real against the `bar` control, and Benjamini-Yekutieli across the pool | imported | metrics → attribution |
-| `evidence.py` | **Question 4 — do I believe it?** The retest sims' own Sharpe against a benchmark, the analytic PSR of the original P/L against the same benchmark (0 here — OPEN.md #71, `POSSIBLE_IMPROVEMENTS.md` #10), effective bets, the corrected p-values and rank stability | imported | metrics + P/L → evidence |
+| `evidence.py` | **Question 4 — do I believe it?** The retest sims' own Sharpe against a benchmark, the analytic PSR of the original P/L against the same benchmark — a same-footprint random trader's own Sharpe, priced from the strategy's harvested trades and `core.barstore`'s bars (OPEN.md #71) — effective bets, the corrected p-values and rank stability | imported | metrics + P/L → evidence |
 | `gates.py` | Every threshold in the study, and what only warns | imported | body → flags |
 | `scoring.py` | Sub-scores, composite and verdict tier | imported | body + flags → verdict |
 

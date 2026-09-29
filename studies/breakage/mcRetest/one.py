@@ -53,7 +53,8 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
     envelope.progress(10, f"leyendo las ocho tareas de {strategy}")
     provenance = {t: inputs["provenance"][f"{t}/{strategy}"] for t in tasks.TASKS
                   if f"{t}/{strategy}" in inputs["provenance"]}
+    bench = study.benchmarks(inputs["trades"], inputs["asset"]).get(strategy, 0.0)
     got = study.one(inputs["keys"], inputs["sims"], inputs["original"], provenance, strategy,
-                    cfg)
+                    bench, cfg)
     envelope.progress(100, "hecho")
     return contract(got, inputs, cfg, started)

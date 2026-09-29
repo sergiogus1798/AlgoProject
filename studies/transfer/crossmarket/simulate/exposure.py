@@ -48,14 +48,17 @@ def drift(bars: pd.DataFrame) -> dict:
         bars: One market's bars.
 
     Returns:
-        Keys mu_m, t and bars. E divides by mu_m, so a market whose drift is statistically
-        indistinguishable from zero has no meaningful E at all — and a market that drifted
-        down has a negative one, which reads as the opposite of what it is.
+        Keys mu_m, sigma_m, t and bars. E divides by mu_m, so a market whose drift is
+        statistically indistinguishable from zero has no meaningful E at all — and a market
+        that drifted down has a negative one, which reads as the opposite of what it is.
+        sigma_m is the same bar returns' own dispersion, for `core.significance.footprint()`'s
+        same-footprint random trader (OPEN.md #71): the drift alone has no noise around it.
     """
     returns = np.log(bars["Close"]).diff().to_numpy()
     mu = float(np.nanmean(returns))
+    sigma = float(np.nanstd(returns, ddof=1))
     n = int(np.sum(~np.isnan(returns)))
-    return {"mu_m": mu, "t": mu / float(np.nanstd(returns, ddof=1)) * np.sqrt(n), "bars": n}
+    return {"mu_m": mu, "sigma_m": sigma, "t": mu / sigma * np.sqrt(n), "bars": n}
 
 
 def concentration(held: pd.DataFrame, bars: pd.DataFrame, mu_min_t: float) -> dict:
@@ -67,9 +70,9 @@ def concentration(held: pd.DataFrame, bars: pd.DataFrame, mu_min_t: float) -> di
         mu_min_t: |t| of the market's own drift below which E is called not meaningful.
 
     Returns:
-        Keys e, a, mu_m, mu_t, held_mean and e_meaningful. A is the pooled mean over the
-        occupied bars minus the market's mean bar, exactly as the source note defines it. E
-        is that ratio. E is now always computed and always shown with its Fieller interval —
+        Keys e, a, mu_m, sigma_m, mu_t, held_mean and e_meaningful. A is the pooled mean over
+        the occupied bars minus the market's mean bar, exactly as the source note defines it.
+        E is that ratio. E is now always computed and always shown with its Fieller interval —
         the flag says whether the denominator is a drift at all, and the interval says what
         that costs: on Brent, mu_m = -1.1e-6 makes E = -69.4 with unbounded limits.
     """
@@ -78,7 +81,8 @@ def concentration(held: pd.DataFrame, bars: pd.DataFrame, mu_min_t: float) -> di
     held_mean = float(np.nanmean(bar_returns[occupied_bars(held)]))
     meaningful = abs(market["t"]) >= mu_min_t and market["mu_m"] > 0
     return {"e": held_mean / market["mu_m"] if market["mu_m"] else float("nan"),
-            "a": held_mean - market["mu_m"], "mu_m": market["mu_m"], "mu_t": market["t"],
+            "a": held_mean - market["mu_m"], "mu_m": market["mu_m"],
+            "sigma_m": market["sigma_m"], "mu_t": market["t"],
             "e_meaningful": bool(meaningful), "held_mean": held_mean}
 
 
@@ -204,7 +208,7 @@ def run(fixed: dict, bars: pd.DataFrame, cfg: dict, rng: np.random.Generator) ->
         rng: Seeded generator.
 
     Returns:
-        Concentration (e, a, mu_m, mu_t, e_meaningful), risk-normalised A, A's bootstrap CI,
+        Concentration (e, a, mu_m, sigma_m, mu_t, e_meaningful), risk-normalised A, A's bootstrap CI,
         and E's Fieller interval with its sign-flip share. The MFE capture ratio used to live
         here and moved to fingerprint.py: it measures how much of a favourable excursion the
         **exit** converted, which is behaviour, not exposure.

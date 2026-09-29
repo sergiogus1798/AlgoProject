@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 
+from core.trades import SIDE
 from portfolio.common.monteCarlo.inputs import costs
 
 
@@ -17,14 +18,16 @@ def _from_frame(frame: pd.DataFrame, asset: dict, risk: float) -> dict:
     Returns:
         Aligned numpy arrays. `pnl` is net USD as SQX booked it and is the primary input of
         every family; `cost` and `spread` are what Family C perturbs; `sample` is IS/OOS as
-        SQX labelled it. Nothing here is imputed: a column the export does not carry does
-        not appear.
+        SQX labelled it. `direction` is +1/-1 (`core.trades.SIDE`), for
+        `significance.footprint()`'s same-footprint random trader. Nothing here is imputed:
+        a column the export does not carry does not appear.
     """
     pnl = frame["Profit/Loss"].to_numpy(dtype=float)
     return {"pnl": pnl, "r": pnl / risk, "cost": costs.recovered(frame, asset),
             "spread": costs.spread_cost(frame, asset),
             "mae": frame["MAE ($)"].to_numpy(dtype=float),
             "size": frame["Size"].to_numpy(dtype=float),
+            "direction": frame["Type"].astype("object").map(SIDE).to_numpy(dtype=float),
             "open": frame["Open time"].to_numpy(),
             "close": frame["Close time"].to_numpy(),
             "sample": frame["Sample type"].to_numpy(dtype=object)}

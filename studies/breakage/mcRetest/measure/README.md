@@ -16,6 +16,7 @@ exactly the trap these READMEs exist to prevent.
 |---|---|---|---|
 | `integrity.py` | Rebuilds the confidence table from the simulations and checks it against the one SQX stored, and proves every metric is accounted for | imported | metrics + stored → agreement |
 | `store.py` | Where the parquet lives, how it is partitioned, and the only way anything reads it back | imported | keys → frames |
+| `originals.py` | The unperturbed trade list each strategy actually produced, joined in from its own harvest by identity, with `core.trades.cost()` already added | imported | project + identities + point value → trades |
 
 The command that drives them is `../ingest.py`, in the module root with the other entry points.
 
@@ -59,3 +60,7 @@ three ranks are a hair apart and it costs nothing.
   than the code hard-coding it, because which metrics an install reports is its own fact.
 - **`ingest.py` raises rather than flagging when a databank does not hold the task it claims.**
   Numbers written under a false label are worse than no numbers.
+- **`trades/` is the one dataset that is not a simulation.** It is this project's own harvest
+  (`studies.screening.gate.harvest`, joined by identity) priced with `core.trades.cost()`, kept
+  only so `verdict/evidence.py` can benchmark `psr()` against a same-footprint random trader
+  instead of zero (OPEN.md #71) — never read for anything a simulation could answer instead.

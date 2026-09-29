@@ -3,7 +3,8 @@
 import numpy as np
 import pandas as pd
 
-from core.significance import moments, psr
+from core.significance import footprint as _footprint
+from core.significance import psr
 
 __all__ = ["psr", "crosscheck", "footprint"]
 
@@ -13,23 +14,28 @@ def footprint(source: dict, day: pd.DataFrame, asset: dict) -> float:
 
     Args:
         source: What stream.build() or stream.portfolio() returned.
-        day: Daily candles, from regime.daily(), spanning the trades' window.
+        day: Daily candles, from regime.daily() -- `core.barstore`'s whole feed history;
+            sliced here to the trades' own window, not read as already sliced.
         asset: What costs.load() returned.
 
     Returns:
-        `moments()`'s sharpe of one value per trade: the market's own move over the whole
-        window, weighted by the share of it that one trade's own hold occupied, times the
-        account's point value and that trade's size, minus what SQX actually charged it
-        (`source["cost"]`). Zero is not the null a trading strategy is measured against
-        (OPEN.md #71): a random trader with this footprint rarely nets zero, because cost
-        usually outweighs what a passive presence of this size would have captured of the
-        drift — the reason `psr()`'s `benchmark` and its own `sharpe` are one ruler with two
-        centrings (OPEN.md #72).
+        `core.significance.footprint()`'s SR_b: one hypothetical random trade per real trade,
+        each holding the same number of days (`source["close"] - source["open"]`) in the same
+        direction (`source["direction"]`) and size (`source["size"]`) as the real one, against
+        the market's own daily mean move and its own day-to-day noise over the trades' window
+        -- not the window's whole move with no noise around it, which is the bug of
+        2026-09-29 (OPEN.md #71): that version scored the random trader a per-trade Sharpe of
+        the market's own drift, dispersed only by how long each trade happened to hold, which
+        is a market-sized Sharpe, not a random trader's. `source["cost"]` is what SQX actually
+        charged. The arithmetic itself is the implementation this study, `crossmarket` and
+        `mcRetest` all share (`core.significance.footprint`, 2026-09-29).
     """
-    move = float(day["Close"].iloc[-1] - day["Close"].iloc[0])
-    occupancy = (source["close"] - source["open"]) / np.timedelta64(1, "D") / len(day)
-    captured = occupancy * move * asset["point_value"] * source["size"] - source["cost"]
-    return moments(captured)[0]
+    window = day.loc[pd.Timestamp(source["open"].min()):pd.Timestamp(source["close"].max())]
+    diffs = window["Close"].diff().dropna().to_numpy()
+    mu, sigma = float(diffs.mean()), float(diffs.std(ddof=1))
+    hold = (source["close"] - source["open"]) / np.timedelta64(1, "D")
+    return _footprint(hold, source["direction"], source["size"], source["cost"], mu, sigma,
+                      asset["point_value"])
 
 
 def crosscheck(psr_value: float, bootstrap_sharpe: np.ndarray) -> dict:
