@@ -18,6 +18,13 @@ curve is `equity.parquet` alone; the mother is the column `manifest.parquet` fla
   |P&L| 0.0. Rows 2022-11-03…12-31 carry non-zero P&L for 97–100 % of variants — the oos1 leg's.
 - 🔬 `USDJPY_workflow_profiling_v1/Strategy_1.28.59`: of the 83 duplicated dates, none has two
   non-zero entries for any variant; `equity_markets.parquet` markets = 9, no USDJPY.
-- Consequence to check: `engines/variants/panel.split(work, "oos2_only")` returns 2022-11-03, and
-  `windows()` cuts the CSCV's chronological IS/OOS there. `studies/closing/blindJoint` cuts oos2
-  at the policy's 2023-01-01, where no duplicate is left, and refuses a cut that has one.
+- 🔬 Fixed 2026-09-29 (issue 44): `engines/variants/panel.split(work, "oos2_only")` used to return
+  the 2022-11-03 warm-up, and `windows()` cut the CSCV's chronological IS/OOS there — putting
+  Nov–Dec 2022 of the oos1 leg's real P&L on the OOS side. `panel.split` now takes the batch's
+  **symbol** (not `work`) and reads the segment's own start from `assets/_policy.yaml` through
+  the new `core.assetdata.segment_start(data, segment)`, never `equity.json`'s `windows`. Callers
+  (`studies/optimisation/cscv/report.py`) pass `look.market(work)`'s symbol, already read for the
+  ledger door. `studies/closing/blindJoint` already cut oos2 at the policy's 2023-01-01 the same
+  way, and refuses a cut that has a duplicate — this brings the CSCV/WFC boundary in line with it.
+  Known-answer test: `tests/test_panelsplit.py`. Every CSCV/WFC figure computed at the
+  `oos2_only`/`build__oos2` split before this changes once — the owner does not care.

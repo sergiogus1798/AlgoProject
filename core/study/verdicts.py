@@ -10,7 +10,7 @@ REQUIRED = ("strategy", "identity", "verdict")
 
 
 def write(out: Path, frame: pd.DataFrame, judged: Path, command: str,
-          overrides: list[str], name: str = "verdict.csv") -> Path:
+          overrides: list[str], name: str = "verdict.csv", extra: dict | None = None) -> Path:
     """Write one verdict table and the manifest that ties it to what it judged.
 
     Args:
@@ -20,6 +20,9 @@ def write(out: Path, frame: pd.DataFrame, judged: Path, command: str,
         command: The command line, verbatim.
         overrides: The --set values it ran with.
         name: The CSV's file name; a module writing two verdicts names the second.
+        extra: Folded into the manifest's `source`, e.g. the null study's resolved root
+            seed -- a module that reads `engines.nulls` under a fresh seed records what it
+            drew here, so the run is reproducible by name.
 
     Returns:
         The CSV's path. The window pairs report and input through the manifest's absolute
@@ -30,6 +33,6 @@ def write(out: Path, frame: pd.DataFrame, judged: Path, command: str,
         raise ValueError(f"verdict table lacks {missing}")
     out.mkdir(parents=True, exist_ok=True)
     frame.to_csv(out / name, index=False)
-    manifest.write(out, {"input": str(judged.resolve()), "overrides": overrides}, command,
-                   {name: len(frame), **frame["verdict"].value_counts().to_dict()})
+    manifest.write(out, {"input": str(judged.resolve()), "overrides": overrides, **(extra or {})},
+                   command, {name: len(frame), **frame["verdict"].value_counts().to_dict()})
     return out / name

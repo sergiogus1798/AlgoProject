@@ -167,7 +167,8 @@ def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
     seen = metrics.observed(source["pnl"], g["starting_equity"])
     steps = sweeps.plan(n, cfg)
     runs = sweeps.execute(engine.payload(source), steps, g["n_sims"], cfg)
-    psr = significance.psr(source["pnl"], cfg["family_e"]["psr_benchmark"])
+    benchmark = significance.footprint(source, day, asset)
+    psr = significance.psr(source["pnl"], benchmark)
     return {"name": source["name"], "n_trades": n, "observed": seen,
             "blocks": sorted({s["block"] for s in steps if s["block"] > 1}),
             "titles": {s["label"]: s["title"] for s in steps},
@@ -176,7 +177,7 @@ def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
             "C": _family_c(source, cfg, g["n_sims"]),
             "D": family_d.run(source, day, cfg),
             "degrade": degrade.overlay(source, cfg),
-            "E": {**psr, **significance.crosscheck(psr["psr"],
-                                                   runs[config.BASELINE]["sharpe"])},
+            "E": {**psr, "benchmark": benchmark,
+                  **significance.crosscheck(psr["psr"], runs[config.BASELINE]["sharpe"])},
             "cost_check": costs.crosscheck(source["frame"], asset),
             "overlap": stream.overlap(source)}

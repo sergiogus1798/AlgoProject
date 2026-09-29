@@ -1,6 +1,7 @@
 """What assets/ declares: costs resolved against the shared policy, checked against the class."""
 
 import copy
+import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -12,7 +13,17 @@ POLICY, CLASSES, MARKETS = "_policy.yaml", "_classes.yaml", "_markets.yaml"
 BUILD = "_build.yaml"   # how a strategy is generated; the symbol files say what it costs
 SYMBOLS = ASSETS / "symbols"   # one file per instrument; the `_*.yaml` above them are shared
 
-RESERVED = "reserved_for"   # a segment spent by looking at it; report() flags it loudly
+RESERVED = "reserved_for"   # a segment spent by looking at it; binds only under enforced()
+AUTONOMOUS = "ALGO_AUTONOMOUS"
+
+
+def enforced() -> bool:
+    """Whether `reserved_for` binds this process: only when `ALGO_AUTONOMOUS=1`.
+
+    Owner, 2026-09-28: a human may look at any segment at any time; whether an autonomous
+    agent deciding alone should still be held is open, so it opts in. Nothing sets it today.
+    """
+    return os.environ.get(AUTONOMOUS) == "1"
 
 
 # Parsed files, keyed by path and stamped with the mtime and size they were parsed at, so an
@@ -144,6 +155,24 @@ def window(data: dict, segment: str) -> tuple[int, int]:
         raise ValueError(f"el tramo `{segment}` de {data['symbol']} no tiene fechas decididas; "
                          f"están en assets/_policy.yaml, bajo `segments: {data['symbol']}:`")
     return _ms(seg["from"], False), _ms(seg["to"], True)
+
+
+def segment_start(data: dict, segment: str) -> str:
+    """One segment's own first day, as an ISO date — never a retested leg's warm-up start
+    (`knowhow/sqx-format/leg-curve-warmup.md`). Raises when `from` is undecided.
+
+    Args:
+        data: One asset as load() returned it.
+        segment: Segment name, e.g. "oos2".
+
+    Returns:
+        ISO date; a bare year means 1 January of it, as `window()` reads its opening bound.
+    """
+    bound = data["segments"][segment]["from"]
+    if bound is None:
+        raise ValueError(f"el tramo `{segment}` de {data['symbol']} no tiene fechas decididas; "
+                         f"están en assets/_policy.yaml, bajo `segments: {data['symbol']}:`")
+    return f"{bound}-01-01" if isinstance(bound, int) else str(bound)
 
 
 def sqx_settings(data: dict, segment: str) -> dict:

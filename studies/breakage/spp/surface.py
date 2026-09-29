@@ -5,7 +5,7 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 
-from studies.breakage.spp.inputs.export import ORIGINAL
+from studies.breakage.spp.inputs.export import without_original
 
 
 def label(value: float) -> str:
@@ -41,7 +41,7 @@ def pairs(result: dict, top_share: float) -> list[dict]:
         the neighbours say, or stays empty.
     """
     metric, origin = result["metric"], result["original"]
-    grid = result["grid"][result["grid"].index != ORIGINAL]
+    grid = without_original(result["grid"])
     axes = {n: sorted(result["grid"][n].unique()) for n in result["parameters"]}
     out = []
     for a, b in combinations(result["parameters"], 2):

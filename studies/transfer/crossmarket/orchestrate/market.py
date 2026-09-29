@@ -35,6 +35,11 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
         (Test 1b) with its sensitivity to the reference window, significance, and cost and
         execution stress. Takes `fixed` so the fill convention is reconciled once per market
         rather than once per test.
+
+        `min_track_benchmark` is the Sharpe `min_track_needed` was measured against -- the
+        same-footprint random trader's own mean-over-std, reusing exp["mu_m"] (OPEN.md #71).
+        Printed so a reader sees which of the two centrings (OPEN.md #72) produced the number,
+        instead of assuming zero.
     """
     rng = np.random.default_rng(cfg["nulls"]["seed"])
     exp = exposure.run(fixed, bars, cfg, rng)
@@ -45,7 +50,14 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
     seen = realrun.reported(fixed, cfg)
     pair = paired.run(fixed, bars, fixed["market"], cfg, rng)
     returns = pricing.trade_returns(fixed, bars)
-    mtr = significance.min_track_record(returns, cfg["diagnostics"]["alpha"])
+    # OPEN.md #71: zero is not the null a trading strategy is measured against. A
+    # same-footprint random trader captures the market's own mean bar return (exp["mu_m"],
+    # already measured for Test 1c) over the same bars this trade held, and pays the same
+    # cost; its own Sharpe, not zero, is the honest benchmark, and it is on the same log-return
+    # scale `returns` is (OPEN.md #72: benchmark and sharpe are one ruler, two centrings).
+    footprint = fixed["held"]["hold"].to_numpy() * exp["mu_m"] - fixed["cost"]
+    benchmark = significance.moments(footprint)[0]
+    mtr = significance.min_track_record(returns, cfg["diagnostics"]["alpha"], benchmark)
     pf_ci = significance.bootstrap_metric(returns, significance.profit_factor, cfg, rng)
     ex_ci = significance.bootstrap_metric(returns, significance.expectancy, cfg, rng)
     s = cfg["stress"]
@@ -64,6 +76,7 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
             "expectancy_ci_lo": ex_ci["lo"], "expectancy_ci_hi": ex_ci["hi"],
             "sharpe": significance.moments(returns)[0],
             "min_track_needed": mtr["needed"], "min_track_enough": mtr["enough"],
+            "min_track_benchmark": benchmark,
             "real": seen, "equalised": curves.equalised(seen, cfg),
             "trades_all": fixed["all"]["trades"], "dropped": fixed["all"]["dropped"],
             "dropped_pnl": fixed["all"]["dropped_pnl"],

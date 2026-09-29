@@ -58,7 +58,6 @@ TIPS = {
     "family_d.garch_dist": "Distribución de los residuos del GARCH (p. ej. t).",
     "family_d.regime_concentration": "Fracción del beneficio en un solo tercil de "
                                      "volatilidad que dispara un aviso.",
-    "family_e.psr_benchmark": "Sharpe contra el que se prueba la PSR (0 = cualquier edge).",
     "family_e.psr_gate": "PSR por debajo de esto veta el veredicto.",
     "family_e.psr_target": "PSR por debajo de esto (pero por encima del veto) es aviso.",
     "scoring.dd_inflation_flag": "Ratio drawdown reordenado / backtest por encima del cual "

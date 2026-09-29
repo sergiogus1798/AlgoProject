@@ -21,9 +21,17 @@ def config(overrides: list[str]) -> dict:
             the type of the value it replaces (core.study.config).
 
     Returns:
-        What config.yaml holds.
+        What config.yaml holds. `nulls.seed` null (the default) is resolved here to a fresh
+        root drawn from OS entropy (`np.random.SeedSequence().entropy`), once per call —
+        every worker forked after this call inherits the same root, so a strategy's monkeys
+        still depend on nothing but the root, its own key and the rung (`simulate.nulls`).
+        An explicit int, from config.yaml or `--set nulls.seed=<int>`, is kept as given, so
+        a run is reproduced by recording the root a first run drew and passing it back in.
     """
-    return study_config.load(CONFIG, overrides)
+    cfg = study_config.load(CONFIG, overrides)
+    if cfg["nulls"]["seed"] is None:
+        cfg["nulls"]["seed"] = int(np.random.SeedSequence().entropy)
+    return cfg
 
 
 def markets(packed: Path) -> list[str]:

@@ -7,15 +7,15 @@ verdict and never drops a market.** It locates a result, names what is wrong wit
 decision is the owner's, made outside here.
 
 **Imports from:** `model/` (for the bootstrap) and itself
-**Consumed by:** `simulate/exposure.py` (one declared exception, for `fieller`), `render/`,
-`explorer/`
+**Consumed by:** `simulate/exposure.py` (one declared exception, for `fieller`),
+`orchestrate/`
 **Must not contain:** a simulation, an equity path, a priced trade, or any HTML beyond `alerts.py`'s
 four fields
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `inference.py` | Every reason to distrust a market, which test a result actually is, whether a sweep point has the power to be read, and which way a sweep curve goes. **It decides nothing** | imported | row, blocks, points → warnings, power, trend |
-| `significance.py` | Minimum track-record length and bootstrap CIs on PF and expectancy. No DSR — see `POSSIBLE_IMPROVEMENTS.md` | imported | returns → moments, CI |
+| `significance.py` | Minimum track-record length against the same-footprint random trader, not zero (OPEN.md #71), and bootstrap CIs on PF and expectancy. No DSR — see `POSSIBLE_IMPROVEMENTS.md` | imported | returns → moments, CI |
 | `fieller.py` | The interval of a ratio whose denominator can be zero: unbounded when it is, instead of a number that looks decided | imported | moments → interval |
 | `breadth.py` | Breadth, worst-market floor and PF dispersion across one strategy's markets | imported | per-market rows → breadth, floor, CV |
 | `alerts.py` | Every warning in four parts: what fired it, what it affects, what it does **not**, and what to do | imported | row → HTML |

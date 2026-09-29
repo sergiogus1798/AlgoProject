@@ -102,7 +102,8 @@ def family_e(result: dict, verdict: dict, cfg: dict) -> dict:
     """Significance: could the true edge be zero, given N and the shape of the returns."""
     e, f = result["E"], cfg["family_e"]
     rows = [["PSR", e["psr"]], ["Objetivo", f["psr_target"]], ["Veto", f["psr_gate"]],
-            ["Sharpe por operación", e["sharpe"]], ["Asimetría", e["skew"]],
+            ["Sharpe por operación", e["sharpe"]], ["Sharpe de referencia", e["benchmark"]],
+            ["Asimetría", e["skew"]],
             ["Curtosis", e["kurtosis"]], ["Operaciones", e["n"]],
             ["P(Sharpe>0) remuestreando", e["bootstrap"]],
             ["Diferencia analítica vs remuestreo", e["gap"]]]
@@ -114,6 +115,9 @@ def family_e(result: dict, verdict: dict, cfg: dict) -> dict:
                       "Si las dos últimas filas coinciden, la conclusión no depende de la "
                       "aproximación normal. No hay Deflated Sharpe: haría falta saber cuántas "
                       "estrategias se probaron, y ese número no existe en esta fase.")],
-        note="La PSR es la probabilidad de que el Sharpe real supere cero, contando cuántas "
-             "operaciones hay y la forma de su distribución: castiga la concentración que el "
-             "Sharpe solo no ve.")
+        note="La PSR es la probabilidad de que el Sharpe real supere el de referencia, "
+             "contando cuántas operaciones hay y la forma de su distribución: castiga la "
+             "concentración que el Sharpe solo no ve. La referencia ya no es cero: es el "
+             "Sharpe de un operador aleatorio con la misma huella de mercado (misma "
+             "ocupación, mismo coste) — casi siempre negativo, porque el coste suele superar "
+             "lo que esa ocupación capta de la deriva del mercado (OPEN.md #71).")

@@ -2,6 +2,7 @@
 
 import pandas as pd
 
+from core.surface import dedupe
 from studies.screening.analysis import decay
 from studies.screening.gate.monkey import familia, mono
 from studies.screening.gate.redundancy import redundancia
@@ -61,10 +62,7 @@ def sanidad(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     oos = data["trades"][data["trades"]["sample"] == "OOS"]
     oos = oos[oos["identity"].isin(alive)]
     count = oos.groupby("identity", observed=True).size().reindex(alive, fill_value=0)
-    fingerprint = pd.util.hash_pandas_object(
-        oos[["Open time", "Close time", "Profit/Loss"]], index=False)
-    key = fingerprint.groupby(oos["identity"].values, observed=True).sum().reindex(alive)
-    clone = key.duplicated(keep="first") & key.notna()
+    clone = dedupe.trade_duplicates(oos, by="identity").reindex(alive, fill_value=False)
     passed = (count >= cfg["min_trades"]) & ~clone
     note = pd.Series("", index=alive)
     note[count < cfg["min_trades"]] = f"menos de {cfg['min_trades']} trades OOS"

@@ -45,6 +45,12 @@ def analytic_sharpe(original_pnl: np.ndarray, cfg: dict) -> dict:
         thousand retests of one strategy are not a thousand selection trials -- feeding them
         in as N would produce a credible, false number. Both sibling studies refuse it for
         the same reason.
+
+        `cfg["evidence"]["psr_benchmark"]` stays 0 here, unlike `crossmarket` and
+        `monteCarlo` (OPEN.md #71): the honest benchmark needs the market's own bars and the
+        trades' prices and times, which this study's ingest never reads (`measure/store.py`
+        keeps 30 reconstructed metrics and raw P/L, nothing that prices a trade). Recorded
+        rather than silently assumed correct: `POSSIBLE_IMPROVEMENTS.md` #10.
     """
     return significance.psr(np.asarray(original_pnl, dtype=np.float64),
                             cfg["evidence"]["psr_benchmark"])

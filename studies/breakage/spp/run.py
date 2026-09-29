@@ -27,9 +27,10 @@ def read(directory: Path, strategy: str, settings: dict) -> dict:
     grid = dedupe.drop_sentinels(export.grid(directory, strategy))
     metrics = [metric] + [m for m in read_cfg["companion_metrics"] if m != metric]
 
+    marginal_grid = export.without_original(grid)
     profiles = {}
     for name in names:
-        curve = profile.marginal(grid, name, metric)
+        curve = profile.marginal(marginal_grid, name, metric)
         shape = profile.plateau(curve, design["plateau_share"])
         profiles[name] = {"curve": curve, "plateau": shape}
 

@@ -1,5 +1,6 @@
 """What the study is run on: its knobs, the structural batch's plan, and every file's trades per leg."""
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -35,10 +36,38 @@ def latest(project: str, databank: str) -> Path:
         databank: One leg's output databank.
 
     Returns:
-        Its `trades.parquet`.
+        Its `trades.parquet`. Prefers an export tagged `--batch structure`
+        (`sqx.export.export_retest`) over the untagged layout an older export used, so a
+        same-day stop-grid export (step 24, tag `stopgrid`) into the same databank cannot
+        shadow this one.
     """
-    days = sorted(export_dir(project, databank, "x").parent.iterdir())
-    return days[-1] / "trades.parquet"
+    root = export_dir(project, databank, "x").parent
+    tagged = sorted(root.glob("*/structure/trades.parquet"))
+    if tagged:
+        return tagged[-1]
+    return sorted(root.glob("*/trades.parquet"))[-1]
+
+
+def segments(work: Path) -> dict[str, str]:
+    """Which segment each leg's databank was filed under, for THIS run.
+
+    Args:
+        work: The batch directory: holds `ran.json` when `sqx.variants.execute` wrote one.
+
+    Returns:
+        databank -> segment, read from `ran.json`'s legs when the file is there — the run's
+        own record, immune to a later edit of `wfc.tasks[].segment` (OPEN.md #80). A run
+        made before `ran.json` existed falls back to today's `assets/_build.yaml`, with a
+        warning printed, because it is the one case where that config is all there is.
+    """
+    found = work / "ran.json"
+    if found.exists():
+        legs = json.loads(found.read_text(encoding="utf-8"))["legs"]
+        return {leg["databank"]: leg["segment"] for leg in legs}
+    print("⚠️  sin ran.json en el batch: releyendo assets/_build.yaml de HOY para un run que no "
+          "lo escribió (OPEN.md #80) — si wfc.tasks[].segment cambió desde entonces, esto filia "
+          "mal el tramo de cada pata.")
+    return {t["databank"]: t["segment"] for t in assetdata.doctrine()["wfc"]["tasks"]}
 
 
 def load(work: Path, project: str, databanks: list[str], feed: str, symbol: str) -> dict:
@@ -60,7 +89,7 @@ def load(work: Path, project: str, databanks: list[str], feed: str, symbol: str)
         reserved for the WFC and the WFM, and this is step 23. A refused leg is a
         PermissionError, never a silent skip.
     """
-    segment = {t["databank"]: t["segment"] for t in assetdata.doctrine()["wfc"]["tasks"]}
+    segment = segments(work)
     for bank in databanks:
         gate.allow(STEP, segment[bank], symbol)
     packed = [latest(project, bank) for bank in databanks]

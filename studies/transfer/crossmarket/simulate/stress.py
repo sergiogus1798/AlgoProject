@@ -127,7 +127,12 @@ def breakeven_multiple(fixed: dict, bars: pd.DataFrame) -> float:
 
     Returns:
         mean(gross) / cost. Closed form because the net return is linear in the multiple.
-        The PDF's gate requires this at or above 2x.
+        The PDF's gate requires this at or above 2x. This is the same question MinTRL's
+        benchmark asks from the other side (OPEN.md #72): MinTRL asks how much edge is needed
+        before the same-footprint random trader's own cost-eaten drift stops explaining the
+        result; this asks how many times the real cost the edge can absorb before it does. A
+        breakeven near 1x and a benchmark close to the observed Sharpe are the same finding
+        read twice, not two independent ones.
     """
     gross = pricing.realised(bars, fixed["held"], fixed["fill"]["convention"])
     return float(gross.mean() / fixed["cost"])

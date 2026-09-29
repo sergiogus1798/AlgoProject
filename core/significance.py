@@ -42,7 +42,14 @@ def psr(returns: np.ndarray, benchmark: float) -> dict:
 
     Args:
         returns: One value per trade.
-        benchmark: Sharpe to beat, per observation. Zero asks whether there is any edge.
+        benchmark: Sharpe to beat, per observation. Zero asks whether there is any edge; that
+            is not the null a trading strategy is measured against (OPEN.md #71) -- the
+            honest one is what a same-footprint random trader would have scored: drift
+            weighted by occupancy, minus cost, computed on the same per-observation scale
+            (`moments()` of that random trader's own P/L) so it sits on the same ruler as
+            `sharpe` below, only centred differently (OPEN.md #72). Zero remains a legitimate
+            benchmark to pass explicitly; it is no longer the default any caller should reach
+            for without saying why.
 
     Returns:
         The observed Sharpe, its skew and kurtosis, the observation count, and the
@@ -57,18 +64,22 @@ def psr(returns: np.ndarray, benchmark: float) -> dict:
             "psr": float(stats.norm.cdf(z))}
 
 
-def min_track_record(returns: np.ndarray, alpha: float = 0.05) -> dict:
+def min_track_record(returns: np.ndarray, alpha: float = 0.05, benchmark: float = 0.0) -> dict:
     """Bailey / Lopez de Prado minimum track-record length.
 
     Args:
         returns: One value per trade.
-        alpha: Significance level for the one-sided test that Sharpe > 0.
+        alpha: Significance level for the one-sided test that Sharpe > benchmark.
+        benchmark: Sharpe to beat, per observation. Zero asks whether there is any edge; the
+            honest benchmark for a trading strategy is what a same-footprint random trader
+            would have scored (OPEN.md #71) -- the same ruler `psr()` uses, with the same
+            centring (OPEN.md #72).
 
     Returns:
-        How many observations the observed shape would need before Sharpe > 0 is
+        How many observations the observed shape would need before Sharpe > benchmark is
         significant, how many there are, and whether that is enough.
     """
     sharpe, skew, kurtosis = moments(returns)
     z = stats.norm.isf(alpha)
-    needed = 1 + variance_factor(sharpe, skew, kurtosis) * (z / sharpe) ** 2
+    needed = 1 + variance_factor(sharpe, skew, kurtosis) * (z / (sharpe - benchmark)) ** 2
     return {"needed": float(needed), "have": len(returns), "enough": bool(len(returns) >= needed)}

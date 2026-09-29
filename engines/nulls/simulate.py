@@ -128,13 +128,15 @@ def nulls(kept: dict, rung: str, cfg: dict, key: str) -> dict:
 
     Returns:
         One array per statistic, each of length nulls.draws. Block `i` draws from
-        `SeedSequence([seed, hash(key), rung id, i])`, so a strategy's monkeys depend on
-        nothing but these four: not on the process or the thread it ran in, not on which
-        other strategies were in the batch, and not on `nulls.draws` -- raising it appends
-        blocks and leaves the first ones as they were. The block holds `chunk_trades` trade
-        valuations: 🔬 swept 2026-09-25, that is what keeps the kernel's working set in
-        cache, and it is a count of trades rather than of runs because the cache sees bytes.
-        Changing it changes the streams, which is why it is a constant of the config.
+        `SeedSequence([root, _stable(key), rung id, i])`, where `root` is `cfg["nulls"]["seed"]`
+        as `inputs.config()` resolved it -- a fresh one per run by default, or the explicit
+        int a caller asked to reproduce. A strategy's monkeys depend on nothing but these
+        four: not on the process or the thread it ran in, not on which other strategies were
+        in the batch, and not on `nulls.draws` -- raising it appends blocks and leaves the
+        first ones as they were. The block holds `chunk_trades` trade valuations: 🔬 swept
+        2026-09-25, that is what keeps the kernel's working set in cache, and it is a count
+        of trades rather than of runs because the cache sees bytes. Changing it changes the
+        streams, which is why it is a constant of the config.
     """
     knobs, names = cfg["nulls"], cfg["statistics"]["report"]
     root = [knobs["seed"], _stable(key), model.RUNG_ID[rung]]
@@ -154,8 +156,10 @@ def _stable(key: str) -> int:
         key: Any text.
 
     Returns:
-        The first eight bytes of its BLAKE2b digest. `hash()` is salted per interpreter,
-        which is how `nulls.seed` fixed nothing until 2026-09-25: the rung name went through
-        it, and two runs of the gate over the same files kept 227 and 229 strategies.
+        The first eight bytes of its BLAKE2b digest. `hash()` is salted per interpreter --
+        history now, but it is why `nulls.seed` fixed nothing until 2026-09-25: the rung
+        name went through it, and two runs of the gate over the same files kept 227 and 229
+        strategies. `_stable` is what makes a fixed `nulls.seed` reproduce a run today, and
+        what makes two strategies in the same run draw different monkeys under a fresh root.
     """
     return int.from_bytes(hashlib.blake2b(key.encode(), digest_size=8).digest(), "big")

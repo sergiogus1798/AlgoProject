@@ -33,6 +33,16 @@ or reasoned to be wrong for this study, and re-adding one means arguing against 
    almost invariant between simulations.
 9. **"Time under water".** A simulation file carries no dates. It is *trades* under water, and
    leaving the word "time" in the vocabulary guarantees someone eventually reports one as the other.
+10. **The realistic PSR benchmark (OPEN.md #71).** `crossmarket` and `monteCarlo` now test the
+    observed Sharpe against a same-footprint random trader's own Sharpe (drift weighted by
+    occupancy, minus cost) instead of zero. Computing it needs the market's own bars and the
+    trades' entry/exit prices and times; `measure/store.py` ingests only the 30 reconstructed
+    metrics and the raw P/L (`NEEDED`, `PNL`), never a price or a timestamp, because the
+    question this study answers — how much a re-run moves under one perturbation — never
+    needed either. `evidence.analytic_sharpe()` keeps `benchmark=0` until ingest carries bars,
+    which is a bigger change than this study's own scope; not silently assumed correct, this is
+    why. `empirical_sharpe()`'s threshold is a separate question (share of retest simulations
+    still above the benchmark, not the analytic PSR test) and is equally affected.
 
 ## Open, and worth building
 

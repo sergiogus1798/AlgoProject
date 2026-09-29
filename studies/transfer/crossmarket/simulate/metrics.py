@@ -2,6 +2,14 @@
 
 import numpy as np
 
+# `sharpe` and `net` answer different questions and can disagree without the study
+# contradicting itself (OPEN.md #72). `sharpe` is scale-free -- it divides out exactly what
+# separates a real trade from a random one -- so a real fleet that is calmer than chance
+# (🔬 measured on XAUUSD OOS1: 36% less volatile per trade, 491$ against 661$, skew +0.53
+# against -0.78, kurtosis 6.4 against 27.0) passes `sharpe` far more often than `net`: 77.4%
+# against 39.5% on the same simulation. Being calmer than chance is a real edge and `sharpe`
+# rewards it; `net` does not. Read both, never one alone, and never as a discrepancy.
+#
 # Every statistic the study reports for a run, and whether more of it is better. The
 # direction is not decoration: for `dd` and `losing_run` a real run sitting high in its null
 # means it drew down worse than chance, which reads the opposite way round from `net`.

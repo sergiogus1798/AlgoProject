@@ -70,6 +70,20 @@ def original(directory: Path, strategy: str) -> dict[str, float]:
     return {k: float(row[k].iloc[0]) for k in names}
 
 
+def without_original(grid: pd.DataFrame) -> pd.DataFrame:
+    """The grid with θ₀ (permutation -1) left out, for every aggregate by level.
+
+    Args:
+        grid: Output of `grid()`.
+
+    Returns:
+        Every row but θ₀'s. θ₀ must never vouch for itself in an aggregate: when the SPP's
+        step grid misses its own level, θ₀'s level holds θ₀ alone and reads as argmax by
+        construction (`knowhow/research/spp-origin-level-sampled-once.md`, `OPEN.md` #79).
+    """
+    return grid[grid.index != ORIGINAL]
+
+
 def varying(frame: pd.DataFrame, names: list[str]) -> list[str]:
     """Metric columns that are not constant across the grid.
 

@@ -13,7 +13,11 @@ aggregate and keep its level on the axis; an empty cell then says "no neighbour 
 `Test_USDJPY_donchianUpperCrossUp_M30`, `raw/.../SPP_IS|SPP_OOS/2026-09-27/spp`, 3 strategies,
 ~10,200-11,200 permutations each. Tuples other than θ₀ at θ₀'s level: `BBerDeviation1` (2.9) 0 in all
 six runs — its levels run 1.89, 2.01, 2.13 … (step 0.12); `BBerDeviation2` (2.8) 0; and
-`CBlc_ClsCrsDCerInt21` (29) 0 on 9.25.72 and 9.27.83. `run.read`'s marginal profiles on SPP_IS give
-for exactly those parameters argmax = original, plateau from = to = original, i.e. `spike: true`
-in the design brief — an artefact, not a reading. `studies/breakage/spp/surface.py` (encargo 24 E4)
-drops θ₀ from its cells; `model/profile.py` does not yet (OPEN.md).
+`CBlc_ClsCrsDCerInt21` (29) 0 on 9.25.72 and 9.27.83. Before the fix, `run.read`'s marginal profiles
+on SPP_IS gave for exactly those parameters argmax = original, plateau from = to = original, i.e.
+`spike: true` in the design brief — an artefact, not a reading.
+
+Fixed 2026-09-29 (`OPEN.md` #79): `studies/breakage/spp/inputs/export.without_original` is the one
+shared exclusion, called by both `run.read` (before `profile.marginal`) and `surface.py`'s cells.
+Every brief written before this date was made with the bug and needs re-running from the stored SPP
+export.

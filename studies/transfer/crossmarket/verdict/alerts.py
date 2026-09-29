@@ -73,7 +73,8 @@ TEXTS = {
         "momento de entrada."),
     "short_sample": (
         "Dado este Sharpe, este sesgo y estas colas, harían falta más operaciones de las que "
-        "hay para que el Sharpe se distinga de cero (Bailey / López de Prado).",
+        "hay para que el Sharpe se distinga del de referencia -- el de un operador aleatorio "
+        "con la misma huella de mercado, casi siempre negativo -- (Bailey / López de Prado).",
         "A cualquier afirmación sobre el Sharpe de este mercado.",
         "<b>No dice que la estrategia sea mala.</b> Dice que esta muestra no puede sostener "
         "esa afirmación concreta. El resto de los tests tienen sus propios tamaños de efecto "

@@ -1,5 +1,6 @@
 """What the study is run on: its knobs, which cell each result block is, and the bars."""
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -24,20 +25,33 @@ def config(overrides: list[str]) -> dict:
     return study_config.load(CONFIG, overrides)
 
 
-def blocks(scaling: pd.DataFrame, given: list[str] | None) -> list[str]:
+def blocks(scaling: pd.DataFrame, given: list[str] | None,
+          directory: Path | None = None) -> list[str]:
     """The task's <Setup> order: which timeframe each result block was run on.
 
     Args:
         scaling: The manifest `sqx.variants.scale` wrote; its `source_tf` is the mothers'.
         given: `run.blocks` from config.yaml, a list only for a task written with
             `--timeframes`.
+        directory: The batch's own folder (`core.datapaths.crosstf_dir`), holding
+            `blocks.json` when `sqx.projects.crosstf` wrote one for this run.
 
     Returns:
-        The source timeframe, then the extra ones in the order `sqx.projects.crosstf` writes
-        them for it — the same `crosstf.timeframes` of assets/_build.yaml, read here.
+        The source timeframe, then the extra ones in the order `sqx.projects.crosstf` wrote
+        them for THIS run — read from `blocks.json` beside the fabrication, never from
+        today's `assets/_build.yaml` (OPEN.md #80): a later edit to `crosstf.timeframes`
+        must not silently relabel an old run's bars. Only a run made before `blocks.json`
+        existed falls back to the doctrine, with a warning printed, because it is the one
+        case where that config is all there is.
     """
     if given:
         return given
+    found = directory / "blocks.json" if directory else None
+    if found and found.exists():
+        return json.loads(found.read_text(encoding="utf-8"))["blocks"]
+    print("⚠️  sin blocks.json en el batch: releyendo assets/_build.yaml de HOY para un run "
+          "que no lo escribió (OPEN.md #80) — si `crosstf.timeframes` cambió desde entonces, "
+          "esto relee mal el timeframe de cada bloque.")
     (source,) = scaling["source_tf"].unique()
     return [source] + doctrine()["crosstf"]["timeframes"][source]
 

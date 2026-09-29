@@ -39,7 +39,8 @@ def main() -> None:
     out = output.folder(export, "crossTF")
     output.population(out, "crossTF", got["population"], title)
     got["panel"].to_parquet(out / "cells.parquet", index=False)
-    verdicts.write(out, got["table"], export, " ".join(sys.argv), a.overrides)
+    verdicts.write(out, got["table"], export, " ".join(sys.argv), a.overrides,
+                  extra={"nulls_seed": got["nulls_seed"]})
     if a.out:
         a.out.parent.mkdir(parents=True, exist_ok=True)
         got["panel"].to_parquet(a.out, index=False)

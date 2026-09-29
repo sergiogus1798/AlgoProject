@@ -97,20 +97,37 @@ def main() -> None:
         knobs["blocks"] = a.blocks
     score = cscv.SCORES[knobs["score"]]
     comp = panel.SHORTCUTS[cfg["split_mode"]]
+    cols = panel.columns(comp)
+    # A batch collected before sqx.variants.collect wrote per-segment columns (issue 67, e.g.
+    # pipeline/XAUUSD/Strategy_17-9-39) has neither segments.parquet nor the "NetProfit
+    # (<segment>)" / "NumberOfTrades (<segment>)" columns cols names, and would otherwise die
+    # mid-run on a KeyError or a FileNotFoundError several calls deep in engines/variants. It
+    # is still good for the parameter cloud (studies/optimisation/cloud), so this only skips
+    # the CSCV -- never touches or re-harvests the batch.
+    if not (a.work / "segments.parquet").exists():
+        raise SystemExit(f"{a.work}: no segments.parquet -- predates the per-segment "
+                         f"collection, so the CSCV cannot read it; re-harvest it or retire it "
+                         f"(knowhow/research/cscv-always-reads-oos2.md)")
+    metrics = pd.read_parquet(a.work / "metrics.parquet")
+    absent = [cols[k] for k in ("is", "oos", "trades_is", "trades_oos")
+             if cols[k] not in metrics.columns]
+    if absent:
+        raise SystemExit(f"{a.work}: metrics.parquet has no {', '.join(absent)} -- predates "
+                         f"the per-segment collection, so '{cfg['split_mode']}' cannot be "
+                         f"measured; re-harvest it or retire it "
+                         f"(knowhow/research/cscv-always-reads-oos2.md)")
     symbol, timeframe = look.market(a.work)
     look.admit(STEP, READS, symbol)
     print(f"PROGRESS 5 {symbol} {timeframe}: {', '.join(READS)} permitidos por el ledger",
           flush=True)
     print("PROGRESS 10 construyendo la matriz de rendimientos por periodo", flush=True)
-    metrics = pd.read_parquet(a.work / "metrics.parquet")
-    cols = panel.columns(comp)
     wide = panel.usable(panel.panel(a.work, knobs["period"]), metrics, cfg["min_trades"],
                         cols)
     grid = grid_of(metrics, wide.columns)
     # The PBO itself ignores this boundary: `cscv.run` cuts the history its own way.
     # It is the four chronological numbers below -- rule cost, deflated Sharpe, trial
     # count, drift -- that are read at the split the config declares.
-    inside, outside = panel.windows(wide, panel.split(a.work, comp))
+    inside, outside = panel.windows(wide, panel.split(symbol, comp))
 
     print(f"PROGRESS 20 {', '.join(knobs['rules'])}: "
           f"{len(cscv.partitions(knobs['blocks']))} particiones sobre {wide.shape[1]} "

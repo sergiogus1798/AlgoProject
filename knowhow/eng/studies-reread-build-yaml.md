@@ -1,21 +1,22 @@
 ---
-q: does a finished run keep the settings it ran with? crossTF blocks order, wfc tasks segment, study re-reads assets/_build.yaml at analysis time, changing _build.yaml rewrites the reading of an old run, Configuración SQX warning
-tag: 📓  date: 2026-09-28  see: editing-asset-yaml
+q: does a finished run keep the settings it ran with? crossTF blocks order, wfc tasks segment, study re-reads assets/_build.yaml at analysis time, changing _build.yaml rewrites the reading of an old run, blocks.json, ran.json, Configuración SQX warning
+tag: 🔬  date: 2026-09-29  see: editing-asset-yaml
 ---
-# Two studies re-read `assets/_build.yaml` when they analyse a run that already happened
-`studies/transfer/crossTF` takes the block order (`crosstf.timeframes[<source>]`) and
-`studies/readings/structure` takes each WFC databank's segment (`wfc.tasks[].segment`) from the
-file as it is TODAY, not from what the run used. Change either value after a run and the old run is
-read with the new one: crossTF scores each cell on another timeframe's bars, structure files a leg
-under the wrong window — both in silence. Until runs save their own blocks (OPEN.md §80), change
-these only between runs, or re-run; the Configuración SQX zone shows «aviso: un run ya hecho se
-relee con este valor» beside both.
+# Fixed: crossTF and structure now read a run's own record, not today's `assets/_build.yaml`
+Was: crossTF's block order and structure's segment came from the file as it is TODAY, so a later
+edit silently relabelled an old run. Fixed 2026-09-29 (`OPEN.md` #80): `sqx.projects.crosstf`
+writes `blocks.json` into `core.datapaths.crosstf_dir(project, --day)`, beside `scaling.parquet`;
+`crossTF/inputs.blocks()` reads it first, the doctrine only when missing, with a warning.
+`sqx.variants.execute` already wrote `ran.json` beside the batch; `structure/inputs.segments()`
+now reads its `legs` first, the doctrine only as that same fallback. An explicit `run.blocks`
+override still wins over the file in crossTF.
 
 ## Evidence
-- `studies/transfer/crossTF/inputs.py:42` — `return [source] + doctrine()["crosstf"]["timeframes"][source]`
-  unless the config gives `run.blocks` (only for a task written with `--timeframes`).
-- `studies/readings/structure/inputs.py:63` — `segment = {t["databank"]: t["segment"] for t in
-  assetdata.doctrine()["wfc"]["tasks"]}`; the ledger gate is then checked against that segment.
-- `sqx.projects.crosstf` only prints the blocks to the terminal; nothing on disk keeps them.
-  `sqx.variants` does record each leg's segment in the batch's `ran.json`, but
-  `structure/inputs.py` does not read it (read 2026-09-28).
+- `studies/transfer/crossTF/inputs.py::blocks()` — `given` (explicit) > `directory/"blocks.json"`
+  > `doctrine()["crosstf"]["timeframes"][source]` (fallback, warns).
+- `studies/readings/structure/inputs.py::segments()` — `work/"ran.json"`'s legs >
+  `assetdata.doctrine()["wfc"]["tasks"]` (fallback, warns).
+- `sqx/projects/crosstf.py::main()` writes `blocks.json`; `sqx/variants/execute.py:~238` already
+  wrote `ran.json` before this fix — `structure` just did not read it.
+- `tests/test_run_record.py` — known-answer test for both readers, the fallback, and the explicit
+  override.

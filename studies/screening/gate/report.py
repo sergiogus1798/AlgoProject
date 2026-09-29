@@ -31,7 +31,8 @@ def main() -> None:
     source = {"project": a.project, "databank": a.databank, "feed": a.feed,
               "harvest": str(folder), "split": data["split"], "end": data["end"],
               "missing_oos": len(data["missing"]),
-              "screens": [s["name"] for s in cfg["screens"]], "overrides": a.set}
+              "screens": [s["name"] for s in cfg["screens"]], "overrides": a.set,
+              "nulls_seed": data["null_cfg"]["nulls"]["seed"]}
     got = many.run(data, cfg, source)
     scores, funnel = got["scores"], got["funnel"]
 

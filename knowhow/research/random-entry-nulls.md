@@ -1,12 +1,16 @@
 ---
-q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed reproducible hash PYTHONHASHSEED
-tag: 🔬  date: 2026-09-25  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias
+q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed reproducible hash PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest
+tag: 🔬  date: 2026-09-29  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias
 ---
 # A monkey verdict depends on the statistic far more than on the null: report all five
 `engines/nulls/config.yaml` lists five statistics and chooses none; never report one. Sharpe is scale-invariant, so
 being calmer than chance counts as edge under `sharpe` but not under `net`. Beating the monkey is a lower bar
 than beating zero (its mean is cost-negative). Use fill `open-open` (reconciled). Normal approximation (PSR/MinTRL)
 is fine for a gate at p≈0.05, not for the extreme tail after multiplicity — BH on the short list uses the simulation.
+
+**2026-09-29 (OPEN.md #71):** `benchmark=0` was the wrong null. `crossmarket` and `monteCarlo` now
+pass this same monkey mean, closed form (occupancy × drift − cost); `mcRetest` has no bars for it
+and stays at 0 (`mcRetest/POSSIBLE_IMPROVEMENTS.md` #10).
 
 ## Evidence
 `studies/readings/monkey/` on `raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25/`: 757 strategies, 960,705 trades, sample `OOS1` (2018–2022, 320,423 trades),

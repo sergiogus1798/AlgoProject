@@ -1,5 +1,12 @@
 """Honest significance on the real trades: minimum track-record length, bootstrap CIs. No DSR:
-see POSSIBLE_IMPROVEMENTS.md for why — it needs a trial count this study does not have."""
+see POSSIBLE_IMPROVEMENTS.md for why — it needs a trial count this study does not have.
+
+`min_track_record`'s `benchmark` and the null's own p-value are one axis read from two ends
+(OPEN.md #72): both ask whether the observed Sharpe clears what a same-footprint random
+trader scores, one analytically and one by simulation. `orchestrate/market.py` computes the
+benchmark once, from `exp["mu_m"]` (Test 1c's own market drift) and `fixed["cost"]`, and
+prints it beside MinTRL as `min_track_benchmark` so the two centrings (zero, and this one)
+are never confused for each other."""
 
 from collections.abc import Callable
 

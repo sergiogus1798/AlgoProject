@@ -104,14 +104,22 @@ def evidence(rows: pd.DataFrame, base: dict) -> dict:
     entries = [(r.feed, r._asdict()) for r in rows.itertuples()]
     entries.append((f"{base['feed']} (base)", base))
     return blocks.table("Qué sostiene esos números", pd.DataFrame(
-        [[f, r["sharpe"], int(r["trades"]), r["min_track_needed"], bool(r["min_track_enough"]),
-          r["pf"], r["pf_ci_lo"], r["pf_ci_hi"], r["expectancy"], r["expectancy_ci_lo"],
-          r["expectancy_ci_hi"]] for f, r in entries],
-        columns=["mercado", "Sharpe / operación", "operaciones usables", "necesarias (MinTRL)",
+        [[f, r["sharpe"], int(r["trades"]), r["min_track_benchmark"], r["min_track_needed"],
+          bool(r["min_track_enough"]), r["pf"], r["pf_ci_lo"], r["pf_ci_hi"], r["expectancy"],
+          r["expectancy_ci_lo"], r["expectancy_ci_hi"]] for f, r in entries],
+        columns=["mercado", "Sharpe / operación", "operaciones usables",
+                 "Sharpe de referencia", "necesarias (MinTRL)",
                  "¿suficientes?", "PF", "PF CI 5 %", "PF CI 95 %", "expectancy",
                  "exp. CI 5 %", "exp. CI 95 %"]),
-        "MinTRL: cuántas operaciones harían falta para que este Sharpe se distinga de cero, "
-        "dados su sesgo y sus colas. No dice que la estrategia sea mala.")
+        "MinTRL: cuántas operaciones harían falta para que este Sharpe se distinga del de "
+        "referencia, dados su sesgo y sus colas. La referencia ya no es cero: es el Sharpe de "
+        "un operador aleatorio con la misma huella de mercado (misma ocupación de barras, "
+        "mismo coste) -- casi siempre negativo, porque el coste supera lo que esa ocupación "
+        "capta de la deriva del mercado. Compárese con «coste de equilibrio» (breakeven) en "
+        "la pestaña de estrés: ambos preguntan lo mismo -- cuánta ventaja hace falta antes de "
+        "que el coste se la coma -- desde direcciones distintas. Y recuérdese que este Sharpe "
+        "premia ser más tranquilo que el azar aunque no gane más en neto: los dos p-valores "
+        "pueden discrepar sin que el estudio se contradiga.")
 
 
 def exits(rows: pd.DataFrame) -> dict:

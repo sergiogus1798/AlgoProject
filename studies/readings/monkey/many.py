@@ -68,7 +68,7 @@ def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFr
                        for s, m, v in zip(panel.index, panel["market"], panel[c])]}
             for c in shown.columns if c != "n"]
             + [blocks.table("Todas", panel.reset_index())],
-            note=f"{cfg['nulls']['draws']:,} monos por estrategia, mercado y peldaño. Sin "
-                 f"veredicto: cuántas baten a sus monos contra cuántas daría el azar lo "
-                 f"dice monkeyExcess, que lee este panel.")])
+            note=f"{cfg['nulls']['draws']:,} monos por estrategia, mercado y peldaño, "
+                 f"semilla {cfg['nulls']['seed']}. Sin veredicto: cuántas baten a sus monos "
+                 f"contra cuántas daría el azar lo dice monkeyExcess, que lee este panel.")])
     return {"population": population, "panel": panel}

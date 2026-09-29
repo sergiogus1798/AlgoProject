@@ -76,7 +76,7 @@ def main() -> None:
                    {"project": a.project, "databank": a.databank, "sample": a.sample,
                     "feed": feeds, "timeframe": a.timeframe, "input": str(packed.resolve()),
                     "draws": cfg["nulls"]["draws"], "rungs": cfg["nulls"]["rungs"],
-                    "overrides": a.set},
+                    "seed": cfg["nulls"]["seed"], "overrides": a.set},
                    " ".join(["python3 -m studies.readings.monkey.report", "--project", a.project,
                              "--databank", a.databank, *(["--feed", a.feed] if a.feed else []),
                              "--timeframe", a.timeframe, "--sample", a.sample]),

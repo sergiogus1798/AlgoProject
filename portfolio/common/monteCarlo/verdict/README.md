@@ -13,7 +13,7 @@ be cross-examined.
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `confidence.py` | Whether the sample can hold up a number | imported | N, q → tier |
-| `significance.py` | **Family E.** Probabilistic Sharpe Ratio and its cross-check against the bootstrap | imported | P&L → PSR |
+| `significance.py` | **Family E.** Probabilistic Sharpe Ratio against the same-footprint random trader's own Sharpe, not zero (OPEN.md #71), and its cross-check against the bootstrap | imported | P&L → PSR |
 | `gates.py` | **Every threshold in the study.** What vetoes, what only warns | imported | result → flags |
 | `scoring.py` | Sub-scores, composite, verdict tier and the binding constraint | imported | result → verdict |
 

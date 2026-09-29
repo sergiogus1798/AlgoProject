@@ -52,7 +52,10 @@ def random_tab(record: dict, cfg: dict) -> dict:
                     "default": metrics.LABELS["mean_r"]}],
         note=f"{cfg['nulls']['draws']:,} backtests aleatorios por cada mercado y cada modelo, "
              f"valorados con las mismas posiciones y los mismos costes que el real. Qué hace "
-             f"cada modelo, en la pestaña Modelos.")
+             f"cada modelo, en la pestaña Modelos. Sharpe y neto pueden discrepar sin que el "
+             f"estudio se contradiga: Sharpe divide por la volatilidad, así que una estrategia "
+             f"más tranquila que el azar lo pasa aunque no gane más en neto — leer los dos, "
+             f"nunca uno solo.")
 
 
 def warnings_table(rows: list[dict], title: str) -> dict:

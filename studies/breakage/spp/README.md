@@ -53,7 +53,8 @@ contains the original tuple and the in-sample argmax as well.
 that used that pair of levels — *other than θ₀*. 🔬 SQX's step grid missed θ₀'s own level of
 `BBerDeviation1` on all three USDJPY M30 SPPs (2026-09-27), so its cell held θ₀ alone and read "on
 the plateau" by construction; now it is empty and says so (`knowhow/research/spp-origin-level-sampled-once.md`).
-The one-parameter profiles in `model/` still include it: `OPEN.md` §79.
+The one-parameter profiles in `run.read` leave it out too (`inputs.export.without_original`,
+`OPEN.md` #79, fixed 2026-09-29) — every design brief made before that date needs re-running.
 
 ## Open, and deliberate
 

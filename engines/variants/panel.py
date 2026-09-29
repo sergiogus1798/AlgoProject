@@ -1,9 +1,10 @@
 """A retested variant batch read back: its C3 columns by split, its usable points, its panel."""
 
-import json
 from pathlib import Path
 
 import pandas as pd
+
+from core import assetdata
 
 
 
@@ -112,18 +113,19 @@ def panel(work: Path, period: str) -> pd.DataFrame:
     return daily.resample(period).sum().iloc[:-1]
 
 
-def split(work: Path, comp: tuple[tuple, tuple]) -> str:
+def split(symbol: str, comp: tuple[tuple, tuple]) -> str:
     """The in-sample / out-of-sample boundary this batch is being read at.
 
     Args:
-        work: The batch directory.
+        symbol: The asset, so the boundary can be read off `assets/_policy.yaml`.
         comp: What `composition` returned — the boundary is the first day of its first
             out-of-sample segment.
 
     Returns:
-        The first out-of-sample day, taken from the spans `sqx.variants.equity` measured
-        off the curves themselves. Read from the harvest rather than restated in this
-        study's own config: two files naming one date is how they come to disagree.
+        That segment's own declared start (`core.assetdata`), never the warm-up date
+        `equity.json`'s `windows` records: a leg retested over one segment carries curve
+        points from ~2 months earlier at zero P&L, so cutting at that date puts the tail of
+        the previous segment's real P&L on this side (`knowhow/sqx-format/leg-curve-warmup.md`).
 
         ⚠️ The CSCV proper does not use this — `cscv.run` cuts the history into 12 blocks
         and reads their 924 partitions (C(12,6)), never the declared boundary, so the PBO is
@@ -131,8 +133,7 @@ def split(work: Path, comp: tuple[tuple, tuple]) -> str:
         numbers computed beside it: the cost of each selection rule, the deflated Sharpe,
         the count of independent trials and the drift.
     """
-    found = json.loads((work / "equity.json").read_text(encoding="utf-8"))
-    return found["windows"][comp[1][0]][0]
+    return assetdata.segment_start(assetdata.load(symbol), comp[1][0])
 
 
 def usable(wide: pd.DataFrame, metrics: pd.DataFrame, min_trades: int,

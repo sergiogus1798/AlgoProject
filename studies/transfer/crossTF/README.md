@@ -37,7 +37,7 @@ clock", and nothing downstream should describe it as one.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, which cell each result block is, and the bars of each timeframe | imported | config + manifests → cells, bars |
+| `inputs.py` | The knobs, which cell each result block is (`blocks.json` first, today's doctrine only as a fallback for a run without one), and the bars of each timeframe | imported | config + manifests → cells, bars |
 | `cells.py` | What each cell earned and where it sits among its own timeframe's nulls | imported | trades + bars → statistic, p |
 | `verdict.py` | What a scaled cell means, once the control and the rounding have had their say | imported | panel → one of five readings |
 | `many.py` | What the study reads, every cell measured and every scaled cell read, as one result the window paints | imported | export + scaling → result |
@@ -51,10 +51,12 @@ nothing inside the module; `report` orchestrates.
 ## The trap a future session will step in
 
 Which result block is which timeframe has to match the `<Setup>` order of the retest task.
-`inputs.blocks()` derives it the way `sqx.projects.crosstf` writes it — the siblings'
-`source_tf`, then `crosstf.timeframes` of `assets/_build.yaml`; `run.blocks` in `config.yaml`
-is a list only for a task written with `--timeframes`. Get it wrong and every cell is priced on
-the wrong bars, with no error anywhere. `report.py` prints the mapping before any number for
-exactly that reason. The blocks are separated by the ticket restarting at 1
-(`core.tradestore.block`) and **not** by the `Symbol` column, which is identical across the
-timeframes of one asset.
+`inputs.blocks()` reads `blocks.json` beside `scaling.parquet` — the order `sqx.projects.crosstf`
+wrote for THIS run — and only falls back to the siblings' `source_tf` plus `crosstf.timeframes` of
+today's `assets/_build.yaml` when the run predates that file, printing a warning (OPEN.md #80): a
+later edit to `crosstf.timeframes` must never silently relabel an old run. `run.blocks` in
+`config.yaml` is a list only for a task written with `--timeframes`, and it still wins over both.
+Get the order wrong and every cell is priced on the wrong bars, with no error anywhere. `report.py`
+prints the mapping before any number for exactly that reason. The blocks are separated by the
+ticket restarting at 1 (`core.tradestore.block`) and **not** by the `Symbol` column, which is
+identical across the timeframes of one asset.

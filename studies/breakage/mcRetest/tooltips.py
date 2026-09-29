@@ -23,7 +23,12 @@ TIPS = {
                              "intervalo exacto.",
     "attribution.dispersion_center": "Centro de la dispersión: median es Brown-Forsythe, "
                                      "robusto; mean sería Levene, que aquí no lo es.",
-    "evidence.psr_benchmark": "El Sharpe de referencia contra el que el PSR mide la ventaja.",
+    "evidence.psr_benchmark": "El Sharpe de referencia contra el que el PSR mide la ventaja. "
+                              "0 aquí, no porque sea la referencia honesta -- lo honesto sería "
+                              "el Sharpe de un operador aleatorio con la misma huella de "
+                              "mercado, como en crossmarket y monteCarlo -- sino porque este "
+                              "estudio no lee las velas ni los precios que haría falta para "
+                              "calcularlo (OPEN.md #71).",
     "ingest.capital": "La cuenta contra la que se miden los drawdowns. Es la convención de SQX, "
                       "no una elección: cambiarla deja de reproducir sus tablas.",
     "fragility.cvar_alpha": "Qué parte de la cola entra en el drawdown condicional. 0.05 es la "

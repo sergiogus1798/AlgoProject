@@ -3,7 +3,7 @@
 | file | what it does | in → out |
 |---|---|---|
 | `config.py` | Reads `config.yaml` and locates one SPP export under the data root | project, databank → settings, path |
-| `export.py` | Reads the wide `spp.parquet` of an SPP export: one strategy's grid, the parameters it permuted, the original tuple | export folder → frame, names, original tuple |
+| `export.py` | Reads the wide `spp.parquet` of an SPP export: one strategy's grid, the parameters it permuted, the original tuple, and the grid with θ₀ left out for aggregates | export folder → frame, names, original tuple |
 
 Holds nothing computed. Every number in this study comes from `model/` or `verdict/`.
 

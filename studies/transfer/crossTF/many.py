@@ -34,7 +34,7 @@ def load(export: Path, scaling: Path, feed: str, cfg: dict) -> dict:
         {"plan", "trades", "frames", "scaling", "nullcfg", "feed", "identity"}.
     """
     table = pd.read_parquet(scaling)
-    cfg["run"]["blocks"] = inputs.blocks(table, cfg["run"]["blocks"])
+    cfg["run"]["blocks"] = inputs.blocks(table, cfg["run"]["blocks"], scaling.parent)
     plan = inputs.plan(table, cfg["run"]["blocks"])
     nullcfg = nullinputs.config([])
     # The null layer names whose costs its p-values carry, and the feed is the only thing
@@ -55,7 +55,8 @@ def run(got: dict, cfg: dict) -> dict:
 
     Returns:
         {"population": the result, "panel": every cell, "table": one row per scaled
-        sibling with its mother's identity and its reading as `verdict`}.
+        sibling with its mother's identity and its reading as `verdict`, "nulls_seed": the
+        root `engines.nulls.inputs.config` drew for this run's monkeys}.
     """
     started = time.time()
     envelope.progress(10, f"midiendo {len(got['plan'])} celdas contra sus nulos")
@@ -101,4 +102,5 @@ def run(got: dict, cfg: dict) -> dict:
     population = envelope.envelope(MODULE, None, None, cfg, started, tabs, said, warn,
                                    [{"term": k, "text": t} for k, t in MEANS_ES.items()])
     envelope.progress(100, f"{len(readings)} hermanas en {len(tfs)} timeframes")
-    return {"population": population, "panel": panel, "table": table}
+    return {"population": population, "panel": panel, "table": table,
+            "nulls_seed": got["nullcfg"]["nulls"]["seed"]}

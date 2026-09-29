@@ -123,6 +123,7 @@ def run(strategy: str, given: dict, cfg: dict, statistic: str = "net") -> dict:
         MODULE, strategy, ident, cfg, started,
         tabs(got, cfg, statistic), said, warn + identity.warning(ident), GLOSSARY,
         summary={"n": len(trades), "reconcile": got["kept"]["checks"]["corr"],
+                 "nulls_seed": cfg["nulls"]["seed"],
                  **{f"p_{n}": v for n, v in got["found"].items()}})
 
 
