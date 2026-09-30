@@ -63,6 +63,11 @@ curvas donde empieza `oos2`** y no elige nada: sale del PDF `PARAMETER_SPACE_TES
 cuya sección E prohíbe expresamente sustituir la madre por el mejor clon.
 
 Del 27 en adelante empieza la cartera, y sólo con estrategias del pool validado del paso 26.
+**Cómo se construye está planificado en `portfolio/PLAN.md`** (2026-09-30): primero el universo
+común (M0-M2), luego el camino del fondeo (F1-F5: reglas de cada empresa, cartera elegida por la
+probabilidad de aprobar sobre el flotante, veredicto en `oos1`+`oos2`, caja del encargo 33), luego la
+cuenta real (M3-M8) y el OOS en papel sobre barras nuevas (M9). Hasta el paso 26, se desarrolla con
+supervivientes de cualquier paso archivadas como desarrollo, en USDJPY y XAUUSD.
 **Primero las estrategias individuales.** Todo lo que usa `oos2` para desarrollar una estrategia
 ocurre antes, en 1-25; el paso 26 no elige por rendimiento, sólo comprueba que SQX reproduce la
 cuenta de la empresa (dueño, 2026-09-29).
@@ -235,5 +240,6 @@ número de monos se convierte en una cifra que se compara con un resultado conoc
 | 🔴 | **costes de `XAGUSD_DukasM1_Infinox` y `BRENTCMDUSD_ftmo`**, y el `data_from` del Brent. Sin ellos el paso 9 se niega a escribirse. Del dueño |
 | ⬜ | **los building blocks** del paso 6: qué indicadores entran en el hueco aleatorio |
 | 🟡 | **el paso 20 construido, sin decidir**: qué es «pasar» (unanimidad / sin_fallo / sólo el StepM, y K = supervivientes o entrantes). Leer `oos2` ya no lo bloquea para un humano (2026-09-28). Del dueño — `docs/encargos/10-spa-stepm.md` |
+| 🟠 | **el motor de carteras (paso 27 en adelante), planificado sin construir** — `portfolio/PLAN.md`. Para empezar hacen falta: tu visto bueno para archivar el pool de desarrollo (M0), las preguntas de su §12 que bloquean cada hito, y `portfolio/DECISIONS.md` #2, #5, #10, #12. Del dueño — `OPEN.md` #87 |
 | ⬜ | **las horas UTC de cada sesión** (Asia/Londres/Nueva York/solape) — sin ellas el paso 22 no puede añadir el corte de sesión; el campo `session` de `assets/symbols/` sólo da la semana de mercado abierto, no la partición del día. Del dueño |
 | 🟡 | **calidad del feed** (encargo 17, construido 2026-09-26) — queda del dueño: la **sesión del Brent** con sus pausas (109 huecos propios al año con la deducida); la inyección la dio por buena el 2026-09-26. Tres detalles de diseño abiertos en `studies/data/feedQuality/POSSIBLE_IMPROVEMENTS.md` |

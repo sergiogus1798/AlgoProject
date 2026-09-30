@@ -1,5 +1,10 @@
 # portfolio — combining strategies
 
+**The implementation plan is `PLAN.md`** (2026-09-30): module layout, data shapes, every knob, the
+AlphaForge port, tests, milestones and the owner's open questions (§12). **Order: M0-M2 (shared
+universe and pairs) → F1-F5 (the funded path, §14 — the owner's priority) → M3-M8 (the real-account
+path) → M9 (paper OOS).** A milestone blocked by an open question does not start on a guessed default.
+
 **Before building anything here, read `BUILD_COMPENDIUM.md` end to end** (owner, 2026-09-28). It
 holds every practice, test and trap gathered for this module: what to port from the owner's
 AlphaForge repo and what to redo, and every portfolio idea of the books-and-internet dossier
@@ -24,6 +29,11 @@ inventing an answer. What is agreed so far:
   construction engine.** The engine chooses combinations and weights; risk per trade, P(pass) and
   the firm's rules are encargo 33's — which also hands the engine each firm's pool with its
   outright prohibitions already removed (below).
+  **Amended 2026-09-30** (`DECISIONS.md` #13, delegated by the owner to the session): the
+  **funded** portfolio is chosen by the funded yardstick inside the engine — P(pass) of one plan
+  on `build`, from floating equity (MAE and MFE, intraday, on the firm's server day), judged on
+  `oos1`+`oos2`. The rule functions stay encargo 33's; the engine calls them. Encargo 33 keeps the
+  bank-level economics and no longer chooses the portfolio. → `PLAN.md` §14.
 - **Correlation thresholds default to 0.30, every one** (Pearson, Spearman, co-loss, tail, and
   the rolling 60-month one in both its whole and recent windows), as config knobs. Development may
   relax them to get a portfolio out of a small pool; a relaxed run says so.

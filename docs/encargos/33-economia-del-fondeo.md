@@ -34,6 +34,13 @@ Y una pieza que va **antes** del motor: lo que una empresa prohíbe sin remedio 
 semana, operar en ventanas de noticias…) saca estrategias del pool de esa empresa antes de buscar
 carteras; el motor busca sobre lo que queda (dueño, 2026-09-29).
 
+**Cambio del 2026-09-30** (`portfolio/DECISIONS.md` #13, que el dueño dejó en manos de la sesión;
+`portfolio/PLAN.md` §14): la cartera **fondeada** la elige el motor con la vara del fondeo —la
+probabilidad de aprobar un plan, leída en `build` sobre la equity flotante (MAE y MFE dentro del
+día del servidor)— y la juzga en `oos1`+`oos2`. Este encargo pone las reglas como funciones puras
+(que el motor llama, y por eso van antes), la simulación de la caja cuenta tras cuenta y la
+economía encima; **ya no elige la cartera**.
+
 ## 1 · El cambio de unidad: el banco, no la cuenta
 
 Una cuenta fondeada **no es capital del dueño**. El dueño compra una opción: paga una prima (el
@@ -146,6 +153,11 @@ SQX solos:**
   días, `DECISIONS.md` #7 y `BUILD_COMPENDIUM.md` §7.1), en el día del servidor de la empresa: barajar
   operaciones sueltas subestima el drawdown de una cartera. El intradía se reconstruye con M1; donde
   no, el MAE de cada operación como cota, y se dice.
+  **Ampliado el 2026-09-30** (`portfolio/PLAN.md` §14.3b): tres Monte Carlo — T1 por operación de
+  cada estrategia, T2 bloques de operaciones sincronizados entre estrategias (cada operación entera,
+  con su flotante), D bloques de días — con la longitud de bloque medida (Politis-White) y barrida;
+  **manda el más pesimista** (dueño). Las cuentas se compran una tras otra sobre un mismo camino
+  largo, no se multiplican probabilidades independientes (§14.3, etapa C).
 - **El nivel del edge** sale de los tramos **OOS**, nunca del IS: la búsqueda genética eligió la
   estrategia por su poco drawdown en IS, así que el IS aporta variedad de regímenes pero no su
   optimismo. Los caminos se recentran a ese nivel y se les aplica el recorte `h` (0 %, 25 %, 50 %,
@@ -169,8 +181,9 @@ casi empata es donde el edge rinde más por dólar.
 
 ### 3.4 Qué se busca y cómo se cuenta
 
-Variables de decisión: plan (familia × tamaño) × subconjunto de add-ons × cartera × riesgo por
-operación en cada fase × cuántas cuentas y cuándo se compran. Cada add-on se evalúa como
+Variables de decisión: plan (familia × tamaño) × subconjunto de add-ons × riesgo por
+operación en cada fase × cuántas cuentas y cuándo se compran. La cartera ya no es una variable de
+aquí: llega elegida y juzgada por el motor, una por plan (2026-09-30, `portfolio/PLAN.md` §14). Cada add-on se evalúa como
 **ΔVE(add-on) − su precio**, no por intuición («+2 % de pérdida máxima por un 30 % más» se paga o no se
 paga según la cartera).
 
@@ -276,7 +289,8 @@ Antes de simular, lista y pregunta al dueño, como mínimo:
 
 1. ✅ `portfolio/funded/catalog/` y el agente `fundingWatcher` (2026-09-29). Falta un test del
    cálculo de precio contra la fórmula del JS de Hantec.
-2. `portfolio/funded/rules/` — las reglas como funciones puras, con tests de caso conocido.
+2. `portfolio/funded/rules/` — las reglas como funciones puras, con tests de caso conocido. **Va
+   primero** (hito F1 de `portfolio/PLAN.md`): el motor las llama para elegir la cartera fondeada.
 3. `portfolio/funded/sim/` — el ciclo completo de compra → fases → fondeada → cobros, sobre caminos
    por bloques, con el recorte `h` y el mono.
 4. `portfolio/funded/decide/` — la búsqueda sobre planes × add-ons × riesgo, registrada en el ledger,

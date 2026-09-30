@@ -100,6 +100,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 83 | 🟢 | The window cannot launch a second project on the custodian for 24 h after the... | docs/OPEN-closed.md |
 | 84 | 🟡 | What the 2026-09-29 walk of the window left for the owner | OPEN.md |
 | 85 | 🟠 | Prop-firm funding workstream — built 2026-09-29, the owner's calls still open | OPEN.md |
+| 87 | 🟠 | Portfolio construction engine — planned 2026-09-30, not built; the owner's calls gate each milestone | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -355,7 +356,9 @@ model chosen per request because some prop firms' data is poor — a per-account
 then **`weeklyReconciler`**: each weekend, SQX backtests of the live strategies over the last week on
 the development data, against the live trades (live EAs run on a separate server; this machine
 reads, investor password recommended); a report, form to be decided. Cron slot after
-`weekly-data-update` (Sat 03:00).
+`weekly-data-update` (Sat 03:00). **2026-09-30:** it shares its retest of the fresh stretch with the
+portfolio's paper OOS (`portfolio/PLAN.md` §14.5 M9 — one retest, two readers), and the floating
+rebuild of §14.2 lets it reconcile live MAE, not only P&L.
 Note: `Bash(*)` is allowed in this project, so the deny list stops the MCP tools, not a hand-made
 HTTP call to the port — the terminal's own "prohibit AI trading" option is the lock that holds.
 
@@ -443,6 +446,11 @@ validated pool). Manual chapters 73 and 74.
   reaches the portfolio. Step 26's thresholds are input parameters, his proposed values accepted.
 - Risk shape from the long SQX history translated to each firm; edge level from OOS with haircut `h`.
 - Only the owner makes a firm active. A deal notifies only if it beats the best known price.
+- **2026-09-30, delegated to the session** (`portfolio/DECISIONS.md` #13): the funded portfolio is
+  chosen by the engine with the funded yardstick — P(pass) of one plan on `build`, from intraday
+  floating equity (MAE and MFE) on the firm's server day — and judged on `oos1`+`oos2`; encargo 33
+  keeps the rules (moved up, the engine calls them) and the bank simulation, and no longer chooses the
+  portfolio. Funded path first (owner's priority). → `portfolio/PLAN.md` §14.
 
 **Open — the owner's calls:**
 1. **Cash budget**: the most he will spend on challenges before a first payout (encargo 33 §3.5).
@@ -481,3 +489,20 @@ reading, which is not forced; codes of firms without a public check stay `unveri
 - `project.cfx` is a plain ZIP: `config.xml` + one `<Type>-Task<N>.xml` per task. Safe to *read*
   at any time.
 
+## 87. 🟠 Portfolio construction engine — planned 2026-09-30, not built; the owner's calls gate each milestone
+
+The plan is `portfolio/PLAN.md`; the order is in `portfolio/CLAUDE.md` (M0-M2 → F1-F5 funded → M3-M8
+real → M9 paper OOS). Nothing is built. What each milestone waits on:
+
+- **M0 (the development pool):** the owner's go-ahead to archive survivors (the archive reads SQX
+  install files and the daemon); PLAN §12 Q2 (where `oos2` comes from — the archive holds only IS and
+  `oos1`), Q13, Q14; `DECISIONS.md` #10. Development assets: USDJPY and XAUUSD (owner, 2026-09-30).
+- **M1-M2:** Q1, Q6-Q9, Q15 (Q3-Q5 are settled for the funded path by the firms' rules, §14.4).
+- **F1:** encargo 33 §6 questions 1-3.
+- **F4 / M5:** Q11. **M3:** `DECISIONS.md` #2 (real side), Q10, Q12, Q16. **M8:** `DECISIONS.md` #5.
+- **Settled 2026-09-30:** floating from M1 **wicks**, longs and shorts alike (SQX's MAE reproduced on
+  2,094/2,094 trades, `knowhow/export/mae-mfe-from-m1.md`); search at M5, finalists and verdict at M1
+  (`knowhow/perf/intraday-floating-resolution.md`); Monte Carlo T1 + T2 + D, the most pessimistic
+  decides, block length measured; the funded portfolio chosen by P(pass) inside the engine
+  (`DECISIONS.md` #13, delegated to the session); OOS correlation is a verdict check, never a selector.
+- Index CFD M1 bars are not in `AlgoData/bars/`; the owner imports them when needed.
