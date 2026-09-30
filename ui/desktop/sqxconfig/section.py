@@ -3,6 +3,7 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+from ui.desktop.theme import C
 from ui.text.glossary import LABELS, label
 from ui.desktop.sqxconfig.field import Field
 
@@ -15,17 +16,21 @@ def words(key: object) -> str:
     return label(f"sqx.{key}") if f"sqx.{key}" in LABELS else label(key)
 
 
-def group_of(section: dict, path: list) -> str:
+def group_of(section: dict, spec: dict) -> str:
     """The sub-heading a value sits under: the path between the section and the value.
 
     Args:
         section: The section, to name a list item by its `title` when it has one.
-        path: The value's path.
+        spec: The value. A study value of WFC or CSCV brings its own `group` heading and
+            the `base` of its path that heading already names.
 
     Returns:
         The heading, e.g. «Tareas › MCR 7 OHLC › Métodos › RandomizeHistoryDataOHLC», or ""
         for a value that hangs straight off the section.
     """
+    path = spec["path"]
+    if spec.get("group"):
+        return " › ".join([spec["group"], *(words(k) for k in path[len(spec["base"]):-1])])
     parts = []
     for depth, key in enumerate(path[1:-1], start=1):
         if isinstance(key, int):
@@ -70,11 +75,12 @@ def note(text: str, width: int = 0, short: int = 0) -> QWidget:
 
 
 class Section(QFrame):
-    """A section of the zone. Folded it is one line; open it lists every value. `written` and
-    `refused` bubble up from its fields."""
+    """A section of the zone. Folded it is one line; open it lists every value. `written`,
+    `refused` and `stale` bubble up from its fields."""
 
     written = Signal(str)
     refused = Signal(str)
+    stale = Signal()
 
     def __init__(self, section: dict) -> None:
         """Build the header now and the rows on first unfold.
@@ -93,6 +99,7 @@ class Section(QFrame):
         self.caption = (f"{words(section['key'])}   ·   {count} valor{'es' if count != 1 else ''}"
                         + (f", {locked} bloqueados" if locked else "")
                         + f"   ·   {section['source']}")
+        self.head.setToolTip("\n".join(section.get("files", [section["source"]])))
         self.head.toggled.connect(self.fold)
         self.lay = QVBoxLayout(self)
         self.lay.setContentsMargins(0, 4, 0, 4)
@@ -133,12 +140,20 @@ class Section(QFrame):
             r += 1
         heading, told = "", {self.section["help"]}
         for spec in self.section["fields"]:
-            group = group_of(self.section, spec["path"])
+            group = group_of(self.section, spec)
             if group != heading:
                 sub = QLabel(group)
                 sub.setObjectName("kicker")
                 grid.addWidget(sub, r, 0, 1, 3)
                 heading, r = group, r + 1
+                # WFC and CSCV's study values: one warning under the heading, not one per row
+                if spec.get("group_help") and spec["group_help"] not in told:
+                    told.add(spec["group_help"])
+                    warning = QLabel(spec["group_help"])
+                    warning.setWordWrap(True)
+                    warning.setStyleSheet(f"color: {C['weak']}; font-weight: 700;")
+                    grid.addWidget(warning, r, 0, 1, 3)
+                    r += 1
             for g in self.section["groups"]:
                 if spec["path"][:len(g["path"])] == g["path"] and g["help"] not in told:
                     told.add(g["help"])
@@ -147,9 +162,10 @@ class Section(QFrame):
             name = QLabel(words(spec["key"]))
             name.setObjectName("mono")
             name.setToolTip(" › ".join(str(p) for p in spec["path"]))
-            field = Field(self.section["file"], spec)
+            field = Field(spec.get("file", self.section["file"]), spec)
             field.written.connect(self.written)
             field.refused.connect(self.refused)
+            field.stale.connect(self.stale)
             grid.addWidget(name, r, 0, Qt.AlignTop)
             grid.addWidget(field, r, 1, Qt.AlignTop)
             if spec["help"] and spec["help"] not in told:

@@ -2,10 +2,12 @@
 """«Continuar workflow»: copy the discards aside, cut the databank, start the next task and wait."""
 
 import argparse
+import os
 import shutil
+import signal
 import sys
 import time
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -13,16 +15,15 @@ import pandas as pd
 from core import worker
 from ledger import record
 from sqx.curate import apply_verdict
-from sqx.projects import stage
-from ui.daemon import progress
+from sqx.projects import crosstfload, stage
+from ui.daemon import progress, workerguard
 from ui.daemon.advance import preflight, sqxlog
 from ui.daemon.filters import discards, ledgerrow
+from ui.daemon.launch import configure
 
-POLL = 10           # seconds between two `action=status`
-READY_TRIES = 60    # × POLL: the CLI answers «not ready» for ~20 s after the port opens
+POLL, READY_TRIES = 10, 60   # s between two `action=status`; × POLL, the CLI's «not ready» ~20 s
 START_WITHIN = 120  # s after `action=start` for «Starting project '<P>'» to reach the log
-# No run of this workflow is known to last this long (the longest logged step, a 1,000-variant
-# WFC, took hours, not days). A job past it is stuck, and it holds the conductor lane: it stops.
+# No run lasts this long (a 1,000-variant WFC took hours): past it the job is stuck, and stops.
 MAX_HOURS = 48
 
 
@@ -92,10 +93,34 @@ def consume(project: str, databank: str, removed: int, task: str) -> None:
                                          "removed": removed, "task": task}])
 
 
+SYNCING, SYNCED = b"Syncing databank(s) from files", b"Synchronization finished"
+
+
+def syncing(top: Path) -> bool:
+    """Whether SQX is still loading the databanks from their files: the last «Syncing
+    databank(s) from files» of today's log has no «Synchronization finished» after it."""
+    f = sqxlog.path(top, date.today())
+    if not f.exists():
+        return False
+    with f.open("rb") as fh:
+        fh.seek(max(0, f.stat().st_size - 4_000_000))
+        tail = fh.read()
+    return tail.rfind(SYNCING) > tail.rfind(SYNCED)
+
+
 def ready(project: str, role: str) -> None:
-    """Wait until the CLI answers, asking only `action=status`."""
+    """Wait until the CLI answers, asking only `action=status`, and has its databanks loaded.
+
+    The first `-project` command after a start makes SQX load every databank from its files.
+    When another caller's status poll (the window's pulse) was that first command, this one
+    is answered at once while the load goes on, and a task started then reads an empty input:
+    🔬 2026-09-29, «WFM : No strategies to retest» at 11:52:35, «Loaded 21 strategies to
+    databank SPP OOS» at 11:52:47.
+    """
+    top = preflight.WORKERS[role]["path"]
     for _ in range(READY_TRIES):
-        if "not ready" not in worker.call(f"-project action=status name={project}", role):
+        answer = worker.call(f"-project action=status name={project}", role)
+        if "not ready" not in answer and not syncing(top):
             return
         time.sleep(POLL)
     sys.exit(f"el {role} no respondió tras {READY_TRIES * POLL} s")
@@ -118,25 +143,45 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict:
         dies, or past MAX_HOURS.
     """
     top, kept, began = preflight.WORKERS[role]["path"], [], time.monotonic()
+    seen = False        # once the start was read, losing it later is never «did not start»
     while True:
         time.sleep(POLL)
         if not worker.holding(top):
             sys.exit(f"el {role} se paró antes de «Project finished»")
-        live = progress.state(role, project).get("status")
+        try:
+            got = progress.state(role, project)
+            live = got.get("status")
+            now = next((t for t in got["tasks"] if t["status"] == "running"), None)
+        except (OSError, ValueError, AttributeError, KeyError) as failed:
+            # The status is only what the progress line shows. A log SQX is still writing must
+            # never end the run: this loop's `finally` stops the worker (2026-09-28, a build).
+            print(f"estado no legible ahora ({failed}); se sigue esperando", flush=True)
+            live = now = None
         run = progress.run_state(sqxlog.grow(top, offsets, kept))
         waited = time.monotonic() - began
+        seen = seen or run["project"] == project
         if run["project"] != project:
-            if waited > START_WITHIN:
+            if not seen and waited > START_WITHIN:
                 sys.exit(f"SQX no escribió «Starting project '{project}'» en {START_WITHIN} s "
                          "tras `action=start`: no arrancó; se para el worker")
             continue
         if run["finished"]:
+            if run["events"].get("error"):
+                sys.exit(f"SQX abortó {project} («Error while running project» en su log): "
+                         "la tarea no terminó; se para el worker")
             return run
         if waited > MAX_HOURS * 3600:
             sys.exit(f"{project} sigue sin «Project finished» tras {MAX_HOURS} h: se para el "
                      "worker para liberar el carril")
-        say(60 + (run["percent"] or 0) * 35 // 100, f"{run['current'] or 'esperando'} "
-            f"{run['percent'] or 0} %" + (f" · {live['generated']} probadas" if live else ""))
+        # A retest's log carries no compute-thread figure: its share is done over its input
+        # (📓 2026-09-29, «MCR 1 Bar 0 % · 122 probadas» with 122 of 200 done).
+        percent = run["percent"]
+        if percent is None and now and now["done"] is not None and now["total"]:
+            percent = min(100, 100 * now["done"] // now["total"])
+        of = f" de {now['total']}" if now and now["total"] else ""
+        say(60 + (percent or 0) * 35 // 100, f"{run['current'] or 'esperando'}"   # a build: no %
+            + (f" {percent} %" if percent is not None else "") + (f" · {live['generated']}{of} "
+            f"probadas · {live.get('in_databank', '?')} en el databank" if live else ""))
 
 
 def advance(project: str, databank: str) -> None:
@@ -153,15 +198,25 @@ def advance(project: str, databank: str) -> None:
     cut = apply_verdict.apply(project, databank, csv, role)
     print(ledger_row(project, databank, pre, cut, backup), flush=True)
     consume(project, databank, cut["removed"], pre["task"])
-    say(25, f"activando solo {pre['task']}")
-    stage.apply(pre["cfx"], [pre["stage"]], pre["skip"])
+    if pre.get("fill"):         # CrossTF_Input (10.5) or CrossTF_Mothers, worker stopped
+        say(20, f"llenando {pre['fill']}")
+        print(crosstfload.fill(pre["fill"], project, role), flush=True)
+    pre["skip"] += configure.run(pre, say)      # its configurator first; silenced MCRs off
+    say(25, "activando " + ", ".join(t for t in stage.titles(pre["stage"]) if t not in pre["skip"]))
+    on = stage.apply(pre["cfx"], [pre["stage"]], pre["skip"])
+    if pre["stage"] == "crosstf":               # D1 on MT4: its own task, created by the fill
+        stage.just(pre["cfx"], [t for t, a in on if a]
+                   + crosstfload.separate_titles(pre["cfx"]))
     say(30, f"arrancando el {role}")
+    top, port = preflight.WORKERS[role]["path"], preflight.WORKERS[role]["port"]
+    workerguard.refuse_if_up(role, top, port)      # `start` answers 0 on «already running»
     try:
         worker.start(role)          # inside: a start that fails half-way is stopped too
+        workerguard.mark(role, project)
         ready(project, role)
         offsets = sqxlog.mark(preflight.WORKERS[role]["path"])
         reply = worker.call(f"-project action=start name={project}", role)
-        if "rror" in reply:
+        if "rror" in reply or "Cannot start" in reply:     # unresolved resources
             sys.exit(f"SQX rechazó `action=start` de {project}: {reply.strip()}")
         say(60, f"{pre['task']} lanzada")
         run = watch(project, role, offsets)
@@ -169,6 +224,9 @@ def advance(project: str, databank: str) -> None:
         # The daemon started it (the preflight refused a worker already up), so it stops it:
         # a worker left up auto-syncs, and a sync deletes what it does not hold (hard rule 1).
         worker.stop(role)
+        left = workerguard.stopped(role, top, port)    # `stop` answers 0 on «STILL RUNNING»
+    if left:
+        sys.exit(f"el {role} no se paró ({left}): páralo antes de leer sus databanks")
     say(100, f"{pre['task']}: {run['events'].get(pre['task'], '?')}; {databank} "
              f"{cut['before']} → {cut['after']}")
 
@@ -179,6 +237,12 @@ def main() -> None:
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
     a = ap.parse_args()
+    # The daemon's cancel sends SIGTERM and waits: raising lets `advance`'s `finally` stop the
+    # worker it started (ui/daemon/jobs.py `_wind_down`). Local, not `launch.run.graceful`:
+    # launch.run imports this module, and importing it back would be a cycle.
+    # The export after the stop is skipped on a cancel: it could outlast the grace period.
+    signal.signal(signal.SIGTERM, lambda _s, _f: (os.environ.update(ALGO_NO_EXPORT="1"), sys.exit(
+        "cancelado desde la ventana: se para el worker antes de salir")))
     advance(a.project, a.databank)
 
 

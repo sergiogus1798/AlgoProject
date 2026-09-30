@@ -46,7 +46,8 @@ def spent_block(frame: pd.DataFrame) -> dict:
     try:
         gate.allow_read(frame)
         blind = {"done": {str(k): v for k, v in done.items()}, "open": True,
-                 "text": "17, 18 y 19 hechos: el paso 20 puede leerlos"}
+                 "text": ("17, 18 y 19 hechos: el paso 20 puede leerlos" if all(done.values())
+                          else "abierta: la puerta ciega sólo se cierra a un agente autónomo")}
     except PermissionError as refusal:
         blind = {"done": {str(k): v for k, v in done.items()}, "open": False,
                  "text": str(refusal)}

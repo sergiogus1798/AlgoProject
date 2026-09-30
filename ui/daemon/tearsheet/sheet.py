@@ -1,16 +1,18 @@
 """The Ficha of one strategy as a contract result: tabs «IS» and «OOS», each computed on its own."""
 
-import math
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 
 from core.study import blocks, result
-from ui.daemon.tearsheet import drawdowns, facts, months, tradestats
+from ui.daemon.strategy import costcurve
+from ui.daemon.tearsheet import drawdowns, months, pnl, tradestats
 
 MODULE = "ui.daemon.tearsheet"
-MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
-SAMPLE = {"IS": "IS (build)", "OOS": "OOS (retest)", "OOS2": "OOS2 (reservado)"}
+SAMPLE = {"IS": "IS (build)", "OOS": "OOS (retest)", "OOS2": "OOS2"}
+INK = {"IS": "IS", "OOS": "OOS", "OOS2": "OOS"}       # `blocks.states.CURVE`'s tone per sample
+UNITS = ("%", "$")                                   # the drawdown's two readings, % first
 
 
 def _days(index: pd.Index) -> list[str]:
@@ -18,112 +20,99 @@ def _days(index: pd.Index) -> list[str]:
     return [f"{d:%Y-%m-%d}" for d in index]
 
 
-def _line(title: str, unit: str, x: list[str], label: str, values: pd.Series, note: str) -> dict:
-    """A one-series lines block, values rounded to the cent."""
-    return {"kind": "lines", "title": title, "unit": unit, "x": x, "note": note,
-            "series": [{"label": label, "values": values.round(2).tolist(), "role": "real"}]}
+def _pnl(sample: str, equity: pd.Series, trades: pd.DataFrame, repriced: pd.DataFrame | None,
+         top: float) -> dict:
+    """«P&L acumulado»: SQX's curve and the real one, dashed without their best `top` %."""
+    got = pnl.curves(equity, trades, repriced, top)
+    ink = INK[sample]
+    names = {"sqx": ("SQX", "sqx"), "real": ("spread y slippage reales", "real"),
+             "sqx_top": (f"SQX sin el top {top:g} %", "sqx"),
+             "real_top": (f"spread y slippage reales sin el top {top:g} %", "real")}
+    series = [{"label": f"{names[k][0]} · {sample}", "values": v.round(2).tolist(), "role": "real",
+               "ink": f"{names[k][1]}.{ink}", "dash": k.endswith("_top")} for k, v in got.items()]
+    note = ("Curva diaria de equity.parquet: P&L cerrado acumulado desde 0 al inicio de esta "
+            "muestra. " + ("La de spread y slippage reales es la misma corregida, el día que "
+                           "cierra cada operación, por lo que cambian los costes de Darwinex "
+                           "(estudio spread). " if "real" in got else
+                           "Sin informe del estudio spread: sólo la de SQX. ")
+            + (f"Discontinuas: cada curva sin su {top:g} % de operaciones mejores (al menos "
+               "una), ordenadas por su propio P&L." if top else ""))
+    return {"kind": "lines", "title": "P&L acumulado", "unit": "$",
+            "x": _days(got["sqx"].index), "series": series, "note": note}
 
 
-def _levels(values: list[list[float | None]]) -> list[float]:
-    """Symmetric round cuts around 0 for the monthly map, 0 always a cut."""
-    mags = sorted(abs(v) for row in values for v in row if v is not None)
-    top = mags[int(0.95 * (len(mags) - 1))] if mags else 0.0
-    if top == 0:
-        return [0.0]
-    base = 10 ** math.floor(math.log10(top))
-    top = next(m * base for m in (1, 2, 5, 10) if m * base >= top)
-    return [-top, -top / 2, -top / 4, 0.0, top / 4, top / 2, top]
+def _drawdown(sample: str, equity: pd.Series, trades: pd.DataFrame, unit: str) -> dict:
+    """«Drawdown»: the distance of SQX's daily curve below its running peak, in % or in $."""
+    capital = tradestats.capital(trades)
+    money, pct = drawdowns.underwater(equity, capital)
+    shown, unit = (pct, "%") if unit == "%" and pct is not None else (money, "$")
+    worst = shown.idxmin()
+    how = (f"en % del saldo en el pico: capital inicial {capital:.0f} (saldo antes de la primera "
+           "operación) más el P&L del pico" if unit == "%" else "en dinero")
+    return {"kind": "lines", "title": "Drawdown", "unit": unit, "x": _days(equity.index),
+            "series": [{"label": f"drawdown · {sample}", "values": shown.round(2).tolist(),
+                        "role": "real", "ink": f"sqx.{INK[sample]}"}],
+            "note": f"Distancia de cada día al máximo anterior de la curva diaria de SQX, {how}. "
+                    f"Máximo: {shown.min():.2f} {unit} el {worst:%Y-%m-%d}."}
 
 
-def _episodes(equity: pd.Series) -> dict:
-    """The five deepest drawdown episodes as a table."""
-    e = drawdowns.episodes(equity)
-    frame = pd.DataFrame({
-        "profundidad": e["depth"].round(2),
-        "pico": e["peak"].dt.strftime("%Y-%m-%d"), "valle": e["trough"].dt.strftime("%Y-%m-%d"),
-        "recuperado": e["recovery"].dt.strftime("%Y-%m-%d").fillna("sin recuperar"),
-        "días": e["length"], "días valle→rec.": e["recovery_days"]})
-    return blocks.table("Los 5 episodios de drawdown más profundos", frame,
-                        "Un episodio va del día del pico al primer día en que la curva vuelve "
-                        "a él. Profundidad en dinero, pico → valle; «días», naturales, de pico "
-                        "a recuperación (o al último día si no se recuperó); «días valle→rec.», "
-                        "de valle a recuperación.", digits=12)
+def _years(sample: str, equity: pd.Series) -> dict:
+    """«P&L por año»: one column per calendar year of SQX's daily curve."""
+    years = months.yearly(months.monthly(equity))
+    return {"kind": "bars", "title": "P&L por año", "unit": "$", "reference": None,
+            "vertical": True,
+            "items": [{"label": str(y), "value": float(v), "error": None, "state": "info",
+                       "ink": f"sqx.{INK[sample]}"} for y, v in years.items()],
+            "note": "Suma de los meses de cada año natural de la curva diaria de SQX, en "
+                    "dinero; el primero y el último pueden ser años parciales."}
 
 
-def _calendar(monthly: pd.Series) -> list[dict]:
-    """The monthly heat map and the yearly bars."""
-    rows, values = months.heat(monthly)
-    total = float(monthly.sum())
-    grid = {"kind": "grid", "title": "P&L por mes", "rows": rows, "cols": MONTHS,
-            "values": values, "scale": "diverging", "levels": _levels(values),
-            "labels": [["" if v is None else f"{v:.0f}" for v in r] for r in values],
-            "note": f"P&L de cada mes natural (cierre del último día del mes menos el del mes "
-                    f"anterior), en dinero; en blanco, meses fuera de la muestra. Las "
-                    f"{len(monthly)} celdas suman {total:.2f}, el P&L final de la curva diaria."}
-    years = months.yearly(monthly)
-    bars = {"kind": "bars", "title": "P&L por año", "unit": "$", "reference": None,
-            "items": [{"label": str(y), "value": float(v), "error": None, "state": "info"}
-                      for y, v in years.items()],
-            "note": "Suma de los meses de cada año natural, en dinero; el primero y el último "
-                    "pueden ser años parciales."}
-    return [grid, bars]
-
-
-def tab(sample: str, equity: pd.Series, trades: pd.DataFrame, sharpe: float | None,
-        day: str) -> dict:
+def tab(sample: str, equity: pd.Series, trades: pd.DataFrame, repriced: pd.DataFrame | None,
+        day: str, top: float, dd: str) -> dict:
     """One sample's tab.
 
     Args:
         sample: "IS", "OOS" or, once the door opened, "OOS2".
         equity: Its cumulative P&L per day, indexed by day, starting at 0.
         trades: Its trades, ascending in close time.
-        sharpe: SQX's Sharpe of this sample.
+        repriced: Its rows of the `spread` report, None without one.
         day: The cosecha's day, for the note.
+        top: Percent of the best trades the P&L also draws without; 0 for none.
+        dd: The drawdown's unit, "%" or "$".
 
     Returns:
         A contract tab; every figure in it counts this sample only.
     """
     x = _days(equity.index)
-    capital = tradestats.capital(trades)
-    money, pct = drawdowns.underwater(equity, capital)
-    monthly = months.monthly(equity)
-    out = [_line("P&L acumulado", "$", x, sample, equity,
-                 "Curva diaria de equity.parquet: P&L cerrado acumulado desde 0 al inicio de "
-                 "esta muestra."),
-           _line("Bajo el agua, en dinero", "$", x, sample, money,
-                 "Distancia de cada día al máximo anterior de la curva, en dinero (0 = en máximo).")]
-    if pct is not None:
-        out.append(_line("Bajo el agua, en % del pico de la cuenta", "%", x, sample, pct,
-                         f"La misma distancia en % del saldo en el pico: capital inicial "
-                         f"{capital:.0f} (saldo antes de la primera operación) más el P&L del pico."))
-    out += [_episodes(equity), *_calendar(monthly),
-            facts.headline(equity, trades["Profit/Loss"], monthly, sharpe, sample),
-            facts.windows(monthly)]
-    if len(trades):
-        out.append(facts.concentration(trades["Profit/Loss"]))
+    out = [_pnl(sample, equity, trades, repriced, top), _drawdown(sample, equity, trades, dd),
+           _years(sample, equity)]
     note = (f"{SAMPLE[sample]}: {x[0]} → {x[-1]}, {len(x)} días con curva y {len(trades)} "
             f"operaciones, cosecha {day}. Cada muestra empieza en 0 y se calcula sola: ninguna "
             "cifra de esta pestaña mezcla IS y OOS.")
     return result.tab(sample, SAMPLE[sample], out, note=note)
 
 
-def build(data: dict) -> dict:
+def build(data: dict, spread: list[Path] = (), top: float = 0.0, dd: str = "%") -> dict:
     """The whole Ficha of one strategy.
 
     Args:
         data: What `harvest.read` returned.
+        spread: Its `spread` report folders, newest first; none draws SQX's curve alone.
+        top: Percent of the best trades the P&L also draws without; 0 for none.
+        dd: The drawdown's unit, "%" or "$".
 
     Returns:
         A contract result (validated) with a tab per sample present and `harvest_day`.
     """
+    found = costcurve.repriced(spread, data["strategy"], data["identity"]) if spread else None
     tabs = []
     for s in SAMPLE:
         e = data["equity"][data["equity"]["sample"] == s]
         if e.empty:
             continue
-        sharpe = data["metrics"].get(f"Sharpe Ratio [{s}]")
+        rows = None if found is None else found[0][found[0]["sample"] == s]
         tabs.append(tab(s, e.set_index("day")["equity"].astype(float),
-                        data["trades"][data["trades"]["sample"] == s], sharpe, data["day"]))
+                        data["trades"][data["trades"]["sample"] == s], rows, data["day"], top, dd))
     return blocks.validate({
         "module": MODULE, "strategy": data["strategy"], "identity": data["identity"],
         "computed_at": datetime.now().isoformat("T", "seconds"), "verdict": None,

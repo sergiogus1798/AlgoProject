@@ -48,16 +48,18 @@ def bounds_of(spec: dict) -> str:
 
 class Field(QWidget):
     """The editor of one value. `written(str)` carries the line for the zone's status bar,
-    `refused(str)` the daemon's reason when it said no."""
+    `refused(str)` the daemon's reason when it said no, `stale` a write other rows depend on."""
 
     written = Signal(str)
     refused = Signal(str)
+    stale = Signal()   # the write changed what other editors show: the zone re-reads
 
     def __init__(self, file: str, spec: dict) -> None:
         """Build the editor the spec asks for.
 
         Args:
-            file: The shared file the value lives in ("build", "classes", "policy", …).
+            file: The file the value lives in: a shared one ("build", "classes", "policy") or
+                a study file of WFC and CSCV ("sppdesign", "thresholds", …).
             spec: The field as `/api/sqxconfig` sends it.
         """
         super().__init__()
@@ -153,5 +155,8 @@ class Field(QWidget):
             self.build()
             return
         self.value = done["value"]
-        self.written.emit(f"escrito en assets · {where} = {shown(self.value)}")
+        self.written.emit(f"escrito en {done.get('where', 'assets')} · {where} = "
+                          f"{shown(self.value)}{done.get('note', '')}")
         self.build()
+        if done.get("reload"):
+            self.stale.emit()

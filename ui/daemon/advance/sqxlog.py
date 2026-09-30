@@ -1,5 +1,6 @@
 """SQX's own log from the moment of a launch on, across midnight: only the lines written since."""
 
+import re
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -52,5 +53,27 @@ def grow(top: Path, offsets: dict[Path, int], kept: list[str]) -> list[str]:
         kept.extend(line for line in whole.decode("utf-8", errors="replace").splitlines()
                     if progress.STARTING.search(line) or progress.PROGRESS.search(line)
                     or progress.PERCENT.search(line))
-    del kept[:-KEEP]
+    kept[:] = progress.trim(kept, KEEP)       # the start line stays, whatever the volume
     return kept
+
+
+def matching(top: Path, offsets: dict[Path, int], rx: re.Pattern[str]) -> list[str]:
+    """Every line the logs gained since `offsets` that `rx` finds, read line by line.
+
+    Args:
+        top: The install.
+        offsets: What `mark` returned before the start, NOT the copy `grow` advances.
+        rx: The pattern.
+
+    Returns:
+        The matching lines. A WFM day is millions of lines: nothing but these is kept.
+    """
+    found = []
+    for f in (path(top, d) for d in days()):
+        if not f.exists():
+            continue
+        with f.open("rb") as fh:
+            fh.seek(offsets.get(f, 0))
+            found += [line for raw in fh
+                      if rx.search(line := raw.decode("utf-8", errors="replace"))]
+    return found

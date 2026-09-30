@@ -1,4 +1,4 @@
-"""«Lote»: one mother's variant batch in parallel coordinates, coloured by NetProfit build or oos1."""
+"""«Lote»: one mother's variant batch in parallel coordinates, coloured by NetProfit build, oos1 or oos2."""
 
 import httpx
 from PySide6.QtCore import Qt
@@ -10,11 +10,13 @@ from ui.desktop.batchview.parallel import Parallel
 from ui.desktop.blocks.chart import key
 from ui.desktop.blocks.states import REAL
 
-METRICS = ("NetProfit (oos1)", "NetProfit (build)")
+METRICS = ("NetProfit (oos1)", "NetProfit (build)", "NetProfit (oos2)")
 TIP = {"NetProfit (oos1)": "Beneficio neto de cada variante en el tramo oos1, el primer tramo "
                            "fuera de muestra del retest del lote.",
        "NetProfit (build)": "Beneficio neto de cada variante en el tramo build, el mismo "
-                            "periodo en que se construyó la madre."}
+                            "periodo en que se construyó la madre.",
+       "NetProfit (oos2)": "Beneficio neto de cada variante en el tramo oos2, el segundo tramo "
+                           "fuera de muestra, cuando el lote se retesteó sobre él."}
 
 
 def has_batch(project: str, strategy: str) -> bool:
@@ -96,6 +98,15 @@ class BatchTab(QFrame):
         """
         self.batch = None if "error" in data else data
         self.note.setText(data.get("error") or data["note"])
+        if self.batch is not None:                  # oos2 only when the batch carries it
+            chosen = self.colour_by.currentText()
+            self.colour_by.blockSignals(True)
+            self.colour_by.clear()
+            for m in (m for m in METRICS if m in self.batch["outcomes"]):
+                self.colour_by.addItem(m)
+                self.colour_by.setItemData(self.colour_by.count() - 1, TIP[m], Qt.ToolTipRole)
+            self.colour_by.setCurrentText(chosen if chosen in self.batch["outcomes"] else METRICS[0])
+            self.colour_by.blockSignals(False)
         for w in (self.pick, self.colour_by, self.chart, self.keys):
             w.setVisible(self.batch is not None)
         if self.batch is not None:

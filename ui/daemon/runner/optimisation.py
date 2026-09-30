@@ -7,8 +7,11 @@ from ui.daemon.runner import where
 def cloud(c: dict, strategy: str) -> list[str] | str:
     """The parameter cloud of one mother's variant batch."""
     work = where.batch(c["project"], strategy, ("metrics.parquet", "equity.parquet"))
+    # The project's own asset: config.yaml names the donor (XAUUSD), which the window showed as
+    # what ran on a USDJPY project (owner, 2026-09-28, «chau USD»).
     return work if isinstance(work, str) else [
-        "-m", "studies.optimisation.cloud.report", "--work", str(work)]
+        "-m", "studies.optimisation.cloud.report", "--work", str(work),
+        "--set", f"run.symbol={c['asset']}"]
 
 
 def signed(c: dict, strategy: str, module: str, needs: tuple[str, ...]) -> list[str] | str:

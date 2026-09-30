@@ -9,13 +9,13 @@ import sys
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QLibraryInfo, QTimer, QTranslator
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from core.paths import ROOT, UI_PORT
 from ui.daemon import version
-from ui.desktop import client
+from ui.desktop import client, helpmark
 from ui.desktop.shell import Shell
 from ui.desktop.theme import QSS
 
@@ -100,6 +100,14 @@ def shoot(window: Shell, folder: Path, zone: str) -> None:
     QApplication.quit()
 
 
+def spanish(app: QApplication) -> None:
+    """Qt's own words in Spanish: the standard buttons said «&Yes», «&No», «OK» and «Cancel»
+    under Spanish questions (📓 2026-09-29), for want of the translation PySide6 ships."""
+    translator = QTranslator(app)
+    if translator.load("qtbase_es", QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)):
+        app.installTranslator(translator)
+
+
 def main() -> None:
     """Open the window and run until it is closed."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -113,12 +121,14 @@ def main() -> None:
     args = ap.parse_args()
 
     app = QApplication(sys.argv)
+    spanish(app)
     owned = ensure_daemon(args.port)
     client.aim(args.port)
     app.setApplicationName("AlgoProject")
     # The same icon the menu entry uses, so the taskbar and alt-tab show it too.
     app.setWindowIcon(QIcon(str(Path(__file__).with_name("icon-256.png"))))
     app.setStyleSheet(QSS)
+    helpmark.install(app)     # the «?» beside every button
     window = Shell()
     window.open_zone(args.zone)
     window.show()

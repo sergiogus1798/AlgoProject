@@ -3,9 +3,9 @@
 
 Dev-only. Opens the real `Shell`, visits each zone of `nav.ZONES`, waits for its reads, then
 drives what can be driven without writing anything: every combo box through its items, every
-tab bar through its tabs, the first rows of every table. Proyecto is opened on a project that
-has a databank, Estrategia on a strategy double-clicked in its panel, and Portfolios' «Importar»
-on the first archived strategy. Nothing reaches SQX and nothing is written: every POST is
+tab bar through its tabs, the first rows of every table. Proyecto (and so Databanks) is opened on
+a project that has a databank, Estrategia on a strategy double-clicked in Databanks' panel, and
+Portfolios' «Importar» on the first archived strategy. Nothing reaches SQX and nothing is written: every POST is
 refused here except the pure reads (`POST /api/load` is turned into its GET), and every modal
 dialog answers «No». Exits 1 when anything raised.
 
@@ -30,7 +30,7 @@ from ui.desktop import client  # noqa: E402
 
 # POSTs that only read: the aggregate curve of chosen rows, a config's hash, the chat's next
 # question. Every other POST writes something (a YAML, a ledger row, a job, a load).
-READS = ("databank/equity", "config/hash", "interview/step")
+READS = ("databank/equity", "config/hash", "interview/step", "filters/preview")
 ITEMS, TABS, WAIT_S = 6, 12, 25     # per combo, per tab bar; seconds a zone may take to read
 ERRORS: list[tuple[str, str]] = []
 HERE = {"zone": "arranque"}
@@ -122,9 +122,9 @@ def walk(shell: object, app: QApplication, name: str, project: str) -> str:
         row = next((r for r in range(table.rowCount())
                     if table.rows[table.item(r, 0).data(256)]["identity"]), None)
         if row is not None:
-            table.double(row, 0)        # the panel's double click: Proyecto → Estrategia
+            table.double(row, 0)        # the panel's double click: Databanks → Estrategia
         else:
-            ERRORS.append((name, "uiwalk: el panel de Proyecto no tiene ninguna fila con "
+            ERRORS.append((name, "uiwalk: el panel de Databanks no tiene ninguna fila con "
                                  "identidad; Estrategia no se ha podido abrir"))
         settle(app, WAIT_S)
     elif name == "Portfolios":
@@ -163,9 +163,11 @@ def main() -> None:
     trap()
     from ui.desktop.nav import ZONES
     from ui.desktop.shell import Shell
+    from ui.desktop import helpmark
     from ui.desktop.theme import QSS
     app = QApplication(sys.argv)
     app.setStyleSheet(QSS)
+    helpmark.install(app)     # the «?» beside every button
     shell = Shell()
     shell.resize(1600, 1000)
     shell.show()

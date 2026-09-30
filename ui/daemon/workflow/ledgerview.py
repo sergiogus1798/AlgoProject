@@ -75,10 +75,11 @@ def oos2(rows: pd.DataFrame, asset: str | None) -> dict:
     total, studies = asset_reads(asset)
     text = (f"OOS2 de {asset}: {looks} mirada(s) de este proyecto"
             + (f" ({', '.join(f'paso {k}: {v}' for k, v in by_step.items())})" if looks else "")
-            + f"; {total} en {studies} estudio(s) de {asset}. Reservado para los pasos "
-            + ", ".join(num(s) for s in allowed_steps)
-            + ". La política no fija un número de miradas: cada una lo gasta"
-            + (f". ⚠ lo leyeron pasos fuera de la reserva: {', '.join(stray)}" if stray else ""))
+            + f"; {total} en {studies} estudio(s) de {asset}"
+            + (f". Reservado para los pasos {', '.join(num(s) for s in allowed_steps)}"
+               f" (sólo para un agente autónomo)" if gate.enforced() else "")
+            + (f". ⚠ lo leyeron pasos fuera de la reserva: {', '.join(stray)}"
+               if stray and gate.enforced() else ""))
     return {"looks": looks, "allowed": None, "virgin": looks == 0, "text": text,
             "reserved_for": [num(s) for s in allowed_steps], "by_step": by_step}
 
@@ -110,6 +111,10 @@ def blind(rows: pd.DataFrame) -> dict:
         blindJoint reads; new callers ask `door(project)`.
     """
     done = [num(s) for s, ran in gate.done(rows).items() if ran]
+    if not gate.enforced():
+        return {"sealed": False, "done": done,
+                "text": "abierto: 17, 18 y 19 se leen cuando quieras (la puerta ciega sólo "
+                        "se cierra a un agente autónomo)"}
     try:
         gate.allow_read(rows)
     except PermissionError as refused:
@@ -129,10 +134,12 @@ def door(project: str) -> dict:
         and `text` (the gate's own sentence when sealed, naming the study).
     """
     study = door_study(project)
-    if study is None:
+    if study is None and gate.enforced():
         return {"sealed": True, "done": [], "study": None,
                 "text": "sin plantilla en projects/registry.csv no hay estudio del ledger que "
                         "abra el paso 20: queda cerrado"}
+    if not gate.enforced():
+        return blind(pd.DataFrame(columns=["step"])) | {"study": study}
     got = blind(studymod.read(study))
     return got | {"study": study, "text": (f"{got['text']} (en el estudio {study})"
                                           if got["sealed"] else

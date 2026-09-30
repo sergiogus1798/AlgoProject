@@ -5,7 +5,9 @@ from pydantic import BaseModel
 
 from core.paths import DATA
 from ui.daemon import runs as launch
-from ui.daemon.results import catalogue, knobs, matrix, runs
+from ui.daemon.loader import find
+from ui.daemon.results import catalogue, forproject, knobs, matrix, runs
+from ui.daemon.runner.table import SAMPLED
 from ui.daemon.strategy import archived
 
 ROUTER = APIRouter()
@@ -67,7 +69,14 @@ def result(project: str, databank: str, study: str, strategy: str = "", identity
         return refused
     if source == "archive":
         return archived.result(identity, databank, study, strategy, version)
-    return runs.result(project, databank, study, strategy, identity, day)
+    got = runs.result(project, databank, study, strategy, identity, day)
+    # Any study, not only the sampled readings: the IS/OOS gate's decay and isOos file their
+    # run under the retest too (📓 2026-09-30, «Decaimiento» empty opened from Results).
+    other = (find.oos_partner(project, databank)
+             if got["result"] is None and identity else None)
+    # A reading of OOS1 run from a build databank lives on its retest (`runner.table`): shown
+    # here only under the same identity, which `runs.result` checks.
+    return runs.result(project, other, study, strategy, identity, day) if other else got
 
 
 @ROUTER.get("/api/history")
@@ -95,16 +104,24 @@ def history(project: str, databank: str, study: str, strategy: str = "",
 
 
 @ROUTER.get("/api/config")
-def config(study: str) -> dict[str, object]:
+def config(study: str, project: str = "") -> dict[str, object]:
     """A study's knobs with their tooltips, and the hash they sign.
 
     Args:
         study: Study key.
+        project: When given, the knobs the runner fills from the project (its feed, symbol,
+            timeframe) show the project's value, with a `note`; a knob it leaves at the
+            file's value although the project differs carries a `warn` (`forproject`).
 
     Returns:
-        As `knobs.sections`.
+        As `knobs.sections`; the hash is the file's, not the project's.
     """
-    return _unknown(study) or knobs.sections(study)
+    refused = _unknown(study)
+    if refused:
+        return refused
+    got = knobs.sections(study)
+    return got | {"sections": forproject.apply(study, got["sections"], project)} if project \
+        else got
 
 
 @ROUTER.post("/api/config/hash")

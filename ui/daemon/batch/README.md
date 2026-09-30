@@ -14,8 +14,10 @@ optimisation runner would pick (`runner/where.batch`), nothing else.
 
 ## Contracts and traps
 
-- **The one-way door.** The batch file holds `oos2`, `ALL` and `oos1+oos2` columns (`ALL`
-  includes oos2). `panel.columns` drops every column whose name contains `oos2` or `ALL` from the
+- **oos2 for a human, sealed for an autonomous agent.** A human gets `NetProfit (oos2)` as a
+  third outcome when the batch has it, and «Lote» offers it. The one-way door holds only under `ALGO_AUTONOMOUS=1` (`core.assetdata.enforced`):
+  the batch file holds `oos2`, `ALL` and `oos1+oos2` columns (`ALL`
+  includes oos2), and `panel.columns` drops every column whose name contains `oos2` or `ALL` from the
   pyarrow column list, so those values are never read into memory; `api.get_batch` then walks the
   whole answer and, should any key or text still name one (a project or parameter so named),
   refuses the answer entire rather than trimming it. `tests/test_ui_batch.py` asserts it on a real

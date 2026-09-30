@@ -16,14 +16,15 @@ FUNNEL = [("cuándo", "ts"), ("paso", "step"), ("tramo", "segment"), ("entran", 
 SEARCHES = [("cuándo", "ts"), ("paso", "step"), ("tramo", "segment"), ("criterio", "criterion"),
             ("entran", "n_in"), ("salen", "n_out"), ("hash", "config_hash"),
             ("lanzado por", "launched_by"), ("nota", "note")]
-SEGMENTS = ["tramo", "ventana", "lecturas", "pasos que lo leyeron", "reservado para"]
+SEGMENTS = ["tramo", "ventana", "lecturas", "pasos que lo leyeron",
+            "reservado (sólo agente autónomo)"]
 EXPLAIN = ("Una línea por búsqueda que miró datos y redujo una población, en todo el estudio "
            "(activo + timeframe + familia). Sólo lectura: el ledger no se edita. Tres "
            "supervivientes de 10.000 no valen lo que tres de 50.")
 WHY = ("Por qué importa: cada mirada a los datos es una prueba más, y cuantas más pruebas, más "
        "fácil es que el mejor resultado sea suerte. Este registro las cuenta todas — las de los "
        "estudios, las del SQX y los filtros que aplicas en la ventana («lanzado por: ventana») — "
-       "para que el Sharpe desinflado y la puerta ciega del paso 20 sepan cuánto se ha buscado.")
+       "para que el Sharpe desinflado sepa cuánto se ha buscado.")
 WINDOW = "ventana"          # `launched_by` of the rows the window's filters write (plan 24, F6)
 
 
@@ -144,7 +145,7 @@ class Ledger(QFrame):
         blind = spent["blind"]
         steps = " · ".join(f"{s} {'hecho' if ran else 'pendiente'}" for s, ran in blind["done"].items())
         colour = C["promising"] if blind["open"] else C["weak"]
-        self.blind.setText(f"PUERTA CIEGA DEL PASO 20 · {steps}\n{blind['text']}")
+        self.blind.setText(f"PASOS 17, 18 Y 19 · {steps}\n{blind['text']}")
         self.blind.setStyleSheet(f"color: {colour}; font-weight: 600;")
         pooled = spent["trials"]
         self.trials.setText(pooled["error"] if "error" in pooled else
@@ -229,6 +230,6 @@ class Ledger(QFrame):
             if virgin[n]["reserved_for"]:
                 colour = C["promising"] if virgin[n]["reads"] == 0 else C["weak"]
                 t.item(r, 2).setForeground(QColor(colour))
-                t.item(r, 2).setToolTip("Tramo reservado: cada lectura lo gasta. Cero es "
-                                        "el único valor que lo deja virgen.")
+                t.item(r, 2).setToolTip("Cuántas veces se ha leído el tramo. Informativo: "
+                                        "sólo un agente autónomo tiene prohibido mirarlo.")
         return t

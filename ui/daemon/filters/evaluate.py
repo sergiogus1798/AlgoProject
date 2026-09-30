@@ -10,7 +10,8 @@ from ui.daemon.results.catalogue import STUDIES
 from ui.daemon.workflow.steps import STEPS
 from ui.text.glossary import label
 
-# Studies whose figures read OOS2 whatever the asset (encargo 22 §7.1: never a filter on OOS2):
+# Studies whose figures read OOS2 whatever the asset (encargo 22 §7.1: never a filter on OOS2 --
+# lifted for humans by the owner on 2026-09-28; it holds only under `ledger.gate.enforced()`):
 # the WFM's window ends in it, step 20 is its SPA, the CSCV cuts build+oos1+oos2 (Q11), market
 # surfaces and the ATR stop may read it, exposure is judged over the whole history. `refused`
 # adds every study of a step the asset's `_policy.yaml` reserves oos2 for; the WFC's
@@ -56,7 +57,10 @@ def named(key: str) -> str:
 
 def refused(symbol: str | None) -> set[str]:
     """The study keys never offered: OOS2_STUDIES, plus the studies of every step that
-    `assets/_policy.yaml` reserves this asset's oos2 for (`ledger.gate.reserved`)."""
+    `assets/_policy.yaml` reserves this asset's oos2 for (`ledger.gate.reserved`). Empty for a
+    human (owner, 2026-09-28): only an autonomous agent under `gate.enforced()` is kept off OOS2."""
+    if not gate.enforced():
+        return set()
     steps = set(gate.reserved(symbol).get("oos2", [])) if symbol else set()
     return OOS2_STUDIES | {k for s in STEPS if float(s["n"]) in steps for k in s["studies"]}
 

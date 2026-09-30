@@ -6,6 +6,7 @@ from ui.daemon.databank.batches import STUDIES as BATCH_STUDIES
 from ui.daemon.databank.batches import batches
 from ui.daemon.databank.cells import norm
 from ui.daemon.results import knobs, store
+from ui.daemon.results.slice import slice_for, verdict_row, whole
 
 
 def _path(project: str, databank: str, study: str, day: str, strategy: str) -> Path:
@@ -124,7 +125,21 @@ def result(project: str, databank: str, study: str, strategy: str, identity: str
     for d in [day] if day else store.days(project, databank, study):
         path = _path(project, databank, study, d, strategy)
         got, why = store.load(path)
-        why = why or _mismatch(got, path.parent.parent if strategy else path.parent, identity)
+        if strategy and not path.is_file():      # a population study: its rows for this one
+            path = _path(project, databank, study, d, "")
+            population, why = store.load(path)
+            row = (store.verdicts(path.parent) or {}).get(strategy)
+            mine = population and (slice_for(population, strategy)
+                                   or (row and verdict_row(population, row, strategy)))
+            # Its rows are checked against the verdict.csv identity by `_mismatch`; the whole
+            # population is nobody's, so it carries the identity asked for.
+            alone = not (path.parent / "estrategias").is_dir()   # it writes no ficha at all
+            got = ({**mine, "identity": None} if mine else
+                   {**whole(population, strategy), "identity": identity or None}
+                   if population and alone else None)
+            why = why or (None if got else "la corrida de la población no nombra esta estrategia")
+        why = why or _mismatch(got, path.parent.parent if strategy and path.parent.name ==
+                               "estrategias" else path.parent, identity)
         if why:
             skipped.append({"day": d, "reason": why})
             continue

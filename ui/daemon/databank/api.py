@@ -1,11 +1,11 @@
-"""The databank panel's routes: tabs, table, aggregate equity, funnel and reload."""
+"""The databank panel's routes: tabs, table, columns, aggregate equity, funnel and reload."""
 
 from collections.abc import Callable
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-from ui.daemon.databank import equity, funnel, layout, table
+from ui.daemon.databank import columns, equity, funnel, layout, segments, table
 from ui.daemon.loader import api as loader
 from ui.daemon.loader import find
 
@@ -37,6 +37,35 @@ def get_panels(project: str) -> dict:
 def get_table(project: str, databank: str) -> dict:
     """One databank: a row per strategy, its metrics and every study's columns."""
     return shown("la tabla", table.table, project, databank)
+
+
+@ROUTER.get("/api/databank/segments")
+def get_segments(project: str, databank: str) -> dict:
+    """The IS+OOS1 figures the column chooser can add, computed from the cosecha's trades."""
+    return shown("la unión IS+OOS1", segments.segments, project, databank)
+
+
+class View(BaseModel):
+    """One table's choice against its default ({hidden, added, order}); None restores it."""
+
+    project: str
+    databank: str
+    table: str
+    view: dict | None = None
+
+
+@ROUTER.get("/api/databank/columns")
+def get_columns(project: str, databank: str) -> dict:
+    """Every table's saved column choice of one databank, `views` {table: ids}."""
+    return shown("las columnas", lambda p, d: {"views": columns.views(p, d)}, project, databank)
+
+
+@ROUTER.post("/api/databank/columns")
+def post_columns(req: View) -> dict:
+    """Keep (or, with `view` None, forget) one table's choice under AlgoData/filters/."""
+    return shown("las columnas",
+                 lambda p, d: {"views": columns.save(p, d, req.table, req.view)},
+                 req.project, req.databank)
 
 
 class Visible(BaseModel):

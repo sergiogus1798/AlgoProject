@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit,
-                               QPushButton, QVBoxLayout)
+                               QMessageBox, QPushButton, QVBoxLayout)
 
 POLICY_ES = {"neutral": "Sin etiquetar → entra a peso 1",
              "off": "Sin etiquetar → fuera (la paleta ES su lista)"}
@@ -36,7 +36,7 @@ class PaletteBar(QFrame):
         self.clone.clicked.connect(self.ask_clone)
         row.addWidget(self.clone)
         self.delete = QPushButton("Borrar")
-        self.delete.clicked.connect(lambda: self.removed.emit())
+        self.delete.clicked.connect(self.ask_delete)
         row.addWidget(self.delete)
         self.policy = QComboBox()
         self.policy.setMinimumWidth(250)
@@ -97,3 +97,11 @@ class PaletteBar(QFrame):
             return
         slug = "".join(c if c.isalnum() else "_" for c in label.strip().lower())
         self.cloned.emit(slug.strip("_"), label.strip(), self.picker.currentData())
+
+    def ask_delete(self) -> None:
+        """Say `removed` once the owner confirms: it deleted on the click (📓 2026-09-29), and
+        a palette is an edited list of weights whose only undo was git."""
+        name = self.picker.currentText()
+        if QMessageBox.question(self, "Borrar paleta", f"¿Borrar la paleta «{name}»? Su fichero "
+                                "se elimina de sqx/blocks/palettes/.") == QMessageBox.Yes:
+            self.removed.emit()

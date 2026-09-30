@@ -18,7 +18,7 @@ tools.report ─▶ screen.screen(result, memory) ─▶ POST /api/study/screen 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `states.py` | Every colour a block is painted in: the contract states, the series and the heat scales | imported | state → hex, label |
+| `states.py` | Every colour a block is painted in: the contract states, the series, the heat scales and `CURVE`, a strategy's IS/OOS tones (SQX violet, real orange → red) that a series or column names as `ink` | imported | state → hex, label |
 | `kinds.py` | `WIDGETS = {kind: widget}` and `draw(block)`, which turns an unknown or broken block into a red line | imported | block → QWidget |
 | `result.py` | `ResultView`: `show(result, meta)` and `compare(left, right, titles)` — verdict, stale banner, tabs, warnings, glossary | imported | result dict(s) → page |
 | `tabpage.py` | One tab: its note, its selector combos (the market picker on a grouped tab), its blocks in one column or beside their counterparts | imported | tab(s) → page |
@@ -31,13 +31,13 @@ tools.report ─▶ screen.screen(result, memory) ─▶ POST /api/study/screen 
 | `card.py` | The frame of a block: its own title and note above the drawing | imported | block, widgets → QFrame |
 | `chart.py` | The painting ground: `Canvas` (paint + hover tooltip), axes, number format, the key under a chart | imported | — |
 | `axis.py` | Round ticks, data-to-pixel maps, x placement of numbers vs labels, paths broken at gaps | imported | — |
-| `distribution.py` | Histogram, band shaded, median dashed, real value marked, headline figures, percentile row; hands a block with `series` to `density` | imported | block → QWidget |
+| `distribution.py` | Histogram, band shaded, median dashed, real value marked, headline figures, percentile row (numeric order; with `row_unit`, heads «1%»… and each cell in that unit); hands a block with `series` to `density` | imported | block → QWidget |
 | `density.py` | Several samples (IS, OOS) as densities on the same bins, a toggle per sample, n/median per sample and the median shift + KS p beside, the union's percentiles under | imported | block → QWidget |
 | `cone.py` | Percentile bands filled, median dashed, real curve on top, the OOS split | imported | block → QWidget |
 | `grid.py` | Heat map on a discrete scale (`levels`, else eight steps of `scale_range` or of its own range), θ₀ `mark` outlined, every cell labelled when it fits, the scale's key beneath | imported | block → QWidget |
 | `scatter.py` | Points by group, quadrants through zero, fitted line with its r | imported | block → QWidget |
-| `bars.py` | Horizontal bars coloured by state, error whiskers, reference line, value past the whisker | imported | block → QWidget |
-| `lines.py` | Series over one x axis: a lone real series in the real ink, references dashed | imported | block → QWidget |
+| `bars.py` | Horizontal bars coloured by state, error whiskers, reference line, value past the whisker; with `vertical`, columns over their labels, each in its item's `ink` when it names one | imported | block → QWidget |
+| `lines.py` | Series over one x axis: a series naming an `ink` in that tone (dashed with `dash`), a lone real series in the real ink, references dashed | imported | block → QWidget |
 | `table.py` | Sortable table in the study's own order, numbers the window's way, full cell on hover | imported | block → QWidget |
 | `verdict.py` | The label in its state's colour, never without its meaning, and its parts as tiles | imported | block → QWidget |
 

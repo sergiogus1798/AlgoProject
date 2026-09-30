@@ -16,7 +16,6 @@ from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from core.paths import DATA, ROOT  # noqa: E402
 from ui.daemon import jobsapi  # noqa: E402
-from ui.daemon.batch import api as batch  # noqa: E402
 from ui.daemon.results import api as results  # noqa: E402
 from ui.daemon.runner import api as runner  # noqa: E402
 from ui.daemon.tearsheet import api as tearsheet, harvest  # noqa: E402
@@ -25,22 +24,22 @@ from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.studypage.views import StrategyPage  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 
-# Since F13 (2026-09-28): the USDJPY Donchian project's cosecha of 09-27. The hand-measured
-# drawdown episode of the retired fixture (USDJPY_workflow_profiling_v1) has
-# no counterpart here yet: re-measure one by hand before asserting it again.
+# The USDJPY Donchian project's newest cosecha, the one the routes read (2026-09-29: Results cut
+# to 21; the 5.16.75 pinned before went with the other 178). Strategy 13.14.82 is among the 21
+# and has a spread report, so its P&L carries the real curve.
 PROJECT, DATABANK, STRATEGY = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results",
-                               "Strategy 1.15.54")
-IDENTITY = "5681a84aea49d41b023f223c9dd881f878e0a0040475364a15076812f43116a4"
-DAY = "2026-09-27"
-FOLDER = DATA / "harvest" / PROJECT / DATABANK / DAY
-MOTHER = "Strategy 9.27.83"          # the one with a variant batch (strategyPermutations/)
+                               "Strategy 13.14.82")
+IDENTITY = "47da0743d600c27cedda1f78cc30de3ebd4935f6624d8ffbf4e9cc0e0e6140dd"
+FOLDER = max(d for d in (DATA / "harvest" / PROJECT / DATABANK).iterdir()
+             if (d / "metrics.parquet").exists())
+DAY = FOLDER.name
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 
 
 def serve() -> TestClient:
     """The Ficha's router plus what the strategy page reads, in-process; never port 8765."""
     app = FastAPI()
-    for r in (tearsheet.ROUTER, results.ROUTER, runner.ROUTER, jobsapi.ROUTER, batch.ROUTER):
+    for r in (tearsheet.ROUTER, results.ROUTER, runner.ROUTER, jobsapi.ROUTER):
         app.include_router(r)
     http = TestClient(app)
 
@@ -76,23 +75,27 @@ def block(result: dict, sample: str, title: str) -> dict:
 
 
 def test_sheet(http: TestClient) -> None:
-    """IS and OOS apart, months summing to the curve to the cent, episodes as by hand, < 1 s warm."""
+    """IS and OOS apart, years summing to the curve, the real and the top-less curves, < 1 s warm."""
     ask(http, "tearsheet")
     started = time.time()
     got = ask(http, "tearsheet")
     warm = time.time() - started
     assert warm < 1.0, warm
     assert [t["name"] for t in got["tabs"]] == ["IS", "OOS"] and got["harvest_day"] == DAY
+    cut = ask(http, "tearsheet", top="5", dd="$")
     for s in ("IS", "OOS"):
         equity, _ = own(s)
-        grid = block(got, s, "P&L por mes")
-        cells = sum(v for row in grid["values"] for v in row if v is not None)
-        assert round(cells, 2) == round(float(equity["equity"].iloc[-1]), 2), (s, cells)
+        assert [b["title"] for b in next(t for t in got["tabs"] if t["name"] == s)["blocks"]] == [
+            "P&L acumulado", "Drawdown", "P&L por año"], s
+        years = block(got, s, "P&L por año")
+        assert abs(sum(i["value"] for i in years["items"]) - float(equity["equity"].iloc[-1])) < 0.05
         curve = block(got, s, "P&L acumulado")
         assert curve["x"][0] == f"{equity['day'].iloc[0]:%Y-%m-%d}", s   # nothing of the other
-        assert len(curve["x"]) == len(equity), s
-    deepest = block(got, "IS", "Los 5 episodios de drawdown más profundos")["rows"][0]
-    assert deepest[0] < 0 and deepest[1] <= deepest[2], deepest
+        assert [x["ink"] for x in curve["series"]] == [f"sqx.{s}", f"real.{s}"], s
+        assert round(curve["series"][0]["values"][-1], 2) == round(float(equity["equity"].iloc[-1]), 2)
+        assert len(block(cut, s, "P&L acumulado")["series"]) == 4, s
+        assert block(got, s, "Drawdown")["unit"] == "%" and block(cut, s, "Drawdown")["unit"] == "$"
+    assert "error" in ask(http, "tearsheet", dd="€")
     print(f"    tearsheet warm {warm:.2f} s")
 
 
@@ -149,7 +152,7 @@ def shot(widget: object, name: str) -> None:
 
 
 def test_draw(app: QApplication) -> None:
-    """The strategy page opens on the Ficha, draws IS beside OOS, then its other sub-tabs."""
+    """The strategy page opens on the Ficha, draws IS beside OOS, then again with its switches."""
     SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=STRATEGY, identity=IDENTITY,
                      asset=None)
     page = StrategyPage()
@@ -164,11 +167,13 @@ def test_draw(app: QApplication) -> None:
     shot(page, "ficha-scrolled")
     view.scroll.verticalScrollBar().setValue(3200)
     shot(page, "ficha-bottom")
-    for k, name in ((1, "salidas"), (2, "subyacente"), (3, "operaciones")):
-        page.ficha.tabs.setCurrentIndex(k)
-        app.processEvents()
-        assert k in page.ficha.done
-        shot(page, name)
+    assert [page.ficha.tabs.tabText(k) for k in range(page.ficha.tabs.count())] == ["IS/OOS"]
+    page.ficha.top.setChecked(True)                  # the P&L asked again without its best 5 %
+    page.ficha.dd.button(1).click()                  # and the drawdown in $
+    app.processEvents()
+    pnl = [b for b in view.results[0]["tabs"][0]["blocks"] if b["title"] == "P&L acumulado"][0]
+    assert len(pnl["series"]) == 4, [x["label"] for x in pnl["series"]]
+    shot(page, "ficha-top")
     page.open_study("gate")                  # a study leaves the Ficha and brings the run bar
     assert not page.on_ficha() and page.bar.isVisibleTo(page) and page.view.results
     assert not page.ficha.isVisibleTo(page)
@@ -177,30 +182,12 @@ def test_draw(app: QApplication) -> None:
     page.deleteLater()
 
 
-def test_lote(http: TestClient) -> None:
-    """«Lote» shows for a mother with a batch folder (drawn, or the sentence of a batch not yet
-    harvested) and stays hidden for a strategy without one."""
-    from ui.desktop.studypage.ficha import LOTE, Ficha
-    names = {s["strategy"]: s["identity"] for s in ask(http, "matrix", project=PROJECT,
-                                                         databank=DATABANK)["strategies"]}
-    ficha = Ficha()
-    for name, shown in ((MOTHER, True), (STRATEGY, False)):
-        ficha.load({"project": PROJECT, "databank": DATABANK, "strategy": name,
-                    "identity": names[name], "asset": "USDJPY"})
-        assert ficha.tabs.isTabVisible(LOTE) == shown, name
-    ficha.load({"project": PROJECT, "databank": DATABANK, "strategy": MOTHER,
-                "identity": names[MOTHER], "asset": "USDJPY"})
-    ficha.tabs.setCurrentIndex(LOTE)
-    ficha.resize(1400, 900)
-    shot(ficha, "lead-ficha-lote")
-
-
 if __name__ == "__main__":
     APP = QApplication.instance() or QApplication([])
     APP.setStyleSheet(QSS)
     HTTP = serve()
     for test, args in ((test_sheet, (HTTP,)), (test_exits, (HTTP,)), (test_refusals, (HTTP,)),
-                       (test_draw, (APP,)), (test_lote, (HTTP,))):
+                       (test_draw, (APP,))):
         started = time.time()
         test(*args)
         print(f"ok  {test.__name__}  {time.time() - started:.1f} s")

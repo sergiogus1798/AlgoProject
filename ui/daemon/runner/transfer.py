@@ -5,7 +5,8 @@ from pathlib import Path
 from core.paths import DATA
 from ui.daemon.runner import where
 
-NO_CROSS = "necesita el export del retest cross-market de este databank (skill /crossmarket)"
+NO_CROSS = ("necesita el export del retest cross-market de este databank (skill /crossmarket); si "
+            "ya corrió, abre la estrategia desde la pestaña Cross Market de Databanks")
 
 
 def crossmarket(c: dict, strategy: str) -> list[str] | str:
@@ -29,13 +30,18 @@ def cross_tf(c: dict, strategy: str) -> list[str] | str:
             c["databank"], "--asset", c["asset"], "--day", c["export"], "--fabricated", made]
 
 
+MCR_ALL = "MCR_All"      # `ui.daemon.loader.afterrun`'s MC ingest target
+
+
 def mc_retest(c: dict, strategy: str) -> list[str] | str:
-    """Step 14 over the newest ingest of the eight MC Retest tasks."""
-    found = where.newest(DATA / "raw" / c["project"] / c["databank"], "*/sims")
+    """Step 14 over the newest ingest of the eight MC Retest tasks — one ingest, `MCR_All`,
+    whichever of the eight databanks the step or the panel names (📓 2026-09-30: the chain
+    passed «MCR 1 Bar» and step 14 was refused beside a fresh ingest)."""
+    found = where.newest(DATA / "raw" / c["project"] / MCR_ALL, "*/sims")
     if not found:
-        return "necesita la ingesta del MC Retest en este databank (skill /mcretest)"
+        return "necesita la ingesta del MC Retest (MCR_All; se hace sola al parar el worker)"
     return ["-m", "studies.breakage.mcRetest.report", "--project", c["project"], "--databank",
-            c["databank"], "--day", found.parent.name]
+            MCR_ALL, "--day", found.parent.name]
 
 
 def spp(c: dict, strategy: str) -> list[str] | str:

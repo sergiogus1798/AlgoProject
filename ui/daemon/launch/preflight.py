@@ -8,12 +8,22 @@ one task at a time per worker, and the moment one finishes, launching another is
 """
 
 from core.paths import databank_dir, project_dir
+from sqx.projects import crosstfload
 from ui.daemon import progress
 from ui.daemon.advance import confirm, preflight as advance
 from ui.daemon.launch import steps as launchsteps
 
 BUILD = "Build"
 ROLES = {"custodian": "custodio", "conductor": "conductor"}   # the owner's words for the workers
+# What the run does to a databank `crosstfload` fills, said in the confirmation.
+FILLS = {"CrossTF_Input": "· Antes de arrancar (paso 10.5), con el worker parado: las "
+                          "supervivientes de Cross Market se escalan a los timeframes de "
+                          "`crosstf.timeframes` y se cargan con sus hermanas en «CrossTF_Input», "
+                          "que se vacía antes; «CrossTF» corre el timeframe de la madre, y cada "
+                          "otro, su tarea «CrossTF <TF>» (D1 con el motor de MT4).",
+         "CrossTF_Mothers": "· Antes de arrancar, con el worker parado: las madres que tiene "
+                            "«CrossTF», sin sus hermanas escaladas, se copian a «CrossTF_Mothers» "
+                            "(que se vacía antes): es lo que lee el MC Retest."}
 
 
 def count(project: str, databank: str, role: str) -> int:
@@ -59,7 +69,8 @@ def check(project: str, titles: str | list[str] = (), step: str = "",
         filled: Databanks an earlier step of the same chain writes: empty now, not a refusal.
 
     Returns:
-        `ok`, `reasons` (empty when ok) and what the confirmation and the run need: `role`,
+        `ok`, `reasons` (empty when ok), `elsewhere` (the one reason is the step not being an
+        SQX task at all — not a failure) and what the confirmation and the run need: `role`,
         `install`, `row`, `cfx`, `chosen` (the rows of `tasks`, in order), `off` (a step's
         titles left off, and why), `step`.
     """
@@ -89,7 +100,8 @@ def judge(project: str, got: dict, reasons: list[str], titles: str | list[str] =
     if step:
         picked = launchsteps.of_step(step, got["cfx"])
         if "refuse" in picked:
-            return {"ok": False, "reasons": reasons + [picked["refuse"]]}
+            return {"ok": False, "reasons": reasons + [picked["refuse"]],
+                    "elsewhere": picked.get("elsewhere", False)}
         titles, off = picked["titles"], picked["off"]
     titles = [titles] if isinstance(titles, str) else list(titles)
     rows = {t["title"]: t for t in got["tasks"]}
@@ -99,16 +111,28 @@ def judge(project: str, got: dict, reasons: list[str], titles: str | list[str] =
                                                    for t in missing or ["?"]]}
     chosen = [rows[t] for t in titles]
     made = {t["output"] for t in chosen} | set(filled)   # filled before this task reads it
+    # CrossTF_Input and CrossTF_Mothers are no task's output: the run fills them from their
+    # feeder just before the start (`crosstfload`), so an empty one is not a refusal.
+    fed = crosstfload.feeders({t["title"]: {"Input": t["input"], "Output": t["output"]}
+                               for t in got["tasks"]})
+    fill = sorted({t["input"] for t in chosen if t["input"] in fed})
     for t in chosen:
         if t["type"] == BUILD and got["role"] != "custodian":
             reasons.append(f"un build va al custodio, y {project} vive en el "
                            f"{ROLES.get(got['role'], got['role'])} (CLAUDE.md, regla 3: el "
                            "conductor es para trabajos cortos)")
-        if t["type"] != BUILD and t["input"] and t["input"] not in made and not t["n_in"]:
+        src = fed.get(t["input"])
+        if src and src not in made and not count(project, src, got["role"]):
+            reasons.append(f"«{t['input']}» se llena desde «{src}», que no tiene ninguna "
+                           f"estrategia en {got['install']}: «{t['title']}» no tendría nada "
+                           "que probar")
+        elif (not src and t["type"] != BUILD and t["input"] and t["input"] not in made
+              and not t["n_in"]):
             reasons.append(f"«{t['input']}» no tiene ninguna estrategia en {got['install']}: "
                            f"«{t['title']}» no tendría nada que probar")
     return {"ok": not reasons, "reasons": reasons, **got, "chosen": chosen, "off": off,
-            "step": step, "configure": launchsteps.unconfigured(got["cfx"], titles)}
+            "step": step, "fill": fill,
+            "configure": launchsteps.unconfigured(got["cfx"], titles)}
 
 
 def text(pre: dict, project: str) -> str:
@@ -141,6 +165,7 @@ def text(pre: dict, project: str) -> str:
     out += [f"· {', '.join(f'«{t}»' for t in ts)} sin configurar: antes de arrancar se configura "
             f"con `{module}` desde assets/ (lo mismo que su skill); una tarea ya configurada no "
             "se toca." for module, ts in pre.get("configure", {}).items()]
+    out += [FILLS[bank] for bank in pre.get("fill", [])]
     return "\n".join(out) + ("\nLo que cada tarea borre al empezar lo decide su configuración "
                              "en SQX; antes se copia el proyecto y al acabar se comparan los "
                              "databanks.")

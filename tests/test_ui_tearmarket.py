@@ -21,9 +21,11 @@ from ui.desktop.blocks.result import ResultView  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 from ui.desktop.tradegallery import TradeGallery  # noqa: E402
 
-# Since F13 (2026-09-28): the USDJPY Donchian project's cosecha of 09-27.
+# The USDJPY Donchian project's newest cosecha — the one the route reads. It was pinned to 09-27,
+# and the cosecha of 2026-09-29 (Results cut to 21) no longer held those identities.
 PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
-HARVEST = DATA / "harvest" / PROJECT / DATABANK / "2026-09-27"
+HARVEST = max(d for d in (DATA / "harvest" / PROJECT / DATABANK).iterdir()
+              if (d / "metrics.parquet").exists())
 XAU = "XAU_ISOOS_ejemplo"            # a project whose name holds no asset symbol
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 

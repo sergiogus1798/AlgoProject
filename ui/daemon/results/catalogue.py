@@ -32,7 +32,7 @@ STUDIES = {
     "marketSurfaces": ("optimisation", "studies.optimisation.marketSurfaces",
                        "Superficies por mercado", "18.5"),
     "wfm": ("optimisation", "studies.optimisation.wfm", "Walk Forward Matrix", "19"),
-    "blindJoint": ("closing", "studies.closing.blindJoint", "Lectura conjunta ciega", "20"),
+    "blindJoint": ("closing", "studies.closing.blindJoint", "Lectura conjunta", "20"),
     "exposure": ("closing", "studies.closing.exposure", "Exposición contra buy & hold", "21"),
     "atrCalculator": ("closing", "studies.closing.atrCalculator", "Stop loss ATR", "24"),
     "monkey": ("readings", "studies.readings.monkey", "Test del mono", None),
@@ -147,11 +147,13 @@ def entry(key: str, cfg: dict | None) -> dict:
         cfg: Its current config, None for a study without one.
 
     Returns:
-        key, family, title, step, role, one, many, runnable, why_not, source. `one`, `many`,
+        key, family, title, step, role, one, many, runnable, why_not, spends (what a run costs
+        beyond CPU: a look at oos2 or a ledger row, as the rail asks before), source. `one`, `many`,
         `runnable` and `why_not` are the runner's (`ui.daemon.runner.table`), so the window
         never offers a button the runner refuses. A study the window never starts has no
         scope there; its `one`/`many` then say what its files can judge.
     """
+    from ui.daemon.workflow.tests import SPENDS   # it imports this module: read at call time
     family, _, title, step = STUDIES[key]
     why = table.why_not(key)
     if why:
@@ -162,7 +164,7 @@ def entry(key: str, cfg: dict | None) -> dict:
         one, many = table.STUDIES[key]["one"], table.STUDIES[key]["many"]
     return {"key": key, "family": family, "title": title, "step": step, "role": role(key, cfg),
             "one": one, "many": many, "runnable": why is None, "why_not": why,
-            "source": "batch" if key in BATCH else "reports"}
+            "spends": SPENDS.get(key, ""), "source": "batch" if key in BATCH else "reports"}
 
 
 def ordered() -> list[str]:

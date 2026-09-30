@@ -1,7 +1,7 @@
 """The tests of each step: which studies, their state on this project, their configuration in one line."""
 
 from ui.daemon import jobs
-from ui.daemon.results import catalogue, knobs
+from ui.daemon.results import catalogue, forproject, knobs
 from ui.daemon.runner import table, where
 from ui.daemon.workflow import sources
 
@@ -10,14 +10,16 @@ from ui.daemon.workflow import sources
 SIGNED = {"wfc", "cscv", "marketSurfaces", "snoopingScreen", "blindJoint"}
 # What a run of these costs beyond CPU: a look at the reserved oos2, or a ledger row. They are
 # never ticked by default nor in «correr todo»; the window asks before each run.
-SPENDS = {"wfc": "gasta una mirada al oos2 y escribe su fila en el ledger",
-          "cscv": "gasta una mirada al oos2 y escribe su fila en el ledger",
-          "marketSurfaces": "gasta una mirada al oos2 y escribe su fila en el ledger",
+SPENDS = {"wfc": "lee el oos2 y escribe su fila en el ledger",
+          "cscv": "lee el oos2 y escribe su fila en el ledger",
+          "marketSurfaces": "lee el oos2 y escribe su fila en el ledger",
           "wfm": "lee el oos2 de la Walk Forward Matrix",
-          "blindJoint": "abre el oos2 del paso 20 y escribe su fila en el ledger",
+          "blindJoint": "lee el oos2 del paso 20 y escribe su fila en el ledger",
           "snoopingScreen": "escribe una fila en el ledger (una búsqueda más de este estudio)"}
-SQX_STEP = ("paso de SQX: la ventana no lo lanza desde el raíl; su análisis se lee después de "
-            "la tarea y se corre desde el panel de databanks")
+SQX_STEP = ("paso de SQX: su tarea se lanza con el ▶ SQX de la tarjeta; su análisis se corre "
+            "después con «▶▶ toda la población» en la ficha de una de sus estrategias")
+# Jobs that run SQX on a project (`ui/daemon/launch`, `advance`): no test starts on it meanwhile.
+LAUNCHERS = ("launch", "advance")
 SHOWN = 3   # knobs the one-line summary prints; the drawer shows them all
 
 
@@ -37,19 +39,23 @@ def keys(spec: dict) -> list[str]:
     return list(dict.fromkeys(spec["studies"] + filed + spec["extra"]))
 
 
-def summary(key: str) -> str:
-    """A study's configuration in one line: the first knobs and how many there are.
+def summary(key: str, project: str) -> str:
+    """A study's configuration in one line: the first knobs and how many there are, with the
+    project's feed, symbol and timeframe where the runner puts them (`forproject`).
 
     Args:
         key: Study key.
+        project: Project name.
 
     Returns:
         e.g. "null.draws=2000 · null.chunk=250 · seed=7 (+9)", or "sin configuración".
     """
-    knob_list = [k for s in knobs.sections(key)["sections"] for k in s["knobs"]]
+    knob_list = [k for s in forproject.apply(key, knobs.sections(key)["sections"], project)
+                 for k in s["knobs"]]
     if not knob_list:
         return "sin configuración"
-    shown = " · ".join(f"{k['key']}={k['value']}" for k in knob_list[:SHOWN])
+    shown = " · ".join(f"{k['key']}={'⚠ ' if k.get('warn') else ''}{k['value']}"
+                       for k in knob_list[:SHOWN])
     return shown + (f" (+{len(knob_list) - SHOWN})" if len(knob_list) > SHOWN else "")
 
 
@@ -82,14 +88,18 @@ def one(spec: dict, key: str, ctx: dict, live: list[dict]) -> dict:
         runnable from the rail: it is read after the SQX task, from the panel.
     """
     title = catalogue.STUDIES[key][2] if key in catalogue.STUDIES else key
+    sqx = next((j for j in live if j["label"] in LAUNCHERS), None)
     refused = (SQX_STEP if spec["kind"] == "sqx" else
+               f"SQX trabaja en este proyecto («{sqx.get('study') or sqx['label']}»): sus "
+               "databanks cambian; espera a que acabe" if sqx else
                f"bloqueado: {ctx['blind']['text']}" if spec["n"] == "20"
                and ctx["blind"]["sealed"] else table.why_not(key)
                or (where.no_family(ctx["project"]) if key in SIGNED and not ctx["family"]
                    else None))
     only = spec.get("only_strategy", False) if key == "edgeCost" else None
     found = sources.results(ctx["project"], key, only)
-    row = {"key": key, "title": title, "config": summary(key), "runnable": not refused,
+    row = {"key": key, "title": title, "config": summary(key, ctx["project"]),
+           "runnable": not refused,
            "databank": found[0]["databank"] if found else None, "spends": SPENDS.get(key, ""),
            # ticked by default and in «correr todo»: free to run, and the rail knows where
            "auto": not refused and key not in SPENDS and spec["feeds"] != ()}

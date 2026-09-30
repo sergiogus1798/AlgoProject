@@ -1,4 +1,4 @@
-"""The variant batch: /api/batch never lets oos2 out, and «Lote» draws a real batch offscreen."""
+"""The variant batch: /api/batch shows oos2 to a human and never lets it out to an autonomous agent, and «Lote» draws a real batch offscreen."""
 
 import os
 import sys
@@ -16,6 +16,7 @@ from PySide6.QtCore import QPointF
 from PySide6.QtWidgets import QApplication
 
 from core.paths import DATA, ROOT
+from ledger import gate
 from ui.daemon.batch import api, panel
 from ui.desktop.batchview import tab
 
@@ -64,6 +65,20 @@ def test_real(c: TestClient) -> dict:
     assert c.get("/api/batch/has", params=dict(zip(("project", "strategy"), REAL))).json() == \
         {"has_batch": True}
     return out
+
+
+def test_human(c: TestClient) -> None:
+    """A human (no ALGO_AUTONOMOUS) gets oos2 as a third outcome, and «Lote» offers it."""
+    out = c.get("/api/batch", params=dict(zip(("project", "strategy"), REAL))).json()
+    assert "error" not in out, out.get("error")
+    assert set(out["outcomes"]) == set(panel.OUTCOMES + panel.OPTIONAL), set(out["outcomes"])
+    app = QApplication.instance() or QApplication([])
+    view = tab.BatchTab()
+    with mock.patch.object(tab.client, "get", lambda path, **kw: out):
+        assert view.load(*REAL)
+    app.processEvents()
+    offered = [view.colour_by.itemText(i) for i in range(view.colour_by.count())]
+    assert "NetProfit (oos2)" in offered, offered
 
 
 def test_refusals(c: TestClient) -> None:
@@ -141,10 +156,14 @@ def main() -> None:
     """Run every check."""
     assert (DATA / "strategyPermutations" / REAL[0] / REAL[1] / "metrics.parquet").exists()
     c = http()
+    os.environ.pop(gate.AUTONOMOUS, None)
+    test_human(c)
+    os.environ[gate.AUTONOMOUS] = "1"          # the seal holds only for an autonomous agent
     real = test_real(c)
     test_refusals(c)
     test_synthetic(c)
     test_view(real)
+    os.environ.pop(gate.AUTONOMOUS)
     print("ok — /api/batch and «Lote»")
 
 

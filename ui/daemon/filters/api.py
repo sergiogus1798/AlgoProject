@@ -1,13 +1,12 @@
-"""The filter routes: metrics offered, apply, manual discard, clear, state, and saved filters."""
+"""The filter routes: metrics, preview, apply, manual discard, clear, state, saved filters."""
 
-import re
 from collections.abc import Callable
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 from ui.daemon.databank import table as tablemod
-from ui.daemon.filters import discards, dists, evaluate, ledgerrow, saved
+from ui.daemon.filters import discards, dists, evaluate, ledgerrow, saved, view
 from ui.daemon.runner import where
 
 ROUTER = APIRouter()
@@ -73,41 +72,16 @@ def anonymous(table: dict) -> int:
     return sum(r["identity"] is None for r in table["rows"])
 
 
-def worded(step: dict) -> str:
-    """A step's expression for the funnel, each metric in the window's words (a step logged
-    before the expression was worded still carries raw keys), and its «sin valor» and
-    «sin identidad» counts."""
-    parts = [re.match(r"^(.*?) (>|<|≥|≤|=|entre|dentro|fuera) (.*)$", p)
-             for p in step["expression"].split(" AND ")]
-    text = step["expression"] if step["origin"] == "manual" else " AND ".join(
-        f"{evaluate.named(m.group(1))} {m.group(2)} {m.group(3)}" for m in parts)
-    return (text + (f" · {step['blank']} sin valor" if step["blank"] else "")
-            + (f" · {step['anonymous']} sin identidad, no filtrables" if step["anonymous"]
-               else ""))
-
-
 def samples(rows: list[dict], metrics: list[dict]) -> set[str]:
     """The samples a filter reads: `IS`, `OOS`, or '' for a study's column or a distribution."""
     known = {m["key"]: m["sample"] for m in metrics}
     return {known[r["metric"]] for r in rows}
 
 
-def state_of(project: str, databank: str) -> dict:
-    """One databank's discards now: hidden identities and each filter's counts."""
-    steps = discards.steps(project, databank)
-    hidden = discards.hidden(project, databank)
-    return {"databank": databank, "hidden": len(hidden), "hidden_ids": sorted(hidden),
-            "entered": steps[0]["entered"] if steps else None,
-            "remaining": steps[-1]["passed"] if steps else None,
-            "anonymous": steps[-1]["anonymous"] if steps else None, "steps": steps}
-
-
-def funnel_rows(project: str, banks: list[str]) -> list[dict]:
-    """The funnel's rows (screen, entered, passed, died, why), one per filter or deletion."""
-    return [{"screen": f"Filtro · {bank}" if s["origin"] == "filter" else f"A mano · {bank}",
-             "entered": s["entered"], "passed": s["passed"], "died": s["died"],
-             "why": worded(s), "kind": "hard"}
-            for bank in banks for s in discards.steps(project, bank)]
+def state_of(project: str, databank: str, got: tuple | None = None) -> dict:
+    """`view.state_of` over a `context` the caller already read, or read once here."""
+    table, _, metrics = got or context(project, databank)
+    return view.state_of(project, databank, table, metrics)
 
 
 def refused(project: str, databank: str) -> str | None:
@@ -119,9 +93,9 @@ def refused(project: str, databank: str) -> str | None:
     return where if isinstance(where, str) else None
 
 
-def metrics_of(project: str, databank: str) -> dict:
+def metrics_of(project: str, databank: str, got: tuple | None = None) -> dict:
     """What the metric dropdown lists, and why the databank cannot be filtered, if it cannot."""
-    table, _, metrics = context(project, databank)
+    table, _, metrics = got or context(project, databank)
     return {"metrics": metrics, "refused": refused(project, databank),
             "anonymous": anonymous(table),
             "ops": list(evaluate.SHOWN), "intervals": sorted(dists.PAIRS)}
@@ -133,33 +107,71 @@ def get_metrics(project: str, databank: str) -> dict:
     return shown("leer las métricas", lambda: metrics_of(project, databank))
 
 
+def judged(req: Apply) -> dict:
+    """The AND of rows on the whole databank, manual deletions apart; nothing written.
+
+    Returns:
+        `rows` (normalised), `got` (the `context` read), `every` (identity → name),
+        `dropped`, `blank`, `hidden` (dropped plus the manual deletions still in the table),
+        or `error`.
+    """
+    table, by_id, metrics = context(req.project, req.databank)
+    rows = evaluate.normal([r.model_dump() for r in req.rows])
+    bad = evaluate.check(rows, metrics) if rows else None
+    if bad:
+        return {"error": bad}
+    every, dropped, blank = evaluate.judge(table, rows, by_id, set())
+    manual = discards.manual_ids(req.project, req.databank) & set(every)
+    return {"rows": rows, "got": (table, by_id, metrics), "every": every, "dropped": dropped,
+            "blank": blank, "hidden": len(set(dropped) | manual)}
+
+
+@ROUTER.post("/api/filters/preview")
+def preview(req: Apply) -> dict:
+    """What these conditions would leave, as the owner edits them: counts only, no ledger
+    row, no discard, nothing hidden (the screen keeps showing what «Continuar» would cut)."""
+    def act() -> dict:
+        """The counts of `judged`, or its error."""
+        got = judged(req)
+        return got if "error" in got else {
+            "n_in": len(got["every"]), "n_out": len(got["every"]) - len(got["dropped"]),
+            "blank": got["blank"], "hidden": got["hidden"],
+            "visible": len(got["every"]) - got["hidden"]}
+    return shown("calcular el filtro", act)
+
+
 def applied(req: Apply) -> dict:
-    """Apply an AND of rows to what is visible: one ledger row, then the discards on disk.
+    """Apply an AND of rows to the whole databank, replacing the filter in force: loosening
+    brings strategies back, tightening hides more; manual deletions stay. One ledger row
+    (none for no conditions, which only lifts the filter), then the discards on disk.
 
     Returns:
         `n_in`, `n_out`, `blank` (kept visible for lacking a value), `expression`, `ledger`
-        (study, step, segment) and the databank's new state — or `error`, and nothing written.
+        (study, step, segment; absent without conditions) and the databank's new state —
+        or `error`, and nothing written; `same` when these rows are already in force.
         No `.sqx` is touched: SQX's databank stays whole until «Continuar workflow».
     """
     why = refused(req.project, req.databank)
     if why:
         return {"error": why}
-    table, by_id, metrics = context(req.project, req.databank)
-    rows = evaluate.normal([r.model_dump() for r in req.rows])
-    bad = evaluate.check(rows, metrics)
-    if bad:
-        return {"error": bad}
-    hidden = discards.hidden(req.project, req.databank)
-    visible, dropped, blank = evaluate.judge(table, rows, by_id, hidden)
-    text = evaluate.expression(rows)
-    step, _ = ledgerrow.placed(req.project, req.databank)
-    wrote = ledgerrow.log(req.project, req.databank, step, samples(rows, metrics),
-                          len(visible), len(visible) - len(dropped), text, "filter", rows)
-    discards.record(req.project, req.databank, dropped, "filter", text, len(visible), blank,
-                    anonymous(table))
-    return {"n_in": len(visible), "n_out": len(visible) - len(dropped), "blank": blank,
-            "expression": text, "ledger": {k: wrote[k] for k in ("study", "step", "segment")},
-            **state_of(req.project, req.databank)}
+    got = judged(req)
+    if "error" in got:
+        return got
+    rows, n_in = got["rows"], len(got["every"])
+    n_out = n_in - len(got["dropped"])
+    counts = {"n_in": n_in, "n_out": n_out, "blank": got["blank"]}
+    if discards.unchanged(req.project, req.databank, rows, n_in, set(got["dropped"])):
+        return {**counts, "same": True, **state_of(req.project, req.databank, got["got"])}
+    text, led = (evaluate.expression(rows) if rows else "sin filtro"), {}
+    if rows:
+        step, _ = ledgerrow.placed(req.project, req.databank)
+        wrote = ledgerrow.log(req.project, req.databank, step,
+                              samples(rows, got["got"][2]), n_in, n_out, text, "filter", rows)
+        led = {"ledger": {k: wrote[k] for k in ("study", "step", "segment")}}
+    discards.record(req.project, req.databank, got["dropped"], "filter", text, n_in,
+                    got["blank"], anonymous(got["got"][0]), rows)
+    return {**counts, "expression": text, **led,
+            **state_of(req.project, req.databank, got["got"])}
 
 
 @ROUTER.post("/api/filters/apply")
@@ -173,8 +185,8 @@ def discarded(req: Discard) -> dict:
     why = refused(req.project, req.databank)
     if why:
         return {"error": why}
-    table = tablemod.table(req.project, req.databank)
-    hidden = discards.hidden(req.project, req.databank)
+    got = context(req.project, req.databank)
+    table, hidden = got[0], discards.hidden(req.project, req.databank)
     visible = {r["identity"]: r["name"] for r in table["rows"]
                if r["identity"] and r["identity"] not in hidden}
     dropped = {i: visible[i] for i in req.identities if i in visible}
@@ -185,10 +197,10 @@ def discarded(req: Discard) -> dict:
     wrote = ledgerrow.log(req.project, req.databank, step, {"IS", "OOS", ""},
                           len(visible), len(visible) - len(dropped), text, "manual", None)
     discards.record(req.project, req.databank, dropped, "manual", text, len(visible), 0,
-                    anonymous(table))
+                    anonymous(table), total=len(table["rows"]) - anonymous(table))
     return {"n_in": len(visible), "n_out": len(visible) - len(dropped), "expression": text,
             "ledger": {k: wrote[k] for k in ("study", "step", "segment")},
-            **state_of(req.project, req.databank)}
+            **state_of(req.project, req.databank, got)}
 
 
 @ROUTER.post("/api/filters/discard")
@@ -206,10 +218,14 @@ def clear(req: Bank) -> dict:
 
 
 def state(project: str, databank: str | None) -> dict:
-    """The funnel's counts: one databank's state, or every filtered databank's rows."""
+    """The funnel's counts: every filtered databank's rows, and with a databank its state
+    and its metrics too, read off one `context` (the strip's one call per table refresh)."""
     banks = [databank.replace(" ", "_")] if databank else discards.databanks(project)
-    out = {"rows": funnel_rows(project, banks)}
-    return out | state_of(project, databank) if databank else out
+    out = {"rows": view.funnel_rows(project, banks)}
+    if not databank:
+        return out
+    got = context(project, databank)
+    return out | metrics_of(project, databank, got) | state_of(project, databank, got)
 
 
 @ROUTER.get("/api/filters/state")

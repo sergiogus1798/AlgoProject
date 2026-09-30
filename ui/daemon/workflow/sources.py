@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from core import worker
 from core.datapaths import project_registry, template_dir, template_runs
 from core.paths import DATA
 from ui.daemon import progress, tasklog
@@ -39,7 +40,8 @@ def sqx_view(role: str, top: Path, project: str) -> dict:
 
     Returns:
         `tasks` (from project.cfx), `banks` (databank → .sqx on disk), `runs` (today's task
-        runs from the project's own log) and `run` (what the install log says). Unlike
+        runs from the project's own log), `run` (what the install log says) and `alive`
+        (an SQX process runs out of the install: /proc, no command). Unlike
         `progress.state` this never asks the worker for its status line: the rail sends no
         command to any install.
     """
@@ -47,7 +49,7 @@ def sqx_view(role: str, top: Path, project: str) -> dict:
     lines, _ = progress.log_lines(top)
     return {"role": role, "folder": folder, "tasks": progress.tasks(folder / "project.cfx"),
             "banks": progress.counts(folder), "runs": tasklog.task_runs(folder),
-            "run": progress.run_state(lines)}
+            "run": progress.run_state(lines), "alive": bool(worker.holding(top))}
 
 
 def day_of(path: Path) -> str:

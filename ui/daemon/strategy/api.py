@@ -78,7 +78,7 @@ def strategy_costcurve(project: str = "", databank: str = "", identity: str = ""
         return refused
     data, spread = _read(project, databank, identity, source, version)
     if isinstance(data, str):
-        return {"error": data}
+        return {"error": data, "absent": isinstance(data, harvest.Absent)}
     return costcurve.curve(data, spread) | {"asset": guess_asset(project)}
 
 
@@ -96,7 +96,7 @@ def strategy_stats(project: str = "", databank: str = "", identity: str = "",
         return refused
     data, spread = _read(project, databank, identity, source, version)
     if isinstance(data, str):
-        return {"error": data}
+        return {"error": data, "absent": isinstance(data, harvest.Absent)}
     curve = costcurve.curve(data, spread)
     return stats.build(project, data, curve, source == "live") | {"asset": guess_asset(project)}
 

@@ -8,7 +8,7 @@ on the day of archiving (measured 2026-09-28, JSON diff empty).
 
 ```
 api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · locate.cfx ─▶ strategymeta.read
-    ├▶ costcurve.curve ◀─ tearsheet.harvest.read · the spread report's trades (member file, then population)
+    ├▶ costcurve.curve ◀─ tearsheet.harvest.read · costcurve.repriced (member file, then population; also read by tearsheet.pnl)
     ├▶ stats.build ─▶ tearsheet.tradestats (shape, returns) · tearsheet.oos2 (door, oos2 cosecha)
     ├▶ archived.* ─▶ core.archive.read (also used by results/, tearsheet/, tearmarket/)
     └▶ POST archive ─▶ core.archive.write (family = the template folder of registry.csv)
@@ -25,13 +25,13 @@ api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · 
 | `api.py` | `ROUTER`: `GET /api/strategy/meta`, `/costcurve`, `/stats`, `/archived`, `POST /api/strategy/archive`; a refusal is `{"error"}`, never a 500 | imported | request → JSON |
 | `locate.py` | The strategy's `.sqx` — the install holding the databank, else an export's copy under `raw/<P>/*/*/strategies/`, else the newest archived version — by identity; the project's `project.cfx` | imported | identity → path, sentence |
 | `meta.py` | E2's fields of the located file (a copy outside the databank folder is read from a temporary folder named as the databank) or of the archived version | imported | path → dict |
-| `costcurve.py` | SQX's daily curve and the same corrected by the `spread` study's repriced trades, IS then OOS1 on one axis; nets and DDs | imported | cosecha rows + trades → curves |
-| `stats.py` | Per sample (IS, OOS1, OOS2): trades, nets (SQX and real), PF, win rate, DD, Sharpe, and the return distribution per unit (USD por lote by default) as a `distribution` block | imported | cosecha rows → dict |
+| `costcurve.py` | SQX's daily curve and the same corrected by the `spread` study's repriced trades, IS then OOS1 on one axis, with `days` for the year ticks; nets and DDs. `repriced` (the report's rows of one strategy) is also what `tearsheet.pnl` corrects each sample with | imported | cosecha rows + trades → curves |
+| `stats.py` | Per sample (IS, OOS1, IS+OOS1 — OOS's curve continued from IS's end, no SQX Sharpe —, OOS2): trades, nets (SQX and real), Profit Factor, win rate, DD, Sharpe; the return's mean, std, skew and excess kurtosis in «$/lote» or «$/trade»; and its distribution per unit (USD por lote by default) as a `distribution` block whose percentile row reads «1%»… in $ (`row_unit`) | imported | cosecha rows → dict |
 | `archived.py` | The `source=archive` answers: `load`, `tearsheet`, `harvest_folder`, and `/api/result`, `/api/history`, `/api/matrix` from the frozen view | imported | archive → the live shapes |
 
 ## Contracts and traps
 
-- **OOS2 is behind the ledger's door** (`ui.daemon.workflow.ledgerview.door`, the study
+- **OOS2 is behind the ledger's door** only under `ALGO_AUTONOMOUS=1` (`core.assetdata.enforced`) (`ui.daemon.workflow.ledgerview.door`, the study
   blindJoint reads): sealed, it answers `{"blocked": "reservado: se abre tras los pasos 17, 18 y
   19", "why": …}`; open, it reads the newest cosecha of the project that carries a sample
   `OOS2`/`oos2` for the identity, else `{"blocked": "OOS2 abierto, sin export: exporta el retest

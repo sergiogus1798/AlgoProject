@@ -102,8 +102,45 @@ def held() -> bool:
     return not any(state.status(*bank).get("error") for bank in (BUILD, CROSS))
 
 
+def test_resave_is_not_a_change() -> None:
+    """SQX's periodic sync rewrites every .sqx with a new date inside: the export stays fresh.
+    A different strategy makes it stale (📓 2026-09-29: every stop re-exported everything)."""
+    import tempfile
+    import zipfile
+
+    def save(f: Path, body: bytes, when: tuple) -> None:
+        """Write a one-entry .sqx whose entry carries `when` as its date."""
+        with zipfile.ZipFile(f, "w") as z:
+            z.writestr(zipfile.ZipInfo("strategy_Portfolio.xml", when), body)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        bank, out = Path(tmp) / "bank", Path(tmp) / "export"
+        bank.mkdir(), out.mkdir()
+        sqx = bank / "Strategy 1.1.1.sqx"
+        save(sqx, b"<rules/>", (2026, 9, 29, 6, 47, 0))
+        os.utime(sqx, (time.time() - 60,) * 2)
+        os.utime(bank, (time.time() - 60,) * 2)
+        done = out / "manifest.json"
+        done.write_text("{}")
+        assert state.age(done, [sqx]) == "fresh" and (out / "manifest.json.sources.sig").exists()
+        save(sqx, b"<rules/>", (2026, 9, 29, 10, 52, 0))      # the resave: same content
+        os.utime(sqx, (time.time() + 5,) * 2)
+        assert state.age(done, [sqx]) == "fresh", "a resave alone is not a change"
+        wfm = bank / "Strategy 2.2.2.sqx"
+        keys = []
+        for ref, when in (("4f573d92", 1), ("393e78e3", 2)):
+            with zipfile.ZipFile(wfm, "w") as z:
+                z.writestr("settings.xml", f'<R><Run stats="c.s.SQStats@{ref}" p="25"/></R>')
+            os.utime(wfm, (time.time() + when,) * 2)
+            keys.append(state.fingerprint([wfm]))
+        assert keys[0] == keys[1], "a Java object address is not content"
+        save(sqx, b"<other rules/>", (2026, 9, 29, 11, 0, 0))
+        os.utime(sqx, (time.time() + 10,) * 2)
+        assert state.age(done, [sqx]) == "stale", "new content is"
+
+
 if __name__ == "__main__":
-    tests = [test_conductor_one_at_a_time]
+    tests = [test_conductor_one_at_a_time, test_resave_is_not_a_change]
     if held():
         tests = [test_status_and_lanes, test_failure_and_retry, test_writing_waits,
                  test_route_and_roster, *tests]

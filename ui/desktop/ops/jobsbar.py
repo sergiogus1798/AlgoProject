@@ -2,9 +2,9 @@
 
 import httpx
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton, QWidget
 
-from ui.desktop import client
+from ui.desktop import background, client
 from ui.desktop.durations import share
 from ui.text.numbers import num
 from ui.desktop.ops.progressbar import bar
@@ -16,6 +16,7 @@ SQX_EVERY = 8               # the SQX runs are read every 8th poll (16 s): each 
 SHOWN = 4                   # chips beyond this collapse into «+N»
 BAR_PX = 64
 ROLE = {"custodian": "custodio", "conductor": "conductor"}
+SQX_JOBS = ("launch", "advance", "crear proyecto", "crear plantilla")   # ✕ asks before these
 
 
 def waiting(job: dict) -> bool:
@@ -78,14 +79,25 @@ class JobsBar(QWidget):
         self.show_jobs([])
 
     def refresh(self) -> None:
-        """Read the job list, and every few polls what SQX runs, or say the daemon is down."""
-        try:
-            if self.ticks % SQX_EVERY == 0:
-                self.sqx = client.get("ops/sqx")["runs"]
-            self.ticks += 1
-            self.show_jobs(client.get("jobs")["jobs"])
-        except httpx.HTTPError as down:
-            self.show_message(f"demonio no responde: {type(down).__name__}", C["dead"])
+        """Read the job list, and every few polls what SQX runs, off the GUI thread; `landed`
+        redraws, or says the daemon is down."""
+        sqx = self.ticks % SQX_EVERY == 0
+        self.ticks += 1
+
+        def read() -> dict:
+            """Both reads, on the pool's thread."""
+            return {"jobs": client.get("jobs")["jobs"],
+                    "sqx": client.get("ops/sqx")["runs"] if sqx else None}
+        background.run(read, self.landed, key=f"jobsbar:{id(self)}")
+
+    def landed(self, got: dict) -> None:
+        """Redraw from the daemon's answer, or say it is down."""
+        if "error" in got:
+            self.show_message("demonio no responde", C["dead"])
+            return
+        if got["sqx"] is not None:
+            self.sqx = got["sqx"]
+        self.show_jobs(got["jobs"])
 
     def clear(self) -> None:
         """Remove every widget of the strip."""
@@ -156,7 +168,7 @@ class JobsBar(QWidget):
                         f"{job.get('databank') or ''}\n" + "\n".join(job.get("tail", [])[-4:]))
         stop = QPushButton("✕", toolTip="Cancelar este trabajo", fixedWidth=24,
                            styleSheet="padding: 0;")
-        stop.clicked.connect(lambda: self.cancel(job["id"]))
+        stop.clicked.connect(lambda: self.cancel(job["id"], job["label"]))
         row.addWidget(text)
         if not waiting(job):
             progress = bar(job.get("percent"), BAR_PX, colour)
@@ -190,12 +202,18 @@ class JobsBar(QWidget):
                           BAR_PX, colour))
         return box
 
-    def cancel(self, job_id: str) -> None:
+    def cancel(self, job_id: str, label: str = "") -> None:
         """Ask the daemon to cancel one job, then redraw.
 
         Args:
             job_id: Its `id`.
+            label: Its `label`. A job that drives SQX asks first: one click stopped a
+                custodian hours into an MC Retest (📓 2026-09-29).
         """
+        if label in SQX_JOBS and QMessageBox.question(
+                self, "Cancelar", "Este trabajo maneja SQX: cancelarlo para el worker a media "
+                "tarea, y lo que no se haya guardado se pierde. ¿Cancelar?") != QMessageBox.Yes:
+            return
         try:
             ok = client.post(f"jobs/{job_id}/cancel", {}).get("ok")
         except httpx.HTTPError as refused:

@@ -23,14 +23,16 @@ class Advance(BaseModel):
 def answer(project: str, databank: str) -> dict:
     """The preflight as the window reads it, with a queued «Continuar» counted as a refusal."""
     pre = preflight.check(project, databank)
-    mine = [j for j in jobs.listing() if j["label"] == LABEL and j["rc"] is None]
+    # «Lanzar en SQX» shares the lane and the workers: one launcher at a time, either way.
+    mine = [j for j in jobs.listing() if j["label"] in (LABEL, "launch") and j["rc"] is None]
     if mine:
         pre["ok"] = False
-        pre["reasons"].append(f"ya hay un «Continuar workflow» en marcha o en cola "
+        pre["reasons"].append(f"ya hay un lanzamiento en marcha o en cola "
                               f"({mine[0]['project']} / {mine[0]['databank']})")
     return {"ok": pre["ok"], "reasons": pre["reasons"],
             "text": confirm.text(pre, project, pre["databank"]) if pre["ok"] else "",
-            "install": pre.get("install"), "task": pre.get("task"), "n": pre.get("n")}
+            "install": pre.get("install"), "role": pre.get("role"), "task": pre.get("task"),
+            "n": pre.get("n")}
 
 
 @ROUTER.get("/api/advance/preflight")
@@ -51,5 +53,6 @@ def run(req: Advance) -> dict[str, object]:
         return got
     job = jobs.start(LABEL, ["-m", "ui.daemon.advance.run", "--project", req.project,
                              "--databank", req.databank],
-                     {"project": req.project, "databank": req.databank}, lane="conductor")
+                     {"project": req.project, "databank": req.databank,
+                      "role": got.get("role")}, lane="conductor")
     return {**got, "job": job["id"]}

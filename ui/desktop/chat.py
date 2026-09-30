@@ -8,11 +8,14 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit, QPlainTex
                                QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
 from ui.desktop import client
+from ui.desktop.jobbutton import JobButton
 from ui.desktop.theme import C
 
-OPENING = ("Cuatro o cinco preguntas y te dejo el brief escrito y el comando listo para pegar "
-           "en Claude Code. Lo que no contestes lleva el default del dueño, y el brief dirá "
-           "cuál se aplicó.")
+OPENING = ("Cuatro o cinco preguntas y te dejo el brief escrito: créala desde aquí o pega el "
+           "prompt en Claude Code. Lo que no contestes lleva el default, y el brief lo dirá.")
+AUTHOR = ("Claude Code, sin nadie delante, corre /sqx-strategy-template sobre «{name}»: mira el "
+          "vocabulario del install, crea el bloque si falta e instala, emite y registra la "
+          "plantilla. Si algo es ambiguo no elige: el trabajo acaba con una PREGUNTA. ¿Lanzar?")
 
 
 def drop(layout: QVBoxLayout | QHBoxLayout) -> None:
@@ -37,15 +40,7 @@ def drop(layout: QVBoxLayout | QHBoxLayout) -> None:
 
 
 def bubble(text: str, mine: bool) -> QFrame:
-    """One message in the transcript.
-
-    Args:
-        text: What it says.
-        mine: True for the reader's own answers, which sit right and accented.
-
-    Returns:
-        A framed label.
-    """
+    """One message of the transcript, a framed label; `mine` (the reader's) sits accented."""
     f = QFrame()
     f.setStyleSheet(f"background:{C['accent'] if mine else C['raised']}; border-radius:10px;")
     lay = QVBoxLayout(f)
@@ -242,4 +237,7 @@ class Chat(QWidget):
         row.addWidget(as_json)
         row.addStretch()
         self.answer_lay.addLayout(row)
+        name = result["brief"]["name"]       # the owner, 2026-09-28: every step from a button
+        self.answer_lay.addWidget(JobButton("Crear la plantilla con Claude", "create/template",
+                                            lambda: {"name": name}, lambda: AUTHOR.format(name=name)))
         self.authored.emit()

@@ -3,7 +3,7 @@
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
-from ui.desktop import client
+from ui.desktop import background, client
 from ui.desktop.selection import SELECTION
 from ui.desktop.theme import C, MONO, T
 
@@ -37,6 +37,10 @@ class LoadBar(QWidget):
         for w in (*self.chips.values(), self.note):
             w.setStyleSheet(f"font-family:{MONO}; font-size:12px;")
             lay.addWidget(w)
+        # Its whole sentence was its minimum width, and «SQX está escribiendo…» beside a
+        # long crumb made the window 2007 px wide (📓 2026-09-29): it is clipped instead,
+        # and read whole on hover.
+        self.note.setMinimumWidth(60)
         self.again = QPushButton("↻")
         self.again.setToolTip("Volver a cargar lo que falló")
         self.again.setStyleSheet("border:none; padding:0 4px;")
@@ -65,24 +69,32 @@ class LoadBar(QWidget):
         self.timer.stop()
         if not all(where):
             return self.show_state(None)
-        self.show_state(self.ask("post"))
+        self.later("post")
 
     def poll(self) -> None:
         """Ask again how the loading goes; after SQX stopped writing, queue what is missing."""
         if all(self.where):
-            self.show_state(self.ask("post" if self.writing else "get"))
+            self.later("post" if self.writing else "get")
 
-    def ask(self, verb: str, retry: bool = False) -> dict:
+    def later(self, verb: str) -> None:
+        """`ask` off the GUI thread; its answer is painted only if the selection has not moved."""
+        where = self.where
+        background.run(lambda: self.ask(verb, where=where),
+                       lambda got: self.show_state(got) if where == self.where else None,
+                       key=f"loadbar:{id(self)}", owner=self)
+
+    def ask(self, verb: str, retry: bool = False, where: tuple | None = None) -> dict:
         """POST to load (queues what is missing) or GET the state; a daemon error is shown.
 
         Args:
             verb: `post` or `get`.
             retry: With `post`, queue the pieces that failed too.
+            where: (project, databank); the one on screen when None.
 
         Returns:
             The daemon's answer, or `{"error": sentence}`.
         """
-        project, databank = self.where
+        project, databank = where or self.where
         try:
             if verb == "post":
                 return client.post("load", {"project": project, "databank": databank,
@@ -118,6 +130,7 @@ class LoadBar(QWidget):
         self.note.setText(f"{got['strategies']} estrategias · {got['role']}"
                           + (" · SQX está escribiendo este proyecto: se carga al terminar"
                              if writing else ""))
+        self.note.setToolTip(self.note.text())
         self.note.setStyleSheet(f"font-family:{MONO}; font-size:12px; color:"
                                 f"{C['weak'] if writing else T['faint']};")
         if writing:

@@ -3,7 +3,8 @@
 from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton
 
-from ui.desktop.studypage.net import fetch, send
+from ui.desktop import background
+from ui.desktop.studypage.net import send
 from ui.desktop.theme import C
 
 POLL_MS = 3000
@@ -48,10 +49,18 @@ class Compute(QObject):
         self.timer.start()
 
     def poll(self) -> None:
-        """Look at the jobs; when all of this ficha's have ended, say so and stop."""
-        jobs = {j["id"]: j for j in fetch("jobs").get("jobs", [])}
+        """Look at the jobs off the GUI thread; `polled` reads them."""
+        background.get("jobs", self.polled, key=f"fichajobs:{id(self)}")
+
+    def polled(self, got: dict) -> None:
+        """When all of this ficha's jobs have ended, say so and stop; else show their progress."""
+        jobs = {j["id"]: j for j in got.get("jobs", [])}
         mine = [jobs[i] for i in self.ids if i in jobs]
+        if not self.ids or "error" in got:
+            return                            # a late answer, or a daemon that did not answer
         if any(j["rc"] is None for j in mine):
+            self.said.emit(" · ".join(f"{j['label']} {j.get('percent', 0)}% · {j['state']}"
+                                      for j in mine if j["rc"] is None))
             return
         self.timer.stop()
         failed = [j for j in mine if j["rc"] != 0]

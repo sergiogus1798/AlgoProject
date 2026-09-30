@@ -38,12 +38,19 @@ def export(project: str, databank: str) -> pd.DataFrame | None:
 
     Returns:
         Indexed by the strategy's name, one numeric column per metric and sample; None
-        when nothing was exported yet.
+        when nothing was exported yet, or the export of an empty databank (a header, or the
+        1-byte file older exports left, which pandas refuses: «No columns to parse»).
     """
     path = metrics_export(project, databank) / "metrics.csv"
     if not path.is_file():
         return None
-    frame = pd.read_csv(path, sep=";").set_index("Strategy Name")
+    try:
+        frame = pd.read_csv(path, sep=";")
+    except pd.errors.EmptyDataError:
+        return None
+    if "Strategy Name" not in frame:
+        return None
+    frame = frame.set_index("Strategy Name")
     return frame[[c for c in frame.columns if c not in TEXT]].select_dtypes("number")
 
 

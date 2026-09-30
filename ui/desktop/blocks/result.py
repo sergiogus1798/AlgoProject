@@ -158,6 +158,12 @@ class ResultView(QWidget):
                           "glosario, dibujados por core.study.render desde el mismo resultado.")
         button.clicked.connect(lambda: said.setText(tools.report(
             self.results, self.titles, self.memory, (self.meta or {}).get("path"))))
+        if not (self.meta or {}).get("path"):
+            # A result read straight from AlgoData (Datos' step-4 studies) has no report
+            # folder: the click could only ever say so (📓 2026-09-29), so it is off instead.
+            button.setEnabled(False)
+            button.setToolTip("Este resultado no viene de un informe guardado: no hay dónde "
+                              "escribir la página.")
         lay.addWidget(button)
         lay.addWidget(said)
         if self.stored and self.stored.get("partials"):

@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ui.daemon.sqxconfig import sections, write
+from ui.daemon.sqxconfig import sections, studies, studywrite, write
 
 ROUTER = APIRouter()
 
@@ -31,7 +31,8 @@ def set_value(change: FieldChange) -> dict[str, object]:
     """Write one value, comments and every other line left alone.
 
     Args:
-        change: Which file, which path, and the new value.
+        change: Which file — a shared one of assets/, or a study file behind the WFC and the
+            CSCV (`studies.FILES`) — which path, and the new value.
 
     Returns:
         What was written. A value outside its options, a locked one or a number that is not
@@ -39,6 +40,8 @@ def set_value(change: FieldChange) -> dict[str, object]:
         the one boundary where a bad value is shown instead of crashing.
     """
     try:
+        if change.file in studies.FILES:
+            return studywrite.set_field(change.file, change.path, change.value)
         return write.set_field(change.file, change.path, change.value)
     except ValueError as err:
         raise HTTPException(422, str(err)) from err

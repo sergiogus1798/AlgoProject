@@ -13,6 +13,7 @@ from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.desktop.selection import SELECTION
 from ui.desktop.theme import C, T
+from ui.desktop.workspace.newproject import NewProject
 
 CARD_MIN = 300    # px a card needs for its longest line; the row holds as many as fit, up to 4
 PER_ROW = 4
@@ -87,7 +88,7 @@ class Gallery(QFrame):
 
     `opened(name)` on a card click. The window calls `load`,
     which asks the daemon off the GUI thread (the first answer of a daemon hashes every
-    strategy of every install, ~12 s) and fills it when the answer lands."""
+    strategy of every install, 12-25 s) and fills it when the answer lands."""
 
     opened = Signal(str)
     arrived = Signal(dict)
@@ -122,6 +123,7 @@ class Gallery(QFrame):
         lay.setContentsMargins(24, 18, 24, 18)
         lay.addWidget(kicker)
         lay.addWidget(self.note)
+        lay.addWidget(NewProject(lambda _name: self.load()))   # owner, 2026-09-28
         lay.addSpacing(10)
         lay.addWidget(scroll, 1)
         self.arrived.connect(self.landed)
@@ -166,7 +168,9 @@ class Gallery(QFrame):
     def ask(self) -> None:
         """The request itself, off the GUI thread; the signal crosses back to it."""
         try:
-            got = client.get("projects/all")
+            # The first answer of a fresh daemon hashes every strategy of every install: 25 s
+            # on 2026-09-29, past the client's 20 s, and the gallery came up empty.
+            got = client.get("projects/all", wait=180)
         except httpx.HTTPError as e:
             got = {"projects": [], "error": f"El demonio no respondió: {e}"}
         self.arrived.emit(got)

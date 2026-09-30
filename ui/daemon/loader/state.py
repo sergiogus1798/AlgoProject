@@ -1,7 +1,15 @@
 """What of a databank is loaded, what is stale, and the commands that bring it up to date."""
 
+import base64
+import hashlib
+import re
+import struct
+import zipfile
+from functools import lru_cache
 from pathlib import Path
+from xml.etree import ElementTree
 
+from core import sqxstats
 from core.paths import export_dir, harvest_dir, metrics_export
 from ui.daemon import jobs
 from ui.daemon.loader import find
@@ -26,22 +34,104 @@ def newest(folder: Path, pattern: str) -> Path | None:
     return days[-1] / pattern if days else None
 
 
+JAVA_REF = re.compile(r"^([\w.$]+)@[0-9a-f]+$")
+
+
+def _records(blob: str) -> bytes:
+    """A statistics blob's records, sorted: the same statistics whatever order SQX wrote."""
+    raw, out, i = base64.b64decode(blob), [], 0
+    while i < len(raw):
+        kind, start = raw[i], i
+        if kind > sqxstats.NAMED:
+            i, kind = i + 3 + struct.unpack(">H", raw[i + 1:i + 3])[0], kind - sqxstats.NAMED
+        else:
+            i += 2
+        i += sqxstats.WIDTH[kind][2]
+        out.append(raw[start:i])
+    return b"".join(sorted(out))
+
+
+def _canonical(node: ElementTree.Element, h: "hashlib._Hash") -> None:
+    """Feed one element to `h` with its children in sorted order and its blobs as records.
+
+    SQX writes a strategy's results as hash maps, so on each save the statistics blocks and
+    the statistics inside each blob come out in another order (🔬 2026-09-29: «Parameters»
+    and «DoFRatio» swapped, the per-sample blocks too; same length, no value changed) and
+    settings.xml's CRC moves with nothing in it changed.
+    """
+    parts = []
+    for child in node:
+        sub = hashlib.blake2b(digest_size=16)
+        _canonical(child, sub)
+        parts.append(sub.digest())
+    # A WFM result names its statistics by Java object address («SQStats@4f573d92»), new on every
+    # save (🔬 2026-09-29: the WFM was re-exported at every stop for it): the class is kept.
+    attrs = sorted((k, JAVA_REF.sub(r"\1", v)) for k, v in node.attrib.items())
+    h.update(node.tag.encode() + repr(attrs).encode())
+    text = (node.text or "").strip()
+    h.update(_records(text) if node.tag == "SQStats" and node.get("e") == "b64" else text.encode())
+    for part in sorted(parts):
+        h.update(part)
+
+
+@lru_cache(maxsize=8192)
+def _entries(path: str, mtime_ns: int, size: int) -> str:
+    """One .sqx's content: its zip entries' CRCs, settings.xml's read order-free (mtime and
+    size are only the cache key)."""
+    try:
+        with zipfile.ZipFile(path) as z:
+            parts = []
+            for i in z.infolist():
+                if i.filename == "settings.xml":
+                    h = hashlib.blake2b(digest_size=16)
+                    _canonical(ElementTree.fromstring(z.read(i)), h)
+                    parts.append(f"settings:{h.hexdigest()}")
+                else:
+                    parts.append(f"{i.filename}:{i.CRC}:{i.file_size}")
+            return "|".join(parts)
+    except (OSError, zipfile.BadZipFile, ValueError, ElementTree.ParseError, struct.error):
+        return f"unreadable:{mtime_ns}:{size}"       # half written: never equal to a sig
+
+
+def fingerprint(sources: list[Path]) -> str:
+    """What the strategies are, not when SQX last saved them.
+
+    SQX rewrites every .sqx of every databank on its periodic sync, stamping each zip entry
+    with the save time, so a file's date moved with nothing in it changed. The zip's own
+    index carries each entry's CRC; settings.xml is read, its statistics in name order.
+    """
+    h = hashlib.blake2b(digest_size=16)
+    for f in sorted(sources):
+        st = f.stat()
+        h.update(f"{f.name}={_entries(str(f), st.st_mtime_ns, st.st_size)}\n".encode())
+    return h.hexdigest()
+
+
 def age(done: Path | None, sources: list[Path]) -> str:
-    """Whether an export is missing, older than the files it was made from, or fresh.
+    """Whether an export is missing, older than the strategies it was made from, or fresh.
 
     Args:
-        done: The export's manifest, or None.
+        done: The export's marker (its manifest, or the folder that makes it complete).
         sources: The .sqx files it reads.
 
     Returns:
         `missing`, `stale` or `fresh`. A strategy added, curated away or retested after the
-        export moves a file's time past the manifest's.
+        export moves a file's time past the marker's; a time moved by SQX's resave alone
+        does not: the export's `<marker>.sources.sig`, written the first time it is seen
+        fresh, still matches `fingerprint`. Without that every worker stop re-exported every
+        databank of the install (📓 2026-09-29: 8 min after a 20-min SPP run).
     """
     if done is None:
         return "missing"
     touched = max((f.stat().st_mtime for f in sources), default=0.0)
     folder = max((f.parent.stat().st_mtime for f in sources), default=0.0)   # a file removed
-    return "stale" if max(touched, folder) > done.stat().st_mtime else "fresh"
+    sig = done.parent / f"{done.name}.sources.sig"
+    if max(touched, folder) <= done.stat().st_mtime:
+        now = fingerprint(sources)
+        if not sig.exists() or sig.read_text() != now:
+            sig.write_text(now)
+        return "fresh"
+    return "fresh" if sig.exists() and sig.read_text() == fingerprint(sources) else "stale"
 
 
 def status(project: str, databank: str) -> dict:

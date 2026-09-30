@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from core.datapaths import template_dir, template_registry, template_runs
+from core.paths import MASTER, WORKERS
 from sqx.templates.holes import reach, shape
 
 DRAFTS = template_registry().parent / "drafts"
@@ -109,7 +110,11 @@ def one(name: str) -> dict[str, object]:
     entry = next(t for t in catalogue() if t["name"] == name)
     brief = template_dir(name) / "brief.md"
     sqx = template_dir(name) / "template.sqx"
-    form = shape(sqx) if sqx.exists() else None
+    # The groups a hole names live where the template's blocks were installed: both workers,
+    # and builds run on the custodian. Read against the master, every bound hole of a template
+    # authored after 2026-09-22 said «un grupo que esta instalación no tiene» (📓 2026-09-29).
+    builds = WORKERS["custodian"]["path"] if "custodian" in WORKERS else MASTER
+    form = shape(sqx, builds) if sqx.exists() else None
     return {**entry, "brief_md": brief.read_text(encoding="utf-8") if brief.exists() else "",
             "holes": form["holes"] if form else [], "fixed": form["fixed"] if form else [],
             "reach": reach(form) if form else ""}

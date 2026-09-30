@@ -115,7 +115,18 @@ class Tasks(QFrame):
         Returns:
             What `/api/progress` returned, for the caller's own line.
         """
-        got = client.get("progress", install=role, project=project)
+        return self.show(project, client.get("progress", install=role, project=project))
+
+    def show(self, project: str, got: dict) -> dict:
+        """Paint one `/api/progress` answer (`load`, or `Running` off the GUI thread).
+
+        Args:
+            project: Its name.
+            got: The daemon's answer.
+
+        Returns:
+            `got`, for the caller's own line.
+        """
         self.state.setText(state_line(got, project))
         self.fill(got["tasks"], got["run"]["percent"])
         self.log.setText("\n".join(got["run"]["tail"]) or "sin líneas de progreso hoy")

@@ -1,20 +1,23 @@
-"""The «Ficha» tab of the strategy page: IS/OOS side by side, exits, the underlying, the trades, the batch."""
+"""The «Ficha» tab of the strategy page: IS/OOS side by side — P&L, drawdown, years."""
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QLabel, QTabWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QFrame, QHBoxLayout, QLabel, QPushButton,
+                               QSpinBox, QTabWidget, QVBoxLayout, QWidget)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
 from ui.desktop.blocks.states import colour
 from ui.desktop.studypage.net import fetch
-from ui.desktop.theme import T
+from ui.desktop.theme import C, T
 
-# (sub-tab, route under /api or None for a widget of its own, whether the route takes the
-# asset). A result whose tabs are exactly «IS», «OOS» is drawn with IS beside OOS.
-SUBS = (("IS/OOS", "tearsheet", False), ("Salidas", "tearsheet/exits", False),
-        ("Contra el subyacente", "tearsheet/market", True), ("Operaciones", None, False),
-        ("Lote", None, False))
-LOTE = len(SUBS) - 1    # shown only when the strategy is the mother of a variant batch
+# (sub-tab, route under /api). A result whose tabs are exactly «IS», «OOS» is drawn with IS
+# beside OOS. The owner took «Salidas», «Contra el subyacente» and «Operaciones» out on
+# 2026-09-28; PORTFOLIOS still lists them for an archived version. «Lote» moved to the WFC
+# study's own tab on 2026-09-29 — a strategy can have no batch, so it does not belong here.
+SUBS = (("IS/OOS", "tearsheet"),)
+TOP = 5                 # «Excluir top X% de trades»: the X it opens with
+PICKED = (f"QPushButton:checked {{ background: {C['accent']}; color: {T['bg']}; font-weight: 700; }}"
+          "QPushButton { min-width: 34px; }")
 PENDING = "pendiente: {what} todavía no está en esta versión de la ventana."
 
 
@@ -59,7 +62,8 @@ class Ficha(QFrame):
     drawer, no history; its staleness is the cosecha's day, printed in the note."""
 
     def __init__(self) -> None:
-        """Build the four sub-tabs, empty; each fills on its first opening per strategy."""
+        """Build the switches and the two sub-tabs, empty; each fills on its first opening per
+        strategy."""
         super().__init__()
         self.setObjectName("term")
         self.where: dict = {}
@@ -68,16 +72,50 @@ class Ficha(QFrame):
         lay.setContentsMargins(0, 4, 0, 0)
         self.note = text("", T["text"], 14)
         lay.addWidget(self.note)
+        lay.addLayout(self._knobs())
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
-        self.subs = [Sub(ResultView() if route else QLabel()) for _, route, _ in SUBS]
-        for sub, (name, _, _) in zip(self.subs, SUBS):
+        self.subs = [Sub(ResultView()) for _, route in SUBS]
+        for sub, (name, _) in zip(self.subs, SUBS):
             self.tabs.addTab(sub, name)
-        self.tabs.setTabToolTip(LOTE, "Las variantes de esta madre en coordenadas paralelas: "
-                                      "sólo los tramos build y oos1, nunca oos2.")
-        self.tabs.setTabVisible(LOTE, False)
         self.tabs.currentChanged.connect(self._open)
         lay.addWidget(self.tabs, 1)
+
+    def _knobs(self) -> QHBoxLayout:
+        """The IS/OOS sheet's two switches: the P&L without its best trades, the drawdown's unit."""
+        self.top = QCheckBox("Excluir top")
+        self.top.setToolTip("Dibuja también, discontinua, cada curva de P&L acumulado sin su X % "
+                            "de operaciones mejores: si el resto no gana, el beneficio cuelga de "
+                            "unas pocas.")
+        self.share = QSpinBox()
+        self.share.setRange(1, 50)
+        self.share.setValue(TOP)
+        self.share.setSuffix("%")
+        self.dd = QButtonGroup(self)
+        row = QHBoxLayout()
+        row.addWidget(self.top)
+        row.addWidget(self.share)
+        row.addWidget(QLabel("de trades", objectName="dim"))
+        row.addSpacing(28)
+        row.addWidget(QLabel("Drawdown en", objectName="dim"))
+        for i, unit in enumerate(("%", "$")):
+            button = QPushButton(unit)
+            button.setCheckable(True)
+            button.setChecked(i == 0)
+            button.setStyleSheet(PICKED)
+            self.dd.addButton(button, i)
+            row.addWidget(button)
+        row.addStretch(1)
+        self.top.toggled.connect(self._redraw)
+        self.share.valueChanged.connect(lambda _: self.top.isChecked() and self._redraw())
+        self.dd.idClicked.connect(self._redraw)
+        return row
+
+    def _redraw(self, *_: object) -> None:
+        """A switch moved: the IS/OOS sheet is asked again, now if it is open."""
+        self.done.discard(0)
+        if self.tabs.currentIndex() == 0:
+            self._open(0)
 
     def load(self, where: dict) -> None:
         """Follow a new selection; the open sub-tab refills now, the rest when opened.
@@ -90,10 +128,6 @@ class Ficha(QFrame):
             return
         self.where = dict(where)
         self.done = set()
-        # The batch belongs to the mother by name, across the project's databanks.
-        from ui.desktop.batchview.tab import has_batch
-        self.tabs.setTabVisible(LOTE, bool(where.get("project") and where.get("strategy"))
-                                and has_batch(where["project"], where["strategy"]))
         self.note.setText(f"{where.get('strategy') or 'Ninguna estrategia elegida'} · "
                           f"{where.get('project') or '—'} › {where.get('databank') or '—'}")
         self._open(self.tabs.currentIndex())
@@ -106,17 +140,14 @@ class Ficha(QFrame):
         w, sub = self.where, self.subs[index]
         if not (w.get("project") and w.get("databank") and w.get("identity")):
             return sub.say("Elige una estrategia en el panel de databanks de Proyecto.")
-        _, route, asset = SUBS[index]
-        if index == LOTE:
-            return self._batch(sub)
-        if route is None:
-            return self._gallery(sub)
+        _, route = SUBS[index]
         got = fetch(route, project=w["project"], databank=w["databank"], identity=w["identity"],
-                    **({"asset": w.get("asset") or ""} if asset else {}))
+                    top=self.share.value() if self.top.isChecked() else 0,
+                    dd=self.dd.checkedButton().text())
         if "error" in got:
             late = "404" in got["error"]
             return sub.say(PENDING.format(what=f"/api/{route}") if late else got["error"],
-                           T["muted"] if late else colour("fail"))
+                           T["muted"] if late or got.get("absent") else colour("fail"))
         day = got.get("harvest_day")
         if day and index == 0:
             self.note.setText(f"{got['strategy']} · {w['project']} › {w['databank']} · "
@@ -131,32 +162,3 @@ class Ficha(QFrame):
         # compare()'s first row is each side's verdict header; the Ficha judges nothing and
         # its sides are named by the tab title and the notes above, so the row goes.
         sub.body.content.layout().itemAt(0).widget().hide()
-
-    def _gallery(self, sub: Sub) -> None:
-        """The trade gallery, imported on first use; «pendiente» while it does not exist."""
-        try:
-            from ui.desktop.tradegallery import TradeGallery
-        except ImportError:
-            return sub.say(PENDING.format(what="la galería de operaciones"))
-        if not isinstance(sub.body, TradeGallery):
-            sub.layout().removeWidget(sub.body)
-            sub.body.deleteLater()
-            sub.body = TradeGallery()
-            sub.layout().insertWidget(1, sub.body, 1)
-        sub.line.setText("")
-        sub.body.show()
-        w = self.where
-        sub.body.load(w["project"], w["databank"], w["identity"], "IS")
-
-    def _batch(self, sub: Sub) -> None:
-        """The mother's variant batch, built on first use like the gallery."""
-        from ui.desktop.batchview.tab import BatchTab
-        if not isinstance(sub.body, BatchTab):
-            sub.layout().removeWidget(sub.body)
-            sub.body.hide()
-            sub.body.deleteLater()
-            sub.body = BatchTab()
-            sub.layout().insertWidget(1, sub.body, 1)
-        sub.line.setText("")
-        sub.body.show()
-        sub.body.load(self.where["project"], self.where["strategy"])

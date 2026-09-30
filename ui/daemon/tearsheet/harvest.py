@@ -12,6 +12,11 @@ TRADES = ["Open time", "Close time", "Profit/Loss", "Size", "Balance", "Close ty
           "MFE ($)", "sample"]
 
 
+class Absent(str):
+    """A strategy the databank holds that its cosecha does not pair: a fact, not a failure —
+    cut before the OOS retest (a «Continuar workflow»), or never retested. Painted grey."""
+
+
 def newest(project: str, databank: str) -> Path | None:
     """The newest cosecha folder of (project, databank), by its folder date.
 
@@ -51,8 +56,10 @@ def read(project: str, databank: str, identity: str) -> dict | str:
     where = [("identity", "==", identity)]
     metrics = pd.read_parquet(folder / "metrics.parquet", filters=where)
     if metrics.empty:
-        return (f"La estrategia {identity[:12]}… no está en la cosecha {folder.name} de "
-                f"{project}/{databank}: una identidad solo empareja dentro de su databank.")
+        return Absent(f"Sin pareja en el OOS de la cosecha {folder.name}: esta estrategia se "
+                      "quedó fuera en un corte («Continuar workflow») o SQX no la retesteó. La "
+                      "cosecha solo lleva las que tienen las dos muestras; sus cifras IS siguen "
+                      f"en la tabla de {databank}.")
     equity = pd.read_parquet(folder / "equity.parquet", columns=EQUITY, filters=where)
     trades = pd.read_parquet(folder / "trades.parquet", columns=TRADES, filters=where)
     stray = (set(equity["sample"]) | set(trades["sample"].astype(str))) - set(SAMPLES)

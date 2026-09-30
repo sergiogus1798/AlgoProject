@@ -13,8 +13,9 @@ def get_pulse() -> dict:
 
     Returns:
         `{"custodian": {...}}`. Reads /proc, today's SQX log, `sqcli.config` and the daemon's
-        job logs; sends nothing to any install. Takes about half a second: the CPU figure
-        is two samples of the process's clock ticks.
+        job logs; to a custodian whose log says a project runs it sends `-project
+        action=status` (`runs.count`), and nothing else to any install. Takes about half a
+        second: the CPU figure is two samples of the process's clock ticks.
     """
     return {"custodian": pulse.custodian()}
 

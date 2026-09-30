@@ -1,12 +1,11 @@
 """The custodian's pulse inside «En marcha»: the line of a long run, its figures explained, the last readings."""
 
-import httpx
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QListWidget,
                                QListWidgetItem, QPushButton, QVBoxLayout)
 
-from ui.desktop import client
+from ui.desktop import background
 from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.desktop.theme import C, MONO, T
@@ -130,11 +129,15 @@ class Pulse(QFrame):
         self.poll.stop()
 
     def refresh(self) -> None:
-        """Ask the daemon for one reading, or say it is not answering."""
-        try:
-            self.show_pulse(client.get("pulse")["custodian"])
-        except httpx.HTTPError as down:
-            self.warn.setText(f"demonio no responde: {type(down).__name__}")
+        """Ask the daemon for one reading off the GUI thread; `landed` paints it."""
+        background.get("pulse", self.landed, key=f"pulse:{id(self)}")
+
+    def landed(self, got: dict) -> None:
+        """Paint the reading, or say the daemon is not answering."""
+        if "error" in got:
+            self.warn.setText("demonio no responde")
+            return
+        self.show_pulse(got["custodian"])
 
     def show_pulse(self, p: dict) -> None:
         """Paint one reading and push it onto the history.

@@ -3,12 +3,17 @@ smallest pieces every zone draws with (a rule, a kicker)."""
 
 from PySide6.QtWidgets import QFrame, QLabel
 
+from ui.desktop import buttonstyle
+
 # One colour, one meaning, everywhere. The verdict scale is discrete and only ever has
 # these five steps: a verdict is a decision the owner took, not a number to interpolate.
 C = {"bg": "#0f1219", "panel": "#171c26", "raised": "#1e2431", "line": "#2a3140",
      "text": "#e7eaf0", "muted": "#8d96aa", "faint": "#5c6678", "accent": "#8a7dff",
      "promising": "#2fb98a", "weak": "#d9a441", "dead": "#c2515e",
      "pending": "#8390a8", "untried": "#141922"}
+
+# Scroll bars and splitter handles: a track that shows where the bar is, a handle that stands out.
+BAR = {"track": "#262c38", "handle": "#7d879b"}
 
 VERDICT_COLOUR = {"promising": C["promising"], "weak": C["weak"], "dead": C["dead"],
                   "": C["pending"]}
@@ -70,18 +75,6 @@ QFrame#sidebar {{ background: {C['panel']}; border-right: 1px solid {C['line']};
 QFrame#panel {{ background: {C['panel']}; border: 1px solid {C['line']}; border-radius: 8px; }}
 QFrame#tile {{ background: {C['raised']}; border: 1px solid {C['line']}; border-radius: 8px; }}
 
-QPushButton {{ background: {C['raised']}; border: 1px solid {C['line']};
-               border-radius: 6px; padding: 7px 13px; }}
-QPushButton:hover {{ border-color: {C['accent']}; }}
-QPushButton:disabled {{ color: {C['faint']}; border-color: {C['line']}; }}
-QPushButton#nav {{ background: transparent; border: none; text-align: left;
-                   padding: 10px 16px; border-radius: 0; color: {C['muted']}; }}
-QPushButton#nav:hover {{ background: {C['raised']}; color: {C['text']}; }}
-QPushButton#nav:checked {{ background: {C['raised']}; color: {C['text']};
-                           border-left: 3px solid {C['accent']}; font-weight: 600; }}
-QPushButton#primary {{ background: {C['accent']}; border-color: {C['accent']};
-                       color: #ffffff; font-weight: 600; }}
-
 QLineEdit, QTextEdit, QPlainTextEdit, QComboBox {{
     background: {C['raised']}; border: 1px solid {C['line']}; border-radius: 6px;
     padding: 7px 9px; selection-background-color: {C['accent']}; }}
@@ -101,9 +94,21 @@ QListWidget {{ background: {C['panel']}; border: 1px solid {C['line']};
 QListWidget::item {{ padding: 9px 10px; border-radius: 6px; }}
 QListWidget::item:selected {{ background: {C['raised']}; }}
 
-QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px; }}
-QScrollBar::handle:vertical {{ background: {C['line']}; border-radius: 5px; min-height: 30px; }}
-QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; }}
+/* Scroll bars and splitter handles meant to be SEEN (owner, 2026-09-28: «mucho más claras, en
+   todos los lugares»): a visible track, a light handle, the accent under the mouse. */
+QScrollBar:vertical {{ background: {BAR['track']}; width: 14px; margin: 0; border-radius: 7px; }}
+QScrollBar:horizontal {{ background: {BAR['track']}; height: 14px; margin: 0; border-radius: 7px; }}
+QScrollBar::handle:vertical {{ background: {BAR['handle']}; border-radius: 6px; min-height: 40px;
+    margin: 2px; }}
+QScrollBar::handle:horizontal {{ background: {BAR['handle']}; border-radius: 6px; min-width: 40px;
+    margin: 2px; }}
+QScrollBar::handle:hover, QScrollBar::handle:pressed {{ background: {C['accent']}; }}
+QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; width: 0; }}
+QScrollBar::add-page, QScrollBar::sub-page {{ background: none; }}
+QSplitter::handle {{ background: {BAR['track']}; }}
+QSplitter::handle:vertical {{ height: 9px; }}
+QSplitter::handle:horizontal {{ width: 9px; }}
+QSplitter::handle:hover, QSplitter::handle:pressed {{ background: {C['accent']}; }}
 QToolTip {{ background: {C['raised']}; color: {C['text']}; border: 1px solid {C['accent']};
             padding: 6px; }}
 
@@ -141,8 +146,11 @@ def chip(text: str, colour: str) -> str:
 # 2026-09-27: `rule` one step lighter, so sections part visibly, and `accent` — the touch of
 # colour inside the terminal look: kickers and the active tab, never a meaning.
 T = {"bg": "#0b0b0c", "panel": "#111113", "line": "#232326", "rule": "#3e3e46",
-     "text": "#f0f0ec", "muted": "#c2c2c8", "faint": "#9a9aa2", "select": "#1f1f24",
-     "accent": C["accent"]}
+     "text": "#f0f0ec", "muted": "#c2c2c8", "faint": "#9a9aa2",
+     # 2026-09-29 (feedback §1.6): the selected row of a term list/table/tab was almost the
+     # same shade as the background — a card someone picked in Configuración SQX did not read
+     # as picked. Lighter and tinted with the accent so a selection is unmistakable.
+     "select": "#332c52", "accent": C["accent"]}
 MONO = '"JetBrains Mono", "DejaVu Sans Mono", monospace'
 
 QSS += f"""
@@ -166,19 +174,20 @@ QFrame#term QTableWidget::item {{ padding: 0 6px; }}
 QFrame#term QTableWidget::item:selected, QFrame#term QListWidget::item:selected {{
     background: {T['select']}; color: {T['text']}; }}
 QFrame#term QListWidget::item {{ padding: 3px 8px; border-radius: 0; }}
-QFrame#term QPushButton {{ background: transparent; border: 1px solid {T['muted']};
-    border-radius: 2px; padding: 3px 10px; font-family: {MONO}; font-size: 12px;
-    font-weight: 700; }}
-QFrame#term QPushButton:hover {{ border-color: {T['text']}; }}
 QFrame#term QComboBox {{ background: {T['panel']}; border: 1px solid {T['rule']};
     border-radius: 2px; padding: 3px 8px; font-family: {MONO}; font-weight: 700; }}
 QFrame#term QCheckBox {{ font-weight: 600; }}
 QFrame#term QLineEdit {{ background: {T['panel']}; border: 1px solid {T['rule']};
     border-radius: 2px; padding: 4px 8px; font-family: {MONO}; font-size: 13px; }}
+QFrame#term QScrollBar:vertical, QFrame#term QScrollBar:horizontal {{
+    background: {BAR['track']}; }}
 QFrame#term QScrollBar::handle:vertical, QFrame#term QScrollBar::handle:horizontal {{
-    background: {T['rule']}; }}
-QFrame#term QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 2px; }}
-QFrame#term QScrollBar::handle:horizontal {{ border-radius: 5px; min-width: 30px; }}
+    background: {BAR['handle']}; }}
+QFrame#term QScrollBar::handle:hover, QFrame#term QScrollBar::handle:pressed {{
+    background: {C['accent']}; }}
+QFrame#term QSplitter::handle {{ background: {BAR['track']}; }}
+QFrame#term QSplitter::handle:hover, QFrame#term QSplitter::handle:pressed {{
+    background: {C['accent']}; }}
 QFrame#term QTabWidget::pane {{ border: none; border-top: 1px solid {T['rule']}; }}
 QFrame#term QTabBar::tab {{ background: transparent; color: {T['muted']};
     border: 1px solid transparent; border-radius: 7px; padding: 4px 12px;
@@ -188,6 +197,7 @@ QFrame#term QTabBar::tab:selected {{ background: {T['select']}; color: {T['text'
     border: 1px solid {T['accent']}; font-weight: 700; }}
 QFrame#term QTabBar::tab:disabled {{ color: {T['faint']}; }}
 """
+QSS += buttonstyle.qss(C, T, MONO)    # after both looks: buttons lit, the «?» mark
 
 
 def state_colour(value: str) -> str:

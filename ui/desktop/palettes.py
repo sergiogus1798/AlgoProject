@@ -243,7 +243,7 @@ class Palettes(QWidget):
         self.reload(slug)
 
     def on_delete(self) -> None:
-        """Remove the open palette and fall back to whatever the library still holds."""
+        """Remove the open palette (the bar has asked) and fall back to what the library holds."""
         client.post(f"palette/{self.open}/delete", {})
         self.open = ""
         self.reload(None)

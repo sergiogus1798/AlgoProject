@@ -1,4 +1,4 @@
-"""The ficha's basic statistics: IS / OOS1 / OOS2 (behind its door), the figures and the trade distribution."""
+"""The ficha's basic statistics: IS / OOS1 / IS+OOS1 / OOS2 (behind its door), the figures and the trade distribution."""
 
 from PySide6.QtWidgets import (QButtonGroup, QComboBox, QGridLayout, QHBoxLayout, QLabel,
                                QPushButton, QVBoxLayout, QWidget)
@@ -9,7 +9,11 @@ from ui.text.numbers import num
 from ui.desktop.theme import C, T
 from ui.desktop.workspace.fichajobs import Compute, uncomputed
 
-SEGMENTS = ("IS", "OOS1", "OOS2")
+SEGMENTS = ("IS", "OOS1", "IS+OOS1", "OOS2")
+LOCKED = SEGMENTS.index("OOS2")
+# The four figures the owner reads first, one step larger (2026-09-28); their names keep the grey.
+BIG = ("Operaciones", "Beneficio neto (SQX, suma de operaciones)",
+       "Beneficio neto con spread y slippage reales (suma de operaciones)", "Profit Factor")
 PICKED = (f"QPushButton:checked {{ border-color: {C['accent']}; background: {T['select']}; }}"
           f"QPushButton:disabled {{ color: {T['faint']}; border: 1px dashed {T['faint']}; }}")
 
@@ -29,8 +33,9 @@ def figure(row: dict) -> QLabel:
     skew or a PF is not a loss."""
     value, unit = row["value"], row.get("unit", "")
     shown = QLabel(num(value, unit), objectName="mono")
-    ink = C["dead"] if "USD" in unit and isinstance(value, (int, float)) and value < 0 else T["text"]
-    shown.setStyleSheet(f"color: {ink}; font-size: 13px;")
+    money = "USD" in unit or "$" in unit
+    ink = C["dead"] if money and isinstance(value, (int, float)) and value < 0 else T["text"]
+    shown.setStyleSheet(f"color: {ink}; font-size: {15 if row['label'] in BIG else 13}px;")
     return shown
 
 
@@ -78,8 +83,8 @@ class Stats(QWidget):
         self.chart = QVBoxLayout()
         lay = QHBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
-        lay.addLayout(left, 1)
-        lay.addLayout(self.chart, 1)
+        lay.addLayout(left, 2)
+        lay.addLayout(self.chart, 3)
 
     def fill(self, data: dict) -> None:
         """Take `/api/strategy/stats`'s answer and show IS.
@@ -97,7 +102,7 @@ class Stats(QWidget):
         self.unit.blockSignals(False)
         oos2 = data.get("samples", {}).get("OOS2", {})
         locked = "rows" not in oos2
-        self.segment.button(2).setEnabled(not locked)
+        self.segment.button(LOCKED).setEnabled(not locked)
         # A disabled button never shows its tooltip, so the reason is written beside it.
         self.reserved.setText(f"OOS2 {oos2['blocked']}" if "blocked" in oos2 else "")
         self.reserved.setToolTip(oos2.get("why", ""))
@@ -111,16 +116,19 @@ class Stats(QWidget):
         if "error" in self.data:
             error = QLabel(self.data["error"], objectName="dim")
             error.setWordWrap(True)
-            error.setStyleSheet(f"color: {C['dead']};")
+            error.setStyleSheet(f"color: {C['muted' if self.data.get('absent') else 'dead']};")
             self.grid.addWidget(error, 0, 0, 1, 2)
             return
         got = self.data["samples"][SEGMENTS[index]]
         shape = got.get("returns", {}).get(self.unit.currentText(), {})
-        rows = got["rows"] + ([{"label": f"Retorno por operación ({self.unit.currentText()})",
-                                "value": None, "head": True}] if shape else [])
+        rows = got["rows"] + ([{"label": "Retorno por operación", "value": None, "head": True}]
+                              if shape else [])
         rows += shape.get("rows", [])
         for i, row in enumerate(rows):
             name = QLabel(label(row["label"]), objectName="kicker" if row.get("head") else "dim")
+            name.setWordWrap(True)
+            if row["label"] in BIG:
+                name.setStyleSheet("font-size: 15px;")
             self.grid.addWidget(name, i, 0)
             if row.get("head"):
                 continue

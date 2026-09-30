@@ -13,7 +13,7 @@ COLUMNS = ["identity", "sample", "Close time", "Profit/Loss", REAL]
 NO_REPORT = "sin informe del estudio spread para esta estrategia"
 
 
-def _rows(folders: list[Path], name: str, identity: str) -> tuple[pd.DataFrame, str] | None:
+def repriced(folders: list[Path], name: str, identity: str) -> tuple[pd.DataFrame, str] | None:
     """The strategy's repriced trades from the newest spread report that holds them.
 
     Args:
@@ -70,7 +70,7 @@ def curve(data: dict, spread: list[Path]) -> dict:
     """
     eq = data["equity"].sort_values(["sample", "day"], kind="stable")      # IS sorts before OOS
     eq = eq.assign(pnl=eq.groupby("sample")["equity"].diff().fillna(eq["equity"]))
-    found = _rows(spread, data["strategy"], data["identity"])
+    found = repriced(spread, data["strategy"], data["identity"])
     real = real_net = real_dd = None
     if found is not None:
         rows, day = found

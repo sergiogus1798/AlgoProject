@@ -29,8 +29,15 @@ def context(project: str, databank: str, strategy: str, asset: str) -> dict:
         newest one; `split` and `end`, the first out-of-sample day and the last day of `oos1`.
     """
     a = assetdata.load(asset)
-    days = sorted((DATA / "raw" / project / databank).glob("*/trades.parquet"))
-    harvests = sorted((DATA / "harvest" / project / databank).glob("*/metrics.parquet"))
+    # The window and layout.py hand over the databank exactly as SQX spells it, spaces and
+    # all ("Retest Markets - Family"); every export lands on disk with underscores
+    # (`core.paths.report_dir` et al.). Without this, a databank whose name is not already
+    # underscore-safe found no export and no harvest here, however much either held — the
+    # Cross Market tab's own databank read "necesita el export del retest cross-market" about
+    # itself (feedback 2026-09-29 §1.4).
+    folder = databank.replace(" ", "_")
+    days = sorted((DATA / "raw" / project / folder).glob("*/trades.parquet"))
+    harvests = sorted((DATA / "harvest" / project / folder).glob("*/metrics.parquet"))
     oos = a["segments"]["oos1"]
     feeds = where.markets(days[-1]) if days else []
     return {"project": project, "databank": databank, "strategy": strategy, "asset": asset,
@@ -96,9 +103,11 @@ def atr_calculator(c: dict) -> list[str] | str:
     """Step 22: the stop's X read from the MAE of the IS winners; SQX's half needs /variants."""
     if not c["export"]:
         return NO_TRADES
-    folder = DATA / "raw" / c["project"] / c["databank"] / c["export"]
+    folder = DATA / "raw" / c["project"] / c["databank"].replace(" ", "_") / c["export"]
     said = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
-    frames = said.get("source", {}).get("timeframes") or []
+    # export_retest signs them under `source`, export_trades under `counts` (2026-09-28: every
+    # single-market export read «sin timeframe» and monkey/entryQuality/atr never ran).
+    frames = said["source"].get("timeframes") or said.get("counts", {}).get("timeframes") or []
     if len(frames) != 1:
         return "el export no dice en qué timeframe corre la estrategia; pásalo a mano con --timeframe"
     return ["-m", "studies.closing.atrCalculator.report", "--project", c["project"],

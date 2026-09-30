@@ -1,4 +1,4 @@
-"""One mother's variant batch as the parallel-coordinates view draws it, build and oos1 only."""
+"""One mother's variant batch as the parallel-coordinates view draws it: build, oos1 and, when the batch has it, oos2."""
 
 import math
 from pathlib import Path
@@ -6,13 +6,16 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 from core.datapaths import variants_dir
+from ledger import gate
 from pipeline.ledger.state import work_dir
 from ui.daemon.runner import where
 
-# The one-way door: a column naming any of these is never read. `ALL` and `oos1+oos2` both
+# The one-way door, shut only for an autonomous agent (`ledger.gate.enforced`; owner,
+# 2026-09-28): then a column naming any of these is never read. `ALL` and `oos1+oos2` both
 # include the reserved segment; `oos2` is it.
 SEALED = ("oos2", "ALL")
 OUTCOMES = ("NetProfit (oos1)", "NetProfit (build)")
+OPTIONAL = ("NetProfit (oos2)",)          # drawn when the batch was retested over it
 LABELS = ("variant_id", "stratum", "origin")
 
 
@@ -23,9 +26,10 @@ def sealed(name: str) -> bool:
         name: A column name or any text about to leave the daemon.
 
     Returns:
-        True when it names `oos2`, `ALL` or `oos1+oos2`.
+        True when the door is shut and it names `oos2`, `ALL` or `oos1+oos2`; always False
+        for a human.
     """
-    return any(s in name for s in SEALED)
+    return gate.enforced() and any(s in name for s in SEALED)
 
 
 def folders(project: str, strategy: str) -> list[Path]:
@@ -49,10 +53,11 @@ def columns(path: Path) -> list[str]:
         path: A batch's `metrics.parquet`.
 
     Returns:
-        Labels, every `param_*` and the two outcomes present, in the file's order.
+        Labels, every `param_*` and the outcomes present, in the file's order.
     """
     names = pq.read_schema(path).names
-    keep = [c for c in names if c in LABELS or c.startswith("param_") or c in OUTCOMES]
+    keep = [c for c in names
+            if c in LABELS or c.startswith("param_") or c in OUTCOMES + OPTIONAL]
     return [c for c in keep if not sealed(c)]
 
 
@@ -64,7 +69,7 @@ def clean(v: object) -> object:
 
 
 def read(path: Path) -> dict:
-    """The batch panel from one `metrics.parquet`, oos2 never loaded.
+    """The batch panel from one `metrics.parquet`, oos2 among the outcomes when it has one.
 
     Args:
         path: The file.
@@ -94,13 +99,14 @@ def read(path: Path) -> dict:
     note = (f"{n} variantes del lote ({', '.join(f'{k} {v}' for k, v in counts.items())}). "
             f"Un eje por parámetro que varía; el último es el NetProfit del tramo elegido. "
             f"Parámetros con un solo valor, sin eje: {fixed_text}. "
-            "Solo se leen los tramos build y oos1.")
+            + ("Tramos: build, oos1 y oos2." if OPTIONAL[0] in cols else "Tramos: build y oos1."))
     return {"variants": [str(v) for v in t.get("variant_id", range(n))],
             "stratum": [str(s) for s in strata], "mother": mother,
             "axes": [{k: a[k] for k in ("key", "label", "values")} for a in axes],
             "fixed": [{"label": f["label"], "value": f["levels"][0] if f["levels"] else None}
                       for f in fixed],
-            "outcomes": {o: [clean(v) for v in t[o]] for o in OUTCOMES}, "note": note}
+            "outcomes": {o: [clean(v) for v in t[o]] for o in OUTCOMES + OPTIONAL if o in cols},
+            "note": note}
 
 
 def batch(project: str, strategy: str) -> dict:

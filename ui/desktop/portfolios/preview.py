@@ -9,7 +9,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication
 
 from core.paths import UI_PORT
-from ui.desktop import client
+from ui.desktop import client, helpmark
 from ui.desktop.portfolios.imported import ImportedFicha
 from ui.desktop.portfolios.zone import PortfoliosZone
 from ui.desktop.studypage.net import fetch
@@ -66,6 +66,7 @@ def main() -> None:
     client._HTTP.base_url = f"http://127.0.0.1:{args.port}"   # every view reaches it through client
     app = QApplication(sys.argv)
     app.setStyleSheet(QSS)
+    helpmark.install(app)     # the «?» beside every button
     zone, fichas = PortfoliosZone(), []
     zone.import_requested.connect(opener(fichas))
     zone.setWindowTitle("AlgoProject — Portfolios")

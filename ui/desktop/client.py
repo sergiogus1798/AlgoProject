@@ -19,18 +19,21 @@ def aim(port: int) -> None:
     _HTTP = httpx.Client(base_url=BASE, timeout=20.0)
 
 
-def get(path: str, **params: str) -> dict:
+def get(path: str, wait: float | None = None, **params: str) -> dict:
     """Read something from the daemon.
 
     Args:
         path: Route under /api, without the prefix.
+        wait: Seconds to wait instead of the client's 20, for a read that runs off the GUI
+            thread and can be slow the first time (the gallery hashes every install).
         params: Query parameters.
 
     Returns:
         The decoded JSON body. A non-2xx raises: the daemon is on loopback and started by
         this same process, so a failure there is a bug to see, not a state to render.
     """
-    r = _HTTP.get(f"/api/{path}", params=params)
+    r = _HTTP.get(f"/api/{path}", params=params,
+                  **({"timeout": wait} if wait is not None else {}))
     r.raise_for_status()
     return r.json()
 

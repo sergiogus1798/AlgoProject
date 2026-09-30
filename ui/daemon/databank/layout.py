@@ -73,8 +73,14 @@ def databank(project: str, out: dict, stage: str, studies: list[str]) -> str:
 
 
 def splits(project: str, bank: str, study: str) -> list[str]:
-    """The sub-panels a study's own data names: its tasks, markets or timeframes."""
-    got = table.table(project, bank)
+    """The sub-panels a study's own data names: its tasks, markets or timeframes; none when
+    that databank cannot be read. Its own sub-panel says why when opened: one unreadable
+    databank (an empty export, 2026-09-29) used to fail the whole tab list, and the window
+    stayed on it with no tabs to leave by."""
+    try:
+        got = table.table(project, bank)
+    except Exception:  # noqa: BLE001 — the ui boundary: the tab row must always come back
+        return []
     return list(dict.fromkeys(c["sub"] for c in got["columns"]
                               if c.get("study") == study and c["sub"]))
 

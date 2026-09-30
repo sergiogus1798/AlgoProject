@@ -38,7 +38,8 @@ def preflight(spec: dict, ctx: dict) -> dict:
         return step("blocked", f"El preflight de {ctx['asset']} se niega hoy: "
                                f"{', '.join(stop)} sin valor pactado. Del dueño.")
     soft = provisional(data)
-    return step("done", f"El preflight de {ctx['asset']} pasa hoy"
+    return step("done", f"El preflight de {ctx['asset']} pasa hoy: su ficha en Activos tiene "
+                        "decididos los costes que exige su clase y sus tramos caben en sus datos"
                         + (f"; costes PROVISIONALES: {', '.join(soft)}" if soft else "") + ".")
 
 
@@ -62,16 +63,21 @@ def sqx(spec: dict, ctx: dict) -> dict:
     if not tasks:
         return step("missing", f"El proyecto no tiene las tareas {', '.join(names)}.")
     run = view["run"]
-    if run["project"] == ctx["project"] and not run["finished"] and run["current"] in names:
+    cut = run["project"] == ctx["project"] and not run["finished"] and run["current"] in names
+    # A run killed before «Project finished» leaves the log saying «started» all day: running
+    # only while an SQX process of the install lives (as `advance.busy`, 2026-09-28).
+    if cut and view["alive"]:
         return step("running", f"SQX corre «{run['current']}» en {view['role']}"
                                + (f", {run['percent']} %" if run["percent"] is not None else ""))
+    killed = (f"El log dice que «{run['current']}» empezó y no terminó, y ningún proceso de SQX "
+              f"vive en {view['role']}: se cortó. " if cut else "")
     held = {t["title"]: view["banks"].get(t["output"], 0) for t in tasks}
     runs = [r for r in view["runs"] if r["title"] in names and r["finished"]]
     tested = [r for r in runs if "tested" in r]
     listing = ", ".join(f"{t}: {n}" for t, n in held.items())
     if not any(held.values()) and not runs:
         armed = [t["title"] for t in tasks if t["active"]]
-        return step("pending", f"Ninguna tarea ha dejado estrategias ({listing})"
+        return step("pending", f"{killed}Ninguna tarea ha dejado estrategias ({listing})"
                                + (f"; activas para el próximo start: {', '.join(armed)}"
                                   if armed else "") + ".")
     if tested:
@@ -83,7 +89,7 @@ def sqx(spec: dict, ctx: dict) -> dict:
         how = "Sin corrida de hoy en el log del proyecto: cuentas del databank"
     day = (runs[-1]["started"][:10] if runs else
            sources.day_of(view["folder"] / "databanks" / tasks[-1]["output"]))
-    return step("done", f"{how}. En disco: {listing}"
+    return step("done", f"{killed}{how}. En disco: {listing}"
                         + sources.curated(ctx["project"], tasks[-1]["output"]) + ".",
                 n_in, n_out, day)
 

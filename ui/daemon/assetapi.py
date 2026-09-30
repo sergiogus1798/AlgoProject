@@ -176,3 +176,17 @@ def set_market(change: MarketChange) -> dict[str, object]:
         The category as written.
     """
     return assets.assetwrite.set_market(change.symbol, change.category, change.feeds)
+
+
+@ROUTER.post("/api/asset/{symbol}/market/main")
+def declare_main(symbol: str) -> dict[str, object]:
+    """Give this asset its own Cross Market block, empty, if it is not a declared main yet.
+
+    Args:
+        symbol: Asset name.
+
+    Returns:
+        Its block, so the zone can fill `candidates` straight after (owner, 2026-09-29
+        §1.7: every asset with a card is a main; provisional-cost ones too).
+    """
+    return assets.assetwrite.declare_main(symbol, assets.load(symbol)["sqx_symbol"])

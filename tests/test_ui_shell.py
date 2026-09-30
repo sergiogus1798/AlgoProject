@@ -96,14 +96,22 @@ def wait(app: QApplication, done: object, seconds: float = 60) -> None:
 
 
 def test_panel_to_strategy(app: QApplication, shell: Shell) -> None:
-    """SELECTION → Proyecto's panel; a double click opens Estrategia on that strategy, whose
-    crumb names it; the ficha reads the daemon for its three panels."""
+    """SELECTION → Proyecto fills Databanks too; the drawer's «→ ver en Databanks» opens it on
+    the step's tab; a double click there opens Estrategia on that strategy, whose crumb names
+    it; the ficha reads the daemon for its three panels."""
     SELECTION.choose(project=PROJECT)
     shell.open_zone("Proyecto")
     table = shell.workspace.panel.table
     wait(app, lambda: table.rowCount() > 0)
-    assert table.rowCount() > 0, "el panel de databanks de Proyecto salió vacío"
+    assert table.rowCount() > 0, "el panel de Databanks salió vacío"
+    assert shell.workspace.panel.window() is shell and shell.workspace.databanks.isAncestorOf(
+        shell.workspace.panel), "el panel de databanks no vive en la zona Databanks"
     shot(shell, "proyecto")
+    tab = shell.workspace.panel.tab()
+    shell.workspace.see(tab, "")
+    assert shell.stack.currentWidget() is shell.zones["Databanks"]
+    assert shell.workspace.panel.tab() == tab
+    shot(shell, "databanks")
     row = next(r for r in range(table.rowCount())
                if table.rows[table.item(r, 0).data(256)]["identity"])
     chosen = table.rows[table.item(row, 0).data(256)]
@@ -112,7 +120,7 @@ def test_panel_to_strategy(app: QApplication, shell: Shell) -> None:
     assert shell.stack.currentWidget() is shell.estrategia, shell.status.text()
     assert shell.estrategia.currentWidget() is shell.ficha
     assert SELECTION.now["identity"] == chosen["identity"]
-    assert SELECTION.now["databank"] == DATABANK
+    assert SELECTION.now["databank"] == DATABANK, (SELECTION.now, shell.workspace.panel.sub_spec())
     assert shell.context.crumbs["strategy"].text() == chosen["name"]
     assert shell.ficha.title.text() == chosen["name"]
     wait(app, lambda: not shell.ficha.said.text())
@@ -153,7 +161,7 @@ def test_portfolios_import(app: QApplication, shell: Shell) -> None:
 def test_grabs(app: QApplication, shell: Shell) -> None:
     """One grab per zone the selection does not change, for a person to look at."""
     for zone in ZONES:
-        if zone in ("Proyecto", "Estrategia"):
+        if zone in ("Proyecto", "Databanks", "Estrategia"):
             continue
         shell.open_zone(zone)
         settle(app)

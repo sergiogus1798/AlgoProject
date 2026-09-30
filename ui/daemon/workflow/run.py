@@ -5,7 +5,7 @@ import pandas as pd
 from core.paths import DATA
 from sqx.projects.stage import titles
 from ui.daemon import jobs, runs
-from ui.daemon.runner import table, where
+from ui.daemon.runner import batch, table, where
 from ui.daemon.workflow import sources, tests
 from ui.daemon.workflow.derive import BLIND
 from ui.daemon.workflow.steps import STEPS
@@ -117,7 +117,7 @@ def refusal(n: str, key: str, ctx: dict) -> str | None:
     Returns:
         The sentence, or None. An unknown step, an SQX step (its task is SQX's, its analysis
         is read from the panel), a study that is not a test of that step, and a test
-        `tests.one` does not mark runnable are all refused here.
+        `tests.one` does not mark runnable — one while SQX runs on the project — are refused.
     """
     spec = BY_N.get(n)
     if spec is None:
@@ -126,7 +126,7 @@ def refusal(n: str, key: str, ctx: dict) -> str | None:
         return tests.SQX_STEP
     if key not in tests.keys(spec):
         return f"{key} no es una prueba del paso {n}"
-    got = tests.one(spec, key, ctx, [])
+    got = tests.one(spec, key, ctx, tests.running(ctx["project"]))
     return None if got["runnable"] else got["why"]
 
 
@@ -153,7 +153,8 @@ def start(ctx: dict, ticked: list[dict], databank: str, picked: list[str]) -> di
         if isinstance(got, str):
             refused.append({"n": t["n"], "key": t["key"], "why": got})
             continue
-        out += [jobs.start(p["label"], p["argv"], p["about"] | {"step": t["n"]}) for p in got]
+        out += [jobs.start(p["label"], p["argv"], p["about"] | {"step": t["n"]},
+                           weight=p.get("weight")) for p in batch.fold(got)]
     return {"jobs": out, "refused": refused}
 
 

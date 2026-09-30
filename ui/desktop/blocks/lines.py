@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QWidget
 
 from ui.desktop.blocks import axis, chart
 from ui.desktop.blocks.card import card
-from ui.desktop.blocks.states import REAL, SERIES
+from ui.desktop.blocks.states import CURVE, REAL, SERIES
 from ui.desktop.theme import T
 
 # Past six drawn series the hues repeat, so the pen style changes with each lap.
@@ -16,11 +16,15 @@ STYLES = (Qt.SolidLine, Qt.DashDotLine, Qt.DotLine)
 
 
 def _pens(b: dict) -> list[tuple[str, Qt.PenStyle, float]]:
-    """(colour, style, width) per series: a lone real series in the real ink, references
-    dashed grey, the rest in the fixed series order."""
+    """(colour, style, width) per series: one naming an `ink` of `CURVE` in it (dashed with
+    `dash`), a lone real series in the real ink, references dashed grey, the rest in the fixed
+    series order."""
     drawn = [s for s in b["series"] if s["role"] != "reference"]
     out, k = [], 0
     for s in b["series"]:
+        if s.get("ink"):
+            out.append((CURVE[s["ink"]], Qt.DashLine if s.get("dash") else Qt.SolidLine, 2.0))
+            continue
         if s["role"] == "reference":
             out.append((T["muted"], Qt.DashLine, 1.5))
             continue

@@ -6,7 +6,9 @@ discrete scale; the mother dashed in the brightest ink. Whether the good variant
 (plateau) or a single line (peak) is read off the picture. Reads nothing: it asks `/api/batch`.
 
 **Imports from:** `ui/desktop/client`, `ui/desktop/blocks` (`chart`, `axis`, `states`), `ui/desktop/theme` ·
-**Consumed by:** the strategy page, as the tab «Lote» (wired by the integrator)
+**Consumed by:** `ui/desktop/studypage/page.py`, as a «Lote» tab beside the drawer — shown only
+while the WFC study is open on a mother (owner, 2026-09-29: it left the Ficha, since a strategy
+can have no batch)
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

@@ -62,10 +62,14 @@ def conditional_map(c: dict, strategy: str) -> list[str] | str:
 
 def exposure(c: dict, strategy: str) -> list[str] | str:
     """Step 21: market time against buy and hold."""
-    return runs.own_trades(c) or (
-        ["-m", "studies.closing.exposure.report", "--project", c["project"], "--databank",
-         c["databank"], "--feed", c["feed"], "--symbol", c["asset"]]
-        + (["--strategy", strategy] if strategy else []))
+    if runs.own_trades(c):
+        return runs.own_trades(c)
+    frame = where.export_timeframe(Path(c["trades"]).parent)
+    # The occupancy grid is the export's own timeframe, not config.yaml's M30.
+    return (["-m", "studies.closing.exposure.report", "--project", c["project"], "--databank",
+             c["databank"], "--feed", c["feed"], "--symbol", c["asset"]]
+            + (["--strategy", strategy] if strategy else [])
+            + (["--set", f"study.timeframe={frame}"] if frame else []))
 
 
 def atr_calculator(c: dict, strategy: str) -> list[str] | str:

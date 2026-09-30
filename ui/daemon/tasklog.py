@@ -1,6 +1,7 @@
 """A project's own task log and the worker's status line: counts, times and the running total."""
 
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -13,11 +14,21 @@ FINISHED = re.compile(r"TASK FINISHED at ([\d.]+ [\d:.]+)")
 TASK = re.compile(r"^Task: (.+), Type: (\w+)", re.M)
 BEFORE = re.compile(r"Databanks before start: (.+)")
 BANK = re.compile(r"(?:^|, )([^(]+?) \((\d+)\)")
-TESTED = re.compile(r"Total tested: (\d+), Time per strategy: ([\d.]+) (ms|s)\., Passed: (\d+), Failed: (\d+)")
+# SQX's durations: «850 ms.», «21 s.», «1 min. 10 s.», «1 hr. 15 min.» (🔬 2026-09-29: past a
+# minute per strategy the «N s.» pattern matched nothing and /api/pulse answered 500).
+DURATION = r"((?:[\d.]+ (?:hr|min|s|ms)\.\s*)+)"
+UNIT_MS = {"hr": 3_600_000, "min": 60_000, "s": 1000, "ms": 1}
+TESTED = re.compile(r"Total tested: (\d+), Time per strategy: " + DURATION
+                    + r", Passed: (\d+), Failed: (\d+)")
 STATUS = {"generated": re.compile(r"Strategies generated\s+(\d+)"),
-          "per_strategy_ms": re.compile(r"Time per strategy\s+([\d.]+) (ms|s)\."),
+          "per_strategy_ms": re.compile(r"Time per strategy\s+" + DURATION),
           "running": re.compile(r"Running time so far\s+(.+)"),
           "in_databank": re.compile(r"In databank\s+(\d+)")}
+
+
+def to_ms(text: str) -> float:
+    """Milliseconds in one of SQX's durations, «1 min. 10 s.» → 70000.0."""
+    return sum(float(n) * UNIT_MS[u] for n, u in re.findall(r"([\d.]+) (hr|min|s|ms)\.", text))
 
 
 def task_runs(project_dir: Path) -> list[dict]:
@@ -37,12 +48,18 @@ def task_runs(project_dir: Path) -> list[dict]:
         text = f.read_text(encoding="utf-8", errors="replace")
         for chunk in text.split("TASK STARTED at ")[1:]:
             chunk = "TASK STARTED at " + chunk
-            started = datetime.strptime(STARTED.search(chunk).group(1), STAMP)
             task = TASK.search(chunk)
+            # SQX writes a start in pieces: read the second after it began, the chunk may stop
+            # at its title, with no «Databanks before start» yet. 🔬 2026-09-28: indexing that
+            # missing line killed the watcher and, through its `finally`, a live build.
+            if task is None:
+                continue
+            started = datetime.strptime(STARTED.search(chunk).group(1), STAMP)
             fin = FINISHED.search(chunk)
             finished = datetime.strptime(fin.group(1), STAMP) if fin else None
-            before = {m.group(1).strip(): int(m.group(2))
-                      for m in BANK.finditer(BEFORE.search(chunk).group(1))}
+            listed = BEFORE.search(chunk)
+            before = ({m.group(1).strip(): int(m.group(2)) for m in BANK.finditer(listed.group(1))}
+                      if listed else {})
             row = {"title": task.group(1), "type": task.group(2),
                    "started": started.isoformat(timespec="seconds"),
                    "finished": finished.isoformat(timespec="seconds") if finished else None,
@@ -50,11 +67,31 @@ def task_runs(project_dir: Path) -> list[dict]:
                    "before": before}
             t = TESTED.search(chunk)
             if t:
-                unit = 1000 if t.group(3) == "s" else 1
-                row |= {"tested": int(t.group(1)), "per_strategy_ms": float(t.group(2)) * unit,
-                        "passed": int(t.group(4)), "failed": int(t.group(5))}
+                row |= {"tested": int(t.group(1)), "per_strategy_ms": to_ms(t.group(2)),
+                        "passed": int(t.group(3)), "failed": int(t.group(4))}
             out.append(row)
     return out
+
+
+_ASKED: dict[tuple[str, str], tuple[float, str]] = {}
+ASK_EVERY_S = 15
+
+
+def _asked(role: str, project: str) -> str:
+    """The worker's status text, asked at most every ASK_EVERY_S for all the daemon's readers.
+
+    The pulse, «En marcha» and the jobs strip each asked on their own, beside the running job's
+    own poll: 🔬 2026-09-29 two statuses landed together as SQX closed «WFC 1 IS» and it died
+    with a NullPointerException in ProjectGlobalLog (a likely, not a proven, cause). One cached
+    answer serves them all.
+    """
+    now = time.monotonic()
+    seen = _ASKED.get((role, project))
+    if seen and now - seen[0] < ASK_EVERY_S:
+        return seen[1]
+    text = worker.call(f"-project action=status name={project}", role)
+    _ASKED[(role, project)] = (now, text)
+    return text
 
 
 def status(role: str, project: str) -> dict | None:
@@ -72,12 +109,12 @@ def status(role: str, project: str) -> dict | None:
     """
     if role not in WORKERS or not worker.holding(WORKERS[role]["path"]):
         return None
-    text = worker.call(f"-project action=status name={project}", role)
+    text = _asked(role, project)
     got = {k: rx.search(text) for k, rx in STATUS.items()}
     if not got["generated"]:
         return None
     per = got["per_strategy_ms"]
     return {"generated": int(got["generated"].group(1)),
-            "per_strategy_ms": float(per.group(1)) * (1000 if per.group(2) == "s" else 1),
+            "per_strategy_ms": to_ms(per.group(1)) if per else None,
             "running": got["running"].group(1).strip(),
             "in_databank": int(got["in_databank"].group(1))}

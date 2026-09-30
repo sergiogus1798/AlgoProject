@@ -1,4 +1,4 @@
-"""OOS2 for the Ficha: sealed until steps 17, 18 and 19 are in the ledger, then read from a cosecha that carries it."""
+"""OOS2 for the Ficha, read from a cosecha that carries it — sealed until 17-19 only for an autonomous agent (`ledger.gate.enforced`)."""
 
 import pandas as pd
 

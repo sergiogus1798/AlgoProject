@@ -5,14 +5,17 @@ router = one line appended to `ROUTERS`; never reorder (plan 24 §5).
 """
 
 from ui.daemon.advance.api import ROUTER as ADVANCE
+from ui.daemon.launch.api import ROUTER as LAUNCH
 from ui.daemon.archive.api import ROUTER as ARCHIVE
 from ui.daemon.assetapi import ROUTER as ASSETS
 from ui.daemon.batch.api import ROUTER as BATCH
+from ui.daemon.create.api import ROUTER as CREATE
 from ui.daemon.data.api import ROUTER as DATA
 from ui.daemon.databank.api import ROUTER as DATABANK
 from ui.daemon.filters.api import ROUTER as FILTERS
 from ui.daemon.jobsapi import ROUTER as JOBS
 from ui.daemon.loader.api import ROUTER as LOADER
+from ui.daemon.mt5bridge.api import ROUTER as MT5BRIDGE
 from ui.daemon.ops.api import ROUTER as OPS
 from ui.daemon.projects.api import ROUTER as PROJECTS
 from ui.daemon.results.api import ROUTER as RESULTS
@@ -43,5 +46,8 @@ ROUTERS = (
     FILTERS,
     STRATEGY,
     ADVANCE,
+    LAUNCH,
     ARCHIVE,
+    CREATE,
+    MT5BRIDGE,
 )

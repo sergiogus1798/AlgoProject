@@ -8,7 +8,7 @@ import re
 LABELS = {
     # SQX metrics, as the exports name them
     "Net profit": "Beneficio neto", "# of trades": "Operaciones",
-    "Profit factor": "Factor de beneficio", "Sharpe Ratio": "Sharpe",
+    "Profit factor": "Profit Factor", "Sharpe Ratio": "Sharpe",
     "Ret/DD Ratio": "Retorno / DD", "Max DD %": "DD máximo %",
     "Winning Percent": "% ganadoras", "R Expectancy": "Esperanza en R",
     "Stability": "Estabilidad", "PSR": "PSR",
@@ -57,7 +57,7 @@ LABELS = {
     "sqx.databank": "Databank", "sqx.precision": "Precisión",
     "sqx.crosschecks": "Crosschecks", "sqx.crossmarket": "Cross-market",
     "sqx.crosstf": "Cross-timeframe (CrossTF)", "sqx.mc_retest": "MC Retest",
-    "sqx.wfc": "WFC y CSCV", "sqx.spp": "SPP", "sqx.wfm": "Walk Forward Matrix (WFM)",
+    "sqx.wfc": "WFC", "sqx.cscv": "CSCV", "sqx.spp": "SPP", "sqx.wfm": "Walk Forward Matrix (WFM)",
     "sqx.forex": "Clase forex", "sqx.no_forex": "Clase no forex",
     "sqx.segments_default": "Tramos: qué es cada uno", "sqx.swap": "Swap",
     "sqx.universe": "Mercados de retest",
@@ -87,6 +87,19 @@ LABELS = {
     "sqx.op": "Operador", "sqx.value": "Valor", "sqx.what": "Qué es", "sqx.spread": "Spread",
     "sqx.fields": "Campos", "sqx.unit": "Unidad", "sqx.sqx": "Ajuste de SQX", "sqx.note": "Nota",
     "sqx.commission": "Comisión", "sqx.field": "Campo", "sqx.sqx_method": "Método de SQX",
+    # WFC and CSCV's study files (owner, 2026-09-28): the batch, the factory, the two readings
+    "sqx.n_target": "Máx. variantes por madre", "sqx.variants": "Mín. variantes por madre",
+    "sqx.strata": "Estratos", "sqx.neighbourhood": "Vecindad", "sqx.factorial": "Factorial",
+    "sqx.coverage": "Cobertura", "sqx.min_span": "Recorrido mínimo ±", "sqx.plateau_share": "Meseta",
+    "sqx.min_levels": "Mín. niveles", "sqx.max_levels": "Máx. niveles", "sqx.widen_step": "Ensanche",
+    "sqx.max_span": "Recorrido máximo ±", "sqx.radius": "Radio", "sqx.frozen": "Congelados",
+    "sqx.span": "Recorrido ±", "sqx.steps": "Pasos", "sqx.n": "Cuántos", "sqx.seed": "Semilla",
+    "sqx.inert_pairs": "Pares inertes", "sqx.min_trades": "Mín. operaciones por lado",
+    "sqx.split_mode": "Composición del corte", "sqx.rho_floor": "Suelo de ρ",
+    "sqx.table_ends": "Filas por extremo", "sqx.period": "Periodo", "sqx.score": "Puntuación",
+    "sqx.blocks": "Bloques (combinaciones)", "sqx.rules": "Reglas de selección",
+    "sqx.random_draws": "Sorteos de la regla aleatoria", "sqx.bootstrap": "Remuestreos",
+    "sqx.cluster_k_max": "Máx. clústeres", "sqx.why": "Por qué",
     "sqx.formula": "Fórmula", "sqx.slippage": "Slippage", "sqx.sqx_type": "Tipo de SQX",
     "sqx.purpose": "Para qué", "sqx.reserved_for": "Reservado a",
     "sqx.triple_swap_on": "Triple swap el", "sqx.rollout_hour": "Hora del rollover",
@@ -208,6 +221,8 @@ def label(key: object) -> str:
     if KEY.fullmatch(key):
         split = re.sub(r"(?<=[a-z])(?=[A-Z])", "_", key)          # camelCase too: isOos
         key = " ".join(WORDS.get(w.lower(), w) for w in re.split(r"[._]+", split) if w)
+        # The owner's name for it, in English on every screen (2026-09-28): `profit_factor_is`.
+        key = re.sub(r"(?i)\bprofit factor\b", "Profit Factor", key)
     return key[:1].upper() + key[1:]
 
 

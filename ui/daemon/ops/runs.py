@@ -13,8 +13,8 @@ def count(role: str, project: str) -> dict | None:
         project: The project its log says is running.
 
     Returns:
-        `task`, `done`, `total` (None for a build: it has no input to count against) and
-        `percent` — SQX's own compute-thread figure when the log carries one, else done over
+        `task`, `done`, `total` (None for a build: it has no input to count against),
+        `elapsed_s` (the task's own clock, from the project log) and `percent` — SQX's own compute-thread figure when the log carries one, else done over
         total — or None when the project is not on disk or has no running task. The only
         command this can send is `progress.state`'s `-project action=status`, the one the
         custodian may receive between start and collect (CLAUDE.md rule 3).
@@ -30,7 +30,8 @@ def count(role: str, project: str) -> dict | None:
     percent = got["run"]["percent"]
     if percent is None and done is not None and total:
         percent = min(100, round(100 * done / total))
-    return {"task": now["title"], "done": done, "total": total, "percent": percent}
+    return {"task": now["title"], "done": done, "total": total,
+            "elapsed_s": now.get("elapsed_s"), "percent": percent}
 
 
 def running(role: str) -> dict | None:

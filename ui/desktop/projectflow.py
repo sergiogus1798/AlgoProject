@@ -101,7 +101,9 @@ def select_strategy(identity: str, shown: tuple[str, str] | None = None) -> str:
     Args:
         identity: The strategy's SHA-256 identity; its name and databank come from the
             daemon's rosters (`/api/projects/find`) and the hash itself is never shown.
-        shown: (databank, name) as the databank panel shows the row. Used when no install
+        shown: (databank, name) as the databank panel shows the row. Its databank is the
+            daemon's first place to look: one identity may sit in Results and OOS alike. Used
+            as the answer when no install
             holds the strategy any more — a row the panel read from the cosecha and the
             reports (📓 2026-09-28: the custodian kept only WFM of the USDJPY project), which
             the ficha still reads by identity.
@@ -112,7 +114,7 @@ def select_strategy(identity: str, shown: tuple[str, str] | None = None) -> str:
     now = SELECTION.now
     try:
         got = client.get("projects/find", project=now["project"] or "", identity=identity,
-                         databank=now["databank"] or "")
+                         databank=(shown[0] if shown else now["databank"]) or "")
     except httpx.HTTPError as e:
         return f"El demonio no respondió: {e}"
     if "error" in got and shown:

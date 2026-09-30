@@ -4,8 +4,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from ui.daemon import jobs
+from ui.daemon.launch import chainplan
 from ui.daemon.runner import where
-from ui.daemon.workflow import derive, ledgerview, run, sources, tests
+from ui.daemon.workflow import derive, ledgerview, needs, run, sources, tests
 from ui.daemon.workflow.steps import STEPS
 
 ROUTER = APIRouter()
@@ -57,8 +58,11 @@ def workflow(project: str) -> dict:
         project: Project name.
 
     Returns:
-        `steps` in WORKFLOW.md order — each with its `tab`, `sub`, `stage` and `tests` —
-        `tabs`, `oos2`, `blind` and `backfill`, the offer to rebuild the rows of 17-19.
+        `steps` in WORKFLOW.md order — each with its `tab`, `sub`, `stage`, `tests`,
+        `panel` (its tests read the databank the panel shows) and `needs` (the steps it
+        needs done first, `needs.of`) —
+        `tabs`, `oos2`, `blind`, `backfill`, the offer to rebuild the rows of 17-19, and
+        `chain`: what «Correr workflow» would run now and where it would stop.
     """
     ctx = context(project)
     live = tests.running(project)
@@ -74,11 +78,13 @@ def workflow(project: str) -> dict:
         row = derive.seal(spec, row, ctx)
         out.append({"n": spec["n"], "title": spec["title"], "kind": spec["kind"],
                     "studies": spec["studies"], "tab": spec["tab"], "sub": spec["sub"],
-                    "stage": spec.get("stage"),
-                    "tests": tests.of_step(spec, ctx, live), **row})
+                    "stage": spec.get("stage"), "panel": spec["feeds"] == (),
+                    "needs": needs.of(spec, ctx), "tests": tests.of_step(spec, ctx, live),
+                    **row})
     return {"project": project, "asset": ctx["asset"], "family": ctx["family"],
             "steps": out, "tabs": TABS, "oos2": ctx["oos2"], "blind": ctx["blind"],
-            "backfill": run.backfill(ctx, run.blind_on_disk(raw))}
+            "backfill": run.backfill(ctx, run.blind_on_disk(raw)),
+            "chain": chainplan.plan({"steps": out})}
 
 
 @ROUTER.get("/api/workflow")

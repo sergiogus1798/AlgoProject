@@ -2,14 +2,15 @@
 
 from datetime import date
 
-from core import assetwrite
+from core import assetdata, assetranges, assetwrite
 from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending, provisional,
                              segments_pending, validate)
 from core.assetdata import (RESERVED, classes, fields, load, markets, policy, schema, special_notes,
                             symbols)
 from core.assets import report
 from core.assetyaml import leaves
-from core.paths import ASSETS
+from core.paths import ASSETS, WORKERS
+from sqx.inspect.instruments import mc_ranges
 
 
 def units(data: dict) -> dict:
@@ -78,7 +79,14 @@ def one(symbol: str) -> dict:
               "required": f in REQUIRED[data["class"]]} for f in fields(data)]
     segments = [{"name": n, **s, "reserved_for": s.get(RESERVED, [])}
                 for n, s in data["segments"].items()]
-    mc = [{"name": n, **r} for n, r in (data.get("mc_retest") or {}).items()]
+    # What the MC Retest will draw, beside what the file says: an empty slippage range is
+    # 1x-4x the build's slippage in `core.assets`, and the card read it as «sin decidir».
+    applied = assetranges.mc_retest(data)
+    # MC Retest runs on the custodian, not the master `sqx_now` was recorded from (feedback
+    # 2026-09-29 §1.7): read the custodian's own projects on disk, never query or start it.
+    custodian = mc_ranges(WORKERS["custodian"]["path"], data["sqx_symbol"]) or {}
+    mc = [{"name": n, **r, "applied": applied.get(n), "custodian_now": custodian.get(n)}
+          for n, r in (data.get("mc_retest") or {}).items()]
     return {"symbol": symbol, "class": data["class"], "broker": data["broker"],
             "sqx_symbol": data["sqx_symbol"], "feeds": data["feeds"],
             "session": data.get("session"), "verified": str(data["verified"]),

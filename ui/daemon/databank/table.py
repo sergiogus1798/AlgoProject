@@ -75,7 +75,9 @@ def table(project: str, databank: str) -> dict:
         databank: Either spelling.
 
     Returns:
-        `databank`, `rows_from` (archivos | informes), `metrics_from` (cosecha | export |
+        `databank`, `rows_from` (archivos | informes), `held_by` (the role whose folder
+        is empty, None when no install has it), `writing` (SQX is writing that folder now:
+        its files are not read, which is why the rows come from the reports), `metrics_from` (cosecha | export |
         ''), `columns` [{key, kind (name | metric | study), metric, sample, study, sub,
         field, title}], `rows` [{identity (None for a name-only row), name, values (one per
         column), states {verdict column key: state}}], `studies` present, and `sealed`
@@ -130,7 +132,10 @@ def table(project: str, databank: str) -> dict:
                     e["states"].get(sub, e["state"]) if sub else e["state"])
         rows.append({"identity": None if key.startswith("name:") else key, "name": name,
                      "values": values, "states": states})
-    return {"databank": db, "rows_from": rows_from, "metrics_from": got_from,
+    where = find.install_of(project, db) if rows_from == "informes" else None
+    return {"databank": db, "rows_from": rows_from, "held_by": where[0] if where else None,
+            "writing": bool(where) and find.writing(where[1], project),
+            "metrics_from": got_from,
             "columns": columns, "rows": rows,
             "studies": [s for s in order if any(f[0] == s for f in study_cols)],
             "sealed": {"studies": list(SEALED), "text": blind["text"]} if hidden else None}

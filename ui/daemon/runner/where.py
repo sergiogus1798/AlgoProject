@@ -64,7 +64,9 @@ def export_timeframe(day: Path) -> str | None:
         e.g. "H1".
     """
     said = json.loads((day / "manifest.json").read_text(encoding="utf-8"))
-    frames = said.get("source", {}).get("timeframes") or []
+    # export_retest signs them under `source`, export_trades under `counts` (2026-09-28: every
+    # single-market export read «sin timeframe» and monkey/entryQuality/atr never ran).
+    frames = said["source"].get("timeframes") or said.get("counts", {}).get("timeframes") or []
     return frames[0] if len(frames) == 1 else None
 
 

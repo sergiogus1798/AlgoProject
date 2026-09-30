@@ -7,10 +7,11 @@ from pathlib import Path
 from core import sqxfile, worker
 from core.datapaths import project_registry
 from core.paths import MASTER, WORKERS, databank_dir, project_dir
-from sqx.projects import registry, stage
+from sqx.projects import crosstfload, registry, stage
 from sqx.projects.configure import BY_TASK, DEFAULT_SEGMENT
 from ui.daemon import progress, workerguard
 from ui.daemon.filters import discards
+from ui.daemon.launch.steps import unconfigured
 from ui.daemon.workflow.steps import STEPS
 
 # QUIET_MIN's job narrowed once the owner lock (OPEN.md #32) existed: a live holder is now
@@ -147,14 +148,29 @@ def next_task(tasks: list[dict], databank: str) -> dict:
     if here is None:
         return {"refuse": f"ninguna tarea de un paso del workflow escribe «{databank}»"}
     later = STEPS[STEPS.index(here) + 1:]
+    # CrossTF reads the Cross Market survivors, and MC Retest the mothers CrossTF kept, through
+    # a databank no task writes (`crosstfload`): the run fills it from this one before starting.
+    fed = crosstfload.feeders({t["title"]: {"Input": t["input"], "Output": t["output"]}
+                               for t in tasks})
     for s in [s for s in later if "stage" in s]:
         titles = stage.titles(s["stage"])
-        hit = next((t for t in tasks if t["title"] in titles and t["input"] == databank), None)
+        hit = next((t for t in tasks if t["title"] in titles
+                    and databank in (t["input"], fed.get(t["input"]))), None)
         if hit:
+            # Every task of the step that reads the cut, or what an earlier one of it writes:
+            # the eight MC Retests all read CrossTF_Mothers, SPP OOS reads SPP IS (📓
+            # 2026-09-30: `skip` was «every other title», so only «MCR 1 Bar» ever ran).
+            on = [hit["title"]]
+            for t in tasks:
+                if t["title"] in titles and t["title"] not in on and (
+                        t["input"] == hit["input"]
+                        or t["input"] in {u["output"] for u in tasks if u["title"] in on}):
+                    on.append(t["title"])
             return {"producer": producer["title"], "step": here["n"],
+                    "fill": hit["input"] if hit["input"] in fed else "",
                     "segment": BY_TASK.get(producer["type"], DEFAULT_SEGMENT),
                     "task": hit["title"], "stage": s["stage"],
-                    "skip": [t for t in titles if t != hit["title"]]}
+                    "skip": [t for t in titles if t not in on]}
     return {"refuse": f"ninguna tarea posterior a «{producer['title']}» lee «{databank}»"}
 
 
@@ -202,6 +218,10 @@ def check(project: str, databank: str) -> dict:
     if "refuse" in following:
         reasons.append(following.pop("refuse"))
     else:
+        # The launcher's configurators, on a task of the step whose cross-check is still off.
+        following["configure"] = unconfigured(cfx, [t for t in stage.titles(following["stage"])
+                                                    if t not in following["skip"]])
+        following["inputs"] = {t["title"]: t["input"] for t in tasks}
         # What the next task's output already holds: a retest appends beside it, so the
         # confirmation says so (📓 2026-09-29, OOS 200 + 21 as «Strategy X(1)»).
         out = next(t["output"] for t in tasks if t["title"] == following["task"])

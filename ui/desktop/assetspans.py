@@ -1,17 +1,14 @@
-"""One asset's windows: its data, the three segments, the MC Retest ranges and the Cross Market."""
+"""One asset's windows: its data, the three segments and the MC Retest ranges."""
 
 from PySide6.QtCore import QDate, Signal
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QDateEdit, QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox,
-                               QPushButton, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import QDateEdit, QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from ui.desktop import client
-from ui.desktop.assetcard import cell, clear, fit, grid, send, val
-from ui.desktop.assetforms import FIXED_FIRST, MarketBox, TextBox, now, word
+from ui.desktop.assetcard import cell, clear, derived, fit, grid, send, val
+from ui.desktop.assetforms import TextBox, now, word
+from ui.desktop.assetmarkets import CrossMarketCheck
 from ui.desktop.theme import C
 
 EMPTY = QDate(1970, 1, 1)   # the date edit's floor, shown as «sin decidir»: `null` in the file
-TINT = {"family": C["accent"], "structural": C["promising"]}   # a group's background, faint
 
 
 def qdate(bound: object, end: bool) -> QDate:
@@ -73,16 +70,9 @@ class AssetSpans(QWidget):
         self.mc.cellDoubleClicked.connect(self.on_mc)
         self.lay.addWidget(self.mc)
 
-        head = QHBoxLayout()
-        self.markets_head = QLabel(objectName="h2")
-        self.markets_head.setWordWrap(True)
-        self.add = QPushButton("Añadir")
-        self.add.clicked.connect(self.on_add)
-        head.addWidget(self.markets_head, 1)
-        head.addWidget(self.add)
-        self.lay.addLayout(head)
-        self.groups = QVBoxLayout()
-        self.lay.addLayout(self.groups)
+        self.markets = CrossMarketCheck()
+        self.markets.changed.connect(self.changed)
+        self.lay.addWidget(self.markets)
 
     def fill(self, data: dict) -> None:
         """Draw one asset's windows.
@@ -93,7 +83,7 @@ class AssetSpans(QWidget):
         self.data = data
         self.fill_dates()
         self.fill_mc()
-        self.fill_markets()
+        self.markets.fill(data)
 
     def fill_dates(self) -> None:
         """One row per segment, under the row of what SQX has, each with its two selectors."""
@@ -161,66 +151,20 @@ class AssetSpans(QWidget):
             # Min Distance undecided means «no perturbation», so it reads 0 (plan 24 Q5); the
             # file keeps its null and the MinDist task is still not written.
             zero = r["name"] == "min_distance"
+            got = r.get("applied") or {}
             ends = [cell("0", "Sin decidir en el fichero (null): sin perturbación.")
-                    if zero and r[k] is None else cell(val(r[k])) for k in ("min", "max")]
-            for j, item in enumerate([cell(word(r["name"]), r["name"]), *ends,
-                                      cell(now(r["sqx_now"]), "Lo que el maestro lleva hoy.")]):
+                    if zero and r[k] is None else
+                    derived(got[k], got["source"]) if r[k] is None and got.get(k) is not None
+                    else cell(val(r[k])) for k in ("min", "max")]
+            custodian = r.get("custodian_now")
+            sqx_now = (cell(now(custodian), "Lo que el custodio (SQX_w2) lleva hoy en su propio "
+                            "proyecto — es quien corre el MC Retest — leído de sus ficheros en "
+                            "disco, sin arrancarlo.") if custodian else
+                       cell(now(r["sqx_now"]), "Lo que el maestro lleva hoy: el custodio no "
+                            "tiene todavía ningún proyecto de este activo que lo diga."))
+            for j, item in enumerate([cell(word(r["name"]), r["name"]), *ends, sqx_now]):
                 self.mc.setItem(i, j, item)
         fit(self.mc)
-
-    def fill_markets(self) -> None:
-        """Draw the Cross Market check as one coloured group per category, a row per market."""
-        clear(self.groups)
-        cats = self.data["markets"]["categories"]
-        self.add.setVisible(bool(cats) and bool(self.data["markets"]["candidates"]))
-        self.markets_head.setText(
-            "Check de Cross Market" if cats else
-            "Check de Cross Market — este activo no es un main declarado en _markets.yaml")
-        for name, rows in cats.items():
-            box = QFrame(objectName="market")
-            tint = QColor(TINT.get(name, C["muted"]))
-            box.setStyleSheet(f"QFrame#market {{ background: rgba({tint.red()},{tint.green()},"
-                              f"{tint.blue()},0.14); border-radius: 6px; }}")
-            inner = QVBoxLayout(box)
-            inner.addWidget(QLabel(f"<b>{word(name)}: {len(rows)}</b>"))
-            for row in rows:
-                line = QHBoxLayout()
-                text = QLabel(f"{row['asset']}  ·  datos desde {row['data_from']}")
-                text.setToolTip(row["feed"])
-                drop = QPushButton("Quitar")
-                drop.clicked.connect(lambda *_, c=name, f=row["feed"]: self.on_drop(c, f))
-                line.addWidget(text, 1)
-                line.addWidget(drop)
-                inner.addLayout(line)
-            self.groups.addWidget(box)
-
-    def on_add(self) -> None:
-        """Ask for a category and a market, and append it to that category."""
-        m = self.data["markets"]
-        box = MarketBox(self.data["symbol"], list(m["categories"]), m["candidates"])
-        if box.exec():
-            category, market = box.payload()
-            self.write(category, [*m["categories"][category], market])
-
-    def on_drop(self, category: str, feed: str) -> None:
-        """Take one market out of one category, after saying what that costs.
-
-        Args:
-            category: family or structural.
-            feed: The market's feed.
-        """
-        rows = self.data["markets"]["categories"][category]
-        asset = next(r["asset"] for r in rows if r["feed"] == feed)
-        if QMessageBox.question(self, f"Quitar {asset}", f"{FIXED_FIRST} ¿Lo quito de "
-                                f"{word(category)}?") == QMessageBox.Yes:
-            self.write(category, [r for r in rows if r["feed"] != feed])
-
-    def write(self, category: str, rows: list[dict]) -> None:
-        """Send the category's whole list; `set_market` turns it into a one-line change."""
-        client.post("assets/market", {"symbol": self.data["symbol"], "category": category,
-                                      "feeds": [{"feed": r["feed"], "data_from": r["data_from"]}
-                                                for r in rows]})
-        self.changed.emit()
 
     def on_mc(self, row: int, column: int) -> None:
         """Change one end of one MC Retest range.

@@ -97,7 +97,7 @@ def banks(name: str, top: Path) -> dict[str, int]:
     """
     folder = top / "user" / "projects" / name / "databanks"
     return {d.name: distinct(name, d.name, d.stat().st_mtime) if any(d.glob("*.sqx")) else 0
-            for d in sorted(folder.iterdir()) if d.is_dir()}
+            for d in sorted(folder.glob("*")) if d.is_dir()}     # none before its first run
 
 
 def ending(run: dict) -> str:
@@ -211,7 +211,7 @@ def locate(project: str, identity: str, databank: str = "") -> dict:
     names = [databank] if databank else []
     if where:
         names += [d.name for d in sorted((where[1] / "user" / "projects" / project /
-                                           "databanks").iterdir()) if d.is_dir()]
+                                           "databanks").glob("*")) if d.is_dir()]
     for d in names:
         got = find.roster(project, d).get(identity)
         if got:

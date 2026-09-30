@@ -80,16 +80,19 @@ def _tip(b: dict) -> Callable:
 
 
 def _percentiles(b: dict) -> QTableWidget:
-    """The percentile row under the chart, the bracket that holds the real value outlined."""
-    keys = list(b["percentiles"])
+    """The percentile row under the chart, the bracket that holds the real value outlined.
+    With `row_unit` the heads read «1%», «10%»… and every cell carries that unit."""
+    keys = sorted(b["percentiles"], key=float)       # JSON may hand them back as text-sorted
     vals = [b["percentiles"][k] for k in keys]
+    unit = f" {b['row_unit']}" if b.get("row_unit") else ""
     table = QTableWidget(1, len(keys))
-    table.setHorizontalHeaderLabels([f"p{k}" for k in keys])
+    table.setHorizontalHeaderLabels([f"{k}%" if unit else f"p{k}" for k in keys])
     table.verticalHeader().setVisible(False)
     table.setEditTriggers(QAbstractItemView.NoEditTriggers)
     real = b["real"]
     for j, (k, v) in enumerate(zip(keys, vals)):
-        item = QTableWidgetItem(chart.num(v))
+        # Whole units past 10 with a unit on each cell, or «-641.7 $» no longer fits.
+        item = QTableWidgetItem(chart.num(round(v) if unit and abs(v) >= 10 else v) + unit)
         item.setTextAlignment(Qt.AlignCenter)
         item.setToolTip(f"el {k} % de la distribución queda por debajo de {chart.num(v)}")
         nxt = vals[j + 1] if j + 1 < len(vals) else None

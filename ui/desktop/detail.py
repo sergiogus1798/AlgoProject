@@ -44,11 +44,12 @@ class Detail(QWidget):
         self.scroll.setWidget(body)
         return lay
 
-    def show_empty(self) -> None:
-        """The placeholder shown before anything is selected."""
+    def show_empty(self, text: str = "Elige una plantilla a la izquierda, o una celda de la "
+                                      "matriz.") -> None:
+        """The placeholder before anything is selected, or `text` instead of a draft's page."""
         lay = self.page()
-        msg = QLabel("Elige una plantilla a la izquierda, o una celda de la matriz.",
-                     objectName="muted")
+        msg = QLabel(text, objectName="muted")
+        msg.setWordWrap(True)
         msg.setAlignment(Qt.AlignCenter)
         lay.addStretch()
         lay.addWidget(msg)

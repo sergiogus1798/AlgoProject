@@ -6,6 +6,7 @@ constants copied BY HAND on 2026-09-27 from the install's settings page
 version adds appears here only once `lists.py` is edited.
 """
 
+from core import assetdata
 from core.assetdata import doctrine, policy
 from sqx.projects.acceptance import ESCAPED, READS
 from sqx.projects.wfm import WF_TYPES
@@ -26,11 +27,13 @@ def spans(section: str) -> list[str]:
 
     Returns:
         The segment names of `segments_default`, then each `a..b` in order. A segment
-        reserved to some consumers (`reserved_for`) is offered only to a section that is one
-        of them: `sqx.projects.setups.span` refuses the rest, and offering it would be a trap.
+        reserved to some consumers (`reserved_for`) is offered to every section for a human,
+        and only to one of those consumers for an autonomous agent (`assetdata.enforced`),
+        which `sqx.projects.setups.span` would refuse otherwise.
     """
     segs = policy()["segments_default"]
-    allowed = [n for n in segs if section.upper() in segs[n].get("reserved_for", [section.upper()])]
+    allowed = [n for n in segs if not assetdata.enforced()
+               or section.upper() in segs[n].get("reserved_for", [section.upper()])]
     names = list(segs)
     return allowed + [f"{a}..{b}" for i, a in enumerate(names) for b in names[i + 1:]
                       if a in allowed and b in allowed]

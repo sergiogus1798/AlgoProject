@@ -1,15 +1,17 @@
 """Where a databank's files live, which retest pairs with it, and whether SQX is writing it now."""
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
-from core import cfx, sqxfile, sqxstats
-from core.paths import databank_dir
+from core import cfx, sqxfile, sqxstats, worker
+from core.paths import DATA, databank_dir
 from ui.daemon import progress
 
 # The retest the gate pairs a build databank with: the task that reads it and writes `OOS`,
 # the name `sqx/projects/builder.py` gives the oos1 retest of every workflow project.
 PARTNER = "OOS"
+AFTERRUN = DATA / "logs" / "afterrun"    # <role>.pid while `afterrun` exports after a stop
 
 
 def install_of(project: str, databank: str) -> tuple[str, Path] | None:
@@ -68,6 +70,32 @@ def partner(top: Path, project: str, databank: str) -> str | None:
     return None
 
 
+def built_from(project: str, databank: str) -> str | None:
+    """The build a retest databank re-ran out of sample — `OOS`'s input, `Results` — or None.
+
+    Args:
+        project: Project name.
+        databank: A databank of it, either spelling.
+    """
+    db = spelled(project, databank)
+    where = install_of(project, db)
+    if db != PARTNER or where is None:
+        return None
+    path = str(where[1] / "user" / "projects" / project / "project.cfx")
+    for task in cfx.tasks(path):
+        io = {d.get("name"): d.get("value") for d in cfx.task_xml(path, task["file"]).iter("Databank")}
+        if io.get("Output") == PARTNER:
+            return io.get("Input")
+    return None
+
+
+def oos_partner(project: str, databank: str) -> str | None:
+    """`partner` of a databank by name, wherever it lives: its OOS retest, or None."""
+    db = spelled(project, databank)
+    where = install_of(project, db)
+    return partner(where[1], project, db) if where else None
+
+
 def files(top: Path, project: str, databank: str) -> list[Path]:
     """The databank's strategy files, sorted.
 
@@ -115,11 +143,24 @@ def writing(top: Path, project: str) -> bool:
         project: Project name.
 
     Returns:
-        True when today's log started it and has not seen it finish: its databanks are
-        being written, and a file read now may be half a strategy.
+        True when today's log started it and has not seen it finish AND an SQX process of
+        that install is alive: its databanks are being written, and a file read now may be
+        half a strategy. A run killed before «Project finished» leaves the log saying
+        «started» all day; without the process check every load of the project was refused
+        until midnight («Recargar databank» did nothing, 2026-09-28).
     """
     state = progress.run_state(progress.log_lines(top)[0])
-    return state["project"] == project and not state["finished"]
+    return (state["project"] == project and not state["finished"] and bool(worker.holding(top))
+            or exporting(top))
+
+
+def exporting(top: Path) -> bool:
+    """Whether `afterrun` is exporting this install's databanks right now (another process
+    than this one): the window then waits instead of asking the same `orderstocsv` twice."""
+    role = next((r for r, t in progress.installs().items() if t == top), "")
+    mark = AFTERRUN / f"{role}.pid"
+    pid = int(mark.read_text()) if mark.is_file() else 0
+    return bool(pid) and pid != os.getpid() and Path(f"/proc/{pid}").exists()
 
 
 def roster(project: str, databank: str) -> dict[str, str]:

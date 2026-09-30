@@ -175,9 +175,22 @@ def line(p: dict, now: datetime) -> str:
     if not p["up"]:
         return f"{clock} custodio parado | libre {p['free_gb']:.0f} GB"
     count = (f"{num(p['done'])} de {num(p['total'])}" if p["total"] is not None else
-             f"{num(p['done'])} hechos" if p["done"] is not None else "avance ?")
+             f"{num(p['done'])} hechos" if p["done"] is not None else
+             "escribiendo databanks a disco" if p.get("writing_out") else "avance ?")
     return (f"{clock} {count} | JVM {p['jvm_gb']:.1f} GB | CPU {p['cpu_pct']:.0f}% | "
             f"libre {p['free_gb']:.0f} GB | caben {p['fits_more']} más")
+
+
+def writing_out(install: Path) -> bool:
+    """Whether the install's last «Syncing datatabank to files» (SQX's spelling) has no
+    «Synchronization finished» after it in today's log."""
+    f = install / "user" / "log" / "StrategyQuant" / f"log_{datetime.now():%Y_%m_%d}.log"
+    if not f.exists():
+        return False
+    with f.open("rb") as fh:
+        fh.seek(max(0, f.stat().st_size - 2_000_000))
+        data = fh.read()
+    return data.rfind(b"Syncing datatabank to files") > data.rfind(b"Synchronization finished")
 
 
 def custodian() -> dict:
@@ -210,18 +223,25 @@ def custodian() -> dict:
             live = runs.count("custodian", project)
             if live and live["done"] is not None:
                 got = {"done": live["done"], "total": live["total"], "task_only": True,
+                       "elapsed_s": live.get("elapsed_s"),
                        "log": f"estado del custodio · {live['task']}"}
         jvm = pss_gb(pids)
         slope, measured = slope_mb(project or "", got["done"] if got else None, jvm)
+        # A variant batch's `synctofiles` writes thousands of files, one thread, for half an
+        # hour after «Project finished»; the pulse said «avance ?» (📓 2026-09-29).
+        p["writing_out"] = run["finished"] and writing_out(install)
         p |= {"project": project, "task": run["current"], "jvm_gb": jvm,
               "cpu_pct": cpu_pct(pids), "slope_mb": slope, "slope_measured": measured,
               "fits_more": max(0, int(min(p["xmx_gb"] - jvm, p["free_gb"]) * 1024 / slope)),
               "log_silent_s": None if run["finished"] or not mtime
               else round(now.timestamp() - mtime)}
         if got:
-            # A task's count over the project's minutes would be no rate at all.
-            minutes = ((now - started).total_seconds() / 60
-                       if started and not got.get("task_only") else None)
+            # A task's count over the project's minutes would be no rate at all: it is
+            # measured on the task's own clock (📓 2026-09-29: «Ritmo —» 5 min into MCR 1 Bar).
+            if got.get("task_only"):
+                minutes = got["elapsed_s"] / 60 if got.get("elapsed_s") else None
+            else:
+                minutes = (now - started).total_seconds() / 60 if started else None
             rate = got["done"] / minutes if minutes else None
             p |= {"done": got["done"], "total": got["total"], "progress_from": got["log"],
                   "rate_per_min": rate,

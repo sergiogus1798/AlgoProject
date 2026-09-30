@@ -1,8 +1,9 @@
 """One asset's costs: what it applies, what SQX carries, and what leaving it undecided costs."""
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QLayout,
-                               QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+                               QMessageBox, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from ui.desktop import client
 from ui.desktop.assetforms import CostBox, now, word
@@ -76,9 +77,28 @@ def val(value: object) -> str:
 
     Returns:
         «sin decidir» for an undecided value (`null` in the file), the figure through
-        `numbers.num` otherwise.
+        `numbers.num` otherwise. A per-segment commission (OPEN #27, 2026-09-29: `{build:
+        {method, value}, oos1: …}`) reads as one figure when the three agree, else the three;
+        it made the whole window fail to open, since Activos is built at start.
     """
+    if isinstance(value, dict):
+        legs = {seg: (v.get("value"), v.get("method")) for seg, v in value.items()
+                if isinstance(v, dict)}
+        if not legs:
+            return str(value)
+        shown = {f"{val(v)}{' %' if m == 'PercentageBased' else ''}" for v, m in legs.values()}
+        return (shown.pop() if len(shown) == 1 else
+                " · ".join(f"{seg} {val(v)}{' %' if m == 'PercentageBased' else ''}"
+                           for seg, (v, m) in legs.items()))
     return "sin decidir" if value is None else num(value)
+
+
+def derived(value: float, source: str) -> QTableWidgetItem:
+    """A bound the file leaves empty and `core.assets` fills: muted, with where it comes from."""
+    item = cell(val(value), f"El fichero lo deja vacío; el MC Retest usa este: {source}. "
+                            "Doble clic para declarar otro.")
+    item.setForeground(QBrush(QColor(C["muted"])))
+    return item
 
 
 def fit(table: QTableWidget) -> None:
@@ -218,6 +238,10 @@ class AssetCard(QWidget):
             row: Which cost field.
             _: Column; any cell of the row opens the same field.
         """
+        if isinstance(self.data["costs"][row]["use"], dict):
+            QMessageBox.information(self, "Por tramo", "Este coste va por tramo (build, oos1 y "
+                                    "oos2): se edita en «Fichero entero».")
+            return
         box = CostBox(self.data["symbol"], self.data["costs"][row])
         if box.exec():
             client.post(f"asset/{self.data['symbol']}/cost", box.payload())

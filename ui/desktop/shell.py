@@ -1,7 +1,8 @@
 """The window itself: grouped side navigation, the context bar, one zone inside, one status bar."""
 
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QStackedWidget, QVBoxLayout,
+                               QWidget)
 
 from ui.desktop import client, projectflow as flow
 from ui.desktop.assets import Assets
@@ -16,12 +17,32 @@ from ui.desktop.ops.jobsbar import JobsBar
 from ui.desktop.ops.ledger import Ledger
 from ui.desktop.ops.running import Running
 from ui.desktop.palettes import Palettes
+from ui.desktop.mt5bridge.zone import VerifyZone
 from ui.desktop.portfolios.zone import PortfoliosZone
 from ui.desktop.selection import SELECTION
 from ui.desktop.sqxconfig.zone import SqxConfigZone
 from ui.desktop.theme import C
 from ui.desktop.workspace.gallery import Gallery
 from ui.desktop.workspace.zone import WorkspaceZone
+
+class Said(QLabel):
+    """The status line: it gives way to the jobs strip instead of widening the window.
+
+    A plain label's minimum width is its whole sentence, and the status row set the window's:
+    a long «carga pedida…» beside two job chips made it 1979 px wide on a 1920 screen
+    (📓 2026-09-29). The sentence is clipped instead, and the whole of it is on hover.
+    """
+
+    def __init__(self) -> None:
+        """An empty faint label that may shrink to nothing."""
+        super().__init__("", objectName="faint")
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+
+    def setText(self, text: str) -> None:
+        """Show the sentence and keep all of it in the tooltip."""
+        super().setText(text)
+        self.setToolTip(text)
+
 
 class Shell(QWidget):
     """The single window. Everything else is a view inside it."""
@@ -47,10 +68,11 @@ class Shell(QWidget):
         self.zones = {
             "Cobertura": self.coverage, "Plantillas": self.catalogue, "Nueva plantilla": self.chat,
             "Paletas": self.palettes, "Activos": self.assets, "Proyectos": self.gallery,
-            "Proyecto": self.workspace, "Estrategia": self.estrategia,
+            "Proyecto": self.workspace, "Databanks": self.workspace.databanks,
+            "Estrategia": self.estrategia,
             "En marcha": self.running, "Registro de búsquedas": self.ledger,
             "Configuración SQX": SqxConfigZone(), "Datos": DataZone(),
-            "Portfolios": PortfoliosZone()}
+            "Portfolios": PortfoliosZone(), "Verificar": VerifyZone()}
         self.wire()
 
         right = QVBoxLayout()
@@ -72,10 +94,9 @@ class Shell(QWidget):
         right.addLayout(body, 1)
         foot = QHBoxLayout()
         foot.setContentsMargins(24, 0, 24, 8)
-        self.status = QLabel("", objectName="faint")
+        self.status = Said()
         self.jobs = JobsBar()
-        foot.addWidget(self.status)
-        foot.addStretch()
+        foot.addWidget(self.status, 1)
         foot.addWidget(self.jobs)
         right.addLayout(foot)
         # The sidebar is built after the stack because opening a zone needs the stack; it is
@@ -84,7 +105,8 @@ class Shell(QWidget):
         # written from these keys, so the button never promises a zone it does not reload.
         self.reloads = {"Cobertura": self.coverage.reload, "Plantillas": self.catalogue.reload,
                         "Paletas": self.palettes.reload, "Activos": self.assets.reload,
-                        "Proyectos": self.gallery.load, "En marcha": self.running.reload}
+                        "Proyectos": self.gallery.load, "En marcha": self.running.reload,
+                        "Verificar": self.zones["Verificar"].reload}
         bar, self.nav = sidebar(self.open_zone, self.refresh, list(self.reloads))
         lay.insertWidget(0, bar)
         lay.addLayout(right, 1)
@@ -102,6 +124,7 @@ class Shell(QWidget):
         self.chat.authored.connect(self.catalogue.reload)
         self.gallery.opened.connect(self.open_project)
         self.workspace.strategy_chosen.connect(self.open_strategy)
+        self.workspace.databanks_wanted.connect(lambda: self.open_zone("Databanks"))
         self.zones["Portfolios"].import_requested.connect(self.open_archived)
 
     def data_landed(self, piece: str) -> None:
@@ -137,14 +160,15 @@ class Shell(QWidget):
         self.context.load.again.setText("↻ sin SQX: modo lectura")
 
     def open_zone(self, name: str) -> None:
-        """Switch to a zone by the name the sidebar shows; Proyecto and Estrategia first catch
-        up with SELECTION when another zone changed it.
+        """Switch to a zone by the name the sidebar shows; Proyecto, Databanks and Estrategia
+        first catch up with SELECTION when another zone changed it.
 
         Args:
             name: One of `nav.ZONES`; a desktop launcher opens the window straight on it
                 (`bin/algoui --zone Proyectos`).
         """
-        flow.catch_up(self, name)
+        # Databanks is filled by Proyecto's zone: one project, one fill, both zones.
+        flow.catch_up(self, "Proyecto" if name == "Databanks" else name)
         self.stack.setCurrentWidget(self.zones[name])
         for zone, b in self.nav.items():
             b.setChecked(zone == name)
@@ -172,7 +196,9 @@ class Shell(QWidget):
             self.open_project(item["project"])
         else:
             SELECTION.choose(**fields)
-            self.open_zone("Proyecto")
+            self.open_zone("Databanks" if kind == "databank" else "Proyecto")
+            if kind == "databank":
+                self.workspace.show_databank(item["databank"])
 
     def open_project(self, name: str) -> None:
         """A card or a palette row chose a project: select it, load it if confirmed, show it."""
@@ -180,7 +206,7 @@ class Shell(QWidget):
         self.open_zone("Proyecto")
 
     def open_strategy(self, identity: str) -> None:
-        """Proyecto's panel chose a strategy by identity: select it and show its ficha."""
+        """Databanks' panel chose a strategy by identity: select it and show its ficha."""
         said = flow.select_strategy(identity, flow.in_panel(self, identity))
         self.status.setText(said)
         if not said:
@@ -211,7 +237,7 @@ class Shell(QWidget):
     def refresh(self) -> None:
         """Reload the zones that load once (`self.reloads`) and restate what is on screen.
 
-        Proyecto and Estrategia follow SELECTION and read on their own.
+        Proyecto, Databanks and Estrategia follow SELECTION and read on their own.
         """
         for reload in self.reloads.values():
             reload()

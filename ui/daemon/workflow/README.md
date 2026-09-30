@@ -6,20 +6,28 @@ each with `state` (`done|running|pending|blocked|sealed|missing`), a Spanish `wh
 `in`/`out`, the `day`, the databank panel's `tab`/`sub` where its result is read, and `tests`:
 every study that belongs to the step (its evidence, the catalogue's studies filed under its
 number, and step 8's off-sequence readings), each with its own state, a one-line `config` from
-`results/knobs`, `runnable` and the `databank` of its newest result. `backfill` says whether to
+`results/knobs` with the project's feed, symbol and timeframe where the runner puts them
+(`results/forproject`; a knob it leaves at the donor's is marked ⚠), `runnable` and the `databank` of its newest result. `backfill` says whether to
 offer «rehacer las filas de 17-19» and the command.
+
+Each step also carries `stage`, `panel` (its tests read the databank the panel shows: 21-25) and
+`needs` (the steps to run before it, `needs.of`; the drawer paints the missing ones in red), and
+the payload `chain`: what «Correr workflow» would run now and where it would stop
+(`ui/daemon/launch/chainplan.plan`, painted beside its button).
 
 `POST /api/workflow/run {project, tests: [{n, key}], databank, strategies}` queues the ticked
 tests in `ui/daemon/jobs.py` → `{jobs, refused: [{n, key, why}]}`. `POST /api/workflow/backfill
 {project}` queues `python3 -m ledger.backfill --blind <P> … --write` when offered.
 
 Reading is files only: the data root, the install's `project.cfx`, logs and databank folders, and
-the ledger. **No command to any install**, not even `-project action=status`. The run routes
-start Python studies and nothing else: an SQX step's own task is never a test.
+the ledger, and `/proc` for whether an SQX process lives in the install. **No command to any
+install**, not even `-project action=status`. The run routes start Python studies and nothing
+else: an SQX step's own task is never a test — the rail's ▶ SQX goes to `ui/daemon/launch/`.
 
 **Imports from:** `core/`, `ledger/`, `sqx/projects/{stage,registry}`,
-`ui/daemon/{progress,tasklog,jobs,runs,results,runner}` ·
-**Consumed by:** `ui/daemon/routers.py` (includes `ROUTER`), `ui/desktop/workspace/rail.py` ·
+`ui/daemon/{progress,tasklog,jobs,runs,results,runner}`, `ui/daemon/launch/chainplan` ·
+**Consumed by:** `ui/daemon/routers.py` (includes `ROUTER`), `ui/desktop/workspace/rail.py`,
+`ui/daemon/launch/chain.py` (the plan, the context, the tests' commands) ·
 **Checked by:** `tools/checks.py` («workflow table»):
 the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, word for word.
 
@@ -28,6 +36,7 @@ the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, w
 | `api.py` | `ROUTER` and the three routes; gathers the context once and runs every step's reader | imported | project → JSON |
 | `steps.py` | The step table: number, short title, WORKFLOW.md title, kind, evidence, study keys, tab and sub-panel, the stages its tests read | imported | — |
 | `derive.py` | One reader per kind of evidence: state, why, funnel; and the seal on 17-19 | imported | context → step |
+| `needs.py` | `of(spec, ctx)`: the steps a step needs done first — for an SQX task step the steps filling its tasks' inputs (from the project's own tasks) and the Python step judging each, for a Python step the SQX step it reads, the variant batch (17-18.5), 17-19 for 20, 20 for 21-25 — and always the row before it | imported | step, context → step numbers |
 | `tests.py` | The tests of each step, generated from the catalogue: state, one-line configuration, whether the window may start it | imported | step → tests |
 | `run.py` | Ticked tests into the runner's jobs — the databank each reads and the strategies — and the backfill offer | imported | request → jobs |
 | `sources.py` | What the disk holds: the install, its tasks and runs, a study's results, the template link | imported | disk → dicts |
@@ -62,8 +71,9 @@ the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, w
 - **4** `core.assetcheck` today: `blocked` when a cost is undecided or the schema breaks.
 - **5** the project folder in an install (custodian, conductor, master, in that order).
 - **SQX steps** (6, 7, 9, 11, 13, 15, 19) — the tasks `sqx.projects.stage.titles` names:
-  `running` when the install log's last start is this project and its current task is one of
-  them; `done` when their output databank holds `.sqx` or today's project log shows a finished
+  `running` when the install log's last start is this project, its current task is one of
+  them and an SQX process lives in the install (`core.worker.holding`) — a run killed before
+  «Project finished» reads pending/done with «se cortó» in `why`; `done` when their output databank holds `.sqx` or today's project log shows a finished
   run; the funnel from that run's tested/passed, else the databank counts on disk.
 - **Tests** `running` when a daemon job of this project runs that study, `blocked` when the
   runner never starts it (`why`) or it signs the ledger and the project has no template, `done`
@@ -74,7 +84,7 @@ the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, w
   `entered/survives`, else `verdict.csv` rows with `out` = verdicts not in `steps.DROP`, else
   the per-strategy JSONs; a batch study counts batches.
 - **10.5** the `CrossTF_Input` databank; **16.5** the mothers' batches with `collected.json`.
-- **The blind door** (`ledgerview.door`) asks `ledger.gate` over exactly one study, the one
+- **The blind door** — only under `ALGO_AUTONOMOUS=1` (`core.assetdata.enforced`); for a human it is always open (owner, 2026-09-28) — (`ledgerview.door`) asks `ledger.gate` over exactly one study, the one
   blindJoint signs and reads: `<symbol>_<timeframe>_<template folder>` from the registry row
   (Q9). Rows signed under the project's own name (E1's tests) never open it; no template, it
   stays shut. Its sentence names the study. `ledgerview.blind(rows)` remains for older callers.

@@ -130,6 +130,12 @@ class Catalogue(QWidget):
         name = item.data(Qt.UserRole) if item else None
         if name:
             self.detail.load(name)
+        elif item:
+            # A draft has nothing authored to show; the click used to leave the previous
+            # page or the placeholder on screen, as if it had not been heard (📓 2026-09-29).
+            self.detail.show_empty("Borrador del chat, sin autorar todavía: no hay plantilla "
+                                   "que enseñar. Se crea en «Nueva plantilla» con «▶ Crear la "
+                                   "plantilla con Claude», o pegando su prompt en Claude Code.")
 
     def select(self, name: str) -> None:
         """Move the selection to one template by name.

@@ -1,11 +1,12 @@
-"""The ficha's equity: SQX's curve and the one at the real spread and slippage, each switchable."""
+"""The ficha's equity: SQX's curve and the one at the real spread and slippage, each switchable, IS and OOS1 in two tones."""
 
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
+from ui.desktop.blocks import chart
 from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.desktop.theme import C
-from ui.desktop.workspace.curves import INK, Curves
+from ui.desktop.workspace.curves import INK, SampleCurves
 from ui.desktop.workspace.fichajobs import Compute, uncomputed
 
 HEIGHT = 300            # px of the drawing; the owner reads it from across the desk
@@ -44,12 +45,15 @@ class CostCurves(QWidget):
         for key in ("sqx", "real"):
             box = self.boxes[key] = QCheckBox(label(f"curve.{key}"))
             box.setChecked(True)
-            box.setStyleSheet(f"color: {INK[key]};")
+            box.setStyleSheet(f"color: {INK[f'{key}.IS']};")
             box.toggled.connect(lambda on, k=key: self.curves.toggle(k, on))
             switches.addWidget(box)
         switches.addStretch(1)
         lay.addLayout(switches)
-        self.curves = Curves(HEIGHT)
+        lay.addWidget(chart.key([("line", INK[f"{k}.{part}"], f"{name} · {seg}")
+                           for k, name in (("sqx", "SQX"), ("real", "spread y slippage"))
+                           for part, seg in (("IS", "IS"), ("OOS", "OOS1"))]))
+        self.curves = SampleCurves(HEIGHT)
         lay.addWidget(self.curves, 1)
         self.missing = QHBoxLayout()
         lay.addLayout(self.missing)
@@ -71,12 +75,12 @@ class CostCurves(QWidget):
         if "error" in curve:
             self.curves.fill([0.0, 0.0], [])
             self.figures.setText(curve["error"])
-            self.figures.setStyleSheet(f"color: {C['dead']};")
+            self.figures.setStyleSheet(f"color: {C['muted' if curve.get('absent') else 'dead']};")
             self.source.setText("")
             return
         self.figures.setStyleSheet("")
         real = curve.get("real")
-        self.curves.fill(curve["sqx"], real or [], curve.get("split"))
+        self.curves.fill(curve["sqx"], real or [], curve.get("split"), curve.get("days", []))
         self.boxes["real"].setEnabled(bool(real))
         if not real:
             self.missing.addWidget(QLabel(f"{label('curve.real')}: ", objectName="dim"))

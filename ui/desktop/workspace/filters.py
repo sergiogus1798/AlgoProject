@@ -1,123 +1,50 @@
 """The databank panel's filters strip: AND rows over real columns, discards, and the ledger (22 §7.1)."""
 
+import threading
+
 import httpx
-import numpy as np
 from PySide6.QtCore import QTimer, Qt, Signal
-from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from ui.desktop import client
-from ui.text.glossary import label
-from ui.text.numbers import num
+from ui.desktop.workspace.filterrow import FilterRow, guessed, plain
 from ui.desktop.workspace.filtersaved import SavedFilters
+from ui.text.numbers import num
 
-# The operators a metric's kind admits, as the daemon spells them → what the owner reads.
-OPS = {"numeric": [(">", ">"), ("<", "<"), (">=", "≥"), ("<=", "≤"), ("=", "="),
-                   ("entre", "entre")],
-       "text": [("=", "=")],
-       "dist": [("dentro", "mediana dentro del intervalo"),
-                ("fuera", "mediana fuera del intervalo")]}
-
-
-def shown_metric(m: dict) -> str:
-    """A metric as the dropdown lists it: the words the daemon gave (`evaluate.named`), the
-    glossary's for an older daemon that sent none."""
-    return m.get("label") or label(m["key"])
-
-
-def typed(value: object) -> str:
-    """A saved value as the box shows it, so it reads back the same: exact, never scientific."""
-    return np.format_float_positional(value, trim="-") if isinstance(value, float) else str(value)
-
-
-class FilterRow(QWidget):
-    """One condition: metric, operator, value (two for «entre», an interval % for a
-    distribution) and «×». `gone` when removed."""
-
-    gone = Signal(object)
-
-    def __init__(self, metrics: list[dict]) -> None:
-        """Build the row over the metrics the daemon offered."""
-        super().__init__()
-        self.metrics = {m["key"]: m for m in metrics}
-        # `column`, never `metric`: that name hides QPaintDevice.metric() and the first paint
-        # segfaults (knowhow/eng/qt-painting-traps.md)
-        self.column, self.op = QComboBox(), QComboBox()
-        self.column.setMinimumWidth(320)
-        for m in metrics:
-            self.column.addItem(shown_metric(m), m["key"])
-            self.column.setItemData(self.column.count() - 1, m.get("reading") or
-                                    f"{num(m['n'])} estrategias tienen valor", Qt.ToolTipRole)
-        self.column.currentIndexChanged.connect(self.retype)
-        self.value, self.upper = QLineEdit(), QLineEdit()
-        for w in (self.value, self.upper):
-            w.setFixedWidth(110)
-        self.op.currentIndexChanged.connect(self.reshape)
-        drop = QPushButton("×")
-        drop.setFixedWidth(28)
-        drop.clicked.connect(lambda: self.gone.emit(self))
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(0, 0, 0, 0)
-        for w in (self.column, self.op, self.value, self.upper, drop):
-            lay.addWidget(w)
-        lay.addStretch(1)
-        self.retype()
-
-    def kind(self) -> str:
-        """numeric, text or dist: which operators the chosen metric admits."""
-        m = self.metrics.get(self.column.currentData(), {"kind": "metric", "numeric": True})
-        return "dist" if m["kind"] == "dist" else ("numeric" if m["numeric"] else "text")
-
-    def retype(self) -> None:
-        """Offer the chosen metric's operators."""
-        self.op.clear()
-        for code, words in OPS[self.kind()]:
-            self.op.addItem(words, code)
-
-    def reshape(self) -> None:
-        """Two value boxes for «entre», an interval % for a distribution."""
-        code = self.op.currentData()
-        self.upper.setVisible(code == "entre")
-        self.value.setPlaceholderText("intervalo %: 50, 80, 90, 98" if code in ("dentro", "fuera")
-                                      else ("desde" if code == "entre" else "valor"))
-        self.upper.setPlaceholderText("hasta")
-
-    def spec(self) -> dict:
-        """The row as the daemon reads it."""
-        code, text = self.op.currentData(), self.value.text().strip().replace(",", ".")
-        value = [text, self.upper.text().strip().replace(",", ".")] if code == "entre" else text
-        return {"metric": self.column.currentData(), "op": code, "value": value}
-
-    def put(self, row: dict) -> None:
-        """Show a saved row."""
-        self.column.setCurrentIndex(max(self.column.findData(row["metric"]), 0))
-        self.op.setCurrentIndex(max(self.op.findData(row["op"]), 0))
-        low, high = row["value"] if isinstance(row["value"], list) else (row["value"], "")
-        self.value.setText(typed(low))
-        self.upper.setText(typed(high))
+PREVIEW_MS = 350    # a pause in the typing before the live count asks the daemon (~0.15 s warm)
 
 
 class FiltersStrip(QFrame):
     """Below the panel's header: the rows (AND), Aplicar, the saved list, «Quitar filtros» and
     «Descartar seleccionadas». It follows the panel's databank on its own, hides what is set
     aside through `panel.set_hidden` (which re-aggregates the visible ids) and reloads the
-    funnel. Nothing here touches SQX: the databank there stays whole."""
+    funnel. A live count says what edited rows would leave, hiding and logging nothing; both
+    reads run off the GUI thread (`arrived`, `counted`). Nothing here touches SQX."""
+
+    arrived = Signal(dict)
+    counted = Signal(dict)
 
     def __init__(self, panel: QWidget, funnel: QWidget | None = None) -> None:
         """Build the strip over a `workspace.panel.Panel` and, optionally, its `Funnel`."""
         super().__init__()
         self.setObjectName("term")
         self.panel, self.funnel, self.at, self.offer = panel, funnel, ("", ""), []
-        self.anonymous = 0
+        self.anonymous, self.now, self.asked, self.shown_ids = 0, [], 0, None
+        self.arrived.connect(self.land)
+        self.counted.connect(self.show_count)
         kicker = QLabel("FILTROS")
         kicker.setObjectName("kicker")
         add, apply_, clear, drop = (QPushButton("+ condición"), QPushButton("▶ Aplicar"),
                                     QPushButton("Quitar filtros"),
                                     QPushButton("Descartar seleccionadas"))
-        apply_.setToolTip("Aplica todas las condiciones a la vez (AND) a lo que se ve. Se apunta "
-                          "en el Ledger como una búsqueda. No toca SQX.")
-        drop.setToolTip("Oculta las filas seleccionadas; también se apunta en el Ledger.")
-        clear.setToolTip("Vuelve a mostrar todo. Lo ya apuntado en el Ledger se queda: se miró.")
+        apply_.setToolTip("Aplica todas las condiciones a la vez (AND) sobre todo el databank y "
+                          "sustituye al filtro anterior: si aflojas, vuelven las que ahora pasan. "
+                          "Los descartes a mano se quedan. Sin condiciones, quita solo el filtro. "
+                          "Se apunta en el Ledger como una búsqueda. No toca SQX.")
+        drop.setToolTip("Oculta las filas seleccionadas; siguen ocultas aunque cambies el "
+                        "filtro. También se apunta en el Ledger.")
+        clear.setToolTip("Quita el filtro y los descartes a mano: vuelve a mostrar todo. Lo ya "
+                         "apuntado en el Ledger se queda: se miró.")
         add.clicked.connect(lambda: self.add())
         apply_.clicked.connect(self.apply)
         clear.clicked.connect(self.clear)
@@ -126,9 +53,13 @@ class FiltersStrip(QFrame):
         self.saved.chosen.connect(self.show_rows)
         self.saved.said.connect(self.say)
         self.saved.store.clicked.connect(lambda: self.saved.save(self.rows()))
-        self.said = QLabel("")
-        self.said.setObjectName("dim")
-        self.said.setWordWrap(True)
+        self.said, self.guess, self.timer = QLabel(""), QLabel(""), QTimer(self)
+        for w in (self.said, self.guess):
+            w.setObjectName("dim")
+            w.setWordWrap(True)
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(PREVIEW_MS)
+        self.timer.timeout.connect(self.preview)
         head = QHBoxLayout()
         for w in (kicker, add, apply_, clear, drop):
             head.addWidget(w)
@@ -141,6 +72,7 @@ class FiltersStrip(QFrame):
         lay.setSpacing(3)
         lay.addLayout(head)
         lay.addLayout(self.box)
+        lay.addWidget(self.guess)
         lay.addWidget(self.said)
         panel.table.model().modelReset.connect(lambda: QTimer.singleShot(0, self.follow))
 
@@ -150,46 +82,73 @@ class FiltersStrip(QFrame):
         return self.panel.project, ("" if spec.get("blocked") else spec.get("databank", ""))
 
     def follow(self) -> None:
-        """The panel painted a table: read this databank's metrics and discards if it changed."""
+        """The panel painted a table (a databank chosen, «Recargar», a «Continuar» done): read
+        this databank's metrics and discards again, off the GUI thread, into `land`."""
         at = self.bank()
         self.setEnabled(bool(at[1]))
-        if at == self.at or not at[1]:
+        if not at[1]:
             return
-        self.at = at
-        try:
-            got = client.get("filters/metrics", project=at[0], databank=at[1])
-            state = client.get("filters/state", project=at[0], databank=at[1])
-        except httpx.HTTPError as failed:
-            self.say(f"El demonio no respondió: {failed}")
+        moved, self.at = at != self.at, at
+
+        def ask() -> None:
+            """One GET: state, funnel rows and metrics off a single `context` in the daemon."""
+            try:
+                got = client.get("filters/state", project=at[0], databank=at[1])
+            except httpx.HTTPError as failed:
+                got = {"error": f"El demonio no respondió: {failed}"}
+            self.arrived.emit({"at": at, "moved": moved, "got": got})
+        threading.Thread(target=ask, daemon=True).start()
+
+    def land(self, msg: dict) -> None:
+        """Paint what `follow` read, unless another databank was chosen since. Rows the owner
+        is still editing on the same databank are kept; the live count then re-runs."""
+        got = msg["got"]
+        if msg["at"] != self.at:
             return
+        if "steps" not in got:
+            self.say(got.get("error", ""))
+            return
+        editing = not msg["moved"] and plain(self.rows()) != plain(self.now)
         self.offer, self.anonymous = got.get("metrics", []), got.get("anonymous") or 0
-        self.show_rows([])
-        self.hide_ids(state)
-        self.say(got.get("error") or got.get("refused") or self.counts(state))
+        if editing:
+            self.now = [] if got.get("stale") else got.get("conditions") or []
+            self.hide_ids(got)
+            self.timer.start()
+        else:
+            self.settle(got)
+        self.say(got.get("refused") or self.counts(got))
 
     def counts(self, state: dict) -> str:
         """The databank's discards in one line, and the rows no filter can hide."""
         loose = state.get("anonymous") or self.anonymous
         tail = f" · {num(loose)} sin identidad, no filtrables" if loose else ""
+        if state.get("orphans"):
+            tail += (f" · {num(state['orphans'])} líneas de descarte sin cabecera en el registro "
+                     "(truncado): no esconden nada")
+        if state.get("stale"):
+            tail += (f" · el filtro «{state['stale']}» es de antes de que los filtros se "
+                     "recalcularan y no está en vigor: pulsa ▶ Aplicar para aplicarlo")
         if not state.get("steps"):
             return (f"{self.at[1]}: sin filtros · {num(len(self.offer))} métricas filtrables "
                     f"(OOS2 no){tail}")
+        hand = f" ({num(state['manual'])} a mano)" if state.get("manual") else ""
         return (f"{self.at[1]}: {num(state['entered'])} → {num(state['remaining'])} visibles · "
-                f"{num(state['hidden'])} descartadas · {num(len(state['steps']))} filtro(s) o "
-                f"borrado(s){tail}")
+                f"{num(state['hidden'])} descartadas{hand}{tail}")
 
     def add(self, row: dict | None = None) -> None:
         """One more condition, empty or a saved one."""
         line = FilterRow(self.offer)
-        line.gone.connect(lambda w: (self.box.removeWidget(w), w.deleteLater()))
+        line.gone.connect(lambda w: (self.box.removeWidget(w), w.deleteLater(),
+                                     self.timer.start()))
+        line.changed.connect(self.timer.start)
         if row:
             line.put(row)
         self.box.addWidget(line)
 
     def rows(self) -> list[dict]:
-        """Every condition on screen."""
-        return [self.box.itemAt(i).widget().spec() for i in range(self.box.count())
-                if isinstance(self.box.itemAt(i).widget(), FilterRow)]
+        """Every condition on screen with a value typed (an empty row is none)."""
+        lines = [self.box.itemAt(i).widget() for i in range(self.box.count())]
+        return [w.spec() for w in lines if isinstance(w, FilterRow) and w.filled()]
 
     def show_rows(self, rows: list[dict]) -> None:
         """Replace the conditions on screen; one empty row when there are none."""
@@ -197,6 +156,43 @@ class FiltersStrip(QFrame):
             self.box.takeAt(0).widget().deleteLater()
         for row in rows or [None]:
             self.add(row)
+
+    def settle(self, state: dict) -> None:
+        """Show the conditions in force and hide what the daemon says is set aside. A stale
+        filter's conditions are shown but not in force: the live count says what they leave."""
+        shown = state.get("conditions") or []
+        self.now = [] if state.get("stale") else shown
+        self.show_rows(shown)
+        self.timer.stop()
+        self.guess.setText("")
+        self.hide_ids(state)
+        if state.get("stale"):
+            self.timer.start()
+
+    def preview(self) -> None:
+        """The live count: what the rows on screen would leave, asked of the daemon off the
+        GUI thread, without hiding or logging anything. Silent while they equal the filter in
+        force; an answer overtaken by a later edit is dropped (`show_count`)."""
+        rows = self.rows()
+        self.asked += 1
+        if not self.at[1] or plain(rows) == plain(self.now):
+            self.guess.setText("")
+            return
+        seq, body = self.asked, {"project": self.at[0], "databank": self.at[1], "rows": rows}
+
+        def ask() -> None:
+            """One POST to `/api/filters/preview`."""
+            try:
+                got = client.post("filters/preview", body)
+            except httpx.HTTPError as failed:
+                got = {"error": f"el demonio no respondió: {failed}"}
+            self.counted.emit({"seq": seq, "got": got})
+        threading.Thread(target=ask, daemon=True).start()
+
+    def show_count(self, msg: dict) -> None:
+        """Paint a live count, unless the rows changed since it was asked."""
+        if msg["seq"] == self.asked:
+            self.guess.setText(guessed(msg["got"]))
 
     def send(self, path: str, body: dict) -> None:
         """POST to the daemon, then hide what it says is set aside and say how it went."""
@@ -208,24 +204,29 @@ class FiltersStrip(QFrame):
         if "error" in got:
             self.say(got["error"])
             return
-        self.hide_ids(got)
+        self.settle(got)
         done = self.counts(got)
-        if "ledger" in got:
+        if got.get("same"):
+            done = f"Ese filtro ya está aplicado: no se apunta otra vez  ·  {done}"
+        elif "ledger" in got:
             led = got["ledger"]
             done = (f"{num(got['n_in'])} → {num(got['n_out'])}"
-                    + (f" ({num(got['blank'])} sin valor, siguen visibles)" if got.get("blank") else "")
+                    + (f" ({num(got['blank'])} sin valor, siguen visibles)" if got.get("blank")
+                       else "")
                     + f" · apuntado en el Ledger: {led['study']}, paso {num(led['step'])}, "
                     f"{led['segment']}  ·  {done}")
         self.say(done)
 
     def hide_ids(self, state: dict) -> None:
-        """Hand the hidden identities to the panel and reload the funnel."""
-        self.panel.set_hidden(set(state.get("hidden_ids", [])))
-        if self.funnel is not None:
+        """Hand the hidden identities to the panel and, when they changed, reload the funnel."""
+        ids = (self.at, set(state.get("hidden_ids", [])))
+        self.panel.set_hidden(ids[1])
+        if self.funnel is not None and ids != self.shown_ids:
             self.funnel.load(self.at[0])
+        self.shown_ids = ids
 
     def apply(self) -> None:
-        """«Aplicar»: the AND of the rows on what is visible."""
+        """«Aplicar»: the AND of the rows on the whole databank, replacing the filter in force."""
         self.send("filters/apply", {"project": self.at[0], "databank": self.at[1],
                                     "rows": self.rows()})
 
@@ -241,7 +242,7 @@ class FiltersStrip(QFrame):
                                       "identities": ids})
 
     def clear(self) -> None:
-        """«Quitar filtros»: everything visible again."""
+        """«Quitar filtros»: the filter and the manual deletions lifted, everything visible."""
         self.send("filters/clear", {"project": self.at[0], "databank": self.at[1]})
 
     def say(self, text: str) -> None:

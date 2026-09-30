@@ -7,6 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
+from ui.desktop import helpmark
 from ui.desktop.datazone.zone import TABS, DataZone
 from ui.desktop.theme import QSS
 
@@ -41,6 +42,7 @@ def main() -> None:
     args = ap.parse_args()
     app = QApplication(sys.argv)
     app.setStyleSheet(QSS)
+    helpmark.install(app)     # the «?» beside every button
     zone = DataZone()
     zone.resize(*SIZE)
     zone.show()

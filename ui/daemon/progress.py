@@ -1,6 +1,5 @@
 """Where a running SQX project is: its tasks, which one runs, how far, read from disk only."""
 
-import re
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -8,12 +7,9 @@ from xml.etree import ElementTree
 
 from core.paths import MASTER, WORKERS
 from ui.daemon import tasklog
+from ui.daemon.daylog import PERCENT, PROGRESS, STARTING, log_lines, trim  # noqa: F401
 
-TAIL_BYTES = 2_000_000
 TAIL_LINES = 14
-PROGRESS = re.compile(r"ProgressEngine - (.+)$")
-PERCENT = re.compile(r"\[Blocking computeThread[^\]]*?(\d+) %")
-STARTING = re.compile(r"Starting project '([^']+)'")
 
 
 def installs() -> dict[str, Path]:
@@ -71,27 +67,7 @@ def counts(project_dir: Path) -> dict[str, int]:
         lags until it saves.
     """
     return {d.name: sum(1 for _ in d.glob("*.sqx"))
-            for d in (project_dir / "databanks").iterdir() if d.is_dir()}
-
-
-def log_lines(install: Path) -> tuple[list[str], float]:
-    """The end of today's SQX log.
-
-    Args:
-        install: The install's top folder.
-
-    Returns:
-        Its last `TAIL_BYTES` as lines, and the file's modification time as a timestamp.
-        Today's file only: a run that crosses midnight starts a new one, and reading the
-        whole 40 MB day would make every refresh cost what one tail costs.
-    """
-    f = install / "user" / "log" / "StrategyQuant" / f"log_{datetime.now():%Y_%m_%d}.log"
-    if not f.exists():
-        return [], 0.0
-    with f.open("rb") as fh:
-        fh.seek(max(0, f.stat().st_size - TAIL_BYTES))
-        data = fh.read().decode("utf-8", errors="replace")
-    return data.splitlines()[1:], f.stat().st_mtime
+            for d in (project_dir / "databanks").glob("*") if d.is_dir()}   # none before its first run
 
 
 def run_state(lines: list[str]) -> dict:
@@ -122,6 +98,11 @@ def run_state(lines: list[str]) -> dict:
         tail.append(line[:12] + " " + text)
         if text.startswith("Project finished") or text.startswith("Project stopped"):
             finished, current = True, None
+            continue
+        if "Error while running project" in text:
+            # SQX aborted the run and will never write «Project finished» (🔬 2026-09-29):
+            # it is an end, and a watcher waiting for the finish would wait forever.
+            finished, current, events["error"] = True, None, "aborted"
             continue
         if " : " not in text:
             continue
@@ -166,7 +147,11 @@ def state(role: str, project: str) -> dict:
     run = run_state(lines)
     held = counts(folder)
     runs = tasklog.task_runs(folder)
-    by_title = {r["title"]: r for r in runs}
+    # A start with no finish and later starts after it is a run that was killed: its
+    # counts are another population's (📓 2026-09-29, the cancelled MCR 2 Spread over 200
+    # lent its total to the next one over 21, whose own start SQX had not logged yet).
+    by_title = {r["title"]: r for i, r in enumerate(runs)
+                if r["finished"] or i == len(runs) - 1}
     live = tasklog.status(role, project) if run["project"] == project and not run["finished"] \
         else None
     rows = []
@@ -180,7 +165,11 @@ def state(role: str, project: str) -> dict:
                "per_strategy_ms": None}
         r = by_title.get(t["title"])
         if r:
-            total = r["before"].get(t["input"]) if t["type"] != "Build" else None
+            # The project log writes «Databanks before start» late, not when the task
+            # begins (📓 2026-09-29, MCR 1 Bar: 2 min in, still absent), so a running retest
+            # had no total; its input databank on disk does not change while it reads it.
+            total = (r["before"].get(t["input"], held.get(t["input"]))
+                     if t["type"] != "Build" else None)
             row |= {"started": r["started"], "elapsed_s": r["elapsed_s"], "total": total,
                     "done": r.get("tested"), "per_strategy_ms": r.get("per_strategy_ms")}
             if status == "running" and live:
@@ -188,6 +177,15 @@ def state(role: str, project: str) -> dict:
                 row["per_strategy_ms"] = (live["per_strategy_ms"] or
                                           (r["elapsed_s"] * 1000 / live["generated"]
                                            if live["generated"] else None))
+        elif status == "running" and live:
+            # Running, but its start is not in the project log yet (SQX writes it late):
+            # the worker's count over the input on disk.
+            row |= {"done": live["generated"], "per_strategy_ms": live["per_strategy_ms"],
+                    "total": held.get(t["input"]) if t["type"] != "Build" else None}
+        if row["total"] == 0 and row["done"]:
+            # An input loaded through the API after the start (the WFC legs' WFC_Variants) is
+            # empty on disk: «190 de 0» (📓 2026-09-29). Unknown, not zero.
+            row["total"] = None
         rows.append(row)
     first = datetime.fromisoformat(runs[0]["started"]) if runs else None
     last = (datetime.fromisoformat(runs[-1]["finished"]) if runs and runs[-1]["finished"]

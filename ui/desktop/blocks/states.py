@@ -47,3 +47,7 @@ DIVERGING = ("#b2182b", "#d6604d", "#f4a582", "#fddbc7", "#f7f7f7",
              "#d1e5f0", "#92c5de", "#4393c3", "#2166ac")
 SEQUENTIAL = ("#f7fbff", "#deebf7", "#c6dbef", "#9ecae1", "#6baed6",
               "#4292c6", "#2171b5", "#08519c", "#08306b")
+# One strategy's curves, IS and OOS in two tones of one family (owner, 2026-09-28): violet is
+# SQX's own curve, orange → red the one at the real spread and slippage. A lines series or a
+# bar item names one of these keys as `ink`; the Estrategia page's equity reads the same map.
+CURVE = {"sqx.IS": "#8a7dff", "sqx.OOS": "#e2a6ff", "real.IS": "#f28e2b", "real.OOS": "#ff4d5e"}

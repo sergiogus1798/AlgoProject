@@ -11,7 +11,9 @@ from ui.desktop.theme import C
 
 # The owner's words for what a write here does (plan 24 §10, Q17).
 WARNING = ("Se aplica a los proyectos que se creen a partir de ahora; los existentes no cambian. "
-           "Cada cambio se escribe en assets/ conservando los comentarios, y git lo ve.")
+           "Cada cambio se escribe en assets/ conservando los comentarios, y git lo ve. WFC y "
+           "CSCV escriben además en los config.yaml de sus estudios y, los bloques del CSCV, en "
+           "ledger/thresholds.yaml, sellado con tu nombre y la fecha.")
 FILES = {"build": "Construcción y tests · _build.yaml", "classes": "Esquemas de coste · _classes.yaml",
          "policy": "Política común · _policy.yaml", "markets": "Universo de retest · _markets.yaml"}
 
@@ -35,7 +37,7 @@ class SqxConfigZone(QFrame):
         self.status = QLabel("")
         self.status.setObjectName("dim")
         reload_ = QPushButton("recargar")
-        reload_.setToolTip("Volver a leer los ficheros de assets/ por si otro los cambió")
+        reload_.setToolTip("Volver a leer los ficheros por si otro los cambió")
         reload_.clicked.connect(self.load)
         top = QHBoxLayout()
         top.addWidget(title)
@@ -90,13 +92,29 @@ class SqxConfigZone(QFrame):
             section = Section(sec)
             section.written.connect(lambda text: self.say(text, C["promising"]))
             section.refused.connect(lambda text: self.say(f"no escrito — {text}", C["dead"]))
+            # queued: the section asking is itself rebuilt by the re-read
+            section.stale.connect(lambda: QTimer.singleShot(0, self.refresh))
             self.column.addWidget(section)
             item = QListWidgetItem(f"  {words(sec['key'])}")
             item.setData(Qt.UserRole, len(self.sections))
             self.index.addItem(item)
             self.sections.append(section)
         self.column.addStretch(1)
-        self.say(f"{len(self.sections)} secciones leídas de assets/", C["muted"])
+        self.say(f"{len(self.sections)} secciones leídas", C["muted"])
+
+    def refresh(self) -> None:
+        """Re-read after a write other rows depend on, keeping what was open, the scroll and
+        the status line that said what was written."""
+        opened = [s.section["key"] for s in self.sections if s.head.isChecked()]
+        said, style = self.status.text(), self.status.styleSheet()
+        at = self.scroll.verticalScrollBar().value()
+        self.load()
+        for s in self.sections:
+            if s.section["key"] in opened:
+                s.head.setChecked(True)
+        self.status.setText(said)
+        self.status.setStyleSheet(style)
+        QTimer.singleShot(0, lambda: self.scroll.verticalScrollBar().setValue(at))
 
     def header(self, text: str) -> None:
         """A file's heading, in the index and above its sections."""

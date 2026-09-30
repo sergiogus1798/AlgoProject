@@ -1,11 +1,6 @@
-"""Trade arithmetic on one sample: starting capital, win rate with its Wilson interval, concentration, exits."""
-
-import math
+"""Trade arithmetic on one sample: starting capital, exits, and the per-trade return and its shape."""
 
 import pandas as pd
-
-Z95 = 1.959964          # two-sided 95 % normal quantile
-TOP = 0.05              # the share of best trades whose weight in the net P&L is measured
 
 
 def capital(trades: pd.DataFrame) -> float | None:
@@ -22,38 +17,6 @@ def capital(trades: pd.DataFrame) -> float | None:
         return None
     first = trades.iloc[0]
     return float(round(first["Balance"] - first["Profit/Loss"]))
-
-
-def wilson(wins: int, n: int) -> tuple[float, float, float]:
-    """Win rate and its 95 % Wilson score interval.
-
-    Args:
-        wins: Trades with P&L > 0.
-        n: Trades, > 0.
-
-    Returns:
-        (rate, low, high), all in %.
-    """
-    p = wins / n
-    centre = (p + Z95 ** 2 / (2 * n)) / (1 + Z95 ** 2 / n)
-    half = Z95 * math.sqrt(p * (1 - p) / n + Z95 ** 2 / (4 * n * n)) / (1 + Z95 ** 2 / n)
-    return 100 * p, 100 * (centre - half), 100 * (centre + half)
-
-
-def concentration(pnl: pd.Series) -> tuple[int, float, float | None]:
-    """How much of the net P&L the best `TOP` of trades carry.
-
-    Args:
-        pnl: Every trade's P&L of one sample.
-
-    Returns:
-        (trades in the top slice — at least one —, their P&L, their share of the net in
-        %, None when the net is not positive: a share of a loss has no reading).
-    """
-    k = max(1, math.ceil(TOP * len(pnl)))
-    top = float(pnl.nlargest(k).sum())
-    net = float(pnl.sum())
-    return k, top, (100 * top / net if net > 0 else None)
 
 
 def by_exit(trades: pd.DataFrame) -> pd.DataFrame:
@@ -95,7 +58,7 @@ def exit_paths(trades: pd.DataFrame) -> tuple[list[str], dict[str, list[float]]]
 # position size out, so a sizing rule that grows with the account does not fatten the tails.
 UNITS = {"USD por lote": lambda t: t["Profit/Loss"] / t["Size"],
          "USD por operación": lambda t: t["Profit/Loss"]}
-PERCENTILES = (5, 25, 75, 95)
+SHORT = {"USD por lote": "$/lote", "USD por operación": "$/trade"}    # owner: «65.36 $/trade»
 
 
 def returns(trades: pd.DataFrame, unit: str) -> pd.Series:
@@ -112,21 +75,18 @@ def returns(trades: pd.DataFrame, unit: str) -> pd.Series:
 
 
 def shape(values: pd.Series) -> dict[str, float | None]:
-    """The distribution of per-trade returns: centre, spread, tails, percentiles.
+    """The distribution of per-trade returns: centre, spread and tails.
 
     Args:
         values: One return per trade.
 
     Returns:
-        mean, median, standard deviation, skewness and excess kurtosis (pandas' bias-corrected
-        estimators, 0 for a normal), and the `PERCENTILES`; None where the sample is too short
-        (skew needs 3 trades, kurtosis 4).
+        mean, standard deviation, skewness and excess kurtosis (pandas' bias-corrected
+        estimators, 0 for a normal); None where the sample is too short (skew needs 3 trades,
+        kurtosis 4). The median and the percentiles are the histogram's row, not repeated here.
     """
     n = len(values)
-    out = {"media": float(values.mean()) if n else None,
-           "mediana": float(values.median()) if n else None,
-           "desviación típica": float(values.std()) if n > 1 else None,
-           "asimetría": float(values.skew()) if n > 2 else None,
-           "curtosis (exceso)": float(values.kurt()) if n > 3 else None}
-    return out | {f"percentil {q}": float(values.quantile(q / 100)) if n else None
-                  for q in PERCENTILES}
+    return {"media": float(values.mean()) if n else None,
+            "desviación típica": float(values.std()) if n > 1 else None,
+            "asimetría": float(values.skew()) if n > 2 else None,
+            "curtosis (exceso)": float(values.kurt()) if n > 3 else None}

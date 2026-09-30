@@ -6,17 +6,21 @@ from PySide6.QtWidgets import QFrame, QLabel, QPushButton, QVBoxLayout
 
 from ui.desktop.theme import C
 
-# The four groups of the window (encargo 22 §2), in the order the owner walks them: the library
-# he builds from, the project he is judging (Proyectos → Proyecto → Estrategia), what is running,
+# The groups of the window (encargo 22 §2), in the order the owner walks them: the library
+# he builds from, the project he is judging (Proyectos → Proyecto → Databanks → Estrategia),
+# what is running,
 # and the portfolios after step 20. «Trabajos» is not a zone: it is the strip in the status bar.
 # The five older PROYECTO zones were retired by F13 of plan 24 (2026-09-28): their content lives
-# in Proyecto and Estrategia (ui/desktop/README.md).
+# in Proyecto and Estrategia (ui/desktop/README.md). Databanks was split out of Proyecto the
+# same day: the two did not fit one screen (owner, 2026-09-28).
 GROUPS = [
     ("BIBLIOTECA", ["Cobertura", "Plantillas", "Nueva plantilla", "Paletas", "Activos",
                     "Configuración SQX", "Datos"]),
-    ("PROYECTO", ["Proyectos", "Proyecto", "Estrategia"]),
+    ("PROYECTO", ["Proyectos", "Proyecto", "Databanks", "Estrategia"]),
     ("OPERACIÓN", ["En marcha", "Registro de búsquedas"]),
     ("PORTFOLIOS", ["Portfolios"]),
+    # Owner, 2026-09-29: the bridge with MetaTrader 5 is a section of this same window.
+    ("MT5 BRIDGE", ["Verificar"]),
 ]
 ZONES = [name for _, names in GROUPS for name in names]
 # What each zone is, on hover.
@@ -28,7 +32,10 @@ TIPS = {
     "Activos": "Costes, tramos, rangos del MC Retest y mercados cruzados de cada activo.",
     "Proyectos": "Una tarjeta por proyecto de cualquier install: símbolo, timeframe, "
                  "estrategias, plantilla y estado.",
-    "Proyecto": "El proyecto elegido: el raíl del workflow, el embudo y el panel de databanks.",
+    "Proyecto": "El proyecto elegido: el workflow — lanzar en SQX, continuar workflow, el "
+                "raíl de pasos — y el embudo de la población.",
+    "Databanks": "Los databanks del proyecto elegido: filtros, pestañas por paso, la tabla de "
+                 "estrategias y su equity agregada.",
     "Estrategia": "La ficha de la estrategia elegida: curvas, estadísticas IS/OOS1/OOS2, "
                   "sus estudios y metadatos.",
     "Configuración SQX": "Los parámetros de entrada de SQX por test, para los proyectos que "
@@ -41,6 +48,8 @@ TIPS = {
                              "cada estudio y qué tramos se han gastado.",
     "Portfolios": "Las estrategias archivadas: se importan a la ficha de Estrategia tal como "
                   "se guardaron, sin recalcular nada.",
+    "Verificar": "El paso 26: la estrategia en SQX con las condiciones de cada empresa contra "
+                 "su backtest en MT5 en la cuenta de esa empresa.",
 }
 
 

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from core.paths import ROOT  # noqa: E402
 from ui.daemon import jobs, jobsapi  # noqa: E402
+from ui.daemon.batch import api as batch  # noqa: E402
 from ui.daemon.results import api as results  # noqa: E402
 from ui.daemon.runner import api as runner  # noqa: E402
 from ui.desktop import client  # noqa: E402
@@ -30,18 +31,19 @@ from ui.desktop.theme import QSS  # noqa: E402
 # Since F13 (2026-09-28): the USDJPY Donchian project; its gate ran on 09-27 and 09-28.
 PROJECT, DATABANK, STRATEGY = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results",
                                "Strategy 1.15.54")
+MOTHER = "Strategy 9.27.83"          # the one with a variant batch (strategyPermutations/)
+NO_BATCH = "Strategy 4.10.81"        # one of Results no 16.5 has fabricated variants for
 RUN = "--run" in sys.argv
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-studypage-")
 
 
 def serve() -> TestClient:
-    """The results, runner and job routes in-process, and the window's client pointed at them.
-
-    Never port 8765 and never bin/algoui: the owner may have the app open.
+    """The results, runner, job and batch routes in-process, and the window's client pointed at
+    them. Never port 8765 and never bin/algoui: the owner may have the app open.
     """
     app = FastAPI()
-    for r in (results.ROUTER, runner.ROUTER, jobsapi.ROUTER):
+    for r in (results.ROUTER, runner.ROUTER, jobsapi.ROUTER, batch.ROUTER):
         app.include_router(r)
     http = TestClient(app)
 
@@ -143,6 +145,26 @@ def test_strategy(app: QApplication, http: TestClient) -> None:
     page.deleteLater()
 
 
+def test_lote(app: QApplication, http: TestClient) -> None:
+    """«Lote» sits beside the drawer only while the WFC study is open on a mother with a batch —
+    it left the Ficha on 2026-09-29 (a strategy can have no batch)."""
+    bank = http.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
+    names = {s["strategy"]: s["identity"] for s in bank["strategies"]}
+    SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=MOTHER,
+                     identity=names[MOTHER], asset="USDJPY")
+    page = StrategyPage()
+    page.open_study("wfc")
+    assert page.lote is not None and page.side.isTabVisible(page.side.indexOf(page.lote))
+    shot(page, "lote-wfc")
+    page.open_study("gate")                  # another study: the tab hides again
+    assert not page.side.isTabVisible(page.side.indexOf(page.lote))
+    SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=NO_BATCH,
+                     identity=names[NO_BATCH], asset="USDJPY")
+    page.open_study("wfc")
+    assert page.lote is None or not page.side.isTabVisible(page.side.indexOf(page.lote))
+    page.deleteLater()
+
+
 def test_population(app: QApplication) -> None:
     """Scope many on the same databank: the newest gate run, two runs compared, the batch
     studies said honestly. (The population page left the sidebar with F13; the scope stays.)"""
@@ -167,7 +189,8 @@ if __name__ == "__main__":
     APP = QApplication.instance() or QApplication([])
     APP.setStyleSheet(QSS)
     HTTP = serve()
-    for test, args in ((test_strategy, (APP, HTTP)), (test_population, (APP,))):
+    for test, args in ((test_strategy, (APP, HTTP)), (test_lote, (APP, HTTP)),
+                       (test_population, (APP,))):
         started = time.time()
         test(*args)
         print(f"ok  {test.__name__}  {time.time() - started:.1f} s")

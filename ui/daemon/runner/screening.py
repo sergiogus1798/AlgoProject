@@ -1,7 +1,9 @@
 """The command lines of the screening and data families (steps 4-8), or why the window cannot start one."""
 
 from core.paths import DATA, databank_dir, metrics_export
+from ui.daemon.loader import find
 from ui.daemon.runner import where
+from ui.daemon.workflow import sources
 
 NO_HARVEST = "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
 NO_METRICS = "necesita el export de métricas de este databank (skill /export, metrics/)"
@@ -11,8 +13,11 @@ def gate(c: dict, strategy: str) -> list[str] | str:
     """Step 8: the whole cosecha through every screen."""
     if not c["harvest"]:
         return NO_HARVEST
-    return ["-m", "studies.screening.gate.report", "--project", c["project"], "--databank",
-            c["databank"], "--feed", c["feed"]]
+    frame = where.harvest_timeframe(c["harvest_dir"])
+    # The monkey screen's bar grid is the cosecha's own timeframe, not config.yaml's M30.
+    return (["-m", "studies.screening.gate.report", "--project", c["project"], "--databank",
+             c["databank"], "--feed", c["feed"]]
+            + (["--set", f"monkey.timeframe={frame}"] if frame else []))
 
 
 def is_oos(c: dict, strategy: str) -> list[str] | str:
@@ -35,11 +40,20 @@ def filters(c: dict, strategy: str) -> list[str] | str:
 
 
 def decay(c: dict, strategy: str) -> list[str] | str:
-    """IS to OOS decay read from the databank's .sqx files, split at the asset's oos1."""
-    if not any(databank_dir(c["project"], c["databank"]).glob("*.sqx")):
-        return "lee los .sqx del databank en el master, y ese databank no tiene ninguno"
-    return ["-m", "studies.screening.decay.report", "--project", c["project"], "--databank",
-            c["databank"], "--split", c["split"], "--end", c["end"]]
+    """IS to OOS decay read from the databank's .sqx files, split at the asset's oos1. Reads
+    whichever install actually holds the project (owner, 2026-09-29: it read the master's
+    always, empty for a project the workers hold — 📓 knowhow/sqx-drive)."""
+    found = sources.install(c["project"])
+    if found is None:
+        return "no encuentra el proyecto en ningún install (master, conductor o custodio)"
+    role, install = found
+    if not any(databank_dir(c["project"], c["databank"], install).glob("*.sqx")):
+        return f"lee los .sqx del databank en {role}, y ese databank no tiene ninguno ahí"
+    built = find.built_from(c["project"], c["databank"])   # IS lives in the build, OOS here
+    return (["-m", "studies.screening.decay.report", "--project", c["project"], "--databank",
+             c["databank"], "--split", c["split"], "--end", c["end"]]
+            + (["--role", role] if role != "master" else [])
+            + (["--is-databank", built] if built else []))
 
 
 def monkey_excess(c: dict, strategy: str) -> list[str] | str:

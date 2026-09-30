@@ -5,6 +5,7 @@ import re
 from core.assetwrite import SHARED
 from core.assetyaml import hint, leaves, read
 from core.paths import ASSETS
+from ui.daemon.sqxconfig import studies
 from ui.daemon.sqxconfig.options import spec
 
 # The order the zone shows the files in: how a strategy is built and tested first, then the
@@ -117,6 +118,39 @@ def one_file(name: str) -> list[dict]:
     return out
 
 
+def where(fields: list[dict]) -> list[str]:
+    """The study files a list of values comes from, relative to the repo, sorted."""
+    return sorted({studies.REL[f["file"]] for f in fields})
+
+
+def with_studies(sections: list[dict]) -> list[dict]:
+    """The `wfc` section with the study values behind it, and a CSCV section after it.
+
+    Args:
+        sections: What `one_file("build")` returned.
+
+    Returns:
+        The same list, `wfc` extended and `cscv` inserted right after it (owner, 2026-09-28:
+        every input of both steps in the window). Their values carry their own `file`; the
+        header names how many files and `files` lists them, for its tooltip — five paths on
+        the header line widened the whole zone past the window.
+    """
+    out = []
+    for sec in sections:
+        if sec["key"] != "wfc":
+            out.append(sec)
+            continue
+        extra = [{**f, "help": clean(f["help"])} for f in studies.fields("wfc")]
+        files = [sec["source"], *where(extra)]
+        out.append({**sec, "fields": sec["fields"] + extra, "files": files,
+                    "source": f"{sec['source']} + {len(files) - 1} ficheros de estudio"})
+        cscv = [{**f, "help": clean(f["help"])} for f in studies.fields("cscv")]
+        out.append({"file": "build", "key": "cscv", "groups": [], "fields": cscv,
+                    "help": studies.CSCV_HELP, "files": where(cscv),
+                    "source": f"{len(where(cscv))} ficheros de estudio"})
+    return out
+
+
 def state() -> dict:
     """The whole zone in one round trip.
 
@@ -124,6 +158,7 @@ def state() -> dict:
         `sections` in the order of FILES, and the files they come from. A few hundred
         values: paging them would add a mode for nothing on loopback.
     """
-    sections = [s for name in FILES[:3] for s in one_file(name)] + [markets()]
+    sections = (with_studies(one_file("build")) + one_file("classes") + one_file("policy")
+                + [markets()])
     return {"sections": sections,
             "files": {name: f"assets/{SHARED[name]}" for name in FILES}}
