@@ -11,17 +11,23 @@ QUERY = Path(__file__).resolve().parent / "winside" / "query.py"
 MARK = "@@JSON@@"
 
 
-def ask(verb: str, args: dict | None = None) -> object:
+def ask(verb: str, args: dict | None = None, account: dict | None = None) -> object:
     """Run one verb of winside/query.py and return its JSON answer.
 
     Args:
         verb: account, terminal, symbols, symbol, bars, ticks, positions, orders, history.
         args: The verb's arguments, as winside/query.py reads them.
+        account: `{login, server}` of `core.paths.MT5_ACCOUNTS`: the terminal is opened when
+            closed (`wine.open_terminal`) and logged into it with its saved password. None
+            asks whatever account the open terminal holds.
 
     Returns:
-        The decoded answer. The terminal must be open and logged in.
+        The decoded answer. Without `account` the terminal must be open and logged in.
     """
-    proc = wine.run(wine.PYTHON, [wine.windows(QUERY), verb, json.dumps(args or {})], timeout=900)
+    if account and not wine.open_terminal():
+        raise SystemExit("el terminal de MT5 no arrancó")
+    args = {**(args or {}), **(account or {})}
+    proc = wine.run(wine.PYTHON, [wine.windows(QUERY), verb, json.dumps(args)], timeout=900)
     line = next((ln for ln in proc.stdout.splitlines() if ln.startswith(MARK)), None)
     if line is None:
         raise SystemExit(f"no answer from the Windows Python:\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}")

@@ -14,9 +14,12 @@ TESTS = MT5_DATA / "tests"
 
 
 def _ini(expert: str, symbol: str, timeframe: str, start: str, end: str, model: str,
-         deposit: float, leverage: int, report_name: str) -> str:
-    """The [Tester] section. Dates are YYYY-MM-DD; the tester wants YYYY.MM.DD."""
-    lines = ["[Tester]", f"Expert={expert}", f"Symbol={symbol}", f"Period={timeframe}",
+         deposit: float, leverage: int, report_name: str, account: dict | None = None) -> str:
+    """The [Tester] section, after a [Common] one naming the account when there is one.
+    Dates are YYYY-MM-DD; the tester wants YYYY.MM.DD."""
+    common = (["[Common]", f"Login={account['login']}", f"Server={account['server']}"]
+              if account else [])
+    lines = [*common, "[Tester]", f"Expert={expert}", f"Symbol={symbol}", f"Period={timeframe}",
              f"Model={MODELS[model]}", "ExecutionMode=0", "Optimization=0", "ForwardMode=0",
              f"FromDate={start.replace('-', '.')}", f"ToDate={end.replace('-', '.')}",
              f"Deposit={deposit:g}", "Currency=USD", f"Leverage={leverage}",
@@ -26,7 +29,8 @@ def _ini(expert: str, symbol: str, timeframe: str, start: str, end: str, model: 
 
 
 def start(expert: str, symbol: str, timeframe: str, start_date: str, end_date: str,
-          model: str, deposit: float, leverage: int) -> dict:
+          model: str, deposit: float, leverage: int, account: dict | None = None,
+          tag: str = "") -> dict:
     """Launch one backtest and return at once; the terminal shuts itself down when it ends.
 
     Args:
@@ -36,6 +40,10 @@ def start(expert: str, symbol: str, timeframe: str, start_date: str, end_date: s
         model: A key of MODELS.
         deposit: Initial balance in USD.
         leverage: 100 means 1:100.
+        account: `{login, server}` to test on, with the password the terminal has saved —
+            the tester reads that server's history, spread and commission. None: the last
+            account the terminal logged into. The terminal stays on it afterwards.
+        tag: Put in the run's id, so the same EA on two accounts is two runs.
 
     Returns:
         {"run": its id, "dir": where the result will land}.
@@ -43,12 +51,12 @@ def start(expert: str, symbol: str, timeframe: str, start_date: str, end_date: s
     if wine.terminal_running():
         raise SystemExit("the MT5 terminal is open: the tester needs it closed (one terminal per data folder)")
     stem = Path(expert.replace("\\", "/")).stem
-    run = f"{stem}_{symbol}_{timeframe}_{start_date}_{end_date}_{model}"
+    run = f"{stem}_{tag + '_' if tag else ''}{symbol}_{timeframe}_{start_date}_{end_date}_{model}"
     folder = TESTS / run
     folder.mkdir(parents=True, exist_ok=True)
     ini = folder / "tester.ini"
     ini.write_text(_ini(expert, symbol, timeframe, start_date, end_date, model, deposit, leverage,
-                        run), encoding="utf-16")
+                        run, account), encoding="utf-16")
     # The terminal does not create Report='s folder: missing, the test passes and no report is written.
     reports = wine.data_dir() / "reports"
     reports.mkdir(exist_ok=True)
@@ -60,12 +68,23 @@ def start(expert: str, symbol: str, timeframe: str, start_date: str, end_date: s
     (folder / "run.json").write_text(json.dumps(
         {"pid": proc.pid, "expert": expert, "symbol": symbol, "timeframe": timeframe,
          "start": start_date, "end": end_date, "model": model, "deposit": deposit,
-         "leverage": leverage}, indent=1))
+         "leverage": leverage, "server": account["server"] if account else None}, indent=1))
     return {"run": run, "dir": str(folder)}
 
 
 def _alive(pid: int) -> bool:
-    """Whether the wine process that started the terminal is still there."""
+    """Whether the wine process that started the terminal is still there.
+
+    When `start()` ran in this same process that one is our child: once it exits it stays a
+    zombie until reaped, and `kill(pid, 0)` still answers for a zombie — `collect()` then read
+    «running» for ever (🔬 2026-09-29, the test done at 19:47:51, the job still waiting at
+    19:49). It is reaped here first.
+    """
+    try:
+        if os.waitpid(pid, os.WNOHANG)[0]:
+            return False
+    except ChildProcessError:
+        pass                      # started by another process: not ours to reap
     try:
         os.kill(pid, 0)
     except ProcessLookupError:

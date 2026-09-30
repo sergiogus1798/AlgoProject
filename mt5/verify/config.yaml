@@ -1,0 +1,46 @@
+# mt5.verify — the step-26 check: one strategy backtested in SQX at each prop firm's conditions
+# and in MT5 on that firm's own account, and the two compared. The window's MT5 Bridge ›
+# Verificar sends its choices as --set; everything the owner has not decided is here.
+
+# Where SQX runs: a short job, one strategy, so the conductor (hard rule 3).
+role: conductor
+
+# The SQX side, a Test_ project cloned from the frozen donor (hard rule 10) and retired when
+# the check ends (hard rule 6). Two of the donor's retest tasks are kept, one per firm.
+sqx:
+  donor_members: [Retest-Task1.xml, Retest-Task3.xml]   # plain retests of the donor, reused by firm
+  input: MT5VerifyIn
+  output_prefix: MT5Verify_          # + the firm key: MT5Verify_ftmo
+  task_title: "MT5 {firm}"            # the firm key in upper case
+  export_title: MQL5
+  # SaveToFiles' <SaveSourceCode type=…>: SQX's internal name, not the GUI's «MetaTrader 5
+  # (*.mq5)» — that one fails the project with «Invalid source code generator» (2026-09-29).
+  generator: "Expert Advisor for MetaTrader5 (*.MQ5)"
+  magic: 1                            # SaveToFiles numbers the EAs' magic from here
+  # The MT5 tester does not slip a market order, so neither does SQX here: a slippage on one
+  # side only would read as an unfaithful EA.
+  slippage: 0
+  settle_s: 8                         # SQX needs this after `load` before the task sees it
+  sync_tries: 60
+  poll_s: 5
+
+# The MT5 side.
+mt5:
+  # The tester's leverage is each account's own, read with its conditions.
+  collect_every_s: 10
+  max_minutes: 60                     # one tester pass; past it the run is given up
+
+# The clock: SQX stamps its feed's zone, MT5 its server's. The offset in whole hours that
+# pairs the most trades is taken, within ± this many hours, and said.
+clock:
+  max_offset_h: 3
+
+# Encargo 34 §3, the owner's starting values — each one lives in ledger/thresholds.yaml.
+thresholds:
+  matched_min: ledger:mt5verify.matched_min
+  entry_tolerance_bars: ledger:mt5verify.entry_tolerance_bars
+  trade_gap_max_r: ledger:mt5verify.trade_gap_max_r
+  daily_corr_min: ledger:mt5verify.daily_corr_min
+  daily_mad_max_pct: ledger:mt5verify.daily_mad_max_pct
+  worst_day_gap_max_pp: ledger:mt5verify.worst_day_gap_max_pp
+  dd_rel_gap_max: ledger:mt5verify.dd_rel_gap_max

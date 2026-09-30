@@ -89,6 +89,52 @@ def terminal_running() -> bool:
     return bool(out.strip())
 
 
+def open_terminal(wait_s: float = 60) -> bool:
+    """Start this prefix's terminal detached, when it is not up, and wait until it runs.
+
+    Started here and not by the MetaTrader5 package's `initialize(path=…)`: a terminal that
+    package starts is the Windows Python's child, holds its stdout, and `run()` — which waits
+    for the pipe to close — then waits for as long as the terminal lives (🔬 2026-09-29, a
+    ten-minute hang on the first account read).
+
+    Returns:
+        True when a terminal is running.
+    """
+    if terminal_running():
+        return True
+    subprocess.Popen(["wine", str(TERMINAL)], env=env(), stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+    for _ in range(int(wait_s)):
+        time.sleep(1)
+        if terminal_running():
+            time.sleep(5)            # the process is listed before its IPC answers
+            return True
+    return False
+
+
+def close_terminal(wait_s: float = 90) -> bool:
+    """Close this prefix's terminal the way its window's X does, so it saves and exits.
+
+    The tester and MetaEditor need it closed, and the MetaTrader5 package can open it but has
+    no call to close it. `taskkill` without /F posts WM_CLOSE; only a terminal still up after
+    `wait_s` is killed.
+
+    Returns:
+        True when no terminal is left.
+    """
+    if not terminal_running():
+        return True
+    run(INSTALL.parent.parent / "windows" / "system32" / "taskkill.exe",
+        ["/IM", "terminal64.exe"], timeout=60)
+    for _ in range(int(wait_s)):
+        if not terminal_running():
+            return True
+        time.sleep(1)
+    subprocess.run(["pkill", "-TERM", "-f", r"^C:\\.*terminal64\.exe"], check=False)
+    time.sleep(5)
+    return not terminal_running()
+
+
 def run(exe: Path, args: list[str], timeout: float, cwd: Path | None = None) -> subprocess.CompletedProcess:
     """Run a Windows program under Wine and wait for it.
 

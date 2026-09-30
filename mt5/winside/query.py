@@ -8,6 +8,7 @@ import csv
 import datetime as dt
 import json
 import sys
+import time
 
 import MetaTrader5 as mt5
 
@@ -37,7 +38,7 @@ def run(verb: str, a: dict) -> object:
     """Dispatch one read-only verb.
 
     Args:
-        verb: account, terminal, symbols, symbol, bars, ticks, positions, orders, history.
+        verb: account, terminal, symbols, symbol, bars, first, ticks, positions, orders, history.
         a: The verb's arguments.
 
     Returns:
@@ -57,6 +58,16 @@ def run(verb: str, a: dict) -> object:
         tf = getattr(mt5, "TIMEFRAME_" + a["timeframe"])
         rates = mt5.copy_rates_range(a["symbol"], tf, _stamp(a["start"]), _stamp(a["end"]))
         return {"rows": _csv(rates, a["out"]) if rates is not None else 0, "error": mt5.last_error()}
+    if verb == "first":         # the server's history depth: its first monthly bar
+        mt5.symbol_select(a["symbol"], True)
+        for _ in range(20):     # a symbol just selected answers «Call failed» until it syncs
+            rates = mt5.copy_rates_from_pos(a["symbol"], mt5.TIMEFRAME_MN1, 0, 1000)
+            if rates is not None and len(rates):
+                break
+            time.sleep(1)
+        return {"first": (dt.datetime.fromtimestamp(int(rates[0]["time"]), dt.timezone.utc)
+                          .date().isoformat() if rates is not None and len(rates) else None),
+                "error": mt5.last_error()}
     if verb == "ticks":
         ticks = mt5.copy_ticks_range(a["symbol"], _stamp(a["start"]), _stamp(a["end"]),
                                      mt5.COPY_TICKS_ALL)
@@ -71,11 +82,17 @@ def run(verb: str, a: dict) -> object:
 
 
 def main() -> None:
-    """Attach to the terminal already running in this prefix, answer, detach."""
-    if not mt5.initialize():
+    """Attach to the terminal of this prefix, answer, detach.
+
+    `login` and `server` among the args log the open terminal into that account with the
+    password it has saved: none travels here. The terminal is started beforehand, detached
+    (`mt5.wine.open_terminal`): one this package started would hold our stdout open.
+    """
+    args = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
+    if not mt5.initialize(**{k: args[k] for k in ("path", "login", "server") if args.get(k)}):
         print(MARK + json.dumps({"error": f"initialize failed: {mt5.last_error()}"}))
         return
-    out = run(sys.argv[1], json.loads(sys.argv[2]) if len(sys.argv) > 2 else {})
+    out = run(sys.argv[1], args)
     mt5.shutdown()
     print(MARK + json.dumps(out, default=str))
 

@@ -22,6 +22,39 @@ estrategia dada por buena, llega esta validación. Como el tramo de la feed de f
 entero en `oos2`, y `oos2` ya se ha gastado en el desarrollo cuando se llega aquí, esta puerta no
 elige estrategias por su rendimiento: sólo comprueba que SQX reproduce la cuenta de la empresa.
 
+## 0.5 · Lo que decidió el dueño el 2026-09-29, y lo que ya está hecho
+
+**Cambio de diseño (dueño):** en vez de traducir el histórico de SQX a cada empresa (§2), **un
+backtest de SQX por empresa, con las condiciones de esa empresa, comparado con el backtest del EA en
+MT5 en la cuenta de esa empresa** — FTMO con FTMO, Hantec con Hantec. El terminal cambia de cuenta
+solo (las contraseñas están guardadas en él). Y lo que se construye primero es **sólo la
+verificación**: el pool (§4) espera.
+
+Sus respuestas, que no se vuelven a preguntar:
+
+| pregunta | respuesta |
+|---|---|
+| ¿con qué datos corre SQX? | los suyos (Dukascopy/Darwinex), con los costes de la empresa |
+| ¿qué spread? | el que da la empresa en el momento de leerlo («spread actual del símbolo») |
+| ¿de dónde salen las estrategias? | del archivo y de los databanks |
+| ¿cómo se dimensiona? | con el de la propia estrategia (hoy FixedSize), en los dos lados: la tarea de SQX lo lleva y el EA se compila con ese lote fijo — la primera prueba real enseñó que, solos, ninguno de los dos lo usa |
+| ¿dónde se ve? | en la misma ventana, sección nueva **MT5 BRIDGE** › «Verificar» |
+
+**Hecho:** `mt5/verify/` (el trabajo, su README), `sqx/projects/mt5verify.py` (el proyecto `Test_`
+con una tarea por empresa y la exportación del EA a MQL5 sin interfaz — resuelve `OPEN.md` #78.3),
+`ui/daemon/mt5bridge/` y `ui/desktop/mt5bridge/` (la zona), los siete umbrales de §3 en
+`ledger/thresholds.yaml` (`mt5verify.*`), `tests/test_mt5verify.py`, el capítulo del manual
+`76-mt5-verificar`.
+
+**Queda:**
+1. **El pool (§4)**, cuando el dueño lo pida.
+2. **La fila 2 lee R como la pérdida media de SQX**, porque estas estrategias no llevan stop: es una
+   lectura del «≤ 0,05 R» que el dueño tiene que confirmar.
+3. **La fila 5 es el drawdown del balance al cierre de cada operación**; el flotante con M1 falta.
+4. **Hantec en XAUUSD se rechaza** hasta que su comisión en el oro esté confirmada en
+   `assets/symbols/XAUUSD.yaml` (`costs.commission.brokers.hantec`).
+5. `mt5/symbols.csv` sólo tiene XAUUSD; cada activo nuevo se añade a mano por empresa.
+
 ## 1 · Qué se compara, y por qué no basta el beneficio total
 
 Dos backtests pueden sumar lo mismo en dos años y tener días muy distintos. Las reglas de una
@@ -41,6 +74,11 @@ Antes de comparar, **SQX se traduce a la cuenta de la empresa** (§2): comparar 
 la diferencia de reloj y de costes, no la fidelidad.
 
 ## 2 · La traducción del histórico de SQX a cada empresa
+
+> **Sustituida el 2026-09-29 por el diseño de §0.5** para la verificación: SQX corre con los costes
+> de cada empresa en vez de traducirse después. El reloj ya no se convierte a mano: se lee de las
+> operaciones (el desfase en horas enteras que más empareja, `mt5.verify.judge.clock`). La
+> traducción de abajo sigue siendo lo que necesita el encargo 33 sobre el histórico entero.
 
 Es la pieza que después usa el encargo 33 sobre el histórico entero:
 
