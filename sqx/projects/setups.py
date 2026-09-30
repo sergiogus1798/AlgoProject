@@ -4,6 +4,7 @@
 import re
 from datetime import date
 
+from core import assetdata
 from core.assetdata import sqx_settings, window
 
 SETUP = re.compile(r"<Setup\b[^>]*>.*?</Setup>", re.S)
@@ -44,10 +45,12 @@ def span(data: dict, segment: str, reserved_ok: bool = False) -> tuple[str, str,
         is read at the pessimistic price.
 
     Raises:
-        SystemExit: When the span names `oos2` and `reserved_ok` is False.
+        SystemExit: When the span names `oos2`, `reserved_ok` is False and an autonomous
+            agent is asking (`core.assetdata.enforced`); a human is never refused (owner,
+            2026-09-28).
     """
     named = segment.split("..")
-    if "oos2" in named and not reserved_ok:
+    if "oos2" in named and not reserved_ok and assetdata.enforced():
         raise SystemExit(f"`{segment}` toca oos2, reservado al WFC y a la WFM — cada mirada "
                          "lo gasta. Si de verdad hace falta, que lo diga el dueno.")
     return (bounds(data, named[0])[0], bounds(data, named[-1])[1], named[-1])
@@ -66,8 +69,22 @@ def one_setup(block: str, data: dict, segment: str) -> str:
         <Method> entries rather than by adding one: SQX ships both SizeBased and
         PercentageBased in every Setup and exactly one is in use.
     """
-    s = sqx_settings(data, segment)
-    a, b = bounds(data, segment)
+    return write_setup(block, sqx_settings(data, segment), *bounds(data, segment))
+
+
+def write_setup(block: str, s: dict, a: str, b: str) -> str:
+    """Write a window and a set of costs into one <Setup>, whoever priced them.
+
+    Args:
+        block: The <Setup>…</Setup> text.
+        s: Costs in `core.assetdata.sqx_settings`' shape: defaultSpread, defaultSlippage,
+            commission {method, value}, swap {type, long, short, triple_swap_on, rollout_hour}.
+        a, b: dateFrom and dateTo as YYYY.MM.DD.
+
+    Returns:
+        The rewritten block. `one_setup` prices it from `assets/`; the MT5 bridge prices it
+        from a prop firm's own account (`mt5.verify.conditions`).
+    """
     block = re.sub(r'dateFrom="[^"]*"', f'dateFrom="{a}"', block, count=1)
     block = re.sub(r'dateTo="[^"]*"', f'dateTo="{b}"', block, count=1)
     block = re.sub(r'(<Setup\b[^>]*?)slippage="[^"]*"', rf'\g<1>slippage="{s["defaultSlippage"]}"',

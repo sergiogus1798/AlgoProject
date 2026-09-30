@@ -1,5 +1,7 @@
 """The custodian's four variant databanks, emptied off the disk between two batches."""
 
+from pathlib import Path
+
 from core import worker
 from core.paths import worker_dir
 from sqx.variants import legs as legmod
@@ -31,3 +33,16 @@ def clear(cfg: dict) -> int:
             path.unlink()
             gone += 1
     return gone
+
+# SQX's own line when a run dies: 🔬 2026-09-29, a NullPointerException in ProjectGlobalLog at the
+# end of «WFC 1 IS» aborted the project and `execute.run` waited 53 min for tests never coming.
+ABORTED = b"Error while running project"
+
+
+def aborted(log: Path, since: int) -> bool:
+    """Whether SQX's log, from byte `since` on, says the project died."""
+    if not log.exists():
+        return False
+    with log.open("rb") as fh:
+        fh.seek(since)
+        return ABORTED in fh.read()

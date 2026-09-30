@@ -1,7 +1,7 @@
 """One sentence per config.yaml knob, for the window's configuration drawer."""
 
 TIPS = {
-    "run.symbol": "El activo cuya política dice dónde empieza el tramo reservado oos2.",
+    "run.symbol": "El activo cuya política dice dónde empieza cada tramo.",
     "run.metric": "La métrica con la que se lee la nube.",
     "run.min_trades": "Una variante que opera menos que esto no es un punto de la superficie.",
     "run.exclude_strata": "Estratos del diseño que se dejan fuera: los canarios están en los "

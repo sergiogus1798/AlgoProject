@@ -9,6 +9,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.assetcheck import pending
+from core import assetdata
 from core.assetdata import doctrine, load, policy, sqx_settings, window
 from sqx.projects.acceptance import acceptance, area
 from sqx.projects.configure import running_install
@@ -237,10 +238,11 @@ def main() -> None:
     if done["others_on"]:
         print(f"      ⚠️ esta tarea corre ademas: {', '.join(done['others_on'])} — el "
               "proyecto no paso por la doctrina")
-    print(f"\n⚠️ {done['segment']} acaba en un tramo RESERVADO para "
-          f"{', '.join(done['reserved_for'] or [])}: cada mirada lo gasta y no se repite.")
-    print("⚠️ Y no se LEE hasta que 17, 18 y 19 esten los tres hechos. Mirar el WFC antes "
-          "de decidir si se corre esto contamina la decision con lo ya visto.")
+    if assetdata.enforced():                   # an autonomous agent only (owner, 2026-09-28)
+        print(f"\n⚠️ {done['segment']} acaba en un tramo RESERVADO para "
+              f"{', '.join(done['reserved_for'] or [])}: cada mirada lo gasta y no se repite.")
+        print("⚠️ Y no se LEE hasta que 17, 18 y 19 esten los tres hechos. Mirar el WFC antes "
+              "de decidir si se corre esto contamina la decision con lo ya visto.")
 
 
 if __name__ == "__main__":

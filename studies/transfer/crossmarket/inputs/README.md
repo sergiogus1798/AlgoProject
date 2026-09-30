@@ -5,7 +5,7 @@ exist and what they are called, and what a worse broker would charge on each. A 
 `.yaml`, validates it against what the export really carries, and hands back a plain dict.
 
 **Imports from:** `core/` only
-**Consumed by:** `simulate/`, `render/`, `explorer/`, and the three `.yaml` files in the module root
+**Consumed by:** `simulate/`, `orchestrate/`, and the three `.yaml` files in the module root
 **Must not contain:** a statistic, a p-value, a threshold's *consequence* (that is `verdict/`), or
 anything that reads bars
 
@@ -21,7 +21,7 @@ anything that reads bars
 reads it.** Nothing else opens the file, and no module holds a number the owner might want to move.
 To change one: edit `config.yaml`, or pass `--set section.key=value` on the command line, or move it
 in the panel's config drawer — the drawer is built from `config.flatten()` plus one sentence per knob
-in `explorer/tooltips.py`, so a new knob needs a row there too or it appears without its hover text.
+in `tooltips.py`, so a new knob needs a row there too or it appears without its hover text.
 
 What the knob then *does* lives one layer away: `verdict/inference.py` turns
 `diagnostics.min_trades`, `diagnostics.alpha` and the rest into named warnings, and

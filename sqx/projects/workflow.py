@@ -15,7 +15,12 @@ from sqx.projects.stage import STAGES, apply, titles
 from sqx.projects.wfc import declare
 
 SOURCE = "OOS"                        # the plain retest every added task is copied from
-CROSSTF = {"title": "CrossTF", "input": "CrossTF_Input", "output": "CrossTF"}
+# The permanent order (owner, 2026-09-29): Cross Market → Cross TF → MC Retest. Cross TF reads
+# the Cross Market survivors scaled (`input`, filled by `sqx.projects.crosstfload`, step 10.5);
+# MC Retest reads the mothers CrossTF kept, without their siblings (`mothers`, filled the same
+# way before step 13).
+CROSSTF = {"title": "CrossTF", "input": "CrossTF_Input", "output": "CrossTF",
+           "mothers": "CrossTF_Mothers"}
 
 
 def steps() -> list[str]:
@@ -85,11 +90,14 @@ def rewire(members: dict[str, bytes]) -> None:
 
     The chain hands each task the previous one's output, which is right for Build → OOS →
     markets and wrong for these: the cross-timeframe task reads the survivors loaded from
-    its own folder, and the three WFC legs all read the same batch of variants.
+    its own folder, the eight MC Retest tasks all read the mothers Cross TF kept (they do
+    not chain, `sqx.projects.mcretest`), and the three WFC legs all read the same batch of
+    variants.
     """
     study = doctrine()["wfc"]
-    wiring = [(CROSSTF["title"], CROSSTF["input"], CROSSTF["output"])] + [
-        (t["title"], study["input"], t["databank"]) for t in study["tasks"]]
+    wiring = ([(CROSSTF["title"], CROSSTF["input"], CROSSTF["output"])]
+              + [(t, CROSSTF["mothers"], t) for t in titles("mcretest")]
+              + [(t["title"], study["input"], t["databank"]) for t in study["tasks"]])
     for title, source, output in wiring:
         member = member_of(members["config.xml"].decode("utf-8"), title)
         text = set_databank(members[member].decode("utf-8"), "Input", source)[0]

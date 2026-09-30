@@ -36,8 +36,9 @@ def population(result: dict, members: list[dict], cfg: dict, started: float) -> 
                  "umbral: se mueve con --set gates.survival_dd_pct=0.35.")]
     verdict = blocks.verdict(
         f"{passed} de {len(rows)}", "pass" if passed else "fail",
-        "Ocho tareas, cada una perturbando una sola cosa, mil re-ejecuciones completas del "
-        "backtest en cada una. La pregunta no es si la curva fue suerte, sino si habría "
+        "Ocho tareas, cada una perturbando una sola cosa, N re-ejecuciones completas del "
+        "backtest en cada una (N = `mc_retest.simulations`). La pregunta no es si la curva "
+        "fue suerte, sino si habría "
         "existido.")
     return envelope.envelope(one.MODULE, None, None, cfg, started, tabs, verdict)
 

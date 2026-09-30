@@ -20,9 +20,10 @@ from ui.daemon.results import matrix, runs  # noqa: E402
 from ui.daemon.tearsheet import harvest, sheet  # noqa: E402
 
 PROJECT, DATABANK, FAMILY = "Test_USDJPY_donchianUpperCrossUp_M30", "Results", "donchianUpperCrossUp"
-IDENTITY = "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"   # Strategy 10.11.79
-# The install's databanks of this Test_ project are gone; the SPP export kept the file.
-SQX = DATA / "raw" / PROJECT / "SPP_IS" / "2026-09-27" / "strategies" / "Strategy 10.11.79.sqx"
+IDENTITY = "47da0743d600c27cedda1f78cc30de3ebd4935f6624d8ffbf4e9cc0e0e6140dd"   # Strategy 13.14.82
+# One of the 21 of the newest cosecha (2026-09-29; 10.11.79 was cut with the other 178). The
+# SPP export kept its file. Run it with the custodian stopped: archive refuses while SQX writes.
+SQX = DATA / "raw" / PROJECT / "SPP_IS" / "2026-09-29" / "strategies" / "Strategy 13.14.82.sqx"
 CHILD = """
 import os, subprocess, sys
 from pathlib import Path

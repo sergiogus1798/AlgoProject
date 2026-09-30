@@ -6,7 +6,7 @@ market's regime was at that bar, and what one log return is in money. It answers
 never "was it luck" — there is no null model here, no draw, no p-value.
 
 **Imports from:** `core/`, and itself
-**Consumed by:** `simulate/`, `verdict/`, `render/`, `explorer/`
+**Consumed by:** `simulate/`, `verdict/`, `orchestrate/`
 **Must not contain:** a random draw, a confidence interval, a threshold, or any HTML
 
 | file | what it does | run it | in → out |

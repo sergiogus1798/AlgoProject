@@ -700,3 +700,53 @@ thresholds:
     why: >-
       margen sobre el spread medido al declararlo en SQX: «es mejor hacer overkill en SQX
       que en tu portfolio live»
+
+  # ── Paso 26 · la verificación SQX ↔ MT5 por empresa (encargo 34 §3) ──────────────────
+  - key: mt5verify.matched_min
+    value: 0.95
+    source: mt5/verify/config.yaml#thresholds.matched_min
+    set_by: dueño
+    set_on: 2026-09-29
+    why: valor de partida aceptado — el EA en MT5 reproduce al menos el 95 % de las operaciones de SQX
+
+  - key: mt5verify.entry_tolerance_bars
+    value: 1
+    source: mt5/verify/config.yaml#thresholds.entry_tolerance_bars
+    set_by: dueño
+    set_on: 2026-09-29
+    why: valor de partida aceptado — la misma operación puede entrar como mucho una barra del timeframe más tarde o antes
+
+  - key: mt5verify.trade_gap_max_r
+    value: 0.05
+    source: mt5/verify/config.yaml#thresholds.trade_gap_max_r
+    set_by: dueño
+    set_on: 2026-09-29
+    why: valor de partida aceptado — diferencia media de P&L por operación emparejada, en R
+
+  - key: mt5verify.daily_corr_min
+    value: 0.95
+    source: mt5/verify/config.yaml#thresholds.daily_corr_min
+    set_by: dueño
+    set_on: 2026-09-29
+    why: valor de partida aceptado — el P&L diario de los dos lados, en el día del servidor de la empresa
+
+  - key: mt5verify.daily_mad_max_pct
+    value: 0.1
+    source: mt5/verify/config.yaml#thresholds.daily_mad_max_pct
+    set_by: dueño
+    set_on: 2026-09-29
+    why: valor de partida aceptado — diferencia media absoluta del P&L diario, en % de la cuenta
+
+  - key: mt5verify.worst_day_gap_max_pp
+    value: 0.5
+    source: mt5/verify/config.yaml#thresholds.worst_day_gap_max_pp
+    set_by: dueño
+    set_on: 2026-09-29
+    why: valor de partida aceptado — el peor día de cada lado, en puntos de % de la cuenta
+
+  - key: mt5verify.dd_rel_gap_max
+    value: 0.10
+    source: mt5/verify/config.yaml#thresholds.dd_rel_gap_max
+    set_by: dueño
+    set_on: 2026-09-29
+    why: valor de partida aceptado — diferencia relativa del drawdown máximo

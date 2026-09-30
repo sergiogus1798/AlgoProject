@@ -81,23 +81,30 @@ def main() -> None:
     install = worker_dir(a.role) if a.role else MASTER
 
     out = export_dir(a.project, a.databank, date.today().isoformat())
-    timeframes = stage(a.project, a.databank, out / "strategies", install=install)
+    # Both are this command's intermediates. A run that failed half-way leaves them, and a
+    # second export the same day then handed SQX a folder with a stray file: «No plugin
+    # loader was able to recognize file …/strategies/manifest.json» (📓 2026-09-29). Its
+    # own names: `strategies/` is `export_spp`'s product in the same day folder (the mothers
+    # the variant factory opens), and this command used to delete it (📓 2026-09-30).
+    staged, csvs = out / "_trades_sqx", out / "_trades_csv"
+    for scratch in (staged, csvs):
+        shutil.rmtree(scratch, ignore_errors=True)
+    timeframes = stage(a.project, a.databank, staged, install=install)
     (out / "timeframes.csv").write_text(
         "strategy,timeframe\n" + "".join(f"{k},{v}\n" for k, v in timeframes.items()))
     print(f"staged {len(timeframes)} strategies from {a.project}/{a.databank}")
 
-    exportdrv.trades(out / "strategies", out / "trades")
+    exportdrv.trades(staged, csvs)
     # The CSVs are an intermediate, not the export: nine tenths of their bytes are quoting,
     # repeated text and four columns that are derivable back. Bars are not copied here at
     # all — they live once in the M1 library, which covers more history than this window did.
-    packed = tradepack.pack(sorted((out / "trades").glob("*.csv")),
-                             out / "trades.parquet", per_market=False)
-    shutil.rmtree(out / "trades")
+    packed = tradepack.pack(sorted(csvs.glob("*.csv")), out / "trades.parquet", per_market=False)
+    shutil.rmtree(csvs)
     # The staged .sqx are copies of what the databank holds; the manifest names the
     # databank, and 757 of them weighed 119 MB beside a 20 MB Parquet. Their identities
     # stay, in identity.csv.
-    sign(out / "strategies", out)
-    shutil.rmtree(out / "strategies")
+    sign(staged, out)
+    shutil.rmtree(staged)
 
     manifest.write(out,
                    {"install": str(install), "project": a.project, "databank": a.databank,

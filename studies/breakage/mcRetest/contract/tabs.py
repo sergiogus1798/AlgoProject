@@ -53,7 +53,8 @@ def stress_tab(got: dict) -> dict:
     entry, tail = got["stress"], got["stress"]["fragility"]
     fan = entry["fan"]
     return envelope.tab("stress", "Estrés combinado", [
-        blocks.distribution("Estrés combinado: mil re-ejecuciones", "USD", entry["_net"],
+        blocks.distribution(f"Estrés combinado: {len(entry['_net'])} re-ejecuciones", "USD",
+                            entry["_net"],
                             entry["original_net"], "Las seis perturbaciones a la vez, sobre "
                             "muestra completa. La línea es el backtest que ocurrió."),
         {"kind": "cone", "title": "El abanico de equity bajo estrés", "unit": "USD",

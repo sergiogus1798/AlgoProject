@@ -17,7 +17,8 @@ def declared() -> list[dict]:
     """Every threshold this project has written down, with who set it and when.
 
     Returns:
-        The rows of `thresholds.yaml`. Read by whoever needs a number; written by nobody.
+        The rows of `thresholds.yaml`. Read by whoever needs a number; written by no
+        module; the window writes one, `cscv.blocks`, for the owner (`ui/daemon/sqxconfig/`).
         Parsed once per state of the file: 🔬 2026-09-27, `fill()` asked for it once per
         placeholder, 66 parses and ~5 s of a cold config load, the most of a 1-2 s study.
     """

@@ -1,9 +1,8 @@
-"""One strategy's trades, IS against OOS: return, duration, MAE and MFE as two overlaid densities."""
+"""One strategy's trades, IS against OOS: return, MAE and MFE as two overlaid densities."""
 
 import time
 
 import numpy as np
-import pandas as pd
 from scipy.stats import ks_2samp
 
 from core.study import blocks, result as envelope
@@ -60,7 +59,7 @@ def compare(title: str, unit: str, is_: np.ndarray, oos: np.ndarray, cfg: dict) 
 
 
 def run(strategy: str, inputs: dict, cfg: dict) -> dict:
-    """The four per-trade distributions of one strategy, IS against OOS.
+    """The per-trade distributions of one strategy, IS against OOS.
 
     Args:
         strategy: The strategy's name.
@@ -70,12 +69,12 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
 
     Returns:
         The contract dict, verdict None: it describes. Never Net Profit or drawdown, which
-        grow with the window; never the R multiple until the strategy carries a stop.
+        grow with the window; never the R multiple until the strategy carries a stop. The
+        trade-duration distribution left on 2026-09-29 (owner): MAE and MFE stay.
     """
     started = time.time()
     t, c = inputs["trades"], cfg["trades"]
     side = {s: t[t["sample"] == s] for s in ("IS", "OOS")}
-    hours = {s: (g["Close time"] - g["Open time"]) / pd.Timedelta(hours=1) for s, g in side.items()}
     shown, summary = [], {"n_is": len(side["IS"]), "n_oos": len(side["OOS"])}
     for col, (key, title) in MONEY.items():
         for option, (unit, read) in UNITS.items():
@@ -84,14 +83,10 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
             shown.append({**b, "select": {"unidad": option}})
             if option == "USD":
                 summary |= {f"{key}_shift": b["shift"]["median"], f"{key}_ks_p": b["shift"]["ks_p"]}
-    b = compare("Duración de cada operación", "horas", hours["IS"].to_numpy(),
-                hours["OOS"].to_numpy(), c)
-    summary |= {"duracion_shift": b["shift"]["median"], "duracion_ks_p": b["shift"]["ks_p"]}
-    shown.insert(len(UNITS), b)
     unit = {"key": "unidad", "label": "Unidad del dinero", "options": list(UNITS),
             "default": next(iter(UNITS))}
     tab = envelope.tab("trades", "IS contra OOS, operación por operación", shown, [unit],
-                       "Las mismas cuatro medidas por operación dentro y fuera de muestra. "
+                       "Las mismas medidas por operación dentro y fuera de muestra. "
                        "Sólo medidas por operación: el beneficio neto y el drawdown crecen "
                        "con la longitud de la ventana y no se comparan así. El múltiplo R "
                        "espera a que la estrategia lleve stop (paso 24).")

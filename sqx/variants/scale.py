@@ -145,6 +145,37 @@ def unmatched(mother: Path, cfg: dict) -> list[str]:
             if t == "int" and n not in claimed and not n[0].isdigit()]
 
 
+def fabricate(mothers: list[Path], out: Path, source: str, targets: list[str]) -> pd.DataFrame:
+    """Write every mother's siblings, the mothers beside them, and the manifest.
+
+    Args:
+        mothers: The `.sqx` built on `source`.
+        out: The batch folder (`core.datapaths.crosstf_dir`); `sqx/` under it is the load.
+        source: The mothers' timeframe.
+        targets: Timeframes to move their periods to — slower (H4) or faster (M30) alike:
+            a faster target multiplies the periods, which never clamps and never rounds.
+
+    Returns:
+        The manifest, also written as `scaling.parquet` one level above the load.
+    """
+    cfg = knobs()
+    # The .sqx go in a folder of their own: SQX loads every file of the folder it is given,
+    # and logged "No plugin loader was able to recognize" for scaling.parquet beside them.
+    load = out / "sqx"
+    load.mkdir(parents=True, exist_ok=True)
+    rows = [sibling(m, load, source, t, cfg, i)
+            for t in targets for i, m in enumerate(mothers)]
+    frame = pd.DataFrame(rows)
+    frame.to_parquet(out / "scaling.parquet", index=False)
+    # The mothers ride along verbatim, because the folder IS the databank load: the study
+    # needs the baseline and the control cells, and those are the mothers' own rows. They
+    # are copied rather than rewritten -- a mother stripped of its fingerprint or its
+    # results is no longer the thing the siblings are being compared against.
+    for m in mothers:
+        shutil.copy2(m, load / m.name)
+    return frame
+
+
 def main() -> None:
     """Rescale a folder of mothers to each target timeframe and write the manifest."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -160,29 +191,14 @@ def main() -> None:
     args = parser.parse_args()
     args.targets = args.targets or doctrine()["crosstf"]["timeframes"][args.source]
 
-    cfg = knobs()
     out = args.out or crosstf_dir(args.project, date.today().isoformat())
-    # The .sqx go in a folder of their own: SQX loads every file of the folder it is given,
-    # and logged "No plugin loader was able to recognize" for scaling.parquet beside them.
-    load = out / "sqx"
-    load.mkdir(parents=True, exist_ok=True)
     mothers = sorted(args.mothers.glob("*.sqx"))
-
-    rows = [sibling(m, load, args.source, t, cfg, i)
-            for t in args.targets for i, m in enumerate(mothers)]
-    frame = pd.DataFrame(rows)
-    frame.to_parquet(out / "scaling.parquet", index=False)
-    # The mothers ride along verbatim, because the folder IS the databank load: the study
-    # needs the baseline and the control cells, and those are the mothers' own rows. They
-    # are copied rather than rewritten -- a mother stripped of its fingerprint or its
-    # results is no longer the thing the siblings are being compared against.
-    for m in mothers:
-        shutil.copy2(m, load / m.name)
-    print(f"-> {load}  ({len(mothers)} madres copiadas con ellas; esta carpeta es la carga)")
-
-    print(f"{len(mothers)} mothers x {len(args.targets)} targets -> {len(rows)} siblings")
+    frame = fabricate(mothers, out, args.source, args.targets)
+    print(f"-> {out / 'sqx'}  ({len(mothers)} madres copiadas con ellas; esta carpeta es la carga)")
+    print(f"{len(mothers)} mothers x {len(args.targets)} targets -> {len(frame)} siblings")
     print(frame[["name", "ratio", "n_scaled", "max_rounding_shift", "clamped"]]
           .to_string(index=False))
+    cfg = knobs()
     loose = sorted({n for m in mothers for n in unmatched(m, cfg)})
     if loose:
         print(f"\nint parameters left untouched ({len(loose)}) -- review the whitelist:")

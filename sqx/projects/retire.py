@@ -62,7 +62,7 @@ def listing() -> None:
                   f"{registry.kind(p.name):<6} {r.get('purpose', '')}")
 
 
-def retire(name: str, role: str, keep: list[str], apply: bool) -> str:
+def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False) -> str:
     """Archive one project's config (plus any databank named) and remove it from its install.
 
     Args:
@@ -70,6 +70,9 @@ def retire(name: str, role: str, keep: list[str], apply: bool) -> str:
         role: "master", "conductor" or "custodian".
         keep: Databank names archived alongside the config, e.g. ["WFM"].
         apply: False only says what would happen.
+        own: The caller built this project in the same job and is done with it (MT5
+            Bridge's `Test_MT5Verify_…`): the FRESH_MINUTES wait, which protects someone
+            else still collecting, is skipped. Every other refusal stands.
 
     Returns:
         One line saying what was, or would be, done.
@@ -84,7 +87,7 @@ def retire(name: str, role: str, keep: list[str], apply: bool) -> str:
         raise SystemExit(f"the {role} is up: it holds {name} in memory and would write it "
                          "back on exit (hard rule 4). Stop it first.")
     d = describe(folder)
-    if time.time() - d["mtime"] < FRESH_MINUTES * 60:
+    if not own and time.time() - d["mtime"] < FRESH_MINUTES * 60:
         raise SystemExit(f"{name} changed less than {FRESH_MINUTES} min ago — someone may still "
                          "be collecting from it. Check ListAgents and the day's log.")
     missing = [b for b in keep if not (folder / "databanks" / b).is_dir()]
@@ -141,6 +144,8 @@ def main() -> None:
     ap.add_argument("--sweep", action="store_true",
                     help="the weekly rule: Test_, fewer than 10 tasks, the owner's queue")
     ap.add_argument("--yes", action="store_true", help="really do it; without it, a dry run")
+    ap.add_argument("--own", action="store_true",
+                    help="the caller built it in this same job: skip the 60-min freshness wait")
     a = ap.parse_args()
     if a.sweep:
         sweep_all(a.yes)
@@ -149,7 +154,7 @@ def main() -> None:
         listing()
         return
     for n in a.names:
-        print(retire(n, a.role, a.keep, a.yes))
+        print(retire(n, a.role, a.keep, a.yes, a.own))
     if not a.yes:
         print("dry run — add --yes to retire them")
 

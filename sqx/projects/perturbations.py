@@ -3,7 +3,9 @@
 
 import re
 
-from core.assetdata import mc_retest, window as epoch
+from core import assetdata
+from core.assetdata import window as epoch
+from core.assetranges import mc_retest
 from sqx.projects.ranges import RANDOMIZE, set_ranges
 from sqx.projects.setups import bounds, set_costs, set_data_range
 
@@ -154,11 +156,11 @@ def window(spec: dict, data: dict) -> tuple[str, str, str, tuple | None]:
         whole span instead — a deliberate divergence, not an oversight.
 
     Raises:
-        SystemExit: When the segment names `oos2`. It is reserved for the WFC and the WFM
-            and every look spends it; a catalogue edit is not the place to decide that.
+        SystemExit: When the segment names `oos2` and an autonomous agent is asking
+            (`core.assetdata.enforced`). A human may point a task at it (owner, 2026-09-28).
     """
     named = spec["segment"].split("..")
-    if RESERVED in named:
+    if RESERVED in named and assetdata.enforced():
         raise SystemExit(f"{spec['title']}: `segment: {spec['segment']}` toca {RESERVED}, "
                          "que esta reservado al WFC y a la WFM — cada mirada lo gasta. "
                          "Si de verdad hace falta, que lo diga el dueno.")

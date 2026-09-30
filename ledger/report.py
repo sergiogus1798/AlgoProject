@@ -67,7 +67,8 @@ def main() -> None:
     print("\n-- qué historia se ha gastado")
     print(spend.spent(frame).to_string(index=False))
     for name, block in spend.virgin(frame, symbol).items():
-        mark = "RESERVADO para " + ", ".join(block["reserved_for"]) if block["reserved_for"] else ""
+        mark = ("RESERVADO para " + ", ".join(block["reserved_for"])
+                if block["reserved_for"] and gate.enforced() else "")
         print(f"  {name:<6} {block['from']} → {block['to']}  leído {block['reads']}x  {mark}")
 
     print("\n-- la puerta ciega del paso 20")
@@ -75,7 +76,8 @@ def main() -> None:
     print("  " + " · ".join(f"{s} {'hecho' if ran else 'pendiente'}" for s, ran in state.items()))
     try:
         gate.allow_read(frame)
-        print("  los tres están: el paso 20 puede leerse")
+        print("  los tres están: el paso 20 puede leerse" if all(state.values()) else
+              "  abierta: la puerta ciega sólo se cierra a un agente autónomo (ALGO_AUTONOMOUS=1)")
     except PermissionError as refusal:
         print(f"  {refusal}")
 

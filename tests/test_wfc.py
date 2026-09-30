@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The WFC's composition of the split: only the owner's four pass, and each look is recorded per segment."""
 
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -46,6 +47,8 @@ def main() -> None:
 
     if look.offered("USDJPY") != labels:
         failures.append(f"con el WFC en reserved_for se ofrecen {look.offered('USDJPY')}")
+    look.admit(8, ("build", "oos2"), "USDJPY")      # a human is never refused (2026-09-28)
+    os.environ[gate.AUTONOMOUS] = "1"                 # the door holds for an autonomous agent
     for step in (17, 18):
         gate.allow(step, "oos2", "USDJPY")    # raises if the policy stopped granting it
     try:
@@ -53,6 +56,7 @@ def main() -> None:
         failures.append("la puerta dejó al paso 8 leer oos2")
     except PermissionError:
         pass
+    os.environ.pop(gate.AUTONOMOUS)
 
     written = []
     record.append = lambda study, row: written.append((study, row)) or row

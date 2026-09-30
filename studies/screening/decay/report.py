@@ -9,7 +9,7 @@ from datetime import date
 import pandas as pd
 
 from core import sqxfile, sqxstats
-from core.paths import databank_dir, report_dir
+from core.paths import MASTER, databank_dir, report_dir, worker_dir
 from core.study import blocks, output, result as envelope, verdicts
 from core.study.render import markdown
 from core.surface import dedupe
@@ -64,6 +64,24 @@ def result(rows: pd.DataFrame, source: dict, started: float) -> dict:
                        "bate a su propio error estándar."))
 
 
+def joined(before: pd.Series, after: pd.Series, split: str) -> pd.Series:
+    """One cumulative daily P&L from a build's curve up to `split` and its retest's from it.
+
+    Args:
+        before, after: Daily cumulative P&L of the build and of its out-of-sample retest,
+            each starting from its own capital.
+        split: First out-of-sample day, YYYY-MM-DD.
+
+    Returns:
+        Their daily changes glued at `split` and summed again: `analysis.decay` reads
+        `diff()`, so two curves that each restart at the capital must not meet as a jump.
+    """
+    cut = pd.Timestamp(split)
+    daily = pd.concat([before.diff().dropna()[lambda s: s.index < cut],
+                       after.diff().dropna()[lambda s: s.index >= cut]])
+    return daily.cumsum()
+
+
 def main() -> None:
     """Read a databank's .sqx straight from disk and write one dated decay report."""
     ap = argparse.ArgumentParser()
@@ -71,12 +89,21 @@ def main() -> None:
     ap.add_argument("--databank", required=True)
     ap.add_argument("--split", required=True, help="first out-of-sample day, YYYY-MM-DD")
     ap.add_argument("--end", required=True, help="last day to consider, YYYY-MM-DD")
+    ap.add_argument("--role", help="read a worker's install instead of the master")
+    ap.add_argument("--is-databank", help="the build this databank retested out of sample: "
+                    "its curve before --split, paired by name (a workflow keeps IS and OOS apart)")
     a = ap.parse_args()
 
     started = time.time()
-    folder = databank_dir(a.project, a.databank)
+    install = worker_dir(a.role) if a.role else MASTER
+    folder = databank_dir(a.project, a.databank, install)
     files = sorted(folder.glob("*.sqx"))
     curves = {f.stem: sqxstats.equity(f) for f in files}
+    if a.is_databank:
+        built = databank_dir(a.project, a.is_databank, install)
+        curves = {n: joined(sqxstats.equity(built / f"{n}.sqx"), c, a.split)
+                  for n, c in curves.items() if (built / f"{n}.sqx").is_file()}
+        files = [f for f in files if f.stem in curves]
     clone = dedupe.curve_duplicates(curves)
     dropped = int(clone.sum())
     curves = {name: c for name, c in curves.items() if not clone[name]}

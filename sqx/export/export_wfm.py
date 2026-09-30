@@ -43,6 +43,12 @@ def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.
                        "sqx_failed": note is not None and note != "Passed"})
         cells += [{"strategy": f.stem} | c for c in wfmatrix.cells(node, wfmatrix.results(f))]
         steps += [{"strategy": f.stem} | s for s in wfmatrix.periods(node)]
+    if not steps:
+        # 🔬 2026-09-29: a WFM task launched without its configurator is a plain retest; its
+        # strategies carry no matrix and the pivot below raised KeyError: 'value'.
+        raise SystemExit(f"ninguna estrategia de «{databank}» lleva resultado de Walk-Forward "
+                         "Matrix: la tarea corrió sin la matriz configurada "
+                         "(sqx.projects.wfm, skill /wfm)")
     params = [{**{k: s[k] for k in KEYS}, "index": s["index"], "parameter": k, "value": v}
               for s in steps for k, v in s["params"].items()]
     frame = lambda rows: pd.DataFrame(rows).drop(columns="params", errors="ignore")
@@ -115,6 +121,8 @@ def main() -> None:
         table.to_parquet(out / f"{name}.parquet", compression="zstd", index=False)
         print(f"{name + '.parquet':16} {len(table):>7} rows  {len(table.columns):>4} columns")
 
+    for scratch in ("strategies", "raw"):          # intermediates a failed run leaves
+        shutil.rmtree(out / scratch, ignore_errors=True)
     staged = stage(a.project, a.databank, out / "strategies", install=install)
     exportdrv.trades(out / "strategies", out / "raw", data="all")
     checked = split(out / "raw", written["steps"], out / "trades.parquet")

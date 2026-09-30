@@ -1,8 +1,8 @@
 """One sentence per config.yaml knob, for the window's configuration drawer."""
 
 TIPS = {
-    "segments": "Qué tramos se leen, una superficie por mercado y tramo. oos2 está reservado y "
-                "el ledger lo rechaza antes de abrir nada.",
+    "segments": "Qué tramos se leen, una superficie por mercado y tramo. Cada lectura de oos2 "
+                "queda apuntada en el ledger.",
     "metric": "La métrica de cada superficie: el beneficio neto por tramo, la misma que lee el "
               "WFC.",
     "min_trades": "Una celda (variante, mercado, tramo) con menos operaciones que esto no "

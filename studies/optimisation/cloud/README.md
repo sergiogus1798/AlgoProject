@@ -46,10 +46,10 @@ theta-zero is the owner's decision, logged, and revalidated on data this study n
 
 ## The four things this module exists to get right
 
-**`oos2` is a one-way door, and a per-period heatmap would walk through it.** `_policy.yaml`
-reserves that segment for the walk-forward correlation and the walk-forward matrix. Every look
-spends it, so `inputs.cloud.before_reserved` cuts the curves at its first day whatever the batch was
-retested over, and the report says how many days it dropped.
+**The per-period heatmap covers `oos2` too, for a human.** Owner, 2026-09-28: a human may look at
+any segment. Only under `ALGO_AUTONOMOUS=1` (`core.assetdata.enforced`) does
+`inputs.cloud.before_reserved` cut the curves at oos2's first day, and the report say how many
+days it dropped.
 
 **Distance is measured in level steps, not per cent.** The cloud is discrete and was designed in
 levels (`sqx/variants/design/`), so "±20 %" means something different for a bar count of 3 and a

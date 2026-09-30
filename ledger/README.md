@@ -12,23 +12,28 @@ family: the unit the multiple-testing correction is owed to.
 |---|---|---|---|
 | `study.py` | What a study is, where its ledger lives, and contract **L1** — the columns of a search | imported | ids → path, frame |
 | `record.py` | Builds a row, checks the door, appends it; and the study's funnel | imported | a search → a line |
-| `gate.py` | **The one-way door**: who may read a reserved segment, and when 17-19 may be read | imported | step, segment → pass or raise |
+| `gate.py` | **The one-way door**, shut only for an autonomous agent: who may read a reserved segment, and when 17-19 may be read | imported | step, segment → pass or raise |
 | `trials.py` | N and the pooled sigma over every search, the population's n_eff, and the deflated Sharpe that follows | imported | ledger → N, sigma, DSR |
 | `spend.py` | The map of spent data: how often each segment has been read, and what is left virgin | imported | ledger → segments |
 | `thresholds.py` | **The accessor**: `value(key)` and `fill(cfg)`, which a module's `config()` runs over its parsed `config.yaml` to replace every `ledger:<key>`; and the check of which rows are read through it | imported | register → numbers, divergences |
 | `backfill.py` | Rebuilds a study's ledger backwards from artefacts a run already left: a gate report, or (`--blind`) the results of 17, 18 and 19 | `python3 -m ledger.backfill --gate <dir> --symbol XAUUSD --timeframe M30 --family <name>` · `python3 -m ledger.backfill --blind <project> --symbol USDJPY --timeframe H1 --family <name>` | a gate report, or WFC/CSCV/WFM results → rows |
 | `blind.py` | The rows steps 17, 18 and 19 did not write, rebuilt from `wfc.json`, `cscv.json` and the WFM reading, one per segment each read — skipping a batch whose WFC or CSCV recorded itself | imported by `backfill` | results → rows |
 | `report.py` | **The command**: the funnel, what was spent, the blind door, and what the whole search costs the Sharpe | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
-| `thresholds.yaml` | Every threshold of the chain, with who set it and when — **the source**: a module's `config.yaml` holds `ledger:<key>` in its place. Read, never written by code | edited by the owner | — |
+| `thresholds.yaml` | Every threshold of the chain, with who set it and when — **the source**: a module's `config.yaml` holds `ledger:<key>` in its place. Read, never written by code — except `cscv.blocks`, which the window's Configuración SQX › CSCV writes for the owner, stamping `set_by`, `set_on` and a proposed `why` (2026-09-28) | edited by the owner, by hand or from the window | — |
 
 Manual page, in Spanish: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 43-ledger).
 
 ## The three things this module exists to get right
 
-**The door is enforced, not trusted.** `gate.allow(step, segment, symbol)` runs *before* the row is
-written, reads `assets/_policy.yaml` every call, and raises. 🔬 Step 8 asking for `oos2` on XAUUSD
-is refused; step 17 passes. And `gate.allow_read` refuses to serve steps 17, 18 and 19 until all
-three have run, which is what makes step 20 blind by construction instead of by discipline.
+**The door binds only an autonomous agent.** Owner, 2026-09-28: a human — at the window, at a
+terminal, or steering a session — may read any segment at any time, so `gate.allow` and
+`gate.allow_read` return without looking unless `core.assetdata.enforced()` (`ALGO_AUTONOMOUS=1`,
+which nothing sets today). Whether an autonomous agent that makes the development decisions should
+stay held is left open; the door stays built for it. Under that flag `gate.allow(step, segment,
+symbol)` runs *before* the row is written, reads `assets/_policy.yaml` every call, and raises —
+🔬 step 8 asking for `oos2` on XAUUSD is refused, step 17 passes — and `gate.allow_read` refuses
+17, 18 and 19 until all three have run. Either way the row is written: the ledger keeps counting
+every look, which the deflated Sharpe needs whoever looked.
 
 ⚠️ **The WFC and the CSCV record their own look; the WFM still does not.** Since 2026-09-27
 (encargo 24, E1) `studies.optimisation.wfc.report` and `…cscv.report` ask `gate.allow` for every
@@ -42,7 +47,7 @@ after `backfill --blind`, which rebuilds the missing rows from the results on di
 `BlindJoint` in `STEPS` is step 20's SPA on `oos2` (`studies/closing/blindJoint/`) — the word the
 owner would add to `reserved_for`, not a permission.
 
-⚠️ The policy names *tests*, so a step it does not list is refused even where it looks harmless.
+⚠️ Under `ALGO_AUTONOMOUS=1` the policy names *tests*, so a step it does not list is refused even where it looks harmless.
 The CSCV was that case until the owner added it to oos2's `reserved_for` (2026-09-27, Q11: the CSCV
 has to see build+oos1+oos2). The fix for the next one is the same: a line in `_policy.yaml`, which
 is the owner's file, never a wider check here.

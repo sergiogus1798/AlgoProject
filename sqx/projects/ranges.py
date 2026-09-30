@@ -3,7 +3,7 @@
 
 import re
 
-from core.assetdata import mc_retest
+from core.assetranges import mc_retest
 
 # The three methods that draw a value from a range, each named by the key its range
 # carries in `assets/symbols/<SYM>.yaml`. All three are absolute point ranges.

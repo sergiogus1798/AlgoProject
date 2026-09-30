@@ -84,6 +84,12 @@ def main() -> None:
     inputs.blind_door(study)
     population = pieces.population(a.project, a.wfm_databank)
     refused = inputs.segment_door(a.symbol)
+    if not refused and not population["complete"].any():
+        # 🔬 2026-09-29: with no mother holding all four pieces the panel came out empty, with
+        # an integer index, and the oos2 prices raised TypeError. There is nothing to read:
+        # the pieces are reported, oos2 stays closed and no ledger row is written.
+        refused = ("ninguna madre llega con las cuatro piezas (WFC, CSCV, superficies y WFM): "
+                   "no hay nada que leer en oos2")
     if refused and one.chosen(cfg):
         raise PermissionError(f"{refused}. Una lectura elegida necesita el StepM sobre oos2")
     span = inputs.window(a.symbol)

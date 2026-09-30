@@ -6,7 +6,7 @@ nothing**: every number here is handed on with no threshold applied to it.
 
 **Imports from:** `inputs/`, `mechanics/`, `engines/nulls/placement`, itself, and `verdict/fieller` (one declared
 exception, below)
-**Consumed by:** `views.py`, `render/`, `explorer/`
+**Consumed by:** `views.py`, `orchestrate/`
 **Must not contain:** a threshold, a warning's wording, a pass/fail, or any HTML
 
 | file | what it does | run it | in → out |

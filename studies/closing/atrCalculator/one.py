@@ -29,6 +29,11 @@ def reading(trades: pd.DataFrame, inputs: dict, cfg: dict) -> dict:
     measured = mae.measure(trades, inputs["bars_index"], inputs["atr"], inputs["point_value"])
     winners = {s: measured.loc[(measured["segment"] == s) & measured["winner"], "mae_atr"]
                .to_numpy() for s in ("build",) + OOS}
+    if not len(winners["build"]):
+        # 🔬 2026-09-29: run on an OOS retest's databank there is no build segment, and the
+        # percentile of no winner raised IndexError. The X is read on build winners only.
+        raise ValueError("ninguna ganadora en el tramo build: este databank no lo lleva "
+                         "(un retest OOS); el stop ATR se lee sobre el databank del build")
     xs = threshold.x_values(winners["build"], cfg)
     curve = noreturn.curve(measured[measured["segment"] == "build"], cfg)
     xs["zone"] = [noreturn.zone_of(x, curve) for x in xs["x"]]

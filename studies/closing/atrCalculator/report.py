@@ -50,7 +50,10 @@ def main() -> None:
     names = [args.strategy] if args.strategy else got["strategies"]
     rows, grids = [], []
     for i, name in enumerate(names, 1):
-        result = one.run(name, got, cfg)
+        try:
+            result = one.run(name, got, cfg)
+        except ValueError as said:
+            sys.exit(f"{name}: {said}")
         grids.append(result.pop("grid"))
         output.member(out, result, f"Stop loss ATR — {name}")
         rows.append({"strategy": name, "identity": result["identity"], "verdict": "info",

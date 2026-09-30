@@ -107,10 +107,16 @@ def run(expected: int, cfg: dict,
     # In a workflow project the other steps' databanks count too: measure from here.
     base = int(IN_BANK.search(_call(f'-project action=status name={cfg["project"]}', cfg))
                .group(1))
-    _call(f'-project action=start name={cfg["project"]}', cfg)
+    log = worker_dir(cfg["role"]) / "user/log/StrategyQuant" / f"log_{time.strftime('%Y_%m_%d')}.log"
+    since = log.stat().st_size if log.exists() else 0
+    if "Cannot start" in (reply := _call(f'-project action=start name={cfg["project"]}', cfg)):
+        raise SystemExit(f"SQX no arrancó {cfg['project']}: {reply.strip()}")   # unresolved
     done = 0
     while done < expected:
         time.sleep(cfg["poll_seconds"])
+        if banks.aborted(log, since):
+            raise SystemExit(f"SQX abortó {cfg['project']} («Error while running project», "
+                             f"ver {log}) con {done} de {expected} reteseadas")
         status = _call(f'-project action=status name={cfg["project"]}', cfg)
         tested = TESTED.search(status)
         done = (int(tested.group(1)) if tested

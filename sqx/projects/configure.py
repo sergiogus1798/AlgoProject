@@ -9,7 +9,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.assetcheck import mc_pending, pending, provisional
-from core.assetdata import load, sqx_settings, window
+from core.assetdata import enforced, load, sqx_settings, window
 from core.paths import WORKERS
 from sqx.projects.doctrine import apply_doctrine, blockers, unify_sessions
 from sqx.projects.ranges import set_ranges
@@ -178,7 +178,7 @@ def main() -> None:
     args = ap.parse_args()
 
     data = load(args.symbol)
-    if args.segment == "oos2":
+    if args.segment == "oos2" and enforced():          # an autonomous agent only (2026-09-28)
         raise SystemExit("oos2 está reservado para el WFC y la WFM. Cada mirada lo gasta; "
                          "si de verdad hace falta, que lo diga el dueño.")
     held = running_install(args.cfx)

@@ -158,7 +158,11 @@ def main() -> None:
                            "muestra seleccionada sobre esa métrica está atenuada por "
                            "construcción."}])
     dupes = ", ".join(f"{n} {s['duplicates_dropped']}" for n, s in samples.items())
-    out = report_dir(a.project, "_comparison", date.today().isoformat()) / "replication"
+    # Filed under the reference databank, not a separate "_comparison" folder (owner,
+    # 2026-09-29): the window's Cribado tab reads a study off the databank on screen, and a
+    # folder starting with "_" is excluded from /api/projects' databank list — a report left
+    # under "_comparison" could never be shown there, whatever ran it.
+    out = report_dir(a.project, a.reference, date.today().isoformat()) / "replication"
     title = f"{a.project} — ¿se sostienen las conclusiones en otras muestras?"
     output.population(out, "replication", got, title,
                       f"Referencia {a.reference}; contra " + ", ".join(names[1:]) + f". "

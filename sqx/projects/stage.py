@@ -66,14 +66,30 @@ def apply(cfx: Path, steps: list[str], skip: list[str] = ()) -> list[tuple[str, 
         One (title, active) row per task. Raises SystemExit when a step names a task the
         project does not carry: starting it then would run nothing, or the wrong thing.
     """
+    wanted = [t for s in steps for t in titles(s)]
+    return just(cfx, [t for t in wanted if t not in skip], wanted)
+
+
+def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tuple[str, bool]]:
+    """Leave only these task titles active in a project.cfx — a step's, or the one the owner
+    chose in the window («Lanzar en SQX»).
+
+    Args:
+        cfx: Path of a project.cfx. Must not be held by a running install (hard rule 4).
+        on: Titles to switch on.
+        expected: Titles the project must carry, `on` by default.
+
+    Returns:
+        One (title, active) row per task. SystemExit when one of `expected` is missing.
+    """
     held = running_install(cfx)
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Paralo: bin/sqx-worker.sh --role {held} stop")
-    wanted = [t for s in steps for t in titles(s)]
+    wanted = expected if expected is not None else on
     with zipfile.ZipFile(cfx) as z:
         members = {n: z.read(n) for n in z.namelist()}
-    config, rows = only(members["config.xml"].decode("utf-8"), [t for t in wanted if t not in skip])
+    config, rows = only(members["config.xml"].decode("utf-8"), on)
     missing = sorted(set(wanted) - {title for title, _ in rows})
     if missing:
         raise SystemExit(f"{cfx.parent.name} no lleva la(s) tarea(s) {', '.join(missing)}. "

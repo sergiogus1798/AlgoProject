@@ -70,15 +70,14 @@ def before_reserved(daily: pd.DataFrame, symbol: str) -> dict:
         symbol: The asset, to read its segments from `assets/_policy.yaml`.
 
     Returns:
-        `curves` ending the day before `oos2` starts, and `cut` days removed.
-
-        `oos2` is a one-way door: `_policy.yaml` reserves it for the walk-forward
-        correlation and the walk-forward matrix, and every look spends it. A per-period
-        heatmap over the whole history would spend it on a diagnostic, so this study
-        stops at the boundary whether or not the batch was retested past it.
+        `curves` ending the day before `oos2` starts, and `cut` days removed -- only for an
+        autonomous agent (`core.assetdata.enforced`). For a human the whole history is
+        kept and `cut` is 0 (owner, 2026-09-28: a human may look at oos2 whenever).
     """
     from core import assetdata
 
+    if not assetdata.enforced():
+        return {"curves": daily, "cut": 0, "limit": None}
     start = str(assetdata.load(symbol)["segments"]["oos2"]["from"])
     limit = pd.Timestamp(start if "-" in start else f"{start}-01-01")
     kept = daily[daily.index < limit]

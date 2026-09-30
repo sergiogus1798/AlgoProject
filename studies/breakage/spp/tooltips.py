@@ -9,7 +9,9 @@ TIPS = {
                       "el resto.",
     "verdict.margin": "Cuántas veces tiene que superar el máximo observado al máximo de una "
                       "rejilla de ruido.",
-    "design.n_target": "Variantes para las que se dimensiona el diseño.",
+    "design.n_target": "Tope de variantes por madre: el diseño se dimensiona para este número "
+                       "y nunca repite una combinación para llegar a él; si el espacio es más "
+                       "pequeño, se fabrica entero.",
     "design.strata": "Qué parte de las variantes va a la vecindad, al factorial y a la "
                      "cobertura.",
     "design.min_levels": "Niveles mínimos de un parámetro vivo.",

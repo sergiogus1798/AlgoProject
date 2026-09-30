@@ -1,4 +1,10 @@
-"""The one-way door: who may look at a reserved segment, and when 17-19 may be read."""
+"""The one-way door: who may look at a reserved segment, and when 17-19 may be read.
+
+Shut only for an agent that decides alone. Owner, 2026-09-28: a human -- at the window, at a
+terminal, or steering a session -- may look at any segment at any time; whether an autonomous
+agent that makes the development decisions should still be held to the door is left open, so
+the door stays built and such an agent opts in by setting `ALGO_AUTONOMOUS=1`.
+"""
 
 import pandas as pd
 
@@ -11,6 +17,8 @@ from core import assetdata
 STEPS = {"WFC": 17, "CSCV": 18, "MarketSurfaces": 18.5, "WFM": 19, "BlindJoint": 20,
          "ATRStop": 24}
 BLIND = (17, 18, 19)
+AUTONOMOUS = assetdata.AUTONOMOUS
+enforced = assetdata.enforced      # the door is shut only for an autonomous agent
 
 
 def reserved(symbol: str) -> dict[str, list[int]]:
@@ -38,15 +46,17 @@ def allow(step: int, segment: str, symbol: str) -> None:
         symbol: The asset.
 
     Raises:
-        PermissionError: The segment is reserved and this step is not one it is reserved
-            for. Every look at `oos2` spends it, so this is the mechanism the owner asked
-            for in place of everyone remembering the rule.
+        PermissionError: Only under `enforced()`: the segment is reserved and this step is
+            not one it is reserved for. A human is never refused; the row is still written,
+            so the ledger keeps counting how often each segment was read.
 
         ⚠️ The policy names the tests, so a step not listed there is refused even when it
         seems harmless. If the CSCV should be allowed to read the reserved stretch, the
         fix is to add it to `reserved_for` in `_policy.yaml`, which is the owner's file --
         not to widen this check.
     """
+    if not enforced():
+        return
     allowed = reserved(symbol).get(segment)
     if allowed is not None and step not in allowed:
         names = [n for n, s in STEPS.items() if s in allowed]
@@ -78,13 +88,15 @@ def allow_read(frame: pd.DataFrame) -> None:
         frame: What `study.read` returned.
 
     Raises:
-        PermissionError: One of them is missing.
+        PermissionError: Only under `enforced()`: one of them is missing.
 
-        The owner's rule of 2026-09-23: reading the correlation and the CSCV before
+        The owner's rule of 2026-09-23, lifted for humans on 2026-09-28: reading the correlation and the CSCV before
         deciding whether to run the matrix contaminates that decision, and the matrix is
         the only test left with untouched data behind it. So step 20 is blind by
         construction, not by discipline.
     """
+    if not enforced():
+        return
     pending = [step for step, ran in done(frame).items() if not ran]
     if pending:
         raise PermissionError(

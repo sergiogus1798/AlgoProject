@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Step 20 on mothers whose answer is known: noise names nobody, a planted edge is named, the pieces veto."""
 
+import os
 import sys
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from ledger import gate
 from studies.closing.blindJoint import inputs, many, measure, one, readings
 from studies.closing.blindJoint.pieces import PIECES
 
@@ -104,11 +106,14 @@ def main() -> None:
     if one.chosen(CFG) is not None or got["population"]["verdict"]["label"] != "SIN REGLA":
         failures.append("sin regla del dueño el paso 20 ha elegido una lectura")
 
+    inputs.blind_door("TEST_M1_nunca_corrido")          # a human is never refused
+    os.environ[gate.AUTONOMOUS] = "1"                    # an autonomous agent is
     try:
         inputs.blind_door("TEST_M1_nunca_corrido")
-        failures.append("la puerta ciega dejó leer un estudio sin 17, 18 ni 19")
+        failures.append("la puerta ciega dejó leer a un agente autónomo un estudio sin 17, 18 ni 19")
     except PermissionError:
         pass
+    os.environ.pop(gate.AUTONOMOUS)
 
     print("\n".join(failures) or
           f"ok: sobre ruido el StepM nombra alguna madre en {false} de {SEEDS} semillas; el "

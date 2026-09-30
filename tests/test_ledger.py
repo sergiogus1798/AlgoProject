@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The ledger's two guarantees: the door refuses, and pooling widens what the DSR must clear."""
 
+import os
 import sys
 from pathlib import Path
 
@@ -40,7 +41,13 @@ def main() -> None:
     """Check the door, the pooling and what the pooling does to the benchmark."""
     failures = []
 
-    # The one-way door, on the real policy: step 8 may not read what is reserved for 17/19.
+    # A human is never refused (owner, 2026-09-28): the door is open without ALGO_AUTONOMOUS.
+    os.environ.pop(gate.AUTONOMOUS, None)
+    gate.allow(8, "oos2", "XAUUSD")
+    gate.allow_read(pd.DataFrame(columns=["step"]))
+
+    # The one-way door, shut for an autonomous agent: step 8 may not read what is reserved for 17/19.
+    os.environ[gate.AUTONOMOUS] = "1"
     try:
         gate.allow(8, "oos2", "XAUUSD")
         failures.append("gate: el paso 8 pudo mirar oos2")
@@ -58,6 +65,7 @@ def main() -> None:
         pass
     done = pd.DataFrame([{"step": s} for s in (17, 18, 19)])
     gate.allow_read(done)
+    os.environ.pop(gate.AUTONOMOUS)
 
     # Pooling the stored moments must equal the moments of the union, exactly.
     counted = trials.accumulated(frame)

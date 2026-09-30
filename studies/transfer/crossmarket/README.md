@@ -85,10 +85,9 @@ name goes in `contract/words.NAMES`. Nothing else changes. → `engines/nulls/pl
 
 **Why can the panel not give different numbers from the report?** Because there is no report. The
 panel is the only entry point, nothing is written to disk and nothing is cached: every number comes
-from the run the owner just started, and `explorer/work.clear()` wipes any result an older version
-left in `derived/crossmarket/` at start-up. The batch report was removed on 2026-09-15 at the owner's
+from the run the owner just started, and nothing older is kept in `derived/crossmarket/`. The batch report was removed on 2026-09-15 at the owner's
 request, because a stored result can always be read as an answer to a question it was not computed
-for. → `explorer/README.md`.
+for. → `orchestrate/README.md`.
 
 ## What this study does not do, by design
 
@@ -113,7 +112,7 @@ for. → `explorer/README.md`.
   test runs on the main backtest restricted to `assets/_markets.yaml`'s declared `out_of_sample` range — the
   project's own `<OutOfSample>` — because the builder optimised nothing there. It is kept out of the
   joint null, the breadth count, the portfolio and the correlation matrix: it is the same market, not
-  a second one. → `explorer/README.md`, and read the `selected_window` warning before reading its p.
+  a second one. → `orchestrate/README.md`, and read the `selected_window` warning (`verdict/alerts.py`) before reading its p.
 - **E is never a bare number.** It divides by the market's own drift, so where that drift is not
   distinguishable from zero the ratio has no finite interval at all. It is always shown with a
   **Fieller interval**, which returns the unbounded one and says so, beside the share of bootstrap

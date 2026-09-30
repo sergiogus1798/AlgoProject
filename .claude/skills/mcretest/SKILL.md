@@ -51,8 +51,11 @@ python3 -m sqx.projects.mcretest <SIMBOLO> \
 ```
 
 `--input` es la población que se perturba y no tiene default: preguntar al dueño cuál es si no está
-claro por el paso anterior (normalmente los supervivientes de `/oos-gate`, `/crossmarket` o
-`/crosstf`).
+claro por el paso anterior. En un proyecto de workflow el orden es permanente — Cross Market →
+Cross TF → MC Retest (dueño, 2026-09-29) — y la entrada es `CrossTF_Mothers`: las madres que dejó
+`CrossTF`, sin sus hermanas escaladas, que `sqx.projects.crosstfload --mothers` copia con el worker
+parado (la ventana lo hace sola al lanzar el paso 13); `builder --workflow` ya cablea las ocho tareas
+a ese databank.
 
 Antes de escribir: **el `.cfx` no puede estar abierto por una instancia** — SQX lo reescribe al
 salir (regla dura 4). El comando se niega y dice qué parar.

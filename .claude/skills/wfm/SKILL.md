@@ -1,30 +1,19 @@
 ---
 name: wfm
-description: Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in the reserved oos2, the ten per-cell conditions and the area rule that decide whether a strategy survives, and the two owner's rules it enforces (every look spends the window, and nothing is read until steps 17, 18 and 19 are all done). Use when the owner asks to set up, configure or run the WFM or walk-forward matrix in SQX, or step 19 of the workflow.
+description: Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in oos2, and the ten per-cell conditions and the area rule that decide whether a strategy survives. Use when the owner asks to set up, configure or run the WFM or walk-forward matrix in SQX, or step 19 of the workflow.
 ---
 
 # /wfm
 
 Paso 19 del workflow, y **el último paso que mira datos**. Deja la tarea `WFM` de un custom project
-configurada y lista para correr. Leerla es `studies/optimisation/wfm/` — y eso ya es el paso 20,
-que va ciego hasta que el 17, el 18 y el 19 estén los tres hechos.
+configurada y lista para correr. Leerla es `studies/optimisation/wfm/`, cuando se quiera.
 
-## Las dos reglas del dueño que este comando hace cumplir
+## Acaba en `oos2`
 
-**1. Acaba en `oos2`, y `oos2` es una puerta de un solo sentido.** La ventana es `build..oos2` —el
-walk-forward necesita histórico delante para optimizar—, y lo que se gasta es la cola:
-`assets/_policy.yaml` la reserva para el WFC y la WFM; `sqx/projects/configure.py` **aborta** si se lo pides para cualquier
-otra cosa. Esta tarea es la excepción, porque es aquello para lo que está reservado. Cada mirada lo
-gasta y no se repite: del 7 al 16 se mira `oos1` una y otra vez, así que al llegar aquí es lo único
-virgen que queda.
-
-**2. No se LEE hasta que 17, 18 y 19 estén los tres hechos.** Si se leen el WFC y el CSCV antes de
-decidir si se corre la WFM —y con qué parámetros—, esa decisión ya está contaminada por lo visto, y
-la última bala se gasta en un test elegido a posteriori. El comando lo canta en cada ejecución;
-forzarlo de verdad es trabajo del ledger, que todavía no existe (`WORKFLOW.md`).
-
-Si el dueño pide correr la WFM y el 17 o el 18 no están hechos: **decírselo y preguntar**, no
-correrla. Es la única muestra que queda.
+La ventana es `build..oos2` —el walk-forward necesita histórico delante para optimizar—. El dueño
+derogó el 2026-09-28 la regla de «no quemar el oos2» para humanos: se corre y se lee cuando él
+quiera, sin esperar a que 17 y 18 estén hechos. Sólo un agente autónomo (`ALGO_AUTONOMOUS=1`) sigue
+atado a la reserva de `assets/_policy.yaml` y a la puerta ciega del paso 20 (`ledger/gate.py`).
 
 ## Qué escribe
 

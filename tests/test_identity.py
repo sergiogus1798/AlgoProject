@@ -11,7 +11,7 @@ from core.paths import DATA  # noqa: E402
 from core.study import identity, output  # noqa: E402
 from sqx.export import export_trades  # noqa: E402
 
-PROJECT = "Test_USDJPY_donchianUpperCrossUp_M30"      # retired: no install holds its databanks
+PROJECT = "Test_USDJPY_donchianUpperCrossUp_M30"      # live on SQX_w2; the names below were cut from it on 2026-09-29
 RAW = DATA / "raw" / PROJECT
 KNOWN = {"Strategy 10.11.79": "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048",
          "Strategy 9.25.72": "2d1ac02dd185f3027469ee8d8d9cbc809d64e048393dc4972eb2f82fb42d2da4"}
@@ -45,8 +45,11 @@ def main() -> None:
     names = list(KNOWN)
     assert identity.lookup(PROJECT, "Results", names) == dict.fromkeys(names)
     # The cosecha names the build databank on `strategy_build` and its OOS one on `strategy`.
-    assert identity.from_harvest(PROJECT, "Results", names) == KNOWN
-    assert identity.from_harvest(PROJECT, "OOS", names) == KNOWN
+    # Asked with the exports' day: the cosecha of 2026-09-29 (Results cut to 21) is newer and no
+    # longer names these two, which is right — a later cosecha is not trusted for an older export.
+    assert identity.from_harvest(PROJECT, "Results", names, "2026-09-27") == KNOWN
+    assert identity.from_harvest(PROJECT, "OOS", names, "2026-09-27") == KNOWN
+    assert identity.from_harvest(PROJECT, "Results", names) == dict.fromkeys(names)
     # A cosecha taken after the export is not trusted: the databank may have been rebuilt.
     assert identity.from_harvest(PROJECT, "OOS", names, "2026-09-26") == dict.fromkeys(names)
     # A databank no cosecha paired gets nothing from it, whatever its names look like.

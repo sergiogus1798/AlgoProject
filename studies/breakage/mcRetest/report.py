@@ -12,8 +12,9 @@ from studies.breakage.mcRetest.contract import words
 from studies.breakage.mcRetest.inputs import config
 from studies.breakage.mcRetest.verdict import gates
 
-LEDE = ("Ocho tareas, cada una perturbando una sola cosa, mil re-ejecuciones completas del "
-        "backtest en cada una. La pregunta no es si la curva fue suerte, sino si habría "
+LEDE = ("Ocho tareas, cada una perturbando una sola cosa, N re-ejecuciones completas del "
+        "backtest en cada una (N = `mc_retest.simulations`). La pregunta no es si la curva "
+        "fue suerte, sino si habría "
         "existido.")
 
 

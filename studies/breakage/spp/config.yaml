@@ -15,7 +15,7 @@ verdict:
   margin: 1.0             # multiples of the null maximum the observed max must clear
 
 design:
-  n_target: 5000          # variants the design is sized for
+  n_target: 500           # variants the design is sized for
   strata:                 # shares of n_target; §5 of the protocol
     neighbourhood: 0.20
     factorial: 0.60

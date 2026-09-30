@@ -4,16 +4,17 @@
 |---|---|---|---|
 | `report.py` | The command: whichever halves this databank has input for, into one dated folder and one manifest naming both inputs | `python3 -m studies.screening.isOos.report --project XAUUSD --databank OOS [--set trades.bins=60]` | `metrics/<P>/<D>/metrics.csv` and/or the newest `harvest/<P>/<D>/<day>/` → `reports/<P>/<D>/<date>/isOos/` |
 | `many.py` | The population half — the IS × OOS correlation map, persistence, one predictor ranking per outcome with the Benjamini-Hochberg survivors marked | imported | metrics columns → contract result |
-| `one.py` | The per-trade half, one strategy: return, duration, MAE and MFE, IS and OOS overlaid as densities on shared bins, with the median shift and the two-sample KS p (encargo 24 E3, owner Q14) | imported | its harvest trades → contract result |
+| `one.py` | The per-trade half, one strategy: return, MAE and MFE, IS and OOS overlaid as densities on shared bins, with the median shift and the two-sample KS p (encargo 24 E3, owner Q14; the duration distribution left 2026-09-29) | imported | its harvest trades → contract result |
 | `config.yaml` | The per-trade knobs: bins, and the tail share folded into the end bins | — | — |
 | `tooltips.py` | One Spanish sentence per knob, for the window's drawer | imported | — |
 | `panel.html` | Template for the interactive explorer. `__PAYLOAD__` is replaced with the embedded data | — | — |
 
 ## The per-trade half (encargo 24 E3)
 
-Owner, 2026-09-27 (Q14): extend this study rather than open another; per-trade return, duration,
-MAE and MFE yes; **the R multiple no** until the strategy carries a stop (step 24); never Net
-Profit or drawdown, which grow with the window. Each is a `distribution` with two `series`
+Owner, 2026-09-27 (Q14): extend this study rather than open another; per-trade return, MAE and
+MFE yes; **the R multiple no** until the strategy carries a stop (step 24); never Net
+Profit or drawdown, which grow with the window. The per-trade duration distribution left on
+2026-09-29 (owner). Each is a `distribution` with two `series`
 (IS, OOS) as densities of area 1 and a `shift` (`core/study/CONTRACT.md`); verdict None, no
 `verdict.csv`. It reads only the samples `IS` and `OOS` and refuses a harvest carrying any other:
 OOS2 is never read here. A strategy with no trade in one sample is skipped and counted in the
@@ -26,10 +27,9 @@ manifest.
   because it is the export's own number.
 - **Bins** cover p0.5–p99.5 of both samples pooled; what falls outside is folded into the end
   bins, so each density keeps its area of 1 (`trades.tail_pct`).
-- **Duration** is clock hours, weekends included. With an exit after X bars nearly every trade
-  lasts the same, and the KS p on those ties is conservative.
 - **Weight:** ~23 KB of JSON and ~23 KB of HTML per strategy — 200 strategies in 7 s and 9.4 MB;
-  a 10,000-strategy harvest would write ~470 MB of pages.
+  a 10,000-strategy harvest would write ~470 MB of pages (measured with the duration
+  distribution still in; one fewer block per strategy now).
 
 The explorer is the last page that recomputes in a browser. It stays until the window has an IS/OOS
 zone that filters; the contract result (`isOos.json`) is what the window reads today.
