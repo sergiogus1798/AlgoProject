@@ -136,16 +136,22 @@ crosstf:
   segment: build..oos1
   precision: 2
   conditions: []
-  # Los timeframes extra POR DEFECTO según el timeframe en que se construyó la estrategia, en
-  # el orden en que se vuelven los bloques 1, 2, ... El bloque 0 es siempre el test principal.
-  # `--timeframes` en la línea de comandos manda sobre esto. Dueño, 2026-09-26: desde M30, H1
-  # y H4; desde H1, H4 y H12 (H12 es un timeframe propio de SQX, "custom"). D1 no es
-  # alcanzable escalando desde H1: medido 2026-09-23, mueve los parámetros 140-586 %.
-  # ⚠️ Este orden es un CONTRATO con `studies/transfer/crossTF/config.yaml` (`run.blocks`):
-  # equivocarlo lee cada celda sobre las barras de otro timeframe, en silencio.
+  # Los timeframes extra POR DEFECTO según el timeframe en que se construyó la estrategia.
+  # Dueño, 2026-09-26: desde M30, H1 y H4. Desde H1 (dueño, 2026-09-29): M30, H4 y D1 — un
+  # timeframe MÁS RÁPIDO que la madre vale igual (M30 dobla los períodos).
+  # CADA TIMEFRAME ES UNA TAREA PROPIA (dueño, 2026-09-30), nunca un bloque del crosscheck de
+  # mercados adicionales: SQX exporta los bloques mezclados por hora y, con el mismo símbolo,
+  # nada los separa (se leían por el ritmo de operaciones, no por el timeframe). «CrossTF»
+  # corre el timeframe de la madre → `CrossTF`; «CrossTF <TF>» cada uno → `CrossTF_<TF>`.
+  # El orden de la lista es el de `blocks.json`, que es lo que lee el estudio.
   timeframes:
     M30: [H1, H4]
-    H1: [H4, H12]
+    H1: [M30, H4, D1]
+  # El motor de cada timeframe, si no es el de `engine`. D1 con MetaTrader 4 (dueño,
+  # 2026-09-30): en D1 la estrategia sólo entra a las 00:00 y la sesión de las fondeadas abre
+  # a las 00:05, así que con el motor de MT5 no opera; el de MT4 no pide sesión.
+  engines:
+    D1: MetaTrader4
 
 # ─── MC Retest ─────────────────────────────────────────────────────────────────────────
 # Paso 13 del workflow. Ocho tareas, cada una perturbando UNA cosa y volviendo a correr el

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write the cross-timeframe check: the same asset and costs, read on other timeframes."""
+"""Write the cross-timeframe check: the same asset and costs, one retest per timeframe."""
 
 import argparse
 import json
@@ -8,25 +8,23 @@ import zipfile
 from datetime import date
 from pathlib import Path
 
-from core.assetdata import doctrine, load, sqx_settings
+from core.assetdata import doctrine, load
 from core.datapaths import crosstf_dir
+from sqx.projects import crosstfsolo
 from sqx.projects.configure import running_install
 from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.setups import set_span, span
-from sqx.projects.stage import own
+from sqx.projects.stage import just, own, titles
+from sqx.projects.tasksettings import set_precision
 
-BLOCK = re.compile(r"<RetestOnAdditionalMarkets\b.*?</RetestOnAdditionalMarkets>", re.S)
-SETUPS = re.compile(r"(<RetestOnAdditionalMarkets\b[^>]*>\s*<Settings>\s*)"
-                    r"<Setups\b[^>]*>.*?</Setups>", re.S)
 MAIN_CHART = re.compile(r'<Chart symbol="([^"]+)" timeframe="([^"]+)"')
 MAIN_DATES = re.compile(r'<Setup dateFrom="([^"]+)" dateTo="([^"]+)"')
 
-# The timeframe is the ONLY thing a Setup owns here, and that is the whole design: the
-# comparison is valid only if the blocks differ in nothing else. Contrast crossmarket.py,
-# where the costs and the window are the market's own because the market IS the variable.
-INHERIT = ('timeframe="false" dates="true" subcharts="false" precision="true" '
-           'distance="true" spread="true" slippage="true" commissions="true" '
-           'swap="true" session="true"')
+# Owner, 2026-09-30: every timeframe runs as a task of its own, never as a block of
+# `RetestOnAdditionalMarkets`. SQX's `data=all` export interleaves the blocks by open time, and
+# on one symbol nothing tells them apart: the k-th occurrence of a ticket read the blocks by
+# how fast each traded (from H1, M30's trades were read as H1's). One task, one databank, one
+# unambiguous export — and D1 on MetaTrader 4, which asks for no session.
 
 
 def main_chart(text: str) -> tuple[str, str]:
@@ -43,153 +41,107 @@ def main_chart(text: str) -> tuple[str, str]:
     return found.group(1), found.group(2)
 
 
-def one_timeframe(feed: str, data: dict, segment: str, timeframe: str,
-                  precision: int, engine: str, window: tuple[str, str]) -> str:
-    """One extra timeframe as the <Setup> the cross-check runs it with.
-
-    Args:
-        feed: SQX feed name -- the same one the main test uses.
-        data: The asset file, as load() returned it.
-        segment: Which segment's costs to write.
-        timeframe: The timeframe this block reads.
-        precision: testPrecision.
-        engine: Backtest engine name.
-        window: (dateFrom, dateTo). Written even though `MainTestValues` makes the main
-            test's dates the live ones: SQX parses the attributes before it reads the
-            mask, and a Setup without them fails the whole task with "Cannot load settings
-            of Cross check 'RetestOnAdditionalMarkets'" (measured 2026-09-23).
-
-    Returns:
-        The <Setup> element. Its costs are written from assets/ so the file states what it
-        charges, but `MainTestValues` makes the main test's values the live ones: the same
-        instrument does not get a different spread for being resampled.
-    """
-    s = sqx_settings(data, segment)
-    c, sw = s["commission"], s["swap"]
-    methods = "".join(
-        f'<Method type="{m}" use="{str(m == c["method"]).lower()}"><Params>'
-        f'<Param key="{"Commission" if m == "SizeBased" else "CommissionPct"}" '
-        f'className="{m}">{c["value"] if m == c["method"] else 0}</Param></Params></Method>'
-        for m in ("SizeBased", "PercentageBased"))
-    return (f'<Setup dateFrom="{window[0]}" dateTo="{window[1]}" '
-            f'testPrecision="{precision}" session="No Session" '
-            f'slippage="{s["defaultSlippage"]}" minDist="10" engine="{engine}">'
-            f'<Chart symbol="{feed}" timeframe="{timeframe}" spread="{s["defaultSpread"]}" />'
-            f"<Commissions>{methods}</Commissions>"
-            f'<Swap use="true" type="{sw["type"]}" long="{sw["long"]}" short="{sw["short"]}" '
-            f'tripleSwapOn="{sw["triple_swap_on"]}" rolloutHour="{sw["rollout_hour"]}" />'
-            f"<MainTestValues {INHERIT} /></Setup>")
-
-
 def main_window(text: str) -> tuple[str, str]:
-    """The window the task's own main test runs on.
-
-    Args:
-        text: A task XML.
-
-    Returns:
-        (dateFrom, dateTo). This is the window the extra timeframes actually run, because
-        `INHERIT` carries `dates="true"`: the dates written into their own <Setup> are
-        inert and the main test's are the live ones. Reading it back is the only way to
-        tell whether the task honours `crosstf.segment`.
-    """
+    """The window the task's own main test runs on, as (dateFrom, dateTo)."""
     found = MAIN_DATES.search(text)
     return found.group(1), found.group(2)
 
 
-def set_timeframes(text: str, symbol: str,
-                   timeframes: list[str] | None = None) -> tuple[str, list[str], int, str]:
-    """Turn the cross-check on and give it one block per extra timeframe.
+def set_main(text: str, symbol: str) -> tuple[str, int, str]:
+    """Put the source task on `crosstf.segment` at `crosstf.precision`, cross-check off.
 
     Args:
-        text: A task XML.
+        text: The `CrossTF` task XML.
         symbol: The asset, for its declared costs.
-        timeframes: The extra timeframes, in the order they become blocks 1, 2, ... None
-            takes the doctrine's list for the task's own timeframe.
 
     Returns:
-        The task, the timeframe of every result block in order (block 0 first), how many
-        acceptance conditions were silenced, and a warning about the window — empty when
-        the task already runs the declared span. The block order is what
-        `studies/transfer/crossTF` derives from the same doctrine; getting it wrong prices
-        every cell on the wrong bars with no error anywhere.
+        The task, how many acceptance conditions were silenced, and a warning about the
+        window — empty when the task runs the declared span. Every other timeframe's task is
+        copied from this one (`crosstfsolo.write`), so it carries the same window and costs.
     """
-    d = doctrine()
-    study = d["crosstf"]
+    study = doctrine()["crosstf"]
     if study["conditions"]:
         raise SystemExit("`crosstf.conditions` de assets/_build.yaml ya no esta vacio: esta "
                          "prueba es una medicion, no una puerta, y escribir condiciones no "
                          "esta implementado. Quitalas o dilo explicitamente.")
-    feed, native = main_chart(text)
-    timeframes = timeframes or study["timeframes"][native]
     data = load(symbol)
-    start, end, costs = span(data, study["segment"])
-    # The extra timeframes inherit the main test's dates, so the main test carries the span.
-    text = set_span(text, data, study["segment"])[0]
-    body = "".join(one_timeframe(feed, data, costs, tf, study["precision"], d["engine"],
-                                 (start, end))
-                   for tf in timeframes)
-    text = SETUPS.sub(rf'\g<1><Setups detailed="true">{body}</Setups>', text, count=1)
-    text = re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"',
-                  r'\g<1>use="true"', text, count=1)
+    start, end, _ = span(data, study["segment"])
+    text = set_precision(set_span(text, data, study["segment"])[0], study["precision"])
+    text = re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"', r'\g<1>use="false"',
+                  text, count=1)
     # Every condition of the task, not only this check's: 🔬 2026-09-25 a clone carried live
-    # conditions elsewhere in the task (the OOS copy three, with DeleteFailedStrategies true),
-    # and one live condition under evaluateAll="false" makes SQX skip the extra blocks.
+    # conditions elsewhere (the OOS copy, with DeleteFailedStrategies true).
     text, silenced = silence(text)
     live = main_window(text)
     warning = ("" if live == (start, end) else
-               f"⚠️  la tarea corre {live[0]} a {live[1]}, no {start} a {end}. Las fechas de "
-               f"los <Setup> extra son INERTES (MainTestValues dates=\"true\"): manda el test "
-               f"principal. Configura la tarea con el segmento `{study['segment']}` o los "
-               "timeframes se leeran sobre otra ventana.")
-    return text, [native] + timeframes, silenced, warning
+               f"⚠️  la tarea corre {live[0]} a {live[1]}, no {start} a {end}: configura la "
+               f"tarea con el segmento `{study['segment']}`.")
+    return text, silenced, warning
+
+
+def wire(cfx: Path, symbol: str, day: str) -> dict:
+    """Write `CrossTF` and one task per extra timeframe, and record which databank is which.
+
+    Args:
+        cfx: The project's project.cfx, no install holding it.
+        symbol: Asset name.
+        day: Fabrication day the `blocks.json` is filed under (`core.datapaths.crosstf_dir`).
+
+    Returns:
+        `task`, `blocks` (the source timeframe first), `databanks` (in the same order),
+        `tasks` (each extra timeframe's row of `crosstfsolo.planned`), `silenced`, `warning`,
+        `staged` and `out`.
+    """
+    held = running_install(cfx)
+    if held:
+        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
+                         f"Paralo: bin/sqx-worker.sh --role {held} stop")
+    with zipfile.ZipFile(cfx) as z:
+        members = {n: z.read(n) for n in z.namelist()}
+    task = member_of(members["config.xml"].decode("utf-8"), "CrossTF")
+    text, silenced, warning = set_main(members[task].decode("utf-8"), symbol)
+    members[task] = text.encode("utf-8")
+    source = main_chart(text)[1]
+    extra = crosstfsolo.planned(source)
+    for solo in extra:
+        crosstfsolo.write(members, text, solo)
+    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, blob in members.items():
+            z.writestr(name, blob)
+    staged = own(cfx, "crosstf")
+    just(cfx, titles("crosstf") + [s["title"] for s in extra])
+    blocks = [source] + [s["timeframe"] for s in extra]
+    databanks = ["CrossTF"] + [s["databank"] for s in extra]
+    # The run's own record: assets/_build.yaml can change after this (Q17), and the study
+    # must score these cells on the bars this run actually holds (OPEN.md #80).
+    out = crosstf_dir(cfx.parent.name, day)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "blocks.json").write_text(json.dumps({"blocks": blocks, "databanks": databanks,
+                                                 "tasks": extra}, indent=2), encoding="utf-8")
+    return {"task": task, "blocks": blocks, "databanks": databanks, "tasks": extra,
+            "silenced": silenced, "warning": warning, "staged": staged, "out": out}
 
 
 def main() -> None:
-    """Write the cross-timeframe Setups into one task, and report the block order."""
+    """Write the cross-timeframe tasks of one project, and report which databank is which."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("symbol")
     ap.add_argument("--cfx", required=True, type=Path)
-    ap.add_argument("--task", help="task XML file; by default the one titled `CrossTF`")
-    ap.add_argument("--timeframes", nargs="+",
-                    help="los timeframes extra, en orden de bloque; por defecto, la doctrina")
     ap.add_argument("--day", default=date.today().isoformat(),
                     help="dia de fabricacion bajo el que se archiva blocks.json "
                          "(core.datapaths.crosstf_dir); por defecto hoy, igual que "
                          "sqx.variants.scale")
     a = ap.parse_args()
-
-    held = running_install(a.cfx)
-    if held:
-        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
-                         f"Paralo: bin/sqx-worker.sh --role {held} stop")
-    with zipfile.ZipFile(a.cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
-    a.task = a.task or member_of(members["config.xml"].decode("utf-8"), "CrossTF")
-    text, blocks, silenced, warning = set_timeframes(members[a.task].decode("utf-8"), a.symbol,
-                                                     a.timeframes)
-    members[a.task] = text.encode("utf-8")
-    with zipfile.ZipFile(a.cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
-
-    study = doctrine()["crosstf"]
-    print(f"{a.task}: {len(blocks) - 1} timeframes anadidos, costes de {a.symbol} a "
-          f"`{study['segment']}`")
-    print(f"{silenced} condiciones de aceptacion apagadas — esto es evidencia, no un filtro")
-    if warning:
-        print(warning)
-    print(own(a.cfx, "crosstf"))
-    print(f"bloques: {', '.join(blocks)}")
-    # The run's own record: assets/_build.yaml can change after this (Q17), and the study
-    # must score these cells on the bars this task actually holds, not on whatever
-    # `crosstf.timeframes` says the day someone reads the run (OPEN.md #80).
-    out = crosstf_dir(a.cfx.parent.name, a.day)
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "blocks.json").write_text(json.dumps({"blocks": blocks}, indent=2), encoding="utf-8")
-    print(f"blocks.json -> {out}")
-    if a.timeframes:   # the study derives the doctrine's order itself; a one-off list it cannot
-        print(f"el estudio necesitara: --set run.blocks=[{','.join(blocks)}]")
+    got = wire(a.cfx, a.symbol, a.day)
+    print(f"{got['task']}: {got['blocks'][0]}, costes de {a.symbol} a "
+          f"`{doctrine()['crosstf']['segment']}`")
+    for s in got["tasks"]:
+        print(f"«{s['title']}»: {s['timeframe']} con {s['engine']} -> {s['databank']}")
+    print(f"{got['silenced']} condiciones de aceptacion apagadas — esto es evidencia, no un filtro")
+    if got["warning"]:
+        print(got["warning"])
+    print(got["staged"])
+    print(f"blocks.json -> {got['out']}")
 
 
 if __name__ == "__main__":

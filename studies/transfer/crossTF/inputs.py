@@ -56,6 +56,40 @@ def blocks(scaling: pd.DataFrame, given: list[str] | None,
     return [source] + doctrine()["crosstf"]["timeframes"][source]
 
 
+def gather(directory: Path, export: Path, packed: pd.DataFrame) -> pd.DataFrame:
+    """Every timeframe's trades as one frame, `block` = the timeframe's place in `blocks`.
+
+    Args:
+        directory: The batch's folder; `blocks.json` lists each timeframe's databank under
+            `databanks` for a run made since 2026-09-30, one task per timeframe.
+        export: The `CrossTF` `trades.parquet`, the source timeframe (block 0); each other
+            databank's export sits beside it (`core.paths.export_dir`), the same day first,
+            else its newest.
+        packed: The CrossTF export, as `trades` returned it.
+
+    Returns:
+        The trades with `block` set per databank. A run before that date kept its
+        timeframes as blocks of the cross-check, and its export's own `block` is kept — read
+        by the k-th occurrence of a ticket, which follows how fast each block trades, not
+        its timeframe (owner, 2026-09-30: why every timeframe is now a task).
+    """
+    found = directory / "blocks.json"
+    banks = json.loads(found.read_text(encoding="utf-8")).get("databanks") if found.exists() \
+        else None
+    if not banks:
+        return packed
+    frames = [packed.assign(block=0)]
+    for i, bank in enumerate(banks[1:], 1):
+        days = export.parents[2] / bank.replace(" ", "_")
+        day = days / export.parent.name
+        day = day if day.is_dir() else max(days.iterdir(), default=None) if days.is_dir() else None
+        if day is None:
+            raise SystemExit(f"{bank} no tiene export: exporta ese databank (se exporta solo al "
+                             "parar el worker, o con el panel de Databanks) antes de leerlo")
+        frames.append(pd.read_parquet(day / "trades.parquet").assign(block=i))
+    return pd.concat(frames, ignore_index=True)
+
+
 def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
     """Which (strategy, block) pairs are a cell, and what each one means.
 

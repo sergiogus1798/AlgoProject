@@ -37,7 +37,7 @@ clock", and nothing downstream should describe it as one.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, which cell each result block is (`blocks.json` first, today's doctrine only as a fallback for a run without one), and the bars of each timeframe | imported | config + manifests → cells, bars |
+| `inputs.py` | The knobs, which timeframe each block is and which databank holds it (`blocks.json` first, today's doctrine only as a fallback for a run without one; `gather` reads one export per timeframe), and the bars of each timeframe | imported | config + manifests → cells, bars |
 | `cells.py` | What each cell earned and where it sits among its own timeframe's nulls | imported | trades + bars → statistic, p |
 | `verdict.py` | What a scaled cell means, once the control and the rounding have had their say | imported | panel → one of five readings |
 | `many.py` | What the study reads, every cell measured and every scaled cell read, as one result the window paints | imported | export + scaling → result |
@@ -50,13 +50,14 @@ nothing inside the module; `report` orchestrates.
 
 ## The trap a future session will step in
 
-Which result block is which timeframe has to match the `<Setup>` order of the retest task.
-`inputs.blocks()` reads `blocks.json` beside `scaling.parquet` — the order `sqx.projects.crosstf`
-wrote for THIS run — and only falls back to the siblings' `source_tf` plus `crosstf.timeframes` of
-today's `assets/_build.yaml` when the run predates that file, printing a warning (OPEN.md #80): a
-later edit to `crosstf.timeframes` must never silently relabel an old run. `run.blocks` in
-`config.yaml` is a list only for a task written with `--timeframes`, and it still wins over both.
-Get the order wrong and every cell is priced on the wrong bars, with no error anywhere. `report.py`
-prints the mapping before any number for exactly that reason. The blocks are separated by the
-ticket restarting at 1 (`core.tradestore.block`) and **not** by the `Symbol` column, which is
-identical across the timeframes of one asset.
+**Each timeframe is its own SQX task and its own databank** (owner, 2026-09-30): `CrossTF` runs the
+mothers' timeframe (block 0), and `CrossTF_M30`, `CrossTF_H4`, `CrossTF_D1` (D1 on the MetaTrader 4
+engine) the others. They used to be blocks of one `RetestOnAdditionalMarkets` task, and that export
+cannot be split on one symbol: the rows come sorted by open time and the k-th occurrence of a
+ticket labelled the blocks by how fast each traded — from H1, M30's trades were scored as the H1
+baseline (`knowhow/export/data-all-blocks.md`). `inputs.blocks()` reads the timeframes and
+`inputs.gather()` the databanks from `blocks.json` beside `scaling.parquet`, both written by
+`sqx.projects.crosstf` for THIS run; each databank's export is found beside CrossTF's, the same day
+first. A run without `databanks` in its `blocks.json` is an old cross-check run: its packed `block`
+column is kept, and it is not trustworthy. Only such a run falls back to today's
+`crosstf.timeframes` (OPEN.md #80). `report.py` prints the mapping before any number.

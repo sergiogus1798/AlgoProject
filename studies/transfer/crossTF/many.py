@@ -35,13 +35,14 @@ def load(export: Path, scaling: Path, feed: str, cfg: dict) -> dict:
     """
     table = pd.read_parquet(scaling)
     cfg["run"]["blocks"] = inputs.blocks(table, cfg["run"]["blocks"], scaling.parent)
+    packed = inputs.gather(scaling.parent, export, inputs.trades(export))
     plan = inputs.plan(table, cfg["run"]["blocks"])
     nullcfg = nullinputs.config([])
     # The null layer names whose costs its p-values carry, and the feed is the only thing
     # that says whose: a property of this run, not of the null machinery.
     nullcfg["feed"] = feed
     mothers = sorted(plan["mother"].unique())
-    return {"plan": plan, "trades": inputs.trades(export), "scaling": table,
+    return {"plan": plan, "trades": packed, "scaling": table,
             "frames": inputs.bars(feed, cfg["run"]["blocks"]), "nullcfg": nullcfg,
             "feed": feed, "identity": output.identify(export.parent, mothers)}
 

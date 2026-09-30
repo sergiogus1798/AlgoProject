@@ -34,14 +34,33 @@ Each scaled sibling is run **on its own source timeframe too**. Without that cel
 and "it died when its Tenkan went from 9 to 2" are the same observation. `control_failed` is that
 separation; if you drop the control, every verdict becomes unattributable.
 
-## Run it
+## Run it — from the window (the usual path)
+
+Since 2026-09-29 the window does steps 10.5 and 11 in one press: ▶ SQX of step 11 (or «Correr
+workflow», or «Continuar workflow» on the Cross Market databank) runs
+`sqx.projects.crosstfload` with the worker **stopped** — the Cross Market survivors on disk are
+scaled to `crosstf.timeframes`, copied with the mothers into `CrossTF_Input` (emptied first), the
+`CrossTF` task is rewritten with the same blocks — then starts the worker, runs `CrossTF`, stops.
+Before step 13 the same module copies the mothers `CrossTF` kept (no `_Scaled*` sibling) into
+`CrossTF_Mothers`, which the eight MC Retest tasks of a `--workflow` project read. The permanent
+order is Cross Market → Cross TF → MC Retest (owner, 2026-09-29). By hand:
+
+```bash
+python3 -m core.assets <SYMBOL>                                            # hard rule 5
+python3 -m sqx.projects.crosstfload --project <P> --role custodian          # 10.5, worker stopped
+python3 -m sqx.projects.crosstfload --project <P> --role custodian --mothers  # before 13
+```
+
+`CrossTF_Input` is written by **no task** — `knowhow/sqx-drive/crosstf-input-filled-by-no-task.md`.
+
+## Run it — step by step
 
 **1 · Fabricate.** Owner's rule, 2026-09-23: **periods and bar-count exits, nothing else.** The
 whitelist in `sqx/variants/config.yaml` (`crosstf:`) is positive — an unrecognised parameter is
 written through untouched, never reinterpreted.
 
 ```bash
-python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1   # H4 + H12
+python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1   # M30 + H4 + D1
 ```
 
 **The batch has a declared home** (hard rule 7 — heavy data never in the repo):
@@ -68,7 +87,9 @@ much as the resampling did. It also lists the int parameters the whitelist did n
 them, do not assume they are wrong.
 
 ⚠️ **D1 is not reachable from H1 by scaling.** Measured: ÷24 moves parameters 140–586 % and clamps
-every period at the builder's floor. Fabricate D1 only for the *unscaled* row.
+every period at the builder's floor. The owner still wants D1 from H1 (2026-09-29): its scaled cells
+come back `unusable` and D1 is read on the *unscaled* row. **A faster target is fine**: H1→M30 is a
+ratio of 0.5, periods double, no rounding and no clamp (🔬 2026-09-29).
 
 ⚠️ **And M30 is barely usable as a source at all.** 🔬 2026-09-23: from M30, **÷2 already clamps**
 — 5 of 6 siblings came back `clamped`, with rounding shifts of 1.0 (H1) and 7.0 (H4) against a
@@ -89,12 +110,12 @@ python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/proje
 
 The timeframes, the window and the precision come from `crosstf:` in `assets/_build.yaml`
 (`segment: build..oos1`, `precision: 2`). The timeframes depend on the one the strategy was built
-on (owner, 2026-09-26): **from M30, H1 and H4; from H1, H4 and H12** — H12 is a custom SQX
-timeframe and works as-is in the task (🔬 2026-09-26). `sqx.variants.scale --source H1` fabricates
-both siblings by default. The study derives the same block order itself — the siblings'
+on: **from M30, H1 and H4** (owner, 2026-09-26); **from H1, M30, H4 and D1** (owner, 2026-09-29).
+H12 is a custom SQX timeframe and works as-is in a task if named (🔬 2026-09-26).
+`sqx.variants.scale --source H1` fabricates every sibling of the list by default. The study derives the same block order itself — the siblings'
 `source_tf` in `scaling.parquet`, then this list (2026-09-27; it used to be a hand-edited
-`run.blocks`). H12 siblings of short
-periods come back `clamped` (÷12 moves them too far) — they are read only as the unscaled row. `--timeframes` overrides the list for
+`run.blocks`). D1 (or H12) siblings of short
+periods come back `clamped` — they are read only as the unscaled row. `--timeframes` overrides the list for
 a one-off — then, and only then, the command prints the `--set run.blocks=[…]` the study needs;
 the window and the precision are not overridable on purpose.
 
@@ -109,12 +130,14 @@ the failing strategy and Python never sees the dead ones
 (`knowhow/conditions/crossmarket-crosstf-no-conditions.md`). It leaves `CrossTF` the only active
 task, refuses while the install is up (hard rule 4), and ends by printing the block order.
 
-**3 · Run and export.** On the custodian, stopped at first. Start it, load the folder into the
-task's input, then the run half of `/template-run` — `stop` then `start`, only `status` while it
-runs, always end stopped:
+**3 · Load, run and export.** On the custodian, stopped: `crosstfload` copies the folder into
+`CrossTF_Input` (SQX loads it when it starts — never `-databank action=load` on a running
+custodian), then the run half of `/template-run` — `start`, only `status` while it runs, always
+end stopped:
 
 ```bash
-python3 -c "from core import worker; print(worker.call('-databank action=load project=<P> name=CrossTF_Input folder=<the crosstf dir>/sqx','custodian'))"
+# with the custodian STOPPED, copy the folder into the databank; SQX loads it on start
+python3 -m sqx.projects.crosstfload --project <P> --role custodian
 python3 -m sqx.export.export_retest --project <P> --databank CrossTF --role custodian
 ```
 
