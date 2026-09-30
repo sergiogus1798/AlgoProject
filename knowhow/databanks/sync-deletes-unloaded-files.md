@@ -1,11 +1,14 @@
 ---
-q: why SQX deletes strategies, databank sync removes sqx files, ClearDatabanks wipes, auto-sync every hour, closing SQX deletes strategies, databank flow at risk, partial load pruned
-tag: 🔬  date: 2026-09-27  see: databanks/sync-only-touches-loaded, databanks/snapshot-before-restart, databanks/databank-verbs
+q: why SQX deletes strategies, databank sync removes sqx files, ClearDatabanks wipes, auto-sync every hour, closing SQX deletes strategies, databank flow at risk, partial load pruned, Cannot process strategy InterruptedException, strategy lost at stop, two syncs at once
+tag: 🔬  date: 2026-09-29  see: databanks/sync-only-touches-loaded, databanks/snapshot-before-restart, databanks/databank-verbs
 ---
 # Memory is the source of truth: a sync deletes on-disk .sqx not held in memory
 Applies to every sync of a **loaded** databank — the hourly auto-sync as much as shutdown. Loss paths:
 a `ClearDatabanks` task empties memory and the next sync deletes the files; a partially loaded databank
-is pruned to that partial set. Before running a project read its **Databank flow** table:
+is pruned to that partial set; and **two syncs of one databank at once** (a periodic one when
+`-exit`'s shutdown sync starts) interrupt a strategy's lock — «Cannot process strategy 'X'»,
+InterruptedException — and the periodic one then deletes X's file. «Lanzar en SQX» restores such
+a file from its pre-run snapshot (`launch.run.restore`). Before running a project read its **Databank flow** table:
 `sqx/inspect/dump_project.py <PROJECT>`. Not: "closing SQX deletes strategies" — misdiagnosis.
 
 ## Evidence
@@ -21,3 +24,8 @@ is pruned to that partial set. Before running a project read its **Databank flow
 - Old per-project docs under `docs/` are retired; regenerate (`OPEN.md`).
 - 📓 Large databanks sync slowly: XAUUSD `WFM` **826 s**. Partial-load pruning hits databanks no
   `ClearDatabanks` touches.
+
+2026-09-29 13:04, stop after the WFM of Test_USDJPY_donchianUpperCrossUp_M30: periodic sync of
+«Retest Markets - Family» (38 s) overlapped the API sync of `-exit`; 13:04:05 «Cannot process
+strategy 'Strategy 9.11.67'»; «files before sync 200 / after sync 199 / removed 1». Restored from
+`AlgoData/projects/snapshots/…/20260929-120337`.

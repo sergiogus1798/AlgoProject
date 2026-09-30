@@ -1,9 +1,9 @@
 ---
 q: split data=all export into blocks; WFM cells in one CSV; crossTF blocks interleaved not contiguous; Ticket cumcount; assign trade to walk-forward step runFrom runTo; torn_blocks
-tag: 🔬  date: 2026-09-26  see: export/data-all-crossmarket, export/wfm-export
+tag: 🔬  date: 2026-09-30  see: export/data-all-crossmarket, export/wfm-export
 ---
 # `data=all` blocks are not reliably contiguous — split by the separator that fits the kind
-- Cross-market: `Symbol` — never the packed `block` column, which is wrong there. CrossTF (same symbol): the k-th occurrence of a ticket is block k → `groupby("Ticket").cumcount()`, sound only while the blocks trade at clearly different rates.
+- Cross-market: `Symbol` — never the packed `block` column, which is wrong there. Same symbol (old CrossTF): **nothing separates the blocks** — the k-th occurrence of a ticket labels blocks by how fast each trades, not by Setup order. Since 2026-09-30 Cross TF runs one task per timeframe (`sqx.projects.crosstf`), one export each.
 - WFM (31 results): cut where `Sample type` turns `IS` → 30 cell blocks (`core/wftrades.chunks()`).
 - Assign a trade to a WF step with `searchsorted` over the next step's `runFrom`, never `runFrom <= t <= runTo`.
 - `tradestore.pack()` returns `torn_blocks`; non-empty = blocks are guesses.
@@ -22,3 +22,9 @@ tag: 🔬  date: 2026-09-26  see: export/data-all-crossmarket, export/wfm-export
   length break the k-th-occurrence rule: ticket 1,100 exists only in the longer blocks, so its first
   occurrence is "block 0" whatever market it is. `Symbol` was right in every row. CrossTF works because
   M30/H1/H4 blocks reach ticket t in time order; two blocks at similar rates would swap.
+- 🔬 2026-09-30, `Test_USDJPY_donchianUpperCrossUp_H1/Retest Markets - Family`, 60 strategies: `block` 0-8
+  held every other market's trades and USDJPY (the main test) sat whole in block 9; `orderstocsv`
+  CSV sorted by open time, `Balance` running across ALL blocks (it cannot chain one block). The
+  k-th occurrence goes to the fastest trader first: from H1, M30 took block 0 and H1 block 1 —
+  the Cross TF study scored M30 as the baseline. `-tools action=orderstocsv` only knows
+  `data=main|all` (`internal/web/SQUANT/help.txt`). Owner chose one task per timeframe.

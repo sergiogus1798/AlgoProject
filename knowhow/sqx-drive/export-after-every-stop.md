@@ -30,3 +30,9 @@ the 15-min quiet rule's `released.json`, unchanged here.
 but `raw/<P>/MCR_All/` stayed at 2026-09-27. `afterrun` with EXTRA ingested 539 runs in 17 s.
 2026-09-29 SPP run: the stop spent 8 min re-exporting all 12 databanks, none changed. Entry
 CRCs of Results matched between 06:47 and 10:52; fingerprinting 2.6 GB of .sqx costs 2 s cold.
+2026-09-29 15:30: the WFM (918k trades) was re-exported at a variants stop although unchanged:
+the EXTRA markers were folders (`<day>/wfm`), whose date an overwriting export does not move, so
+the export never read fresh and was never signed. Markers are now each export's `manifest.json`.
+17:24: still re-exported at each stop — a WFM result's attributes carry Java object addresses
+(`stats="…SQStats@4f573d92"`), new on every save; `state._canonical` now keeps only the class.
+

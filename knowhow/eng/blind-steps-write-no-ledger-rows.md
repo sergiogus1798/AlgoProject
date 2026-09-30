@@ -8,7 +8,8 @@ batch, and write one ledger row per segment read (WFC: its composition's segment
 build, oos1, oos2, step 18 — the owner put `CSCV` in oos2's `reserved_for` on 2026-09-27). The WFM
 writes none, so the blind door still needs `python3 -m ledger.backfill --blind <project> --symbol S
 --timeframe TF --family F` (dry run, then `--write` once). `blind` skips a batch whose live rows
-exist (note opens `lote <batch>`). Step 20's SPA on oos2 stays unread until `BlindJoint` is added.
+exist (note opens `lote <batch>`). ⚠️ Since 2026-09-28 the door binds only under
+`ALGO_AUTONOMOUS=1`; for a human it is open (`eng/oos2-door-binds-only-autonomous`).
 
 ## Evidence
 - 2026-09-27, `Strategy_9.27.83` of `Test_USDJPY_donchianUpperCrossUp_M30`: two compositions + the

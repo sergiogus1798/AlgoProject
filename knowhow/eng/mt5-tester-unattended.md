@@ -1,5 +1,5 @@
 ---
-q: automate MT5 strategy tester backtest, terminal64 /config tester.ini, no report written, Report= folder missing, test successfully finished but no htm, news filter in tester, CalendarValueHistory in strategy tester, economic calendar backtest, FTMO news filter inert in tester, MT5 window pops up, run terminal hidden headless, Xvfb without sudo, DISPLAY virtual, SQX EA mmMultiplier lot 0 LotsIfNoMM
+q: automate MT5 strategy tester backtest, collect stuck running zombie defunct start.exe, terminal64 /config tester.ini, no report written, Report= folder missing, test successfully finished but no htm, news filter in tester, CalendarValueHistory in strategy tester, economic calendar backtest, FTMO news filter inert in tester, MT5 window pops up, run terminal hidden headless, Xvfb without sudo, DISPLAY virtual, SQX EA mmMultiplier lot 0 LotsIfNoMM
 tag: 🔬  date: 2026-09-29  see: eng/mt5-under-wine, eng/metaeditor-compile-under-wine
 ---
 # An SQX EA backtests unattended in MT5 under Wine — but the report folder must exist, and a calendar news filter does nothing in the tester
@@ -7,6 +7,7 @@ tag: 🔬  date: 2026-09-29  see: eng/mt5-under-wine, eng/metaeditor-compile-und
 - It needs no window: `wine.env()` points `DISPLAY` at an Xvfb on `:77` (started on demand), so the terminal and MetaEditor draw off screen. Xvfb is not installed and sudo asks for a password here: `apt-get download xvfb` + `dpkg -x` and `Xvfb` copied to `~/.local/bin` runs, since every library it links is already on the machine. `MT5_VISIBLE=1` brings the windows back.
 - `Report=reports\<name>` is relative to the data folder and **the terminal does not create `reports\`**: the log still says `last test passed with result "successfully finished"`, and no `.htm` is written anywhere. `start()` now creates it.
 - MQL5's economic calendar returns nothing in the Strategy Tester: an EA that filters news with `CalendarValueHistory` (the owner's `FTMONewsFilter_Files` EAs) trades in the tester exactly as it would without the filter. A backtest cannot show what the filter costs; that needs the event times fed in from a file, or the live trades.
+- ⚠️ `start()` and `collect()` in ONE process: the wine launcher exits as a zombie child and `kill(pid, 0)` answers for a zombie, so `collect()` read «running» for ever. `tester._alive` reaps it with `waitpid(WNOHANG)` first (🔬 2026-09-29, the test finished 19:47:51, still «running» at 19:49).
 - Pairing two EAs' trades (same entries and exits) is the check. P&L is not: the two versions of an owner's EA can size differently. In `FTMO_EAs_NoNews/Strategy 3.48.75` `mmMultiplier = 0.01` makes the fixed-amount lot round to 0, so every trade falls back to `mmLotsIfNoMM` = 0.01.
 
 ## Evidence

@@ -1,17 +1,19 @@
 ---
-q: Continuar workflow from the window; window deletes discards in SQX; advance next task; curate then start; ui/daemon/advance; preflight refuses busy worker; watcher Project finished; only action=status after start; stop only what it started
-tag: 📓  date: 2026-09-28  see: databanks/sync-deletes-unloaded-files, databanks/databank-verbs, sqx-drive/running-a-task-headless
+q: Continuar workflow from the window; window deletes discards in SQX; advance next task; curate then start; ui/daemon/advance; preflight refuses busy worker; watcher Project finished; only action=status after start; stop only what it started; Lanzar en SQX any task
+tag: 📓  date: 2026-09-30  see: databanks/sync-deletes-unloaded-files, databanks/databank-verbs, sqx-drive/running-a-task-headless
 ---
 # «Continuar workflow»: refuse any sign of use, cut files stopped, start, then only `action=status`
 Order (`ui/daemon/advance/run.py`, one conductor-lane job): preflight again → copy the discarded
 `.sqx` to `AlgoData/projects/discards/<P>/<D>/<stamp>/` + `verdict.csv` → `apply_verdict.apply`
-(install stopped) → ledger row → `stage.apply` (only the next task on) → `worker.start` → wait
+(install stopped) → ledger row → `stage.apply` (every next-step task reading the cut or an on task's
+output, minus silenced MCRs; before 2026-09-30 only «MCR 1 Bar» ran) → `worker.start` → wait
 with `action=status` → `-project action=start` → `progress.state` until «Project finished» → `stop`.
-Refuse, never stop, a worker that is up (Q6); the master is refused before anything else.
-Follow SQX's log from offsets marked before `action=start`, yesterday's file too; bound the
-start (120 s to «Starting project») and the run (48 h), and stop the worker on any failure.
+Refuse, never stop, a worker that is up; the master first. Follow SQX's log from offsets marked before
+`action=start`; start ≤120 s, run ≤48 h. «Lanzar en SQX» (`ui/daemon/launch/`) = same run, any task/step.
 
 ## Evidence
+- 🔬 2026-09-30 `tests/test_advance_nexttask.py`: `next_task` after a cut on `CrossTF` leaves
+  `skip` empty for the eight MCR tasks (was the seven others), and SPP OOS rides behind SPP IS.
 - 📓 `awake()` (`sqx/variants/execute.py`) polls readiness with `-project action=list`, which
   fills memory from disk (`databanks/databank-verbs`); the window must not send it, so readiness
   is polled with `action=status`, which answers `Error: CLI not ready.` for ~20 s like any verb.

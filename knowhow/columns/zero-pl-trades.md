@@ -29,5 +29,9 @@ with flats; `flat=loss` and dropping it do not.
 | Strategy 11.1.50 | 0.3823 | 0.2039 | **0.3404** | 0.1562 | 0.3400 |
 | Strategy 23.1.71 | −0.1764 | −0.3845 | **−0.4468** | −0.3213 | −0.4500 |
 
+⚠️ Open (2026-09-28, cosecha `trades.parquet` of Test_USDJPY M30 `Results`, 526 zero trades in 348 k):
+`wins/(wins+losses)` matches `Winning Percent [IS]` within rounding on 200 of 200; the half-win rule is off
+by up to 0.013 on 28. Suspect: the cosecha rounds P/L to the cent, so a «zero» there may be a tiny win or
+loss. `ui/daemon/databank/segments.py` uses the non-zero form for its IS+OOS1 column.
 Unseen before: the XAUUSD calibration corpus has zero flat trades; USDJPY has 6 of 4,482 (0.13 %) — enough
 to break `WinningPct`, `KellyFormula` (amplifies the win-rate error) and `ZScore`, blocking workflow step 14.

@@ -1,6 +1,6 @@
 ---
 q: how long does each workflow step take, MC Retest share of SQX time, MCR 7 OHLC MCR 8 Stress, crossmarket.report bottleneck, retest.ingest memory, custodian stop start cost, startOnlyTask, WFC per-mother cost, WFM duration, crossmarket.report parallel speed, export_spp slow optprofile parser, snoopingScreen M1 memory, Python side of the workflow, tree PSS vs time -v
-tag: 🔬  date: 2026-09-26  see: perf/python-parallelism, perf/smt-in-sqx-retest
+tag: 🔬  date: 2026-09-29  see: perf/python-parallelism, perf/smt-in-sqx-retest
 ---
 # MC Retest is the single biggest SQX cost; WFC's per-mother cost is FIXED (market loading) until the population is large enough to shift it
 Full table: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento). Measure `retest.ingest` memory before a big run (scales
@@ -59,3 +59,10 @@ variants) and 26-09 (`USDJPY_workflow_profiling_v1`, all 25 steps touched, 7 of 
 - 🔬 Fixed the same day: `export_spp` 43.7 s → 9.8 s for both SPP databanks (offset reader 2.6×, one
   process per file, table spilled per strategy and streamed; all four parquets `assert_frame_equal`).
   Crossmarket batch on the run's 8: 18 s / 7.2 GB → 9.6 s / 4.3 GB at `batch_draws` 10,000, same verdict.
+
+2026-09-29, 21 strategies, USDJPY M30, every step from the window's «▶ SQX» (project log): OOS 6 s; MCR 1 Bar 67 s, 2 Spread 454 s, 3 Slippage 447 s, 5 Params 63 s, 6 Exits
+449 s, 7 OHLC 1,692 s, 8 Stress 2,568 s (MC Retest 5,740 s ≈ 273 s per strategy); SPP IS 614 s,
+SPP OOS 320 s; WFM (30 cells, Exact, 5,000 tests/step) 3,522 s ≈ 168 s per strategy. Window jobs
+add 5-9 min each (start, ~50 s databank load, stop, export). Python steps on the 21: seconds.
+Table: manual cap. 12.
+
