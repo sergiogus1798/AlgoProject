@@ -139,6 +139,11 @@ day, also inclusive, which is how a segment ends mid-year: `to: 2026-08-30` runs
 of 30 August. `window(data, "build")` turns either into the `(dateFrom, dateTo)` epoch milliseconds
 a SQX task carries, and **raises rather than inventing** when the dates are null.
 
+**oos2's end is not hand-edited any more** (owner, 2026-09-30): on the first Saturday of each month,
+after the data update, `bin/monthly-oos2-roll.sh` (`python3 -m sqx.data.roll_oos2 --apply`) moves
+every decided `oos2.to` to the last day of the previous month — only where `data.to` already reaches
+that month's last weekday, never backwards, never a `null`.
+
 | segment | what it is for | spread |
 |---|---|---|
 | `build` | generation. The only sample the builder ever sees | `is` |

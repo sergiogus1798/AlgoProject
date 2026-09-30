@@ -165,6 +165,20 @@ def add_segments(symbol: str) -> None:
     write(path, doc)
 
 
+def set_segment_end(symbol: str, segment: str, end: date) -> None:
+    """Move one asset's segment to end on a given day, inclusive, keeping every comment.
+
+    Args:
+        symbol: Asset name, as `_policy.yaml`'s `segments:` names it.
+        segment: "build", "oos1" or "oos2".
+        end: The new last day.
+    """
+    path = ASSETS / POLICY
+    doc = read(path)
+    doc["segments"][symbol][segment]["to"] = end
+    write(path, doc)
+
+
 def retire(symbol: str) -> dict:
     """Take an asset out of the library without losing it.
 

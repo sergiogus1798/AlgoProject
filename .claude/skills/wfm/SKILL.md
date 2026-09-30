@@ -89,7 +89,7 @@ bin/sqx-worker.sh --role custodian stop
 
 ## Qué mirar en la salida
 
-- **Las fechas.** Tienen que ser las de `oos2` (2023.01.01→2026.08.30 en XAUUSD). Si aparece
+- **Las fechas.** Tienen que ser las de `oos2` (en XAUUSD, 2023.01.01 → el `to` de `oos2` en `_policy.yaml`, que avanza solo cada primer sábado de mes). Si aparece
   2018–2022, la tarea está releyendo la muestra gastada y no es fuera de muestra de nada.
 - **`30 celdas`.** Otro número significa que alguien tocó los ejes en `_build.yaml`: no es un error,
   es un estudio distinto.

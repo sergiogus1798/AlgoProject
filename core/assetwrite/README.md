@@ -6,6 +6,6 @@ Split into a folder on 2026-09-29 (`CODESTYLE.md` rule 1, 250 lines). Every call
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | One value, one cost with its `why`, or a whole asset into the library or onto the retired shelf | — | change → file |
+| `__init__.py` | One value, one cost with its `why`, one segment's end (`set_segment_end`, the monthly oos2 roll), or a whole asset into the library or onto the retired shelf | — | change → file |
 | `brokers.py` | Replace one asset's `costs.commission.brokers` table — the per-broker figures `commission.use` is picked from | — | brokers dict → file |
 | `markets.py` | One category of one asset's Cross Market check (`_markets.yaml`'s `family`/`structural` feeds) | — | feeds → file |
