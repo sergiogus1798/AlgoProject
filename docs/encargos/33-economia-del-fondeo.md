@@ -22,8 +22,17 @@ la que está mirando) vende challenges de 1, 2 y 3 pasos y cuentas instantáneas
 con add-ons que cambian las reglas (más pérdida máxima, más reparto, menos objetivo…) y **cada uno
 cambia el precio**. La elección es un problema de decisión con un precio en cada casilla.
 
-Contesta `DECISIONS.md` #6 (qué reglas codificar y de qué empresa) con datos, y toca el #1 (si la
-cartera fondeada y la real admiten las mismas estrategias).
+Contesta `DECISIONS.md` #6 (qué reglas codificar y de qué empresa) con datos. El #1 ya está
+decidido: la cartera fondeada y la real leen el mismo pool (dueño, 2026-09-29).
+
+**Va después del motor de construcción de carteras y es suyo el dimensionado** (dueño, 2026-09-29):
+el motor elige combinaciones y pesos; este encargo pone el riesgo por operación, las reglas de la
+empresa y la probabilidad de aprobar. Riesgo fijo fraccional, nunca Kelly, y Monte Carlo de todos
+los tipos de `BUILD_COMPENDIUM.md` §7: bootstrap de operaciones, bootstrap por bloques del P&L diario
+conjunto, distribución por fecha de inicio, ventanas móviles e inyección de los peores días.
+Y una pieza que va **antes** del motor: lo que una empresa prohíbe sin remedio (mantener el fin de
+semana, operar en ventanas de noticias…) saca estrategias del pool de esa empresa antes de buscar
+carteras; el motor busca sobre lo que queda (dueño, 2026-09-29).
 
 ## 1 · El cambio de unidad: el banco, no la cuenta
 
@@ -187,6 +196,9 @@ que ver:
 
 El **presupuesto de caja** (desembolso acumulado máximo) es una entrada del dueño y una restricción
 dura, no un informe: un plan cuyo p90 de desembolso antes del primer cobro la supera no se elige.
+**El dueño lo fijó el 2026-09-29: 1.000 € en total** («pon 1000 euros en total en la cuenta
+bancaria»). Los planes están en USD: se convierte al cambio del día del cálculo, y ese cambio queda
+escrito junto al resultado.
 
 Pasos:
 
@@ -255,7 +267,7 @@ Antes de simular, lista y pregunta al dueño, como mínimo:
 2. Cierre del viernes / sin noticias: ¿se descarta la estrategia o se modifica para cumplir?
 3. ¿Se puede cambiar el riesgo entre fase y fondeada (y dentro de la fondeada tras un cobro)?
 4. Tras un suspenso, ¿se recompra el mismo plan siempre, o la política de recompra es parte de la
-   decisión? Y la cifra del presupuesto de caja (§3.5).
+   decisión? ~~Y la cifra del presupuesto de caja~~: 1.000 € en total (dueño, 2026-09-29, §3.5).
 5. ~~¿Otras divisas de cuenta?~~ Sólo cuentas en USD (dueño, 2026-09-29).
 6. ~~¿Precio de lista o con descuento?~~ De lista: los descuentos se ignoran (dueño, 2026-09-29).
 7. Con qué datos no vistos se valida la combinación elegida (`DECISIONS.md` #11) y qué recortes `h` quiere ver.

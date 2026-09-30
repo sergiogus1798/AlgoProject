@@ -32,7 +32,7 @@ pool of pre-validated strategies at $100 risk/trade → find combinations of `mi
 | file | what it does | verdict |
 |---|---|---|
 | `portfolio/config.py` | One dataclass with every threshold: account 60k, daily loss 4.5 %, total DD 9 %, Pearson/Spearman/co-loss/tail ≤ 0.30, same-asset window 8 h, rolling 60 m ≤ 0.40 and ≤ 0.30 in the last 3 y, fitness weights 0.8/0.1/0.1, GA params, WF 6 y IS / 3 y OOS | the "one place for every knob" idea matches `config.yaml` + `gates.py` here |
-| `portfolio/universe.py` | Precomputes once: daily P&L matrix (days × N, $0 fill), monthly P&L (NaN where absent), N×N Pearson, Spearman, **co-loss** (share of months both lose), and a boolean **same-asset conflict** matrix (two strategies open on the same canonical symbol within `window_hours`) | **keep** — every combo check becomes an O(K²) lookup. Bug: <6 overlapping months → correlation 0.0, so unknown passes as uncorrelated; should reject or flag |
+| `portfolio/universe.py` | Precomputes once: daily P&L matrix (days × N, $0 fill), monthly P&L (NaN where absent), N×N Pearson, Spearman, **co-loss** (share of months both lose), and a boolean **same-asset conflict** matrix (two strategies open on the same canonical symbol within `window_hours`) | **keep**, except the same-asset matrix — **dropped by the owner, 2026-09-29** — every combo check becomes an O(K²) lookup. Bug: <6 overlapping months → correlation 0.0, so unknown passes as uncorrelated; should reject or flag |
 | `generator/filters.py` | Static filters (Pearson, Spearman, co-loss, **tail correlation** on the worst 30 % of months, same-asset) then **rolling** Pearson/Spearman, stricter in the recent period; short-circuits on first failing pair; counts rejections per filter | **keep**, extend per §3 |
 | `generator/sampler.py` | Random combinations, proportional to sizes | fine for small pools |
 | `generator/genetic.py` | GA over combinations: tournament, union crossover, swap/add/remove mutation, every filter a hard constraint; **greedy independent-set seeding** (shuffle, add each strategy compatible with all already in); per-pair rolling-correlation cache | **keep the engineering**; the search itself must obey §2.1-2.2 |
@@ -115,9 +115,9 @@ day. No minimum days, consistency, news windows, static-vs-trailing DD, or portf
 
 ## 4 · Diversification and correlation (AlphaForge's core)
 
-1. [AF] **Keep the six pairwise measures:** Pearson, Spearman, **co-loss**, **tail** (worst 30 %
-   of months), **rolling 60 m with a stricter recent threshold**, **same asset within 8 h**. The
-   dossier backs all of them.
+1. [AF] **Keep five of the six pairwise measures:** Pearson, Spearman, **co-loss**, **tail** (worst 30 %
+   of months), **rolling 60 m with a stricter recent threshold**. The sixth, **same asset within
+   8 h**, is **dropped by the owner, 2026-09-29** — not ported.
 2. **Stress-day correlation:** the same matrix only on the 5 % largest-|move| days of the asset or
    a risk proxy, on named crises, and on the survivors' own worst days; report the **effective
    number of independent strategies in calm and in stress**. ρ 0.1 overall and 0.8 in stress is
@@ -129,7 +129,7 @@ day. No minimum days, consistency, news windows, static-vs-trailing DD, or portf
    same direction on the same asset; size on the **joint** position. Turtles' S1+S2 believed −50 %
    worst case, real −80 %; Kovner: "eight highly correlated positions are one position eight times
    larger". [D·v4] ⚠ Contradicts "trade the plateau": variant-factory siblings are exactly such
-   clones. — [AF] the 8 h rule is a crude version; generalise it.
+   clones. — [AF] the 8 h rule was a crude version of this; it is dropped (owner, 2026-09-29).
 5. **Groups from the history of joint stop-outs,** not only return correlation: count how often
    losing trades coincide across related markets (crossmarket output). [D·v4, §5.9 "Calor de
    cartera"]
@@ -209,7 +209,8 @@ day. No minimum days, consistency, news windows, static-vs-trailing DD, or portf
    shuffling: shuffling breaks simultaneous losses and understates DD (Faith pp. 199-205,
    Fitschen pp. 161-165). [D·v4, §1.11] ⚠ **Contradicts the owner's decision** to keep the trade
    bootstrap exactly for sizing (`docs/AgentPDFs/WORKFLOW.md`, "El Monte Carlo de bootstrap está
-   FUERA"); already in `common/monteCarlo/POSSIBLE_IMPROVEMENTS.md`. Owner decision (§11). — [AF]
+   FUERA"); already in `common/monteCarlo/POSSIBLE_IMPROVEMENTS.md`. **Settled (owner, 2026-09-29): Monte Carlo of
+   every kind — trade bootstrap and block bootstrap both, plus §7.2-7.5 — for encargo 33's sizing.** — [AF]
    no portfolio MC at all.
 2. **Start-date distributions** (Fitschen): an equity curve from every possible start, measure
    the worst drop **below starting capital**, first-year return, time to first new high. No
@@ -290,7 +291,8 @@ day. No minimum days, consistency, news windows, static-vs-trailing DD, or portf
    **static or trailing** per firm; minimum days; consistency; news windows. [AF] models only the
    first two, on closed P&L.
 3. 🤔 **MT5 netting vs hedging:** on a netting account two strategies on one symbol net each
-   other; this justifies AlphaForge's same-asset rule beyond diversification.
+   other. (AlphaForge's same-asset rule, which this would have justified, was dropped by the owner
+   on 2026-09-29.)
 
 ## 11 · Live: incubation, monitoring, retirement
 
@@ -320,7 +322,7 @@ day. No minimum days, consistency, news windows, static-vs-trailing DD, or portf
 | piece | verdict |
 |---|---|
 | Precomputed matrices, greedy independent-set seeding, per-pair caches | keep |
-| Pairwise filters incl. co-loss, tail, rolling-recent, same-asset | keep, plus §4.2, §4.3, §4.4 |
+| Pairwise filters incl. co-loss, tail, rolling-recent | keep, plus §4.2, §4.3, §4.4; same-asset dropped (owner, 2026-09-29) |
 | Four weighting methods + weight walk-forward | keep, equal weight as mandatory baseline, shrinkage on min-var |
 | Expand-a-portfolio mode | keep → marginal-contribution admission (§3.2) |
 | Combination search on the whole history | redo: by segment, counted in the ledger (§2.1, §2.2) |
@@ -331,6 +333,9 @@ day. No minimum days, consistency, news windows, static-vs-trailing DD, or portf
 | Dashboards, xlsx/PDF exporter | do not port; `ui/` |
 
 ## 13 · Decisions the owner must take (mirrored in `DECISIONS.md` #7-#12)
+
+**2026-09-29:** #7, #8 and #11's principle are settled, and #1 and #3 of `DECISIONS.md` too —
+see `portfolio/CLAUDE.md`. `DECISIONS.md` is the live list; this section is its origin.
 
 1. Trade bootstrap or joint-daily block bootstrap for sizing (§7.1).
 2. Capped fractional Kelly or pure fixed fractional (§6.2 vs §6.3).
