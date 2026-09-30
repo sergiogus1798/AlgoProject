@@ -12,7 +12,7 @@ from core.paths import DATA
 from core.study.render import page
 from ui.daemon import jobs, runs
 from ui.daemon.results import store
-from ui.daemon.runner import table, transfer
+from ui.daemon.runner import batch, offer, table, transfer
 
 ROUTER = APIRouter()
 # The studies whose one.run() re-runs a sub-test alone (CONTRACT §1). The job is
@@ -61,7 +61,8 @@ def study_run(req: StudyRun) -> dict[str, object]:
         return {"error": f"no se pudo preparar {req.study}: {e}"}
     if isinstance(planned, str):
         return {"error": planned}
-    return {"jobs": [jobs.start(p["label"], p["argv"], p["about"]) for p in planned]}
+    return {"jobs": [jobs.start(p["label"], p["argv"], p["about"], weight=p.get("weight"))
+                     for p in batch.fold(planned)]}
 
 
 def _rerun(req: StudyRun) -> list[dict] | str:
@@ -135,6 +136,22 @@ def study_only(study: str, project: str = "", databank: str = "", asset: str = "
         return {"options": table.options(study, project, databank, asset)}
     except (FileNotFoundError, KeyError, ValueError, StopIteration):
         return {"options": []}
+
+
+@ROUTER.get("/api/study/offer")
+def study_offer(project: str, databank: str, strategy: str, asset: str = "") -> dict[str, object]:
+    """What the strategy page greys: each study the runner refuses here, why, and where to go.
+
+    Args:
+        project, databank, strategy, asset: The strategy page's place.
+
+    Returns:
+        `{"studies": {key: {"why", "go"}}}` as `offer.offer`; `{"error"}` when it cannot tell.
+    """
+    try:
+        return {"studies": offer.offer(project, databank, strategy, asset)}
+    except (FileNotFoundError, KeyError, ValueError, OSError) as e:
+        return {"error": f"no se pudo saber qué estudios hay aquí: {e}"}
 
 
 @ROUTER.post("/api/study/screen")

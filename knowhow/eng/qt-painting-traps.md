@@ -1,17 +1,20 @@
 ---
-q: PySide6 paintEvent exception swallowed, grab() raises, deleteLater old widget still paints, QStackedWidget tallest page height, QSizePolicy Ignored, emoji glyph missing font ⛔ 👁 empty box, offscreen widget test, attribute named metric segfault, QTabBar white line under tabs, drawBase, tab stylesheet underline, QScrollArea viewport width stale in resizeEvent, columns relayout
-tag: 🔬  date: 2026-09-27  see: eng/qt-reload-inside-own-signal
+q: PySide6 paintEvent exception swallowed, grab() raises, deleteLater old widget still paints, QStackedWidget tallest page height, QSizePolicy Ignored, emoji glyph missing font ⛔ 👁 empty box, offscreen widget test, attribute named metric segfault, QTabBar white line under tabs, drawBase, tab stylesheet underline, QScrollArea viewport width stale in resizeEvent, columns relayout, setTabTextColor ignored, grey out a tab, tab colour stylesheet, ⓘ 🕘 glyph
+tag: 🔬  date: 2026-09-30  see: eng/qt-reload-inside-own-signal
 ---
 # Seven PySide6 traps met building the window (`ui/desktop/`)
 - A `paintEvent` that raises only prints; **`widget.grab()` re-raises it** — an offscreen test must grab, not just build.
 - **`deleteLater` is not immediate**: the old widget keeps painting until the event loop runs. `hide()` (or `setParent(None)`) it first.
 - **A `QStackedWidget` is as tall as its tallest page** — set the non-current pages `QSizePolicy.Ignored`.
-- **No installed font has ⛔ or 👁** (0 families; ⊘ and ◉ are in 21): paint the mark by hand or use ⊘/◉.
+- **No installed font has ⛔, 👁, ⓘ or 🕘** (⊘, ◉ and ⚙ render): paint the mark by hand or use those.
 - **Never name an attribute `metric`** on a widget: it hides `QPaintDevice.metric()` and the process segfaults at first paint.
-- **A styled `QTabBar::tab` still gets Qt's base line** (bright, under the whole bar): `QTabBar { qproperty-drawBase: 0; }`.
+- **A styled `QTabBar::tab` still gets Qt's base line** (`QTabBar { qproperty-drawBase: 0; }`), **and ignores `setTabTextColor`** (its `color` wins): mark a tab in its text (`studypage/offer.py`, «· sin datos») and strip the mark wherever a tab is found by its text.
 - **A scroll area's viewport width is stale in the parent's `resizeEvent`**: watch `area.viewport()` with an event filter (`ui/desktop/assets.py`).
 
 ## Evidence
+- 🔬 2026-09-30, Estrategia's «sin datos» tabs: `setTabTextColor(i, T['faint'])` left every tab the
+  theme's colour in the `--shot` captures; the text suffix showed. «ⓘ metadatos» and «🕘 Historial»
+  drew an empty box in the same captures; «⚙ Configuración» drew its gear.
 - 🔬 2026-09-27, the asset zone: `place()` in `Assets.resizeEvent` read the old viewport width and the zone opened in
   one column on a 1553 px window; the same call from a viewport `QEvent.Resize` filter laid out two.
 - `tests/test_ui_blocks.py` draws every real study result offscreen and calls `grab()` on each (line 59,

@@ -3,13 +3,15 @@
 from collections.abc import Callable
 
 from PySide6.QtCore import QTimer, Signal
-from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QMessageBox, QPushButton,
+                               QVBoxLayout, QWidget)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.states import colour
+from ui.desktop import background
 from ui.desktop.studypage.net import fetch, send
 from ui.desktop.theme import T
+from ui.text.brief import full, off
 
 POLL_MS = 2000
 
@@ -98,13 +100,23 @@ class RunBar(QWidget):
             only: A sub-test key from `/api/study/only`, or None for the whole study.
         """
         w = self.where
+        # The rail asks before a run that reads oos2 or writes the ledger; the study page ran
+        # it on the click (📓 2026-09-29, WFM «toda la población»).
+        spends = self.entry.get("spends")
+        if spends and QMessageBox.question(
+                self, "Esto lee oos2 o escribe en el ledger",
+                f"{self.entry['key']}: {spends}. Cada corrida cuenta y no se deshace.\n\n"
+                "¿Correr?") != QMessageBox.Yes:
+            self._say(self.line, "No se lanzó nada.")
+            return
         got = send("study/run", {
             "study": self.entry["key"], "scope": scope, "project": w["project"],
             "databank": w["databank"], "asset": w["asset"] or "", "only": only,
             "strategies": [w["strategy"]] if scope == "one" else [],
             "overrides": self.overrides()})
         if "error" in got:
-            self._say(self.error, got["error"])
+            self._say(self.error, off(got["error"]))
+            self.error.setToolTip(full(got["error"]))
             return
         self._say(self.error, "")
         self.ids = [j["id"] for j in got["jobs"]]
@@ -112,10 +124,17 @@ class RunBar(QWidget):
                           + (f" · solo {only}" if only else ""))
         self._busy(True)
         self.timer.start()
+        self.poll()          # the first read now, not after POLL_MS: a press must show
+                              # something changed at once, not after a silent couple of seconds
 
     def poll(self) -> None:
-        """Read this bar's jobs; when all have ended, stop polling and say so."""
-        got = fetch("jobs")
+        """Read this bar's jobs off the GUI thread; `polled` reads them."""
+        background.get("jobs", self.polled, key=f"runbar:{id(self)}")
+
+    def polled(self, got: dict) -> None:
+        """Show this bar's jobs; when all have ended, stop polling and say so."""
+        if not self.ids:
+            return                            # an answer that landed after the last one
         if "error" in got:
             self._say(self.error, got["error"])
             return
@@ -131,6 +150,10 @@ class RunBar(QWidget):
             if failed:
                 tail = "\n".join(failed[0]["tail"][-6:])
                 self._say(self.error, f"{failed[0]['state']}:\n{tail}")
+            else:
+                # A clear word first, or "terminado" reads as one job's state among several
+                # and is easy to miss (owner, 2026-09-29: «no se ve que pase nada»).
+                self._say(self.line, f"terminado: {self.entry['key']} · " + " | ".join(parts))
             self.ids = []
             self._busy(False)
             self.finished.emit()

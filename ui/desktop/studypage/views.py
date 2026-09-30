@@ -1,6 +1,7 @@
 """The study page of one strategy, with its Ficha as the first tab — what the Estrategia zone embeds."""
 
 from ui.desktop.studypage.ficha import Ficha
+from ui.desktop.studypage.offer import OFF
 from ui.desktop.studypage.page import StudyPage
 
 FICHA = "ficha"     # the family tab's data for the Ficha, which is no family of studies
@@ -16,6 +17,7 @@ class StrategyPage(StudyPage):
         self.hold = False
         super().__init__(strategy_page=True)
         self.ficha = Ficha()
+        self.crumb.hide()          # the context bar above says project › strategy already
         lay = self.layout()
         lay.insertWidget(lay.indexOf(self.families) + 1, self.ficha, 1)
         self.families.blockSignals(True)
@@ -35,7 +37,8 @@ class StrategyPage(StudyPage):
     def _mode(self, ficha: bool) -> None:
         """Show the Ficha or the study widgets, never both."""
         self.ficha.setVisible(ficha)
-        for w in (self.studies, self.head, self.bar, self.note, self.view.parentWidget()):
+        for w in (self.studies, self.head, self.bar, self.toggles, self.note,
+                  self.view.parentWidget()):
             w.setVisible(not ficha)
         if ficha:
             for w in (self.back, self.skipped):
@@ -75,7 +78,7 @@ class StrategyPage(StudyPage):
             name: «Ficha», «Cribado», «Transferencia»…; a name with no tab leaves the bar be.
         """
         for i in range(self.families.count()):
-            if self.families.tabText(i) == name:
+            if self.families.tabText(i).removesuffix(OFF) == name:
                 self.families.setCurrentIndex(i)
                 return
 

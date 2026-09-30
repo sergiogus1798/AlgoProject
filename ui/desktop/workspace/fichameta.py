@@ -2,7 +2,8 @@
 
 import re
 
-from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QDialog, QFrame, QGridLayout, QLabel, QScrollArea, QVBoxLayout,
+                               QWidget)
 
 from ui.text.glossary import label
 from ui.desktop.theme import C, T
@@ -93,7 +94,7 @@ def rows(meta: dict) -> list[tuple[str, str, str]]:
 
 
 class Meta(QScrollArea):
-    """The right-hand column, scrolling on its own; each field's name above its value."""
+    """The fields, scrolling on their own; each field's name above its value."""
 
     def __init__(self) -> None:
         """Build it empty."""
@@ -110,7 +111,6 @@ class Meta(QScrollArea):
         lay.addLayout(self.grid)
         lay.addStretch(1)
         self.setWidget(inner)
-        self.setStyleSheet(f"QScrollArea {{ border-left: 1px solid {T['rule']}; }}")
 
     def fill(self, meta: dict) -> None:
         """Paint `/api/strategy/meta`'s answer; an error is the one line shown.
@@ -134,3 +134,33 @@ class Meta(QScrollArea):
             value.setStyleSheet(f"color: {ink}; margin-bottom: 4px;")
             self.grid.addWidget(key, 2 * i, 0)
             self.grid.addWidget(value, 2 * i + 1, 0)
+
+
+class MetaWindow(QDialog):
+    """The metadata in a window of its own, opened by the ficha's «ⓘ metadatos» (owner,
+    2026-09-30: as a column on every tab they took the width the tests' results need)."""
+
+    def __init__(self, parent: QWidget) -> None:
+        """Build it empty and hidden; `fill` paints, `show` opens it beside the page.
+
+        Args:
+            parent: The ficha, so the window closes with it and floats above it.
+        """
+        super().__init__(parent)
+        self.setObjectName("term")
+        self.setWindowTitle("Metadatos de la estrategia")
+        self.resize(560, 760)
+        self.meta = Meta()
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(4, 10, 4, 10)
+        lay.addWidget(self.meta)
+
+    def fill(self, meta: dict, strategy: str) -> None:
+        """Paint one strategy's fields and name it in the title.
+
+        Args:
+            meta: `/api/strategy/meta`'s answer.
+            strategy: Its name.
+        """
+        self.setWindowTitle(f"Metadatos · {strategy}")
+        self.meta.fill(meta)

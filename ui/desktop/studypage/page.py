@@ -8,11 +8,13 @@ from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
 from ui.desktop.blocks.states import colour
 from ui.desktop.selection import SELECTION
-from ui.desktop.studypage import compare, dots, notes
+from ui.desktop.studypage import compare, dots, notes, wfclote
 from ui.desktop.studypage.drawer import Drawer
 from ui.desktop.studypage.history import History
 from ui.desktop.studypage.net import fetch
+from ui.desktop.studypage.offer import Offer
 from ui.desktop.studypage.runbar import RunBar
+from ui.desktop.studypage.sidepanel import SideToggles
 from ui.desktop.theme import T
 
 
@@ -55,13 +57,18 @@ class StudyPage(QFrame):
         self.drawer = Drawer()
         self.bar = RunBar(self.drawer.overrides)
         self.bar.finished.connect(self.after_run)
-        lay.addWidget(self.bar)
+        tools = QHBoxLayout()
+        tools.addWidget(self.bar, 1)
+        tools.addStretch(0)                  # holds the panel's buttons right when the bar hides
+        lay.addLayout(tools)
         row = QHBoxLayout()
         self.note = text("", T["muted"], 14)
         row.addWidget(self.note, 1)
         self.back = QPushButton("volver a una sola corrida")
         self.back.clicked.connect(lambda: self.load())
         row.addWidget(self.back, 0, Qt.AlignTop)
+        self.offer = Offer(self)             # the tests with no data here, greyed
+        row.addWidget(self.offer.button, 0, Qt.AlignTop)
         lay.addLayout(row)
         self.skipped = text("", T["text"], 13)
         lay.addWidget(self.skipped)
@@ -70,10 +77,14 @@ class StudyPage(QFrame):
         self.history.picked.connect(lambda day: self.load(day))
         self.history.compare_runs.connect(self.compare_days)
         self.history.versus.connect(self.versus)
-        side = QTabWidget()
+        self.side = side = QTabWidget()
         side.setDocumentMode(True)
         side.addTab(self.drawer, "configuración")
         side.addTab(self.history, "historial y comparar")
+        side.tabBar().hide()            # the buttons of `SideToggles` choose the tab
+        self.toggles = SideToggles(side)
+        tools.addWidget(self.toggles, 0, Qt.AlignTop)
+        self.lote = None       # the mother's variant batch, added only on the WFC study
         split = QSplitter()
         split.addWidget(self.view)
         split.addWidget(side)
@@ -99,6 +110,7 @@ class StudyPage(QFrame):
             self.where["strategy"] = self.where["identity"] = ""
         self.crumb.setText(notes.context(self.where, self.strategy_page))
         self._states()
+        self.offer.ask()
         self.open_study(self.key)
 
     def _asset(self, project: str) -> str | None:
@@ -140,7 +152,7 @@ class StudyPage(QFrame):
         family = self.families.tabData(index)
         keys = [k for k, e in self.catalogue.items() if e["family"] == family]
         if self.key not in keys:
-            self.key = keys[0]
+            self.key = self.offer.first(keys)
         self.studies.blockSignals(True)
         while self.studies.count():
             self.studies.removeTab(0)
@@ -150,6 +162,7 @@ class StudyPage(QFrame):
             self.studies.setTabToolTip(i, dots.says(self.cells.get(k)))
         self.studies.setCurrentIndex(keys.index(self.key))
         self.studies.blockSignals(False)
+        self.offer.paint()
         self.load()
 
     def _study(self, index: int) -> None:
@@ -168,6 +181,7 @@ class StudyPage(QFrame):
         self.drawer.load(self.key, entry["title"])
         self.bar.aim(entry, w, self.strategy_page)
         self.back.hide()
+        self.offer.button.hide()
         self.skipped.hide()
         if not (w["project"] and w["databank"]):
             return self._empty("Elige un proyecto y un databank.")
@@ -190,6 +204,8 @@ class StudyPage(QFrame):
             self.note.setText(notes.absent(entry, self.strategy_page))
         else:
             self.note.setText(notes.shown(self.meta["day"], bool(day), self.strategy_page))
+        self.offer.explain()
+        wfclote.show(self)
 
     def _empty(self, sentence: str, ink: str = T["muted"]) -> None:
         """No result to show, and why."""

@@ -4,14 +4,15 @@ One window, one daemon, and `core/` underneath. This is the unified platform des
 `docs/AgentPDFs/plataforma-unificada-2026-09-20.md`, redrawn by the owner on 2026-09-27
 (encargo 22, in git history; the file is no longer in `docs/encargos/`) and built by plan 24. It is the only window on this
 machine: the older zones and the mock on invented data were deleted on 2026-09-28 (owner: «borra
-la UI anterior; quiero que en esta máquina esté solo la nueva»). The sidebar holds four groups:
+la UI anterior; quiero que en esta máquina esté solo la nueva»). The sidebar holds five groups:
 
 | group | zones | what it is for |
 |---|---|---|
 | BIBLIOTECA | Cobertura, Plantillas, Nueva plantilla, Paletas, Activos, Configuración SQX, Datos | what the owner builds from: the template library and its coverage, the palettes, every instrument's costs and windows, the SQX settings new projects get, the data root and the step-4 studies |
-| PROYECTO | Proyectos → Proyecto → Databanks → Estrategia | one project judged: the gallery of every install's projects; one project's workflow — «Lanzar en SQX», «Continuar workflow» with its databank chooser, the rail and the population's funnel; the same project's databank panel on the whole height, with the filters; one strategy's ficha — curves, IS/OOS1/OOS2 statistics, metadata, «Archivar» and every study below. Proyecto and Databanks were one zone until 2026-09-28: together they did not fit a 1080-px screen |
+| PROYECTO | Proyectos → Proyecto → Databanks → Estrategia | one project judged: the gallery of every install's projects; one project's workflow — «Lanzar en SQX», «Continuar workflow» with its databank chooser, the rail and the population's funnel; the same project's databank panel on the whole height, with the filters; one strategy's ficha — curves, IS/OOS1/OOS2 statistics, «Archivar», every study below on the whole width (a study with no data in this databank marked «· sin datos», with a jump to its own databank), the metadata in a window of their own. Proyecto and Databanks were one zone until 2026-09-28: together they did not fit a 1080-px screen |
 | OPERACIÓN | En marcha, Registro de búsquedas (+ the jobs strip in the status bar) | what runs: the custodian's pulse and the SQX project's tasks one by one; the ledger — one line per search that looked at data and reduced a population, the window's filters included |
 | PORTFOLIOS | Portfolios | the archived strategies; «Importar» opens one on the Estrategia page as it was frozen, nothing recomputed |
+| MT5 BRIDGE | Verificar | step 26: one strategy — the one chosen in Proyecto, or an archived one — retested in SQX at each prop firm's conditions and backtested in MT5 on that firm's account, with the five rows of encargo 34 judged; every past check and its result. The owner asked for the bridge as a section of this same window (2026-09-29), not a second app |
 
 Above the zones a fixed context bar reads `Proyectos › proyecto › estrategia` from
 `desktop/selection.py`, the one global selection; each crumb opens its zone, the identity lives
@@ -101,6 +102,14 @@ The two exceptions, both the owner's (2026-09-27):
   to `AlgoData/projects/snapshots/`, `stage.just` (only that task on), start, `action=status`
   until «Project finished», stop; then compares every databank but the task's output — one
   that fell keeps the copy, otherwise it is deleted — and a build writes its `runs.csv` row.
+- **«Verificar en SQX y en MT5» runs step 26 for one strategy** (`daemon/mt5bridge/`,
+  `desktop/mt5bridge/`; owner, 2026-09-29). The preflight refuses a conductor that is busy,
+  an open MT5 terminal, a window or a tester model not chosen (neither has a default), and a firm
+  with no saved account or no symbol in `mt5/symbols.csv`. The job (`mt5.verify.run`) reads each
+  firm's conditions off its own MT5 account, builds a `Test_MT5Verify_…` project on the
+  conductor, starts it, `action=status` until «Project finished», stops it, retires the project,
+  then compiles the EA SQX exported and backtests it in MT5 on each account. The terminal only
+  backtests; it stays on the last account used.
 
 **The daemon's lanes** (`daemon/jobs.py`): every job is a child of the daemon, in memory, logged
 under `AlgoData/logs/ui/`. The **python** lane runs analysis modules (`python3 -m studies…`)
@@ -111,9 +120,9 @@ cores minus four (`daemon/runner/batch.py`). **The window never waits on the dae
 timer or a finished job triggers**: those calls go through `desktop/background.py` and only the
 painting happens on the GUI thread (owner, 2026-09-28: «la UI se congela»; measured and fixed in
 `knowhow/perf/window-waits-off-gui-thread.md`). The **conductor** lane runs one job
-at a time: the loader's `orderstocsv` exports, «Continuar workflow» and «Lanzar en SQX» (the two
-launchers also refuse each other while one is queued or running). Nothing else reaches an
-install.
+at a time: the loader's `orderstocsv` exports, «Continuar workflow», «Lanzar en SQX» and
+«Verificar en SQX y en MT5» (the three launchers also refuse each other while one is queued or
+running). Nothing else reaches an install.
 
 The asset zone and Configuración SQX are the same rule from the other side: they write `assets/`,
 which is configuration in the repository, through `core.assetwrite`, and reach no install for

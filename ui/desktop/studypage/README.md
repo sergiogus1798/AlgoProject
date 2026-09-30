@@ -12,12 +12,14 @@ routes and `ui.desktop.tradegallery` stay for PORTFOLIOS' archived sheets.
 
 ```
 views.StrategyPage ─▶ ficha.Ficha ─▶ «Excluir top X% de trades» · «Drawdown en % | $»
-                   │                 ├ IS/OOS (ResultView, IS beside OOS; the switches ask again)
-                   │                 └ Lote (batchview.BatchTab, only for a mother)
+                   │                 └ IS/OOS (ResultView, IS beside OOS; the switches ask again)
 views.StrategyPage ─▶ page.StudyPage ─▶ blocks.ResultView
                                                ├ drawer.Drawer   (knobs, reset, hash match)
                                                ├ runbar.RunBar   (▶ ▶▶ ↻, one job, polling)
                                                ├ history.History (runs, compare, rival picker)
+                                               ├ batchview.BatchTab («Lote», only on the WFC
+                                               │  study of a mother — moved off the Ficha
+                                               │  2026-09-29: a strategy can have no batch)
                                                └ dots · notes · compare ─▶ net ─▶ client
 ```
 
@@ -27,8 +29,11 @@ views.StrategyPage ─▶ page.StudyPage ─▶ blocks.ResultView
 |---|---|---|---|
 | `__init__.py` | Names the package; holds no code | — | — |
 | `views.py` | `StrategyPage` (scope one, the «Ficha» as its first family tab, `open_family(name)` for Estrategia's origin). The population page (`PopulationStudy`) and its zone were retired by F13 of plan 24: a population's result lives in Proyecto's databank panel. `StudyPage(strategy_page=False)` stays only because its branches run through `page`, `notes`, `dots`, `runbar` and `history`: no zone builds it, `tests/test_ui_studypage.py` keeps it working, and removing it is a refactor of this package, not a cut | imported | — |
-| `ficha.py` | `Ficha`: the harvest's sheet of the selected strategy — «IS/OOS» (P&L acumulado, Drawdown, P&L por año) and «Lote» only for the mother of a variant batch —, each filled on first opening; above them «Excluir top X% de trades» (X 5 by default) and «Drawdown en % / $», which ask `/api/tearsheet` again with `top` and `dd`; `sides` is also PORTFOLIOS' | imported | SELECTION → `/api/tearsheet` → page |
-| `page.py` | `StudyPage`: tabs, dots, the result, drawer + history on the right, `open_study(key)` | imported | SELECTION → page |
+| `ficha.py` | `Ficha`: the harvest's sheet of the selected strategy — «IS/OOS» (P&L acumulado, Drawdown, P&L por año) —, filled on first opening; above it «Excluir top X% de trades» (X 5 by default) and «Drawdown en % / $», which ask `/api/tearsheet` again with `top` and `dd`; `sides` is also PORTFOLIOS' | imported | SELECTION → `/api/tearsheet` → page |
+| `page.py` | `StudyPage`: tabs, dots, the result on the whole width, drawer + history in a side panel folded behind `sidepanel`'s buttons, `open_study(key)` | imported | SELECTION → page |
+| `sidepanel.py` | `SideToggles`: «⚙ Configuración», «Historial» and «Lote» (while its tab shows), each opening the side panel on its tab and folding it on a second press; the panel starts folded (owner, 2026-09-30) | imported | press → panel |
+| `offer.py` | `Offer`: `/api/study/offer` off the GUI thread; a study with no stored result here that the runner refuses gets «· sin datos» in its tab text (and its family, when every study of it does), its sentence instead of the run bar, and «→ abrir en …» (`jump`) when its own databank holds the same name | imported | place → marks, jump |
+| `wfclote.py` | `show(page)`: adds, shows or hides the «Lote» tab beside the drawer — only on the WFC study of a mother with a variant batch | imported | `page.where`, `page.key` → tab |
 | `drawer.py` | Every knob by section, in the glossary's words (`glossary.knob`; the raw key `--set` takes in its tooltip), its sentence visible and on hover, typed editors, reset, the next run's hash against the shown result's | imported | `/api/config` → `--set` list |
 | `runbar.py` | ▶ esta estrategia · ▶▶ toda la población · ↻ solo …; one job at a time, percent/state every 2 s while it runs, cancel, errors | imported | press → job → `finished` |
 | `history.py` | The runs newest first (day, state, hash, caducado), two chosen → compare, a picker of the databank's other strategies | imported | `/api/history` → signals |
@@ -44,6 +49,14 @@ Grabs in `scratch/ui-plan/shots/E-*.png`. The Ficha: `python3 tests/test_ui_tear
 
 ## Contracts and traps
 
+- **The side panel is folded by default** (owner, 2026-09-30: always open, the knobs took the
+  width the result needs). `SideToggles` hides the panel's own tab bar; `wfclote.show` calls
+  `toggles.sync()` so «Lote» gets and loses its button with its tab.
+- **«· sin datos» is in the tab's text, not its colour**: the theme's sheet sets every tab's
+  colour, so `setTabTextColor` never shows. Anything that finds a tab by its text strips
+  `offer.OFF` first (`views.open_family`, `workspace/ficha.describe`).
+- **«→ abrir en …» pairs by name, as a jump the owner chooses** — never a result borrowed in
+  silence: inside one project the identity changes between databanks.
 - **The Ficha is a family tab, not a study.** Its tab data is `"ficha"`; on it the study
   widgets (study tabs, headline, run bar, notes, result + side panel) hide. Following a new
   SELECTION there refills the Ficha and only records the study key, so the page does not load a

@@ -131,9 +131,27 @@ def test_only_options() -> None:
     assert http.get("/api/study/only", params={"study": "gate"}).json() == {"options": []}
 
 
+def test_offer() -> None:
+    """On the build databank the tests whose data lives elsewhere are refused, with the jump
+    to the databank their Databanks tab reads when it holds the same name, and a sentence when
+    it does not; a study that can run on Results is not listed (owner, 2026-09-30)."""
+    got = client().get("/api/study/offer", params={
+        "project": PROJECT, "databank": DATABANK, "strategy": "Strategy 13.14.82",
+        "asset": "USDJPY"}).json()["studies"]
+    cross = got["crossmarket"]
+    assert "cross-market" in cross["why"], cross
+    # The project was retired from the custodian on 2026-09-30: with no install holding
+    # Retest Markets there is no jump, only the sentence naming the databank.
+    go = cross["go"]
+    assert (go.get("tab") == "Cross Market" and go["identity"]
+            if "databank" in go else "Retest_Markets_-_Family" in go["absent"]), go
+    assert "MCR_All" in got["mcRetest"]["go"]["absent"], got["mcRetest"]
+    assert "gate" not in got and "edgeCost" not in got, sorted(got)
+
+
 if __name__ == "__main__":
     assert DATA.exists()
-    tests = [test_refusals, test_only_options, test_queue_and_cancel]
+    tests = [test_refusals, test_only_options, test_offer, test_queue_and_cancel]
     if "--run" in sys.argv:
         tests.append(test_real_run)
     else:

@@ -1,113 +1,72 @@
 """One card of the rail: a step's box, number, kind, title, target tab, configuration and state."""
 
-import ast
-import re
-
-import numpy as np
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import (QCheckBox, QFrame, QHBoxLayout, QLabel, QPushButton, QSizePolicy,
-                               QVBoxLayout)
+from PySide6.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout
 
-from ui.text.glossary import knob, label
-from ui.text.numbers import num
+from ui.text.glossary import label
 from ui.desktop.theme import C, T
-
-# The daemon's state words (ui/daemon/workflow) as the rail says and paints them. `sealed` is
-# a finished 17-19 whose numbers stay hidden until 20 opens; `missing`, nothing to read.
-STATE = {"done": ("hecho", C["promising"]), "running": ("en marcha", C["accent"]),
-         "pending": ("pendiente", C["pending"]), "blocked": ("bloqueado", C["dead"]),
-         "sealed": ("sellado", C["weak"]), "missing": ("sin dato", T["faint"])}
-KIND = {"sqx": ("SQX", "corre en StrategyQuant X: la ventana lo enseña y no lo lanza"),
-        "python": ("PY", "corre en Python, desde aquí"),
-        "person": ("TÚ", "lo haces tú, en el chat")}
-MORE = re.compile(r" \(\+(\d+)\)$")      # the «(+9)» tail of a test's one-line config
+from ui.desktop.workspace.railwords import KIND, gear, ink, readable, run_button, runnable, small, word
+from ui.text.brief import brief, busy
 
 
-def value_words(value: object) -> str:
-    """A knob's value as the window prints it: a number exact and never scientific (a knob
-    is copied, not read at a glance, so no K or M), None as «—», a boolean as sí/no, a list
-    item by item, text as the study spells it. A value that arrives as its Python text
-    («2500», «None», «['NetProfit']») is read back first."""
-    if isinstance(value, str):
-        try:
-            value = ast.literal_eval(value) if value else None
-        except (ValueError, SyntaxError):      # a word: `hard`, `ReturnDDRatio (build)`
-            return value
-    if isinstance(value, (list, tuple)):
-        return ", ".join(value_words(v) for v in value) or "—"
-    if isinstance(value, float) and value.is_integer():
-        value = int(value)
-    if isinstance(value, int) and not isinstance(value, bool):
-        return f"{value:,}".replace(",", " ")       # exact: a seed is not «20.3 M»
-    if isinstance(value, float):
-        return np.format_float_positional(value, trim="-")    # exact and never «1e-05»
-    return num(value) if value is None or isinstance(value, (bool, str)) else str(value)
+def off_reason(step: dict, sqx: dict | None) -> tuple[str, bool]:
+    """Why a step's run button is off, and whether that is a real failure.
 
-
-def readable(config: str) -> str:
-    """A test's one-line config («nulls.draws=2500 · run.blocks=None (+9)», as
-    `ui.daemon.workflow.tests.summary` writes it) in the window's words:
-    «Nulos › Corridas 2 500 · Ejecución › Bloques — · y 9 más». Anything else passes."""
-    more = MORE.search(config)
-    body = config[:more.start()] if more else config
-    if "=" not in body:
-        return config
-    parts = [f"{knob(k)} {value_words(v)}" for k, v in
-             (item.split("=", 1) for item in body.split(" · "))]
-    return " · ".join(parts) + (f" · y {more.group(1)} más" if more else "")
-
-
-def word(state: str) -> str:
-    """The Spanish word of a state, the raw one quoted when the rail does not know it."""
-    return STATE.get(state, (f"«{state}»",))[0]
-
-
-def ink(state: str) -> str:
-    """The colour of a state, the pending grey when the rail does not know it."""
-    return STATE.get(state, ("", C["pending"]))[1]
-
-
-def small(text: str, name: str = "dim", colour: str = "") -> QLabel:
-    """One line of a card, in the term look, cut rather than widening the card.
+    Red is for a real failure only (CLAUDE.md feedback, 2026-09-29): a step done elsewhere
+    (its ▶ SQX never launches it, `steps.ELSEWHERE`), a study only run from the terminal, or
+    a step simply busy right now are expected states, not something broken.
 
     Args:
-        text: What it says.
-        name: The term style to wear (dim, mono).
-        colour: A colour that overrides the style's, or '' to keep it.
+        step: One step as GET /api/workflow sends it.
+        sqx: For an SQX step, its entry of GET /api/launch/steps; None while unknown.
+
+    Returns:
+        `(why, fails)` — `why` is '' when it may run; `fails` is False for an expected state.
     """
-    line = QLabel(text)
-    line.setObjectName(name)
-    line.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-    if colour:
-        line.setStyleSheet(f"color: {colour};")
-    return line
-
-
-def runnable(step: dict) -> list[dict]:
-    """The tests of a step the window may start: Python studies, never an SQX task."""
-    return [t for t in step["tests"] if t["runnable"]]
+    if step["kind"] == "sqx":
+        if sqx is None:
+            return "sin comprobar todavía si SQX puede lanzarlo", False
+        if sqx["ok"]:
+            return "", False
+        return sqx["reasons"][0], not sqx.get("elsewhere", False)
+    tests = runnable(step)
+    if not tests:
+        return (step["tests"][0]["why"], False) if step["tests"] else \
+               ("no tiene pruebas que se corran desde aquí", False)
+    if step["state"] == "blocked":
+        return step["why"], True
+    if all(t["state"] == "running" for t in tests):
+        return "todas sus pruebas están en marcha", False
+    return "", False
 
 
 class StepCard(QFrame):
     """One step. A click outside the box and the button opens its tab and shows its tests;
-    the box ticks every runnable test of the step; ▶ runs the step's ticked tests. An SQX
-    step has no ▶: the window starts nothing in SQX."""
+    the box ticks every runnable test of the step. «▶ PY» runs the step's ticked tests, or
+    all of them when none is ticked (`ran`); «▶ SQX» launches every task of the step in one
+    start of its worker (`launched`); the ⚙ left of it asks for the screen that edits the
+    step's configuration (`configured`). Off, the button is dashed and its reason replaces the
+    configuration line."""
 
     opened = Signal(str)
     ticked = Signal(str, bool)
     ran = Signal(str)
+    launched = Signal(str)
+    configured = Signal(str)
 
-    def __init__(self, step: dict, checked: bool, chosen: bool) -> None:
+    def __init__(self, step: dict, checked: bool, chosen: bool, sqx: dict | None = None) -> None:
         """Build the card.
 
         Args:
             step: One step as GET /api/workflow sends it.
             checked: Whether every runnable test of it is ticked.
             chosen: Whether it is the step the drawer shows.
+            sqx: An SQX step's entry of GET /api/launch/steps, None until it is read.
         """
         super().__init__()
         self.step = step
+        self.why, self.fails = ("", False) if step["kind"] == "person" else off_reason(step, sqx)
         colour = ink(step["state"])
         self.setObjectName("stepcard")
         edge = T["accent"] if chosen else T["line"]
@@ -124,13 +83,21 @@ class StepCard(QFrame):
         box.toggled.connect(lambda on: self.ticked.emit(step["n"], on))
         top.addWidget(box)
         top.addStretch(1)
-        top.addWidget(small(KIND[step["kind"]][0]))
-        if step["kind"] != "sqx" and runnable(step):
-            run = QPushButton("▶")
-            run.setFixedWidth(26)
-            run.setToolTip(label(f"Correr las pruebas marcadas del paso {step['n']}"))
-            run.setEnabled(step["state"] != "blocked")
-            run.clicked.connect(lambda: self.ran.emit(step["n"]))
+        if step["kind"] == "person":
+            top.addWidget(small(KIND["person"][0]))
+        else:
+            kind = step["kind"]
+            run = run_button(kind, f"▶ {KIND[kind][0]}", self.why)
+            if not self.why:
+                run.setToolTip(label(
+                    f"Lanzar en SQX todas las tareas del paso {step['n']} juntas"
+                    if kind == "sqx" else
+                    f"Correr las pruebas marcadas del paso {step['n']}; si no hay ninguna, "
+                    "pregunta y corre las que ni leen oos2 ni escriben en el Ledger"
+                    + (" sobre el databank que enseña Databanks" if step.get("panel") else "")))
+            run.clicked.connect(lambda: (self.launched if kind == "sqx"
+                                         else self.ran).emit(step["n"]))
+            top.addWidget(gear(step["n"], self.configured))
             top.addWidget(run)
         title = QLabel(label(step["title"]))
         title.setWordWrap(True)
@@ -144,7 +111,13 @@ class StepCard(QFrame):
         lay.addWidget(title)
         where = step["tab"] + (f" › {step['sub']}" if step["sub"] else "")
         lay.addWidget(small(f"→ {where or label('sin panel')}", "mono"))
-        lay.addWidget(small(self.config()))
+        # A few words on a card that fits two lines; its full reason is in its tooltip.
+        short = "workflow corriendo" if busy(self.why) else brief(label(self.why), 30)
+        status = (small(f"✖ {short}", "dim", C["dead"]) if self.fails and not busy(self.why)
+                  else small(f"· {short}", "dim") if self.why
+                  else small(self.config()))
+        status.setWordWrap(True)
+        lay.addWidget(status)
         lay.addWidget(small(word(step["state"]).upper(), "mono", colour))
 
     def config(self) -> str:
@@ -160,7 +133,8 @@ class StepCard(QFrame):
         tests = ", ".join(label(t["title"]) for t in s["tests"]) or "ninguna"
         return (f"Paso {s['n']} · {s['title']} — {word(s['state'])}\n{KIND[s['kind']][1]}\n"
                 f"Pruebas: {tests}\nResultado en el panel: {s['tab'] or 'ninguno'}"
-                + (f"\n\n{s['why']}" if s["why"] else ""))
+                + (f"\n\n{s['why']}" if s["why"] else "")
+                + (f"\n\nNo se puede correr ahora: {self.why}" if self.why else ""))
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # noqa: N802 — Qt's name
         """Show the step in the drawer and its tab in the panel.

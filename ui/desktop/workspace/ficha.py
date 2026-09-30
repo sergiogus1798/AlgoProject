@@ -1,19 +1,20 @@
-"""Estrategia: the fixed basic panel, the family tabs and the metadata of one strategy (22 §5)."""
+"""Estrategia: the fixed basic panel and the family tabs of one strategy (22 §5); its metadata on a button."""
 
 import threading
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton, QSplitter, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSplitter,
+                               QVBoxLayout, QWidget)
 
 from ui.desktop.selection import SELECTION
 from ui.desktop.studypage.net import fetch, send
+from ui.desktop.studypage.offer import OFF
 from ui.desktop.studypage.views import StrategyPage
 from ui.desktop.theme import C, T
 from ui.desktop.workspace import fichaarchive
 from ui.desktop.workspace.fichacurves import CostCurves
 from ui.desktop.workspace.fichajobs import Compute
-from ui.desktop.workspace.fichameta import Meta
+from ui.desktop.workspace.fichameta import MetaWindow
 from ui.desktop.workspace.fichastats import Stats
 from ui.desktop.workspace.texts import FAMILIES as SHORT
 
@@ -26,8 +27,9 @@ ORIGIN_FAMILY = {"Puerta IS/OOS": "Cribado", "Cross Market": "Transferencia",
 
 class Ficha(QFrame):
     """The strategy page. The top panel is the same in every databank and folds; below it,
-    the study page's family tabs, opened on the family of the databank panel it came from,
-    and the metadata column. `arrived` carries the daemon's answers back to the GUI thread."""
+    the study page's family tabs, opened on the family of the databank panel it came from, on
+    the whole width — the metadata open in their own window from «ⓘ metadatos» (owner,
+    2026-09-30). `arrived` carries the daemon's answers back to the GUI thread."""
 
     arrived = Signal(dict)
     archived = Signal(dict)
@@ -55,11 +57,18 @@ class Ficha(QFrame):
         self.keep.clicked.connect(self.archive)
         self.fold = QPushButton("▾ plegar panel básico")
         self.fold.clicked.connect(self.toggle)
+        self.info = QPushButton("metadatos")
+        self.info.setProperty("help", "Abre en una ventana aparte lo que el .sqx dice de la "
+                              "estrategia: condiciones, órdenes, money management, activo y los "
+                              "costes de su último test.")
+        self.info.setStyleSheet("font-size: 11px; padding: 2px 8px;")
+        self.info.clicked.connect(self.show_meta)
+        self.metawin = MetaWindow(self)
         head = QHBoxLayout()
         for w in (self.title, self.origin):
             head.addWidget(w)
         head.addStretch(1)
-        for w in (self.said, self.keep, self.fold):
+        for w in (self.said, self.keep, self.fold, self.info):
             head.addWidget(w)
         self.curves, self.stats = CostCurves(self.compute), Stats(self.compute)
         self.basic = QFrame(objectName="basic")
@@ -74,15 +83,17 @@ class Ficha(QFrame):
         self.family = QVBoxLayout()
         self.family.addWidget(self.short)
         self.family.addStretch(0)            # the page, once built, takes it all
-        self.meta = Meta()
         lower = QWidget()
         low = QHBoxLayout(lower)
         low.setContentsMargins(0, 6, 0, 0)
-        low.addLayout(self.family, 3)
-        low.addWidget(self.meta, 1)
+        low.addLayout(self.family, 1)
+        # Each side scrolls: unwrapped they asked 549 + 550 px and the window grew to 1,239 px,
+        # past a 1080-px screen (2026-09-28). Wrapped, the splitter takes height from either.
         self.split = QSplitter(Qt.Vertical)
-        self.split.addWidget(self.basic)
-        self.split.addWidget(lower)
+        for part in (self.basic, lower):
+            area = QScrollArea(widgetResizable=True, frameShape=QFrame.NoFrame)
+            area.setWidget(part)
+            self.split.addWidget(area)
         self.split.setSizes([520, 480])
         lay = QVBoxLayout(self)
         lay.setContentsMargins(16, 10, 16, 10)
@@ -126,7 +137,7 @@ class Ficha(QFrame):
             self.where["asset"] = got["curve"].get("asset") or ""
         self.curves.fill(got["curve"])
         self.stats.fill(got["stats"])
-        self.meta.fill(got["meta"])
+        self.metawin.fill(got["meta"], self.where["strategy"])
         self.say("")
 
     def lower(self, live: bool, family: str) -> None:
@@ -140,6 +151,7 @@ class Ficha(QFrame):
         if live and self.page is None:
             self.page = StrategyPage()
             self.page.families.currentChanged.connect(self.describe)
+            self.page.offer.jump.connect(self.jump)
             self.family.addWidget(self.page, 1)
         if self.page is not None:
             self.page.setVisible(live)
@@ -148,11 +160,38 @@ class Ficha(QFrame):
         self.describe()
 
     def describe(self, *_: object) -> None:
-        """The chosen family's one-line description, above its tabs."""
+        """The chosen family's one-line description, above its tabs; the basic panel (general
+        strategy data — the price curve and its stats) folds away outside the Ficha (owner,
+        2026-09-29): Transferencia's own studies get that space instead, and general data
+        stays where it belongs, the Ficha, rather than repeating on every family tab."""
         if self.page is not None:
             bar = self.page.families
-            family = bar.tabText(bar.currentIndex())
+            family = bar.tabText(bar.currentIndex()).removesuffix(OFF)
             self.short.setText(f"{family}: {SHORT[family]}" if family in SHORT else "")
+            basic = self.split.widget(0)
+            basic.setVisible(family == "Ficha")
+            self.fold.setVisible(family == "Ficha")
+
+    def jump(self, study: str, go: dict) -> None:
+        """«→ abrir en …»: the strategy of the same name in the databank a test lives in,
+        opened on that test — the owner's choice, by name (the identity there may differ).
+
+        Args:
+            study: The study key to open there.
+            go: `/api/study/offer`'s `databank`, `tab`, `strategy`, `identity`.
+        """
+        SELECTION.choose(databank=go["databank"], strategy=go["strategy"],
+                         identity=go["identity"])
+        self.fill(self.where["project"], go["strategy"], go["tab"])
+        self.page.open_study(study)
+
+    def show_meta(self) -> None:
+        """Open the metadata window, or bring it forward when it is already open."""
+        if not self.data:
+            return self.say("aún leyendo la estrategia…")
+        self.metawin.show()
+        self.metawin.raise_()
+        self.metawin.activateWindow()
 
     def reload(self) -> None:
         """A «calcular» ended: read the page again."""
@@ -181,6 +220,6 @@ class Ficha(QFrame):
 
     def toggle(self) -> None:
         """Fold the basic panel away, or bring it back."""
-        folding = self.basic.isVisible()
-        self.basic.setVisible(not folding)
+        folding = self.split.widget(0).isVisible()      # the basic panel's scroll area
+        self.split.widget(0).setVisible(not folding)
         self.fold.setText("▸ desplegar panel básico" if folding else "▾ plegar panel básico")

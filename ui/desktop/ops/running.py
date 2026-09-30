@@ -1,15 +1,15 @@
 """«En marcha»: the custodian's pulse and one project's tasks — the same project, one screen."""
 
-import httpx
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QSplitter, QVBoxLayout
 
-from ui.desktop import client
+from ui.desktop import background, client
 from ui.desktop.ops.pulse import Pulse
 from ui.desktop.ops.tasks import Tasks
 from ui.desktop.selection import SELECTION
 from ui.desktop.theme import C, kicker
+from ui.text.brief import full, line
 
 ROLE = {"custodian": "custodio · SQX_w2", "conductor": "conductor · SQX_w1", "master": "maestro"}
 ORDER = ("custodian", "conductor", "master")     # where a selected project is looked for first
@@ -58,11 +58,22 @@ class Running(QFrame):
         lay.addWidget(split, 1)
 
     def reload(self) -> None:
-        """Ask the daemon which installs and projects exist, and choose what to show."""
-        self.data = client.get("progress/installs")
+        """Ask the daemon which installs and projects exist and what SQX runs, off the GUI
+        thread; `listed` chooses what to show."""
+        background.run(lambda: {"installs": client.get("progress/installs"),
+                                "runs": client.get("ops/sqx")["runs"]},
+                       self.listed, key=f"running:{id(self)}")
+
+    def listed(self, got: dict) -> None:
+        """The installs arrived: fill both pickers and draw."""
+        if "error" in got:
+            self.note.setText(line(got["error"]))
+            self.note.setToolTip(full(got["error"]))
+            return
+        self.data = got["installs"]
         role, project = self.install.currentText(), self.project.currentText()
         if not self.by_hand:
-            role, project = self.default()
+            role, project = self.default(got["runs"])
         self.install.clear()
         for r in self.data:
             self.install.addItem(r)
@@ -70,15 +81,17 @@ class Running(QFrame):
         self.install.setCurrentText(role if role in self.data else "custodian")
         self.fill_projects(project)
 
-    def default(self) -> tuple[str, str]:
+    def default(self, runs: list[dict]) -> tuple[str, str]:
         """What the zone shows when the owner has not picked: the running project first.
+
+        Args:
+            runs: `/api/ops/sqx`'s runs.
 
         Returns:
             The install and project of the first worker running something (custodian
             first); else the window's selected project on the first install holding it;
             else the custodian with no project.
         """
-        runs = client.get("ops/sqx")["runs"]
         if runs:
             return runs[0]["role"], runs[0]["project"]
         chosen = SELECTION.now["project"]
@@ -138,11 +151,18 @@ class Running(QFrame):
         if not project:
             self.note.setText("Este install no tiene proyectos.")
             return
-        try:
-            self.tasks.load(role, project)
-        except httpx.HTTPError as down:
-            self.note.setText(f"demonio no responde: {type(down).__name__}")
+        background.get("progress", lambda got: self.progressed(role, project, got),
+                       key=f"progress:{id(self)}", owner=self, install=role, project=project)
+
+    def progressed(self, role: str, project: str, got: dict) -> None:
+        """One project's tasks arrived: draw them, if that project is still the one picked."""
+        if (role, project) != (self.install.currentText(), self.project.currentText()):
             return
+        if "error" in got:
+            self.note.setText(line(got["error"]))
+            self.note.setToolTip(full(got["error"]))
+            return
+        self.tasks.show(project, got)
         self.note.setText(self.relation(role, project))
 
     def relation(self, role: str, project: str) -> str:

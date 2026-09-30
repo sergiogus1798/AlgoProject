@@ -17,9 +17,11 @@ app ─▶ routers ─▶ templates ─▶ library ─▶ registry.csv · runs.c
 through the packages `ledger/`, `pipeline/ledger`, `sqx/projects/stage`, `sqx/curate` and each
 study's config loader · **Consumed by:** `ui/desktop/` (over HTTP only), `core/archive/view.py`
 (`gateview`)
-**Must not contain:** a Qt widget, an SQX command outside `advance/`, or a second way of writing a
-CSV. `jobs.py` starts `python3 -m` analysis modules and nothing else: never `sqcli`, never a
-worker — the one route that reaches SQX is `advance/`'s «Continuar workflow», on a worker only.
+**Must not contain:** a Qt widget, an SQX command outside `advance/`, `launch/` and `mt5bridge/`'s job, or a second way
+of writing a CSV. `jobs.py` starts `python3 -m` modules and nothing else: never `sqcli`, never a
+worker — the routes that reach SQX are `advance/`'s «Continuar workflow», `launch/`'s «Lanzar
+en SQX», ▶ SQX and «Correr workflow», and `mt5bridge/`'s «Verificar en SQX y en MT5», on a worker
+only, each one job on the conductor lane.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
@@ -36,8 +38,11 @@ worker — the one route that reaches SQX is `advance/`'s «Continuar workflow»
 | `assets.py` | What the asset zone draws: every instrument with what blocks it, one asset in full, and the writes it may make | imported | disk → JSON |
 | `assetapi.py` | The asset library's routes, as a router | imported | request → JSON |
 | `runs.py` | What running one module on one strategy means: the argv, given the asset's feed and what `raw/` and `harvest/` hold — or the sentence saying why it cannot run here; `guess_asset` reads a project's asset off its name | imported | context → argv · reason |
-| `jobs.py` | The daemon's job list: commands started from the window as its own children, each logged under `AlgoData/logs/ui/`; the python lane and the one-at-a-time conductor lane | imported | argv → job record |
+| `jobs.py` | The daemon's job list: commands started from the window as its own children, each logged under `AlgoData/logs/ui/`; the python lane and the one-at-a-time conductor lane; cancelling a `launch`/`advance` job sends SIGTERM and waits `GRACE_S` for its `finally` to stop the worker before SIGKILL, stops the worker itself only when the job's own `workerguard` marker says it started it, keeps the lane busy until that stop ends, and says «sigue arrancado» in the job's state when even that failed (`winddown.py`) | imported | argv → job record |
+| `winddown.py` | Cancelling a `launch`/`advance` job: SIGTERM, `GRACE_S` (360 s) for its `finally` to stop the worker, SIGKILL; then `worker.stop` only for a worker whose `workerguard` marker carries that job's PID — never anyone else's | imported by `jobs.py` | job → worker stopped |
+| `workerguard.py` | `up(top, port)` (an SQX process of the install or its port), `refuse_if_up` right before a start (`sqx-worker.sh start` answers 0 on «already running»), `mark` right after the start, `stopped` after the stop (answers 0 on «STILL RUNNING»: the marker stays and a line is printed), `orphans(own)`: markers a closed window's job left, said on the rail | imported by `launch/run.py`, `advance/run.py`, `winddown.py`, `launch/api.py` | install → sign, marker |
 | `gateview.py` | A gate report read off disk: its funnel and scorecard (`gate`), one strategy's paired metrics and daily curve (`strategy`), which report judged a cosecha (`judged`), the screens as configured (`screens`) — for the databank panel's funnel and `core.archive.view` | imported | disk → JSON |
+| `daylog.py` | Today's SQX log of an install as the lines `progress.run_state` reads — read whole once, then only what it gained; `trim` keeps the last «Starting project», a bounded tail and only the newest percentage | imported | log → lines |
 | `progress.py` | Where a running SQX project is: its tasks from `project.cfx`, which one runs and how far from the tail of today's log, and each databank's count on disk. Files, plus the worker's status line through `tasklog` | imported | disk → JSON |
 | `tasklog.py` | A project's own task log — each task's start, finish, input counts and time per strategy — and the worker's `-project action=status` line while it runs | imported | disk · HTTP → dicts |
 | `interview.py` | The questions the chat asks, and which is next | imported | answers → question |
@@ -52,7 +57,7 @@ The surfaces' routers, each a package with its own README, all listed in `router
 | folder | routes | what it reads |
 |---|---|---|
 | `results/` | `/api/catalogue`, `/api/result`, `/api/history`, `/api/config`, `/api/config/hash`, `/api/matrix`, `/api/projects` | `AlgoData/reports/<P>/<D>/<day>/<study>/` as the study contract; the catalogue's run fields come from `runner/table.py` |
-| `runner/` | `POST /api/study/run`, `/api/study/only`, `POST /api/jobs/{id}/cancel` | the data root, to build each study's `python3 -m` command or say why not; queued in `jobs.py` |
+| `runner/` | `POST /api/study/run`, `/api/study/only`, `/api/study/offer`, `POST /api/jobs/{id}/cancel` | the data root, to build each study's `python3 -m` command or say why not; queued in `jobs.py` |
 | `workflow/` | `/api/workflow` | the steps of WORKFLOW.md for one project, from files, logs and the ledger |
 | `ops/` | `/api/pulse`, `/api/ops/sqx`, `/api/ledger` | `/proc`, the workers' logs and `sqcli.config`, `AlgoData/ledger/*.jsonl`; a worker whose log says a project runs is asked its `action=status` line (through `progress.state`) and nothing else |
 | `tearsheet/` | `/api/tearsheet`, `/api/tearsheet/exits` | the newest `harvest/<P>/<D>/<day>/{equity,trades,metrics}.parquet`, filtered on identity; IS and OOS apart, any other sample refused; `sample=OOS2` answers `{blocked}` until 17-19 are in the ledger, then from a cosecha with an oos2 sample |
@@ -65,8 +70,11 @@ The surfaces' routers, each a package with its own README, all listed in `router
 | `databank/` | `/api/databank/panels`, `/table`, `/equity`, `/funnel`, `POST /api/databank/reload` | the databank panel of Proyecto: roster (`loader.find`), `metrics/` or the cosecha, every study under `reports/<P>/*/` paired by identity, the mothers' batch studies (`estudios/`) by name, the `spread` report's trades, `gate/funnel.csv`, the ledger's door for 17-20 — no SQX; reload only asks `POST /api/load` |
 | `filters/` | `/api/filters/metrics`, `POST /apply`, `POST /discard`, `POST /clear`, `/state`, `GET`/`POST /saved` | the databank table's real columns (OOS2 left out) and the stored `distribution` blocks; writes `AlgoData/filters/<P>/<D>/discards.jsonl` and `saved.yaml`, and one ledger row per filter or manual deletion through `ledger.record.log` — no `.sqx`, no SQX |
 | `advance/` | `/api/advance/preflight`, `POST /api/advance/run` | `registry.csv`, the worker's port, `/proc`, its projects' dates and today's SQX log, F6's `discards.jsonl`, the project's `project.cfx`; the job copies the discards to `AlgoData/projects/discards/`, cuts through `sqx.curate.apply_verdict.apply`, stages, starts the worker, sends `-project action=start` and then only `action=status` until «Project finished», and stops it — **the one route that reaches SQX**, never the master |
+| `launch/` | `/api/launch/tasks`, `/preflight`, `/steps`, `POST /run`, `GET`/`POST /chain` | the same preflight as `advance/`; the job runs `core.assets`, copies the project to `AlgoData/projects/snapshots/`, switches on one task, one step's tasks, or — «Correr workflow» — each pending step in WORKFLOW.md's order with its Python tests between, starts the worker once per step, only `action=status` until «Project finished», stops it; halts before the next SQX task after a judging step (8, 10, 12, 14, 16). Never the master |
 | `strategy/` | `/api/strategy/meta`, `/costcurve`, `/stats`, `/archived`, `POST /api/strategy/archive` | the Estrategia page: the `.sqx` by file read (the install, else an export's copy under `raw/`, else the archive) through `sqx.inspect.strategymeta`, the cosecha and the `spread` report's trades, the ledger's door for OOS2; «Archivar» freezes through `core.archive.write` — no SQX. With `source=archive`, it and `results/`, `tearsheet/`, `tearmarket/` answer from `core.archive.read` |
+| `create/` | `/api/create/options`, `POST /api/create/template`, `POST /api/create/project` | the chat's draft brief (`templates/drafts/`), the library's templates and `assets/symbols/`; queues the headless author (`CLAUDE_BIN -p`) or `core.assets` + `builder --workflow` on the conductor lane — never starts SQX |
 | `archive/` | `/api/archive/list`, `/api/archive/show` | PORTFOLIOS: `AlgoData/archive/` through `core.archive.read` — each archived strategy with its versions, the ledger count frozen that day, and what one version holds and skipped; files only, no job, no SQX |
+| `mt5bridge/` | `/api/mt5bridge/options`, `/runs`, `/result`, `POST /preflight`, `POST /verify` | MT5 BRIDGE › Verificar: `AlgoData/mt5/verify/<run>/{run.json,result.json}`, the archive and `strategy.locate` for the `.sqx`, `core.paths.MT5_ACCOUNTS`; the preflight is `advance.busy` on the conductor plus an open MT5 terminal refused; `verify` queues `python3 -m mt5.verify.run` on the conductor lane, labelled `mt5verify` — a launcher for `winddown` and `launch.queued` |
 
 ## Contracts and traps
 
