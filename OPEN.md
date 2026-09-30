@@ -100,6 +100,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 83 | 🟢 | The window cannot launch a second project on the custodian for 24 h after the... | docs/OPEN-closed.md |
 | 84 | 🟡 | What the 2026-09-29 walk of the window left for the owner | OPEN.md |
 | 85 | 🟠 | Prop-firm funding workstream — built 2026-09-29, the owner's calls still open | OPEN.md |
+| 86 | 🟡 | Audit 2026-09-30: exports without manifest, a `migrate` code_version, two files over 250 lines | OPEN.md |
 | 87 | 🟠 | Portfolio construction engine — planned 2026-09-30, not built; the owner's calls gate each milestone | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
@@ -370,6 +371,17 @@ HTTP call to the port — the terminal's own "prohibit AI trading" option is the
 
 **2026-09-29, later — owner lifted the hold for this test.** The unattended backtest works: `metaeditor.expert()` → `tester.start()` → `tester.collect()` on the owner's `Strategy 3.48.75` (XAUUSD H1, `~/Desktop/FTMO_EAs_NoNews` and `FTMONewsFilter_Files`), 20 months in ~15 s each, 27 trades parsed from the report. One bug fixed: the terminal does not create the `reports\` folder of `Report=`, so no report was written (`tester.py` makes it now). The news filter is inert in the tester (the calendar is empty there), so both versions trade identically. → `knowhow/eng/mt5-tester-unattended.md`. Left: the tester has no way to pass EA inputs (a `[TesterInputs]` section); the MetaQuotes MCP tester is still unproven; there is still no SQX backtest of the same EA to compare against.
 
+**2026-09-29, evening — MT5 Bridge › Verificar built (encargo 34 §0.5).** Point 3 is solved: a
+SaveToFiles task with `<SaveSourceCode type="Expert Advisor for MetaTrader5 (*.MQ5)">` exports the
+EA headless (the GUI's label «MetaTrader 5 (*.mq5)» fails the project;
+`knowhow/sqx-drive/export-mql5-source-headless.md`). The terminal switches between the owner's
+saved FTMO and Hantec accounts on its own — `initialize(login, server)` with the terminal started
+detached first, and a `[Common] Login/Server` section in the tester ini
+(`knowhow/eng/mt5-account-switch-unattended.md`). `python3 -m mt5.verify.run` and the window's
+new MT5 BRIDGE section run the whole check. Still open from this section: point 4 is now the
+owner's thresholds of encargo 34 (in `ledger/thresholds.yaml`, `mt5verify.*`); the MetaQuotes MCP
+tester stays unproven; the tester still cannot pass EA inputs.
+
 ## 81. 🟡 The window's cut-over (plan 24) left five owner's calls open
 
 2026-09-28, closing F13 of `docs/encargos/24-plan-ventana.md` — the owner: «borra la UI anterior;
@@ -453,7 +465,8 @@ validated pool). Manual chapters 73 and 74.
   portfolio. Funded path first (owner's priority). → `portfolio/PLAN.md` §14.
 
 **Open — the owner's calls:**
-1. **Cash budget**: the most he will spend on challenges before a first payout (encargo 33 §3.5).
+1. ~~**Cash budget**~~ — **answered 2026-09-29: 1,000 € in total** (encargo 33 §3.5; plans are in
+   USD, converted at the day's rate).
 2. **FundedNext** (candidate): the EA usage fee's amount; accepting one account per portfolio
    (identical trades across accounts are banned); gates G3 Spain and G4 payout record; then activate
    or not — `docs/AgentPDFs/fondeo-admision-fundednext-2026-09-29.md`.
@@ -473,8 +486,10 @@ sits where the hand FTMO patch did, but its live behaviour is unseen — the tes
 `_Hantec` EA on a demo chart across one red-folder release and read the Experts tab for the close line.
 
 **Open — to build:** encargo 33 (the EV model, then plug it into `deals.worth`, which today judges a
-deal only by the zero-edge floor); encargo 34 (waits on #78); a test of Hantec's price formula
-against its page's JS.
+deal only by the zero-edge floor); encargo 34's pool (its verification is built, 2026-09-29: MT5
+BRIDGE › Verificar, §0.5 of the encargo, with its open points); a test of Hantec's price formula
+against its page's JS. Hantec's commission on gold is unconfirmed, so the verification refuses
+Hantec on XAUUSD until it is filled in the Activos zone.
 
 **Known limits:** the notification only shows if the desktop session is up at 10:00 (the deal stays
 in the table); FundingPips' catalogue is typed and unconfirmed because its site blocks automated
@@ -488,6 +503,17 @@ reading, which is not forced; codes of firms without a public check stay `unveri
   while SQX is not running.
 - `project.cfx` is a plain ZIP: `config.xml` + one `<Type>-Task<N>.xml` per task. Safe to *read*
   at any time.
+
+## 86. 🟡 Audit 2026-09-30: exports without manifest, a `migrate` code_version, two files over 250 lines
+Opened by the unattended docs pass from `audit/2026-09-30.md`. None is a documentation error; all wait for a decision or for in-flight work.
+- 📓 **Exports without a root manifest** under `AlgoData/raw/`: `Test_USDJPY_donchianUpperCrossUp_M30/SPP_IS/2026-09-27`, `.../SPP_OOS/2026-09-27`,
+  `XAUUSD/SPP_IS/2026-09-19`, `XAUUSD/SPP_OOS/2026-09-19`, `XAUUSD/WFM/2026-09-10` (audit list cut at 5). Reproduce: `python3 tools/daily_audit.py`.
+  Fix: a root manifest written by that exporter, or declare the gap accepted. Not resolved — the exporter is code.
+- 📓 **One manifest has `code_version` = `migrate`** (not a commit; `git cat-file` fails). Not located. Find: `grep -rl '"migrate"' ~/Desktop/AlgoData/raw --include=manifest.json`. Declare or rewrite.
+- 📓 **`tools/checks.py` file-length fails**: `core/assetdata.py` 285 lines, `ui/desktop/workspace/panel.py` 260 (max 250). Working tree holds in-flight window work
+  (313 paths); split when it settles.
+- 📓 **Custodian log 704 MB**: `log_2026_09_29.log` 526 MB, ~220k × `TradingException: Setting 'TradingSetup.StrategyClass' is not set` in `WFSimulationJob`.
+  Same storm as `knowhow/eng/log-retention.md`; the archiver + prune handle it (SQX config is the owner's). Check whether the next long job repeats it.
 
 ## 87. 🟠 Portfolio construction engine — planned 2026-09-30, not built; the owner's calls gate each milestone
 

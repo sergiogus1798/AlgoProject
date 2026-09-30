@@ -32,9 +32,10 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
      stop`. Between start and collect the custodian receives only `-project action=status` (owner,
      2026-09-25) — never `count`, a load or an export: `count` syncs **from** files and wipes what is
      only in memory, which is rule 1 firing (`knowhow/databanks/databank-verbs.md`). The end is `Project
-     finished` in SQX's own log. The window's two confirmation-gated launchers start a worker task the
-     same way — «Continuar workflow» (owner, 2026-09-27) and «Lanzar en SQX» (owner, 2026-09-28) — details
-     in `ui/README.md`, `ui/daemon/advance/`, `ui/daemon/launch/`.
+     finished` in SQX's own log. The window's three confirmation-gated launchers start a worker task the
+     same way — «Continuar workflow» (owner, 2026-09-27), «Lanzar en SQX» (owner, 2026-09-28) and MT5
+     Bridge's «Verificar en SQX y en MT5» (owner, 2026-09-29) — details in `ui/README.md`,
+     `ui/daemon/advance/`, `ui/daemon/launch/`, `ui/daemon/mt5bridge/`.
    - **Other sessions share the workers; each install now carries a real owner lock**
      (`OPEN.md` #32, owner 2026-09-29): `start` writes `<install>/user/log/OWNER` (holder —
      `$CLAUDE_CODE_SESSION_ID`, else `--owner`/`$SQX_OWNER`, else "owner" — PID, start time);
@@ -103,6 +104,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | what a prop firm's account costs with its add-ons, and its rules (the firms of `AlgoData/funding/firms.yaml`; adding one: `/firm-onboard`) | `python3 -m portfolio.funded.catalog.show <firm or plan>`, then `portfolio/funded/catalog/README.md` — refreshed every Sunday by the `fundingWatcher` agent |
 | prop-firm discounts: what is on today, and whether one is worth it | `python3 -m portfolio.funded.deals.worth [deal_id]`, then `portfolio/funded/deals/README.md` — hunted daily at 10:00 by the `dealHunter` agent, desktop notification |
 | MetaTrader 5: install under Wine, backtest an SQX EA in its tester, compare with SQX, read the terminal (MCP `mt5`, no order tools) | `mt5/README.md`, then OPEN.md #78 |
+| step 26: a strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account (window › MT5 BRIDGE › Verificar) | `mt5/verify/README.md`, then encargo 34 §0.5 |
 | whether a result beats random entry, and which channel the edge lives in | `studies/readings/monkey/README.md` |
 | cribar una poblacion OOS entera hasta una lista de supervivientes | `studies/screening/gate/README.md` |
 | running something, or explaining to a human how to | the chapter in `AlgoData/manual-fuentes/` (`00-empezar.md`, then that module's); the owner gets the PDF in `docs/manual/` |
