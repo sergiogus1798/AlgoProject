@@ -6,7 +6,7 @@
 # projects, projects of fewer than 10 tasks, and whatever the owner queued in
 # AlgoData/projects/retire-queue.txt — archiving each project.cfx in AlgoData first. It never
 # starts, stops or queries an install: a running one keeps its projects another week. Writes
-# audit/YYYY-MM-DD-proyectos.md, uncommitted. See .claude/agents/projectJanitor.md and
+# AlgoData/audit/YYYY-MM-DD-proyectos.md. See .claude/agents/projectJanitor.md and
 # docs/manual/04-sqx-plantillas-y-proyectos.pdf (cap. 55-retirar-proyectos).
 #
 # Usage:
@@ -58,6 +58,6 @@ timeout 1h "$CLAUDE" -p --agent projectJanitor --model sonnet \
   "Weekly SQX project cleanup, unattended from cron: nobody can answer, so never ask — when in \
 doubt keep the project and say why. Follow .claude/agents/projectJanitor.md step by step: dry-run the \
 sweep, hold back any candidate with a sign of life, retire the rest with sqx.projects.retire, \
-dequeue what you retired from the queue, and write audit/${TODAY}-proyectos.md in Spanish. Never \
+dequeue what you retired from the queue, and write $DATA/audit/${TODAY}-proyectos.md in Spanish. Never \
 send any command to an SQX install and never touch git."
 echo "=== $(date -Is) weekly project cleanup end, exit $?"

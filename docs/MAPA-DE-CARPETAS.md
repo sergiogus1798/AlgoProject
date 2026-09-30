@@ -147,6 +147,12 @@ Carpetas creadas vacías, con su README, para los encargos que todavía no está
 | 16 — repetición de mercado | `engines/market/replay/` |
 | 17 — calidad del feed | `studies/data/feedQuality/` |
 
+## Informes de los agentes: `audit/` → `AlgoData/audit/` (30-09-2026)
+
+Los informes diarios y semanales (auditoría, `-mechanical`, `-fixes`, `-fondeo`, `-proyectos`) y el
+`state.json` del auditor salieron del repositorio y de git: ahora viven en `AlgoData/audit/`
+(`core.paths.AUDIT`). Un informe que cite `audit/AAAA-MM-DD.md` está ahí, con el mismo nombre.
+
 ## Cómo se comprobó que nada cambió
 
 Todos los comandos se corrieron con el código viejo y con el nuevo sobre los mismos exports, y se

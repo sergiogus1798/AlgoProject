@@ -1,11 +1,11 @@
 #!/bin/bash
-# audit-prune — gzip old daily audit reports in place, in audit/.
+# audit-prune — gzip old daily audit reports in place, in the data root's audit/ (core.paths.AUDIT).
 #
 # tools/daily_audit.py and the auditor agent write two files a day, forever
-# (audit/YYYY-MM-DD.md, audit/YYYY-MM-DD-mechanical.md). Unlike SQX's own logs there is no
+# (YYYY-MM-DD.md, YYYY-MM-DD-mechanical.md, and the agents' -fixes/-fondeo/-proyectos). Unlike SQX's own logs there is no
 # separate archive step: this gzips the report itself once it is older than KEEP_DAYS, keeping
 # the text (small, greppable) but off the working tree's daily view. Never touches today's
-# reports or audit/state.json. Nothing is deleted — a .md.gz is still every byte the report had.
+# reports or state.json. Nothing is deleted — a .md.gz is still every byte the report had.
 #
 # Usage:
 #   audit-prune            gzip reports older than KEEP_DAYS; verbose
@@ -16,7 +16,8 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 KEEP_DAYS="${KEEP_DAYS:-60}"
-DIR="audit"
+DIR=$(python3 -c 'from core.paths import AUDIT; print(AUDIT)' 2>&1) || {
+  printf 'cannot resolve the audit folder:\n  %s\n' "$DIR"; exit 1; }
 
 DRY=0
 case "${1:-}" in
@@ -25,7 +26,7 @@ case "${1:-}" in
   *)         echo "unknown argument: $1" >&2; exit 2 ;;
 esac
 
-[ -d "$DIR" ] || { echo "no $DIR/ here"; exit 1; }
+[ -d "$DIR" ] || { echo "no $DIR yet"; exit 0; }
 
 TODAY_STEM="$(date +%F)"
 n=0

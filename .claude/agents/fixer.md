@@ -56,7 +56,7 @@ Each of these goes into your report as "needs the owner", with the one sentence 
 
 ## Report
 
-Write `audit/YYYY-MM-DD-fixes.md` last, uncommitted like the rest:
+Write `AlgoData/audit/YYYY-MM-DD-fixes.md` (`core.paths.AUDIT`, outside git) last:
 
 ```markdown
 # Fixes YYYY-MM-DD

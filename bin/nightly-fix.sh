@@ -5,7 +5,7 @@
 #
 # Cron starts it at 04:00, but it first waits for the documenter's lock, which in turn waited for
 # the audit's. It works in the one checkout, on the branch it has, like the documenter, and
-# commits nothing: the owner reads `git diff` and audit/YYYY-MM-DD-fixes.md in the morning and
+# commits nothing: the owner reads `git diff` and AlgoData/audit/YYYY-MM-DD-fixes.md in the morning and
 # commits what he wants (owner, 2026-09-26: one folder, no worktrees, no agent commits unasked).
 #
 # Usage:
@@ -44,8 +44,8 @@ exec 8>"$DOCS_LOCK"
 flock -w 14400 8 || { echo "--- documenter still running after 4 h; skipped"; exit 1; }
 flock -u 8
 
-if [ ! -f "audit/$TODAY.md" ]; then
-  echo "--- no audit/$TODAY.md: the audit did not finish; nothing to fix"; exit 1
+if [ ! -f "$DATA/audit/$TODAY.md" ]; then
+  echo "--- no $DATA/audit/$TODAY.md: the audit did not finish; nothing to fix"; exit 1
 fi
 if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
   echo "--- no claude binary found; skipped"; exit 1
@@ -54,15 +54,15 @@ echo "--- already modified before the fixer, not its to touch:"
 git status --short
 
 IN=$(mktemp -d)
-cp "audit/$TODAY.md" "$IN/"
-[ -f "audit/$TODAY-mechanical.md" ] && cp "audit/$TODAY-mechanical.md" "$IN/"
+cp "$DATA/audit/$TODAY.md" "$IN/"
+[ -f "$DATA/audit/$TODAY-mechanical.md" ] && cp "$DATA/audit/$TODAY-mechanical.md" "$IN/"
 
 timeout 3h "$CLAUDE" -p --agent fixer --model opus \
   --permission-mode acceptEdits --add-dir "$DATA" --add-dir "$IN" \
   --allowedTools=Bash,Read,Grep,Glob,Write,Edit \
   "Fix what today's audit found. The reports are in $IN. Work in this checkout on the branch it \
 has; never commit, stash, switch branch or create a worktree — leave every change uncommitted. \
-Unattended from cron: never ask. Write audit/${TODAY}-fixes.md last."
+Unattended from cron: never ask. Write $DATA/audit/${TODAY}-fixes.md last."
 echo "--- agent exit $?"
 git status --short
 rm -rf "$IN"

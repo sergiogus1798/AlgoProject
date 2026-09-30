@@ -14,8 +14,8 @@ Python does the mathematics that decides which of them are real.
 | `mt5/` | Deployment and live-versus-backtest. Reserved, not built |
 
 Supporting them: `core/` shared library · `assets/` per-asset cost overrides that must be read before
-authoring anything · `knowhow/` the facts that cost time to discover · `docs/` generated reference ·
-`audit/` daily reports.
+authoring anything · `knowhow/` the facts that cost time to discover · `docs/` generated reference. The daily
+reports of the unattended agents live in the data root, `AlgoData/audit/`.
 
 ## Setting up on a new machine
 

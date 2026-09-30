@@ -12,7 +12,7 @@
 
 `manual.py` renders the chapters to `docs/manual/NN-<family>.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. The owner reads only PDFs (2026-09-26): the PDFs are in git and are the only thing in `docs/manual/`; the `.md` chapters and their `assets/` are the original and live in `AlgoData/manual-fuentes/`, out of the repo. `FAMILIES` decides which chapter goes in which PDF, and a chapter in no family stops the build. A family is rendered again only when its HTML or a picture it shows changed (`AlgoData/manual-fuentes/.rendered.json`; delete it to force a full rebuild) — `knowhow/eng/manual-pdf-rebuild-is-input-keyed.md`.
 
-`daily_audit.py` writes `audit/YYYY-MM-DD-mechanical.md` and exits non-zero when something regressed.
+`daily_audit.py` writes `AlgoData/audit/YYYY-MM-DD-mechanical.md` (`core.paths.AUDIT`) and exits non-zero when something regressed.
 It involves no model. **It is installed**, as the first half of `bin/nightly-audit.sh`, which cron
 runs at 03:00 and which then runs the `auditor` agent headless on Sonnet for the judgement half.
 `bin/nightly-docs.sh` runs the `documenter` the same way at 03:30, after waiting for the audit's

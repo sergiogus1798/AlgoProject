@@ -56,7 +56,7 @@ something is a page, not the owner.
 7. Run the refresh again so the database carries your edits; it must end without a traceback.
 8. If the refresh names an `UNMODELLED add-on`, describe what it does (from the purchase page's
    add-on list) in the report, with the `EFFECTS` line it would need in `combos.py` — do not edit it.
-9. Write `audit/YYYY-MM-DD-fondeo.md` in Spanish, for the owner:
+9. Write `AlgoData/audit/YYYY-MM-DD-fondeo.md` (`core.paths.AUDIT`) in Spanish, for the owner:
    - **Precios**: every price that moved, old → new, per plan; plans added or removed.
    - **Reglas**: every rule you changed, old → new, with its source; new rules added.
    - **Pendiente**: what is still unknown or in conflict, and where you looked.

@@ -13,7 +13,7 @@ never "fix" code you find broken — you report it.
 
 Read `CLAUDE.md` first. Then work the four areas below. You may be running unattended from cron
 (`bin/nightly-audit.sh`): nobody can answer a question, so never ask one — decide, and say in the
-report what you could not check and why. Start from today's `audit/*-mechanical.md` and do not
+report what you could not check and why. Start from today's `AlgoData/audit/*-mechanical.md` and do not
 repeat what it already says; spend your effort on what a script cannot see. Budget your reading: use the router, the
 folder READMEs and `docs/DEPENDENCIES.md` rather than opening every file.
 
@@ -82,7 +82,7 @@ Read the analyses and reports produced since the last audit and challenge them:
 
 ## Output
 
-Write `audit/YYYY-MM-DD.md`:
+Write `AlgoData/audit/YYYY-MM-DD.md` (`core.paths.AUDIT` — the reports live in the data root, not in git):
 
 ```markdown
 # Audit YYYY-MM-DD
@@ -97,7 +97,7 @@ One line: the single most important thing, or "nothing new".
 
 Severity: 🔴 causes data loss or a wrong conclusion · 🟠 will mislead someone · 🟡 friction or rot.
 
-Then update `audit/state.json`, keyed by a stable fingerprint of each finding, so the next audit
+Then update `AlgoData/audit/state.json`, keyed by a stable fingerprint of each finding, so the next audit
 reports only what is new, worse or resolved. **A repeat of yesterday's list is a failed audit.**
 Open an `OPEN.md` entry for anything 🔴 or 🟠 that will not be fixed today: a new numbered `## N.`
 section (next free number, status emoji in the heading) placed in numeric order among the other

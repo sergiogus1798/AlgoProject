@@ -4,7 +4,7 @@
 # Re-reads the prop firms' sites into AlgoData/funding/funding.sqlite (prices, plans, add-ons),
 # then researches the curated rules in AlgoData/funding/rules/*.yaml that are unknown,
 # unconfirmed, in conflict or older than four weeks (owner, 2026-09-29). Reads public pages only.
-# Writes audit/YYYY-MM-DD-fondeo.md, uncommitted. See .claude/agents/fundingWatcher.md and
+# Writes AlgoData/audit/YYYY-MM-DD-fondeo.md. See .claude/agents/fundingWatcher.md and
 # portfolio/funded/catalog/README.md.
 #
 # Usage:
@@ -51,6 +51,6 @@ timeout 1h "$CLAUDE" -p --agent fundingWatcher --model sonnet \
   "Weekly prop-firm catalogue check, unattended from cron: nobody can answer, so never ask. \
 Follow .claude/agents/fundingWatcher.md step by step: run the refresh, research the rules that are \
 unknown, unconfirmed, in conflict or older than 28 days on the firms' own pages, edit \
-AlgoData/funding/rules/*.yaml, refresh again, and write audit/${TODAY}-fondeo.md in Spanish. Read \
+AlgoData/funding/rules/*.yaml, refresh again, and write $DATA/audit/${TODAY}-fondeo.md in Spanish. Read \
 public pages only — never log in, buy or submit anything — and never touch git or Python."
 echo "=== $(date -Is) weekly funding refresh end, exit $?"

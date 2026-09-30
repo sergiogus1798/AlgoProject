@@ -143,9 +143,10 @@ every study speaks · `sqx/` SQX surface · `studies/` every question asked of a
 WORKFLOW family · `engines/` what the studies compute with · `portfolio/` portfolios, and the trade-level
 Monte Carlo · `pipeline/` one mother in, one verdict out, unattended · `ledger/` the global search ledger
 and the frozen thresholds · `perf/` cost catalogue · `mt5/` MetaTrader 5 under Wine and its MCP server ·
-`assets/` cost overrides · `knowhow/` facts · `docs/` manual and owner's dossiers · `audit/` daily reports ·
+`assets/` cost overrides · `knowhow/` facts · `docs/` manual and owner's dossiers ·
 `tests/` golden and known-answer tests · `tools/` checks and generators · `bin/` worker scripts · `config/`
-machine settings (the real one is not in git) · `scratch/` throwaway, not in git.
+machine settings (the real one is not in git) · `scratch/` throwaway, not in git. The agents' daily and weekly
+reports (audit, fixes, fondeo, proyectos) live in `AlgoData/audit/` (`core.paths.AUDIT`), not in git.
 
 master `~/Desktop/SQX` (5050) · conductor `~/Desktop/SQX_w1` (5060) · custodian `~/Desktop/SQX_w2` (5070) ·
 data `~/Desktop/AlgoData` · machine-specific paths: `config/machine.yaml`.

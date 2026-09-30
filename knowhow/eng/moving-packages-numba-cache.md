@@ -4,7 +4,7 @@ tag: 🔬  date: 2026-09-25  see: eng/moving-module-into-layer, perf/numba-divis
 ---
 # Moving whole packages: clear `__pycache__`, and a path rewrite must not touch records or labels
 1. `git mv` of a directory moves the untracked `__pycache__` with it. Numba's `cache=True` files there (`.nbi`/`.nbc`) pickle the **old** module path, so the first call of a cached kernel imports a package that no longer exists. After any package move: `find . -name __pycache__ -prune -exec rm -rf {} +`.
-2. A path rewrite across the repo must skip what is a dated record — `audit/` reports and dated `docs/AgentPDFs/*-AAAA-MM-DD.md` — or history starts saying things that were not true on its date. Rewrite live docs; point old names to `docs/MAPA-DE-CARPETAS.md`.
+2. A path rewrite across the repo must skip what is a dated record — the audit reports (now `AlgoData/audit/`, out of git since 2026-09-30) and dated `docs/AgentPDFs/*-AAAA-MM-DD.md` — or history starts saying things that were not true on its date. Rewrite live docs; point old names to `docs/MAPA-DE-CARPETAS.md`.
 3. A string that merely **starts like** a folder is not a path: the daemon's HTTP routes (`"gate/harvests"` → `/api/gate/...`) and stored labels (`criterion: gate/<screen>` in the ledger) look exactly like `gate/…`. After a text rewrite, list every changed quoted string whose old value was not a file on disk and check it by hand (`git diff -M | grep '^-.*"gate/'`).
 
 ## Evidence

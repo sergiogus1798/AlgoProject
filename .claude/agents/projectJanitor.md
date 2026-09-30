@@ -44,7 +44,7 @@ is already parquet in `raw/`, `harvest/` and `reports/`.
    `python3 -c "from sqx.projects.sweep import dequeue; dequeue('<role>', '<P>')"`).
    If you retired nothing you held back, `python3 -m sqx.projects.retire --sweep --yes` does steps
    3 and the dequeue together.
-4. Write `audit/YYYY-MM-DD-proyectos.md` in Spanish: what was retired (install, name, tasks, MB,
+4. Write `AlgoData/audit/YYYY-MM-DD-proyectos.md` (`core.paths.AUDIT`) in Spanish: what was retired (install, name, tasks, MB,
    why), what was held back and why, the disk freed, and any `FAILED` line verbatim.
 
 ## Never

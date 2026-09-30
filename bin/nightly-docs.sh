@@ -51,8 +51,8 @@ timeout 2h "$CLAUDE" -p --agent documenter --model sonnet \
   --permission-mode acceptEdits --add-dir "$DATA" \
   --allowedTools=Bash,Read,Grep,Glob,Write,Edit \
   "Documentation drift pass, unattended from cron: nobody can answer, so never ask — decide, and \
-leave in OPEN.md what you could not resolve. Start from today's audit (audit/${TODAY}.md and \
-audit/${TODAY}-mechanical.md): repair every documentation finding in it, then check paths, \
+leave in OPEN.md what you could not resolve. Start from today's audit ($DATA/audit/${TODAY}.md and \
+$DATA/audit/${TODAY}-mechanical.md): repair every documentation finding in it, then check paths, \
 commands and claims in CLAUDE.md files, READMEs, knowhow/ and the manual chapters in AlgoData/manual-fuentes/ against what is on disk. \
 Documentation only: never edit code, never write under the data root, never run git add, commit, \
 checkout, stash or reset — leave your changes uncommitted. When done run python3 tools/checks.py. \

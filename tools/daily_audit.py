@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.paths import DATA, MASTER, ROOT
+from core.paths import AUDIT, DATA, MASTER, ROOT
 
 
 def run(*command: str) -> tuple[int, str]:
@@ -107,9 +107,10 @@ def main() -> None:
         lines += ["", "## test output", "", "```",
                   "\n".join(filter(None, [tests_out, sqx_out])), "```"]
 
-    out = ROOT / "audit" / f"{date.today().isoformat()}-mechanical.md"
+    AUDIT.mkdir(parents=True, exist_ok=True)
+    out = AUDIT / f"{date.today().isoformat()}-mechanical.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"wrote {out.relative_to(ROOT)}")
+    print(f"wrote {out}")
     sys.exit(1 if (checks_code or tests_code or sqx_code or depmap_code
                    or bad or no_manifest) else 0)
 

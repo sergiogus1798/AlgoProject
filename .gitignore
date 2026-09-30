@@ -11,6 +11,8 @@ config/machine.yaml
 
 # Throwaway work.
 scratch/
+# The agents' reports moved to AlgoData/audit/ (2026-09-30); never back into the repo.
+/audit/
 __pycache__/
 *.pyc
 .venv/

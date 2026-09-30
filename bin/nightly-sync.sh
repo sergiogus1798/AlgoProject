@@ -1,7 +1,7 @@
 #!/bin/bash
 # nightly-sync — the /sync skill, unattended, from cron.
 #
-# Runs after the nightly audit so its report goes up with everything else. The skill
+# Runs after the nightly audit, so the OPEN.md it touched goes up with everything else. The skill
 # already refuses data, machine.yaml and secrets, runs the checks before committing and
 # never force-pushes, merges or deletes. Unattended adds one rule: anything the skill
 # would ask the owner about is left uncommitted and written to the log instead.
