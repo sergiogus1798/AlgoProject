@@ -101,7 +101,8 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 84 | 🟡 | What the 2026-09-29 walk of the window left for the owner | OPEN.md |
 | 85 | 🟠 | Prop-firm funding workstream — built 2026-09-29, the owner's calls still open | OPEN.md |
 | 86 | 🟡 | Audit 2026-09-30: exports without manifest, a `migrate` code_version, two files over 250 lines | OPEN.md |
-| 87 | 🟠 | Portfolio construction engine — planned 2026-09-30, not built; the owner's calls gate each milestone | OPEN.md |
+| 87 | 🟠 | Portfolio construction engine — M0-M2, F1 and the F2 engine built 2026-09-30; the owner's calls gate each milestone | OPEN.md |
+| 88 | 🟠 | SQX's daily curve is each day's LOW equity, not a mark to market — readers that difference it | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -495,6 +496,20 @@ Hantec on XAUUSD until it is filled in the Activos zone.
 in the table); FundingPips' catalogue is typed and unconfirmed because its site blocks automated
 reading, which is not forced; codes of firms without a public check stay `unverified`.
 
+## 88. 🟠 SQX's daily curve is each day's LOW equity, not a mark to market — readers that difference it
+🔬 2026-09-30, portfolio engine wave 1: `dailyEquity.bin` (and every `equity.parquet` built from it)
+holds, per trading day on the feed's clock, the day's **lowest** equity — closed P&L plus open
+positions at their worst M1 wick. The M1 rebuild matches it on 100 % of 3,983 days of the archived
+USDJPY strategy (max 0.16 $); the MTM close matches 45 %. → `knowhow/sqx-format/daily-equity-bin.md`,
+golden `tests/test_portfolio_universe.py`.
+- **Affected, not changed (other workstreams):** anything that differences this curve as daily
+  P&L — the variant batches' `equity.parquet` read by the WFC and the CSCV (`engines/variants/`),
+  `studies/screening/snoopingScreen/`, `studies/closing/blindJoint/`, `studies/closing/exposure/`.
+  Their totals are right (the differences telescope); their day-by-day values, Sharpe and
+  correlations are low-to-low. Decide per study whether it matters; a daily MTM series needs trades
+  + M1 (`portfolio/common/construct/equity/`).
+- The portfolio engine already uses the curve only as a known answer, never as P&L.
+
 ## Constraints discovered while investigating
 
 - **SQX rewrites every `project.cfx` on save/exit.** All 14 project files were restamped within the
@@ -532,3 +547,17 @@ real → M9 paper OOS). Nothing is built. What each milestone waits on:
   decides, block length measured; the funded portfolio chosen by P(pass) inside the engine
   (`DECISIONS.md` #13, delegated to the session); OOS correlation is a verdict check, never a selector.
 - Index CFD M1 bars are not in `AlgoData/bars/`; the owner imports them when needed.
+- **Answered 2026-09-30 (second session):** Q1, Q2, Q4, Q6-Q9, Q12-Q15, Q17, `DECISIONS.md` #10,
+  encargo 33 §6.1-§6.3 — `portfolio/PLAN.md` §12 «Answered». Still open: Q10, Q11, Q16,
+  `DECISIONS.md` #2 (real side), #5, #12, encargo 33 §6.4 and §6.7. Hantec's server clock taken as
+  New York + 7 h, **unconfirmed** — read it from Hantec's MT5 terminal when the bridge is up.
+- **Built 2026-09-30: M0 code, M1, M2, F1** (`portfolio/PLAN.md` §9 status, chapters 77-78 in
+  `11-cartera.pdf`). Found on the way: SQX's daily curve is the day's LOW (#88); the tail filter is
+  biased −0.46 between independents and runs one-sided; only 75 % of independent pairs pass every
+  filter on a 10-year build (`knowhow/research/pair-filters-false-rejection.md`).
+- **F2 engine built** (chapter 79): stage A on 48 cores. Its first real run needs pool members that
+  carry the step-24 stop (SL = X·ATR(20), X = p90), archived as their own identity — none yet.
+- **Next: F3** (stage B: exact M1 joint intraday, T1/T2/D Monte Carlo, risk per phase) after a real F2 run.
+- **Development pool waits** for `Test_USDJPY_donchianUpperCrossUp_H1` (custodian, at 16.5 on
+  2026-09-30 11:20) to finish: no mother has oos2 trades yet. Then `candidates.py` lists the
+  archive commands and the owner archives.

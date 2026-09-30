@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 
-from perf.inputs import parsers, workloads
+from perf.inputs import construct, parsers, workloads
 
 # Adding a target is a function in workloads.py or parsers.py and one row here. Nothing
 # else changes: the harness, the history and the panel all read this dict. `unit` is what
@@ -24,6 +24,9 @@ TARGETS: dict[str, dict] = {
                           "call": workloads.snooping_superior},
     "feedquality.detect": {"area": "strategies", "unit": "bars",
                            "call": workloads.feedquality_detect},
+    "portfolio.universe_member": {"area": "portfolio", "unit": "trades",
+                                  "call": construct.universe_member},
+    "portfolio.pairs_table": {"area": "portfolio", "unit": "pairs", "call": construct.pairs_table},
     "core.trades_read": {"area": "core", "unit": "rows", "call": parsers.trades_read},
     "core.bars_read": {"area": "core", "unit": "bars", "call": parsers.bars_read},
     "core.ticks_read": {"area": "core", "unit": "ticks", "call": parsers.ticks_read},

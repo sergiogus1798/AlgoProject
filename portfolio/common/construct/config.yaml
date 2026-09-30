@@ -1,0 +1,45 @@
+# Every knob of the portfolio construction engine (portfolio/PLAN.md §5.7, answers in §12).
+# Correlation thresholds come from ledger/thresholds.yaml as ledger:<key>; a run that overrides
+# one (--set pairs.pearson=0.45) is relaxed, and says so on its first line.
+
+compute:                        # owner 2026-09-30: the portfolio engine gets the whole machine
+  max_ram_gb: 80                # every parallel stage sizes its workers to stay under this
+  worker_ram_gb: 1.5            # 🔬 1.15 GB per universe worker beyond the shared M1 bars (48 workers: 56 GB, 15 s)
+
+equity:
+  reference_clock: EET          # owner 2026-09-30, Q4: the shared universe's day
+  firm_clocks:                  # the funded objective's day: each firm's server midnight
+    ftmo: Europe/Prague         # confirmed: the CE(S)T day of its daily-loss rule
+    hantec: EETUS               # New York + 7 h, owner 2026-09-30 — UNCONFIRMED
+  unconfirmed_clocks: [hantec]
+  block_minutes: 5              # the search's joint intraday resolution (knowhow/perf/intraday-floating-resolution.md)
+  reconcile_max_trades: 3       # SQX's own noise floor, sqx/variants/curves.py PLAUSIBLE_TRADES
+  excursion_tolerance: 1.0      # account currency: a rebuilt MAE/MFE this close to SQX's counts as exact
+  excursion_min_share: 0.99     # share of trades exact on MAE and on MFE that licenses the rebuild
+
+pairs:
+  pearson: ledger:portfolio.pairs.pearson
+  spearman: ledger:portfolio.pairs.spearman
+  co_loss: ledger:portfolio.pairs.co_loss
+  tail: ledger:portfolio.pairs.tail
+  rolling_whole: ledger:portfolio.pairs.rolling_whole
+  rolling_recent: ledger:portfolio.pairs.rolling_recent
+  frequencies: [monthly, daily] # owner 2026-09-30, Q7: Pearson and Spearman at both, each must pass
+  sign: abs                     # owner 2026-09-30, Q6: |ρ| over the threshold rejects
+  one_sided: [tail, co_loss]    # owner 2026-09-30: only ρ > threshold — two independent series read tail ≈ −0.46 (Berkson)
+  tail_quantile: 0.30           # a month is a tail month when either is in its own worst 30 %
+  rolling_months: 60
+  recent_months: 36             # owner 2026-09-30, Q9: windows ending in the last 36 months of build
+  min_overlap_months: 24        # owner 2026-09-30, Q8: below it the pair is rejected
+  stress_quantile: 0.05         # owner 2026-09-30, Q15: the pool's worst 5 % of build days
+
+funded:                         # F2, the funded search's stage A (PLAN §14.3; owner 2026-09-30)
+  stop_percentile: ledger:portfolio.funded.stop_percentile   # the step-24 X that sizes every trade
+  risk_grid: [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]  # risk per trade, fraction of the INITIAL balance
+  horizon_days: 126             # a pass counts only within ~6 months of trading days of the purchase
+  min_lot: 0.01                 # a trade whose lot rounds below it cannot be placed: that risk level is infeasible
+
+search:                         # AlphaForge's GA defaults (PLAN §5.3), set_by AlphaForge until the owner moves them
+  seeds: 300
+  ga: {population: 300, generations: 100, elite: 0.20, tournament: 4, crossover: 0.80, mutation: 0.40, stagnation: 10}
+

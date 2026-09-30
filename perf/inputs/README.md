@@ -8,6 +8,7 @@ Configuration only. Nothing here times anything; `perf/measure/` does that.
 | `sample.py` | finds the real files a target runs on: newest export, fixed file order | imported | config → paths and bytes |
 | `targets.py` | the registry — one row per comparable number, with its area and its unit | imported | names → target entries |
 | `workloads.py` | the analysis work: Monte Carlo, retest read-back, cross-market kernel | imported | config → scale and bytes read |
+| `construct.py` | the portfolio engine's work: one archived strategy through the universe, and a 500-strategy pairs table on every core. ⚠ the universe reads each feed's time zone from the master's `data.db` read-only (`sqx.inspect.feeds`) — the one file of an install a target opens | imported | config → scale |
 | `parsers.py` | the reading work: trade CSVs, bars, `.sqx` XML and statistics | imported | config → scale and bytes read |
 
 **No target ever touches StrategyQuant X.** Every one of them reads files already exported

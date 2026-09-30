@@ -3,7 +3,8 @@ q: RAM budget SQX installs vs Python, -Xmx per install master W1 W2, jstat -gc l
 tag: 🔬  date: 2026-09-23  see: perf/server-cores-and-ram, perf/smt-in-sqx-retest
 ---
 # RAM budget: W2 -Xmx80g + all cores; size heaps from jstat's live set, not RSS
-Current (owner, 2026-09-23, PC-A): W2 `-Xmx80g`, `coreUsage -1`; Python reserve 20 GB; OS 10–12 GB. Master as viewer `-Xmx12g`
+Current (owner, 2026-09-23, PC-A): W2 `-Xmx80g`, `coreUsage -1`; Python reserve 20 GB; OS 10–12 GB. **Exception (owner,
+2026-09-30): the portfolio engine may take all cores and up to 80 GB** — so it runs when the custodian is idle. Master as viewer `-Xmx12g`
 fits beside a full W2; master generating at 24g does not (swap 4 GB, overflow is OOM-killed).
 Heap = 1.5 × live set (`OU + EU` from `jstat -gc`). Keep `-Xms` low (1g/2g) on workers. A Python reserve costs nothing until used;
 an `-Xmx` is spent once granted. Verify a heap figure on disk: `grep Xm <install>/*.config`.

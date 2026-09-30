@@ -37,7 +37,7 @@ what blocks it today. In short:
 | `assets/` | Per-asset costs, segments and ranges. Read with `python3 -m core.assets <SYMBOL>` before authoring anything |
 | `knowhow/` | The facts that cost time to discover, one card each, tagged tested / from logs / inferred |
 | `perf/` | The cost catalogue — what each expensive part takes in time, memory and disk |
-| `docs/` | The owner's manual (ten PDFs in `docs/manual/`), dossiers and encargos, the folder map and the generated dependency map |
+| `docs/` | The owner's manual (eleven PDFs in `docs/manual/`), dossiers and encargos, the folder map and the generated dependency map |
 | `tests/` · `tools/` · `bin/` · `config/` | Golden and known-answer tests · checks and generators · worker and scheduled-agent scripts · machine settings |
 
 Data never goes in this repository. It lives in the data root, `~/Desktop/AlgoData`, indexed by its

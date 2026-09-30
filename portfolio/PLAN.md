@@ -14,10 +14,10 @@ tested.
 
 | fact | source |
 |---|---|
-| 🔬 SQX already stores a **daily mark-to-market** equity per strategy (`dailyEquity.bin`), cumulative P&L in account currency; **day D holds the equity carried into D**; only the `Main` result matches net profit | `knowhow/sqx-format/daily-equity-bin.md`, parser `core/sqxstats.py` `equity()` |
+| 🔬 SQX stores per strategy each trading day's **lowest equity** (`dailyEquity.bin`: closed P&L + open positions at their worst M1 wick, cumulative, feed clock) — **not** a mark to market (corrected 2026-09-30: the M1 rebuild matches it on 100 % of 3,983 days, max 0.16 $); only the `Main` result matches net profit. A daily MTM P&L exists only from the rebuild | `knowhow/sqx-format/daily-equity-bin.md`, parser `core/sqxstats.py` `equity()` |
 | 🔬 The archive freezes that curve as `harvest/equity.parquet` (`day, identity, equity, sample`) and the trades as `harvest/trades.parquet` (orderstocsv schema + `identity, sample`) | `AlgoData/archive/4d679e…/2026-09-28T0919/harvest/`, `core/archive/README.md` |
 | 🔬 **The archive holds only `IS` and `OOS` (= `oos1`)** — the gate's cosecha. The one archived strategy: IS 2007-12-03…2017-12-28, OOS 2017-11-30…2022-12-29; **no `oos2` at all** | same parquet, read 2026-09-30 |
-| 🔬 A mother that reached step 16.5 has its **full-history daily P&L** (build, oos1, oos2) as column `P00000` of its variant batch's `equity.parquet`, 2007-12-03…2026-08-27 on USDJPY — but the archive does not freeze the batch | `AlgoData/strategyPermutations/<P>/<mother>/equity.parquet`, `knowhow/sqx-format/leg-curve-warmup.md` |
+| 🔬 A mother that reached step 16.5 has its **full-history daily-low curve** (build, oos1, oos2) as column `P00000` of its variant batch's `equity.parquet`, 2007-12-03…2026-08-27 on USDJPY — but the archive does not freeze the batch | `AlgoData/strategyPermutations/<P>/<mother>/equity.parquet`, `knowhow/sqx-format/leg-curve-warmup.md` |
 | 🔬 Every leg's curve opens ~2 months early with zero P&L, so legs overlap and dates repeat (41 duplicates in the batch above). Slice by `core.assetdata.window()`, never by the curve's own splits | `knowhow/sqx-format/leg-curve-warmup.md`, `core/assetdata.py:155` |
 | 🔬 Segments differ per asset: FX and XAUUSD build 2008-2017 / oos1 2018-2022 / oos2 2023-2026-08-30; indices build 2011-13…2019 / oos1 2020-2023 / oos2 2024-2026-08-31; BRENT, XAGUSD, SP500ft undecided | `assets/_policy.yaml` `segments:` |
 | 🔬 M1 bars: `AlgoData/bars/<feed>/M1.parquet`, read by `core.barstore.source(feed, columns)`; float64, indexed by bar-open time | `core/paths.py:184`, `core/barstore.py:65` |
@@ -35,7 +35,7 @@ tested.
 | 🔬 Long jobs go through `ui/daemon/jobs.py`: lane `python` (core-budgeted, refuses below 20 GB free RAM) or `conductor` (SQX) | `ui/daemon/jobs.py:25-30,88` |
 | 🔬 Python's RAM reserve is 20 GB; the worst catalogue target peaks 2.5 GB | `knowhow/perf/ram-budget.md` |
 | 🔬 `checks.py`: 250 lines per file, README table per folder, docstrings + type hints, no absolute path outside `core/paths.py`, every `__main__` named by a manual chapter, pinned requirements, fresh `DEPENDENCIES.md` | `CODESTYLE.md`, `tools/checks.py` |
-| 🔬 `docs/manual/` is ten PDFs, one per family (`tools/manual.py` `FAMILIES`); no family is about portfolios | `tools/manual.py:26` |
+| 🔬 `docs/manual/` was ten PDFs, one per family (`tools/manual.py` `FAMILIES`); the eleventh, «11-cartera», added 2026-09-30 (Q17) | `tools/manual.py:26` |
 | 🔬 AlphaForge filters with `abs(corr) <= threshold` — a strongly **negative** correlation is rejected too | AlphaForge `generator/filters.py:148,161,194` |
 | 🔬 AlphaForge's HRP writes each weight at the strategy's position in the dendrogram order and then zips with the names in the original order: weights land on the wrong strategies | AlphaForge `generator/weighting.py:189-193,247` |
 | 🔬 AlphaForge: <6 overlapping months → correlation and co-loss stored as `0.0` and the filter passes | AlphaForge `universe.py:123,169`, `filters.py:182,208` |
@@ -462,6 +462,17 @@ with `python3 tools/depmap.py && python3 tools/checks.py`. Chapter numbers are t
 | **M7** | the «Construir» tab and `ui/daemon/portfolios/`; screenshots | M5 | `71-app-portfolios` extended |
 | **M8** | more weight methods + AF `wf.py` walk-forward as the gate against equal | **`DECISIONS.md` #5** (rebalancing) | 79 (section) |
 
+**Status, 2026-09-30** (`portfolio/EXECUTION.md`):
+
+| # | status |
+|---|---|
+| M0 | ✅ code: `inputs/pool.py`, `inputs/source.py`, `candidates.py` (chapter 77). ⏳ the pool itself: waits for `Test_USDJPY_donchianUpperCrossUp_H1` to finish and for the owner to archive |
+| M1 | ✅ `equity/*` + `universe.py` (chapter 78): M1 rebuild licensed on the archived strategy (MAE 100 %, MFE 99.9 %, SQX's daily low 100 % of 3,983 days), EET daily matrix, firm-clock day tables and M5 blocks; parallel, 48 strategies in 15 s at 57 GB |
+| M2 | ✅ `pairs/*`, `search/admissible.py`, the screen in `universe.py`: 500 strategies' 124,750 pairs in 30 s on 48 cores, graph in 1 s |
+| F1 | ✅ `portfolio/funded/rules/`: 11 plans ≤ 10k, one-tick known answers, numba sweep = reference (2,500 × 2,500 in 3 ms) |
+| F2 | ✅ engine (chapter 79): fixed-risk sizing from the step-24 stop, stage-A objective on 48 cores (~1,500-1,860 combinations/s, 1.3 GB), greedy + GA, ledger rows (pool study + each member's), the command. ⏳ its first real run: no archived strategy carries the step-24 stop yet |
+| M3-M5, M8 | ⛔ Q10, Q11, Q16, `DECISIONS.md` #2 (real side), #5 |
+
 **The funded path (§14.5) runs F1-F5 after M0-M2 and before M3-M8** — the owner's priority is
 funded accounts first (2026-09-30).
 
@@ -586,6 +597,40 @@ eigenvalues, (b) K / (1 + (K−1)·mean ρ), (c) both reported. And is stress-da
 strategy), T2 (synchronised trade blocks) and D (joint-daily blocks) disagree: (a) the most
 pessimistic of the three; (b) T1 decides, T2 and D shown as warnings; (c) all three shown, the owner
 decides case by case.
+
+**Answered by the owner, 2026-09-30 (second session)** — each is now a rule, not a question:
+
+| Q | answer |
+|---|---|
+| Q1 | **One portfolio-wide calendar, cut at the latest segment end among the members** (build ends at the latest build end, oos1 and oos2 likewise); a member contributes its own other segment's days inside the portfolio's segment, and the result counts them. USDJPY + XAUUSD share one calendar, so today nothing moves |
+| Q2 | **Strategies of the recently run project that carry every segment, oos2 included**; if there are not enough, wait for that run to finish before testing on real data. 🔬 2026-09-30 11:20: `Test_USDJPY_donchianUpperCrossUp_H1` (15 mothers, on the custodian, at 16.5) — mothers have build+oos1 trades (`raw/…/CrossTF_Mothers`), full-history daily curves in 9 of 15 batches, **no oos2 trades yet**; `WFC_Build/OOS1/OOS2` hold 300 fabricated variants, none a mother. The engine is built and tested on synthetic data and the archived strategy meanwhile |
+| Q3-Q5 | funded side settled by §14.4; real side still open |
+| Q4 | shared universe: **one reference clock, EET** (NY-close server convention); the funded objective uses each firm's server day: FTMO `Europe/Prague` midnight (confirmed), **Hantec GMT+2 winter / GMT+3 summer, the standard MT5 NY-close clock = New York + 7 h — unconfirmed**, flagged in every result |
+| Q6 | **reject \|ρ\| > 0.30** (AlphaForge's reading; strong negative correlation rejected too) |
+| Q7 | **both monthly and daily**, each at 0.30; a pair must pass both |
+| Q8 | **24 overlapping months; below it the pair is rejected** (`insufficient` → not admissible, never 0.0) |
+| Q9 | **recent = the 60-month windows ending in the last 36 months of build** |
+| Q12 | **both**: a study `PORTFOLIO_<pool>_construct` (symbols joined, timeframe `mixed`) **and** one row in each member's study |
+| Q13 | **no new field: development = archived with `step` < 26**; the pool CSV's `development` column is filled from it, never by hand |
+| Q14 | **every archivable survivor of every step**, `candidates.py` prints the commands and the owner approves; the owner archives (no go-ahead for the session to archive) |
+| Q15 | stress days = **the worst 5 % of build days of the equal-weighted pool**; effective N **both formulas** (participation ratio and K/(1+(K−1)·mean ρ)), calm and stress; stress correlation **reported only, not a filter** |
+| Q17 | **an eleventh manual PDF, «Cartera»** (chapters 77 onward) |
+| `DECISIONS.md` #10 | **near-survivors enter, marked**; the result counts how many the portfolio chose |
+| encargo 33 §6.1 | unconfirmed catalogue rules: **use the catalogue's reading, flagged «sin confirmar» in every result** |
+| encargo 33 §6.2 | Friday close / no news: **the strategy is dropped from that plan's pool** (a trimmed strategy was never validated) |
+| encargo 33 §6.3 | **one risk per phase** (1, 2, 3, funded), a searched dimension counted in the ledger; unchanged after a payout |
+| rule machine (F1) | Hantec Express trailing max loss rises with the **intraday equity high** (floating included), locks at the starting balance at +6 % — unconfirmed, flagged; at daily resolution the day's high raises the floor **before** the day's low is checked (the conservative order). FTMO 1-step `eod_trailing` trails the **highest end-of-day balance** (closed) − 10 % of initial, capped at the initial — unconfirmed, flagged. A phase's target is met when the **closed balance at the day's end** ≥ target. «A day's profit» (profitable days, best-day and consistency rules) is the **closed P&L of the server day**; an FTMO trading day is a day with at least one position opened |
+| Q8 (rolling) | a pair with 24-59 shared months is judged **without the rolling filters** (no full 60-month window), and the result counts such pairs (`n_without_rolling`) |
+| tail sign | the tail filter is **one-sided** (reject only ρ > 0.30): two independent series read tail ≈ −0.46 by construction (`knowhow/research/pair-filters-false-rejection.md`) |
+| F2 unit of risk | ~~a fixed lot, equal build volatility~~ — **superseded the same day by the owner: trade at FIXED RISK, for funded and for everything.** Each trade risks r % of the **initial** balance over a stop of **X·ATR(20), X = the step-24 p90** (one rule for all, fixed before looking, `ledger:portfolio.funded.stop_percentile`). The funded member is the strategy **with that stop grafted** — its step-24 SQX retest over build/oos1/oos2, not the stopless original. 🔬 SQX already sizes every trade at $1,000 over 4·ATR(20) (`ATRRiskBasedSizingFixedRisk`), so a member's P&L at risk r is SQX's × (r·balance/1,000) × (4/X) — a constant per strategy; the 0.01-lot minimum is checked trade by trade |
+| F2 risk grid | **risk per trade 0.1 %…1.0 % of the initial balance, 10 levels**, every member at the same r (equal weight in R); the resulting daily volatility is reported |
+| F2 horizon | a pass counts only **within 126 trading days (~6 months)** of the purchase; still open then = not passed; start days are the build days with a full horizon after them |
+| F2 phases | stage A uses **one risk for every phase**; the ~50 finalists (stage B) sweep the risk per phase |
+| pairs unit | unchanged: SQX's P&L is already fixed-risk, and a constant factor per strategy does not move a correlation |
+| M0 survivors | **what the workflow carried forward is a candidate**: every mother with a 16.5 batch enters at step 16.5 whatever the earlier words said (the line shows them); `mcRetest` FAIL does not exclude; otherwise the word rules above |
+| FTMO 1-step | **no minimum trading days** (FTMO FAQ, confirmed 2026-09-30; the best-day rule sets the practical floor of 2) |
+
+Still open: Q10, Q11, Q16, `DECISIONS.md` #2 (real side), #5, #12, encargo 33 §6.4 and §6.7.
 
 Open decisions and where they block: `DECISIONS.md` #2 → M3 · #5 → M8 · #10 → M0 · #12 → M5 (words
 only) · #6 → encargo 33, feeds M6's file.

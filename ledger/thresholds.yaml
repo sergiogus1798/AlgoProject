@@ -750,3 +750,53 @@ thresholds:
     set_by: dueño
     set_on: 2026-09-29
     why: valor de partida aceptado — diferencia relativa del drawdown máximo
+
+  # ── Paso 27 · la cartera: filtros de parejas (portfolio/PLAN.md §5.2) ──────────────────
+  - key: portfolio.pairs.pearson
+    value: 0.30
+    source: portfolio/common/construct/config.yaml#pairs.pearson
+    set_by: dueño
+    set_on: 2026-09-29
+    why: todos los umbrales de correlación a 0,30 — Pearson de P&L (mensual y diario, cada uno), |ρ| > 0,30 rechaza la pareja
+
+  - key: portfolio.pairs.spearman
+    value: 0.30
+    source: portfolio/common/construct/config.yaml#pairs.spearman
+    set_by: dueño
+    set_on: 2026-09-29
+    why: todos los umbrales de correlación a 0,30 — Spearman de P&L (mensual y diario, cada uno), |ρ| > 0,30 rechaza la pareja
+
+  - key: portfolio.pairs.co_loss
+    value: 0.30
+    source: portfolio/common/construct/config.yaml#pairs.co_loss
+    set_by: dueño
+    set_on: 2026-09-29
+    why: todos los umbrales de correlación a 0,30 — fracción de meses solapados en que las dos pierden
+
+  - key: portfolio.pairs.tail
+    value: 0.30
+    source: portfolio/common/construct/config.yaml#pairs.tail
+    set_by: dueño
+    set_on: 2026-09-29
+    why: todos los umbrales de correlación a 0,30 — Pearson en los meses en que alguna está en su peor 30 %
+
+  - key: portfolio.pairs.rolling_whole
+    value: 0.30
+    source: portfolio/common/construct/config.yaml#pairs.rolling_whole
+    set_by: dueño
+    set_on: 2026-09-29
+    why: todos los umbrales de correlación a 0,30 — máximo de Pearson y Spearman en ventanas de 60 meses sobre todo el build
+
+  - key: portfolio.pairs.rolling_recent
+    value: 0.30
+    source: portfolio/common/construct/config.yaml#pairs.rolling_recent
+    set_by: dueño
+    set_on: 2026-09-29
+    why: todos los umbrales de correlación a 0,30 — el mismo máximo en las ventanas que terminan en los últimos 36 meses del build
+
+  - key: portfolio.funded.stop_percentile
+    value: 90
+    source: portfolio/common/construct/config.yaml#funded.stop_percentile
+    set_by: dueño
+    set_on: 2026-09-30
+    why: el stop con el que se opera es SL = X·ATR(20) del paso 24; X = p90 del MAE/ATR de las ganadoras de build, la misma regla para todas, fijada antes de mirar ninguna cartera

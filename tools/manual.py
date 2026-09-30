@@ -59,6 +59,8 @@ FAMILIES = {
     "10-cierre": ("El cierre: paso 20, exposición, stop y MetaTrader 5", [
         "56-paso-20", "38-exposicion", "54-atr-calculator", "60-mt5", "76-mt5-verificar",
         "75-filtro-noticias"]),
+    "11-cartera": ("Cartera: el pool, el universo, las parejas y la búsqueda de fondeo", [
+        "77-cartera-pool", "78-cartera-universo", "79-cartera-fondeo"]),
 }
 
 STYLE = """

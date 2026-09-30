@@ -57,6 +57,32 @@ inventing an answer. What is agreed so far:
   siblings alike — enter the pool and face the same correlation filter as any strategy. The owner
   expects parameter siblings to fail it (ρ ≥ 0.30) and crossTF siblings to be the ones worth a try.
 
+**Settled by the owner, 2026-09-30** (full table in `PLAN.md` §12 «Answered»): one portfolio-wide
+calendar cut at the latest segment end among members (Q1); shared-universe day in EET, funded
+objective on each firm's server day — FTMO `Europe/Prague`, Hantec New York + 7 h (unconfirmed)
+(Q4); reject |ρ| > 0.30, monthly **and** daily (Q6, Q7); 24 months of overlap or the pair is
+rejected (Q8); «recent» = windows ending in the last 36 months of build (Q9); ledger rows in a
+`PORTFOLIO_<pool>_construct` study **and** in each member's (Q12); development = archived with
+`step` < 26 (Q13); every archivable survivor, near-survivors included and marked (Q14,
+`DECISIONS.md` #10) — the owner archives; stress days = the pool's worst 5 % of build days,
+effective N by both formulas, stress correlation reported only (Q15); manual family «Cartera»
+(Q17). Funded rules: an unconfirmed catalogue rule is used as read and flagged; a firm's Friday
+close or news ban **drops** the strategy from that plan's pool; one risk per phase, searched.
+**The development pool waits for `Test_USDJPY_donchianUpperCrossUp_H1` to finish** (Q2): the
+engine is tested on synthetic data and the archived strategy until then.
+
+**The engine gets the whole machine** (owner, 2026-09-30): every stage uses all the physical cores
+(48 — SMT does not pay, `core/fanout.py`) and sizes its workers to stay **under 80 GB**
+(`config.yaml compute:`). That is more than the 20 GB Python reserve of the RAM split
+(`knowhow/perf/ram-budget.md`): a portfolio run and a custodian job (80 GB heap) do not fit
+together — run the engine when the custodian is idle. Every new stage is built for speed first:
+fork-shared inputs, workers that return megabytes and never minute paths, numba where a loop
+repeats; measure it (`python3 -m perf.catalogue --only portfolio.<target>`).
+
+**Built 2026-09-30 (this session): M0 code, M1, M2, F1, F2 engine** — status per milestone in `PLAN.md` §9.
+**Funded members trade at fixed risk** (owner, 2026-09-30): r % of the initial balance per trade over
+the step-24 stop X·ATR(20), X = p90; the member is the strategy with that stop grafted.
+
 **Only validated strategies enter** (owner, 2026-09-29): a strategy that passed steps 1-25 and
 whose MT5 backtest on a prop firm's feed matched SQX's (step 26, encargo 34) joins that firm's
 **validated pool**, and the portfolio reads only from it. `oos2` is spent by then.
@@ -66,7 +92,7 @@ whose MT5 backtest on a prop firm's feed matched SQX's (step 26, encargo 34) joi
 asset card of that day and the ledger count (N strategies tried) that deflates its Sharpe. The
 window's PORTFOLIOS zone lists it and «Importar» shows it as the Estrategia page, read from the
 archive with nothing recomputed (`ui/desktop/portfolios/`). Importing from a live databank waits
-for the owner. The portfolio maths itself is not built yet.
+for the owner. The portfolio maths is being built: `common/construct/` (PLAN, EXECUTION).
 
 A funded account's rules split in two (owner, 2026-09-29): what a firm **forbids outright** (holding
 over the weekend, trading news windows…) removes strategies from that firm's pool **before** the

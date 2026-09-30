@@ -59,7 +59,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
    sweeps what was forgotten every Monday at 03:00 (`sqx/projects/sweep.py`).
 7. **Heavy data goes to the data root** (`~/Desktop/AlgoData`). Never write data into the repo.
 8. **A new command ships with its manual chapter, in the same task — and the owner reads only PDFs.**
-   `docs/manual/` holds ten PDFs, one per workflow family, and nothing else: **no `.md`, no images**
+   `docs/manual/` holds eleven PDFs, one per workflow family, and nothing else: **no `.md`, no images**
    (owner, 2026-09-26). The chapters and their screenshots live in `AlgoData/manual-fuentes/`
    (`core.paths.MANUAL_SRC`): copy `_PLANTILLA.md` there to `NN-<name>.md`, in Spanish, screenshots of
    real output in its `assets/`, add the stem to a family in `tools/manual.py`, and rerun `python3
