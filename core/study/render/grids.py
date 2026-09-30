@@ -34,6 +34,10 @@ def _levels(b: dict) -> list[float]:
 def grid(b: dict) -> str:
     """One cell per (row, col), filled by its step on a discrete scale, its label written in, θ₀ outlined."""
     rows, cols = b["rows"], b["cols"]
+    if not rows or not cols:
+        # The window says so for an empty map (`ui/desktop/blocks/grid.py`); the page raised
+        # on max() of nothing: blindJoint with no complete mother, 2026-09-29.
+        return '<p class="muted">(vacía: el estudio no dejó ninguna celda aquí)</p>'
     cut = _levels(b)
     colours = DIVERGING if b["scale"] == "diverging" else SEQUENTIAL
     # Room for the longest row label, at the tick font's ~6.5 px per character.

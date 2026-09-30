@@ -142,6 +142,6 @@ def mc_pending(data: dict) -> list[str]:
     """
     # Imported here and not at the top: assetcheck is the pure-file half and assetdata reads
     # the policy, so importing it up here would make the two modules circular.
-    from core.assetdata import mc_retest
+    from core.assetranges import mc_retest
 
     return [k for k, v in mc_retest(data).items() if v["min"] is None or v["max"] is None]

@@ -16,7 +16,7 @@
 # y pedirle 30 operaciones es bastante más duro que pedírselas a los 10 años de `build`.
 # El informe dice cuántos puntos cayó cada suelo; si el segundo se come el lote, bájalo
 # aquí y no toques el duro.
-min_trades: 30
+min_trades: 50
 
 # ─── La composición del corte ─────────────────────────────────────────────────────────
 # Dueño, 2026-09-27 (encargo 24, Q11): `build` va SIEMPRE dentro de muestra; dentro es

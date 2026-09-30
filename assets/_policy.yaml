@@ -33,13 +33,15 @@ segments_default:
     spread: oos
   oos2:
     purpose: >-
-      RESERVADO para Walk Forward Correlation, las superficies por mercado (paso 18.5) y Walk
-      Forward Matrix, que son las últimas pruebas, y para el stop loss ATR del paso 24, que se
-      corre sobre la superviviente (dueño, 2026-09-26, los dos añadidos). No usar antes: cada
-      mirada a este tramo lo gasta.
+      El último tramo fuera de muestra. Lo usan Walk Forward Correlation, CSCV, las superficies
+      por mercado (paso 18.5), Walk Forward Matrix y el stop loss ATR del paso 24. Un humano
+      puede mirarlo cuando quiera (dueño, 2026-09-28): la reserva de abajo sólo ata a un agente
+      autónomo que decida solo (ALGO_AUTONOMOUS=1), y si eso debe seguir así está por discutir.
     spread: oos
     # CSCV añadido por el dueño el 2026-09-27 (encargo 24, Q11): el CSCV tiene que ver
     # build+oos1+oos2, y apunta en el Ledger un renglón por tramo que lee.
+    # Desde el 2026-09-28 esta lista sólo obliga a un agente autónomo (`core.assetdata.enforced`);
+    # el ledger sigue contando cada mirada, sea de quien sea.
     reserved_for: [WFC, CSCV, MarketSurfaces, WFM, ATRStop]
 
 segments:

@@ -27,6 +27,8 @@ live deeper add the root to `sys.path` in their first lines.
 | `exportdrv.py` | The three exports SQX offers: trades, databank metrics, bars | request → files |
 | `manifest.py` | Write and read the `manifest.json` every export must carry | facts → JSON |
 | `assetdata.py` | What `assets/` declares: costs and windows resolved against the shared policy | symbol → dict |
+| `assetranges.py` | The MC Retest spread and slippage ranges of one asset in SQX's points: a bound the asset declares as written, a null one as `_policy.yaml`'s default multiple of the cost the backtest runs at, with the source said | asset dict → {spread, slippage: {min, max, source}} |
+| `assetoverride.py` | Temporary, one-run overrides of the build doctrine `assetdata.doctrine()` reads — a run-wide precision or MC Retest count for one project, by an env var, never a `_build.yaml` edit | env var → doctrine tree |
 | `assetcheck.py` | What is missing or wrong about an asset: undecided values, and windows the data cannot fill | dict → problems |
 | `assetyaml.py` | The `assets/` YAML files read and written without losing a comment: the round trip, and every editable value of a file with what the file itself says about it | file → leaves |
 | `assetwrite.py` | The only writer of `assets/`: one value, one cost with its `why`, or a whole asset into the library or onto the retired shelf | change → file |

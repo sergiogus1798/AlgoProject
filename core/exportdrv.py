@@ -30,8 +30,15 @@ def trades(source: Path, out_dir: Path, data: str = "main") -> str:
     worker.require_posix()
     out_dir.mkdir(parents=True, exist_ok=True)
     cmd = ["-tools", "action=orderstocsv", f"file={source}", f"output={out_dir}", f"data={data}"]
-    return subprocess.run([str(WORKER_SH), "run", *cmd],
-                          capture_output=True, text=True, check=True).stdout
+    got = subprocess.run([str(WORKER_SH), "run", *cmd], capture_output=True, text=True)
+    if got.returncode:
+        # SQX says why on stdout («No plugin loader was able to recognize file …»); a bare
+        # CalledProcessError swallowed it and every failed export read the same.
+        said = [line for line in (got.stdout + got.stderr).splitlines()
+                if "rror" in line or "xception" in line][-5:]
+        raise RuntimeError(f"orderstocsv salió con {got.returncode} sobre {source}: "
+                           + (" | ".join(said) or (got.stderr or got.stdout).strip()[-800:]))
+    return got.stdout
 
 
 def symbols() -> str:
@@ -143,5 +150,5 @@ def metrics(source: Path, view: str, out: Path) -> int:
     seen = worker.wait_ready(STAGING_PROJECT, STAGING_DATABANK)
     worker.call(f"-databank action=export project={STAGING_PROJECT} "
                 f"name={STAGING_DATABANK} file={out} view={prepared}")
-    worker.stop()
+    worker.stop(export=False)
     return seen

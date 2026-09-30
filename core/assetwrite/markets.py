@@ -8,6 +8,31 @@ from core.assetyaml import read, write
 from core.paths import ASSETS
 
 
+def declare_main(symbol: str, sqx_symbol: str) -> dict:
+    """Give an asset its own Cross Market block, empty, if it does not have one yet.
+
+    Owner, 2026-09-29 (feedback §1.7): every asset with a card is a main, not only the ones
+    someone got around to declaring — the warning was noise, not a finding. `timeframe`
+    starts `null`: it is genuinely per-run (which template built it), so it is filled the
+    day this asset's Cross Market retest actually configures one, never guessed here.
+
+    Args:
+        symbol: The asset, as `assets/symbols/<symbol>.yaml` names it.
+        sqx_symbol: Its `sqx_symbol`, to declare as `main`.
+
+    Returns:
+        Its block: the existing one, untouched, or the new empty one.
+    """
+    path = ASSETS / MARKETS
+    doc = read(path)
+    if symbol not in doc:
+        block = CommentedMap({"main": sqx_symbol, "timeframe": None,
+                              "categories": CommentedMap({"family": [], "structural": []})})
+        doc[symbol] = block
+        write(path, doc)
+    return doc[symbol]
+
+
 def set_market(symbol: str, category: str, feeds: list[dict]) -> dict:
     """Make one category of one asset's Cross Market check hold exactly these markets.
 

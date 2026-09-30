@@ -12,7 +12,7 @@ from ruamel.yaml.comments import CommentedMap
 
 from core.assetdata import BUILD, CLASSES, MARKETS, POLICY, SYMBOLS, classes
 from core.assetwrite.brokers import set_brokers   # noqa: F401  (re-exported)
-from core.assetwrite.markets import flow, set_market   # noqa: F401  (re-exported)
+from core.assetwrite.markets import declare_main, flow, set_market   # noqa: F401  (re-exported)
 from core.assetyaml import read, write
 from core.paths import ASSETS
 

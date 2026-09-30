@@ -24,6 +24,7 @@ psutil==7.2.2
 # The desktop app (ui/). Qt for the window, FastAPI+uvicorn for the local daemon,
 # httpx for the one hop between them.
 PySide6==6.8.1
+shiboken6==6.8.1
 fastapi==0.121.2
 pydantic==2.13.5
 starlette==0.49.1

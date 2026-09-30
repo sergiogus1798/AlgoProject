@@ -7,6 +7,7 @@ from pathlib import Path
 
 import yaml
 
+from core import assetoverride
 from core.paths import ASSETS
 
 POLICY, CLASSES, MARKETS = "_policy.yaml", "_classes.yaml", "_markets.yaml"
@@ -58,8 +59,22 @@ def classes() -> dict:
 
 
 def doctrine() -> dict:
-    """The build doctrine: rule complexity, order types, exits, sizing, hours, cross-checks."""
-    return _read(BUILD)
+    """The build doctrine: rule complexity, order types, exits, sizing, hours, cross-checks.
+
+    `assetoverride.PRECISION` and `.MC_SIMULATIONS` (unset by default) replace every
+    `precision` or `simulations` the doctrine carries, wherever it nests one — the build's
+    own, `crosschecks.precision` (the builder's `RetestWithHigherPrecision`), every retest's,
+    each MC Retest task's and SPP task's own. Set for one configurator's process only, to
+    apply a temporary run-wide setting to one project without touching `_build.yaml`.
+    """
+    d = _read(BUILD)
+    precision = os.environ.get(assetoverride.PRECISION)
+    if precision:
+        d = assetoverride.replace(d, "precision", int(precision))
+    simulations = os.environ.get(assetoverride.MC_SIMULATIONS)
+    if simulations:
+        d = assetoverride.replace(d, "simulations", int(simulations))
+    return d
 
 
 def symbols() -> list[str]:
@@ -201,41 +216,6 @@ def sqx_settings(data: dict, segment: str) -> dict:
             "commission": {"method": commission["method"], "value": commission["value"]},
             "swap": {"type": s["swap"]["sqx_type"], "long": use("swap_long"),
                      "short": use("swap_short"), **data["swap"]}}
-
-
-def mc_retest(data: dict, segment: str = "build") -> dict:
-    """The spread and slippage ranges the MC Retest task must randomise within.
-
-    Args:
-        data: One asset as load() returned it.
-        segment: Which segment's costs the default multiples are read against — the one the
-            MC Retest tasks run on.
-
-    Returns:
-        {"spread": {"min", "max", "source"}, ...} in points. A bound the asset declares is
-        used as written; a null one falls back to `mc_retest.default_multiples` of
-        `_policy.yaml` times the cost the backtest itself runs at, and `source` says which
-        of the two it was.
-
-    Absolute points is the only unit SQX accepts, so a multiple is resolved here rather than
-    stored: a range is only meaningful at the instrument's own scale, and SQX's factory
-    1.0-5.0 is between 1 and 5 points on an instrument whose spread is 1100.
-    """
-    policy = _read(POLICY)["mc_retest"]["default_multiples"]
-    costs = {"spread": sqx_settings(data, segment)["defaultSpread"],
-             "slippage": sqx_settings(data, segment)["defaultSlippage"]}
-    out = {}
-    for name, span in data["mc_retest"].items():
-        if span["min"] is not None and span["max"] is not None:
-            out[name] = {**{k: span[k] for k in ("min", "max")}, "source": "declarado"}
-            continue
-        factor, cost = policy.get(name), costs.get(name)
-        if factor is None or cost is None:
-            out[name] = {"min": span["min"], "max": span["max"], "source": "sin decidir"}
-            continue
-        out[name] = {"min": round(factor["min"] * cost, 6), "max": round(factor["max"] * cost, 6),
-                     "source": f"{factor['min']}x-{factor['max']}x el {name} de `{segment}`"}
-    return out
 
 
 def markets(symbol: str) -> dict:

@@ -24,6 +24,7 @@ UI_PORT = _CFG.get("ui_port", 8765)
 # installed; its tester reports and exports go under the data root, never into the prefix.
 MT5_PREFIX = Path(_CFG.get("mt5_prefix", "~/Desktop/MT5")).expanduser()
 MT5_DATA = DATA / "mt5"
+MT5_ACCOUNTS = _CFG.get("mt5_accounts") or {}   # {firm: {login, server}}; the terminal keeps the passwords
 CLAUDE_BIN = Path(_CFG.get("claude_bin") or max(  # «Crear la plantilla con Claude»; else VS Code's
     Path("~/.vscode/extensions").expanduser().glob("anthropic.claude-code-*/resources/native-binary/claude"), default="claude")).expanduser()
 STRATEGY_POOLS = {name: Path(p).expanduser()
