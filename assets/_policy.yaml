@@ -37,7 +37,8 @@ segments_default:
       por mercado (paso 18.5), Walk Forward Matrix y el stop loss ATR del paso 24. Un humano
       puede mirarlo cuando quiera (dueño, 2026-09-28): la reserva de abajo sólo ata a un agente
       autónomo que decida solo (ALGO_AUTONOMOUS=1), y si eso debe seguir así está por discutir.
-    spread: oos
+    # Su propio spread y slippage en TODOS los activos (dueño, 2026-09-30): IS, OOS1 y OOS2.
+    spread: oos2
     # CSCV añadido por el dueño el 2026-09-27 (encargo 24, Q11): el CSCV tiene que ver
     # build+oos1+oos2, y apunta en el Ledger un renglón por tramo que lee.
     # Desde el 2026-09-28 esta lista sólo obliga a un agente autónomo (`core.assetdata.enforced`);
@@ -45,58 +46,59 @@ segments_default:
     reserved_for: [WFC, CSCV, MarketSurfaces, WFM, ATRStop]
 
 segments:
-  BRENT:
-    data: {from: 2013-01-01, to: 2026-09-24}   # BRENTCMDUSD_ftmo, 4.121.895 barras M1
-    build: {from: null, to: null}
-    oos1: {from: null, to: null}
-    oos2: {from: null, to: null}
+  UKOIL:
+    data: {from: 2013-01-01, to: 2026-09-24}   # UKOIL.cash_M1, 4.121.895 barras M1
+    # Dueño, 2026-10-01: los tramos de los índices (los datos empiezan en 2013).
+    build: {from: 2013, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   AUDJPY:
-    data: {from: 2003-12-01, to: 2026-09-25}   # AUDJPY_DukasM1_the5ers, 8.533.415 barras M1
+    data: {from: 2003-12-01, to: 2026-10-01}   # AUDJPY_M1, 8.539.264 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   AUDUSD:
-    data: {from: 2003-08-04, to: 2026-09-25}   # AUDUSD_DukasM1_the5ers, 8.504.721 barras M1
+    data: {from: 2003-08-04, to: 2026-10-01}   # AUDUSD_M1, 8.510.802 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   CADJPY:
-    data: {from: 2004-10-25, to: 2026-09-25}   # CADJPY_DukasM1_the5ers, 7.896.704 barras M1
+    data: {from: 2004-10-25, to: 2026-10-01}   # CADJPY_M1, 7.902.568 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   DAX40:
-    data: {from: 2013-09-30, to: 2026-09-25}   # DAX40_DukasM1_Infinox, 3.911.957 barras M1
+    data: {from: 2013-09-30, to: 2026-10-01}   # DAX40_M1, 3.918.005 barras M1
     build: {from: 2013-09-30, to: 2019}
     oos1: {from: 2020, to: 2023}
     oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   DJ30:
-    data: {from: 2013-09-30, to: 2026-09-25}   # DJ30_DukasM1_Infinox, 3.999.606 barras M1
+    data: {from: 2013-09-30, to: 2026-10-01}   # DJ30_M1, 4.005.747 barras M1
     build: {from: 2013-09-30, to: 2019}
     oos1: {from: 2020, to: 2023}
     oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   EURJPY:
-    data: {from: 2003-08-04, to: 2026-09-25}   # EURJPY_DukasM1_the5ers, 8.654.801 barras M1
+    data: {from: 2003-08-04, to: 2026-10-01}   # EURJPY_M1, 8.660.771 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   EURUSD:
-    data: {from: 2003-05-05, to: 2026-09-25}   # EURUSD_DukasM1_the5ers, 8.741.866 barras M1
+    data: {from: 2003-05-05, to: 2026-10-01}   # EURUSD_M1, 8.748.070 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   GBPJPY:
-    data: {from: 2003-08-04, to: 2026-09-25}   # GBPJPY_DukasM1_the5ers, 8.652.803 barras M1
+    data: {from: 2003-08-04, to: 2026-10-01}   # GBPJPY_M1, 8.658.651 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   GBPUSD:
-    data: {from: 2003-05-05, to: 2026-09-25}   # GBPUSD_DukasM1_the5ers, 8.738.737 barras M1
+    data: {from: 2003-05-05, to: 2026-10-01}   # GBPUSD_M1, 8.744.705 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   NIKKEI225:
-    data: {from: 2011-09-19, to: 2026-09-25}   # NIKKEI225_DukasM1_Infinox, 4.082.974 barras M1
+    data: {from: 2011-09-19, to: 2026-10-01}   # NIKKEI225_M1, 4.088.726 barras M1
     build: {from: 2011-09-19, to: 2019}
     oos1: {from: 2020, to: 2023}
     oos2: {from: 2024, to: 2026-08-31, spread: oos2}
@@ -106,40 +108,46 @@ segments:
     oos1: {from: null, to: null}
     oos2: {from: null, to: null}
   XAGUSD:
-    data: {from: 2003-08-08, to: 2026-09-25}   # XAGUSD_DukasM1_Infinox, 7.278.583 barras M1
-    build: {from: null, to: null}
-    oos1: {from: null, to: null}
-    oos2: {from: null, to: null}
+    data: {from: 2003-08-08, to: 2026-09-30}   # XAGUSD_M1, 7.283.102 barras M1
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30, spread: oos2}
   USA500:
-    data: {from: 2012-01-19, to: 2026-09-25}   # USA500_DukasM1_Infinox, 4.051.618 barras M1
+    data: {from: 2012-01-19, to: 2026-10-01}   # USA500_M1, 4.058.139 barras M1
     build: {from: 2012-01-19, to: 2019}
     oos1: {from: 2020, to: 2023}
     oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   USATEC:
-    data: {from: 2012-01-19, to: 2026-09-25}   # USATEC_DukasM1_Infinox, 4.213.892 barras M1
+    data: {from: 2012-01-19, to: 2026-10-01}   # USATEC_M1, 4.220.398 barras M1
     build: {from: 2012-01-19, to: 2019}
     oos1: {from: 2020, to: 2023}
     oos2: {from: 2024, to: 2026-08-31, spread: oos2}
   USDCAD:
-    data: {from: 2003-08-04, to: 2026-09-25}   # USDCAD_DukasM1_the5ers, 8.628.639 barras M1
+    data: {from: 2003-08-04, to: 2026-10-01}   # USDCAD_M1, 8.634.556 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   USDCHF:
-    data: {from: 2003-05-05, to: 2026-09-25}   # USDCHF_DukasM1_the5ers, 8.717.915 barras M1
+    data: {from: 2003-05-05, to: 2026-10-01}   # USDCHF_M1, 8.723.882 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   USDJPY:
-    data: {from: 2003-05-05, to: 2026-09-25}   # USDJPY_DukasM1_the5ers, 8.738.610 barras M1
+    data: {from: 2003-05-05, to: 2026-10-01}   # USDJPY_M1, 8.744.464 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30}
   XAUUSD:
-    data: {from: 2003-05-05, to: 2026-09-25}   # XAUUSD_DukasM1_Infinox, 7.953.422 barras M1
+    data: {from: 2003-05-05, to: 2026-09-30}   # XAUUSD_M1, 7.958.218 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-08-30, spread: oos2}
+  USOIL:
+    data: {from: 2013-01-01, to: 2026-10-01}   # USOIL.cash_M1, 4.464.116 barras M1
+    # Dueño, 2026-10-01: los tramos de los índices (los datos empiezan en 2013).
+    build: {from: 2013, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
 
 # ─── Convenciones de swap ──────────────────────────────────────────────────────────────
 # Las lleva el atributo <Swap> de cada InstrumentInfo. Son iguales en los 142 instrumentos

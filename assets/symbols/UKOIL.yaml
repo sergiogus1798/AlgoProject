@@ -1,0 +1,163 @@
+# UKOIL — Brent, con el nombre de FTMO en MT5 (UKOIL.cash). Hasta el 2026-10-01 se llamaba BRENT.
+#   · el esquema de sus costes, sus unidades y los ajustes de SQX → `../_classes.yaml`, clase `no_forex`
+#   · los segmentos temporales y las convenciones de swap        → `../_policy.yaml`
+#   · los mercados donde se retestea su edge                     → `../_markets.yaml`
+#
+# ESTE ACTIVO EXISTE HOY SÓLO COMO MERCADO DE CROSS-CHECK DE XAUUSD, no como activo main.
+# `session: null` a propósito: el <Setup> del mercado extra lleva `session="No Session"` y
+# hereda la del test principal. Construir SOBRE brent exigiría decidir su sesión primero.
+symbol: UKOIL
+class: no_forex
+broker: ftmo
+sqx_symbol: UKOIL.cash_M1
+feeds:
+  - UKOIL.cash_M1
+verified: 2026-09-23
+
+session: null
+
+# Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano.
+instrument:
+  tick_size: 0.001
+  point_value: 100             # $ por 1.0 de precio y 1.0 de lote
+  min_distance: 10             # SQX lleva minDistance 0.0; el <Setup> del cross-check escribe 10
+
+costs:
+  spread_is:
+    use: 90.0                # points — tramo `build`
+    sqx_now: 32.0            # points, el unico que hay hoy
+    why: "2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de UKOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 72.0 puntos en sep-2026 (21.0 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El Brent no tiene ticks de Darwinex; 2013-2024 no está medido."
+  spread_oos:
+    use: 90.0                # points — tramos `oos1` y `oos2`
+    sqx_now: 32.0            # points, el unico que hay hoy
+    why: "2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de UKOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 72.0 puntos en sep-2026 (21.0 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El Brent no tiene ticks de Darwinex; 2013-2024 no está medido."
+  spread_oos2:
+    use: 90.0
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de UKOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 72.0 puntos en sep-2026 (21.0 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El Brent no tiene ticks de Darwinex; 2013-2024 no está medido.'
+  commission:
+    use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
+      build:
+        method: SizeBased
+        value: 1.0
+      oos1:
+        method: SizeBased
+        value: 1.0
+      oos2:
+        method: SizeBased
+        value: 1.0
+    sqx_now: {method: SizeBased, value: 0.00}   # $ por lote
+    why: "2026-09-29 — decisión del dueño: en el Brent el workflow de SQX (build y cada retest) usa la comisión de Hantec, 1 USD por lote ida y vuelta (SizeBased), en los tres tramos. Es la más cara de sus brokers en el crudo (Infinox 1 $/lote, Darwinex 0,005 % ≈ 0,5 $/lote a 100 $, FTMO 0); el 0,005 % de Darwinex que usan oro y plata cobraría aquí la mitad."
+    brokers:
+      ftmo:
+        method: SizeBased
+        value: 0.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29 (Brent)
+        date: '2026-09-29'
+        confirmed: true
+        pct_now: 0.0
+        price_now: 100.044
+        price_date: '2026-09-21'
+      darwinex:
+        method: PercentageBased
+        value: 0.005
+        unit: pct_of_notional
+        source: dueño, 2026-09-29
+        date: '2026-09-29'
+        confirmed: true
+        note: confirmado por el dueño para metales/crudo (encargo 2026-09-29), ya no ambiguo entre forex y commodities
+        pct_now: 0.005
+        price_now: 100.044
+        price_date: '2026-09-21'
+      infinox:
+        method: SizeBased
+        value: 1.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29 (Brent)
+        date: '2026-09-29'
+        confirmed: true
+        pct_now: 0.009996
+        price_now: 100.044
+        price_date: '2026-09-21'
+      hantec:
+        method: SizeBased
+        value: 1.0
+        unit: usd_per_lot
+        source: dueño, 2026-09-29 (Brent)
+        date: '2026-09-29'
+        confirmed: true
+        pct_now: 0.009996
+        price_now: 100.044
+        price_date: '2026-09-21'
+      the5ers:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: sin cifra propia
+      fundednext:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: página propia confirmada no cubre energías
+      fundingpips:
+        method: null
+        value: null
+        unit: null
+        source: null
+        date: '2026-09-29'
+        confirmed: false
+        note: agregadores dicen sin comisión en energías; 403 en el fetch propio
+  slippage_is:
+    use: 45.0                # points — tramo `build`
+    sqx_now: 0.0
+    why: "2026-10-01 — decisión del dueño: la mitad del spread de su tramo (90.0), default del dueño."
+  slippage_oos:
+    use: 45.0                # points — tramos `oos1` y `oos2`
+    sqx_now: 0.0
+    why: "2026-10-01 — decisión del dueño: la mitad del spread de su tramo (90.0), default del dueño."
+  slippage_oos2:
+    use: 45.0
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: la mitad del spread de su tramo (90.0), default del dueño.'
+  swap_long:
+    use: 0.0                 # % ANUAL (SQX divide /100 y /360)
+    sqx_now: {type: points, value: 0.03}
+    why: "2026-10-01 — decisión del dueño: el lado que hoy COBRA swap va a 0 en el crudo. El peor caso de FTMO y Hantec daba +20.41 % anual a favor del largo por la backwardation de hoy, y aplicado a toda la historia desde 2013 regalaba ese carry a cualquier largo. El lado que paga (swap_short) no cambia. Si `studies.data.spread.fundedswap.worst()` se vuelve a correr, un lado positivo se escribe 0."
+  swap_short:
+    use: -257.09             # % ANUAL (SQX divide /100 y /360)
+    sqx_now: {type: points, value: -25.76}
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO 61.03/-275.55, Hantec 15.01/-72.45); este lado sale de hantec. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos y con el roll del futuro; `studies.data.spread.fundedswap.worst()` lo recalcula."
+
+notes:
+  - "2026-09-23: fichero creado para que XAUUSD pueda escribir su cross-check de mercados adicionales, que se negaba porque ningun fichero declaraba el feed UKOIL.cash_M1. Costes del maestro, con las conversiones de unidad de la clase no_forex hechas al ultimo cierre real. Nada pactado con FTMO."
+  - "2026-09-23: el triple swap de este feed cae en VIERNES (tripleSwapOn=FRIDAY), no en miercoles como los otros dieciseis. `../_policy.yaml` lo fija en WEDNESDAY para TODOS y no tiene override por activo, asi que el <Setup> del cross-check salia con el miercoles y el coste de financiacion caia la noche equivocada. Se corrige con el bloque `swap:` de abajo: `load()` hace {**politica, **activo}, asi que un `swap:` propio pisa el global entero — por eso hay que repetir tambien `rollout_hour`. Verificado en el <Setup> escrito."
+  - "2026-09-27: el dueño fija el triple swap en VIERNES solo para los índices y en MIÉRCOLES para todo lo demás, Brent incluido: se quita el bloque `swap:` propio y hereda el miércoles de `../_policy.yaml`, aunque el feed de FTMO lleve FRIDAY."
+
+mc_retest:
+  spread:
+    min: 84.5
+    max: 94.12
+    sqx_now: {min: 1, max: 5}
+  slippage:
+    min: 42.25
+    max: 47.06
+    sqx_now: {min: 0, max: 5}
+
+projects_using_it:
+  - XAUUSD
+mt5:
+  ftmo: UKOIL.cash
+  hantec: UKOIL.h
+# Punto de MT5 en cada empresa, leído de su servidor el 2026-10-01 (mt5.live 'symbol').
+# Spread de MT5 × to_sqx = puntos de SQX (to_sqx = point ÷ instrument.tick_size).
+# No es siempre ÷10: forex y yenes ÷10, oro e índices ×1, Brent en Hantec ×10.
+mt5_point:
+  ftmo: {point: 0.001, digits: 3, to_sqx: 1.0}
+  hantec: {point: 0.01, digits: 2, to_sqx: 10.0}

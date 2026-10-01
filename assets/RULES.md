@@ -79,8 +79,10 @@ index CFDs do since 2026-09-27: their spread fell or rose between the two OOS wi
   Regenerate with `python3 -m sqx.inspect.instruments`.
 - `costs` — one block per field of its class, each with:
   - `use` — what to actually apply. `null` blocks authoring.
-  - `sqx_now` — what the master carries today, **with its own unit**, which is often not the unit of
-    `use`. A gold swap is `{type: points, value: -73.42}` while `use` will be a percentage.
+  - `sqx_now` — the value recorded in the file, **with its own unit**, which is often not the unit
+    of `use`. The asset zone does not show it: its «SQX hoy» column reads the custodian's instrument
+    registry (`SQX_w2/user/data/data.db`, `sqx.inspect.instruments.registry`) on disk, never the
+    master (owner, 2026-09-30). A gold swap is `{type: points, value: -73.42}` while `use` will be a percentage.
   - `why` — one line on why it differs. The part that stops the same discussion recurring.
 
   `spread` and `commission` block while undecided. `slippage` and the swaps do not, and both now
@@ -205,6 +207,34 @@ is `python3 -m core.assets <SYMBOL>` and its exit code.
 
 The one writer is `core.assetwrite`. Nothing else in the project writes these files, and a second
 writer is how a comment gets lost.
+
+## The funded worst case — swap, metal commission and the instrument's contract (owner, 2026-10-01)
+
+Funding comes first, so the development costs follow the two funded accounts, **FTMO and Hantec**,
+read from the MT5 terminal (`mt5.live`), and this section overrides what the two below say where
+they differ:
+
+- **Swap, every asset:** each side is the worse of the two firms **today** —
+  `studies.data.spread.fundedswap.worst(symbol)`, the onboard's `swap: funded_worst`. Forex in SQX
+  points (the firm's USD per lot per night ÷ the SQX instrument's pointValue × tickStep);
+  everything else in % annual on each firm's own notional. It is a figure of the day — brokers moved
+  several of them between the morning and the evening of 2026-10-01 — so rerun it before a build.
+  The −7 %, −8 % and registry-mean defaults are retired. **Crude only (UKOIL, USOIL): the side that
+  is credited today is written 0**, never the positive figure — backwardation paid the long ~+20 %
+  annual, and applied back to 2013 that carry was a gift to every long. The charged side is kept.
+- **Spread on crude:** no Darwinex ticks exist, so all three segments carry FTMO's spread of today
+  × 1.25 (UKOIL 90, USOIL 97.88 points; slippage half). It tripled from 2025-01 with no price move
+  behind it, so it is not modelled back; 2013–2024 is unmeasured.
+- **Commission on metals and crude:** the worse of FTMO and Hantec per segment, no longer Darwinex's
+  0.005 %. Gold: Hantec's 5 USD/lot round trip beats FTMO's 0.0014 % at every segment's median
+  price. Silver: 5 USD/lot too, **assuming** Hantec charges silver as it does gold — unconfirmed
+  (no XAGUSD.h deal yet); FTMO's confirmed 0.0014 % is cheaper below ~71 USD. Crude: 1 USD/lot. Forex (5 USD/lot) and
+  indices (0) were already both firms' figure. Verified against the accounts' own deals:
+  `knowhow/costs/funded-accounts-real-costs.md`.
+- **The instrument is FTMO's and Hantec's MT5 contract**, not Infinox's or the5ers': `instrument.
+  point_value` of USA500 is 1 (was 10), of NIKKEI225 0.0631 (was 0.649); JPY, CAD and CHF pairs carry
+  that day's conversion. SQX holds them as `<ASSET>` (forex, metals) or `<ASSET>_ftmo` (indices).
+- **Every feed is on FTMO's clock, EETUS** — `knowhow/sqx-drive/renaming-feeds.md`.
 
 ## The per-broker commission table, and the development default it decides
 

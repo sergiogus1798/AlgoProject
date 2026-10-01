@@ -1,0 +1,81 @@
+symbol: USOIL
+class: no_forex
+broker: ftmo
+sqx_symbol: USOIL.cash_M1
+feeds:
+  - USOIL.cash_M1
+verified: 2026-10-01
+session: null
+instrument:
+  tick_size: 0.001
+  point_value: 100.0
+  min_distance: 0
+costs:
+  spread_is:
+    use: 97.88
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de USOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 78.3 puntos en sep-2026 (24.6 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El WTI no tiene ticks de Darwinex; 2013-2024 no está medido.'
+  spread_oos:
+    use: 97.88
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de USOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 78.3 puntos en sep-2026 (24.6 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El WTI no tiene ticks de Darwinex; 2013-2024 no está medido.'
+  spread_oos2:
+    use: 97.88
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de USOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 78.3 puntos en sep-2026 (24.6 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El WTI no tiene ticks de Darwinex; 2013-2024 no está medido.'
+  commission:
+    use:
+      build:
+        method: SizeBased
+        value: 1.0
+      oos1:
+        method: SizeBased
+        value: 1.0
+      oos2:
+        method: SizeBased
+        value: 1.0
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: el peor caso de FTMO y Hantec. FTMO 0 y Hantec 1 USD/lote ida y vuelta son las cifras que el dueño confirmó para el Brent el 2026-09-29; el WTI no tiene operaciones en ninguna de las dos cuentas para comprobarlo en su historial. SizeBased, los tres tramos.'
+  slippage_is:
+    use: 48.94
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: la mitad del spread de su tramo (97.88), default del dueño.'
+  slippage_oos:
+    use: 48.94
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: la mitad del spread de su tramo (97.88), default del dueño.'
+  slippage_oos2:
+    use: 48.94
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: la mitad del spread de su tramo (97.88), default del dueño.'
+  swap_long:
+    use: 0.0
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: el lado que hoy COBRA swap va a 0 en el crudo. El peor caso de FTMO y Hantec daba +18.77 % anual a favor del largo por la backwardation de hoy, y aplicado a toda la historia desde 2013 regalaba ese carry a cualquier largo. El lado que paga (swap_short) no cambia. Si `studies.data.spread.fundedswap.worst()` se vuelve a correr, un lado positivo se escribe 0.'
+  swap_short:
+    use: -134.44
+    sqx_now: null
+    why: '2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO 49.69/-225.27, Hantec 5.99/-34.36); este lado sale de hantec. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos y con el roll del futuro; `studies.data.spread.fundedswap.worst()` lo recalcula.'
+notes:
+  - '2026-10-01: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
+mc_retest:
+  spread:
+    min: null
+    max: null
+    sqx_now: null
+  slippage:
+    min: null
+    max: null
+    sqx_now: null
+mt5:
+  ftmo: USOIL.cash
+  hantec: USOIL.h
+mt5_point:
+  ftmo:
+    point: 0.001
+    digits: 3
+    to_sqx: 1.0
+  hantec:
+    point: 0.01
+    digits: 2
+    to_sqx: 10.0

@@ -237,7 +237,6 @@ número de monos se convierte en una cifra que se compara con un resultado conoc
 | | qué falta, y de quién depende |
 |---|---|
 | 🔴 | **`assets/_study.yaml`** — los umbrales de aceptación del paso 6 y sobre qué muestra (`sampleType`) se miden. Del dueño |
-| 🔴 | **costes de `XAGUSD_DukasM1_Infinox` y `BRENTCMDUSD_ftmo`**, y el `data_from` del Brent. Sin ellos el paso 9 se niega a escribirse. Del dueño |
 | ⬜ | **los building blocks** del paso 6: qué indicadores entran en el hueco aleatorio |
 | 🟡 | **el paso 20 construido, sin decidir**: qué es «pasar» (unanimidad / sin_fallo / sólo el StepM, y K = supervivientes o entrantes). Leer `oos2` ya no lo bloquea para un humano (2026-09-28). Del dueño — `docs/encargos/10-spa-stepm.md` |
 | 🟠 | **el motor de carteras (paso 27 en adelante), planificado sin construir** — `portfolio/PLAN.md`. Para empezar hacen falta: tu visto bueno para archivar el pool de desarrollo (M0), las preguntas de su §12 que bloquean cada hito, y `portfolio/DECISIONS.md` #2, #5, #10, #12. Del dueño — `OPEN.md` #87 |
