@@ -135,6 +135,22 @@ def close_terminal(wait_s: float = 90) -> bool:
     return not terminal_running()
 
 
+def kill_terminal() -> bool:
+    """Kill this prefix's terminal outright, no save — for one `close_terminal` gave up on.
+
+    The owner's last resort for a terminal wedged open that neither its own window controls
+    nor `close_terminal`'s WM_CLOSE/SIGTERM reach (🔬 2026-10-01). Throws away unsaved state.
+
+    Returns:
+        True when no terminal is left.
+    """
+    if not terminal_running():
+        return True
+    subprocess.run(["pkill", "-KILL", "-f", r"^C:\\.*terminal64\.exe"], check=False)
+    time.sleep(2)
+    return not terminal_running()
+
+
 def run(exe: Path, args: list[str], timeout: float, cwd: Path | None = None) -> subprocess.CompletedProcess:
     """Run a Windows program under Wine and wait for it.
 

@@ -29,13 +29,12 @@ relative to `cwd` does, and is how `metaeditor.py` calls MetaEditor now.
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `server.py` | The MCP server: status, compile, backtest start/result, runs, compare, and the read-only live tools | `python3 -m mt5.server` (Claude Code starts it) | tool calls → JSON |
-| `wine.py` | Where the terminal, MetaEditor and the Windows Python live in the prefix; Linux → Windows paths; the terminal's data folder (via `origin.txt`); running an .exe (`cwd=` for a space-free relative argument); `open_terminal()` detached (never let the MetaTrader5 package start it: it would hold our stdout) and `close_terminal()` by WM_CLOSE | imported | — |
+| `wine.py` | Where the terminal, MetaEditor and the Windows Python live in the prefix; Linux → Windows paths; the terminal's data folder (via `origin.txt`); running an .exe (`cwd=` for a space-free relative argument); `open_terminal()` detached (never let the MetaTrader5 package start it: it would hold our stdout), `close_terminal()` by WM_CLOSE falling back to SIGTERM, and `kill_terminal()` — SIGKILL outright, the owner's last resort for a terminal wedged open past `close_terminal`, wired to the MT5 Bridge window's «forzar su cierre» (`ui/daemon/mt5bridge/api.py`'s `/close-terminal`) | imported | — |
 | `metaeditor.py` | Compile an .mq5 (or a folder) with MetaEditor and read its log; install SQX's `Sq*` indicators and the project's `indicators/` over them — refuses while the terminal is open | imported | .mq5 → .ex5 + errors |
 | `tester.py` | Write a tester ini — with a `[Common] Login/Server` section for `account=`, which switches to that saved account — start the terminal detached, collect the report into `MT5_DATA/tests/<run>/` | imported | EA + window → report.htm, deals/trades.parquet |
 | `report.py` | Parse the tester's HTML report: summary cells, the deal rows (found by shape, not by language), trades paired from in/out deals | imported | report.htm → summary, deals, trades |
-| `compare.py` | Pair MT5 trades with SQX's (same side, nearest entry within a tolerance) and the figures of the gap | imported | two trade frames → pairs + figures |
+| `compare.py` | Pair MT5 trades with SQX's (same side, nearest entry within a tolerance), the figures of the gap, and `in_points`: a trade's P&L from its price move at one point value, for both sides | imported | two trade frames → pairs + figures |
 | `live.py` | Run a verb of `winside/query.py` under the Windows Python, on the account `account=` names (logged in with its saved password); bars and ticks to Parquet | imported | verb → JSON / parquet |
-| `symbols.csv` | Each SQX asset's symbol name at each firm: `sqx,ftmo,hantec`, one column per firm. An empty cell stops that firm — never guessed (encargo 35 §1 #3) | edited | — |
 
 `winside/` runs under the Windows Python inside the prefix, not under the project's Python.
 

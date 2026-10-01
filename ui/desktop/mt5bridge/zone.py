@@ -10,6 +10,7 @@ from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
 from ui.desktop.blocks.states import colour
 from ui.desktop.jobbutton import JobButton
+from ui.desktop.mt5bridge.forceclose import ForceClose
 from ui.desktop.mt5bridge.render import COLUMNS, FirmLight, fill_runs, filtered, header
 from ui.desktop.selection import SELECTION
 from ui.desktop.studypage.net import fetch as daemon_fetch
@@ -71,12 +72,14 @@ class VerifyZone(QFrame):
         self.refused = text("", colour("fail"), 12)
         self.button = JobButton("Verificar en SQX y en MT5", "mt5bridge/verify", self.body,
                                 self.confirm, lambda _job: self.reload())
+        self.force = ForceClose(self.send)
         left = QWidget()
         side = QVBoxLayout(left)
         side.setContentsMargins(0, 0, 12, 0)
         side.addLayout(form)
         side.addWidget(self.refused)
         side.addWidget(self.button)
+        side.addWidget(self.force)
         side.addStretch(1)
         left.setMinimumWidth(380)
         left.setMaximumWidth(520)

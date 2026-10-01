@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from core import sqxfile
+from mt5 import wine
 from ui.daemon import jobs
 from ui.daemon.launch.api import queued
 from ui.daemon.mt5bridge import runs
@@ -113,3 +114,29 @@ def verify(req: Verify) -> dict:
                                    "strategy": req.identity, "role": "conductor",
                                    "study": LABEL}, lane="conductor")
     return job
+
+
+@ROUTER.post("/api/mt5bridge/close-terminal")
+def force_close() -> dict:
+    """Force a wedged-open MT5 terminal shut — graceful first, killed outright if that fails.
+
+    For the terminal neither the owner's window controls nor a normal check can close
+    (🔬 2026-10-01): a last resort, so the owner can then retry a check. Allowed even with a
+    check running, since a terminal that needs forcing is not serving one; the running job is
+    only mentioned, not blocked on.
+
+    Returns:
+        Whether it is closed now, whether it had to be killed outright, and a warning when a
+        check was running.
+    """
+    try:
+        running = [j for j in jobs.listing() if j["label"] == LABEL and j["rc"] is None]
+        if not wine.terminal_running():
+            return {"closed": True, "forced": False}
+        if wine.close_terminal(wait_s=10):
+            return {"closed": True, "forced": False,
+                    "warning": "había una verificación en curso" if running else None}
+        return {"closed": wine.kill_terminal(), "forced": True,
+                "warning": "había una verificación en curso" if running else None}
+    except FAILS as e:
+        return {"error": f"no se pudo cerrar MT5: {type(e).__name__}: {e}"}
