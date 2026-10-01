@@ -1,17 +1,18 @@
 ---
 q: auto export after SQX run; export when task finishes; crossmarket needs export of the retest; afterrun; ALGO_NO_EXPORT; worker.stop export; owner lock OWNER file; puede ser de otra sesión; headless claude authoring template from window; MCR_All ingest stale; step 14 reads old ingest; export_spp export_wfm after run; 15 min quiet guard own runs; every stop re-exports everything; SQX resave changes mtime; zip CRC fingerprint sources.sig
-tag: 🔬  date: 2026-09-29  see: sqx-drive/window-advances-workflow, sqx-drive/owner-lock, databanks/sync-deletes-unloaded-files
+tag: 🔬  date: 2026-10-01  see: sqx-drive/window-advances-workflow, sqx-drive/owner-lock, databanks/sync-deletes-unloaded-files
 ---
 # Every worker stop exports the install's stale databanks; the 24 h guard is gone, the lock decides busy now
-`bin/sqx-worker.sh stop` runs `ui.daemon.loader.afterrun --role R`: per Test_/Trade_ databank the
-loader's pieces (metrics → trades → harvest), then `afterrun.EXTRA` — MC ingest `MCR_All` (new
-`<day>-N`: immutable), `export_spp`, `export_wfm`. Stale is by content (`state.age` checks
-`<marker>.sources.sig`, SQX's sync rewrites dates not CRCs); `ALGO_NO_EXPORT=1` skips it. 2026-09-29,
-owner: the 24 h "another project touched" refusal is gone (§83) — `advance.busy` now refuses only
-the owner lock, the port or a live PID; `sqx-drive/owner-lock` says why that lock does not replace
-the 15-min quiet rule's `released.json`, unchanged here.
+`bin/sqx-worker.sh stop` runs `ui.daemon.loader.afterrun --role R`: per databank of the project the
+launcher marked (`workerguard.mark`; no mark → every Test_/Trade_ project) the
+pieces (metrics → trades → harvest; no trades for the 8 MCR databanks), then `afterrun.EXTRA` (MC
+ingest `MCR_All` `<day>-N`, `export_spp`, `export_wfm`). Stale is by content: `.sources.sig` reads
+every XML entry order-free (SQX's resave reshuffles SQStats in settings.xml and the MC results).
+`ALGO_NO_EXPORT=1` skips it; WFC batch and legs never. Busy = owner lock, port or live PID (§83).
 
 ## Evidence
+- 🔬 2026-09-30: during 16.5 two stops were still exporting `WFC_Variants` (500 variants) 6 min later,
+  holding the conductor (a «Verificar» waited, and one hit «another sqcli holds SQX_w1»).
 - 🔬 `python3 -m ui.daemon.loader.afterrun --role custodian` on 2026-09-28: exported metrics
   and trades of `Test_USDJPY_donchianUpperCrossUp_M30/OOS` (stale), left the rest (fresh).
 - 📓 The owner's «crossmarket: necesita el export del retest cross-market» came from

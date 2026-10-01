@@ -43,13 +43,16 @@ def table(metrics: dict, levels: tuple) -> dict:
             for name, values in metrics.items()}
 
 
-def reconcile(metrics: dict, stored: dict, cfg: dict) -> dict:
+def reconcile(metrics: dict, stored: dict, cfg: dict, readings: list[dict] = ()) -> dict:
     """Whether the reconstruction reproduces what SQX itself computed.
 
     Args:
         metrics: What model.recon.frame() returned.
         stored: What core.sqxretest.levels() returned.
         cfg: What inputs.config.load() returned.
+        readings: Other `frame`s of the same simulations SQX may equally have computed
+            (`zero_readings`: a stored 0-cent trade of unknown sign); the admissible
+            band is the union of each reading's.
 
     Returns:
         Per metric: how far outside the admissible band its worst level fell, as a multiple
@@ -69,7 +72,8 @@ def reconcile(metrics: dict, stored: dict, cfg: dict) -> dict:
             if name not in blob:
                 continue
             target = float(blob[name])
-            band = _band(values, level, name)
+            band = [v for alt in (values, *(r[name] for r in readings))
+                    for v in _band(alt, level, name)]
             outside = max(min(band) - target, target - max(band), 0.0)
             worst = max(worst, outside / max(abs(target) * tol, floor))
         out[name] = {"worst_ratio": worst, "passed": worst <= 1.0}
@@ -149,3 +153,22 @@ def stored_only(stored: dict) -> list[str]:
     """
     known = set(recon.RECON) | set(recon.ANALOGUE) | set(recon.EXCLUDED)
     return sorted(varying(stored) - known)
+
+
+def zero_readings(sims: dict, capital: float) -> list[dict]:
+    """The same simulations with every stored 0-cent trade read as a hair below and above zero.
+
+    SQX stores each trade's P/L in whole cents but counts wins and losses on the full figure:
+    🔬 2026-10-01, XAUUSD with a %-annual swap, Strategy 22.6.83 has one 0-cent trade in 535
+    and SQX's own original counts 271 losses — the 270 negative ones plus it. A stored zero
+    can be a true zero (half a win, measured 2026-09-24 on USDJPY), a fraction of a cent lost
+    or won, and the file cannot say which; the reconciliation accepts any of the three.
+
+    Returns:
+        Two more `recon.frame`s, or none when no simulation holds a 0-cent trade.
+    """
+    pnl, zero = sims["pnl"], sims["pnl"] == 0
+    if not zero.any():
+        return []
+    return [recon.frame(np.where(zero, nudge, pnl.astype(np.float64)), sims["offsets"], capital)
+            for nudge in (-0.1, 0.1)]

@@ -19,20 +19,37 @@ import sys
 from datetime import date
 from pathlib import Path
 
+from core.assetdata import doctrine
 from core.paths import DATA, ROOT
 from studies.breakage.mcRetest.inputs.tasks import DATABANK as MCR
-from ui.daemon import progress
+from ui.daemon import progress, workerguard
 from ui.daemon.loader import find, state
 
 MARK = find.AFTERRUN                     # <role>.pid while this runs: the loader waits
 OWN = ("Test_", "Trade_")                # hard rule 6: every custom project, never the stock ones
+# The eight MC Retest databanks' trades: no study reads them (step 14 reads the MCR_All ingest
+# and the build's harvest), and each cost a ~14 s orderstocsv JVM at every stop (📓 2026-10-01,
+# 7 × 14 s of step 13's export). Owner, 2026-10-01: «deja de exportarlos innecesariamente».
+# The window still exports them on demand when one is opened.
+UNREAD_TRADES = set(MCR.values())
 
 
-def banks(top: object) -> list[tuple[str, str]]:
-    """(project, databank) of every custom project on the install with strategies on disk."""
-    root = top / "user" / "projects"
+def skipped() -> set[str]:
+    """The WFC batch and its three legs: `sqx.variants` harvests them itself (`equity`,
+    `collect`) and empties them per mother, so every stop of a variant run re-exported
+    thousands of variants on the conductor for nobody (📓 2026-09-30, minutes per stop)."""
+    wfc = doctrine()["wfc"]
+    return {wfc["input"], *(t["databank"] for t in wfc["tasks"])}
+
+
+def banks(top: object, only: str | None = None) -> list[tuple[str, str]]:
+    """(project, databank) of every custom project on the install with strategies on disk —
+    or of `only` — but the variant batches' (`skipped`)."""
+    root, off = top / "user" / "projects", skipped()
     return [(p.name, d.name) for p in sorted(root.iterdir()) if p.name.startswith(OWN)
-            for d in sorted((p / "databanks").glob("*")) if d.is_dir() and any(d.glob("*.sqx"))]
+            and (only is None or p.name == only)
+            for d in sorted((p / "databanks").glob("*"))
+            if d.is_dir() and d.name not in off and any(d.glob("*.sqx"))]
 
 
 # The exports a step's analysis reads that are not the loader's pieces: without them the
@@ -83,34 +100,40 @@ def extras(project: str, role: str, top: Path) -> list[tuple[str, list[str]]]:
 
 
 def export(role: str) -> int:
-    """Run what the loader would queue for each databank of the install; return the failures."""
+    """Run what the loader would queue for each databank of the project that ran; return the
+    failures. The launcher marks that project (`workerguard.mark`) and the mark outlives this
+    export; a stop with no mark (a skill's own start) exports the whole install as before.
+    🔬 2026-10-01: an autopilot stop spent 13 min re-exporting another session's 1,404-strategy
+    project that nobody had run — owner: «qué coño estás exportando».
+    """
     top = progress.installs()[role]
+    ran = (workerguard.marked(role) or {}).get("project")
     failed = 0
-    for project, databank in banks(top):
+    for project, databank in banks(top, ran):
         todo = state.commands(project, state.status(project, databank))
         for piece in ("metrics", "trades", "harvest"):       # the harvest reads the trades
-            if piece not in todo:
+            if piece not in todo or (piece == "trades" and databank in UNREAD_TRADES):
                 continue
             print(f"exportando {piece} de {project} / {databank}", flush=True)
             got = subprocess.run([sys.executable, *todo[piece][1]], cwd=ROOT)
             failed += got.returncode != 0
-    for project in sorted({p for p, _ in banks(top)}):
+    for project in sorted({p for p, _ in banks(top, ran)}):
         for name, cmd in extras(project, role, top):
             print(f"exportando {name} de {project}", flush=True)
             got = subprocess.run([sys.executable, *cmd], cwd=ROOT)
             failed += got.returncode != 0
-    sign(top)
+    sign(top, ran)
     return failed
 
 
-def sign(top: Path) -> None:
+def sign(top: Path, ran: str | None = None) -> None:
     """Record, beside every export now up to date, what its strategies are (`state.age` writes
     the `.sources.sig` when it finds an export fresh). Without it the next stop found SQX's
     resave newer than the export and no signature to tell it was a resave: every stop
     re-exported the whole install (📓 2026-09-29, 8 min after a 6-min task)."""
-    for project, databank in banks(top):
+    for project, databank in banks(top, ran):
         state.status(project, databank)
-    for project in sorted({p for p, _ in banks(top)}):
+    for project in sorted({p for p, _ in banks(top, ran)}):
         extras(project, "", top)          # `age` signs each fresh EXTRA export; argv unused
 
 

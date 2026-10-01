@@ -97,7 +97,7 @@ class Shell(QWidget):
         self.status = Said()
         self.jobs = JobsBar()
         foot.addWidget(self.status, 1)
-        foot.addWidget(self.jobs)
+        foot.addWidget(self.jobs, 3)     # Ignored width (jobsbar): takes its share, never pushes
         right.addLayout(foot)
         # The sidebar is built after the stack because opening a zone needs the stack; it is
         # inserted first so it still sits down the left.

@@ -66,7 +66,9 @@ def one(path: Path, task: str, cfg: dict) -> dict:
             "original": pd.DataFrame([{**keys, **{k: float(v[0]) for k, v in original.items()}}]),
             "provenance": {**got, "usable": usable, "stored_only": integrity.stored_only(stored),
                            "identity": sqxfile.identity(path)},
-            "reconciliation": integrity.reconcile(metrics, stored, cfg) if usable else {}}
+            "reconciliation": (integrity.reconcile(metrics, stored, cfg,
+                                                   integrity.zero_readings(sims, capital))
+                                if usable else {})}
 
 
 def _job(args: tuple) -> dict:

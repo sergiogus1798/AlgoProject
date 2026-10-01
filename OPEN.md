@@ -103,7 +103,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 86 | 🟡 | Audit 2026-09-30: exports without manifest, a `migrate` code_version, two files over 250 lines | OPEN.md |
 | 87 | 🟠 | Portfolio construction engine — M0-M2, F1 and the F2 engine built 2026-09-30; the owner's calls gate each milestone | OPEN.md |
 | 88 | 🟠 | SQX's daily curve is each day's LOW equity, not a mark to market — readers that difference it | OPEN.md |
-| 90 | 🟡 | The autopilot (`pipeline/autopilot/`) — phase 1 built 2026-10-01, never run against SQX yet | OPEN.md |
+| 90 | 🟡 | The autopilot — phase 1 ran end to end 2026-10-01, its holes fixed | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -563,16 +563,33 @@ real → M9 paper OOS). Nothing is built. What each milestone waits on:
   2026-09-30 11:20) to finish: no mother has oos2 trades yet. Then `candidates.py` lists the
   archive commands and the owner archives.
 
-## 90. 🟡 The autopilot (`pipeline/autopilot/`) — phase 1 built 2026-10-01, never run against SQX yet
+## 90. 🟡 The autopilot (`pipeline/autopilot/`) — phase 1 ran end to end 2026-10-01 (6 → 16), its holes fixed
 
 Owner, 2026-10-01: a fully automatic, fast workflow; binary criteria with three outcomes (pass /
 limbo / fail), a limbo goes on marked, a step without criteria lets everyone through; meanwhile a
 random draw of 5 at step 8 only; not `ALGO_AUTONOMOUS`. Phase 1 = steps 7 → 16; tested offline
 (facts, criteria, plan) on `Test_USDJPY_donchianUpperCrossUp_H1`, never a real run.
 
-- **First real run** on a fresh `Test_` project, then measure what each hop costs (SQX time
-  against the dead time between steps: worker start/stop, loader exports, the step-8 readings
-  outside the sequence — `monkey`, `profitShape`, `entryQuality`…). Owner asked for this next.
+- **First real run done 2026-10-01** (`Test_XAUUSD_timeRangeBreakout2_M30`, crossmarket on XAGUSD
+  only — UKOIL was mid-conversion): 6 → 16 in ~51 min after a build stopped by hand at 571
+  strategies. Costs in `knowhow/perf/autopilot-dead-time.md`. Fixed the same day: consecutive SQX
+  steps share one start (`run.merged`, 6+7), `--own-log`, the YAML `on:` key in `judge.settings`.
+- **Fixed 2026-10-01 — a refused study counted as done:** the autopilot runs
+  `chain.python_step(strict=True)`, a refusal is a failure.
+- **Fixed 2026-10-01 — the MC Retest ingest refusal:** SQX stores each trade in whole cents and
+  counts losses on the full figure; with the %-annual swap a 0-cent trade is often a fraction of a
+  cent lost. `integrity.zero_readings` reconciles a stored zero as any of zero / loss / win.
+- **Fixed 2026-10-01 — re-exports at every stop:** the fingerprint read only settings.xml
+  order-free; `MonteCarloManipulation_Results.xml` moved all 571 on a bare start+stop
+  (`state._entries` now reads every XML entry). The MCR databanks' trades are no longer exported
+  (no study reads them).
+- **Decided 2026-10-01 (owner) — build cap, whichever first:** `Trade_` 10,000 strategies or 180
+  min, `Test_` 300 or 10 min (`databank.caps`, `builder` defaults). SQX stops on the count; the
+  minutes are enforced by `ui/daemon/advance/buildcap.py`, and the autopilot then runs the OOS
+  the stopped project skipped.
+- **Decided 2026-10-01 (owner) — `profitShape` and `entryQuality` run after step 8's cut**, on its
+  survivors only (`pipeline/autopilot/run.py` `AFTER_CUT`); they were 200 of step 8's 297 s on all
+  571. The window's «Correr workflow» still runs them before its stop at 8.
 - **Decided 2026-10-01:** step 12 judges each mother by her siblings and cuts `CrossTF` (losers
   and every scaled sibling), so step 13's refill of `CrossTF_Mothers` holds only the passing
   mothers, unscaled. A fact missing for a strategy → limbo (owner: odd, but limbo).

@@ -144,13 +144,18 @@ def load(project: str, databank: str) -> list[str]:
     return failed
 
 
-def python_step(project: str, action: dict) -> list[str]:
+def python_step(project: str, action: dict, strict: bool = False) -> list[str]:
     """Load what the step reads, then run each of its tests.
+
+    Args:
+        project: Project name.
+        action: One entry of the plan's `do`.
+        strict: A refused test is a failure too: the autopilot judges on what tests wrote
+            (🔬 2026-10-01, step 14 judged on 0 facts after mcRetest was refused).
 
     Returns:
         The failures, one line each: a load or a command that ended non-zero. A test the
-        rail would refuse now (its input is not on disk) is said and skipped, as «correr
-        todo» lists it under «no se lanzó», and does not stop the chain.
+        rail refuses now is said and skipped, as «correr todo» lists it under «no se lanzó».
     """
     ctx = workflow.context(project)
     failed = [f for d in feeds(action["n"], ctx) for f in load(project, d)]
@@ -160,9 +165,11 @@ def python_step(project: str, action: dict) -> list[str]:
     # monkeyExcess reads the panel monkey writes: last, or it is refused in the same press.
     for key in sorted(action["tests"], key=lambda k: k == "monkeyExcess"):
         why = rail.refusal(action["n"], key, ctx)
-        planned = why or rail.plan(rail.BY_N[action["n"]], key, ctx, "", [])
+        planned = why or rail.plan(rail.BY_N[action["n"]], key, ctx, "", action.get("picked", []))
         if isinstance(planned, str):
             print(f"{key}: no se corre — {planned}", flush=True)
+            if strict:
+                failed.append(f"{key}: no se corrió — {planned}")
             continue
         width = 1 if key in jobs.WIDE else max(1, jobs.SLOTS // jobs.LIGHT)
         with ThreadPoolExecutor(width) as pool:

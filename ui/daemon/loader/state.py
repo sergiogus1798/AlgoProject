@@ -76,16 +76,19 @@ def _canonical(node: ElementTree.Element, h: "hashlib._Hash") -> None:
 
 @lru_cache(maxsize=8192)
 def _entries(path: str, mtime_ns: int, size: int) -> str:
-    """One .sqx's content: its zip entries' CRCs, settings.xml's read order-free (mtime and
-    size are only the cache key)."""
+    """One .sqx's content: its zip entries' CRCs, every XML entry read order-free (mtime and
+    size are only the cache key). Not only settings.xml: each result's
+    `MonteCarloManipulation_Results.xml` holds the same hash-ordered SQStats, so a bare start
+    and stop moved all 571 fingerprints of a build databank and every stop re-exported it
+    (🔬 2026-10-01)."""
     try:
         with zipfile.ZipFile(path) as z:
             parts = []
             for i in z.infolist():
-                if i.filename == "settings.xml":
+                if i.filename.endswith(".xml"):
                     h = hashlib.blake2b(digest_size=16)
                     _canonical(ElementTree.fromstring(z.read(i)), h)
-                    parts.append(f"settings:{h.hexdigest()}")
+                    parts.append(f"{i.filename}:{h.hexdigest()}")
                 else:
                     parts.append(f"{i.filename}:{i.CRC}:{i.file_size}")
             return "|".join(parts)

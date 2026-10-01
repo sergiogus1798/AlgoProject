@@ -64,6 +64,12 @@ engine: MetaTrader5 (hedged)
 databank:
   max_strategies: 10000
   stop_condition: databank-full
+  # Dueño, 2026-10-01: el build para con lo que ocurra antes, N estrategias o M minutos. SQX
+  # solo admite un tipo de parada: para él por N (`databank-full`) y el lanzador para el
+  # proyecto al cumplir M (`ui.daemon.advance.run.watch`). Por prefijo del proyecto (regla 6).
+  caps:
+    Trade_: {strategies: 10000, minutes: 180}   # workflows de trabajo
+    Test_: {strategies: 300, minutes: 10}       # testing y desarrollo
 
 # ─── Precisión del backtest ────────────────────────────────────────────────────────────
 # `testPrecision` en cada <Setup>. 1 = sólo el timeframe elegido, 2 = 1 minuto. Medido

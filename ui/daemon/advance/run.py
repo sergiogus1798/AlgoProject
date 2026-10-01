@@ -17,7 +17,7 @@ from ledger import record
 from sqx.curate import apply_verdict
 from sqx.projects import crosstfload, stage
 from ui.daemon import progress, workerguard
-from ui.daemon.advance import preflight, sqxlog
+from ui.daemon.advance import buildcap, preflight, sqxlog
 from ui.daemon.filters import discards, ledgerrow
 from ui.daemon.launch import configure
 
@@ -136,14 +136,13 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict:
             since counts, so an earlier run's finish — today's or yesterday's — is never this one's.
 
     Returns:
-        The last `run` read. Each poll calls `progress.state`, which sends `-project
-        action=status` and nothing else — the one verb a worker may get between start and
-        collect (owner, 2026-09-25). The log itself is read across midnight (`sqxlog`).
+        The last `run` read. Each poll sends `-project action=status` (`progress.state`), and
+        `stop` once a build passes its minutes (`buildcap`); the log is read across midnight.
         SystemExit when the start never reaches the log within START_WITHIN, when the worker
         dies, or past MAX_HOURS.
     """
     top, kept, began = preflight.WORKERS[role]["path"], [], time.monotonic()
-    seen = False        # once the start was read, losing it later is never «did not start»
+    seen = stopped = False   # once the start was read, losing it is never «did not start»
     while True:
         time.sleep(POLL)
         if not worker.holding(top):
@@ -170,6 +169,7 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict:
                 sys.exit(f"SQX abortó {project} («Error while running project» en su log): "
                          "la tarea no terminó; se para el worker")
             return run
+        stopped = stopped or buildcap.enforce(project, role, now, top)
         if waited > MAX_HOURS * 3600:
             sys.exit(f"{project} sigue sin «Project finished» tras {MAX_HOURS} h: se para el "
                      "worker para liberar el carril")

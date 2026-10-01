@@ -143,3 +143,14 @@ def unify_sessions(members: dict[str, bytes], session: str) -> list[str] | None:
         members[name] = settings.add_session(text, block).encode("utf-8")
         fixed.append(name)
     return fixed
+
+
+def caps(project: str, strategies: int | None, minutes: int | None) -> tuple[int, int]:
+    """How many strategies and minutes a build of this project may take, whichever comes first.
+
+    Args:
+        project: Its name; the prefix (`Test_`, `Trade_`) picks the doctrine's `databank.caps`.
+        strategies, minutes: What the caller asked for; None takes the doctrine's.
+    """
+    cap = next(v for k, v in doctrine()["databank"]["caps"].items() if project.startswith(k))
+    return (strategies or cap["strategies"], minutes or cap["minutes"])

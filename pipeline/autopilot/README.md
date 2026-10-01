@@ -46,6 +46,7 @@ mother-by-mother work begins (`pipeline/run.py`), and never runs the 19 (reads o
 - **The median of a `near_median` rule is over the databank being cut**, not over every strategy
   the study read (the gate also reads the build's strategies that never reached `OOS`).
 - **The chain's tests at step 8 include the readings outside the sequence** (`monkey`,
-  `profitShape`, `entryQuality`…): they are what «correr todo» runs. Their numbers are facts too,
-  and they cost time — the first thing to measure (`OPEN.md`).
+  `profitShape`, `entryQuality`…): they are what «correr todo» runs. Their numbers are facts too.
+  `profitShape` and `entryQuality` run AFTER step 8's cut, on its survivors only (`run.AFTER_CUT`,
+  owner 2026-10-01: they were 200 of the step's 297 s on all 571); their facts are not judged at 8.
 - **Not `ALGO_AUTONOMOUS`** (owner, 2026-10-01): the ledger's oos2 door is not forced on it yet.

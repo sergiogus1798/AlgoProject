@@ -2,7 +2,7 @@
 
 import httpx
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton, QSizePolicy, QWidget
 
 from ui.desktop import background, client
 from ui.desktop.durations import share
@@ -69,7 +69,8 @@ class JobsBar(QWidget):
         self.lay = QHBoxLayout(self)
         self.lay.setContentsMargins(6, 0, 6, 0)
         self.lay.setSpacing(6)
-        self.setStyleSheet(f"font-family: {MONO}; font-size: 12px;")
+        self.setStyleSheet(f"font-family: {MONO}; font-size: 12px;")  # never widens the window:
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)  # 4 long chips made it 3.8k px
         self.poll = QTimer(self)
         self.poll.setInterval(POLL_MS)
         self.poll.timeout.connect(self.refresh)
@@ -131,7 +132,10 @@ class JobsBar(QWidget):
         running = sorted((j for j in live if not waiting(j)),
                          key=lambda j: -(j.get("percent") or 0))
         queued = sorted((j for j in live if waiting(j)), key=lambda j: j["queued"])
-        failed = sum(1 for j in jobs if j.get("rc") not in (None, 0))
+        # §4.3/§16 (owner, 2026-09-30): «un trabajo terminó con error» said nothing about which
+        # one or why. Newest first, since that is the one the owner just watched fail.
+        failed = sorted((j for j in jobs if j.get("rc") not in (None, 0)),
+                        key=lambda j: j["started"], reverse=True)
         self.lay.addWidget(QLabel("TRABAJOS", styleSheet=f"color: {T['faint']}; "
                                                           "font-weight: 700;"))
         head = f"{num(len(running) + len(self.sqx))} en marcha · {num(len(queued))} en cola"
@@ -143,9 +147,30 @@ class JobsBar(QWidget):
         if len(live) > SHOWN:
             self.lay.addWidget(QLabel(f"+{num(len(live) - SHOWN)}"))
         self.lay.addStretch(1)
-        if failed:
-            self.lay.addWidget(QLabel(f"{num(failed)} terminaron con error",
+        for job in failed[:SHOWN]:
+            self.lay.addWidget(self.failed_chip(job))
+        if len(failed) > SHOWN:
+            self.lay.addWidget(QLabel(f"+{num(len(failed) - SHOWN)} más con error",
                                       styleSheet=f"color: {C['dead']};"))
+
+    def failed_chip(self, job: dict) -> QWidget:
+        """One failed job on the strip itself: study, asset/market and why (§4.3/§16).
+
+        Args:
+            job: One `/api/jobs` record with `rc` not in (None, 0).
+
+        Returns:
+            The chip.
+        """
+        where = job.get("asset") or job.get("databank") or ""
+        why = next((t for t in reversed(job.get("tail") or []) if t.strip()), job.get("state", ""))
+        head = f"{job.get('study') or job['label']}" + (f" · {where}" if where else "")
+        text = QLabel(f"⚠ {head}: {why}"[:60], styleSheet=f"color: {C['dead']}; border: 1px "
+                     f"solid {C['dead']}; border-radius: 3px; padding: 1px 6px;")
+        text.setToolTip(f"{job['label']} · {job.get('lane') or 'python'} · {job.get('state', '')}"
+                        f"\n{job.get('project') or ''} {where}\n"
+                        + "\n".join(job.get("tail", [])[-8:]))
+        return text
 
     def chip(self, job: dict) -> QWidget:
         """One job: its text, coloured by lane state, and its cancel button.

@@ -13,7 +13,7 @@ from ui.desktop.ops.progressbar import bar
 from ui.desktop.theme import C, chip, kicker, rule
 
 COLUMNS = ["#", "tarea", "tipo", "en este start", "estado", "hechas / total", "avance", "tiempo",
-           "por estrategia", "databank de salida", "en disco"]
+           "por estrategia", "databank de salida", "en databank", "en disco"]
 BAR = COLUMNS.index("avance")
 STATUS = {"done": ("hecha", "promising"), "running": ("en curso", "weak"),
           "skipped": ("saltada", "faint"), "earlier": ("hecha antes", "promising"),
@@ -32,6 +32,9 @@ TIPS = {
     "tiempo": "desde «TASK STARTED» hasta «TASK FINISHED», o hasta ahora si corre",
     "por estrategia": "tiempo medio por estrategia que SQX declara; si mientras corre dice 0, "
                       "lo que lleva entre las hechas",
+    "en databank": "lo que SQX tiene en memoria en ese databank, sin esperar a que guarde: la "
+                   "tarea en curso, su «In databank»; las demás, lo que el log del proyecto "
+                   "apuntó al empezar la última tarea · cuando no se sabe",
     "en disco": "ficheros .sqx en disco: SQX los escribe al sincronizar, así que la salida de la "
                 "tarea en curso va con retraso",
 }
@@ -150,12 +153,14 @@ class Tasks(QFrame):
             n, go = t["strategies"], t["started"]
             cells = [num(i + 1), t["title"], t["type"], "sí" if t["active"] else "·", text,
                      ratio(t) if go else "·", "", clock(t["elapsed_s"]) if go else "·",
-                     per(t) if go else "·", t["output"], "·" if n is None else num(n)]
+                     per(t) if go else "·", t["output"],
+                     "·" if t.get("in_memory") is None else num(t["in_memory"]),
+                     "·" if n is None else num(n)]
             for j, value in enumerate(cells):
                 item = QTableWidgetItem(value)
                 item.setFlags(Qt.ItemIsEnabled)
                 item.setToolTip(TIPS.get(COLUMNS[j], ""))
-                if j in (0, 5, 7, 8, 10):
+                if j in (0, 5, 7, 8, 10, 11):
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 if j == 4:
                     item.setForeground(QColor(C[colour]))

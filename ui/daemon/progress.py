@@ -125,6 +125,28 @@ def run_state(lines: list[str]) -> dict:
             "percent": None if finished else percent, "tail": tail[-TAIL_LINES:]}
 
 
+def in_memory(task: dict, status: str, runs: list[dict], live: dict | None) -> int | None:
+    """What SQX itself holds in a task's output databank, which the disk shows only after a sync.
+
+    Args:
+        task: One row of `tasks`.
+        status: Its status in this start.
+        runs: `tasklog.task_runs` of the project, oldest first.
+        live: The worker's `status` while this project runs, or None.
+
+    Returns:
+        The running task: SQX's own «In databank». Any other: the count SQX logged for that
+        databank at the latest task start («Databanks before start» is memory, not files),
+        unless that start is the task's own — then it predates what the task wrote. None when
+        neither says.
+    """
+    if status == "running":
+        return live["in_databank"] if live else None
+    if not runs or runs[-1]["title"] == task["title"]:
+        return None
+    return runs[-1]["before"].get(task["output"])
+
+
 def state(role: str, project: str) -> dict:
     """Everything the generation zone draws for one project of one install.
 
@@ -161,6 +183,7 @@ def state(role: str, project: str) -> dict:
         if status == "skipped" and held.get(t["output"]):
             status = "earlier"
         row = {**t, "status": status, "strategies": held.get(t["output"]),
+               "in_memory": in_memory(t, status, runs, live),
                "started": None, "elapsed_s": None, "total": None, "done": None,
                "per_strategy_ms": None}
         r = by_title.get(t["title"])

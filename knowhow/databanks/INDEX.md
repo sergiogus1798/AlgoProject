@@ -4,7 +4,7 @@
 - `context-databank-name-not-normalized` — Cross Market necesita el export del retest cross-market entrando desde el propio databank Cross Market; ui.daemon.runs.context databank with spaces finds no export; multimarket False when it should be True; databank name Retest Markets - Family
 - `curate-verdict-identity-per-databank` — apply_verdict refuses OOS with different strategy than verdict judged; identidad distinta IS OOS; curating both Results and OOS with one verdict.csv; 3 con identidad distinta harvest
 - `curating-a-databank` — remove strategies from a databank, curate databank apply verdict, strategies= selector not working, action=move moves whole databank, delete rejected strategies, create destination databank, rejected record csv
-- `databank-verbs` — -databank action count list export which is read-only, count destroys load, verify a load, databank verbs direction memory disk, synctofiles syncfromfiles
+- `databank-verbs` — -databank action count list export which is read-only, count destroys load, verify a load, databank verbs direction memory disk, synctofiles syncfromfiles, clear deletes files, load async, syncfromfiles adds duplicates
 - `memory-vs-disk-exporter` — databank shows records but directory empty, Auto-sync never export nothing, orderstocsv empty databank, never-synced databank strategies, find synced copy downstream
 - `no-spaces-in-names` — databank name with spaces unreachable API, Databank 'Retest' doesn't exist, Retest Markets - Family, MC Trades, load databank with spaces
 - `snapshot-before-restart` — snapshot user/projects before restart, snapshot size exclude log, rsync snapshot, dedupe snapshot link-dest, delete snapshot after restart, count sqx per databank
