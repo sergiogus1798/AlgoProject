@@ -90,6 +90,10 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     after he says yes, staging only the files of that task (never `git add -A`: other sessions leave their
     own changes in the same tree).
 
+13. **One direction per template and per build: long OR short, never both in one strategy.** Owner,
+    2026-10-01, «regla dura». `sqx.projects.builder` refuses a template whose `Long entry` and
+    `Short entry` rules both open trades (`builder.directions`). A short idea is its own template.
+
 ## ROUTER — read only what the task needs
 
 | task | read |

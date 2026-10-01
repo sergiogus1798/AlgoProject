@@ -71,3 +71,10 @@ build. The vendor's "import into AlgoWizard and run a Build" does not apply here
 opens the GUI. `status=buildConfirmed` is written only by `/template-run`.
 
 <!-- vendor text follows -->
+
+## One direction only (hard rule 13, owner 2026-10-01)
+
+A template trades long OR short, never both: no template with a `Long entry` and a `Short entry`
+that both open trades, and no symmetric both-direction template. A short idea is its own template.
+`sqx.projects.builder` refuses a two-sided template.
+

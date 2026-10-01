@@ -7,7 +7,7 @@ Per-task `<Blocks><BuildingBlocks>`: 844 `<Block key= weight= use= category=>`. 
 bound to a group samples the group regardless of `use="false"`; a template's fixed block ignores the list entirely.
 To narrow a group-bound template, choose/author the group — switches silently do nothing there.
 A frozen donor's list lacks blocks authored after the freeze; SQX builds with them anyway (`sqx/blocks/taxonomy.py` adds them back).
-Nothing in this repo reads or writes `<BuildingBlocks>` (as of 2026-09-24).
+`sqx/projects/buildingblocks.py` writes it from a palette (2026-10-01), prefix stripped to the taxonomy key: one switch per block, both roles.
 
 ## Evidence
 Donor `AlgoData/projectsBackup/XAUUSD_base_2026-09-21`; `Build-Task3.xml` 2.9 MB vs Retest 40 KB.

@@ -1,0 +1,199 @@
+# Paleta «Ruptura de franja horaria — XAUUSD M30» — familia Ruptura.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `breakout`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: timeRangeBreakout
+label: Ruptura de franja horaria — XAUUSD M30
+family: breakout
+origin: propia
+based_on: null
+created: '2026-10-01'
+note: 'Hueco libre único, AND con un CRUCE fijo (Close cruza el máximo de la franja).
+  Por eso solo estados, no eventos: dos cruces en la misma barra matan la frecuencia.
+  Peso 3 al régimen de volatilidad y tendencia/rango (lo que decide si una ruptura
+  sigue); 2 a la tendencia alcista, la vela de ruptura, el VWAP de sesión y la hora
+  en rango; 1 al momento/agotamiento por umbral. Fuera: otra ruptura de nivel (Highest,
+  Donchian, BB/KC, TimeBreakout, sesión), los comparadores de cruce, BarHourIs (puede
+  caer en la barra de reapertura de las 01:00, deriva falsa) y todo lo bajista o corto.
+  Entrada a mercado y salidas ATR fijas: los niveles no se usan.'
+unlabelled: 'off'
+overrides:
+  ATRHigher: 3
+  ATRLower: 3
+  ATRRising: 3
+  ATRFalling: 3
+  ATRPercentAboveLevel: 3
+  ATRPercentBelowLevel: 3
+  ATRPercentRankAboveLevel: 3
+  ATRPercentRankBelowLevel: 3
+  ATRPercentRankRising: 3
+  ATRPercentRankFalling: 3
+  StdDevHigher: 3
+  StdDevLower: 3
+  StdDevRising: 3
+  StdDevFalling: 3
+  CBlock_ATRRankHighVol: 3
+  CBlock_ATRRankLowVol: 3
+  CBlock_SqueezeOff: 3
+  CBlock_SqueezeOn: 3
+  CBlock_WAEPosAboveExplosion: 3
+  CBlock_WAEPosAboveExplosion_2_2_2: 3
+  CBlock_WAEPosAboveExplosion_2_3: 3
+  CBlock_WAEPosAboveExplosion_2_2_3_2: 3
+  ADXHigher: 3
+  ADXLower: 3
+  ADXRising: 3
+  ADXFalling: 3
+  ChoppinessIndexAboveLevel: 3
+  ChoppinessIndexBelowLevel: 3
+  ChoppinessIndexRising: 3
+  ChoppinessIndexFalling: 3
+  KERaboveLevel: 3
+  KERbelowLevel: 3
+  CSSAMarketRegimeAboveLevel: 3
+  CSSAMarketRegimeBelowLevel: 3
+  CBlock_ChoppinessTrending: 3
+  CBlock_ChoppinessChoppy: 3
+  CBlock_CSSARegimeAbove50: 3
+  CBlock_CSSARegimeBelow50: 3
+  CBlock_HursExponentIsAboveLevel: 3
+  CBlock_HursExponentIsAboveLevel_2: 3
+  CBlock_HursExponentIsAboveLevel_3: 3
+  CBlock_HursExponentIsAboveLevel_3_2: 3
+  CBlock_EntropyLow: 3
+  CBlock_EntropyHigh: 3
+  EntropyMathAboveLevel: 3
+  EntropyMathBelowLevel: 3
+  MABarClosesAbove: 2
+  MABarOpensAbove: 2
+  MARising: 2
+  HMARising: 2
+  FasterHMAIsAboveSlowerHMA: 2
+  KAMARising: 2
+  FastKAMAAboveSlowKAMA: 2
+  DEMARising: 2
+  DoubleDEMARising: 2
+  LinRegRising: 2
+  LinRegBarClosesAbove: 2
+  SuperTrendUPTrend: 2
+  BarClosesAboveSuperTrend: 2
+  PSARBarHigher: 2
+  DIPlusHigher: 2
+  DIPlusRising: 2
+  MACDMainHigherZero: 2
+  MACDMainHigherSignal: 2
+  MACDMainRising: 2
+  OSMAHigherZero: 2
+  OSMARising: 2
+  VortexUptrend: 2
+  GannHiLoUPTrend: 2
+  IsUptrend: 2
+  WaveTrendMainHigherZero: 2
+  WaveTrendMainHigherSignal: 2
+  WaveTrendMainRising: 2
+  QQEValue1HigherValue2: 2
+  QQEValue1Rising: 2
+  BUPHigher: 2
+  BUPRising: 2
+  DisparityIndexAboveLevel: 2
+  DisparityIndexRising: 2
+  DPOAboveLevel: 2
+  TTMSqueezeMomentumIsRising: 2
+  CBlock_CMMAIsAboveLevel: 2
+  CBlock_CMMAIsAboveLevel_4: 2
+  CBlock_EMAMAIsRising_2: 2
+  CBlock_EMAMAIsRising_2_2: 2
+  CBlock_EMAMAIsRising_2_3_2: 2
+  CBlock_DPOAbove0: 2
+  CBlock_DisparityAbove0: 2
+  CBlock_SqueezeMomentumPos: 2
+  CloseAboveAnchoredVWAP: 2
+  AnchoredVWAPRising: 2
+  FastAnchoredVWAPAboveSlowAnchoredVWAP: 2
+  CloseAboveVWAP: 1
+  VWAPRising: 1
+  RSIHigher: 1
+  RSILower: 1
+  RSIRising: 1
+  CCIHigher: 1
+  CCILower: 1
+  ROCAboveLevel: 1
+  ROCBelowLevel: 1
+  ROCRising: 1
+  MomHigher: 1
+  MomLower: 1
+  StochSlowDHigher: 1
+  StochSlowDLower: 1
+  WPRHigher: 1
+  WPRLower: 1
+  LaguerreRSIRising: 1
+  DVOAboveLevel: 1
+  DVOBelowLevel: 1
+  RVIAboveLevel: 1
+  RVIBelowLevel: 1
+  QQEValue1Higher: 1
+  CBlock_SmoothedRSIRising: 1
+  CBlock_StrongCandle: 2
+  CBlock_CandleSmallUpperWick: 2
+  CBlock_CandleBreakoutLong: 2
+  CBlock_IBSCloseLarger: 2
+  CBlock_BullishMarubozu: 2
+  BarHourIsBigger: 2
+  BarHourIsSmaller: 2
+  BarDayOfWeekIs: 2
+  BarDayOfWeekIsNot: 2
+  IsGreater: 2
+  IsLower: 2
+  IsRising: 1
+  IsFalling: 1
+  IsGreaterPercentil: 1
+  IsLowerPercentil: 1
+  IsGreaterCount: 1
+  IsLowerCount: 1
+  IndicatorAboveMA: 1
+  IndicatorBelowMA: 1
+  ATR: 3
+  ATRPercentRank: 3
+  StdDev: 3
+  ADX: 3
+  ChoppinessIndex: 3
+  KaufmanEfficiencyRatio: 3
+  EMA: 2
+  SMA: 2
+  HullMovingAverage: 2
+  KAMA: 2
+  LinearRegression: 2
+  SuperTrend: 2
+  AnchoredVWAP: 2
+  Close: 2
+  Open: 2
+  OpenD: 2
+  CloseD: 2
+  HighD: 2
+  LowD: 2
+  SessionOpen: 2
+  Number: 2
+  ATRPercent: 1
+  RSI: 1
+  ROC: 1
+  Momentum: 1
+  CCI: 1
+  MACD: 1
+  HurstExponent: 1
+  TrueRange: 1
+  CBlock_TimeBreakoutLong: 0
+  CBlock_BreakoutDonchianLong: 0
+  HighestInRange: 0
+  SessionHigh: 0
+  Highest: 0
+  DonchianChannels: 0

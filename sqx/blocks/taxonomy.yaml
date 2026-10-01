@@ -122,7 +122,7 @@ ATR:
     origin: native
     form: ATR(@Chart@#Period#)[#Shift#] is rising
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 2}
     help: Is triggered if ATR is rising
 ATR Percent:
   ATRPercentAboveLevel:
@@ -159,7 +159,7 @@ ATR Percent Rank:
     origin: native
     form: 'ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#) is above #Level#'
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 2}
     help: Is triggered if ATR Percent Rank is above level
   ATRPercentRankBelowLevel:
     roles: [signal]
@@ -194,7 +194,7 @@ ATR Percent Rank:
     origin: native
     form: ATR Percent Rank(@Chart@#ATRPeriod#,#Lenght#) is rising
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 2}
     help: Is triggered if ATR Percent Rank is rising 2 consecutive bars
 Anchored VWAP:
   AnchoredVWAPFalling:
@@ -928,13 +928,13 @@ BreakoutLong:
     origin: own
     form: BreakoutDonchianLong(#Int2#)
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 3}
   CBlock_CandleBreakoutLong:
     roles: [signal]
     origin: own
     form: 'CandleBreakoutATRLong(#Double2#, #Int3#)'
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 3}
   CBlock_CandleSmallUpperWick:
     roles: [signal]
     origin: own
@@ -946,13 +946,13 @@ BreakoutLong:
     origin: own
     form: StrongCandle(#Double2#)
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 2}
   CBlock_TimeBreakoutLong:
     roles: [signal]
     origin: own
     form: 'TimeBreakoutLong(#Int2#, #Int3#)'
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 3}
 BreakoutShort:
   CBlock_BarsLargerRSI_2:
     roles: [signal]
@@ -2730,7 +2730,7 @@ Indicators:
     origin: native
     form: Donchian Channels(#Period#).#Line#[#Shift#]
     groups: [BollingerBands_Lower]
-    archetypes: {}
+    archetypes: {breakout: 3}
   EMA:
     roles: [indicator, level]
     origin: native
@@ -2797,14 +2797,14 @@ Indicators:
     origin: native
     form: Highest(@Chart@#Period#)[#Shift#]
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 3}
     help: Returns highest value of given period of bars
   HighestInRange:
     roles: [indicator, level]
     origin: native
     form: 'HighestInRange(@Chart@#TimeFrom#, #TimeTo#)[#Shift#]'
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 3}
     help: returns highest high of candles in given time range
   HullMovingAverage:
     roles: [indicator, level]
@@ -4034,7 +4034,7 @@ Price:
     origin: native
     form: SessionHigh(@Chart@#StartHours#:#StartMinutes#-#EndHours#:#EndMinutes#)[#Shift#]
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 3}
   SessionLow:
     roles: [indicator, level]
     origin: native
@@ -4478,7 +4478,7 @@ Std Dev:
     origin: native
     form: StdDev(@Chart@#Period#)[#Shift#] is rising
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 2}
     help: Is triggered if StdDev is rising
 Stochastic:
   StochFastKCrossDown:
@@ -4787,7 +4787,7 @@ VolatilityRegime_user:
     origin: own
     form: ATR Percent Rank(@Chart@12,120) > 50 (high volatility)
     groups: [VolatilityRegimeFilters]
-    archetypes: {}
+    archetypes: {breakout: 3}
     help: 'High-volatility regime: current ATR ranks high vs its own history.'
   CBlock_ATRRankLowVol:
     roles: [signal]
@@ -4801,7 +4801,7 @@ VolatilityRegime_user:
     origin: own
     form: TTM Squeeze(@Chart@20).Squeeze is OFF (volatility released)
     groups: [VolatilityRegimeFilters]
-    archetypes: {}
+    archetypes: {breakout: 3}
     help: 'Volatility-expansion regime: squeeze released. Verify polarity on first import.'
   CBlock_SqueezeOn:
     roles: [signal]
@@ -4874,7 +4874,7 @@ WAE:
     origin: own
     form: WAEPosAboveExplosion
     groups: []
-    archetypes: {}
+    archetypes: {breakout: 3}
   CBlock_WAEPosAboveExplosion_2:
     roles: [signal]
     origin: own

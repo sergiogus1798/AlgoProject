@@ -28,5 +28,6 @@
 - `spp-origin-level-sampled-once` — SPP original tuple level never sampled, theta-zero alone in its cell, SPP step grid misses original value, argmax equals original, plateau width 1 spike, two-parameter surface, marginal profile biased, spp surface grid
 - `trade-filter-parameter-space` — minimum trades filter removes parameter levels, parameter cloud collapsed column, DICrossShift1 single value, space.varying, sensitivity zero, filter before surface fit
 - `window-filters-are-ledger-searches` — window filter ledger row, manual deletion ledger, filter step segment, discards.jsonl, filters refused no template, ledger.report "de 150 entraron a 183" summary wrong order, # of trades (OOS) missing from cosecha, Trades OOS column
+- `xauusd-reopen-bar-drift` — gold Asian session drift, overnight effect XAUUSD, long at 01:00 reopen, daily pause 00:00-01:00 EET, first minutes after reopen jump, hour-of-day entry fake edge, BarHourIs 1, time-of-day template gold
 - `zero-drift-division` — strategy over market ratio E = mean held return / market drift, Brent negative drift, Fieller interval unbounded, bootstrap ratio, cross-market excess A, headline metric
 - `zero-duration-trades` — fewer trades than SQX databank, zero-duration trades Open time == Close time, Time in trade 0s, envelope.occupancy exit > entry, trade count mismatch, bar grid study

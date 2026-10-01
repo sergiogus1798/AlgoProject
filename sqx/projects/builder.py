@@ -25,9 +25,21 @@ from xml.etree import ElementTree
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 TEMPLATES_REL = "user/settings/StrategyTemplates"
+ENTRY = re.compile(r'<Rule name="(Long|Short) entry".*?</Rule>', re.S)
 
 
 def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
+def directions(template: Path) -> list[str]:
+    """The sides a template can open a trade on: each «Long/Short entry» rule holding an Enter action.
+
+    Owner, 2026-10-01, hard rule: one direction per template and per build, never both.
+    """
+    with zipfile.ZipFile(template) as z:
+        text = z.read("strategy_Portfolio.xml").decode("utf-8")
+    return sorted({m.group(1) for m in ENTRY.finditer(text)
+                   if re.search(r'key="Enter\w*"', m.group(0))})
+
+
           minutes: int, donor: Path, segment: str | None = None,
           tasks: tuple = ("Build",), only: set | None = None,
           session_from: Path | None = None, silence: tuple = (), workflow: bool = False) -> dict:
@@ -182,6 +194,11 @@ def main() -> None:
     if missing:
         raise SystemExit(f"{a.symbol}: {', '.join(missing)} have no agreed value. Ask the owner "
                          "before authoring anything for it (hard rule 5).")
+    sides = directions(a.template)
+    if len(sides) != 1:
+        raise SystemExit(f"{a.template.name} abre operaciones en {sides or 'ninguna dirección'}: "
+                         "una plantilla, y un build, van en UNA sola dirección, long o short "
+                         "(regla dura del dueño, 2026-10-01).")
     held = running_install(worker_dir(a.role) / "user/projects" / a.name / "project.cfx")
     if held:
         raise SystemExit(f"the {held} is running and rewrites a project.cfx on exit. "
