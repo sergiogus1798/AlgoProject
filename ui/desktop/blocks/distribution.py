@@ -45,7 +45,7 @@ def _draw(b: dict) -> Callable:
         if b["real"] is not None:
             xr = x(b["real"])
             chart.vline(p, xr, box, REAL, 3)
-            label = f"{b.get('mark') or 'real'} {chart.num(b['real'])}"
+            label = f"{b.get('mark') or 'Real'} {chart.num(b['real'])}"
             p.setFont(chart.font(11, True))
             w = p.fontMetrics().horizontalAdvance(label) + 10
             left = xr + 6 if xr + 6 + w < box.right() else xr - 6 - w
@@ -65,14 +65,13 @@ def _tip(b: dict) -> Callable:
         """The sentence for what lies under `pos`, None over empty ground."""
         box = chart.area(rect)
         x = axis.scale(*_span(b), box.left(), box.right())
-        unit = f" {b['unit']}" if b["unit"] else ""
         if b["real"] is not None and abs(pos.x() - x(b["real"])) < 5:
-            return f"{b.get('mark') or 'valor real'}: {chart.num(b['real'])}{unit}"
+            return f"{b.get('mark') or 'valor real'}: {chart.num(b['real'], b['unit'])}"
         if abs(pos.x() - x(b["median"])) < 5:
-            return f"mediana de la distribución: {chart.num(b['median'])}{unit}"
+            return f"mediana de la distribución: {chart.num(b['median'], b['unit'])}"
         for a, z, c in zip(edges, edges[1:], counts):
             if x(a) <= pos.x() < x(z):
-                return (f"de {chart.num(a)} a {chart.num(z)}{unit}\n{c} casos "
+                return (f"de {chart.num(a, b['unit'])} a {chart.num(z, b['unit'])}\n{c} casos "
                         f"({100 * c / total:.1f} %)")
         return None
 
@@ -89,6 +88,8 @@ def _percentiles(b: dict) -> QTableWidget:
     table.setHorizontalHeaderLabels([f"{k}%" if unit else f"p{k}" for k in keys])
     table.verticalHeader().setVisible(False)
     table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    table.setSelectionMode(QAbstractItemView.NoSelection)    # a click only recoloured the cell
+    table.setFocusPolicy(Qt.NoFocus)
     real = b["real"]
     for j, (k, v) in enumerate(zip(keys, vals)):
         # Whole units past 10 with a unit on each cell, or «-641.7 $» no longer fits.
@@ -119,16 +120,12 @@ def widget(block: dict) -> QWidget:
     b = block
     if b.get("series"):
         return density.widget(b, _percentiles(b))
-    unit = f" {b['unit']}" if b["unit"] else ""
     lo, hi = b["band"]
-    mark = b.get("mark") or "real"
+    mark = b.get("mark") or "Real"
     p = "" if b["p"] is None else f" · p = {num(b['p'], 'p')}"
     key = chart.key([("box", SIM, "distribución"), ("box", chart.blend(SIM, 0.3), "banda"),
                      ("dash", MEDIAN, "mediana"), ("line", REAL, mark)])
-    head = text(f"<b>{mark}</b> {chart.num(b['real'])}{unit} · mediana "
-                f"{chart.num(b['median'])}{unit} · banda {chart.num(lo)} … {chart.num(hi)}"
-                f"{unit}{p}", T["text"], 14)
-    head.setToolTip("La banda es el tramo que el estudio da por normal en la distribución "
-                    "(sus dos extremos, aquí). p, cuando la hay, la calcula el estudio: la nota "
-                    "y el glosario dicen contra qué.")
-    return card(b, head, chart.Canvas(_draw(b), _tip(b)), key, _percentiles(b))
+    # Real, median and band are already in the key and the chart: only p earns a line.
+    head = text(p[3:], T["text"], 14) if p else None
+    parts = [head] if head else []
+    return card(b, *parts, chart.Canvas(_draw(b), _tip(b)), key, _percentiles(b))

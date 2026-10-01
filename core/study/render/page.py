@@ -8,7 +8,8 @@ from core.study.render import figures, grids, tables
 TEMPLATE = Path(__file__).with_name("page.html")
 DRAW = {"distribution": figures.distribution, "cone": figures.cone, "lines": figures.lines,
         "bars": figures.bars, "grid": grids.grid, "scatter": grids.scatter,
-        "table": tables.table, "verdict": tables.verdict}
+        "table": tables.table, "verdict": tables.verdict,
+        "callout": tables.callout, "list": tables.lst}
 
 
 def shell(title: str, sections: list[str]) -> str:

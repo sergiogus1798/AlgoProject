@@ -62,7 +62,7 @@ def sentence(result: dict, warning: str) -> str:
     lines = [f"ρ = {result['rho']:+.3f} (IC 95 % {result['low']:+.3f} a "
              f"{result['high']:+.3f}, sobre {result['cells']} celdas y "
              f"{result['steps']} tramos): {text}.",
-             f"El optimizador cambia el {result['share_changed']:.0%} de los parámetros "
+             f"El optimizador cambia el {result['share_changed']:.1%} de los parámetros "
              f"de un tramo al siguiente."]
     if result["drift_high"]:
         lines.append("Esa deriva es alta: cada reoptimización elige una estrategia "

@@ -45,12 +45,14 @@ def widget(block: dict) -> QWidget:
     frame.setStyleSheet(f"QFrame#verdict {{ border-left: 6px solid {c}; }}")
     lay = QVBoxLayout(frame)
     lay.setContentsMargins(14, 8, 8, 8)
+    # No state word beside the label (owner, 2026-10-01: «quitar Descartar nota cero / Falla y
+    # nota cero»): the colour already says it, and it stays in the tooltip. A score shows only
+    # where a study passes one on purpose (mcRetest's composite); crossmarket no longer does.
     score = "" if b.get("score") is None else (
-        f'&nbsp;&nbsp;<span style="color:{T["muted"]}; font-size:16px;">nota '
+        f'&nbsp;&nbsp;<span style="color:{T["muted"]}; font-size:16px;">'
         f'{chart.num(b["score"])}</span>')
     head = QLabel(f'<span style="color:{c}; font-size:26px; font-weight:800;">{b["label"]}'
-                  f'</span>&nbsp;&nbsp;<span style="color:{c}; font-size:14px;">'
-                  f'{label(b["state"])}</span>{score}')
+                  f'</span>{score}')
     head.setStyleSheet(f"font-family: {chart.FACE};")
     head.setToolTip(f"estado del veredicto: {label(b['state'])}")
     lay.addWidget(head)

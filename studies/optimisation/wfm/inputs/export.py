@@ -44,6 +44,19 @@ def steps(directory: Path, drop_future: bool = True) -> pd.DataFrame:
     return frame.reset_index(drop=True)
 
 
+def trades(directory: Path) -> pd.DataFrame:
+    """Every walk-forward trade, tagged by cell and by IS/OOS sample.
+
+    Args:
+        directory: The export's `wfm/` folder.
+
+    Returns:
+        The frame as `export_wfm.split` wrote it: `result` names the cell exactly as
+        `cells()` and `steps()` do, `sample` is "IS" or "OOS", `period` the step index.
+    """
+    return pd.read_parquet(directory / "trades.parquet")
+
+
 def chosen(directory: Path) -> pd.DataFrame:
     """The parameter values the optimiser settled on at each step.
 
@@ -74,3 +87,46 @@ def varying(frame: pd.DataFrame, prefix: str) -> list[str]:
     columns = [c for c in frame.columns if c.startswith(prefix)]
     live = [c for c in columns if frame[c].nunique(dropna=True) > 1]
     return sorted(c[len(prefix):] for c in live)
+
+
+def conditions(directory: Path) -> pd.DataFrame | None:
+    """Every cell against every condition SQX judged it by, or None for an older export.
+
+    Args:
+        directory: The export's `wfm/` folder.
+
+    Returns:
+        One row per (strategy, cell, condition): `family`, `metric`, `op`, `threshold`, the
+        cell's `value`, and `met`. Exports before 2026-10-01 never wrote it.
+    """
+    path = directory / "conditions.parquet"
+    return pd.read_parquet(path) if path.exists() else None
+
+
+def objectives(directory: Path) -> pd.DataFrame | None:
+    """Stability, score and the WF specials of every cell, conditions or not.
+
+    Args:
+        directory: The export's `wfm/` folder.
+
+    Returns:
+        One row per cell, `core.wfmobjectives.SHOWN` as columns, or None for an older export.
+    """
+    path = directory / "objectives.parquet"
+    return pd.read_parquet(path) if path.exists() else None
+
+
+def rules(directory: Path) -> pd.DataFrame:
+    """The area rule each strategy ran with, as SQX stored it in the strategy.
+
+    Args:
+        directory: The export's `wfm/` folder.
+
+    Returns:
+        Indexed by strategy: `sqx_failed` and `threshold_pct`, `rows`, `cols`,
+        `min_squares`. An export older than 2026-10-01 lacks the four and the caller takes
+        `_build.yaml`'s; one older than 2026-09-26 has no `status.parquet` at all.
+    """
+    path = directory / "status.parquet"
+    return (pd.read_parquet(path).set_index("strategy") if path.exists() else
+            pd.DataFrame(index=pd.Index(cells(directory)["strategy"].unique(), name="strategy")))

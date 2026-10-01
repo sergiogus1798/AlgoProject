@@ -97,10 +97,22 @@ def _draw(b: dict) -> Callable:
                 # left to the hover sentence rather than cut into an unreadable stub.
                 if b["labels"] or p.fontMetrics().horizontalAdvance(text) < cw - 6:
                     p.drawText(cell.adjusted(4, 0, -4, 0), Qt.AlignCenter | Qt.TextWordWrap, text)
+        if b.get("region"):
+            _region(p, b, left, cw, ch)
         if b.get("mark"):
             _mark(p, b, left, cw, ch)
 
     return draw
+
+
+def _region(p: QPainter, b: dict, left: float, cw: float, ch: float) -> None:
+    """A faint outline on every cell of `region` (2026-09-30, §8.5): a plateau box carried
+    over from another surface. Never touches `values` or `labels` — only `mark` draws a tag."""
+    p.setBrush(Qt.NoBrush)
+    p.setPen(QPen(QColor(T["faint"]), 2))
+    for cell in b["region"]:
+        i, j = b["rows"].index(cell["row"]), b["cols"].index(cell["col"])
+        p.drawRect(QRectF(left + j * cw, HEAD + i * ch, cw, ch).adjusted(1, 1, -1, -1))
 
 
 def _mark(p: QPainter, b: dict, left: float, cw: float, ch: float) -> None:
@@ -134,6 +146,8 @@ def _tip(b: dict) -> Callable:
         m = b.get("mark")
         if m and (m["row"], m["col"]) == (b["rows"][i], b["cols"][j]):
             out += f"\n{m['label']}: {label('grid.mark')}"
+        if any((c["row"], c["col"]) == (b["rows"][i], b["cols"][j]) for c in b.get("region") or []):
+            out += "\ndentro de la región marcada"
         return out + (f"\n{b['labels'][i][j]}" if b["labels"] else "")
 
     return tip

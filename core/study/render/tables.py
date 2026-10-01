@@ -25,6 +25,20 @@ def table(b: dict) -> str:
             f"</table></div>{note}")
 
 
+def callout(b: dict) -> str:
+    """One sentence the study wants seen, not read past — a coloured banner."""
+    return f'<div class="verdict st-{b.get("state") or "info"}"><p>{escape(b["text"])}</p></div>'
+
+
+def lst(b: dict) -> str:
+    """Title in bold, a short description under it, one item after another."""
+    items = "".join(f'<li><b>{escape(i["title"])}</b> — {escape(i["text"])}</li>'
+                    for i in b["items"])
+    title = f'<h3>{escape(b["title"])}</h3>' if b.get("title") else ""
+    note = f'<p class="lede">{escape(b["note"])}</p>' if b.get("note") else ""
+    return f"{title}{note}<ul>{items}</ul>"
+
+
 def verdict(b: dict) -> str:
     """The call, its score, the sentence that explains it, and the parts that made it."""
     score = "" if b["score"] is None else f' <span class="score">{svg.num(b["score"])}</span>'

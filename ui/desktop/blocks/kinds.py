@@ -5,15 +5,18 @@ from collections.abc import Callable
 
 from PySide6.QtWidgets import QWidget
 
-from ui.desktop.blocks import bars, cone, distribution, grid, lines, scatter, table, verdict
+from ui.desktop.blocks import (bars, callout, cone, desclist, distribution, grid, lines,
+                               scatter, table, verdict)
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.states import colour
 
-# One widget per contract kind (core/study/CONTRACT.md §2). A ninth kind is a new module here.
+# One widget per contract kind (core/study/CONTRACT.md §2). `callout` and `list` were added
+# 2026-09-30 (feedback §1.7, §1.10): a new kind is still a new module here, asked for first.
 WIDGETS: dict[str, Callable[[dict], QWidget]] = {
     "distribution": distribution.widget, "cone": cone.widget, "grid": grid.widget,
     "scatter": scatter.widget, "bars": bars.widget, "lines": lines.widget,
-    "table": table.widget, "verdict": verdict.widget}
+    "table": table.widget, "verdict": verdict.widget, "callout": callout.widget,
+    "list": desclist.widget}
 
 
 def draw(block: dict) -> QWidget:

@@ -4,44 +4,49 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QPushButton, QScrollArea, QS
                                QTabWidget, QVBoxLayout, QWidget)
 
 from ui.desktop.blocks import fuse, tools
-from ui.desktop.blocks.card import text
+from ui.desktop.blocks.card import initial, text
 from ui.desktop.blocks.head import head as _head
 from ui.desktop.blocks.head import stale as _stale
 from ui.desktop.blocks.pick import selectors
 from ui.desktop.blocks.states import colour, label
-from ui.desktop.blocks.tabpage import TabPage
+from ui.desktop.blocks.tabpage import Slot, TabPage
 from ui.text.glossary import label as words
 from ui.desktop.theme import T
 
 FOLD = 8        # warnings shown before the rest fold behind a button
 
 
-def _warnings(results: list[dict], titles: list[str]) -> list[QWidget]:
-    """Each distinct warning once, in its state's colour, with how many times it was raised.
-
-    A population raises the same sentence once per strategy: fifty identical lines would
-    bury the one that differs, so identical ones are counted, never dropped.
-    """
+def _warnings(results: list[dict], titles: list[str]) -> tuple[list[QWidget], list[QWidget]]:
+    """Each distinct warning once, coloured, counted, split into a study's `highlight`ed ones
+    (KS, say) and the rest — a population raises the same sentence once per strategy, so
+    identical ones are counted, never dropped."""
     seen: dict[tuple, list] = {}
+    high: dict[tuple, bool] = {}
+    helps: dict[tuple, str] = {}
     for r, t in zip(results, titles):
         for w in r.get("warnings") or []:
-            seen.setdefault((t, w["state"], w["text"]), []).append(w["code"])
-    out = []
+            key = (t, w["state"], w["text"])
+            seen.setdefault(key, []).append(w["code"])
+            high[key] = high.get(key, False) or bool(w.get("highlight"))
+            helps[key] = helps.get(key) or w.get("help") or ""
+    top, rest = [], []
     for (t, state, body), codes in seen.items():
-        c = colour(state)
+        h, c = high[(t, state, body)], colour(state)
         times = f"×{len(codes)} · " if len(codes) > 1 else ""
-        line = text(f"{times}{t + ' · ' if t else ''}{body}", T["text"], 13)
-        line.setStyleSheet(line.styleSheet() + f" border-left: 4px solid {c}; "
-                           "padding: 4px 10px;")
-        line.setToolTip(f"aviso «{codes[0]}» · {label(state)}: colorea, nunca elimina")
-        out.append(line)
-    return out
+        said = helps[(t, state, body)]     # a warning that explains itself shows a «?» (KS)
+        mark = f" <span style='color:{T['faint']}'>(?)</span>" if said else ""
+        line = text(f"{times}{t + ' · ' if t else ''}{body}{mark}", T["text"], 15 if h else 13, h)
+        line.setStyleSheet(line.styleSheet() + f" border-left: {6 if h else 4}px solid {c}; "
+                           f"padding: {8 if h else 4}px 10px;")
+        line.setToolTip(said or f"Aviso «{codes[0]}» · {label(state)}: colorea, nunca elimina")
+        (top if h else rest).append(line)
+    return top, rest
 
 
 def _glossary(results: list[dict]) -> list[QWidget]:
     """Every term once, with its sentence."""
     terms = {g["term"]: g["text"] for r in results for g in r.get("glossary") or []}
-    return [text(f"<b>{k}</b> — {v}", T["text"], 13) for k, v in terms.items()]
+    return [text(f"<b>{initial(k)}</b> — {v}", T["text"], 13) for k, v in terms.items()]
 
 
 def _section(title: str) -> QWidget:
@@ -96,11 +101,13 @@ class ResultView(QWidget):
         """
         self.stored, self.meta, self.showing = result, meta, "stored"
         if result is None:
-            self._build([], [], [text("Sin resultado todavía: este estudio no ha corrido aquí.",
-                                      T["muted"], 15)])
-            return
+            return self.empty("Sin resultado todavía: este estudio no ha corrido aquí.")
         top = [_head(result, None)] + ([_stale(meta)] if meta and meta.get("stale") else [])
         self._build([result], [""], top + [self._tools()])
+
+    def empty(self, sentence: str) -> None:
+        """No result: one muted sentence in its place."""
+        self._build([], [], [text(sentence, T["muted"], 15)])
 
     def compare(self, left: dict, right: dict, titles: tuple[str, str]) -> None:
         """Draw two results in two columns, the same tab open in both, block beside block.
@@ -129,8 +136,8 @@ class ResultView(QWidget):
                 if len(s["options"]) == 1:
                     self.memory.setdefault(tab["name"], {})[s["key"]] = s["options"][0]
         self.showing = f"beside:{index}"
-        self.compare(self.stored, part, (f"guardado · {self.stored.get('computed_at')}",
-                                         f"solo {part.get('only')} · {part.get('computed_at')}"))
+        self.compare(self.stored, part, (f"Guardado · {self.stored.get('computed_at')}",
+                                         f"Solo {part.get('only')} · {part.get('computed_at')}"))
 
     def merged(self, index: int) -> None:
         """The stored result with one sub-test taken from a partial re-run (`fuse.merge`).
@@ -173,7 +180,8 @@ class ResultView(QWidget):
         return box
 
     def _build(self, results: list[dict], titles: list[str], top: list[QWidget]) -> None:
-        """Lay the page out again: header widgets, the tabs, the warnings, the glossary."""
+        """Lay the page out again: header widgets, the warnings (highlighted first, top of the
+        page — §1: «Avisos: moverlos arriba, visibles»), the tabs, the glossary."""
         self.results, self.titles, self.pages = results, titles, {}
         self.content = QFrame()
         self.content.setObjectName("term")
@@ -182,32 +190,37 @@ class ResultView(QWidget):
         lay.setSpacing(10)
         for w in top:
             lay.addWidget(w)
+        high, rest = _warnings(results, titles)
+        for w in high:
+            lay.addWidget(w)
+        if rest:
+            lay.addWidget(_section(f"avisos ({len(rest)} más)"))
+            for k, w in enumerate(rest):
+                lay.addWidget(w)
+                w.setVisible(k < FOLD)
+            if len(rest) > FOLD:
+                more = QPushButton(f"Ver los {len(rest) - FOLD} avisos restantes")
+                more.clicked.connect(lambda: [w.setVisible(True) for w in rest] + [more.hide()])
+                lay.addWidget(more)
         names = list(dict.fromkeys(t["name"] for r in results for t in r["tabs"]))
         self.names = names
         if names:
             self.tabs = QTabWidget()
             self.tabs.setDocumentMode(True)
+            # Expanding (Qt's default) grabs the leftover space the outer stretch was meant
+            # to hold, leaving a blank gap inside the tab instead of above the glossary
+            # (§1 «hueco vacío enorme»); Minimum keeps it at its content's own height.
+            self.tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
             for n in names:
                 tab = next(t for r in results for t in r["tabs"] if t["name"] == n)
-                holder = QWidget()         # the page goes in on first opening: a population
+                holder = Slot()            # the page goes in on first opening: a population
                 QVBoxLayout(holder).setContentsMargins(0, 0, 0, 0)   # has hundreds of tables
-                i = self.tabs.addTab(holder, (tab.get("title") or n).replace("&", "&&"))
+                i = self.tabs.addTab(holder, initial(tab.get("title") or n).replace("&", "&&"))
                 self.tabs.setTabToolTip(i, tab.get("note") or tab.get("title") or n)
             self.tabs.currentChanged.connect(self._open)
             lay.addWidget(self.tabs)
             self.tabs.setCurrentIndex(names.index(self.tab) if self.tab in names else 0)
             self._open(self.tabs.currentIndex())
-        warnings = _warnings(results, titles)
-        if warnings:
-            lay.addWidget(_section(f"avisos ({len(warnings)} distintos)"))
-            for k, w in enumerate(warnings):
-                lay.addWidget(w)
-                w.setVisible(k < FOLD)
-            if len(warnings) > FOLD:
-                more = QPushButton(f"ver los {len(warnings) - FOLD} avisos restantes")
-                more.clicked.connect(lambda: [w.setVisible(True) for w in warnings]
-                                     + [more.hide()])
-                lay.addWidget(more)
         glossary = _glossary(results)
         if glossary:
             lay.addWidget(_section("glosario"))
@@ -232,9 +245,5 @@ class ResultView(QWidget):
             self.pages[index] = page
             self.tabs.widget(index).layout().addWidget(page)
         self.tab = name
-        # A QStackedWidget is as tall as its tallest page unless the others are Ignored:
-        # without this a short tab would sit on the empty height of the longest one.
-        for i in range(self.tabs.count()):
-            policy = QSizePolicy.Preferred if i == index else QSizePolicy.Ignored
-            self.tabs.widget(i).setSizePolicy(policy, policy)
+        self.tabs.widget(index).updateGeometry()   # the slots' hints changed with the tab shown
         self.tabs.updateGeometry()

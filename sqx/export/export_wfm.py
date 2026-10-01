@@ -8,8 +8,11 @@ from pathlib import Path
 import pandas as pd
 
 import shutil
+import xml.etree.ElementTree as ET
+import zipfile
 
-from core import exportdrv, manifest, sqxfile, trades, tradestore, wfmatrix, wftrades
+from core import (exportdrv, manifest, sqxfile, trades, tradestore, wfmatrix, wfmobjectives,
+                  wftrades)
 from core.paths import MASTER, databank_dir, export_dir, worker_dir
 from sqx.export.export_trades import stage
 
@@ -26,21 +29,28 @@ def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.
 
     Returns:
         `cells` (one row per matrix cell), `steps` (one per walk-forward step of every
-        cell), `params` (long form: one row per step and parameter) and `status` (one per
-        strategy: whether SQX marked it failed, and why — it is kept, never deleted). A cell's statistics
+        cell), `params` (long form: one row per step and parameter), `status` (one per
+        strategy: whether SQX marked it failed, and why — it is kept, never deleted — and
+        the area rule it ran with), `conditions` (one per cell and condition: its value,
+        the threshold, whether it holds) and `objectives` (one per cell: stability, score
+        and the WF specials SQX never stores, `core.wfmobjectives`). A cell's statistics
         come three times -- `is_`, `oos_`, `all_`; a step's twice, `is_` from its
         optimisation window and `oos_` from its run window.
         A strategy the databank holds without a matrix result was never cross-checked with
         WFM and is skipped -- a stripped copy carries the rules and no cross-check at all.
     """
-    cells, steps, status = [], [], []
+    cells, steps, status, conditions, objectives = [], [], [], [], []
     for f in sorted(databank_dir(project, databank, install).glob("*.sqx")):
         node = wfmatrix.matrix(f)
         if node is None:
             continue
         note = sqxfile.sqx_filter(f)
+        root = ET.fromstring(zipfile.ZipFile(f).read("settings.xml").decode("utf8", "replace"))
+        rule, checked, shown = wfmobjectives.cells(root)
         status.append({"strategy": f.stem, "sqx_filter": note,
-                       "sqx_failed": note is not None and note != "Passed"})
+                       "sqx_failed": note is not None and note != "Passed"} | rule)
+        conditions += [{"strategy": f.stem} | c for c in checked]
+        objectives += [{"strategy": f.stem} | o for o in shown]
         cells += [{"strategy": f.stem} | c for c in wfmatrix.cells(node, wfmatrix.results(f))]
         steps += [{"strategy": f.stem} | s for s in wfmatrix.periods(node)]
     if not steps:
@@ -65,7 +75,8 @@ def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.
         if number.notna().sum() == wide[name].notna().sum():
             wide[name] = number
     return {"cells": frame(cells), "steps": frame(steps), "params": wide,
-            "status": pd.DataFrame(status)}
+            "status": pd.DataFrame(status), "conditions": pd.DataFrame(conditions),
+            "objectives": pd.DataFrame(objectives)}
 
 
 def split(raw_dir: Path, steps: pd.DataFrame, out: Path) -> pd.DataFrame:

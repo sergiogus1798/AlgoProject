@@ -28,7 +28,7 @@ def head(result: dict, title: str | None) -> QWidget:
         lay.addWidget(verdict.widget(result["verdict"]))
     elif result.get("only"):
         lay.addWidget(text("Sin veredicto: el veredicto sale del análisis entero, no de una "
-                           f"subprueba («{result['only']}») corrida sola.", T["muted"], 14))
+                           f"subprueba («{result['only']}») lanzada sola.", T["muted"], 14))
     else:
         lay.addWidget(text("Este estudio describe y no juzga: no hay veredicto.", T["muted"], 14))
     lay.addWidget(text(stamp(result), T["faint"], 12))

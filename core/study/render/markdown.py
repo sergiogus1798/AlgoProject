@@ -36,8 +36,8 @@ def block(b: dict) -> list[str]:
                 + f" — {b['meaning']}", ""]
         body += [f"- {p['label']}: {num(p.get('value'))} {p.get('note', '')}" for p in b["parts"]]
     elif kind == "distribution" and b.get("series"):
-        body = _table(["muestra", "n", "mediana"],
-                      [[s["label"], s["n"], s["median"]] for s in b["series"]])
+        body = _table(["muestra", "n", "mediana", "real"],
+                      [[s["label"], s["n"], s["median"], s.get("real")] for s in b["series"]])
         if b.get("shift"):
             p = "—" if b["shift"]["ks_p"] is None else f"{b['shift']['ks_p']:.4f}"
             body += ["", f"desplazamiento de la mediana ({b['series'][-1]['label']} − "
@@ -57,6 +57,11 @@ def block(b: dict) -> list[str]:
         if b.get("scale_range"):
             body += ["", "escala común a varias rejillas: {} a {}".format(
                 *(num(v) for v in b["scale_range"]))]
+    elif kind == "callout":
+        head = []
+        body = [f"> **{b['text']}**", ""]
+    elif kind == "list":
+        body = [f"- **{i['title']}** — {i['text']}" for i in b["items"]]
     else:
         body = [f"({kind}: se ve en la página HTML)"]
     note = [b["note"]] if b.get("note") else []

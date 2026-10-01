@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
+from core.symbols import alias
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.kinds import draw
 from ui.desktop.blocks.pick import picked, selectors, shown
@@ -123,7 +124,7 @@ def picker(tab: dict, on: list[str], changed: Callable[[list[str]], None]) -> QW
         changed(list(keep))
 
     for o in [str(o) for o in s["options"]]:
-        b = QPushButton(o)
+        b = QPushButton(alias(o))
         b.setCheckable(True)
         b.setChecked(o in keep)
         b.setStyleSheet(f"QPushButton:checked {{ background: {T['accent']}; color: {T['bg']}; "

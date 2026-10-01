@@ -1,4 +1,4 @@
-"""The eight kinds of block a study result is made of, built from raw numbers and checked."""
+"""The kinds of block a study result is made of, built from raw numbers and checked."""
 
 import json
 
@@ -19,6 +19,10 @@ KINDS = {
     "lines": ("title", "unit", "x", "series"),
     "table": ("title", "columns", "rows", "align", "note"),
     "verdict": ("label", "state", "score", "meaning", "parts"),
+    # Added 2026-09-30 (feedback §1.7, §1.10): a highlighted sentence, and a title+description
+    # list ("¿Qué hace cada modelo?"). `state` on a callout and `help` on any block are optional.
+    "callout": ("text",),
+    "list": ("title", "items"),
 }
 PERCENTILES = (1, 5, 10, 25, 50, 75, 90, 95, 99)
 CONE_LEVELS = ("2.5", "25", "50", "75", "97.5")
@@ -72,7 +76,8 @@ def thin(length: int, most: int = 400) -> list[int]:
 def distribution(title: str, unit: str, values: np.ndarray, real: float | None, note: str,
                  p: float | None = None, band: tuple[float, float] = (5, 95),
                  bins: int = 60, series: dict[str, np.ndarray] | None = None,
-                 shift: dict | None = None, span: tuple[float, float] | None = None) -> dict:
+                 shift: dict | None = None, span: tuple[float, float] | None = None,
+                 reals: dict[str, float | None] | None = None) -> dict:
     """The null's distribution with the real value marked, aggregated from the raw draws.
 
     Args:
@@ -84,10 +89,10 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
         p: The test's p-value, when it has one.
         band: Percentiles bounding the shaded band.
         bins: Histogram bins over the draws' range, widened to include the real value.
-        series: Label -> raw values, overlaid on the same bins, each as a density of area 1
-            so samples of different length compare (IS against OOS).
+        series: Label -> raw values, overlaid on the same bins, each a density of area 1.
         shift: {"median", "ks_p"} between the series, computed by the study.
         span: The range the bins cover instead; values outside land in the end bins.
+        reals: Label -> that series' own real, instead of one shared `real` (SPP IS/OOS).
 
     Returns:
         A "distribution" block. The draws never leave: only the histograms do.
@@ -111,7 +116,9 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
             s = np.asarray(raw, dtype=float)
             s = s[np.isfinite(s)]
             c = np.histogram(np.clip(s, edges[0], edges[-1]), bins=edges)[0]
+            r = (reals or {}).get(label)
             out["series"].append({"label": label, "n": len(s), "median": _num(np.median(s)),
+                                  "real": _num(r) if r is not None else None,
                                   "counts": [float(x) for x in c / (len(s) * width)]})
     if shift is not None:
         out["shift"] = {"median": _num(shift["median"]), "ks_p": _num(shift["ks_p"])}

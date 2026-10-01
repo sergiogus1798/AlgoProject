@@ -7,6 +7,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QMouseEvent, QPainter, QPaintEvent, QPen
 from PySide6.QtWidgets import QLabel, QToolTip, QWidget
 
+from ui.desktop.blocks.card import initial
 from ui.text import numbers
 from ui.desktop.theme import T
 
@@ -30,16 +31,19 @@ def font(size: int = 11, bold: bool = False) -> QFont:
     return f
 
 
-def num(v: float | str | None) -> str:
+def num(v: float | str | None, unit: str = "") -> str:
     """A figure as the window prints it — `numbers.num`, kept here for the blocks that import it.
 
     Args:
         v: The value, None for a missing one; text passes through.
+        unit: Appended after a space; `"%"` is always one decimal, even on a whole number
+            (§1 «7,7 %, no 8 %») — pass the block's own `unit` here rather than concatenating
+            it after the call, or that rule is skipped.
 
     Returns:
         The text; an em dash for a missing value.
     """
-    return numbers.num(v)
+    return numbers.num(v, unit)
 
 
 def area(rect: QRectF) -> QRectF:
@@ -123,9 +127,11 @@ def key(items: list[tuple[str, str, str]]) -> QLabel:
         A wrapped label.
     """
     glyph = {"box": "■", "line": "━━", "dash": "╍╍"}
+    # Only the first letter changes, and not on a code or a unit (§1 «mayúscula inicial»).
     html = "&nbsp;&nbsp;&nbsp;".join(
         f'<span style="color:{c}; font-size:15px;">{glyph[m]}</span>&nbsp;'
-        f'<span style="color:{T["text"]};">{escape(t)}</span>' for m, c, t in items)
+        f'<span style="color:{T["text"]};">{escape(initial(t))}</span>'
+        for m, c, t in items)
     label = QLabel(html)
     label.setWordWrap(True)
     label.setStyleSheet(f"font-family:{FACE}; font-size:12px;")

@@ -74,9 +74,8 @@ def _tip(b: dict) -> Callable:
             return None
         px, _ = axis.xaxis(b["x"], box.left(), box.right())
         i = axis.nearest(px, pos.x())
-        unit = f" {b['unit']}" if b["unit"] else ""
-        rows = [f"x = {b['x'][i]}", f"real: {chart.num(b['real'][i])}{unit}"]
-        rows += [f"p{k}: {chart.num(v[i])}{unit}" for k, v in reversed(b["bands"].items())]
+        rows = [f"x = {b['x'][i]}", f"real: {chart.num(b['real'][i], b['unit'])}"]
+        rows += [f"p{k}: {chart.num(v[i], b['unit'])}" for k, v in reversed(b["bands"].items())]
         return "\n".join(rows)
 
     return tip

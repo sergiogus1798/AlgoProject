@@ -40,6 +40,8 @@ tools.report ─▶ screen.screen(result, memory) ─▶ POST /api/study/screen 
 | `lines.py` | Series over one x axis: a series naming an `ink` in that tone (dashed with `dash`), a lone real series in the real ink, references dashed | imported | block → QWidget |
 | `table.py` | Sortable table in the study's own order, numbers the window's way, full cell on hover | imported | block → QWidget |
 | `verdict.py` | The label in its state's colour, never without its meaning, and its parts as tiles | imported | block → QWidget |
+| `callout.py` | The `callout` kind (2026-09-30): one coloured, bold sentence the study wants seen ahead of the rest | imported | block → QWidget |
+| `desclist.py` | The `list` kind (2026-09-30): a title in bold and a short description under it, one item after another | imported | block → QWidget |
 
 Test: `python3 tests/test_ui_blocks.py` draws every population result and three strategy results
 per study under `AlgoData/reports/`, offscreen, in ~3 s.
@@ -60,8 +62,9 @@ per study under `AlgoData/reports/`, offscreen, in ~3 s.
 - **Pages are built on first opening.** A population result holds hundreds of tables; building
   every tab up front paid for tabs nobody opened. The tab and the selector values are remembered
   across `show` calls, so stepping through strategies keeps the reader on the same drawing.
-- **A tab is as tall as its own page.** A `QStackedWidget` takes the height of its tallest page;
-  the others are set `Ignored` so a short tab does not sit on the blank height of a long one.
+- **A tab is as tall as its own page.** `QTabWidget.sizeHint()` and the stack's height-for-width
+  take the maximum over every page whatever its size policy (`Ignored` did nothing), so each page
+  sits in a `tabpage.Slot` that asks for zero size while its tab is not the current one.
 - **`deleteLater` is not immediate.** A replaced body is hidden first: until the event loop
   runs it still paints, and did, over the selectors.
 - **Diverging runs red (low) to blue (high).** The static pages (`core/study/render/grids.py`)
@@ -91,3 +94,15 @@ per study under `AlgoData/reports/`, offscreen, in ~3 s.
 - **The report is the screen, not the defaults.** `screen.screen` keeps exactly the blocks
   drawn, empties `selectors` so `core.study.render.page` draws all it keeps, and writes the
   choices into each tab's note. The daemon writes it to `<study>/pantalla/`.
+- **Warnings sit at the top now, highlighted ones first** (2026-09-30, feedback §1): `_warnings`
+  splits into a study's `highlight: true` warnings (bigger, bolder, drawn right after the
+  header) and the rest, folded behind a count as before. `ResultView._build` draws them before
+  the tabs, not after — a hueco below a short tab used to sit between the tab and the warnings.
+- **A tab's height is its own, not its `QTabWidget`'s.** `TabPage` and the `QTabWidget` that
+  holds it are both pinned to `QSizePolicy.Minimum` on the vertical axis (2026-09-30): left at
+  Qt's default `Expanding`, either one grabs the leftover space the page's own trailing
+  stretch was meant to hold, and a short tab shows a blank gap instead of the glossary
+  starting right under it.
+- **A number's unit goes through `chart.num`/`numbers.num`, not string concatenation**
+  (2026-09-30): only that path applies the one-decimal rule for `%`. Every block file routes
+  its unit-bearing figures this way now; a new one should too.

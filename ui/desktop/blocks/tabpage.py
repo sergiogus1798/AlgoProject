@@ -1,14 +1,36 @@
 """One contract tab, in one column or beside its counterpart: its note, its selectors, its blocks."""
 
-from PySide6.QtWidgets import QComboBox, QGridLayout, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import QSize
+from PySide6.QtWidgets import (QComboBox, QGridLayout, QHBoxLayout, QLabel, QSizePolicy,
+                               QVBoxLayout, QWidget)
 
 from ui.desktop.blocks import markets
-from ui.desktop.blocks.card import text
+from ui.desktop.blocks.card import initial, text
 from ui.desktop.blocks.kinds import draw
 from ui.desktop.blocks.pick import pairs, selectors, shown
 from ui.desktop.theme import T
 
-__all__ = ["TabPage", "pairs", "shown"]    # shown and pairs live in pick; kept here for callers
+__all__ = ["Slot", "TabPage", "pairs", "shown"]    # shown and pairs live in pick; kept here for callers
+
+
+class Slot(QWidget):
+    """A tab's slot in the `QTabWidget`. `QTabWidget.sizeHint` is the largest of every page's
+    hint whatever its size policy, so a short tab sat on the blank height of the longest one
+    opened before it (§1, measured 933 px of content in 8288 px); a hidden slot — every tab but
+    the current one — asks for nothing. `heightForWidth` too: the scroll area sizes the page by
+    it, and the stack answers the largest of its pages there as well."""
+
+    def sizeHint(self) -> QSize:  # noqa: N802 — Qt's name
+        """Its page's hint while it is the current tab, nothing otherwise."""
+        return QSize(0, 0) if self.isHidden() else super().sizeHint()
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802 — Qt's name
+        """As `sizeHint`: a hidden tab holds no minimum either."""
+        return QSize(0, 0) if self.isHidden() else super().minimumSizeHint()
+
+    def heightForWidth(self, width: int) -> int:  # noqa: N802 — Qt's name
+        """As `sizeHint`, for the height the scroll area lays the page out at."""
+        return 0 if self.isHidden() else super().heightForWidth(width)
 
 
 class TabPage(QWidget):
@@ -24,6 +46,10 @@ class TabPage(QWidget):
                 laid side by side with the consensus grid of another tab (`markets`).
         """
         super().__init__()
+        # Left at Qt's default (Expanding), this widget's sizeHint stretches to whatever its
+        # QStackedWidget parent is given, which pushed a blank gap below a short tab's blocks
+        # instead of leaving that space to the page's own trailing stretch (§1 «hueco enorme»).
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         self.tabs, self.pool = tabs, pool or []
         first = next(t for t in tabs if t is not None)
         self.chosen = {s["key"]: chosen.get(s["key"], s["default"]) for s in selectors(first)}
@@ -40,13 +66,18 @@ class TabPage(QWidget):
         for s in selectors(first):
             if self.grouped and s["key"] == markets.KEY:
                 continue
-            row.addWidget(QLabel(s["label"]))
+            head = QLabel(initial(s["label"]))
+            if s.get("help"):
+                head.setToolTip(s["help"])   # the uniform "?" of CONTRACT §1 (2026-09-30)
+            row.addWidget(head)
             combo = QComboBox()
-            combo.addItems([str(o) for o in s["options"]])
-            combo.setCurrentText(str(self.chosen[s["key"]]))
+            for o in s["options"]:       # shown capitalised, chosen by the study's own text
+                combo.addItem(initial(o), str(o))
+            combo.setCurrentIndex(max(0, combo.findData(str(self.chosen[s["key"]]))))
             combo.setToolTip("Cambia qué combinación se dibuja. No recalcula nada: el estudio "
                              "guardó todas.")
-            combo.currentTextChanged.connect(lambda v, k=s["key"]: self.choose(k, v))
+            combo.currentIndexChanged.connect(
+                lambda _, k=s["key"], c=combo: self.choose(k, c.currentData()))
             row.addWidget(combo)
         row.addStretch(1)
         lay.addLayout(row)
@@ -85,7 +116,7 @@ class TabPage(QWidget):
         for i, row in enumerate(rows):
             for j, b in enumerate(row):
                 grid.addWidget(draw(b) if b is not None else
-                               text("(sin equivalente en este lado)", T["faint"]), i, j)
+                               text("(Sin equivalente en este lado)", T["faint"]), i, j)
         if self.grouped and maps:
             grid.addWidget(markets.row(maps, consensus), len(rows), 0)
             rows.append(maps)

@@ -34,8 +34,13 @@ def overlay(b: dict) -> str:
             body.append(f'<line x1="{x(s["median"]):.1f}" x2="{x(s["median"]):.1f}" '
                         f'y1="{PAD["t"]}" y2="{H - PAD["b"]}" stroke="{colour}" '
                         f'stroke-dasharray="4 3"/>')
+        real = s.get("real")
+        if real is not None:
+            body.append(f'<line x1="{x(real):.1f}" x2="{x(real):.1f}" y1="{PAD["t"]}" '
+                        f'y2="{H - PAD["b"]}" stroke="{colour}" stroke-width="3"/>')
+        tail = "" if real is None else f" · real {svg.num(real)}"
         key.append((svg.box(colour, .5), f"{s['label']} · n {svg.num(s['n'])} · mediana "
-                                         f"{svg.num(s['median'])}"))
+                                         f"{svg.num(s['median'])}{tail}"))
     shift = b.get("shift")
     if shift:
         p = "—" if shift["ks_p"] is None else f"{shift['ks_p']:.4f}"

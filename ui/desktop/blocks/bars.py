@@ -7,7 +7,7 @@ from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 from ui.desktop.blocks import axis, chart
-from ui.desktop.blocks.card import card, text
+from ui.desktop.blocks.card import card, initial, text
 from ui.desktop.blocks.states import CURVE, colour, label
 from ui.desktop.theme import T
 
@@ -64,7 +64,7 @@ def _draw(b: dict) -> Callable:
             p.setPen(QColor(T["text"]))
             p.setFont(chart.font(11, True))
             p.drawText(QRectF(end + 8, top, rect.width() - end, row), Qt.AlignLeft | Qt.AlignVCenter,
-                       chart.num(i["value"]))
+                       chart.num(i["value"], b["unit"]))
         p.setPen(QPen(QColor(T["rule"]), 1))
         p.drawLine(QPointF(x(0.0), TOP), QPointF(x(0.0), bottom))
         if b["reference"] is not None:
@@ -84,8 +84,7 @@ def _tip(b: dict) -> Callable:
         if not 0 <= k < len(b["items"]):
             return None
         i = b["items"][k]
-        unit = f" {b['unit']}" if b["unit"] else ""
-        out = f"{i['label']}: {chart.num(i['value'])}{unit}"
+        out = f"{i['label']}: {chart.num(i['value'], b['unit'])}"
         if i.get("error"):
             out += f"\nintervalo {chart.num(i['error'][0])} … {chart.num(i['error'][1])}"
         return out + f"\nestado: {label(i.get('state', 'none'))}"
@@ -123,7 +122,7 @@ def _columns(b: dict) -> Callable:
             p.setFont(chart.font(9, True))
             above = i["value"] >= 0
             p.drawText(QRectF(left - 10, (a - 18) if above else z + 2, width + 20, 16),
-                       Qt.AlignHCenter, chart.num(i["value"]))
+                       Qt.AlignHCenter, chart.num(i["value"], b["unit"]))
 
     return draw
 
@@ -138,7 +137,7 @@ def _column_tip(b: dict) -> Callable:
         if not (box.contains(pos) and 0 <= k < len(b["items"])):
             return None
         i = b["items"][k]
-        return f"{i['label']}: {chart.num(i['value'])}{' ' + b['unit'] if b['unit'] else ''}"
+        return f"{i['label']}: {chart.num(i['value'], b['unit'])}"
 
     return tip
 
@@ -153,21 +152,21 @@ def widget(block: dict) -> QWidget:
         The framed chart and its key; with `vertical`, the columns alone — their ink is the
         sample's and the card's note names it.
     """
-    b = block
+    b = {**block, "items": [{**i, "label": initial(i["label"])} for i in block["items"]]}
     if not b["items"]:
         # A chart of nothing painted max() of an empty list inside paintEvent, and the window
         # died with a segfault (a filters.json with no filter applied, 2026-09-28).
-        return card(b, text("sin barras: el estudio no dejó ningún valor que dibujar",
+        return card(b, text("Sin barras: el estudio no dejó ningún valor que dibujar",
                             T["muted"]))
     if b.get("vertical"):
         return card(b, chart.Canvas(_columns(b), _column_tip(b)))
     states = sorted({i.get("state", "none") for i in b["items"]})
     items = [("box", colour(s), label(s)) for s in states]
     if any(i.get("error") for i in b["items"]):
-        items.append(("line", T["text"], "intervalo"))
+        items.append(("line", T["text"], "Intervalo"))
     if b["reference"] is not None:
-        items.append(("dash", T["text"], f"referencia {chart.num(b['reference'])}"))
+        items.append(("dash", T["text"], f"Referencia {chart.num(b['reference'])}"))
     if b["unit"]:
-        items.append(("box", T["bg"], f"unidad: {b['unit']}"))
+        items.append(("box", T["bg"], f"Unidad: {b['unit']}"))
     height = max(chart.HEIGHT - 20, TOP + BOTTOM + 30 * len(b["items"]))
     return card(b, chart.Canvas(_draw(b), _tip(b), height), chart.key(items))

@@ -19,12 +19,21 @@ def main() -> None:
     ap.add_argument("--databank", default="WFM",
                     help="export folder name, underscores not spaces")
     ap.add_argument("--day", help="export date; default is the most recent one")
+    ap.add_argument("--strategy", help="one strategy alone, as the export names it: writes "
+                    "only estrategias/<name>.json, never the population's files")
     ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[])
     args = ap.parse_args()
 
     directory = config.export(args.project, args.databank, args.day)
-    got = many.run(directory, config.load(args.overrides))
     out = report_dir(args.project, args.databank, date.today().isoformat()) / "wfm"
+    if args.strategy:
+        # Only its own JSON and page, as crossTF's --strategy: verdict.csv, wfm.json and
+        # cell_correlations.csv are the population's, and one strategy must not replace them.
+        got = many.one(directory, config.load(args.overrides), args.strategy)
+        print(markdown.render(got, f"Walk-Forward Matrix — {args.strategy}"))
+        print(f"-> {output.member(out, got, f'Walk-Forward Matrix — {args.strategy}')}")
+        return
+    got = many.run(directory, config.load(args.overrides))
     title = f"Walk-Forward Matrix — {args.project} / {args.databank}"
     output.population(out, "wfm", got["population"], title,
                       "¿Lo que optimiza bien predice lo que va bien después?")

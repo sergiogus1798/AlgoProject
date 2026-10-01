@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from core.study import blocks, output, result as envelope
-from studies.optimisation.wfm import run as reading
+from studies.optimisation.wfm import contract, objectives, run as reading
 from studies.optimisation.wfm.verdict import call
 
 MODULE = "studies.optimisation.wfm"
@@ -14,8 +14,11 @@ STATE = {call.PREDICTS: "pass", call.BLIND: "watch", call.PERVERSE: "fail"}
 GLOSSARY = [
     {"term": "Celda", "text": "Una combinación de cuántos tramos y qué parte fuera de muestra. "
      "Es la unidad de observación: todas reparten la misma historia."},
-    {"term": "ρ por celda", "text": "Spearman entre lo que cada tramo rindió al optimizar y lo "
-     "que rindió después, dentro de una celda."},
+    {"term": "ρ por celda", "text": "Dentro de una celda, Spearman entre el resultado que un "
+     "tramo tuvo al optimizarse (ventana IS) y el que ese mismo tramo tuvo después, corriendo "
+     "de verdad (ventana OOS) — no compara celdas entre sí, ni qué tramos fueron buenos en "
+     "distintas métricas. Bajo: ni siquiera dentro de esa celda el parámetro que ganó en IS "
+     "tendía a ganar en OOS, así que esa celda concreta no sostiene su propio veredicto."},
     {"term": "Deriva", "text": "Qué parte de los parámetros cambia el optimizador de un tramo "
      "al siguiente, en desviaciones típicas de cada uno."}]
 
@@ -33,17 +36,22 @@ def grid(cells: pd.DataFrame, strategy: str) -> dict:
 
 
 def member(strategy: str, got: dict, result: dict, cfg: dict, started: float,
-           failed: str | None) -> dict:
+           failed: str | None, identity: str | None = None) -> dict:
     """One strategy's verdict and its matrix, flagged when SQX itself failed it."""
     comp = result["companions"]
     return envelope.envelope(
-        MODULE, strategy, None, cfg, started,
+        MODULE, strategy, identity, cfg, started,
         [envelope.tab("matrix", "La matriz", [
+            *contract.matrix(result["checked"], result["scored"],
+                             result["rules"].loc[strategy].to_dict(), strategy,
+                             result["sqx_failed"].get(strategy), result["objectives"] is None),
+            *contract.equity_blocks(result["trades"], strategy),
             grid(result["cells"], strategy),
             blocks.table("La misma correlación en otras métricas",
                          comp[comp["strategy"] == strategy].drop(columns=["strategy"]),
                          "Un veredicto que sólo se sostiene en la métrica con la que se leyó "
-                         "es una propiedad de esa métrica, no de la estrategia.")])],
+                         "es una propiedad de esa métrica, no de la estrategia.")]),
+         objectives.tab(result["checked"], result["objectives"], strategy)],
         blocks.verdict(got["verdict"], STATE[got["verdict"]],
                        call.sentence(got, result["warning"]).replace("**", ""), got["rho"],
                        [{"label": "celdas con ρ negativo", "state": "info",
@@ -57,6 +65,34 @@ def member(strategy: str, got: dict, result: dict, cfg: dict, started: float,
           "text": f"SQX la marcó como FAILED en la Walk-Forward Matrix: {failed}"}] if failed else None,
         glossary=GLOSSARY, summary={k: v for k, v in got.items() if k != "verdict"}
         | {"verdict": got["verdict"], "sqx_failed": bool(failed)})
+
+
+def failures(directory: Path) -> dict[str, str]:
+    """The strategies SQX's own area rule failed, with the filter that failed them."""
+    status = directory / "status.parquet"
+    return ({} if not status.exists() else
+            pd.read_parquet(status).query("sqx_failed").set_index("strategy")["sqx_filter"]
+            .to_dict())
+
+
+def one(directory: Path, cfg: dict, strategy: str) -> dict:
+    """One strategy of the export alone, the same result the whole export gives it.
+
+    Args:
+        directory: The export's `wfm/` folder.
+        cfg: What config.load() returned.
+        strategy: Its name as the export spells it.
+
+    Returns:
+        The contract dict, its identity resolved.
+    """
+    started = time.time()
+    result = reading.read(directory, cfg, strategy)
+    if strategy not in result["verdicts"]:
+        raise SystemExit(f"{strategy} no tiene celdas con pasos suficientes en {directory}")
+    return member(strategy, result["verdicts"][strategy], result, cfg, started,
+                  failures(directory).get(strategy),
+                  output.identify(directory, [strategy]).get(strategy))
 
 
 def run(directory: Path, cfg: dict) -> dict:
@@ -75,11 +111,8 @@ def run(directory: Path, cfg: dict) -> dict:
     i = result["independence"]
     names = list(result["verdicts"])
     ident = output.identify(directory, names)
-    status = directory / "status.parquet"
-    failed = ({} if not status.exists() else
-              pd.read_parquet(status).query("sqx_failed").set_index("strategy")["sqx_filter"]
-              .to_dict())
-    members = [member(s, g, result, cfg, started, failed.get(s))
+    failed = failures(directory)
+    members = [member(s, g, result, cfg, started, failed.get(s), ident.get(s))
                for s, g in result["verdicts"].items()]
     table = pd.DataFrame([{"strategy": s, "identity": ident.get(s), **g}
                           for s, g in result["verdicts"].items()])

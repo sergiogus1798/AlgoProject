@@ -8,31 +8,47 @@ from PySide6.QtWidgets import QWidget
 
 from ui.desktop.blocks import axis, chart
 from ui.desktop.blocks.card import card
-from ui.desktop.blocks.states import CURVE, REAL, SERIES
+from ui.desktop.blocks.states import CURVE, REAL, SERIES, colour
 from ui.desktop.theme import T
 
-# Past six drawn series the hues repeat, so the pen style changes with each lap.
+# Past six drawn series the hues repeat, so the pen style changes with each lap — except
+# under `auto_dash_negative`, where the style is the sign's alone.
 STYLES = (Qt.SolidLine, Qt.DashDotLine, Qt.DotLine)
+
+
+def _ends_negative(s: dict) -> bool:
+    """Whether a series' last known value sits below zero."""
+    last = next((v for v in reversed(s["values"]) if v is not None), None)
+    return last is not None and last < 0
 
 
 def _pens(b: dict) -> list[tuple[str, Qt.PenStyle, float]]:
     """(colour, style, width) per series: one naming an `ink` of `CURVE` in it (dashed with
-    `dash`), a lone real series in the real ink, references dashed grey, the rest in the fixed
-    series order."""
+    `dash`), a lone real series in the real ink, references grey, the rest in the fixed
+    series order.
+
+    With `auto_dash_negative` (owner's rule) the style follows the sign and nothing else, for
+    every series, the reference included: a curve that ends below zero is dashed, one that
+    ends at or above it solid. Colours may cycle past six series; styles never do. Without
+    it, references are dashed and past six series each lap of colours changes the style."""
     drawn = [s for s in b["series"] if s["role"] != "reference"]
+    auto = b.get("auto_dash_negative")
     out, k = [], 0
     for s in b["series"]:
+        signed = Qt.DashLine if _ends_negative(s) else Qt.SolidLine
         if s.get("ink"):
-            out.append((CURVE[s["ink"]], Qt.DashLine if s.get("dash") else Qt.SolidLine, 2.0))
+            style = signed if auto else (Qt.DashLine if s.get("dash") else Qt.SolidLine)
+            out.append((CURVE[s["ink"]], style, 2.0))
             continue
         if s["role"] == "reference":
-            out.append((T["muted"], Qt.DashLine, 1.5))
+            out.append((T["muted"], signed if auto else Qt.DashLine, 2.0 if auto else 1.5))
             continue
+        lap = Qt.SolidLine if len(drawn) == 1 else STYLES[k // len(SERIES) % 3]
+        style = signed if auto else lap
         if len(drawn) == 1:
-            out.append((REAL if s["role"] == "real" else SERIES[0], Qt.SolidLine, 2.5))
+            out.append((REAL if s["role"] == "real" else SERIES[0], style, 2.5))
         else:
-            out.append((SERIES[k % len(SERIES)], STYLES[k // len(SERIES) % 3],
-                        2.5 if s["role"] == "real" else 1.8))
+            out.append((SERIES[k % len(SERIES)], style, 2.5 if s["role"] == "real" else 1.8))
             k += 1
     return out
 
@@ -54,6 +70,12 @@ def _draw(b: dict) -> Callable:
         px, xt = axis.xaxis(b["x"], box.left(), box.right())
         lo, hi = _range(b)
         y = axis.scale(lo, hi, box.bottom(), box.top())
+        if b.get("zero_shade") and lo < 0 < hi:
+            above, below = QColor(colour("pass")), QColor(colour("fail"))
+            above.setAlphaF(0.08)
+            below.setAlphaF(0.08)
+            p.fillRect(QRectF(box.left(), box.top(), box.width(), y(0) - box.top()), above)
+            p.fillRect(QRectF(box.left(), y(0), box.width(), box.bottom() - y(0)), below)
         chart.axes(p, box, xt, [(y(v), chart.num(v)) for v in axis.ticks(lo, hi, 5)])
         p.setBrush(Qt.NoBrush)
         for s, (c, style, width) in zip(b["series"], pens):
@@ -82,9 +104,8 @@ def _tip(b: dict) -> Callable:
             return None
         px, _ = axis.xaxis(b["x"], box.left(), box.right())
         i = axis.nearest(px, pos.x())
-        unit = f" {b['unit']}" if b["unit"] else ""
         rows = [f"x = {chart.num(b['x'][i])}"]
-        rows += [f"{s['label']}: {chart.num(s['values'][i])}{unit}" for s in b["series"]]
+        rows += [f"{s['label']}: {chart.num(s['values'][i], b['unit'])}" for s in b["series"]]
         return "\n".join(rows[:16])
 
     return tip
