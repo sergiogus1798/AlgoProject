@@ -8,11 +8,13 @@ from perf.inputs import sample
 from portfolio.common.monteCarlo import run
 from portfolio.common.monteCarlo.inputs import config as mc_config, costs, stream
 from engines.inference.snooping import superior
+from pipeline.autopilot import facts
 from studies.breakage.mcRetest.measure import store
 from studies.closing.atrCalculator import inputs as atr_inputs, load as atr_load, one as atr_one
 from studies.data.feedQuality import detect as fq_detect, inputs as fq_inputs
 from studies.screening.snoopingScreen import inputs as snooping
 from studies.transfer.crossmarket.simulate import paired
+from ui.daemon.workflow import sources
 
 
 def montecarlo_stream(cfg: dict) -> dict:
@@ -167,3 +169,21 @@ def feedquality_detect(cfg: dict) -> dict:
     got = fq_detect.measure(b, fq_inputs.tick(b, study["session"]["years"]), study)
     fq_detect.events(b, got, study["K"][feed], fq_inputs.week_mask(study, feed), study)
     return {"scale": len(b["c"]), "bytes_in": int(sum(b[x].nbytes for x in "ohlc"))}
+
+
+def autopilot_facts(cfg: dict) -> dict:
+    """Every number of one judging step's studies, as the autopilot gathers them before a judge.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        Fact rows gathered, and bytes of the per-strategy results read.
+    """
+    project, step = cfg["sample"]["facts"]
+    found = facts.gather(project, step)
+    read = [f for study in facts.BY_N[step]["studies"]
+            for r in sources.results(project, study)[:1] if r["path"].is_dir()
+            for f in r["path"].rglob("*") if f.suffix in (".json", ".parquet", ".csv")]
+    return {"scale": len(found), "bytes_in": sample.weight(read)}
+

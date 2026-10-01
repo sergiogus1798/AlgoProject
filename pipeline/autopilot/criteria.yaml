@@ -1,0 +1,41 @@
+# What the autopilot keeps at each judging step. Read by pipeline/autopilot/judge.py.
+#
+# dev — while the workflow itself is being built (owner, 2026-10-01: "no me interesan los
+#   filtros, me interesa que la aplicación y el workflow funcionen bien"). At the steps in `at`,
+#   keep `sample` strategies drawn at random among those that pass the step's rules — all of
+#   them while a step has none. `seed: null` draws a fresh seed each run; the run records it.
+#   `on: false` once the criteria below are the real ones.
+#
+# steps — one entry per judging step:
+#   cut    the databank the next SQX task reads: where the verdict is applied. A step with
+#          rules and no `cut` stops the run.
+#          Step 12 cuts CrossTF, before step 13 copies its mothers to CrossTF_Mothers: a mother
+#          is judged by her siblings' facts (`crossTF.cells.<role>.<tf>.*`, `crossTF.reading.*`)
+#          and, if she passes, only she goes on — on her own timeframe, unscaled. Every scaled
+#          sibling in a cut databank always goes (owner, 2026-10-01).
+#          Step 14 cuts «MCR 8 Stress», the one of the eight MCR databanks SPP IS reads; the
+#          other seven keep everyone and nothing reads them again (owner, 2026-10-01).
+#          Step 16 cuts «SPP OOS»: the WFM (19) reads it, and 16.5 takes the survivors from it,
+#          matched to their «SPP IS» counterparts, and designs from the combined backtest
+#          (owner, 2026-10-01).
+#   rules  each one tests one fact, a key of the step's hechos.parquet
+#          (`python3 -m pipeline.autopilot.facts --project P --step N` lists them), and gives
+#          pass, limbo or fail:
+#            {fact: K, pass: ">= 0", limbo: ">= -100"}
+#            {fact: K, near_median: 0.2, limbo_near_median: 0.5}
+#              |value − median| ≤ tol × |median|, the median over the databank being cut
+#          A strategy's outcome is its worst rule; a strategy without the fact is limbo
+#          (owner, 2026-10-01: odd, but limbo).
+#          No rules: every strategy passes. A limbo goes on, marked (owner, 2026-10-01).
+dev:
+  on: true
+  sample: 5
+  at: ["8"]
+  seed: null
+
+steps:
+  "8":  {cut: OOS, rules: []}
+  "10": {cut: Retest Markets - Family, rules: []}
+  "12": {cut: CrossTF, rules: []}
+  "14": {cut: MCR 8 Stress, rules: []}
+  "16": {cut: SPP OOS, rules: []}

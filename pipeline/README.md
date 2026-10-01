@@ -30,6 +30,7 @@ server on top of it. Three consequences, and they are the design:
 | `stages/` | what a stage is, how one is run, and when it refuses | adding a gate or wiring a real module in |
 | `stubs/` | what stands in for the five modules not built yet | wiring a real module in |
 | `verify/` | is this still a pipeline and not a script? | touching progress or resumption |
+| `autopilot/` | one PROJECT's workflow, 7 → 16, unattended: the window's chain judging by `criteria.yaml` instead of stopping (owner, 2026-10-01) | running a workflow without stops, or writing criteria |
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

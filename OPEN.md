@@ -103,6 +103,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 86 | 🟡 | Audit 2026-09-30: exports without manifest, a `migrate` code_version, two files over 250 lines | OPEN.md |
 | 87 | 🟠 | Portfolio construction engine — M0-M2, F1 and the F2 engine built 2026-09-30; the owner's calls gate each milestone | OPEN.md |
 | 88 | 🟠 | SQX's daily curve is each day's LOW equity, not a mark to market — readers that difference it | OPEN.md |
+| 90 | 🟡 | The autopilot (`pipeline/autopilot/`) — phase 1 built 2026-10-01, never run against SQX yet | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -561,3 +562,31 @@ real → M9 paper OOS). Nothing is built. What each milestone waits on:
 - **Development pool waits** for `Test_USDJPY_donchianUpperCrossUp_H1` (custodian, at 16.5 on
   2026-09-30 11:20) to finish: no mother has oos2 trades yet. Then `candidates.py` lists the
   archive commands and the owner archives.
+
+## 90. 🟡 The autopilot (`pipeline/autopilot/`) — phase 1 built 2026-10-01, never run against SQX yet
+
+Owner, 2026-10-01: a fully automatic, fast workflow; binary criteria with three outcomes (pass /
+limbo / fail), a limbo goes on marked, a step without criteria lets everyone through; meanwhile a
+random draw of 5 at step 8 only; not `ALGO_AUTONOMOUS`. Phase 1 = steps 7 → 16; tested offline
+(facts, criteria, plan) on `Test_USDJPY_donchianUpperCrossUp_H1`, never a real run.
+
+- **First real run** on a fresh `Test_` project, then measure what each hop costs (SQX time
+  against the dead time between steps: worker start/stop, loader exports, the step-8 readings
+  outside the sequence — `monkey`, `profitShape`, `entryQuality`…). Owner asked for this next.
+- **Decided 2026-10-01:** step 12 judges each mother by her siblings and cuts `CrossTF` (losers
+  and every scaled sibling), so step 13's refill of `CrossTF_Mothers` holds only the passing
+  mothers, unscaled. A fact missing for a strategy → limbo (owner: odd, but limbo).
+- **Decided 2026-10-01:** step 14 cuts `MCR 8 Stress` (what SPP IS reads), step 16 cuts `SPP OOS`
+  (what the WFM reads; 16.5 takes the survivors from it and their SPP IS counterparts).
+- **Blocks the «compared with the original» facts of step 12:** the baseline cell had 0 trades on
+  all 30 mothers of the 2026-09-30 run (§89, the empty «madre reconstruida» control).
+- **Phase 2** (16.5 → 20, mother by mother): the mothers are those left in `SPP OOS` after the
+  step-16 cut, each matched to her counterpart in `SPP IS`; the variants are designed from the
+  metrics of the combined backtest (owner, 2026-10-01: «no es necesario coger solo SPP OOS»).
+  Today `pipeline.run.mothers` takes every mother of the SPP export and the brief reads only IS.
+  `pipeline/recipe.yaml` also fails as written —
+  `ran` lacks `--project`, `wfc`/`cscv` lack `--family` (§50), `--chart` hard-codes XAUUSD.
+- **Phase 3** (21 → 26): the stopped version is not harvested for step 25, no pool for 26 (§89, §85).
+- **Overlapping two populations** (one in SQX, one in Python) only if the measurement shows the
+  dead time is large.
+

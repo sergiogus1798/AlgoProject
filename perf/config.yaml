@@ -74,5 +74,7 @@ sample:
   harvest: [XAU_ISOOS_ejemplo, Results, XAUUSD]  # project, databank, asset of the gate harvest the
                                   # snooping screen is timed on
   bars_timeframe: M30
+  facts: [Test_USDJPY_donchianUpperCrossUp_H1, "8"]   # project and judging step the autopilot's
+                                  # facts are gathered from: a project with every step's results
   files: 20                       # how many files the per-file parsing targets chew through
   n_sims: 5000                    # the catalogue measures the shape of the cost, not a real study

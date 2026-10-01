@@ -24,6 +24,7 @@ TARGETS: dict[str, dict] = {
                           "call": workloads.snooping_superior},
     "feedquality.detect": {"area": "strategies", "unit": "bars",
                            "call": workloads.feedquality_detect},
+    "autopilot.facts": {"area": "strategies", "unit": "rows", "call": workloads.autopilot_facts},
     "portfolio.universe_member": {"area": "portfolio", "unit": "trades",
                                   "call": construct.universe_member},
     "portfolio.pairs_table": {"area": "portfolio", "unit": "pairs", "call": construct.pairs_table},

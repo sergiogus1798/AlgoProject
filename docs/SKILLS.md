@@ -104,32 +104,33 @@ esta casa. Lo único suyo que hoy se usa son los esqueletos, y esos viven dentro
 
 <!-- generado por tools/skillmap.py — no editar debajo de esta linea -->
 
-Regenerado 2026-09-29 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
+Regenerado 2026-10-01 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
 
 ## Skills de proyecto — `/home/sergioguslw/Desktop/AlgoProject/.claude/skills`
 
 | skill | ~tokens al invocar | ficheros | último cambio | para qué |
 |---|---:|---:|---|---|
+| `crosstf` | 2,658 | 1 | 2026-09-29 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
 | `variants` | 2,384 | 1 | 2026-09-29 | Run the variant factory in SQX — turn one mother's SPP design brief into a batch of parameter variants, load and retest them on the custodian, and harvest the metrics panel and the per-day equity the WFC and the CSCV read |
-| `crosstf` | 2,282 | 1 | 2026-09-27 | Test whether a strategy's edge survives being read on a slower timeframe — fabricate period-rescaled siblings, wire a cross-timeframe check into a custom project, run it on the custodian, and read each cell against its own timeframe's null |
 | `curate` | 1,904 | 1 | 2026-09-25 | Apply a Python verdict back into SQX — move the strategies a filter, a test or an analysis rejected out of a databank, so the next task in the chain only sees the survivors. Works between any two tasks and with any module that can name what it drops |
 | `template-run` | 1,790 | 1 | 2026-09-26 | Build an existing strategy template on a market — set up the project, run it on the custodian, check the strategies really carry the template's fixed block, and record the run. Touches live installs and burns CPU |
-| `wfm` | 1,764 | 1 | 2026-09-29 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in oos2, and the ten per-cell conditions and the area rule that decide whether a strategy survives |
+| `wfm` | 1,782 | 1 | 2026-09-30 | Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in oos2, and the ten per-cell conditions and the area rule that decide whether a strategy survives |
 | `firm-onboard` | 1,754 | 1 | 2026-09-29 | Add a prop firm to the funding studies by the owner's admission protocol — register it as a candidate, check the admission gates on the firm's own pages (self-built EAs on MT5, Spain served, track record, modelable rules, EA traps), build its catalogue reader or typed catalogue, seed its rules file, find its offer surfaces, record its MT5 facts, and hand the owner an admission sheet; only the owner makes a firm active. Also re-runs the gates on a firm whose rules changed |
 | `sync` | 1,562 | 1 | 2026-09-26 | Put the project's current state on GitHub and keep it there — check what changed, refuse to commit data or machine-specific files, run the mechanical checks, commit it grouped by theme, and push every branch. Also bootstraps the remote the first time |
+| `mcretest` | 1,430 | 1 | 2026-09-29 | Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders |
 | `oos-gate` | 1,382 | 1 | 2026-09-29 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
-| `mcretest` | 1,351 | 1 | 2026-09-26 | Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders |
 | `spp` | 1,343 | 1 | 2026-09-26 | Configure and run the two SPP tasks of a custom SQX project — the System Parameter Permutation grid over the in-sample and the out-of-sample window, at the owner's spread and steps, with every acceptance silenced so the profile is a map and not a filter |
 | `crossmarket` | 1,341 | 1 | 2026-09-25 | Retest surviving strategies on other markets with SQX's Retest on additional markets cross-check — the markets from assets/_markets.yaml, each over its own window and at its own declared costs. Configures and runs a task on the custodian |
+| `asset-onboard` | 1,279 | 1 | 2026-09-30 | Add a new asset to assets/ with its whole cost card worked out from data — Darwinex's real spread per segment (measured, modelled back where there are no ticks), slippage at half of it, the owner's default commission and swap for its kind, the triple-swap night, and the MC Retest spread range from the real dispersion. Also refreshes the spreads of an existing asset |
 | `perf` | 1,249 | 1 | 2026-09-26 | Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement, left uncommitted for the owner |
-| `asset-onboard` | 1,197 | 1 | 2026-09-27 | Add a new asset to assets/ with its whole cost card worked out from data — Darwinex's real spread per segment (measured, modelled back where there are no ticks), slippage at half of it, the owner's default commission and swap for its kind, the triple-swap night, and the MC Retest spread range from the real dispersion. Also refreshes the spreads of an existing asset |
+| `autopilot` | 579 | 1 | 2026-10-01 | Run a project's whole workflow unattended — every SQX task and Python study from step 7 to 16, judging each judging step by criteria.yaml and cutting in SQX instead of stopping, cheap in tokens (reads only a status line and a short summary, never SQX's log) |
 | `ea-news` | 533 | 1 | 2026-09-29 | Make SQX-exported MetaTrader 5 EAs obey a prop firm's news rule — per strategy one EA with the firm's news filter (close before a high-impact release, no entries around it) and one without, both compiled |
 | `export` | 518 | 1 | 2026-09-27 | Export data out of StrategyQuant X — a databank's metrics with IS/OOS columns, every trade of every strategy, or OHLC bars |
 | `translate` | 443 | 1 | 2026-09-12 | Turn a .sqx strategy into readable pseudocode and an executable Python backtest, reconciled against the trades SQX exported |
-| `audit` | 401 | 1 | 2026-09-12 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
+| `audit` | 408 | 1 | 2026-09-30 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 247 | 1 | 2026-09-25 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-18 skills, 23,452 tokens de cuerpo en total, 91 KB en disco.
+19 skills, 24,592 tokens de cuerpo en total, 96 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 
