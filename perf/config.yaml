@@ -70,7 +70,7 @@ sample:
   retest_databank: MCR_All        # the ingested parquet the retest study reads back
   atr_databank: Results           # an export spanning IS and oos1, for the ATR stop study (step 24)
   atr_timeframe: H1               # the timeframe that export's strategies run on
-  bars_feed: XAUUSD_DukasM1_Infinox
+  bars_feed: XAUUSD_M1
   harvest: [XAU_ISOOS_ejemplo, Results, XAUUSD]  # project, databank, asset of the gate harvest the
                                   # snooping screen is timed on
   bars_timeframe: M30

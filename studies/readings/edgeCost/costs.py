@@ -27,7 +27,7 @@ def asset_for(feed: str) -> dict:
     """The asset file that prices this feed's costs.
 
     Args:
-        feed: SQX symbol as the harvest's manifest names it, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: SQX symbol as the harvest's manifest names it, e.g. "XAUUSD_M1".
 
     Returns:
         `core.assetdata.load()`'s dict. Raises when no `assets/symbols/*.yaml` claims the

@@ -16,7 +16,7 @@ def load(project: str, databanks: list[str], feed: str, symbol: str, timeframe: 
         project: Where the trades were exported from.
         databanks: One or more databanks of that project — the three WFC legs of a retest,
             or one export that already spans the windows. The newest export of each.
-        feed: SQX feed name of the main market, e.g. XAUUSD_DukasM1_Infinox.
+        feed: SQX feed name of the main market, e.g. XAUUSD_M1.
         symbol: Asset file name, e.g. XAUUSD.
         timeframe: The strategy's timeframe; the ATR is read on its bars.
         work: The stop-loss batch (`sqx.variants.stopgrid`) the exports came from, or None

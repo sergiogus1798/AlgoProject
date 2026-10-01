@@ -5,10 +5,10 @@
 symbol: EURUSD
 class: forex
 broker: the5ers
-sqx_symbol: EURUSD_DukasM1_the5ers
+sqx_symbol: EURUSD_M1
 feeds:
-  - EURUSD_DukasM1_the5ers
-  - EURUSD_DarwTick_the5ers
+  - EURUSD_M1
+  - EURUSD_TICK
   - EURUSD_M1_dukas
 verified: 2026-09-03
 
@@ -23,16 +23,24 @@ session: EURUSD_ftmo
 # `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
 instrument:
   tick_size: 0.0001
-  point_value: 100000       # $ por 1.0 de precio y 1.0 de lote
+  point_value: 100000.0     # $ por 1.0 de precio y 1.0 de lote
   min_distance: 10
 
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
-  spread:
-    use: 0.5                 # points
+  spread_is:
+    use: 0.54                # points
     sqx_now: 0.1              # points
-    why: "onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (EURUSD_DarwTick_the5ers). studies.data.spread.onboard"
+    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (EURUSD_TICK). studies.data.spread.onboard"
+  spread_oos:
+    use: 0.45
+    sqx_now: null
+    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (EURUSD_TICK). studies.data.spread.onboard
+  spread_oos2:
+    use: 0.49
+    sqx_now: null
+    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (EURUSD_TICK). studies.data.spread.onboard
   commission:
     use:                     # $ por lote
       build:
@@ -125,21 +133,25 @@ costs:
         price_now: 1.14633
         price_date: '2026-09-22'
   slippage_is:
-    use: 0.25                 # points — tramo(s) build
+    use: 0.27                 # points — tramo(s) build
     sqx_now: 0.0
-    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
   slippage_oos:
-    use: 0.25                 # points — tramo(s) oos1 y oos2
+    use: 0.23                 # points — tramo(s) oos1 y oos2
     sqx_now: 0.0
-    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+  slippage_oos2:
+    use: 0.24
+    sqx_now: null
+    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
   swap_long:
-    use: -7.15                 # points por noche
+    use: -10.33                # points por noche
     sqx_now: {type: points, value: -3.07}
-    why: "2026-09-27 — decisión del dueño: media del swap en puntos por noche de las 7 variantes de EURUSD con swap activo en el registro de instrumentos de SQX (dukascopy, ftmo, roboforex, the5ers, icmarkets, pepperstone, darwinex); mediana -6.6. Fuera: EURUSD_monevis(off), EURUSD.pro_oanda(percent) (desactivado o en %). Antes -3.07 (the5ers). Valor por defecto: el swap real cambia con los tipos."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -10.33/0.37, Hantec -10.24/0.66); este lado sale de ftmo. Pasado a puntos de SQX con pointValue × tickStep de su instrumento (contrato de MT5). Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
   swap_short:
-    use: 2.13                 # points por noche
+    use: 0.37                 # points por noche
     sqx_now: {type: points, value: 0.11}
-    why: "2026-09-27 — decisión del dueño: media del swap en puntos por noche de las 7 variantes de EURUSD con swap activo en el registro de instrumentos de SQX (dukascopy, ftmo, roboforex, the5ers, icmarkets, pepperstone, darwinex); mediana 2.44. Fuera: EURUSD_monevis(off), EURUSD.pro_oanda(percent) (desactivado o en %). Antes 0.11 (the5ers). Valor por defecto: el swap real cambia con los tipos."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -10.33/0.37, Hantec -10.24/0.66); este lado sale de ftmo. Pasado a puntos de SQX con pointValue × tickStep de su instrumento (contrato de MT5). Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
 
 notes:
   - "2026-09-23: spread, commission y los dos swap rellenados con lo que el MAESTRO lleva hoy (leido de los project.cfx con `sqx.inspect.instruments`), para desbloquear la regla dura 5 sin esperar a las cifras de the5ers. Son defaults de fabrica de SQX, comision CERO incluida: el coste modelado infravalora el real ~10x y su ordenacion entre pares no es creible. Todo resultado con coste producido antes de que el dueno los sustituya arrastra esa advertencia."
@@ -149,8 +161,8 @@ notes:
 # significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
 mc_retest:
   spread:
-    min: 0.33
-    max: 0.8
+    min: 0.36
+    max: 0.86
     sqx_now: {min: 1, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
   slippage:
     min: null
@@ -160,6 +172,9 @@ mc_retest:
 # Proyectos del maestro que usan este activo. Leído, no decidido.
 projects_using_it:
   - EURUSD
+mt5:
+  ftmo: EURUSD
+  hantec: EURUSD.h
 # Punto de MT5 en cada empresa, leído de su servidor el 2026-10-01 (mt5.live 'symbol').
 # Spread de MT5 × to_sqx = puntos de SQX (to_sqx = point ÷ instrument.tick_size).
 # No es siempre ÷10: forex y yenes ÷10, oro e índices ×1, Brent en Hantec ×10.

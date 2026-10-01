@@ -72,7 +72,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--wfm-databank", required=True, help="the WFM databank step 19 read")
-    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. USDJPY_DukasM1_the5ers")
+    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. USDJPY_M1")
     ap.add_argument("--symbol", required=True, help="asset file name, e.g. USDJPY")
     ap.add_argument("--timeframe", required=True, help="the build's timeframe, for the ledger")
     ap.add_argument("--family", required=True, help="the template family, for the ledger")

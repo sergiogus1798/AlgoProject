@@ -27,6 +27,7 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
 | `verdict.py` | Constancy against the tolerance, the two-way validation, the model chosen, the reconstruction and the proposal per segment | imported | tables → decision |
 | `asset.py` | One asset's report as the contract's data | imported | tables → result |
 | `scan.py` | **Step 4's command** | `python3 -m studies.data.spread.scan [--symbol S]` | ticks + bars → `spread/<tick feed>/{daily,hours,minutes}.parquet, summary.json, spread.*` |
+| `fundedswap.py` | The worst swap of FTMO and Hantec per side, read live from each firm's MT5 server (`mt5.live`), in SQX points (forex, through the SQX instrument's pointValue × tickStep) or % annual on each firm's own notional — the onboard's `swap: funded_worst` (owner, 2026-10-01) | imported | asset → {long, short} |
 | `band.py` | The daily mean spread as a power law of price, `a · price^b`, for the mean (least squares) and each quantile (quantile regression, rearranged so they never cross); the band's calibration by year | imported | days → curves |
 | `bands.py` | **The band's command**, one report per asset; the extreme quantiles are the MC Retest's RandomizeSpread Min and Max | `python3 -m studies.data.spread.bands [--symbol S]` | ticks → `spread/<tick feed>/band.{json,html,md}`, `band_days.parquet`, `band_summary.json` |
 | `registry.py` | What SQX's own `data.db` says of a symbol, read-only: its DukasM1 and DarwTick feeds, instrument, data range, and the mean swap of every broker's variant | imported | symbol → facts |

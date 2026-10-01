@@ -6,8 +6,10 @@ import sqlite3
 import pandas as pd
 
 from core.paths import MASTER
+from core.symbols import alias
 
 REGISTRY = MASTER / "user" / "data" / "data.db"
+DUKASCOPY, DARWINEX = 2, 4   # DATA.SOURCE codes: what `-symbol action=list` prints as the source
 
 
 def _query(sql: str, args: tuple = ()) -> list[tuple]:
@@ -20,12 +22,25 @@ def feeds(symbol: str) -> dict:
     """Every feed of a symbol, split by kind.
 
     Returns:
-        {"bars": [DukasM1 feeds], "ticks": [DarwTick feeds]}, each with its broker suffix,
-        e.g. "EURGBP_DukasM1_the5ers". Several brokers is a question for the owner.
+        {"bars": [Dukascopy M1 feeds], "ticks": [Darwinex tick feeds]}, e.g. "EURGBP_M1" and
+        "EURGBP_TICK". Told apart by SQX's own timeframe and source columns, not by the name:
+        since 2026-10-01 a name carries neither the source nor the broker. Several of one kind
+        is a question for the owner.
     """
-    names = [r[0] for r in _query("SELECT SYMBOL FROM DATA") if r[0].split("_")[0] == symbol]
-    return {"bars": sorted(n for n in names if "_DukasM1_" in n),
-            "ticks": sorted(n for n in names if "_DarwTick_" in n)}
+    rows = [r for r in _query("SELECT SYMBOL, TIMEFRAME, SOURCE FROM DATA") if alias(r[0]) == symbol]
+    return {"bars": sorted(n for n, tf, src in rows if tf == "M1" and src == DUKASCOPY),
+            "ticks": sorted(n for n, tf, src in rows if tf == "TICK" and src == DARWINEX)}
+
+
+def broker(feed: str) -> str:
+    """The broker whose instrument a feed is defined on, as `assets/` spells it.
+
+    Returns:
+        The broker's postfix in SQX's registry without its underscore, e.g. "Infinox",
+        "the5ers", "ftmo".
+    """
+    return _query("SELECT B.POSTFIX FROM DATA D JOIN BROKER B ON B.ID = D.BROKER_ID "
+                  "WHERE D.SYMBOL = ?", (feed,))[0][0].lstrip("_")
 
 
 def instrument(feed: str) -> dict:

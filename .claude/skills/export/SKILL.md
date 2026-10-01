@@ -25,7 +25,7 @@ to every export here, or the command looks for the project on the master and fin
 
 ```bash
 python3 -m sqx.export.export_trades --project XAUUSD --databank OOS \
-    --symbol XAUUSD_DukasM1_Infinox [--role custodian]
+    --symbol XAUUSD_M1 [--role custodian]
 ```
 
 The symbol carries no timeframe suffix. A folder of `.sqx` exports in one JVM start.

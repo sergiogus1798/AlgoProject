@@ -119,11 +119,12 @@ thresholds:
 
   # ── Paso 18 · el CSCV ─────────────────────────────────────────────────────────────────
   - key: cscv.blocks
-    value: 12
+    value: 16
     source: studies/optimisation/cscv/config.yaml#cscv.blocks
     set_by: dueño
-    set_on: 2026-09-23
-    why: C(12,6) = 924 particiones, los números de López de Prado
+    set_on: 2026-09-30
+    why: antes 12 (C(12,6) = 924 particiones); el dueño sube a 16 (C(16,8) = 12.870) en la
+      pasada de feedback de UI del 2026-09-30 (FEEDBACK §8.4)
 
   # ── Paso 18.5 · superficies por mercado ───────────────────────────────────────────────
   - key: marketSurfaces.rho_floor
@@ -409,9 +410,9 @@ thresholds:
   # K y sesión por feed: medidos por studies.data.feedQuality.calibrate con el criterio del dueño
   # (decisiones 3 y 15; sesión deducida del feed por pregunta del 2026-09-26), el mismo día y
   # antes de mirar ninguna estrategia. Se recalculan sólo si cambia el proveedor del feed.
-  - key: feedQuality.K.BRENTCMDUSD_ftmo
+  - key: feedQuality.K.UKOIL.cash_M1
     value: 20
-    source: studies/data/feedQuality/config.yaml#K.BRENTCMDUSD_ftmo
+    source: studies/data/feedQuality/config.yaml#K.UKOIL.cash_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -421,18 +422,18 @@ thresholds:
       0.25 × mediana. Año estable 2018. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.BRENTCMDUSD_ftmo
+  - key: feedQuality.sessions.UKOIL.cash_M1
     value: "Mon 03:00-Tue 00:00, Tue 03:00-Wed 00:00, Wed 03:00-Thu 00:00, Thu 03:00-Fri 00:00, Fri 03:00-Fri 23:46, Fri 23:59-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.BRENTCMDUSD_ftmo
+    source: studies/data/feedQuality/config.yaml#sessions.UKOIL.cash_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.XAGUSD_DukasM1_Infinox
+  - key: feedQuality.K.XAGUSD_M1
     value: 20
-    source: studies/data/feedQuality/config.yaml#K.XAGUSD_DukasM1_Infinox
+    source: studies/data/feedQuality/config.yaml#K.XAGUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -442,18 +443,18 @@ thresholds:
       0.25 × mediana. Año estable 2020. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.XAGUSD_DukasM1_Infinox
+  - key: feedQuality.sessions.XAGUSD_M1
     value: "Mon 01:00-Tue 00:00, Tue 01:00-Wed 00:00, Wed 01:00-Thu 00:00, Thu 01:00-Fri 00:00, Fri 01:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.XAGUSD_DukasM1_Infinox
+    source: studies/data/feedQuality/config.yaml#sessions.XAGUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.XAUUSD_DukasM1_Infinox
+  - key: feedQuality.K.XAUUSD_M1
     value: 25
-    source: studies/data/feedQuality/config.yaml#K.XAUUSD_DukasM1_Infinox
+    source: studies/data/feedQuality/config.yaml#K.XAUUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -463,18 +464,18 @@ thresholds:
       0.25 × mediana. Año estable 2014. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.XAUUSD_DukasM1_Infinox
+  - key: feedQuality.sessions.XAUUSD_M1
     value: "Mon 01:00-Tue 00:00, Tue 01:00-Wed 00:00, Wed 01:00-Thu 00:00, Thu 01:00-Fri 00:00, Fri 01:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.XAUUSD_DukasM1_Infinox
+    source: studies/data/feedQuality/config.yaml#sessions.XAUUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.USDJPY_DukasM1_the5ers
+  - key: feedQuality.K.USDJPY_M1
     value: 30
-    source: studies/data/feedQuality/config.yaml#K.USDJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.USDJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -484,18 +485,18 @@ thresholds:
       0.25 × mediana. Año estable 2005. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.USDJPY_DukasM1_the5ers
+  - key: feedQuality.sessions.USDJPY_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.USDJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.USDJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.AUDJPY_DukasM1_the5ers
+  - key: feedQuality.K.AUDJPY_M1
     value: 25
-    source: studies/data/feedQuality/config.yaml#K.AUDJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.AUDJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -505,18 +506,18 @@ thresholds:
       0.25 × mediana. Año estable 2003. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.AUDJPY_DukasM1_the5ers
+  - key: feedQuality.sessions.AUDJPY_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.AUDJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.AUDJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.AUDUSD_DukasM1_the5ers
+  - key: feedQuality.K.AUDUSD_M1
     value: 25
-    source: studies/data/feedQuality/config.yaml#K.AUDUSD_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.AUDUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -526,18 +527,18 @@ thresholds:
       0.25 × mediana. Año estable 2025. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.AUDUSD_DukasM1_the5ers
+  - key: feedQuality.sessions.AUDUSD_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.AUDUSD_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.AUDUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.CADJPY_DukasM1_the5ers
+  - key: feedQuality.K.CADJPY_M1
     value: 20
-    source: studies/data/feedQuality/config.yaml#K.CADJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.CADJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -547,18 +548,18 @@ thresholds:
       0.25 × mediana. Año estable 2008. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.CADJPY_DukasM1_the5ers
+  - key: feedQuality.sessions.CADJPY_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.CADJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.CADJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.EURJPY_DukasM1_the5ers
+  - key: feedQuality.K.EURJPY_M1
     value: 20
-    source: studies/data/feedQuality/config.yaml#K.EURJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.EURJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -568,18 +569,18 @@ thresholds:
       0.25 × mediana. Año estable 2005. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.EURJPY_DukasM1_the5ers
+  - key: feedQuality.sessions.EURJPY_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.EURJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.EURJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.EURUSD_DukasM1_the5ers
+  - key: feedQuality.K.EURUSD_M1
     value: 25
-    source: studies/data/feedQuality/config.yaml#K.EURUSD_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.EURUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -589,18 +590,18 @@ thresholds:
       0.25 × mediana. Año estable 2005. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.EURUSD_DukasM1_the5ers
+  - key: feedQuality.sessions.EURUSD_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.EURUSD_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.EURUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.GBPJPY_DukasM1_the5ers
+  - key: feedQuality.K.GBPJPY_M1
     value: 25
-    source: studies/data/feedQuality/config.yaml#K.GBPJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.GBPJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -610,18 +611,18 @@ thresholds:
       0.25 × mediana. Año estable 2005. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.GBPJPY_DukasM1_the5ers
+  - key: feedQuality.sessions.GBPJPY_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.GBPJPY_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.GBPJPY_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.GBPUSD_DukasM1_the5ers
+  - key: feedQuality.K.GBPUSD_M1
     value: 30
-    source: studies/data/feedQuality/config.yaml#K.GBPUSD_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.GBPUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -631,18 +632,18 @@ thresholds:
       0.25 × mediana. Año estable 2005. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.GBPUSD_DukasM1_the5ers
+  - key: feedQuality.sessions.GBPUSD_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.GBPUSD_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.GBPUSD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.USDCAD_DukasM1_the5ers
+  - key: feedQuality.K.USDCAD_M1
     value: 25
-    source: studies/data/feedQuality/config.yaml#K.USDCAD_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.USDCAD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -652,18 +653,18 @@ thresholds:
       0.25 × mediana. Año estable 2005. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.USDCAD_DukasM1_the5ers
+  - key: feedQuality.sessions.USDCAD_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.USDCAD_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.USDCAD_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
       deducida del feed (pregunta del 2026-09-26): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
-  - key: feedQuality.K.USDCHF_DukasM1_the5ers
+  - key: feedQuality.K.USDCHF_M1
     value: 25
-    source: studies/data/feedQuality/config.yaml#K.USDCHF_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#K.USDCHF_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-
@@ -673,9 +674,9 @@ thresholds:
       0.25 × mediana. Año estable 2005. Se recalcula sólo si
       cambia el proveedor del feed
 
-  - key: feedQuality.sessions.USDCHF_DukasM1_the5ers
+  - key: feedQuality.sessions.USDCHF_M1
     value: "Mon 00:00-Sat 00:00"
-    source: studies/data/feedQuality/config.yaml#sessions.USDCHF_DukasM1_the5ers
+    source: studies/data/feedQuality/config.yaml#sessions.USDCHF_M1
     set_by: agente
     set_on: 2026-09-26
     why: >-

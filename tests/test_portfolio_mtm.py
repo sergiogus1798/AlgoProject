@@ -134,7 +134,7 @@ def check_golden() -> None:
         return
 
     trades = pd.read_parquet(runs[0])
-    feed = "USDJPY_DukasM1_the5ers"
+    feed = "USDJPY_M1"
     t0 = time.perf_counter()
     bars = barstore.source(feed, ["High", "Low", "Close"])
     t_read = time.perf_counter() - t0

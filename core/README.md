@@ -36,6 +36,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `assets.py` | The preflight read out loud, with the feed-quality warning the last `studies.data.feedQuality.scan` left for the asset's feeds; `python3 -m core.assets <SYMBOL>` | symbol → report |
 | `commission.py` | Converts a broker's own $/lot or % figure into a % of notional at today's price (`commission_pct`), refreshes every asset's confirmed brokers' `pct_now` from the latest close (`python3 -m core.commission --refresh`, weekly), and hands it to step 26 and `weeklyReconciler` (`broker_pct`) — never to an SQX workflow task, which prices at `costs.commission.use` instead | brokers, feed → `pct_now` per broker |
 | `significance.py` | Could this edge be zero: Sharpe and its shape, the variance factor both formulas below share, the Probabilistic Sharpe Ratio and the minimum track-record length | returns → probabilities |
+| `symbols.py` | `alias(symbol)`: the short market name shown on screen for a full SQX symbol (`USDJPY_M1` → `USDJPY`) — an override in `assets/_aliases.yaml`, else the ticker before the first underscore | symbol → short name |
 
 Three rules specific to this folder:
 

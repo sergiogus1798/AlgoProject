@@ -3,8 +3,8 @@
 BLOCKER found in review, 2026-09-26: a single `SPREAD_SHARE = 0.5` applied to every feed was
 wrong even for feeds it was never checked against (`knowhow/export/fill-and-pricing.md` itself
 says silver and Brent show a ZERO entry offset on the same export gold shows 0.05 on). Measured
-here instead of assumed: on `USDJPY_DukasM1_the5ers` the entry offset is 0.002 against a 0.001
-declared spread (ratio 2.0, not 0.5); on `XAUUSD_DukasM1_Infinox` it is 1.5-1.6, not 0.5 either —
+here instead of assumed: on `USDJPY_M1` the entry offset is 0.002 against a 0.001
+declared spread (ratio 2.0, not 0.5); on `XAUUSD_M1` it is 1.5-1.6, not 0.5 either —
 neither matches the number the old constant borrowed from a different gold dataset. The fill
 convention is a property of the feed and the historical task that ran it, not a universal SQX
 constant, so it is measured from the same bars and trades every report call already has.
@@ -25,7 +25,7 @@ def measure(trades: pd.DataFrame, feed: str, timeframe: str) -> dict:
 
     Args:
         trades: One harvest's trades, carrying `sample` ("IS"/"OOS").
-        feed: SQX feed, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: SQX feed, e.g. "XAUUSD_M1".
         timeframe: The bars the strategies were priced on, e.g. "M30".
 
     Returns:

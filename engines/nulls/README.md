@@ -122,7 +122,7 @@ strategy trades**; and the test stays **per strategy**, with no population-wide 
 
 ```bash
 python3 -m studies.readings.monkey.verify --project XAUUSD --databank Results \
-    --feed XAUUSD_DukasM1_Infinox --strategy "Strategy 1.17.44"
+    --feed XAUUSD_M1 --strategy "Strategy 1.17.44"
 ```
 
 Three checks, and all three have to pass: the fill reconciles above 0.99; the vectorised barrier

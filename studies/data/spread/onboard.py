@@ -16,10 +16,10 @@ from pathlib import Path
 import pandas as pd
 
 from core import assetwrite
-from core.assetdata import SYMBOLS, policy, window
+from core.assetdata import SYMBOLS, load, policy, window
 from core.assets import report
 from core.assetyaml import read, write
-from studies.data.spread import inputs, measure, registry, verdict
+from studies.data.spread import fundedswap, inputs, measure, registry, verdict
 
 CONFIG = Path(__file__).with_name("config.yaml")
 HALVES = {"build": "is", "oos1": "oos", "oos2": "oos2"}
@@ -71,28 +71,65 @@ def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
                                   & (daily.index < pd.Timestamp(b, unit="ms"))].mean() * factor), 2)
            for k, (a, b) in windows.items()}
     forex = kind == "forex"
-    if forex:
-        whole = (daily.index >= pd.Timestamp(windows["build"][0], unit="ms")) & \
-                (daily.index < pd.Timestamp(windows["oos2"][1], unit="ms"))
-        spreads = {"spread": round(float(points[whole].mean() * factor), 2)}
-        slips = {"slippage_is": spreads["spread"] / 2, "slippage_oos": spreads["spread"] / 2}
-    else:
-        spreads = {f"spread_{HALVES[k]}": v for k, v in per.items()}
-        slips = {f"slippage_{HALVES[k]}": round(v / 2, 2) for k, v in per.items()}
+    # One per segment for every kind (owner, 2026-09-30): forex used to get one mean.
+    spreads = {f"spread_{HALVES[k]}": v for k, v in per.items()}
+    slips = {f"slippage_{HALVES[k]}": round(v / 2, 2) for k, v in per.items()}
     price = _oos1_price(m, windows["oos1"])
     usd = cfg["onboard"]["commission_usd_per_lot"]
     commission = (float(rules["commission"]) if rules["commission"] != "usd_per_lot"
                   else float(usd) if forex else round(usd / (inst["point_value"] * price) * 100, 6))
-    swaps = (registry.broker_swaps(symbol, tick) if rules["swap"] == "brokers"
-             else {"long": float(rules["swap"][0]), "short": float(rules["swap"][1])})
+    if rules["swap"] == "funded_worst":   # owner, 2026-10-01: worst of the funded accounts, live
+        swaps = (fundedswap.worst(symbol) if (SYMBOLS / f"{symbol}.yaml").exists()
+                 and load(symbol).get("mt5") else {"pending": "sin `mt5:` en su ficha todavía"})
+    elif rules["swap"] == "brokers":
+        swaps = registry.broker_swaps(symbol, tick)
+    else:
+        swaps = {"long": float(rules["swap"][0]), "short": float(rules["swap"][1])}
     k = verdict.mc_multiples(days, name, [cfg["band"]["quantiles"][0], cfg["band"]["quantiles"][-1]])
-    base = spreads.get("spread", spreads.get("spread_is"))
+    base = spreads["spread_is"]
+    mc_spread, mc_slippage = mc_range(base, k, cfg["mc"])
     return {"symbol": symbol, "kind": kind, "class": "forex" if forex else "no_forex", "bars": bars,
-            "ticks": ticks, "broker": bars.split("_", 2)[-1], "instrument": inst, "segments": segs,
+            "ticks": ticks, "broker": registry.broker(bars), "instrument": inst, "segments": segs,
             "data": registry.data_range(bars), "model": name, "per_segment": per, "spreads": spreads,
             "slippage": slips, "commission": commission, "price": price, "swap": swaps,
-            "triple_swap_on": rules["triple_swap_on"], "mc_spread": (round(base * k["min"], 2), round(base * k["max"], 2)),
-            "mc_multiples": k, "factor": factor}
+            "triple_swap_on": rules["triple_swap_on"], "mc_spread": mc_spread,
+            "mc_slippage": mc_slippage, "mc_multiples": k, "factor": factor}
+
+
+def mc_range(base: float, k: dict, cfg: dict) -> tuple[tuple[float, float], tuple[float, float]]:
+    """The MC Retest's spread and slippage ranges, widened to a floor SQX can actually draw from.
+
+    Args:
+        base: The build segment's own declared spread (points), what the multiples scale.
+        k: `verdict.mc_multiples()`'s {"min", "max"} ratios.
+        cfg: The `mc` section of config.yaml (`grain`, `min_steps`).
+
+    Returns:
+        `(spread, slippage)`, each a `(min, max)` in points. SQX's `RandomizeSpread` and
+        `RandomizeSlippage` draw on a grain of about `cfg["grain"]` points (measured on
+        USDJPY, `knowhow/costs/mc-retest-ranges.md`): a band narrower than `min_steps` of
+        that grain gives too few distinct outcomes for the task to have a shape
+        (`tarea_sin_dispersion`) — a low-spread pair's multiplicative band (≈0.65x-1.47x of a
+        small `base`) is exactly where this bites. The band is widened around its own centre,
+        never shifted, so the multiplicative quantiles still say what they said; a floor that
+        would push the low end below zero pulls the whole band up instead, since a negative
+        spread is not a thing SQX can draw. Slippage is declared as half the spread everywhere
+        else in this module (`slips` above), so its range is exactly half of the (already
+        floored) spread range — not floored again on its own, since halving it never worsens
+        the same grain check for the spread task, which is the one seen jammed at ~35-39k in
+        practice (2026-09-30 feedback §6).
+    """
+    lo, hi = base * k["min"], base * k["max"]
+    floor = cfg["grain"] * cfg["min_steps"]
+    if hi - lo < floor:
+        mid = (lo + hi) / 2
+        lo, hi = mid - floor / 2, mid + floor / 2
+    if lo < 0:
+        hi -= lo
+        lo = 0.0
+    spread = (round(lo, 2), round(hi, 2))
+    slippage = (round(lo / 2, 2), round(hi / 2, 2))
+    return spread, slippage
 
 
 def apply(p: dict, cfg: dict, spread_only: bool) -> None:
@@ -113,19 +150,19 @@ def apply(p: dict, cfg: dict, spread_only: bool) -> None:
                 assetwrite.set_value("policy", ["segments", s, seg, edge], value)
         assetwrite.set_value("policy", ["segments", s, "data"], {"from": p["data"][0], "to": p["data"][1]})
     how = f"× factor {p['factor']}, modelo `{p['model']}` donde no hay ticks ({p['ticks']})"
-    for f, v in p["spreads"].items():
+    assetwrite.rename_cost(s, "spread", "spread_is")        # a forex file before 2026-09-30
+    for i, (f, v) in enumerate(p["spreads"].items()):
         assetwrite.set_cost(s, f, float(v), f"{day} — spread medio de Darwinex del tramo {how}. "
-                            "studies.data.spread.onboard", after="spread_oos")
-    for f, v in p["slippage"].items():
+                            "studies.data.spread.onboard", after=list(p["spreads"])[i - 1])
+    for i, (f, v) in enumerate(p["slippage"].items()):
         assetwrite.set_cost(s, f, float(v), f"{day} — la mitad del spread de su tramo, default del dueño.",
-                            after="slippage_oos")
-    if p["class"] == "no_forex":
-        # Only once `spread_oos2` exists: a segment naming a field the file lacks breaks every load.
-        assetwrite.set_value("policy", ["segments", s, "oos2", "spread"], "oos2")
+                            after=list(p["slippage"])[i - 1])
     if not spread_only:
         _commission_and_swap(p, cfg, day)
     assetwrite.set_value(s, ["mc_retest", "spread", "min"], float(p["mc_spread"][0]))
     assetwrite.set_value(s, ["mc_retest", "spread", "max"], float(p["mc_spread"][1]))
+    assetwrite.set_value(s, ["mc_retest", "slippage", "min"], float(p["mc_slippage"][0]))
+    assetwrite.set_value(s, ["mc_retest", "slippage", "max"], float(p["mc_slippage"][1]))
     doc = read(CONFIG)
     doc["assets"][s] = {"ticks": p["ticks"], "bars": p["bars"]}
     doc["band"]["assets"][s] = p["ticks"]
@@ -140,10 +177,15 @@ def _commission_and_swap(p: dict, cfg: dict, day: str) -> None:
     assetwrite.set_cost(s, "commission", p["commission"], f"{day} — default del dueño para `{p['kind']}`: "
                         f"{cfg['onboard']['commission_usd_per_lot']} USD por lote ida y vuelta "
                         f"(en % al último precio Darwinex {p['price']:g} si no es forex; 0 en índices).")
-    src = (f"media de {p['swap']['n']} brokers del registro de SQX" if "n" in p["swap"]
-           else "default del dueño, % anual")
-    for f, k in (("swap_long", "long"), ("swap_short", "short")):
-        assetwrite.set_cost(s, f, float(p["swap"][k]), f"{day} — {src}.")
+    if "pending" in p["swap"]:
+        print(f"swap NO escrito: {p['swap']['pending']} — fija `mt5:` y vuelve a correr --write")
+    else:
+        src = (f"media de {p['swap']['n']} brokers del registro de SQX" if "n" in p["swap"]
+               else f"peor caso de {' y '.join(p['swap']['raw'])} leído hoy de sus servidores MT5 "
+                    f"(puntos MT5 largo/corto {p['swap']['raw']}); cambia con los tipos, revisar"
+               if "raw" in p["swap"] else "default del dueño, % anual")
+        for f, k in (("swap_long", "long"), ("swap_short", "short")):
+            assetwrite.set_cost(s, f, float(p["swap"][k]), f"{day} — {src}.")
     if p["triple_swap_on"] != policy()["swap"]["triple_swap_on"]:
         assetwrite.set_value(s, ["swap"], {"triple_swap_on": p["triple_swap_on"], "rollout_hour": "23:00"})
 
@@ -153,8 +195,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--symbol", required=True, help="e.g. EURGBP")
     ap.add_argument("--kind", required=True, choices=["index", "metal", "forex"])
-    ap.add_argument("--bars", default="", help="the DukasM1 feed when there are several")
-    ap.add_argument("--ticks", default="", help="the DarwTick feed when there are several")
+    ap.add_argument("--bars", default="", help="the Dukascopy M1 feed when there are several")
+    ap.add_argument("--ticks", default="", help="the Darwinex tick feed when there are several")
     ap.add_argument("--write", action="store_true", help="write it; without it, only print")
     ap.add_argument("--spread-only", action="store_true",
                     help="existing asset: write spreads, slippage and MC range, keep segments, commission, swap")
@@ -164,13 +206,14 @@ def main() -> None:
     bars, ticks = a.bars or found["bars"], a.ticks or found["ticks"]
     bars, ticks = [bars] if isinstance(bars, str) else bars, [ticks] if isinstance(ticks, str) else ticks
     if len(bars) != 1 or len(ticks) != 1:
-        raise SystemExit(f"{a.symbol}: feeds DukasM1 {found['bars']}, DarwTick {found['ticks']} — "
+        raise SystemExit(f"{a.symbol}: feeds M1 {found['bars']}, TICK {found['ticks']} — "
                          "hace falta exactamente uno de cada: elige con --bars y --ticks")
     p = plan(a.symbol, a.kind, bars[0], ticks[0], cfg)
     rows = [("modelo del build", p["model"]), ("spread por tramo (puntos, × factor)", p["per_segment"]),
             ("spreads a declarar", p["spreads"]), ("slippage", p["slippage"]),
             ("comisión", p["commission"]), ("swap largo/corto", (p["swap"]["long"], p["swap"]["short"])),
             ("triple swap", p["triple_swap_on"]), ("MC Retest spread (puntos)", p["mc_spread"]),
+            ("MC Retest slippage (puntos)", p["mc_slippage"]),
             ("  en múltiplos", {k: round(v, 2) for k, v in p["mc_multiples"].items()}),
             ("tramos", p["segments"]), ("instrumento", p["instrument"])]
     print(f"{a.symbol} ({a.kind}) — {p['bars']} + {p['ticks']}")

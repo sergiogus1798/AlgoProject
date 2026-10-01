@@ -12,13 +12,19 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import pandas as pd
+
 from core.paths import DATA, report_dir  # noqa: E402
 from ui.daemon import jobs, jobsapi  # noqa: E402
-from ui.daemon.runner import api  # noqa: E402
+from ui.daemon.runner import api, where  # noqa: E402
 
-# Since F13 (2026-09-28): the USDJPY Donchian project.
-PROJECT, DATABANK, STRATEGY = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results",
-                               "Strategy 1.15.54")
+# Since F13 (2026-09-28): the USDJPY Donchian project. The strategy is read off the newest
+# export rather than pinned by name: a nightly workflow re-run gives this project a fresh
+# population under new names (📓 2026-09-30, T1 UI feedback pass — a hardcoded "Strategy
+# 1.15.54" no longer existed in the export and made this test fail on unrelated grounds).
+PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
+_export = where.newest(DATA / "raw" / PROJECT / DATABANK, "*/trades.parquet")
+STRATEGY = pd.read_parquet(_export, columns=["strategy"])["strategy"].iloc[0]
 # Job logs go here, not to AlgoData/logs/ui, and vanish with the test.
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-runner-")
 SLEEPER = ["-c", "import time; print('PROGRESS 40 a medias', flush=True); time.sleep(30)"]
@@ -127,7 +133,7 @@ def test_only_options() -> None:
         "study": "crossmarket", "project": PROJECT, "databank": "Retest_Markets_-_Family",
         "asset": "USDJPY"}).json()["options"]
     keys = [o["key"] for o in got]
-    assert keys and "USDJPY_DukasM1_the5ers" not in keys, keys
+    assert keys and "USDJPY_M1" not in keys, keys
     assert http.get("/api/study/only", params={"study": "gate"}).json() == {"options": []}
 
 

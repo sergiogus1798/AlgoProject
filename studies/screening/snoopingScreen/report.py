@@ -3,6 +3,7 @@
 
 import argparse
 import shlex
+import shutil
 import sys
 from datetime import date
 
@@ -49,7 +50,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True, help="the build databank the gate ran on")
-    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_DukasM1_Infinox")
+    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_M1")
     ap.add_argument("--symbol", required=True, help="asset file name, e.g. XAUUSD")
     ap.add_argument("--timeframe", required=True, help="the build's timeframe, for the ledger")
     ap.add_argument("--family", required=True, help="the template family, for the ledger")
@@ -72,6 +73,9 @@ def main() -> None:
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "snoopingScreen"
     title = f"SPA y StepM contra el buy & hold — {a.project} / {a.databank}"
     output.population(out, "snoopingScreen", got["population"], title)
+    # A rerun the same day lands in this same folder: the last run's strategies go first, or
+    # one it no longer read would keep its old file and be read as current (autopilot facts).
+    shutil.rmtree(out / "estrategias", ignore_errors=True)
     for m in got["members"]:
         output.member(out, m, f"SPA y StepM — {m['strategy']}")
     table = measured["table"].reset_index()

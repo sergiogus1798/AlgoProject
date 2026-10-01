@@ -123,7 +123,7 @@ def cross_market(sqx: Path) -> bool:
 
 
 def feed(sqx: Path) -> str:
-    """The SQX symbol a strategy ran on, without the timeframe: `USDJPY_DukasM1_the5ers`.
+    """The SQX symbol a strategy ran on, without the timeframe: `USDJPY_M1`.
 
     Args:
         sqx: One strategy file.

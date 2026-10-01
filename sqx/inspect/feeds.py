@@ -3,6 +3,7 @@
 import sqlite3
 
 from core.paths import MASTER
+from core.symbols import current
 
 REGISTRY = MASTER / "user" / "data" / "data.db"
 
@@ -11,12 +12,12 @@ def timezone(feed: str) -> str:
     """The IANA zone SQX stamps one feed's bars in — its trades' times are in the same clock.
 
     Args:
-        feed: The feed name, e.g. "USDJPY_DukasM1_the5ers".
+        feed: The feed name, e.g. "USDJPY_M1".
 
     Returns:
         The zone as the registry spells it, e.g. "EET" or "Asia/Jerusalem". Read-only: the
         registry is opened with `mode=ro`, so a running master is never written to.
     """
     with sqlite3.connect(f"file:{REGISTRY}?mode=ro", uri=True) as db:
-        row = db.execute("SELECT TIMEZONE FROM DATA WHERE SYMBOL = ?", (feed,)).fetchone()
+        row = db.execute("SELECT TIMEZONE FROM DATA WHERE SYMBOL = ?", (current(feed),)).fetchone()
     return row[0]

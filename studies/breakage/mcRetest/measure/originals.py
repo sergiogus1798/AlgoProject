@@ -17,7 +17,7 @@ def feed_of(path: Path) -> tuple[str, str]:
         path: Any .sqx of the project -- every strategy of one project runs on the same feed.
 
     Returns:
-        (symbol, feed), e.g. ("USDJPY", "USDJPY_DukasM1_the5ers"). `sqxfile.symbol()` returns
+        (symbol, feed), e.g. ("USDJPY", "USDJPY_M1"). `sqxfile.symbol()` returns
         the feed with the `_LOM_<timeframe>` suffix SQX appends for its own fill model; cutting
         it there is what turns it into the directory name `core.barstore` actually holds.
     """

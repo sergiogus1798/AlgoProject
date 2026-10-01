@@ -15,11 +15,11 @@ config.**
 | | index | metal | forex |
 |---|---|---|---|
 | segments | build from the first day of data to 2019, oos1 2020–2023, oos2 2024–31/08/2026 | build 2008–2017, oos1 2018–2022, oos2 2023–30/08/2026 ⚠️ | same as metal |
-| spread | mean Darwinex spread of each segment × 1.25, one per segment (`spread_oos2` its own) | same | one spread: the mean over build..oos2 × 1.25 |
+| spread | mean Darwinex spread of each segment × 1.25, one per segment (`spread_oos2` its own) | same | same — one per segment since 2026-09-30 (owner) |
 | build without ticks | **proportional to price** (`relativo`) | the best-validated model | best-validated |
-| slippage | half the spread of its segment | same | half the spread |
+| slippage | half the spread of its segment | same | same |
 | commission | 0 | 8 USD/lot round trip → % of notional at Darwinex's last price | 8 USD/lot |
-| swap | −8 % annual, long and short | −7 % annual, long and short | mean, in points, of every broker's variant in SQX's registry |
+| swap | worst of FTMO and Hantec per side, live from MT5 (`fundedswap`, owner 2026-10-01): % annual | same | same, in SQX points |
 | triple swap | FRIDAY | WEDNESDAY | WEDNESDAY |
 | MC Retest spread | quantiles 2.5–97.5 % of measured day ÷ model mean, × the build spread | same | same |
 
@@ -56,6 +56,10 @@ python3 -m core.assets EURGBP                                                   
   - **session: null.** The builder borrows the session from a project that holds it
     (`knowhow/costs/sessions-per-asset.md`), and refuses when none does.
   - A market missing from `_markets.yaml`.
+- **Then its `mt5:`** — the asset's symbol at each prop firm (`ftmo`, `hantec`), read from each
+  terminal (`mcp__mt5__mt5_symbols`), never guessed: `core.assetwrite.set_value(<S>, ["mt5"],
+  {...})`. Without it MT5 Bridge › Verificar refuses that firm (owner, 2026-09-30: it moved here
+  from the git-ignored `mt5/symbols.csv`).
 
 Say both in the report.
 

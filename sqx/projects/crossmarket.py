@@ -27,7 +27,7 @@ def feed_owner(feed: str) -> str | None:
     """Which asset file declares a feed.
 
     Args:
-        feed: SQX feed name, e.g. "XAGUSD_DukasM1_Infinox".
+        feed: SQX feed name, e.g. "XAGUSD_M1".
 
     Returns:
         The asset name, or None when no file in assets/symbols/ carries that feed — which

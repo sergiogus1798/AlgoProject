@@ -103,8 +103,8 @@ def markets_of(folder: Path) -> list[str]:
     first = next(iter(sorted(folder.glob("*.sqx"))), None)
     keys = sqxstats.results(first) if first else []
     # Cut at the "/": 🔬 2026-09-25 on USDJPY, the key `settings.xml` stores is
-    # `Main: USDJPY_DukasM1_the5ers/H1` and the archive's folder is
-    # `Results/Main: USDJPY_DukasM1_the5ers_LOM_H1/`, so the whole key matched no curve and
+    # `Main: USDJPY_M1/H1` and the archive's folder is
+    # `Results/Main: USDJPY_M1_LOM_H1/`, so the whole key matched no curve and
     # the harvest came back empty. Up to the "/" it is a prefix of both.
     return {legmod.market(k): k.split("/")[0] for k in keys
             if k.startswith(legmod.MAIN) or k.startswith(legmod.EXTRA)}

@@ -20,7 +20,7 @@ def main() -> None:
     ap.add_argument("--project", required=True, help="the custom project it was retested in")
     ap.add_argument("--databank", required=True, nargs="+",
                     help="the legs to read, by output databank: WFC_Build WFC_OOS1")
-    ap.add_argument("--feed", required=True, help="the main market's feed, e.g. USDJPY_DukasM1_the5ers")
+    ap.add_argument("--feed", required=True, help="the main market's feed, e.g. USDJPY_M1")
     ap.add_argument("--symbol", required=True, help="the asset, e.g. USDJPY")
     ap.add_argument("--set", dest="overrides",
                     action="extend", nargs="+", default=[], metavar="KEY=VALUE")

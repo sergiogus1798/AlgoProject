@@ -12,7 +12,7 @@ COSTS = ("Costes PROVISIONALES: los 9 pares y el principal se retestearon con lo
 
 
 def short(feed: str) -> str:
-    """"EURUSD_DukasM1_the5ers" -> "EURUSD"."""
+    """"EURUSD_M1" -> "EURUSD"."""
     return feed.split("_")[0]
 
 

@@ -18,8 +18,8 @@ def main_feed(work: Path) -> tuple[str, str]:
         work: The batch directory.
 
     Returns:
-        ("USDJPY_DukasM1_the5ers", "H1"), read off the result key SQX stored, e.g.
-        "Main: USDJPY_DukasM1_the5ers/H1". Taken from the batch and never from
+        ("USDJPY_M1", "H1"), read off the result key SQX stored, e.g.
+        "Main: USDJPY_M1/H1". Taken from the batch and never from
         `_markets.yaml`, whose timeframe is the asset's default and not this run's.
     """
     key = pq.read_table(work / "segments.parquet", columns=["result_key"],
@@ -47,7 +47,7 @@ def provisional(feed: str) -> bool:
     """Whether the costs a market was retested at are still placeholders.
 
     Args:
-        feed: A feed name, e.g. "EURUSD_DukasM1_the5ers".
+        feed: A feed name, e.g. "EURUSD_M1".
 
     Returns:
         True when any cost of its asset file carries a `why` that starts PROVISIONAL —

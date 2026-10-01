@@ -15,12 +15,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import assetdata
 from core.datapaths import projects_backup
-from mt5 import tester
+from mt5 import compare, tester
 from mt5.verify import conditions, firms, judge, mt5side
 from sqx.projects import mt5verify
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
-FEED = "XAUUSD_DukasM1_Infinox"
+FEED = "XAUUSD_M1"
 COSTS = {"defaultSpread": 41.0, "defaultSlippage": 0,
          "commission": {"method": "PercentageBased", "value": 0.0014},
          "swap": {"type": "points", "long": -90.35, "short": -4.2, "triple_swap_on": "WEDNESDAY",
@@ -31,11 +31,22 @@ def trades(n: int, seed: int) -> pd.DataFrame:
     """n trades 37 h apart, alternating sides, P&L drawn around a small edge."""
     rng = np.random.default_rng(seed)
     t0 = pd.Timestamp("2025-01-02 10:00")
-    return pd.DataFrame([{"Type": "Buy" if i % 2 else "Sell",
-                          "Open time": t0 + pd.Timedelta(hours=37 * i), "Open price": 2000.0,
-                          "Size": 1.0, "Close time": t0 + pd.Timedelta(hours=37 * i + 5),
-                          "Close price": 2001.0, "Profit/Loss": float(rng.normal(20, 100))}
-                         for i in range(n)])
+    pnl = rng.normal(20, 100, n)
+    return moved(pd.DataFrame([{"Type": "Buy" if i % 2 else "Sell",
+                                 "Open time": t0 + pd.Timedelta(hours=37 * i), "Open price": 2000.0,
+                                 "Size": 1.0, "Close time": t0 + pd.Timedelta(hours=37 * i + 5),
+                                 "Profit/Loss": float(pnl[i])} for i in range(n)]))
+
+
+def moved(frame: pd.DataFrame) -> pd.DataFrame:
+    """Close prices that move exactly the trade's P&L at `INST`'s point value: the criteria
+    read the price move (`mt5.compare.in_points`), not the booked USD."""
+    side = np.where(frame["Type"] == "Buy", 1.0, -1.0)
+    return frame.assign(**{"Close price": frame["Open price"] + side * frame["Profit/Loss"]
+                           / (INST["point_value"] * frame["Size"])})
+
+
+INST = {"tick_size": 0.01, "point_value": 100.0}
 
 
 def judged(failures: list[str]) -> None:
@@ -45,15 +56,20 @@ def judged(failures: list[str]) -> None:
     sqx = trades(60, 1)
     late = judge.shifted(sqx, 1)
     late["Profit/Loss"] += np.random.default_rng(2).normal(0, 1, len(late))
-    got = judge.firm_result("ftmo", sqx, late, "H1", 100000, cfg, "XAUUSD")["summary"]
+    late = moved(late)
+    got = judge.firm_result("ftmo", sqx, late, "H1", 100000, cfg, "XAUUSD", INST,
+                             ("EETUS", "EETUS"))["summary"]
     if got["state"] != "pass" or got["clock_h"] != 1:
         failures.append(f"una copia una hora tarde no pasa con reloj +1: {got}")
     scrambled = late.copy()
     scrambled["Profit/Loss"] = np.random.default_rng(3).normal(20, 100, len(late))
-    got = judge.firm_result("ftmo", sqx, scrambled, "H1", 100000, cfg, "XAUUSD")["summary"]
+    scrambled = moved(scrambled)
+    got = judge.firm_result("ftmo", sqx, scrambled, "H1", 100000, cfg, "XAUUSD", INST,
+                             ("EETUS", "EETUS"))["summary"]
     if got["state"] != "fail" or got["row_1"] != 1.0 or got["row_2"] <= 0.05:
         failures.append(f"un P&L barajado no falla la fila 2 con todo emparejado: {got}")
-    got = judge.firm_result("ftmo", sqx, sqx.iloc[:0], "H1", 100000, cfg, "XAUUSD")["summary"]
+    got = judge.firm_result("ftmo", sqx, sqx.iloc[:0], "H1", 100000, cfg, "XAUUSD", INST,
+                             ("EETUS", "EETUS"))["summary"]
     if got["state"] != "fail" or got["row_1"] != 0.0:
         failures.append(f"sin operaciones en MT5 no falla la fila 1: {got}")
 
@@ -134,13 +150,26 @@ def lots(failures: list[str]) -> None:
         pass
 
 
+def zoned(failures: list[str]) -> None:
+    """the5ers' Asia/Jerusalem to the firms' EETUS: +1 h in the weeks the US has changed hour
+    and Israel not yet (2024-03-15), 0 h in summer (2024-07-01); the skipped hour is NaT."""
+    t = pd.DataFrame({"Open time": pd.to_datetime(["2024-03-15 10:00", "2024-07-01 10:00",
+                                                   "2024-03-29 02:30"]),
+                      "Close time": pd.to_datetime(["2024-03-15 12:00", "2024-07-01 12:00",
+                                                    "2024-03-29 04:00"])})
+    got = compare.to_zone(t, "Asia/Jerusalem", "EETUS")["Open time"]
+    if list(got[:2]) != [pd.Timestamp("2024-03-15 11:00"), pd.Timestamp("2024-07-01 10:00")] \
+            or not pd.isna(got[2]):
+        failures.append(f"Asia/Jerusalem → EETUS no convierte por fecha: {list(got)}")
+
+
 def main() -> None:
-    """Run the five checks."""
+    """Run the six checks."""
     failures = []
-    for check in (judged, priced, written, ini, lots):
+    for check in (judged, zoned, priced, written, ini, lots):
         check(failures)
     print("\n".join(failures) or
-          "ok: el reloj se lee de las operaciones (+1 h), un P&L barajado falla la fila 2 y un "
+          "ok: el reloj se lee de las operaciones (+1 h) y se convierte de zona fecha a fecha, un P&L barajado falla la fila 2 y un "
           "lado vacío la 1; FTMO se traduce a unidades de SQX y Hantec sin comisión confirmada "
           "se rechaza; el proyecto solo enciende las dos empresas y la exportación, cada una a "
           "sus costes, con el FixedSize de la estrategia; el ini del tester cambia de cuenta; el EA "

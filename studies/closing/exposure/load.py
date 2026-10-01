@@ -9,7 +9,7 @@ def load(project: str, databank: str, feed: str, symbol: str, cfg: dict) -> dict
 
     Args:
         project, databank: Where the trades were exported from.
-        feed: SQX feed name, e.g. XAUUSD_DukasM1_Infinox.
+        feed: SQX feed name, e.g. XAUUSD_M1.
         symbol: Asset file name, e.g. XAUUSD.
         cfg: What `inputs.config` returned.
 

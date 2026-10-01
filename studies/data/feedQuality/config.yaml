@@ -47,30 +47,30 @@ alarm:
 review:
   extreme_per_column: 20                                   # los más extremos por columna, para revisarlos a mano
 K:                                                         # por feed, criterio de la decisión 3
-  BRENTCMDUSD_ftmo: ledger:feedQuality.K.BRENTCMDUSD_ftmo
-  XAGUSD_DukasM1_Infinox: ledger:feedQuality.K.XAGUSD_DukasM1_Infinox
-  XAUUSD_DukasM1_Infinox: ledger:feedQuality.K.XAUUSD_DukasM1_Infinox
-  USDJPY_DukasM1_the5ers: ledger:feedQuality.K.USDJPY_DukasM1_the5ers
-  AUDJPY_DukasM1_the5ers: ledger:feedQuality.K.AUDJPY_DukasM1_the5ers
-  AUDUSD_DukasM1_the5ers: ledger:feedQuality.K.AUDUSD_DukasM1_the5ers
-  CADJPY_DukasM1_the5ers: ledger:feedQuality.K.CADJPY_DukasM1_the5ers
-  EURJPY_DukasM1_the5ers: ledger:feedQuality.K.EURJPY_DukasM1_the5ers
-  EURUSD_DukasM1_the5ers: ledger:feedQuality.K.EURUSD_DukasM1_the5ers
-  GBPJPY_DukasM1_the5ers: ledger:feedQuality.K.GBPJPY_DukasM1_the5ers
-  GBPUSD_DukasM1_the5ers: ledger:feedQuality.K.GBPUSD_DukasM1_the5ers
-  USDCAD_DukasM1_the5ers: ledger:feedQuality.K.USDCAD_DukasM1_the5ers
-  USDCHF_DukasM1_the5ers: ledger:feedQuality.K.USDCHF_DukasM1_the5ers
+  UKOIL.cash_M1: ledger:feedQuality.K.UKOIL.cash_M1
+  XAGUSD_M1: ledger:feedQuality.K.XAGUSD_M1
+  XAUUSD_M1: ledger:feedQuality.K.XAUUSD_M1
+  USDJPY_M1: ledger:feedQuality.K.USDJPY_M1
+  AUDJPY_M1: ledger:feedQuality.K.AUDJPY_M1
+  AUDUSD_M1: ledger:feedQuality.K.AUDUSD_M1
+  CADJPY_M1: ledger:feedQuality.K.CADJPY_M1
+  EURJPY_M1: ledger:feedQuality.K.EURJPY_M1
+  EURUSD_M1: ledger:feedQuality.K.EURUSD_M1
+  GBPJPY_M1: ledger:feedQuality.K.GBPJPY_M1
+  GBPUSD_M1: ledger:feedQuality.K.GBPUSD_M1
+  USDCAD_M1: ledger:feedQuality.K.USDCAD_M1
+  USDCHF_M1: ledger:feedQuality.K.USDCHF_M1
 sessions:                                                  # por feed, deducida del feed
-  BRENTCMDUSD_ftmo: ledger:feedQuality.sessions.BRENTCMDUSD_ftmo
-  XAGUSD_DukasM1_Infinox: ledger:feedQuality.sessions.XAGUSD_DukasM1_Infinox
-  XAUUSD_DukasM1_Infinox: ledger:feedQuality.sessions.XAUUSD_DukasM1_Infinox
-  USDJPY_DukasM1_the5ers: ledger:feedQuality.sessions.USDJPY_DukasM1_the5ers
-  AUDJPY_DukasM1_the5ers: ledger:feedQuality.sessions.AUDJPY_DukasM1_the5ers
-  AUDUSD_DukasM1_the5ers: ledger:feedQuality.sessions.AUDUSD_DukasM1_the5ers
-  CADJPY_DukasM1_the5ers: ledger:feedQuality.sessions.CADJPY_DukasM1_the5ers
-  EURJPY_DukasM1_the5ers: ledger:feedQuality.sessions.EURJPY_DukasM1_the5ers
-  EURUSD_DukasM1_the5ers: ledger:feedQuality.sessions.EURUSD_DukasM1_the5ers
-  GBPJPY_DukasM1_the5ers: ledger:feedQuality.sessions.GBPJPY_DukasM1_the5ers
-  GBPUSD_DukasM1_the5ers: ledger:feedQuality.sessions.GBPUSD_DukasM1_the5ers
-  USDCAD_DukasM1_the5ers: ledger:feedQuality.sessions.USDCAD_DukasM1_the5ers
-  USDCHF_DukasM1_the5ers: ledger:feedQuality.sessions.USDCHF_DukasM1_the5ers
+  UKOIL.cash_M1: ledger:feedQuality.sessions.UKOIL.cash_M1
+  XAGUSD_M1: ledger:feedQuality.sessions.XAGUSD_M1
+  XAUUSD_M1: ledger:feedQuality.sessions.XAUUSD_M1
+  USDJPY_M1: ledger:feedQuality.sessions.USDJPY_M1
+  AUDJPY_M1: ledger:feedQuality.sessions.AUDJPY_M1
+  AUDUSD_M1: ledger:feedQuality.sessions.AUDUSD_M1
+  CADJPY_M1: ledger:feedQuality.sessions.CADJPY_M1
+  EURJPY_M1: ledger:feedQuality.sessions.EURJPY_M1
+  EURUSD_M1: ledger:feedQuality.sessions.EURUSD_M1
+  GBPJPY_M1: ledger:feedQuality.sessions.GBPJPY_M1
+  GBPUSD_M1: ledger:feedQuality.sessions.GBPUSD_M1
+  USDCAD_M1: ledger:feedQuality.sessions.USDCAD_M1
+  USDCHF_M1: ledger:feedQuality.sessions.USDCHF_M1

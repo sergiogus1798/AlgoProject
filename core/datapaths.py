@@ -5,6 +5,7 @@ Split out of core/paths.py, which keeps the installs and the primary exports."""
 from pathlib import Path
 
 from core.paths import DATA, MASTER
+from core.symbols import current
 
 
 def template_dir(name: str) -> Path:
@@ -197,17 +198,19 @@ def tick_file(feed: str) -> Path:
     """The tick history SQX keeps for one tick feed, read in place and never copied.
 
     Args:
-        feed: SQX symbol, e.g. "XAUUSD_DarwTick_Infinox".
+        feed: SQX symbol, e.g. "XAUUSD_TICK".
 
     Returns:
         The master's `.dat`: several GB of delta-coded ask/bid ticks that only
         `core.tickfile` reads. Read-only; SQX rewrites it on a data update.
     """
+    feed = current(feed)   # an older .sqx names the feed as it was before 2026-10-01
     return MASTER / "user" / "data" / "History" / feed / f"{feed}_TICK.dat"
 
 
 def bar_file(feed: str) -> Path:
     """The M1 history SQX keeps for one bar feed, read in place: `core.tickfile.bars` decodes it."""
+    feed = current(feed)
     return MASTER / "user" / "data" / "History" / feed / f"{feed}_M1.dat"
 
 

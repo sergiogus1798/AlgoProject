@@ -5,9 +5,9 @@
 symbol: XAUUSD
 class: no_forex
 broker: Infinox
-sqx_symbol: XAUUSD_DukasM1_Infinox
+sqx_symbol: XAUUSD_M1
 feeds:
-  - XAUUSD_DukasM1_Infinox
+  - XAUUSD_M1
 verified: 2026-09-03
 
 # Sesión de negociación que SQX aplica a la tarea (`MarketOpenSession`). Tiene que ser la
@@ -21,7 +21,7 @@ session: XAUUSD_ftmo
 # `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
 instrument:
   tick_size: 0.01
-  point_value: 100          # $ por 1.0 de precio y 1.0 de lote
+  point_value: 100.0        # $ por 1.0 de precio y 1.0 de lote
   min_distance: 10
 
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
@@ -30,28 +30,28 @@ costs:
   spread_is:
     use: 16.37               # points — tramo `build`
     sqx_now: 5               # points, el unico que hay hoy
-    why: "onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_DarwTick_Infinox). studies.data.spread.onboard"
+    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_TICK). studies.data.spread.onboard"
   spread_oos:
     use: 22.54                # points — tramos `oos1` y `oos2`
     sqx_now: 10               # points, el unico que hay hoy
-    why: "onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_DarwTick_Infinox). studies.data.spread.onboard"
+    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_TICK). studies.data.spread.onboard"
   spread_oos2:
     use: 37.49
     sqx_now: null
-    why: onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_DarwTick_Infinox). studies.data.spread.onboard
+    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAUUSD_TICK). studies.data.spread.onboard
   commission:
     use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
       build:
-        method: PercentageBased
-        value: 0.005
+        method: SizeBased
+        value: 5.0
       oos1:
-        method: PercentageBased
-        value: 0.005
+        method: SizeBased
+        value: 5.0
       oos2:
-        method: PercentageBased
-        value: 0.005
+        method: SizeBased
+        value: 5.0
     sqx_now: {method: SizeBased, value: 8}   # $ por lote — HAY QUE PASARLO A %
-    why: "2026-09-29 — el dueño corrige el reparto por tramo: en un activo no_forex con comisión confirmada TODO el workflow de SQX (build y cada retest — OOS, crossmarket, MC Retest, SPP, WFM, variantes...) usa la % de Darwinex, 0.005 % del nocional, en los tres tramos por igual. Ya no se elige el bróker más caro tramo a tramo (per_segment queda retirado de ese papel); Darwinex es la referencia del spread y la más citada en el árbol de costes, así que fija el desarrollo. Forex sigue en 5 USD/lote SizeBased en los tres tramos; índices en 0 %: ninguno de los dos cambia. core.commission.broker_pct sigue dando la % propia de cada bróker para el paso 26 y weeklyReconciler."
+    why: "2026-10-01 — decisión del dueño: el peor caso de FTMO y Hantec (deja de usarse el 0,005 % de Darwinex). Hantec cobra 2,50 USD por lote y lado = 5 USD ida y vuelta (verificado en sus operaciones reales de XAUUSD.h); FTMO 0,0014 % del nocional. A la mediana de cada tramo (1.251 / 1.707 / 2.637) los 5 USD de Hantec son 0,0040 / 0,0029 / 0,0019 %: Hantec es el peor en los tres. SizeBased."
     brokers:
       darwinex:
         method: PercentageBased
@@ -98,13 +98,12 @@ costs:
         price_now: 4369.12
         price_date: '2026-09-22'
       hantec:
-        method: null
-        value: null
-        unit: null
-        source: null
-        date: '2026-09-29'
-        confirmed: false
-        note: agregadores dan $5/lote en oro; no está en la tabla propia confirmada (que sólo lista forex)
+        method: SizeBased
+        value: 5.0
+        unit: usd_per_lot
+        source: operaciones reales de la cuenta Hantec (mt5.live history), 2,50 USD/lote/lado
+        date: '2026-10-01'
+        confirmed: true
       the5ers:
         method: null
         value: null
@@ -124,23 +123,23 @@ costs:
   slippage_is:
     use: 8.19                # points — tramo(s) build
     sqx_now: 0.0
-    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
   slippage_oos:
     use: 11.27             # points — tramo(s) oos1 y oos2
     sqx_now: 0.0
-    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
   slippage_oos2:
     use: 18.75
     sqx_now: null
-    why: onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño.
+    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
   swap_long:
-    use: -7.0                 # % ANUAL (SQX divide /100 y /360)
+    use: -7.07                # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: -73.42}
-    why: "2026-09-27 — decisión del dueño: -7 % anual, el mismo en largo y en corto. Valor por defecto: el swap real cambia con los tipos y no hay histórico."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -72.64/-4.2, Hantec -82.0/-8.0); este lado sale de hantec. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
   swap_short:
-    use: -7.0                 # % ANUAL (SQX divide /100 y /360)
+    use: -0.69                # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: 38.76}
-    why: "2026-09-27 — decisión del dueño: -7 % anual, el mismo en largo y en corto. Valor por defecto: el swap real cambia con los tipos y no hay histórico."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -72.64/-4.2, Hantec -82.0/-8.0); este lado sale de hantec. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
 
 notes:
   - "2026-09-21: spread, commission and point_value filled with SQX's own defaults so authoring is not blocked while the protocol is built. They are NOT agreed Infinox figures. Every cost-bearing result produced before the owner replaces them carries that caveat."
@@ -175,6 +174,9 @@ projects_using_it:
   - Retester
   - USDJPY
   - XAUUSD
+mt5:
+  ftmo: XAUUSD
+  hantec: XAUUSD.h
 # Punto de MT5 en cada empresa, leído de su servidor el 2026-10-01 (mt5.live 'symbol').
 # Spread de MT5 × to_sqx = puntos de SQX (to_sqx = point ÷ instrument.tick_size).
 # No es siempre ÷10: forex y yenes ÷10, oro e índices ×1, Brent en Hantec ×10.

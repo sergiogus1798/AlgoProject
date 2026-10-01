@@ -19,7 +19,7 @@ def stamped(path: Path) -> dict[str, str]:
 
     Returns:
         Every scalar entry by name, as text, e.g. {"ExitOnFriday.FridayExitTime": "2100",
-        "Symbol": "XAUUSD_DukasM1_Infinox"}. Times here are HHMM; lastSettings.xml holds the
+        "Symbol": "XAUUSD_M1"}. Times here are HHMM; lastSettings.xml holds the
         same ones in seconds after midnight.
     """
     with zipfile.ZipFile(path) as z:
@@ -166,7 +166,7 @@ def asset_card(feed: str) -> tuple[str | None, str | None]:
     """The asset file that declares this feed, and the sha256 of its bytes today.
 
     Args:
-        feed: SQX symbol, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: SQX symbol, e.g. "XAUUSD_M1".
 
     Returns:
         (asset, sha256), or (None, None) when no file in assets/symbols claims the feed.

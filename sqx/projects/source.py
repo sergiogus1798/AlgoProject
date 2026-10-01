@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 
 from core.paths import MASTER, WORKERS
+from core.symbols import current
 from sqx.projects.resources import SYMBOL
 from sqx.projects.tasksettings import session_block
 
@@ -17,7 +18,7 @@ def defines(cfx: Path, session: str, feed: str) -> bool:
         feed: SQX symbol name, from the asset's file.
     """
     with zipfile.ZipFile(cfx) as z:
-        texts = [z.read(n).decode("utf-8", "replace") for n in z.namelist()
+        texts = [current(z.read(n).decode("utf-8", "replace")) for n in z.namelist()
                  if n.endswith(".xml") and n != "config.xml"]
     return (any(session_block(t, session) for t in texts)
             and any(m.group(1) == feed for t in texts for m in SYMBOL.finditer(t)))

@@ -2,6 +2,7 @@
 """The gate over one databank: the cascade, the scorecard, and the verdict SQX can apply."""
 
 import argparse
+import shutil
 from datetime import date
 
 from core.manifest import write as write_manifest
@@ -16,7 +17,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
-    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_DukasM1_Infinox")
+    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_M1")
     ap.add_argument("--set", action="extend", nargs="+", default=[], help="screen.threshold=value")
     a = ap.parse_args()
 
@@ -39,6 +40,9 @@ def main() -> None:
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "gate"
     title = f"Puerta OOS — {a.project} / {a.databank}"
     output.population(out, "gate", got["population"], title)
+    # A rerun the same day lands in this same folder: the last run's strategies go first, or
+    # one it no longer read would keep its old file and be read as current (autopilot facts).
+    shutil.rmtree(out / "estrategias", ignore_errors=True)
     for m in got["members"]:
         output.member(out, m, f"Puerta OOS — {m['strategy']}")
     scores.to_parquet(out / "scorecard.parquet", compression="zstd")

@@ -22,7 +22,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True, help="the harvest's build databank name")
-    ap.add_argument("--feed", required=True, help="SQX feed, e.g. XAUUSD_DukasM1_Infinox")
+    ap.add_argument("--feed", required=True, help="SQX feed, e.g. XAUUSD_M1")
     ap.add_argument("--strategy", default="", help="one strategy, read in full; all when omitted")
     ap.add_argument("--set", action="extend", nargs="+", default=[], help="section.key=value")
     a = ap.parse_args()

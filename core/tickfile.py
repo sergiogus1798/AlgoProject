@@ -207,5 +207,5 @@ def read(path: Path) -> tuple[pd.DataFrame, int]:
 
 
 def minutes(feed: str) -> tuple[pd.DataFrame, int]:
-    """`read()` of one tick feed's history, e.g. "XAUUSD_DarwTick_Infinox"."""
+    """`read()` of one tick feed's history, e.g. "XAUUSD_TICK"."""
     return read(tick_file(feed))

@@ -60,12 +60,12 @@ notes:
   - '2026-10-01: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
 mc_retest:
   spread:
-    min: null
-    max: null
+    min: 92.63
+    max: 102.38
     sqx_now: null
   slippage:
-    min: null
-    max: null
+    min: 46.31
+    max: 51.19
     sqx_now: null
 mt5:
   ftmo: USOIL.cash

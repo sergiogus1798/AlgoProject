@@ -76,7 +76,7 @@ def ticks_read(cfg: dict) -> dict:
         Ticks decoded and bytes read. USDJPY's Darwinex history, the lighter of the two the
         study reads (368 M ticks, 2.6 GB): the cost grows with the file, one pass, no ticks held.
     """
-    feed = "USDJPY_DarwTick_the5ers"
+    feed = "USDJPY_TICK"
     _, ticks = tickfile.minutes(feed)
     return {"scale": ticks, "bytes_in": tick_file(feed).stat().st_size}
 

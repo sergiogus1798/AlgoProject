@@ -39,22 +39,22 @@
 # mientras nadie ha mirado con calma cuál de los dos cajones le toca a cada mercado.
 
 XAUUSD:
-  main: XAUUSD_DukasM1_Infinox
+  main: XAUUSD_M1
   timeframe: M30
   categories:
     # Misma familia macro que el oro: metales y energía, movidos por el dólar y por el riesgo.
     family:
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
       # 2026-09-23: averiguado. `AlgoData/bars/manifest.json`, sincronizado de SQX el
       # 2026-09-21 con sync_bars.py: 4.105.534 barras M1 de 2013-01-01 a 2026-09-07.
       # Con `unknown` el cross-check le daba ventana desde 2008, cinco años sin datos.
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
     # Vacío hasta que el dueño elija los mercados estructurales y corra ese retest. La
     # categoría existe para que el export se pueda clasificar contra ella.
     structural: []
 
 USDJPY:
-  main: USDJPY_DukasM1_the5ers
+  main: USDJPY_M1
   timeframe: H1
   categories:
     # Los 28 pares de las 8 divisas major comparten motor macro — dólar, diferenciales de
@@ -70,384 +70,384 @@ USDJPY:
     # Los 9 tienen datos desde 2003-2004, antes del `build` de 2008: la ventana común es
     # entera, 2008-01-01 → 2022-12-31, sin que ningún mercado la recorte.
     family:
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
     # Vacío a propósito: ningún par de divisas es structural para otro. Los candidatos
     # reales son los mercados que ya tienen feed y costes fuera del FX — XAUUSD, DAX40,
     # USA500, NIKKEI225 — y entran cuando el dueño lo decida, no antes.
     structural: []
 AUDJPY:
-  main: AUDJPY_DukasM1_the5ers
+  main: AUDJPY_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 AUDUSD:
-  main: AUDUSD_DukasM1_the5ers
+  main: AUDUSD_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
-BRENT:
-  main: BRENTCMDUSD_ftmo
+UKOIL:
+  main: UKOIL.cash_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 CADJPY:
-  main: CADJPY_DukasM1_the5ers
+  main: CADJPY_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 DAX40:
-  main: DAX40_DukasM1_Infinox
+  main: DAX40_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 DJ30:
-  main: DJ30_DukasM1_Infinox
+  main: DJ30_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 EURJPY:
-  main: EURJPY_DukasM1_the5ers
+  main: EURJPY_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 EURUSD:
-  main: EURUSD_DukasM1_the5ers
+  main: EURUSD_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 GBPJPY:
-  main: GBPJPY_DukasM1_the5ers
+  main: GBPJPY_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 GBPUSD:
-  main: GBPUSD_DukasM1_the5ers
+  main: GBPUSD_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 NIKKEI225:
-  main: NIKKEI225_DukasM1_Infinox
+  main: NIKKEI225_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 USA500:
-  main: USA500_DukasM1_Infinox
+  main: USA500_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 USATEC:
-  main: USATEC_DukasM1_Infinox
+  main: USATEC_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 USDCAD:
-  main: USDCAD_DukasM1_the5ers
+  main: USDCAD_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 USDCHF:
-  main: USDCHF_DukasM1_the5ers
+  main: USDCHF_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAGUSD_DukasM1_Infinox, data_from: 2003-08-08}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []
 XAGUSD:
-  main: XAGUSD_DukasM1_Infinox
+  main: XAGUSD_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_DukasM1_the5ers, data_from: 2003-12-01}
-      - {feed: AUDUSD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: BRENTCMDUSD_ftmo, data_from: 2013-01-01}
-      - {feed: CADJPY_DukasM1_the5ers, data_from: 2004-10-25}
-      - {feed: DAX40_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: DJ30_DukasM1_Infinox, data_from: 2013-09-30}
-      - {feed: EURJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: EURUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: GBPJPY_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: GBPUSD_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: NIKKEI225_DukasM1_Infinox, data_from: 2011-09-19}
-      - {feed: USA500_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USATEC_DukasM1_Infinox, data_from: 2012-01-19}
-      - {feed: USDCAD_DukasM1_the5ers, data_from: 2003-08-04}
-      - {feed: USDCHF_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: USDJPY_DukasM1_the5ers, data_from: 2003-05-05}
-      - {feed: XAUUSD_DukasM1_Infinox, data_from: 2003-05-05}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
     structural: []

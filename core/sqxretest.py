@@ -47,7 +47,7 @@ def _prefix(archive: zipfile.ZipFile) -> str:
 
     Returns:
         The folder every retest member sits in, e.g.
-        "Results/Main: XAUUSD_DukasM1_Infinox_LOM_M30". Asserting there is exactly one is
+        "Results/Main: XAUUSD_M1_LOM_M30". Asserting there is exactly one is
         what stops two silent failures: a .sqx with no retest at all -- most robustness
         files on this machine are Monte Carlo *Manipulation* and carry an orders member but
         no retest -- and a multi-market strategy whose level table and P/L could otherwise
@@ -150,7 +150,7 @@ def meta(path: Path) -> dict:
         Declared simulation count, instrument, timeframe, date range, and the prose line
         SQX writes for each active method. `declared` is what was asked for, not what was
         stored: a run cut short leaves fewer files and the level table is then shifted.
-        `instrument` is symbol and feed run together, "XAUUSD_DukasM1_Infinox" -- it is not
+        `instrument` is symbol and feed run together, "XAUUSD_M1" -- it is not
         a symbol and does not compare equal to one. `core.sqxfile.symbol` splits them.
     """
     xml = _results(path)

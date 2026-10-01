@@ -243,7 +243,7 @@ neither was done here.
 - **Test 1c, exposure-adjusted return.** Concentration ratio E and drift-neutral excess A. Cheaper
   than this test and answers a different question: beating the market's own average bar rather than
   beating chance. Built in `simulate/exposure.py`. Sanity check against `trade_models.block_shift`-style
-  random entries on `XAGUSD_DukasM1_Infinox` gives E ≈ 1.13, A ≈ 1.5e-6 — near 1 and 0 as the PDF
+  random entries on `XAGUSD_M1` gives E ≈ 1.13, A ≈ 1.5e-6 — near 1 and 0 as the PDF
   predicts. The real strategy there (913 trades) measures E ≈ 3.28, A ≈ 2.5e-5 (CI 90%
   [-2.9e-5, 7.3e-5] — the lower bound crosses zero on this one strategy), risk-normalised A ≈ 0.006.
   **`capture_ratio` used to come out ±inf**: 7 of 844 trades on that market have MFE = 0 (the trade

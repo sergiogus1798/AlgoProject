@@ -2,7 +2,7 @@
 
 run:
   sample: OOS1              # which `Sample type` to read
-  feed: XAUUSD_DukasM1_Infinox
+  feed: XAUUSD_M1
   timeframe: M30            # the grid the strategy was built on; the delay is also
                             # measured on M1, which is the library's own resolution
   atr: 14                   # lookback of the volatility every excursion is divided by

@@ -1,11 +1,13 @@
 ---
 q: update SQX bar data download; data action=update on worker lost; master to worker rsync user/data; core.assets --dataranges refresh data ranges
-tag: 🔬  date: 2026-09-25  see: costs/tick-feed-coverage, databanks/snapshot-before-restart
+tag: 🔬  date: 2026-10-01  see: costs/tick-feed-coverage, databanks/snapshot-before-restart
 ---
 # Downloading new bars is the owner's button on the master; automate only the read side
 - A download on a worker is lost: next worker start overwrites its H2 databases with the master's stale copy.
 - Master download = `sqcli` on the master → forbidden while its GUI is up (hard rule 2), snapshot `user/projects` first (hard rule 1).
 - Safe any time: `python3 -m core.assets --dataranges` asks the conductor and rewrites the `data:` line of all 17 assets in `assets/_policy.yaml`.
+- ⚠️ `-symbol action=delete` on a feed that is downloading does NOT stop its job: it kept requesting Dukascopy for hours and its 429s starved every later Dukascopy download (HK50, 2026-10-01). Only `-exit` and a fresh `sqcli` ends it. Run one Dukascopy download at a time; Darwinex is not rate-limited the same way.
+- Darwinex's catalogue is `internal/plugins/DataSourceDarwinex/darwinex.csv` (327 symbols): WTI is `XTIUSD`, there is no Brent and no HK50.
 
 ## Evidence
 - 🔬 `sqcli -data action=update` = GUI "Update all"; with no `symbol=` it updates every configured symbol (67, 16 min, 2026-09-25; a feed may 429 a day or two) (beside `import`, `export`, `exportToMT4/5`, `clone`, `timezones`). Verb reference: `internal/web/SQUANT/help.txt` (readable without starting anything).

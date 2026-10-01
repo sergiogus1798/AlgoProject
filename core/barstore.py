@@ -7,6 +7,7 @@ import pandas as pd
 
 from core import bars, manifest
 from core.paths import DATA, bar_cache, bar_source
+from core.symbols import current
 
 # SQX timeframe code to the pandas offset that reproduces it. Verified on XAUUSD 2026-09-21:
 # resampling 7,708,823 M1 bars to M30 gives SQX's own M30 export to the last decimal on all
@@ -75,7 +76,7 @@ def source(feed: str, columns: list[str] | None = None) -> pd.DataFrame:
         returns them. Prices stay float64: under zstd they compress smaller than float32
         does, so rounding them buys nothing and costs precision.
     """
-    return pd.read_parquet(bar_source(feed),
+    return pd.read_parquet(bar_source(current(feed)),
                            columns=["t", *columns] if columns else None).set_index("t")
 
 
@@ -92,6 +93,7 @@ def read(feed: str, timeframe: str) -> pd.DataFrame:
         kept under the M1 fingerprint, so a refreshed feed rebuilds it instead of serving
         bars from the previous data.
     """
+    feed = current(feed)   # an older .sqx names the feed as it was before 2026-10-01
     if timeframe == "M1":
         return source(feed)
     cache = bar_cache(feed, timeframe, library()[feed]["version"])

@@ -5,9 +5,9 @@
 symbol: USATEC
 class: no_forex
 broker: Infinox
-sqx_symbol: USATEC_DukasM1_Infinox
+sqx_symbol: USATEC_M1
 feeds:
-  - USATEC_DukasM1_Infinox
+  - USATEC_M1
 verified: 2026-09-03
 
 # Sesión de negociación que SQX aplica a la tarea (`MarketOpenSession`). Tiene que ser la
@@ -21,24 +21,24 @@ session: US100.cash_ftmo  # FTMO nombra los indices distinto que el simbolo del 
 # `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
 instrument:
   tick_size: 0.01
-  point_value: 1            # $ por 1.0 de precio y 1.0 de lote
+  point_value: 1.0          # $ por 1.0 de precio y 1.0 de lote
   min_distance: 0
 
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 69.7                 # points — tramo `build`
+    use: 69.68                # points — tramo `build`
     sqx_now: 85               # points, el unico que hay hoy
-    why: "2026-09-27 — opción A del dueño: spread proporcional al precio (modelo `relativo`: el spread medio en % del precio de los días Darwinex × el precio Dukascopy de cada día del build; medido donde hay ticks, 20 % del tramo). Media del tramo 55.7 puntos × factor 1.25 (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27."
+    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (USATEC_TICK). studies.data.spread.onboard"
   spread_oos:
-    use: 104.4                # points — tramo `oos1` (oos2 lleva `spread_oos2`)
+    use: 104.44               # points — tramo `oos1` (oos2 lleva `spread_oos2`)
     sqx_now: 85               # points, el unico que hay hoy
-    why: "2026-09-27 — media del spread medio diario de Darwinex (USATEC_DarwTick_Infinox) en oos1, 2020-01-02 a 2023-12-29 (1034 días), 83.6 puntos × factor 1.25 del dueño (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27."
+    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (USATEC_TICK). studies.data.spread.onboard"
   spread_oos2:
-    use: 114.9
+    use: 115.15
     sqx_now: null
-    why: 2026-09-27 — media del spread medio diario de Darwinex (USATEC_DarwTick_Infinox) en oos2, 2024-01-02 a 2026-08-31 (687 días), 91.9 puntos × factor 1.25 del dueño (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27.
+    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (USATEC_TICK). studies.data.spread.onboard
   commission:
     use:                      # % del nocional
       build:
@@ -131,25 +131,25 @@ costs:
         price_now: null
         price_date: null
   slippage_is:
-    use: 34.9                 # points — tramo(s) build
+    use: 34.84                # points — tramo(s) build
     sqx_now: 0.0
-    why: "2026-09-27 — la mitad del spread de su tramo (69.7), default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
   slippage_oos:
-    use: 52.2                 # points — tramo oos1 (oos2 lleva `slippage_oos2`)
+    use: 52.22                # points — tramo oos1 (oos2 lleva `slippage_oos2`)
     sqx_now: 0.0
-    why: "2026-09-27 — la mitad del spread de su tramo (104.4), default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
   slippage_oos2:
-    use: 57.5
+    use: 57.58
     sqx_now: null
-    why: 2026-09-27 — la mitad del spread de su tramo (114.9), default del dueño.
+    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
   swap_long:
-    use: -8.0                 # % ANUAL (SQX divide /100 y /360)
+    use: -7.25                # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: money, value: -6.18}
-    why: "2026-09-27 — decisión del dueño: -8 % anual aproximado, el mismo en largo y en corto (ambos lados pagan). Valor por defecto: el swap real cambia con los tipos y no hay histórico."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -471.69/-187.48, Hantec -615.0/25.12); este lado sale de hantec. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
   swap_short:
-    use: -8.0                 # % ANUAL (SQX divide /100 y /360)
+    use: -2.21                # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: money, value: 1.2}
-    why: "2026-09-27 — decisión del dueño: -8 % anual aproximado, el mismo en largo y en corto (ambos lados pagan). Valor por defecto: el swap real cambia con los tipos y no hay histórico."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -471.69/-187.48, Hantec -615.0/25.12); este lado sale de ftmo. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
 
 notes:
   - "USATEC is the Nasdaq 100 (US Tech index) at Infinox. The owner said the Nasdaq should use 80 points of spread rather than 40, but what SQX actually carries here is 85 and the 40 belongs to USA500. Confirm which instrument and which number before filling `use`, rather than assuming either."
@@ -168,7 +168,7 @@ swap:
 mc_retest:
   spread:
     min: 30.1
-    max: 281.3
+    max: 281.23
     sqx_now: {min: 1, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
   slippage:
     min: null
@@ -181,6 +181,9 @@ projects_using_it:
   - EURUSD
   - USDJPY
   - XAUUSD
+mt5:
+  ftmo: US100.cash
+  hantec: US100.h
 # Punto de MT5 en cada empresa, leído de su servidor el 2026-10-01 (mt5.live 'symbol').
 # Spread de MT5 × to_sqx = puntos de SQX (to_sqx = point ÷ instrument.tick_size).
 # No es siempre ÷10: forex y yenes ÷10, oro e índices ×1, Brent en Hantec ×10.

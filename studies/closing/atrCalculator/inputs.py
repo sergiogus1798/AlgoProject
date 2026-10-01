@@ -122,7 +122,7 @@ def bars(feed: str, timeframe: str) -> pd.DataFrame:
     """The strategy's own timeframe, whole: the ATR forgets its start in a few hundred bars.
 
     Args:
-        feed: The SQX feed name, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: The SQX feed name, e.g. "XAUUSD_M1".
         timeframe: "M30", "H1" and the rest; resampled from M1 and cached by barstore.
 
     Returns:

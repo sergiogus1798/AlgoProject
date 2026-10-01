@@ -93,7 +93,7 @@ def bars(feed: str, timeframe: str) -> pd.DataFrame:
     """The bars a strategy was priced on.
 
     Args:
-        feed: The SQX feed name, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: The SQX feed name, e.g. "XAUUSD_M1".
         timeframe: "M30", "H1" and the rest; resampled from M1 and cached by barstore.
 
     Returns:

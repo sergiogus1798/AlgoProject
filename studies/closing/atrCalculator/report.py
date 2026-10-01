@@ -22,7 +22,7 @@ def main() -> None:
     ap.add_argument("--databank", required=True, nargs="+",
                     help="one or more databanks: the three WFC legs of a retest, or one export "
                          "that already spans IS, oos1 and oos2")
-    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_DukasM1_Infinox")
+    ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_M1")
     ap.add_argument("--symbol", required=True, help="asset file name, e.g. XAUUSD")
     ap.add_argument("--timeframe", required=True, help="the strategy's timeframe, e.g. M30")
     ap.add_argument("--strategy", default="", help="one strategy; every one when omitted")

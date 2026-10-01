@@ -23,7 +23,7 @@ config.yaml ─▶ inputs ─▶ benchmark ─▶ measure ─▶ many / one ─�
 | `measure.py` | The excess panel through the SPA and the StepM, and one row per strategy | imported | excess → p-values, named, table |
 | `one.py` | One strategy as the contract's data: SUPERIOR only when the StepM names it | imported — the window calls it | table row → result |
 | `many.py` | The population as one result: the three SPA p-values, the Sharpe histogram against buy and hold, the gate's survivors, the StepM set | imported | inputs → results |
-| `report.py` | **The command**: runs it, writes `reports/<P>/<D>/<day>/snoopingScreen/`, records a step-8 row in the ledger | `python3 -m studies.screening.snoopingScreen.report --project XAU_ISOOS_ejemplo --databank Results --feed XAUUSD_DukasM1_Infinox --symbol XAUUSD --timeframe M30 --family DirectionalMomentum` | harvest → reports + ledger row |
+| `report.py` | **The command**: runs it, writes `reports/<P>/<D>/<day>/snoopingScreen/`, records a step-8 row in the ledger | `python3 -m studies.screening.snoopingScreen.report --project XAU_ISOOS_ejemplo --databank Results --feed XAUUSD_M1 --symbol XAUUSD --timeframe M30 --family DirectionalMomentum` | harvest → reports + ledger row |
 | `tooltips.py` | One Spanish sentence per `config.yaml` knob | imported | — |
 | `config.yaml` | The segment, the benchmark's sizing, the FWER — a `ledger:` placeholder, the number is in `ledger/thresholds.yaml` — and the bootstrap | edited | — |
 

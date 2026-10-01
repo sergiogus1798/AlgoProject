@@ -5,6 +5,8 @@ import re
 import zipfile
 from pathlib import Path
 
+from core.symbols import current
+
 SYMBOL = re.compile(r'<Symbol\b[^>]*?name="([^"]+)"[^>]*?>.*?</Symbol>', re.S)
 CHART = re.compile(r'<Chart\b[^>]*?symbol="([^"]+)"')
 INSTRUMENT = re.compile(r'<InstrumentInfo\b[^>]*?instrument="([^"]+)"[^>]*?/>')
@@ -19,7 +21,7 @@ def main_feed(members: dict[str, bytes], build_member: str) -> str:
         build_member: The task whose first <Chart> defines it — the generator's own feed.
 
     Returns:
-        The SQX symbol name, e.g. "XAUUSD_DukasM1_Infinox". Only this one is replaced, so
+        The SQX symbol name, e.g. "XAUUSD_M1". Only this one is replaced, so
         the extra markets a cross-check task carries keep their own feeds.
     """
     return CHART.search(members[build_member].decode("utf-8")).group(1)
@@ -43,7 +45,8 @@ def definitions(source: Path, feed: str) -> tuple[str, str, str]:
     """
     with zipfile.ZipFile(source) as z:
         for name in (n for n in z.namelist() if n.endswith(".xml") and n != "config.xml"):
-            text = z.read(name).decode("utf-8", "replace")
+            # A project written before SQX's feeds were renamed names them the old way.
+            text = current(z.read(name).decode("utf-8", "replace"))
             block = next((m.group(0) for m in SYMBOL.finditer(text) if m.group(1) == feed), None)
             if not block:
                 continue

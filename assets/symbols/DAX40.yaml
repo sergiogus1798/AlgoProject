@@ -5,9 +5,9 @@
 symbol: DAX40
 class: no_forex
 broker: Infinox
-sqx_symbol: DAX40_DukasM1_Infinox
+sqx_symbol: DAX40_M1
 feeds:
-  - DAX40_DukasM1_Infinox
+  - DAX40_M1
 verified: 2026-09-03
 
 # Sesión de negociación que SQX aplica a la tarea (`MarketOpenSession`). Tiene que ser la
@@ -21,24 +21,24 @@ session: GER40.cash_ftmo  # FTMO nombra los indices distinto que el simbolo del 
 # `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
 instrument:
   tick_size: 0.01
-  point_value: 1.157798     # $ por 1.0 de precio y 1.0 de lote
+  point_value: 1.12948      # $ por 1.0 de precio y 1.0 de lote
   min_distance: 0
 
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 145.3                # points — tramo `build`
+    use: 145.32               # points — tramo `build`
     sqx_now: 100              # el maestro no configura este feed hoy
-    why: "2026-09-27 — opción A del dueño: spread proporcional al precio (modelo `relativo`: el spread medio en % del precio de los días Darwinex × el precio Dukascopy de cada día del build; medido donde hay ticks, 24 % del tramo). Media del tramo 116.3 puntos × factor 1.25 (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27."
+    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (DAX40_TICK). studies.data.spread.onboard"
   spread_oos:
-    use: 205.0                # points — tramo `oos1` (oos2 lleva `spread_oos2`)
+    use: 204.98               # points — tramo `oos1` (oos2 lleva `spread_oos2`)
     sqx_now: 100              # el maestro no configura este feed hoy
-    why: "2026-09-27 — media del spread medio diario de Darwinex (DAX40_DarwTick_Infinox) en oos1, 2020-01-02 a 2023-12-29 (1022 días), 164.0 puntos × factor 1.25 del dueño (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27."
+    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (DAX40_TICK). studies.data.spread.onboard"
   spread_oos2:
-    use: 251.9
+    use: 252.7
     sqx_now: null
-    why: 2026-09-27 — media del spread medio diario de Darwinex (DAX40_DarwTick_Infinox) en oos2, 2024-01-02 a 2026-08-31 (674 días), 201.5 puntos × factor 1.25 del dueño (ledger spread.safety.factor). studies.data.spread, docs/AgentPDFs/spread-real-2026-09-27.
+    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (DAX40_TICK). studies.data.spread.onboard
   commission:
     use:                      # % del nocional
       build:
@@ -131,25 +131,25 @@ costs:
         price_now: null
         price_date: null
   slippage_is:
-    use: 72.7               # points — tramo(s) build
+    use: 72.66              # points — tramo(s) build
     sqx_now: null
-    why: "2026-09-27 — la mitad del spread de su tramo (145.3), default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
   slippage_oos:
-    use: 102.5              # points — tramo oos1 (oos2 lleva `slippage_oos2`)
+    use: 102.49             # points — tramo oos1 (oos2 lleva `slippage_oos2`)
     sqx_now: null
-    why: "2026-09-27 — la mitad del spread de su tramo (205.0), default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
   slippage_oos2:
-    use: 126.0
+    use: 126.35
     sqx_now: null
-    why: 2026-09-27 — la mitad del spread de su tramo (251.9), default del dueño.
+    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
   swap_long:
-    use: -8.0                 # % ANUAL (SQX divide /100 y /360)
+    use: -6.47                # % ANUAL (SQX divide /100 y /360)
     sqx_now: null             # el maestro no configura este feed hoy
-    why: "2026-09-27 — decisión del dueño: -8 % anual aproximado, el mismo en largo y en corto (ambos lados pagan). Valor por defecto: el swap real cambia con los tipos y no hay histórico."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -448.78/-4.53, Hantec -438.2565602/-27.65); este lado sale de ftmo. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
   swap_short:
-    use: -8.0                 # % ANUAL (SQX divide /100 y /360)
+    use: -0.4                 # % ANUAL (SQX divide /100 y /360)
     sqx_now: null             # el maestro no configura este feed hoy
-    why: "2026-09-27 — decisión del dueño: -8 % anual aproximado, el mismo en largo y en corto (ambos lados pagan). Valor por defecto: el swap real cambia con los tipos y no hay histórico."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -448.78/-4.53, Hantec -438.2565602/-27.65); este lado sale de hantec. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
 
 notes: []
 
@@ -165,8 +165,8 @@ swap:
 
 mc_retest:
   spread:
-    min: 85.1
-    max: 361.5
+    min: 85.11
+    max: 361.53
     sqx_now: null             # el maestro no configura este feed hoy
   slippage:
     min: null
@@ -176,6 +176,9 @@ mc_retest:
 # Proyectos del maestro que usan este activo. Leído, no decidido.
 projects_using_it:
   - XAUUSD
+mt5:
+  ftmo: GER40.cash
+  hantec: GER40.h
 # Punto de MT5 en cada empresa, leído de su servidor el 2026-10-01 (mt5.live 'symbol').
 # Spread de MT5 × to_sqx = puntos de SQX (to_sqx = point ÷ instrument.tick_size).
 # No es siempre ÷10: forex y yenes ÷10, oro e índices ×1, Brent en Hantec ×10.

@@ -14,7 +14,7 @@ from core import tradestore
 from studies.transfer.crossmarket.inputs import markets
 from studies.transfer.crossmarket.mechanics import envelope
 from studies.transfer.crossmarket.orchestrate import market as market_run
-from studies.transfer.crossmarket.simulate import backtest, realrun, stress
+from studies.transfer.crossmarket.simulate import backtest, realrun
 from studies.transfer.crossmarket.verdict import inference
 
 # The stretch entered selection twice — inside every sampleType=127 acceptance condition,
@@ -32,7 +32,7 @@ def label(feed: str, span: dict[str, str]) -> str:
         span: What markets.out_of_sample() returned.
 
     Returns:
-        A display key, e.g. "XAUUSD_DukasM1_Infinox · OOS 2018-2022". It is never a key into
+        A display key, e.g. "XAUUSD_M1 · OOS 2018-2022". It is never a key into
         `setup["bars"]` or into the export: the data always comes from `feed` itself.
     """
     return f'{feed} · OOS {span["from"][:4]}-{span["to"][:4]}'
@@ -55,7 +55,6 @@ def run(setup: dict, cfg: dict, name: str, asset: str,
         out-of-sample range. There is **no window sweep** here: the sweep cuts the run into
         3-year, 1-year and 6-month blocks, and a five-year stretch holding a few hundred
         trades leaves every block under `sweep.min_trades`, so every point would be withheld.
-        The cost-and-execution stress is run, because it needs no such room.
     """
     span = markets.out_of_sample(asset)
     if span is None:
@@ -75,11 +74,9 @@ def run(setup: dict, cfg: dict, name: str, asset: str,
         f"{shown} · {m}", share * len(models) / units))
     row = {"feed": shown, "category": "tramo OOS del backtest principal",
            "data_from": span["from"], **model_row}
-    step(f"{shown} · coste y ejecución", (units - 1) / units)
     row.update(market_run.tests(fixed, bars, cfg, feed))
     row["exits"] = realrun.exits(fixed)
     row["reproducible_pnl"] = sum(e["gross_share"] for e in row["exits"] if e["reproducible"])
-    runs["stress"] = stress.simulate(fixed, bars, cfg, row["stress_settings"])
     # SELECTED is appended rather than checked: nothing in the row can reveal that this
     # window was read by the acceptance conditions. It is a fact about the project, and it
     # is the single most important thing to say about the number beside it.

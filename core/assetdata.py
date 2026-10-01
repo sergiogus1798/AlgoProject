@@ -123,13 +123,11 @@ def fields(data: dict) -> list[str]:
         data: One asset as load() returned it.
 
     Returns:
-        Field names. A forex asset carries one spread, a no_forex asset two — plus one
-        spread and one slippage per extra half its own segments name in `_policy.yaml`
-        (`oos2: {spread: oos2}` asks for `spread_oos2` and `slippage_oos2`).
+        Field names: a spread and a slippage per half the asset's segments name in
+        `_policy.yaml` — `is`, `oos` and, since 2026-09-30 for every asset, `oos2`.
     """
     s = schema(data)
-    extra = [] if data["class"] == "forex" else sorted(
-        {seg["spread"] for seg in data["segments"].values()} - {"is", "oos"})
+    extra = sorted({seg["spread"] for seg in data["segments"].values()} - {"is", "oos"})
     return (s["spread"]["fields"] + [f"spread_{h}" for h in extra] + [s["commission"]["field"]]
             + s["slippage"]["fields"] + [f"slippage_{h}" for h in extra] + s["swap"]["fields"])
 
@@ -195,7 +193,7 @@ def sqx_settings(data: dict, segment: str) -> dict:
 
     Args:
         data: One asset as load() returned it.
-        segment: Segment name, which picks the spread on a no_forex asset.
+        segment: Segment name, which picks the spread and the slippage.
 
     Returns:
         defaultSpread and defaultSlippage (the slippage follows the spread's segment), and
@@ -209,9 +207,8 @@ def sqx_settings(data: dict, segment: str) -> dict:
     use = lambda k: data["costs"][k]["use"]
     s = schema(data)
     half = data["segments"][segment]["spread"]
-    spread = "spread" if data["class"] == "forex" else f"spread_{half}"
     commission = use("commission")[segment]
-    return {"defaultSpread": use(spread),
+    return {"defaultSpread": use(f"spread_{half}"),
             "defaultSlippage": use(f"slippage_{half}"),
             "commission": {"method": commission["method"], "value": commission["value"]},
             "swap": {"type": s["swap"]["sqx_type"], "long": use("swap_long"),
@@ -235,7 +232,7 @@ def symbol_for(feed: str) -> str | None:
     """Which asset file declares this SQX feed.
 
     Args:
-        feed: SQX symbol name, e.g. "USDJPY_DukasM1_the5ers".
+        feed: SQX symbol name, e.g. "USDJPY_M1".
 
     Returns:
         The asset name, or None when no file claims it. Lets a study that only knows the

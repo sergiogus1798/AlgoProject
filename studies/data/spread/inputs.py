@@ -34,7 +34,7 @@ def minutes(feed: str) -> pd.DataFrame:
     """One tick feed's minute table, decoded once and cached beside the `.dat`'s stamp.
 
     Args:
-        feed: SQX tick feed, e.g. "XAUUSD_DarwTick_Infinox".
+        feed: SQX tick feed, e.g. "XAUUSD_TICK".
 
     Returns:
         `core.tickfile.minutes()`'s frame. The cache is rebuilt when the `.dat` changed size
@@ -58,7 +58,7 @@ def volatility(feed: str) -> pd.DataFrame:
     """Dukascopy's daily volatility and price, for every day its M1 bars cover.
 
     Args:
-        feed: SQX M1 feed, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: SQX M1 feed, e.g. "XAUUSD_M1".
 
     Returns:
         Indexed by day: `rv` the mean absolute 1-minute log return, `price` the median close.

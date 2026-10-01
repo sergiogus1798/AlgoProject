@@ -38,13 +38,13 @@ stages:
   # shaped by what they find. ⚠️ Both run on the custodian, one at a time: the profile is
   # ~20 MB on disk but tens of gigabytes while it is built, so two at once do not fit.
   - name: spp_is
-    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_is --chart XAUUSD_DukasM1_Infinox=M30=5 --project {project}
+    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_is --chart XAUUSD_M1=M30=5 --project {project}
     needs: []
     produces: ["{work}/spp_is.json"]
     record: [tested, wall_s, max_tests, spread_pct]
 
   - name: spp_oos
-    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_oos --chart XAUUSD_DukasM1_Infinox=M30=10 --project {project}
+    command: python3 -m sqx.variants.spp --work {work} --mother {mother} --kind spp_oos --chart XAUUSD_M1=M30=10 --project {project}
     needs: ["{work}/spp_is.json"]
     produces: ["{work}/spp_oos.json"]
     record: [tested, wall_s]
@@ -144,7 +144,7 @@ stages:
     record: [n, rho, call]
 
   # Where `wfc` asks whether this surface carried over, this asks whether the WAY the
-  # parameters get picked is prone to overfitting at all -- 924 ways of splitting the
+  # parameters get picked is prone to overfitting at all -- 12,870 ways of splitting the
   # history, three selection rules, and what each one costs. Needs the per-period matrix,
   # which is why it sits after `equity` and not next to `wfc`.
   # Named for what it writes, like every other row: the stage is `cscv`, the command that

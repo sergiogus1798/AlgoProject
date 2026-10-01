@@ -18,7 +18,7 @@ def market(work: Path) -> tuple[str, str]:
         work: The batch directory, holding `segments.parquet` from `sqx.variants.collect`.
 
     Returns:
-        ("USDJPY", "M30"), read off the result key SQX stored ("Main: USDJPY_DukasM1_the5ers/
+        ("USDJPY", "M30"), read off the result key SQX stored ("Main: USDJPY_M1/
         M30") and never from `_markets.yaml`, whose timeframe is the asset's default and not
         this run's. The batch records no study of its own, so this is where the ledger's
         symbol and timeframe come from.

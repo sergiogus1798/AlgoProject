@@ -102,7 +102,7 @@ def moves(feed: str, days: pd.DatetimeIndex) -> pd.Series:
     """The asset's price change between consecutive days of the panel.
 
     Args:
-        feed: SQX feed name, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: SQX feed name, e.g. "XAUUSD_M1".
         days: The panel's index, as panel() returned it.
 
     Returns:

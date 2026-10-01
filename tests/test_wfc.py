@@ -21,7 +21,7 @@ UNIONS = ("build", "build+oos1", "oos1", "oos2", "oos1+oos2")   # what sqx.varia
 def batch(folder: Path) -> Path:
     """A batch holding only the one row `look.market` reads, on USDJPY M30."""
     pd.DataFrame([{"variant_id": "P00000", "segment": "build", "market": look.MAIN,
-                   "result_key": "Main: USDJPY_DukasM1_the5ers/M30"}]).to_parquet(
+                   "result_key": "Main: USDJPY_M1/M30"}]).to_parquet(
         folder / "segments.parquet")
     return folder
 

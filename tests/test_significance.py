@@ -9,10 +9,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.significance import footprint, min_track_record, moments, psr
+from core.significance import annual_sharpe, footprint, min_track_record, moments, psr
 
 SEED = 7
 
@@ -65,6 +66,33 @@ def test_min_track_record_needs_more_against_a_realistic_benchmark() -> None:
     assert zero < quarter < half
 
 
+def test_min_track_record_unreachable_when_sharpe_does_not_clear_benchmark() -> None:
+    """SR <= SR*: no track record makes SR > SR* significant, so `needed` is None and never
+    enough -- not the large finite number the squared negative gap used to print (USDCHF
+    35,426 on 2026-09-30, `knowhow/research/mintrl-explosion-is-correct.md`)."""
+    r = returns()
+    sharpe = moments(r)[0]
+    for benchmark in (sharpe, sharpe + 0.0087, 1.0):
+        got = min_track_record(r, benchmark=benchmark)
+        assert got["needed"] is None and got["enough"] is False and got["have"] == r.size
+    assert min_track_record(-r)["needed"] is None          # a losing series against zero
+    assert min_track_record(r, benchmark=sharpe - 0.01)["needed"] > r.size
+
+
+def test_annual_sharpe_counts_trading_days_only() -> None:
+    """Known answer: P&L on two Mondays and a Saturday close that lands on the third Monday;
+    every other trading day is a zero. The calendar-day version this replaced also counted
+    the weekend days as zeros and read a smaller ratio."""
+    closed = pd.to_datetime(["2024-01-01 10:00", "2024-01-08 15:00", "2024-01-13 02:00"])
+    pnl = np.array([100.0, 40.0, 60.0])
+    daily = np.array([100.0, 0, 0, 0, 0, 40.0, 0, 0, 0, 0, 60.0])   # Mon 1st .. Mon 15th
+    want = daily.mean() / daily.std(ddof=1) * np.sqrt(252)
+    assert abs(annual_sharpe(pnl, closed) - want) < 1e-9
+    calendar = np.array([100.0, 0, 0, 0, 0, 0, 0, 40.0, 0, 0, 0, 0, 60.0])
+    assert annual_sharpe(pnl, closed) > calendar.mean() / calendar.std(ddof=1) * np.sqrt(252)
+    assert np.isnan(annual_sharpe(np.array([5.0]), pd.to_datetime(["2024-01-02"])))
+
+
 def test_footprint_zero_noise_reproduces_the_no_noise_value() -> None:
     """sigma=0 collapses `mean(var_i)` to 0, so SR_b is exactly `moments()` of the per-trade
     means -- the known-answer case every caller's own footprint() reduces to when the market
@@ -103,7 +131,7 @@ def test_footprint_realistic_gold_numbers_are_small_and_below_buy_and_hold() -> 
     sets the random trader's dispersion, so a short, noisy hold does not inherit a
     buy-and-hold-sized Sharpe."""
     from core import barstore
-    bars = barstore.read("XAUUSD_DukasM1_Infinox", "M30").loc["2018-01-01":"2022-12-31"]
+    bars = barstore.read("XAUUSD_M1", "M30").loc["2018-01-01":"2022-12-31"]
     diffs = bars["Close"].diff().dropna().to_numpy()
     mu, sigma = float(diffs.mean()), float(diffs.std(ddof=1))
     rng = np.random.default_rng(5)
@@ -140,6 +168,8 @@ if __name__ == "__main__":
     test_psr_benchmark_raises_the_bar()
     test_min_track_record_benchmark_zero_matches_old_formula()
     test_min_track_record_needs_more_against_a_realistic_benchmark()
+    test_min_track_record_unreachable_when_sharpe_does_not_clear_benchmark()
+    test_annual_sharpe_counts_trading_days_only()
     test_footprint_zero_noise_reproduces_the_no_noise_value()
     test_footprint_zero_drift_and_cost_gives_zero()
     test_footprint_realistic_gold_numbers_are_small_and_below_buy_and_hold()

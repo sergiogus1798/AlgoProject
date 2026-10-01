@@ -1,0 +1,69 @@
+# Old SQX feed names -> the names SQX holds since 2026-10-01 (owner: drop the broker suffix and
+# unify, `<ASSET>_M1` for Dukascopy bars and `<ASSET>_TICK` for ticks). Projects, strategies and
+# exports written before that date keep the old names; `core.symbols.current()` translates them
+# when the builder borrows a definition from one. Deleted that day: AUDJPY_DarwTick_icmarkets,
+# AUDJPY_DukasM1_icmarkets, GBPJPY_DarwTick_icmarkets (duplicates of the5ers' feeds).
+# Same day: Brent took FTMO's MT5 name and its own instrument, UKOIL.cash_ftmo (it carried
+# USOIL.cash_ftmo, WTI's); AAPL_SQM1_ICMarkets and TSLA_SQM1_ICMarkets were deleted.
+BRENTCMDUSD_ftmo: UKOIL.cash_M1
+AAPL_DarwTick_ICMarkets: AAPL_TICK
+AAPL_DukasM1_ICMarkets: AAPL_M1
+AMZN_DarwTick_ICMarkets: AMZN_TICK
+AMZN_DukasM1_ICMarkets: AMZN_M1
+AUDJPY_DarwTick_the5ers: AUDJPY_TICK
+AUDJPY_DukasM1_the5ers: AUDJPY_M1
+AUDUSD_DarwTick_the5ers: AUDUSD_TICK
+AUDUSD_DukasM1_the5ers: AUDUSD_M1
+CADJPY_DarwTick_the5ers: CADJPY_TICK
+CADJPY_DukasM1_the5ers: CADJPY_M1
+DAX40_DarwTick_Infinox: DAX40_TICK
+DAX40_DukasM1_Infinox: DAX40_M1
+DJ30_DarwTick_Infinox: DJ30_TICK
+DJ30_DukasM1_Infinox: DJ30_M1
+EURAUD_DarwTick_the5ers: EURAUD_TICK
+EURAUD_DukasM1_the5ers: EURAUD_M1
+EURCAD_DarwTick_the5ers: EURCAD_TICK
+EURCAD_DukasM1_the5ers: EURCAD_M1
+EURCHF_DarwTick_the5ers: EURCHF_TICK
+EURCHF_DukasM1_the5ers: EURCHF_M1
+EURGBP_DarwTick_the5ers: EURGBP_TICK
+EURGBP_DukasM1_the5ers: EURGBP_M1
+EURJPY_DarwTick_the5ers: EURJPY_TICK
+EURJPY_DukasM1_the5ers: EURJPY_M1
+EURUSD_DarwTick_the5ers: EURUSD_TICK
+EURUSD_DukasM1_the5ers: EURUSD_M1
+GBPJPY_DarwTick_the5ers: GBPJPY_TICK
+GBPJPY_DukasM1_the5ers: GBPJPY_M1
+GBPUSD_DarwTick_the5ers: GBPUSD_TICK
+GBPUSD_DukasM1_the5ers: GBPUSD_M1
+GOOGL_DarwTick_ICMarkets: GOOGL_TICK
+GOOGL_DukasM1_ICMarkets: GOOGL_M1
+HK50_DukasTick_Infinox: HK50_TICK
+META_DarwTick_ICMarkets: META_TICK
+META_DukasM1_ICMarkets: META_M1
+MSFT_DarwTick_ICMarkets: MSFT_TICK
+MSFT_DukasM1_ICMarkets: MSFT_M1
+NFLX_DarwTick_ICMarkets: NFLX_TICK
+NFLX_DukasM1_ICMarkets: NFLX_M1
+NIKKEI225_DarwTick_Infinox: NIKKEI225_TICK
+NIKKEI225_DukasM1_Infinox: NIKKEI225_M1
+NZDUSD_DarwTick_the5ers: NZDUSD_TICK
+NZDUSD_DukasM1_the5ers: NZDUSD_M1
+TSLA_DarwTick_ICMarkets: TSLA_TICK
+TSLA_DukasM1_ICMarkets: TSLA_M1
+USA500_DarwTick_Infinox: USA500_TICK
+USA500_DukasM1_Infinox: USA500_M1
+USATEC_DarwTick_Infinox: USATEC_TICK
+USATEC_DukasM1_Infinox: USATEC_M1
+USDCAD_DarwTick_the5ers: USDCAD_TICK
+USDCAD_DukasM1_the5ers: USDCAD_M1
+USDCHF_DarwTick_the5ers: USDCHF_TICK
+USDCHF_DukasM1_the5ers: USDCHF_M1
+USDJPY_DarwTick_the5ers: USDJPY_TICK
+USDJPY_DukasM1_the5ers: USDJPY_M1
+USDSEK_DukasM1_darwinex: USDSEK_M1
+USDSGD_DukasM1_darwinex: USDSGD_M1
+XAGUSD_DarwTick_Infinox: XAGUSD_TICK
+XAGUSD_DukasM1_Infinox: XAGUSD_M1
+XAUUSD_DarwTick_Infinox: XAUUSD_TICK
+XAUUSD_DukasM1_Infinox: XAUUSD_M1

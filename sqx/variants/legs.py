@@ -13,7 +13,7 @@ from sqx.projects.setups import bounds
 
 MAIN = "Main"
 EXTRA = "AdditionalMarket: "
-# "AdditionalMarket: XAGUSD_DukasM1_Infinox/M30:  XAGUSD_DukasM1_Infinox/M30" -> the feed.
+# "AdditionalMarket: XAGUSD_M1/M30:  XAGUSD_M1/M30" -> the feed.
 FEED = re.compile(rf"^{re.escape(EXTRA)}([^/:]+)")
 
 

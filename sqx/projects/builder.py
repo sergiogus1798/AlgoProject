@@ -13,22 +13,23 @@ from core.assetcheck import pending, provisional
 from core.assetdata import doctrine, load
 from core.datapaths import projects_backup
 from core.paths import worker_dir
+from core.symbols import current
 from sqx.inspect.keep_tasks import keep
 from sqx.projects import crosschecks, registry, source, summary
 from sqx.projects.configure import configure, ignored_templates, running_install
 from sqx.projects.databanks import chain_databanks
-from sqx.projects.doctrine import blockers, borrow_session
+from sqx.projects.doctrine import blockers, borrow_session, caps
 from sqx.projects.patch import set_caps, set_template, sync_databanks
+from sqx.projects.registryxml import refresh_all
 from sqx.projects.resources import borrow_symbol, main_feed, refuse
 from sqx.projects import workflow as wf
 from xml.etree import ElementTree
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
-TEMPLATES_REL = "user/settings/StrategyTemplates"
 ENTRY = re.compile(r'<Rule name="(Long|Short) entry".*?</Rule>', re.S)
+TEMPLATES_REL = "user/settings/StrategyTemplates"
 
 
-def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
 def directions(template: Path) -> list[str]:
     """The sides a template can open a trade on: each «Long/Short entry» rule holding an Enter action.
 
@@ -40,6 +41,22 @@ def directions(template: Path) -> list[str]:
                    if re.search(r'key="Enter\w*"', m.group(0))})
 
 
+def install_template(template: Path, target: Path) -> None:
+    """Copy a template into an install with its old feed names translated (`core.symbols.current`).
+
+    SQX resolves a template's own `lastSettings.xml` as a project resource: a feed renamed since
+    the template was saved makes every later `action=start` answer «Project has unresolved
+    resources», while the build itself runs (🔬 2026-10-01, AUDJPY_TICK).
+    """
+    with zipfile.ZipFile(template) as z:
+        members = {n: z.read(n) for n in z.namelist()}
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as z:
+        for n, blob in members.items():
+            z.writestr(n, current(blob.decode("utf-8")).encode("utf-8") if n.endswith(".xml")
+                       else blob)
+
+
+def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
           minutes: int, donor: Path, segment: str | None = None,
           tasks: tuple = ("Build",), only: set | None = None,
           session_from: Path | None = None, silence: tuple = (), workflow: bool = False) -> dict:
@@ -79,10 +96,14 @@ def directions(template: Path) -> list[str]:
     stem = template.parent.name if template.stem == "template" else template.stem
     installed_template = install / TEMPLATES_REL / "authored" / f"{stem}.sqx"
     installed_template.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(template, installed_template)
+    install_template(template, installed_template)
 
     with zipfile.ZipFile(donor) as z:
         members = {n: z.read(n) for n in z.namelist()}
+    # The donor was frozen before SQX's feeds were renamed (2026-10-01): its tasks name feeds
+    # SQX no longer holds, so they are translated before anything reads them.
+    members = {n: current(b.decode("utf-8")).encode("utf-8") if n.endswith(".xml") else b
+               for n, b in members.items()}
     if workflow:   # every retest measures and none filters, unless the owner names a filter
         tasks, only = ("Build", "Retest"), wf.kept_members(members["config.xml"].decode("utf-8"))
         silence = tuple(set(silence) | {"Retest"})
@@ -98,6 +119,7 @@ def directions(template: Path) -> list[str]:
     donor_feed = main_feed(members, build_member)
     replaced = (borrow_symbol(members, load(symbol)["sqx_symbol"], build_member, session_from)
                 if session_from else None)
+    refresh_all(members)   # the donor and any borrowed project predate the 2026-10-01 EETUS move
 
     config, synced = sync_databanks(members["config.xml"].decode("utf-8"))
     members["config.xml"] = re.sub(r'<Project name="[^"]*"', f'<Project name="{name}"',
@@ -166,9 +188,8 @@ def main() -> None:
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--role", default="custodian")
     ap.add_argument("--timeframe", required=True, help="M15, M30, H1 or H4 — every task gets it")
-    ap.add_argument("--max-strategies", type=int,
-                    default=doctrine()["databank"]["max_strategies"])
-    ap.add_argument("--minutes", type=int, default=10)
+    ap.add_argument("--max-strategies", type=int, help="default: databank.caps by prefix")
+    ap.add_argument("--minutes", type=int, help="default: databank.caps by prefix")
     ap.add_argument("--donor", type=Path, default=DONOR)
     ap.add_argument("--session-from", type=Path, help="project.cfx to borrow the asset's session "
                     "and feed from; default the newest one defining both — read only")
@@ -189,16 +210,16 @@ def main() -> None:
         raise SystemExit(registry.check_name(a.name))
     if not a.template.exists():
         raise SystemExit(f"{a.template} does not exist.")
-    asset = load(a.symbol)
-    missing = pending(asset)
-    if missing:
-        raise SystemExit(f"{a.symbol}: {', '.join(missing)} have no agreed value. Ask the owner "
-                         "before authoring anything for it (hard rule 5).")
     sides = directions(a.template)
     if len(sides) != 1:
         raise SystemExit(f"{a.template.name} abre operaciones en {sides or 'ninguna dirección'}: "
                          "una plantilla, y un build, van en UNA sola dirección, long o short "
                          "(regla dura del dueño, 2026-10-01).")
+    asset = load(a.symbol)
+    missing = pending(asset)
+    if missing:
+        raise SystemExit(f"{a.symbol}: {', '.join(missing)} have no agreed value. Ask the owner "
+                         "before authoring anything for it (hard rule 5).")
     held = running_install(worker_dir(a.role) / "user/projects" / a.name / "project.cfx")
     if held:
         raise SystemExit(f"the {held} is running and rewrites a project.cfx on exit. "
@@ -210,8 +231,8 @@ def main() -> None:
     # `build` stages the project outside any install and only moves it into
     # user/projects/ once the doctrine, session, Setup-count and stray-feed gates have
     # all passed (`refuse`, inside build()) — a raise here leaves nothing installed.
-    done = build(a.name, a.template, a.symbol, a.role, a.timeframe, a.max_strategies,
-                 a.minutes, a.donor, a.segment, tuple(a.tasks.split(',')),
+    done = build(a.name, a.template, a.symbol, a.role, a.timeframe,
+                 *caps(a.name, a.max_strategies, a.minutes), a.donor, a.segment, tuple(a.tasks.split(',')),
                  set(a.only.split(',')) if a.only else None, borrow,
                  tuple(x for x in a.silence.split(',') if x), a.workflow)
 

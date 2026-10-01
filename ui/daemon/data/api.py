@@ -54,7 +54,7 @@ def bars(feed: str = "", tf: str = "D1", since: str = "") -> dict:
     """One feed's OHLC at D1, H4 or H1 from the bar library.
 
     Args:
-        feed: A feed of `bars/`, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: A feed of `bars/`, e.g. "XAUUSD_M1".
         tf: "D1", "H4" or "H1".
         since: First day as YYYY-MM-DD, empty for the whole history.
 
@@ -77,7 +77,7 @@ def spread(feed: str = "", part: str = "spread") -> dict:
     """One tick feed's spread report or its band, as `studies.data.spread` wrote them.
 
     Args:
-        feed: A folder of `spread/`, e.g. "XAUUSD_DarwTick_Infinox".
+        feed: A folder of `spread/`, e.g. "XAUUSD_TICK".
         part: "spread" (the scan) or "band" (the MC Retest band).
 
     Returns:
@@ -93,7 +93,7 @@ def feedquality(feed: str = "") -> dict:
     """One M1 feed's quality report, as `studies.data.feedQuality.scan` wrote it.
 
     Args:
-        feed: A folder of `feedQuality/`, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: A folder of `feedQuality/`, e.g. "XAUUSD_M1".
 
     Returns:
         `{"result": contract dict}` or `{"error": sentence}`.

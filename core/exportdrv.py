@@ -58,7 +58,7 @@ def bars(symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: st
     """Export OHLC bars for one symbol and timeframe.
 
     Args:
-        symbol: SQX symbol WITHOUT the timeframe suffix, e.g. "XAUUSD_DukasM1_Infinox".
+        symbol: SQX symbol WITHOUT the timeframe suffix, e.g. "XAUUSD_M1".
             Passing the suffixed name fails with "Symbol ... not found."
         timeframe: SQX timeframe code, e.g. "M30".
         out_dir: Directory the CSV is written into.

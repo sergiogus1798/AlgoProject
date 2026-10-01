@@ -1,0 +1,7 @@
+# Explicit overrides for core.symbols.alias(), when the leading-ticker rule gets a name wrong.
+# The rule alone covers every symbol seen so far (USDJPY_M1 -> USDJPY,
+# AUDUSD_..._FTMO -> AUDUSD): this file starts empty and exists so a future symbol that does not
+# fit is one line here, not a code change. `sqx_symbol: short_name`.
+# FTMO's MT5 names carry a dot suffix the leading-ticker rule keeps (2026-10-01).
+UKOIL.cash_M1: UKOIL
+USOIL.cash_M1: USOIL

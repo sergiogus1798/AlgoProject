@@ -51,7 +51,7 @@ def test_definitions_scope() -> None:
     if not USDJPY_SOURCE.exists():
         print(f"  SKIP — {USDJPY_SOURCE} not on this machine")
         return
-    symbol, instrument, broker = resources.definitions(USDJPY_SOURCE, "USDJPY_DukasM1_the5ers")
+    symbol, instrument, broker = resources.definitions(USDJPY_SOURCE, "USDJPY_M1")
     check("Symbol block", symbol.startswith("<Symbol"))
     check("InstrumentInfo block", instrument.startswith("<InstrumentInfo"))
     check("Broker block", broker.startswith("<Broker"))
@@ -115,7 +115,9 @@ def test_finished_setups_carry_assets_costs_not_the_masters() -> None:
                   for m in re.finditer(r"<Setup\b[^>]*>.*?</Setup>", t, re.S)
                   if f'symbol="{asset["sqx_symbol"]}"' in m.group(0)]
         check("the built project has Setups trading USDJPY", bool(setups))
-        wrong = [s for s in setups if f'spread="{asset["costs"]["spread"]["use"]}"' not in s]
+        # One spread per segment since 2026-09-30: each Setup carries one of the declared three.
+        declared = {asset["costs"][f]["use"] for f in asset["costs"] if f.startswith("spread_")}
+        wrong = [s for s in setups if not any(f'spread="{v}"' in s for v in declared)]
         check("every Setup carries assets/'s declared spread, not the master's",
               not wrong, f"{len(wrong)} of {len(setups)} Setups")
         stray_master_spread = [s for s in setups if 'spread="0.1"' in s]

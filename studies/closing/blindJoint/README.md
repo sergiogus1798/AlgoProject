@@ -24,7 +24,7 @@ config.yaml ─▶ inputs ──────▶ pieces ─▶ measure ───�
 | `measure.py` | The excess panel through the SPA and a StepM per reading, one row per mother | imported | inputs → p-values, named, calls |
 | `one.py` | One mother as the contract's data: her four pieces as parts, her call under every reading | imported — the window calls it | row → result |
 | `many.py` | The population: the pieces grid, the readings grid, the SPA tab | imported | inputs → results |
-| `report.py` | **The command**: writes `reports/<P>/<WFM>/<day>/blindJoint/` and, when it read oos2, a step-20 ledger row | `python3 -m studies.closing.blindJoint.report --project USDJPY_workflow_profiling_v1 --wfm-databank WFM --feed USDJPY_DukasM1_the5ers --symbol USDJPY --timeframe H1 --family crossAboveHMA_v1` | pieces + oos2 → reports + ledger row |
+| `report.py` | **The command**: writes `reports/<P>/<WFM>/<day>/blindJoint/` and, when it read oos2, a step-20 ledger row | `python3 -m studies.closing.blindJoint.report --project USDJPY_workflow_profiling_v1 --wfm-databank WFM --feed USDJPY_M1 --symbol USDJPY --timeframe H1 --family crossAboveHMA_v1` | pieces + oos2 → reports + ledger row |
 | `tooltips.py` | One Spanish sentence per `config.yaml` knob | imported | — |
 | `config.yaml` | The benchmark's sizing, the FWER (the ledger row part A reads), the two open decisions (`joint`), the bootstrap | edited | — |
 

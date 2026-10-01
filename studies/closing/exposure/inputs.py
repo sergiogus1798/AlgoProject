@@ -69,7 +69,7 @@ def bars(feed: str, timeframe: str, span: tuple[pd.Timestamp, pd.Timestamp]) -> 
     """The bars of the window this study is measured over.
 
     Args:
-        feed: The SQX feed name, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: The SQX feed name, e.g. "XAUUSD_M1".
         timeframe: "M30", "H1" and the rest; resampled from M1 and cached by barstore.
         span: First and last instant of the segment, as `window` returns them.
 

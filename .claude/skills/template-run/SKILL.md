@@ -77,7 +77,7 @@ A retest across markets asks which markets. They are declared, per main asset, i
 `assets/_markets.yaml` and printed by the preflight:
 
 ```
-- retest family: XAGUSD_DukasM1_Infinox, BRENTCMDUSD_ftmo
+- retest family: XAGUSD_M1, UKOIL.cash_M1
 - retest structural: (vacío)
 ```
 

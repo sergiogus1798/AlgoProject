@@ -73,12 +73,12 @@ def test_benchmarks_groups_by_strategy() -> None:
     real_read, study.barstore.read = study.barstore.read, fake_read
     try:
         two = pd.concat([trades(), trades().assign(strategy="B")], ignore_index=True)
-        got = study.benchmarks(two, {"feed": "USDJPY_DukasM1_the5ers", "point_value": 3.0})
+        got = study.benchmarks(two, {"feed": "USDJPY_M1", "point_value": 3.0})
     finally:
         study.barstore.read = real_read
     assert set(got) == {"A", "B"}
     assert abs(got["A"] - got["B"]) < 1e-12          # same trades, same benchmark
-    assert calls == [("USDJPY_DukasM1_the5ers", "D1")]
+    assert calls == [("USDJPY_M1", "D1")]
 
 
 if __name__ == "__main__":

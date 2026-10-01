@@ -84,7 +84,7 @@ cross-check block and the databanks are replaced. Never hand-assemble a task.
 
 ```bash
 python3 -m sqx.variants.harness --kind spp_is --project Test_XAUUSD --output SPPOut \
-  --chart "XAUUSD_DukasM1_Infinox M30 5" --spp
+  --chart "XAUUSD_M1 M30 5" --spp
 # defaults: --spp-spread 35  --spp-step-pct 4  --spp-max-tests 15000
 ```
 

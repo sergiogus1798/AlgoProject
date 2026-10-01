@@ -4,43 +4,56 @@
 # `ledger:<clave>` = el número vive en ledger/thresholds.yaml, con quién lo puso y cuándo.
 assets:                         # activo -> su feed de ticks (Darwinex) y su feed de velas M1 (Dukascopy)
   XAUUSD:
-    ticks: XAUUSD_DarwTick_Infinox
-    bars: XAUUSD_DukasM1_Infinox
+    ticks: XAUUSD_TICK
+    bars: XAUUSD_M1
   USDJPY:
-    ticks: USDJPY_DarwTick_the5ers
-    bars: USDJPY_DukasM1_the5ers
-  DAX40: {ticks: DAX40_DarwTick_Infinox, bars: DAX40_DukasM1_Infinox}
-  DJ30: {ticks: DJ30_DarwTick_Infinox, bars: DJ30_DukasM1_Infinox}
-  NIKKEI225: {ticks: NIKKEI225_DarwTick_Infinox, bars: NIKKEI225_DukasM1_Infinox}
-  USA500: {ticks: USA500_DarwTick_Infinox, bars: USA500_DukasM1_Infinox}
-  USATEC: {ticks: USATEC_DarwTick_Infinox, bars: USATEC_DukasM1_Infinox}
+    ticks: USDJPY_TICK
+    bars: USDJPY_M1
+  DAX40:
+    ticks: DAX40_TICK
+    bars: DAX40_M1
+  DJ30:
+    ticks: DJ30_TICK
+    bars: DJ30_M1
+  NIKKEI225:
+    ticks: NIKKEI225_TICK
+    bars: NIKKEI225_M1
+  USA500:
+    ticks: USA500_TICK
+    bars: USA500_M1
+  USATEC:
+    ticks: USATEC_TICK
+    bars: USATEC_M1
   AUDJPY:
-    ticks: AUDJPY_DarwTick_the5ers
-    bars: AUDJPY_DukasM1_the5ers
+    ticks: AUDJPY_TICK
+    bars: AUDJPY_M1
   AUDUSD:
-    ticks: AUDUSD_DarwTick_the5ers
-    bars: AUDUSD_DukasM1_the5ers
+    ticks: AUDUSD_TICK
+    bars: AUDUSD_M1
   CADJPY:
-    ticks: CADJPY_DarwTick_the5ers
-    bars: CADJPY_DukasM1_the5ers
+    ticks: CADJPY_TICK
+    bars: CADJPY_M1
   EURJPY:
-    ticks: EURJPY_DarwTick_the5ers
-    bars: EURJPY_DukasM1_the5ers
+    ticks: EURJPY_TICK
+    bars: EURJPY_M1
   EURUSD:
-    ticks: EURUSD_DarwTick_the5ers
-    bars: EURUSD_DukasM1_the5ers
+    ticks: EURUSD_TICK
+    bars: EURUSD_M1
   GBPJPY:
-    ticks: GBPJPY_DarwTick_the5ers
-    bars: GBPJPY_DukasM1_the5ers
+    ticks: GBPJPY_TICK
+    bars: GBPJPY_M1
   GBPUSD:
-    ticks: GBPUSD_DarwTick_the5ers
-    bars: GBPUSD_DukasM1_the5ers
+    ticks: GBPUSD_TICK
+    bars: GBPUSD_M1
   USDCAD:
-    ticks: USDCAD_DarwTick_the5ers
-    bars: USDCAD_DukasM1_the5ers
+    ticks: USDCAD_TICK
+    bars: USDCAD_M1
   USDCHF:
-    ticks: USDCHF_DarwTick_the5ers
-    bars: USDCHF_DukasM1_the5ers
+    ticks: USDCHF_TICK
+    bars: USDCHF_M1
+  XAGUSD:
+    ticks: XAGUSD_TICK
+    bars: XAGUSD_M1
 day:
   min_minutes: 300              # un día con menos minutos cotizados (festivo, medio día) no entra en el modelo
 constancy:
@@ -60,24 +73,28 @@ reprice:
   near_minutes: 5               # un tick a más de estos minutos de la hora de la operación no vale: se usa el modelo
   judge: spread_slippage        # spread | spread_slippage: contra qué versión se dice «se rompe»
   action: mark                  # mark | drop: si el reajuste que no cubre el spread real escribe DESCARTAR
+mc:                              # el rango de mc_retest.spread/slippage que escribe onboard.plan()
+  grain: 0.1                    # el paso de RandomizeSpread/RandomizeSlippage en SQX, mismas unidades que spread_is
+  min_steps: 10                 # el rango debe cubrir al menos esto pasos de `grain`, si no la tarea sale sin forma
 band:                           # la curva spread = a · precio^b y sus límites (dueño, 2026-09-27), un informe por activo
   assets:                       # activo -> su feed de ticks; sólo hacen falta los ticks
-    DAX40: DAX40_DarwTick_Infinox
-    DJ30: DJ30_DarwTick_Infinox
-    NIKKEI225: NIKKEI225_DarwTick_Infinox
-    USA500: USA500_DarwTick_Infinox
-    USATEC: USATEC_DarwTick_Infinox
-    XAUUSD: XAUUSD_DarwTick_Infinox
-    USDJPY: USDJPY_DarwTick_the5ers
-    AUDJPY: AUDJPY_DarwTick_the5ers
-    AUDUSD: AUDUSD_DarwTick_the5ers
-    CADJPY: CADJPY_DarwTick_the5ers
-    EURJPY: EURJPY_DarwTick_the5ers
-    EURUSD: EURUSD_DarwTick_the5ers
-    GBPJPY: GBPJPY_DarwTick_the5ers
-    GBPUSD: GBPUSD_DarwTick_the5ers
-    USDCAD: USDCAD_DarwTick_the5ers
-    USDCHF: USDCHF_DarwTick_the5ers
+    DAX40: DAX40_TICK
+    DJ30: DJ30_TICK
+    NIKKEI225: NIKKEI225_TICK
+    USA500: USA500_TICK
+    USATEC: USATEC_TICK
+    XAUUSD: XAUUSD_TICK
+    USDJPY: USDJPY_TICK
+    AUDJPY: AUDJPY_TICK
+    AUDUSD: AUDUSD_TICK
+    CADJPY: CADJPY_TICK
+    EURJPY: EURJPY_TICK
+    EURUSD: EURUSD_TICK
+    GBPJPY: GBPJPY_TICK
+    GBPUSD: GBPUSD_TICK
+    USDCAD: USDCAD_TICK
+    USDCHF: USDCHF_TICK
+    XAGUSD: XAGUSD_TICK
   quantiles: [0.025, 0.5, 0.975]   # los extremos son el Min y el Max del MC Retest de spread
   min_minutes: 300              # un día con menos minutos cotizados no entra
 onboard:                        # alta de un activo nuevo: las reglas por defecto del dueño (2026-09-27), por tipo
@@ -85,18 +102,18 @@ onboard:                        # alta de un activo nuevo: las reglas por defect
   index:
     segments: {build: data, build_to: 2019, oos1: [2020, 2023], oos2: [2024, 2026-08-31]}
     commission: 0               # cuenta raw: los índices no pagan comisión
-    swap: [-8, -8]              # % anual, largo y corto
+    swap: funded_worst          # dueño 2026-10-01: el peor de FTMO y Hantec, lado a lado, leído en vivo de MT5 (antes [-8, -8])
     triple_swap_on: FRIDAY
     model: relativo             # spread proporcional al precio en el build (opción A)
   metal:
     segments: {build: 2008, build_to: 2017, oos1: [2018, 2022], oos2: [2023, 2026-08-30]}
     commission: usd_per_lot
-    swap: [-7, -7]
+    swap: funded_worst          # antes [-7, -7]
     triple_swap_on: WEDNESDAY
     model: null                 # null = el que mejor valida
   forex:
     segments: {build: 2008, build_to: 2017, oos1: [2018, 2022], oos2: [2023, 2026-08-30]}
     commission: usd_per_lot
-    swap: brokers               # media en puntos de todas las variantes del par en el registro de SQX
+    swap: funded_worst          # antes `brokers`, la media del registro de SQX
     triple_swap_on: WEDNESDAY
     model: null

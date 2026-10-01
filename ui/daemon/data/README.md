@@ -27,7 +27,7 @@ api ─▶ catalogue ─▶ perf.disk.inventory (bytes, files, formats, age) + e
 - **An archived strategy's folder is named by its identity**, which the window never prints:
   every branch under `archive/<identity>/` is left out of the catalogue; the `archive` row still
   counts their bytes, files and manifests.
-- **An asset is the feed name up to its first underscore.** `DAX40_DarwTick_Infinox` has ticks
+- **An asset is the feed name up to its first underscore.** `DAX40_TICK` has ticks
   and no bars: the zone says so instead of drawing an empty chart.
 - **H1 over the whole history is 140 000 bars and 7.7 MB of JSON** (XAUUSD, 2026-09-27, 0.55 s);
   the zone asks for a period (`since`) and draws columns, not candles, when they do not fit.

@@ -10,10 +10,11 @@
 
 forex:
   what: "Pares de divisas. Hoy: los 10 de the5ers."
-  # Un solo spread: el nocional de un par no se mueve como el del oro, así que un valor fijo
-  # en puntos sigue siendo un coste relativo estable a lo largo de los diez años de build.
+  # Un spread POR TRAMO, como el resto (dueño, 2026-09-30): el spread real de Darwinex de un
+  # par también cambia de un tramo a otro (AUDJPY: 1.61 build, 1.27 oos1, 1.92 oos2), y un
+  # solo valor medio lo escondía. `_policy.yaml` dice qué tramo usa cuál.
   spread:
-    fields: [spread]
+    fields: [spread_is, spread_oos]
     unit: points
     sqx: 'InstrumentInfo defaultSpread'
     note: "1 punto = 1 × tick_size de precio."
@@ -56,7 +57,7 @@ forex:
     formula: "coste_noche = size × pointValue × tick_size × puntos"
 
 no_forex:
-  what: "Todo lo demás: índices CFD y metales. Hoy: DAX40, DJ30, NIKKEI225, USA500, USATEC, XAUUSD, XAGUSD, BRENT."
+  what: "Todo lo demás: índices CFD y metales. Hoy: DAX40, DJ30, NIKKEI225, USA500, USATEC, XAUUSD, XAGUSD, UKOIL, USOIL."
   # DOS spreads. El precio de estos activos se multiplica a lo largo del histórico — el oro va
   # de 800 a 3500 — así que un spread fijo en puntos cuesta, en % del nocional, el triple en
   # 2010 que hoy. Declarar uno para el tramo de construcción y otro para los dos fuera de

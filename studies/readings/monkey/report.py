@@ -52,7 +52,7 @@ def main() -> None:
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
     ap.add_argument("--feed", default="",
-                    help="SQX feed name, e.g. XAUUSD_DukasM1_Infinox. A one-market export "
+                    help="SQX feed name, e.g. XAUUSD_M1. A one-market export "
                          "needs it; a cross-market export runs every market without it")
     ap.add_argument("--strategy", default="", help="one strategy, read in full; all when omitted")
     ap.add_argument("--timeframe", default="M30")

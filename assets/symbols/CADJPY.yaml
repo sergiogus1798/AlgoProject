@@ -5,9 +5,9 @@
 symbol: CADJPY
 class: forex
 broker: the5ers
-sqx_symbol: CADJPY_DukasM1_the5ers
+sqx_symbol: CADJPY_M1
 feeds:
-  - CADJPY_DukasM1_the5ers
+  - CADJPY_M1
 verified: 2026-09-03
 
 # Sesión de negociación que SQX aplica a la tarea (`MarketOpenSession`). Tiene que ser la
@@ -21,16 +21,24 @@ session: CADJPY_ftmo
 # `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
 instrument:
   tick_size: 0.01
-  point_value: 653.92387    # $ por 1.0 de precio y 1.0 de lote
+  point_value: 631.325088   # $ por 1.0 de precio y 1.0 de lote
   min_distance: 10
 
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
-  spread:
+  spread_is:
     use: 1.31                # points
     sqx_now: 0.1              # points
-    why: "onboard 2026-09-27 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (CADJPY_DarwTick_the5ers). studies.data.spread.onboard"
+    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (CADJPY_TICK). studies.data.spread.onboard"
+  spread_oos:
+    use: 1.16
+    sqx_now: null
+    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (CADJPY_TICK). studies.data.spread.onboard
+  spread_oos2:
+    use: 1.53
+    sqx_now: null
+    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (CADJPY_TICK). studies.data.spread.onboard
   commission:
     use:                     # $ por lote
       build:
@@ -123,21 +131,25 @@ costs:
         price_now: 112.151
         price_date: '2026-09-22'
   slippage_is:
-    use: 0.655                # points — tramo(s) build
+    use: 0.66                 # points — tramo(s) build
     sqx_now: 0.0
-    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
   slippage_oos:
-    use: 0.655                # points — tramo(s) oos1 y oos2
+    use: 0.58                 # points — tramo(s) oos1 y oos2
     sqx_now: 0.0
-    why: "onboard 2026-09-27 — la mitad del spread de su tramo, default del dueño."
+    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+  slippage_oos2:
+    use: 0.77
+    sqx_now: null
+    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
   swap_long:
-    use: 6.37                 # points por noche
+    use: 0.45                 # points por noche
     sqx_now: {type: points, value: 0.32}
-    why: "2026-09-27 — decisión del dueño: media del swap en puntos por noche de las 7 variantes de CADJPY con swap activo en el registro de instrumentos de SQX (dukascopy, ftmo, roboforex, the5ers, icmarkets, pepperstone, darwinex); mediana 7.12. Fuera: CADJPY_monevis(off), CADJPY.pro_oanda(percent) (desactivado o en %). Antes 0.32 (the5ers). Valor por defecto: el swap real cambia con los tipos."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO 0.45/-6.4, Hantec 1.05/-5.6); este lado sale de ftmo. Pasado a puntos de SQX con pointValue × tickStep de su instrumento (contrato de MT5). Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
   swap_short:
-    use: -16.76                 # points por noche
+    use: -6.41                  # points por noche
     sqx_now: {type: points, value: -10.31}
-    why: "2026-09-27 — decisión del dueño: media del swap en puntos por noche de las 7 variantes de CADJPY con swap activo en el registro de instrumentos de SQX (dukascopy, ftmo, roboforex, the5ers, icmarkets, pepperstone, darwinex); mediana -18.08. Fuera: CADJPY_monevis(off), CADJPY.pro_oanda(percent) (desactivado o en %). Antes -10.31 (the5ers). Valor por defecto: el swap real cambia con los tipos."
+    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO 0.45/-6.4, Hantec 1.05/-5.6); este lado sale de ftmo. Pasado a puntos de SQX con pointValue × tickStep de su instrumento (contrato de MT5). Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
 
 notes:
   - "2026-09-23: spread, commission y los dos swap rellenados con lo que el MAESTRO lleva hoy (leido de los project.cfx con `sqx.inspect.instruments`), para desbloquear la regla dura 5 sin esperar a las cifras de the5ers. Son defaults de fabrica de SQX, comision CERO incluida: el coste modelado infravalora el real ~10x y su ordenacion entre pares no es creible. Todo resultado con coste producido antes de que el dueno los sustituya arrastra esa advertencia."
@@ -160,6 +172,9 @@ projects_using_it:
   - AUDJPY
   - CADJPY_H1
   - USDJPY
+mt5:
+  ftmo: CADJPY
+  hantec: CADJPY.h
 # Punto de MT5 en cada empresa, leído de su servidor el 2026-10-01 (mt5.live 'symbol').
 # Spread de MT5 × to_sqx = puntos de SQX (to_sqx = point ÷ instrument.tick_size).
 # No es siempre ÷10: forex y yenes ÷10, oro e índices ×1, Brent en Hantec ×10.

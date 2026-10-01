@@ -128,7 +128,7 @@ def injection() -> None:
     """The owner's grid (2.16), a fifth of its counts, planted in a copy of the gold feed."""
     inject.CFG.update(CFG)
     inject.SHARE[0] = 0.2
-    res = inject.run_feed("XAUUSD_DukasM1_Infinox")
+    res = inject.run_feed("XAUUSD_M1")
     ok = inject.accept(res)
     assert all(v for k, v in ok.items() if k != "cero detecciones nuevas"), ok
     assert res["false_marks"] <= 0.001 * res["real_before"], res["false_marks"]

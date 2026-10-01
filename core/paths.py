@@ -185,7 +185,7 @@ def bar_source(feed: str) -> Path:
     """The M1 bars of one feed: the only bar data the project stores.
 
     Args:
-        feed: SQX symbol without the timeframe suffix, e.g. "XAUUSD_DukasM1_Infinox".
+        feed: SQX symbol without the timeframe suffix, e.g. "XAUUSD_M1".
 
     Returns:
         Path under the data root. Every other timeframe is resampled from this file and

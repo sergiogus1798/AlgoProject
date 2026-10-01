@@ -7,9 +7,11 @@
 run:
   symbol: USDJPY              # assets/symbols/<symbol>.yaml — source of the frozen build
                               # segment the tercile cut-offs are measured on
-  feed: USDJPY_DukasM1_the5ers
+  feed: USDJPY_M1
   timeframe: H1                # the grid the strategy was built on
-  sample: OOS1                 # which `Sample type` is classified and read cell by cell
+  sample: OOS1                 # the `Sample type` the map opens on; the «Muestra» selector
+                               # always offers «Completa» beside it — every harvested trade,
+                               # build + OOS1 (owner, 2026-10-01)
 
 volatility:
   atr_period: 20               # trading days of daily true range the tercile is cut on

@@ -28,7 +28,7 @@ config.yaml ─▶ inputs ─▶ occupancy ─▶ benchmark ─▶ compare ─�
 | `load.py` | The window from policy, its bars, the point value, the newest export on the configured sample, and each strategy's identity | imported | export + feed → inputs |
 | `one.py` | One strategy measured — occupancy, the three buy and hold conventions, the trade-off, presence — and judged, as the contract's data the window paints | imported — the window calls it | inputs → result |
 | `many.py` | Every strategy, and the population read as one result | imported | inputs → results |
-| `report.py` | **The command**: every strategy to `reports/<P>/<D>/<day>/exposure/` (`verdict.csv`, a page and a JSON each, the population's page), or `--strategy` for one alone | `python3 -m studies.closing.exposure.report --project XAUUSD --databank "MC Trades" --feed XAUUSD_DukasM1_Infinox --symbol XAUUSD [--strategy S]` | export → reports |
+| `report.py` | **The command**: every strategy to `reports/<P>/<D>/<day>/exposure/` (`verdict.csv`, a page and a JSON each, the population's page), or `--strategy` for one alone | `python3 -m studies.closing.exposure.report --project XAUUSD --databank "MC Trades" --feed XAUUSD_M1 --symbol XAUUSD [--strategy S]` | export → reports |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `config.yaml` | The sample, the segment, the three conventions and the gate | edited | — |
 
