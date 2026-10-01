@@ -23,11 +23,12 @@ config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ many
 
 | file | what it does | run it |
 |---|---|---|
-| `run.py` | One export's whole reading, including the reconstructed pass/fail matrix | imported |
+| `run.py` | One export's whole reading, including the pass/fail matrix and each original strategy against its asset (`against`) | imported |
 | `many.py` | `one()`: one strategy alone (`run.read(only=…)` correlates, scores and bootstraps only it, the window shapes and the drift's parameter spread kept the export's), the same member the whole run gives it. `run()`: the export as one result — verdicts with each strategy's ρ grid, the window geometry, the drift, the two axes — and each strategy's own | imported — the window reads it |
 | `contract.py` | One strategy's pass/fail matrix as SQX paints it — met/active per cell, the conditions on hover, ▣ best rectangle, ◆ recommended cell, checked against SQX's own mark — which condition binds, and the cells' equity with one aggregate table (encargo 37) | imported |
 | `objectives.py` | The «Los objetivos» tab: one matrix per condition against its threshold, then stability, score, the WF specials and SQX's parameter stability without one | imported |
 | `labels.py` | The Spanish name and one-sentence meaning of every objective | imported |
+| `assetview.py` | The «Contra el activo y el azar» tab: the original strategy (fixed parameters) on `oos2` only — against holding its asset at the same volatility (Sharpe gap with a paired-bootstrap interval, the Sharpe left without the asset, both curves, year by year) and against 10,000 same-footprint random traders (p per statistic) | imported |
 | `report.py` | The command: `reports/<P>/<D>/<day>/wfm/` with `verdict.csv`, `cell_correlations.csv`, the page and one per strategy. `--strategy` writes only that strategy's `estrategias/` JSON and page (`many.one`), never the population's files | `python3 -m studies.optimisation.wfm.report --project XAUUSD --databank WFM [--strategy "Strategy 1.19.29"]` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable | edited, or `--set section.key=value` |

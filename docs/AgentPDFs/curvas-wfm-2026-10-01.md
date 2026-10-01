@@ -101,6 +101,25 @@ el número real de pruebas, y en todos los regímenes?* D es leer lo que ya hay;
 3. **¿Dónde va?** (a) una pestaña más dentro del WFM, o (b) un estudio propio que también lea el
    `oos1` y el `oos2` de las madres que no pasaron por el WFM.
 
+## 4. Respuestas del dueño (2026-10-01) y lo construido
+
+1. Contra el oro. 2. La estrategia original, no una celda: el WFM sólo comprueba robustez, y
+escoger una de las 30 curvas después de verlas ya es sobreajuste (selección sobre la muestra que se
+juzga). 3. Una pestaña más del WFM.
+
+4. Sólo el `oos2`: el `oos1` ya sirvió para cribar la población y un tramo que eligió no puede
+juzgar. 5. El trader al azar también: la original contra 10.000 traders con su misma huella.
+
+Construido: pestaña **«Contra el activo y el azar»**. Con la original marcada al cierre diario, sólo
+en el `oos2` (2023-01-03 → 2026-08-28, 944 días), las cinco madres de XAUUSD:
+
+- **Contra el oro:** Sharpe 0,62 a 1,20 frente a 1,31. Ninguna lo supera, pero el intervalo de la
+  diferencia incluye el 0 en las cinco: 3,7 años no bastan para separar un 1,0 de un 1,3. Amarillo.
+- **Contra el azar** (Sharpe por operación): p entre 0,016 y 0,16; dos de cinco por debajo de 0,05
+  (9.10.57 y 20.25.72), sin corregir por ser cinco pruebas. En beneficio neto ninguna se distingue
+  (p 0,25–0,43): un trader al azar que compra oro esos años también gana. Lo que tienen es menos
+  drawdown que el azar, no más beneficio.
+
 ## Lo que no está verificado
 
 - El Sharpe usa P/L por fecha de cierre; una operación de varios días cae entera en su cierre, lo

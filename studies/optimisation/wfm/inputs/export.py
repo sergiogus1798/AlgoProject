@@ -130,3 +130,18 @@ def rules(directory: Path) -> pd.DataFrame:
     path = directory / "status.parquet"
     return (pd.read_parquet(path).set_index("strategy") if path.exists() else
             pd.DataFrame(index=pd.Index(cells(directory)["strategy"].unique(), name="strategy")))
+
+
+def main(directory: Path) -> pd.DataFrame | None:
+    """The original backtest's trades: each strategy with its own fixed parameters.
+
+    Args:
+        directory: The export's `wfm/` folder.
+
+    Returns:
+        tradestore's columns plus `Symbol` and `strategy`, or None for an export older than
+        2026-10-01. SQX tags every trade `IST`: the window's own segments say which days
+        were out of sample.
+    """
+    path = directory / "main.parquet"
+    return pd.read_parquet(path) if path.exists() else None

@@ -79,14 +79,18 @@ def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.
             "objectives": pd.DataFrame(objectives)}
 
 
-def split(raw_dir: Path, steps: pd.DataFrame, out: Path) -> pd.DataFrame:
+def split(raw_dir: Path, steps: pd.DataFrame, out: Path,
+          timeframes: dict[str, str]) -> pd.DataFrame:
     """Tag every strategy's data=all trades with their matrix cell and step, into one Parquet.
 
     Args:
         raw_dir: Where orderstocsv wrote its files, one per strategy.
         steps: The `steps` table, used both for the run windows and for the stored counts.
         out: The `trades.parquet` to write: tradestore's columns plus `result` (the cell),
-            `period` (the step) and `sample`.
+            `period` (the step) and `sample`. The original backtest — the strategy with its
+            own fixed parameters, the block every cell is compared with — goes beside it in
+            `main.parquet`, tradestore's columns plus `Symbol`, `strategy` and `timeframe`.
+        timeframes: Strategy to its timeframe, as `stage` read it.
 
     Returns:
         The verification table: one row per cell and step with the trades assigned against
@@ -95,12 +99,14 @@ def split(raw_dir: Path, steps: pd.DataFrame, out: Path) -> pd.DataFrame:
         a cell's first run window -- are in the Parquet but outside this table: 2026-09-10,
         88,721 rows against 65,161 assigned, and both numbers are right.
     """
-    checked, frames = [], []
+    checked, frames, mains = [], [], []
     for f in sorted(raw_dir.glob("*.csv")):
         mine = steps[steps["strategy"] == f.stem]
         if mine.empty:
             continue
-        blocks = wftrades.chunks(trades.read(f))[1:]
+        main, *blocks = wftrades.chunks(trades.read(f))
+        mains.append(main[tradestore.KEEP + ["Symbol"]].assign(strategy=f.stem,
+                                                                timeframe=timeframes[f.stem]))
         for block, cell in zip(blocks, mine["result"].unique()):
             rows = mine[mine["result"] == cell].to_dict("records")
             tagged = wftrades.label(block, rows)
@@ -113,6 +119,8 @@ def split(raw_dir: Path, steps: pd.DataFrame, out: Path) -> pd.DataFrame:
         if c in packed:
             packed[c] = packed[c].astype("category")
     packed.to_parquet(out, compression="zstd", index=False)
+    pd.concat(mains, ignore_index=True).to_parquet(out.with_name("main.parquet"),
+                                                   compression="zstd", index=False)
     return pd.concat(checked, ignore_index=True)
 
 
@@ -136,7 +144,7 @@ def main() -> None:
         shutil.rmtree(out / scratch, ignore_errors=True)
     staged = stage(a.project, a.databank, out / "strategies", install=install)
     exportdrv.trades(out / "strategies", out / "raw", data="all")
-    checked = split(out / "raw", written["steps"], out / "trades.parquet")
+    checked = split(out / "raw", written["steps"], out / "trades.parquet", staged)
     checked.to_parquet(out / "check.parquet", index=False)
     off = int((checked["assigned"] - checked["stored"]).abs().sum())
     print(f"trades           {int(checked['assigned'].sum()):>7} assigned, {off} unaccounted for")

@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from core.study import blocks, output, result as envelope
-from studies.optimisation.wfm import contract, objectives, run as reading
+from studies.optimisation.wfm import assetview, contract, objectives, run as reading
 from studies.optimisation.wfm.verdict import call
 
 MODULE = "studies.optimisation.wfm"
@@ -51,7 +51,9 @@ def member(strategy: str, got: dict, result: dict, cfg: dict, started: float,
                          comp[comp["strategy"] == strategy].drop(columns=["strategy"]),
                          "Un veredicto que sólo se sostiene en la métrica con la que se leyó "
                          "es una propiedad de esa métrica, no de la estrategia.")]),
-         objectives.tab(result["checked"], result["objectives"], strategy)],
+         objectives.tab(result["checked"], result["objectives"], strategy),
+         *([assetview.tab(result["benchmark"][strategy])]
+           if strategy in result["benchmark"] else [])],
         blocks.verdict(got["verdict"], STATE[got["verdict"]],
                        call.sentence(got, result["warning"]).replace("**", ""), got["rho"],
                        [{"label": "celdas con ρ negativo", "state": "info",

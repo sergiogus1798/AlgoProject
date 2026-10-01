@@ -3,7 +3,8 @@
 | file | what it does | in → out |
 |---|---|---|
 | `config.py` | Reads `config.yaml` and locates one WFM export under the data root | project, databank → settings, path |
-| `export.py` | Reads a WFM export: cells, steps, chosen parameters, every trade tagged by cell and sample, each cell against each condition, the stability/score/special objectives, and the area rule each strategy ran with | export folder → frames |
+| `export.py` | Reads a WFM export: cells, steps, chosen parameters, every trade tagged by cell and sample, each cell against each condition, the original backtest's trades (`main.parquet`), the stability/score/special objectives, and the area rule each strategy ran with | export folder → frames |
+| `asset.py` | The asset behind the export's feed: D1 close, point value, and its `oos2` days from `_policy.yaml` — not `oos1`, which screened the population | feed → dict |
 
 Holds nothing computed.
 

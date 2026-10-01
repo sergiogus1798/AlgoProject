@@ -17,3 +17,14 @@ measure:
 verdict:
   zero_band: 0.0          # how far the interval must clear zero to be called either way
   drift_high: 0.5         # share of parameters re-decided per step that counts as high
+
+benchmark:
+  # The original strategy over `oos2` only — `oos1` screened the population and is spent —
+  # against holding its asset at the same volatility (days resampled in pairs, stationary
+  # bootstrap) and against random traders with its own footprint (engines/nulls, rung timing).
+  n_resamples: 2000
+  block_days: 20          # mean block length, about a month of trading days
+  monkey_draws: 10000     # random traders; the smallest p observable is 1/10001
+  monkey_min_trades: 30   # fewer trades inside oos2 and the monkey is not run
+  confidence: 0.95
+  seed: 0

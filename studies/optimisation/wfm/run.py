@@ -5,8 +5,9 @@ from pathlib import Path
 import pandas as pd
 
 from core import assetdata
-from studies.optimisation.wfm.inputs import export
-from studies.optimisation.wfm.measure import correlation, drift, gaterule
+from studies.optimisation.wfm.inputs import asset, export
+from core import barstore
+from studies.optimisation.wfm.measure import benchmark, correlation, drift, gaterule, monkey
 from studies.optimisation.wfm.model import windows
 from studies.optimisation.wfm.verdict import call
 
@@ -75,7 +76,43 @@ def read(directory: Path, settings: dict, only: str | None = None) -> dict:
             "rules": rules[["threshold_pct", "rows", "cols", "min_squares"]],
             "sqx_failed": rules["sqx_failed"].to_dict() if "sqx_failed" in rules else {},
             "objectives": objectives,
-            "trades": trades if not only else trades[trades["strategy"] == only]}
+            "trades": trades if not only else trades[trades["strategy"] == only],
+            "benchmark": against(export.main(directory), only, settings["benchmark"])}
+
+
+def against(main: pd.DataFrame | None, only: str | None, cfg: dict) -> dict:
+    """Each original strategy on `oos2` against its asset at equal risk and against chance.
+
+    Args:
+        main: `inputs.export.main()`, None for an export older than 2026-10-01.
+        only: One strategy's name, or None for all.
+        cfg: The `benchmark` block of `config.yaml`.
+
+    Returns:
+        Strategy to `measure.benchmark.compare` plus its `state`, the asset's `name` and
+        `monkey` (`measure.monkey.against`, None when `oos2` holds too few trades to price);
+        empty when the export holds no original trades. The original, not a matrix cell:
+        picking one of the 30 cells to stand for the strategy is a choice made after
+        seeing them, which is selection on the very sample being judged.
+    """
+    if main is None:
+        return {}
+    the = asset.of(main["Symbol"].iloc[0])
+    start, end = the["oos"]
+    out = {}
+    for name, g in main.groupby("strategy", observed=True):
+        if only and name != only:
+            continue
+        pnl = benchmark.daily_pnl(g, the["close"], the["point_value"])
+        days = (pnl.index >= start) & (pnl.index < end)
+        capital = float(g["Balance"].iloc[0] - g["Profit/Loss"].iloc[0])
+        got = benchmark.compare(pnl[days], the["close"][days], capital, cfg)
+        inside = g[(g["Open time"] >= start) & (g["Close time"] < end)]
+        frame = barstore.read(g["Symbol"].iloc[0], g["timeframe"].iloc[0])
+        out[name] = got | {"state": benchmark.call(got), "asset": the["name"],
+                           "monkey": monkey.against(inside, frame, cfg["monkey_draws"], name)
+                           if len(inside) >= cfg["monkey_min_trades"] else None}
+    return out
 
 
 def companions(steps: pd.DataFrame, cells: pd.DataFrame, read_cfg: dict,
