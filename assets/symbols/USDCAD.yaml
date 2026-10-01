@@ -158,3 +158,9 @@ mc_retest:
 # Proyectos del maestro que usan este activo. Leído, no decidido.
 projects_using_it:
   - EURUSD
+# Punto de MT5 en cada empresa, leído de su servidor el 2026-10-01 (mt5.live 'symbol').
+# Spread de MT5 × to_sqx = puntos de SQX (to_sqx = point ÷ instrument.tick_size).
+# No es siempre ÷10: forex y yenes ÷10, oro e índices ×1, Brent en Hantec ×10.
+mt5_point:
+  ftmo: {point: 1e-05, digits: 5, to_sqx: 0.1}
+  hantec: {point: 1e-05, digits: 5, to_sqx: 0.1}

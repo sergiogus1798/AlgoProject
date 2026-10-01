@@ -81,6 +81,11 @@ def for_sqx(data: dict, firm: str, info: dict, slippage: float) -> tuple[dict, l
              f"swap {swap['type']} largo {long_} corto {short}, triple el "
              f"{swap['triple_swap_on'].lower()} (su servidor)",
              f"deslizamiento {slippage}: el tester de MT5 no desliza"]
+    stored = (data.get("mt5_point") or {}).get(firm, {}).get("point")
+    if stored is not None and abs(stored - info["point"]) > 1e-12:
+        lines.append(f"OJO: {info['name']} cotiza hoy con point {info['point']}, pero "
+                     f"assets/symbols/{data['symbol']}.yaml (mt5_point.{firm}) guarda {stored}: "
+                     "actualiza la ficha")
     return ({"defaultSpread": spread, "defaultSlippage": slippage,
              "commission": {"method": com["method"], "value": com["value"]}, "swap": swap},
             lines)

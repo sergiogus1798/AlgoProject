@@ -91,6 +91,11 @@ index CFDs do since 2026-09-27: their spread fell or rose between the two OOS wi
   $28.82 on USDCHF. Half the spread scales with the instrument and lands on 5 points for gold, the
   midpoint of the range its own MC Retest already explores.
 - `mc_retest` — the spread and slippage ranges the MC Retest task draws from, in points.
+- `mt5` — the asset's symbol name at each firm. `mt5_point` — each firm's MT5 `point` and
+  `to_sqx` = point ÷ `instrument.tick_size`, read off the firm's server (2026-10-01). **Every cost
+  in this file is in SQX points**; a figure read in MT5 (spread, swap in points, a stop) enters
+  SQX × `to_sqx`, never a remembered ÷10: FX and JPY pairs 0.1, gold/silver/indices 1, Brent at
+  Hantec **10**. → `knowhow/costs/mt5-points-to-sqx-points.md`
 
 Its time windows are **not** here: they live in `_policy.yaml` under `segments: <SYMBOL>:`, all
 seventeen together, next to the date range SQX actually holds for that feed.
