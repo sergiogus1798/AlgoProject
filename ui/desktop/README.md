@@ -52,6 +52,7 @@ and the study tabs). The mock on invented data (`workspace/mock.py`, `fake.py`) 
 | `theme.py` | The one design system: the palette `C`, the terminal look `T`, the stylesheet, and the two smallest pieces every zone draws with (`rule()`, `kicker(text)`) | imported | — |
 | `buttonstyle.py` | How a button looks in both looks (`qss(C, T, mono)`, appended by `theme`): lit when it can be pressed — accent edge over a fill brighter on top, a brighter edge and fill on hover, darker when pressed, accent fill when checked — and inert when it cannot (dim text, dashed dark edge); `#nav`, `#primary` and the «?» mark (`QLabel#helpmark`) | imported | — |
 | `helpmark.py` | The «?» beside every button (owner, 2026-09-28): `install(app)` puts one application-wide event filter that, on a button's first show, sets the hand cursor and places a round mark whose tooltip is the button's `help` property or the registry sentence (`ui/text/buttonhelp`), merged with the button's own tooltip (a near-copy is said once). In a horizontal box the mark is inserted right after the button; anywhere else it floats (child of the button's parent, in no layout) right of the button when that strip is free, else over the button's spare right edge, else it hides — it never widens a button and never takes a grid cell. Each mark filters its own button: visibility, move, resize, reparent (re-placed in the new parent), destruction (it forgets the button at once). No mark for `#nav`, flat section heads, the breadcrumbs, Qt's internal buttons (tab bars, combos, dialog boxes, calendars) or `helpmark=False` | imported | — |
+| `combofix.py` | Every `QComboBox` popup grows to every option the screen can hold, upwards when the space below runs out, and scrolls beyond (2026-10-01, §1): one application-wide event filter, `install(app)`. The «2 of 4» was Qt's menu-style popup reserving two scroll-arrow strips inside the rows' height; the theme now uses the plain list popup | imported | — |
 | `background.py` | Daemon calls off the GUI thread: `run(work, done, key, owner)`, `get`, `post` on a 4-thread `QThreadPool`; the answer lands in `done` on the GUI thread through one relay object; `key` keeps only the newest answer per stream; a deleted `owner` drops it. Every poll and every reload uses it (owner, 2026-09-28: «la UI se congela») | imported | work → callback |
 | `client.py` | The only way out to the daemon; `aim(port)` points it at another port (`launch --port`, `tools/uiwalk.py`) | imported | path → JSON |
 | `coverage.py` | The matrix of what has been tried, and the counts above it | imported | — |
@@ -63,12 +64,14 @@ and the study tabs). The mock on invented data (`workspace/mock.py`, `fake.py`) 
 | `palettes.py` | The palette library: the open palette, its blocks by category, and the writes | imported | — |
 | `palettebar.py` | The palette view's top bar: the picker, the policy, the search and the library actions | imported | — |
 | `blocktable.py` | The table of blocks under one palette, and the override picker on each row | imported | — |
-| `assets.py` | The asset zone: one page per instrument (`AssetPage`), two per row from 880 px of viewport, the index down the left scrolling to them | imported | — |
+| `assets.py` | The asset zone: one page per instrument (`AssetPage`), one per row at full width — costs and windows on the left, a `Características` tile on the right — the index down the left scrolling to them | imported | — |
 | `assetlist.py` | The index down the left: the instruments coloured by what they still need | imported | — |
-| `assetcard.py` | One asset's costs, its chips and everything the preflight would complain about | imported | — |
-| `assetspans.py` | The same asset's windows: its data range, a date selector per segment and the MC Retest ranges — its SQX column prefers the custodian's own range, read off its projects on disk, falling back to the master's when it has none yet | imported | — |
+| `assetcard.py` | One asset's costs, its chips and everything the preflight would complain about — its cost table is just field/use/unit now (owner, 2026-10-01: the live-SQX column is gone from every asset table) | imported | — |
+| `assetspans.py` | The same asset's windows: a tramo card per segment (its spread note and its two date selectors) beside what SQX actually has, and the MC Retest ranges | imported | — |
 | `assetmarkets.py` | `CrossMarketCheck`: «Declarar como main» for an asset that is not one yet, «Añadir»/«Quitar» a market once it is, one coloured group per category | imported | — |
 | `assetforms.py` | The boxes the zone opens: a text, a cost with its `why`, a Cross Market row, a new asset | imported | — |
+| `assettable.py` | The read-only table helpers shared by `assetcard.py` and `assetspans.py`: `grid`, `cell`, `val`, `derived`, `fit`, `clear`, `send` | imported | — |
+| `assettraits.py` | `TRAITS`: a one-paragraph, non-exhaustive note per symbol on how it tends to trade (trend, rango, carry) — a starting point for the `Características` tile, not a study | imported | — |
 | `yamltree.py` | Any `assets/` file as a table of its values, each one beside its own comment | imported | — |
 | `durations.py` | How «En marcha» prints a duration, a processed-over-total, a time per strategy, and the 0-100 share a task's bar shows (`share`) | imported | — |
 
@@ -142,8 +145,9 @@ each exception.
   window and the market all open a box that says what the figure means, in which unit, and what
   leaving it undecided costs. A spread is not a number to nudge with the arrow keys.
 - **The asset zone writes `assets/` and nothing else.** It reaches SQX for nothing: `sqx_now` and
-  `instrument` are read from the files, which `sqx.inspect.instruments` refreshes. A window that
-  queried the master would make opening a list a job that can block.
+  `instrument` are read from files: the custodian's `data.db` for «SQX hoy» (owner, 2026-09-30: never
+  the master), the asset file for the rest. A window that queried an install would make opening a
+  list a job that can block.
 - **The sidebar is built last and inserted first.** It opens a zone, and opening one needs the
   stack to exist. Zones are addressed by name (`nav.ZONES`), never by index: a launcher's
   `--zone Proyectos` survives a regrouping, and a name no longer in `nav.ZONES` fails loudly.

@@ -1,12 +1,12 @@
 """One asset's windows: its data, the three segments and the MC Retest ranges."""
 
 from PySide6.QtCore import QDate, Signal
-from PySide6.QtWidgets import QDateEdit, QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QDateEdit, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
+                               QWidget)
 
-from ui.desktop.assetcard import cell, clear, derived, fit, grid, send, val
-from ui.desktop.assetforms import TextBox, now, word
+from ui.desktop.assettable import cell, clear, derived, fit, grid, send, val
+from ui.desktop.assetforms import TextBox, word
 from ui.desktop.assetmarkets import CrossMarketCheck
-from ui.desktop.theme import C
 
 EMPTY = QDate(1970, 1, 1)   # the date edit's floor, shown as «sin decidir»: `null` in the file
 
@@ -60,13 +60,16 @@ class AssetSpans(QWidget):
         self.lay = QVBoxLayout(self)
         self.lay.setContentsMargins(0, 0, 0, 0)
         self.lay.setSpacing(10)
-        self.lay.addWidget(QLabel("Tramos — elige fechas y Aplicar", objectName="h2"))
-        self.dates = QGridLayout()
-        self.dates.setHorizontalSpacing(10)
+        self.lay.addWidget(QLabel("Tramos", objectName="h2"))
+        self.feed = QLabel(objectName="muted")
+        self.feed.setWordWrap(True)
+        self.lay.addWidget(self.feed)
+        self.dates = QHBoxLayout()
+        self.dates.setSpacing(12)
         self.lay.addLayout(self.dates)
 
         self.lay.addWidget(QLabel("MC Retest — rangos en puntos", objectName="h2"))
-        self.mc = grid(["range", "min", "max", "sqx_now"], 3)
+        self.mc = grid(["range", "min", "max"], 2)
         self.mc.cellDoubleClicked.connect(self.on_mc)
         self.lay.addWidget(self.mc)
 
@@ -86,34 +89,57 @@ class AssetSpans(QWidget):
         self.markets.fill(data)
 
     def fill_dates(self) -> None:
-        """One row per segment, under the row of what SQX has, each with its two selectors."""
+        """One card per segment, side by side, under the line of what SQX actually has."""
         clear(self.dates)
         span = self.data["data"] or {}
-        self.dates.addWidget(QLabel(word("data")), 0, 0)
-        have = QLabel(f"{span.get('from', 'sin datos')} → {span.get('to', 'sin datos')}")
-        have.setToolTip("Lo que SQX tiene para el feed de este activo. No se edita: lo refresca "
-                        "`python3 -m core.assets --dataranges`.")
-        self.dates.addWidget(have, 0, 1, 1, 3)
-        for i, seg in enumerate(self.data["segments"]):
-            first, last = picker(qdate(seg["from"], False)), picker(qdate(seg["to"], True))
-            go = QPushButton("Aplicar")
-            go.setEnabled(False)
-            for edit in (first, last):
-                edit.dateChanged.connect(
-                    lambda *_, s=seg, a=first, b=last, g=go: self.dirty(s, a, b, g))
-            go.clicked.connect(lambda *_, s=seg, a=first, b=last: self.on_dates(s, a, b))
-            name = QLabel(word(seg["name"]))
-            name.setToolTip(seg["purpose"])
-            kept = seg["reserved_for"]
-            note = QLabel(f"Spread {word(seg['spread'])}"
-                          + (f" · reservado para {', '.join(kept)}" if kept else ""))
-            note.setStyleSheet(f"color:{C['weak'] if kept else C['muted']};")
-            note.setWordWrap(True)
-            note.setToolTip(seg["purpose"])
-            for j, w in enumerate((name, first, last, go)):
-                self.dates.addWidget(w, 2 * i + 1, j)
-            self.dates.addWidget(note, 2 * i + 2, 1, 1, 4)   # under its selectors: a page is half wide
-        self.dates.setColumnStretch(4, 1)
+        self.feed.setText(f"Datos en SQX: {span.get('from', 'sin datos')} → "
+                          f"{span.get('to', 'sin datos')}")
+        self.feed.setToolTip("Lo que SQX tiene para el feed de este activo. No se edita: lo "
+                             "refresca `python3 -m core.assets --dataranges`.")
+        for seg in self.data["segments"]:
+            self.dates.addWidget(self.segment_card(seg))
+        self.dates.addStretch()
+
+    def segment_card(self, seg: dict) -> QFrame:
+        """One tramo as a tile: its name, its spread note and its two date selectors.
+
+        Args:
+            seg: The segment as the daemon sent it.
+
+        Returns:
+            A `tile` frame, done growing: changing a date only enables its own «Aplicar».
+        """
+        tile = QFrame(objectName="tile")
+        lay = QVBoxLayout(tile)
+        lay.setContentsMargins(14, 12, 14, 12)
+        lay.setSpacing(6)
+
+        name = QLabel(word(seg["name"]), objectName="h2")
+        name.setToolTip(seg["purpose"])
+        lay.addWidget(name)
+
+        kept = seg["reserved_for"]
+        note = QLabel(f"Spread {word(seg['spread'])}", objectName="muted")
+        note.setWordWrap(True)
+        note.setToolTip(seg["purpose"] + (f"\nReservado para {', '.join(kept)} (solo ata a "
+                                          "un agente autónomo)." if kept else ""))
+        lay.addWidget(note)
+
+        first, last = picker(qdate(seg["from"], False)), picker(qdate(seg["to"], True))
+        row = QHBoxLayout()
+        row.addWidget(first)
+        row.addWidget(QLabel("→"))
+        row.addWidget(last)
+        lay.addLayout(row)
+
+        go = QPushButton("Aplicar")
+        go.setEnabled(False)
+        for edit in (first, last):
+            edit.dateChanged.connect(
+                lambda *_, s=seg, a=first, b=last, g=go: self.dirty(s, a, b, g))
+        go.clicked.connect(lambda *_, s=seg, a=first, b=last: self.on_dates(s, a, b))
+        lay.addWidget(go)
+        return tile
 
     def dirty(self, seg: dict, first: QDateEdit, last: QDateEdit, go: QPushButton) -> None:
         """Enable Aplicar only for a change that makes a window.
@@ -144,7 +170,7 @@ class AssetSpans(QWidget):
         self.changed.emit()
 
     def fill_mc(self) -> None:
-        """Draw the MC Retest ranges beside the ones the master still carries."""
+        """Draw the MC Retest ranges the file decides, or `core.assets` derives when it does not."""
         rows = self.data["mc_retest"]
         self.mc.setRowCount(len(rows))
         for i, r in enumerate(rows):
@@ -156,13 +182,7 @@ class AssetSpans(QWidget):
                     if zero and r[k] is None else
                     derived(got[k], got["source"]) if r[k] is None and got.get(k) is not None
                     else cell(val(r[k])) for k in ("min", "max")]
-            custodian = r.get("custodian_now")
-            sqx_now = (cell(now(custodian), "Lo que el custodio (SQX_w2) lleva hoy en su propio "
-                            "proyecto — es quien corre el MC Retest — leído de sus ficheros en "
-                            "disco, sin arrancarlo.") if custodian else
-                       cell(now(r["sqx_now"]), "Lo que el maestro lleva hoy: el custodio no "
-                            "tiene todavía ningún proyecto de este activo que lo diga."))
-            for j, item in enumerate([cell(word(r["name"]), r["name"]), *ends, sqx_now]):
+            for j, item in enumerate([cell(word(r["name"]), r["name"]), *ends]):
                 self.mc.setItem(i, j, item)
         fit(self.mc)
 

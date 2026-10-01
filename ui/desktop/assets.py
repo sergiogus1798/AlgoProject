@@ -1,6 +1,6 @@
-"""The asset zone: every instrument as a page of its own, two per row when the width allows."""
+"""The asset zone: every instrument as a page of its own, one per row, full width."""
 
-from PySide6.QtCore import QEvent, QObject, Qt, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton,
                                QScrollArea, QSplitter, QVBoxLayout, QWidget)
 
@@ -9,13 +9,15 @@ from ui.desktop.assetcard import AssetCard
 from ui.desktop.assetforms import NewAssetBox
 from ui.desktop.assetlist import AssetList
 from ui.desktop.assetspans import AssetSpans
+from ui.desktop.assettraits import trait
 from ui.desktop.yamltree import YamlTree
 
-TWO_UP = 880   # px of scroll viewport from which two pages fit side by side, tables readable
+TRAITS_WIDTH = 320   # a column of prose, not a table: no point growing past a readable line
 
 
 class AssetPage(QFrame):
-    """One instrument: its costs, its windows, its Cross Market check and, on demand, its file."""
+    """One instrument: its costs, its windows, its Cross Market check, its trading character,
+    and, on demand, its file."""
 
     changed = Signal(str)   # the asset written, so the zone recounts and redraws only it
     retired = Signal(str)
@@ -28,15 +30,16 @@ class AssetPage(QFrame):
         """
         super().__init__(objectName="panel")
         self.symbol = symbol
-        lay = QVBoxLayout(self)
+        lay = QHBoxLayout(self)
         lay.setContentsMargins(14, 12, 14, 14)
         lay.setSpacing(14)
+
+        left = QVBoxLayout()
+        left.setSpacing(14)
         self.card, self.spans, self.tree = AssetCard(), AssetSpans(), YamlTree()
         self.raw = QPushButton("Fichero entero")
         self.raw.setCheckable(True)
-        self.raw.setToolTip("Todos los valores del fichero del activo, cada uno con lo que su "
-                            "propio comentario dice. Las fechas de los tramos no están ahí: "
-                            "viven en assets/_policy.yaml y se eligen arriba.")
+        self.raw.setToolTip("Todos los valores del fichero del activo, cada uno con su comentario.")
         self.raw.toggled.connect(self.tree.setVisible)
         drop = QPushButton("Retirar")
         drop.setToolTip("Mueve el fichero a assets/symbols/_retired/. Deja de contar para "
@@ -50,9 +53,30 @@ class AssetPage(QFrame):
         self.spans.changed.connect(lambda: self.changed.emit(symbol))
         self.tree.edited.connect(self.on_edit)
         for w in (self.card, self.spans, self.tree):
-            lay.addWidget(w)
-        lay.addStretch()
+            left.addWidget(w)
+        left.addStretch()
+        lay.addLayout(left, 2)
+        lay.addWidget(self.traits_panel(), 1)
         self.refresh()
+
+    def traits_panel(self) -> QFrame:
+        """A tile naming how this asset tends to trade — trend, rango, carry.
+
+        Returns:
+            The tile, already filled: the note never changes while the page is open, unlike
+            the costs and the windows beside it.
+        """
+        tile = QFrame(objectName="tile")
+        tile.setMaximumWidth(TRAITS_WIDTH)
+        tlay = QVBoxLayout(tile)
+        tlay.setContentsMargins(14, 12, 14, 12)
+        tlay.setSpacing(6)
+        tlay.addWidget(QLabel("Características", objectName="h2"))
+        text = QLabel(trait(self.symbol), objectName="muted")
+        text.setWordWrap(True)
+        tlay.addWidget(text)
+        tlay.addStretch()
+        return tile
 
     def refresh(self) -> None:
         """Read this asset again and redraw the three parts."""
@@ -93,7 +117,6 @@ class Assets(QWidget):
         super().__init__()
         self.data: dict = {"assets": [], "classes": {}}
         self.pages: dict[str, AssetPage] = {}
-        self.columns = 0
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(10)
@@ -118,13 +141,13 @@ class Assets(QWidget):
         self.grid = QGridLayout()
         self.grid.setSpacing(14)
         self.grid.setAlignment(Qt.AlignTop)
+        self.grid.setColumnStretch(0, 1)
         holder = QWidget()
         holder.setLayout(self.grid)
         self.area = QScrollArea()
         self.area.setWidget(holder)
         self.area.setWidgetResizable(True)
         self.area.setFrameShape(QScrollArea.NoFrame)
-        self.area.viewport().installEventFilter(self)
         split.addWidget(self.area)
         split.setStretchFactor(1, 1)
         split.setSizes([170, 1200])
@@ -146,8 +169,8 @@ class Assets(QWidget):
             page.changed.connect(self.on_changed)
             page.retired.connect(lambda *_: self.reload())
             self.pages[a["symbol"]] = page
-        self.columns = 0
-        self.place()
+        for i, page in enumerate(self.pages.values()):
+            self.grid.addWidget(page, i, 0)
         self.list.fill(self.data["assets"], keep)
 
     def recount(self) -> None:
@@ -157,27 +180,6 @@ class Assets(QWidget):
         soft = [a for a in self.data["assets"] if a["provisional"] and a["symbol"] not in blocked]
         self.counts.setText(f"{len(self.data['assets'])} activos · {len(blocked)} bloqueados · "
                             f"{len(soft)} sólo con cifras provisionales")
-
-    def place(self) -> None:
-        """Lay the pages out in one or two columns, whichever the viewport holds readably."""
-        columns = 2 if self.area.viewport().width() >= TWO_UP else 1
-        if columns == self.columns:
-            return
-        self.columns = columns
-        for i, page in enumerate(self.pages.values()):
-            self.grid.addWidget(page, i // columns, i % columns)
-        for c in range(2):
-            self.grid.setColumnStretch(c, 1 if c < columns else 0)
-
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Re-lay the pages whenever the viewport's own width changes.
-
-        The viewport and not the zone: it is resized after the zone, so a width read in the
-        zone's resizeEvent is the old one and the zone opened in one column on a wide window.
-        """
-        if event.type() == QEvent.Resize:
-            self.place()
-        return False
 
     def show_page(self, symbol: str) -> None:
         """Scroll the grid to one asset's page.

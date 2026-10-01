@@ -10,7 +10,7 @@ from core.assetdata import (RESERVED, classes, fields, load, markets, policy, sc
 from core.assets import report
 from core.assetyaml import leaves
 from core.paths import ASSETS, WORKERS
-from sqx.inspect.instruments import mc_ranges
+from sqx.inspect.instruments import registry
 
 
 def units(data: dict) -> dict:
@@ -75,17 +75,17 @@ def one(symbol: str) -> dict:
     """
     data = load(symbol)
     unit = units(data)
-    costs = [{"field": f, **data["costs"][f], "unit": unit[f],
+    # «SQX hoy» is the custodian's own registry, never the master's the file recorded (owner,
+    # 2026-09-30): read off its data.db, without starting it.
+    now = registry(WORKERS["custodian"]["path"], data["sqx_symbol"])
+    costs = [{"field": f, **data["costs"][f], "sqx_now": now.get(f), "unit": unit[f],
               "required": f in REQUIRED[data["class"]]} for f in fields(data)]
     segments = [{"name": n, **s, "reserved_for": s.get(RESERVED, [])}
                 for n, s in data["segments"].items()]
     # What the MC Retest will draw, beside what the file says: an empty slippage range is
     # 1x-4x the build's slippage in `core.assets`, and the card read it as «sin decidir».
     applied = assetranges.mc_retest(data)
-    # MC Retest runs on the custodian, not the master `sqx_now` was recorded from (feedback
-    # 2026-09-29 §1.7): read the custodian's own projects on disk, never query or start it.
-    custodian = mc_ranges(WORKERS["custodian"]["path"], data["sqx_symbol"]) or {}
-    mc = [{"name": n, **r, "applied": applied.get(n), "custodian_now": custodian.get(n)}
+    mc = [{"name": n, **r, "applied": applied.get(n)}
           for n, r in (data.get("mc_retest") or {}).items()]
     return {"symbol": symbol, "class": data["class"], "broker": data["broker"],
             "sqx_symbol": data["sqx_symbol"], "feeds": data["feeds"],
