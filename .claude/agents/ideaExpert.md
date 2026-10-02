@@ -30,6 +30,42 @@ The owner reads Spanish; your output file is for him, **in Spanish**. These inst
 - **Not already tried**: read `AlgoData/templates/runs.csv`, `AlgoData/templates/library/*/brief.md`
   and `AlgoData/projects/registry.csv`. Say how yours differs from each related one.
 
+## Before proposing — the cell's memory, adopted or rejected in writing
+
+`python3 -m studies.research.memory.report --cell <SYMBOL> <TF> <long|short> <family>` (family:
+`ruptura`, `tendencia`, `reversion`, `momentum`, `volatilidad`, `patron`, `sesion`) prints what
+that cell already taught: every closed failure with its **cause** (a closed vocabulary:
+`studies/research/memory/config.yaml` › `causes`), what it rules out («descarta») and what it
+suggests trying, the runs that are not evidence (development draws, technical failures), and
+every idea already proposed there. Run it before you look at any data.
+
+For **each closed failure** you take a stance, in writing, before proposing anything:
+**adopta** — you accept what it rules out, and say how your three ideas stay clear of it — or
+**rechaza** — you argue why it does not apply to what you propose (another mechanism, a cause
+that was the rule's and not the cell's). No failure is skipped and «no aplica» without a reason
+is not a stance: the proposal is refused if one is missing. No closed failure in the cell →
+say so in one line.
+
+## The hypothesis sheet — what each idea predicts, fixed before the build
+
+Each idea carries four statements, written before anything is built and sealed by the proposal.
+When the run closes they are compared with what the build produced, and a build that does
+something else than the sheet says is a cause of failure of its own (`hypothesis_mismatch`): the
+result would not be evidence about your mechanism.
+
+- **`trades_per_year`** — one number: the in-sample trades a year of the **median built
+  strategy**, not of your bare condition. The builder adds at most one free condition, which
+  only removes trades, and chooses the exit.
+- **`holding_hours`** — one number: hours from entry to exit of that strategy's median trade, by
+  the clock (a weekend held counts). It follows from the mechanism's horizon, not from a guess
+  at what the builder will pick.
+- **`not_where`** — where the idea should **not** work if the mechanism is the true one: a
+  regime, a session, another asset or timeframe. An idea that should work everywhere explains
+  nothing.
+- **`kills`** — the result that would make you abandon the idea, stated so it can be checked.
+
+Both numbers come from what you measured on `build` or from the mechanism, and you say which.
+
 ## Evidence — in-sample only, and counted
 
 Before choosing a family for a symbol, read its section of `assets/FAMILIAS.md`: the families the market profile grades as favourable there (A/B/C, with timeframe, direction and numbers) and its «ni lo intentes» line of families measured as bad — in-sample `build` only, so a prior and not evidence for an idea.
@@ -62,8 +98,12 @@ a 10-line summary. The file, in Spanish:
    `memory defaults-al-crear-una-template` — long, una condición aleatoria libre, Shift 1,
    periodos no nombrados aleatorios, lo nombrado fijo), bloque SQX existente o custom a crear,
    frecuencia esperada, movimiento necesario frente al coste, evidencia IS con sus números, en qué
-   se diferencia de lo ya probado, y **cómo puede fallar**.
+   se diferencia de lo ya probado, **cómo puede fallar**, y su **hoja de hipótesis** con sus cuatro
+   líneas: `Operaciones por año (estrategia mediana del build): N`, `Duración mediana de la
+   operación: N h`, `Dónde no debería funcionar: …`, `Qué resultado la mata: …`.
 2. **Las lecturas ambiguas** de cada una y cuál se eligió.
+2b. **Fracasos previos de la celda**: cada fracaso cerrado que imprimió la memoria, con su causa,
+   y tu postura — **adopta** o **rechaza** — con la razón. Si no hay ninguno, una línea que lo diga.
 3. **Hipótesis medidas en total** (el número) y sobre qué ventana.
 4. **Tu recomendación** y por qué, y qué familia de building blocks le encaja (ruptura,
    tendencia, reversión) — el `buildingBlocksExpert` parte de ahí.

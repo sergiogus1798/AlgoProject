@@ -43,3 +43,131 @@ asset_class:
 # `built` and `oos` come from the build and its OOS retest (steps 6-7), `gate` from the step-8
 # judge's cut, then each SQX step's last databank.
 stages: [built, oos, gate, markets, mcr, spp]
+
+# ── Why a run died (encargo 42, front B) ─────────────────────────────────────────────────────
+# A closed vocabulary: every closed run gets ONE of these as `cause`, with what it rules out and
+# what to try next (the texts are Spanish: the owner and the agents read them in the cell's
+# memory). `scope` says how far the failure reaches: `idea` (that rule only), `celda` (anything
+# of that family on that asset, timeframe and direction) or `ninguno` (no evidence at all).
+causes:
+  status: approved   # the 12 causes and their mapping, owner 2026-10-02
+  vocabulary:
+    no_population:
+      label: el build no da población
+      scope: idea
+      rules_out: esa condición fija, tal como está escrita, con los filtros del build en ese activo y marco
+      try_next: aflojar el disparo o cambiar de marco antes de tocar los filtros del build
+    too_few_trades:
+      label: opera demasiado poco
+      scope: idea
+      rules_out: esa regla en ese marco (no llega al mínimo de operaciones por año)
+      try_next: el mismo mecanismo en un marco menor o con un disparo menos exigente
+    too_many_trades:
+      label: opera demasiado
+      scope: idea
+      rules_out: esa regla en ese marco (por encima del techo de operaciones, donde el coste se come el filo)
+      try_next: un disparo más exigente o un marco mayor
+    cost_kills:
+      label: el coste se come el filo
+      scope: celda
+      rules_out: movimientos de ese tamaño en ese activo con los costes reales
+      try_next: un horizonte más largo (más movimiento por operación) u otro activo más barato
+    oos_decay:
+      label: se degrada fuera de muestra
+      scope: idea
+      rules_out: esa regla (ganaba en el tramo de construcción y no en oos1, o con peor forma)
+      try_next: otro mecanismo de la misma familia; no la misma regla con otros periodos
+    not_beyond_random:
+      label: no bate al azar
+      scope: idea
+      rules_out: que la entrada aporte algo sobre la deriva del mercado o una entrada al azar
+      try_next: otro mecanismo; si varias ideas de la celda acaban aquí, otra celda
+    fragile_parameters:
+      label: frágil a parámetros y perturbaciones
+      scope: idea
+      rules_out: esa regla (vive en un punto, no en una meseta)
+      try_next: una regla con menos parámetros o con el parámetro atado a una medida del mercado
+    single_market:
+      label: sólo funciona en su mercado o en su marco
+      scope: idea
+      rules_out: que el mecanismo sea general (no pasa a otros mercados ni a otros marcos)
+      try_next: un mecanismo que se explique igual en los mercados de la familia
+    funding_rule:
+      label: rompe una regla de fondeo
+      scope: idea
+      rules_out: esa regla para fondeo (peor día, pérdida flotante o drawdown frente a lo que gana)
+      try_next: el mismo mecanismo con salida que corte el flotante, o menos tiempo en mercado
+    hypothesis_mismatch:
+      label: el build no hizo lo que la hoja predijo
+      scope: idea
+      rules_out: leer el resultado como prueba del mecanismo (lo construido es otra cosa)
+      try_next: reescribir la regla para que exprese el mecanismo, o rehacer la hoja
+    infrastructure:
+      label: fallo técnico
+      scope: ninguno
+      rules_out: nada (no es evidencia contra la idea)
+      try_next: repetir la corrida
+    unclassified:
+      label: murió sin causa legible
+      scope: ninguno
+      rules_out: nada todavía (ninguna razón escrita dice por qué)
+      try_next: leer el resumen de la corrida y añadir su razón a `causes.facts`
+  # The judge writes a strategy's reason as "<state>: <fact>=<value>" parts joined by "; "
+  # (pipeline/autopilot/criteria.py). Only the `fail:` parts count; the FIRST pattern that
+  # matches the fact names its cause (shell wildcards). A two-sided rule on one fact (the
+  # trades-per-year band) is told apart by `split`: any value between the band's floor and its
+  # lowest ceiling — criteria.yaml today: floor 40, ceilings 50 (H4), 75, 100 (M30).
+  facts:
+    - {fact: "gate.scorecard.is_trades_per_year", split: 45, below: too_few_trades, above: too_many_trades}
+    - {fact: "gate.scorecard.sanidad_*", cause: too_few_trades}
+    - {fact: "gate.scorecard.oos_trades_per_year", cause: oos_decay}
+    - {fact: "gate.scorecard.estaticas_*", cause: oos_decay}
+    - {fact: "gate.scorecard.forma_*", cause: oos_decay}
+    - {fact: "gate.scorecard.degradacion_years_positive", cause: oos_decay}
+    - {fact: "gate.scorecard.degradacion_value", cause: oos_decay}
+    - {fact: "gate.scorecard.degradacion_passed", cause: oos_decay}
+    - {fact: "gate.scorecard.degradacion_concentration", cause: not_beyond_random}
+    - {fact: "gate.scorecard.degradacion_t", cause: not_beyond_random}
+    - {fact: "gate.scorecard.drift_excess_t", cause: not_beyond_random}
+    - {fact: "gate.scorecard.trade_t", cause: not_beyond_random}
+    - {fact: "gate.scorecard.mono_*", cause: not_beyond_random}
+    - {fact: "gate.scorecard.familia_*", cause: not_beyond_random}
+    - {fact: "gate.scorecard.*_worst_day_r", cause: funding_rule}
+    - {fact: "gate.scorecard.*_worst_trade_mae_r", cause: funding_rule}
+    - {fact: "gate.scorecard.*_max_dd_r", cause: funding_rule}
+    - {fact: "gate.scorecard.*_dd_over_net_year", cause: funding_rule}
+    - {fact: "monkey.*", cause: not_beyond_random}
+    - {fact: "monkeyExcess.*", cause: not_beyond_random}
+    - {fact: "snoopingScreen.*", cause: not_beyond_random}
+    - {fact: "spread.*", cause: cost_kills}
+    - {fact: "edgeCost.*", cause: cost_kills}
+    - {fact: "crossmarket.*", cause: single_market}
+    - {fact: "crossTF.*", cause: single_market}
+    - {fact: "mcRetest.*", cause: fragile_parameters}
+    - {fact: "spp.*", cause: fragile_parameters}
+  # The judging steps whose verdict.csv says why a population died at each stage.
+  judged_at: {gate: ["8"], markets: ["10"], mcr: ["12", "14"], spp: ["16"]}
+  # When no judge wrote a reason (an SQX task left the databank empty by its own filters).
+  stage:
+    built: no_population
+    oos: unclassified
+    gate: unclassified
+    markets: single_market
+    mcr: fragile_parameters
+    spp: fragile_parameters
+
+# ── The hypothesis sheet (encargo 42, front B) ───────────────────────────────────────────────
+# What each idea fixes before its build; the proposal seals it, and closing the run compares it
+# with what the build produced (the median strategy of the build's databank, in-sample trades).
+sheet:
+  databank: Results      # the build's own databank: every strategy built, before any cut
+  # The owner's number (2026-10-02). A factor f: built ÷ predicted above f or under 1/f, on
+  # trades per year or on holding time, is a mismatch. `pending` reports the ratios and types
+  # nothing. A mismatch on a run with survivors is only annotated (owner, same day).
+  tolerance: 2
+
+# ── The reviewer (encargo 42, front B) ───────────────────────────────────────────────────────
+review:
+  # Owner, 2026-10-02: the reviewer only annotates (false), one pass, on Opus. true would take a
+  # «tumbada» idea out of the launch. His veto is his in either case.
+  removes: false

@@ -4,14 +4,18 @@
 // NewsRuleMinutes before to NewsRuleMinutes after a restricted release that moves this symbol. The
 // EA closes its positions and cancels its pending orders from NewsCloseMinutesBefore until
 // NewsRuleMinutes before each release, and opens nothing from NewsBlockMinutesBefore before
-// until NewsBlockMinutesAfter after it. Neither calendar exists in the Strategy Tester, so the
-// filter does nothing there: a backtest of this EA is the backtest of the EA without it.
+// until NewsBlockMinutesAfter after it. Neither calendar exists in the Strategy Tester: there
+// the releases come from NewsTesterFile, the firm's history already in this server's clock,
+// written into Common\Files by mt5/newsfilter/testerfile.py. Live, that file is never opened.
 
 datetime newsEventTime[];
 string   newsEventCurrency[];
 string   newsEventTitle[];
 datetime newsLoadedAt = 0;
 bool     newsWarned = false;
+bool     newsTesterLoaded = false;
+int      newsCursor = 0;                           // tester: first release not yet behind us
+int      NEWS_THIN_DAY = 600;                      // tester: fewer ticks in a day = no M1 history under it
 
 string NEWS_FF_URL   = "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
 string NEWS_FF_FILE  = "AlgoProjectNewsFF.json";   // Common\Files: one download serves every EA
@@ -63,9 +67,14 @@ void newsLoadMT5(){
    MqlCalendarValue values[];
    datetime now = TimeTradeServer();
    if(!CalendarValueHistory(values, now - PeriodSeconds(PERIOD_D1), now + PeriodSeconds(PERIOD_D1), NULL, NULL)) return;
+   long serverShift = (long)(MathRound((double)(TimeTradeServer() - TimeGMT()) / 900.0) * 900);
    for(int i = 0; i < ArraySize(values); i++){
       MqlCalendarEvent event;
       if(!CalendarEventById(values[i].event_id, event)) continue;
+      // An all-day event (a summit, a G20) has no minute: it is stamped 00:00 UTC, a placeholder. The mode
+      // alone is not enough: MetaQuotes files the RBA rate decision as all-day and still gives it its real time.
+      if((event.time_mode == CALENDAR_TIMEMODE_DATE || event.time_mode == CALENDAR_TIMEMODE_NOTIME)
+         && ((long)values[i].time - serverShift) % 86400 == 0) continue;
       MqlCalendarCountry country;
       if(!CalendarCountryById(event.country_id, country)) continue;
       string tag = newsTag(country.code, event.event_code, country.currency, event.importance);
@@ -145,6 +154,30 @@ void newsRefresh(){
    }
 }
 
+//+------------------------------------------------------------------+
+//| Strategy Tester: the whole history from Common\Files, once.      |
+//| Lines are "YYYY.MM.DD HH:MM;tag;source;title", sorted by time,    |
+//| in the server's clock. False when the file cannot be opened.      |
+//+------------------------------------------------------------------+
+bool newsLoadTester(){
+   ResetLastError();
+   int h = FileOpen(NewsTesterFile, FILE_READ | FILE_TXT | FILE_ANSI | FILE_COMMON);
+   if(h == INVALID_HANDLE){
+      Print("News filter (tester): cannot open Common\\Files\\", NewsTesterFile, " (error ", GetLastError(), "). Write it with: python3 -m mt5.newsfilter.testerfile <firm>. Stopping: this would not be a filtered run");
+      return false;
+   }
+   while(!FileIsEnding(h)){
+      string parts[];
+      if(StringSplit(FileReadString(h), ';', parts) < 4) continue;
+      newsAdd(StringToTime(parts[0]), parts[1], parts[3]);
+   }
+   FileClose(h);
+   int n = ArraySize(newsEventTime);
+   if(n == 0) Print("News filter (tester): no release in ", NewsTesterFile, " moves ", _Symbol);
+   else Print("News filter (tester): ", n, " releases that move ", _Symbol, " read from ", NewsTesterFile, ", ", TimeToString(newsEventTime[0]), " to ", TimeToString(newsEventTime[n - 1]));
+   return true;
+}
+
 bool newsHasExposure(){
    for(int i = PositionsTotal() - 1; i >= 0; i--)
       if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber) return true;
@@ -158,19 +191,45 @@ bool newsHasExposure(){
 //| while no new entry may be opened                                  |
 //+------------------------------------------------------------------+
 bool handleNewsCompliance(){
-   if(!EnableNewsFilter || MQLInfoInteger(MQL_TESTER)) return false;
+   bool tester = (bool)MQLInfoInteger(MQL_TESTER);
+   if(!EnableNewsFilter || (tester && NewsTesterFile == "")) return false;
    if(!newsWarned){
       newsWarned = true;
       if(!newsSymbolCovered())
          Alert("News filter: no restricted news maps to ", _Symbol, ", so it never blocks. If $label restricts it, add it to mt5/newsfilter/firms.py and regenerate this EA");
    }
-   newsRefresh();
+   if(!tester) newsRefresh();
+   else if(!newsTesterLoaded){
+      newsTesterLoaded = true;
+      if(!newsLoadTester()){
+         ExpertRemove();
+         return true;
+      }
+   }
    static datetime lastClose = 0;
-   datetime now = TimeTradeServer();
+   datetime now = tester ? TimeCurrent() : TimeTradeServer();
+   if(tester){   // a day built from H1 bars has no tick inside the minutes before a release: say which
+      static datetime tickDay = 0;
+      static int dayTicks = 0;
+      datetime today = now - now % 86400;
+      if(today != tickDay){
+         if(tickDay != 0 && dayTicks < NEWS_THIN_DAY) Print("News filter (tester): thin history ", TimeToString(tickDay, TIME_DATE), " ", dayTicks, " ticks");
+         tickDay = today;
+         dayTicks = 0;
+      }
+      dayTicks++;
+   }
    int blockBefore = (int)MathMax(NewsBlockMinutesBefore, NewsCloseMinutesBefore);
    bool block = false;
-   for(int i = 0; i < ArraySize(newsEventTime); i++){
+   for(int i = (tester ? newsCursor : 0); i < ArraySize(newsEventTime); i++){
       datetime t = newsEventTime[i];
+      if(tester){   // the file is sorted: skip what is behind for good, stop at what is still ahead
+         if(t + NewsBlockMinutesAfter * 60 < now){
+            if(i == newsCursor) newsCursor++;
+            continue;
+         }
+         if(t - blockBefore * 60 > now) break;
+      }
       if(now >= t - blockBefore * 60 && now <= t + NewsBlockMinutesAfter * 60) block = true;
       if(NewsCloseOpenPositions && now >= t - NewsCloseMinutesBefore * 60 && now < t - NewsRuleMinutes * 60
          && now - lastClose >= 15 && newsHasExposure()){

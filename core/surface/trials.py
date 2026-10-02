@@ -62,7 +62,11 @@ def independent(window: pd.DataFrame, k_max: int) -> dict:
         k_max: Largest cluster count to consider.
 
     Returns:
-        The chosen count, its silhouette, and the count of variants.
+        The chosen count, its silhouette, and the count of variants. Read the silhouette
+        as the tell: below about 0.2 the count has no structure behind it (owner's reading
+        aid, 2026-10-02, not a threshold the code applies).
+
+        Raises ValueError when no split up to k_max passes the half rule below.
 
         Five thousand variants of one mother are not five thousand trials: they share a
         rule tree and most of their trades. Deflating a Sharpe by the raw count would
@@ -83,6 +87,10 @@ def independent(window: pd.DataFrame, k_max: int) -> dict:
         labels = fcluster(tree, k, criterion="maxclust")
         if np.bincount(labels).max() * 2 <= len(labels):
             scored[k] = silhouette(dist, labels)
+    if not scored:
+        raise ValueError(f"no split of {window.shape[1]} variants into 2..{k_max} clusters leaves "
+                         f"every cluster at half or less: one family dominates; raise k_max or "
+                         f"count this panel by hand")
     best = max(scored, key=scored.get)
     return {"n_clusters": best, "silhouette": round(scored[best], 4),
             "n_variants": int(window.shape[1])}

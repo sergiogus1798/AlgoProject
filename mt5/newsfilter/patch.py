@@ -38,6 +38,7 @@ def blocks(firm: dict) -> tuple[list[str], list[str]]:
     values = {**firm, "mt5_calendar": str(firm["mt5_calendar"]).lower(),
               "forex_factory": str(firm["forex_factory"]).lower(),
               "country_of": country_lines(firm["country_of"]), "events": event_lines(firm["events"]),
+              "tester_file": f"AlgoProjectNews_{firm['label']}.csv",
               "mt5_what": "HIGH importance" if firm["events"] is None else f"{firm['label']}'s restricted list"}
     render = [Template((MQL / f).read_text()).substitute(values).split("\n")[:-1]
               for f in ("inputs.mqh.tpl", "helpers.mqh.tpl")]

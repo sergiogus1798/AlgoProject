@@ -36,12 +36,14 @@ FTMO_EVENTS = {
 # rule_minutes: the firm's own window, no open and no close inside it.
 # block_before/after: no new entry from this far before a release until this far after it.
 # close_before: close positions and cancel pending orders from here until rule_minutes before.
+# server_zone: the firm's MT5 server clock (a key of mt5.compare.OFFSET_ZONES or an IANA name):
+# the tester runs on it, so the calendar history is written in it (testerfile.py).
 FIRMS = {
     # rules/hantec.yaml news_window: funded accounts, 3 min, Forex Factory red folder. Owner,
     # 2026-09-29: close first, both calendars, currency + country of the index.
     "hantec": {"label": "Hantec", "rule_minutes": 3, "block_before": 5, "block_after": 5,
                "close_before": 5, "mt5_calendar": True, "forex_factory": True,
-               "events": None, "country_of": COUNTRY_OF},
+               "events": None, "country_of": COUNTRY_OF, "server_zone": "EETUS"},
     # FTMO's own restricted list (ftmo.com/en/faq/can-i-trade-news/, owner 2026-09-29), by MT5
     # event_code — the name is in the terminal's language. MT5 rates half of it medium, so
     # importance cannot stand in for it (knowhow/eng/ftmo-news-vs-mt5-importance.md). Crude Oil
@@ -49,7 +51,7 @@ FIRMS = {
     # Timings are the owner's hand-made patch of 2026-05-17.
     "ftmo": {"label": "FTMO", "rule_minutes": 2, "block_before": 3, "block_after": 3,
              "close_before": 5, "mt5_calendar": True, "forex_factory": False,
-             "events": FTMO_EVENTS,
+             "events": FTMO_EVENTS, "server_zone": "EETUS",
              "country_of": {"USD": ["US100", "US500", "USA500", "US30", "US2000", "DXY", "USDX"],
                             "OIL": ["USOIL", "UKOIL"]}},
 }

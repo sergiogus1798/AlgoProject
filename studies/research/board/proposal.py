@@ -9,31 +9,63 @@ from pathlib import Path
 
 from studies.research.board import inputs, many, proposalmd, store
 from studies.research.board.inputs import CELL
+from studies.research.memory import queries, sheet
 
 QUARRIES = ("perfil", "libros", "propia")
 STEPS = ("leer el tablero", "elegir la celda", "pedir tres ideas al ideaExpert",
-         "preparar la paleta de cada idea", "escribir la propuesta")
+         "pasar las tres ideas por el ideaReviewer", "preparar la paleta de cada idea",
+         "escribir la propuesta")
 IDEA_KEYS = ("name", "rule", "mechanism", "direction", "quarry", "palette", "custom_blocks",
-             "custodian_hours", "failure", "questions")
+             "custodian_hours", "failure", "questions", "sheet", "review")
+PROPOSERS = ("ideaExpert", "researchDirector")
+VERDICTS = ("resiste", "dudosa", "tumbada")
+AXES = ("mechanism", "cost", "similarity", "ambiguity")
+STANCES = ("adopta", "rechaza")
+REMOVES = inputs.MEMORY["review"]["removes"]
 STANDING = ("Las supervivientes se parecerán: tres ideas de la misma familia en el mismo mercado "
             "ganan y pierden los mismos años; para la cartera cuentan como poco más de una.",
             "El listón de la celda sube tres ensayos de golpe.")
 
 
-def check(p: dict) -> list[str]:
+def reviewed(idea: dict) -> list[str]:
+    """Why an idea's review is not one: no verdict of the three, or an axis left unsaid."""
+    got = idea.get("review") or {}
+    out = [] if got.get("verdict") in VERDICTS else [f"la revisión dice una de {', '.join(VERDICTS)}"]
+    return out + [f"la revisión no dice nada de «{k}»" for k in AXES if not str(got.get(k, "")).strip()]
+
+
+def stances(p: dict, attempts: list[dict]) -> list[str]:
+    """The cell's closed failures the draft neither adopts nor rejects with a reason."""
+    said = {f.get("project"): f for f in p["prior_failures"]}
+    owed = queries.failures(attempts, *(p["cell"][c] for c in CELL))
+    return [f"el fracaso previo de {a['project']} ({a['cause']}) ni se adopta ni se rechaza por escrito"
+            for a in owed if said.get(a["project"], {}).get("stance") not in STANCES
+            or not str(said[a["project"]].get("why", "")).strip()]
+
+
+def check(p: dict, attempts: list[dict] = ()) -> list[str]:
     """Why a proposal cannot be accepted as written; empty when it can.
 
     Args:
-        p: The director's draft: `cell`, `diagnosis`, `measures`, `departs` and `ideas`.
+        p: The director's draft: `cell`, `diagnosis`, `measures`, `departs`, `reviewer`,
+            `prior_failures` and `ideas`.
+        attempts: The memory's attempts table: the cell's closed failures come from it.
 
     Returns:
         Spanish sentences: not three ideas, a missing field, an idea in another direction than
         its cell (hard rule 13), a palette that draws from the idea's own family or from one
-        alike (dossier §5), a question without its readings (hard rule 11).
+        alike (dossier §5), a question without its readings (hard rule 11), an idea without
+        its hypothesis sheet or without its review, a reviewer that is the proposer, a
+        previous failure of the cell left without a written stance.
     """
     out = [f"falta «{k}»" for k in ("cell", "diagnosis", "measures", "ideas") if not p.get(k)]
+    out += ["falta «prior_failures» (vacío si la celda no tiene fracasos cerrados)"] \
+        if "prior_failures" not in p else []
     if out:
         return out
+    if not p.get("reviewer") or p["reviewer"] in PROPOSERS:
+        out.append("sin revisión: «reviewer» nombra a quien revisó, y no es quien propone")
+    out += stances(p, attempts)
     ideas = p["ideas"]
     if len(ideas) != 3 or len({i.get("name") for i in ideas}) != 3:
         out.append("tienen que ser tres ideas con nombres distintos")
@@ -54,6 +86,7 @@ def check(p: dict) -> list[str]:
                        "fija (§5: nunca dos iguales)")
         out += [f"{name}: una pregunta sin sus lecturas" for q in i.get("questions", [])
                 if len(q.get("readings", [])) < 2]
+        out += [f"{name}: {why}" for why in sheet.problems(i.get("sheet") or {}) + reviewed(i)]
     return out
 
 
@@ -63,16 +96,20 @@ def open_questions(idea: dict) -> list[dict]:
 
 
 def launchable(idea: dict) -> tuple[bool, str]:
-    """Whether an idea may go to SQX, and why not: vetoed, or a question still open (rule 11)."""
+    """Whether an idea may go to SQX, and why not: vetoed, a question still open (rule 11), or
+    knocked down by the reviewer when `review.removes` lets its verdict take an idea out."""
     if idea.get("vetoed"):
         return False, "vetada"
+    if REMOVES and idea.get("review", {}).get("verdict") == VERDICTS[-1]:
+        return False, "tumbada por el revisor"
     waiting = len(open_questions(idea))
     return (False, f"{waiting} pregunta(s) sin contestar") if waiting else (True, "")
 
 
 def stamp(p: dict, board: dict, now: datetime) -> dict:
     """Add what Python knows and the agent must not invent: the id, the cell's place on the
-    board, the ideas already spent there, the provisional-costs mark and the two standing costs."""
+    board, the ideas already spent there, the provisional-costs mark, the two standing costs,
+    each sheet's seal and whether the reviewer's verdict removes an idea or only annotates it."""
     key = tuple(p["cell"][c] for c in CELL)
     cell = next((c for c in board["cells"] if tuple(c[k] for k in CELL) == key), None)
     if cell is None:
@@ -80,8 +117,10 @@ def stamp(p: dict, board: dict, now: datetime) -> dict:
     return {**p, "id": f"{now:%Y%m%d-%H%M%S}-{key[0]}-{key[1]}-{key[2]}-{key[3]}",
             "created": now.isoformat(timespec="seconds"), "board": cell,
             "ideas_spent": cell["ideas_spent"], "provisional_costs": cell["provisional_costs"],
-            "standing_costs": list(STANDING),
-            "ideas": [{"vetoed": False, **copy.deepcopy(i)} for i in p["ideas"]]}
+            "standing_costs": list(STANDING), "review_removes": REMOVES,
+            "ideas": [{"vetoed": False, **copy.deepcopy(i),
+                       **({"sheet_seal": sheet.seal(i["sheet"])} if "sheet" in i else {})}
+                      for i in p["ideas"]]}
 
 
 def save(p: dict) -> Path:
@@ -120,11 +159,11 @@ def main() -> None:
         step(a.step, a.note)
         print(f"paso {a.step}/{len(STEPS)}: {STEPS[a.step - 1]}")
         return
-    draft = store.read(a.draft)
-    problems = check(draft)
+    draft, memory = store.read(a.draft), inputs.memory()
+    problems = check(draft, memory["attempts"])
     if problems:
         sys.exit("La propuesta no se acepta:\n- " + "\n- ".join(problems))
-    board = many.run(inputs.scores(), inputs.memory(), inputs.CONFIG, inputs.sweep())
+    board = many.run(inputs.scores(), memory, inputs.CONFIG, inputs.sweep())
     p = stamp(draft, board, datetime.now())
     path = save(p)
     print(proposalmd.text(p))

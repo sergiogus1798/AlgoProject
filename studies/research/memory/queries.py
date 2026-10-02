@@ -33,6 +33,14 @@ def conclusive(row: dict, include_dev: bool) -> bool:
     return row["outcome"].startswith(CONCLUSIVE) and (include_dev or not row["dev_cut"])
 
 
+def failures(attempts: list[dict], symbol: str, timeframe: str, direction: str, family: str,
+             include_dev: bool = False) -> list[dict]:
+    """The closed runs of one cell that carry a cause: what whoever proposes there next must
+    adopt or reject, one by one. A failed run (`infrastructure`) is not closed and not here."""
+    return [a for a in attempts if cell(a) == (symbol, timeframe, direction, family)
+            and a["cause"] and conclusive(a, include_dev)]
+
+
 def survivors_by_family(attempts: list[dict], include_dev: bool = False) -> list[dict]:
     """Per family and asset class: how many attempts, how many closed, how many gave survivors.
 

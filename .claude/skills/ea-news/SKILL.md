@@ -36,5 +36,7 @@ reads **0 errores**; any error is a stop, not a retry.
 Tell the owner, in Spanish: where the two EAs of each strategy are (`AlgoData/mt5/eas/<Firm>/` and
 `MQL5/Experts/AlgoProject/<Firm>/`); that `_<Firm>` goes on the funded account and `_NoNews` on the
 challenge or with the news add-on; that Forex Factory needs `https://nfs.faireconomy.media` allowed
-in MT5 → Herramientas → Opciones → Asesores expertos → WebRequest; and that **a backtest shows
-nothing of the filter** — the calendar does not exist in the Strategy Tester.
+in MT5 → Herramientas → Opciones → Asesores expertos → WebRequest; and that the filter also acts in the Strategy Tester, from
+`Common\Files\AlgoProjectNews_<Firm>.csv` (`python3 -m mt5.newsfilter.testerfile <firm>`), and what the
+rule costs the strategy is `python3 -m mt5.newsfilter.reading` (chapter 75, second part) — which
+strategy and firm is the owner's call.

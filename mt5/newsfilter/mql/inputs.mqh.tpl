@@ -9,5 +9,6 @@ input int    NewsCloseMinutesBefore = $close_before;      // Close positions and
 input bool   NewsCloseOpenPositions = true;   // An SL or TP hit inside the window is a close, so close first
 input bool   NewsUseMT5Calendar     = $mt5_calendar;   // MetaQuotes calendar: $mt5_what
 input bool   NewsUseForexFactory    = $forex_factory;   // Forex Factory red folder: allow https://nfs.faireconomy.media in Tools > Options > Expert Advisors
+input string NewsTesterFile         = "$tester_file";   // Strategy Tester only: the calendar history in Common\Files (python3 -m mt5.newsfilter.testerfile); empty = no filter in the tester
 // ===== NEWS FILTER: END =====
 

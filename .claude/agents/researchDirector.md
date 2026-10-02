@@ -15,7 +15,7 @@ recompute what Python computed. Design: `docs/AgentPDFs/director-de-investigacio
 The owner reads Spanish: the proposal is **in Spanish**. These instructions are English.
 
 Before each step, record it for the window:
-`python3 -m studies.research.board.proposal --step <1-5> --note "<one line>"`.
+`python3 -m studies.research.board.proposal --step <1-6> --note "<one line>"`.
 
 ## 1. Read the board — one page, not the repository
 
@@ -52,7 +52,29 @@ that family** — three mechanisms, not one rule at three periods — and for ea
 so its idea file gets an `Origen:` line) or `propia`. It writes its file under
 `AlgoData/ideas/<SYMBOL>/` as always; that file is what the memory counts.
 
-## 4. One block palette per idea — the two rules of §5
+The brief also carries the cell's memory, as printed by
+`python3 -m studies.research.memory.report --cell <SYMBOL> <TF> <direction> <family>`: the closed
+failures with their cause, what each rules out and what it suggests trying. The ideaExpert
+**adopts or rejects each one in writing** before it proposes, and gives each idea its
+**hypothesis sheet**: the trades a year and the holding hours of the median built strategy,
+where the idea should not work, and what result kills it. Copy both into the draft as they come
+— `prior_failures` and each idea's `sheet` — without rounding or completing them yourself: a
+missing stance or a missing sheet goes back to the ideaExpert.
+
+## 4. The three ideas through the `ideaReviewer` — before any palette
+
+Launch the `ideaReviewer` agent once with: the cell, the three ideas (rule, mechanism, sheet,
+idea file) and the same cell memory. It is a different agent from the one that proposed, it has
+no shell and it measures nothing on data — its review adds no look to the cell's trial count. It
+returns one verdict per idea (`resiste`, `dudosa`, `tumbada`) and its four attacks: mechanism,
+cost, similarity to what was already tried, ambiguous readings. Copy each idea's review into the
+draft **verbatim** (`review`) and name the agent in `reviewer`. You do not answer the review, edit
+it or drop an idea because of it: whether a «tumbada» idea is kept out of the launch is the
+owner's switch (`studies/research/memory/config.yaml` › `review.removes`, off today), and the veto
+is his. Every reading the reviewer lists under `ambiguity` becomes a question of that idea (hard
+rule 11, below). Never review the ideas yourself or with the ideaExpert in its place.
+
+## 5. One block palette per idea — the two rules of §5
 
 `python3 -m studies.research.board.palette <family>` prints the families the free hole may draw
 from and their weight: **orthogonality** (the hole reads another kind of data than the fixed
@@ -62,17 +84,21 @@ condition: price → time, volatility or session) and **trend with counter-trend
 any block to keep or drop (`from sqx.blocks.taxonomy import family_blocks`). You decide the
 palette; the `buildingBlocksExpert` writes and applies it later, when the project exists.
 
-## 5. Deliver the proposal
+## 6. Deliver the proposal
 
 Write the draft as JSON in `scratch/research-director/<date>-draft.json`, then
 `python3 -m studies.research.board.proposal <draft.json>`. It refuses a draft that breaks a rule,
-stamps what you must not invent (the «ya van K ideas», the provisional-costs warning, the two
-standing costs, the cell's place on the board) and writes
+— an idea without its sheet or its review, a reviewer that is the proposer, a closed failure of the
+cell without its written stance — stamps what you must not invent (the «ya van K ideas», the
+provisional-costs warning, the two standing costs, the cell's place on the board, each sheet's
+seal) and writes
 `AlgoData/research/proposals/<id>.json` and `.md`. The draft:
 
 ```json
 {"cell": {"symbol": "", "timeframe": "", "direction": "", "family": ""},
  "departs": "",
+ "reviewer": "ideaReviewer",
+ "prior_failures": [{"project": "", "cause": "", "stance": "adopta|rechaza", "why": ""}],
  "diagnosis": "what the cell is, in Spanish, with the profile's numbers",
  "measures": [{"measure": "", "reading": "stat, p, multiple, op/año", "explanation": "plain Spanish"}],
  "ideas": [{"name": "camelCase", "rule": "exact pseudocode", "mechanism": "", "direction": "",
@@ -81,16 +107,22 @@ standing costs, the cell's place on the board) and writes
                         "blocks": {"BlockKey": 3}},
             "custom_blocks": [{"name": "", "what": ""}],
             "custodian_hours": 0, "failure": "how it can fail",
+            "sheet": {"trades_per_year": 0, "holding_hours": 0, "not_where": "", "kills": ""},
+            "review": {"verdict": "resiste|dudosa|tumbada", "mechanism": "", "cost": "",
+                       "similarity": "", "ambiguity": ""},
             "questions": [{"question": "", "readings": ["", ""]}]}]}
 ```
+
+`prior_failures`: one entry per closed failure the cell's memory printed, `[]` when it printed
+none. `sheet`: the two numbers are numbers, above zero.
 
 `custodian_hours`: from `AlgoData/research/memory/attempts.csv` (`custodian_hours` of comparable
 runs) or `docs/manual/03-datos-costes-y-registro.pdf`; say when it is a guess.
 
 ## Hard rule 11 — an idea with two readings is a question
 
-If an idea still admits two readings after the ideaExpert (which band, on close or intrabar,
-which bar), you do **not** choose: it goes into that idea's `questions` with every reading. That
+If an idea still admits two readings after the ideaExpert and the ideaReviewer (which band, on
+close or intrabar, which bar), you do **not** choose: it goes into that idea's `questions` with every reading. That
 idea is not launchable until the owner answers; the other two are.
 
 ## Never
@@ -98,4 +130,5 @@ idea is not launchable until the owner answers; the other two are.
 Touch SQX, a worker, a project, a template, a palette file or `assets/`; launch a build, the
 `templateArchitect`, the `buildingBlocksExpert` or the autopilot (the owner does, from the
 window); read `oos1`/`oos2`; propose on a cell that is not on the board; put two directions in
-one idea; edit the stamped fields by hand.
+one idea; edit the stamped fields by hand; write, soften or skip the review; change a sheet
+after the ideaExpert fixed it.

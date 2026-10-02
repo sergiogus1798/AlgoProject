@@ -6,12 +6,15 @@ from pathlib import Path
 
 from core.datapaths import DATA, template_runs
 from studies.research.memory import attempts, sources
+from studies.research.memory.causes import VOCABULARY
 from studies.research.memory.sources import CONFIG
 
 COLUMNS = ["template", "symbol", "timeframe", "project", "date", "strategies_built",
            "strategies_kept", "verdict", "report"]
 STEP = {"built": "6", "oos": "7", "gate": "8", "markets": "9", "mcr": "13", "spp": "15"}
 AUTO = "auto"
+HYPOTHESIS = {"pending": "sin juzgar: el umbral de desajuste es del dueño y está pendiente",
+              "match": "encaja", "mismatch": "DESAJUSTE"}
 
 
 def sentence(row: dict) -> str:
@@ -27,7 +30,14 @@ def sentence(row: dict) -> str:
            "incomplete": f"incompleto: ultimo tramo {row['last_stage']}",
            "unknown": "sin datos del embudo"}[row["outcome"].split("@")[0]]
     dev = "; corte de desarrollo en el paso 8 (sorteo): no es evidencia" if row["dev_cut"] else ""
-    return f"{AUTO}: embudo {funnel or '-'}; {end}{dev}"
+    why = (f"; causa: {VOCABULARY[row['cause']]['label']} ({row['cause']}"
+           + (f", {row['cause_share']} de las que fallaron" if row["cause_share"] else "")
+           + f") — descarta: {row['rules_out']}; probar: {row['try_next']}") if row["cause"] else ""
+    sheet = (f"; hoja: {row['built_trades_per_year']} op/año frente a {row['sheet_trades_per_year']} "
+             f"predichas (x{row['trades_ratio']}), {row['built_holding_hours']} h frente a "
+             f"{row['sheet_holding_hours']} (x{row['holding_ratio']}), {HYPOTHESIS[row['hypothesis']]}"
+             ) if row["trades_ratio"] != "" else ""
+    return f"{AUTO}: embudo {funnel or '-'}; {end}{dev}{why}{sheet}"
 
 
 def write(path: Path, rows: list[dict], fields: list[str]) -> None:

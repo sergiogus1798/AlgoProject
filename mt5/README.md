@@ -43,7 +43,9 @@ prop firm's conditions against its EA's backtest on that firm's MT5 account (its
 The accounts are `mt5_accounts` in `config/machine.yaml` (`core.paths.MT5_ACCOUNTS`).
 
 `newsfilter/` writes a prop firm's news rule into SQX's MQL5 export — two EAs per strategy, with and
-without the filter (`/ea-news`, its own README).
+without the filter — keeps the calendar history (MT5's and Forex Factory's, from 2007) in
+`MT5_DATA/calendar/`, and measures what the rule costs a strategy in the Strategy Tester, where the
+patched EA reads that history from `Common\Files` (`/ea-news`, its own README).
 
 `indicators/` is the project's MQL5 indicator set, in MQL5's own `Indicators/` and `Include/` layout: the
 add-on `Sq*` indicators SQX does not ship, and the owner's versions of `SqBBWidthRatio`,

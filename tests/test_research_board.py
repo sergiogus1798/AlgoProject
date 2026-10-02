@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Research board: the gate, the four factors, the hole rules, the proposal's refusals and the
-profile's self-examination, on synthetic tables (nothing of AlgoData is read or written)."""
+"""Research board: the gate, the four factors, the hole rules, the proposal's refusals (sheet, review
+and previous failures included) and the profile's self-examination, on synthetic tables (no AlgoData)."""
 
 import copy
 import json
@@ -14,17 +14,19 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.research.board import factors, inputs, many, page, palette, proposal, selfcheck, store
+from studies.research.board import factors, inputs, many, page, palette, proposal, proposalmd, selfcheck, store
 
 CFG = inputs.CONFIG
-DRAFT = json.loads((Path(__file__).parent / "fixtures" / "research_proposal_draft.json")
-                   .read_text(encoding="utf-8"))
+BARE = json.loads((Path(__file__).parent / "fixtures/research_proposal_draft.json").read_text(encoding="utf-8"))
+SHEET = {"trades_per_year": 45, "holding_hours": 16, "not_where": "en rango lateral", "kills": "PF < 1"}
+REVIEW = {"verdict": "tumbada", "mechanism": "dudoso", "cost": "caro", "similarity": "a nada", "ambiguity": "no"}
+DRAFT = {**BARE, "reviewer": "ideaReviewer", "prior_failures": [],     # BARE: the window's fixture, no sheet, no review
+         "ideas": [{**i, "sheet": dict(SHEET), "review": dict(REVIEW)} for i in BARE["ideas"]]}
 EMPTY = {"attempts": [], "ideas": [], "by_family": [], "spent": []}
 
 
-def score(symbol: str, family: str, multiple: float, passes: bool, tf: str = "H4",
-          direction: str = "short", trades: float = 50.0, clock: bool = False,
-          significant: bool | None = None, p_raw: float = 0.01) -> dict:
+def score(symbol: str, family: str, multiple: float, passes: bool, tf: str = "H4", direction: str = "short",
+          trades: float = 50.0, clock: bool = False, significant: bool | None = None, p_raw: float = 0.01) -> dict:
     """One row of scores.csv."""
     return {"symbol": symbol, "timeframe": tf, "direction": direction, "family": family,
             "score": 40.0, "lead": "x", "p": 0.01, "p_raw": p_raw, "multiple": multiple,
@@ -32,19 +34,18 @@ def score(symbol: str, family: str, multiple: float, passes: bool, tf: str = "H4
             "significant": passes if significant is None else significant, "needs_clock": clock}
 
 
-def swept(symbol: str, family: str, plateau: bool, best: float, tf: str = "H4",
-          direction: str = "short") -> dict:
+def swept(symbol: str, family: str, plateau: bool, best: float, tf: str = "H4", direction: str = "short") -> dict:
     """One row of the sweep's best.csv."""
-    return {"symbol": symbol, "timeframe": tf, "direction": direction, "family": family,
-            "entry": "extreme", "param": 2.0, "exit": "mean20", "multiple": best,
-            "trades_per_year": 60.0, "plateau_any": plateau, "max_multiple": best}
+    return {"symbol": symbol, "timeframe": tf, "direction": direction, "family": family, "entry": "extreme",
+            "param": 2.0, "exit": "mean20", "multiple": best, "trades_per_year": 60.0,
+            "plateau_any": plateau, "max_multiple": best}
 
 
 def attempt(symbol: str, family: str, outcome: str, tf: str = "H4") -> dict:
     """One row of the attempts table."""
-    return {"project": f"Test_{symbol}_{family}_{outcome}", "symbol": symbol, "timeframe": tf,
-            "direction": "short", "family": family, "outcome": outcome, "dev_cut": "",
-            "asset_class": inputs.asset_class(symbol), "survivors": 3 * (outcome == "survivors")}
+    return {"project": f"Test_{symbol}_{family}_{outcome}", "symbol": symbol, "timeframe": tf, "direction": "short",
+            "family": family, "outcome": outcome, "dev_cut": "", "asset_class": inputs.asset_class(symbol),
+            "survivors": 3 * (outcome == "survivors")}
 
 
 def test_gate() -> None:
@@ -63,9 +64,8 @@ def test_gate() -> None:
     sweep = pd.DataFrame([swept("USDCHF", "ruptura", True, 4.0)])
     board = many.run(scores, EMPTY, CFG, sweep)
     got = {(c["symbol"], c["direction"], c["family"]): c for c in board["cells"]}
-    assert set(got) == {("USDCHF", "short", "momentum"), ("USDCHF", "short", "ruptura"),
-                        ("XAUUSD", "short", "tendencia"), ("USA500", "long", "reversion"),
-                        ("GBPJPY", "short", "reversion")}
+    assert set(got) == {("USDCHF", "short", "momentum"), ("USDCHF", "short", "ruptura"), ("XAUUSD", "short", "tendencia"),
+                        ("USA500", "long", "reversion"), ("GBPJPY", "short", "reversion")}
     assert board["gated_out"] == 4
     assert got[("USDCHF", "short", "momentum")]["entered_by"] == ["desnudo"]
     assert got[("USDCHF", "short", "ruptura")]["entered_by"] == ["barrido"]
@@ -97,8 +97,7 @@ def test_order_prior_and_evidence() -> None:
 
 def test_past_is_flat_without_closed_runs() -> None:
     """Nothing closed: every family reads the same 0.5, tried or not."""
-    tried = [{"family": "ruptura", "asset_class": "metal", "attempts": 12, "closed": 0,
-              "with_survivors": 0, "survivors": 0}]
+    tried = [{"family": "ruptura", "asset_class": "metal", "attempts": 12, "closed": 0, "with_survivors": 0, "survivors": 0}]
     a = factors.past(tried, "ruptura", "metal", 4, 0.9)
     b = factors.past(tried, "momentum", "forex", 4, 0.9)
     assert a["rate"] == b["rate"] == 0.5 and a["low"] < 0.2 and a["high"] > 0.8
@@ -122,13 +121,10 @@ def test_past_shrinks_and_spares_the_untried() -> None:
 def test_factors_order_the_board() -> None:
     """Among cells alike in prior and evidence, more effect ranks first; an attempt in the cell
     or ideas spent there push it down."""
-    scores = pd.DataFrame([score("USDCHF", "momentum", 8.0, True),
-                           score("UKOIL", "momentum", 8.0, True),
-                           score("USDCHF", "ruptura", 4.0, True),
-                           score("USOIL", "momentum", 8.0, True, trades=5)])
+    scores = pd.DataFrame([score("USDCHF", "momentum", 8.0, True), score("UKOIL", "momentum", 8.0, True),
+                           score("USDCHF", "ruptura", 4.0, True), score("USOIL", "momentum", 8.0, True, trades=5)])
     memory = {**EMPTY, "attempts": [attempt("UKOIL", "momentum", "unknown")],
-              "spent": [{"symbol": "USOIL", "timeframe": "H4", "direction": "short",
-                         "family": "", "ideas": 6}]}
+              "spent": [{"symbol": "USOIL", "timeframe": "H4", "direction": "short", "family": "", "ideas": 6}]}
     board = many.run(scores, memory, CFG, None)
     cells = {(c["symbol"], c["family"]): c for c in board["cells"]}
     top = cells[("USDCHF", "momentum")]
@@ -172,11 +168,30 @@ def test_proposal_refusals() -> None:
     assert "tres ideas" in " ".join(proposal.check({**DRAFT, "ideas": DRAFT["ideas"][:2]}))
 
 
+def test_proposal_needs_sheet_review_and_stances() -> None:
+    """No sheet, no review, the proposer as reviewer, a closed failure of the cell without a stance: refused."""
+    said = " | ".join(proposal.check(BARE) + proposal.check({**BARE, "prior_failures": []}))
+    assert all(w in said for w in ("falta «prior_failures»", "sin revisión", "la hoja no dice «kills»",
+                                   "ejemploImpulseBarDown: falta «sheet»", "ejemploImpulseBarDown: falta «review»"))
+    bad = copy.deepcopy(DRAFT)
+    bad["reviewer"], bad["ideas"][0]["sheet"]["trades_per_year"] = "ideaExpert", "muchas"
+    bad["ideas"][1]["review"]["verdict"], bad["ideas"][2]["review"]["cost"] = "regular", " "
+    said = " | ".join(proposal.check(bad))
+    assert all(w in said for w in ("no es quien propone", "«trades_per_year» con un", "una de resiste", "nada de «cost»"))
+    died = {**attempt("XAUUSD", "momentum", "died@gate"), "cause": "oos_decay"}
+    rows = [died, {**attempt("XAUUSD", "momentum", "failed@9"), "cause": "infrastructure"},
+            {**attempt("XAUUSD", "ruptura", "died@gate"), "cause": "cost_kills"},      # another cell
+            {**attempt("XAUUSD", "momentum", "died@oos"), "cause": "oos_decay", "dev_cut": "yes"}]
+    assert [w.split(" ni ")[0] for w in proposal.check(DRAFT, rows)] == ["el fracaso previo de Test_XAUUSD_momentum_died@gate (oos_decay)"]
+    stance = {"project": died["project"], "cause": "oos_decay", "stance": "adopta", "why": "otra regla"}
+    assert proposal.check({**DRAFT, "prior_failures": [stance]}, rows) == []
+    assert len(proposal.check({**DRAFT, "prior_failures": [{**stance, "why": " "}]}, rows)) == 1
+
+
 def test_proposal_stamp_and_launchable() -> None:
     """Python stamps K, the mark and the standing costs; a question or a veto blocks only its idea."""
     scores = pd.DataFrame([score("XAUUSD", "momentum", 26.0, True, trades=4.6)])
-    memory = {**EMPTY, "spent": [{"symbol": "XAUUSD", "timeframe": "H4", "direction": "short",
-                                  "family": "", "ideas": 1}]}
+    memory = {**EMPTY, "spent": [{"symbol": "XAUUSD", "timeframe": "H4", "direction": "short", "family": "", "ideas": 1}]}
     p = proposal.stamp(DRAFT, many.run(scores, memory, CFG), datetime(2026, 10, 1, 12))
     assert p["id"] == "20261001-120000-XAUUSD-H4-short-momentum" and p["ideas_spent"] == 1
     assert len(p["standing_costs"]) == 2 and not p["provisional_costs"]
@@ -184,13 +199,18 @@ def test_proposal_stamp_and_launchable() -> None:
     p["ideas"][1]["questions"][0]["answer"] = "Por el rango"
     p["ideas"][2]["vetoed"] = True
     assert [proposal.launchable(i) for i in p["ideas"]][1:] == [(True, ""), (False, "vetada")]
-    with tempfile.TemporaryDirectory() as tmp, \
-            mock.patch.object(store, "proposals_dir", lambda: Path(tmp)):
+    with tempfile.TemporaryDirectory() as tmp, mock.patch.object(store, "proposals_dir", lambda: Path(tmp)):
         proposal.save(p)
         assert proposal.listing() == [p["id"]] and proposal.load(p["id"]) == p
         md = (Path(tmp) / f"{p['id']}.md").read_text(encoding="utf-8")
     assert "ya van **1 ideas**" in md and "VETADA" in md and "Respuesta: Por el rango" in md
     assert "Las supervivientes se parecerán" in md and "> **Pocas operaciones.**" not in md
+    # The sheet is sealed; «tumbada» only annotates while `review.removes` is off (owner, pending).
+    assert len(p["ideas"][0]["sheet_seal"]) == 16 and proposal.REMOVES is p["review_removes"] is False
+    with mock.patch.object(proposal, "REMOVES", True):
+        assert proposal.launchable(p["ideas"][0]) == (False, "tumbada por el revisor")
+    assert "**Revisión — TUMBADA.**" in md and "45 operaciones al año" in md and "sólo anota" in md
+    assert "Dónde NO debería funcionar: en rango lateral" in md and "no tiene fracasos cerrados" in md
 
 
 def test_selfcheck_known_answers() -> None:
@@ -199,13 +219,11 @@ def test_selfcheck_known_answers() -> None:
     few = pd.DataFrame({"score": [10.0, 60.0], "survived": [False, True]})
     got = selfcheck.judge(few, cfg)
     assert not got["enough"] and "hacen falta 20" in selfcheck.text(got, 0.5)
-    good = pd.DataFrame({"score": [20.0] * 15 + [70.0] * 15,
-                         "survived": [False] * 14 + [True] + [True] * 12 + [False] * 3})
+    good = pd.DataFrame({"score": [20.0] * 15 + [70.0] * 15, "survived": [False] * 14 + [True] + [True] * 12 + [False] * 3})
     got = selfcheck.judge(good, cfg)
     assert got["decision"] == "mantener" and got["proven"] and got["p"] < 0.001
     assert got["runs_saved"] == 15 and got["survivor_runs_lost"] == 1
-    flat = pd.DataFrame({"score": [20.0] * 15 + [70.0] * 15,
-                         "survived": ([True] * 5 + [False] * 10) * 2})
+    flat = pd.DataFrame({"score": [20.0] * 15 + [70.0] * 15, "survived": ([True] * 5 + [False] * 10) * 2})
     got = selfcheck.judge(flat, cfg)
     assert got["decision"] == "reducir" and not got["proven"] and got["survivor_runs_lost"] == 5
     assert "de 0.50 a 0.25" in selfcheck.text(got, 0.5)
@@ -213,8 +231,7 @@ def test_selfcheck_known_answers() -> None:
 
 def test_selfcheck_joins_only_closed_runs() -> None:
     """Dev draws, failed and unknown runs are not evidence."""
-    scores = pd.DataFrame([score("XAUUSD", "momentum", 3.0, True),
-                           score("EURUSD", "momentum", 3.0, False)])
+    scores = pd.DataFrame([score("XAUUSD", "momentum", 3.0, True), score("EURUSD", "momentum", 3.0, False)])
     rows = [attempt("XAUUSD", "momentum", "survivors"), attempt("EURUSD", "momentum", "died@gate"),
             attempt("EURUSD", "momentum", "failed@9"), attempt("XAUUSD", "momentum", "unknown"),
             {**attempt("XAUUSD", "momentum", "survivors"), "dev_cut": "yes"}]
@@ -224,10 +241,9 @@ def test_selfcheck_joins_only_closed_runs() -> None:
 
 def main() -> None:
     """Run every test in file order."""
-    for name, test in list(globals().items()):
-        if name.startswith("test_"):
-            test()
-            print("ok", name)
+    for name, test in [(n, t) for n, t in globals().items() if n.startswith("test_")]:
+        test()
+        print("ok", name)
 
 
 if __name__ == "__main__":

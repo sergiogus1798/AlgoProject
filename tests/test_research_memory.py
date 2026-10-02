@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Research memory: the resumen parser, the funnel's outcomes, the ideas index, the queries and the
-verdict writer, on small fixture files in a temp dir (nothing of AlgoData is read or written)."""
+"""Research memory: the resumen parser, the funnel's outcomes, the typed cause, the hypothesis sheet,
+the ideas index, the queries and the verdict writer, on fixture files in a temp dir (no AlgoData)."""
 
 import csv
+import json
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.research.memory import attempts, ideas, queries, sources, verdict
+import pandas as pd
+
+from studies.research.memory import attempts, causes, ideas, queries, report, sheet, sources, verdict
 
 RESUMEN_OK = """# Autopiloto · Test_XAUUSD_x_H1 · 20261001-100000
 
@@ -42,6 +46,15 @@ PROJECTS = ("name,kind,install,created,purpose,symbol,timeframe,template,workflo
             "yes,,\nTest_XAUUSD_died_H1,test,SQX_w2,2026-10-01 11:00,p,XAUUSD,H1,"
             "/d/templates/library/emaX/t.sqx,yes,,\nTest_MT5Verify_X,test,SQX_w1,2026-10-01 11:00,p,"
             "XAUUSD,H1,/other/s.sqx,no,,\n")
+VERDICT = """strategy,verdict,identity,outcome,reason
+s1,DESCARTAR,a,fail,fail: gate.scorecard.estaticas_value=-10.0; fail: gate.scorecard.is_trades_per_year=12.0
+s2,DESCARTAR,b,fail,fail: gate.scorecard.estaticas_value=-3.0; limbo: gate.scorecard.forma_value=1.5
+s3,DESCARTAR,c,fail,fail: gate.scorecard.is_trades_per_year=120.0
+s4,DESCARTAR,d,fail,fail: feedQuality.verdict_csv.p=0.001
+s5,DESCARTAR,e,pass,fuera del sorteo de desarrollo
+s6,DESCARTAR,f,fail,hermana escalada: solo sigue la madre
+"""
+SHEET = {"trades_per_year": 50, "holding_hours": 20, "not_where": "en rango", "kills": "PF < 1"}
 RUNS = ("template,symbol,timeframe,project,date,strategies_built,strategies_kept,verdict,report\n"
         "emaX,USDJPY,H1,Old_Run,2026-09-24,50,50,hand typed,doc.md\n")
 
@@ -53,6 +66,17 @@ def fixture(root: Path) -> Path:
     died = root / "autopilot/Test_XAUUSD_died_H1/20261001-110000"
     died.mkdir(parents=True)
     (died / "resumen.md").write_text(RESUMEN_DIED)
+    (died / "paso-8").mkdir()
+    (died / "paso-8/verdict.csv").write_text(VERDICT)
+    (root / "proposals").mkdir()
+    (root / "proposals/20261001-090000-XAUUSD-H1-long-ruptura.json").write_text(json.dumps(
+        {"ideas": [{"name": "atrUp", "sheet": SHEET, "sheet_seal": sheet.seal(SHEET)}, {"name": "old"}]}))
+    (root / "proposals/estado.json").write_text("{}")
+    export = root / "raw/Test_XAUUSD_x_H1/Results/2026-10-01"
+    export.mkdir(parents=True)
+    trades().to_parquet(export / "trades.parquet")
+    sheet.proposals_dir = lambda: root / "proposals"
+    sheet.export_dir = lambda project, databank, day: root / "raw" / project / databank / day
     (root / "ideas/XAUUSD").mkdir(parents=True)
     (root / "ideas/XAUUSD/2026-10-01-a.md").write_text(IDEAS)
     for name, text in (("registry.csv", REGISTRY), ("projects.csv", PROJECTS), ("runs.csv", RUNS)):
@@ -63,6 +87,21 @@ def fixture(root: Path) -> Path:
     sources.template_runs = lambda: root / "runs.csv"
     ideas.ideas_dir = lambda: root / "ideas"
     return root / "runs.csv"
+
+
+def trades() -> pd.DataFrame:
+    """A build of two strategies over exactly two in-sample years: A trades 10 a year and holds
+    10 h, B trades 30 a year and holds 30 h; the median strategy is 20 a year, 20 h."""
+    start, rows = pd.Timestamp("2015-01-01"), []
+    for name, n, hours in (("A", 20, 10), ("B", 60, 30)):
+        opens = [start + pd.Timedelta(days=700 * k / n) for k in range(n)]
+        rows += [{"strategy": name, "Open time": o, "Close time": o + pd.Timedelta(hours=hours),
+                  "Sample type": "IST"} for o in opens]
+    end = start + pd.Timedelta(days=730.5)
+    rows[-1]["Open time"], rows[-1]["Close time"] = end - pd.Timedelta(hours=30), end
+    rows.append({"strategy": "A", "Open time": end, "Close time": end + pd.Timedelta(hours=900),
+                 "Sample type": "OOS1"})
+    return pd.DataFrame(rows)
 
 
 def test_parse() -> None:
@@ -85,6 +124,65 @@ def test_outcomes(root: Path) -> None:
     assert attempts.funnel({"built": 9, "oos": 0}, "")["outcome"] == "died@oos"
     assert attempts.funnel({"built": 9, "oos": 0}, "7")["outcome"] == "failed@7"   # zero after a crash
     assert attempts.funnel({}, "")["outcome"] == "unknown"
+
+
+def test_causes(root: Path) -> None:
+    """A dead run takes the cause that failed most strategies; a crash is infrastructure; a dev
+    draw, a limbo and a scaled sibling are no cause; no reason written falls to the stage's."""
+    assert causes.of_reason("fuera del sorteo de desarrollo") == set() == causes.of_reason("")
+    assert causes.of_reason("limbo: gate.scorecard.drift_excess_t=sin dato") == set()
+    assert causes.of_reason("fail: gate.scorecard.oos_worst_day_r=-6.1; fail: spp.x.y=1") == {
+        "funding_rule", "fragile_parameters"}
+    assert causes.of_fact("gate.scorecard.is_trades_per_year", "44.9") == "too_few_trades"
+    assert causes.of_fact("crossTF.reading.H4.x", "0") == "single_market"
+    assert set(causes.CAUSES["stage"].values()) | {r.get("cause", r.get("below")) for r in
+                                                   causes.CAUSES["facts"]} <= set(causes.VOCABULARY)
+    rows = {r["project"]: r for r in attempts.table()}
+    died = rows["Test_XAUUSD_died_H1"]
+    assert (died["cause"], died["cause_share"]) == ("oos_decay", "2/4")
+    assert died["causes"] == "oos_decay:2;too_few_trades:1;too_many_trades:1;unclassified:1"
+    assert "oos1" in died["rules_out"] and died["try_next"]
+    assert rows["Old_Run"]["cause"] == "" == rows["Test_XAUUSD_x_H1"]["cause"]
+    blank = {"hypothesis": "", "died_at": ""}
+    assert causes.typed(blank | {"outcome": "failed@7"}, root)["cause"] == "infrastructure"
+    bare = causes.typed(blank | {"outcome": "died@markets", "died_at": "markets"}, root / "none")
+    assert (bare["cause"], bare["cause_share"], bare["causes"]) == ("single_market", "", "")
+    assert causes.typed(blank | {"outcome": "died@built", "died_at": "built"}, root)["cause"] == "no_population"
+    assert [r["project"] for r in queries.failures(list(rows.values()), "XAUUSD", "H1", "long",
+                                                   "tendencia")] == ["Test_XAUUSD_died_H1"]
+    page = report.cell_text(list(rows.values()), [], ["XAUUSD", "H1", "long", "tendencia"])
+    assert "Fracasos cerrados (1)" in page and "se degrada fuera de muestra (oos_decay, 2/4" in page
+    assert causes.CAUSES["status"] == "approved"             # the owner, 2026-10-02
+
+
+def test_sheet(root: Path) -> None:
+    """The build's median strategy against the sealed sheet: while the owner's tolerance is
+    pending the ratio is reported and nothing is typed; with a factor, a mismatch is a cause."""
+    assert sheet.problems(SHEET) == [] and len(sheet.problems({"trades_per_year": 0, "kills": " "})) == 4
+    got = sheet.built(trades())
+    assert (round(got["trades_per_year"], 6), got["holding_hours"]) == (20.0, 20.0)
+    assert sheet.compare(SHEET, got, "pending")["hypothesis"] == "pending"
+    assert sheet.compare(SHEET, got, 2)["hypothesis"] == "mismatch"      # 20 built / 50 predicted
+    assert sheet.compare(SHEET, got, 3)["hypothesis"] == "match"
+    row = lambda: next(r for r in attempts.table() if r["project"] == "Test_XAUUSD_x_H1")  # noqa: E731
+    ok = row()
+    assert (ok["hypothesis"], ok["trades_ratio"], ok["holding_ratio"], ok["cause"]) == ("pending", 0.4, 1.0, "")
+    with patch.dict(sources.CONFIG["sheet"], tolerance=2):                # the owner's factor, explicit
+        off = row()
+    assert (off["hypothesis"], off["cause"], off["outcome"]) == ("mismatch", "hypothesis_mismatch", "survivors")
+    assert queries.failures([off], "XAUUSD", "H1", "long", "ruptura") == []          # a dev run: not evidence
+    assert queries.failures([off], "XAUUSD", "H1", "long", "ruptura", include_dev=True) == [off]
+    dead = causes.typed({"outcome": "died@gate", "died_at": "gate", "hypothesis": "mismatch"},
+                        root / "autopilot/Test_XAUUSD_died_H1")
+    assert dead["cause"] == "oos_decay" and dead["causes"].endswith(";hypothesis_mismatch")
+    path = root / "proposals/20261001-090000-XAUUSD-H1-long-ruptura.json"
+    moved = json.loads(path.read_text())
+    moved["ideas"][0]["sheet"]["trades_per_year"] = 20                    # moved after the build
+    path.write_text(json.dumps(moved))
+    assert row()["hypothesis"] == "altered"
+    path.write_text(json.dumps({"ideas": [{"name": "atrUp", "sheet": SHEET, "sheet_seal": sheet.seal(SHEET)}]}))
+    assert sheet.reading("atrUp", "No_Export")["hypothesis"] == "no_data"
+    assert sheet.reading("emaX", "x") == sheet.BLANK
 
 
 def test_ideas_and_queries() -> None:
@@ -122,6 +220,8 @@ def test_writer(root: Path) -> None:
     assert len(list(csv.DictReader(open(copy)))) == 2
     died = verdict.close_run(root / "autopilot/Test_XAUUSD_died_H1/20261001-110000", copy)
     assert "murio en el paso 8" in died["verdict"]
+    assert "causa: se degrada fuera de muestra (oos_decay, 2/4" in died["verdict"]
+    assert "hoja: 20.0 op/año frente a 50 predichas (x0.4)" in got["verdict"] and "pendiente" in got["verdict"]
     typed = list(csv.DictReader(open(copy)))
     mine = next(r for r in typed if r["project"] == "Test_XAUUSD_x_H1")
     mine["verdict"], mine["strategies_kept"] = "el dueno dice no", "1"
@@ -134,10 +234,12 @@ def test_writer(root: Path) -> None:
 def main() -> None:
     """Run every test of this file."""
     test_parse()
-    with tempfile.TemporaryDirectory() as tmp:
-        root = Path(tmp)
+    with tempfile.TemporaryDirectory() as tmp, patch.dict(sources.CONFIG["sheet"], tolerance="pending"):
+        root = Path(tmp)   # the pending branch, whatever the live tolerance; restored on exit
         fixture(root)
         test_outcomes(root)
+        test_causes(root)
+        test_sheet(root)
         test_ideas_and_queries()
         test_writer(root)
     print("test_research_memory: ok")

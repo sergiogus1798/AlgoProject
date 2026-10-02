@@ -1,6 +1,24 @@
 """A proposal as the Markdown the owner reads."""
 
 
+def sheet(i: dict) -> list[str]:
+    """An idea's sealed hypothesis sheet and its review; nothing for an idea that has neither."""
+    out = []
+    if "sheet" in i:
+        h = i["sheet"]
+        out += [f"**Hoja de hipótesis** (sellada, `{i.get('sheet_seal', 'sin sello')}`): la estrategia "
+                f"mediana del build hará unas **{h['trades_per_year']:g} operaciones al año** en el "
+                f"tramo de construcción y durará unas **{h['holding_hours']:g} h** de entrada a salida.",
+                f"- Dónde NO debería funcionar: {h['not_where']}",
+                f"- Qué resultado la mata: {h['kills']}", ""]
+    if "review" in i:
+        r = i["review"]
+        out += [f"**Revisión — {r['verdict'].upper()}.**", f"- Mecanismo: {r['mechanism']}",
+                f"- Coste: {r['cost']}", f"- Parecido con lo ya probado: {r['similarity']}",
+                f"- Lecturas ambiguas: {r['ambiguity']}", ""]
+    return out
+
+
 def idea(n: int, i: dict) -> list[str]:
     """One idea's section."""
     families = [f"| {f['family']} | {f['weight']} | {f['reason']} |"
@@ -21,8 +39,22 @@ def idea(n: int, i: dict) -> list[str]:
             "| familia de bloques | peso | por qué |", "|---|---|---|", *families, "",
             f"Bloques: {blocks or 'los de esas familias, sin excepciones'}", "",
             "**Bloques custom a crear.**", *custom, "",
-            f"**Cómo puede fallar.** {i['failure']}", "",
+            f"**Cómo puede fallar.** {i['failure']}", "", *sheet(i),
             *(["**Preguntas abiertas (regla 11).**", *questions, ""] if questions else [])]
+
+
+def reviewed(p: dict) -> list[str]:
+    """Who reviewed, what its verdict can do, and the stance taken on each previous failure of
+    the cell; nothing for a proposal stamped before the review existed."""
+    if "reviewer" not in p:
+        return []
+    power = ("una idea «tumbada» no se lanza" if p["review_removes"] else
+             "el revisor sólo anota: una idea «tumbada» se lanza igual si no la vetas")
+    stances = [f"- {f['project']} ({f['cause']}): **{f['stance']}** — {f['why']}"
+               for f in p["prior_failures"]] or ["- La celda no tiene fracasos cerrados que adoptar o rechazar."]
+    return ["## Revisión y fracasos previos", "",
+            f"Revisó `{p['reviewer']}`, un agente distinto del que propone, sin medir nada sobre "
+            f"datos; {power}. El veto es tuyo.", "", *stances, ""]
 
 
 def text(p: dict) -> str:
@@ -50,7 +82,7 @@ def text(p: dict) -> str:
         "", "| medida | lectura | qué quiere decir |", "|---|---|---|", *measures, "", *warn,
         "## Antes de lanzar", "",
         f"- En {c['symbol']} {c['timeframe']} {c['direction']} ya van **{p['ideas_spent']} ideas** "
-        "antes de estas tres.", *[f"- {s}" for s in p["standing_costs"]], ""]
+        "antes de estas tres.", *[f"- {s}" for s in p["standing_costs"]], "", *reviewed(p)]
     for n, i in enumerate(p["ideas"], 1):
         lines += idea(n, i)
     return "\n".join(lines) + "\n"

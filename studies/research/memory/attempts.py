@@ -3,14 +3,14 @@
 import re
 from pathlib import Path
 
-from studies.research.memory import sources
+from studies.research.memory import causes, sheet, sources
 from studies.research.memory.sources import CONFIG
 
 STAGES = CONFIG["stages"]
 COLUMNS = ["project", "template", "family", "archetype", "symbol", "timeframe", "direction",
            "asset_class", "idea", "date", "custodian_hours", "runs", *STAGES, "crosstf_cells",
-           "last_stage", "died_at", "survivors", "dev_cut", "failed_at", "outcome", "verdict",
-           "source"]
+           "last_stage", "died_at", "survivors", "dev_cut", "failed_at", "outcome", *causes.BLANK,
+           *sheet.BLANK, "verdict", "source"]
 NAME = re.compile(r"^(?:Test|Trade)_([A-Z0-9]+)_.*_(M15|M30|H1|H4|D1)$")
 DIRECTION = {"market_long": "long", "market_short": "short"}
 
@@ -42,7 +42,8 @@ def funnel(stages: dict, failed: str) -> dict:
 
 
 def one(project: str, reg: dict, runs: dict, tpl: dict, ideas: set, root: Path | None = None) -> dict:
-    """The row of one project from every source that knows it; what none knows stays ''."""
+    """The row of one project from every source that knows it; what none knows stays ''.
+    Its sheet is read before its cause: a build that contradicts the sheet is a cause too."""
     name = sources.template_of(reg) or runs.get("template", "")
     parts = NAME.match(project)
     pilot = sources.autopilot_project(project, root)
@@ -66,7 +67,9 @@ def one(project: str, reg: dict, runs: dict, tpl: dict, ideas: set, root: Path |
             "source": "+".join(s for s, on in (("projects", reg), ("runs.csv", runs),
                                                ("autopilot", pilot["runs"])) if on)}
     row |= {s: stages.get(s, "") for s in STAGES}
-    return row | funnel(stages if pilot["runs"] else {}, pilot["failed"])
+    row |= funnel(stages if pilot["runs"] else {}, pilot["failed"])
+    row |= sheet.reading(name, project) if name else sheet.BLANK
+    return row | causes.typed(row, (root or sources.autopilot_runs()) / project)
 
 
 def table(ideas: set = frozenset()) -> list[dict]:

@@ -108,6 +108,11 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 91 | 🟠 | The gate's t was compressed (fixed 2026-10-02); every threshold and null FPR read on the old scale is stale | OPEN.md |
 | 92 | 🟠 | Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02) | OPEN.md |
 | 93 | 🟠 | Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured | OPEN.md |
+| 96 | 🟡 | `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error | OPEN.md |
+| 97 | 🟡 | `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@` | OPEN.md |
+| 98 | 🟡 | Nothing reads SQX's own `StrategyProblems` flag | OPEN.md |
+| 99 | 🟠 | `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line | OPEN.md |
+| 101 | 🟡 | A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1 | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -490,6 +495,13 @@ validated pool). Manual chapters 73 and 74.
 **Open — to verify:** the news filter of `mt5/newsfilter` (`/ea-news`, 2026-09-29) compiles and
 sits where the hand FTMO patch did, but its live behaviour is unseen — the tester has no calendar. Put a
 `_Hantec` EA on a demo chart across one red-folder release and read the Experts tab for the close line.
+2026-10-02 (encargo 42): the tester mode exists — the patched EA reads the firm's history from
+Common\Files and was seen to close 5 min before and to refuse entries on three hand-checked releases
+(`knowhow/eng/ea-news-filter.md`). Still open: the live close on a demo chart; the EAs in
+`AlgoData/mt5/eas/` were regenerated 2026-10-02 in AlgoData only (backup in `eas-backup-2026-10-02/`) — `Experts/` and
+the live charts still carry the old ones; the thin-day exclusion and the no-minute events' removal are not yet seen in a tester run; the first real
+with/without reading waits for the owner's strategy and firm; FTMO-Server4 lacks USDJPY M1 for
+2023-09-20→2023-11-10 (`knowhow/eng/mt5-tester-m1-gaps-hide-news-window.md`).
 
 **Open — to build:** encargo 33 (the EV model, then plug it into `deals.worth`, which today judges a
 deal only by the zero-edge floor); encargo 34's pool (its verification is built, 2026-09-29: MT5
@@ -698,3 +710,66 @@ proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Op
   `freeShellLong`/`freeShellShort` (two holes per side). The 28 calibration populations exceed the
   cap, used the broad palette (842 blocks, time blocks and stop/limit entry blocks included) —
   against rule 15 — and must be rebuilt per family before the criteria are taken as final.
+
+## 96. 🟡 `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error
+
+Found 2026-10-02 contrasting with tschm/jsharpe (encargo 42, C1). On balanced blocks it is exact
+(2, 4, 8 of 40 variants). With 30+5+5 the «no cluster above half» rule refuses the true split
+(k=3, silhouette 0.531) and returns 14 (silhouette 0.147); one blob of 40 returns 16 (silhouette
+0.014). The deflated Sharpe's bar goes from 0.85σ to 1.74σ: harsh side, but an artefact. With no
+admissible split up to `k_max` it raises `ValueError: max() arg is an empty sequence` (one blob,
+`k_max=10`; cscv's 40 hides it). Owner's call: keep the rule and report the silhouette as the
+tell (< ~0.2 = no structure), or let a dominant cluster stand. Same contrast: our
+PSR/MinTRL/DSR follow the 2012/14 convention, jsharpe the 2025 one; arithmetic agrees.
+
+**Owner's decision, 2026-10-02:** KEEP the half rule (count unchanged in every case); the silhouette is
+the tell, below ~0.2 the count has no structure (a reading aid in docs, no threshold in code); keep
+the 2012/14 PSR/DSR convention. **Done:** with no admissible split up to `k_max`, `independent` raises a
+clear `ValueError` (k_max, «every split leaves a cluster above half») instead of `max() arg is an empty
+sequence`; `tests/test_inference_vs_jsharpe.py` pins the new text. The silhouette already travels in
+the dict `independent` returns (`cscv.json` › `trials`, `ledger.trials.population_n_eff`); no signature
+changed. **Open:** nothing prints the silhouette next to the count in a window or a report line.
+→ `knowhow/research/trial-count-half-rule.md`, `knowhow/research/psr-dsr-two-conventions-jsharpe.md`
+
+## 97. 🟡 `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@`
+
+Found 2026-10-02 (encargo 42, C3). `RESULTS_RE` wants `[A-Z0-9]+` before the first underscore:
+147 of 10,123 `.sqx` on the three installs read empty (`SP500ft_…`, `@ES`, `@EW`, all on the
+master), and the entry `UKOIL.cash_M1_LOM_H1` does not match either — a strategy built on UKOIL
+would read empty, or, with additional markets, read the first additional market as its symbol.
+Same family as #94. `settings.xml` carries the name whole in `<Result>/<ValuesMap>/<Symbol>`.
+Callers: `describe()`, `mt5.reconcile.register.market`. → `knowhow/eng/outside-parsers-what-they-catch.md`
+
+## 98. 🟡 Nothing reads SQX's own `StrategyProblems` flag
+
+Found 2026-10-02 (encargo 42, C3). `settings.xml` › `SpecialValuesMap/SettingsMap/StrategyProblems`
+is a bitmask of `BadStrategyException` reasons (no trades, too few, zero-P/L, too short, zero
+duration, too many open, too long, none filled) — the red «Strategy Problems» box of SQX's
+overview. Non-zero in 33 of 3,375 sampled `.sqx` (values 1, 2, 8; e.g. custodian
+`Test_Calib_GBPUSD_H1_rupturaL/OOS/Strategy 15.2.366.sqx`). To do: read it in `core.sqxfile`,
+decode the bits (they live in the jar), and show it on the strategy's sheet. Owner, 2026-10-02:
+show it first; whether the gate cuts on it is decided once the bits seen in our populations are known.
+→ `knowhow/eng/outside-parsers-what-they-catch.md`
+
+## 99. 🟠 `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line
+
+Found 2026-10-02 (encargo 42, C3). The report's `Period` row repeats the window that was asked.
+`V100545_Strategy_10_1_79_hantec_USDJPY.h_H1_2008-07-01…`: «History Quality 22%», first trade
+2022-06-08, the same 457 trades as the run from 2022-06-01 (itself 76 %); FTMO reads 95–99 %.
+The tester journal says `start time changed to 2008.12.03 … to provide data at beginning`.
+The depth guard (`mt5.verify.run.earliest`) only covers «Desde = MT5»; a typed date, or a
+symbol with holes inside the window, is collected as a normal run and compared with SQX over a
+window MT5 never traded. To do: carry `History Quality` and the first deal's date into the
+run's summary and let step 26 flag a run below a floor the owner names. Owner, 2026-10-02: no
+floor yet — two points (Hantec 76 %, FTMO 95–99 %) are not enough to name one.
+→ `knowhow/eng/outside-parsers-what-they-catch.md`, `knowhow/eng/mt5-history-depth-first-bar.md`
+
+## 101. 🟡 A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1
+
+Found 2026-10-02 on the first real proposal with sheet and review (encargo 42, front B):
+`AlgoData/research/proposals/20261002-203224-DJ30-H1-long-ruptura`. The cell had 0 ideas and was
+#1 on the board (70.6 points); the ideaExpert files its three ideas in `AlgoData/ideas/` before the
+director stamps, so `proposal.stamp` reads «ya van 3 ideas» and the board row as rank 311, 47.1
+points (= 70.6 × 1/(1 + 3/6)). To do: the stamp leaves out the ideas of the proposal being stamped
+(by idea file), or stamps the board row read before the ideaExpert ran. Not fixed: `ideas.py`
+and the brake are shared with the ledger's trial count (another session's work in motion).

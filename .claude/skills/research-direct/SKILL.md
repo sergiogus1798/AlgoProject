@@ -34,7 +34,9 @@ earlier «grey cells do not enter» is superseded.
 ## 3. Run the director
 
 Agent `researchDirector` (or a general-purpose agent told to follow
-`.claude/agents/researchDirector.md`, model opus). It launches the `ideaExpert` itself. A
+`.claude/agents/researchDirector.md`, model opus). It launches the `ideaExpert` and the `ideaReviewer` itself:
+each idea reaches the owner with its hypothesis sheet and the reviewer's verdict, and the stance
+taken on each previous failure of the cell. A
 proposal costs 10-30 $: when the owner did not ask for one explicitly, ask before this step.
 
 ## 4. Show the proposal
