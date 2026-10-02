@@ -123,7 +123,8 @@ def unlisted_in_readme(files: list[Path]) -> list[str]:
     """
     out = []
     for folder in sorted({f.parent for f in files}):
-        readme = folder / "README.md"
+        # A skill's folder is documented by its SKILL.md, which names its scripts.
+        readme = folder / ("SKILL.md" if (folder / "SKILL.md").exists() else "README.md")
         if not readme.exists():
             out.append(f"{folder.relative_to(ROOT)}/: no README.md")
             continue
