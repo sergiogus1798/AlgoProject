@@ -59,4 +59,6 @@ order among the other open sections, plus a matching row in `OPEN.md`'s own Inde
 Closing (⚪ 🟢 ✅ — only when the owner said so, or the fix is verified done): **move** the whole
 section, verbatim, out of `OPEN.md` into `docs/OPEN-closed.md`, in numeric order there, and flip its
 Index row in `OPEN.md` to point at `docs/OPEN-closed.md`. Never delete an issue outright — closed
-ones are kept for the citations that name them ("OPEN.md §N").
+ones are kept for the citations that name them ("OPEN.md §N"). Do it with the script, not by hand:
+write `{"close": {"<N>": ["<emoji>", "<note>"]}, "note": {…}}` to a JSON file and run
+`python3 .claude/skills/open-close/close.py <spec.json>` (`--dry-run` first).

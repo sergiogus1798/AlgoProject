@@ -102,7 +102,8 @@ python3 -c "from core import worker; print(worker.call('-project action=start na
   — leaves only that step on; a start with Build still active rebuilds from scratch.
 - **`action=stop` before every second `start`.** A second start on a project that already ran does
   nothing, silently, forever.
-- Poll with `-project action=status` only (hard rule 3). **Never `-databank action=count` while it
+- Wait with `.claude/skills/sqx-wait/wait.sh` (`mark` before the start, then `--from` in the
+  background) and do nothing until it notifies (rule 18). **Never `-databank action=count` while it
   runs**: it syncs from files and wipes what is still only in memory. The end is `Project finished`
   in `<install>/user/log/StrategyQuant/log_<date>.log`.
 

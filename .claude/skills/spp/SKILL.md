@@ -49,8 +49,9 @@ como **el único activo**, porque `action=start` corre todas las tareas activas.
 ```bash
 bin/sqx-worker.sh --role custodian start
 python3 -c "from core import worker; worker.call('-project action=stop name=<PROYECTO>','custodian')"
+N=$(.claude/skills/sqx-wait/wait.sh --role custodian mark)
 python3 -c "from core import worker; worker.call('-project action=start name=<PROYECTO>','custodian')"
-# mientras corre, sólo -project action=status; el final es `Project finished` en el log de SQX
+.claude/skills/sqx-wait/wait.sh --role custodian --from "$N"   # run_in_background; nada más hasta su aviso (regla 18)
 bin/sqx-worker.sh --role custodian stop
 ```
 
