@@ -6,7 +6,7 @@ import re
 import signal
 import time
 import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from core import assetdata, sqxfile
@@ -15,6 +15,7 @@ from core.study import result as study_result
 from ledger import record, study as ledger_study
 from mt5 import compare, tester, wine
 from mt5.verify import conditions, firms, judge, mt5side, report, sidebyside, sqxside
+from sqx.inspect import feeds
 from sqx.projects import mt5verify
 from ui.daemon.launch.run import assets as rule_five, graceful
 
@@ -62,6 +63,17 @@ def capital(cfx: Path, member: str) -> float:
     with zipfile.ZipFile(cfx) as z:
         found = re.search(r"<InitialCapital>([\d.]+)</InitialCapital>", z.read(member).decode())
     return float(found.group(1)) if found else 100000.0
+
+
+def latest(end: str, data: dict) -> str:
+    """The window's last day, never past the day before SQX's last one: a range that closes
+    on SQX's last day (its next midnight) reads «Project has unresolved resources» and the
+    project never starts (📓 2026-09-30, USDJPY to 2026-09-25)."""
+    last = (date.fromisoformat(str(data["data"]["to"])[:10]) - timedelta(days=1)).isoformat()
+    if end > last:
+        print(f"Hasta: SQX tiene datos hasta el {str(data['data']['to'])[:10]}; la ventana "
+              f"acaba el {last}", flush=True)
+    return min(end, last)
 
 
 def earliest(start: str, end: str, depth: dict, data: dict) -> str:
@@ -150,8 +162,8 @@ def main() -> None:
         report.finish(work, meta, cfg, started, {}, refused, "ninguna empresa se pudo preparar")
         raise SystemExit("ninguna empresa se pudo preparar: " + " | ".join(refused.values()))
 
-    window = (earliest(a.start, a.end, depth, data), a.end)
-    meta["from"] = window[0]
+    window = (earliest(a.start, a.end, depth, data), latest(a.end, data))
+    meta["from"], meta["to"] = window
     project = f"Test_MT5Verify_{asset}_{timeframe}_{stamp[9:]}"
     role = cfg["role"]
     say(10, f"creando {project} en el {role}")
@@ -188,12 +200,13 @@ def main() -> None:
                                                            "summary": got["summary"]}
 
     say(92, "comparando")
+    zones = (feeds.timezone(data["sqx_symbol"]), cfg["clock"]["server_zone"])
     pieces, summaries = {}, {}
     for firm in costs:
         sqx_in = compare.window(sqx_trades[firm], *window)
         mt5_in = compare.window(mt5_trades[firm], *window)
         piece = judge.firm_result(firm, sqx_in, mt5_in, timeframe, deposit, cfg,
-                                  usable[firm]["symbol"])
+                                  usable[firm]["symbol"], data["instrument"], zones)
         pieces[firm] = piece
         summaries[firm] = {**piece["summary"], "report": reports[firm]["dir"]}
         record.log(ledger_study.study_id(asset, timeframe, "mt5verify"), {

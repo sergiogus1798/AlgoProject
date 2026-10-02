@@ -17,6 +17,12 @@ COLUMNS = (("Cuándo", "Cuándo empezó la verificación."),
            ("Modelo", "El modelo del tester de MT5."),
            ("Estado", "En marcha, hecha o fallida, y por qué falló."))
 MARKS = {"pass": "✓", "fail": "✗"}
+NAMES = {"ftmo": "FTMO", "hantec": "Hantec"}      # as the owner writes them (2026-09-29 §3.3)
+
+
+def name(firm: str) -> str:
+    """A firm's key as the owner reads it: FTMO in capitals, Hantec with a capital H."""
+    return NAMES.get(firm, firm.capitalize())
 
 
 class FirmLight(QCheckBox):
@@ -45,8 +51,8 @@ def fill_runs(table: QTableWidget, runs: list[dict]) -> None:
     """One row per past check, newest first — `runs` is already sorted that way."""
     table.setRowCount(len(runs))
     for r, run in enumerate(runs):
-        firms = [f"{f} {MARKS.get(s, '?')}" for f, s in (run.get("firms") or {}).items()]
-        firms += [f"{f} —" for f in run.get("refused") or {}]
+        firms = [f"{name(f)} {MARKS.get(s, '?')}" for f, s in (run.get("firms") or {}).items()]
+        firms += [f"{name(f)} —" for f in run.get("refused") or {}]
         state = {"running": "en marcha", "done": "hecha", "failed": "fallida"}.get(
             run.get("state"), run.get("state") or "")
         cells = [run.get("started", "")[:16].replace("T", " "), " · ".join(firms),
@@ -55,7 +61,7 @@ def fill_runs(table: QTableWidget, runs: list[dict]) -> None:
                  state + (f": {run['error']}" if run.get("error") else "")]
         for c, value in enumerate(cells):
             item = QTableWidgetItem(value)
-            if c == 1 and run.get("verdict") in ("pass", "fail"):
+            if c == 1 and run.get("verdict") in ("pass", "watch", "fail"):   # watch: some firms
                 item.setForeground(Qt.GlobalColor.white)
                 item.setBackground(QColor(colour(run["verdict"])))
             item.setToolTip(value)

@@ -178,7 +178,11 @@ def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, di
         config = retitle(config, member, title)
         rows.append({"firm": firm, "title": title, "member": member, "output": output})
 
-    members[SAVE_MEMBER] = save_task(cfg["input"], mq5_dir, cfg["generator"],
+    # The EA is exported from the first firm's retest, not from the strategy as loaded: SQX
+    # writes the sizing its last backtest ran, and a strategy built on the doctrine carries
+    # ATRRiskBasedSizingFixedRisk — a user snippet with no MetaTrader 5 template, so the
+    # export wrote nothing (📓 2026-09-30). The retest ran the strategy's own FixedSize.
+    members[SAVE_MEMBER] = save_task(rows[0]["output"], mq5_dir, cfg["generator"],
                                      cfg["magic"]).encode("utf-8")
     config = re.sub(rf'\s*<Task\b[^>]*taskXMLFile="{SAVE_MEMBER}"[^>]*/>', "", config)
     config = config.replace("</Tasks>", f'    <Task name="Save to files" type="SaveToFiles" '

@@ -1,15 +1,14 @@
 """Which prop firms the bridge can verify on: their saved MT5 account and their symbol names."""
-import csv
 from pathlib import Path
 
 import yaml
 
+from core import assetdata
 from core.paths import MT5_ACCOUNTS
 from core.study import config as study_config
 from ledger import thresholds
 
 HERE = Path(__file__).resolve().parent
-SYMBOLS = HERE.parent / "symbols.csv"
 CONFIG = HERE / "config.yaml"
 # How each firm's key is spelled for the owner (window, reports) — never plain .upper()
 # (owner, 2026-09-29: "FTMO" en mayúsculas, "Hantec" con H mayúscula).
@@ -27,15 +26,13 @@ def config(overrides: list[str] = ()) -> dict:
     return study_config.apply(cfg, list(overrides))
 
 
-def table() -> dict[str, dict[str, str]]:
-    """`mt5/symbols.csv` as {SQX asset: {firm: the firm's symbol}}, empty cells left out.
-
-    The owner's rule (encargo 35 §1 #3): the SQX name is the key, one column per firm, and an
-    asset missing from a firm's column stops the job for that firm — never guessed.
+def names(asset: str) -> dict[str, str]:
+    """The asset's symbol at each firm, `mt5:` of `assets/symbols/<asset>.yaml` — versioned
+    with the asset and edited in the Activos zone (owner, 2026-09-30; it was a git-ignored
+    `mt5/symbols.csv`). The owner's rule (encargo 35 §1 #3): a firm the asset does not name
+    stops the job for that firm — never guessed.
     """
-    with SYMBOLS.open(encoding="utf-8") as f:
-        return {row["sqx"]: {k: v for k, v in row.items() if k != "sqx" and v}
-                for row in csv.DictReader(f)}
+    return dict(assetdata.load(asset).get("mt5") or {})
 
 
 def usable(asset: str) -> dict[str, dict]:
@@ -45,11 +42,12 @@ def usable(asset: str) -> dict[str, dict]:
         {firm: {"account", "symbol", "why"}}: `why` is None when both are known, else the
         sentence saying which of the two is missing.
     """
-    names = table().get(asset, {})
+    known = names(asset)
     out = {}
     for firm, account in MT5_ACCOUNTS.items():
-        symbol = names.get(firm)
-        why = None if symbol else (f"{asset} no tiene símbolo de {firm} en mt5/symbols.csv: "
-                                   "añádelo; nunca se adivina")
+        symbol = known.get(firm)
+        why = None if symbol else (f"{asset} no tiene símbolo de {label(firm)} en "
+                                   f"assets/symbols/{asset}.yaml (mt5.{firm}): añádelo en "
+                                   "Activos; nunca se adivina")
         out[firm] = {"account": account, "symbol": symbol, "why": why}
     return out

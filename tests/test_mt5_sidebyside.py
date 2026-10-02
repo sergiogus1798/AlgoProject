@@ -17,8 +17,8 @@ from ui.desktop.mt5bridge.render import filtered
 def pairs(hours: int, pnl: list[float]) -> pd.DataFrame:
     """Two SQX trades shifted to a firm's server clock; MT5 opened only the first."""
     opened = pd.to_datetime(["2025-01-02 10:00", "2025-01-03 11:00"]) + pd.Timedelta(hours=hours)
-    return pd.DataFrame({"Type": ["Buy", "Sell"], "Open time": opened, "Profit/Loss": pnl,
-                         "Open time_mt5": [opened[0], pd.NaT], "Profit/Loss_mt5": [9.0, None]})
+    return pd.DataFrame({"Type": ["Buy", "Sell"], "Open time": opened, "Profit/Loss USD": pnl,
+                         "Open time_mt5": [opened[0], pd.NaT], "Profit/Loss USD_mt5": [9.0, None]})
 
 
 def test_rows_are_sqx_entries_and_lights_drop_columns() -> None:

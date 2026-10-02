@@ -29,9 +29,10 @@ def clock(sqx: pd.DataFrame, mt5: pd.DataFrame, tolerance_min: float, max_h: int
 
     SQX stamps its feed's zone (`knowhow/export/feed-clock-timezones.md`), MT5 its server's,
     and the two need not be the same zone nor change hour on the same day. The shift is read
-    off the trades rather than assumed: most pairs first, then the smallest total entry gap —
-    with a tolerance of one H1 bar a one-hour error still pairs everything — then the
-    smaller shift.
+    off the trades rather than assumed: most pairs within half the tolerance first — with a
+    tolerance of one H1 bar a one-hour error still pairs everything, and greedy pairing can
+    even find one pair more (🔬 2026-09-30: 376 pairs all 1 h off beat 375 exact ones) —
+    then most pairs, then the smallest total entry gap, then the smaller shift.
     """
     if sqx.empty or mt5.empty:
         return 0
@@ -39,9 +40,10 @@ def clock(sqx: pd.DataFrame, mt5: pd.DataFrame, tolerance_min: float, max_h: int
     for h in range(-max_h, max_h + 1):
         pairs = compare.pair(shifted(sqx, h), mt5, tolerance_min)
         hit = pairs.dropna(subset=["Open time_mt5"])
-        gap = float((hit["Open time_mt5"] - hit["Open time"]).abs().dt.total_seconds().sum())
-        scored.append((len(hit), -gap, -abs(h), h))
-    return max(scored)[3]
+        gaps = (hit["Open time_mt5"] - hit["Open time"]).abs()
+        close = int((gaps <= pd.Timedelta(minutes=tolerance_min / 2)).sum())
+        scored.append((close, len(hit), -float(gaps.dt.total_seconds().sum()), -abs(h), h))
+    return max(scored)[4]
 
 
 def daily(frame: pd.DataFrame, deposit: float) -> pd.Series:
@@ -100,9 +102,9 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
             f"{'—' if matched_mt5 is None else f'{matched_mt5:.0%}'} tienen pareja"),
         one("2", "diferencia media por operación emparejada, en R", gap_r,
             th["trade_gap_max_r"], False,
-            "media de |P&L MT5 − P&L SQX|; R = la pérdida media de SQX "
-            f"({'—' if r is None else f'{r:.2f}'} USD): las de la doctrina no llevan stop; "
-            f"sesgo con signo {'—' if not len(hit) else f'{diff.mean():+.2f}'} USD"),
+            "media de |P&L MT5 − P&L SQX| del movimiento de precio, al valor de punto fijo "
+            f"del activo; R = la pérdida media de SQX ({'—' if r is None else f'{r:.2f}'} "
+            f"USD): sin stop; sesgo {'—' if not len(hit) else f'{diff.mean():+.2f}'} USD"),
         one("3a", "correlación del P&L diario", corr, th["daily_corr_min"], True,
             f"{len(days)} días del servidor con alguna operación cerrada en un lado u otro"),
         one("3b", "diferencia media absoluta del P&L diario, % de la cuenta", mad,
@@ -117,7 +119,7 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
 
 
 def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str, deposit: float,
-                cfg: dict, symbol: str) -> dict:
+                cfg: dict, symbol: str, instrument: dict, zones: tuple[str, str]) -> dict:
     """One firm's clock-aligned comparison: its verdict, its unpaired-trades table, its curves.
 
     Args:
@@ -127,6 +129,10 @@ def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str,
         deposit: The account both sides start from.
         cfg: The whole config: `thresholds` and `clock`.
         symbol: The firm's symbol, for the verdict's note.
+        instrument: The asset's tick size and point value: every row compares price moves at
+            one point value (`compare.in_points`); USD is only shown.
+        zones: (SQX feed's zone, the firm server's): SQX's times are moved trade by trade
+            (`compare.to_zone`) before `clock` looks for any whole-hour shift left.
 
     Returns:
         {"verdict", "lonely", "summary", "pairs", "hours", "daily_sqx", "daily_mt5", "label"}
@@ -135,6 +141,8 @@ def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str,
         `"firm": firm`, so the window can hide a firm's own blocks by its light.
     """
     th = cfg["thresholds"]
+    sqx = compare.in_points(compare.to_zone(sqx, *zones), instrument)
+    mt5 = compare.in_points(mt5, instrument)
     tolerance = th["entry_tolerance_bars"] * MINUTES[timeframe]
     hours = clock(sqx, mt5, tolerance, cfg["clock"]["max_offset_h"])
     moved = shifted(sqx, hours)
@@ -156,9 +164,9 @@ def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str,
                                              for r in got])
     verdict = {**verdict, "firm": firm}
     lonely = pairs[pairs["Open time_mt5"].isna()][["Type", "Open time", "Close time",
-                                                   "Profit/Loss"]].head(50)
+                                                   "Profit/Loss USD"]].head(50)
     lonely = lonely.rename(columns={"Type": "tipo", "Open time": "apertura",
-                                    "Close time": "cierre", "Profit/Loss": "P&L"})
+                                    "Close time": "cierre", "Profit/Loss USD": "P&L (USD)"})
     lonely_block = {**blocks.table(f"{label}: operaciones de SQX sin pareja en MT5 (hasta 50)",
                                    lonely.astype(str),
                                    f"{symbol}, {len(pairs) - len(pairs.dropna(subset=['Open time_mt5']))} "
@@ -190,7 +198,8 @@ def combined_chart(pieces: dict[str, dict]) -> dict:
                        "values": [float(v) for v in a], "firm": firm})
         series.append({"label": f"MT5 · {p['label']}", "role": "sim",
                        "values": [float(v) for v in b], "firm": firm})
-    return {"kind": "lines", "title": "P&L acumulado por día (hora del servidor), % de la cuenta",
+    return {"kind": "lines",
+            "title": "P&L acumulado por día (hora del servidor), % de la cuenta, puntos a valor fijo",
             "unit": "%", "x": [d.strftime("%Y-%m-%d") for d in days], "series": series}
 
 

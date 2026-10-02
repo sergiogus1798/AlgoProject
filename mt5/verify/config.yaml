@@ -34,6 +34,10 @@ mt5:
 # pairs the most trades is taken, within ± this many hours, and said.
 clock:
   max_offset_h: 3
+  # The servers' zone: FTMO's and Hantec's clocks change hour on the US days (🔬 2026-09-30,
+  # every unpaired USDJPY entry fell in the US-to-EU weeks). SQX's times are converted from
+  # their feed's zone (`sqx.inspect.feeds.timezone`) to this one before any shift is sought.
+  server_zone: EETUS
 
 # Encargo 34 §3, the owner's starting values — each one lives in ledger/thresholds.yaml.
 thresholds:

@@ -21,8 +21,9 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
     rows += [{"empresa": firms.label(f), "veredicto": "No se pudo verificar", "reloj (h)": None,
               "operaciones SQX": None, "operaciones MT5": None} for f in refused]
     states = [s["state"] for s in summaries.values()]
+    # Each firm is judged alone: one that validates is amber, never the red of none (📓 2026-09-30)
     overall = ("pass" if states and all(s == "pass" for s in states) else
-               "fail" if states else "none")
+               "watch" if "pass" in states else "fail" if states else "none")
     head = {"name": "resumen", "title": "Resumen",
             "note": (f"{meta['strategy']} · {meta['asset']} {meta['timeframe']} · "
                      f"{meta['from']} → {meta['to']} · modelo del tester «{meta['model']}». "
@@ -40,8 +41,8 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
          "pestaña de cada una dice qué fila falla. " if bad else "") +
         "Cada empresa se juzga por separado.")
     verdict = study_result.blocks.verdict(
-        {"pass": "Validada", "fail": "No validada", "none": "Sin verificar"}[overall], overall,
-        meaning)
+        {"pass": "Validada", "watch": f"Validada en {', '.join(good)}", "fail": "No validada",
+         "none": "Sin verificar"}[overall], overall, meaning)
     out = study_result.envelope(MODULE, meta["strategy"], meta["identity"], cfg, started,
                                 [head, *tabs], verdict, summary={"firms": summaries,
                                                                   "refused": refused})

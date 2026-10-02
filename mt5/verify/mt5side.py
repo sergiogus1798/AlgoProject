@@ -9,13 +9,18 @@ from mt5 import metaeditor, tester, wine
 
 
 def fixed_lots(source: str, lots: str) -> str:
-    """The EA's source with its sizing switched to a fixed lot: `UseMoneyManagement = false`
-    makes every sizing function return `mmLotsIfNoMM`, which is set to `lots`.
+    """The EA's source with its sizing switched to a fixed lot: a «Fixed size» EA's `mmLots`, or
+    `UseMoneyManagement = false`, which makes every sizing function return `mmLotsIfNoMM`.
 
     SaveToFiles writes the EA with a sizing of its own (🔬 2026-09-29: «Fixed Amount» 100 USD
     for a strategy that stores FixedSize 0.1), and the tester cannot pass inputs: the default
     in the source is what runs. Raises when either input is missing rather than guess.
     """
+    # Exported from a FixedSize retest (`sqx.projects.mt5verify`), the EA sizes with `mmLots`
+    # alone and carries neither switch (📓 2026-09-30): that one input is the lot.
+    out, k = re.subn(r"input double mmLots = [\d.]+;", f"input double mmLots = {lots};", source)
+    if k == 1:
+        return re.sub(r"input double mmMultiplier = [\d.]+;", "input double mmMultiplier = 1.0;", out)
     out, n = re.subn(r"input bool UseMoneyManagement = \w+;", "input bool UseMoneyManagement = false;",
                      source)
     out, m = re.subn(r"input double mmLotsIfNoMM = [\d.]+;", f"input double mmLotsIfNoMM = {lots};", out)

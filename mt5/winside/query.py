@@ -34,6 +34,47 @@ def _csv(array: object, path: str) -> int:
     return len(array)
 
 
+FULL_WEEK = 100      # H1 bars in a traded week: 120 whole; a server's sparse years give ~5
+
+
+def _full_week(symbol: str, day: dt.datetime) -> bool:
+    """Whether the server has a whole week of H1 bars from `day`, not a daily sprinkle: the
+    tester reads such years as «History Quality 22 %» and trades nothing in them. H1, not M1:
+    the terminal serves M1 only for its last «max bars», one row for anything older. A symbol
+    not synced yet answers «Call failed» (None) for a while, so it is asked again."""
+    for _ in range(10):
+        rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1, day, day + dt.timedelta(days=7))
+        if rates is not None:
+            return len(rates) >= FULL_WEEK
+        time.sleep(1)
+    return False
+
+
+def first_full(symbol: str) -> str | None:
+    """The first month the server has whole weeks of `symbol`, found by halving the months
+    between its first monthly bar and now — the monthly bars reach further back than the
+    tester can trade (🔬 2026-09-30: USDJPY.h on Hantec, MN1 from 2008-07, whole H1 weeks and
+    so the tester's trades from 2022)."""
+    mt5.symbol_select(symbol, True)
+    monthly = None
+    for _ in range(20):
+        monthly = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_MN1, 0, 1000)
+        if monthly is not None and len(monthly):
+            break
+        time.sleep(1)
+    if monthly is None or not len(monthly):
+        return None
+    months = [dt.datetime.fromtimestamp(int(m["time"]), dt.timezone.utc) for m in monthly]
+    lo, hi = 0, len(months) - 1
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if _full_week(symbol, months[mid] + dt.timedelta(days=7)):    # skip a month's first days
+            hi = mid
+        else:
+            lo = mid + 1
+    return months[lo].date().isoformat()
+
+
 def run(verb: str, a: dict) -> object:
     """Dispatch one read-only verb.
 
@@ -58,16 +99,8 @@ def run(verb: str, a: dict) -> object:
         tf = getattr(mt5, "TIMEFRAME_" + a["timeframe"])
         rates = mt5.copy_rates_range(a["symbol"], tf, _stamp(a["start"]), _stamp(a["end"]))
         return {"rows": _csv(rates, a["out"]) if rates is not None else 0, "error": mt5.last_error()}
-    if verb == "first":         # the server's history depth: its first monthly bar
-        mt5.symbol_select(a["symbol"], True)
-        for _ in range(20):     # a symbol just selected answers «Call failed» until it syncs
-            rates = mt5.copy_rates_from_pos(a["symbol"], mt5.TIMEFRAME_MN1, 0, 1000)
-            if rates is not None and len(rates):
-                break
-            time.sleep(1)
-        return {"first": (dt.datetime.fromtimestamp(int(rates[0]["time"]), dt.timezone.utc)
-                          .date().isoformat() if rates is not None and len(rates) else None),
-                "error": mt5.last_error()}
+    if verb == "first":         # how far back the server has whole weeks: what the tester trades
+        return {"first": first_full(a["symbol"]), "error": mt5.last_error()}
     if verb == "ticks":
         ticks = mt5.copy_ticks_range(a["symbol"], _stamp(a["start"]), _stamp(a["end"]),
                                      mt5.COPY_TICKS_ALL)

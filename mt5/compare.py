@@ -1,4 +1,5 @@
 """Pair the trades of an MT5 backtest with SQX's for the same strategy and window, and measure the gap."""
+import numpy as np
 import pandas as pd
 
 
@@ -70,3 +71,62 @@ def window(trades: pd.DataFrame, start: str, end: str) -> pd.DataFrame:
     """Trades opened inside [start, end], dates YYYY-MM-DD, end day included."""
     t = trades["Open time"]
     return trades[(t >= pd.Timestamp(start)) & (t < pd.Timestamp(end) + pd.Timedelta(days=1))]
+
+
+def in_points(trades: pd.DataFrame, instrument: dict) -> pd.DataFrame:
+    """Each trade's P&L from its price move, at ONE point value for SQX and MT5 alike.
+
+    Args:
+        trades: SQX's export shape (Type, Open price, Close price, Size, Profit/Loss).
+        instrument: The asset's `tick_size` and `point_value` (USD per 1.0 of price per lot).
+
+    Returns:
+        The trades with `Profit/Loss` = points moved × tick × point value × size, and the
+        account's own figure kept as `Profit/Loss USD`. Owner, 2026-09-30: compare in points —
+        SQX converts a JPY pair at a fixed rate and MT5 at each day's
+        (`knowhow/costs/sqx-fixed-point-value-jpy.md`), so the USD figures differ by the rate,
+        not by the EA. Commission and swap are not in the price move.
+    """
+    side = np.where(trades["Type"].astype(str).str.startswith("Buy"), 1.0, -1.0)
+    move = (trades["Close price"] - trades["Open price"]) * side
+    return trades.assign(**{"Profit/Loss USD": trades["Profit/Loss"],
+                            "Profit/Loss": move * instrument["point_value"] * trades["Size"]})
+
+
+# A zone the IANA database lacks, as SQX and the MT5 servers spell it: New York + 7 h
+# (`knowhow/export/feed-clock-timezones.md`).
+OFFSET_ZONES = {"EETUS": ("America/New_York", 7)}
+
+
+def to_zone(trades: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
+    """The same trades with both times moved from one clock zone to another, trade by trade.
+
+    A constant hour shift is right most of the year and wrong for the weeks two zones change
+    hour on different days (🔬 2026-09-30: the5ers' Asia/Jerusalem feed against the firms'
+    EETUS servers — every unpaired entry of four USDJPY runs fell between the US and the
+    European change, in March and late October). A time the change skips or repeats is NaT,
+    kept: it pairs with nothing and is counted, never guessed.
+
+    Args:
+        trades: With `Open time` and `Close time`, naive, in `source`.
+        source, target: IANA names, or a key of `OFFSET_ZONES`.
+
+    Returns:
+        A copy, naive, in `target`.
+    """
+    def utc(t: pd.Series, zone: str) -> pd.Series:
+        """Naive times in `zone` as UTC."""
+        name, hours = OFFSET_ZONES.get(zone, (zone, 0))
+        local = (t - pd.Timedelta(hours=hours)).dt.tz_localize(name, ambiguous="NaT",
+                                                                 nonexistent="NaT")
+        return local.dt.tz_convert("UTC")
+
+    def local(t: pd.Series, zone: str) -> pd.Series:
+        """UTC times as naive ones in `zone`."""
+        name, hours = OFFSET_ZONES.get(zone, (zone, 0))
+        return t.dt.tz_convert(name).dt.tz_localize(None) + pd.Timedelta(hours=hours)
+
+    out = trades.copy()
+    for c in ("Open time", "Close time"):
+        out[c] = local(utc(pd.to_datetime(out[c]), source), target)
+    return out

@@ -1,7 +1,7 @@
 """What MT5 Bridge › Verificar reads and checks: past checks, the strategy's file, and whether one may start now."""
 import json
 import re
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from core import assetdata, sqxfile
@@ -66,9 +66,10 @@ def options() -> dict:
 
 
 def hasta_default(asset: str) -> str:
-    """The last day `assets/symbols/<asset>.yaml` says SQX holds data for, or "" if undecided."""
+    """The day before the last `assets/symbols/<asset>.yaml` says SQX holds data for, or "" if
+    undecided: a window closing on SQX's last day never starts (`mt5.verify.run.latest`)."""
     data = assetdata.load(asset).get("data") or {}
-    return str(data.get("to") or "")
+    return str(data["to"] - timedelta(days=1)) if data.get("to") else ""
 
 
 def desde_default(hasta: str) -> str:
