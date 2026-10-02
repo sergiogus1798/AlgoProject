@@ -62,22 +62,6 @@ paired:
   reference: 3                # half-width in MONTHS of the centered reference window, or `block`
   sensitivity: [3, 6, 12, block]   # every reference the test is also run under, and reported beside it
 
-portfolio:
-  block_weeks: 4              # calendar block the combined account is resampled in whole
-  draws: 2000                 # resamples and reorderings of the combined account
-  order_block: 10             # trades per block of the reordering, from monteCarlo.model.draws
-
-stress:
-  cost_multiples: [1.0, 1.5, 2.0, 2.5, 3.0]
-  bar_shift: 1                # bars entries and exits are moved by, to see the decay
-  slippage_fractions: [0.1, 0.25, 0.5]     # share of the bar's range given back at both ends
-  sims: 25000                 # runs of the cost-and-fill stress; the nulls' own count, so the p resolves as finely
-  calibrate: true             # take cost_shock and fill_depth from execution.yaml where the feed is declared
-  p_skip: 0.05                # chance each trade is simply missed
-  cost_shock: [1.0, 2.0]      # cost multiple drawn per run, uniform between these
-  fill_frac: 0.15             # share of trades filled worse
-  fill_depth: 0.25            # fraction of the trade's own adverse excursion given back
-
 verdict:
   breadth_floor: 0.5          # share of markets whose expectancy interval must clear zero to keep the
                               # strategy (MANTENER); the only screen this study applies, see report.py

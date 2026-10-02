@@ -31,20 +31,34 @@ def worst_market_floor(rows: pd.DataFrame) -> dict:
     return {"market": worst["feed"], "pf": float(worst["pf"])}
 
 
-def dispersion(rows: pd.DataFrame) -> float:
-    """Coefficient of variation of profit factor across a strategy's markets.
+def median_pf(rows: pd.DataFrame) -> float:
+    """The median profit factor across a strategy's markets, beside its worst one.
 
     Args:
         rows: One strategy's testable per-market rows, carrying `pf`.
 
     Returns:
-        std / mean of pf, or NaN on a single market — the spread of one number is not zero,
-        it is undefined, and 2 of the 30 sampled strategies never traded on silver at all.
-        Low means consistent behaviour across markets; high means one or two lucky markets
-        are carrying the result.
+        The median of `pf`; a single market's own value on one market.
+    """
+    return float(rows["pf"].median())
+
+
+def dispersion(rows: pd.DataFrame) -> float:
+    """Standard deviation of profit factor across a strategy's markets (📓 2026-09-30, owner:
+    was the coefficient of variation — «CV del PF» — shown and read as a plain spread; the UI
+    now reads it «STD del PF»).
+
+    Args:
+        rows: One strategy's testable per-market rows, carrying `pf`.
+
+    Returns:
+        std of pf, or NaN on a single market — the spread of one number is not zero, it is
+        undefined, and 2 of the 30 sampled strategies never traded on silver at all. Low
+        means consistent behaviour across markets; high means one or two lucky markets are
+        carrying the result.
     """
     pf = rows["pf"].to_numpy()
-    return float(pf.std(ddof=1) / pf.mean()) if len(pf) > 1 else float("nan")
+    return float(pf.std(ddof=1)) if len(pf) > 1 else float("nan")
 
 
 def summary(rows: pd.DataFrame, alpha: float) -> dict:
@@ -61,7 +75,7 @@ def summary(rows: pd.DataFrame, alpha: float) -> dict:
         these together; nothing here combines them into one number.
     """
     return {**breadth(rows), "worst_market": worst_market_floor(rows),
-            "pf_cv": dispersion(rows),
+            "median_pf": median_pf(rows), "pf_cv": dispersion(rows),
             "under_alpha": int((rows["p"] <= alpha).sum()),
             "paired_under_alpha": int((rows["paired_p"] <= alpha).sum()),
             "edge_r": float(rows["edge_r"].median()),
@@ -88,6 +102,6 @@ def judge(summary: dict, floor: float) -> tuple[str, str]:
     got = summary["fraction"]
     if got >= floor:
         return "MANTENER", (f"{summary['cleared']} de {summary['markets']} mercados con la "
-                            f"esperanza por encima de cero ({got:.0%} >= {floor:.0%})")
+                            f"esperanza por encima de cero ({got:.1%} >= {floor:.1%})")
     return "DESCARTAR", (f"solo {summary['cleared']} de {summary['markets']} mercados con la "
-                         f"esperanza por encima de cero ({got:.0%} < {floor:.0%})")
+                         f"esperanza por encima de cero ({got:.1%} < {floor:.1%})")

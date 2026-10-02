@@ -13,11 +13,10 @@ import numpy as np
 import pandas as pd
 
 from core import tradestore
-from studies.transfer.crossmarket.inputs import execution
+from core.significance import annual_sharpe
 from studies.transfer.crossmarket.mechanics import curves, envelope, pricing
 from studies.transfer.crossmarket.orchestrate import sweep as sweep_run
-from studies.transfer.crossmarket.simulate import (backtest, correlation, exposure, fingerprint,
-                                                   paired, portfolio, realrun, stress)
+from studies.transfer.crossmarket.simulate import backtest, correlation, exposure, paired, realrun
 from studies.transfer.crossmarket.verdict import inference, significance
 
 
@@ -28,22 +27,29 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
         fixed: What backtest.setting() returned for this market.
         bars: That market's bars.
         cfg: What config.load() returned.
-        feed: The market's SQX symbol, for its execution assumptions.
+        feed: The market's SQX symbol; kept for callers that key their own progress text on it.
 
     Returns:
         A flat row: the real backtest's own statistics, exposure (Test 1c), the paired test
-        (Test 1b) with its sensitivity to the reference window, significance, and cost and
-        execution stress. Takes `fixed` so the fill convention is reconciled once per market
-        rather than once per test.
+        (Timing Alpha) with its sensitivity to the reference window, and significance. Takes
+        `fixed` so the fill convention is reconciled once per market rather than once per test.
 
-        `min_track_benchmark` is the Sharpe `min_track_needed` was measured against -- the
-        same-footprint random trader's own Sharpe under the market's own noise, reusing
-        exp["mu_m"] and exp["sigma_m"] (OPEN.md #71). Printed so a reader sees which centring
-        produced the number, instead of assuming zero.
+        `min_track_benchmark` (SR*) is the Sharpe `min_track_needed` was measured against --
+        the same-footprint random trader's own Sharpe under the market's own noise, reusing
+        exp["mu_m"] and exp["sigma_m"] (OPEN.md #71) -- printed so a reader sees which centring
+        produced the number, instead of assuming zero. It is on the same **per-trade** scale as
+        `sharpe` (both unannualised means over the trades' own std, `core.significance.moments`),
+        which is what the Bailey/Lopez de Prado formula needs: SR and SR* are never glued
+        together, they are two independent means computed from two different populations (the
+        real trades, and the same-footprint random trader) on the one ruler `min_track_record`
+        shares between them. `sharpe_total` is a second, unrelated number -- the annualised
+        Sharpe of the strategy's own **daily** P&L on trading days (`core.significance.
+        annual_sharpe`, the owner's rule), reported beside it for
+        the headline but never fed into MinTRL: annualising SR while leaving SR* per-trade would
+        silently change the units MinTRL divides by.
     """
     rng = np.random.default_rng(cfg["nulls"]["seed"])
     exp = exposure.run(fixed, bars, cfg, rng)
-    stressed = execution.settings(fixed, feed, cfg)
     # What the backtest DID, over every trade SQX reported. realrun.real() stays on the
     # located subset and is what the null comparison uses: the real run and its random
     # counterparts have to be the same trades.
@@ -64,9 +70,10 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
     benchmark = significance.footprint(hold, np.ones_like(hold), np.ones_like(hold),
                                        fixed["cost"], exp["mu_m"], exp["sigma_m"], 1.0)
     mtr = significance.min_track_record(returns, cfg["diagnostics"]["alpha"], benchmark)
-    pf_ci = significance.bootstrap_metric(returns, significance.profit_factor, cfg, rng)
+    # Not shown in the evidence table any more (§4.11: PF and expectancy CIs dropped from
+    # display), but expectancy_ci_lo is what verdict/breadth.py's breadth screen itself reads
+    # ("cleared" = markets whose interval clears zero) — that computation stays.
     ex_ci = significance.bootstrap_metric(returns, significance.expectancy, cfg, rng)
-    s = cfg["stress"]
     return {"e": exp["e"], "a": exp["a"], "mu_m": exp["mu_m"], "sigma_m": exp["sigma_m"],
             "mu_t": exp["mu_t"],
             "e_meaningful": exp["e_meaningful"], "risk_normalised": exp["risk_normalised"],
@@ -78,22 +85,15 @@ def tests(fixed: dict, bars: pd.DataFrame, cfg: dict, feed: str) -> dict:
             "paired_mean": pair["mean"], "paired_median": pair["median"], "paired_p": pair["p"],
             "paired_beat": pair["beat_share"], "paired_ci_lo": pair["ci"]["lo"],
             "paired_ci_hi": pair["ci"]["hi"],
-            "pf": significance.profit_factor(returns), "pf_ci_lo": pf_ci["lo"],
-            "pf_ci_hi": pf_ci["hi"], "expectancy": significance.expectancy(returns),
-            "expectancy_ci_lo": ex_ci["lo"], "expectancy_ci_hi": ex_ci["hi"],
+            "pf": significance.profit_factor(returns),
+            "expectancy": significance.expectancy(returns), "expectancy_ci_lo": ex_ci["lo"],
             "sharpe": significance.moments(returns)[0],
+            "sharpe_total": annual_sharpe(fixed["all"]["pnl"], fixed["all"]["close"]),
             "min_track_needed": mtr["needed"], "min_track_enough": mtr["enough"],
             "min_track_benchmark": benchmark,
             "real": seen, "equalised": curves.equalised(seen, cfg),
             "trades_all": fixed["all"]["trades"], "dropped": fixed["all"]["dropped"],
-            "dropped_pnl": fixed["all"]["dropped_pnl"],
-            "costs": execution.compare(fixed, feed), "stress_settings": stressed,
-            "cost_gradient": stress.cost_gradient(fixed, bars, s["cost_multiples"]
-                                                  ).to_dict("records"),
-            "breakeven": stress.breakeven_multiple(fixed, bars),
-            "bar_shift_decay": stress.bar_shift_stress(fixed, bars, s["bar_shift"]),
-            "slippage_decay": {str(f): stress.range_slippage_stress(fixed, bars, f)
-                               for f in s["slippage_fractions"]}}
+            "dropped_pnl": fixed["all"]["dropped_pnl"]}
 
 def nulls(fixed: dict, bars: pd.DataFrame, cfg: dict, models: list[str],
           step: Callable[[str, float], None]) -> tuple[dict, dict]:
@@ -142,7 +142,7 @@ def nulls(fixed: dict, bars: pd.DataFrame, cfg: dict, models: list[str],
     return row, runs
 
 
-def analyse_market(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataFrame, base: dict,
+def analyse_market(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataFrame,
                    step: Callable[[str, float], None]) -> tuple[dict, dict, dict]:
     """Every test in this build on one strategy's trades on one market.
 
@@ -151,48 +151,40 @@ def analyse_market(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataF
         market: One row of markets.universe()'s `markets` — feed, category, data_from.
         trades: That market's trades for this strategy, as tradestore.market() returns them.
         bars: That market's bars.
-        base: What backtest.setting() returned for the same strategy on the base asset.
         step: Called with (what is running, share of this market done) for the progress bar.
 
     Returns:
         (row, runs, extra): the flat per-market row with its warnings attached; one full
-        result per null model plus the window sweep and the execution stress; and what the
-        strategy-level views need from this market — its weekly equity curve for the
-        correlation matrix, its equity in per cent for the overlay, and the priced trades
-        themselves for the portfolio account.
+        result per null model plus the window sweep; and what the strategy-level views need
+        from this market — its weekly equity curve for the correlation matrix and its equity
+        in per cent for the overlay.
     """
     real = trades
     # Everything below runs on the backtest's own window, never on the whole bar file: the
     # nulls must not be able to trade years the real strategy never saw, and the statistics
     # that compare against the market's own average — the drift in Test 1c, the blind window
-    # in Test 1b, the market's structural profile — have to describe the same stretch.
+    # in Timing Alpha, the market's structural profile — have to describe the same stretch.
     bars = envelope.window(real, bars)
     fixed = backtest.setting(real, bars, cfg)
     feed = market["feed"]
     models = cfg["nulls"]["models"]
-    # One unit per model, per sweep point and for the stress, so the bar moves evenly.
+    # One unit per model, one per sweep point, so the bar moves evenly.
     swept = len(cfg["sweep"]["windows"]) * len(cfg["sweep"]["models"])
-    units = len(models) + swept + 1
+    units = len(models) + swept
     model_row, runs = nulls(fixed, bars, cfg, models, lambda m, share: step(
         f"{feed} · {m}", share * len(models) / units))
     row = {**market, **model_row}
     runs["sweep"] = sweep_run.window_sweep(fixed, bars, cfg, runs, lambda what, share: step(
         f"{feed} · {what}", (len(models) + share * swept) / units))
-    step(f"{feed} · coste y ejecución", (units - 1) / units)
     row.update(tests(fixed, bars, cfg, feed))
     row["exits"] = realrun.exits(fixed)
     row["reproducible_pnl"] = sum(e["gross_share"] for e in row["exits"] if e["reproducible"])
-    runs["stress"] = stress.simulate(fixed, bars, cfg, row["stress_settings"])
-    row["fingerprint"] = fingerprint.fingerprint(feed, base, {**fixed, "bars": bars},
-                                                 cfg["exposure"]["drop_zero_mfe"])
     row["warnings"] = inference.warnings(row, cfg)
     return row, runs, {"weekly": correlation.weekly_equity(fixed, bars),
-                       "curve": curves.series(fixed, cfg),
-                       "stream": portfolio.priced(fixed, feed)}
+                       "curve": curves.series(fixed, cfg)}
 
 
-def verdict_row(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataFrame,
-                base: dict) -> dict:
+def verdict_row(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataFrame) -> dict:
     """The per-market row `analyse_market` returns, and nothing the batch verdict never reads.
 
     Args:
@@ -200,15 +192,14 @@ def verdict_row(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataFram
         market: One row of markets.universe()'s `markets`.
         trades: That market's trades for this strategy.
         bars: That market's bars.
-        base: What backtest.setting() returned for the same strategy on the base asset.
 
     Returns:
         The row, with every column `breadth.summary` and `inference` read equal to
         `analyse_market`'s: each model and each test draws from its own generator seeded
         from `nulls.seed`, so leaving one out moves nothing in the others. Left out: the
-        three non-headline models, the window sweep built from them, the execution stress
-        and the curves for the strategy-level views -- 🔬 2026-09-25, about a quarter of
-        the batch, computed and dropped, since `report.py` writes only the summary.
+        three non-headline models and the window sweep built from them -- 🔬 2026-09-25,
+        about a quarter of the batch, computed and dropped, since `report.py` writes only
+        the summary.
     """
     bars = envelope.window(trades, bars)
     fixed = backtest.setting(trades, bars, cfg)
@@ -216,7 +207,5 @@ def verdict_row(cfg: dict, market: dict, trades: pd.DataFrame, bars: pd.DataFram
     row = {**market, **row, **tests(fixed, bars, cfg, market["feed"])}
     row["exits"] = realrun.exits(fixed)
     row["reproducible_pnl"] = sum(e["gross_share"] for e in row["exits"] if e["reproducible"])
-    row["fingerprint"] = fingerprint.fingerprint(market["feed"], base, {**fixed, "bars": bars},
-                                                 cfg["exposure"]["drop_zero_mfe"])
     row["warnings"] = inference.warnings(row, cfg)
     return row

@@ -13,7 +13,7 @@ never "was it luck" — there is no null model here, no draw, no p-value.
 |---|---|---|---|
 | `pricing.py` | ATR, the cost SQX charged recovered per trade, the net return per trade, the fill convention re-derived by reconciling against SQX's own prices, whether what is left over is a spread or a mismatch, and the long-only assertion | imported | bars + trades → returns, cost, convention, fill profile |
 | `envelope.py` | The real run's shape on the bar grid: bars held, gaps, regime blocks, the weekday-hour groups a model may move it to, the bars to each Friday close, and the trades inside one declared stretch of the backtest | imported | trades + bars → the market dict |
-| `equity.py` | Equity through the sample on the **calendar**, and the percentile cone around the real curve | imported | P&L + exit bars → curves, bands |
+| `equity.py` | Equity through the sample on the **calendar** and the percentile cone around the real curve. "Sharpe total" moved to `core.significance.annual_sharpe` (2026-10-01), shared with crossTF | imported | P&L + exit bars → curves, bands |
 | `curves.py` | Each market's equity on its own real calendar, and what it returned once every market risks the same | imported | fixed → curve, factor |
 | `strata.py` | The regime state of every bar — ATR quantile × trend sign — for the optional `regime_strata` model | imported | bars → stratum index |
 | `units.py` | One log return in every unit a reader needs: bps, per cent, ATR units, dollars per trade and dollars accumulated | imported | logret → units |
@@ -36,9 +36,16 @@ period.
 ## Contracts and traps
 
 - **`pricing.trade_returns()` lives here, not with the statistics that read it.** It is
-  `realised(...) − cost`: a measurement. It sat in `verdict/significance.py` until 2026-09-18, which
-  made `simulate/fingerprint.py` import the inference layer to get a per-trade return. A module that
+  `realised(...) − cost`: a measurement. It sat in `verdict/significance.py` until 2026-09-18,
+  which made a caller import the inference layer just to get a per-trade return. A module that
   computes the numbers it then judges cannot be cross-examined.
+- **"Sharpe total" is `core.significance.annual_sharpe()`** (owner's rule, 2026-10-01), the one
+  Sharpe for every table of crossmarket and crossTF: the classic Sharpe of the whole backtest's
+  daily P&L on **trading days** (Mon–Fri, days with nothing closed at zero; a weekend close counts
+  on Monday), mean/std × √252. It used calendar days until 2026-10-01, weekends included, which
+  shrank the ratio by ~√(5/7). It is a **different ruler** from `verdict/significance.moments()`'s
+  per-trade Sharpe, which stays unannualised because that is the scale the same-footprint
+  benchmark and MinTRL need — the two are shown side by side, never mixed.
 - **Long only.** `pricing.require_long_only()` refuses anything else rather than silently flipping a
   sign. Checked: all 92,329 trades of the 30-strategy sample are Buy.
 - **The fill convention is re-derived, never assumed.** `pricing.reconcile()` reproduces SQX's own
@@ -62,8 +69,9 @@ period.
   starts.** That is what lets `model/trade_models.semester_shift()` displace 2013H1 the same way in
   every market, which is what makes `simulate/joint.py` correctly sized.
 - **`curves.py` never adds two markets together.** Every market runs its own independent account, on
-  its own dates, with its own real sizes. Combining them is `simulate/portfolio.py`, where the
-  drawdown of a combination has to be computed on the combined curve and never summed from the parts.
+  its own dates, with its own real sizes — `sampled()` now carries the curve in both `pct` and
+  `usd` (2026-09-30: the equity-by-market chart reads dollars). The combined-account view that used
+  to sit in `simulate/portfolio.py` was removed the same day (owner's feedback §4.16).
 - **`units.py` converts, it does not format.** `dollars()` multiplies by the entry price and the
   size; `scaled()` divides by the market's median ATR as a fraction of price — the same constant
   `backtest.run()` divides `mean_r` by, so the two are on one axis. That arithmetic is why it is here

@@ -8,7 +8,7 @@ from core import fanout, tradestore
 from studies.transfer.crossmarket.mechanics import curves, envelope
 from studies.transfer.crossmarket.orchestrate import (market as market_run, stretch as oos_run,
                                                       views)
-from studies.transfer.crossmarket.simulate import backtest, correlation, portfolio
+from studies.transfer.crossmarket.simulate import backtest, correlation
 from studies.transfer.crossmarket.verdict import breadth, inference
 
 # What the workers read — the export, every feed's bars, the base asset's setting — set before
@@ -33,7 +33,7 @@ def _unit(key: str) -> tuple:
         return oos_run.run(got["setup"], got["cfg"], got["name"], got["setup"]["asset"], quiet)
     market = got["markets"][key]
     return market_run.analyse_market(got["cfg"], market, got["trades"][key],
-                                     got["setup"]["bars"][key], got["base"], quiet)
+                                     got["setup"]["bars"][key], quiet)
 
 
 def analyse_strategy(setup: dict, cfg: dict, name: str, only: str | None,
@@ -50,23 +50,19 @@ def analyse_strategy(setup: dict, cfg: dict, name: str, only: str | None,
     Returns:
         The record the session holds: the per-market rows, every model's full result, the
         markets this strategy produced no trades on at all, the strategy's summary, every
-        market's equity curve, the combined portfolio account, the correlation matrix, the
-        base asset's own row — the reference case, never evidence — and `oos`, the same
-        random-entry test run on the base asset's declared out-of-sample stretch alone. The
-        base asset is in the portfolio and in the equity overlay because the question there
-        is what the combination does, and the combination the owner would trade has gold in
-        it. `oos` is in neither, and in no per-market view: see oos_run.py.
+        market's equity curve, the correlation matrix, the base asset's own row — the
+        reference case, never evidence — and `oos`, the same random-entry test run on the
+        base asset's declared out-of-sample stretch alone. The base asset is in the equity
+        overlay and the correlation matrix. `oos` is in neither, and in no per-market view:
+        see oos_run.py.
     """
     universe = setup["universe"]
     main = universe["main"]
     base_trades = tradestore.market(setup["trades"], name, main)
     base_bars = envelope.window(base_trades, setup["bars"][main])
-    # The base asset carries its own bars: the fingerprint compares every market's
-    # distributions against it, and that needs its ATR as well as its trades.
     base = {**backtest.setting(base_trades, base_bars, cfg), "bars": base_bars}
     weekly = {main: correlation.weekly_equity(base, base_bars)}
     equity = {main: curves.series(base, cfg)}
-    streams = {main: portfolio.priced(base, main)}
 
     wanted = [m for m in universe["markets"] if only is None or m["feed"] == only]
     # The OOS stretch is one more unit of work when the whole strategy is run; a single-market
@@ -96,12 +92,11 @@ def analyse_strategy(setup: dict, cfg: dict, name: str, only: str | None,
         rows.append(row)
         runs[feed] = got
         weekly[feed], equity[feed] = extra["weekly"], extra["curve"]
-        streams[feed] = extra["stream"]
     per_market = pd.DataFrame(rows)
     return {"rows": per_market.to_dict("records"), "runs": runs, "missing": missing,
             "summary": {"family": inference.family(per_market), "missing": len(missing),
                         **breadth.summary(per_market, cfg["diagnostics"]["alpha"])},
             "base": {"feed": main, **market_run.tests(base, base_bars, cfg, main),
                      "trades": len(base["held"])},
-            "oos": oos, "equity": equity, "weekly": weekly, "streams": streams,
-            **views.build(weekly, streams, runs, cfg)}
+            "oos": oos, "equity": equity, "weekly": weekly,
+            **views.build(weekly, runs, cfg)}

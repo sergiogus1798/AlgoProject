@@ -1,14 +1,10 @@
 """Each market's equity on its own real calendar, and what it is worth at equal risk.
 
 Every market runs its **own independent account**: the same starting capital, its own real
-position sizes, its own dates. Nothing here adds two markets together — that is
-simulate/portfolio.py, where the drawdown of a combination has to be computed on the
-combined curve, never summed from the parts."""
+position sizes, its own dates. Nothing here adds two markets together."""
 
 import numpy as np
 import pandas as pd
-
-COMBINED = "cuenta combinada"    # what the whole account is called on the portfolio chart
 
 
 def sampled(equity: np.ndarray, closed: pd.DatetimeIndex, cfg: dict) -> dict:
@@ -20,36 +16,17 @@ def sampled(equity: np.ndarray, closed: pd.DatetimeIndex, cfg: dict) -> dict:
         cfg: What config.load() returned.
 
     Returns:
-        Keys dates (ISO) and pct, per cent of the starting account. Thinned by index rather
-        than by time, so a stretch with no trades is a flat line between two real points
-        instead of a hundred repeated ones.
+        Keys dates (ISO), pct (per cent of the starting account) and usd (the same cumulative
+        P&L, in dollars — §4.5, owner 2026-09-30: the equity-by-market chart reads USD, not
+        percent, because a market's dollar P&L is what a reader can check against the
+        databank). Thinned by index rather than by time, so a stretch with no trades is a flat
+        line between two real points instead of a hundred repeated ones.
     """
     steps = min(cfg["equity"]["steps"], len(equity))
     edges = np.unique(np.linspace(0, len(equity) - 1, steps).astype(int))
     return {"dates": [str(closed[i].date()) for i in edges],
-            "pct": (equity[edges] / cfg["equity"]["starting"] * 100).tolist()}
-
-
-def combined(merged: pd.DataFrame, cfg: dict) -> dict:
-    """The combined account's equity, and what each market contributed to it.
-
-    Args:
-        merged: What portfolio.stream() returned — every market's trades in close order.
-        cfg: What config.load() returned.
-
-    Returns:
-        {"cuenta combinada": series} plus one per market, in the shape overlays.equity() draws. Every
-        market's line is its own cumulative P&L inside the **shared** account, so the lines
-        add up to the combined one. That is the difference from series() below, where each
-        market has an independent account and the heights are not comparable at all: here a
-        market's line reads as "how much of the combined result is this one", and a line that
-        spends the sample under zero is a market the rest of the account carried.
-    """
-    parts = [(COMBINED, merged)] + [(f, merged[merged["feed"] == f])
-                                       for f in merged["feed"].unique()]
-    return {feed: sampled(np.cumsum(part["pnl"].to_numpy()),
-                          pd.DatetimeIndex(part["close"].to_numpy()), cfg)
-            for feed, part in parts}
+            "pct": (equity[edges] / cfg["equity"]["starting"] * 100).tolist(),
+            "usd": equity[edges].tolist()}
 
 
 def series(fixed: dict, cfg: dict) -> dict:

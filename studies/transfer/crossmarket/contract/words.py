@@ -1,5 +1,12 @@
 """The Spanish the study speaks: each null model's name and argument, the checks, the glossary."""
 
+# The two tests the owner renamed 2026-09-30: no "1A"/"1B" anywhere a reader sees, ever. The
+# internal keys ("random", "paired") stay — renaming them is a bigger change for no reader-facing
+# gain — only the words a person reads change. Timing Alpha carries no decision criterion yet
+# (owner, 2026-09-30): it is read, not judged.
+TEST_1A = "Entrada aleatoria"
+TEST_1B = "Timing Alpha"
+
 # What each model is called on screen. The registry keys stay as they are — they are the
 # contract trade_models.MODELS, config.yaml and every docstring share — and this is the only
 # place a reader's name for one lives.
@@ -24,15 +31,16 @@ EXPLAINED = {
         "fichero de velas: si el backtest va de 2008 a 2022, ninguna simulación opera en "
         "2007 ni en 2023."),
     "resampled_holds": (
-        "<b>Lo que añade sobre Shuffled Sequence:</b> ya no conserva el conjunto. En vez de "
-        "barajar las duraciones reales, las <b>sortea con reemplazo</b> — una duración puede "
-        "salir dos veces y otra ninguna. Consecuencia: el <b>tiempo total en mercado varía "
-        "de tirada en tirada</b>, cosa que Shuffled Sequence fija.<br><br>"
-        "Contesta: <i>¿el ritmo de operar de esta estrategia, como población y no como esta "
-        "realización concreta, vale algo?</i> En la práctica sobre estos datos da casi "
-        "exactamente lo mismo que Shuffled Sequence (σ dentro del 2%, p dentro de 0,005): "
-        "una vez que la colocación es libre, dominar dónde cae la tirada importa mucho más "
-        "que si el multiset se conserva."),
+        "<b>La misma idea que Shuffle sequence, con reemplazo.</b> En vez de barajar el "
+        "conjunto real de duraciones y esperas — cada una usada exactamente una vez —, las "
+        "<b>sortea con reemplazo</b>: en una tirada dada, una duración real puede salir dos "
+        "veces y otra ninguna. Consecuencia directa: el <b>tiempo total en mercado ya no es "
+        "fijo</b> de tirada en tirada, mientras que en Shuffle sequence sí lo es.<br><br>"
+        "Contesta: <i>¿el ritmo de operar de esta estrategia, leído como una población de "
+        "duraciones posibles y no como esta lista concreta, vale algo?</i> Medido sobre estos "
+        "datos da casi lo mismo que Shuffle sequence (σ dentro del 2%, p dentro de 0,005): una "
+        "vez que la colocación es libre, dónde cae la tirada pesa mucho más que si el conjunto "
+        "exacto de duraciones se conserva o no."),
     "fitted_holds": (
         "<b>Lo que añade sobre Resampled Sequence:</b> las duraciones ya <b>ni siquiera "
         "salen de las reales</b>. Se ajusta una distribución a ellas — binomial negativa si "
@@ -76,14 +84,25 @@ EXPLAINED = {
         "del mismo tipo de mercado, pero en otro momento, habría ganado lo mismo?</i>"),
 }
 
-# Why there is no fifth model. Kept in the panel so the question is not reopened from scratch.
-RETIRED = (
-    "<b>Renewal Process, retirado el 15-09-2026.</b> Recorría las velas y, estando plano, "
-    "decidía entrar con la frecuencia empírica, de modo que también el número de operaciones "
-    "era aleatorio. Sobre el papel añadía algo; medido sobre 8 pares estrategia×mercado <b>no "
-    "añadía nada</b>: misma anchura que Resampled Sequence dentro del 2% y mismo p dentro de "
-    "0,004, en todos ellos. Una vez que la colocación es libre sobre toda la muestra, lo que "
-    "manda es en qué década cae la tirada, y eso los tres primeros ya lo aleatorizan igual.")
+# The "?" of the KS warning (owner, 2026-09-30): what the test is and what its rejection costs.
+KS_HELP = ("Kolmogorov–Smirnov compara la distribución ajustada a las duraciones con las "
+           "duraciones reales. Si rechaza (p por debajo de alpha), el nulo de entrada aleatoria "
+           "que sortea de esa distribución (Fitted Distributions Sequence) no reproduce las "
+           "duraciones reales, y sus p-valores son cuestionables. Los otros modelos reutilizan "
+           "las duraciones reales y no se ven afectados.")
+
+# One line per model, for the list under the Entrada aleatoria tab; EXPLAINED is the long form.
+SHORT = {
+    "segment_permute": "Baraja el orden de las duraciones y esperas reales y las coloca desde "
+                       "una vela al azar: mismo tiempo en mercado, otro momento.",
+    "resampled_holds": "Como Shuffled Sequence, pero sortea las duraciones y esperas con "
+                       "reemplazo: el tiempo total en mercado cambia de tirada en tirada.",
+    "fitted_holds": "Sortea duraciones nuevas de una distribución ajustada a las reales "
+                    "(binomial negativa o Poisson). Solo vale si el ajuste pega (KS).",
+    "block_shift": "Mueve cada operación semanas enteras dentro de su semestre, mismo día y "
+                   "hora: cambia solo cuándo entra. Es el p del resumen.",
+    "regime_strata": "Recoloca cada operación en una vela al azar de su mismo régimen de "
+                     "volatilidad y tendencia."}
 
 # The report is read in Spanish; model/trade_models.RANDOMISES is code, and stays English.
 RANDOMISES = {"segment_permute": "cuándo entra, el orden, las rachas y el régimen",
@@ -99,7 +118,8 @@ DIAGNOSTICS = [("convention", "convención de fill", "la que reprodujo los preci
                ("fill_offset", "spread de entrada (ATR)", "constante; lo paga también cada nulo"),
                ("on_open_price", "entradas al precio de su vela", "1,00 = ningún fill intravela"),
                ("on_bar_open", "entradas selladas en apertura", "sólo el reloj; no dispara nada"),
-               ("off_grid", "operaciones que no ocupan ninguna vela", "fuera de 1a, 1b y 1c; dentro del beneficio"),
+               ("off_grid", "operaciones que no ocupan ninguna vela",
+                f"fuera de {TEST_1A}, {TEST_1B} y Exposición; dentro del beneficio"),
                ("calendar_kept", "calendario conservado", "1,00 en block_shift"),
                ("friday_exit", "salidas por cierre de viernes", "el nulo las reproduce"),
                ("atr_ratio", "volatilidad en las entradas", "1,00 = la media del mercado"),
@@ -111,6 +131,7 @@ DIAGNOSTICS = [("convention", "convención de fill", "la que reprodujo los preci
 
 # What every number on the page means, in the owner's own terms. Plain text: the window prints it.
 GLOSSARY = [
+    {"term": "KS (Kolmogorov–Smirnov)", "text": KS_HELP},
     {"term": "El estadístico (mean_r)", "text": "Retorno logarítmico medio por operación, ya "
      "descontado el coste, dividido por el ATR mediano del mercado. Esa constante es la misma "
      "para el real y para los aleatorios, así que no mueve ningún p: sólo pone oro, plata y "
@@ -119,14 +140,16 @@ GLOSSARY = [
      "real. 0,03 son 3 de cada 100. No es la probabilidad de que la estrategia funcione."},
     {"term": "Ventaja", "text": "Real menos la mediana de los aleatorios: el tamaño del efecto, "
      "lo que hay que mirar cuando el p sale ajustado."},
-    {"term": "Test pareado (1b)", "text": "Cada operación contra la media exacta de todas las "
-     "ventanas de su misma duración en su mismo tramo. El coste se cancela: no dice si gana "
-     "dinero, sólo si sus entradas eligen momento."},
-    {"term": "$ acumulado (1b)", "text": "Cuánto de lo que ganó la estrategia lo puso el "
-     "momento de entrar, y no el simple hecho de estar dentro del mercado."},
-    {"term": "Sensibilidad de 1b", "text": "El mismo test con ventanas centradas de ±3, ±6 y "
-     "±12 meses y con semestres fijos. Un p que aguanta las cuatro no depende de esa elección."},
-    {"term": "A y E (1c)", "text": "A es el exceso por vela sobre la vela media del mercado, "
+    {"term": TEST_1B, "text": "Cada operación contra la media exacta de todas las ventanas de "
+     "su misma duración en su mismo tramo. El coste se cancela: no dice si gana dinero, sólo si "
+     "sus entradas eligen momento. Sin criterio de decisión propio todavía (2026-09-30): se lee, "
+     "no se juzga."},
+    {"term": f"$ acumulado ({TEST_1B})", "text": "Cuánto de lo que ganó la estrategia lo puso "
+     "el momento de entrar, y no el simple hecho de estar dentro del mercado."},
+    {"term": f"Sensibilidad de {TEST_1B}", "text": "El mismo test con ventanas centradas de "
+     "±3, ±6 y ±12 meses y con semestres fijos. Un p que aguanta las cuatro no depende de esa "
+     "elección."},
+    {"term": "A y E (Exposición)", "text": "A es el exceso por vela sobre la vela media del mercado, "
      "definido siempre; E es el mismo cociente y sale con su intervalo de Fieller, no acotado "
      "cuando la deriva del mercado no se distingue de cero."},
     {"term": "Los modelos", "text": "No hay una única forma correcta de convertir un backtest "

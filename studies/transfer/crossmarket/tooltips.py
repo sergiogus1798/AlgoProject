@@ -1,14 +1,14 @@
 """One sentence per config.yaml knob, for the config drawer's hover text."""
 
 TIPS = {
-    "nulls.batch_draws": "Corridas nulas por mercado en el lote de toda la exportación: su "
+    "nulls.batch_draws": "Runs nulos por mercado en el lote de toda la exportación: su "
                          "veredicto lee el intervalo de la esperanza, no la p, y el nulo era "
                          "el 84 % de su CPU.",
-    "nulls.batch_cells": "Máximo de corridas × operaciones que el lote valora de una vez, unos "
+    "nulls.batch_cells": "Máximo de runs × operaciones que el lote valora de una vez, unos "
                          "90 bytes cada una: es el mando de la memoria.",
     "nulls.headline": "El modelo nulo cuya p resume la tabla: block_shift es el único que cambia "
                       "una sola cosa, así que su p baja sólo se atribuye al momento de entrar.",
-    "nulls.chunk": "Corridas aleatorias valoradas por tanda; es memoria, no estadística.",
+    "nulls.chunk": "Runs aleatorios valorados por tanda; es memoria, no estadística.",
     "equity.starting": "Cuenta, en USD, desde la que arranca la curva de equity aditiva.",
     "equity.steps": "Puntos por curva; un SVG no puede enseñar más.",
     "equity.bands": "Los percentiles del cono que se dibuja alrededor de la curva real.",
@@ -90,36 +90,9 @@ TIPS = {
     "paired.sensitivity": "Todas las definiciones con las que se corre además el test, para "
                           "ver si el p depende de la elección. Un p que aguanta las cuatro no "
                           "depende de ella; uno que sólo aguanta una la tenía de muleta.",
-    "portfolio.block_weeks": "Semanas de calendario por bloque del remuestreo del portfolio. "
-                             "En calendario y no en operaciones: lo que importa en una cartera "
-                             "es que dos mercados pierdan la misma semana, y remuestrear "
-                             "operaciones sueltas destruye justo eso.",
-    "portfolio.draws": "Remuestreos y barajados de la cuenta combinada.",
-    "portfolio.order_block": "Operaciones por bloque al barajar el orden del portfolio, de "
-                             "engines.resample.draws.",
     "equity.risk_target_dd": "Caída máxima a la que se reescala cada mercado para compararlos "
                              "a riesgo igual. 0,10 = cada mercado se dimensiona hasta que su "
                              "peor caída es el 10% de la cuenta.",
-    "stress.sims": "Ejecuciones degradadas por mercado. Igualado al número de sorteos de los "
-                   "nulos, para que su p tenga la misma resolución.",
-    "stress.calibrate": "Toma cost_shock y fill_depth de execution.yaml para los feeds "
-                        "declarados allí, en vez de los números redondos de este fichero. "
-                        "p_skip nunca se calibra: nada en el export dice cuántas órdenes se "
-                        "habrían perdido.",
-    "stress.p_skip": "Probabilidad de que cada operación simplemente no ocurra. Es un supuesto "
-                     "explícito y no se calibra desde ningún dato.",
-    "stress.cost_shock": "Multiplicador de coste por tirada, si no hay calibración. Con "
-                         "calibración sale de spread_stress / spread_typical del feed.",
-    "stress.fill_frac": "Fracción de operaciones que se llenan peor.",
-    "stress.fill_depth": "Parte de su propia excursión adversa que devuelve una operación mal "
-                         "llena. Con calibración sale del slippage típico del feed frente a su "
-                         "MAE mediana.",
-    "stress.cost_multiples": "Múltiplos del coste a los que se vuelve a valorar todo, para "
-                             "ver a partir de cuál desaparece el beneficio.",
-    "stress.bar_shift": "Velas que se desplazan entrada y salida para ver cuánto decae el "
-                        "resultado si la ejecución llega tarde.",
-    "stress.slippage_fractions": "Fracción del rango de la vela que se cede en contra en "
-                                 "cada extremo.",
     "diagnostics.alpha": "El nivel contra el que se colorean los p-valores. No decide nada: "
                          "aquí no hay veredicto, sólo un umbral de lectura.",
     "diagnostics.min_trades": "Por debajo de esto el mercado se marca como muestra pequeña. "
@@ -139,14 +112,13 @@ TIPS = {
                                   "dispara.",
     "diagnostics.min_on_grid": "Por debajo de esta fracción de operaciones colocables en la "
                                "rejilla de velas salta un aviso. Una operación que abre y "
-                               "cierra dentro de la misma vela no tiene intervalo, así que 1a, "
-                               "1b y 1c no pueden usarla; el beneficio y la caída de la "
-                               "pestaña Backtest sí la incluyen.",
+                               "cierra dentro de la misma vela no tiene intervalo, así que "
+                               "Entrada aleatoria, Timing Alpha y Exposición no pueden usarla; "
+                               "el beneficio y la caída de la pestaña Backtest sí la incluyen.",
 }
 
 GROUPS = {"nulls": "Modelos nulos", "sweep": "Barrido de ventana",
           "joint": "Nulo conjunto",
           "strata": "Estratos de régimen", "equity": "Cuenta y curvas", "bootstrap": "Bootstrap",
-          "exposure": "Exposición (1c)", "paired": "Test pareado (1b)",
-          "portfolio": "Portfolio", "stress": "Coste y ejecución",
+          "exposure": "Exposición", "paired": "Timing Alpha",
           "diagnostics": "Lectura y avisos"}

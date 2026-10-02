@@ -17,7 +17,7 @@ four fields
 | `inference.py` | Every reason to distrust a market, which test a result actually is, whether a sweep point has the power to be read, and which way a sweep curve goes. **It decides nothing** | imported | row, blocks, points → warnings, power, trend |
 | `significance.py` | Minimum track-record length against the same-footprint random trader, not zero (OPEN.md #71), and bootstrap CIs on PF and expectancy. No DSR — see `POSSIBLE_IMPROVEMENTS.md` | imported | returns → moments, CI |
 | `fieller.py` | The interval of a ratio whose denominator can be zero: unbounded when it is, instead of a number that looks decided | imported | moments → interval |
-| `breadth.py` | Breadth, worst-market floor and PF dispersion across one strategy's markets | imported | per-market rows → breadth, floor, CV |
+| `breadth.py` | Breadth, worst-market floor, median PF and PF dispersion (std, not CV since 2026-09-30 — the databank table reads it "STD del PF") across one strategy's markets | imported | per-market rows → breadth, floor, median, std |
 | `alerts.py` | Every warning in four parts: what fired it, what it affects, what it does **not**, and what to do | imported | row → HTML |
 
 A `grep` is the proof that the direction holds:

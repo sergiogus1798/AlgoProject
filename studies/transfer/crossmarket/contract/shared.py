@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from core.study import blocks
+from core.symbols import alias
 from studies.transfer.crossmarket.simulate import metrics
 
 TAGS = re.compile(r"<[^>]+>")
@@ -50,21 +51,28 @@ def cone(run_cone: dict, title: str, note: str = "") -> dict:
             "real": run_cone["observed"], "split": None, "note": note}
 
 
-def metric_table(table: dict, cfg: dict, title: str) -> dict:
-    """Every statistic of one simulated run against the real backtest, percentiles included."""
+def metric_table(table: dict, cfg: dict, title: str, keys: tuple[str, ...] | None = None) -> dict:
+    """Every statistic of one simulated run against the real backtest, percentiles included.
+
+    Args:
+        table: {statistic: what metrics.summarise() returned}.
+        cfg: What config.load() returned.
+        title: What the reader is looking at.
+        keys: Which statistics to show, in order; defaults to every one metrics.TABLED names
+            (the computation itself is never trimmed — only what a table displays is).
+    """
     qs = cfg["equity"]["percentiles"]
-    rows = [[metrics.LABELS[n] + (" (más es mejor)" if metrics.HIGHER_IS_BETTER[n]
-                                  else " (menos es mejor)"),
-             v["observed"], v["median"], v["p_value"], v["beats"], *[v["p"][q] for q in qs]]
-            for n, v in ((n, table[n]) for n in metrics.TABLED if n in table)]
+    rows = [[metrics.LABELS[n], v["observed"], v["median"], v["p_value"], v["beats"],
+             *[v["p"][q] for q in qs]]
+            for n, v in ((n, table[n]) for n in (keys or metrics.TABLED) if n in table)]
     alpha = cfg["diagnostics"]["alpha"]
     return blocks.table(title, pd.DataFrame(
         rows, columns=["estadístico", "real", "mediana simulada", "p", "bate a",
                        *[f"p{q:g}" for q in qs]]),
         f"p: qué fracción de las simulaciones igualó o superó al real en ese indicador; "
         f"cuanto más pequeño, más difícil de explicar por suerte (criterio {alpha:.2f}). "
-        f"«Bate a» es la otra cara. En drawdown y racha perdedora ambos se calculan con "
-        f"«menos es mejor».")
+        f"«Bate a» es la otra cara. En drawdown y racha perdedora, tanto p como «bate a» leen "
+        f"el lado que es mejor para ese indicador: sufrir menos, no sufrir más.")
 
 
 def on_axis(curves: dict[str, dict], key: str) -> tuple[list[str], dict[str, list]]:
@@ -92,9 +100,13 @@ def on_axis(curves: dict[str, dict], key: str) -> tuple[list[str], dict[str, lis
 
 def bars(title: str, items: list[tuple[str, float]], unit: str, reference: float | None,
          note: str = "", good: float | None = None) -> dict:
-    """One bar per market; green above `good` (or the reference) and red below it."""
+    """One bar per market; green above `good` (or the reference) and red below it.
+
+    `items`' labels are raw SQX feeds — aliased to their short name here (§1, review pass
+    2026-09-30), since `bars` is free-form text the generic renderer never shortens itself.
+    """
     cut = good if good is not None else reference
     return {"kind": "bars", "title": title, "unit": unit, "reference": reference, "note": note,
-            "items": [{"label": k, "value": v, "error": None,
+            "items": [{"label": alias(k), "value": v, "error": None,
                        "state": "info" if cut is None or v != v else
                        "pass" if v > cut else "fail"} for k, v in items]}

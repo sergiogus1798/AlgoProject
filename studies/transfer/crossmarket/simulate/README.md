@@ -15,18 +15,19 @@ exception, below)
 | `realrun.py` | The real backtest's own statistics — over **everything SQX reported** and over the grid-locatable subset, which are not the same population — and the mechanical checks | imported | fixed + bars → stats, checks |
 | `metrics.py` | **What a run is worth.** Net, drawdown, Ret/DD, Sharpe, PF and the losing run of thousands of runs at once, each with its own good side | imported | P&L matrix → statistics |
 | `sweep.py` | **The window sweep.** Calendar blocks of each size, the trades and free room in each, and a free-placement model confined to them | imported | bars + trades + model → blocks, entries, holds |
-| `stress.py` | Cost gradient, breakeven cost multiple, and decay under a bar shift or range slippage | imported | fixed + bars → cost/slippage curves |
 | `exposure.py` | **Test 1c.** Drift-neutral excess A with a hold-weighted bootstrap CI, its risk-normalised form, and concentration E with a Fieller interval | imported | fixed + bars → A, E |
-| `paired.py` | **Test 1b.** Each trade against the exact mean of every window of its own length, near it in time — a centered window or the regime block, and the test is run under both | imported | fixed + bars → alpha, Wilcoxon p |
-| `portfolio.py` | **The Portfolio tab.** Every market as one account, what each one adds to it, how often they overlapped, and two ways of asking how much is luck | imported | streams → account, marginal |
+| `paired.py` | **Timing Alpha.** Each trade against the exact mean of every window of its own length, near it in time — a centered window or the regime block, and the test is run under both | imported | fixed + bars → alpha, Wilcoxon p |
 | `joint.py` | **The joint null.** One a-priori statistic over the out-of-sample markets and one p, pooled from draws that displace every market together | imported | runs → joint p |
-| `fingerprint.py` | Behavioural fingerprint against the base asset: holding-time KS, MAE/MFE by ATR, return shape, MFE capture, and the four overlaid histograms | imported | trades + bars → fingerprint |
-| `correlation.py` | Weekly equity curves and their correlation matrix across a strategy's markets plus the base asset | imported | curves → correlation |
+| `correlation.py` | Weekly equity curves, and the correlation of their **weekly returns** (a diff of the curve, not its level) across a strategy's markets plus the base asset | imported | curves → correlation |
 
-`correlation.py` and `fingerprint.py` are here and not in `verdict/` on one test: **neither reads a
-threshold from `cfg` and neither emits a named warning.** They produce statistics — a matrix, a KS
-statistic, an excursion profile — and hand them on. `fingerprint.py` says so in its own first line:
-descriptive, against the base asset, never against chance.
+**Removed 2026-09-30 (owner's feedback §4.16):** `stress.py` (cost gradient, breakeven, bar-shift
+and slippage decay — the "Coste y ejecución" tab) and `portfolio.py` (the combined account, the
+"Portfolio" tab) and `fingerprint.py` (the behavioural fingerprint, the "Huella" tab). Code, UI and
+tests, so none of it computes any more; `inputs/execution.py` and `execution.yaml`, which only fed
+`stress.py`, are gone with it.
+
+`correlation.py` is here and not in `verdict/` on one test: **it reads no threshold from `cfg` and
+emits no named warning.** It produces a statistic — a matrix — and hands it on.
 
 **The one declared import exception** is `exposure.py → verdict/fieller`. `fieller.interval()` is the
 primitive with which `exposure` produces its own headline number E; it is the same carve-out
@@ -213,28 +214,13 @@ the markets' null spreads sit within a small factor of each other — 🔬 measu
 0.1026, a factor of 1.20. Switch it to `z` when one market's spread is several times another's, or
 that market decides the verdict on scale alone.
 
-## Does adding a market break the portfolio?
+## The combined-portfolio account was removed (2026-09-30)
 
-The retest asks whether the edge transfers; `portfolio.py` asks the question that follows from it —
-*oil and the Nasdaq need not be brilliant, but they must not wreck what gold does.* One account of
-`equity.starting` for every market at once, the base asset included as the core position, and the
-drawdown computed on the **combined** curve, never summed from the parts, as `portfolio/CLAUDE.md`
-requires.
-
-The table it exists for is **marginal contribution**: the whole portfolio, the portfolio without each
-market, and the difference on every statistic. A market whose Δ Ret/DD is negative is costing the
-combination more than it brings, however good its own p-value was. 🔬 Measured on `Strategy 2.29.29`:
-gold +2.70, silver −0.19, Brent **−4.55**.
-
-Two different ways of asking how much of it is luck, because they are not the same question:
-**calendar-block resampling** (`portfolio.block_weeks`, default four weeks) draws whole weeks, so
-every market's trades inside a block travel together and a week that was bad for two markets at once
-stays bad for both — resampling single trades would destroy exactly the dependence being measured;
-and **reordering**, delegated to `engines.resample.draws`, which leaves composition
-untouched so net profit is invariant by construction and only the path statistics move.
-
-It is one strategy in N markets, **not** N strategies: building the owner's real portfolio is
-`portfolio/`, where `DECISIONS.md` still has the design open.
+`portfolio.py` used to ask whether adding a market broke the combination — one account of
+`equity.starting` for every market at once, the drawdown on the combined curve, marginal
+contribution per market, and two ways of resampling how much of it was luck. The owner's feedback
+§4.16 dropped the tab and the code behind it (kept as history here, not as a contract): building
+the owner's real portfolio was always `portfolio/`'s job, not a side effect of this retest.
 
 ## Contracts and traps
 
@@ -250,7 +236,3 @@ It is one strategy in N markets, **not** N strategies: building the owner's real
   two or three streams PC1 is close to a function of the mean pairwise correlation, so it added an
   axis the matrix did not carry. It is recorded as *discarded with a reason* in
   `POSSIBLE_IMPROVEMENTS.md`.
-- **`fingerprint.capture_ratio` measures the exit, not the entry**, which is why it lives there and
-  not in `exposure.py`. A trade that never moved favourably has an undefined capture ratio, not an
-  infinite one: 7 of 844 silver trades are such, and keeping them makes the mean ±inf while the
-  median silently ignores the problem.

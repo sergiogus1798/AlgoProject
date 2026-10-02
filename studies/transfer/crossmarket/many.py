@@ -2,40 +2,23 @@
 
 import os
 import time
-from functools import lru_cache
 
 import pandas as pd
 
 from core import fanout, tradestore
 from core.study import blocks, result as envelope
 from studies.transfer.crossmarket.inputs.config import batch as batch_cfg
-from studies.transfer.crossmarket.mechanics import envelope as window
 from studies.transfer.crossmarket.orchestrate import market as market_run
-from studies.transfer.crossmarket.simulate import backtest
 from studies.transfer.crossmarket.verdict import breadth, inference
 
 COLUMNS = ["strategy", "identity", "verdict", "reason", "markets", "cleared", "fraction",
-           "under_alpha", "paired_under_alpha", "edge_r", "worst_pf", "pf_cv", "family",
-           "missing", "warnings"]
+           "under_alpha", "paired_under_alpha", "edge_r", "worst_pf", "median_pf", "pf_cv",
+           "family", "missing", "warnings"]
 
 # What the workers read: the whole export and every feed's bars, which is gigabytes. Set
 # once before the pool is built and never written again, so `fork` hands each worker the
 # same pages instead of pickling them one per strategy.
 _SHARED: dict = {}
-
-
-@lru_cache(maxsize=4)
-def _base(name: str) -> dict:
-    """The strategy on its own base asset, which every market's fingerprint compares against.
-
-    Cached because the same worker usually draws several markets of one strategy: the tasks
-    are queued longest first, and a strategy's markets are close in length.
-    """
-    got = _SHARED["inputs"]
-    main = got["universe"]["main"]
-    trades = tradestore.market(got["trades"], name, main)
-    bars = window.window(trades, got["bars"][main])
-    return {**backtest.setting(trades, bars, _SHARED["cfg"]), "bars": bars}
 
 
 def _market(task: tuple[str, str]) -> dict:
@@ -46,14 +29,22 @@ def _market(task: tuple[str, str]) -> dict:
     markets are independent — every model and test seeds its own generator.
     """
     name, feed = task
-    got, cfg = _SHARED["inputs"], _SHARED["cfg"]
-    market = next(m for m in got["universe"]["markets"] if m["feed"] == feed)
-    trades = tradestore.market(got["trades"], name, feed)
-    # Fewer draws per batch on a long market, the same draws: block_shift's are keyed by the
-    # calendar, and 🔬 2026-09-26 its rows came out identical at chunks of 500 and 137.
-    n = cfg["nulls"]
-    cfg = {**cfg, "nulls": {**n, "chunk": max(1, min(n["chunk"], n["batch_cells"] // len(trades)))}}
-    return market_run.verdict_row(cfg, market, trades, got["bars"][feed], _base(name))
+    try:
+        got, cfg = _SHARED["inputs"], _SHARED["cfg"]
+        market = next(m for m in got["universe"]["markets"] if m["feed"] == feed)
+        trades = tradestore.market(got["trades"], name, feed)
+        # Fewer draws per batch on a long market, the same draws: block_shift's are keyed by
+        # the calendar, and 🔬 2026-09-26 its rows came out identical at chunks of 500 and 137.
+        n = cfg["nulls"]
+        cfg = {**cfg,
+               "nulls": {**n, "chunk": max(1, min(n["chunk"], n["batch_cells"] // len(trades)))}}
+        return market_run.verdict_row(cfg, market, trades, got["bars"][feed])
+    except Exception as e:
+        # §4.3 (owner, 2026-09-30): one market's failure used to end the whole population job
+        # with a traceback that never said which of the (strategy, market) tasks broke, or on
+        # what — the run bar only showed "un trabajo terminó con error". Named here, once, so
+        # it survives `ProcessPoolExecutor`'s re-raise and lands in the job's own log tail.
+        raise RuntimeError(f"{name} en {feed}: {e}") from e
 
 
 def row(name: str, rows: list[dict], missing: int, inputs: dict, cfg: dict) -> dict:
@@ -66,7 +57,8 @@ def row(name: str, rows: list[dict], missing: int, inputs: dict, cfg: dict) -> d
             "reason": reason, "markets": got["markets"], "cleared": got["cleared"],
             "fraction": round(got["fraction"], 4), "under_alpha": got["under_alpha"],
             "paired_under_alpha": got["paired_under_alpha"], "edge_r": round(got["edge_r"], 6),
-            "worst_pf": round(got["worst_market"]["pf"], 4), "pf_cv": round(got["pf_cv"], 4),
+            "worst_pf": round(got["worst_market"]["pf"], 4),
+            "median_pf": round(got["median_pf"], 4), "pf_cv": round(got["pf_cv"], 4),
             "family": got["family"], "missing": got["missing"], "warnings": got["warnings"]}
 
 

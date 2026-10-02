@@ -23,11 +23,15 @@ NAMES = tuple(HIGHER_IS_BETTER)
 TABLED = tuple(n for n in NAMES if n != "trades")
 # The statistics keep their industry names in English, the way a reader of any backtesting
 # report expects them; the sentences around them are Spanish because the owner reads those.
+# `sharpe` is never "total"/"global"/"anual" here: it is the per-trade mean/std of one path
+# (simulated or the one real backtest), and "Sharpe total" is reserved for the annualised
+# daily-equity number in `contract/backtest.py::evidence` (review pass 2026-09-30, §1 — a
+# label promising annualisation must be backed by one).
 LABELS = {"net": "Net profit", "return_pct": "Return on account",
           "dd": "Max drawdown", "dd_pct": "Max drawdown %",
-          "ret_dd": "Return/DD", "sharpe": "Sharpe per trade",
+          "ret_dd": "Return/DD", "sharpe": "Sharpe (por operación)",
           "pf": "Profit factor", "losing_run": "Longest losing run",
-          "trades": "Trades", "mean_r": "Mean return per trade (ATR units)"}
+          "trades": "Trades", "mean_r": "Mean R"}
 UNITS = {"net": "$", "dd": "$", "return_pct": "%", "dd_pct": "%", "ret_dd": "",
          "sharpe": "", "pf": "", "losing_run": "ops", "trades": "ops", "mean_r": ""}
 

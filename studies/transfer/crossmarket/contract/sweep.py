@@ -1,17 +1,17 @@
 """The window-sweep tab: the free-placement nulls re-drawn inside ever smaller calendar blocks."""
 
-import numpy as np
 import pandas as pd
 
 from core.study import blocks, result as envelope
+from core.symbols import alias
 from studies.transfer.crossmarket.contract import shared, words
 from studies.transfer.crossmarket.simulate import metrics, sweep
 
-METRICS = ("net", "mean_r", "ret_dd", "dd", "sharpe", "pf")
+# No `sharpe`: per-run, unannualised (review pass 2026-09-30) — same reasoning as
+# contract/nulls.py DRAWN.
+METRICS = ("net", "ret_dd", "dd", "pf")
 TRENDS = {"timing": "plano o decreciente: timing", "regime": "creciente: régimen",
           "no_pass": "sin pass a ningún tamaño", "unassessable": "no evaluable"}
-REASONS = {"short_window": "ventana por debajo de sweep.min_months",
-           "weak_blocks": "demasiadas operaciones en bloques débiles"}
 
 
 def window_name(window: str) -> str:
@@ -35,7 +35,7 @@ def grid(record: dict, cfg: dict, model: str, metric: str) -> dict:
         sw = runs["sweep"]
         at = {w["window"]: pt for w, pt in zip(sw["windows"], sw["points"][model])}
         ps = [_p(at[w], metric) if w in at else None for w in labels]
-        rows.append(feed)
+        rows.append(alias(feed))
         values.append(ps + [None])
         texts.append(["✕" if p is None else f"{p:.4f}" for p in ps]
                      + [TRENDS[sw["trend"][model][metric]]])
@@ -49,62 +49,36 @@ def grid(record: dict, cfg: dict, model: str, metric: str) -> dict:
 
 
 def curve(sw: dict, cfg: dict, feed: str, metric: str) -> dict:
-    """One market's p against block size, one series per swept model, the reference flat."""
-    x = [window_name(w["window"]) for w in sw["windows"]]
-    series = [{"label": words.NAMES[m], "values": [_p(pt, metric) for pt in sw["points"][m]],
-               "role": "real"} for m in cfg["sweep"]["models"]]
+    """One market's p against block size, one column per swept model, as a table (§4.14, owner
+    2026-09-30: a plot here invited reading a trend into three or four points; the table is
+    the same numbers with no line to over-read).
+
+    `feed` is already the short display name (`tab()` aliases it once before calling
+    `market()`/`curve()`) — never a raw SQX symbol.
+    """
+    models = cfg["sweep"]["models"]
+    body = [[window_name(w["window"]), *[_p(sw["points"][m][i], metric) for m in models]]
+            for i, w in enumerate(sw["windows"])]
+    columns = ["tamaño de bloque", *[words.NAMES[m] for m in models]]
     if sw["reference"] is not None:
-        series.append({"label": words.NAMES[cfg["sweep"]["reference"]],
-                       "values": [sw["reference"][metric]] * len(x), "role": "reference"})
-    return {"kind": "lines", "title": f"p de «{metrics.LABELS[metric]}» según el tamaño de "
-                                      f"bloque — {feed}", "unit": "p", "x": x, "series": series,
+        ref = sw["reference"][metric]
+        body = [[*r, ref] for r in body]
+        columns = [*columns, f"{words.NAMES[cfg['sweep']['reference']]} (referencia, plana)"]
+    return {**blocks.table(f"p de «{metrics.LABELS[metric]}» según el tamaño de bloque — {feed}",
+                           pd.DataFrame(body, columns=columns)),
             "select": {"mercado": feed, "estadístico": metrics.LABELS[metric]},
-            "note": "Si p se mantiene bajo al encoger, el acierto sobrevive sin la suerte de "
-                    "régimen: es timing. Si sube, el aprobado era herencia de régimen. La "
-                    "curva nunca converge a la referencia: es otro eje."}
-
-
-def power(sw: dict, feed: str, model: str, metric: str) -> dict:
-    """One model's sweep point by point, beside the counts that say how far to trust each p."""
-    body = []
-    for window, point in zip(sw["windows"], sw["points"][model]):
-        used = [b for b in window["blocks"] if b["trades"]]
-        counts = [b["trades"] for b in used]
-        withheld = point["table"] is None
-        body.append([window_name(window["window"]), len(window["blocks"]),
-                     len(window["blocks"]) - len(used), min(counts), float(np.median(counts)),
-                     sum(b["free"] for b in window["blocks"]),
-                     min(b["free_share"] for b in used), window["weak_share"],
-                     point["trades"], None if withheld else point["table"][metric]["std"],
-                     REASONS[window["reason"]] if withheld else _p(point, metric)])
-    return {**blocks.table(f"Potencia punto a punto — {feed} · {words.NAMES[model]}",
-                           pd.DataFrame(body, columns=[
-                               "ventana", "bloques", "vacíos", "ops/bloque mín",
-                               "ops/bloque mediana", "hueco libre (velas)", "libre mín",
-                               "ops en bloques débiles", "ops vivas por tirada",
-                               "σ del nulo", "p"])),
-            "select": {"mercado": feed, "modelo": words.NAMES[model],
-                       "estadístico": metrics.LABELS[metric]}}
-
-
-def blocks_table(sw: dict, feed: str) -> dict:
-    """Every block of every window size on one market; they depend on trades, not the model."""
-    body = [[window_name(w["window"]), f'{b["start"]} → {b["end"]}', b["bars"], b["trades"],
-             b["occupied"], b["free"], b["free_share"],
-             "" if not weak else "vacío" if not b["trades"] else "débil"]
-            for w in sw["windows"] for b, weak in zip(w["blocks"], w["weak"])]
-    return {**blocks.table(f"Bloques — {feed}", pd.DataFrame(body, columns=[
-        "ventana", "bloque", "velas", "operaciones", "ocupadas", "libres", "libre", ""])),
-            "select": {"mercado": feed}}
+            "note": "Si p se mantiene bajo al encoger el bloque, el acierto sobrevive sin la "
+                    "suerte de régimen: es timing. Si sube, el aprobado era herencia de "
+                    "régimen. La referencia no converge con los demás: es otro eje, el "
+                    "calendario y las rachas, no el tamaño del bloque."}
 
 
 def market(sw: dict, cfg: dict, feed: str) -> list[dict]:
     """Everything the sweep keeps for one market, tagged by its selectors."""
-    out = [blocks_table(sw, feed)]
+    out = []
     for metric in METRICS:
         out.append(curve(sw, cfg, feed, metric))
         for model in cfg["sweep"]["models"]:
-            out.append(power(sw, feed, model, metric))
             for window, point in zip(sw["windows"], sw["points"][model]):
                 if point["shapes"] is not None:
                     out.append({**shared.distribution(
@@ -124,13 +98,23 @@ def market(sw: dict, cfg: dict, feed: str) -> list[dict]:
     return out
 
 
+def model_list(models: list[str]) -> dict:
+    """What each swept (free-placement) model does, title + short text (§4.14)."""
+    return {"kind": "list", "title": "Qué hace cada modelo aquí", "items": [
+        {"title": words.NAMES[m], "text": shared.text(words.EXPLAINED[m])} for m in models],
+            "note": "Los tres son de colocación libre: destruyen a la vez régimen, calendario "
+                    "y rachas al correr sobre la ventana completa. Aquí se confinan a bloques "
+                    "cada vez más cortos, lo que devuelve el régimen y nada más."}
+
+
 def tab(record: dict, cfg: dict) -> dict:
     """The window sweep on every market, behind four selectors."""
     s = cfg["sweep"]
     body = [grid(record, cfg, m, k) for m in s["models"] for k in METRICS]
+    body.append(model_list(s["models"]))
     for feed, runs in record["runs"].items():
-        body += market(runs["sweep"], cfg, feed)
-    feeds = list(record["runs"])
+        body += market(runs["sweep"], cfg, alias(feed))
+    feeds = [alias(f) for f in record["runs"]]
     return envelope.tab(
         "sweep", "Barrido de ventana", body,
         selectors=[{"key": "modelo", "label": "Modelo",
@@ -146,6 +130,7 @@ def tab(record: dict, cfg: dict) -> dict:
                     "default": window_name(sweep.FULL)}],
         note="Los modelos de colocación libre destruyen a la vez régimen, calendario y "
              "rachas. Aquí se vuelven a sortear dentro de bloques cada vez más cortos: "
-             "encoger el bloque devuelve el régimen y nada más, así que la curva separa qué "
+             "encoger el bloque devuelve el régimen y nada más, así que la tabla separa qué "
              "parte del p es acierto y qué parte herencia de régimen. El estadístico del "
-             "veredicto sigue siendo mean_r bajo block_shift; el selector es exploración.")
+             "veredicto sigue siendo Mean R bajo Calendar Shift; el selector es exploración y "
+             "no lo mueve.")

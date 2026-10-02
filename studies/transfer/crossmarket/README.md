@@ -25,23 +25,28 @@ session would otherwise step in.
 |---|---|---|
 | `inputs/` | what is this study being run on? | touching a knob, a market declaration or a cost |
 | `mechanics/` | what did a trade occupy, and what was it worth? | touching the pricing, the bar grid or the window |
-| `simulate/` | what are the numbers, under a given model? | touching a test, the sweep or the portfolio |
+| `simulate/` | what are the numbers, under a given model? | touching a test or the sweep |
 | `verdict/` | what is there to distrust about them? | moving a threshold or adding a warning |
 | `orchestrate/` | how does one strategy go through every market? | changing what a market's analysis runs |
-| `contract/` | how is all of that read? — the twelve tabs as the contract's blocks | adding a figure, a table or a sentence |
+| `contract/` | how is all of that read? — the tabs as the contract's blocks | adding a figure, a table or a sentence |
 
 Only these sit in the root, because they are the only things that get called or edited:
 
 | file | what it does | run it |
 |---|---|---|
 | `load.py` | Everything a run reads, once: the export, its market universe, every feed's bars, the strategy names and their identity (`identity.resolve`: installs, cosecha, kept `.sqx`; empty where none names it) | imported |
-| `one.py` | **One strategy across every market, as the contract's data** — twelve tabs, the breadth verdict, warnings, glossary; `only=` runs one market alone | imported — the window calls it |
-| `many.py` | Every strategy judged on breadth, one (strategy, market) task per process: the verdict `/curate` applies | imported |
+| `one.py` | **One strategy across every market, as the contract's data** — the tabs, the breadth verdict, warnings, glossary; `only=` runs one market alone | imported — the window calls it |
+| `many.py` | Every strategy judged on breadth, one (strategy, market) task per process: the verdict `/curate` applies. `_market` wraps its body so a worker's exception always names its strategy and feed (§4.3, owner 2026-09-30) before `fanout.run` re-raises it in the parent — the population job's log then says which (strategy, market) broke and why, not just "falló" | imported |
 | `report.py` | The command: the batch to `verdict.csv` (with `identity`, and a `note` on each row left without one) and the export's page, or `--strategy NAME` for one strategy's whole study | `python3 -m studies.transfer.crossmarket.report --project P --databank D --asset USDJPY [--day DAY] [--strategy S]` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable of the study, grouped by section | edited, or `--set section.key=value` |
 | `assets/_markets.yaml` | What each base asset's markets are called, how they are grouped, and where its backtest's out-of-sample stretch starts | edited |
-| `execution.yaml` | Per feed, what a worse broker would charge | edited |
+
+**Removed 2026-09-30 (owner's feedback §4.16):** Cost-and-execution stress (`simulate/stress.py`,
+`inputs/execution.py`, `execution.yaml`, the "Coste y ejecución" tab), the behavioural fingerprint
+(`simulate/fingerprint.py`, the "Huella" tab) and the combined-portfolio account
+(`simulate/portfolio.py`, `contract/portfolio.py`, the "Portfolio" tab) are gone — code, UI and the
+config sections that fed them, not just hidden. Nothing else reads them.
 
 `orchestrate/` is the one folder allowed to cross layers — that is what an orchestrator is. Everyone
 else obeys one direction:
@@ -83,11 +88,12 @@ module that reads that file; `verdict/` is the only layer that turns a key into 
 saying what it randomises; and its key in `config.yaml` under `nulls.models`. The reader's Spanish
 name goes in `contract/words.NAMES`. Nothing else changes. → `engines/nulls/placement/README.md`.
 
-**Why can the panel not give different numbers from the report?** Because there is no report. The
-panel is the only entry point, nothing is written to disk and nothing is cached: every number comes
-from the run the owner just started, and nothing older is kept in `derived/crossmarket/`. The batch report was removed on 2026-09-15 at the owner's
-request, because a stored result can always be read as an answer to a question it was not computed
-for. → `orchestrate/README.md`.
+**Where do the numbers on the page come from?** `report.py` (encargo 19, 2026-09-25) writes them to
+`reports/<P>/<D>/<day>/crossmarket/` — the population's `crossmarket.json`, one
+`estrategias/<name>.json` per strategy studied whole, and `verdict.csv` for `/curate`. The window's
+per-market **run** button still calls `one.run(..., only=<feed>)` straight from the panel, and that
+partial result is never written to disk — merging it into what is stored is the daemon's job
+(`core/study/CONTRACT.md` §1), not this study's. → `orchestrate/README.md`.
 
 ## What this study does not do, by design
 
