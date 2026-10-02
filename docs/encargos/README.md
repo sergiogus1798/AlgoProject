@@ -122,6 +122,16 @@ puntos que la sesión de esa noche dejó a medias y que no son un arreglo de una
 | `40-cerebro-con-probabilidades.md` | una regresión logística que da a cada estrategia la probabilidad de pasar el paso siguiente, calibrada con nuestros datos (prototipo sobre 49.124 de XAUUSD: AUC 0,69-0,74, bien calibrada), como estudio y como regla de `criteria.yaml` con su coste | el objetivo y el corte de `p`, del dueño; runs completos para el objetivo bueno |
 | `41-fases-0-y-1.md` | **plan vivo** de las fases 0 y 1 del dossier `estado-y-direccion-2026-10-02`: proteger lo hecho (cortafuegos, commit, copia) y que la fábrica decida (criterios firmados, registro completo, monos de punta a punta con los encargos 9 y 30). Lleva tabla de estado y bitácora; cada sesión actualiza su punto | las decisiones D1-D7 del dueño; los encargos 9 y 30 |
 
+## La tanda de los repos externos, 2026-10-02
+
+Sale del dossier `docs/AgentPDFs/repos-externos-2026-10-02`: lo que el dueño eligió implementar de
+esa búsqueda y que no depende de nada más. Un jefe con tres agentes, tres frentes sin ficheros en
+común.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `42-noticias-memoria-y-contrastes.md` | **A** el filtro de noticias dentro del tester de MT5, con el histórico del calendario, y cuánto le cuesta a una estrategia · **B** una memoria que guarda por qué murió cada corrida, la hoja de hipótesis que se compara con lo construido, y un revisor distinto del que propone · **C** el Sharpe deflactado contra `jsharpe`, el spread desde OHLC como quinto modelo, y nuestros parsers contra los de fuera | las preguntas de cada frente, del dueño; ningún worker |
+
 ## Encargos vivos de tandas anteriores
 
 | fichero | agente | posee | estado |

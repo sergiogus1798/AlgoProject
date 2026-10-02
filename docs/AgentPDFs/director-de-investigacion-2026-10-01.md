@@ -299,6 +299,8 @@ salieron después se cerraron el mismo 2026-10-01:
   supervivientes. Con 9 corridas no se puede saber; por eso el punto 4 de §7 existe.
 - **La nula.** El remuestreo por bloques es la propuesta; la longitud del bloque cambia las p y no
   está elegida. En el dossier `Ajedrez4D` ya salió que esa longitud importa.
+  **Cerrado el 2026-10-01:** medida con `blocklen.py`, bloque de 1 barra
+  (`knowhow/research/market-profile-block-length.md`).
 - **El tiempo de cálculo del perfil.** 19 activos × 4 marcos × cientos de remuestreos: estimo
   minutos, no lo he medido.
 - **El coste del `ideaExpert` enfocado.** Los 7-8 $ son de sus diez sesiones sin perfil.
