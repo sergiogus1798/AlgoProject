@@ -59,5 +59,9 @@ def num(value: object, unit: str = "") -> str:
         return "∞" if v > 0 else "−∞"
     if unit == "p":
         return f"< {P_FLOOR}" if v < P_FLOOR else f"{v:.4f}"
+    if unit == "%":
+        # Always one decimal (§1: «7,7 %, no 8 %») — `_plain`'s four significant digits round
+        # a number past 10 to a whole one, which read as a rougher figure than the study gave.
+        return f"{v:.1f} %"
     text = _scaled(v)
     return f"{text} {unit}" if unit else text

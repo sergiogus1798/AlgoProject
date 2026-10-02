@@ -1,4 +1,5 @@
-"""The studies that write into a mother's variant batch: cloud, wfc and its compositions, cscv."""
+"""The studies that write into a mother's variant batch: cloud, wfc (and its compositions),
+cscv, marketSurfaces."""
 
 from collections import defaultdict
 from pathlib import Path
@@ -8,7 +9,10 @@ from pipeline.ledger.state import work_dir
 from ui.daemon.databank.cells import norm
 from ui.daemon.results import store
 
-STUDIES = ("cloud", "wfc", "cscv")
+# marketSurfaces was missing here until 2026-09-30 (FEEDBACK §8.5): its report writes
+# `estudios/marketSurfaces.json` beside cloud/wfc/cscv, but `/api/result` looked for it under
+# `reports/<P>/<D>/`, where it never lands — the run finished, the databank never got it.
+STUDIES = ("cloud", "wfc", "cscv", "marketSurfaces")
 
 
 def batches(project: str) -> dict[str, list[Path]]:
@@ -42,9 +46,18 @@ def summary(got: dict) -> dict[tuple[str, str], object]:
 def entry(path: Path) -> dict | None:
     """One batch study result as a table entry, or None when it is not a contract result.
 
+    Cached by the file's version: `marketSurfaces` and `cloud` JSONs run to megabytes, and
+    every databank table read ~230 of them afresh — 2.8 s per call, three calls per tab list,
+    past the window's 20-s timeout («El demonio no responde», 🔬 2026-10-01).
+
     Args:
         path: `estudios/<study>.json` or `estudios/wfc_<composition>.json`.
     """
+    return store.cached(path, _entry)
+
+
+def _entry(path: Path) -> dict | None:
+    """`entry`, uncached."""
     got, _ = store.load(path)
     if got is None:
         return None
@@ -77,13 +90,13 @@ def mothers(project: str) -> dict[str, dict]:
         mine = out.setdefault(name, {})
         for study in STUDIES:
             path = folders[0] / "estudios" / f"{study}.json"
-            if path.is_file() and (got := entry(path)):
-                mine[study] = got
+            if path.is_file() and (got := entry(path)):     # a copy: the cached one stays clean
+                mine[study] = {**got, "fields": dict(got["fields"]), "states": dict(got["states"])}
         for path in sorted((folders[0] / "estudios").glob("wfc_*.json")):
             got = entry(path)
             if got is None:
                 continue
-            wfc = mine.setdefault("wfc", {**got, "verdict": None, "fields": {}})
+            wfc = mine.setdefault("wfc", {**got, "verdict": None, "fields": {}, "states": {}})
             comp = path.stem.removeprefix("wfc_")
             wfc["fields"][(comp, "verdict")] = got["verdict"]
             wfc["fields"][(comp, "score")] = got["fields"].get(("", "score"))

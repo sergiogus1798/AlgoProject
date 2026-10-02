@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem
 
+from ui.text.columnhelp import label_for
 from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.desktop.theme import C
@@ -19,10 +20,12 @@ WIDEST = 280            # px: a long reason is cut and read on hover, not allowe
 class Cell(QTableWidgetItem):
     """One cell: shown through `numbers.num`, sorted on its value (a number as a number)."""
 
-    def __init__(self, value: object, ink: str = "", blank: str = "", tip: str = "") -> None:
+    def __init__(self, value: object, ink: str = "", blank: str = "", tip: str = "",
+                 bold: bool = False) -> None:
         """Hold the value in `ink` (the dead colour for a figure that says the strategy loses,
-        `columns.unprofitable`); `blank` is what a missing value reads («–» for a metric with
-        no data), `tip` why."""
+        `columns.unprofitable`, or a study's pass/fail); `blank` is what a missing value
+        reads («–» for a metric with no data), `tip` why. `bold`: a Pass/Fail verdict, in its
+        colour and bold (owner, 2026-09-30 — global rule, every table of this panel)."""
         super().__init__(num(value) if value is not None else blank)
         self.value = value
         if value is None and blank:
@@ -33,6 +36,10 @@ class Cell(QTableWidgetItem):
             self.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
         if ink:
             self.setForeground(QColor(ink))
+        if bold:
+            font = self.font()
+            font.setBold(True)
+            self.setFont(font)
         if isinstance(value, str) and len(value) > 30:
             self.setToolTip(value)
 
@@ -66,17 +73,21 @@ def pick(columns: list[dict], sub: dict) -> list[tuple[int, str]]:
     """
     every = sub["studies"] == ["*"]
     many = every or len(sub["studies"]) > 1
+    # «Cierre › Análisis conjunto» reads only the three studies' verdicts (owner, 2026-09-30:
+    # quitar «Beneficio IS / OOS»): Net Profit there answers nothing the WFC/CSCV/veredicto
+    # columns do not already decide.
+    no_base = sub["studies"] == ["blindJoint"]
     out = []
     for i, c in enumerate(columns):
         if c["kind"] == "name":
             out.append((i, label("strategy")))
-        elif c["kind"] == "metric" and c["metric"] in BASE:
+        elif c["kind"] == "metric" and c["metric"] in BASE and not no_base:
             out.append((i, f"{label(c['metric'])} {c['sample']}".strip()))
         elif c["kind"] == "study" and every and c["field"] == "verdict" and not c["sub"]:
             out.append((i, c["title"]))
         elif (c["kind"] == "study" and c["study"] in sub["studies"]
               and c["sub"] == (sub["split"] or "")):
-            head = label(c["field"])
+            head = label_for(c["study"], c["field"]) or label(c["field"])
             out.append((i, f"{c['title']} · {head}" if many else head))
     metrics = [p for p in out if columns[p[0]]["kind"] == "metric"]
     order = {m: k for k, m in enumerate(BASE)}
@@ -133,10 +144,13 @@ class DataTable(QTableWidget):
         self.setColumnCount(0)          # also forgets a header dragged out of place
         self.setColumnCount(len(shown) + 1)
         self.setRowCount(len(rows))
-        self.setHorizontalHeaderLabels([label("strategy")] + [c["header"] for c in shown])
+        # A column that explains itself carries a visible «(?)» (owner, 2026-10-01).
+        self.setHorizontalHeaderLabels([label("strategy")] + [
+            c["header"] + (" (?)" if c.get("help") else "") for c in shown])
         for c, choice in enumerate(shown, 1):
             tip = choice["why"] or ""
-            self.horizontalHeaderItem(c).setToolTip(f"Sin datos: {tip}" if tip else "")
+            said = [choice.get("help") or "", f"Sin datos: {tip}" if tip else ""]
+            self.horizontalHeaderItem(c).setToolTip("\n\n".join(t for t in said if t))
         for r, row in enumerate(rows):
             name = Cell(row["name"])
             name.setData(Qt.UserRole, r)
@@ -151,7 +165,8 @@ class DataTable(QTableWidget):
                 tip = note(choice, row, segs) if got is None and not study else ""
                 ink = STATE_INK.get(state) or (C["dead"] if unprofitable(choice["id"], got)
                                                else "")
-                self.setItem(r, c, Cell(got, ink, "" if study else DASH, tip))
+                self.setItem(r, c, Cell(got, ink, "" if study else DASH, tip,
+                                        bold=state in ("pass", "fail")))
         head = self.horizontalHeader()
         head.setSectionResizeMode(QHeaderView.Interactive)
         self.resizeColumnsToContents()

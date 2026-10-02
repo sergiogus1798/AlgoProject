@@ -157,7 +157,7 @@ class Rail(QFrame):
         plan = data.get("chain") or {"do": [], "stop": {"n": None, "why": "sin plan"}}
         self.chain.setEnabled(bool(plan["do"]))
         self.plan.setText(railrun.plan_line(plan))
-        self.plan.setStyleSheet(f"color: {C['accent'] if plan['do'] else C['dead']};")
+        self.plan.setStyleSheet(f"color: {C['accent'] if plan['do'] else C['muted']};")
         offer = data["backfill"]
         self.backfill.setVisible(offer["offer"])
         self.backfill.setToolTip(label(offer["why"]))

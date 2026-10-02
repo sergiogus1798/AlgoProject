@@ -1,10 +1,11 @@
 """What every study said of each strategy of a project, per databank: verdict, state and fields."""
 
 import re
+from collections import defaultdict
 from pathlib import Path
 
 from core.paths import DATA
-from ui.daemon.results import catalogue, store
+from ui.daemon.results import catalogue, lote, store
 
 # Columns of a verdict.csv that are not a field of the strategy: its keys and the word itself.
 KEYS = {"strategy", "identity", "verdict", "verdict_state", "mother"}
@@ -14,8 +15,11 @@ KEYS = {"strategy", "identity", "verdict", "verdict_state", "mother"}
 SPLIT = {"crossTF": "timeframe"}
 
 # A per-strategy table whose rows become sub-panels: its title, first column the sub's name
-# (the eight MC Retest tasks, the markets of the cross-market paired test).
-SUBTABLE = {"mcRetest": "Qué hizo cada tarea", "crossmarket": "Pareado (1b)"}
+# (the eight MC Retest tasks, the markets of the cross-market Timing Alpha test). "Pareado
+# (1b)" was the table's title before the owner's 2026-09-30 rename (§4.15, no "1A"/"1B"
+# anywhere) — updated to the current title in contract/tests.py::paired_tab, or this lookup
+# silently finds nothing and every Timing Alpha sub-panel comes back empty.
+SUBTABLE = {"mcRetest": "Qué hizo cada tarea", "crossmarket": "El Alpha en todas sus unidades"}
 
 # How bad a state is, to give a strategy split in several rows one state of its own.
 SEVERITY = ("fail", "watch", "pass", "info", "none")
@@ -68,6 +72,14 @@ def from_csv(study: str, folder: Path) -> dict[str, dict]:
             entry["fields"][(sub, "verdict")] = word
             entry["states"][sub] = state
             entry["state"] = worst(list(entry["states"].values()))
+            # A split study (crossTF: one row per timeframe) never fills the top-level
+            # verdict above, so a table that shows only that column («Resumen») kept
+            # every row filtered out as unjudged (📓 2026-09-30, 0/105 on
+            # Test_USDJPY_donchianUpperCrossUp_H1). Summarise it as the verdict of
+            # whichever sub carries the overall worst state, consistent with `state`.
+            entry["verdict"] = next(w for s, w in ((v, entry["fields"][(k, "verdict")])
+                                                    for k, v in entry["states"].items())
+                                     if s == entry["state"])
         else:
             entry["verdict"] = word
     return out
@@ -124,6 +136,46 @@ def project(project_name: str) -> dict[str, dict]:
                 mine["by_name"].setdefault(norm(name), {})[folder.name] = entry
                 if entry["identity"]:
                     mine["by_id"].setdefault(entry["identity"], {})[folder.name] = entry
+    return out
+
+
+def lotes(project_name: str) -> dict[str, dict]:
+    """Every strategy a one-off multi-mother lote judged (`structure`, `atrCalculator`), by name.
+
+    Args:
+        project_name: Project name.
+
+    Returns:
+        norm name → {study: entry}, the same entry shape `from_json` builds. These two
+        studies fabricate a batch of SEVERAL mothers together under `structural/`/
+        `atrCalculator/<P>/<lote>/estudios/<study>/estrategias/<name>.json` — never under
+        `reports/`, so `project()` never saw them and a Cierre sub-panel fell back to the
+        whole build roster, 300 rows deep for 3-6 real mothers (📓 2026-09-30, block G/A1's
+        audit; `ui.daemon.results.lote` reads one strategy's file, this reads every one).
+        A strategy two lotes of the same study both claim carries no entry for it — the same
+        ambiguity `lote.path` refuses to guess at, one mother at a time.
+    """
+    out: dict[str, dict] = {}
+    for study, root in lote.ROOTS.items():
+        found: dict[str, list[Path]] = defaultdict(list)
+        for path in sorted((DATA / root / project_name).glob(
+                f"*/estudios/{study}/estrategias/*.json")):
+            found[path.stem].append(path)
+        for name, paths in found.items():
+            if len(paths) > 1:
+                continue
+            row = store.slim(paths[0])
+            if row is None:
+                continue
+            table = (store.tables(paths[0]) or {}).get(SUBTABLE.get(study))
+            fields = {}
+            for line in table["rows"] if table else []:
+                for column, value in zip(table["columns"][1:], line[1:]):
+                    fields[(str(line[0]), column)] = value
+            out.setdefault(norm(name), {})[study] = {
+                "identity": row["identity"], "verdict": row["label"], "state": row["state"],
+                "states": {}, "fields": fields, "name": row["strategy"],
+                "day": (row["computed_at"] or "")[:10]}
     return out
 
 

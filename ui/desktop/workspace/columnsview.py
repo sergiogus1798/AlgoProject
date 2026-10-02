@@ -16,7 +16,7 @@ from ui.desktop.workspace.table import pick
 UNION = "|IS+OOS1"
 # The store's key for a databank's metric choice, which every table of it shows (owner,
 # 2026-09-28: «se guarda por databank»). A study's own columns stay per table («tab › sub»):
-# hiding the gate's verdict in «Build + OOS1» must not blank the «Cribas» tab.
+# hiding a study column in one sub-panel must not blank it in another.
 WIDE = "métricas"
 
 

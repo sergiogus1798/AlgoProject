@@ -60,7 +60,7 @@ def tests(rail: QWidget, keys: list[tuple[str, str]], databank: str = "",
               for t in rail.step(n)["tests"] if t["key"] == k and t["spends"]]
     if costly and QMessageBox.question(
             rail, "Esto lee oos2 o escribe en el ledger",
-            "Cada corrida cuenta y no se deshace:\n" + "\n".join(costly) + "\n\n¿Correr?"
+            "Cada run cuenta y no se deshace:\n" + "\n".join(costly) + "\n\n¿Correr?"
     ) != QMessageBox.Yes:
         rail.said.setText("No se lanzó nada.")
         return

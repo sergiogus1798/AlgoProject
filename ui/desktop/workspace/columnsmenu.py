@@ -17,7 +17,7 @@ GROUPS = {"Estudio": "Columnas del estudio de esta pestaña",
 
 
 def folded(text: str) -> str:
-    """Lower case without accents, so «ganadoras» finds «% Ganadoras» and «deposito» «depósito»."""
+    """Lower case without accents, so «deposito» finds «depósito» regardless of the accent."""
     return "".join(ch for ch in unicodedata.normalize("NFD", text.lower())
                    if unicodedata.category(ch) != "Mn")
 

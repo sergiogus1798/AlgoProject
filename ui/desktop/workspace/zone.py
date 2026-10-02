@@ -3,6 +3,7 @@
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QSizePolicy, QSplitter, QVBoxLayout
 
+from ui.desktop.client import get
 from ui.text.numbers import num
 from ui.desktop.workspace.advance import Advance
 from ui.desktop.workspace.databanks import DatabanksZone
@@ -124,8 +125,9 @@ class WorkspaceZone(QFrame):
         No request: `/api/projects/all` costs ~12 s cold, past the client's timeout, and the
         gallery fetched it off the GUI thread before any card could be clicked.
         """
-        return next((g.rows[name] for g in self.window().findChildren(Gallery)
-                     if name in getattr(g, "rows", {})), {})
+        held = next((g.rows[name] for g in self.window().findChildren(Gallery)
+                     if name in getattr(g, "rows", {})), None)
+        return held if held is not None else get("projects/one", name=name)   # registry only
 
     def show_tab(self, tab: str, sub: str = "") -> None:
         """Bring one tab of the Databanks panel forward, and one of its sub-panels — the rail's

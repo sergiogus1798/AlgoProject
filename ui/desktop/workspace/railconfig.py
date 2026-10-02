@@ -140,7 +140,7 @@ class Drawer(QFrame):
         self.note.setVisible(step["n"] in STEP_NOTES)
         text, missing = needs_line(step, (data or {}).get("steps", []))
         self.needs.setText(text)
-        self.needs.setStyleSheet(f"color: {C['dead'] if missing else C['promising']};")
+        self.needs.setStyleSheet(f"color: {C['weak'] if missing else C['promising']};")
         self.needs.setVisible(bool(text))
         playable = step["kind"] != "sqx"
         self.batch = [{"n": step["n"], "key": t["key"]} for t in step["tests"]

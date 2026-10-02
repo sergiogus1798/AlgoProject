@@ -13,6 +13,15 @@ from ui.daemon.workflow import ledgerview
 # the ledger's door is shut none of their figures leaves the daemon.
 SEALED = ("wfc", "cscv", "wfm", "blindJoint")
 
+# A study field the databank table never shows as a column, though the study keeps it (other
+# tables, the ficha's own view, read the entry directly): the owner's Cross Market databank
+# read (2026-09-30) — «Familia», «Faltan», «Avisos», «Nota» clutter the table without deciding
+# anything there.
+HIDDEN_FIELDS = {("crossmarket", "family"), ("crossmarket", "missing"),
+                 ("crossmarket", "warnings"), ("crossmarket", "note"),
+                 ("mcRetest", "qué perturba"), ("mcRetest", "operaciones vs original"),
+                 ("mcRetest", "forma"), ("blindJoint", "reason")}
+
 
 def door(project: str) -> tuple[dict, str | None]:
     """The ledger's door of step 20 — the very one the rail asks — and the project's asset.
@@ -48,13 +57,19 @@ def roster(project: str, databank: str, own: dict,
     for name in figures.index if figures is not None and not by_id else []:
         if cells.norm(name) not in named:
             rows[f"name:{cells.norm(name)}"] = name
+    if databank.replace(" ", "_") == "MCR_All":
+        # The MC ingest names «1.26.46»: the page would open a name no other study knows
+        # (📓 2026-09-30); `results.api` strips the prefix again when it asks mcRetest.
+        rows = {k: n if n.startswith("Strategy ") else f"Strategy {n}" for k, n in rows.items()}
     return "informes", rows
 
 
-def studies_of(key: str, name: str, own: dict, every: dict, mothers: dict) -> dict:
+def studies_of(key: str, name: str, own: dict, every: dict, mothers: dict, lotes: dict) -> dict:
     """What each study said of one row: this databank's reports by identity, then by name,
-    then any databank of the project by identity, then the mother's batch by name."""
-    found = dict(mothers.get(cells.norm(name), {}))
+    then any databank of the project by identity, then the mother's variant batch by name,
+    then the mother's one-off multi-mother lote (`structure`, `atrCalculator`) by name."""
+    found = dict(lotes.get(cells.norm(name), {}))
+    found |= dict(mothers.get(cells.norm(name), {}))
     found |= every.get(key, {})
     found |= own["by_name"].get(cells.norm(name), {})
     found |= own["by_id"].get(key, {})
@@ -87,17 +102,20 @@ def table(project: str, databank: str) -> dict:
     every = cells.project(project)
     own = every.get(db.replace(" ", "_"), {"by_id": {}, "by_name": {}})
     anywhere, mothers = cells.anywhere(every), batches.mothers(project)
+    lotes = cells.lotes(project)
     got_from, figures = metrics.source(project, db)
     rows_from, keys = roster(project, db, own, figures)
     blind, _ = door(project)
     hidden = set(SEALED) if blind["sealed"] else set()
     lines, fields = [], {}
     for key, name in sorted(keys.items(), key=lambda kv: kv[1]):
-        said = {s: e for s, e in studies_of(key, name, own, anywhere, mothers).items()
+        said = {s: e for s, e in studies_of(key, name, own, anywhere, mothers, lotes).items()
                 if s not in hidden}
         for study, e in said.items():
             fields.setdefault((study, "", "verdict"), None)
             for sub, field in e["fields"]:
+                if (study, field) in HIDDEN_FIELDS:
+                    continue
                 fields.setdefault((study, sub, field), None)
         lines.append((key, name, said))
     order = catalogue.ordered()
@@ -106,6 +124,12 @@ def table(project: str, databank: str) -> dict:
         rank.setdefault((study, sub), -1 if not sub else len(rank))
     study_cols = sorted(fields, key=lambda f: (order.index(f[0]), rank[f[:2]], f[2] != "verdict"))
     figure_cols = [c for c in (figures.columns if figures is not None else []) if c != "name"]
+    # A sample this databank never carries (Cross Market's OOS: no retest window) is empty in
+    # every row, not just some — SQX's own «Export Data View» always offers the column, so the
+    # daemon is the only place that can tell «never filled» from «this strategy made no trade»
+    # (`metrics.empty_samples` blanks the latter per row). Drop only the former.
+    if figures is not None:
+        figure_cols = [c for c in figure_cols if not figures[c].isna().all()]
     columns = ([{"key": "name", "kind": "name"}]
                + [{"key": c, "kind": "metric", "metric": c.rsplit(" (", 1)[0],
                    "sample": c.rsplit(" (", 1)[-1].rstrip(")") if " (" in c else ""}
@@ -114,11 +138,21 @@ def table(project: str, databank: str) -> dict:
                    "sub": f[1], "field": f[2], "title": catalogue.STUDIES[f[0]][2]}
                   for f in study_cols])
     by_id = got_from == "cosecha"
+    # The cosecha holds only the strategies that had an OOS retest (H1: 60 of the build's 300);
+    # the rest kept dashes in every metric though SQX's own export carries their figures
+    # (owner's §4.1, 🔬 2026-10-01). A row the cosecha lacks reads the export, by name.
+    spare = metrics.export(project, db) if by_id else None
+    if spare is not None:
+        spare = spare[~spare.index.map(cells.norm).duplicated()]
+        spare.index = spare.index.map(cells.norm)
     rows = []
     for key, name, said in lines:
         at = key if by_id else name
         figs = figures.loc[at] if figures is not None and at in figures.index else None
-        values = [name] + [clean(figs[c]) if figs is not None else None for c in figure_cols]
+        if figs is None and spare is not None and cells.norm(name) in spare.index:
+            figs = spare.loc[cells.norm(name)]
+        values = [name] + [clean(figs.get(c)) if figs is not None else None
+                           for c in figure_cols]
         states = {}
         for study, sub, field in study_cols:
             e = said.get(study)

@@ -13,8 +13,9 @@ from ui.desktop.theme import C, T
 
 # The daemon's state words (ui/daemon/workflow) as the rail says and paints them. `sealed` is
 # a finished 17-19 whose numbers stay hidden until 20 opens; `missing`, nothing to read.
+# `blocked` is a wait, not a failure: amber, never red (owner, 2026-09-29).
 STATE = {"done": ("hecho", C["promising"]), "running": ("en marcha", C["accent"]),
-         "pending": ("pendiente", C["pending"]), "blocked": ("bloqueado", C["dead"]),
+         "pending": ("pendiente", C["pending"]), "blocked": ("bloqueado", C["weak"]),
          "sealed": ("sellado", C["weak"]), "missing": ("sin dato", T["faint"])}
 KIND = {"sqx": ("SQX", "corre en StrategyQuant X: su ▶ SQX lanza todas sus tareas juntas en el "
                       "worker del proyecto, que se para al acabar"),
@@ -50,7 +51,7 @@ def value_words(value: object) -> str:
 def readable(config: str) -> str:
     """A test's one-line config («nulls.draws=2500 · run.blocks=None (+9)», as
     `ui.daemon.workflow.tests.summary` writes it) in the window's words:
-    «Nulos › Corridas 2 500 · Ejecución › Bloques — · y 9 más». Anything else passes."""
+    «Nulos › Runs 2 500 · Ejecución › Bloques — · y 9 más». Anything else passes."""
     more = MORE.search(config)
     body = config[:more.start()] if more else config
     if "=" not in body:

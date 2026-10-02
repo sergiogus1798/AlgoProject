@@ -2,6 +2,7 @@
 
 import re
 
+from ui.text.columnhelp import help_for
 from ui.text.glossary import label
 
 # The chooser's groups. «OOS» is the payload's own out-of-sample block, whatever span its task
@@ -12,7 +13,7 @@ DASH = "–"
 PENDING = "leyendo del demonio…"
 WHY = {"OOS2": "sin export de OOS2 para este databank",
        "IS+OOS1": "la unión IS+OOS1 sólo se calcula para neto, operaciones, Profit Factor, "
-                  "% ganadoras, drawdown y Ret/DD",
+                  "Win Rate, drawdown y Ret/DD",
        "": "SQX no exporta esta métrica en este segmento"}
 NO_OOS = "sin operaciones OOS: su unión sería sólo su IS"
 # What says a strategy loses money, read in the red (owner, 2026-09-28): a profit factor under
@@ -78,14 +79,16 @@ def choices(columns: list[dict], defaults: list[tuple[int, str]],
     Returns:
         id → {id, header, group (segment, or «Estudio»), index (payload column or None),
         union (a metric the segments route computes, or None), why (None when it has data),
-        default}. Defaults first in their order, then the metric grid by segment.
+        default, help (the header's «?», `ui.text.columnhelp`, or None)}. Defaults first in their order, then the metric grid by segment.
     """
     out = {}
     for i, head in defaults[1:]:
         c = columns[i]
         group = SAMPLE.get(c["sample"], c["sample"]) if c["kind"] == "metric" else "Estudio"
         out[column_id(c)] = {"id": column_id(c), "header": head, "group": group, "index": i,
-                             "union": None, "why": None, "default": True}
+                             "union": None, "why": None, "default": True,
+                             "help": (help_for("metric", "", c["metric"]) if c["kind"] == "metric"
+                                      else help_for("study", c["study"], c["field"]))}
     at = {column_id(c): i for i, c in enumerate(columns) if c["kind"] == "metric"}
     union = (segs or {}).get("union") or []
     names = list(dict.fromkeys([c["metric"] for c in columns if c["kind"] == "metric"] + union))
@@ -99,7 +102,7 @@ def choices(columns: list[dict], defaults: list[tuple[int, str]],
                    else WHY.get(segment, WHY[""]))
             out[key] = {"id": key, "header": f"{label(name)} {segment}", "group": segment,
                         "index": at.get(key), "union": name if joined and not why else None,
-                        "why": why, "default": False}
+                        "why": why, "default": False, "help": help_for("metric", "", name)}
     return out
 
 

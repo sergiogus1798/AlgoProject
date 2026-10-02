@@ -28,7 +28,7 @@ PREFLIGHT = (
     "workflow»). Se repite en el momento de pulsar: que el proyecto no viva en el maestro, "
     "que esté en registry.csv y en un solo worker; que ese worker esté libre (su puerto no "
     "responde, ningún proceso de SQX corre desde él, ningún otro proyecto suyo se tocó en las "
-    "últimas 24 h, su log no se escribió en los últimos 15 min ni dice que una corrida empezó "
+    "últimas 24 h, su log no se escribió en los últimos 15 min ni dice que un run empezó "
     "y no acabó); que el proyecto lleve las tareas del paso; que un build vaya sólo al "
     "custodio; que la tarea tenga estrategias en su databank de entrada; y que no haya otro "
     "lanzamiento en cola. Si algo falla, el botón se apaga y dice por qué.")
@@ -63,7 +63,7 @@ NOT_YET = ("Lo que cambies aquí vale para los proyectos que se creen desde ahor
            "Vuelve con «Proyecto» en la barra de la izquierda.")
 # Said instead for a Python step (17, 18): its study values are read again on the next run.
 STUDY_NOW = ("Viene del paso {n} de {project}: los valores del estudio (su config.yaml) valen "
-             "desde la próxima corrida. Vuelve con «Proyecto» en la barra de la izquierda.")
+             "desde el próximo run. Vuelve con «Proyecto» en la barra de la izquierda.")
 
 
 def informes(table: dict) -> str:
@@ -85,8 +85,8 @@ def informes(table: dict) -> str:
 
 # The Databanks panel's tabs with no aggregate equity beside the table (owner, 2026-09-29):
 # every test's databank, as the IS/OOS gate already was.
-TABLE_ONLY = {"Puerta IS/OOS", "Cross Market", "Cross Timeframe", "MC Retest", "SPP", "WFM",
-              "WFC", "CSCV", "Market Surfaces", "Cierre"}
+TABLE_ONLY = {"Puerta IS/OOS", "Cross Market", "Cross Timeframe", "MC Retest", "SPP",
+              "WFM + WFC + CSCV + Market Surfaces", "Cierre"}
 # The ⚙ Métricas button's tooltip, which the «?» reads too.
 CHOOSER = ("Elige qué métricas enseña la tabla: quita las de siempre (hasta dejar, por ejemplo, "
            "solo Beneficio neto y DD máximo) o añade cualquiera de IS, OOS1, OOS2 o IS+OOS1. "

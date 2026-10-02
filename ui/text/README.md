@@ -16,6 +16,11 @@ daemon never imports the window, so they moved here.
 | `buttonhelp_texts.py` | The registry itself, `HELP`: one or two Spanish sentences per button text, grounded in what its slot does — whether it writes, whether it asks first, whether it touches SQX | imported | — |
 | `brief.py` | Why a button is off, in a few plain words (owner, 2026-09-30: «no me pongas un textaco»): `brief(reasons)` → «el workflow ya está corriendo» when any reason says SQX is busy (`BUSY`), a known case's plain words (`KNOWN`), else the first sentence cut under 60 characters; `off` prefixes «No disponible: », `line` capitalises, `full` is every reason one per line for the tooltip | imported | reasons → words |
 | `numbers.py` | The one number formatter: `num(value, unit="")` — never scientific, thousands split by a space, «K»/«M» from 100 000, `unit="p"` prints a p-value as 0.0123 or «< 0.0001» | imported | value → text |
+| `columnhelp.py` | The «?» and the short header of every databank-table column: `help_for(kind, study, field)` (kind "metric" with the SQX name, sample suffix optional; or "study" with the catalogue key and field, "verdict" for its verdict) and `label_for(study, field)` (≤ 22 characters, None → `glossary.label`); `METRICS`, `STUDY`, `LABEL`, and the atrCalculator percentile / exposure sizing families by pattern; an unknown column returns None, never a guess | imported | column → sentence, header |
+| `columnhelp_metrics.py` | `METRICS`: one sentence per SQX metric, from the snippet SQX computes it with (`internal/extend/Snippets/SQ/Columns/Databanks/`) or the project's own columns (PSR, TRL Ratio, DoF Ratio, Param Count) | imported | — |
+| `columnhelp_verdicts.py` | `VERDICTS`: per study, the question it answers and what each verdict word the window shows means | imported | — |
+| `columnhelp_fields.py` | `FIELDS`: (study, field) → sentence for every non-family study column, grounded in the code that writes it | imported | — |
+| `columnhelp_closing.py` | exposure's fixed fields and the two families — `bench_<sizing>_<stat>`, `strat_<stat>`, `lots_<sizing>`, atrCalculator's `<kind>_p<N>` and `n_winners_<segment>` — resolved by regex | imported | field → sentence |
 
 ## Contracts and traps
 

@@ -7,10 +7,10 @@ import re
 # Append new keys at the end (plan 24 §5): never change an existing one, a view may rely on it.
 LABELS = {
     # SQX metrics, as the exports name them
-    "Net profit": "Beneficio neto", "# of trades": "Operaciones",
+    "Net profit": "Net Profit", "# of trades": "Operaciones",
     "Profit factor": "Profit Factor", "Sharpe Ratio": "Sharpe",
     "Ret/DD Ratio": "Retorno / DD", "Max DD %": "DD máximo %",
-    "Winning Percent": "% ganadoras", "R Expectancy": "Esperanza en R",
+    "Winning Percent": "Win Rate", "R Expectancy": "Esperanza en R",
     "Stability": "Estabilidad", "PSR": "PSR",
     # the columns the zones print
     "strategy": "Estrategia", "estrategia": "Estrategia", "strategy_build": "Estrategia en el build",
@@ -20,13 +20,13 @@ LABELS = {
     "composite": "Compuesto", "value": "Valor", "test": "Prueba", "flags": "Avisos",
     "warnings": "Avisos", "gate": "Puerta", "gates": "Puertas", "screen": "Criba",
     "passed": "Pasa", "entered": "Entraron", "died": "Murieron", "kind": "Tipo",
-    "name": "Nombre", "note": "Nota", "nota": "Nota", "why": "Por qué", "runs": "Corridas",
+    "name": "Nombre", "note": "Nota", "nota": "Nota", "why": "Por qué", "runs": "Runs",
     "markets": "Mercados", "market": "Mercado", "timeframe": "Timeframe",
     "net": "Neto", "net_5": "Neto p5", "pf": "PF", "pf_5": "PF p5", "psr": "PSR",
     "ret_dd": "Retorno / DD", "dd_pct": "DD %", "dd_pct_95": "DD % p95",
     "dd_pct_99": "DD % p99", "stitched_dd_pct": "DD % empalmado", "sharpe": "Sharpe",
     "sharpe_is": "Sharpe IS", "sharpe_oos": "Sharpe OOS", "oos_ratio": "Cociente OOS / IS",
-    "oos_pct": "OOS %", "net_profit_oos": "Beneficio neto OOS", "retention": "Retención",
+    "oos_pct": "OOS %", "net_profit_oos": "Net Profit OOS", "retention": "Retención",
     "edge_r": "Ventaja en R", "real_r": "R real", "null_r": "R del nulo",
     "null_trades": "Operaciones del nulo", "p": "p", "p_min": "p mínimo",
     "p_median": "p mediano", "paired_p": "p emparejado", "rho": "ρ", "t": "t",
@@ -47,8 +47,8 @@ LABELS = {
     "degradacion": "Degradación", "forma": "Forma", "mono": "Mono", "familia": "Familia",
     "redundancia": "Redundancia",
     # config knobs, section.knob as the drawer names them
-    "null.draws": "Nulo · corridas", "null.chunk": "Nulo · corridas por lote",
-    "draws": "Corridas", "chunk": "Corridas por lote", "seed": "Semilla",
+    "null.draws": "Nulo · runs", "null.chunk": "Nulo · runs por lote",
+    "draws": "Runs", "chunk": "Runs por lote", "seed": "Semilla",
     # Configuración SQX (plan 24, F9): the keys of assets/_build.yaml, _classes.yaml and the
     # globals of _policy.yaml, namespaced `sqx.` so a bare «build» elsewhere keeps its reading
     "sqx.complexity": "Complejidad de las reglas", "sqx.order_types": "Tipos de orden",
@@ -124,7 +124,7 @@ LABELS = {
     # the databank panel (plan 24, F3b): verdict.csv columns and batch summaries it shows
     "cleared": "Mercados superados", "fraction": "Fracción", "binding": "Tramo que manda",
     "blocked_by": "Bloqueada por", "seen": "Visto", "baseline": "Referencia",
-    "control": "Control", "pf_cv": "CV del PF", "missing": "Faltan", "broken": "Se rompe en",
+    "control": "Control", "pf_cv": "STD del PF", "missing": "Faltan", "broken": "Se rompe en",
     "score": "Puntuación", "point": "Punto", "surface": "Superficie", "temporal": "Temporal",
     "variants": "Variantes", "dropped": "Descartadas", "r2": "R²", "gap": "Hueco",
     "rho_median": "ρ mediana", "drift_median": "Deriva mediana", "roughness": "Rugosidad",
@@ -139,7 +139,7 @@ LABELS = {
     # the Estrategia page (plan 24, F4): signal names of a .sqx and the two curves
     "LongEntrySignal": "Entrada larga", "ShortEntrySignal": "Entrada corta",
     "LongExitSignal": "Salida larga", "ShortExitSignal": "Salida corta",
-    "curve.sqx": "SQX (curva diaria)", "curve.real": "spread y slippage reales",
+    "curve.sqx": "SQX (curva diaria)", "curve.real": "SPREAD Y SLIPPAGE REALES",
     # the configuration knobs by part (encargo 24, F15): `knob()` labels each dotted part of
     # a knob key here first, so a section word reads the same in the rail and the drawer
     "knob.nulls": "Nulos", "knob.null": "Nulo", "knob.run": "Ejecución", "knob.ingest": "Ingesta",
@@ -166,7 +166,7 @@ LABELS = {
     "knob.statistic": "Estadístico", "knob.rung": "Peldaño", "knob.sizing": "Tamaño de posición",
     "knob.fwer": "FWER", "knob.reps": "Repeticiones", "knob.models": "Modelos",
     "knob.reference": "Referencia", "knob.steps": "Pasos", "knob.kind": "Tipo",
-    "knob.draws": "Corridas", "knob.seed": "Semilla", "knob.chunk": "Corridas por lote",
+    "knob.draws": "Runs", "knob.seed": "Semilla", "knob.chunk": "Runs por lote",
     "knob.timeframe": "Timeframe", "knob.keep": "Condición", "knob.value": "Valor",
     "knob.why": "Por qué", "knob.min_retention": "Retención mínima", "knob.min_t": "t mínimo",
     "knob.min_years_positive": "Mín. años positivos",
@@ -181,7 +181,7 @@ LABELS = {
     "knob.model": "Modelo", "knob.candidates": "Candidatos", "knob.split": "Año de corte",
     "knob.fixed": "Fijado", "knob.quantiles": "Cuantiles", "knob.min_minutes": "Mín. minutos",
     "knob.judge": "Juzga contra", "knob.near_minutes": "Minutos de cercanía",
-    "knob.batch_draws": "Corridas por tanda", "knob.batch_cells": "Celdas por tanda",
+    "knob.batch_draws": "Runs por tanda", "knob.batch_cells": "Celdas por tanda",
     "knob.chunk_trades": "Operaciones por lote", "knob.percentile_set": "Percentiles guardados",
     "knob.tile_bytes": "Bytes por franja", "knob.max_workers": "Máx. procesos",
     "knob.trim": "Recorte", "knob.best_months": "Mejores meses", "knob.open": "Apertura",
@@ -235,7 +235,7 @@ def knob(key: object) -> str:
 
     Returns:
         Its glossary entry when the whole key has one; otherwise its parts joined by « › »
-        («Nulos › Corridas», «Presencia › Tipo»). Never the raw dotted key.
+        («Nulos › Runs», «Presencia › Tipo»). Never the raw dotted key.
     """
     key = str(key)
     if key in LABELS:

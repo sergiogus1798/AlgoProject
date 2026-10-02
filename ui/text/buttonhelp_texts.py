@@ -123,10 +123,10 @@ HELP = {
     "toda la población": "Corre este estudio en Python sobre todo el databank, con los "
                          "valores del cajón. Tarda más. No toca SQX.",
     "solo": "Vuelve a correr sólo la subprueba elegida en la lista; se guarda aparte y no toca "
-            "la corrida entera.",
+            "el run entero.",
     "cancelar": "Cancela el trabajo de este estudio que está en marcha.",
-    "comparar las dos corridas elegidas": "Pone lado a lado las dos corridas elegidas en la "
-                                          "lista (Ctrl+clic).",
+    "comparar los dos runs elegidos": "Pone lado a lado los dos runs elegidos en la lista "
+                                      "(Ctrl+clic).",
     "comparar con esta estrategia": "Pone este estudio de la estrategia abierta al lado del de "
                                     "la estrategia elegida en la lista.",
     "restablecer valores de fábrica": "Devuelve cada valor del cajón al de config.yaml. El "

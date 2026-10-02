@@ -36,6 +36,29 @@ def http() -> TestClient:
     return TestClient(app)
 
 
+# `c`/`real` used to be plain parameters, only ever filled by `main()` below — a bare
+# `python3 -m pytest` collected these as fixtures pytest never defined and every test here
+# errored at setup (📓 2026-09-30, T1/R UI feedback pass). `C` built once at import, the same
+# pattern `test_ui_studypage.py` uses; `_real_batch()` replaces the `real` parameter since the
+# sealed (autonomous) fetch needs its own `gate.AUTONOMOUS` context regardless of test order.
+C = http()
+
+
+def _real_batch() -> dict:
+    """The real batch's response under an autonomous agent's seal (no oos2), refetched by
+    whichever test needs it — cheap, an in-process TestClient — instead of passed between
+    tests, which only ever worked from `main()`'s own call order."""
+    prev = os.environ.get(gate.AUTONOMOUS)
+    os.environ[gate.AUTONOMOUS] = "1"
+    try:
+        return C.get("/api/batch", params=dict(zip(("project", "strategy"), REAL))).json()
+    finally:
+        if prev is None:
+            os.environ.pop(gate.AUTONOMOUS, None)
+        else:
+            os.environ[gate.AUTONOMOUS] = prev
+
+
 def labels(value: object) -> list[str]:
     """Every key and every string inside a response."""
     if isinstance(value, dict):
@@ -51,25 +74,29 @@ def sealed_free(out: dict) -> None:
     assert not bad, bad
 
 
-def test_real(c: TestClient) -> dict:
+def test_real() -> None:
     """The real batch: its axes, both outcomes, the mother, and nothing sealed."""
-    out = c.get("/api/batch", params=dict(zip(("project", "strategy"), REAL))).json()
+    out = _real_batch()
     sealed_free(out)
     assert out["has_batch"] and "error" not in out, out.get("error")
     assert len(out["variants"]) == VARIANTS and set(out["outcomes"]) == set(panel.OUTCOMES)
     assert all(len(a["values"]) == VARIANTS for a in out["axes"]) and len(out["axes"]) == AXES
     assert out["variants"][out["mother"]] == "P00000"
-    spaced = c.get("/api/batch", params={"project": REAL[0],
+    spaced = C.get("/api/batch", params={"project": REAL[0],
                                          "strategy": REAL[1].replace("_", " ")})
     assert spaced.json()["variants"] == out["variants"]
-    assert c.get("/api/batch/has", params=dict(zip(("project", "strategy"), REAL))).json() == \
+    assert C.get("/api/batch/has", params=dict(zip(("project", "strategy"), REAL))).json() == \
         {"has_batch": True}
-    return out
 
 
-def test_human(c: TestClient) -> None:
+def test_human() -> None:
     """A human (no ALGO_AUTONOMOUS) gets oos2 as a third outcome, and «Lote» offers it."""
-    out = c.get("/api/batch", params=dict(zip(("project", "strategy"), REAL))).json()
+    prev = os.environ.pop(gate.AUTONOMOUS, None)
+    try:
+        out = C.get("/api/batch", params=dict(zip(("project", "strategy"), REAL))).json()
+    finally:
+        if prev is not None:
+            os.environ[gate.AUTONOMOUS] = prev
     assert "error" not in out, out.get("error")
     assert set(out["outcomes"]) == set(panel.OUTCOMES + panel.OPTIONAL), set(out["outcomes"])
     app = QApplication.instance() or QApplication([])
@@ -81,22 +108,22 @@ def test_human(c: TestClient) -> None:
     assert "NetProfit (oos2)" in offered, offered
 
 
-def test_refusals(c: TestClient) -> None:
+def test_refusals() -> None:
     """A folder without metrics.parquet and a mother without a batch each get a sentence."""
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp) / "Strategy_9.9.9"
         work.mkdir()
         with mock.patch.object(panel, "folders", lambda p, s: [work]), \
                 mock.patch.object(panel.where, "batch", lambda p, s, n: work):
-            out = c.get("/api/batch", params={"project": "Fake", "strategy": "Strategy 9.9.9"})
+            out = C.get("/api/batch", params={"project": "Fake", "strategy": "Strategy 9.9.9"})
     out = out.json()
     assert out["has_batch"] and "metrics.parquet" in out["error"], out
-    none = c.get("/api/batch", params={"project": REAL[0], "strategy": "Strategy 0.0.0"}).json()
+    none = C.get("/api/batch", params={"project": REAL[0], "strategy": "Strategy 0.0.0"}).json()
     assert none == {"has_batch": False, "error": none["error"]} and "no tiene lote" in none["error"]
-    assert not c.get("/api/batch/has", params={"project": "X", "strategy": "S 1"}).json()["has_batch"]
+    assert not C.get("/api/batch/has", params={"project": "X", "strategy": "S 1"}).json()["has_batch"]
 
 
-def test_synthetic(c: TestClient) -> None:
+def test_synthetic() -> None:
     """A batch whose file holds every sealed spelling, a sealed parameter and a flat one."""
     frame = pd.DataFrame({
         "variant_id": ["P00000", "P00001", "P00002"], "stratum": ["origin", "factorial", "canary"],
@@ -105,25 +132,35 @@ def test_synthetic(c: TestClient) -> None:
         "NetProfit (build)": [1.0, -2.0, 3.0], "NetProfit (oos1)": [4.0, 5.0, -6.0],
         "NetProfit (oos2)": [7.0, 8.0, 9.0], "NetProfit (ALL)": [1.0, 1.0, 1.0],
         "NetProfit (oos1+oos2)": [2.0, 2.0, 2.0], "Drawdown (oos2)": [0.1, 0.2, 0.3]})
-    with tempfile.TemporaryDirectory() as tmp:
-        work = Path(tmp) / "Strategy_9.9.9"
-        work.mkdir()
-        frame.to_parquet(work / "metrics.parquet")
-        assert not any(panel.sealed(col) for col in panel.columns(work / "metrics.parquet"))
-        with mock.patch.object(panel, "folders", lambda p, s: [work]), \
-                mock.patch.object(panel.where, "batch", lambda p, s, n: work):
-            out = c.get("/api/batch", params={"project": "Fake", "strategy": "Strategy 9.9.9"}).json()
-    sealed_free(out)
-    assert [a["label"] for a in out["axes"]] == ["Period"], out["axes"]
-    assert out["fixed"] == [{"label": "Shift", "value": 1}] and "Shift = 1" in out["note"]
-    held = {"has_batch": True, "variants": ["ALL"], "note": "x"}
-    with mock.patch.object(panel, "batch", lambda p, s: held):
-        leak = c.get("/api/batch", params={"project": "P", "strategy": "S"}).json()
-    assert set(leak) == {"has_batch", "error"}, leak
+    prev = os.environ.get(gate.AUTONOMOUS)
+    os.environ[gate.AUTONOMOUS] = "1"          # the seal only fires for an autonomous agent
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "Strategy_9.9.9"
+            work.mkdir()
+            frame.to_parquet(work / "metrics.parquet")
+            assert not any(panel.sealed(col) for col in panel.columns(work / "metrics.parquet"))
+            with mock.patch.object(panel, "folders", lambda p, s: [work]), \
+                    mock.patch.object(panel.where, "batch", lambda p, s, n: work):
+                out = C.get("/api/batch",
+                            params={"project": "Fake", "strategy": "Strategy 9.9.9"}).json()
+        sealed_free(out)
+        assert [a["label"] for a in out["axes"]] == ["Period"], out["axes"]
+        assert out["fixed"] == [{"label": "Shift", "value": 1}] and "Shift = 1" in out["note"]
+        held = {"has_batch": True, "variants": ["ALL"], "note": "x"}
+        with mock.patch.object(panel, "batch", lambda p, s: held):
+            leak = C.get("/api/batch", params={"project": "P", "strategy": "S"}).json()
+        assert set(leak) == {"has_batch", "error"}, leak
+    finally:
+        if prev is None:
+            os.environ.pop(gate.AUTONOMOUS, None)
+        else:
+            os.environ[gate.AUTONOMOUS] = prev
 
 
-def test_view(real: dict) -> None:
+def test_view() -> None:
     """«Lote» offscreen: the real batch with hover and the selector, and a refusal."""
+    real = _real_batch()
     app = QApplication.instance() or QApplication([])
     from ui.desktop.theme import QSS
     app.setStyleSheet(QSS)
@@ -155,15 +192,11 @@ def test_view(real: dict) -> None:
 def main() -> None:
     """Run every check."""
     assert (DATA / "strategyPermutations" / REAL[0] / REAL[1] / "metrics.parquet").exists()
-    c = http()
-    os.environ.pop(gate.AUTONOMOUS, None)
-    test_human(c)
-    os.environ[gate.AUTONOMOUS] = "1"          # the seal holds only for an autonomous agent
-    real = test_real(c)
-    test_refusals(c)
-    test_synthetic(c)
-    test_view(real)
-    os.environ.pop(gate.AUTONOMOUS)
+    test_human()
+    test_real()
+    test_refusals()
+    test_synthetic()
+    test_view()
     print("ok — /api/batch and «Lote»")
 
 

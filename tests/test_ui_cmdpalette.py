@@ -16,16 +16,27 @@ from PySide6.QtCore import QSettings, Qt  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import QApplication, QLineEdit  # noqa: E402
 
-from core.paths import ROOT  # noqa: E402
+import pandas as pd  # noqa: E402
+
+from core.paths import DATA, ROOT  # noqa: E402
 from ui.daemon.loader import state as loadstate  # noqa: E402
 from ui.daemon import jobs, tasklog  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
+from ui.daemon.runner import where  # noqa: E402
 from ui.desktop import client, cmdrank  # noqa: E402
 from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.shell import Shell  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 
-PROJECT, DATABANK, STRATEGY = "Test_USDJPY_donchianUpperCrossUp_M30", "Results", "Strategy 1.15.54"
+PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
+# The strategy is read off the newest export rather than pinned by name: a nightly workflow
+# re-run gives this project a fresh population under new names (📓 2026-09-30, T1/R UI feedback
+# pass — a hardcoded "Strategy 1.15.54" no longer existed and made this test fail on unrelated
+# grounds; same fix as `test_ui_runner.py`). QUERY is its numeric suffix, specific enough that
+# the palette's fuzzy match finds only this one strategy.
+_export = where.newest(DATA / "raw" / PROJECT / DATABANK, "*/trades.parquet")
+STRATEGY = pd.read_parquet(_export, columns=["strategy"])["strategy"].iloc[0]
+QUERY = STRATEGY.removeprefix("Strategy ")
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-cmdpalette-")
 LOADS: list = []     # what the load bar asked the daemon to start
@@ -76,70 +87,85 @@ def pick(app: QApplication, shell: Shell, query: str) -> None:
     assert not shell.cmdpalette.isVisible()
 
 
+# `app`/`shell` used to be plain parameters, only ever filled by `main()` below — a bare
+# `python3 -m pytest` collected these as fixtures pytest never defined and every test here
+# errored at setup (📓 2026-09-30, T1/R UI feedback pass; same fix as `test_ui_studypage.py`/
+# `test_ui_shell.py`). Built once at import instead; test order still matches `main()`'s
+# (`test_strategy` sets the SELECTION `test_study`/`test_recent_and_escape` read).
+serve()
+QAPP = QApplication.instance() or QApplication(sys.argv)
+QAPP.setStyleSheet(QSS)
+SHELL = Shell()
+SHELL.resize(1440, 900)
+SHELL.show()
+SHELL.activateWindow()
+settle(QAPP)
+
+
 def test_match() -> None:
     """Subsequence, accent-blind; a tight match outranks a scattered one; non-matches drop;
     «ledger» finds the search log by its alias."""
     m = cmdrank.match
     assert m("busq", "Registro de búsquedas") is not None
     assert m("busquedas", "Búsquedas") == 0
-    assert m("xyz", "Proyecto") is None and m("1.15.54", STRATEGY) is not None
+    assert m("xyz", "Proyecto") is None and m(QUERY, STRATEGY) is not None
     assert m("est", "Estrategia") < m("est", "Registro de búsquedas")
     items = [{"kind": "zone", "label": z, "also": cmdrank.ALIASES.get(z, ())}
              for z in ("En marcha", "Registro de búsquedas", "Proyecto")]
     assert [i["label"] for i in cmdrank.rank("ledger", items, [])] == ["Registro de búsquedas"]
 
 
-def test_lazy(shell: Shell) -> None:
+def test_lazy() -> None:
     """Nothing is read at window start: the daemon is asked only when the palette opens."""
-    assert shell.cmdpalette.items == [] and shell.cmdpalette.catalogue == []
+    assert SHELL.cmdpalette.items == [] and SHELL.cmdpalette.catalogue == []
 
 
-def test_zone(app: QApplication, shell: Shell) -> None:
+def test_zone() -> None:
     """A zone by an alias, through open_zone: the stack and the sidebar agree."""
-    pick(app, shell, "ledger")
-    assert shell.stack.currentWidget() is shell.ledger
-    assert [n for n, b in shell.nav.items() if b.isChecked()] == ["Registro de búsquedas"]
+    pick(QAPP, SHELL, "ledger")
+    assert SHELL.stack.currentWidget() is SHELL.ledger
+    assert [n for n, b in SHELL.nav.items() if b.isChecked()] == ["Registro de búsquedas"]
 
 
-def test_strategy(app: QApplication, shell: Shell) -> None:
+def test_strategy() -> None:
     """A strategy of the chosen databank: SELECTION gets name and identity, Estrategia opens."""
     SELECTION.choose(project=PROJECT, databank=DATABANK)
-    pick(app, shell, "1.15.54")
+    pick(QAPP, SHELL, QUERY)
     assert SELECTION.now["strategy"] == STRATEGY and len(SELECTION.now["identity"]) == 64
     assert SELECTION.now["project"] == PROJECT and SELECTION.now["databank"] == DATABANK
-    assert shell.stack.currentWidget() is shell.estrategia
-    assert shell.estrategia.currentWidget() is shell.ficha
-    assert shell.context.crumbs["strategy"].text().startswith(STRATEGY)
+    assert SHELL.stack.currentWidget() is SHELL.estrategia
+    assert SHELL.estrategia.currentWidget() is SHELL.ficha
+    assert SHELL.context.crumbs["strategy"].text().startswith(STRATEGY)
 
 
-def test_study(app: QApplication, shell: Shell) -> None:
+def test_study() -> None:
     """With a strategy chosen, a one-strategy study opens on its ficha; a population-only one
     is not listed (its result lives in Proyecto's panel)."""
-    pick(app, shell, "profitShape")
-    assert shell.stack.currentWidget() is shell.estrategia
-    assert shell.ficha.page is not None and shell.ficha.page.key == "profitShape"
-    QTest.keyClick(shell, Qt.Key_K, Qt.ControlModifier)
-    settle(app)
-    assert not [i for i in shell.cmdpalette.items
+    pick(QAPP, SHELL, "edgeCost")
+    assert SHELL.stack.currentWidget() is SHELL.estrategia
+    assert SHELL.ficha.page is not None and SHELL.ficha.page.key == "edgeCost"
+    QTest.keyClick(SHELL, Qt.Key_K, Qt.ControlModifier)
+    settle(QAPP)
+    assert not [i for i in SHELL.cmdpalette.items
                 if i["kind"] == "study" and i["study"] == "gate"]
-    QTest.keyClick(shell.cmdpalette.field, Qt.Key_Escape)
-    settle(app)
+    QTest.keyClick(SHELL.cmdpalette.field, Qt.Key_Escape)
+    settle(QAPP)
 
 
-def test_recent_and_escape(app: QApplication, shell: Shell) -> None:
+def test_recent_and_escape() -> None:
     """The last choices come first, newest on top; Esc closes without going anywhere."""
-    QTest.keyClick(shell, Qt.Key_K, Qt.ControlModifier)
-    settle(app)
-    top = [i["label"] for i in shell.cmdpalette.shown[:3]]
-    assert top == ["Forma del beneficio (profitShape)", STRATEGY, "Registro de búsquedas"], top
-    assert all(i.get("recent") for i in shell.cmdpalette.shown[:3])
+    QTest.keyClick(SHELL, Qt.Key_K, Qt.ControlModifier)
+    settle(QAPP)
+    top = [i["label"] for i in SHELL.cmdpalette.shown[:3]]
+    assert top == ["Edge por coste (edgeCost)", STRATEGY, "Registro de búsquedas"], top
+    assert all(i.get("recent") for i in SHELL.cmdpalette.shown[:3])
     SHOTS.mkdir(parents=True, exist_ok=True)
-    QTest.keyClicks(shell.cmdpalette.field, "1.1")
-    settle(app)
-    shell.cmdpalette.grab().save(str(SHOTS / "I-palette.png"))
-    QTest.keyClick(shell.cmdpalette.field, Qt.Key_Escape)
-    settle(app)
-    assert not shell.cmdpalette.isVisible() and shell.stack.currentWidget() is shell.estrategia
+    QTest.keyClicks(SHELL.cmdpalette.field, QUERY[:3])
+    settle(QAPP)
+    SHELL.cmdpalette.grab().save(str(SHOTS / "I-palette.png"))
+    QTest.keyClick(SHELL.cmdpalette.field, Qt.Key_Escape)
+    settle(QAPP)
+    assert not SHELL.cmdpalette.isVisible() and SHELL.stack.currentWidget() is SHELL.estrategia
 
 
 def test_store_limits() -> None:
@@ -153,34 +179,26 @@ def test_store_limits() -> None:
     QSettings(*cmdrank.STORE).setValue(cmdrank.RECENT_KEY, json.dumps([]))
 
 
-def test_text_field_keeps_ctrl_k(app: QApplication, shell: Shell) -> None:
+def test_text_field_keeps_ctrl_k() -> None:
     """A focused text field keeps Ctrl+K (X11 deletes to end of line; offscreen, nothing): no palette."""
-    shell.open_zone("Plantillas")
-    field = next(f for f in shell.catalogue.findChildren(QLineEdit) if f.isVisible())
+    SHELL.open_zone("Plantillas")
+    field = next(f for f in SHELL.catalogue.findChildren(QLineEdit) if f.isVisible())
     field.setText("abc")
     field.setFocus()
     field.setCursorPosition(1)
-    settle(app)
+    settle(QAPP)
     QTest.keyClick(field, Qt.Key_K, Qt.ControlModifier)
-    settle(app)
-    assert not shell.cmdpalette.isVisible() and field.text() in ("a", "abc")
+    settle(QAPP)
+    assert not SHELL.cmdpalette.isVisible() and field.text() in ("a", "abc")
     field.clear()
 
 
 def main() -> None:
     """Run every check and print its time."""
-    serve()
-    app = QApplication(sys.argv)
-    app.setStyleSheet(QSS)
-    shell = Shell()
-    shell.resize(1440, 900)
-    shell.show()
-    shell.activateWindow()
-    settle(app)
     for test in (test_match, test_lazy, test_zone, test_strategy, test_study,
                  test_recent_and_escape, test_store_limits, test_text_field_keeps_ctrl_k):
         t = time.time()
-        test(*(app, shell)[2 - test.__code__.co_argcount:])
+        test()
         print(f"ok  {test.__name__}  {time.time() - t:.1f} s")
 
 
