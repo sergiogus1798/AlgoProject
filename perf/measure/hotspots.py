@@ -4,6 +4,7 @@ import pstats
 import tempfile
 from pathlib import Path
 
+from core.datapaths import tmp_dir
 from perf.measure import harness
 
 SITES = 12
@@ -22,7 +23,7 @@ def profile(target: str, cfg: dict, top: int = SITES) -> dict:
         lines that held the most bytes at the peak. Own time rather than cumulative: the
         cumulative ranking always puts `main` first and says nothing.
     """
-    dump = Path(tempfile.mkstemp(suffix=".prof")[1])
+    dump = Path(tempfile.mkstemp(suffix=".prof", dir=tmp_dir())[1])
     run = harness.once(target, [], cfg, profile=dump, memtop=top)
     stats = pstats.Stats(str(dump))
     rows = sorted(stats.stats.items(), key=lambda kv: kv[1][2], reverse=True)[:top]

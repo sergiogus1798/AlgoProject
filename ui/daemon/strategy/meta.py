@@ -4,6 +4,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
+from core.datapaths import tmp_dir
 from sqx.inspect import strategymeta
 from ui.daemon.loader import find
 from ui.daemon.strategy import archived, locate
@@ -30,7 +31,7 @@ def live(project: str, databank: str, identity: str) -> dict:
     spelled = find.spelled(project, databank)
     if path.parent.name == spelled or cfx is None:
         return strategymeta.read(path, cfx) | {"origin": origin}
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
         folder = Path(tmp) / spelled
         folder.mkdir()
         shutil.copy2(path, folder / path.name)

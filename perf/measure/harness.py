@@ -8,6 +8,7 @@ import tempfile
 import time
 from pathlib import Path
 
+from core.datapaths import tmp_dir
 from core.paths import ROOT
 
 PAGE_MB = 4096 / (1024 * 1024)
@@ -59,7 +60,7 @@ def once(target: str, overrides: list[str], cfg: dict,
     Returns:
         What the runner reported plus `rss_peak_mb`, the tree-wide peak this process saw.
     """
-    out = Path(tempfile.mkstemp(suffix=".json")[1])
+    out = Path(tempfile.mkstemp(suffix=".json", dir=tmp_dir())[1])
     argv = [sys.executable, "-m", "perf.measure.runner", target, "--out", str(out)]
     argv += ["--profile", str(profile)] if profile else []
     argv += ["--memtop", str(memtop)] if memtop else []

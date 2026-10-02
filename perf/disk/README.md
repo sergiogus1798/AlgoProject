@@ -5,7 +5,7 @@ Read-only over `~/Desktop/AlgoData`. Nothing here deletes, moves or rewrites any
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `report.py` | runs the four below, appends them, and **exits non-zero when a budget broke** | `python3 -m perf.disk.report` | data root → `disk.csv`, `budgets.csv`, `duplicates.csv`, `formats.csv`, `reclaimable.csv` |
-| `budget.py` | each branch against its ceiling from `config.yaml`, and the whole root against its own | imported | branch rows → verdicts |
+| `budget.py` | each branch against its ceiling from `config.yaml`, the whole root against its own, and the system temp partition (`/tmp`) against `disk.tmp_max_share` | imported | branch rows → verdicts |
 | `retention.py` | what could be deleted and how much it would free, by four rules | imported | branch rows → candidates |
 | `inventory.py` | one row per branch: bytes, files, formats, days since last write | imported | data root → branch rows |
 | `duplicates.py` | files that look like copies of each other, by size and head/tail digest | imported | data root → candidate groups |
@@ -20,6 +20,10 @@ end are almost certainly the same file, but nothing here confirms it and nothing
 for a regression — which is what lets it sit in cron and be believed. Ceilings live in
 `config.yaml` under `disk.budget_gb`, sized 2026-09-21 against 2.3 GB in use with headroom for the
 variant study (~200 MB of trades per mother strategy per market, so `raw/` is where growth lands).
+
+The report also prints how full `/tmp` is (`tempfile.gettempdir()`, its own 3.9 GB partition, not under the data
+root) and exits non-zero when it is above `disk.tmp_max_share` (0.8) — it filled to 100 % on 2026-09-26 and
+broke every shell. Remedy: `bin/weekly-claude-cleanup.sh`. → `knowhow/eng/tmp-partition-fills-with-scratchpads.md`
 
 A branch with **no** budget is reported `unbudgeted`, not passed. A new branch appearing and growing
 is exactly what this table exists to make visible, and a default of "unlimited" would hide it.

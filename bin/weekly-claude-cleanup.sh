@@ -1,16 +1,17 @@
 #!/bin/bash
-# weekly-claude-cleanup — delete the scratchpads old Claude sessions left in /tmp, Sunday 23:30.
+# weekly-claude-cleanup — delete the scratchpads old Claude sessions left in /tmp, and the project's
+# own leftovers in <data root>/tmp. Idempotent, so it runs daily (the name is historical).
 #
 # Every Claude Code session gets /tmp/claude-$UID/<project>/<session-id>/ and nothing removes it
 # when the session ends. /tmp is its own 3.9 GB partition here: on 2026-09-26 it filled to 100 %
 # (one scratchpad alone held 958 MB, 23 days old) and every session's shell started failing.
-# Owner, 2026-09-26: clean them weekly. A session folder goes only when the NEWEST file anywhere
-# inside it is older than KEEP_DAYS — a folder's own date does not move when a subfolder is
+# Owner, 2026-09-26: clean them (weekly then; daily from 2026-10-02, /tmp was at 93 % again).
+# A session folder goes only when the NEWEST file anywhere inside it is older than KEEP_DAYS — a folder's own date does not move when a subfolder is
 # written, so a live session could look old. Also trims bash-edit-diff/. Nothing else in /tmp,
 # and never ~/.claude/projects (the conversations themselves). Plain shell: no model is needed
 # to compare two dates.
 #
-# Usage:
+# Usage (cron: daily; the file keeps its first name):
 #   weekly-claude-cleanup            delete what is old; one line per folder in the log
 #   weekly-claude-cleanup --dry-run  list what would go and how much it frees; delete nothing
 #   KEEP_DAYS=7 weekly-claude-cleanup
@@ -28,10 +29,24 @@ case "${1:-}" in
   *)         echo "unknown argument: $1" >&2; exit 2 ;;
 esac
 
-if [ "$DRY" -eq 0 ]; then
-  DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
-    printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
-  exec >>"$DATA/logs/claude-cleanup.log" 2>&1
+DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
+  printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+[ "$DRY" -eq 0 ] && exec >>"$DATA/logs/claude-cleanup.log" 2>&1
+
+# The project's own temp folder (core.datapaths.tmp_dir): what a crashed run left behind. An
+# entry goes when the newest file inside it is older than KEEP_DAYS, like a session folder.
+TMP="$DATA/tmp"
+if [ -d "$TMP" ]; then
+  now=$(date +%s); gone_own=0
+  for entry in "$TMP"/* "$TMP"/.[!.]*; do
+    [ -e "$entry" ] || continue
+    newest=$(find "$entry" -printf '%T@\n' 2>/dev/null | sort -n | tail -1 | cut -d. -f1)
+    [ -n "$newest" ] && [ $(( now - newest )) -ge $(( KEEP_DAYS * 86400 )) ] || continue
+    echo "    own tmp: $(( (now - newest) / 86400 )) d  $entry"
+    if [ "$DRY" -eq 0 ]; then rm -rf -- "$entry" || echo "    failed: $entry"; fi
+    gone_own=$((gone_own + 1))
+  done
+  echo "$(date -Is) $TMP: $gone_own old entries $([ "$DRY" -eq 1 ] && echo 'would go' || echo 'deleted')"
 fi
 
 [ -d "$BASE" ] || { echo "$(date -Is) no $BASE, nothing to do"; exit 0; }

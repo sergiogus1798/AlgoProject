@@ -34,6 +34,9 @@ disk:
   # data belongs in the data root by project rule 7 -- the budget follows the data, the
   # data does not get moved out to fit the budget.
   total_gb: 90
+  tmp_max_share: 0.8         # the system temp partition (/tmp, 3.9 GB, its own filesystem): over this share
+                             # of its size the report exits non-zero. It filled to 100 % on 2026-09-26
+                             # and every session's shell broke; 2.8 GB of it is Claude scratchpads
   near_share: 0.8            # share of a budget at which a branch is called "near"
   budget_gb:
     raw: 40                  # 0.35 GB on 2026-09-23, after WFM_Stability (1.5 GB) was

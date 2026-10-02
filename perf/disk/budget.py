@@ -1,5 +1,8 @@
 """Is the data root bigger than it is allowed to be? One verdict per branch, and an exit code."""
 
+import shutil
+import tempfile
+
 OVER, NEAR, OK, UNBUDGETED = "over", "near", "ok", "unbudgeted"
 
 
@@ -74,3 +77,22 @@ def total(rows: list[dict], cfg: dict) -> dict:
     gb = sum(r["bytes"] for r in top_level(rows)) / 1e9
     limit = cfg["disk"]["total_gb"]
     return {"gb": gb, "budget_gb": limit, "share": gb / limit, "over": gb > limit}
+
+
+def system_tmp(cfg: dict) -> dict:
+    """How full the system temp partition is, against `disk.tmp_max_share`.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        The folder, GB used and total, the share, and whether it is over. Not part of the data
+        root, but it is a partition of its own that session scratchpads fill and a full one
+        breaks every shell, so the report fails on it like on a broken budget.
+    """
+    folder = tempfile.gettempdir()
+    used = shutil.disk_usage(folder)
+    limit = cfg["disk"]["tmp_max_share"]
+    share = used.used / used.total
+    return {"path": folder, "gb": used.used / 1e9, "total_gb": used.total / 1e9,
+            "share": share, "max_share": limit, "over": share > limit}

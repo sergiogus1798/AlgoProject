@@ -10,7 +10,7 @@ import pandas as pd
 
 from core import assetdata, cfx, manifest, tickfile
 from core.barstore import source
-from core.datapaths import retired_project, spread_dir, tick_file
+from core.datapaths import retired_project, spread_dir, tick_file, tmp_dir
 from core.paths import DATA, bar_source
 from core.study import config as study_config
 from ledger import thresholds
@@ -121,7 +121,7 @@ def _task_costs(folder: Path, feed: str, what: str) -> dict:
     tick = asset(assetdata.symbol_for(feed))["instrument"]["tick_size"]
     wanted = {src["databank"]: "IS", src["oos_databank"]: "OOS"}
     out = {}
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
         project = _cfx(Path(src["install"]), src["project"], Path(tmp))
         for task in cfx.tasks(project):
             root = cfx.task_xml(project, task["file"])

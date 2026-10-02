@@ -40,7 +40,7 @@ def run(cfg: dict, quick: bool) -> dict:
 def main() -> None:
     """Print what the data root holds, what is over budget, and what could be freed.
 
-    Exits non-zero when any branch or the total broke its budget, so this can sit in cron
+    Exits non-zero when any branch, the total or the system temp partition broke its budget, so this can sit in cron
     unattended the way `perf.catalogue` already does for regressions.
     """
     ap = argparse.ArgumentParser(description="Inventory the data root under ~/Desktop/AlgoData.")
@@ -69,12 +69,18 @@ def main() -> None:
     for r in free[:10]:
         print(f"  {r['bytes'] / 1e6:9.1f} MB  {r['rule']:18s} {r['path']}  — {r['why']}")
 
+    tmp = budget.system_tmp(cfg)
+    print(f"\n{tmp['path']}: {tmp['gb']:.2f} GB de {tmp['total_gb']:.2f} GB ({tmp['share']:.0%}), "
+          f"tope {tmp['max_share']:.0%}")
     over = budget.failed(found["budgets"])
     for r in over:
         print(f"\nFUERA DE PRESUPUESTO: {r['branch']} {r['gb']:.2f} GB > {r['budget_gb']} GB")
     if whole["over"]:
         print(f"\nFUERA DE PRESUPUESTO: total {whole['gb']:.2f} GB > {whole['budget_gb']} GB")
-    sys.exit(1 if over or whole["over"] else 0)
+    if tmp["over"]:
+        print(f"\nFUERA DE PRESUPUESTO: {tmp['path']} al {tmp['share']:.0%} > {tmp['max_share']:.0%}"
+              " (corre bin/weekly-claude-cleanup.sh)")
+    sys.exit(1 if over or whole["over"] or tmp["over"] else 0)
 
 
 if __name__ == "__main__":

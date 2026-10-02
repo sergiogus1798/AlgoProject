@@ -235,3 +235,16 @@ def funding_dir() -> Path:
 def portfolio_dir() -> Path:
     """The portfolio engine's tree: declared pools, prohibitions, the universe cache and runs."""
     return DATA / "portfolio"
+
+
+def tmp_dir() -> Path:
+    """The project's own temp folder, so its scratch never lands on the 3.9 GB `/tmp` partition.
+
+    Returns:
+        `<data root>/tmp`, created on first call. Pass it as `dir=` to `tempfile`; the context
+        managers delete their folder on exit, and `bin/weekly-claude-cleanup.sh` prunes whatever
+        a crashed run left behind.
+    """
+    out = DATA / "tmp"
+    out.mkdir(parents=True, exist_ok=True)
+    return out

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from core.datapaths import tmp_dir
 from perf.inputs import sample
 
 WRITERS = {
@@ -31,7 +32,7 @@ def one(frame: pd.DataFrame, label: str) -> list[dict]:
     """
     rows = []
     for name, write in WRITERS.items():
-        path = Path(tempfile.mkstemp(suffix=f".{name}")[1])
+        path = Path(tempfile.mkstemp(suffix=f".{name}", dir=tmp_dir())[1])
         start = time.perf_counter()
         write(frame, path)
         written = time.perf_counter() - start

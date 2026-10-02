@@ -20,7 +20,7 @@ python3 -m perf.catalogue                      # measure everything, store it, j
 python3 -m perf.catalogue --only strategies    # one area, or one target name
 python3 -m perf.catalogue --hotspots montecarlo.analyse   # where that target's time and memory go
 python3 -m perf.catalogue --scaling            # also re-measure the machine's memory ceiling
-python3 -m perf.disk.report                    # inventory AlgoData: size, duplicates, formats
+python3 -m perf.disk.report                    # inventory AlgoData: size, duplicates, formats; also /tmp's use %
 ```
 
 `catalogue` **exits non-zero when anything regressed**, so it can sit in cron unattended.
