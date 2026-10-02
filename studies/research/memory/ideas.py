@@ -27,12 +27,13 @@ def parse(text: str, symbol: str, name: str) -> list[dict]:
 
     Returns:
         One row per `### Idea N — `name` · TF · direction` heading. `hypotheses_measured` is
-        the file's own count (its «Hipótesis medidas: N» line, shared by its ideas) or ''.
+        the file's own count (the largest of its «Hipótesis medidas: N» lines — an addendum restates
+        the running total — shared by its ideas) or ''.
         `origin` is the text of an `Origen:` line inside the idea's section, '' when the file
         gives none; `from_book` is yes/no only when that line exists, else unknown — a book idea
         carries its author's trials, so unknown is not a no.
     """
-    counted = HYPOTHESES.search(text)
+    counted = [int(n) for n in HYPOTHESES.findall(text)]
     marks = list(HEADING.finditer(text))
     rows = []
     for i, m in enumerate(marks):
@@ -40,7 +41,7 @@ def parse(text: str, symbol: str, name: str) -> list[dict]:
         origin = ORIGIN.search(section)
         rows.append({"idea": m[2], "symbol": symbol, "timeframe": m[3],
                      "direction": direction(m[4]), "date": name[:10], "rank": int(m[1]),
-                     "hypotheses_measured": int(counted[1]) if counted else "",
+                     "hypotheses_measured": max(counted) if counted else "",
                      "origin": origin[1].strip() if origin else "",
                      "from_book": ("yes" if "libro" in origin[1].lower() else "no")
                      if origin else "unknown", "file": f"{symbol}/{name}"})

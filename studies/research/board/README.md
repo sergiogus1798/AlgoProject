@@ -52,11 +52,13 @@ evidence is graded naked 1 > plateau 0.8 > significant under 2× 0.5 > none 0.25
   passing cells are proposed, future runs are all «high» by the profile's own filter, and the low
   half comes from runs launched by hand. Until both halves exist it cannot conclude.
 
-## The hook for `ledger/trials.py` (not wired: `ledger/` was not to be edited)
+## The ideas spent reach the deflated Sharpe (wired 2026-10-02)
 
-`inputs.ideas_spent(inputs.memory()["spent"], symbol, timeframe, direction, family) -> int` is the
-number of ideas already proposed for a cell; `memory.queries.ideas_spent` also carries
-`hypotheses`, what the ideaExpert measured. A deflated Sharpe that wants «trials of the cell» adds
-them to `trials.accumulated(frame)["n"]`: `OPEN.md` (entry in the phase-4 report).
+`ledger.report` adds to a study's N the **hypotheses** the ideaExpert measured (owner: the real
+looks, not the ideas), through `studies.research.memory.trials.spent` — each idea file once per
+study, only the study's direction, an idea with no family yet in every study of its asset,
+timeframe and direction. The board is not in that path: `inputs.ideas_spent(…)` stays what the
+proposal prints as «ya van K ideas», a count of ideas, per cell. The profile's own measures stay
+out of N. → `ledger/README.md`, `knowhow/research/ideas-are-ledger-trials.md`.
 
 Manual: `AlgoData/manual-fuentes/83-tablero-de-investigacion.md`. Test: `tests/test_research_board.py`.

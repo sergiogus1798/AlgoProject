@@ -13,15 +13,15 @@ family: the unit the multiple-testing correction is owed to.
 | `study.py` | What a study is, where its ledger lives, and contract **L1** — the columns of a search | imported | ids → path, frame |
 | `record.py` | Builds a row, checks the door, appends it; and the study's funnel | imported | a search → a line |
 | `gate.py` | **The one-way door**, shut only for an autonomous agent: who may read a reserved segment, and when 17-19 may be read | imported | step, segment → pass or raise |
-| `trials.py` | N and the pooled sigma over every search, the population's n_eff, and the deflated Sharpe that follows | imported | ledger → N, sigma, DSR |
+| `trials.py` | N and the pooled sigma over every search — plus the `extra` looks the caller passes, which raise N and leave sigma alone — the population's n_eff, and the deflated Sharpe that follows | imported | ledger (+ extra) → N, sigma, DSR |
 | `spend.py` | The map of spent data: how often each segment has been read, and what is left virgin | imported | ledger → segments |
 | `thresholds.py` | **The accessor**: `value(key)` and `fill(cfg)`, which a module's `config()` runs over its parsed `config.yaml` to replace every `ledger:<key>`; and the check of which rows are read through it | imported | register → numbers, divergences |
 | `backfill.py` | Rebuilds a study's ledger backwards from artefacts a run already left: a gate report, or (`--blind`) the results of 17, 18 and 19 | `python3 -m ledger.backfill --gate <dir> --symbol XAUUSD --timeframe M30 --family <name>` · `python3 -m ledger.backfill --blind <project> --symbol USDJPY --timeframe H1 --family <name>` | a gate report, or WFC/CSCV/WFM results → rows |
 | `blind.py` | The rows steps 17, 18 and 19 did not write, rebuilt from `wfc.json`, `cscv.json` and the WFM reading, one per segment each read — skipping a batch whose WFC or CSCV recorded itself | imported by `backfill` | results → rows |
-| `report.py` | **The command**: the funnel, what was spent, the blind door, and what the whole search costs the Sharpe | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
+| `report.py` | **The command**: the funnel, what was spent, the blind door, and what the whole search costs the Sharpe — «N candidatos + K hipótesis», the ideaExpert's looks read from `studies.research.memory.trials` | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
 | `thresholds.yaml` | Every threshold of the chain, with who set it and when — **the source**: a module's `config.yaml` holds `ledger:<key>` in its place. Read, never written by code — except `cscv.blocks`, which the window's Configuración SQX › CSCV writes for the owner, stamping `set_by`, `set_on` and a proposed `why` (2026-09-28) | edited by the owner, by hand or from the window | — |
 
-Manual page, in Spanish: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 43-ledger).
+Manual page, in Spanish: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 43-ledger). Tests: `tests/test_ledger.py`, `tests/test_ledger_ideas.py`.
 
 ## The three things this module exists to get right
 
@@ -60,6 +60,14 @@ that spread is narrower than the study's, always in the direction that flatters 
 ⚠️ **It refuses to pool two units.** SQX stores annualised Sharpes and `core.significance` works per
 observation; mixing them yields a plausible number that means nothing. Every row records
 `score_unit`, and `accumulated` raises rather than average across two of them.
+
+**The ideas spent count too, and only the command knows about them** (owner, 2026-10-02). The
+hypotheses the ideaExpert measured before any search existed are trials of the study: `report.py`
+asks `studies.research.memory.trials.spent` and passes the number to `accumulated(frame, extra)`.
+`trials.py` imports no study — the count arrives as an argument — so the dependency runs
+command → memory and never inference → memory; the window's ledger view and `core.archive` still
+call `accumulated(frame)` and show the searches alone. The market profile's own measures are
+printed beside it and **not** added (`knowhow/research/ideas-are-ledger-trials.md`).
 
 **A reconstructed row is weaker than a recorded one, and says so.** `backfill` can only recover what
 an artefact wrote down — a funnel knows what it counted, not what else was tried and discarded — so

@@ -7,15 +7,18 @@ from core.significance import moments
 from core.surface import plateau, trials
 
 
-def accumulated(frame: pd.DataFrame) -> dict:
+def accumulated(frame: pd.DataFrame, extra: int = 0) -> dict:
     """The number of trials and the spread of their scores, over the whole study.
 
     Args:
         frame: What `study.read` returned.
+        extra: Looks at the data that left no search row -- the hypotheses the research
+            memory counts for this study. The caller passes them; this module reads no memory.
 
     Returns:
-        `n` candidates ever scored, `sigma` their pooled standard deviation with ddof=1,
-        and the searches behind both. The pooling is **exact**: each search's stored
+        `n` trials (`searched` candidates ever scored plus `extra`), `sigma` the candidates'
+        pooled standard deviation with ddof=1, and the searches behind both. `extra` raises
+        N and leaves sigma alone: a hypothesis has no Sharpe to pool. The pooling is **exact**: each search's stored
         `ddof=1` spread is converted back to its population form, the mixture variance is
         `sum n_i(sigma_i^2 + mu_i^2)/N - grand^2`, and the result is converted back. No
         search has to keep its candidates around to be counted later, and the answer is
@@ -45,7 +48,7 @@ def accumulated(frame: pd.DataFrame) -> dict:
     population = sd ** 2 * (n - 1) / n
     variance = float((n * (population + mean ** 2)).sum() / total - grand ** 2)
     unbiased = variance * total / (total - 1)
-    return {"n": int(total), "sigma": float(np.sqrt(max(unbiased, 0.0))),
+    return {"n": int(total) + extra, "searched": int(total), "extra": extra, "sigma": float(np.sqrt(max(unbiased, 0.0))),
             "mean": grand, "searches": int(len(scored)), "unit": units.pop()}
 
 

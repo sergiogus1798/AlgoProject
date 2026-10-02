@@ -11,6 +11,7 @@ Config (grid, families, archetype → family, asset → class, stage order): `co
 | `attempts.py` | One row per project run (template × asset × timeframe × direction): the funnel per stage, where it died, survivors, outcome, hours | imported | sources → `COLUMNS` rows |
 | `ideas.py` | Every `### Idea N` of `AlgoData/ideas/<SYMBOL>/*.md` with the hypotheses its file measured and whether it came from a book | imported | idea files → `COLUMNS` rows |
 | `queries.py` | `untouched_cells`, `survivors_by_family`, `ideas_spent`, `grid` | imported | tables → rows |
+| `trials.py` | `spent(ideas, templates, symbol, timeframe, family)`: the hypotheses measured that count as trials of one **ledger study** (each idea file once, the study's direction only), and `profile_looks(…)`, the market profile's distinct measures there, shown and never added | imported by `ledger.report` | ideas index + template registry → K |
 | `verdict.py` | `close_run(run_dir)`: closes the project's row in `runs.csv` with its funnel and a verdict sentence | `python3 -m studies.research.memory.report --close <run_dir> [--runs-csv X]` | a finished run → runs.csv row |
 | `report.py` | The command: rebuilds the five CSVs, prints the summary | `python3 -m studies.research.memory.report [--out DIR]` | sources → `attempts.csv`, `ideas.csv`, `ideas_spent.csv`, `survivors_by_family.csv`, `untouched_cells.csv` |
 
@@ -32,6 +33,9 @@ Config (grid, families, archetype → family, asset → class, stage order): `co
   no source records CPU time. Empty = never ran under the autopilot.
 - **`from_book` is `unknown`** unless the idea's section has an `Origen:` line; unknown is not no.
 - The ledger is per study (asset × timeframe × family), not per project, so it is not read here;
-  the funnel comes from the autopilot's own summary.
+  the funnel comes from the autopilot's own summary. The other way round it is: `ledger.report`
+  reads `trials.spent` to add the hypotheses to its N.
+- **`hypotheses_measured` is the largest «Hipótesis medidas: N» of the file**: an addendum restates
+  the running total (24, then «29 (24 de antes + 5 nuevas)»), and the first match undercounted.
 
 Manual: `AlgoData/manual-fuentes/81-memoria-de-resultados.md`. Test: `tests/test_research_memory.py`.

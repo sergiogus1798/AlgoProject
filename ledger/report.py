@@ -9,6 +9,7 @@ import pandas as pd
 
 from core.surface import plateau
 from ledger import gate, record, spend, study as studymod, thresholds, trials
+from studies.research.memory import ideas, sources, trials as research
 
 YEAR = 252      # trading days a year, for converting SQX's annualised Sharpes
 
@@ -81,21 +82,29 @@ def main() -> None:
     except PermissionError as refusal:
         print(f"  {refusal}")
 
-    counted = trials.accumulated(frame)
+    timeframe = frame["timeframe"].iloc[0]
+    family = a.study.removeprefix(studymod.study_id(symbol, timeframe, "") + "_")
+    spent = research.spent(ideas.index(), sources.templates(), symbol, timeframe, family)
+    counted = trials.accumulated(frame, spent["hypotheses"])
     if not counted["n"]:
         print("\n-- ninguna búsqueda registró la distribución de sus candidatos")
         return
-    print(f"\n-- lo que se ha probado en total: N = {counted['n']} candidatos sobre "
-          f"{counted['searches']} búsqueda(s), sigma = {counted['sigma']:.4f} "
-          f"({counted['unit']})")
+    print(f"\n-- lo que se ha probado en total: N = {counted['n']} = {counted['searched']} "
+          f"candidatos de {counted['searches']} búsqueda(s) + {spent['hypotheses']} hipótesis "
+          f"medidas en {spent['ideas']} idea(s) ({' y '.join(spent['directions'])}), "
+          f"sigma = {counted['sigma']:.4f} ({counted['unit']})")
+    print(f"  aparte, sin sumar: {research.profile_looks(symbol, timeframe, spent['directions'])}"
+          " medidas del perfil de mercado y su barrido, corregidas entre sí")
 
     last = frame[frame["n_scored"].notna()].iloc[-1]
     local = int(last["n_scored"])
     sigma = counted["sigma"] / np.sqrt(YEAR) if counted["unit"] == "annualised" \
         else counted["sigma"]
-    for label, n in (("la última búsqueda", local), ("el estudio entero", counted["n"])):
-        print(f"  benchmark con N de {label:<18} ({n:>5}): "
-              f"{plateau.expected_max_sharpe(sigma, n):.4f} (por día)")
+    widths = (("la última búsqueda", local), ("todas las búsquedas", counted["searched"]),
+              ("búsquedas + ideas", counted["n"]))
+    for label, n in widths:
+        print(f"  benchmark con N de {label:<19} ({n:>5}): "
+              f"{plateau.expected_max_sharpe(sigma, n):.6f} (por día)")
     if local == counted["n"]:
         print("  los dos coinciden: este estudio sólo tiene una búsqueda con distribución "
               "registrada, así que no hay nada acumulado todavía que mover")
@@ -103,10 +112,10 @@ def main() -> None:
     if a.equity and a.identity:
         returns = returns_of(a.equity, a.identity)
         print(f"\n-- el Sharpe desinflado de {a.identity[:12]}… sobre {len(returns)} días")
-        for label, n in (("la última búsqueda", local), ("el estudio entero", counted["n"])):
+        for label, n in widths:
             found = trials.deflated(returns, sigma, n)
-            print(f"  N de {label:<18}: sharpe {found['sharpe']:.4f} contra benchmark "
-                  f"{found['benchmark']:.4f} -> DSR {found['dsr']:.4f}")
+            print(f"  N de {label:<19}: sharpe {found['sharpe']:.4f} contra benchmark "
+                  f"{found['benchmark']:.4f} -> DSR {found['dsr']:.6f}")
 
 
 if __name__ == "__main__":
