@@ -46,6 +46,13 @@ def plan(data: dict) -> dict:
             continue
         if n in chainplan.FILLED_BY_NEXT:
             continue
+        if n == "16.5":       # the variant factory runs here, unattended (pipeline.autopilot.variants)
+            if pending:
+                do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})
+                pending = None
+            do.append({"n": n, "title": step["title"], "kind": "variants", "tests": []})
+            stale = True
+            continue
         if n in chainplan.OOS2 or n in ELSEWHERE:
             return halt(n, chainplan.OOS2.get(n) or ELSEWHERE[n])
         if not step.get("stage"):

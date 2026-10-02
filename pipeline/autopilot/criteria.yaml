@@ -24,6 +24,10 @@
 #            {fact: K, pass: ">= 0", limbo: ">= -100"}
 #            {fact: K, near_median: 0.2, limbo_near_median: 0.5}
 #              |value − median| ≤ tol × |median|, the median over the databank being cut
+#          A rule may vary by what the project is — its timeframe, symbol or asset class
+#          (`forex`, `no_forex`); several joined by "+" must all hold; the first entry that
+#          matches replaces the fields it names, no match leaves the rule as written:
+#            {fact: K, pass: ">= 2.33", limbo: ">= 1.65", by: {H4: {pass: ">= 2.5", limbo: ">= 1.9"}}}
 #          A strategy's outcome is its worst rule; a strategy without the fact is limbo
 #          (owner, 2026-10-01: odd, but limbo).
 #          No rules: every strategy passes. A limbo goes on, marked (owner, 2026-10-01).
@@ -34,7 +38,45 @@ dev:
   seed: null
 
 steps:
-  "8":  {cut: OOS, rules: []}
+  # Paso 8 — propuesta de agente 2026-10-02, PROVISIONAL hasta que el dueño la apruebe. Calibrada
+  # sobre 27 poblaciones sin seleccionar (USDJPY y XAUUSD; M30, H1, H4) y 11,9 M de estrategias
+  # nulas: docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md. Pass = probada; Limbo = no ha
+  # podido probarse todavía, sigue marcada; Fail = azar casi seguro o riesgo inasumible.
+  "8":
+    cut: OOS
+    rules:
+      # R1 — está en el databank OOS y su lista de operaciones no es escasa ni un clon
+      - {fact: gate.scorecard.presencia_passed, pass: ">= 1"}
+      - {fact: gate.scorecard.sanidad_passed, pass: ">= 1"}
+      # R2 — ganó dinero en oos1
+      - {fact: gate.scorecard.estaticas_value, pass: "> 0"}
+      # R3 — LA prueba: t de la operación en oos1 descontando la deriva del mercado (n efectiva
+      # AR(1)). Una línea para todo activo y lado: 1,65 deja pasar ~4 % de estrategias sin edge y
+      # sin costes, 2,33 ~0,6 % (H1 y M30). H4 es más ruidoso: 1,9 / 2,5.
+      - {fact: gate.scorecard.drift_excess_t, pass: ">= 2.33", limbo: ">= 1.65",
+         by: {H4: {pass: ">= 2.5", limbo: ">= 1.9"}}}
+      # R4 — operaciones por año en el IS: la banda. Por debajo de 20 el azar domina; de 20 a 40
+      # la estrategia puede ser buena pero oos1 no tiene potencia para probarlo (Limbo); 40 es
+      # el suelo del dueño. Techo: por encima, los costes se comen el filo con salidas a 2-24 h.
+      - {fact: gate.scorecard.is_trades_per_year, pass: ">= 40", limbo: ">= 20"}
+      - {fact: gate.scorecard.is_trades_per_year, pass: "<= 75", limbo: "<= 100",
+         by: {M30: {pass: "<= 100", limbo: "<= 130"}, H4: {pass: "<= 50", limbo: "<= 65"}}}
+      # R5 — la frecuencia no se hundió fuera de muestra
+      - {fact: gate.scorecard.oos_trades_per_year, pass: ">= 15", limbo: ">= 10"}
+      # R6 — drawdown máximo OOS / IS
+      - {fact: gate.scorecard.forma_value, pass: "<= 1.25", limbo: "<= 2.0"}
+      # R7 — años naturales de oos1 con neto > 0
+      - {fact: gate.scorecard.degradacion_years_positive, pass: ">= 3", limbo: ">= 2"}
+      # R8 — mejor trimestre / neto total de oos1 (red de seguridad: nunca decide sola)
+      - {fact: gate.scorecard.degradacion_concentration, pass: "<= 0.5", limbo: "<= 0.8"}
+      # R9 — riesgo flotante en R (1R = el riesgo por operación del sizing). A 1 % de cuenta por
+      # R, un día de -5R es el límite diario del 5 % de una cuenta de fondeo.
+      - {fact: gate.scorecard.oos_worst_day_r, pass: ">= -3", limbo: ">= -5"}
+      - {fact: gate.scorecard.oos_worst_trade_mae_r, pass: ">= -3", limbo: ">= -5"}
+      - {fact: gate.scorecard.oos_dd_over_net_year, pass: "<= 1.5", limbo: "<= 2.5"}
+      # SIN regla, a propósito: p del mono (no reproducible y redundante con la t), edge por
+      # coste, PF al spread real y snooping (redundantes con la t), calidad del feed, forma del
+      # beneficio y calidad de la entrada (dueño, 2026-10-01: fuera de este criterio).
   "10": {cut: Retest Markets - Family, rules: []}
   "12": {cut: CrossTF, rules: []}
   "14": {cut: MCR 8 Stress, rules: []}

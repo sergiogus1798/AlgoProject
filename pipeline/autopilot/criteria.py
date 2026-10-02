@@ -36,6 +36,27 @@ def one(value: float, rule: dict, median: float) -> str:
     return "limbo" if "limbo" in rule and holds(value, rule["limbo"]) else "fail"
 
 
+def resolved(rules: list[dict], tags: set[str]) -> list[dict]:
+    """A step's rules as they apply to one project: each rule's `by` folded in.
+
+    Args:
+        rules: The step's rules. One may carry `by: {<tags>: {pass: ..., limbo: ...}}`, where
+            `<tags>` is one tag or several joined by "+" (all must hold), e.g. `H4` or
+            `H4+no_forex`.
+        tags: What the project is: its timeframe, symbol and asset class.
+
+    Returns:
+        The rules without `by`: the fields of the FIRST entry of `by` whose tags the project
+        has replace the rule's own; a rule without a matching entry is as written.
+    """
+    out = []
+    for rule in rules:
+        extra = next((fields for key, fields in (rule.get("by") or {}).items()
+                      if set(str(key).split("+")) <= tags), {})
+        out.append({k: v for k, v in rule.items() if k != "by"} | extra)
+    return out
+
+
 def outcomes(facts: pd.DataFrame, who: list[str], rules: list[dict]) -> dict[str, tuple[str, str]]:
     """Every strategy's outcome: its worst rule.
 

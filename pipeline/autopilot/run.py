@@ -11,9 +11,10 @@ from datetime import datetime
 from pathlib import Path
 
 from core.paths import DATA
-from pipeline.autopilot import judge, plan
+from pipeline.autopilot import judge, plan, variants
 from ui.daemon.advance import preflight as advance
-from ui.daemon.launch import chain, preflight
+from sqx.projects import live
+from ui.daemon.launch import chain, liverun, preflight
 from ui.daemon.launch import steps as launchsteps
 from ui.daemon.launch import run as launcher
 from ui.daemon.workflow import api as workflow
@@ -60,7 +61,7 @@ def sqx_step(project: str, actions: list[dict], first: bool, filled: set[str]) -
     if not pre["ok"]:
         sys.exit(f"paso {'+'.join(a['n'] for a in actions)}: no se lanza:\n  "
                  + "\n  ".join(pre["reasons"]))
-    moved = launcher.execute(pre, project)
+    moved = (liverun.execute if live.mine(pre["role"]) else launcher.execute)(pre, project)
     filled |= {t["output"] for t in pre["chosen"]}
     return " · ".join(f"{t}: {a} → {b}" for t, (a, b) in moved.items())
 
@@ -82,13 +83,17 @@ def merged(todo: list[dict]) -> list[dict]:
 AFTER_CUT = {"8": ["profitShape", "entryQuality"]}
 
 
-def after_cut(actions: list[dict]) -> list[dict]:
+def after_cut(actions: list[dict], cfg: dict) -> list[dict]:
     """Move AFTER_CUT's tests out of their step's Python action to a Python action right after
-    that step's judge, marked `cut` so the loop hands it the surviving strategies."""
+    that step's judge, marked `cut` so the loop hands it the surviving strategies — except a
+    test a rule of that step in `criteria.yaml` names (`<test>.…`): it is judged, so it runs
+    before the judge, on everyone."""
     out, late = [], {}
     for a in actions:
+        judged = {r["fact"].split(".")[0]
+                  for r in cfg["steps"].get(a["n"], {}).get("rules") or []}
         moved = [k for k in AFTER_CUT.get(a["n"], [])
-                 if a["kind"] == "python" and k in a["tests"]]
+                 if a["kind"] == "python" and k in a["tests"] and k not in judged]
         if moved:
             late[a["n"]] = {"n": a["n"], "title": a["title"], "kind": "python", "tests": moved,
                             "cut": True}
@@ -106,11 +111,13 @@ def survivors(project: str, n: str, role: str, cfg: dict) -> list[str]:
     return sorted(judge.population(project, cfg["steps"][n]["cut"], role)["strategy"])
 
 
-def autopilot(project: str, out: Path, own_log: bool = False) -> None:
+def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = False) -> None:
     """Plan from the rail, then run every action in order; the first failure ends it.
 
     `own_log`: this caller wrote the install's log of the last minutes itself, so it is no
     sign of anyone else (`advance.busy`); the lock, the port and a live process still refuse.
+    `on_live`: one GUI session (`sqx.projects.live`) for every SQX step, started here and
+    stopped at the end, its start and stop timed as rows of their own.
     """
     where = advance.where(project)
     if "refuse" in where:
@@ -123,7 +130,12 @@ def autopilot(project: str, out: Path, own_log: bool = False) -> None:
     (out / "plan.json").write_text(json.dumps(todo, indent=1, ensure_ascii=False),
                                    encoding="utf-8")
     done, filled, ran_sqx = [], set(), own_log
-    actions = after_cut(merged(todo["do"]))
+    actions = after_cut(merged(todo["do"]), cfg)
+    if on_live:
+        began = time.monotonic()
+        live.start(where["role"])
+        done.append({"n": "-", "kind": "arranque", "s": time.monotonic() - began,
+                     "what": "sesión GUI del custodio"})
     try:
         for i, action in enumerate(actions):
             status(out, f"[{i + 1}/{len(actions)}] paso {action['n']} · {action['kind']}")
@@ -138,6 +150,8 @@ def autopilot(project: str, out: Path, own_log: bool = False) -> None:
                         if a["kind"] == "sqx" and a["n"] in ns]
                 if left:
                     what += " · " + sqx_step(project, left, False, filled)
+            elif action["kind"] == "variants":
+                what = variants.run(project, where["role"])
             elif action["kind"] == "python":
                 if action.get("cut"):
                     action["picked"] = survivors(project, action["n"], where["role"], cfg)
@@ -153,7 +167,7 @@ def autopilot(project: str, out: Path, own_log: bool = False) -> None:
                          "s": time.monotonic() - began, "what": what})
             summary(out, project, done, todo["stop"])
     except BaseException as failed:
-        n = actions[len(done)]["n"]
+        n = actions[sum(d["n"] != "-" for d in done)]["n"]
         (out / "fallo.md").write_text(
             f"# Fallo en el paso {n}\n\n{failed}\n\n```\n"
             + "".join(traceback.format_exc().splitlines(keepends=True)[-TAIL:]) + "```\n",
@@ -161,6 +175,13 @@ def autopilot(project: str, out: Path, own_log: bool = False) -> None:
         summary(out, project, done, todo["stop"], error=n)
         status(out, f"FALLO en el paso {n}: {str(failed).splitlines()[0] if str(failed) else ''}")
         raise
+    finally:
+        if on_live and live.mine(where["role"]):
+            began = time.monotonic()
+            live.stop(where["role"])
+            done.append({"n": "-", "kind": "parada", "s": time.monotonic() - began,
+                         "what": "parada y export final"})
+            summary(out, project, done, todo["stop"])
     status(out, f"FIN · {len(done)} acciones · resumen en {out / 'resumen.md'}")
 
 
@@ -171,6 +192,8 @@ def main() -> None:
     ap.add_argument("--plan", action="store_true", help="solo escribe el plan, no corre nada")
     ap.add_argument("--own-log", action="store_true",
                     help="el log reciente del worker lo escribiste tú: no esperes sus 15 min")
+    ap.add_argument("--live", action="store_true",
+                    help="una sola sesión de SQX (modo GUI) para todos los pasos, sin reinicios")
     a = ap.parse_args()
     if a.plan:
         print(json.dumps(plan.plan(workflow.workflow(a.project)), indent=1, ensure_ascii=False))
@@ -179,7 +202,7 @@ def main() -> None:
     out.mkdir(parents=True)
     print(f"carpeta del run: {out}", flush=True)
     signal.signal(signal.SIGTERM, chain.cancelled)
-    autopilot(a.project, out, a.own_log)
+    autopilot(a.project, out, a.own_log, a.live)
 
 
 if __name__ == "__main__":

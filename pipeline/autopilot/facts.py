@@ -17,6 +17,12 @@ BY_N = {s["n"]: s for s in STEPS}
 # A scaled sibling's name ends in its target timeframe (`sqx.projects.crosstfload.SIBLING`).
 TARGET = re.compile(r"_Scaled([MHD]\d+)(\(\d+\))?$")
 COLUMNS = ["study", "strategy", "identity", "key", "value"]
+BOOLS = {"True": 1.0, "False": 0.0}
+# The per-strategy CSVs a result folder may hold, read column by column as `<stem>_csv.<col>`:
+# a study's own verdict, and the monkey's ladder (`nulls.csv`, one row per strategy × market).
+CSVS = ("verdict.csv", "nulls.csv")
+# Columns of those CSVs that name the row, never a fact.
+NAMES = {"strategy", "identity", "verdict", "verdict_state", "mother", "market"}
 
 
 def slug(text: str) -> str:
@@ -26,7 +32,16 @@ def slug(text: str) -> str:
 
 
 def number(value: object) -> float | None:
-    """A cell as a float, or None when it is not a number (text, None, NaN)."""
+    """A cell as a float, or None when it is not a number (text, None, NaN).
+
+    A CSV cell comes as text: a number in it is read, and "True"/"False" are 1 and 0.
+    """
+    if isinstance(value, str):
+        value = BOOLS.get(value, value)
+        try:
+            value = float(value)
+        except ValueError:
+            return None
     if not isinstance(value, (bool, int, float, np.number, np.bool_)):
         return None
     return float(value) if value == value else None
@@ -36,8 +51,9 @@ def block(b: dict) -> list[tuple[str, float | None]]:
     """The numbers one contract block carries, keyed under its title.
 
     A distribution gives its real value, median, p and percentiles; a table every numeric
-    cell as `<title>.<first cell of the row>.<column>`; a verdict each part's value. The
-    other kinds are pictures of series and give nothing a rule can test.
+    cell as `<title>.<first cell of the row>.<column>`; a verdict `verdict_pass` (1 when its
+    state is pass: a reading such as profitShape's `spread`) and each part's value. The other
+    kinds are pictures of series and give nothing a rule can test.
     """
     t = slug(b.get("title") or b.get("label") or b["kind"])
     if b["kind"] == "distribution":
@@ -48,7 +64,8 @@ def block(b: dict) -> list[tuple[str, float | None]]:
         return [(f"{t}.{slug(row[0])}.{slug(col)}", cell) for row in b["rows"]
                 for col, cell in zip(b["columns"][1:], row[1:])]
     if b["kind"] == "verdict":
-        return [(f"{t}.{slug(p['label'])}", p.get("value")) for p in b.get("parts", [])]
+        return [("verdict_pass", b["state"] == "pass")] + [
+            (f"{t}.{slug(p['label'])}", p.get("value")) for p in b.get("parts", [])]
     return []
 
 
@@ -74,9 +91,32 @@ def flatten(result: dict) -> list[tuple[str, float | None]]:
     return out
 
 
+def per_strategy(study: str, df: pd.DataFrame, prefix: str, skip: set[str]) -> list[dict]:
+    """Every column of a one-row-per-strategy table that holds a number, as `<prefix>.<col>`.
+
+    A column with any number in it is read; its text cells (and a bool column's None, where a
+    cascade never reached the strategy) are dropped by the caller as not numbers.
+    """
+    ids = df["identity"].fillna("") if "identity" in df.columns else pd.Series("", index=df.index)
+    rows = []
+    for col in df.columns.difference(skip, sort=False):
+        values = [number(x) for x in df[col]]
+        if any(v is not None for v in values):
+            rows += [{"study": study, "strategy": s, "identity": i,
+                      "key": f"{prefix}.{slug(col)}", "value": v}
+                     for s, i, v in zip(df["strategy"], ids, values)]
+    return rows
+
+
 def from_folder(study: str, folder: Path) -> list[dict]:
-    """The rows of one result folder: its per-strategy JSONs, its one-row-per-strategy parquets and
-    its verdict.csv (`verdict_csv.drop` 1 when the study itself said DESCARTAR)."""
+    """The rows of one result folder: its per-strategy JSONs, its one-row-per-strategy parquets
+    and CSVs (`CSVS`), `verdict_csv.drop` (1 when the study itself said DESCARTAR) and, where
+    the CSV has a `verdict_state`, `verdict_csv.state_pass` (1 when it is pass).
+
+    A parquet indexed by identity (the gate's scorecard) gets it as a column, so its facts join
+    the databank by identity like every other study's. Rows without a strategy name (the
+    gate's build strategies SQX never put in the OOS databank) are not in any databank judged.
+    """
     rows = []
     for f in sorted((folder / "estrategias").glob("*.json")):
         r = json.loads(f.read_text(encoding="utf-8"))
@@ -84,20 +124,31 @@ def from_folder(study: str, folder: Path) -> list[dict]:
                   "key": k, "value": number(x)} for k, x in flatten(r)]
     for f in sorted(folder.glob("*.parquet")):
         df = pd.read_parquet(f)
-        if "strategy" not in df.columns or df["strategy"].duplicated().any():
+        df = df.reset_index() if df.index.name == "identity" else df
+        if "strategy" not in df.columns:
+            continue
+        df = df[df["strategy"].notna()]
+        if df["strategy"].duplicated().any():
             continue        # a trade or cell table: its rows are not one per strategy
-        ids = df["identity"] if "identity" in df.columns else pd.Series("", index=df.index)
-        for col in df.select_dtypes(["number", "bool"]).columns:
+        rows += per_strategy(study, df, slug(f.stem), {"strategy", "identity"})
+    for name in CSVS:
+        csv = folder / name
+        if not csv.exists():
+            continue
+        df = pd.read_csv(csv, dtype=str)
+        if name != "verdict.csv" and df["strategy"].duplicated().any():
+            continue        # a ladder over several markets: no one row per strategy
+        rows += per_strategy(study, df, f"{csv.stem}_csv", NAMES)
+        if name == "verdict.csv":
+            ids = df["identity"].fillna("") if "identity" in df.columns else \
+                pd.Series("", index=df.index)
+            rows += [{"study": study, "strategy": s, "identity": i, "key": "verdict_csv.drop",
+                      "value": float(v == "DESCARTAR")}
+                     for s, i, v in zip(df["strategy"], ids, df["verdict"])]
+            # spread says its own call in words (pass/fail) beside a verdict that only marks
             rows += [{"study": study, "strategy": s, "identity": i,
-                      "key": f"{slug(f.stem)}.{slug(col)}", "value": number(x)}
-                     for s, i, x in zip(df["strategy"], ids, df[col])]
-    csv = folder / "verdict.csv"
-    if csv.exists():
-        df = pd.read_csv(csv, dtype=str).fillna("")
-        ids = df["identity"] if "identity" in df.columns else pd.Series("", index=df.index)
-        rows += [{"study": study, "strategy": s, "identity": i, "key": "verdict_csv.drop",
-                  "value": float(v == "DESCARTAR")}
-                 for s, i, v in zip(df["strategy"], ids, df["verdict"])]
+                      "key": "verdict_csv.state_pass", "value": float(v == "pass")}
+                     for s, i, v in zip(df["strategy"], ids, df.get("verdict_state", []))]
     return rows
 
 
@@ -147,7 +198,8 @@ def crosstf_rows(folder: Path) -> list[dict]:
 
 
 def gather(project: str, n: str) -> pd.DataFrame:
-    """Every number the studies of step `n` wrote for `project`, from each one's newest result.
+    """Every number the studies of step `n` and its extras (`steps.EXTRA`: step 8's monkey,
+    profitShape, entryQuality) wrote for `project`, from each one's newest result.
 
     Args:
         project: Project name.
@@ -160,7 +212,7 @@ def gather(project: str, n: str) -> pd.DataFrame:
         rows with the same label) gets `#2`, `#3`… in its order, never one picked silently.
     """
     rows = []
-    for study in BY_N[n]["studies"]:
+    for study in BY_N[n]["studies"] + BY_N[n]["extra"]:
         found = [r for r in sources.results(project, study, False if study == "edgeCost"
                                             else None) if r["path"].is_dir()]
         if found:

@@ -7,9 +7,11 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from core import assetdata
 from core.paths import databank_dir
 from pipeline.autopilot import criteria, facts
 from sqx.curate import apply_verdict
+from sqx.projects import registry
 from sqx.projects.crosstfload import SIBLING
 from ui.daemon.advance.preflight import by_identity
 
@@ -25,6 +27,15 @@ def settings() -> dict:
     if True in dev:
         dev["on"] = dev.pop(True)
     return cfg
+
+
+def tags(project: str) -> set[str]:
+    """What a rule's `by` may name for this project: its timeframe, its symbol and the asset's
+    class (`forex`, `no_forex`), from the project registry; empty for an unregistered one."""
+    row = next((r for r in reversed(registry.rows()) if r["name"] == project), None)
+    if row is None or row["symbol"] not in assetdata.symbols():
+        return {row["timeframe"]} if row else set()
+    return {row["timeframe"], row["symbol"], assetdata.load(row["symbol"])["class"]}
 
 
 def population(project: str, bank: str, role: str) -> pd.DataFrame:
@@ -53,7 +64,7 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     found = facts.gather(project, n)
     found.to_parquet(out / "hechos.parquet")
     spec, dev = cfg["steps"].get(n, {}), cfg["dev"]
-    rules = spec.get("rules") or []
+    rules = criteria.resolved(spec.get("rules") or [], tags(project))
     sample = dev["sample"] if dev["on"] and n in dev["at"] else None
     if not rules and sample is None:
         return {"n": n, "hechos": len(found), "corte": "ninguno: el paso no tiene criterio"}
