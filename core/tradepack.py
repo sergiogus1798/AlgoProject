@@ -1,4 +1,4 @@
-"""Pack one export's CSVs into the trade library: parsed in parallel, written a strategy at a time."""
+"""Pack one export's CSVs into the trade library: parsed in parallel, written a few dozen strategies at a time."""
 
 import shutil
 from pathlib import Path
@@ -13,28 +13,35 @@ from core import fanout, tradestore
 # 3.2 GB; this one 28.7 s and 1.1 GB at 8 processes, 25.7 s and 1.8 GB at 16, 23.9 s and 4.1 GB
 # at 48. The writing is serial and sets the floor, so more processes only buy memory.
 WORKERS = 8
+CHUNK = 64           # strategies per spill and per write: bounds the memory of one
 # Where the workers spill, and how to parse, set before the fork.
 _PARTS: dict = {}
 
 
-def _part(path: Path) -> dict:
-    """One strategy's CSV parsed and spilled as its own Parquet, in a worker.
+def _part(batch: tuple[Path, ...]) -> dict:
+    """A run of strategies' CSVs parsed and spilled as one Parquet, in a worker.
 
     Args:
-        path: A CSV orderstocsv wrote.
+        batch: CSVs orderstocsv wrote, in the order they are stored.
 
     Returns:
-        What write() needs without reopening it: its columns and dtypes, the values of its
-        text columns, whether it kept `Ticket`, whether its blocks came out torn, and where
-        it was spilled.
+        `spill`, where their rows went, and per strategy what pack() needs without
+        reopening it: its columns and dtypes, the values of its text columns, whether it
+        kept `Ticket`, whether its blocks came out torn.
     """
-    frame, kept, torn = tradestore._prepared(path, _PARTS["per_market"])
-    spill = _PARTS["folder"] / f"{path.stem}.parquet"
-    frame.to_parquet(spill, index=False)
-    return {"spill": spill, "kept": kept, "torn": torn, "rows": len(frame),
-            "dtypes": {c: str(t) for c, t in frame.dtypes.items()},
-            "values": {c: set(frame[c].astype(str)) for c in tradestore.CATEGORICAL
-                       if c in frame}}
+    frames, info = [], []
+    for path in batch:
+        frame, kept, torn = tradestore._prepared(path, _PARTS["per_market"])
+        frames.append(frame)
+        info.append({"kept": kept, "torn": torn, "rows": len(frame),
+                     "dtypes": {c: str(t) for c, t in frame.dtypes.items()},
+                     "values": {c: set(frame[c].astype(str)) for c in tradestore.CATEGORICAL
+                                if c in frame}})
+    spill = _PARTS["folder"] / f"{batch[0].stem}.parquet"
+    # A strategy without trades has no types to give; the first stands for an empty batch.
+    pd.concat([f for f in frames if len(f)] or frames[:1], ignore_index=True).to_parquet(
+        spill, index=False)
+    return {"spill": spill, "info": info}
 
 
 def pack(files: list[Path], out: Path, per_market: bool) -> dict:
@@ -55,8 +62,13 @@ def pack(files: list[Path], out: Path, per_market: bool) -> dict:
     parts = out.parent / "_parts"
     parts.mkdir(parents=True, exist_ok=True)
     _PARTS.update(folder=parts, per_market=per_market)
-    got = dict(fanout.run(_part, {f: f.stat().st_size for f in files}, WORKERS))
-    info = [got[f] for f in files]
+    # 🔬 2026-10-01: a spill and a write per strategy cost ~15 ms of pandas and Arrow overhead
+    # each -- 57 of the 107 s of a 5,130-strategy export. The same rows in the same order,
+    # CHUNK strategies at a time.
+    batches = [tuple(files[at:at + CHUNK]) for at in range(0, len(files), CHUNK)]
+    got = dict(fanout.run(_part, {b: sum(f.stat().st_size for f in b) for b in batches},
+                          WORKERS))
+    info = [i for b in batches for i in got[b]["info"]]
     columns = list(dict.fromkeys(c for i in info for c in i["dtypes"]))
     # A column missing from some strategy, or typed two ways, is what concat makes float64.
     dtypes = {c: next(iter(kinds)) if len(kinds) == 1 and all(c in i["dtypes"] for i in info)
@@ -66,8 +78,8 @@ def pack(files: list[Path], out: Path, per_market: bool) -> dict:
     categories = {c: sorted(set().union(*(i["values"][c] for i in info if c in i["values"])))
                   for c in tradestore.CATEGORICAL if c in dtypes}
     writer = None
-    for i in info:
-        frame = pd.read_parquet(i["spill"]).reindex(columns=columns)
+    for b in batches:
+        frame = pd.read_parquet(got[b]["spill"]).reindex(columns=columns)
         frame = frame.astype({c: t for c, t in dtypes.items() if c not in categories})
         for c, values in categories.items():
             frame[c] = pd.Categorical(frame[c].astype(str), categories=values)

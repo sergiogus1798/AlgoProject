@@ -26,3 +26,10 @@ Sum: SQX 1,829 s · start 136 s · stop+export 762 s · Python 319 s (step 8 297
 judges ~2 s. MCR 7 OHLC 386 s, MCR 6 Exits 125 s, MCR 3 Slippage 116 s, MCR 5 Params 19 s.
 Step 8: gate 7 s, edgeCost 4, feedQuality 39, spread 35, decay 4, monkey 5, profitShape 96,
 entryQuality 104. Build 10:09:42 → stopped by hand 10:21:33 at 571 (status «Accepted 0.24 %» at 54 s).
+- 🔬 2026-10-01, live chain (`autopilot --live`, one GUI session), XAUUSD H1 donchianUpperCrossUp,
+  128 built → 5: OOS 11 s · 9 crossmarket 20 s · 11 crossTF 271 s (still a restart) · 13 MCR
+  1,565 s · 15 SPP 587 s; session open 28-38 s once, close+export 46-92 s once. Dead time between
+  SQX steps ≈ 0 (was 27 s + 90-230 s per step). 16.5 variants (sqcli, per mother: make+pilot
+  146-214 s, execute 173-281 s) 2,090 s for 5 mothers; 17+18+18.5 77 s; 19 WFM 1,072 s.
+  Wall clock steps 4 → 19: 128.7 min, ~16 of them lost to the build's ignored stop and two
+  relaunches.

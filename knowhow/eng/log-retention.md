@@ -1,6 +1,6 @@
 ---
 q: SQX log huge gigabytes, log retention prune archive, sqx-log-prune.sh --auto, archive_logs, keep days, current day log, error storm, WFM custom columns log, EdgeDecay project log noise, condensed log
-tag: 🔬  date: 2026-09-30  see: columns/custom-columns-stored, columns/edge-decay-retired
+tag: 🔬  date: 2026-10-01  see: columns/custom-columns-stored, columns/edge-decay-retired
 ---
 # Logs: archive first, prune only what has a `.gz`, never today's file
 `sqx.export.archive_logs` gzips every install's logs to `AlgoData/logs/<install>/`; `bin/sqx-log-prune.sh` deletes a live log only if its
@@ -16,6 +16,7 @@ Big logs are tailed/grepped, never opened. The storm's cause stays unrepaired (o
   Variable 'PriceEntryMult…' doesn't exist`; 184 × `Project 'Infinox - SPNft - HN (High Precision)' does not exist` (`OPEN.md` issue 6); rest 2,825 lines.
   → a WFM cross-check whose custom columns can't compute per step writes ~1 GB/hour. Kept as `log_2026_08_18.condensed.log.gz` (36 KB; frames dropped, 4 messages counted on the last line).
 - 📓 2026-09-29 custodian: `log_2026_09_29.log` 526 MB, ~220k × the same `StrategyClass is not set` exception in `WFSimulationJob` (custodian log folder 202 → 704 MB in a day; `OPEN.md` #86). Recurrence of the storm above, not a new cause.
+- 📓 2026-09-30 custodian: `log_2026_09_30.log` 167 MB, 70,212 lines mention `StrategyClass` — the same exception a second day running (audit 2026-10-01); custodian folder 861 MB, conductor 32 MB, master 1.6 MB. Archiver + prune cover it (7-day keep); the cause is SQX config, not repaired.
 - 55 MB day = one error: `Infinox_SP500ft_H4_HighPrecision` sync failure looping hourly (`OPEN.md` issue 3).
 - 📓 `user/projects/<P>/log/global_log_*` is 97 % `EdgeDecayFilter` noise (3 lines/strategy/pass: `running Per strategy analysis: EdgeDecayFilter` / `- OK` / `- Failed`):
   USDJPY 566 MB = 15.5 M lines, 135 K without. Signal (`TASK STARTED`/`TASK FINISHED` with databank counts, per-filter rejections, time/strategy) kept in
