@@ -19,6 +19,17 @@ trades.parquet ──┘   what the  what each  what it    the
 | **scaled** — periods divided by the timeframe ratio | does the edge tolerate coarser resolution and a 0–4 h delay in acting? | evidence against the strategy |
 | **unscaled** — the mother's periods left alone | is the market self-similar at this scale? | **nothing about the strategy** — it is graded nowhere and carries no verdict |
 
+## One view, not two (2026-09-30 feedback §5)
+
+The window shows scaled and unscaled together in one tab, `mother`/`statistic`/`scope`
+selectors switching what is drawn — never what is computed: `cells.numbers` prices every
+statistic of `engines.nulls.stats` on the same draws, so `statistic` is free (its «Sharpe total» replaces the per-trade Sharpe on the selector since 2026-10-01: `core.significance.annual_sharpe` of the cell's trades by close date, read but never judged — the null draws have no calendar), and `scope`
+only toggles between the two tables (`Cada hermana escalada` vs `La madre sin escalar`). The
+verdict itself never moves with a selector; it is read once, off `config.yaml`'s
+`verdict.statistic`. Every cell — baseline, control, scaled and unscaled alike — is judged
+against the **same null** (`verdict.rung`, `timing` by default: it shuffles only *when* each
+trade enters, on that cell's own timeframe's bars); only the bars it is drawn on change.
+
 ## Why there is a control cell
 
 A scaled sibling is run on **its own source timeframe too**, and that cell is the control.
@@ -41,7 +52,7 @@ clock", and nothing downstream should describe it as one.
 | `cells.py` | What each cell earned and where it sits among its own timeframe's nulls | imported | trades + bars → statistic, p |
 | `verdict.py` | What a scaled cell means, once the control and the rounding have had their say | imported | panel → one of five readings |
 | `many.py` | What the study reads, every cell measured and every scaled cell read, as one result the window paints | imported | export + scaling → result |
-| `report.py` | **The command**: prints the result and writes it to `reports/<P>/<D>/<export day>/crossTF/` — the page, `verdict.csv` (one row per scaled sibling, its reading as `verdict`) and `cells.parquet` | `python3 -m studies.transfer.crossTF.report --project P --asset USDJPY [--databank CrossTF] [--day DAY] [--fabricated DAY]` | export → reports |
+| `report.py` | **The command**: prints the result and writes it to `reports/<P>/<D>/<export day>/crossTF/` — the page, `verdict.csv` (one row per scaled sibling, its reading as `verdict`) and `cells.parquet`. `--strategy MOTHER` reads that one mother alone (feedback 2026-09-30 §5: "Run solo esta estrategia" is a real, cheaper run, not just a hidden button) and writes only `estrategias/<mother>.json` — never `verdict.csv`, `cells.parquet` or the population page, which until 2026-10-01 it overwrote with that one mother and the databank tab lost the other 14 (same rule as crossmarket's `--strategy`) | `python3 -m studies.transfer.crossTF.report --project P --asset USDJPY [--databank CrossTF] [--day DAY] [--fabricated DAY] [--strategy MOTHER]` | export → reports |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `config.yaml` | Every tunable, grouped by section | edited, or `--set section.key=value` | — |
 
