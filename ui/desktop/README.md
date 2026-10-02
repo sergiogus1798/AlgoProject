@@ -130,7 +130,7 @@ each exception.
   believes it, clipping the paragraph: fix the width and ask `heightForWidth`, or give it an
   ignored horizontal size policy (`workspace/README.md`).
 - **The palette view writes palettes, never the taxonomy.** `taxonomy.yaml` holds the labels and
-  is somebody else's job (`docs/encargos/6-taxonomia-bloques.md`); the window only writes
+  is somebody else's job (labelled by commit `a694e67`); the window only writes
   `sqx/blocks/palettes/<slug>.yaml`. Two writers on one file is how a column drifts.
 - **A default palette cannot be deleted from the window.** It ships with the repository and is the
   thing every clone starts from; the button is disabled and says to clone instead.

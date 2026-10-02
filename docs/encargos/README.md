@@ -24,6 +24,12 @@ salieron el ejemplo USDJPY del 24-09, al que ese informe supera, y los dos `CONT
 skills de SQX y `/curate` ya existen. Ese mismo día salieron también el **20** (el ATR calculator,
 paso 24: lo que decía vive en `docs/manual/10-cierre.pdf`, cap. 54-atr-calculator) y la ficha del
 proyecto de ejemplo IS/OOS, que ahora es `knowhow/locations/xau-isoos-example-project.md`.
+El 2026-10-02 salieron el **6** (los 768 bloques de `sqx/blocks/taxonomy.yaml` llevan sus siete
+pesos de arquetipo, commit `a694e67`), el **10** (pasos 20 y 23 construidos; sus tres decisiones del
+dueño viven en `OPEN.md` §50), el **37** (la matriz del WFM con sus 10 condiciones, verificada contra
+SQX, commit `5d2d0dc`) y el **42** (noticias en el tester, la memoria con causas y el revisor, y los
+tres contrastes, commit `69c4ada`; la lectura real con y sin filtro espera la estrategia y la firma
+del dueño, `OPEN.md` §85, y lo que encontró está en §96-§99 y §101).
 
 ## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
 
@@ -33,7 +39,6 @@ escriben en él.
 | fichero | qué construye | depende de |
 |---|---|---|
 | `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 25 pasos, y cuántos llegan. **No se implementa por ahora** (dueño, 2026-09-26) | — |
-| `10-spa-stepm.md` | ✅ **A (2026-09-25) y B (2026-09-26) construidas**: la B es el paso 20, `studies/closing/blindJoint/`, corrida sobre USDJPY (ninguna madre pasa). Quedan tres decisiones del dueño: qué es pasar el 20, si el 20 puede leer `oos2`, y el CSCV leyendo `oos2` fuera de la política | gate |
 | `13-alfa-beta.md` | **interrogante aparcado**, no encargo: nadie lo coge hasta cerrar la secuencia individual | — |
 
 ## La tanda del PDF `PARAMETER_SPACE_TESTS`, 2026-09-24
@@ -116,31 +121,10 @@ puntos que la sesión de esa noche dejó a medias y que no son un arreglo de una
 
 | fichero | qué construye | depende de |
 |---|---|---|
-| `37-matriz-wfm-completa.md` | la matriz pasa/no pasa del WFM con sus 10 condiciones (hoy solo 2: falta decodificar los subresults 31-33 de cada celda), qué criterio cumple cada celda, verificada contra SQX, y el panel de las 30 curvas con estadísticas agregadas | un `.sqx` con WFM en el custodio o el conductor para contrastar |
 | `38-recuadro-de-la-meseta.md` | en Market Surfaces, que el recuadro pintado sea la meseta que se mide (hoy es un cuadrado de radio 2 sin el filtro de delta, y la meseta es una sola variante en 7 de 15 madres), un mínimo de variantes para llamarla meseta, y JSON de menos de 2 MB | el mínimo, del dueño |
 | `39-edge-segun-los-costes.md` | Edge por coste completo: el swap de cada operación modelado (hoy solo un residuo), una tabla por coste y la sensibilidad del edge a cada coste ×0…×3 con su punto muerto, por estrategia y en la población | el umbral del color, del dueño |
 | `40-cerebro-con-probabilidades.md` | una regresión logística que da a cada estrategia la probabilidad de pasar el paso siguiente, calibrada con nuestros datos (prototipo sobre 49.124 de XAUUSD: AUC 0,69-0,74, bien calibrada), como estudio y como regla de `criteria.yaml` con su coste | el objetivo y el corte de `p`, del dueño; runs completos para el objetivo bueno |
 | `41-fases-0-y-1.md` | **plan vivo** de las fases 0 y 1 del dossier `estado-y-direccion-2026-10-02`: proteger lo hecho (cortafuegos, commit, copia) y que la fábrica decida (criterios firmados, registro completo, monos de punta a punta con los encargos 9 y 30). Lleva tabla de estado y bitácora; cada sesión actualiza su punto | las decisiones D1-D7 del dueño; los encargos 9 y 30 |
-
-## La tanda de los repos externos, 2026-10-02
-
-Sale del dossier `docs/AgentPDFs/repos-externos-2026-10-02`: lo que el dueño eligió implementar de
-esa búsqueda y que no depende de nada más. Un jefe con tres agentes, tres frentes sin ficheros en
-común.
-
-| fichero | qué construye | depende de |
-|---|---|---|
-| `42-noticias-memoria-y-contrastes.md` | **A** el filtro de noticias dentro del tester de MT5, con el histórico del calendario, y cuánto le cuesta a una estrategia · **B** una memoria que guarda por qué murió cada corrida, la hoja de hipótesis que se compara con lo construido, y un revisor distinto del que propone · **C** el Sharpe deflactado contra `jsharpe`, el spread desde OHLC como quinto modelo, y nuestros parsers contra los de fuera | las preguntas de cada frente, del dueño; ningún worker |
-
-## Encargos vivos de tandas anteriores
-
-| fichero | agente | posee | estado |
-|---|---|---|---|
-| `6-taxonomia-bloques.md` | etiquetador | **solo el campo `archetypes` de `sqx/blocks/taxonomy.yaml`** | 🔴 sin empezar: los 767 bloques siguen con `archetypes: {}` |
-
-No toca código, no toca SQX, no gasta CPU. Se puede lanzar en paralelo con cualquier otra cosa.
-Su hermano, el encargo 7 (las tres paletas por defecto), **está hecho** — 180 / 177 / 148 bloques
-nombrados con `unlabelled: off` — y por eso ya no está aquí.
 
 ## Lo que no es un encargo
 
