@@ -1,0 +1,4 @@
+# The code graph is built from code and markdown structure only; nothing here is worth a node.
+docs/manual/
+tests/fixtures/
+.claude/worktrees/

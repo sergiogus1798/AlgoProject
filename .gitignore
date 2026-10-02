@@ -25,3 +25,5 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 .claude/settings.local.json
+# Graph output is a link into AlgoData (rule 7).
+graphify-out

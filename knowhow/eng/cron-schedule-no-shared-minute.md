@@ -4,7 +4,7 @@ tag: 🔬  date: 2026-10-02  see: crontab-long-tmpdir-path, headless-claude-from
 ---
 # No two cron entries share a minute; a script that waits on a lock starts after the one that takes it
 `flock -w` only waits if the other script ALREADY holds the lock; started first or together it runs alongside.
-Chain: Sat 02:00 `weekly-data-update` → 02:05 `monthly-oos2-roll`; Mon 02:50 janitor; 03:00 audit → 03:30 docs
+Chain: Sat 02:00 `weekly-data-update` → 02:05 `monthly-oos2-roll`; daily 02:20 `graphify update .` (1.5 min, no lock); Mon 02:50 janitor; 03:00 audit → 03:30 docs
 → 03:45 `archive_logs` → 04:00 fixer → 04:15 `sqx-log-prune` (archive before prune); Sun 05:00 knowhow
 review → 05:10 docs-health; daily 23:30 claude-cleanup. Durations: audit 1-1.5 min, docs 40 s, fixer 1-6,
 data update 15.5, janitor 1.3, knowhow 4, docs-health 11.5. Back up first (`crontab -l > AlgoData/logs/crontab-backup-<date>.txt`).

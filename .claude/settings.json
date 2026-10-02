@@ -36,6 +36,7 @@
     ],
     "defaultMode": "bypassPermissions"
   },
+  "bashOutputMaxChars": 10000,
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
   "hooks": {
