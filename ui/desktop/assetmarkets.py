@@ -2,8 +2,8 @@
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton,
+                               QVBoxLayout, QWidget)
 
 from ui.desktop import client
 from ui.desktop.assetforms import FIXED_FIRST, MarketBox, word
@@ -23,6 +23,7 @@ class CrossMarketCheck(QWidget):
         self.data: dict = {}
         self.lay = QVBoxLayout(self)
         self.lay.setContentsMargins(0, 0, 0, 0)
+        self.lay.setSpacing(6)
         head = QHBoxLayout()
         self.markets_head = QLabel(objectName="h2")
         self.markets_head.setWordWrap(True)
@@ -38,7 +39,9 @@ class CrossMarketCheck(QWidget):
         head.addWidget(self.add)
         self.lay.addLayout(head)
         self.groups = QVBoxLayout()
+        self.groups.setSpacing(6)
         self.lay.addLayout(self.groups)
+        self.lay.addStretch()
 
     def fill(self, data: dict) -> None:
         """Draw the Cross Market check as one coloured group per category, a row per market.
@@ -63,17 +66,24 @@ class CrossMarketCheck(QWidget):
             tint = QColor(TINT.get(name, C["muted"]))
             box.setStyleSheet(f"QFrame#market {{ background: rgba({tint.red()},{tint.green()},"
                               f"{tint.blue()},0.14); border-radius: 6px; }}")
-            inner = QVBoxLayout(box)
-            inner.addWidget(QLabel(f"<b>{word(name)}: {len(rows)}</b>"))
-            for row in rows:
-                line = QHBoxLayout()
-                text = QLabel(f"{row['asset']}  ·  datos desde {row['data_from']}")
-                text.setToolTip(row["feed"])
-                drop = QPushButton("Quitar")
+            inner = QGridLayout(box)
+            inner.setContentsMargins(10, 6, 8, 8)
+            inner.setHorizontalSpacing(10)
+            inner.setVerticalSpacing(1)
+            inner.setColumnStretch(1, 1)
+            inner.addWidget(QLabel(f"<b>{word(name)}: {len(rows)}</b>"), 0, 0, 1, 3)
+            for i, row in enumerate(rows, 1):
+                asset = QLabel(row["asset"])
+                asset.setToolTip(row["feed"])
+                since = QLabel(f"desde {row['data_from']}", objectName="muted")
+                drop = QPushButton("×")
+                drop.setToolTip(f"Quitar {row['asset']} de {word(name)}.")
+                drop.setFixedSize(22, 20)
+                drop.setStyleSheet("padding: 0;")
                 drop.clicked.connect(lambda *_, c=name, f=row["feed"]: self.on_drop(c, f))
-                line.addWidget(text, 1)
-                line.addWidget(drop)
-                inner.addLayout(line)
+                inner.addWidget(asset, i, 0)
+                inner.addWidget(since, i, 1)
+                inner.addWidget(drop, i, 2)
             self.groups.addWidget(box)
 
     def on_declare(self) -> None:

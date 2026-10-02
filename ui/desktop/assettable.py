@@ -1,5 +1,6 @@
 """The read-only tables the asset zone draws from — cells, formatting, the shared grid."""
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QLayout, QTableWidget, QTableWidgetItem
 
@@ -9,23 +10,30 @@ from ui.text.numbers import num
 from ui.desktop.theme import C
 
 
-def grid(headers: list[str], stretch: int) -> QTableWidget:
-    """An empty table in the house style.
+ROW = 24   # a row of figures, not of prose: the theme's default is half as tall again
+
+
+def grid(headers: list[str]) -> QTableWidget:
+    """An empty table in the house style, as small as what it holds.
 
     Args:
         headers: Column keys, shown through the glossary.
-        stretch: Which column takes the leftover width.
 
     Returns:
         A read-only table: every write in this zone goes through a box, never a cell, so a
-        stray keystroke cannot change what an instrument costs.
+        stray keystroke cannot change what an instrument costs. No column stretches (owner,
+        2026-10-02): `fit` gives the table the width and height of its content.
     """
-    t = QTableWidget(0, len(headers))
+    t = QTableWidget(0, len(headers), objectName="compact")
     t.setHorizontalHeaderLabels([word(h) for h in headers])
     t.verticalHeader().setVisible(False)
+    t.verticalHeader().setMinimumSectionSize(ROW)
+    t.verticalHeader().setDefaultSectionSize(ROW)
     t.setSelectionBehavior(QAbstractItemView.SelectRows)
     t.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    t.horizontalHeader().setSectionResizeMode(stretch, QHeaderView.Stretch)
+    t.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+    t.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    t.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
     return t
 
 
@@ -77,7 +85,7 @@ def derived(value: float, source: str) -> QTableWidgetItem:
 
 
 def fit(table: QTableWidget) -> None:
-    """Give a table exactly the height its rows need.
+    """Give a table exactly the width its columns and the height its rows need.
 
     Args:
         table: The table, already filled.
@@ -91,6 +99,8 @@ def fit(table: QTableWidget) -> None:
     # the widget below is drawn over the last row.
     height = table.horizontalHeader().height() + 2 * table.frameWidth() + 4
     table.setFixedHeight(height + sum(table.rowHeight(i) for i in range(table.rowCount())))
+    table.setFixedWidth(2 * table.frameWidth() + 4
+                        + sum(table.columnWidth(j) for j in range(table.columnCount())))
 
 
 def clear(layout: QLayout) -> None:

@@ -41,28 +41,34 @@ class AssetCard(QWidget):
         """Build the title, the chips, the complaints strip and the cost table."""
         super().__init__()
         self.data: dict = {}
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.setSpacing(10)
-
+        # The name, the chips and the complaints span the page; the page places `top` itself
+        # and this widget keeps only the cost table, one column among three (owner, 2026-10-02).
+        self.top = QWidget()
+        top = QVBoxLayout(self.top)
+        top.setContentsMargins(0, 0, 0, 0)
+        top.setSpacing(4)
         self.title = QLabel(objectName="h1")
         self.actions = QHBoxLayout()   # the page puts its buttons here, beside the name
         self.actions.addWidget(self.title)
         self.actions.addStretch()
-        lay.addLayout(self.actions)
+        top.addLayout(self.actions)
         self.chips = QLabel()
         self.chips.setWordWrap(True)
         self.trouble = QLabel()
         self.trouble.setWordWrap(True)
         for w in (self.chips, self.trouble):
-            lay.addWidget(w)
+            top.addWidget(w)
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(6)
 
         head = QLabel("Costes — doble clic para cambiar", objectName="h2")
         head.setToolTip("El ratón encima de una fila dice por qué vale lo que vale.")
         lay.addWidget(head)
         # The `why` is a paragraph: a column for it would take half a page that sits beside
         # another one, so it rides on every cell of its row and in the box that edits it.
-        self.costs = grid(["field", "use", "unit"], 2)
+        self.costs = grid(["field", "use", "unit"])
         self.costs.cellDoubleClicked.connect(self.on_cost)
         lay.addWidget(self.costs)
         self.footer = QLabel(objectName="muted")

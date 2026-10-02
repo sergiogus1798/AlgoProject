@@ -54,28 +54,32 @@ class AssetSpans(QWidget):
     changed = Signal()
 
     def __init__(self) -> None:
-        """Build the segment rows, the MC Retest table and the Cross Market groups."""
+        """Build the segment tiles; the MC Retest table and the Cross Market groups are widgets
+        of their own (`ranges`, `markets`) that the page places in its other columns."""
         super().__init__()
         self.data: dict = {}
         self.lay = QVBoxLayout(self)
         self.lay.setContentsMargins(0, 0, 0, 0)
-        self.lay.setSpacing(10)
+        self.lay.setSpacing(6)
         self.lay.addWidget(QLabel("Tramos", objectName="h2"))
         self.feed = QLabel(objectName="muted")
         self.feed.setWordWrap(True)
         self.lay.addWidget(self.feed)
-        self.dates = QHBoxLayout()
-        self.dates.setSpacing(12)
+        self.dates = QVBoxLayout()
+        self.dates.setSpacing(6)
         self.lay.addLayout(self.dates)
 
-        self.lay.addWidget(QLabel("MC Retest — rangos en puntos", objectName="h2"))
-        self.mc = grid(["range", "min", "max"], 2)
+        self.ranges = QWidget()
+        box = QVBoxLayout(self.ranges)
+        box.setContentsMargins(0, 0, 0, 0)
+        box.setSpacing(6)
+        box.addWidget(QLabel("MC Retest — rangos en puntos", objectName="h2"))
+        self.mc = grid(["range", "min", "max"])
         self.mc.cellDoubleClicked.connect(self.on_mc)
-        self.lay.addWidget(self.mc)
+        box.addWidget(self.mc)
 
         self.markets = CrossMarketCheck()
         self.markets.changed.connect(self.changed)
-        self.lay.addWidget(self.markets)
 
     def fill(self, data: dict) -> None:
         """Draw one asset's windows.
@@ -89,7 +93,7 @@ class AssetSpans(QWidget):
         self.markets.fill(data)
 
     def fill_dates(self) -> None:
-        """One card per segment, side by side, under the line of what SQX actually has."""
+        """One card per segment, stacked, under the line of what SQX actually has."""
         clear(self.dates)
         span = self.data["data"] or {}
         self.feed.setText(f"Datos en SQX: {span.get('from', 'sin datos')} → "
@@ -98,7 +102,6 @@ class AssetSpans(QWidget):
                              "refresca `python3 -m core.assets --dataranges`.")
         for seg in self.data["segments"]:
             self.dates.addWidget(self.segment_card(seg))
-        self.dates.addStretch()
 
     def segment_card(self, seg: dict) -> QFrame:
         """One tramo as a tile: its name, its spread note and its two date selectors.
@@ -111,34 +114,34 @@ class AssetSpans(QWidget):
         """
         tile = QFrame(objectName="tile")
         lay = QVBoxLayout(tile)
-        lay.setContentsMargins(14, 12, 14, 12)
-        lay.setSpacing(6)
+        lay.setContentsMargins(10, 6, 10, 8)
+        lay.setSpacing(4)
 
         name = QLabel(word(seg["name"]), objectName="h2")
         name.setToolTip(seg["purpose"])
-        lay.addWidget(name)
-
         kept = seg["reserved_for"]
         note = QLabel(f"Spread {word(seg['spread'])}", objectName="muted")
-        note.setWordWrap(True)
         note.setToolTip(seg["purpose"] + (f"\nReservado para {', '.join(kept)} (solo ata a "
                                           "un agente autónomo)." if kept else ""))
-        lay.addWidget(note)
+        go = QPushButton("Aplicar")
+        go.setEnabled(False)
+        head = QHBoxLayout()
+        head.addWidget(name)
+        head.addWidget(note, 1)
+        head.addWidget(go)
+        lay.addLayout(head)
 
         first, last = picker(qdate(seg["from"], False)), picker(qdate(seg["to"], True))
         row = QHBoxLayout()
-        row.addWidget(first)
+        row.addWidget(first, 1)
         row.addWidget(QLabel("→"))
-        row.addWidget(last)
+        row.addWidget(last, 1)
         lay.addLayout(row)
 
-        go = QPushButton("Aplicar")
-        go.setEnabled(False)
         for edit in (first, last):
             edit.dateChanged.connect(
                 lambda *_, s=seg, a=first, b=last, g=go: self.dirty(s, a, b, g))
         go.clicked.connect(lambda *_, s=seg, a=first, b=last: self.on_dates(s, a, b))
-        lay.addWidget(go)
         return tile
 
     def dirty(self, seg: dict, first: QDateEdit, last: QDateEdit, go: QPushButton) -> None:

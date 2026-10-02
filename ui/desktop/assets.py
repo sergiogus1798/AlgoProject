@@ -12,7 +12,8 @@ from ui.desktop.assetspans import AssetSpans
 from ui.desktop.assettraits import trait
 from ui.desktop.yamltree import YamlTree
 
-TRAITS_WIDTH = 320   # a column of prose, not a table: no point growing past a readable line
+MARKETS_WIDTH = 260   # a name, a date and a button per market: wider only spreads them apart
+SIDE_WIDTH = 290      # two date selectors side by side, and a column of prose under them
 
 
 class AssetPage(QFrame):
@@ -30,12 +31,9 @@ class AssetPage(QFrame):
         """
         super().__init__(objectName="panel")
         self.symbol = symbol
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(14, 12, 14, 14)
-        lay.setSpacing(14)
-
-        left = QVBoxLayout()
-        left.setSpacing(14)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(12, 8, 12, 10)
+        lay.setSpacing(8)
         self.card, self.spans, self.tree = AssetCard(), AssetSpans(), YamlTree()
         self.raw = QPushButton("Fichero entero")
         self.raw.setCheckable(True)
@@ -52,11 +50,27 @@ class AssetPage(QFrame):
         self.card.changed.connect(lambda: self.changed.emit(symbol))
         self.spans.changed.connect(lambda: self.changed.emit(symbol))
         self.tree.edited.connect(self.on_edit)
-        for w in (self.card, self.spans, self.tree):
-            left.addWidget(w)
-        left.addStretch()
-        lay.addLayout(left, 2)
-        lay.addWidget(self.traits_panel(), 1)
+        # Three columns (owner, 2026-10-02): what it costs, where its edge is retested — to the
+        # right of the costs — and where it is built, each as narrow as what it holds.
+        lay.addWidget(self.card.top)
+        body = QHBoxLayout()
+        body.setSpacing(12)
+        costs, side = QVBoxLayout(), QVBoxLayout()
+        for col, parts in ((costs, (self.card, self.spans.ranges)),
+                           (side, (self.spans, self.traits_panel()))):
+            col.setSpacing(10)
+            for w in parts:
+                col.addWidget(w, 0, Qt.AlignLeft)
+            col.addStretch()
+        self.spans.markets.setFixedWidth(MARKETS_WIDTH)
+        for w in (self.spans, side.itemAt(1).widget()):
+            w.setFixedWidth(SIDE_WIDTH)
+        body.addLayout(costs)
+        body.addWidget(self.spans.markets)
+        body.addLayout(side)
+        body.addStretch()
+        lay.addLayout(body)
+        lay.addWidget(self.tree)
         self.refresh()
 
     def traits_panel(self) -> QFrame:
@@ -67,15 +81,13 @@ class AssetPage(QFrame):
             the costs and the windows beside it.
         """
         tile = QFrame(objectName="tile")
-        tile.setMaximumWidth(TRAITS_WIDTH)
         tlay = QVBoxLayout(tile)
-        tlay.setContentsMargins(14, 12, 14, 12)
-        tlay.setSpacing(6)
+        tlay.setContentsMargins(10, 8, 10, 8)
+        tlay.setSpacing(4)
         tlay.addWidget(QLabel("Características", objectName="h2"))
         text = QLabel(trait(self.symbol), objectName="muted")
         text.setWordWrap(True)
         tlay.addWidget(text)
-        tlay.addStretch()
         return tile
 
     def refresh(self) -> None:
@@ -139,7 +151,7 @@ class Assets(QWidget):
         self.list.opened.connect(self.show_page)
         split.addWidget(self.list)
         self.grid = QGridLayout()
-        self.grid.setSpacing(14)
+        self.grid.setSpacing(10)
         self.grid.setAlignment(Qt.AlignTop)
         self.grid.setColumnStretch(0, 1)
         holder = QWidget()

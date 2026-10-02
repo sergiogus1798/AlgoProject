@@ -92,6 +92,8 @@ QHeaderView::section {{ background: {C['panel']}; color: {C['muted']};
                         border: none; border-bottom: 1px solid {C['line']};
                         padding: 8px; font-weight: 600; }}
 QTableWidget::item:selected {{ background: {C['raised']}; color: {C['text']}; }}
+QTableWidget#compact QHeaderView::section {{ padding: 3px 8px; }}
+QTableWidget#compact::item {{ padding: 0 6px; }}
 
 QListWidget {{ background: {C['panel']}; border: 1px solid {C['line']};
                border-radius: 8px; padding: 4px; }}
