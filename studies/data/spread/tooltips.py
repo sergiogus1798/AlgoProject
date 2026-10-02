@@ -28,6 +28,12 @@ TIPS = {
     "onboard.commission_usd_per_lot": "Comisión por defecto de un activo nuevo, USD por lote "
                                       "ida y vuelta; en no forex se pasa a % del nocional al "
                                       "último precio de Darwinex.",
+    "mc.grain": "El paso de RandomizeSpread/RandomizeSlippage en SQX, en las mismas unidades "
+               "que spread_is: el rango de mc_retest.spread/slippage se ensancha en múltiplos "
+               "de este paso, nunca a una fracción de él.",
+    "mc.min_steps": "Cuántos pasos de `mc.grain` debe cubrir el rango de mc_retest.spread como "
+                    "mínimo; por debajo, la tarea perturba tan poco que sale sin forma (§6 "
+                    "feedback 2026-09-30: «resultados muy juntos»).",
     **{f"onboard.{kind}.{knob}": tip for kind in ("index", "metal", "forex") for knob, tip in {
         "segments.build": "Primer año del tramo de construcción; «data» es desde el primer dato.",
         "segments.build_to": "Último año del tramo de construcción.",

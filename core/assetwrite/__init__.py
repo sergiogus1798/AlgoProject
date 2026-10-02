@@ -103,6 +103,18 @@ def set_cost(symbol: str, field: str, value: object, why: str, after: str | None
     return {"file": str(path), "field": field, "use": value, "why": why}
 
 
+def rename_cost(symbol: str, old: str, new: str) -> None:
+    """Give a cost field a new name in place, its `use`, `sqx_now` and `why` kept — the forex
+    `spread` became `spread_is` when every asset got one spread per segment (2026-09-30)."""
+    path = path_of(symbol)
+    doc = read(path)
+    if old in doc["costs"] and new not in doc["costs"]:
+        keys = list(doc["costs"])
+        doc["costs"].insert(keys.index(old), new, doc["costs"].pop(old))
+        write(path, doc)
+        reindex()
+
+
 def create(symbol: str, cls: str, broker: str, sqx_symbol: str, session: str,
            instrument: dict) -> dict:
     """Add an asset to the library, with every decision still open.
@@ -120,8 +132,8 @@ def create(symbol: str, cls: str, broker: str, sqx_symbol: str, session: str,
         blocks authoring: invented values are worse than none, because they look decided.
     """
     schema = classes()[cls]
-    fields = (schema["spread"]["fields"] + [schema["commission"]["field"]]
-              + schema["slippage"]["fields"] + schema["swap"]["fields"])
+    fields = (schema["spread"]["fields"] + ["spread_oos2", schema["commission"]["field"]]
+              + schema["slippage"]["fields"] + ["slippage_oos2"] + schema["swap"]["fields"])
     body = {"symbol": symbol, "class": cls, "broker": broker, "sqx_symbol": sqx_symbol,
             "feeds": [sqx_symbol], "verified": date.today(), "session": session,
             "instrument": instrument,

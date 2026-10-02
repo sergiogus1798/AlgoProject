@@ -26,7 +26,12 @@ ZERO_COMMISSION = {"build": {"method": "SizeBased", "value": 0.0},
                    "oos2": {"method": "SizeBased", "value": 0.0}}
 FOREX = {"symbol": "TESTX", "class": "forex", "instrument": {"tick_size": TICK,
          "point_value": POINT_VALUE},
-        "costs": {"spread": {"use": SPREAD, "why": "test"},
+         "segments": {"build": {"spread": "is"}, "oos1": {"spread": "oos"},
+                      "oos2": {"spread": "oos2"}},
+        "costs": {"spread_is": {"use": SPREAD, "why": "test"},
+                  "spread_oos": {"use": SPREAD, "why": "test"},
+                  "spread_oos2": {"use": SPREAD, "why": "test"},
+                  "slippage_oos2": {"use": 0.0, "why": "test"},
                   "commission": {"use": ZERO_COMMISSION, "why": "test"},
                   "slippage_is": {"use": 0.0, "why": "test"},
                   "slippage_oos": {"use": 0.0, "why": "test"},
@@ -106,15 +111,13 @@ def main() -> None:
     # A no_forex asset carries no commission warning: issue 26 settled once per trade (2026-09-27).
     no_forex = {**FOREX, "class": "no_forex",
                "segments": {"build": {"spread": "is"}, "oos1": {"spread": "oos"}},
-               "costs": {**FOREX["costs"], "spread_is": FOREX["costs"]["spread"],
-                        "spread_oos": FOREX["costs"]["spread"]}}
-    del no_forex["costs"]["spread"]
+               "costs": dict(FOREX["costs"])}
     warn_codes = {w["code"] for w in costs.warnings(no_forex)}
     assert "issue26" not in warn_codes, warn_codes
 
     # A PROVISIONAL cost stamps the result, forex or not.
     stood_in = {**FOREX, "costs": {**FOREX["costs"],
-               "spread": {"use": SPREAD, "why": "PROVISIONAL, not agreed with the broker"}}}
+               "spread_is": {"use": SPREAD, "why": "PROVISIONAL, not agreed with the broker"}}}
     assert {"provisional"} <= {w["code"] for w in costs.warnings(stood_in)}
 
     # many.run() must find the same strategy and the same numbers through the population path.

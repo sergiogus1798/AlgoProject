@@ -11,6 +11,7 @@
 - `prop-firm-catalogue-sources` — where does each prop firm's catalogue come from, FundedNext packages Next.js payload, FundingPips blocked Vercel checkpoint Cloudflare, which firm sites can be read by code, manual catalogue
 - `prop-firm-discounts` — how to detect or verify a prop firm discount code or sale, Hantec CheckDiscount, FTMO discounted price, DROP50, coupon, promo code check without buying
 - `refreshing-sqx-costs` — update SQX bar data download; data action=update on worker lost; master to worker rsync user/data; core.assets --dataranges refresh data ranges
+- `sessions-live-in-data-db` — where are SQX trading sessions stored; session EURUSD_ftmo not defined in any project; ninguna tarea define la sesión; Data Manager sessions database; data.db SESSIONS ELEMENTS; FTMO sessions of every asset; builder refuses session; borrow session from master
 - `sessions-per-asset` — session missing for asset builder refuses; unify_sessions; borrow session from another asset; --session-from; builder finds session automatically; --symbol does not switch market; GBPUSD AUDUSD USDCAD no session; Asia London New York overlap hours
 - `slippage` — slippage value per asset; defaultSlippage zero; can slippage be measured from export; half the spread convention; point value dollars per point
 - `spread-per-segment-every-asset` — forex one spread vs no_forex spread_is spread_oos spread_oos2; AUDJPY only one spread; spread per segment every asset; slippage_oos2; _classes forex fields; segments_default oos2 spread; rename_cost spread spread_is

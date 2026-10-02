@@ -5,8 +5,9 @@ from datetime import date
 from core.assetdata import fields, load, schema
 
 # Cost fields that block authoring while undecided, per class. The swaps do not block.
-REQUIRED = {"forex": ("spread", "commission"),
-            "no_forex": ("spread_is", "spread_oos", "commission")}
+# One spread per segment for every class since 2026-09-30 (owner): IS, OOS1 and OOS2.
+REQUIRED = {"forex": ("spread_is", "spread_oos", "spread_oos2", "commission"),
+            "no_forex": ("spread_is", "spread_oos", "spread_oos2", "commission")}
 
 
 

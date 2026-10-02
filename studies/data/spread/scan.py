@@ -83,7 +83,7 @@ def main() -> None:
         table = pd.DataFrame(got["proposal"]).set_index("tramo")
         print(f"\n{symbol}: relativo {'constante' if got['relative']['constant'] else 'NO constante'} "
               f"(peor año {got['relative']['worst']:.2f}×) → modelo {got['model']}, error hacia "
-              f"atrás {got['error_backwards']:.0%}. Hoy: {got['declared']}. MC Retest de spread: "
+              f"atrás {got['error_backwards']:.1%}. Hoy: {got['declared']}. MC Retest de spread: "
               f"{got['mc_multiples']['min']:.2f}x–{got['mc_multiples']['max']:.2f}x el spread de la tarea")
         print(table[["% días medidos", "spread medio (pb)", "comisión % propuesta",
                      "puntos equivalentes"]].round(4).to_string())

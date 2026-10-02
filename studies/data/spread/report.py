@@ -15,13 +15,26 @@ from datetime import date
 
 import pandas as pd
 
-from core import assetdata
+from core import assetdata, fanout
 from core.datapaths import spread_dir
 from core.paths import report_dir
 from core.study import output, verdicts
 from core.study.render import markdown
 from core.study.result import progress
 from studies.data.spread import inputs, many, one, reprice
+
+
+# 🔬 2026-10-01, 5,130 strategies: `one.run` once each in one thread was 80 of the study's
+# 110 s, and the population reads only each one's `summary`.
+WORKERS = 8
+_JOB: dict = {}      # what `_summary` reads, set before the fork
+
+
+def _summary(identity: str) -> dict:
+    """One strategy's `summary` row, in a worker: the rest of its reading stays there."""
+    j = _JOB
+    return one.run(j["names"][identity], identity, j["groups"][identity], j["charged"],
+                   j["tick"], j["cfg"])["summary"]
 
 
 def main() -> None:
@@ -56,10 +69,17 @@ def main() -> None:
     tick = data["instrument"]["tick_size"]
 
     groups = dict(tuple(trades.groupby("identity", observed=True)))
-    results = {}
-    for n, identity in enumerate(i for i in wanted if i in groups):
-        results[identity] = one.run(names[identity], identity, groups[identity], charged, tick, cfg)
-        progress(10 + 90 * (n + 1) // len(wanted), names[identity])
+    todo = [i for i in wanted if i in groups]
+    _JOB.update(names=names, groups=groups, charged=charged, tick=tick, cfg=cfg)
+    if a.strategy:
+        results = {i: one.run(names[i], i, groups[i], charged, tick, cfg) for i in todo}
+    else:
+        landed = {}
+        for n, (identity, row) in enumerate(fanout.run(
+                _summary, {i: len(groups[i]) for i in todo}, WORKERS)):
+            landed[identity] = {"summary": row}
+            progress(10 + 90 * (n + 1) // len(wanted), names[identity])
+        results = {i: landed[i] for i in todo}      # the panel's order is the harvest's
 
     if a.strategy:
         got = results[wanted[0]]

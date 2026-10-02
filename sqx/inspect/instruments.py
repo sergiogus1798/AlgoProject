@@ -5,6 +5,7 @@ import argparse
 import html
 import json
 import re
+import sqlite3
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
@@ -59,6 +60,42 @@ def instruments(cfx: Path) -> dict[str, dict]:
     return found
 
 
+def registry(root: Path, sqx_symbol: str) -> dict[str, object]:
+    """What one install's instrument registry carries for a feed, per cost field of `assets/`.
+
+    Args:
+        root: An install's folder — the custodian's, which runs the workflow (owner,
+            2026-09-30: «SQX hoy», always the custodian's, never the master's).
+        sqx_symbol: The feed, as `assets/symbols/<S>.yaml`'s `sqx_symbol` names it.
+
+    Returns:
+        {spread_is/oos/oos2, slippage_*: the one default of the instrument — SQX keeps one per
+        instrument, the segments are ours —, commission: {method, value}, swap_long/short:
+        {type, value}}, read-only off `user/data/data.db` without starting it; {} when the
+        registry does not know the feed.
+    """
+    db = sqlite3.connect(f"file:{root / 'user/data/data.db'}?mode=ro", uri=True)
+    try:
+        row = db.execute("SELECT i.DEFAULTSPREAD, i.DEFAULTSLIPPAGE, i.COMMISSIONS, i.SWAP "
+                         "FROM DATA d JOIN INSTRUMENTS i ON i.INSTRUMENT = d.INSTRUMENT "
+                         "WHERE d.SYMBOL = ? LIMIT 1", (sqx_symbol,)).fetchone()
+    finally:
+        db.close()
+    if row is None:
+        return {}
+    spread, slip, com, swap = row
+    method = re.search(r'type="(\w+)"', com or "")
+    value = re.search(r">([-\d.]+)</Param>", com or "")
+    sw = dict(re.findall(r'(\w+)="([^"]*)"', swap or ""))
+    out = {f"spread_{h}": spread for h in ("is", "oos", "oos2")}
+    out |= {f"slippage_{h}": slip for h in ("is", "oos", "oos2")}
+    out["commission"] = {"method": method.group(1) if method else None,
+                         "value": float(value.group(1)) if value else None}
+    out |= {f"swap_{k}": {"type": sw.get("type"), "value": float(sw[k]) if k in sw else None}
+            for k in ("long", "short")}
+    return out
+
+
 def mc_ranges(root: Path, sqx_symbol: str) -> dict[str, dict] | None:
     """The MC Retest spread/slippage ranges one install's own projects carry for a symbol.
 
@@ -71,15 +108,15 @@ def mc_ranges(root: Path, sqx_symbol: str) -> dict[str, dict] | None:
         sqx_symbol: The feed name, as `assets/symbols/<S>.yaml`'s `sqx_symbol` names it.
 
     Returns:
-        {"spread": {min, max}, "slippage": {min, max}} from the first switched-on MC Retest
-        task carrying this symbol, missing keys when only one method is on; None when this
-        install has no project with one yet.
+        {"spread": {min, max}, "slippage": {min, max}} from the first project whose MC Retest
+        tasks carry this symbol, each method from the task that draws it, a key missing when
+        no task draws it; None when this install has no project with one yet.
     """
     projects = root / "user/projects"
     if not projects.is_dir():
         return None
     for d in sorted(projects.iterdir()):
-        cfx = d / "project.cfx"
+        cfx, got = d / "project.cfx", {}
         if not cfx.exists():
             continue
         with zipfile.ZipFile(cfx) as z:
@@ -87,17 +124,19 @@ def mc_ranges(root: Path, sqx_symbol: str) -> dict[str, dict] | None:
                 if name == "config.xml":
                     continue
                 text = z.read(name).decode("utf-8", "replace")
-                if f'instrument="{sqx_symbol}"' not in text or '<MonteCarloRetest use="true"' not in text:
+                # The feed is the chart's symbol; `instrument=` spells it without its data
+                # source (`USDJPY_the5ers`), so it never matched (📓 2026-09-30, column empty).
+                if (f'<Chart symbol="{sqx_symbol}"' not in text
+                        or '<MonteCarloRetest use="true"' not in text):
                     continue
-                got = {}
                 for method, key in MC_METHODS.items():
                     m = re.search(rf'<Method use="true" type="{method}">\s*<Params>\s*'
                                  r'<Param key="Min"[^>]*>([\d.]+)</Param>\s*'
                                  r'<Param key="Max"[^>]*>([\d.]+)</Param>', text)
-                    if m:
+                    if m and key not in got:       # the eight tasks each draw one method
                         got[key] = {"min": float(m.group(1)), "max": float(m.group(2))}
-                if got:
-                    return got
+            if got:
+                return got
     return None
 
 
