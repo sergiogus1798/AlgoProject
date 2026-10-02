@@ -3,7 +3,7 @@
 | file | what it does | in → out |
 |---|---|---|
 | `rules.py` | The three ways a person picks one parameter set off a surface, behind one signature | scores, grid → a choice |
-| `cscv.py` | The partitions, the per-period score, and the choose-then-score loop | panel → one row per partition |
+| `cscv.py` | The partitions, the per-period score, the block sums each half is scored from, and the choose-then-score loop | panel → one row per partition |
 
 **The score is pluggable and the plug is narrow.** `SCORES` holds `sharpe` and `sortino`, both
 rates per period, and `run` uses whichever it is given on *both* halves of every partition. Ret/DD

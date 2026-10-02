@@ -93,24 +93,28 @@ def points(metrics: pd.DataFrame, min_trades: int, cols: dict) -> pd.DataFrame:
 
 
 def panel(work: Path, period: str) -> pd.DataFrame:
-    """Every harvested variant's profit, aggregated from days to periods.
+    """Every harvested variant's profit per period, daily by default.
 
     Args:
         work: The batch directory, holding `equity.parquet` from `sqx.variants.equity`.
-        period: A pandas offset alias -- "W" for weekly, "ME" for month end.
+        period: "D" for trading days (the CSCV's since 2026-10-01, as Bailey and López de
+            Prado use it), or a pandas offset alias -- "W" weekly, "ME" month end.
 
     Returns:
         Periods down, `variant_id` across, each cell that period's profit or loss.
 
+        **"D" is the days the curves have, not the calendar**: every weekday the history
+        spans (zero-P&L days included, they are rows of the joined index) plus the few
+        Sundays a feed clock opens on, never a weekend or holiday filled with zeros. The
+        three legs overlap by their ~2-month warm-up, so a date can appear twice in
+        `equity.parquet`; the two increments are summed, as the weekly resample always did.
+
         **The final period is dropped.** SQX marks a position that is still open on the
         last bar to market in the equity curve while its net profit counts only closed
-        trades, so the last few days carry an unrealised number that no other period
-        carries -- measured on 172 of 962 variants, by up to 332 dollars. Aggregating
-        daily to weekly is also what makes the ranks mean anything: at roughly sixty
-        trades a year a daily matrix is almost all zeros.
+        trades, so the last period carries an unrealised number that no other carries.
     """
-    daily = pd.read_parquet(work / "equity.parquet")
-    return daily.resample(period).sum().iloc[:-1]
+    days = pd.read_parquet(work / "equity.parquet").groupby(level=0).sum()
+    return (days if period == "D" else days.resample(period).sum()).iloc[:-1]
 
 
 def split(symbol: str, comp: tuple[tuple, tuple]) -> str:
@@ -127,8 +131,8 @@ def split(symbol: str, comp: tuple[tuple, tuple]) -> str:
         points from ~2 months earlier at zero P&L, so cutting at that date puts the tail of
         the previous segment's real P&L on this side (`knowhow/sqx-format/leg-curve-warmup.md`).
 
-        ⚠️ The CSCV proper does not use this — `cscv.run` cuts the history into 12 blocks
-        and reads their 924 partitions (C(12,6)), never the declared boundary, so the PBO is
+        ⚠️ The CSCV proper does not use this — `cscv.run` cuts the history into 16 blocks
+        and reads their 12,870 partitions (C(16,8)), never the declared boundary, so the PBO is
         the same number under every composition. What does move is the four chronological
         numbers computed beside it: the cost of each selection rule, the deflated Sharpe,
         the count of independent trials and the drift.

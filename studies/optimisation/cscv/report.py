@@ -24,6 +24,10 @@ STEP = 18
 # The CSCV cuts the whole joined curve, so every look reads all three segments — oos2 included,
 # which `assets/_policy.yaml` grants it since 2026-09-27 (owner, encargo 24 Q11).
 READS = panel.SEGMENTS
+# Both scores run always, so the window's "Sharpe / Sortino" selector switches without a
+# second call to the study (owner, 2026-09-30 §8.4; CONTRACT §1 «selectors»). The verdict and
+# `cscv.json`'s flat keys stay on `cscv.score` alone — only the tabs carry the other one too.
+SCORE_KEYS = ("sharpe", "sortino")
 
 # What the rule workers read, set before the fork.
 _SHARED: dict = {}
@@ -60,20 +64,21 @@ def flat(name: str, found: dict) -> dict:
     return {f"{k}_{name}": v for k, v in found.items() if not isinstance(v, (dict, list))}
 
 
-def _rule(name: str) -> tuple[pd.DataFrame, dict]:
-    """One selection rule's CSCV and its measured cost, in a worker of its own.
+def _rule(key: tuple[str, str]) -> tuple[pd.DataFrame, dict]:
+    """One selection rule's CSCV and its measured cost, under one score, in a worker of its own.
 
     Args:
-        name: A key of `rules.RULES`.
+        key: (a key of `rules.RULES`, a key of `SCORE_KEYS`).
 
     Returns:
         (its partitions, what `summary.everything` and `cost.cost` found).
     """
+    name, score_key = key
     got = _SHARED
     run = cscv.run(got["wide"], got["knobs"]["blocks"], rules.RULES[name], got["grid"],
-                   np.random.default_rng(got["knobs"]["seed"]), got["score"])
-    return run, summary.everything(run) | cost.cost(got["inside"], got["outside"],
-                                                    got["grid"], name, got["knobs"])
+                   np.random.default_rng(got["knobs"]["seed"]), score_key)
+    return run, summary.everything(run) | cost.cost(
+        got["inside"], got["outside"], got["grid"], name, got["knobs"] | {"score": score_key})
 
 
 def main() -> None:
@@ -82,8 +87,8 @@ def main() -> None:
     ap.add_argument("--work", required=True, type=Path,
                     help="the batch directory: holds metrics.parquet and equity.parquet")
     ap.add_argument("--blocks", type=int,
-                    help="blocks to cut the history into, overriding config.yaml. "
-                         "12 gives C(12,6) = 924 partitions, 10 gives 252, 16 gives 12,870")
+                    help="blocks to cut the history into, overriding the ledger's 16 "
+                         "(C(16,8) = 12,870 partitions); 12 gives 924, 10 gives 252")
     ap.add_argument("--family", required=True,
                     help="la familia de plantillas del lote: la tercera parte del estudio del "
                          "ledger, donde se apunta la mirada, un renglón por tramo")
@@ -120,7 +125,7 @@ def main() -> None:
     look.admit(STEP, READS, symbol)
     print(f"PROGRESS 5 {symbol} {timeframe}: {', '.join(READS)} permitidos por el ledger",
           flush=True)
-    print("PROGRESS 10 construyendo la matriz de rendimientos por periodo", flush=True)
+    print("PROGRESS 10 construyendo la matriz de rendimientos diarios", flush=True)
     wide = panel.usable(panel.panel(a.work, knobs["period"]), metrics, cfg["min_trades"],
                         cols)
     grid = grid_of(metrics, wide.columns)
@@ -133,12 +138,17 @@ def main() -> None:
           f"{len(cscv.partitions(knobs['blocks']))} particiones sobre {wide.shape[1]} "
           "variantes", flush=True)
     # The rules share nothing and each seeds its own generator, so they run side by side
-    # and give exactly what they gave one after another.
-    _SHARED.update(wide=wide, grid=grid, inside=inside, outside=outside, knobs=knobs,
-                   score=score)
-    done = dict(fanout.run(_rule, {name: 1 for name in knobs["rules"]}, len(knobs["rules"])))
-    runs = {name: done[name][0] for name in knobs["rules"]}
-    found = {name: done[name][1] for name in knobs["rules"]}
+    # and give exactly what they gave one after another. Every rule runs under both scores
+    # (SCORE_KEYS) so the window's selector switches instantly; only `knobs["score"]`'s copy
+    # feeds the verdict and `cscv.json`'s flat keys, unchanged from before this ran twice.
+    _SHARED.update(wide=wide, grid=grid, inside=inside, outside=outside, knobs=knobs)
+    tasks = [(name, sk) for name in knobs["rules"] for sk in SCORE_KEYS]
+    done = dict(fanout.run(_rule, {t: 1 for t in tasks}, len(tasks)))
+    runs_by_score = {sk: {name: done[(name, sk)][0] for name in knobs["rules"]}
+                     for sk in SCORE_KEYS}
+    found_by_score = {sk: {name: done[(name, sk)][1] for name in knobs["rules"]}
+                      for sk in SCORE_KEYS}
+    found = found_by_score[knobs["score"]]
 
     print("PROGRESS 80 contando cuantas pruebas independientes hay de verdad", flush=True)
     independent = counting.independent(inside, knobs["cluster_k_max"])
@@ -163,7 +173,8 @@ def main() -> None:
                                       encoding="utf-8")
     output.population(a.work / "estudios", "cscv", envelope.envelope(
         "studies.optimisation.cscv.report", a.work.name, None, cfg, started,
-        contract.tabs(runs, found, result), contract.verdict(found, result),
+        contract.tabs(runs_by_score, found_by_score, result, knobs["score"]),
+        contract.verdict(found, result),
         glossary=contract.GLOSSARY), f"CSCV — {a.work.name.replace('_', ' ')}")
     head = knobs["rules"][0]
     look.log(a.work, a.family, {
@@ -174,13 +185,13 @@ def main() -> None:
                 f"{wide.shape[1]} variantes · {result['periods']} periodos {knobs['period']} · "
                 f"cronología {panel.label(comp)}"}, READS)
 
-    print(f"PROGRESS 100 PBO {found[head]['pbo']:.0%} con {head}, DSR {deflated['dsr']:.2f}",
+    print(f"PROGRESS 100 PBO {found[head]['pbo']:.1%} con {head}, DSR {deflated['dsr']:.2f}",
           flush=True)
     for name in knobs["rules"]:
         low, high = found[name]["ci95"]
         print(f"  {name:20s} PBO {found[name]['pbo']:6.1%}  percentil OOS "
               f"{found[name]['pct_oos']:5.1f} [{low:.0f}, {high:.0f}]  "
-              f"pierde {found[name]['prob_loss']:.0%}")
+              f"pierde {found[name]['prob_loss']:.1%}")
     print(f"\n{wide.shape[1]} variantes que valen {independent['n_clusters']} pruebas "
           f"independientes; el orden se conserva con pendiente {result['slope']:+.2f}")
     print(f"-> {a.work / 'estudios' / 'cscv.html'}")

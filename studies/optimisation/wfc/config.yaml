@@ -4,7 +4,3 @@
 # The rho below which ranking by in-sample profit is not worth doing. Not a law: it is the
 # owner's threshold and changing it re-runs only the verdict, never the measurement.
 rho_floor: 0.30
-
-# Rows kept from each end of the in-sample ranking when the batch is too big to tabulate.
-# The ends are what answers the question: did the in-sample winners stay winners?
-table_ends: 12

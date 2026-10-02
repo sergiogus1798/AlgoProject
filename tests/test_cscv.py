@@ -3,6 +3,8 @@
 the block-shuffled one, where a surface with real dispersion must still read as luck."""
 
 import sys
+import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +13,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.surface import trials as counting
+from engines.variants import panel as variants
 from studies.optimisation.cscv.measure import cscv, rules
 from studies.optimisation.cscv.verdict import summary, trials
 
@@ -80,6 +83,58 @@ def spiky() -> tuple[np.ndarray, pd.DataFrame]:
     return score, pd.DataFrame({"param_x": a, "param_y": b})
 
 
+def by_rows(wide: pd.DataFrame, blocks: int, rule: Callable, grid: pd.DataFrame,
+            rng: np.random.Generator, score: str) -> pd.DataFrame:
+    """The CSCV as it was computed before 2026-10-01: rows concatenated, one partition at a time.
+
+    Args:
+        wide, blocks, rule, grid, rng: As `cscv.run`.
+        score: A key of `cscv.SCORES`.
+
+    Returns:
+        The same frame `cscv.run` returns, off the plain per-row score -- the reference the
+        block-sum version must reproduce.
+    """
+    measure = cscv.SCORES[score]
+    pieces = np.array_split(np.arange(len(wide)), blocks)
+    values, n = wide.to_numpy(), wide.shape[1]
+    rows = []
+    for inside in cscv.partitions(blocks):
+        outside = [b for b in range(blocks) if b not in inside]
+        train = measure(values[np.concatenate([pieces[b] for b in inside])])
+        held = values[np.concatenate([pieces[b] for b in outside])]
+        test = measure(held)
+        pick = rule(train, grid, rng)
+        omega = (int((test < test[pick]).sum()) + 1) / (n + 1)
+        slope, intercept = np.polyfit(train, test, 1)
+        rows.append({"pick": pick, "omega": omega, "lam": float(np.log(omega / (1 - omega))),
+                     "is_score": float(train[pick]), "oos_score": float(test[pick]),
+                     "oos_median": float(np.median(test)), "slope": float(slope),
+                     "r2": float(np.corrcoef(train, test)[0, 1] ** 2),
+                     "oos_pnl": float(held[:, pick].sum())})
+    return pd.DataFrame(rows)
+
+
+def daily_panel() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """A joined equity file with two overlapping legs, and the panel it must read as.
+
+    Returns:
+        (what `engines.variants.panel.panel(work, "D")` read off it, the expected frame):
+        the overlapping date summed, the weekend never filled, the last day dropped.
+    """
+    leg1 = pd.DataFrame({"P0": [1.0, 0.0, 2.0], "P1": [0.0, 0.0, -1.0]},
+                        index=pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06"]))
+    leg2 = pd.DataFrame({"P0": [0.5, 3.0, 4.0], "P1": [0.0, 1.0, 9.0]},
+                        index=pd.to_datetime(["2020-01-06", "2020-01-07", "2020-01-08"]))
+    with tempfile.TemporaryDirectory() as tmp:
+        pd.concat([leg1, leg2]).sort_index().to_parquet(Path(tmp) / "equity.parquet")
+        got = variants.panel(Path(tmp), "D")
+    want = pd.DataFrame({"P0": [1.0, 0.0, 2.5, 3.0], "P1": [0.0, 0.0, -1.0, 1.0]},
+                        index=pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06",
+                                              "2020-01-07"]))
+    return got, want
+
+
 def check(failures: list, ok: bool, said: str) -> None:
     """Record one property and say how it went.
 
@@ -131,6 +186,24 @@ def main() -> None:
           "con una ventaja real, el arrastre es claramente positivo")
     check(failures, abs(found["shuffled"]["slope"].mean()) < 0.1,
           "barajado por bloques: dispersion real y arrastre cero, que es el caso ciego")
+
+    print("\n## la matriz diaria y las sumas por bloque")
+    got, want = daily_panel()
+    check(failures, got.equals(want), "el panel D suma la fecha que dos tramos comparten, no "
+          "rellena el fin de semana y descarta el último día")
+    wide = panels(SEED)["edge"].iloc[:, :25]
+    wide.iloc[:40, 3] = 0.0
+    wide.iloc[:, 5] = wide.iloc[:, 5].abs()  # never loses: Sortino places it on top
+    small = pd.DataFrame({"param_i": range(wide.shape[1])})
+    for score in cscv.SCORES:
+        for name, rule in rules.RULES.items():
+            fast = cscv.run(wide, BLOCKS, rule, small, np.random.default_rng(1), score)
+            slow = by_rows(wide, BLOCKS, rule, small, np.random.default_rng(1), score)
+            same = (fast["pick"].equals(slow["pick"])
+                    and np.allclose(fast.drop(columns="pick"), slow.drop(columns="pick"),
+                                rtol=1e-9, atol=1e-9))
+            check(failures, same, f"{score} {name}: las sumas por bloque dan lo mismo que "
+                  "concatenar filas, partición a partición")
 
     print("\n## el signo de lambda")
     records = cscv.run(grids["edge"], BLOCKS, rules.argmax,

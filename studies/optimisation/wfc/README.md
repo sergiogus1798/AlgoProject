@@ -35,7 +35,7 @@ config.yaml ─▶ engines/variants ─▶ measure ─▶ contract
 
 | file | what it does | run it |
 |---|---|---|
-| `report.py` | The correlation, under one composition, recorded in the ledger | `python3 -m studies.optimisation.wfc.report --work <dir> --family <F> --inside build,oos1 --outside oos2` |
+| `report.py` | The correlation under every partition the ledger's door offers (a window selector switches between them with no new computation); only the one requested on the command line is recorded in the ledger | `python3 -m studies.optimisation.wfc.report --work <dir> --family <F> --inside build,oos1 --outside oos2` |
 | `config.yaml` | The rho floor and the table; the trade floor and the default composition are in `engines/variants/config.yaml` | edited, or `--set section.key=value` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 

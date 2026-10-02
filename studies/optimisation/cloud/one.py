@@ -57,7 +57,8 @@ def read(work: Path, cfg: dict) -> dict:
     picked = ensemble.spread(coords, pool, cfg["ensemble"]["k"])
 
     return {"data": data, "live": live, "collapsed": sorted(set(data["params"]) - set(live)),
-            "reading": reading, "whole": whole, "local": local, "indices": indices,
+            "reading": reading, "values": values, "near_mask": near,
+            "whole": whole, "local": local, "indices": indices,
             "roughness": surrogate.local_roughness(unit, values, s["neighbours"]),
             "curvature": surrogate.curvature(local, unit[origin_row]),
             "window": window, "table": table, "rho": stability.persistence(per, keep),

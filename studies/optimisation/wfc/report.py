@@ -58,7 +58,7 @@ def parse() -> argparse.Namespace:
 
 
 def main() -> None:
-    """Ask the door, measure the grid, say what it licenses, write it and record the look."""
+    """Ask the door, measure every offered partition, say what the requested one licenses."""
     a = parse()
     started = time.time()
     cfg = config.load(a.overrides)
@@ -76,14 +76,28 @@ def main() -> None:
     found = correlation.correlation(kept, cols)
     said = correlation.verdict(found, cfg["rho_floor"])
     thin = json.loads((a.work / "collected.json").read_text(encoding="utf-8"))
-    note = (f"{dropped} de {len(metrics)} combinaciones descartadas por operar menos de "
-            f"{cfg['min_trades']} veces en alguna de las dos muestras. Antes de eso, "
-            f"{thin.get('thin', 0)} variantes ya habían quedado fuera del panel por no "
-            f"llegar a {thin.get('floor', '?')} operaciones en todo el periodo: una "
-            f"combinación que apenas opera da un beneficio que mide una o dos operaciones.")
+    # Every partition the ledger's door allows today (feedback §8.2): a human may switch
+    # between them in the window with no new computation, so they all ride in this same
+    # result — none of them logged to the ledger except the one actually requested, below.
+    parts = []
+    for other in panel.COMPOSITIONS:
+        try:
+            look.admit(STEP, other[0] + other[1], symbol)
+        except PermissionError:
+            continue
+        other_cols = panel.columns(other)
+        other_kept = panel.points(metrics, cfg["min_trades"], other_cols)
+        other_found = correlation.correlation(other_kept, other_cols)
+        other_said = correlation.verdict(other_found, cfg["rho_floor"])
+        parts.append((panel.label(other), other_kept, other_found, other_said, other_cols,
+                     len(metrics) - len(other_kept), len(metrics)))
+    note = (f"{thin.get('thin', 0)} variantes ya quedaron fuera del panel por no llegar a "
+            f"{thin.get('floor', '?')} operaciones en todo el periodo, antes de leer ninguna "
+            f"composición: una combinación que apenas opera da un beneficio que mide una o "
+            f"dos operaciones.")
     title = f"WFC — {a.work.name.replace('_', ' ')} — {cols['is_label']} contra {cols['oos_label']}"
     result = envelope.envelope(MODULE, a.work.name, None, cfg, started,
-                               [wfc.tab(kept, found, cols, cfg["table_ends"], note)],
+                               [wfc.tab(parts, name, cfg["rho_floor"], note)],
                                wfc.verdict(said, found), glossary=wfc.GLOSSARY)
     # One file set per composition, so a second reading never overwrites the first; the
     # plain `wfc.*` is a copy of the newest, which the viewer and step 20 read.

@@ -5,10 +5,12 @@ TIPS = {
                   "entra en la nube.",
     "split_mode": "Qué se considera fuera de muestra: oos2_only (la lectura estricta) o "
                   "oos1_oos2.",
-    "cscv.period": "El periodo de la matriz de rendimientos: W semanas, ME meses, D días.",
+    "cscv.period": "Las filas de la matriz de rendimientos: D días de mercado (la de López "
+                   "de Prado, por defecto), W semanas, ME meses.",
     "cscv.score": "El estadístico por el que se ordenan las variantes: sharpe o sortino, "
                   "nunca Ret/DD.",
-    "cscv.blocks": "Bloques en que se corta la historia; 12 dan 924 particiones.",
+    "cscv.blocks": "Bloques en que se corta la historia; 16 dan C(16,8) = 12.870 "
+                   "particiones.",
     "cscv.rules": "Las reglas de elección que se juzgan, la primera es la titular.",
     "cscv.random_draws": "Sorteos de la regla aleatoria entre las rentables.",
     "cscv.bootstrap": "Remuestreos del intervalo del percentil fuera de muestra.",

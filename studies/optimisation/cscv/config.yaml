@@ -6,19 +6,23 @@
 # The IS/OOS boundary is NOT here -- it is written into equity.json by the harvest, which
 # reads it off the harness that produced the numbers. One date, one definition.
 cscv:
-  # How daily P&L is aggregated before anything is ranked. At roughly sixty trades a year
-  # a daily matrix is almost all zeros and its ranks are noise. "W" weekly, "ME" monthly.
-  period: W
+  # The rows of the returns matrix. "D" is Bailey, Borwein, López de Prado and Zhu's own
+  # choice (owner, 2026-10-01): every trading day the joined curve has, zero-P&L days
+  # included, about 260 a year. The old argument for weekly -- "at sixty trades a year a
+  # daily matrix is almost all zeros" -- did not hold on the H1 batches: the curves are
+  # marked to market, and 75 % of the cells of USDJPY H1 Strategy_10.1.79 move
+  # (knowhow/research/cscv-daily-returns.md). "W" weekly and "ME" monthly still run.
+  period: D
   # What "best" means when a rule ranks variants. It has to be comparable across windows
   # of different lengths, which is exactly what Ret/DD is not: its return grows with the
   # window and its drawdown only with the square root of it, so a longer window scores
   # higher for free. "sharpe" and "sortino" are both rates per period and are both
   # legitimate here; sortino counts only the periods that lost.
   score: sharpe
-  # Blocks the history is cut into, following Lopez de Prado. Twelve gives C(12,6) = 924
-  # partitions. Ten gives 252 and is the cheap setting; sixteen gives 12,870 and costs
-  # fourteen times as much for a third-decimal improvement on a statistic whose null
-  # standard deviation is 0.21. Overridable per run with `report.py --blocks`. The number
+  # Blocks the history is cut into, following Lopez de Prado. Sixteen gives C(16,8) = 12,870
+  # partitions (owner, 2026-09-30); twelve gives 924, ten 252. Each half is scored off
+  # block sums, so the cost grows with the partitions and not with the rows: a daily panel
+  # costs what a weekly one did. Overridable per run with `report.py --blocks`. The number
   # lives in ledger/thresholds.yaml, with who set it and when.
   blocks: ledger:cscv.blocks
   # The ways of choosing parameters that get compared. The point of the study is the

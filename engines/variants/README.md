@@ -6,7 +6,7 @@ where the in-sample / out-of-sample boundary is, and the per-period panel of the
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names what the package is; holds no code | — | — |
-| `panel.py` | The four admitted compositions of the split (`COMPOSITIONS`, the two named `SHORTCUTS`, `composition`, `columns`), the usable points, the N × T panel, the real boundary read off `equity.json`, and the two windows | imported | `metrics.parquet` + `equity.parquet` → points, panel, windows |
+| `panel.py` | The four admitted compositions of the split (`COMPOSITIONS`, the two named `SHORTCUTS`, `composition`, `columns`), the usable points, the N × T panel (trading days for the CSCV, weekly or monthly on request), the real boundary read off `equity.json`, and the two windows | imported | `metrics.parquet` + `equity.parquet` → points, panel, windows |
 | `look.py` | What a read spends: the batch's asset and timeframe off `segments.parquet`, the ledger's door on every segment before anything opens, the compositions the door offers, and one ledger row per segment read | imported | batch + family → door, rows |
 | `config.yaml` | The trade floor and the named composition, shared by the WFC and the CSCV | edited, or `--set` through either study | — |
 

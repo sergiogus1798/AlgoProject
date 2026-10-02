@@ -25,8 +25,8 @@ def deflated(window: pd.DataFrame, pick: int, n_eff: int) -> dict:
 
         **Every Sharpe here is per period**, the unit that function's docstring insists
         on: the returns, the spread across trials and the benchmark are all computed off
-        the same weekly panel, so nothing is annualised on one side of the comparison and
-        not the other.
+        the same panel, daily since 2026-10-01, so nothing is annualised on one side of
+        the comparison and not the other.
     """
     returns = window.to_numpy()[:, pick]
     observed, skew, kurtosis = significance.moments(returns)

@@ -37,8 +37,8 @@ min_trades: 50
 # hacer un backtest: `sqx.variants.collect` deja en `metrics.parquet` las columnas de todas.
 # Una que toque `oos2` pasa antes por la puerta (`ledger.gate.allow`).
 #
-# ⚠️ El CSCV no cambia con esto: `cscv.run` parte el historial en 12 bloques y lee sus 924
-# particiones (C(12,6)); no mira la frontera declarada, así que el PBO es el MISMO número en
+# ⚠️ El CSCV no cambia con esto: `cscv.run` parte el historial en 16 bloques y lee sus 12.870
+# particiones (C(16,8)); no mira la frontera declarada, así que el PBO es el MISMO número en
 # todas las composiciones, y siempre lee build+oos1+oos2 (dueño, 2026-09-27). Lo que sí se
 # mueve son los cuatro números cronológicos que van al lado en el mismo informe: el coste de
 # cada regla de selección, el Sharpe desinflado, el número de pruebas independientes y el

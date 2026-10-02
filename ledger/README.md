@@ -40,7 +40,7 @@ every look, which the deflated Sharpe needs whoever looked.
 segment before opening the batch and then write one row per segment read through `record.log`
 (`engines/variants/look.py`): the WFC one per segment of its composition (step 17,
 `criterion: wfc/<inside>__<outside>`), the CSCV three — `build`, `oos1`, `oos2` (step 18), since its
-924 partitions cut the whole history. The WFM (19) still writes none, so the blind door opens only
+12,870 partitions cut the whole history. The WFM (19) still writes none, so the blind door opens only
 after `backfill --blind`, which rebuilds the missing rows from the results on disk, marked
 `backfill`, **skips a batch whose WFC or CSCV already wrote its own** (a live row's note opens
 `lote <batch>`), and refuses to write a step twice (`knowhow/eng/blind-steps-write-no-ledger-rows.md`).
