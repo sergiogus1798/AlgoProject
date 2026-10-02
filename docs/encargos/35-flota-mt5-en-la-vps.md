@@ -120,6 +120,10 @@ Depende de exportar el `.mq5` de SQX sin la interfaz: `OPEN.md` #78 punto 3, tod
    Hantec con 15 gráficos ocupa ~450 MB, así que 10 terminales son ~4,5 GB y 15 ~7 GB, más ~3 GB de
    Windows: caben 15-18 como techo, 12-14 con holgura. La RAM ya no obliga a nada; se propone el
    servicio MQL5 más una tarea programada de Windows que reabre un terminal caído.
+   **Medido en la VPS el 2026-10-02, ya con acceso (`ssh vps`, por Tailscale):** no es Windows 10 sino
+   **Windows Server 2022** (con soporte hasta 2031; estaba sin parches desde julio de 2021 y el dueño la actualizó ese mismo día); 3
+   terminales abiertos (FTMO, Hantec, MetaQuotes) ocupan 1,4 GB y quedan 5,8 GB libres de 12. Siguen
+   abiertos a internet el 3389 y el 5986. → `knowhow/locations/vps-fleet-access.md`
 2. ~~La plantilla de Excel~~ — hecha, §1 #5.
 3. **El patrón del nombre del archivo** que liga un EA a su fondeada (§3 punto 5), por ejemplo
    `Est17_FTMO100k.mq5`. ¿Para una empresa y un tamaño, o para una cuenta concreta?
