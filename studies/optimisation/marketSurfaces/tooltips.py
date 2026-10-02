@@ -15,4 +15,11 @@ TIPS = {
                   "tiene que superar.",
     "min_share": "Qué parte de los mercados declarados tiene que pasar, en cada tramo, para "
                  "decir que la región viaja.",
-    "step": "El paso del workflow con el que el ledger apunta esta mirada."}
+    "step": "El paso del workflow con el que el ledger apunta esta mirada.",
+    "region_radius": "Cuántos escalones de nivel cuenta como vecino de la madre, en todos los "
+                     "parámetros a la vez. El mismo número que la nube de parámetros (A1).",
+    "region_delta": "Qué tanto por debajo del resultado de la madre en el mercado principal "
+                    "sigue contando como parte de la meseta. El mismo número que la nube de "
+                    "parámetros (C1).",
+    "region_metric": "La segunda métrica que el mapa de calor puede mostrar, sin volver a "
+                     "correr el estudio: las dos se calculan siempre."}

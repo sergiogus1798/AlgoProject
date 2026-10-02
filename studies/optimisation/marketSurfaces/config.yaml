@@ -35,3 +35,16 @@ min_share: "ledger:marketSurfaces.min_share"
 # The workflow step the ledger records this at (owner, 2026-09-26: same level as the WFC
 # and the CSCV, read blind at step 20).
 step: 18.5
+
+# The plateau on the main asset (owner, 2026-09-30 §8.5): a point counts when it is within
+# `region_radius` level steps of the mother on EVERY parameter at once, and within
+# `region_delta` of the mother's own score there. Mirrors `cloud.config.neighbourhood`'s
+# `radius`/`delta` exactly, on purpose — it is meant to read as the same plateau, not a
+# second definition of one. Marked on every market's own heatmap; the table beside it
+# reads each market's performance inside this fixed region against outside it.
+region_radius: 2
+region_delta: 0.20
+
+# The second metric a heatmap can show beside `metric`, switched with a drop-down that
+# needs no second run (CONTRACT §1 «selectors»): both are precomputed.
+region_metric: ProfitFactor

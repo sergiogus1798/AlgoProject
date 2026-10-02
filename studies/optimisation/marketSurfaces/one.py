@@ -10,11 +10,14 @@ from core import assetdata
 from core.study import blocks, result as envelope
 from studies.optimisation.marketSurfaces.contract import grids, tabs
 from studies.optimisation.marketSurfaces.inputs import surfaces
-from studies.optimisation.marketSurfaces.measure import pairs, verify
+from studies.optimisation.marketSurfaces.measure import pairs, region, verify
 from studies.optimisation.marketSurfaces.verdict import call
 
 MODULE = "studies.optimisation.marketSurfaces"
 ORIGIN = "P00000"
+# How a config's metric column is named on screen. Extend when `config.yaml`'s `metric` or
+# `region_metric` takes another value.
+METRIC_LABEL = {"NetProfit": "Net Profit", "ProfitFactor": "Profit Factor"}
 
 
 def origin_pct(cells: pd.DataFrame) -> pd.DataFrame:
@@ -52,9 +55,17 @@ def measure(work: Path, cfg: dict, symbol: str) -> dict:
     feed, timeframe = surfaces.main_feed(work)
     declared = surfaces.declared(symbol)
     cells = surfaces.long(work, cfg["segments"], cfg["metric"], cfg["min_trades"], feed)
+    # The second metric a heatmap can show, precomputed so the window's selector needs no
+    # second run (CONTRACT §1 «selectors», owner 2026-09-30 §8.5).
+    alt_cells = surfaces.long(work, cfg["segments"], cfg["region_metric"], cfg["min_trades"], feed)
     absent = [m for m in declared if m not in set(cells["market"])]
     order = [feed] + [m for m in declared if m not in absent]
     envelope.progress(30, f"{cells['variant_id'].nunique()} variantes x {len(order)} mercados")
+    # The plateau detected on the main asset (build segment), carried over to every market
+    # as-is — never each market's own top share (owner, 2026-09-30 §8.5).
+    params = surfaces.parameters(work)
+    plateau = region.plateau(params, cells, ORIGIN, feed, cfg["region_radius"],
+                             cfg["region_delta"])
 
     found = pd.concat([pairs.matrix(surfaces.wide(cells, s, order),
                                     surfaces.wide(cells, s, order, "exposure"),
@@ -70,8 +81,8 @@ def measure(work: Path, cfg: dict, symbol: str) -> dict:
                          verify.markets(work, cells, order[1:])], ignore_index=True)
     envelope.progress(90, "verificado")
     return {"feed": feed, "timeframe": timeframe, "declared": declared, "absent": absent,
-            "order": order, "cells": cells, "params": surfaces.parameters(work),
-            "pairs": found, "rows": rows, "checks": checked,
+            "order": order, "cells": cells, "alt_cells": alt_cells, "params": params,
+            "plateau": plateau, "pairs": found, "rows": rows, "checks": checked,
             "diagonal": verify.diagonal(found),
             "provisional": {m: surfaces.provisional(m) for m in [feed] + declared}}
 
@@ -97,6 +108,11 @@ def warnings(m: dict) -> list[dict]:
     why = grids.missing(m["params"], ORIGIN)
     if why:
         out.append({"code": "no_pair_grids", "state": "info", "text": why})
+    elif not m["plateau"]:
+        out.append({"code": "no_plateau", "state": "watch",
+                    "text": "La madre no tiene celda con datos en el tramo build del mercado "
+                            "principal: sin ella no hay meseta que trasladar, y el recuadro y "
+                            "la tabla de dentro/fuera salen vacíos."})
     out.append({"code": "family_only", "state": "info",
                 "text": "Los 9 mercados son de la misma familia macro que el principal "
                         "(_markets.yaml, sin structural): pasar aquí es la prueba fácil; "
@@ -123,14 +139,17 @@ def result(m: dict, cfg: dict, started: float, strategy: str) -> dict:
     verdict = blocks.verdict(said["label"], said["state"],
                              said["meaning"] + " " + tabs.COSTS, None, parts)
     usable = m["cells"][m["cells"]["usable"]]
+    usable_alt = m["alt_cells"][m["alt_cells"]["usable"]]
     return envelope.envelope(
         MODULE, strategy, None, cfg, started,
         [tabs.reading(m["rows"], cfg["segments"], cfg["rho_floor"]),
          tabs.matrices(m["pairs"], cfg["segments"], m["order"]),
          tabs.surfaces(usable, cfg["segments"], m["order"], ORIGIN),
          *([] if grids.missing(m["params"], ORIGIN) else
-           grids.tabs(usable, m["params"], cfg["segments"], m["order"], ORIGIN,
-                      cfg["top_share"])),
+           grids.tabs(usable, METRIC_LABEL.get(cfg["metric"], cfg["metric"]), usable_alt,
+                      METRIC_LABEL.get(cfg["region_metric"], cfg["region_metric"]),
+                      m["params"], cfg["segments"], m["order"], ORIGIN, cfg["top_share"],
+                      m["plateau"], cfg["region_radius"], cfg["region_delta"])),
          tabs.checks(m["checks"], m["diagonal"], verify.RANK_AGREES)],
         verdict, warnings(m),
         [{"term": "rho_ab", "text": "Spearman del beneficio neto entre las variantes de dos "
@@ -138,7 +157,11 @@ def result(m: dict, cfg: dict, started: float, strategy: str) -> dict:
          {"term": "J_ab", "text": "Jaccard de los deciles superiores: qué parte de las mejores "
                                   "combinaciones son las mismas en los dos mercados."},
          {"term": "n_eff", "text": "Variantes con un resultado distinto en el par: dos tuplas "
-                                   "que dan el mismo backtest cuentan una vez."}],
+                                   "que dan el mismo backtest cuentan una vez."},
+         {"term": "meseta del principal", "text": "Las variantes a pocos escalones de la "
+          "madre en todos los parámetros a la vez, y no muy por debajo de su resultado en "
+          "el mercado principal. Se calcula una sola vez ahí y se traslada tal cual a los "
+          "demás mercados — no es el top propio de cada uno (eso es el mapa de consenso)."}],
         {"call": said["label"], "state": said["state"], "passed": said["passed"],
          "declared": len(m["declared"]), "markets": len(m["order"]),
          "variants": int(m["cells"]["variant_id"].nunique()),

@@ -28,7 +28,7 @@ config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ contract
 | folder | the question it answers | read its README before |
 |---|---|---|
 | `inputs/` | which cells, which markets, which costs? | touching the segment filter or the floor |
-| `measure/` | what are rho, J and the checks? | touching the null or the dedupe |
+| `measure/` | what are rho, J, the checks and the main-asset plateau? | touching the null, the dedupe or `region_radius`/`region_delta` |
 | `verdict/` | what does a pair mean, and what does the mother get? | moving a threshold |
 | `contract/` | how is it drawn? | adding a figure |
 
@@ -37,7 +37,8 @@ config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ contract
 | `one.py` | Every number of one batch (`measure`) and the contract's result of them (`result`, `run`) | imported — the window calls `run` | batch → result |
 | `report.py` | **The command**: asks the ledger's door for each segment before opening anything, writes `marketSurfaces.json/.html/.md`, `pairs.csv`, `checks.csv`, `verdict.csv`, and one ledger row per segment | `python3 -m studies.optimisation.marketSurfaces.report --work <batch> --family <F> [--out <dir>]` | batch → reading + ledger |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `config.yaml` | Segments, metric, top share and the three thresholds (registered in `ledger/thresholds.yaml`) | edited, or `--set key=value` | — |
+| `config.yaml` | Segments, metric, top share, `region_radius`/`region_delta`/`region_metric` and the three thresholds (registered in `ledger/thresholds.yaml`) | edited, or `--set key=value` | — |
+| `measure/region.py` | The plateau detected on the main asset (θ₀'s own neighbourhood box and score band), its 2D projection for a heatmap's outline, and the inside/outside/overall table | imported | cells, params → plateau, table |
 
 Manual page, in Spanish: `docs/manual/09-optimizacion.pdf` (cap. 52-superficies-mercado). Known-answer test:
 `tests/test_marketsurfaces.py`.
@@ -71,17 +72,31 @@ much less without it. **The call is on `rho_neutral`** (owner, OPEN.md §48, 202
 rho (the WFC's metric) is kept beside it in every table and bar chart, displayed but never decided
 on, because it is the one that exposure alone can carry.
 
-## The surfaces the window draws (encargo 24 E4, 22 §6.2)
+## The surfaces the window draws (encargo 24 E4, 22 §6.2; redesigned 2026-09-30 §8.5)
 
 Beside the distribution per market, the contract draws the surface itself: for **every ordered
-pair of parameters** a `grid` per market and segment — the median net profit of the variants that
-used each pair of levels, the mother left out — with θ₀ marked and **one colour scale across the
-markets** of that pair and segment (`scale_range`). The owner picks the pair on two drop-downs,
-«Eje X» and «Eje Y» (owner, 2026-09-27, Q13). The **consensus map** sums them: per cell, in how many
-markets it is in that market's top decile (`top_share`, the plateau), `levels` 0..N. A region that
-travels is a high, continuous patch with θ₀ inside it. 🔬 On the 150-variant `minimal` batch of
-`Test_USDJPY_donchianUpperCrossUp_M30` most cells hold one variant or none: a consensus map needs the
-full design, not a minimal one.
+pair of parameters** a `grid` per market, segment and metric (Net Profit and `region_metric`,
+both precomputed — a drop-down switches, no second run) — the median of the variants that used
+each pair of levels, the mother left out — with θ₀ marked and **one colour scale across the
+markets** of that pair, segment and metric (`scale_range`). The owner picks the pair on two
+drop-downs, «Eje X» and «Eje Y» (owner, 2026-09-27, Q13).
+
+**The region drawn on every market's heatmap is the one plateau detected on the main asset**
+(`measure.region.plateau`: θ₀'s own neighbourhood box and score band, the same numbers
+`cloud.config.neighbourhood` uses for A1/C1) — carried over as-is, never recomputed per market
+(owner, 2026-09-30: "la región = la meseta detectada en el activo principal"). It is outlined
+(`grid["region"]`, a faint border, never hides a cell's own number) rather than filled, and the
+**«región» tab** puts a number on it: each market's performance inside that fixed set of
+variants against outside it and against the whole batch. The pre-existing **consensus map**
+answers a different question and is kept beside it, not replaced: per cell, in how many markets
+it is in *that market's own* top decile (`top_share`), `levels` 0..N — a region that travels on
+its own terms is a high, continuous patch with θ₀ inside it.
+
+🔬 The main-asset plateau can be tiny: at ~500 variants across six live parameters it is
+routinely just θ₀ itself (`knowhow/research/plateau-radius-degenerates-at-six-params.md`) — the
+«región» table then reads n=1 "inside", correctly, not as a bug. 🔬 On the 150-variant `minimal`
+batch of `Test_USDJPY_donchianUpperCrossUp_M30` most heatmap cells hold one variant or none
+either way: neither the consensus map nor the region table means much below the full design.
 
 ## What it does not tell you
 
