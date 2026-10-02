@@ -52,7 +52,7 @@ Only the entry points sit in the root, because they are the only things that get
 | `load.py` | Everything one report reads from one ingest, once: simulations, originals, the confidence table, provenance and identity | imported |
 | `one.py` | **One strategy as the contract's data**: verdict, five tabs, glossary, summary row | imported — the window calls it |
 | `many.py` | Every strategy, and what can only be said across them, as one result | imported |
-| `report.py` | The command: every strategy of one ingest, to `verdict.csv`, one JSON and one page per strategy, and the ingest's page | `python3 -m studies.breakage.mcRetest.report --project XAUUSD` |
+| `report.py` | The command: every strategy of one ingest, to `verdict.csv`, one JSON and one page per strategy, and the ingest's page. `--strategy` («1.26.46» or «Strategy 1.26.46») runs `one.run` on that strategy alone and rewrites only its `estrategias/` JSON and page — `verdict.csv`, `mcRetest.json` and the battery's cross-strategy facts are the population's | `python3 -m studies.breakage.mcRetest.report --project XAUUSD [--strategy "Strategy 1.26.46"]` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable of the study, grouped by the layer that reads it | edited, or `--set section.key=value` |
 

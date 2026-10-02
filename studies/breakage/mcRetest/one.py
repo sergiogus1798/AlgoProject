@@ -35,7 +35,8 @@ def contract(got: dict, inputs: dict, cfg: dict, started: float) -> dict:
         MODULE, got["strategy"], inputs["identity"].get(got["strategy"]), cfg, started,
         [tabs.verdict_tab(got), tabs.cost_tab(got, cfg), tabs.stress_tab(got),
          tabs.tasks_tab(got), tabs.levels_tab(got, inputs["levels"], cfg)],
-        tabs.verdict_block(got), glossary=GLOSSARY, summary=tabs.summary(got))
+        tabs.verdict_block(got), warnings=tabs.sparse_warnings(got), glossary=GLOSSARY,
+        summary=tabs.summary(got))
 
 
 def run(strategy: str, inputs: dict, cfg: dict) -> dict:

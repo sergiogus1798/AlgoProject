@@ -28,7 +28,7 @@ SENTENCES = {
         "Esta tarea corrió y la estrategia no se enteró: las mil simulaciones dieron el mismo "
         "resultado. No es un aprobado, es que ese eje no se llegó a probar.",
     "tabla_de_niveles_corrupta":
-        "Esta corrida se cortó antes de terminar. Las simulaciones guardadas son válidas, pero "
+        "Este run se cortó antes de terminar. Las simulaciones guardadas son válidas, pero "
         "SQX escribió su tabla de confianza sobre el total que le pediste, así que esa tabla "
         "tiene todos los rangos desplazados y no se lee.",
     "reconciliacion_fallida":
@@ -92,7 +92,7 @@ def battery(result: dict) -> list[list[str]]:
     order = (f"no evaluable con {ranks['n']} estrategias, hacen falta {ranks['needed']}"
              if not ranks["measurable"] else
              f"tau de Kendall {ranks['tau']:+.2f} (p = {ranks['p']:.3f})")
-    return [["Apuestas efectivas", f"{enb['enb']:.2f} de {enb['n']} ({enb['ratio']:.0%})",
+    return [["Apuestas efectivas", f"{enb['enb']:.2f} de {enb['n']} ({enb['ratio']:.1%})",
              "Comparten plantilla de generación, pero sus retornos diarios apenas se "
              "correlacionan: la plantilla fija la forma de las reglas, no el momento."],
             ["Multiplicidad", f"{mult['pool']} contrastes, {mult['method'].upper()} factor "

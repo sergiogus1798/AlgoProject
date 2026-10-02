@@ -95,7 +95,7 @@ def underwater(pnl: np.ndarray, offsets: np.ndarray) -> np.ndarray:
 
 
 def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> dict:
-    """The envelope every simulated equity curve ran inside.
+    """The envelope every simulated equity curve ran inside, and a sample of the curves themselves.
 
     Args:
         pnl: Every simulation's P/L concatenated, USD.
@@ -103,11 +103,15 @@ def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> dict:
         cfg: What inputs.config.load() returned.
 
     Returns:
-        The configured percentiles of equity at each point of normalised progress. The
+        The configured percentiles of equity at each point of normalised progress, plus
+        `sample`: up to `fragility.fan_sample` individual curves, on the same grid. The
         x-axis is progress from 0 to 1 and **not the trade index**: simulations differ in
         length -- 676 to 2,031 measured -- so there is no common trade number to align them
         on, and interpolating each curve onto a shared grid is the only honest way to stack
-        them.
+        them. The sample is spread evenly across simulations **ordered by their own final
+        equity** (2026-09-30, feedback §6: "enough to see the distribution") rather than
+        left in simulation order, so a thin sample still shows the full spread from the worst
+        run to the best one instead of whatever 100 happened to be drawn first.
     """
     points = cfg["fragility"]["fan_points"]
     grid = np.linspace(0.0, 1.0, points)
@@ -115,9 +119,13 @@ def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> dict:
     for k, (start, stop) in enumerate(zip(offsets[:-1], offsets[1:])):
         equity = np.cumsum(pnl[start:stop])
         curves[k] = np.interp(grid, np.linspace(0.0, 1.0, equity.size), equity)
+    order = np.argsort(curves[:, -1])
+    take = min(cfg["fragility"]["fan_sample"], len(order))
+    keep = order[np.linspace(0, len(order) - 1, take).astype(int)]
     return {"progress": grid,
             "bands": {level: np.percentile(curves, level, axis=0)
-                      for level in cfg["fragility"]["band_levels"]}}
+                      for level in cfg["fragility"]["band_levels"]},
+            "sample": curves[keep]}
 
 
 def describe(metrics: dict, pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> dict:

@@ -7,9 +7,15 @@ import pandas as pd
 from core.study import blocks, result as envelope
 from studies.breakage.mcRetest import one, run as study
 from studies.breakage.mcRetest.contract import words
+from studies.breakage.mcRetest.contract.tabs import COMPOSITE_HELP
 
 COLUMNS = ["strategy", "identity", "verdict", "composite", "binding", "stress_net_p5",
            "stress_cvar_dd_pct", "vetoes", "blocked_by"]
+# Parallel to COLUMNS minus "identity" (dropped before the table is drawn) — CONTRACT §2's
+# per-column table help (2026-09-30 §6: "?" en «Veredicto compuesto» y en «qué falló»).
+SHOWN_HELP = [None, None, COMPOSITE_HELP, None, None, None,
+             "Qué veto de gates.py mandó el veredicto a FAIL.",
+             "Qué veto SOLO de datos lo dejó en INCONCLUSIVE, sin decidir nada."]
 
 
 def table(members: list[dict]) -> pd.DataFrame:
@@ -23,11 +29,13 @@ def population(result: dict, members: list[dict], cfg: dict, started: float) -> 
     rows = table(members)
     passed = int(rows.verdict.isin(["STRONG", "ACCEPTABLE", "MARGINAL"]).sum())
     counts = rows.verdict.value_counts()
+    strategy_table = blocks.table("Estrategia a estrategia", rows.drop(columns=["identity"]))
+    strategy_table["help"] = SHOWN_HELP
     tabs = [envelope.tab("summary", "Veredictos", [
         {"kind": "bars", "title": "Veredictos", "unit": "estrategias", "reference": None,
          "items": [{"label": v, "value": int(counts.get(v, 0)), "error": None,
                     "state": words.STATE[v]} for v in words.VERDICTS]},
-        blocks.table("Estrategia a estrategia", rows.drop(columns=["identity"]))]),
+        strategy_table]),
         envelope.tab("battery", "De la batería entera", [blocks.table(
             "Lo que sólo se dice mirando todas", pd.DataFrame(
                 words.battery(result), columns=["qué", "valor", "qué significa"]))],

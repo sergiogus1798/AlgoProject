@@ -27,6 +27,8 @@ scenario:
 fragility:
   band_levels: [2.5, 25, 50, 75, 97.5]   # the equity fan's percentiles, the study contract's five
   fan_points: 100          # points of normalised progress; simulations differ in length
+  fan_sample: 100          # individual curves kept per task, spread across the outcome (feedback
+                           # 2026-09-30 §6: "per-task histograms and equity curves"), not the bands
   cvar_alpha: 0.05         # the drawdown tail the gate reads, as a conditional mean
   n_resamples: 9999        # BCa resamples, for smooth statistics only; a quantile uses the exact interval
   confidence: 0.95

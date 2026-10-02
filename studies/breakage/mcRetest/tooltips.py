@@ -4,14 +4,14 @@ TIPS = {
     "ingest.cents_per_usd": "Céntimos por dólar: el .bin de SQX guarda el resultado de cada "
                             "operación en céntimos enteros.",
     "ingest.workers": "Procesos que leen las simulaciones a la vez; cambia RAM por tiempo "
-                      "(16 tarda 1,9 s y ocupa 1,9 GB en 40 corridas).",
+                      "(16 tarda 1,9 s y ocupa 1,9 GB en 40 runs).",
     "ingest.min_sims": "Simulaciones mínimas de una tarea para que sus cuantiles se lean.",
     "ingest.compression": "Compresión de los ficheros intermedios que escribe la ingesta.",
     "levels": "Los niveles de confianza que produce SQX; son los únicos que existen.",
     "recon.tolerance": "Diferencia relativa máxima entre una métrica reconstruida y la de SQX.",
     "recon.absolute_floor": "Por debajo de esta diferencia absoluta manda el redondeo a "
                             "céntimos y la métrica se da por igual.",
-    "recon.systematic_share": "Si una métrica falla en esta parte de las corridas es una "
+    "recon.systematic_share": "Si una métrica falla en esta parte de los runs es una "
                               "fórmula mal hecha y la ingesta se para; por debajo, la celda se "
                               "excluye y se apunta.",
     "scenario.ordering_metric": "La métrica que ordena las simulaciones cuando un nivel se lee "
@@ -29,6 +29,10 @@ TIPS = {
                             "media del 5% de peores re-ejecuciones.",
     "fragility.confidence": "Confianza de los intervalos exactos sobre los cuantiles.",
     "fragility.band_levels": "Los percentiles que dibuja el abanico de equity.",
+    "fragility.fan_sample": "Cuántas curvas individuales se guardan por tarea, repartidas de "
+                            "peor a mejor por su equity final — no en orden de simulación —, "
+                            "para que una muestra pequeña siga cubriendo todo el rango "
+                            "(feedback 2026-09-30 §6: histogramas y equity curves por tarea).",
     "modes.dip_alpha": "Umbral del test del dip. Por debajo, la distribución se declara bimodal.",
     "modes.min_outcome_share": "Proporción de simulaciones que deben dar resultados distintos "
                                "antes de aplicar cualquier test de forma. Spread y slippage se "
