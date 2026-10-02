@@ -4,10 +4,11 @@ tag: 🔬  date: 2026-09-24  see: authoring/block-vocabulary, authoring/holes-gr
 ---
 # `<BuildingBlocks>` in the Build task gates only FREE holes and generic generation
 Per-task `<Blocks><BuildingBlocks>`: 844 `<Block key= weight= use= category=>`. A `RandomCondition`
-bound to a group samples the group regardless of `use="false"`; a template's fixed block ignores the list entirely.
-To narrow a group-bound template, choose/author the group — switches silently do nothing there.
+bound to a group samples the group regardless of `use="false"`; a template's fixed block ignores the list entirely. To narrow a group-bound template, choose/author the group — switches silently do nothing there.
 A frozen donor's list lacks blocks authored after the freeze; SQX builds with them anyway (`sqx/blocks/taxonomy.py` adds them back).
 `sqx/projects/buildingblocks.py` writes it from a palette (2026-10-01), prefix stripped to the taxonomy key: one switch per block, both roles.
+🔬 2026-10-02: a palette with `unlabelled: off` + `overrides` is a SHORTLIST — `palette.resolve` switches off every block not listed. Before that fix the full labelling of 2026-10-01 (752 blocks got a neutral 1) made every curated palette resolve to ~575 conditions, clock blocks and stop/limit levels included; anything applied between 2026-10-01 22:41 and the fix was built wide. Guard: `tests/test_palettes_families.py`.
+A value block with roles indicator+level (Close, SessionHigh, ATR…) cannot be switched for one role only: on as indicator = on as stop/limit level.
 
 ## Evidence
 Donor `AlgoData/projectsBackup/XAUUSD_base_2026-09-21`; `Build-Task3.xml` 2.9 MB vs Retest 40 KB.

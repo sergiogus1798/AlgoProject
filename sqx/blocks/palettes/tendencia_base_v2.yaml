@@ -1,0 +1,41 @@
+# Paleta «Tendencia — base (revisada v2)» — familia Tendencia.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `trend`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: tendencia_base_v2
+label: Tendencia — base (revisada v2)
+family: trend
+origin: propia
+based_on: tendencia_base
+created: '2026-10-02'
+note: 'Paleta PURA de familia: solo los bloques que SON de esta familia, un representante
+  por clase de información, estados antes que eventos salvo donde la familia es un
+  evento. Sin bloques de reloj ni de calendario y sin niveles stop/limit (regla 15).
+  Cinco clases: pendiente de la media, precio respecto de la media, estado de un trailing
+  por volatilidad (SuperTrend; PSAR, PMax, HalfTrend, SSL y Gann miden lo mismo),
+  movimiento direccional por máximos y mínimos (DI+ frente a DI−) y fuerza de tendencia
+  sin dirección (ADX alto). Fuera: MACD, Momentum, ROC y QQE (van en momentum), los
+  ocho cruces de medias y las medias dobles HMA/KAMA/DEMA (el mismo dato que media
+  + precio), Vortex, Aroon e Ichimoku (duplican DI), Hurst/entropía/choppiness (duplican
+  ADX), el perfil de volumen, las velas y todos los indicadores y comparadores sueltos.'
+unlabelled: 'off'
+overrides:
+  MARising: 3
+  MAFalling: 3
+  SuperTrendUPTrend: 3
+  SuperTrendDownTrend: 3
+  MABarClosesAbove: 2
+  MABarClosesBelow: 2
+  DIPlusHigher: 2
+  DIPlusLower: 2
+  ADXHigher: 2

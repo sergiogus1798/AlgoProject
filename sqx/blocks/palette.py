@@ -23,7 +23,8 @@ UNLABELLED = ("neutral", "off")
 CONDITIONS = (90, 170)
 
 FAMILY_ES = {"breakout": "Ruptura", "mean_reversion": "Reversión a la media",
-             "trend": "Tendencia"}
+             "trend": "Tendencia", "momentum": "Momentum", "volatility": "Volatilidad",
+             "pattern": "Patrón", "session": "Sesión"}
 SLUG = re.compile(r"^[a-z0-9_]+$")
 FIELDS = ("name", "label", "family", "origin", "based_on", "created", "note",
           "unlabelled", "overrides")
@@ -146,13 +147,21 @@ def resolve(palette: dict, blocks: dict[str, dict]) -> dict[str, dict]:
 
     Returns:
         Block key to its resolved switch: `use`, `weight`, and `why` — `override`,
-        `taxonomy` or `unlabelled` — so the window can say where a decision came from
-        instead of showing a number nobody can trace.
+        `not_listed`, `taxonomy` or `unlabelled` — so the window can say where a decision
+        came from instead of showing a number nobody can trace.
+
+        `unlabelled: off` with a list of overrides is a shortlist, as the file header
+        promises: nothing but the list enters. Since 2026-10-01 every block carries a label,
+        mostly a neutral 1, so without this the taxonomy admitted ~575 conditions into every
+        curated palette, time blocks and stop/limit levels included (owner's rule 15).
     """
+    shortlist = palette["unlabelled"] == "off" and bool(palette["overrides"])
     out = {}
     for key, block in blocks.items():
         if key in palette["overrides"]:
             weight, why = palette["overrides"][key], "override"
+        elif shortlist:
+            weight, why = 0, "not_listed"
         elif palette["family"] in block["archetypes"]:
             weight, why = block["archetypes"][palette["family"]], "taxonomy"
         else:

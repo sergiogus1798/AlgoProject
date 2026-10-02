@@ -1,0 +1,37 @@
+# Paleta «Momentum — base» — familia Momentum.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `momentum`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: momentum_base
+label: Momentum — base
+family: momentum
+origin: default
+based_on: null
+created: '2026-10-02'
+note: 'Paleta PURA de familia: solo los bloques que SON de esta familia, un representante
+  por clase de información, estados antes que eventos salvo donde la familia es un
+  evento. Sin bloques de reloj ni de calendario y sin niveles stop/limit (regla 15).
+  Tres clases: velocidad del precio en N barras (ROC, en %, así el nivel viaja entre
+  activos; Momentum mide lo mismo en puntos), aceleración (MACD frente a su señal;
+  OSMA y Awesome son lo mismo) e impulso que supera a la volatilidad (Waddah Attar
+  por encima de la línea de explosión). Fuera: MACD > 0 (es media rápida sobre lenta:
+  tendencia), los osciladores acotados por nivel (su extremo es reversión) y Bulls/Bears,
+  DPO y Disparity (distancia a la media).'
+unlabelled: 'off'
+overrides:
+  ROCAboveLevel: 3
+  ROCBelowLevel: 3
+  MACDMainHigherSignal: 2
+  MACDMainLowerSignal: 2
+  CBlock_WAEPosAboveExplosion: 2
+  CBlock_WAEPosAboveExplosion_2: 2

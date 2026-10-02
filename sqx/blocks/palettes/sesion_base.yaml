@@ -1,0 +1,45 @@
+# Paleta «Sesión — base» — familia Sesión.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `session`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: sesion_base
+label: Sesión — base
+family: session
+origin: default
+based_on: null
+created: '2026-10-02'
+note: 'Paleta PURA de familia, sin CurrentHour, sin día del mes y sin ningún bloque
+  de calendario: la sesión se lee por sus PRECIOS. Tres clases: el rango de una franja
+  (SessionHigh/Low) y su apertura (SessionOpen), los niveles del día (OpenD, HighD,
+  LowD) y el precio medio de la sesión (VWAP anclado). Los niveles son valores, no
+  condiciones: necesitan Close y cuatro comparadores. ⚠️ Esos siete valores (Close,
+  SessionHigh/Low/Open, OpenD, HighD, LowD) tienen en SQX doble papel, indicador y
+  nivel stop/limit, y una paleta enciende los dos a la vez: con órdenes a mercado
+  el papel de nivel no se usa. Fuera: HighestInRange/LowestInRange y TimeBreakout
+  (duplican SessionHigh/Low), Pivots (se calculan de HighD/LowD/CloseD), semana y
+  mes, y el perfil de volumen y TPO.'
+unlabelled: 'off'
+overrides:
+  SessionHigh: 3
+  SessionLow: 3
+  SessionOpen: 2
+  OpenD: 2
+  HighD: 2
+  LowD: 2
+  Close: 2
+  CloseAboveAnchoredVWAP: 2
+  CloseBelowAnchoredVWAP: 2
+  CrossesAbove: 2
+  CrossesBelow: 2
+  IsGreater: 2
+  IsLower: 2

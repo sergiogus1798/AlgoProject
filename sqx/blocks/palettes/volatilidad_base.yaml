@@ -1,0 +1,41 @@
+# Paleta «Volatilidad — base» — familia Volatilidad.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `volatility`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: volatilidad_base
+label: Volatilidad — base
+family: volatility
+origin: default
+based_on: null
+created: '2026-10-02'
+note: 'Paleta PURA de familia: solo los bloques que SON de esta familia, un representante
+  por clase de información, estados antes que eventos salvo donde la familia es un
+  evento. Sin bloques de reloj ni de calendario y sin niveles stop/limit (regla 15).
+  Cuatro clases, ninguna con dirección: nivel de volatilidad respecto de su propia
+  historia (rango percentil del ATR, mitad alta o baja), compresión y liberación (Squeeze:
+  Bollinger dentro de Keltner — comprobar la polaridad en el primer build, lo pide
+  la ayuda del bloque), si la volatilidad sube o baja (ATR) y cambio de distribución
+  (test KS, el primero a podar). Fuera: ATR y StdDev contra un nivel fijo en puntos
+  (no viaja entre mercados ni entre años), StdDev y las bandas BB/KC que suben o bajan
+  (duplican el ATR), Ulcer, Wasserstein, y el régimen tendencia/rango (ADX vive en
+  tendencia y en reversión).'
+unlabelled: 'off'
+overrides:
+  CBlock_ATRRankHighVol: 3
+  CBlock_ATRRankLowVol: 3
+  CBlock_SqueezeOn: 3
+  CBlock_SqueezeOff: 3
+  ATRRising: 2
+  ATRFalling: 2
+  CBlock_KSBreakOn: 1
+  CBlock_KSBreakOff: 1

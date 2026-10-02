@@ -1,0 +1,45 @@
+# Paleta «Patrón — base» — familia Patrón.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `pattern`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: patron_base
+label: Patrón — base
+family: pattern
+origin: default
+based_on: null
+created: '2026-10-02'
+note: 'Paleta PURA de familia: solo los bloques que SON de esta familia, un representante
+  por clase de información, estados antes que eventos salvo donde la familia es un
+  evento. Sin bloques de reloj ni de calendario y sin niveles stop/limit (regla 15).
+  Seis clases de forma, cada una con su par alcista y bajista: envolvente (giro de
+  dos velas), mecha larga de rechazo (martillo / estrella fugaz), barra interior (harami),
+  vela de cuerpo entero (marubozu), racha de tres velas (soldados / cuervos) y pivote
+  confirmado (fractal). Las versiones La City, no las nativas de SQX: son el mismo
+  patrón dos veces. Fuera: los 40 patrones raros (kicker, tasuki, mat hold, tri-star…),
+  que casi no disparan y no dan 40-50 operaciones al año; el doji y la peonza (no
+  dicen dirección); las ventanas (un CFD de 24 h casi no tiene huecos); IBS (está
+  en reversión).'
+unlabelled: 'off'
+overrides:
+  CBlock_BullishEngulfing: 3
+  CBlock_BullishEngulfing_2: 3
+  CBlock_Hammer: 3
+  CBlock_LaCityShootingStar: 3
+  CBlock_BullishHarami: 2
+  CBlock_BullishHarami_2: 2
+  CBlock_BullishMarubozu: 2
+  CBlock_BullishMarubozu_2: 2
+  CBlock_ThreeWhiteSoldiers: 2
+  CBlock_ThreeWhiteSoldiers_2: 2
+  IsBullishFractal: 1
+  IsBearishFractal: 1

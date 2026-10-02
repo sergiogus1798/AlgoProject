@@ -1,0 +1,37 @@
+# Paleta «Ruptura — base (revisada v2)» — familia Ruptura.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `breakout`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: ruptura_base_v2
+label: Ruptura — base (revisada v2)
+family: breakout
+origin: propia
+based_on: ruptura_base
+created: '2026-10-02'
+note: 'Paleta PURA de familia: solo los bloques que SON de esta familia, un representante
+  por clase de información, estados antes que eventos salvo donde la familia es un
+  evento. Sin bloques de reloj ni de calendario y sin niveles stop/limit (regla 15).
+  Tres clases: ruptura del rango de N barras (Donchian), ruptura de la envolvente
+  de volatilidad (Bollinger) y vela de expansión (cuerpo > k·ATR). Fuera: Keltner
+  y Highest/Lowest (duplican Bollinger y Donchian), la nube de Ichimoku (estructura
+  de tendencia), todo el régimen de volatilidad y el momentum (son otras paletas),
+  la ruptura de franja horaria (va en sesión) y todos los indicadores y comparadores
+  sueltos.'
+unlabelled: 'off'
+overrides:
+  CBlock_BreakoutDonchianLong: 3
+  CBlock_BreakoutDonchianLong_2: 3
+  CBlock_BBBreakoutUp: 3
+  CBlock_BBBreakoutDown: 3
+  CBlock_CandleBreakoutLong: 2
+  CBlock_CandleBreakoutLong_2: 2
