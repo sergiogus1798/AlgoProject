@@ -1,6 +1,6 @@
 ---
 q: claude hooks, PreToolUse guard, blocked by guard.py, hook blocks git add -A worktree switch pkill sqcli master project.cfx csv, PostToolUse ruff lint, settings.local.json additionalDirectories
-tag: 🔬  date: 2026-09-29  see: headless-claude-from-cron
+tag: 🔬  date: 2026-09-29  see: headless-claude-from-cron, claude-permission-path-syntax
 ---
 # Rules 2, 4, 7 and 12 are enforced by `.claude/hooks/guard.py`, not only written down
 A PreToolUse hook blocks (exit 2): `pkill`/`killall` with `StrategyQuant`; `sqcli` naming the master

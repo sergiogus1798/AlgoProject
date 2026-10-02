@@ -24,8 +24,6 @@
       "mcp__metatrader5__trade_close_by_position",
       "mcp__metatrader5__chart_add_expert",
       "mcp__metatrader5__chart_add_script",
-      "Edit(**/project.cfx)",
-      "Write(**/project.cfx)",
       "Bash(git worktree:*)",
       "Bash(git switch:*)",
       "Bash(git checkout -b:*)",

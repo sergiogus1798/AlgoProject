@@ -1,5 +1,5 @@
 #!/bin/bash
-# weekly-project-cleanup — the projectJanitor agent, unattended from cron, Monday 03:00.
+# weekly-project-cleanup — the projectJanitor agent, unattended from cron, Monday 02:50 (clear of the audit's 03:00).
 #
 # Other sessions create custom SQX projects for one question and leave them on the workers
 # (owner, 2026-09-26). This pass retires what the rule in sqx/projects/sweep.py names — Test_
@@ -7,7 +7,8 @@
 # AlgoData/projects/retire-queue.txt — archiving each project.cfx in AlgoData first. It never
 # starts, stops or queries an install: a running one keeps its projects another week. Writes
 # AlgoData/audit/YYYY-MM-DD-proyectos.md. See .claude/agents/projectJanitor.md and
-# docs/manual/04-sqx-plantillas-y-proyectos.pdf (cap. 55-retirar-proyectos).
+# docs/manual/04-sqx-plantillas-y-proyectos.pdf (chapter 55-retirar-proyectos; source in
+# AlgoData/manual-fuentes/).
 #
 # Usage:
 #   weekly-project-cleanup            run it

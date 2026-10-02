@@ -1,10 +1,11 @@
 #!/bin/bash
 # nightly-fix — the fixer agent on Opus, unattended, from cron, last of the nightly chain.
 #
-#   03:00 audit  →  03:30 documenter  →  04:00 fixer
+#   03:00 audit  →  03:30 documenter  →  04:00 fixer   (03:45 archive_logs sits between;
+#   04:15 sqx-log-prune follows — no two cron entries share a minute, see knowhow/eng/cron-schedule-no-shared-minute.md)
 #
 # Cron starts it at 04:00, but it first waits for the documenter's lock, which in turn waited for
-# the audit's. It works in the one checkout, on the branch it has, like the documenter, and
+# the audit's. It works in the one checkout, on master, like the documenter, and
 # commits nothing: the owner reads `git diff` and AlgoData/audit/YYYY-MM-DD-fixes.md in the morning and
 # commits what he wants (owner, 2026-09-26: one folder, no worktrees, no agent commits unasked).
 #

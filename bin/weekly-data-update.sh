@@ -12,6 +12,9 @@
 #      close the update just brought in (owner, 2026-09-29). Runs even if step 2 found nothing
 #      new; does not stop the script on failure, since it only affects step 26/weeklyReconciler.
 #
+# Cron: Saturday 02:00 (it was 03:00, the audit's minute). bin/monthly-oos2-roll.sh starts five
+# minutes later and waits on this script's lock, so that order must hold.
+#
 # No model involved: nothing here needs judgement. First real run and its numbers: OPEN.md 30.
 #
 # Usage:

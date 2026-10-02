@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.paths import AUDIT, DATA, MASTER, ROOT
+from tools import audit_tests
 
 
 def run(*command: str) -> tuple[int, str]:
@@ -81,8 +82,8 @@ def undecided_assets() -> list[str]:
 def main() -> None:
     """Write today's mechanical audit and exit non-zero if anything regressed."""
     checks_code, checks_out = run("python3", "tools/checks.py")
-    tests_code, tests_out = run("python3", "tests/test_cfx.py")
-    sqx_code, sqx_out = run("python3", "tests/test_sqxfile.py")
+    results, wall = audit_tests.run_all()
+    tests_row, tests_failed = audit_tests.report(results, wall)
     depmap_code, _ = run("python3", "tools/depmap.py")
     dirty = run("git", "status", "--porcelain", "docs/DEPENDENCIES.md")[1]
 
@@ -95,23 +96,20 @@ def main() -> None:
              "documentation drift and statistical rigour need the `/audit` agent.", "",
              "| check | result |", "|---|---|",
              f"| `tools/checks.py` | {'ok' if not checks_code else 'FAILED'} |",
-             f"| `tests/test_cfx.py` | {'ok' if not tests_code else 'FAILED'} |",
-             f"| `tests/test_sqxfile.py` | {'ok' if not sqx_code else 'FAILED'} |",
+             tests_row[0],
              f"| `docs/DEPENDENCIES.md` | {'stale, regenerated' if dirty else 'current'} |",
              f"| projects that fail to render | {', '.join(bad) or 'none'} |",
              f"| exports without a manifest | {', '.join(no_manifest) or 'none'} |",
              f"| assets in use, cost still undecided | {', '.join(undecided) or 'none'} |"]
     if checks_code:
         lines += ["", "## checks.py output", "", "```", checks_out, "```"]
-    if tests_code or sqx_code:
-        lines += ["", "## test output", "", "```",
-                  "\n".join(filter(None, [tests_out, sqx_out])), "```"]
+    lines += tests_row[1:]
 
     AUDIT.mkdir(parents=True, exist_ok=True)
     out = AUDIT / f"{date.today().isoformat()}-mechanical.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {out}")
-    sys.exit(1 if (checks_code or tests_code or sqx_code or depmap_code
+    sys.exit(1 if (checks_code or tests_failed or depmap_code
                    or bad or no_manifest) else 0)
 
 

@@ -1,6 +1,6 @@
 ---
 name: projectJanitor
-description: Weekly cleanup of the custom SQX projects other sessions left behind on the workers — retires Test_ projects, projects of a few tasks that are not a workflow, and whatever the owner queued, keeping each project.cfx archived in AlgoData. Never starts, stops or queries an install. Runs unattended on Monday 03:00; use by hand when the owner asks to clean up SQX projects.
+description: Weekly cleanup of the custom SQX projects other sessions left behind on the workers — retires Test_ projects, projects of a few tasks that are not a workflow, and whatever the owner queued, keeping each project.cfx archived in AlgoData. Never starts, stops or queries an install. Runs unattended on Monday 02:50; use by hand when the owner asks to clean up SQX projects.
 tools: Bash, Read, Grep, Glob, Write
 model: sonnet
 ---

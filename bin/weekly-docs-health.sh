@@ -14,7 +14,7 @@
 #   - a general pass for a doc whose command, path or claim no longer matches the code, beyond
 #     what nightly-docs.sh already repairs from the daily audit.
 #
-# Starts at the same time as the knowhow review but waits for its lock, so the two never fight
+# Cron starts it ten minutes after the knowhow review (05:10 vs 05:00) and it waits for that lock, so the two never fight
 # over OPEN.md at once. Writes documentation only — no code, no SQX, no data root, no git — and
 # leaves its changes uncommitted, so `git diff` on Monday shows exactly what it did.
 #
