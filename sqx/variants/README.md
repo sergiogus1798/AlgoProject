@@ -39,6 +39,7 @@ design_brief.json ─▶ design ─▶ build ─▶ manifest
 | `inputs.py` | Reads `config.yaml`, the brief, the already-known results, and says where output goes | imported | names → values, paths |
 | `tuples.py` | The canonical form of a parameter tuple and its hash | imported | tuple → hash, columns |
 | `manifest.py` | Contract C2, built by reading the files back off the disk | imported | folder → parquet |
+| `livexec.py` | `execute`'s `awake`/`load`/`run`/`panel`/`synced`/`clear` on this holder's live GUI session (`sqx.projects.live`); `backend(cfg)` picks it or `execute`. The legs run by the projectXML of the start, the panel is `loadGridData` (no reader needs it), the clear is `removeReports` + sync | imported | a batch folder → the three legs retested, mirrored to disk |
 | `execute.py` | Loads a batch into the custodian, runs the retest harness, exports the panel | `python3 -m sqx.variants.execute --work <dir> --project <SYM>_variantes`; `--clear` empties the four databanks between batches | `.sqx` → `retest.csv` |
 | `banks.py` | Empties the input and the three legs' databanks off the custodian's disk, refusing while the install is up | imported | project → files deleted |
 | `collect.py` | Contract C3: per-segment and per-union metrics joined onto the manifest, plus `segments.parquet`; refuses a batch whose controls all returned the same number | `python3 -m sqx.variants.collect --work <dir>` | csv + parquet → `metrics.parquet` |

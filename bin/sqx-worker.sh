@@ -21,6 +21,9 @@
 #   sqx-worker [--role ROLE] run <args>   sync, then one-shot sqcli command, e.g.
 #                                           sqx-worker run -project action=list
 #   ROLE is conductor (default) or custodian.
+#   --gui (start only): run ./StrategyQuantX under a private Xvfb instead of sqcli, so the
+#   GUI's own JSON servlets (/project/start runTask, /project/updateTaskXML) answer on the
+#   port SQX writes to settings.xml (WebServerPortUsed), with the BrowserToken beside it.
 #
 # Every install carries an owner lock (OPEN.md #32): `start` writes user/log/OWNER
 # (holder, sqcli PID, start time); `stop` from a different holder refuses unless --force.
@@ -32,6 +35,7 @@ ROLE=conductor
 FORCE_SYNC=0
 OWNER_ARG=""
 FORCE_STOP=0
+GUI=0
 while true; do
   case "${1:-}" in
     --role) ROLE="${2:?--role needs a role}"; shift 2 ;;
@@ -41,6 +45,7 @@ while true; do
     --owner) OWNER_ARG="${2:?--owner needs a name}"; shift 2 ;;
     # stop only: override a different holder's lock.
     --force) FORCE_STOP=1; shift ;;
+    --gui) GUI=1; shift ;;
     *) break ;;
   esac
 done
@@ -70,10 +75,15 @@ source "$ROOT/bin/sqx-lock.sh"
 # while the H2 database is locked, and the second launch is the one that does the damage.
 holds_install() {
   local p
-  for p in $(pgrep -x sqcli 2>/dev/null); do
+  for p in $(pgrep -x 'sqcli|StrategyQuantX' 2>/dev/null); do
     [ "$(readlink -f "/proc/$p/cwd" 2>/dev/null)" = "$(readlink -f "$WORKER")" ] && return 0
   done
   return 1
+}
+
+xvfb_file() { printf '%s/user/log/XVFB' "$WORKER"; }
+gui_setting() {
+  grep -oE "<$1>[^<]*" "$WORKER/user/settings/settings.xml" 2>/dev/null | head -1 | sed "s/<$1>//"
 }
 
 configured_port() {
@@ -201,7 +211,7 @@ case "${1:-}" in
     # RUNNING (OPEN.md #75, 2026-09-27, conductor). SQX itself logs the line below the moment
     # its CLI can take a command; wait for it, bounded, before sending -exit. A worker that
     # has been up for a while already has the line, so this costs nothing on a normal stop.
-    if ! grep -q 'CLI is now ready' "$LOG" 2>/dev/null; then
+    if [ ! -f "$(xvfb_file)" ] && ! grep -q 'CLI is now ready' "$LOG" 2>/dev/null; then
       echo -n "waiting for the CLI to finish booting"
       for _ in $(seq 1 30); do
         grep -q 'CLI is now ready' "$LOG" 2>/dev/null && break
@@ -209,7 +219,13 @@ case "${1:-}" in
       done
       echo
     fi
-    curl -sg -m 30 "http://localhost:${CLI_PORT}/call?cmd=-exit" >/dev/null 2>&1
+    if [ -f "$(xvfb_file)" ]; then
+      # GUI mode never readies the sqcli API («CLI not ready»); its own servlet exits it.
+      curl -s -m 30 -H "browserToken: $(gui_setting BrowserToken)" \
+        "http://localhost:$(gui_setting WebServerPortUsed)/main/exitapp" >/dev/null 2>&1
+    else
+      curl -sg -m 30 "http://localhost:${CLI_PORT}/call?cmd=-exit" >/dev/null 2>&1
+    fi
     # The shutdown sync is what writes the databanks to disk, and it is NOT quick: a
     # 500-strategy databank took over 20 s on its own, and with three of them the JVM was
     # still writing when the old 20-second wait gave up. It did not kill anything — it
@@ -220,6 +236,9 @@ case "${1:-}" in
     echo
     running && echo "⚠️ $ROLE STILL RUNNING after 5 min — do not read its databanks yet" \
             || echo "$ROLE stopped"
+    if ! running && [ -f "$(xvfb_file)" ]; then
+      kill "$(cat "$(xvfb_file)")" 2>/dev/null; rm -f "$(xvfb_file)"
+    fi
     # The worker just released its log. Quiescent install = safe moment to prune.
     "$ROOT/bin/sqx-log-prune.sh" --auto || true
     # Owner, 2026-09-28: every SQX run is exported the moment it ends — metrics, trades and
@@ -237,19 +256,41 @@ case "${1:-}" in
     "$ROOT/bin/sqx-log-prune.sh" --auto || true
     sync_bars || exit 1
     cd "$WORKER" || exit 1
-    env -u ELECTRON_RUN_AS_NODE setsid nohup ./sqcli >"$LOG" 2>&1 </dev/null &
+    if [ "$GUI" = "1" ]; then
+      # One display per install, derived from its port, so two workers never share a screen.
+      DISP=":$((CLI_PORT / 10))"
+      OLD_TOKEN=$(gui_setting BrowserToken)
+      setsid nohup "$HOME/.local/bin/Xvfb" "$DISP" -screen 0 1920x1080x24 -nolisten tcp \
+        >"$WORKER/user/log/xvfb.log" 2>&1 </dev/null &
+      echo $! >"$(xvfb_file)"
+      sleep 1
+      env -u ELECTRON_RUN_AS_NODE DISPLAY="$DISP" setsid nohup ./StrategyQuantX >"$LOG" 2>&1 </dev/null &
+    else
+      env -u ELECTRON_RUN_AS_NODE setsid nohup ./sqcli >"$LOG" 2>&1 </dev/null &
+    fi
     SQCLI_PID=$!
     echo -n "starting $ROLE"
     for _ in $(seq 1 60); do
       running && break; echo -n "."; sleep 2
     done
     echo
+    if running && [ "$GUI" = "1" ]; then
+      # SQX writes a fresh BrowserToken to settings.xml once its GUI web server is up.
+      echo -n "waiting for the GUI web server"
+      for _ in $(seq 1 90); do
+        [ "$(gui_setting BrowserToken)" != "$OLD_TOKEN" ] && break; echo -n "."; sleep 2
+      done
+      echo
+      [ "$(gui_setting BrowserToken)" != "$OLD_TOKEN" ] || echo "⚠️ GUI web server did not report a new token"
+      echo "gui:        http://localhost:$(gui_setting WebServerPortUsed)  (header browserToken from settings.xml)"
+    fi
     if running; then
       write_lock "$SQCLI_PID"
       echo "worker up:  http://localhost:${CLI_PORT}/call?cmd=-h"
       echo "log:        $LOG"
       echo "owner:      $(resolve_holder)"
     else
+      [ -f "$(xvfb_file)" ] && { kill "$(cat "$(xvfb_file)")" 2>/dev/null; rm -f "$(xvfb_file)"; }
       echo "worker failed to start — see $LOG"; exit 1
     fi
     ;;

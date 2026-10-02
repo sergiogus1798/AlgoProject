@@ -1,14 +1,19 @@
 ---
-q: MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 1 Bar Error while running project; project hangs after MCR crash no Project finished; transient SQX engine bug
-tag: 🔬  date: 2026-09-26  see: authoring/cloned-custom-block-native-key
+q: MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 1 Bar Error while running project; WFC 1 IS variants pilot aborted; project hangs after crash no Project finished; transient SQX engine bug
+tag: 🔬  date: 2026-09-30  see: authoring/cloned-custom-block-native-key
 ---
-# MCR 1 Bar can crash SQX's own engine with a NullPointerException — transient, not caused by project config, and the project hangs silently afterwards
+# A retest task can crash SQX's own engine with a fastutil NullPointerException — transient, not the project, and the project hangs silently afterwards
 Right after `Task finished`, the log shows `Error while running project` with a `NullPointerException`
 in fastutil (`IntArrayList.getInt ... "this.wrapped" is null`) — SQX's own code, not the project.
 `action=status` then repeats frozen numbers forever: tell dead from slow by `ps` on the `sqcli` PID,
-whose CPU `TIME` stops climbing. `action=stop` then `action=start` reran clean.
+whose CPU `TIME` stops climbing. `action=stop` then `action=start` reran clean. Seen on `MCR 1 Bar`
+(twice) and on the variants pilot's `WFC 1 IS`; the launchers now read «Error while running
+project» in the log and stop (`advance.run.watch`, `sqx.variants.banks.aborted`): rerun that step.
 
 ## Evidence
+- 🔬 2026-09-30, `Test_USDJPY_donchianUpperCrossUp_H1`: `MCR 1 Bar` 15 strategies, NPE right after
+  `Task finished in 9.55 s.`, clean on the rerun (7 tasks × 15, 20,998 simulations); later the same
+  NPE at 09:33:20 in `WFC 1 IS` of `sqx.variants.make`'s pilot (172 of 900), the make stopped.
 Running the eight MC Retest tasks (`/mcretest`, paso 13) on `USDJPY_workflow_profiling_v1` (8
 strategies, market entries, `RandomizeStartingBar` first): `MCR 1 Bar` printed
 `Task finished in 27.96 s.` and immediately after, the SAME thread logged

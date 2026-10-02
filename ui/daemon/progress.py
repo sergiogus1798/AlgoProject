@@ -6,6 +6,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.paths import MASTER, WORKERS
+from sqx.projects import live
 from ui.daemon import tasklog
 from ui.daemon.daylog import PERCENT, PROGRESS, STARTING, log_lines, trim  # noqa: F401
 
@@ -147,6 +148,19 @@ def in_memory(task: dict, status: str, runs: list[dict], live: dict | None) -> i
     return runs[-1]["before"].get(task["output"])
 
 
+def gui_memory(role: str, project: str) -> dict[str, int] | None:
+    """Strategies per databank in a GUI session's memory (`sqx.projects.live`), None without one.
+
+    The window's boundary: a session closing between the check and the call answers None.
+    """
+    if role not in WORKERS or not live.gui_up(role):
+        return None
+    try:
+        return live.records(role, project)
+    except (OSError, SystemExit, KeyError):
+        return None
+
+
 def state(role: str, project: str) -> dict:
     """Everything the generation zone draws for one project of one install.
 
@@ -174,8 +188,9 @@ def state(role: str, project: str) -> dict:
     # lent its total to the next one over 21, whose own start SQX had not logged yet).
     by_title = {r["title"]: r for i, r in enumerate(runs)
                 if r["finished"] or i == len(runs) - 1}
-    live = tasklog.status(role, project) if run["project"] == project and not run["finished"] \
-        else None
+    going = run["project"] == project and not run["finished"]
+    live = tasklog.status(role, project) if going else None
+    mem = gui_memory(role, project) if going and not live else None
     rows = []
     for t in tasks(folder / "project.cfx"):
         seen = run["events"].get(t["title"]) if run["project"] == project else None
@@ -205,6 +220,14 @@ def state(role: str, project: str) -> dict:
             # the worker's count over the input on disk.
             row |= {"done": live["generated"], "per_strategy_ms": live["per_strategy_ms"],
                     "total": held.get(t["input"]) if t["type"] != "Build" else None}
+        if status == "running" and mem:
+            # A GUI session has no `action=status`: the task's output in SQX's memory is its
+            # count — every retest here is silenced, so each strategy tested lands there.
+            base = r["before"].get(t["output"], 0) if r and t["type"] != "Build" else 0
+            row |= {"in_memory": mem.get(t["output"]),
+                    "done": (mem.get(t["output"]) or 0) - base}
+            if row["elapsed_s"] and row["done"]:
+                row["per_strategy_ms"] = row["elapsed_s"] * 1000 / row["done"]
         if row["total"] == 0 and row["done"]:
             # An input loaded through the API after the start (the WFC legs' WFC_Variants) is
             # empty on disk: «190 de 0» (📓 2026-09-29). Unknown, not zero.

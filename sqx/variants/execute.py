@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import worker
 from core.paths import worker_dir
-from sqx.variants import banks, inputs, legs as legmod
+from sqx.variants import banks, inputs, legs as legmod, livexec
 
 TESTED = re.compile(r"Total tested\s+(\d+)")
 # A project whose tasks are all Retest reports no "Total tested" line; what moves is the
@@ -161,12 +161,8 @@ def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
         the install has the whole batch in memory, which is the condition hard rule 1
         turns on.
 
-        ⚠️ **The wait is a poll and not a sleep, because the sync is slow and its cost
-        grows with the batch.** Read off the custodian's log 2026-09-23: syncing 962
-        `.sqx` took **21.95 s**, so a fixed wait sized for a small run silently returns a
-        folder that is still filling, and the harvest then studies whatever arrived in
-        time. Polling for the count the retest reported scales with the batch and costs
-        nothing when the sync was quick.
+        ⚠️ A poll, not a sleep: syncing 962 `.sqx` took 21.95 s (2026-09-23), and the cost
+        grows with the batch — a fixed wait returns a folder still filling.
     """
     _call(f'-databank action=synctofiles project={cfg["project"]} name={databank}', cfg)
     folder = legmod.bank_dir(cfg["role"], cfg["project"], databank)
@@ -196,8 +192,10 @@ def main() -> None:
     if a.project in STOCK:
         raise SystemExit(f"{a.project} es un proyecto de serie: regla dura 10, todo run en un "
                          "custom project. Usa el del workflow o crea uno con sqx.projects.builder.")
+    be = livexec.backend(cfg)      # this holder's live GUI session, or the restart route
     if a.clear:
-        print(f"{banks.clear(cfg)} .sqx borrados de {cfg['project']}: entrada y los tres tramos")
+        gone = (livexec.clear if be is livexec else banks.clear)(cfg)
+        print(f"{gone} .sqx borrados de {cfg['project']}: entrada y los tres tramos")
         return
     legs = legmod.legs()
     folder = a.work / "sqx"
@@ -206,11 +204,11 @@ def main() -> None:
     cfx = worker_dir(cfg["role"]) / "user/projects" / a.project / "project.cfx"
     with zipfile.ZipFile(cfx) as z:
         on = re.findall(r'active="true"[^>]*title="([^"]*)"', z.read("config.xml").decode())
-    if sorted(on) != sorted(leg["title"] for leg in legs):
+    if be is not livexec and sorted(on) != sorted(leg["title"] for leg in legs):
         raise SystemExit(f"{a.project} tiene activas {on}: `action=start` las correria todas. "
                          f"python3 -m sqx.projects.stage --cfx {cfx} --step wfc")
     print(f"PROGRESS 2 despertando el {cfg['role']}", flush=True)
-    ours = awake(cfg)
+    ours = be.awake(cfg)
 
     def say(pct: int, line: str) -> None:
         """Fold the retest's own percentage into the stage's, after the load."""
@@ -222,16 +220,16 @@ def main() -> None:
     try:
         print(f"PROGRESS 5 cargando {n} variantes en "
               f"{cfg['project']}/{legmod.source()}", flush=True)
-        load(folder, cfg)
+        be.load(folder, cfg)
         # One `action=start` runs the project's three active retest tasks in chain --
         # build, oos1, oos2 -- so the progress counter passes `n` twice on its way. It is
         # the last leg that has to finish, and that is what `expected` counts here.
-        done = run(n * len(legs), cfg, say) // len(legs)
+        done = be.run(n * len(legs), cfg, say) // len(legs)
         harvest = []
         for leg in legs:
             print(f"PROGRESS 92 exportando {leg['databank']}", flush=True)
-            csv = panel(a.work, cfg, leg["databank"], f"retest_{leg['segment']}")
-            bank, on_disk = synced(done, cfg, leg["databank"])
+            csv = be.panel(a.work, cfg, leg["databank"], f"retest_{leg['segment']}")
+            bank, on_disk = be.synced(done, cfg, leg["databank"])
             harvest.append(leg | {"panel": csv.name, "databank_dir": str(bank),
                                   "n_on_disk": on_disk})
     finally:

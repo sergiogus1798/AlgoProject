@@ -13,6 +13,7 @@ import pandas as pd
 
 from core import manifest, sqxfile, worker
 from core.paths import MASTER, WORKERS, databank_dir, metrics_export, report_dir
+from sqx.projects import live
 
 DROP = "DESCARTAR"
 
@@ -23,11 +24,7 @@ def install_of(role: str) -> Path:
 
 
 def is_up(role: str) -> bool:
-    """Whether anything holds that install ("master" or a headless role).
-
-    Nothing here may run against a live install: SQX holds a databank's records in memory
-    and rewrites the files from them, so a file moved underneath it is undone by the next sync.
-    """
+    """Whether anything holds that install; a file moved underneath it is undone by its next sync."""
     if role == "master":
         worker.require_posix()
         return subprocess.run(["pgrep", "-f", f"{MASTER}/StrategyQuantX"],
@@ -183,7 +180,8 @@ def apply(project: str, databank: str, verdict_csv: Path, role: str,
     if not on_disk:
         sys.exit(EMPTY.format(source=source))
     refuse_mismatch(source, names)
-    if is_up(role):
+    on_live = role != "master" and live.mine(role)
+    if is_up(role) and not (on_live and not into):
         sys.exit(f"the {role} is running. It holds this databank in memory and rewrites the "
                  f"files from it, so the move would be undone. Stop it first"
                  + ("." if role == "master" else f": bin/sqx-worker.sh --role {role} stop"))
@@ -193,7 +191,9 @@ def apply(project: str, databank: str, verdict_csv: Path, role: str,
     record(source, names, reasons(verdict_csv), out, stamp, project, databank)
     print(f"  what was here is listed in {out / f'before-{stamp}.csv'}")
     target = databank_dir(project, into, install) if into else None
-    gone, absent = remove(source, target, list(names))
+    gone, absent = ((live.cut(role, project, databank, list(names)),   # memory, then sync
+                     sorted(set(names) - set(on_disk))) if on_live
+                    else remove(source, target, list(names)))
     after = len(list(source.glob("*.sqx")))
     print(f"{databank}: {len(on_disk)} → {after}   "
           + (f"{target}: +{gone}" if target else f"deleted {gone}"))

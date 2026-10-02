@@ -8,7 +8,9 @@ from pathlib import Path
 KEPT_MAX = 50_000           # kept lines of a log with no «Starting project» at all
 PROGRESS = re.compile(r"ProgressEngine - (.+)$")
 PERCENT = re.compile(r"\[Blocking computeThread[^\]]*?(\d+) %")
-STARTING = re.compile(r"Starting project '([^']+)'")
+# sqcli logs «Starting project 'P'»; a GUI session (`sqx.projects.live`) only «Creating project
+# log at '…/projects/P/log/…'». Either names the project in group 1.
+STARTING = re.compile(r"(?:Starting project '|Creating project log at '[^']*/projects/)([^'/]+)")
 
 
 def trim(lines: list[str], keep: int = KEPT_MAX) -> list[str]:

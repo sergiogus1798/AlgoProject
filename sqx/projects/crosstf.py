@@ -79,13 +79,17 @@ def set_main(text: str, symbol: str) -> tuple[str, int, str]:
     return text, silenced, warning
 
 
-def wire(cfx: Path, symbol: str, day: str) -> dict:
+def wire(cfx: Path, symbol: str, day: str, project: str = "") -> dict:
     """Write `CrossTF` and one task per extra timeframe, and record which databank is which.
 
     Args:
         cfx: The project's project.cfx, no install holding it.
         symbol: Asset name.
         day: Fabrication day the `blocks.json` is filed under (`core.datapaths.crosstf_dir`).
+        project: Project the `blocks.json` is filed under; default the cfx's folder. A live
+            session wires a copy in a temporary folder, whose name is not the project
+            (🔬 2026-10-01: blocks.json went to crosstf/tmp9a9isior and step 12 died on
+            KeyError 'block').
 
     Returns:
         `task`, `blocks` (the source timeframe first), `databanks` (in the same order),
@@ -114,7 +118,7 @@ def wire(cfx: Path, symbol: str, day: str) -> dict:
     databanks = ["CrossTF"] + [s["databank"] for s in extra]
     # The run's own record: assets/_build.yaml can change after this (Q17), and the study
     # must score these cells on the bars this run actually holds (OPEN.md #80).
-    out = crosstf_dir(cfx.parent.name, day)
+    out = crosstf_dir(project or cfx.parent.name, day)
     out.mkdir(parents=True, exist_ok=True)
     (out / "blocks.json").write_text(json.dumps({"blocks": blocks, "databanks": databanks,
                                                  "tasks": extra}, indent=2), encoding="utf-8")

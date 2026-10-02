@@ -1,61 +1,49 @@
 ---
-q: run the workflow without restarting SQX; startOnlyTask runs the wrong task; startFromTask Task 'Build strategies' does not exist; cut a databank with the worker up; step project loadconfig; time between tasks; build to OOS gap; copy databank between projects; remove deletes folder; ServletProject.jar GUI endpoints; runFrom runTask by task index; onUpdateTaskXML live edit; setDatabankSynchronization syncType; GUI web server port 8082 reachable headless
-tag: 🔬🤔  date: 2026-10-01  see: databanks/databank-verbs, databanks/curating-a-databank, perf/workflow-step-durations, databanks/no-spaces-in-names
+q: run the workflow without restarting SQX; startOnlyTask runs the wrong task; startFromTask Task 'Build strategies' does not exist; cut a databank with the worker up; step project loadconfig; time between tasks; build to OOS gap; copy databank between projects; remove deletes folder; ServletProject.jar GUI endpoints; GUI mode headless Xvfb; browserToken; runThisTaskOnly projectXML; updateTaskXML live edit; removeReports delete by name; loadGridData metrics; CLI not ready; exitapp; databank names with spaces over HTTP
+tag: 🔬  date: 2026-10-01  see: databanks/databank-verbs, databanks/curating-a-databank, perf/autopilot-dead-time, databanks/no-spaces-in-names
 ---
-# One SQX session can run every step and every cut: step projects by `loadconfig`, cut by `clear`+`load`; `startOnlyTask` cannot pick a task
-`startOnlyTask`/`startFromTask task=N` turn N into the task TYPE's generic name ("Retest strategies",
-"Build strategies") and run the first task carrying that exact `name` — in a donor-built project any
-retest index runs `OOS`, and the build is unreachable (silent no-op / «Task … does not exist»). What
-works live, 🔬 on `Test_USDJPY_LiveChain_H1`: `action=start` chains active tasks natively (build→OOS
-0.19 s apart); the cut is files-free; a step's task runs in a step project made with `loadconfig`
-(0.39 s), fed by `load folder=`, its output copied back with `-databank action=copy` into a databank
-**declared in the main config.xml** (one made by `action=create` is never saved). Transition ≈ 0.8 s.
+# In GUI mode (`sqx-worker.sh --gui`) one SQX session runs any task, edits any task and cuts any databank live; sqcli cannot pick a task
+sqcli's `startOnlyTask task=N` runs the first task named like N's TYPE (any retest → `OOS`). GUI mode
+serves `/project/*` on `WebServerPortUsed` to a POST with header `browserToken: <BrowserToken>` (both
+in `settings.xml`); `start action=runThisTaskOnly taskName=<cfx name>` **plus `projectXML=<getConfig>`**
+runs only that task (without `projectXML`: nothing). `/call` says «CLI not ready» all session long.
 
 ## Evidence
-- 2026-10-01, custodian, 60 strategies USDJPY H1. `startOnlyTask task=3|4|5|14` → log «OOS : Starting
-  strategies retesting»; `startFromTask task=1` → `Task 'Build strategies' does not exist` (cfx name is
-  `Build strategies 2`). The GUI servlet (`ServletProject.jar`, `/project/start`, `action=runThisTaskOnly`,
-  `taskName=` real name) would do it, but sqcli serves only `/call` on 5070 — GUI mode (port 8082) untested.
-- Cut, worker up: `synctofiles` OOS 0.42 s → copy survivors to a folder → `clear` (deletes the files on
-  disk at once: «removed 56») → `load folder=` (async; wait for «Strategies loaded», 0.14 s) → `export`
-  = exactly the 56 survivors. Persisted on stop (disk 56 = keep list) and across a restart.
-- `-databank action=delete strategies=` still a no-op over HTTP (5 encodings tried, «Reports removed.»).
-- `syncfromfiles` ADDS disk files to memory (60 + 56 → 116, collisions renamed `X(1)`); `count` on an
-  already-loaded project does not resync.
-- `-project action=remove` deletes the project's FOLDER from disk, databanks included.
-- Exports from memory: 8–18 ms per databank. Retest in the step project read «Data loaded from memory».
-- `copy` into main `Markets` (made by `create`): 56 in memory, 0 on disk after stop. Into declared
-  `CrossTF`: 56 and 56. Other projects on the install unchanged (snapshot compare).
-
-## 🤔 The GUI's own JSON servlet (not sqcli) can already do everything `startOnlyTask` cannot — read from the jar, not run
-`javap -c -p -constants` on `internal/plugins/ServletProject/ServletProject.jar`
-(`com.strategyquant.plugin.Servlet.impl.Project.ProjectServlet`, 2026-10-01) — this is the Electron
-window's own backend endpoint, `/project/*` on the GUI's web port (`WebServerPortUsed`, 8082 on the
-custodian's `user/settings/settings.xml`), separate from sqcli's `/call`. It is **not sqcli** — sqcli
-never binds this port — so every finding below is from the bytecode only, nothing was called over HTTP
-(GUI mode was never launched; that is pista 3 of the 2026-10-01 encargo, still a design, not a test):
-- `onStart`: `action=runFrom|runTask` takes a **1-based task INDEX** (`Integer.valueOf`, bounds-checked
-  against `getTasksCount()`), resolves it with `project.getTask(index-1).getName()` and calls
-  `SQProject.setRunSpecification(50 or 100, thatRealName)` — the exact step sqcli's CLI parser is
-  missing (bisected in `sqx-drive/cannot-start-unresolved-past-data.md`'s probe-and-remove pattern,
-  not through this). `action=runThisTaskOnly|runProjectFromHere` take `taskName=` directly, same call.
-- `onUpdateTaskXML`/`onUpdateProjectXML` (both `synchronized`): rewrite one task's or the whole project's
-  `<Settings>` through `SQProject.updateConfig`/`ISQTask.setConfig`, then
-  `SQFileManager.updateTaskConfig`/`updateWholeProjectConfig` — a live edit of which tasks are active or
-  what a task runs, served from the SAME in-process `ProjectEngine.get(name)` object sqcli's `-project`
-  verbs use, with no restart implied by the bytecode.
-- `onSetDatabankSynchronization`: one call, `Databank.setSyncType(syncType)` — the live knob pista 5
-  asked whether it exists; it does, as a plain servlet param.
-- Every param here is a normal form field (`tryGetParam` off a `Map<String,String[]>`), posted
-  gzipped+urlencoded by the Electron window (`BackendService.getPromise`, `internal/web/app/sq-tools/
-  sqbackend/services/BackendService.js`) — not sqcli's single command string split on whitespace
-  (hard rule 6's bug). A databank name with a space would very likely survive this route; untested.
-- Auth: the window calls `/main/login` with a password only when "remote access" is turned on
-  (`internal/web/app/login/LoginService.js`); the master answered «Remote access disabled» at
-  `/main/getWebSocketPort` with its GUI up (card predates this reading). Whether a local, headless
-  Electron+JVM session demands that login before serving `/project/*` is unconfirmed — the next
-  concrete step, not yet taken.
-- Not reachable today: sqcli is a separate process that never opens 8082. Using this means running the
-  custodian in **GUI mode headless under Xvfb** instead of sqcli — a change to how `bin/sqx-worker.sh`
-  launches the custodian, which hard rule 3 reserves for the owner to approve (see the chain design in
-  `perf/autopilot-dead-time.md`'s sibling report, 2026-10-01).
+- 🔬 2026-10-01, custodian GUI mode, `Test_XAUUSD_GuiChain_M30` (Build, OOS, MC Trades all `active`):
+  Build alone 63 s, no other task ran; OOS alone 2.3 s; MC Trades alone 1.7 s. Start 28 s, stop 30 s
+  (`exitapp` → shutdown sync), all processes gone, databanks on disk = memory (Results 30, OOS 15, MC 15).
+- `updateTaskXML projectName= taskXMLFile=Retest-Task1.xml xmlConfig=<xml>` (21 ms): changed the task in
+  memory AND SQX rewrote `project.cfx` itself — the live way around hard rule 4. Rerun obeyed it.
+- `removeReports projectName= databankName=OOS strategies=<name,name,…>` (170-190 ms): names with spaces
+  work, so does `databankName=MC Trades`. It drops from memory only; the files stay until a sync.
+  `synchronizeDatabank` (3 ms + ~1 s async) then leaves disk == memory exactly (30→20, 20→15).
+- `listStrategies` 6 ms (names). `loadGridData … first1000=false lastChangeTime=0 refreshAction=false`
+  6-8 ms: one row per strategy in the databank VIEW's column order, no headers. `databankList` 5 ms.
+  `status` → «Not implemented.»: detect the end by «Project finished» in SQX's log (grep, timestamp).
+- Next task read the cut: MC Trades (input OOS) tested 15 = the survivors.
+- Auth (javap `SQWebGUILib.jar` `HttpJSONServlet.doGet`): a matching `browserToken` header skips the
+  remote-access check; token = `new Date().toString().hashCode()` at start. No header → 401
+  «Remote access disabled». Jetty binds `0.0.0.0`; port is the first free in 8080-8090 unless
+  `WebServerPort` is set (custodian took 8080 with the master in CLI mode).
+- ⚠️ A fresh GUI session answers `databankList` with EVERY databank at 0 records and loads them
+  from disk 1-10 s later (Results 0 → 128). A sync in that gap mirrors empty memory over the files
+  (hard rule 1); `live.start` returns only once memory == disk for every Test_/Trade_ project.
+- `/project/stop` on a running BUILD answers «Project execution stopped.» and does NOT stop it:
+  sent twice over 5 min (H1, 95 cores), Results kept growing 105 → 128, no end line in the log.
+  Only closing the session (`exitapp`, ~45 s, databanks saved) ended it. So the build's minute
+  cap (`buildcap`, SQX ignores `minutes=` under `databank-full`) has no live equivalent yet.
+- 16.5 live (`sqx.variants.livexec`): 500 variants × 3 WFC legs — `loadFilesToDatabank folder=
+  clear=true all=true` then `start` with the legs' projectXML — 151 s against 281 s by sqcli with a
+  restart; emptying the four databanks 2.5 s (`removeReports` by name + sync), 500/500/500 on disk.
+- Build stop types (`SQTradingLib` `StopConditionTypes`): never, databank-full, passed-count,
+  time-limit. 🔬 `databank-full` with 300 / 10 min ran 49 min (606 accepted, Results held at 300);
+  `time-limit` 2 min stopped itself at 123 s (`restartCount` 5 changes nothing). The type comes
+  from `databank.stop_condition` in assets/_build.yaml, now `time-limit`.
+- «Last generation» is held on «Auto-sync never» in memory whatever config.xml says: it never
+  reaches disk, so `live.sync` skips any databank whose live `syncType` is that.
+- GUI mode uses `StrategyQuantX.config`, not `sqcli.config`: the custodian's was 8g, set to 80g
+  (owner, 2026-10-01) — keep the two equal.
+- sqcli route, same day: cut = `synctofiles` → copy survivors → `clear` (deletes files) → `load folder=`
+  (async, «Strategies loaded») → `export`; `-databank action=delete strategies=` is a no-op over HTTP;
+  `syncfromfiles` adds (`X(1)`); `-project action=remove` deletes the folder; a step project by
+  `loadconfig` + `-databank action=copy` into a databank declared in config.xml worked, ≈ 0.8 s.

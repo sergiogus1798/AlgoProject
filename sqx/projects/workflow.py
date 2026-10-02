@@ -120,9 +120,15 @@ def finish(cfx: Path, symbol: str) -> None:
     """
     with zipfile.ZipFile(cfx) as z:
         members = {n: z.read(n) for n in z.namelist()}
+    from sqx.projects import crosstf, crosstfsolo      # both import this module
     member = member_of(members["config.xml"].decode("utf-8"), CROSSTF["title"])
     text = set_span(members[member].decode("utf-8"), load(symbol), doctrine()["crosstf"]["segment"])
     members[member] = text[0].encode("utf-8")
+    # The extra timeframes' tasks exist from the start, so step 11 only rewrites them and a
+    # live session takes that without a restart (owner, 2026-10-01: «todas las tareas de golpe»).
+    main = crosstf.set_main(text[0], symbol)[0]
+    for solo in crosstfsolo.planned(crosstf.main_chart(main)[1]):
+        crosstfsolo.write(members, main, solo)
     with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
         for name, blob in members.items():
             z.writestr(name, blob)

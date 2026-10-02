@@ -7,7 +7,7 @@ from pathlib import Path
 from core import sqxfile, worker
 from core.datapaths import project_registry
 from core.paths import MASTER, WORKERS, databank_dir, project_dir
-from sqx.projects import crosstfload, registry, stage
+from sqx.projects import crosstfload, live, registry, stage
 from sqx.projects.configure import BY_TASK, DEFAULT_SEGMENT
 from ui.daemon import progress, workerguard
 from ui.daemon.filters import discards
@@ -77,6 +77,8 @@ def busy(role: str, project: str, own_log: bool = False) -> list[str]:
         Q6): a `stop` kills anyone's run (OPEN.md §32). "Busy" is the lock held by a live
         holder, or the port up, or a live SQX process — not merely a project's mtime.
     """
+    if live.mine(role):            # this holder's GUI session: up on purpose, between its steps
+        return []
     top, port = WORKERS[role]["path"], WORKERS[role]["port"]
     out = []
     held = worker.lock(top)

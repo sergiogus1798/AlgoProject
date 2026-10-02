@@ -8,7 +8,7 @@ launcher marked (`workerguard.mark`; no mark → every Test_/Trade_ project) the
 pieces (metrics → trades → harvest; no trades for the 8 MCR databanks), then `afterrun.EXTRA` (MC
 ingest `MCR_All` `<day>-N`, `export_spp`, `export_wfm`). Stale is by content: `.sources.sig` reads
 every XML entry order-free (SQX's resave reshuffles SQStats in settings.xml and the MC results).
-`ALGO_NO_EXPORT=1` skips it; WFC batch and legs never. Busy = owner lock, port or live PID (§83).
+`ALGO_NO_EXPORT=1` skips it (then `gate.harvest --exports` does trades + harvest in one JVM); WFC batch and legs never. Busy = owner lock, port or live PID (§83).
 
 ## Evidence
 - 🔬 2026-09-30: during 16.5 two stops were still exporting `WFC_Variants` (500 variants) 6 min later,

@@ -22,11 +22,12 @@ from pathlib import Path
 from core.assetdata import doctrine
 from core.paths import DATA, ROOT
 from studies.breakage.mcRetest.inputs.tasks import DATABANK as MCR
+from sqx.projects import live
 from ui.daemon import progress, workerguard
 from ui.daemon.loader import find, state
 
 MARK = find.AFTERRUN                     # <role>.pid while this runs: the loader waits
-OWN = ("Test_", "Trade_")                # hard rule 6: every custom project, never the stock ones
+OWN = ("Test_", "Trade_", "Research_")   # hard rule 6: every custom project, never the stock ones
 # The eight MC Retest databanks' trades: no study reads them (step 14 reads the MCR_All ingest
 # and the build's harvest), and each cost a ~14 s orderstocsv JVM at every stop (📓 2026-10-01,
 # 7 × 14 s of step 13's export). Owner, 2026-10-01: «deja de exportarlos innecesariamente».
@@ -141,10 +142,12 @@ def main() -> None:
     """Export after a stop; `ALGO_NO_EXPORT=1` skips it (a cancel that must end fast)."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--role", required=True, help="el install que se acaba de parar")
+    ap.add_argument("--live", action="store_true",
+                    help="sesión GUI arriba con sus databanks recién sincronizados (sqx.projects.live)")
     a = ap.parse_args()
     if os.environ.get("ALGO_NO_EXPORT") == "1" or a.role == "master":
         return
-    if find.worker.holding(progress.installs()[a.role]):
+    if find.worker.holding(progress.installs()[a.role]) and not (a.live and live.mine(a.role)):
         sys.exit(f"{a.role} sigue arrancado: no se exporta nada a medio escribir")
     MARK.mkdir(parents=True, exist_ok=True)
     mark = MARK / f"{a.role}.pid"

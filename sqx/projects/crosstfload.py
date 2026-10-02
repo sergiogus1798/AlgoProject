@@ -69,20 +69,21 @@ def refill(folder: Path, files: list[Path]) -> int:
     return len(files)
 
 
-def load_input(project: str, role: str, day: str) -> dict:
+def load_input(project: str, role: str, day: str, cfx: Path | None = None) -> dict:
     """Step 10.5: scale the Cross Market survivors, wire the CrossTF task, fill CrossTF_Input.
 
     Args:
         project: A workflow project (`builder --workflow`) on a worker.
         role: The worker holding it, stopped.
         day: The batch's day under `core.datapaths.crosstf_dir`.
+        cfx: The project.cfx to wire; default the install's own. A live session passes a copy.
 
     Returns:
         `mothers`, `siblings`, `loaded`, `source` (tf), `targets`, `blocks`, `batch`,
         `clamped` (siblings whose periods hit the builder's floor).
     """
     install = worker_dir(role)
-    cfx = project_dir(project, install) / "project.cfx"
+    cfx = cfx or project_dir(project, install) / "project.cfx"
     members = members_of(cfx)
     fed = feeders(banks(members))
     if CROSSTF["input"] not in fed:
@@ -101,7 +102,7 @@ def load_input(project: str, role: str, day: str) -> dict:
     frame = scale.fabricate(mothers, batch, source, targets)
     # The same targets, in the same order, are the tasks `wire` writes, one each: the study
     # places each sibling in its `target_tf`'s databank, and one missing there is a KeyError.
-    wired = crosstf.wire(cfx, symbol, day)
+    wired = crosstf.wire(cfx, symbol, day, project)
     loaded = refill(databank_dir(project, CROSSTF["input"], install),
                     sorted((batch / "sqx").glob("*.sqx")))
     return {"mothers": len(mothers), "siblings": len(frame), "loaded": loaded,
@@ -110,12 +111,13 @@ def load_input(project: str, role: str, day: str) -> dict:
             "tasks": wired["tasks"]}
 
 
-def load_mothers(project: str, role: str) -> dict:
+def load_mothers(project: str, role: str, cfx: Path | None = None) -> dict:
     """Before step 13: the mothers CrossTF kept, without their siblings, into CrossTF_Mothers.
 
     Args:
         project: A workflow project on a worker.
         role: The worker holding it, stopped.
+        cfx: As `load_input`.
 
     Returns:
         `mothers` copied and `siblings` left behind. MC Retest perturbs the strategies the
@@ -123,7 +125,7 @@ def load_mothers(project: str, role: str) -> dict:
         CrossTF databank is left whole: its export is what step 12 reads.
     """
     install = worker_dir(role)
-    cfx = project_dir(project, install) / "project.cfx"
+    cfx = cfx or project_dir(project, install) / "project.cfx"
     members = members_of(cfx)
     config = members["config.xml"].decode("utf-8")
     if f'<Databank name="{CROSSTF["mothers"]}"' not in config:   # a project built before it
@@ -147,18 +149,18 @@ def separate_titles(cfx: Path) -> list[str]:
         return crosstfsolo.present(z.read("config.xml").decode("utf-8"))
 
 
-def fill(bank: str, project: str, role: str) -> str:
+def fill(bank: str, project: str, role: str, cfx: Path | None = None) -> str:
     """Fill one of the two databanks and say what went in, in the owner's words.
 
     Args:
         bank: CrossTF_Input or CrossTF_Mothers.
-        project, role: As `load_input`.
+        project, role, cfx: As `load_input`.
     """
     if bank == CROSSTF["mothers"]:
-        got = load_mothers(project, role)
+        got = load_mothers(project, role, cfx)
         return (f"{got['mothers']} madres de {CROSSTF['output']} -> {bank} ({got['siblings']} "
                 f"hermanas escaladas se quedan en {CROSSTF['output']})")
-    got = load_input(project, role, date.today().isoformat())
+    got = load_input(project, role, date.today().isoformat(), cfx)
     return "\n".join([f"{got['mothers']} madres x {len(got['targets'])} timeframes -> "
                       f"{got['siblings']} hermanas ({got['clamped']} con períodos pegados al "
                       "mínimo: se leen solo sin escalar)",

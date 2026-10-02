@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import worker
-from sqx.variants import execute, inputs, legs as legmod, tuples, united
+from sqx.variants import execute, inputs, legs as legmod, livexec, tuples, united
 from sqx.variants.build import fabricate
 from sqx.variants.design import levels, pilot as designpilot
 
@@ -56,13 +56,14 @@ def run(design: dict, settings: dict, live: dict[str, list[float]], work: Path, 
     fabricate.batch(plan_rows, parent, design["strategy"], folder, "minimal")
 
     legs = legmod.legs()
-    ours = execute.awake(cfg)
+    be = livexec.backend(cfg)
+    ours = be.awake(cfg)
     try:
         say(5, f"cargando el piloto en {project}/{legmod.source()}")
-        execute.load(folder, cfg)
-        done = execute.run(len(table) * len(legs), cfg,
+        be.load(folder, cfg)
+        done = be.run(len(table) * len(legs), cfg,
                            lambda p, line: say(5 + p * 80 // 100, line)) // len(legs)
-        bank, _ = execute.synced(done, cfg, legs[0]["databank"])
+        bank, _ = be.synced(done, cfg, legs[0]["databank"])
         rows = united.per_result(bank, legs[0]["segment"], lambda *_a: None)
     finally:
         if ours:
