@@ -55,19 +55,45 @@ def market_surfaces(c: dict, strategy: str) -> list[str] | str:
 
 def wfm(c: dict, strategy: str) -> list[str] | str:
     """Step 19 over the newest Walk-Forward Matrix export of this databank."""
-    found = where.newest(DATA / "raw" / c["project"] / c["databank"], "*/wfm")
+    found = where.newest(DATA / "raw" / c["project"] / c["databank"].replace(" ", "_"), "*/wfm")
     if not found:
         return "necesita el export de la Walk-Forward Matrix de este databank (skill /wfm)"
-    return ["-m", "studies.optimisation.wfm.report", "--project", c["project"], "--databank",
-            c["databank"], "--day", found.parent.name]
+    return (["-m", "studies.optimisation.wfm.report", "--project", c["project"], "--databank",
+             c["databank"], "--day", found.parent.name]
+            + (["--strategy", strategy] if strategy else []))
 
 
-# The batch studies take the mother as their strategy; `many` would be every mother at once,
-# which none of their commands does.
+def mothers(project: str) -> list[str] | str:
+    """Every mother with a variant batch of this project, as `core.datapaths.variants_dir` names it.
+
+    Args:
+        project: Project name.
+
+    Returns:
+        Names sorted, reversing the one space `variants_dir` turned into an underscore (a
+        mother is always "Strategy N.N.N", one word and one space) — or the Spanish sentence
+        why there is none. What "Run todo el databank" means for a batch study whose input is
+        one mother's variant batch, not one strategy of the databank's own export (owner,
+        2026-09-30 §8.4/§8.5): every mother, not the population `where.distinct` would find.
+    """
+    root = DATA / "strategyPermutations" / project
+    found = sorted(d.name.replace("_", " ", 1) for d in root.iterdir() if d.is_dir()) \
+        if root.is_dir() else []
+    return found or f"ningún lote de variantes en {project} (skill /variants)"
+
+
+# The batch studies take the mother as their strategy, and all of them declare `population`:
+# table.jobs runs one job per mother that has a batch — cscv fans out on its own per job
+# (jobs.WIDE) and runs them side by side; the others are grouped by `runner.batch.fold` into
+# one forked batchrun (cloud and wfc gained «Run todo el databank» this way, owner 2026-10-01).
 STUDIES = {
-    "cloud": {"plan": cloud, "one": True, "many": False, "sets": True},
-    "wfc": {"plan": wfc, "one": True, "many": False, "sets": True},
-    "cscv": {"plan": cscv, "one": True, "many": False, "sets": True},
-    "marketSurfaces": {"plan": market_surfaces, "one": True, "many": False, "sets": True},
-    "wfm": {"plan": wfm, "one": False, "many": True, "sets": True},
+    "cloud": {"plan": cloud, "one": True, "many": True, "sets": True,
+              "population": lambda c: mothers(c["project"])},
+    "wfc": {"plan": wfc, "one": True, "many": True, "sets": True,
+            "population": lambda c: mothers(c["project"])},
+    "cscv": {"plan": cscv, "one": True, "many": True, "sets": True,
+             "population": lambda c: mothers(c["project"])},
+    "marketSurfaces": {"plan": market_surfaces, "one": True, "many": True, "sets": True,
+                       "population": lambda c: mothers(c["project"])},
+    "wfm": {"plan": wfm, "one": True, "many": True, "sets": True},
 }

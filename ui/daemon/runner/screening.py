@@ -53,7 +53,8 @@ def decay(c: dict, strategy: str) -> list[str] | str:
     return (["-m", "studies.screening.decay.report", "--project", c["project"], "--databank",
              c["databank"], "--split", c["split"], "--end", c["end"]]
             + (["--role", role] if role != "master" else [])
-            + (["--is-databank", built] if built else []))
+            + (["--is-databank", built] if built else [])
+            + (["--strategy", strategy] if strategy else []))
 
 
 def monkey_excess(c: dict, strategy: str) -> list[str] | str:
@@ -98,7 +99,7 @@ STUDIES = {
     "gate": {"plan": gate, "one": False, "many": True, "sets": True},
     "isOos": {"plan": is_oos, "one": True, "many": True, "sets": True},
     "filters": {"plan": filters, "one": False, "many": True, "sets": False},
-    "decay": {"plan": decay, "one": False, "many": True, "sets": False},
+    "decay": {"plan": decay, "one": True, "many": True, "sets": False},
     "monkeyExcess": {"plan": monkey_excess, "one": False, "many": True, "sets": False},
     "feedQuality": {"plan": feed_quality, "one": True, "many": True, "sets": True},
     "spread": {"plan": spread, "one": True, "many": True, "sets": True},

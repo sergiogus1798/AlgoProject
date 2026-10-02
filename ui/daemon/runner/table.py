@@ -8,7 +8,8 @@ from ui.daemon.runner import optimisation, readings, screening, transfer, where
 
 STUDIES = {**screening.STUDIES, **transfer.STUDIES, **optimisation.STUDIES, **readings.STUDIES}
 # The one study whose command runs a sub-test alone (CONTRACT §1): `--only <feed>` with
-# `--strategy`. monteCarlo's one.run() can too, but its report.py exposes neither flag.
+# `--strategy`. monteCarlo's one.run() can too, but its report.py takes `--strategy` and no
+# `--only`: its sub-tests run through `ui.daemon.results.rerun`.
 ONLY = {"crossmarket": transfer.only_options}
 # Studies that read the export's `OOS1` sample unless told otherwise: on a build-only export
 # they found no trade and died in a traceback (2026-09-27, Results holds IST alone).
@@ -79,8 +80,18 @@ def jobs(req: dict) -> list[dict] | str:
         if not (c["export"] and oos1(c)):
             return (f"{study} lee la muestra OOS1 y ni el export de {req['databank']} ni el de "
                     f"su retest fuera de muestra la traen: carga el databank OOS")
+    # A batch study (CSCV, Market Surfaces) reads one mother's variant batch, not one
+    # strategy of the databank's export: its "many" is "every mother that has a batch",
+    # which `entry["population"]` names instead of the usual population-wide single call
+    # (owner, 2026-09-30 §8.4/§8.5).
+    if scope == "many" and "population" in entry:
+        strategies = entry["population"](c)
+        if isinstance(strategies, str):
+            return f"{study}: {strategies}"
+    else:
+        strategies = req["strategies"] if scope == "one" else [""]
     out = []
-    for strategy in req["strategies"] if scope == "one" else [""]:
+    for strategy in strategies:
         argv = entry["plan"](c, strategy)
         if isinstance(argv, str):
             return f"{study}: {argv}"

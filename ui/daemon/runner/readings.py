@@ -9,6 +9,23 @@ NO_TF = ("el export no dice en qué timeframe corre la estrategia (manifest sin 
          "timeframe): córrelo desde la terminal")
 
 
+def exported(c: dict) -> list[str] | str:
+    """Every strategy of the databank's trade export: what «Run todo el databank» means for a
+    study whose command reads one strategy (owner, 2026-10-01) — one job each, folded by
+    `runner.batch.fold` into one forked batchrun."""
+    if not c["export"]:
+        return runs.NO_TRADES
+    return where.distinct(Path(c["trades"]), "strategy") or "el export no nombra estrategias"
+
+
+def harvested(c: dict) -> list[str] | str:
+    """Every strategy of the databank's newest cosecha, as its builds spell them."""
+    if not c["harvest"]:
+        return "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
+    names = where.distinct(Path(c["harvest_dir"]) / "metrics.parquet", "strategy_build")
+    return names or "la cosecha no nombra estrategias"
+
+
 def monkey(c: dict, strategy: str) -> list[str] | str:
     """The entry-timing null: one strategy on its own market, or every strategy of the export."""
     if not c["export"]:
@@ -79,10 +96,12 @@ def atr_calculator(c: dict, strategy: str) -> list[str] | str:
 
 
 def monte_carlo(c: dict, strategy: str) -> list[str] | str:
-    """The trade-level Monte Carlo over every strategy of the newest single-market export."""
-    return runs.own_trades(c) or [
-        "-m", "portfolio.common.monteCarlo.report", "--project", c["project"], "--databank",
-        c["databank"], "--asset", c["asset"], "--day", c["export"]]
+    """The trade-level Monte Carlo over every strategy of the newest single-market export, or
+    one strategy of it alone."""
+    return runs.own_trades(c) or (
+        ["-m", "portfolio.common.monteCarlo.report", "--project", c["project"], "--databank",
+         c["databank"], "--asset", c["asset"], "--day", c["export"]]
+        + (["--strategy", strategy] if strategy else []))
 
 
 def blind_joint(c: dict, strategy: str) -> list[str] | str:
@@ -91,20 +110,28 @@ def blind_joint(c: dict, strategy: str) -> list[str] | str:
     row, family = where.enrolled(c["project"]), where.family(c["project"])
     if family is None:
         return where.no_family(c["project"])
+    # Always the project's own WFM databank, whichever tab the button was pressed from
+    # (T2, 2026-09-30: the open databank was passed blindly, e.g. a Cross Market one).
+    # Imported here: databank.cells → results.catalogue → runner → this module → layout → cells.
+    from ui.daemon.databank import layout
+    wfm = layout.databank(c["project"], layout.outputs(c["project"]), "wfm", ["wfm"])
     return ["-m", "studies.closing.blindJoint.report", "--project", c["project"],
-            "--wfm-databank", c["databank"], "--feed", c["feed"], "--symbol", c["asset"],
+            "--wfm-databank", wfm, "--feed", c["feed"], "--symbol", c["asset"],
             "--timeframe", row["timeframe"], "--family", family]
 
 
 STUDIES = {
     "monkey": {"plan": monkey, "one": True, "many": True, "sets": True},
-    "profitShape": {"plan": profit_shape, "one": True, "many": False, "sets": True},
-    "entryQuality": {"plan": entry_quality, "one": True, "many": False, "sets": True},
+    "profitShape": {"plan": profit_shape, "one": True, "many": True, "sets": True,
+                    "population": exported},
+    "entryQuality": {"plan": entry_quality, "one": True, "many": True, "sets": True,
+                     "population": exported},
     "edgeCost": {"plan": edge_cost, "one": True, "many": True, "sets": True},
-    "conditionalMap": {"plan": conditional_map, "one": True, "many": False, "sets": True},
+    "conditionalMap": {"plan": conditional_map, "one": True, "many": True, "sets": True,
+                       "population": harvested},
     "exposure": {"plan": exposure, "one": True, "many": True, "sets": True},
     "atrCalculator": {"plan": atr_calculator, "one": True, "many": True, "sets": True},
-    "monteCarlo": {"plan": monte_carlo, "one": False, "many": True, "sets": True},
+    "monteCarlo": {"plan": monte_carlo, "one": True, "many": True, "sets": True},
     "structure": {"why": "lee un lote estructural ya retesteado y elige sus piernas (--work, "
                          "--databank): desde la terminal, tras sqx.structural"},
     "blindJoint": {"plan": blind_joint, "one": False, "many": True, "sets": True},
