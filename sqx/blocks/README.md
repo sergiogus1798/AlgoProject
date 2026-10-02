@@ -20,8 +20,9 @@ on any SQX unchanged.
 
 ## taxonomy.yaml
 
-The labels are the point and they are **not** derived: `archetypes` is a weight per family
-(`breakout`, `mean_reversion`, `trend`) that somebody — a person or a labelling agent — puts there.
+The labels are the point and they are **not** derived: `archetypes` is a weight 0-3 per family
+(seven since 2026-10-01: `breakout`, `mean_reversion`, `trend`, `momentum`, `volatility`, `pattern`,
+`session`; `taxonomy.family_blocks(family, min_weight)` lists them) that somebody — a person or a labelling agent — puts there.
 Everything else in the file is read back from the install on each refresh and overwritten.
 
 Only the **767 blocks the builder can actually sample** are here, taken from a Build task's

@@ -5,11 +5,12 @@ from sqx.blocks import palette
 from sqx.blocks.taxonomy import ARCHETYPES, flat, read
 from ui.daemon.coverage import ARCHETYPES as REGISTRY_ARCHETYPES
 
-# The registry names seven archetypes for the coverage matrix; the taxonomy labels blocks
-# against three families. They are different axes and only three of the seven line up. The
-# other four are left unmapped on purpose: inventing a family for `momentum` would put
-# blocks into a palette nobody chose. The window shows "sin paleta" for those.
-FAMILY = {"breakout": "breakout", "meanReversion": "mean_reversion", "trendFollowing": "trend"}
+# The registry names seven archetypes for the coverage matrix and, since 2026-10-01, the
+# taxonomy labels blocks against the same seven families. Only the first three spell
+# differently (`meanReversion` / `mean_reversion`, `trendFollowing` / `trend`).
+FAMILY = {"breakout": "breakout", "meanReversion": "mean_reversion", "trendFollowing": "trend",
+          "momentum": "momentum", "volatility": "volatility", "pattern": "pattern",
+          "session": "session"}
 
 WIRE = ("use", "weight", "why")
 

@@ -14,9 +14,13 @@ from sqx.inspect.vocabulary import installs, vocabulary
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 
-# The owner's three families, 2026-09-24. A block carries one weight per family:
-# 0 excludes it, 1 is neutral, 2 and 3 prefer it. An empty map means nobody has labelled it.
-ARCHETYPES = ("breakout", "mean_reversion", "trend")
+# The owner's seven families (three on 2026-09-24, widened to seven on 2026-10-01: the
+# coverage matrix's seven archetypes). A block carries one weight per family: 0 excludes
+# it, 1 is neutral, 2 and 3 prefer it. An empty map means nobody has labelled it.
+# The first three keep the keys they always had; `momentum`, `volatility`, `pattern` and
+# `session` are the same words as the coverage registry's. Order is the file's order.
+ARCHETYPES = ("breakout", "mean_reversion", "trend", "momentum", "volatility", "pattern", "session")
+WEIGHTS = (0, 1, 2, 3)
 
 HEADER = f"""\
 # Taxonomía de bloques — qué bloque pega con qué tipo de estrategia.
@@ -30,7 +34,7 @@ HEADER = f"""\
 # —las acciones, las funciones matemáticas, los 158 `talib_*`— existen en el vocabulario y
 # son inalcanzables desde la generación: `knowhow/authoring/holes-groups-randomcondition.md`.
 #
-# archetypes: un peso por familia. 0 lo excluye, 1 es neutro, 2 y 3 lo prefieren.
+# archetypes: siete pesos, uno por familia. 0 lo excluye, 1 es neutro, 2 y 3 lo prefieren.
 #   {", ".join(ARCHETYPES)}
 # Vacío = sin etiquetar. Un bloque sin etiquetar no entra en ninguna paleta.
 #
@@ -89,6 +93,28 @@ def flat(taxonomy: dict[str, dict]) -> dict[str, dict]:
     """
     return {key: {**row, "category": category}
             for category, blocks in taxonomy.items() for key, row in blocks.items()}
+
+
+def family_blocks(family: str, min_weight: int = 2, taxonomy: dict[str, dict] | None = None,
+                  role: str | None = None) -> dict[str, int]:
+    """The blocks that carry at least a given weight in one family.
+
+    Args:
+        family: One of ARCHETYPES.
+        min_weight: The lowest weight to return, 0-3. 2 is "fits", 3 is "characteristic".
+        taxonomy: As read() returns it; the file on disk when omitted.
+        role: Optionally only blocks that play this role (`signal`, `indicator`, `level`).
+
+    Returns:
+        Block key to its weight, heaviest first. A block nobody has labelled is absent
+        whatever min_weight is: no label is not a weight of 1.
+    """
+    assert family in ARCHETYPES, f"unknown family {family}"
+    rows = flat(taxonomy if taxonomy is not None else read(TAXONOMY))
+    hits = {k: r["archetypes"][family] for k, r in rows.items()
+            if family in r["archetypes"] and r["archetypes"][family] >= min_weight
+            and (role is None or role in r["roles"])}
+    return dict(sorted(hits.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
 def write(path: Path, taxonomy: dict[str, dict]) -> int:
