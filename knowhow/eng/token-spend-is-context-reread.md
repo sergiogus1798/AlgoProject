@@ -21,3 +21,13 @@ chars, Bash 83.7 M (33 821 calls), Read 16.8 M (2 331 calls, 246 over 20k chars)
 Bash cap: setting `bashOutputMaxChars` (default 30 000 chars inline, clamped 4 000-128 000; the rest goes to a file with a
 preview and its path), Claude Code 2.1.287. Over 34 001 Bash results of 12 days: a cap of 20 000 saves 2.3 % of the chars,
 15 000 6.8 %, 10 000 15.7 % (cuts 6 % of the results), 6 000 29 %.
+Waiting on SQX (rule 18), one background Bash command, `run_in_background`, with the worker's `sqcli` PID in `$PID`:
+`L=$(ls -t <worker>/user/log/StrategyQuant/log_*.log | head -1); S=$(stat -c %s "$L"); until tail -c +$((S+1)) "$L" |
+grep -q "Project finished" || ! kill -0 $PID 2>/dev/null || [ $(awk '/MemAvailable/{print int($2/1048576)}'
+/proc/meminfo) -lt 15 ]; do sleep 20; done; echo ended` — take `$L` and `$S` BEFORE `action=start`. At 450k of context
+a 3-minute pulse is 20 turns an hour re-reading everything; the code paths already block (`sqx.projects.live.wait`).
+By context size of the turn (main sessions, same transcripts): under 200k 15 % of the spend, 200-400k 24.5 %, 400-700k
+21.4 %, over 700k 7.5 %; every turn above 200k run at 150k instead would have saved 32 %. Hence `autoCompactWindow:
+300000` in `~/.claude/settings.json` (tokens or `auto`; `/autocompact` shows and sets it; env
+`CLAUDE_CODE_AUTO_COMPACT_WINDOW`). Subagents: `general-purpose` on Opus 22.8 % of the spend, on Sonnet 7.7 %, every
+named expert under 0.5 %. Cache rewritten after a pause over 5 min: 261 times, 6.2 % extra — `/compact` before leaving.

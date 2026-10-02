@@ -115,10 +115,19 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 17. **Mechanical work runs on Sonnet.** Owner, 2026-10-02. Mechanical = carrying out something already
     decided and written: an encargo or plan step by step, a listed set of fixes, a workflow step through
     its skill, exports, renames, regenerating docs, sync. A subagent spawned for it takes `model:
-    "sonnet"`; a `claude -p` script or an agent file for it says `sonnet`. A session whose task is
+    "sonnet"` — and so does every `general-purpose` or `Explore` subagent unless its brief is design,
+    statistics or authoring, said in the brief (they ran on Opus by default: 23 % of the spend); a
+    `claude -p` script or an agent file for it says `sonnet`. A session whose task is
     mechanical and that runs on Opus says so in its first line — «tarea mecánica: `/model sonnet`» — and
     carries on; only the owner switches a session's model. Opus is for designing, deciding, statistics
     and authoring ideas or templates.
+18. **Waiting on SQX happens outside the conversation: one background command, one notice.** Owner,
+    2026-10-02 — it replaces the 3-minute pulse he asked for on 2026-09-25. After `action=start`, run
+    ONE background command that exits when the run ends — `Project finished` in SQX's log, the `sqcli`
+    PID gone, or free RAM under 15 GB — and do nothing until it notifies: no `Monitor` emitting
+    progress lines, no `sleep` loop, no periodic `action=status`. Each pulse is a turn that re-reads
+    the whole conversation. The owner watches progress in the window (`ui/daemon/ops/pulse.py`).
+    → `knowhow/eng/token-spend-is-context-reread.md`
 
 ## ROUTER — read only what the task needs
 
