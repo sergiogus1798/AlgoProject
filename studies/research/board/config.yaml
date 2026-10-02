@@ -1,0 +1,78 @@
+# The research director's board — what orders the cells. Edit here, nowhere else.
+
+# How the factors add up (each one is 0-1 before its weight; the sum is rescaled to 100).
+# Owner, 2026-10-02: the prior and the measurements are used together — «statistics are a bonus on
+# top of the prior, not a requirement». Chosen so that prior-Alta with evidence for ranks first,
+# prior-Alta alone (0.30 + 0.30 x 0.25) and a naked pass alone (0.30 + its signal) are comparable,
+# and a cell measured against sinks (evidence 0 and the `against` brake).
+weights:
+  prior: 0.30         # the owner's prior for the cell: Alta 1, Media 0.5, none or Baja 0
+  evidence: 0.30      # what was measured there, graded (see `evidence`)
+  signal: 0.10        # the measured effect, in multiples of the round-trip cost
+  gap: 0.15           # coverage: how little that family was tried in that cell
+  past: 0.15          # survival rate of the family in that asset class, shrunk by its uncertainty
+
+prior:
+  values: {Alta: 1.0, Media: 0.5, Baja: 0.0, "": 0.0}
+  pullback_as: reversion   # the profile family the prior's `pullback` is filed under: the template
+                           # is a reversion trigger (fixed condition) with a D1 trend context
+
+# The measured evidence of a cell, best first: it passes the profile's four filters naked; a
+# variant of the exit/parameter sweep passes on a plateau; the lead is significant and stable but
+# pays under twice the cost; nothing; measured against (significant and under half a cost, the
+# opposite sign, or no sweep variant reaching half a cost).
+evidence:
+  values: {naked: 1.0, plateau: 0.8, weak: 0.5, none: 0.25, against: 0.0}
+  against_brake: 0.5  # what multiplies the points of a cell measured against
+
+page:
+  rows: 40            # cells printed on the page; the rest are in board.json
+
+signal:
+  cap: 10.0           # an effect of this many costs or more counts as the full signal (1.0)
+
+past:
+  prior_strength: 4   # pseudo-attempts at the pooled rate: fewer closed runs than this weigh little
+  interval: 0.90      # the credible interval printed beside the rate
+
+brake:
+  half: 6             # ideas already spent in the cell at which its points are halved
+
+# A mark only, never a gate. The gate (owner, 2026-10-02): the prior rates the cell Alta, OR it
+# passes the profile's four filters naked, OR a sweep variant passes on a plateau; never a family
+# whose rule needs the clock.
+marks:
+  provisional_costs: [XAGUSD, UKOIL, USOIL]   # owner, 2026-10-01: their costs are not closed yet
+
+# The ONE mapping between the profile's and memory's family keys (Spanish) and the block
+# taxonomy's (English, sqx/blocks/taxonomy.py ARCHETYPES).
+taxonomy_family:
+  ruptura: breakout
+  tendencia: trend
+  reversion: mean_reversion
+  momentum: momentum
+  volatilidad: volatility
+  patron: pattern
+  sesion: session
+
+# The two rules of the dossier's §5 the director applies to the free hole, as data.
+# `data`: the kind of data each family's blocks read (orthogonality: the hole reads another kind
+# than the fixed condition). `alike`: families that follow the move, and `counter`, the one that
+# fades it (trend with counter-trend, never two alike).
+palette:
+  data:
+    breakout: price
+    trend: price
+    momentum: price
+    mean_reversion: price
+    pattern: price
+    volatility: volatility
+    session: time
+  alike: [breakout, trend, momentum]
+  counter: mean_reversion
+  weights: {orthogonal: 3, counter: 2, same_data: 1}   # the hole's family weight by its relation
+  min_block_weight: 2                                  # family_blocks(min_weight)
+
+selfcheck:
+  min_closed: 20      # closed runs before the profile is examined (dossier §7.4: 20-30)
+  alpha: 0.10         # one-sided Fisher p at which «high score gave more survivors» is called proven

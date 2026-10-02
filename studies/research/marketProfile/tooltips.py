@@ -1,0 +1,52 @@
+"""One sentence per config.yaml knob, for the window's configuration drawer."""
+
+TIPS = {
+    "run.timeframes": "Los marcos temporales del mapa.",
+    "run.workers": "Procesos en paralelo, un activo cada uno.",
+    "run.fresh_minutes": "Un fichero de barras tocado hace menos de estos minutos se está "
+                         "reescribiendo y el activo se salta.",
+    "nulls.model": "Cómo se remuestrea la serie para la nula (un modelo de engines.resample).",
+    "nulls.draws": "Series remuestreadas por celda; la p más pequeña posible es 1/(sorteos+1).",
+    "nulls.seed": "Semilla del remuestreo; vacía, se sortea una nueva y se apunta en run.json.",
+    "nulls.block": "Barras por bloque en cada marco: lo que dura la memoria que la nula conserva.",
+    "filters.alpha": "Tasa de falsos descubrimientos que se tolera en todo el mapa.",
+    "filters.cost_multiple": "Cuántas veces el coste de ida y vuelta tiene que pagar el efecto "
+                             "medio por operación.",
+    "filters.stable_share": "Parte de los años de build que el signo tiene que superar.",
+    "filters.min_trades_per_year": "Cuarto filtro: operaciones al año que la medida tiene que dar "
+                                   "en build (40 de partida; nunca por debajo de 35).",
+    "filters.min_trades_per_year_by_asset": "Mínimo propio de un activo, p. ej. {XAGUSD: 35}; no "
+                                            "puede bajar de 35.",
+    "filters.min_trades": "Con menos operaciones una medida no se contrasta.",
+    "score.z_cap": "Tope de la z de cada medida al calcular la puntuación de 0 a 100.",
+    "derive.atr": "Barras del ATR que mide extremos e impulsos.",
+    "derive.mean": "Barras de la media y la desviación del cierre.",
+    "derive.channels": "Longitudes, en barras, de los canales de ruptura.",
+    "derive.narrow": "Barras entre las que se busca la más estrecha y la más ancha.",
+    "higher.momentum": "Días del momentum de D1: cierre del día frente al de hace tantos días.",
+    "higher.means": "Días de las medias de D1: 200 es el filtro de tendencia, 5 una salida.",
+    "higher.channels": "Días de los canales de D1 (máximo y mínimo de los días ya cerrados).",
+    "higher.atr": "Días del ATR de D1 que mide el trailing contado en días.",
+    "higher.vol": "Régimen de volatilidad: ATR de D1 corto entre largo; más de 1, se expande.",
+    "higher.rsi": "Periodo del RSI, del cierre de D1 y del cierre de la propia vela.",
+    "higher.median": "Días de la mediana con la que se compara el ATR de D1 (volatilidad alta o baja).",
+    "higher.band": "Días de las bandas de D1 (media más o menos una desviación).",
+    "higher.streak": "Cierres de D1 seguidos en el mismo sentido.",
+    "higher.outside": "Días cuyos cierres tiene que superar el cierre de D1.",
+    "higher.narrow": "Días entre los que el rango de ayer es el más estrecho (NR4).",
+    "higher.squeeze": "Compresión: rango de los últimos días cortos entre el de los largos.",
+    "sweep.draws": "Sorteos de la nula por celda en el barrido de salidas y parámetros.",
+    "sweep.workers": "Procesos del barrido, una celda (activo × marco) cada uno.",
+    "sweep.holds": "Múltiplos de la duración propia de cada entrada que se prueban como salida fija.",
+    "sweep.trails": "Anchuras del trailing, en ATR de la vela.",
+    "sweep.stop": "Stop de protección en ATR bajo el cierre de la señal, con la duración doblada.",
+    "sweep.plateau": "Vecinos que también tienen que pagar para que una variante esté en meseta.",
+    "sweep.channels": "Canales en velas que necesitan las rupturas del barrido.",
+    "sweep.d1_channels": "Canales de D1 del barrido.",
+    "sweep.d1_means": "Medias de D1 del barrido (100 y 200 como filtro de tendencia).",
+    "sweep.entries": "Las entradas del barrido: familia, clase de salida, duración y sus tres parámetros.",
+    "sessions": "Franjas del día en horas del reloj del feed: [desde, hasta).",
+    "range_bands": "Franjas cuyo rango se opera en ruptura cuando la franja termina.",
+    "range_hold_hours": "Horas que se mantiene la ruptura del rango de una franja.",
+    "measures": "Las medidas del perfil: nombre, familia, función y parámetros en barras; "
+                "`clock` marca las que necesitan reloj y `tag` lo que añade cada una."}

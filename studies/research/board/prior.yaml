@@ -1,0 +1,52 @@
+# The owner's qualitative prior, asset × family — transcribed from
+# AlgoData/research/literature/familias-por-activo-prior-2026-10-02.md (owner, 2026-10-02: «use
+# both — the document is very good, and statistics on our side all the better»).
+# Asset names are ours (US500 = USA500, US100 = USATEC, US30 = DJ30, GER40 = DAX40, JP225 = NIKKEI225).
+# CADJPY is not named there: it reads the yen crosses' row, as its group says. USDCHF, UKOIL and
+# USOIL have no prior. Assets of the prior we do not hold (UK100, NZDUSD, EURGBP, AUDNZD, EURCHF)
+# are left out. `pullback` is a family of the prior that is not one of the profile's seven.
+families: [tendencia, ruptura, pullback, reversion, momentum, volatilidad]   # the order of every row below
+
+# Matrix (H1-H4 aggregate): A = Alta, M = Media, B = Baja.
+matrix:
+  USA500:    [M, M, A, A, M, M]
+  DJ30:      [M, M, A, A, M, M]
+  USATEC:    [M, A, A, M, A, M]
+  DAX40:     [M, A, M, M, M, A]
+  NIKKEI225: [M, A, M, M, M, A]
+  EURUSD:    [M, B, M, A, B, M]
+  GBPUSD:    [M, M, M, M, M, M]
+  USDJPY:    [A, M, A, B, A, M]
+  AUDUSD:    [M, B, M, M, M, B]
+  USDCAD:    [M, B, M, M, M, B]
+  GBPJPY:    [A, A, A, B, A, M]
+  EURJPY:    [A, A, A, B, A, M]
+  AUDJPY:    [A, A, A, B, A, M]
+  CADJPY:    [A, A, A, B, A, M]
+  XAUUSD:    [A, A, A, B, A, A]
+  XAGUSD:    [M, A, M, M, M, A]
+
+# Where the prior says «(largo)»: only the long side holds it.
+long_only:
+  USA500: [pullback, reversion]
+  DJ30: [pullback, reversion]
+  USATEC: [pullback]
+
+# Per timeframe: [main, secondary] family (one entry where the prior gives only one).
+by_timeframe:
+  USA500:    {M15: [reversion, volatilidad], M30: [reversion, pullback],    H1: [pullback, reversion],  H4: [pullback, tendencia]}
+  DJ30:      {M15: [reversion, volatilidad], M30: [reversion, pullback],    H1: [pullback, reversion],  H4: [pullback, tendencia]}
+  USATEC:    {M15: [ruptura, reversion],     M30: [ruptura, pullback],      H1: [pullback, momentum],   H4: [momentum, tendencia]}
+  DAX40:     {M15: [ruptura, volatilidad],   M30: [ruptura, volatilidad],   H1: [ruptura, pullback],    H4: [tendencia, pullback]}
+  NIKKEI225: {M15: [volatilidad, reversion], M30: [ruptura, volatilidad],   H1: [ruptura, pullback],    H4: [tendencia, ruptura]}
+  EURUSD:    {M15: [reversion],              M30: [reversion],              H1: [reversion, pullback],  H4: [tendencia, pullback]}
+  GBPUSD:    {M15: [reversion, volatilidad], M30: [ruptura, reversion],     H1: [pullback, ruptura],    H4: [tendencia, pullback]}
+  AUDUSD:    {M15: [reversion],              M30: [reversion],              H1: [reversion, pullback],  H4: [tendencia, pullback]}
+  USDCAD:    {M15: [reversion],              M30: [reversion],              H1: [reversion, pullback],  H4: [tendencia, pullback]}
+  USDJPY:    {M15: [volatilidad, ruptura],   M30: [ruptura, momentum],      H1: [pullback, momentum],   H4: [tendencia, pullback]}
+  GBPJPY:    {M15: [volatilidad, ruptura],   M30: [ruptura, momentum],      H1: [pullback, momentum],   H4: [tendencia, pullback]}
+  EURJPY:    {M15: [volatilidad, ruptura],   M30: [ruptura, momentum],      H1: [pullback, momentum],   H4: [tendencia, pullback]}
+  AUDJPY:    {M15: [volatilidad, ruptura],   M30: [ruptura, momentum],      H1: [pullback, momentum],   H4: [tendencia, pullback]}
+  CADJPY:    {M15: [volatilidad, ruptura],   M30: [ruptura, momentum],      H1: [pullback, momentum],   H4: [tendencia, pullback]}
+  XAUUSD:    {M15: [volatilidad, ruptura],   M30: [ruptura, volatilidad],   H1: [ruptura, pullback],    H4: [tendencia, momentum]}
+  XAGUSD:    {M15: [reversion],              M30: [volatilidad, reversion], H1: [ruptura, volatilidad], H4: [ruptura, tendencia]}

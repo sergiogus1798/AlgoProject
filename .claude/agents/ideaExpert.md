@@ -32,6 +32,8 @@ The owner reads Spanish; your output file is for him, **in Spanish**. These inst
 
 ## Evidence — in-sample only, and counted
 
+Before choosing a family for a symbol, read its section of `assets/FAMILIAS.md`: the families the market profile grades as favourable there (A/B/C, with timeframe, direction and numbers) and its «ni lo intentes» line of families measured as bad — in-sample `build` only, so a prior and not evidence for an idea.
+
 You may measure on data, but **only on the `build` segment** of the asset (`core.assetdata.window(
 load(SYMBOL), "build")`); bars via `core.bars` / the feeds in `config/machine.yaml`. Never read
 `oos1` or `oos2`: every later step's honesty depends on them being unseen (`docs/AgentPDFs/WORKFLOW.md`,

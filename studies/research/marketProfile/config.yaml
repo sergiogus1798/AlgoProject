@@ -1,0 +1,217 @@
+# Every tunable of the market profile, in one place. Nothing below is hidden in code.
+#
+# The profile reads ONLY the `build` segment of each asset (assets/_policy.yaml). oos1 and
+# oos2 are cut off before the bars are resampled; tests/test_marketprofile.py proves it.
+
+run:
+  timeframes: [M15, M30, H1, H4]   # the director's grid (owner, 2026-10-01)
+  workers: 4                       # processes, one asset each
+  fresh_minutes: 30                # a feed file touched this recently is being rewritten: skip it
+
+nulls:
+  model: block_bootstrap           # a key of engines.resample.draws.DRAWS
+  draws: 3000                      # resampled series per cell; the smallest p is 1 / (draws + 1).
+                                   # 3000 since the widening: with 14,364 tests a p of 1/1001 was the
+                                   # only one Benjamini-Hochberg could still name (measured 2026-10-02)
+  seed: null                       # null = a fresh root from OS entropy, recorded in run.json
+  # Bars per block, by timeframe. Measured 2026-10-01 with `blocklen.py` on XAUUSD, EURUSD and
+  # USA500, H1 and H4 (AlgoData/research/profiles/blocklen.csv): on sign-flipped series, where
+  # no direction exists, a block of 1 rejects 4.0-7.5 % of the tests at the 5 % level (mean
+  # 4.9 %); 6 bars already rejects 1.3-2.9 % and 24 bars 0.3-0.8 %, and the spread of the null
+  # does not move (0.87-1.05 of the block-1 spread). A longer block keeps the structure it is
+  # meant to break, so it only costs power: 1 is the only length with the right size.
+  block: {M15: 1, M30: 1, H1: 1, H4: 1}
+
+filters:
+  alpha: 0.05                      # Benjamini-Hochberg FDR over every test of the run
+  cost_multiple: 2.0               # mean gross effect per trade >= this many round-trip costs
+  stable_share: 0.5                # share of build years with the sign must EXCEED this
+  # Fourth filter (owner, 2026-10-02): trades a year of the measure in build. 40 for every asset;
+  # the owner is open to 35 for an asset, named below ({XAGUSD: 35}), and never lower than 35.
+  min_trades_per_year: 40
+  min_trades_per_year_by_asset: {}
+  min_trades: 30                   # fewer trades than this and a measure is not tested
+
+score:
+  z_cap: 5.0                       # a measure's z against its null, clipped to [0, z_cap];
+                                   # the family's score is 100 * mean(z) / z_cap
+
+# Indicators every measure shares, in bars of the cell's timeframe.
+derive:
+  atr: 20
+  mean: 20
+  channels: [20, 55, 100, 200]
+  narrow: 7
+
+# The wider frame every bar may read (higher.py), periods in DAYS: the D1 bars are built from the
+# cell's own bars and a bar only ever sees the days already closed (never its own day).
+higher:
+  momentum: [1, 5, 9, 20, 30, 40, 60, 120, 200, 252]   # D1 close against the close N days earlier
+  means: [5, 20, 50, 200]          # D1 close against its mean: 200 the trend filter, 5 an exit
+  channels: [1, 5, 10, 20, 50, 55, 85]   # highest high / lowest low of the last N closed days
+  atr: 20                          # D1 ATR: the ruler of a trailing exit counted in days
+  vol: [10, 100]                   # expanding or quiet: D1 ATR(10) / D1 ATR(100), above or below 1
+  median: 250                      # high or low: D1 ATR against its own median of this many days
+  rsi: 2                           # RSI period, of the D1 close and of the cell's own close
+  band: [10, 20]                   # D1 mean and deviation of the close (Fitschen's bands)
+  streak: 3                        # D1 closes in a row, each beyond the one before
+  outside: 10                      # D1 close beyond the closes of this many days before
+  narrow: 4                        # NR4: the D1 range is the narrowest of this many days
+  squeeze: [5, 50]                 # range of the last 5 days over the range of the last 50
+
+# Trading sessions as hours of the feed's own clock (EET on the US daylight calendar, FTMO's):
+# New York's 08:00 is always 15:00 there; Tokyo and London drift one hour a few weeks a year.
+# A band is [from, to); a bar belongs to the band its OPEN falls in.
+sessions:
+  asia: [2, 10]
+  london: [10, 15]
+  new_york: [15, 23]
+range_bands: [asia, london]        # whose range the session breakout trades once the band closes
+range_hold_hours: 8
+
+# The exit and parameter sweep (sweep.py, `report --sweep`): a SEPARATE study with its own output
+# folder and its own correction. Every entry is tried at three nearby parameters and under every
+# exit: the fixed holds (`holds` × the entry's own `hold`, in bars, or in days of bars when
+# `hold: day`), the trailing widths (`trails`, in ATR of the cell), a protective stop (`stop` ATR
+# below the signal close, with the hold doubled), and two exits by condition — for `kind: fade`
+# the close back above the 20-bar and the 5-bar mean, for `kind: follow` the close below the
+# 20-bar low and below the 20-bar mean. A variant is a hypothesis selected in-sample.
+sweep:
+  draws: 1000
+  workers: 60                      # processes, one cell (asset x timeframe) each
+  holds: [0.5, 1, 2, 4]
+  trails: [2.0, 4.0]
+  stop: 2.0
+  plateau: 2                       # neighbours that must also pay for a variant to be on a plateau
+  channels: [20, 30, 55, 100]      # bar channels the sweep's breakouts need
+  d1_channels: [1, 2, 3, 5, 10, 20, 50, 55, 85]
+  d1_means: [5, 20, 50, 100, 200]
+  entries:
+    extreme:    {family: reversion, kind: fade,   hold: 8,   params: [1.5, 2.0, 3.0]}   # ATR below the 20-bar mean
+    rsi_low:    {family: reversion, kind: fade,   hold: 8,   params: [5, 10, 20]}       # RSI(2) of the bar below
+    down_run:   {family: reversion, kind: fade,   hold: 8,   params: [2, 3, 4]}         # down closes in a row
+    rsi_up100:  {family: reversion, kind: fade,   hold: 8,   params: [5, 10, 20]}       # RSI(2) below, D1 close > SMA100
+    rsi_up200:  {family: reversion, kind: fade,   hold: 8,   params: [5, 10, 20]}       # RSI(2) below, D1 close > SMA200
+    ibs_low:    {family: reversion, kind: fade,   hold: day, params: [0.1, 0.2, 0.3]}   # yesterday's IBS below
+    channel:    {family: ruptura,   kind: follow, hold: 8,   params: [30, 55, 100]}     # close above the N-bar high
+    channel_d:  {family: ruptura,   kind: follow, hold: day, params: [10, 20, 55]}      # close above the N-day high
+    prev_day:   {family: sesion,    kind: follow, hold: 8,   params: [1, 2, 3]}         # close above the high of N days
+    big_bar:    {family: momentum,  kind: follow, hold: 4,   params: [1.0, 2.0, 3.0]}   # up bar with a body of m ATR
+    band:       {family: tendencia, kind: follow, hold: 8,   params: [0.5, 1.0, 1.5]}   # close k deviations above its mean
+    tsmom_d:    {family: tendencia, kind: follow, hold: day, params: [20, 60, 120]}     # D1 close above N days ago
+    pullback:   {family: tendencia, kind: follow, hold: 8,   params: [14, 20, 30]}      # recross of SMA(N), D1 momentum 60 up
+
+# One row per measure: `fn` is a key of measure.REGISTRY, `args` its parameters in bars.
+# A measure with trades is run twice, long and short (hard rule 13); one without is run once.
+# `clock: true` marks a rule that needs the hour, a session band or the weekday: it is measured
+# and kept in measures.csv, and never leads a family, never grades and never reaches the board
+# (owner, 2026-10-02: no clock or calendar blocks).
+# `tag` says what a measure of the 2026-10-02 widening adds to the original 31, for the audit:
+#   horizon  a lookback of weeks (bars up to 200, or D1 windows)       hold    the same entry held longer
+#   exit     the same entry with a target or trailing exit             context a D1 trend filter
+# `lit` names the entries of AlgoData/research/literature/edges-2026-10-02.yaml a measure tests.
+#   regime   a D1 volatility-regime filter                            literature  a rule of the literature file (`lit`: its id there)
+# fn `rule` (measure/rules.py): enter / when / leave are keys of rules.CONDITIONS, one position at
+# a time, fills at the next open; `cap` in bars of the cell, `trail` in ATRs of `ruler` (bar | day).
+measures:
+  - {name: vr4,            family: tendencia,   fn: variance_ratio, args: {q: 4, tail: 1}}
+  - {name: vr16,           family: tendencia,   fn: variance_ratio, args: {q: 16, tail: 1}}
+  - {name: hurst,          family: tendencia,   fn: hurst,          args: {}}
+  - {name: look12_hold4,   family: tendencia,   fn: lookback,       args: {L: 12, H: 4}}
+  - {name: look12_hold16,  family: tendencia,   fn: lookback,       args: {L: 12, H: 16}}
+  - {name: look48_hold4,   family: tendencia,   fn: lookback,       args: {L: 48, H: 4}}
+  - {name: look48_hold16,  family: tendencia,   fn: lookback,       args: {L: 48, H: 16}}
+  - {name: fitschen,       family: tendencia,   fn: above_band,     args: {k: 1.0, H: 5}}
+  - {name: channel20,      family: ruptura,     fn: breakout,       args: {N: 20, H: 8}}
+  - {name: channel55,      family: ruptura,     fn: breakout,       args: {N: 55, H: 8}}
+  - {name: false_break20,  family: ruptura,     fn: false_break,    args: {N: 20, within: 5}}
+  - {name: vr4_low,        family: reversion,   fn: variance_ratio, args: {q: 4, tail: -1}}
+  - {name: vr16_low,       family: reversion,   fn: variance_ratio, args: {q: 16, tail: -1}}
+  - {name: stationarity,   family: reversion,   fn: adf,            args: {of: level}}
+  - {name: pullback_speed, family: reversion,   fn: adf,            args: {of: deviation}}
+  - {name: extreme2,       family: reversion,   fn: extreme,        args: {k: 2.0, H: 8}}
+  - {name: extreme3,       family: reversion,   fn: extreme,        args: {k: 3.0, H: 8}}
+  - {name: bar1atr,        family: momentum,    fn: big_bar,        args: {m: 1.0, H: 4}}
+  - {name: bar2atr,        family: momentum,    fn: big_bar,        args: {m: 2.0, H: 4}}
+  - {name: bar3atr,        family: momentum,    fn: big_bar,        args: {m: 3.0, H: 4}}
+  - {name: range_acf,      family: volatilidad, fn: range_acf,      args: {lags: 5}}
+  - {name: narrow_then,    family: volatilidad, fn: narrow_wide,    args: {}}
+  - {name: narrow_break,   family: volatilidad, fn: narrow_break,   args: {H: 4}}
+  - {name: inside,         family: patron,      fn: inside,         args: {}}
+  - {name: engulfing,      family: patron,      fn: engulfing,      args: {}}
+  - {name: run3_follow,    family: patron,      fn: run,            args: {k: 3, follow: true}}
+  - {name: run3_fade,      family: patron,      fn: run,            args: {k: 3, follow: false}}
+  - {name: best_hour,      family: sesion,      fn: hour,           args: {}, clock: true}
+  - {name: best_band,      family: sesion,      fn: band,           args: {}, clock: true}
+  - {name: best_weekday,   family: sesion,      fn: weekday,        args: {}, clock: true}
+  - {name: band_range,     family: sesion,      fn: band_range,     args: {}, clock: true}
+  # ---- widening of 2026-10-02 (audit: knowhow/research/market-profile-blind-spots.md) ----
+  - {name: look100_hold24,       family: tendencia, tag: horizon, fn: lookback, args: {L: 100, H: 24}}
+  - {name: look200_hold48,       family: tendencia, tag: horizon, fn: lookback, args: {L: 200, H: 48}}
+  - {name: tsmom_d20_run,        family: tendencia, tag: horizon, lit: "TR-02", fn: rule, args: {enter: mom_d20, leave: "not:mom_d20"}}
+  - {name: tsmom_d60_run,        family: tendencia, tag: horizon, lit: "TR-02", fn: rule, args: {enter: mom_d60, leave: "not:mom_d60"}}
+  - {name: tsmom_d120_run,       family: tendencia, tag: horizon, fn: rule, args: {enter: mom_d120, leave: "not:mom_d120"}}
+  - {name: sma50_200_run,        family: tendencia, tag: horizon, fn: rule, args: {enter: sma50_over_200, leave: "not:sma50_over_200"}}
+  - {name: tsmom_d60_volup_run,  family: tendencia, tag: regime,  lit: "TR-03", fn: rule, args: {enter: mom_d60, when: [vol_up], leave: "not:mom_d60"}}
+  - {name: pullback_mom60_trail, family: tendencia, tag: context, fn: rule, args: {enter: resume20, when: [mom_d60], trail: 3.0}}
+  - {name: pullback_up200_trail, family: tendencia, tag: context, fn: rule, args: {enter: resume20, when: [up_d200], trail: 3.0}}
+  - {name: channel100_hold24,    family: ruptura,   tag: horizon, fn: breakout, args: {N: 100, H: 24}}
+  - {name: channel200_hold48,    family: ruptura,   tag: horizon, fn: breakout, args: {N: 200, H: 48}}
+  - {name: donchian_d20_opp,     family: ruptura,   tag: horizon, fn: rule, args: {enter: break_d20, leave: below_d10}}
+  - {name: donchian_d55_opp,     family: ruptura,   tag: horizon, fn: rule, args: {enter: break_d55, leave: below_d20}}
+  - {name: donchian_d20_trail,   family: ruptura,   tag: horizon, fn: rule, args: {enter: break_d20, trail: 3.0, ruler: day}}
+  - {name: donchian_d20_volup,   family: ruptura,   tag: regime,  lit: "TR-03", fn: rule, args: {enter: break_d20, when: [vol_up], leave: below_d10}}
+  - {name: channel55_volup,      family: ruptura,   tag: regime,  fn: rule, args: {enter: break55, when: [vol_up], cap: 8}}
+  - {name: channel55_up200,      family: ruptura,   tag: context, fn: rule, args: {enter: break55, when: [up_d200], cap: 8}}
+  - {name: channel55_trail,      family: ruptura,   tag: exit,    fn: rule, args: {enter: break55, trail: 3.0}}
+  - {name: extreme2_hold24,      family: reversion, tag: hold,    fn: rule, args: {enter: extreme2, cap: 24}}
+  - {name: extreme2_mean,        family: reversion, tag: exit,    fn: rule, args: {enter: extreme2, leave: above_sma20, cap: 40}}
+  - {name: extreme2_up200,       family: reversion, tag: context, fn: rule, args: {enter: extreme2, when: [up_d200], cap: 8}}
+  - {name: extreme2_up200_mean,  family: reversion, tag: context, fn: rule, args: {enter: extreme2, when: [up_d200], leave: above_sma20, cap: 40}}
+  - {name: extreme2_voldn_mean,  family: reversion, tag: regime,  fn: rule, args: {enter: extreme2, when: [vol_down], leave: above_sma20, cap: 40}}
+  - {name: rsi2_sma5,            family: reversion, tag: exit,    fn: rule, args: {enter: rsi_low, leave: above_sma5, cap: 10}}
+  - {name: rsi2_up200_sma5,      family: reversion, tag: context, lit: "REV-38b", fn: rule, args: {enter: rsi_low, when: [up_d200], leave: above_sma5, cap: 10}}
+  - {name: rsi2_voldn_sma5,      family: reversion, tag: regime,  fn: rule, args: {enter: rsi_low, when: [vol_down], leave: above_sma5, cap: 10}}
+  - {name: down3_hold8,          family: reversion, tag: hold,    fn: rule, args: {enter: down3, cap: 8}}
+  - {name: down3_sma5,           family: reversion, tag: exit,    fn: rule, args: {enter: down3, leave: above_sma5, cap: 10}}
+  - {name: down3_up200_sma5,     family: reversion, tag: context, fn: rule, args: {enter: down3, when: [up_d200], leave: above_sma5, cap: 10}}
+  - {name: connors_d1,           family: reversion, tag: context, lit: "REV-38a", fn: rule, args: {enter: d1_rsi_low, when: [up_d200], leave: d1_above_sma5}}
+  - {name: bar2atr_hold16,       family: momentum,  tag: hold,    fn: rule, args: {enter: bar2atr, cap: 16}}
+  - {name: bar2atr_trail,        family: momentum,  tag: exit,    fn: rule, args: {enter: bar2atr, trail: 3.0}}
+  - {name: bar2atr_volup,        family: momentum,  tag: regime,  fn: rule, args: {enter: bar2atr, when: [vol_up], cap: 4}}
+  - {name: bar2atr_up200,        family: momentum,  tag: context, fn: rule, args: {enter: bar2atr, when: [up_d200], cap: 4}}
+  - {name: prev_day_break,       family: sesion,    tag: context, fn: rule, args: {enter: break_d1, leave: below_d1}}
+  # ---- the literature's translations the widening did not cover (same file's ids in `lit`) ----
+  - {name: tsmom_d252_run,        family: tendencia, tag: literature, lit: TR-01, fn: rule, args: {enter: mom_d252, leave: "not:mom_d252"}}
+  - {name: tsmom_d252_volhigh_run, family: tendencia, tag: literature, lit: TR-03, fn: rule, args: {enter: mom_d252, when: [vol_high], leave: "not:mom_d252"}}
+  - {name: slow_d50_200_run,      family: tendencia, tag: literature, lit: TR-04, fn: rule, args: {enter: slow_d50_200, leave: "not:slow_d50_200"}}
+  - {name: fast_d5_20_run,        family: tendencia, tag: literature, lit: "TR-05 TR-15", fn: rule, args: {enter: fast_d5_20, leave: "not:fast_d5_20"}}
+  - {name: fast_d5_20_quiet_run,  family: tendencia, tag: literature, lit: TR-06, fn: rule, args: {enter: fast_d5_20, when: [vol_low], leave: "not:fast_d5_20"}}
+  - {name: fitschen_b10_1d,       family: tendencia, tag: literature, lit: "TR-07a TR-08a TR-09", fn: rule, args: {enter: band10, days: 1}}
+  - {name: fitschen_d10_1d,       family: tendencia, tag: literature, lit: "TR-07b TR-08b", fn: rule, args: {enter: band_d10, days: 1}}
+  - {name: strong_d20_21d,        family: tendencia, tag: literature, lit: "TR-10 TR-11", fn: rule, args: {enter: strong_d20, days: 21}}
+  - {name: chan_30_40_run,        family: tendencia, tag: literature, lit: TR-12, fn: rule, args: {enter: chan_30_40, leave: "not:chan_30_40"}}
+  - {name: donchian_d85_opp,      family: ruptura,   tag: literature, lit: BRK-14, fn: rule, args: {enter: break_d85, leave: below_d85, days: 20}}
+  - {name: carry_crash_10d,       family: ruptura,   tag: literature, lit: CARRY-48, fn: rule, args: {enter: break_d20, when: [atr_up], days: 10}}
+  - {name: carry_crash_opp5,      family: ruptura,   tag: literature, lit: CARRY-48, fn: rule, args: {enter: break_d20, when: [atr_up], leave: below_d5}}
+  - {name: donchian_d20_squeeze,  family: volatilidad, tag: literature, lit: VOL-55, fn: rule, args: {enter: break_d20, when: [squeeze], days: 20}}
+  - {name: noise_k03,             family: momentum,  tag: literature, lit: MOM-21b, fn: rule, args: {enter: noise03, leave: below_d1_open, days: 1}}
+  - {name: noise_k05,             family: momentum,  tag: literature, lit: MOM-21b, fn: rule, args: {enter: noise05, leave: below_d1_open, days: 1}}
+  - {name: noise_k07,             family: momentum,  tag: literature, lit: MOM-21b, fn: rule, args: {enter: noise07, leave: below_d1_open, days: 1}}
+  - {name: noise_k10,             family: momentum,  tag: literature, lit: MOM-21b, fn: rule, args: {enter: noise10, leave: below_d1_open, days: 1}}
+  - {name: noise_k05_nr4,         family: volatilidad, tag: literature, lit: VOL-22, fn: rule, args: {enter: noise05, when: [nr_day], leave: below_d1_open, days: 1}}
+  - {name: day_down_1d,           family: reversion, tag: literature, lit: REV-36a, fn: rule, args: {enter: day_down, days: 1}}
+  - {name: mac5_down_1d,          family: reversion, tag: literature, lit: REV-36b, fn: rule, args: {enter: mac5_down, days: 1}}
+  - {name: week_down_5d,          family: reversion, tag: literature, lit: REV-36c, fn: rule, args: {enter: week_down, days: 5}}
+  - {name: ibs_low_1d,            family: reversion, tag: literature, lit: REV-37a, fn: rule, args: {enter: ibs_low, days: 1}}
+  - {name: ibs_low_volhigh_1d,    family: reversion, tag: literature, lit: "REV-37a REV-39", fn: rule, args: {enter: ibs_low, when: [vol_high], days: 1}}
+  - {name: ibs_low_volhigh_up_1d, family: reversion, tag: literature, lit: "REV-37b", fn: rule, args: {enter: ibs_low, when: [vol_high, mom_d200], days: 1}}
+  - {name: day_down_volhigh_1d,   family: reversion, tag: literature, lit: REV-39, fn: rule, args: {enter: day_down, when: [vol_high], days: 1}}
+  - {name: out10_counter,         family: reversion, tag: literature, lit: REV-40, fn: rule, args: {enter: out10_low, leave: out10_high}}
+  - {name: williams_pullback_1d,  family: reversion, tag: literature, lit: REV-41, fn: rule, args: {enter: williams, days: 1}}
+  - {name: d1_down3_1d,           family: reversion, tag: literature, lit: REV-41, fn: rule, args: {enter: d1_down3, days: 1}}
+  - {name: weak_d20_21d,          family: reversion, tag: literature, lit: "REV-42 REV-43", fn: rule, args: {enter: weak_d20, days: 21}}
+  - {name: weak_d20_mean,         family: reversion, tag: literature, lit: REV-42, fn: rule, args: {enter: weak_d20, leave: d1_above_sma20}}
+  - {name: keltner225_mean,       family: reversion, tag: literature, lit: REV-45, fn: rule, args: {enter: keltner225, leave: above_sma20}}
+  - {name: keltner225_hold8,      family: reversion, tag: literature, lit: REV-45, fn: rule, args: {enter: keltner225, cap: 8}}
+  - {name: after_spike_21d,       family: reversion, tag: literature, lit: CARRY-49, fn: rule, args: {enter: week_up, when: [vol_spike], days: 21}}

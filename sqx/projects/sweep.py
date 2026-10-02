@@ -66,6 +66,9 @@ def candidates(installs: dict[str, Path], up: dict[str, bool], stock: set[str],
                 row.update(action="retire", reason="en la cola que nombró el dueño")
             elif kind == "trade":
                 row.update(action="keep", reason="Trade_: se queda hasta que el dueño diga")
+            elif kind == "research":
+                row.update(action="keep", reason="Research_: sin decidir si se tira o se queda "
+                                                 "(pregunta abierta al dueño)")
             elif kind == "test":
                 row.update(action="retire", reason="Test_: ya respondió")
             elif isinstance(d["tasks"], int) and d["tasks"] < WORKFLOW_MIN_TASKS:

@@ -14,7 +14,12 @@ search overfits; narrowed wrongly, it never finds the filter the idea needs.
 
 Read first: `sqx/blocks/README.md`, `knowhow/authoring/builder-block-switches.md`,
 `knowhow/authoring/holes-groups-randomcondition.md`, the three palettes in `sqx/blocks/palettes/`,
-and `sqx/blocks/taxonomy.yaml` (767 blocks the builder can sample; labels mostly empty).
+and `sqx/blocks/taxonomy.yaml` (767 blocks the builder can sample, each with seven weights 0-3 in
+`archetypes`: breakout, mean_reversion, trend, momentum, volatility, pattern, session — encargo 6).
+To list a family: `from sqx.blocks.taxonomy import family_blocks; family_blocks("volatility", 2, role="signal")`.
+Which family palette suits each asset, and the palettes its free hole draws from under the two rules: `assets/FAMILIAS.md` (owner's document, from the market profile; in-sample `build` only).
+The labels are a first pass by block type: a `3` is characteristic, `1` neutral, `0` rare and a real
+contradiction; the form still decides in doubt.
 
 ## Input
 

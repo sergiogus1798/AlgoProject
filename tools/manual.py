@@ -33,7 +33,7 @@ FAMILIES = {
     "02-la-ventana": ("La ventana de escritorio", [
         "61-app-proyectos", "65-app-proyecto", "69-app-filtros-y-continuar",
         "68-app-estrategia", "58-app-estudios", "70-app-operacion", "71-app-portfolios",
-        "35-app-plantillas", "38-app-activos", "66-app-configuracion-sqx", "67-app-datos",
+        "35-app-plantillas", "84-app-investigar", "38-app-activos", "66-app-configuracion-sqx", "67-app-datos",
         "60-app-pulido", "72-app-crear"]),
     "03-datos-costes-y-registro": ("Datos, costes y registro de la búsqueda", [
         "13-barras", "57-calidad-del-feed", "59-spread-real", "25-actualizar-datos", "24-costes", "43-ledger",
@@ -41,7 +41,8 @@ FAMILIES = {
     "04-sqx-plantillas-y-proyectos": ("SQX: bloques, plantillas y proyectos", [
         "40-sqx-lab", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
         "06-mover-estrategias", "27-curar", "17-pipeline", "80-autopiloto", "55-retirar-proyectos",
-        "62-metadatos-estrategia"]),
+        "62-metadatos-estrategia", "82-perfil-de-mercado", "81-memoria-de-resultados",
+        "83-tablero-de-investigacion"]),
     "05-cribado-oos": ("Cribado fuera de muestra", [
         "01-analisis-is-oos", "02-filtros", "03-comparar-muestras", "04-decaimiento",
         "29-puerta", "49-snooping"]),

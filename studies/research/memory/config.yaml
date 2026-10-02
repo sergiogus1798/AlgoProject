@@ -1,0 +1,45 @@
+# Results memory — what the board's cells are made of. Edit here, nowhere else.
+
+timeframes: [M15, M30, H1, H4]      # the director's grid (owner, 2026-10-01)
+directions: [long, short]           # hard rule 13: one direction per template
+
+# The seven families of the coverage (owner, 2026-10-01).
+families: [ruptura, tendencia, reversion, momentum, volatilidad, patron, sesion]
+
+# templates/registry.csv `archetype` -> family. "free" (the calibration shells) belongs to
+# no family: it stays out of the family queries instead of being guessed.
+archetype_family:
+  breakout: ruptura
+  trendFollowing: tendencia
+  meanReversion: reversion
+  momentum: momentum
+  volatility: volatilidad
+  pattern: patron
+  session: sesion
+
+# The 19 assets and their class, for "survivors per family per asset class".
+asset_class:
+  XAUUSD: metal
+  XAGUSD: metal
+  USOIL: energy
+  UKOIL: energy
+  DAX40: index
+  DJ30: index
+  NIKKEI225: index
+  USA500: index
+  USATEC: index
+  AUDJPY: forex
+  AUDUSD: forex
+  CADJPY: forex
+  EURJPY: forex
+  EURUSD: forex
+  GBPJPY: forex
+  GBPUSD: forex
+  USDCAD: forex
+  USDCHF: forex
+  USDJPY: forex
+
+# The stages a population passes, in order, with the autopilot's task title that counts them.
+# `built` and `oos` come from the build and its OOS retest (steps 6-7), `gate` from the step-8
+# judge's cut, then each SQX step's last databank.
+stages: [built, oos, gate, markets, mcr, spp]

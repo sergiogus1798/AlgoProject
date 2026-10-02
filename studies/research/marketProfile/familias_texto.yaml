@@ -1,0 +1,259 @@
+# Lo escrito a mano de assets/FAMILIAS.md: los párrafos de juicio (`fragments`) y la descripción
+# en español de cada condición (`conditions`) y de cada medida original (`measures`).
+# `familias.py` pone las tablas; esto es lo que no sale de los datos. Si cambian los números del
+# mapa, los párrafos que citan cifras se revisan a mano.
+prior_notes:
+  CADJPY: 'la prior no lo nombra: tratado como cruce del yen, como dice su grupo'
+  AUDUSD: fila «AUDUSD, NZDUSD, USDCAD» de la prior
+  USDCAD: fila «AUDUSD, NZDUSD, USDCAD» de la prior
+fragments:
+  head: |+
+    # Familias y paletas favorables por activo
+
+    Qué clase de estrategia tiene más a favor cada activo, **ordenada de más a menos favorable**, con qué
+    paleta de bloques construirla, **marco por marco** (M15, M30, H1, H4) y **junto a lo que dice la
+    bibliografía**. Lo que no llega al listón **no se lista** como favorable: aparece, si acaso, en «ni lo
+    intentes», o en la vista por marco con un «—» delante.
+
+    - **De dónde sale.** Del perfil de mercado (`studies/research/marketProfile/`, capítulo 82 del
+      manual), ficheros `scores.csv` y `measures.csv` de `AlgoData/research/profiles/`. Las tablas las
+      imprimen `python3 -m studies.research.marketProfile.report --favourable` (apartados 1, 2, 4, 5 y 6)
+      y `--bibliography` (apartado 7). Los párrafos son juicio escrito a mano sobre esos números; lo que
+      añade conocimiento de mercado va marcado *«criterio, no medido»* y nunca contradice una medida.
+    - **Estado:** generado el 2026-10-02 con el perfil **ampliado** de ese día: 19 activos, M15/M30/H1/H4,
+      largo y corto, 7 familias (1.064 celdas-familia), **99 medidas** (las 31 originales más 68 nuevas:
+      horizontes de semanas y meses, contexto de D1, régimen de volatilidad, salidas por objetivo y por
+      trailing, y las reglas de la bibliografía) = **14.364 pruebas**, 3.000 sorteos por celda. Si se
+      rehace el perfil, se rehace este documento.
+    - **Sin reloj.** Ninguna regla que necesite la hora, una franja de sesión, el día de la semana o el
+      calendario entra en los rankings ni llega al tablero (tu decisión del 2026-10-02). Lo que se midió
+      con reloj está en el apartado 6.3, para que no se pierda. La familia `sesion` queda representada
+      sólo por su medida de precios (`prev_day_break`: máximo y mínimo del día anterior).
+    - **Contexto de D1.** Las medidas nuevas leen D1 como filtro desde M15-H4 (permitido): una vela sólo
+      ve los días **ya cerrados**, nunca el suyo (`tests/test_marketprofile.py` lo comprueba).
+    - **Claves literales** (para `grep`): los activos (`XAUUSD`), las familias (`tendencia`, `ruptura`,
+      `reversion`, `momentum`, `volatilidad`, `patron`, `sesion`), las paletas
+      (`sqx/blocks/palettes/<nombre>.yaml`) y los identificadores de la bibliografía (`REV-37a`).
+
+    ## Avisos — léelos una vez
+
+    1. **Todo es dentro de muestra.** Sólo el tramo `build` de cada activo (2008-2017 en forex y
+       metales; hacia 2012-2019 en índices y crudos). Nunca `oos1` ni `oos2`.
+    2. **Nadie ha comprobado aún que el perfil prediga supervivientes.** Dice dónde hay estructura en
+       el precio, no qué plantilla sobrevive.
+    3. **La familia `volatilidad` no informa por su puntuación** (~33 en casi todas las celdas: la nula
+       no conserva el agrupamiento de la volatilidad). Sólo cuentan sus medidas con operaciones.
+    4. **Los costes de `XAGUSD`, `UKOIL` y `USOIL` son provisionales**; su «efecto en × coste» se moverá.
+    5. **El efecto de los largos es bruto de deriva.** La p la descuenta (la nula tiene la misma
+       deriva); el múltiplo no. En índices (deriva de +7 a +16 % al año en build) casi cualquier largo
+       mantenido días «paga» 5-30× el coste: mira la p, no el múltiplo. Tampoco incluye el swap, y las
+       reglas nuevas que mantienen días pasan noches.
+    6. **Una fila habla por la medida líder de la familia en esa celda** (la que mejor paga entre las
+       que pasan; si ninguna pasa, la de p corregida más pequeña).
+    7. **Las operaciones al año de las medidas originales `look*` y `channel*` cuentan señales
+       solapadas**, no operaciones de una estrategia; las medidas nuevas llevan una posición a la vez.
+
+    ## La nota
+
+    Cuatro filtros del perfil, leídos de la medida líder: **significativa** (p corregida por
+    Benjamini-Hochberg ≤ 0,05 sobre las 14.364 pruebas), **paga** (efecto medio ≥ 2× el coste de ida y
+    vuelta), **estable** (signo bueno en más de la mitad de los años) y **frecuente** (≥ 40 operaciones
+    al año; tu mínimo).
+
+    | nota | qué exige | cómo leerla |
+    |---|---|---|
+    | **A** | los cuatro filtros | celda donde pedir una idea ya |
+    | **B** | significativa y paga ≥ 2×, pero **pocas operaciones** o **frágil** (se dice cuál) | el efecto es real; así medido no da para una estrategia |
+    | **C** | estable y frecuente, con **una** flaqueza: significativa pero paga entre 1× y 2×; o paga ≥ 2× con p cruda ≤ 0,05 que no sobrevive a la corrección | sugerente. Un build aquí es una apuesta, no una consecuencia |
+    | — | todo lo demás | **no se lista** (pero se ve en la vista por marco) |
+
+    Orden dentro de un activo: la nota; a igual nota, primero lo significativo; después el múltiplo.
+
+    **«Ni lo intentes»** (medido, familias sin ninguna celda con nota en ese activo):
+    `estructura real que no paga el coste` — significativa pero el efecto no llega a 0,5× el coste, en
+    al menos la mitad de las celdas; `ninguna celda llega a medio coste`; `signo contrario` — p cruda
+    ≥ 0,95 y efecto ≤ −1× el coste, sólo en las celdas que se nombran.
+
+    ## Las paletas
+
+    La **condición fija** de la plantilla sale de la paleta de la familia; el **hueco libre** sortea de
+    otras paletas según las dos reglas del director (`studies/research/board/config.yaml`):
+    ortogonalidad (peso 3), tendencia con contratendencia y nunca dos iguales (peso 2), mismo dato con
+    otra lectura (peso 1). `sesion_base` es desde hoy una paleta **sin reloj** (rango y apertura de la
+    sesión y niveles del día leídos como precios). El detalle bloque a bloque:
+    `python3 -m studies.research.board.palette <familia>`. Una sola dirección por plantilla y todo a mercado.
+
+    | familia de la condición fija | su paleta | el hueco libre sortea de (peso) |
+    |---|---|---|
+    | `ruptura` | `ruptura_base_v2` | sesion_base (3), volatilidad_base (3), reversion_base_v2 (2), patron_base (1) |
+    | `reversion` | `reversion_base_v2` | sesion_base (3), volatilidad_base (3), momentum_base (2), ruptura_base_v2 (2), tendencia_base_v2 (2), patron_base (1) |
+    | `tendencia` | `tendencia_base_v2` | sesion_base (3), volatilidad_base (3), reversion_base_v2 (2), patron_base (1) |
+    | `momentum` | `momentum_base` | sesion_base (3), volatilidad_base (3), reversion_base_v2 (2), patron_base (1) |
+    | `volatilidad` | `volatilidad_base` | momentum_base (3), patron_base (3), reversion_base_v2 (3), ruptura_base_v2 (3), sesion_base (3), tendencia_base_v2 (3) |
+    | `patron` | `patron_base` | sesion_base (3), volatilidad_base (3), momentum_base (1), reversion_base_v2 (1), ruptura_base_v2 (1), tendencia_base_v2 (1) |
+    | `sesion` | `sesion_base` | momentum_base (3), patron_base (3), reversion_base_v2 (3), ruptura_base_v2 (3), tendencia_base_v2 (3), volatilidad_base (3) |
+
+  notes: |+
+    **Cómo leer esta tabla.** El orden lo pone **tu prior** (`AlgoData/research/literature/familias-por-activo-prior-2026-10-02.md`); lo medido la anota. Regla de la propia prior: *si la prior y el dato coinciden, genera esa familia; si discrepan, fíate del dato pero exige más evidencia fuera de muestra.* Lo «medido en contra» **no se quita**: se queda marcado, porque el conflicto es lo que hay que ver.
+
+    **Lo que hay que saber antes de leer nada más** (auditoría del 2026-10-02, `knowhow/research/market-profile-blind-spots.md`):
+
+    - **Veredicto desnudo:** 2 de 1.064 celdas-familia pasan los cuatro filtros con 14.364 pruebas (EURUSD M15 corto `momentum`; DJ30 H1 largo `ruptura` con filtro de tendencia D1). Con la corrección por familia pasan 4, todas de `reversion` (apartado 6.2).
+    - **Con salida razonable:** el barrido de 53.352 variantes (apartado 7) añade 3 variantes que pasan y **ninguna en meseta**. La salida fija desnuda no era lo que escondía los efectos.
+    - **Reversión: existe en todas partes y no paga.** Tres cierres seguidos en contra (`run3_fade`) es significativo en el 87 % de las celdas; RSI(2) con salida a la media, en el 63-68 % de M15-M30. El efecto mediano de lo significativo es 0,2× el coste (máximo 1,0×). Eso es «la reversión es menor que el spread», no «no hay reversión».
+    - **Tendencia: no aparece a ningún horizonte en un solo activo.** En las medidas de horizonte largo (100-200 velas, 20 a 252 días) la tasa de p cruda ≤ 0,05 es del 0,8 % (el azar da un 5 %). Mantenida semanas paga varias veces el coste, pero son 3-12 operaciones al año y no se distingue de la deriva.
+    - **Índices, compra de caídas en largo:** paga de 6 a 18× el coste en USA500, USATEC, DJ30 y NIKKEI225 (RSI(2) de D1 < 10 sobre SMA200), y es negativa en DAX40; son 5-8 operaciones al año y p cruda 0,07-0,17: visible en dinero, invisible en estadística con 8 años de un solo activo.
+
+  alt: |+
+    El veredicto de cabecera corrige las 14.364 pruebas juntas (umbral efectivo: p cruda ≤ 0,0017). No es
+    la opción dura que parece: las familias densas (`patron`, la estructura de `reversion`, `volatilidad`)
+    meten cientos de p diminutas y suben el umbral para todas; `tendencia` y `ruptura`, corregidas solas,
+    necesitarían p ≤ 0,00001 y no nombran nada. La alternativa defendible es **Benjamini-Hochberg dentro de
+    cada familia**: cada familia responde a su propia pregunta con su propio 5 %. A favor: no deja que una
+    familia viva del umbral de otra. En contra: es más dura con las familias dispersas y más blanda con
+    `reversion`. Por activo se probó también: pasarían 6 medidas en vez de 2 (EURUSD, USDCAD, USDJPY, XAUUSD). **La elección es tuya; el código no cambia sola.**
+
+  clock: |+
+    Estas medidas necesitan la hora, una franja de sesión o el día de la semana. Se midieron y **no se
+    proponen**: no lideran familia, no tienen nota y no llegan al tablero. La nota que tendrían se deja
+    aquí para que el conocimiento no se pierda («mejor hora», «mejor franja» y «mejor día» se eligen
+    mirando: su p paga la elección, su múltiplo no).
+
+  sweep: |
+    Estudio **aparte** (`python3 -m studies.research.marketProfile.report --sweep`, salida en
+    `AlgoData/research/profiles/sweep/`): responde a «¿esta estructura pasa el listón con una salida
+    razonable y parámetros cercanos?». Cada entrada se prueba con tres parámetros vecinos y nueve salidas:
+    duración fija a 0,5×, 1×, 2× y 4× la suya; trailing de 2 y de 4 ATR; para las entradas de reversión,
+    salida al volver a la media de 20 y a la de 5; para las de tendencia y ruptura, salida al perder el
+    mínimo de 20 velas y al cerrar bajo la media de 20; y un stop de 2 ATR con la duración doblada. Trece
+    entradas (`extreme`, `rsi_low`, `down_run`, `rsi_up100`, `rsi_up200`, `ibs_low`, `channel`,
+    `channel_d`, `prev_day`, `big_bar`, `band`, `tsmom_d`, `pullback`) × 3 × 9 × largo/corto = 702
+    variantes por celda, **53.352 pruebas**, 1.000 sorteos, sólo `build`, mismo coste, misma nula,
+    corregidas juntas **dentro del barrido** (una estadística que gana a los 1.000 sorteos toma la cola
+    normal de su z: con 53.352 pruebas la p mínima de 1.000 sorteos ya no puede ser significativa).
+    `patron` y `volatilidad` no tienen entrada propia en el barrido.
+
+    **Una variante elegida aquí es una hipótesis seleccionada dentro de muestra, no un hallazgo.** Su
+    trabajo es decir qué celdas merecen un build en SQX, que es donde está la prueba fuera de muestra.
+    «Meseta»: la variante pasa los cuatro filtros y al menos 2 de sus vecinas (parámetro contiguo, duración
+    contigua, la otra anchura de trailing) también pagan ≥ 2× con signo estable. Un pico aislado no es evidencia.
+
+    **Resultado:** 623 variantes significativas, **3 pasan los cuatro filtros, ninguna en meseta**.
+
+    | marco | celdas-familia | pasan desnudas | pasan con alguna variante | de ellas en meseta | no pagan 2× con ninguna variante |
+    |---|---|---|---|---|---|
+    | M15 | 190 | 1 | 1 | 0 | 124 |
+    | M30 | 190 | 0 | 1 | 0 | 108 |
+    | H1 | 190 | 1 | 1 | 0 | 80 |
+    | H4 | 190 | 0 | 0 | 0 | 39 |
+
+    Las tres que pasan (picos): USDJPY H1 largo `extreme` 3 ATR con salida a la media de 5 (2,9×, 55/año);
+    EURUSD M15 corto `big_bar` 3 ATR mantenida 4 velas (2,4×, 64/año — la misma celda del veredicto
+    desnudo); EURUSD M30 corto `big_bar` 3 ATR mantenida 2 velas (2,7×, 40/año).
+
+    **Cuánto era culpa de la salida fija:** poco. Elegir la mejor de las nueve salidas sube el efecto
+    mediano de 0,08× a 0,57× el coste y la parte de entradas con alguna variante que paga ≥ 2× del 7 % al
+    26 %; pero lo que paga no es significativo y lo significativo (casi todo reversión en M15-M30: 574
+    de 623) paga 0,3-0,5× en mediana con cualquier salida. De las 1.144 variantes que pagan, son estables
+    y frecuentes, 147 tienen p cruda ≤ 0,05 y 40 de ésas están en meseta — son las candidatas a build
+    (`sweep/variants.parquet`: DJ30 H1 largo `channel` 55, XAUUSD H1 largo `big_bar` 2 ATR, EURJPY H1
+    largo `pullback`, GBPJPY H1 largo `channel`), como apuesta, no como consecuencia.
+  bib: |+
+    Fuente: `AlgoData/research/literature/edges-2026-10-02.yaml` (62 entradas; cada fuente se cita como la
+    da el fichero y con su nota de verificación: **lo marcado con ⚠️ no está verificado y no debe leerse
+    como establecido**). Estado de cada entrada: «medido» (una medida del perfil la contrasta, celda a
+    celda), «sólo bibliografía» (es una prior, no una regla), «la bibliografía lo afirma y aquí no se
+    mide» (con el porqué) y «descartado por usar reloj» (apartado 6.3). Las reglas que en la fuente salen
+    «al cierre de D1» o «en la primera vela del día» se midieron reescritas sin reloj: el contexto de D1
+    vale para todo el día siguiente y la salida es por número de velas o por precio.
+
+    **Donde la bibliografía verificada y tu prior no dicen lo mismo** (las dos, una línea cada una):
+
+    - *Tendencia rápida en índices y FX desarrollado.* Prior: `tendencia` Alta en USDJPY y cruces del yen, Media en índices, principal en H4 en casi todo. Bibliografía (`TR-15` Hsu et al. 2016, revisado por pares; `TR-06` Kurth et al. 2026): las reglas de tendencia en divisas desarrolladas no son significativas desde los años 90 y la tendencia rápida (5-20 días) está plana en índices y FX desde 2009 salvo en baja volatilidad. Medido aquí: de acuerdo con la bibliografía (ver `TR-05`, `TR-06`, `TR-15` abajo).
+    - *Reversión barra a barra.* Prior: `reversion` principal en M15-M30 de índices USA y FX. Bibliografía (`NEG-47` Neely & Weller; `NEG-27`): los patrones intradía son estables pero no pagan costes realistas. Medido aquí: las dos cosas a la vez — significativa casi siempre, 0,2-0,4× el coste.
+    - *Reversión de índices.* Prior: Alta en largo en USA500 y DJ30. Bibliografía (`REV-36a`, `REV-37a`, `REV-38a`): sí, en la barra **diaria** y sólo en largo; DAX revierte a la semana, no al día. Medido aquí: el signo y la asimetría largo/corto coinciden; la significancia no llega.
+
+  tail: |
+    ## 9. Activos de la prior que no están en `assets/`
+
+    La prior cubre cinco activos que no tenemos y los señala como **los mejores mercados de reversión**:
+    `UK100` (reversión Alta, lo demás Baja o Media), `EURGBP`, `AUDNZD` y `EURCHF` (reversión Alta, el
+    resto Baja; M15 «evitar por coste»; EURCHF con riesgo de cola por el suelo del SNB de 2015) y
+    `NZDUSD` (misma fila que AUDUSD y USDCAD). Dado que aquí la reversión es la única estructura que
+    aparece en todas partes y lo que la mata es el coste frente al rango, son los candidatos naturales
+    si se añaden activos (`/asset-onboard`): no hay ninguna medida de ellos.
+
+    Activos nuestros que la prior no cubre: `USDCHF`, `UKOIL`, `USOIL` (ordenados sólo con lo medido y
+    la bibliografía) y `CADJPY` (tratado como cruce del yen).
+conditions:
+  rsi_low: RSI(2) de la vela < 10
+  down3: 3 cierres bajistas seguidos
+  extreme2: cierre a 2 ATR bajo su media de 20
+  d1_rsi_low: RSI(2) de D1 < 10
+  mom_d20: cierre D1 > el de hace 20 días
+  mom_d60: cierre D1 > el de hace 60 días
+  mom_d120: cierre D1 > el de hace 120 días
+  mom_d252: cierre D1 > el de hace 252 días
+  mom_d200: cierre D1 > el de hace 200 días
+  sma50_over_200: SMA50 > SMA200 (velas)
+  resume20: el cierre vuelve a cruzar sobre su media de 20
+  break55: cierre sobre el máximo de 55 velas
+  break_d1: cierre sobre el máximo de ayer
+  break_d20: cierre sobre el máximo de 20 días
+  break_d55: cierre sobre el máximo de 55 días
+  break_d85: cierre sobre el máximo de 85 días
+  bar2atr: vela con cuerpo > 2 ATR
+  up_d200: cierre D1 sobre su SMA200
+  vol_up: ATR D1(10) > ATR D1(100)
+  vol_down: ATR D1(10) < ATR D1(100)
+  vol_high: ATR D1(20) sobre su mediana de 250 días
+  vol_low: ATR D1(20) bajo su mediana de 250 días
+  vol_spike: ATR D1(20) > 1,5× su mediana
+  atr_up: ATR D1(20) > 1,5× el de hace 20 días
+  nr_day: ayer fue el día más estrecho de 4
+  squeeze: rango de 5 días ≤ 0,6× el de 50
+  above_sma5: cierre sobre su SMA5
+  above_sma20: cierre sobre su media de 20
+  d1_above_sma5: cierre D1 sobre su SMA5
+  d1_above_sma20: cierre D1 sobre su SMA20
+  below_d1: cierre bajo el mínimo de ayer
+  below_d5: cierre bajo el mínimo de 5 días
+  below_d10: cierre bajo el mínimo de 10 días
+  below_d20: cierre bajo el mínimo de 20 días
+  below_d85: cierre bajo el mínimo de 85 días
+  below_d1_open: cierre bajo la apertura del día
+  out10_high: cierre D1 sobre los 10 cierres previos
+  slow_d50_200: SMA50 de D1 > SMA200 de D1
+  fast_d5_20: SMA5 de D1 > SMA20 de D1
+  band10: cierre > SMA10 + 1 desv. (velas)
+  band_d10: cierre > media de 10 días + 1 desv.
+  strong_d20: cierre D1 > media de 20 días + 1 desv.
+  weak_d20: cierre D1 < media de 20 días − 1 desv.
+  chan_30_40: cierre D1 < el de hace 30 días y > el de hace 40
+  noise03: cierre > apertura del día + 0,3 ATR D1
+  noise05: cierre > apertura del día + 0,5 ATR D1
+  noise07: cierre > apertura del día + 0,7 ATR D1
+  noise10: cierre > apertura del día + 1,0 ATR D1
+  day_down: ayer cerró a la baja
+  mac5_down: media ponderada 4-3-2-1 de los últimos retornos diarios < 0
+  week_down: retorno de 5 días negativo
+  week_up: retorno de 5 días positivo
+  ibs_low: IBS de ayer < 0,20
+  out10_low: cierre D1 bajo los 10 cierres previos
+  williams: cierre D1 > el de hace 30 días y < el de hace 9
+  d1_down3: 3 cierres D1 bajistas seguidos
+  keltner225: cierre a 2,25 ATR bajo su media de 20
+measures:
+  look: largo si las últimas L velas subieron, mantenido H
+  fitschen: cierre 1 desv. sobre su media de 20, 5 velas
+  channel: ruptura del canal de N velas, mantenida H
+  extreme2: cierre a 2 ATR de su media; en contra, 8 velas
+  extreme3: cierre a 3 ATR de su media; en contra, 8 velas
+  bar1atr: vela de cuerpo > 1 ATR; a favor, 4 velas
+  bar2atr: vela de cuerpo > 2 ATR; a favor, 4 velas
+  bar3atr: vela de cuerpo > 3 ATR; a favor, 4 velas
+  narrow_break: ruptura de la vela más estrecha de 7, 4 velas
+  inside: vela interior
+  engulfing: envolvente
+  run3_follow: 3 cierres seguidos, a favor, 1 vela
+  run3_fade: 3 cierres seguidos, en contra, 1 vela
