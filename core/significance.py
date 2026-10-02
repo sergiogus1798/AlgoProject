@@ -1,6 +1,7 @@
-"""Could this edge be zero? The Sharpe-based tests three studies now share, and nothing else."""
+"""Could this edge be zero? The Sharpe-based tests three studies now share, and the one Sharpe total."""
 
 import numpy as np
+import pandas as pd
 from scipy import stats
 
 
@@ -129,9 +130,35 @@ def min_track_record(returns: np.ndarray, alpha: float = 0.05, benchmark: float 
 
     Returns:
         How many observations the observed shape would need before Sharpe > benchmark is
-        significant, how many there are, and whether that is enough.
+        significant, how many there are, and whether that is enough. `needed` is None
+        ("no alcanzable") when the observed Sharpe does not exceed the benchmark: no track
+        record, however long, makes SR > SR* significant then, and squaring the negative gap
+        would print a large finite number that reads as reachable.
     """
     sharpe, skew, kurtosis = moments(returns)
+    if sharpe <= benchmark:
+        return {"needed": None, "have": len(returns), "enough": False}
     z = stats.norm.isf(alpha)
     needed = 1 + variance_factor(sharpe, skew, kurtosis) * (z / (sharpe - benchmark)) ** 2
     return {"needed": float(needed), "have": len(returns), "enough": bool(len(returns) >= needed)}
+
+
+def annual_sharpe(pnl: np.ndarray, closed: np.ndarray) -> float:
+    """"Sharpe total" (owner's rule): the classic Sharpe of the whole backtest's daily P&L.
+
+    Args:
+        pnl: Account currency per trade.
+        closed: Each trade's close time, same order as `pnl`.
+
+    Returns:
+        Mean over standard deviation (ddof=1) of the P&L of every trading day — Monday to
+        Friday, from the first close to the last, days with nothing closed at zero — times
+        sqrt(252). A trade closing on a weekend counts on the next Monday. NaN with fewer
+        than two days or no variation. Fixed sizing makes daily P&L and daily return on the
+        account the same series up to a constant, so the ratio is the same either way.
+    """
+    day = pd.DatetimeIndex(closed).normalize() + pd.offsets.BDay(0)
+    daily = pd.Series(np.asarray(pnl, dtype=np.float64), index=day).groupby(level=0).sum()
+    rets = daily.reindex(pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0)
+    sd = rets.std(ddof=1) if len(rets) > 1 else 0.0
+    return float(rets.mean() / sd * np.sqrt(252)) if sd > 0 else float("nan")

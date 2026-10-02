@@ -64,14 +64,31 @@ def stepm(excess: pd.DataFrame, fwer: float, block: int, reps: int, seed: int) -
         step 20 tests it does. Same seed, same draws: on 80 panels where `StepM` does not
         raise, this names exactly what it names.
     """
-    named, left = [], list(excess.columns)
+    return screen(excess, fwer, block, reps, seed)[1]
+
+
+def screen(excess: pd.DataFrame, fwer: float, block: int, reps: int, seed: int) -> tuple:
+    """spa() and stepm() of one panel, from one bootstrap where they share it.
+
+    Args:
+        excess, fwer, block, reps, seed: As stepm() takes them.
+
+    Returns:
+        (what spa() returns, what stepm() returns). The SPA over the whole panel IS the
+        StepM's first round -- same data, same seed, same draws -- so asking for both
+        separately ran it twice: 🔬 2026-10-01, 5,130 strategies, two 65 s bootstraps where
+        one serves, and on a population the StepM names nobody of there is no second round.
+    """
+    named, left, pvalues = [], list(excess.columns), None
     while left:
         test = SPA(np.zeros(len(excess)), -excess[left], block_size=block, reps=reps,
                    bootstrap="stationary", seed=seed)
         test.compute()
+        if pvalues is None:
+            pvalues = {k: float(v) for k, v in test.pvalues.items()}
         found = list(test.better_models(fwer))
         if not found:
             break
         named += found
         left = [c for c in left if c not in found]
-    return sorted(named)
+    return pvalues, sorted(named)
