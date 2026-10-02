@@ -12,6 +12,16 @@ python3 -m core.assets <SYMBOL>      # blocking. Non-zero exit means stop and as
 Then say out loud which spread, commission and swap you are applying and where they differ from what
 SQX carries. `sqx/inspect/instruments.py` shows what SQX carries today.
 
+## How many conditions a build gets — count them before every build
+
+Root rules 14 and 15 (owner, 2026-10-02). **Max 2 entry and 2 exit conditions per strategy.**
+«What to build» is per strategy only in a Simple Strategy (set 1..2); in a template it applies to
+**each** `RandomCondition` hole, on top of the fixed conditions: 1 fixed + 1 hole → 0..1; 2 fixed →
+no hole; never two holes on a side — a template of only random holes is a Simple Strategy: build
+that instead and author no template. Palette: no time/calendar blocks, no stop/limit entry blocks
+with market orders, and one curated set per idea family — never everything.
+→ `knowhow/authoring/condition-count-simple-vs-template.md`
+
 ## Every run gets its own custom project
 
 Owner, 2026-09-23, hard rule 10. Never run anything in the stock `Builder` or `Retester`, and never
@@ -38,7 +48,7 @@ hand it is `python3 -m sqx.projects.stage --cfx <cfx> --step <step>`. Without `-
 `project.cfx` in `AlgoData/projects/retired/` and nothing else, because what the run found is already
 parquet in `raw/`, `harvest/` and `reports/`. `--keep WFM` archives a databank too. A `Trade_`
 project stays until the owner says. `--list` shows every custom project of the three installs.
-What a session forgets, the **projectJanitor** agent retires every Monday at 03:00
+What a session forgets, the **projectJanitor** agent retires every Monday at 02:50
 (`bin/weekly-project-cleanup.sh`, the rule in `sqx/projects/sweep.py`): `Test_`, anything under 10
 tasks, and the owner's queue `AlgoData/projects/retire-queue.txt` — the only way a master project goes.
 

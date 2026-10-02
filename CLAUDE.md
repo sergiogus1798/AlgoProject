@@ -56,7 +56,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
    real fruit (owner, 2026-09-26). The builder refuses any other name and records every project in
    `AlgoData/projects/registry.csv`. **Whoever creates a `Test_` project retires it when the task ends:**
    `python3 -m sqx.projects.retire <P> --role <role> --yes`, worker stopped. The `projectJanitor` agent
-   sweeps what was forgotten every Monday at 03:00 (`sqx/projects/sweep.py`).
+   sweeps what was forgotten every Monday at 02:50 (`sqx/projects/sweep.py`).
 7. **Heavy data goes to the data root** (`~/Desktop/AlgoData`). Never write data into the repo.
 8. **A new command ships with its manual chapter, in the same task — and the owner reads only PDFs.**
    `docs/manual/` holds eleven PDFs, one per workflow family, and nothing else: **no `.md`, no images**
@@ -93,6 +93,19 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 13. **One direction per template and per build: long OR short, never both in one strategy.** Owner,
     2026-10-01, «regla dura». `sqx.projects.builder` refuses a template whose `Long entry` and
     `Short entry` rules both open trades (`builder.directions`). A short idea is its own template.
+
+14. **At most 2 entry and 2 exit conditions per strategy — and «What to build» counts PER RANDOM
+    HOLE.** Owner, 2026-10-02, «fundamental». Without a template (Simple Strategy): entry and exit
+    conditions 1..2. With a template: total = the template's fixed conditions + what each
+    `RandomCondition` is filled with — so 1 fixed + 1 hole means «What to build» **0..1** on that
+    side, 2 fixed means **no hole**, and never two holes on one side (0..4 conditions) — a template
+    of nothing but random holes is a Simple Strategy: use that, no template is authored. Same for
+    exits. → `knowhow/authoring/condition-count-simple-vs-template.md`
+15. **What the builder may draw** (owner, 2026-10-02): **no time blocks** — BarTime, CurrentTime, day
+    of week / of month, any block that reads the clock or the calendar — in any study or generation;
+    **no stop/limit entry blocks** while orders are at market (they only work with stop or limit
+    orders); and **never the whole palette**: one run per idea family (trend following, breakout,
+    mean reversion…), each with the conditions and indicators that suit it.
 
 ## ROUTER — read only what the task needs
 
