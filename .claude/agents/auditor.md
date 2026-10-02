@@ -42,7 +42,7 @@ for it. He knows, and it is deliberate. On SQX you report only these three thing
   worker to test it; with none up, judge the newest export on disk instead —, exports written truncated or empty, columns
   missing or renamed, a row count that does not match the databank, an export the analyses read as
   current that is in fact stale or unreadable.
-- **Log files too large.** `~/Desktop/SQX/user/logs` and the worker's equivalent: total size, the
+- **Log files too large.** `~/Desktop/SQX/user/log` and the worker's equivalent: total size, the
   largest files, anything growing fast enough to matter. Give the size and the path, nothing else.
 - **A custom block or a project archive is corrupt.** Blocks and groups under the install that fail
   to parse, name an indicator or parameter the install does not have, or whose code cannot do what

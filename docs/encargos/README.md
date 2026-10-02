@@ -109,6 +109,19 @@ sido contrastado con uno.
 |---|---|---|
 | `36-licencia-reprecio-datatick.md` | el paso 25.5 del `WORKFLOW.md`: un retest DATATICK real (`*_DarwTick_*`) en el custodio, sobre un puñado de supervivientes ya existentes, contra el reprecio de Python operación por operación — licencia el atajo o dice qué le falta. Nota de paso: el modelo de USDJPY se apoya en el nivel de precio (`studies/data/spread/POSSIBLE_IMPROVEMENTS.md`) | un worker libre; el umbral de aceptación, del dueño |
 
+## Lo que quedó sin hacer del feedback de la ventana, 2026-10-01
+
+Salen de la auditoría del feedback del 2026-09-30 (`AlgoData/audit/feedback-ui-2026-09-30/`): tres
+puntos que la sesión de esa noche dejó a medias y que no son un arreglo de una tarde.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `37-matriz-wfm-completa.md` | la matriz pasa/no pasa del WFM con sus 10 condiciones (hoy solo 2: falta decodificar los subresults 31-33 de cada celda), qué criterio cumple cada celda, verificada contra SQX, y el panel de las 30 curvas con estadísticas agregadas | un `.sqx` con WFM en el custodio o el conductor para contrastar |
+| `38-recuadro-de-la-meseta.md` | en Market Surfaces, que el recuadro pintado sea la meseta que se mide (hoy es un cuadrado de radio 2 sin el filtro de delta, y la meseta es una sola variante en 7 de 15 madres), un mínimo de variantes para llamarla meseta, y JSON de menos de 2 MB | el mínimo, del dueño |
+| `39-edge-segun-los-costes.md` | Edge por coste completo: el swap de cada operación modelado (hoy solo un residuo), una tabla por coste y la sensibilidad del edge a cada coste ×0…×3 con su punto muerto, por estrategia y en la población | el umbral del color, del dueño |
+| `40-cerebro-con-probabilidades.md` | una regresión logística que da a cada estrategia la probabilidad de pasar el paso siguiente, calibrada con nuestros datos (prototipo sobre 49.124 de XAUUSD: AUC 0,69-0,74, bien calibrada), como estudio y como regla de `criteria.yaml` con su coste | el objetivo y el corte de `p`, del dueño; runs completos para el objetivo bueno |
+| `41-fases-0-y-1.md` | **plan vivo** de las fases 0 y 1 del dossier `estado-y-direccion-2026-10-02`: proteger lo hecho (cortafuegos, commit, copia) y que la fábrica decida (criterios firmados, registro completo, monos de punta a punta con los encargos 9 y 30). Lleva tabla de estado y bitácora; cada sesión actualiza su punto | las decisiones D1-D7 del dueño; los encargos 9 y 30 |
+
 ## Encargos vivos de tandas anteriores
 
 | fichero | agente | posee | estado |

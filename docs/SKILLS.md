@@ -104,7 +104,7 @@ esta casa. Lo único suyo que hoy se usa son los esqueletos, y esos viven dentro
 
 <!-- generado por tools/skillmap.py — no editar debajo de esta linea -->
 
-Regenerado 2026-10-01 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
+Regenerado 2026-10-02 con `python3 tools/skillmap.py`. El coste en tokens es el cuerpo del `SKILL.md`, que solo se carga al invocarla; la descripcion (~90 tokens) esta siempre en contexto.
 
 ## Skills de proyecto — `/home/sergioguslw/Desktop/AlgoProject/.claude/skills`
 
@@ -121,8 +121,9 @@ Regenerado 2026-10-01 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | `oos-gate` | 1,382 | 1 | 2026-09-29 | Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies |
 | `spp` | 1,343 | 1 | 2026-09-26 | Configure and run the two SPP tasks of a custom SQX project — the System Parameter Permutation grid over the in-sample and the out-of-sample window, at the owner's spread and steps, with every acceptance silenced so the profile is a map and not a filter |
 | `crossmarket` | 1,341 | 1 | 2026-09-25 | Retest surviving strategies on other markets with SQX's Retest on additional markets cross-check — the markets from assets/_markets.yaml, each over its own window and at its own declared costs. Configures and runs a task on the custodian |
-| `asset-onboard` | 1,279 | 1 | 2026-09-30 | Add a new asset to assets/ with its whole cost card worked out from data — Darwinex's real spread per segment (measured, modelled back where there are no ticks), slippage at half of it, the owner's default commission and swap for its kind, the triple-swap night, and the MC Retest spread range from the real dispersion. Also refreshes the spreads of an existing asset |
+| `asset-onboard` | 1,278 | 1 | 2026-10-01 | Add a new asset to assets/ with its whole cost card worked out from data — Darwinex's real spread per segment (measured, modelled back where there are no ticks), slippage at half of it, the owner's default commission and swap for its kind, the triple-swap night, and the MC Retest spread range from the real dispersion. Also refreshes the spreads of an existing asset |
 | `perf` | 1,249 | 1 | 2026-09-26 | Measure what the project costs in time, memory and disk, find where it is worth making faster, and implement the improvement, left uncommitted for the owner |
+| `research-direct` | 729 | 1 | 2026-10-01 | Ask the research director where to investigate next — refresh the results memory, print the board of cells (asset × timeframe × direction × family) that pass the market profile's filters, run the researchDirector agent to pick one cell and bring three ideas with their block palettes, and show the proposal. Costs 10-30 $ per proposal; launches nothing in SQX |
 | `autopilot` | 579 | 1 | 2026-10-01 | Run a project's whole workflow unattended — every SQX task and Python study from step 7 to 16, judging each judging step by criteria.yaml and cutting in SQX instead of stopping, cheap in tokens (reads only a status line and a short summary, never SQX's log) |
 | `workflow-start` | 569 | 1 | 2026-10-01 | Start a new workflow run from nothing — the three expert agents for the idea, the template and the building blocks (spending what they need), then the custom project, the palette written into its Build task, and the autopilot from step 6 on |
 | `ea-news` | 533 | 1 | 2026-09-29 | Make SQX-exported MetaTrader 5 EAs obey a prop firm's news rule — per strategy one EA with the firm's news filter (close before a high-impact release, no entries around it) and one without, both compiled |
@@ -131,7 +132,7 @@ Regenerado 2026-10-01 con `python3 tools/skillmap.py`. El coste en tokens es el 
 | `audit` | 408 | 1 | 2026-09-30 | Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks) |
 | `doc` | 247 | 1 | 2026-09-25 | Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious. |
 
-20 skills, 25,155 tokens de cuerpo en total, 98 KB en disco.
+21 skills, 25,883 tokens de cuerpo en total, 101 KB en disco.
 
 ## Skills de global — `/home/sergioguslw/.claude/skills`
 

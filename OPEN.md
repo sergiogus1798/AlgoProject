@@ -103,7 +103,11 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 86 | 🟡 | Audit 2026-09-30: exports without manifest, a `migrate` code_version, two files over 250 lines | OPEN.md |
 | 87 | 🟠 | Portfolio construction engine — M0-M2, F1 and the F2 engine built 2026-09-30; the owner's calls gate each milestone | OPEN.md |
 | 88 | 🟠 | SQX's daily curve is each day's LOW equity, not a mark to market — readers that difference it | OPEN.md |
+| 89 | 🟡 | What the 2026-09-30 H1 workflow run (steps 5-26) left open | OPEN.md |
 | 90 | 🟡 | The autopilot — phase 1 ran end to end 2026-10-01, its holes fixed | OPEN.md |
+| 91 | 🟠 | The gate's t was compressed (fixed 2026-10-02); every threshold and null FPR read on the old scale is stale | OPEN.md |
+| 92 | 🟠 | Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02) | OPEN.md |
+| 93 | 🟠 | Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -359,7 +363,7 @@ model chosen per request because some prop firms' data is poor — a per-account
 then **`weeklyReconciler`**: each weekend, SQX backtests of the live strategies over the last week on
 the development data, against the live trades (live EAs run on a separate server; this machine
 reads, investor password recommended); a report, form to be decided. Cron slot after
-`weekly-data-update` (Sat 03:00). **2026-09-30:** it shares its retest of the fresh stretch with the
+`weekly-data-update` (Sat 02:00). **2026-09-30:** it shares its retest of the fresh stretch with the
 portfolio's paper OOS (`portfolio/PLAN.md` §14.5 M9 — one retest, two readers), and the floating
 rebuild of §14.2 lets it reconcile live MAE, not only P&L.
 Note: `Bash(*)` is allowed in this project, so the deny list stops the MCP tools, not a hand-made
@@ -511,6 +515,28 @@ golden `tests/test_portfolio_universe.py`.
   + M1 (`portfolio/common/construct/equity/`).
 - The portfolio engine already uses the curve only as a known answer, never as P&L.
 
+## 91. 🟠 The gate's t was compressed (fixed 2026-10-02); every threshold and null FPR read on the old scale is stale
+🔬 `studies/screening/analysis/decay.py` put the annualised Sharpe inside Lo's variance term: `t`
+was compressed and capped at √(2·years). Fixed; old 1.3 / 1.65 / 2.0 = new 1.42 / 1.92 / 2.55 on a
+5-year oos1. The gate also gained `trade_t`, `drift_excess_t` and the floating-risk columns in R,
+for every paired strategy. → `knowhow/research/gate-t-scales.md`, `studies/screening/gate/README.md`.
+- **Nothing in `ledger/thresholds.yaml` moved, and no gate threshold reads the t** (`degradacion.min_t`
+  is 0.0 in `config.yaml`: a sign test, scale-free). What reads the new scale today: the decay
+  study's own `SIGNIFICANT_T = 1.65` (MANTENER is now reachable by more strategies: on
+  `Test_Calib_USDJPY_H1` 565 clear 1.65 where 232 did), its «t máximo», and any `criteria.yaml`
+  rule on `gate.scorecard.degradacion_t` (none today).
+- **Owner's call:** which t step 8 judges on. The red team recommends `drift_excess_t` (limbo ≥ 1.65,
+  pass ≥ 2.33), one line for every asset and side; the calibration proposal's R8 lines were written
+  on the old scale and its side table becomes unnecessary.
+- **Still open — the null is not on the same statistic.** `AlgoData/scratch/null-fpr-2026-10-01`
+  books closed trades and used the bugged formula; SQX's curve is the daily low with the floating
+  in (#88). Until the null is recomputed on `trade_t` / `drift_excess_t` (and re-costed to match a
+  random-generation population), its FPRs are upper bounds by 2–4× and real/null ratios ~3× low.
+- **Still open — `worst_day_r` is low to low** (#88), not start-of-day to intraday low; an exact
+  daily-loss figure needs trades + M1 (`portfolio/common/construct/equity/`).
+- Reports written before 2026-10-02 (`gate/scorecard.parquet`, `decay/`) keep the old t; the 23
+  `Test_Calib_*` gates were re-run on 2026-10-02, nothing else was.
+
 ## Constraints discovered while investigating
 
 - **SQX rewrites every `project.cfx` on save/exit.** All 14 project files were restamped within the
@@ -520,16 +546,45 @@ golden `tests/test_portfolio_universe.py`.
 - `project.cfx` is a plain ZIP: `config.xml` + one `<Type>-Task<N>.xml` per task. Safe to *read*
   at any time.
 
+## 89. 🟡 What the 2026-09-30 H1 workflow run (steps 5-26) left open
+📓 2026-09-30, `Test_USDJPY_donchianUpperCrossUp_H1` run end to end through the window's launchers
+(report: `scratch/informe-2026-09-30.md`). Fixed in that task and not listed here. Still open:
+- **`tests/test_ui_strategy.py` fails**: it expects `meta["backtest"]` (the per-task costs the
+  ficha's metadata warns about, `ui/desktop/workspace/fichameta.py`), which
+  `sqx.inspect.strategymeta` never returns. Another session's unfinished work; not touched.
+- **Costs changed mid-run**: the WFC legs were configured with USDJPY's old single spread (0.65);
+  the asset now carries 0.49 / 0.59 / 1.16 per segment. Steps 16.5-24 ran on the old legs, kept
+  for consistency within the run.
+- **MC Retest ingest**: two level tables unusable, «run cut short» — `bar/4.3.53`, `ohlc/8.13.72`
+  (after the fastutil NPE relaunch, `knowhow/sqx-drive/mcr-nullpointer-fastutil-transient.md`).
+- **Step 23 control «madre reconstruida»** printed an empty table: the mothers came from
+  `CrossTF_Mothers`, whose files keep no build/oos1 result to compare against.
+- **Step 25 reads the mother without its stop**: step 24 recommends X but nothing harvests the
+  stopped version in the shape `edgeCost` reads; the run read the `Results` harvest.
+- **Replicación never runs in a workflow project**: it compares one build's conclusions against
+  other builds, and a workflow project has one. The page now says so instead of «no ha corrido».
+- **Filtros candidatos asks for ≥200 strategies**; after the step-8 cut the population is 60.
+- **A study whose result lives in another databank reads «Sin resultado todavía»** on every
+  other databank's strategy page: Lectura conjunta (step 20, filed under `WFM`), Exposición
+  (`CrossTF_Mothers`), Stop loss ATR and the optimisation studies (their work folders), opened
+  from Cross Market or Cross TF. Results pair by identity, and a name pairing is only ever
+  offered as a jump (`ui/daemon/runner/offer.py`) — today only for a study the runner refuses.
+  Proposal for the owner: offer the same jump when the study is not refused but its result is
+  elsewhere. Seen in the 2026-09-30 walk (`scratch/run0930/shots/w4`).
+- **Hantec after the clock fix still fails rows 1/3a/5** on the three USDJPY mothers (drawdown
+  0.292 % SQX vs 0.228 % MT5 on 10.9.72): not the clock any more (`clock_h` 0 on all six) —
+  costs or Hantec's history, to diagnose.
+
 ## 86. 🟡 Audit 2026-09-30: exports without manifest, a `migrate` code_version, two files over 250 lines
 Opened by the unattended docs pass from `audit/2026-09-30.md`. None is a documentation error; all wait for a decision or for in-flight work.
 - 📓 **Exports without a root manifest** under `AlgoData/raw/`: `Test_USDJPY_donchianUpperCrossUp_M30/SPP_IS/2026-09-27`, `.../SPP_OOS/2026-09-27`,
   `XAUUSD/SPP_IS/2026-09-19`, `XAUUSD/SPP_OOS/2026-09-19`, `XAUUSD/WFM/2026-09-10` (audit list cut at 5). Reproduce: `python3 tools/daily_audit.py`.
   Fix: a root manifest written by that exporter, or declare the gap accepted. Not resolved — the exporter is code.
 - 📓 **One manifest has `code_version` = `migrate`** (not a commit; `git cat-file` fails). Not located. Find: `grep -rl '"migrate"' ~/Desktop/AlgoData/raw --include=manifest.json`. Declare or rewrite.
-- 📓 **`tools/checks.py` file-length fails**: `core/assetdata.py` 285 lines, `ui/desktop/workspace/panel.py` 260 (max 250). Working tree holds in-flight window work
-  (313 paths); split when it settles.
+  Located 2026-10-01: `raw/XAUUSD/Results/2026-09-03/manifest.json` holds the single string `migrated from AlgoProject_Old, pre-git` — the audit's `migrated`/`pre-git`/`AlgoProject_Old`/`from` are that one value split by its grep (🔬 grep). The 21 `<hash>-dirty` ones resolve after stripping the suffix.
+- 📓 **`tools/checks.py` file-length** — resolved: audit 2026-10-01 reports 982 files, 0 problems.
 - 📓 **Custodian log 704 MB**: `log_2026_09_29.log` 526 MB, ~220k × `TradingException: Setting 'TradingSetup.StrategyClass' is not set` in `WFSimulationJob`.
-  Same storm as `knowhow/eng/log-retention.md`; the archiver + prune handle it (SQX config is the owner's). Check whether the next long job repeats it.
+  Same storm as `knowhow/eng/log-retention.md`; the archiver + prune handle it (SQX config is the owner's). Repeated 2026-09-30: `log_2026_09_30.log` 167 MB, 70,212 `StrategyClass` lines; custodian folder 861 MB (audit 2026-10-01). Archiver + prune handle it; cause stays with the owner.
 
 ## 87. 🟠 Portfolio construction engine — planned 2026-09-30, not built; the owner's calls gate each milestone
 
@@ -607,3 +662,39 @@ random draw of 5 at step 8 only; not `ALGO_AUTONOMOUS`. Phase 1 = steps 7 → 16
 - **Overlapping two populations** (one in SQX, one in Python) only if the measurement shows the
   dead time is large.
 
+
+## 92. 🟠 Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02)
+
+`logs/disk-nightly.log` ends with `FUERA DE PRESUPUESTO: reports 5.05 GB > 5 GB`; the data root is 40.57 GB of 90.
+The log lists 41 deletion candidates, 4.86 GB, nothing deleted automatically. The largest are five superseded
+`raw/Test_USDJPY_donchianUpperCrossUp_M30/MCR_All/2026-09-29*` exports (667 MB each, all contained in `2026-09-29-9`),
+and 275 duplicate parquet groups (strategy pnl repeated x11 across the `2026-09-29-N` folders).
+To decide: delete the superseded exports, and find out why one MCR_All export was written 12 times on one day.
+
+## 93. 🟠 Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured
+
+`assets/_study.yaml` (step 6) and step 8 of `pipeline/autopilot/criteria.yaml` carry an agent's
+proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Open:
+
+- **Owner's decisions** (dossier §1): the trades-per-year floor (written as fail < 20, limbo 20-40,
+  pass >= 40 on `is_trades_per_year`; he prefers 40-50 as a floor); `dev.on` still true, so the
+  rules apply and 5 survivors are then drawn at random; the risk per trade on funded accounts.
+- **15 assets could not be built** (session `<SYM>_ftmo` in no project). Solved in principle 2026-10-02:
+  every FTMO session is in the master's `user/data/data.db` (`knowhow/costs/sessions-live-in-data-db.md`);
+  to do: `doctrine.borrow_session` falls back to it, and the three cards with `session: null` get theirs.
+- **Untested**: a `Trade_` build fills the databank in minutes and then replaces by IS Ret/DD for
+  the rest of its 180 minutes — a selection nobody measured (test: 180-min full build against a
+  6-min one). The A/B of floors inside the build is one build per arm.
+- **Not a fact yet**: the IS profit factor (a `PF >= 1.10` rule at step 8 needs it).
+- **Spent**: `oos1` of USDJPY and XAUUSD was read to choose these thresholds; freeze them before
+  the next build. `oos2` untouched.
+- **Data**: the calibration left ~28 `Test_Calib_*` trees under `AlgoData/{harvest,reports,raw,metrics}`
+  and `AlgoData/scratch/{calib_*,null2,null-fpr-2026-10-01}` — #92's budget. Delete once the
+  owner has decided.
+
+- **Condition count (rule 14, owner 2026-10-02)**: `buildrules.py` writes `maxConditions = 2` whatever
+  the template holds, so a template with holes builds 3-4 conditions. To do: count fixed conditions
+  and `RandomCondition` holes per side, write `2 − fixed`, refuse two holes on a side; fix or retire
+  `freeShellLong`/`freeShellShort` (two holes per side). The 28 calibration populations exceed the
+  cap, used the broad palette (842 blocks, time blocks and stop/limit entry blocks included) —
+  against rule 15 — and must be rebuilt per family before the criteria are taken as final.

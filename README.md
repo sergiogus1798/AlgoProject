@@ -111,3 +111,10 @@ again into one command — `/template-run`, `/oos-gate`, `/crossmarket`, `/cross
 documenter and fixer, a weekly project janitor, and the prop-firm catalogue watcher and daily deal
 hunter. Their reports go to `AlgoData/audit/`. `/sync` keeps this GitHub copy equal to the machine —
 see `docs/manual/01-empezar.pdf`.
+
+Two scheduled jobs need no model and so are plain cron scripts, not agents:
+`bin/weekly-data-update.sh` (Saturday 02:00) snapshots the master's projects, runs the GUI's
+"Update all" on SQX's data headless, refreshes each asset's data range in `assets/_policy.yaml` and
+the brokers' commissions; `bin/monthly-oos2-roll.sh` (Saturday 02:05, acts only on the month's
+first Saturday) waits for that update and moves every decided `oos2` to end on the last day of the
+previous month. Both log to `AlgoData/logs/`.
