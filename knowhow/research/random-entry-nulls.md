@@ -1,6 +1,6 @@
 ---
 q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest, footprint noise bug total variance, random trader only vs OOS never vs build IS owner 2026-09-29
-tag: 🔬  date: 2026-09-29  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias
+tag: 🔬  date: 2026-09-29  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias, research/mintrl-explosion-is-correct
 ---
 # A monkey verdict depends on the statistic far more than on the null: report all five
 `engines/nulls/config.yaml` lists five statistics and chooses none; never report one. Sharpe is scale-invariant, so
@@ -8,7 +8,7 @@ being calmer than chance counts as edge under `sharpe` but not under `net`. Beat
 than beating zero (its mean is cost-negative). Use fill `open-open` (reconciled). Normal approximation (PSR/MinTRL)
 is fine for a gate at p≈0.05, not for the extreme tail after multiplicity — BH on the short list uses the simulation.
 
-**2026-09-29 (OPEN.md #71):** `benchmark=0` was the wrong null; `footprint()` now prices a same-footprint random trader against the market's own bar-to-bar noise (law of total variance), shared by `crossmarket`, `monteCarlo` and `mcRetest`. See Evidence for the before/after numbers.
+**2026-09-29 (OPEN.md #71):** `benchmark=0` was the wrong null; `footprint()` now prices a same-footprint random trader against the market's own bar-to-bar noise (law of total variance), shared by `crossmarket`, `monteCarlo` and `mcRetest` — see Evidence.
 **Same day, second rule (owner):** the random trader may only be read on OOS or on an additional market, never the main market's build — it already selected the strategy. Enforced in `monteCarlo`, `mcRetest`, `readings/monkey` (IST refused on the own market); `crossmarket`, `gate.monkey` already were. Audit below Evidence.
 
 ## Evidence
