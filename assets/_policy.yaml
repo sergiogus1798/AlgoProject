@@ -148,12 +148,52 @@ segments:
     build: {from: 2013, to: 2019}
     oos1: {from: 2020, to: 2023}
     oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+  EURGBP:
+    data: {from: 2003-08-04, to: 2026-10-01}   # EURGBP_M1, 8.653.556 barras M1
+    build: {from: 2008-01-01, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
 
 # ─── Convenciones de swap ──────────────────────────────────────────────────────────────
 # Las lleva el atributo <Swap> de cada InstrumentInfo. Son iguales en los 142 instrumentos
 # configurados hoy en el maestro, así que viven aquí en vez de repetirse 17 veces.
 # Dueño, 2026-09-27: el triple swap cae el miércoles por la noche en todo salvo los índices,
 # que lo llevan el viernes en su propio fichero (`swap:` de cada índice).
+  EURAUD:
+    data: {from: 2005-10-10, to: 2026-10-01}   # EURAUD_M1, 7.660.225 barras M1
+    build: {from: 2008-01-01, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  NZDUSD:
+    data: {from: 2003-08-04, to: 2026-10-01}   # NZDUSD_M1, 8.614.991 barras M1
+    build: {from: 2008-01-01, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  HK50:
+    data: {from: 2012-03-29, to: 2026-09-30}   # HK50_M1, 2.531.080 barras M1
+    build: {from: 2012-03-29, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+  AUDNZD:
+    data: {from: 2006-12-12, to: 2026-10-02}   # AUDNZD_M1, 7.300.111 barras M1
+    build: {from: 2008-01-01, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-08-30}
+  UK100:
+    data: {from: 2011-09-19, to: 2026-10-02}   # UK100_M1, 4.130.091 barras M1
+    build: {from: 2011-09-19, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+  AUS200:
+    data: {from: 2013-10-09, to: 2026-10-02}   # AUS200_M1, 3.449.723 barras M1
+    build: {from: 2013-10-09, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+  XCUUSD:
+    data: {from: 2012-03-05, to: 2026-10-02}   # XCUUSD_M1, 4.404.537 barras M1
+    build: {from: 2012-03-05, to: 2019}
+    oos1: {from: 2020, to: 2023}
+    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
 swap:
   triple_swap_on: WEDNESDAY
   rollout_hour: "23:00"

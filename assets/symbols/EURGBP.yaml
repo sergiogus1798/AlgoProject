@@ -1,0 +1,77 @@
+symbol: EURGBP
+class: forex
+broker: ftmo
+sqx_symbol: EURGBP_M1
+feeds:
+  - EURGBP_M1
+verified: 2026-10-02
+session: EURGBP_ftmo
+instrument:
+  tick_size: 0.0001
+  point_value: 132231.0
+  min_distance: 0
+costs:
+  spread_is:
+    use: 1.01
+    sqx_now: null
+    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (EURGBP_TICK). studies.data.spread.onboard
+  spread_oos:
+    use: 1.04
+    sqx_now: null
+    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (EURGBP_TICK). studies.data.spread.onboard
+  spread_oos2:
+    use: 1.03
+    sqx_now: null
+    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (EURGBP_TICK). studies.data.spread.onboard
+  commission:
+    use:
+      build:
+        method: SizeBased
+        value: 5.0
+      oos1:
+        method: SizeBased
+        value: 5.0
+      oos2:
+        method: SizeBased
+        value: 5.0
+    sqx_now: null
+    why: '2026-10-02 — 5 USD por lote ida y vuelta, la cifra del dueño (2026-09-29) para todo el forex y la de FTMO; mismo método y valor en los tres tramos.'
+  slippage_is:
+    use: 0.51
+    sqx_now: null
+    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  slippage_oos:
+    use: 0.52
+    sqx_now: null
+    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  slippage_oos2:
+    use: 0.52
+    sqx_now: null
+    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  swap_long:
+    use: -7.61
+    sqx_now: null
+    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-7.62, -0.01)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+  swap_short:
+    use: -0.01
+    sqx_now: null
+    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-7.62, -0.01)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+notes:
+  - '2026-10-02: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
+mc_retest:
+  spread:
+    min: 0.63
+    max: 1.63
+    sqx_now: null
+  slippage:
+    min: 0.32
+    max: 0.82
+    sqx_now: null
+mt5:
+  ftmo: EURGBP
+  hantec: EURGBP.h
+mt5_point:
+  ftmo:
+    point: 1e-05
+    digits: 5
+    to_sqx: 0.1

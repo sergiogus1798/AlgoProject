@@ -37,417 +37,570 @@
 # `structural` vacío. Es una clasificación de partida, no una curada mercado a mercado — family
 # aquí no afirma un motor económico compartido para cada par, solo evita bloquear el retest
 # mientras nadie ha mirado con calma cuál de los dos cajones le toca a cada mercado.
+#
+# Dueño, 2026-10-02 (tarde) — lista curada mercado a mercado; sustituye a la de esa mañana y a la
+# clasificación en bloque del 2026-09-29. Fijada ANTES de mirar ningún resultado. Todo activo con
+# barras en SQX es main y lleva sus dos listas:
+#   forex (14 pares)  → family: los otros 13 pares · structural: XAUUSD, XAGUSD, XCUUSD
+#   índices (8)       → family: los otros 7 índices · structural: XAUUSD, XCUUSD, EURUSD, USDJPY
+#     NIKKEI225       → USDJPY pasa a family: yen débil y Nikkei al alza son el mismo trade
+#   XAUUSD, XAGUSD    → family: el otro metal, EURUSD, AUDUSD (la pata dólar)
+#                       structural: XCUUSD, los dos crudos, los 8 índices, USDJPY
+#   UKOIL, USOIL      → family: el otro crudo, USDCAD, CADJPY (divisa petrolera)
+#                       structural: XAUUSD, XAGUSD, XCUUSD, los 8 índices, EURUSD, USDJPY
+#   XCUUSD (cobre)    → family: XAGUSD, AUDUSD · structural: XAUUSD, los crudos, los 8 índices,
+#                       EURUSD, USDJPY
+# Al leer un resultado, los mercados casi iguales cuentan como uno: USA500/USATEC/DJ30, UKOIL/USOIL
+# y los cruces del yen. 13 pares son unos 5-6 mercados independientes, no 13.
 
 XAUUSD:
   main: XAUUSD_M1
   timeframe: M30
   categories:
-    # Misma familia macro que el oro: metales y energía, movidos por el dólar y por el riesgo.
     family:
       - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      # 2026-09-23: averiguado. `AlgoData/bars/manifest.json`, sincronizado de SQX el
-      # 2026-09-21 con sync_bars.py: 4.105.534 barras M1 de 2013-01-01 a 2026-09-07.
-      # Con `unknown` el cross-check le daba ventana desde 2008, cinco años sin datos.
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-    # Vacío hasta que el dueño elija los mercados estructurales y corra ese retest. La
-    # categoría existe para que el export se pueda clasificar contra ella.
-    structural: []
-
-USDJPY:
-  main: USDJPY_M1
-  timeframe: H1
-  categories:
-    # Los 28 pares de las 8 divisas major comparten motor macro — dólar, diferenciales de
-    # tipos, apetito de riesgo — así que TODOS van en `family`. Ninguno es una prueba dura
-    # para USDJPY, y decirlo aquí evita leer un resultado family como si fuera structural.
-    #
-    # El universo son los pares que el feed `the5ers` ya tiene descargados Y que declaran
-    # costes en `symbols/`: 9 de los 27 posibles. Se fija ANTES de mirar ningún resultado
-    # (dueño, 2026-09-23). Los 5 que tienen feed pero no fichero de costes — NZDUSD, EURGBP,
-    # EURAUD, EURCAD, EURCHF — quedan FUERA a propósito: entrarían al coste por defecto del
-    # registro de instrumentos, y un cross-market a un coste inventado es peor que nada.
-    #
-    # Los 9 tienen datos desde 2003-2004, antes del `build` de 2008: la ventana común es
-    # entera, 2008-01-01 → 2022-12-31, sin que ningún mercado la recorte.
-    family:
       - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
       - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-    # Vacío a propósito: ningún par de divisas es structural para otro. Los candidatos
-    # reales son los mercados que ya tienen feed y costes fuera del FX — XAUUSD, DAX40,
-    # USA500, NIKKEI225 — y entran cuando el dueño lo decida, no antes.
-    structural: []
-AUDJPY:
-  main: AUDJPY_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
+    structural:
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
       - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-AUDUSD:
-  main: AUDUSD_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
       - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
       - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
       - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-UKOIL:
-  main: UKOIL.cash_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-CADJPY:
-  main: CADJPY_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
       - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-DAX40:
-  main: DAX40_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-DJ30:
-  main: DJ30_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-EURJPY:
-  main: EURJPY_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
+      - {feed: USOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
 EURUSD:
   main: EURUSD_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
       - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
       - {feed: EURJPY_M1, data_from: 2003-08-04}
       - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-GBPJPY:
-  main: GBPJPY_M1
-  timeframe: null
-  categories:
-    family:
       - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
       - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
       - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
 GBPUSD:
   main: GBPUSD_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
       - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
       - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
       - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-NIKKEI225:
-  main: NIKKEI225_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
       - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
       - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-USA500:
-  main: USA500_M1
-  timeframe: null
-  categories:
-    family:
       - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
       - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
       - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-USATEC:
-  main: USATEC_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
       - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
-USDCAD:
-  main: USDCAD_M1
-  timeframe: null
-  categories:
-    family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
-      - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
-      - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
-      - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
 USDCHF:
   main: USDCHF_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
-      - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
       - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
       - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
-      - {feed: USA500_M1, data_from: 2012-01-19}
-      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
       - {feed: USDCAD_M1, data_from: 2003-08-04}
       - {feed: USDJPY_M1, data_from: 2003-05-05}
-      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
       - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+AUDUSD:
+  main: AUDUSD_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+USDCAD:
+  main: USDCAD_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+USDJPY:
+  main: USDJPY_M1
+  timeframe: H1
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+EURJPY:
+  main: EURJPY_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+GBPJPY:
+  main: GBPJPY_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+AUDJPY:
+  main: AUDJPY_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+CADJPY:
+  main: CADJPY_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+USA500:
+  main: USA500_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+USATEC:
+  main: USATEC_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+DJ30:
+  main: DJ30_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+DAX40:
+  main: DAX40_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+NIKKEI225:
+  main: NIKKEI225_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
 XAGUSD:
   main: XAGUSD_M1
   timeframe: null
   categories:
     family:
-      - {feed: AUDJPY_M1, data_from: 2003-12-01}
       - {feed: AUDUSD_M1, data_from: 2003-08-04}
-      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
-      - {feed: CADJPY_M1, data_from: 2004-10-25}
-      - {feed: DAX40_M1, data_from: 2013-09-30}
-      - {feed: DJ30_M1, data_from: 2013-09-30}
-      - {feed: EURJPY_M1, data_from: 2003-08-04}
       - {feed: EURUSD_M1, data_from: 2003-05-05}
-      - {feed: GBPJPY_M1, data_from: 2003-08-04}
-      - {feed: GBPUSD_M1, data_from: 2003-05-05}
-      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+    structural:
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: USOIL.cash_M1, data_from: 2013-01-01}
       - {feed: USA500_M1, data_from: 2012-01-19}
       - {feed: USATEC_M1, data_from: 2012-01-19}
-      - {feed: USDCAD_M1, data_from: 2003-08-04}
-      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
       - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+UKOIL:
+  main: UKOIL.cash_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USOIL.cash_M1, data_from: 2013-01-01}
+    structural:
       - {feed: XAUUSD_M1, data_from: 2003-05-05}
-    structural: []
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+EURAUD:
+  main: EURAUD_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+EURGBP:
+  main: EURGBP_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+NZDUSD:
+  main: NZDUSD_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+      - {feed: AUDNZD_M1, data_from: 2006-12-12}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+AUDNZD:
+  main: AUDNZD_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: GBPUSD_M1, data_from: 2003-05-05}
+      - {feed: USDCHF_M1, data_from: 2003-05-05}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+      - {feed: NZDUSD_M1, data_from: 2003-08-04}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: EURJPY_M1, data_from: 2003-08-04}
+      - {feed: GBPJPY_M1, data_from: 2003-08-04}
+      - {feed: AUDJPY_M1, data_from: 2003-12-01}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+      - {feed: EURGBP_M1, data_from: 2003-08-04}
+      - {feed: EURAUD_M1, data_from: 2005-10-10}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+UK100:
+  main: UK100_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+HK50:
+  main: HK50_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+USOIL:
+  main: USOIL.cash_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: USDCAD_M1, data_from: 2003-08-04}
+      - {feed: CADJPY_M1, data_from: 2004-10-25}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+AUS200:
+  main: AUS200_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: XCUUSD_M1, data_from: 2012-03-05}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}
+XCUUSD:
+  main: XCUUSD_M1
+  timeframe: null
+  categories:
+    family:
+      - {feed: XAGUSD_M1, data_from: 2003-08-08}
+      - {feed: AUDUSD_M1, data_from: 2003-08-04}
+    structural:
+      - {feed: XAUUSD_M1, data_from: 2003-05-05}
+      - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: USOIL.cash_M1, data_from: 2013-01-01}
+      - {feed: USA500_M1, data_from: 2012-01-19}
+      - {feed: USATEC_M1, data_from: 2012-01-19}
+      - {feed: DJ30_M1, data_from: 2013-09-30}
+      - {feed: DAX40_M1, data_from: 2013-09-30}
+      - {feed: UK100_M1, data_from: 2011-09-19}
+      - {feed: NIKKEI225_M1, data_from: 2011-09-19}
+      - {feed: HK50_M1, data_from: 2012-03-29}
+      - {feed: AUS200_M1, data_from: 2013-10-09}
+      - {feed: EURUSD_M1, data_from: 2003-05-05}
+      - {feed: USDJPY_M1, data_from: 2003-05-05}

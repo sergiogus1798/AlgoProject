@@ -1,6 +1,6 @@
 ---
 q: update SQX bar data download; data action=update on worker lost; master to worker rsync user/data; core.assets --dataranges refresh data ranges
-tag: 🔬  date: 2026-10-01  see: costs/tick-feed-coverage, databanks/snapshot-before-restart
+tag: 🔬  date: 2026-10-02  see: costs/tick-feed-coverage, databanks/snapshot-before-restart
 ---
 # Downloading new bars is the owner's button on the master; automate only the read side
 - A download on a worker is lost: next worker start overwrites its H2 databases with the master's stale copy.
@@ -8,9 +8,12 @@ tag: 🔬  date: 2026-10-01  see: costs/tick-feed-coverage, databanks/snapshot-b
 - Safe any time: `python3 -m core.assets --dataranges` asks the conductor and rewrites the `data:` line of all 17 assets in `assets/_policy.yaml`.
 - ⚠️ `-symbol action=delete` on a feed that is downloading does NOT stop its job: it kept requesting Dukascopy for hours and its 429s starved every later Dukascopy download (HK50, 2026-10-01). Only `-exit` and a fresh `sqcli` ends it. Run one Dukascopy download at a time; Darwinex is not rate-limited the same way.
 - Darwinex's catalogue is `internal/plugins/DataSourceDarwinex/darwinex.csv` (327 symbols): WTI is `XTIUSD`, there is no Brent and no HK50.
+- Dukascopy's catalogue is `internal/plugins/DataSourceDukascopy/dukascopy.csv` (753 rows: symbol, name, class, first M1 and tick day): copper is `COPPERCMDUSD` in USD per lb (FTMO's `XCUUSD` is cents per lb, ×100); bonds, platinum, softs and the dollar index only start in 2017-2021.
+- Dukascopy throttles by volume, not by count: two M1 feeds back to back took 8 min each, the third crawled on connect timeouts (340 KB in 17 min). Queue Darwinex ticks meanwhile — they run in parallel on the same instance.
 
 ## Evidence
 - 🔬 `sqcli -data action=update` = GUI "Update all"; with no `symbol=` it updates every configured symbol (67, 16 min, 2026-09-25; a feed may 429 a day or two) (beside `import`, `export`, `exportToMT4/5`, `clone`, `timezones`). Verb reference: `internal/web/SQUANT/help.txt` (readable without starting anything).
 - `bin/sqx-worker.sh` start runs `rsync -a --exclude='History/' "$MASTER/user/data/" "$WORKER/user/data/"` (flow master → worker). `History` is a shared symlink,
   but the three H2 databases a backtest reads are per-install copies.
 - Conductor sees the master's store via the same rsync. Run mid-update, `--dataranges` caught four feeds moving `2026-01-16` → `2026-09-22`, left thirteen alone.
+- 🔬 2026-10-02, master headless: AUDNZD_M1 12:08→12:16, UK100_M1 12:16→12:24, AUSIDXAUD from 12:24 `ConnectTimeoutException datafeed.dukascopy.com` per file; AUDNZD Darwinex ticks started 12:41 beside it and grew 280 MB in 4 min.

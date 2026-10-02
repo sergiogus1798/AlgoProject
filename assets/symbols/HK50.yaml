@@ -1,0 +1,80 @@
+symbol: HK50
+class: no_forex
+broker: ftmo
+sqx_symbol: HK50_M1
+feeds:
+  - HK50_M1
+verified: 2026-10-02
+session: HK50.cash_ftmo
+instrument:
+  tick_size: 0.01
+  point_value: 0.127444
+  min_distance: 0
+costs:
+  spread_is:
+    use: 870.0
+    sqx_now: null
+    why: '2026-10-02 — dueño: «usa los costes y todo de FTMO». Sin ticks de Darwinex: el spread de FTMO de hoy × 1,25 en los tres tramos, como en el crudo. Medido en los ticks de HK50.cash del terminal MT5 de FTMO, ponderado por tiempo: 696 puntos en sep-2026. Los años anteriores no están medidos.'
+  spread_oos:
+    use: 870.0
+    sqx_now: null
+    why: '2026-10-02 — dueño: «usa los costes y todo de FTMO». Sin ticks de Darwinex: el spread de FTMO de hoy × 1,25 en los tres tramos, como en el crudo. Medido en los ticks de HK50.cash del terminal MT5 de FTMO, ponderado por tiempo: 696 puntos en sep-2026. Los años anteriores no están medidos.'
+  spread_oos2:
+    use: 870.0
+    sqx_now: null
+    why: '2026-10-02 — dueño: «usa los costes y todo de FTMO». Sin ticks de Darwinex: el spread de FTMO de hoy × 1,25 en los tres tramos, como en el crudo. Medido en los ticks de HK50.cash del terminal MT5 de FTMO, ponderado por tiempo: 696 puntos en sep-2026. Los años anteriores no están medidos.'
+  commission:
+    use:
+      build:
+        method: PercentageBased
+        value: 0.0
+      oos1:
+        method: PercentageBased
+        value: 0.0
+      oos2:
+        method: PercentageBased
+        value: 0.0
+    sqx_now: null
+    why: 2026-10-02 — comisión CERO, la de FTMO y la del dueño (2026-09-29) para todos los índices.
+  slippage_is:
+    use: 435.0
+    sqx_now: null
+    why: 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  slippage_oos:
+    use: 435.0
+    sqx_now: null
+    why: 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  slippage_oos2:
+    use: 435.0
+    sqx_now: null
+    why: 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  swap_long:
+    use: -7.24
+    sqx_now: null
+    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-478.71, 10.04)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+  swap_short:
+    use: 0.15
+    sqx_now: null
+    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-478.71, 10.04)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+notes:
+  - '2026-10-02: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
+mc_retest:
+  spread:
+    min: 750.0
+    max: 1230.0
+    sqx_now: null
+  slippage:
+    min: 375.0
+    max: 615.0
+    sqx_now: null
+swap:
+  triple_swap_on: FRIDAY
+  rollout_hour: 23:00
+mt5:
+  ftmo: HK50.cash
+  hantec: HK50.h
+mt5_point:
+  ftmo:
+    point: 0.01
+    digits: 2
+    to_sqx: 1.0

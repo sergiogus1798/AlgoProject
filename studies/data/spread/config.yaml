@@ -54,6 +54,24 @@ assets:                         # activo -> su feed de ticks (Darwinex) y su fee
   XAGUSD:
     ticks: XAGUSD_TICK
     bars: XAGUSD_M1
+  EURGBP:
+    ticks: EURGBP_TICK
+    bars: EURGBP_M1
+  EURAUD:
+    ticks: EURAUD_TICK
+    bars: EURAUD_M1
+  NZDUSD:
+    ticks: NZDUSD_TICK
+    bars: NZDUSD_M1
+  AUDNZD:
+    ticks: AUDNZD_TICK
+    bars: AUDNZD_M1
+  UK100:
+    ticks: UK100_TICK
+    bars: UK100_M1
+  AUS200:
+    ticks: AUS200_TICK
+    bars: AUS200_M1
 day:
   min_minutes: 300              # un día con menos minutos cotizados (festivo, medio día) no entra en el modelo
 constancy:
@@ -67,6 +85,8 @@ model:
     NIKKEI225: relativo
     USA500: relativo
     USATEC: relativo
+    UK100: relativo
+    AUS200: relativo
 safety:
   factor: ledger:spread.safety.factor            # multiplica el spread medido al declararlo en SQX
 reprice:
@@ -95,6 +115,12 @@ band:                           # la curva spread = a · precio^b y sus límites
     USDCAD: USDCAD_TICK
     USDCHF: USDCHF_TICK
     XAGUSD: XAGUSD_TICK
+    EURGBP: EURGBP_TICK
+    EURAUD: EURAUD_TICK
+    NZDUSD: NZDUSD_TICK
+    AUDNZD: AUDNZD_TICK
+    UK100: UK100_TICK
+    AUS200: AUS200_TICK
   quantiles: [0.025, 0.5, 0.975]   # los extremos son el Min y el Max del MC Retest de spread
   min_minutes: 300              # un día con menos minutos cotizados no entra
 onboard:                        # alta de un activo nuevo: las reglas por defecto del dueño (2026-09-27), por tipo

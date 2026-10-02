@@ -211,7 +211,7 @@ def main() -> None:
     p = plan(a.symbol, a.kind, bars[0], ticks[0], cfg)
     rows = [("modelo del build", p["model"]), ("spread por tramo (puntos, × factor)", p["per_segment"]),
             ("spreads a declarar", p["spreads"]), ("slippage", p["slippage"]),
-            ("comisión", p["commission"]), ("swap largo/corto", (p["swap"]["long"], p["swap"]["short"])),
+            ("comisión", p["commission"]), ("swap largo/corto", p["swap"].get("pending") or (p["swap"]["long"], p["swap"]["short"])),
             ("triple swap", p["triple_swap_on"]), ("MC Retest spread (puntos)", p["mc_spread"]),
             ("MC Retest slippage (puntos)", p["mc_slippage"]),
             ("  en múltiplos", {k: round(v, 2) for k, v in p["mc_multiples"].items()}),

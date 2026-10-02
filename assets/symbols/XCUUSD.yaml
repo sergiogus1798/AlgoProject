@@ -1,0 +1,80 @@
+symbol: XCUUSD
+class: no_forex
+broker: ftmo
+sqx_symbol: XCUUSD_M1
+feeds:
+  - XCUUSD_M1
+verified: 2026-10-02
+session: XAGUSD_ftmo
+instrument:
+  tick_size: 0.0001
+  point_value: 10000.0
+  min_distance: 0
+costs:
+  spread_is:
+    use: 73.58
+    sqx_now: null
+    why: '2026-10-02 — dueño: «usa los costes y todo de FTMO». Sin ticks de Darwinex: el spread de FTMO de hoy × 1,25 en los tres tramos, como en el crudo. Medido en los ticks de XCUUSD del terminal MT5 de FTMO, ponderado por tiempo: 58.86 puntos en sep-2026. Los años anteriores no están medidos.'
+  spread_oos:
+    use: 73.58
+    sqx_now: null
+    why: '2026-10-02 — dueño: «usa los costes y todo de FTMO». Sin ticks de Darwinex: el spread de FTMO de hoy × 1,25 en los tres tramos, como en el crudo. Medido en los ticks de XCUUSD del terminal MT5 de FTMO, ponderado por tiempo: 58.86 puntos en sep-2026. Los años anteriores no están medidos.'
+  spread_oos2:
+    use: 73.58
+    sqx_now: null
+    why: '2026-10-02 — dueño: «usa los costes y todo de FTMO». Sin ticks de Darwinex: el spread de FTMO de hoy × 1,25 en los tres tramos, como en el crudo. Medido en los ticks de XCUUSD del terminal MT5 de FTMO, ponderado por tiempo: 58.86 puntos en sep-2026. Los años anteriores no están medidos.'
+  commission:
+    use:
+      build:
+        method: PercentageBased
+        value: 0.0014
+      oos1:
+        method: PercentageBased
+        value: 0.0014
+      oos2:
+        method: PercentageBased
+        value: 0.0014
+    sqx_now: null
+    why: '2026-10-02 — 0,0014 % del nocional, la tarifa de FTMO para metales (la confirmada en plata); SIN CONFIRMAR en cobre: la cuenta no tiene operaciones de XCUUSD.'
+  slippage_is:
+    use: 36.79
+    sqx_now: null
+    why: 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  slippage_oos:
+    use: 36.79
+    sqx_now: null
+    why: 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  slippage_oos2:
+    use: 36.79
+    sqx_now: null
+    why: 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  swap_long:
+    use: -9.95
+    sqx_now: null
+    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-18.02, 2.55)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+  swap_short:
+    use: 1.41
+    sqx_now: null
+    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-18.02, 2.55)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+notes:
+  - '2026-10-02: el feed (Dukascopy COPPERCMDUSD) cotiza en USD por libra (6,58) y FTMO XCUUSD en centavos por libra (658): un precio de MT5 se divide entre 100. El lote es el de FTMO, 10.000 libras (point_value 10000); un punto de MT5 (0,01 centavos) es un tick de SQX (0,0001 USD).'
+  - '2026-10-02: el perfil de FTMO en SQX no trae sesión de cobre; lleva XAGUSD_ftmo, el horario de metales de FTMO (01:05-23:50). Los ticks de XCUUSD en FTMO van de 01:05 a 23:00: revisar si importa esa última hora.'
+mc_retest:
+  spread:
+    min: 68.75
+    max: 80.0
+    sqx_now: null
+  slippage:
+    min: 34.38
+    max: 40.0
+    sqx_now: null
+swap:
+  triple_swap_on: WEDNESDAY
+  rollout_hour: 23:00
+mt5:
+  ftmo: XCUUSD
+mt5_point:
+  ftmo:
+    point: 0.01
+    digits: 2
+    to_sqx: 1.0

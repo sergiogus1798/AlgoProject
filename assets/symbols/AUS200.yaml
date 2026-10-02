@@ -1,0 +1,79 @@
+symbol: AUS200
+class: no_forex
+broker: ftmo
+sqx_symbol: AUS200_M1
+feeds:
+  - AUS200_M1
+verified: 2026-10-02
+session: AUS200.cash_ftmo
+instrument:
+  tick_size: 0.01
+  point_value: 0.69395
+  min_distance: 0
+costs:
+  spread_is:
+    use: 316.5
+    sqx_now: null
+    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUS200_TICK). studies.data.spread.onboard
+  spread_oos:
+    use: 229.05
+    sqx_now: null
+    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUS200_TICK). studies.data.spread.onboard
+  spread_oos2:
+    use: 203.24
+    sqx_now: null
+    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUS200_TICK). studies.data.spread.onboard
+  commission:
+    use:
+      build:
+        method: PercentageBased
+        value: 0.0
+      oos1:
+        method: PercentageBased
+        value: 0.0
+      oos2:
+        method: PercentageBased
+        value: 0.0
+    sqx_now: null
+    why: 'onboard 2026-10-02 — default del dueño para `index`: 8 USD por lote ida y vuelta (en % al último precio Darwinex 7052 si no es forex; 0 en índices).'
+  slippage_is:
+    use: 158.25
+    sqx_now: null
+    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  slippage_oos:
+    use: 114.53
+    sqx_now: null
+    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  slippage_oos2:
+    use: 101.62
+    sqx_now: null
+    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+  swap_long:
+    use: -9.1
+    sqx_now: null
+    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-220.19, 14.78)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+  swap_short:
+    use: 0.61
+    sqx_now: null
+    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-220.19, 14.78)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+notes:
+  - '2026-10-02: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
+mc_retest:
+  spread:
+    min: 152.39
+    max: 1064.12
+    sqx_now: null
+  slippage:
+    min: 76.19
+    max: 532.06
+    sqx_now: null
+swap:
+  triple_swap_on: FRIDAY
+  rollout_hour: 23:00
+mt5:
+  ftmo: AUS200.cash
+mt5_point:
+  ftmo:
+    point: 0.01
+    digits: 2
+    to_sqx: 1.0
