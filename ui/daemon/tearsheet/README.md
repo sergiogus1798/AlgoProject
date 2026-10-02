@@ -25,6 +25,7 @@ api ─▶ harvest.read (newest harvest/<P>/<D>/<day>/, pyarrow filter on identi
 | `__init__.py` | Names the package; holds no code | — | — |
 | `api.py` | `ROUTER`: `GET /api/tearsheet` (`&top=0-50&dd=%\|$`) and `GET /api/tearsheet/exits`, `?project&databank&identity&sample=&source=live\|archive&version=`; `sample` IS, OOS1 (or OOS) keeps one tab, OOS2 goes through `oos2`; the `spread` report folders live or frozen in the version; a refusal is `{"error"}`, never a 500 | imported | request → contract dict |
 | `harvest.py` | The newest cosecha of (P, D), one identity's equity, trades and metrics row; refuses a sample outside IS/OOS; the sentence naming the harvest command when there is none | imported | disk → dict · sentence |
+| `borrow.py` | A databank with no cosecha of its own (Cross Market, Cross TF, MCR, SPP, WFM…) reads a cosecha of the project: the **same identity** first (the MCR_All ingest keeps the build's), else **by name** (the databank's roster, else the `strategy` the page passes, in either spelling) — and the Ficha carries a warning saying which; cut or doubled names answer a grey sentence | imported by `harvest.read` | roster + cosecha → (databank, identity, note) |
 | `pnl.py` | One sample's curves on one daily index: SQX's, the real one (SQX's corrected on each closing day by the repriced trades), and each without its own best `top` % of trades | imported | curve, trades, repriced → series |
 | `drawdowns.py` | Underwater in money and in % of the account's peak | imported | daily curve → series |
 | `months.py` | Monthly P&L exact to the cent, and the years they add up to | imported | daily curve → months, years |
@@ -48,9 +49,10 @@ Ficha drawn offscreen with its switches (grabs `scratch/ui-plan/shots/H1-*.png`)
   `{"blocked": "reservado: se abre tras los pasos 17, 18 y 19"}`.
 - **`source=archive` recomputes arithmetic, never a study**: the frozen `harvest.read` dict of
   `core.archive.read` goes through the same `sheet.build`/`exits.build`.
-- **An identity pairs only inside its databank** (`knowhow/sqx-format/identity-differs-across-databanks.md`).
-  The harvest is keyed by the build databank's identity; asked with another databank's, the
-  route says the strategy is not in the cosecha, it never looks elsewhere.
+- **A databank without a cosecha borrows one** (`borrow`), never a red «no tiene cosecha» while
+  the project has the strategy harvested: same identity first, then the name (identities differ
+  across databanks, `knowhow/sqx-format/identity-differs-across-databanks.md`). Both routes take
+  an optional `strategy` for the name. A databank WITH its own cosecha is read by identity only.
 - **Two P&L totals, two sources.** The P&L, the drawdown and the years read `equity.parquet`
   (SQX's daily curve from the .sqx); the exits sum `trades.parquet`. They differ by tens of dollars
   on real strategies, and each note names its source.

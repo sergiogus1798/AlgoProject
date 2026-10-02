@@ -60,7 +60,7 @@ def slice_for(result: dict, strategy: str) -> dict | None:
     for tab in out.get("tabs", []):
         kept = [k for k in (block(b, strategy) for b in tab.get("blocks", [])) if k]
         if kept:
-            tabs.append({**tab, "blocks": kept, "note": "Corrida de toda la población, vista "
+            tabs.append({**tab, "blocks": kept, "note": "Run de toda la población, vista "
                          "solo para esta estrategia. " + (tab.get("note") or "")})
     if not tabs:
         return None
@@ -84,7 +84,7 @@ def verdict_row(result: dict, row: dict, strategy: str) -> dict:
              "columns": keys, "rows": [[row[k] for k in keys]], "align": ["left"] * len(keys)}
     return {**copy.deepcopy(result), "strategy": strategy, "sliced": True,
             "tabs": [{"name": "row", "title": "Esta estrategia", "blocks": [table],
-                      "note": "Su fila del verdict.csv de la corrida de toda la población."}]}
+                      "note": "Su fila del verdict.csv del run de toda la población."}]}
 
 
 def whole(result: dict, strategy: str) -> dict:

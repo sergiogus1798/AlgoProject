@@ -27,10 +27,10 @@ from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.studypage.page import StudyPage  # noqa: E402
 from ui.desktop.studypage.views import StrategyPage  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
+from ui.desktop.workspace.fichaorigin import default_study  # noqa: E402
 
 # Since F13 (2026-09-28): the USDJPY Donchian project; its gate ran on 09-27 and 09-28.
-PROJECT, DATABANK, STRATEGY = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results",
-                               "Strategy 1.15.54")
+PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
 MOTHER = "Strategy 9.27.83"          # the one with a variant batch (strategyPermutations/)
 NO_BATCH = "Strategy 4.10.81"        # one of Results no 16.5 has fabricated variants for
 RUN = "--run" in sys.argv
@@ -64,6 +64,20 @@ def serve() -> TestClient:
     return http
 
 
+# `app`/`http` used to be plain parameters, only ever filled by the `__main__` block below — a
+# bare `python3 -m pytest` collected these as fixtures pytest never defined and every test here
+# errored at setup (📓 2026-09-30, T1 UI feedback pass). Built once at import instead, the same
+# singleton pattern every other tests/test_ui_*.py file uses (`QApplication.instance() or
+# QApplication([])`), so `python3 -m pytest tests/test_ui_studypage.py -q` runs them directly.
+APP = QApplication.instance() or QApplication([])
+APP.setStyleSheet(QSS)
+HTTP = serve()
+# Read off the newest export rather than pinned by name: a nightly workflow re-run gives this
+# project a fresh population under new names (same drift `test_ui_runner.py` hit).
+_bank = HTTP.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
+STRATEGY = next(s["strategy"] for s in _bank["strategies"] if s["strategy"] not in (MOTHER, NO_BATCH))
+
+
 def settle(app: QApplication, until: Callable[[], bool], seconds: float) -> None:
     """Run the event loop until a condition holds (the run bar polls on a QTimer)."""
     end = time.time() + seconds
@@ -92,9 +106,9 @@ def run_one(app: QApplication, page: StrategyPage) -> None:
     assert "100%" in page.bar.line.text(), page.bar.line.text()
 
 
-def test_strategy(app: QApplication, http: TestClient) -> None:
+def test_strategy() -> None:
     """Dots, result, drawer signing, compare with a rival; a real edgeCost run with --run."""
-    bank = http.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
+    bank = HTTP.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
     ident = next(s["identity"] for s in bank["strategies"] if s["strategy"] == STRATEGY)
     SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=STRATEGY, identity=ident,
                      asset=None)
@@ -117,7 +131,7 @@ def test_strategy(app: QApplication, http: TestClient) -> None:
     assert page.drawer.overrides() == []
 
     if RUN:
-        run_one(app, page)
+        run_one(APP, page)
     else:
         print("    (sin --run: no se corre edgeCost de verdad; escribiría un informe del día en "
               "AlgoData/reports/ de este proyecto)")
@@ -137,18 +151,18 @@ def test_strategy(app: QApplication, http: TestClient) -> None:
     page.open_study("falsePositives")
     assert page.bar.one.isHidden() and "aún no existe" in page.bar.line.text()
 
-    page.open_study("crossmarket")           # not run on Results: said, never borrowed
-    assert page.view.results == [] and "otro databank" in page.note.text(), page.note.text()
+    page.open_study("crossmarket")           # not run on Results: found by name elsewhere (§2)
+    assert page.view.results and "de Retest_Markets_-_Family" in page.note.text(), page.note.text()
 
     page.open_study("wfm")
-    assert "Proyecto" in page.note.text() or "otro databank" in page.note.text()
+    assert "Proyecto" in page.note.text() or " de " in page.note.text(), page.note.text()
     page.deleteLater()
 
 
-def test_lote(app: QApplication, http: TestClient) -> None:
+def test_lote() -> None:
     """«Lote» sits beside the drawer only while the WFC study is open on a mother with a batch —
     it left the Ficha on 2026-09-29 (a strategy can have no batch)."""
-    bank = http.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
+    bank = HTTP.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
     names = {s["strategy"]: s["identity"] for s in bank["strategies"]}
     SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=MOTHER,
                      identity=names[MOTHER], asset="USDJPY")
@@ -165,7 +179,36 @@ def test_lote(app: QApplication, http: TestClient) -> None:
     page.deleteLater()
 
 
-def test_population(app: QApplication) -> None:
+def test_origin() -> None:
+    """§4.3/§9.4: a databank panel (and its sub-panel) opens the right study, never a family
+    sibling's — Cross Market stays Cross Market, Mapa condicional stays the conditional map."""
+    assert default_study("Cross Market", "Resumen") == "crossmarket"
+    assert default_study("Cross Timeframe", "H4") == "crossTF"
+    assert default_study("Cierre", "Mapa condicional") == "conditionalMap"
+    assert default_study("Cierre", "Exposición") == "exposure"
+    opt = "WFM + WFC + CSCV + Market Surfaces"
+    assert default_study(opt, "Nube de parámetros") == "cloud"
+    assert default_study(opt, "Walk Forward Matrix") == "wfm"
+    assert default_study(opt, "IS Build → OOS OOS1") == "wfc"     # a WFC composition sub
+    assert default_study("desconocido", "x") is None
+
+
+def test_hidden() -> None:
+    """§1: a study with no result anywhere and no databank of its own to run it in must not be
+    a tab at all, once the daemon has answered `/api/study/offer` — not just greyed."""
+    bank = HTTP.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
+    ident = next(s["identity"] for s in bank["strategies"] if s["strategy"] == STRATEGY)
+    SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=STRATEGY, identity=ident,
+                     asset=None)
+    page = StrategyPage()
+    settle(APP, lambda: bool(page.offer.refused), 10)
+    page.open_family("Lecturas")           # falsePositives: no databank of its own, not built
+    keys = [page.studies.tabData(i) for i in range(page.studies.count())]
+    assert "falsePositives" not in keys, keys
+    page.deleteLater()
+
+
+def test_population() -> None:
     """Scope many on the same databank: the newest gate run, two runs compared, the batch
     studies said honestly. (The population page left the sidebar with F13; the scope stays.)"""
     SELECTION.choose(project=PROJECT, databank=DATABANK)
@@ -186,11 +229,7 @@ def test_population(app: QApplication) -> None:
 
 
 if __name__ == "__main__":
-    APP = QApplication.instance() or QApplication([])
-    APP.setStyleSheet(QSS)
-    HTTP = serve()
-    for test, args in ((test_strategy, (APP, HTTP)), (test_lote, (APP, HTTP)),
-                       (test_population, (APP,))):
+    for test in (test_strategy, test_lote, test_hidden, test_origin, test_population):
         started = time.time()
-        test(*args)
+        test()
         print(f"ok  {test.__name__}  {time.time() - started:.1f} s")

@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from core.paths import DATA
+from ui.daemon.tearsheet import borrow
 
 SAMPLES = ("IS", "OOS")      # the one-way door: a harvest holds these two and nothing else
 EQUITY = ["day", "equity", "sample"]
@@ -37,22 +38,30 @@ def missing(project: str, databank: str) -> str:
             f"{databank} --oos-databank <databank OOS>` (skill /oos-gate).")
 
 
-def read(project: str, databank: str, identity: str) -> dict | str:
+def read(project: str, databank: str, identity: str, name: str = "") -> dict | str:
     """One strategy's rows of the newest cosecha, filtered on identity at read time.
 
     Args:
         project, databank: The build databank.
         identity: SHA-256 of the normalised XML, as SELECTION holds it; it pairs only
             inside this databank (knowhow/sqx-format/identity-differs-across-databanks.md).
+        name: The strategy's name, for `borrow` when the databank has no cosecha of its own.
 
     Returns:
         `day`, `folder`, `strategy` (name), `identity`, `metrics` (the SQX row as a dict),
-        `equity` and `trades` (DataFrames, ascending in time) — or the Spanish sentence of why not.
+        `equity` and `trades` (DataFrames, ascending in time), the `databank` read and its
+        `note` («» unless borrowed from the build's, `borrow`) — or the sentence of why not.
         A sample other than IS/OOS is refused, never filtered out.
     """
-    folder = newest(project, databank)
+    folder, note = newest(project, databank), ""
     if folder is None:
-        return missing(project, databank)
+        got = borrow.borrow(project, databank, identity, newest, name)
+        if got is None:
+            return missing(project, databank)
+        if isinstance(got, str):
+            return Absent(got)
+        databank, identity, note = got
+        folder = newest(project, databank)
     where = [("identity", "==", identity)]
     metrics = pd.read_parquet(folder / "metrics.parquet", filters=where)
     if metrics.empty:
@@ -70,5 +79,5 @@ def read(project: str, databank: str, identity: str) -> dict | str:
     trades["sample"] = trades["sample"].astype(str)
     row = metrics.iloc[0].to_dict()
     return {"day": folder.name, "folder": str(folder), "strategy": row["strategy"],
-            "identity": identity, "metrics": row, "equity": equity.sort_values("day", kind="stable"),
+            "databank": databank, "note": note, "identity": identity, "metrics": row, "equity": equity.sort_values("day", kind="stable"),
             "trades": trades.sort_values("Close time", kind="stable")}

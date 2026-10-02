@@ -5,9 +5,7 @@ from pydantic import BaseModel
 
 from core.paths import DATA
 from ui.daemon import runs as launch
-from ui.daemon.loader import find
-from ui.daemon.results import catalogue, forproject, knobs, matrix, runs
-from ui.daemon.runner.table import SAMPLED
+from ui.daemon.results import catalogue, forproject, knobs, matrix, presence, runs
 from ui.daemon.strategy import archived
 
 ROUTER = APIRouter()
@@ -54,8 +52,8 @@ def result(project: str, databank: str, study: str, strategy: str = "", identity
         databank: Databank name, spaces or underscores.
         study: Study key.
         strategy: Strategy name; empty for the population result.
-        identity: The strategy's identity; when given, a result of another strategy that
-            shares the name is refused instead of shown.
+        identity: The strategy's identity; preferred anywhere in the project, else the
+            name answers and `meta.other_identity` says the XML differs.
         day: Report day; empty for the newest.
         source: "live" reads `reports/`; "archive" answers from the archived version of
             `identity`, computing nothing (its `stale` is the day of archiving's).
@@ -69,14 +67,24 @@ def result(project: str, databank: str, study: str, strategy: str = "", identity
         return refused
     if source == "archive":
         return archived.result(identity, databank, study, strategy, version)
-    got = runs.result(project, databank, study, strategy, identity, day)
-    # Any study, not only the sampled readings: the IS/OOS gate's decay and isOos file their
-    # run under the retest too (📓 2026-09-30, «Decaimiento» empty opened from Results).
-    other = (find.oos_partner(project, databank)
-             if got["result"] is None and identity else None)
-    # A reading of OOS1 run from a build databank lives on its retest (`runner.table`): shown
-    # here only under the same identity, which `runs.result` checks.
-    return runs.result(project, other, study, strategy, identity, day) if other else got
+    # Every databank, lote and batch of the project is searched by `hits.sources`: the OOS
+    # retest, the MC Retest ingest (named without «Strategy ») and the ATR lotes included.
+    return runs.result(project, databank, study, strategy, identity, day)
+
+
+@ROUTER.get("/api/presence")
+def strategy_presence(project: str, databank: str, strategy: str,
+                      identity: str = "") -> dict[str, object]:
+    """Per study, whether this strategy has a result anywhere in the project, and its state.
+
+    Args:
+        project, databank, strategy, identity: The strategy page's place.
+
+    Returns:
+        `{"studies": {key: {state, label, stale, day, elsewhere, other_identity}}}` — only
+        the studies with a result, the one `/api/result` would show (`presence.presence`).
+    """
+    return {"studies": presence.presence(project, databank, strategy, identity)}
 
 
 @ROUTER.get("/api/history")

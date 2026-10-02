@@ -3,16 +3,16 @@
 from collections import Counter
 from pathlib import Path
 
-from ui.daemon.results import catalogue, knobs, store
+from ui.daemon.results import catalogue, stale, store
 from ui.daemon.loader import find
 
 
-def _column(folder: Path, current: str | None) -> tuple[dict, list[dict]]:
+def _column(folder: Path, project: str) -> tuple[dict, list[dict]]:
     """One study folder's cells, keyed by identity.
 
     Args:
         folder: reports/<P>/<D>/<day>/<study>/.
-        current: The hash a run would sign today, None for a study without a config.
+        project: SQX project name, whose runner substitutions `stale.fresh` signs with.
 
     Returns:
         (identity -> {strategy, state, label, stale}, skipped). Each strategy's own JSON
@@ -22,6 +22,8 @@ def _column(folder: Path, current: str | None) -> tuple[dict, list[dict]]:
         folder that yields no cell at all says why with a count of 0.
     """
     table = store.verdicts(folder) or {}
+    manifest = folder / "manifest.json"
+    one, many = (stale.fresh(folder.name, project, manifest, p) for p in (False, True))
     cells, skipped, seen = {}, Counter(), set()
     for path in folder.glob("estrategias/*.json"):
         row = store.slim(path)
@@ -35,7 +37,7 @@ def _column(folder: Path, current: str | None) -> tuple[dict, list[dict]]:
             continue
         cells[identity] = {"strategy": row["strategy"], "state": row["state"],
                            "label": row["label"],
-                           "stale": current is not None and row["config_hash"] != current}
+                           "stale": bool(one) and row["config_hash"] not in one}
     population = folder / f"{folder.name}.json"
     whole = store.slim(population) if population.is_file() else None
     signed = whole["config_hash"] if whole else None
@@ -47,7 +49,7 @@ def _column(folder: Path, current: str | None) -> tuple[dict, list[dict]]:
             continue
         cells[row["identity"]] = {
             "strategy": name, "state": store.WORDS.get(row["word"], "none"), "label": row["word"],
-            "stale": None if signed is None or current is None else signed != current}
+            "stale": None if signed is None or not many else signed not in many}
     if not cells and not skipped:
         skipped["ni JSON por estrategia del contrato ni verdict.csv con estrategia y veredicto"] = 0
     rel = f"{folder.parent.name}/{folder.name}"
@@ -71,7 +73,6 @@ def matrix(project: str, databank: str) -> dict:
         databank signs its strategies with other identities than the build's.
     """
     root = store.bank(project, databank)
-    current = {}
     cells: dict[str, dict] = {}
     names: dict[str, str] = {}
     skipped = []
@@ -81,9 +82,7 @@ def matrix(project: str, databank: str) -> dict:
                 skipped.append({"path": f"{day.name}/{folder.name}", "n": None,
                                 "reason": "no es un estudio del catálogo"})
                 continue
-            if folder.name not in current:
-                current[folder.name] = knobs.signed(folder.name, [])
-            got, lost = _column(folder, current[folder.name])
+            got, lost = _column(folder, project)
             skipped += lost
             for identity, cell in got.items():
                 names[identity] = cell.pop("strategy")

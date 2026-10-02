@@ -28,7 +28,7 @@ def test_only_this_strategy() -> None:
     assert grid["rows"] == ["A"] and grid["values"] == [[1.0]]
     assert [i["label"] for i in bars["items"]] == ["A"]
     assert table["rows"] == [["A", "H4"]] and siblings["rows"] == [["A_ScaledH4"]]
-    assert got["tabs"][0]["note"].startswith("Corrida de toda la población")
+    assert got["tabs"][0]["note"].startswith("Run de toda la población")
     assert slice_for(POPULATION, "C") is None
     assert POPULATION["tabs"][0]["blocks"][0]["rows"] == ["A", "B"]      # never mutated
 

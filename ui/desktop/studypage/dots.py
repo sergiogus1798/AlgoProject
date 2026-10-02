@@ -14,7 +14,7 @@ def dot(cell: dict | None) -> QIcon:
     """A filled dot in the stored verdict's colour, a ring when caducado, a grey ring when absent.
 
     Args:
-        cell: `{"state", "stale", ...}` of the newest stored run here, None when none.
+        cell: `{"state", "stale", ...}` of the result the page shows, None when none.
 
     Returns:
         The tab's icon.
@@ -47,26 +47,34 @@ def says(cell: dict | None) -> str:
         Spanish, naming the state, the study's own word and the day.
     """
     if cell is None:
-        return "Sin resultado en este databank (círculo gris): no ha corrido aquí."
+        return "Sin resultado en ningún databank del proyecto (círculo gris): no ha corrido."
     stale = " · CADUCADO: se calculó con otra configuración" if cell.get("stale") else ""
+    where = f" · de {cell['elsewhere']}" if cell.get("elsewhere") else ""
+    other = " · versión de otro databank (XML distinto)" if cell.get("other_identity") else ""
     return (f"{label(cell['state'])} — «{cell.get('label') or '—'}» · día "
-            f"{cell.get('day') or '—'}{stale}")
+            f"{cell.get('day') or '—'}{where}{other}{stale}")
 
 
-def of_strategy(project: str, databank: str, identity: str | None) -> tuple[dict, list[dict]]:
-    """Every study's stored state for one strategy, and the databank's strategies.
+def of_strategy(project: str, databank: str, strategy: str,
+                identity: str | None) -> tuple[dict, list[dict]]:
+    """Every study's stored state for one strategy anywhere in the project, and the databank's
+    strategies.
 
     Args:
-        project, databank: Where.
-        identity: The strategy's identity; the matrix is keyed by it, never by name.
+        project, databank: Where the page opened.
+        strategy: The strategy's name; the project pairs by it when the identity differs
+            (owner, 2026-09-30: one strategy, one entity across the project).
+        identity: The strategy's identity, preferred where it matches.
 
     Returns:
-        ({study: cell}, [{"strategy", "identity"}]) from `/api/matrix`, empty on an error.
+        ({study: cell} from `/api/presence` — only the studies with a result somewhere —,
+        [{"strategy", "identity"}] from `/api/matrix`, the rivals the history offers); empty
+        on an error.
     """
-    got = fetch("matrix", project=project, databank=databank)
-    if "error" in got:
-        return {}, []
-    return got["cells"].get(identity or "", {}), got["strategies"]
+    got = fetch("presence", project=project, databank=databank, strategy=strategy,
+                identity=identity or "")
+    bank = fetch("matrix", project=project, databank=databank)
+    return got.get("studies") or {}, bank.get("strategies") or []
 
 
 def of_population(project: str, databank: str, keys: list[str]) -> dict:

@@ -54,8 +54,9 @@ def exit_paths(trades: pd.DataFrame) -> tuple[list[str], dict[str, list[float]]]
     return x, paths
 
 
-# How one trade's return is counted (plan 24 §10: «USD por lote» by default). Per lot takes the
-# position size out, so a sizing rule that grows with the account does not fatten the tails.
+# How one trade's return is counted (default «USD por operación», owner 2026-09-30 — `ui.daemon.
+# strategy.stats.DEFAULT_UNIT`). Per lot takes the position size out, so a sizing rule that grows
+# with the account does not fatten the tails; it stays selectable, just not the default any more.
 UNITS = {"USD por lote": lambda t: t["Profit/Loss"] / t["Size"],
          "USD por operación": lambda t: t["Profit/Loss"]}
 SHORT = {"USD por lote": "$/lote", "USD por operación": "$/trade"}    # owner: «65.36 $/trade»

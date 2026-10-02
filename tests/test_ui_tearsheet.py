@@ -142,7 +142,8 @@ def test_refusals(http: TestClient) -> None:
         got = ask(http, "tearsheet/exits", **where)
         assert "un solo tipo: «Stop loss»" in block(got, "IS", "Resultado por tipo de salida")["note"]
     harvest.DATA = real
-    assert "no está en la cosecha" in ask(http, "tearsheet", identity="nada")["error"]
+    gone = ask(http, "tearsheet", identity="nada")      # cut or never retested: said, in grey
+    assert "Sin pareja en el OOS" in gone["error"] and gone["absent"] is True, gone
 
 
 def shot(widget: object, name: str) -> None:
@@ -160,7 +161,8 @@ def test_draw(app: QApplication) -> None:
     assert page.on_ficha() and page.ficha.isVisibleTo(page) and not page.bar.isVisibleTo(page)
     view = page.ficha.subs[0].body
     assert len(view.results) == 2, page.ficha.subs[0].line.text()
-    assert DAY in page.ficha.note.text(), page.ficha.note.text()
+    # §3.1 (owner, 2026-09-30): no «cosecha del…» line under the Ficha, only who and where.
+    assert "cosecha del" not in page.ficha.note.text(), page.ficha.note.text()
     app.processEvents()
     shot(page, "ficha")
     view.scroll.verticalScrollBar().setValue(1400)

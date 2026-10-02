@@ -64,7 +64,7 @@ class StudyPage(QFrame):
         row = QHBoxLayout()
         self.note = text("", T["muted"], 14)
         row.addWidget(self.note, 1)
-        self.back = QPushButton("volver a una sola corrida")
+        self.back = QPushButton("Volver a un solo run")
         self.back.clicked.connect(lambda: self.load())
         row.addWidget(self.back, 0, Qt.AlignTop)
         self.offer = Offer(self)             # the tests with no data here, greyed
@@ -121,15 +121,16 @@ class StudyPage(QFrame):
         return self.assets.get(project)
 
     def _states(self) -> None:
-        """Every study's stored state here, for the dots."""
+        """Every study's stored state, for the dots and for which tabs exist: on a strategy's
+        page, anywhere in the project (`/api/presence`)."""
         w = self.where
         self.cells, self.strategies = {}, []
         if not (w["project"] and w["databank"]):
             return
-        if self.strategy_page:
+        if self.strategy_page and w["strategy"]:
             self.cells, self.strategies = dots.of_strategy(w["project"], w["databank"],
-                                                           w["identity"])
-        else:
+                                                           w["strategy"], w["identity"])
+        elif not self.strategy_page:
             self.cells = dots.of_population(w["project"], w["databank"], list(self.catalogue))
 
     def open_study(self, key: str) -> None:
@@ -147,10 +148,18 @@ class StudyPage(QFrame):
         else:
             self.families.setCurrentIndex(index)
 
+    def prune(self) -> None:
+        """Rebuild the family on screen once the daemon has answered: a study with no result
+        anywhere and nowhere to run it must vanish, not just grey (owner, 2026-09-30 §1)."""
+        self._family(self.families.currentIndex())
+
     def _family(self, index: int) -> None:
         """Fill the study tabs of one family, each with its dot, and open the right one."""
         family = self.families.tabData(index)
-        keys = [k for k, e in self.catalogue.items() if e["family"] == family]
+        keys = [k for k, e in self.catalogue.items()
+               if e["family"] == family and not self.offer.hide(k)]
+        if not keys:          # everything here is hidden: better an unusable tab than none
+            keys = [k for k, e in self.catalogue.items() if e["family"] == family]
         if self.key not in keys:
             self.key = self.offer.first(keys)
         self.studies.blockSignals(True)
@@ -203,7 +212,8 @@ class StudyPage(QFrame):
         if got["result"] is None:
             self.note.setText(notes.absent(entry, self.strategy_page))
         else:
-            self.note.setText(notes.shown(self.meta["day"], bool(day), self.strategy_page))
+            self.note.setText(notes.shown(self.meta["day"], bool(day), self.strategy_page)
+                              + notes.elsewhere(self.meta))
         self.offer.explain()
         wfclote.show(self)
 
@@ -221,7 +231,7 @@ class StudyPage(QFrame):
         Args:
             left, right: Their days.
         """
-        self._compare(*compare.runs(self.where, self.key, left, right))
+        compare.paint(self, *compare.runs(self.where, self.key, left, right))
 
     def versus(self, strategy: str, identity: str) -> None:
         """This strategy beside another of the databank, same study.
@@ -229,19 +239,7 @@ class StudyPage(QFrame):
         Args:
             strategy, identity: The other strategy.
         """
-        self._compare(*compare.strategies(self.where, self.key, strategy, identity))
-
-    def _compare(self, results: list[dict | None], titles: tuple[str, str]) -> None:
-        """Draw two results compared, or say which side has none."""
-        missing = [t for r, t in zip(results, titles) if r is None]
-        if missing:
-            self.note.setText(f'<span style="color:{colour("fail")}">No se puede comparar: '
-                              f"{', '.join(missing)} no tiene resultado de este estudio "
-                              "aquí.</span>")
-            return
-        self.view.compare(results[0], results[1], titles)
-        self.note.setText(f"Comparando {titles[0]} (izquierda) con {titles[1]} (derecha).")
-        self.back.show()
+        compare.paint(self, *compare.strategies(self.where, self.key, strategy, identity))
 
     def after_run(self) -> None:
         """A run of this page ended: re-read the dots and the newest result."""

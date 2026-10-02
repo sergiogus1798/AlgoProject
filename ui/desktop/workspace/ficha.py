@@ -15,14 +15,9 @@ from ui.desktop.workspace import fichaarchive
 from ui.desktop.workspace.fichacurves import CostCurves
 from ui.desktop.workspace.fichajobs import Compute
 from ui.desktop.workspace.fichameta import MetaWindow
+from ui.desktop.workspace.fichaorigin import ORIGIN_FAMILY, default_study
 from ui.desktop.workspace.fichastats import Stats
 from ui.desktop.workspace.texts import FAMILIES as SHORT
-
-# Which family tab opens first, by the databank panel the page was opened from.
-ORIGIN_FAMILY = {"Puerta IS/OOS": "Cribado", "Cross Market": "Transferencia",
-                 "Cross Timeframe": "Transferencia", "MC Retest": "Rotura", "SPP": "Optimización",
-                 "WFC": "Optimización", "CSCV": "Optimización", "Market Surfaces": "Optimización",
-                 "WFM": "Cierre", "Cierre": "Cierre"}
 
 
 class Ficha(QFrame):
@@ -100,13 +95,16 @@ class Ficha(QFrame):
         lay.addLayout(head)
         lay.addWidget(self.split, 1)
 
-    def fill(self, project: str, name: str, databank: str) -> None:
+    def fill(self, project: str, name: str, databank: str, sub: str = "") -> None:
         """Load one strategy from the daemon, off the GUI thread.
 
         Args:
             project: Its project.
             name: Its name in the databank.
             databank: The panel it was opened from, which chooses the family tab.
+            sub: The panel's open sub-panel, which can choose the study tab too (§4.3/§9.4:
+                a Cross Market strategy opens on Cross Market, not Cross Timeframe; a Mapa
+                condicional one opens on the conditional map, not Exposición).
         """
         now = SELECTION.now
         self.opened_from = databank
@@ -116,16 +114,18 @@ class Ficha(QFrame):
         self.title.setText(name)
         self.origin.setText(f"   abierta desde {databank}   ·   {project}"
                             + (f"   ·   {self.where['databank']}" if self.where["databank"] else ""))
-        self.lower(True, ORIGIN_FAMILY.get(databank, "Ficha"))
+        self.lower(True, ORIGIN_FAMILY.get(databank, "Ficha"), default_study(databank, sub))
         self.say("leyendo la estrategia…")
         threading.Thread(target=self.ask, args=(dict(self.where),), daemon=True).start()
 
     def ask(self, where: dict) -> None:
         """Off the GUI thread: the three reads of the page, then `arrived`."""
         q = {k: where[k] for k in ("project", "databank", "identity")}
+        # The name pairs a databank with no cosecha (MCR_All, an ingest) to the project's own.
+        named = q | {"strategy": where["strategy"]}
         self.arrived.emit({"key": (where["project"], where["strategy"]),
-                           "curve": fetch("strategy/costcurve", **q),
-                           "stats": fetch("strategy/stats", **q),
+                           "curve": fetch("strategy/costcurve", **named),
+                           "stats": fetch("strategy/stats", **named),
                            "meta": fetch("strategy/meta", **q)})
 
     def paint(self, got: dict) -> None:
@@ -138,15 +138,16 @@ class Ficha(QFrame):
         self.curves.fill(got["curve"])
         self.stats.fill(got["stats"])
         self.metawin.fill(got["meta"], self.where["strategy"])
-        self.say("")
+        self.say(got["curve"].get("note") or "")      # where a borrowed cosecha came from
 
-    def lower(self, live: bool, family: str) -> None:
-        """Below the panel: the study page, opened on the origin's family.
+    def lower(self, live: bool, family: str, study: str | None = None) -> None:
+        """Below the panel: the study page, opened on the origin's study (or its family alone).
 
         Args:
             live: False in a subclass that shows no study tabs (PORTFOLIOS' archived page
                 overrides this method); the live ficha always passes True.
-            family: The family tab to open.
+            family: The family tab to open when `study` names none, or is not on this page.
+            study: A catalogue key to open directly (`default_study`), None for `family` alone.
         """
         if live and self.page is None:
             self.page = StrategyPage()
@@ -156,7 +157,10 @@ class Ficha(QFrame):
         if self.page is not None:
             self.page.setVisible(live)
             if live:
-                self.page.open_family(family)
+                if study and study in self.page.catalogue:
+                    self.page.open_study(study)
+                else:
+                    self.page.open_family(family)
         self.describe()
 
     def describe(self, *_: object) -> None:

@@ -4,7 +4,7 @@ The generic page every study is read through: family tabs in `studies/CLAUDE.md`
 tabs each with the dot of its stored verdict, the result drawn by `blocks.ResultView`, the
 configuration drawer, the run bar, the history and the two comparisons. It follows `SELECTION`
 and talks to the daemon only (`/api/catalogue`, `/api/result`, `/api/history`, `/api/config`,
-`/api/config/hash`, `/api/matrix`, `/api/projects`, `/api/study/run`, `/api/study/only`,
+`/api/config/hash`, `/api/matrix`, `/api/presence`, `/api/projects`, `/api/study/run`, `/api/study/only`,
 `/api/jobs`, `/api/jobs/{id}/cancel`). The strategy page opens on a fixed first tab «Ficha»
 (`/api/tearsheet`), which is not a study: no run bar, no drawer, no history. Its «Salidas»,
 «Contra el subyacente» and «Operaciones» sub-tabs were removed by the owner on 2026-09-28; the
@@ -32,13 +32,13 @@ views.StrategyPage ─▶ page.StudyPage ─▶ blocks.ResultView
 | `ficha.py` | `Ficha`: the harvest's sheet of the selected strategy — «IS/OOS» (P&L acumulado, Drawdown, P&L por año) —, filled on first opening; above it «Excluir top X% de trades» (X 5 by default) and «Drawdown en % / $», which ask `/api/tearsheet` again with `top` and `dd`; `sides` is also PORTFOLIOS' | imported | SELECTION → `/api/tearsheet` → page |
 | `page.py` | `StudyPage`: tabs, dots, the result on the whole width, drawer + history in a side panel folded behind `sidepanel`'s buttons, `open_study(key)` | imported | SELECTION → page |
 | `sidepanel.py` | `SideToggles`: «⚙ Configuración», «Historial» and «Lote» (while its tab shows), each opening the side panel on its tab and folding it on a second press; the panel starts folded (owner, 2026-09-30) | imported | press → panel |
-| `offer.py` | `Offer`: `/api/study/offer` off the GUI thread; a study with no stored result here that the runner refuses gets «· sin datos» in its tab text (and its family, when every study of it does), its sentence instead of the run bar, and «→ abrir en …» (`jump`) when its own databank holds the same name | imported | place → marks, jump |
+| `offer.py` | `Offer`: `/api/study/offer` off the GUI thread; a study with no result in ANY databank of the project (`/api/presence`) that the runner refuses here gets «· sin datos» in its tab text (and its family, when every study of it does), its sentence instead of the run bar, and «→ abrir en …» (`jump`) when its own databank holds the same name; with no jump either, its tab is hidden | imported | place → marks, jump |
 | `wfclote.py` | `show(page)`: adds, shows or hides the «Lote» tab beside the drawer — only on the WFC study of a mother with a variant batch | imported | `page.where`, `page.key` → tab |
 | `drawer.py` | Every knob by section, in the glossary's words (`glossary.knob`; the raw key `--set` takes in its tooltip), its sentence visible and on hover, typed editors, reset, the next run's hash against the shown result's | imported | `/api/config` → `--set` list |
 | `runbar.py` | ▶ esta estrategia · ▶▶ toda la población · ↻ solo …; one job at a time, percent/state every 2 s while it runs, cancel, errors | imported | press → job → `finished` |
 | `history.py` | The runs newest first (day, state, hash, caducado), two chosen → compare, a picker of the databank's other strategies | imported | `/api/history` → signals |
 | `compare.py` | The two results a comparison needs: two days, or two strategies of one databank | imported | where → results, titles |
-| `dots.py` | The dot icon per state and where states come from (matrix for a strategy, history for the population) | imported | cells → QIcon |
+| `dots.py` | The dot icon per state and where states come from (`/api/presence` for a strategy — anywhere in the project, the tooltip naming the databank and «XML distinto» —, history for the population) | imported | cells → QIcon |
 | `notes.py` | Every sentence the page says around a result: role, breadcrumb, why absent, days passed over | imported | entry → text |
 | `net.py` | `fetch`/`send`: a daemon that does not answer becomes `{"error"}`, never a crash | imported | path → JSON |
 
@@ -66,9 +66,11 @@ Grabs in `scratch/ui-plan/shots/E-*.png`. The Ficha: `python3 tests/test_ui_tear
   the tab notes move above the columns and compare's verdict header row is hidden (the Ficha
   judges nothing). A missing route (HTTP 404) reads «pendiente», any other refusal in red.
 
-- **A result is paired by identity inside one databank, never borrowed.** The strategy page asks
-  `/api/result` with the identity SELECTION holds; the same name in another databank is another
-  strategy (measured 2026-09-26). No result here says so; it never falls back elsewhere.
+- **A strategy is one entity across the project** (owner, 2026-09-30). The page asks
+  `/api/result` and `/api/presence` with the name and identity SELECTION holds; the daemon
+  prefers the same XML anywhere, else the same name, and `notes.elsewhere` says «de <databank>»,
+  the lote, and «versión de otro databank (XML distinto)» when the identity differs. A tab is
+  hidden or marked «sin datos» only when no databank of the project has a result for it.
 - **`meta.skipped` is shown**, in amber, day by day with its reason — «otra estrategia con el
   mismo nombre» is how a name collision becomes visible instead of silently drawn.
 - **cloud, wfc, cscv write into the variant batch**, not `reports/`: the catalogue still marks

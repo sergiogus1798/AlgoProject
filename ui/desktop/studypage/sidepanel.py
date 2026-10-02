@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSizePolicy, QTabWidget,
 BUTTONS = {
     "configuración": ("⚙ Configuración", "Abre los parámetros del estudio: lo que cambies aquí "
                       "solo vale para la próxima ejecución, como --set; el config.yaml no se toca."),
-    "historial y comparar": ("Historial", "Abre las corridas anteriores del estudio, para "
+    "historial y comparar": ("Historial", "Abre los runs anteriores del estudio, para "
                              "ver una vieja o comparar dos, o esta estrategia contra otra."),
     "Lote": ("Lote", "Abre el lote de variantes de esta madre en coordenadas paralelas."),
 }

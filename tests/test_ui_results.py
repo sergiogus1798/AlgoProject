@@ -64,9 +64,11 @@ def check_result(c: TestClient, failures: list[str]) -> None:
         return
     if meta["stale"] != (meta["config_hash"] != meta["current_hash"]):
         failures.append("stale no es config_hash != current_hash")
+    # One entity across the project (owner, 2026-09-30 §2): a different identity with the same
+    # name is shown, marked, never refused.
     wrong = c.get(f"{base}&strategy={name}&identity={'0' * 64}").json()
-    if wrong["result"] is not None or not wrong["meta"]["skipped"]:
-        failures.append("una identidad distinta con el mismo nombre no se rechaza")
+    if wrong["result"] is None or not wrong["meta"].get("other_identity"):
+        failures.append("una identidad distinta con el mismo nombre no sale marcada")
     right = c.get(f"{base}&strategy={name}&identity={res['identity']}").json()
     if right["result"] is None:
         failures.append("la identidad correcta no encuentra su resultado")
@@ -83,6 +85,29 @@ def check_result(c: TestClient, failures: list[str]) -> None:
         failures.append(f"la matriz no da el estado del JSON por identidad: {cell}")
     if not all(s["state"] in STATES for row in grid["cells"].values() for s in row.values()):
         failures.append("una celda con un estado fuera de los cinco")
+
+
+def check_lote(c: TestClient, failures: list[str]) -> None:
+    """`structure`/`atrCalculator` (block G's audit, 2026-09-30): found by name in the mother's
+    `structural`/`atrCalculator` lote, whichever databank is asked, not only the ones under
+    `reports/` — real fixture mothers of two projects."""
+    mothers = {"Test_USDJPY_donchianUpperCrossUp_H1": ["Strategy 16.9.76", "Strategy 10.9.72",
+                                                        "Strategy 21.9.59"],
+              "Test_USDJPY_donchianUpperCrossUp_M30": ["Strategy 9.27.83", "Strategy 10.11.79",
+                                                        "Strategy 9.25.72"]}
+    for project, names in mothers.items():
+        for name in names:
+            got = c.get("/api/result", params={"project": project, "databank": "Results",
+                                                "study": "structure", "strategy": name}).json()
+            if got["result"] is None:
+                failures.append(f"{project}/{name}: sin lectura estructural: {got['meta']}")
+    # atrCalculator's H1 mothers sit in two passes (pass1, pass2): both are fine (owner,
+    # 2026-10-01), the newest answers and says which.
+    got = c.get("/api/result", params={"project": "Test_USDJPY_donchianUpperCrossUp_H1",
+                                       "databank": "Results", "study": "atrCalculator",
+                                       "strategy": "Strategy 16.9.76"}).json()
+    if got["result"] is None or "pass2" not in str(got["meta"]):
+        failures.append(f"atrCalculator con dos pasadas no lee la más nueva: {got['meta']}")
 
 
 def check_old_reports(c: TestClient, failures: list[str]) -> None:
@@ -128,10 +153,11 @@ def main() -> None:
     """Run every check and exit non-zero on the first failure list."""
     c = client()
     failures: list[str] = []
-    for check in (check_catalogue, check_result, check_old_reports, check_config):
+    for check in (check_catalogue, check_result, check_lote, check_old_reports, check_config):
         check(c, failures)
     print("\n".join(failures) or "ok: catálogo, resultado por identidad, historial, matriz, "
-                                 "informes antiguos y cajón de configuración")
+                                 "lotes estructurales, informes antiguos y cajón de "
+                                 "configuración")
     sys.exit(1 if failures else 0)
 
 

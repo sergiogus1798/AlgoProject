@@ -40,14 +40,17 @@ class History(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 8, 10, 8)
         lay.addWidget(text("HISTORIAL", T["text"], 12, True))
-        lay.addWidget(text("Clic: ver esa corrida. Ctrl+clic en dos y «comparar»: una al lado "
-                           "de la otra.", T["muted"], 12))
+        lay.addWidget(text("Clic: ver ese run. Ctrl+clic en dos y «Comparar»: uno al lado "
+                           "del otro.", T["muted"], 12))
         self.runs = QListWidget()
         self.runs.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.runs.itemClicked.connect(lambda it: self.picked.emit(it.data(Qt.UserRole)))
         self.runs.itemSelectionChanged.connect(self._selection)
         lay.addWidget(self.runs, 1)
-        self.both = QPushButton("comparar las dos corridas elegidas")
+        self.both = QPushButton("Comparar los dos runs elegidos")
+        # Its own sentence: the registry (`ui/text/buttonhelp_texts`) still keys the old label.
+        self.both.setProperty("help", "Pone lado a lado los dos runs elegidos en la lista "
+                                      "(Ctrl+clic).")
         self.both.clicked.connect(self._compare)
         lay.addWidget(self.both)
         self.skipped = text("", T["faint"], 12)
@@ -59,7 +62,7 @@ class History(QFrame):
         self.rival.setToolTip("Solo las de este databank: el mismo nombre en otro databank es "
                               "otra estrategia (otra identidad).")
         lay.addWidget(self.rival)
-        self.go = QPushButton("comparar con esta estrategia")
+        self.go = QPushButton("Comparar con esta estrategia")
         self.go.clicked.connect(lambda: self.versus.emit(self.rival.currentText(),
                                                          self.rival.currentData()))
         lay.addWidget(self.go)
@@ -85,7 +88,7 @@ class History(QFrame):
         if "error" in got:
             self.skipped.setText(got["error"])
         elif not got.get("runs"):
-            self.skipped.setText("Ninguna corrida de este estudio en este databank.")
+            self.skipped.setText("Ningún run de este estudio en este databank.")
         else:
             self.skipped.setText("")
         passed = [f"{s['day']}: {s['reason']}" for s in got.get("skipped") or []]
@@ -112,11 +115,11 @@ class History(QFrame):
         self._selection()
 
     def _selection(self) -> None:
-        """«comparar» works with exactly two runs chosen."""
+        """«Comparar» works with exactly two runs chosen."""
         n = len(self.runs.selectedItems())
         self.both.setEnabled(n == 2)
-        self.both.setToolTip("Elige exactamente dos corridas (Ctrl+clic)." if n != 2 else
-                             "Las dos corridas, misma pestaña abierta en ambas.")
+        self.both.setToolTip("Elige exactamente dos runs (Ctrl+clic)." if n != 2 else
+                             "Los dos runs, misma pestaña abierta en ambos.")
 
     def _compare(self) -> None:
         """Emit the two chosen days, older on the left."""

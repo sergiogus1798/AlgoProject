@@ -22,7 +22,7 @@ api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names the package; holds no code | — | — |
-| `api.py` | `ROUTER`: `GET /api/strategy/meta`, `/costcurve`, `/stats`, `/archived`, `POST /api/strategy/archive`; a refusal is `{"error"}`, never a 500 | imported | request → JSON |
+| `api.py` | `ROUTER`: `GET /api/strategy/meta`, `/costcurve`, `/stats` (both with an optional `strategy` name, and a `note` saying whose cosecha was borrowed — `tearsheet.borrow`), `/archived`, `POST /api/strategy/archive`; a refusal is `{"error"}`, never a 500 | imported | request → JSON |
 | `locate.py` | The strategy's `.sqx` — the install holding the databank, else an export's copy under `raw/<P>/*/*/strategies/`, else the newest archived version — by identity; the project's `project.cfx` | imported | identity → path, sentence |
 | `meta.py` | E2's fields of the located file (a copy outside the databank folder is read from a temporary folder named as the databank) or of the archived version | imported | path → dict |
 | `costcurve.py` | SQX's daily curve and the same corrected by the `spread` study's repriced trades, IS then OOS1 on one axis, with `days` for the year ticks; nets and DDs. `repriced` (the report's rows of one strategy) is also what `tearsheet.pnl` corrects each sample with | imported | cosecha rows + trades → curves |

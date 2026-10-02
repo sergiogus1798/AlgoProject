@@ -1,6 +1,12 @@
 """The two results a comparison puts side by side: two runs of one strategy, or two strategies."""
 
+from typing import TYPE_CHECKING
+
+from ui.desktop.blocks.states import colour
 from ui.desktop.studypage.net import fetch
+
+if TYPE_CHECKING:
+    from ui.desktop.studypage.page import StudyPage
 
 
 def query(where: dict, study: str) -> dict:
@@ -29,7 +35,7 @@ def runs(where: dict, study: str, left: str, right: str) -> tuple[list, tuple[st
         ([left result, right result], titles); a side is None when it holds no result.
     """
     got = [fetch("result", **query(where, study), day=d).get("result") for d in (left, right)]
-    return got, (f"corrida {left}", f"corrida {right}")
+    return got, (f"Run {left}", f"Run {right}")
 
 
 def strategies(where: dict, study: str, strategy: str,
@@ -48,3 +54,20 @@ def strategies(where: dict, study: str, strategy: str,
     other = fetch("result", **query(where, study) | {"strategy": strategy,
                                                      "identity": identity}).get("result")
     return [mine, other], (where["strategy"], strategy)
+
+
+def paint(page: "StudyPage", results: list[dict | None], titles: tuple[str, str]) -> None:
+    """Draw two results side by side on the page, or say which side has none.
+
+    Args:
+        page: The study page (`view`, `note`, `back`).
+        results, titles: As `runs`/`strategies` returned them.
+    """
+    missing = [t for r, t in zip(results, titles) if r is None]
+    if missing:
+        page.note.setText(f'<span style="color:{colour("fail")}">No se puede comparar: '
+                          f"{', '.join(missing)} no tiene resultado de este estudio aquí.</span>")
+        return
+    page.view.compare(results[0], results[1], titles)
+    page.note.setText(f"Comparando {titles[0]} (izquierda) con {titles[1]} (derecha).")
+    page.back.show()

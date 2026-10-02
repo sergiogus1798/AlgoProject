@@ -62,12 +62,27 @@ def absent(entry: dict, strategy_page: bool) -> str:
     """
     if entry["source"] == "batch":
         return ("Este estudio escribe en el lote de variantes de la madre (estudios/), no en "
-                "reports/: se lee desde el lote de variantes — aún no conectado.")
+                "reports/: solo tiene resultado por madre, nunca de toda la población.")
     if strategy_page and not entry["one"] and entry["many"]:
         return ("Este estudio juzga la población y no dejó ficha de esta estrategia aquí: "
                 "su resultado está en el panel de databanks de Proyecto.")
-    return ("Sin resultado de este estudio en este databank. No se toma el de otro databank: "
-            "allí una estrategia con el mismo nombre tiene otra identidad.")
+    return "Sin resultado de este estudio en ningún databank de este proyecto."
+
+
+def elsewhere(meta: dict) -> str:
+    """The small line beside the shown result when it came from another databank or a lote.
+
+    Args:
+        meta: `/api/result`'s `meta` (`elsewhere`, `note` — which lote —, `other_identity`).
+
+    Returns:
+        Rich text, "" when the result is this databank's own and the same XML.
+    """
+    mark = (' · <span style="color:{0}">versión de otro databank (XML distinto)</span>'
+            .format(colour("watch")) if meta.get("other_identity") else "")
+    where = " · ".join(w for w in (f"de {meta['elsewhere']}" if meta.get("elsewhere") else "",
+                                   meta.get("note") or "") if w)
+    return (f' <span style="color:{T["muted"]}">· {where}</span>' if where else "") + mark
 
 
 def skipped(rows: list[dict]) -> str:
@@ -82,7 +97,7 @@ def skipped(rows: list[dict]) -> str:
     if not rows:
         return ""
     body = "<br>".join(f"{r['day']}: {r['reason']}" for r in rows)
-    return (f'<span style="color:{colour("watch")}"><b>Corridas más nuevas que no se '
+    return (f'<span style="color:{colour("watch")}"><b>Runs más nuevos que no se '
             f"muestran:</b><br>{body}</span>")
 
 
@@ -98,6 +113,8 @@ def shown(day: str, chosen: bool, strategy_page: bool) -> str:
         One Spanish sentence.
     """
     if chosen:
-        return f"Corrida del {day}, elegida en el historial."
-    whose = "de esta estrategia (por identidad)" if strategy_page else "de la población"
-    return f"Corrida del {day}: la más nueva {whose} en este databank."
+        return f"Run del {day}, elegido en el historial."
+    if not strategy_page:
+        return f"Run del {day}: el más nuevo de la población en este databank."
+    return (f"Run del {day}: el más nuevo de esta estrategia en el proyecto, el de su mismo XML "
+            "si lo hay, si no el de su nombre.")

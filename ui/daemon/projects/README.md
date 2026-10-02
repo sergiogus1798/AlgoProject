@@ -19,7 +19,7 @@ places that each know part of a project:
 |---|---|---|---|
 | `__init__.py` | The package's one-line purpose | imported | — |
 | `sources.py` | The merge: one card per project on an install or with reports (SQX's five stock projects left out), running first; and `locate`, the databank and name of one identity | imported | disk → cards |
-| `api.py` | `GET /api/projects/all` and `GET /api/projects/find?project&identity[&databank]` | imported | request → JSON |
+| `api.py` | `GET /api/projects/all`, `GET /api/projects/one?name` (symbol, timeframe, template from `registry.csv` alone — a zone's title before the gallery arrives) and `GET /api/projects/find?project&identity[&databank]` | imported | request → JSON |
 
 ## Traps
 

@@ -142,16 +142,15 @@ class Ficha(QFrame):
             return sub.say("Elige una estrategia en el panel de databanks de Proyecto.")
         _, route = SUBS[index]
         got = fetch(route, project=w["project"], databank=w["databank"], identity=w["identity"],
-                    top=self.share.value() if self.top.isChecked() else 0,
+                    strategy=w.get("strategy") or "", top=self.share.value() if self.top.isChecked() else 0,
                     dd=self.dd.checkedButton().text())
         if "error" in got:
             late = "404" in got["error"]
             return sub.say(PENDING.format(what=f"/api/{route}") if late else got["error"],
                            T["muted"] if late or got.get("absent") else colour("fail"))
-        day = got.get("harvest_day")
-        if day and index == 0:
-            self.note.setText(f"{got['strategy']} · {w['project']} › {w['databank']} · "
-                              f"cosecha del {day}: la ficha lee la más nueva de este databank")
+        if got.get("harvest_day") and index == 0:      # §3.1: no «cosecha del…» line
+            self.note.setText(f"{got['strategy']} · {w['project']} › {w['databank']}"
+                              + (f" · {got['note']}" if got.get("note") else ""))
         sub.body.show()
         if [t["name"] for t in got["tabs"]] != ["IS", "OOS"]:
             sub.line.setText("")

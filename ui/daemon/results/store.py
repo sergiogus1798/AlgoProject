@@ -120,6 +120,12 @@ def _cached(path: Path, read: Callable[[Path], object]) -> object:
     return _CACHE[key]
 
 
+def cached(path: Path, read: Callable[[Path], object]) -> object:
+    """`_cached` for a reader outside this module (a batch study's table entry): one parse per
+    version of the file, whoever asks."""
+    return _cached(path, read)
+
+
 def _slim(path: Path) -> dict | None:
     """The handful of fields a matrix cell or a history row needs from one result file.
 

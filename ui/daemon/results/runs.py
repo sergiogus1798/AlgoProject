@@ -1,198 +1,129 @@
-"""One stored result with its staleness, and every run of a study on a databank or a strategy."""
+"""A strategy's result as one entity across the whole project (owner, 2026-09-30): the one stored
+result its page shows, chosen among `hits.sources` — its identity first, else its name."""
 
-from pathlib import Path
+from collections.abc import Iterable
 
-from ui.daemon.databank.batches import STUDIES as BATCH_STUDIES
-from ui.daemon.databank.batches import batches
-from ui.daemon.databank.cells import norm
-from ui.daemon.results import knobs, store
+from ui.daemon.results import hits, stale, store
 from ui.daemon.results.slice import slice_for, verdict_row, whole
 
 
-def _path(project: str, databank: str, study: str, day: str, strategy: str) -> Path:
-    """Where one result lives.
+def pick(found: Iterable[dict], identity: str) -> tuple[dict | None, list[dict]]:
+    """The candidate to show: the first that carries this identity, else the first by name.
 
     Args:
-        project: SQX project name.
-        databank: Databank name.
-        study: Study key.
-        day: Report day.
-        strategy: Strategy name, "" for the population result.
+        found: `hits.sources`, in preference order.
+        identity: The identity asked for, "" to take the first.
 
     Returns:
-        `<study>.json` or `estrategias/<name>.json`; names carry dots, so the suffix is
-        appended, never swapped (as `core.study.output.member` writes it).
+        (the hit or None, `{day, reason}` of every folder passed over before it). Stops at
+        the first identity match, so a strategy found at home reads nothing further.
     """
-    folder = store.bank(project, databank) / day / study
-    return folder / "estrategias" / f"{strategy}.json" if strategy else folder / f"{study}.json"
+    first, skipped, before = None, [], []
+    for h in found:
+        if "skip" in h:
+            where = f" ({h['elsewhere']})" if h.get("elsewhere") else ""
+            (skipped if first is None else before).append(
+                {"day": f"{h['day']}{where}", "reason": h["skip"]})
+            continue
+        if identity and h["identity"] == identity:
+            return h, skipped + before
+        if first is None:
+            first = h
+        if not identity:
+            break
+    return first, skipped
 
 
-def _identity(result: dict, folder: Path) -> str | None:
-    """The identity a stored result belongs to.
+def other(hit: dict, identity: str) -> bool:
+    """Whether a hit found by name is a different XML than the one asked for (shown with a
+    discreet marker, never hidden: owner, 2026-09-30). Unknown identity is not «other»."""
+    return bool(identity and hit["identity"] and hit["identity"] != identity)
+
+
+def judged(hit: dict, study: str, project: str) -> tuple[bool, str | None]:
+    """`stale.judge` of one hit."""
+    return stale.judge(study, hit["config_hash"], project, hit["manifest"], hit["population"])
+
+
+def full(hit: dict, identity: str) -> dict:
+    """The contract result a hit points at, as the strategy's page shows it.
 
     Args:
-        result: A contract result, or its slim row.
-        folder: Its study folder.
+        hit: A hit of `hits.sources`.
+        identity: The identity asked for; a population result that says nothing per
+            strategy carries it, being nobody's in particular.
 
     Returns:
-        The result's own identity, else the one its run's verdict.csv gave the same name —
-        some studies (wfm) sign the JSON without it. None when neither carries one.
+        The result dict, sliced to this strategy when it is the population's run.
     """
-    row = (store.verdicts(folder) or {}).get(result["strategy"] or "", {})
-    return result["identity"] or row.get("identity")
+    got, _ = store.load(hit["path"])
+    kind, alias = hit["kind"], hit["alias"]
+    if kind in ("file", "population"):
+        return got
+    if kind == "whole":
+        return {**whole(got, alias), "identity": identity or None}
+    row = (store.verdicts(hit["path"].parent) or {}).get(alias)
+    mine = slice_for(got, alias) if kind == "slice" else None
+    return {**(mine or verdict_row(got, row, alias)), "identity": hit["identity"]}
 
 
-def _mismatch(result: dict, folder: Path, identity: str) -> str | None:
-    """Why a result found by name is not the strategy asked for, if it is not.
-
-    Args:
-        result: A contract result, or its slim row.
-        folder: Its study folder.
-        identity: The identity asked for, "" when the caller gave none.
+def meta(hit: dict | None, skipped: list[dict], study: str, project: str,
+         identity: str) -> dict:
+    """The `meta` beside a result: where it came from and whether it is current.
 
     Returns:
-        The reason in Spanish, or None when it matches or nothing was asked.
+        day, path, config_hash, current_hash, stale, computed_at, skipped, elsewhere (the
+        databank it came from, None for this one), other_identity, note (which lote, when
+        it came from one).
     """
-    if not identity:
-        return None
-    got = _identity(result, folder)
-    if got is None:
-        return "el resultado no guarda identidad: no se puede emparejar"
-    return None if got == identity else "otra estrategia con el mismo nombre (identidad distinta)"
-
-
-def _batch_path(project: str, study: str, strategy: str) -> tuple[Path | None, str | None]:
-    """Where a batch study's result for one mother lives, `cloud`/`wfc`/`cscv` (OPEN #51).
-
-    Args:
-        project: SQX project name.
-        study: Study key.
-        strategy: The mother's name; these studies never judge a population.
-
-    Returns:
-        (`<batch>/estudios/<study>.json`, None), or (None, the reason in Spanish) when the
-        study is not one of these, no strategy was asked for, no batch carries this mother,
-        or two batches do (`ui.daemon.databank.batches.batches`, the same ambiguity the
-        databank panel refuses to pick for the owner).
-    """
-    if study not in BATCH_STUDIES or not strategy:
-        return None, None
-    found = batches(project).get(norm(strategy), [])
-    if not found:
-        return None, "esta estrategia no es madre de ningún lote de variantes"
-    if len(found) > 1:
-        return None, "dos lotes de variantes para esta madre: sin uno solo que leer"
-    return found[0] / "estudios" / f"{study}.json", None
+    if hit is None:
+        return {"day": None, "path": None, "config_hash": None, "current_hash": None,
+                "stale": False, "computed_at": None, "skipped": skipped, "elsewhere": None,
+                "other_identity": False, "note": ""}
+    old, current = judged(hit, study, project)
+    return {"day": hit["day"], "path": str(hit["path"]), "config_hash": hit["config_hash"],
+            "current_hash": current, "stale": old, "computed_at": hit["computed_at"],
+            "skipped": skipped, "elsewhere": hit["elsewhere"],
+            "other_identity": other(hit, identity), "note": hit["note"]}
 
 
 def result(project: str, databank: str, study: str, strategy: str, identity: str,
            day: str) -> dict:
-    """The newest contract result of a study, for the population or for one strategy.
+    """The newest contract result of a study for the population or one strategy.
 
     Args:
         project: SQX project name.
-        databank: Databank name.
+        databank: The databank the page opened from.
         study: Study key.
-        strategy: Strategy name, "" for the population result.
+        strategy: Strategy name, "" for the population result (this databank only).
         identity: The strategy's identity, "" to trust the name.
-        day: A report day, "" for the newest that holds a contract result.
+        day: A report day, "" for the newest.
 
     Returns:
-        `result` (the contract dict or None) and `meta`: day, path, config_hash,
-        current_hash, stale, computed_at, and `skipped` — the newer days passed over, each
-        with its reason.
+        `result` (the contract dict or None) and `meta` as `meta`.
     """
-    current = knobs.signed(study, [], population=not strategy)
-    skipped = []
-    batch_path, batch_why = _batch_path(project, study, strategy)
-    if batch_why:
-        return {"result": None, "meta": {"day": None, "path": None, "config_hash": None,
-                                         "current_hash": current, "stale": False,
-                                         "computed_at": None,
-                                         "skipped": [{"day": "", "reason": batch_why}]}}
-    if batch_path:
-        got, why = store.load(batch_path)
-        if why:
-            return {"result": None, "meta": {"day": None, "path": str(batch_path),
-                                             "config_hash": None, "current_hash": current,
-                                             "stale": False, "computed_at": None,
-                                             "skipped": [{"day": "", "reason": why}]}}
-        return {"result": got, "meta": {
-            "day": (got.get("computed_at") or "")[:10], "path": str(batch_path),
-            "config_hash": got["config_hash"], "current_hash": current,
-            "stale": current is not None and got["config_hash"] != current,
-            "computed_at": got.get("computed_at"), "skipped": []}}
-    for d in [day] if day else store.days(project, databank, study):
-        path = _path(project, databank, study, d, strategy)
-        got, why = store.load(path)
-        if strategy and not path.is_file():      # a population study: its rows for this one
-            path = _path(project, databank, study, d, "")
-            population, why = store.load(path)
-            row = (store.verdicts(path.parent) or {}).get(strategy)
-            mine = population and (slice_for(population, strategy)
-                                   or (row and verdict_row(population, row, strategy)))
-            # Its rows are checked against the verdict.csv identity by `_mismatch`; the whole
-            # population is nobody's, so it carries the identity asked for.
-            alone = not (path.parent / "estrategias").is_dir()   # it writes no ficha at all
-            got = ({**mine, "identity": None} if mine else
-                   {**whole(population, strategy), "identity": identity or None}
-                   if population and alone else None)
-            why = why or (None if got else "la corrida de la población no nombra esta estrategia")
-        why = why or _mismatch(got, path.parent.parent if strategy and path.parent.name ==
-                               "estrategias" else path.parent, identity)
-        if why:
-            skipped.append({"day": d, "reason": why})
-            continue
-        return {"result": got, "meta": {
-            "day": d, "path": str(path), "config_hash": got["config_hash"],
-            "current_hash": current,
-            "stale": current is not None and got["config_hash"] != current,
-            "computed_at": got.get("computed_at"), "skipped": skipped}}
-    return {"result": None, "meta": {"day": None, "path": None, "config_hash": None,
-                                     "current_hash": current, "stale": False,
-                                     "computed_at": None, "skipped": skipped}}
+    hit, skipped = pick(hits.sources(project, databank, study, strategy, day), identity)
+    return {"result": full(hit, identity) if hit else None,
+            "meta": meta(hit, skipped, study, project, identity)}
 
 
 def history(project: str, databank: str, study: str, strategy: str, identity: str) -> dict:
-    """Every day a study left a contract result for the population or one strategy.
+    """Every run of the place the page's result comes from, newest first.
 
     Args:
-        project: SQX project name.
-        databank: Databank name.
-        study: Study key.
-        strategy: Strategy name, "" for the population.
-        identity: The strategy's identity, "" to trust the name.
+        project, databank, study, strategy, identity: As `result`.
 
     Returns:
-        `runs` newest first — day, config_hash, computed_at, state, label, stale — and
-        `skipped`, the days with a report that is not a contract result or not this
-        strategy, each with its reason.
+        `runs` — day, config_hash, computed_at, state, label, stale, elsewhere — of the
+        databank or lote the chosen result lives in, and `skipped`, its days passed over.
     """
-    current = knobs.signed(study, [], population=not strategy)
-    runs, skipped = [], []
-    batch_path, batch_why = _batch_path(project, study, strategy)
-    if batch_why:
-        return {"runs": [], "skipped": [{"day": "", "reason": batch_why}]}
-    if batch_path:
-        row = store.slim(batch_path)
-        why = store.load(batch_path)[1] if row is None else None
-        if why:
-            return {"runs": [], "skipped": [{"day": "", "reason": why}]}
-        return {"runs": [{"day": (row["computed_at"] or "")[:10],
-                          "config_hash": row["config_hash"], "computed_at": row["computed_at"],
-                          "state": row["state"], "label": row["label"],
-                          "stale": current is not None and row["config_hash"] != current}],
-               "skipped": []}
-    for d in store.days(project, databank, study):
-        path = _path(project, databank, study, d, strategy)
-        row = store.slim(path) if path.is_file() else None
-        why = (store.load(path)[1] if row is None
-               else _mismatch(row, path.parent.parent if strategy else path.parent, identity))
-        if why:
-            skipped.append({"day": d, "reason": why})
-            continue
-        runs.append({"day": d, "config_hash": row["config_hash"],
-                     "computed_at": row["computed_at"], "state": row["state"],
-                     "label": row["label"],
-                     "stale": current is not None and row["config_hash"] != current})
-    return {"runs": runs, "skipped": skipped}
+    found = list(hits.sources(project, databank, study, strategy))
+    hit, _ = pick(found, identity)
+    if hit is None:
+        return {"runs": [], "skipped": [{"day": h["day"], "reason": h["skip"]} for h in found]}
+    mine = [h for h in found if h.get("origin") == hit.get("origin")]
+    runs = [{"day": h["day"], "config_hash": h["config_hash"], "computed_at": h["computed_at"],
+             "state": h["state"], "label": h["label"], "stale": judged(h, study, project)[0],
+             "elsewhere": h["elsewhere"]} for h in mine if "skip" not in h]
+    return {"runs": runs, "skipped": [{"day": h["day"], "reason": h["skip"]}
+                                      for h in mine if "skip" in h]}

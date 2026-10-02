@@ -21,6 +21,21 @@ def every_project() -> dict[str, object]:
         return {"projects": [], "error": f"no se pudieron leer los proyectos: {e}"}
 
 
+@ROUTER.get("/api/projects/one")
+def one_project(name: str) -> dict[str, object]:
+    """One project's symbol, timeframe and template from `registry.csv` alone — what a zone
+    titles itself with before the gallery's ~12 s list has arrived (📓 2026-09-30: «· ? · ?»).
+
+    Returns:
+        `symbol`, `timeframe`, `template` (library name); {} for a project the registry lacks.
+    """
+    row = sources.registered().get(name)
+    if not row:
+        return {}
+    return {"symbol": row["symbol"], "timeframe": row["timeframe"],
+            "template": sources.template(row["template"])}
+
+
 @ROUTER.get("/api/projects/find")
 def find_strategy(project: str, identity: str, databank: str = "") -> dict[str, object]:
     """The databank and name of one strategy of a project, by its identity.

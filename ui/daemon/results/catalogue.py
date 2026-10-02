@@ -106,9 +106,26 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
 }
 
 
+# Why «Run solo esta estrategia» does not exist for a study whose question is about the whole
+# population (owner, 2026-10-01: say why instead of hiding the button). Its result for one
+# strategy is the population run, sliced.
+ONE_WHY = {
+    "gate": "La puerta criba la población entera: su embudo y sus correcciones dependen de "
+            "cuántas estrategias entran. El veredicto de esta sale del run de todo el databank.",
+    "filters": "Barre cortes de una métrica IS sobre toda la población y mide qué dejan pasar "
+               "fuera: con una sola estrategia no hay nada que cortar.",
+    "monkeyExcess": "Cuenta cuántas estrategias baten a su mono frente a cuántas daría el azar: "
+                    "es una pregunta sobre el conjunto, no sobre una.",
+    "snoopingScreen": "SPA y StepM descuentan la búsqueda entera: con una estrategia no hay "
+                      "búsqueda que pagar.",
+    "blindJoint": "El StepM del paso 20 cuenta todas las madres que llegaron: una sola no "
+                  "paga la búsqueda.",
+}
+
 # Studies that write into a mother's variant batch (`estudios/`), not under reports/<P>/<D>/:
-# /api/result cannot reach them yet, and the page says so instead of «sin resultado».
-BATCH = {"cloud", "wfc", "cscv"}
+# `ui.daemon.results.bank._batch_path` reads them from there instead of the databank's own
+# report folder, whichever databank the page opened from (`ui.daemon.databank.batches`).
+BATCH = {"cloud", "wfc", "cscv", "marketSurfaces"}
 
 
 def folder(key: str) -> Path:
@@ -164,6 +181,7 @@ def entry(key: str, cfg: dict | None) -> dict:
         one, many = table.STUDIES[key]["one"], table.STUDIES[key]["many"]
     return {"key": key, "family": family, "title": title, "step": step, "role": role(key, cfg),
             "one": one, "many": many, "runnable": why is None, "why_not": why,
+            "one_why": None if one else ONE_WHY.get(key),
             "spends": SPENDS.get(key, ""), "source": "batch" if key in BATCH else "reports"}
 
 

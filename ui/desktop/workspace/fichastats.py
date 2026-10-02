@@ -12,8 +12,8 @@ from ui.desktop.workspace.fichajobs import Compute, uncomputed
 SEGMENTS = ("IS", "OOS1", "IS+OOS1", "OOS2")
 LOCKED = SEGMENTS.index("OOS2")
 # The four figures the owner reads first, one step larger (2026-09-28); their names keep the grey.
-BIG = ("Operaciones", "Beneficio neto (SQX, suma de operaciones)",
-       "Beneficio neto con spread y slippage reales (suma de operaciones)", "Profit Factor")
+BIG = ("Operaciones", "Net Profit (SQX, suma de operaciones)",
+       "Net Profit con spread y slippage reales (suma de operaciones)", "Profit Factor")
 PICKED = (f"QPushButton:checked {{ border-color: {C['accent']}; background: {T['select']}; }}"
           f"QPushButton:disabled {{ color: {T['faint']}; border: 1px dashed {T['faint']}; }}")
 

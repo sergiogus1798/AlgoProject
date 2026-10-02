@@ -21,7 +21,7 @@ def _spread(project: str, databank: str, identity: str, source: str, version: st
 
 
 def _answer(project: str, databank: str, identity: str, build: Callable[[dict, list], dict],
-            sample: str, source: str, version: str) -> dict:
+            sample: str, source: str, version: str, strategy: str = "") -> dict:
     """Read the cosecha (or the archive) and build, or the sentence of why not — never a 500.
 
     Args:
@@ -30,6 +30,8 @@ def _answer(project: str, databank: str, identity: str, build: Callable[[dict, l
         sample: "" for IS and OOS side by side; IS, OOS1 (or OOS) alone; OOS2 behind its door.
         source: "live" reads the newest cosecha; "archive" the archived version, nothing else.
         version: The archived version, "" for the newest.
+        strategy: The strategy's name, to pair by in another databank's cosecha when this
+            one has none and its files do not name the identity (`harvest.read`).
 
     Returns:
         A contract result; `{"blocked": sentence, "why"?}` for an OOS2 that may not or cannot
@@ -49,11 +51,15 @@ def _answer(project: str, databank: str, identity: str, build: Callable[[dict, l
         data = (oos2.read(project, identity) if source == "live" else
                 "el archivo no guarda OOS2: se archiva lo que la cosecha IS/OOS tenía")
         return {"blocked": data} if isinstance(data, str) else build(data, [])
-    data = (harvest.read(project, databank, identity) if source == "live"
+    data = (harvest.read(project, databank, identity, strategy) if source == "live"
             else archived.tearsheet(identity, version))
     if isinstance(data, str):
         return {"error": data, "absent": isinstance(data, harvest.Absent)}
-    got = build(data, _spread(project, databank, identity, source, version))
+    got = build(data, _spread(project, data.get("databank", databank), data["identity"], source,
+                              version))
+    if data.get("note"):
+        got["warnings"] = [{"code": "cosecha prestada", "state": "info", "text": data["note"]},
+                           *(got.get("warnings") or [])]
     if sample:
         got["tabs"] = [t for t in got["tabs"] if t["name"] == TAB[sample]]
     return got
@@ -61,12 +67,14 @@ def _answer(project: str, databank: str, identity: str, build: Callable[[dict, l
 
 @ROUTER.get("/api/tearsheet")
 def tearsheet(project: str = "", databank: str = "", identity: str = "", sample: str = "",
-              source: str = "live", version: str = "", top: float = 0.0, dd: str = "%") -> dict:
+              source: str = "live", version: str = "", top: float = 0.0, dd: str = "%",
+              strategy: str = "") -> dict:
     """The Ficha: P&L (SQX and real, with or without the best trades), drawdown, years.
 
     Args:
         top: Percent of the best trades the P&L also draws without, 0-50; 0 for none.
         dd: The drawdown's unit, "%" or "$".
+        strategy: The strategy's name, as `_answer` takes it.
 
     Returns:
         A contract result with tabs «IS» and «OOS» (or the one `sample` names) and
@@ -75,16 +83,17 @@ def tearsheet(project: str = "", databank: str = "", identity: str = "", sample:
     if dd not in sheet.UNITS or not 0 <= top <= 50:
         return {"error": f"top {top:g} fuera de 0-50 o drawdown «{dd}» que no es % ni $."}
     return _answer(project, databank, identity,
-                   lambda data, spread: sheet.build(data, spread, top, dd), sample, source, version)
+                   lambda data, spread: sheet.build(data, spread, top, dd), sample, source, version,
+                   strategy)
 
 
 @ROUTER.get("/api/tearsheet/exits")
 def tearsheet_exits(project: str = "", databank: str = "", identity: str = "", sample: str = "",
-                    source: str = "live", version: str = "") -> dict:
+                    source: str = "live", version: str = "", strategy: str = "") -> dict:
     """P&L and expectancy per exit type, and one cumulative line per type — each sample apart.
 
     Returns:
         As `/api/tearsheet`.
     """
     return _answer(project, databank, identity, lambda data, _: exits.build(data), sample,
-                   source, version)
+                   source, version, strategy)
