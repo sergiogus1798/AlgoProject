@@ -19,6 +19,7 @@ from ui.desktop.ops.running import Running
 from ui.desktop.palettes import Palettes
 from ui.desktop.mt5bridge.zone import VerifyZone
 from ui.desktop.portfolios.zone import PortfoliosZone
+from ui.desktop.research.zone import ResearchZone
 from ui.desktop.selection import SELECTION
 from ui.desktop.sqxconfig.zone import SqxConfigZone
 from ui.desktop.theme import C
@@ -71,7 +72,7 @@ class Shell(QWidget):
             "Proyecto": self.workspace, "Databanks": self.workspace.databanks,
             "Estrategia": self.estrategia,
             "En marcha": self.running, "Registro de búsquedas": self.ledger,
-            "Configuración SQX": SqxConfigZone(), "Datos": DataZone(),
+            "Configuración SQX": SqxConfigZone(), "Datos": DataZone(), "Investigar": ResearchZone(),
             "Portfolios": PortfoliosZone(), "Verificar": VerifyZone()}
         self.wire()
 
@@ -106,7 +107,8 @@ class Shell(QWidget):
         self.reloads = {"Cobertura": self.coverage.reload, "Plantillas": self.catalogue.reload,
                         "Paletas": self.palettes.reload, "Activos": self.assets.reload,
                         "Proyectos": self.gallery.load, "En marcha": self.running.reload,
-                        "Verificar": self.zones["Verificar"].reload}
+                        "Verificar": self.zones["Verificar"].reload,
+                        "Investigar": self.zones["Investigar"].reload}
         bar, self.nav = sidebar(self.open_zone, self.refresh, list(self.reloads))
         lay.insertWidget(0, bar)
         lay.addLayout(right, 1)

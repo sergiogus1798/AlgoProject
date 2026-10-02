@@ -14,8 +14,9 @@ from ui.desktop.theme import C
 # in Proyecto and Estrategia (ui/desktop/README.md). Databanks was split out of Proyecto the
 # same day: the two did not fit one screen (owner, 2026-09-28).
 GROUPS = [
-    ("BIBLIOTECA", ["Cobertura", "Plantillas", "Nueva plantilla", "Paletas", "Activos",
-                    "Configuración SQX", "Datos"]),
+    # Owner, 2026-10-01: «Investigar», the research director's panel, beside the templates.
+    ("BIBLIOTECA", ["Cobertura", "Plantillas", "Investigar", "Nueva plantilla", "Paletas",
+                    "Activos", "Configuración SQX", "Datos"]),
     ("PROYECTO", ["Proyectos", "Proyecto", "Databanks", "Estrategia"]),
     ("OPERACIÓN", ["En marcha", "Registro de búsquedas"]),
     ("PORTFOLIOS", ["Portfolios"]),
@@ -27,6 +28,8 @@ ZONES = [name for _, names in GROUPS for name in names]
 TIPS = {
     "Cobertura": "Lo que se ha probado: plantillas o arquetipos por símbolo y timeframe.",
     "Plantillas": "La librería de plantillas y borradores, con la ficha de cada una.",
+    "Investigar": "Dónde investigar: el mapa de los mercados, la memoria de lo probado, el "
+                  "director de investigación y su propuesta de tres ideas.",
     "Nueva plantilla": "La entrevista que redacta el borrador de una plantilla nueva.",
     "Paletas": "Las paletas de bloques que alimentan los huecos libres de las plantillas.",
     "Activos": "Costes, tramos, rangos del MC Retest y mercados cruzados de cada activo.",

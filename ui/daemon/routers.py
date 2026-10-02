@@ -18,6 +18,7 @@ from ui.daemon.loader.api import ROUTER as LOADER
 from ui.daemon.mt5bridge.api import ROUTER as MT5BRIDGE
 from ui.daemon.ops.api import ROUTER as OPS
 from ui.daemon.projects.api import ROUTER as PROJECTS
+from ui.daemon.research.api import ROUTER as RESEARCH
 from ui.daemon.results.api import ROUTER as RESULTS
 from ui.daemon.runner.api import ROUTER as RUNNER
 from ui.daemon.sqxconfig.api import ROUTER as SQXCONFIG
@@ -50,4 +51,5 @@ ROUTERS = (
     ARCHIVE,
     CREATE,
     MT5BRIDGE,
+    RESEARCH,
 )
