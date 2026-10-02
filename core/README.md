@@ -7,7 +7,8 @@ live deeper add the root to `sys.path` in their first lines.
 |---|---|---|
 | `__init__.py` | Puts stdout/stderr in UTF-8 on import, so Windows' cp1252 console does not crash on this project's own accents and symbols | — |
 | `paths.py` | The only module that knows where anything lives. Reads `config/machine.yaml`; `WORKERS` maps a worker role (conductor, custodian) to its install and port | names, roles → `Path` |
-| `datapaths.py` | The data root's secondary trees: the template library, `pipeline/`, `strategyPermutations/`, `logs/`, `backups/`, `projectsBackup/`, `cache/` and `spread/`, and the master's tick files. Split out of `paths.py`, which keeps the installs and the primary exports | names → `Path` |
+| `datapaths.py` | The data root's secondary trees: the template library, `pipeline/`, `strategyPermutations/`, `logs/`, `backups/`, `projectsBackup/`, `cache/` and `spread/`, the master's tick files, and `tmp_dir()` — the project's own temp folder `<data root>/tmp` (created on demand; `tempfile` callers pass it as `dir=`, so scratch never fills the 3.9 GB `/tmp` partition). Split out of `paths.py`, which keeps the installs and the primary exports | names → `Path` |
+| `researchpaths.py` | The research director's trees under the data root: the market profile, the results memory, the autopilot's runs and the `ideaExpert`'s files | names → `Path` |
 | `sqxfile.py` | Read a `.sqx` without SQX: identity hash, symbol, inner XML, parameters, the corrected `Param Count` mirrored from `<Variables>` (OPEN #17) | `.sqx` → values |
 | `optprofile.py` | Read a `.sqx`'s Sys. Param Permutation profile without SQX: run counts, per-metric medians against the original value, the stored histograms, and every permutation's parameters and statistics when SQX kept them | `.sqx` → dicts |
 | `sqxstats.py` | Read a `.sqx` result without SQX: decode any `SQStats` blob into its 152 statistics, the stored metrics per sample, and the daily equity curve | `.sqx` → metrics, series |
@@ -28,6 +29,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `exportdrv.py` | The three exports SQX offers: trades, databank metrics, bars | request → files |
 | `manifest.py` | Write and read the `manifest.json` every export must carry | facts → JSON |
 | `assetdata.py` | What `assets/` declares: costs and windows resolved against the shared policy | symbol → dict |
+| `buildfilters.py` | The Build's acceptance filters for one asset and timeframe, resolved from `assets/_study.yaml` (defaults ← class ← symbol; trade bounds = trades per year × the build segment's years); refuses on any missing value | asset dict + timeframe + mode → the conditions to write |
 | `assetranges.py` | The MC Retest spread and slippage ranges of one asset in SQX's points: a bound the asset declares as written, a null one as `_policy.yaml`'s default multiple of the cost the backtest runs at, with the source said | asset dict → {spread, slippage: {min, max, source}} |
 | `assetoverride.py` | Temporary, one-run overrides of the build doctrine `assetdata.doctrine()` reads — a run-wide precision or MC Retest count for one project, by an env var, never a `_build.yaml` edit | env var → doctrine tree |
 | `assetcheck.py` | What is missing or wrong about an asset: undecided values, and windows the data cannot fill | dict → problems |

@@ -1,0 +1,13 @@
+# Fixture of tests/test_build_acceptance.py — frozen thresholds, not the live assets/_study.yaml.
+sample: IS
+defaults:
+  trades_per_year:
+    H1: {min: 30, max: 75}
+  profit_factor_min: 1.20
+  net_profit_min: 0
+classes: {}
+symbols:
+  DAX40: {profit_factor_min: 1.25, trades_per_year: {H4: {min: 20, max: 50}}}
+calibration:
+  trades_min: 100
+  net_profit_min: 0

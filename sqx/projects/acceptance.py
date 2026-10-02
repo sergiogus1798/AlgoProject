@@ -11,11 +11,12 @@ ESCAPED = {">": "&gt;", "<": "&lt;", ">=": "&gt;=", "<=": "&lt;=", "=": "=", "<>
 # looks at `sampleType` -- 20 is every walk-forward run concatenated, which is the only
 # sample a walk-forward cell can be judged on. The other three read statsStability,
 # statsScore and statsSpecial, which are computed per cell and carry no samples at all.
-READS = {"oos": (30, 20, "0", "Decimal2"),
+READS = {"is": (30, 10, "0", "Decimal2"),     # the task's own backtest, in-sample only
+         "oos": (30, 20, "0", "Decimal2"),
          "stability": (31, 127, "0", "Decimal2Pct"),
          "score": (32, 127, "0", "Decimal2Pct"),
          "special": (33, 127, "33", "Decimal2Pct")}
-FORMATS = {"NetProfit": "Decimal2PL", "WFMinTradesInRun": "Integer"}
+FORMATS = {"NetProfit": "Decimal2PL", "WFMinTradesInRun": "Integer", "NumberOfTrades": "Integer"}
 
 
 def condition(spec: dict, crosscheck: str) -> str:
@@ -25,7 +26,8 @@ def condition(spec: dict, crosscheck: str) -> str:
         spec: One entry of a catalogue's `conditions` list -- `read` (a key of READS),
             `metric` (the column class, e.g. ProfitFactor or WFPctOfProfitableRuns), `op`
             and `value`.
-        crosscheck: Element name the condition is evaluated by, e.g. "WalkForwardMatrix".
+        crosscheck: Element name the condition is evaluated by, e.g. "WalkForwardMatrix";
+            "main" for the task's own backtest (a Build's `<Rankings>`, read "is").
             It is not decoration: SQX looks the cross-check up by this name and asks it for
             the value, so a condition naming a cross-check the install does not have
             evaluates to nothing.

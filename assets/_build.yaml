@@ -63,10 +63,10 @@ engine: MetaTrader5 (hedged)
 # ─── Databank ──────────────────────────────────────────────────────────────────────────
 databank:
   max_strategies: 10000
-  stop_condition: databank-full
-  # Dueño, 2026-10-01: el build para con lo que ocurra antes, N estrategias o M minutos. SQX
-  # solo admite un tipo de parada: para él por N (`databank-full`) y el lanzador para el
-  # proyecto al cumplir M (`ui.daemon.advance.run.watch`). Por prefijo del proyecto (regla 6).
+  stop_condition: time-limit
+  # Dueño, 2026-10-01: el build para a los M minutos (`time-limit`, la parada de SQX, la única
+  # que respeta una sesión viva: `/project/stop` no para un build) y el databank guarda las N
+  # mejores; lleno, una nueva entra solo si mejora a la peor. Por prefijo del proyecto (regla 6).
   caps:
     Trade_: {strategies: 10000, minutes: 180}   # workflows de trabajo
     Test_: {strategies: 300, minutes: 10}       # testing y desarrollo
@@ -219,21 +219,21 @@ mc_retest:
   tasks:
     - title: MCR 1 Bar
       segment: build
-      simulations: 1000
+      simulations: 200
       precision: 1             # timeframe elegido — rápido y grosero
       full_sample: false
       methods:
         RandomizeStartingBar: {MaxChange: 500}
     - title: MCR 2 Spread
       segment: build
-      simulations: 1000
+      simulations: 200
       precision: 2             # un minuto — lento y fino
       full_sample: false
       methods:
         RandomizeSpread: {}
     - title: MCR 3 Slippage
       segment: build
-      simulations: 1000
+      simulations: 200
       precision: 2
       full_sample: false
       methods:
@@ -243,21 +243,21 @@ mc_retest:
     # dueño, 2026-09-23. `sqx/projects/orders.py` lo mira antes de escribirla.
     - title: MCR 4 MinDist
       segment: build
-      simulations: 1000
+      simulations: 100
       precision: 2
       full_sample: false
       methods:
         RandomizeMinDistance: {}
     - title: MCR 5 Params
       segment: build
-      simulations: 1000
+      simulations: 500
       precision: 1
       full_sample: false
       methods:
         RandomizeStrategyParameters: {Probability: 100, MaxChange: 15, Symmetric: true}
     - title: MCR 6 Exits
       segment: build
-      simulations: 1000
+      simulations: 500
       precision: 2
       full_sample: false
       methods:
@@ -266,7 +266,7 @@ mc_retest:
     # reconstruye el histórico entero en cada simulación. Candidata a bajarle `simulations`.
     - title: MCR 7 OHLC
       segment: build
-      simulations: 1000
+      simulations: 500
       precision: 2
       full_sample: false
       methods:
@@ -275,7 +275,7 @@ mc_retest:
     # y 15 años en vez de 10.
     - title: MCR 8 Stress
       segment: build..oos1
-      simulations: 1000
+      simulations: 500
       precision: 2
       full_sample: true
       methods:
@@ -295,7 +295,7 @@ mc_retest:
 #
 # La ventana es de PRINCIPIO DE `build` A FINAL DE `oos2` (dueño, 2026-09-24). Es el único
 # estudio que recorre el histórico entero, porque la pregunta del CSCV —¿mi forma de elegir
-# parámetros sobreajusta?— necesita toda la historia para poder partirla de 924 maneras.
+# parámetros sobreajusta?— necesita toda la historia para poder partirla de 12.870 maneras.
 #
 # Toca `oos2`. Cada lectura queda en el ledger; sólo a un agente autónomo se le limita a los
 # consumidores de `reserved_for` (dueño, 2026-09-28).

@@ -5,13 +5,14 @@ import re
 from datetime import datetime, timezone
 
 from core.datapaths import project_registry
+from sqx.projects.rankings import describe
 
 # Owner, 2026-09-26: `Test_` is a functional test that will be thrown away, `Trade_` a project
 # meant to bear fruit. The prefix is how a later session tells clutter from work at a glance.
 KINDS = {"Test_": "test", "Trade_": "trade"}
 NAME_OK = re.compile(r"^(Test|Trade)_[A-Za-z0-9_]+$")
 COLUMNS = ("name", "kind", "install", "created", "purpose", "symbol", "timeframe",
-           "template", "workflow", "retired", "archive")
+           "template", "workflow", "retired", "archive", "acceptance")
 
 
 def check_name(name: str) -> str | None:
@@ -70,7 +71,8 @@ def record(done: dict, purpose: str, symbol: str, template: str) -> None:
                  "install": done["install"],
                  "created": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
                  "purpose": purpose, "symbol": symbol, "timeframe": done["timeframe"],
-                 "template": template, "workflow": "yes" if done.get("added") else "no"})
+                 "template": template, "workflow": "yes" if done.get("added") else "no",
+                 "acceptance": describe(done["acceptance"])})
     _write(keep)
 
 

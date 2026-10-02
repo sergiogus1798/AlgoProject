@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Say out loud what building a project applied, which is the half a human reads."""
 
+from sqx.projects.rankings import describe
+
 
 def say(done: dict, role: str) -> None:
     """Print one build's result, warnings last.
@@ -33,6 +35,9 @@ def say(done: dict, role: str) -> None:
     if done["feed_replaced"]:
         print(f"  feed      {done['feed_replaced']} → {done['feed']} en {len(done['setups'])} "
               f"tarea(s), traído de {done['session_borrowed_from']}")
+    if done["acceptance"]["tasks"]:
+        print(f"  aceptación  {describe(done['acceptance'])}  (assets/_study.yaml, "
+              f"build {done['acceptance']['build_years']} años)")
     print(f"  to disk   {', '.join(done['synced_to_disk']) or 'already syncing'}")
     if done["silenced"]:
         print(f"  ⚠️ {done['silenced']} condiciones de aceptación apagadas — esas tareas "

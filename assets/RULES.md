@@ -27,6 +27,11 @@ assets/
   _build.yaml        the build doctrine: rule complexity, order types, exits, sizing, hours,
                      precision and cross-checks. What SHAPE a strategy may have, as opposed to
                      what it costs to trade one.
+  _study.yaml        the Build's acceptance filters (step 6): which generated strategies are kept —
+                     trades per year by timeframe, profit factor, net profit, all read in-sample
+                     (sampleType 10). Defaults, then per class, then per symbol; a missing value
+                     refuses the build. Read by `core/buildfilters.py`, written into the task by
+                     `sqx/projects/rankings.py`. PROVISIONAL (agent proposal, 2026-10-02).
   symbols/
     <SYMBOL>.yaml    what is genuinely this instrument's own, and nothing else.
 ```

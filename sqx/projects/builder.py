@@ -11,11 +11,11 @@ from pathlib import Path
 
 from core.assetcheck import pending, provisional
 from core.assetdata import doctrine, load
-from core.datapaths import projects_backup
+from core.datapaths import projects_backup, tmp_dir
 from core.paths import worker_dir
 from core.symbols import current
 from sqx.inspect.keep_tasks import keep
-from sqx.projects import crosschecks, registry, source, summary
+from sqx.projects import crosschecks, rankings, registry, source, summary
 from sqx.projects.configure import configure, ignored_templates, running_install
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session, caps
@@ -59,7 +59,8 @@ def install_template(template: Path, target: Path) -> None:
 def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
           minutes: int, donor: Path, segment: str | None = None,
           tasks: tuple = ("Build",), only: set | None = None,
-          session_from: Path | None = None, silence: tuple = (), workflow: bool = False) -> dict:
+          session_from: Path | None = None, silence: tuple = (), workflow: bool = False,
+          acceptance: str = "study") -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -83,6 +84,7 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
             not. Read only. Omit when the donor already carries it.
         workflow: Every workflow step's task in this one project, only Build and OOS on, every
             retest's acceptance silenced (owner, 2026-09-25/26). Overrides `tasks` and `only`.
+        acceptance: Which filters of `assets/_study.yaml` the Build accepts by (`rankings`).
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
@@ -90,9 +92,8 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
         task XML until 2026-09-23.
     """
     install = worker_dir(role)
-    # Every library folder holds a file literally called template.sqx, so installing it
-    # under that name makes two different templates collide silently. The folder is the
-    # template's name.
+    # Every library folder holds a file literally called template.sqx: installed under that
+    # name two templates collide silently, so the folder is the template's name.
     stem = template.parent.name if template.stem == "template" else template.stem
     installed_template = install / TEMPLATES_REL / "authored" / f"{stem}.sqx"
     installed_template.parent.mkdir(parents=True, exist_ok=True)
@@ -145,13 +146,14 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
     # surviving the swap), and none of that may leave a half-built .cfx sitting in
     # user/projects — that booby-trapped a USDJPY build on 2026-09-23 (OPEN.md issue 34).
     # Nothing under `install` is touched until every gate here has passed.
-    with tempfile.TemporaryDirectory(prefix="sqx-builder-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="sqx-builder-", dir=tmp_dir()) as tmp:
         staged = Path(tmp) / "project.cfx"
         with zipfile.ZipFile(staged, "w", zipfile.ZIP_DEFLATED) as z:
             for member, blob in members.items():
                 z.writestr(member, blob)
 
         costs = configure(staged, symbol, segment, timeframe)
+        accepted = rankings.apply(staged, symbol, timeframe, acceptance)
         if workflow:
             wf.finish(staged, symbol)
         with zipfile.ZipFile(staged) as z:
@@ -167,6 +169,7 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
                  "databanks": kept["databanks"], "synced_to_disk": synced,
                  "chain": chained,
                  "max_strategies": strategies, "minutes": minutes, "silenced": quiet,
+                 "acceptance": accepted,
                  "segments": {n: seg for n, (seg, _) in costs.items()},
                  "template_ignored": ignored_templates(final),
                  "provisional_costs": provisional(load(symbol)),
@@ -203,6 +206,7 @@ def main() -> None:
     ap.add_argument("--only", help="comma-separated task XML files to narrow --tasks to, "
                     "e.g. Build-Task3.xml,Retest-Task1.xml")
     ap.add_argument("--workflow", action="store_true", help="every workflow task, Build+OOS on")
+    ap.add_argument("--acceptance", choices=rankings.MODES, default="study", help="_study.yaml")
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
     a = ap.parse_args()
 
@@ -228,13 +232,12 @@ def main() -> None:
     if stop:
         raise SystemExit("\n".join(stop))
     borrow = a.session_from or source.pick(a.donor, asset["session"], asset["sqx_symbol"])
-    # `build` stages the project outside any install and only moves it into
-    # user/projects/ once the doctrine, session, Setup-count and stray-feed gates have
-    # all passed (`refuse`, inside build()) — a raise here leaves nothing installed.
+    # `build` stages the project outside any install and moves it in only once every gate
+    # has passed (`refuse`, inside build()) — a raise here leaves nothing installed.
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe,
                  *caps(a.name, a.max_strategies, a.minutes), a.donor, a.segment, tuple(a.tasks.split(',')),
                  set(a.only.split(',')) if a.only else None, borrow,
-                 tuple(x for x in a.silence.split(',') if x), a.workflow)
+                 tuple(x for x in a.silence.split(',') if x), a.workflow, a.acceptance)
 
     registry.record(done, a.purpose, a.symbol, str(a.template))
     if a.json:

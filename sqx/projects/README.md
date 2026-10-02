@@ -16,9 +16,10 @@
 | `summary.py` | Say out loud what one build applied — the doctrine, the segments, the feed swap — with the provisional costs and the silenced acceptance last, where they are read | imported | `builder.build`'s result → the lines a human reads |
 | `ranges.py` | The MC Retest spread and slippage ranges a task randomises within, from `assets/` | imported | an asset + a task XML → the task with its declared ranges |
 | `doctrine.py` | Apply `assets/_build.yaml` to every task, and make them all carry the session they name | imported | a task + an asset + a timeframe → the task, generating and trading as declared |
+| `rankings.py` | Step 6's acceptance: replace the Build task's `<Rankings>` conditions — all of the donor's — with the filters `core.buildfilters` resolves from `assets/_study.yaml` (trades per year × the asset's build years as a floor and a ceiling, profit factor, net profit, all on sampleType 10 = IS), or its `calibration` set (trades ≥ 100 & net > 0, build MC manipulation off) for an unselected population. `builder` calls `apply()` on every new project and refuses when a value is missing; `describe()` is the line that lands in the summary, the JSON (`acceptance`) and `registry.csv` | `python3 -m sqx.projects.rankings <cfx> <SYM> --timeframe <TF> [--acceptance study\|calibration] [--study-file <yaml>]` (project stopped) | a project.cfx + an asset + a timeframe → its Build task accepting by `_study.yaml` |
 | `buildrules.py` | What a generator may emit: how many conditions, which order types, which exits, no SL/PT | imported | a Build task → the same task with the generator bounded |
 | `tasksettings.py` | What every task of a project must share: timeframe, engine, session, sizing, hours, cross-checks | imported | a task → the same task, aligned with its siblings |
-| `buildmode_model.xml` | The owner's genetic settings, copied verbatim from his `XAUUSD_Breakout_H1` | data | — |
+| `buildmode_model.xml` | The owner's genetic settings, verbatim from the Build he configured by hand on 2026-10-02 (population 250 per island, 25 generations, 20 islands, no initial-population filter) | data | — |
 | `crossmarket.py` | The additional-markets cross-check: which markets, over what window (`crossmarket.segment`), at whose cost — all from `assets/`, with every acceptance condition silenced so it stays evidence | `python3 -m sqx.projects.crossmarket <SYM> [--cfx <cfx> --task <file> --timeframe <TF>]` | `_markets.yaml` + the markets' own files → the task's `<Setups>` |
 | `databanks.py` | qué databank lee y qué escribe cada tarea, y encadena el input de cada una con el output de la anterior | importado | proyecto → una fila por tarea |
 | `crosstf.py` | The **same** asset read on other timeframes, one retest per timeframe (owner, 2026-09-30 — never blocks of `RetestOnAdditionalMarkets`, whose `data=all` export cannot be split on one symbol): `CrossTF` on the source timeframe over `crosstf.segment` at `crosstf.precision`, its cross-check off and its acceptance silenced, then one «CrossTF <TF>» per `crosstf.timeframes` entry (`crosstfsolo`); files `blocks.json` (`blocks` and `databanks`, in order) under `core.datapaths.crosstf_dir(project, --day)` so the study never re-reads this run off a doctrine that may since have changed (OPEN.md #80) | `python3 -m sqx.projects.crosstf <SYM> --cfx <cfx> [--day YYYY-MM-DD]` | a project → its Cross TF tasks, plus `blocks.json` |
@@ -63,6 +64,15 @@ costs, per task, so the master's embedded figures stay inert. `tests/test_builde
 both halves: `definitions()`/`borrow_session()` return only resource-shaped blocks, and a finished
 project's `<Setup>`s carry `assets/`'s declared spread, never the master's (USDJPY: master 0.1,
 `assets/symbols/USDJPY.yaml` 0.65 — the two never coincide by accident).
+
+**What the Build accepts is data too, and it is no longer the donor's.** Until 2026-10-02 every
+project inherited the frozen donor's `NumberOfTrades > 500 & SortinoRatio > 0.6 & Stagnation < 540`
+(sampleType 127), which no file stated. `rankings.apply` now writes `assets/_study.yaml` into
+`<Rankings><Conditions>` of the Build — scoped to `<Rankings>`, because the first `<Conditions>` of a
+Build task is the initial population's under `<BuildMode>` — and the builder refuses a project whose
+asset or timeframe has no value there. `--acceptance calibration` writes the relaxed set instead.
+`tests/test_build_acceptance.py` holds the golden XML and the refusals; the card is
+`knowhow/conditions/build-rankings-acceptance.md`.
 
 **The doctrine is data, not code.** `assets/_build.yaml` holds what shape a strategy may have —
 at most two entry and two exit conditions, a lookback of one bar, market orders only, exits by bars

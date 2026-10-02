@@ -1,0 +1,67 @@
+# Filtros de aceptación del Build (paso 6): QUÉ estrategia entra en el databank mientras se genera.
+#
+# ⚠️ PROPUESTA DE AGENTE, 2026-10-02 — PROVISIONAL hasta que el dueño la apruebe. Las cifras están
+# calibradas en `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`; el A/B de suelos dentro del
+# build está en `AlgoData/scratch/calib_final/ab_build.md`.
+#
+# `_build.yaml` dice qué FORMA tiene la estrategia que se genera; este fichero dice cuáles de las
+# generadas se quedan. Lo escribe `sqx/projects/rankings.py` en las condiciones de «Ranking» de la
+# tarea Build de cada proyecto nuevo (`builder`), sustituyendo ENTERAS las del donante
+# (`NumberOfTrades > 500`, `SortinoRatio > 0.6`, `Stagnation < 540`, que nadie había decidido).
+# Lo resuelve `core/buildfilters.py`: defaults ← classes[clase del activo] ← symbols[activo].
+# Si falta un valor para el activo o el timeframe, el builder SE NIEGA: no hay filtro por omisión.
+
+# ─── Muestra ───────────────────────────────────────────────────────────────────────────
+# Sobre qué muestra se mide cada condición. IS = `sampleType` 10 de SQX: sólo la ventana de
+# construcción (`build`). Un filtro del build NUNCA lee OOS: seleccionar con el OOS lo gasta
+# (knowhow/research/post-selection-bias.md). No hay otro valor admitido.
+sample: IS
+
+# ─── Filtros por defecto ───────────────────────────────────────────────────────────────
+# ⚠️ DENTRO del build el filtro es MÍNIMO, a propósito. Medido el 2026-10-02 (A/B de 12 builds,
+# `AlgoData/scratch/calib_final/ab_build.md`): un suelo de operaciones o de profit factor puesto
+# DENTRO del build cambia lo que cría el genético y pierde estrategias buenas en oos1 — con
+# 30-75 ops/año y PF >= 1.20 las buenas por minuto de build caen de 45 a 1,5 (USDJPY H1 libre) y
+# de 857 a 68 (Donchian); con 40 o 50 ops/año, peor todavía. El mismo corte aplicado DESPUÉS del
+# build cuesta menos. Por eso la selección de verdad vive en el paso 8
+# (`pipeline/autopilot/criteria.yaml`): la banda de operaciones por año del IS y todo lo demás.
+defaults:
+  # Operaciones POR AÑO, por timeframe. El suelo y el techo que se escriben en SQX son totales:
+  # trades_per_year × años del tramo `build` del activo (`_policy.yaml`), suelo redondeado hacia
+  # arriba y techo hacia abajo. XAUUSD H1, 10 años: 100 <= NumberOfTrades <= 1500.
+  # El suelo (10/año) sólo garantiza que haya estadística que leer; el techo es el doble del
+  # techo del paso 8 y casi nunca muerde. Un timeframe que no esté aquí no se puede construir.
+  trades_per_year:
+    H1: {min: 10, max: 150}
+    M30: {min: 10, max: 200}
+    H4: {min: 10, max: 100}
+  # Profit factor mínimo en el IS (ProfitFactor >= valor). 1.0 = sólo no perder.
+  profit_factor_min: 1.0
+  # Beneficio neto en el IS, estricto (NetProfit > valor).
+  net_profit_min: 0
+
+# ─── Excepciones por clase (`class:` del fichero del activo) ───────────────────────────
+classes: {}
+
+# ─── Excepciones por activo ────────────────────────────────────────────────────────────
+# Sólo lo que cambia; lo demás se hereda. `trades_per_year` se mezcla timeframe a timeframe.
+# Índices y crudo: su `build` es más corto (6,25-8,3 años frente a 10), así que el suelo por año sube
+# para que el total no baje de ~100 operaciones. PROVISIONAL: ningún índice se ha podido
+# construir todavía (falta su sesión en SQX).
+symbols:
+  DAX40: {trades_per_year: {H1: {min: 16, max: 150}, M30: {min: 16, max: 200}, H4: {min: 16, max: 100}}}
+  DJ30: {trades_per_year: {H1: {min: 16, max: 150}, M30: {min: 16, max: 200}, H4: {min: 16, max: 100}}}
+  NIKKEI225: {trades_per_year: {H1: {min: 13, max: 150}, M30: {min: 13, max: 200}, H4: {min: 13, max: 100}}}
+  USA500: {trades_per_year: {H1: {min: 13, max: 150}, M30: {min: 13, max: 200}, H4: {min: 13, max: 100}}}
+  USATEC: {trades_per_year: {H1: {min: 13, max: 150}, M30: {min: 13, max: 200}, H4: {min: 13, max: 100}}}
+  UKOIL: {trades_per_year: {H1: {min: 15, max: 150}, M30: {min: 15, max: 200}, H4: {min: 15, max: 100}}}
+  USOIL: {trades_per_year: {H1: {min: 15, max: 150}, M30: {min: 15, max: 200}, H4: {min: 15, max: 100}}}
+
+# ─── Modo calibración ──────────────────────────────────────────────────────────────────
+# `builder --acceptance calibration`: una población SIN seleccionar, para calibrar estos mismos
+# filtros y los criterios del paso 8. Sólo un mínimo absoluto de operaciones y beneficio > 0,
+# y el crosscheck MonteCarloManipulation del build apagado (no filtra nada y gasta CPU).
+# Nunca para un proyecto `Trade_`.
+calibration:
+  trades_min: 100
+  net_profit_min: 0
