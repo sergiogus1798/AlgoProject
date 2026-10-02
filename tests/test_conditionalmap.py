@@ -9,7 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.readings.conditionalMap import cells, inputs, regime, sessions  # noqa: E402
+from studies.readings.conditionalMap import cells, contract, inputs, one, regime, sessions  # noqa: E402,E501
 
 
 def main() -> None:
@@ -97,6 +97,34 @@ def main() -> None:
         failures.append(f"una celda de {len(full)} operaciones (= MIN_CELL) sí debería "
                         "producir estadísticos")
 
+    # The «Muestra» selector and the visible floor (owner, 2026-10-01): OOS1 and Completa
+    # are both offered, Completa holds every trade, and a cell under the floor says
+    # «< N ops» instead of going blank.
+    n_is, n_oos = 3 * cells.MIN_CELL, cells.MIN_CELL + 5
+    found = {"identity": "x", "sample": np.array(["IST"] * n_is + ["OOS1"] * n_oos),
+             "session": np.array(["Asia"] * (n_is + n_oos)),
+             "weekday": np.array(["Monday"] * (n_is + n_oos - 1) + ["Tuesday"])}
+    got = {"found": found, "pnl": rng.normal(0, 1, n_is + n_oos),
+           "vol_idx": np.zeros(n_is + n_oos, dtype=int),
+           "trend_idx": np.zeros(n_is + n_oos, dtype=int),
+           "vol_edges": np.array([1.0, 2.0]), "trend_edges": np.array([0.2, 0.4])}
+    cfg = inputs.config(["bootstrap.resamples=99"])
+    by_sample = one.samples(got, "OOS1")
+    if [len(v["pnl"]) for v in by_sample.values()] != [n_oos, n_is + n_oos]:
+        failures.append(f"OOS1 / Completa deberían tener {n_oos} / {n_is + n_oos} operaciones")
+    tab = contract.calendar_tab(by_sample, cfg)
+    if tab["selectors"][0]["options"] != ["OOS1", one.FULL]:
+        failures.append(f"el selector Muestra ofrece {tab['selectors'][0]['options']}")
+    grids = [b for b in tab["blocks"] if b["kind"] == "grid"]
+    floor = f"< {cells.MIN_CELL} ops"
+    if not grids or any(b["labels"][0][1] != floor or b["labels"][1][0] != floor for b in grids):
+        failures.append(f"una casilla por debajo del suelo debería decir «{floor}»")
+    if any("no se muestran" not in b["note"] for b in grids):
+        failures.append("la rejilla debería decir debajo que las celdas pequeñas no se muestran")
+    days = [b for b in tab["blocks"] if b["kind"] == "bars" and "día" in b["title"]]
+    if any("martes (1)" not in b["note"] for b in days):
+        failures.append("las barras deberían nombrar el día escondido y sus operaciones")
+
     # Sessions, worked by hand: feed clock -> UTC -> each city's own local hours.
     cities = inputs.config([])["sessions"]
     cases = [  # (feed clock, zone, expected, why)
@@ -119,7 +147,8 @@ def main() -> None:
 
     print("\n".join(failures) or
           "ok: los cortes de tercil no ven nada fuera del tramo de build, una celda por "
-          "debajo del suelo nunca llega a la rejilla, y cada sesión sale de la hora local "
+          "debajo del suelo nunca llega a la rejilla y lo dice («< N ops»), el selector Muestra ofrece "
+          "OOS1 y Completa, y cada sesión sale de la hora local "
           "de su ciudad tras pasar el reloj del feed a UTC")
     sys.exit(1 if failures else 0)
 

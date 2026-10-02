@@ -32,7 +32,8 @@ def run(inputs: dict, cfg: dict) -> dict:
     worth = int((table.verdict == "worth_it").sum())
     shown = table[["strategy", "verdict", "n", "exp_share", "exp_hours_per_week",
                    "strat_return_pct", "return_per_exposure_pct", "efficiency",
-                   "return_ratio", "dd_ratio", "reasons"]]
+                   "return_ratio", "dd_ratio", "reasons"]].assign(
+        verdict=table["verdict"].map(one.LABEL))
     population = envelope.envelope(
         one.MODULE, None, None, cfg, started,
         [envelope.tab("summary", "Rendimiento contra exposición", [

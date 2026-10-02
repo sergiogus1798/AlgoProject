@@ -90,8 +90,6 @@ def run(data: dict, cfg: dict) -> dict:
     got = measure.run(data, cfg)
     complete = population[population["complete"]]
     labels = pd.DataFrame({p: complete[p].map(lambda s: s["label"]) for p in PIECES})
-    calls = got["calls"]
-    word = calls.apply(lambda col: col.map(one.CALL))
     incomplete = population[~population["complete"]]
     tabs = [
         envelope.tab("pieces", "Las cuatro piezas, a la vez", [
@@ -100,10 +98,6 @@ def run(data: dict, cfg: dict) -> dict:
                 "Azul oscuro pasa, azul medio a medias (indeciso, ciego), blanco no pasa. El "
                 "estado es el del propio estudio: el paso 20 no re-deriva ningún umbral.")],
             note=data["source"]),
-        envelope.tab("readings", "La llamada bajo cada lectura", [
-            grid("Lecturas × madres", calls.T, word.T,
-                 "piezas+población. Pasa quien sobrevive a las piezas Y el StepM la nombra "
-                 "sobre esa población. Sin color: el StepM no corrió.")]),
         spa_tab(got, cfg)]
     warnings = ([{"code": "policy", "state": "watch", "text": got["refused"]}]
                 if got["refused"] else []) + [

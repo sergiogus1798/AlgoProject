@@ -30,24 +30,55 @@ def measure(priced: pd.DataFrame) -> dict:
 
     Returns:
         Flat numbers plus `by_hour` and `by_dow`, each a Series of mean gross per bucket.
+        Median and min are kept beside every mean (feedback §9.5, 2026-09-30): a few large
+        winners move the mean gross far more than the median, and a min shows the worst
+        single trade the edge is built on rather than only its centre.
     """
-    mean_cost = priced["cost_today"].mean()
+    mean_cost, median_cost = priced["cost_today"].mean(), priced["cost_today"].median()
+    min_cost = priced["cost_today"].min()
     mean_gross, median_gross = priced["gross"].mean(), priced["gross"].median()
+    min_gross = priced["gross"].min()
     edge_mean = mean_gross / mean_cost
     edge_median = median_gross / mean_cost
+    commission = priced["commission_cost"]
     by_hour = priced.assign(hour=priced["Open time"].dt.hour).groupby("hour")["gross"].mean()
     by_dow = priced.assign(dow=priced["Open time"].dt.dayofweek).groupby("dow")["gross"].mean()
-    return {"n": len(priced), "mean_cost": mean_cost, "mean_gross": mean_gross,
-            "median_gross": median_gross, "edge_mean": edge_mean, "edge_median": edge_median,
+    return {"n": len(priced), "mean_cost": mean_cost, "median_cost": median_cost,
+            "min_cost": min_cost, "mean_gross": mean_gross, "median_gross": median_gross,
+            "min_gross": min_gross, "edge_mean": edge_mean, "edge_median": edge_median,
             "breakeven_multiple": edge_mean, "cost_over_edge": mean_cost / mean_gross,
-            "by_hour": by_hour, "by_dow": by_dow}
+            "mean_commission": commission.mean(), "median_commission": commission.median(),
+            "min_commission": commission.min(), "by_hour": by_hour, "by_dow": by_dow}
 
 
 DOW_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
 
+def measure_table(got: dict) -> dict:
+    """Gross and today's modelled cost, mean/median/min side by side (feedback §9.5)."""
+    return blocks.table(
+        "Bruto y coste de hoy: media, mediana y mínimo", pd.DataFrame([
+            ["bruto por operación", got["mean_gross"], got["median_gross"], got["min_gross"]],
+            ["coste de hoy por operación", got["mean_cost"], got["median_cost"],
+             got["min_cost"]]], columns=["", "media", "mediana", "mínimo"]),
+        "El mínimo es la peor operación sola, no un percentil: unos pocos ganadores grandes "
+        "mueven la media del bruto mucho más que la mediana; el coste de hoy varía poco "
+        "porque es el mismo spread/comisión declarado repetido, salvo cambios IS/OOS.")
+
+
+def commission_table(got: dict) -> dict:
+    """The commission alone, mean/median/min, and what the reconciliation residual says
+    about swap (feedback §9.5: "tablas con comisiones, swaps...")."""
+    return blocks.table(
+        "Comisión por operación", pd.DataFrame([[
+            got["mean_commission"], got["median_commission"], got["min_commission"]]],
+            columns=["media", "mediana", "mínimo"]),
+        "Ya está dentro de «coste de hoy» y de la reconciliación de abajo; aquí sola para "
+        "verla sin el spread mezclado.")
+
+
 def tabs(got: dict, recon: dict) -> list[dict]:
-    """The three readings: the headline numbers, the reconciliation, and the two breakdowns."""
+    """The four readings: the headline numbers, the breakdowns, and the reconciliation."""
     headline = blocks.table(
         "Edge por operación y coste de breakeven", pd.DataFrame([[
             got["n"], got["mean_gross"], got["median_gross"], got["mean_cost"],
@@ -62,10 +93,11 @@ def tabs(got: dict, recon: dict) -> list[dict]:
     rec = blocks.table(
         "Reconciliación contra SQX", pd.DataFrame([[
             recon["n"], recon["corr"], recon["resid_mean"], recon["resid_std"]]],
-            columns=["operaciones", "correlación", "residual medio", "residual std"]),
+            columns=["operaciones", "correlación", "residual medio (swap)", "residual std"]),
         "price_pnl reconstruido de Open/Close price contra Profit/Loss + comisión — el "
         "residual es swap y redondeo de centavos, nunca spread: el spread ya está en el "
-        "precio de relleno.")
+        "precio de relleno. El residual medio es la mejor estimación de swap que este "
+        "estudio tiene: la exportación de SQX no trae una columna de swap propia.")
     by_hour = {"kind": "bars", "title": f"Bruto medio por {HOURS_ES}", "unit": "USD",
               "reference": 0.0,
               "items": [{"label": f"{h:02d}h", "value": float(v), "error": None,
@@ -79,8 +111,8 @@ def tabs(got: dict, recon: dict) -> list[dict]:
              "note": ""}
     # Reconciliation FIRST (review FIX, 2026-09-26): a reader must see whether the bruto is
     # trustworthy before the headline table that uses it — never the other way round.
-    return [envelope.tab("reconcile", "Reconciliación", [rec]),
-            envelope.tab("headline", "Edge y breakeven", [headline]),
+    return [envelope.tab("reconcile", "Reconciliación", [rec, commission_table(got)]),
+            envelope.tab("headline", "Edge y breakeven", [headline, measure_table(got)]),
             envelope.tab("sessions", "Por sesión y hora", [by_hour, by_dow])]
 
 

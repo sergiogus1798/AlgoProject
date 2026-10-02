@@ -8,7 +8,7 @@ REASONS = {
                    "por si solo: lee `return_pct` y el drawdown, no la eficiencia",
     "inefficient": "eficiencia {eff:.2f}x, por debajo de {min:.2f}x: por hora expuesta no "
                    "rinde mas que tener el activo",
-    "timing": "capturo el {cap:.0%} del movimiento del mercado estando dentro el "
+    "timing": "capturo el {cap:.1%} del movimiento del mercado estando dentro el "
               "{share:.1%} del tiempo, y alineado solo el {ali:.1%}: se parece mas a estar "
               "presente en los tramos buenos que a una ventaja propia",
 }

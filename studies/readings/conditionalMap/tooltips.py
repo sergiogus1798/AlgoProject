@@ -4,7 +4,8 @@ TIPS = {
     "run.symbol": "El activo, para leer su tramo de construcción.",
     "run.feed": "El feed de barras sobre el que se sitúa cada entrada.",
     "run.timeframe": "La rejilla sobre la que se construyó la estrategia.",
-    "run.sample": "Qué muestra se clasifica celda a celda, por su Sample type.",
+    "run.sample": "La muestra con la que abre el mapa, por su Sample type; el desplegable "
+                  "«Muestra» ofrece siempre también la Completa (build + OOS1).",
     "volatility.atr_period": "Días de rango verdadero diario sobre los que se corta el "
                              "tercil de volatilidad realizada.",
     "trend.window": "Días detrás de cada entrada sobre los que se mide el ratio de "

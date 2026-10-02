@@ -75,7 +75,7 @@ def breaks_tab(brk: dict) -> dict:
                     {"label": "crítico −", "values": [-breaks.CRITICAL] * len(path),
                      "role": "reference"}],
          "note": f"Supremo {c['sup']:.2f} contra el crítico {breaks.CRITICAL}; candidato en la "
-                 f"operación {c['at']} ({c['share']:.0%} de la muestra, {brk['date']:%Y-%m-%d})."},
+                 f"operación {c['at']} ({c['share']:.1%} de la muestra, {brk['date']:%Y-%m-%d})."},
         blocks.table("Los dos lados del candidato", brk["sides"].reset_index()),
         {"kind": "lines", "title": "Sharpe móvil con su banda", "unit": "",
          "x": [str(v) for v in rolling.iloc[:, 0]],

@@ -43,18 +43,22 @@ def grid(pnl: np.ndarray, vol_idx: np.ndarray, trend_idx: np.ndarray, cfg: dict)
 
     Returns:
         `mean`: the 3x3 matrix for the heat map, None where the cell is empty or below the
-        floor. `cells`: the same cells flat, named and with every stat, for the table.
+        floor. `count`: every cell's trades, floored or not, so the map can say why a cell
+        is blank. `cells`: the cleared cells flat, named and with every stat, for the table.
     """
     mean = [[None] * len(regime.BUCKETS) for _ in regime.BUCKETS]
+    count = [[0] * len(regime.BUCKETS) for _ in regime.BUCKETS]
     found = []
     for i, vname in enumerate(regime.BUCKETS):
         for j, tname in enumerate(regime.BUCKETS):
-            stats = cell_stats(pnl[(vol_idx == i) & (trend_idx == j)], cfg)
+            inside = pnl[(vol_idx == i) & (trend_idx == j)]
+            count[i][j] = int(len(inside))
+            stats = cell_stats(inside, cfg)
             if stats is None:
                 continue
             mean[i][j] = round(stats["mean"], 6)
             found.append({"volatilidad": vname, "tendencia": tname, **stats})
-    return {"mean": mean, "cells": found}
+    return {"mean": mean, "count": count, "cells": found}
 
 
 def by_label(pnl: np.ndarray, labels: np.ndarray, order: tuple, cfg: dict) -> list[dict]:
@@ -67,14 +71,18 @@ def by_label(pnl: np.ndarray, labels: np.ndarray, order: tuple, cfg: dict) -> li
         cfg: The `bootstrap` block.
 
     Returns:
-        One dict per populated label, `cell_stats()` plus `label`.
+        `shown`: one dict per label that clears the floor, `cell_stats()` plus `label`.
+        `hidden`: {label: trades} for every label below it, zero included.
     """
-    out = []
+    shown, hidden = [], {}
     for name in order:
-        stats = cell_stats(pnl[labels == name], cfg)
-        if stats is not None:
-            out.append({"label": name, **stats})
-    return out
+        inside = pnl[labels == name]
+        stats = cell_stats(inside, cfg)
+        if stats is None:
+            hidden[name] = int(len(inside))
+        else:
+            shown.append({"label": name, **stats})
+    return {"shown": shown, "hidden": hidden}
 
 
 def session_by_weekday(pnl: np.ndarray, session: np.ndarray, weekday: np.ndarray,
@@ -88,16 +96,19 @@ def session_by_weekday(pnl: np.ndarray, session: np.ndarray, weekday: np.ndarray
         cfg: The `bootstrap` block.
 
     Returns:
-        `mean`: sessions x weekdays matrix, None where below the floor. `cells`: the same,
-        flat, with every stat.
+        `mean`: sessions x weekdays matrix, None where below the floor. `count`: every
+        cell's trades. `cells`: the cleared ones, flat, with every stat.
     """
     mean = [[None] * len(WEEKDAYS) for _ in sessions.ORDER]
+    count = [[0] * len(WEEKDAYS) for _ in sessions.ORDER]
     found = []
     for i, sname in enumerate(sessions.ORDER):
         for j, dname in enumerate(WEEKDAYS):
-            stats = cell_stats(pnl[(session == sname) & (weekday == dname)], cfg)
+            inside = pnl[(session == sname) & (weekday == dname)]
+            count[i][j] = int(len(inside))
+            stats = cell_stats(inside, cfg)
             if stats is None:
                 continue
             mean[i][j] = round(stats["mean"], 6)
             found.append({"sesión": sname, "weekday": dname, **stats})
-    return {"mean": mean, "cells": found}
+    return {"mean": mean, "count": count, "cells": found}

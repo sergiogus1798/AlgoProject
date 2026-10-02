@@ -55,8 +55,11 @@ def run(data: dict, cfg: dict) -> dict:
         `states`, `calls` (readings.verdicts), `named` per reading, and when the SPA ran
         `spa`, `table` (one row per complete mother: lots, both Sharpe ratios, the mean
         daily excess, whether the StepM over every entrant names it), `sharpe_bh`,
-        `block`, `days`, `flat` and `K`. A mother whose curve never moves on oos2 is kept
-        out of the test: it has no variance to studentize by and could not be named.
+        `block`, `days`, `flat` and `K`. Also `panel` (each mother's own daily P&L) and
+        `held` (buy & hold's daily P&L at one lot), both reindexed to the days actually
+        tested, so `one.py` can draw the two equity curves at equal risk. A mother whose
+        curve never moves on oos2 is kept out of the test: it has no variance to
+        studentize by and could not be named.
     """
     got = {"states": states(data["population"]), "refused": data.get("refused")}
     if got["refused"]:
@@ -84,5 +87,5 @@ def run(data: dict, cfg: dict) -> dict:
     return {**got, "named": named, "calls": readings.verdicts(got["states"], named),
             "spa": superior.spa(tested, block, boot["reps"], boot["seed"]),
             "table": table, "block": block, "days": len(excess), "flat": flat,
-            "K": tested.shape[1],
+            "K": tested.shape[1], "panel": days, "held": held,
             "sharpe_bh": float(held.mean() / held.std(ddof=1) * np.sqrt(YEAR))}

@@ -8,11 +8,11 @@ hypotheses instead of testing one** — descriptive, never a filter, never a ver
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `report.py` | **The command**: one strategy's map, printed and written to `reports/<P>/<D>/<day>/conditionalMap/estrategias/` | `python3 -m studies.readings.conditionalMap.report --harvest ~/Desktop/AlgoData/harvest/<project>/<databank>/<day> --strategy "Strategy 14.19.58"` | harvest + bars → map |
-| `one.py` | The measurements — trades located, tercile at entry, cell stats — as the contract's data | imported — the window calls it | harvest + bars → result |
-| `contract.py` | The two tabs (volatilidad x tendencia; sesión y día de la semana), the multiple-comparisons warning and the glossary | imported | numbers → tabs |
+| `one.py` | The measurements — trades located, tercile at entry, cell stats — as the contract's data, once per option of the «Muestra» selector (`samples`) | imported — the window calls it | harvest + bars → result |
+| `contract.py` | The two tabs (volatilidad x tendencia; sesión y día de la semana), each with the «Muestra» selector, every floored cell written «< 30 ops», the multiple-comparisons warning and the glossary | imported | numbers → tabs |
 | `sessions.py` | Each entry's session: feed clock → UTC → Tokyo, London and New York local hours | imported | entry times → session labels |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `inputs.py` | The knobs, one strategy's trades located on the harvest, its identity | imported | harvest + bars → located trades |
+| `inputs.py` | The knobs, one strategy's trades (every harvested sample) located on the harvest, its identity | imported | harvest + bars → located trades |
 | `regime.py` | Daily volatility (ATR) and trend (efficiency ratio), and the tercile edges frozen on the asset's build segment | imported | bars → terciles |
 | `cells.py` | Per-cell trades, mean P&L with its bootstrap interval and hit rate, floored at `engines/nulls`'s own minimum cell size | imported | trades + terciles → cells |
 | `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` | — |
@@ -32,11 +32,24 @@ before reading anything else in it.**
    `build`, `oos1`, whatever `run.sample` names — is compared against that one fixed pair of
    numbers, never against the distribution of the sample being described.
 2. **Minimum cell size**, read from `engines/nulls/config.yaml#verdict.min_trades` rather than
-   copied (`cells.MIN_CELL`), so the two floors cannot quietly drift apart. A cell below it is
-   left out of the grid and out of the table — not shown at zero, not shown at all.
+   copied (`cells.MIN_CELL`), so the two floors cannot quietly drift apart. A cell below it
+   shows no P&L and is left out of the table — but it says so (owner, 2026-10-01): the grid
+   writes «< 30 ops» in it and a note under the map counts them, and a session or weekday
+   bar under the floor is named, with its trades, in the note under its chart.
 3. **No filter leaves here.** The result carries no `verdict` block; every block is `state:
    "info"`. A cell that looks striking is a question for the owner, and a filter built on it
    is a new entry in `ledger/thresholds.yaml`, revalidated on data this map has not touched.
+
+## Two samples, one selector
+
+**«Muestra»: OOS1 / Completa** (owner, 2026-10-01). `run.sample` (OOS1) is what the map opens
+on; «Completa» is every trade the harvest holds for the strategy — `IST` (build) plus `OOS1`,
+the whole backtest the gate harvested; `oos2` is never harvested. Both are computed in one run
+and tagged `select: {"sample": ...}`, so the window switches without calling the study again.
+On the 15 USDJPY H1 mothers, OOS1 alone clears the floor in 0–4 of the 30 session x weekday
+cells and the full sample in 10–23 (🔬 2026-10-01). The tercile edges stay the build segment's
+in both, so in the full sample the build segment's own days split a third per tercile by
+construction, and whatever a cell shows there may be part of what the build fitted.
 
 ## Sessions — and the clock they are read in
 

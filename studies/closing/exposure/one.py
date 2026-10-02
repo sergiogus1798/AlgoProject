@@ -11,6 +11,9 @@ from studies.closing.exposure import benchmark, compare, occupancy, verdict
 MODULE = "studies.closing.exposure"
 CONVENTIONS = {"one_lot": "un lote", "avg_size": "el tamaño medio de la estrategia",
                "equal_risk": "a igual riesgo (misma volatilidad diaria)"}
+# The verdict's own word (`worth_it`/`not_worth_it`, in verdict.csv for /curate) shown to the
+# reader (feedback §9.3, 2026-09-30): "Aprobado" (verde) / "Suspenso" (rojo).
+LABEL = {"worth_it": "Aprobado", "not_worth_it": "Suspenso"}
 GLOSSARY = [
     {"term": "Exposición", "text": "La parte de las barras de la ventana con alguna posición "
      "abierta. La ventana sale de la política del activo, nunca de la primera y la última "
@@ -88,7 +91,7 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
     head = cfg["benchmark"]["headline"]
     reasons = [r for r in found["reasons"].split(" | ") if r]
     said = blocks.verdict(
-        found["verdict"], "pass" if found["verdict"] == "worth_it" else "fail",
+        LABEL[found["verdict"]], "pass" if found["verdict"] == "worth_it" else "fail",
         f"Eficiencia {found['efficiency']:.2f}x: por hora expuesta rinde eso veces lo que el "
         f"buy and hold {CONVENTIONS[head]}. Pasa desde {cfg['gate']['min_efficiency']:.2f}x.",
         found["efficiency"], [{"label": r, "state": "watch", "value": None, "note": ""}

@@ -27,7 +27,9 @@ def main() -> None:
             "por azar en cualquier estrategia, incluida una sin ninguna ventaja "
             f"(PDF del dueño, item 6). Muestra {run['sample']} · {run['feed']} "
             f"{run['timeframe']} · {got['summary']['clasificadas']} de "
-            f"{got['summary']['trades']} operaciones clasificadas.")
+            f"{got['summary']['trades']} operaciones clasificadas; la muestra Completa "
+            f"(build + OOS1) tiene {got['summary']['trades_completa']} y se elige en el "
+            "desplegable «Muestra».")
     print(markdown.render(got, title))
     out = output.folder(a.harvest / "trades.parquet", "conditionalMap")
     print(f"-> {output.member(out, got, title, lede)}")

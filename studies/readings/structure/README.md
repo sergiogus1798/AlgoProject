@@ -35,3 +35,13 @@ the observed value (`measure.subset_null`). The twin share is shown beside it.
 `inputs.load` asks the ledger's one-way door for every leg and records the look. For a human the
 door is open (owner, 2026-09-28); only under `ALGO_AUTONOMOUS=1` is `--databank WFC_OOS2` refused at
 step 23 (PermissionError, no file opened), because `_policy.yaml` reserves `oos2` for other steps.
+
+## `inputs.latest` reads the batch's OWN export, never just the newest one
+
+🔬 2026-09-30 (feedback §9.6): a WFC re-run two days after a structural batch's own retest left
+`KeyError` on every mother of `Test_USDJPY_donchianUpperCrossUp_M30/2026-09-27` — `latest()` took
+"newest `trades.parquet` in this databank" literally, and the newest one by then was an unrelated
+later WFC composition with a different set of `variant_id`s. `latest()` now takes the batch's
+`required` variant ids (`inputs.load` passes `set(plan["variant_id"])`) and walks from newest to
+oldest, tagged exports first, until one actually carries every variant the batch fabricated —
+raising by name when none does, instead of handing `one.py` a `KeyError` with no batch in sight.

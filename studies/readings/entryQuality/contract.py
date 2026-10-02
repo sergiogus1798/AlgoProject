@@ -51,8 +51,11 @@ def delay_tab(found: dict, cfg: dict) -> dict:
     tf = cfg["run"]["timeframe"]
     return envelope.tab("delay", "4 · Lo que cuesta llegar tarde", [
         reading(verdict.latency(found["on_tf"], cfg["verdict"]["dcr_high"])),
-        blocks.table(f"En barras de {tf}", found["on_tf"].reset_index(drop=True)),
-        blocks.table("En minutos", found["on_m1"].reset_index(drop=True))],
+        # The delay `d` is each row's first cell, so a row is addressable by it
+        # (`entryQuality.delay.en_barras_de_la_estrategia.1.dcr`), whatever the timeframe.
+        blocks.table("En barras de la estrategia", found["on_tf"].reset_index(),
+                     f"Barras de {tf}; d en barras."),
+        blocks.table("En minutos", found["on_m1"].reset_index(), "d en minutos.")],
         note="Tier 1: las mismas salidas, la entrada desplazada. Una barra de retraso que se "
              "lleva mucho del edge es fragilidad a la latencia, o información del futuro en la "
              "entrada.")

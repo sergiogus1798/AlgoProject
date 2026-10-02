@@ -33,6 +33,31 @@ def parts(row: pd.Series, got: dict) -> list[dict]:
                             f"no nombrada; Sharpe del buy & hold {got['sharpe_bh']:.3f}"}]
 
 
+def equity_chart(mother: str, got: dict, lots_bh: float) -> dict:
+    """The mother's own oos2 equity next to buy & hold's, both at the same daily risk.
+
+    Args:
+        mother: The mother's name, a column of `got["panel"]`.
+        got: What measure.run() returned (`panel`, `held`, both already on oos2's days).
+        lots_bh: The buy & hold size measure.equal_risk() found for this mother.
+
+    Returns:
+        A "lines" block: two cumulative curves on the same USD axis (feedback §9.2, adding
+        the original backtest's own curve beside buy & hold — same risk scaling as the
+        stats table above).
+    """
+    mine = got["panel"][mother].cumsum()
+    bh = (got["held"] * lots_bh).cumsum()
+    return {"kind": "lines", "title": "Equity en oos2: la madre contra el buy & hold "
+            "a igual riesgo", "unit": "USD", "x": [d.strftime("%Y-%m-%d") for d in mine.index],
+            "series": [{"label": "Madre", "values": [float(v) for v in mine], "role": "real"},
+                       {"label": "Buy & hold (igual riesgo)", "values": [float(v) for v in bh],
+                        "role": "reference"}],
+            "auto_dash_negative": True, "zero_shade": True,
+            "note": "Misma escala de riesgo que la tabla de arriba: lotes de buy & hold "
+                    "elegidos para que su volatilidad diaria iguale a la de la madre."}
+
+
 def run(row: pd.Series, got: dict, cfg: dict) -> dict:
     """What step 20 says about one mother.
 
@@ -64,14 +89,10 @@ def run(row: pd.Series, got: dict, cfg: dict) -> dict:
                "quién cuenta el StepM (config.yaml, joint). Abajo, lo que diría cada lectura.")
     said = blocks.verdict(CALL[state] if reading else "SIN REGLA", state, meaning, None,
                           parts(row, got))
-    table = blocks.table("La llamada bajo cada lectura", pd.DataFrame(
-        [[r, CALL[calls[r]]] for r in calls.index], columns=["lectura", "llamada"]),
-        "piezas+población. Pasa quien sobrevive a las piezas Y el StepM nombra sobre esa "
-        "población. SIN LEER: el StepM no corrió porque la política no deja mirar oos2.")
     pieces = blocks.table("Las cuatro piezas, como las dijo su estudio", pd.DataFrame(
         [[f"{PIECES[p]} {NAMES[p]}", row[p]["label"], row[p]["state"], row[p]["meaning"]]
          for p in PIECES], columns=["paso", "llamada", "estado", "qué quiere decir"]))
-    tabs = [envelope.tab("pieces", "Las cuatro piezas", [pieces, table])]
+    tabs = [envelope.tab("pieces", "Las cuatro piezas", [pieces])]
     if not got["refused"]:
         r = got["table"].loc[row.name]
         tabs.append(envelope.tab("benchmark", "Contra el buy & hold en oos2", [
@@ -80,7 +101,8 @@ def run(row: pd.Series, got: dict, cfg: dict) -> dict:
                  ["Sharpe anual del buy & hold", got["sharpe_bh"]],
                  ["Lotes de buy & hold a igual riesgo", r["lots_bh"]],
                  ["Exceso medio diario (USD)", r["excess_day"]]], columns=["qué", "valor"]),
-                "Exceso positivo ⇔ Sharpe mayor que el del buy & hold.")]))
+                "Exceso positivo ⇔ Sharpe mayor que el del buy & hold."),
+            equity_chart(row.name, got, r["lots_bh"])]))
     return envelope.envelope(MODULE, row.name, row["identity"], cfg, started, tabs, said,
                              summary={"complete": True, "call": state,
                                       **{p: row[p]["state"] for p in PIECES},

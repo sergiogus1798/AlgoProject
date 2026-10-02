@@ -46,23 +46,25 @@ def located(folder: Path, strategy: str, cfg: dict, frame: pd.DataFrame, cities:
     Args:
         folder: A harvest day folder (`trades.parquet`, `metrics.parquet` inside it).
         strategy: Its name exactly as the harvest spells it.
-        cfg: The `run` block of config.yaml.
+        cfg: The `run` block of config.yaml (its `sample` is read by `one.samples`, not here).
         frame: The bars of the timeframe the strategy was built on.
         cities: The `sessions` block of config.yaml.
 
     Returns:
-        `identity`, `trades` (one sample, open-time order), `entry` bar index, `day`
-        (entry's calendar day, normalised) and `weekday` (its English day name — Monday
-        through Friday on every asset seen so far) and `session` (sessions.ORDER, "" where
-        the feed's clock repeats or skips the hour).
+        `identity`, `trades` (every sample the harvest holds — `IST` and `OOS1` today, the
+        build and its first retest; `oos2` is never harvested — in open-time order),
+        `sample` (each trade's `Sample type`), `entry` bar index, `day` (entry's calendar
+        day, normalised) and `weekday` (its English day name — Monday through Friday on
+        every asset seen so far) and `session` (sessions.ORDER, "" where the feed's clock
+        repeats or skips the hour). `one.samples` cuts the readings out of it.
     """
     identity = identity_of(folder, strategy)
     trades = pd.read_parquet(folder / "trades.parquet")
-    trades = trades[(trades["identity"] == identity)
-                    & (trades["Sample type"] == cfg["sample"])].sort_values("Open time")
+    trades = trades[trades["identity"] == identity].sort_values("Open time")
     trades = trades.reset_index(drop=True)
     entry = frame.index.searchsorted(trades["Open time"].to_numpy())
     day = pd.DatetimeIndex(trades["Open time"]).normalize()
     utc = sessions.to_utc(trades["Open time"], feeds.timezone(cfg["feed"]))
-    return {"identity": identity, "trades": trades, "entry": entry, "day": day,
+    return {"identity": identity, "trades": trades,
+            "sample": trades["Sample type"].astype(str).to_numpy(), "entry": entry, "day": day,
             "weekday": day.day_name().to_numpy(), "session": sessions.label(utc, cities)}

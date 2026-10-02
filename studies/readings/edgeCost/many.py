@@ -46,16 +46,21 @@ def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> dict:
     below = panel["edge_mean"] < bar
     panel["verdict"] = np.where(below & (action == "drop"), "DESCARTAR", "MANTENER")
 
-    bars = {"kind": "bars", "title": f"Edge medio por estrategia — umbral {bar} spreads",
-           "unit": "spreads", "reference": bar,
-           "items": [{"label": s, "value": float(v), "error": None,
-                      "state": "fail" if v < bar else "pass"}
-                     for s, v in panel["edge_mean"].items()]}
-    table = blocks.table("Todas", panel.reset_index(), "edge en spreads = bruto medio / "
-                         "coste de ida y vuelta modelado hoy; c* es el mismo número.")
+    # A bar per strategy used to read as one solid line across the panel once there were more
+    # than a few dozen (feedback §9.5, 2026-09-30): a table, coloured green/red by the same
+    # threshold, sorts and reads at any population size.
+    shown = panel.reset_index()
+    states = [["pass" if not b else "fail"] * len(shown.columns) for b in below]
+    table = blocks.table(
+        "Cada estrategia contra su coste", shown,
+        f"Verde: edge medio por encima de {bar} spreads. Rojo: por debajo "
+        f"({'sólo marcadas' if action == 'mark' else 'DESCARTAR en curate'}). "
+        "edge en spreads = bruto medio / coste de ida y vuelta modelado hoy; c* es el "
+        "mismo número.")
+    table["states"] = states
     population = envelope.envelope(
         MODULE, None, None, cfg, started,
-        [envelope.tab("panel", "Cada estrategia contra su coste", [bars, table],
+        [envelope.tab("panel", "Cada estrategia contra su coste", [table],
                       note=f"{int(below.sum())} de {len(panel)} por debajo de {bar} spreads "
                            f"({'sólo marcadas' if action == 'mark' else 'DESCARTAR en curate'})."
                       )], warnings=costs.warnings(asset), glossary=one.GLOSSARY)
