@@ -2,8 +2,8 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `config.py` | Reads `config.yaml` and locates one SPP export under the data root | project, databank → settings, path |
-| `export.py` | Reads the wide `spp.parquet` of an SPP export: one strategy's grid, the parameters it permuted, the original tuple, and the grid with θ₀ left out for aggregates | export folder → frame, names, original tuple |
+| `config.py` | Reads `config.yaml`, locates one SPP export under the data root, and finds its IS/OOS pair | project, databank → settings, path |
+| `export.py` | Reads the wide `spp.parquet` of an SPP export: one strategy's grid, the parameters it permuted, the original tuple, the grid with θ₀ left out for aggregates, and its own `trades.parquet` when one was exported | export folder → frame, names, original tuple, trades |
 
 Holds nothing computed. Every number in this study comes from `model/` or `verdict/`.
 
@@ -24,3 +24,6 @@ Holds nothing computed. Every number in this study comes from `model/` or `verdi
   measurement.
 - Several dates coexist under `raw/<project>/<databank>/` on purpose — those exports are immutable.
   Which one was read is printed in the report and stored in the brief.
+- **`config.other()` may return None.** OOS often lags IS by days: a real state, not a
+  malformed export. `export.trades()` returns None the same way — `export_trades` is a
+  separate command from the SPP export and is not always run.

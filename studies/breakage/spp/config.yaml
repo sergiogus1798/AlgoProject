@@ -32,8 +32,6 @@ design:
   max_levels: 9           # nor more, however much variance it explains
   plateau_share: 0.5      # how far below the best level still counts as plateau
 
-surface:
-  # The plateau of a two-parameter surface is the top decile of its cells (owner, 2026-09-27,
-  # encargo 24 Q13) — the same top share the parameter cloud tracks. One grid per ordered
-  # pair of parameters, each cell the median of `read.metric` over every tuple that used it.
-  top_share: 0.10
+panel1:
+  # The window's histograms: mediana ± this share of its own value (owner, 2026-09-30, §7).
+  band_share: 0.30

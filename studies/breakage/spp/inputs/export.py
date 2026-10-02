@@ -84,6 +84,25 @@ def without_original(grid: pd.DataFrame) -> pd.DataFrame:
     return grid[grid.index != ORIGINAL]
 
 
+def trades(directory: Path, strategy: str) -> pd.DataFrame | None:
+    """One strategy's own trades over this export's window, if `export_trades` was ever run here.
+
+    Args:
+        directory: The export's `spp/` folder.
+        strategy: Which strategy.
+
+    Returns:
+        Rows of `trades.parquet`, sorted by close time, or None when that file does not
+        exist -- `export_trades` is a separate command from the SPP export and is not
+        always run, which is a real state and not a malformed one.
+    """
+    path = directory.parent / "trades.parquet"
+    if not path.exists():
+        return None
+    frame = pd.read_parquet(path, filters=[("strategy", "==", strategy)])
+    return frame.sort_values("Close time").reset_index(drop=True)
+
+
 def varying(frame: pd.DataFrame, names: list[str]) -> list[str]:
     """Metric columns that are not constant across the grid.
 

@@ -4,6 +4,7 @@
 |---|---|---|
 | `influence.py` | Which parameters move the result: variance explained per metric, and the exact-duplicate test that sees what variance cannot | grid → eta² table, inert calls |
 | `profile.py` | The shape of one parameter's curve: its marginal, its contiguous plateau, its centre, and where to place the variant grid's levels | grid → curve, plateau, levels |
+| `combine.py` | IS and OOS1 side by side for the window's two panels: which metrics grow with the window and which do not, the real strategy's additive metrics rebuilt from a concatenated window, an approximate combined permutation population, and Sharpe/Sortino from real concatenated trades | two grids (+ trades) → combined values |
 
 ## The two measurements do different jobs, and only one of them is proof
 

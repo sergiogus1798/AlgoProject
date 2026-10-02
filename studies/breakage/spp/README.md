@@ -7,6 +7,17 @@ anything but noise.** It produces two outputs, not one — a report for the owne
 
 It never talks to SQX. The owner runs the SPP and names the databank; this reads what came out.
 
+The window shows two panels (rebuilt 2026-09-30, feedback §7), independent of the noise call above
+and of the design brief: **panel 1** is a histogram per metric — Net Profit, Profit Factor,
+Retorno/Drawdown, Max Drawdown, Sharpe, Sortino — over the whole permutation grid, the real backtest
+and the median marked, a band of median ± a configured share of its own value, for a period the
+reader picks (solo IS, solo OOS1, or the two combined); **panel 2** overlays IS and OOS1 as
+transparent densities, but only for metrics that do not grow with the window (Sharpe, Sortino,
+Profit Factor, R/Edge ratio — never Net Profit or Ret/DD). What used to be six tabs of
+parameter-by-parameter reconnaissance (influence, plateaus, pairwise surfaces, the fabrication
+design) are no longer shown — `run.py`'s reading and `model/` still compute all of it, because
+`sqx/variants` still needs the design brief; the window just stopped drawing them.
+
 ```
 config.yaml ─▶ inputs ─▶ model ─▶ verdict ─▶ contract
  every knob   the grid   what      is it     the report
@@ -17,19 +28,35 @@ config.yaml ─▶ inputs ─▶ model ─▶ verdict ─▶ contract
 
 | folder | the question it answers | read its README before |
 |---|---|---|
-| `inputs/` | what grid is this, and what was the original tuple? | touching an export path or a column name |
-| `model/` | what does a number read off this grid mean? | changing how a parameter is judged live or dead |
+| `inputs/` | what grid is this, its IS/OOS pair, and what was the original tuple? | touching an export path or a column name |
+| `model/` | what does a number read off this grid mean, and how do IS and OOS1 combine? | changing how a parameter is judged live or dead, or the combined metrics |
 | `verdict/` | is this family worth the next stage? | moving the noise threshold |
 
 | file | what it does | run it |
 |---|---|---|
-| `run.py` | One strategy's whole reading, and the brief derived from it | imported |
-| `surface.py` | Two parameters at a time: the verdict metric's median on every cell of each ordered pair's grid, θ₀ left out of the cells, the top decile as plateau, and where θ₀ sits | imported |
-| `contract.py` | The reading as the contract's tabs: the noise call, influence, plateaus, the pair surfaces (a `grid` per ordered pair, «Eje X» / «Eje Y» selectors, θ₀ as `mark`) and the design | imported |
-| `one.py` | **One strategy as the contract's data**, its brief carried in the summary | imported — the window calls it |
+| `run.py` | One strategy's whole reading (eta², duplicate test, plateaus, noise verdict), and the design brief derived from it — internal now, feeds `sqx/variants` and the noise verdict, not drawn tab by tab | imported |
+| `contract.py` | The reading as the contract's tabs: the noise verdict, panel 1 (histograms per period) and panel 2 (IS/OOS1 overlaid, time-free metrics) | imported |
+| `one.py` | **One strategy as the contract's data**: finds the strategy's IS/OOS pair on disk, builds both panels, still carries the brief in the summary | imported — the window calls it |
 | `report.py` | The command: every strategy of one export to `reports/<P>/<D>/<day>/spp/` — a page and a JSON each, and the `design_brief_<strategy>.json` the fabrication reads — plus `strategies.csv` (`strategy, identity, brief, note`), what pairs the folder by identity (the archive, the matrix); a `--strategy` run rewrites it with those strategies only | `python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` |
+
+## The panels read IS and OOS1 as two separate exports, not one databank
+
+`--databank` still names one export (SPP_IS or SPP_OOS), the one the design brief and the noise
+verdict are read from, unchanged. `one.py` additionally finds its **pair** on disk
+(`inputs.config.other`, by name: `SPP_IS` ↔ `SPP_OOS`) and reads both grids for the panels — this
+is a Python-side join, nothing in SQX is touched. The pair may not exist yet (OOS lags IS as a
+rule): panel 1 then offers only the one period it has, and panel 2 does not appear, both said in a
+note rather than shown empty (§1: no false "sin datos", nothing drawn that cannot be).
+
+**"Combinado" is not a third SPP run — there isn't one.** SPP grids of different windows cannot be
+paired (see below): so `model/combine.py` rebuilds Net Profit, Profit Factor, Max Drawdown and
+Ret/DD from their additive components (summing a real concatenated backtest could show, Max
+Drawdown as an upper bound), and only pools Sharpe and Sortino as a wider sample, since those need
+the permutation's own trades to recompute properly and the export does not carry them. The real
+backtest's own Sharpe/Sortino under "combinado" needs the actual concatenated trades
+(`export_trades`, both sides); when that export is missing, the panel says so instead of guessing.
 
 ## The three things this module exists to get right
 

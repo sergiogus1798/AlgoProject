@@ -38,3 +38,39 @@ def export(project: str, databank: str, day: str | None = None) -> Path:
     if day:
         return root / day / "spp"
     return sorted(d / "spp" for d in root.iterdir() if (d / "spp").is_dir())[-1]
+
+
+def pair(databank: str) -> str:
+    """The other half of an IS/OOS SPP databank pair.
+
+    Args:
+        databank: "SPP_IS" or "SPP_OOS" (or any name ending the same way).
+
+    Returns:
+        The counterpart name. `report.py` needs both: the IS/OOS panels compare across
+        them, and neither export alone carries the other window's numbers.
+    """
+    if databank.upper().endswith("_OOS"):
+        return databank[:-len("_OOS")] + "_IS"
+    if databank.upper().endswith("_IS"):
+        return databank[:-len("_IS")] + "_OOS"
+    raise ValueError(f"{databank!r} does not end in _IS or _OOS")
+
+
+def other(project: str, databank: str) -> Path | None:
+    """The paired databank's own most recent export folder, or None when it has none yet.
+
+    Args:
+        project: Project name on the master.
+        databank: The databank whose pair is wanted.
+
+    Returns:
+        `export(project, pair(databank))`, dated on its own — IS and OOS are exported on
+        different days as a rule — or None when that databank carries no `spp/` export at
+        all, a real state (OOS often lags IS, or exports something else entirely) rather
+        than a malformed one.
+    """
+    root = DATA / "raw" / project / pair(databank)
+    if not root.is_dir() or not any((d / "spp").is_dir() for d in root.iterdir()):
+        return None
+    return export(project, pair(databank))

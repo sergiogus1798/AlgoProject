@@ -17,5 +17,5 @@ TIPS = {
     "design.min_levels": "Niveles mínimos de un parámetro vivo.",
     "design.max_levels": "Niveles máximos, explique la varianza que explique.",
     "design.plateau_share": "Cuánto por debajo del mejor nivel sigue contando como meseta.",
-    "surface.top_share": "Qué parte de arriba de cada superficie de dos parámetros es meseta: "
-                         "0.10 es el decil superior de sus celdas."}
+    "panel1.band_share": "Ancho de la banda de cada histograma: mediana ± este porcentaje de "
+                         "su propio valor. 0.30 es ±30 %."}

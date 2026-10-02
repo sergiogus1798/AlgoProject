@@ -1,12 +1,29 @@
-"""One strategy's SPP reconnaissance as the contract's tabs: the call, influence, plateaus, surfaces, design."""
+"""One strategy's SPP reconnaissance as the contract's tabs: the noise call, and the two performance panels."""
 
+import numpy as np
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.breakage.spp.surface import label, origin_table
+from studies.breakage.spp.model import combine
 
 VERDICT = {"proceed": ("SEGUIR", "pass", "el máximo supera lo que daría una rejilla de ruido"),
            "noise": ("RUIDO", "fail", "el máximo no supera lo que daría una rejilla de ruido")}
+
+# What "combinado" means for each metric, spelled out beside its histogram (2026-09-30, §7):
+# an SPP grid cannot be concatenated across windows (README.md), so four metrics are rebuilt
+# from their additive components and two are only a pooled, broader sample.
+COMBINED_CAVEAT = {
+    "NetProfit": "combinado: suma exacta de ambas ventanas.",
+    "ProfitFactor": "combinado: bruto ganado y bruto perdido sumados, PF recalculado — no la "
+                    "media de los dos PF.",
+    "ReturnDDRatio": "combinado: Net Profit y Max Drawdown combinados, recalculado — no la "
+                     "suma de los dos ratios.",
+    "Drawdown": "combinado: suma de las dos caídas — cota superior; la caída conjunta real "
+               "pudo ser menor si no coinciden en el tiempo.",
+    "SharpeRatio": "combinado: no hay operaciones por permutación para recalcularlo; aquí se "
+                  "agrupan las permutaciones de IS y de OOS1 como una sola muestra.",
+    "SortinoRatio": "combinado: mismo agrupamiento que Sharpe, no una ventana conjunta "
+                    "recalculada."}
 
 
 def verdict(result: dict) -> dict:
@@ -24,111 +41,85 @@ def verdict(result: dict) -> dict:
                             "value": s["spike_ratio"], "note": f"curtosis {s['kurtosis']:.2f}"}])
 
 
-def influence(result: dict) -> dict:
-    """Variance explained by each parameter on every metric, beside the duplicate test."""
-    eta2, dup = result["eta2"], result["duplicates"]
-    shown = eta2.copy()
-    shown["grupos"], shown["idénticos"] = dup["groups"], dup["identical"]
-    shown["inerte"] = dup["inert"].astype(bool)
-    shown = shown.sort_values(result["metric"], ascending=False).reset_index()
-    return envelope.tab("influence", "Influencia por parámetro", [
-        {"kind": "bars", "title": f"η² sobre {result['metric']}", "unit": "η²",
-         "reference": None,
-         "items": [{"label": r.iloc[0], "value": float(r[result["metric"]]), "error": None,
-                    "state": "none" if r["inerte"] else "info"} for _, r in shown.iterrows()],
-         "note": "En gris, los parámetros que el test de duplicados declara inertes."},
-        blocks.table("η² por métrica y test de duplicados", shown)],
-        note="η² es por métrica: el mismo parámetro puede explicar el 8 % de una y el 78 % de "
-             "otra. Congelar se decide por el test de duplicados, nunca por η²: una SPP "
-             "muestrea desequilibrado y un parámetro inerte saca η² por encima de cero.")
+def _hist(name: str, unit: str, values: np.ndarray, real: float | None, share: float,
+         caveat: str) -> dict:
+    """One panel-1 histogram: the grid's distribution, the real backtest, a median ± share band."""
+    arr = np.asarray(values, dtype=float)
+    arr = arr[np.isfinite(arr)]
+    median = float(np.median(arr))
+    lo, hi = median - share * abs(median), median + share * abs(median)
+    ends = [float(arr.min()), float(arr.max()), lo, hi] + ([real] if real is not None else [])
+    b = blocks.distribution(name, unit, arr, real, "", span=(min(ends), max(ends)))
+    b["band"] = [lo, hi]
+    where = "" if real is None else ("dentro" if lo <= real <= hi else "fuera")
+    b["note"] = (f"Banda: mediana ± {share:.0%} de su propio valor."
+                + (f" El real queda {where} de la banda." if where else "")
+                + (f" {caveat}" if caveat else ""))
+    return b
 
 
-def plateaus(result: dict) -> dict:
-    """One plateau per parameter, and its marginal profile drawn."""
-    rows = [{"parámetro": n, **p["plateau"], "original": result["original"][n]}
-            for n, p in result["profiles"].items()]
-    curves = [{"kind": "lines", "title": f"{n} — mediana de {result['metric']} por nivel",
-               "unit": "", "x": [float(v) for v in p["curve"]["level"]],
-               "series": [{"label": "mediana", "values": list(p["curve"]["median"]),
-                           "role": "real"}],
-               "note": f"Meseta de {p['plateau']['from']:g} a {p['plateau']['to']:g}, centro "
-                       f"{p['plateau']['center']:g}, argmax {p['plateau']['argmax']:g}, "
-                       f"original {result['original'][n]:g}.",
-               "select": {"parámetro": n}} for n, p in result["profiles"].items()]
-    names = list(result["profiles"])
-    return envelope.tab(
-        "plateaus", "Meseta y centro por parámetro",
-        [blocks.table("Mesetas", pd.DataFrame(rows))] + curves,
-        selectors=[{"key": "parámetro", "label": "Parámetro", "options": names,
-                    "default": names[0]}],
-        note="El centro es el punto medio de la meseta contigua, no el argmax — lo que hace "
-             "el BestValue de SQX. Donde centro y argmax se separan, el pico está en el "
-             "borde de lo estable.")
-
-
-def _origin(cell: dict) -> str:
-    """What θ₀'s cell says, θ₀ itself left out of it."""
-    if not cell["n"]:
-        return ("θ₀ está solo en su celda: ninguna otra tupla probó esa pareja de niveles, así "
-                "que la rejilla no dice nada de su vecindad.")
-    return (f"Sin contar a θ₀, su celda ({cell['n']} tuplas) vale {cell['value']:.3g}, por "
-            f"encima del {cell['rank']:.0f} % de las celdas, "
-            + ("dentro" if cell["plateau"] else "fuera") + " de la meseta.")
-
-
-def surfaces(found: list[dict], metric: str, top_share: float) -> dict:
-    """Two parameters at a time, picked on two drop-downs, with θ₀ marked on every grid.
+def panel1(periods: list[tuple[str, dict, dict, bool]], share: float) -> dict:
+    """The six across-time histograms, one period at a time (2026-09-30, §7).
 
     Args:
-        found: What `surface.pairs` returned.
-        metric: The verdict metric the cells are the median of.
-        top_share: The plateau's share of the cells, for the notes.
+        periods: `[(label, {metric: array}, {metric: real or None}, is_combined), ...]` — one
+            entry per period the data actually supports (IS, OOS1, combined), built by
+            `one._periods`.
+        share: The band's half-width as a share of the median (`config.yaml: panel1.band_share`).
 
     Returns:
-        One tab: a `grid` per ordered pair tagged {"x", "y"}, then θ₀'s table.
+        One tab, a selector only when there is more than one period to choose from (§1: a
+        selector that changes nothing is removed).
     """
-    grids = [{"kind": "grid", "title": f"{p['y']} contra {p['x']} — mediana de {metric}",
-              "rows": [label(v) for v in p["surface"].index],
-              "cols": [label(v) for v in p["surface"].columns],
-              "values": p["surface"].to_numpy(dtype=float).tolist(),
-              "scale": "discrete", "levels": p["levels"], "labels": None,
-              "mark": {"row": label(p["origin"]["y"]), "col": label(p["origin"]["x"]),
-                       "label": "θ₀"},
-              "scale_range": None,
-              "note": f"Cada celda es la mediana de {metric} de todas las tuplas que usaron esa "
-                      f"pareja de niveles, sean cuales sean los demás parámetros, θ₀ fuera. Cortes en los "
-                      f"cuartiles y en el percentil {100 * (1 - top_share):g}: la banda de "
-                      f"arriba es la meseta (≥ {p['cut']:.3g}). {_origin(p['origin'])}",
-              "select": {"x": p["x"], "y": p["y"]}} for p in found]
-    names = list(dict.fromkeys(p["x"] for p in found))
+    made = []
+    for label, values, reals, combined in periods:
+        for col, name, unit in combine.METRICS:
+            caveat = COMBINED_CAVEAT[col] if combined else ""
+            real = reals.get(col)
+            if combined and col in ("SharpeRatio", "SortinoRatio") and real is None:
+                caveat += " Sin real marcado: falta el export de operaciones para " \
+                          "reconstruirlo (skill /export)."
+            b = _hist(name, unit, values[col], real, share, caveat)
+            if len(periods) > 1:
+                b["select"] = {"periodo": label}
+            made.append(b)
+    selectors = ([{"key": "periodo", "label": "Periodo", "options": [p[0] for p in periods],
+                  "default": periods[0][0]}] if len(periods) > 1 else [])
     return envelope.tab(
-        "surfaces", "Superficies por pareja",
-        grids + [blocks.table("θ₀ en cada pareja", origin_table(found),
-                              "Una fila por pareja sin orden: (Y, X) es la misma rejilla "
-                              "traspuesta.")],
-        selectors=[{"key": "x", "label": "Eje X", "options": names, "default": names[0]},
-                   {"key": "y", "label": "Eje Y", "options": names, "default": names[1]}],
-        note=f"Elige un parámetro para cada eje. Meseta = el decil superior de las celdas de "
-             f"esa rejilla ({100 * top_share:g} %), la misma definición que la nube de "
-             f"parámetros. Una celda con pocas tuplas pesa lo mismo que una llena: una SPP "
-             f"muestrea desequilibrado. Si eliges el mismo parámetro en los dos ejes no hay "
-             f"rejilla.")
+        "panel1", "Distribución de la performance", made, selectors=selectors,
+        note="Se varían todos los parámetros a la vez, al azar, dentro de un rango — miles de "
+             "backtests — y se estudia la distribución de la performance que resulta, no un "
+             "solo número. Cada histograma marca el backtest real y la mediana de la "
+             "distribución, con una banda de ± el porcentaje configurado sobre la mediana.")
 
 
-def design(brief: dict) -> dict:
-    """The design the fabrication stage will build, as it was derived here."""
-    live = pd.DataFrame([{"parámetro": p["name"], "η²": p["eta2"], "centro": p["center"],
-                          "niveles": ", ".join(f"{v:g}" for v in p["levels"]),
-                          "original": p["original"], "argmax IS": p["argmax_is"],
-                          "ancho de meseta": p["plateau_width"], "pico": p["spike"]}
-                         for p in brief["parameters"]])
-    frozen = pd.DataFrame([{"parámetro": f["name"], "valor": f["value"],
-                            "grupos": f["groups"], "por qué": f["reason"]}
-                           for f in brief["frozen"]])
-    return envelope.tab("design", "El diseño para la fábrica", [
-        blocks.table("Parámetros vivos", live, "Un pico (meseta de ancho 1) no tiene "
-                     "margen a ningún lado: su centro es el argmax con otro nombre."),
-        blocks.table("Congelados", frozen, "Congelados por el test de duplicados: cambiarlos "
-                     "no movió ni un backtest.")],
-        note=f"{brief['n_target']:,} variantes en tres estratos: "
-             + ", ".join(f"{k} {v:.0%}" for k, v in brief["strata"].items()) + ".")
+def panel2(is_pop: pd.DataFrame, oos_pop: pd.DataFrame, is_real: pd.Series,
+          oos_real: pd.Series) -> dict:
+    """IS against OOS1 overlaid, time-free metrics only (2026-09-30, §7).
+
+    Args:
+        is_pop, oos_pop: `export.without_original()` grids of each window.
+        is_real, oos_real: Each window's permutation -1 row, for the per-series real mark.
+
+    Returns:
+        One tab, one overlaid `distribution` block per time-free metric the strategy's SPP
+        actually varied.
+    """
+    made = []
+    for col, name, unit in combine.TIME_FREE:
+        if col not in is_pop.columns or col not in oos_pop.columns:
+            continue
+        a, b = is_pop[col].to_numpy(float), oos_pop[col].to_numpy(float)
+        a, b = a[np.isfinite(a)], b[np.isfinite(b)]
+        reals = {"IS": float(is_real[col]) if col in is_real.index else None,
+                "OOS1": float(oos_real[col]) if col in oos_real.index else None}
+        made.append(blocks.distribution(
+            name, unit, np.concatenate([a, b]), None,
+            "IS y OOS1 solapadas como densidad (cada una integra a 1): compara su forma, no "
+            "el tamaño de la muestra.", series={"IS": a, "OOS1": b}, reals=reals))
+    return envelope.tab(
+        "panel2", "IS contra OOS1 — lo que no crece con la ventana", made,
+        note="Solo métricas atemporales: Sharpe, Sortino, Profit Factor y R/Edge ratio — nunca "
+             "Net Profit ni Retorno/Drawdown, que crecen con la ventana y no se pueden comparar "
+             "así entre una IS larga y una OOS1 más corta. Kaufman Efficiency Ratio no está "
+             "entre las columnas que SQX exporta para el SPP, así que no aparece.")
