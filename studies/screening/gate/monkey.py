@@ -77,7 +77,8 @@ def mono(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     frame = pd.DataFrame(got).T.reindex(alive)
     ok = (frame["p"] <= cfg["max_p"]) & (frame["corr"] >= verdict.RECONCILE_FLOOR)
     note = "reconcilia " + frame["corr"].round(4).astype(str)
-    return pd.DataFrame({"value": frame["p"], "passed": ok, "note": note, "p": frame["p"]})
+    return pd.DataFrame({"value": frame["p"], "passed": ok, "note": note, "p": frame["p"],
+                         "corr": frame["corr"]})
 
 
 def familia(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:

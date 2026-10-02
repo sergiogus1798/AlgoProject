@@ -33,8 +33,7 @@ def run(data: dict, cfg: dict) -> dict:
     tested = excess.drop(columns=flat)
     boot = cfg["bootstrap"]
     block = superior.block_length(tested)
-    spa = superior.spa(tested, block, boot["reps"], boot["seed"])
-    named = superior.stepm(tested, cfg["stepm"]["fwer"], block, boot["reps"], boot["seed"])
+    spa, named = superior.screen(tested, cfg["stepm"]["fwer"], block, boot["reps"], boot["seed"])
 
     days = data["panel"].loc[excess.index]
     held = data["moves"].loc[excess.index] * data["point_value"]

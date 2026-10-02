@@ -8,7 +8,9 @@ Libraries, not commands. The entry points that use them live in `../reports/`.
 | `correlations.py` | Pearson/Spearman, the single-test significance floor, and Benjamini-Hochberg over a family of tests | imported | two columns → correlation rows |
 | `improvement.py` | Sweeps candidate IS filters: what each one does to an OOS outcome, with a bootstrap interval on the difference | imported | columns + one target → one row per filter |
 | `replication.py` | Whether a conclusion drawn on one sample holds on another independently generated one: outcome gaps, filter thresholds carried across, rank stability | imported | two samples' columns → gaps and agreement |
-| `decay.py` | How much of each strategy's in-sample edge survived, whether what is left beats its own error bar, and the keep/doubt/discard call | imported | daily equity → one row per strategy |
+| `decay.py` | How much of each strategy's in-sample edge survived, whether what is left beats its own error bar (Lo 2002 on the daily curve: `sqrt((1 + SR_annual² / 2 / 252) / years)` — fixed 2026-10-02, `knowhow/research/gate-t-scales.md`), and the keep/doubt/discard call | imported | daily equity → one row per strategy |
+| `tradelevel.py` | The t of a strategy's mean trade, iid and at the AR(1) effective n, and each trade's P&L from the market's own drift over its hold — what the gate's `trade_t` and `drift_excess_t` are made of | imported | trades + bars → t per strategy |
+| `floating.py` | Max drawdown and worst day of the marked-to-market daily equity, worst trade MAE and net per year, all in R | imported | daily equity + trades → one row per strategy |
 
 The excess over chance and Benjamini-Hochberg moved to `engines/inference/` (2026-09-25): the
 gate and the monkey reading need them as much as these do.

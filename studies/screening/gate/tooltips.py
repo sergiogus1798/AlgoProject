@@ -29,6 +29,6 @@ TIPS = {
     "mono.max_p": "La p más alta que se deja pasar; laxa a propósito.",
     "familia.alpha": "Nivel de la corrección por multiplicidad sobre todas las p del mono. "
                      "Blanda: informa, no elimina.",
-    "monkey.draws": "Corridas nulas por estrategia; el resto de mandos del nulo son los de "
+    "monkey.draws": "Runs nulos por estrategia; el resto de mandos del nulo son los de "
                     "engines/nulls/config.yaml.",
     "monkey.timeframe": "Las barras sobre las que se colocan los monos."}

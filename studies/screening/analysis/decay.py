@@ -42,8 +42,9 @@ def diagnose(curve: pd.Series, split: str, end: str) -> dict:
     edge = sharpe(after)
     total = after.sum()
 
-    # Lo (2002): the standard error of an annualised Sharpe over T years of daily data.
-    error = np.sqrt((1 + 0.5 * edge ** 2) / (len(after) / YEAR))
+    # Lo (2002), iid: SE of a per-day Sharpe over T days is sqrt((1 + SR_day**2 / 2) / T);
+    # annualised, the squared term is the annual Sharpe's over the days in a year.
+    error = np.sqrt((1 + 0.5 * edge ** 2 / YEAR) / (len(after) / YEAR))
     return {"sharpe_is": sharpe(before), "sharpe_oos": edge,
             "retention": edge / sharpe(before), "t": edge / error,
             "years_positive": int((years > 0).sum()), "years": len(years),

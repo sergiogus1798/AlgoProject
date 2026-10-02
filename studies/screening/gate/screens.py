@@ -98,7 +98,8 @@ def degradacion(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         cfg: This screen's row of config.yaml.
 
     Returns:
-        `value` is the retention of the Sharpe ratio. The four numbers come from
+        `value` is the retention of the Sharpe ratio, and `t`, `years_positive` and
+        `concentration` ride beside it as their own columns. The four numbers come from
         `studies/screening/analysis/decay.py` unchanged — retention, the t of Lo (2002) on the
         out-of-sample stretch, how many of its years were profitable, and the share of its
         profit owed to one quarter — read off the curve `inputs.load` glued together, so
@@ -113,7 +114,9 @@ def degradacion(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     note = ("t=" + table["t"].round(2).astype(str)
             + " anos+=" + table["years_positive"].astype(str)
             + " conc=" + table["concentration"].round(2).astype(str))
-    return result(table["retention"], passed.fillna(False), note)
+    frame = result(table["retention"], passed.fillna(False), note)
+    return frame.assign(t=table["t"], years_positive=table["years_positive"],
+                        concentration=table["concentration"])
 
 
 def forma(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:

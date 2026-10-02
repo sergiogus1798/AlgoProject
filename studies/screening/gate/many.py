@@ -5,7 +5,7 @@ import time
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.screening.gate import cascade, one
+from studies.screening.gate import cascade, measures, one
 
 
 def run(data: dict, cfg: dict, source: dict) -> dict:
@@ -23,6 +23,7 @@ def run(data: dict, cfg: dict, source: dict) -> dict:
     started = time.time()
     envelope.progress(5, f"{len(data['metrics'])} emparejadas, {len(data['missing'])} sin OOS")
     scores, funnel = cascade.run(data, cfg)
+    scores = scores.join(measures.table(data))
     why = {s["name"]: s for s in cfg["screens"]}
     survive = int(scores["survives"].sum())
     population = envelope.envelope(

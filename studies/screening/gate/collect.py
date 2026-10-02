@@ -1,14 +1,23 @@
 """One databank's three tables, taken in a single staging of its files."""
 
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
 
-from core import exportdrv, sqxfile, sqxstats, tradestore
+from core import exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
 from core.sqxview import LABEL, VIEW
 
 PREFIX = {"IS": "IS__", "OOS": "OOS__"}   # which databank a staged file came from
+# 🔬 2026-10-01, 2 x 5,130 strategies: the identities were hashed twice in one thread (33 s)
+# and the 10,260 CSVs parsed in one (35 s) of a 204 s harvest whose JVM takes 45.
+WORKERS = 8
+
+
+def identities(files: list[Path]) -> dict[Path, str]:
+    """`core.sqxfile.identity` of many files, across processes: 1.6 ms each in one."""
+    return dict(fanout.run(sqxfile.identity, {f: 1 for f in files}, WORKERS))
 
 
 def index(folder: Path) -> dict[str, Path]:
@@ -27,7 +36,9 @@ def index(folder: Path) -> dict[str, Path]:
         either — SQX renames on collision, and two databanks of the same project were
         found holding entirely different strategies under one name.
     """
-    return {sqxfile.identity(f): f for f in sorted(folder.glob("*.sqx"))}
+    files = sorted(folder.glob("*.sqx"))
+    ids = identities(files)
+    return {ids[f]: f for f in files}
 
 
 def measured(stats: dict[str, dict]) -> int:
@@ -82,17 +93,21 @@ def metrics(staged: dict[str, Path]) -> tuple[pd.DataFrame, str]:
     return pd.DataFrame.from_dict(rows, orient="index"), LABEL[block]
 
 
-def tables(sides: dict[str, list[Path]], work: Path) -> dict:
+def tables(sides: dict[str, list[Path]], work: Path,
+           exports: dict[str, Path] | None = None) -> dict:
     """Stage both databanks' strategies once, and take everything they hold in one pass.
 
     Args:
         sides: "IS" and "OOS" to the .sqx to take from each databank.
         work: Scratch directory; nothing in it survives this call.
+        exports: Side to a folder that receives that side's `trades.parquet` as
+            `sqx.export.export_trades` packs it, with what its manifest counts beside it in
+            `packed` -- the same `orderstocsv` then serves the databank's own trade export.
 
     Returns:
         Per side: `metrics` (one row per identity, the view's columns of the block it filled,
         without the block's suffix), `trades`, `equity`, `seen` -- how many strategies that
-        side holds -- and `sample`, which of the two blocks it filled.
+        side holds -- `sample`, which of the two blocks it filled, and `packed`.
 
         Both sides go into ONE staging folder under a side prefix, because SQX names a
         loaded strategy after its file (`knowhow/sqx-format/loaded-name-is-filename.md`): the
@@ -101,34 +116,57 @@ def tables(sides: dict[str, list[Path]], work: Path) -> dict:
         `orderstocsv`, a one-shot `sqcli` on the conductor -- the conductor cycle the metrics
         export needed (~36 s to start and stop) is gone.
     """
+    shutil.rmtree(work, ignore_errors=True)       # what a run that died half-way left
     staged = work / "sqx"
     staged.mkdir(parents=True, exist_ok=True)
+    known = identities([f for files in sides.values() for f in files])
     ids, side_of = {}, {}
     for side, files in sides.items():
         for f in files:
             stem = PREFIX[side] + f.stem
             shutil.copy(f, staged / f"{stem}.sqx")
-            ids[stem], side_of[stem] = sqxfile.identity(f), side
+            ids[stem], side_of[stem] = known[f], side
 
-    exportdrv.trades(staged, work / "csv")
-    trades = tradestore.frame(sorted((work / "csv").glob("*.csv")), False)[0]
-    trades["side"] = trades["strategy"].astype(str).map(side_of)
-    curves = {stem: sqxstats.equity(staged / f"{stem}.sqx", "Main") for stem in sorted(ids)}
+    # The curves and the metrics are read off the files while the JVM writes the trades: it
+    # is a subprocess, and the wait for it was ~10 s of reading left for afterwards.
+    with ThreadPoolExecutor(1) as jvm:
+        exported = jvm.submit(exportdrv.trades, staged, work / "csv")
+        curves = {stem: sqxstats.equity(staged / f"{stem}.sqx", "Main") for stem in sorted(ids)}
+        read = {side: metrics({stem: staged / f"{stem}.sqx" for stem in ids
+                               if side_of[stem] == side}) for side in sides}
+        exported.result()
 
     out = {}
     for side in sides:
-        mine, label = metrics({stem: staged / f"{stem}.sqx" for stem in ids
-                               if side_of[stem] == side})
+        # Each side's CSVs under the strategies' own names, so the pack names its rows as
+        # the databank's export does: the prefix is constant, the order is the same.
+        csvs = work / f"csv_{side}"
+        csvs.mkdir()
+        for f in sorted((work / "csv").glob(f"{PREFIX[side]}*.csv")):
+            f.rename(csvs / f.name[len(PREFIX[side]):])
+        packed = (exports or {}).get(side, work / side) / "trades.parquet"
+        packed.parent.mkdir(parents=True, exist_ok=True)
+        counts = tradepack.pack(sorted(csvs.glob("*.csv")), packed, per_market=False)
+        drawn = pd.read_parquet(packed)
+        mine, label = read[side]
         mine = mine.assign(identity=mine["Strategy Name"].map(ids),
                            **{"Strategy Name": mine["Strategy Name"].str[len(PREFIX[side]):]})
-        drawn = trades[trades["side"] == side]
+        own = {stem[len(PREFIX[side]):]: i for stem, i in ids.items() if side_of[stem] == side}
         equity = pd.DataFrame({ids[s]: c for s, c in curves.items() if side_of[s] == side})
         out[side] = {
             "metrics": mine.set_index("identity"),
-            "trades": drawn.assign(identity=drawn["strategy"].astype(str).map(ids)).drop(
-                columns=["strategy", "side"]),
+            "trades": drawn.assign(identity=drawn["strategy"].astype(str).map(own)).drop(
+                columns=["strategy"]),
             "equity": equity.rename_axis("day").reset_index().melt(
                 id_vars="day", var_name="identity", value_name="equity").dropna(),
-            "seen": len(mine), "sample": label}
+            "seen": len(mine), "sample": label, "packed": counts}
+    # One set of categories over both sides, as one frame of both had: two sides that differ
+    # in a text column would otherwise come out of their concat as plain text.
+    for c in tradestore.CATEGORICAL:
+        both = [o["trades"][c] for o in out.values() if c in o["trades"]]
+        values = sorted(set().union(*(b.cat.categories for b in both)))
+        for o in out.values():
+            if c in o["trades"]:
+                o["trades"][c] = o["trades"][c].cat.set_categories(values)
     shutil.rmtree(work)
     return out

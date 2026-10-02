@@ -4,14 +4,48 @@
 import argparse
 import random
 from datetime import date
+from pathlib import Path
 
 import pandas as pd
 
 from core import manifest, sqxfile
-from core.paths import MASTER, databank_dir, harvest_dir, worker_dir
+from core.paths import MASTER, databank_dir, export_dir, harvest_dir, worker_dir
 from studies.screening.gate import collect, pairing
 
 SAMPLE_SEED = 20260923      # a subset harvest is a sample, and a sample has to reproduce
+
+
+def export(folder: Path, a: argparse.Namespace, databank: str, files: list[Path],
+           packed: dict, install: Path) -> None:
+    """Finish one databank's trade export beside the `trades.parquet` the harvest packed.
+
+    Args:
+        folder: `raw/<project>/<databank>/<day>`, already holding `trades.parquet`.
+        a: The parsed arguments.
+        databank: The databank those trades are of.
+        files: Its .sqx, all of them.
+        packed: What `tradepack.pack` counted.
+        install: The install holding the project.
+
+    The three files `sqx.export.export_trades` leaves, with its manifest: every reader of a
+    databank's export, and the loader's freshness check, find what that command writes.
+    """
+    feeds = {f.stem: sqxfile.symbol(f) for f in files}
+    (folder / "timeframes.csv").write_text("strategy,timeframe\n" + "".join(
+        f"{name},{fed.rsplit('_', 1)[-1]}\n" for name, (_, fed) in sorted(feeds.items())))
+    ids = collect.identities(files)
+    (folder / "identity.csv").write_text("strategy,identity\n" + "".join(
+        f"{f.stem},{ids[f]}\n" for f in sorted(files)), encoding="utf-8")
+    symbol, fed = next(iter(feeds.values()))
+    feed = f"{symbol}_{fed.split('_LOM_')[0]}"
+    manifest.write(folder,
+                   {"install": str(install), "project": a.project, "databank": databank,
+                    "symbol": feed},
+                   f"export_trades.py --project {a.project} --databank {databank} "
+                   f"--symbol {feed}",
+                   {**packed, "timeframes": sorted({fed.rsplit("_", 1)[-1]
+                                                    for _, fed in feeds.values()})})
+    print(f"wrote {folder}")
 
 
 def main() -> None:
@@ -22,6 +56,9 @@ def main() -> None:
     ap.add_argument("--oos-databank", required=True, help="the retest databank, out of sample")
     ap.add_argument("--role", help="worker role holding the project; the master if absent")
     ap.add_argument("--limit", type=int, default=0, help="a random sample of N pairs, for a trial")
+    ap.add_argument("--exports", action="store_true",
+                    help="write also each databank's own trade export (raw/), from the same "
+                         "orderstocsv: what export_trades would write, without its two JVMs")
     a = ap.parse_args()
 
     install = worker_dir(a.role) if a.role else MASTER
@@ -39,14 +76,24 @@ def main() -> None:
 
     out = harvest_dir(a.project, a.databank, date.today().isoformat())
     out.mkdir(parents=True, exist_ok=True)
-    sides = collect.tables({side: [pairs[i][n] for i in matched]
-                            for n, side in enumerate(("IS", "OOS"))}, out / "_work")
+    taken = {side: [pairs[i][n] for i in matched] for n, side in enumerate(("IS", "OOS"))}
+    # A databank's export holds ALL its strategies: a side the pairing left some out of
+    # (unpaired, or a --limit sample) is not exported here, and export_trades still does it.
+    whole = {side: export_dir(a.project, bank, date.today().isoformat())
+             for side, bank, held in (("IS", a.databank, build), ("OOS", a.oos_databank, after))
+             if a.exports and len(taken[side]) == len(held)}
+    sides = collect.tables(taken, out / "_work", whole)
+    for side, folder in whole.items():
+        export(folder, a, a.databank if side == "IS" else a.oos_databank, taken[side],
+               sides[side]["packed"], install)
     # A pair whose identity changed in the retest carries two identities, so the retest side
     # is re-keyed to the build's before anything is joined on it.
     if alias:
         sides["OOS"]["metrics"] = sides["OOS"]["metrics"].rename(index=alias)
         for frame in ("trades", "equity"):
-            sides["OOS"][frame]["identity"] = sides["OOS"][frame]["identity"].replace(alias)
+            # map, not replace: over 20 M rows `replace` with a dict took 11 s to do this
+            was = sides["OOS"][frame]["identity"]
+            sides["OOS"][frame]["identity"] = was.map(alias).fillna(was)
 
     metrics = sides["IS"]["metrics"].add_suffix(" [IS]").join(
         sides["OOS"]["metrics"].add_suffix(" [OOS]"))

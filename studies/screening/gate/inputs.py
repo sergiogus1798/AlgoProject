@@ -4,8 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from core import assetdata
 from core.paths import DATA
 from core.study import config as study_config
+from core.symbols import current
 from ledger import thresholds
 
 CONFIG = Path(__file__).with_name("config.yaml")
@@ -26,6 +28,28 @@ def config(overrides: list[str]) -> dict:
     """
     cfg = thresholds.fill(study_config.load(CONFIG, []))
     return study_config.apply(cfg, overrides, {s["name"]: s for s in cfg["screens"]})
+
+
+def market(feed: str) -> dict:
+    """What the measured columns need to know about the asset behind a feed.
+
+    Args:
+        feed: SQX feed name, e.g. "USDJPY_M1".
+
+    Returns:
+        `point_value`; `risk`, 1R in account currency (the doctrine's fixed risk per trade);
+        and per sample ("IS" the asset's build segment, "OOS" its oos1) `windows`, as the
+        pair of strings a DatetimeIndex slices by, and `years`, the segment's length.
+    """
+    asset = assetdata.load(assetdata.symbol_for(current(feed)))
+    segment = {"IS": "build", "OOS": "oos1"}
+    edges = {s: assetdata.window(asset, k) for s, k in segment.items()}
+    return {"point_value": asset["instrument"]["point_value"],
+            "risk": assetdata.doctrine()["money_management"]["params"]["Amount"],
+            "windows": {s: (str(asset["segments"][k]["from"]), str(asset["segments"][k]["to"]))
+                        for s, k in segment.items()},
+            "years": {s: (pd.Timestamp(b, unit="ms") - pd.Timestamp(a, unit="ms")).days / 365.25
+                      for s, (a, b) in edges.items()}}
 
 
 def newest(project: str, databank: str) -> Path:

@@ -8,7 +8,7 @@ from datetime import date
 import pandas as pd
 
 from core import manifest
-from core.paths import metrics_export, report_dir
+from core.paths import report_dir
 from core.study import blocks, output, result as envelope
 from core.study.render import markdown
 from engines.inference import fdr
@@ -69,8 +69,7 @@ def main() -> None:
     a = ap.parse_args()
 
     started = time.time()
-    src = metrics_export(a.project, a.databank)
-    columns, names = metrics.load(src / "metrics.csv")
+    columns, names, read = metrics.source(a.project, a.databank)
     columns, names, dropped = metrics.deduplicated(columns, names)
     is_metrics = metrics.measured(columns, metrics.IS)
     targets = [t for t in (a.target or TARGETS) if t in metrics.measured(columns, metrics.OOS)]
@@ -97,7 +96,7 @@ def main() -> None:
     title = f"{a.project} / {a.databank} — qué compra un filtro"
     output.population(out, "filters", got, title,
                       f"{len(names):,} estrategias ({dropped} duplicadas descartadas).")
-    manifest.write(out, {"input": str((src / "metrics.csv").resolve())},
+    manifest.write(out, {"input": str(read.resolve())},
                    f"filters.py --project {a.project} --databank {a.databank}",
                    {"strategies": len(names), "duplicates_dropped": dropped,
                     "candidates": tried, "targets": targets})

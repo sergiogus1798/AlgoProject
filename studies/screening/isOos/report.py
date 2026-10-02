@@ -57,8 +57,8 @@ def population(project: str, databank: str, cfg: dict) -> dict:
     Returns:
         `result`, `source`, `input` and `counts`, for the page and the manifest.
     """
-    src = metrics_export(project, databank)
-    columns, names = metrics.load(src / "metrics.csv")
+    columns, names, read = metrics.source(project, databank)
+    src = read.parent
     made = manifest.read(src)
     # Exports before 2026-09-27 went through the view on the conductor and name it; since
     # then they are read off the .sqx and say so under `metrics`.
@@ -75,7 +75,7 @@ def population(project: str, databank: str, cfg: dict) -> dict:
     explorer = TEMPLATE.read_text(encoding="utf-8").replace(
         "__PAYLOAD__", json.dumps(payload(columns, names, source, is_metrics, oos_metrics)))
     return {"result": got, "source": source, "explorer": explorer,
-            "input": str((src / "metrics.csv").resolve()),
+            "input": str(read.resolve()),
             "counts": {"strategies": len(names), "is_metrics": len(is_metrics),
                        "oos_metrics": len(oos_metrics), "duplicates_dropped": dropped}}
 

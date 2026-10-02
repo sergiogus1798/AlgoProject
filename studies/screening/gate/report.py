@@ -26,6 +26,7 @@ def main() -> None:
     data = inputs.load(folder)
     data["null_cfg"] = null_inputs.config([f"nulls.draws={cfg['monkey']['draws']}"])
     data["bars"] = null_inputs.bars(a.feed, cfg["monkey"]["timeframe"])
+    data["market"] = inputs.market(a.feed)
     print(f"{len(data['metrics'])} emparejadas + {len(data['missing'])} sin OOS, "
           f"ventana {data['split']} -> {data['end']}\n")
 

@@ -5,6 +5,7 @@ import argparse
 import sys
 import time
 from datetime import date
+from pathlib import Path
 
 import pandas as pd
 
@@ -14,6 +15,7 @@ from core.study import blocks, output, result as envelope, verdicts
 from core.study.render import markdown
 from core.surface import dedupe
 from studies.screening.analysis import decay
+from studies.screening.decay import one
 
 MODULE = "studies.screening.decay.report"
 COLUMNS = ["name", "sharpe_is", "sharpe_oos", "retention", "t", "years_positive",
@@ -82,6 +84,49 @@ def joined(before: pd.Series, after: pd.Series, split: str) -> pd.Series:
     return daily.cumsum()
 
 
+def curves(folder: Path, built: Path | None, split: str, strategy: str | None) -> dict:
+    """Each strategy's daily equity, read from its .sqx, with its build's IS when given.
+
+    Args:
+        folder: The databank's folder on the install.
+        built: The build's databank folder, or None when this one holds IS too.
+        split: First out-of-sample day, YYYY-MM-DD.
+        strategy: One name alone, or None for every .sqx of the databank.
+
+    Returns:
+        name -> curve, only names that also sit in the build when `built` is given.
+    """
+    files = [folder / f"{strategy}.sqx"] if strategy else sorted(folder.glob("*.sqx"))
+    got = {f.stem: sqxstats.equity(f) for f in files}
+    if built is None:
+        return got
+    return {n: joined(sqxstats.equity(built / f"{n}.sqx"), c, split)
+            for n, c in got.items() if (built / f"{n}.sqx").is_file()}
+
+
+def write_one(out: Path, folder: Path, strategy: str, curve: pd.Series, split: str,
+              end: str) -> Path:
+    """One strategy's run: only `estrategias/<name>.json` and its page, the way crossTF's
+    `--strategy` does — `decay.json`, `verdict.csv` and the manifest are the population's,
+    and rewriting them from one strategy would leave the databank tab with that one alone.
+
+    Args:
+        out: The module's report folder.
+        folder: The databank's folder, for the strategy's identity.
+        strategy: Its name.
+        curve: Its daily equity, IS and OOS.
+        split, end: The OOS stretch, YYYY-MM-DD.
+
+    Returns:
+        The JSON's path.
+    """
+    got = one.run(strategy, {"curve": curve,
+                             "identity": sqxfile.identity(folder / f"{strategy}.sqx")},
+                  {"split": split, "end": end})
+    print(markdown.render(got, f"Decaimiento — {strategy}"))
+    return output.member(out, got, f"Decaimiento — {strategy}")
+
+
 def main() -> None:
     """Read a databank's .sqx straight from disk and write one dated decay report."""
     ap = argparse.ArgumentParser()
@@ -92,25 +137,27 @@ def main() -> None:
     ap.add_argument("--role", help="read a worker's install instead of the master")
     ap.add_argument("--is-databank", help="the build this databank retested out of sample: "
                     "its curve before --split, paired by name (a workflow keeps IS and OOS apart)")
+    ap.add_argument("--strategy", help="one strategy alone, as the databank names it: writes "
+                    "only estrategias/<name>.json, never the population's files")
     a = ap.parse_args()
 
     started = time.time()
     install = worker_dir(a.role) if a.role else MASTER
     folder = databank_dir(a.project, a.databank, install)
-    files = sorted(folder.glob("*.sqx"))
-    curves = {f.stem: sqxstats.equity(f) for f in files}
-    if a.is_databank:
-        built = databank_dir(a.project, a.is_databank, install)
-        curves = {n: joined(sqxstats.equity(built / f"{n}.sqx"), c, a.split)
-                  for n, c in curves.items() if (built / f"{n}.sqx").is_file()}
-        files = [f for f in files if f.stem in curves]
-    clone = dedupe.curve_duplicates(curves)
-    dropped = int(clone.sum())
-    curves = {name: c for name, c in curves.items() if not clone[name]}
-    rows = decay.table(curves, a.split, a.end)
-    identity = {f.stem: sqxfile.identity(f) for f in files}
-    source = {"split": a.split, "end": a.end, "duplicates_dropped": dropped}
+    built = databank_dir(a.project, a.is_databank, install) if a.is_databank else None
+    found = curves(folder, built, a.split, a.strategy)
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "decay"
+    if a.strategy:
+        if a.strategy not in found:
+            raise SystemExit(f"{a.strategy} no está en {built} para leer su IS")
+        print(f"-> {write_one(out, folder, a.strategy, found[a.strategy], a.split, a.end)}")
+        return
+    clone = dedupe.curve_duplicates(found)
+    dropped = int(clone.sum())
+    kept = {name: c for name, c in found.items() if not clone[name]}
+    rows = decay.table(kept, a.split, a.end)
+    identity = {n: sqxfile.identity(folder / f"{n}.sqx") for n in found}
+    source = {"split": a.split, "end": a.end, "duplicates_dropped": dropped}
     got = result(rows, source, started)
     title = f"Decaimiento — {a.project} / {a.databank}"
     output.population(out, "decay", got, title)
@@ -119,7 +166,7 @@ def main() -> None:
     verdicts.write(out, table, folder, " ".join(sys.argv), [])
     print(markdown.render(got, title))
     print(f"{len(rows)} estrategias ({dropped} duplicadas de trades idénticos descartadas "
-          f"de {len(files)}) → {out}")
+          f"de {len(found)}) → {out}")
 
 
 if __name__ == "__main__":

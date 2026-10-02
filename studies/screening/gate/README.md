@@ -19,14 +19,15 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `harvest.py` | **The cosecha**: pairs the build and retest databanks by strategy name and joins them on identity, takes both, writes the joined tables | `python3 -m studies.screening.gate.harvest --project P --databank build --oos-databank oos1` | two databanks → four files + manifest |
+| `harvest.py` | **The cosecha**: pairs the build and retest databanks by strategy name and joins them on identity, takes both, writes the joined tables | `python3 -m studies.screening.gate.harvest --project P --databank build --oos-databank oos1` (`--exports`: also each databank's own trade export under `raw/`, from the same `orderstocsv`) | two databanks → four files + manifest |
 | `pairing.py` | Finds the correspondence by strategy name (owner, 2026-09-26); the join itself is on identity, which is what everything downstream keys on | imported | two indexes → pairs, aliases, unpaired |
 | `collect.py` | One side of it: stage a set of `.sqx` once and take its metrics, trades and equity | imported | files → three frames |
-| `inputs.py` | The knobs, one harvest read back, and the two windows glued into one curve | imported | folder → frames, split, end |
+| `inputs.py` | The knobs, one harvest read back, the two windows glued into one curve, and `market()`: the asset behind the feed (point value, 1R, the build and oos1 windows) | imported | folder → frames, split, end |
 | `screens.py` | The five cheap screens and the registry the cascade reads | imported | harvest + survivors → value, passed |
 | `monkey.py` | The two screens that need the null study: the monkey, and the family correction over it | imported | trades + bars → p |
 | `redundancy.py` | The soft screen: are these N strategies or one repeated N times | imported | equity → groups |
-| `cascade.py` | Runs the screens in the config's order, each over what the last left, and writes the verdicts; the scorecard keeps every column a screen returns as `<screen>_<column>` (degradacion's `t`, `years_positive`, `concentration`; mono's `p`, `corr`) — the autopilot judges them as `gate.scorecard.*` | imported | harvest → scorecard, funnel |
+| `cascade.py` | Runs the screens in the config's order, each over what the last left, and writes the verdicts; the scorecard keeps every column a screen returns as `<screen>_<column>` (degradacion's `t`, `years_positive`, `concentration`; mono's `p`, `corr`) — the autopilot judges them as `gate.scorecard.*`. A strategy killed by a hard screen keeps that screen's `_passed` = False and `survives` = False, and nothing for the screens after it | imported | harvest → scorecard, funnel |
+| `measures.py` | The scorecard's **measured** columns, for every paired strategy whichever screen it died at: `trade_t`, `drift_excess_t`, trades per year, and the floating risk in R. No screen reads them | imported | trades + equity + bars → 14 columns |
 | `one.py` | One strategy through the gate as the contract's data: MANTENER or DESCARTAR, and every screen with its number | imported — the window calls it | scorecard row → result |
 | `many.py` | The cascade and the funnel as one result, and every strategy's own | imported | harvest → results |
 | `report.py` | **The gate over one harvest** | `python3 -m studies.screening.gate.report --project P --databank build --feed XAUUSD_M1` | harvest → `scorecard.parquet`, `funnel.csv`, two `verdict.csv`, `gate.md`/`.html`/`.json`, one page per strategy |
@@ -105,10 +106,36 @@ on purpose:
 ## Where the arrows point
 
 `gate` imports `core`, `nulls` and `studies.screening.analysis` (`decay` for the degradation maths,
-`correlations.discoveries` for Benjamini-Hochberg). Nothing imports `gate` yet; `pipeline/` is where
+`tradelevel` and `floating` for the measured columns). Nothing imports `gate` yet; `pipeline/` is where
 it will, as the row that thins a population before the per-mother protocol starts. `studies/screening/analysis`
 is a library folder with no entry points, so importing it does not point the arrow backwards — but a
 screen that needs new maths **extends that module** rather than growing a second copy of Lo (2002).
+
+## Measured, not judged (2026-10-02)
+
+`measures.py` adds fourteen columns to the scorecard after the cascade, for **every** strategy the
+retest databank holds — a strategy dead at `estaticas` has them too, so a `criteria.yaml` rule on
+them never meets a fact the cascade did not compute. Nothing here eliminates; they become
+`gate.scorecard.<column>` facts of the autopilot.
+
+| column | what it is |
+|---|---|
+| `trade_t` | plain t of the mean OOS trade: mean / sd × √n of `Profit/Loss` |
+| `drift_excess_t` | the same on each OOS trade's P&L **minus the market's drift over its hold** (side × mean bar-to-bar close change of oos1 × bars held × size × point value), at the AR(1) effective n. One line for longs and shorts, any asset, any window length. Equal to the calibration toolkit's `t_ex_ar1_oos` to 4e-16 on 5,048 strategies |
+| `oos_trades_per_year`, `is_trades_per_year` | trades over the length of the asset's oos1 / build segment |
+| `oos_max_dd_r`, `is_max_dd_r` | largest fall of SQX's daily equity from its running high, in R (positive). That curve is each day's **lowest** equity, open positions at their worst wick (`OPEN.md` #88), so this is the floating drawdown, not the closed one |
+| `oos_worst_day_r`, `is_worst_day_r` | worst single server day of that equity, floating included, in R (negative): low to low, not start-of-day to low — a proxy for a firm's daily-loss rule, not the rule |
+| `oos_worst_trade_mae_r`, `is_worst_trade_mae_r` | worst `MAE ($)` of any trade, in R (negative) |
+| `oos_net_per_year_r`, `is_net_per_year_r` | closed net per year, in R |
+| `oos_dd_over_net_year`, `is_dd_over_net_year` | `max_dd_r` / `net_per_year_r`: how many years of net the worst floating fall cost (1.5 = repaid in 18 months). **+inf when net ≤ 0** — never NaN, which a rule would read as a missing fact (limbo): a `<=` rule fails it. NaN only for a strategy without trades |
+
+1R is the doctrine's fixed risk per trade (`assets/_build.yaml` `money_management.params.Amount`,
+1,000 USD). It is nominal — the doctrine carries no stop — which is exactly what the MAE column shows.
+
+**Three t's, three scales** (`knowhow/research/gate-t-scales.md`): `degradacion_t` is Lo's t on SQX's
+daily curve (floating included) and reads ≈ 0.8× `trade_t`; before 2026-10-02 it was also compressed
+by a units bug (annualised Sharpe inside the variance term) and capped at √(2·years). A scorecard
+written before that date is on the old scale — never mix the two.
 
 ## What this module deliberately does not do
 

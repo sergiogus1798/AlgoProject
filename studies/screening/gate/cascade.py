@@ -30,7 +30,9 @@ def run(data: dict, cfg: dict, say: bool = True) -> tuple[pd.DataFrame, pd.DataF
         say: Print the funnel line by line while it runs.
 
     Returns:
-        The scorecard — one row per identity, three columns per screen plus `died_at` —
+        The scorecard — one row per identity, `<screen>_<column>` for every column a screen
+        returned (value, passed, note; degradacion's t, years_positive, concentration; mono's
+        p and corr) plus `died_at` and `survives` —
         and the funnel, one row per screen with how many entered, passed and died.
 
         A strategy that dies in a hard screen is not handed to the next one, so its later
@@ -42,11 +44,17 @@ def run(data: dict, cfg: dict, say: bool = True) -> tuple[pd.DataFrame, pd.DataF
     alive, funnel = scores.index, []
     for row in cfg["screens"]:
         name, hard = row["name"], row["kind"] == "hard"
+        if alive.empty:     # nobody left to screen: the later screens have no input (mono crashed)
+            for column in ("value", "passed", "note", "p"):
+                if f"{name}_{column}" not in scores:
+                    scores[f"{name}_{column}"] = None
+            funnel.append({"screen": name, "kind": row["kind"], "entered": 0, "passed": 0,
+                           "died": 0})
+            continue
         data["scores"] = scores
         out = SCREENS[name](data, alive, row)
-        for column in ("value", "passed", "note", "p"):
-            if column in out:
-                scores.loc[alive, f"{name}_{column}"] = out[column]
+        for column in out.columns:      # value, passed, note, and whatever else it measured
+            scores.loc[alive, f"{name}_{column}"] = out[column]
         killed = out.index[~out["passed"].astype(bool)] if hard else pd.Index([])
         scores.loc[killed, "died_at"] = name
         funnel.append({"screen": name, "kind": row["kind"], "entered": len(alive),
