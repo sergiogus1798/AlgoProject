@@ -57,8 +57,8 @@ def main() -> None:
         if missing:
             failures.append(f"{key}: faltan {sorted(missing)}")
     blocks = [f for f in secs["cscv"]["fields"] if f["key"] == "blocks"]
-    if not blocks or "924" not in blocks[0]["help"].replace(".", ""):
-        failures.append("cscv: los bloques no dicen sus 924 particiones")
+    if not blocks or "12870" not in blocks[0]["help"].replace(".", "").replace(",", ""):
+        failures.append("cscv: los bloques no dicen sus 12870 particiones")
 
     with tempfile.TemporaryDirectory() as tmp:
         copies = {k: Path(tmp) / f"{k}.yaml" for k in studies.FILES}

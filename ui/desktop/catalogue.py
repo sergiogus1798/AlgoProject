@@ -21,7 +21,7 @@ def summary(t: dict) -> str:
     """
     if t["orphan"]:
         return "solo en runs.csv — no está en el registro"
-    markets = " ".join(f"{r['symbol']}·{r['timeframe']}" for r in t["runs"]) or "sin corridas"
+    markets = " ".join(f"{r['symbol']}·{r['timeframe']}" for r in t["runs"]) or "sin runs"
     return f"{t.get('archetype') or 'sin arquetipo'} — {markets}"
 
 

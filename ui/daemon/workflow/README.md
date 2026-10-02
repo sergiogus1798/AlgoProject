@@ -37,9 +37,9 @@ the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, w
 | `steps.py` | The step table: number, short title, WORKFLOW.md title, kind, evidence, study keys, tab and sub-panel, the stages its tests read | imported | — |
 | `derive.py` | One reader per kind of evidence: state, why, funnel; and the seal on 17-19 | imported | context → step |
 | `needs.py` | `of(spec, ctx)`: the steps a step needs done first — for an SQX task step the steps filling its tasks' inputs (from the project's own tasks) and the Python step judging each, for a Python step the SQX step it reads, the variant batch (17-18.5), 17-19 for 20, 20 for 21-25 — and always the row before it | imported | step, context → step numbers |
-| `tests.py` | The tests of each step, generated from the catalogue: state, one-line configuration, whether the window may start it | imported | step → tests |
+| `tests.py` | The tests of each step, generated from the catalogue: state (a stored result is «done» even for a test the rail cannot launch — an SQX step's analysis, a terminal-only study, the MT5 check), one-line configuration, whether the window may start it | imported | step → tests |
 | `run.py` | Ticked tests into the runner's jobs — the databank each reads and the strategies — and the backfill offer | imported | request → jobs |
-| `sources.py` | What the disk holds: the install, its tasks and runs, a study's results, the template link | imported | disk → dicts |
+| `sources.py` | What the disk holds: the install, its tasks and runs, a study's results (step 25 read off `edgeCost/estrategias/*.json`, which a `--strategy` run writes without a manifest; step 26 off `mt5/verify/*/run.json` whose .sqx came from a folder named after the project), the template link | imported | disk → dicts |
 | `ledgerview.py` | The project's ledger studies, the oos2 budget, and the blind door over the one Q9 study — asked of `ledger.gate`/`spend` | imported | ledger → dicts |
 
 ## Where a test runs

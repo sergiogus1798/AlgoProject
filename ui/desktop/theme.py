@@ -54,7 +54,7 @@ STATUS_HELP = {
     "draft": "Escrita, sin comprobar. El XML puede no resolver.",
     "validated": "El XML resuelve y las referencias existen. Nadie la ha construido todavía.",
     "buildConfirmed": "Una construcción real sacó estrategias y llevan de verdad su bloque fijo.",
-    "archived": "Fuera del trabajo diario. Su fila y sus corridas se conservan.",
+    "archived": "Fuera del trabajo diario. Su fila y sus runs se conservan.",
 }
 
 # Owner, 2026-09-27 (encargo 22 §10): one step larger everywhere, a livelier accent (violet: it
@@ -81,6 +81,10 @@ QLineEdit, QTextEdit, QPlainTextEdit, QComboBox {{
 QLineEdit:focus, QComboBox:focus, QTextEdit:focus {{ border-color: {C['accent']}; }}
 QComboBox QAbstractItemView {{ background: {C['raised']}; border: 1px solid {C['line']};
                                selection-background-color: {C['accent']}; }}
+/* A plain list popup, not the menu style: that one reserved two scroller arrows inside the
+   rows' height and showed 2 of 4 options (2026-10-01). `combofix` sizes it to the screen. */
+QComboBox {{ combobox-popup: 0; }}
+QComboBox QAbstractItemView::item {{ padding: 4px 8px; }}
 
 QTableWidget {{ background: {C['panel']}; gridline-color: {C['line']};
                 border: 1px solid {C['line']}; border-radius: 8px; }}

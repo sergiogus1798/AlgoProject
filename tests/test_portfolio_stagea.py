@@ -201,4 +201,10 @@ check("best() matches a manual argmax on row 0",
       abs(best_p[0] - scores5[0][row0_valid].max()) < 1e-12, (best_p[0], scores5[0]))
 
 print(f"\n{len(FAILED)} failed" if FAILED else "\nall checks passed")
-sys.exit(1 if FAILED else 0)
+# Guarded (📓 2026-09-30, T1/R UI feedback pass): this whole file is a plain script
+# (tests/README.md: `python3 test_portfolio_stagea.py`), not pytest tests — an
+# unconditional sys.exit() at module scope raised SystemExit during a bare
+# `pytest tests/`'s collection and crashed the WHOLE run with an INTERNALERROR,
+# not just this file.
+if __name__ == "__main__":
+    sys.exit(1 if FAILED else 0)

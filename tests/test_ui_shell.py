@@ -77,13 +77,26 @@ def slug(zone: str) -> str:
     return zone.lower().replace(" ", "-").replace("/", "").replace("ó", "o").replace("í", "i")
 
 
-def test_every_zone(app: QApplication, shell: Shell) -> None:
+# `app`/`shell` used to be plain parameters, only ever filled by `main()` below — a bare
+# `python3 -m pytest` collected these as fixtures pytest never defined and every test here
+# errored at setup (📓 2026-09-30, T1 UI feedback pass; same fix as `test_ui_studypage.py`).
+# Built once at import instead; the tests below still run in file order because that order IS
+# the dependency (`test_panel_to_strategy` sets the SELECTION the later ones read).
+serve()
+QAPP = QApplication.instance() or QApplication(sys.argv)
+QAPP.setStyleSheet(QSS)
+SHELL = Shell()
+SHELL.resize(1440, 900)
+SHELL.show()
+
+
+def test_every_zone() -> None:
     """Each sidebar entry opens its own page and marks only its own button."""
     for zone in ZONES:
-        shell.open_zone(zone)
-        settle(app)
-        assert shell.stack.currentWidget() is shell.zones[zone], zone
-        assert [n for n, b in shell.nav.items() if b.isChecked()] == [zone]
+        SHELL.open_zone(zone)
+        settle(QAPP)
+        assert SHELL.stack.currentWidget() is SHELL.zones[zone], zone
+        assert [n for n, b in SHELL.nav.items() if b.isChecked()] == [zone]
 
 
 def wait(app: QApplication, done: object, seconds: float = 60) -> None:
@@ -95,93 +108,85 @@ def wait(app: QApplication, done: object, seconds: float = 60) -> None:
     settle(app)
 
 
-def test_panel_to_strategy(app: QApplication, shell: Shell) -> None:
+def test_panel_to_strategy() -> None:
     """SELECTION → Proyecto fills Databanks too; the drawer's «→ ver en Databanks» opens it on
     the step's tab; a double click there opens Estrategia on that strategy, whose crumb names
     it; the ficha reads the daemon for its three panels."""
     SELECTION.choose(project=PROJECT)
-    shell.open_zone("Proyecto")
-    table = shell.workspace.panel.table
-    wait(app, lambda: table.rowCount() > 0)
+    SHELL.open_zone("Proyecto")
+    table = SHELL.workspace.panel.table
+    wait(QAPP, lambda: table.rowCount() > 0)
     assert table.rowCount() > 0, "el panel de Databanks salió vacío"
-    assert shell.workspace.panel.window() is shell and shell.workspace.databanks.isAncestorOf(
-        shell.workspace.panel), "el panel de databanks no vive en la zona Databanks"
-    shot(shell, "proyecto")
-    tab = shell.workspace.panel.tab()
-    shell.workspace.see(tab, "")
-    assert shell.stack.currentWidget() is shell.zones["Databanks"]
-    assert shell.workspace.panel.tab() == tab
-    shot(shell, "databanks")
+    assert SHELL.workspace.panel.window() is SHELL and SHELL.workspace.databanks.isAncestorOf(
+        SHELL.workspace.panel), "el panel de databanks no vive en la zona Databanks"
+    shot(SHELL, "proyecto")
+    tab = SHELL.workspace.panel.tab()
+    SHELL.workspace.see(tab, "")
+    assert SHELL.stack.currentWidget() is SHELL.zones["Databanks"]
+    assert SHELL.workspace.panel.tab() == tab
+    shot(SHELL, "databanks")
     row = next(r for r in range(table.rowCount())
                if table.rows[table.item(r, 0).data(256)]["identity"])
     chosen = table.rows[table.item(row, 0).data(256)]
     table.double(row, 0)
-    settle(app)
-    assert shell.stack.currentWidget() is shell.estrategia, shell.status.text()
-    assert shell.estrategia.currentWidget() is shell.ficha
+    settle(QAPP)
+    assert SHELL.stack.currentWidget() is SHELL.estrategia, SHELL.status.text()
+    assert SHELL.estrategia.currentWidget() is SHELL.ficha
     assert SELECTION.now["identity"] == chosen["identity"]
-    assert SELECTION.now["databank"] == DATABANK, (SELECTION.now, shell.workspace.panel.sub_spec())
-    assert shell.context.crumbs["strategy"].text() == chosen["name"]
-    assert shell.ficha.title.text() == chosen["name"]
-    wait(app, lambda: not shell.ficha.said.text())
-    assert shell.ficha.page is not None, "la ficha no montó las pestañas de estudios"
-    shot(shell, "estrategia")
+    assert SELECTION.now["databank"] == DATABANK, (SELECTION.now, SHELL.workspace.panel.sub_spec())
+    assert SHELL.context.crumbs["strategy"].text() == chosen["name"]
+    assert SHELL.ficha.title.text() == chosen["name"]
+    wait(QAPP, lambda: not SHELL.ficha.said.text())
+    assert SHELL.ficha.page is not None, "la ficha no montó las pestañas de estudios"
+    shot(SHELL, "estrategia")
 
 
-def test_crumbs(shell: Shell) -> None:
+def test_crumbs() -> None:
     """Each crumb opens its zone of PROYECTO."""
     for crumb, zone in (("projects", "Proyectos"), ("project", "Proyecto"),
                         ("strategy", "Estrategia")):
-        shell.context.crumbs[crumb].click()
-        assert shell.stack.currentWidget() is shell.zones[zone], crumb
+        SHELL.context.crumbs[crumb].click()
+        assert SHELL.stack.currentWidget() is SHELL.zones[zone], crumb
 
 
-def test_portfolios_import(app: QApplication, shell: Shell) -> None:
+def test_portfolios_import() -> None:
     """PORTFOLIOS' «Importar» opens the archived version on Estrategia, SELECTION untouched;
     a live strategy chosen afterwards brings the live ficha back."""
-    zone = shell.zones["Portfolios"]
-    shell.open_zone("Portfolios")
-    wait(app, lambda: bool(getattr(zone, "rows", None)), 20)
+    zone = SHELL.zones["Portfolios"]
+    SHELL.open_zone("Portfolios")
+    wait(QAPP, lambda: bool(getattr(zone, "rows", None)), 20)
     if not getattr(zone, "rows", None):
         print("    (sin estrategias archivadas en AlgoData/archive: no hay nada que importar)")
         return
     before = dict(SELECTION.now)
     zone.pick(zone.rows[0]["identity"])
     zone.import_requested.emit(zone.rows[0]["identity"], "")
-    settle(app)
-    assert shell.stack.currentWidget() is shell.estrategia, shell.status.text()
-    assert shell.estrategia.currentWidget() is shell.estrategia.imported
+    settle(QAPP)
+    assert SHELL.stack.currentWidget() is SHELL.estrategia, SHELL.status.text()
+    assert SHELL.estrategia.currentWidget() is SHELL.estrategia.imported
     assert SELECTION.now == before
-    wait(app, lambda: not shell.estrategia.imported.said.text())
-    shot(shell, "portfolios-importada")
-    shell.estrategia.show_live()
-    assert shell.estrategia.currentWidget() is shell.ficha
+    wait(QAPP, lambda: not SHELL.estrategia.imported.said.text())
+    shot(SHELL, "portfolios-importada")
+    SHELL.estrategia.show_live()
+    assert SHELL.estrategia.currentWidget() is SHELL.ficha
 
 
-def test_grabs(app: QApplication, shell: Shell) -> None:
+def test_grabs() -> None:
     """One grab per zone the selection does not change, for a person to look at."""
     for zone in ZONES:
         if zone in ("Proyecto", "Databanks", "Estrategia"):
             continue
-        shell.open_zone(zone)
-        settle(app)
-        shot(shell, slug(zone))
+        SHELL.open_zone(zone)
+        settle(QAPP)
+        shot(SHELL, slug(zone))
 
 
 def main() -> None:
     """Run every check and print its time."""
-    serve()
-    app = QApplication(sys.argv)
-    app.setStyleSheet(QSS)
-    t = time.time()
-    shell = Shell()
-    shell.resize(1440, 900)
-    shell.show()
-    print(f"ok  Shell()  {time.time() - t:.1f} s")
     for test in (test_every_zone, test_panel_to_strategy, test_crumbs, test_portfolios_import,
                  test_grabs):
         t = time.time()
-        test(*(app, shell)[2 - test.__code__.co_argcount:])
+        test()
         print(f"ok  {test.__name__}  {time.time() - t:.1f} s")
 
 

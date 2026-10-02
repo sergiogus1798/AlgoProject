@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 
 from core.paths import ROOT, UI_PORT
 from ui.daemon import version
-from ui.desktop import client, helpmark
+from ui.desktop import client, combofix, helpmark
 from ui.desktop.shell import Shell
 from ui.desktop.theme import QSS
 
@@ -129,6 +129,7 @@ def main() -> None:
     app.setWindowIcon(QIcon(str(Path(__file__).with_name("icon-256.png"))))
     app.setStyleSheet(QSS)
     helpmark.install(app)     # the «?» beside every button
+    combofix.install(app)     # every dropdown shows all it fits (§1, 2026-09-30)
     window = Shell()
     window.open_zone(args.zone)
     window.show()

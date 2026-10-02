@@ -48,15 +48,24 @@ def put_back(before: str | None) -> None:
         os.environ[gate.AUTONOMOUS] = before
 
 
-def test_route() -> dict:
+def _route_autonomous() -> dict:
+    """`route(PROJECT)` as an autonomous agent — refetched by whichever test needs it (an
+    in-process TestClient call is cheap) instead of passed between tests, which only ever
+    worked from `__main__`'s own call order (📓 2026-09-30, T1/R UI feedback pass: a bare
+    `python3 -m pytest` collected a plain parameter like `data` as a fixture pytest never
+    defined, and every dependent test errored at setup)."""
+    before = as_agent(True)
+    try:
+        return route(PROJECT)
+    finally:
+        put_back(before)
+
+
+def test_route() -> None:
     """The real project, read as an autonomous agent: every step in WORKFLOW order, the
     contract's keys, the ledger's door. Step 8 is checked by invariants, not by today's
     counts: filters and curations of the live project move its output."""
-    before = as_agent(True)
-    try:
-        return check_route(route(PROJECT))
-    finally:
-        put_back(before)
+    check_route(_route_autonomous())
 
 
 def check_route(data: dict) -> dict:
@@ -114,8 +123,9 @@ def test_seal() -> None:
     assert on_disk["state"] == "sealed" and "backfill" in on_disk["why"]
 
 
-def test_widget(data: dict) -> None:
+def test_widget() -> None:
     """Proyecto's rail draws the real project and its cards, and one grab is saved."""
+    data = _route_autonomous()
     from ui.desktop import client
     from ui.desktop.theme import QSS
     from ui.desktop.workspace.rail import Rail
@@ -145,9 +155,10 @@ def test_widget(data: dict) -> None:
     assert drawer.note.isVisibleTo(rail) and "PREFLIGHT" in drawer.note.text()
 
 
-def test_needs(data: dict) -> None:
+def test_needs() -> None:
     """Every step but the first needs an earlier one, from the project's tasks where it can:
     the OOS retest the build, the cross-market retest the OOS and its judge (8)."""
+    data = _route_autonomous()
     by = {s["n"]: s for s in data["steps"]}
     order = [s["n"] for s in data["steps"]]
     assert by["1"]["needs"] == []
@@ -182,10 +193,10 @@ def test_project_knobs() -> None:
 
 if __name__ == "__main__":
     test_human()
-    real = test_route()
+    test_route()
     test_unknown_project()
     test_seal()
-    test_needs(real)
+    test_needs()
     test_project_knobs()
-    test_widget(real)
+    test_widget()
     print("ok")

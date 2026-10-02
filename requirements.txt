@@ -20,6 +20,8 @@ numba==0.67.0
 threadpoolctl==3.7.0
 # Physical cores, which is how many worker processes are worth starting.
 psutil==7.2.2
+# The golden and known-answer tests (tests/).
+pytest==9.1.1
 
 # The desktop app (ui/). Qt for the window, FastAPI+uvicorn for the local daemon,
 # httpx for the one hop between them.

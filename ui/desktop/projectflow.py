@@ -59,14 +59,20 @@ class StrategyZone(QStackedWidget):
         return ""
 
 
-def origin(shell: QWidget) -> str:
-    """The databank panel tab the ficha was opened from, as the ficha's families know it."""
+def origin(shell: QWidget) -> tuple[str, str]:
+    """The databank panel's tab (and its open sub-panel) the ficha was opened from.
+
+    Returns:
+        (tab, sub) as `ficha.fill` and `fichaorigin.default_study` read them; sub is "" when
+        the tab is not one `ORIGIN_FAMILY` knows, or before the panel has its tab row.
+    """
     try:
-        top = shell.workspace.panel.top
-        tab = top.tabText(top.currentIndex())
+        panel = shell.workspace.panel
+        tab = panel.top.tabText(panel.top.currentIndex())
+        sub = panel.sub.tabText(panel.sub.currentIndex())
     except AttributeError:                    # a panel without its tab row yet
-        return FIRST_PANEL
-    return tab if tab in ficha_module.ORIGIN_FAMILY else FIRST_PANEL
+        return FIRST_PANEL, ""
+    return (tab, sub) if tab in ficha_module.ORIGIN_FAMILY else (FIRST_PANEL, "")
 
 
 def catch_up(shell: QWidget, zone: str) -> None:
@@ -82,7 +88,7 @@ def catch_up(shell: QWidget, zone: str) -> None:
         SHOWN[zone] = now["project"]
     wanted = (now["project"], now["databank"], now["strategy"])
     if zone == "Estrategia" and now["strategy"] and SHOWN[zone] != wanted:
-        shell.estrategia.ficha.fill(now["project"], now["strategy"], origin(shell))
+        shell.estrategia.ficha.fill(now["project"], now["strategy"], *origin(shell))
         shell.estrategia.show_live()
         SHOWN[zone] = wanted
 

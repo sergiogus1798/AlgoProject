@@ -9,6 +9,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+import pytest  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -31,6 +32,23 @@ def fake_jobs(listed: list[dict]) -> list:
     return started
 
 
+def held() -> bool:
+    """Whether an install holds both fixture databanks today."""
+    fake_jobs([])
+    return not any(state.status(*bank).get("error") for bank in (BUILD, CROSS))
+
+
+# Moved above the tests that need it as a decorator (was below, only read from `__main__`) —
+# under a bare `pytest`, the four tests below ran unconditionally and failed with a bare
+# KeyError instead of skipping, on nights the custodian does not hold this fixture project
+# (📓 2026-09-30, T1/R UI feedback pass: it did not tonight, retired per the coordinator's G/H
+# findings). Not a code regression: `state.status` correctly returns `{"error": ...}` for an
+# absent project; these tests just never had a pytest-side skip to match `__main__`'s.
+NEEDS_FIXTURE = pytest.mark.skipif(not held(), reason=f"ninguna instalación guarda "
+                                   f"{BUILD[0]} / {BUILD[1]} y {CROSS[1]}")
+
+
+@NEEDS_FIXTURE
 def test_status_and_lanes() -> None:
     """A build databank pairs with OOS and needs the conductor for trades and cosecha only;
     a cross-market one exports with data=all; the metrics never touch SQX."""
@@ -47,6 +65,7 @@ def test_status_and_lanes() -> None:
     assert "sqx.export.export_retest" in todo["trades"][1], todo
 
 
+@NEEDS_FIXTURE
 def test_failure_and_retry() -> None:
     """A failed load stays failed and is not queued again until the owner retries."""
     failed = {"loader": "trades", "project": BUILD[0], "databank": BUILD[1], "rc": 1,
@@ -60,6 +79,7 @@ def test_failure_and_retry() -> None:
     assert "trades" in {a[2]["loader"] for a, _ in started}, started
 
 
+@NEEDS_FIXTURE
 def test_writing_waits() -> None:
     """While SQX writes the project nothing is read or queued, and the roster is empty."""
     started = fake_jobs([])
@@ -72,6 +92,7 @@ def test_writing_waits() -> None:
         find.writing = real
 
 
+@NEEDS_FIXTURE
 def test_route_and_roster() -> None:
     """The routes answer, an unknown databank is a sentence, and the roster lists the files."""
     fake_jobs([])
@@ -94,12 +115,6 @@ def test_conductor_one_at_a_time() -> None:
     assert now[light]["queued"] is None
     for i in (*ids, light):
         jobs.cancel(i)
-
-
-def held() -> bool:
-    """Whether an install holds both fixture databanks today."""
-    fake_jobs([])
-    return not any(state.status(*bank).get("error") for bank in (BUILD, CROSS))
 
 
 def test_resave_is_not_a_change() -> None:

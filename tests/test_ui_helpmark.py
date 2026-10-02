@@ -14,6 +14,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT), str(ROOT / "tools")]
 
+import pytest  # noqa: E402
 from PySide6.QtCore import QEvent, QPoint  # noqa: E402
 from PySide6.QtGui import QHelpEvent  # noqa: E402
 from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QPushButton,  # noqa: E402
@@ -22,6 +23,14 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QPushButt
 from ui.desktop import helpmark  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 from ui.text.buttonhelp import help_for, merge, normalise  # noqa: E402
+
+# `app`/`port` used to be plain parameters, only ever filled by `main()` below — a bare
+# `python3 -m pytest` collected them as fixtures pytest never defined and every test here
+# errored at setup (📓 2026-09-30, T1/R UI feedback pass; same fix as `test_ui_studypage.py`).
+# `APP` built once at import, same pattern as the rest of `tests/test_ui_*.py`.
+APP = QApplication.instance() or QApplication(sys.argv)
+APP.setStyleSheet(QSS)
+helpmark.install(APP)
 
 
 def marks(w: QWidget) -> list:
@@ -42,7 +51,7 @@ def test_keys() -> None:
     assert help_for("Guardar") == "" and help_for("") == ""
 
 
-def test_marks(app: QApplication) -> None:
+def test_marks() -> None:
     """One mark per button: in its row, or floating right of it in a grid or a column (never a
     grid cell, never a wider button); hidden with it, gone with it."""
     top = QWidget()
@@ -65,10 +74,10 @@ def test_marks(app: QApplication) -> None:
     column.addWidget(fixed)
     column.addWidget(QTabBar())
     top.show()
-    app.processEvents()
+    APP.processEvents()
     top.hide()
     top.show()                       # a second show never adds a second mark
-    app.processEvents()
+    APP.processEvents()
     by = {m.button.text(): m for m in marks(top)}
     assert sorted(by) == sorted(["▶ correr marcados (0)", "xyz", "abc", "seguir leyendo"]), by
     assert row.indexOf(by["▶ correr marcados (0)"]) == row.indexOf(known) + 1
@@ -83,12 +92,12 @@ def test_marks(app: QApplication) -> None:
     assert not by["▶ correr marcados (0)"].isHidden()
     tipped.deleteLater()
     for _ in range(2):               # the button, then the mark its `destroyed` scheduled
-        app.sendPostedEvents(None, QEvent.DeferredDelete)
+        APP.sendPostedEvents(None, QEvent.DeferredDelete)
     assert len(marks(top)) == 3
     top.deleteLater()
 
 
-def test_dead_button(app: QApplication) -> None:
+def test_dead_button() -> None:
     """A tooltip asked of a mark whose button just died must not touch the button (it was a
     segfault: one DeferredDelete pass kills the button, the mark's own deletion still waits)."""
     top = QWidget()
@@ -96,16 +105,16 @@ def test_dead_button(app: QApplication) -> None:
     button = QPushButton("Leer ahora")
     lay.addWidget(button)
     top.show()
-    app.processEvents()
+    APP.processEvents()
     mark = marks(top)[0]
     button.deleteLater()
-    app.sendPostedEvents(None, QEvent.DeferredDelete)
+    APP.sendPostedEvents(None, QEvent.DeferredDelete)
     QApplication.sendEvent(mark, QHelpEvent(QEvent.ToolTip, QPoint(2, 2), QPoint(2, 2)))
     assert mark.button is None
     top.deleteLater()
 
 
-def test_reparent(app: QApplication) -> None:
+def test_reparent() -> None:
     """A marked button moved to another parent keeps one «?», next to it in the new place."""
     first, second = QWidget(), QWidget()
     one, two = QHBoxLayout(first), QHBoxLayout(second)
@@ -113,17 +122,17 @@ def test_reparent(app: QApplication) -> None:
     one.addWidget(button)
     first.show()
     second.show()
-    app.processEvents()
+    APP.processEvents()
     two.addWidget(button)            # reparents it to `second`
     button.show()
     for _ in range(2):
-        app.processEvents()
-        app.sendPostedEvents(None, QEvent.DeferredDelete)
+        APP.processEvents()
+        APP.sendPostedEvents(None, QEvent.DeferredDelete)
     assert not marks(first) and len(marks(second)) == 1, (marks(first), marks(second))
     orphan = QPushButton("Leer ahora")
     orphan.setParent(None)
     orphan.show()                    # a top-level button: no parent, no mark, no exception
-    app.processEvents()
+    APP.processEvents()
     for w in (first, second, orphan):
         w.deleteLater()
 
@@ -136,7 +145,12 @@ def test_merge() -> None:
     assert merge("Hace a.", "Apagado: falta el proyecto.") == "Hace a.\n\nApagado: falta el proyecto."
 
 
-def test_coverage(app: QApplication, port: int) -> None:
+# Needs a real scratch daemon on its own port (never the owner's 8765) — opt-in via
+# `--port` in `__main__` below, never through a bare `pytest`/`python3 -m pytest` collection,
+# which has no port to give it and no fixture named `port` to ask pytest for one.
+@pytest.mark.skip(reason="needs --port (a scratch daemon): run "
+                         "`python3 tests/test_ui_helpmark.py --port 8772`")
+def test_coverage(port: int = 0) -> None:
     """Walk every zone as uiwalk does; every visible enabled button must say what it does."""
     import uiwalk
     uiwalk.aim(port)
@@ -160,7 +174,7 @@ def test_coverage(app: QApplication, port: int) -> None:
 
     uiwalk.settle = look
     for zone in ZONES:
-        uiwalk.walk(shell, app, zone, "Test_USDJPY_donchianUpperCrossUp_M30")
+        uiwalk.walk(shell, APP, zone, "Test_USDJPY_donchianUpperCrossUp_M30")
     sys.excepthook = sys.__excepthook__     # uiwalk's hook would swallow the assertion below
     counted = [b for b in shell.findChildren(QPushButton) if not helpmark.skipped(b)]
     print(f"    {len(counted)} botones vivos al final, {len(marks(shell))} con «?», "
@@ -173,18 +187,15 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--port", type=int, help="un demonio de pruebas, nunca el 8765 del dueño")
     args = ap.parse_args()
-    app = QApplication(sys.argv)
-    app.setStyleSheet(QSS)
-    helpmark.install(app)
     test_keys()
     print("ok  test_keys")
     for test in (test_marks, test_dead_button, test_reparent):
-        test(app)
+        test()
         print(f"ok  {test.__name__}")
     test_merge()
     print("ok  test_merge")
     if args.port:
-        test_coverage(app, args.port)
+        test_coverage(args.port)
         print("ok  test_coverage")
     else:
         print("--  test_coverage: sin --port, no se recorre la ventana")

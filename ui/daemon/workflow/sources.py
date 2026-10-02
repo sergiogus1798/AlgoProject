@@ -7,7 +7,7 @@ from pathlib import Path
 
 from core import worker
 from core.datapaths import project_registry, template_dir, template_runs
-from core.paths import DATA
+from core.paths import DATA, MT5_DATA
 from ui.daemon import progress, tasklog
 from ui.daemon.workflow.steps import BATCH_ROOTS, DROP
 
@@ -71,6 +71,8 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
         Reports live under reports/<project>/<databank>/<day>/<key>/; batch studies under
         `BATCH_ROOTS`/<project>/<batch>/estudios/<key>(.json).
     """
+    if key == "mt5Validation":
+        return verified(project)
     found = []
     for folder in (DATA / "reports" / project).glob(f"*/*/{key}"):
         m = folder / "manifest.json"
@@ -83,9 +85,32 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
                 found.append({"path": hit, "day": day_of(hit), "databank": None,
                               "manifest": {}})
     if strategy_runs is not None:
-        found = [r for r in found
-                 if ("--strategy" in r["manifest"].get("command", "")) == strategy_runs]
+        # A `--strategy` run writes only `estrategias/<name>.json` and no manifest — the folder's
+        # manifest is step 8's population run of the same day (📓 2026-09-30: step 25 ran on
+        # three mothers and the rail said «sin resultado»). Step 25 is read off those files.
+        def per_strategy(r: dict) -> bool:
+            """Whether a result folder holds `--strategy` runs."""
+            return any((r["path"] / "estrategias").glob("*.json"))
+
+        def population(r: dict) -> bool:
+            """Whether a result folder holds a population run."""
+            return bool(r["manifest"]) and "--strategy" not in r["manifest"].get("command", "")
+
+        found = [r for r in found if (per_strategy if strategy_runs else population)(r)]
     return sorted(found, key=lambda r: r["day"], reverse=True)
+
+
+def verified(project: str) -> list[dict]:
+    """Step 26's runs of this project's strategies, newest first — «Verificar» files them under
+    `mt5/verify/<run>/`, not under the project, so a run is this project's when the .sqx it
+    verified came from a folder named after it (its databank, or the copies of steps 23-24)."""
+    found = []
+    for meta in (MT5_DATA / "verify").glob("*/run.json"):
+        run = json.loads(meta.read_text(encoding="utf-8"))
+        if f"/{project}/" in run.get("file", "") and run.get("state") == "done":
+            found.append({"path": meta.parent, "day": run["started"][:10], "databank": None,
+                          "manifest": {}})
+    return sorted(found, key=lambda r: r["path"].name, reverse=True)
 
 
 def funnel(result: dict) -> tuple[int | None, int | None, str]:

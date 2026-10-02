@@ -15,8 +15,8 @@ TILE_HELP = {
     "build_confirmed": "Cuántas han pasado de 'el XML resuelve' a 'una construcción real sacó "
                        "estrategias que llevan su bloque'. Es el único estado que prueba algo.",
     "runs": "Filas de runs.csv: cada una es una plantilla probada en un activo y un timeframe.",
-    "symbols": "Activos distintos tocados por alguna corrida.",
-    "timeframes": "Timeframes distintos tocados por alguna corrida.",
+    "symbols": "Activos distintos tocados por algún run.",
+    "timeframes": "Timeframes distintos tocados por algún run.",
     "archetypes_used": "Arquetipos con al menos una plantilla, sobre los que el catálogo conoce. "
                        "La distancia entre los dos números es de lo que tienes poco.",
     "drafts": "Briefs que el chat ha redactado y que nadie ha autorado todavía. No cuentan "
@@ -116,7 +116,7 @@ class Matrix(QWidget):
                 item.widget().deleteLater()
         shown = [("Plantillas", str(totals["templates"]), "templates"),
                  ("Confirmadas", str(totals["build_confirmed"]), "build_confirmed"),
-                 ("Corridas", str(totals["runs"]), "runs"),
+                 ("Runs", str(totals["runs"]), "runs"),
                  ("Activos", str(totals["symbols"]), "symbols"),
                  ("Timeframes", str(totals["timeframes"]), "timeframes"),
                  ("Arquetipos cubiertos",

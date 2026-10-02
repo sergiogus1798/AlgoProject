@@ -139,8 +139,7 @@ r = run(d, stages, risk={"phase1": 1.0, "phase2": 1.0})
 check("phase2 starts fresh: passes on day 2, not day 1 (no carried balance)",
       r["outcome"] == "pass" and r["stage"] == "phase2" and r["stage_days"] == [0, 2], r)
 
-# 11. horizon: a pass within the window, a pass one day too late reads open, a fail is a fail
-# regardless of timing, and horizon=0 means no limit (matches an unbounded run)
+# 11. horizon: a pass in the window passes, a late one stays open, a fail fails regardless, and horizon=0 is unbounded
 d = _days(6); d["closed"][4] = 500.0
 r = run(d, [_stage(target=0.05)], start=0, horizon=5)
 check("horizon: pass on the deadline day (start + horizon - 1) still passes",
@@ -247,4 +246,5 @@ machine.sweep(days, p, {"phase1": 0.4, "phase2": 0.4}, starts)
 print(f"sweep timing: 2,500 starts x 2,500 days = {time.perf_counter() - t0:.3f} s")
 
 print(f"\n{len(FAILED)} failed" if FAILED else "\nall checks passed")
-sys.exit(1 if FAILED else 0)
+if __name__ == "__main__":     # guarded (T1/R, 2026-09-30): a bare exit crashed `pytest tests/`
+    sys.exit(1 if FAILED else 0)

@@ -75,7 +75,7 @@ class Detail(QWidget):
         if t.get("reach"):
             lay.addWidget(QLabel("Qué rellena el builder", objectName="h2"))
             lay.addWidget(shape_panel(t))
-        lay.addWidget(QLabel("Corridas", objectName="h2"))
+        lay.addWidget(QLabel("Runs", objectName="h2"))
         lay.addWidget(self.runs(t))
         if t["brief_md"]:
             lay.addWidget(QLabel("Brief", objectName="h2"))

@@ -109,11 +109,14 @@ def one(spec: dict, key: str, ctx: dict, live: list[dict]) -> dict:
     if job:
         return row | {"state": "running",
                       "why": f"{job['state'] or 'en marcha'} desde {job['started'][11:16]}"}
-    if refused:
-        return row | {"state": "blocked", "why": refused}
+    # A result says the test ran, even one the rail cannot launch itself (an SQX step's
+    # analysis, a terminal-only study, the MT5 check): «bloqueado» beside it read as not done
+    # (📓 2026-09-30, steps 19, 23 and 26 of a finished run).
     if found:
         return row | {"state": "done", "why": f"último resultado del {found[0]['day']}"
                       + (f" sobre {found[0]['databank']}" if found[0]["databank"] else "")}
+    if refused:
+        return row | {"state": "blocked", "why": refused}
     return row | {"state": "pending", "why": "sin resultado para este proyecto"}
 
 

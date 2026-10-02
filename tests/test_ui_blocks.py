@@ -26,6 +26,11 @@ SYNTHETIC = [          # kinds no stored report carries yet, so they are built h
      "fit": {"slope": 0.1, "intercept": 0.0, "r": 0.2}},
     {"kind": "verdict", "label": "PASA", "state": "pass", "score": 81.0, "meaning": "m",
      "parts": [{"label": "p", "state": "watch", "value": None, "note": "n"}]},
+    {"kind": "callout", "text": "El 39,7 % de las simulaciones rindieron peor que el backtest "
+     "real en Profit Factor.", "state": "watch"},
+    {"kind": "list", "title": "t", "note": "n",
+     "items": [{"title": "Shuffle sequence", "text": "d1"},
+              {"title": "Resample sequence", "text": "d2"}]},
 ]
 
 

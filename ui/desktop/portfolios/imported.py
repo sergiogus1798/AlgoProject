@@ -54,7 +54,7 @@ class ImportedFicha(Ficha):
                            "stats": fetch("strategy/stats", **q),
                            "meta": fetch("strategy/meta", **q)})
 
-    def lower(self, live: bool, family: str) -> None:
+    def lower(self, live: bool, family: str, study: str | None = None) -> None:
         """The frozen studies stand where the study tabs would: nothing to switch."""
 
     def reload(self) -> None:

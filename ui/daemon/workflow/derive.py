@@ -86,7 +86,7 @@ def sqx(spec: dict, ctx: dict) -> dict:
     else:
         n_in = view["banks"].get(tasks[0]["input"]) if spec["stage"] != "build" else None
         n_out = held[tasks[-1]["title"]]
-        how = "Sin corrida de hoy en el log del proyecto: cuentas del databank"
+        how = "Sin run de hoy en el log del proyecto: cuentas del databank"
     day = (runs[-1]["started"][:10] if runs else
            sources.day_of(view["folder"] / "databanks" / tasks[-1]["output"]))
     return step("done", f"{killed}{how}. En disco: {listing}"

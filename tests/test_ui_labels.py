@@ -23,7 +23,7 @@ RAW = ("nulls.draws", "run.blocks", "ingest.capital", "=None", "e-05", "e+06", "
 def test_rail_line() -> None:
     """The one-line config a test carries reads as words: labelled knobs, numbers in full."""
     got = readable("nulls.draws=2500 · run.blocks=None · ingest.capital=1e-05 (+9)")
-    assert got == ("Nulos › Corridas 2 500 · Ejecución › Bloques — · Ingesta › Capital "
+    assert got == ("Nulos › Runs 2 500 · Ejecución › Bloques — · Ingesta › Capital "
                    "0.00001 · y 9 más"), got
     assert readable("sin configuración") == "sin configuración"
     assert knob("presencia.kind") == "Presencia › Tipo"
@@ -34,14 +34,14 @@ def test_filter_words() -> None:
     cases = {"crossTF.H1.p": "Cross-timeframe · H1 · p",
              "mcRetest.stress_net_p5": "MC Retest · Neto p5 bajo estrés",
              "spread.operaciones": "Spread real de Darwinex · Operaciones",
-             "Net profit (IS)": "Beneficio neto IS",
+             "Net profit (IS)": "Net Profit IS",
              "dist:monkey/Sharpe [R]": "Distribución · Test del mono · Sharpe [R]"}
     for key, words in cases.items():
         assert evaluate.named(key) == words, (key, evaluate.named(key))
     text = evaluate.expression([{"metric": "crossTF.H1.p", "op": "<", "value": 0.00001},
                                 {"metric": "Net profit (OOS)", "op": "entre",
                                  "value": [0.0, 2_000_000.0]}])
-    assert text == ("Cross-timeframe · H1 · p < 0.00001 AND Beneficio neto OOS entre 0 y "
+    assert text == ("Cross-timeframe · H1 · p < 0.00001 AND Net Profit OOS entre 0 y "
                     "2000000"), text
     assert not any(r in text for r in RAW), text
 
