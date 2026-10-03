@@ -15,11 +15,12 @@ from core.datapaths import projects_backup, tmp_dir
 from core.paths import worker_dir
 from core.symbols import current
 from sqx.inspect.keep_tasks import keep
-from sqx.projects import crosschecks, rankings, registry, source, summary
-from sqx.projects.configure import configure, ignored_templates, running_install
+from sqx.projects import buildrules, cfxio, crosschecks, rankings, registry, source, summary
+from sqx.projects.configure import configure, ignored_templates
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session, caps
-from sqx.projects.patch import set_caps, set_template, sync_databanks
+from sqx.projects.patch import (GENERATIONS, install_template, set_caps, set_generation,
+                                set_simple, set_template, sync_databanks)
 from sqx.projects.registryxml import refresh_all
 from sqx.projects.resources import borrow_symbol, main_feed, refuse
 from sqx.projects import workflow as wf
@@ -41,31 +42,17 @@ def directions(template: Path) -> list[str]:
                    if re.search(r'key="Enter\w*"', m.group(0))})
 
 
-def install_template(template: Path, target: Path) -> None:
-    """Copy a template into an install with its old feed names translated (`core.symbols.current`).
-
-    SQX resolves a template's own `lastSettings.xml` as a project resource: a feed renamed since
-    the template was saved makes every later `action=start` answer «Project has unresolved
-    resources», while the build itself runs (🔬 2026-10-01, AUDJPY_TICK).
-    """
-    with zipfile.ZipFile(template) as z:
-        members = {n: z.read(n) for n in z.namelist()}
-    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as z:
-        for n, blob in members.items():
-            z.writestr(n, current(blob.decode("utf-8")).encode("utf-8") if n.endswith(".xml")
-                       else blob)
-
-
-def build(name: str, template: Path, symbol: str, role: str, timeframe: str, strategies: int,
-          minutes: int, donor: Path, segment: str | None = None,
+def build(name: str, template: Path | None, symbol: str, role: str, timeframe: str,
+          strategies: int, minutes: int, donor: Path, segment: str | None = None,
           tasks: tuple = ("Build",), only: set | None = None,
           session_from: Path | None = None, silence: tuple = (), workflow: bool = False,
-          acceptance: str = "study") -> dict:
+          acceptance: str = "study", side: str | None = None,
+          generation: str = GENERATIONS[0]) -> dict:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
         name: Project name, underscores only — the HTTP API splits on whitespace.
-        template: The .sqx to build from, from the template library.
+        template: The library .sqx to build from; None for a Simple Strategy (needs `side`).
         symbol: Asset name, e.g. "XAUUSD".
         role: Which headless install it is installed into and will build on.
         timeframe: SQX timeframe name. Every task of the project gets this one — a retest
@@ -85,6 +72,8 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
         workflow: Every workflow step's task in this one project, only Build and OOS on, every
             retest's acceptance silenced (owner, 2026-09-25/26). Overrides `tasks` and `only`.
         acceptance: Which filters of `assets/_study.yaml` the Build accepts by (`rankings`).
+        side: "long" or "short" — the one direction a Simple Strategy build generates.
+        generation: One of `patch.GENERATIONS`; "random-generation" is a population's twin.
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
@@ -94,10 +83,12 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
     install = worker_dir(role)
     # Every library folder holds a file literally called template.sqx: installed under that
     # name two templates collide silently, so the folder is the template's name.
-    stem = template.parent.name if template.stem == "template" else template.stem
-    installed_template = install / TEMPLATES_REL / "authored" / f"{stem}.sqx"
-    installed_template.parent.mkdir(parents=True, exist_ok=True)
-    install_template(template, installed_template)
+    installed_template = None
+    if template:
+        stem = template.parent.name if template.stem == "template" else template.stem
+        installed_template = install / TEMPLATES_REL / "authored" / f"{stem}.sqx"
+        installed_template.parent.mkdir(parents=True, exist_ok=True)
+        install_template(template, installed_template)
 
     with zipfile.ZipFile(donor) as z:
         members = {n: z.read(n) for n in z.namelist()}
@@ -111,15 +102,13 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
     members, kept = keep(members, set(tasks), only=only)
     added = wf.complete(members) if workflow else []
 
-    borrowed = (borrow_session(members, load(symbol)["session"], session_from)
-                if session_from else None)
+    borrowed = borrow_session(members, load(symbol)["session"], session_from)   # else SQX's registry
     # The donor's own feed is read from its generator when it kept one, and otherwise
     # from any task: every task of a one-asset donor names the same chart.
     tasks = [m for m in members if m.endswith(".xml") and m != "config.xml"]
     build_member = next((m for m in tasks if m.startswith("Build-")), tasks[0])
     donor_feed = main_feed(members, build_member)
-    replaced = (borrow_symbol(members, load(symbol)["sqx_symbol"], build_member, session_from)
-                if session_from else None)
+    replaced = borrow_symbol(members, load(symbol)["sqx_symbol"], build_member, session_from)
     refresh_all(members)   # the donor and any borrowed project predate the 2026-10-01 EETUS move
 
     config, synced = sync_databanks(members["config.xml"].decode("utf-8"))
@@ -129,8 +118,9 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
              for t in ElementTree.fromstring(members["config.xml"]).find("Tasks")}
     quiet = 0
     for member in [n for n in members if n.endswith(".xml") and n != "config.xml"]:
-        text = set_template(members[member].decode("utf-8"), installed_template)
-        text = set_caps(text, strategies, minutes)
+        text = members[member].decode("utf-8")
+        text = set_template(text, installed_template) if template else set_simple(text, side)
+        text = set_caps(set_generation(text, generation), strategies, minutes)
         if kinds.get(member) in silence:
             text, n = crosschecks.silence(text)
             quiet += n
@@ -165,7 +155,8 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
                  "session_borrowed_from": str(session_from) if session_from else None,
                  "session_borrowed_into": borrowed,
                  "feed": load(symbol)["sqx_symbol"], "feed_replaced": replaced,
-                 "template": str(installed_template), "tasks": kept["kept"], "added": added,
+                 "template": str(installed_template or f"Simple Strategy, {side}"),
+                 "generation": generation, "tasks": kept["kept"], "added": added,
                  "databanks": kept["databanks"], "synced_to_disk": synced,
                  "chain": chained,
                  "max_strategies": strategies, "minutes": minutes, "silenced": quiet,
@@ -185,9 +176,12 @@ def build(name: str, template: Path, symbol: str, role: str, timeframe: str, str
 def main() -> None:
     """Build and install one Builder project, refusing on anything undecided."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("name", help="Test_<...> (functional test) or Trade_<...> (real work)")
+    ap.add_argument("name", help="Test_<...> (functional test), Trade_<...> (real work) or Research_<...> (research queue)")
     ap.add_argument("--purpose", required=True, help="one sentence: what this project is for")
-    ap.add_argument("--template", type=Path, required=True)
+    shape = ap.add_mutually_exclusive_group(required=True)
+    shape.add_argument("--template", type=Path)
+    shape.add_argument("--simple", choices=("long", "short"), help="Simple Strategy, one side")
+    ap.add_argument("--random", action="store_true", help="random generation, not genetic")
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--role", default="custodian")
     ap.add_argument("--timeframe", required=True, help="M15, M30, H1 or H4 — every task gets it")
@@ -195,7 +189,7 @@ def main() -> None:
     ap.add_argument("--minutes", type=int, help="default: databank.caps by prefix")
     ap.add_argument("--donor", type=Path, default=DONOR)
     ap.add_argument("--session-from", type=Path, help="project.cfx to borrow the asset's session "
-                    "and feed from; default the newest one defining both — read only")
+                    "and feed from; default the newest one defining the feed — read only")
     ap.add_argument("--segment", choices=("build", "oos1"),
                     help="force one segment on every task; omit to take each task's own")
     ap.add_argument("--tasks", default="Build",
@@ -212,19 +206,21 @@ def main() -> None:
 
     if registry.check_name(a.name):
         raise SystemExit(registry.check_name(a.name))
-    if not a.template.exists():
+    if a.template and not a.template.exists():
         raise SystemExit(f"{a.template} does not exist.")
-    sides = directions(a.template)
+    sides = directions(a.template) if a.template else [a.simple]
     if len(sides) != 1:
         raise SystemExit(f"{a.template.name} abre operaciones en {sides or 'ninguna dirección'}: "
                          "una plantilla, y un build, van en UNA sola dirección, long o short "
                          "(regla dura del dueño, 2026-10-01).")
+    if a.template and (over := buildrules.over_the_cap(a.template, doctrine()["complexity"])):
+        raise SystemExit("\n".join(over))
     asset = load(a.symbol)
     missing = pending(asset)
     if missing:
         raise SystemExit(f"{a.symbol}: {', '.join(missing)} have no agreed value. Ask the owner "
                          "before authoring anything for it (hard rule 5).")
-    held = running_install(worker_dir(a.role) / "user/projects" / a.name / "project.cfx")
+    held = cfxio.held(worker_dir(a.role) / "user/projects" / a.name / "project.cfx")
     if held:
         raise SystemExit(f"the {held} is running and rewrites a project.cfx on exit. "
                          f"Stop it: bin/sqx-worker.sh --role {held} stop")
@@ -237,9 +233,10 @@ def main() -> None:
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe,
                  *caps(a.name, a.max_strategies, a.minutes), a.donor, a.segment, tuple(a.tasks.split(',')),
                  set(a.only.split(',')) if a.only else None, borrow,
-                 tuple(x for x in a.silence.split(',') if x), a.workflow, a.acceptance)
+                 tuple(x for x in a.silence.split(',') if x), a.workflow, a.acceptance,
+                 a.simple, GENERATIONS[a.random])
 
-    registry.record(done, a.purpose, a.symbol, str(a.template))
+    registry.record(done, a.purpose, a.symbol, str(a.template or f"simple:{a.simple}"))
     if a.json:
         print(json.dumps(done, indent=2))
         return

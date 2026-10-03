@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 
 from core import assetdata
 from core.assetdata import doctrine
+from sqx.projects import cfxio
 from sqx.projects.crosschecks import silence
 from sqx.projects.databanks import set_databank
 from sqx.projects.perturbations import OUT_OF_SAMPLE
@@ -190,8 +191,6 @@ def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, di
                             f'title="{cfg["export_title"]}" />\n  </Tasks>', 1)
     config = declare(config, [cfg["input"]] + [r["output"] for r in rows])
     members["config.xml"] = config.encode("utf-8")
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(cfx, members)
     return {"project": ElementTree.fromstring(config).get("name"), "input": cfg["input"],
             "tasks": rows, "export": cfg["export_title"]}

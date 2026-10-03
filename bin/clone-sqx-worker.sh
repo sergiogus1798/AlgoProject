@@ -45,7 +45,10 @@ say "Preflight — role $ROLE: $WORKER (ports $CLI_PORT / $EDITOR_PORT / $WEB_PO
 [ -d "$MASTER" ] || { echo "master not found: $MASTER"; exit 1; }
 [ -e "$WORKER" ] && { echo "worker already exists: $WORKER — remove it first"; exit 1; }
 
-if pgrep -f "StrategyQuantX|strategyquantx_ui|sqcli" >/dev/null 2>&1; then
+# Exact process names, as bin/sqx-worker.sh matches them — never `pgrep -f`, which also
+# matches any shell or `claude -p` whose command line merely names SQX and refuses falsely.
+# The kernel keeps 15 characters of a name, so strategyquantx_ui shows as strategyquantx_.
+if pgrep -x 'sqcli|StrategyQuantX|strategyquantx_' >/dev/null 2>&1; then
   echo "SQX or sqcli is running. Close it first — H2 takes exclusive locks."; exit 1
 fi
 for p in 5050 5051 8080 "$CLI_PORT" "$EDITOR_PORT" "$WEB_PORT"; do

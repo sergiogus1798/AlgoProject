@@ -3,6 +3,8 @@
 
 import argparse
 import csv
+import fcntl
+import os
 from pathlib import Path
 
 from core.datapaths import template_registry, template_runs
@@ -31,17 +33,22 @@ def append(csv_path: Path, columns: tuple[str, ...], row: dict[str, str],
         "added" or "updated". Updating rather than appending twice is what keeps the
         file answerable: two rows for one key make "have I tried this" ambiguous.
     """
-    rows = list(csv.DictReader(csv_path.open(encoding="utf-8"))) if csv_path.exists() else []
-    ident = tuple(row.get(c, "") for c in key)
-    old = next((r for r in rows if tuple(r[c] for c in key) == ident), None)
-    if old:
-        old.update({c: v for c, v in row.items() if c in columns})
-    else:
-        rows.append({c: row.get(c, "") for c in columns})
-    with csv_path.open("w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=columns)
-        w.writeheader()
-        w.writerows(rows)
+    # The lock is a sidecar: the CSV is replaced, so a lock on the CSV itself would be lost.
+    with csv_path.with_suffix(".csv.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        rows = list(csv.DictReader(csv_path.open(encoding="utf-8"))) if csv_path.exists() else []
+        ident = tuple(row.get(c, "") for c in key)
+        old = next((r for r in rows if tuple(r[c] for c in key) == ident), None)
+        if old:
+            old.update({c: v for c, v in row.items() if c in columns})
+        else:
+            rows.append({c: row.get(c, "") for c in columns})
+        tmp = csv_path.with_suffix(".csv.tmp")
+        with tmp.open("w", encoding="utf-8", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=columns)
+            w.writeheader()
+            w.writerows(rows)
+        os.replace(tmp, csv_path)
     return "updated" if old else "added"
 
 

@@ -9,7 +9,7 @@ from pathlib import Path
 import yaml
 
 from core.assetdata import doctrine
-from sqx.projects.configure import running_install
+from sqx.projects import cfxio
 
 STAGES = Path(__file__).with_name("stages.yaml")
 TASK = re.compile(r"<Task\b[^>]*/>")
@@ -82,7 +82,7 @@ def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tu
     Returns:
         One (title, active) row per task. SystemExit when one of `expected` is missing.
     """
-    held = running_install(cfx)
+    held = cfxio.held(cfx)
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Paralo: bin/sqx-worker.sh --role {held} stop")
@@ -95,9 +95,7 @@ def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tu
         raise SystemExit(f"{cfx.parent.name} no lleva la(s) tarea(s) {', '.join(missing)}. "
                          "Un proyecto de workflow se crea con `sqx.projects.builder --workflow`.")
     members["config.xml"] = config.encode("utf-8")
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(cfx, members)
     return rows
 
 

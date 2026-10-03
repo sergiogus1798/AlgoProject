@@ -11,6 +11,8 @@ from time import sleep
 from core.paths import WORKERS, WORKER_SH
 
 PROC = Path("/proc")
+TIMEOUT = 600      # seconds one reply may take: what sqx.projects.live's own client allows
+MAX_HOURS = 48     # no wait on a run outlives this (ui/daemon/advance/run.py's bound)
 
 
 def require_posix() -> None:
@@ -28,7 +30,7 @@ def require_posix() -> None:
             "Windows. Export on the Linux machine; analyse the CSVs anywhere.")
 
 
-def call(command: str, role: str = "conductor") -> str:
+def call(command: str, role: str = "conductor", timeout: float = TIMEOUT) -> str:
     """Send one sqcli command to the running worker.
 
     Args:
@@ -36,6 +38,8 @@ def call(command: str, role: str = "conductor") -> str:
         role: Which headless install to talk to. The conductor takes every short job; the
             custodian must receive no command between "start" and "collect", because a
             sync deletes on-disk .sqx it does not hold in memory.
+        timeout: Seconds to wait for the reply; past it urlopen raises an OSError
+            (TimeoutError or URLError) instead of hanging on a JVM that stopped answering.
 
     Returns:
         The server's response text. Only spaces are encoded: the server reads the rest of
@@ -43,7 +47,28 @@ def call(command: str, role: str = "conductor") -> str:
     """
     port = WORKERS[role]["port"]
     url = f"http://localhost:{port}/call?cmd=" + command.replace(" ", "%20")
-    return urllib.request.urlopen(url).read().decode()
+    return urllib.request.urlopen(url, timeout=timeout).read().decode()
+
+
+def checked(reply: str, command: str) -> str:
+    """A reply that has to have worked, e.g. a load or an export whose text nobody reads.
+
+    Args:
+        reply: What `call` returned.
+        command: The command it answered, for the message.
+
+    Returns:
+        The reply. SystemExit when it is one of SQX's `Error: ...` bodies (`Error: CLI not
+        ready.`, `Error: Databank 'X' doesn't exist.`): the HTTP status is 200 either way.
+    """
+    if reply.lstrip().startswith("Error"):
+        raise SystemExit(f"SQX rechazó `{command}`: {reply.strip()[:300]}")
+    return reply
+
+
+def holder() -> str:
+    """Who this process is to `bin/sqx-lock.sh`, in its own order: session, $SQX_OWNER, "owner"."""
+    return os.environ.get("CLAUDE_CODE_SESSION_ID") or os.environ.get("SQX_OWNER") or "owner"
 
 
 def start(role: str = "conductor", owner: str | None = None) -> None:

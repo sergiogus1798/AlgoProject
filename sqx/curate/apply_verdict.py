@@ -145,8 +145,8 @@ def remove(source: Path, into: Path | None, names: list[str]) -> tuple[int, list
 
 
 EMPTY = ("{source} holds no .sqx at all: a databank on `Auto-sync never` keeps its records in "
-         "memory only. Set it to `Auto-sync every 1 hour` in project.cfx, or run `-databank "
-         "action=synctofiles` on the instance that holds them, before stopping it.")
+         "memory only. Run `-databank action=synctofiles` on the instance that holds them, "
+         "before stopping it — a project.cfx edited under a live instance is lost (rule 4).")
 
 
 def refuse_mismatch(source: Path, names: dict[str, str]) -> None:

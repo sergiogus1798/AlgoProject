@@ -56,14 +56,15 @@ def run(expected: int, cfg: dict, progress: Callable[[int, str], None]) -> int:
     """Run the three legs, and only them (sent as the start's projectXML), and wait.
 
     Returns:
-        What the three legs returned between them, as `execute.run` counts it.
+        What the three legs returned between them, as `execute.run` counts it. SystemExit
+        unless the run ended on «Project finished»: a stopped or aborted one is a partial batch.
     """
     xml = live.call(cfg["role"], "getConfig", projectName=cfg["project"])["config"]["xml"]
     config = stage.only(xml, [leg["title"] for leg in legmod.legs()])[0]
     progress(0, f"{expected} retests lanzados")
     end = live.run(cfg["role"], cfg["project"], config)
-    if "Error" in end:
-        raise SystemExit(f"SQX: {end}")
+    if "Project finished" not in end:     # «Project stopped» is a cut batch, not a finished one
+        raise SystemExit(f"SQX no terminó {cfg['project']}: {end}")
     mem = live.records(cfg["role"], cfg["project"])
     return sum(mem[leg["databank"]] for leg in legmod.legs())
 

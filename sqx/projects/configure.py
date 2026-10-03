@@ -11,7 +11,9 @@ from xml.etree import ElementTree
 from core.assetcheck import mc_pending, pending, provisional
 from core.assetdata import enforced, load, sqx_settings, window
 from core.paths import WORKERS
+from sqx.projects import cfxio
 from sqx.projects.doctrine import apply_doctrine, blockers, unify_sessions
+from sqx.projects.patch import NO_TEMPLATE
 from sqx.projects.ranges import set_ranges
 from sqx.projects.setups import set_costs
 
@@ -27,25 +29,8 @@ BY_TASK = {"Build": "build"}
 DEFAULT_SEGMENT = "oos1"
 
 
-def running_install(cfx: Path) -> str | None:
-    """The role whose install holds this file, when that install is up.
-
-    Args:
-        cfx: Path of a project.cfx.
-
-    Returns:
-        Role name when the file lives inside a headless install that is answering, else
-        None. SQX rewrites a project.cfx on save and exit, so a patch applied while it is
-        up is silently lost — hard rule 4.
-    """
-    import socket
-    for role, w in WORKERS.items():
-        if w["path"] in cfx.parents:
-            with socket.socket() as s:
-                s.settimeout(0.5)
-                if s.connect_ex(("127.0.0.1", w["port"])) == 0:
-                    return role
-    return None
+# Kept for old imports; the guard of hard rule 4 now lives in `cfxio`.
+running_install = cfxio.held
 
 
 def apply(text: str, data: dict, segment: str,
@@ -88,14 +73,16 @@ def ignored_templates(members: dict[str, bytes]) -> list[str]:
         One line per task whose StrategyType names a templateFile but declares
         type="simple". SQX then builds generically and ignores the template, with no error
         anywhere — `OPEN.md` issue 9, 0 of 642. Free: reading the attribute before the
-        build costs nothing, proving the same afterwards costs the build.
+        build costs nothing, proving the same afterwards costs the build. A Simple Strategy
+        asked for on purpose (`patch.set_simple`) names `NO_TEMPLATE` and is not one.
     """
     out = []
     for name, blob in members.items():
         if not name.endswith(".xml") or name == "config.xml":
             continue
         for m in re.finditer(r"<StrategyType[^>]*>", blob.decode("utf-8")):
-            if 'templateFile="' in m.group(0) and 'type="template"' not in m.group(0):
+            if ('templateFile="' in m.group(0) and 'type="template"' not in m.group(0)
+                    and f'templateFile="{NO_TEMPLATE}"' not in m.group(0)):
                 kind = re.search(r'type="([^"]*)"', m.group(0))
                 out.append(f"{name}: names a templateFile but declares "
                            f"type=\"{kind.group(1) if kind else '?'}\"")
@@ -160,9 +147,7 @@ def configure(cfx: Path, symbol: str, segment: str | None = None,
             # consume un chat que hace json.load() sobre ella.
             print(f"  sesión {data['session']} añadida a {len(added)} tarea(s) que la nombraban "
                   "sin definirla", file=sys.stderr)
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(cfx, members)
     return out
 
 
@@ -181,7 +166,7 @@ def main() -> None:
     if args.segment == "oos2" and enforced():          # an autonomous agent only (2026-09-28)
         raise SystemExit("oos2 está reservado para el WFC y la WFM. Cada mirada lo gasta; "
                          "si de verdad hace falta, que lo diga el dueño.")
-    held = running_install(args.cfx)
+    held = cfxio.held(args.cfx)
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Párala: bin/sqx-worker.sh --role {held} stop")

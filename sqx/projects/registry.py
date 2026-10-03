@@ -1,16 +1,21 @@
 """Who created each custom SQX project, for what, and whether it has been retired."""
 
 import csv
+import fcntl
+import os
 import re
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from core.datapaths import project_registry
 from sqx.projects.rankings import describe
 
 # Owner, 2026-09-26: `Test_` is a functional test that will be thrown away, `Trade_` a project
-# meant to bear fruit. The prefix is how a later session tells clutter from work at a glance.
-KINDS = {"Test_": "test", "Trade_": "trade"}
-NAME_OK = re.compile(r"^(Test|Trade)_[A-Za-z0-9_]+$")
+# meant to bear fruit; `Research_` (owner, 2026-10-03) is what the research queue builds, kept
+# until the owner decides (sweep.py). The prefix is how a later session tells clutter from work.
+KINDS = {"Test_": "test", "Trade_": "trade", "Research_": "research"}
+NAME_OK = re.compile(r"^(Test|Trade|Research)_[A-Za-z0-9_]+$")
 COLUMNS = ("name", "kind", "install", "created", "purpose", "symbol", "timeframe",
            "template", "workflow", "retired", "archive", "acceptance")
 
@@ -27,12 +32,12 @@ def check_name(name: str) -> str | None:
     if NAME_OK.match(name):
         return None
     return (f"'{name}': a project name starts with Test_ (a functional test, thrown away "
-            "afterwards) or Trade_ (meant to bear real fruit), then letters, digits and "
+            "afterwards), Trade_ (meant to bear real fruit) or Research_ (the research queue's), then letters, digits and "
             "underscores only — the HTTP API splits its command on whitespace.")
 
 
 def kind(name: str) -> str:
-    """'test', 'trade' or 'legacy' (created before the prefixes existed)."""
+    """'test', 'trade', 'research' or 'legacy' (created before the prefixes existed)."""
     return next((k for p, k in KINDS.items() if name.startswith(p)), "legacy")
 
 
@@ -45,14 +50,38 @@ def rows() -> list[dict]:
         return list(csv.DictReader(f))
 
 
-def _write(all_rows: list[dict]) -> None:
-    """Rewrite the whole registry; it is small, and a rewrite keeps the columns in order."""
+@contextmanager
+def _locked() -> Iterator[None]:
+    """Hold an exclusive lock on the registry for one read-modify-write.
+
+    Two sessions registering at once would each rewrite the CSV from their own stale copy and
+    lose the other's row; so every mutator reads `rows()` inside this lock, then `_write`s.
+    """
     path = project_registry()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=COLUMNS)
-        w.writeheader()
-        w.writerows({c: r.get(c, "") for c in COLUMNS} for r in all_rows)
+    with open(path.with_name(path.name + ".lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
+
+
+def _write(all_rows: list[dict]) -> None:
+    """Rewrite the whole registry beside itself and swap it in, so a crash keeps the old one.
+
+    Call it only inside `_locked()`.
+    """
+    path = project_registry()
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        with tmp.open("w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=COLUMNS)
+            w.writeheader()
+            w.writerows({c: r.get(c, "") for c in COLUMNS} for r in all_rows)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def record(done: dict, purpose: str, symbol: str, template: str) -> None:
@@ -64,16 +93,17 @@ def record(done: dict, purpose: str, symbol: str, template: str) -> None:
         symbol: Asset name.
         template: Path of the template it builds from.
     """
-    keep = [r for r in rows()
-            if not (r["name"] == done["project"] and r["install"] == done["install"]
-                    and not r["retired"])]
-    keep.append({"name": done["project"], "kind": kind(done["project"]),
-                 "install": done["install"],
-                 "created": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
-                 "purpose": purpose, "symbol": symbol, "timeframe": done["timeframe"],
-                 "template": template, "workflow": "yes" if done.get("added") else "no",
-                 "acceptance": describe(done["acceptance"])})
-    _write(keep)
+    row = {"name": done["project"], "kind": kind(done["project"]), "install": done["install"],
+           "created": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+           "purpose": purpose, "symbol": symbol, "timeframe": done["timeframe"],
+           "template": template, "workflow": "yes" if done.get("added") else "no",
+           "acceptance": describe(done["acceptance"])}
+    with _locked():
+        keep = [r for r in rows()
+                if not (r["name"] == done["project"] and r["install"] == done["install"]
+                        and not r["retired"])]
+        keep.append(row)
+        _write(keep)
 
 
 def mark_retired(name: str, install: str, archive: str) -> None:
@@ -85,13 +115,14 @@ def mark_retired(name: str, install: str, archive: str) -> None:
         archive: Path of the archive the project went to.
     """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-    all_rows = rows()
-    live = [r for r in all_rows if r["name"] == name and r["install"] == install
-            and not r["retired"]]
-    if not live:
-        live = [{"name": name, "kind": kind(name), "install": install,
-                 "purpose": "(unregistered — created before the registry)"}]
-        all_rows += live
-    for r in live:
-        r["retired"], r["archive"] = now, archive
-    _write(all_rows)
+    with _locked():
+        all_rows = rows()
+        live = [r for r in all_rows if r["name"] == name and r["install"] == install
+                and not r["retired"]]
+        if not live:
+            live = [{"name": name, "kind": kind(name), "install": install,
+                     "purpose": "(unregistered — created before the registry)"}]
+            all_rows += live
+        for r in live:
+            r["retired"], r["archive"] = now, archive
+        _write(all_rows)

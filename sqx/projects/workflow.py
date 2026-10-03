@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 
 from core.assetdata import doctrine, load
+from sqx.projects import cfxio
 from sqx.projects.crosschecks import member_of
 from sqx.projects.databanks import set_databank
 from sqx.projects.setups import set_span
@@ -129,7 +130,5 @@ def finish(cfx: Path, symbol: str) -> None:
     main = crosstf.set_main(text[0], symbol)[0]
     for solo in crosstfsolo.planned(crosstf.main_chart(main)[1]):
         crosstfsolo.write(members, main, solo)
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(cfx, members)
     apply(cfx, ["build", "oos"])

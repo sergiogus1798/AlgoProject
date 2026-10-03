@@ -12,9 +12,20 @@
 # ─── Complejidad de las reglas ─────────────────────────────────────────────────────────
 # "Simplicity is key". Como MÁXIMO 2 indicadores de entrada y 2 de salida en el resultado
 # final — da igual que vengan de la plantilla o del hueco aleatorio: el tope es global.
+#
+# El tope se cuenta distinto según haya plantilla o no (dueño, 2026-10-02, regla 14):
+#   · Simple Strategy (sin plantilla): «What to build» cuenta POR ESTRATEGIA y se escribe
+#     `simple` tal cual — entrada 1..2 y salida 1..2, lo que él puso en la interfaz. La
+#     condición de salida es obligatoria SOLO aquí.
+#   · Con plantilla: «What to build» cuenta POR CADA hueco aleatorio, encima de lo fijo, así
+#     que se escribe 0..(tope − fijas) por lado; la salida sigue siendo 0..2 (optativa) y
+#     dos huecos libres en un lado se rechazan. Lo calcula `sqx/projects/buildrules.py`.
 complexity:
   max_entry_conditions: 2
   max_exit_conditions: 2
+  simple:
+    entry: [1, 2]
+    exit: [1, 2]
   # Global lookback. 1 = sólo la última barra cerrada. Subirlo es invitar al sobreajuste.
   lookback_bars: 1
 
@@ -69,6 +80,7 @@ databank:
   # mejores; lleno, una nueva entra solo si mejora a la peor. Por prefijo del proyecto (regla 6).
   caps:
     Trade_: {strategies: 10000, minutes: 180}   # workflows de trabajo
+    Research_: {strategies: 10000, minutes: 180}   # la cola de investigación: un workflow entero
     Test_: {strategies: 300, minutes: 10}       # testing y desarrollo
 
 # ─── Precisión del backtest ────────────────────────────────────────────────────────────
@@ -80,9 +92,12 @@ databank:
 # El builder construye a timeframe elegido porque a 1 minuto no terminaría nunca, y se
 # apoya en el crosscheck de alta precisión para descartar lo que sólo existe en las barras
 # grandes. De ahí en adelante ya no hay atajo: todo a 1 minuto, el test principal incluido.
+#
+# Dueño, 2026-10-02: «selected timeframe en todo, nada de retest a M1». `default` pasa de 2 a 1:
+# el retest OOS y todos los pasos siguientes van también a timeframe elegido.
 precision:
   build: 1
-  default: 2
+  default: 1
 
 # ─── Crosschecks ───────────────────────────────────────────────────────────────────────
 # El de alta precisión SÓLO en la construcción — después no pinta nada, porque el propio
@@ -135,12 +150,16 @@ crosschecks:
 #                 avisa si la tarea no lo lleva.
 crossmarket:
   segment: build..oos1
-  precision: 2          # un minuto; el crosscheck de alta precisión ya no pinta nada aquí
+  precision: 1          # timeframe elegido (dueño, 2026-10-02: «nada de retest a M1»)
   conditions: []        # ninguna. Es una medición, no una puerta
 
 crosstf:
-  segment: build..oos1
-  precision: 2
+  # Dueño, 2026-10-02: el paso lee SÓLO oos1 («sí») — la lectura, el nulo y las reglas usan las
+  # operaciones de oos1 contra un nulo sorteado dentro de oos1, y la tarea de SQX reprueba sólo
+  # oos1, a costes de oos1. Antes era `build..oos1` en una sola ventana: la madre se eligió
+  # sobre build, así que su p ahí salía 0,0004 por construcción.
+  segment: oos1
+  precision: 1          # timeframe elegido (dueño, 2026-10-02)
   conditions: []
   # Los timeframes extra POR DEFECTO según el timeframe en que se construyó la estrategia.
   # Dueño, 2026-09-26: desde M30, H1 y H4. Desde H1 (dueño, 2026-09-29): M30, H4 y D1 — un

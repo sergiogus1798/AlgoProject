@@ -5,7 +5,7 @@ import zipfile
 from pathlib import Path
 
 from core.assetdata import doctrine, sqx_settings
-from sqx.projects import buildrules as rules, tasksettings as settings
+from sqx.projects import buildrules as rules, sessiondb, tasksettings as settings
 
 
 def apply_doctrine(text: str, data: dict, segment: str, timeframe: str) -> tuple[str, dict]:
@@ -81,36 +81,43 @@ def blockers(data: dict, timeframe: str) -> list[str]:
     return out
 
 
-def borrow_session(members: dict[str, bytes], session: str, source: Path) -> str:
-    """Bring one session definition in from another project, so the clone can trade its asset.
+def borrow_session(members: dict[str, bytes], session: str, source: Path | None) -> str | None:
+    """Bring one session definition into a clone, so it can trade its asset.
 
     Args:
         members: The .cfx contents by member name, patched in place. One task gains the
             definition; `unify_sessions` is what then spreads it to the rest.
         session: Session name, from the asset's file.
-        source: A project.cfx that defines it. Read only — never written, so a live install
-            may hold it open (hard rule 4 is about writing).
+        source: A project.cfx that may define it, or None when no project was found. Read
+            only — never written, so a live install may hold it open (hard rule 4 is about
+            writing).
 
     Returns:
-        The member that received it.
+        The member that received it, or None when a task of the clone already defines it.
 
     Raises:
-        SystemExit: When `source` does not define that session either. Nothing is invented:
-            the hours come from a project SQX itself produced, or the caller is told to
-            register the session in SQX first.
+        SystemExit: When neither `source` nor SQX's Data Manager database defines that
+            session. Nothing is invented: the hours come from a project SQX itself produced
+            or from the catalogue SQX itself keeps (`sessiondb`), in that order.
 
-    A donor frozen for one asset carries only that asset's sessions, so every project cloned
-    from it is stuck on a different asset until the hours arrive from somewhere. This is that
-    somewhere, and it is deliberately a copy of a real definition rather than a constructor:
-    a task naming a session it does not define trades the wrong hours in silence.
+    A donor frozen for one asset carries only that asset's sessions, and a project carries
+    only the sessions its tasks use — so most assets' sessions are in no project at all,
+    only in the database. A task naming a session it does not define trades the wrong
+    hours in silence.
     """
-    with zipfile.ZipFile(source) as z:
-        block = next((b for b in (settings.session_block(
-            z.read(n).decode("utf-8", "replace"), session)
-            for n in z.namelist() if n.endswith(".xml") and n != "config.xml") if b), None)
+    if any(settings.session_block(b.decode("utf-8"), session)
+           for n, b in members.items() if n.endswith(".xml") and n != "config.xml"):
+        return None
+    block = None
+    if source:
+        with zipfile.ZipFile(source) as z:
+            block = next((b for b in (settings.session_block(
+                z.read(n).decode("utf-8", "replace"), session)
+                for n in z.namelist() if n.endswith(".xml") and n != "config.xml") if b), None)
+    block = block or sessiondb.block(session, sessiondb.copy())
     if not block:
-        raise SystemExit(f"{source} no define la sesión {session} tampoco. Hay que darla de "
-                         "alta en SQX — no se inventan horarios de mercado.")
+        raise SystemExit(f"falta la SESIÓN {session}: no la define ningún proyecto ni el Data "
+                         "Manager de SQX. Hay que darla de alta en SQX — no se inventan horarios.")
     target = next(n for n in members if n.endswith(".xml") and n != "config.xml")
     members[target] = settings.add_session(
         members[target].decode("utf-8"), block).encode("utf-8")
@@ -149,7 +156,7 @@ def caps(project: str, strategies: int | None, minutes: int | None) -> tuple[int
     """How many strategies and minutes a build of this project may take, whichever comes first.
 
     Args:
-        project: Its name; the prefix (`Test_`, `Trade_`) picks the doctrine's `databank.caps`.
+        project: Its name; the prefix (`Test_`, `Trade_`, `Research_`) picks the doctrine's `databank.caps`.
         strategies, minutes: What the caller asked for; None takes the doctrine's.
     """
     cap = next(v for k, v in doctrine()["databank"]["caps"].items() if project.startswith(k))

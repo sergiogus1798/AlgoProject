@@ -1,9 +1,9 @@
 # sqx-lock — the real owner lock bin/sqx-worker.sh writes and enforces (OPEN.md #32).
 #
 # One JSON file per install, <install>/user/log/OWNER: {holder, pid, since}. `start` writes
-# it once the worker is up; `stop` from a different holder refuses unless --force; a lock
+# it the moment it launches sqcli; `stop` from a different holder refuses unless --force; a lock
 # whose sqcli PID is dead and whose port is down is stale and clears itself. Sourced by
-# bin/sqx-worker.sh and by tests/test_worker_lock.sh, so there is exactly one implementation
+# bin/sqx-worker.sh and by tests/test_worker_lock.py, so there is exactly one implementation
 # to test and to trust.
 #
 # The caller sets WORKER (the install's top folder) and defines running() (true when its
@@ -33,7 +33,8 @@ except (OSError, ValueError):
 print(d.get(sys.argv[2], ""))' "$(owner_file)" "$1" 2>/dev/null
 }
 
-# write_lock <sqcli-pid> — called right after `start` confirms the worker is up.
+# write_lock <sqcli-pid> — called by `start` right after it launches sqcli (not once the port
+# answers: a booting worker is already held, and a late one must never come up unowned).
 write_lock() {
   mkdir -p "$(dirname "$(owner_file)")"
   python3 -c '

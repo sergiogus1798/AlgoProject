@@ -10,7 +10,7 @@ from xml.etree import ElementTree
 
 from core.assetcheck import pending
 from core.assetdata import doctrine, load
-from sqx.projects.configure import running_install
+from sqx.projects import cfxio
 from sqx.projects.databanks import set_databank
 from sqx.projects.orders import pending_orders
 from sqx.projects.perturbations import disable, usable, write_task
@@ -94,9 +94,7 @@ def configure(cfx: Path, symbol: str, source: str, databank: Path | None) -> dic
                      "simulations": sims, "dropped": dropped, **done})
 
     members["config.xml"] = config.encode("utf-8")
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(cfx, members)
     return {"project": ElementTree.fromstring(config).get("name"), "orders": orders,
             "simulations": catalogue["simulations"], "input": source, "tasks": rows}
 
@@ -119,7 +117,7 @@ def main() -> None:
     if missing:
         raise SystemExit(f"{a.symbol}: {', '.join(missing)} sin valor pactado. "
                          "Preguntale al dueno antes de configurar nada (regla dura 5).")
-    held = running_install(a.cfx)
+    held = cfxio.held(a.cfx)
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
                          f"salir. Parala: bin/sqx-worker.sh --role {held} stop")

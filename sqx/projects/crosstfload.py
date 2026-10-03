@@ -11,8 +11,8 @@ from pathlib import Path
 from core.assetdata import doctrine
 from core.datapaths import crosstf_dir
 from core.paths import databank_dir, project_dir, worker_dir
+from sqx.projects import cfxio
 from sqx.projects import crosstf, crosstfsolo, registry
-from sqx.projects.configure import running_install
 from sqx.projects.crosschecks import member_of
 from sqx.projects.databanks import databanks
 from sqx.projects.stage import titles
@@ -50,7 +50,7 @@ def feeders(io: dict[str, dict]) -> dict[str, str]:
 
 def members_of(cfx: Path) -> dict[str, bytes]:
     """The project's files, refused while an install holds it (hard rule 4)."""
-    held = running_install(cfx)
+    held = cfxio.held(cfx)
     if held:
         raise SystemExit(f"el {held} tiene {cfx.parent.name} abierto y reescribe sus databanks "
                          f"al sincronizar: páralo antes (bin/sqx-worker.sh --role {held} stop)")
@@ -69,7 +69,8 @@ def refill(folder: Path, files: list[Path]) -> int:
     return len(files)
 
 
-def load_input(project: str, role: str, day: str, cfx: Path | None = None) -> dict:
+def load_input(project: str, role: str, day: str, cfx: Path | None = None,
+               folder: Path | None = None, targets: list[str] | None = None) -> dict:
     """Step 10.5: scale the Cross Market survivors, wire the CrossTF task, fill CrossTF_Input.
 
     Args:
@@ -77,6 +78,9 @@ def load_input(project: str, role: str, day: str, cfx: Path | None = None) -> di
         role: The worker holding it, stopped.
         day: The batch's day under `core.datapaths.crosstf_dir`.
         cfx: The project.cfx to wire; default the install's own. A live session passes a copy.
+        folder: Mothers taken from here, every `.sqx` under it, instead of the Cross Market
+            databank — a calibration feeds the step from `keep/<P>/{survivors,sample}`.
+        targets: The timeframes to scale to and retest; the doctrine's list when None.
 
     Returns:
         `mothers`, `siblings`, `loaded`, `source` (tf), `targets`, `blocks`, `batch`,
@@ -86,29 +90,34 @@ def load_input(project: str, role: str, day: str, cfx: Path | None = None) -> di
     cfx = cfx or project_dir(project, install) / "project.cfx"
     members = members_of(cfx)
     fed = feeders(banks(members))
-    if CROSSTF["input"] not in fed:
+    if not folder and CROSSTF["input"] not in fed:
         raise SystemExit(f"{project} no lleva la tarea de Cross Market: no hay supervivientes "
                          "que escalar")
-    mothers = sorted(databank_dir(project, fed[CROSSTF["input"]], install).glob("*.sqx"))
+    source_of = folder or databank_dir(project, fed[CROSSTF["input"]], install)
+    mothers = sorted(source_of.rglob("*.sqx"))
     if not mothers:
-        raise SystemExit(f"«{fed[CROSSTF['input']]}» no tiene ningún .sqx en {install.name}: "
-                         "corre antes el Cross Market (paso 9) y su corte (paso 10)")
+        raise SystemExit(f"{source_of} no tiene ningún .sqx: corre antes el Cross Market "
+                         "(paso 9) y su corte (paso 10), o da una carpeta con madres")
     task = members[member_of(members["config.xml"].decode("utf-8"), CROSSTF["title"])]
     source = crosstf.main_chart(task.decode("utf-8"))[1]
-    targets = doctrine()["crosstf"]["timeframes"][source]
+    targets = [t for t in doctrine()["crosstf"]["timeframes"][source]
+               if targets is None or t in targets]
     symbol = next(r["symbol"] for r in reversed(registry.rows()) if r["name"] == project)
     batch = crosstf_dir(project, day)
     shutil.rmtree(batch / "sqx", ignore_errors=True)   # a second preparation the same day
     frame = scale.fabricate(mothers, batch, source, targets)
     # The same targets, in the same order, are the tasks `wire` writes, one each: the study
     # places each sibling in its `target_tf`'s databank, and one missing there is a KeyError.
-    wired = crosstf.wire(cfx, symbol, day, project)
+    wired = crosstf.wire(cfx, symbol, day, project, targets)
+    for bank in wired["databanks"] if folder else []:   # a calibration project is reused:
+        refill(databank_dir(project, bank, install), [])  # an earlier attempt's retest goes
     loaded = refill(databank_dir(project, CROSSTF["input"], install),
                     sorted((batch / "sqx").glob("*.sqx")))
     return {"mothers": len(mothers), "siblings": len(frame), "loaded": loaded,
             "source": source, "targets": targets, "blocks": wired["blocks"], "batch": batch,
             "clamped": int(frame["clamped"].sum()), "warning": wired["warning"],
-            "tasks": wired["tasks"]}
+            "tasks": wired["tasks"], "databanks": wired["databanks"],
+            "unverified": int((frame["unverified"] != "").sum())}
 
 
 def load_mothers(project: str, role: str, cfx: Path | None = None) -> dict:
@@ -130,9 +139,7 @@ def load_mothers(project: str, role: str, cfx: Path | None = None) -> dict:
     config = members["config.xml"].decode("utf-8")
     if f'<Databank name="{CROSSTF["mothers"]}"' not in config:   # a project built before it
         members["config.xml"] = declare(config, [CROSSTF["mothers"]]).encode("utf-8")
-        with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-            for name, blob in members.items():
-                z.writestr(name, blob)
+        cfxio.write(cfx, members)
     files = sorted(databank_dir(project, CROSSTF["output"], install).glob("*.sqx"))
     kept = [f for f in files if not SIBLING.search(f.stem)]
     if not kept:
@@ -149,21 +156,23 @@ def separate_titles(cfx: Path) -> list[str]:
         return crosstfsolo.present(z.read("config.xml").decode("utf-8"))
 
 
-def fill(bank: str, project: str, role: str, cfx: Path | None = None) -> str:
+def fill(bank: str, project: str, role: str, cfx: Path | None = None,
+         folder: Path | None = None, targets: list[str] | None = None) -> str:
     """Fill one of the two databanks and say what went in, in the owner's words.
 
     Args:
         bank: CrossTF_Input or CrossTF_Mothers.
-        project, role, cfx: As `load_input`.
+        project, role, cfx, folder, targets: As `load_input`.
     """
     if bank == CROSSTF["mothers"]:
         got = load_mothers(project, role, cfx)
         return (f"{got['mothers']} madres de {CROSSTF['output']} -> {bank} ({got['siblings']} "
                 f"hermanas escaladas se quedan en {CROSSTF['output']})")
-    got = load_input(project, role, date.today().isoformat(), cfx)
+    got = load_input(project, role, date.today().isoformat(), cfx, folder, targets)
     return "\n".join([f"{got['mothers']} madres x {len(got['targets'])} timeframes -> "
                       f"{got['siblings']} hermanas ({got['clamped']} con períodos pegados al "
-                      "mínimo: se leen solo sin escalar)",
+                      f"mínimo y {got['unverified']} con una longitud sin verificar: no se "
+                      "leen como escaladas)",
                       f"desde {got['source']}: {', '.join(got['targets'])} · una tarea por "
                       f"timeframe: {', '.join(got['blocks'])}",
                       f"{got['loaded']} .sqx en {bank} (madres + hermanas) · lote {got['batch']}",
@@ -179,8 +188,14 @@ def main() -> None:
     ap.add_argument("--role", required=True, choices=["conductor", "custodian"])
     ap.add_argument("--mothers", action="store_true",
                     help="llena CrossTF_Mothers (lo que lee el MC Retest) en vez de CrossTF_Input")
+    ap.add_argument("--from-folder", type=Path,
+                    help="madres desde esta carpeta (todo .sqx bajo ella) en vez del databank "
+                         "de Cross Market")
+    ap.add_argument("--targets", nargs="+",
+                    help="solo estos timeframes de `crosstf.timeframes`; por defecto todos")
     a = ap.parse_args()
-    print(fill(CROSSTF["mothers"] if a.mothers else CROSSTF["input"], a.project, a.role))
+    print(fill(CROSSTF["mothers"] if a.mothers else CROSSTF["input"], a.project, a.role,
+               folder=a.from_folder, targets=a.targets))
 
 
 if __name__ == "__main__":

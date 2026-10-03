@@ -10,7 +10,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.assetdata import doctrine, load
-from sqx.projects.configure import running_install
+from sqx.projects import cfxio
 from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.crossmarket import SETUPS, chosen, one_market
 from sqx.projects.databanks import set_databank
@@ -184,9 +184,7 @@ def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str
 
     config = declare(config, [study["input"]] + [t["databank"] for t in study["tasks"]])
     members["config.xml"] = config.encode("utf-8")
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(cfx, members)
     return {"project": ElementTree.fromstring(config).get("name"),
             "input": study["input"], "tasks": rows}
 
@@ -206,7 +204,7 @@ def main() -> None:
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
-    held = running_install(a.cfx)
+    held = cfxio.held(a.cfx)
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
                          f"salir. Parala: bin/sqx-worker.sh --role {held} stop")

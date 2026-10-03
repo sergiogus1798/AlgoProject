@@ -9,9 +9,9 @@ from pathlib import Path
 from core.assetcheck import pending
 from core.assetdata import load
 from core.buildfilters import MODES, STUDY, filters
+from sqx.projects import cfxio
 from sqx.projects import buildrules as rules
 from sqx.projects.acceptance import CONDITIONS, condition
-from sqx.projects.configure import running_install
 
 RANKINGS = re.compile(r"<Rankings\b.*?</Rankings>", re.S)
 MC_MANIPULATION = re.compile(r'(<MonteCarloManipulation )use="true"')
@@ -71,9 +71,7 @@ def apply(cfx: Path, symbol: str, timeframe: str, mode: str = "study",
         if mode == "calibration":
             text = MC_MANIPULATION.sub(r'\g<1>use="false"', text)
         members[name] = text.encode("utf-8")
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(cfx, members)
     return {**written, "tasks": tasks}
 
 
@@ -87,7 +85,7 @@ def main() -> None:
     ap.add_argument("--study-file", type=Path, default=STUDY,
                     help="another thresholds file, for an A/B of filters")
     a = ap.parse_args()
-    held = running_install(a.cfx)
+    held = cfxio.held(a.cfx)
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Párala: bin/sqx-worker.sh --role {held} stop")

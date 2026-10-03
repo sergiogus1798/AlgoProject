@@ -8,10 +8,12 @@ from pathlib import Path
 from datetime import date
 
 from core.assetdata import doctrine, load, markets, sqx_settings, symbols
-from sqx.projects.configure import running_install
+from sqx.projects import cfxio
+from sqx.projects.crossfeeds import with_feeds
 from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.setups import span
 from sqx.projects.stage import own
+from sqx.projects.tasksettings import set_precision
 
 TITLE = "Retest Markets - Family"     # the donor's additional-markets task
 
@@ -36,22 +38,22 @@ def feed_owner(feed: str) -> str | None:
     return next((s for s in symbols() if feed in (load(s).get("feeds") or [])), None)
 
 
-def window(main: dict, data_from: date | str, segment: str) -> tuple[str, str]:
-    """The retest window for one extra market.
+def window(market: dict, data_from: date | str, segment: str) -> tuple[str, str]:
+    """The retest window for one extra market: ITS OWN segments, never the main asset's.
 
     Args:
-        main: The main asset as load() returned it.
+        market: The extra market's own asset file, as load() returned it.
         data_from: First date the market has data, from `_markets.yaml`. A date, or the
             string "unknown".
         segment: The span `assets/_build.yaml` declares under `crossmarket.segment`.
 
     Returns:
-        (dateFrom, dateTo) as YYYY.MM.DD. It runs from the start of the span — or from
-        this market's own first bar when that is later — to its end. The whole history is
-        used on purpose: this test asks whether the logic survives a different market, and
-        cutting it to the main asset's window throws away the years that would answer it.
+        (dateFrom, dateTo) as YYYY.MM.DD: from the start of the market's own first segment
+        of the span — or its first bar when that is later — to the end of its own last
+        one. Owner, 2026-10-02: with the MAIN's dates an index main carried XAUUSD and
+        USDJPY through 2023, the first year of their `oos2`.
     """
-    start, end, _ = span(main, segment)
+    start, end, _ = span(market, segment)
     if isinstance(data_from, date):
         start = max(start, f"{data_from:%Y.%m.%d}")
     return start, end
@@ -71,9 +73,8 @@ def one_market(feed: str, data: dict, segment: str, window_: tuple[str, str],
         timeframe: The project's timeframe.
 
     Returns:
-        The <Setup> element. One Setup holds one spread and one slippage while the window
-        spans both segments, so the OOS figures are charged — the market that has to
-        surprise us is never given the cheaper price.
+        The <Setup> element. One Setup holds one price while the window spans both
+        segments: the market's OWN last segment is charged (its card, its oos1).
     """
     s = sqx_settings(data, segment)
     c, sw = s["commission"], s["swap"]
@@ -126,24 +127,30 @@ def set_markets(text: str, symbol: str, timeframe: str,
         market in the second list is NOT written: SQX would happily run it at the default
         spread of whatever instrument it resolves to, and a cross-market result at an
         invented cost is worse than no result. The window and the costs segment come from
-        `crossmarket:` in the doctrine, not from an argument: they are the same question
-        for every asset and a run at a window nobody declared is unattributable.
+        `crossmarket:` in the doctrine, read on each market's OWN card; every Setup of the
+        task, the main test included, is put on `crossmarket.precision`; and every market's
+        feed definition is written into the task (`with_feeds`).
     """
     d = doctrine()
     study = d["crossmarket"]
-    main = load(symbol)
-    costs = span(main, study["segment"])[2]
+    costs = study["segment"].split("..")[-1]
     used, blocked = [], []
     for m in chosen(symbol, categories):
-        if not m["costs_from"]:
-            blocked.append(m)
+        card = load(m["costs_from"])["segments"] if m["costs_from"] else None
+        if not card or None in (card["build"]["from"], card["oos1"]["to"]):
+            blocked.append(m)       # no card, or a card whose own window is undecided
             continue
-        used.append(m | {"window": window(main, m["data_from"], study["segment"])})
+        used.append(m | {"window": window(load(m["costs_from"]), m["data_from"],
+                                          study["segment"])})
     if not used:
         return text, used, blocked, 0
     body = "".join(one_market(m["feed"], load(m["costs_from"]), costs, m["window"],
                               study["precision"], d["engine"], timeframe) for m in used)
-    text = SETUPS.sub(rf'\g<1><Setups detailed="true">{body}</Setups>', text, count=1)
+    text = SETUPS.sub(lambda k: f'{k.group(1)}<Setups detailed="true">{body}</Setups>', text,
+                      count=1)
+    # The extra markets INHERIT the main test's precision, written when the project was
+    # created: 🔬 2026-10-02, a project older than the doctrine change still carried 2.
+    text = with_feeds(set_precision(text, study["precision"]), used)
     text = re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"',
                   r'\g<1>use="true"', text, count=1)
     if study["conditions"]:
@@ -166,18 +173,21 @@ def main() -> None:
                                    "`Retest Markets - Family`")
     ap.add_argument("--timeframe", help="the project's timeframe; required with --cfx")
     ap.add_argument("--categories", default="family,structural")
+    ap.add_argument("--skip-undeclared", action="store_true",
+                    help="write the markets that have a card and a window, name the rest")
     a = ap.parse_args()
     cats = tuple(a.categories.split(","))
 
     if not a.cfx:
         for m in chosen(a.symbol, cats):
-            w = window(load(a.symbol), m["data_from"], doctrine()["crossmarket"]["segment"])
             where = m["costs_from"] or "⚠️ NINGÚN fichero de assets/symbols/ declara este feed"
+            w = window(load(m["costs_from"]), m["data_from"],
+                       doctrine()["crossmarket"]["segment"]) if m["costs_from"] else ("?", "?")
             when = "" if isinstance(m["data_from"], date) else "  ⚠️ data_from sin averiguar"
             print(f"{m['feed']:30} {m['category']:11} {w[0]} a {w[1]}   costes: {where}{when}")
         return
 
-    held = running_install(a.cfx)
+    held = cfxio.held(a.cfx)
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Paralo: bin/sqx-worker.sh --role {held} stop")
@@ -186,17 +196,17 @@ def main() -> None:
     a.task = a.task or member_of(members["config.xml"].decode("utf-8"), TITLE)
     text, used, blocked, silenced = set_markets(members[a.task].decode("utf-8"), a.symbol,
                                                a.timeframe, categories=cats)
-    if blocked:
+    if blocked and not (a.skip_undeclared and used):
         raise SystemExit("sin escribir nada — estos mercados no tienen costes declarados en "
                          "assets/symbols/: " + ", ".join(m["feed"] for m in blocked)
                          + ".\nCrea su fichero o dime sus costes; no se copian del maestro ni "
                          "se inventan (regla dura 5).")
     members[a.task] = text.encode("utf-8")
-    with zipfile.ZipFile(a.cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(a.cfx, members)
     for m in used:
         print(f"  {m['feed']:30} {m['category']:11} {m['window'][0]} a {m['window'][1]}")
+    for m in blocked:
+        print(f"  SALTADO {m['feed']} ({m['category']}): sin ficha o sin ventana en assets/")
     print(f"{silenced} condiciones de aceptacion apagadas — esto es evidencia, no un filtro")
     print(own(a.cfx, "crossmarket"))
 

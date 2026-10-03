@@ -2,12 +2,14 @@
 
 import re
 import sqlite3
+import zipfile
+from pathlib import Path
 
-from core.paths import MASTER
+from sqx.projects import sessiondb
 
-REGISTRY = MASTER / "user" / "data" / "data.db"
 SYMBOL = re.compile(r'<Symbol\b[^>]*?name="([^"]+)"[^>]*?>.*?</Symbol>', re.S)
 INSTRUMENT = re.compile(r'<InstrumentInfo\b[^>]*?instrument="([^"]+)"[^>]*?/>')
+DAY = 86_400_000   # a <Symbol> range is in epoch milliseconds, on midnights
 
 
 def _java(x: float) -> str:
@@ -27,8 +29,8 @@ def _esc(v: object) -> str:
 
 
 def _registry(sql: str, args: tuple) -> dict | None:
-    """One row of SQX's data registry, read-only."""
-    with sqlite3.connect(f"file:{REGISTRY}?mode=ro", uri=True) as db:
+    """One row of SQX's data registry, read-only, off the data root's copy of the master's."""
+    with sqlite3.connect(f"file:{sessiondb.copy()}?mode=ro", uri=True) as db:
         db.row_factory = sqlite3.Row
         r = db.execute(sql, args).fetchone()
     return dict(r) if r else None
@@ -68,6 +70,29 @@ def broker_xml(broker_id: int) -> str | None:
     return (f'<Broker id="{b["ID"]}" name="{_esc(b["NAME"])}" description="{_esc(b["DESC"] or "")}" '
             f'timezone="{_esc(b["MT_TIMEZONE"])}" postfix="{_esc(b["POSTFIX"] or "")}" '
             f'mtUse="{str(bool(b["MT_USE"])).lower()}" spUse="{str(bool(b["STOCKPICKER_USE"])).lower()}" />')
+
+
+def definitions(feed: str) -> tuple[str, str, str] | None:
+    """One feed's three resource blocks written from the registry, for a feed no project carries.
+
+    Args:
+        feed: SQX symbol name, e.g. "DAX40_M1".
+
+    Returns:
+        (the <Symbol> block, its <InstrumentInfo>, its <Broker>), or None when the registry
+        holds no such feed. The dates are the data's own range; `setups` rewrites them to the
+        task's window, as it does for a block borrowed from a project.
+    """
+    d = _registry("SELECT * FROM DATA WHERE SYMBOL = ?", (feed,))
+    if not d:
+        return None
+    info = instrument_xml(d["INSTRUMENT"])
+    head = " ".join(f'{k}="{_esc(v)}"' for k, v in (
+        ("name", d["SYMBOL"]), ("source", d["SOURCE"]), ("barType", d["DATATYPE"]),
+        ("precision", d["TIMEFRAME"]), ("timezone", d["TIMEZONE"]), ("dateFrom", d["DATEFROM"]),
+        ("dateTo", d["DATETO"]), ("uSymbol", d["USYMBOL"]), ("uSymbolName", d["USYMBOLNAME"]),
+        ("removeWeekends", str(bool(d["REMOVE_WEEKENDS"])).lower()), ("broker", d["BROKER_ID"])))
+    return f"<Symbol {head}>\n        {info}\n      </Symbol>", info, broker_xml(d["BROKER_ID"])
 
 
 def refresh(text: str) -> str:
@@ -119,3 +144,55 @@ def refresh_all(members: dict[str, bytes]) -> None:
     """`refresh` every task of a .cfx in place — the main feed and the cross-check markets alike."""
     for member in [m for m in members if m.endswith(".xml") and m != "config.xml"]:
         members[member] = refresh(members[member].decode("utf-8")).encode("utf-8")
+
+
+def unresolved(cfx: Path, active_only: bool = True) -> list[str]:
+    """What SQX would call «unresolved resources» in a project, read off the files — nothing started.
+
+    Args:
+        cfx: A project.cfx. Read only.
+        active_only: Check only the tasks config.xml has switched on — the ones a start runs.
+
+    Returns:
+        One line per mismatch, «member: what», empty when every task agrees with the registry.
+        The checks are the ones `action=start` was measured to refuse on
+        (`knowhow/sqx-drive/cannot-start-unresolved-past-data.md`): a feed the registry lacks,
+        a <Symbol> on another timezone or data broker, a data range outside the feed's bars —
+        `dateTo` is the midnight AFTER the last day, so a window may end at most the day before
+        the feed's last bar — an <Instruments> entry or a <Session> that is not the registry's
+        own text, and a session a task names without defining it.
+    """
+    with zipfile.ZipFile(cfx) as z:
+        config = z.read("config.xml").decode("utf-8")
+        tasks = {m.group(2): m.group(1) == "true" for m in re.finditer(
+            r'<Task\b[^>]*?active="(\w+)"[^>]*?taskXMLFile="([^"]+)"', config)}
+        texts = {n: z.read(n).decode("utf-8") for n, on in tasks.items() if on or not active_only}
+    out = []
+    for member, text in texts.items():
+        for m in SYMBOL.finditer(text):
+            head = dict(re.findall(r'(\w+)="([^"]*)"', re.match(r"<Symbol\b[^>]*>", m.group(0)).group(0)))
+            d = _registry("SELECT * FROM DATA WHERE SYMBOL = ?", (m.group(1),))
+            if not d:
+                out.append(f"{member}: feed {m.group(1)} is not in the registry")
+                continue
+            if (head["timezone"], head["broker"]) != (d["TIMEZONE"], str(d["BROKER_ID"])):
+                out.append(f"{member}: {m.group(1)} on timezone {head['timezone']} / broker "
+                           f"{head['broker']}, the registry has {d['TIMEZONE']} / {d['BROKER_ID']}")
+            if int(head["dateTo"]) > d["DATETO"] or int(head["dateFrom"]) < d["DATEFROM"] // DAY * DAY:
+                out.append(f"{member}: {m.group(1)} range {head['dateFrom']}..{head['dateTo']} is "
+                           f"outside its bars {d['DATEFROM']}..{d['DATETO']} (end the window at "
+                           "most the day before the last bar)")
+        for m in INSTRUMENT.finditer(text):
+            if _registry("SELECT 1 FROM INSTRUMENTS WHERE INSTRUMENT = ?", (m.group(1),)) \
+                    and m.group(0) != instrument_xml(m.group(1)):
+                out.append(f"{member}: instrument {m.group(1)} is not the registry's text")
+        defined = {name: block for block, name in
+                   re.findall(r'(<Session name="([^"]+)">.*?</Session>)', text, re.S)}
+        for name, block in defined.items():
+            mine = sessiondb.block(name, sessiondb.copy())
+            if mine and re.sub(r"\s+", "", mine) != re.sub(r"\s+", "", block):
+                out.append(f"{member}: session {name} is not the registry's hours")
+        for name in set(re.findall(r'MarketOpenSession">([^<]+)<', text)) - set(defined):
+            out.append(f"{member}: names session {name} without defining it")
+    return sorted(set(out))
+

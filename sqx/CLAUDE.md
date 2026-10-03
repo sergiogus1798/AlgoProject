@@ -29,9 +29,14 @@ treat one as a scratch harness — the knowhow pages that used `Retester` that w
 One command builds the project:
 
 ```bash
-python3 -m sqx.projects.builder Test_<name>|Trade_<name> --purpose "<what for>" \
+python3 -m sqx.projects.builder Test_<name>|Trade_<name>|Research_<name> --purpose "<what for>" \
     --template <lib>/template.sqx --symbol <SYM> --role custodian --timeframe <TF> --workflow
 ```
+
+With no fixed idea there is no template: `--simple long|short` in place of `--template` builds a
+Simple Strategy on that one side (`--random` for its random-generation twin). Then apply the
+family's palette and **count** what the Build carries before any run:
+`python3 -m sqx.projects.buildingblocks --project P --palette <name>[,<name>] --count`.
 
 It clones the frozen donor and prices each task from `assets/` by its own segment. With
 `--workflow` (owner, 2026-09-25) the one project holds **every step's task** — the donor's, plus
@@ -41,29 +46,29 @@ only its own step active, because `action=start` runs every active task and skip
 hand it is `python3 -m sqx.projects.stage --cfx <cfx> --step <step>`. Without `--workflow`,
 `--tasks`/`--only` keep a subset, for a study run on its own. A stock project is never borrowed.
 
-**Name it `Test_` or `Trade_`, say what it is for, and retire it when it has answered** (owner,
+**Name it `Test_`, `Trade_` or `Research_`, say what it is for, and retire it when it has answered** (owner,
 2026-09-26). The builder refuses any other prefix and needs `--purpose`; both land in
 `AlgoData/projects/registry.csv`. A `Test_` project dies with the task that made it:
 `python3 -m sqx.projects.retire <P> --role <role> --yes`, with that worker stopped — it keeps the
 `project.cfx` in `AlgoData/projects/retired/` and nothing else, because what the run found is already
 parquet in `raw/`, `harvest/` and `reports/`. `--keep WFM` archives a databank too. A `Trade_`
-project stays until the owner says. `--list` shows every custom project of the three installs.
+or `Research_` project stays until the owner says (owner, 2026-10-03: `Research_` is what the research queue builds). `--list` shows every custom project of the three installs.
 What a session forgets, the **projectJanitor** agent retires every Monday at 02:50
 (`bin/weekly-project-cleanup.sh`, the rule in `sqx/projects/sweep.py`): `Test_`, anything under 10
-tasks, and the owner's queue `AlgoData/projects/retire-queue.txt` — the only way a master project goes.
+tasks (never `Trade_` or `Research_`), and the owner's queue `AlgoData/projects/retire-queue.txt` — the only way a master project goes.
 
 ## Lanes — one owner each, because this state is shared and not reversible
 
 | lane | who | rule |
 |---|---|---|
-| SQX lifecycle (start/stop), master install | one session only | announce before stopping SQX |
-| builds and long jobs | **custodian** `SQX_w2` / 5070 | One job at a time; between start and collect only `-project action=status`, never `count`. **Never on the master** |
-| authoring blocks, groups, templates, projects | **conductor** `SQX_w1` / 5060 | 8 cores, always awake. Start it for the job, then `bin/sqx-worker.sh stop` |
+| master install `SQX` / 5050 | **the owner** | His GUI. Never build there, never run `sqcli` while its GUI is up; work that needs it closed waits until he closes it and says so (root rule 3) |
+| builds and long jobs | **custodian** `SQX_w2` / 5070 | One job at a time, then `bin/sqx-worker.sh --role custodian stop`; between start and collect only `-project action=status`, never `count`. **Never on the master** |
+| authoring blocks, groups, templates, projects | **conductor** `SQX_w1` / 5060 | 8 cores, short jobs. Start it for the job with `bin/sqx-worker.sh start`, then `bin/sqx-worker.sh stop`; check the OWNER lock first (root rule 3) |
 | reading configs, `.cfx`, task chains | anyone | read-only, never triggers a restart |
 | snapshots and recovery | one session | snapshot before anything destructive |
 
-If you were not told you own the lifecycle lane, you do not. Read freely; change nothing that needs
-SQX to restart.
+Start and stop only through `bin/sqx-worker.sh` (it carries the owner lock). Read freely; change
+nothing that needs SQX to restart.
 
 ## What lives here
 

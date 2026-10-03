@@ -11,8 +11,8 @@ from xml.etree import ElementTree
 
 from core.datapaths import retired_project
 from core.paths import MASTER, WORKERS
+from sqx.projects import cfxio
 from sqx.projects import registry, sweep
-from sqx.projects.configure import running_install
 
 STOCK = {"Builder", "Retester", "Optimizer", "PortfolioComposer", "PortfolioMaster"}
 FRESH_MINUTES = 60   # younger than this, someone may still be collecting from it
@@ -83,7 +83,7 @@ def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False
         raise SystemExit(f"{name} is a stock project; it is never retired.")
     if not (folder / "project.cfx").exists():
         raise SystemExit(f"{folder} holds no project.cfx.")
-    if (master_up() if role == "master" else running_install(folder / "project.cfx")):
+    if (master_up() if role == "master" else cfxio.held(folder / "project.cfx")):
         raise SystemExit(f"the {role} is up: it holds {name} in memory and would write it "
                          "back on exit (hard rule 4). Stop it first.")
     d = describe(folder)
@@ -111,7 +111,7 @@ def is_up(role: str) -> bool:
     """Whether one install is running now."""
     if role == "master":
         return master_up()
-    return bool(running_install(WORKERS[role]["path"] / "user/projects" / "_" / "project.cfx"))
+    return bool(cfxio.held(WORKERS[role]["path"] / "user/projects" / "_" / "project.cfx"))
 
 
 def sweep_all(apply: bool) -> None:

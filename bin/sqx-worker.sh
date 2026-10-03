@@ -26,8 +26,15 @@
 #   port SQX writes to settings.xml (WebServerPortUsed), with the BrowserToken beside it.
 #
 # Every install carries an owner lock (OPEN.md #32): `start` writes user/log/OWNER
-# (holder, sqcli PID, start time); `stop` from a different holder refuses unless --force.
-# The holder is $CLAUDE_CODE_SESSION_ID when set, else --owner/$SQX_OWNER, else "owner".
+# (holder, sqcli PID, start time) the moment it launches; `stop` from a different holder
+# refuses unless --force. The holder is $CLAUDE_CODE_SESSION_ID when set, else
+# --owner/$SQX_OWNER, else "owner".
+#
+# Exit codes: 0 only when the command did what it says. `start` exits 1 when another start
+# or run of the same install is in progress, or when the port never opened (the sqcli it
+# launched is then killed, by PID). `stop` exits 1 when the worker is still alive at the end.
+# "Alive" is the port OR a sqcli/StrategyQuantX process whose working directory is the
+# install -- never the port alone. → knowhow/sqx-drive/worker-process-lifecycle.md
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -73,15 +80,98 @@ source "$ROOT/bin/sqx-lock.sh"
 # Does any sqcli already have this install open? `running` only watches the port, and a
 # worker whose AppSettings drifted listens somewhere else -- so the port alone says "free"
 # while the H2 database is locked, and the second launch is the one that does the damage.
-holds_install() {
-  local p
+# Matched by exact process name and working directory, never by a command-line pattern: a
+# shell or a `claude -p` whose arguments merely name sqcli is not a worker (rule 2).
+install_pids() {
+  local p here
+  here=$(readlink -f "$WORKER")
   for p in $(pgrep -x 'sqcli|StrategyQuantX' 2>/dev/null); do
-    [ "$(readlink -f "/proc/$p/cwd" 2>/dev/null)" = "$(readlink -f "$WORKER")" ] && return 0
+    [ "$(readlink -f "/proc/$p/cwd" 2>/dev/null)" = "$here" ] && printf '%s\n' "$p"
   done
-  return 1
+  return 0
+}
+holds_install() { [ -n "$(install_pids)" ]; }
+
+# The worker is alive while its port answers OR its process exists. The port alone lies at
+# both ends: a booting worker has a process and no port yet, and one shutting down may drop
+# the port while the JVM is still writing its databanks to disk.
+alive() { running || holds_install; }
+
+# Seconds `start` waits for the port and `stop` waits for the process. 🔬 2026-10-03, 1,679
+# launches in both workers' launcher_*.log against "Server started on port" in SQX's log:
+# the port opens 1-7 s after launch (median 2), the 80 GB custodian included -- so 120 s
+# without a port is a failed start, not a slow one. The env overrides exist for the tests.
+START_WAIT="${SQX_START_WAIT:-120}"
+STOP_WAIT="${SQX_STOP_WAIT:-300}"
+
+# One start (or one-shot run) per install at a time. `guard_launch` alone is check-then-act:
+# the log prune and `sync_bars` (an md5 of the master's data, then an rsync) sit between the
+# check and the launch, and two sessions both passed it -- the 2026-09-23 incident below.
+# The flock is held on fd 9 until this script exits; every daemon it launches closes fd 9
+# (`9>&-`), or the worker itself would hold the lock for as long as it lives.
+take_start_lock() {
+  if [ ! -x "$WORKER/sqcli" ]; then
+    echo "no SQX install at $WORKER — clone it first: bin/clone-sqx-worker.sh $ROLE"; exit 1
+  fi
+  mkdir -p "$WORKER/user/log"
+  exec 9>"$WORKER/user/log/.start.lock" || {
+    echo "cannot open $WORKER/user/log/.start.lock"; exit 1; }
+  if ! flock -n 9; then
+    printf 'REFUSING: another start or run of %s is in progress (%s is locked).\n' \
+      "$ROLE" "$WORKER/user/log/.start.lock"
+    printf 'Two launches on one install is how a worker got the port of the master.\n'
+    printf 'Wait for it to finish, then look at who holds the install before retrying.\n'
+    exit 1
+  fi
 }
 
 xvfb_file() { printf '%s/user/log/XVFB' "$WORKER"; }
+# One display per install, derived from its port, so two workers never share a screen.
+xvfb_display() { printf ':%s' "$((CLI_PORT / 10))"; }
+
+# The PID in user/log/XVFB, but only while that process really is this install's Xvfb. The
+# file outlives a GUI crash or a reboot, and a bare `kill $(cat XVFB)` then hits whatever
+# owns the number now.
+xvfb_pid() {
+  local pid
+  pid=$(cat "$(xvfb_file)" 2>/dev/null) || return 1
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = "Xvfb" ] || return 1
+  tr '\0' '\n' <"/proc/$pid/cmdline" 2>/dev/null | grep -qx -- "$(xvfb_display)" || return 1
+  printf '%s' "$pid"
+}
+
+# Kill this install's Xvfb if the file still names it, and remove the file either way.
+drop_xvfb() {
+  local pid
+  [ -f "$(xvfb_file)" ] || return 0
+  pid=$(xvfb_pid) && kill "$pid" 2>/dev/null
+  rm -f "$(xvfb_file)"
+}
+
+# A start whose port never opened used to report the failure and leave its sqcli alive: it
+# could come up later with no OWNER lock, invisible to every other session. Kill the one
+# this start launched -- by PID, checked to still be a sqcli/StrategyQuantX of this install.
+kill_launched() {
+  local pid="$1"
+  if install_pids | grep -qx -- "$pid"; then
+    echo "killing the process this start launched (PID $pid)"
+    kill "$pid" 2>/dev/null
+    for _ in $(seq 1 30); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "PID $pid ignored SIGTERM for 30 s — sending SIGKILL"
+      kill -9 "$pid" 2>/dev/null; sleep 2
+    fi
+  fi
+  if kill -0 "$pid" 2>/dev/null && install_pids | grep -qx -- "$pid"; then
+    echo "⚠️ PID $pid is STILL ALIVE — its owner lock is kept; kill it by PID before retrying"
+  else
+    rm -f "$(owner_file)"
+  fi
+  if [ "$(configured_port)" != "$CLI_PORT" ]; then
+    echo "⚠️ internal/AppSettings.txt now declares port $(configured_port), not $CLI_PORT — fix it before the next start"
+  fi
+}
 gui_setting() {
   grep -oE "<$1>[^<]*" "$WORKER/user/settings/settings.xml" 2>/dev/null | head -1 | sed "s/<$1>//"
 }
@@ -158,7 +248,7 @@ sync_bars() {
   if [ ! -x "$WORKER/sqcli" ]; then
     echo "no SQX install at $WORKER — clone it first: bin/clone-sqx-worker.sh $ROLE"; return 1
   fi
-  if running; then
+  if alive; then
     echo "$ROLE is running on :$CLI_PORT — stop it first (sqx-worker --role $ROLE stop)"; return 1
   fi
   # The master may be mid-import. Copy, then confirm the source didn't move
@@ -204,14 +294,29 @@ case "${1:-}" in
   sync)  sync_bars ;;
   stop)
     clear_stale_lock
-    running || { echo "$ROLE not running"; rm -f "$(owner_file)"; exit 0; }
+    # "Running" is the process, not the port: a worker still booting has no port yet, and
+    # calling it "not running" removed the lock of a live install.
+    if ! alive; then
+      echo "$ROLE not running"; drop_xvfb; rm -f "$(owner_file)"; exit 0
+    fi
     refuse_stop_if_held || exit 1
+    # GUI mode only while the XVFB file names a live Xvfb of this install. A file left by a
+    # GUI crash or a reboot used to send this down the GUI branch: no -exit, a 5 min wait.
+    GUI_UP=0
+    if [ -f "$(xvfb_file)" ]; then
+      if xvfb_pid >/dev/null; then
+        GUI_UP=1
+      else
+        echo "stale $(xvfb_file): its PID is not this install's Xvfb — removed, stopping as a CLI worker"
+        rm -f "$(xvfb_file)"
+      fi
+    fi
     # A stop sent in the ~20 s after `start` returns (port answering, CLI still booting) is
     # silently swallowed, and the old code then waited the full 5 min before saying STILL
     # RUNNING (OPEN.md #75, 2026-09-27, conductor). SQX itself logs the line below the moment
     # its CLI can take a command; wait for it, bounded, before sending -exit. A worker that
     # has been up for a while already has the line, so this costs nothing on a normal stop.
-    if [ ! -f "$(xvfb_file)" ] && ! grep -q 'CLI is now ready' "$LOG" 2>/dev/null; then
+    if [ "$GUI_UP" = "0" ] && ! grep -q 'CLI is now ready' "$LOG" 2>/dev/null; then
       echo -n "waiting for the CLI to finish booting"
       for _ in $(seq 1 30); do
         grep -q 'CLI is now ready' "$LOG" 2>/dev/null && break
@@ -219,36 +324,59 @@ case "${1:-}" in
       done
       echo
     fi
-    if [ -f "$(xvfb_file)" ]; then
+    if [ "$GUI_UP" = "1" ]; then
       # GUI mode never readies the sqcli API («CLI not ready»); its own servlet exits it.
       curl -s -m 30 -H "browserToken: $(gui_setting BrowserToken)" \
         "http://localhost:$(gui_setting WebServerPortUsed)/main/exitapp" >/dev/null 2>&1
     else
       curl -sg -m 30 "http://localhost:${CLI_PORT}/call?cmd=-exit" >/dev/null 2>&1
     fi
+    SENT=$?
     # The shutdown sync is what writes the databanks to disk, and it is NOT quick: a
     # 500-strategy databank took over 20 s on its own, and with three of them the JVM was
     # still writing when the old 20-second wait gave up. It did not kill anything — it
     # returned "did not stop" and the next command read a half-written databank: 211 of 500
-    # .sqx, no error anywhere (measured 2026-09-24). So wait for the process to actually go.
+    # .sqx, no error anywhere (measured 2026-09-24). So wait for the process to actually go
+    # — the process, not the port.
+    if [ "$SENT" = "7" ]; then
+      # curl 7 = connection refused: the exit never reached SQX, so there is no shutdown
+      # to wait 5 minutes for. Give a process that was already leaving a few seconds.
+      echo "could not reach $ROLE to send it the exit (nothing answers on its port)"
+      STOP_WAIT=10
+    fi
     echo -n "stopping $ROLE"
-    for _ in $(seq 1 300); do running || break; echo -n "."; sleep 1; done
+    for _ in $(seq 1 "$STOP_WAIT"); do alive || break; echo -n "."; sleep 1; done
     echo
-    running && echo "⚠️ $ROLE STILL RUNNING after 5 min — do not read its databanks yet" \
-            || echo "$ROLE stopped"
-    if ! running && [ -f "$(xvfb_file)" ]; then
-      kill "$(cat "$(xvfb_file)")" 2>/dev/null; rm -f "$(xvfb_file)"
+    if alive; then
+      STOPPED=0
+      if [ "$SENT" = "7" ]; then
+        echo "⚠️ $ROLE STILL RUNNING and not answering — do not read its databanks yet"
+      else
+        echo "⚠️ $ROLE STILL RUNNING after 5 min — do not read its databanks yet"
+      fi
+      echo "   PID(s) holding $WORKER: $(install_pids | tr '\n' ' ')— kill by PID, never by pattern"
+    else
+      STOPPED=1
+      echo "$ROLE stopped"
+      drop_xvfb
     fi
     # The worker just released its log. Quiescent install = safe moment to prune.
     "$ROOT/bin/sqx-log-prune.sh" --auto || true
+    # A stop that did not stop is a failure the caller must see: core.worker.stop runs this
+    # with check=True, and exit 0 here let it go on to read databanks still being written.
+    # The owner lock stays, because the install is still held.
+    [ "$STOPPED" = "1" ] || exit 1
     # Owner, 2026-09-28: every SQX run is exported the moment it ends — metrics, trades and
     # the cosecha of each new or stale databank of the install's Test_/Trade_ projects.
     # ALGO_NO_EXPORT=1 skips it. A failed export never fails the stop.
-    running || (cd "$ROOT" && python3 -m ui.daemon.loader.afterrun --role "$ROLE") || true
-    running || rm -f "$(owner_file)"
+    (cd "$ROOT" && python3 -m ui.daemon.loader.afterrun --role "$ROLE") || true
+    rm -f "$(owner_file)"
     ;;
   start)
     clear_stale_lock
+    running && { echo "$ROLE already running on :$CLI_PORT"; exit 0; }
+    take_start_lock
+    # Again under the lock: the start that held it a moment ago may have finished.
     running && { echo "$ROLE already running on :$CLI_PORT"; exit 0; }
     guard_launch
     # Nothing holds a log right now, and a start is about to write more of them.
@@ -256,21 +384,28 @@ case "${1:-}" in
     "$ROOT/bin/sqx-log-prune.sh" --auto || true
     sync_bars || exit 1
     cd "$WORKER" || exit 1
+    # The prune and the sync can take long; check once more right before launching.
+    guard_launch
+    # Nothing holds the install, so an XVFB file here is a leftover of a GUI run that
+    # crashed: without this a later `stop` of a CLI worker took the GUI branch.
+    drop_xvfb
     if [ "$GUI" = "1" ]; then
-      # One display per install, derived from its port, so two workers never share a screen.
-      DISP=":$((CLI_PORT / 10))"
+      DISP=$(xvfb_display)
       OLD_TOKEN=$(gui_setting BrowserToken)
       setsid nohup "$HOME/.local/bin/Xvfb" "$DISP" -screen 0 1920x1080x24 -nolisten tcp \
-        >"$WORKER/user/log/xvfb.log" 2>&1 </dev/null &
+        >"$WORKER/user/log/xvfb.log" 2>&1 </dev/null 9>&- &
       echo $! >"$(xvfb_file)"
       sleep 1
-      env -u ELECTRON_RUN_AS_NODE DISPLAY="$DISP" setsid nohup ./StrategyQuantX >"$LOG" 2>&1 </dev/null &
+      env -u ELECTRON_RUN_AS_NODE DISPLAY="$DISP" setsid nohup ./StrategyQuantX >"$LOG" 2>&1 </dev/null 9>&- &
     else
-      env -u ELECTRON_RUN_AS_NODE setsid nohup ./sqcli >"$LOG" 2>&1 </dev/null &
+      env -u ELECTRON_RUN_AS_NODE setsid nohup ./sqcli >"$LOG" 2>&1 </dev/null 9>&- &
     fi
     SQCLI_PID=$!
+    # The lock is written at launch, not once the port answers: a worker that is booting is
+    # already held, and one that comes up late must never come up unowned.
+    write_lock "$SQCLI_PID"
     echo -n "starting $ROLE"
-    for _ in $(seq 1 60); do
+    for _ in $(seq 1 $((START_WAIT / 2))); do
       running && break; echo -n "."; sleep 2
     done
     echo
@@ -285,21 +420,25 @@ case "${1:-}" in
       echo "gui:        http://localhost:$(gui_setting WebServerPortUsed)  (header browserToken from settings.xml)"
     fi
     if running; then
-      write_lock "$SQCLI_PID"
       echo "worker up:  http://localhost:${CLI_PORT}/call?cmd=-h"
       echo "log:        $LOG"
       echo "owner:      $(resolve_holder)"
     else
-      [ -f "$(xvfb_file)" ] && { kill "$(cat "$(xvfb_file)")" 2>/dev/null; rm -f "$(xvfb_file)"; }
-      echo "worker failed to start — see $LOG"; exit 1
+      echo "worker failed to start — see $LOG"
+      kill_launched "$SQCLI_PID"
+      drop_xvfb
+      exit 1
     fi
     ;;
   run)
     shift
+    # Held until this one-shot ends: a `start` or a second `run` of the same install is
+    # refused instead of racing it between the check and the launch.
+    take_start_lock
     guard_launch
     sync_bars || exit 1
     cd "$WORKER" || exit 1
-    env -u ELECTRON_RUN_AS_NODE ./sqcli "$@" 2>&1 | grep -vE "DEBUG|oshi|ResponseProcessCookies|set-cookie"
+    env -u ELECTRON_RUN_AS_NODE ./sqcli "$@" 2>&1 9>&- | grep -vE "DEBUG|oshi|ResponseProcessCookies|set-cookie"
     ;;
   *)
     sed -n '2,23p' "$0" | sed 's/^# \?//'

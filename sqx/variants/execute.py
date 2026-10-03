@@ -16,25 +16,14 @@ from core import worker
 from core.paths import worker_dir
 from sqx.variants import banks, inputs, legs as legmod, livexec
 
-TESTED = re.compile(r"Total tested\s+(\d+)")
-# A project whose tasks are all Retest reports no "Total tested" line; what moves is the
-# record count across its databanks, the loaded batch plus every leg's output so far.
-IN_BANK = re.compile(r"In databank\s+(\d+)")
+TESTED, IN_BANK = banks.TESTED, banks.IN_BANK      # `spp` reads TESTED from here
 SETTLE = 8          # seconds SQX needs after `load` before the databank answers for them all
 
 STOCK = {"Builder", "Retester"}   # SQX's own projects: never a harness (hard rule 10)
 
 
 def _call(command: str, cfg: dict) -> str:
-    """One sqcli command against the install that holds the batch.
-
-    Args:
-        command: The sqcli command line.
-        cfg: The `execute` block of config.yaml.
-
-    Returns:
-        Whatever the worker printed.
-    """
+    """One sqcli command against the install `cfg` (the `execute` block) names; its reply."""
     return worker.call(command, role=cfg["role"])
 
 
@@ -46,17 +35,26 @@ def awake(cfg: dict) -> bool:
 
     Returns:
         True when this call started it, so the caller knows to put it back. An install
-        that was already awake is left awake: somebody else is using it.
+        that was already awake is left awake, and is used only when its owner lock names
+        this holder: SystemExit otherwise, before a `clear` or a `load` reaches a run that
+        is another session's (hard rule 3).
 
         The port answers for about twenty seconds before the CLI does, replying
         `Error: CLI not ready.` in the meantime. That is normal and is polled through, not
         treated as a failure.
     """
     try:
-        if "not ready" not in _call("-project action=list", cfg):
-            return False
+        up = "not ready" not in _call("-project action=list", cfg)
     except OSError:
-        pass
+        up = False
+    if up:
+        held = worker.lock(worker_dir(cfg["role"])) or {"holder": "nadie: no hay OWNER"}
+        if held["holder"] != worker.holder():
+            raise SystemExit(
+                f'el {cfg["role"]} ya está arriba y lo tiene «{held["holder"]}»; tú eres '
+                f"«{worker.holder()}». No se le manda nada: espera a que termine o pregunta "
+                "al owner (regla dura 3)")
+        return False
     worker.start(cfg["role"])
     for _ in range(cfg["ready_tries"]):
         time.sleep(cfg["poll_seconds"])
@@ -80,10 +78,12 @@ def load(folder: Path, cfg: dict) -> None:
     """
     source = legmod.source()
     for bank in [source] + [leg["databank"] for leg in legmod.legs()]:
-        _call(f'-databank action=clear project={cfg["project"]} name={bank}', cfg)
+        reply = _call(f'-databank action=clear project={cfg["project"]} name={bank}', cfg)
+        if reply.lstrip().startswith("Error"):   # logged, not fatal: its replies are unmeasured
+            print(f"aviso: clear de {bank}: {reply.strip()[:200]}", file=sys.stderr, flush=True)
         time.sleep(2)
-    _call(f'-databank action=load project={cfg["project"]} name={source} '
-          f"folder={folder}", cfg)
+    command = f'-databank action=load project={cfg["project"]} name={source} folder={folder}'
+    worker.checked(_call(command, cfg), command)
     time.sleep(SETTLE)
 
 
@@ -97,30 +97,31 @@ def run(expected: int, cfg: dict,
         progress: Called with a percentage and a status line as the run advances.
 
     Returns:
-        How many strategies SQX reports as tested.
+        How many strategies SQX reports as tested. SystemExit when SQX aborts the project,
+        when a status reply carries no count, or past `worker.MAX_HOURS`.
 
         ⚠️ `action=startOnlyTask` is NOT used: on this install it reports the project
         started and then tests nothing, silently, forever. `action=start` runs every ACTIVE
         task and skips the rest (🔬 2026-09-25), which is why `main` refuses unless the three
         WFC legs are the only ones switched on.
     """
+    project = cfg["project"]
     # In a workflow project the other steps' databanks count too: measure from here.
-    base = int(IN_BANK.search(_call(f'-project action=status name={cfg["project"]}', cfg))
-               .group(1))
-    log = worker_dir(cfg["role"]) / "user/log/StrategyQuant" / f"log_{time.strftime('%Y_%m_%d')}.log"
-    since = log.stat().st_size if log.exists() else 0
-    if "Cannot start" in (reply := _call(f'-project action=start name={cfg["project"]}', cfg)):
-        raise SystemExit(f"SQX no arrancó {cfg['project']}: {reply.strip()}")   # unresolved
+    base = banks.in_bank(_call(f"-project action=status name={project}", cfg), project)
+    logs = worker_dir(cfg["role"]) / "user/log/StrategyQuant"
+    seen, began = banks.mark(logs), time.monotonic()
+    if "Cannot start" in (reply := _call(f"-project action=start name={project}", cfg)):
+        raise SystemExit(f"SQX no arrancó {project}: {reply.strip()}")   # unresolved
     done = 0
     while done < expected:
         time.sleep(cfg["poll_seconds"])
-        if banks.aborted(log, since):
-            raise SystemExit(f"SQX abortó {cfg['project']} («Error while running project», "
-                             f"ver {log}) con {done} de {expected} reteseadas")
-        status = _call(f'-project action=status name={cfg["project"]}', cfg)
-        tested = TESTED.search(status)
-        done = (int(tested.group(1)) if tested
-                else int(IN_BANK.search(status).group(1)) - base)
+        if banks.aborted(logs, seen):
+            raise SystemExit(f"SQX abortó {project} («Error while running project», "
+                             f"ver {logs}) con {done} de {expected} reteseadas")
+        if time.monotonic() - began > worker.MAX_HOURS * 3600:
+            raise SystemExit(f"{project} sigue en {done} de {expected} reteseadas tras "
+                             f"{worker.MAX_HOURS} h: se deja de esperar")
+        done = banks.tested(_call(f"-project action=status name={project}", cfg), project, base)
         progress(done * 100 // expected, f"{done} de {expected} reteseadas")
     return done
 
@@ -139,8 +140,8 @@ def panel(out: Path, cfg: dict, databank: str, stem: str) -> Path:
         sync-from-files first and destroys what `action=load` put in memory.
     """
     csv = out / f"{stem}.csv"
-    _call(f'-databank action=export project={cfg["project"]} name={databank} '
-          f"file={csv}", cfg)
+    command = f'-databank action=export project={cfg["project"]} name={databank} file={csv}'
+    worker.checked(_call(command, cfg), command)
     return csv
 
 
@@ -182,7 +183,6 @@ def main() -> None:
     ap.add_argument("--project", required=True,
                     help="the custom project holding the three WFC legs: the workflow's own "
                          "(`builder --workflow`), or one built with --tasks Retest")
-
     ap.add_argument("--clear", action="store_true",
                     help="empty the four databanks off the disk, install stopped, and exit")
     a = ap.parse_args()

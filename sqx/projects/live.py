@@ -13,10 +13,12 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
+from core import worker
 from core.datapaths import tmp_dir
 from core.paths import ROOT, WORKERS
 
 SCRIPT = ROOT / "bin" / "sqx-worker.sh"
+MISSES = 5          # polls in a row the port must refuse before `wait` calls the session dead
 END = re.compile(r"Project finished|Project stopped|Error while running project")
 
 
@@ -36,24 +38,25 @@ def _holder() -> str:
     return os.environ.get("CLAUDE_CODE_SESSION_ID") or os.environ.get("SQX_OWNER") or "owner"
 
 
+def _up(role: str) -> bool:
+    """Whether something listens on that worker's port."""
+    with socket.socket() as s:
+        s.settimeout(0.5)
+        return s.connect_ex(("127.0.0.1", WORKERS[role]["port"])) == 0
+
+
 def mine(role: str) -> bool:
     """Whether a GUI session this holder started is up on that worker."""
     top = _top(role)
     lock = top / "user/log/OWNER"
     if not (top / "user/log/XVFB").exists() or not lock.exists():
         return False
-    with socket.socket() as s:
-        s.settimeout(0.5)
-        up = s.connect_ex(("127.0.0.1", WORKERS[role]["port"])) == 0
-    return up and json.loads(lock.read_text())["holder"] == _holder()
+    return _up(role) and json.loads(lock.read_text())["holder"] == _holder()
 
 
 def gui_up(role: str) -> bool:
     """Whether a GUI session, anyone's, is up on that worker: what a reader like the window asks."""
-    with socket.socket() as s:
-        s.settimeout(0.5)
-        up = s.connect_ex(("127.0.0.1", WORKERS[role]["port"])) == 0
-    return up and (_top(role) / "user/log/XVFB").exists()
+    return _up(role) and (_top(role) / "user/log/XVFB").exists()
 
 
 def start(role: str) -> None:
@@ -109,16 +112,27 @@ def wait(role: str, since: tuple[Path, int]) -> str:
 
     The agent never reads SQX's log: this does, and returns one line. Nothing here stops a
     build: `/project/stop` does not stop one (🔬), so the build ends on its own `time-limit`.
+    SystemExit when the port stays down MISSES polls in a row, or past `worker.MAX_HOURS`.
     """
     log, offset = since
+    began, down = time.monotonic(), 0
     while True:
-        if _log(role) != log:                         # midnight: SQX opened the next day's file
-            log, offset = _log(role), 0
+        down = 0 if _up(role) else down + 1           # asked before the read: the last line counts
         with open(log, "rb") as f:
             f.seek(offset)
-            for line in f.read().decode("utf-8", "replace").splitlines():
-                if END.search(line):
-                    return line.strip()
+            chunk = f.read()
+        whole = chunk[:chunk.rfind(b"\n") + 1]        # a half-written line waits for its end
+        offset += len(whole)
+        for line in whole.decode("utf-8", "replace").splitlines():
+            if END.search(line):
+                return line.strip()
+        if not whole and _log(role) != log:           # midnight: its end read, the next day's
+            log, offset = _log(role), 0
+            continue
+        if down >= MISSES:
+            raise SystemExit(f"el {role} dejó de escuchar antes de «Project finished» ({log})")
+        if time.monotonic() - began > worker.MAX_HOURS * 3600:
+            raise SystemExit(f"{role}: sin «Project finished» tras {worker.MAX_HOURS} h ({log})")
         time.sleep(1)
 
 
@@ -194,26 +208,28 @@ def cut(role: str, project: str, bank: str, names: list[str]) -> int:
     return before - after
 
 
-
 def load(role: str, project: str, bank: str) -> int:
     """Make memory hold exactly the .sqx a fill just wrote into the databank's folder.
 
     A file written beside a live databank and never loaded is deleted by its next sync (hard
     rule 1), so the folder is copied aside, the databank cleared and refilled from the copy.
+    A load that has not finished in 120 s raises BEFORE any sync and leaves the copy on disk.
     """
     folder = _top(role) / "user/projects" / project / "databanks" / bank
     want = len(list(folder.glob("*.sqx")))
-    with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
-        for f in folder.glob("*.sqx"):
-            shutil.copy2(f, tmp)
-        call(role, "loadFilesToDatabank", projectName=project, databankName=bank, folder=tmp,
-             clear="true", all="true")
-        for _ in range(600):
-            if records(role, project)[bank] == want:
-                break
-            time.sleep(0.2)
-    sync(role, project, [bank])
-    got = records(role, project)[bank]
+    tmp = tempfile.mkdtemp(dir=tmp_dir())
+    for f in folder.glob("*.sqx"):
+        shutil.copy2(f, tmp)
+    call(role, "loadFilesToDatabank", projectName=project, databankName=bank, folder=tmp,
+         clear="true", all="true")
+    for _ in range(600):
+        got = records(role, project)[bank]
+        if got == want:
+            break
+        time.sleep(0.2)
     if got != want:
-        raise SystemExit(f"{bank}: {got} en memoria tras cargar {want} ficheros")
+        raise SystemExit(f"{bank}: {got} en memoria tras 120 s cargando {want} ficheros; no se "
+                         f"sincroniza (un sync borraría los que faltan). Su copia queda en {tmp}")
+    shutil.rmtree(tmp)
+    sync(role, project, [bank])
     return got

@@ -10,8 +10,8 @@ from pathlib import Path
 
 from core.assetdata import doctrine, load
 from core.datapaths import crosstf_dir
+from sqx.projects import cfxio
 from sqx.projects import crosstfsolo
-from sqx.projects.configure import running_install
 from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.setups import set_span, span
 from sqx.projects.stage import just, own, titles
@@ -58,6 +58,7 @@ def set_main(text: str, symbol: str) -> tuple[str, int, str]:
         The task, how many acceptance conditions were silenced, and a warning about the
         window — empty when the task runs the declared span. Every other timeframe's task is
         copied from this one (`crosstfsolo.write`), so it carries the same window and costs.
+        The span is `oos1` alone since 2026-10-02 (owner: the step reads only oos1).
     """
     study = doctrine()["crosstf"]
     if study["conditions"]:
@@ -79,7 +80,8 @@ def set_main(text: str, symbol: str) -> tuple[str, int, str]:
     return text, silenced, warning
 
 
-def wire(cfx: Path, symbol: str, day: str, project: str = "") -> dict:
+def wire(cfx: Path, symbol: str, day: str, project: str = "",
+         targets: list[str] | None = None) -> dict:
     """Write `CrossTF` and one task per extra timeframe, and record which databank is which.
 
     Args:
@@ -90,13 +92,15 @@ def wire(cfx: Path, symbol: str, day: str, project: str = "") -> dict:
             session wires a copy in a temporary folder, whose name is not the project
             (🔬 2026-10-01: blocks.json went to crosstf/tmp9a9isior and step 12 died on
             KeyError 'block').
+        targets: The extra timeframes this run reads (`crosstfsolo.planned`'s `only`); the
+            doctrine's whole list when None. A task left out stays in the project, inactive.
 
     Returns:
         `task`, `blocks` (the source timeframe first), `databanks` (in the same order),
         `tasks` (each extra timeframe's row of `crosstfsolo.planned`), `silenced`, `warning`,
         `staged` and `out`.
     """
-    held = running_install(cfx)
+    held = cfxio.held(cfx)
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Paralo: bin/sqx-worker.sh --role {held} stop")
@@ -106,12 +110,10 @@ def wire(cfx: Path, symbol: str, day: str, project: str = "") -> dict:
     text, silenced, warning = set_main(members[task].decode("utf-8"), symbol)
     members[task] = text.encode("utf-8")
     source = main_chart(text)[1]
-    extra = crosstfsolo.planned(source)
+    extra = crosstfsolo.planned(source, targets)
     for solo in extra:
         crosstfsolo.write(members, text, solo)
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, blob in members.items():
-            z.writestr(name, blob)
+    cfxio.write(cfx, members)
     staged = own(cfx, "crosstf")
     just(cfx, titles("crosstf") + [s["title"] for s in extra])
     blocks = [source] + [s["timeframe"] for s in extra]

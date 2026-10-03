@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core.datapaths import projects_backup
 from core.paths import WORKERS, worker_dir
+from sqx.projects import cfxio
 from sqx.projects.crosschecks import member_of
 from sqx.variants import inputs
 
@@ -196,9 +197,7 @@ def write(cfx: Path, task: str, kind: str, role: str) -> Path:
                          "de workflow se crea con `sqx.projects.builder --workflow` "
                          "(regla dura 10).")
     members[member] = task.encode("utf-8")
-    with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as out:
-        for name, data in members.items():
-            out.writestr(name, data)
+    cfxio.write(cfx, members)
     return cfx
 
 
