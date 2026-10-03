@@ -28,11 +28,13 @@ that already passed `/oos-gate`, never on a freshly built population.
 
 Never grade the unscaled row. Report it, say what it is, and move on.
 
-## Why there is a control cell, and why it is not optional
+## The control cell is shown, not read (proposal of 2026-10-02, pending the owner)
 
-Each scaled sibling is run **on its own source timeframe too**. Without that cell, "it died on H4"
-and "it died when its Tenkan went from 9 to 2" are the same observation. `control_failed` is that
-separation; if you drop the control, every verdict becomes unattributable.
+Each scaled sibling is run **on its own source timeframe too**, and that number sits beside the
+reading. It was a reading of its own (`control_failed`) until 2026-10-02: it took 29 of 46 real
+siblings and inverted for a negative baseline — periods ÷ 4 on the mother's bars is another
+strategy, not a rounding check. What prices the sibling now is `z_new`: its z with what its
+mother's result already explains taken out (a sibling re-reads the same asset over the same years).
 
 ## Run it — from the window (the usual path)
 
@@ -55,9 +57,11 @@ python3 -m sqx.projects.crosstfload --project <P> --role custodian --mothers  # 
 
 ## Run it — step by step
 
-**1 · Fabricate.** Owner's rule, 2026-09-23: **periods and bar-count exits, nothing else.** The
-whitelist in `sqx/variants/config.yaml` (`crosstf:`) is positive — an unrecognised parameter is
-written through untouched, never reinterpreted.
+**1 · Fabricate.** Owner's rule, 2026-09-23: **periods and bar-count exits, nothing else.** Since
+2026-10-02 a period is what SQX types `ParamTypePeriod` on the variable (MACD's three, the
+Stochastic's slowing…), a custom block's length is what `sqx/variants/lengths.yaml` rules, and the
+name patterns of `sqx/variants/config.yaml` are only a fallback. A custom block the table does not
+rule is left unscaled and its sibling comes back `unusable`.
 
 ```bash
 python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1   # M30 + H4 + D1
@@ -81,23 +85,20 @@ AlgoData/crosstf/XAUUSD/2026-09-23/
                                        rounding moved it; step 4 reads it
 ```
 
-Read the two columns it prints before going on. `clamped=True` or `max_rounding_shift` above 0.15
-means the cell cannot be attributed to the timeframe, because the rounding moved the parameters as
-much as the resampling did. It also lists the int parameters the whitelist did not claim — review
+The two columns it prints, `clamped` and `max_rounding_shift`, are recorded and shown, and since
+2026-10-02 they no longer discard a sibling (owner: «Redondea donde puedas, ya está»): each
+length is rounded to the nearest integer, floor 2, and the sibling is read like any other. It also lists the int parameters the whitelist did not claim — review
 them, do not assume they are wrong.
 
 ⚠️ **D1 is not reachable from H1 by scaling.** Measured: ÷24 moves parameters 140–586 % and clamps
-every period at the builder's floor. The owner still wants D1 from H1 (2026-09-29): its scaled cells
-come back `unusable` and D1 is read on the *unscaled* row. **A faster target is fine**: H1→M30 is a
-ratio of 0.5, periods double, no rounding and no clamp (🔬 2026-09-29).
+every period at the builder's floor. The doctrine still lists D1 from H1 (owner, 2026-09-29); the
+criteria calibration of 2026-10-02 runs without it (`crosstfload --targets M30 H4`). **A faster target is fine**: H1→M30 doubles the
+periods, no clamp (→ `knowhow/sqx-drive/crosstf-input-filled-by-no-task.md`).
 
-⚠️ **And M30 is barely usable as a source at all.** 🔬 2026-09-23: from M30, **÷2 already clamps**
-— 5 of 6 siblings came back `clamped`, with rounding shifts of 1.0 (H1) and 7.0 (H4) against a
-tolerance of 0.15. The cause is structural, not bad luck: the build doctrine pins the lookback at
-one bar and the builder's period floor is 2, so a population built on M30 sits on the floor already
-and has nowhere to be divided to. **Check the clamped column before spending a run**: if most of
-the batch is clamped, the answer is "this population cannot be rescaled", and no amount of CPU
-changes it.
+⚠️ **Short lengths hit the floor, and the sibling is read all the same** (owner, 2026-10-02). A
+Stochastic's D and slowing of 3 divided by 4 are written as 2, the floor. 🔬 on 600 Simple
+Strategies: 23 % of H1→H4 siblings and 53 % of M30→H4 ones carry a clamped length. Say the
+`clamped` share and the rounding shift when reporting; do not drop those siblings.
 
 **2 · Wire the task.** It lives in the workflow's own project (`/template-run --workflow`), in the
 task titled `CrossTF`, which reads `CrossTF_Input` and writes `CrossTF`:
@@ -109,9 +110,10 @@ python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/proje
 ```
 
 The timeframes, the window and the precision come from `crosstf:` in `assets/_build.yaml`
-(`segment: build..oos1`, `precision: 2`). The timeframes depend on the one the strategy was built
+(`segment: oos1`, `precision: 1` — owner, 2026-10-02: the step reads oos1 only, at the selected
+timeframe's precision). The timeframes depend on the one the strategy was built
 on: **from M30, H1 and H4** (owner, 2026-09-26); **from H1, M30, H4 and D1** (owner, 2026-09-29).
-H12 is a custom SQX timeframe and works as-is in a task if named (🔬 2026-09-26).
+H12 is a custom SQX timeframe and works as-is in a task if named (→ `knowhow/sqx-drive/custom-timeframe-h12.md`).
 `sqx.variants.scale --source H1` fabricates every sibling of the list by default. The study derives the same block order itself — the siblings'
 `source_tf` in `scaling.parquet`, then this list (2026-09-27; it used to be a hand-edited
 `run.blocks`). D1 (or H12) siblings of short
@@ -122,7 +124,7 @@ the window and the precision are not overridable on purpose.
 Each `<Setup>` overrides **only** `timeframe`; the window, costs, precision and session all come from
 the main test through `<MainTestValues>` — the same instrument does not get a different spread for
 being resampled. Because the extra blocks inherit the main test's dates, the command **writes the
-task's own window as `build..oos1`** (since 2026-09-25; it used to only warn).
+task's own window as `crosstf.segment`** — `oos1` since 2026-10-02, `build..oos1` before.
 
 It **silences every acceptance condition** of the cross-check and forces `DeleteFailedStrategies`
 to false, and says how many — `crosstf.conditions: []` (owner, 2026-09-24): with them live SQX drops
@@ -132,8 +134,9 @@ task, refuses while the install is up (hard rule 4), and ends by printing the bl
 
 **3 · Load, run and export.** On the custodian, stopped: `crosstfload` copies the folder into
 `CrossTF_Input` (SQX loads it when it starts — never `-databank action=load` on a running
-custodian), then the run half of `/template-run` — `start`, only `status` while it runs, always
-end stopped:
+custodian), then the run half of `/template-run` — `start` and the wait — mark, `action=start`, ONE
+background `wait.sh --from`, nothing until it notifies (rule 18; `-project action=status` is the only
+query the custodian takes meanwhile) — always end stopped:
 
 ```bash
 # with the custodian STOPPED, copy the folder into the databank; SQX loads it on start
@@ -147,9 +150,14 @@ python3 -m sqx.export.export_retest --project <P> --databank CrossTF --role cust
 python3 -m studies.transfer.crossTF.report --project <P> --asset <SYMBOL> [--day <export>] [--fabricated <scale day>]
 ```
 
-Five readings: `survives` (beats its own timeframe's null — the edge is its own), `inherited`
-(profitable there but indistinguishable from random entry), `fails`, `control_failed` (the parameter
-change broke it, not the timeframe), `unusable` (rounding or clamping moved the parameters too far).
+Six readings, on oos1 only (an agent's proposal of 2026-10-02, pending the owner — the study's
+README): `survives` (beats its own timeframe's null AND adds to what its mother already showed,
+`z_new`), `inherited` (made money, no more than its mother predicts), `fails` (lost money), and
+three that mean the test did not happen: `unusable` (ONLY an unverified custom-block length —
+owner, 2026-10-02, «Redondea donde puedas, ya está»: rounding and the floor never discard a
+sibling; `rounding_shift` and `clamped` are numbers to measure with), `silent` (no trade),
+`no_data` (under 30 oos1 trades). The control cell is
+shown, never read. `--seed N` replays the nulls.
 
 ## The trap that is silent
 
@@ -164,15 +172,16 @@ the `Symbol` column, which is identical across the timeframes of one asset.
   exits are scaled, so `StopLossCoef` and `ProfitTargetCoef` are written through unchanged while the
   range they multiply grows with aggregation. Declared property of the comparison, not a bug — but
   never describe an H4 cell as a clean "same strategy, slower clock".
-- Which readings were `unusable`, and their rounding shift. A population that is mostly unusable is a
-  result about short periods, not a reason to raise the tolerance.
+- The share of siblings with a clamped length and their rounding shift, as a description: they are
+  read like any other (owner, 2026-10-02), and whether they behave differently is a thing to measure.
 - That the result is correlated with what the OOS gate already knew, and is worth less per CPU-hour
   than another market.
 
 ## Do not
 
 - Grade the unscaled row, or report it as robustness evidence.
-- Read a scaled cell whose `clamped` is True, or whose rounding shift is over tolerance.
+- Discard a sibling for rounding or for hitting the floor (owner, 2026-10-02) — only an unverified
+  custom-block length makes one `unusable`.
 - Run it with the cross-check's acceptance conditions live.
 - Build D1-scaled siblings and read them as scaled.
 - Run it on the master, or on a stock project.

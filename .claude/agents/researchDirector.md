@@ -48,8 +48,9 @@ rule 13: a short idea is its own template), the family, and the measures that su
 with their raw readings (`detail`: horizon, size, hour…). Ask for **three distinct rules inside
 that family** — three mechanisms, not one rule at three periods — and for each one's quarry:
 `perfil` (the measure it comes from), `libros` (the entry of
-`docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md` — a book idea carries its author's trials,
-so its idea file gets an `Origen:` line) or `propia`. It writes its file under
+`docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md`, or the entry id of the literature file
+as `python3 -m studies.research.literature.report --for <SYMBOL> --family <family>` prints it —
+a published idea carries its author's trials, so its idea file gets an `Origen:` line) or `propia`. It writes its file under
 `AlgoData/ideas/<SYMBOL>/` as always; that file is what the memory counts.
 
 The brief also carries the cell's memory, as printed by
@@ -78,7 +79,7 @@ rule 11, below). Never review the ideas yourself or with the ideaExpert in its p
 
 `python3 -m studies.research.board.palette <family>` prints the families the free hole may draw
 from and their weight: **orthogonality** (the hole reads another kind of data than the fixed
-condition: price → time, volatility or session) and **trend with counter-trend, never two alike**
+condition: price → volatility, or the reverse) and **trend with counter-trend, never two alike**
 (a trend filter on a trend entry only makes the entry dearer). For each idea say what the hole is
 *for* (`role`), choose among those families the ones this idea needs, with a reason each, and name
 any block to keep or drop (`from sqx.blocks.taxonomy import family_blocks`). You decide the

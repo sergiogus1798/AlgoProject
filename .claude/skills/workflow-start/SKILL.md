@@ -1,6 +1,6 @@
 ---
 name: workflow-start
-description: Start a new workflow run from nothing — the three expert agents for the idea, the template and the building blocks (spending what they need), then the custom project, the palette written into its Build task, and the autopilot from step 6 on. Use when the owner asks for a new strategy run, a new idea on a symbol, or a complete workflow from scratch.
+description: Start a new workflow run from nothing — the three expert agents for the idea, the template and the building blocks (spending what they need), then the custom project, the palette written into its Build task, and the autopilot from the build (step 6) on. Use when the owner asks for a new strategy run, a new idea on a symbol, or a complete workflow from scratch.
 ---
 
 # /workflow-start
@@ -25,10 +25,12 @@ files the template in the library, verified block by block. Relay its verificati
 ## 4-5. Preflight and project
 
 `python3 -m core.assets <SYMBOL>` (stop on non-zero). Check the custodian is free (`ListAgents`,
-`ls -lt <worker>/user/projects | head`, the OWNER lock). Then:
+`ls -lt <worker>/user/projects | head`, the OWNER lock). **Ask the owner `Test_` (throwaway functional
+test) or `Trade_` (meant to bear fruit)** unless the request already says (hard rule 11: a question,
+not a default). Then, with the chosen prefix:
 
 ```bash
-python3 -m sqx.projects.builder Test_<SYMBOL>_<template>_<TF> --purpose "<why>" \
+python3 -m sqx.projects.builder <Test|Trade>_<SYMBOL>_<template>_<TF> --purpose "<why>" \
     --template AlgoData/templates/library/<template>/template.sqx --symbol <SYMBOL> \
     --role custodian --timeframe <TF> --workflow
 ```
@@ -41,7 +43,13 @@ The conditions on must be inside the owner's band (90-170).
 
 ## 7. The rest — `/autopilot`
 
-From the build (step 6's task) to 16.5, unattended, reading only `resumen.md`.
+From the build (step 6's task, chained with 7) to 16, then the tail 16.5 to 25 for every survivor
+(26 when its four parameters are given), unattended, reading only `resumen.md`.
+
+## 8. Close
+
+If the project is `Test_` (rule 6), when the run ends and the worker is stopped:
+`python3 -m sqx.projects.retire <P> --role <role> --yes`. A `Trade_` project is kept.
 
 ## Never
 

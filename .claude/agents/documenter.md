@@ -35,7 +35,7 @@ Every claim carries its provenance: **🔬 verified by direct test · 📓 read 
 - When a new finding contradicts an old one, **rewrite the card's rule in place** and bump its
   `date:`. Git keeps the old version; the card keeps only what is true now. A `Not: <old belief>`
   line is allowed only when the old belief is a trap readers still fall into.
-- Knowhow is one fact per card. `grep -rh '^q:' knowhow/` first: edit the card that exists, or
+- Knowhow is one fact per card. `grep -rh '^q:' knowhow/<domain>/` (questions) or `grep -rli '<symptom>' knowhow/` (the `kw:` line) first; every card has a `q:` question (≤ 120 chars, ends in `?`) and a `kw:` keyword line: edit the card that exists, or
   create a new one. Never append a section to a card, and never `cat >>` into knowhow.
 - Numbers get a date and a source. "231 strategies" without "in `SPP OOS` + `WFM`, 2026-09-03" is
   worthless in three months.

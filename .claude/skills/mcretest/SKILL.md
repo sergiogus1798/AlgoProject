@@ -5,92 +5,92 @@ description: Configure the eight MC Retest tasks of a custom SQX project — one
 
 # /mcretest
 
-Paso 13 del workflow, la mitad de SQX. Deja las ocho tareas MC Retest de un custom project
-configuradas y listas para correr. Leer lo que producen es `/retest` → `studies/breakage/mcRetest/`
-(paso 14), y el Monte Carlo que reordena operaciones está FUERA del workflow a propósito.
+Step 13 of the workflow, the SQX half. It leaves the eight MC Retest tasks of a custom project
+configured and ready to run. Reading what they produce is `/retest` → `studies/breakage/mcRetest/`
+(step 14), and the Monte Carlo that reorders trades is OUT of the workflow on purpose.
 
-## Lo único que hay que entender antes
+## The one thing to understand first
 
-Las ocho tareas existen para **atribuir**, no para filtrar. Cada una perturba una sola cosa, así
-que cuando una estrategia se cae se sabe de qué dependía: del coste de entrar, del relleno, de sus
-propios parámetros o del histórico exacto que le tocó ver.
+The eight tasks exist to **attribute**, not to filter. Each one perturbs a single thing, so when a
+strategy falls it is known what it depended on: the cost of entering, the fill, its own parameters or
+the exact history it happened to see.
 
-Eso impone dos cosas, y las dos las escribe el comando:
+That imposes two things, and the command writes both:
 
-- **Un solo método activo por tarea** (seis en la de estrés). Una tarea que mueve dos cosas no
-  puede atribuir el daño a ninguna, y `studies/breakage/mcRetest/` se niega a ingerir su databank.
-- **Condiciones de aceptación apagadas.** Con ellas vivas SQX borra lo que falla y cada tarea
-  encadena en la siguiente: al final sólo sabes cuántas sobrevivieron. El veredicto se toma en
-  Python y se aplica con `/curate`.
+- **A single active method per task** (six in the stress one). A task that moves two things cannot
+  attribute the damage to either, and `studies/breakage/mcRetest/` refuses to ingest its databank.
+- **Acceptance conditions off.** With them live SQX deletes what fails and each task chains into the
+  next: in the end you only know how many survived. The verdict is taken in Python and applied with
+  `/curate`.
 
-Por eso **las ocho leen el mismo databank**: son ocho lecturas de una población, no un embudo.
+That is why **all eight read the same databank**: they are eight readings of one population, not a
+funnel.
 
-## La regla de MinDist — del dueño, 2026-09-23
+## The MinDist rule — the owner's, 2026-09-23
 
-`MCR 4 MinDist` **sólo** se configura si la población lleva órdenes **stop o limit**. La distancia
-mínima es lo cerca del precio que el bróker deja poner una orden pendiente; con entradas a mercado
-no hay ninguna, y la tarea sortearía mil veces un número que nadie lee.
+`MCR 4 MinDist` is configured **only** if the population carries **stop or limit** orders. The minimum
+distance is how close to the price the broker lets a pending order be placed; with market entries
+there is none, and the task would draw a thousand times a number nobody reads.
 
-El comando lo resuelve solo y dice de dónde sale la respuesta:
+The command resolves it by itself and says where the answer comes from:
 
-| fuente | cuándo | qué vale |
+| source | when | what it is worth |
 |---|---|---|
-| `population` | el databank ya existe | abre los `.sqx` y mira qué órdenes usan. Es la respuesta buena |
-| `generator` → `no` | no hay población y el builder no puede emitir pendientes | seguro: lo que no se puede generar no está |
-| `generator` → `SIN RESOLVER` | no hay población y el builder **sí** puede | no se inventa: la tarea se queda sin configurar y hay que repasarlo tras el build |
+| `population` | the databank already exists | opens the `.sqx` and looks at which orders they use. It is the good answer |
+| `generator` → `no` | there is no population and the builder cannot emit pending orders | safe: what cannot be generated is not there |
+| `generator` → `SIN RESOLVER` | there is no population and the builder **can** | not invented: the task is left unconfigured and must be reviewed after the build |
 
-Dentro de `MCR 8 Stress` pasa lo mismo con su método de distancia mínima: se cae ese método y la
-tarea se escribe con los otros cinco. La condición es del método, no de la tarea.
+Inside `MCR 8 Stress` the same happens with its minimum-distance method: that method is dropped and
+the task is written with the other five. The condition belongs to the method, not to the task.
 
-## Correrlo
+## Run it
 
 ```bash
-python3 -m core.assets <SIMBOLO>                       # preflight, BLOQUEANTE
-python3 -m sqx.projects.mcretest <SIMBOLO> \
-    --cfx <install>/user/projects/<PROYECTO>/project.cfx --input <databank>
+python3 -m core.assets <SYMBOL>                        # preflight, BLOCKING
+python3 -m sqx.projects.mcretest <SYMBOL> \
+    --cfx <install>/user/projects/<PROJECT>/project.cfx --input <databank>
 ```
 
-`--input` es la población que se perturba y no tiene default: preguntar al dueño cuál es si no está
-claro por el paso anterior. En un proyecto de workflow el orden es permanente — Cross Market →
-Cross TF → MC Retest (dueño, 2026-09-29) — y la entrada es `CrossTF_Mothers`: las madres que dejó
-`CrossTF`, sin sus hermanas escaladas, que `sqx.projects.crosstfload --mothers` copia con el worker
-parado (la ventana lo hace sola al lanzar el paso 13); `builder --workflow` ya cablea las ocho tareas
-a ese databank.
+`--input` is the population that is perturbed and has no default: ask the owner which one if the
+previous step does not make it clear. In a workflow project the order is permanent — Cross Market →
+Cross TF → MC Retest (owner, 2026-09-29) — and the input is `CrossTF_Mothers`: the mothers `CrossTF`
+left, without their scaled siblings, which `sqx.projects.crosstfload --mothers` copies with the worker
+stopped (the window does it by itself when launching step 13); `builder --workflow` already wires the
+eight tasks to that databank.
 
-Antes de escribir: **el `.cfx` no puede estar abierto por una instancia** — SQX lo reescribe al
-salir (regla dura 4). El comando se niega y dice qué parar.
+Before writing: **the `.cfx` cannot be open in an instance** — SQX rewrites it on exit (hard rule 4).
+The command refuses and says what to stop.
 
-`<PROYECTO>` es el del workflow (`/template-run --workflow`): ya lleva las ocho tareas. El comando
-las deja como **las únicas activas**, menos las que no pudo configurar (`⊘`), que se quedan
-apagadas. Correrlo, en el custodio y una sola cosa a la vez (antes, `ListAgents`,
-`ls -lt <install>/user/projects` y el log: el `stop` mata lo de cualquier sesión):
+`<PROJECT>` is the workflow's (`/template-run --workflow`): it already carries the eight tasks. The
+command leaves them as **the only active ones**, except those it could not configure (`⊘`), which stay
+off. Run it on the custodian and one thing at a time (first, `ListAgents`,
+`ls -lt <install>/user/projects` and the log: the `stop` kills any session's work):
 
 ```bash
 bin/sqx-worker.sh --role custodian start
-python3 -c "from core import worker; worker.call('-project action=stop name=<PROYECTO>','custodian')"
+python3 -c "from core import worker; worker.call('-project action=stop name=<PROJECT>','custodian')"
 N=$(.claude/skills/sqx-wait/wait.sh --role custodian mark)
-python3 -c "from core import worker; worker.call('-project action=start name=<PROYECTO>','custodian')"
-.claude/skills/sqx-wait/wait.sh --role custodian --from "$N"   # run_in_background; nada más hasta su aviso (regla 18)
-bin/sqx-worker.sh --role custodian stop
+python3 -c "from core import worker; worker.call('-project action=start name=<PROJECT>','custodian')"
+.claude/skills/sqx-wait/wait.sh --role custodian --from "$N"   # run_in_background; nothing more until it notifies (rule 18)
+bin/sqx-worker.sh --role custodian stop || exit 1   # exits 1 if the worker is still alive: go no further
 ```
 
-## Qué mirar en la salida
+## What to look at in the output
 
-- La línea de `ordenes`: de dónde salió el veredicto de pendientes, y cuántas estrategias se leyeron.
-- Un `⊘` por tarea no configurada, **con el motivo**. Las dos razones legítimas son "no hay órdenes
-  pendientes" y "rango sin decidir en `assets/symbols/`". Cualquier otra cosa es un proyecto mal
-  clonado.
-- `condicion(es) apagada(s)` distinto de cero en cada tarea escrita: si sale 0 en todas, el donante
-  ya las traía apagadas y conviene comprobarlo.
+- The `ordenes` line: where the pending-orders verdict came from, and how many strategies were read.
+- One `⊘` per unconfigured task, **with the reason**. The two legitimate reasons are "no hay órdenes
+  pendientes" and "rango sin decidir en `assets/symbols/`". Anything else is a badly cloned project.
+- `condicion(es) apagada(s)` different from zero in each task written: if it shows 0 in all, the donor
+  already brought them off and it is worth checking.
 
-## Dónde se cambia qué
+## Where each thing is changed
 
-| qué | dónde |
+| what | where |
 |---|---|
-| qué perturba cada tarea, y su `simulations`, `precision` y `segment` propios | `assets/_build.yaml`, bloque `mc_retest:`. Cada tarea lleva los suyos |
-| `precision` | `1` = timeframe elegido, rápido y grosero · `2` = un minuto, lento y fino. Va al revés de lo que sugiere la palabra, y el 2 cuesta el doble (medido) |
-| `segment` | `build` un tramo · `build..oos1` **dos puntos**, una ventana continua que abarca los dos, cobrada al coste del último. `oos2` está prohibido y el comando se niega |
-| entre qué dos valores se sortea spread, slippage y distancia mínima | `assets/symbols/<SIMBOLO>.yaml`, bloque `mc_retest:` |
-| los títulos de las ocho tareas | **contrato** con `studies/breakage/mcRetest/inputs/tasks.py`. Cambiarlos rompe el paso 14 en silencio |
+| what each task perturbs, and its own `simulations`, `precision` and `segment` | `assets/_build.yaml`, `mc_retest:` block. Each task carries its own |
+| `precision` | `1` = chosen timeframe, fast and coarse · `2` = one minute, slow and fine. It goes the opposite way to what the word suggests, and 2 costs double (measured) |
+| `segment` | `build` one segment · `build..oos1` **two dots**, one continuous window spanning both, charged at the last one's cost. `oos2` is forbidden and the command refuses |
+| between which two values spread, slippage and minimum distance are drawn | `assets/symbols/<SYMBOL>.yaml`, `mc_retest:` block |
+| the titles of the eight tasks | **contract** with `studies/breakage/mcRetest/inputs/tasks.py`. Changing them breaks step 14 silently |
 
-Manual: `docs/manual/08-montecarlo.pdf` (cap. 32-mcretest). Lectura de resultados: `docs/manual/08-montecarlo.pdf` (cap. 11-retest-mc).
+Manual: `docs/manual/08-montecarlo.pdf` (cap. 32-mcretest). Reading results: `docs/manual/08-montecarlo.pdf` (cap. 11-retest-mc).

@@ -1,6 +1,6 @@
 ---
 name: oos-gate
-description: Close the loop between an OOS retest and the next SQX task — harvest the two databanks into Python, run the gate's screens, and put the verdict back so the next task only sees the survivors. Stops and restarts installs and deletes rejected strategies. Use when the owner asks to screen, filter or cull a population after its out-of-sample retest, to apply a Python verdict to a databank, or to prepare the survivors for the cross-market test.
+description: Screen a population after its OOS retest — harvest the two databanks (build and OOS) into Python, run the gate's screens and write the survivors list and verdict.csv. Stops the install to harvest. Moving the verdict back into SQX (deleting the rejected strategies) is `/curate`, which this skill hands over to. Use when the owner asks to screen or cull a population after its out-of-sample retest, or to prepare the survivors for the cross-market test.
 ---
 
 # /oos-gate
@@ -21,7 +21,7 @@ databanks. The harvest is what joins them.
 ## 1 · Harvest, with the install stopped
 
 ```bash
-bin/sqx-worker.sh --role custodian stop
+bin/sqx-worker.sh --role custodian stop || exit 1   # exits 1 if the worker is still alive: go no further
 python3 -m studies.screening.gate.harvest --project <P> --databank Results --oos-databank OOS --role custodian
 ```
 

@@ -35,9 +35,11 @@ what the judging was. If a module does not emit that CSV yet, writing one is two
 
 A databank set to **`Auto-sync never`** keeps its records in memory and leaves its directory empty.
 The whole mechanism here is file-level, so there would be nothing to curate — and nothing for Python
-to have filtered either. The donor's build databank ships that way. Two ways out, both before the
-install stops: set it to `Auto-sync every 1 hour` in `project.cfx`, or run
-`-databank action=synctofiles` on the instance that holds the records and give it time to land. The
+to have filtered either. The donor's build databank ships that way. The way out, while the install
+that holds the records is still up and before it stops: run `-databank action=synctofiles` on it
+(custodian only) and give it time to land. Never edit `Auto-sync` in `project.cfx` for this — SQX
+holds the file and rewrites it on save and exit, so the change is silently lost (rule 4); the setting
+may be changed only with the worker stopped, and then there are no records in memory to land. The
 command refuses on an empty directory and says this.
 
 ## Writing the verdict without a module: a filter, or a name
@@ -66,7 +68,7 @@ python3 -m sqx.curate.apply_verdict --project <P> --databank Results \
     --verdict <path>/verdict.csv --role custodian
 
 # 2. stop the install, then apply
-bin/sqx-worker.sh --role custodian stop
+bin/sqx-worker.sh --role custodian stop || exit 1   # exits 1 if the worker is still alive: go no further
 python3 -m sqx.curate.apply_verdict ... --apply
 
 # 3. start it again — the sync from files is what makes memory match

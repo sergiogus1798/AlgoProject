@@ -14,7 +14,7 @@ Spanish. You may be running unattended from cron (`bin/weekly-project-cleanup.sh
 answer, so never ask — **when in doubt, keep the project and say why.** A project kept one more week
 costs disk; a project deleted under a running session costs that session's work.
 
-Read `CLAUDE.md` (hard rules 1-4 and 6) before anything else.
+Hard rules 1-4 and 6 of the root `CLAUDE.md` bind you before anything else.
 
 ## The rule, as `sqx/projects/sweep.py` states it
 
@@ -22,7 +22,7 @@ Read `CLAUDE.md` (hard rules 1-4 and 6) before anything else.
   way a master project is ever retired.
 - On the workers: every `Test_` project, and every legacy project with fewer than 10 tasks (a
   whole workflow carries 15 to 18).
-- Never: a `Trade_` project, a stock project, anything touched in the last 24 hours, anything on an
+- Never: a `Trade_` or `Research_` project (the research queue's; kept until the owner decides), a stock project, anything touched in the last 24 hours, anything on an
   install that is running.
 
 Retiring archives `project.cfx` to `AlgoData/projects/retired/<install>/<P>-<date>.tar.gz`, deletes
@@ -53,5 +53,5 @@ is already parquet in `raw/`, `harvest/` and `reports/`.
   sweep reads the port and the process list, which is all it needs. If an install is up, its
   projects wait a week.
 - Retire from the master anything the queue does not name.
-- Touch a `Trade_` project, or edit `sweep.py`'s thresholds — they are the owner's.
+- Touch a `Trade_` or `Research_` project, or edit `sweep.py`'s thresholds — they are the owner's.
 - `git add`, commit, stash or switch branch. Leave the report uncommitted.

@@ -5,148 +5,154 @@ description: Run the variant factory in SQX — turn one mother's SPP design bri
 
 # /variants
 
-Paso 16.5 del workflow: **de un diseño a una población de variantes medida**. Cuatro comandos en
-orden, tres de ellos sin tocar SQX y uno que ocupa el custodio durante horas. Lo que sale de aquí es
-lo que leen el WFC (paso 17) y el CSCV (paso 18) — y esos dos no se miran hasta que el 19 también
-esté hecho.
+Step 16.5 of the workflow: **from one design to a measured population of variants**. Four commands
+in order, three of them without touching SQX and one that holds the custodian for hours. What comes
+out of here is what the WFC (step 17) and the CSCV (step 18) read — and those two are not looked at
+until step 19 is done too.
 
-## Por qué existe
+## Why it exists
 
-**Ningún verbo de `sqcli` cambia los parámetros de una estrategia.** Ninguno. La única forma de
-puntuar una combinación es escribir un `.sqx` con ese valor dentro y retestear ese fichero. Eso es
-la fábrica.
+**No `sqcli` verb changes a strategy's parameters.** None. The only way to score a combination is to
+write a `.sqx` with that value inside and retest that file. That is the factory. → `knowhow/sqx-drive/variant-route.md`
 
-Y hace falta porque los dos SPP del paso 15 **no se pueden emparejar**: comparten 6 tuplas de
-~11.600. Para tener la misma combinación medida dentro y fuera de muestra hay que fabricarla.
+And it is needed because the two SPPs of step 15 **cannot be paired**: they share 6 tuples out of
+~11,600. To have the same combination measured in-sample and out-of-sample it has to be fabricated.
 
-## En qué proyecto corre: el del workflow
+## Which project it runs in: the workflow's
 
-Dueño, 2026-09-25: todo el workflow vive en **un** custom project, el que `/template-run` creó con
-`--workflow`. Ya lleva las tres patas del retest que alimenta el WFC y el CSCV —`WFC 1 IS`,
-`WFC 2 OOS1`, `WFC 3 OOS2`, una por tramo, cada una a su spread y su slippage y con los mercados
-adicionales dentro—, leyendo las tres `WFC_Variants` (**sin espacios**: la API no puede nombrar un
-databank que los lleve). La doctrina está en `wfc:` de `assets/_build.yaml`:
+Owner, 2026-09-25: the whole workflow lives in **one** custom project, the one `/template-run`
+created with `--workflow`. It already carries the three legs of the retest that feeds the WFC and the
+CSCV — `WFC 1 IS`, `WFC 2 OOS1`, `WFC 3 OOS2`, one per segment, each at its own spread and slippage
+and with the additional markets inside — reading the three `WFC_Variants` (**no spaces**: the API
+cannot name a databank that has them). The doctrine is in `wfc:` of `assets/_build.yaml`:
 
 ```bash
-python3 -m sqx.projects.wfc <SIMBOLO> --cfx <install>/user/projects/<PROYECTO>/project.cfx \
+python3 -m sqx.projects.wfc <SYMBOL> --cfx <install>/user/projects/<PROJECT>/project.cfx \
     --timeframe <TF>
 ```
 
-Encuentra las tres por su título, apaga todas sus condiciones (con la de OOS que el donante trae en
-la de `build`, ese tramo volvía sin los mercados y sin avisar) y las deja **como las únicas
-activas**. `execute` exige `--project` y se niega con un proyecto de serie (regla dura 10) o si hay
-activa otra cosa que esas tres. Manual: `docs/manual/09-optimizacion.pdf` (cap. 37-wfc-retest).
+It finds the three by their title, switches off all their conditions (with the OOS one the donor
+brings in `build`, that segment used to come back without the markets and without warning) and
+leaves them **as the only active ones**. `execute` requires `--project` and refuses a stock project
+(hard rule 10) or one with anything else active than those three. Manual:
+`docs/manual/09-optimizacion.pdf` (cap. 37-wfc-retest).
 
-Un proyecto hecho sólo para esto (`Test_<SIM>_variantes`, clonado con `--tasks Retest`) sigue valiendo: `wfc` con
-`--tasks <tres ficheros>` en el orden build, oos1, oos2.
+A project made only for this (`Test_<SYM>_variantes`, cloned with `--tasks Retest`) is still valid:
+`wfc` with `--tasks <three files>` in the order build, oos1, oos2.
 
-⚠️ **Entre una madre y la siguiente, vaciar los cuatro databanks** —`clear` y `synctofiles` de cada
-uno, y parar—, **después** de `equity` y `collect`: las curvas se leen del disco del custodio.
-Medido: 33 s y el disco a cero. **La cosecha ya lee los tres databanks**: `execute.py`
-exporta un panel por tramo, `equity.py` une las curvas diarias de los tres (y guarda las de cada
-mercado adicional aparte) y `collect.py` deja en C3 las métricas por tramo, por mercado y las
-uniones. De ahí salen las dos lecturas del WFC — `build` vs `oos1+oos2`, y la estricta `build+oos1`
-vs `oos2` — sin volver a correr nada.
+⚠️ **Between one mother and the next, empty the four databanks** — `clear` and `synctofiles` on each,
+then stop — **after** `equity` and `collect`: the curves are read from the custodian's disk.
+→ `knowhow/sqx-drive/variant-chain-custom-project.md`. **The harvest now reads the three databanks**:
+`execute.py` exports one panel per segment, `equity.py` joins the three segments' daily curves (and
+keeps each additional market's apart) and `collect.py` leaves in C3 the metrics per segment, per
+market and the unions. From there come the two WFC readings — `build` vs `oos1+oos2`, and the strict
+`build+oos1` vs `oos2` — without running anything again.
 
-## El suelo duro: 50 operaciones
+## The hard floor: 50 trades
 
-`wfc.min_trades_total` en `assets/_build.yaml` (dueño, 2026-09-24). Un backtest con menos de 50
-operaciones sumando `build`+`oos1`+`oos2` **no entra en ninguna estadística**: `collect.py` no lo
-escribe en `metrics.parquet`. Se cuenta por variante **y por mercado**, la evidencia completa se
-queda en `segments.parquet` con `usable=False`, y el recuento se canta por pantalla y en
-`collected.json`. Al informar, di cuántos cayeron: un lote donde la mitad no llega al suelo no es un
-lote con menos puntos, es un diseño que fabricó variantes que no operan.
+`wfc.min_trades_total` in `assets/_build.yaml` (owner, 2026-09-24). A backtest with fewer than 50
+trades summing `build`+`oos1`+`oos2` **enters no statistic**: `collect.py` does not write it to
+`metrics.parquet`. It is counted per variant **and per market**, the full evidence stays in
+`segments.parquet` with `usable=False`, and the count is announced on screen and in `collected.json`.
+When reporting, say how many fell: a batch where half does not reach the floor is not a batch with
+fewer points, it is a design that fabricated variants that do not trade.
 
-No confundirlo con `min_trades: 30` del `config.yaml` del WFC, que mira cada lado de la partición
-por separado y actúa después.
+Not to be confused with `min_trades: 30` in the WFC's `config.yaml`, which looks at each side of the
+partition separately and acts afterwards.
 
-## Los cuatro comandos
+## The four commands
 
 ```bash
-python3 -m sqx.variants.make --brief <design_brief_<Estrategia>.json> --project <PROYECTO> \
+python3 -m sqx.variants.make --brief <design_brief_<Strategy>.json> --project <PROJECT> \
     [--out <work>] [--sample N | --limit N] [--design-only] [--no-pilot]
-python3 -m sqx.variants.execute --work <work> --project <PROYECTO>   # ⏰ el único que ocupa el custodio
-python3 -m sqx.variants.equity   --work <work>    # antes que collect: collect lee equity.parquet
+python3 -m sqx.variants.execute --work <work> --project <PROJECT>   # ⏰ the only one that holds the custodian
+python3 -m sqx.variants.equity   --work <work>    # before collect: collect reads equity.parquet
 python3 -m sqx.variants.collect  --work <work>
 ```
 
-| comando | qué deja | toca SQX |
+`execute` waits on the run itself (it polls `-project action=status`): launch it with
+`run_in_background: true` and do nothing until it exits (rule 18) — no `wait.sh`, no polling loop.
+
+| command | what it leaves | touches SQX |
 |---|---|---|
-| `make` | `plan.csv`, `design.json`, `sqx/` con las N variantes, `manifest.parquet`, `pilot.json` | **el piloto, sí** (por defecto) |
-| `execute` | `retest.csv`, `ran.json`, el databank volcado a disco | **sí** |
-| `equity` | `equity.parquet` — el P&L **por día** de cada variante | no |
-| `collect` | `metrics.parquet` — el panel unido al manifiesto | no |
+| `make` | `plan.csv`, `design.json`, `sqx/` with the N variants, `manifest.parquet`, `pilot.json` | **the pilot, yes** (by default) |
+| `execute` | `retest.csv`, `ran.json`, the databank dumped to disk | **yes** |
+| `equity` | `equity.parquet` — each variant's P&L **per day** | no |
+| `collect` | `metrics.parquet` — the panel joined to the manifest | no |
 
-## El piloto, antes de fabricar el lote entero (OPEN.md #41, dueño 2026-09-29)
+## The pilot, before fabricating the whole batch (OPEN.md #41, owner 2026-09-29)
 
-Medido 2026-09-24 en `Strategy 17.9.39`: **1.002 de 2.000 filas operaron menos de 30 veces dentro de
-muestra** — la mitad del presupuesto se fue en combinaciones que no son un punto de una superficie.
-`make` ahora fabrica y retestea primero unos cientos de tuplas de muestra (Sobol, sólo los
-parámetros que se mueven) en el MISMO `--project`, cuenta sus operaciones y descarta los niveles de
-un parámetro cuyo piloto operó por debajo de `pilot.min_trades` (30 por defecto) — nunca un
-parámetro entero, y nunca el valor del origen. El lote grande se fabrica ya sin esas regiones.
+Measured 2026-09-24 on `Strategy 17.9.39`: **1,002 of 2,000 rows traded fewer than 30 times
+in-sample** — half the budget went on combinations that are not a point of a surface. `make` now
+first fabricates and retests a few hundred sample tuples (Sobol, only the parameters that move) in
+the SAME `--project`, counts their trades and drops the levels of a parameter whose pilot traded
+below `pilot.min_trades` (30 by default) — never a whole parameter, and never the origin's value.
+The big batch is then fabricated without those regions.
 
-**ON por defecto** (`pilot.enabled` en `sqx/variants/config.yaml`). `--no-pilot` lo salta para una
-prueba rápida; `--design-only` nunca lo corre (no fabrica nada). Es el único momento en que `make`
-toca SQX: un retest corto, con los mismos `awake`/`load`/`run`/`synced` de `execute.py`, sobre el
-mismo proyecto y a los mismos costes por tarea — no crea ni necesita un proyecto propio.
+**ON by default** (`pilot.enabled` in `sqx/variants/config.yaml`). `--no-pilot` skips it for a quick
+test; `--design-only` never runs it (it fabricates nothing). It is the only time `make` touches SQX:
+a short retest, with the same `awake`/`load`/`run`/`synced` of `execute.py`, on the same project and
+at the same per-task costs — it creates and needs no project of its own.
 
-**Nunca es silencioso.** `pilot.json` (junto al lote) lleva, por parámetro y nivel, la mediana de
-operaciones del piloto, cuántos puntos la sostienen y si se descartó; `design.json` lleva el mismo
-recorte en `pilot_dropped`. Un lote fabricado con el piloto y otro sin él nunca deberían compararse
-como si fueran el mismo diseño — mira `pilot_dropped` antes de leer una superficie.
+**It is never silent.** `pilot.json` (next to the batch) carries, per parameter and level, the
+pilot's median trades, how many points support it and whether it was dropped; `design.json` carries
+the same cut in `pilot_dropped`. A batch fabricated with the pilot and one without it should never be
+compared as if they were the same design — look at `pilot_dropped` before reading a surface.
 
-**El espacio de variantes** (dueño, 2026-09-26): cada parámetro cubre al menos ±30 %, los enteros con
-todos sus valores, los *shift* fijos, y cada madre tiene **al menos 1.000 variantes distintas**
-(`--min-variants`, `minimum:` en `sqx/variants/config.yaml`) — si no caben en el ±30 %, los enteros se
-ensanchan hasta ±60 %. Si `make` imprime `⚠️ only N distinct tuples`, dilo al dueño antes de correr.
+**The variant space** (owner, 2026-09-26): every parameter covers at least ±30 %, integers with all
+their values, the *shift* ones fixed, and each mother has **at least 1,000 distinct variants**
+(`--min-variants`, `minimum:` in `sqx/variants/config.yaml`) — if they do not fit in ±30 %, the
+integers are widened to ±60 %. If `make` prints `⚠️ only N distinct tuples`, tell the owner before
+running.
 
-`--sample N` fabrica N filas **repartidas** por todo el plan (los controles y luego picks
-espaciados de cada estrato); `--limit N` coge las N primeras y sesga el lote hacia un estrato. Para
-una prueba de humo, `--sample`.
+`--sample N` fabricates N rows **spread** over the whole plan (the controls and then spaced picks from
+each stratum); `--limit N` takes the first N and biases the batch toward one stratum. For a smoke
+test, `--sample`.
 
-El brief sale del paso 16: `studies/breakage/spp/report.py`. Si su veredicto es `noise`, la familia
-no se distingue del azar y fabricar variantes de ella es medir ruido — el comando no lo impide, lo
-enseña en la primera línea. Decírselo al dueño antes de gastar la tarde.
+The brief comes from step 16: `studies/breakage/spp/report.py`. If its verdict is `noise`, the family
+is indistinguishable from chance and fabricating variants of it is measuring noise — the command does
+not prevent it, it shows it on the first line. Tell the owner before spending the afternoon.
 
-## Los tres contratos, y por qué son tres
+## The three contracts, and why there are three
 
-**design** decide y no escribe ningún fichero. **build** escribe y no decide nada. **manifest** lee
-los ficheros de vuelta del disco y describe lo que **hay**, no lo que se quería que hubiera. Ese
-tercer límite es lo único que detecta un fichero cuyo contenido no es la tupla que le dio nombre, y
-ese fallo es silencioso en cualquier otro montaje.
+**design** decides and writes no file. **build** writes and decides nothing. **manifest** reads the
+files back from disk and describes what **is there**, not what was meant to be there. That third
+boundary is the only thing that detects a file whose content is not the tuple that named it, and
+that failure is silent in any other setup.
 
-## Los cinco controles del lote
+## The batch's five controls
 
-Están para fallar, no para analizarse: `P00000` (el origen refabricado), tres canarios con resultado
-ya conocido tomados en los **extremos** de la rejilla SPP, y un par inerte por parámetro congelado.
-Si `collect` dice que todos los controles devolvieron el mismo número, la cadena está rota y se para
-ahí. Un canario en el extremo delata una cadena rota; uno del medio devuelve un número plausible.
+They are there to fail, not to be analysed: `P00000` (the origin re-fabricated), three canaries with
+a known result taken at the **extremes** of the SPP grid, and an inert pair per frozen parameter. If
+`collect` says all the controls returned the same number, the chain is broken and it stops there. A
+canary at the extreme betrays a broken chain; one from the middle returns a plausible number.
 
-⚠️ La expectativa de un canario es sobre el resultado **dentro de muestra** y sólo vale mientras la
-ventana IS del retest sea la que corrió el SPP.
+⚠️ A canary's expectation is about the **in-sample** result and is only valid while the retest's IS
+window is the one the SPP ran.
 
-## Las trampas medidas
+## The measured traps
 
-- **Un `.sqx` reteseado lleva TRES curvas de equity** — `Portfolio`, `Main:` y una por mercado
-  cruzado — y `Portfolio` va primero en el archivo. Leer la primera da oro más plata: 10.476 contra
-  35.328 en `P00000`. `equity.py` las llama por su nombre, nunca por posición.
-- **`synctofiles` escribe con retraso**: 962 de 2.000 estaban en disco cuando el retest dijo que
-  había acabado. `execute` espera, pero el cap es `sync_tries` en el config.
-- **`-project action=startOnlyTask` dice que sí y no testea nada** en esta instalación. Sólo
-  `action=start` corre la tarea.
-- **Nunca dejar el worker arriba**: un sync borra los `.sqx` que no tiene en memoria (regla dura 1).
-  `execute` lo para si fue él quien lo levantó.
-- Antes de tocar W2: `ListAgents`, `ls -lt user/projects` y el log. El `stop` mata lo de cualquiera.
+- **A retested `.sqx` carries THREE equity curves** — `Portfolio`, `Main:` and one per cross
+  market — and `Portfolio` comes first in the file. Reading the first gives gold plus silver.
+  `equity.py` calls them by name, never by position. → `knowhow/sqx-format/daily-equity-bin.md`
+- **`synctofiles` writes late**: 962 of 2,000 were on disk when the retest said it had finished.
+  `execute` waits, but the cap is `sync_tries` in the config. → `knowhow/sqx-drive/variant-route.md`
+- **`-project action=startOnlyTask` says yes and tests nothing** on this install. Only
+  `action=start` runs the task.
+- **Never leave the worker up**: a sync deletes the `.sqx` it does not hold in memory (hard rule 1).
+  `execute` stops it if it was the one that started it.
+- Before touching W2: `ListAgents`, `ls -lt user/projects` and the log. The `stop` kills anyone's work.
 
-## Qué mirar
+## What to look at
 
-- `make`: `planned N de un target M` con el shortfall. Un hueco grande no es un fallo — una tupla
-  nunca se repite para llegar al target.
-- `execute`: `n_loaded` contra `n_returned` contra `n_on_disk` en `ran.json`. Si bajan, falta gente.
-- `collect`: los controles. Si fallan, no se sigue.
-- `equity`: 962 variantes en 1,5 s y 5,9 MB de Parquet — contra ~90 minutos si se exportaran sus
-  trades. Si tarda mucho más, está leyendo lo que no debe.
+- `make`: `planned N of a target M` with the shortfall. A big gap is not a failure — a tuple is
+  never repeated to reach the target.
+- `execute`: `n_loaded` against `n_returned` against `n_on_disk` in `ran.json`. If they drop, people
+  are missing.
+- `collect`: the controls. If they fail, do not go on.
+- `equity`: 962 variants in 1.5 s and 5.9 MB of Parquet — against ~90 minutes if their trades were
+  exported. If it takes much longer, it is reading what it should not.
 
-Manual: `docs/manual/09-optimizacion.pdf` (cap. 18-variantes) (fabricar) y `docs/manual/09-optimizacion.pdf` (cap. 19-wfc) (ejecutar, recoger y el
-paso 17). El encadenador de las ~100 madres es `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 17-pipeline).
+Manual: `docs/manual/09-optimizacion.pdf` (cap. 18-variantes) (fabricating) and
+`docs/manual/09-optimizacion.pdf` (cap. 19-wfc) (running, collecting and step 17). The chainer of the
+~100 mothers is `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 17-pipeline).

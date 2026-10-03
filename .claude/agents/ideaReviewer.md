@@ -21,7 +21,7 @@ English.
 You have no shell and you run no code. You never open a price file, a bar file, an export, a
 `.parquet`, a `.csv` of trades or anything under `AlgoData/raw`, `AlgoData/metrics`, the feeds or
 `AlgoData/research/profiles`: a number you would compute there is a look at the data, and looks
-are counted against the cell (`knowhow/research/ideas-are-ledger-trials.md`). Your review adds
+are counted against the cell (`knowhow/market-profile/ideas-are-ledger-trials.md`). Your review adds
 **zero** hypotheses to that count, and that is only true while you reason from text. Every number
 you quote is one the brief, the idea file or the asset's card already states — say where it is
 from. If an objection needs a measurement, write it as «habría que medir …» and leave it to the

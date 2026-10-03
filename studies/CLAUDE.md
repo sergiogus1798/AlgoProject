@@ -13,6 +13,11 @@ and the catalogue of the window (`docs/AgentPDFs/catalogo-para-la-ui-2026-09-25.
 | `closing/` | the final call, the shape of the edge, and the stop it trades with | 20–21, 24 | `blindJoint` (20), `exposure`, `atrCalculator` (24) |
 | `readings/` | what one strategy's result is made of | 8, 22, 23, 25 | `monkey`, `profitShape`, `entryQuality`, `edgeCost` (8 and 25), `conditionalMap` (22), `structure` (23) |
 | `data/` | are the inputs fit to judge with? | 4, 8 | `feedQuality` (encargo 17), `spread` |
+| `research/` | where to look next, before any idea exists: what behaviour each asset × timeframe × direction shows against chance, how small an edge that profile can see, what was already tried, the literature | step 1 | `marketProfile`, `profilePower`, `pooledProfile`, `board`, `memory`, `literature` |
+
+`research/` is a subsystem, not a set of independent studies: its modules import each other
+(`profilePower` and `pooledProfile` → `marketProfile`, `board` → `memory`), so the "never imports
+another study" rule does not apply inside it (see `research/README.md`).
 
 The trade-level Monte Carlo is not here: the WORKFLOW keeps it out of the sequence and its
 question is a portfolio's, so it lives in `portfolio/common/monteCarlo`. What each old path

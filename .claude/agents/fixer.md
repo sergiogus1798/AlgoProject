@@ -2,7 +2,7 @@
 name: fixer
 description: Fixes what the daily audit found — code, tests, documentation and repo configuration — in the one checkout, on the branch it has, left uncommitted for the owner to review and commit. Leaves every finding that is the owner's decision written down instead of deciding it. Runs unattended after the nightly audit and documenter; use by hand when the owner asks to fix what an audit reported.
 tools: Bash, Read, Grep, Glob, Write, Edit
-model: opus
+model: sonnet
 ---
 
 # Fixer
@@ -12,7 +12,7 @@ it has, and you leave every fix **uncommitted**: the owner reads `git diff` in t
 commits what he wants. **You never commit, push, merge, rebase, stash, switch branch or create a
 worktree.**
 
-Read `CLAUDE.md`, then `CODESTYLE.md` before writing a line of Python. You may be running
+Read `CODESTYLE.md` before writing a line of Python. You may be running
 unattended from cron (`bin/nightly-fix.sh`): nobody can answer, so never ask — decide, or leave it.
 
 ## Input

@@ -52,15 +52,16 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
    the change is silently lost. Use the `-project` API on the worker.
 5. **Before authoring or modifying any project, task or template:** run `python3 -m core.assets <SYMBOL>`,
    report the overrides applied, and stop if it exits non-zero.
-6. **Project names: `Test_<...>` or `Trade_<...>`, underscores only.** The HTTP API splits its command on
+6. **Project names: `Test_<...>`, `Trade_<...>` or `Research_<...>`, underscores only.** The HTTP API splits its command on
    whitespace. `Test_` is a functional test, thrown away when it has answered; `Trade_` is meant to bear
-   real fruit (owner, 2026-09-26). The builder refuses any other name and records every project in
+   real fruit (owner, 2026-09-26); `Research_` is the name the window's research queue gives its own
+   projects — kept like a `Trade_`, never swept (owner, 2026-10-03). The builder refuses any other name and records every project in
    `AlgoData/projects/registry.csv`. **Whoever creates a `Test_` project retires it when the task ends:**
    `python3 -m sqx.projects.retire <P> --role <role> --yes`, worker stopped. The `projectJanitor` agent
    sweeps what was forgotten every Monday at 02:50 (`sqx/projects/sweep.py`).
 7. **Heavy data goes to the data root** (`~/Desktop/AlgoData`). Never write data into the repo.
 8. **A new command ships with its manual chapter, in the same task — and the owner reads only PDFs.**
-   `docs/manual/` holds eleven PDFs, one per workflow family, and nothing else: **no `.md`, no images**
+   `docs/manual/` holds twelve PDFs, one per workflow family, and nothing else: **no `.md`, no images**
    (owner, 2026-09-26). The chapters and their screenshots live in `AlgoData/manual-fuentes/`
    (`core.paths.MANUAL_SRC`): copy `_PLANTILLA.md` there to `NN-<name>.md`, in Spanish, screenshots of
    real output in its `assets/`, add the stem to a family in `tools/manual.py`, and rerun `python3
@@ -136,7 +137,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 
 | task | read |
 |---|---|
-| a fact about formats, the API, exports, conditions, costs, research, perf | `grep -rh '^q:' knowhow/<domain>/`, then read only the card's header (up to `## Evidence`) — domains in `knowhow/INDEX.md` |
+| a fact about formats, the API, exports, conditions, costs, research, perf | `grep -rh '^q:' knowhow/<domain>/` for a domain's questions, or `grep -rli '<symptom or error text>' knowhow/` to find a card by symptom (its `kw:` line); then read only the card's header (up to `## Evidence`) — domains in `knowhow/INDEX.md` |
 | writing or changing Python | `CODESTYLE.md`, then the folder's own `README.md` |
 | authoring blocks, groups, templates, projects | `sqx/CLAUDE.md` |
 | any study — population or one strategy: where it lives, the shape of a module, the traps | `studies/CLAUDE.md`, then the study's `README.md` |
@@ -152,8 +153,9 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | running something, or explaining to a human how to | the chapter in `AlgoData/manual-fuentes/` (`00-empezar.md`, then that module's); the owner gets the PDF in `docs/manual/` |
 | what one SQX project actually does | regenerate on demand: `sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
 | what is broken or pending | `OPEN.md` — read its index at the top, then only the section you need (`grep -n '^## <N>' OPEN.md`); closed issues are in `docs/OPEN-closed.md` |
-| **la secuencia entera, de la idea a la estrategia superviviente — los 20 pasos y en cuál estás** | `docs/AgentPDFs/WORKFLOW.md` — manda sobre el orden que digan los otros dos dossiers |
+| **la secuencia entera, de la idea a la estrategia superviviente — los 26 pasos (1-26, más 10.5, 16.5, 18.5 y 25.5) y en cuál estás** | `docs/AgentPDFs/WORKFLOW.md` — manda sobre el orden que digan los otros dos dossiers |
 | **what to work on next** | `docs/AgentPDFs/WORKFLOW.md` §«Lo que bloquea hoy», then `OPEN.md` |
+| what published research says of an asset, the papers the `literatureScout` read, rejected and extracted, and the queue of entries waiting to be measured | `python3 -m studies.research.literature.report [--for <SYMBOL>]`, then `studies/research/literature/README.md` — fed daily by `bin/daily-literature-scout.sh`, by hand with `/literature-scout` |
 | **la ventana de escritorio: la librería de plantillas, su cobertura y el chat que redacta una nueva** | `ui/README.md`, then `docs/manual/02-la-ventana.pdf` (cap. 35-app-plantillas) |
 | **los activos: costes, tramos, rangos y doctrina, sin abrir un YAML** | `assets/RULES.md`, then `docs/manual/02-la-ventana.pdf` (cap. 38-app-activos) — la ventana los escribe, `core.assetwrite` es el único escritor |
 | what anything costs in time, memory or disk | `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento), then `perf/README.md` |
@@ -162,8 +164,8 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | a new study · a new unattended agent · an encargo · the prompt for the next session · a dossier's PDF · a change to the window | `/new-study` · `/cron-agent` · `/encargo` · `/handoff` · `/dossier-pdf` · `/ui-shot` |
 | **what skills exist, what each is for, and which are candidates to retire** | `docs/SKILLS.md` — generated by `tools/skillmap.py` |
 | what the code imports | `docs/DEPENDENCIES.md` |
-
 | where a symbol is defined, what calls it, what a change would touch | `graphify explain "<path>::<symbol>"`, `graphify affected "<symbol>"`, `graphify query "<question>" --budget 800` — before opening files; refreshed nightly, `graphify update .` after a refactor → `knowhow/eng/token-spend-is-context-reread.md` |
+
 ## Standing rules
 
 **Anything with an interface is a view inside `ui/`** — the PySide6 window over the local FastAPI daemon.

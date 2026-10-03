@@ -1,11 +1,11 @@
 ---
 name: doc
-description: Record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious.
+description: Launch the `documenter` agent (model sonnet) to record what a session discovered into the right knowhow, OPEN.md or CLAUDE.md file, and repair documentation that has drifted from the code. Use after work that found something non-obvious.
 ---
 
 # /doc
 
-Launch the `documenter` subagent.
+Launch the `documenter` subagent with `model: "sonnet"` (rule 17).
 
 1. Tell it what was discovered, in full, including how it was established — 🔬 tested, 📓 read from
    logs or files, or 🤔 inferred. Provenance is not optional; it decides how the claim is written.

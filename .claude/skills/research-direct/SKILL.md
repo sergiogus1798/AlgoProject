@@ -1,6 +1,6 @@
 ---
 name: research-direct
-description: Ask the research director where to investigate next — refresh the results memory, print the board of cells (asset × timeframe × direction × family) the owner's prior rates Alta or the market profile's measurements admit, run the researchDirector agent to pick one cell and bring three ideas with their block palettes, and show the proposal. Costs 10-30 $ per proposal; launches nothing in SQX. Use when the owner asks what to investigate next, for a research proposal, "qué investigo ahora", or presses «Proponer investigación».
+description: Ask the research director where to investigate next — refresh the results memory, print the board of cells (asset × timeframe × direction × family) the owner's prior rates Alta or the market profile's measurements admit, run the researchDirector agent to pick one cell and bring three ideas with their block palettes, and show the proposal. Costs one Opus session with its subagents (the ideaExpert and the ideaReviewer) per proposal; launches nothing in SQX. Use when the owner asks what to investigate next, for a research proposal, "qué investigo ahora", or presses «Proponer investigación».
 ---
 
 # /research-direct
@@ -37,7 +37,7 @@ Agent `researchDirector` (or a general-purpose agent told to follow
 `.claude/agents/researchDirector.md`, model opus). It launches the `ideaExpert` and the `ideaReviewer` itself:
 each idea reaches the owner with its hypothesis sheet and the reviewer's verdict, and the stance
 taken on each previous failure of the cell. A
-proposal costs 10-30 $: when the owner did not ask for one explicitly, ask before this step.
+proposal costs one Opus session with its subagents: when the owner did not ask for one explicitly, ask before this step.
 
 ## 4. Show the proposal
 

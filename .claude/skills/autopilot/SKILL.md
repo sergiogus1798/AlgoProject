@@ -1,6 +1,6 @@
 ---
 name: autopilot
-description: Run a project's whole workflow unattended — every SQX task and Python study from step 7 to 16, judging each judging step by criteria.yaml and cutting in SQX instead of stopping, cheap in tokens (reads only a status line and a short summary, never SQX's log). Use when the owner asks to run the workflow automatically, unattended, end to end, with the autopilot, or "sin pararse".
+description: Run a project's whole workflow unattended — every SQX task and Python study from the build (step 6's task, chained with 7) to 16, then the tail 16.5 to 25 for every survivor (26 when its four parameters are given), judging each judging step by criteria.yaml and cutting in SQX instead of stopping, cheap in tokens (reads only a status line and a short summary, never SQX's log). Use when the owner asks to run the workflow automatically, unattended, end to end, with the autopilot, or "sin pararse".
 ---
 
 # /autopilot
@@ -24,7 +24,8 @@ description: Run a project's whole workflow unattended — every SQX task and Py
 python3 -m pipeline.autopilot.run --project P > /dev/null 2>&1
 ```
 
-with `run_in_background: true`. You are woken when it exits. Meanwhile, if asked how it goes,
+with `run_in_background: true`. You are woken when it exits. `run.py` already waits on each SQX step
+itself (one start, `Project finished`, one stop), so no `wait.sh` is needed here. Meanwhile, if asked how it goes,
 read only the newest `AlgoData/autopilot/<P>/*/estado.txt` (one line).
 
 ## 3. After

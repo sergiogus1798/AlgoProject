@@ -5,93 +5,94 @@ description: Configure and run the two SPP tasks of a custom SQX project — the
 
 # /spp
 
-Paso 15 del workflow, la mitad de SQX. Deja las tareas `SPP IS` y `SPP OOS` de un custom project
-configuradas, y opcionalmente las corre en el custodio. Leer lo que producen es
-`studies/breakage/spp/` (paso 16), que sale de ahí con el `design_brief.json` de las variantes.
+Step 15 of the workflow, the SQX half. It leaves the `SPP IS` and `SPP OOS` tasks of a custom
+project configured, and optionally runs them on the custodian. Reading what they produce is
+`studies/breakage/spp/` (step 16), which comes out of it with the variants' `design_brief.json`.
 
-## Lo único que hay que entender antes
+## The one thing to understand first
 
-**El SPP es `OptProfileSysParamPermutation`.** `SequentialOptimization` vive al lado, en el mismo
-bloque `<CrossChecks>`, habla también de permutar parámetros y **no escribe perfil ninguno**.
-Encender el equivocado costó 47 núcleos durante 91 minutos y no produjo nada (2026-09-22). El
-comando enciende el correcto; no hay flag para equivocarse.
+**The SPP is `OptProfileSysParamPermutation`.** `SequentialOptimization` lives next to it, in the same
+`<CrossChecks>` block, also talks about permuting parameters and **writes no profile at all**.
+Switching on the wrong one cost 47 cores for 91 minutes and produced nothing (2026-09-22). The
+command switches on the right one; there is no flag to get it wrong.
 
-**Las dos tareas no se comparan entre sí.** Medido 2026-09-19: el SPP de IS y el de OOS de la misma
-estrategia con ajustes idénticos comparten **6 tuplas de ~11.600**. SQX no recorre la misma rejilla
-dos veces. Son dos lecturas del mismo entorno, y ésa es la razón de que exista la fábrica de
-variantes del paso 16.5 — para comparar hay que fabricar las tuplas uno mismo.
+**The two tasks are not compared with each other.** Measured 2026-09-19: the IS and the OOS SPP of the
+same strategy with identical settings share **6 tuples out of ~11,600**. SQX does not walk the same
+grid twice. They are two readings of the same environment, and that is the reason the variant
+factory of step 16.5 exists — to compare, you have to fabricate the tuples yourself.
 
-**La aceptación va apagada, las dos.** Las condiciones de la tarea (19 en un clon del donante) y los
-cuatro `Eval*Check` del propio crosscheck. Con ellos vivos SQX borra las estrategias cuyo mapa no le
-gusta y `sppUltra` lee la superficie de una población ya seleccionada sin enterarse.
+**Acceptance is off, both of them.** The task's conditions (19 in a donor clone) and the four
+`Eval*Check` of the crosscheck itself. With them live SQX deletes the strategies whose map it does
+not like and `sppUltra` reads the surface of an already selected population without knowing it.
 
-## Correrlo
+## Run it
 
 ```bash
-python3 -m core.assets <SIMBOLO>                       # preflight, BLOQUEANTE
-python3 -m sqx.projects.spp <SIMBOLO> \
-    --cfx <install>/user/projects/<PROYECTO>/project.cfx --input <databank>
+python3 -m core.assets <SYMBOL>                        # preflight, BLOCKING
+python3 -m sqx.projects.spp <SYMBOL> \
+    --cfx <install>/user/projects/<PROJECT>/project.cfx --input <databank>
 ```
 
-`--input` es la población que se permuta y no tiene default: normalmente los supervivientes del MC
-Retest (paso 13-14). Preguntar al dueño si no está claro. La segunda tarea lee lo que escribió la
-primera, y con la aceptación apagada eso es la población entera.
+`--input` is the population that is permuted and has no default: normally the MC Retest survivors
+(step 13-14). Ask the owner if it is not clear. The second task reads what the first wrote, and with
+acceptance off that is the whole population.
 
-Antes de escribir: **el `.cfx` no puede estar abierto por una instancia** — SQX lo reescribe al
-salir (regla dura 4). El comando se niega y dice qué parar.
+Before writing: **the `.cfx` cannot be open in an instance** — SQX rewrites it on exit (hard rule 4).
+The command refuses and says what to stop.
 
-Correrlo después, en el custodio y una sola cosa a la vez:
+Run it afterwards, on the custodian and one thing at a time:
 
-`<PROYECTO>` es el del workflow (`/template-run --workflow`): el comando de arriba deja su paso
-como **el único activo**, porque `action=start` corre todas las tareas activas. El `stop` antes del
-`start` no sobra: en un proyecto que ya corrió, un segundo `start` sin él no hace nada, en silencio.
+`<PROJECT>` is the workflow's (`/template-run --workflow`): the command above leaves its step as
+**the only active one**, because `action=start` runs all the active tasks. The `stop` before the
+`start` is not superfluous: in a project that already ran, a second `start` without it does nothing,
+silently.
 
 ```bash
 bin/sqx-worker.sh --role custodian start
-python3 -c "from core import worker; worker.call('-project action=stop name=<PROYECTO>','custodian')"
+python3 -c "from core import worker; worker.call('-project action=stop name=<PROJECT>','custodian')"
 N=$(.claude/skills/sqx-wait/wait.sh --role custodian mark)
-python3 -c "from core import worker; worker.call('-project action=start name=<PROYECTO>','custodian')"
-.claude/skills/sqx-wait/wait.sh --role custodian --from "$N"   # run_in_background; nada más hasta su aviso (regla 18)
-bin/sqx-worker.sh --role custodian stop
+python3 -c "from core import worker; worker.call('-project action=start name=<PROJECT>','custodian')"
+.claude/skills/sqx-wait/wait.sh --role custodian --from "$N"   # run_in_background; nothing more until it notifies (rule 18)
+bin/sqx-worker.sh --role custodian stop || exit 1   # exits 1 if the worker is still alive: go no further
 ```
 
-⚠️ Antes de tocar W2: `ListAgents`, `ls -lt <install>/user/projects` y el log. El `stop` mata lo de
-cualquier sesión.
+⚠️ Before touching W2: `ListAgents`, `ls -lt <install>/user/projects` and the log. The `stop` kills
+any session's work.
 
-## Qué mirar en la salida
+## What to look at in the output
 
-- **`tope 15,000 permutaciones`** — la línea que más importa. El donante trae `1000000001`, el
-  centinela de SQX para **exhaustivo**; eso no es una tarea larga, es una tarea sin final. Se
-  escribe siempre, nunca se hereda.
-- **`±35 % en 18 pasos`** — ~4 % por paso, el default del dueño. Los 12 pasos sobre ±30 del donante
-  son gruesos.
-- **`19 condicion(es) y 2 chequeo(s) del SPP apagados`** — si sale `0` en las dos tareas, conviene
-  comprobar el clon.
-- Un **`⊘`** significa que el proyecto no lleva esa tarea; un **`⚠️ esta tarea corre ademas: …`**,
-  que ese `.cfx` no pasó por la doctrina y correría otros crosschecks a la vez.
+- **`tope 15,000 permutaciones`** — the line that matters most. The donor brings `1000000001`, SQX's
+  sentinel for **exhaustive**; that is not a long task, it is a task with no end. It is always
+  written, never inherited.
+- **`±35 % en 18 pasos`** — ~4 % per step, the owner's default. The donor's 12 steps over ±30 are
+  coarse.
+- **`19 condicion(es) y 2 chequeo(s) del SPP apagados`** — if `0` shows up in both tasks, check the
+  clone.
+- A **`⊘`** means the project does not carry that task; a **`⚠️ esta tarea corre ademas: …`**, that
+  that `.cfx` did not go through the doctrine and would run other crosschecks at the same time.
 
-## Lo que cuesta, y por qué el silencio no es un cuelgue
+## What it costs, and why the silence is not a hang
 
-Medido 2026-09-22 en el custodio, una madre real de XAUUSD con 22 parámetros: **media hora larga**,
-y el log escribe una línea por parámetro en los tres primeros segundos y **nada más** hasta el
-final. `-project action=status` dice `Total tested 0` todo el rato. La señal honesta de que trabaja
-es la memoria de la JVM subiendo (23,6 → 36,9 GB). RSS plana y sin log es un cuelgue; RSS subiendo
-es trabajo.
+Measured 2026-09-22 on the custodian, a real XAUUSD mother with 22 parameters: **a good half hour**,
+and the log writes one line per parameter in the first three seconds and **nothing else** until the
+end. `-project action=status` says `Total tested 0` the whole time. The honest sign that it is
+working is the JVM's memory going up (23.6 → 36.9 GB). Flat RSS and no log is a hang; rising RSS is
+work.
 
-⚠️ **Una SPP a la vez por instalación.** El perfil son decenas de GB mientras se construye sobre un
-heap de 48.
+⚠️ **One SPP at a time per install.** The profile is tens of GB while it is built on a 48 heap.
 
-## Dónde se cambia qué
+## Where each thing is changed
 
-| qué | dónde |
+| what | where |
 |---|---|
-| tope de permutaciones, ±%, finura del paso | `assets/_build.yaml`, bloque `spp:` |
-| qué ventana corre cada tarea y a qué precisión | el mismo bloque, `tasks:` |
-| los títulos `SPP IS` / `SPP OOS` | **contrato** con el donante y con `export_spp`. Cambiarlos deja la tarea sin encontrar |
+| permutation cap, ±%, step fineness | `assets/_build.yaml`, `spp:` block |
+| which window each task runs and at what precision | the same block, `tasks:` |
+| the `SPP IS` / `SPP OOS` titles | **contract** with the donor and with `export_spp`. Changing them leaves the task unfound |
 
-⚠️ Dos divergencias declaradas, anotadas en `OPEN.md` §38 y pendientes del dueño: la precisión es
-`1` y no el `2` de la doctrina (a 1 minuto no termina), y `SPP IS` corre sobre `build`, que es lo
-que significa "in sample" y lo que hacen las tareas del maestro.
+⚠️ Two declared divergences, noted in `OPEN.md` §38 and pending the owner: the precision is `1` and
+not the doctrine's `2` (at 1 minute it does not finish), and `SPP IS` runs on `build`, which is what
+"in sample" means and what the master's tasks do.
 
-Manual: `docs/manual/09-optimizacion.pdf` (cap. 33-spp). Exportar el perfil: `docs/manual/09-optimizacion.pdf` (cap. 08-spp). Leerlo:
-`docs/manual/09-optimizacion.pdf` (cap. 15-sppultra).
+Manual: `docs/manual/09-optimizacion.pdf` (cap. 33-spp). Exporting the profile:
+`docs/manual/09-optimizacion.pdf` (cap. 08-spp). Reading it: `docs/manual/09-optimizacion.pdf`
+(cap. 15-sppultra).

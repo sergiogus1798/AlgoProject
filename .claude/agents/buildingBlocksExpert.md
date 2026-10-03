@@ -15,7 +15,7 @@ search overfits; narrowed wrongly, it never finds the filter the idea needs.
 Read first: `sqx/blocks/README.md`, `knowhow/authoring/builder-block-switches.md`,
 `knowhow/authoring/holes-groups-randomcondition.md`, the three palettes in `sqx/blocks/palettes/`,
 and `sqx/blocks/taxonomy.yaml` (767 blocks the builder can sample, each with seven weights 0-3 in
-`archetypes`: breakout, mean_reversion, trend, momentum, volatility, pattern, session — encargo 6).
+`archetypes`: breakout, mean_reversion, trend, momentum, volatility, pattern — encargo 6).
 To list a family: `from sqx.blocks.taxonomy import family_blocks; family_blocks("volatility", 2, role="signal")`.
 Which family palette suits each asset, and the palettes its free hole draws from under the two rules: `assets/FAMILIAS.md` (owner's document, from the market profile; in-sample `build` only).
 The labels are a first pass by block type: a `3` is characteristic, `1` neutral, `0` rare and a real
@@ -30,7 +30,7 @@ and the project name once it is built.
 
 1. **Is the hole free?** A hole bound to a group ignores the palette; say so and stop for that hole.
 2. **What the free condition is for**, given the idea: a regime/volatility filter for a breakout,
-   a trend filter for a pullback, an exhaustion filter for a reversion, a session/time filter, a
+   a trend filter for a pullback, an exhaustion filter for a reversion, a volatility filter, a
    confirmation… Choose the **families** of blocks that can play that role on this asset and
    timeframe, then the blocks. Each choice has a reason; keep out what duplicates the fixed block
    (a second Donchian breakout beside a Donchian breakout adds nothing) and what cannot be

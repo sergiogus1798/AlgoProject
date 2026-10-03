@@ -517,7 +517,7 @@ verdict line, and each would be one more trial in the ledger.
 
 ## 12 · Questions for the owner
 
-Not asked again: anything in `portfolio/CLAUDE.md` (engine first, sizing to 33, 0.30 thresholds,
+Not asked again: anything in `DECISIONS.md` «Settled by the owner» (engine first, sizing to 33, 0.30 thresholds,
 no same-asset filter, pluggable weights with equal as baseline, build → oos1+oos2, same pool,
 siblings face the filter, development pool from any step).
 

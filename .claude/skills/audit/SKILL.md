@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks). Use when the owner asks for an audit, a health check, or what is broken.
+description: Launch the `auditor` agent (model sonnet) to run the daily project audit — documentation against reality, code and data integrity, statistical rigour, and the three SQX failures that count (broken exports, oversized logs, corrupt blocks). Use when the owner asks for an audit, a health check, or what is broken.
 ---
 
 # /audit
@@ -8,7 +8,7 @@ description: Run the daily project audit — documentation against reality, code
 Launch the `auditor` subagent. It is read-only and writes `AlgoData/audit/YYYY-MM-DD.md`.
 
 1. Check whether today's report already exists in `AlgoData/audit/`. If it does, ask whether to re-run or read it.
-2. Spawn the agent with the `auditor` subagent type, in the background.
+2. Spawn the agent with the `auditor` subagent type, `model: "sonnet"` (rule 17), in the background.
 3. When it returns, give the owner the three findings that matter, in Spanish, with severity. Do not
    paste the whole report; name the file.
 

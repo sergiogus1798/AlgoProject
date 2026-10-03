@@ -5,111 +5,115 @@ description: Configure and run the Walk Forward Matrix task of a custom SQX proj
 
 # /wfm
 
-Paso 19 del workflow, y **el último paso que mira datos**. Deja la tarea `WFM` de un custom project
-configurada y lista para correr. Leerla es `studies/optimisation/wfm/`, cuando se quiera.
+Step 19 of the workflow, and **the last step that looks at data**. It leaves the `WFM` task of a
+custom project configured and ready to run. Reading it is `studies/optimisation/wfm/`, when wanted.
 
-## Acaba en `oos2`
+## It ends in `oos2`
 
-La ventana es `build..oos2` —el walk-forward necesita histórico delante para optimizar—. El dueño
-derogó el 2026-09-28 la regla de «no quemar el oos2» para humanos: se corre y se lee cuando él
-quiera, sin esperar a que 17 y 18 estén hechos. Sólo un agente autónomo (`ALGO_AUTONOMOUS=1`) sigue
-atado a la reserva de `assets/_policy.yaml` y a la puerta ciega del paso 20 (`ledger/gate.py`).
+The window is `build..oos2` — the walk-forward needs history in front to optimise. On 2026-09-28 the
+owner repealed the «do not burn oos2» rule for humans: it is run and read whenever he wants, without
+waiting for 17 and 18 to be done. Only an autonomous agent (`ALGO_AUTONOMOUS=1`) is still bound to the
+reserve in `assets/_policy.yaml` and to step 20's blind door (`ledger/gate.py`).
 
-## Qué escribe
+## What it writes
 
-30 celdas: 5 porcentajes de fuera de muestra (20→40 de 5 en 5) × 6 números de pasadas (6→16 de 2 en
-2), `MaxTests` 5.000 por paso, ±35 % en pasos del 4 % (`maxSteps=18`), sólo los parámetros
-**recomendados** por SQX, precisión 2, fidelidad `exact_is_exact_oos` —el "Walk-Forward type" de la
-GUI: cada paso hace su propia optimización real sobre su ventana, no un recorte— y la ventana
-`build..oos2` tanto en los `<Setup>` como en `<Resources><Symbol>`.
+30 cells: 5 out-of-sample percentages (20→40 in steps of 5) × 6 numbers of runs (6→16 in steps of 2),
+`MaxTests` 5,000 per step, ±35 % in steps of 4 % (`maxSteps=18`), only the parameters **recommended**
+by SQX, precision 2, fidelity `exact_is_exact_oos` — the GUI's "Walk-Forward type": each step does
+its own real optimisation over its window, not a cut — and the window `build..oos2` both in the
+`<Setup>` and in `<Resources><Symbol>`.
 
-El reparto entre los dos mandos es deliberado (dueño, 2026-09-24): `MaxTests` bajó de 15.000 a 5.000
-porque compra una elección mejor por paso y nada legible después, mientras que `wf_type` cambia lo
-que significa el número que sí se guarda.
+The split between the two knobs is deliberate (owner, 2026-09-24): `MaxTests` went down from 15,000 to
+5,000 because it buys a better choice per step and nothing readable afterwards, whereas `wf_type`
+changes what the number that is stored means.
 
-⚠️ **Se cobra a `oos1`, no al último tramo** (`wfm.costs_segment`, decisión del dueño 2026-09-24):
-son 18,7 años de los que `oos2` es la cola de 3,7. Es la excepción a la convención de los spans, y
-el comando lo canta en su salida. Hoy `oos1` y `oos2` comparten spread, así que el número no cambia.
+⚠️ **It is charged at `oos1`'s costs, not the last segment's** (`wfm.costs_segment`, owner's decision
+2026-09-24): it is 18.7 years of which `oos2` is the 3.7 tail. It is the exception to the spans'
+convention, and the command announces it in its output. Today `oos1` and `oos2` share spread, so the
+number does not change.
 
-Y el criterio, que es lo que la tarea del maestro no tenía: **diez condiciones por casilla**, una
-casilla aprueba con el 80 % de ellas cumplidas, y la estrategia aprueba si hay un rectángulo de 4x4
-casillas con 12 aprobadas. Están en `assets/_build.yaml`, `wfm.conditions`, con el % de las 150
-casillas reales del maestro que cumple cada umbral al lado; la disección de las fórmulas de SQX está
-en `knowhow/conditions/wfm-acceptance.md`.
+And the criterion, which is what the master's task lacked: **ten conditions per cell**, a cell passes
+with 80 % of them met, and the strategy passes if there is a 4x4-cell rectangle with 12 passing. They
+are in `assets/_build.yaml`, `wfm.conditions`, with the % of the master's 150 real cells that meets
+each threshold next to them; the dissection of SQX's formulas is in
+`knowhow/conditions/wfm-acceptance.md`.
 
-**El criterio marca, no borra** (🔬 2026-09-26, dueño). Con `DeleteFailedStrategies=false` —el
-comando lo fuerza— una estrategia que no encuentra el área de 12 casillas se queda en el databank
-con `FiltersResultFailedReason = "Cross Check filter in 'Walk-Forward Matrix': Robustness score
-didn't pass."`. `export_wfm` lo guarda en `status.parquet` y en el manifest (`failed_in_sqx`), y el
-análisis lo pone como aviso `failed_en_sqx` en la ficha de la estrategia. El veredicto sigue siendo
-de Python. No uses el modo mapa (`min_squares: 0`) salvo que el dueño lo pida.
+**The criterion flags, it does not delete** (🔬 2026-09-26, owner). With `DeleteFailedStrategies=false`
+— the command forces it — a strategy that does not find the 12-cell area stays in the databank with
+`FiltersResultFailedReason = "Cross Check filter in 'Walk-Forward Matrix': Robustness score
+didn't pass."`. `export_wfm` saves it in `status.parquet` and in the manifest (`failed_in_sqx`), and
+the analysis puts it as a `failed_en_sqx` warning on the strategy's sheet. The verdict stays Python's.
+Do not use map mode (`min_squares: 0`) unless the owner asks.
 
-Cuenta la factura antes de lanzar: 5.000 backtests por paso × 6–16 pasos por celda × 30 celdas ×
-estrategia, a precisión 2. La WFM del maestro terminó con 500 sobre cinco años.
+Count the bill before launching: 5,000 backtests per step × 6–16 steps per cell × 30 cells × strategy,
+at precision 2. The master's WFM finished with 500 over five years.
 
-## Correrlo
+## Run it
 
 ```bash
-python3 -m core.assets <SIMBOLO>                       # preflight, BLOQUEANTE
-python3 -m sqx.projects.wfm <SIMBOLO> \
-    --cfx <install>/user/projects/<PROYECTO>/project.cfx --input <databank>
+python3 -m core.assets <SYMBOL>                        # preflight, BLOCKING
+python3 -m sqx.projects.wfm <SYMBOL> \
+    --cfx <install>/user/projects/<PROJECT>/project.cfx --input <databank>
 ```
 
-`--input` son los supervivientes que han llegado al paso 19 y no tiene default.
+`--input` is the survivors that reached step 19 and has no default.
 
-El proyecto tiene que llevar la tarea titulada `WFM`, que viene del donante congelado: si no la
-lleva, el comando se niega en vez de fabricarla — el bloque y sus condiciones vienen de una tarea
-que escribió SQX. Y el `.cfx` no puede estar abierto por una instancia (regla dura 4).
+The project must carry the task titled `WFM`, which comes from the frozen donor: if it does not, the
+command refuses instead of fabricating it — the block and its conditions come from a task that SQX
+wrote. And the `.cfx` cannot be open in an instance (hard rule 4).
 
-Después, en el custodio, una sola cosa a la vez, y avisando antes de tocar W2 (`ListAgents`,
-`ls -lt user/projects`, el log — el `stop` mata lo de cualquier sesión):
+Then, on the custodian, one thing at a time, and warning before touching W2 (`ListAgents`,
+`ls -lt user/projects`, the log — the `stop` kills any session's work):
 
-`<PROYECTO>` es el del workflow (`/template-run --workflow`): el comando de arriba deja su paso
-como **el único activo**, porque `action=start` corre todas las tareas activas. El `stop` antes del
-`start` no sobra: en un proyecto que ya corrió, un segundo `start` sin él no hace nada, en silencio.
+`<PROJECT>` is the workflow's (`/template-run --workflow`): the command above leaves its step as
+**the only active one**, because `action=start` runs all the active tasks. The `stop` before the
+`start` is not superfluous: in a project that already ran, a second `start` without it does nothing,
+silently.
 
 ```bash
 bin/sqx-worker.sh --role custodian start
-python3 -c "from core import worker; worker.call('-project action=stop name=<PROYECTO>','custodian')"
+python3 -c "from core import worker; worker.call('-project action=stop name=<PROJECT>','custodian')"
 N=$(.claude/skills/sqx-wait/wait.sh --role custodian mark)
-python3 -c "from core import worker; worker.call('-project action=start name=<PROYECTO>','custodian')"
-.claude/skills/sqx-wait/wait.sh --role custodian --from "$N"   # run_in_background; nada más hasta su aviso (regla 18)
-bin/sqx-worker.sh --role custodian stop
+python3 -c "from core import worker; worker.call('-project action=start name=<PROJECT>','custodian')"
+.claude/skills/sqx-wait/wait.sh --role custodian --from "$N"   # run_in_background; nothing more until it notifies (rule 18)
+bin/sqx-worker.sh --role custodian stop || exit 1   # exits 1 if the worker is still alive: go no further
 ```
 
-## Qué mirar en la salida
+## What to look at in the output
 
-- **Las fechas.** Tienen que ser las de `oos2` (en XAUUSD, 2023.01.01 → el `to` de `oos2` en `_policy.yaml`, que avanza solo cada primer sábado de mes). Si aparece
-  2018–2022, la tarea está releyendo la muestra gastada y no es fuera de muestra de nada.
-- **`30 celdas`.** Otro número significa que alguien tocó los ejes en `_build.yaml`: no es un error,
-  es un estudio distinto.
-- **`13 del donante apagadas y 10 propias escritas`** — el 13 es lo normal en un clon del donante y
-  un 0 avisa de que ese `.cfx` no viene de él. Si el segundo número no es el de `wfm.conditions`, la
-  matriz juzga con otra cosa.
-- **`queda marcada FAILED en SQX, NO se borra`** — lo normal. Si alguna vez falta una estrategia en el databank de salida, `DeleteFailedStrategies` no estaba en `false`.
-- **`⚠️ esta tarea corre ademas: …`** — ese `.cfx` no pasó por la doctrina y correría otros
-  crosschecks a la vez, cada uno con su factura.
+- **The dates.** They must be `oos2`'s (in XAUUSD, 2023.01.01 → the `to` of `oos2` in `_policy.yaml`,
+  which advances by itself every first Saturday of the month). If 2018–2022 appears, the task is
+  re-reading the spent sample and is out-of-sample of nothing.
+- **`30 celdas`.** Any other number means someone touched the axes in `_build.yaml`: not an error, a
+  different study.
+- **`13 del donante apagadas y 10 propias escritas`** — the 13 is normal in a clone of the donor and a
+  0 warns that the `.cfx` does not come from it. If the second number is not that of
+  `wfm.conditions`, the matrix judges with something else.
+- **`queda marcada FAILED en SQX, NO se borra`** — normal. If a strategy is ever missing from the
+  output databank, `DeleteFailedStrategies` was not `false`.
+- **`⚠️ esta tarea corre ademas: …`** — that `.cfx` did not go through the doctrine and would run other
+  crosschecks at the same time, each with its bill.
 
-⚠️ La ventana entera son 18,7 años en XAUUSD, de los que `oos2` es la cola de 3,7. Con 16 pasadas
-cada tramo fuera de muestra ronda el año; con 6, tres años y medio. Mirarlo antes de leer una
-correlación por celda. En un activo con `oos2: {from: null}` no hay ventana y el comando
-revienta, que es lo correcto.
+⚠️ The whole window is 18.7 years in XAUUSD, of which `oos2` is the 3.7 tail. With 16 runs each
+out-of-sample segment is about a year; with 6, three and a half years. Look at it before reading a
+per-cell correlation. On an asset with `oos2: {from: null}` there is no window and the command blows
+up, which is correct.
 
-## Dónde se cambia qué
+## Where each thing is changed
 
-| qué | dónde |
+| what | where |
 |---|---|
-| los dos ejes, `MaxTests`, ±% y el paso, precisión, la ventana | `assets/_build.yaml`, bloque `wfm:` |
-| la fidelidad del walk-forward (`type`) | `assets/_build.yaml`, `wfm.wf_type` |
-| el criterio por casilla y el área que ha de encontrar | `assets/_build.yaml`, `wfm.conditions`, `threshold_pct`, `grid_passing_size`, `min_squares` |
-| qué tramo es `oos2` en cada activo | `assets/_policy.yaml`, `segments:` |
-| el título `WFM` | **contrato** con el donante y con `export_wfm` |
+| the two axes, `MaxTests`, ±% and the step, precision, the window | `assets/_build.yaml`, `wfm:` block |
+| the walk-forward's fidelity (`type`) | `assets/_build.yaml`, `wfm.wf_type` |
+| the per-cell criterion and the area it must find | `assets/_build.yaml`, `wfm.conditions`, `threshold_pct`, `grid_passing_size`, `min_squares` |
+| which segment is `oos2` on each asset | `assets/_policy.yaml`, `segments:` |
+| the `WFM` title | **contract** with the donor and with `export_wfm` |
 
-Exportar desde un worker: `python3 -m sqx.export.export_wfm --project <P> --databank WFM --role custodian`.
+Export from a worker: `python3 -m sqx.export.export_wfm --project <P> --databank WFM --role custodian`.
 
-Medido el 2026-09-25 sobre 3 madres de USDJPY H1 (`knowhow/sqx-drive/wfm-end-to-end.md`): la matriz, ~4-5 min
-por madre y un JVM de 45 GB; export 20 s; análisis 2 s. **SQX no da ninguna señal de avance** mientras
-corre: `Running time 0 ms` y el databank quieto hasta que termina cada madre.
+Measured 2026-09-25 on 3 USDJPY H1 mothers (`knowhow/sqx-drive/wfm-end-to-end.md`): the matrix, ~4-5
+min per mother and a 45 GB JVM; export 20 s; analysis 2 s. **SQX gives no progress signal** while it
+runs: `Running time 0 ms` and the databank still until each mother finishes.
 
-Manual: `docs/manual/09-optimizacion.pdf` (cap. 34-wfm). Exportar: `docs/manual/09-optimizacion.pdf` (cap. 09-wfm). Leerlo:
-`docs/manual/09-optimizacion.pdf` (cap. 14-walkforwardmatrix).
+Manual: `docs/manual/09-optimizacion.pdf` (cap. 34-wfm). Exporting: `docs/manual/09-optimizacion.pdf`
+(cap. 09-wfm). Reading it: `docs/manual/09-optimizacion.pdf` (cap. 14-walkforwardmatrix).

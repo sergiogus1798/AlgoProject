@@ -26,11 +26,11 @@ p-values into decoration. If the universe is wrong, the owner edits the file fir
 
 ## The window is each market's own
 
-`assets/_build.yaml` declares it once for every asset, under `crossmarket.segment`: **`build..oos1`**
-(owner, 2026-09-24), the same two-dot notation the MC Retest uses. That means from the main asset's
-**build start** — or from that market's first bar, whichever is later — to the end of `oos1`. For XAUUSD: XAGUSD runs 2008–2022, and a market whose data starts in 2013 runs
-2013–2022. The whole history is used on purpose; cutting it to the main asset's window throws away
-the years that would answer the question.
+`assets/_build.yaml` declares it once, under `crossmarket.segment`: **`build..oos1`** (owner,
+2026-09-24), read on **each extra market's own card** (owner, 2026-10-02): from the start of that
+market's own `build` — or its first bar, whichever is later — to the end of **its own `oos1`**.
+Never the main asset's dates: an index main (oos1 to 2023) must not carry XAUUSD or USDJPY into
+2023, the first year of their `oos2`, and an index under XAUUSD runs to the end of its own oos1.
 
 ## The costs are each market's own, and they are not copied from anywhere
 
@@ -44,6 +44,10 @@ list to the owner and ask — hard rule 5.
 
 One Setup carries one spread while the window spans both segments, so the **OOS** figures are
 charged. The market that has to surprise us is never given the cheaper price.
+
+The command also puts **every Setup of the task, the main test included, on
+`crossmarket.precision`** (the extra markets inherit the main test's), and writes each extra feed's
+`<Symbol>`, `<InstrumentInfo>` and `<Broker>` from SQX's registry when the task lacks them.
 
 `<MainTestValues>` says what comes from the main test instead: the timeframe, the precision and the
 minimum distance are shared; the dates, spread, slippage, commissions and swap are the market's own.
@@ -65,7 +69,16 @@ It writes the task titled `Retest Markets - Family` (reads `OOS`, writes `Retest
 and leaves it the only active task. The install must be stopped — it refuses otherwise (hard rule 4).
 A project built for this study alone, without `--workflow`, needs `--task <file>` and prints a ⚠️:
 check what is active before starting it. Then the run half of `/template-run`: custodian, `stop`
-then `start`, only `status` while it runs, always end stopped.
+then `start`, always end stopped, waiting outside the conversation (rule 18):
+
+```bash
+bin/sqx-worker.sh --role custodian start
+python3 -c "from core import worker; worker.call('-project action=stop name=<P>','custodian')"
+N=$(.claude/skills/sqx-wait/wait.sh --role custodian mark)
+python3 -c "from core import worker; worker.call('-project action=start name=<P>','custodian')"
+.claude/skills/sqx-wait/wait.sh --role custodian --from "$N"   # run_in_background; nothing more until it notifies (rule 18)
+bin/sqx-worker.sh --role custodian stop || exit 1   # exits 1 if the worker is still alive: go no further
+```
 
 ## What the result means
 

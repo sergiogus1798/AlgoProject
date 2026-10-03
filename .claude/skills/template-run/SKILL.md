@@ -46,6 +46,10 @@ Owner, 2026-09-25: a template run is step 5 of the workflow, so the project it c
 
 ## Set the project up — one command
 
+**Before creating the project, ask the owner `Test_` or `Trade_`** when the request does not make it
+obvious (hard rule 11: a stop with a question, never a default). `Test_` is a throwaway functional
+test; `Trade_` is meant to bear real fruit (rule 6).
+
 ```bash
 python3 -m sqx.projects.builder Test_<name>|Trade_<name> --purpose "<what for>" --template <library>/template.sqx --symbol <SYMBOL> \
     --timeframe <TF> --role custodian --workflow --max-strategies <n> --minutes <m> [--json]
@@ -134,6 +138,12 @@ python3 -m sqx.templates.registry --run --set template=<name> --set symbol=<SYM>
 
 One row per (template, symbol, timeframe) — that is what answers "have I tried this on NASDAQ H1".
 If the strategies carried the fixed block, also flip the template's `status` to `buildConfirmed`.
+
+## Retire a throwaway
+
+**Closing a `Test_` project** (rule 6): whoever created it retires it when the task ends — worker
+stopped, then `python3 -m sqx.projects.retire <P> --role <role> --yes` (without `--yes` it is a dry
+run). A `Trade_` project is kept.
 
 ## Do not
 
