@@ -42,7 +42,8 @@ def allow(step: int, segment: str, symbol: str) -> None:
 
     Args:
         step: Workflow step, 1 to 25.
-        segment: The segment the search reads -- "build", "oos1", "oos2".
+        segment: The segment the search reads -- "build", "oos1", "oos2", or several joined by
+            "+" ("oos1+oos2", step 26).
         symbol: The asset.
 
     Raises:
@@ -57,13 +58,15 @@ def allow(step: int, segment: str, symbol: str) -> None:
     """
     if not enforced():
         return
-    allowed = reserved(symbol).get(segment)
-    if allowed is not None and step not in allowed:
-        names = [n for n, s in STEPS.items() if s in allowed]
-        raise PermissionError(
-            f"ledger: el paso {step} no puede mirar `{segment}` de {symbol}: está "
-            f"reservado para {', '.join(names)}. Cada mirada lo gasta "
-            f"(assets/_policy.yaml, WORKFLOW.md §la puerta de un solo sentido)")
+    held = reserved(symbol)
+    for part in segment.split("+"):      # step 26 reads "oos1+oos2": any reserved part binds
+        allowed = held.get(part)
+        if allowed is not None and step not in allowed:
+            names = [n for n, s in STEPS.items() if s in allowed]
+            raise PermissionError(
+                f"ledger: el paso {step} no puede mirar `{part}` de {symbol}: está "
+                f"reservado para {', '.join(names)}. Cada mirada lo gasta "
+                f"(assets/_policy.yaml, WORKFLOW.md §la puerta de un solo sentido)")
 
 
 def done(frame: pd.DataFrame) -> dict[int, bool]:

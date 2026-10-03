@@ -11,7 +11,8 @@ from datetime import datetime
 from pathlib import Path
 
 from core.paths import DATA
-from pipeline.autopilot import judge, plan, variants
+from pipeline.autopilot import blind, judge, plan, tail, tailrun, variants
+from pipeline.autopilot.survivors import Done, mothers
 from ui.daemon.advance import preflight as advance
 from sqx.projects import live
 from ui.daemon.launch import chain, liverun, preflight
@@ -111,13 +112,15 @@ def survivors(project: str, n: str, role: str, cfg: dict) -> list[str]:
     return sorted(judge.population(project, cfg["steps"][n]["cut"], role)["strategy"])
 
 
-def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = False) -> None:
+def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = False,
+              given: dict = tail.NOTHING) -> None:
     """Plan from the rail, then run every action in order; the first failure ends it.
 
     `own_log`: this caller wrote the install's log of the last minutes itself, so it is no
     sign of anyone else (`advance.busy`); the lock, the port and a live process still refuse.
     `on_live`: one GUI session (`sqx.projects.live`) for every SQX step, started here and
     stopped at the end, its start and stop timed as rows of their own.
+    `given`: the tail's inputs (`tail.inputs`); from step 17 on the actions are `tailrun`'s.
     """
     where = advance.where(project)
     if "refuse" in where:
@@ -126,7 +129,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     if busy:
         sys.exit("el worker no está libre:\n  " + "\n  ".join(busy))
     cfg = judge.settings()
-    todo = plan.plan(workflow.workflow(project))
+    todo = plan.plan(workflow.workflow(project), given)
     (out / "plan.json").write_text(json.dumps(todo, indent=1, ensure_ascii=False),
                                    encoding="utf-8")
     done, filled, ran_sqx = [], set(), own_log
@@ -141,17 +144,22 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
             status(out, f"[{i + 1}/{len(actions)}] paso {action['n']} · {action['kind']}")
             began = time.monotonic()
             if action["kind"] == "sqx":
+                if action["n"] == "19":     # the WFM reads oos2: the ledger's door first
+                    blind.admit(project, "19")
                 what = sqx_step(project, action["steps"], not ran_sqx, filled)
                 ran_sqx = True
                 # A build stopped on its time cap does not go on to the OOS (`buildcap`): the
                 # rail still shows those steps to do, so they run now, in a start of their own.
                 ns = {s["n"] for s in action["steps"]}
-                left = [a for a in plan.plan(workflow.workflow(project))["do"]
+                left = [a for a in plan.plan(workflow.workflow(project), given)["do"]
                         if a["kind"] == "sqx" and a["n"] in ns]
                 if left:
                     what += " · " + sqx_step(project, left, False, filled)
             elif action["kind"] == "variants":
-                what = variants.run(project, where["role"])
+                left = mothers(project, where["role"], cfg, action["n"])   # nobody left: a clean end
+                what = variants.run(project, where["role"], set(left["strategy"]))
+            elif action["kind"] in tailrun.KINDS:
+                what = tailrun.run(action, project, where["role"], out, cfg)
             elif action["kind"] == "python":
                 if action.get("cut"):
                     action["picked"] = survivors(project, action["n"], where["role"], cfg)
@@ -166,8 +174,12 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
             done.append({"n": action["n"], "kind": action["kind"],
                          "s": time.monotonic() - began, "what": what})
             summary(out, project, done, todo["stop"])
+    except Done as end:         # a clean stop decided while running: nothing failed
+        todo["stop"] = {"n": None, "why": str(end)}
+        summary(out, project, done, todo["stop"])
     except BaseException as failed:
-        n = actions[sum(d["n"] != "-" for d in done)]["n"]
+        at = sum(d["n"] != "-" for d in done)
+        n = actions[at]["n"] if at < len(actions) else "final"   # failed after the last action
         (out / "fallo.md").write_text(
             f"# Fallo en el paso {n}\n\n{failed}\n\n```\n"
             + "".join(traceback.format_exc().splitlines(keepends=True)[-TAIL:]) + "```\n",
@@ -194,15 +206,18 @@ def main() -> None:
                     help="el log reciente del worker lo escribiste tú: no esperes sus 15 min")
     ap.add_argument("--live", action="store_true",
                     help="una sola sesión de SQX (modo GUI) para todos los pasos, sin reinicios")
+    tail.flags(ap)
     a = ap.parse_args()
+    given = tail.inputs(a, judge.settings())
     if a.plan:
-        print(json.dumps(plan.plan(workflow.workflow(a.project)), indent=1, ensure_ascii=False))
+        print(json.dumps(plan.plan(workflow.workflow(a.project), given), indent=1,
+                         ensure_ascii=False))
         return
     out = RUNS / a.project / f"{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
     print(f"carpeta del run: {out}", flush=True)
     signal.signal(signal.SIGTERM, chain.cancelled)
-    autopilot(a.project, out, a.own_log, a.live)
+    autopilot(a.project, out, a.own_log, a.live, given)
 
 
 if __name__ == "__main__":

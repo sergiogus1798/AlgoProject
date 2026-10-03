@@ -3,6 +3,7 @@
 import csv
 import io
 import json
+import os
 import re
 import sys
 
@@ -205,7 +206,9 @@ def write_dataranges() -> list[str]:
         if old != new:
             changed.append(f"{symbol}: {old.strip()}  \u2192  {new.strip()}")
             text = text.replace(block.group(), f"  {symbol}:\n{new}")
-    path.write_text(text, encoding="utf-8")
+    tmp = path.with_suffix(".yaml.tmp")      # a half-written policy would stop every asset load
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
     return changed
 
 

@@ -154,7 +154,8 @@ a SQX task carries, and **raises rather than inventing** when the dates are null
 **oos2's end is not hand-edited any more** (owner, 2026-09-30): on the first Saturday of each month,
 after the data update, `bin/monthly-oos2-roll.sh` (`python3 -m sqx.data.roll_oos2 --apply`) moves
 every decided `oos2.to` to the last day of the previous month — only where `data.to` already reaches
-that month's last weekday, never backwards, never a `null`.
+that month's last weekday, never backwards, never a `null`. An asset whose feed was stale that
+day stays behind alone, and the same script retries it on each later Saturday at the same end date.
 
 | segment | what it is for | spread |
 |---|---|---|
@@ -323,8 +324,9 @@ no tiene su feed (dueño).
 
 ⚠️ **Una sesión se define DENTRO del proyecto**, en `<Resources><Sessions>`. Una tarea que nombra
 una sesión que su proyecto no lleva carga sin quejarse y opera otro horario.
-`sqx/projects/doctrine.py` copia la definición a las tareas que la nombran sin llevarla, y se
-**niega** cuando ninguna tarea del proyecto la define: un horario de mercado no se inventa.
+`sqx/projects/doctrine.py` copia la definición a las tareas que la nombran sin llevarla; si ningún
+proyecto la define la construye del registro de SQX (`sqx/projects/sessiondb.py`, sobre una copia), y
+se **niega** cuando tampoco está ahí: un horario de mercado no se inventa.
 
 El registro completo está en `user/data/data.db`, que es **SQLite** pese al nombre — tablas
 `SESSIONS` y `ELEMENTS`, y `BROKER` para los perfiles (FTMO es el 8, The5ers el 9).

@@ -27,6 +27,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `fanout.py` | Independent tasks across forked processes, the costliest first (LPT), one BLAS thread each, never more processes than physical cores, results as they land | tasks + costs → results |
 | `cfx.py` | Read a `project.cfx`: task chain, output databanks, acceptance conditions | project → dicts |
 | `worker.py` | Start, stop and command a headless worker over its HTTP API; every call takes the role, conductor by default, and goes through `bin/sqx-worker.sh`'s owner lock (OPEN.md §32). `holding()` reports which PIDs run out of an install, the guard every write to a live install must pass; `lock()` reads who holds the owner lock, read-only | command, role → reply |
+| `uitoken.py` | The ui daemon's session token: `mint(port)` writes `AlgoData/ui/token-<port>` (0600, atomically; `ui.daemon.serve` only), `read(port)` is the ONE way a client — the window, a script, a skill — gets it; `HEADER` is `X-Algo-Token`. Here and not in `ui/` because both the daemon and the window read it and `ui.desktop` may not import `ui.daemon` | imported | port → token |
 | `exportdrv.py` | The three exports SQX offers: trades, databank metrics, bars | request → files |
 | `manifest.py` | Write and read the `manifest.json` every export must carry | facts → JSON |
 | `assetdata.py` | What `assets/` declares: costs and windows resolved against the shared policy | symbol → dict |

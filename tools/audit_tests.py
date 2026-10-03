@@ -38,9 +38,6 @@ ASIDE: dict[str, tuple[str, str]] = {
     "tests/test_strategymeta.py": (
         "golden's asset_card_sha256 is not the sha of assets/symbols/XAUUSD.yaml after the cost-card "
         "edits, and strategymeta reads the golden strategies differently", "2026-10-02"),
-    "tests/test_thresholds.py": (
-        "ledger/thresholds.py walks the dotted path K.UKOIL.cash_M1 into config.yaml and the feed "
-        "name's own dot splits it: KeyError 'UKOIL' (ledger is the owner's)", "2026-10-02"),
     "tests/test_ui_columns.py": (
         "the databank column chooser's default order changed while ui/daemon/databank/ is modified "
         "by another session", "2026-10-02"),

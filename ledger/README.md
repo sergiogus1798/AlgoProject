@@ -43,7 +43,7 @@ segment before opening the batch and then write one row per segment read through
 12,870 partitions cut the whole history. The WFM (19) still writes none, so the blind door opens only
 after `backfill --blind`, which rebuilds the missing rows from the results on disk, marked
 `backfill`, **skips a batch whose WFC or CSCV already wrote its own** (a live row's note opens
-`lote <batch>`), and refuses to write a step twice (`knowhow/eng/blind-steps-write-no-ledger-rows.md`).
+`lote <batch>`), and refuses to write a step twice (`knowhow/pipeline/blind-steps-write-no-ledger-rows.md`).
 `BlindJoint` in `STEPS` is step 20's SPA on `oos2` (`studies/closing/blindJoint/`) — the word the
 owner would add to `reserved_for`, not a permission.
 
@@ -67,7 +67,7 @@ asks `studies.research.memory.trials.spent` and passes the number to `accumulate
 `trials.py` imports no study — the count arrives as an argument — so the dependency runs
 command → memory and never inference → memory; the window's ledger view and `core.archive` still
 call `accumulated(frame)` and show the searches alone. The market profile's own measures are
-printed beside it and **not** added (`knowhow/research/ideas-are-ledger-trials.md`).
+printed beside it and **not** added (`knowhow/market-profile/ideas-are-ledger-trials.md`).
 
 **A reconstructed row is weaker than a recorded one, and says so.** `backfill` can only recover what
 an artefact wrote down — a funnel knows what it counted, not what else was tried and discarded — so
@@ -86,7 +86,7 @@ informative count in the note.
 to the number's type and the window's drawer still shows the knob. The placeholder keeps the key in
 its place: the gate prints a screen's thresholds in row order. 🔬 All six modules that declare one
 (gate, snoopingScreen, profitShape, entryQuality, cloud, cscv — 14 keys) came out byte-identical on
-real data after the move, fingerprint included (`knowhow/eng/thresholds-live-in-the-ledger.md`). A key missing from
+real data after the move, fingerprint included (`knowhow/pipeline/thresholds-live-in-the-ledger.md`). A key missing from
 the register, or appended twice by two branches, raises on read. `ledger.report
 --check-thresholds` says of each row whether its module reads it from here (`ledger`) or still
 keeps a copy (`copia`), and fails on a copy that diverges; `tests/test_thresholds.py` swaps every

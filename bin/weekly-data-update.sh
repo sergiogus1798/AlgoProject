@@ -50,9 +50,19 @@ exec 9>"$LOCK"
 flock -n 9 || { echo "$(date -Is) another data update is running; skipped"; exit 0; }
 echo "=== $(date -Is) weekly data update start"
 
-# The update refuses on its own with the GUI up, but checking first spares a 4 GB copy.
-if pgrep -f "$MASTER/" >/dev/null; then
-  echo "--- master SQX is running; nothing done"; exit 1
+# The update refuses on its own with the master up, but checking first spares a 4 GB copy and a
+# rotation. The same test the update makes (core.worker.holding): `pgrep -f "$MASTER/"` saw
+# nothing on 2026-10-03, because SQX runs as `./sqcli` from inside the install and its command
+# line names no folder — the copy was made, an old one rotated out, and only then the refusal.
+HELD=$(python3 -c '
+from core.paths import MASTER
+from core.worker import holding
+print(*holding(MASTER))') || { echo "--- cannot tell whether the master is running; nothing done"; exit 1; }
+if [ -n "$HELD" ]; then
+  echo "--- master SQX is running (PID $HELD); nothing done"
+  . "$ROOT/bin/lib-agent-alert.sh"
+  agent_alert weekly-data-update "master SQX is running (rule 2): the weekly update was not made"
+  exit 1
 fi
 
 mkdir -p "$SNAP"
@@ -82,4 +92,10 @@ echo "--- refreshing broker commission percentages"
 python3 -m core.commission --refresh || echo "--- core.commission --refresh failed, continuing"
 
 echo "=== $(date -Is) weekly data update end"
+# a refused update (master GUI up, rule 2) or a failed one leaves the data stale and the Saturday
+# oos2 roll failing; the log alone told nobody
+if [ "$rc" -ne 0 ]; then
+  . "$ROOT/bin/lib-agent-alert.sh"
+  agent_alert weekly-data-update "sqx.data.update exited $rc (the master GUI up refuses it: close it and rerun)"
+fi
 exit $rc

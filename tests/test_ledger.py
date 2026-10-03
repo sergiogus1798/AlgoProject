@@ -11,7 +11,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.surface import plateau
-from ledger import gate, record, trials
+from ledger import gate, record, spend, trials
 
 SEED = 3
 
@@ -55,6 +55,22 @@ def main() -> None:
         pass
     gate.allow(17, "oos2", "XAUUSD")
     gate.allow(8, "oos1", "XAUUSD")
+    try:
+        gate.allow(26, "oos1+oos2", "XAUUSD")
+        failures.append("gate: el paso 26 pudo mirar oos1+oos2, con oos2 reservado")
+    except PermissionError:
+        pass
+    gate.allow(26, "build+oos1", "XAUUSD")
+
+    # A composite segment is spent in each of its parts, in the map and in what is left virgin.
+    both = pd.DataFrame({"segment": ["oos1+oos2", "oos1"], "step": [26, 8],
+                         "ts": ["2026-10-01", "2026-10-02"]})
+    got = spend.spent(both).set_index("segment")["searches"].to_dict()
+    if got != {"oos1": 2, "oos2": 1}:
+        failures.append(f"spend: oos1+oos2 contó {got}, no {{oos1: 2, oos2: 1}}")
+    reads = {k: v["reads"] for k, v in spend.virgin(both, "XAUUSD").items()}
+    if reads.get("oos1") != 2 or reads.get("oos2") != 1:
+        failures.append(f"spend.virgin: oos1+oos2 contó {reads}")
 
     # Step 20 stays blind until all three have run.
     frame, pooled = rows()

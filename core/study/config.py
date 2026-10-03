@@ -5,7 +5,7 @@ import json
 from collections.abc import Callable
 from pathlib import Path
 
-import yaml
+from core.assetyaml import safe_load
 
 
 def _cast(old: object, raw: str) -> object:
@@ -19,7 +19,7 @@ def _cast(old: object, raw: str) -> object:
         The new value. An int is widened where a float stood; any other change of type is
         refused, so a threshold typed on the command line cannot silently become a string.
     """
-    new = yaml.safe_load(raw)
+    new = safe_load(raw)
     if old is None or type(new) is type(old):
         return new
     if isinstance(old, float) and isinstance(new, int) and not isinstance(new, bool):
@@ -64,7 +64,7 @@ def load(path: Path, overrides: list[str],
     Returns:
         The parsed config.
     """
-    cfg = yaml.safe_load(path.read_text(encoding="utf-8"))
+    cfg = safe_load(path.read_text(encoding="utf-8"))
     return apply(cfg, overrides, names(cfg) if names else None)
 
 

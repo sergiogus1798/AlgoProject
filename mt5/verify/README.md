@@ -20,9 +20,11 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 | `conditions.py` | One symbol's specification read off the firm's server, and its costs in SQX's units: spread now (points × point ÷ SQX tick), swap by MT5's mode, triple-swap day; commission from `assets/symbols/<S>.yaml` `costs.commission.brokers.<firm>` — refused when unconfirmed | imported | account + symbol → `sqx_settings`-shaped costs |
 | `sqxside.py` | The builder's command for the `Test_MT5Verify_…` project, the run on the conductor (only `action=status` between start and «Project finished», stop in a `finally`), the trades by `orderstocsv` with the worker down, and `sqx.projects.retire` | imported | project → trades per firm |
 | `mt5side.py` | Compile the exported EA under a space-free name, and one tester pass per account, waited for | imported | `.mq5` → trades per firm |
-| `judge.py` | Every row on price moves at the asset's one point value, SQX and MT5 alike (`mt5.compare.in_points`; owner 2026-09-30: SQX prices a JPY pair at a fixed rate, MT5 at the day's — USD only shown). SQX's times converted from the feed's zone to the server's (`mt5.compare.to_zone`, `clock.server_zone`: the firms change hour on US dates, the5ers' feed on Israel's), then any whole-hour offset left read off the trades — close pairs first (`knowhow/eng/mt5-verify-clock-zones.md`) —, the pairing (`mt5.compare.pair`) and the five rows against `ledger/thresholds.yaml` (`mt5verify.*`); one firm's verdict, unpaired-trades table and daily curves (`firm_result`), the shared parameter table (`params_table`) and the merged chart of every firm's pair of curves (`combined_chart`) — one tab, not one per firm (owner, 2026-09-29 §3.7) | imported | trade lists + costs → verdict, tables, chart |
+| `judge.py` | Every row on price moves at the asset's one point value, SQX and MT5 alike (`mt5.compare.in_points`; owner 2026-09-30: SQX prices a JPY pair at a fixed rate, MT5 at the day's — USD only shown). SQX's times converted from the feed's zone to the server's (`mt5.compare.to_zone`, `clock.server_zone`: the firms change hour on US dates, the5ers' feed on Israel's), then any whole-hour offset left read off the trades — close pairs first (`knowhow/mt5/mt5-verify-clock-zones.md`) —, the pairing (`mt5.compare.pair`) and the five rows against `ledger/thresholds.yaml` (`mt5verify.*`); one firm's verdict, unpaired-trades table and daily curves (`firm_result`), the shared parameter table (`params_table`) and the merged chart of every firm's pair of curves (`combined_chart`) — one tab, not one per firm (owner, 2026-09-29 §3.7) | imported | trade lists + costs → verdict, tables, chart |
 | `sidebyside.py` | The side-by-side trades table (owner, 2026-09-30: paired by entry time): one row per SQX entry in the feed's clock, then per firm the P&L of its own SQX retest, the MT5 entry in its server's clock and the MT5 P&L, empty when the EA opened nothing there; the last 500 entries; `firm_columns` lists each firm's three columns so its light hides them | imported | `firm_result`'s pairs → one table block |
 | `report.py` | Writes `result.json` in the study contract and `run.json` beside it — the headline is `pass` when every firm validates, `watch` («Validada en FTMO») when some do, `fail` when none; marks a crashed run `failed` so the window never shows it running forever | imported | summaries + tabs → the two files |
+| `autopilot.py` | Step 26 as an autopilot action: `check(project, finalists, params)` — the window's preflight (`ui.daemon.mt5bridge.runs.check`) for every finalist, plus a missing parameter, a finalist that is not its file and a firm's unconfirmed commission, and the Spanish confirmation naming the conductor and each MT5 account; `run(project, finalists, params, out)` — one `mt5.verify.run` subprocess per finalist with the window's argv, each verdict recorded in the pool; a finalist that does not validate is a result, a crashed job is `SystemExit`. 🤔 unrun against a real conductor and terminal | imported by `pipeline.autopilot` | finalists + the owner's dates, model, firms → pool rows, `out/verificados.csv`, `out/mt5verify.log`, one summary line |
+| `pool.py` | The validated pool (encargo 34 §4; format proposed, the owner's to confirm): one append-only `AlgoData/pool/<firm>.csv`; `record(rows)`, `read(firm)` (identities whose latest verdict by `verified_on` is `pass`), `history(firm)`, `rows_of(run)` (a finished check's run.json + result.json → one row per judged firm; a refused firm or a crashed check gives none), `rebuild()`/`pending()` from the checks on disk | `python3 -m mt5.verify.pool [--rebuild]` | `AlgoData/mt5/verify/<run>/` → `AlgoData/pool/<firm>.csv` |
 | `config.yaml` | Role, the donor's retests reused, the databank names, SaveToFiles' generator and first magic, slippage 0, tester polling, clock search span; thresholds as `ledger:<key>` | edited | — |
 
 ## Decisions it carries
@@ -49,16 +51,16 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
   `assets/symbols/<S>.yaml`'s `data.to` says SQX holds (`ui.daemon.mt5bridge.runs.hasta_default`),
   editable, the day before that (a range closing on SQX's last day never starts). Desde defaults
   to `MT5`: the job reads each firm's first month of whole H1 weeks once the terminal is open
-  (`knowhow/eng/mt5-history-depth-first-bar.md`), `HISTORY_FALLBACK_YEARS` (4) only when no
+  (`knowhow/mt5/mt5-history-depth-first-bar.md`), `HISTORY_FALLBACK_YEARS` (4) only when no
   server answers.
 - **Every asset names its symbol at each firm** in `mt5:` of its file —
-  `knowhow/eng/mt5-symbols-csv-only-had-one-row.md`.
+  `knowhow/mt5/mt5-symbols-csv-only-had-one-row.md`.
 
 ## Traps
 
 - **`mt5.initialize(path=…)` must not start the terminal**: its child holds the Windows Python's
   stdout and `wine.run` waits forever. `wine.open_terminal()` starts it detached first
-  (`knowhow/eng/mt5-account-switch-unattended.md`).
+  (`knowhow/mt5/mt5-account-switch-unattended.md`).
 - **MetaEditor and the tester need the terminal closed**: `wine.close_terminal()` posts
   WM_CLOSE (`taskkill` without /F) before each.
 - **A file name with a space never reaches MetaEditor whole** (`wine.run`): the EA is copied

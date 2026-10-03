@@ -1,7 +1,9 @@
 """The assets/ YAML files read and written without losing a comment — the only round-trip here."""
 
+import re
 from pathlib import Path
 
+import yaml
 from ruamel.yaml import YAML
 
 _Y = YAML()
@@ -13,6 +15,28 @@ _Y.indent(mapping=2, sequence=4, offset=2)   # the indentation assets/ already u
 # a load+dump of the four shared files and the nineteen symbol files is byte-identical.
 _Y.representer.add_representer(
     type(None), lambda r, d: r.represent_scalar("tag:yaml.org,2002:null", "null"))
+
+
+class _Loader(yaml.SafeLoader):
+    """PyYAML's safe loader reading floats as YAML 1.2 does, which is how ruamel writes them."""
+
+
+# 1.1 wants a dot in the mantissa, so `1e-05` -- what ruamel writes for a point -- loads as a str.
+_Loader.add_implicit_resolver("tag:yaml.org,2002:float", re.compile(
+    r"^(?:[-+]?(?:[0-9][0-9_]*)\.[0-9_]*(?:[eE][-+]?[0-9]+)?|\.[0-9][0-9_]*(?:[eE][-+]?[0-9]+)?"
+    r"|[-+]?[0-9][0-9_]*[eE][-+]?[0-9]+|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$"), list("-+0123456789."))
+
+
+def safe_load(text: str) -> object:
+    """`yaml.safe_load` for the files ruamel writes: `1e-05` is a float here, not a string.
+
+    Args:
+        text: YAML source.
+
+    Returns:
+        Plain dicts, lists and scalars, as `yaml.safe_load` gives them.
+    """
+    return yaml.load(text, Loader=_Loader)
 
 
 def read(path: Path) -> object:

@@ -11,6 +11,29 @@ REQUIRED = {"forex": ("spread_is", "spread_oos", "spread_oos2", "commission"),
 
 
 
+def numeric_strings(node: object, here: str = "") -> list[str]:
+    """Where a leaf is a string that reads as a number: a reader that lost a float, or a stray quote.
+
+    Args:
+        node: Any part of one asset as load() returned it.
+        here: The dotted path to it.
+
+    Returns:
+        One line per such leaf. `1e-05` loaded by YAML 1.1 as a string once crashed step 26.
+    """
+    if isinstance(node, dict):
+        return [m for k, v in node.items() for m in numeric_strings(v, f"{here}.{k}".strip("."))]
+    if isinstance(node, list):
+        return [m for i, v in enumerate(node) for m in numeric_strings(v, f"{here}[{i}]")]
+    if isinstance(node, str):
+        try:
+            float(node)
+        except ValueError:
+            return []
+        return [f"`{here}` es el texto {node!r} y se lee como número"]
+    return []
+
+
 def validate(data: dict) -> list[str]:
     """What this asset's file gets wrong against its class.
 
@@ -28,6 +51,7 @@ def validate(data: dict) -> list[str]:
                if k not in (data.get("mc_retest") or {})]
             + [f"`instrument.{k}` no es un número: {v!r} — comentario pegado al valor"
                for k, v in data["instrument"].items() if not isinstance(v, (int, float))]
+            + numeric_strings(data)
             + before_data(data))
 
 

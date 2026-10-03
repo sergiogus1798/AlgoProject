@@ -130,7 +130,8 @@ def main() -> None:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id = f"{stamp}_{re.sub(r'[^A-Za-z0-9]+', '_', strategy.stem)}"
     work = RUNS / run_id
-    work.mkdir(parents=True, exist_ok=True)
+    mq5_dir = work / "mq5"
+    mq5_dir.mkdir(parents=True, exist_ok=True)
     meta = {"run": run_id, "strategy": strategy.stem, "file": str(strategy),
             "identity": sqxfile.identity(strategy), "asset": asset, "timeframe": timeframe,
             "from": a.start, "to": a.end, "model": a.model, "state": "running",
@@ -142,20 +143,23 @@ def main() -> None:
 
     wanted = [f for f in a.firms.split(",") if f]
     refused, costs, notes, leverage, depth = {}, {}, {}, {}, {}
-    for firm, row in firms.usable(asset).items():
-        if wanted and firm not in wanted:
-            continue
-        if row["why"]:
-            refused[firm] = row["why"]
-            continue
-        say(5, f"leyendo {row['symbol']} en la cuenta de {firm} ({row['account']['server']})")
-        try:
-            info = conditions.read(row["symbol"], row["account"])
-            costs[firm], notes[firm] = conditions.for_sqx(data, firm, info, cfg["sqx"]["slippage"])
-            leverage[firm], depth[firm] = info["account_leverage"], info["first_bar"]
-        except conditions.Refused as why:
-            refused[firm] = str(why)
-    wine.close_terminal()
+    try:
+        for firm, row in firms.usable(asset).items():
+            if wanted and firm not in wanted:
+                continue
+            if row["why"]:
+                refused[firm] = row["why"]
+                continue
+            say(5, f"leyendo {row['symbol']} en la cuenta de {firm} ({row['account']['server']})")
+            try:
+                info = conditions.read(row["symbol"], row["account"])
+                costs[firm], notes[firm] = conditions.for_sqx(data, firm, info,
+                                                              cfg["sqx"]["slippage"])
+                leverage[firm], depth[firm] = info["account_leverage"], info["first_bar"]
+            except conditions.Refused as why:
+                refused[firm] = str(why)
+    finally:
+        wine.close_terminal()
     for firm, why in refused.items():
         print(f"⚠️ {firm}: {why}", flush=True)
     if not costs:
@@ -169,14 +173,12 @@ def main() -> None:
     say(10, f"creando {project} en el {role}")
     built = sqxside.build(project, strategy, asset, timeframe, role, cfg["sqx"]["donor_members"])
     cfx = Path(built["cfx"])
-    mq5_dir = work / "mq5"
-    mq5_dir.mkdir(exist_ok=True)
-    done = mt5verify.configure(cfx, data["sqx_symbol"], window, costs, mq5_dir, cfg["sqx"],
-                               sizing)
-    deposit = capital(cfx, done["tasks"][0]["member"])
-    outputs = {t["firm"]: t["output"] for t in done["tasks"]}
     try:
-        folders = sqxside.run(project, role, strategy, work, outputs, cfg["sqx"])
+        done = mt5verify.configure(cfx, data["sqx_symbol"], window, costs, mq5_dir, cfg["sqx"],
+                                   sizing)
+        deposit = capital(cfx, done["tasks"][0]["member"])
+        folders = sqxside.run(project, role, strategy, work,
+                              {t["firm"]: t["output"] for t in done["tasks"]}, cfg["sqx"])
         say(55, "exportando las operaciones de SQX")
         sqx_trades = sqxside.firm_trades(folders, work)
     finally:
@@ -211,7 +213,7 @@ def main() -> None:
         summaries[firm] = {**piece["summary"], "report": reports[firm]["dir"]}
         record.log(ledger_study.study_id(asset, timeframe, "mt5verify"), {
             "step": 26, "launched_by": "mt5.verify", "symbol": asset, "timeframe": timeframe,
-            "segment": segments(data, window), "window_from": window[0], "window_to": a.end,
+            "segment": segments(data, window), "window_from": window[0], "window_to": window[1],
             "n_in": 1, "n_out": int(piece["summary"]["state"] == "pass"),
             "criterion": f"SQX ↔ MT5 en {firm} ({a.model})",
             "thresholds": cfg["thresholds"], "note": f"{strategy.stem} · {run_id}"})
@@ -227,8 +229,7 @@ def main() -> None:
                         "empresa; la lucecita de cada empresa en la ventana enciende o apaga "
                         "su curva y sus criterios.",
                 "blocks": tab_blocks}]
-    meta.update({"project": project, "deposit": deposit, "ea": ea["expert"],
-                 "lots": sizing["params"]["Size"]})
+    meta.update(project=project, deposit=deposit, ea=ea["expert"], lots=sizing["params"]["Size"])
     report.finish(work, meta, cfg, started, summaries, refused, "", tabs)
     say(100, " · ".join(f"{firms.label(f)}: {'Validada' if s['state'] == 'pass' else 'No validada'}"
                         for f, s in summaries.items()) or "sin empresas")

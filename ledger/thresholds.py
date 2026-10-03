@@ -4,7 +4,7 @@ import re
 from functools import lru_cache
 
 import pandas as pd
-import yaml
+from core.assetyaml import safe_load
 
 from core.paths import ROOT
 
@@ -29,7 +29,7 @@ def declared() -> list[dict]:
 @lru_cache(maxsize=4)
 def _parsed(stamp: int, size: int) -> list[dict]:
     """`declared()` for one state of the file; the key changes the moment anyone edits it."""
-    return yaml.safe_load(FILE.read_text(encoding="utf-8"))["thresholds"]
+    return safe_load(FILE.read_text(encoding="utf-8"))["thresholds"]
 
 
 def value(key: str) -> object:
@@ -83,7 +83,7 @@ def resolve(source: str) -> float:
         silent default would hide.
     """
     path, dotted = source.split("#", 1)
-    return walk(yaml.safe_load((ROOT / path).read_text(encoding="utf-8")), dotted)
+    return walk(safe_load((ROOT / path).read_text(encoding="utf-8")), dotted)
 
 
 def walk(node: object, dotted: str) -> object:
@@ -94,15 +94,24 @@ def walk(node: object, dotted: str) -> object:
         dotted: `key.sub.key`, a step possibly `list[field=value]`.
 
     Returns:
-        Whatever sits at the end of the path.
+        Whatever sits at the end of the path. A key that itself holds a dot is taken whole:
+        at each mapping the longest run of steps that is a key there wins, so
+        `K.UKOIL.cash_M1` reads `K` and then the feed `UKOIL.cash_M1` (OPEN.md 94 — FTMO's
+        MT5 names carry a dot, and a feed is named after them).
     """
-    for step in dotted.split("."):
-        picked = SELECTOR.match(step)
+    steps = dotted.split(".")
+    at = 0
+    while at < len(steps):
+        picked = SELECTOR.match(steps[at])
         if picked:
             name, field, wanted = picked.groups()
             node = next(item for item in node[name] if str(item[field]) == wanted)
-        else:
-            node = node[step]
+            at += 1
+            continue
+        ends = range(len(steps), at, -1) if isinstance(node, dict) else ()
+        end = next((e for e in ends if ".".join(steps[at:e]) in node), at + 1)
+        node = node[".".join(steps[at:end])]
+        at = end
     return node
 
 

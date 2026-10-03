@@ -5,6 +5,11 @@ import pandas as pd
 from core import assetdata
 
 
+def by_segment(frame: pd.DataFrame) -> pd.DataFrame:
+    """One row per segment read: a search over "oos1+oos2" (step 26) counts in each part."""
+    return frame.assign(segment=frame["segment"].str.split("+")).explode("segment")
+
+
 def spent(frame: pd.DataFrame) -> pd.DataFrame:
     """How many times each segment has been read, and by which steps.
 
@@ -18,7 +23,7 @@ def spent(frame: pd.DataFrame) -> pd.DataFrame:
     """
     if not len(frame):
         return pd.DataFrame(columns=["segment", "searches", "steps", "first", "last"])
-    grouped = frame.groupby("segment")
+    grouped = by_segment(frame).groupby("segment")
     return pd.DataFrame({"searches": grouped.size(),
                          "steps": grouped["step"].apply(lambda s: sorted(set(s))),
                          "first": grouped["ts"].min(),
@@ -38,7 +43,7 @@ def virgin(frame: pd.DataFrame, symbol: str) -> dict:
         holdout", and the answer stops being yes silently.
     """
     segments = assetdata.load(symbol)["segments"]
-    counts = frame["segment"].value_counts().to_dict() if len(frame) else {}
+    counts = by_segment(frame)["segment"].value_counts().to_dict() if len(frame) else {}
     return {name: {"from": str(spec["from"]), "to": str(spec["to"]),
                    "reads": int(counts.get(name, 0)),
                    "reserved_for": spec.get("reserved_for")}

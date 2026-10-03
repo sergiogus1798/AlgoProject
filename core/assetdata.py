@@ -5,7 +5,7 @@ import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-import yaml
+from core.assetyaml import safe_load
 
 from core import assetoverride
 from core.paths import ASSETS
@@ -39,7 +39,7 @@ def _parse(path: Path) -> dict:
     stamp = path.stat()
     stamp = (stamp.st_mtime_ns, stamp.st_size)
     if _PARSED.get(path, (None,))[0] != stamp:
-        _PARSED[path] = (stamp, yaml.safe_load(path.read_text(encoding="utf-8")))
+        _PARSED[path] = (stamp, safe_load(path.read_text(encoding="utf-8")))
     return copy.deepcopy(_PARSED[path][1])
 
 

@@ -61,6 +61,20 @@ def main() -> None:
             pass
     thresholds.declared = real_declared
 
+    # A feed named after FTMO's MT5 symbol carries a dot of its own (OPEN.md 94): the key is
+    # taken whole, a plain nested path and a selector still resolve, a missing key still raises.
+    fake = {"K": {"UKOIL.cash_M1": 20, "XAUUSD_M1": 7, "UKOIL": {"other": 1}},
+            "rows": [{"id": "a", "v": {"x.y": 3}}]}
+    for dotted, wanted in (("K.UKOIL.cash_M1", 20), ("K.XAUUSD_M1", 7), ("K.UKOIL.other", 1),
+                           ("rows[id=a].v.x.y", 3)):
+        if thresholds.walk(fake, dotted) != wanted:
+            failures.append(f"walk({dotted!r}) no devuelve {wanted}")
+    try:
+        thresholds.walk(fake, "K.USOIL.cash_M1")
+        failures.append("walk no falla con una clave que no existe")
+    except KeyError:
+        pass
+
     table = thresholds.divergences()
     if not table["coincide"].all():
         failures.append("--check-thresholds encuentra divergencias")
