@@ -9,7 +9,6 @@
       "Grep",
       "WebFetch",
       "WebSearch",
-      "mcp__sqx__*",
       "mcp__mt5__*"
     ],
     "ask": [],
@@ -66,7 +65,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Edit|Write|MultiEdit",
+        "matcher": "Bash|Edit|Write|MultiEdit|Agent|Task|EnterWorktree",
         "hooks": [
           {
             "type": "command",
