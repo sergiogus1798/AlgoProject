@@ -59,7 +59,7 @@ FAMILIES = {
         "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix"]),
     "10-cierre": ("El cierre: paso 20, exposición, stop y MetaTrader 5", [
         "56-paso-20", "38-exposicion", "54-atr-calculator", "60-mt5", "76-mt5-verificar",
-        "75-filtro-noticias"]),
+        "75-filtro-noticias", "93-metatracker", "94-flota-colector"]),
     "11-cartera": ("Cartera: el pool, el universo, las parejas y la búsqueda de fondeo", [
         "77-cartera-pool", "78-cartera-universo", "79-cartera-fondeo"]),
 }

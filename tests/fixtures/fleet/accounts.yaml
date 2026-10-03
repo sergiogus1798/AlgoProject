@@ -1,0 +1,4 @@
+# Synthetic accounts of the MetaTracker fixture (made-up logins); the real ones live in config/machine.yaml.
+900001: {firm: ftmo, plan: 2step, size: 10000, phase: funded, excel: FTMO_10k_Ejemplo}
+900002: {firm: hantec, plan: enhanced, size: 100000, phase: phase1, excel: Hantec_100k_Ejemplo}
+900003: {firm: fundingpips, plan: 2step-standard, size: 10000, phase: phase2}

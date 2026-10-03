@@ -1,0 +1,11 @@
+#!/bin/bash
+# metatracker — abre MetaTracker, la ventana de la flota de MT5 de la VPS. Doble clic, o esto.
+# Es una app aparte de bin/algoui (dueño, 2026-10-02): sin demonio, sólo lee AlgoData/fleet/.
+set -euo pipefail
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+# Las mismas libs de XCB que necesita bin/algoui: sin ellas el plugin xcb de Qt no carga.
+QT_XCB="$HOME/.local/lib/qt-xcb"
+[ -d "$QT_XCB" ] && export LD_LIBRARY_PATH="$QT_XCB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+cd "$ROOT"
+exec python3 -m mt5.fleet.app.launch "$@"

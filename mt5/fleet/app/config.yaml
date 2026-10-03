@@ -1,0 +1,28 @@
+# MetaTracker — the owner's thresholds (2026-10-02).
+
+# An account whose last beat is older than this is silent (⚫). The beacon writes every 30 s.
+silence_s: 300
+
+# 🔴 when less than this share of a floor's allowance is left: with a 5 % daily loss, under
+# 1.25 % of the size to the daily floor; with a 10 % max loss, under 2.5 % to the total floor.
+red_margin_left: 0.25
+
+# How often the window re-reads AlgoData/fleet/live/.
+refresh_s: 10
+
+# Weekend rule (accounts whose stage forbids holding over it): a position still open this many
+# hours before its symbol's Friday close turns the account yellow, and red inside the second figure.
+weekend_yellow_h: 3
+weekend_red_h: 1
+
+# News rule: yellow when a release that moves an open position's symbol is this many minutes away.
+# Red is inside the firm's own window (FTMO 2 min, Hantec 3 min: mt5/newsfilter/firms.py).
+news_yellow_min: 30
+
+# A magic with no trade for more than this many days is flagged on the Despliegue tab.
+silent_strategy_days: 30
+
+# Same strategy on several accounts: two entries pair when they are on the same side and open
+# within this many minutes of each other, looking back this many days (Estrategias tab).
+pair_tolerance_min: 5
+pair_days: 7

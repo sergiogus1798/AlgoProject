@@ -41,6 +41,15 @@ mt5_prefix: ~/Desktop/MT5
 #   ftmo: {login: 12345678, server: FTMO-Server4}
 #   hantec: {login: 1234567, server: HantecMarketsMU-MT5}
 
+# The live MT5 fleet on the VPS (encargo 35). `accounts` is what MetaTracker needs to find each
+# account's floors in the funding catalogue: by login, the firm, the plan's family, its size in
+# the account's currency and the stage it is in (phase1, phase2, phase3, funded).
+# fleet:
+#   vps:
+#     accounts:
+#       12345678: {firm: ftmo, plan: 2step, size: 10000, phase: funded}
+#       1234567: {firm: hantec, plan: enhanced, size: 100000, phase: phase1}
+
 # Claude Code's CLI, which the window runs headless to author a template from its chat.
 # Optional: the newest VS Code extension's bundled binary, else `claude` on the PATH.
 # claude_bin: ~/.local/bin/claude
