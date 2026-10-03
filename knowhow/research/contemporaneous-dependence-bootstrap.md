@@ -1,5 +1,6 @@
 ---
-q: portfolio drawdown bootstrap multiple markets, trade-level bootstrap destroys co-occurrence, calendar block resampling, concurrent positions counted twice close before open lexsort
+q: Why bootstrap a multi-market portfolio by whole calendar blocks instead of by trades?
+kw: portfolio drawdown bootstrap multiple markets, trade-level bootstrap destroys co-occurrence, calendar block resampling, concurrent positions counted twice close before open lexsort
 tag: 🔬  date: 2026-09-16  see: research/robustness-monte-carlo
 ---
 # Bootstrap a multi-market portfolio by whole calendar blocks, never by trades

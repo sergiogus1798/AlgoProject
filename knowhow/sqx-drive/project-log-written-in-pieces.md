@@ -1,6 +1,7 @@
 ---
-q: global_log half written; TASK STARTED without Databanks before start; watcher crashed killed build; log says started never finished; writing flag stuck; Recargar databank does nothing; worker preflight refuses after a killed run; running retest has no total; Hechas / total shows ·; 0 % probadas
-tag: 🔬  date: 2026-09-29  see: sqx-drive/window-advances-workflow, databanks/sync-deletes-unloaded-files
+q: Why does a project's global_log show a killed run's "started" and incomplete lines in the day's log?
+kw: global_log half written; TASK STARTED without Databanks before start; watcher crashed killed build; log says started never finished; writing flag stuck; Recargar databank does nothing; worker preflight refuses after a killed run; running retest has no total; Hechas / total shows ·; 0 % probadas
+tag: 🔬  date: 2026-09-29  see: ui/window-advances-workflow, databanks/sync-deletes-unloaded-files
 ---
 # SQX writes a project's global_log in pieces, and a killed run's «started» stays in the day's log
 A second into a task `user/projects/<P>/log/global_log_<day>_<time>.log` holds only `TASK STARTED`

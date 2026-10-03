@@ -1,5 +1,6 @@
 ---
-q: IS proxies inside top Sharpe decile, TRL Ratio SQN ZScore R Expectancy, Param Count negative, second filter after Sharpe, regression to the mean stratify
+q: Which in-sample metrics separate survivors inside the top Sharpe decile?
+kw: IS proxies inside top Sharpe decile, TRL Ratio SQN ZScore R Expectancy, Param Count negative, second filter after Sharpe, regression to the mean stratify
 tag: 🤔  date: 2026-09-06  see: research/ga-target-choice, research/post-selection-bias
 ---
 # Per-trade edge quality separates survivors inside the top Sharpe decile — not shippable yet

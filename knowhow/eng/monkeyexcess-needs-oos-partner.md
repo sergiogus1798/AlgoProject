@@ -1,5 +1,6 @@
 ---
-q: Exceso sobre el mono necesita panel del mono de toda la poblacion siempre; monkeyExcess refuses on the build databank even after monkey ran; monkey panel filed under OOS never Results; SAMPLED set table.py
+q: Why must monkeyExcess join the OOS databank's monkey panel to SAMPLED and not only to monkey?
+kw: Exceso sobre el mono necesita panel del mono de toda la poblacion siempre; monkeyExcess refuses on the build databank even after monkey ran; monkey panel filed under OOS never Results; SAMPLED set table.py
 tag: 🔬  date: 2026-09-29  see: eng/feed-in-config-yaml
 ---
 # `monkeyExcess` reads the OOS databank's monkey panel; it must join `SAMPLED`, not just `monkey`

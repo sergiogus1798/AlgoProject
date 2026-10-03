@@ -1,5 +1,6 @@
 ---
-q: profitShape entryQuality over a whole population; one process per strategy loads the whole trades.parquet; RAM per process; how many in parallel; out of memory session killed; 5000 strategies how long
+q: How much RAM and time do profitShape and entryQuality take per strategy, and how many can run in parallel?
+kw: profitShape entryQuality over a whole population; one process per strategy loads the whole trades.parquet; RAM per process; how many in parallel; out of memory session killed; 5000 strategies how long
 tag: 🔬  date: 2026-10-01  see: perf/ram-budget
 ---
 # profitShape / entryQuality cost 1.7 GB and ~3 s per strategy: at most 8-12 side by side

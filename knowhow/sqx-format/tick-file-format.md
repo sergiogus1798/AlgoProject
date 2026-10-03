@@ -1,5 +1,6 @@
 ---
-q: read SQX tick data without SQX; read M1 bars from SQX History without export; _M1.dat format; _TICK.dat format; DarwTick feed ask bid; decode tick file; History folder .dat; spread from ticks; SQDataLib TickDataReader; ICryptable internal.dat
+q: How do I read a `*_TICK.dat` tick file with `core.tickfile` without SQX?
+kw: read SQX tick data without SQX; read M1 bars from SQX History without export; _M1.dat format; _TICK.dat format; DarwTick feed ask bid; decode tick file; History folder .dat; spread from ticks; SQDataLib TickDataReader; ICryptable internal.dat
 tag: 🔬  date: 2026-09-27  see: export/feed-clock-timezones, costs/darwinex-real-spread
 ---
 # A `*_TICK.dat` is plain, delta-coded ask/bid: `core.tickfile` reads it without SQX, 650 M ticks in 25 s

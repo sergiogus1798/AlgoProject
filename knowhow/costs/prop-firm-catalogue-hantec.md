@@ -1,5 +1,6 @@
 ---
-q: where do Hantec Trader's challenge prices, rules and add-on surcharges come from, how is the price of a plan with add-ons computed, prop firm funded account catalogue scrape
+q: Where can Hantec's whole prop-firm price list be read as JSON?
+kw: where do Hantec Trader's challenge prices, rules and add-on surcharges come from, how is the price of a plan with add-ons computed, prop firm funded account catalogue scrape
 tag: 🔬  date: 2026-09-29
 ---
 # Hantec's whole price list is one public JSON: `GET /purchasechallenge?handler=InitState`

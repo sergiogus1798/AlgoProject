@@ -1,5 +1,6 @@
 ---
-q: strategy tunable parameters list, variable paramType, SPP permutation ranges per class, ParamTypeShift 0..6, percentage range collapses small integers, inert parameter detection, engine deterministic
+q: How do I list a strategy's tunable parameters: the `<variable>`s with a non-empty `<paramType>`?
+kw: strategy tunable parameters list, variable paramType, SPP permutation ranges per class, ParamTypeShift 0..6, percentage range collapses small integers, inert parameter detection, engine deterministic
 tag: 🔬  date: 2026-09-21  see: sqx-format/writing-a-variant, sqx-format/optimization-profile-bin, columns/param-count
 ---
 # A strategy's tunable parameters = its `<variable>`s with a non-empty `<paramType>`

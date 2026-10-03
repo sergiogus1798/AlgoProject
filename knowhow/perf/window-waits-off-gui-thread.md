@@ -1,5 +1,6 @@
 ---
-q: why does the desktop window freeze while Python analyses run, ui lag, GUI thread, one process per strategy, idle cores in a population run
+q: Why did the desktop window freeze on reloads, and where must daemon waits happen?
+kw: why does the desktop window freeze while Python analyses run, ui lag, GUI thread, one process per strategy, idle cores in a population run
 tag: 🔬  date: 2026-09-28  see: python-parallelism, ram-budget
 ---
 # The window froze on its own reloads, not on data: never wait on the daemon from the GUI thread

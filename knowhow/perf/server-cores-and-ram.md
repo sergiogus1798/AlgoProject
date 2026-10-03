@@ -1,5 +1,6 @@
 ---
-q: how many cores does the server have, 48 physical 96 logical SMT siblings, os.cpu_count lies, max_workers, STREAM bandwidth oversubscription, SQX Xmx108g memory reserved, comput threads
+q: How many cores does the server really have, and do SMT and oversubscription help?
+kw: how many cores does the server have, 48 physical 96 logical SMT siblings, os.cpu_count lies, max_workers, STREAM bandwidth oversubscription, SQX Xmx108g memory reserved, comput threads
 tag: 🔬  date: 2026-09-19  see: perf/ram-budget, perf/smt-in-sqx-retest, perf/monte-carlo-bandwidth
 ---
 # 48 physical cores, not 96; SMT and oversubscription lose bandwidth

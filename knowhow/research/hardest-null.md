@@ -1,5 +1,6 @@
 ---
-q: which random-entry null is hardest to beat / most conservative, block_shift vs other nulls, crossmarket four nulls, null spread sigma, docstring contradicted by measurement
+q: Does a null that randomises more make the null harder to beat?
+kw: which random-entry null is hardest to beat / most conservative, block_shift vs other nulls, crossmarket four nulls, null spread sigma, docstring contradicted by measurement
 tag: 🔬  date: 2026-09-15  see: research/bar-file-wider-than-backtest, research/random-entry-nulls
 ---
 # "Randomises more" ≠ "harder to beat": measure each null's spread

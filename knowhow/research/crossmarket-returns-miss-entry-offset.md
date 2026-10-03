@@ -1,5 +1,6 @@
 ---
-q: crossmarket verdict too optimistic; worst_pf above SQX's own profit factor; crossmarket wrong timeframe bars; _markets.yaml timeframe vs export timeframe; M30 export priced on H1 bars; cost_rate near zero; spread not subtracted in crossmarket trade_returns; entry offset above bar open
+q: On which bars and with which entry offset must the cross-market study price an export?
+kw: crossmarket verdict too optimistic; worst_pf above SQX's own profit factor; crossmarket wrong timeframe bars; _markets.yaml timeframe vs export timeframe; M30 export priced on H1 bars; cost_rate near zero; spread not subtracted in crossmarket trade_returns; entry offset above bar open
 tag: 🔬  date: 2026-09-27  see: fill-and-pricing, data-all-crossmarket
 ---
 # The cross-market study must price an export on the export's own bars, and charge the entry offset

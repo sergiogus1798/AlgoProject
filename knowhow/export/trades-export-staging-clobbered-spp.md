@@ -1,5 +1,6 @@
 ---
-q: export_spp strategies folder missing; variants make FileNotFoundError raw SPP_IS strategies Strategy.sqx; export_trades deletes strategies; two exports same day folder; _trades_sqx staging
+q: Which folders does `export_trades` stage into, and why must it not touch `strategies/`?
+kw: export_spp strategies folder missing; variants make FileNotFoundError raw SPP_IS strategies Strategy.sqx; export_trades deletes strategies; two exports same day folder; _trades_sqx staging
 tag: 🔬  date: 2026-09-30  see: export/export-retest-batch-tag, export/spp-export
 ---
 # `export_trades` stages in `_trades_sqx/` and `_trades_csv/`; `strategies/` belongs to `export_spp`

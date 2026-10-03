@@ -1,6 +1,7 @@
 ---
-q: export strategy to MQL5 mq5 source code headless without GUI, sqcli code export verb, Save to files task SaveSourceCode generator name, Invalid source code generator, Expert Advisor for MetaTrader5 (*.MQ5), magic numbers MNActive, exported EA money management differs from strategy, customSettings false retest sizing, SQX data to MT5 exportToMT5, SQX MCP tools list
-tag: 🔬  date: 2026-09-29  see: eng/mt5-under-wine, eng/mt5-account-switch-unattended
+q: How do I get MQL5 source out of SQX headless, given that no sqcli verb writes it?
+kw: export strategy to MQL5 mq5 source code headless without GUI, sqcli code export verb, Save to files task SaveSourceCode generator name, Invalid source code generator, Expert Advisor for MetaTrader5 (*.MQ5), magic numbers MNActive, exported EA money management differs from strategy, customSettings false retest sizing, SQX data to MT5 exportToMT5, SQX MCP tools list
+tag: 🔬  date: 2026-09-29  see: mt5/mt5-under-wine, mt5/mt5-account-switch-unattended
 ---
 # No sqcli verb writes MQL5; a "Save to files" task does — generator «Expert Advisor for MetaTrader5 (*.MQ5)»
 - `sqcli -h` (build of 2026-09-29) has no code-export verb. SQX's own MCP (`mcpx`) has 6 tools: list_projects/databanks/strategies, get_strategy_stats, run_project, stop_project — none writes code.

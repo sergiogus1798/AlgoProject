@@ -1,5 +1,6 @@
 ---
-q: can a config.yaml name the feed / symbol / asset / timeframe? wrong feed, scored against gold bars, crossTF USDJPY, reconciliation below 0.99, XAUUSD shown in a USDJPY project, config viewer donor values
+q: Why must a study's config.yaml never name the asset or feed?
+kw: can a config.yaml name the feed / symbol / asset / timeframe? wrong feed, scored against gold bars, crossTF USDJPY, reconciliation below 0.99, XAUUSD shown in a USDJPY project, config viewer donor values
 tag: 🔬  date: 2026-09-28  see: research/bar-file-wider-than-backtest
 ---
 # A config.yaml declares thresholds and models, never the asset

@@ -1,5 +1,6 @@
 ---
-q: walk forward matrix results in sqx, WalkForwardMatrixResult, RunResult stats statsOOS, WFM cell sample 10 20 127, WFM parameter stability SpecialValuesMap, futurePeriod empty RunStats, WFM optimisation population stored
+q: Where do I read Walk Forward Matrix cell metrics: `<Result>` blobs in settings.xml, not `RunResult/stats`?
+kw: walk forward matrix results in sqx, WalkForwardMatrixResult, RunResult stats statsOOS, WFM cell sample 10 20 127, WFM parameter stability SpecialValuesMap, futurePeriod empty RunStats, WFM optimisation population stored
 tag: 🔬  date: 2026-09-10  see: export/wfm-export, conditions/wfm-acceptance, sqx-format/optimization-profile-bin
 ---
 # The WFM grid lives in settings.xml; take cell metrics from `<Result>` blobs, never `RunResult/stats`

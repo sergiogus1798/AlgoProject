@@ -1,5 +1,6 @@
 ---
-q: which window was a strategy selected on; is 2018-2022 out of sample; untouched data start 2023; selection bias cross-market retest as filter; sampleType per resultType Build task
+q: Which XAUUSD windows has Build selection touched, and where does untouched data start?
+kw: which window was a strategy selected on; is 2018-2022 out of sample; untouched data start 2023; selection bias cross-market retest as filter; sampleType per resultType Build task
 tag: 🔬  date: 2026-09-17  see: conditions/retest-additional-markets, conditions/crossmarket-crosstf-no-conditions
 ---
 # XAUUSD Build selection touches every window; untouched data starts 2023-01-01

@@ -1,5 +1,6 @@
 ---
-q: decode SQStats blob, settings.xml base64 stats, 152 statistics, sqxstats KEYS, metric key mapping, read databank metrics off disk without SQX, sample type 10 20, replace view export, Export Data View columns, harvest metrics without conductor
+q: How do I decode the SQStats blob (152 stats) from disk without running SQX?
+kw: decode SQStats blob, settings.xml base64 stats, 152 statistics, sqxstats KEYS, metric key mapping, read databank metrics off disk without SQX, sample type 10 20, replace view export, Export Data View columns, harvest metrics without conductor
 tag: 🔬  date: 2026-09-27  see: sqx-format/result-sections, sqx-format/optimization-profile-bin, sqx-format/daily-equity-bin, columns/custom-columns-stored
 ---
 # SQStats decodes completely: 152 stats, readable off disk with no SQX running

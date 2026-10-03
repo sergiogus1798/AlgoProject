@@ -1,5 +1,6 @@
 ---
-q: edit assets/*.yaml keeping comments, ruamel round-trip byte identical, core.assetyaml, indent width null representer, comment of a key lc.key ca.items, set_value flow list becomes block, quoted "true" loses quotes, remove list item keep comments, emptied list blank line lost, set_market
+q: How do I edit an assets/*.yaml file without losing its comments?
+kw: edit assets/*.yaml keeping comments, ruamel round-trip byte identical, core.assetyaml, indent width null representer, comment of a key lc.key ca.items, set_value flow list becomes block, quoted "true" loses quotes, remove list item keep comments, emptied list blank line lost, set_market
 tag: 🔬  date: 2026-09-27  see: eng/no-slicing-xml-yaml-by-index
 ---
 # Write `assets/*.yaml` through `core.assetyaml` (ruamel round-trip)

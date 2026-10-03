@@ -1,5 +1,6 @@
 ---
-q: how long does each workflow step take, MC Retest share of SQX time, MCR 7 OHLC MCR 8 Stress, crossmarket.report bottleneck, retest.ingest memory, custodian stop start cost, startOnlyTask, WFC per-mother cost, WFM duration, crossmarket.report parallel speed, export_spp slow optprofile parser, snoopingScreen M1 memory, Python side of the workflow, tree PSS vs time -v
+q: Which SQX workflow step costs the most time, and how does WFC's per-mother cost scale?
+kw: how long does each workflow step take, MC Retest share of SQX time, MCR 7 OHLC MCR 8 Stress, crossmarket.report bottleneck, retest.ingest memory, custodian stop start cost, startOnlyTask, WFC per-mother cost, WFM duration, crossmarket.report parallel speed, export_spp slow optprofile parser, snoopingScreen M1 memory, Python side of the workflow, tree PSS vs time -v
 tag: 🔬  date: 2026-09-29  see: perf/python-parallelism, perf/smt-in-sqx-retest
 ---
 # MC Retest is the single biggest SQX cost; WFC's per-mother cost is FIXED (market loading) until the population is large enough to shift it

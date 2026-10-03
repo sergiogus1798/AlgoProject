@@ -1,5 +1,6 @@
 ---
-q: where is the .sqx of a finished workflow project; databank folder empty on the install; loader.find finds nothing; raw strategies copy same identity; strategymeta backtest empty; metadata of a strategy without SQX
+q: Where is a finished project's .sqx stored, and under what name does E2's reader need it?
+kw: where is the .sqx of a finished workflow project; databank folder empty on the install; loader.find finds nothing; raw strategies copy same identity; strategymeta backtest empty; metadata of a strategy without SQX
 tag: 🔬  date: 2026-09-28  see: identity-differs-across-databanks
 ---
 # A finished project's .sqx is often only in `raw/…/strategies/`, and E2's reader needs it under the databank's name

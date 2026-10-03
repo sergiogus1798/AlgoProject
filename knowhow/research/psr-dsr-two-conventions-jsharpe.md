@@ -1,5 +1,6 @@
 ---
-q: PSR DSR MinTRL differ from jsharpe, tschm jsharpe contrast, Lopez de Prado 2025 variance under the null SR0, Bailey 2012 variance at observed Sharpe, n-1 or T, skew kurtosis ignored at benchmark zero, deflated Sharpe convention, expected maximum Sharpe matches, which PSR formula do we use
+q: How does our PSR/MinTRL/DSR convention differ from the jsharpe package?
+kw: PSR DSR MinTRL differ from jsharpe, tschm jsharpe contrast, Lopez de Prado 2025 variance under the null SR0, Bailey 2012 variance at observed Sharpe, n-1 or T, skew kurtosis ignored at benchmark zero, deflated Sharpe convention, expected maximum Sharpe matches, which PSR formula do we use
 tag: 🔬  date: 2026-10-02  see: research/mintrl-explosion-is-correct, research/trial-count-half-rule
 ---
 # Our PSR / MinTRL / DSR are Bailey–López de Prado 2012-14; jsharpe is the 2025 paper — same arithmetic, different convention

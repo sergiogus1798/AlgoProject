@@ -1,5 +1,6 @@
 ---
-q: compare strategy against buy and hold, sizing convention one lot vs mean size vs volatility-matched, benchmark.py, occupancy exposure per day alpha
+q: Which sizing convention must a buy-and-hold benchmark name to count as a result?
+kw: compare strategy against buy and hold, sizing convention one lot vs mean size vs volatility-matched, benchmark.py, occupancy exposure per day alpha
 tag: 🔬  date: 2026-09-24  see: research/random-entry-nulls
 ---
 # Buy and hold is three numbers; name the sizing convention or it is not a result

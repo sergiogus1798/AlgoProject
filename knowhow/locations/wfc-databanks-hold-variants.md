@@ -1,5 +1,6 @@
 ---
-q: which databank holds the mothers of the variant batches; WFC_Build WFC_OOS1 WFC_OOS2 rows; S00V000 names; why cloud wfc cscv marketSurfaces read unjudged in a databank table; where to show batch studies per mother
+q: What do the WFC tasks' databanks hold, and where do batch studies read from?
+kw: which databank holds the mothers of the variant batches; WFC_Build WFC_OOS1 WFC_OOS2 rows; S00V000 names; why cloud wfc cscv marketSurfaces read unjudged in a databank table; where to show batch studies per mother
 tag: 🔬  date: 2026-10-01  see: locations/which-reports-pair-by-identity
 ---
 # The WFC tasks' databanks hold the variants, never a mother — read the batch studies on WFM

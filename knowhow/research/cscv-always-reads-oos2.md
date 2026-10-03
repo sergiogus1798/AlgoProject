@@ -1,12 +1,13 @@
 ---
-q: can I run the CSCV or the WFC on a real variant batch to test a change, golden, regression? split_mode oos1_oos2 oos2_only, composition, spends oos2, ledger row, old batch KeyError NetProfit (build+oos1)
-tag: 📓  date: 2026-09-27  see: eng/thresholds-live-in-the-ledger
+q: Why must a CSCV run on a real batch never be used as a regression test?
+kw: can I run the CSCV or the WFC on a real variant batch to test a change, golden, regression? split_mode oos1_oos2 oos2_only, composition, spends oos2, ledger row, old batch KeyError NetProfit (build+oos1)
+tag: 📓  date: 2026-09-27  see: pipeline/thresholds-live-in-the-ledger
 ---
 # Every CSCV run on a real batch reads oos2, and now writes it in the ledger — never use one as a regression test
 The CSCV's partitions cut the whole joined curve (build+oos1+oos2) whatever the composition, and
 since 2026-09-27 each run appends three permanent ledger rows (step 18) — the ledger is append-only.
 A WFC composition with `oos2` does the same on step 17. Reading oos2 is allowed to a human
-(2026-09-28, `eng/oos2-door-binds-only-autonomous`), but every look still counts in the ledger.
+(2026-09-28, `pipeline/oos2-door-binds-only-autonomous`), but every look still counts in the ledger.
 To prove a change keeps the output, compare the config dict (`inputs.config.load`) and use
 `tests/test_cscv.py` / `tests/test_wfc.py`, not a real batch. A WFC `--inside build --outside oos1`
 reads no oos2 and is the only real-batch run that spends nothing reserved.

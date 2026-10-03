@@ -1,5 +1,6 @@
 ---
-q: exit types Close type in XAUUSD corpus; any stop loss take profit; long only; path-independent exits; M1 bar library size load time flat bars OHLC consistency
+q: What exit types does the XAUUSD corpus use, and how fast does the M1 library load?
+kw: exit types Close type in XAUUSD corpus; any stop loss take profit; long only; path-independent exits; M1 bar library size load time flat bars OHLC consistency
 tag: 🔬  date: 2026-09-24  see: export/fill-and-pricing, export/bars, export/trade-export-columns
 ---
 # XAUUSD corpus exits are 3 types, none a stop; the M1 library loads whole in 0.4 s

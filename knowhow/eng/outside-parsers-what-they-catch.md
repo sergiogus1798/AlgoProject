@@ -1,12 +1,13 @@
 ---
-q: sqx-mcp mt5-quant mcp-mt5 comparison of parsers, cases our readers miss, core.sqxfile.symbol empty, symbol with dot or lowercase UKOIL.cash SP500ft @ES, StrategyProblems bitmask BadStrategyException, History Quality not read, start time changed to provide data, tester report covers another period, .set last used inputs, OptMode terminal.ini, report htm.xml, UTF-16 without BOM
-tag: 🔬  date: 2026-10-02  see: eng/mt5-history-depth-first-bar, eng/mt5-tester-unattended, databanks/databank-verbs
+q: What do settings.xml, SQX's StrategyProblems and the tester's history quality catch that our parsers do not?
+kw: sqx-mcp mt5-quant mcp-mt5 comparison of parsers, cases our readers miss, core.sqxfile.symbol empty, symbol with dot or lowercase UKOIL.cash SP500ft @ES, StrategyProblems bitmask BadStrategyException, History Quality not read, start time changed to provide data, tester report covers another period, .set last used inputs, OptMode terminal.ini, report htm.xml, UTF-16 without BOM
+tag: 🔬  date: 2026-10-02  see: mt5/mt5-history-depth-first-bar, mt5/mt5-tester-unattended, databanks/databank-verbs
 ---
 # Three things outside parsers read that ours do not: the symbol from settings.xml, SQX's `StrategyProblems`, and the tester's history quality
 Read-only comparison with DAVIDAROCA27/sqx-mcp, masdevid/mt5-quant and PHUICMT/mcp-mt5 (all MIT), each candidate checked on our own files. Confirmed:
 1. **`core.sqxfile.symbol()` / `describe()` return `("", "")` when the symbol is not `[A-Z0-9]+`** — a dot, a lowercase letter, an `@`. sqx-mcp reads `<Result>/<ValuesMap>/<Symbol>` in `settings.xml`, which carries any name (`UKOIL.cash_M1`, `SP500ft_Plus02_Infinox`).
 2. **`StrategyProblems`** (`settings.xml`, `SpecialValuesMap/SettingsMap`) is SQX's own bitmask of `BadStrategyException` reasons (no trades, too few, zero-P/L, too short, zero duration, too many open, too long, none filled) — the red «Strategy Problems» box of its overview. Nothing here reads it.
-3. **The tester's history quality and its `start time changed to …` journal line.** The report's `Period` row repeats the window that was ASKED; `mt5.tester.collect()` reads neither the `History Quality` cell nor the journal, so a run on thin history is collected as a normal one. The a-priori depth guard (`eng/mt5-history-depth-first-bar`) covers only «Desde = MT5».
+3. **The tester's history quality and its `start time changed to …` journal line.** The report's `Period` row repeats the window that was ASKED; `mt5.tester.collect()` reads neither the `History Quality` cell nor the journal, so a run on thin history is collected as a normal one. The a-priori depth guard (`mt5/mt5-history-depth-first-bar`) covers only «Desde = MT5».
 Not applicable here (checked): UTF-16 without BOM, `.htm.xml` reports, `ShutdownTerminal` unreliable, stale `.set` inputs, `OptMode=-1`, the first-start history-sync failure, reversal deals, the default magic 11111, databank sync races, XXE — details below.
 
 ## Evidence

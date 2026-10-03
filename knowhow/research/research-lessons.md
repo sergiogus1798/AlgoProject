@@ -1,5 +1,6 @@
 ---
-q: stop-fill slippage assumption, ATR stop study, stop commission round trips, pooling two populations one databank, range restriction conditioning on a metric, significance at n=10000, FDR effect size
+q: What lessons apply to stop-fill simulations, range restriction and p-values at large n?
+kw: stop-fill slippage assumption, ATR stop study, stop commission round trips, pooling two populations one databank, range restriction conditioning on a metric, significance at n=10000, FDR effect size
 tag: 🔬  date: 2026-09-04  see: research/post-selection-bias, research/is-proxies-top-decile
 ---
 # Research lessons: stop fills, range restriction, p at large n

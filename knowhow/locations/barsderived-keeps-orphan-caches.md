@@ -1,5 +1,6 @@
 ---
-q: barsDerived orphan caches; old fingerprint parquet; bar library refresh leaves stale resampled timeframes; what can be deleted in barsDerived; D1-<version>.parquet
+q: Why do resampled-timeframe caches go stale after a bar-library refresh, and what sweeps them?
+kw: barsDerived orphan caches; old fingerprint parquet; bar library refresh leaves stale resampled timeframes; what can be deleted in barsDerived; D1-<version>.parquet
 tag: 🔬  date: 2026-09-27  see: export/bars, export/storage-format
 ---
 # A bar-library refresh orphans every resampled timeframe, and nothing sweeps them

@@ -1,5 +1,6 @@
 ---
-q: strategy over market ratio E = mean held return / market drift, Brent negative drift, Fieller interval unbounded, bootstrap ratio, cross-market excess A, headline metric
+q: Why never divide by a market drift that may be zero, and what to report instead?
+kw: strategy over market ratio E = mean held return / market drift, Brent negative drift, Fieller interval unbounded, bootstrap ratio, cross-market excess A, headline metric
 tag: 🔬  date: 2026-09-16  see: research/fixed-reference-window-edge, research/gates-are-owner-decisions
 ---
 # Never divide by a drift that may be zero: read A, report E with a Fieller interval

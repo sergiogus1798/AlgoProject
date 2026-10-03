@@ -1,6 +1,7 @@
 ---
-q: config_hash mismatch crossmarket stale window always stale population result identity resolved but stale, knobs.py current_hash differs from stored, nulls.draws vs batch_draws, LOADERS_POPULATION
-tag: 🔬  date: 2026-09-29  see: eng/thresholds-live-in-the-ledger
+q: Why does a study stay stale when its population run substitutes a knob before fingerprinting?
+kw: config_hash mismatch crossmarket stale window always stale population result identity resolved but stale, knobs.py current_hash differs from stored, nulls.draws vs batch_draws, LOADERS_POPULATION
+tag: 🔬  date: 2026-09-29  see: pipeline/thresholds-live-in-the-ledger
 ---
 # A study whose population run substitutes a knob before fingerprinting reads stale forever unless the window's loader repeats the substitution
 `crossmarket.many.run` never draws `nulls.draws` — the population's null is always

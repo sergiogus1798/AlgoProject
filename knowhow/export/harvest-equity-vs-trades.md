@@ -1,5 +1,6 @@
 ---
-q: harvest equity.parquet final value differs from sum of trades Profit/Loss; daily curve vs trade list mismatch; which total to show; tearsheet totals
+q: Why do a harvest's daily equity curve and its trade list end at different totals?
+kw: harvest equity.parquet final value differs from sum of trades Profit/Loss; daily curve vs trade list mismatch; which total to show; tearsheet totals
 tag: 🔬  date: 2026-09-27  see: sqx-format/leg-curve-warmup, sqx-format/daily-equity-bin
 ---
 # A harvest's daily curve and its trade list do not end at the same total

@@ -1,5 +1,6 @@
 ---
-q: slippage value per asset; defaultSlippage zero; can slippage be measured from export; half the spread convention; point value dollars per point
+q: How is slippage set when it cannot be measured from an SQX export?
+kw: slippage value per asset; defaultSlippage zero; can slippage be measured from export; half the spread convention; point value dollars per point
 tag: 🔬  date: 2026-09-22  see: costs/where-the-spread-is, costs/mc-retest-ranges
 ---
 # Slippage cannot be measured from an export; the convention is half the spread (owner, 2026-09-22)

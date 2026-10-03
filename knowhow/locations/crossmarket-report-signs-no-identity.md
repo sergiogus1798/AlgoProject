@@ -1,5 +1,6 @@
 ---
-q: crossmarket verdict.csv identity empty, crossmarket JSON identity None, pair crossmarket result to a strategy, archive leaves crossmarket out, Strategy X(1) duplicate name in Retest Markets databank, export_retest identity.csv
+q: When does a crossmarket report carry strategy identity, and what must its export keep?
+kw: crossmarket verdict.csv identity empty, crossmarket JSON identity None, pair crossmarket result to a strategy, archive leaves crossmarket out, Strategy X(1) duplicate name in Retest Markets databank, export_retest identity.csv
 tag: 🔬  date: 2026-09-28  see: sqx-format/identity-differs-across-databanks, locations/which-reports-pair-by-identity
 ---
 # A crossmarket report signs identity only if its export kept identity.csv (export_retest does since 2026-09-28)

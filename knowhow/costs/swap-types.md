@@ -1,5 +1,6 @@
 ---
-q: SQX swap types points percent money formula; percent swap annual or nightly 360; convert points to percent; triple swap day per feed WEDNESDAY FRIDAY; tripleSwapOn override asset file; swap points unit tickStep vs tick_size; JPY swap 10x overcharge; swap_long swap_short assets yaml units
+q: In what units are `points` and `percent` swap, and where is the triple-swap day set?
+kw: SQX swap types points percent money formula; percent swap annual or nightly 360; convert points to percent; triple swap day per feed WEDNESDAY FRIDAY; tripleSwapOn override asset file; swap points unit tickStep vs tick_size; JPY swap 10x overcharge; swap_long swap_short assets yaml units
 tag: 🔬  date: 2026-10-01  see: costs/per-task-costs, costs/where-the-spread-is, costs/funded-accounts-real-costs
 ---
 # `points` swap is in tickStep, not tick_size; `percent` swap is an ANNUAL rate (÷100 ÷360); the triple-swap day is per feed

@@ -1,5 +1,6 @@
 ---
-q: parameter cloud smooth but ranking reshuffles each year, in-sample tuning useless, period-to-period Spearman, Sobol DICrossPeriod1, CSCV vs chronological walk-forward correlation f_y rho
+q: Can a profitable, smooth variant cloud still reshuffle which member is best each year?
+kw: parameter cloud smooth but ranking reshuffles each year, in-sample tuning useless, period-to-period Spearman, Sobol DICrossPeriod1, CSCV vs chronological walk-forward correlation f_y rho
 tag: 🔬  date: 2026-09-24  see: research/trade-filter-parameter-space, research/is-optimisation-vs-oos
 ---
 # A smooth, profitable cloud can still reshuffle which member is best every year

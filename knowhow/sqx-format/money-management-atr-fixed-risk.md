@@ -1,5 +1,6 @@
 ---
-q: which money management do the strategies use, ATRRiskBasedSizingFixedRisk parameters, why does Size vary per trade, risk per trade in SQX, convert SQX P&L to another risk or stop, lastSettings.xml MoneyManagement use=true, fixed risk R multiple
+q: How does the workflow size each trade: fixed $1,000 risk over 4*ATR(20)?
+kw: which money management do the strategies use, ATRRiskBasedSizingFixedRisk parameters, why does Size vary per trade, risk per trade in SQX, convert SQX P&L to another risk or stop, lastSettings.xml MoneyManagement use=true, fixed risk R multiple
 tag: 🔬  date: 2026-09-30  see: export/orderstocsv-schema, sqx-format/daily-equity-bin
 ---
 # The workflow's strategies size every trade at a FIXED $1,000 risk over 4·ATR(20) — SQX's P&L is already fixed-risk

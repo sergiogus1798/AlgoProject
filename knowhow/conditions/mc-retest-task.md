@@ -1,5 +1,6 @@
 ---
-q: MonteCarloRetest task XML; MCR tasks silently run a plain retest; doctrine apply_doctrine turns off crosscheck; MCBacktestPrecision vs testPrecision; MCUseFullSample; MCR task names contract; RandomizeMinDistance; set_crosschecks regex kills conditions
+q: Why must mcretest.py re-enable the MC Retest crosscheck after the doctrine switches it off?
+kw: MonteCarloRetest task XML; MCR tasks silently run a plain retest; doctrine apply_doctrine turns off crosscheck; MCBacktestPrecision vs testPrecision; MCUseFullSample; MCR task names contract; RandomizeMinDistance; set_crosschecks regex kills conditions
 tag: 🔬  date: 2026-09-23  see: costs/mc-retest-ranges, conditions/active-conditions-in-crosschecks
 ---
 # The doctrine switches the MC Retest crosscheck off; `mcretest.py` must re-enable it after

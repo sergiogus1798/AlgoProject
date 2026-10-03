@@ -1,5 +1,6 @@
 ---
-q: sqx.structural.keep refuses custodian sigue arriba PID is tail not sqcli; worker.holding false positive; Monitor tail -F on SQX log blocks safety check; nightly auditor claude -p blocks execute --clear
+q: Why did `worker.holding()` count a monitor tail process as holding a worker, and how is it fixed?
+kw: sqx.structural.keep refuses custodian sigue arriba PID is tail not sqcli; worker.holding false positive; Monitor tail -F on SQX log blocks safety check; nightly auditor claude -p blocks execute --clear
 tag: 🔬  date: 2026-09-27  see: sqx-drive/variants-execute-needs-worker-it-started
 ---
 # `worker.holding()` counts only a process whose executable lives in the install — fixed 2026-09-27

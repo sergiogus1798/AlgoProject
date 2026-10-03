@@ -1,5 +1,6 @@
 ---
-q: which XML element is the SPP; OptProfileSysParamPermutation vs SequentialOptimization; SPP defaults MaxTests DistributionUp Steps WhatToParametrize; SPP writes no profile
+q: Which task type is the SPP (`OptProfileSysParamPermutation`) and why does `SequentialOptimization` write no profile?
+kw: which XML element is the SPP; OptProfileSysParamPermutation vs SequentialOptimization; SPP defaults MaxTests DistributionUp Steps WhatToParametrize; SPP writes no profile
 tag: 🔬  date: 2026-09-22  see: sqx-drive/spp-headless, export/spp-export, sqx-format/optimization-profile-bin
 ---
 # The SPP is `OptProfileSysParamPermutation`; `SequentialOptimization` writes no profile

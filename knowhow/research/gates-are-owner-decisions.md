@@ -1,5 +1,6 @@
 ---
-q: gate threshold that excludes evidence, MIN_MARKETS, NO EVALUABLE, who decides thresholds, soft screen passed 0, ledger funnel 45 → 0, backfill score distribution
+q: Who decides a threshold that removes strategies: the analysis or the owner?
+kw: gate threshold that excludes evidence, MIN_MARKETS, NO EVALUABLE, who decides thresholds, soft screen passed 0, ledger funnel 45 → 0, backfill score distribution
 tag: 🔬  date: 2026-09-24  see: research/post-selection-bias, research/pooling-moments
 ---
 # A threshold that removes data is the owner's decision; analysis reports, it doesn't drop

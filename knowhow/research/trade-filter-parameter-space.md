@@ -1,5 +1,6 @@
 ---
-q: minimum trades filter removes parameter levels, parameter cloud collapsed column, DICrossShift1 single value, space.varying, sensitivity zero, filter before surface fit
+q: What does a trade-count floor remove in parameter space before a surface is fitted?
+kw: minimum trades filter removes parameter levels, parameter cloud collapsed column, DICrossShift1 single value, space.varying, sensitivity zero, filter before surface fit
 tag: 🔬  date: 2026-09-24  see: research/eta-squared-vs-duplicates, research/cloud-ranking-stability
 ---
 # A trade-count floor is a projection in parameter space: report what it removed there

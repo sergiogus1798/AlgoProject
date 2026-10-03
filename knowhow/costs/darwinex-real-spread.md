@@ -1,5 +1,6 @@
 ---
-q: real spread Darwinex vs declared SQX spread; is spread constant relative to price; spread gold USDJPY by year; spread at bar open hour; long pays spread entry short exit; spread model volatility; DATATICK retest cheaper; real curve better than SQX curve in the Ficha; points vs pips confusion
+q: How far is Darwinex's real spread from the spread `assets/` declares, and is it constant relative to price?
+kw: real spread Darwinex vs declared SQX spread; is spread constant relative to price; spread gold USDJPY by year; spread at bar open hour; long pays spread entry short exit; spread model volatility; DATATICK retest cheaper; real curve better than SQX curve in the Ficha; points vs pips confusion
 tag: 🔬  date: 2026-09-30 (corrected)  see: sqx-format/tick-file-format, costs/where-the-spread-is, costs/commission-methods, costs/mc-retest-ranges
 ---
 # Darwinex's real spread is 3–8× what `assets/` declares for XAUUSD, and not constant even relative to price. No units bug on the JPY pairs, and the Ficha's real curve beating SQX's is by design

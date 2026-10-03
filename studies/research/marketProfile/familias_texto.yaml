@@ -96,7 +96,7 @@ fragments:
   notes: |+
     **Cómo leer esta tabla.** El orden lo pone **tu prior** (`AlgoData/research/literature/familias-por-activo-prior-2026-10-02.md`); lo medido la anota. Regla de la propia prior: *si la prior y el dato coinciden, genera esa familia; si discrepan, fíate del dato pero exige más evidencia fuera de muestra.* Lo «medido en contra» **no se quita**: se queda marcado, porque el conflicto es lo que hay que ver.
 
-    **Lo que hay que saber antes de leer nada más** (auditoría del 2026-10-02, `knowhow/research/market-profile-blind-spots.md`):
+    **Lo que hay que saber antes de leer nada más** (auditoría del 2026-10-02, `knowhow/market-profile/market-profile-blind-spots.md`):
 
     - **Veredicto desnudo:** 2 de 1.064 celdas-familia pasan los cuatro filtros con 14.364 pruebas (EURUSD M15 corto `momentum`; DJ30 H1 largo `ruptura` con filtro de tendencia D1). Con la corrección por familia pasan 4, todas de `reversion` (apartado 6.2).
     - **Con salida razonable:** el barrido de 53.352 variantes (apartado 7) añade 3 variantes que pasan y **ninguna en meseta**. La salida fija desnuda no era lo que escondía los efectos.

@@ -1,5 +1,6 @@
 ---
-q: arch StepM ValueError zero-size array to reduction operation maximum, StepM crashes, small K, every column named, Romano Wolf step-down, superior.stepm
+q: Why does arch's StepM raise a zero-size array ValueError at small K?
+kw: arch StepM ValueError zero-size array to reduction operation maximum, StepM crashes, small K, every column named, Romano Wolf step-down, superior.stepm
 tag: 🔬  date: 2026-09-26  see: research/post-selection-bias
 ---
 # arch 7.2.0's StepM raises when its rounds name every column — use engines' own step-down

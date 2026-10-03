@@ -1,5 +1,6 @@
 ---
-q: export OHLC bars from SQX; data action=export symbol name timeframe; Symbol not found; sync_bars check feeds; bar library M1; feed price increment vs tick_size
+q: How do I export bars from SQX: which symbol form and how many timeframes per JVM?
+kw: export OHLC bars from SQX; data action=export symbol name timeframe; Symbol not found; sync_bars check feeds; bar library M1; feed price increment vs tick_size
 tag: 🔬  date: 2026-09-24  see: export/what-a-project-stores, export/exits-and-m1-library
 ---
 # Export bars with the bare symbol and a separate timeframe, one timeframe per JVM

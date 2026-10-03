@@ -1,5 +1,6 @@
 ---
-q: parse acceptance condition XML; Condition shapes Column-Value Numeric-Value GoToTask ResultsCount; use="false" disabled condition; subresult sampleType plType; condition count XAUUSD
+q: What XML shapes can a project condition take, and why check use=?
+kw: parse acceptance condition XML; Condition shapes Column-Value Numeric-Value GoToTask ResultsCount; use="false" disabled condition; subresult sampleType plType; condition count XAUUSD
 tag: 🔬  date: 2026-09-24  see: conditions/wfm-acceptance, conditions/active-conditions-in-crosschecks, export/databank-metrics-is-oos
 ---
 # Conditions come in three XML shapes; always check `use=`

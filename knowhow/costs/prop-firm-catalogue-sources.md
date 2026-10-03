@@ -1,5 +1,6 @@
 ---
-q: where does each prop firm's catalogue come from, FundedNext packages Next.js payload, FundingPips blocked Vercel checkpoint Cloudflare, which firm sites can be read by code, manual catalogue
+q: How are the FundedNext and FundingPips catalogues obtained, by code or typed by hand?
+kw: where does each prop firm's catalogue come from, FundedNext packages Next.js payload, FundingPips blocked Vercel checkpoint Cloudflare, which firm sites can be read by code, manual catalogue
 tag: 🔬  date: 2026-09-29  see: prop-firm-catalogue-hantec, prop-firm-discounts
 ---
 # FundedNext's catalogue is inline in its home page; FundingPips' site cannot be read by code — typed, never forced

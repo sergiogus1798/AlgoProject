@@ -1,5 +1,6 @@
 ---
-q: build doctrine where in task XML; Param className after key; set_params returns substitutions zero; task sessions differ per task; ExitAfterBars in bars per timeframe; which sections a Retest task has; high precision crosscheck spread 0; YAML on: key True
+q: Where does the build doctrine live in a Build task, and how must its param patterns match?
+kw: build doctrine where in task XML; Param className after key; set_params returns substitutions zero; task sessions differ per task; ExitAfterBars in bars per timeframe; which sections a Retest task has; high precision crosscheck spread 0; YAML on: key True
 tag: 🔬  date: 2026-09-23  see: authoring/bar-exit-ignores-task, costs/sessions-per-asset, costs/per-task-costs
 ---
 # Build doctrine lives in `<Setup>` plus four sections; patterns must match `<Param key= className=>`

@@ -1,5 +1,6 @@
 ---
-q: WFM 30 cells independent? original strategy vs buy and hold, which curve represents the strategy, main backtest Sample type IST; effective number of cells; share of profitable cells meaning; WFM out-of-sample curves vs buy and hold gold; WFM pass but no edge; long-only XAUUSD strategies gold beta years
+q: How many independent curves are the 30 WFM cells worth?
+kw: WFM 30 cells independent? original strategy vs buy and hold, which curve represents the strategy, main backtest Sample type IST; effective number of cells; share of profitable cells meaning; WFM out-of-sample curves vs buy and hold gold; WFM pass but no edge; long-only XAUUSD strategies gold beta years
 tag: 🔬  date: 2026-10-01  see: conditions/wfm-acceptance, research/is-optimisation-vs-oos, export/wfm-export
 ---
 # The 30 WFM cells are worth 1.6–3 independent curves; a WFM pass does not beat buy-and-hold

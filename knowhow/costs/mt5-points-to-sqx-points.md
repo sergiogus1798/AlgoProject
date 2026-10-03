@@ -1,5 +1,6 @@
 ---
-q: MT5 spread to SQX spread; divide by 10 forex only; EURUSD spread 1 in MT5 is 0.1 in SQX; MT5 point vs SQX tick size; pipette vs pip; gold index spread same number; Brent Hantec multiply by 10; exotic FX divide by 100; conditions.py spread conversion; mt5_point to_sqx
+q: How do I convert MT5 points to SQX points for an asset and firm (`to_sqx`)?
+kw: MT5 spread to SQX spread; divide by 10 forex only; EURUSD spread 1 in MT5 is 0.1 in SQX; MT5 point vs SQX tick size; pipette vs pip; gold index spread same number; Brent Hantec multiply by 10; exotic FX divide by 100; conditions.py spread conversion; mt5_point to_sqx
 tag: 🔬  date: 2026-10-01  see: costs/darwinex-real-spread, costs/where-the-spread-is
 ---
 # MT5 points → SQX points = × `to_sqx` (MT5 `point` ÷ SQX `TICKSIZE`), per asset AND per firm — not a fixed ÷10

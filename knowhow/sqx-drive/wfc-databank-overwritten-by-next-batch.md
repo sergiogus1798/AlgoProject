@@ -1,5 +1,6 @@
 ---
-q: sqx.variants.equity 17 bloques donde ninguna curva cuadra con lo que SQX guardo; equity.py reads live databank not export; running structural or atrCalculator after variants execute destroys WFC equity data
+q: Why does `sqx.variants.equity` lose WFC data when a later batch runs through the same project?
+kw: sqx.variants.equity 17 bloques donde ninguna curva cuadra con lo que SQX guardo; equity.py reads live databank not export; running structural or atrCalculator after variants execute destroys WFC equity data
 tag: 🔬  date: 2026-09-26  see: sqx-drive/variants-execute-needs-worker-it-started
 ---
 # `sqx.variants.equity` reads the LIVE `WFC_Build/OOS1/OOS2` databank folders, not an export — running any later batch through the same project erases the previous one's equity data

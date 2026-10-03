@@ -1,6 +1,7 @@
 ---
-q: SQX P&L in USD for USDJPY JPY pairs fixed point value; MT5 P&L larger than SQX same trade; point_value 631.3 653.92; conversion at a fixed rate; profit per trade differs by year; Verificar row 2 R gap row 5 drawdown JPY
-tag: 🔬  date: 2026-10-01  see: costs/sqx-fx-costs, eng/mt5-history-depth-first-bar
+q: Why do SQX and MT5 value the point of a JPY-quoted pair differently?
+kw: SQX P&L in USD for USDJPY JPY pairs fixed point value; MT5 P&L larger than SQX same trade; point_value 631.3 653.92; conversion at a fixed rate; profit per trade differs by year; Verificar row 2 R gap row 5 drawdown JPY
+tag: 🔬  date: 2026-10-01  see: costs/sqx-fx-costs, mt5/mt5-history-depth-first-bar
 ---
 # SQX prices a JPY-quoted pair at one fixed point value; MT5 at each moment's rate
 `USDJPY_M1` carries `point_value` 631.3 USD per yen per lot since 2026-10-01 — 100,000 / 158.4,

@@ -1,5 +1,6 @@
 ---
-q: compare source=archive with source=live; archived result differs from live; partials only in live; mcRetest strategy name 10.11.79 without Strategy prefix; /api/result live returns null for mcRetest; crossTF spread per-strategy result null population only; F12 import acceptance diff
+q: How do I check an archived study result against what the live route produces for that day?
+kw: compare source=archive with source=live; archived result differs from live; partials only in live; mcRetest strategy name 10.11.79 without Strategy prefix; /api/result live returns null for mcRetest; crossTF spread per-strategy result null population only; F12 import acceptance diff
 tag: 🔬  date: 2026-09-28  see: locations/which-reports-pair-by-identity
 ---
 # An archived result is that day's rendering: diff it against live for that day, under the study's own name

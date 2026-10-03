@@ -1,5 +1,6 @@
 ---
-q: which port/endpoint to call SQX on; 5050 vs 5060 vs 8080; "CLI not ready"; worker project not visible on master; can I edit project.cfx; read vs write boundary
+q: Which SQX command API endpoint do I drive: a worker's, or the master's with its GUI closed?
+kw: which port/endpoint to call SQX on; 5050 vs 5060 vs 8080; "CLI not ready"; worker project not visible on master; can I edit project.cfx; read vs write boundary
 tag: 🔬  date: 2026-09-02  see: sqx-drive/project-verb, sqx-drive/mcp-server-limits, sqx-drive/three-install-topology
 ---
 # Drive SQX through a worker's command API; the master's needs its GUI closed

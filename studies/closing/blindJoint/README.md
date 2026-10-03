@@ -53,7 +53,7 @@ reading needs the StepM, so choosing one while the policy refuses oos2 raises.
 
 **Blind by construction.** `inputs.blind_door` raises unless the study's ledger has rows for 17,
 18 and 19 — presence in the ledger is what "ran" means. ⚠️ Those three studies do not write rows
-themselves (`knowhow/eng/blind-steps-write-no-ledger-rows.md`); `python3 -m ledger.backfill
+themselves (`knowhow/pipeline/blind-steps-write-no-ledger-rows.md`); `python3 -m ledger.backfill
 --blind <project>` rebuilds them from their results, marked `backfill`.
 
 **A piece's threshold lives in its study.** The state is read from each result's `verdict`

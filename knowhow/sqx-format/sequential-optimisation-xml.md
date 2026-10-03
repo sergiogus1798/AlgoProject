@@ -1,5 +1,6 @@
 ---
-q: sequential optimization results sqx, SequentialOptimization_Results.xml, BestValue stable area, chained scan fitness, sequential opt parse
+q: What does a sequential optimisation write to disk: plain XML with fitness only, and how is the scan chained?
+kw: sequential optimization results sqx, SequentialOptimization_Results.xml, BestValue stable area, chained scan fitness, sequential opt parse
 tag: 🔬  date: 2026-09-10  see: sqx-format/optimization-profile-bin, export/sequential-opt-not-wfc
 ---
 # Sequential optimisation writes plain XML with fitness only; the scan is chained

@@ -1,0 +1,52 @@
+# mt5.reconcile — the weeklyReconciler (OPEN.md #78): what the live account did in one ISO week
+# against the SQX backtest of the same strategies over the same days, on the development data.
+# It describes; it does not judge: there is NO pass bar here (owner pending, rule 11).
+#
+# A key left empty is the OWNER'S decision and has no default: the command refuses in Spanish
+# until it is filled here or given as --set section.key=value.
+
+# Which accounts of config/machine.yaml `mt5_accounts` are LIVE (keys, e.g. [ftmo]). Never
+# guessed from a name. Only needed when the live side is read from the terminal.
+live:
+  accounts:
+  # Days of history asked past the week's end, so a trade opened on Friday and closed the
+  # next week is read whole.
+  spill_days: 7
+
+# magic number -> strategy. CSV, columns `magic,strategy,identity,sqx,firm,since`, kept in the
+# data root (it names the owner's accounts' EAs, so it is not versioned). Relative to
+# core.paths.MT5_DATA. The file is the owner's to write: absent, the command refuses.
+register: reconcile/register.csv
+
+# Pairing. `entry_tolerance_bars` — how many bars of the strategy's timeframe apart two entries
+# may be and still be called the same trade — is the owner's; step 26 uses
+# ledger `mt5verify.entry_tolerance_bars`, shown in the report as a reference only.
+pairing:
+  entry_tolerance_bars:
+
+# The clock, as in mt5/verify/config.yaml (knowhow/mt5/mt5-verify-clock-zones.md): the firms'
+# servers run on EETUS; SQX's times are converted from their feed's zone, then any whole-hour
+# shift left is read off the trades within ± max_offset_h. The ISO week is cut on this clock.
+clock:
+  server_zone: EETUS
+  max_offset_h: 3
+
+# The SQX side: a Test_Reconcile_<asset>_<tf>_<week> project on the conductor (short job),
+# cloned by sqx.projects.builder, retired when it ends. UNRUN as of 2026-10-02.
+sqx:
+  role: conductor
+  donor_members: [Retest-Task1.xml]     # one plain retest of the donor
+  input: ReconcileIn
+  output: ReconcileOut
+  task_title: "Reconcile"
+  # The asset's own costs of this segment (the week lies after oos2's start).
+  segment: oos2
+  # Fixed lot of the retest. The comparison never depends on it: points do not carry size, and
+  # the currency figures are rescaled to each live trade's own size.
+  lots: 0.1
+  # Days of bars before the week's Monday, so indicators are warm and a position opened the
+  # week before exists. 🤔 unmeasured: the first real run sets it.
+  warmup_days: 60
+  settle_s: 8
+  sync_tries: 60
+  poll_s: 5

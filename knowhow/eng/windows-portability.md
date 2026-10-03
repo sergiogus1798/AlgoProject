@@ -1,6 +1,7 @@
 ---
-q: does the project run on Windows? portable, Linux-only, desktop app ui on Windows, algoui.cmd, PYTHONUTF8, encoding utf-8 cp1252 UnicodeDecodeError, PyYAML wheel, python version 3.14, require_posix, read-only mode, modo lectura, no SQX install, /api/health sqx installs
-tag: 🔬  date: 2026-09-27  see: eng/checker-blind-spots, eng/qt-reload-inside-own-signal
+q: Which parts of the project run on Windows and which are Linux-only?
+kw: does the project run on Windows? portable, Linux-only, desktop app ui on Windows, algoui.cmd, PYTHONUTF8, encoding utf-8 cp1252 UnicodeDecodeError, PyYAML wheel, python version 3.14, require_posix, read-only mode, modo lectura, no SQX install, /api/health sqx installs
+tag: 🔬  date: 2026-09-27  see: eng/checker-blind-spots, ui/qt-reload-inside-own-signal
 ---
 # SQX driving is Linux-only; the analysis and the window are portable
 Export on Linux, analyse and open `ui/` anywhere. On Windows launch with `bin\algoui.cmd` (sets

@@ -1,5 +1,6 @@
 ---
-q: XAUUSD generated strategies stop loss take profit; SLPT None; long only; ExitAfterBars 8; bar-cap vs signal-exit populations; XAUUSD in-sample window
+q: What exits, direction and stops does the XAUUSD corpus have?
+kw: XAUUSD generated strategies stop loss take profit; SLPT None; long only; ExitAfterBars 8; bar-cap vs signal-exit populations; XAUUSD in-sample window
 tag: 🤔  date: 2026-09-04  see: authoring/bar-exit-ignores-task, authoring/build-doctrine-sections, research/research-lessons
 ---
 # The XAUUSD corpus has no SL, no PT, no trailing; long-only; every exit capped at 8 bars

@@ -1,5 +1,6 @@
 ---
-q: exposure.report KeyError strategy identity verdict empty table; Sample type OOS1 required; edgeCost report --strategy IndexError out of bounds; stopgrid variant names S00Vxxx not original strategy name
+q: Which databank or export name must the exposure and edge-cost readers of `export_retest` output be given?
+kw: exposure.report KeyError strategy identity verdict empty table; Sample type OOS1 required; edgeCost report --strategy IndexError out of bounds; stopgrid variant names S00Vxxx not original strategy name
 tag: 🔬  date: 2026-09-26  see: databanks/curate-verdict-identity-per-databank
 ---
 # Two Python readers of `sqx.export.export_retest` output need a SPECIFIC databank/name, not just any export

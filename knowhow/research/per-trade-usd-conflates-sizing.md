@@ -1,5 +1,6 @@
 ---
-q: compare IS vs OOS trades per trade; per-trade return USD vs percent of balance vs per lot; trade Size changes between samples; money management sizing; MAE MFE histogram IS OOS shift; density histogram two samples
+q: Why does a per-trade IS/OOS comparison in USD confuse lot size with edge?
+kw: compare IS vs OOS trades per trade; per-trade return USD vs percent of balance vs per lot; trade Size changes between samples; money management sizing; MAE MFE histogram IS OOS shift; density histogram two samples
 tag: 🔬  date: 2026-09-27  see: research-lessons
 ---
 # A per-trade IS/OOS comparison in USD reads a change of lot size as a change of edge

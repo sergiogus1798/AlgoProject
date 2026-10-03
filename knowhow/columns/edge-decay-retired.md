@@ -1,5 +1,6 @@
 ---
-q: EdgeDecayRatio EdgeDecayFilter, edge decay score IS vs OOS, net profit decay calendar artifact, decay ratio near zero, why edge decay retired
+q: Why were EdgeDecayRatio and EdgeDecayFilter retired, and how to do decay work now?
+kw: EdgeDecayRatio EdgeDecayFilter, edge decay score IS vs OOS, net profit decay calendar artifact, decay ratio near zero, why edge decay retired
 tag: 🔬  date: 2026-09-06  see: columns/custom-columns-stored
 ---
 # `EdgeDecayRatio` / `EdgeDecayFilter` are retired — do decay work in Python over exported CSVs

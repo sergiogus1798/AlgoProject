@@ -1,5 +1,6 @@
 ---
-q: where is the spread charged SQX; spread in fill prices not commission; double counting spread; why assets split forex vs no_forex; percentage commission; field meanings assets
+q: Why must the spread not be folded into a commission in SQX costs?
+kw: where is the spread charged SQX; spread in fill prices not commission; double counting spread; why assets split forex vs no_forex; percentage commission; field meanings assets
 tag: 🔬  date: 2026-09-22  see: export/fill-and-pricing, costs/commission-methods, costs/swap-types
 ---
 # The spread is in the fill prices, not a charge — folding it into a commission charges it twice

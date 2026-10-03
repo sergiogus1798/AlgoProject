@@ -1,5 +1,6 @@
 ---
-q: autopilot run time breakdown, dead time between SQX steps, how long does the autopilot take, worker restart cost per step, export after stop cost, step 8 python cost, profitShape entryQuality slow, build never stops databank-full minutes ignored
+q: How much time does the autopilot lose per SQX step starting and exporting?
+kw: autopilot run time breakdown, dead time between SQX steps, how long does the autopilot take, worker restart cost per step, export after stop cost, step 8 python cost, profitShape entryQuality slow, build never stops databank-full minutes ignored
 tag: 🔬  date: 2026-10-01  see: perf/workflow-step-durations, sqx-drive/live-chain-without-restart, sqx-drive/export-after-every-stop
 ---
 # Per SQX step the autopilot spends ~27 s starting and 90-230 s exporting; on a dev run that is ~30 % of 6 → 16

@@ -1,5 +1,6 @@
 ---
-q: gold Asian session drift, overnight effect XAUUSD, long at 01:00 reopen, daily pause 00:00-01:00 EET, first minutes after reopen jump, hour-of-day entry fake edge, BarHourIs 1, time-of-day template gold
+q: Where does the XAUUSD Asian drift live relative to the 01:00 EET reopen?
+kw: gold Asian session drift, overnight effect XAUUSD, long at 01:00 reopen, daily pause 00:00-01:00 EET, first minutes after reopen jump, hour-of-day entry fake edge, BarHourIs 1, time-of-day template gold
 tag: 🔬  date: 2026-10-01  see: costs/darwinex-real-spread, export/feed-clock-timezones, research/m1-feed-anomaly-statistics
 ---
 # On XAUUSD_M1 the gold "Asian drift" lives in the first 5 minutes after the 01:00 EET reopen — treat any edge entered at that bar as suspect

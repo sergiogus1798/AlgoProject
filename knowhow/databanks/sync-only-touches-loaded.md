@@ -1,5 +1,6 @@
 ---
-q: does a sync prune a databank nobody opened, unloaded databank safe on restart, removed 0 log, starting a worker for other work endangers batch
+q: Does a sync prune a databank nobody opened, or only the loaded ones?
+kw: does a sync prune a databank nobody opened, unloaded databank safe on restart, removed 0 log, starting a worker for other work endangers batch
 tag: 🔬  date: 2026-09-23  see: databanks/sync-deletes-unloaded-files, databanks/snapshot-before-restart
 ---
 # A sync only touches databanks that were loaded; one nobody opened is not pruned

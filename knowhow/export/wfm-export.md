@@ -1,5 +1,6 @@
 ---
-q: Walk-Forward Matrix WFM export cells steps; is_Fitness oos_Fitness zero; future steps past end of data; pool steps or cells; params.parquet NaN parameter drift
+q: How is a Walk Forward Matrix exported and read, and what do its per-step fitness and last steps mean?
+kw: Walk-Forward Matrix WFM export cells steps; is_Fitness oos_Fitness zero; future steps past end of data; pool steps or cells; params.parquet NaN parameter drift
 tag: 🔬  date: 2026-09-23  see: export/data-all-blocks, conditions/wfm-acceptance, export/fill-and-pricing, export/exits-and-m1-library
 ---
 # WFM export: the cell is the unit; per-step fitness is zero and last steps run into the future

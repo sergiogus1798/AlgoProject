@@ -1,5 +1,6 @@
 ---
-q: sqx.variants.spp on Retester hard rule 10 violation; which project does the SPP reconnaissance harness use; harness.write overwrites Retest-Task1.xml; can the SPP harness share the mother's workflow project; SPPRecon_In/SPPRecon_Out
+q: Where must the SPP reconnaissance harness live: in the mother's own workflow project, found by title?
+kw: sqx.variants.spp on Retester hard rule 10 violation; which project does the SPP reconnaissance harness use; harness.write overwrites Retest-Task1.xml; can the SPP harness share the mother's workflow project; SPPRecon_In/SPPRecon_Out
 tag: 🔬  date: 2026-09-29  see: sqx-drive/variant-chain-custom-project, sqx-drive/spp-task-type
 ---
 # The SPP reconnaissance harness lives in the mother's own workflow project, by title

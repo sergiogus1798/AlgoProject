@@ -1,5 +1,6 @@
 ---
-q: sqx-strategy-project skill donor task chain; keep_tasks strip; StrategyType simple ignores templateFile; template not applied OPEN issue 9; templateFile absolute path; uSymbol vs symbol
+q: When does SQX ignore a project's `templateFile`: StrategyType simple or template?
+kw: sqx-strategy-project skill donor task chain; keep_tasks strip; StrategyType simple ignores templateFile; template not applied OPEN issue 9; templateFile absolute path; uSymbol vs symbol
 tag: 🔬  date: 2026-09-22  see: authoring/headless-authoring-chain, sqx-format/project-cfx
 ---
 # With `<StrategyType type="simple">` the `templateFile` is ignored; only `type="template"` applies it

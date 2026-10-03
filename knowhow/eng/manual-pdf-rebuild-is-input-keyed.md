@@ -1,5 +1,6 @@
 ---
-q: manual pdf changes every rebuild, docs/manual git churn, chrome print-to-pdf not deterministic, CreationDate ModDate, .rendered.json, force manual rebuild
+q: When does tools/manual.py re-render a family's PDF and when does it skip it?
+kw: manual pdf changes every rebuild, docs/manual git churn, chrome print-to-pdf not deterministic, CreationDate ModDate, .rendered.json, force manual rebuild
 tag: 🔬  date: 2026-09-29  see:
 ---
 # `tools/manual.py` re-renders a family only when its inputs change

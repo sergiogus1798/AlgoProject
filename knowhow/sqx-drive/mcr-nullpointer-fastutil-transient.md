@@ -1,5 +1,6 @@
 ---
-q: MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 1 Bar Error while running project; WFC 1 IS variants pilot aborted; project hangs after crash no Project finished; transient SQX engine bug
+q: Why does an MC Retest task crash SQX with a fastutil NullPointerException and leave the project hung?
+kw: MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 1 Bar Error while running project; WFC 1 IS variants pilot aborted; project hangs after crash no Project finished; transient SQX engine bug
 tag: 🔬  date: 2026-09-30  see: authoring/cloned-custom-block-native-key
 ---
 # A retest task can crash SQX's own engine with a fastutil NullPointerException — transient, not the project, and the project hangs silently afterwards

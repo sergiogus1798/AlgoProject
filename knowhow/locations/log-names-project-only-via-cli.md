@@ -1,5 +1,6 @@
 ---
-q: which log line names the project of a run; Starting project; ProgressEngine task title; SKIPPED inactive task; percent in thread name; how the window knows what SQX is running
+q: Which SQX log line names the project of a run?
+kw: which log line names the project of a run; Starting project; ProgressEngine task title; SKIPPED inactive task; percent in thread name; how the window knows what SQX is running
 tag: 📓  date: 2026-09-25  see: locations/report-csv-conventions, sqx-drive/running-a-task-headless
 ---
 # The only log line naming a run's project is the CLI's `Starting project '<name>'`

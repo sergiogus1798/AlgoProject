@@ -1,5 +1,6 @@
 ---
-q: how to export trades from SQX; orderstocsv columns schema; MAE MFE units points or dollars; Sample type IST OOS1; unfilled pending order EndTest; recover commission per trade
+q: What traps does `orderstocsv` have when exporting every .sqx of a folder in one JVM?
+kw: how to export trades from SQX; orderstocsv columns schema; MAE MFE units points or dollars; Sample type IST OOS1; unfilled pending order EndTest; recover commission per trade
 tag: 🔬  date: 2026-09-29  see: export/trade-export-columns, export/storage-format, costs/commission-methods
 ---
 # `orderstocsv` exports every .sqx of a folder in one JVM — mind 4 traps

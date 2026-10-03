@@ -1,5 +1,6 @@
 ---
-q: where are SQX logs; log retention 14 days; log size GB; archive_logs AlgoData/logs; XAUUSD data coverage dates; build window unused gold data
+q: How long does SQX keep its logs, and how often must `archive_logs.py` run?
+kw: where are SQX logs; log retention 14 days; log size GB; archive_logs AlgoData/logs; XAUUSD data coverage dates; build window unused gold data
 tag: 🔬  date: 2026-09-04  see: eng/log-retention, sqx-drive/gui-web-surface
 ---
 # SQX keeps 14 days of logs and prunes on start — `archive_logs.py` must run more often than that

@@ -1,5 +1,6 @@
 ---
-q: databank shows records but directory empty, Auto-sync never export nothing, orderstocsv empty databank, never-synced databank strategies, find synced copy downstream
+q: Why do file-based exports see an empty databank that is full in memory with Auto-sync never?
+kw: databank shows records but directory empty, Auto-sync never export nothing, orderstocsv empty databank, never-synced databank strategies, find synced copy downstream
 tag: 🔬  date: 2026-09-05  see: databanks/autosync-nothing-on-disk, databanks/databank-verbs, export/orderstocsv-schema
 ---
 # An `Auto-sync never` databank can be full in memory and empty on disk — file-based exports see nothing

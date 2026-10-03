@@ -99,7 +99,7 @@ comparación deja su fila en el ledger.
 
 **Los umbrales son parámetros de entrada, no constantes** (dueño, 2026-09-29): cada uno es una
 fila de `ledger/thresholds.yaml` y el `config.yaml` del módulo lleva `ledger:<clave>` en su sitio
-(`knowhow/eng/thresholds-live-in-the-ledger.md`); una corrida puede cambiarlos con `--set`. El dueño
+(`knowhow/pipeline/thresholds-live-in-the-ledger.md`); una corrida puede cambiarlos con `--set`. El dueño
 aceptó estos valores de partida:
 
 | # | umbral | valor de partida |

@@ -1,5 +1,6 @@
 ---
-q: SQX log huge gigabytes, log retention prune archive, sqx-log-prune.sh --auto, archive_logs, keep days, current day log, error storm, WFM custom columns log, EdgeDecay project log noise, condensed log
+q: In what order and under which conditions may a log be archived and pruned?
+kw: SQX log huge gigabytes, log retention prune archive, sqx-log-prune.sh --auto, archive_logs, keep days, current day log, error storm, WFM custom columns log, EdgeDecay project log noise, condensed log
 tag: 🔬  date: 2026-10-01  see: columns/custom-columns-stored, columns/edge-decay-retired
 ---
 # Logs: archive first, prune only what has a `.gz`, never today's file

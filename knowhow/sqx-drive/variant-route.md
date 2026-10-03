@@ -1,5 +1,6 @@
 ---
-q: retest an arbitrary parameter set; set strategy parameters no CLI verb; write variant .sqx; strip members disk cost; one retest gives IS and OOS; variant throughput; retested .sqx missing on disk synctofiles; harvest dailyEquity vs trades
+q: How do I score a parameter tuple: write it into a `.sqx` and retest the file?
+kw: retest an arbitrary parameter set; set strategy parameters no CLI verb; write variant .sqx; strip members disk cost; one retest gives IS and OOS; variant throughput; retested .sqx missing on disk synctofiles; harvest dailyEquity vs trades
 tag: 🔬  date: 2026-09-22  see: sqx-format/writing-a-variant, sqx-format/five-member-sqx, sqx-drive/variant-chain-custom-project
 ---
 # To score a parameter tuple, write it into a `.sqx` and retest the file

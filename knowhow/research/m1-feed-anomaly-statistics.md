@@ -1,5 +1,6 @@
 ---
-q: feed quality M1 anomalies; bad tick vs flash crash; spike threshold K MAD fat tails; K per feed 20 25 30; frozen price runs; gaps; rollover gaps 00:00; Dukascopy early years; stable year; feed tick vs SQX tick; silver CADJPY spike-and-revert
+q: Are extreme moves on the Dukascopy M1 feed real events or bad data, and how to mark them?
+kw: feed quality M1 anomalies; bad tick vs flash crash; spike threshold K MAD fat tails; K per feed 20 25 30; frozen price runs; gaps; rollover gaps 00:00; Dukascopy early years; stable year; feed tick vs SQX tick; silver CADJPY spike-and-revert
 tag: 🔬  date: 2026-09-26  see: export/bars, export/feed-clock-timezones, costs/sessions-per-asset
 ---
 # On the Dukascopy M1 feed, extreme moves are mostly real events; measure K per feed on a trailing scale

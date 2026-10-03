@@ -1,5 +1,6 @@
 ---
-q: cloning a custom block for another indicator; sed rename EMA to HMA; Cannot find block 'HMA'; nested indicator key must match native catalog; XmlStrategyException Cannot find block
+q: Which `key` must a cloned custom block keep when cloned for another indicator?
+kw: cloning a custom block for another indicator; sed rename EMA to HMA; Cannot find block 'HMA'; nested indicator key must match native catalog; XmlStrategyException Cannot find block
 tag: 🔬  date: 2026-09-26  see: authoring/block-vocabulary, authoring/fixed-native-block-params
 ---
 # Cloning a custom block for another indicator: the nested `key` must stay the CATALOGUE key, not the display abbreviation

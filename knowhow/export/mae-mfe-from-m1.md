@@ -1,5 +1,6 @@
 ---
-q: rebuild MAE MFE from M1 bars; which minutes SQX counts in a trade's MAE; MAE ($) wick or close; floating equity minute by minute; intraday worst floating for prop-firm daily loss; exit minute excluded; cost of a minute-level floating path
+q: How does SQX compute a trade's MAE and MFE from M1 bars?
+kw: rebuild MAE MFE from M1 bars; which minutes SQX counts in a trade's MAE; MAE ($) wick or close; floating equity minute by minute; intraday worst floating for prop-firm daily loss; exit minute excluded; cost of a minute-level floating path
 tag: 🔬  date: 2026-09-30  see: export/orderstocsv-schema, export/fill-and-pricing, sqx-format/daily-equity-bin
 ---
 # SQX's MAE/MFE = the M1 wicks from the entry minute to the minute BEFORE the exit, against the fill price

@@ -1,5 +1,6 @@
 ---
-q: where per-task costs live SQX project; Setup vs InstrumentInfo; different spread IS OOS per task; commission method flip use; project unresolved resources; instrument edit defaultslippage; setups.py
+q: Where in a project.cfx are per-task costs stored, and what must never be edited?
+kw: where per-task costs live SQX project; Setup vs InstrumentInfo; different spread IS OOS per task; commission method flip use; project unresolved resources; instrument edit defaultslippage; setups.py
 tag: 🔬  date: 2026-09-23  see: costs/commission-methods, costs/swap-types, conditions/retest-additional-markets
 ---
 # Per-task costs live in each task's `<Setup>`; never edit `<Resources><Symbol><InstrumentInfo>`

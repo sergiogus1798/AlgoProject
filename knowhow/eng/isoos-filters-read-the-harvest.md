@@ -1,5 +1,6 @@
 ---
-q: Panel IS/OOS only Param Count IS metric; Filtros candidatos no IS metrics; metrics export of OOS databank IS columns zero; population IS OOS from harvest; metrics.source; oos_databank manifest
+q: Why does an IS/OOS population study read the harvest instead of a workflow retest's metrics export?
+kw: Panel IS/OOS only Param Count IS metric; Filtros candidatos no IS metrics; metrics export of OOS databank IS columns zero; population IS OOS from harvest; metrics.source; oos_databank manifest
 tag: 🔬  date: 2026-09-30  see: eng/decay-needs-build-and-retest, databanks/
 ---
 # A workflow retest's metrics export has no IS: the IS/OOS population studies read the harvest

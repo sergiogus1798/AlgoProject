@@ -1,5 +1,6 @@
 ---
-q: new databank Auto-sync every 1 hour but no directory on disk, export stages 0 strategies, exportdrv.stage empty, MCP record count misleading
+q: Does "Auto-sync every 1 hour" prove a databank was ever synced to disk before I export?
+kw: new databank Auto-sync every 1 hour but no directory on disk, export stages 0 strategies, exportdrv.stage empty, MCP record count misleading
 tag: 🔬  date: 2026-09-05  see: databanks/memory-vs-disk-exporter, databanks/databank-verbs
 ---
 # "Auto-sync every 1 hour" is a setting, not proof a sync ever ran — `ls` before exporting

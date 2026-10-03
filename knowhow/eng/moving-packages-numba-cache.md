@@ -1,5 +1,6 @@
 ---
-q: moved renamed package folder git mv, ModuleNotFoundError old module name after refactor, numba cache=True .nbi .nbc __pycache__ stale, bulk rewrite of paths touched dated audit reports, mass rename imports, 404 after rename, HTTP route string rewritten, ledger criterion label changed
+q: What must I clear or avoid rewriting when moving whole packages (numba cache, records, labels)?
+kw: moved renamed package folder git mv, ModuleNotFoundError old module name after refactor, numba cache=True .nbi .nbc __pycache__ stale, bulk rewrite of paths touched dated audit reports, mass rename imports, 404 after rename, HTTP route string rewritten, ledger criterion label changed
 tag: 🔬  date: 2026-09-25  see: eng/moving-module-into-layer, perf/numba-division
 ---
 # Moving whole packages: clear `__pycache__`, and a path rewrite must not touch records or labels

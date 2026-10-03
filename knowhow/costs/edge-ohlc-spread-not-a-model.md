@@ -1,5 +1,6 @@
 ---
-q: EDGE estimator spread from OHLC bars, eguidotti bidask Ardia Guidotti Kroencke JFE 2024, fifth spread model, effective spread without ticks, model.MODELS add edge, spread from Dukascopy M1 bars, bid bars no bid-ask bounce, reconstruct spread before 2017
+q: Can the EDGE estimator of spread from OHLC bars be used as a fifth spread model?
+kw: EDGE estimator spread from OHLC bars, eguidotti bidask Ardia Guidotti Kroencke JFE 2024, fifth spread model, effective spread without ticks, model.MODELS add edge, spread from Dukascopy M1 bars, bid bars no bid-ask bounce, reconstruct spread before 2017
 tag: 🔬  date: 2026-10-02  see: costs/darwinex-real-spread, costs/spread-per-segment-every-asset
 ---
 # EDGE (spread from OHLC) is not a fifth spread model: on our bid bars it reads a fifth of the real spread, and it breaks before 2012

@@ -1,5 +1,6 @@
 ---
-q: Cross Market necesita el export del retest cross-market entrando desde el propio databank Cross Market; ui.daemon.runs.context databank with spaces finds no export; multimarket False when it should be True; databank name Retest Markets - Family
+q: Why did `ui.daemon.runs.context` find nothing for a databank whose name is spelled with spaces?
+kw: Cross Market necesita el export del retest cross-market entrando desde el propio databank Cross Market; ui.daemon.runs.context databank with spaces finds no export; multimarket False when it should be True; databank name Retest Markets - Family
 tag: 🔬  date: 2026-09-29  see: databanks/, eng/feed-in-config-yaml
 ---
 # `ui.daemon.runs.context` globbed the databank name raw; a space-spelled one found nothing

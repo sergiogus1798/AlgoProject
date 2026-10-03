@@ -1,5 +1,6 @@
 ---
-q: sqcli -project verb actions; loadconfig saveconfig traps; create/modify project programmatically; URL encoding in /call; full sqcli verb reference help.txt
+q: What do the `-project` verbs create or modify via the API, and why does `loadconfig` never overwrite?
+kw: sqcli -project verb actions; loadconfig saveconfig traps; create/modify project programmatically; URL encoding in /call; full sqcli verb reference help.txt
 tag: 🔬  date: 2026-09-02  see: sqx-drive/running-a-task-headless, databanks/databank-verbs, sqx-drive/which-endpoint
 ---
 # `-project` creates/modifies projects via API; `loadconfig` never overwrites

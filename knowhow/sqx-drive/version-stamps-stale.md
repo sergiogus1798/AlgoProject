@@ -1,5 +1,6 @@
 ---
-q: sqx-worker.sh check reports STALE; data_futures.version data_stock.version restamped by sqcli; worker bars freshness check; restamp 202609201214
+q: Why does `sqcli` restamp `data_futures.version` and `data_stock.version` on every start, and does `check` care?
+kw: sqx-worker.sh check reports STALE; data_futures.version data_stock.version restamped by sqcli; worker bars freshness check; restamp 202609201214
 tag: 🔬  date: 2026-09-21  see: sqx-drive/driving-a-role
 ---
 # `sqcli` restamps `data_futures.version` and `data_stock.version` on every start; `check` ignores them

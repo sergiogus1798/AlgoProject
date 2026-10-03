@@ -1,5 +1,6 @@
 ---
-q: custom databank column snippet, DatabankColumn java where, compile snippet, column value frozen stored, rewrite column no effect old strategies, new column reads 0, recompute stats verb
+q: Why does rewriting a custom SQX column not change values in existing strategies?
+kw: custom databank column snippet, DatabankColumn java where, compile snippet, column value frozen stored, rewrite column no effect old strategies, new column reads 0, recompute stats verb
 tag: 🔬  date: 2026-09-06  see: sqx-format/sqstats-blob, columns/param-count, columns/edge-decay-retired
 ---
 # A custom column's value is frozen into the .sqx when the result is computed

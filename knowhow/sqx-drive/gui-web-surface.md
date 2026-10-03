@@ -1,5 +1,6 @@
 ---
-q: SQX GUI is Electron + Jetty web app; live progress websocket getWebSocketPort; Remote access disabled; ProgressEngine log progress; tail log for progress percent; control SQX from outside
+q: How does SQX's GUI talk over HTTP and WebSocket, and where do I tail progress (`ProgressEngine` log)?
+kw: SQX GUI is Electron + Jetty web app; live progress websocket getWebSocketPort; Remote access disabled; ProgressEngine log progress; tail log for progress percent; control SQX from outside
 tag: 🔬  date: 2026-09-20  see: sqx-drive/which-endpoint, eng/log-retention
 ---
 # SQX's GUI is HTTP+WebSocket on localhost; for progress, tail the `ProgressEngine` log

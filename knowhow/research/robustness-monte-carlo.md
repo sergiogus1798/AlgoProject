@@ -1,5 +1,6 @@
 ---
-q: Monte Carlo drawdown inflation, backtest drawdown underestimates real, stitched 5th percentile path, how many simulations, 20000 vs 100000, reorder invariant net profit, prop firm drawdown veto, edge dies after 2013
+q: How much drawdown should an account be sized for versus the backtest, and how many sims?
+kw: Monte Carlo drawdown inflation, backtest drawdown underestimates real, stitched 5th percentile path, how many simulations, 20000 vs 100000, reorder invariant net profit, prop firm drawdown veto, edge dies after 2013
 tag: 🔬  date: 2026-09-09  see: perf/monte-carlo-bandwidth
 ---
 # Size the account on ~2× the backtest drawdown; 20,000 sims already decide

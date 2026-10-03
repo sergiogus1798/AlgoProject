@@ -1,5 +1,6 @@
 ---
-q: how was a strategy tested, backtest costs of a strategy, lastSettings.xml task config, settings.xml trading options ExitOnFriday FridayExitTime, MoneyManagement.UseFromStrategy, Symbol Portfolio, HHMM vs seconds, generic builder AND with attributes, logic.conditions misses AND, strategy metadata
+q: How do I find the task a .sqx was last tested with, through `lastSettings.xml`?
+kw: how was a strategy tested, backtest costs of a strategy, lastSettings.xml task config, settings.xml trading options ExitOnFriday FridayExitTime, MoneyManagement.UseFromStrategy, Symbol Portfolio, HHMM vs seconds, generic builder AND with attributes, logic.conditions misses AND, strategy metadata
 tag: 🔬  date: 2026-09-27  see: sqx-format/sqx-zip-members, costs/per-task-costs, sqx-format/rewriting-strategy-logic
 ---
 # A .sqx carries the task it was last tested with: `lastSettings.xml` is that task's XML

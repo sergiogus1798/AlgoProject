@@ -1,5 +1,6 @@
 ---
-q: where is the AlgoWizard block catalogue config.xml; how many blocks; customBlocks.xml owner's blocks; ctemplate config.xml confusion; catalog.json value atoms
+q: Where is SQX's native block catalogue, and where do custom blocks live?
+kw: where is the AlgoWizard block catalogue config.xml; how many blocks; customBlocks.xml owner's blocks; ctemplate config.xml confusion; catalog.json value atoms
 tag: 🔬  date: 2026-09-22  see: authoring/builder-block-switches, authoring/holes-groups-randomcondition
 ---
 # The native block catalogue is `internal/web/SQWIZARD/branding/global/config.xml`; own blocks in `customBlocks.xml`

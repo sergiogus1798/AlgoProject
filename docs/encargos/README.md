@@ -145,7 +145,7 @@ Tres ficheros son compartidos y los tocan varios agentes:
   tools/depmap.py` y se queda lo que salga.
 - **`requirements.txt`: se añade línea, nunca se reordena.**
 - **`ledger/thresholds.yaml`: un módulo nuevo añade sus filas al final de su sección y lee el valor
-  con `ledger:<clave>`** (`knowhow/eng/thresholds-live-in-the-ledger.md`). Mover un umbral es del dueño.
+  con `ledger:<clave>`** (`knowhow/pipeline/thresholds-live-in-the-ledger.md`). Mover un umbral es del dueño.
 
 ## Qué devuelve cada agente
 

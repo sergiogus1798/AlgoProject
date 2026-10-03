@@ -1,5 +1,6 @@
 ---
-q: example project XAU_ISOOS_ejemplo; reference fixture IS OOS two databanks; Results 120 OOS 115; test bench for gate snooping edgeCost perf harvest; acceptance disabled by hand; janitor retires it
+q: What is `XAU_ISOOS_ejemplo` on the custodian and how are its databanks laid out?
+kw: example project XAU_ISOOS_ejemplo; reference fixture IS OOS two databanks; Results 120 OOS 115; test bench for gate snooping edgeCost perf harvest; acceptance disabled by hand; janitor retires it
 tag: 📓  date: 2026-09-26  see: export/databank-metrics-is-oos, sqx-format/strategy-identity, research/post-selection-bias
 ---
 # `XAU_ISOOS_ejemplo` on the custodian is the project's reference fixture: IS and OOS in two databanks

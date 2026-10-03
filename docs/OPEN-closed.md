@@ -790,7 +790,7 @@ recorded it. Until that is found the ledger's "removable" (`sqx/`, 2,000 files, 
 swept, and the guarantee the sweep rests on is broken for every mother that follows. Nothing was
 forced. Find which stage rewrites the file and either hash after it or make it write elsewhere.
 
-**Closed 2026-09-29.** Not a rewrite: `sqx.variants.collect` never hashed its own files. It now records `bytes`+`sha256` and a data-root-relative path (`collect.fingerprint`). Batches collected before today still lack the hash and must be re-collected before `pipeline.cleanup`. `knowhow/eng/collect-never-hashed-its-own-files.md`.
+**Closed 2026-09-29.** Not a rewrite: `sqx.variants.collect` never hashed its own files. It now records `bytes`+`sha256` and a data-root-relative path (`collect.fingerprint`). Batches collected before today still lack the hash and must be re-collected before `pipeline.cleanup`. `knowhow/pipeline/collect-never-hashed-its-own-files.md`.
 
 ## 34. 🟢 `sqx.projects.builder` installs the donor clone before it refuses
 

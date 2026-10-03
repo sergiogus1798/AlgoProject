@@ -1,5 +1,6 @@
 ---
-q: pair SPP IS and SPP OOS permutations for walk forward correlation WFC; SPP grid size coverage; Steps MaxTests shifts saturate grid; birthday collisions
+q: When do two SPP runs pair tuple by tuple for a WFC, and why do they share ~0 at defaults?
+kw: pair SPP IS and SPP OOS permutations for walk forward correlation WFC; SPP grid size coverage; Steps MaxTests shifts saturate grid; birthday collisions
 tag: 🔬  date: 2026-09-19  see: export/spp-parameter-importance, export/sequential-opt-not-wfc, export/spp-export
 ---
 # Two SPP runs pair only when the grid is saturated; at default settings they share ~0 tuples

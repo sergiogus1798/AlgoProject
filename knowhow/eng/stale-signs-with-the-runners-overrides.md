@@ -1,5 +1,6 @@
 ---
-q: false Caducado right after a run; stale cloud results; config_hash vs current_hash with --set overrides; forproject.SET run.symbol; split_mode drop-down makes WFC stale; which hash a result is compared with; stale.fresh
+q: When is a study result considered stale, given the overrides the window's runner may apply?
+kw: false Caducado right after a run; stale cloud results; config_hash vs current_hash with --set overrides; forproject.SET run.symbol; split_mode drop-down makes WFC stale; which hash a result is compared with; stale.fresh
 tag: 🔬  date: 2026-10-01  see: eng/population-signs-a-different-config-than-strategy
 ---
 # A result is stale only when no way the window could run it today signs its hash

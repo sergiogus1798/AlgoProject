@@ -1,10 +1,11 @@
 ---
-q: project.cfx format, cfx zip config.xml task xml, edit project.cfx while running, task output databank, Databank value null, cfx only config.xml rejected, missing task files project dropped, templateFile Project vs StrategyType, project symbol timeframe, main chart of a project
+q: What is inside `project.cfx` and when does SQX rewrite it?
+kw: project.cfx format, cfx zip config.xml task xml, edit project.cfx while running, task output databank, Databank value null, cfx only config.xml rejected, missing task files project dropped, templateFile Project vs StrategyType, project symbol timeframe, main chart of a project
 tag: 🔬  date: 2026-09-27  see: sqx-drive/project-verb, sqx-format/retest-rewrites-sqstats
 ---
 # project.cfx is a ZIP (`config.xml` + `<TaskType>-Task<N>.xml`); SQX rewrites it on save and exit
 Reading is always safe (no SQX needed); `sqx/inspect/dump_project.py` renders one. **Never edit a cfx a
-running instance holds** — silently discarded; use the `-project` API (`knowhow/sqx-drive/`). A task's
+running instance holds** — silently discarded; use the `-project` API (`knowhow/sqx-drive/`). Every Python rewrite goes through `sqx/projects/cfxio.py`: `held()` checks all three installs (port OR a live process; a JVM booting or exiting has no port) on the resolved path, and `write()` swaps a temp zip in with `os.replace`, so a kill never leaves a truncated project. A task's
 real output databank is `<Databank name="Output" value=>` in the task XML, not `<Task title=>`.
 The strategy template is `<StrategyType templateFile=>` in the Build task; `<Project templateFile=>` is dead.
 

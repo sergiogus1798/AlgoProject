@@ -1,5 +1,6 @@
 ---
-q: CrossTF Input has no strategies nothing to test; CrossTF databank empty; No columns to parse from file; Databanks view stuck on Cross TF; empty metrics.csv 1 byte; step 10.5 preparation; who fills CrossTF_Input; CrossTF_Mothers; MC Retest reads Results; Cross Market → Cross TF → MC Retest order; crosstfload
+q: What fills `CrossTF_Input` before step 11, given that no task writes it?
+kw: CrossTF Input has no strategies nothing to test; CrossTF databank empty; No columns to parse from file; Databanks view stuck on Cross TF; empty metrics.csv 1 byte; step 10.5 preparation; who fills CrossTF_Input; CrossTF_Mothers; MC Retest reads Results; Cross Market → Cross TF → MC Retest order; crosstfload
 tag: 🔬  date: 2026-09-29  see: databanks/curating-a-databank, sqx-drive/start-before-databanks-load, sqx-drive/custom-timeframe-h12
 ---
 # `CrossTF_Input` is written by no task: something must fill it on disk before step 11, or Cross TF tests nothing

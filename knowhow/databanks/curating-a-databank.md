@@ -1,5 +1,6 @@
 ---
-q: remove strategies from a databank, curate databank apply verdict, strategies= selector not working, action=move moves whole databank, delete rejected strategies, create destination databank, rejected record csv
+q: How do I curate a databank: move or delete .sqx files with the install stopped, since `strategies=` never works?
+kw: remove strategies from a databank, curate databank apply verdict, strategies= selector not working, action=move moves whole databank, delete rejected strategies, create destination databank, rejected record csv
 tag: 🔬  date: 2026-09-23  see: databanks/databank-verbs, databanks/no-spaces-in-names, sqx-format/strategy-identity
 ---
 # Curate by moving/deleting .sqx files with the install stopped; the CLI `strategies=` selector never works

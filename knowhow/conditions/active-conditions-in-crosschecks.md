@@ -1,5 +1,6 @@
 ---
-q: where active acceptance conditions live in a task; silence acceptance of a study; crosschecks.py silenced count zero; WalkForwardMatrix element vs WalkForwardOptimization; matrix cells Param1 Param2
+q: Where do a donor task's active conditions sit, and how to silence them all?
+kw: where active acceptance conditions live in a task; silence acceptance of a study; crosschecks.py silenced count zero; WalkForwardMatrix element vs WalkForwardOptimization; matrix cells Param1 Param2
 tag: 🔬  date: 2026-09-23  see: conditions/wf-type, conditions/wfm-acceptance, conditions/mc-retest-task
 ---
 # Every active condition of a donor task sits inside `<CrossChecks>`

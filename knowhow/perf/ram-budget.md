@@ -1,5 +1,6 @@
 ---
-q: RAM budget SQX installs vs Python, -Xmx per install master W1 W2, jstat -gc live set vs RSS, JDK tools in install j64/bin, -Xms idle worker, PC-A PC-B, how much heap does SQX need
+q: How is the RAM split across the SQX installs and how should heaps be sized?
+kw: RAM budget SQX installs vs Python, -Xmx per install master W1 W2, jstat -gc live set vs RSS, JDK tools in install j64/bin, -Xms idle worker, PC-A PC-B, how much heap does SQX need
 tag: 🔬  date: 2026-09-23  see: perf/server-cores-and-ram, perf/smt-in-sqx-retest
 ---
 # RAM budget: W2 -Xmx80g + all cores; size heaps from jstat's live set, not RSS

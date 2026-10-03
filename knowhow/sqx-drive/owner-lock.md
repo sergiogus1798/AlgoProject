@@ -1,10 +1,11 @@
 ---
-q: owner lock on a worker; OWNER file; who started this worker; stop refuses different holder; --force stop; --owner flag; SQX_OWNER; CLAUDE_CODE_SESSION_ID holder; stale lock cleared; is the 24 h guard gone; does the lock replace released.json
-tag: 🔬  date: 2026-09-29  see: sqx-drive/window-advances-workflow, sqx-drive/export-after-every-stop, databanks/sync-deletes-unloaded-files
+q: How does the real owner lock written by `bin/sqx-worker.sh` work, and what does `advance.busy` read?
+kw: owner lock on a worker; OWNER file; who started this worker; stop refuses different holder; --force stop; --owner flag; SQX_OWNER; CLAUDE_CODE_SESSION_ID holder; stale lock cleared; is the 24 h guard gone; does the lock replace released.json
+tag: 🔬  date: 2026-10-03  see: sqx-drive/worker-process-lifecycle, ui/window-advances-workflow, sqx-drive/export-after-every-stop, databanks/sync-deletes-unloaded-files
 ---
 # `bin/sqx-worker.sh` writes a real owner lock (OPEN.md §32); `advance.busy` reads it, not a project's mtime
-Fix for §32 (owner, 2026-09-29): `start` writes `<install>/user/log/OWNER` (`{holder, pid, since}`);
-`stop` from a different holder refuses unless `--force`; a dead PID with a down port clears it.
+Fix for §32 (owner, 2026-09-29): `start` writes `<install>/user/log/OWNER` (`{holder, pid, since}`) at
+launch; `stop` from a different holder refuses unless `--force`; a dead PID with a down port clears it.
 Holder = `$CLAUDE_CODE_SESSION_ID`, else `--owner`/`$SQX_OWNER`, else `"owner"`. One implementation,
 `bin/sqx-lock.sh`, sourced by `bin/sqx-worker.sh`; `core.worker.start/stop` already ran through it.
 `advance.busy` (`core.worker.lock`, read-only) names the holder; §83's 24 h "touched" refusal is
@@ -12,6 +13,9 @@ gone. **Does not replace `released.json`**: the lock is gone once the worker sto
 marker covers the minutes after.
 
 ## Evidence
+- 🔬 2026-10-03: the lock is written when sqcli is launched, no longer once the port answers — a
+  booting worker is held, a start that fails removes it, a `stop` that fails keeps it
+  (`sqx-drive/worker-process-lifecycle`, `tests/test_worker_lifecycle.py`).
 - 🔬 A worker with no OWNER file (started by a version of `bin/sqx-worker.sh` before this lock
   existed) stops exactly as before — `refuse_stop_if_held` returns immediately when the file is
   absent (`tests/test_worker_lock.py::test_no_lock_is_never_refused`). A run already in flight when

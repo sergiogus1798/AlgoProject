@@ -1,5 +1,6 @@
 ---
-q: Decaimiento IS OOS sharpe_is empty retention empty; decay study one databank; workflow IS and OOS in two databanks; --is-databank; built_from OOS input Results
+q: Why are sharpe_is and retention empty in the decay study when run on a workflow's OOS databank?
+kw: Decaimiento IS OOS sharpe_is empty retention empty; decay study one databank; workflow IS and OOS in two databanks; --is-databank; built_from OOS input Results
 tag: 🔬  date: 2026-09-30  see: sqx-drive/study-cli-defaults-to-master
 ---
 # Decay needs the build and its retest: in a workflow no single databank holds IS and OOS

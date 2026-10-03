@@ -1,5 +1,6 @@
 ---
-q: startOnlyTask does nothing Total tested 0; action=start runs whole chain; inactive task active=false SKIPPED; Project finished in log; second start does nothing needs stop; retestSelected missing retests nothing; DeleteFailedStrategies in harness
+q: How do I run one workflow step headless: stop, then start with only its tasks `active="true"`?
+kw: startOnlyTask does nothing Total tested 0; action=start runs whole chain; inactive task active=false SKIPPED; Project finished in log; second start does nothing needs stop; retestSelected missing retests nothing; DeleteFailedStrategies in harness
 tag: 🔬  date: 2026-09-25  see: sqx-drive/project-verb, sqx-drive/spp-task-type
 ---
 # Run a step with `stop` then `start`, only its tasks `active="true"`; never `startOnlyTask`

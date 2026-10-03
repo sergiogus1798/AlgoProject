@@ -1,5 +1,6 @@
 ---
-q: master conductor custodian roles; why two workers; custodian sync rule only status between start and collect; which install exports a databank; opening a worker GUI syncs; core split elastic coreUsage
+q: What are the three SQX installs (master, conductor W1, custodian W2), their ports and what each is for?
+kw: master conductor custodian roles; why two workers; custodian sync rule only status between start and collect; which install exports a databank; opening a worker GUI syncs; core split elastic coreUsage
 tag: 🔬  date: 2026-09-23  see: sqx-drive/install-ports-and-heap, databanks/sync-deletes-unloaded-files, sqx-drive/driving-a-role
 ---
 # One master + two headless workers: conductor W1 answers, custodian W2 holds the one long job

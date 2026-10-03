@@ -1,5 +1,6 @@
 ---
-q: which trade export columns can be dropped; is an export cross-market; Symbol column present on one-market exports; Ticket Balance Time in trade Comment Symbol derivable; Close type needed; trade parquet packing size speed memory; categorical columns
+q: Which of the 16 trade-export columns are needed and which can be derived?
+kw: which trade export columns can be dropped; is an export cross-market; Symbol column present on one-market exports; Ticket Balance Time in trade Comment Symbol derivable; Close type needed; trade parquet packing size speed memory; categorical columns
 tag: 🔬  date: 2026-09-26  see: export/orderstocsv-schema, export/storage-format
 ---
 # Of 16 trade columns, 12 carry everything; Ticket/Time in trade/Comment/Symbol are derivable

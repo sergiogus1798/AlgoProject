@@ -1,5 +1,6 @@
 ---
-q: session missing for asset builder refuses; unify_sessions; borrow session from another asset; --session-from; builder finds session automatically; --symbol does not switch market; GBPUSD AUDUSD USDCAD no session; Asia London New York overlap hours
+q: How is a session and its feed assigned to a new asset's project?
+kw: session missing for asset builder refuses; unify_sessions; borrow session from another asset; --session-from; builder finds session automatically; --symbol does not switch market; GBPUSD AUDUSD USDCAD no session; Asia London New York overlap hours
 tag: 🔬  date: 2026-09-27  see: authoring/donor-clone-market, costs/per-task-costs, export/feed-clock-timezones
 ---
 # A session and its feed are borrowed whole from a project SQX wrote — never invented

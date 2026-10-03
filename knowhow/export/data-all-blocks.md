@@ -1,5 +1,6 @@
 ---
-q: split data=all export into blocks; WFM cells in one CSV; crossTF blocks interleaved not contiguous; Ticket cumcount; assign trade to walk-forward step runFrom runTo; torn_blocks
+q: How do I split a `data=all` export into its blocks when they are not contiguous?
+kw: split data=all export into blocks; WFM cells in one CSV; crossTF blocks interleaved not contiguous; Ticket cumcount; assign trade to walk-forward step runFrom runTo; torn_blocks
 tag: 🔬  date: 2026-09-30  see: export/data-all-crossmarket, export/wfm-export
 ---
 # `data=all` blocks are not reliably contiguous — split by the separator that fits the kind

@@ -41,13 +41,16 @@ derive:
   atr: 20
   mean: 20
   channels: [20, 55, 100, 200]
+  close_channels: [50, 150, 200]   # highest and lowest CLOSE of the bars before: the trading-range
+                                   # break of the literature compares prices, not highs (BRK-60)
   narrow: 7
 
 # The wider frame every bar may read (higher.py), periods in DAYS: the D1 bars are built from the
 # cell's own bars and a bar only ever sees the days already closed (never its own day).
 higher:
   momentum: [1, 5, 9, 20, 30, 40, 60, 120, 200, 252]   # D1 close against the close N days earlier
-  means: [5, 20, 50, 200]          # D1 close against its mean: 200 the trend filter, 5 an exit
+  means: [5, 20, 50, 150, 200]     # D1 close against its mean: 200 the trend filter, 5 an exit,
+                                   # 150 the moving-average rule of TR-65
   channels: [1, 5, 10, 20, 50, 55, 85]   # highest high / lowest low of the last N closed days
   atr: 20                          # D1 ATR: the ruler of a trailing exit counted in days
   vol: [10, 100]                   # expanding or quiet: D1 ATR(10) / D1 ATR(100), above or below 1
@@ -110,6 +113,8 @@ sweep:
 #   horizon  a lookback of weeks (bars up to 200, or D1 windows)       hold    the same entry held longer
 #   exit     the same entry with a target or trailing exit             context a D1 trend filter
 # `lit` names the entries of AlgoData/research/literature/edges-2026-10-02.yaml a measure tests.
+# The literature scout's entries (scout-<day>.yaml there) are not listed below: `report` appends
+# each entry's `translation.measures` after these rows (literature.py), tagged `literature`.
 #   regime   a D1 volatility-regime filter                            literature  a rule of the literature file (`lit`: its id there)
 # fn `rule` (measure/rules.py): enter / when / leave are keys of rules.CONDITIONS, one position at
 # a time, fills at the next open; `cap` in bars of the cell, `trail` in ATRs of `ruler` (bar | day).
@@ -145,7 +150,7 @@ measures:
   - {name: best_band,      family: sesion,      fn: band,           args: {}, clock: true}
   - {name: best_weekday,   family: sesion,      fn: weekday,        args: {}, clock: true}
   - {name: band_range,     family: sesion,      fn: band_range,     args: {}, clock: true}
-  # ---- widening of 2026-10-02 (audit: knowhow/research/market-profile-blind-spots.md) ----
+  # ---- widening of 2026-10-02 (audit: knowhow/market-profile/market-profile-blind-spots.md) ----
   - {name: look100_hold24,       family: tendencia, tag: horizon, fn: lookback, args: {L: 100, H: 24}}
   - {name: look200_hold48,       family: tendencia, tag: horizon, fn: lookback, args: {L: 200, H: 48}}
   - {name: tsmom_d20_run,        family: tendencia, tag: horizon, lit: "TR-02", fn: rule, args: {enter: mom_d20, leave: "not:mom_d20"}}

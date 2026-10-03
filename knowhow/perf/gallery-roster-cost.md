@@ -1,5 +1,6 @@
 ---
-q: gallery slow, /api/projects/all 12 seconds, roster cost, find.roster lru_cache 64 thrash, count strategies of every project, identity hashing cost per strategy, total strategies per project
+q: How much does counting every project's distinct strategies cost, and how should it be cached?
+kw: gallery slow, /api/projects/all 12 seconds, roster cost, find.roster lru_cache 64 thrash, count strategies of every project, identity hashing cost per strategy, total strategies per project
 tag: 🔬  date: 2026-09-27  see: sqx-format/strategy-identity, sqx-format/project-cfx
 ---
 # Counting every project's distinct strategies costs ~12 s once; keep the count cached per folder mtime

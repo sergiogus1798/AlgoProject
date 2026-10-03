@@ -1,10 +1,11 @@
 ---
-q: auto export after SQX run; export when task finishes; crossmarket needs export of the retest; afterrun; ALGO_NO_EXPORT; worker.stop export; owner lock OWNER file; puede ser de otra sesión; headless claude authoring template from window; MCR_All ingest stale; step 14 reads old ingest; export_spp export_wfm after run; 15 min quiet guard own runs; every stop re-exports everything; SQX resave changes mtime; zip CRC fingerprint sources.sig
-tag: 🔬  date: 2026-10-01  see: sqx-drive/window-advances-workflow, sqx-drive/owner-lock, databanks/sync-deletes-unloaded-files
+q: What does `bin/sqx-worker.sh stop` export from the install's databanks, and what decides that the worker is busy?
+kw: auto export after SQX run; export when task finishes; crossmarket needs export of the retest; afterrun; ALGO_NO_EXPORT; worker.stop export; owner lock OWNER file; puede ser de otra sesión; headless claude authoring template from window; MCR_All ingest stale; step 14 reads old ingest; export_spp export_wfm after run; 15 min quiet guard own runs; every stop re-exports everything; SQX resave changes mtime; zip CRC fingerprint sources.sig
+tag: 🔬  date: 2026-10-01  see: ui/window-advances-workflow, sqx-drive/owner-lock, databanks/sync-deletes-unloaded-files
 ---
 # Every worker stop exports the install's stale databanks; the 24 h guard is gone, the lock decides busy now
 `bin/sqx-worker.sh stop` runs `ui.daemon.loader.afterrun --role R`: per databank of the project the
-launcher marked (`workerguard.mark`; no mark → every Test_/Trade_ project) the
+launcher marked (`workerguard.mark`; no mark → every Test_/Trade_/Research_ project) the
 pieces (metrics → trades → harvest; no trades for the 8 MCR databanks), then `afterrun.EXTRA` (MC
 ingest `MCR_All` `<day>-N`, `export_spp`, `export_wfm`). Stale is by content: `.sources.sig` reads
 every XML entry order-free (SQX's resave reshuffles SQStats in settings.xml and the MC results).

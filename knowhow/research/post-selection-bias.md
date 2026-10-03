@@ -1,5 +1,6 @@
 ---
-q: decay measured after OOS filter, selection bias, strategies improve out of sample?, Sharpe retention 1.00 vs 0.45, gate reads inert on selected population, monkey p-values selected sample, generator decay
+q: Why is any statistic measured after filtering on the OOS biased?
+kw: decay measured after OOS filter, selection bias, strategies improve out of sample?, Sharpe retention 1.00 vs 0.45, gate reads inert on selected population, monkey p-values selected sample, generator decay
 tag: 🔬  date: 2026-09-23  see: research/gates-are-owner-decisions, research/random-entry-nulls, research/is-proxies-top-decile
 ---
 # A filter on the OOS spends the OOS

@@ -1,5 +1,6 @@
 ---
-q: SPP headless on a worker progress; SPP silent no log is it hung; SPP memory cost; optprofile.read permutations count wrong; staged strategy already has optimizationProfile.bin; dontStoreOP3DChartsData
+q: Does a headless SPP persist its results, and how do I judge its progress (JVM RSS, one per install)?
+kw: SPP headless on a worker progress; SPP silent no log is it hung; SPP memory cost; optprofile.read permutations count wrong; staged strategy already has optimizationProfile.bin; dontStoreOP3DChartsData
 tag: 🔬  date: 2026-09-22  see: sqx-drive/spp-task-type, sqx-format/optimization-profile-bin
 ---
 # A headless SPP persists fine; judge progress by JVM RSS, one SPP per install

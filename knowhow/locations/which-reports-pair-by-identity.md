@@ -1,5 +1,6 @@
 ---
-q: pair a study's result with a strategy of another databank; mcRetest crossTF identity equals Results identity; pre_mcr_identity; which reports carry identity; batch estudios wfc cscv cloud identity None; join reports across databanks; identity after the databank left every install; identify from harvest; structural atrCalculator lote estrategias not under reports; two passes same mother
+q: Which studies and reports resolve strategy identity back to a kept .sqx, and which may not?
+kw: pair a study's result with a strategy of another databank; mcRetest crossTF identity equals Results identity; pre_mcr_identity; which reports carry identity; batch estudios wfc cscv cloud identity None; join reports across databanks; identity after the databank left every install; identify from harvest; structural atrCalculator lote estrategias not under reports; two passes same mother
 tag: 🔬  date: 2026-09-30  see: locations/crossmarket-report-signs-no-identity, databanks/curate-verdict-identity-per-databank
 ---
 # Studies resolve identity installs → cosecha → kept .sqx, so a retired project still signs; crossmarket and the batch studies still may not

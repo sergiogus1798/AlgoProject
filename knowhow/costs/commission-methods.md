@@ -1,5 +1,6 @@
 ---
-q: SQX commission methods SizeBased PercentageBased PerTrade None Stockpicker; commission per side or round turn; computeCommissionsOnOpen; issue 26 percentage commission once or twice
+q: How many times and on which price does SQX's PercentageBased commission charge a trade?
+kw: SQX commission methods SizeBased PercentageBased PerTrade None Stockpicker; commission per side or round turn; computeCommissionsOnOpen; issue 26 percentage commission once or twice
 tag: 🔬  date: 2026-09-27  see: costs/per-task-costs, costs/where-the-spread-is, export/orderstocsv-schema
 ---
 # `PercentageBased` is charged ONCE per trade, on the open price: `(pct/100) × size × openPrice × pointValue`

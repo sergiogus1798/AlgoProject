@@ -1,5 +1,6 @@
 ---
-q: equity.json splits windows two months early, leg curve starts before segment, warm-up zeros dailyEquity, equity.parquet duplicate dates, overlapping legs, oos2 boundary 2022-11-03, CSCV windows split leak, mother's own curve origin P00000, main market missing from equity_markets.parquet
+q: Why does each leg's curve open about two months before its segment, with zero P&L?
+kw: equity.json splits windows two months early, leg curve starts before segment, warm-up zeros dailyEquity, equity.parquet duplicate dates, overlapping legs, oos2 boundary 2022-11-03, CSCV windows split leak, mother's own curve origin P00000, main market missing from equity_markets.parquet
 tag: 🔬  date: 2026-09-26  see: sqx-format/daily-equity-bin
 ---
 # Each leg's curve opens ~2 months before its segment, with zero P&L; `equity.json` splits are those starts

@@ -1,5 +1,6 @@
 ---
-q: No space left on device /tmp; pwd write error; /tmp full; Claude scratchpads never deleted; /tmp/claude-1000 size; clean old sessions; where does project temp go; tempfile dir
+q: Why does the 3.9 GB /tmp partition fill up, and what frees it?
+kw: No space left on device /tmp; pwd write error; /tmp full; Claude scratchpads never deleted; /tmp/claude-1000 size; clean old sessions; where does project temp go; tempfile dir
 tag: 🔬  date: 2026-10-02  see: crontab-long-tmpdir-path, log-retention
 ---
 # /tmp is a 3.9 GB partition, and ended Claude sessions never free their scratchpads

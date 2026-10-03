@@ -1,5 +1,6 @@
 ---
-q: plateau membership n=1, neighbourhood radius 2 too tight, cloud ensemble one variant, marketSurfaces region empty, how many variants inside the plateau
+q: Why does a radius-2 Chebyshev plateau box across six parameters hold only the mother?
+kw: plateau membership n=1, neighbourhood radius 2 too tight, cloud ensemble one variant, marketSurfaces region empty, how many variants inside the plateau
 tag: 🔬  date: 2026-09-30  see: research/cloud-ranking-stability
 ---
 # A Chebyshev box of radius 2 across six live parameters usually holds only the mother

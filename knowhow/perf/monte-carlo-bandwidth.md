@@ -1,5 +1,6 @@
 ---
-q: Monte Carlo slow, memory bandwidth bound, max_workers, tiles tile_bytes 4 MB, float32 paths float64 accumulator, chunk bytes budget, parent single-threaded share, n_sims 20000 vs 100000, compare versions without seed
+q: What limits Monte Carlo speed, and how should its memory use be budgeted?
+kw: Monte Carlo slow, memory bandwidth bound, max_workers, tiles tile_bytes 4 MB, float32 paths float64 accumulator, chunk bytes budget, parent single-threaded share, n_sims 20000 vs 100000, compare versions without seed
 tag: 🔬  date: 2026-09-20  see: perf/server-cores-and-ram, perf/python-parallelism, research/robustness-monte-carlo
 ---
 # Monte Carlo is memory-bandwidth bound: budget in bytes, tile to L3 (4 MB), float32 paths

@@ -1,5 +1,6 @@
 ---
-q: exported bars wider than backtest window, random-entry null samples outside backtest, envelope.window slice first entry last exit, market drift mu_m wrong span
+q: Why must bars be sliced to the backtest's own span before any null or benchmark?
+kw: exported bars wider than backtest window, random-entry null samples outside backtest, envelope.window slice first entry last exit, market drift mu_m wrong span
 tag: 🔬  date: 2026-09-15  see: research/hardest-null, research/random-entry-nulls, research/zero-duration-trades
 ---
 # Slice the bars to the backtest's own span before any null or benchmark

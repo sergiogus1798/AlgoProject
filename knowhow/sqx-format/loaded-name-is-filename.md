@@ -1,5 +1,6 @@
 ---
-q: strategy name in databank after load, filename vs StrategyName, collision rename (1), P00000(1), join key variant_id sqx_name
+q: How does SQX name a loaded strategy, and what happens on a filename collision?
+kw: strategy name in databank after load, filename vs StrategyName, collision rename (1), P00000(1), join key variant_id sqx_name
 tag: 🔬  date: 2026-09-22  see: sqx-format/writing-a-variant, sqx-format/strategy-identity
 ---
 # SQX names a loaded strategy after its FILE; on collision it appends `(N)`

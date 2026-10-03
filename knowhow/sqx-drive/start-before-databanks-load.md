@@ -1,5 +1,6 @@
 ---
-q: No strategies to retest; task started with empty input; Syncing databank(s) from files; first -project command loads databanks; action=start too early; WFM finished in seconds; watcher lost Starting project line; Error while running project; NullPointerException ProjectGlobalLog addAcceptedStats; run waits forever
+q: Why does a task started while SQX is still loading its databanks retest nothing?
+kw: No strategies to retest; task started with empty input; Syncing databank(s) from files; first -project command loads databanks; action=start too early; WFM finished in seconds; watcher lost Starting project line; Error while running project; NullPointerException ProjectGlobalLog addAcceptedStats; run waits forever
 tag: 🔬  date: 2026-09-29  see: sqx-drive/project-log-written-in-pieces, sqx-drive/export-after-every-stop
 ---
 # A task started while SQX is still loading its databanks retests nothing

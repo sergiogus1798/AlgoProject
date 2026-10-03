@@ -1,6 +1,7 @@
 ---
-q: FTMO Hantec real commission per lot from deal history, swap worst case funded accounts, crude oil swap backwardation UKOIL USOIL, FTMO spread oil ticks, swap points unit MT5 vs SQX tickStep, swap differs per contract size
-tag: 🔬  date: 2026-10-01  see: costs/swap-types, costs/commission-per-broker, eng/mt5-verify-clock-zones
+q: Which commission and swap should funded-account (FTMO, Hantec) simulations use, and where do they come from?
+kw: FTMO Hantec real commission per lot from deal history, swap worst case funded accounts, crude oil swap backwardation UKOIL USOIL, FTMO spread oil ticks, swap points unit MT5 vs SQX tickStep, swap differs per contract size
+tag: 🔬  date: 2026-10-01  see: costs/swap-types, costs/commission-per-broker, mt5/mt5-verify-clock-zones
 ---
 # Funded accounts: commission confirmed from real deals; swap = worst of FTMO and Hantec, live
 - Commission from the accounts' own deals: forex 2.50 $/lot/side at both (5 $ round trip); indices 0 at both; gold FTMO 3 $/lot/side at ~4,150 (≈0.0014 % round trip), Hantec 2.50 $/lot/side.

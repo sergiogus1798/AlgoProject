@@ -1,5 +1,6 @@
 ---
-q: how SQX computes ATR; Wilder or simple mean; ATR-based stop loss formula; ATRBasedValue getATRValue shift 1 round 6; reproduce the ATR SQX used for a stop; calibrate.atr is a rolling mean; Close type SL
+q: How does SQX compute ATR and an ATR-based stop distance?
+kw: how SQX computes ATR; Wilder or simple mean; ATR-based stop loss formula; ATRBasedValue getATRValue shift 1 round 6; reproduce the ATR SQX used for a stop; calibrate.atr is a rolling mean; Close type SL
 tag: 🔬  date: 2026-09-26  see: export/fill-and-pricing, sqx-format/grafting-a-stop-loss
 ---
 # SQX's ATR is Wilder with an averaged start; the stop is X · round(ATR(20), 6) of the last closed bar

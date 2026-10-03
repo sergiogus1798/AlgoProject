@@ -1,5 +1,6 @@
 ---
-q: is the SQX command API authenticated; listens on 0.0.0.0; firewall ports; drive worker over LAN
+q: Is the SQX command API authenticated, and who can reach it on the network?
+kw: is the SQX command API authenticated; listens on 0.0.0.0; firewall ports; drive worker over LAN
 tag: 🔬  date: 2026-09-21  see: sqx-drive/three-install-topology
 ---
 # The SQX command API listens on 0.0.0.0 with no authentication

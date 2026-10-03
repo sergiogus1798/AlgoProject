@@ -1,5 +1,6 @@
 ---
-q: how long does a Walk-Forward Matrix take on a worker, end to end? WFM progress, status, export_wfm --role, step 19 cost
+q: How long does a Walk Forward Matrix take headless in a custom project, and can its progress be seen?
+kw: how long does a Walk-Forward Matrix take on a worker, end to end? WFM progress, status, export_wfm --role, step 19 cost
 tag: 🔬  date: 2026-09-25  see: export/wfm-export, conditions/wfm-acceptance, sqx-format/wfm-in-settings-xml
 ---
 # A WFM runs headless in a custom project: ~4-5 min per mother, and no progress signal

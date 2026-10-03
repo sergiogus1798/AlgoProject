@@ -1,5 +1,6 @@
 ---
-q: monte carlo retest results in sqx, MonteCarloRetest_Simulation Orders.bin format, MonteCarloRetest_Results.xml confidence levels LevelStat, MCUseFullSample, MC retest method config lastSettings, one MC result per sqx
+q: What does an MC Retest store per simulation: the P/L vector and which metric quantile levels?
+kw: monte carlo retest results in sqx, MonteCarloRetest_Simulation Orders.bin format, MonteCarloRetest_Results.xml confidence levels LevelStat, MCUseFullSample, MC retest method config lastSettings, one MC result per sqx
 tag: 🔬  date: 2026-09-17  see: sqx-format/mc-retest-reconstruction, conditions/mc-retest-task, costs/mc-retest-ranges
 ---
 # MC Retest stores each simulation's P/L vector only, plus 11 per-metric quantile levels

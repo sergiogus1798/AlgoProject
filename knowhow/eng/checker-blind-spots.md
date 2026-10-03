@@ -1,5 +1,6 @@
 ---
-q: checks.py absolute path in bin/*.sh, checker input files, hardcoded_paths, mapfile process substitution exit status lost, bash KeyError three lines
+q: Why does checks.py miss absolute paths in bin/*.sh, and why does mapfile < <(...) lose the exit status?
+kw: checks.py absolute path in bin/*.sh, checker input files, hardcoded_paths, mapfile process substitution exit status lost, bash KeyError three lines
 tag: 🔬  date: 2026-09-21  see: eng/windows-portability, eng/moving-module-into-layer
 ---
 # A checker only sees the files it is handed; `mapfile < <(...)` drops the exit status

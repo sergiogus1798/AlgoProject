@@ -1,5 +1,6 @@
 ---
-q: -databank action count list export which is read-only, count destroys load, verify a load, databank verbs direction memory disk, synctofiles syncfromfiles, clear deletes files, load async, syncfromfiles adds duplicates
+q: Which `-databank` verbs move data from files to memory or the reverse, and which is a safe reader?
+kw: -databank action count list export which is read-only, count destroys load, verify a load, databank verbs direction memory disk, synctofiles syncfromfiles, clear deletes files, load async, syncfromfiles adds duplicates
 tag: 🔬  date: 2026-10-01  see: databanks/sync-deletes-unloaded-files, databanks/curating-a-databank, sqx-drive/live-chain-without-restart
 ---
 # `-databank` verbs move data in opposite directions; only `action=export` is a safe reader

@@ -1,5 +1,6 @@
 ---
-q: does a RandomCondition need a group; empty #Group# samples all conditions; AND RandomCondition plus fixed block; block not in any group unreachable from hole; Keltner condition not in group; empty group RandConditions silent; vocabulary.py diff installs
+q: Can a template hole reference a block directly, or only a group?
+kw: does a RandomCondition need a group; empty #Group# samples all conditions; AND RandomCondition plus fixed block; block not in any group unreachable from hole; Keltner condition not in group; empty group RandConditions silent; vocabulary.py diff installs
 tag: 🔬  date: 2026-09-22  see: authoring/builder-block-switches, authoring/block-vocabulary
 ---
 # A hole references a group, never a block; an ungrouped block works only as a fixed block

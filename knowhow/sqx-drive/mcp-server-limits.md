@@ -1,5 +1,6 @@
 ---
-q: what can the sqx MCP server do; load a project into the running master; project missing from list silently; config.xml references missing task files; Infinox_SP500ft_H4_HighPrecision; graft_tasks
+q: What can SQX's MCP server on the master do, and why does a project that fails to load vanish silently?
+kw: what can the sqx MCP server do; load a project into the running master; project missing from list silently; config.xml references missing task files; Infinox_SP500ft_H4_HighPrecision; graft_tasks
 tag: 🔬  date: 2026-09-21  see: sqx-drive/which-endpoint, sqx-format/project-cfx
 ---
 # MCP on the master is read-only plus run/stop; a project that fails to load vanishes silently

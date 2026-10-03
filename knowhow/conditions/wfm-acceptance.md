@@ -1,5 +1,6 @@
 ---
-q: Walk Forward Matrix acceptance decoded; where WFM conditions live; cell score robustness thresholdPct robCombRows robCombCols robMinComb; subresult 30 31 32 33 Stability Score WFScore; WFM failed strategy kept with DeleteFailedStrategies false FiltersResultFailedReason; calibration of SQX default WFM conditions; stability score specials 31 32 33 recomputed core.wfmobjectives; recommended combination
+q: Which WFM setting decides acceptance, and how is a cell's score computed?
+kw: Walk Forward Matrix acceptance decoded; where WFM conditions live; cell score robustness thresholdPct robCombRows robCombCols robMinComb; subresult 30 31 32 33 Stability Score WFScore; WFM failed strategy kept with DeleteFailedStrategies false FiltersResultFailedReason; calibration of SQX default WFM conditions; stability score specials 31 32 33 recomputed core.wfmobjectives; recommended combination
 tag: 🔬  date: 2026-10-01  see: conditions/wf-type, export/wfm-export, conditions/active-conditions-in-crosschecks
 ---
 # WFM acceptance: only `<WalkForwardMatrix><AcceptanceSettings><Conditions>` counts; cell score = % active conditions met

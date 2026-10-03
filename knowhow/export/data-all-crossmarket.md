@@ -1,5 +1,6 @@
 ---
-q: export cross-market retest trades; data=all additional markets one CSV per strategy; Symbol separator; where OOS starts in retest export; missing market file; export_retest --limit sample; long-only fleet
+q: How does `data=all` write additional markets into a strategy's CSV, and how do I split them?
+kw: export cross-market retest trades; data=all additional markets one CSV per strategy; Symbol separator; where OOS starts in retest export; missing market file; export_retest --limit sample; long-only fleet
 tag: 🔬  date: 2026-09-21  see: export/data-all-blocks, export/fill-and-pricing, conditions/retest-additional-markets, export/export-retest-batch-tag
 ---
 # `data=all` writes main + every AdditionalMarket into one CSV per strategy; `Symbol` splits them

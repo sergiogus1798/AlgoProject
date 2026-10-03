@@ -1,5 +1,6 @@
 ---
-q: SQX coreUsage how many threads for a retest, 48 vs 95 threads, SMT in SQX, idle sqcli memory, jstat jcmd AttachNotSupportedException, sqcli loads strategies lazily count Records 0, databank load folder, loadconfig name=, Retest status Total tested missing, two sessions on the custodian
+q: How many threads does an SQX retest scale to on this server?
+kw: SQX coreUsage how many threads for a retest, 48 vs 95 threads, SMT in SQX, idle sqcli memory, jstat jcmd AttachNotSupportedException, sqcli loads strategies lazily count Records 0, databank load folder, loadconfig name=, Retest status Total tested missing, two sessions on the custodian
 tag: 🔬  date: 2026-09-23  see: perf/server-cores-and-ram, perf/ram-budget, sqx-drive/worker-process-lifecycle
 ---
 # An SQX retest scales to the 48 physical cores; 95 threads add only 2–10 %
@@ -30,5 +31,5 @@ Custodian `SQX_w2` (`-Xmx48g`), throwaway project `bench_smt`: Retest without SP
 Collision (📓 `SQX_w2/user/log/StrategyQuant/log_2026_09_23.log` 07:20–07:37): benchmark `stop`s (07:26:21, 07:27:11, 07:27:42, 07:29:19, 07:30:28,
 07:31:37, 07:32:58) killed another session's cost bisection runs (`bisect_sin_costes`, `bis_*`, `chat_keltner_M30`, `ctrl_*`), which ran at a changed `coreUsage`.
 A `start` at 07:31:41 opened port 5050 from `SQX_w2` and died with `Database may be already in use: Locked by another` (two processes, one H2).
-No tool enforces "don't talk to the custodian while it works": `execute.awake()` respects a live instance, `stop` does not. Pending in `OPEN.md`:
+No tool enforces "don't talk to the custodian while it works": `execute.awake()` respects a live instance (since 2026-10-03 it refuses one whose `OWNER` lock names another holder, before any `clear`/`load`), `stop` does not. Pending in `OPEN.md`:
 owner lock in `bin/sqx-worker.sh` (`start` records who; another's `stop` refuses without `--force`).

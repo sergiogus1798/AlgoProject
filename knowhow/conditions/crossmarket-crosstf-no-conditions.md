@@ -1,5 +1,6 @@
 ---
-q: cross-market cross-timeframe check acceptance conditions empty; crossmarket.conditions crosstf.conditions _build.yaml; silence whole task; Setup missing dateFrom fails task; crossTF block names LOM
+q: Why do cross-market and crossTF checks run with zero SQX conditions?
+kw: cross-market cross-timeframe check acceptance conditions empty; crossmarket.conditions crosstf.conditions _build.yaml; silence whole task; Setup missing dateFrom fails task; crossTF block names LOM
 tag: 🔬  date: 2026-09-24  see: conditions/retest-additional-markets, conditions/active-conditions-in-crosschecks
 ---
 # Cross-market / crossTF checks run with zero conditions; the verdict is taken in Python

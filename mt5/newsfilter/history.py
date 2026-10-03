@@ -19,7 +19,7 @@ def server_shift(s: dict) -> pd.Timedelta:
     """Server clock minus UTC right now, to the quarter hour.
 
     The calendar stamps EVERY release, past ones included, at UTC plus today's offset — not the
-    offset the server had that day (knowhow/eng/mt5-calendar-history-clock.md). Subtracting
+    offset the server had that day (knowhow/mt5/mt5-calendar-history-clock.md). Subtracting
     today's offset therefore gives UTC for the whole history, in summer and in winter.
     """
     now = terminal.call(s, "get_time_information", {})

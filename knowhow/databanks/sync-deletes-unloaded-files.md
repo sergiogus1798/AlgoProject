@@ -1,5 +1,6 @@
 ---
-q: why SQX deletes strategies, databank sync removes sqx files, ClearDatabanks wipes, auto-sync every hour, closing SQX deletes strategies, databank flow at risk, partial load pruned, Cannot process strategy InterruptedException, strategy lost at stop, two syncs at once
+q: Why does a databank sync delete .sqx files that were not loaded in memory?
+kw: why SQX deletes strategies, databank sync removes sqx files, ClearDatabanks wipes, auto-sync every hour, closing SQX deletes strategies, databank flow at risk, partial load pruned, Cannot process strategy InterruptedException, strategy lost at stop, two syncs at once
 tag: 🔬  date: 2026-09-29  see: databanks/sync-only-touches-loaded, databanks/snapshot-before-restart, databanks/databank-verbs
 ---
 # Memory is the source of truth: a sync deletes on-disk .sqx not held in memory

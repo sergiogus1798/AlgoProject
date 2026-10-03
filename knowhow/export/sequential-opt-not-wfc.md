@@ -1,5 +1,6 @@
 ---
-q: sequential optimisation IS vs OOS walk forward correlation; Seq. Opt. chained scan BestValue; Fitness equals Ret/DD; how to get a real WFC paired tuples
+q: Can a sequential optimisation's runs be paired as a walk-forward correlation (WFC)?
+kw: sequential optimisation IS vs OOS walk forward correlation; Seq. Opt. chained scan BestValue; Fitness equals Ret/DD; how to get a real WFC paired tuples
 tag: 🔬  date: 2026-09-19  see: export/spp-pairing-for-wfc, sqx-format/sequential-optimisation-xml, sqx-drive/variant-route
 ---
 # Sequential optimisation pairs by label but not by strategy — only the chain prefix is a real WFC

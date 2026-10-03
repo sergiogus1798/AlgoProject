@@ -1,5 +1,6 @@
 ---
-q: pool variance of many searches, mixture variance from counts means spreads, ddof conversion, ledger trials.accumulated, deflated Sharpe sigma
+q: How are stored ddof=1 search spreads pooled exactly for the deflated Sharpe?
+kw: pool variance of many searches, mixture variance from counts means spreads, ddof conversion, ledger trials.accumulated, deflated Sharpe sigma
 tag: 🔬  date: 2026-09-24  see: research/gates-are-owner-decisions
 ---
 # Pool search moments exactly, converting ddof=1 spreads in and out

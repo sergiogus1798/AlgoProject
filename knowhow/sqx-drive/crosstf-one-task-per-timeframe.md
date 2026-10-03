@@ -1,5 +1,6 @@
 ---
-q: Cross TF one task per timeframe; CrossTF M30 H4 D1 tasks; CrossTF_D1 databank; D1 MetaTrader 4 engine no session; why not RetestOnAdditionalMarkets for timeframes; crossTF blocks.json databanks; crosstf.engines
+q: How is Cross TF wired: one retest task per timeframe, and which engine does D1 use?
+kw: Cross TF one task per timeframe; CrossTF M30 H4 D1 tasks; CrossTF_D1 databank; D1 MetaTrader 4 engine no session; why not RetestOnAdditionalMarkets for timeframes; crossTF blocks.json databanks; crosstf.engines
 tag: 🔬  date: 2026-09-30  see: export/data-all-blocks, sqx-drive/crosstf-input-filled-by-no-task
 ---
 # Cross TF runs one retest per timeframe, never blocks of the cross-check; D1 on the MetaTrader 4 engine

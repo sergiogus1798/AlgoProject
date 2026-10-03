@@ -1,5 +1,6 @@
 ---
-q: what is inside a .sqx file? sqx zip members, sqx file size, compare strategies by hash, get symbol from sqx, parse orders.bin, index all sqx
+q: How do I compare two .sqx files: by inner XML, since the ZIP file hash differs?
+kw: what is inside a .sqx file? sqx zip members, sqx file size, compare strategies by hash, get symbol from sqx, parse orders.bin, index all sqx
 tag: 🔬  date: 2026-09-04  see: sqx-format/strategy-identity, sqx-format/daily-equity-bin, sqx-format/result-sections, export/orderstocsv-schema
 ---
 # A .sqx is a ZIP; compare by inner XML, never by file hash

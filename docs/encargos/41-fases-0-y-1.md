@@ -23,11 +23,11 @@ Estados: ⬜ sin empezar · 🟡 en curso · ✅ hecho · 🔴 espera al dueño.
 |---|---|---|---|---|---|
 | 0.1 | Cerrar la API de SQX al exterior | DUEÑO (root) | S | — | ✅ |
 | 0.2 | Commit y push de lo pendiente | sesión + sí del dueño | S | — | ✅ |
-| 0.3 | Propuesta diaria de commit | sesión | S | 0.2 | ⬜ |
+| 0.3 | Propuesta diaria de commit | sesión | S | 0.2 | ✅ |
 | 0.4 | Copia nocturna fuera del disco | sesión; destino del DUEÑO | S-M | D6 | ✅ a mano, por el dueño |
 | 0.5 | `/tmp` al 92 % | sesión | S | — | 🟡 |
 | 0.6 | Higiene de cron y de `settings.json` | sesión | S | — | 🟡 |
-| 0.7 | Documentación al día | sesión | S | 0.2 | ⬜ |
+| 0.7 | Documentación al día | sesión | S | 0.2 | ✅ |
 | 1.1 | Hoja de decisiones D1-D5 en PDF | sesión | S | — | ⬜ |
 | 1.2 | Firma provisional de los pasos 6 y 8 | DUEÑO | S | 1.1 | 🔴 |
 | 1.3 | Registro completo | sesión | M | — | ⬜ |
@@ -77,9 +77,10 @@ firmadas, deja una fila en el registro por paso, y se sabe cuántos monos de N l
 ### 0.3 · Propuesta diaria de commit
 
 - **Porqué.** El commit sigue siendo del dueño (regla 12), pero tiene que costarle un sí.
-- **Cómo.** `bin/nightly-sync.sh` existe y no está en el cron porque haría commits solo. Darle un
-  modo que **solo proponga**: escribe `AlgoData/audit/<fecha>-commit.md` con los grupos y el
-  mensaje de cada uno, y no ejecuta `git commit`. Va en el cron detrás del `fixer`.
+- **Cómo.** `bin/nightly-commit-proposal.sh` (cron, detrás del `fixer`) **solo propone**: escribe
+  `AlgoData/audit/<fecha>-commit.md` con los grupos y el mensaje de cada uno, y no ejecuta
+  `git commit`; el dueño lo aplica con `python3 -m tools.commit_apply`. El script antiguo que
+  corría `/sync` sin supervisión, que hacía commit y push solo, se borró (2026-10-03).
 - **Hecho:** cada mañana hay una propuesta, y aplicarla es un comando o una frase en el chat.
   Capítulo de manual en la misma tarea (regla 8).
 
@@ -253,3 +254,4 @@ Una línea por sesión que avance algo: fecha, punto, qué quedó.
 - 2026-10-02 — **0.2**: propuesta de 24 commits (372 rutas) lista, 111 rutas de otra sesión fuera; espera el sí del dueño. **0.5**: `/tmp` del 93 % al 54 %; temporales del proyecto en `AlgoData/tmp` (`core.datapaths.tmp_dir`), limpieza diaria, `/tmp` en el informe de disco con tope 80 %. Falta comprobar el «< 50 % tras una corrida completa». **0.6**: cron sin dos tareas en el mismo minuto (sábado: datos 02:00 y `oos2` 02:05), reglas muertas de `project.cfx` quitadas de `settings.json` (manda `guard.py`), la auditoría mecánica corre las 105 pruebas (92 pasan, 13 apartadas con motivo en `tools/audit_tests.py`). Sigue saliendo con 1 por tres causas ajenas: `checks.py` rojo por la sesión de Investigar, el proyecto `Infinox_SP500ft_H4_HighPrecision` que no se pinta y un export sin manifiesto (`Test_USDJPY_donchianUpperCrossUp_M30/SPP_IS/2026-09-27`). Pendiente de apuntar en OPEN: `ledger/thresholds.py` rompe con el feed `UKOIL.cash_M1`.
 - 2026-10-02 — **D7 (0.1):** el dueño no toca el cortafuegos salvo necesidad extrema: ya se quedó fuera del servidor una vez y hubo que reinstalarlo. El 0.1 queda aparcado; el 5050 sigue escuchando en `0.0.0.0` cuando el master está abierto. Sin decidir: una vía que no pase por el cortafuegos (que SQX escuche solo en local). **D6 (0.4):** no hay copia nocturna automática; lo importante está en GitHub y el resto lo copia el dueño a mano a su SSD privado (la primera, esta noche). **0.2:** sí del dueño; commits aplicados grupo a grupo y push. Lo de la sesión de Investigar (111 rutas) queda sin commit hasta que cierre.
 - 2026-10-02 — **0.1 cerrado.** El dueño instaló Tailscale (servidor `100.113.159.40`) y encendió `ufw` con tres reglas: entrada por `tailscale0`, 22/tcp y 3389/tcp; lo demás, denegado por defecto. Comprobado desde fuera (portchecker.io): antes el 5050 respondía; ahora 5050, 5051, 5060, 5070 y 8080 no responden, el 3389 sí, y SQX sigue respondiendo en local. `ufw` queda activo en el arranque. Queda a decisión del dueño cerrar el 22 público (se ven intentos de conexión de fuera) y dejar el SSH solo por Tailscale.
+- 2026-10-02 — **0.3 hecho.** `bin/nightly-commit-proposal.sh` en el cron a las 05:45 (detrás del `fixer` y de los agentes del domingo; el agente no tiene permiso para `git add/commit/push`): escribe `AlgoData/audit/<fecha>-commit.md` y `.json`. Se aplica con `python3 -m tools.commit_apply` o diciendo «aplica la propuesta de commit». Probado de verdad hoy (7 grupos, 116 rutas en curso, 2 paradas) y en `--dry-run`; el push real con el aplicador no se ha probado. **0.7 hecho.** 26 pasos (más 10.5, 16.5, 18.5, 25.5) en `WORKFLOW.md`, `CLAUDE.md`, `SKILLS.md` y `AgentPDFs/README.md`; pasos 9 y 22 a ✅ y building blocks a 🟡 (el dueño puede revertir el 9); OPEN #87 corregido; nuevos OPEN #94 (`UKOIL.cash_M1` en `ledger/thresholds.py`) y #95 (pruebas apartadas). **Fase 0:** quedan 🟡 el 0.5 (ver `/tmp` < 50 % tras una corrida) y el 0.6 (auditoría mecánica a 0, depende de OPEN #95 y de lo que otras sesiones tienen a medias).

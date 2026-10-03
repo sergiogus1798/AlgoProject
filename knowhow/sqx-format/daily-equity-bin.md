@@ -1,5 +1,6 @@
 ---
-q: parse dailyEquity.bin, is SQX daily equity the day's low or close, daily low equity MAE per day, daily equity curve without SQX, sub-period / split OOS study, which dailyEquity.bin (Main vs Portfolio vs AdditionalMarket), equity vs net profit mismatch, open position last bar, is daily equity mark-to-market, which day is the equity stamped, align equity with bars / benchmark, cross-check market curve sum vs NetProfit
+q: How do I parse `dailyEquity.bin`: what does each daily value mean and which series is `Main`?
+kw: parse dailyEquity.bin, is SQX daily equity the day's low or close, daily low equity MAE per day, daily equity curve without SQX, sub-period / split OOS study, which dailyEquity.bin (Main vs Portfolio vs AdditionalMarket), equity vs net profit mismatch, open position last bar, is daily equity mark-to-market, which day is the equity stamped, align equity with bars / benchmark, cross-check market curve sum vs NetProfit
 tag: 🔬  date: 2026-09-30  see: sqx-format/result-sections, sqx-format/sqx-zip-members, sqx-format/leg-curve-warmup
 ---
 # dailyEquity.bin parses: each trading day's LOWEST equity (floating at the M1 wicks), cumulative; take `Main`

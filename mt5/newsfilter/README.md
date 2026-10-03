@@ -12,12 +12,12 @@ inside the window is a close); from `block_before` before until `block_after` af
 Hantec: releases from MT5's calendar (HIGH) and Forex Factory's red folder, counting for a symbol
 when their currency is in its name or is the country of its index or commodity (`COUNTRY_OF`).
 FTMO: only FTMO's own restricted list (`FTMO_EVENTS`, 37 MT5 event codes — MT5 rates half of them
-medium, `knowhow/eng/ftmo-news-vs-mt5-importance.md`), crude inventories on oil alone.
+medium, `knowhow/mt5/ftmo-news-vs-mt5-importance.md`), crude inventories on oil alone.
 **Neither calendar exists in the Strategy Tester.** There the patched EA reads the firm's history
 from `Common\Files\AlgoProjectNews_<Firm>.csv` (input `NewsTesterFile`; empty = no filter in the
 tester), already in the server's clock; live, it never opens that file. So the cost of the rule is
 now a measurement: the same strategy with the filter and without (`reading.py`).
-`knowhow/eng/ea-news-filter.md`, `knowhow/eng/mt5-calendar-history-clock.md`.
+`knowhow/mt5/ea-news-filter.md`, `knowhow/mt5/mt5-calendar-history-clock.md`.
 
 ```
 terminal (open) ─ history.py ─▶ AlgoData/mt5/calendar/mt5_{events,values}.parquet  (UTC)
@@ -51,7 +51,7 @@ known by construction).
 - **Events with no minute are dropped, live and in the tester file** (owner, 2026-10-02): type all-day
   (`CALENDAR_TIMEMODE_DATE`) AND stamped 00:00 UTC. Both tests are needed — MetaQuotes files the RBA
   rate decision (FTMO-restricted) as all-day with its real time, and timed releases do fall on
-  00:00 UTC. `knowhow/eng/mt5-calendar-history-clock.md`.
+  00:00 UTC. `knowhow/mt5/mt5-calendar-history-clock.md`.
 - **The 14 EAs of `MT5_DATA/eas/` were regenerated on 2026-10-02** (tester mode, no all-day events) and
   compiled there, next to their sources — not in the terminal's `Experts/`; the previous ones are in
   `MT5_DATA/eas-backup-2026-10-02/`. `run.py --compile` still copies into `Experts/AlgoProject/<Firm>/`,

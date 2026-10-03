@@ -1,5 +1,6 @@
 ---
-q: export SPP system parameter permutation results; SPP trades; permutation table 152 statistics; Don't store data for 3D charts; spp.parquet; export_spp
+q: How do I export an SPP permutation table when SQX has no CLI export for it?
+kw: export SPP system parameter permutation results; SPP trades; permutation table 152 statistics; Don't store data for 3D charts; spp.parquet; export_spp
 tag: 🔬  date: 2026-09-23  see: export/spp-pairing-for-wfc, export/storage-format, sqx-format/optimization-profile-bin
 ---
 # SPP has no CLI export and no trades — read the permutation table from `optimizationProfile.bin`

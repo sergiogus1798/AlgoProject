@@ -1,5 +1,6 @@
 ---
-q: CUSUM stability test did not reject but halves differ, OLS-CUSUM break, profitShape, non-rejection is not stability, concentration few_periods
+q: Does a CUSUM non-rejection show a strategy is stable?
+kw: CUSUM stability test did not reject but halves differ, OLS-CUSUM break, profitShape, non-rejection is not stability, concentration few_periods
 tag: 🔬  date: 2026-09-24  see: research/entry-vs-chance
 ---
 # A CUSUM non-rejection is not evidence of stability; print the split table with the verdict

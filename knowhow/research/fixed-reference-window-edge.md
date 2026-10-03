@@ -1,5 +1,6 @@
 ---
-q: fixed semester partition reference window, centered window ±3m ±6m ±12m, test 1b paired.py, arbitrary modelling choice sweep, log return presentation basis points dollars
+q: Why use a centered reference window instead of a fixed-boundary one?
+kw: fixed semester partition reference window, centered window ±3m ±6m ±12m, test 1b paired.py, arbitrary modelling choice sweep, log return presentation basis points dollars
 tag: 🔬  date: 2026-09-16  see: research/zero-drift-division
 ---
 # Use a centered reference window; sweep arbitrary choices and print every answer

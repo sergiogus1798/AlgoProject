@@ -1,5 +1,6 @@
 ---
-q: portfolio worst intraday floating loss per day; sum of members' daily worst vs exact; M5 vs M1 resolution for prop-firm daily loss; cost of a minute-level portfolio path; Monte Carlo at M5; how to rank combinations by intraday drawdown cheaply
+q: What resolution is enough to compute a portfolio's worst intraday floating, and what does summing members' worsts do?
+kw: portfolio worst intraday floating loss per day; sum of members' daily worst vs exact; M5 vs M1 resolution for prop-firm daily loss; cost of a minute-level portfolio path; Monte Carlo at M5; how to rank combinations by intraday drawdown cheaply
 tag: 🔬  date: 2026-09-30  see: export/mae-mfe-from-m1, perf/ram-budget
 ---
 # A portfolio's worst intraday floating: M5 blocks give the M1 answer at 1/11 of the cost; summing members' daily worsts overstates it ×1.6

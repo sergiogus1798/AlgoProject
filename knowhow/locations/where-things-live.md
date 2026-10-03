@@ -1,5 +1,6 @@
 ---
-q: where are strategies templates outside SQX; WorkSQX AddonsSQX; Desktop/user only copy XAUUSD Results; Trash excluded from searches; SQX.zip; tools built here index_sqx dump_project keep_tasks project_health vocabulary export tools
+q: Where are strategy and template stores outside the installs, and which tools inspect them?
+kw: where are strategies templates outside SQX; WorkSQX AddonsSQX; Desktop/user only copy XAUUSD Results; Trash excluded from searches; SQX.zip; tools built here index_sqx dump_project keep_tasks project_health vocabulary export tools
 tag: 🔬  date: 2026-09-22  see: locations/logs-and-data-coverage, authoring/block-vocabulary
 ---
 # Strategy/template stores outside the installs, and the inspection tools that read them

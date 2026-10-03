@@ -1,5 +1,6 @@
 ---
-q: one-item random group still drifts; RandomCondition resolves outside its bound group; template_check 197/200 not 200/200; genetic mutation ignores group membership; fixed condition not always carried
+q: Does a one-item group really pin a slot, or can SQX mutation move it later?
+kw: one-item random group still drifts; RandomCondition resolves outside its bound group; template_check 197/200 not 200/200; genetic mutation ignores group membership; fixed condition not always carried
 tag: 🔬  date: 2026-09-27  see: authoring/holes-groups-randomcondition, sqx-format/strategy-identity
 ---
 # A one-item group only fixes the FIRST draw; SQX's own mutation can still move the slot later

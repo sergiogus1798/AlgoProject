@@ -1,5 +1,6 @@
 ---
-q: monkey test inside SQX, random entry custom block, RAND block WinRateEdge Math.random unseeded, seeded hash timestamp seed, XOR modulo bit shift in SQX vocabulary, Java snippet, RandomCondition runtime random, D3 encargo 12, encargo 30, always true block
+q: Can SQX blocks make a seeded random entry, and is the installed RAND block seeded?
+kw: monkey test inside SQX, random entry custom block, RAND block WinRateEdge Math.random unseeded, seeded hash timestamp seed, XOR modulo bit shift in SQX vocabulary, Java snippet, RandomCondition runtime random, D3 encargo 12, encargo 30, always true block
 tag: 🔬  date: 2026-09-28  see: sqx-format/rewriting-strategy-logic
 ---
 # A random entry inside SQX needs a Java snippet, and the RAND block installed on the master is unseeded

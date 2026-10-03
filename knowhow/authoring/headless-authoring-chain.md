@@ -1,5 +1,6 @@
 ---
-q: install custom block group template without GUI; customBlocks.xml blockGroups.xml edit safely; sqcli rewrites customBlocks; headless authoring chain; custom block in signal XML; build output databank empty Auto-sync never
+q: How do blocks, groups and templates get installed without the SQX GUI import?
+kw: install custom block group template without GUI; customBlocks.xml blockGroups.xml edit safely; sqcli rewrites customBlocks; headless authoring chain; custom block in signal XML; build output databank empty Auto-sync never
 tag: 🔬  date: 2026-09-23  see: authoring/project-skill, authoring/block-vocabulary, databanks/autosync-nothing-on-disk
 ---
 # Blocks, groups and templates install by writing a file into a stopped install — no GUI import

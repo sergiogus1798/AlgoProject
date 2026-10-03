@@ -1,5 +1,6 @@
 ---
-q: sqx.variants.execute hangs after Project finished; WFC_OOS1 WFC_OOS2 databank 0 files on disk; execute.py waiting forever; who stops the custodian after variants execute
+q: Why does `sqx.variants.execute` hang after "Project finished" when I pre-started the custodian myself?
+kw: sqx.variants.execute hangs after Project finished; WFC_OOS1 WFC_OOS2 databank 0 files on disk; execute.py waiting forever; who stops the custodian after variants execute
 tag: 🔬  date: 2026-09-26  see: sqx-drive/mcr-nullpointer-fastutil-transient
 ---
 # `sqx.variants.execute` only stops the worker if IT started it — pre-starting the custodian yourself makes it hang after SQX says "Project finished"

@@ -4,12 +4,15 @@
 import re
 from pathlib import Path
 
+from knowhowq import question_problems
+
 ROOT = Path(__file__).resolve().parent.parent
 KNOWHOW = ROOT / "knowhow"
-HEADER_LINES = 12
+HEADER_LINES = 13  # 12 + the kw: line
 MAX_BYTES = 6 * 1024
 REFERENCE = re.compile(r"knowhow/[\w./-]*[\w/]")
 SCANNED = {".md", ".py", ".yaml", ".sh"}
+DOSSIER = re.compile(r"docs/AgentPDFs/[^/]*\d{4}-\d{2}-\d{2}")
 SKIPPED = {"audit", "scratch", ".git", "sqx-lab"}
 
 
@@ -19,18 +22,23 @@ def cards() -> list[Path]:
 
 
 def front(card: Path) -> dict[str, str]:
-    """The q:, tag:, date: and see: fields of a card's frontmatter.
+    """The q:, kw:, tag:, date: and see: fields of a card's frontmatter.
 
     Args:
         card: Path of a card.
 
     Returns:
         Field name to raw text. tag, date and see share one line, so they are split on
-        their own keywords rather than on newlines.
+        their own keywords; q: and kw: take their whole line (kw: never reaches an index).
     """
-    head = card.read_text(encoding="utf-8").split("---")[1]
-    return {m.group(1): m.group(2).strip()
-            for m in re.finditer(r"\b(q|tag|date|see):\s*(.*?)(?=\s+\b(?:tag|date|see):|\n|$)", head)}
+    out: dict[str, str] = {}
+    for ln in card.read_text(encoding="utf-8").split("---")[1].splitlines():
+        if ln.startswith(("q:", "kw:")):  # a whole line: free text that may hold "see:" or "tag:"
+            out[ln.split(":", 1)[0]] = ln.split(":", 1)[1].strip()
+        else:
+            out.update({m.group(1): m.group(2).strip() for m in re.finditer(
+                r"\b(tag|date|see):\s*(.*?)(?=\s+\b(?:tag|date|see):|$)", ln)})
+    return out
 
 
 def render(domain: Path) -> str:
@@ -61,15 +69,16 @@ def bad_cards(files: list[Path]) -> list[str]:
     for c in cards():
         rel, text = c.relative_to(ROOT), c.read_text(encoding="utf-8")
         fields = front(c)
-        if not fields.get("q") or not fields.get("tag"):
-            out.append(f"{rel}: no q: or tag: in the frontmatter")
+        if not (fields.get("q") and fields.get("kw") and fields.get("tag")):
+            out.append(f"{rel}: no q:, kw: or tag: in the frontmatter")
         if sum(1 for ln in text.split("## Evidence")[0].splitlines() if ln.strip()) > HEADER_LINES:
             out.append(f"{rel}: header above ## Evidence is over {HEADER_LINES} lines")
         for ref in re.split(r"[,\s]+", fields.get("see", "")):
             ref = ref.strip("`[]").removeprefix("knowhow/").removesuffix(".md").rstrip("/")
             if ref and ref != "-" and ref not in known and not (KNOWHOW / ref).is_dir():
                 out.append(f"{rel}: see: {ref} is not a card")
-        size = len(text.encode("utf-8"))
+        out += question_problems(c)
+        size = len(text.encode("utf-8")) - len(f"kw: {fields.get('kw', '')}\n".encode())  # kw: is a grep aid, not rule
         if size > MAX_BYTES:
             out.append(f"{rel}: {size:,} bytes, split it (max {MAX_BYTES:,})")
     return out
@@ -86,8 +95,8 @@ def broken_links(files: list[Path]) -> list[str]:
     """
     out = []
     for f in ROOT.rglob("*"):
-        if f.suffix not in SCANNED or SKIPPED & set(f.relative_to(ROOT).parts):
-            continue
+        if f.suffix not in SCANNED or SKIPPED & set(f.relative_to(ROOT).parts) or DOSSIER.search(str(f)):
+            continue  # dated dossiers in docs/AgentPDFs are history: they name the paths of their day
         for i, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
             for ref in REFERENCE.findall(line):
                 if not (ROOT / ref).exists():

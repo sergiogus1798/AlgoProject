@@ -1,5 +1,6 @@
 ---
-q: how to reach the Windows VPS; ssh vps; Tailscale; live MT5 terminals; fleet; run PowerShell remotely; VPS specs RAM OS; ports open to the internet
+q: How do I reach the Windows VPS fleet machine?
+kw: how to reach the Windows VPS; ssh vps; Tailscale; live MT5 terminals; fleet; run PowerShell remotely; VPS specs RAM OS; ports open to the internet
 tag: 🔬  date: 2026-10-02  see: sqx-drive/api-no-auth, locations/live-ea-magic-numbers
 ---
 # The Windows VPS is reached with `ssh vps`, over Tailscale only

@@ -1,5 +1,6 @@
 ---
-q: fewer trades than SQX databank, zero-duration trades Open time == Close time, Time in trade 0s, envelope.occupancy exit > entry, trade count mismatch, bar grid study
+q: Why print both the run's trade count and the count a bar-grid test could compare?
+kw: fewer trades than SQX databank, zero-duration trades Open time == Close time, Time in trade 0s, envelope.occupancy exit > entry, trade count mismatch, bar grid study
 tag: 🔬  date: 2026-09-16  see: research/bar-file-wider-than-backtest, columns/zero-pl-trades
 ---
 # Separate "what the run did" from "what the test could compare", and print both counts

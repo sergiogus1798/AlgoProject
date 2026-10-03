@@ -1,12 +1,15 @@
 ---
-q: python heredoc bash -c SyntaxError, verify SQX write, session names unstable, forkserver ProcessPoolExecutor fork deadlock threads, set_forkserver_preload, ELECTRON_RUN_AS_NODE bad option --no-sandbox
-tag: 🔬  date: 2026-09-18  see: eng/moving-module-into-layer, perf/process-pool-shutdown
+q: Which engineering practices have already caused real damage in this project?
+kw: harvest pool deadlock fork pipe_write timeout 900, kill -STOP $(pgrep -f) matches own shell, python heredoc bash -c SyntaxError, verify SQX write, session names unstable, forkserver ProcessPoolExecutor fork deadlock threads, set_forkserver_preload, ELECTRON_RUN_AS_NODE bad option --no-sandbox
+tag: 🔬  date: 2026-10-03  see: eng/moving-module-into-layer, perf/process-pool-shutdown
 ---
 # Practices that already bit
 - Complex Python: write it to a file and run it; never `bash -c` heredocs (quoting → `SyntaxError: '(' was never closed`).
 - Verify an SQX write by reading back what SQX stored; the `loadconfig` auto-rename (`knowhow/sqx-drive/`) lands "successful" writes elsewhere.
 - Identity goes in files, not session names (auto-named, change on reopen; `ListAgents` shows only live ones). One owner per lane (`sqx/CLAUDE.md`).
 - `ProcessPoolExecutor` in a process that has threads: use `forkserver`, never `fork`; reuse one pool.
+- A process pool can deadlock at fork even with forkserver elsewhere: seen once (2026-10-02) in the calibration harvest — all workers asleep, parent in `pipe_write`. The queue wraps it in `timeout 900` × 3 tries and serialises loads.
+- `pgrep -f X` / `kill -STOP $(pgrep -f X)` matches your own shell (its command line holds X): list with `ps`, kill by PID (bit again 2026-10-02).
 - Launch SQX with `ELECTRON_RUN_AS_NODE` unset.
 
 ## Evidence

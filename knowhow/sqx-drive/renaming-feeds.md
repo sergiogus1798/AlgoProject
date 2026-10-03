@@ -1,5 +1,6 @@
 ---
-q: rename SQX symbol feed, symbol action=edit name=, change feed timezone, timezone baked into .dat, old projects old feed names, XAUUSD_DukasM1_Infinox to XAUUSD_M1, feed renames table, delete symbol
+q: How does `-symbol action=edit symbol=OLD name=NEW` rename a feed, and why is the timezone ignored?
+kw: rename SQX symbol feed, symbol action=edit name=, change feed timezone, timezone baked into .dat, old projects old feed names, XAUUSD_DukasM1_Infinox to XAUUSD_M1, feed renames table, delete symbol
 tag: 🔬  date: 2026-10-01  see: export/feed-clock-timezones, sqx-format/tick-file-format, databanks/sync-deletes-unloaded-files
 ---
 # `-symbol action=edit symbol=OLD name=NEW` renames everywhere; the timezone it silently ignores

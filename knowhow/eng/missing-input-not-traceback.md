@@ -1,6 +1,7 @@
 ---
-q: analysis fails with traceback instead of saying what is missing, empty report exit 0, studies.readings.monkey.report --sample OOS1 zero strategies, is_oos StopIteration, exposure.report IndexError trades.parquet, sorted(glob)[-1] next(iter)
-tag: 🔬  date: 2026-09-24  see: eng/pipeline-run-guards
+q: How should a command report a missing input instead of a traceback or a silent zero?
+kw: analysis fails with traceback instead of saying what is missing, empty report exit 0, studies.readings.monkey.report --sample OOS1 zero strategies, is_oos StopIteration, exposure.report IndexError trades.parquet, sorted(glob)[-1] next(iter)
+tag: 🔬  date: 2026-09-24  see: pipeline/pipeline-run-guards
 ---
 # Say what input is missing; never let an empty selection become a traceback or a silent zero
 Pattern to fix: `sorted(glob(...))[-1]` or `next(iter(...))` over something that can be empty. One line naming the missing

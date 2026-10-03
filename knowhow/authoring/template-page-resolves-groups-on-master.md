@@ -1,5 +1,6 @@
 ---
-q: template page says "atado a un grupo que esta instalación no tiene", unknown_group true, red hole in Plantillas, group installed only on the workers, holes.shape reads the master's blockGroups.xml, which install resolves a template's groups
+q: Which install's `blockGroups.xml` does the template page use to resolve a hole's group?
+kw: template page says "atado a un grupo que esta instalación no tiene", unknown_group true, red hole in Plantillas, group installed only on the workers, holes.shape reads the master's blockGroups.xml, which install resolves a template's groups
 tag: 🔬  date: 2026-09-28  see: authoring/holes-groups-randomcondition
 ---
 # The template page resolves a hole's group against the MASTER's `blockGroups.xml`, not the workers'

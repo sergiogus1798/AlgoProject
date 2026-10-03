@@ -1,5 +1,6 @@
 ---
-q: MC Retest RandomizeSpread RandomizeSlippage Min Max units points or multiples; factory default 1-5 0-5; mc_retest block assets; mc_pending; RandomizeMinDistance range; tarea_sin_dispersion; MC draw granularity tick
+q: In what units are the MC Retest RandomizeSpread and RandomizeSlippage Min/Max ranges?
+kw: MC Retest RandomizeSpread RandomizeSlippage Min Max units points or multiples; factory default 1-5 0-5; mc_retest block assets; mc_pending; RandomizeMinDistance range; tarea_sin_dispersion; MC draw granularity tick
 tag: 🔬  date: 2026-09-27  see: conditions/mc-retest-task, costs/slippage
 ---
 # MC Retest spread/slippage ranges are absolute points, drawn on a ~0.1-point grain

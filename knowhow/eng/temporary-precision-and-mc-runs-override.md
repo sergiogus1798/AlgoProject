@@ -1,5 +1,6 @@
 ---
-q: how to run one project tonight at a different precision or MC Retest count without touching `_build.yaml`, and how to restore it
+q: How do I override precision or Monte Carlo simulation count for one run with ALGO_PRECISION_OVERRIDE?
+kw: how to run one project tonight at a different precision or MC Retest count without touching `_build.yaml`, and how to restore it
 tag: 🔬  date: 2026-09-29  see: eng/feed-in-config-yaml
 
 # `ALGO_PRECISION_OVERRIDE` / `ALGO_MC_SIMULATIONS` — a run-wide, one-project override

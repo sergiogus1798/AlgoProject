@@ -1,5 +1,6 @@
 ---
-q: number of independent trials wrong, core.surface.trials.independent inflates count, half rule no cluster above half, dominant family of variants, one blob 16 clusters, silhouette 0.01, n_eff too high deflated Sharpe too harsh, cluster_k_max too small ValueError max() arg is an empty sequence, jsharpe number_of_clusters unstable seed
+q: When does trials.independent over-count the independent trials of a family?
+kw: number of independent trials wrong, core.surface.trials.independent inflates count, half rule no cluster above half, dominant family of variants, one blob 16 clusters, silhouette 0.01, n_eff too high deflated Sharpe too harsh, cluster_k_max too small ValueError max() arg is an empty sequence, jsharpe number_of_clusters unstable seed
 tag: 🔬  date: 2026-10-02  see: research/psr-dsr-two-conventions-jsharpe
 ---
 # `trials.independent` is exact on balanced families and over-counts when one family holds more than half

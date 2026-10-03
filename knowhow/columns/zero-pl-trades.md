@@ -1,5 +1,6 @@
 ---
-q: zero P/L trade flat trade, Winning Percent half win, ZScore flat counts as win, WinningPct formula, KellyFormula win rate excludes flats wins/(wins+losses), reconstruction mismatch USDJPY
+q: How do WinningPct, ZScore and KellyFormula treat a zero-P/L trade?
+kw: zero P/L trade flat trade, Winning Percent half win, ZScore flat counts as win, WinningPct formula, KellyFormula win rate excludes flats wins/(wins+losses), reconstruction mismatch USDJPY
 tag: 🔬  date: 2026-09-25  see: sqx-format/mc-retest-reconstruction
 ---
 # A zero-P/L trade is half a win in `WinningPct`, a full win in `ZScore`, and left out of `KellyFormula`

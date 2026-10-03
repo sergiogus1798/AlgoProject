@@ -1,5 +1,6 @@
 ---
-q: storage format parquet vs CSV for exports; which columns to drop SPP export; redundant metrics; RExpectancy 99999 sentinel; CalmarRatio? question mark column name
+q: In what format are per-test trades and exports stored on disk?
+kw: storage format parquet vs CSV for exports; which columns to drop SPP export; redundant metrics; RExpectancy 99999 sentinel; CalmarRatio? question mark column name
 tag: 🔬  date: 2026-09-23  see: export/trade-export-columns, export/spp-export, export/what-a-project-stores
 ---
 # Change the format, keep the columns: one typed zstd Parquet per test and export

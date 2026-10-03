@@ -1,5 +1,6 @@
 ---
-q: Project has unresolved resources, start refused, InstrumentInfo compared as string, getXML, Symbol block stale after feed change, decimals tickStep, Java double 1.0E-5, Broker timezone, resources from data.db, refresh
+q: Why does SQX report "Unresolved resources" when a task's resource XML differs from what its registry writes?
+kw: Project has unresolved resources, start refused, InstrumentInfo compared as string, getXML, Symbol block stale after feed change, decimals tickStep, Java double 1.0E-5, Broker timezone, resources from data.db, refresh
 tag: 🔬  date: 2026-10-01  see: sqx-drive/renaming-feeds, sqx-drive/cannot-start-unresolved-past-data
 ---
 # «Unresolved resources» = a task's resource XML no longer equals what SQX's registry writes

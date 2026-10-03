@@ -1,5 +1,6 @@
 ---
-q: which SQX feed per asset DarwTick vs DukasM1 history length; sqx_symbol; SP500ft_Plus02_Infinox missing feed; symbol list
+q: Which feed should I use, DukasM1 or DarwTick, to cover the longest history?
+kw: which SQX feed per asset DarwTick vs DukasM1 history length; sqx_symbol; SP500ft_Plus02_Infinox missing feed; symbol list
 tag: 🔬  date: 2026-09-22  see: costs/refreshing-sqx-costs, locations/logs-and-data-coverage
 ---
 # Use the `DukasM1` feed, not `DarwTick`: tick feeds start 2017–2018, M1 reaches 2003–2012

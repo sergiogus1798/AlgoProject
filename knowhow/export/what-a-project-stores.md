@@ -1,5 +1,6 @@
 ---
-q: which bar data to store; M1 resample equals SQX M30 H1 export; float32 vs float64 zstd size; bars/ directory per export; duplicate strategies SPP OOS WFM dedupe by name or hash
+q: What should a project store of its data, and how are strategies deduplicated?
+kw: which bar data to store; M1 resample equals SQX M30 H1 export; float32 vs float64 zstd size; bars/ directory per export; duplicate strategies SPP OOS WFM dedupe by name or hash
 tag: 🔬  date: 2026-09-21  see: export/bars, export/storage-format, export/trade-export-columns
 ---
 # Store only M1 bars; dedupe strategies on the trade list, not name or XML hash

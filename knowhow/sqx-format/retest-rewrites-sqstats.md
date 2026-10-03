@@ -1,5 +1,6 @@
 ---
-q: does a retest rewrite inherited SQStats, retested variant own results, IS and OOS in one retest run, startOnlyTask tests nothing Total tested 0, disabled cross-check symbol error, loadconfig merges on exit, origin variant reference
+q: Does a retest rewrite a strategy's inherited SQStats, so the variant chain is sound?
+kw: does a retest rewrite inherited SQStats, retested variant own results, IS and OOS in one retest run, startOnlyTask tests nothing Total tested 0, disabled cross-check symbol error, loadconfig merges on exit, origin variant reference
 tag: 🔬  date: 2026-09-22  see: sqx-format/five-member-sqx, sqx-format/oos-range-marker, sqx-format/loaded-name-is-filename, sqx-drive/running-a-task-headless
 ---
 # A retest rewrites the inherited SQStats: the variant chain is sound

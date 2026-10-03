@@ -1,5 +1,6 @@
 ---
-q: SPP original tuple level never sampled, theta-zero alone in its cell, SPP step grid misses original value, argmax equals original, plateau width 1 spike, two-parameter surface, marginal profile biased, spp surface grid
+q: What happens when an SPP step grid does not contain the original parameter value?
+kw: SPP original tuple level never sampled, theta-zero alone in its cell, SPP step grid misses original value, argmax equals original, plateau width 1 spike, two-parameter surface, marginal profile biased, spp surface grid
 tag: 🔬  date: 2026-09-27  see: research/eta-squared-vs-duplicates, research/post-selection-bias
 ---
 # An SPP's step grid can miss θ₀'s own level: then θ₀'s level holds θ₀ alone

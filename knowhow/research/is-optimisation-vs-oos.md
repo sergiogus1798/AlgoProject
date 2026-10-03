@@ -1,5 +1,6 @@
 ---
-q: does in-sample parameter optimisation predict OOS? walk-forward correlation rho IS vs OOS, how many parameter tuples, unusable tuples fewer than 30 trades, report interval not coefficient
+q: How well does in-sample optimisation rank the out-of-sample results?
+kw: does in-sample parameter optimisation predict OOS? walk-forward correlation rho IS vs OOS, how many parameter tuples, unusable tuples fewer than 30 trades, report interval not coefficient
 tag: 🔬  date: 2026-09-22  see: research/cloud-ranking-stability, research/eta-squared-vs-duplicates
 ---
 # In-sample optimisation barely ranks the OOS (rho ≈ 0.19): report the interval, not the coefficient

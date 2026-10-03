@@ -1,5 +1,6 @@
 ---
-q: Param Count column meaning, ParameterCount snippet counts, ParamTypeShift noise, MagicNumber counted, ParametrizationTypes list, transformToVariables, hardcoded strategies no variables, Python mirror of Param Count, param_count core.sqxfile, old frozen strategies stale count
+q: Which parameter types does the SQX Param Count column count?
+kw: Param Count column meaning, ParameterCount snippet counts, ParamTypeShift noise, MagicNumber counted, ParametrizationTypes list, transformToVariables, hardcoded strategies no variables, Python mirror of Param Count, param_count core.sqxfile, old frozen strategies stale count
 tag: 🔬  date: 2026-09-29  see: columns/custom-columns-stored, sqx-format/declared-parameters
 ---
 # "Param Count" counts only Period, Constant, EntryLevel, OtherParam and ExitUsed (since 2026-09-06)

@@ -1,5 +1,6 @@
 ---
-q: which SPP parameters are inert? eta-squared vs duplicate test, freeze parameter, parameter importance, SPP unbalanced, pairing IS/OOS SPP runs
+q: Should an inert parameter be frozen by the duplicate test or by eta-squared?
+kw: which SPP parameters are inert? eta-squared vs duplicate test, freeze parameter, parameter importance, SPP unbalanced, pairing IS/OOS SPP runs
 tag: 🔬  date: 2026-09-21  see: export/spp-parameter-importance, export/spp-pairing-for-wfc
 ---
 # Freeze on the duplicate test, never on eta-squared

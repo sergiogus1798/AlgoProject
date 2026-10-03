@@ -1,5 +1,6 @@
 ---
-q: crontab file fails No such file or directory, install crontab from a long TMPDIR scratchpad path, vixie-cron truncation bug, crontab: /tmp/.../scratch: No such file or directory
+q: Why does `crontab <file>` fail with a wrong filename when the file sits in a long scratchpad path?
+kw: crontab file fails No such file or directory, install crontab from a long TMPDIR scratchpad path, vixie-cron truncation bug, crontab: /tmp/.../scratch: No such file or directory
 tag: 🔬  date: 2026-09-26  see: headless-claude-from-cron
 ---
 # `crontab <file>` truncates a long path and fails with the wrong filename

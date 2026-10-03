@@ -1,5 +1,6 @@
 ---
-q: reconstruct SQX metrics from P/L vector, per-simulation metrics MC retest, WinLossRatio vs PayoutRatio, SQN formula, StandardDev ddof, DrawdownPct formula, RecoveryFactor, ZScore continuity, MaxLoss confidence level direction, non-reconstructible Sharpe Ulcer
+q: Which MC Retest metrics can be reconstructed exactly from a simulation's P/L vector?
+kw: reconstruct SQX metrics from P/L vector, per-simulation metrics MC retest, WinLossRatio vs PayoutRatio, SQN formula, StandardDev ddof, DrawdownPct formula, RecoveryFactor, ZScore continuity, MaxLoss confidence level direction, non-reconstructible Sharpe Ulcer
 tag: 🔬  date: 2026-09-18  see: sqx-format/mc-retest-storage, sqx-format/metric-formulas, columns/zero-pl-trades
 ---
 # 29 of 97 varying metrics reconstruct exactly per simulation from the P/L vector

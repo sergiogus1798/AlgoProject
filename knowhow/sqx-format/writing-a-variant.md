@@ -1,5 +1,6 @@
 ---
-q: write a strategy variant, rewrite parameter in sqx, repack sqx, Fingerprint remove, variant size MB, five-member size, integral double format, variant inherits parent results
+q: How do I write a strategy variant: which four string substitutions in two members?
+kw: write a strategy variant, rewrite parameter in sqx, repack sqx, Fingerprint remove, variant size MB, five-member size, integral double format, variant inherits parent results
 tag: 🔬  date: 2026-09-26  see: sqx-format/five-member-sqx, sqx-format/loaded-name-is-filename, sqx-format/declared-parameters, sqx-format/retest-rewrites-sqstats, sqx-format/rewriting-strategy-logic
 ---
 # A variant = four string substitutions in two members; everything else byte-identical

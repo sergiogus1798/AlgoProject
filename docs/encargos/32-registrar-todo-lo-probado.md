@@ -6,7 +6,7 @@ dejar escrito todo lo que se probó.** Cuántas cosas se probaron es lo que deci
 descontar al ganador. Si sólo queda el ganador, la corrección por pruebas múltiples se hace a ciegas.
 
 Lee `CLAUDE.md` · `CODESTYLE.md` · `ledger/README.md` · `ledger/study.py` · `ledger/record.py` ·
-`ledger/trials.py` · `core/study/CONTRACT.md` · `studies/CLAUDE.md` · `knowhow/eng/thresholds-live-in-the-ledger.md`.
+`ledger/trials.py` · `core/study/CONTRACT.md` · `studies/CLAUDE.md` · `knowhow/pipeline/thresholds-live-in-the-ledger.md`.
 
 ---
 

@@ -1,5 +1,6 @@
 ---
-q: forex one spread vs no_forex spread_is spread_oos spread_oos2; AUDJPY only one spread; spread per segment every asset; slippage_oos2; _classes forex fields; segments_default oos2 spread; rename_cost spread spread_is
+q: Which segments (IS, OOS1, OOS2) must every asset's spread and slippage cover, forex included?
+kw: forex one spread vs no_forex spread_is spread_oos spread_oos2; AUDJPY only one spread; spread per segment every asset; slippage_oos2; _classes forex fields; segments_default oos2 spread; rename_cost spread spread_is
 tag: 🔬  date: 2026-09-30  see: costs/darwinex-real-spread, costs/sqx-fx-costs
 ---
 # Every asset carries spread and slippage for IS, OOS1 and OOS2 — forex included

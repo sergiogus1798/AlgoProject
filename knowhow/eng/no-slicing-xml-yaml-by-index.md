@@ -1,5 +1,6 @@
 ---
-q: edit SQX XML project.cfx by str.index, silence conditions, Project does not exist after sync, broken XML, rewrite YAML section lost other session's blocks, git diff shows no deletions, recover lost assets block
+q: Why must a shared XML or YAML file never be cut with str.index() when editing my section?
+kw: edit SQX XML project.cfx by str.index, silence conditions, Project does not exist after sync, broken XML, rewrite YAML section lost other session's blocks, git diff shows no deletions, recover lost assets block
 tag: 🔬  date: 2026-09-24  see: eng/editing-asset-yaml
 ---
 # Never cut a shared XML/YAML file by `str.index()`; edit only your section

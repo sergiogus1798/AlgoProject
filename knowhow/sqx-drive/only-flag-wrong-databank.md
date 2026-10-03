@@ -1,5 +1,6 @@
 ---
-q: builder --only drops tasks wrong input databank; task Input Output databank matched by string; chain_databanks; phantom Results-Rexpect input on build task
+q: After `builder --only`, why does a task read the wrong databank and how do I rethread each task's Input?
+kw: builder --only drops tasks wrong input databank; task Input Output databank matched by string; chain_databanks; phantom Results-Rexpect input on build task
 tag: 🔬  date: 2026-09-23  see: databanks/, authoring/donor-clone-market
 ---
 # After `builder --only`, rethread each task's Input to the previous task's Output

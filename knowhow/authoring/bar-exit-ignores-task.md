@@ -1,5 +1,6 @@
 ---
-q: ExitAfterBars in template; exit after bars missing from built strategies; ExitTypes minValue maxValue; #ExitAfterBars.ExitAfterBars# key; randomValue default
+q: What decides whether a template's bar exit is present, versus the range the task sets?
+kw: ExitAfterBars in template; exit after bars missing from built strategies; ExitTypes minValue maxValue; #ExitAfterBars.ExitAfterBars# key; randomValue default
 tag: 🔬  date: 2026-09-23  see: authoring/build-doctrine-sections
 ---
 # A template's bar exit: the task sets its RANGE, nothing tested sets its PRESENCE (unresolved)

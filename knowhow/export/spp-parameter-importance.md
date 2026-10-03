@@ -1,5 +1,6 @@
 ---
-q: which parameters matter SPP eta-squared sensitivity; marginal profile WFC without pairing; freeze parameters shrink grid; unpaired SPP runs
+q: Can unpaired SPP runs still give parameter importance and a marginal-profile WFC?
+kw: which parameters matter SPP eta-squared sensitivity; marginal profile WFC without pairing; freeze parameters shrink grid; unpaired SPP runs
 tag: 🔬  date: 2026-09-19  see: export/spp-pairing-for-wfc, research/eta-squared-vs-duplicates
 ---
 # Unpaired SPP runs still give parameter importance (eta²) and a marginal-profile WFC

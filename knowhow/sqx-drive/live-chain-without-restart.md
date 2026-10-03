@@ -1,5 +1,6 @@
 ---
-q: run the workflow without restarting SQX; startOnlyTask runs the wrong task; startFromTask Task 'Build strategies' does not exist; cut a databank with the worker up; step project loadconfig; time between tasks; build to OOS gap; copy databank between projects; remove deletes folder; ServletProject.jar GUI endpoints; GUI mode headless Xvfb; browserToken; runThisTaskOnly projectXML; updateTaskXML live edit; removeReports delete by name; loadGridData metrics; CLI not ready; exitapp; databank names with spaces over HTTP
+q: How do I continue a workflow without restarting SQX, running or editing any task live in GUI mode?
+kw: run the workflow without restarting SQX; startOnlyTask runs the wrong task; startFromTask Task 'Build strategies' does not exist; cut a databank with the worker up; step project loadconfig; time between tasks; build to OOS gap; copy databank between projects; remove deletes folder; ServletProject.jar GUI endpoints; GUI mode headless Xvfb; browserToken; runThisTaskOnly projectXML; updateTaskXML live edit; removeReports delete by name; loadGridData metrics; CLI not ready; exitapp; databank names with spaces over HTTP
 tag: 🔬  date: 2026-10-01  see: databanks/databank-verbs, databanks/curating-a-databank, perf/autopilot-dead-time, databanks/no-spaces-in-names
 ---
 # In GUI mode (`sqx-worker.sh --gui`) one SQX session runs any task, edits any task and cuts any databank live; sqcli cannot pick a task
@@ -27,7 +28,7 @@ runs only that task (without `projectXML`: nothing). `/call` says «CLI not read
   `WebServerPort` is set (custodian took 8080 with the master in CLI mode).
 - ⚠️ A fresh GUI session answers `databankList` with EVERY databank at 0 records and loads them
   from disk 1-10 s later (Results 0 → 128). A sync in that gap mirrors empty memory over the files
-  (hard rule 1); `live.start` returns only once memory == disk for every Test_/Trade_ project.
+  (hard rule 1); `live.start` returns only once memory == disk for every Test_/Trade_/Research_ project.
 - `/project/stop` on a running BUILD answers «Project execution stopped.» and does NOT stop it:
   sent twice over 5 min (H1, 95 cores), Results kept growing 105 → 128, no end line in the log.
   Only closing the session (`exitapp`, ~45 s, databanks saved) ended it. So the build's minute

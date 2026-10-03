@@ -1,5 +1,6 @@
 ---
-q: window filter ledger row, manual deletion ledger, filter step segment, discards.jsonl, filters refused no template, ledger.report "de 150 entraron a 183" summary wrong order, # of trades (OOS) missing from cosecha, Trades OOS column
+q: Does a filter applied in the window count as a search in the ledger?
+kw: window filter ledger row, manual deletion ledger, filter step segment, discards.jsonl, filters refused no template, ledger.report "de 150 entraron a 183" summary wrong order, # of trades (OOS) missing from cosecha, Trades OOS column
 tag: 🔬  date: 2026-09-28  see: authoring/template-family-is-the-folder
 ---
 # A filter in the window is a search: one ledger row each, logged before anything is hidden

@@ -1,5 +1,6 @@
 ---
-q: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest, footprint noise bug total variance, random trader only vs OOS never vs build IS owner 2026-09-29
+q: Why does a monkey verdict depend more on the statistic than on the null?
+kw: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest, footprint noise bug total variance, random trader only vs OOS never vs build IS owner 2026-09-29
 tag: 🔬  date: 2026-09-29  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias, research/mintrl-explosion-is-correct
 ---
 # A monkey verdict depends on the statistic far more than on the null: report all five

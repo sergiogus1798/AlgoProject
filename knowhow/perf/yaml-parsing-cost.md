@@ -1,5 +1,6 @@
 ---
-q: YAML parsing slow in a loop, assetdata.symbol_for cache, crossTF slow, cache by mtime and size, assets/ parsed every call
+q: How should YAML asset files be read to avoid re-parsing them per strategy?
+kw: YAML parsing slow in a loop, assetdata.symbol_for cache, crossTF slow, cache by mtime and size, assets/ parsed every call
 tag: 🔬  date: 2026-09-25  see: perf/python-parallelism, eng/editing-asset-yaml
 ---
 # Never parse YAML per strategy/cell: `core.assetdata` caches each file by mtime + size

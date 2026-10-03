@@ -1,5 +1,6 @@
 ---
-q: CalmarRatio formula, CalmarRatio AnnualPctReturnDDRatio identical, RExpectancyScore meaning, UlcerPerformanceIndex reconstruct, SQX metric definitions SPP export
+q: How are Calmar and `UlcerPerformanceIndex` computed in SQX, and which one can't be reconstructed?
+kw: CalmarRatio formula, CalmarRatio AnnualPctReturnDDRatio identical, RExpectancyScore meaning, UlcerPerformanceIndex reconstruct, SQX metric definitions SPP export
 tag: 🔬  date: 2026-09-21  see: sqx-format/mc-retest-reconstruction, sqx-format/sqstats-blob
 ---
 # Calmar = CAGR / DrawdownPct (= AnnualPctReturnDDRatio); UlcerPerformanceIndex is not reconstructible

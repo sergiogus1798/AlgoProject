@@ -1,5 +1,6 @@
 ---
-q: correlation filter rejects independent strategies, tail correlation negative bias Berkson, rolling window max correlation inflated, co-loss threshold 0.30 independent, how many independent pairs pass the portfolio pair filters, clique size of independent strategies, AlphaForge tail filter abs
+q: Why do pair filters (tail, rolling max, co-loss) reject independent strategies?
+kw: correlation filter rejects independent strategies, tail correlation negative bias Berkson, rolling window max correlation inflated, co-loss threshold 0.30 independent, how many independent pairs pass the portfolio pair filters, clique size of independent strategies, AlphaForge tail filter abs
 tag: 🔬  date: 2026-09-30  see: research/post-selection-bias, sqx-format/daily-equity-bin
 ---
 # Pair filters reject INDEPENDENT strategies: tail by construction, rolling maxima and co-loss by chance

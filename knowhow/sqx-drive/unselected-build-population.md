@@ -1,6 +1,7 @@
 ---
-q: build an unselected calibration population; relaxed Rankings filters; databank full replaces by fitness; In databank status counts all databanks; passed-count stop; stop project during Build; OOS "(1)" duplicate files; worker killed mid-stop loses retest; free shell template two RandomCondition; nested AND three conditions; afterrun export minutes per stop; build and OOS in one start time-limit; calibration queue cadence; random generation acceptance
-tag: 🔬  date: 2026-10-01  see: perf/review-path-after-sqx, conditions/selection-window, research/post-selection-bias, sqx-drive/export-after-every-stop, authoring/one-item-group-can-drift
+q: Why does a Build with only `trades >= 100, NetProfit > 0` fill with thousands of strategies, and how do I box it?
+kw: build an unselected calibration population; relaxed Rankings filters; databank full replaces by fitness; In databank status counts all databanks; passed-count stop; stop project during Build; OOS "(1)" duplicate files; worker killed mid-stop loses retest; free shell template two RandomCondition; nested AND three conditions; afterrun export minutes per stop; build and OOS in one start time-limit; calibration queue cadence; random generation acceptance
+tag: 🔬  date: 2026-10-04  see: perf/review-path-after-sqx, conditions/selection-window, research/post-selection-bias, sqx-drive/export-after-every-stop, authoring/one-item-group-can-drift
 ---
 # A Build with only `trades >= 100, NetProfit > 0` accepts 1,000-2,000 strategies a minute — box it with `time-limit`, never let it fill
 - The donor's `<Rankings><Conditions>` (trades > 500, Sortino > 0.6, Stagnation < 540, sampleType 127 = the build window, no OOS range in the task) reach every project verbatim; no module writes them. Relaxed by hand in the stopped `project.cfx`, the builder accepts 25-65 % of what it generates.
@@ -9,8 +10,12 @@ tag: 🔬  date: 2026-10-01  see: perf/review-path-after-sqx, conditions/selecti
 - An `action=stop` during Build ends the project (the OOS task does not run). A second stop a few seconds later landed on the OOS task that had started and left a partial `OOS`; the next full retest then wrote `Strategy X(1).sqx` beside each survivor (same identity). Empty the output databank on disk, install stopped, before a retest that is repeated.
 - A worker killed while `stop` is syncing loses the whole retest databank (it was only in memory) and can leave one torn `.sqx` in the source databank (`zipfile` refuses it). Test the zips before restarting.
 - A free `RandomCondition` hole may resolve into a nested `AND` of two conditions: `AND(hole, hole)` gives strategies of 3 conditions (39 % on Donchian+free), and a group-bound hole drifted off its block in 180 of 5026.
+- 📓 Simple Strategy builds accept far faster than the free shell (10-20k accepted in 2-6 min; median acceptance 5.5 %); custodian JVM reaches 64-79 GB and its shutdown sync outlasts the script's 5 min — numbers in Evidence.
 
 ## Evidence
+- 📓 Simple Strategy builds (2026-10-02/03) accept far faster than the free-shell template: ≈ 60k generated in 3 min, 10-20k accepted at a 2-6 min box on indices. Acceptance per cell 1-34 % (median 5.5 %); M30 and yen crosses are slow (25 base cells accepted < 300 in 2 min and needed a 10-minute box). The search needs ~2 min to start producing.
+- 📓 Custodian JVM RSS reaches 64-79 GB on 4-6 min builds. Its shutdown sync of 3 databanks × 20k files exceeds `sqx-worker.sh`'s 5-minute wait: not a hang — wait up to 40 min for the port.
+- `AlgoData/scratch/calib2/synth_final/synthesis.md` (acceptance table), `STATE.md` (queue v9).
 - `Test_Calib_USDJPY_H1` (donchianUpperCrossUp, 96 cores): 10,000 in `Results` 60 s after start, 114,489 generated in 145 s, 2.9 M generated/h. Donor filters applied afterwards to its IS metrics keep 71 of 5026.
 - `Test_Calib_XAUUSD_H1`: watchdog stop at 7,056 after 35 s; 7,085 on disk. OOS retest of 7,084: 83 s.
 - Free shell (`freeShellLong`, both holes free, 842 blocks on): 2 % accepted in the first minute, 34 % after five; 5,059 in 5 min (18,367 generated).

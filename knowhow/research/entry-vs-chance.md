@@ -1,5 +1,6 @@
 ---
-q: entry quality e-ratio MFE/MAE vs random entries, entryQuality, entries carry least edge, long gold 2020 bar-count exit, no SL TP in corpus
+q: Do the entries or the exits carry the edge on this corpus, and how to tell?
+kw: entry quality e-ratio MFE/MAE vs random entries, entryQuality, entries carry least edge, long gold 2020 bar-count exit, no SL TP in corpus
 tag: 🔬  date: 2026-09-24  see: research/random-entry-nulls, research/cusum-blind-spot
 ---
 # On this corpus the entries carry least: read null, e-ratio and concentration together

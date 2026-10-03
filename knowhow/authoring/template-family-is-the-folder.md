@@ -1,6 +1,7 @@
 ---
-q: template family for the ledger, --family, template stem, registry.csv template column, template.sqx stem is "template", which study id does a project sign, family of a project with no template
-tag: 🔬  date: 2026-09-27  see: eng/blind-steps-write-no-ledger-rows
+q: What defines a project's template family: the library folder name or the .sqx file stem?
+kw: template family for the ledger, --family, template stem, registry.csv template column, template.sqx stem is "template", which study id does a project sign, family of a project with no template
+tag: 🔬  date: 2026-09-27  see: pipeline/blind-steps-write-no-ledger-rows
 ---
 # A project's template family is its library folder's name, not the `.sqx` file's stem
 Every library template is `AlgoData/templates/library/<name>/template.sqx`, so `Path(row["template"]).stem`

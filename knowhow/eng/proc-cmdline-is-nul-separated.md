@@ -1,5 +1,6 @@
 ---
-q: how to check a pid is my scratch ui daemon before killing it; /proc/<pid>/cmdline grep never matches; test daemon on --port survives kill
+q: Why does grepping /proc/<pid>/cmdline for a string with spaces never match?
+kw: how to check a pid is my scratch ui daemon before killing it; /proc/<pid>/cmdline grep never matches; test daemon on --port survives kill
 tag: 🔬  date: 2026-09-28  see: three-install-topology
 ---
 # `/proc/<pid>/cmdline` separates arguments with NUL, so a grep with spaces never matches

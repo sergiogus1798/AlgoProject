@@ -1,5 +1,6 @@
 ---
-q: CSCV decay panel negative slope good PBO contradiction, chosen variant IS vs OOS regression negative, PBO 7.7% but slope negative is that correct, complementary halves mechanical correlation
+q: Why is the CSCV chosen-point IS/OOS slope negative even when PBO is low?
+kw: CSCV decay panel negative slope good PBO contradiction, chosen variant IS vs OOS regression negative, PBO 7.7% but slope negative is that correct, complementary halves mechanical correlation
 tag: 🔬  date: 2026-09-30  see: research/is-optimisation-vs-oos
 ---
 # The CSCV's per-chosen-point IS/OOS slope is negative by construction, more so when the edge is real

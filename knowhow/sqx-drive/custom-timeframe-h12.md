@@ -1,5 +1,6 @@
 ---
-q: H12 custom timeframe SQX retest Setup timeframe="H12"; cross-timeframe H1 to H4 and H12; H8 H12 support; 12h resample
+q: How does SQX run a custom timeframe like H12 in a task's `<Setup>`?
+kw: H12 custom timeframe SQX retest Setup timeframe="H12"; cross-timeframe H1 to H4 and H12; H8 H12 support; 12h resample
 tag: 🔬  date: 2026-09-27  see: sqx-drive/running-a-task-headless, conditions/crossmarket-crosstf-no-conditions
 ---
 # SQX runs a custom timeframe like H12 when a task's `<Setup>` just names it

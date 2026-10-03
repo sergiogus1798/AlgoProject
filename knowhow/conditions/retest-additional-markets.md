@@ -1,5 +1,6 @@
 ---
-q: RetestOnAdditionalMarkets Setup XML; per-market costs timeframe; MainTestValues inheritance mask override; cross-timeframe retest in one task; AcceptanceSettings MinMarkets market="1"
+q: How is RetestOnAdditionalMarkets structured, and how do MainTestValues change a Setup?
+kw: RetestOnAdditionalMarkets Setup XML; per-market costs timeframe; MainTestValues inheritance mask override; cross-timeframe retest in one task; AcceptanceSettings MinMarkets market="1"
 tag: 🔬  date: 2026-09-23  see: conditions/crossmarket-crosstf-no-conditions, conditions/selection-window, costs/per-task-costs
 ---
 # `RetestOnAdditionalMarkets` = one full `<Setup>` per extra market; `<MainTestValues>` decides which values win

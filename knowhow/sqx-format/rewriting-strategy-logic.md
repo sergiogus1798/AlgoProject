@@ -1,5 +1,6 @@
 ---
-q: edit strategy logic in sqx, delete a condition block, ablation, AND with one block, invert long to short, rewrite IfThen rule, Long entry Short entry, #Direction# flip, MarketPositionIsLong, same trades after ablation redundant or ignored
+q: Does SQX run a rewritten rule as written: a single-block AND, or an order flipped to the other side?
+kw: edit strategy logic in sqx, delete a condition block, ablation, AND with one block, invert long to short, rewrite IfThen rule, Long entry Short entry, #Direction# flip, MarketPositionIsLong, same trades after ablation redundant or ignored
 tag: 🔬  date: 2026-09-26  see: sqx-format/writing-a-variant, conditions/no-seeded-hash-in-sqx
 ---
 # SQX runs a rewritten rule as written: an AND of one block, and an order flipped to the other side

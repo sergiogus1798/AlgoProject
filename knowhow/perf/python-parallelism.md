@@ -1,5 +1,6 @@
 ---
-q: parallelise our Python, how many processes / workers, fork copy-on-write, crossmarket cost per trade, gate cost ATR cache, memory limit stress.py degraded, chunked Monte Carlo exact, filter after compute, count trades before launching, pool.map no progress, PSS vs RSS fork pool
+q: How should Python work be parallelised, and with how many processes?
+kw: parallelise our Python, how many processes / workers, fork copy-on-write, crossmarket cost per trade, gate cost ATR cache, memory limit stress.py degraded, chunked Monte Carlo exact, filter after compute, count trades before launching, pool.map no progress, PSS vs RSS fork pool
 tag: 🔬  date: 2026-09-27  see: perf/monte-carlo-bandwidth, perf/numba-division, perf/yaml-parsing-cost, perf/measuring-project-cost
 ---
 # Parallelise per (strategy, market) with fork, 48 processes after numba; the unit of cost is the trade
@@ -38,7 +39,7 @@ Full tables: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento).
 - 🔬 2026-09-27, one strategy (`crossmarket.one.run`, 9 markets, 25,000 draws): serial 883 s → each
   market + OOS a `core.fanout` task: 116 s, same 3.8 GB peak; at 2,000 draws 136 → 26 s, contract
   JSON `==`. `ui/daemon/jobs.py` weighs jobs on 48 cores (fan-out 24, light 3, none below 20 GB free
-  — `perf/ram-budget.md`, since 2026-09-27).
+  — `knowhow/perf/ram-budget.md`, since 2026-09-27).
 - 🔬 2026-09-29, OPEN #69/#70 re-confirmed on real stored input: `crossmarket.report` batch,
   `Test_USDJPY_donchianUpperCrossUp_M30/Retest_Markets_-_Family/2026-09-28`, 200 real strategies ×
   9 markets, `batch_draws` 10,000, 48 workers — **135 s wall**, 6,121 s CPU (45×). `verdict.csv`

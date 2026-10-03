@@ -1,5 +1,6 @@
 ---
-q: permissions deny Edit(**/project.cfx) matches nothing, Claude Code permission rule path syntax, // absolute path, ~/ home, settings.json deny outside project root
+q: Why does a deny rule like Edit(**/project.cfx) not block anything outside this repo?
+kw: permissions deny Edit(**/project.cfx) matches nothing, Claude Code permission rule path syntax, // absolute path, ~/ home, settings.json deny outside project root
 tag: 🔬  date: 2026-10-02  see: claude-hooks-guard
 ---
 # Edit/Read permission paths are gitignore patterns anchored at the project: `**/x` never leaves it

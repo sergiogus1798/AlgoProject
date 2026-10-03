@@ -1,5 +1,6 @@
 ---
-q: SQX default FX costs the5ers pairs spread commission zero; fallback costs cross-market; CADJPY GBPJPY spread; use SQX defaults for correlation N_eff
+q: Can SQX's factory FX costs be used as a fallback for pricing a strategy?
+kw: SQX default FX costs the5ers pairs spread commission zero; fallback costs cross-market; CADJPY GBPJPY spread; use SQX defaults for correlation N_eff
 tag: 🔬  date: 2026-09-23  see: costs/where-the-spread-is, conditions/crossmarket-crosstf-no-conditions
 ---
 # SQX's own FX costs are factory defaults — not a fallback for pricing, only for correlation

@@ -1,5 +1,6 @@
 ---
-q: which broker commission is confirmed vs guessed; no_forex commission default Darwinex 0.005 percent whole workflow; gold silver crude commission by segment; forex commission most restrictive; commission method same build oos1 oos2; broker pct_now price_now; core.commission broker_pct; step 26 commission; weeklyReconciler commission
+q: Which broker's commission % does `commission.use` take for a no_forex asset in each segment?
+kw: which broker commission is confirmed vs guessed; no_forex commission default Darwinex 0.005 percent whole workflow; gold silver crude commission by segment; forex commission most restrictive; commission method same build oos1 oos2; broker pct_now price_now; core.commission broker_pct; step 26 commission; weeklyReconciler commission
 tag: 🔬  date: 2026-09-29  see: costs/commission-methods, costs/sqx-fx-costs, costs/darwinex-real-spread
 ---
 # `commission.use` for a `no_forex` asset is Darwinex's own % in EVERY segment — no per-segment "max broker" pick

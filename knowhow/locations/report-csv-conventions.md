@@ -1,5 +1,6 @@
 ---
-q: report CSV strategy column; verdict tier column values MANTENER DESCARTAR; how ui finds a module's verdict; report folder per project; gate report date vs harvest date; source.harvest manifest
+q: Which columns name the strategy and verdict in report CSVs, and how are gate and harvest paired?
+kw: report CSV strategy column; verdict tier column values MANTENER DESCARTAR; how ui finds a module's verdict; report folder per project; gate report date vs harvest date; source.harvest manifest
 tag: 🔬  date: 2026-09-25  see: locations/where-things-live
 ---
 # Report CSVs name the strategy in `strategy` and the verdict in `verdict`; pair gate↔harvest by manifest

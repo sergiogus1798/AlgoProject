@@ -1,5 +1,6 @@
 ---
-q: export_retest --batch same day overwrite, steps 23 24 25 same databank collide, structure report could not be rerun, export_dir batch tag, atrCalculator newest structure latest, KeyError variant_id structure rerun after WFC redone
+q: How do I tell apart same-day `export_dir(project, databank, day)` exports, which have no step in the path?
+kw: export_retest --batch same day overwrite, steps 23 24 25 same databank collide, structure report could not be rerun, export_dir batch tag, atrCalculator newest structure latest, KeyError variant_id structure rerun after WFC redone
 tag: 🔬  date: 2026-09-30  see: export/data-all-crossmarket
 ---
 # `export_dir(project, databank, day)` has no step in the path — tag same-day exports, and never trust "newest" alone across days either

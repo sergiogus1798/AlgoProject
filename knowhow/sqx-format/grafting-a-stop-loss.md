@@ -1,5 +1,6 @@
 ---
-q: add a stop loss to a strategy without one; graft ATR stop into sqx; SLPT.None to ATRBasedValue; StopLossCoef1 ParamTypeExitUsed; variant factory cannot add a parameter; X = 1000 probe reproduces trades
+q: How do I graft a stop loss into a strategy: which two text substitutions turn `SLPT.None` into `ATRBasedValue`?
+kw: add a stop loss to a strategy without one; graft ATR stop into sqx; SLPT.None to ATRBasedValue; StopLossCoef1 ParamTypeExitUsed; variant factory cannot add a parameter; X = 1000 probe reproduces trades
 tag: 🔬  date: 2026-09-26  see: sqx-format/writing-a-variant, export/sqx-atr-is-wilder
 ---
 # A stop is grafted by two text substitutions: the entry's SLPT.None → ATRBasedValue, plus one variable

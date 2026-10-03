@@ -1,5 +1,6 @@
 ---
-q: why are the tokens so high, where do Claude tokens go, token cost, cache read, long session, 1M context, compact, clear, graphify code graph, graphify-out, graphify query explain affected, reduce tokens
+q: Where does most of the token spend of a long session go?
+kw: why are the tokens so high, where do Claude tokens go, token cost, cache read, long session, 1M context, compact, clear, graphify code graph, graphify-out, graphify query explain affected, reduce tokens
 tag: 🔬  date: 2026-10-02  see: cron-schedule-no-shared-minute
 ---
 # Three quarters of the spend is re-reading a long session's context, not the fixed prompt

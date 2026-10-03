@@ -1,5 +1,6 @@
 ---
-q: where is the SQX CLI port set AppSettings.txt; WebServerPortUsed; coreUsage missing means all cores; -Xms -Xmx per install; worker answering on 5050; History symlink; disk cost of an install
+q: Where do an SQX install's port, heap and core usage live (`AppSettings.txt`, `settings.xml`, `sqcli.config`)?
+kw: where is the SQX CLI port set AppSettings.txt; WebServerPortUsed; coreUsage missing means all cores; -Xms -Xmx per install; worker answering on 5050; History symlink; disk cost of an install
 tag: 🔬  date: 2026-09-25  see: sqx-drive/three-install-topology, perf/ram-budget
 ---
 # Ports live in `internal/AppSettings.txt` + `settings.xml`; heap in `sqcli.config`; absent `coreUsage` = all cores

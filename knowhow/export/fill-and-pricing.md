@@ -1,5 +1,6 @@
 ---
-q: SQX fill convention open-to-open; entry price offset spread above bar open; how much of the spread is in the fill price; intrabar entries pending fills or clock; zero-duration trades; rebuild P/L from bars; point value per market regression; M1 execution grid
+q: At what prices and moments does SQX fill entries and exits for this fleet?
+kw: SQX fill convention open-to-open; entry price offset spread above bar open; how much of the spread is in the fill price; intrabar entries pending fills or clock; zero-duration trades; rebuild P/L from bars; point value per market regression; M1 execution grid
 tag: 🔬  date: 2026-09-26  see: export/data-all-crossmarket, export/exits-and-m1-library, research/zero-duration-trades, costs/where-the-spread-is
 ---
 # SQX fills this fleet at the logic-TF bar opens (entry and exit); nothing happens inside a bar

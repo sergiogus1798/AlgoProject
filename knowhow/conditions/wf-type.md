@@ -1,5 +1,6 @@
 ---
-q: walk-forward type attribute 0 1 2 simulated exact IS OOS; WalkForwardMatrix type meaning; period optimization attribute codes floating fixed
+q: What do the Walk-Forward type values 0, 1 and 2 mean in SQX?
+kw: walk-forward type attribute 0 1 2 simulated exact IS OOS; WalkForwardMatrix type meaning; period optimization attribute codes floating fixed
 tag: 🔬  date: 2026-09-24  see: conditions/active-conditions-in-crosschecks, conditions/wfm-acceptance
 ---
 # WF `type` is the GUI's "Walk-Forward type": 0 sim/sim, 1 sim IS/exact OOS (default), 2 exact/exact (the project's)

@@ -1,5 +1,6 @@
 ---
-q: what timezone are SQX bars and trade times in, is Open time UTC, broker time, EET, Asia/Jerusalem, EETUS, convert trade times to UTC, session of day, feed timezone
+q: In which timezone does SQX stamp a feed's timestamps, and how do I convert to UTC?
+kw: what timezone are SQX bars and trade times in, is Open time UTC, broker time, EET, Asia/Jerusalem, EETUS, convert trade times to UTC, session of day, feed timezone
 tag: 🔬  date: 2026-10-01  see: costs/sessions-per-asset, export/trade-export-columns, sqx-drive/renaming-feeds
 ---
 # SQX stamps every feed in its broker's clock, never UTC — read the zone, then convert
@@ -9,7 +10,7 @@ tag: 🔬  date: 2026-10-01  see: costs/sessions-per-asset, export/trade-export-
 - ⚠️ `EETUS` has no IANA name: it is New York + 7 h — shift −7 h, localize as `America/New_York`.
 - ⚠️ The hour a change of time repeats or skips: localize with `ambiguous="NaT"`, count, never guess.
 - Without this, anything hour-of-day (sessions, rollover, news) is off by 2–3 h.
-- FTMO's and Hantec's MT5 servers are `EETUS` too; SQX ↔ MT5 needs zone conversion, not a shift (`eng/mt5-verify-clock-zones`).
+- FTMO's and Hantec's MT5 servers are `EETUS` too; SQX ↔ MT5 needs zone conversion, not a shift (`mt5/mt5-verify-clock-zones`).
 
 ## Evidence
 - 2026-09-26, read-only copy of `SQX/user/data/data.db`: rows for `XAUUSD_DukasM1_Infinox` (EET),

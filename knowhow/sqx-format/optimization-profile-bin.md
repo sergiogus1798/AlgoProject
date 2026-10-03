@@ -1,5 +1,6 @@
 ---
-q: optimizationProfile.bin format, SPP optimization profile parse, SPP permutations stored, 3D charts setting dontStoreOP3DChartsData, SPP permutation trades, SQUtils.writeUTF, betterHashCode metric keys, optprofile_columns.json
+q: How do I read `optimizationProfile.bin`, the SPP profile, with `core/optprofile.py`?
+kw: optimizationProfile.bin format, SPP optimization profile parse, SPP permutations stored, 3D charts setting dontStoreOP3DChartsData, SPP permutation trades, SQUtils.writeUTF, betterHashCode metric keys, optprofile_columns.json
 tag: 🔬  date: 2026-09-10  see: sqx-format/sqstats-blob, sqx-format/sequential-optimisation-xml, export/spp-export
 ---
 # optimizationProfile.bin is the SPP profile; it parses (`core/optprofile.py`)

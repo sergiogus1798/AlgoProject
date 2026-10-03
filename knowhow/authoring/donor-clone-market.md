@@ -1,5 +1,6 @@
 ---
-q: builder clone of donor still trades XAUUSD; project for non-XAUUSD asset built on gold; set_costs only rewrites matching Chart symbol; resources.py borrow Symbol InstrumentInfo Broker; zero Setup on asset feed guard; unresolved resources; builder leaves half-built project on refusal; stray donor feed after swap; setups count not printed; builder scope from the master session or instrument only never task config; InstrumentInfo embeds a cost blob but Setup governs
+q: What must be done when cloning the donor project for a new market's feed?
+kw: builder clone of donor still trades XAUUSD; project for non-XAUUSD asset built on gold; set_costs only rewrites matching Chart symbol; resources.py borrow Symbol InstrumentInfo Broker; zero Setup on asset feed guard; unresolved resources; builder leaves half-built project on refusal; stray donor feed after swap; setups count not printed; builder scope from the master session or instrument only never task config; InstrumentInfo embeds a cost blob but Setup governs
 tag: 🔬  date: 2026-09-29  see: sqx-drive/only-flag-wrong-databank, costs/per-task-costs, eng/feed-in-config-yaml, costs/sessions-per-asset
 ---
 # A donor clone must have its feed swapped, staged before it ever touches an install, and refused if the swap left a trace

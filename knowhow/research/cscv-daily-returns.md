@@ -1,5 +1,6 @@
 ---
-q: CSCV daily or weekly returns, López de Prado PBO matrix rows, is a daily panel all zeros, how many days in equity.parquet, duplicate dates leg overlap, Sundays in equity, CSCV runtime 12870 partitions daily, block sums
+q: Is a daily-returns panel in the CSCV mostly zeros, and what does it rank?
+kw: CSCV daily or weekly returns, López de Prado PBO matrix rows, is a daily panel all zeros, how many days in equity.parquet, duplicate dates leg overlap, Sundays in equity, CSCV runtime 12870 partitions daily, block sums
 tag: 🔬  date: 2026-10-01  see: research/cscv-chosen-point-slope-seesaw, research/cscv-always-reads-oos2
 ---
 # The CSCV reads daily returns, and a daily panel is not "almost all zeros"

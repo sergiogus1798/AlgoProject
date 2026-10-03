@@ -1,5 +1,6 @@
 ---
-q: does a finished run keep the settings it ran with? crossTF blocks order, wfc tasks segment, study re-reads assets/_build.yaml at analysis time, changing _build.yaml rewrites the reading of an old run, blocks.json, ran.json, Configuración SQX warning
+q: Do crossTF and structure read a run's own record or today's assets/_build.yaml?
+kw: does a finished run keep the settings it ran with? crossTF blocks order, wfc tasks segment, study re-reads assets/_build.yaml at analysis time, changing _build.yaml rewrites the reading of an old run, blocks.json, ran.json, Configuración SQX warning
 tag: 🔬  date: 2026-09-29  see: editing-asset-yaml
 ---
 # Fixed: crossTF and structure now read a run's own record, not today's `assets/_build.yaml`

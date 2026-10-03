@@ -1,5 +1,6 @@
 ---
-q: MinTRL absurd huge five digit number bug or correct crossmarket USDCHF 35000 35426, SR below SR* negative gap squared, no alcanzable unreachable, SR SR* not glued gamma4 non-excess kurtosis Bailey Lopez de Prado, 27 avisos en total 3 avisos por test crossmarket bug or real
+q: What does MinTRL return when the Sharpe is below the benchmark Sharpe?
+kw: MinTRL absurd huge five digit number bug or correct crossmarket USDCHF 35000 35426, SR below SR* negative gap squared, no alcanzable unreachable, SR SR* not glued gamma4 non-excess kurtosis Bailey Lopez de Prado, 27 avisos en total 3 avisos por test crossmarket bug or real
 tag: 🔬  date: 2026-10-01  see: research/random-entry-nulls
 ---
 # MinTRL is only defined when SR > SR*; below it, it is «No alcanzable», not a big number

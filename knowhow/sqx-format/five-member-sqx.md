@@ -1,5 +1,6 @@
 ---
-q: five-member sqx minimal shape loads, databank de-duplication fingerprint, load same folder twice duplicates, DismissTooSimilarStrategies, fabricated variant exports parent's metrics, inherited results detector
+q: Does SQX load and retest a five-member .sqx, and which results does it carry until retested?
+kw: five-member sqx minimal shape loads, databank de-duplication fingerprint, load same folder twice duplicates, DismissTooSimilarStrategies, fabricated variant exports parent's metrics, inherited results detector
 tag: 🔬  date: 2026-09-22  see: sqx-format/writing-a-variant, sqx-format/retest-rewrites-sqstats, databanks/databank-verbs, databanks/autosync-nothing-on-disk
 ---
 # SQX loads and retests a five-member .sqx — but it still carries the parent's results until retested

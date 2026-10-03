@@ -1,5 +1,6 @@
 ---
-q: which genetic algorithm GA target / fitness to use? Ret/DD vs Sharpe vs R Expectancy vs RSquared, seed variance run-to-run, Sharpe (IS) threshold 0.6, minimum trades 100, second condition, acceptance vs selection
+q: Which genetic-algorithm target should the build optimise, given the run-to-run noise?
+kw: which genetic algorithm GA target / fitness to use? Ret/DD vs Sharpe vs R Expectancy vs RSquared, seed variance run-to-run, Sharpe (IS) threshold 0.6, minimum trades 100, second condition, acceptance vs selection
 tag: 🔬  date: 2026-09-05  see: research/is-proxies-top-decile, research/post-selection-bias
 ---
 # GA target is unresolved: run-to-run noise (~16 pp) exceeds every target effect

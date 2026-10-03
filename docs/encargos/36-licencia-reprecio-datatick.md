@@ -100,7 +100,7 @@ atajo? Dos lecturas razonables, para elegir o proponer otra:
   que de verdad importa para el paso 8/25 (`action: mark`).
 
 Como todo umbral del proyecto, va a `ledger/thresholds.yaml` con su `ledger:<clave>`
-(`knowhow/eng/thresholds-live-in-the-ledger.md`), no como constante en el módulo.
+(`knowhow/pipeline/thresholds-live-in-the-ledger.md`), no como constante en el módulo.
 
 ## 5 · Salidas
 

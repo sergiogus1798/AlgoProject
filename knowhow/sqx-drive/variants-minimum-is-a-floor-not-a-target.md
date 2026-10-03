@@ -1,5 +1,6 @@
 ---
-q: sqx.variants.make produces way more than 1000 variants; minimum variants config is a floor not a target; how many variants will one mother produce; estimate WFC cost before running variants.execute
+q: Is `minimum.variants` in `sqx/variants/config.yaml` a target or a floor, and how many variants can one mother make?
+kw: sqx.variants.make produces way more than 1000 variants; minimum variants config is a floor not a target; how many variants will one mother produce; estimate WFC cost before running variants.execute
 tag: 🔬  date: 2026-09-26  see: perf/workflow-step-durations
 ---
 # `minimum.variants: 1000` in `sqx/variants/config.yaml` is a FLOOR, not a target — one mother can produce 1x-5x that with no warning
@@ -21,7 +22,7 @@ each parameter clears its own floor, and that combinatorial count has no upper c
   `make`'s own progress table (`planned N de un target M`) shows the true count, and it has to be read
   per mother, not assumed from the config.
 - Consequence measured downstream: `sqx.variants.execute`'s SQX-side cost for a mother scales with
-  this true count once it is large enough (`perf/workflow-step-durations.md` — a WFC leg's fixed
+  this true count once it is large enough (`knowhow/perf/workflow-step-durations.md` — a WFC leg's fixed
   9-market-loading cost stopped dominating somewhere between ~1,500 and ~5,000 variants). Reading
   only `minimum.variants: 1000` before estimating a run's wall-clock time will under-estimate it by
   up to 5× for a mother whose parameters happen to be wide.

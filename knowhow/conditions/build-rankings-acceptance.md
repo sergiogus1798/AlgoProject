@@ -1,15 +1,18 @@
 ---
-q: Build task acceptance filters; Rankings Conditions; filtering conditions of the builder; _study.yaml; donor NumberOfTrades 500 SortinoRatio Stagnation; first Conditions is BuildMode initial population; sampleType 10 IS in a Build; calibration filters
-tag: 🔬  date: 2026-10-02  see: conditions/condition-xml-shapes, conditions/selection-window, research/post-selection-bias, sqx-drive/unselected-build-population
+q: Which element holds a Build task's acceptance conditions, Rankings or the first Conditions?
+kw: Build task acceptance filters; Rankings Conditions; filtering conditions of the builder; _study.yaml; donor NumberOfTrades 500 SortinoRatio Stagnation; first Conditions is BuildMode initial population; sampleType 10 IS in a Build; calibration filters
+tag: 🔬  date: 2026-10-04  see: conditions/condition-xml-shapes, conditions/selection-window, research/post-selection-bias, sqx-drive/unselected-build-population
 ---
 # A Build accepts by `<Rankings><Conditions>`; the FIRST `<Conditions>` of the task is not it
 A Build task's first `<Conditions>` is `<BuildMode>`'s (initial population): `acceptance.CONDITIONS.search(task)`
 and `crosschecks.silence(task)` hit it. Write acceptance only through `sqx.projects.rankings` (slices
 `<Rankings>`), values from `assets/_study.yaml`; `builder` does it for every new project and refuses on a
-missing value. Read `resultType="main" subresult="30" sampleType="10"` (IS): 127 equals 10 only while the
+missing value. 🔬 Verified as Build ranking conditions (100 % of accepted strategies comply, several
+populations): `NumberOfTrades`, `ProfitFactor`, `NetProfit`, `ReturnDDRatio`, `WinningPct`. Read `resultType="main" subresult="30" sampleType="10"` (IS): 127 equals 10 only while the
 Build has no `<OutOfSample><Range>`; 11 ≡ 10 and 40 is never stored.
 
 ## Evidence
+- 2026-10-02/03: `ReturnDDRatio` and `WinningPct` checked by their own IS columns in `AlgoData/scratch/calib2/adaptive/RECIPE.md` §6 (arms ab3-ab7, ab4).
 - Before 2026-10-02 every project carried the frozen donor's `NumberOfTrades > 500`, `SortinoRatio > 0.6`,
   `Stagnation < 540` (sampleType 127), which no repo file stated.
 - Trade bounds are totals: trades/yr × build years (XAUUSD 10.0, DAX40 6.25) — the donor's 500 was 50/yr on FX and 80/yr on DAX40. The compact one-line `<Condition>` shape `acceptance.condition` writes is honoured.

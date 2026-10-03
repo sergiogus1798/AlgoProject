@@ -41,7 +41,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 25 | 🟢 | The authoring chain is proven headless end to end — issue 9's positive control | docs/OPEN-closed.md |
 | 26 | 🟢 | `PercentageBased` is charged ONCE per trade — settled 2026-09-27 | docs/OPEN-closed.md |
 | 27 | 🟢 | Sixteen of seventeen assets have no agreed cost, and the schema changed under... | docs/OPEN-closed.md |
-| 28 | 🟠 | `DAX40` has an asset file but the master configures no such feed | OPEN.md |
+| 28 | 🟠 | `DAX40`'s feed is in SQX's registry but in no project — builds, not yet run | OPEN.md |
 | 29 | 🟠 | Six index assets have no IS/OOS window, and `SP500ft`'s feed does not exist | OPEN.md |
 | 30 | ✅ | `sqx.data.update` ran end to end on 2026-09-25 | docs/OPEN-closed.md |
 | 31 | ⚪ | Revisión completa del proyecto — 2026-09-22 — CERRADO 2026-09-26 | docs/OPEN-closed.md |
@@ -108,10 +108,13 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 91 | 🟠 | The gate's t was compressed (fixed 2026-10-02); every threshold and null FPR read on the old scale is stale | OPEN.md |
 | 92 | 🟠 | Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02) | OPEN.md |
 | 93 | 🟠 | Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured | OPEN.md |
+| 94 | 🟢 | `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes | OPEN.md |
+| 95 | 🟡 | Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner | OPEN.md |
 | 96 | 🟡 | `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error | OPEN.md |
 | 97 | 🟡 | `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@` | OPEN.md |
 | 98 | 🟡 | Nothing reads SQX's own `StrategyProblems` flag | OPEN.md |
 | 99 | 🟠 | `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line | OPEN.md |
+| 100 | 🟠 | Literature scout built 2026-10-02 — owner decisions pending, 8 questions and 8 entries without a condition | OPEN.md |
 | 101 | 🟡 | A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1 | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
@@ -223,16 +226,18 @@ taking a universe dict, and only failed at runtime. Both classes of drift are ch
 
 ---
 
-## 28. 🟠 `DAX40` has an asset file but the master configures no such feed
+## 28. 🟠 `DAX40`'s feed is in SQX's registry but in no project — builds, not yet run
 
-`assets/DAX40.yaml` names `DAX40_DukasM1_Infinox`, and a sweep of every `project.cfx` on the master
-on 2026-09-22 found that symbol in none of them — the other sixteen assets all resolve. Its
-`instrument` block and `sqx_now` values are therefore the ones read on 2026-09-03 and carried
-forward, not re-read from the live install.
-
-Either the feed was removed from the projects since, or the file was written for a market not yet
-set up. **Not a finding against the master's configuration** — that is the owner's — just a note
-that this one file cannot be refreshed from `sqx.inspect.instruments` until the feed exists.
+Stale until 2026-10-02: this said the master had no DAX40 feed and named `DAX40_DukasM1_Infinox`.
+Today the master's Data Manager holds `DAX40_M1` (instrument `DAX40_ftmo`, FTMO, EETUS, 3.9 M bars
+from 2013-09-30) and `DAX40_TICK` (from 2018-06), with bars under `user/data/History/`; the card
+names `DAX40_M1` and `python3 -m core.assets DAX40` exits 0. What is still true: **no `project.cfx`
+on any install carries that feed**, so the builder writes its resources from the registry
+(`registryxml.definitions`, `knowhow/costs/sessions-live-in-data-db.md`). A DAX40 H1 project built
+into a temp install carries main chart `DAX40_M1`, instrument `DAX40_ftmo`, session
+`GER40.cash_ftmo`. **Open: nobody has started such a project in SQX yet** — the first real run is
+the proof that SQX resolves it; on USA500 the registry route and the project route give
+byte-identical tasks.
 
 
 ---
@@ -292,7 +297,7 @@ reading of "passes step 20" side by side; it cuts nobody until the owner chooses
 `reserved_for` (`assets/_policy.yaml`) — without it the SPA on oos2 is never read; (3) the CSCV
 reads oos2 and the policy does not list it. Engineering, not his: the WFC, CSCV and WFM reports
 write no ledger row, so the blind door opens only after `python3 -m ledger.backfill --blind`
-(`knowhow/eng/blind-steps-write-no-ledger-rows.md`); wiring them needs (3) first, or the CSCV's own
+(`knowhow/pipeline/blind-steps-write-no-ledger-rows.md`); wiring them needs (3) first, or the CSCV's own
 row would be refused. ⚠️ On 2026-09-26, exploring the USDJPY batches before the module existed,
 the session read the two mothers' oos2 daily P&L (sums, correlation) outside the door; no ledger row
 records that look — the owner decides whether to add one.
@@ -305,7 +310,7 @@ records that look — the owner decides whether to add one.
 the family comes from).
 
 **2026-09-28:** (2) is moot for a human — the owner lifted the oos2 reservation and the blind door
-for humans (`knowhow/eng/oos2-door-binds-only-autonomous.md`), so the SPA on oos2 is read whenever a
+for humans (`knowhow/pipeline/oos2-door-binds-only-autonomous.md`), so the SPA on oos2 is read whenever a
 human runs step 20. It stays open only for an autonomous agent (`ALGO_AUTONOMOUS=1`), together with
 whether such an agent should be held at all.
 
@@ -376,11 +381,11 @@ HTTP call to the port — the terminal's own "prohibit AI trading" option is the
 
 **2026-09-29.** Install and login DONE: the terminal runs under Wine (`~/Desktop/MT5`), connected, logged in to «$10k FTMO Account 2-Step» on FTMO-Server4 (owner: several funded accounts). Left, all ours: `metaeditor` is not installed (needed by `mt5_compile`), then backtest one SQX EA in the tester and compare it with SQX.
 
-**2026-09-29.** Compile works: `MetaEditor64.exe` was there (case bug in `mt5/wine.py`); Wine truncates any argument with a space, so `compile_path` now compiles by a relative path with `cwd`, and refuses while the terminal is up (they share the data-folder lock). 48/48 `Sq*` indicators compiled, 0 errors. Left: (1) no SQX-exported EA exists on disk — export one through a `Test_` project's SaveToFiles task (`SaveSourceCode`) on the conductor; (2) the tester and MetaEditor need the terminal closed, and it runs logged in to the owner's funded FTMO account — his call when. Proposed bar: matched ≥ 95 % both ways, open gap ≤ 1 bar, same exit ≥ 90 %, P&L corr ≥ 0.95. `knowhow/eng/metaeditor-compile-under-wine.md`.
+**2026-09-29.** Compile works: `MetaEditor64.exe` was there (case bug in `mt5/wine.py`); Wine truncates any argument with a space, so `compile_path` now compiles by a relative path with `cwd`, and refuses while the terminal is up (they share the data-folder lock). 48/48 `Sq*` indicators compiled, 0 errors. Left: (1) no SQX-exported EA exists on disk — export one through a `Test_` project's SaveToFiles task (`SaveSourceCode`) on the conductor; (2) the tester and MetaEditor need the terminal closed, and it runs logged in to the owner's funded FTMO account — his call when. Proposed bar: matched ≥ 95 % both ways, open gap ≤ 1 bar, same exit ≥ 90 %, P&L corr ≥ 0.95. `knowhow/mt5/metaeditor-compile-under-wine.md`.
 
 **2026-09-29.** Owner, 2026-09-29: MT5 is on hold until he says so — do not touch the terminal, the tester or MetaEditor meanwhile.
 
-**2026-09-29, later — owner lifted the hold for this test.** The unattended backtest works: `metaeditor.expert()` → `tester.start()` → `tester.collect()` on the owner's `Strategy 3.48.75` (XAUUSD H1, `~/Desktop/FTMO_EAs_NoNews` and `FTMONewsFilter_Files`), 20 months in ~15 s each, 27 trades parsed from the report. One bug fixed: the terminal does not create the `reports\` folder of `Report=`, so no report was written (`tester.py` makes it now). The news filter is inert in the tester (the calendar is empty there), so both versions trade identically. → `knowhow/eng/mt5-tester-unattended.md`. Left: the tester has no way to pass EA inputs (a `[TesterInputs]` section); the MetaQuotes MCP tester is still unproven; there is still no SQX backtest of the same EA to compare against.
+**2026-09-29, later — owner lifted the hold for this test.** The unattended backtest works: `metaeditor.expert()` → `tester.start()` → `tester.collect()` on the owner's `Strategy 3.48.75` (XAUUSD H1, `~/Desktop/FTMO_EAs_NoNews` and `FTMONewsFilter_Files`), 20 months in ~15 s each, 27 trades parsed from the report. One bug fixed: the terminal does not create the `reports\` folder of `Report=`, so no report was written (`tester.py` makes it now). The news filter is inert in the tester (the calendar is empty there), so both versions trade identically. → `knowhow/mt5/mt5-tester-unattended.md`. Left: the tester has no way to pass EA inputs (a `[TesterInputs]` section); the MetaQuotes MCP tester is still unproven; there is still no SQX backtest of the same EA to compare against.
 
 **2026-09-29, evening — MT5 Bridge › Verificar built (encargo 34 §0.5).** Point 3 is solved: a
 SaveToFiles task with `<SaveSourceCode type="Expert Advisor for MetaTrader5 (*.MQ5)">` exports the
@@ -388,7 +393,7 @@ EA headless (the GUI's label «MetaTrader 5 (*.mq5)» fails the project;
 `knowhow/sqx-drive/export-mql5-source-headless.md`). The terminal switches between the owner's
 saved FTMO and Hantec accounts on its own — `initialize(login, server)` with the terminal started
 detached first, and a `[Common] Login/Server` section in the tester ini
-(`knowhow/eng/mt5-account-switch-unattended.md`). `python3 -m mt5.verify.run` and the window's
+(`knowhow/mt5/mt5-account-switch-unattended.md`). `python3 -m mt5.verify.run` and the window's
 new MT5 BRIDGE section run the whole check. Still open from this section: point 4 is now the
 owner's thresholds of encargo 34 (in `ledger/thresholds.yaml`, `mt5verify.*`); the MetaQuotes MCP
 tester stays unproven; the tester still cannot pass EA inputs.
@@ -497,11 +502,11 @@ sits where the hand FTMO patch did, but its live behaviour is unseen — the tes
 `_Hantec` EA on a demo chart across one red-folder release and read the Experts tab for the close line.
 2026-10-02 (encargo 42): the tester mode exists — the patched EA reads the firm's history from
 Common\Files and was seen to close 5 min before and to refuse entries on three hand-checked releases
-(`knowhow/eng/ea-news-filter.md`). Still open: the live close on a demo chart; the EAs in
+(`knowhow/mt5/ea-news-filter.md`). Still open: the live close on a demo chart; the EAs in
 `AlgoData/mt5/eas/` were regenerated 2026-10-02 in AlgoData only (backup in `eas-backup-2026-10-02/`) — `Experts/` and
 the live charts still carry the old ones; the thin-day exclusion and the no-minute events' removal are not yet seen in a tester run; the first real
 with/without reading waits for the owner's strategy and firm; FTMO-Server4 lacks USDJPY M1 for
-2023-09-20→2023-11-10 (`knowhow/eng/mt5-tester-m1-gaps-hide-news-window.md`).
+2023-09-20→2023-11-10 (`knowhow/mt5/mt5-tester-m1-gaps-hide-news-window.md`).
 
 **Open — to build:** encargo 33 (the EV model, then plug it into `deals.worth`, which today judges a
 deal only by the zero-edge floor); encargo 34's pool (its verification is built, 2026-09-29: MT5
@@ -598,10 +603,11 @@ Opened by the unattended docs pass from `audit/2026-09-30.md`. None is a documen
 - 📓 **Custodian log 704 MB**: `log_2026_09_29.log` 526 MB, ~220k × `TradingException: Setting 'TradingSetup.StrategyClass' is not set` in `WFSimulationJob`.
   Same storm as `knowhow/eng/log-retention.md`; the archiver + prune handle it (SQX config is the owner's). Repeated 2026-09-30: `log_2026_09_30.log` 167 MB, 70,212 `StrategyClass` lines; custodian folder 861 MB (audit 2026-10-01). Archiver + prune handle it; cause stays with the owner.
 
-## 87. 🟠 Portfolio construction engine — planned 2026-09-30, not built; the owner's calls gate each milestone
+## 87. 🟠 Portfolio construction engine — M0-M2, F1 and the F2 engine built 2026-09-30; the owner's calls gate each milestone
 
 The plan is `portfolio/PLAN.md`; the order is in `portfolio/CLAUDE.md` (M0-M2 → F1-F5 funded → M3-M8
-real → M9 paper OOS). Nothing is built. What each milestone waits on:
+real → M9 paper OOS). Built so far: M0 code, M1, M2, F1 and the F2 engine (bullets below); F3 onwards
+and M3-M9 are not. What each milestone waits on:
 
 - **M0 (the development pool):** the owner's go-ahead to archive survivors (the archive reads SQX
   install files and the daemon); PLAN §12 Q2 (where `oos2` comes from — the archive holds only IS and
@@ -683,6 +689,8 @@ The log lists 41 deletion candidates, 4.86 GB, nothing deleted automatically. Th
 and 275 duplicate parquet groups (strategy pnl repeated x11 across the `2026-09-29-N` folders).
 To decide: delete the superseded exports, and find out why one MCR_All export was written 12 times on one day.
 
+**Worse 2026-10-03:** the data root is 88.12 GB of 90 (98 %); `reports` 30.50 GB (budget 5), `snapshots` 8.57 GB (8), `bars` 2.93/3, `harvest` 15.55 GB and `scratch` 6.87 GB unbudgeted. 24 h earlier it was 40.57 GB. Cause: the `Test_Calib_*` projects (`reports/Test_Calib_*`, ~1 GB each, ~100 folders) — not the MCR_All exports. The disk itself has 580 GB free, so only the budget is at stake. The owner decides what to retire.
+
 ## 93. 🟠 Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured
 
 `assets/_study.yaml` (step 6) and step 8 of `pipeline/autopilot/criteria.yaml` carry an agent's
@@ -691,9 +699,15 @@ proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Op
 - **Owner's decisions** (dossier §1): the trades-per-year floor (written as fail < 20, limbo 20-40,
   pass >= 40 on `is_trades_per_year`; he prefers 40-50 as a floor); `dev.on` still true, so the
   rules apply and 5 survivors are then drawn at random; the risk per trade on funded accounts.
-- **15 assets could not be built** (session `<SYM>_ftmo` in no project). Solved in principle 2026-10-02:
-  every FTMO session is in the master's `user/data/data.db` (`knowhow/costs/sessions-live-in-data-db.md`);
-  to do: `doctrine.borrow_session` falls back to it, and the three cards with `session: null` get theirs.
+- **Sessions: done 2026-10-02 for 15 of the 16 cards that name one.** `doctrine.borrow_session` now falls
+  back to a copy of the master's `user/data/data.db` (`sqx/projects/sessiondb.py`,
+  `knowhow/costs/sessions-live-in-data-db.md`); a real EURUSD H1 project carried `EURUSD_ftmo` from it.
+  The three `session: null` cards got theirs the same day (owner: FTMO's for every asset) —
+  `XAGUSD_ftmo`, `UKOIL.cash_ftmo`, `USOIL.cash_ftmo`; XAGUSD and UKOIL build.
+  **The feed has the same fallback since 2026-10-02**: no project carries `DAX40_M1` or
+  `USOIL.cash_M1`, so `resources.definitions` writes their `<Symbol>`, `<InstrumentInfo>` and
+  `<Broker>` from the registry (`registryxml.definitions`). All 19 assets now build; DAX40 and USOIL
+  were built H1 into a temp install, none of the 17 new ones has been RUN in SQX yet.
 - **Untested**: a `Trade_` build fills the databank in minutes and then replaces by IS Ret/DD for
   the rest of its 180 minutes — a selection nobody measured (test: 180-min full build against a
   6-min one). The A/B of floors inside the build is one build per arm.
@@ -704,12 +718,77 @@ proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Op
   and `AlgoData/scratch/{calib_*,null2,null-fpr-2026-10-01}` — #92's budget. Delete once the
   owner has decided.
 
-- **Condition count (rule 14, owner 2026-10-02)**: `buildrules.py` writes `maxConditions = 2` whatever
-  the template holds, so a template with holes builds 3-4 conditions. To do: count fixed conditions
-  and `RandomCondition` holes per side, write `2 − fixed`, refuse two holes on a side; fix or retire
-  `freeShellLong`/`freeShellShort` (two holes per side). The 28 calibration populations exceed the
-  cap, used the broad palette (842 blocks, time blocks and stop/limit entry blocks included) —
-  against rule 15 — and must be rebuilt per family before the criteria are taken as final.
+- **Condition count (rule 14) and palette (rule 15): in the builder since 2026-10-02.**
+  `buildrules.what_to_build` writes entry 1..2 / exit 1..2 for a Simple Strategy (`builder --simple
+  long|short`, `--random` for the twin) and `0..(2 − fixed)` per side for a template; the builder
+  refuses two free holes on a side (`freeShellLong`/`freeShellShort` are now refused: use
+  `--simple`); `buildingblocks.rewrite` never switches on a stop/limit level or a clock block, and
+  `buildingblocks --count` prints what a Build carries (`tests/test_condition_count.py`,
+  `tests/test_builder_simple.py`). Still open:
+  - **No Simple Strategy project has been started in SQX yet** — files only. The first population
+    confirms SQX takes it (`knowhow/authoring/simple-strategy-build-xml.md`).
+  - **A template's fixed idea is a hole bound to a one-item group**, and SQX has one condition range
+    for every hole of a side: such a side is written 1..1 (idea + exactly one random), not the
+    owner's 0..1. Whether a bound hole at min 0 keeps its block needs one short build; until then
+    "the idea alone" is never built from a template.
+  - Owner: in a Simple Strategy the exit rule is drawn in ~50 % of strategies (`_ExitRule_`
+    probability 50, as in his own project) and then holds 1..2 conditions — or must every strategy
+    carry one (`exits.condition_required`)? And: are `SessionHigh/Low/Open/Close`,
+    `HighestInRange`, `CBlock_TimeBreakout*` clock blocks for rule 15? Today only SQX's
+    «Bar And Time» natives are refused.
+  - The 28 calibration populations exceed the cap and used the broad palette (842 blocks) — they
+    must be rebuilt per family before the criteria are taken as final.
+
+**2026-10-03.** 2026-10-03/04: steps 6 and 8 recalibrated (116 base cells, 201 populations, red-teamed) — dossier `docs/AgentPDFs/criterios-pasos-6-a-12-2026-10-04.md`, PROVISIONAL, owner's approval pending; proposals written in `assets/_study.yaml` (ceiling 75/yr, no floor beyond 10/yr, no PF/RetDD) and `pipeline/autopilot/criteria.yaml` (step 8; steps 10 and 12 still `rules: []`). Cards: `knowhow/research/{step6-floor-vs-step8-yield,is-filters-inside-the-build,oos1-oos2-persistence,drift-term-biased-by-side,crosstf-mother-sibling-dependence,crossmarket-effective-markets}.md`. Still open: (1) long builds (180 min, cap 10,000) with a full databank — no IS filter was tested there; (2) the gate's drift-term correction is proposed, NOT applied (`drift_excess_t`, and `crossmarket/simulate/excess.py` with it); (3) `wfc.py` gives extra markets the main's dates; (4) 7-11 % of strategies change identity between the build and the OOS databank (name join; fingerprint agrees 99.7-100 % on 3 populations); (5) the crossmarket and crossTF studies hard-code their window, so oos2 is read from raw exports; (6) `assets/_policy.yaml` oos2 end 2026-09-30 is past the last bar of XAUUSD, XAGUSD and HK50 — an OOS2 task cannot start (`knowhow/sqx-drive/cannot-start-unresolved-past-data.md`); (7) 31 H1 base cells have no oos2 (`oos2_job.sh` not run).
+
+## 94. 🟢 `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes
+🔬 2026-10-02. Opened from `tools/audit_tests.py` (`tests/test_thresholds.py` is set aside for it).
+- **Trap:** `python3 -m ledger.report --check-thresholds` raises `KeyError: 'UKOIL'` instead of
+  printing the table of declared thresholds against their copies, so nobody can tell whether a
+  threshold drifted. Everything else that reads the ledger is unaffected: `thresholds.value(key)`
+  and `thresholds.fill()` compare the whole key string (🔬 `thresholds.value('feedQuality.K.UKOIL.cash_M1')`
+  returns 20).
+- **Mechanism:** `ledger/thresholds.yaml` points two rows at a config key that contains a dot —
+  `feedQuality.K.UKOIL.cash_M1` and `feedQuality.sessions.UKOIL.cash_M1`, source
+  `studies/data/feedQuality/config.yaml#K.UKOIL.cash_M1`. `walk()` does `dotted.split(".")` and
+  descends `K → UKOIL → cash_M1`, but the config's key is the single string `UKOIL.cash_M1`.
+  The other 12 feeds have no dot (`XAUUSD_M1`), so only Brent's feed (`UKOIL.cash_M1`) breaks it.
+- **Reproduce:** `python3 tests/test_thresholds.py` → `ledger/thresholds.py:105 in walk: KeyError: 'UKOIL'`
+  (via `divergences()` ← `resolve()`).
+- **Fix (not applied — `ledger/` is the owner's):** make `walk` try the longest key that exists
+  at each node (so `UKOIL.cash_M1` is taken whole), or write the pointer with a selector for keys
+  that contain a dot. Then remove the entry from `ASIDE` in `tools/audit_tests.py` — the audit says
+  when it passes again.
+
+**2026-10-03.** `ledger/thresholds.py` `walk()` now takes a key that holds a dot whole: at each mapping the longest run of steps that is a key there wins, so `K.UKOIL.cash_M1` reads `K` then the feed `UKOIL.cash_M1`; selectors and plain nested paths resolve as before and a missing key still raises KeyError. No threshold value and no ledger row changed. Verified: `python3 tests/test_thresholds.py` passes (89 of 89, plus known-answer cases for the dotted key on a fake config), `python3 -m ledger.report --check-thresholds` prints its table again, and the test's entry is gone from `ASIDE` in `tools/audit_tests.py`. Fixed, uncommitted: close it once the owner has committed.
+
+## 95. 🟡 Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner
+📓 2026-10-02. The mechanical audit runs every `tests/test_*.py` (105 on the day) and lists in `ASIDE`
+the ones it does not count as failures: 92 passed, 13 set aside. The thirteenth, `test_thresholds`,
+is #94. The twelve below are not bugs of the audit; each is either another session's work in
+motion or a drift that needs a decision. The audit prints them as «apartadas» and says «PASSES:
+remove it from ASIDE» when one recovers, so the list cannot rot silently. Reasons as written in
+`tools/audit_tests.py`, all dated 2026-10-02:
+
+| test | why it fails | whose / what clears it |
+|---|---|---|
+| `test_commission_segments` | Darwinex's commission is PercentageBased 0.005 in the asset cards; the donor's Build and Retest Setup still say SizeBased 5.0 | cost cards in motion (`assets/_build.yaml`): align the donor or the test |
+| `test_feedquality` | `calibration.json` is keyed by the old feed names (`XAUUSD_DukasM1_Infinox…`); the feeds became `XAUUSD_M1` on 2026-10-01 | recalibrate or rekey the file |
+| `test_mt5verify` | 5 assertions fail while `mt5/verify` (`firms.py`, `judge.py`, `run.py`) is being rewritten | the session rewriting it |
+| `test_portfolio_build` | `AttributeError: RangeIndex.to_period` in `portfolio/common/construct/equity/matrix.py` with the test's fixture | a code or fixture bug, not a one-line fix |
+| `test_portfolio_mtm` | golden MAE exactness 0.943 < 0.99 on the real data | drift after the feed rename |
+| `test_portfolio_universe` | golden rebuild vs SQX daily «low» reads «out» (exact 0.96-0.975) | same drift as `test_portfolio_mtm` |
+| `test_strategymeta` | the golden's `asset_card_sha256` is not the sha of `assets/symbols/XAUUSD.yaml` after the cost-card edits, and `strategymeta` reads the golden strategies differently | re-freeze the golden after the cost cards settle |
+| `test_ui_columns` | the databank column chooser's default order changed while `ui/daemon/databank/` is modified | the session working on it |
+| `test_ui_research` | the research board's passing cells differ | `studies/research/board`, another session's work in progress |
+| `test_ui_results` | the results catalogue does not match `studies/` (board, marketProfile, memory, monteCarlo) | `ui/daemon/results/` and `studies/research` in motion |
+| `test_ui_sqxconfig_studies` | the ledger changed more than its three lines (sealed 2026-10-02); the test's expectation of `ledger/thresholds.yaml` is out of date | update the expectation |
+| `test_ui_strategy` | strategy meta has no `backtest` key — the same failure as in #89 | `ui/daemon/` modified by another session |
+
+Decision for the owner: none yet. Each row closes when its test passes again and is removed from
+`ASIDE`; close this issue when `ASIDE` is empty or holds only entries with an open OPEN number.
+Reproduce: `python3 tools/audit_tests.py` or the single file (`python3 tests/test_<name>.py`, or
+`python3 -m pytest -q tests/test_<name>.py` when it has no `__main__`).
 
 ## 96. 🟡 `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error
 
@@ -762,7 +841,33 @@ symbol with holes inside the window, is collected as a normal run and compared w
 window MT5 never traded. To do: carry `History Quality` and the first deal's date into the
 run's summary and let step 26 flag a run below a floor the owner names. Owner, 2026-10-02: no
 floor yet — two points (Hantec 76 %, FTMO 95–99 %) are not enough to name one.
-→ `knowhow/eng/outside-parsers-what-they-catch.md`, `knowhow/eng/mt5-history-depth-first-bar.md`
+→ `knowhow/eng/outside-parsers-what-they-catch.md`, `knowhow/mt5/mt5-history-depth-first-bar.md`
+
+## 100. 🟠 Literature scout built 2026-10-02 — owner decisions pending, 8 questions and 8 entries without a condition
+
+`studies/research/literature/`, `/literature-scout`, `bin/daily-literature-scout.sh`; day one in
+`knowhow/market-profile/literature-scout-yield.md` (67 papers read, 9 useful, 17 entries, 1 measured: no cell passes).
+
+- **Cron installed 2026-10-02**: `0 7 * * *` (backup `AlgoData/logs/crontab-backup-2026-10-02c.txt`). Owner:
+  spend what reading needs — opus reads, sonnet triages, `run.budget_tokens` 3M is only a runaway guard.
+  The first unattended run (2026-10-03) is the first with the paged search: check its log.
+- **Sources** (owner, 2026-10-02): repositories on with the grade `code repository`; Oxfordstrat, Quantpedia
+  and AQR on. traders.com, SSRN, Alpha Architect and Semantic Scholar refuse a script; OpenAlex has a free
+  daily budget per IP (a free API key would lift it — the owner's to get).
+- **20 entries wait on his answer** (`python3 -m studies.research.literature.report`, the `PREGUNTA` blocks;
+  `--answer ID N`), then a session writes their measures (`scout measure`). At this rate the questions
+  outgrow what he can answer: whether the reader should ask less is open.
+- **10 entries have no measure**: most state no parameters in the text read (five point to Sullivan et al.
+  1999), one tests a 354-pair grid, the newest need conditions `rules.py` lacks (Keltner, Hull, MACD, ADX).
+- **The profile's top-up was stopped half-way on 2026-10-02** (RAM conflict with the calibration queue):
+  only DAX40 and DJ30 carry TR-65's six measures and the three corrected ones (`slow_d50_200_run`,
+  `fast_d5_20_run`, `fast_d5_20_quiet_run`, inverted until that day; old rows dropped, backup
+  `profiles/cells-backup-2026-10-02-meanorder`). `measures.csv` and `assets/FAMILIAS.md` still show the old
+  rows. The daily run completes it with 4 workers when 25 GB are available; else run
+  `nice -n 19 python3 -m studies.research.marketProfile.report --top-up` and `--familias` after the
+  calibration ends (~05:40 UTC 4 Oct).
+- `tools/manual.py` refuses to build while chapters 85, 87, 88 and 89 (other sessions') have no family:
+  the PDF of family 04 was built alone for chapter 90.
 
 ## 101. 🟡 A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1
 

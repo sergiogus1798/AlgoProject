@@ -1,5 +1,6 @@
 ---
-q: apply_verdict refuses OOS with different strategy than verdict judged; identidad distinta IS OOS; curating both Results and OOS with one verdict.csv; 3 con identidad distinta harvest
+q: Why can applying the same `verdict.csv` to Results and OOS databanks refuse on OOS?
+kw: apply_verdict refuses OOS with different strategy than verdict judged; identidad distinta IS OOS; curating both Results and OOS with one verdict.csv; 3 con identidad distinta harvest
 tag: 🔬  date: 2026-09-26  see: authoring/cloned-custom-block-native-key
 ---
 # A verdict's `identity` column is per-DATABANK, not per-strategy-name: applying the same verdict.csv to Results and OOS can refuse on OOS

@@ -1,5 +1,6 @@
 ---
-q: variant chain in a custom project sqx.variants; WFC databank names underscores; config.xml must declare databanks; task conditions block additional markets; retest-only project no Total tested In databank; holding() misses workers cwd; result key vs Results folder name
+q: What silently breaks `sqx.variants` when run in a custom project, and how are the six breakers handled?
+kw: variant chain in a custom project sqx.variants; WFC databank names underscores; config.xml must declare databanks; task conditions block additional markets; retest-only project no Total tested In databank; holding() misses workers cwd; result key vs Results folder name
 tag: 🔬  date: 2026-09-25  see: sqx-drive/variant-route, databanks/no-spaces-in-names, sqx-drive/running-a-task-headless
 ---
 # Running `sqx.variants` in a custom project: six silent breakers, all now handled

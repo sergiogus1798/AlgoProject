@@ -1,5 +1,6 @@
 ---
-q: databank name with spaces unreachable API, Databank 'Retest' doesn't exist, Retest Markets - Family, MC Trades, load databank with spaces
+q: Why is a databank with spaces in its name unreachable through the HTTP API?
+kw: databank name with spaces unreachable API, Databank 'Retest' doesn't exist, Retest Markets - Family, MC Trades, load databank with spaces
 tag: 🔬  date: 2026-09-23  see: databanks/curating-a-databank
 ---
 # A databank whose name has spaces is unreachable through the HTTP API — use files

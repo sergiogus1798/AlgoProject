@@ -46,7 +46,7 @@ FIRMS = {
                "events": None, "country_of": COUNTRY_OF, "server_zone": "EETUS"},
     # FTMO's own restricted list (ftmo.com/en/faq/can-i-trade-news/, owner 2026-09-29), by MT5
     # event_code — the name is in the terminal's language. MT5 rates half of it medium, so
-    # importance cannot stand in for it (knowhow/eng/ftmo-news-vs-mt5-importance.md). Crude Oil
+    # importance cannot stand in for it (knowhow/mt5/ftmo-news-vs-mt5-importance.md). Crude Oil
     # Inventories restrict only oil: tag OIL. JP225 and the European indices restrict nothing.
     # Timings are the owner's hand-made patch of 2026-05-17.
     "ftmo": {"label": "FTMO", "rule_minutes": 2, "block_before": 3, "block_after": 3,

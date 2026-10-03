@@ -1,5 +1,6 @@
 ---
-q: same strategy name different identity across databanks of one project, pair results across databanks, Results vs OOS vs MCR_All vs WFM identity, MCR_All drops Strategy prefix, matrix pairing by identity, name collision
+q: Why does the identity a study records for a strategy change between databanks of one project?
+kw: same strategy name different identity across databanks of one project, pair results across databanks, Results vs OOS vs MCR_All vs WFM identity, MCR_All drops Strategy prefix, matrix pairing by identity, name collision
 tag: 🔬  date: 2026-09-26  see: sqx-format/strategy-identity, databanks/curate-verdict-identity-per-databank, sqx-format/loaded-name-is-filename
 ---
 # Inside one project, the identity a study records for a strategy changes between databanks — pair results only inside one databank

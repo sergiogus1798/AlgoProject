@@ -1,5 +1,6 @@
 ---
-q: settings.xml result sections, per-market metrics from sqx, AdditionalMarket SQStats, stats mixing across markets, ProfitFactor 0 or 5.0 stored, profit factor capped
+q: Why must I scope the several SQStats sections of `settings.xml`, one per result?
+kw: settings.xml result sections, per-market metrics from sqx, AdditionalMarket SQStats, stats mixing across markets, ProfitFactor 0 or 5.0 stored, profit factor capped
 tag: 🔬  date: 2026-09-24  see: sqx-format/sqstats-blob, sqx-format/daily-equity-bin
 ---
 # settings.xml has one SQStats section per result — scope them or they mix

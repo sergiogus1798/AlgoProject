@@ -1,5 +1,6 @@
 ---
-q: cross-market parameter surface, same parameter region on two markets, Spearman between markets confounded, exposure times drift, long-only net profit ranks, rho_neutral, market surfaces encargo 15
+q: Why does a cross-market Spearman of net profit partly measure time-in-market and drift?
+kw: cross-market parameter surface, same parameter region on two markets, Spearman between markets confounded, exposure times drift, long-only net profit ranks, rho_neutral, market surfaces encargo 15
 tag: 🔬  date: 2026-09-26  see: research/cloud-ranking-stability
 ---
 # Between two markets, a long-only net-profit ranking is partly time-in-market × each market's drift

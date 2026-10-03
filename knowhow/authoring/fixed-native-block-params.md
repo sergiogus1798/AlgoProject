@@ -1,5 +1,6 @@
 ---
-q: fixed native block in template with generate random param; GenerateException Identification not found; random periods via one-item group; MABarClosesAbove period; frozen params in fixed slot still permuted by SPP
+q: How do I give a fixed block random periods when it takes only frozen params?
+kw: fixed native block in template with generate random param; GenerateException Identification not found; random periods via one-item group; MABarClosesAbove period; frozen params in fixed slot still permuted by SPP
 tag: 🔬  date: 2026-09-26  see: authoring/holes-groups-randomcondition, sqx-drive/spp-task-type
 ---
 # A fixed block takes frozen params only; for random periods, bind a hole to a group of ONE item

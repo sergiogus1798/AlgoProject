@@ -1,5 +1,6 @@
 ---
-q: refactor move module into layer package inputs mechanics model simulate verdict render, Path(__file__).with_name config not found, private name import collision shadowing local, layer violation, verify refactor no batch command, git show HEAD compare output
+q: What breaks when a module moves into another layer that checks.py and import loops do not catch?
+kw: refactor move module into layer package inputs mechanics model simulate verdict render, Path(__file__).with_name config not found, private name import collision shadowing local, layer violation, verify refactor no batch command, git show HEAD compare output
 tag: 🔬  date: 2026-09-19  see: eng/practices-that-bit, eng/checker-blind-spots
 ---
 # Moving a module into layers: three breakages `checks.py` and an import loop don't catch
@@ -12,8 +13,8 @@ Verify: structure-diff every rendered output with digits normalised to `#` (numb
 `studies/transfer/crossmarket/` → `inputs/ mechanics/ model/ simulate/ verdict/ render/` (second after `portfolio/common/monteCarlo/`).
 - Three configs stay in the module root because `docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 05-retest-mercados) names them by path.
 - `render/charts.py` exported `_x`, `_ticks` to two modules: `_x` → `xpos` fine; `ticks` already a local (rendered markup) in `charts.cone()` and `overlays.py` → named `tickvals`. In monteCarlo the trap was `line`.
-- Two `simulate/ → verdict/` arrows: `fingerprint → significance` used only `trade_returns()` (`realised(...) − cost`, a measurement) → moved to `mechanics/pricing.py`,
+- Two `simulate/ → verdict/` arrows: `fingerprint → significance` used only `trade_returns()` (`realised(...) − cost`, a measurement) → moved to `studies/transfer/crossmarket/mechanics/pricing.py`,
   leaving dead imports (`pricing`, `pandas`) in `significance.py`; `verdict/` now imports nothing outside `model/`. `exposure → fieller` is real → declared (as monteCarlo declares `simulate/ → verdict/confidence`). monteCarlo's case: two vocabulary constants that were configuration.
-- No batch command (only a Flask panel): baseline over its HTTP API — routes/params from `@APP.get`/`@APP.post`, one strategy with sim counts cut via `--set`,
+- No batch command (it had only a Flask panel, retired 2026-09-25): baseline over its HTTP API — routes/params from `@APP.get`/`@APP.post`, one strategy with sim counts cut via `--set`,
   11 tabs + every `market × model × metric × window` view = 214; 214/214 identical. Stopwatch 5 repeats: median 10.12 s → 10.10 s.
 - `render/svg.py` vs old `charts.py` from git: both figures at three widths + every constant and primitive, 0 differences (~30 lines of test).

@@ -1,5 +1,6 @@
 ---
-q: export databank metrics IS OOS columns; sampleType 10 20 127; custom .vw view paired columns; which block (IS) (OOS) is filled single-window task; export_metrics header-only CSV empty; --role worker; databank table shows IS and OOS the same; window IS empty OOS filled
+q: How do I get paired IS and OOS databank metrics from SQX?
+kw: export databank metrics IS OOS columns; sampleType 10 20 127; custom .vw view paired columns; which block (IS) (OOS) is filled single-window task; export_metrics header-only CSV empty; --role worker; databank table shows IS and OOS the same; window IS empty OOS filled
 tag: 🔬  date: 2026-09-24  see: export/sequential-opt-not-wfc, databanks/no-spaces-in-names, databanks/sync-deletes-unloaded-files
 ---
 # Paired IS/OOS metrics come from a custom `.vw`; read which block is filled off the data

@@ -1,5 +1,6 @@
 ---
-q: how to detect or verify a prop firm discount code or sale, Hantec CheckDiscount, FTMO discounted price, DROP50, coupon, promo code check without buying
+q: How do I verify a prop-firm discount code for Hantec and find FTMO's sales?
+kw: how to detect or verify a prop firm discount code or sale, Hantec CheckDiscount, FTMO discounted price, DROP50, coupon, promo code check without buying
 tag: 🔬  date: 2026-09-29  see: prop-firm-catalogue-hantec
 ---
 # Hantec verifies any code per plan through its own `CheckDiscount`; FTMO's sales sit in its pricing table
