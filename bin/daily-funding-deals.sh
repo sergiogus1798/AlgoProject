@@ -43,13 +43,14 @@ python3 -m portfolio.funded.deals.scan
 echo "--- scan above"
 
 if [ -n "$CLAUDE" ] && [ -x "$CLAUDE" ]; then
-  timeout 30m "$CLAUDE" -p --agent dealHunter --model sonnet --add-dir "$DATA" \
+  . "$ROOT/bin/lib-agent-alert.sh"
+  agent_run daily-funding-deals sonnet "" timeout 30m "$CLAUDE" -p --output-format json --agent dealHunter --model sonnet --add-dir "$DATA" \
     --allowedTools=Bash,Read,Grep,Glob,WebFetch,WebSearch \
     "Daily prop-firm deal hunt, unattended from cron: nobody can answer, so never ask. Follow \
 .claude/agents/dealHunter.md: search the web for current discount codes and sales of every active or \
 candidate firm of AlgoData/funding/firms.yaml, record each candidate only through python3 -m portfolio.funded.deals.add, and end with a \
 summary of at most ten lines. Never log in, buy or submit anything, never edit files, never touch git."
-  echo "--- agent above, exit $?"
+  echo "--- agent above"
 else
   echo "--- no claude binary found; web search skipped"
 fi

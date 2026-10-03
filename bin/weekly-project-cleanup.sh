@@ -53,7 +53,8 @@ if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
 fi
 
 TODAY=$(date +%F)
-timeout 1h "$CLAUDE" -p --agent projectJanitor --model sonnet \
+. "$ROOT/bin/lib-agent-alert.sh"
+agent_run weekly-project-cleanup sonnet "$DATA/audit/${TODAY}-proyectos.md" timeout 1h "$CLAUDE" -p --output-format json --agent projectJanitor --model sonnet \
   --permission-mode acceptEdits "${ADD_DIRS[@]}" \
   --allowedTools=Bash,Read,Grep,Glob,Write \
   "Weekly SQX project cleanup, unattended from cron: nobody can answer, so never ask — when in \

@@ -47,7 +47,8 @@ if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
 fi
 
 TODAY=$(date +%F)
-timeout 2h "$CLAUDE" -p --agent documenter --model sonnet \
+. "$ROOT/bin/lib-agent-alert.sh"
+agent_run nightly-docs sonnet "" timeout 2h "$CLAUDE" -p --output-format json --agent documenter --model sonnet \
   --permission-mode acceptEdits --add-dir "$DATA" \
   --allowedTools=Bash,Read,Grep,Glob,Write,Edit \
   "Documentation drift pass, unattended from cron: nobody can answer, so never ask — decide, and \

@@ -57,7 +57,8 @@ if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
   echo "--- no claude binary found; skipped"; exit 1
 fi
 
-timeout 2h "$CLAUDE" -p --agent documenter --model sonnet \
+. "$ROOT/bin/lib-agent-alert.sh"
+agent_run weekly-docs-health sonnet "" timeout 2h "$CLAUDE" -p --output-format json --agent documenter --model sonnet \
   --permission-mode acceptEdits --add-dir "$DATA" \
   --allowedTools=Bash,Read,Grep,Glob,Write,Edit \
   "Weekly docs-health pass, unattended from cron: nobody can answer, so never ask — decide, and \

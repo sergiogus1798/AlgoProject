@@ -63,7 +63,8 @@ if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
 fi
 
 TODAY=$(date +%F)
-timeout 2h "$CLAUDE" -p --agent auditor --model sonnet \
+. "$ROOT/bin/lib-agent-alert.sh"
+agent_run nightly-audit sonnet "$DATA/audit/${TODAY}.md" timeout 2h "$CLAUDE" -p --output-format json --agent auditor --model sonnet \
   --permission-mode acceptEdits "${ADD_DIRS[@]}" \
   --allowedTools=Bash,Read,Grep,Glob,Write,Edit \
   "Run the full daily audit (all four areas). Read $DATA/audit/${TODAY}-mechanical.md first, and the data root's size from the last \

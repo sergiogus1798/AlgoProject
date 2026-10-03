@@ -1,5 +1,5 @@
 #!/bin/bash
-# nightly-fix — the fixer agent on Opus, unattended, from cron, last of the nightly chain.
+# nightly-fix — the fixer agent on Sonnet (rule 17: mechanical work), unattended, from cron, last of the nightly chain.
 #
 #   03:00 audit  →  03:30 documenter  →  04:00 fixer   (03:45 archive_logs sits between;
 #   04:15 sqx-log-prune follows — no two cron entries share a minute, see knowhow/eng/cron-schedule-no-shared-minute.md)
@@ -58,13 +58,13 @@ IN=$(mktemp -d)
 cp "$DATA/audit/$TODAY.md" "$IN/"
 [ -f "$DATA/audit/$TODAY-mechanical.md" ] && cp "$DATA/audit/$TODAY-mechanical.md" "$IN/"
 
-timeout 3h "$CLAUDE" -p --agent fixer --model opus \
+. "$ROOT/bin/lib-agent-alert.sh"
+agent_run nightly-fix sonnet "$DATA/audit/${TODAY}-fixes.md" timeout 3h "$CLAUDE" -p --output-format json --agent fixer --model sonnet \
   --permission-mode acceptEdits --add-dir "$DATA" --add-dir "$IN" \
   --allowedTools=Bash,Read,Grep,Glob,Write,Edit \
   "Fix what today's audit found. The reports are in $IN. Work in this checkout on the branch it \
 has; never commit, stash, switch branch or create a worktree — leave every change uncommitted. \
 Unattended from cron: never ask. Write $DATA/audit/${TODAY}-fixes.md last."
-echo "--- agent exit $?"
 git status --short
 rm -rf "$IN"
 echo "=== $(date -Is) nightly fix end"
