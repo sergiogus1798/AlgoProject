@@ -7,6 +7,7 @@ their screenshots live in MANUAL_SRC, out of the repo; edit a chapter there and 
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -17,6 +18,7 @@ import markdown
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core.datapaths import tmp_dir
 from core.paths import BROWSER, MANUAL, MANUAL_SRC
 
 # What each family's PDF was last rendered from; delete it to force a full rebuild.
@@ -42,7 +44,8 @@ FAMILIES = {
         "40-sqx-lab", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
         "06-mover-estrategias", "27-curar", "17-pipeline", "80-autopiloto", "55-retirar-proyectos",
         "62-metadatos-estrategia", "82-perfil-de-mercado", "81-memoria-de-resultados",
-        "83-tablero-de-investigacion"]),
+        "83-tablero-de-investigacion", "90-explorador-de-bibliografia",
+        "91-potencia-del-perfil", "92-perfil-agrupado"]),
     "05-cribado-oos": ("Cribado fuera de muestra", [
         "01-analisis-is-oos", "02-filtros", "03-comparar-muestras", "04-decaimiento",
         "29-puerta", "49-snooping"]),
@@ -58,10 +61,13 @@ FAMILIES = {
         "37-wfc-retest", "19-wfc", "25-cscv", "39-nube-de-parametros",
         "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix"]),
     "10-cierre": ("El cierre: paso 20, exposición, stop y MetaTrader 5", [
-        "56-paso-20", "38-exposicion", "54-atr-calculator", "60-mt5", "76-mt5-verificar",
+        "56-paso-20", "85-autopiloto-cierre", "38-exposicion", "54-atr-calculator", "60-mt5", "76-mt5-verificar", "86-mt5-pool-validado",
         "75-filtro-noticias", "93-metatracker", "94-flota-colector"]),
     "11-cartera": ("Cartera: el pool, el universo, las parejas y la búsqueda de fondeo", [
-        "77-cartera-pool", "78-cartera-universo", "79-cartera-fondeo"]),
+        "77-cartera-pool", "78-cartera-universo", "79-cartera-fondeo",
+        "87-cartera-etapa-b-y-veredicto", "88-fondeo-caja"]),
+    "12-en-real": ("En real: la cuenta contra SQX", [
+        "89-reconciliador-semanal"]),
 }
 
 STYLE = """
@@ -217,7 +223,8 @@ def main() -> None:
         subprocess.run([str(BROWSER), "--headless=new", "--disable-gpu", "--no-sandbox",
                         "--no-pdf-header-footer", "--virtual-time-budget=10000",
                         f"--print-to-pdf={pdf}", html.as_uri()],
-                       check=True, capture_output=True)
+                       check=True, capture_output=True,
+                       env={**os.environ, "TMPDIR": str(tmp_dir())})   # Chrome's scoped_dir*
         html.unlink()
         done[fam] = fingerprint(doc)
         RENDERED.write_text(json.dumps(done, indent=1), encoding="utf-8")

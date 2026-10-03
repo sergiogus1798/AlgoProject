@@ -10,9 +10,10 @@ from pathlib import Path
 
 import depmap
 import knowhowmap
+import knowhowrefs
+from layering import bad_layering
 
-ROOT = depmap.ROOT
-MAX_LINES = 250
+ROOT, MAX_LINES = depmap.ROOT, 250
 PATHS_MODULE = ROOT / "core" / "paths.py"
 DEVELOPER_ONLY = {"tools", "tests"}
 ABSOLUTE = re.compile(r"""["'](?:/home/|/root/|~/)""")
@@ -228,14 +229,12 @@ def workflow_drift(files: list[Path]) -> list[str]:
 def main() -> None:
     """Run every check and exit non-zero if anything fails."""
     files = depmap.py_files()
-    checks = [("file length", too_long), ("documentation", undocumented),
-              ("hardcoded paths", hardcoded_paths), ("requirements", missing_requirements),
-              ("folder READMEs", unlisted_in_readme), ("manual pages", no_manual_page),
-              ("lint", lint_bugs),
-              ("dependency map", stale_depmap), ("knowhow cards", knowhowmap.bad_cards),
-              ("knowhow links", knowhowmap.broken_links),
-              ("knowhow indexes", knowhowmap.stale_indexes),
-              ("workflow table", workflow_drift)]
+    checks = [("file length", too_long), ("documentation", undocumented), ("hardcoded paths", hardcoded_paths),
+              ("requirements", missing_requirements), ("folder READMEs", unlisted_in_readme),
+              ("manual pages", no_manual_page), ("lint", lint_bugs), ("dependency map", stale_depmap),
+              ("knowhow cards", knowhowmap.bad_cards), ("knowhow links", knowhowmap.broken_links),
+              ("knowhow header paths", knowhowrefs.dead_header_paths), ("knowhow indexes", knowhowmap.stale_indexes),
+              ("workflow table", workflow_drift), ("layering", bad_layering)]
     total = 0
     for name, check in checks:
         problems = check(files)

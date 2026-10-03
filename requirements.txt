@@ -14,7 +14,6 @@ openpyxl==3.1.5
 pyarrow==25.0.1
 Markdown==3.10.3
 arch==7.2.0
-Flask==3.1.2
 diptest==0.11.0
 # The null studies' compiled kernels, and the one BLAS thread each worker process gets.
 numba==0.67.0
@@ -40,4 +39,7 @@ httpx==0.28.1
 mcp==1.29.1
 lxml==6.1.2
 MetaTrader5==5.0.6231; sys_platform == "win32"
+
+# The literature scout (studies/research/literature/): a paper's PDF as text, page by page.
+pypdf==6.19.0
 Pillow==12.3.0

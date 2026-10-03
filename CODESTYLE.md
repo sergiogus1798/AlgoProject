@@ -96,6 +96,8 @@ Rules for a module in this shape:
   registry's table says what each holds fixed and what it randomises. Adding a fifth is then adding a
   function and one row, and nothing else changes.
 - **Dependencies point one way**, along the table above. Inference never imports execution.
+- **Packages layer too** (`tools/layering.py`, run by `checks.py`): `core` imports no other package, `engines` only
+  `core` and `ledger`, `sqx` only `core`; only `tests` and `tools` import `ui`, only `tests` imports `tools`. Old violations sit in its ALLOW list as debt to shrink.
 - **A module is replaceable.** If swapping it means editing three other files, the boundary is wrong.
 - **Extension over modification.** New capability arrives as a new entry, not as a flag threaded
   through the existing ones.

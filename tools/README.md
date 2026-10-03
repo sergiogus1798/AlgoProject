@@ -5,7 +5,11 @@
 | `checks.py` | Verify every mechanical rule in `CODESTYLE.md` and list what breaks them | `python3 tools/checks.py` |
 | `depmap.py` | Read the real imports and regenerate `docs/DEPENDENCIES.md` | `python3 tools/depmap.py` |
 | `skillmap.py` | Read every installed skill and regenerate `docs/SKILLS.md` — what exists, what it costs to invoke, what is stale | `python3 tools/skillmap.py` |
+| `layering.py` | The import-direction check `checks.py` runs (core, engines, sqx, ui, tools); its ALLOW list is debt | imported, not run |
 | `knowhowmap.py` | Regenerate each `knowhow/<domain>/INDEX.md` from its cards' `q:` lines; `checks.py` uses it to check the cards, the `knowhow/` links and the indexes | `python3 tools/knowhowmap.py` |
+| `knowhowrefs.py` | The knowhow check `checks.py` runs: a card's header (above `## Evidence`) must not cite a repo path that no longer exists | imported, not run |
+| `knowhowq.py` | The knowhow check on `q:`: one question, ≤ 120 chars, ending in `?`; cards not yet rewritten are listed in `knowhow_pending_q.txt` (must end empty) | imported, not run |
+| `commit_apply.py` | Apply the night's commit proposal (`AlgoData/audit/<date>-commit.json`, written by `bin/nightly-commit-proposal.sh`) on the owner's «sí»: per group `git add -- paths` + `git commit -- paths`, one push with the gh credential helper; refuses a stale proposal and groups whose files moved; `--facts` lists the uncommitted files with their age. No model | `python3 -m tools.commit_apply [date] [--dry-run] [--only N,M] [--no-push] [--force]` |
 | `manual.py` | Build the user manual as one PDF per workflow family, from the chapters in `AlgoData/manual-fuentes/` | `python3 tools/manual.py` |
 | `daily_audit.py` | The half of the audit a machine can do alone: checks, every `tests/test_*.py`, corrupt projects, missing manifests, undecided asset costs | `python3 tools/daily_audit.py` |
 | `audit_tests.py` | The audit's test runner: every `tests/test_*.py` six at a time (pytest for a file with no `__main__`, offscreen Qt, 300 s each), and `ASIDE`, the explicit list of tests set aside with reason and date, printed by the report as «apartadas» | imported by `daily_audit.py` |
@@ -17,9 +21,9 @@
 It involves no model. **It is installed**, as the first half of `bin/nightly-audit.sh`, which cron
 runs at 03:00 and which then runs the `auditor` agent headless on Sonnet for the judgement half.
 `bin/nightly-docs.sh` runs the `documenter` the same way at 03:30, after waiting for the audit's
-lock, and leaves its repairs uncommitted. `bin/nightly-fix.sh` runs the `fixer` on Opus at 04:00,
+lock, and leaves its repairs uncommitted. `bin/nightly-fix.sh` runs the `fixer` on Sonnet at 04:00,
 after the documenter, in the one checkout, and leaves its fixes uncommitted too — the owner commits
-what he wants. `bin/nightly-sync.sh` is the same shape for `/sync`. Why the `claude` they call is found the way it
+what he wants. `/sync` is not run unattended (it would commit on its own); cron runs `bin/nightly-commit-proposal.sh` at 05:45 instead, propose-only, and `commit_apply.py` applies it. Why the `claude` they call is found the way it
 is: `knowhow/eng/headless-claude-from-cron.md`.
 
 `sqx-lab/` is a vendored plugin, not project code: four skills that author custom blocks, random

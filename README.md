@@ -37,7 +37,7 @@ what blocks it today. In short:
 | `assets/` | Per-asset costs, segments and ranges. Read with `python3 -m core.assets <SYMBOL>` before authoring anything |
 | `knowhow/` | The facts that cost time to discover, one card each, tagged tested / from logs / inferred |
 | `perf/` | The cost catalogue — what each expensive part takes in time, memory and disk |
-| `docs/` | The owner's manual (eleven PDFs in `docs/manual/`), dossiers and encargos, the folder map and the generated dependency map |
+| `docs/` | The owner's manual (twelve PDFs in `docs/manual/`), dossiers and encargos, the folder map and the generated dependency map |
 | `tests/` · `tools/` · `bin/` · `config/` | Golden and known-answer tests · checks and generators · worker and scheduled-agent scripts · machine settings |
 
 Data never goes in this repository. It lives in the data root, `~/Desktop/AlgoData`, indexed by its
@@ -108,7 +108,7 @@ Skills (`.claude/skills/`, catalogued in `docs/SKILLS.md`) turn each workflow st
 again into one command — `/template-run`, `/oos-gate`, `/crossmarket`, `/crosstf`, `/mcretest`,
 `/spp`, `/variants`, `/wfm`, `/export`, `/curate`, `/translate` and others. Scheduled agents
 (`.claude/agents/`, launched by `bin/`) keep the project honest unattended: a nightly audit,
-documenter and fixer, a weekly project janitor, and the prop-firm catalogue watcher and daily deal
+documenter and fixer, a daily commit proposal at 05:45 (propose only: the owner commits, with one «sí» to `python3 -m tools.commit_apply`), a weekly project janitor, and the prop-firm catalogue watcher and daily deal
 hunter. Their reports go to `AlgoData/audit/`. `/sync` keeps this GitHub copy equal to the machine —
 see `docs/manual/01-empezar.pdf`.
 
