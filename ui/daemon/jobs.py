@@ -46,10 +46,11 @@ def _launch(job: dict) -> None:
     # UTF-8 mode: on Windows a child printing to a file encodes as cp1252 and dies on the
     # first «→» or «ρ» of a Spanish report.
     lower = job["lane"] == "python" and hasattr(os, "nice")
-    job["_proc"] = subprocess.Popen([sys.executable, *job["argv"]], cwd=ROOT,
-                                    stdout=open(job["log"], "wb"), stderr=subprocess.STDOUT,
-                                    env={**os.environ, "PYTHONUTF8": "1"},
-                                    preexec_fn=(lambda: os.nice(NICE)) if lower else None)
+    with open(job["log"], "wb") as out:      # the child holds its own copy of the descriptor
+        job["_proc"] = subprocess.Popen([sys.executable, *job["argv"]], cwd=ROOT, stdout=out,
+                                        stderr=subprocess.STDOUT,
+                                        env={**os.environ, "PYTHONUTF8": "1"},
+                                        preexec_fn=(lambda: os.nice(NICE)) if lower else None)
     job["started"] = datetime.now().isoformat(timespec="seconds")
     threading.Thread(target=lambda: (job["_proc"].wait(), pump()), daemon=True).start()
 

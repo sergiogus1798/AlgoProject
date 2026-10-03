@@ -70,7 +70,8 @@ class VerifyZone(QFrame):
         form.addRow("Modelo del tester", self.model)
         form.addRow("Empresas", self.firms)
         self.refused = text("", colour("fail"), 12)
-        self.button = JobButton("Verificar en SQX y en MT5", "mt5bridge/verify", self.body,
+        self.button = JobButton("Verificar en SQX y en MT5", "mt5bridge/verify",
+                                lambda: {**self.body(), "nonce": self.nonce},
                                 self.confirm, lambda _job: self.reload())
         self.force = ForceClose(self.send)
         left = QWidget()
@@ -201,6 +202,7 @@ class VerifyZone(QFrame):
         got = self.send("mt5bridge/preflight", self.body())
         reasons = got.get("reasons") or ([got["error"]] if "error" in got else [])
         self.refused.setText("\n".join(f"· {r}" for r in reasons))
+        self.nonce = got.get("nonce", "")       # what «Sí» sends back: the proof of this text
         return got.get("text") if got.get("ok") else None
 
     def _fill(self) -> None:

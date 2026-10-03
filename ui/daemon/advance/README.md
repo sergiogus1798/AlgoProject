@@ -3,7 +3,7 @@
 The one route of the window that changes what SQX holds (encargo 22 §7.2 point 3, plan 24 F7).
 The owner filters in the window (F6: `AlgoData/filters/<P>/<D>/discards.jsonl`, nothing in SQX);
 this button turns those discards into a curate and launches the next task, behind a preflight and
-a confirmation. Sequence and evidence: `knowhow/sqx-drive/window-advances-workflow.md`.
+a confirmation. Sequence and evidence: `knowhow/ui/window-advances-workflow.md`.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
@@ -12,7 +12,7 @@ a confirmation. Sequence and evidence: `knowhow/sqx-drive/window-advances-workfl
 | `buildcap.py` | The build's time cap (owner, 2026-10-01: N strategies or M minutes, whichever first): `minutes` reads it from the Build task's `StopCondition` (SQX itself stops only on N under `databank-full`); `enforce`, called by `run.watch` each poll, sends `-project action=stop` once the running build has used it — the project then does not go on to its next task | imported | project.cfx + running task → stop |
 | `run.py` | The job: preflight again; copy the discarded `.sqx` to `AlgoData/projects/discards/<P>/<D>/<stamp>/` with `verdict.csv`; `sqx.curate.apply_verdict.apply` with the registry's role; one ledger row; a `cut` line in F6's discard log; when the next task reads a databank no task writes (`CrossTF_Input` after Cross Market, `CrossTF_Mothers` after Cross TF), `sqx.projects.crosstfload.fill` with the worker stopped; `ui.daemon.launch.configure.run` on a next-step task whose cross-check is still off; `sqx.projects.stage.apply` leaving on the next step's tasks that read the cut or an on task's output (never a silenced MC Retest); `core.worker.start`; `-project action=start`; then `progress.state` (status) each poll and `sqxlog` until «Project finished» — failing, worker stopped, if SQX never logs the start within 120 s, refuses the start, or passes 48 h; `core.worker.stop` in a `finally` that also covers a failed `worker.start` | `python3 -m ui.daemon.advance.run --project P --databank D` (the window queues it) | discards → databank cut, next task run, worker stopped |
 | `sqxlog.py` | SQX's own log from the launch on, yesterday's and today's file: `mark` the offsets just before `action=start`, `grow` reads only what was written since, so an earlier finish never ends this run and a run across midnight is followed | imported | install → log lines |
-| `api.py` | `GET /api/advance/preflight`, `POST /api/advance/run` (one job on the conductor lane of `jobs.py`; a second one queued or running is a refusal) | imported | request → JSON |
+| `api.py` | `GET /api/advance/preflight` (ok → a one-use `nonce`, `ui/daemon/proof.py`), `POST /api/advance/run` (refused without that nonce or when the sentence changed; one job on the conductor lane of `jobs.py`; a second one queued or running is a refusal) | imported | request → JSON |
 
 ## Traps
 

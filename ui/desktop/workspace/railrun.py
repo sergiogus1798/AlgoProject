@@ -148,7 +148,8 @@ def sqx_step(rail: QWidget, n: str) -> None:
                             QMessageBox.No) != QMessageBox.Yes:
         rail.said.setText("No se lanzó nada.")
         return
-    done = post("launch/run", {"project": rail.project, "step": n})
+    done = post("launch/run", {"project": rail.project, "step": n,
+                               "nonce": got.get("nonce", "")})
     rail.said.setText(f"En marcha: paso {n} ({', '.join(done['titles'])}) — su avance, en "
                       "«En marcha»" if done.get("job") else
                       "No se lanzó: " + brief(done.get("reasons") or [done.get("error", "?")]))

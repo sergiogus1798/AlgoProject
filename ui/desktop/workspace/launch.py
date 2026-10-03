@@ -110,7 +110,8 @@ class Launcher(QWidget):
                                 QMessageBox.No) != QMessageBox.Yes:
             return
         try:
-            got = client.post("launch/run", {"project": self.project, "task": task})
+            got = client.post("launch/run", {"project": self.project, "task": task,
+                                             "nonce": got.get("nonce", "")})
         except httpx.HTTPError as failed:
             got = {"ok": False, "reasons": [f"El demonio no respondió: {failed}"]}
         if got.get("job"):

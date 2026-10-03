@@ -61,7 +61,7 @@ class FilterRow(QWidget):
         super().__init__()
         self.metrics = {m["key"]: m for m in metrics}
         # `column`, never `metric`: that name hides QPaintDevice.metric() and the first paint
-        # segfaults (knowhow/eng/qt-painting-traps.md)
+        # segfaults (knowhow/ui/qt-painting-traps.md)
         self.column, self.op = QComboBox(), QComboBox()
         self.column.setMinimumWidth(320)
         for m in metrics:

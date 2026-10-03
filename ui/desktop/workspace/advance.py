@@ -140,7 +140,7 @@ class Advance(QWidget):
         """Enable the button, or disable it with a few words beside it; every reason is in
         their tooltip (owner, 2026-09-30)."""
         reasons = got.get("reasons") or ([got["error"]] if "error" in got else [])
-        self.text = got.get("text", "")
+        self.text, self.nonce = got.get("text", ""), got.get("nonce", "")
         self.button.setEnabled(bool(got.get("ok")))
         self.why.setText("" if got.get("ok") else off(reasons))
         self.why.setToolTip("" if got.get("ok") else full(reasons))
@@ -151,12 +151,14 @@ class Advance(QWidget):
         self.show_state(ask("advance/preflight", project=self.project, databank=self.databank))
         if not self.button.isEnabled():
             return
+        nonce = self.nonce      # of the sentence about to be shown, not of a poll landing later
         if QMessageBox.question(self, "Continuar workflow", self.text + "\n\n¿Confirmas?",
                                 QMessageBox.Yes | QMessageBox.No,
                                 QMessageBox.No) != QMessageBox.Yes:
             return
         try:
-            got = client.post("advance/run", {"project": self.project, "databank": self.databank})
+            got = client.post("advance/run", {"project": self.project, "databank": self.databank,
+                                              "nonce": nonce})
         except httpx.HTTPError as failed:
             got = {"ok": False, "reasons": [f"El demonio no respondió: {failed}"]}
         if got.get("job"):

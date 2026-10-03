@@ -24,8 +24,7 @@ XMX = re.compile(r"-Xmx(\d+)([gGmM])")
 PSS = re.compile(r"^Pss:\s+(\d+) kB", re.M)
 GB = 1024 ** 2              # kB in a GB
 
-# In memory on purpose: the slope is a property of the run in progress, and a daemon that
-# restarts has lost nothing a few more readings will not measure again.
+# In memory on purpose: the slope belongs to the run in progress; a restart re-measures it.
 READINGS: list[dict] = []
 
 
@@ -39,13 +38,14 @@ def xmx_gb(install: Path) -> float:
         `-Xmx` in GB.
     """
     m = XMX.search((install / "sqcli.config").read_text(encoding="utf-8"))
+    if not m:
+        raise ValueError("no -Xmx")
     return int(m.group(1)) / (1 if m.group(2) in "gG" else 1024)
 
 
 def free_gb() -> float:
     """The machine's `MemAvailable`, in GB."""
-    text = Path("/proc/meminfo").read_text()
-    return int(re.search(r"MemAvailable:\s+(\d+) kB", text).group(1)) / GB
+    return int(re.search(r"MemAvailable:\s+(\d+) kB", Path("/proc/meminfo").read_text()).group(1)) / GB
 
 
 def pss_gb(pids: list[int]) -> float:
@@ -210,41 +210,41 @@ def custodian() -> dict:
     if "custodian" not in WORKERS:
         return base | {"line": f"{now:%H:%M:%S} esta máquina no declara custodio", "warn": []}
     install = WORKERS["custodian"]["path"]
-    pids = worker.holding(install)
-    p = base | {"xmx_gb": xmx_gb(install), "up": bool(pids)}
-    if pids:
-        lines, mtime = progress.log_lines(install)
-        run = progress.run_state(lines)
-        project, started = project_start(lines)
-        got = job_progress(LOGS, now.timestamp()) if not run["finished"] else None
-        if got is None and project and not run["finished"]:
-            # A run started outside the window prints no PROGRESS line the daemon can
-            # find (OPEN §55): the worker's own status line counts the running task.
-            live = runs.count("custodian", project)
-            if live and live["done"] is not None:
-                got = {"done": live["done"], "total": live["total"], "task_only": True,
-                       "elapsed_s": live.get("elapsed_s"),
-                       "log": f"estado del custodio · {live['task']}"}
-        jvm = pss_gb(pids)
-        slope, measured = slope_mb(project or "", got["done"] if got else None, jvm)
-        # A variant batch's `synctofiles` writes thousands of files, one thread, for half an
-        # hour after «Project finished»; the pulse said «avance ?» (📓 2026-09-29).
-        p["writing_out"] = run["finished"] and writing_out(install)
-        p |= {"project": project, "task": run["current"], "jvm_gb": jvm,
-              "cpu_pct": cpu_pct(pids), "slope_mb": slope, "slope_measured": measured,
-              "fits_more": max(0, int(min(p["xmx_gb"] - jvm, p["free_gb"]) * 1024 / slope)),
-              "log_silent_s": None if run["finished"] or not mtime
-              else round(now.timestamp() - mtime)}
-        if got:
-            # A task's count over the project's minutes would be no rate at all: it is
-            # measured on the task's own clock (📓 2026-09-29: «Ritmo —» 5 min into MCR 1 Bar).
-            if got.get("task_only"):
-                minutes = got["elapsed_s"] / 60 if got.get("elapsed_s") else None
-            else:
-                minutes = (now - started).total_seconds() / 60 if started else None
-            rate = got["done"] / minutes if minutes else None
-            p |= {"done": got["done"], "total": got["total"], "progress_from": got["log"],
-                  "rate_per_min": rate,
-                  "eta_min": (got["total"] - got["done"]) / rate
-                  if rate and got["total"] is not None else None}
+    try:
+        pids = worker.holding(install)
+        p = base | {"xmx_gb": xmx_gb(install), "up": bool(pids)}
+        if pids:
+            lines, mtime = progress.log_lines(install)
+            run = progress.run_state(lines)
+            project, started = project_start(lines)
+            got = job_progress(LOGS, now.timestamp()) if not run["finished"] else None
+            if got is None and project and not run["finished"]:
+                # A run started outside the window has no PROGRESS line (OPEN §55): ask status.
+                live = runs.count("custodian", project)
+                if live and live["done"] is not None:
+                    got = {"done": live["done"], "total": live["total"], "task_only": True,
+                           "elapsed_s": live.get("elapsed_s"),
+                           "log": f"estado del custodio · {live['task']}"}
+            jvm = pss_gb(pids)
+            slope, measured = slope_mb(project or "", got["done"] if got else None, jvm)
+            # `synctofiles` writes for half an hour after «Project finished» (📓 2026-09-29).
+            p["writing_out"] = run["finished"] and writing_out(install)
+            p |= {"project": project, "task": run["current"], "jvm_gb": jvm,
+                  "cpu_pct": cpu_pct(pids), "slope_mb": slope, "slope_measured": measured,
+                  "fits_more": max(0, int(min(p["xmx_gb"] - jvm, p["free_gb"]) * 1024 / slope)),
+                  "log_silent_s": None if run["finished"] or not mtime
+                  else round(now.timestamp() - mtime)}
+            if got:
+                # A task's count over the project's minutes is no rate: use the task's own clock.
+                if got.get("task_only"):
+                    minutes = got["elapsed_s"] / 60 if got.get("elapsed_s") else None
+                else:
+                    minutes = (now - started).total_seconds() / 60 if started else None
+                rate = got["done"] / minutes if minutes else None
+                p |= {"done": got["done"], "total": got["total"], "progress_from": got["log"],
+                      "rate_per_min": rate,
+                      "eta_min": (got["total"] - got["done"]) / rate
+                      if rate and got["total"] is not None else None}
+    except (FileNotFoundError, ProcessLookupError, ValueError):   # it ended mid-read
+        return base | {"line": line(base, now), "warn": warnings(base)}
     return p | {"line": line(p, now), "warn": warnings(p)}

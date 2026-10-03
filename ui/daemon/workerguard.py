@@ -44,18 +44,29 @@ def refuse_if_up(role: str, top: Path, port: int) -> None:
         sys.exit(f"el {role} ya estaba arrancado ({seen}): no se toca ni se para")
 
 
+def _put(name: str, data: dict) -> None:
+    """One marker written whole or not at all: a reader never meets half a file."""
+    MARKS.mkdir(parents=True, exist_ok=True)
+    tmp = MARKS / f"{name}.tmp"
+    tmp.write_text(json.dumps(data), encoding="utf-8")
+    os.replace(tmp, MARKS / name)
+
+
 def mark(role: str, project: str) -> None:
     """Record that this process started the role's worker (call right after `worker.start`)."""
-    MARKS.mkdir(parents=True, exist_ok=True)
-    (MARKS / f"{role}.json").write_text(json.dumps(
-        {"role": role, "project": project, "pid": os.getpid(),
-         "since": datetime.now().isoformat(timespec="seconds")}), encoding="utf-8")
+    _put(f"{role}.json", {"role": role, "project": project, "pid": os.getpid(),
+                          "since": datetime.now().isoformat(timespec="seconds")})
 
 
 def marked(role: str | None) -> dict | None:
     """The role's marker, or None."""
     f = MARKS / f"{role}.json"
-    return json.loads(f.read_text(encoding="utf-8")) if role and f.exists() else None
+    if not (role and f.exists()):
+        return None
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
 
 
 def stopped(role: str, top: Path, port: int) -> str:
@@ -83,11 +94,9 @@ def release(role: str) -> None:
     on the window's own runs). Written after the stop and its export, so every line this job
     caused is older than `at`.
     """
-    MARKS.mkdir(parents=True, exist_ok=True)
     mark = marked(role) or {}
-    (MARKS / f"{role}.released.json").write_text(json.dumps(
-        {"role": role, "project": mark.get("project"), "pid": mark.get("pid", os.getpid()),
-         "at": time.time()}), encoding="utf-8")
+    _put(f"{role}.released.json", {"role": role, "project": mark.get("project"),
+                                   "pid": mark.get("pid", os.getpid()), "at": time.time()})
     (MARKS / f"{role}.json").unlink(missing_ok=True)
 
 
@@ -127,7 +136,11 @@ def orphans(own: set[int]) -> list[dict]:
     for f in sorted(MARKS.glob("*.json")) if MARKS.is_dir() else []:
         if f.name.endswith(".released.json"):
             continue
-        m = json.loads(f.read_text(encoding="utf-8"))
+        try:
+            m = json.loads(f.read_text(encoding="utf-8"))
+            m["pid"], m["project"], m["since"], m["role"]
+        except (ValueError, KeyError):      # half-written or corrupt: nothing to say about it
+            continue
         if m["pid"] in own:
             continue
         alive = psutil.pid_exists(m["pid"])

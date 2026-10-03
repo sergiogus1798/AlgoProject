@@ -8,7 +8,7 @@ la UI anterior; quiero que en esta máquina esté solo la nueva»). The sidebar 
 
 | group | zones | what it is for |
 |---|---|---|
-| BIBLIOTECA | Cobertura, Plantillas, Nueva plantilla, Paletas, Activos, Configuración SQX, Datos | what the owner builds from: the template library and its coverage, the palettes, every instrument's costs and windows, the SQX settings new projects get, the data root and the step-4 studies |
+| BIBLIOTECA | Cobertura, Plantillas, Investigar, Nueva plantilla, Paletas, Activos, Configuración SQX, Datos | what the owner builds from: the template library and its coverage, where to investigate next (the research director's map, memory, proposal and queue), the palettes, every instrument's costs and windows, the SQX settings new projects get, the data root and the step-4 studies |
 | PROYECTO | Proyectos → Proyecto → Databanks → Estrategia | one project judged: the gallery of every install's projects; one project's workflow — «Lanzar en SQX», «Continuar workflow» with its databank chooser, the rail and the population's funnel; the same project's databank panel on the whole height, with the filters; one strategy's ficha — curves, IS/OOS1/OOS2 statistics, «Archivar», every study below on the whole width (a study with no data in this databank marked «· sin datos», with a jump to its own databank), the metadata in a window of their own. Proyecto and Databanks were one zone until 2026-09-28: together they did not fit a 1080-px screen |
 | OPERACIÓN | En marcha, Registro de búsquedas (+ the jobs strip in the status bar) | what runs: the custodian's pulse and the SQX project's tasks one by one; the ledger — one line per search that looked at data and reduced a population, the window's filters included |
 | PORTFOLIOS | Portfolios | the archived strategies; «Importar» opens one on the Estrategia page as it was frozen, nothing recomputed |
@@ -68,6 +68,14 @@ The daemon binds loopback and only loopback. It can rewrite `registry.csv`, `run
 everything under `assets/`, so it is not something to put on the network of a machine that also
 runs three SQX installs.
 
+Loopback alone keeps nobody on this machine out, so every request passes a gate (`daemon/gate.py`):
+the daemon's own `Host`, no foreign `Origin` (a page in the owner's browser), and a session token
+the daemon mints at start into `AlgoData/ui/token-<port>` (0600) and the window sends as
+`X-Algo-Token` on everything but `GET /api/health`. And the three launchers below take a one-use
+nonce from their preflight (`daemon/proof.py`): `run`/`verify` starts nothing unless the
+confirmation it is asked to honour is the one the preflight would show now. The owner sees none of
+it. → `daemon/README.md` §«Who may call the daemon»
+
 ## What it does not do
 
 **It never authors anything, and it drives SQX for two things only.** The chat writes a draft
@@ -102,10 +110,19 @@ The two exceptions, both the owner's (2026-09-27):
   to `AlgoData/projects/snapshots/`, `stage.just` (only that task on), start, `action=status`
   until «Project finished», stop; then compares every databank but the task's output — one
   that fell keeps the copy, otherwise it is deleted — and a build writes its `runs.csv` row.
+- **«Crear plantillas y lanzar en SQX» runs a research proposal's ideas, one after another on
+  the custodian** (`daemon/research/`, `desktop/research/`; design of 2026-10-01, built and
+  tested with fakes only — its first real press waits for the owner). The preflight refuses a
+  prefix not chosen (`Test_`/`Trade_`, no default), an idea vetoed or with an open question
+  (hard rule 11), a busy custodian and any other launcher. The job, labelled `launch`, takes
+  each idea through `core.assets` → `templateArchitect` → `sqx.projects.builder --workflow` →
+  `buildingBlocksExpert` → `pipeline.autopilot.run`, then closes the run in the research memory.
+  «Proponer investigación», beside it, runs the `researchDirector` (Claude, 10-30 $, no SQX)
+  after its own confirmation.
 - **«Verificar en SQX y en MT5» runs step 26 for one strategy** (`daemon/mt5bridge/`,
   `desktop/mt5bridge/`; owner, 2026-09-29). The preflight refuses a conductor that is busy,
   an open MT5 terminal, a window or a tester model not chosen (neither has a default), and a firm
-  with no saved account or no symbol in `mt5/symbols.csv`. The job (`mt5.verify.run`) reads each
+  with no saved account or no symbol in the asset's `mt5:` (`assets/symbols/<S>.yaml`). The job (`mt5.verify.run`) reads each
   firm's conditions off its own MT5 account, builds a `Test_MT5Verify_…` project on the
   conductor, starts it, `action=status` until «Project finished», stops it, retires the project,
   then compiles the EA SQX exported and backtests it in MT5 on each account. The terminal only
@@ -126,8 +143,9 @@ running). Nothing else reaches an install.
 
 The asset zone and Configuración SQX are the same rule from the other side: they write `assets/`,
 which is configuration in the repository, through `core.assetwrite`, and reach no install for
-anything. `instrument` and `sqx_now` are facts `sqx.inspect.instruments` refreshes — not values the
-window goes and fetches, which would make opening a list a job that can block on a busy master.
+anything. `instrument` is a fact `sqx.inspect.instruments` refreshes; «SQX hoy» is read from the
+custodian's `user/data/data.db` on disk (`registry`), never from the master and never over its API —
+a query would make opening a list a job that can block on a busy install.
 
 ## Run it
 

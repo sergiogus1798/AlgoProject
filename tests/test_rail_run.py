@@ -33,7 +33,8 @@ def fake_daemon(data: dict) -> None:
             return {"steps": SQX}
         if path == "jobs":
             return {"jobs": []}
-        return {"ok": True, "reasons": [], "titles": ["CONSTRUCCION"], "text": "Se va a lanzar"}
+        return {"ok": True, "reasons": [], "titles": ["CONSTRUCCION"], "text": "Se va a lanzar",
+                "nonce": "n-1"}
 
     def post(path: str, body: dict) -> dict:
         """Every write the rail sends, answered as the daemon would when it queues."""
@@ -91,7 +92,8 @@ def test_buttons() -> None:
     SENT.clear()
     six.click()
     assert [p for p, _ in SENT][:2] == ["GET launch/preflight", "POST launch/run"], SENT
-    assert SENT[1][1] == {"project": "Test_Fake", "step": "6"}, SENT
+    # the nonce of the preflight whose sentence was shown goes back with the run (proof.py)
+    assert SENT[1][1] == {"project": "Test_Fake", "step": "6", "nonce": "n-1"}, SENT
     SENT.clear()
     ANSWER["yes"] = QMessageBox.No
     r.chain.click()

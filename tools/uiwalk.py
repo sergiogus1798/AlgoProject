@@ -39,16 +39,14 @@ HERE = {"zone": "arranque"}
 def aim(port: int) -> None:
     """Point the window's client at the daemon on `port`, with writes refused."""
     client.aim(port)
-    get = client.get
+    get, real = client.get, client.post
 
     def post(path: str, body: dict) -> dict:
         """Let the reads through; answer every write with an error the views already show."""
         if path == "load":
             return get("load", project=body["project"], databank=body["databank"])
         if path in READS:
-            r = client._HTTP.post(f"/api/{path}", json=body)
-            r.raise_for_status()
-            return r.json()
+            return real(path, body)
         return {"error": f"uiwalk: POST /api/{path} no se envía (paseo de solo lectura)"}
 
     client.post = post

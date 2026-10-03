@@ -8,16 +8,15 @@ from xml.etree.ElementTree import ParseError
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ui.daemon import jobs, workerguard
+from ui.daemon import jobs, proof, winddown, workerguard
 from ui.daemon.advance import preflight as advance
 from ui.daemon.launch import chain, preflight
 from ui.daemon.workflow.steps import STEPS
 
 ROUTER = APIRouter()
 LABEL = "launch"
-# The launchers share the conductor lane and refuse each other: two jobs starting and
-# stopping workers at once is OPEN.md §32 from inside the window. `mt5verify` is MT5 Bridge's.
-LAUNCHERS = (LABEL, "advance", "mt5verify")
+# The launchers (`winddown.LAUNCHERS`) share the conductor lane and refuse each other: two jobs
+# starting and stopping workers at once is OPEN.md §32 from inside the window.
 FAILS = (OSError, KeyError, ValueError, zipfile.BadZipFile, ParseError)
 
 
@@ -27,6 +26,7 @@ class Launch(BaseModel):
     project: str
     task: str = ""
     step: str = ""
+    nonce: str = ""             # the proof its preflight returned (`proof.py`)
 
 
 class Chain(BaseModel):
@@ -44,7 +44,7 @@ def orphans() -> list[dict]:
 def queued() -> list[str]:
     """A launcher of any kind queued or running — here, or orphaned by a closed window and
     still alive: the refusal, both ways, or nothing."""
-    mine = [j for j in jobs.listing() if j["label"] in LAUNCHERS and j["rc"] is None]
+    mine = [j for j in jobs.listing() if j["label"] in winddown.LAUNCHERS and j["rc"] is None]
     out = [f"ya hay un lanzamiento en marcha o en cola en {mine[0]['project']}: espera a que "
            "acabe"] if mine else []
     return out + [o["text"] for o in orphans() if o["alive"]]
@@ -62,14 +62,26 @@ def listing(project: str) -> dict[str, object]:
     return {"install": got["install"], "role": got["role"], "tasks": got["tasks"]}
 
 
+def shown(project: str, task: str, step: str, got: dict) -> dict:
+    """What a nonce of this launcher is bound to: what was asked and the sentence shown."""
+    return {"project": project, "task": task, "step": step, "text": got["text"]}
+
+
 @ROUTER.get("/api/launch/preflight")
+def confirmable(project: str, task: str = "", step: str = "") -> dict[str, object]:
+    """`check`, plus the one-use nonce `POST /api/launch/run` asks back when it is ok."""
+    got = check(project, task, step)
+    return {**got, "nonce": proof.issue(LABEL, shown(project, task, step, got))} if got[
+        "ok"] else got
+
+
 def check(project: str, task: str = "", step: str = "") -> dict[str, object]:
     """Whether a task, or a step's tasks, may be launched now; the confirmation text when so."""
     try:
         pre = preflight.check(project, task, step)
+        pre["reasons"] += queued()
     except FAILS as e:
         return {"ok": False, "reasons": [f"no se pudo comprobar: {e}"], "text": ""}
-    pre["reasons"] += queued()
     pre["ok"] = not pre["reasons"]
     return {"ok": pre["ok"], "reasons": pre["reasons"], "role": pre.get("role"),
             "titles": [t["title"] for t in pre.get("chosen", [])],
@@ -96,10 +108,14 @@ def steps(project: str) -> dict[str, object]:
 
 @ROUTER.post("/api/launch/run")
 def run(req: Launch) -> dict[str, object]:
-    """Queue the one job that stages, starts, watches and stops — after re-checking."""
+    """Queue the one job that stages, starts, watches and stops — after re-checking, and only
+    with the nonce of a preflight that showed this very sentence."""
     got = check(req.project, req.task, req.step)
     if not got["ok"]:
         return got
+    why = proof.refusal(LABEL, req.nonce, shown(req.project, req.task, req.step, got))
+    if why:
+        return {**got, "ok": False, "reasons": [why]}
     what = ["--step", req.step] if req.step else ["--task", req.task]
     job = jobs.start(LABEL, ["-m", "ui.daemon.launch.run", "--project", req.project, *what],
                      {"project": req.project, "role": got["role"],

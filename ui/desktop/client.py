@@ -2,9 +2,11 @@
 
 import httpx
 
+from core import uitoken
 from core.paths import UI_PORT
 
-BASE = f"http://127.0.0.1:{UI_PORT}"
+PORT = UI_PORT
+BASE = f"http://127.0.0.1:{PORT}"
 _HTTP = httpx.Client(base_url=BASE, timeout=20.0)
 
 
@@ -14,9 +16,28 @@ def aim(port: int) -> None:
     Args:
         port: Its port; the default is `ui_port` of `config/machine.yaml`.
     """
-    global BASE, _HTTP
+    global PORT, BASE, _HTTP
+    PORT = port
     BASE = f"http://127.0.0.1:{port}"
     _HTTP = httpx.Client(base_url=BASE, timeout=20.0)
+
+
+def send(method: str, path: str, **how: object) -> dict:
+    """The one place a request leaves the window, with the daemon's session token on it.
+
+    Args:
+        method: "GET" or "POST".
+        path: Route under /api, without the prefix.
+        how: What `httpx.Client.request` takes (`params`, `json`, `timeout`).
+
+    Returns:
+        The decoded JSON body. The token is read from the daemon's own file each time
+        (`core.uitoken`): a daemon another window restarted has minted a new one.
+    """
+    r = _HTTP.request(method, f"/api/{path}", headers={uitoken.HEADER: uitoken.read(PORT)},
+                      **how)
+    r.raise_for_status()
+    return r.json()
 
 
 def get(path: str, wait: float | None = None, **params: str) -> dict:
@@ -32,10 +53,7 @@ def get(path: str, wait: float | None = None, **params: str) -> dict:
         The decoded JSON body. A non-2xx raises: the daemon is on loopback and started by
         this same process, so a failure there is a bug to see, not a state to render.
     """
-    r = _HTTP.get(f"/api/{path}", params=params,
-                  **({"timeout": wait} if wait is not None else {}))
-    r.raise_for_status()
-    return r.json()
+    return send("GET", path, params=params, **({"timeout": wait} if wait is not None else {}))
 
 
 def post(path: str, body: dict) -> dict:
@@ -48,9 +66,7 @@ def post(path: str, body: dict) -> dict:
     Returns:
         The decoded JSON body.
     """
-    r = _HTTP.post(f"/api/{path}", json=body)
-    r.raise_for_status()
-    return r.json()
+    return send("POST", path, json=body)
 
 
 def awake(port: int) -> bool:

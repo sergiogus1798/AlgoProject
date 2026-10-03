@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from core import sqxfile
 from mt5 import wine
-from ui.daemon import jobs
+from ui.daemon import jobs, proof
 from ui.daemon.launch.api import queued
 from ui.daemon.mt5bridge import runs
 
@@ -26,6 +26,7 @@ class Verify(BaseModel):
     end: str
     model: str
     firms: list[str]
+    nonce: str = ""             # the proof its preflight returned (`proof.py`); `verify` only
 
 
 @ROUTER.get("/api/mt5bridge/options")
@@ -87,13 +88,24 @@ def _check(req: Verify) -> dict:
     return {**got, "file": str(path) if path else None, "where": where}
 
 
-@ROUTER.post("/api/mt5bridge/preflight")
-def preflight(req: Verify) -> dict:
+def shown(req: Verify, got: dict) -> dict:
+    """What a nonce of this launcher is bound to: the form, the file and the sentence shown."""
+    return {**req.model_dump(exclude={"nonce"}), "file": got.get("file"), "text": got["text"]}
+
+
+def checked(req: Verify) -> dict:
     """Whether this check may start now, and the text the owner confirms."""
     try:
         return _check(req)
     except FAILS as e:
         return {"ok": False, "reasons": [f"no se pudo comprobar: {e}"], "text": ""}
+
+
+@ROUTER.post("/api/mt5bridge/preflight")
+def preflight(req: Verify) -> dict:
+    """`checked`, plus the one-use nonce `POST /api/mt5bridge/verify` asks back when it is ok."""
+    got = checked(req)
+    return {**got, "nonce": proof.issue(LABEL, shown(req, got))} if got["ok"] else got
 
 
 @ROUTER.post("/api/mt5bridge/verify")
@@ -104,9 +116,12 @@ def verify(req: Verify) -> dict:
         The job's record (`jobbutton.JobButton` follows its `id`), or `{"error"}` with the
         reasons it was refused.
     """
-    got = preflight(req)
+    got = checked(req)
     if not got["ok"]:
         return {"error": "no se lanza: " + "; ".join(got["reasons"])}
+    why = proof.refusal(LABEL, req.nonce, shown(req, got))
+    if why:
+        return {"error": "no se lanza: " + why}
     start = "mt5" if req.start.strip().upper() == runs.DEEPEST else req.start
     argv = ["-m", "mt5.verify.run", "--strategy", got["file"], "--from", start,
             "--to", req.end, "--model", req.model, "--firms", ",".join(req.firms)]

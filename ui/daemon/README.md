@@ -25,12 +25,14 @@ only, each one job on the conductor lane.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `app.py` | The app: includes every router of `routers.py` and serves `/api/health` (code fingerprint, pid, busy jobs, which installs exist — the read-only mode) | imported | request → JSON |
+| `app.py` | The app: puts the gate of `gate.py` in front of everything, includes every router of `routers.py` and serves `/api/health` (code fingerprint, pid, busy jobs, which installs exist — the read-only mode) | imported | request → JSON |
 | `routers.py` | `ROUTERS`, every router the daemon serves in the order `app.py` includes them; a new surface is one line appended at the end | imported | — |
 | `templates.py` | The library's routes as a router: `/api/templates`, `/api/template/{name}` (+ `/status`), `/api/coverage`, `/api/verdict`, `/api/palettes`, `/api/palette/{name}` (+ `/delete`), `/api/palettes/new`, `/api/interview/step`, `/api/interview/finish` | imported | request → JSON |
 | `jobsapi.py` | The routes every zone shares: `/api/jobs` (the daemon's job list), `/api/progress/installs` and `/api/progress` (where an SQX project stands, from files) | imported | request → JSON |
 | `version.py` | Fingerprint of the daemon's own code, served by `/api/health` so the launcher replaces an idle daemon left over from older code | imported | files → 16 hex |
-| `serve.py` | Bind to 127.0.0.1 and serve | `python3 -m ui.daemon.serve [--port P]` | — |
+| `serve.py` | Bind 127.0.0.1 itself, and only then mint the session token (`core.uitoken.mint`) and serve on that socket — a second daemon that finds the port taken exits before touching the token | `python3 -m ui.daemon.serve [--port P]` | — |
+| `gate.py` | The middleware: `refusal(method, path, headers)` answers `host`, `origin`, `token` or None — 403 before any route; armed by `serve` through `ALGO_UI_PORT` | imported by `app.py` | request → 403 · the route |
+| `proof.py` | The launchers' proof of confirmation: `issue(kind, plan)` gives a one-use nonce bound to the hash of what was asked and the sentence shown, `refusal(kind, nonce, plan)` spends it — unknown, used, older than 10 min or bound to another plan is a sentence for the owner | imported by `launch/api.py`, `advance/api.py`, `mt5bridge/api.py` | plan → nonce · refusal |
 | `library.py` | What the library holds: registry rows, runs, and what is really on disk | imported | disk → dicts |
 | `coverage.py` | The matrix of runs and the headline counts | imported | catalogue → grid |
 | `writes.py` | The three writes: status, notes, verdict | imported | change → row |
@@ -65,16 +67,53 @@ The surfaces' routers, each a package with its own README, all listed in `router
 | `batch/` | `/api/batch`, `/api/batch/has` | a mother's `strategyPermutations/` or `pipeline/` `metrics.parquet` — only labels, `param_*`, `NetProfit (build)` and `NetProfit (oos1)`; every oos2/ALL column dropped before reading |
 | `loader/` | `GET`/`POST /api/load` | a databank chosen in the window: its files on whichever install holds it, the `project.cfx` for its OOS partner, the `metrics/`, `raw/` and `harvest/` manifests; queues what is missing or stale — metrics on the python lane (no SQX), trades and cosecha on the one-at-a-time conductor lane |
 | `data/` | `/api/data/catalogue`, `/api/data/assets`, `/api/data/bars`, `/api/data/spread`, `/api/data/feedquality` | the data root through `perf.disk.inventory` and its `manifest.json` files; the bar library through `core.barstore` (cached in `barsDerived/`); the step-4 contract dicts in `spread/<feed>/` and `feedQuality/<feed>/` — no export, no SQX |
-| `projects/` | `/api/projects/all`, `/api/projects/find` | every project of the gallery: each install's `project.cfx`, `registry.csv`, `reports/`, the rosters for the total and today's log for the state — `-project action=status` only to a worker running it, never `count` |
+| `projects/` | `/api/projects/all`, `/api/projects/one`, `/api/projects/find` | every project of the gallery: each install's `project.cfx`, `registry.csv`, `reports/`, the rosters for the total and today's log for the state — `-project action=status` only to a worker running it, never `count` |
 | `sqxconfig/` | `/api/sqxconfig`, `POST /api/sqxconfig/value` | `assets/_build.yaml`, `_classes.yaml`, the globals of `_policy.yaml` and `_markets.yaml` (read only) through `core.assetyaml`; writes one value through `core.assetwrite.set_value`, comments kept — no SQX |
 | `databank/` | `/api/databank/panels`, `/table`, `/equity`, `/funnel`, `POST /api/databank/reload` | the databank panel of Proyecto: roster (`loader.find`), `metrics/` or the cosecha, every study under `reports/<P>/*/` paired by identity, the mothers' batch studies (`estudios/`) by name, the `spread` report's trades, `gate/funnel.csv`, the ledger's door for 17-20 — no SQX; reload only asks `POST /api/load` |
 | `filters/` | `/api/filters/metrics`, `POST /apply`, `POST /discard`, `POST /clear`, `/state`, `GET`/`POST /saved` | the databank table's real columns (OOS2 left out) and the stored `distribution` blocks; writes `AlgoData/filters/<P>/<D>/discards.jsonl` and `saved.yaml`, and one ledger row per filter or manual deletion through `ledger.record.log` — no `.sqx`, no SQX |
 | `advance/` | `/api/advance/preflight`, `POST /api/advance/run` | `registry.csv`, the worker's port, `/proc`, its projects' dates and today's SQX log, F6's `discards.jsonl`, the project's `project.cfx`; the job copies the discards to `AlgoData/projects/discards/`, cuts through `sqx.curate.apply_verdict.apply`, stages, starts the worker, sends `-project action=start` and then only `action=status` until «Project finished», and stops it — **the one route that reaches SQX**, never the master |
+| `research/` | `/api/research/map`, `/cell`, `/memory`, `/board`, `GET`/`POST /direct`, `/proposal`, `POST /veto`, `/answer`, `GET`/`POST /launch`, `/queue` | «Investigar»: the reads cost nothing; `POST /direct` queues the research director (Claude, no SQX) after a cost confirmation; `POST /launch` queues ONE job labelled `launch` that takes each launchable idea of a proposal through `core.assets` → `templateArchitect` → `builder --workflow` → `buildingBlocksExpert` → autopilot on the custodian, one after another. Never the master |
 | `launch/` | `/api/launch/tasks`, `/preflight`, `/steps`, `POST /run`, `GET`/`POST /chain` | the same preflight as `advance/`; the job runs `core.assets`, copies the project to `AlgoData/projects/snapshots/`, switches on one task, one step's tasks, or — «Correr workflow» — each pending step in WORKFLOW.md's order with its Python tests between, starts the worker once per step, only `action=status` until «Project finished», stops it; halts before the next SQX task after a judging step (8, 10, 12, 14, 16). Never the master |
 | `strategy/` | `/api/strategy/meta`, `/costcurve`, `/stats`, `/archived`, `POST /api/strategy/archive` | the Estrategia page: the `.sqx` by file read (the install, else an export's copy under `raw/`, else the archive) through `sqx.inspect.strategymeta`, the cosecha and the `spread` report's trades, the ledger's door for OOS2; «Archivar» freezes through `core.archive.write` — no SQX. With `source=archive`, it and `results/`, `tearsheet/`, `tearmarket/` answer from `core.archive.read` |
 | `create/` | `/api/create/options`, `POST /api/create/template`, `POST /api/create/project` | the chat's draft brief (`templates/drafts/`), the library's templates and `assets/symbols/`; queues the headless author (`CLAUDE_BIN -p`) or `core.assets` + `builder --workflow` on the conductor lane — never starts SQX |
 | `archive/` | `/api/archive/list`, `/api/archive/show` | PORTFOLIOS: `AlgoData/archive/` through `core.archive.read` — each archived strategy with its versions, the ledger count frozen that day, and what one version holds and skipped; files only, no job, no SQX |
 | `mt5bridge/` | `/api/mt5bridge/options`, `/runs`, `/result`, `POST /preflight`, `POST /verify` | MT5 BRIDGE › Verificar: `AlgoData/mt5/verify/<run>/{run.json,result.json}`, the archive and `strategy.locate` for the `.sqx`, `core.paths.MT5_ACCOUNTS`; the preflight is `advance.busy` on the conductor plus an open MT5 terminal refused; `verify` queues `python3 -m mt5.verify.run` on the conductor lane, labelled `mt5verify` — a launcher for `winddown` and `launch.queued` |
+
+## Who may call the daemon, and what a launcher needs
+
+Loopback is not a boundary: every local process and every page open in a browser can reach
+127.0.0.1. Three checks, the first two in `gate.py`, in this order, 403 on the first that fails:
+
+1. **Host** must be `127.0.0.1:<port>` or `localhost:<port>` — a DNS-rebound name is refused.
+2. **Origin**, when the request carries one, must be the daemon's own. A browser puts it on every
+   cross-origin POST, body or not (`/api/mt5bridge/close-terminal` and `/api/jobs/{id}/cancel` take
+   none); the window's httpx client sends none. There is no CORS middleware and there must never
+   be one.
+3. **The session token**, header `X-Algo-Token`, on **every route and every method** except
+   `GET /api/health` — the one thing a window asks before it knows a daemon exists (it tells the
+   code fingerprint, the pid and the busy count, nothing of the library). `serve` mints it with
+   `secrets.token_urlsafe(32)` once it holds the port and writes `AlgoData/ui/token-<port>`, mode
+   0600; `core.uitoken.read(port)` is the only reader, and `ui/desktop/client.py::send` the only sender
+   (it reads the file on each request, so a daemon another window replaced is followed without a
+   restart). A new client — a script, a skill, a `curl` — takes the token from `core.uitoken.read`,
+   never from a copy. The token says «a process of this user», not «a person»: it keeps a web page
+   and another user out, not the owner's own scripts.
+
+The gate is unarmed only when `ui.daemon.app` is imported without `serve` — a test's `TestClient`,
+which binds no socket; `tests/test_ui_gate.py` arms it by hand.
+
+**The three confirmation-gated launchers also need a proof** (`proof.py`): `GET
+/api/launch/preflight`, `GET /api/advance/preflight` and `POST /api/mt5bridge/preflight`, when
+they answer ok, return a `nonce` bound to sha256 of (launcher, what was asked, the confirmation
+text). `POST /api/launch/run`, `/api/advance/run` and `/api/mt5bridge/verify` re-run the preflight
+and spend the nonce against the text it gives now: no nonce, one already used, one older than 10
+minutes, one of another launcher, or a text that changed (the counts and names in it are the
+state) starts nothing and says why. Nonces live in memory; a restarted daemon forgets them and the
+button asks again. The nonce proves the plan was computed and is still true, not that a person
+clicked — that is the dialog's job, in the window. «Correr workflow» (`/api/launch/chain`) and
+«Crear plantillas y lanzar en SQX» (`/api/research/launch`) keep their own older form of it: the
+client sends the plan back and the daemon compares. `pipeline/autopilot` and `mt5/verify` call
+`ui.daemon`'s Python functions, never its HTTP routes: neither the gate nor the nonce is in their way.
 
 ## Contracts and traps
 

@@ -1,6 +1,6 @@
 """The daemon's HTTP surface: everything the window knows, it asks for here.
 
-This file holds the app and `/api/health`; every other route lives in a router listed in
+This file holds the app, its gate (`gate.py`) and `/api/health`; every other route lives in a router listed in
 `routers.py` (the library's own in `templates.py`).
 """
 
@@ -8,10 +8,13 @@ import os
 
 from fastapi import FastAPI
 
-from ui.daemon import jobs, progress, version
+from ui.daemon import gate, jobs, progress, version
 from ui.daemon.routers import ROUTERS
 
 APP = FastAPI(title="AlgoDaemon", docs_url=None, redoc_url=None)
+# Host, Origin and the session token, before any route. No CORS middleware, ever: the
+# window is not a browser, and a browser page has no business here.
+gate.install(APP)
 # Taken once at import: the code this process is actually running, not what is on disk now.
 CODE = version.fingerprint()
 for router in ROUTERS:
