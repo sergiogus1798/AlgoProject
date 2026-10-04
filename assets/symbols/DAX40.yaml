@@ -28,17 +28,17 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 145.32               # points — tramo `build`
+    use: 182.85               # points — tramo `build`
     sqx_now: 100              # el maestro no configura este feed hoy
-    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (DAX40_TICK). studies.data.spread.onboard"
+    why: "recalibrado 2026-10-04 — 0.0164 % del precio medio del tramo `build` (11162.1): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 204.98               # points — tramo `oos1` (oos2 lleva `spread_oos2`)
+    use: 233.76               # points — tramo `oos1` (oos2 lleva `spread_oos2`)
     sqx_now: 100              # el maestro no configura este feed hoy
-    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (DAX40_TICK). studies.data.spread.onboard"
+    why: "recalibrado 2026-10-04 — 0.0164 % del precio medio del tramo `oos1` (14270.4): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 252.7
+    use: 359.22
     sqx_now: null
-    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (DAX40_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.0164 % del precio medio del tramo `oos2` (21929.1): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                      # % del nocional
       build:
@@ -131,17 +131,17 @@ costs:
         price_now: 25175.19
         price_date: '2026-10-01'
   slippage_is:
-    use: 72.66              # points — tramo(s) build
+    use: 64.0               # points — tramo(s) build
     sqx_now: null
-    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+    why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
-    use: 102.49             # points — tramo oos1 (oos2 lleva `slippage_oos2`)
+    use: 81.82              # points — tramo oos1 (oos2 lleva `slippage_oos2`)
     sqx_now: null
-    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+    why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 126.35
+    use: 125.73
     sqx_now: null
-    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
+    why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
     use: -6.47                # % ANUAL (SQX divide /100 y /360)
     sqx_now: null             # el maestro no configura este feed hoy
@@ -165,15 +165,21 @@ swap:
 
 mc_retest:
   spread:
-    min: 85.11
-    max: 361.53
+    min: null
+    max: null
     sqx_now: null             # el maestro no configura este feed hoy
+    multiples:
+      min: 0.5
+      max: 2.3
   slippage:
-    min: 42.56
-    max: 180.77
+    min: null
+    max: null
     sqx_now: null             # el maestro no configura este feed hoy
 
 # Proyectos del maestro que usan este activo. Leído, no decidido.
+    multiples:
+      min: 0.5
+      max: 2.3
 projects_using_it:
   - XAUUSD
 mt5:

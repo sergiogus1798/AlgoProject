@@ -91,12 +91,13 @@ index CFDs do since 2026-09-27: their spread fell or rose between the two OOS wi
   - `why` — one line on why it differs. The part that stops the same discussion recurring.
 
   `spread` and `commission` block while undecided. `slippage` and the swaps do not, and both now
-  carry a PROVISIONAL figure: **slippage is half the spread**, the owner's convention of
-  2026-09-22. It is not a measurement and cannot be one — SQX carries `defaultSlippage = 0.0` on
-  all seventeen, and a backtest applies whatever slippage it is given, so none is recoverable from
-  an export. A flat figure in points is wrong across classes: 2.5 points is $0.02 on the Nikkei and
-  $28.82 on USDCHF. Half the spread scales with the instrument and lands on 5 points for gold, the
-  midpoint of the range its own MC Retest already explores.
+  carry a figure: **slippage is 35 % of the segment's spread** (owner, 2026-10-04; half the spread
+  from 2026-09-22 until then). SQX applies it on entry AND exit, so it charges spread × 1.7 a round
+  trip: 600 live deals of FTMO, Hantec and FundingPips cost 1.33 × the mean spread (95 % CI by day
+  1.08–1.72), the tail being stops filled while the spread is blown. The spread itself is the WIDEST
+  firm's time-weighted mean as a % of price (the larger of its 12- and 3-month means), times each
+  segment's mean price, with no safety factor — the history is charged what 2026 charges in
+  proportion to price. → `knowhow/costs/funded-tick-spread-vs-price.md`
 - `mc_retest` — the spread and slippage ranges the MC Retest task draws from, in points.
 - `mt5` — the asset's symbol name at each firm. `mt5_point` — each firm's MT5 `point` and
   `to_sqx` = point ÷ `instrument.tick_size`, read off the firm's server (2026-10-01). **Every cost
@@ -110,13 +111,19 @@ seventeen together, next to the date range SQX actually holds for that feed.
 ## MC Retest ranges
 
 The `MC Retest` task re-runs the whole backtest against a perturbed input, and two of its methods
-draw a value from a range: `RandomizeSpread` and `RandomizeSlippage`. Each asset declares its own,
-under `mc_retest`, **in points** — absolute, not a multiple of the real spread.
+draw a value from a range: `RandomizeSpread` and `RandomizeSlippage`. SQX takes absolute points,
+but since 2026-10-04 every asset leaves its bounds `null` and the range is resolved per task as
+MULTIPLES of the cost of the segment that task is priced at (`core.assetranges.mc_retest(data,
+segment)`): `_policy.yaml` › `mc_retest.default_multiples`, 0.5×–2×, or the asset's own `multiples`
+where the widest firm's worst month measured more (forex, up to 6× on EURUSD). MCR 2/3 run on
+`build`, MCR 8 Stress on `build..oos1` priced at `oos1`, so each gets its own range. A range
+narrower than 1 point is widened to 1 (SQX draws on a 0.1-point grain). A number written in the
+card still wins over the multiples.
 
 ```yaml
 mc_retest:
-  spread:   {min: 5, max: 12, sqx_now: …}
-  slippage: {min: 0, max: 10, sqx_now: …}
+  spread:   {min: null, max: null, multiples: {min: 0.5, max: 2.7}, sqx_now: …}
+  slippage: {min: null, max: null, multiples: {min: 0.5, max: 2.7}, sqx_now: …}
 ```
 
 An undecided range **does not block**: the preflight prints a warning and exits 0, because an

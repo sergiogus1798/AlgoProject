@@ -2,6 +2,10 @@
 
 from core.assetdata import policy, sqx_settings
 
+# SQX draws a range on a ~0.1-point grain: under ten steps the task comes out with no dispersion
+# (`knowhow/costs/mc-retest-ranges.md`). Only a forex pair's range is this narrow.
+MIN_SPAN = 1.0
+
 
 def mc_retest(data: dict, segment: str = "build") -> dict:
     """The spread and slippage ranges the MC Retest task must randomise within.
@@ -13,8 +17,8 @@ def mc_retest(data: dict, segment: str = "build") -> dict:
 
     Returns:
         {"spread": {"min", "max", "source"}, ...} in points. A bound the asset declares is
-        used as written; a null one falls back to `mc_retest.default_multiples` of
-        `_policy.yaml` times the cost the backtest itself runs at, and `source` says which
+        used as written; a null one falls back to the asset's own `multiples` under that
+        range, else `mc_retest.default_multiples` of `_policy.yaml`, times the cost the backtest itself runs at, and `source` says which
         of the two it was.
 
     Absolute points is the only unit SQX accepts, so a multiple is resolved here rather than
@@ -29,10 +33,11 @@ def mc_retest(data: dict, segment: str = "build") -> dict:
         if span["min"] is not None and span["max"] is not None:
             out[name] = {**{k: span[k] for k in ("min", "max")}, "source": "declarado"}
             continue
-        factor, cost = multiples.get(name), costs.get(name)
+        factor, cost = span.get("multiples") or multiples.get(name), costs.get(name)
         if factor is None or cost is None:
             out[name] = {"min": span["min"], "max": span["max"], "source": "sin decidir"}
             continue
-        out[name] = {"min": round(factor["min"] * cost, 6), "max": round(factor["max"] * cost, 6),
+        low = round(factor["min"] * cost, 6)
+        out[name] = {"min": low, "max": max(round(factor["max"] * cost, 6), round(low + MIN_SPAN, 6)),
                      "source": f"{factor['min']}x-{factor['max']}x el {name} de `{segment}`"}
     return out

@@ -11,12 +11,13 @@ RANDOMIZE = {"spread": "RandomizeSpread", "slippage": "RandomizeSlippage",
              "min_distance": "RandomizeMinDistance"}
 
 
-def set_ranges(text: str, data: dict) -> dict[str, int]:
+def set_ranges(text: str, data: dict, segment: str = "build") -> dict[str, int]:
     """Put this asset's declared MC Retest ranges into a task, in place.
 
     Args:
         text: A task XML.
         data: One asset as load() returned it.
+        segment: The segment the task is priced at: a range left in multiples follows it.
 
     Returns:
         Range name to how many <Method> blocks were rewritten, and the new text under
@@ -28,7 +29,7 @@ def set_ranges(text: str, data: dict) -> dict[str, int]:
     """
     out = {"text": text}
     for name, method in RANDOMIZE.items():
-        span = mc_retest(data).get(name, {"min": None, "max": None})
+        span = mc_retest(data, segment).get(name, {"min": None, "max": None})
         if span["min"] is None or span["max"] is None:
             out[name] = 0
             continue

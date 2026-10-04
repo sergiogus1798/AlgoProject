@@ -208,8 +208,11 @@ def main() -> None:
         raise SystemExit(registry.check_name(a.name))
     if a.template and not a.template.exists():
         raise SystemExit(f"{a.template} does not exist.")
+    # Only where something is built: mt5.verify passes a finished strategy as `--template`
+    # with `--tasks Retest`, and a generated strategy carries an Enter action on both rules.
+    builds = a.workflow or "Build" in a.tasks.split(",")
     sides = directions(a.template) if a.template else [a.simple]
-    if len(sides) != 1:
+    if builds and len(sides) != 1:
         raise SystemExit(f"{a.template.name} abre operaciones en {sides or 'ninguna dirección'}: "
                          "una plantilla, y un build, van en UNA sola dirección, long o short "
                          "(regla dura del dueño, 2026-10-01).")

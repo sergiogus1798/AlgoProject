@@ -12,17 +12,17 @@ instrument:
   min_distance: 0
 costs:
   spread_is:
-    use: 2.27
+    use: 2.36
     sqx_now: null
-    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUDNZD_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.0200 % del precio medio del tramo `build` (1.17822): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos:
-    use: 1.97
+    use: 2.14
     sqx_now: null
-    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUDNZD_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.0200 % del precio medio del tramo `oos1` (1.06996): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos2:
-    use: 2.3
+    use: 2.23
     sqx_now: null
-    why: onboard 2026-10-02 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUDNZD_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.0200 % del precio medio del tramo `oos2` (1.1152): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:
       build:
@@ -37,17 +37,17 @@ costs:
     sqx_now: null
     why: '2026-10-02 — 5 USD por lote ida y vuelta, la cifra del dueño (2026-09-29) para todo el forex y la de FTMO; mismo método y valor en los tres tramos.'
   slippage_is:
-    use: 1.14
+    use: 0.83
     sqx_now: null
-    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+    why: '35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   slippage_oos:
-    use: 0.98
+    use: 0.75
     sqx_now: null
-    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+    why: '35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   slippage_oos2:
-    use: 1.15
+    use: 0.78
     sqx_now: null
-    why: onboard 2026-10-02 — la mitad del spread de su tramo, default del dueño.
+    why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
     use: 2.01
     sqx_now: null
@@ -60,13 +60,19 @@ notes:
   - '2026-10-02: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
 mc_retest:
   spread:
-    min: 1.44
-    max: 3.27
+    min: null
+    max: null
     sqx_now: null
+    multiples:
+      min: 0.5
+      max: 3.1
   slippage:
-    min: 0.72
-    max: 1.64
+    min: null
+    max: null
     sqx_now: null
+    multiples:
+      min: 0.5
+      max: 3.1
 mt5:
   ftmo: AUDNZD
   hantec: AUDNZD.h

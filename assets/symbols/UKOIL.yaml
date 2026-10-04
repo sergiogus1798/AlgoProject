@@ -3,9 +3,10 @@
 #   · los segmentos temporales y las convenciones de swap        → `../_policy.yaml`
 #   · los mercados donde se retestea su edge                     → `../_markets.yaml`
 #
-# ESTE ACTIVO EXISTE HOY SÓLO COMO MERCADO DE CROSS-CHECK DE XAUUSD, no como activo main.
-# `session: null` a propósito: el <Setup> del mercado extra lleva `session="No Session"` y
-# hereda la del test principal. Construir SOBRE brent exigiría decidir su sesión primero.
+# Sesión: `UKOIL.cash_ftmo`, decisión del dueño, 2026-10-02 (la de FTMO para todos los activos);
+# hasta entonces iba a null porque sólo era mercado de cross-check de XAUUSD. Como mercado extra
+# nada cambia: su <Setup> lleva `session="No Session"` y hereda la del test principal; la sesión
+# de esta ficha rige cuando se construye SOBRE brent.
 symbol: UKOIL
 class: no_forex
 broker: ftmo
@@ -14,7 +15,7 @@ feeds:
   - UKOIL.cash_M1
 verified: 2026-09-23
 
-session: null
+session: UKOIL.cash_ftmo
 
 # Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano.
 instrument:
@@ -24,17 +25,17 @@ instrument:
 
 costs:
   spread_is:
-    use: 90.0                # points — tramo `build`
+    use: 52.44               # points — tramo `build`
     sqx_now: 32.0            # points, el unico que hay hoy
-    why: "2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de UKOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 72.0 puntos en sep-2026 (21.0 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El Brent no tiene ticks de Darwinex; 2013-2024 no está medido."
+    why: "recalibrado 2026-10-04 — 0.0755 % del precio medio del tramo `build` (69.4676): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 90.0                # points — tramos `oos1` y `oos2`
+    use: 55.63               # points — tramos `oos1` y `oos2`
     sqx_now: 32.0            # points, el unico que hay hoy
-    why: "2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de UKOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 72.0 puntos en sep-2026 (21.0 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El Brent no tiene ticks de Darwinex; 2013-2024 no está medido."
+    why: "recalibrado 2026-10-04 — 0.0755 % del precio medio del tramo `oos1` (73.682): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 90.0
+    use: 58.24
     sqx_now: null
-    why: '2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de UKOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 72.0 puntos en sep-2026 (21.0 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El Brent no tiene ticks de Darwinex; 2013-2024 no está medido.'
+    why: 'recalibrado 2026-10-04 — 0.0755 % del precio medio del tramo `oos2` (77.1444): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
       build:
@@ -57,8 +58,8 @@ costs:
         date: '2026-09-29'
         confirmed: true
         pct_now: 0.0
-        price_now: 100.044
-        price_date: '2026-09-21'
+        price_now: 107.242
+        price_date: '2026-09-24'
       darwinex:
         method: PercentageBased
         value: 0.005
@@ -68,8 +69,8 @@ costs:
         confirmed: true
         note: confirmado por el dueño para metales/crudo (encargo 2026-09-29), ya no ambiguo entre forex y commodities
         pct_now: 0.005
-        price_now: 100.044
-        price_date: '2026-09-21'
+        price_now: 107.242
+        price_date: '2026-09-24'
       infinox:
         method: SizeBased
         value: 1.0
@@ -77,9 +78,9 @@ costs:
         source: dueño, 2026-09-29 (Brent)
         date: '2026-09-29'
         confirmed: true
-        pct_now: 0.009996
-        price_now: 100.044
-        price_date: '2026-09-21'
+        pct_now: 0.009325
+        price_now: 107.242
+        price_date: '2026-09-24'
       hantec:
         method: SizeBased
         value: 1.0
@@ -87,9 +88,9 @@ costs:
         source: dueño, 2026-09-29 (Brent)
         date: '2026-09-29'
         confirmed: true
-        pct_now: 0.009996
-        price_now: 100.044
-        price_date: '2026-09-21'
+        pct_now: 0.009325
+        price_now: 107.242
+        price_date: '2026-09-24'
       the5ers:
         method: null
         value: null
@@ -115,17 +116,17 @@ costs:
         confirmed: false
         note: agregadores dicen sin comisión en energías; 403 en el fetch propio
   slippage_is:
-    use: 45.0                # points — tramo `build`
+    use: 18.35               # points — tramo `build`
     sqx_now: 0.0
-    why: "2026-10-01 — decisión del dueño: la mitad del spread de su tramo (90.0), default del dueño."
+    why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
-    use: 45.0                # points — tramos `oos1` y `oos2`
+    use: 19.47               # points — tramos `oos1` y `oos2`
     sqx_now: 0.0
-    why: "2026-10-01 — decisión del dueño: la mitad del spread de su tramo (90.0), default del dueño."
+    why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 45.0
+    use: 20.38
     sqx_now: null
-    why: '2026-10-01 — decisión del dueño: la mitad del spread de su tramo (90.0), default del dueño.'
+    why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
     use: 0.0                 # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: 0.03}
@@ -142,12 +143,12 @@ notes:
 
 mc_retest:
   spread:
-    min: 84.5
-    max: 94.12
+    min: null
+    max: null
     sqx_now: {min: 1, max: 5}
   slippage:
-    min: 42.25
-    max: 47.06
+    min: null
+    max: null
     sqx_now: {min: 0, max: 5}
 
 projects_using_it:

@@ -694,13 +694,14 @@ thresholds:
       queda a ±20 % de la mediana de los años; si no, se modela para los años sin Darwinex
 
   - key: spread.safety.factor
-    value: 1.25
+    value: 1.0
     source: studies/data/spread/config.yaml#safety.factor
     set_by: dueño
-    set_on: 2026-09-27
+    set_on: 2026-10-04
     why: >-
-      margen sobre el spread medido al declararlo en SQX: «es mejor hacer overkill en SQX
-      que en tu portfolio live»
+      sin factor sobre el spread (era 1,25 desde 2026-09-27): el margen va entero en el
+      slippage, 35 % del spread en cada pata — 600 operaciones reales de FTMO, Hantec y
+      FundingPips costaron 1,33 × el spread medio de ida y vuelta, IC 95 % 1,08-1,72
 
   # ── Paso 26 · la verificación SQX ↔ MT5 por empresa (encargo 34 §3) ──────────────────
   - key: mt5verify.matched_min

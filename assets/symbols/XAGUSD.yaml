@@ -3,11 +3,11 @@
 #   · los segmentos temporales y las convenciones de swap        → `../_policy.yaml`
 #   · los mercados donde se retestea su edge                     → `../_markets.yaml`
 #
-# ESTE ACTIVO EXISTE HOY SÓLO COMO MERCADO DE CROSS-CHECK DE XAUUSD, no como activo main.
-# Por eso `session` va a null: `sqx.projects.crossmarket` escribe `session="No Session"` en el
-# <Setup> del mercado extra y hereda la del test principal (`MainTestValues session="true"`).
-# Si algún día se construye SOBRE plata, hay que decidir su sesión antes: `session: null`
-# bloquea la autoría de un proyecto main, y eso es lo correcto.
+# Sesión: `XAGUSD_ftmo`, decisión del dueño, 2026-10-02 («la session de ftmo para la XAG y que
+# aplique al resto de activos»). Hasta entonces iba a null porque el activo sólo era mercado de
+# cross-check de XAUUSD. Como mercado extra nada cambia: `sqx.projects.crossmarket` sigue
+# escribiendo `session="No Session"` en su <Setup> y hereda la del test principal
+# (`MainTestValues session="true"`); la sesión de esta ficha rige cuando se construye SOBRE plata.
 symbol: XAGUSD
 class: no_forex
 broker: Infinox
@@ -17,7 +17,7 @@ feeds:
   - XAGUSD_TICK
 verified: 2026-09-23
 
-session: null
+session: XAGUSD_ftmo
 
 # Hechos del feed, leídos de SQX. No son decisiones y no se editan a mano:
 # `python3 -m sqx.inspect.instruments` los vuelve a sacar del maestro.
@@ -30,17 +30,17 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 12.43               # points — tramo `build`
+    use: 33.27               # points — tramo `build`
     sqx_now: 22.0            # points, el unico que hay hoy
-    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAGUSD_TICK). studies.data.spread.onboard"
+    why: "recalibrado 2026-10-04 — 0.1592 % del precio medio del tramo `build` (20.9032): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 9.57                # points — tramos `oos1` y `oos2`
+    use: 31.59               # points — tramos `oos1` y `oos2`
     sqx_now: 22.0            # points, el unico que hay hoy
-    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAGUSD_TICK). studies.data.spread.onboard"
+    why: "recalibrado 2026-10-04 — 0.1592 % del precio medio del tramo `oos1` (19.846): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 21.06
+    use: 62.16
     sqx_now: null
-    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `volatilidad` donde no hay ticks (XAGUSD_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.1592 % del precio medio del tramo `oos2` (39.0591): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
       build:
@@ -64,8 +64,8 @@ costs:
         confirmed: true
         note: confirmado por el dueño para metales/crudo (encargo 2026-09-29), ya no ambiguo entre forex y commodities
         pct_now: 0.005
-        price_now: 66.639
-        price_date: '2026-09-22'
+        price_now: 61.512
+        price_date: '2026-09-30'
       fundednext:
         method: PercentageBased
         value: 0.0016
@@ -75,8 +75,8 @@ costs:
         confirmed: true
         note: 'metales: Lote x ContractSize x PrecioApertura x 0.0016 %; plata contract 5000'
         pct_now: 0.0016
-        price_now: 66.639
-        price_date: '2026-09-22'
+        price_now: 61.512
+        price_date: '2026-09-30'
       infinox:
         method: SizeBased
         value: 8.0
@@ -85,9 +85,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cuenta raw de Infinox; cifra confirmada por el dueño (encargo 2026-09-29)
-        pct_now: 0.002401
-        price_now: 66.639
-        price_date: '2026-09-22'
+        pct_now: 0.002601
+        price_now: 61.512
+        price_date: '2026-09-30'
       ftmo:
         method: PercentageBased
         value: 0.0014
@@ -97,8 +97,8 @@ costs:
         confirmed: true
         note: confirmado por el dueño para metales/crudo (encargo 2026-09-29)
         pct_now: 0.0014
-        price_now: 66.639
-        price_date: '2026-09-22'
+        price_now: 61.512
+        price_date: '2026-09-30'
       hantec:
         method: null
         value: null
@@ -124,17 +124,17 @@ costs:
         confirmed: false
         note: agregadores dan $5/lote (forex y metales); 403 en el fetch propio
   slippage_is:
-    use: 6.21                # points — tramo `build`
+    use: 11.64               # points — tramo `build`
     sqx_now: 0.0
-    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+    why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
-    use: 4.79                # points — tramos `oos1` y `oos2`
+    use: 11.06               # points — tramos `oos1` y `oos2`
     sqx_now: 0.0
-    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+    why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 10.53
+    use: 21.76
     sqx_now: null
-    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
+    why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
     use: -11.24              # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: -15.9}
@@ -151,12 +151,12 @@ notes:
 # main y no corre MC Retest. Ver `../_policy.yaml`.
 mc_retest:
   spread:
-    min: 5.79
-    max: 23.06
+    min: null
+    max: null
     sqx_now: {min: 1, max: 5}
   slippage:
-    min: 2.9
-    max: 11.53
+    min: null
+    max: null
     sqx_now: {min: 0, max: 5}
 
 # Proyectos del maestro que usan este activo. Leído, no decidido.

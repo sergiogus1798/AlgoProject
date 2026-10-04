@@ -6,6 +6,7 @@
 - `edge-ohlc-spread-not-a-model` — Can the EDGE estimator of spread from OHLC bars be used as a fifth spread model?
 - `funded-accounts-real-costs` — Which commission and swap should funded-account (FTMO, Hantec) simulations use, and where do they come from?
 - `funded-stage-catalogue-gaps` — What does `funding.sqlite` not hold for the funded stage, and which `gaps.*` inputs of `portfolio/funded/sim` fill it?
+- `funded-tick-spread-vs-price` — Does an index CFD's spread scale with its price, and what do FTMO's and Hantec's own ticks say the spread is?
 - `mc-retest-ranges` — In what units are the MC Retest RandomizeSpread and RandomizeSlippage Min/Max ranges?
 - `mt5-points-to-sqx-points` — How do I convert MT5 points to SQX points for an asset and firm (`to_sqx`)?
 - `per-task-costs` — Where in a project.cfx are per-task costs stored, and what must never be edited?

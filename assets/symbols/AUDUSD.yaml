@@ -29,17 +29,17 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 0.95                # points
+    use: 0.63                # points
     sqx_now: 0.1              # points
-    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUDUSD_TICK). studies.data.spread.onboard"
+    why: "recalibrado 2026-10-04 — 0.0072 % del precio medio del tramo `build` (0.876691): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 0.7
+    use: 0.51
     sqx_now: null
-    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUDUSD_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.0072 % del precio medio del tramo `oos1` (0.715692): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos2:
-    use: 0.81
+    use: 0.48
     sqx_now: null
-    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (AUDUSD_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.0072 % del precio medio del tramo `oos2` (0.665711): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                     # $ por lote
       build:
@@ -132,17 +132,17 @@ costs:
         price_now: 0.69446
         price_date: '2026-10-01'
   slippage_is:
-    use: 0.47                 # points — tramo(s) build
+    use: 0.22                 # points — tramo(s) build
     sqx_now: 0.0
-    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+    why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
-    use: 0.35                 # points — tramo(s) oos1 y oos2
+    use: 0.18                 # points — tramo(s) oos1 y oos2
     sqx_now: 0.0
-    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+    why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 0.41
+    use: 0.17
     sqx_now: null
-    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
+    why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
     use: -4.5                  # points por noche
     sqx_now: {type: points, value: -3.36}
@@ -160,15 +160,21 @@ notes:
 # significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
 mc_retest:
   spread:
-    min: 0.62
-    max: 1.4
+    min: null
+    max: null
     sqx_now: {min: 1, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
+    multiples:
+      min: 0.5
+      max: 3.9
   slippage:
-    min: 0.31
-    max: 0.7
+    min: null
+    max: null
     sqx_now: {min: 0, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
 
 # Proyectos del maestro que usan este activo. Leído, no decidido.
+    multiples:
+      min: 0.5
+      max: 3.9
 projects_using_it:
   - AUDJPY
   - CADJPY_H1

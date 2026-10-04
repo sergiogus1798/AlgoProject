@@ -205,7 +205,7 @@ def write_task(text: str, spec: dict, methods: dict, data: dict,
         '<OutOfSample showGraph="false" />' if oos is None else
         f'<OutOfSample showGraph="false"><Range dateFrom="{oos[0]}" dateTo="{oos[1]}" />'
         "</OutOfSample>", text, count=1)
-    ranges = set_ranges(text, data)
+    ranges = set_ranges(text, data, segment)
     return ranges.pop("text"), {"segment": segment, "from": start, "to": end,
                                 "out_of_sample": oos, "setups": setups,
                                 "silenced": silenced, "methods": sorted(methods),

@@ -28,17 +28,17 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 2.13                # points
+    use: 2.12                # points
     sqx_now: 1.2              # points
-    why: "onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (GBPJPY_TICK). studies.data.spread.onboard"
+    why: "recalibrado 2026-10-04 — 0.0139 % del precio medio del tramo `build` (153.278): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 2.06
+    use: 2.04
     sqx_now: null
-    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (GBPJPY_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.0139 % del precio medio del tramo `oos1` (147.283): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos2:
-    use: 2.7
+    use: 2.68
     sqx_now: null
-    why: onboard 2026-09-30 — spread medio de Darwinex del tramo × factor 1.25, modelo `relativo` donde no hay ticks (GBPJPY_TICK). studies.data.spread.onboard
+    why: 'recalibrado 2026-10-04 — 0.0139 % del precio medio del tramo `oos2` (193.486): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                     # $ por lote
       build:
@@ -131,17 +131,17 @@ costs:
         price_now: 208.982
         price_date: '2026-10-01'
   slippage_is:
-    use: 1.06                # points — tramo(s) build
+    use: 0.74                # points — tramo(s) build
     sqx_now: 0.0
-    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+    why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
-    use: 1.03                # points — tramo(s) oos1 y oos2
+    use: 0.71                # points — tramo(s) oos1 y oos2
     sqx_now: 0.0
-    why: "onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño."
+    why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 1.35
+    use: 0.94
     sqx_now: null
-    why: onboard 2026-09-30 — la mitad del spread de su tramo, default del dueño.
+    why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
     use: 3.09                 # points por noche
     sqx_now: {type: points, value: 0.53}
@@ -159,12 +159,12 @@ notes:
 # significa que distintas tareas llevan rangos distintos. Ver `../_policy.yaml`.
 mc_retest:
   spread:
-    min: 1.41
-    max: 3.3
+    min: null
+    max: null
     sqx_now: {min: 1, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
   slippage:
-    min: 0.71
-    max: 1.66
+    min: null
+    max: null
     sqx_now: {min: 0, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
 
 # Proyectos del maestro que usan este activo. Leído, no decidido.

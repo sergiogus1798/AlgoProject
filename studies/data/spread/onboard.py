@@ -73,7 +73,7 @@ def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
     forex = kind == "forex"
     # One per segment for every kind (owner, 2026-09-30): forex used to get one mean.
     spreads = {f"spread_{HALVES[k]}": v for k, v in per.items()}
-    slips = {f"slippage_{HALVES[k]}": round(v / 2, 2) for k, v in per.items()}
+    slips = {f"slippage_{HALVES[k]}": round(v * cfg["safety"]["slippage_share"], 2) for k, v in per.items()}
     price = _oos1_price(m, windows["oos1"])
     usd = cfg["onboard"]["commission_usd_per_lot"]
     commission = (float(rules["commission"]) if rules["commission"] != "usd_per_lot"

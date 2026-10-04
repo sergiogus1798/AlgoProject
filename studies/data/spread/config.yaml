@@ -89,6 +89,7 @@ model:
     AUS200: relativo
 safety:
   factor: ledger:spread.safety.factor            # multiplica el spread medido al declararlo en SQX
+  slippage_share: 0.35          # slippage = esta parte del spread (dueño, 2026-10-04; antes la mitad)
 reprice:
   near_minutes: 5               # un tick a más de estos minutos de la hora de la operación no vale: se usa el modelo
   judge: spread_slippage        # spread | spread_slippage: contra qué versión se dice «se rompe»

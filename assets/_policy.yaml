@@ -56,52 +56,52 @@ segments:
     data: {from: 2003-12-01, to: 2026-10-01}   # AUDJPY_M1, 8.539.264 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   AUDUSD:
     data: {from: 2003-08-04, to: 2026-10-01}   # AUDUSD_M1, 8.510.802 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   CADJPY:
     data: {from: 2004-10-25, to: 2026-10-01}   # CADJPY_M1, 7.902.568 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   DAX40:
     data: {from: 2013-09-30, to: 2026-10-01}   # DAX40_M1, 3.918.005 barras M1
     build: {from: 2013-09-30, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   DJ30:
     data: {from: 2013-09-30, to: 2026-10-01}   # DJ30_M1, 4.005.747 barras M1
     build: {from: 2013-09-30, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   EURJPY:
     data: {from: 2003-08-04, to: 2026-10-01}   # EURJPY_M1, 8.660.771 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   EURUSD:
     data: {from: 2003-05-05, to: 2026-10-01}   # EURUSD_M1, 8.748.070 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   GBPJPY:
     data: {from: 2003-08-04, to: 2026-10-01}   # GBPJPY_M1, 8.658.651 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   GBPUSD:
     data: {from: 2003-05-05, to: 2026-10-01}   # GBPUSD_M1, 8.744.705 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   NIKKEI225:
     data: {from: 2011-09-19, to: 2026-10-01}   # NIKKEI225_M1, 4.088.726 barras M1
     build: {from: 2011-09-19, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   SP500ft:
     data: null   # ⚠️ SP500ft_Plus02_Infinox NO EXISTE en SQX — no hay histórico que partir
     build: {from: null, to: null}
@@ -111,48 +111,48 @@ segments:
     data: {from: 2003-08-08, to: 2026-09-30}   # XAGUSD_M1, 7.283.102 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30, spread: oos2}
+    oos2: {from: 2023, to: 2026-09-30, spread: oos2}
   USA500:
     data: {from: 2012-01-19, to: 2026-10-01}   # USA500_M1, 4.058.139 barras M1
     build: {from: 2012-01-19, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   USATEC:
     data: {from: 2012-01-19, to: 2026-10-01}   # USATEC_M1, 4.220.398 barras M1
     build: {from: 2012-01-19, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   USDCAD:
     data: {from: 2003-08-04, to: 2026-10-01}   # USDCAD_M1, 8.634.556 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   USDCHF:
     data: {from: 2003-05-05, to: 2026-10-01}   # USDCHF_M1, 8.723.882 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   USDJPY:
     data: {from: 2003-05-05, to: 2026-10-01}   # USDJPY_M1, 8.744.464 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   XAUUSD:
     data: {from: 2003-05-05, to: 2026-09-30}   # XAUUSD_M1, 7.958.218 barras M1
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30, spread: oos2}
+    oos2: {from: 2023, to: 2026-09-30, spread: oos2}
   USOIL:
     data: {from: 2013-01-01, to: 2026-10-01}   # USOIL.cash_M1, 4.464.116 barras M1
     # Dueño, 2026-10-01: los tramos de los índices (los datos empiezan en 2013).
     build: {from: 2013, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   EURGBP:
     data: {from: 2003-08-04, to: 2026-10-01}   # EURGBP_M1, 8.653.556 barras M1
     build: {from: 2008-01-01, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
 
 # ─── Convenciones de swap ──────────────────────────────────────────────────────────────
 # Las lleva el atributo <Swap> de cada InstrumentInfo. Son iguales en los 142 instrumentos
@@ -163,37 +163,37 @@ segments:
     data: {from: 2005-10-10, to: 2026-10-01}   # EURAUD_M1, 7.660.225 barras M1
     build: {from: 2008-01-01, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   NZDUSD:
     data: {from: 2003-08-04, to: 2026-10-01}   # NZDUSD_M1, 8.614.991 barras M1
     build: {from: 2008-01-01, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   HK50:
     data: {from: 2012-03-29, to: 2026-09-30}   # HK50_M1, 2.531.080 barras M1
     build: {from: 2012-03-29, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   AUDNZD:
     data: {from: 2006-12-12, to: 2026-10-02}   # AUDNZD_M1, 7.300.111 barras M1
     build: {from: 2008-01-01, to: 2017}
     oos1: {from: 2018, to: 2022}
-    oos2: {from: 2023, to: 2026-08-30}
+    oos2: {from: 2023, to: 2026-09-30}
   UK100:
     data: {from: 2011-09-19, to: 2026-10-02}   # UK100_M1, 4.130.091 barras M1
     build: {from: 2011-09-19, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   AUS200:
     data: {from: 2013-10-09, to: 2026-10-02}   # AUS200_M1, 3.449.723 barras M1
     build: {from: 2013-10-09, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   XCUUSD:
     data: {from: 2012-03-05, to: 2026-10-02}   # XCUUSD_M1, 4.404.537 barras M1
     build: {from: 2012-03-05, to: 2019}
     oos1: {from: 2020, to: 2023}
-    oos2: {from: 2024, to: 2026-08-31, spread: oos2}
+    oos2: {from: 2024, to: 2026-09-30, spread: oos2}
 swap:
   triple_swap_on: WEDNESDAY
   rollout_hour: "23:00"
@@ -235,12 +235,18 @@ mc_retest:
     min_distance: {min: 0.0, max: 10.0}
 
   # Lo que se usa cuando un activo deja su rango en `null`, en MÚLTIPLOS del coste con que
-  # corre el backtest — no en puntos. Decisión del dueño, 2026-09-24: «min 1x, max 4x, con el
+  # corre el backtest — no en puntos. Dueño, 2026-10-04: 0,5x-2x (la firma más barata en un mes
+  # tranquilo, y el peor mes de la más ancha); un activo que midió más lleva su `multiples`.
+  # Antes, 2026-09-24: «min 1x, max 4x, con el
   # spread y el slippage los del backtest normal». En múltiplos y no en puntos a propósito: el
   # día que cambie el spread pactado de un par, su rango de MC Retest lo sigue solo, y un
   # número escrito a mano en el fichero del activo sigue mandando sobre esto.
   # ⚠️ El de fábrica de SQX (arriba) es el MISMO en los diecisiete mercados y por eso no
   # significa nada: 1-5 puntos es enorme en un par de divisas y ridículo en un índice.
   default_multiples:
-    spread: {min: 1, max: 4}
-    slippage: {min: 1, max: 4}
+    spread:
+      min: 0.5
+      max: 2
+    slippage:
+      min: 0.5
+      max: 2

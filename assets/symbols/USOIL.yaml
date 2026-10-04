@@ -5,24 +5,24 @@ sqx_symbol: USOIL.cash_M1
 feeds:
   - USOIL.cash_M1
 verified: 2026-10-01
-session: null
+session: USOIL.cash_ftmo
 instrument:
   tick_size: 0.001
   point_value: 100.0
   min_distance: 0
 costs:
   spread_is:
-    use: 97.88
+    use: 56.12
     sqx_now: null
-    why: '2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de USOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 78.3 puntos en sep-2026 (24.6 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El WTI no tiene ticks de Darwinex; 2013-2024 no está medido.'
+    why: 'recalibrado 2026-10-04 — 0.0877 % del precio medio del tramo `build` (63.9918): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos:
-    use: 97.88
+    use: 61.27
     sqx_now: null
-    why: '2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de USOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 78.3 puntos en sep-2026 (24.6 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El WTI no tiene ticks de Darwinex; 2013-2024 no está medido.'
+    why: 'recalibrado 2026-10-04 — 0.0877 % del precio medio del tramo `oos1` (69.8643): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos2:
-    use: 97.88
+    use: 64.73
     sqx_now: null
-    why: '2026-10-01 — decisión del dueño: overkill, el spread de FTMO de hoy × 1,25 en los tres tramos. Medido en los ticks de USOIL.cash del terminal MT5 de FTMO, ponderado por tiempo: 78.3 puntos en sep-2026 (24.6 en ene-2025: se triplicó sin que el precio lo explique, así que no se modela hacia atrás). El WTI no tiene ticks de Darwinex; 2013-2024 no está medido.'
+    why: 'recalibrado 2026-10-04 — 0.0877 % del precio medio del tramo `oos2` (73.8074): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:
       build:
@@ -37,17 +37,17 @@ costs:
     sqx_now: null
     why: '2026-10-01 — decisión del dueño: el peor caso de FTMO y Hantec. FTMO 0 y Hantec 1 USD/lote ida y vuelta son las cifras que el dueño confirmó para el Brent el 2026-09-29; el WTI no tiene operaciones en ninguna de las dos cuentas para comprobarlo en su historial. SizeBased, los tres tramos.'
   slippage_is:
-    use: 48.94
+    use: 19.64
     sqx_now: null
-    why: '2026-10-01 — decisión del dueño: la mitad del spread de su tramo (97.88), default del dueño.'
+    why: '35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   slippage_oos:
-    use: 48.94
+    use: 21.44
     sqx_now: null
-    why: '2026-10-01 — decisión del dueño: la mitad del spread de su tramo (97.88), default del dueño.'
+    why: '35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   slippage_oos2:
-    use: 48.94
+    use: 22.66
     sqx_now: null
-    why: '2026-10-01 — decisión del dueño: la mitad del spread de su tramo (97.88), default del dueño.'
+    why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
     use: 0.0
     sqx_now: null
@@ -60,12 +60,12 @@ notes:
   - '2026-10-01: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
 mc_retest:
   spread:
-    min: 92.63
-    max: 102.38
+    min: null
+    max: null
     sqx_now: null
   slippage:
-    min: 46.31
-    max: 51.19
+    min: null
+    max: null
     sqx_now: null
 mt5:
   ftmo: USOIL.cash

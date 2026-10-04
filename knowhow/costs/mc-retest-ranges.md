@@ -4,7 +4,9 @@ kw: MC Retest RandomizeSpread RandomizeSlippage Min Max units points or multiple
 tag: 🔬  date: 2026-09-27  see: conditions/mc-retest-task, costs/slippage
 ---
 # MC Retest spread/slippage ranges are absolute points, drawn on a ~0.1-point grain
-Set the range at the instrument's scale in `assets/symbols/<SYMBOL>.yaml` → `mc_retest`
+Since 2026-10-04 the cards leave the bounds null and `core.assetranges.mc_retest(data, segment)`
+resolves 0.5×–2× (or the card's `multiples`) of that segment's spread and slippage, never under
+1 point wide; a number written in `assets/symbols/<SYMBOL>.yaml` → `mc_retest` still wins.
 (`core.assetcheck.mc_pending()` names assets without one). On USDJPY SQX draws in steps of about
 0.1 point (one tick): a range spanning k steps gives ~k outcomes. The 1x–4x of a 0.1-point spread
 (0.1–0.4) gave 2, of a 0.05 slippage (0.05–0.2) gave 1 → `tarea_sin_dispersion`. Span ≥ 5–10 ticks.
