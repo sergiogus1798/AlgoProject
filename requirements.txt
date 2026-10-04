@@ -14,6 +14,7 @@ openpyxl==3.1.5
 pyarrow==25.0.1
 Markdown==3.10.3
 arch==7.2.0
+statsmodels==0.15.0
 diptest==0.11.0
 # The null studies' compiled kernels, and the one BLAS thread each worker process gets.
 numba==0.67.0
