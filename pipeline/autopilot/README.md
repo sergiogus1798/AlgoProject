@@ -11,6 +11,11 @@ and a limbo goes on, marked; a step without criteria lets everyone through.
 **Development mode** (`dev` in `criteria.yaml`, on today): at step 8 only, keep 5 strategies drawn
 at random among those that pass. The point is a fast run that proves the chain, not a filter.
 
+**Smoke mode** (`run --smoke`, `Test_` projects only, 2026-10-04): a functional test of the chain.
+Only the rules on `judge.READABLE` facts judge (presence, sanity, trades per year), at every step,
+so the dev draw always has someone to keep; `criteria.yaml` is not touched. 🔬 1,000 Simple
+Strategy longs on NIKKEI225 M30 left 0 alive at step 8 under the real rules and the run ended there.
+
 **Cheap to watch.** Everything an agent needs is three small files in the run's folder; it never
 reads SQX's log. `estado.txt` (one line, overwritten), `resumen.md` (one row per action, seconds
 and what it did), `fallo.md` (only on failure: the step, the reason, the last lines of the trace).

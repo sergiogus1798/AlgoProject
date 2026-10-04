@@ -1,6 +1,7 @@
 """One judging step: its facts, the criteria, the dev draw, the verdict.csv and the cut in SQX."""
 
 import hashlib
+import os
 import random
 import sys
 from pathlib import Path
@@ -19,6 +20,12 @@ from ui.daemon.advance.preflight import by_identity
 
 CRITERIA = Path(__file__).with_name("criteria.yaml")
 KEEP = "MANTENER"     # anything but DESCARTAR keeps a strategy (sqx/curate/README.md)
+# A functional test of the chain (`run --smoke`, Test_ projects only): only the rules that say a
+# strategy can be read at all are kept, so the dev draw always has someone to draw (🔬 2026-10-04,
+# 1,000 built, 0 alive at step 8: the run ended there and tested nothing after it).
+SMOKE = "ALGO_SMOKE"
+READABLE = {"gate.scorecard.presencia_passed", "gate.scorecard.sanidad_passed",
+            "gate.scorecard.is_trades_per_year", "gate.scorecard.oos_trades_per_year"}
 
 
 def settings() -> dict:
@@ -28,7 +35,17 @@ def settings() -> dict:
     dev = cfg.get("dev") or {}
     if True in dev:
         dev["on"] = dev.pop(True)
+    if os.environ.get(SMOKE) == "1":
+        for step in cfg["steps"].values():
+            step["rules"] = [r for r in step.get("rules") or [] if r.get("fact") in READABLE]
     return cfg
+
+
+def smoke(project: str) -> None:
+    """Turn the smoke mode on for this run and its subprocesses; a Test_ project only."""
+    if not project.startswith("Test_"):
+        sys.exit("--smoke es solo para proyectos Test_: en los demás juzgan todas las reglas")
+    os.environ[SMOKE] = "1"
 
 
 def tags(project: str) -> set[str]:

@@ -217,8 +217,11 @@ def main() -> None:
                     help="el log reciente del worker lo escribiste tú: no esperes sus 15 min")
     ap.add_argument("--live", action="store_true",
                     help="una sola sesión de SQX (modo GUI) para todos los pasos, sin reinicios")
+    ap.add_argument("--smoke", action="store_true", help="prueba funcional de un Test_")
     tail.flags(ap)
     a = ap.parse_args()
+    if a.smoke:
+        judge.smoke(a.project)
     os.environ[AUTONOMOUS] = "1"   # D4 (owner, 2026-10-04): oos2's door binds this run and its subprocesses
     given = tail.inputs(a, judge.settings())
     if a.plan:
