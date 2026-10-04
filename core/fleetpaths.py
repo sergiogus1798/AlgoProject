@@ -1,5 +1,6 @@
 """Where the live MT5 fleet's files are, and each account's plan from machine.yaml."""
 
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -25,7 +26,13 @@ def workbook() -> Path:
     return FLEET / "Flota_de_cuentas.xlsx"
 
 
+@lru_cache(maxsize=1)
+def _accounts(mtime_ns: int) -> dict[int, dict]:
+    """The `fleet.vps.accounts` of machine.yaml as of one modification time."""
+    cfg = yaml.load((ROOT / "config" / "machine.yaml").read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
+    return ((cfg.get("fleet") or {}).get("vps") or {}).get("accounts") or {}
+
+
 def accounts() -> dict[int, dict]:
     """Each fleet account's plan by login — `{firm, plan, size, phase}` — which no file of the firm carries."""
-    cfg = yaml.safe_load((ROOT / "config" / "machine.yaml").read_text(encoding="utf-8"))
-    return ((cfg.get("fleet") or {}).get("vps") or {}).get("accounts") or {}
+    return _accounts((ROOT / "config" / "machine.yaml").stat().st_mtime_ns)

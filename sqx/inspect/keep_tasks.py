@@ -6,12 +6,10 @@ carries the donor's remaining task chain along. For a builder-only project the
 rest has to go - together with the task XML members and the databank
 registrations nothing references any more.
 
-    python3 keep_tasks.py in.cfx out.cfx --types Build [--keep-databanks A,B]
-
-System databanks (the first `--system-count` by position, default 5) are always
+System databanks (the first `system_count` by position, default 5) are always
 kept; SQX expects them to exist.
 """
-import argparse, os, sys, zipfile
+import sys
 import xml.etree.ElementTree as ET
 
 
@@ -51,10 +49,7 @@ def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
     # databanks: keep the system ones plus anything a kept task still writes
     referenced = set()
     for t in kept:
-        try:
-            sub = ET.fromstring(members[t.get("taskXMLFile")])
-        except Exception:
-            continue
+        sub = ET.fromstring(members[t.get("taskXMLFile")])
         for d in sub.findall("Databanks/Databank"):
             v = d.get("value")
             if v and v != "null":
@@ -79,39 +74,3 @@ def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
                      "dropped_files": len(dropped_files),
                      "databanks": [d.get("name") for d in dbs_el.findall("Databank")],
                      "dropped_databanks": dropped_dbs}
-
-
-def main() -> None:
-    """Copy a .cfx keeping only the chosen task types, their XML members and databanks."""
-    ap = argparse.ArgumentParser()
-    ap.add_argument("src")
-    ap.add_argument("dst")
-    ap.add_argument("--types", default="Build",
-                    help="comma-separated task types to KEEP (default: Build)")
-    ap.add_argument("--system-count", type=int, default=5,
-                    help="how many lowest-position databanks are system ones")
-    args = ap.parse_args()
-
-    with zipfile.ZipFile(args.src) as z:
-        members = {n: z.read(n) for n in z.namelist()}
-
-    members, done = keep(members, {t.strip() for t in args.types.split(",") if t.strip()},
-                         args.system_count)
-
-    os.makedirs(os.path.dirname(os.path.abspath(args.dst)) or ".", exist_ok=True)
-    with zipfile.ZipFile(args.dst, "w", zipfile.ZIP_DEFLATED) as z:
-        for n, data in members.items():
-            z.writestr(n, data)
-
-    print(f"kept {len(done['kept'])} task(s): " + ", ".join(done["kept"]))
-    print(f"dropped task(s): " + ", ".join(done["dropped"]))
-    print(f"dropped {done['dropped_files']} task XML member(s)")
-    print("kept databanks: " + ", ".join(done["databanks"]))
-    if done["dropped_databanks"]:
-        print(f"dropped {len(done['dropped_databanks'])} unreferenced databank(s): "
-              + ", ".join(done["dropped_databanks"]))
-    print(f"-> {args.dst}")
-
-
-if __name__ == "__main__":
-    main()

@@ -60,30 +60,18 @@ def asset_state() -> dict[str, object]:
 
 
 @ROUTER.get("/api/asset/{symbol}")
-def asset(symbol: str) -> dict[str, object]:
+def asset(symbol: str, leaves: bool = True) -> dict[str, object]:
     """One asset in full.
 
     Args:
         symbol: Asset name.
+        leaves: False leaves the raw file's leaves out.
 
     Returns:
         Costs, windows, MC Retest ranges, retest universe, preflight complaints and the
         file's own editable leaves.
     """
-    return assets.one(symbol)
-
-
-@ROUTER.get("/api/assets/shared/{name}")
-def shared_file(name: str) -> dict[str, object]:
-    """One of the four files that decide for every asset at once.
-
-    Args:
-        name: policy, classes, markets or build.
-
-    Returns:
-        Its leaves and the path it lives at.
-    """
-    return assets.shared(name)
+    return assets.one(symbol, leaves)
 
 
 def why_for(symbol: str, field: str, text: str) -> str:

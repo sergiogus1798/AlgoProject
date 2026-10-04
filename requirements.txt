@@ -2,7 +2,7 @@
 # Install: python3 -m pip install -r requirements.txt
 # Python 3.10 to 3.13. numpy, scipy and arch publish no wheels for 3.14 yet,
 # and pip would try to compile them.
-PyYAML==6.0.3
+PyYAML>=5.4
 # Round-trip de YAML que conserva comentarios: assets/ se edita desde la app sin
 # perder ni una línea de las que explican por qué vale lo que vale.
 ruamel.yaml==0.18.16

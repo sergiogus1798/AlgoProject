@@ -60,6 +60,8 @@ def candidates(installs: dict[str, Path], up: dict[str, bool], stock: set[str],
             kind = registry.kind(p.name)
             if up[role]:
                 row.update(action="keep", reason=f"el {role} está encendido")
+            elif d["tasks"] == "?":
+                row.update(action="keep", reason="project.cfx ilegible: nunca se retira")
             elif age_h < QUIET_HOURS:
                 row.update(action="keep", reason=f"tocado hace {age_h:.0f} h")
             elif (role, p.name) in named:

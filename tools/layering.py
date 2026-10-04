@@ -15,8 +15,7 @@ ONLY_FROM = {"ui": {"tests", "tools"}, "tools": {"tests"}, "tests": set()}
 ALLOW: set[tuple[str, str]] = {
     (".claude/skills/dossier-pdf/render.py", "tools"),
     ("core/archive/manifest.py", "ledger"),
-    ("core/archive/view.py", "ui.daemon"),
-    ("core/archive/write.py", "ui.daemon"),
+    ("core/archive/cli.py", "ui.daemon"),
     ("mt5/reconcile/sqxside.py", "ui.daemon"),
     ("mt5/verify/autopilot.py", "ui.daemon"),
     ("mt5/verify/run.py", "ui.daemon"),

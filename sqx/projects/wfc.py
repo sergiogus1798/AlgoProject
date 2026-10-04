@@ -169,8 +169,7 @@ def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str
         raise SystemExit(f"--tasks pide {len(study['tasks'])} ficheros, en el orden de "
                          f"`wfc.tasks`: {', '.join(t['segment'] for t in study['tasks'])}")
 
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     config = members["config.xml"].decode("utf-8")
     rows = []
     for spec, member in zip(study["tasks"], members_in_order):

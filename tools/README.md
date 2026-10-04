@@ -4,6 +4,7 @@
 |---|---|---|
 | `checks.py` | Verify every mechanical rule in `CODESTYLE.md` and list what breaks them | `python3 tools/checks.py` |
 | `depmap.py` | Read the real imports and regenerate `docs/DEPENDENCIES.md` | `python3 tools/depmap.py` |
+| `projectmap.py` | Read Graphify's graph and regenerate `PROJECT_MAP.md`: modules, interfaces, infra vs calculation, hot spots | `python3 tools/projectmap.py` |
 | `skillmap.py` | Read every installed skill and regenerate `docs/SKILLS.md` — what exists, what it costs to invoke, what is stale | `python3 tools/skillmap.py` |
 | `layering.py` | The import-direction check `checks.py` runs (core, engines, sqx, ui, tools); its ALLOW list is debt | imported, not run |
 | `knowhowmap.py` | Regenerate each `knowhow/<domain>/INDEX.md` from its cards' `q:` lines; `checks.py` uses it to check the cards, the `knowhow/` links and the indexes | `python3 tools/knowhowmap.py` |

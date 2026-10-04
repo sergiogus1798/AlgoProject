@@ -1,6 +1,8 @@
 """What the window needs to draw the palette library, and the four writes it may do."""
 
-from core.paths import TAXONOMY
+from functools import lru_cache
+
+from core.paths import PALETTES, TAXONOMY
 from sqx.blocks import palette
 from sqx.blocks.taxonomy import ARCHETYPES, flat, read
 from ui.daemon.coverage import ARCHETYPES as REGISTRY_ARCHETYPES
@@ -16,7 +18,14 @@ WIRE = ("use", "weight", "why")
 
 
 def state() -> dict:
-    """Everything the palette view draws, in one round trip.
+    """Everything the palette view draws, in one round trip; re-read only when a file changed."""
+    files = (TAXONOMY, *sorted(PALETTES.glob("*.yaml")))
+    return _state(tuple((f.name, f.stat().st_mtime_ns) for f in files))
+
+
+@lru_cache(maxsize=1)
+def _state(stamp: tuple) -> dict:
+    """The palette view's payload, parsed once per `stamp` (the taxonomy's and each palette's mtime).
 
     Returns:
         The flat taxonomy, one entry per palette in the library with its file, its

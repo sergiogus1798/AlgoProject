@@ -12,7 +12,6 @@ an SQX workflow task, which prices at `costs.commission.use` instead (`assets/RU
 
 import sys
 
-from core import barstore
 from core.assetdata import load, symbols
 from core.assetwrite import set_brokers
 from core.paths import bar_source
@@ -57,6 +56,7 @@ def refresh() -> dict:
         broker on a feed with no bars synced yet (the five indices) is left untouched rather
         than guessed.
     """
+    from core import barstore   # lazy: pulls in pandas, which only the refresh needs
     out = {}
     for asset in symbols():
         data = load(asset)

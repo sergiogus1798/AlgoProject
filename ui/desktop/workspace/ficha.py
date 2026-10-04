@@ -1,11 +1,10 @@
 """Estrategia: the fixed basic panel and the family tabs of one strategy (22 §5); its metadata on a button."""
 
-import threading
-
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSplitter,
                                QVBoxLayout, QWidget)
 
+from ui.desktop import background
 from ui.desktop.selection import SELECTION
 from ui.desktop.studypage.net import fetch, send
 from ui.desktop.studypage.offer import OFF
@@ -24,10 +23,7 @@ class Ficha(QFrame):
     """The strategy page. The top panel is the same in every databank and folds; below it,
     the study page's family tabs, opened on the family of the databank panel it came from, on
     the whole width — the metadata open in their own window from «ⓘ metadatos» (owner,
-    2026-09-30). `arrived` carries the daemon's answers back to the GUI thread."""
-
-    arrived = Signal(dict)
-    archived = Signal(dict)
+    2026-09-30). `background.run` carries the daemon's answers back to the GUI thread."""
 
     def __init__(self) -> None:
         """Build the empty page; `fill` loads a strategy."""
@@ -40,8 +36,6 @@ class Ficha(QFrame):
         self.compute = Compute()
         self.compute.said.connect(self.say)
         self.compute.done.connect(self.reload)
-        self.arrived.connect(self.paint)
-        self.archived.connect(self.after_archive)
         self.title = QLabel("", objectName="h1")
         self.title.setStyleSheet("font-size: 20px;")
         self.origin = QLabel("", objectName="dim")
@@ -116,17 +110,18 @@ class Ficha(QFrame):
                             + (f"   ·   {self.where['databank']}" if self.where["databank"] else ""))
         self.lower(True, ORIGIN_FAMILY.get(databank, "Ficha"), default_study(databank, sub))
         self.say("leyendo la estrategia…")
-        threading.Thread(target=self.ask, args=(dict(self.where),), daemon=True).start()
+        where = dict(self.where)
+        background.run(lambda: self.ask(where), self.paint, key=f"ficha:{id(self)}", owner=self)
 
-    def ask(self, where: dict) -> None:
-        """Off the GUI thread: the three reads of the page, then `arrived`."""
+    def ask(self, where: dict) -> dict:
+        """Off the GUI thread: the three reads of the page, for `paint`."""
         q = {k: where[k] for k in ("project", "databank", "identity")}
         # The name pairs a databank with no cosecha (MCR_All, an ingest) to the project's own.
         named = q | {"strategy": where["strategy"]}
-        self.arrived.emit({"key": (where["project"], where["strategy"]),
-                           "curve": fetch("strategy/costcurve", **named),
-                           "stats": fetch("strategy/stats", **named),
-                           "meta": fetch("strategy/meta", **q)})
+        return {"key": (where["project"], where["strategy"]),
+                "curve": fetch("strategy/costcurve", **named),
+                "stats": fetch("strategy/stats", **named),
+                "meta": fetch("strategy/meta", **q)}
 
     def paint(self, got: dict) -> None:
         """Paint what `ask` brought, unless another strategy was chosen since."""
@@ -214,8 +209,7 @@ class Ficha(QFrame):
             return self.say(asked["error"])
         self.say("archivando…")
         body = {k: self.where[k] for k in ("project", "databank", "identity")} | asked
-        threading.Thread(target=lambda: self.archived.emit(send("strategy/archive", body)),
-                         daemon=True).start()
+        background.run(lambda: send("strategy/archive", body), self.after_archive, owner=self)
 
     def after_archive(self, got: dict) -> None:
         """Say where the version went, or why it did not."""

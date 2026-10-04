@@ -78,9 +78,8 @@ def load(folder: Path, cfg: dict) -> None:
     """
     source = legmod.source()
     for bank in [source] + [leg["databank"] for leg in legmod.legs()]:
-        reply = _call(f'-databank action=clear project={cfg["project"]} name={bank}', cfg)
-        if reply.lstrip().startswith("Error"):   # logged, not fatal: its replies are unmeasured
-            print(f"aviso: clear de {bank}: {reply.strip()[:200]}", file=sys.stderr, flush=True)
+        command = f'-databank action=clear project={cfg["project"]} name={bank}'
+        worker.checked(_call(command, cfg), command)
         time.sleep(2)
     command = f'-databank action=load project={cfg["project"]} name={source} folder={folder}'
     worker.checked(_call(command, cfg), command)
@@ -154,7 +153,8 @@ def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
         databank: Which databank to flush — one leg's output.
 
     Returns:
-        The databank's folder inside the install, and how many `.sqx` it now holds.
+        The databank's folder inside the install, and how many `.sqx` it now holds;
+        raises `SystemExit` when the poll runs out with fewer than `expected` on disk.
 
         SQX writes a retested strategy to disk lazily: measured 2026-09-22, a finished run
         of 2,000 had 962 files on disk. Every per-period equity curve lives inside those
@@ -171,8 +171,8 @@ def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
         time.sleep(cfg["poll_seconds"])
         on_disk = len(list(folder.glob("*.sqx")))
         if on_disk >= expected:
-            break
-    return folder, on_disk
+            return folder, on_disk
+    raise SystemExit(f"{databank}: {on_disk} of {expected} on disk after {cfg['sync_tries']} polls")
 
 
 def main() -> None:

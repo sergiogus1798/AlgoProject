@@ -7,26 +7,22 @@ file and moved over it.
 """
 
 import os
-import socket
 import zipfile
 from pathlib import Path
 
-from core.paths import MASTER, WORKERS
-from core.worker import holding
+from core.paths import WORKERS
+from core.worker import holding, installs, listening
 
 
 def _installs() -> dict[str, tuple[Path, int | None]]:
     """Role to (install folder, port), the master included (it has no known port)."""
-    out = {"master": (MASTER.resolve(), None)}
-    out.update({role: (w["path"].resolve(), w["port"]) for role, w in WORKERS.items()})
-    return out
+    return {role: (p.resolve(), WORKERS.get(role, {}).get("port")) for role, p in installs().items()}
 
 
-def _answers(port: int) -> bool:
-    """Whether something listens on this local port."""
-    with socket.socket() as s:
-        s.settimeout(0.5)
-        return s.connect_ex(("127.0.0.1", port)) == 0
+def members(cfx: Path) -> dict[str, bytes]:
+    """Every member of a project.cfx (or any zip), name to bytes, in archive order."""
+    with zipfile.ZipFile(cfx) as z:
+        return {n: z.read(n) for n in z.namelist()}
 
 
 def held(cfx: Path) -> str | None:
@@ -42,7 +38,7 @@ def held(cfx: Path) -> str | None:
     """
     path = Path(cfx).resolve()
     for role, (install, port) in _installs().items():
-        if install in path.parents and ((port is not None and _answers(port)) or holding(install)):
+        if install in path.parents and ((port is not None and listening(port)) or holding(install)):
             return role
     return None
 

@@ -227,11 +227,11 @@ class Rail(QFrame):
         """Queue `ledger.backfill --blind … --write` for this project."""
         got = railrun.post("workflow/backfill", {"project": self.project})
         self.said.setText(got.get("error") or "Rehaciendo las filas de 17-19 (ver Trabajos).")
-        self.poll()
+        self.poll(True)
 
-    def poll(self) -> None:
+    def poll(self, fresh: bool = False) -> None:
         """Follow this project's jobs (`railwatch`): off the GUI thread, repaints grouped."""
-        railwatch.poll(self)
+        railwatch.poll(self, fresh)
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 — Qt's name
         """Resume following the jobs when the rail comes into view."""

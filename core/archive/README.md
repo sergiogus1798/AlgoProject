@@ -7,19 +7,18 @@ can show it again **without running anything** (`read` imports no `studies.*` an
 spawns nothing). The key is the identity (SHA-256 of the normalised XML); a name never pairs.
 
 **Imports from:** `core.paths`, `core.sqxfile`, `core.assetdata`, `core.datapaths`, `core.manifest`,
-`ledger`, and on the write side only `ui.daemon.loader.find`, `ui.daemon.results`,
-`ui.daemon.gateview`, `ui.daemon.tearsheet.harvest` (the shapes it captures) and
-`sqx.inspect.strategymeta` when it exists · **Consumed by:** the Ficha's «Archivar» and
-PORTFOLIOS' «Importar» (encargo 22, fronts F4 and F12)
+`ledger`; `cli.py`'s `archive` verb imports the writer from `ui/daemon/strategy/` (one row of
+`tools/layering.py`'s ALLOW) · **Consumed by:** the Ficha's «Archivar» and PORTFOLIOS' «Importar»
+(encargo 22, fronts F4 and F12). The writer, `archive_write.py`, and the capture of what the
+daemon serves, `archive_view.py`, live in `ui/daemon/strategy/` since 2026-10-04: they import the
+daemon, so `core` must not hold them.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names the package; holds no code | — | — |
 | `__main__.py` | Makes `python3 -m core.archive` run `cli.main` | `python3 -m core.archive …` | — |
-| `cli.py` | The command: `list`, `archive`, `show` | `python3 -m core.archive archive --project P --databank Results --identity <sha> --step 16 --family <template>` | args → printed |
-| `write.py` | `archive(project, databank, identity, step, note, *, family, sqx=None) -> Path`: locates the `.sqx` on the install by file read (refusing while SQX runs the project), freezes everything, seals it | imported | a live strategy → `archive/<identity>/<stamp>/` |
+| `cli.py` | The command: `list`, `archive` (through `ui.daemon.strategy.archive_write`), `show` | `python3 -m core.archive archive --project P --databank Results --identity <sha> --step 16 --family <template>` | args → printed |
 | `collect.py` | Finds every folder under `reports/<P>/` that names the identity (through any CSV with `strategy`+`identity`, or a JSON's own identity) and copies its JSONs, manifest and the strategy's rows of every table; the loose CSVs outside a study folder cut to the identity; and `skipped`, what could not be paired and why; the cosecha rows | imported | reports, harvest → frozen files |
-| `view.py` | Captures what the daemon serves today: `runs.result` per study and its population, the matrix row, `harvest.read`, the gate report and sheet | imported | live daemon reads → `view.json` + parquet |
 | `manifest.py` | The provenance: the project's registry row, the asset YAML with its sha256 and the resolved card, the ledger study's `trials.accumulated` and `spend.virgin` | imported | project, symbol → dicts |
 | `read.py` | `load(identity, version=None) -> dict`, `versions(identity)`, `listing()` — files only | imported | archive → the live shapes |
 

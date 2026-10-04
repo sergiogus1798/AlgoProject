@@ -1,15 +1,14 @@
-"""The three ways data leaves SQX: trades, databank metrics, and bars."""
+"""What leaves SQX through the worker: trades, the symbol list and bars (metrics are read off the .sqx)."""
 
-import re
 import shutil
 import subprocess
 from pathlib import Path
 
 from core import worker
-from core.paths import STAGING, VIEWS_REL, WORKER, WORKER_SH, view_file
+from core.paths import STAGING, WORKER_SH
 
-SAMPLE = {"10": "IS", "20": "OOS", "127": "Full"}
-STAGING_PROJECT, STAGING_DATABANK = "Retester", "Results"
+SYMBOLS_TIMEOUT_S = 120     # `-symbol action=list` after a ~20 s JVM start
+TRADES_TIMEOUT_S = 6 * 3600  # orderstocsv ~4 min per 231 strategies (~90 min for 5,000)
 
 
 def trades(source: Path, out_dir: Path, data: str = "main") -> str:
@@ -30,7 +29,8 @@ def trades(source: Path, out_dir: Path, data: str = "main") -> str:
     worker.require_posix()
     out_dir.mkdir(parents=True, exist_ok=True)
     cmd = ["-tools", "action=orderstocsv", f"file={source}", f"output={out_dir}", f"data={data}"]
-    got = subprocess.run([str(WORKER_SH), "run", *cmd], capture_output=True, text=True)
+    got = subprocess.run([str(WORKER_SH), "run", *cmd], capture_output=True, text=True,
+                         timeout=TRADES_TIMEOUT_S)
     if got.returncode:
         # SQX says why on stdout («No plugin loader was able to recognize file …»); a bare
         # CalledProcessError swallowed it and every failed export read the same.
@@ -51,7 +51,8 @@ def symbols() -> str:
     """
     worker.require_posix()
     return subprocess.run([str(WORKER_SH), "run", "-symbol", "action=list"],
-                          capture_output=True, text=True, check=True).stdout
+                          capture_output=True, text=True, check=True,
+                          timeout=SYMBOLS_TIMEOUT_S).stdout
 
 
 def bars(symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: str) -> Path:
@@ -83,30 +84,6 @@ def bars(symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: st
     return target
 
 
-def prepare_view(view: str) -> str:
-    """Copy a master databank view to the worker, tagging each column by period.
-
-    Args:
-        view: The view's name on the master, e.g. "Export Data View".
-
-    Returns:
-        The name the copy was written under on the worker.
-
-    Spaces are stripped because the HTTP API splits its command on whitespace, and each
-    column name gains an (IS)/(OOS)/(Full) suffix from its sampleType so the exported
-    headers are unique.
-    """
-    xml = view_file(view).read_text(encoding="utf-8")
-    xml = re.sub(r'name="([^"]+)" sampleType="(\d+)"',
-                 lambda m: f'name="{m.group(1)} ({SAMPLE[m.group(2)]})" '
-                           f'sampleType="{m.group(2)}"', xml)
-    name = view.replace(" ", "")
-    xml = re.sub(r'<View name="[^"]*" originalName="[^"]*"',
-                 f'<View name="{name}" originalName="{name}"', xml)
-    (WORKER / VIEWS_REL / f"{name}.vw").write_text(xml, encoding="utf-8")
-    return name
-
-
 def stage(source: Path) -> int:
     """Copy a folder of strategies into the worker's staging databank.
 
@@ -127,28 +104,3 @@ def stage(source: Path) -> int:
     for f in found:
         shutil.copy(f, STAGING / f.name)
     return len(found)
-
-
-def metrics(source: Path, view: str, out: Path) -> int:
-    """Export one databank's performance metrics, one row per strategy.
-
-    Args:
-        source: Folder holding the databank's .sqx, on whichever install holds it.
-        view: Databank view to export through, defining the columns and their sample types.
-        out: CSV file to write.
-
-    Returns:
-        How many strategies the worker saw. The whole staging dance exists because
-        -databank action=export only works on the instance holding the project, and the
-        master's CLI is unavailable while its GUI is up.
-    """
-    worker.require_posix()
-    out.parent.mkdir(parents=True, exist_ok=True)
-    prepared = prepare_view(view)
-    stage(source)
-    worker.start()
-    seen = worker.wait_ready(STAGING_PROJECT, STAGING_DATABANK)
-    worker.call(f"-databank action=export project={STAGING_PROJECT} "
-                f"name={STAGING_DATABANK} file={out} view={prepared}")
-    worker.stop(export=False)
-    return seen

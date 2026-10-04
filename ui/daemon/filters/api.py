@@ -101,12 +101,6 @@ def metrics_of(project: str, databank: str, got: tuple | None = None) -> dict:
             "ops": list(evaluate.SHOWN), "intervals": sorted(dists.PAIRS)}
 
 
-@ROUTER.get("/api/filters/metrics")
-def get_metrics(project: str, databank: str) -> dict:
-    """The metric dropdown's contents (`metrics_of`)."""
-    return shown("leer las métricas", lambda: metrics_of(project, databank))
-
-
 def judged(req: Apply) -> dict:
     """The AND of rows on the whole databank, manual deletions apart; nothing written.
 

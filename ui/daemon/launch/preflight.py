@@ -29,7 +29,7 @@ FILLS = {"CrossTF_Input": "· Antes de arrancar (paso 10.5), con el worker parad
 def count(project: str, databank: str, role: str) -> int:
     """How many .sqx one databank holds on the worker's disk now."""
     folder = databank_dir(project, databank, advance.WORKERS[role]["path"])
-    return len(list(folder.glob("*.sqx"))) if folder.is_dir() else 0
+    return sum(1 for _ in folder.glob("*.sqx")) if folder.is_dir() else 0
 
 
 def tasks(project: str) -> dict:

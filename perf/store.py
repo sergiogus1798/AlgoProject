@@ -1,16 +1,17 @@
 """The catalogue itself: one appended row per measurement, and the only way anything reads it."""
 
 import os
-import subprocess
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import pandas as pd
+from core.manifest import code_version
+from core.paths import perf_dir
 
-from core.paths import ROOT, perf_dir
+if TYPE_CHECKING:
+    import pandas as pd
 
 HISTORY = "history.csv"
-DISK = "disk.csv"
 COLUMNS = ["day", "time", "commit", "target", "area", "unit", "scale", "budget",
            "wall_s", "cpu_s",
            "rss_peak_mb", "self_rss_mb", "alloc_peak_mb", "bytes_in_mb", "wall_spread_pct",
@@ -24,9 +25,7 @@ def commit() -> str:
         Short hash, with `-dirty` appended when the tree carried uncommitted changes. A
         measurement whose commit is dirty cannot be reproduced, and the panel says so.
     """
-    out = subprocess.run(["git", "describe", "--always", "--dirty"], cwd=ROOT,
-                         capture_output=True, text=True)
-    return out.stdout.strip()
+    return code_version()
 
 
 def context() -> dict:
@@ -59,6 +58,7 @@ def append(rows: list[dict], name: str = HISTORY) -> Path:
     """
     where = perf_dir() / name
     where.parent.mkdir(parents=True, exist_ok=True)
+    import pandas as pd   # lazy: the disk report only needs commit() and context()
     frame = pd.DataFrame(rows)
     frame = frame[[c for c in COLUMNS if c in frame.columns]] if name == HISTORY else frame
     if where.exists():
@@ -72,7 +72,7 @@ def append(rows: list[dict], name: str = HISTORY) -> Path:
     return where
 
 
-def history(name: str = HISTORY) -> pd.DataFrame:
+def history(name: str = HISTORY) -> "pd.DataFrame":
     """Everything ever measured.
 
     Args:
@@ -82,6 +82,7 @@ def history(name: str = HISTORY) -> pd.DataFrame:
         The catalogue in the order it was written, empty with the right columns when
         nothing has been measured yet.
     """
+    import pandas as pd
     where = perf_dir() / name
     if not where.exists():
         return pd.DataFrame(columns=COLUMNS)

@@ -162,8 +162,7 @@ def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, di
         {"project", "input", "tasks": [{firm, title, member, output}], "export": title}.
         Every task switched on, and only these: `action=start` runs the active ones.
     """
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     config = members["config.xml"].decode("utf-8")
     retests = [m for m in cfg["donor_members"] if m in members]
     if len(retests) < len(firms):

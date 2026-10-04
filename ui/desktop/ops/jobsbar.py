@@ -1,14 +1,16 @@
 """The status-bar strip of jobs: what runs, a 0-100 % bar for each, what waits, and a cancel."""
 
+import time
+
 import httpx
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton, QSizePolicy, QWidget
 
-from ui.desktop import background, client
+from ui.desktop import background, client, jobsfeed
 from ui.desktop.durations import share
 from ui.text.numbers import num
 from ui.desktop.ops.progressbar import bar
-from ui.desktop.theme import C, MONO, T
+from ui.desktop.theme import C, MONO, T, clear
 
 POLL_MS = 2000
 SQX_EVERY = 8               # the SQX runs are read every 8th poll (16 s): each read may ask a
@@ -72,22 +74,21 @@ class JobsBar(QWidget):
         self.setStyleSheet(f"font-family: {MONO}; font-size: 12px;")  # never widens the window:
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)  # 4 long chips made it 3.8k px
         self.poll = QTimer(self)
-        self.poll.setInterval(POLL_MS)
         self.poll.timeout.connect(self.refresh)
-        self.poll.start()
+        self.poll.start(POLL_MS)
         self.sqx: list[dict] = []           # the SQX runs as last read
+        self.last: list | None = None       # the job list last drawn
         self.ticks = 0
         self.show_jobs([])
 
     def refresh(self) -> None:
-        """Read the job list, and every few polls what SQX runs, off the GUI thread; `landed`
-        redraws, or says the daemon is down."""
+        """Read the job list (and every few polls the SQX runs) off the GUI thread for `landed`."""
         sqx = self.ticks % SQX_EVERY == 0
         self.ticks += 1
 
         def read() -> dict:
             """Both reads, on the pool's thread."""
-            return {"jobs": client.get("jobs")["jobs"],
+            return {"at": time.monotonic(), "jobs": client.get("jobs")["jobs"],
                     "sqx": client.get("ops/sqx")["runs"] if sqx else None}
         background.run(read, self.landed, key=f"jobsbar:{id(self)}")
 
@@ -95,17 +96,16 @@ class JobsBar(QWidget):
         """Redraw from the daemon's answer, or say it is down."""
         if "error" in got:
             self.show_message("demonio no responde", C["dead"])
+            self.last = None
             return
+        jobsfeed.store({"jobs": got["jobs"]}, got["at"])
+        moved = got["sqx"] is not None and got["sqx"] != self.sqx
         if got["sqx"] is not None:
             self.sqx = got["sqx"]
+        if got["jobs"] == self.last and not moved:
+            return                          # nothing moved: no rebuild of the strip every 2 s
+        self.last = got["jobs"]
         self.show_jobs(got["jobs"])
-
-    def clear(self) -> None:
-        """Remove every widget of the strip."""
-        while self.lay.count():
-            item = self.lay.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
 
     def show_message(self, text: str, colour: str) -> None:
         """Replace the strip with one sentence.
@@ -114,7 +114,7 @@ class JobsBar(QWidget):
             text: What to say.
             colour: Its colour.
         """
-        self.clear()
+        clear(self.lay)
         self.lay.addWidget(QLabel(text, styleSheet=f"color: {colour};"))
         self.lay.addStretch(1)
 
@@ -125,7 +125,7 @@ class JobsBar(QWidget):
             jobs: `/api/jobs` records, oldest first. Finished ones (`rc` set) are counted,
                 not shown: the job zone keeps their logs.
         """
-        self.clear()
+        clear(self.lay)
         live = [j for j in jobs if j.get("rc") is None]
         # The furthest first: a job that prints no PROGRESS sits at 0 % until it ends, and
         # four of those must not hide the one whose bar moves.

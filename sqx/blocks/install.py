@@ -3,11 +3,11 @@
 
 import argparse
 import shutil
-import socket
 import time
 from pathlib import Path
 from xml.etree import ElementTree
 
+from core import worker
 from core.paths import MASTER, WORKERS
 
 CUSTOM_REL = "user/settings/customBlocks.xml"
@@ -25,21 +25,6 @@ def targets() -> dict[str, dict]:
     """
     return {"master": {"path": MASTER, "port": None},
             **{r: {"path": w["path"], "port": w["port"]} for r, w in WORKERS.items()}}
-
-
-def is_running(port: int) -> bool:
-    """Whether something answers on an install's command port.
-
-    Args:
-        port: The install's sqcli port.
-
-    Returns:
-        True when the port is listening. SQX rewrites user/settings on exit, so a write
-        while it is up is silently undone — this is the guard against that.
-    """
-    with socket.socket() as s:
-        s.settimeout(0.5)
-        return s.connect_ex(("127.0.0.1", port)) == 0
 
 
 def backup(store: Path) -> Path:
@@ -114,7 +99,7 @@ def main() -> None:
     if args.role == "master":
         raise SystemExit("the master is the owner's install; author on a worker and hand "
                          "the blocks over")
-    if is_running(target["port"]):
+    if worker.listening(target["port"]):
         raise SystemExit(f"{target['path'].name} is running on port {target['port']}. It "
                          "rewrites user/settings on exit, so this write would be lost. "
                          f"Stop it first: bin/sqx-worker.sh --role {args.role} stop")

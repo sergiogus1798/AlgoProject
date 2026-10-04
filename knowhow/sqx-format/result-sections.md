@@ -6,7 +6,7 @@ tag: 🔬  date: 2026-09-24  see: sqx-format/sqstats-blob, sqx-format/daily-equi
 # settings.xml has one SQStats section per result — scope them or they mix
 Sections: `Portfolio`, `Main: <feed>/<TF>`, one `AdditionalMarket: <feed>/<TF>: …` per cross-check
 market, each with 12 blobs (3 directions × 4 samples). `core.sqxstats.stats(path, result)` slices one;
-`core.sqxstats.results` lists keys. Per-market sums/ratios-of-sums come free, no trade export.
+`core.sqxstats.results` lists keys; `core.sqxstats.every(path)` returns all results' stats from ONE read of settings.xml (🔬 2026-10-04, 120 cross-market .sqx with >2 results: identical to `stats(path, key)` per key, no duplicate keys). Per-market sums/ratios-of-sums come free, no trade export.
 `ProfitFactor` stored `0.0` with no trades and capped `5.0` with no losses — neither is sortable;
 `sqx.variants.united.combine` writes NaN / infinity instead.
 

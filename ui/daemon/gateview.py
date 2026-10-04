@@ -1,5 +1,5 @@
 """A gate report read off disk — its funnel and scorecard, one strategy's paired metrics and curve —
-for the databank panel's funnel and the archive (`core.archive.view`)."""
+for the databank panel's funnel and the archive (`ui.daemon.strategy.archive_view`)."""
 
 import json
 from pathlib import Path

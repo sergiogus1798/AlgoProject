@@ -4,7 +4,7 @@ from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QStackedWidget, QTabBar,
                                QVBoxLayout, QWidget)
 
-from ui.desktop import client, projectflow as flow
+from ui.desktop import background, projectflow as flow
 from ui.desktop.assets import Assets
 from ui.desktop.catalogue import Catalogue
 from ui.desktop.chat import Chat
@@ -117,7 +117,7 @@ class Shell(Opens, QWidget):
         self.reloads = {"Cobertura": self.coverage.reload, "Plantillas": self.catalogue.reload,
                         "Paletas": self.palettes.reload, "Activos": self.assets.reload,
                         "Proyectos": self.gallery.load, "En marcha": self.running.reload,
-                        "Verificar": self.zones["Verificar"].reload,
+                        "Verificar": self.verify_reload,
                         "Investigar": self.zones["Investigar"].reload}
         bar, self.nav = sidebar(self.open_zone, self.refresh, list(self.reloads))
         lay.insertWidget(0, bar)
@@ -129,11 +129,18 @@ class Shell(Opens, QWidget):
         self.gallery.load()
         self.open_zone(ZONES[0])
         self.restate()
-        self.guard(client.get("health")["sqx"]["installs"])
+        background.get("health", lambda h: "sqx" in h and self.guard(h["sqx"]["installs"]),
+                       owner=self)
         # The app's only shortcut. A text field that has the focus keeps Ctrl+K (Qt's «delete
         # to end of line»), the chat's answer box included: the palette never eats typing.
         self.cmdpalette = CmdPalette(self)
         QShortcut(QKeySequence("Ctrl+K"), self, self.cmdpalette.open)
+
+    def verify_reload(self) -> None:
+        """Reload Verificar and mark it loaded, so its `showEvent` does not read it a second time."""
+        zone = self.zones["Verificar"]
+        zone.loaded = True
+        zone.reload()
 
     def wire(self) -> None:
         """Connect the zones that hand the owner on to another zone."""

@@ -4,7 +4,6 @@
 import argparse
 import json
 import re
-import zipfile
 from datetime import date
 from pathlib import Path
 
@@ -104,8 +103,7 @@ def wire(cfx: Path, symbol: str, day: str, project: str = "",
     if held:
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Paralo: bin/sqx-worker.sh --role {held} stop")
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     task = member_of(members["config.xml"].decode("utf-8"), "CrossTF")
     text, silenced, warning = set_main(members[task].decode("utf-8"), symbol)
     members[task] = text.encode("utf-8")

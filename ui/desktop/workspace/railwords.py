@@ -3,12 +3,11 @@
 import ast
 import re
 
-import numpy as np
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QLabel, QPushButton, QSizePolicy, QToolButton
 
 from ui.text.glossary import knob, label
-from ui.text.numbers import num
+from ui.text.numbers import exact, num
 from ui.desktop.theme import C, T
 
 # The daemon's state words (ui/daemon/workflow) as the rail says and paints them. `sealed` is
@@ -44,7 +43,7 @@ def value_words(value: object) -> str:
     if isinstance(value, int) and not isinstance(value, bool):
         return f"{value:,}".replace(",", " ")       # exact: a seed is not «20.3 M»
     if isinstance(value, float):
-        return np.format_float_positional(value, trim="-")    # exact and never «1e-05»
+        return exact(value)    # exact and never «1e-05»
     return num(value) if value is None or isinstance(value, (bool, str)) else str(value)
 
 

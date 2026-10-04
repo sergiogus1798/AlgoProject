@@ -45,13 +45,14 @@ def _block(start: int) -> tuple[dict, dict]:
     files, keys = _SHARED["files"], _SHARED["keys"]
     found, off, implausible = {m: {} for m in keys}, {m: [] for m in keys}, {m: [] for m in keys}
     for path in files[start:start + BLOCK]:
+        every = sqxstats.every(path)       # one read of settings.xml per file, not one per market
         for market, key in keys.items():
             try:
                 curve = sqxstats.equity(path, key)
             except StopIteration:
                 continue
             found[market][path.stem] = curve
-            stats = sqxstats.stats(path, key)[sqxstats.FULL]
+            stats = next(v for k, v in every.items() if k.startswith(key))[sqxstats.FULL]
             diff = abs(float(curve.iloc[-1]) - stats["NetProfit"])
             if diff > ROUNDING:
                 off[market].append(path.stem)

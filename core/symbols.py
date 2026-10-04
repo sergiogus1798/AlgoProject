@@ -11,8 +11,11 @@ RENAMES = ASSETS / "_feed_renames.yaml"
 
 
 def _overrides() -> dict:
-    """The override file, parsed fresh: it is a handful of lines, edited by hand."""
-    return yaml.safe_load(ALIASES.read_text()) or {}
+    """The override file, re-parsed only when its mtime changes (same stamp as `current`)."""
+    stamp = ALIASES.stat().st_mtime_ns
+    if _aliases.get("stamp") != stamp:
+        _aliases.update(stamp=stamp, map=yaml.load(ALIASES.read_text(), Loader=yaml.CSafeLoader) or {})
+    return _aliases["map"]
 
 
 def alias(symbol: str) -> str:
@@ -34,11 +37,12 @@ def alias(symbol: str) -> str:
 
 
 _compiled: dict = {}
+_aliases: dict = {}
 
 
 def renames() -> dict[str, str]:
     """Old SQX feed name -> the name SQX holds today, from `assets/_feed_renames.yaml`."""
-    return yaml.safe_load(RENAMES.read_text()) or {}
+    return yaml.load(RENAMES.read_text(), Loader=yaml.CSafeLoader) or {}
 
 
 def current(text: str) -> str:

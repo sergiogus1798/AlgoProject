@@ -1,5 +1,6 @@
 """The stage registry: recipe.yaml read into concrete commands, gates and output paths."""
 
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -12,13 +13,19 @@ RECIPE = HERE / "recipe.yaml"
 CONFIG = HERE / "config.yaml"
 
 
+@lru_cache(maxsize=2)
+def _load(path: Path, mtime_ns: int) -> dict:
+    """One YAML file as of one modification time: one parse per stage and strategy was the cost."""
+    return yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
+
+
 def settings() -> dict:
     """The pipeline's own tunables.
 
     Returns:
-        The parsed config.yaml, unmodified.
+        The parsed config.yaml, unmodified (shared across calls: never mutate it).
     """
-    return yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
+    return _load(CONFIG, CONFIG.stat().st_mtime_ns)
 
 
 def stages() -> list[dict]:
@@ -29,7 +36,7 @@ def stages() -> list[dict]:
         into something runnable for one strategy. The daemon that replaces the CLI reads
         this same list, which is why the stages are data and not functions.
     """
-    return yaml.safe_load(RECIPE.read_text(encoding="utf-8"))["stages"]
+    return _load(RECIPE, RECIPE.stat().st_mtime_ns)["stages"]
 
 
 def context(project: str, databank: str, strategy: str, day: str) -> dict:

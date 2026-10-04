@@ -13,10 +13,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pandas as pd  # noqa: E402
 
 from core import sqxfile  # noqa: E402
-from core.archive import read, write  # noqa: E402
+from core.archive import read  # noqa: E402
 from core.paths import DATA, ROOT  # noqa: E402
 from ui.daemon import gateview  # noqa: E402
 from ui.daemon.results import matrix, runs  # noqa: E402
+from ui.daemon.strategy import archive_write as write  # noqa: E402
 from ui.daemon.tearsheet import harvest, sheet  # noqa: E402
 
 PROJECT, DATABANK, FAMILY = "Test_USDJPY_donchianUpperCrossUp_M30", "Results", "donchianUpperCrossUp"

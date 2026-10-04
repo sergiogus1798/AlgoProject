@@ -2,6 +2,7 @@
 
 import re
 from collections import defaultdict
+from functools import lru_cache
 from pathlib import Path
 
 from core.paths import DATA
@@ -25,6 +26,7 @@ SUBTABLE = {"mcRetest": "Qué hizo cada tarea", "crossmarket": "El Alpha en toda
 SEVERITY = ("fail", "watch", "pass", "info", "none")
 
 
+@lru_cache(maxsize=65536)
 def norm(name: str) -> str:
     """A strategy name as every writer spells it: `Strategy 9.27.83`, `9.27.83`,
     `Strategy_9.27.83` and the pipeline's `Strategy_9-27-83` all give `9.27.83`."""

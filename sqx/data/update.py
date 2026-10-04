@@ -13,6 +13,7 @@ from core.datapaths import data_update_backups
 from core.paths import MASTER
 from core.worker import holding
 
+UPDATE_TIMEOUT_S = 6 * 3600  # a full download of every symbol is hours; only a hung sqcli passes this
 SNAPSHOTS = data_update_backups()
 
 
@@ -47,7 +48,7 @@ def save(snapshot: dict[str, int], when: str) -> Path:
     return path
 
 
-def update(install: Path, symbol: str | None) -> str:
+def update(install: Path, symbol: str | None) -> tuple[str, int]:
     """Drive `-data action=update` on one install, the CLI form of the GUI's "Update all".
 
     Args:
@@ -56,13 +57,19 @@ def update(install: Path, symbol: str | None) -> str:
         symbol: One SQX symbol, or None for every symbol the install has configured.
 
     Returns:
-        Everything sqcli printed. The same `env -u ELECTRON_RUN_AS_NODE ./sqcli` invocation
-        bin/sqx-worker.sh uses, from the install's own directory, which sqcli requires.
+        (everything sqcli printed, its exit code; 124 on timeout). It never raises, so the caller
+        still checks rule 1 whatever happened: the sync ran either way. The same
+        `env -u ELECTRON_RUN_AS_NODE ./sqcli` invocation bin/sqx-worker.sh uses, from the install's own directory, which sqcli requires.
     """
     cmd = ["./sqcli", "-data", "action=update"] + ([f"symbol={symbol}"] if symbol else [])
-    done = subprocess.run(cmd, cwd=install, capture_output=True, text=True,
-                          env={"PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
-    return done.stdout + done.stderr
+    try:
+        done = subprocess.run(cmd, cwd=install, capture_output=True, text=True,
+                              env={"PATH": "/usr/bin:/bin", "HOME": str(Path.home())},
+                              timeout=UPDATE_TIMEOUT_S)
+    except subprocess.TimeoutExpired as e:
+        out = [x.decode() if isinstance(x, bytes) else x or "" for x in (e.stdout, e.stderr)]
+        return "".join(out) + f"\nsqcli -data update: timeout after {UPDATE_TIMEOUT_S} s", 124
+    return done.stdout + done.stderr, done.returncode
 
 
 def lost(before: dict[str, int], after: dict[str, int]) -> list[str]:
@@ -102,7 +109,8 @@ def main() -> None:
         return
 
     print(f"foto guardada en {save(before, when)}")
-    print(update(MASTER, a.symbol))
+    out, rc = update(MASTER, a.symbol)
+    print(out)
 
     after = inventory(MASTER)
     gone = lost(before, after)
@@ -114,6 +122,8 @@ def main() -> None:
 
     moved = write_dataranges()
     print("\n".join(moved) if moved else "_policy.yaml ya estaba al día")
+    if rc:
+        sys.exit(f"sqcli -data update exited {rc}")
 
 
 if __name__ == "__main__":

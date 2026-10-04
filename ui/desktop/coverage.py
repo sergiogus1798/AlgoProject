@@ -5,7 +5,7 @@ from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QHeaderView, QLabel, QPushButton,
                                QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
-from ui.desktop import client, names
+from ui.desktop import background, client, names
 from ui.desktop.coveragecells import ACTIONS, LEVELS, MARK, fill_tiles, level, swatch
 from ui.desktop.studypage.net import fetch
 from ui.desktop.theme import C, verdict_label
@@ -97,29 +97,30 @@ class Matrix(QWidget):
         lay.addWidget(box)
         lay.addStretch()
 
-        self.data: dict = {}
-        self.templates: list[dict] = []
-        self.board: dict[str, list[dict]] = {}
-        self.cell: dict = {}
+        self.data, self.templates, self.board, self.cell = {}, [], {}, {}
 
     def reload(self) -> None:
-        """Fetch the matrix, the counts, the director's board and its proposal, and repaint."""
-        axis = self.axis.currentData()
-        self.data = client.get("coverage", row_axis=axis)
+        """Fetch the matrix and the counts; the board and the proposal follow off the GUI thread."""
+        self.data = client.get("coverage", row_axis=self.axis.currentData())
         got = client.get("templates")
         self.templates = got["templates"]
         fill_tiles(self.tiles, got["totals"])
-        self.board = {}
-        for c in fetch("research/board").get("cells", []):
-            row = c["symbol"] if axis == "symbol" else names.spelt(c["family"], names.REGISTRY)
-            self.board.setdefault(f"{row}|{c['timeframe']}", []).append(c)
-        self.fill_proposal(fetch("research/proposal"))
-        self.fill_table()
+        background.run(lambda: {"board": fetch("research/board"), "proposal": fetch("research/proposal")},
+                       self.board_landed, "coverage-board", self)
         self.legend.setText(" &nbsp; ".join(swatch(colour, text) for _, text, colour, _ in LEVELS)
                             + " &nbsp;·&nbsp; ✔ alguna prometedora &nbsp; ~ la mejor, floja &nbsp; "
                               "✘ todas muertas &nbsp;·&nbsp; tablero N: activos (o familias) que "
                               "el director admite ahí")
         self.choose({})
+
+    def board_landed(self, got: dict) -> None:
+        """The board and the proposal arrive after the table: repaint with them."""
+        self.board = {}
+        for c in got["board"].get("cells", []):
+            row = c["symbol"] if self.axis.currentData() == "symbol" else names.spelt(c["family"], names.REGISTRY)
+            self.board.setdefault(f"{row}|{c['timeframe']}", []).append(c)
+        self.fill_proposal(got["proposal"])
+        self.fill_table()
 
     def fill_proposal(self, p: dict) -> None:
         """The director's newest proposal in one line, or that there is none.

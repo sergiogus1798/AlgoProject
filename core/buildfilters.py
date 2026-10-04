@@ -54,7 +54,7 @@ def filters(data: dict, timeframe: str, mode: str = "study", path: Path = STUDY)
     """
     if not path.exists():
         raise SystemExit(f"{path} no existe: sin él no hay filtros de aceptación que escribir.")
-    study = yaml.safe_load(path.read_text(encoding="utf-8"))
+    study = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
     sample = _need(study, "sample", "la raíz")
     if sample not in SAMPLES:
         raise SystemExit(f"assets/_study.yaml: `sample: {sample}` no se admite. Un filtro del "

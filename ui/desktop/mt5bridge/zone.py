@@ -231,7 +231,7 @@ class VerifyZone(QFrame):
         meta = got["meta"]
         self.said.setText(f"{meta['strategy']} · {meta['from']} → {meta['to']} · "
                           f"modelo «{meta['model']}»"
-                          + (f" · falló: {meta['error']}" if meta.get("error") else ""))
+                          + (" + Real ticks" if meta.get("ticks") else ""))
         self.result = got["result"]
         self.why = no_result(meta)
         for firm, box in self.boxes.items():

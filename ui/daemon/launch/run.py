@@ -13,13 +13,13 @@ from pathlib import Path
 
 from core import worker
 from core.datapaths import template_runs
-from core.paths import ROOT
 from sqx.projects import crosstfload, stage
 from sqx.templates.registry import RUN_COLUMNS, append
 from ui.daemon import workerguard
 from ui.daemon.advance import preflight as advance, sqxlog
 from ui.daemon.advance.run import ready, say, watch
 from ui.daemon.launch import configure, preflight
+from ui.daemon.projdisk import counts
 
 # The project folder before the start (hard rule 1), without log/; deleted once the counts match.
 SNAPSHOTS = advance.DISCARDS.parent / "snapshots"
@@ -33,13 +33,6 @@ def assets(symbol: str) -> None:
     if got.returncode:
         sys.exit(f"core.assets {symbol} salió con {got.returncode}: no se lanza nada\n"
                  f"{got.stderr.strip()}")
-
-
-def counts(folder: Path) -> dict[str, int]:
-    """.sqx per databank of one project folder, keyed as SQX names them (the folder's name)."""
-    banks = folder / "databanks"
-    return {d.name: len(list(d.glob("*.sqx"))) for d in sorted(banks.iterdir()) if d.is_dir()} \
-        if banks.is_dir() else {}
 
 
 def snapshot(folder: Path) -> Path:

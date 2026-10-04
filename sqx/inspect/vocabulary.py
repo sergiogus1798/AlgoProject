@@ -8,20 +8,11 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.datapaths import vocabulary_snapshot
-from core.paths import MASTER, WORKERS
+from core.worker import installs
 
 CONFIG_REL = "internal/web/SQWIZARD/branding/global/config.xml"
 CUSTOM_REL = "user/settings/customBlocks.xml"
 GROUPS_REL = "user/settings/blockGroups.xml"
-
-
-def installs() -> dict[str, Path]:
-    """Every install on this machine, by the name it is addressed with.
-
-    Returns:
-        "master" plus one entry per headless role in machine.yaml.
-    """
-    return {"master": MASTER, **{role: w["path"] for role, w in WORKERS.items()}}
 
 
 def native_blocks(install: Path) -> dict[str, dict]:

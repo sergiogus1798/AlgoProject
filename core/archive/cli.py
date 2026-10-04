@@ -50,7 +50,7 @@ def main() -> None:
         for row in read.listing():
             print(json.dumps(row, ensure_ascii=False))
     elif args.verb == "archive":
-        from core.archive import write
+        from ui.daemon.strategy import archive_write as write   # the window freezes; layering.ALLOW
         print(write.archive(args.project, args.databank, args.identity, args.step, args.note,
                             family=args.family, sqx=args.sqx))
     else:

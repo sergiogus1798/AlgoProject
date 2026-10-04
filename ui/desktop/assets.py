@@ -1,132 +1,14 @@
 """The asset zone: every instrument as a page of its own, one per row, full width."""
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton,
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QShowEvent
+from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton,
                                QScrollArea, QSplitter, QVBoxLayout, QWidget)
 
 from ui.desktop import client
-from ui.desktop.assetcard import AssetCard
 from ui.desktop.assetforms import NewAssetBox
 from ui.desktop.assetlist import AssetList
-from ui.desktop.assetspans import AssetSpans
-from ui.desktop.assettraits import LEGEND, TRAITS_HELP, trait, traits_table
-from ui.desktop.yamltree import YamlTree
-
-MARKETS_WIDTH = 360   # a name, a date and a button per market (owner, 2026-10-04: 310 boxed it in)
-SIDE_WIDTH = 290      # two date selectors side by side, and a column of prose under them
-
-
-class AssetPage(QFrame):
-    """One instrument: its costs, its windows, its Cross Market check, its trading character,
-    and, on demand, its file."""
-
-    changed = Signal(str)   # the asset written, so the zone recounts and redraws only it
-    retired = Signal(str)
-
-    def __init__(self, symbol: str) -> None:
-        """Build the page and fill it from the daemon.
-
-        Args:
-            symbol: Asset name.
-        """
-        super().__init__(objectName="panel")
-        self.symbol = symbol
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(12, 8, 12, 10)
-        lay.setSpacing(8)
-        self.card, self.spans, self.tree = AssetCard(), AssetSpans(), YamlTree()
-        self.raw = QPushButton("Fichero entero")
-        self.raw.setCheckable(True)
-        self.raw.setToolTip("Todos los valores del fichero del activo, cada uno con su comentario.")
-        self.raw.toggled.connect(self.tree.setVisible)
-        drop = QPushButton("Retirar")
-        drop.setToolTip("Mueve el fichero a assets/symbols/_retired/. Deja de contar para "
-                        "`core.assets`, pero no se pierde.")
-        drop.clicked.connect(self.on_retire)
-        self.card.actions.addWidget(self.raw)
-        self.card.actions.addWidget(drop)
-        self.tree.setVisible(False)
-        self.tree.setMinimumHeight(420)
-        self.card.changed.connect(lambda: self.changed.emit(symbol))
-        self.spans.changed.connect(lambda: self.changed.emit(symbol))
-        self.tree.edited.connect(self.on_edit)
-        # Three columns (owner, 2026-10-02): what it costs, where its edge is retested — to the
-        # right of the costs — and where it is built, each as narrow as what it holds.
-        lay.addWidget(self.card.top)
-        body = QHBoxLayout()
-        body.setSpacing(12)
-        costs, side = QVBoxLayout(), QVBoxLayout()
-        for col, parts in ((costs, (self.card, self.spans.ranges)), (side, (self.spans,))):
-            col.setSpacing(10)
-            for w in parts:
-                col.addWidget(w, 0, Qt.AlignLeft)
-            col.addStretch()
-        self.spans.markets.setFixedWidth(MARKETS_WIDTH)
-        self.spans.setFixedWidth(SIDE_WIDTH)
-        body.addLayout(costs)
-        body.addWidget(self.spans.markets)
-        body.addLayout(side)
-        # To the right of Tramos, on the width that was left empty (owner, 2026-10-04).
-        body.addWidget(self.traits_panel(), 1, Qt.AlignTop)
-        lay.addLayout(body)
-        lay.addWidget(self.tree)
-        self.refresh()
-
-    def traits_panel(self) -> QFrame:
-        """A tile naming how this asset tends to trade — trend, rango, carry.
-
-        Returns:
-            The tile, already filled: the note never changes while the page is open, unlike
-            the costs and the windows beside it.
-        """
-        tile = QFrame(objectName="tile")
-        tlay = QVBoxLayout(tile)
-        tlay.setContentsMargins(10, 8, 10, 8)
-        tlay.setSpacing(4)
-        title = QLabel("Características (?)", objectName="h2")
-        title.setToolTip(TRAITS_HELP)
-        tlay.addWidget(title)
-        tlay.addWidget(QLabel(LEGEND, objectName="muted"))
-        self.prior = QLabel()
-        self.prior.setStyleSheet("font-size: 16px;")
-        self.prior.setWordWrap(True)
-        self.prior.setToolTip(TRAITS_HELP)
-        text = QLabel(trait(self.symbol), objectName="muted")
-        text.setWordWrap(True)
-        tlay.addWidget(self.prior)
-        tlay.addWidget(text)
-        return tile
-
-    def refresh(self) -> None:
-        """Read this asset again and redraw the three parts."""
-        data = client.get(f"asset/{self.symbol}")
-        self.card.fill(data)
-        self.spans.fill(data)
-        self.tree.fill(self.symbol, data["leaves"])
-        self.prior.setText(traits_table(data["prior"]))
-
-    def on_edit(self, name: str, path: list, text: str, kind: str) -> None:
-        """Write a value the file table changed.
-
-        Args:
-            name: The file it belongs to.
-            path: The keys leading to it.
-            text: What was typed.
-            kind: "scalar" or "list".
-        """
-        client.post("assets/value", {"name": name, "path": path, "text": text, "kind": kind})
-        self.changed.emit(self.symbol)
-
-    def on_retire(self) -> None:
-        """Withdraw this asset after saying what that does."""
-        ok = QMessageBox.question(
-            self, f"Retirar {self.symbol}",
-            f"El fichero se mueve a assets/symbols/_retired/{self.symbol}.yaml. Deja de existir "
-            "para `core.assets` y para el índice, y ninguna tarea nueva podrá usarlo. Sus tramos "
-            "se quedan en _policy.yaml. ¿Lo retiro?")
-        if ok == QMessageBox.Yes:
-            client.post(f"asset/{self.symbol}/retire", {})
-            self.retired.emit(self.symbol)
+from ui.desktop.assetpage import AssetPage
 
 
 class Assets(QWidget):
@@ -167,6 +49,8 @@ class Assets(QWidget):
         self.area = QScrollArea()
         self.area.setWidget(holder)
         self.area.setWidgetResizable(True)
+        self.area.verticalScrollBar().valueChanged.connect(self.read_visible)
+        self.area.verticalScrollBar().rangeChanged.connect(lambda *_: self.read_visible())
         self.area.setFrameShape(QScrollArea.NoFrame)
         split.addWidget(self.area)
         split.setStretchFactor(1, 1)
@@ -192,6 +76,22 @@ class Assets(QWidget):
         for i, page in enumerate(self.pages.values()):
             self.grid.addWidget(page, i, 0)
         self.list.fill(self.data["assets"], keep)
+        QTimer.singleShot(0, self.read_visible)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        """Read what the zone opens on once it is laid out (the page positions exist by then)."""
+        super().showEvent(event)
+        QTimer.singleShot(0, self.read_visible)
+
+    def read_visible(self) -> None:
+        """Read the pages on screen that have not been read: 28 GETs at once cost 2 s."""
+        if not self.isVisible():
+            return
+        top = self.area.verticalScrollBar().value()
+        end = top + self.area.viewport().height()
+        for page in self.pages.values():
+            if not page.loaded and page.y() < end and page.y() + page.height() > top:
+                page.refresh()
 
     def recount(self) -> None:
         """Read the library's state and say how many assets are blocked or provisional."""
@@ -209,6 +109,7 @@ class Assets(QWidget):
         """
         if symbol in self.pages:
             self.area.verticalScrollBar().setValue(self.pages[symbol].y())
+            self.read_visible()
 
     def on_changed(self, symbol: str) -> None:
         """Redraw the asset just written and the counts, leaving every other page as it is.

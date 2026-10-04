@@ -54,8 +54,7 @@ def members_of(cfx: Path) -> dict[str, bytes]:
     if held:
         raise SystemExit(f"el {held} tiene {cfx.parent.name} abierto y reescribe sus databanks "
                          f"al sincronizar: páralo antes (bin/sqx-worker.sh --role {held} stop)")
-    with zipfile.ZipFile(cfx) as z:
-        return {n: z.read(n) for n in z.namelist()}
+    return cfxio.members(cfx)
 
 
 def refill(folder: Path, files: list[Path]) -> int:

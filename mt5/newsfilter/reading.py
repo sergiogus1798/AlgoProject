@@ -8,6 +8,7 @@ import pandas as pd
 from core.paths import MT5_ACCOUNTS, MT5_DATA
 from mt5.newsfilter import gaps, testerfile, windows
 from mt5.newsfilter.firms import FIRMS
+from mt5.verify import firms as verify_firms
 
 OUT = MT5_DATA / "newsfilter-readings"
 KEY = ["Type", "Open time"]
@@ -84,6 +85,9 @@ def backtest(expert: str, a: argparse.Namespace, tag: str) -> pd.DataFrame:
         raise SystemExit("el terminal de MT5 sigue abierto y el tester no arranca con él")
     started = tester.start(expert, a.symbol, a.timeframe, a.start, a.end, a.model, a.deposit,
                            a.leverage, MT5_ACCOUNTS.get(a.firm), tag)
+    cfg = verify_firms.config()["mt5"]  # as mt5.verify: ticks models are far slower, past the limit the run is given up
+    minutes = cfg["ticks_max_minutes" if a.model in ("real_ticks", "every_tick") else "max_minutes"]
+    deadline = time.monotonic() + minutes * 60
     while True:
         time.sleep(10)
         got = tester.collect(started["run"])
@@ -91,6 +95,9 @@ def backtest(expert: str, a: argparse.Namespace, tag: str) -> pd.DataFrame:
             return pd.read_parquet(got["trades_file"])
         if got["state"] == "no_report":
             raise SystemExit(f"{expert}: {got['hint']}")
+        if time.monotonic() > deadline:
+            wine.close_terminal()
+            raise SystemExit(f"{expert}: el tester no acabó en {minutes} min")
 
 
 def show(summary: dict, violations: pd.DataFrame, label: str) -> None:

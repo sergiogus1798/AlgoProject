@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QLayout, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem
 
 from ui.desktop import client
 from ui.desktop.assetforms import word
@@ -101,16 +101,6 @@ def fit(table: QTableWidget) -> None:
     table.setFixedHeight(height + sum(table.rowHeight(i) for i in range(table.rowCount())))
     table.setFixedWidth(2 * table.frameWidth() + 4
                         + sum(table.columnWidth(j) for j in range(table.columnCount())))
-
-
-def clear(layout: QLayout) -> None:
-    """Empty a layout of every widget and sub-layout it holds, before drawing it again."""
-    while layout.count():
-        item = layout.takeAt(0)
-        if item.widget():
-            item.widget().deleteLater()
-        elif item.layout():
-            clear(item.layout())
 
 
 def send(name: str, path: list, text: str) -> None:

@@ -22,7 +22,7 @@ KEEP = "MANTENER"     # anything but DESCARTAR keeps a strategy (sqx/curate/READ
 def settings() -> dict:
     """criteria.yaml, parsed. YAML 1.1 reads the key `on:` of `dev` as the boolean True, so it is
     put back under "on" (🔬 2026-10-01: KeyError 'on' at the first judge ever run)."""
-    cfg = yaml.safe_load(CRITERIA.read_text(encoding="utf-8"))
+    cfg = yaml.load(CRITERIA.read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
     dev = cfg.get("dev") or {}
     if True in dev:
         dev["on"] = dev.pop(True)

@@ -4,7 +4,6 @@
 import argparse
 import json
 import re
-import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -112,8 +111,7 @@ def configure(cfx: Path, symbol: str, source: str) -> dict:
     """
     data = load(symbol)
     cfg = doctrine()["spp"]
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     config = members["config.xml"].decode("utf-8")
 
     rows, reads = [], source

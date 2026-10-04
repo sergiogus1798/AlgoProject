@@ -5,9 +5,9 @@ from pathlib import Path
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from core.archive import read, write
 from ui.daemon.runner import where
 from ui.daemon.runs import guess_asset
+from ui.daemon.strategy import archive_write as write
 from ui.daemon.strategy import archived, costcurve, locate, meta, stats
 from ui.daemon.tearsheet import harvest
 
@@ -108,15 +108,9 @@ def strategy_stats(project: str = "", databank: str = "", identity: str = "",
         "asset": guess_asset(project), "note": data.get("note", "")}
 
 
-@ROUTER.get("/api/strategy/archived")
-def strategy_archived(identity: str = "") -> dict:
-    """The archived versions of one strategy, oldest first."""
-    return {"versions": read.versions(identity)}
-
-
 @ROUTER.post("/api/strategy/archive")
 def strategy_archive(req: Archive) -> dict:
-    """Freeze the strategy with everything the window shows of it (`core.archive.write`).
+    """Freeze the strategy with everything the window shows of it (`archive_write`).
 
     Returns:
         `{"folder", "version"}`, or `{"error"}`: no template in the registry (no family to

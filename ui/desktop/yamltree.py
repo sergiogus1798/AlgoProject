@@ -4,7 +4,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem)
 
 from ui.desktop.assetforms import TextBox
-from ui.desktop.theme import C
 
 # Past this, a value stops being a cell and becomes a paragraph: a `why` or a note is
 # edited in a box, not squeezed into a column.

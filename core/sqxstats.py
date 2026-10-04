@@ -25,6 +25,12 @@ _BLOCK = re.compile(r'<stats_LQ1_direction_DD_(-?\d+)_L1_pl_DD_(\d+)_L1_sample_D
                     r'[^>]*>\s*<SQStats version="\d+" e="b64">([^<]+)</SQStats>')
 
 
+def _settings(path: Path) -> str:
+    """The text of a .sqx's settings.xml (several MB), its zip closed again."""
+    with zipfile.ZipFile(path) as z:
+        return z.read("settings.xml").decode("utf8", errors="replace")
+
+
 def records(blob: str) -> dict:
     """Decode one base64 SQStats blob into every statistic it holds.
 
@@ -62,7 +68,7 @@ def results(path: Path) -> list[str]:
         "AdditionalMarket: <feed>/<TF>: …" per cross-check market. A strategy that was
         never retested on a second market carries only its Main one.
     """
-    xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
+    xml = _settings(path)
     return _RESULT.findall(xml)
 
 
@@ -90,7 +96,7 @@ def stats(path: Path, result: str = "Main") -> dict:
     Raises:
         KeyError: The file has no such result.
     """
-    xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
+    xml = _settings(path)
     cuts = [(m.start(), m.group(1)) for m in _RESULT.finditer(xml)]
     at = next((i for i, (_, key) in enumerate(cuts) if key.startswith(result)), None)
     if at is None:
@@ -114,7 +120,7 @@ def every(path: Path) -> dict[str, dict]:
         cross-market retest -- ten on a nine-market family -- would otherwise decompress and
         search a multi-megabyte settings.xml ten times per file.
     """
-    xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
+    xml = _settings(path)
     cuts = [(m.start(), m.group(1)) for m in _RESULT.finditer(xml)] + [(len(xml), "")]
     return {key: {int(sample): records(blob)
                   for direction, pl, sample, blob in _BLOCK.findall(xml[start:end])
@@ -140,10 +146,10 @@ def equity(path: Path, result: str = "Main") -> pd.Series:
         gold plus silver where the databank's Net profit is gold alone -- measured on
         `P00000`, 10,476 against 35,328 -- so the result is named, never taken by position.
     """
-    archive = zipfile.ZipFile(path)
-    member = next(n for n in archive.namelist()
-                  if n.startswith(f"Results/{result}") and n.endswith("dailyEquity.bin"))
-    raw = archive.read(member)
+    with zipfile.ZipFile(path) as archive:
+        member = next(n for n in archive.namelist()
+                      if n.startswith(f"Results/{result}") and n.endswith("dailyEquity.bin"))
+        raw = archive.read(member)
     i, buf = 4, bytearray()
     while i < len(raw):
         marker = raw[i]

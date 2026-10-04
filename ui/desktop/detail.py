@@ -140,7 +140,7 @@ class Detail(QWidget):
         lay.setSpacing(10)
         lay.addWidget(QLabel("Estado:", objectName="muted"))
         box = QComboBox()
-        statuses = client.get("templates")["statuses"]
+        statuses = list(STATUS_HELP)       # the library's STATUSES, which the zone already read
         box.addItems(statuses)
         box.setCurrentText(t.get("status") or "draft")
         box.setToolTip("\n".join(f"{s}: {STATUS_HELP[s]}" for s in statuses))

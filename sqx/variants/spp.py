@@ -3,7 +3,6 @@
 
 import argparse
 import json
-import subprocess
 import sys
 import time
 from collections.abc import Callable
@@ -31,8 +30,7 @@ def stop(role: str) -> None:
         is up is lost in silence -- hard rule 4. The harness has to change between the
         in-sample and the out-of-sample run, so this happens twice per mother.
     """
-    if f':{WORKERS[role]["port"]} ' in subprocess.run(
-            ["ss", "-ltn"], capture_output=True, text=True).stdout:
+    if worker.listening(WORKERS[role]["port"]):
         worker.stop(role)
         time.sleep(3)
 
@@ -126,22 +124,23 @@ def main() -> None:
 
     print("PROGRESS 5 despertando el custodio", flush=True)
     execute.awake(cfg)
-    execute.load(folder, cfg)
+    try:       # one job, then stop (hard rule 3): a failed load, start or sync must not leave it up
+        execute.load(folder, cfg)
 
-    def say(pct: int, line: str) -> None:
-        """Fold the wait's percentage into the stage's."""
-        print(f"PROGRESS {5 + pct * 90 // 100} {line}", flush=True)
+        def say(pct: int, line: str) -> None:
+            """Fold the wait's percentage into the stage's."""
+            print(f"PROGRESS {5 + pct * 90 // 100} {line}", flush=True)
 
-    worker.call(f'-project action=start name={cfg["project"]}', cfg["role"])
-    done, spent = wait(cfg, spp["timeout_s"], say)
+        command = f'-project action=start name={cfg["project"]}'
+        worker.checked(worker.call(command, cfg["role"]), command)
+        done, spent = wait(cfg, spp["timeout_s"], say)
 
-    # The profile is attached to the strategy, and nothing writes it to disk on its own:
-    # `syncDatabanksAfterTaskDone` is false on this install, so the sync is explicit.
-    for bank in (cfg["input"], cfg["output"]):
-        worker.call(f'-databank action=synctofiles project={cfg["project"]} name={bank}',
-                    cfg["role"])
-        time.sleep(spp["sync_s"])
-    worker.stop(cfg["role"])
+        # The profile is attached to the strategy, and nothing writes it to disk on its own:
+        # `syncDatabanksAfterTaskDone` is false on this install, so the sync is explicit.
+        for bank in (cfg["input"], cfg["output"]):
+            execute.synced(1, cfg, bank)
+    finally:
+        worker.stop(cfg["role"])
 
     where = worker_dir(cfg["role"]) / "user/projects" / cfg["project"] / "databanks"
     found = {b: sorted((where / b).glob("*.sqx")) for b in (cfg["input"], cfg["output"])}

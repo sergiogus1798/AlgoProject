@@ -74,7 +74,7 @@ def tests(rail: QWidget, keys: list[tuple[str, str]], databank: str = "",
     rail.said.setText(f"{num(len(got['jobs']))} trabajos en cola"
                       + (f"   ·   no se lanzó: {refused}" if refused else ""))
     rail.load(rail.project)
-    rail.poll()
+    rail.poll(True)
 
 
 def step(rail: QWidget, n: str) -> None:
@@ -154,7 +154,7 @@ def sqx_step(rail: QWidget, n: str) -> None:
                       "«En marcha»" if done.get("job") else
                       "No se lanzó: " + brief(done.get("reasons") or [done.get("error", "?")]))
     rail.load(rail.project)
-    rail.poll()
+    rail.poll(True)
 
 
 def chain(rail: QWidget) -> None:
@@ -173,7 +173,7 @@ def chain(rail: QWidget) -> None:
     rail.said.setText("En marcha: Correr workflow — su avance, en «En marcha»" if done.get("job")
                       else "No se lanzó: " + brief(done.get("reasons") or [done.get("error", "?")]))
     rail.load(rail.project)
-    rail.poll()
+    rail.poll(True)
 
 
 def plan_line(chain_plan: dict) -> str:

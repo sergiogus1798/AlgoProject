@@ -1,5 +1,7 @@
 """A databank's SQX metrics: its newest cosecha (IS + OOS paired) or its current metrics export."""
 
+from functools import lru_cache
+
 import pandas as pd
 
 from core.paths import harvest_dir, metrics_export
@@ -44,6 +46,13 @@ def export(project: str, databank: str) -> pd.DataFrame | None:
     path = metrics_export(project, databank) / "metrics.csv"
     if not path.is_file():
         return None
+    got = _export(str(path), path.stat().st_mtime_ns, databank)
+    return None if got is None else got.copy()      # callers mutate the frame
+
+
+@lru_cache(maxsize=8)
+def _export(path: str, mtime_ns: int, databank: str) -> pd.DataFrame | None:
+    """`export`'s read and cleaning of one `metrics.csv`, kept until the file is rewritten."""
     try:
         frame = pd.read_csv(path, sep=";")
     except pd.errors.EmptyDataError:

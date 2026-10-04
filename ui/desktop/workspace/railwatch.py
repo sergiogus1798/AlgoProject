@@ -4,7 +4,7 @@ import time
 
 from PySide6.QtWidgets import QWidget
 
-from ui.desktop import background
+from ui.desktop import jobsfeed
 from ui.desktop.theme import C
 from ui.text.numbers import num
 
@@ -15,16 +15,17 @@ POLL_MS = 3000
 REPAINT_S = 20
 
 
-def poll(rail: QWidget) -> None:
+def poll(rail: QWidget, fresh: bool = False) -> None:
     """Ask for the job list off the GUI thread; `polled` reads it.
 
     Args:
         rail: The `Rail` (its `project`, `timer`, `live`, `ended`, `painted`, `said`).
+        fresh: Force the GET (a press just queued a job the cached list lacks).
     """
     rail.timer.stop()                     # restarted by `polled`: never two asks in flight
     project = rail.project
-    background.get("jobs", lambda got: polled(rail, project, got),
-                   key=f"railjobs:{id(rail)}", owner=rail)
+    jobsfeed.read(lambda got: polled(rail, project, got), f"railjobs:{id(rail)}", rail,
+                   0.0 if fresh else jobsfeed.TTL_S)
 
 
 def polled(rail: QWidget, project: str, got: dict) -> None:

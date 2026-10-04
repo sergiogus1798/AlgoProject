@@ -189,8 +189,8 @@ class Funnel(QFrame):
                 return got
             try:
                 extra = client.get("filters/state", project=project).get("rows", [])
-            except httpx.HTTPError:
-                extra = []
+            except httpx.HTTPError as err:       # said in the funnel's label, not swallowed
+                return got | {"source": f"{got['source']} — sin las filas de los filtros: {err}"}
             return got | {"rows": got["rows"] + extra}
         background.run(both, self.landed, key=f"funnel:{id(self)}")
 

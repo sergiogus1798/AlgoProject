@@ -1,10 +1,17 @@
 """The one way the window prints a number: never scientific, thousands grouped, K and M when large."""
 
 import math
+from decimal import Decimal
 
 SIGNIFICANT = 4         # digits kept below 1 000, as `.4g` did, but always written out in full
 FLOOR = 1e-10           # below this a figure prints as 0: no metric here lives down there
 P_FLOOR = 0.0001        # the smallest p-value printed as a number; below it «< 0.0001»
+
+
+def exact(value: float) -> str:
+    """A float's shortest round-trip digits, never scientific, no trailing zeros: 1e-05 → «0.00001»."""
+    text = format(Decimal(repr(float(value))), "f")
+    return text.rstrip("0").rstrip(".") if "." in text else text
 
 
 def _grouped(whole: int) -> str:

@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 LOCK_SH = ROOT / "bin" / "sqx-lock.sh"
 
 
@@ -122,12 +123,30 @@ def test_no_lock_is_never_refused(root: Path) -> None:
     assert "rc=0" in out, out
 
 
+def test_holding_matches_the_install_path_not_its_prefix(scratch: Path) -> None:
+    """`SQX` must not hold a process whose executable is under `SQX_w1`."""
+    from core import worker
+    top = scratch / "SQX"
+    proc = scratch / "proc" / "4242"
+    proc.mkdir(parents=True)
+    (proc / "cmdline").write_bytes(f"{top}_w1/sqcli\0-x".encode())
+    (proc / "cwd").symlink_to(scratch)
+    real, worker.PROC = worker.PROC, scratch / "proc"
+    try:
+        assert worker.holding(top) == []
+        (proc / "cmdline").write_bytes(f"{top}/sqcli\0-x".encode())
+        assert worker.holding(top) == [4242]
+    finally:
+        worker.PROC = real
+
+
 if __name__ == "__main__":
     for test in (test_resolve_holder_precedence, test_write_and_read_lock,
                  test_stale_lock_cleared, test_live_pid_keeps_the_lock,
                  test_port_up_keeps_the_lock_even_with_a_dead_pid,
                  test_stop_refused_by_a_different_holder,
-                 test_stop_by_the_same_holder_is_never_refused, test_no_lock_is_never_refused):
+                 test_stop_by_the_same_holder_is_never_refused, test_no_lock_is_never_refused,
+                 test_holding_matches_the_install_path_not_its_prefix):
         with tempfile.TemporaryDirectory() as scratch:
             began = time.time()
             test(Path(scratch))

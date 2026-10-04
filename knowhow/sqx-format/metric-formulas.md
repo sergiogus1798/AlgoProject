@@ -22,3 +22,4 @@ export SQX's column, never compute an analogue.
   columns, consistent with `UlcerIndex` on the daily curve. Joins Sharpe, Sortino, Ulcer, RSquared,
   Stability as non-reconstructible.
 - Do not name the ~16 constant: sqrt(252) = 15.87 and 16 both sit inside the spread.
+- Sharpe annualisation stays √252 everywhere in our studies: it is SQX's convention. 260/365 was tried and reverted 2026-10-04 — studies then disagreed with the databank's own Sharpe. 🔬

@@ -4,9 +4,10 @@ from PySide6.QtCore import QDate, Signal
 from PySide6.QtWidgets import (QDateEdit, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
                                QWidget)
 
-from ui.desktop.assettable import cell, clear, derived, fit, grid, send, val
+from ui.desktop.assettable import cell, derived, fit, grid, send, val
 from ui.desktop.assetforms import TextBox, word
 from ui.desktop.assetmarkets import CrossMarketCheck
+from ui.desktop.theme import clear
 
 EMPTY = QDate(1970, 1, 1)   # the date edit's floor, shown as «sin decidir»: `null` in the file
 

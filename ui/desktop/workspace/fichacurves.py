@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidg
 
 from ui.desktop.blocks import chart
 from ui.text.glossary import label
-from ui.desktop.theme import C
+from ui.desktop.theme import C, clear
 from ui.desktop.workspace.curves import INK, SampleCurves
 from ui.desktop.workspace.fichajobs import Compute, uncomputed
 
@@ -15,16 +15,6 @@ HEIGHT = 300            # px of the drawing; the owner reads it from across the 
 REAL_HELP = ("El spread y la comisión que SQX cobró llevan un margen de seguridad a propósito "
              "(× 1,25 sobre el spread medido de Darwinex): por eso esta curva sale mejor que la "
              "de SQX en casi toda estrategia, no por un error de repricing.")
-
-
-def clear(lay: QHBoxLayout) -> None:
-    """Empty a row of widgets and nested rows."""
-    while lay.count():
-        item = lay.takeAt(0)
-        if item.widget():
-            item.widget().deleteLater()
-        elif item.layout():
-            clear(item.layout())
 
 
 class CostCurves(QWidget):

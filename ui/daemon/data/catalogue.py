@@ -5,6 +5,7 @@ import re
 import time
 from collections import Counter
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 from core import manifest
@@ -12,6 +13,7 @@ from core.paths import DATA
 from perf.inputs import config
 
 DAY = 86400
+TTL = 300         # seconds the walk of the data root is reused
 DEPTH = 3          # levels of the tree the window shows
 STAT_UP_TO = 20   # a folder with more files than this is dated by its own mtime, not by each file
 # An archived strategy's folder is named by its identity, which the window never prints
@@ -19,8 +21,12 @@ STAT_UP_TO = 20   # a folder with more files than this is dated by its own mtime
 IDENTITY = re.compile(r"[0-9a-f]{64}")
 
 
-def _walk() -> dict[str, dict]:
+@lru_cache(maxsize=1)
+def _walk(bucket: int) -> dict[str, dict]:
     """One pass over the data root: files, formats, newest write and manifests of every branch.
+
+    Args:
+        bucket: `time // TTL`; the 4-million-file walk is kept for TTL seconds, then redone.
 
     Returns:
         {branch: row} for every folder down to `DEPTH` with a file somewhere under it. One
@@ -38,7 +44,7 @@ def _walk() -> dict[str, dict]:
             newest = os.stat(root).st_mtime
         else:
             newest = max(os.stat(os.path.join(root, f)).st_mtime for f in files)
-        kinds = Counter(os.path.splitext(f)[1] or "none" for f in files)
+        kinds = Counter(f[f.rfind("."):] if f.rfind(".") > 0 else "none" for f in files)
         m = manifest.read(Path(root)) if "manifest.json" in files else None
         for depth in range(1, min(len(parts), DEPTH) + 1):
             r = rows.setdefault("/".join(parts[:depth]), {
@@ -67,7 +73,7 @@ def catalogue() -> dict:
     """
     stale_days, now = config.load()["disk"]["stale_days"], time.time()
     rows = []
-    for branch, r in sorted(_walk().items(), key=lambda kv: -kv[1]["files"]):
+    for branch, r in sorted(_walk(int(now // TTL)).items(), key=lambda kv: -kv[1]["files"]):
         parts = branch.split("/")
         if any(IDENTITY.fullmatch(p) for p in parts):
             continue

@@ -1,12 +1,10 @@
 """The databank panel's filters strip: AND rows over real columns, discards, and the ledger (22 §7.1)."""
 
-import threading
-
 import httpx
-from PySide6.QtCore import QTimer, Qt, Signal
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from ui.desktop import client
+from ui.desktop import background, client
 from ui.desktop.workspace.filterrow import FilterRow, guessed, plain
 from ui.desktop.workspace.filtersaved import SavedFilters
 from ui.text.numbers import num
@@ -19,10 +17,7 @@ class FiltersStrip(QFrame):
     «Descartar seleccionadas». It follows the panel's databank on its own, hides what is set
     aside through `panel.set_hidden` (which re-aggregates the visible ids) and reloads the
     funnel. A live count says what edited rows would leave, hiding and logging nothing; both
-    reads run off the GUI thread (`arrived`, `counted`). Nothing here touches SQX."""
-
-    arrived = Signal(dict)
-    counted = Signal(dict)
+    reads run off the GUI thread (`background`). Nothing here touches SQX."""
 
     def __init__(self, panel: QWidget, funnel: QWidget | None = None) -> None:
         """Build the strip over a `workspace.panel.Panel` and, optionally, its `Funnel`."""
@@ -30,9 +25,7 @@ class FiltersStrip(QFrame):
         self.setObjectName("term")
         self.panel, self.funnel, self.at, self.offer = panel, funnel, ("", ""), []
         self.anonymous, self.now, self.asked, self.shown_ids = 0, [], 0, None
-        self.arrived.connect(self.land)
-        self.counted.connect(self.show_count)
-        kicker = QLabel("FILTROS")
+        kicker = QLabel("Filtros")
         kicker.setObjectName("kicker")
         add, apply_, clear, drop = (QPushButton("+ condición"), QPushButton("▶ Aplicar"),
                                     QPushButton("Quitar filtros"),
@@ -90,14 +83,9 @@ class FiltersStrip(QFrame):
             return
         moved, self.at = at != self.at, at
 
-        def ask() -> None:
-            """One GET: state, funnel rows and metrics off a single `context` in the daemon."""
-            try:
-                got = client.get("filters/state", project=at[0], databank=at[1])
-            except httpx.HTTPError as failed:
-                got = {"error": f"El demonio no respondió: {failed}"}
-            self.arrived.emit({"at": at, "moved": moved, "got": got})
-        threading.Thread(target=ask, daemon=True).start()
+        # One GET: state, funnel rows and metrics off a single `context` in the daemon.
+        background.get("filters/state", lambda got: self.land({"at": at, "moved": moved, "got": got}),
+                       owner=self, project=at[0], databank=at[1])
 
     def land(self, msg: dict) -> None:
         """Paint what `follow` read, unless another databank was chosen since. Rows the owner
@@ -180,14 +168,8 @@ class FiltersStrip(QFrame):
             return
         seq, body = self.asked, {"project": self.at[0], "databank": self.at[1], "rows": rows}
 
-        def ask() -> None:
-            """One POST to `/api/filters/preview`."""
-            try:
-                got = client.post("filters/preview", body)
-            except httpx.HTTPError as failed:
-                got = {"error": f"el demonio no respondió: {failed}"}
-            self.counted.emit({"seq": seq, "got": got})
-        threading.Thread(target=ask, daemon=True).start()
+        background.post("filters/preview", body, lambda got: self.show_count({"seq": seq, "got": got}),
+                        owner=self)
 
     def show_count(self, msg: dict) -> None:
         """Paint a live count, unless the rows changed since it was asked."""

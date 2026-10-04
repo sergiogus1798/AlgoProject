@@ -1,7 +1,7 @@
 """The one design system: the palette every view reads, the stylesheet it becomes, and the two
 smallest pieces every zone draws with (a rule, a kicker)."""
 
-from PySide6.QtWidgets import QFrame, QLabel
+from PySide6.QtWidgets import QFrame, QLabel, QLayout
 
 from ui.desktop import buttonstyle
 
@@ -207,24 +207,14 @@ QFrame#term QTabBar::tab:disabled {{ color: {T['faint']}; }}
 QSS += buttonstyle.qss(C, T, MONO)    # after both looks: buttons lit, the «?» mark
 
 
-def state_colour(value: str) -> str:
-    """The colour of one verdict word, whatever module wrote it.
-
-    Args:
-        value: The `verdict`, `tier` or `stage` a report row carries.
-
-    Returns:
-        Green for what passed, red for what died, amber for a middle word, grey for a word
-        no module of this project uses — shown, never hidden.
-    """
-    v = value.lower()
-    if v in {"pass", "proceed", "keep", "mantener", "worth_it", "promising", "reliable"}:
-        return C["promising"]
-    if v in {"fail", "reject", "descartar", "not_worth_it", "dead"}:
-        return C["dead"]
-    if v in {"marginal", "dudosa", "provisional", "weak"}:
-        return C["weak"]
-    return C["pending"]
+def clear(layout: QLayout) -> None:
+    """Empty a layout of every widget and nested layout, before drawing it again."""
+    while layout.count():
+        item = layout.takeAt(0)
+        if item.widget():
+            item.widget().deleteLater()
+        elif item.layout():
+            clear(item.layout())
 
 
 def rule() -> QFrame:
@@ -233,7 +223,7 @@ def rule() -> QFrame:
 
 
 def kicker(text: str) -> QLabel:
-    """A small spaced-out heading, upper-cased on screen.
+    """A small spaced-out heading, sentence case on screen.
 
     Args:
         text: The heading.

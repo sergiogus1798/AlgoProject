@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QMessageBox, QPus
 
 from ui.desktop.blocks.card import initial, text
 from ui.desktop.blocks.states import colour
-from ui.desktop import background
+from ui.desktop import jobsfeed
 from ui.desktop.studypage.net import fetch, send
 from ui.desktop.theme import T
 from ui.text.brief import full, off
@@ -135,12 +135,12 @@ class RunBar(QWidget):
                           + (f" · solo {only}" if only else ""))
         self._busy(True)
         self.timer.start()
-        self.poll()          # the first read now, not after POLL_MS: a press must show
+        self.poll(True)      # the first read now, not after POLL_MS: a press must show
                               # something changed at once, not after a silent couple of seconds
 
-    def poll(self) -> None:
-        """Read this bar's jobs off the GUI thread; `polled` reads them."""
-        background.get("jobs", self.polled, key=f"runbar:{id(self)}")
+    def poll(self, fresh: bool = False) -> None:
+        """Read this bar's jobs off the GUI thread; `polled` reads them (`fresh`: not from memory)."""
+        jobsfeed.read(self.polled, f"runbar:{id(self)}", self, ttl=0 if fresh else jobsfeed.TTL_S)
 
     def polled(self, got: dict) -> None:
         """Show this bar's jobs; when all have ended, stop polling and say so."""
@@ -173,7 +173,7 @@ class RunBar(QWidget):
         """Cancel this bar's jobs; the next poll reports how they ended."""
         for i in self.ids:
             send(f"jobs/{i}/cancel", {})
-        self.poll()
+        self.poll(True)
 
     def _busy(self, busy: bool) -> None:
         """One job at a time: the run buttons wait while one runs, the cancel shows."""

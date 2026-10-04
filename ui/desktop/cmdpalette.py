@@ -73,8 +73,8 @@ class CmdPalette(QFrame):
         """Every candidate: projects and databanks from the gallery, the rest from the daemon.
 
         The gallery fetches its rows off the GUI thread; asking `/api/projects/all` here
-        would freeze the window ~12 s on a cold daemon. Until they land, projects are missing
-        and the hint says so.
+        would block the window while a cold daemon answers (12 s on 09-27, 0.13 s on 10-04).
+        Until they land, projects are missing and the hint says so.
 
         Returns:
             The items, and one sentence naming what could not be read ("" when all was).

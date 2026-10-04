@@ -18,5 +18,6 @@ Test_USDJPY_donchianUpperCrossUp_M30, 200 strategies, scratch daemon, offscreen 
 - Before: profitShape "population" = 207 jobs, LIGHT weight 3 → 16 at once; one job ≈ 1 s, of
   which 0.7 s is importing pandas + the study (`-X importtime`) and the rest re-reading the 12 MB
   trades parquet. 207 jobs: 43 s (log mtimes 19:33:30 → 19:34:13).
+- UI load times 2026-10-04, before → after 🔬: Datos 7.7 s GUI freeze → 0.002 s (catalogue cached 5 min, fetched in background); Activos 3.0 → 0.37 s (pages built lazily when scrolled into view); `/api/databank/panels` 1.5 → 0.75 s; `Shell()` 0.98 → 0.21 s; `core.symbols.alias()` 385 → 3.3 µs.
 - After: fill returns in 0.006 s; 200 strategies in one batch of 44 workers: ~9 s; worst event-loop
   gap during the batch 320 ms (once), p99 182 ms.

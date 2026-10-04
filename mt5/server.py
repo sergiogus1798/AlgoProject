@@ -3,9 +3,11 @@
 Registered in the repo's .mcp.json as `mt5`, stdio. It has no tool that sends, modifies or
 closes an order, on purpose (owner, 2026-09-27): trading is not this server's business.
 """
+import functools
 import json
 import shutil
 from pathlib import Path
+from typing import Any, Callable
 
 import pandas as pd
 from mcp.server.fastmcp import FastMCP
@@ -14,6 +16,30 @@ from core import trades as sqx_trades
 from mt5 import compare, live, metaeditor, tester, wine
 
 server = FastMCP("mt5")
+
+
+def _safe(register: Callable) -> Callable:
+    """Wrap `server.tool` so a helper's SystemExit becomes a RuntimeError: FastMCP turns an
+    Exception into a tool error but lets SystemExit kill the stdio server."""
+    def tool(*a: Any, **k: Any) -> Callable:
+        """The registering decorator, with the guard inside."""
+        deco = register(*a, **k)
+
+        def wrap(fn: Callable) -> Callable:
+            """Guard one tool function and register it."""
+            @functools.wraps(fn)
+            def run(*args: Any, **kw: Any) -> Any:
+                """The tool, its SystemExit made an Exception."""
+                try:
+                    return fn(*args, **kw)
+                except SystemExit as e:
+                    raise RuntimeError(str(e)) from e
+            return deco(run)
+        return wrap
+    return tool
+
+
+server.tool = _safe(server.tool)
 
 
 def _sqx(path: str, strategy: str) -> pd.DataFrame:

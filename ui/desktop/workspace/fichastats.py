@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QButtonGroup, QComboBox, QGridLayout, QHBoxLayout
 from ui.desktop.blocks.kinds import draw
 from ui.text.glossary import label
 from ui.text.numbers import num
-from ui.desktop.theme import C, T
+from ui.desktop.theme import C, T, clear
 from ui.desktop.workspace.fichajobs import Compute, uncomputed
 
 SEGMENTS = ("IS", "OOS1", "IS+OOS1", "OOS2")
@@ -16,16 +16,6 @@ BIG = ("Operaciones", "Net Profit (SQX, suma de operaciones)",
        "Net Profit con spread y slippage reales (suma de operaciones)", "Profit Factor")
 PICKED = (f"QPushButton:checked {{ border-color: {C['accent']}; background: {T['select']}; }}"
           f"QPushButton:disabled {{ color: {T['faint']}; border: 1px dashed {T['faint']}; }}")
-
-
-def clear(grid: QGridLayout | QVBoxLayout) -> None:
-    """Empty a layout, nested layouts included."""
-    while grid.count():
-        entry = grid.takeAt(0)
-        if entry.widget():
-            entry.widget().deleteLater()
-        elif entry.layout():
-            clear(entry.layout())
 
 
 def figure(row: dict) -> QLabel:

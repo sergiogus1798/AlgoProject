@@ -17,7 +17,7 @@ def load(overrides: list[str] | None = None) -> dict:
     Returns:
         The whole config.
     """
-    cfg = yaml.safe_load(FILE.read_text(encoding="utf-8"))
+    cfg = yaml.load(FILE.read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
     for item in overrides or []:
         key, value = item.split("=", 1)
         node = cfg

@@ -112,11 +112,6 @@ execute:
   # the cost grows with the batch and 5,000 is minutes. The poll stops as soon as the
   # folder holds what the retest returned; this is only the cap.
   sync_tries: 60
-  # First day of the harness's <OutOfSample> range, which is what splits every harvested
-  # curve. It is the same boundary `assets/XAUUSD.yaml` records (build ends 2017-12-31,
-  # oos1 starts here), and `equity.py` both checks the curves against it and writes it
-  # into equity.json -- so the studies downstream read the split rather than restating it.
-  split: "2018-01-01"
   # ⚠️ `-project action=startOnlyTask` reports success and tests NOTHING on this install.
   # Only `action=start` runs the task. Measured 2026-09-22, knowhow/sqx-drive/running-a-task-headless.md.
 
@@ -130,31 +125,32 @@ spp:
   max_tests: 15000        # ⚠️ SET it, never inherit: a donor can carry 1000000001, which is
                           # SQX's sentinel for exhaustive -- every combination of everything
   timeout_s: 3600         # an SPP reports nothing until it finishes; this is the only cap
-  sync_s: 6               # seconds to let `synctofiles` land before reading the folder
 
 crosstf:
   # Which parameters move when the timeframe moves. OWNER'S RULE, 2026-09-23: periods and
-  # bar-count exits, NOTHING ELSE. This is a positive whitelist, not a classification --
-  # anything unmatched is written through untouched, so an unknown custom-block parameter
-  # is never silently reinterpreted.
+  # bar-count exits, NOTHING ELSE. Since 2026-10-02 («arregla el escalado») a period is what SQX
+  # itself types one — `<paramType>ParamTypePeriod</paramType>` on the variable, which is how
+  # MACD's Fast/Slow/Smooth, the Stochastic's slowing, WaveTrend's lengths, QQE's smoothing and
+  # BH Ergodic's R/S/U/trigger are reached: no name pattern matched them, and 65 % of a
+  # Simple-Strategy population carried one. A CUSTOM block's parameters are ruled one by one in
+  # `lengths.yaml` (SQX types them as the block declared them, a plain Int). `sqx.variants.lengths`.
   #
-  # Deliberately NOT here, and the consequence stated so nobody reads a cell as clean:
+  # The patterns below are only the FALLBACK, for what SQX types otherwise — ExitAfterBars is
+  # `ParamTypeExitUsed`, the #Bars# of "Is rising" — and for a file older than the field.
+  # They never claim a variable SQX types a shift.
+  #
+  # Deliberately never scaled, and the consequence stated so nobody reads a cell as clean:
   #   *Coef*, *Mult*, *Deviation*  multiply a volatility or range measure that grows when
   #                                bars are aggregated, so a StopLossCoef left at 2 is a
   #                                physically ~2x wider stop on H4 than on H1.
   #   *Lvl*                        oscillator thresholds, bounded 0..100, dimensionless.
   #   *Shift*, *Shf*               fixed at 1 by the builder; 1/4 is not a bar.
   #   *Mth*, *Fld*, *Str*          categorical selectors, not quantities.
+  #   Laguerre gamma, PSAR step    smoothing coefficients: there is no bar count to divide.
   scale:
     - "(Period|Prd|Lookback|Lkb)\\d*$"
     - "EMA\\d*$"
-    - "Bars\\d*$"        # ExitAfterBars, and the #Bars# lookback of comparisons like
-                        # "Is rising" (IsBars1) -- found 2026-09-23 by the unmatched-int
-                        # report, which is what that report is for
-  # Candidates the whitelist does not claim yet -- `scale.py` prints every unmatched int
-  # parameter so this list can be settled against real strategies rather than guessed:
-  #   "Slw\\d*$"      Stochastic slowing, a smoothing length in bars
-  #   "(Smooth|Smt)\\d*$"
+    - "Bars\\d*$"
 
   floor: 2        # the builder's own minPeriod; a scaled period below it is clamped and flagged
   shape: minimal  # 13.7 KB per file, and the parent's results cannot ride along

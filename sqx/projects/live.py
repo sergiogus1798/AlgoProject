@@ -4,18 +4,19 @@ import json
 import shutil
 import os
 import re
-import socket
 import subprocess
 import tempfile
 import time
 import urllib.parse
 import urllib.request
 import zipfile
+from functools import lru_cache
 from pathlib import Path
 
 from core import worker
 from core.datapaths import tmp_dir
 from core.paths import ROOT, WORKERS
+from sqx.projects import cfxio
 
 SCRIPT = ROOT / "bin" / "sqx-worker.sh"
 MISSES = 5          # polls in a row the port must refuse before `wait` calls the session dead
@@ -27,9 +28,15 @@ def _top(role: str) -> Path:
     return WORKERS[role]["path"]
 
 
+@lru_cache(maxsize=8)
+def _settings(role: str, mtime_ns: int) -> str:
+    """The install's settings.xml as of one modification time (SQX rewrites it at every GUI start)."""
+    return (_top(role) / "user/settings/settings.xml").read_text(encoding="utf-8")
+
+
 def _setting(role: str, key: str) -> str:
     """One value SQX wrote to the install's settings.xml (port and token: at every GUI start)."""
-    text = (_top(role) / "user/settings/settings.xml").read_text(encoding="utf-8")
+    text = _settings(role, (_top(role) / "user/settings/settings.xml").stat().st_mtime_ns)
     return re.search(rf"<{key}>([^<]*)", text).group(1)
 
 
@@ -40,9 +47,7 @@ def _holder() -> str:
 
 def _up(role: str) -> bool:
     """Whether something listens on that worker's port."""
-    with socket.socket() as s:
-        s.settimeout(0.5)
-        return s.connect_ex(("127.0.0.1", WORKERS[role]["port"])) == 0
+    return worker.listening(WORKERS[role]["port"])
 
 
 def mine(role: str) -> bool:
@@ -149,10 +154,8 @@ def push(role: str, project: str, staged: Path, held: Path) -> str:
         staged: The copy of `held` the configurators and `stage.just` wrote.
         held: The project.cfx the running install holds (hard rule 4: never written here).
     """
-    with zipfile.ZipFile(staged) as z:
-        new = {n: z.read(n) for n in z.namelist()}
-    with zipfile.ZipFile(held) as z:
-        old = {n: z.read(n) for n in z.namelist()}
+    new = cfxio.members(staged)
+    old = cfxio.members(held)
     extra = added(staged, held)
     if extra:
         raise SystemExit(f"la copia trae ficheros que el proyecto vivo no tiene: {extra}")

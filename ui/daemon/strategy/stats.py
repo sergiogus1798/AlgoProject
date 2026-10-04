@@ -1,6 +1,5 @@
 """The basic statistics of one strategy per sample — IS, OOS1, both joined, and OOS2 behind its door."""
 
-import numpy as np
 import pandas as pd
 
 from core.study import blocks

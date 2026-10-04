@@ -2,15 +2,17 @@
 
 import json
 import os
+import socket
 import subprocess
 import sys
 import urllib.request
 from pathlib import Path
 from time import sleep
 
-from core.paths import WORKERS, WORKER_SH
+from core.paths import MASTER, WORKERS, WORKER_SH
 
 PROC = Path("/proc")
+READY_POLLS = 900  # x 2 s = 30 min for the databank to load; a JVM start is ~20 s
 TIMEOUT = 600      # seconds one reply may take: what sqx.projects.live's own client allows
 MAX_HOURS = 48     # no wait on a run outlives this (ui/daemon/advance/run.py's bound)
 
@@ -145,11 +147,24 @@ def wait_ready(project: str, databank: str, role: str = "conductor") -> int:
     "Error: CLI not ready." for ~20 s, and loading strategies from files finishes later
     still. Exporting before this returns writes a header-only CSV with no error.
     """
-    while True:
+    for _ in range(READY_POLLS):
         reply = call(f"-databank action=count project={project} name={databank}", role)
         if "Records:" in reply:
             return int(reply.split("Records:")[1].split()[0])
         sleep(2)
+    raise SystemExit(f"{project}/{databank}: no records after {READY_POLLS * 2} s on {role}")
+
+def installs() -> dict[str, Path]:
+    """Role to install folder, the master first: `master` plus one entry per headless role."""
+    return {"master": MASTER, **{role: w["path"] for role, w in WORKERS.items()}}
+
+
+def listening(port: int) -> bool:
+    """Whether something listens on this local port (an install's sqcli port)."""
+    with socket.socket() as s:
+        s.settimeout(0.5)
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
 
 def holding(install: Path) -> list[int]:
     """PIDs of StrategyQuant processes running out of one install.
@@ -180,6 +195,6 @@ def holding(install: Path) -> list[int]:
         except OSError:
             continue
         exe = line.split("\0")[0]
-        if exe.startswith(str(install)) or (here == install.resolve() and not exe.startswith("/")):
+        if exe.startswith(f"{install}/") or (here == install.resolve() and not exe.startswith("/")):
             found.append(int(d.name))
     return found

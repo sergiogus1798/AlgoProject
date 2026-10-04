@@ -1,7 +1,6 @@
 """The Estrategia page of an archived version: F4's ficha, every read on `source=archive`, nothing run."""
 
-import threading
-
+from ui.desktop import background
 from ui.desktop.portfolios.studies import ArchivedStudies
 from ui.desktop.studypage.net import fetch
 from ui.desktop.workspace.ficha import Ficha
@@ -43,16 +42,17 @@ class ImportedFicha(Ficha):
         self.origin.setToolTip(f"Identidad: {shown['identity']}")
         self.frozen.load(shown)
         self.say("leyendo el archivo…")
-        threading.Thread(target=self.ask, args=(dict(self.where),), daemon=True).start()
+        where = dict(self.where)
+        background.run(lambda: self.ask(where), self.paint, key=f"ficha:{id(self)}", owner=self)
 
-    def ask(self, where: dict) -> None:
+    def ask(self, where: dict) -> dict:
         """Off the GUI thread: the ficha's three reads, on the archived version."""
         q = {k: where[k] for k in ("project", "databank", "identity")} | {
             "source": "archive", "version": self.version}
-        self.arrived.emit({"key": (where["project"], where["strategy"]),
-                           "curve": fetch("strategy/costcurve", **q),
-                           "stats": fetch("strategy/stats", **q),
-                           "meta": fetch("strategy/meta", **q)})
+        return {"key": (where["project"], where["strategy"]),
+                "curve": fetch("strategy/costcurve", **q),
+                "stats": fetch("strategy/stats", **q),
+                "meta": fetch("strategy/meta", **q)}
 
     def lower(self, live: bool, family: str, study: str | None = None) -> None:
         """The frozen studies stand where the study tabs would: nothing to switch."""

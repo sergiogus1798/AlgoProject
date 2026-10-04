@@ -3,7 +3,7 @@
 from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton
 
-from ui.desktop import background
+from ui.desktop import jobsfeed
 from ui.desktop.studypage.net import send
 from ui.desktop.theme import C
 
@@ -50,7 +50,7 @@ class Compute(QObject):
 
     def poll(self) -> None:
         """Look at the jobs off the GUI thread; `polled` reads them."""
-        background.get("jobs", self.polled, key=f"fichajobs:{id(self)}")
+        jobsfeed.read(self.polled, key=f"fichajobs:{id(self)}", owner=self)
 
     def polled(self, got: dict) -> None:
         """When all of this ficha's jobs have ended, say so and stop; else show their progress."""

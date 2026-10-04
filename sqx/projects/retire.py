@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 
 from core.datapaths import retired_project
 from core.paths import MASTER, WORKERS
+from core.worker import holding, installs
 from sqx.projects import cfxio
 from sqx.projects import registry, sweep
 
@@ -18,21 +19,9 @@ STOCK = {"Builder", "Retester", "Optimizer", "PortfolioComposer", "PortfolioMast
 FRESH_MINUTES = 60   # younger than this, someone may still be collecting from it
 
 
-def installs() -> dict[str, Path]:
-    """Role → install folder, the master included."""
-    return {"master": MASTER, **{r: w["path"] for r, w in WORKERS.items()}}
-
-
 def master_up() -> bool:
     """Whether any process runs from inside the master install (its GUI or a sqcli)."""
-    needle = (str(MASTER) + "/").encode()
-    for cmd in Path("/proc").glob("[0-9]*/cmdline"):
-        try:
-            if needle in cmd.read_bytes():
-                return True
-        except OSError:
-            continue
-    return False
+    return bool(holding(MASTER))
 
 
 def describe(folder: Path) -> dict:
@@ -87,6 +76,8 @@ def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False
         raise SystemExit(f"the {role} is up: it holds {name} in memory and would write it "
                          "back on exit (hard rule 4). Stop it first.")
     d = describe(folder)
+    if d["tasks"] == "?":
+        raise SystemExit(f"{name}: project.cfx unreadable, never retired (cannot tell what it is).")
     if not own and time.time() - d["mtime"] < FRESH_MINUTES * 60:
         raise SystemExit(f"{name} changed less than {FRESH_MINUTES} min ago — someone may still "
                          "be collecting from it. Check ListAgents and the day's log.")

@@ -1,13 +1,10 @@
 """The panel's column views: the metric choice per databank, read off the GUI thread and kept."""
 
-import threading
-
 import httpx
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QWidget
 
-from ui.desktop import client
-from ui.desktop.workspace.aggregate import ask
+from ui.desktop import background, client
 from ui.desktop.workspace.columns import (choices, column_id, diff, is_metric, resolve,
                                           shown_ids)
 from ui.desktop.workspace.columnsmenu import ColumnsMenu
@@ -23,11 +20,9 @@ WIDE = "métricas"
 class Views(QObject):
     """The column choices and IS+OOS1 figures of the panel's databanks: the metrics one
     databank shows in every table of it, the study columns per table. Both are asked in a
-    thread (`fetched` lands them); until then the table paints its default, or «–» with
+    thread (`background` lands them); until then the table paints its default, or «–» with
     «leyendo…» for an IS+OOS1 column, and repaints when they land. A failed read is said and
     not kept: the next paint, the chooser or «Recargar» asks again."""
-
-    fetched = Signal(dict)
 
     def __init__(self, panel: QWidget) -> None:
         """Belong to one `Panel`, whose `project`, `sub_spec`, `cache` and `open_sub` it uses."""
@@ -38,7 +33,6 @@ class Views(QObject):
         self.failed: dict[tuple, str] = {}
         self.asking: set[tuple] = set()
         self.waiting = ""               # a databank whose chooser opens once its data lands
-        self.fetched.connect(self.land)
 
     def reset(self) -> None:
         """A new project: forget everything read."""
@@ -60,12 +54,9 @@ class Views(QObject):
         self.asking.add((kind, databank))
         project = self.panel.project
 
-        def run() -> None:
-            """The GET, off the GUI thread."""
-            got = ask(f"databank/{kind}", project=project, databank=databank)
-            self.fetched.emit({"kind": kind, "project": project, "databank": databank,
-                               "got": got})
-        threading.Thread(target=run, daemon=True).start()
+        background.get(f"databank/{kind}", lambda got: self.land(
+            {"kind": kind, "project": project, "databank": databank, "got": got}),
+            owner=self, project=project, databank=databank)
 
     def land(self, msg: dict) -> None:
         """Keep what a thread read (or its failure, unkept) and repaint or open the chooser."""

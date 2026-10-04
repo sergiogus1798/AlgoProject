@@ -5,7 +5,7 @@ from collections.abc import Callable
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
-from ui.desktop import background
+from ui.desktop import background, jobsfeed
 from ui.desktop.theme import C
 
 POLL_MS = 4000
@@ -61,7 +61,7 @@ class JobButton(QWidget):
 
     def poll(self) -> None:
         """Ask the job list off the GUI thread."""
-        background.get("jobs", self.landed, key=f"jobbutton:{id(self)}", owner=self)
+        jobsfeed.read(self.landed, f"jobbutton:{id(self)}", self)
 
     def landed(self, got: dict) -> None:
         """Paint the job's state; on its end, stop polling and hand it over."""

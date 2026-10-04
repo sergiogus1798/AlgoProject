@@ -228,7 +228,7 @@ def check(project: str, databank: str) -> dict:
         # confirmation says so (📓 2026-09-29, OOS 200 + 21 as «Strategy X(1)»).
         out = next(t["output"] for t in tasks if t["title"] == following["task"])
         following |= {"output": out,
-                      "n_out": len(list(databank_dir(project, out, top).glob("*.sqx")))
+                      "n_out": sum(1 for _ in databank_dir(project, out, top).glob("*.sqx"))
                       if out else 0}
     return {"ok": not reasons, "reasons": reasons, **got, "cfx": cfx, "databank": databank,
             "source": source, "n": n, "files": files, "discards": rows, **following}

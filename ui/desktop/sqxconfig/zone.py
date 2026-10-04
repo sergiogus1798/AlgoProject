@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
                                QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
-from ui.desktop import client
+from ui.desktop import background, client
 from ui.desktop.sqxconfig.section import Section, words
 from ui.desktop.theme import C
 
@@ -70,7 +70,8 @@ class SqxConfigZone(QFrame):
         """Read the daemon the first time the zone is shown, not when the window starts."""
         super().showEvent(event)
         if not self.sections:
-            self.load()
+            self.say("leyendo…", C["muted"])
+            background.get("sqxconfig", self.build, key="sqxconfig", owner=self)
 
     def load(self) -> None:
         """Read `/api/sqxconfig` and rebuild the index and the sections, all folded."""
@@ -78,6 +79,13 @@ class SqxConfigZone(QFrame):
             state = client.get("sqxconfig")
         except httpx.HTTPError as err:
             self.say(f"El demonio no contesta: {err}", C["dead"])
+            return
+        self.build(state)
+
+    def build(self, state: dict) -> None:
+        """Rebuild the index and the sections from `/api/sqxconfig`, all folded."""
+        if "error" in state:
+            self.say(state["error"], C["dead"])
             return
         while self.column.count():
             item = self.column.takeAt(0)

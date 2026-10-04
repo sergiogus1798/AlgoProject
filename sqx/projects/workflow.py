@@ -2,7 +2,6 @@
 """Give a donor clone every task of the workflow: keep the steps' own, add the ones it lacks."""
 
 import re
-import zipfile
 from pathlib import Path
 
 import yaml
@@ -119,8 +118,7 @@ def finish(cfx: Path, symbol: str) -> None:
     `crosstf.segment` (build..oos1), and its extra timeframes inherit the main test's dates, so
     the main test has to carry that span or every cell is read over the wrong window.
     """
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     from sqx.projects import crosstf, crosstfsolo      # both import this module
     member = member_of(members["config.xml"].decode("utf-8"), CROSSTF["title"])
     text = set_span(members[member].decode("utf-8"), load(symbol), doctrine()["crosstf"]["segment"])

@@ -4,7 +4,6 @@
 import argparse
 import json
 import re
-import zipfile
 from pathlib import Path
 
 from core.paths import TAXONOMY, project_dir, worker_dir
@@ -88,8 +87,7 @@ def apply(cfx: Path, name: str) -> dict:
         raise SystemExit(f"el {up} está encendido: SQX reescribe {cfx.name} al salir y el "
                          f"cambio se perdería. Páralo: bin/sqx-worker.sh --role {up} stop")
     resolved = union(name.split(","))
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     tasks = {}
     for n in [n for n in members if n.startswith("Build-")]:
         text, tasks[n] = rewrite(members[n].decode("utf-8"), resolved)

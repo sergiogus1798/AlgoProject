@@ -168,14 +168,14 @@ def test_run_sees_an_abort_in_the_next_days_log_and_is_bounded() -> None:
     raises(f"tras {worker.MAX_HOURS} h", run_with, ["In databank 10"] * 50, top, 3600 * 30.0)
 
 
-def test_load_refuses_an_error_reply_and_only_logs_one_on_clear() -> None:
-    """`Error:` to a load or an export is fatal; to a clear it is only printed."""
+def test_load_refuses_an_error_reply_on_clear_and_load() -> None:
+    """`Error:` to a clear, a load or an export is fatal."""
     def call(command: str, role: str = "conductor") -> str:
         """core.worker.call: every reply an error body."""
         return "Error: Databank 'X' doesn't exist." if "action=load" in command else "Error: odd"
 
     with patched((worker, "call", call), (time, "sleep", lambda s: None)):
-        raises("doesn't exist", execute.load, Path("/nowhere"), CFG)
+        raises("action=clear", execute.load, Path("/nowhere"), CFG)
         raises("action=export", execute.panel, Path("/nowhere"), CFG, "WFC", "retest_oos1")
 
 

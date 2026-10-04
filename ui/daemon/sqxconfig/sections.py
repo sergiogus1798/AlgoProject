@@ -1,6 +1,7 @@
 """The SQX settings as the zone draws them: one section per test or topic, every value typed."""
 
 import re
+from functools import lru_cache
 
 from core.assetwrite import SHARED
 from core.assetyaml import hint, leaves, read
@@ -152,7 +153,14 @@ def with_studies(sections: list[dict]) -> list[dict]:
 
 
 def state() -> dict:
-    """The whole zone in one round trip.
+    """The whole zone in one round trip; re-read only when one of its files changed."""
+    files = [ASSETS / f for f in SHARED.values()] + list(studies.FILES.values())
+    return _state(tuple(f.stat().st_mtime_ns for f in files))
+
+
+@lru_cache(maxsize=1)
+def _state(stamp: tuple) -> dict:
+    """The whole zone, built once per `stamp` (the mtime of every file it reads).
 
     Returns:
         `sections` in the order of FILES, and the files they come from. A few hundred

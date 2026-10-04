@@ -5,6 +5,7 @@ from collections.abc import Callable
 from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel, QTabWidget, QVBoxLayout,
                                QWidget)
 
+from ui.desktop import background
 from ui.desktop.blocks.card import text
 from ui.desktop.datazone import tree
 from ui.desktop.datazone.pages import BarsPage, StudyPage
@@ -138,8 +139,12 @@ class DataZone(QFrame):
             self.pages[name].load(self.asset())
 
     def _draw_catalogue(self) -> None:
+        """Ask for the tree of AlgoData off the GUI thread (the walk takes seconds when cold)."""
+        self.total.setText("leyendo AlgoData…")
+        background.get("data/catalogue", self._paint_catalogue, key="data/catalogue", owner=self)
+
+    def _paint_catalogue(self, body: dict) -> None:
         """The tree of AlgoData, and the total above the tabs."""
-        body = self.fetch("data/catalogue")
         lay = self.catalogue.layout()
         while lay.count():
             old = lay.takeAt(0).widget()

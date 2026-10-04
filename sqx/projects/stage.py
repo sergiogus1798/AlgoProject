@@ -4,6 +4,7 @@
 import argparse
 import re
 import zipfile
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -13,6 +14,17 @@ from sqx.projects import cfxio
 
 STAGES = Path(__file__).with_name("stages.yaml")
 TASK = re.compile(r"<Task\b[^>]*/>")
+
+
+@lru_cache(maxsize=1)
+def _parsed(mtime_ns: int) -> dict:
+    """stages.yaml as of one modification time."""
+    return yaml.safe_load(STAGES.read_text(encoding="utf-8"))
+
+
+def _stages() -> dict:
+    """stages.yaml, re-read when its mtime changes (the daemon is long-lived)."""
+    return _parsed(STAGES.stat().st_mtime_ns)
 
 
 def titles(step: str) -> list[str]:
@@ -26,7 +38,7 @@ def titles(step: str) -> list[str]:
     """
     if step == "wfc":
         return [t["title"] for t in doctrine()["wfc"]["tasks"]]
-    return yaml.safe_load(STAGES.read_text(encoding="utf-8"))[step]
+    return list(_stages()[step])
 
 
 def only(config: str, wanted: list[str]) -> tuple[str, list[tuple[str, bool]]]:
@@ -87,8 +99,7 @@ def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tu
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Paralo: bin/sqx-worker.sh --role {held} stop")
     wanted = expected if expected is not None else on
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     config, rows = only(members["config.xml"].decode("utf-8"), on)
     missing = sorted(set(wanted) - {title for title, _ in rows})
     if missing:

@@ -9,10 +9,11 @@ from datetime import datetime
 from pathlib import Path
 
 from core import sqxfile
-from core.archive import collect, manifest, view
+from core.archive import collect, manifest
 from core.manifest import code_version
 from core.paths import archive_dir, project_dir
 from ui.daemon.loader import find
+from ui.daemon.strategy import archive_view as view
 
 STAMP = "%Y-%m-%dT%H%M"
 META = "sqx.inspect.strategymeta"          # front E2's reader; frozen only once it exists

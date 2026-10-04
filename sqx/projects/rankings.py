@@ -3,7 +3,6 @@
 
 import argparse
 import re
-import zipfile
 from pathlib import Path
 
 from core.assetcheck import pending
@@ -59,8 +58,7 @@ def apply(cfx: Path, symbol: str, timeframe: str, mode: str = "study",
         What `filters` resolved, plus `tasks`, the members written — none, and no conditions,
         when the project has no Build task.
     """
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     tasks = [n for n, blob in members.items() if n.endswith(".xml") and n != "config.xml"
              and rules.BLOCKS.search(blob.decode("utf-8"))]
     # A project with no Build task (a study's retest on its own) has nothing to filter by.

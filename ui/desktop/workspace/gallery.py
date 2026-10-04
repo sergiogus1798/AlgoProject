@@ -1,13 +1,11 @@
 """Proyectos: one card per project — symbol, timeframe, strategies, template, state (22 §3)."""
 
-import threading
-
 import httpx
 from PySide6.QtCore import QEvent, QObject, Qt, Signal
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel,
                                QMessageBox, QScrollArea, QVBoxLayout, QWidget)
 
-from ui.desktop import client
+from ui.desktop import background, client
 from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.desktop.selection import SELECTION
@@ -40,10 +38,10 @@ class Gallery(QFrame):
 
     `opened(name)` on a card click. The window calls `load`,
     which asks the daemon off the GUI thread (the first answer of a daemon hashes every
-    strategy of every install, 12-25 s) and fills it when the answer lands."""
+    strategy of every install, 12-25 s on 09-27/29, 0.13 s on 10-04) and fills it when the
+    answer lands."""
 
     opened = Signal(str)
-    arrived = Signal(dict)
 
     def __init__(self) -> None:
         """Build it empty; `fill` or `load` brings the cards."""
@@ -93,7 +91,6 @@ class Gallery(QFrame):
         lay.addLayout(bar)
         lay.addSpacing(10)
         lay.addWidget(scroll, 1)
-        self.arrived.connect(self.landed)
 
     def fill(self, projects: list[dict]) -> None:
         """Lay out one card per project.
@@ -150,23 +147,15 @@ class Gallery(QFrame):
         return False
 
     def load(self) -> None:
-        """Ask the daemon for every project in a thread; `landed` paints the answer."""
+        """Ask the daemon for every project off the GUI thread; `landed` paints the answer."""
         self.note.setText(f"{NOTE}\nLeyendo los proyectos de los installs…")
-        threading.Thread(target=self.ask, daemon=True).start()
-
-    def ask(self) -> None:
-        """The request itself, off the GUI thread; the signal crosses back to it."""
-        try:
-            # The first answer of a fresh daemon hashes every strategy of every install: 25 s
-            # on 2026-09-29, past the client's 20 s, and the gallery came up empty.
-            got = client.get("projects/all", wait=180)
-        except httpx.HTTPError as e:
-            got = {"projects": [], "error": f"El demonio no respondió: {e}"}
-        self.arrived.emit(got)
+        # The first answer of a fresh daemon hashes every strategy of every install: 25 s on
+        # 2026-09-29, past the client's 20 s, and the gallery came up empty.
+        background.get("projects/all", self.landed, key="gallery", wait=180)
 
     def landed(self, got: dict) -> None:
         """Paint the daemon's answer, or say why there is none."""
-        self.fill(got["projects"])
+        self.fill(got.get("projects", []))
         self.note.setText(NOTE + (f"\n{got['error']}" if got.get("error") else ""))
 
     def choose(self, name: str) -> str:

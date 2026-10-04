@@ -3,8 +3,6 @@
 
 import argparse
 import shutil
-import socket
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -25,13 +23,8 @@ def install_of(role: str) -> Path:
 
 def is_up(role: str) -> bool:
     """Whether anything holds that install; a file moved underneath it is undone by its next sync."""
-    if role == "master":
-        worker.require_posix()
-        return subprocess.run(["pgrep", "-f", f"{MASTER}/StrategyQuantX"],
-                              capture_output=True, text=True).returncode == 0
-    with socket.socket() as s:
-        s.settimeout(0.5)
-        return s.connect_ex(("127.0.0.1", WORKERS[role]["port"])) == 0
+    port = None if role == "master" else WORKERS[role]["port"]
+    return bool(worker.holding(install_of(role))) or (port is not None and worker.listening(port))
 
 
 def rejected(verdict: Path) -> dict[str, str]:

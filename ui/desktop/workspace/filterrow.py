@@ -1,11 +1,10 @@
 """One condition of the filters strip: metric, operator, value, and «×»."""
 
-import numpy as np
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLineEdit, QPushButton, QWidget
 
 from ui.text.glossary import label
-from ui.text.numbers import num
+from ui.text.numbers import exact, num
 
 # The operators a metric's kind admits, as the daemon spells them → what the owner reads.
 OPS = {"numeric": [(">", ">"), ("<", "<"), (">=", "≥"), ("<=", "≤"), ("=", "="),
@@ -23,7 +22,7 @@ def shown_metric(m: dict) -> str:
 
 def typed(value: object) -> str:
     """A saved value as the box shows it, so it reads back the same: exact, never scientific."""
-    return np.format_float_positional(value, trim="-") if isinstance(value, float) else str(value)
+    return exact(value) if isinstance(value, float) else str(value)
 
 
 def plain(rows: list[dict]) -> list[dict]:

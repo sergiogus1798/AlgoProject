@@ -4,13 +4,11 @@
 import argparse
 import re
 import sys
-import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
 from core.assetcheck import mc_pending, pending, provisional
 from core.assetdata import enforced, load, sqx_settings, window
-from core.paths import WORKERS
 from sqx.projects import cfxio
 from sqx.projects.doctrine import apply_doctrine, blockers, unify_sessions
 from sqx.projects.patch import NO_TEMPLATE
@@ -122,8 +120,7 @@ def configure(cfx: Path, symbol: str, segment: str | None = None,
         where assets/ says five points. Nothing errors if this is skipped.
     """
     data = load(symbol)
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     per_task = segment_of(members)
     for line in ignored_templates(members):
         print(f"  ⚠️ TEMPLATE IGNORADA — {line}")

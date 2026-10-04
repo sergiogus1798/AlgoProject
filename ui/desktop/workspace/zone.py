@@ -122,7 +122,7 @@ class WorkspaceZone(QFrame):
     def card(self, name: str) -> dict:
         """The project's card as the gallery in this window already holds it, or {}.
 
-        No request: `/api/projects/all` costs ~12 s cold, past the client's timeout, and the
+        No request: `/api/projects/all` cost 12-25 s cold (0.13 s on 2026-10-04), and the
         gallery fetched it off the GUI thread before any card could be clicked.
         """
         held = next((g.rows[name] for g in self.window().findChildren(Gallery)

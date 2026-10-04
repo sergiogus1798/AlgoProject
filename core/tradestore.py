@@ -71,7 +71,7 @@ def _prepared(path: Path, per_market: bool) -> tuple:
 
     Args:
         path: A CSV orderstocsv wrote.
-        per_market: As in frame().
+        per_market: As in `pack`.
 
     Returns:
         (frame with the stored columns and its `strategy`, whether it kept `Ticket`,
@@ -85,47 +85,6 @@ def _prepared(path: Path, per_market: bool) -> tuple:
     keep = KEEP + (["Symbol", "block"] if per_market else [])
     keep = keep if ordered(got) else keep + ["Ticket"]
     return got[keep].assign(strategy=path.stem), "Ticket" in keep, torn
-
-
-def frame(files: list[Path], per_market: bool) -> tuple[pd.DataFrame, dict]:
-    """Every strategy of one export as a single typed frame.
-
-    Args:
-        files: One CSV per strategy, as orderstocsv wrote them.
-        per_market: True for a data=all export, whose CSVs carry several result blocks --
-            the main test first, then one per additional market in Setup order. Both
-            `Symbol` and `block` are kept for those. `Symbol` alone is NOT a separator:
-            a cross-timeframe retest puts several blocks on the same symbol, and they
-            collapse into one.
-
-    Returns:
-        (the frame, counts): counts carry the names of any strategy whose row order does not
-        carry its ticket, and `torn`, the strategies whose blocks did not come out as complete
-        ticket runs. Parsed in one thread on purpose: 🔬 2026-09-25, sixteen threads made
-        `export_retest` of 499 x 9 slower, 179.5 s against 160.4 s, with the same output --
-        the work per file beyond `read_csv` holds the GIL.
-    """
-    parts = [_prepared(f, per_market) for f in files]
-    packed = pd.concat([part for part, _, _ in parts], ignore_index=True)
-    for c in CATEGORICAL:
-        if c in packed:
-            packed[c] = packed[c].astype("category")
-    return packed, {"strategies": len(files), "trades": len(packed),
-                    "columns": list(packed.columns),
-                    "kept_ticket": [f.stem for f, (_, kept, _) in zip(files, parts) if kept],
-                    "torn_blocks": [f.stem for f, (_, _, torn) in zip(files, parts) if torn]}
-
-
-def names(path: Path) -> list[str]:
-    """Which strategies one packed export holds.
-
-    Args:
-        path: A Parquet written by core.tradepack.pack().
-
-    Returns:
-        Strategy names, sorted. Reads the one column rather than the file.
-    """
-    return sorted(pd.read_parquet(path, columns=["strategy"])["strategy"].unique())
 
 
 def by_strategy(packed: pd.DataFrame) -> dict[str, pd.DataFrame]:

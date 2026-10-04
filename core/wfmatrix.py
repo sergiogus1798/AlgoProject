@@ -9,7 +9,6 @@ from core import sqxstats
 # SQX writes the matrix axes as two ranges: param1 is the out-of-sample percentage and
 # param2 the number of walk-forward runs. periodType 10 is a rolling window: measured on
 # XAUUSD/WFM, IS stays at 4.72 years and OOS at 1.33 and both slide -- neither expands.
-AXES = {"oos_pct": ("start1", "stop1", "increment1"), "runs": ("start2", "stop2", "increment2")}
 MILLIS = 1000
 # A cell's own result stores 15 SQStats blobs: direction (0 both, 1 long, -1 short) x sample.
 # Measured on XAUUSD/WFM: sample 10 is the first optimisation window alone, 20 every walk-forward
@@ -97,18 +96,6 @@ def matrix(path: Path) -> ET.Element | None:
     xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
     found = ET.fromstring(xml).find(".//WalkForwardResult")
     return None if found is None else found[0]
-
-
-def axes(node: ET.Element) -> dict:
-    """Args:
-        node: A `MatrixResult` element.
-
-    Returns:
-        `oos_pct` and `runs` as (first, last, step), plus `period_type`. The cell count is
-        the product of the two ranges -- 5 x 6 = 30 on the XAUUSD/WFM databank.
-    """
-    out = {name: tuple(int(node.get(a)) for a in attrs) for name, attrs in AXES.items()}
-    return out | {"period_type": int(node.get("periodType"))}
 
 
 def cells(node: ET.Element, found: dict[str, ET.Element]) -> list[dict]:

@@ -8,6 +8,7 @@
 - `decay-needs-build-and-retest` — Why are sharpe_is and retention empty in the decay study when run on a workflow's OOS databank?
 - `editing-asset-yaml` — How do I edit an assets/*.yaml file without losing its comments?
 - `feed-in-config-yaml` — Why must a study's config.yaml never name the asset or feed?
+- `graphify-cannot-list-dead-code` — Can the graphify graph list dead functions?
 - `headless-claude-from-cron` — How do I run `claude -p` from cron so it finds the binary, its tools and its directories?
 - `isoos-filters-read-the-harvest` — Why does an IS/OOS population study read the harvest instead of a workflow retest's metrics export?
 - `log-retention` — In what order and under which conditions may a log be archived and pruned?
@@ -27,6 +28,8 @@
 - `step25-reads-a-harvest-of-the-traded-version` — Why does edgeCost.report read only a harvest of the traded version at step 25?
 - `studies-reread-build-yaml` — Do crossTF and structure read a run's own record or today's assets/_build.yaml?
 - `temporary-precision-and-mc-runs-override` — How do I override precision or Monte Carlo simulation count for one run with ALGO_PRECISION_OVERRIDE?
+- `tests-are-scripts-run-via-audit-tests` — How are the tests run, and why might a new test_ function never execute?
 - `tmp-partition-fills-with-scratchpads` — Why does the 3.9 GB /tmp partition fill up, and what frees it?
 - `token-spend-is-context-reread` — Where does most of the token spend of a long session go?
+- `vscode-has-no-statusline-usage-json` — Why is ~/.claude/usage.json never written under the VSCode extension?
 - `windows-portability` — Which parts of the project run on Windows and which are Linux-only?
