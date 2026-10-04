@@ -80,8 +80,8 @@ def genetic(cfx: Path, running: bool, banks: dict[str, int]) -> dict | None:
 
     Returns:
         `population` (PopulationSize × Islands, what must fill before the databank gets any),
-        `size`, `islands`, `generations`, `initial` and `last` (files in «Initial population»
-        and «Last generation»); None when no Build runs or it is not genetic.
+        `size`, `islands`, `generations`, `initial`, `last` and `results` (files in «Initial
+        population», «Last generation» and «Results»); None when no Build runs or it is not genetic.
     """
     if not running:
         return None
@@ -95,4 +95,4 @@ def genetic(cfx: Path, running: bool, banks: dict[str, int]) -> dict | None:
         return None
     return {"population": size * islands, "size": size, "islands": islands,
             "generations": int(g["MaxGenerations"]), "initial": banks.get("Initial population"),
-            "last": banks.get("Last generation")}
+            "last": banks.get("Last generation"), "results": banks.get("Results")}

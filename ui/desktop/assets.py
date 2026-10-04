@@ -9,12 +9,10 @@ from ui.desktop.assetcard import AssetCard
 from ui.desktop.assetforms import NewAssetBox
 from ui.desktop.assetlist import AssetList
 from ui.desktop.assetspans import AssetSpans
-from ui.desktop.assettraits import trait
-from ui.desktop.names import family
+from ui.desktop.assettraits import TRAITS_HELP, trait, trait_line
 from ui.desktop.yamltree import YamlTree
 
-MARKETS_WIDTH = 310   # a name, a date and a button per market: wider only spreads them apart
-VERB = {"Alta": "Va muy bien para", "Media": "Va regular para", "Baja": "Va mal para"}
+MARKETS_WIDTH = 360   # a name, a date and a button per market (owner, 2026-10-04: 310 boxed it in)
 SIDE_WIDTH = 290      # two date selectors side by side, and a column of prose under them
 
 
@@ -58,19 +56,18 @@ class AssetPage(QFrame):
         body = QHBoxLayout()
         body.setSpacing(12)
         costs, side = QVBoxLayout(), QVBoxLayout()
-        for col, parts in ((costs, (self.card, self.spans.ranges)),
-                           (side, (self.spans, self.traits_panel()))):
+        for col, parts in ((costs, (self.card, self.spans.ranges)), (side, (self.spans,))):
             col.setSpacing(10)
             for w in parts:
                 col.addWidget(w, 0, Qt.AlignLeft)
             col.addStretch()
         self.spans.markets.setFixedWidth(MARKETS_WIDTH)
         self.spans.setFixedWidth(SIDE_WIDTH)
-        side.itemAt(1).widget().setFixedWidth(SIDE_WIDTH)
         body.addLayout(costs)
         body.addWidget(self.spans.markets)
         body.addLayout(side)
-        body.addStretch()
+        # To the right of Tramos, on the width that was left empty (owner, 2026-10-04).
+        body.addWidget(self.traits_panel(), 1, Qt.AlignTop)
         lay.addLayout(body)
         lay.addWidget(self.tree)
         self.refresh()
@@ -89,6 +86,8 @@ class AssetPage(QFrame):
         tlay.addWidget(QLabel("Características", objectName="h2"))
         self.prior = QLabel()
         self.prior.setStyleSheet("font-size: 14px;")
+        self.prior.setWordWrap(True)
+        self.prior.setToolTip(TRAITS_HELP)
         text = QLabel(trait(self.symbol), objectName="muted")
         text.setWordWrap(True)
         tlay.addWidget(self.prior)
@@ -101,9 +100,8 @@ class AssetPage(QFrame):
         self.card.fill(data)
         self.spans.fill(data)
         self.tree.fill(self.symbol, data["leaves"])
-        self.prior.setText("<br>".join(
-            f"- {VERB[p['level']]} {family(p['family'])}{' (solo largos)' if p['long_only'] else ''}"
-            for p in data["prior"]) or "- Sin prior para este activo")
+        self.prior.setText("<br>".join(trait_line(p) for p in data["prior"])
+                           or "Sin prior ni perfil medido para este activo")
 
     def on_edit(self, name: str, path: list, text: str, kind: str) -> None:
         """Write a value the file table changed.

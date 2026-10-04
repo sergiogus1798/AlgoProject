@@ -17,6 +17,8 @@ QT_QPA_PLATFORM=offscreen bin/algoui --port 8757 --shot $S --zone <Zona>
 `--port 8757` is a scratch daemon, so the owner's open window (8765, `ui_port`) is untouched and
 runs the new code. `Read` the PNG and check what the owner asked for, against his standing
 preferences: big readable text, high contrast, tables as small as their content, terminal style.
+The window opens at 1440×900; the owner's screen is 2560×1440, so a layout question (what sits
+beside what, empty width) is shot with `--size 2560x1400` too.
 What cannot be seen in the shot (a click, a drawer) is said as not verified, not assumed.
 
 ## Walk every zone

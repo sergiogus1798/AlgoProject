@@ -77,8 +77,10 @@ GENETIC_TIP = ("Generación genética. Ninguna estrategia llega al databank hast
                "generadas y 0 en el databank. SQX no publica en su estado ni en su log la "
                "generación actual, las islas ni cuánto lleva de la población inicial, así que se "
                "muestran los ajustes del proyecto y los ficheros de los databanks «Initial "
-               "population» y «Last generation» en disco, que SQX escribe al sincronizar y por "
-               "tanto van con retraso.")
+               "population», «Last generation» y «Results» en disco, que SQX escribe al "
+               "sincronizar (como mucho cada hora) y por tanto van con retraso: «— de 1.000» "
+               "quiere decir que SQX aún no ha escrito ninguna, no que esté parado. La señal en "
+               "vivo de que corre es «procesadas» en la línea de estado, que sube cada 15 s.")
 
 
 def genetic_line(g: dict) -> str:
@@ -91,10 +93,13 @@ def genetic_line(g: dict) -> str:
         HTML for a QLabel.
     """
     disk = lambda n: "—" if n is None else num(n)  # noqa: E731 — a label, not logic
-    return (f"{chip('GENÉTICA', C['weak'])} &nbsp;población inicial <b>{disk(g['initial'])}</b> / "
-            f"{num(g['population'])} en disco ({num(g['size'])} × {num(g['islands'])} islas) · "
-            f"generaciones <b>{num(g['generations'])}</b> como máximo, la actual no se publica · "
-            f"última generación en disco <b>{disk(g['last'])}</b> &nbsp;<b>[?]</b>")
+    filled = g["initial"] is not None and g["population"] and (
+        f" ({100 * min(g['initial'], g['population']) / g['population']:.1f} %)") or ""
+    return (f"{chip('Genética', C['weak'])} &nbsp;Initial population <b>{disk(g['initial'])} de "
+            f"{num(g['population'])}</b>{filled} en disco ({num(g['size'])} × "
+            f"{num(g['islands'])} islas) · Last generation <b>{disk(g['last'])}</b> · Results "
+            f"<b>{disk(g.get('results'))}</b> · generaciones {num(g['generations'])} como máximo, "
+            f"la actual no se publica &nbsp;<b>[?]</b>")
 
 
 class Tasks(QFrame):

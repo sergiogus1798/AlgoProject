@@ -4,6 +4,10 @@ import pandas as pd
 from mt5.fleet.app import fmt
 
 DAY = 86400
+# Lines of a terminal's log that match «failed» and are no fault: MT5's own Signals (copy trading)
+# service asks the broker for its signal list every half hour, and a prop firm's server (FTMO)
+# offers none. 📓 2026-10-04: `Signal '541350656': failed get list of signals` filled Salud.
+NOISE = ("failed get list of signals",)
 
 
 def disconnections(minutes: pd.DataFrame | None, since: int) -> tuple[int, int] | None:
@@ -36,13 +40,13 @@ def terminal(beat: dict, minutes: pd.DataFrame | None, vps: dict | None) -> dict
     Returns:
         `connected`, `ping_ms`, `build`, `disconnections` (`disconnections()`), `uptime_s` (the
         service's, None on a schema-1 beat) and `errors`: the last lines of this terminal's log that
-        carry an error, from the VPS's own reading (empty without one).
+        carry an error, from the VPS's own reading (empty without one), `NOISE` left out.
     """
     mine = next((t for t in (vps or {"terminals": []})["terminals"] if t["login"] == beat["login"]), None)
     return {"connected": bool(beat["connected"]), "ping_ms": beat["ping_us"] / 1000, "build": beat["build"],
             "disconnections": disconnections(minutes, beat["day_start"]),
             "uptime_s": beat["server_time"] - beat["service_started"] if "service_started" in beat else None,
-            "errors": mine["errors"] if mine else []}
+            "errors": [e for e in mine["errors"] if not any(n in e for n in NOISE)] if mine else []}
 
 
 def machine(vps: dict | None) -> list[tuple[str, str]]:

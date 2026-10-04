@@ -70,14 +70,14 @@ and the study tabs). The mock on invented data (`workspace/mock.py`, `fake.py`) 
 | `palettes.py` | The palette library: the open palette, its blocks by category, and the writes | imported | — |
 | `palettebar.py` | The palette view's top bar: the picker, the policy, the search and the library actions | imported | — |
 | `blocktable.py` | The table of blocks under one palette, and the override picker on each row | imported | — |
-| `assets.py` | The asset zone: one page per instrument (`AssetPage`), one per row, in three columns each as narrow as what it holds (owner, 2026-10-02) — costs and MC Retest ranges, the Cross Market check to their right, then the tramos over the `Características` tile — the index down the left scrolling to them | imported | — |
+| `assets.py` | The asset zone: one page per instrument (`AssetPage`), one per row, in three columns each as narrow as what it holds (owner, 2026-10-02) and Características on the width left to the right of Tramos (owner, 2026-10-04) — costs and MC Retest ranges, the Cross Market check to their right, then the tramos over the `Características` tile — the index down the left scrolling to them | imported | — |
 | `assetlist.py` | The index down the left: the instruments coloured by what they still need | imported | — |
 | `assetcard.py` | One asset's costs, its chips and everything the preflight would complain about — its cost table is just field/use/unit now (owner, 2026-10-01: the live-SQX column is gone from every asset table) | imported | — |
 | `assetspans.py` | The same asset's windows: a tramo card per segment, stacked (its spread note, «Aplicar» and its two date selectors) under what SQX actually has; the MC Retest ranges are its `ranges` widget and the Cross Market check its `markets`, both placed by the page | imported | — |
 | `assetmarkets.py` | `CrossMarketCheck`: «Declarar como main» for an asset that is not one yet, «Añadir»/«Quitar» a market once it is, one coloured group per category, a compact row per market (name, first date, ×) | imported | — |
 | `assetforms.py` | The boxes the zone opens: a text, a cost with its `why`, a Cross Market row, a new asset | imported | — |
 | `assettable.py` | The read-only table helpers shared by `assetcard.py` and `assetspans.py`: `grid`, `cell`, `val`, `derived`, `fit`, `clear`, `send` — `grid` stretches no column and `fit` gives a table the width and height of its content | imported | — |
-| `assettraits.py` | `TRAITS`: a one-paragraph, non-exhaustive note per symbol on how it tends to trade (trend, rango, carry) — a starting point for the `Características` tile, not a study | imported | — |
+| `assettraits.py` | `trait_line`: one family of the Características tile as a coloured line — green «Va bien» (measured for), amber «Sin confirmar», red «Va mal» — from the daemon's `prior` rows (owner, 2026-10-04); and `TRAITS`: a one-paragraph, non-exhaustive note per symbol on how it tends to trade (trend, rango, carry) — a starting point for the `Características` tile, not a study | imported | — |
 | `yamltree.py` | Any `assets/` file as a table of its values, each one beside its own comment | imported | — |
 | `durations.py` | How «En marcha» prints a duration, a processed-over-total, a time per strategy, and the 0-100 share a task's bar shows (`share`) | imported | — |
 

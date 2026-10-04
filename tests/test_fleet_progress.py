@@ -122,6 +122,10 @@ def check_health() -> None:
     assert health.disconnections(frame, 0) == (3, 4)
     assert health.disconnections(frame, 25) == (2, 3)                              # the first episode is before `since`
     assert health.disconnections(None, 0) is None
+    beat = {"login": 7, "connected": 1, "ping_us": 9000, "build": 5000, "day_start": 0}
+    vps = {"terminals": [{"login": 7, "errors": ["QR\t2\t00:12:37\tSignal\t'7': failed get list of signals",
+                                                 "AB\t2\t00:13:00\tTrades\t'7': order send failed"]}]}
+    assert health.terminal(beat, None, vps)["errors"] == [vps["terminals"][0]["errors"][1]]   # Signals noise out
     assert floors.server_offset({"server_time": GMT + OFF + 20, "written_gmt": GMT}) == OFF
 
 

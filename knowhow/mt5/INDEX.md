@@ -9,6 +9,7 @@
 - `mt5-calendar-history-clock` — How do I convert MT5 calendar history timestamps, which carry today's server offset, to the real past time?
 - `mt5-ea-export-needs-template-sizing` — Why does an exported EA's SaveToFiles sizing not match the doctrine's, and what template is missing?
 - `mt5-history-depth-first-bar` — Where does a server's usable MT5 history actually start: first monthly bar or first whole H1 week?
+- `mt5-signal-list-failed-is-noise` — What is `Signal '<login>': failed get list of signals` in an MT5 terminal's log, and is it a fault?
 - `mt5-symbols-csv-only-had-one-row` — Why did every asset except one report "no symbol" in mt5/symbols.csv?
 - `mt5-terminal-mcp-from-python` — How can Python call the MT5 terminal's own MCP read-only tools in bulk over HTTP?
 - `mt5-tester-m1-gaps-hide-news-window` — Why does a narrow news window never see a tick in the MT5 tester where the server lacks M1 bars?

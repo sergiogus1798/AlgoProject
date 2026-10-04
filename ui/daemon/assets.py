@@ -1,6 +1,7 @@
 """What the window needs to draw assets/, and the writes it may make on it."""
 
 from datetime import date
+from functools import lru_cache
 
 from core import assetdata, assetranges, assetwrite
 from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending, provisional,
@@ -11,7 +12,7 @@ from core.assets import report
 from core.assetyaml import leaves
 from core.paths import ASSETS, WORKERS
 from sqx.inspect.instruments import registry
-from studies.research.marketProfile import priorview
+from ui.daemon.assetprior import prior
 
 
 def units(data: dict) -> dict:
@@ -99,17 +100,18 @@ def one(symbol: str) -> dict:
             "leaves": _leaves(symbol), "prior": prior(symbol)}
 
 
-def prior(symbol: str) -> list[dict]:
-    """The owner's prior for this asset: how well each family suits it, Alta first.
+@lru_cache(maxsize=1)
+def feeds(stamp: tuple) -> dict[str, tuple[str, list[str]]]:
+    """Every asset's SQX symbol and feeds, read once per version of the asset files.
+
+    Args:
+        stamp: The mtimes of every YAML under `assets/`: the cache key, so an edit is read.
 
     Returns:
-        [{family, level (Alta/Media/Baja), long_only}], or [] for an asset the prior skips.
+        Asset → (sqx_symbol, feeds). 🔬 2026-10-04: `universe` loaded every asset three times
+        per page — 2,527 loads and 5.6 s of the 7.7 the zone took to open its 27 pages.
     """
-    if symbol not in priorview.PRIOR["matrix"]:
-        return []
-    rows = [{"family": f, "level": priorview.matrix(symbol, f),
-             "long_only": priorview.long_only(symbol, f)} for f in priorview.PRIOR["families"]]
-    return sorted(rows, key=lambda r: list(priorview.LEVEL.values()).index(r["level"]))
+    return {s: (d["sqx_symbol"], d["feeds"]) for s in symbols() for d in [load(s)]}
 
 
 def universe(symbol: str) -> dict:
@@ -126,15 +128,16 @@ def universe(symbol: str) -> dict:
         feed and timeframe, which is not a row to add.
     """
     declared = markets(symbol)
-    owner = {feed: s for s in symbols() for feed in [load(s)["sqx_symbol"], *load(s)["feeds"]]}
+    names = feeds(tuple(f.stat().st_mtime_ns for f in sorted(ASSETS.rglob("*.yaml"))))
+    owner = {feed: s for s, (main, rest) in names.items() for feed in [main, *rest]}
     cats = {c: [{**f, "data_from": f["data_from"] and str(f["data_from"]),
                  "asset": owner.get(f["feed"], f["feed"])}
                 for f in rows] for c, rows in (declared.get("categories") or {}).items()}
     taken = {f["feed"] for rows in cats.values() for f in rows} | {declared.get("main")}
     spans = policy()["segments"]
-    free = [{"asset": s, "feed": load(s)["sqx_symbol"],
+    free = [{"asset": s, "feed": main,
              "data_from": str(((spans.get(s) or {}).get("data") or {}).get("from") or "")}
-            for s in symbols() if s != symbol and not taken & {load(s)["sqx_symbol"]}]
+            for s, (main, _) in names.items() if s != symbol and main not in taken]
     return {"main": declared.get("main"), "timeframe": declared.get("timeframe"),
             "categories": cats, "candidates": free if declared else []}
 

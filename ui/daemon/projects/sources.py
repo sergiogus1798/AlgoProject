@@ -155,10 +155,13 @@ def gallery() -> list[dict]:
     """Every card, the running ones first, then by name.
 
     Returns:
-        One `card` per project on an install or with reports. A registry row whose project
-        is on no install and left no report is a retired project's ghost and is not listed.
+        One `card` per project on an install, or with reports and not retired. A retired
+        project keeps its reports under `AlgoData/reports/` but is not listed: the owner
+        deleted it and 218 of them stayed on the gallery as «ausente» (owner, 2026-10-04).
     """
-    held, rows, reps = on_disk(), registered(), reported()
+    held, rows = on_disk(), registered()
+    gone = {r["name"] for r in registry.rows() if r["retired"]} - set(rows) - set(held)
+    reps = reported() - gone
     runs_today = {role: progress.run_state(progress.log_lines(top)[0])
                   for role, top in progress.installs().items()}
     cards = [card(n, held.get(n), rows.get(n, {}), runs_today, n in reps)

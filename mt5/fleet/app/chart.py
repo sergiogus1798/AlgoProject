@@ -45,13 +45,13 @@ class CurveCanvas(FigureCanvasQTAgg):
             return
         for h in curve["hours"]:
             ax.fill_between([at(h["start"]), at(h["start"] + 3600)], h["low"], h["high"], color=BAND,
-                            alpha=0.45, linewidth=0, label="mínimo y máximo de cada hora")
+                            alpha=0.45, linewidth=0, label="Mínimo y máximo de cada hora")
         ax.plot([at(t) for t in curve["times"]], curve["equity"], color=EQUITY, linewidth=2.4,
-                marker="o" if len(curve["times"]) < 3 else None, label="equity (minuto)")
+                marker="o" if len(curve["times"]) < 3 else None, label="Equity (minuto)")
         ax.axhline(curve["daily_floor"], color=DAILY, linestyle="--", linewidth=2,
-                   label=f"suelo diario {fmt.money(curve['daily_floor'])}")
+                   label=f"Suelo diario {fmt.money(curve['daily_floor'])}")
         ax.axhline(curve["max_floor"], color=TOTAL, linestyle="--", linewidth=2,
-                   label=f"suelo total {fmt.money(curve['max_floor'])}")
+                   label=f"Suelo total {fmt.money(curve['max_floor'])}")
         ax.set_xlim(at(curve["start"]), at(max(curve["now"], curve["start"] + 3600)))
         ax.xaxis.set_major_formatter(DateFormatter("%H:%M"))
         ax.grid(color=theme.LINE, linewidth=0.8)

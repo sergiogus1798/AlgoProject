@@ -118,6 +118,9 @@ def main() -> None:
                          "de la ventana del dueño")
     ap.add_argument("--shot", type=Path, metavar="DIR",
                     help="guarda una captura PNG de la ventana en esa carpeta y sale")
+    ap.add_argument("--size", metavar="ANCHOxALTO",
+                    help="tamaño de la ventana, p. ej. 2560x1400 para una captura a pantalla "
+                         "del dueño (por defecto 1440x900)")
     args = ap.parse_args()
 
     app = QApplication(sys.argv)
@@ -131,6 +134,8 @@ def main() -> None:
     helpmark.install(app)     # the «?» beside every button
     combofix.install(app)     # every dropdown shows all it fits (§1, 2026-09-30)
     window = Shell()
+    if args.size:
+        window.resize(*map(int, args.size.split("x")))
     window.open_zone(args.zone)
     window.show()
     if args.shot:

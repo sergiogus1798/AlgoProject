@@ -4,83 +4,27 @@ import threading
 
 import httpx
 from PySide6.QtCore import QEvent, QObject, Qt, Signal
-from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import (QFrame, QGridLayout, QLabel, QMessageBox, QScrollArea,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel,
+                               QMessageBox, QScrollArea, QVBoxLayout, QWidget)
 
 from ui.desktop import client
 from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.desktop.selection import SELECTION
-from ui.desktop.theme import C, T
+from ui.desktop.workspace.card import CARD_MIN, Card
 from ui.desktop.workspace.newproject import NewProject
 
-CARD_MIN = 300    # px a card needs for its longest line; the row holds as many as fit, up to 4
 PER_ROW = 4
-STATE_INK = {"corriendo": C["accent"], "terminado": C["promising"], "construido": C["weak"],
-             "parado": C["dead"], "ausente": C["faint"]}
-STATE_HELP = {"corriendo": "SQX lo está corriendo ahora (leído con action=status).",
-              "terminado": "La última tarea terminó: «Project finished» en el log de SQX.",
-              "construido": "El proyecto existe pero ninguna tarea ha corrido todavía.",
-              "parado": "Se paró antes de terminar su tarea.",
-              "ausente": "Ya no está en ningún install; quedan sus informes."}
 NOTE = ("Una tarjeta por proyecto de cualquier install, tenga informes o no. Las estrategias son "
         "el total entre todos sus databanks. Clic en una tarjeta para abrir el proyecto entero.")
+# The three filters (owner, 2026-10-04): card field → what its combo says when it filters nothing.
+FILTERS = {"symbol": "Todos los activos", "timeframe": "Todas las temporalidades",
+           "install_label": "Todas las instalaciones"}
 
 
-def line(text: str, name: str, css: str = "") -> QLabel:
-    """One line of a card in a term style, with extra css when it needs it."""
-    got = QLabel(text)
-    got.setObjectName(name)
-    got.setStyleSheet(css)
-    return got
-
-
-class Card(QFrame):
-    """One project. A click anywhere on it emits `opened(name)`."""
-
-    opened = Signal(str)
-
-    def __init__(self, p: dict) -> None:
-        """Build the card from one `/api/projects/all` row."""
-        super().__init__()
-        self.name = p["name"]
-        ink = STATE_INK[p["state"]]
-        where = p.get("install_label") or p["install"]
-        self.setObjectName("card")
-        self.setStyleSheet(f"QFrame#card {{ border: 1px solid {T['rule']}; border-radius: 6px; }}"
-                           f"QFrame#card:hover {{ border-color: {C['accent']}; }}")
-        self.setCursor(Qt.PointingHandCursor)
-        self.setToolTip("\n".join(x for x in (p["name"], p.get("why") or STATE_HELP[p["state"]],
-                                              p.get("purpose"), f"Install: {where}") if x))
-        self.setMinimumHeight(170)
-        self.setMinimumWidth(CARD_MIN - 40)
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(14, 10, 14, 12)
-        lay.setSpacing(4)
-        lay.addWidget(line(f"{p['symbol'] or '—'}  ·  {p['timeframe'] or '—'}", "figure",
-                           "font-size: 22px;"))
-        lay.addWidget(line(p["name"], "dim"))
-        lay.addSpacing(6)
-        lay.addWidget(line(f"{label('estrategias')}  {num(p['strategies'])}", "mono",
-                           "font-size: 14px;"))
-        lay.addWidget(line(f"{label('plantilla')}  {p['template'] or 'sin plantilla registrada'}",
-                           "mono"))
-        live = p.get("live")
-        if live:
-            lay.addWidget(line(f"{label('procesadas')}  {num(live['generated'])}  ·  "
-                               f"{live['running']}", "dim"))
-        lay.addStretch(1)
-        lay.addWidget(line(f"● {p['state'].upper()}", "mono", f"color: {ink};"))
-        lay.addWidget(line(f"en el {where}", "dim"))
-
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Open the project.
-
-        Args:
-            event: Qt's mouse event, unused.
-        """
-        self.opened.emit(self.name)
+def passes(p: dict, chosen: dict[str, str]) -> bool:
+    """Whether a card meets every filter that is set; an unset filter ("") lets all through."""
+    return all(not want or (p.get(field) or "—") == want for field, want in chosen.items())
 
 
 class Gallery(QFrame):
@@ -124,6 +68,21 @@ class Gallery(QFrame):
         lay.addWidget(kicker)
         lay.addWidget(self.note)
         lay.addWidget(NewProject(lambda _name: self.load()))   # owner, 2026-09-28
+        bar = QHBoxLayout()
+        self.filters: dict[str, QComboBox] = {}
+        for field, every in FILTERS.items():
+            combo = QComboBox()
+            combo.addItem(every, "")
+            combo.setToolTip("Se combina con los otros dos filtros: la galería enseña los "
+                             "proyectos que cumplen los tres a la vez.")
+            combo.currentIndexChanged.connect(self.refilter)
+            self.filters[field] = combo
+            bar.addWidget(combo)
+        self.shown = QLabel("")
+        self.shown.setObjectName("dim")
+        bar.addWidget(self.shown)
+        bar.addStretch(1)
+        lay.addLayout(bar)
         lay.addSpacing(10)
         lay.addWidget(scroll, 1)
         self.arrived.connect(self.landed)
@@ -135,6 +94,22 @@ class Gallery(QFrame):
             projects: `/api/projects/all` rows.
         """
         self.rows = {p["name"]: p for p in projects}
+        for field, combo in self.filters.items():      # keep what was chosen across a reload
+            kept = combo.currentData()
+            combo.blockSignals(True)
+            while combo.count() > 1:
+                combo.removeItem(1)
+            for value in sorted({p.get(field) or "—" for p in projects}):
+                combo.addItem(value, value)
+            combo.setCurrentIndex(max(0, combo.findData(kept)))
+            combo.blockSignals(False)
+        self.refilter()
+
+    def refilter(self) -> None:
+        """Lay out the cards of the projects that meet the three filters at once."""
+        chosen = {field: combo.currentData() for field, combo in self.filters.items()}
+        projects = [p for p in self.rows.values() if passes(p, chosen)]
+        self.shown.setText(f"{len(projects)} de {len(self.rows)} proyectos")
         while self.grid.count():
             self.grid.takeAt(0).widget().deleteLater()
         self.cards = [Card(p) for p in projects]

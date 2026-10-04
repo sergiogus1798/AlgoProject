@@ -6,6 +6,25 @@ this; it is prose, not a cost or a filter. A real reading of which regime an ass
 in is `studies/readings/monkey/README.md`, not this.
 """
 
+from ui.desktop.names import family
+from ui.desktop.theme import C
+
+# Características judges by what the market profile measured, not by the prior alone (owner,
+# 2026-10-04): verdict → (what the line opens with, its ink).
+VERDICT = {"bien": ("Va bien", C["promising"]), "sin_confirmar": ("Sin confirmar", C["weak"]),
+           "mal": ("Va mal", C["dead"])}
+TRAITS_HELP = (
+    "Cada línea es una familia de estrategias juzgada para este activo.\n\n"
+    "Verde «Va bien»: el perfil de mercado la midió a favor en al menos una temporalidad — la "
+    "regla desnuda de la familia saca nota frente a su entrada aleatoria, o su barrido con una "
+    "salida razonable cae en meseta.\n"
+    "Ámbar «Sin confirmar»: tu prior la da por Alta o Media, pero nada medido la respalda "
+    "todavía.\n"
+    "Rojo «Va mal»: medida en contra (ni nota ni múltiplo sobre el coste) sin ninguna "
+    "temporalidad a favor, o tu prior la da por Baja.\n\n"
+    "Las temporalidades medidas son M15, M30, H1 y H4, sobre el tramo build. «Prior» es tu "
+    "matriz cualitativa de familias por activo (H1-H4), que antes era lo único que se leía aquí.")
+
 GENERIC = ("Sin nota todavía — añade aquí lo que se sepa de cómo se mueve este activo.")
 
 TRAITS = {
@@ -77,3 +96,22 @@ def trait(symbol: str) -> str:
         The prose, never empty, so the panel always says something.
     """
     return TRAITS.get(symbol, GENERIC)
+
+
+def trait_line(p: dict) -> str:
+    """One family of the Características panel as a coloured line of rich text.
+
+    Args:
+        p: One row of the daemon's `prior`: family, level, long_only, favour, against, verdict.
+
+    Returns:
+        «Va bien · Momentum — a favor en H1, H4 · en contra en M15 · prior Alta».
+    """
+    said, ink = VERDICT[p["verdict"]]
+    parts = [f"a favor en {', '.join(p['favour'])}" if p["favour"] else "",
+             f"en contra en {', '.join(p['against'])}" if p["against"] else "",
+             "" if p["favour"] or p["against"] else "nada medido a favor ni en contra",
+             f"prior {p['level']}" if p["level"] else "sin prior",
+             "solo largos" if p["long_only"] else ""]
+    return (f"<span style='color: {ink};'>● {said} · <b>{family(p['family'])}</b></span> — "
+            + " · ".join(x for x in parts if x))
