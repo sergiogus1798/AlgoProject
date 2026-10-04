@@ -21,5 +21,8 @@ TIPS = {
     "region_delta": "Qué tanto por debajo del resultado de la madre en el mercado principal "
                     "sigue contando como parte de la meseta. El mismo número que la nube de "
                     "parámetros (C1).",
-    "region_metric": "La segunda métrica que el mapa de calor puede mostrar, sin volver a "
-                     "correr el estudio: las dos se calculan siempre."}
+    "extra_metrics": "Las métricas que el mapa de calor puede mostrar además de la principal "
+                     "(Profit Factor, Sharpe, Ret/DD), sin volver a correr el estudio: todas se "
+                     "calculan siempre.",
+    "density_metrics": "Métricas que sólo añaden las densidades superpuestas de «una superficie "
+                       "por mercado» (Sortino): un mapa de calor de más pesa 4 MB por estrategia."}

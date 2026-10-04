@@ -62,14 +62,15 @@ def verdict(found: dict, floor: float) -> dict:
     if np.isnan(found["rho"]):
         return {"call": "sin_dato",
                 "why": f"solo {found['n']} puntos utilizables, o todos con el mismo valor"}
+    rho, fl = f"{found['rho']:.2f}".replace(".", ","), f"{floor:.2f}".replace(".", ",")
     if lo > floor:
         return {"call": "fiable",
-                "why": f"rho {found['rho']:.2f}, intervalo [{lo:.2f}, {hi:.2f}] entero por "
-                       f"encima de {floor}: el ranking en IS predice el de OOS"}
+                "why": f"Spearman {rho}, claramente por encima del mínimo de {fl}: el ranking "
+                       "en IS predice el de OOS"}
     if hi < floor:
         return {"call": "no_fiable",
-                "why": f"rho {found['rho']:.2f}, intervalo [{lo:.2f}, {hi:.2f}] entero por "
-                       f"debajo de {floor}: optimizar en IS no compra nada fuera"}
+                "why": f"Spearman {rho}, claramente por debajo del mínimo de {fl}: optimizar "
+                       "en IS no compra nada fuera"}
     return {"call": "indeciso",
-            "why": f"rho {found['rho']:.2f}, pero el intervalo [{lo:.2f}, {hi:.2f}] cruza "
-                   f"{floor}. Con {found['n']} puntos no se puede decidir: hacen falta mas"}
+            "why": f"Spearman {rho}, demasiado cerca del mínimo de {fl} para decidir con "
+                   f"{found['n']} puntos: hacen falta más"}

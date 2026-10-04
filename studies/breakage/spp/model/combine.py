@@ -13,7 +13,7 @@ METRICS = [("NetProfit", "Net Profit", "USD"), ("ProfitFactor", "Profit Factor",
 # Panel 2: only metrics that do not grow with the sample's length (never Net Profit,
 # Drawdown or Ret/DD -- CONTRACT.md "Two samples, one histogram").
 TIME_FREE = [("SharpeRatio", "Sharpe", ""), ("SortinoRatio", "Sortino", ""),
-             ("ProfitFactor", "Profit Factor", ""), ("EdgeRatioInPips", "R / Edge ratio", "pips")]
+             ("ProfitFactor", "Profit Factor", ""), ("EdgeRatioInPips", "R/Edge ratio", "pips")]
 
 
 def _ratios(net: float, gp: float, gl: float, dd: float) -> dict:

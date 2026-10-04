@@ -5,7 +5,7 @@ import time
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.closing.blindJoint import measure, one, readings
+from studies.closing.blindJoint import measure, one, readings, words
 from studies.closing.blindJoint.pieces import NAMES, PIECES
 
 LEVEL = {"pass": 1, "watch": 0, "fail": -1, "none": None, "info": None}
@@ -64,13 +64,13 @@ def headline(got: dict, cfg: dict, complete: int) -> dict:
     if reading:
         n = counts[readings.label(reading)]
         return blocks.verdict(f"{n} de {complete} pasan el paso 20", "pass" if n else "fail",
-                              f"Lectura {readings.label(reading)}.", None, parts)
+                              f"Lectura {words.reading(reading)}.", None, parts)
     sure = [readings.label(r) for r in readings.names()
             if not readings.kept(got["states"], r[0])]
     return blocks.verdict(
-        "SIN REGLA", "info",
+        "Sin regla", "info",
         "El dueño no ha elegido cómo se combinan las piezas ni sobre quién cuenta el StepM. "
-        f"Descartan a todas por las piezas, sin llegar al StepM: {', '.join(sure) or 'ninguna'}.",
+        f"Descartan a todas por las piezas, sin llegar al StepM: {', '.join(words.reading(tuple(r.split('+'))) for r in sure) or 'ninguna'}.",
         None, parts)
 
 

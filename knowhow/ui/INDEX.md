@@ -8,6 +8,7 @@
 - `qt-richtext-eats-angle-brackets` — Why does a QLabel in rich text cut everything after a bare '<'?
 - `rail-step-done-with-one-mother` — Why does the rail mark a per-mother step done as soon as one mother has its result?
 - `stale-ui-daemon` — Why does the shortcut run yesterday's code after an update, and how do I restart the ui daemon?
+- `ten-thousand-strategy-databank` — Why did a 10,000-strategy databank time out or freeze the window, and what keeps it fast?
 - `ui-tests-pytest-fixture-fake` — Why does a plain parameter in tests/test_ui_*.py get treated as a pytest fixture?
 - `where-window-progress-comes-from` — Where does each progress figure in the window come from, and which runs have none?
 - `window-advances-workflow` — What does «Continuar workflow» check and do before it starts a step?

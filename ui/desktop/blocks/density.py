@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout, QWidget
 
 from ui.desktop.blocks import axis, chart
 from ui.desktop.blocks.card import card, text
+from ui.desktop.blocks.shade import caption, sign_shade
 from ui.desktop.blocks.states import REAL, SERIES
 from ui.text.glossary import label
 from ui.text.numbers import num
@@ -33,6 +34,8 @@ def _draw(b: dict, hidden: set[int]) -> Callable:
         y = axis.scale(0, top * 1.08, box.bottom(), box.top())
         chart.axes(p, box, [(x(v), chart.num(v)) for v in axis.ticks(*_span(b))],
                    [(y(v), chart.num(v)) for v in axis.ticks(0, top * 1.08, 4)])
+        if b.get("sign_shade", True):
+            sign_shade(p, box, x, *_span(b), b.get("pivot", 0.0))
         for k, s in enumerate(b["series"]):
             if k in hidden:
                 continue
@@ -87,6 +90,8 @@ def _side(b: dict) -> QWidget:
     box = QWidget()
     lay = QVBoxLayout(box)
     lay.setContentsMargins(12, 0, 0, 0)
+    if b.get("share_positive") is not None:
+        lay.addWidget(text(caption(b["share_positive"], b.get("pivot", 0.0)), T["text"], 14))
     for k, s in enumerate(b["series"]):
         real = f" · real {chart.num(s['real'], b['unit'])}" if s.get("real") is not None else ""
         lay.addWidget(text(f'<span style="color:{SERIES[k % len(SERIES)]}">■</span> '

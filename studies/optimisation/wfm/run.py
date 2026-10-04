@@ -65,6 +65,7 @@ def read(directory: Path, settings: dict, only: str | None = None) -> dict:
                                        settings["verdict"])
 
     trades = export.trades(directory)
+    original = export.main(directory)
     return {"source": str(directory), "metric": metric,
             "shapes": shapes, "independence": windows.independence(shapes),
             "cells": cells, "verdicts": verdicts, "warning": warning,
@@ -77,7 +78,8 @@ def read(directory: Path, settings: dict, only: str | None = None) -> dict:
             "sqx_failed": rules["sqx_failed"].to_dict() if "sqx_failed" in rules else {},
             "objectives": objectives,
             "trades": trades if not only else trades[trades["strategy"] == only],
-            "benchmark": against(export.main(directory), only, settings["benchmark"])}
+            "original": original, "windows": everything,
+            "benchmark": against(original, only, settings["benchmark"])}
 
 
 def against(main: pd.DataFrame | None, only: str | None, cfg: dict) -> dict:

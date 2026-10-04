@@ -55,13 +55,22 @@ study asks before inventing one.**
  "series": [{"label": str, "counts": [float, ...],               # optional (encargo 24 E3): overlaid samples on the SAME bins,
              "n": int, "median": float,                          #   counts as a DENSITY — sum(counts × bin width) = 1 per series
              "real": float | None}, ...],                        #   optional (2026-09-30): THIS series' own real backtest, not the block's
+ "sign_shade": bool,                                             # optional (2026-10-04, default true): faint red behind x<0, green behind x>0
+ "pivot": float,                                                 # optional (default 0): where the shade changes side and what share_positive counts above;
+                                                                  #   1 for a Profit Factor or OOS/IS ratio. Caption: «X % rentables» (0) / «X % por encima de P»
+ "share_positive": float | None,                                 # optional: share of draws > 0 (0..1); the window prints «X % rentables». blocks.distribution
+                                                                  #   sets it when the draws cross zero; pass sign_shade=False for a statistic whose sign is not good/bad
  "shift": {"median": float, "ks_p": float} | None}               # optional: median(last) − median(first) and the two-sample KS p
 
 # cone — equity cone with the real curve on top
 {"kind": "cone", "title": str, "unit": str,
  "x": ["YYYY-MM-DD" | int, ...],
  "bands": {"2.5": [...], "25": [...], "50": [...], "75": [...], "97.5": [...]},
- "real": [float, ...], "split": "YYYY-MM-DD" | None}             # where the OOS starts, if any
+ "real": [float, ...], "split": "YYYY-MM-DD" | None,            # where the OOS starts, if any
+ "real_label": str}                                              # optional: key text of the real line («original»)
+# The levels are the keys of `bands` (five, ascending): outer band = first-last, inner = 2nd-4th,
+# median = middle. «Instead of N curves» (2026-10-04): `bands.bands(title, unit, x, curves[n, len(x)],
+# original, split=None, original_label="original")` -> bands 5-95 light, 25-75 darker, median, original.
 
 # grid — heat map: window sweep, SPP, WFM, parameter cloud
 {"kind": "grid", "title": str, "rows": [str, ...], "cols": [str, ...],
@@ -76,10 +85,15 @@ study asks before inventing one.**
                                                                   #   over from another surface — never hides `values`,
                                                                   #   unlike `labels`, which replaces the printed number
 
+# Any block may carry `"beside": true`: it is laid in the same row as the block before it, equal widths (single-result tabs).
+# verdict `score` may be text («Spearman 44,53 %»): drawn large beside the label.
+
 # scatter — WFC in against out, any x/y per combination
 {"kind": "scatter", "title": str, "x_label": str, "y_label": str,
  "points": [{"x": float, "y": float, "label": str, "group": str}, ...],
  "quadrants": bool, "fit": {"slope": float, "intercept": float, "r": float} | None}
+# The window draws at most 400 points (seeded sample, axes from all of them) and says so in the
+# key. Pass ALL the points and compute `fit` on all of them: the line and r always use the N.
 
 # bars — attribution, funnel, power per block, contribution per market
 {"kind": "bars", "title": str, "unit": str,
@@ -92,7 +106,7 @@ study asks before inventing one.**
  "auto_dash_negative": bool | None,       # optional (2026-09-30): a series ending < 0 draws dashed
  "zero_shade": bool | None}               # optional: background green above 0, red below (needs unit in USD-like terms)
 
-# table
+# table   (optional `"compact": true`: no stretched last column; Pass/Fail cells filled with the saturated green/red, dark text)
 {"kind": "table", "title": str, "columns": [str, ...], "rows": [[...], ...],
  "align": ["left" | "right", ...], "note": str,
  "help": [str | None, ...] | None,        # optional (2026-09-30): one "?" tooltip per column, parallel

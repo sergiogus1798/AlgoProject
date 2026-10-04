@@ -25,6 +25,7 @@ config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ cont
 |---|---|---|---|
 | `one.py` | Every measurement of one batch and its four readings, as the contract's data the window paints | imported — the window calls it | batch → result |
 | `contract.py` | The four tabs — A1, A2 and A3, B2, C1 — each with its readings | imported | numbers → tabs |
+| `heatmaps.py` | A2/A3 heat maps: the metric over every pair of the 4 parameters with the highest Sobol total, 6 equal-width bins per axis, median per cell, θ₀ marked, one shared colour range | imported | numbers → grids |
 | `report.py` | **The command**: prints the result and writes `cloud.json`, `cloud.html` and `cloud.md` into the batch; `--out` also writes the numbers alone | `python3 -m studies.optimisation.cloud.report --work <dir>` | batch → four readings |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
 | `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |

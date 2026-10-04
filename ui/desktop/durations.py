@@ -28,11 +28,16 @@ def ratio(t: dict) -> str:
         t: A task row of `/api/progress`.
 
     Returns:
-        `300 / 1 000`, `100 / ·` for a build (no total), «·» before it started.
+        `300 / 1 000`, `100 / ·` for a build (no total), «·» before it started. A WFC leg
+        leads with its mother: `madre 7 de 30 · 300 / 500 variantes`.
     """
     done = "·" if t["done"] is None else num(t["done"])
     total = "·" if t["total"] is None else num(t["total"])
-    return f"{done} / {total}"
+    m = t.get("mother")
+    if not m:
+        return f"{done} / {total}"
+    of = "·" if m["of"] is None else num(m["of"])
+    return f"madre {num(m['n'])} de {of} · {done} / {total} variantes"
 
 
 def per(t: dict) -> str:

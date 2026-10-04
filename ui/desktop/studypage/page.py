@@ -13,6 +13,7 @@ from ui.desktop.studypage.drawer import Drawer
 from ui.desktop.studypage.history import History
 from ui.desktop.studypage.net import fetch
 from ui.desktop.studypage.offer import Offer
+from ui.desktop.studypage.picker import StrategyPicker
 from ui.desktop.studypage.runbar import RunBar
 from ui.desktop.studypage.sidepanel import SideToggles
 from ui.desktop.theme import T
@@ -50,16 +51,17 @@ class StudyPage(QFrame):
         self.studies = QTabBar()
         self.studies.setIconSize(QSize(dots.SIZE, dots.SIZE))
         self.studies.setExpanding(False)
-        lay.addWidget(self.families)
-        lay.addWidget(self.studies)
         self.head = text("", T["text"], 13)
-        lay.addWidget(self.head)
+        for w in (self.families, self.studies, self.head):
+            lay.addWidget(w)
         self.drawer = Drawer()
         self.bar = RunBar(self.drawer.overrides)
         self.bar.finished.connect(self.after_run)
-        tools = QHBoxLayout()
+        tools = self.tools = QHBoxLayout()
+        self.picker = StrategyPicker(strategy_page)
+        tools.addWidget(self.picker)
         tools.addWidget(self.bar, 1)
-        tools.addStretch(0)                  # holds the panel's buttons right when the bar hides
+        tools.addStretch(0)                  # keeps the panel's buttons right when the bar hides
         lay.addLayout(tools)
         row = QHBoxLayout()
         self.note = text("", T["muted"], 14)
@@ -165,10 +167,10 @@ class StudyPage(QFrame):
         self.studies.blockSignals(True)
         while self.studies.count():
             self.studies.removeTab(0)
-        for k in keys:
-            i = self.studies.addTab(dots.dot(self.cells.get(k)), self.catalogue[k]["title"])
+        for k, cell in ((k, self.cells.get(k)) for k in keys):      # «&&»: no Qt shortcut mark
+            i = self.studies.addTab(dots.dot(cell), self.catalogue[k]["title"].replace("&", "&&"))
             self.studies.setTabData(i, k)
-            self.studies.setTabToolTip(i, dots.says(self.cells.get(k)))
+            self.studies.setTabToolTip(i, dots.says(cell))
         self.studies.setCurrentIndex(keys.index(self.key))
         self.studies.blockSignals(False)
         self.offer.paint()
@@ -186,9 +188,10 @@ class StudyPage(QFrame):
             day: A run's day, "" for the newest.
         """
         entry, w = self.catalogue[self.key], self.where
-        self.head.setText(notes.headline(entry))
+        notes.show_head(self.head, entry)
         self.drawer.load(self.key, entry["title"])
         self.bar.aim(entry, w, self.strategy_page)
+        self.picker.aim(w["project"], w["databank"], w["strategy"], self.key)
         self.back.hide()
         self.offer.button.hide()
         self.skipped.hide()
@@ -197,7 +200,7 @@ class StudyPage(QFrame):
         if self.strategy_page and not w["strategy"]:
             return self._empty("Elige una estrategia en el panel de databanks de Proyecto.")
         query = compare.query(w, self.key)
-        got = fetch("result", **query, day=day)
+        got = compare.result(query, day)
         self.history.fill(fetch("history", **query),
                           [s for s in self.strategies if s["identity"] != w["identity"]]
                           if self.strategy_page else None)

@@ -104,7 +104,8 @@ def long(work: Path, segments: list[str], metric: str, min_trades: int,
         (SQX's per cent of time in the market), `usable`.
         The segment filter is pushed into the Parquet read, so a reserved segment's rows
         are never materialised. The floor is per segment for the same reason the WFC's is:
-        a variant with 200 trades overall and 4 in this segment measures four trades here.
+        a variant with 200 trades overall and 4 in this segment measures four trades here. A cell
+        whose metric is infinite or missing (a Profit Factor with no loss) is not usable either.
     """
     table = pq.read_table(work / "segments.parquet",
                           columns=["variant_id", "market", "segment", metric, "NumberOfTrades",
@@ -114,7 +115,8 @@ def long(work: Path, segments: list[str], metric: str, min_trades: int,
     table["market"] = table["market"].replace(MAIN, main)
     table = table.rename(columns={metric: "value", "NumberOfTrades": "trades",
                                   "Exposure": "exposure"})
-    table["usable"] = table["trades"] >= min_trades
+    table["value"] = table["value"].replace([float("inf"), float("-inf")], float("nan"))
+    table["usable"] = (table["trades"] >= min_trades) & table["value"].notna()
     return table.reset_index(drop=True)
 
 
@@ -137,3 +139,20 @@ def wide(cells: pd.DataFrame, segment: str, markets: list[str],
     kept = one[column].where(one["usable"])
     return (one.assign(kept=kept).pivot(index="variant_id", columns="market", values="kept")
             .reindex(columns=markets))
+
+
+def days(work: Path, market: str, segment: str) -> pd.DataFrame:
+    """One market's daily profit in one segment, for the zero-edge null of `measure.lift`.
+
+    Args:
+        work: The batch directory, holding `equity_markets.parquet`.
+        market: The feed.
+        segment: The leg.
+
+    Returns:
+        Days down, `variant_id` across, zero where a variant closed nothing that day. The
+        filters are pushed into the Parquet read, as `measure.verify.totals` does.
+    """
+    table = pq.read_table(work / "equity_markets.parquet", columns=["date", "variant_id", "pnl"],
+                          filters=[("market", "=", market), ("segment", "=", segment)])
+    return table.to_pandas().pivot(index="date", columns="variant_id", values="pnl").fillna(0.0)

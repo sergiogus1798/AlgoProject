@@ -45,6 +45,11 @@ step: 18.5
 region_radius: 2
 region_delta: 0.20
 
-# The second metric a heatmap can show beside `metric`, switched with a drop-down that
-# needs no second run (CONTRACT §1 «selectors»): both are precomputed.
-region_metric: ProfitFactor
+# The metrics a heatmap can show beside `metric` (Profit Factor, Sharpe, Ret/DD), switched with a
+# drop-down that needs no second run (CONTRACT §1 «selectors»): all are precomputed. Names are
+# SQX's columns of segments.parquet; `one.METRIC_LABEL` writes them on screen.
+extra_metrics: [ProfitFactor, SharpeRatio, ReturnDDRatio]
+
+# Metrics only the overlaid densities of the «una superficie por mercado» tab add to those above
+# (owner, 2026-10-04 §19): a heatmap of a Sortino adds 4 MB per strategy and nobody asked for it.
+density_metrics: [SortinoRatio]

@@ -11,7 +11,7 @@ STATE = {"pass": "var(--good)", "fail": "var(--bad)", "watch": "var(--watch)",
          "info": "var(--null)", "none": "var(--ink-2)"}
 
 
-def num(value: float | None) -> str:
+def num(value: float | str | None) -> str:
     """One number in the shape a reader expects for its size.
 
     Args:
@@ -23,6 +23,8 @@ def num(value: float | None) -> str:
     """
     if value is None:
         return "—"
+    if isinstance(value, str):      # a figure its study already wrote out («44,53 %»)
+        return value
     if abs(value) >= 1000 or value == int(value):
         return f"{value:,.0f}"
     return f"{value:,.2f}" if abs(value) >= 1 else f"{value:.4g}"

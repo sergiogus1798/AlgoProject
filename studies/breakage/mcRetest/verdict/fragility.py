@@ -94,38 +94,34 @@ def underwater(pnl: np.ndarray, offsets: np.ndarray) -> np.ndarray:
     return out
 
 
-def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> dict:
-    """The envelope every simulated equity curve ran inside, and a sample of the curves themselves.
+def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict, original: np.ndarray | None = None) -> dict:
+    """The percentile bands of every simulated equity curve, on a shared progress grid.
 
     Args:
         pnl: Every simulation's P/L concatenated, USD.
         offsets: Where each simulation starts, length sims + 1.
         cfg: What inputs.config.load() returned.
+        original: The backtest's own equity curve, USD, any length, or None where the ingest
+            holds none for this task.
 
     Returns:
-        The configured percentiles of equity at each point of normalised progress, plus
-        `sample`: up to `fragility.fan_sample` individual curves, on the same grid. The
-        x-axis is progress from 0 to 1 and **not the trade index**: simulations differ in
-        length -- 676 to 2,031 measured -- so there is no common trade number to align them
-        on, and interpolating each curve onto a shared grid is the only honest way to stack
-        them. The sample is spread evenly across simulations **ordered by their own final
-        equity** (2026-09-30, feedback §6: "enough to see the distribution") rather than
-        left in simulation order, so a thin sample still shows the full spread from the worst
-        run to the best one instead of whatever 100 happened to be drawn first.
+        `bands` (the configured percentiles of equity at each point), `original` on the same
+        grid (or None) and `progress`. The x-axis is progress from 0 to 1 and **not the trade
+        index**: simulations differ in length -- 676 to 2,031 measured -- so there is no common
+        trade number to align them on, and interpolating each curve onto a shared grid is the
+        only honest way to stack them. No individual curve leaves: the window draws bands
+        (owner, 2026-10-04: a hundred curves slowed it down).
     """
-    points = cfg["fragility"]["fan_points"]
-    grid = np.linspace(0.0, 1.0, points)
-    curves = np.empty((offsets.size - 1, points))
+    grid = np.linspace(0.0, 1.0, cfg["fragility"]["fan_points"])
+    curves = np.empty((offsets.size - 1, grid.size))
     for k, (start, stop) in enumerate(zip(offsets[:-1], offsets[1:])):
         equity = np.cumsum(pnl[start:stop])
         curves[k] = np.interp(grid, np.linspace(0.0, 1.0, equity.size), equity)
-    order = np.argsort(curves[:, -1])
-    take = min(cfg["fragility"]["fan_sample"], len(order))
-    keep = order[np.linspace(0, len(order) - 1, take).astype(int)]
     return {"progress": grid,
             "bands": {level: np.percentile(curves, level, axis=0)
                       for level in cfg["fragility"]["band_levels"]},
-            "sample": curves[keep]}
+            "original": None if original is None else
+            np.interp(grid, np.linspace(0.0, 1.0, original.size), original)}
 
 
 def describe(metrics: dict, pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> dict:

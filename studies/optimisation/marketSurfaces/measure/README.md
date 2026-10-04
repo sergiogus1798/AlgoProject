@@ -3,6 +3,7 @@
 | file | what it does | in → out |
 |---|---|---|
 | `pairs.py` | rho (Spearman) and J (Jaccard of the top decile) between two surfaces over the variants both keep, each distinct backtest once, with the Fisher interval and the hypergeometric band under independence; and every pair of one segment | surfaces → one row per pair |
+| `lift.py` | The criteria metrics (owner, 2026-10-04: computed and shown, no threshold): the Jaccard's lift over J by chance, where chance is the other market under zero edge — each day's profit at a random sign, shared by every variant and every market, so both stay as dependent as they are — and whether the mother is in each market's top share, with the same null; read together as the median lift and the excess share of markets | imported | tops + daily profit → lift, excess, null percentiles |
 | `verify.py` | The encargo's §3: every market's daily curve summed against SQX's net profit (and against the next market's, as the control), the main market's curve and the WFC's C3 column, and the diagonal | batch + cells → checks |
 | `region.py` | The plateau detected on the main asset — θ₀'s own level-step box and score band, mirroring `cloud.config.neighbourhood` — its 2D projection for a heatmap outline, and each market's performance inside it against outside and overall (2026-09-30 §8.5) | params + cells → plateau, box, table |
 

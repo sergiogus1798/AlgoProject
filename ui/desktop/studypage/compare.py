@@ -23,6 +23,23 @@ def query(where: dict, study: str) -> dict:
             "strategy": where["strategy"] or "", "identity": where["identity"] or ""}
 
 
+def result(query: dict, day: str = "") -> dict:
+    """`/api/result` for the page, without the cross-market tab the Ficha now shows (it stays in
+    the stored JSON, which the Ficha reads).
+
+    Args:
+        query: From `query`.
+        day: A run's day, "" for the newest.
+
+    Returns:
+        The route's answer.
+    """
+    got = fetch("result", **query, day=day)
+    if query["study"] == "crossmarket" and got.get("result"):
+        got["result"]["tabs"] = [t for t in got["result"]["tabs"] if t["name"] != "oos"]
+    return got
+
+
 def runs(where: dict, study: str, left: str, right: str) -> tuple[list, tuple[str, str]]:
     """Two runs of the study on screen.
 
@@ -34,7 +51,7 @@ def runs(where: dict, study: str, left: str, right: str) -> tuple[list, tuple[st
     Returns:
         ([left result, right result], titles); a side is None when it holds no result.
     """
-    got = [fetch("result", **query(where, study), day=d).get("result") for d in (left, right)]
+    got = [result(query(where, study), d).get("result") for d in (left, right)]
     return got, (f"Run {left}", f"Run {right}")
 
 
@@ -50,9 +67,9 @@ def strategies(where: dict, study: str, strategy: str,
     Returns:
         As `runs`: the strategy on screen left, the other right.
     """
-    mine = fetch("result", **query(where, study)).get("result")
-    other = fetch("result", **query(where, study) | {"strategy": strategy,
-                                                     "identity": identity}).get("result")
+    mine = result(query(where, study)).get("result")
+    other = result(query(where, study) | {"strategy": strategy,
+                                          "identity": identity}).get("result")
     return [mine, other], (where["strategy"], strategy)
 
 

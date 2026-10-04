@@ -98,7 +98,7 @@ class Panel(QFrame):
         self.project, self.live, self.cache = project, True, {}
         self.columns.reset()
         background.get("databank/panels", lambda got: self.filled(project, got),
-                       key=f"tabs:{id(self)}", owner=self, project=project)
+                       key=f"tabs:{id(self)}", owner=self, project=project, wait=120)
 
     def filled(self, project: str, got: dict) -> None:
         """The project's tabs arrived: lay out both rows and open the first sub-panel."""
@@ -159,7 +159,7 @@ class Panel(QFrame):
             return
         self.said.setText(f"Leyendo {bank}…")
         background.get("databank/table", lambda got: self.landed(project, spec, got),
-                       key=f"panel:{id(self)}", owner=self, project=project, databank=bank)
+                       key=f"panel:{id(self)}", owner=self, project=project, databank=bank, wait=120)
 
     def landed(self, project: str, spec: dict, table: dict) -> None:
         """A databank's table arrived: keep it (not a failure) and paint it if still on screen."""

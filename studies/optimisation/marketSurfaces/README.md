@@ -37,7 +37,7 @@ config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ contract
 | `one.py` | Every number of one batch (`measure`) and the contract's result of them (`result`, `run`) | imported — the window calls `run` | batch → result |
 | `report.py` | **The command**: asks the ledger's door for each segment before opening anything, writes `marketSurfaces.json/.html/.md`, `pairs.csv`, `checks.csv`, `verdict.csv`, and one ledger row per segment | `python3 -m studies.optimisation.marketSurfaces.report --work <batch> --family <F> [--out <dir>]` | batch → reading + ledger |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `config.yaml` | Segments, metric, top share, `region_radius`/`region_delta`/`region_metric` and the three thresholds (registered in `ledger/thresholds.yaml`) | edited, or `--set key=value` | — |
+| `config.yaml` | Segments, metric, top share, `region_radius`/`region_delta`, `extra_metrics` (Profit Factor, Sharpe, Ret/DD) and `density_metrics` (Sortino) and the three thresholds (registered in `ledger/thresholds.yaml`) | edited, or `--set key=value` | — |
 | `measure/region.py` | The plateau detected on the main asset (θ₀'s own neighbourhood box and score band), its 2D projection for a heatmap's outline, and the inside/outside/overall table | imported | cells, params → plateau, table |
 
 Manual page, in Spanish: `docs/manual/09-optimizacion.pdf` (cap. 52-superficies-mercado). Known-answer test:
@@ -75,8 +75,8 @@ on, because it is the one that exposure alone can carry.
 ## The surfaces the window draws (encargo 24 E4, 22 §6.2; redesigned 2026-09-30 §8.5)
 
 Beside the distribution per market, the contract draws the surface itself: for **every ordered
-pair of parameters** a `grid` per market, segment and metric (Net Profit and `region_metric`,
-both precomputed — a drop-down switches, no second run) — the median of the variants that used
+pair of parameters** a `grid` per market, segment and metric (Net Profit and `extra_metrics`,
+all precomputed — a drop-down switches, no second run) — the median of the variants that used
 each pair of levels, the mother left out — with θ₀ marked and **one colour scale across the
 markets** of that pair, segment and metric (`scale_range`). The owner picks the pair on two
 drop-downs, «Eje X» and «Eje Y» (owner, 2026-09-27, Q13).

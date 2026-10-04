@@ -95,7 +95,10 @@ def length_warning(shapes: pd.DataFrame, metric: str,
     lo, hi = shapes["is_years"].min(), shapes["is_years"].max()
     if metric not in biased or hi / lo < 1.05:
         return ""
-    return (f"`{metric}` no es invariante a la longitud de ventana, y la matriz varía esa "
-            f"longitud a propósito: las ventanas de optimización van de {lo:.1f} a "
-            f"{hi:.1f} años ({hi / lo:.2f}×). Cualquier tendencia a lo largo del eje "
-            f"`runs` es en parte el propio eje.")
+    name = {"ReturnDDRatio": "Return/DD ratio", "NetProfit": "Net Profit", "CalmarRatio?": "Calmar",
+            "RecoveryFactor": "Recovery Factor"}.get(metric, metric)
+    a, b, ratio = (f"{x:.{d}f}".replace(".", ",") for x, d in ((lo, 1), (hi, 1), (hi / lo, 2)))
+    return (f"{name} no es invariante a la longitud de ventana, y la matriz varía esa "
+            f"longitud a propósito: las ventanas de optimización van de {a} a {b} años "
+            f"({ratio}×). Cualquier tendencia a lo largo del eje del número de tramos es en "
+            f"parte el propio eje.")

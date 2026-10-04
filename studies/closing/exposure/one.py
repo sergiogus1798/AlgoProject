@@ -1,4 +1,4 @@
-"""One strategy against buy and hold, priced in market time, as the contract's data."""
+"""One strategy against buy & hold, priced in market time, as the contract's data."""
 
 import time
 
@@ -14,6 +14,17 @@ CONVENTIONS = {"one_lot": "un lote", "avg_size": "el tamaño medio de la estrate
 # The verdict's own word (`worth_it`/`not_worth_it`, in verdict.csv for /curate) shown to the
 # reader (feedback §9.3, 2026-09-30): "Aprobado" (verde) / "Suspenso" (rojo).
 LABEL = {"worth_it": "Aprobado", "not_worth_it": "Suspenso"}
+SHORT = {"one_lot": "un lote", "avg_size": "tamaño medio", "equal_risk": "a igual riesgo"}
+
+
+def fmt(value: float | None, digits: int = 2, unit: str = "") -> str:
+    """A figure the Spanish way: decimal comma, spaces between thousands, «–» when absent."""
+    if value is None:
+        return "–"
+    text = f"{value:,.{digits}f}".replace(",", " ").replace(".", ",")
+    return f"{text} {unit}".strip()
+
+
 GLOSSARY = [
     {"term": "Exposición", "text": "La parte de las barras de la ventana con alguna posición "
      "abierta. La ventana sale de la política del activo, nunca de la primera y la última "
@@ -23,7 +34,7 @@ GLOSSARY = [
      "Es una extrapolación: mide la calidad del tiempo, no un retorno alcanzable."},
     {"term": "Eficiencia", "text": "Ese rendimiento por hora como múltiplo del del buy and "
      "hold. 1,0 es tan productivo por hora como tener el activo."},
-    {"term": "A igual riesgo", "text": "El buy and hold con el tamaño que iguala su "
+    {"term": "A igual riesgo", "text": "El buy & hold con el tamaño que iguala su "
      "volatilidad diaria a la de la estrategia: la única convención en la que «rinde menos» "
      "habla del edge y no del tamaño."}]
 
@@ -73,7 +84,7 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: d
 
 
 def run(strategy: str, inputs: dict, cfg: dict) -> dict:
-    """What one strategy's return cost in market time, against buy and hold.
+    """What one strategy's return cost in market time, against buy & hold.
 
     Args:
         strategy: Its name in the export.
@@ -92,35 +103,41 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
     reasons = [r for r in found["reasons"].split(" | ") if r]
     said = blocks.verdict(
         LABEL[found["verdict"]], "pass" if found["verdict"] == "worth_it" else "fail",
-        f"Eficiencia {found['efficiency']:.2f}x: por hora expuesta rinde eso veces lo que el "
-        f"buy and hold {CONVENTIONS[head]}. Pasa desde {cfg['gate']['min_efficiency']:.2f}x.",
+        f"Eficiencia {fmt(found['efficiency'])}x: por hora expuesta rinde eso veces lo que el "
+        f"buy & hold {CONVENTIONS[head]}. Pasa desde {fmt(cfg['gate']['min_efficiency'])}x.",
         found["efficiency"], [{"label": r, "state": "watch", "value": None, "note": ""}
                               for r in reasons])
     span = inputs["span"]
     trade = blocks.table("La dicotomía", pd.DataFrame(
-        [["barras con posición", found["exp_share"]],
-         ["horas por semana en el mercado", found["exp_hours_per_week"]],
-         ["horas por semana fuera", found["hours_off"]],
-         ["cuenta comprometida mientras opera (%)", found["exp_notional_when_in_pct"]],
-         ["rendimiento por hora expuesta (%)", found["return_per_exposure_pct"]],
-         ["eficiencia frente al buy and hold", found["efficiency"]],
-         ["retorno total frente al buy and hold", found["return_ratio"]],
-         ["drawdown frente al del buy and hold", found["dd_ratio"]]], columns=["", "valor"]),
-        "Rendir menos que el buy and hold en total no es un fallo aquí: es la pregunta.")
-    sides = blocks.table("La estrategia y el buy and hold", pd.DataFrame(
-        [["la estrategia", None, found["strat_net"], found["strat_return_pct"],
-          found["strat_cagr_pct"], found["strat_maxdd_pct"], found["strat_sharpe"]]]
-        + [[f"buy and hold, {CONVENTIONS[c]}", found[f"lots_{c}"], found[f"bench_{c}_net"],
-            found[f"bench_{c}_return_pct"], found[f"bench_{c}_cagr_pct"],
-            found[f"bench_{c}_maxdd_pct"], found[f"bench_{c}_sharpe"]]
+        [["Barras con posición", fmt(found["exp_share"] * 100, 2, "%")],
+         ["Horas por semana en el mercado", fmt(found["exp_hours_per_week"], 1)],
+         ["Horas por semana fuera", fmt(found["hours_off"], 1)],
+         ["Cuenta comprometida mientras opera", fmt(found["exp_notional_when_in_pct"], 1, "%")],
+         ["Rendimiento por hora expuesta", fmt(found["return_per_exposure_pct"], 1, "%")],
+         ["Eficiencia frente al buy & hold", fmt(found["efficiency"]) + "x"],
+         ["Retorno total frente al buy & hold", fmt(found["return_ratio"]) + "x"],
+         ["Drawdown frente al del buy & hold", fmt(found["dd_ratio"]) + "x"]],
+        columns=["Medida", "Valor"]),
+        "Rendir menos que el buy & hold en total no es un fallo aquí: es la pregunta.")
+    trade["align"] = ["left", "right"]
+    sides = blocks.table("La estrategia y el buy & hold", pd.DataFrame(
+        [["La estrategia", "–", fmt(found["strat_net"], 0), fmt(found["strat_return_pct"], 1, "%"),
+          fmt(found["strat_cagr_pct"], 1, "%"), fmt(found["strat_maxdd_pct"], 1, "%"),
+          fmt(found["strat_sharpe"])]]
+        + [[f"Buy & hold, {SHORT[c]}", fmt(found[f"lots_{c}"]), fmt(found[f"bench_{c}_net"], 0),
+            fmt(found[f"bench_{c}_return_pct"], 1, "%"), fmt(found[f"bench_{c}_cagr_pct"], 1, "%"),
+            fmt(found[f"bench_{c}_maxdd_pct"], 1, "%"), fmt(found[f"bench_{c}_sharpe"])]
            for c in cfg["benchmark"]["report"]],
-        columns=["", "lotes", "neto (USD)", "retorno (%)", "CAGR (%)", "DD (%)", "Sharpe"]),
+        columns=["", "Lotes", "Net Profit (USD)", "Retorno", "CAGR", "Drawdown", "Sharpe"]),
         f"El veredicto lee la convención {CONVENTIONS[head]}.")
+    sides["align"] = ["left"] + ["right"] * 6
     presence = blocks.table("Dónde estaba cuando el mercado se movió", pd.DataFrame(
-        [["parte del movimiento del mercado con posición", found["captured"]],
-         ["parte alineada con su dirección", found["aligned"]]], columns=["", "valor"]),
+        [["Movimiento del mercado con posición", fmt(found["captured"] * 100, 2, "%")],
+         ["Parte alineada con su dirección", fmt(found["aligned"] * 100, 2, "%")]],
+        columns=["Medida", "Valor"]),
         "Capturar mucho movimiento estando poco tiempo y poco alineada se parece más a estar "
         "presente en los tramos buenos que a una ventaja propia.")
+    presence["align"] = ["left", "right"]
     return envelope.envelope(
         MODULE, strategy, inputs["identity"].get(strategy), cfg, started,
         [envelope.tab("tradeoff", "Rendimiento contra exposición", [trade, sides, presence],

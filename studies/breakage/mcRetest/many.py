@@ -6,7 +6,7 @@ import pandas as pd
 
 from core.study import blocks, result as envelope
 from studies.breakage.mcRetest import one, run as study
-from studies.breakage.mcRetest.contract import words
+from studies.breakage.mcRetest.contract import criteria, words
 from studies.breakage.mcRetest.contract.tabs import COMPOSITE_HELP
 
 COLUMNS = ["strategy", "identity", "verdict", "composite", "binding", "stress_net_p5",
@@ -20,8 +20,10 @@ SHOWN_HELP = [None, None, COMPOSITE_HELP, None, None, None,
 
 def table(members: list[dict]) -> pd.DataFrame:
     """One row per strategy, worst composite first."""
-    return pd.DataFrame([{"strategy": m["strategy"], "identity": m["identity"],
-                          **m["summary"]} for m in members])[COLUMNS].sort_values("composite")
+    rows = pd.DataFrame([{"strategy": m["strategy"], "identity": m["identity"], **m["summary"]}
+                         for m in members])
+    # The criteria metrics ride after the verdict's own columns (contract.criteria.summary).
+    return rows[COLUMNS + [c for c in rows if c not in COLUMNS]].sort_values("composite")
 
 
 def population(result: dict, members: list[dict], cfg: dict, started: float) -> dict:
@@ -30,7 +32,7 @@ def population(result: dict, members: list[dict], cfg: dict, started: float) -> 
     passed = int(rows.verdict.isin(["STRONG", "ACCEPTABLE", "MARGINAL"]).sum())
     counts = rows.verdict.value_counts()
     strategy_table = blocks.table("Estrategia a estrategia", rows.drop(columns=["identity"]))
-    strategy_table["help"] = SHOWN_HELP
+    strategy_table["help"] = SHOWN_HELP + criteria.HELP[1:4]
     tabs = [envelope.tab("summary", "Veredictos", [
         {"kind": "bars", "title": "Veredictos", "unit": "estrategias", "reference": None,
          "items": [{"label": v, "value": int(counts.get(v, 0)), "error": None,

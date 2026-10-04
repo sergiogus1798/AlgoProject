@@ -38,7 +38,8 @@ def main() -> None:
         got = one.run(name, directory, cfg)
         signed.append({"strategy": name, "identity": got["identity"],
                        "brief": got["summary"]["verdict"],
-                       "note": "" if got["identity"] else identity.NOTE})
+                       "note": "" if got["identity"] else identity.NOTE,
+                       "criterios": got["summary"]["criterios"]})
         output.member(out, got, f"SPP — {name}", LEDE)
         brief = got["summary"]["brief"]
         safe = name.replace(" ", "_").replace(".", "-")
@@ -49,7 +50,13 @@ def main() -> None:
               f"exceso {brief['excess']:.2f} vs nulo {brief['noise_max']:.2f}  "
               f"vivos={len(brief['parameters'])} congelados={len(brief['frozen'])}")
     # The briefs are named by a mangled name; this table is what pairs the folder by identity.
-    pd.DataFrame(signed).to_csv(out / "strategies.csv", index=False)
+    table = pd.DataFrame(signed)
+    table.drop(columns="criterios").to_csv(out / "strategies.csv", index=False)
+    # The criteria metrics, one column each: what the databank table and the autopilot read
+    # (`spp.verdict_csv.<column>`). `verdict` is the noise call, which this does not change.
+    pd.concat([table[["strategy", "identity"]].assign(verdict=table["brief"]),
+               pd.DataFrame(table["criterios"].tolist())], axis=1).to_csv(
+        out / "verdict.csv", index=False)
     print(f"\n-> {out}")
 
 

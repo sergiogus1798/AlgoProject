@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTab
 
 from ui.desktop.blocks import axis, chart, density
 from ui.desktop.blocks.card import card, text
+from ui.desktop.blocks.shade import caption as share_caption, sign_shade
 from ui.desktop.blocks.states import MEDIAN, REAL, SIM
 from ui.text.numbers import num
 from ui.desktop.theme import T
@@ -29,6 +30,8 @@ def _draw(b: dict) -> Callable:
         box = chart.area(rect)
         x = axis.scale(*_span(b), box.left(), box.right())
         y = axis.scale(0, top * 1.08, box.bottom(), box.top())
+        if b.get("sign_shade", True):
+            sign_shade(p, box, x, *_span(b), b.get("pivot", 0.0))
         lo, hi = b["band"]
         if lo is not None and hi is not None:
             band = QColor(SIM)
@@ -123,9 +126,12 @@ def widget(block: dict) -> QWidget:
     lo, hi = b["band"]
     mark = b.get("mark") or "Real"
     p = "" if b["p"] is None else f" · p = {num(b['p'], 'p')}"
-    key = chart.key([("box", SIM, "distribución"), ("box", chart.blend(SIM, 0.3), "banda"),
+    banded = [("box", chart.blend(SIM, 0.3), "banda")] if lo is not None else []
+    key = chart.key([("box", SIM, "distribución"), *banded,
                      ("dash", MEDIAN, "mediana"), ("line", REAL, mark)])
     # Real, median and band are already in the key and the chart: only p earns a line.
-    head = text(p[3:], T["text"], 14) if p else None
+    share = b.get("share_positive")
+    caption = share_caption(share, b.get("pivot", 0.0)) if share is not None else ""
+    head = text(" · ".join(x for x in (p[3:], caption) if x), T["text"], 14) if p or caption else None
     parts = [head] if head else []
     return card(b, *parts, chart.Canvas(_draw(b), _tip(b)), key, _percentiles(b))

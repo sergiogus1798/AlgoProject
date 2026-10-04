@@ -7,13 +7,13 @@ import numpy as np
 from core.study.render import svg
 from core.study.render.svg import H, PAD, REAL, SIM, W
 
-# Discrete steps, as the owner wants them: never a continuous ramp. Diverging runs cold to
-# warm through a neutral middle; sequential runs light to dark in one hue.
-DIVERGING = ("#2166ac", "#4393c3", "#92c5de", "#d1e5f0", "#f7f7f7",
-             "#fddbc7", "#f4a582", "#d6604d", "#b2182b")
-SEQUENTIAL = ("#f7fbff", "#deebf7", "#c6dbef", "#9ecae1", "#6baed6",
-              "#4292c6", "#2171b5", "#08519c", "#08306b")
-DARK = {"#2166ac", "#b2182b", "#d6604d", "#2171b5", "#08519c", "#08306b", "#4292c6"}
+# Discrete steps, as the owner wants them: never a continuous ramp. Both scales run red (bad)
+# to green (good), the same as the window's (ui/desktop/blocks/states.py); no blue.
+DIVERGING = ("#b2182b", "#d6604d", "#f4a582", "#fddbc7", "#f7f7f7",
+             "#d9f0d3", "#a6dba0", "#5aae61", "#1b7837")
+SEQUENTIAL = ("#c0392b", "#d9573a", "#e8803f", "#f0a94a", "#e8d155",
+              "#b5d65a", "#7cc65e", "#46b563", "#1fa05a")
+DARK = {"#b2182b", "#d6604d", "#c0392b", "#d9573a", "#5aae61", "#1b7837", "#46b563", "#1fa05a"}
 
 
 def _levels(b: dict) -> list[float]:

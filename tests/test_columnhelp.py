@@ -75,6 +75,27 @@ def test_families_name_their_member() -> None:
     assert label_for("exposure", "strat_sharpe") == "Sharpe estrategia"
 
 
+def test_criteria_metrics_have_help_and_a_short_label() -> None:
+    """Every criteria-metric column the four studies publish (owner, 2026-10-04)."""
+    tokens = ("Net_Profit", "Profit_Factor", "Ret_DD", "Max_Drawdown", "Sharpe", "Sortino")
+    columns = {
+        "spp": [f"distancia_{u}_{s}_{t}" for u in ("pct", "IQR") for s in ("IS", "OOS1")
+                for t in tokens] + [f"{k}_{t}" for k in ("decaimiento", "A", "Wasserstein")
+                                    for t in ("Sharpe", "Sortino", "Profit_Factor", "R_Edge")],
+        "wfc": ["exceso_persistencia_oos1", "exceso_persistencia_oos2",
+                "exceso_persistencia_minimo", "mediana_ratio_Sharpe"],
+        "mcRetest": ["percentil_original_estres", "brecha_mediana_pct_estres",
+                     "distancia_IQR_estres"],
+        "marketSurfaces": [f"{k}_{s}" for k in ("lift_Jaccard_mediano", "exceso_madre_en_top")
+                           for s in ("build", "oos1", "oos2")]}
+    for study, fields in columns.items():
+        for field in fields:
+            assert "Sin umbral" in help_for("study", study, field), (study, field)
+            assert len(label_for(study, field)) <= 22, (study, field, label_for(study, field))
+    assert label_for("spp", "distancia_IQR_OOS1_Net_Profit") == "ΔIQR OOS1 Net Profit"
+    assert label_for("marketSurfaces", "lift_Jaccard_mediano_build") == "Lift Jaccard IS"
+
+
 def test_unknown_column_is_none() -> None:
     """No guess for a column nobody described."""
     assert help_for("study", "wfm", "nonsense") is None

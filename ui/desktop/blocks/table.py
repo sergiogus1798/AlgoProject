@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QDoubleSpinBox, QHBoxLayout, Q
 from core.symbols import alias
 from ui.desktop.blocks import chart
 from ui.desktop.blocks.card import card, text
-from ui.desktop.blocks.states import colour
+from ui.desktop.blocks.states import STATE_LABEL, colour
 from ui.text import numbers
 from ui.text.glossary import label
 from ui.desktop.theme import T
@@ -36,7 +36,7 @@ class Cell(QTableWidgetItem):
     """A cell that sorts by its value, not by its printed text: «1 200» after «950»."""
 
     def __init__(self, value: object, market: bool = False, state: str | None = None,
-                 percent: bool = False) -> None:
+                 percent: bool = False, compact: bool = False) -> None:
         """Print the value and keep it for sorting.
 
         Args:
@@ -47,13 +47,15 @@ class Cell(QTableWidgetItem):
                 else guessed from the text itself (`PASS_WORDS`/`FAIL_WORDS`); bold and green
                 or red either way (§1 «Pass/Fail…verde bold…rojo bold»).
             percent: True in a column in percent: one decimal, the «%» left to the header.
+            compact: A coloured cell is filled with its state colour, dark text on it.
         """
         shown = alias(value) if market and isinstance(value, str) else value
         figure = isinstance(shown, (int, float, type(None))) and not isinstance(shown, bool)
         if figure and percent:
             printed = numbers.num(shown, "%").removesuffix(" %")
         else:
-            printed = chart.num(shown) if figure else str(shown)
+            # A raw contract state in a cell («watch») reads as its label («Vigilar»).
+            printed = chart.num(shown) if figure else STATE_LABEL.get(str(shown), str(shown))
         super().__init__(printed)
         self.value = value
         word = " ".join(value.lower().split()) if isinstance(value, str) else ""
@@ -62,7 +64,11 @@ class Cell(QTableWidgetItem):
             font = self.font()
             font.setBold(True)
             self.setFont(font)
-            self.setForeground(QColor(colour(state)))
+            if compact:
+                self.setBackground(QColor(colour(state)))
+                self.setForeground(QColor(T["bg"]))
+            else:
+                self.setForeground(QColor(colour(state)))
 
     def __lt__(self, other: "Cell") -> bool:
         """Numbers before text, missing values last, each group in its own order.
@@ -112,7 +118,8 @@ def widget(block: dict) -> QWidget:
     states, tips = b.get("states"), b.get("tips")
     for i, row in enumerate(b["rows"]):
         for j, v in enumerate(row):
-            cell = Cell(v, market[j], states[i][j] if states else None, percent[j])
+            cell = Cell(v, market[j], states[i][j] if states else None, percent[j],
+                        bool(b.get("compact")))
             cell.setTextAlignment((Qt.AlignRight if align[j] == "right" else Qt.AlignLeft)
                                   | Qt.AlignVCenter)
             full = v if isinstance(v, str) else chart.num(v)       # never 1e-05, even on hover
@@ -128,7 +135,9 @@ def widget(block: dict) -> QWidget:
     table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
     # A last column of sentences (the «why», «what it says») takes the spare width, so less
     # of it is cut; a last column of numbers does not, or its figures drift to the far edge.
-    table.horizontalHeader().setStretchLastSection(align[-1] == "left")
+    table.horizontalHeader().setStretchLastSection(align[-1] == "left" and not b.get("compact"))
+    if b.get("compact"):       # a small matrix: as wide as its columns, no wider
+        table.setMaximumWidth(sum(table.columnWidth(j) for j in range(len(b["columns"]))) + 6)
     table.verticalHeader().setDefaultSectionSize(26)
     shown = min(len(b["rows"]), VISIBLE)
     table.setFixedHeight(table.horizontalHeader().sizeHint().height() + 26 * shown + 6)

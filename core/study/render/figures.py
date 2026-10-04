@@ -99,7 +99,8 @@ def cone(b: dict) -> str:
     x = svg.scale(0, max(n - 1, 1), PAD["l"], W - PAD["r"])
     y = svg.scale(min(values), max(values), H - PAD["b"], PAD["t"])
     body = []
-    for lo, hi, alpha in (("2.5", "97.5", .15), ("25", "75", .3)):
+    k = sorted(b["bands"], key=float)     # 5-95 or 2.5-97.5: the block's own levels
+    for lo, hi, alpha in ((k[0], k[-1], .15), (k[1], k[-2], .3)):
         up, down = b["bands"][hi], b["bands"][lo]
         pts = [f"{x(i):.1f},{y(v):.1f}" for i, v in zip(xs, up) if v is not None]
         pts += [f"{x(i):.1f},{y(v):.1f}" for i, v in reversed(list(zip(xs, down))) if v is not None]

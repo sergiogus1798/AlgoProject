@@ -1,8 +1,9 @@
 """The databank panel's routes: tabs, table, columns, aggregate equity, funnel and reload."""
 
+import json
 from collections.abc import Callable
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel
 
 from ui.daemon.databank import columns, equity, funnel, layout, segments, table
@@ -34,9 +35,12 @@ def get_panels(project: str) -> dict:
 
 
 @ROUTER.get("/api/databank/table")
-def get_table(project: str, databank: str) -> dict:
-    """One databank: a row per strategy, its metrics and every study's columns."""
-    return shown("la tabla", table.table, project, databank)
+def get_table(project: str, databank: str) -> Response:
+    """One databank: a row per strategy, its metrics and every study's columns. Written out
+    here: FastAPI's own encoder walks every value, 3 s for the 24 MB of 10,000 strategies."""
+    got = shown("la tabla", table.table, project, databank)
+    return Response(json.dumps(got, ensure_ascii=False, allow_nan=False, separators=(",", ":")),
+                    media_type="application/json")
 
 
 @ROUTER.get("/api/databank/segments")

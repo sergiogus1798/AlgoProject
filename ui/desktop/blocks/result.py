@@ -207,6 +207,7 @@ class ResultView(QWidget):
         if names:
             self.tabs = QTabWidget()
             self.tabs.setDocumentMode(True)
+            self.tabs.setTabBarAutoHide(True)   # one tab: its name only repeats the title
             # Expanding (Qt's default) grabs the leftover space the outer stretch was meant
             # to hold, leaving a blank gap inside the tab instead of above the glossary
             # (§1 «hueco vacío enorme»); Minimum keeps it at its content's own height.

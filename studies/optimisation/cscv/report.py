@@ -68,14 +68,15 @@ def _rule(key: tuple[str, str]) -> tuple[pd.DataFrame, dict]:
     """One selection rule's CSCV and its measured cost, under one score, in a worker of its own.
 
     Args:
-        key: (a key of `rules.RULES`, a key of `SCORE_KEYS`).
+        key: (`argmax` or `plateau_centre`, a key of `SCORE_KEYS`).
 
     Returns:
         (its partitions, what `summary.everything` and `cost.cost` found).
     """
     name, score_key = key
     got = _SHARED
-    run = cscv.run(got["wide"], got["knobs"]["blocks"], rules.RULES[name], got["grid"],
+    rule = rules.pick(name, got["knobs"]["plateau_radius"])
+    run = cscv.run(got["wide"], got["knobs"]["blocks"], rule, got["grid"],
                    np.random.default_rng(got["knobs"]["seed"]), score_key)
     return run, summary.everything(run) | cost.cost(
         got["inside"], got["outside"], got["grid"], name, got["knobs"] | {"score": score_key})
@@ -162,9 +163,10 @@ def main() -> None:
               "score": knobs["score"], "partitions": len(cscv.partitions(knobs["blocks"])),
               "dsr": deflated["dsr"], "sharpe_benchmark": deflated["benchmark"],
               "n_clusters": independent["n_clusters"], "levels_max": moved["levels_max"],
+              "plateau_radius": knobs["plateau_radius"],
               # The carry-over slope is fitted across every variant of a partition, so it
-              # is a property of the surface and identical for all three rules. Stated
-              # once here; the per-rule copies below are the same number three times.
+              # is a property of the surface and identical for both rules. Stated
+              # once here; the per-rule copies below are the same number twice.
               "slope": found[knobs["rules"][0]]["slope"],
               "r2": found[knobs["rules"][0]]["r2"],
               **{k: v for name in knobs["rules"] for k, v in flat(name, found[name]).items()},
@@ -172,7 +174,7 @@ def main() -> None:
     (a.work / "cscv.json").write_text(json.dumps(result, indent=2, ensure_ascii=False),
                                       encoding="utf-8")
     output.population(a.work / "estudios", "cscv", envelope.envelope(
-        "studies.optimisation.cscv.report", a.work.name, None, cfg, started,
+        "studies.optimisation.cscv.report", a.work.name.replace("_", " "), None, cfg, started,
         contract.tabs(runs_by_score, found_by_score, result, knobs["score"]),
         contract.verdict(found, result),
         glossary=contract.GLOSSARY), f"CSCV — {a.work.name.replace('_', ' ')}")

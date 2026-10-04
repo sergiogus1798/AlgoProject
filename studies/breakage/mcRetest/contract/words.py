@@ -62,7 +62,8 @@ VERDICTS = {
     "ACCEPTABLE": "Aguanta, sin margen de sobra.",
     "MARGINAL": "Se sostiene por poco; cualquier deterioro la tumba.",
     "FAIL": "Algo la descalifica. Mira los vetos.",
-    "INCONCLUSIVE": "No falló: no se pudo juzgar. La batería no dio evidencia suficiente."}
+    "INCONCLUSIVE": "Sin veredicto: la estrategia no falló, pero los datos de la batería no "
+                    "bastan para juzgarla (ni aprueba ni suspende)."}
 
 
 STATE = {"STRONG": "pass", "ACCEPTABLE": "pass", "MARGINAL": "watch", "FAIL": "fail",
@@ -101,3 +102,25 @@ def battery(result: dict) -> list[list[str]]:
              "subiendo simulaciones, así que no son evidencia."],
             ["Estabilidad del ranking", order, "Si el orden de las estrategias sobrevive al "
                                                "estrés combinado."]]
+
+
+GROUPS = {"production": "Producción", "execution": "Ejecución",
+          "specification": "Especificación", "data": "Datos"}
+
+_TESTS = {"net_p5": "Net Profit p5", "pf_p5": "Profit Factor p5",
+          "cvar_drawdown": "Drawdown CVaR",
+          "trade_count": "Operaciones (mediana frente a original)",
+          "edge": "Probabilidad de ventaja positiva", "worst_axis": "Peor tarea de ejecución",
+          "params_p5": "Net Profit p5 con parámetros perturbados"}
+_SUFFIX = {"_p5": "Net Profit p5", "_outcomes": "resultados distintos",
+           "_levels": "niveles guardados"}
+
+
+def test_name(test: str) -> str:
+    """A check's name as the owner reads it: «net_p5» becomes «Net Profit p5»."""
+    if test in _TESTS:
+        return _TESTS[test]
+    for suffix, text in _SUFFIX.items():
+        if test.endswith(suffix):
+            return f"{tasks.TITLES.get(test[:-len(suffix)], test[:-len(suffix)])}: {text}"
+    return test

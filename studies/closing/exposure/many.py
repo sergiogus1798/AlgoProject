@@ -1,4 +1,4 @@
-"""Every strategy of one export against buy and hold, and the population read as one result."""
+"""Every strategy of one export against buy & hold, and the population read as one result."""
 
 import time
 
@@ -6,6 +6,18 @@ import pandas as pd
 
 from core.study import blocks, result as envelope
 from studies.closing.exposure import one
+
+SHOWN = {"strategy": "Estrategia", "verdict": "Veredicto", "n": "Operaciones",
+         "exp_share": "Barras con posición (%)", "exp_hours_per_week": "Horas por semana",
+         "strat_return_pct": "Retorno (%)", "return_per_exposure_pct": "Rendimiento por hora expuesta (%)",
+         "efficiency": "Eficiencia", "return_ratio": "Retorno frente al buy & hold",
+         "dd_ratio": "Drawdown frente al buy & hold", "reasons": "Motivos"}
+
+# What verdict.csv carries, hence the Databanks columns of «Exposición»: the rest of the flat
+# row (44 figures) stays in each strategy's own result.
+CSV = ["strategy", "identity", "verdict", "n", "exp_share", "exp_hours_per_week",
+       "strat_return_pct", "return_per_exposure_pct", "efficiency", "return_ratio", "dd_ratio",
+       "captured", "aligned", "reasons"]
 
 
 def run(inputs: dict, cfg: dict) -> dict:
@@ -33,17 +45,18 @@ def run(inputs: dict, cfg: dict) -> dict:
     shown = table[["strategy", "verdict", "n", "exp_share", "exp_hours_per_week",
                    "strat_return_pct", "return_per_exposure_pct", "efficiency",
                    "return_ratio", "dd_ratio", "reasons"]].assign(
-        verdict=table["verdict"].map(one.LABEL))
+        verdict=table["verdict"].map(one.LABEL), exp_share=table["exp_share"] * 100).rename(
+        columns=SHOWN)
     population = envelope.envelope(
         one.MODULE, None, None, cfg, started,
         [envelope.tab("summary", "Rendimiento contra exposición", [
-            {"kind": "bars", "title": "Eficiencia por hora expuesta, frente al buy and hold",
+            {"kind": "bars", "title": "Eficiencia por hora expuesta, frente al buy & hold",
              "unit": "×", "reference": cfg["gate"]["min_efficiency"],
              "items": [{"label": r.strategy, "value": r.efficiency, "error": None,
                         "state": "pass" if r.verdict == "worth_it" else "fail"}
                        for r in table.itertuples()]},
-            blocks.table("Estrategia a estrategia", shown)])],
+            blocks.table("Estrategia a estrategia", shown, "Tiempo en el mercado en %; rendimientos en %.")])],
         blocks.verdict(f"{worth} de {len(table)}", "pass" if worth else "fail",
                        f"{worth} estrategias rinden por hora expuesta al menos "
-                       f"{cfg['gate']['min_efficiency']:.1f} veces lo que el buy and hold."))
+                       f"{one.fmt(cfg['gate']['min_efficiency'], 1)} veces lo que el buy & hold."))
     return {"population": population, "table": table, "members": members}

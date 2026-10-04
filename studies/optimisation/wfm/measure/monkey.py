@@ -21,7 +21,8 @@ def against(trades: pd.DataFrame, frame: pd.DataFrame, draws: int, name: str) ->
         `rows` (one per statistic: the real value, the monkeys' mean and 95th percentile,
         the share of monkeys below it, the empirical p), `reconcile` (how well the engine
         reprices the real trades from the bars — a p from a poor one is decoration),
-        `trades`, `draws` and the `seed` drawn.
+        `trades`, `draws` and the `seed` drawn, and `samples` (statistic -> the monkeys' raw
+        values, for the window's histogram; never written to disk).
     """
     cfg = inputs.config([f"nulls.draws={draws}"])
     kept = simulate.fixed(trades.reset_index(drop=True), frame, cfg)
@@ -32,4 +33,5 @@ def against(trades: pd.DataFrame, frame: pd.DataFrame, draws: int, name: str) ->
              "below": float((drawn[n] < seen[n]).mean()),
              "p": verdict.pvalue(seen[n], drawn[n], n)} for n in names]
     return {"rows": rows, "reconcile": float(kept["checks"]["corr"]), "trades": len(trades),
-            "draws": draws, "seed": cfg["nulls"]["seed"]}
+            "draws": draws, "seed": cfg["nulls"]["seed"],
+            "samples": {n: np.asarray(drawn[n], dtype=float) for n in names}}

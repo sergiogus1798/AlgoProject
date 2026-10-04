@@ -27,10 +27,11 @@ cscv:
   blocks: ledger:cscv.blocks
   # The ways of choosing parameters that get compared. The point of the study is the
   # difference between them, so a run with one rule answers half the question.
-  rules: [argmax, plateau_centre, random_profitable]
-  # Draws averaged for the rule that is random. It is a control, and a control measured
-  # once is an anecdote.
-  random_draws: 50
+  rules: [argmax, plateau_centre]
+  # How far "next door" reaches for Plateau center, in grid levels in every parameter at once
+  # (Chebyshev distance): 1 = the point and its immediate neighbours, 2 = two steps out. A
+  # wider radius smooths more and asks for a broader plateau.
+  plateau_radius: 1
   # Resamples behind the interval on each rule's out-of-sample percentile.
   bootstrap: 200
   # Largest number of clusters considered when counting how many independent trials the

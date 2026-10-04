@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QFrame, QHBoxLayout, QLa
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
 from ui.desktop.blocks.states import colour
+from ui.desktop.studypage import compare
 from ui.desktop.studypage.net import fetch
 from ui.desktop.theme import C, T
 
@@ -14,7 +15,7 @@ from ui.desktop.theme import C, T
 # beside OOS. The owner took «Salidas», «Contra el subyacente» and «Operaciones» out on
 # 2026-09-28; PORTFOLIOS still lists them for an archived version. «Lote» moved to the WFC
 # study's own tab on 2026-09-29 — a strategy can have no batch, so it does not belong here.
-SUBS = (("IS/OOS", "tearsheet"),)
+SUBS = (("IS/OOS", "tearsheet"), ("Entrada aleatoria · OOS principal", "result"))
 TOP = 5                 # «Excluir top X% de trades»: the X it opens with
 PICKED = (f"QPushButton:checked {{ background: {C['accent']}; color: {T['bg']}; font-weight: 700; }}"
           "QPushButton { min-width: 34px; }")
@@ -141,6 +142,8 @@ class Ficha(QFrame):
         if not (w.get("project") and w.get("databank") and w.get("identity")):
             return sub.say("Elige una estrategia en el panel de databanks de Proyecto.")
         _, route = SUBS[index]
+        if route == "result":
+            return self._random_oos(sub, w)
         got = fetch(route, project=w["project"], databank=w["databank"], identity=w["identity"],
                     strategy=w.get("strategy") or "", top=self.share.value() if self.top.isChecked() else 0,
                     dd=self.dd.checkedButton().text())
@@ -161,3 +164,15 @@ class Ficha(QFrame):
         # compare()'s first row is each side's verdict header; the Ficha judges nothing and
         # its sides are named by the tab title and the notes above, so the row goes.
         sub.body.content.layout().itemAt(0).widget().hide()
+
+    def _random_oos(self, sub: Sub, w: dict) -> None:
+        """The Cross Market result's «oos» tab (random entry on the main market's OOS), drawn here."""
+        got = fetch("result", **compare.query(w, "crossmarket"))
+        tab = next((t for t in (got.get("result") or {}).get("tabs", []) if t["name"] == "oos"), None)
+        if tab is None:
+            return sub.say("Sin resultado: el test de entrada aleatoria aún no se ha corrido para "
+                           "esta estrategia.")
+        sub.body.show()
+        sub.line.setText("")
+        sub.body.show_result({**got["result"], "tabs": [tab], "warnings": []}, None)
+        sub.body.content.layout().itemAt(0).widget().hide()   # the cross-market verdict is not this test's

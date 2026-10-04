@@ -60,7 +60,8 @@ the bracketing ranks directly — exact coverage, no resampling, and it cannot f
 - **Trades under water, never time.** A simulation file carries no dates. Leaving the word "time" in
   the vocabulary guarantees someone eventually reports one number as the other.
 - **The equity fan's x-axis is normalised progress, not the trade index.** Simulations differ in
-  length — 676 to 2,031 measured — so there is no common trade number to stack them on.
+  length — 676 to 2,031 measured — so there is no common trade number to stack them on. Only the percentile bands (5, 25, 50, 75, 95)
+  and, for the production task, the original's equity leave `fan()`; never individual curves.
 - **The trade count is a gated response, not a diagnostic.** A simulation that fired six times is not
   a degraded strategy, it is a different one, and its net profit is meaningless in every percentile
   it contributes to.

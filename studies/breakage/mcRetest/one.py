@@ -16,7 +16,23 @@ GLOSSARY = [
     {"term": "Rejilla", "text": "Una tarea cuyas mil simulaciones dan pocos valores distintos: "
      "sin forma que medir, sólo extremos."},
     {"term": "Bimodal", "text": "Dos grupos de resultados separados: la perturbación a veces "
-     "rompe la estrategia y a veces no la toca."}]
+     "rompe la estrategia y a veces no la toca."},
+    {"term": "Estrés combinado", "text": "La tarea que perturba las seis cosas a la vez (barra, "
+     "spread, slippage, parámetros, salidas e histórico) sobre la muestra completa."},
+    {"term": "Re-ejecución", "text": "Una de las simulaciones de SQX: el mismo backtest con la "
+     "perturbación sorteada de nuevo."},
+    {"term": "Net Profit p5", "text": "El percentil 5 del Net Profit: el 5 % de las re-ejecuciones "
+     "gana menos que esto. Es el listón de lo que se sostiene con mala suerte."},
+    {"term": "Mediana Monte Carlo", "text": "El Net Profit central de las re-ejecuciones. Si "
+     "queda muy lejos del backtest original, el resultado original era un caso extremo."},
+    {"term": "Banda de percentiles", "text": "La banda clara contiene del 5 al 95 % de las curvas "
+     "de equity simuladas y la oscura del 25 al 75 %; la línea central es la mediana."},
+    {"term": "Sigma", "text": "Desviación típica; aquí, la del control. Un coste en sigmas dice "
+     "cuántas veces el ruido irreducible mueve la perturbación."},
+    {"term": "Veto", "text": "Una comprobación que descalifica a la estrategia por sí sola; el "
+     "aviso, en cambio, solo la marca."},
+    {"term": "Simulaciones rentables", "text": "El porcentaje de re-ejecuciones con Net Profit "
+     "mayor que cero."}]
 
 
 def contract(got: dict, inputs: dict, cfg: dict, started: float) -> dict:

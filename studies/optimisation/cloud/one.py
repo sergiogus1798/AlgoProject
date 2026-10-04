@@ -35,8 +35,9 @@ def read(work: Path, cfg: dict) -> dict:
     unit = space.unit(frame, live)
     coords = pd.DataFrame(unit, index=frame["variant_id"], columns=live)
 
-    near = neighbourhood.near(space.steps(frame, data["params"]), origin_row,
-                              cfg["neighbourhood"]["radius"])
+    steps = space.steps(frame, data["params"])
+    gap = np.abs(steps - steps[origin_row]).max(axis=1)   # Chebyshev, in level steps
+    near = neighbourhood.near(steps, origin_row, cfg["neighbourhood"]["radius"])
     reading = neighbourhood.reading(values, near, origin_row, cfg["neighbourhood"]["delta"])
 
     s = cfg["surrogate"]
@@ -57,6 +58,7 @@ def read(work: Path, cfg: dict) -> dict:
     picked = ensemble.spread(coords, pool, cfg["ensemble"]["k"])
 
     return {"data": data, "live": live, "collapsed": sorted(set(data["params"]) - set(live)),
+            "radius": cfg["neighbourhood"]["radius"], "nearest": int(np.delete(gap, origin_row).min()),
             "reading": reading, "values": values, "near_mask": near,
             "whole": whole, "local": local, "indices": indices,
             "roughness": surrogate.local_roughness(unit, values, s["neighbours"]),
@@ -96,7 +98,7 @@ def run(work: Path, cfg: dict) -> dict:
                      "text": f"{found['window']['cut']} días recortados: caen en el tramo "
                              f"reservado oos2."})
     return envelope.envelope(
-        MODULE, data["origin"], None, cfg, started, contract.tabs(found, calls),
+        MODULE, work.name.replace("_", " ", 1), None, cfg, started, contract.tabs(found, calls),
         warnings=warn, glossary=contract.GLOSSARY,
         summary={"point": calls["point"], "surface": calls["surface"],
                  "temporal": calls["temporal"], "variants": len(data["frame"]),

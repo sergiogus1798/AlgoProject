@@ -55,6 +55,15 @@ def palette(b: dict) -> list[str]:
     return [ramp[round(i * (len(ramp) - 1) / max(n - 1, 1))] for i in range(n)]
 
 
+def _short(v: float | None) -> str:
+    """A cell's figure in at most five characters, for a cell too narrow for the full one."""
+    if v is None:
+        return "–"
+    a = abs(v)
+    return (f"{v / 1e6:.1f}M" if a >= 1e6 else f"{v / 1e3:.1f}K" if a >= 1e4 else f"{v:.0f}"
+            if a >= 100 else f"{v:.1f}" if a >= 10 else f"{v:.2f}")
+
+
 def _ink(fill: str) -> str:
     """Black or white text, whichever reads on the cell's fill."""
     c = QColor(fill)
@@ -94,7 +103,9 @@ def _draw(b: dict) -> Callable:
                 p.setPen(QColor(T["faint"] if v is None else _ink(fill)))
                 text = b["labels"][i][j] if b["labels"] else chart.num(v)
                 # Three maps side by side leave ~30 px a cell: a figure that does not fit is
-                # left to the hover sentence rather than cut into an unreadable stub.
+                # written short («24.4K», «0.31»), and left to the hover only if that fails too.
+                if not b["labels"] and p.fontMetrics().horizontalAdvance(text) >= cw - 6:
+                    text = _short(v)
                 if b["labels"] or p.fontMetrics().horizontalAdvance(text) < cw - 6:
                     p.drawText(cell.adjusted(4, 0, -4, 0), Qt.AlignCenter | Qt.TextWordWrap, text)
         if b.get("region"):
@@ -109,7 +120,7 @@ def _region(p: QPainter, b: dict, left: float, cw: float, ch: float) -> None:
     """A faint outline on every cell of `region` (2026-09-30, §8.5): a plateau box carried
     over from another surface. Never touches `values` or `labels` — only `mark` draws a tag."""
     p.setBrush(Qt.NoBrush)
-    p.setPen(QPen(QColor(T["faint"]), 2))
+    p.setPen(QPen(QColor("#d5dbea"), 3.5))
     for cell in b["region"]:
         i, j = b["rows"].index(cell["row"]), b["cols"].index(cell["col"])
         p.drawRect(QRectF(left + j * cw, HEAD + i * ch, cw, ch).adjusted(1, 1, -1, -1))

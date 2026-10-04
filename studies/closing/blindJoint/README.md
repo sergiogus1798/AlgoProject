@@ -25,6 +25,7 @@ config.yaml ─▶ inputs ──────▶ pieces ─▶ measure ───�
 | `one.py` | One mother as the contract's data: her four pieces as parts, her call under every reading | imported — the window calls it | row → result |
 | `many.py` | The population: the pieces grid, the readings grid, the SPA tab | imported | inputs → results |
 | `report.py` | **The command**: writes `reports/<P>/<WFM>/<day>/blindJoint/` and, when it read oos2, a step-20 ledger row | `python3 -m studies.closing.blindJoint.report --project USDJPY_workflow_profiling_v1 --wfm-databank WFM --feed USDJPY_M1 --symbol USDJPY --timeframe H1 --family crossAboveHMA_v1` | pieces + oos2 → reports + ledger row |
+| `words.py` | Another study's call in Spanish: states, `blind`, `rho 0.45` → `ρ = 0,45` | imported by `one.py` | — |
 | `tooltips.py` | One Spanish sentence per `config.yaml` knob | imported | — |
 | `config.yaml` | The benchmark's sizing, the FWER (the ledger row part A reads), the two open decisions (`joint`), the bootstrap | edited | — |
 
@@ -67,11 +68,13 @@ of zero-P&L warm-up repeating the previous leg's dates, and the leg is not recor
 that catches a duplicated date raises. 🔬 That curve is each day's LOWEST equity, not a mark to
 market, so since 2026-10-04 it is only the known answer: the panel is the close-to-close P&L rebuilt
 from the mother's oos2 trades and the M1 bars (`portfolio/common/construct/equity/closecurve`, as
-part A), and it is refused unless its own daily lows match the curve. ⚠️ The trades are read from
-`trades.parquet` in the batch folder (schema T plus `variant_id`), which step 16.5 does not write
-yet (decision E3, pending its cost measurement): until it does, `inputs.trades_door` refuses, the
-pieces are read, the SPA is not, and oos2 stays unopened. Proven on synthetic data only
-(`tests/test_close_curve.py`) — the change was never run on a real oos2.
+part A), and it is refused unless its own daily lows match the curve. The trades are read from
+`trades.parquet` in the batch folder (schema T plus `variant_id` and `segment`), which step 16.5 writes
+for the mother only since 2026-10-04 (`sqx/variants/mothertrades.py`; decision E3, owner: «solo para
+la madre»). A batch made before that has none: `inputs.trades_door` refuses, and with a chosen
+reading the report stops. 🔬 2026-10-04, first real oos2:
+NIKKEI225 M30, 10 mothers, the rebuilt panel reconciled with SQX's curve and the report ran whole (known
+answer on synthetic data: `tests/test_close_curve.py`).
 
 **The StepM is written on `arch`'s SPA**, not `arch`'s `StepM`, which raises when its rounds
 name every column between them — never at part A's K = 200, often at step 20's K of 2 to 5.

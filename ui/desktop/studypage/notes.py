@@ -1,5 +1,7 @@
 """What the page says about a study around its result: its role, where it was looked for, what was passed over."""
 
+from PySide6.QtWidgets import QLabel
+
 from ui.desktop.blocks.states import colour
 from ui.desktop.theme import T
 
@@ -18,17 +20,28 @@ def headline(entry: dict) -> str:
     Returns:
         Rich text.
     """
-    role = (f'<b style="color:{colour("fail")}">⊘ elimina</b> — su verdict.csv quita '
+    role = (f'<b style="color:{colour("fail")}">⊘ Elimina</b> — su verdict.csv quita '
             f"estrategias vía /curate" if entry["role"] == "gate" else
-            f'<b style="color:{colour("info")}">◉ describe</b> — no quita a nadie')
+            f'<b style="color:{colour("info")}">◉ Describe</b> — no quita a nadie')
     step = f"paso {entry['step']}" if entry["step"] else "fuera de la secuencia"
     scope = " y ".join(s for s, ok in (("una estrategia", entry["one"]),
                                        ("la población", entry["many"])) if ok) or "—"
     # `one`/`many` are the runner's scopes when the study runs from here (catalogue.entry).
     verb = "se corre sobre" if entry["runnable"] else "juzga"
     return (f'<span style="font-size:17px; font-weight:700">{entry["title"]}</span>'
-            f' <span style="color:{T["faint"]}">{entry["key"]}</span> · {step} · {role}'
-            f" · {verb} {scope}")
+            f" · {step} · {role} · {verb} {scope}")
+
+
+def show_head(label: QLabel, entry: dict) -> None:
+    """Write the study's headline on `label`, with what «Elimina» and «Describe» mean as its tooltip.
+
+    Args:
+        label: The page's head line.
+        entry: The study's catalogue entry.
+    """
+    label.setText(headline(entry))
+    label.setToolTip("Elimina: un estudio de cribado, su veredicto saca estrategias del databank. "
+                     "Describe: solo mide y muestra, no quita a nadie.")
 
 
 def context(where: dict, strategy_page: bool) -> str:

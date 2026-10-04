@@ -196,7 +196,8 @@ def main() -> None:
     wide.iloc[:, 5] = wide.iloc[:, 5].abs()  # never loses: Sortino places it on top
     small = pd.DataFrame({"param_i": range(wide.shape[1])})
     for score in cscv.SCORES:
-        for name, rule in rules.RULES.items():
+        for name in ("argmax", "plateau_centre"):
+            rule = rules.pick(name, 1)
             fast = cscv.run(wide, BLOCKS, rule, small, np.random.default_rng(1), score)
             slow = by_rows(wide, BLOCKS, rule, small, np.random.default_rng(1), score)
             same = (fast["pick"].equals(slow["pick"])
@@ -214,7 +215,7 @@ def main() -> None:
     print("\n## las reglas de seleccion")
     score, grid = spiky()
     picked = rules.argmax(score, grid, rng)
-    centred = rules.plateau_centre(score, grid, rng)
+    centred = rules.plateau_centre(score, grid, rng, 1)
     check(failures, grid.loc[picked, "param_x"] == 9,
           "argmax se queda con el pico aislado")
     check(failures, abs(grid.loc[centred, "param_x"] - 3) <= 1

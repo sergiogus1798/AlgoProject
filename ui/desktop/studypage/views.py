@@ -1,5 +1,7 @@
 """The study page of one strategy, with its Ficha as the first tab — what the Estrategia zone embeds."""
 
+from PySide6.QtCore import Qt
+
 from ui.desktop.studypage.ficha import Ficha
 from ui.desktop.studypage.offer import OFF
 from ui.desktop.studypage.page import StudyPage
@@ -43,6 +45,11 @@ class StrategyPage(StudyPage):
         if ficha:
             for w in (self.back, self.skipped):
                 w.hide()
+            self.ficha.layout().insertWidget(0, self.picker, 0, Qt.AlignLeft)   # the Ficha's header
+            w = self.where
+            self.picker.aim(w["project"], w["databank"], w["strategy"], "")
+        else:
+            self.tools.insertWidget(0, self.picker)
 
     def _family(self, index: int) -> None:
         """A family tab was chosen; the Ficha's is handled here, the rest by the base.
@@ -70,6 +77,7 @@ class StrategyPage(StudyPage):
         super().follow(now)
         self.hold = False
         self.ficha.load(self.where)
+        self.picker.aim(*(self.where[k] for k in ("project", "databank", "strategy")), "")
 
     def open_family(self, name: str) -> None:
         """Show one family tab by the name it shows (Estrategia opens on its origin's family).

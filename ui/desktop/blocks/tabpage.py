@@ -112,15 +112,25 @@ class TabPage(QWidget):
             sides = [plain]
         else:
             sides = [shown(t, self.chosen) if t is not None else [] for t in self.tabs]
-        rows = [(b,) for b in sides[0]] if len(sides) == 1 else pairs(*sides)
+        if len(sides) == 1:
+            rows = []
+            for b in sides[0]:       # `beside` lays a block in the row of the one before it
+                if b.get("beside") and rows and not self.grouped:
+                    rows[-1] += (b,)
+                else:
+                    rows.append((b,))
+        else:
+            rows = pairs(*sides)
+        wide = max([len(sides), *map(len, rows)])
         for i, row in enumerate(rows):
             for j, b in enumerate(row):
+                span = wide - len(row) + 1 if len(sides) == 1 and j == len(row) - 1 else 1
                 grid.addWidget(draw(b) if b is not None else
-                               text("(Sin equivalente en este lado)", T["faint"]), i, j)
+                               text("(Sin equivalente en este lado)", T["faint"]), i, j, 1, span)
         if self.grouped and maps:
             grid.addWidget(markets.row(maps, consensus), len(rows), 0)
             rows.append(maps)
-        for j in range(len(sides)):
+        for j in range(wide):
             grid.setColumnStretch(j, 1)
         if not rows:
             grid.addWidget(text("Esta combinación no tiene bloques.", T["faint"]), 0, 0)

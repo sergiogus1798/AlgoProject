@@ -8,6 +8,7 @@ field with no sentence returns None: an unknown column gets no «?» rather than
 import re
 
 from ui.text.columnhelp_closing import ATR, BENCH, LOTS, STRAT, WINNERS, atr, exposure
+from ui.text.columnhelp_criteria import criteria
 from ui.text.columnhelp_fields import FIELDS
 from ui.text.columnhelp_metrics import METRICS
 from ui.text.columnhelp_verdicts import VERDICTS
@@ -95,6 +96,8 @@ def help_for(kind: str, study: str, field: str) -> str | None:
         return exposure(field)
     if study == "atrCalculator":
         return atr(field)
+    if got := criteria(study, field):
+        return got[1]
     return None
 
 
@@ -120,4 +123,6 @@ def label_for(study: str, field: str) -> str | None:
         return ATR_LABEL[got[1]].format(p=got[2])
     if study == "atrCalculator" and (got := WINNERS.match(field)):
         return WINNERS_LABEL[got[1]]
+    if got := criteria(study, field):
+        return got[0]
     return None

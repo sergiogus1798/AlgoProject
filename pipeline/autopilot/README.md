@@ -32,6 +32,7 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
 | `plan.py` | The rail walked as `chainplan.plan` walks it up to 16.5, with a `judge` before the next SQX step that still has to run; from 17 on it is `tail.walk`'s | imported | GET /api/workflow + the tail's inputs → `{do, stop}` |
 | `tail.py` | The plan 17 → 26: the three blind looks (planned whenever any of 17-19 is open), `sqx` 19, its reading, the ledger rows, 20 and its judge, 21-22 on the databanks given, 23, 24, 25, the finalists, 26; clean stops without a family, without `--panel`, without every `--mt5-*`; and those flags | imported | rail steps + inputs → actions, stop |
 | `tailrun.py` | One tail action run: its kind → the module that does it, with the mothers of that step | imported | action → one line for resumen.md |
+| `pasos.csv` | (written by `run.py` next to `estado.txt`) one row per step start, end or failure — `paso, estado (empezó/hecho/falló), hora` — which the window's «En marcha» reads to show each Python step after a daemon restart | — | — |
 | `survivors.py` | Who walks the tail: one row per identity of the databank the last judged step cut (`cut` of 16, later of 20-25), `about(project)` (symbol, timeframe, feed, family) and `Done`, the clean stop | imported | project, step → mothers |
 | `blind.py` | 17, 18, 18.5 per mother (door asked first, a mother with her result skipped unless `redo`), the WFM reading, the ledger rows 17-19 still lack (per project, once per WFM reading) then `gate.allow_read`, and step 20 through the same door | imported | batches + WFM export → results, ledger rows |
 | `closing.py` | 21-22 as the window builds them on the databank given; 23 (`structural.make` → retest → `keep` → export build+oos1 → `structure.report` → clear) and 24 (two `stopgrid` passes, each retested, exported and read) in the project's own three WFC legs, the project copied aside before each retest | imported | mothers → `structural/<P>/<stamp>/`, `atrCalculator/<P>/<stamp>/pass{1,2}/` |
@@ -42,6 +43,7 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
 | `criteria.py` | The inference: one rule → pass/limbo/fail (a threshold, distance to the population's median, or — 2026-10-03 — a verdict, `is: pass`/`is: fail` on a 1/0 fact; `else: limbo` on any of them makes not-met a limbo instead of a fail); a compound `all: [...]` / `any: [...]` is its worst / its best part, nested freely (`judged`); `reads` lists every fact the rules name, parts included; a strategy's outcome is its worst rule; a missing fact is limbo. `resolved` folds a rule's `by` in first: `by: {H4: {pass: ">= 2.5"}}` replaces the fields it names when the project has that tag — its timeframe, symbol or asset class (`judge.tags`, from the project registry); several joined by `+` must all hold, the first matching entry wins, no match leaves the rule as written | imported | facts + rules → `{id: (outcome, reason)}` |
 | `judge.py` | One judging step: facts to `hechos.parquet`, the databank's files by identity, the criteria, the dev draw (seed recorded), `verdict.csv` (`strategy, verdict, identity, outcome, reason`), the cut | imported | step → databank cut, `paso-<n>/` |
 | `criteria.yaml` | The rules and the dev draw, commented. Also read and written by the window's «Criterios» zone (`ui/daemon/criteria/`): each change stamped in `ledger/criteria-history.jsonl`, and `frozen: {on, by, sha}` once the owner freezes them | edited, by hand or from the window | — |
+| `offered.yaml` | Step → the facts a study publishes for a criterion the owner has not set yet (owner, 2026-10-04: «calculados y visibles, sin juzgar»), each with its name on screen and the knowhow card of its zero-edge null. Read by the window's «Criterios» zone only (`ui/daemon/criteria/read.offered`): listed under their step with an empty threshold and offered in the fact picker. `judge.py` never reads it — a fact judges only once a rule in `criteria.yaml` names it. A fact enters after its null told it apart from the real values; one the null covers stays a diagnostic of its panel | edited | — |
 
 ## Traps
 
@@ -144,7 +146,8 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
 - **It sets `ALGO_AUTONOMOUS=1`** (D4, owner 2026-10-04, in `run.main`; its subprocesses inherit
   it): the ledger's door refuses `oos2` to every step the policy does not list. 17, 18, 18.5 and 19
   are computed without any of their numbers read, registered, and only then is 20 read — a
-  missing row of 17-19 is a `PermissionError` before any command starts. ⚠️ Step 20 is not in
-  `_policy.yaml`, so its SPA half is not read (`studies/closing/blindJoint/README.md`).
+  missing row of 17-19 is a `PermissionError` before any command starts. Step 20 (`BlindJoint`) is in
+  `_policy.yaml`'s `reserved_for` since 2026-10-04 (owner): its StepM over oos2 is read, one look
+  counted (`studies/closing/blindJoint/README.md`).
 - **Batches are named by the brief's `strategy`**, not its file stem (dots, not dashes): batches
   made before 2026-10-02 under `Strategy_20-25-72` are not found by 17-20.

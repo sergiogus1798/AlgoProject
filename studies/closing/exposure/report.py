@@ -38,7 +38,7 @@ def main() -> None:
         output.member(out, m, f"Exposición — {m['strategy']}")
     output.population(out, "exposure", found["population"],
                       f"Exposición — {args.project} / {args.databank}")
-    verdicts.write(out, found["table"], got["packed"], " ".join(sys.argv), args.set)
+    verdicts.write(out, found["table"][many.CSV], got["packed"], " ".join(sys.argv), args.set)
     print(markdown.render(found["population"], "Exposición"))
     print(f"-> {out / 'verdict.csv'}")
 

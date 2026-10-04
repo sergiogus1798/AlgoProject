@@ -13,9 +13,10 @@ project is running — the one command the custodian may receive between start a
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `api.py` | `ROUTER`: `GET /api/pulse`, `GET /api/ops/sqx`, `GET /api/ledger?study=` | imported | request → JSON |
+| `api.py` | `ROUTER`: `GET /api/pulse`, `GET /api/ops/sqx`, `GET /api/ops/steps?install=&project=`, `GET /api/ledger?study=` | imported | request → JSON |
 | `pulse.py` | One reading of the custodian: `n de N` from the newest job log's `PROGRESS` line — or, for a run started outside the window, the running task's count from the worker's status line (`runs.count`) — rate since the project started, JVM PSS against `-Xmx`, CPU over 0.5 s, `MemAvailable`, how many more backtests fit at the measured (or assumed 10 MB) slope, and the warnings | imported | /proc + logs → dict |
 | `runs.py` | What each worker runs now: project and task from its log, done/total from `progress.state`, the percent SQX's log gives or done ÷ total. Nothing when the worker is down or its last start finished | imported | logs + status → list |
+| `steps.py` | `GET /api/ops/steps`: `progress.state` plus `rows` — SQX tasks sorted by the workflow step their stage belongs to (`sqx/projects/stages.yaml`; the project file lists WFM before CrossTF and the WFC), the Python steps (`kind: python`) from the workflow rail's readers with the newest autopilot run's `pasos.csv` and failed window jobs laid over, and `mother` (n of SPP OOS) on the running WFC leg | imported | project → dict |
 | `ledgerview.py` | One study's ledger as JSON: its searches, funnel, segments read, virgin map, blind door of step 20 and pooled N/σ | imported | ledger jsonl → dict |
 
 SQX's own log carries no backtest count. A daemon job that prints `PROGRESS <pct> <n> de <N>`

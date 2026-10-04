@@ -32,11 +32,13 @@ def test_swap_block_recovers_oos_filed_as_is() -> None:
 
 
 def test_swap_block_recovers_is_filed_as_oos() -> None:
-    """A build-side databank (`CrossTF_Mothers`) that filed its numbers as `(OOS)` instead."""
+    """A build..oos1 databank (`CrossTF_Mothers`) filed its numbers as `(OOS)`: they are OOS1's,
+    and the header must say so (owner, 2026-10-04), not «IS»."""
     frame = pd.DataFrame({"Net profit (IS)": [0.0, 0.0], "Net profit (OOS)": [50.0, 75.0]})
     got = swap_block(frame, "CrossTF_Mothers")
-    assert list(got["Net profit (IS)"]) == [50.0, 75.0]
-    assert list(got["Net profit (OOS)"]) == [0.0, 0.0]
+    assert list(got["Net profit (OOS1)"]) == [50.0, 75.0]
+    assert list(got["Net profit (IS)"]) == [0.0, 0.0]
+    assert "Net profit (OOS)" not in got
 
 
 def test_swap_block_leaves_a_real_split_alone() -> None:

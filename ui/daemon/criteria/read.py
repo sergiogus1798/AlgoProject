@@ -17,7 +17,8 @@ from ui.text.glossary import label
 # The file the autopilot judges with and the history of what the window changed in it. A dict
 # so a test points both at copies.
 FILES = {"criteria": ROOT / "pipeline" / "autopilot" / "criteria.yaml",
-         "history": ROOT / "ledger" / "criteria-history.jsonl"}
+         "history": ROOT / "ledger" / "criteria-history.jsonl",
+         "offered": ROOT / "pipeline" / "autopilot" / "offered.yaml"}
 WORDS = {"pass": "Aprobado", "fail": "Suspenso"}
 GROUPS = {"all": "Todas", "any": "Alguna"}
 SHOWN = 30      # history rows sent to the window, newest first
@@ -101,9 +102,28 @@ def row(rule: dict) -> dict:
             "kind": kind(rule), "passes": passes, "limbo": limbo, "by": "; ".join(by)}
 
 
+def offered(n: str, used: list[dict]) -> list[dict]:
+    """The facts offered.yaml lists for step `n` that no rule names yet, as rows with no threshold.
+
+    Args:
+        n: Step number.
+        used: The step's rules.
+
+    Returns:
+        Rows shaped as `row`'s, `passes` and `limbo` «—»: computed, shown, judging nothing.
+    """
+    ruled = {r.get("fact") for r in used}
+    listed = yaml.safe_load(FILES["offered"].read_text(encoding="utf-8")).get(n) or []
+    return [{"fact": o["fact"], "label": o["name"], "kind": "Test de la app", "passes": "—",
+             "limbo": "—", "by": "",
+             "tip": f"{o['fact']}\n\nDisponible, sin umbral todavía: no juzga hasta que se "
+                    f"le ponga uno. Lo que da sin ventaja: {o['card']}"}
+            for o in listed if o["fact"] not in ruled]
+
+
 def menu(n: str, used: list[dict]) -> list[dict]:
     """The facts a rule of step `n` may name: those of the newest autopilot run that judged it,
-    plus the ones its rules already name.
+    the ones offered.yaml lists for it, plus the ones its rules already name.
 
     Args:
         n: Step number.
@@ -119,6 +139,7 @@ def menu(n: str, used: list[dict]) -> list[dict]:
         if found else set()
     keys |= {r["fact"] for rule in used for r in [rule, *(rule.get("all") or rule.get("any") or [])]
              if "fact" in r}
+    keys |= {o["fact"] for o in offered(n, [])}
     return sorted(({"fact": k, "label": name(k), "sqx": "sqx" in k.rsplit(".", 1)[-1].lower()}
                    for k in keys), key=lambda f: (f["label"], f["fact"]))
 
@@ -143,8 +164,14 @@ def build() -> dict:
         for (text, metric, passes), key in zip(rows, keys)]}
 
 
-def said(rule: dict | None) -> str:
-    """A rule of the history in one line; «—» for none and for the freeze's own mark."""
+def said(rule: object) -> str:
+    """One side of a history line in words: a rule; a step's whole list of rules, replaced at
+    once, as its lines joined; a plain value (a cut, the dev sample) as itself; «—» for none
+    and for the freeze's own mark."""
+    if isinstance(rule, list):
+        return "; ".join(map(said, rule)) or "—"
+    if not isinstance(rule, dict):
+        return "—" if rule is None else str(rule)
     if not rule or "sha" in rule:
         return "—"
     return f"{row(rule)['label']}: " + " · limbo ".join(t for t in test(rule) if t != "—")
@@ -165,8 +192,8 @@ def state() -> dict:
         `frozen` (None, or `on`, `by` and `changed`: the file no longer matches what was
         frozen), `dev`, `build` (step 6), `steps` — every step that has tests or an entry in
         criteria.yaml, in WORKFLOW's order, each with `n`, `title`, `cut` (None: the file gives
-        it no databank to cut, so no rule can be added from here), `rows` and `facts` — and
-        `history`.
+        it no databank to cut, so no rule can be added from here), `rows`, `facts` and
+        `offered` (facts published for a criterion with no threshold yet) — and `history`.
     """
     noted = read(FILES["criteria"])
     lines = FILES["criteria"].read_text(encoding="utf-8").splitlines()
@@ -181,6 +208,6 @@ def state() -> dict:
         steps.append({"n": s["n"], "title": s["title"], "cut": spec.get("cut"),
                       "rows": [row(r) | {"why": hint(lines, at[i][0])}
                                for i, r in enumerate(rules)],
-                      "facts": menu(s["n"], rules)})
+                      "facts": menu(s["n"], rules), "offered": offered(s["n"], rules)})
     return {"frozen": frozen and {**frozen, "changed": frozen["sha"] != sha(doc["steps"])},
             "dev": doc["dev"], "build": build(), "steps": steps, "history": history()}

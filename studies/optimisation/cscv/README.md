@@ -45,8 +45,8 @@ per chunk of 1,024 partitions. On `Test_USDJPY_donchianUpperCrossUp_H1/Strategy_
 study 6.6 s with a ~0.5 GB peak per worker (🔬 2026-10-01); `tests/test_cscv.py` holds the two
 equal partition by partition.
 
-**Extensions of this project, marked as such in the result:** the `plateau_centre` and
-`random_profitable` rules, the Sortino score (every rule runs under both Sharpe and Sortino,
+**Extensions of this project, marked as such in the result:** the `plateau_centre` rule (radius `cscv.plateau_radius`, default 1 level) and
+the Sortino score (every rule runs under both Sharpe and Sortino,
 `report.py`'s `SCORE_KEYS`, so the window's "Puntuación" selector switches without a second run;
 `cscv.score` only picks which signs the verdict and `cscv.json`'s flat keys), the slope across
 all variants («Pendiente»), the dominance against the median variant, and the rule cost on the

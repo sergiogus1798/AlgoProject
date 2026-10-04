@@ -1,5 +1,6 @@
 """The scatter block: points by group, the quadrants through zero and the fitted line if any."""
 
+import random
 from collections.abc import Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
@@ -12,11 +13,21 @@ from ui.desktop.blocks.states import SERIES
 from ui.desktop.theme import T
 
 
+MOST = 400   # points drawn; the fit and r in the block were computed on all of them
+
+
+def _sample(b: dict) -> dict:
+    """The block with at most MOST points (seeded, so a redraw shows the same ones); the axes
+    keep the range of all of them."""
+    pts = b["points"]
+    xs, ys = [p["x"] for p in pts], [p["y"] for p in pts]
+    kept = pts if len(pts) <= MOST else random.Random(0).sample(pts, MOST)
+    return {**b, "points": kept, "n_all": len(pts), "span": ((min(xs), max(xs)), (min(ys), max(ys)))}
+
+
 def _maps(b: dict, box: QRectF) -> tuple[Callable, Callable, tuple, tuple]:
     """The two data-to-pixel maps and the two data ranges."""
-    xs = [p["x"] for p in b["points"]]
-    ys = [p["y"] for p in b["points"]]
-    sx, sy = (min(xs), max(xs)), (min(ys), max(ys))
+    sx, sy = b["span"]
     return (axis.scale(*sx, box.left(), box.right()), axis.scale(*sy, box.bottom(), box.top()),
             sx, sy)
 
@@ -85,10 +96,13 @@ def widget(block: dict) -> QWidget:
     Returns:
         The framed chart and its key.
     """
-    b = block
+    b = _sample(block)
     items = [("box", SERIES[i % len(SERIES)], g) for i, g in enumerate(_groups(b))]
     if b["fit"]:
         f = b["fit"]
         items.append(("dash", T["text"], f"recta ajustada, pendiente {chart.num(f['slope'])}, "
                                          f"r = {f['r']:.3f}"))
+    if b["n_all"] > MOST:
+        items.append(("box", T["faint"], f"muestra de {MOST} de {b['n_all']} puntos"
+                      + ("; la recta usa los " + str(b["n_all"]) if b["fit"] else "")))
     return card(b, chart.Canvas(_draw(b), _tip(b)), chart.key(items))

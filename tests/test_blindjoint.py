@@ -100,15 +100,15 @@ def main() -> None:
     open_cfg = {**CFG, "joint": {**CFG["joint"], "pieces": None}}   # before the owner's rule
     got = many.run(refused, open_cfg)
     member = {m["strategy"]: m for m in got["members"]}
-    if member["b"]["verdict"]["label"] != "INCOMPLETA" or "b" in got["measured"]["states"].index:
+    if member["b"]["verdict"]["label"] != "Incompleta" or "b" in got["measured"]["states"].index:
         failures.append("una madre incompleta se ha leído")
     if set(got["measured"]["calls"].loc["a"]) != {"none"}:
         failures.append("sin oos2 la llamada de una madre que pasa las piezas debe quedar sin leer")
-    if one.chosen(open_cfg) is not None or got["population"]["verdict"]["label"] != "SIN REGLA":
+    if one.chosen(open_cfg) is not None or got["population"]["verdict"]["label"] != "Sin regla":
         failures.append("sin regla del dueño el paso 20 ha elegido una lectura")
     if one.chosen(CFG) != ("sin_fallo", "entrantes"):               # owner, 2026-10-04
         failures.append("el paso 20 no lee la regla del dueño: sin_fallo sobre las entrantes")
-    if many.run(refused, CFG)["population"]["verdict"]["label"] == "SIN REGLA":
+    if many.run(refused, CFG)["population"]["verdict"]["label"] == "Sin regla":
         failures.append("con la regla del dueño el paso 20 sigue diciendo SIN REGLA")
 
     inputs.blind_door("TEST_M1_nunca_corrido")          # a human is never refused

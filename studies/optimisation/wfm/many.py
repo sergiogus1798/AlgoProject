@@ -19,52 +19,95 @@ GLOSSARY = [
      "de verdad (ventana OOS) — no compara celdas entre sí, ni qué tramos fueron buenos en "
      "distintas métricas. Bajo: ni siquiera dentro de esa celda el parámetro que ganó en IS "
      "tendía a ganar en OOS, así que esa celda concreta no sostiene su propio veredicto."},
+    {"term": "Blind ρ", "text": "El veredicto de la estrategia: ρ es la media (en z de Fisher) de "
+     "los ρ por celda — en cada celda, Spearman entre lo que cada tramo logró al optimizarse "
+     "(IS) y lo que logró después (OOS) — con un intervalo de confianza que remuestrea celdas. "
+     "Blind (ciego): el intervalo incluye 0, optimizar mejor no dice nada de lo que viene. "
+     "Predicts: está por encima de 0. Perverse: por debajo, lo que optimiza mejor va peor."},
+    {"term": "Veredicto de SQX", "text": "La regla del área de SQX (un rectángulo de celdas "
+     "aprobadas en la matriz Pass / Fail). Es el juicio propio de SQX, aparte del nuestro (ρ)."},
     {"term": "Deriva", "text": "Qué parte de los parámetros cambia el optimizador de un tramo "
      "al siguiente, en desviaciones típicas de cada uno."}]
+
+
+def sqx_says(message: str | None) -> str:
+    """SQX's own English message, quoted after a Spanish sentence saying what it means."""
+    return ("No superó el filtro de robustez del cross check. " if message and "Robustness" in message
+            else "") + f"SQX dice: «{message}»"
+
+
+def pct(share: float) -> str:
+    """A share as the owner reads it: 0.3333 -> «33,3 %»."""
+    return f"{share * 100:.1f} %".replace(".", ",")
 
 
 def grid(cells: pd.DataFrame, strategy: str) -> dict:
     """One strategy's ρ per cell: runs down, out-of-sample share across."""
     mine = cells[cells["strategy"] == strategy].pivot_table(index="runs", columns="oos_pct",
                                                            values="rho", observed=True)
-    return {"kind": "grid", "title": f"ρ por celda — {strategy}",
+    return {"kind": "grid", "title": f"Correlación IS→OOS dentro de la celda (Spearman) — {strategy}",
+            "help": "Dentro de cada celda, Spearman entre lo que cada tramo logró al optimizarse "
+                    "(ventana IS) y lo que logró después (ventana OOS), sobre la métrica leída. "
+                    "Alto (verde): el tramo que mejor optimizó tendió a ir mejor después. Cerca "
+                    "de 0: optimizar no predice. Negativo (rojo): optimizar mejor fue peor después.",
             "rows": [str(r) for r in mine.index], "cols": [f"{c}%" for c in mine.columns],
             "values": [[None if pd.isna(v) else float(v) for v in row]
                        for row in mine.to_numpy()],
             "scale": "diverging", "levels": [-0.6, -0.4, -0.2, -0.05, 0.05, 0.2, 0.4, 0.6],
-            "labels": None, "note": "Filas: número de tramos. Columnas: parte fuera de muestra."}
+            "labels": [[None if pd.isna(v) else f"{v:+.2f}".replace(".", ",") for v in row]
+                       for row in mine.to_numpy()], "note": "Filas: número de tramos. Columnas: parte fuera de muestra."}
 
 
 def member(strategy: str, got: dict, result: dict, cfg: dict, started: float,
            failed: str | None, identity: str | None = None) -> dict:
     """One strategy's verdict and its matrix, flagged when SQX itself failed it."""
     comp = result["companions"]
+    shown = contract.matrix(result["checked"], result["scored"],
+                            result["rules"].loc[strategy].to_dict(), strategy,
+                            result["sqx_failed"].get(strategy), result["objectives"] is None)
+    at = next(i for i, b in enumerate(shown) if b["kind"] == "table")
+    # the ρ matrix to the right of the Pass / Fail one
+    shown.insert(at + 1, grid(result["cells"], strategy) | {"beside": True})
+    equity_one, selectors = contract.equity_versus(result["trades"], result["original"],
+                                                   result["windows"], strategy)
+    sqx = result["sqx_failed"].get(strategy)
     return envelope.envelope(
         MODULE, strategy, identity, cfg, started,
         [envelope.tab("matrix", "La matriz", [
-            *contract.matrix(result["checked"], result["scored"],
-                             result["rules"].loc[strategy].to_dict(), strategy,
-                             result["sqx_failed"].get(strategy), result["objectives"] is None),
+            *shown,
             *contract.equity_blocks(result["trades"], strategy),
-            grid(result["cells"], strategy),
+            *equity_one,
             blocks.table("La misma correlación en otras métricas",
-                         comp[comp["strategy"] == strategy].drop(columns=["strategy"]),
+                         comp[comp["strategy"] == strategy].drop(columns=["strategy"]).rename(columns={
+                             "metric": "Métrica", "low": "Límite inferior", "high": "Límite superior",
+                             "share_negative": "Celdas con ρ negativo"}),
                          "Un veredicto que sólo se sostiene en la métrica con la que se leyó "
-                         "es una propiedad de esa métrica, no de la estrategia.")]),
+                         "es una propiedad de esa métrica, no de la estrategia.")],
+                      selectors=selectors),
          objectives.tab(result["checked"], result["objectives"], strategy),
          *([assetview.tab(result["benchmark"][strategy])]
            if strategy in result["benchmark"] else [])],
-        blocks.verdict(got["verdict"], STATE[got["verdict"]],
+        blocks.verdict(f"{got['verdict'].capitalize()} ρ", STATE[got["verdict"]],
                        call.sentence(got, result["warning"]).replace("**", ""), got["rho"],
-                       [{"label": "celdas con ρ negativo", "state": "info",
-                         "value": got["share_negative"], "note": ""},
-                        {"label": "parámetros que cambian por tramo",
+                       [*([{"label": "SQX: Failed" if failed or sqx else "SQX: Pass", "state": "fail" if failed or sqx else "pass",
+                            "value": None,
+                            "note": "El juicio propio de SQX (regla del área de la matriz), "
+                                    "aparte de nuestro ρ. "
+                                    + (f"No pasó. {sqx_says(failed)}" if failed else "Pasó.")}]
+                          if sqx is not None or failed else []),
+                        {"label": "Celdas con ρ negativo", "state": "info",
+                         "value": got["share_negative"], "shown": pct(got["share_negative"]),
+                         "note": "De las celdas de la matriz, cuántas tienen Spearman IS→OOS bajo 0."},
+                        {"label": "Parámetros que cambian por tramo",
                          "state": "watch" if got["drift_high"] else "info",
-                         "value": got["share_changed"], "note": ""}]),
+                         "value": got["share_changed"], "shown": pct(got["share_changed"]),
+                         "note": "Qué parte de los parámetros re-decide el optimizador de un "
+                                 "tramo al siguiente."}]),
         # SQX's own area rule failed it and, with nothing deleted, it is still here: the
         # owner wants that raised wherever the strategy is read (2026-09-26).
         [{"code": "failed_en_sqx", "state": "fail",
-          "text": f"SQX la marcó como FAILED en la Walk-Forward Matrix: {failed}"}] if failed else None,
+          "text": f"SQX marcó esta estrategia como fallida en la Walk Forward Matrix. {sqx_says(failed)}"}]
+        if failed else None,
         glossary=GLOSSARY, summary={k: v for k, v in got.items() if k != "verdict"}
         | {"verdict": got["verdict"], "sqx_failed": bool(failed)})
 

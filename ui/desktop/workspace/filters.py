@@ -85,7 +85,7 @@ class FiltersStrip(QFrame):
 
         # One GET: state, funnel rows and metrics off a single `context` in the daemon.
         background.get("filters/state", lambda got: self.land({"at": at, "moved": moved, "got": got}),
-                       owner=self, project=at[0], databank=at[1])
+                       owner=self, project=at[0], databank=at[1], wait=120)
 
     def land(self, msg: dict) -> None:
         """Paint what `follow` read, unless another databank was chosen since. Rows the owner

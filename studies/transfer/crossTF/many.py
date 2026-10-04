@@ -9,27 +9,33 @@ import pandas as pd
 from core import tradestore
 from core.study import blocks, output, result as envelope
 from engines.nulls import inputs as nullinputs
-from studies.transfer.crossTF import cells, inputs, verdict
+from studies.transfer.crossTF import cells, equity, inputs, verdict
 
 MODULE = "studies.transfer.crossTF"
-STATE = {"survives": "pass", "inherited": "watch", "fails": "fail", "control_failed": "watch",
+STATE = {"survives": "pass", "inherited": "watch", "fails": "fail", "no_data": "none",
          "silent": "none", "unusable": "none"}
 MEANS_ES = {
-    "unusable": "el redondeo o el recorte movió los parámetros demasiado para atribuir nada",
-    "silent": "la entrada no disparó en ese timeframe: no hay nada que juzgar",
-    "control_failed": "el cambio de parámetros solo ya la rompió en su propio timeframe",
-    "survives": "bate al nulo de timing de su propio timeframe",
-    "inherited": "gana en el timeframe nuevo, pero no se distingue del azar ahí",
-    "fails": "no se traslada"}
+    "unusable": "lleva un bloque custom con una longitud sin verificar: no se pudo escalar",
+    "silent": "la entrada no disparó en ese timeframe en oos1: no hay nada que juzgar",
+    "no_data": "sin datos: menos de 30 operaciones en oos1, en la hermana o en su madre",
+    "survives": "bate a su nulo en oos1 más allá de lo que explica el resultado de su madre",
+    "inherited": "gana en oos1, pero no más de lo que predice el resultado de su madre",
+    "fails": "pierde en oos1"}
+# The word of each reading as the owner reads it (the raw ids stay in verdict.csv for /curate).
+READING_ES = {"survives": "Sobrevive", "inherited": "Heredada", "fails": "Falla",
+              "silent": "Silenciosa", "unusable": "No utilizable", "no_data": "Sin datos"}
 # The three roles a cell's role column takes that are not one of the five readings above, and
 # the sentence each earns in the reading menu and the glossary (feedback §5, "?" para Baseline,
 # Control, Scale).
 TERMS_ES = {
     "Baseline": "La madre corrida sin tocar, en su propio timeframe (bloque 0 del retest): el "
                 "número contra el que se compara todo lo demás.",
-    "Control": "La hermana escalada, devuelta a jugar en el timeframe DE LA MADRE. Aísla lo que "
-               "costó cambiar los parámetros por sí solo, sin que el timeframe nuevo tenga nada "
-               "que ver — por eso se lee antes que la p.",
+    "Control": "La hermana escalada, devuelta a jugar en el timeframe DE LA MADRE: lo que "
+               "costó cambiar los parámetros por sí solo. Se enseña y no se juzga (propuesta "
+               "de 2026-10-02): con periodos ÷4 es otra estrategia, no un control.",
+    "Sin escalar (unscaled)": "La madre con sus periodos intactos, corrida en un timeframe más "
+                              "lento. No se juzga: pregunta si el mercado se parece a sí mismo "
+                              "a esa escala, no si la estrategia está sobreajustada.",
     "Escala (scaled)": "La hermana cuyos periodos y salidas por número de barras se reescalaron "
                        "a un timeframe más lento (sqx.variants.scale). El stop en precio no se "
                        "toca, así que en H4 es aproximadamente el doble de ancho en precio que "
@@ -65,9 +71,9 @@ def load(export: Path, scaling: Path, feed: str, cfg: dict, strategy: str | None
         if table.empty:
             raise SystemExit(f"{strategy!r} no es una madre de {scaling}: nada que fabricar")
     cfg["run"]["blocks"] = inputs.blocks(table, cfg["run"]["blocks"], scaling.parent)
-    packed = inputs.gather(scaling.parent, export, inputs.trades(export))
+    packed = inputs.oos(inputs.gather(scaling.parent, export, inputs.trades(export)), feed)
     plan = inputs.plan(table, cfg["run"]["blocks"])
-    nullcfg = nullinputs.config([])
+    nullcfg = nullinputs.config(nullinputs.seeded(cfg["run"]["seed"]))
     # The null layer names whose costs its p-values carry, and the feed is the only thing
     # that says whose: a property of this run, not of the null machinery.
     nullcfg["feed"] = feed
@@ -77,59 +83,13 @@ def load(export: Path, scaling: Path, feed: str, cfg: dict, strategy: str | None
             "feed": feed, "identity": output.identify(export.parent, mothers)}
 
 
-def equity_blocks(plan: pd.DataFrame, packed: pd.DataFrame) -> list[dict]:
-    """Two lines charts per mother: baseline against its unscaled siblings, and against its
-    escaladas (feedback §5, "primero equities"). Tagged `mother`, so the window offers a
-    selector instead of drawing every mother's lines on top of each other.
-
-    Args:
-        plan: What `inputs.plan` returned.
-        packed: What `inputs.trades`/`inputs.gather` returned.
-
-    Returns:
-        `lines` blocks, two per mother that has a baseline long enough to draw, none for one
-        that traded fewer than two times.
-    """
-    grid_x = [round(float(p) * 100, 1) for p in np.linspace(0.0, 1.0, CURVE_POINTS)]
-    out = []
-    for mother, rows_m in plan.groupby("mother", sort=True):
-        base_row = rows_m[rows_m["role"] == "baseline"].iloc[0]
-        base = cells.curve(tradestore.block(packed, base_row.strategy, base_row.block),
-                           CURVE_POINTS)
-        if base is None:
-            continue
-        for role, label, extra in (("unscaled", "sin escalar", []),
-                                   ("scaled", "escaladas", [("control", "Control", "reference")])):
-            series = [{"label": f"Baseline {base_row.timeframe}", "values": base, "role": "real"}]
-            for row in rows_m[rows_m["role"] == role].itertuples():
-                c = cells.curve(tradestore.block(packed, row.strategy, row.block), CURVE_POINTS)
-                if c is not None:
-                    series.append({"label": row.timeframe, "values": c, "role": "sim"})
-            for extra_role, extra_label, extra_kind in extra:
-                for row in rows_m[rows_m["role"] == extra_role].itertuples():
-                    c = cells.curve(tradestore.block(packed, row.strategy, row.block),
-                                    CURVE_POINTS)
-                    if c is not None:
-                        series.append({"label": f"{extra_label} {row.timeframe}",
-                                      "values": c, "role": extra_kind})
-            if len(series) > 1:
-                out.append({"kind": "lines", "title": f"Equity: baseline contra {label}",
-                           "unit": "USD", "x": grid_x, "series": series,
-                           "auto_dash_negative": True, "zero_shade": True,
-                           "select": {"mother": mother},
-                           "note": "Eje X: avance de 0 a 100, no número de operación — las "
-                                   "hermanas de otro timeframe no tienen el mismo número de "
-                                   "operaciones que la baseline."})
-    return out
-
-
 def stat_grids(panel: pd.DataFrame, names: list[str]) -> list[dict]:
     """The mother-by-timeframe grid, one per statistic (feedback §5, "no solo Sharpe")."""
     out = []
     for name in names:
         wide = cells.matrix(panel, name)
         out.append({
-            "kind": "grid", "title": "Lectura de cada madre por timeframe",
+            "kind": "grid", "title": "Lectura de todas las madres por timeframe",
             "rows": list(wide.index), "cols": [str(c) for c in wide.columns],
             "values": [[None if pd.isna(x) else float(x) for x in row] for row in wide.to_numpy()],
             "scale": "diverging", "levels": None, "labels": None,
@@ -145,7 +105,7 @@ def correlation_grid(plan: pd.DataFrame, packed: pd.DataFrame) -> dict | None:
         return None
     wide = corr.assign(cell=corr["role"] + "_" + corr["timeframe"]).pivot_table(
         index="mother", columns="cell", values="corr", observed=True)
-    return {"kind": "grid", "title": "Correlación de los retornos mensuales contra la baseline",
+    return {"kind": "grid", "title": "Correlación de los retornos mensuales contra la baseline, todas las madres",
            "rows": list(wide.index), "cols": [str(c) for c in wide.columns],
            "values": [[None if pd.isna(x) else float(x) for x in row] for row in wide.to_numpy()],
            "scale": "diverging", "levels": None, "labels": None,
@@ -189,38 +149,47 @@ def run(got: dict, cfg: dict) -> dict:
     null_note = (f"Las {len(panel)} celdas —baseline, control, escaladas y sin escalar— se "
                 f"miden todas contra EL MISMO nulo: `{v['rung']}` (aleatoriza únicamente en "
                 f"qué vela entra cada operación; cuántas veces y cuánto se arriesga se dejan "
-                f"fijos), sobre {judged}. Lo único "
+                f"fijos), sobre {judged} y SOLO en oos1. Lo único "
                 f"que cambia celda a celda es sobre qué barras se dibuja ese nulo: las de su "
                 f"propio timeframe. Bloques de resultado leídos como {pairs}.")
-    scaled_tbl = blocks.table("Cada hermana escalada, juzgada", scaled_table)
-    scaled_tbl["select"] = {"scope": SCOPE["escalado"]}
-    scaled_tbl["help"] = [None, None, None, None, None,
-                          TERMS_ES["Baseline"], TERMS_ES["Control"], None, None]
-    unscaled_tbl = blocks.table("La madre en cada timeframe, sin escalar", unscaled_table,
-                                "Sin veredicto: pregunta si el mercado es autosimilar a esa "
-                                "escala, no si la estrategia está sobreajustada. Fallar aquí no "
-                                "dice nada de ella.")
-    unscaled_tbl["select"] = {"scope": SCOPE["sin_escalar"]}
+    def scaled_one(rows: pd.DataFrame) -> dict:
+        """The scaled siblings' table of one mother."""
+        tbl = blocks.table("Cada hermana escalada, juzgada", rows)
+        tbl["select"] = {"scope": SCOPE["escalado"]}
+        tbl["help"] = [None, None, None, None, None, None, None,
+                       TERMS_ES["Baseline"], TERMS_ES["Control"], None, None]
+        return tbl
+
+    def unscaled_one(rows: pd.DataFrame) -> dict:
+        """The unscaled table of one mother."""
+        tbl = blocks.table("La madre en cada timeframe, sin escalar", rows,
+                           "Sin veredicto: pregunta si el mercado es autosimilar a esa "
+                           "escala, no si la estrategia está sobreajustada. Fallar aquí no "
+                           "dice nada de ella.")
+        tbl["select"] = {"scope": SCOPE["sin_escalar"]}
+        return tbl
 
     reading_menu = {"kind": "list", "title": "Qué significa cada lectura",
-                    "note": "En el orden en que se comprueban — el control se lee antes que "
-                            "la p, porque el orden de las comprobaciones es el orden de la "
-                            "culpa.",
+                    "note": "En el orden en que se comprueban. Las tres primeras dicen que la "
+                            "prueba no se pudo hacer (limbo), no que la estrategia falle. "
+                            "La z nueva (z_new) es lo que la hermana añade a lo que ya "
+                            "enseñó su madre.",
                     "items": [{"title": k.capitalize(), "text": t}
                              for k, t in MEANS_ES.items()]
                              + [{"title": k, "text": t} for k, t in TERMS_ES.items()]}
     corr = correlation_grid(got["plan"], got["trades"])
     body = ([{"kind": "callout", "state": "info", "text": null_note}]
-           + equity_blocks(got["plan"], got["trades"])
+           + equity.blocks(got["plan"], got["trades"])
            + stat_grids(panel, stat_names)
            + ([corr] if corr else [])
-           + [{"kind": "bars", "title": "Cómo cayó la población", "unit": "hermanas",
+           + [{"kind": "bars", "title": "Cómo cayó la población (todas las madres)", "unit": "hermanas",
                "reference": None,
-               "items": [{"label": f"{tf} · {r}", "value": int(n), "error": None,
+               "items": [{"label": f"{tf} · {READING_ES[r]}", "value": int(n), "error": None,
                          "state": STATE[r]} for tf, tally in verdict.counts(readings).items()
                         for r, n in sorted(tally.items())]},
-              reading_menu, scaled_tbl, unscaled_tbl])
-    tabs = [envelope.tab("crossTF", "Cross-timeframe", body, selectors=[
+              reading_menu] + equity.per_mother(scaled_one, scaled_table, mothers)
+           + equity.per_mother(unscaled_one, unscaled_table, mothers))
+    tabs = [envelope.tab("crossTF", "Resultado por timeframe", body, selectors=[
         {"key": "mother", "label": "Madre", "options": mothers, "default": mothers[0]},
         {"key": "statistic", "label": "Estadístico", "help": "El estadístico que dibuja el "
          "mapa de calor. No mueve el veredicto, que se lee siempre sobre "
@@ -238,9 +207,9 @@ def run(got: dict, cfg: dict) -> dict:
     said = blocks.verdict(
         f"{int(counts.get('survives', 0))} de {len(readings)} sobreviven",
         "pass" if counts.get("survives", 0) else "fail",
-        "Una hermana escalada sobrevive si bate al nulo de timing de su propio timeframe con "
-        "su control intacto. " + " ".join(f"{tf}: " + ", ".join(
-            f"{r} {n}" for r, n in sorted(t.items())) + "." for tf, t in
+        "Una hermana escalada sobrevive si bate al nulo de timing de su timeframe en oos1 más "
+        "allá de lo que explica su madre. " + " ".join(f"{tf}: " + ", ".join(
+            f"{READING_ES[r].lower()} {n}" for r, n in sorted(t.items())) + "." for tf, t in
                                       verdict.counts(readings).items()))
     glossary = [{"term": k, "text": t} for k, t in MEANS_ES.items()] \
         + [{"term": k, "text": t} for k, t in TERMS_ES.items()]

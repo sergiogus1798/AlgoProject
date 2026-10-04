@@ -18,4 +18,10 @@ TIPS = {
     "design.max_levels": "Niveles máximos, explique la varianza que explique.",
     "design.plateau_share": "Cuánto por debajo del mejor nivel sigue contando como meseta.",
     "panel1.band_share": "Ancho de la banda de cada histograma: mediana ± este porcentaje de "
-                         "su propio valor. 0.30 es ±30 %."}
+                         "su propio valor. 0.30 es ±30 %.",
+    "criteria.is_floor": "Suelo de la mediana IS por métrica: por debajo no se publica el "
+                         "decaimiento mediana(OOS1)/mediana(IS), porque el cociente cambia de "
+                         "signo o explota.",
+    "criteria.median_floor_iqr": "La distancia del original a la mediana, en % de la mediana, "
+                                 "solo se publica si la mediana está al menos a estos IQR de "
+                                 "cero."}

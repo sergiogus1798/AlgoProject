@@ -118,7 +118,7 @@ def test_strategy() -> None:
     page.open_study("gate")
     assert page.studies.tabText(page.studies.currentIndex()) == "Puerta IS/OOS"
     assert page.cells["gate"]["state"] in ("pass", "fail") and page.view.results
-    assert "elimina" in page.head.text()
+    assert "Elimina" in page.head.text()
     shot(page, "strategy")
 
     page.open_study("edgeCost")

@@ -1,5 +1,7 @@
 """The pass/fail matrix as SQX paints it and the cells' equity, as the contract's blocks (encargo 37)."""
 
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -87,10 +89,11 @@ def matrix(checked: pd.DataFrame, scored: pd.DataFrame, rule: dict, strategy: st
     return [
         *([{"kind": "callout", "state": "watch", "text": PARTIAL.format(
             n=int(mine["active"].iloc[0]), pct=rule["threshold_pct"])}] if partial else []),
-        {**blocks.table("Matriz pasa / no pasa", grid,
+        {**blocks.table("Matriz Pass / Fail", grid,
                         f"Cada celda: condiciones cumplidas sobre activas; aprueba con el "
                         f"{rule['threshold_pct']} %. Pasa el ratón por una celda para ver cada "
-                        f"condición con su valor."), "states": states, "tips": tips},
+                        f"condición con su valor."), "states": states, "tips": tips,
+         "compact": True},
         {"kind": "callout", "state": "pass" if got["passed"] else "fail",
          "text": (f"{'Aprueba' if got['passed'] else 'No aprueba'}: necesita "
                   f"{rule['min_squares']} celdas aprobadas en un rectángulo {rule['rows']}×"
@@ -130,3 +133,42 @@ def equity_blocks(trades: pd.DataFrame, strategy: str) -> list[dict]:
                      "laborables (los días sin operaciones cuentan como 0), media / desviación "
                      "× √252. Las celdas reparten la misma historia: la dispersión describe, "
                      "no es un error estándar.")]
+
+
+def cell_name(cell: str) -> str:
+    """«WF: 6 runs : 20 % OOS» as the reader says it."""
+    runs, pct = re.findall(r"\d+", cell)
+    return f"{runs} pasadas · {pct} % fuera de muestra"
+
+
+def equity_versus(trades: pd.DataFrame, original: pd.DataFrame | None, windows: pd.DataFrame,
+                  strategy: str) -> tuple[list[dict], list[dict]]:
+    """One chart per cell, the cell's OOS equity against the original's, picked by a selector.
+
+    Args:
+        trades: `run.read`'s `trades`.
+        original: `run.read`'s `original`, None for an export older than 2026-10-01.
+        windows: `run.read`'s `windows` (the steps' run windows).
+        strategy: Which strategy to draw.
+
+    Returns:
+        The 30 `lines` blocks, each tagged `select: celda`, and the tab's one selector;
+        both empty when the export holds no original trades.
+    """
+    if original is None:
+        return [], []
+    got = equity.versus_original(trades, original, windows, strategy)
+    names = {c: cell_name(c) for c in sorted(got, key=lambda c: [int(n) for n in re.findall(r"\d+", c)])}
+    out = [{"kind": "lines", "title": f"Equity de la celda ({names[c]}) frente a la original",
+            "unit": "USD", "x": v["x"], "select": {"celda": names[c]},
+            "series": [{"label": f"celda ({v['n_cell']} operaciones)", "role": "real",
+                        "values": v["cell"]},
+                       {"label": f"original ({v['n_original']} operaciones)", "role": "reference",
+                        "values": v["original"]}],
+            "note": "Las dos curvas ganan sólo en los mismos tramos fuera de muestra de esta celda "
+                    "(los huecos entre tramos no cuentan para ninguna) y parten de 0 en el primero. "
+                    "La celda es la estrategia re-optimizada en cada tramo; la original, con los "
+                    "parámetros fijos del backtest. Si la celda queda por debajo, reoptimizar "
+                    "no compensó."} for c, v in got.items() if c in names]
+    return out, [{"key": "celda", "label": "Celda", "options": list(names.values()),
+                  "default": next(iter(names.values()), "")}]

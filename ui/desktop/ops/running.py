@@ -171,7 +171,7 @@ class Running(QFrame):
         if not project:
             self.note.setText("Este install no tiene proyectos.")
             return
-        background.get("progress", lambda got: self.progressed(role, project, got),
+        background.get("ops/steps", lambda got: self.progressed(role, project, got),
                        key=f"progress:{id(self)}", owner=self, install=role, project=project)
 
     def progressed(self, role: str, project: str, got: dict) -> None:

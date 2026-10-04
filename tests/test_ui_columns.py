@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx  # noqa: E402
 from PySide6.QtCore import Qt  # noqa: E402
+from PySide6.QtGui import QColor  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from ui.daemon.databank import columns as store  # noqa: E402
@@ -95,15 +96,15 @@ def settle(app: QApplication, done: object = None, seconds: float = 5) -> None:
 def heads(panel: Panel) -> list[str]:
     """The headers on screen, in visual order."""
     t, h = panel.table, panel.table.horizontalHeader()
-    return [t.horizontalHeaderItem(c).text() for c in sorted(range(t.columnCount()),
-                                                              key=h.visualIndex)]
+    return [t.model().headerData(c, Qt.Horizontal).removesuffix(" (?)") for c in sorted(range(t.columnCount()),
+                                                                   key=h.visualIndex)]
 
 
 def cells(panel: Panel, header: str) -> list:
-    """The items of one column, top to bottom as shown."""
+    """The cells of one column, top to bottom as shown (model indexes)."""
     t = panel.table
-    c = [t.horizontalHeaderItem(i).text() for i in range(t.columnCount())].index(header)
-    return [t.item(r, c) for r in range(t.rowCount())]
+    c = [t.model().headerData(i, Qt.Horizontal).removesuffix(" (?)") for i in range(t.columnCount())].index(header)
+    return [t.model().index(r, c) for r in range(t.rowCount())]
 
 
 def disk(root: Path, bank: str = "Results") -> dict:
@@ -155,25 +156,24 @@ def main() -> None:
         settle(app)
         now = heads(panel)
         assert "Sharpe IS" not in now and now[-6:] == [
-            "Estabilidad IS", "Beneficio neto OOS2", "Beneficio neto IS+OOS1",
+            "Estabilidad IS", "Net Profit OOS2", "Net Profit IS+OOS1",
             "Sharpe IS+OOS1", "Puerta", "SPP"], now       # metrics first, the study's after
-        inks = [c.foreground().color().name() for c in cells(panel, "Beneficio neto OOS")]
+        inks = [(c.data(Qt.ForegroundRole) or QColor()).name() for c in cells(panel, "Net Profit OOS")]
         assert inks[0] != C["dead"] and set(inks[1:]) == {C["dead"]}, inks   # 0 is not red
         for key, v, red in (("Profit factor|OOS", .97, 1), ("Profit factor|IS", 1.2, 0),
                             ("Max DD %|IS", -9, 0), ("Drawdown|IS+OOS1", -3, 0), ("ZScore|OOS",
                             -.4, 0), ("Ret/DD Ratio|OOS2", -.1, 1), ("spread.PF [OOS]", .9, 1)):
             assert columns.unprofitable(key, v) == red, key
-        assert [c.text() for c in cells(panel, "Beneficio neto OOS2")] == [DASH] * 6
-        assert [c.text() for c in cells(panel, "Sharpe IS+OOS1")] == [DASH] * 6
-        joined = cells(panel, "Beneficio neto IS+OOS1")
-        assert [c.text() for c in joined][:2] == ["1 000", "1 001"]
-        assert joined[5].text() == DASH and joined[5].toolTip() == columns.NO_OOS
+        assert [c.data() for c in cells(panel, "Net Profit OOS2")] == [DASH] * 6
+        assert [c.data() for c in cells(panel, "Sharpe IS+OOS1")] == [DASH] * 6
+        joined = cells(panel, "Net Profit IS+OOS1")
+        assert [c.data() for c in joined][:2] == ["1 000", "1 001"]
+        assert joined[5].data() == DASH and joined[5].data(Qt.ToolTipRole) == columns.NO_OOS
         # «–» last whichever way the column is sorted.
-        c = [panel.table.horizontalHeaderItem(i).text()
-             for i in range(panel.table.columnCount())].index("Beneficio neto IS+OOS1")
+        c = joined[0].column()
         for order in (Qt.DescendingOrder, Qt.AscendingOrder):
             panel.table.sortByColumn(c, order)        # what a header click does
-            texts = [x.text() for x in cells(panel, "Beneficio neto IS+OOS1")]
+            texts = [x.data() for x in cells(panel, "Net Profit IS+OOS1")]
             top = "1 004" if order == Qt.DescendingOrder else "1 000"
             assert texts[-1] == DASH and texts[0] == top, (order, texts)
         # A header dragged: kept in the new order; the name is put back in front.
@@ -199,23 +199,23 @@ def main() -> None:
         # Per databank: SPP keeps its default; Cribas, on Results too, shows Build's metrics.
         panel.select("SPP", "IS")
         settle(app, lambda: "SPP IS" in panel.columns.views)
-        assert "Beneficio neto IS+OOS1" not in heads(panel) and panel.table.rowCount() == 4
+        assert "Net Profit IS+OOS1" not in heads(panel) and panel.table.rowCount() == 4
         panel.select("Puerta", "Cribas")
         assert (heads(panel)[1], heads(panel)[-1]) == ("Sharpe IS+OOS1", "Veredicto")
         # One metric left, in every Results table; Cribas' hidden verdict keeps its 3 rows.
         panel.columns.keep(["Net profit|IS"])
         panel.open_sub(1)
-        assert heads(panel) == ["Estrategia", "Beneficio neto IS"] and panel.table.rowCount() == 3
+        assert heads(panel) == ["Estrategia", "Net Profit IS"] and panel.table.rowCount() == 3
         panel.set_hidden({"id1"})
-        assert [panel.table.isRowHidden(r) for r in range(3)].count(True) == 1
+        assert panel.table.rowCount() == 2 and len(panel.table.rows) == 3
         panel.select("Puerta", "Build")
-        assert heads(panel) == ["Estrategia", "Beneficio neto IS", "Puerta", "SPP", "WFC"]
+        assert heads(panel) == ["Estrategia", "Net Profit IS", "Puerta", "SPP", "WFC"]
         # A fresh panel (the next session) reads the same choices back from the store.
         again = Panel()
         again.fill(P)
         settle(app, lambda: "Results" in again.columns.views)
         settle(app, lambda: "Results" in again.columns.segs)
-        assert heads(again)[:2] == ["Estrategia", "Beneficio neto IS"], heads(again)
+        assert heads(again)[:2] == ["Estrategia", "Net Profit IS"], heads(again)
         again.columns.keep(None)                          # «Restaurar vista por defecto»
         again.open_sub(0)
         assert heads(again) == default + ["WFC"], heads(again)

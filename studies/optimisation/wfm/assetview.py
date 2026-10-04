@@ -64,7 +64,15 @@ def _monkey(m: dict | None) -> list[dict]:
                  "% de traders al azar que supera", "p"])
     p = next(r["p"] for r in m["rows"] if r["statistic"] == "sharpe")
     beats = p <= ALPHA
+    sharpe = next(r for r in m["rows"] if r["statistic"] == "sharpe")
     return [
+        {"kind": "callout", "state": "none", "text": (
+            f"Qué se compara: la estrategia original (parámetros fijos, sus {m['trades']} operaciones "
+            f"del oos2) con {m['draws']:,} traders al azar que hacen las mismas operaciones, con la "
+            "misma duración, tamaño, dirección y costes, y sólo eligen al azar cuándo entrar. No se "
+            "corre contra el azar cada celda de la matriz: sólo la original. "
+            f"Pasa si p ≤ {ALPHA}: menos del {ALPHA:.0%} de los traders al azar iguala o supera su "
+            "Sharpe, así que la entrada aporta algo más que la suerte del activo.")},
         {"kind": "callout", "state": "pass" if beats else "watch",
          "text": (f"{'Bate' if beats else 'No se distingue d'}{' al' if beats else 'el'} trader al "
                   f"azar en Sharpe: p = {p:.4f}. {m['draws']:,} traders con su misma huella — "
@@ -76,7 +84,12 @@ def _monkey(m: dict | None) -> list[dict]:
                         "comprando también gana: por eso se mira además contra el activo. "
                         f"Reconciliación del motor con las operaciones reales: {m['reconcile']:.5f}; "
                         f"semilla {m['seed']}."),
-         "states": [[None] * 5 + ["pass" if r["p"] <= ALPHA else None] for r in m["rows"]]}]
+         "states": [[None] * 5 + ["pass" if r["p"] <= ALPHA else None] for r in m["rows"]]},
+        blocks.distribution("Sharpe por operación de los traders al azar", "", m["samples"]["sharpe"],
+                            sharpe["real"], f"Cada barra: cuántos de los {m['draws']:,} traders al azar "
+                            "sacaron ese Sharpe por operación. La línea marcada es la estrategia "
+                            "original: cuanto más a la derecha de casi todos, menos se explica por el "
+                            "azar.", p=p)]
 
 
 def tab(got: dict) -> dict:

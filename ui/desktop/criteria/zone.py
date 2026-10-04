@@ -152,12 +152,17 @@ class CriteriaZone(QFrame):
                        "porque el autopilot se pararía al juzgarlo.")
         add.clicked.connect(lambda _, s=step: self.edit(s, None))
         row.addWidget(add)
-        if not step["rows"]:
+        if step["rows"]:
+            t = table(COLUMNS, [cells(r) for r in step["rows"]], TIPS)
+            t.cellDoubleClicked.connect(lambda r, _, s=step: self.edit(s, r))
+            self.column.addWidget(t)
+        else:
             self.column.addWidget(QLabel("Sin criterios: pasan todas."))
-            return
-        t = table(COLUMNS, [cells(r) for r in step["rows"]], TIPS)
-        t.cellDoubleClicked.connect(lambda r, _, s=step: self.edit(s, r))
-        self.column.addWidget(t)
+        if step["offered"]:
+            self.column.addWidget(QLabel(
+                "Disponibles, sin umbral todavía — calculados y visibles, no juzgan:",
+                objectName="dim"))
+            self.column.addWidget(table(COLUMNS, [cells(r) for r in step["offered"]], TIPS))
 
     def edit(self, step: dict, at: int | None) -> None:
         """Open the dialog for one rule of a step and send what it built to the daemon.

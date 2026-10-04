@@ -3,7 +3,7 @@
 | file | what it does | in → out |
 |---|---|---|
 | `config.py` | Reads `config.yaml` and the trade floor shared with the WFC and the CSCV | — → settings |
-| `surfaces.py` | The main feed and timeframe off the batch, the markets `_markets.yaml` declared, whether each one's costs are provisional, every (variant, market, segment) cell of the segments asked for, and each variant's `param_*` values (the axes of the pair grids) | `segments.parquet`, `metrics.parquet`, `assets/` → cells, surfaces |
+| `surfaces.py` | (`days`: one market's daily profit per variant in one segment, for the zero-edge null of `measure.lift`) The main feed and timeframe off the batch, the markets `_markets.yaml` declared, whether each one's costs are provisional, every (variant, market, segment) cell of the segments asked for, and each variant's `param_*` values (the axes of the pair grids) | `segments.parquet`, `metrics.parquet`, `assets/` → cells, surfaces |
 
 Holds nothing computed.
 

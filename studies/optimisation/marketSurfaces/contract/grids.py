@@ -10,11 +10,14 @@ from studies.optimisation.marketSurfaces.contract.tabs import selector, short
 from studies.optimisation.marketSurfaces.measure import region as regionmod
 
 PREFIX = "param_"
+# Where a metric turns from bad to good: the colour scale is centred on it, so red is always a
+# loss (owner, 2026-10-04 §19). Every metric not listed turns at zero.
+NEUTRAL = {"Profit Factor": 1.0}
 
 
 def label(value: float) -> str:
     """How a level is written on an axis and in the mark, so the two always agree."""
-    return f"{value:g}"
+    return f"{value:.3g}".replace(".", ",")
 
 
 def surface(one: pd.DataFrame, x: str, y: str, axes: dict) -> pd.DataFrame:
@@ -33,7 +36,8 @@ def _grid(title: str, s: pd.DataFrame, values: list, mark: dict, note: str,
           select: dict, region: list[dict] | None = None, **scale: object) -> dict:
     """A `grid` block on the axes of `s`, θ₀ marked."""
     return {"kind": "grid", "title": title, "rows": [label(v) for v in s.index],
-            "cols": [label(v) for v in s.columns], "values": values, "labels": None,
+            "cols": [label(v) for v in s.columns], "values": values,
+            "labels": None,
             "mark": mark, "note": note, "select": select, "region": region, **scale}
 
 
@@ -62,20 +66,25 @@ def markets(cells: pd.DataFrame, segment: str, x: str, y: str, axes: dict, order
     one = cells[cells["segment"] == segment]
     grids = {m: surface(one[one["market"] == m], x, y, axes) for m in order}
     stack = np.stack([g.to_numpy(dtype=float) for g in grids.values()])
-    lo, hi = float(np.nanmin(stack)), float(np.nanmax(stack))
-    span = [lo, hi] if lo < hi else None      # a flat surface everywhere has no range to share
+    centre = NEUTRAL.get(metric_label, 0.0)
+    # Symmetric around the neutral point (red = loss) and cut at the 95th percentile of the
+    # distance to it, so one outlier cell does not wash every other one out to white.
+    reach = float(np.nanquantile(np.abs(stack - centre), 0.95))
+    span = [centre - reach, centre + reach] if reach > 0 else None
+    bad = f"{metric_label} por debajo de {centre:g}" if centre else f"{metric_label} negativo"
     s = grids[order[0]]
     box = regionmod.box(s.index.get_loc(theta[y]), s.columns.get_loc(theta[x]),
                         len(s.index), len(s.columns), radius, list(s.index), list(s.columns))
     box = [{"row": label(c["row"]), "col": label(c["col"])} for c in box]
     tag = {"segment": segment, "x": x, "y": y, "metric": metric_label}
     return [_grid(f"{short(m)} — {segment}: {y} contra {x} ({metric_label})", g,
-                  g.to_numpy(dtype=float).tolist(), mark,
+                  blocks.plain(g.to_numpy(dtype=float), 4), mark,
                   "Mediana de la variante de cada celda en este mercado, sin contar a la "
-                  "madre. La misma escala de color en todos los mercados de esta pareja, "
-                  "tramo y métrica; el recuadro es la meseta detectada en el mercado "
-                  "principal, calcada aquí — nunca el mejor decil propio de este mercado.",
-                  {**tag, "market": short(m)}, box, scale="sequential", levels=None,
+                  f"madre. Rojo = {bad}, verde = por encima, más intenso cuanto más lejos; "
+                  "la misma escala en todos los mercados de esta pareja, tramo y métrica; el "
+                  "recuadro es la meseta detectada en el mercado principal, calcada aquí — "
+                  "nunca el mejor decil propio de este mercado.",
+                  {**tag, "market": short(m)}, box, scale="diverging", levels=None,
                   scale_range=span) for m, g in grids.items()]
 
 
@@ -167,17 +176,15 @@ def region_table(cells_by_metric: dict[str, pd.DataFrame], plateau: frozenset,
                       "mercado, no de dónde se puso el corte.")
 
 
-def tabs(cells: pd.DataFrame, label: str, alt_cells: pd.DataFrame, alt_label: str,
-         params: pd.DataFrame, segments: list[str], order: list[str], origin: str,
-         share: float, plateau: frozenset, radius: int, delta: float) -> list[dict]:
-    """The per-market grids (two metrics), the consensus map, and the region table.
+def tabs(cells_by_metric: dict[str, pd.DataFrame], params: pd.DataFrame, segments: list[str],
+         order: list[str], origin: str, share: float, plateau: frozenset, radius: int,
+         delta: float) -> list[dict]:
+    """The per-market grids (every metric), the consensus map, and the region table.
 
     Args:
-        cells: `inputs.surfaces.long`, usable cells of `config.yaml`'s primary metric.
-        label: What `cells["value"]` holds, e.g. "Net Profit".
-        alt_cells: The same, of `region_metric` — precomputed so the metric selector needs
-            no second run (CONTRACT §1 «selectors»).
-        alt_label: What `alt_cells["value"]` holds, e.g. "Profit Factor".
+        cells_by_metric: Metric label to `inputs.surfaces.long`, usable cells only. The FIRST is
+            `config.yaml`'s primary metric (the consensus map's); the rest are `extra_metrics`,
+            all precomputed so the metric selector needs no second run (CONTRACT §1 «selectors»).
         params: `variant_id` and the batch's `param_*` columns, one row per variant.
         segments: The segments read.
         order: Market order, the main one first.
@@ -198,20 +205,21 @@ def tabs(cells: pd.DataFrame, label: str, alt_cells: pd.DataFrame, alt_label: st
     theta = idx.loc[origin]
     # θ₀ stays on the axes and out of the medians: its own score in its own cell would
     # vouch for itself, and on the main market's build it is the in-sample pick.
-    primary = cells[cells["variant_id"] != origin].join(idx, on="variant_id")
-    alt = alt_cells[alt_cells["variant_id"] != origin].join(idx, on="variant_id")
+    joined = {k: c[c["variant_id"] != origin].join(idx, on="variant_id")
+              for k, c in cells_by_metric.items()}
+    primary = next(iter(joined.values()))
     grid_blocks, cons_blocks = [], []
     for segment in segments:
         for x, y in permutations(names, 2):
-            grid_blocks += markets(primary, segment, x, y, axes, order, theta, radius, label)
-            grid_blocks += markets(alt, segment, x, y, axes, order, theta, radius, alt_label)
+            for metric, cells in joined.items():
+                grid_blocks += markets(cells, segment, x, y, axes, order, theta, radius, metric)
             cons_blocks.append(consensus(primary, segment, x, y, axes, order, theta, share))
     axis = [{"key": "x", "label": "Eje X", "options": names, "default": names[0]},
             {"key": "y", "label": "Eje Y", "options": names, "default": names[1]}]
     market_sel = {"key": "market", "label": "Mercado", "options": [short(m) for m in order],
                  "default": short(order[0])}
     metric_sel = {"key": "metric", "label": "Métrica",
-                 "options": [label, alt_label], "default": label}
+                 "options": list(cells_by_metric), "default": next(iter(cells_by_metric))}
     return [result.tab("rejillas", "Superficies por pareja de parámetros", grid_blocks,
                        [market_sel, metric_sel, selector(segments), *axis],
                        "Elige mercado, métrica, tramo y un parámetro para cada eje. Cada celda "
@@ -226,6 +234,10 @@ def tabs(cells: pd.DataFrame, label: str, alt_cells: pd.DataFrame, alt_label: st
                        f"celda en su decil superior (la meseta, {100 * share:g} % de arriba "
                        f"de sus celdas). Una región que viaja se ve como una mancha alta y "
                        f"continua; θ₀ debería caer dentro. Es un mapa distinto del recuadro de "
-                       f"«rejillas»: aquí cada mercado se compara contra sí mismo."),
-            region_table({label: cells, alt_label: alt_cells}, plateau, segments, order,
+                       f"«rejillas»: aquí cada mercado se compara contra sí mismo. Solo "
+                       f"diagnóstico: no sirve para elegir parámetros nuevos — sería "
+                       f"reoptimizar sobre todos los mercados a la vez, que además están "
+                       f"correlacionados; una estrategia con parámetros cambiados así es "
+                       f"nueva y repite el workflow."),
+            region_table(cells_by_metric, plateau, segments, order,
                         radius, delta)]

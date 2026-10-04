@@ -4,7 +4,7 @@ REASONS = {
     "few_trades": "{n} operaciones: por debajo de {min}, ninguna tasa es legible",
     "short_window": "{days} dias de ventana: por debajo de {min}, el CAGR es una ficcion",
     "loses": "pierde dinero en la ventana; la eficiencia por hora no se interpreta",
-    "bench_loses": "el buy and hold pierde en esta ventana, asi que batirlo no dice nada "
+    "bench_loses": "el buy & hold pierde en esta ventana, asi que batirlo no dice nada "
                    "por si solo: lee `return_pct` y el drawdown, no la eficiencia",
     "inefficient": "eficiencia {eff:.2f}x, por debajo de {min:.2f}x: por hora expuesta no "
                    "rinde mas que tener el activo",
@@ -32,7 +32,7 @@ def judge(strategy: dict, bench: dict, exposure: dict, trade_off: dict, presence
         `verdict` -- "worth_it" or "not_worth_it" -- and `reasons`, the lines that decided
         it or that say why it cannot be read. A strategy is worth it when it earns more per
         hour of exposure than the benchmark does per hour of its own, by the multiple the
-        config asks for. Returning less in absolute terms than buy and hold is not a
+        config asks for. Returning less in absolute terms than buy & hold is not a
         failure here and never fires a reason: that is the whole point of the study.
     """
     gate = cfg["gate"]

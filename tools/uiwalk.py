@@ -24,7 +24,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QInputDialog,  # noqa: E402
-                               QMessageBox, QTabBar, QTableWidget)
+                               QMessageBox, QTabBar, QTableView)
 
 from shiboken6 import isValid  # noqa: E402
 
@@ -101,7 +101,7 @@ def drive(app: QApplication, zone: object) -> int:
                 bar.setCurrentIndex(i)
                 settle(app, 0.4)
         moved += 1
-    for table in [t for t in zone.findChildren(QTableWidget) if t.isVisible()]:
+    for table in [t for t in zone.findChildren(QTableView) if t.isVisible()]:
         if not isValid(table):
             continue
         for r in range(min(table.rowCount(), 3)):
@@ -124,7 +124,7 @@ def walk(shell: object, app: QApplication, name: str, project: str) -> str:
     if name == "Estrategia":
         table = shell.workspace.panel.table
         row = next((r for r in range(table.rowCount())
-                    if table.rows[table.item(r, 0).data(256)]["identity"]), None)
+                    if table.row_at(r)["identity"]), None)
         if row is not None:
             table.double(row, 0)        # the panel's double click: Databanks → Estrategia
         else:

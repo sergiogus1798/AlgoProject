@@ -2,6 +2,7 @@
 """Autopilot: one project's workflow, SQX and Python, judging and cutting at each judging step without stopping."""
 
 import argparse
+import csv
 import json
 import os
 import signal
@@ -31,6 +32,12 @@ def status(out: Path, line: str) -> None:
     """Overwrite estado.txt with one line, and print it: the only thing a watcher reads mid-run."""
     (out / "estado.txt").write_text(f"{datetime.now():%H:%M:%S} {line}\n", encoding="utf-8")
     print(line, flush=True)
+
+
+def mark(out: Path, n: str, state: str) -> None:
+    """Append `step, state, time` to pasos.csv: `empezó`, `hecho` or `falló`; the window reads it."""
+    with open(out / "pasos.csv", "a", newline="", encoding="utf-8") as f:
+        csv.writer(f).writerow([n, state, f"{datetime.now():%H:%M:%S}"])
 
 
 def summary(out: Path, project: str, done: list[dict], stop: dict, error: str = "") -> None:
@@ -149,6 +156,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
         for i, action in enumerate(actions):
             status(out, f"[{i + 1}/{len(actions)}] paso {action['n']} · {action['kind']}")
             began, empty = time.monotonic(), False
+            mark(out, action["n"], "empezó")
             if action["kind"] == "sqx":
                 if action["n"] == "19":     # the WFM reads oos2: the ledger's door first
                     blind.admit(project, "19")
@@ -181,6 +189,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
             done.append({"n": action["n"], "kind": action["kind"],
                          "s": time.monotonic() - began, "what": what})
             phases.row("accion", f"{action['n']} {action['kind']}", done[-1]["s"])
+            mark(out, action["n"], "hecho")
             summary(out, project, done, todo["stop"])
             if empty:
                 raise Done(f"el paso {action['n']} no dejó ninguna superviviente: no queda nada que seguir")
@@ -195,6 +204,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
             + "".join(traceback.format_exc().splitlines(keepends=True)[-TAIL:]) + "```\n",
             encoding="utf-8")
         summary(out, project, done, todo["stop"], error=n)
+        mark(out, n, "falló")
         status(out, f"FALLO en el paso {n}: {str(failed).splitlines()[0] if str(failed) else ''}")
         raise
     finally:

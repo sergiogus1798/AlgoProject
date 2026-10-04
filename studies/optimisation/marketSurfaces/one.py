@@ -8,16 +8,19 @@ import pandas as pd
 
 from core import assetdata
 from core.study import blocks, result as envelope
-from studies.optimisation.marketSurfaces.contract import grids, tabs
+from core.surface import dedupe
+from studies.optimisation.marketSurfaces.contract import criteria, density, grids, tabs
 from studies.optimisation.marketSurfaces.inputs import surfaces
-from studies.optimisation.marketSurfaces.measure import pairs, region, verify
+from studies.optimisation.marketSurfaces.measure import lift, pairs, region, verify
 from studies.optimisation.marketSurfaces.verdict import call
 
 MODULE = "studies.optimisation.marketSurfaces"
 ORIGIN = "P00000"
-# How a config's metric column is named on screen. Extend when `config.yaml`'s `metric` or
-# `region_metric` takes another value.
-METRIC_LABEL = {"NetProfit": "Net Profit", "ProfitFactor": "Profit Factor"}
+# How a config's metric column is named on screen and in which unit. Extend when `config.yaml`'s
+# `metric`, `extra_metrics` or `density_metrics` takes another value.
+METRIC_LABEL = {"NetProfit": "Net Profit", "ProfitFactor": "Profit Factor", "SharpeRatio": "Sharpe",
+                "ReturnDDRatio": "Ret/DD", "SortinoRatio": "Sortino"}
+UNIT = {"Net Profit": "USD"}
 
 
 def origin_pct(cells: pd.DataFrame) -> pd.DataFrame:
@@ -38,6 +41,45 @@ def origin_pct(cells: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def lifts(work: Path, cells: pd.DataFrame, order: list[str], cfg: dict) -> dict:
+    """The criteria metrics of every segment (`measure.lift`): computed, judged by nothing.
+
+    Args:
+        work: The batch directory.
+        cells: `inputs.surfaces.long`.
+        order: The main market first, then the declared ones present.
+        cfg: What `inputs.config.load` returned.
+
+    Returns:
+        Segment → {"markets": market → `lift.market`, "all": `lift.together`}. A market
+        that shares fewer than `lift.MIN_VARIANTS` distinct usable variants with the main
+        one is left out: its numbers are missing, never zero. One sign per calendar day is
+        drawn for every market at once, so the markets stay as correlated as they are.
+    """
+    out = {}
+    for segment in cfg["segments"]:
+        wide = surfaces.wide(cells, segment, order)
+        panels = {m: surfaces.days(work, m, segment) for m in order[1:]}
+        dates = sorted(set().union(*(p.index for p in panels.values())))
+        signs = pd.DataFrame(np.random.default_rng(lift.SEED).choice(
+            [-1.0, 1.0], size=(lift.DRAWS, len(dates))), columns=dates)
+        found = {}
+        for m, panel in panels.items():
+            kept = dedupe.distinct(wide[[order[0], m]].dropna().set_axis(["a", "b"], axis=1),
+                                   ("a", "b"))
+            ids = list(kept.index)
+            # No daily curve for these variants in this segment (the harvest kept none): the
+            # null cannot be drawn, so the market's numbers are missing here too.
+            if len(kept) < lift.MIN_VARIANTS or not set(ids) <= set(panel.columns):
+                continue
+            ta, tb = (pairs.top(kept[c], cfg["top_share"]) for c in ("a", "b"))
+            null = lift.flipped(panel[ids].to_numpy(), signs[panel.index].to_numpy(), len(ta))
+            found[m] = lift.market(kept.index.isin(ta), kept.index.isin(tb), null,
+                                   ids.index(ORIGIN) if ORIGIN in ids else None)
+        out[segment] = {"markets": found, "all": lift.together(found)}
+    return out
+
+
 def measure(work: Path, cfg: dict, symbol: str) -> dict:
     """Every number of one batch, nothing judged and nothing written.
 
@@ -55,9 +97,11 @@ def measure(work: Path, cfg: dict, symbol: str) -> dict:
     feed, timeframe = surfaces.main_feed(work)
     declared = surfaces.declared(symbol)
     cells = surfaces.long(work, cfg["segments"], cfg["metric"], cfg["min_trades"], feed)
-    # The second metric a heatmap can show, precomputed so the window's selector needs no
-    # second run (CONTRACT §1 «selectors», owner 2026-09-30 §8.5).
-    alt_cells = surfaces.long(work, cfg["segments"], cfg["region_metric"], cfg["min_trades"], feed)
+    # The other metrics a heatmap or a density can show, precomputed so the window's selector
+    # needs no second run (CONTRACT §1 «selectors», owner 2026-09-30 §8.5 and 2026-10-04 §19).
+    by_metric = {METRIC_LABEL[k]: cells if k == cfg["metric"] else
+                 surfaces.long(work, cfg["segments"], k, cfg["min_trades"], feed)
+                 for k in [cfg["metric"], *cfg["extra_metrics"], *cfg["density_metrics"]]}
     absent = [m for m in declared if m not in set(cells["market"])]
     order = [feed] + [m for m in declared if m not in absent]
     envelope.progress(30, f"{cells['variant_id'].nunique()} variantes x {len(order)} mercados")
@@ -79,11 +123,14 @@ def measure(work: Path, cfg: dict, symbol: str) -> dict:
     build = (pd.Timestamp(lo, unit="ms"), pd.Timestamp(hi, unit="ms") - pd.Timedelta(days=1))
     checked = pd.concat([verify.main(work, cells, feed, build),
                          verify.markets(work, cells, order[1:])], ignore_index=True)
-    envelope.progress(90, "verificado")
+    envelope.progress(80, "verificado; midiendo el Jaccard contra mercados sin ventaja")
+    measured = lifts(work, cells, order, cfg)
+    envelope.progress(90, "métricas para criterios medidas")
     return {"feed": feed, "timeframe": timeframe, "declared": declared, "absent": absent,
-            "order": order, "cells": cells, "alt_cells": alt_cells, "params": params,
+            "order": order, "cells": cells, "by_metric": by_metric, "params": params,
             "plateau": plateau, "pairs": found, "rows": rows, "checks": checked,
             "diagonal": verify.diagonal(found),
+            "lifts": measured,
             "provisional": {m: surfaces.provisional(m) for m in [feed] + declared}}
 
 
@@ -134,30 +181,28 @@ def result(m: dict, cfg: dict, started: float, strategy: str) -> dict:
     """
     said = call.mother(m["rows"], len(m["declared"]), cfg["min_share"])
     parts = [{"label": f"{tabs.short(r.market)} {r.segment}", "state": r.state,
-              "value": r.rho, "note": f"J {r.j:.2f} (azar {r.j0:.2f})"}
+              "value": r.rho, "shown": f"{r.rho:.2f}".replace(".", ","),
+              "note": f"Jaccard {r.j:.2f} (por azar {r.j0:.2f})".replace(".", ",")}
              for r in m["rows"].itertuples()]
     verdict = blocks.verdict(said["label"], said["state"],
                              said["meaning"] + " " + tabs.COSTS, None, parts)
-    usable = m["cells"][m["cells"]["usable"]]
-    usable_alt = m["alt_cells"][m["alt_cells"]["usable"]]
+    usable = {k: c[c["usable"]] for k, c in m["by_metric"].items()}
+    grid_metrics = list(usable)[:1 + len(cfg["extra_metrics"])]     # density-only ones stay out
     return envelope.envelope(
         MODULE, strategy, None, cfg, started,
-        [tabs.reading(m["rows"], cfg["segments"], cfg["rho_floor"]),
+        [criteria.into(tabs.reading(m["rows"], cfg["segments"], cfg["rho_floor"]), m["lifts"]),
          tabs.matrices(m["pairs"], cfg["segments"], m["order"]),
-         tabs.surfaces(usable, cfg["segments"], m["order"], ORIGIN),
+         density.tab(usable, {k: UNIT.get(k, "") for k in usable}, cfg["segments"], m["order"],
+                     ORIGIN),
          *([] if grids.missing(m["params"], ORIGIN) else
-           grids.tabs(usable, METRIC_LABEL.get(cfg["metric"], cfg["metric"]), usable_alt,
-                      METRIC_LABEL.get(cfg["region_metric"], cfg["region_metric"]),
-                      m["params"], cfg["segments"], m["order"], ORIGIN, cfg["top_share"],
-                      m["plateau"], cfg["region_radius"], cfg["region_delta"])),
+           grids.tabs({k: usable[k] for k in grid_metrics}, m["params"], cfg["segments"],
+                      m["order"], ORIGIN, cfg["top_share"], m["plateau"], cfg["region_radius"],
+                      cfg["region_delta"])),
          tabs.checks(m["checks"], m["diagonal"], verify.RANK_AGREES)],
         verdict, warnings(m),
-        [{"term": "rho_ab", "text": "Spearman del beneficio neto entre las variantes de dos "
-                                    "mercados: si ordenan igual las combinaciones."},
-         {"term": "J_ab", "text": "Jaccard de los deciles superiores: qué parte de las mejores "
-                                  "combinaciones son las mismas en los dos mercados."},
-         {"term": "n_eff", "text": "Variantes con un resultado distinto en el par: dos tuplas "
-                                   "que dan el mismo backtest cuentan una vez."},
+        [{"term": "Spearman (ρ)", "text": tabs.TERMS["Spearman"]},
+         {"term": "Jaccard", "text": tabs.TERMS["Jaccard"]},
+         {"term": "n efectivo", "text": tabs.TERMS["n_eff"]},
          {"term": "meseta del principal", "text": "Las variantes a pocos escalones de la "
           "madre en todos los parámetros a la vez, y no muy por debajo de su resultado en "
           "el mercado principal. Se calcula una sola vez ahí y se traslada tal cual a los "
@@ -165,7 +210,8 @@ def result(m: dict, cfg: dict, started: float, strategy: str) -> dict:
         {"call": said["label"], "state": said["state"], "passed": said["passed"],
          "declared": len(m["declared"]), "markets": len(m["order"]),
          "variants": int(m["cells"]["variant_id"].nunique()),
-         "segments": cfg["segments"], "costs_provisional": any(m["provisional"].values())})
+         "segments": cfg["segments"], "costs_provisional": any(m["provisional"].values()),
+         **criteria.summary(m["lifts"])})
 
 
 def run(strategy: str, work: Path, cfg: dict, symbol: str) -> dict:

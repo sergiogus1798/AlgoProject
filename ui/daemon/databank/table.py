@@ -1,12 +1,14 @@
 """One databank as SQX shows it: a row per strategy, its metrics, and a column group per study."""
 
 import math
+import threading
+from concurrent.futures import Future
 
 import pandas as pd
 
 from ui.daemon.databank import batches, cells, metrics
 from ui.daemon.loader import find
-from ui.daemon.results import catalogue
+from ui.daemon.results import catalogue, store
 from ui.daemon.workflow import ledgerview
 
 # Read together or not at all (WORKFLOW.md «los tres a la vez»), and step 20 after them: while
@@ -21,6 +23,11 @@ HIDDEN_FIELDS = {("crossmarket", "family"), ("crossmarket", "missing"),
                  ("crossmarket", "warnings"), ("crossmarket", "note"),
                  ("mcRetest", "qué perturba"), ("mcRetest", "operaciones vs original"),
                  ("mcRetest", "forma"), ("blindJoint", "reason")}
+# 🔬 2026-10-04: opening a project asks for the same 10,000-row table three times at once
+# (the tab list, the table, the filters), and the three builds shared one GIL: 60 s against
+# the window's 20. Whoever asks while a build is in flight waits for it and reads its answer.
+FLIGHTS: dict[tuple[str, str], Future] = {}
+GUARD = threading.Lock()
 
 
 def door(project: str) -> tuple[dict, str | None]:
@@ -82,7 +89,34 @@ def clean(value: object) -> object:
     return None if isinstance(value, float) and math.isnan(value) else value
 
 
+def figures_by_row(figures: pd.DataFrame | None) -> dict:
+    """A metrics frame as index → {column: value}: 10,000 rows of 34 figures read one
+    `.loc` and one `.get` at a time cost 2 s of the table's 4 (🔬 2026-10-04). Transposed,
+    so a row keeps the one dtype `.loc` gave it: an integer among floats is a float."""
+    return {} if figures is None else figures.T.to_dict()
+
+
 def table(project: str, databank: str) -> dict:
+    """`build`, once for everybody who asks while it runs; nobody may change what it returns."""
+    key = (project, find.spelled(project, databank))
+    with GUARD:
+        flight = FLIGHTS.get(key)
+        mine = flight is None
+        if mine:
+            flight = FLIGHTS[key] = Future()
+    if mine:
+        try:
+            flight.set_result(build(project, databank))
+            store.keep()
+        except Exception as failed:  # noqa: BLE001 — handed to every waiter, raised below
+            flight.set_exception(failed)
+        finally:
+            with GUARD:
+                del FLIGHTS[key]
+    return flight.result()
+
+
+def build(project: str, databank: str) -> dict:
     """GET /api/databank/table: the whole databank, every column the window may show.
 
     Args:
@@ -145,12 +179,9 @@ def table(project: str, databank: str) -> dict:
     if spare is not None:
         spare = spare[~spare.index.map(cells.norm).duplicated()]
         spare.index = spare.index.map(cells.norm)
-    rows = []
+    rows, held, spared = [], figures_by_row(figures), figures_by_row(spare)
     for key, name, said in lines:
-        at = key if by_id else name
-        figs = figures.loc[at] if figures is not None and at in figures.index else None
-        if figs is None and spare is not None and cells.norm(name) in spare.index:
-            figs = spare.loc[cells.norm(name)]
+        figs = held.get(key if by_id else name) or spared.get(cells.norm(name))
         values = [name] + [clean(figs.get(c)) if figs is not None else None
                            for c in figure_cols]
         states = {}

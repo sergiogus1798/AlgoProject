@@ -29,10 +29,6 @@ TIPS = {
                             "media del 5% de peores re-ejecuciones.",
     "fragility.confidence": "Confianza de los intervalos exactos sobre los cuantiles.",
     "fragility.band_levels": "Los percentiles que dibuja el abanico de equity.",
-    "fragility.fan_sample": "Cuántas curvas individuales se guardan por tarea, repartidas de "
-                            "peor a mejor por su equity final — no en orden de simulación —, "
-                            "para que una muestra pequeña siga cubriendo todo el rango "
-                            "(feedback 2026-09-30 §6: histogramas y equity curves por tarea).",
     "modes.dip_alpha": "Umbral del test del dip. Por debajo, la distribución se declara bimodal.",
     "modes.min_outcome_share": "Proporción de simulaciones que deben dar resultados distintos "
                                "antes de aplicar cualquier test de forma. Spread y slippage se "
@@ -53,4 +49,7 @@ TIPS = {
     "gates.psr_gate": "Probabilidad mínima de que la ventaja no sea cero.",
     "scoring.weights": "Cuánto pesa cada rol. La producción vale más de la mitad porque es la "
                        "única estimación real; el control pesa cero porque es el denominador.",
-    "scoring.tiers": "Cortes de la nota compuesta para STRONG / ACCEPTABLE / MARGINAL."}
+    "scoring.tiers": "Cortes de la nota compuesta para STRONG / ACCEPTABLE / MARGINAL.",
+    "criteria.real_floor_iqr": "La brecha de la mediana en % del original solo se publica si "
+                               "el original está al menos a tantos rangos intercuartílicos "
+                               "(IQR) de cero; por debajo, dividir por él no significa nada."}

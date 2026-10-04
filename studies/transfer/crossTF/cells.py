@@ -67,14 +67,14 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
         empty = {n: np.nan for n in names}
         return {"trades": 0, "seen": np.nan, "p": np.nan, **NO_NULL,
                 "seen_all": {**empty, TOTAL: np.nan}, "p_all": empty,
-                "warnings": ["the strategy never traded on this timeframe"]}
+                "warnings": ["La estrategia no operó en este timeframe: no hay nada que juzgar."]}
     kept = simulate.fixed(rows, frame, nullcfg)
     seen_all = {**simulate.real(kept, names),
                 TOTAL: annual_sharpe(rows["Profit/Loss"].to_numpy(dtype=float), rows["Close time"])}
     if len(rows) < min_trades:
         p_all = {n: np.nan for n in names}
         return {"trades": len(rows), "seen": seen_all[statistic], "p": np.nan, **NO_NULL,
-                "seen_all": seen_all, "p_all": p_all, "warnings": ["too few trades for a p"]}
+                "seen_all": seen_all, "p_all": p_all, "warnings": [f"Solo {len(rows)} operaciones en oos1, menos de las {min_trades} que hacen falta para calcular un p."]}
     drawn = simulate.nulls(kept, rung, nullcfg, key)
     p_all = {n: verdict.pvalue(seen_all[n], drawn[n], n) for n in names}
     mean, sd = float(np.mean(drawn[statistic])), float(np.std(drawn[statistic], ddof=1))

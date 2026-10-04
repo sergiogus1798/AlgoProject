@@ -3,7 +3,7 @@
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.breakage.mcRetest.contract import words
+from studies.breakage.mcRetest.contract import criteria, words
 from studies.breakage.mcRetest.inputs import tasks
 
 COMPOSITE_HELP = ("Media ponderada de cuatro subnotas sobre 100 — producción 55%, ejecución "
@@ -18,8 +18,8 @@ def verdict_block(got: dict) -> dict:
     v = got["verdict"]
     block = blocks.verdict(
         v["verdict"], words.STATE[v["verdict"]],
-        f"{words.VERDICTS[v['verdict']]} Limita: {v['binding']}.", v["composite"],
-        [{"label": k, "state": "fail" if k == v["binding"] and v["verdict"] == "FAIL"
+        f"{words.VERDICTS[v['verdict']]} Limita: {words.GROUPS[v['binding']]}.", v["composite"],
+        [{"label": words.GROUPS[k], "state": "fail" if k == v["binding"] and v["verdict"] == "FAIL"
           else "info", "value": x, "note": ""} for k, x in v["subscores"].items()])
     block["help"] = COMPOSITE_HELP
     return block
@@ -27,19 +27,20 @@ def verdict_block(got: dict) -> dict:
 
 def verdict_tab(got: dict) -> dict:
     """Every check that fired, with what it measured, and the sub-scores."""
-    rows = [["VETO" if f["gate"] else "aviso", f["test"], f["value"], f["limit"],
+    rows = [["Veto" if f["gate"] else "Aviso", words.test_name(f["test"]), f["value"], f["limit"],
              words.SENTENCES[f["veto"]]] for f in got["flags"]]
-    table = blocks.table("Qué saltó", pd.DataFrame(rows, columns=["tipo", "prueba", "midió",
-                                                                 "contra", "qué dice"]),
-                         "Qué comprobación descalificó la estrategia (VETO) o solo la marcó "
-                         "(aviso), y contra qué límite. Un VETO manda el veredicto a FAIL — o "
+    table = blocks.table("Qué comprobaciones saltaron", pd.DataFrame(
+                             rows, columns=["Tipo", "Prueba", "Midió", "Contra", "Qué dice"]),
+                         "Qué comprobación descalificó la estrategia (Veto) o solo la marcó "
+                         "(Aviso), y contra qué límite. Un veto manda el veredicto a FAIL — o "
                          "a INCONCLUSIVE cuando es sólo de datos, nunca de resultado."
                          + ("" if rows else " No saltó nada."))
     return envelope.tab("verdict", "Veredicto", [
         table,
         {"kind": "bars", "title": "Subnotas por grupo de tareas", "unit": "sobre 100",
-         "reference": None, "items": [{"label": k, "value": x, "error": None, "state": "info"}
-                                      for k, x in got["verdict"]["subscores"].items()]}])
+         "reference": None,
+         "items": [{"label": words.GROUPS[k], "value": x, "error": None, "state": "info"}
+                   for k, x in got["verdict"]["subscores"].items()]}])
 
 
 def cost_tab(got: dict, cfg: dict) -> dict:
@@ -48,23 +49,26 @@ def cost_tab(got: dict, cfg: dict) -> dict:
     floor = cfg["attribution"]["min_control_sigma"]
     return envelope.tab("cost", "Qué la rompe", [
         {"kind": "bars", "title": "Coste de cada tarea, en sigmas del control",
-         "unit": "sigmas", "reference": floor,
+         "unit": "σ", "reference": floor,
          "help": f"El control (tarea `bar`, sólo mueve la vela de inicio) da la sigma del "
                  f"ruido irreducible: {a['control_sigma']:,.0f} USD aquí. El desplazamiento de "
                  f"cada perturbación se mide en esos sigmas. Por debajo de {floor:g} sigma es "
                  f"ruido — no un hallazgo; a partir de {floor:g} sigma (la línea de "
                  f"referencia) se colorea como hallazgo. Este umbral sólo pinta esta barra: no "
                  f"veta nada por sí solo — los vetos de verdad (pestaña «Veredicto») usan sus "
-                 f"propios límites en fracción de beneficio, no en sigmas.",
+                 f"propios límites en fracción de beneficio, no en sigmas. Verde: dentro del ruido "
+                 f"o incluso mejor que el control (valor negativo = la perturbación no "
+                 f"cuesta, mejora); rojo: cuesta de {floor:g} σ en adelante. σ = sigma.",
          "note": f"El control mueve el resultado {a['control_sigma']:,.0f} USD por sí solo. "
                  f"Menos de {floor:g} sigma es ruido, no un hallazgo.",
-         "items": [{"label": tasks.TITLES[r["task"]], "value": r["cost_in_sigmas"],
-                    "error": None, "state": "fail" if r["cost_in_sigmas"] >= floor else "none"}
+         "items": [{"label": tasks.TITLES[r["task"]], "value": round(r["cost_in_sigmas"], 1),
+                    "error": None, "state": "fail" if r["cost_in_sigmas"] >= floor else "pass"}
                    for r in a["ranking"]]},
-        blocks.table("La clasificación", pd.DataFrame(
+        blocks.table("Clasificación de tareas por coste", pd.DataFrame(
             [[tasks.TITLES[r["task"]], r["cost"], r["cost_in_sigmas"], r["spread_vs_control"]]
              for r in a["ranking"]],
-            columns=["tarea", "coste (USD)", "sigmas del control", "dispersión vs control"]))])
+            columns=["Tarea", "Coste (USD)", "Sigmas del control",
+                     "Dispersión frente al control"]))])
 
 
 def stress_tab(got: dict) -> dict:
@@ -76,35 +80,32 @@ def stress_tab(got: dict) -> dict:
                             entry["_net"],
                             entry["original_net"], "Las seis perturbaciones a la vez, sobre "
                             "muestra completa. La línea es el backtest que ocurrió."),
-        {"kind": "cone", "title": "El abanico de equity bajo estrés", "unit": "USD",
-         "x": [round(float(p) * 100, 1) for p in fan["progress"]],
-         "bands": {str(k): list(v) for k, v in fan["bands"].items()},
-         "real": [None] * len(fan["progress"]), "split": None,
-         "note": "El eje X es avance de 0 a 100 y no número de operación: cada re-ejecución "
-                 "tiene su propia cuenta de operaciones."},
-        blocks.table("La cola", pd.DataFrame(
-            [["Beneficio p5", tail["net_p5"]["point"], tail["net_p5"]["lo"],
+        _fan_cone("Abanico de equity bajo estrés", fan),
+        blocks.table("La cola de la distribución", pd.DataFrame(
+            [["Net Profit p5", tail["net_p5"]["point"], tail["net_p5"]["lo"],
               tail["net_p5"]["hi"]],
-             ["Profit factor p5", tail["pf_p5"]["point"], tail["pf_p5"]["lo"],
+             ["Profit Factor p5", tail["pf_p5"]["point"], tail["pf_p5"]["lo"],
               tail["pf_p5"]["hi"]],
              ["Drawdown CVaR (%)", tail["drawdown"]["cvar"], None, None],
-             ["Operaciones bajo el agua", tail["underwater_median"], None, None],
-             ["P(beneficio > 0)", tail["positive_share"], None, None]],
-            columns=["medida", "valor", "intervalo 95 % desde", "hasta"]))])
+             ["Operaciones bajo el agua (mediana)", tail["underwater_median"], None, None],
+             ["Simulaciones rentables (%)", round(tail["positive_share"] * 100, 2), None, None]],
+            columns=["Medida", "Valor", "Intervalo al 95 %: desde", "Hasta"]))])
 
 
-def _sample_lines(task: str, got_t: dict) -> dict:
-    """A task's sampled equity curves — role `real` marks none, the original is a reference."""
-    fan = got_t["fan"]
-    sample = fan.get("sample")
-    x = [round(float(p) * 100, 1) for p in fan["progress"]]
-    series = [{"label": f"simulación {i + 1}", "values": [float(v) for v in row], "role": "sim"}
-             for i, row in enumerate(sample)] if sample is not None else []
-    return {"kind": "lines", "title": f"{tasks.TITLES[task]}: {len(series)} curvas muestreadas",
-           "unit": "USD", "x": x, "series": series, "zero_shade": True,
-           "note": "Eje X: avance de 0 a 100, no número de operación. Muestreadas repartidas "
-                   "de la peor re-ejecución a la mejor, no en el orden en que salieron — con "
-                   "pocas se ve igual el hueco entre las que sobreviven y las que no."}
+def _fan_cone(title: str, fan: dict) -> dict:
+    """A task's simulated equity as percentile bands 5-95 and 25-75, the median and the original."""
+    block = {"kind": "cone", "title": title, "unit": "USD",
+             "x": [round(float(p) * 100, 1) for p in fan["progress"]],
+             "bands": {str(k): [float(x) for x in v] for k, v in fan["bands"].items()},
+             "real": [None] * len(fan["progress"]) if fan["original"] is None
+             else [float(x) for x in fan["original"]], "split": None,
+             "note": "Banda clara: del 5 al 95 % de las re-ejecuciones. Banda oscura: del 25 al "
+                     "75 %. Línea central: la mediana. El eje X es avance de 0 a 100 y no "
+                     "número de operación: cada re-ejecución tiene su propia cuenta de "
+                     "operaciones."}
+    if fan["original"] is not None:
+        block["real_label"] = "backtest original"
+    return block
 
 
 def tasks_tab(got: dict) -> dict:
@@ -117,13 +118,15 @@ def tasks_tab(got: dict) -> dict:
                                 f"Perturba {words.PERTURBA[t]}. Deja fijo: "
                                 f"{words.FIJA[t]}.")
             for t in present if got[t]["modes"]["perturbed"]]
-    curves = [_sample_lines(t, got[t]) for t in present if got[t]["modes"]["perturbed"]]
+    curves = [_fan_cone(f"{tasks.TITLES[t]}: abanico de equity", got[t]["fan"]) for t in present
+              if got[t]["modes"]["perturbed"]]
     missing = [tasks.TITLES[t] for t in tasks.TASKS if t not in got]
     return envelope.tab("tasks", "Las ocho tareas", [
         blocks.table("Qué hizo cada tarea", pd.DataFrame(
-            rows, columns=["tarea", "beneficio p5 (USD)", "mediana Monte Carlo (USD)",
-                           "backtest original (USD)", "drawdown CVaR (%)"]),
+            rows, columns=["Tarea", "Net Profit p5 (USD)", "Mediana Monte Carlo (USD)",
+                           "Backtest original (USD)", "Drawdown CVaR (%)"]),
             f"No corrieron: {', '.join(missing)}." if missing else ""),
+        criteria.table(got),
         *[b for pair in zip(figs, curves) for b in pair]])
 
 
@@ -137,14 +140,15 @@ def levels_tab(got: dict, levels: pd.DataFrame, cfg: dict) -> dict:
                              observed=True)
             .reset_index())
     wide["task"] = wide["task"].map(tasks.TITLES)
+    wide = wide.rename(columns={"task": "Tarea", "metric": "Métrica"})
     wide.columns = [str(c) for c in wide.columns]
     return envelope.tab("levels", "Tabla de confianza", [
-        blocks.table("Beneficio p5 y drawdown CVaR, tarea a tarea", pd.DataFrame(
+        blocks.table("Net Profit p5 y Drawdown CVaR, tarea a tarea", pd.DataFrame(
             [[tasks.TITLES[t], got[t]["fragility"]["net_p5"]["point"],
               float(pd.Series(got[t]["_net"]).median()), got[t]["original_net"],
               got[t]["fragility"]["drawdown"]["cvar"]] for t in tasks.TASKS if t in got],
-            columns=["tarea", "beneficio p5 (USD)", "mediana Monte Carlo (USD)",
-                    "backtest original (USD)", "drawdown CVaR (%)"])),
+            columns=["Tarea", "Net Profit p5 (USD)", "Mediana Monte Carlo (USD)",
+                    "Backtest original (USD)", "Drawdown CVaR (%)"])),
         blocks.table(f"La tabla que SQX guardó, niveles {', '.join(map(str, show))}", wide,
                      "Tablas con los rangos desplazados por un run cortado no aparecen.")],
         note="Un nivel de confianza no es un escenario: el percentil 5 del beneficio y el del "
@@ -194,4 +198,5 @@ def summary(got: dict) -> dict:
     return {"verdict": v["verdict"], "composite": v["composite"], "binding": v["binding"],
             "stress_net_p5": round(s["net_p5"]["point"], 2),
             "stress_cvar_dd_pct": round(s["drawdown"]["cvar"], 2),
-            "vetoes": "; ".join(v["vetoes"]), "blocked_by": "; ".join(v["blocked_by"])}
+            "vetoes": "; ".join(v["vetoes"]), "blocked_by": "; ".join(v["blocked_by"]),
+            **criteria.summary(got)}

@@ -28,6 +28,7 @@ KINDS = {
 }
 PERCENTILES = (1, 5, 10, 25, 50, 75, 90, 95, 99)
 CONE_LEVELS = ("2.5", "25", "50", "75", "97.5")
+BANDS_5_95 = ("5", "25", "50", "75", "95")
 
 
 def _num(value: float) -> float | None:
@@ -78,7 +79,8 @@ def thin(length: int, most: int = 400) -> list[int]:
 def distribution(title: str, unit: str, values: np.ndarray, real: float | None, note: str,
                  p: float | None = None, band: tuple[float, float] = (5, 95),
                  bins: int = 60, series: dict[str, np.ndarray] | None = None,
-                 shift: dict | None = None, reals: dict[str, float | None] | None = None) -> dict:
+                 shift: dict | None = None, reals: dict[str, float | None] | None = None,
+                 sign_shade: bool = True, pivot: float = 0.0) -> dict:
     """The null's distribution with the real value marked, aggregated from the raw draws.
 
     Args:
@@ -93,6 +95,10 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
         series: Label -> raw values, overlaid on the same bins, each a density of area 1.
         shift: {"median", "ks_p"} between the series, computed by the study.
         reals: Label -> that series' own real, instead of one shared `real` (SPP IS/OOS).
+        sign_shade: False for a statistic whose sign is not good/bad (the window then paints
+            no red/green background and no «X % rentables» caption).
+        pivot: Where good starts: 0, or 1 for a Profit Factor or an OOS/IS ratio. The shade
+            changes side there and `share_positive` counts the draws above it.
 
     Returns:
         A "distribution" block. The draws never leave: only the histograms do.
@@ -109,6 +115,10 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
            "percentiles": {str(q): _num(np.percentile(v, q)) for q in PERCENTILES},
            "p": None if p is None else _num(p),
            "note": note + clip.caption(len(v) - len(inside))}
+    out["sign_shade"] = sign_shade
+    out["pivot"] = float(pivot)
+    if sign_shade and v.min() < pivot < v.max():
+        out["share_positive"] = float((v > pivot).mean())
     if series:
         width = np.diff(edges)
         out["series"] = []
@@ -127,7 +137,8 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
 
 
 def cone(title: str, unit: str, x: list, paths: np.ndarray, real: list,
-         split: str | None = None) -> dict:
+         split: str | None = None, levels: tuple[str, ...] = CONE_LEVELS,
+         real_label: str | None = None) -> dict:
     """An equity cone with the real curve on top, aggregated from simulated paths.
 
     Args:
@@ -137,17 +148,23 @@ def cone(title: str, unit: str, x: list, paths: np.ndarray, real: list,
         paths: Simulated curves, shape (runs, len(x)).
         real: The observed curve, len(x).
         split: Where the out-of-sample starts, if it does.
+        levels: Five percentiles, ascending, as text: the outer band, the inner band and the
+            median between them. `BANDS_5_95` is the owner's pick for «N curves» (see `bands`).
+        real_label: What the line at `real` is called in the key; default «curva real».
 
     Returns:
         A "cone" block carrying five percentiles per point, never the runs.
     """
-    q = np.percentile(np.asarray(paths, dtype=float), [float(c) for c in CONE_LEVELS], axis=0)
-    return {"kind": "cone", "title": title, "unit": unit, "x": list(x),
-            "bands": {c: [_num(v) for v in row] for c, row in zip(CONE_LEVELS, q)},
-            "real": [_num(v) for v in real], "split": split}
+    q = np.percentile(np.asarray(paths, dtype=float), [float(c) for c in levels], axis=0)
+    out = {"kind": "cone", "title": title, "unit": unit, "x": list(x),
+           "bands": {c: [_num(v) for v in row] for c, row in zip(levels, q)},
+           "real": [_num(v) for v in real], "split": split}
+    if real_label:
+        out["real_label"] = real_label
+    return out
 
 
-def verdict(label: str, state: str, meaning: str, score: float | None = None,
+def verdict(label: str, state: str, meaning: str, score: float | str | None = None,
             parts: list[dict] | None = None) -> dict:
     """A categorical call and the sentence that explains it — the label is never shown alone.
 
@@ -155,7 +172,7 @@ def verdict(label: str, state: str, meaning: str, score: float | None = None,
         label: The word as the module says it.
         state: One of STATES.
         meaning: What the label means.
-        score: A composite score, where the module has one.
+        score: A composite score, where the module has one; text («Spearman 44,53 %») is drawn big.
         parts: {"label", "state", "value", "note"} per family or gate that made the call.
 
     Returns:

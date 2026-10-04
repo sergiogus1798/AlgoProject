@@ -6,15 +6,38 @@ from pathlib import Path
 import pandas as pd
 
 from core.study import identity, output, result as envelope
-from studies.breakage.spp import contract, run as reading
+from studies.breakage.spp import contract, criteria, run as reading
 from studies.breakage.spp.inputs import config, export
-from studies.breakage.spp.model import combine
+from studies.breakage.spp.model import combine, decay
 
 MODULE = "studies.breakage.spp"
 COMBINED = "IS + OOS1 combinado"
 GLOSSARY = [
     {"term": "n_eff", "text": "Cuántas tuplas de parámetros dieron un resultado distinto; "
      "el nulo del máximo se calcula sobre ellas, no sobre las filas."},
+    {"term": "Net Profit", "text": "Ganancia neta de la permutación en la ventana, en USD."},
+    {"term": "Profit Factor", "text": "Bruto ganado dividido por bruto perdido: por encima de 1 "
+     "la permutación gana dinero."},
+    {"term": "Retorno/Drawdown", "text": "Net Profit dividido por el Max Drawdown: cuánto se gana "
+     "por cada dólar de caída máxima."},
+    {"term": "Max Drawdown", "text": "La mayor caída del capital desde un máximo, en USD."},
+    {"term": "Sharpe", "text": "Rendimiento medio entre su desviación típica; por encima de 0 "
+     "es rentable."},
+    {"term": "Sortino", "text": "Como Sharpe, pero solo penaliza la volatilidad a la baja."},
+    {"term": "R/Edge ratio", "text": "Cuánto se mueve el precio a favor de la entrada frente a "
+     "en contra; por encima de 1 hay ventaja de entrada."},
+    {"term": "Rentables", "text": "Porcentaje de permutaciones que ganan dinero: Net Profit, "
+     "Ret/DD, Sharpe o Sortino mayores que 0, Profit Factor o R/Edge ratio mayores que 1."},
+    {"term": "Permutación", "text": "Un backtest con todos los parámetros cambiados a la vez, al "
+     "azar, dentro de su rango."},
+    {"term": "OOS1", "text": "Primer tramo fuera de muestra, no usado para construir la "
+     "estrategia."},
+    {"term": "Área de meseta", "text": "Parte de la rejilla cuyo resultado queda cerca del mejor "
+     "nivel: cerca de 1 es una zona ancha y estable."},
+    {"term": "(Máx − mediana)/IQR", "text": "Cuánto sobresale el mejor punto de la rejilla, "
+     "medido en rangos intercuartílicos: un valor alto es un pico aislado."},
+    {"term": "Curtosis", "text": "Peso de las colas de la distribución; alta significa pocos "
+     "puntos extremos."},
     {"term": "Banda", "text": "Mediana ± el porcentaje configurado de su propio valor: el "
      "rango que la SPP habría dado con otra combinación de parámetros."},
     {"term": COMBINED, "text": "Los dos SPP no comparten tuplas (solo 6 de ~11.600 en "
@@ -74,9 +97,10 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict:
 
     Returns:
         The contract dict the window paints: panel 1 (histograms per period), panel 2 (IS
-        against OOS1 overlaid) when both exports exist, and the noise verdict. Its summary
-        carries `brief`, the `design_brief.json` the fabrication stage consumes — computed
-        exactly as before, independent of the new panels.
+        against OOS1 overlaid) when both exports exist, the criteria metrics, and the noise
+        verdict. Its summary carries `brief`, the `design_brief.json` the fabrication stage
+        consumes — computed exactly as before, independent of the panels — and `criterios`,
+        the criteria metrics as the flat row `report` writes to verdict.csv.
     """
     started = time.time()
     found = reading.read(directory, strategy, cfg)
@@ -103,10 +127,14 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict:
         notes.append({"code": "sin_oos", "state": "info",
                       "text": "Solo hay export de un lado (IS u OOS) de este proyecto: no hay "
                               "con qué solapar IS y OOS1."})
+    measured = decay.measure(is_pop, oos_pop, is_real, oos_real, cfg["criteria"]) \
+        if is_pop is not None else None
+    if measured:
+        tabs.append(criteria.tab(measured))
     ident = output.identify(directory, [strategy])[strategy]
     return envelope.envelope(
         MODULE, strategy, ident, cfg, started, tabs, contract.verdict(found),
         notes + identity.warning(ident), GLOSSARY,
         summary={"verdict": brief["verdict"], "n_eff": brief["n_eff"],
                 "live": len(brief["parameters"]), "frozen": len(brief["frozen"]),
-                "brief": brief})
+                "brief": brief, "criterios": criteria.flat(measured) if measured else {}})

@@ -9,7 +9,7 @@ from ui.desktop import buttonstyle
 # these five steps: a verdict is a decision the owner took, not a number to interpolate.
 C = {"bg": "#0f1219", "panel": "#171c26", "raised": "#1e2431", "line": "#2a3140",
      "text": "#e7eaf0", "muted": "#8d96aa", "faint": "#5c6678", "accent": "#8a7dff",
-     "promising": "#2fb98a", "weak": "#d9a441", "dead": "#c2515e",
+     "promising": "#1fd47f", "weak": "#d9a441", "dead": "#ff4d5e",
      "pending": "#8390a8", "untried": "#141922"}
 
 # Scroll bars and splitter handles: a track that shows where the bar is, a handle that stands out.

@@ -3,6 +3,7 @@
 - `arch-stepm-empty-panel` — Why does arch's StepM raise a zero-size array ValueError at small K?
 - `bar-file-wider-than-backtest` — Why must bars be sliced to the backtest's own span before any null or benchmark?
 - `buy-and-hold` — Which sizing convention must a buy-and-hold benchmark name to count as a result?
+- `cloud-neighbourhood-empty-at-high-dimension` — Why do the parameter cloud's A1 and A3 read "Sin dato" on a mother with many parameters?
 - `cloud-ranking-stability` — Can a profitable, smooth variant cloud still reshuffle which member is best each year?
 - `contemporaneous-dependence-bootstrap` — Why bootstrap a multi-market portfolio by whole calendar blocks instead of by trades?
 - `cross-market-rank-exposure` — Why does a cross-market Spearman of net profit partly measure time-in-market and drift?
@@ -28,6 +29,7 @@
 - `is-optimisation-vs-oos` — How well does in-sample optimisation rank the out-of-sample results?
 - `is-proxies-top-decile` — Which in-sample metrics separate survivors inside the top Sharpe decile?
 - `m1-feed-anomaly-statistics` — Are extreme moves on the Dukascopy M1 feed real events or bad data, and how to mark them?
+- `mcretest-original-among-reruns` — Is the MC Retest's «the original is not an outlier of its re-runs» usable as a criterion?
 - `mintrl-explosion-is-correct` — What does MinTRL return when the Sharpe is below the benchmark Sharpe?
 - `monkey-size-carries-donor-volatility` — Why do random-entry monkeys fail the floating-risk rules (worst MAE, worst day in R) far more than real strategies?
 - `oos1-oos2-persistence` — How much of a strategy's per-trade Sharpe on oos1 persists on oos2, and what is a step-8 line worth there?
@@ -42,12 +44,15 @@
 - `research-lessons` — What lessons apply to stop-fill simulations, range restriction and p-values at large n?
 - `robustness-monte-carlo` — How much drawdown should an account be sized for versus the backtest, and how many sims?
 - `selected-null-same-pool` — Why does the funded verdict's selected null find the same portfolio as the real pool?
+- `spp-decay-metrics-zero-edge-null` — Can the SPP's IS-vs-OOS1 decay metrics (median ratio, Vargha–Delaney A, W1/IQR) tell a zero-edge family from a real one?
 - `spp-noise-gate-centred-no-floor` — How does the SPP noise gate decide, and is there a minimum trade count?
 - `spp-origin-level-sampled-once` — What happens when an SPP step grid does not contain the original parameter value?
 - `stageb-selector-p-reads-high` — Which P(pass) of stage B's winner may be reported — the one that chose it, or a re-draw?
 - `step6-floor-vs-step8-yield` — How does the step-6 trades-per-year floor affect step-8 yield and Pass counts?
+- `surfaces-jaccard-lift-flip-null` — Do the surfaces' Jaccard lift, or «the mother inside the other markets' top decile», beat a zero-edge market?
 - `trade-filter-parameter-space` — What does a trade-count floor remove in parameter space before a surface is fitted?
 - `trial-count-half-rule` — When does trials.independent over-count the independent trials of a family?
+- `wfc-top-persistence-sign-flip-null` — Does the WFC's top persistence, or its median OOS/IS Sharpe ratio, tell a zero-edge variant family from a real one?
 - `wfm-cells-are-not-independent` — How many independent curves are the 30 WFM cells worth?
 - `window-filters-are-ledger-searches` — Does a filter applied in the window count as a search in the ledger?
 - `xauusd-reopen-bar-drift` — Where does the XAUUSD Asian drift live relative to the 01:00 EET reopen?

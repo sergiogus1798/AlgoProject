@@ -21,7 +21,7 @@ from ui.daemon.sqxconfig import api, studies
 # What the owner found missing on 2026-09-28, and the rest of both steps' inputs.
 WFC = {("sppdesign", "n_target"), ("variants", "variants"), ("variants", "seed"),
        ("batch", "min_trades"), ("batch", "split_mode"), ("wfcstudy", "rho_floor")}
-CSCV = {("thresholds", "value"), ("cscvstudy", "rules"), ("cscvstudy", "random_draws"),
+CSCV = {("thresholds", "value"), ("cscvstudy", "rules"), ("cscvstudy", "plateau_radius"),
         ("cscvstudy", "bootstrap"), ("batch", "split_mode")}
 
 

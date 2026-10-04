@@ -98,7 +98,8 @@ def rows(meta: dict) -> list[tuple[str, str, str]]:
         if "error" not in task and task["costs"] != last["costs"]:
             out.append((f"⚠ Costes de «{task['task']}»", f"{_costs(task)} — no son los del último "
                         "test guardado en el .sqx", warn))
-    prob = meta["problems"]
+    # A version archived before 2026-10-04 carries no «problems» (📓 uiwalk, Portfolios).
+    prob = meta.get("problems") or {"value": 0}
     if prob["value"]:
         text = ", ".join(PROBLEMS[r] for r in prob["reasons"])
         if prob["unknown"]:

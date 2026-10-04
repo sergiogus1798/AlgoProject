@@ -12,6 +12,7 @@ disagree. It analyses nothing. The contract itself is `CONTRACT.md`
 | `config.py` | A module's `config.yaml` read, `--set section.key=value` applied with the type of the value it replaces, and the config's fingerprint | imported | YAML + overrides → dict, hash |
 | `clip.py` | The one histogram rule: the axis spans percentiles 0.5-99.5, outliers are not drawn, and the caption counts them; `blocks.distribution` and the crossmarket and Monte Carlo `shape()` all go through it | imported | draws → inside values, span |
 | `blockcheck.py` | The check of a block's optional keys (a distribution's series and shift, a grid's mark and scale), called by `blocks.validate` | imported | block → raises or passes |
+| `bands.py` | `bands(title, unit, x, curves[n, len(x)], original)`: N curves as a `cone` block of 5-95 / 25-75 bands, median and original | imported | curves → block |
 | `blocks.py` | The eight block kinds, the five state words, builders for the two that aggregate raw draws (`distribution`, `cone`) plus `table` and `verdict`, and the validator that refuses anything else | imported | numbers → blocks |
 | `result.py` | The envelope of one result — module, strategy, identity, config hash, tabs, warnings, glossary — validated on the way out, and the `PROGRESS` line | imported | tabs → result dict |
 | `verdicts.py` | A population verdict: `verdict.csv` with `strategy`, `identity`, `verdict`, and the manifest naming the absolute input it judged | imported | frame → CSV + manifest |

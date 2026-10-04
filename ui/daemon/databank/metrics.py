@@ -8,6 +8,7 @@ from core.paths import harvest_dir, metrics_export
 from ui.daemon.loader.state import newest
 
 # Columns of either file that are labels, not figures.
+STRUCTURAL = ("Param Count", "TimeFrame", "DoF Ratio")      # measured in neither block
 TEXT = {"strategy", "strategy_build", "structure", "Strategy Name", "Filters result"}
 
 
@@ -94,6 +95,9 @@ def swap_block(frame: pd.DataFrame, databank: str) -> pd.DataFrame:
     theirs_filled = bool(frame[theirs].fillna(0).abs().to_numpy().sum())
     if mine_filled or not theirs_filled:
         return frame
+    if role == "IS":     # a build..oos1 task (Cross TF, Cross Market): real OOS1 figures, say so
+        return frame.rename(columns={c: c.replace("(OOS)", "(OOS1)") for c in frame.columns
+                                    if c.endswith("(OOS)") and not c.startswith(STRUCTURAL)})
     swap = {c: c.replace(f"({role})", f"({other})") if c.endswith(f"({role})")
             else c.replace(f"({other})", f"({role})") if c.endswith(f"({other})") else c
             for c in frame.columns}

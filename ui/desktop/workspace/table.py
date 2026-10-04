@@ -1,62 +1,16 @@
 """The databank panel's table: the columns one sub-panel shows, sortable and movable, losers in red."""
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableView
 
 from ui.text.columnhelp import label_for
 from ui.text.glossary import label
-from ui.text.numbers import num
-from ui.desktop.theme import C
-from ui.desktop.workspace.columns import DASH, note, unprofitable, value
+from ui.desktop.workspace.tablemodel import Rows
 
 # The SQX metrics every sub-panel shows beside its study, in SQX's order, IS then OOS.
 BASE = ("Net profit", "# of trades", "Profit factor", "Sharpe Ratio", "Ret/DD Ratio",
         "Max DD %", "Winning Percent")
-STATE_INK = {"pass": C["promising"], "fail": C["dead"], "watch": C["weak"]}
 WIDEST = 280            # px: a long reason is cut and read on hover, not allowed to push the rest
-
-
-class Cell(QTableWidgetItem):
-    """One cell: shown through `numbers.num`, sorted on its value (a number as a number)."""
-
-    def __init__(self, value: object, ink: str = "", blank: str = "", tip: str = "",
-                 bold: bool = False) -> None:
-        """Hold the value in `ink` (the dead colour for a figure that says the strategy loses,
-        `columns.unprofitable`, or a study's pass/fail); `blank` is what a missing value
-        reads («–» for a metric with no data), `tip` why. `bold`: a Pass/Fail verdict, in its
-        colour and bold (owner, 2026-09-30 — global rule, every table of this panel)."""
-        super().__init__(num(value) if value is not None else blank)
-        self.value = value
-        if value is None and blank:
-            self.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            self.setForeground(QColor(C["muted"]))
-            self.setToolTip(tip)
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            self.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        if ink:
-            self.setForeground(QColor(ink))
-        if bold:
-            font = self.font()
-            font.setBold(True)
-            self.setFont(font)
-        if isinstance(value, str) and len(value) > 30:
-            self.setToolTip(value)
-
-    def __lt__(self, other: QTableWidgetItem) -> bool:
-        """Figures before words, each among its own kind in order, and a blank or «–» last
-        whichever way the column is sorted: Qt sorts descending by asking `other < self`, so
-        a blank is the largest going up and the smallest going down."""
-        table = self.tableWidget()
-        down = table is not None and \
-            table.horizontalHeader().sortIndicatorOrder() == Qt.DescendingOrder
-
-        def key(v: object) -> tuple:
-            """A sort key that never compares a number with a text."""
-            if isinstance(v, (int, float)) and not isinstance(v, bool):
-                return (0, v, "")
-            return (1, 0, str(v)) if v is not None else (-1 if down else 2, 0, "")
-        return key(self.value) < key(getattr(other, "value", None))
 
 
 def pick(columns: list[dict], sub: dict) -> list[tuple[int, str]]:
@@ -96,7 +50,7 @@ def pick(columns: list[dict], sub: dict) -> list[tuple[int, str]]:
     return out[:1] + metrics + [p for p in out[1:] if columns[p[0]]["kind"] != "metric"]
 
 
-class DataTable(QTableWidget):
+class DataTable(QTableView):
     """The rows of one databank under one sub-panel's columns. Double click emits the row's
     identity (None for a row only a report without identity names) and its name."""
 
@@ -109,14 +63,16 @@ class DataTable(QTableWidget):
         self.rows: list[dict] = []
         self.ids: list[str] = []
         self.hidden: set[str] = set()
+        self.setModel(Rows())
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.verticalHeader().setVisible(False)
         self.verticalHeader().setDefaultSectionSize(24)
         self.setShowGrid(False)
         self.setWordWrap(False)
-        self.cellDoubleClicked.connect(self.double)
+        self.doubleClicked.connect(lambda i: self.double(i.row()))
         self.horizontalHeader().setSectionsMovable(True)
+        self.horizontalHeader().setResizeContentsPrecision(100)   # rows measured for a width
         self.horizontalHeader().sectionMoved.connect(self.moved)
         self.setToolTip("Doble clic en una fila: su página en «Estrategia».")
 
@@ -134,40 +90,19 @@ class DataTable(QTableWidget):
             segs: GET /api/databank/segments, for the IS+OOS1 columns.
 
         Returns:
-            How many rows are in the table.
+            How many rows the sub-panel holds, the ones a filter hides included.
         """
         if judged:
             rows = [r for r in rows if any(r["values"][i] is not None for i in judged)]
         self.rows, self.ids = rows, [c["id"] for c in shown]
-        self.setSortingEnabled(False)
-        self.clear()
-        self.setColumnCount(0)          # also forgets a header dragged out of place
-        self.setColumnCount(len(shown) + 1)
-        self.setRowCount(len(rows))
-        # A column that explains itself carries a visible «(?)» (owner, 2026-10-01).
-        self.setHorizontalHeaderLabels([label("strategy")] + [
-            c["header"] + (" (?)" if c.get("help") else "") for c in shown])
-        for c, choice in enumerate(shown, 1):
-            tip = choice["why"] or ""
-            said = [choice.get("help") or "", f"Sin datos: {tip}" if tip else ""]
-            self.horizontalHeaderItem(c).setToolTip("\n\n".join(t for t in said if t))
-        for r, row in enumerate(rows):
-            name = Cell(row["name"])
-            name.setData(Qt.UserRole, r)
-            font = name.font()
-            font.setBold(True)
-            name.setFont(font)
-            self.setItem(r, 0, name)
-            for c, choice in enumerate(shown, 1):
-                study = choice["group"] == "Estudio"
-                state = row["states"].get(choice["id"]) if study else None
-                got = value(choice, row, segs)
-                tip = note(choice, row, segs) if got is None and not study else ""
-                ink = STATE_INK.get(state) or (C["dead"] if unprofitable(choice["id"], got)
-                                               else "")
-                self.setItem(r, c, Cell(got, ink, "" if study else DASH, tip,
-                                        bold=state in ("pass", "fail")))
         head = self.horizontalHeader()
+        self.setSortingEnabled(False)
+        self.model().hidden = self.hidden
+        self.model().fill(rows, shown, segs)
+        head.blockSignals(True)             # forget a header dragged out of place
+        for c in range(self.columnCount()):
+            head.moveSection(head.visualIndex(c), c)
+        head.blockSignals(False)
         head.setSectionResizeMode(QHeaderView.Interactive)
         self.resizeColumnsToContents()
         for c in range(self.columnCount()):
@@ -175,9 +110,21 @@ class DataTable(QTableWidget):
         # Only a study's text stretches: a last metric stretched carried its right-aligned
         # figures 1,000 px away from the rest once the owner kept two metrics (2026-09-28).
         head.setStretchLastSection(bool(shown) and shown[-1]["group"] == "Estudio")
+        head.setSortIndicator(-1, Qt.AscendingOrder)
         self.setSortingEnabled(True)
-        self.set_hidden(self.hidden)
         return len(rows)
+
+    def rowCount(self) -> int:  # noqa: N802 — the name the callers knew on QTableWidget
+        """The rows on show."""
+        return self.model().rowCount()
+
+    def columnCount(self) -> int:  # noqa: N802
+        """The columns, the name included."""
+        return self.model().columnCount()
+
+    def row_at(self, r: int) -> dict:
+        """The payload's row shown at view row `r`."""
+        return self.rows[self.model().order[r]]
 
     def moved(self, *_moved: int) -> None:
         """A header was dragged: the ids in their new order for the panel to keep. The name
@@ -192,16 +139,14 @@ class DataTable(QTableWidget):
     def set_hidden(self, identities: set[str]) -> None:
         """Hide the rows of these strategies — what a filter set aside (F6), still in SQX."""
         self.hidden = set(identities)
-        for r in range(self.rowCount()):
-            row = self.rows[self.item(r, 0).data(Qt.UserRole)]
-            self.setRowHidden(r, row["identity"] in self.hidden)
+        self.model().rearrange(hidden=self.hidden)
 
-    def double(self, r: int, _c: int) -> None:
+    def double(self, r: int, _c: int = 0) -> None:
         """A row was double-clicked: say which strategy."""
-        row = self.rows[self.item(r, 0).data(Qt.UserRole)]
+        row = self.row_at(r)
         self.chosen.emit(row["identity"], row["name"])
 
     def chosen_names(self) -> list[str]:
         """The names of the selected rows, for «correr marcados de este panel»."""
-        return sorted({self.rows[self.item(i.row(), 0).data(Qt.UserRole)]["name"]
+        return sorted({self.row_at(i.row())["name"]
                        for i in self.selectionModel().selectedRows()})

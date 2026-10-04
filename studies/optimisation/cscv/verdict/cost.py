@@ -17,7 +17,7 @@ def landed(train: np.ndarray, test: np.ndarray, grid: pd.DataFrame, rule: Callab
         train: In-sample returns, periods down and variants across.
         test: Out-of-sample returns over the same variants.
         grid: The `param_` columns in the same order.
-        rule: One of `rules.RULES`.
+        rule: One of `rules.pick`'s.
         rng: The draw.
         score: What "best" is measured in, one of `cscv.SCORES`.
 
@@ -40,30 +40,25 @@ def cost(inside: pd.DataFrame, outside: pd.DataFrame, grid: pd.DataFrame, name: 
         inside: The in-sample panel.
         outside: The out-of-sample panel over the same variants.
         grid: The `param_` columns in the panel's column order.
-        name: Key of `rules.RULES`.
-        cfg: The `cscv` block of config.yaml, which names the score as well as the draws.
+        name: `argmax` or `plateau_centre`.
+        cfg: The `cscv` block of config.yaml, which names the score and the plateau radius.
 
     Returns:
-        The percentile, its 95 % interval and how many draws are behind it.
+        The percentile and its 95 % interval.
 
         The interval resamples **variants**, through `core.surface.dedupe.bootstrap_ci`,
         because a percentile is a statement about a pool and the pool is what a different
-        design would have differed in. The random rule is averaged over many draws; the
-        other two are deterministic and need one.
+        design would have differed in. Both rules are deterministic, so one pick is enough.
     """
-    rule, score = rules.RULES[name], cscv.SCORES[cfg["score"]]
+    rule, score = rules.pick(name, cfg["plateau_radius"]), cscv.SCORES[cfg["score"]]
     train, test = inside.to_numpy(), outside.to_numpy()
-    draws = cfg["random_draws"] if name == "random_profitable" else 1
-    rng = np.random.default_rng(cfg["seed"])
-    point = float(np.mean([landed(train, test, grid, rule, rng, score)
-                           for _ in range(draws)]))
+    point = landed(train, test, grid, rule, np.random.default_rng(cfg["seed"]), score)
     low, high = dedupe.bootstrap_ci(
         np.arange(train.shape[1]),
         lambda take: landed(train[:, take], test[:, take], grid.iloc[take], rule,
                             np.random.default_rng(cfg["seed"]), score),
         n_resamples=cfg["bootstrap"], seed=cfg["seed"])
-    return {"pct_oos": round(point, 1), "ci95": [round(low, 1), round(high, 1)],
-            "draws": draws}
+    return {"pct_oos": round(point, 1), "ci95": [round(low, 1), round(high, 1)]}
 
 
 def drift(inside: pd.DataFrame, outside: pd.DataFrame, grid: pd.DataFrame,

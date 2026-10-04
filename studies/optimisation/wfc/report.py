@@ -9,12 +9,13 @@ from pathlib import Path
 
 import pandas as pd
 
+from core import assetdata
 from core.study import output, result as envelope
 from core.study.config import fingerprint
 from engines.variants import look, panel
-from studies.optimisation.wfc.contract import wfc
+from studies.optimisation.wfc.contract import criteria, wfc
 from studies.optimisation.wfc.inputs import config
-from studies.optimisation.wfc.measure import correlation
+from studies.optimisation.wfc.measure import correlation, persistence
 
 MODULE = "studies.optimisation.wfc"
 STEP = 17
@@ -34,6 +35,33 @@ def chosen(a: argparse.Namespace, cfg: dict) -> tuple[tuple, tuple]:
     if a.inside:
         return panel.composition(a.inside.split(","), a.outside.split(","))
     return panel.SHORTCUTS[a.split or cfg["split_mode"]]
+
+
+def measured(kept: pd.DataFrame, cols: dict, days: pd.DataFrame, symbol: str, cfg: dict) -> dict:
+    """The criteria metrics of one composition (`measure.persistence.measure`).
+
+    Args:
+        kept: The usable points under the composition.
+        cols: What `panel.columns` returned for it.
+        days: `panel.panel(work, "D")`: daily profit, one column per variant.
+        symbol: The asset, whose declared segments cut the out-of-sample days.
+        cfg: The loaded config.
+    """
+    asset = assetdata.load(symbol)
+    starts = [pd.Timestamp(assetdata.segment_start(asset, s)) for s in panel.SEGMENTS]
+    ends = starts[1:] + [pd.Timestamp.max]
+    when = pd.to_datetime(days.index)
+    out = pd.Series(False, index=days.index)
+    for segment in cols["oos_label"].split("+"):
+        at = panel.SEGMENTS.index(segment)
+        out |= (when >= starts[at]) & (when < ends[at])
+    sharpe = [kept.get(f"SharpeRatio ({cols[k]})", pd.Series(float("nan"), index=kept.index))
+              for k in ("is_label", "oos_label")]
+    return persistence.measure(
+        kept[cols["is"]].to_numpy(float), kept[cols["oos"]].to_numpy(float),
+        sharpe[0].to_numpy(float), sharpe[1].to_numpy(float),
+        days.loc[out.to_numpy(), kept["variant_id"].astype(str)].to_numpy(float),
+        cfg["persistence"]["top"], cfg["persistence"]["keep"], cfg["sharpe_floor"])
 
 
 def parse() -> argparse.Namespace:
@@ -79,7 +107,7 @@ def main() -> None:
     # Every partition the ledger's door allows today (feedback §8.2): a human may switch
     # between them in the window with no new computation, so they all ride in this same
     # result — none of them logged to the ledger except the one actually requested, below.
-    parts = []
+    parts, metered, days = [], {}, panel.panel(a.work, "D")
     for other in panel.COMPOSITIONS:
         try:
             look.admit(STEP, other[0] + other[1], symbol)
@@ -91,14 +119,23 @@ def main() -> None:
         other_said = correlation.verdict(other_found, cfg["rho_floor"])
         parts.append((panel.label(other), other_kept, other_found, other_said, other_cols,
                      len(metrics) - len(other_kept), len(metrics)))
-    note = (f"{thin.get('thin', 0)} variantes ya quedaron fuera del panel por no llegar a "
-            f"{thin.get('floor', '?')} operaciones en todo el periodo, antes de leer ninguna "
-            f"composición: una combinación que apenas opera da un beneficio que mide una o "
-            f"dos operaciones.")
+        metered[other] = measured(other_kept, other_cols, days, symbol, cfg)
+    # The top's persistence is read with build in sample against each later segment alone.
+    windows = {c[1][0]: m for c, m in metered.items() if c[0] == ("build",) and len(c[1]) == 1}
+    fabricated = thin.get("thin", 0) + len(metrics)
+    note = (f"De {fabricated} combinaciones fabricadas, {thin.get('thin', 0)} se excluyeron al "
+            f"recoger el lote por no llegar a {thin.get('floor', '?')} operaciones en todo el "
+            f"periodo: el beneficio de una combinación que apenas opera mide una o dos "
+            f"operaciones. Después, cada partición descarta además las que operan menos de "
+            f"{cfg['min_trades']} en el tramo IS o en el OOS.")
     title = f"WFC — {a.work.name.replace('_', ' ')} — {cols['is_label']} contra {cols['oos_label']}"
-    result = envelope.envelope(MODULE, a.work.name, None, cfg, started,
-                               [wfc.tab(parts, name, cfg["rho_floor"], note)],
-                               wfc.verdict(said, found), glossary=wfc.GLOSSARY)
+    top = wfc.tab(parts, name, cfg["rho_floor"], note, cfg["min_trades"], cfg["sharpe_floor"])
+    top["blocks"][-2:-2] = criteria.tables(           # before the correlations table and strata
+        windows, {panel.label(c): m for c, m in metered.items()},
+        cfg["persistence"]["top"], cfg["persistence"]["keep"])
+    result = envelope.envelope(MODULE, a.work.name, None, cfg, started, [top],
+                               wfc.verdict(said, found), glossary=wfc.GLOSSARY,
+                               summary=criteria.summary(windows, metered[comp]))
     # One file set per composition, so a second reading never overwrites the first; the
     # plain `wfc.*` is a copy of the newest, which the viewer and step 20 read.
     out = a.work / "estudios"

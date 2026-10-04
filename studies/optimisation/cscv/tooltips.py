@@ -12,7 +12,9 @@ TIPS = {
     "cscv.blocks": "Bloques en que se corta la historia; 16 dan C(16,8) = 12.870 "
                    "particiones.",
     "cscv.rules": "Las reglas de elección que se juzgan, la primera es la titular.",
-    "cscv.random_draws": "Sorteos de la regla aleatoria entre las rentables.",
+    "cscv.plateau_radius": "Hasta dónde llega «el vecindario» de Plateau center, en niveles "
+                           "de la rejilla en cada parámetro a la vez: 1 es el punto y sus "
+                           "vecinos inmediatos, 2 llega dos pasos más lejos.",
     "cscv.bootstrap": "Remuestreos del intervalo del percentil fuera de muestra.",
     "cscv.cluster_k_max": "Grupos máximos al contar cuántas pruebas independientes hay.",
     "cscv.seed": "Semilla de todo lo aleatorio del CSCV."}

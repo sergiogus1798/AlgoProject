@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from ui.daemon.ops import ledgerview, pulse, runs
+from ui.daemon.ops import ledgerview, pulse, runs, steps
 
 ROUTER = APIRouter()
 
@@ -29,6 +29,23 @@ def get_sqx_runs() -> dict:
         Files, plus `-project action=status` to a worker only while its log says it runs.
     """
     return {"runs": runs.runs()}
+
+
+@ROUTER.get("/api/ops/steps")
+def get_steps(install: str, project: str) -> dict:
+    """«En marcha» for one project: `/api/progress` plus `rows`, SQX tasks and Python steps in order.
+
+    Args:
+        install: An install role.
+        project: A project name of that install.
+
+    Returns:
+        What `progress.state` builds, and `rows`: every SQX task and every Python step of the
+        workflow in WORKFLOW.md's order, the Python ones with their state (`pending`, `running`,
+        `done`, `failed`) and the WFC legs with `mother`. Files and the daemon's job list, plus
+        the one `-project action=status` of `progress.state`.
+    """
+    return steps.state(install, project)
 
 
 @ROUTER.get("/api/ledger")

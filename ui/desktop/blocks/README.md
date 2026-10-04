@@ -31,11 +31,12 @@ tools.report ─▶ screen.screen(result, memory) ─▶ POST /api/study/screen 
 | `card.py` | The frame of a block: its own title and note above the drawing | imported | block, widgets → QFrame |
 | `chart.py` | The painting ground: `Canvas` (paint + hover tooltip), axes, number format, the key under a chart | imported | — |
 | `axis.py` | Round ticks, data-to-pixel maps, x placement of numbers vs labels, paths broken at gaps | imported | — |
-| `distribution.py` | Histogram, band shaded, median dashed, real value marked, headline figures, percentile row (numeric order; with `row_unit`, heads «1%»… and each cell in that unit); hands a block with `series` to `density` | imported | block → QWidget |
+| `distribution.py` | Histogram, red/green sign shade, «X % rentables» caption, band shaded, median dashed, real value marked, headline figures, percentile row (numeric order; with `row_unit`, heads «1%»… and each cell in that unit); hands a block with `series` to `density` | imported | block → QWidget |
 | `density.py` | Several samples (IS, OOS) as densities on the same bins, a toggle per sample, n/median per sample and the median shift + KS p beside, the union's percentiles under | imported | block → QWidget |
-| `cone.py` | Percentile bands filled, median dashed, real curve on top, the OOS split | imported | block → QWidget |
+| `shade.py` | The faint red/green background behind the negative/positive side of a histogram's x axis (`sign_shade`) | imported | painter, box, x map → paint |
+| `cone.py` | Percentile bands filled (levels read from the block's `bands` keys: 2,5-97,5 or 5-95), median dashed, real curve on top, the OOS split | imported | block → QWidget |
 | `grid.py` | Heat map on a discrete scale (`levels`, else eight steps of `scale_range` or of its own range), θ₀ `mark` outlined, every cell labelled when it fits, the scale's key beneath | imported | block → QWidget |
-| `scatter.py` | Points by group, quadrants through zero, fitted line with its r | imported | block → QWidget |
+| `scatter.py` | Points by group (at most 400, seeded sample; the fit uses all), quadrants through zero, fitted line with its r | imported | block → QWidget |
 | `bars.py` | Horizontal bars coloured by state, error whiskers, reference line, value past the whisker; with `vertical`, columns over their labels, each in its item's `ink` when it names one | imported | block → QWidget |
 | `lines.py` | Series over one x axis (optional `x_label`/`y_label` name the axes): a series naming an `ink` in that tone (dashed with `dash`), a lone real series in the real ink, references dashed | imported | block → QWidget |
 | `table.py` | Sortable table in the study's own order, numbers the window's way, full cell on hover | imported | block → QWidget |

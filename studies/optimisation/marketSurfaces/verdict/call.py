@@ -63,13 +63,13 @@ def mother(rows: pd.DataFrame, declared: int, min_share: float) -> dict:
     reach = [n / declared >= min_share for n in passed.values()] or [False]
     counts = ", ".join(f"{n} de {declared} en {s}" for s, n in passed.items())
     if all(reach):
-        return {"label": "la región viaja", "state": "pass", "passed": passed,
+        return {"label": "La región viaja", "state": "pass", "passed": passed,
                 "meaning": f"La misma región de parámetros es la buena en {counts}: una "
                            f"coincidencia así no la produce el azar de un backtest."}
     if not any(reach):
-        return {"label": "la región no viaja", "state": "fail", "passed": passed,
+        return {"label": "La región no viaja", "state": "fail", "passed": passed,
                 "meaning": f"Sólo {counts} ordenan las variantes como el mercado principal "
                            f"con el decil superior compartido: lo que es bueno aquí no lo es "
                            f"allí. Ganar en otro mercado, si gana, no es la misma región."}
-    return {"label": "la región viaja a medias", "state": "watch", "passed": passed,
+    return {"label": "La región viaja a medias", "state": "watch", "passed": passed,
             "meaning": f"{counts}: la región viaja en un tramo de la historia y no en otro."}

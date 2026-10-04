@@ -17,7 +17,7 @@ def edges(values: list) -> list[float]:
 
     Returns:
         Cut points at (i - 4.5) × w, w the smallest of 1, 2, 2.5 or 5 × 10^k that covers the
-        largest absolute value: zero sits inside the pale middle step, losses red, gains blue.
+        largest absolute value: zero sits inside the pale middle step, losses red, gains green.
     """
     top = max((abs(v) for v in values if v is not None), default=1.0) or 1.0
     need = top / (len(DIVERGING) / 2)

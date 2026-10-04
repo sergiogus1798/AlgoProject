@@ -15,12 +15,32 @@ SCORE_LABEL = {"sharpe": "Sharpe", "sortino": "Sortino"}
 CALL = {"primer_orden": "gana siempre", "segundo_orden": "gana en promedio",
         "ninguna": "no gana"}
 # Which rules are Bailey, Borwein, López de Prado and Zhu's and which this project added.
-ORIGIN = {"argmax": "paper", "plateau_centre": "extensión", "random_profitable": "extensión"}
+ORIGIN = {"argmax": "paper", "plateau_centre": "extensión"}
+NAME = {"argmax": "Argmax", "plateau_centre": "Plateau center"}
+
+
+def pct(x: float) -> str:
+    """A fraction as «29,2 %», the way the owner reads a percentage."""
+    return f"{x:.1%}".replace(".", ",").replace("%", " %")
+
+
+def dec(x: float, signed: bool = False) -> str:
+    """A number with two decimals and a comma: «+0,60»."""
+    return f"{x:+.2f}".replace(".", ",") if signed else f"{x:.2f}".replace(".", ",")
+
+
+METHOD = ("Método CSCV (Combinatorially Symmetric Cross-Validation) de Bailey, Borwein, "
+          "López de Prado y Zhu, «The Probability of Backtest Overfitting» (2014).")
+PBO_PLAIN = ("El PBO (probabilidad de sobreajuste del backtest) es la fracción de formas de "
+             "partir la historia en dos mitades en que la variante que la regla eligió como la "
+             "mejor en una mitad quedó por debajo de la mediana en la otra. Por debajo del 50 % "
+             "elegir así supera al azar (Pass); por encima, elegir así es peor que no elegir "
+             "(Fail).")
 GLOSSARY = [
-    {"term": "PBO", "text": "De cada 100 formas de partir la historia en dos mitades, en "
-     "cuántas la combinación elegida por la mitad de entrenamiento acabó por debajo de la "
-     "mediana en la otra. Por encima del 50 % elegir así es peor que no elegir. Como en "
-     "Bailey, Borwein, López de Prado y Zhu (2014): rendimientos DIARIOS de cada variante "
+    {"term": "CSCV", "text": METHOD + " Parte la historia en bloques, toma la mitad de ellos "
+     "como dentro de muestra y la otra mitad como fuera, y repite con todas las combinaciones."},
+    {"term": "PBO", "text": PBO_PLAIN + " Método de López de Prado y colegas: "
+     "rendimientos DIARIOS de cada variante "
      "(todos los días de mercado, también los de P&L cero), 16 bloques, las C(16,8) = 12.870 "
      "particiones, y el Sharpe de cada mitad."},
     {"term": "Percentil OOS", "text": "En qué percentil del ranking real fuera de muestra cayó "
@@ -36,21 +56,23 @@ GLOSSARY = [
     {"term": "Degradación IS → OOS", "text": "La regresión del paper: el Sharpe fuera de "
      "muestra de lo elegido contra su Sharpe dentro, una nube de puntos con un punto por "
      "partición. Anualizado ×√252 solo para leerlo: el factor no cambia ningún puesto."},
-    {"term": "vs. la mediana", "text": "Extensión de este proyecto: si elegir con la regla "
+    {"term": "Vs. la mediana", "text": "Extensión de este proyecto: si elegir con la regla "
      "bate a quedarse con la combinación del medio, en toda la distribución o sólo en "
      "promedio (dominancia estocástica de primer y segundo orden)."},
     {"term": "Sortino", "text": "Extensión de este proyecto: el desplegable «Puntuación» "
      "vuelve a correr todo ordenando por Sortino en vez de por el Sharpe del paper."},
     {"term": "Argmax", "text": "Coger sin más el punto de mayor puntuación dentro de muestra. "
-     "Es la regla original de Bailey y López de Prado (Combinatorially Symmetric "
-     "Cross-Validation, 2014): λ es el logit del rango relativo fuera de muestra del punto "
-     "elegido, PBO = P(λ ≤ 0)."},
+     "Es la regla original de Bailey, Borwein, López de Prado y Zhu (CSCV, 2014): λ es el "
+     "logit del rango relativo fuera de muestra del punto elegido, PBO = P(λ ≤ 0)."},
     {"term": "Plateau center", "text": "Extensión de este proyecto, no del paper original: "
-     "coger el punto cuyo entorno inmediato (él y sus vecinos) puntúa mejor en promedio, no "
-     "el pico aislado."},
-    {"term": "Random profitable", "text": "Extensión de este proyecto, de control: coger al "
-     "azar cualquier punto rentable dentro de muestra. Una regla que no gana a esto no está "
-     "eligiendo, está decorando."}]
+     "coger el punto cuyo entorno (él y sus vecinos hasta el radio del plateau) puntúa mejor "
+     "en promedio, no el pico aislado. Se lee igual que Argmax: un PBO BAJO es bueno. Si "
+     "baja mucho respecto a Argmax, el pico de la superficie era suerte y la meseta que lo "
+     "rodea sí aguanta; si es parecido o peor, suavizar no compra nada."},
+    {"term": "Radio del plateau", "text": "Hasta dónde llega «el entorno» de Plateau center: "
+     "niveles de la rejilla de parámetros, en cada parámetro a la vez. Con 1 es el punto y "
+     "sus vecinos inmediatos; con 2, dos pasos más lejos. Es un parámetro de entrada del "
+     "estudio (cscv.plateau_radius)."}]
 
 
 def verdict(found: dict, result: dict) -> dict:
@@ -62,30 +84,36 @@ def verdict(found: dict, result: dict) -> dict:
     head = next(iter(found))
     pbo = found[head]["pbo"]
     return blocks.verdict(
-        f"PBO {pbo:.1%} con {head}", "fail" if pbo > 0.5 else "pass",
+        f"PBO {pct(pbo)} con {NAME[head]}", "fail" if pbo > 0.5 else "pass",
         f"Las {result['n']} variantes valen {result['n_clusters']} pruebas independientes; con "
-        f"ese recuento el Sharpe del mejor sobrevive con probabilidad {result['dsr']:.1%} "
+        f"ese recuento el Sharpe del mejor sobrevive con probabilidad {pct(result['dsr'])} "
         f"(DSR). De una mitad a la otra el orden se conserva con pendiente "
-        f"{result['slope']:+.2f} (ajustada sobre todas las variantes, no solo la elegida; "
-        f"extensión de este proyecto).",
-        None, [{"label": f"{name}: PBO {f['pbo']:.1%}",
+        f"{dec(result['slope'], True)} (ajustada sobre todas las variantes, no solo la elegida; "
+        f"extensión de este proyecto). Radio del plateau: {result['plateau_radius']}. "
+        "Método de López de Prado y colegas (CSCV).",
+        None, [{"label": f"{NAME[name]}: PBO {pct(f['pbo'])}",
                 "state": "fail" if f["pbo"] > 0.5 else "pass", "value": None,
-                "note": f"pierde {f['prob_loss']:.1%} · {CALL[f['dominance']]}"}
+                "note": f"pierde {pct(f['prob_loss'])} · {CALL[f['dominance']]}"}
                for name, f in found.items()])
 
 
-def rule_table(found: dict) -> dict:
+def rule_table(found: dict, radius: int) -> dict:
     """The rules side by side, PBO and «pierde» written as one-decimal percentages."""
     return {**blocks.table("Regla a regla", pd.DataFrame(
-        [[f"{name} ({ORIGIN.get(name, 'extensión')})", f"{f['pbo']:.1%}", f["pct_oos"],
+        [[f"{NAME[name]} ({ORIGIN[name]})", pct(f["pbo"]),
+          "Fail" if f["pbo"] > 0.5 else "Pass", f["pct_oos"],
           f["ci95"][0], f["ci95"][1],
-          f"{f['prob_loss']:.1%}", CALL[f["dominance"]]] for name, f in found.items()],
-        columns=["regla", "PBO", "percentil OOS", "IC 95 % desde", "hasta",
-                 "pierde", "vs. la mediana"])),
-        "help": ["Argmax es la regla original de Bailey y López de Prado; Plateau center y "
-                 "Random profitable son extensiones de este proyecto — glosario.",
-                 None, "Extensión: sobre la partición cronológica real, no sobre las "
-                       "particiones combinatorias.",
+          pct(f["prob_loss"]), CALL[f["dominance"]]] for name, f in found.items()],
+        columns=["Regla", "PBO", "Resultado", "Percentil OOS", "IC 95 % desde", "Hasta",
+                 "Pierde", "Vs. la mediana"]),
+        note=f"Radio del plateau: {radius} (niveles de la rejilla en cada parámetro; "
+             "solo afecta a Plateau center)."),
+        "help": ["Argmax es la regla original del CSCV de Bailey, Borwein, López de Prado y "
+                 "Zhu; Plateau center es una extensión de este proyecto — glosario.",
+                 PBO_PLAIN,
+                 "Pass si el PBO es del 50 % o menos, Fail si pasa del 50 %.",
+                 "Extensión: sobre la partición cronológica real, no sobre las "
+                 "particiones combinatorias.",
                  None, None, "La probabilidad de pérdida del paper.",
                  "Extensión: dominancia estocástica frente a la variante mediana."]}
 
@@ -118,18 +146,19 @@ def tabs(runs_by_score: dict, found_by_score: dict, result: dict, default_score:
         label = SCORE_LABEL[score_key]
         found = found_by_score[score_key]
         lambda_blocks += [
-            {**blocks.distribution(f"λ — {name}", "", r["lam"].to_numpy(), 0.0,
-                                   f"PBO {found[name]['pbo']:.1%}: la parte a la izquierda "
-                                   f"del cero."), "mark": "la mediana", "select": {"score": label}}
+            {**blocks.distribution(f"λ — {NAME[name]}", "", r["lam"].to_numpy(), 0.0,
+                                   f"PBO {pct(found[name]['pbo'])}: la parte a la izquierda "
+                                   f"del cero."), "mark": "Corte", "select": {"score": label},
+             "help": f"{METHOD} {PBO_PLAIN}"}
             for name, r in runs.items()]
-        lambda_blocks.append({**rule_table(found), "select": {"score": label}})
+        lambda_blocks.append({**rule_table(found, result["plateau_radius"]), "select": {"score": label}})
         x = runs[head]["is_score"].to_numpy() * factor
         y = runs[head]["oos_score"].to_numpy() * factor
         slope, intercept = np.polyfit(x, y, 1)
         decay_blocks.append({
-            "kind": "scatter", "title": f"{label} anual — {head} (regresión del paper)",
+            "kind": "scatter", "title": f"{label} anual — {NAME[head]} (regresión del paper)",
             "x_label": "In Sample", "y_label": "Out of Sample",
-            "points": [{"x": float(a), "y": float(b), "label": str(i), "group": head}
+            "points": [{"x": float(a), "y": float(b), "label": str(i), "group": NAME[head]}
                        for i, (a, b) in enumerate(zip(x, y))],
             "quadrants": True,
             "fit": {"slope": float(slope), "intercept": float(intercept),
@@ -148,14 +177,15 @@ def tabs(runs_by_score: dict, found_by_score: dict, result: dict, default_score:
                     "es una contradicción: es la firma esperada de una selección que no está "
                     "sobreajustando. Lo que hay que leer para saber si el orden se conserva es "
                     "la «Pendiente» del veredicto y del glosario, ajustada sobre TODAS las "
-                    f"variantes ({result['slope']:+.2f} aquí), nunca el signo de esta recta."})
+                    f"variantes ({dec(result['slope'], True)} aquí), nunca el signo de esta recta."})
     return [
         envelope.tab("lambda", "Cuántas veces lo elegido queda por debajo de la mediana",
                      lambda_blocks, [selector],
                      note=f"{result['n']} variantes, {result['periods']} rendimientos "
                           f"{PERIODO.get(result['period'], result['period'])} por variante, "
                           f"{result['blocks']} bloques y "
-                          f"{result['partitions']} particiones. El mejor dentro y el mejor "
+                          f"{result['partitions']} particiones. Radio del plateau: "
+                          f"{result['plateau_radius']}. El mejor dentro y el mejor "
                           f"fuera distan {result['levels_max']} niveles en el parámetro que "
                           "más se movió."),
         envelope.tab("decay", "Degradación de performance IS → OOS (regresión lineal)",

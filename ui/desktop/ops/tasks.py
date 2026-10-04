@@ -18,12 +18,19 @@ BAR = COLUMNS.index("avance")
 STATUS = {"done": ("hecha", "promising"), "running": ("en curso", "weak"),
           "skipped": ("saltada", "faint"), "earlier": ("hecha antes", "promising"),
           "queued": ("en cola", "pending"), "inactive": ("inactiva", "faint")}
+PY_STATUS = {"done": ("hecho", "promising"), "running": ("en curso", "weak"),
+             "pending": ("pendiente", "pending"), "failed": ("falló", "dead")}
 TIPS = {
     "estado": "hecha: el log vio «Task finished» en este start · hecha antes: inactiva en este "
               "start pero su databank tiene estrategias de uno anterior · en curso: la última "
               "tarea que escribe · saltada: inactiva en este start (stage) · en cola: activa y "
-              "aún no empezada · inactiva: apagada",
-    "hechas / total": "hechas: las que SQX dice haber procesado (el estado del worker mientras "
+              "aún no empezada · inactiva: apagada · Los pasos de Python (tipo «Python») salen del "
+              "resultado en disco (hecho), de un trabajo de la ventana o de la última línea del "
+              "autopiloto (en curso, falló) o de nada de eso (pendiente)",
+    "hechas / total": "En el WFC: madre N de M (cada madre pasa por sus propias variantes; el log "
+                      "de SQX no nombra la madre, así que se cuentan los arranques de la pata, y "
+                      "una madre repetida cuenta otra vez) y las variantes hechas de esa madre · "
+                      "hechas: las que SQX dice haber procesado (el estado del worker mientras "
                       "corre, el log de la tarea al acabar) · total: lo que había en su databank "
                       "de entrada al empezar. Un build no tiene total",
     "avance": "El porcentaje de la tarea en curso: el que SQX escribe en su log cuando lo da (las "
@@ -120,7 +127,7 @@ class Tasks(QFrame):
         top = QFrame()
         tl = QVBoxLayout(top)
         tl.setContentsMargins(0, 0, 0, 0)
-        tl.addWidget(kicker("las tareas del proyecto, en el orden en que SQX las corre"))
+        tl.addWidget(kicker("las tareas de SQX y los pasos de Python, en el orden del workflow"))
         self.table = QTableWidget()
         self.table.setSelectionMode(QAbstractItemView.NoSelection)
         self.table.verticalHeader().setVisible(False)
@@ -150,7 +157,7 @@ class Tasks(QFrame):
         Returns:
             What `/api/progress` returned, for the caller's own line.
         """
-        return self.show(project, client.get("progress", install=role, project=project))
+        return self.show(project, client.get("ops/steps", install=role, project=project))
 
     def show(self, project: str, got: dict) -> dict:
         """Paint one `/api/progress` answer (`load`, or `Running` off the GUI thread).
@@ -166,7 +173,7 @@ class Tasks(QFrame):
         g = got.get("genetic")
         self.genetic.setVisible(bool(g))
         self.genetic.setText(genetic_line(g) if g else "")
-        self.fill(got["tasks"], got["run"]["percent"])
+        self.fill(got["rows"], got["run"]["percent"])
         self.log.setText("\n".join(got["run"]["tail"]) or "sin líneas de progreso hoy")
         return got
 
@@ -184,6 +191,9 @@ class Tasks(QFrame):
         for j, name in enumerate(COLUMNS):
             self.table.horizontalHeaderItem(j).setToolTip(TIPS.get(name, ""))
         for i, t in enumerate(tasks):
+            if t["kind"] == "python":
+                self.python_row(i, t)
+                continue
             text, colour = STATUS[t["status"]]
             n, go = t["strategies"], t["started"]
             cells = [num(i + 1), t["title"], t["type"], "sí" if t["active"] else "·", text,
@@ -216,3 +226,21 @@ class Tasks(QFrame):
         header.setSectionResizeMode(1, QHeaderView.Stretch)
         header.setSectionResizeMode(BAR, QHeaderView.Fixed)
         self.table.setColumnWidth(BAR, 120)
+
+    def python_row(self, i: int, t: dict) -> None:
+        """One Python step of the workflow: its name and state, nothing SQX measures."""
+        text, colour = PY_STATUS[t["status"]]
+        cells = [num(i + 1), t["title"], "Python", "·", text] + ["·"] * (len(COLUMNS) - 5)
+        for j, value in enumerate(cells):
+            item = QTableWidgetItem(value)
+            item.setFlags(Qt.ItemIsEnabled)
+            item.setToolTip(t["why"] if j == 1 else TIPS.get(COLUMNS[j], ""))
+            if j == 0:
+                item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            if j == 4:
+                item.setForeground(QColor(C[colour]))
+            self.table.setItem(i, j, item)
+        if t["status"] == "running":
+            self.table.setCellWidget(i, BAR, bar(None, 110, C["weak"]))
+        elif t["status"] == "done":
+            self.table.setCellWidget(i, BAR, bar(100, 110, C["promising"]))

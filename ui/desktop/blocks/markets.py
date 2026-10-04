@@ -29,11 +29,16 @@ def grouped(tab: dict) -> bool:
             and any(b["kind"] == "grid" and KEY in (b.get("select") or {}) for b in tab["blocks"]))
 
 
+def main(tab: dict) -> str:
+    """The main market: the study lists it first, and it stays on the left of every row (owner, 2026-10-04)."""
+    return str(next(s for s in selectors(tab) if s["key"] == KEY)["options"][0])
+
+
 def first(tab: dict) -> list[str]:
-    """The markets on screen before the reader picks: the selector's default and the next ones."""
+    """The markets on screen before the reader picks: the main one and the next ones."""
     s = next(s for s in selectors(tab) if s["key"] == KEY)
     options = [str(o) for o in s["options"]]
-    return ([str(s["default"])] + [o for o in options if o != str(s["default"])])[:MOST]
+    return options[:MOST]
 
 
 def split(tab: dict, chosen: dict, pool: list[dict]) -> tuple[list[dict], list[dict], dict | None]:
@@ -51,6 +56,7 @@ def split(tab: dict, chosen: dict, pool: list[dict]) -> tuple[list[dict], list[d
         recomputed: every combination is already in the result (CONTRACT §1).
     """
     markets = chosen.get(CHOSEN) or first(tab)
+    markets = [main(tab)] + [m for m in markets if m != main(tab)]       # the main one, always first
     plain = [b for b in shown(tab, {**chosen, KEY: markets[0]})
              if not (b["kind"] == "grid" and KEY in (b.get("select") or {}))]
     grids = [b for m in markets for b in shown(tab, {**chosen, KEY: m})
@@ -92,6 +98,8 @@ def row(grids: list[dict], consensus: dict | None) -> QWidget:
 def picker(tab: dict, on: list[str], changed: Callable[[list[str]], None]) -> QWidget:
     """One toggle per market: pressing a fourth lets go of the oldest, so 2-3 stay on screen.
 
+    The main market is always on and never the one let go: it sits at the left of every row.
+
     Args:
         tab: A grouped tab.
         on: The markets on screen now.
@@ -105,7 +113,8 @@ def picker(tab: dict, on: list[str], changed: Callable[[list[str]], None]) -> QW
     lay = QHBoxLayout(box)
     lay.setContentsMargins(0, 0, 0, 0)
     lay.addWidget(text(label("markets.pick"), T["muted"], 12))
-    keep = list(on)
+    first_ = main(tab)
+    keep = [first_] + [m for m in on if m != first_]
     buttons: dict[str, QPushButton] = {}
 
     def press(market: str, down: bool) -> None:
@@ -115,8 +124,8 @@ def picker(tab: dict, on: list[str], changed: Callable[[list[str]], None]) -> QW
         if down:
             keep.append(market)
             if len(keep) > MOST:
-                buttons[keep.pop(0)].setChecked(False)
-        elif len(keep) == 1:
+                buttons[keep.pop(1)].setChecked(False)
+        elif len(keep) == 1 or market == first_:
             buttons[market].setChecked(True)
             return
         else:

@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from studies.optimisation.marketSurfaces.contract import density, grids
 from studies.optimisation.marketSurfaces.measure import pairs
 from studies.optimisation.marketSurfaces.verdict import call
 
@@ -116,6 +117,9 @@ def main() -> None:
           f"dos mercados que sólo comparten la MISMA deriva: rho en bruto "
           f"{shared_exposure['rho']:+.2f} (intervalo sobre el suelo) pero rho_neutral "
           f"{shared_exposure['rho_neutral']:+.2f} decide, y no pasa por exposición sola")
+    silent = pairs.pair(time_in, time_in * float("nan"), SHARE, QUANTILE, time_in, time_in)
+    check(failures, silent["n_eff"] == 0 and call.pair_state(silent, FLOOR) != "pass",
+          "un mercado sin ninguna variante usable no comparte nada: sin lectura, y no pasa")
 
     print("\n## la llamada de la madre")
     rows = pd.DataFrame({"segment": ["build"] * 4 + ["oos1"] * 4,
@@ -123,6 +127,25 @@ def main() -> None:
     check(failures, call.mother(rows, 4, 0.5)["state"] == "pass", "2/4 y 3/4 con 0.5 -> pass")
     check(failures, call.mother(rows, 9, 0.5)["state"] == "fail",
           "los mismos contra 9 declarados -> fail: el que falta cuenta como no superado")
+
+    print("\n## las densidades y la escala de las rejillas")
+    edges = np.linspace(-5, 5, 241)
+    dens = np.array(density.kde(np.random.default_rng(1).normal(1, 0.5, 400), edges))
+    check(failures, abs((dens * np.diff(edges)).sum() - 1) < 1e-9, "la densidad suma área 1")
+    check(failures, abs((edges[1:] + edges[:-1])[dens.argmax()] / 2 - 1) < 0.15,
+          "la moda de la densidad cae donde la muestra (1)")
+    flat = np.array(density.kde(np.full(20, 3.0), edges))
+    check(failures, np.isfinite(flat).all() and flat.argmax() == np.abs(edges[:-1] - 3).argmin(),
+          "una muestra constante no rompe el ancho de banda")
+    cells = pd.DataFrame({"variant_id": ["a", "b", "a", "b"], "market": ["M1", "M1", "M2", "M2"],
+                          "segment": "build", "value": [0.8, 1.9, 1.2, 1.1], "x": [1, 2, 1, 2],
+                          "y": [1, 1, 1, 1]})
+    theta = pd.Series({"x": 1, "y": 1})
+    made = grids.markets(cells, "build", "x", "y", {"x": [1, 2], "y": [1]}, ["M1", "M2"], theta, 1,
+                         "Profit Factor")
+    lo, hi = made[0]["scale_range"]
+    check(failures, made[0]["scale"] == "diverging" and abs((lo + hi) / 2 - 1.0) < 1e-12,
+          "la escala del Profit Factor está centrada en 1: rojo es perder, verde ganar")
 
     print()
     if failures:

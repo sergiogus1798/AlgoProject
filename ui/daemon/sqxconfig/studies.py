@@ -50,7 +50,7 @@ RANGES = {("sppdesign", "n_target"): (1, None), ("sppdesign", "min_span"): SHARE
           ("variants", "min_levels"): (2, None), ("variants", "span"): SHARE,
           ("variants", "steps"): (2, None), ("variants", "n"): (0, None),
           ("batch", "min_trades"): (0, None), ("wfcstudy", "rho_floor"): (-1, 1),
-          ("wfcstudy", "table_ends"): (1, None), ("cscvstudy", "random_draws"): (1, None),
+          ("wfcstudy", "table_ends"): (1, None), ("cscvstudy", "plateau_radius"): (1, None),
           ("cscvstudy", "bootstrap"): (1, None), ("cscvstudy", "cluster_k_max"): (1, None),
           ("thresholds", "cscv.blocks"): (4, 20)}
 CHOICES = {("batch", "split_mode"): list(SHORTCUTS), ("cscvstudy", "period"): ["D", "W", "ME"],

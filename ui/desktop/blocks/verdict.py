@@ -48,9 +48,11 @@ def widget(block: dict) -> QWidget:
     # No state word beside the label (owner, 2026-10-01: «quitar Descartar nota cero / Falla y
     # nota cero»): the colour already says it, and it stays in the tooltip. A score shows only
     # where a study passes one on purpose (mcRetest's composite); crossmarket no longer does.
+    text_score = isinstance(b.get("score"), str)      # already formatted («Spearman 44,53 %»): big
     score = "" if b.get("score") is None else (
-        f'&nbsp;&nbsp;<span style="color:{T["muted"]}; font-size:16px;">'
-        f'{chart.num(b["score"])}</span>')
+        f'&nbsp;&nbsp;<span style="color:{T["text"] if text_score else T["muted"]}; '
+        f'font-size:{26 if text_score else 16}px;{" font-weight:800;" if text_score else ""}">'
+        f'{b["score"] if text_score else chart.num(b["score"])}</span>')
     head = QLabel(f'<span style="color:{c}; font-size:26px; font-weight:800;">{b["label"]}'
                   f'</span>{score}')
     head.setStyleSheet(f"font-family: {chart.FACE};")

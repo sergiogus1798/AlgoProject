@@ -85,3 +85,42 @@ def aggregate(cells: pd.DataFrame) -> pd.DataFrame:
     rows.append({"métrica": f"% de celdas en beneficio ({len(cells)} celdas)", "mediana": share,
                  "p25": None, "p75": None, "peor": None, "mejor": None})
     return pd.DataFrame(rows).round(2)
+
+
+def versus_original(trades: pd.DataFrame, main: pd.DataFrame, steps: pd.DataFrame,
+                    strategy: str, points: int = 200) -> dict[str, dict]:
+    """Each cell's stitched OOS equity against the original's over those very windows.
+
+    Args:
+        trades: `wfm/trades.parquet`.
+        main: `wfm/main.parquet`, the original's trades with its fixed parameters.
+        steps: `inputs.export.steps` (future steps already dropped): the cell's run windows.
+        strategy: Which strategy.
+        points: Dates kept on the x axis.
+
+    Returns:
+        Cell name -> `x` (ISO dates), `cell` and `original` (cumulative profit, both from 0 at
+        the cell's first window), `n_cell` and `n_original`. The original is counted only on
+        trades that closed inside a window of that cell's out-of-sample runs, so both curves
+        earn over the same days; the gaps between windows count for neither.
+    """
+    mine = trades[(trades["strategy"] == strategy) & (trades["sample"] == "OOS")]
+    orig = main[main["strategy"] == strategy].sort_values("Close time")
+    out = {}
+    for cell, g in mine.sort_values("Close time").groupby("result", observed=True):
+        win = steps[(steps["strategy"] == strategy) & (steps["result"] == cell)].sort_values("run_from")
+        if len(g) < 2 or win.empty:
+            continue
+        start, end = (win[c].to_numpy("datetime64[ns]") for c in ("run_from", "run_to"))
+        t = orig["Close time"].to_numpy("datetime64[ns]")
+        k = np.searchsorted(start, t, side="right") - 1
+        kept = orig[(k >= 0) & (t < end[np.clip(k, 0, None)])]
+        grid = pd.date_range(start[0], min(end[-1], g["Close time"].max()), periods=points)
+
+        def at(frame: pd.DataFrame) -> list[float]:
+            """Cumulative profit of `frame` at each grid date."""
+            cum = np.concatenate([[0.0], np.cumsum(frame["Profit/Loss"].to_numpy(dtype=float))])
+            return [float(cum[i]) for i in np.searchsorted(frame["Close time"].to_numpy("datetime64[ns]"), grid.to_numpy(), side="right")]
+        out[str(cell)] = {"x": [d.date().isoformat() for d in grid], "cell": at(g), "original": at(kept),
+                          "n_cell": len(g), "n_original": len(kept)}
+    return out

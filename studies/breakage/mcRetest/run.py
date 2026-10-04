@@ -7,6 +7,7 @@ from core import barstore, fanout
 
 from studies.breakage.mcRetest.inputs import tasks
 from studies.breakage.mcRetest.measure import store
+from studies.breakage.mcRetest.model import place
 from studies.breakage.mcRetest.verdict import (attribution, evidence, fragility, gates, modes,
                                                scoring)
 
@@ -69,6 +70,12 @@ def benchmarks(trades: pd.DataFrame | None, asset: dict | None) -> dict[str, flo
     return out
 
 
+def _daily_equity(keys: dict, strategy: str) -> np.ndarray | None:
+    """The original's equity curve, USD, from the ingest's daily profits; None if it holds none."""
+    daily = store.load_returns(**keys)
+    return daily[strategy].cumsum().to_numpy() if strategy in daily else None
+
+
 def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: str,
              benchmark: float, cfg: dict) -> dict:
     """Questions 1 and 2 for every task of one strategy.
@@ -98,10 +105,13 @@ def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: s
             "modes": modes.describe(metrics, float(row["NumberOfTrades"].iloc[0]), cfg),
             "evidence": evidence.empirical_sharpe(metrics, benchmark),
             "original_net": float(row["NetProfit"].iloc[0]),
+            "place": place.place(metrics["NetProfit"], float(row["NetProfit"].iloc[0]),
+                                 cfg["criteria"]["real_floor_iqr"]),
             # Kept so the figures can draw the outcome itself, not only its summary. The
             # renderer must never reach back into the parquet: one source per number.
             "_net": metrics["NetProfit"],
-            "fan": fragility.fan(pnl["pnl"].to_numpy(), offsets, cfg)}
+            "fan": fragility.fan(pnl["pnl"].to_numpy(), offsets, cfg, _daily_equity(keys, strategy)
+                                 if task == "stress" else None)}
     return out
 
 

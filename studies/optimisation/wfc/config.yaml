@@ -4,3 +4,13 @@
 # The rho below which ranking by in-sample profit is not worth doing. Not a law: it is the
 # owner's threshold and changing it re-runs only the verdict, never the measurement.
 rho_floor: 0.30
+# Only for the OOS/IS Sharpe histogram (visual, not a criterion): a variant enters the ratio
+# only if its in-sample Sharpe is above this, because a ratio explodes when the denominator is
+# near zero or negative. The count left out is printed under the figure.
+sharpe_floor: 0.1
+# Persistence of the top (owner, 2026-10-04: computed and shown, no threshold yet): of the
+# variants in the best `top` share of the build by net profit, how many stay in the best `keep`
+# share of each out-of-sample window. By chance it is `keep`; the fact published is the excess.
+persistence:
+  top: 0.20
+  keep: 0.50

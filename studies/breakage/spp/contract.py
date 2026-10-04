@@ -6,8 +6,8 @@ import pandas as pd
 from core.study import blocks, result as envelope
 from studies.breakage.spp.model import combine
 
-VERDICT = {"proceed": ("SEGUIR", "pass", "el máximo supera lo que daría una rejilla de ruido"),
-           "noise": ("RUIDO", "fail", "el máximo no supera lo que daría una rejilla de ruido")}
+VERDICT = {"proceed": ("SEGUIR", "pass", "aprueba: el máximo supera lo que daría una rejilla de ruido"),
+           "noise": ("RUIDO", "fail", "no aprueba: el máximo no supera lo que daría una rejilla de ruido")}
 
 # What "combinado" means for each metric, spelled out beside its histogram (2026-09-30, §7):
 # an SPP grid cannot be concatenated across windows (README.md), so four metrics are rebuilt
@@ -33,22 +33,28 @@ def verdict(result: dict) -> dict:
     return blocks.verdict(label, state, f"{meaning.capitalize()}: exceso del máximo sobre la media {n['excess']:.3f} "
                           f"contra {n['noise_max']:.3f} bajo el nulo σ·√(2·ln n_eff).",
                           n["ratio"],
-                          [{"label": "tuplas distintas (n_eff)", "state": "info",
+                          [{"label": "Tuplas distintas (n_eff)", "state": "info",
                             "value": n["n_eff"], "note": f"de {n['n_rows']:,} filas"},
-                           {"label": "área de meseta", "state": "info",
+                           {"label": "Área de meseta", "state": "info",
                             "value": n["plateau_area"], "note": ""},
-                           {"label": "(máx − mediana)/IQR", "state": "info",
-                            "value": s["spike_ratio"], "note": f"curtosis {s['kurtosis']:.2f}"}])
+                           {"label": "(Máx − mediana)/IQR", "state": "info",
+                            "value": s["spike_ratio"], "note": f"Curtosis {s['kurtosis']:.2f}"}])
 
 
-def _hist(name: str, unit: str, values: np.ndarray, real: float | None, share: float,
+# Where a metric stops being profitable; Max Drawdown has no good side, so no shade.
+PIVOT = {"ProfitFactor": 1.0, "EdgeRatioInPips": 1.0}
+NO_SHADE = {"Drawdown"}
+
+
+def _hist(col: str, name: str, unit: str, values: np.ndarray, real: float | None, share: float,
          caveat: str) -> dict:
     """One panel-1 histogram: the grid's distribution, the real backtest, a median ± share band."""
     arr = np.asarray(values, dtype=float)
     arr = arr[np.isfinite(arr)]
     median = float(np.median(arr))
     lo, hi = median - share * abs(median), median + share * abs(median)
-    b = blocks.distribution(name, unit, arr, real, "")
+    b = blocks.distribution(name, unit, arr, real, "", sign_shade=col not in NO_SHADE,
+                           **({"pivot": PIVOT[col]} if col in PIVOT else {}))
     b["band"] = [lo, hi]
     where = "" if real is None else ("dentro" if lo <= real <= hi else "fuera")
     b["note"] = (f"Banda: mediana ± {share:.0%} de su propio valor."
@@ -78,14 +84,14 @@ def panel1(periods: list[tuple[str, dict, dict, bool]], share: float) -> dict:
             if combined and col in ("SharpeRatio", "SortinoRatio") and real is None:
                 caveat += " Sin real marcado: falta el export de operaciones para " \
                           "reconstruirlo (skill /export)."
-            b = _hist(name, unit, values[col], real, share, caveat)
+            b = _hist(col, name, unit, values[col], real, share, caveat)
             if len(periods) > 1:
                 b["select"] = {"periodo": label}
             made.append(b)
     selectors = ([{"key": "periodo", "label": "Periodo", "options": [p[0] for p in periods],
                   "default": periods[0][0]}] if len(periods) > 1 else [])
     return envelope.tab(
-        "panel1", "Distribución de la performance", made, selectors=selectors,
+        "panel1", "Distribución del rendimiento", made, selectors=selectors,
         note="Se varían todos los parámetros a la vez, al azar, dentro de un rango — miles de "
              "backtests — y se estudia la distribución de la performance que resulta, no un "
              "solo número. Cada histograma marca el backtest real y la mediana de la "
@@ -112,12 +118,17 @@ def panel2(is_pop: pd.DataFrame, oos_pop: pd.DataFrame, is_real: pd.Series,
         a, b = a[np.isfinite(a)], b[np.isfinite(b)]
         reals = {"IS": float(is_real[col]) if col in is_real.index else None,
                 "OOS1": float(oos_real[col]) if col in oos_real.index else None}
+        edge = PIVOT.get(col, 0.0)
+        pcts = " · ".join(f"{k}: {100 * float((v > edge).mean()):.1f} % por encima de {edge:g}"
+                          .replace(".", ",") for k, v in (("IS", a), ("OOS1", b)))
         made.append(blocks.distribution(
             name, unit, np.concatenate([a, b]), None,
-            "IS y OOS1 solapadas como densidad (cada una integra a 1): compara su forma, no "
-            "el tamaño de la muestra.", series={"IS": a, "OOS1": b}, reals=reals))
+            f"{pcts}. IS y OOS1 solapadas como densidad (cada una integra a 1): compara su "
+            "forma, no el tamaño de la muestra.", series={"IS": a, "OOS1": b}, reals=reals,
+            sign_shade=col not in NO_SHADE,
+            **({"pivot": PIVOT[col]} if col in PIVOT else {})))
     return envelope.tab(
-        "panel2", "IS contra OOS1 — lo que no crece con la ventana", made,
+        "panel2", "IS contra OOS1: lo que no crece con la ventana", made,
         note="Solo métricas atemporales: Sharpe, Sortino, Profit Factor y R/Edge ratio — nunca "
              "Net Profit ni Retorno/Drawdown, que crecen con la ventana y no se pueden comparar "
              "así entre una IS larga y una OOS1 más corta. Kaufman Efficiency Ratio no está "

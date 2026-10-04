@@ -17,6 +17,7 @@ metric is*, `measure/` says *what its value was on these runs, and whether that 
 | `counts.py` | The metrics that are reductions over the trades: totals, counts, averages and their ratios | imported | parts → arrays |
 | `drawdown.py` | Every drawdown metric, and the account-capital denominator the four of them share | imported | parts → arrays |
 | `runs.py` | Streaks of wins and losses, and the runs test SQX scores their randomness with | imported | parts → arrays |
+| `place.py` | The criteria metrics (owner, 2026-10-04: computed and shown, no threshold): where the original backtest sits among a task's re-runs — its percentile, the median's gap as a share of the original (missing when the original is near zero) and the same distance in IQRs of the re-runs | imported | re-runs + original → percentile, gaps |
 
 ## The calibration, and why it is not optional
 

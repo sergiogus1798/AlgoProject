@@ -1,0 +1,14 @@
+# Facts a study publishes for a criterion the owner has not set yet (owner, 2026-10-04:
+# «calculados y visibles, sin juzgar»). The Criterios zone lists them under their step with an
+# empty threshold and offers them in «Añadir criterio»; nothing here judges — `judge.py` reads
+# criteria.yaml alone. A fact enters this file only after its metric was run on a zero-edge
+# null and told it apart from the real values (the card under `card`, with the quantiles a
+# threshold is read from); one the null covers stays a diagnostic of its panel and is not
+# listed. Step → list of {fact, name, card}.
+"17":
+  - fact: wfc.summary.exceso_persistencia_minimo
+    name: "WFC · exceso de persistencia del top, peor ventana"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.summary.exceso_persistencia_oos1
+    name: "WFC · exceso de persistencia del top en OOS1"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md

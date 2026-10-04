@@ -21,7 +21,7 @@ def block(b: dict, strategy: str) -> dict | None:
 
     Returns:
         A table with only the rows whose strategy column names it; bars with only its items;
-        a grid with only its row; a verdict or a note as it was. None for any other block,
+        a grid with only its row; a `lines` block when it is this mother's; a verdict or a note as it was. None for any other block,
         or one of these with nothing about this strategy.
     """
     kind = b.get("kind")
@@ -33,6 +33,8 @@ def block(b: dict, strategy: str) -> dict | None:
         items = [i for i in b.get("items") or [] if mine(str(i.get("label", "")).split(" · ")[0],
                                                           strategy)]
         return {**b, "items": items} if items else None
+    if kind == "lines":
+        return b if mine((b.get("select") or {}).get("mother"), strategy) else None
     if kind == "grid":
         keep = [i for i, r in enumerate(b.get("rows") or []) if mine(r, strategy)]
         if not keep:
@@ -41,6 +43,14 @@ def block(b: dict, strategy: str) -> dict | None:
                 "values": [b["values"][i] for i in keep],
                 **({"labels": [b["labels"][i] for i in keep]} if b.get("labels") else {})}
     return None
+
+
+def _alone(tab: dict, kept: list[dict]) -> dict:
+    """The tab kept to one mother: no `mother` selector (one choice is noise) and no tag."""
+    sel = [s for s in tab.get("selectors") or [] if s["key"] != "mother"]
+    blocks = [{**b, "select": {k: v for k, v in b["select"].items() if k != "mother"}}
+              if b.get("select") else b for b in kept]
+    return {"selectors": sel, "blocks": blocks} if tab.get("selectors") else {"blocks": blocks}
 
 
 def slice_for(result: dict, strategy: str) -> dict | None:
@@ -60,7 +70,7 @@ def slice_for(result: dict, strategy: str) -> dict | None:
     for tab in out.get("tabs", []):
         kept = [k for k in (block(b, strategy) for b in tab.get("blocks", [])) if k]
         if kept:
-            tabs.append({**tab, "blocks": kept, "note": "Run de toda la población, vista "
+            tabs.append({**tab, **_alone(tab, kept), "note": "Run de toda la población, vista "
                          "solo para esta estrategia. " + (tab.get("note") or "")})
     if not tabs:
         return None

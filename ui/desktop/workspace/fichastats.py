@@ -94,7 +94,8 @@ class Stats(QWidget):
         locked = "rows" not in oos2
         self.segment.button(LOCKED).setEnabled(not locked)
         # A disabled button never shows its tooltip, so the reason is written beside it.
-        self.reserved.setText(f"OOS2 {oos2['blocked']}" if "blocked" in oos2 else "")
+        why = oos2.get("blocked", "").removeprefix("OOS2 ")    # one reason already names it
+        self.reserved.setText(f"OOS2 {why}" if why else "")
         self.reserved.setToolTip(oos2.get("why", ""))
         self.segment.button(0).setChecked(True)
         self.show_sample(0)

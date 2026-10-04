@@ -128,8 +128,8 @@ def test_panel_to_strategy() -> None:
     assert SHELL.workspace.panel.tab() == tab
     shot(SHELL, "databanks")
     row = next(r for r in range(table.rowCount())
-               if table.rows[table.item(r, 0).data(256)]["identity"])
-    chosen = table.rows[table.item(row, 0).data(256)]
+               if table.row_at(r)["identity"])
+    chosen = table.row_at(row)
     table.double(row, 0)
     settle(QAPP)
     assert SHELL.stack.currentWidget() is SHELL.estrategia, SHELL.status.text()

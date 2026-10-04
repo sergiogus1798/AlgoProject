@@ -59,11 +59,14 @@ def sentence(result: dict, warning: str) -> str:
         BLIND: "lo que optimiza mejor **no dice nada** sobre lo que va después",
         PERVERSE: "lo que optimiza mejor va **peor** después — la reoptimización está "
                   "seleccionando lo que va a fallar"}[result["verdict"]]
-    lines = [f"ρ = {result['rho']:+.3f} (IC 95 % {result['low']:+.3f} a "
-             f"{result['high']:+.3f}, sobre {result['cells']} celdas y "
+    def n(x: float, f: str = "+.2f") -> str:
+        """A figure with the decimal comma."""
+        return format(x, f).replace(".", ",")
+    lines = [f"ρ = {n(result['rho'])} (IC 95 % {n(result['low'])} a "
+             f"{n(result['high'])}, sobre {result['cells']} celdas y "
              f"{result['steps']} tramos): {text}.",
-             f"El optimizador cambia el {result['share_changed']:.1%} de los parámetros "
-             f"de un tramo al siguiente."]
+             f"El optimizador cambia el {n(result['share_changed'] * 100, '.1f')} % de los "
+             f"parámetros de un tramo al siguiente."]
     if result["drift_high"]:
         lines.append("Esa deriva es alta: cada reoptimización elige una estrategia "
                      "sustancialmente distinta.")

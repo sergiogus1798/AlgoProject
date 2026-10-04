@@ -35,3 +35,11 @@ design:
 panel1:
   # The window's histograms: mediana ± this share of its own value (owner, 2026-09-30, §7).
   band_share: 0.30
+
+criteria:
+  # The criteria metrics (owner, 2026-10-04: computed and shown, no threshold, judging nothing).
+  # A ratio is published only when its denominator is clear of zero; otherwise the fact is
+  # missing. median(OOS1)/median(IS) needs the IS median ABOVE this, per metric:
+  is_floor: {SharpeRatio: 0.1, SortinoRatio: 0.1, ProfitFactor: 1.0, EdgeRatioInPips: 1.0}
+  # (original - median)/|median| needs |median| to be at least this many IQRs of the grid.
+  median_floor_iqr: 0.25

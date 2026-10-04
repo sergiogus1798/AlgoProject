@@ -1,17 +1,23 @@
 """Where a databank's files live, which retest pairs with it, and whether SQX is writing it now."""
 
 import os
+import threading
 from functools import lru_cache
 from pathlib import Path
 
 from core import cfx, sqxfile, sqxstats, worker
 from core.paths import DATA, databank_dir
-from ui.daemon import progress
+from ui.daemon import diskmemo, progress
 
 # The retest the gate pairs a build databank with: the task that reads it and writes `OOS`,
 # the name `sqx/projects/builder.py` gives the oos1 retest of every workflow project.
 PARTNER = "OOS"
 AFTERRUN = DATA / "logs" / "afterrun"    # <role>.pid while `afterrun` exports after a stop
+# 🔬 2026-10-04: opening a project asks for the same roster four times at once, and
+# `lru_cache` lets every caller compute it: 10,000 strategies listed four times under one
+# GIL took 47-80 s against the window's 20. One lists; the others wait and read the cache.
+LISTING = threading.Lock()
+sqxfile._SEEN.update(diskmemo.load("identities"))
 
 
 def install_of(project: str, databank: str) -> tuple[str, Path] | None:
@@ -179,7 +185,12 @@ def roster(project: str, databank: str) -> dict[str, str]:
     if where is None or writing(where[1], project):
         return {}
     folder = databank_dir(project, db, where[1])
-    return _roster(str(folder), folder.stat().st_mtime)
+    with LISTING:
+        known = len(sqxfile._SEEN)
+        got = _roster(str(folder), folder.stat().st_mtime)
+        if len(sqxfile._SEEN) != known:      # hashed something new: the next daemon will not
+            diskmemo.save("identities", dict(sqxfile._SEEN))
+        return got
 
 
 @lru_cache(maxsize=64)

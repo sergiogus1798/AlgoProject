@@ -5,10 +5,28 @@ import pandas as pd
 from core.study import blocks, result
 
 RHO_LEVELS = [-0.5, -0.3, 0.0, 0.3, 0.5, 0.7]
-COSTS = ("Costes PROVISIONALES: los 9 pares y el principal se retestearon con los defaults de "
-         "fábrica de SQX, comisión CERO. El coste por operación mueve más a las variantes que "
+COSTS = ("Costes provisionales: los 9 pares y el principal se retestearon con los valores por "
+         "defecto de SQX, con comisión cero. El coste por operación mueve más a las variantes que "
          "más operan, así que puede reordenar una superficie: lee esto como provisional hasta "
-         "que el dueño fije los costes de the5ers.")
+         "que el dueño fije los costes de The5ers.")
+
+
+TERMS = {
+    "Jaccard": "Solape entre las mejores combinaciones de parámetros de dos mercados: la "
+               "intersección dividida por la unión de sus deciles superiores, J = |A∩B| / |A∪B|. "
+               "1 = las mejores combinaciones son las mismas en los dos; 0 = ninguna en común. "
+               "Por azar, con el decil, sale en torno a 0,05: lo que importa es cuánto lo supera.",
+    "Jaccard por azar": "El Jaccard que darían dos órdenes de variantes independientes, y el "
+                        "percentil alto de ese azar que el Jaccard observado tiene que superar.",
+    "Spearman": "Correlación de rangos del Net Profit de cada variante entre el principal y "
+                "este mercado: 1 = las ordenan igual, 0 = sin relación, −1 = al revés.",
+    "n_eff": "Variantes con un resultado distinto en el par: dos tuplas que dan el mismo "
+             "backtest cuentan una vez.",
+    "exposure": "Spearman tras quitar a cada mercado lo que explica su tiempo dentro: aísla la "
+                "región de parámetros de la deriva del mercado.",
+    "Solape": "Cuántas variantes del decil superior comparten el principal y este mercado, "
+              "sobre el tamaño del decil.",
+}
 
 
 def short(feed: str) -> str:
@@ -36,22 +54,27 @@ def reading(rows: pd.DataFrame, segments: list[str], floor: float) -> dict:
     for segment in segments:
         one = rows[rows["segment"] == segment]
         table = pd.DataFrame({
-            "mercado": one["market"].map(short), "n_eff": one["n_eff"], "rho": one["rho"],
-            "rho_lo": one["rho_lo"], "rho_hi": one["rho_hi"],
-            "rho_sin_exp": one["rho_neutral"], "J": one["j"],
-            "J_azar": one["j0"], "J_banda": one["j_hi"],
-            "solape": one["overlap"].astype(str) + "/" + one["k"].astype(str),
-            "madre_pct": one["origin_pct"], "estado": one["state"]})
+            "Mercado": one["market"].map(short), "n efectivo": one["n_eff"],
+            "Spearman": one["rho"], "Spearman (inf.)": one["rho_lo"],
+            "Spearman (sup.)": one["rho_hi"], "Spearman sin exposición": one["rho_neutral"],
+            "Jaccard": one["j"], "Jaccard por azar": one["j0"],
+            "Jaccard (banda alta del azar)": one["j_hi"],
+            "Solape": one["overlap"].astype(str) + "/" + one["k"].astype(str),
+            "Madre (%)": one["origin_pct"], "Estado": one["state"]})
         out.append({**blocks.table(
             f"Principal contra cada mercado — {segment}", table,
-            "rho: Spearman del beneficio neto entre variantes, con su intervalo al 95 %. J: "
-            "Jaccard de los deciles superiores; J_azar es lo que dan dos órdenes "
-            "independientes y J_banda su percentil alto. madre_pct: dónde cae la madre en "
-            "ese mercado (100 = la mejor). rho_sin_exp: el mismo rho quitando a cada "
-            "mercado lo que explica su tiempo dentro — en estrategias sólo largas, parte del "
-            "orden es exposición por deriva del mercado, no región de parámetros."),
+            "Spearman: correlación de rangos del Net Profit entre variantes, con su intervalo "
+            "al 95 %. Jaccard: solape de los deciles superiores (ver el glosario); "
+            "«por azar» es lo que dan dos órdenes independientes y «banda alta» su percentil "
+            "alto. Madre: dónde cae la madre en ese mercado (100 = la mejor). «Sin exposición»: "
+            "el mismo Spearman quitando a cada mercado lo que explica su tiempo dentro — en "
+            "estrategias sólo largas, parte del orden es exposición por deriva del mercado, no "
+            "región de parámetros."),
+            "help": [None, TERMS["n_eff"], TERMS["Spearman"], None, None, TERMS["exposure"],
+                     TERMS["Jaccard"], TERMS["Jaccard por azar"], TERMS["Jaccard por azar"],
+                     TERMS["Solape"], None, None],
             "select": {"segment": segment}})
-        out.append({"kind": "bars", "title": f"rho con el principal — {segment}", "unit": "",
+        out.append({"kind": "bars", "title": f"Spearman con el principal — {segment}", "unit": "",
                     "items": [{"label": short(m), "value": r, "error": [lo, hi], "state": s}
                               for m, r, lo, hi, s in zip(one["market"], one["rho"],
                                                          one["rho_lo"], one["rho_hi"],
@@ -78,7 +101,7 @@ def matrices(pairs: pd.DataFrame, segments: list[str], order: list[str]) -> dict
     for segment in segments:
         one = pairs[pairs["segment"] == segment]
         both = pd.concat([one, one.rename(columns={"a": "b", "b": "a"})]).drop_duplicates(["a", "b"])
-        for key, title, levels in (("rho", "rho de Spearman", RHO_LEVELS),
+        for key, title, levels in (("rho", "Spearman", RHO_LEVELS),
                                    ("j", "Jaccard del decil superior", None)):
             grid = both.pivot(index="a", columns="b", values=key).reindex(index=order, columns=order)
             j0 = float(one["j0"].median())
@@ -93,39 +116,6 @@ def matrices(pairs: pd.DataFrame, segments: list[str], order: list[str]) -> dict
                       "emparejaron por su identificador.")
 
 
-def surfaces(cells: pd.DataFrame, segments: list[str], order: list[str],
-             origin: str) -> dict:
-    """One surface per market and segment: the spread of the metric with the mother marked.
-
-    Args:
-        cells: `inputs.surfaces.long`, only usable cells.
-        segments: The segments read.
-        order: Market order, the main one first.
-        origin: The mother's `variant_id`.
-
-    Returns:
-        The third tab, a distribution per (market, segment).
-    """
-    out = []
-    for market in order:
-        for segment in segments:
-            one = cells[(cells["market"] == market) & (cells["segment"] == segment)]
-            mother = one.loc[one["variant_id"] == origin, "value"]
-            block = blocks.distribution(
-                f"{short(market)} — {segment}", "USD", one["value"].to_numpy(),
-                float(mother.iloc[0]) if len(mother) else float("nan"),
-                "Beneficio neto de cada variante en este mercado y tramo; la línea es la madre.")
-            out.append({**block, "mark": "madre", "select": {"market": short(market),
-                                                              "segment": segment}})
-    markets = {"key": "market", "label": "Mercado", "options": [short(m) for m in order],
-               "default": short(order[0])}
-    return result.tab("superficies", "Una superficie por mercado", out,
-                      [markets, selector(segments)],
-                      "La superficie es el beneficio neto de las variantes en un mercado. "
-                      "Su nivel depende del coste (provisional); lo que se compara entre "
-                      "mercados es el orden, no el nivel.")
-
-
 def checks(found: pd.DataFrame, diagonal: pd.DataFrame, agrees: float) -> dict:
     """The three verifications of §3 of the encargo.
 
@@ -137,14 +127,19 @@ def checks(found: pd.DataFrame, diagonal: pd.DataFrame, agrees: float) -> dict:
     Returns:
         The fourth tab.
     """
-    table = found.assign(market=found["market"].map(short))
-    diag = diagonal.assign(a=diagonal["a"].map(short))
+    table = found.assign(market=found["market"].map(short)).rename(columns={
+        "check": "Comprobación", "market": "Mercado", "segment": "Tramo", "n": "n",
+        "rho": "Spearman", "rho_wrong": "Spearman (mercado equivocado)",
+        "within_1usd": "Dentro de 1 USD", "gap_median": "Diferencia mediana",
+        "gap_max": "Diferencia máxima"})
+    diag = diagonal.assign(a=diagonal["a"].map(short)).rename(columns={
+        "segment": "Tramo", "a": "Mercado", "rho": "Spearman", "j": "Jaccard"})
     return result.tab("verificacion", "Verificación", [
         blocks.table("La superficie sale del resultado correcto", table,
-                     f"rho: orden de la curva diaria sumada contra el beneficio de SQX; tiene "
-                     f"que pasar de {agrees}. rho_wrong: la misma curva contra el mercado "
-                     f"siguiente, que es lo que daría un emparejamiento equivocado. Los "
-                     f"dólares no tienen por qué cuadrar (ver within_1usd)."),
-        blocks.table("rho de cada mercado consigo mismo", diag,
-                     "Tiene que ser exactamente 1: si no, las variantes no se emparejaron "
+                     f"Spearman: orden de la curva diaria sumada contra el Net Profit de SQX; "
+                     f"tiene que pasar de {agrees}. «Mercado equivocado»: la misma curva contra "
+                     f"el mercado siguiente, que es lo que daría un emparejamiento erróneo. Los "
+                     f"dólares no tienen por qué cuadrar (ver «Dentro de 1 USD»)."),
+        blocks.table("Spearman y Jaccard de cada mercado consigo mismo", diag,
+                     "Tienen que ser exactamente 1: si no, las variantes no se emparejaron "
                      "por identidad.")])

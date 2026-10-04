@@ -98,7 +98,7 @@ LABELS = {
     "sqx.split_mode": "Composición del corte", "sqx.rho_floor": "Suelo de ρ",
     "sqx.table_ends": "Filas por extremo", "sqx.period": "Periodo", "sqx.score": "Puntuación",
     "sqx.blocks": "Bloques (combinaciones)", "sqx.rules": "Reglas de selección",
-    "sqx.random_draws": "Sorteos de la regla aleatoria", "sqx.bootstrap": "Remuestreos",
+    "sqx.plateau_radius": "Radio del plateau", "sqx.bootstrap": "Remuestreos",
     "sqx.cluster_k_max": "Máx. clústeres", "sqx.why": "Por qué",
     "sqx.formula": "Fórmula", "sqx.slippage": "Slippage", "sqx.sqx_type": "Tipo de SQX",
     "sqx.purpose": "Para qué", "sqx.reserved_for": "Reservado a",
