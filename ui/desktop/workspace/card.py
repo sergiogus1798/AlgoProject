@@ -62,7 +62,7 @@ class Card(QFrame):
                                f"{live['running']}", "dim"))
         lay.addStretch(1)
         lay.addWidget(line(f"● {p['state'].capitalize()}", "mono", f"color: {ink};"))
-        lay.addWidget(line(f"en el {where}", "dim"))
+        lay.addWidget(line(f"en el {where}" if p["install"] else where, "dim"))
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Open the project.

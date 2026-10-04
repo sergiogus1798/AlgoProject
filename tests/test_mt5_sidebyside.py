@@ -33,6 +33,12 @@ def test_rows_are_sqx_entries_and_lights_drop_columns() -> None:
     assert shown["columns"] == ["entrada SQX", "tipo", "Hantec · P&L SQX",
                                 "Hantec · entrada MT5", "Hantec · P&L MT5"]
     assert shown["rows"][0] == ["2025-01-02 10:00", "Buy", 11.0, "2025-01-02 13:00", 9.0]
+    both = sidebyside.table({"ftmo": {"pairs": pairs(2, [10.0, -5.0]), "hours": 2,
+                                      "ticks": {"pairs": pairs(2, [10.0, -5.0]), "hours": 2}},
+                             "hantec": {"pairs": pairs(3, [11.0, -4.0]), "hours": 3}})
+    assert both["columns"][2:7] == ["FTMO · P&L SQX", "FTMO · entrada MT5", "FTMO · P&L MT5",
+                                    "FTMO · entrada MT5 Real ticks", "FTMO · P&L MT5 Real ticks"]
+    assert both["firm_columns"] == {"ftmo": [2, 3, 4, 5, 6], "hantec": [7, 8, 9]}
 
 
 if __name__ == "__main__":

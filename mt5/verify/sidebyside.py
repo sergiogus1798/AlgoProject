@@ -19,19 +19,29 @@ def table(pieces: dict[str, dict]) -> dict:
         A "table" block: the entry in SQX's feed clock and its side, then per firm the USD
         P&L of its SQX retest as SQX booked it, the MT5 entry in its server's clock and the
         MT5 P&L as MT5 booked it — empty when the EA opened nothing there. USD is shown; the
-        criteria compare points (`compare.in_points`). `firm_columns` lets the window drop a firm's three
+        criteria compare points (`compare.in_points`). A firm with a second piece under `"ticks"`
+        gains its real-ticks entry and P&L. `firm_columns` lets the window drop a firm's
         columns when its light is off. Each firm's SQX retest carries its own costs, so the
         rows are the union of their entries, keyed on the unshifted open time and side.
     """
-    frames = []
+    frames, columns, at = [], {}, 2
     for firm, piece in pieces.items():
-        p, label = piece["pairs"], firms.label(firm)
-        frames.append(pd.DataFrame({
-            "entrada SQX": pd.to_datetime(p["Open time"]) - pd.Timedelta(hours=piece["hours"]),
-            "tipo": p["Type"], f"{label} · P&L SQX": p["Profit/Loss USD"],
-            f"{label} · entrada MT5": pd.to_datetime(p["Open time_mt5"]).dt.strftime(
-                "%Y-%m-%d %H:%M").fillna(""),
-            f"{label} · P&L MT5": p["Profit/Loss USD_mt5"]}).set_index(["entrada SQX", "tipo"]))
+        label = firms.label(firm)
+        # A firm with a real-ticks pass (`ticks.keep`) gets two more columns: that pass's MT5 leg.
+        for mt5, part in [("MT5", piece), ("MT5 Real ticks", piece.get("ticks"))]:
+            if part is None:
+                continue
+            p = part["pairs"]
+            cols = {"entrada SQX": pd.to_datetime(p["Open time"]) - pd.Timedelta(hours=part["hours"]),
+                    "tipo": p["Type"], f"{label} · P&L SQX": p["Profit/Loss USD"],
+                    f"{label} · entrada {mt5}": pd.to_datetime(p["Open time_mt5"]).dt.strftime(
+                        "%Y-%m-%d %H:%M").fillna(""),
+                    f"{label} · P&L {mt5}": p["Profit/Loss USD_mt5"]}
+            if part is not piece:
+                del cols[f"{label} · P&L SQX"]       # the same SQX retest, already a column
+            frames.append(pd.DataFrame(cols).set_index(["entrada SQX", "tipo"]))
+            columns[firm] = columns.get(firm, []) + list(range(at, at + len(cols) - 2))
+            at += len(cols) - 2
     merged = pd.concat(frames, axis=1).sort_index().tail(ROWS).reset_index()
     merged["entrada SQX"] = merged["entrada SQX"].dt.strftime("%Y-%m-%d %H:%M")
     out = blocks.table("Operaciones de SQX y de MT5, lado a lado", merged,
@@ -40,6 +50,5 @@ def table(pieces: dict[str, dict]) -> dict:
                        "operación de su EA en MT5 que abrió en la misma dirección dentro de la "
                        "tolerancia de entrada, en la hora de su servidor. Vacío = el EA no abrió "
                        "esa operación.")
-    out["firm_columns"] = {firm: [2 + 3 * i, 3 + 3 * i, 4 + 3 * i]
-                           for i, firm in enumerate(pieces)}
+    out["firm_columns"] = columns
     return out

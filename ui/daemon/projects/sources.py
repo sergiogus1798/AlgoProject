@@ -16,6 +16,7 @@ from ui.daemon.loader import find
 ORDER = ("corriendo", "parado", "terminado", "construido", "ausente")
 FIRST_TASK = re.compile(r'<Task [^>]*taskXMLFile="([^"]+)"')
 CHART = re.compile(r'<Chart symbol="([^"]+)" timeframe="([^"]+)"')
+RETIRED = "retirados"      # the install filter's value for a retired project that left reports
 LABEL = {"master": "maestro", "conductor": "conductor", "custodian": "custodio"}
 
 
@@ -155,17 +156,20 @@ def gallery() -> list[dict]:
     """Every card, the running ones first, then by name.
 
     Returns:
-        One `card` per project on an install, or with reports and not retired. A retired
-        project keeps its reports under `AlgoData/reports/` but is not listed: the owner
-        deleted it and 218 of them stayed on the gallery as «ausente» (owner, 2026-10-04).
+        One `card` per project on an install or with reports. A retired project that kept
+        its reports under `AlgoData/reports/` carries `install_label` «retirados», which the
+        window hides unless that filter is chosen: 218 of them filled the gallery as
+        «ausente» after the owner deleted them (owner, 2026-10-04).
     """
-    held, rows = on_disk(), registered()
+    held, rows, reps = on_disk(), registered(), reported()
     gone = {r["name"] for r in registry.rows() if r["retired"]} - set(rows) - set(held)
-    reps = reported() - gone
     runs_today = {role: progress.run_state(progress.log_lines(top)[0])
                   for role, top in progress.installs().items()}
     cards = [card(n, held.get(n), rows.get(n, {}), runs_today, n in reps)
              for n in sorted(set(held) | reps)]
+    for c in cards:
+        if c["name"] in gone:
+            c["install_label"], c["why"] = RETIRED, "Retirado; quedan sus informes."
     return sorted(cards, key=lambda c: (ORDER.index(c["state"]), c["name"]))
 
 

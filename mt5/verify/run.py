@@ -14,7 +14,7 @@ from core.paths import MT5_DATA
 from core.study import result as study_result
 from ledger import record, study as ledger_study
 from mt5 import compare, tester, wine
-from mt5.verify import conditions, firms, judge, mt5side, report, sidebyside, sqxside
+from mt5.verify import conditions, firms, judge, mt5side, report, sqxside, ticks
 from sqx.inspect import feeds
 from sqx.projects import mt5verify
 from ui.daemon.launch.run import assets as rule_five, graceful
@@ -117,9 +117,12 @@ def main() -> None:
     ap.add_argument("--model", required=True, choices=sorted(tester.MODELS),
                     help="the MT5 tester's model — chosen each time, never a default")
     ap.add_argument("--firms", default="", help="comma-separated firm keys; all saved if empty")
+    ap.add_argument("--also-real-ticks", action="store_true",
+                    help="a second MT5 pass on real ticks, judged and drawn beside --model's")
     ap.add_argument("--set", action="append", default=[], help="section.key=value")
     a = ap.parse_args()
     started = time.time()
+    also = a.also_real_ticks and a.model != ticks.MODEL
     cfg = firms.config(a.set)
     if a.start != "mt5" and date.fromisoformat(a.start) >= date.fromisoformat(a.end):
         raise SystemExit("la ventana acaba antes de empezar")
@@ -134,7 +137,7 @@ def main() -> None:
     mq5_dir.mkdir(parents=True, exist_ok=True)
     meta = {"run": run_id, "strategy": strategy.stem, "file": str(strategy),
             "identity": sqxfile.identity(strategy), "asset": asset, "timeframe": timeframe,
-            "from": a.start, "to": a.end, "model": a.model, "state": "running",
+            "from": a.start, "to": a.end, "model": a.model, "ticks": also, "state": "running",
             "started": datetime.now().isoformat(timespec="seconds")}
     (work / "run.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
 
@@ -191,7 +194,7 @@ def main() -> None:
     say(60, f"compilando {found[0].name}")
     ea = mt5side.compile_ea(found[0], f"V{stamp[9:]}_{strategy.stem}", sizing["params"]["Size"])
 
-    mt5_trades, reports = {}, {}
+    mt5_trades, reports, slow = {}, {}, {}
     usable = firms.usable(asset)
     for i, firm in enumerate(costs):
         say(65 + 25 * i // len(costs), f"backtest en MT5 en la cuenta de {firm}")
@@ -200,35 +203,31 @@ def main() -> None:
                                cfg["mt5"])
         mt5_trades[firm], reports[firm] = got["trades"], {"dir": got["dir"],
                                                            "summary": got["summary"]}
+        if also:
+            slow[firm] = ticks.backtest(ea["expert"], usable[firm], timeframe, window, deposit,
+                                        leverage[firm], firm, cfg["mt5"])
 
     say(92, "comparando")
     zones = (feeds.timezone(data["sqx_symbol"]), cfg["clock"]["server_zone"])
     pieces, summaries = {}, {}
     for firm in costs:
         sqx_in = compare.window(sqx_trades[firm], *window)
-        mt5_in = compare.window(mt5_trades[firm], *window)
-        piece = judge.firm_result(firm, sqx_in, mt5_in, timeframe, deposit, cfg,
-                                  usable[firm]["symbol"], data["instrument"], zones)
-        pieces[firm] = piece
-        summaries[firm] = {**piece["summary"], "report": reports[firm]["dir"]}
-        record.log(ledger_study.study_id(asset, timeframe, "mt5verify"), {
-            "step": 26, "launched_by": "mt5.verify", "symbol": asset, "timeframe": timeframe,
-            "segment": segments(data, window), "window_from": window[0], "window_to": window[1],
-            "n_in": 1, "n_out": int(piece["summary"]["state"] == "pass"),
-            "criterion": f"SQX ↔ MT5 en {firm} ({a.model})",
-            "thresholds": cfg["thresholds"], "note": f"{strategy.stem} · {run_id}"})
+        for model, trades in [(a.model, mt5_trades[firm]), (ticks.MODEL, slow.get(firm))][:1 + also]:
+            piece = judge.firm_result(firm, sqx_in, compare.window(trades, *window), timeframe,
+                                      deposit, cfg, usable[firm]["symbol"], data["instrument"],
+                                      zones)
+            record.log(ledger_study.study_id(asset, timeframe, "mt5verify"), {
+                "step": 26, "launched_by": "mt5.verify", "symbol": asset, "timeframe": timeframe,
+                "segment": segments(data, window), "window_from": window[0],
+                "window_to": window[1], "n_in": 1,
+                "n_out": int(piece["summary"]["state"] == "pass"),
+                "criterion": f"SQX ↔ MT5 en {firm} ({model})",
+                "thresholds": cfg["thresholds"], "note": f"{strategy.stem} · {run_id}"})
+            ticks.keep(pieces, summaries, firm, piece, reports[firm]["dir"])
     tabs = []
     if pieces:
-        baseline = assetdata.sqx_settings(data, "build")
-        tab_blocks = [judge.params_table(baseline, costs), judge.combined_chart(pieces),
-                      sidebyside.table(pieces)]
-        for piece in pieces.values():
-            tab_blocks += [piece["verdict"], piece["lonely"]]
-        tabs = [{"name": "verificacion", "title": "Verificación",
-                "note": "Criterios de aceptación (verde: superado, rojo: fallido) y P&L por "
-                        "empresa; la lucecita de cada empresa en la ventana enciende o apaga "
-                        "su curva y sus criterios.",
-                "blocks": tab_blocks}]
+        params = judge.params_table(assetdata.sqx_settings(data, "build"), costs)
+        tabs = [ticks.tab(params, pieces, a.model)]
     meta.update(project=project, deposit=deposit, ea=ea["expert"], lots=sizing["params"]["Size"])
     report.finish(work, meta, cfg, started, summaries, refused, "", tabs)
     say(100, " · ".join(f"{firms.label(f)}: {'Validada' if s['state'] == 'pass' else 'No validada'}"

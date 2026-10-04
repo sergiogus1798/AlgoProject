@@ -17,7 +17,9 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
     tabs = list(tabs or [])
     rows = [{"empresa": firms.label(f), "veredicto": "Validada" if s["state"] == "pass" else
             "No validada", "reloj (h)": s["clock_h"], "operaciones SQX": s["sqx_trades"],
-             "operaciones MT5": s["mt5_trades"]} for f, s in summaries.items()]
+             "operaciones MT5": s["mt5_trades"],
+             "veredicto en Real ticks": {"pass": "Validada", "fail": "No validada"}.get(
+                 s.get("ticks_state"), "—")} for f, s in summaries.items()]
     rows += [{"empresa": firms.label(f), "veredicto": "No se pudo verificar", "reloj (h)": None,
               "operaciones SQX": None, "operaciones MT5": None} for f in refused]
     states = [s["state"] for s in summaries.values()]
@@ -29,8 +31,9 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
                      f"{meta['from']} → {meta['to']} · modelo del tester «{meta['model']}». "
                      + " ".join(f"{firms.label(f)}: {w}" for f, w in refused.items())),
             "blocks": [study_result.blocks.table(
-                "Cada empresa", pd.DataFrame(rows, columns=["empresa", "veredicto", "reloj (h)",
-                                                            "operaciones SQX", "operaciones MT5"]),
+                "Cada empresa", pd.DataFrame(rows, columns=[
+                    "empresa", "veredicto", "reloj (h)", "operaciones SQX", "operaciones MT5",
+                    *(["veredicto en Real ticks"] if meta.get("ticks") else [])]),
                 "una estrategia puede valer para una empresa y no para otra")]}
     good = [firms.label(f) for f, s in summaries.items() if s["state"] == "pass"]
     bad = [firms.label(f) for f, s in summaries.items() if s["state"] != "pass"]

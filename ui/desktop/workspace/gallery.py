@@ -22,8 +22,16 @@ FILTERS = {"symbol": "Todos los activos", "timeframe": "Todas las temporalidades
            "install_label": "Todas las instalaciones"}
 
 
+RETIRED = "retirados"      # the daemon's `install_label` of a retired project
+
+
 def passes(p: dict, chosen: dict[str, str]) -> bool:
-    """Whether a card meets every filter that is set; an unset filter ("") lets all through."""
+    """Whether a card meets every filter that is set; an unset filter ("") lets all through.
+
+    A retired project (only its reports remain) shows only when the install filter asks for it.
+    """
+    if p.get("install_label") == RETIRED and chosen.get("install_label") != RETIRED:
+        return False
     return all(not want or (p.get(field) or "—") == want for field, want in chosen.items())
 
 
@@ -109,7 +117,13 @@ class Gallery(QFrame):
         """Lay out the cards of the projects that meet the three filters at once."""
         chosen = {field: combo.currentData() for field, combo in self.filters.items()}
         projects = [p for p in self.rows.values() if passes(p, chosen)]
-        self.shown.setText(f"{len(projects)} de {len(self.rows)} proyectos")
+        retired = sum(p.get("install_label") == RETIRED for p in self.rows.values())
+        if chosen["install_label"] == RETIRED:
+            self.shown.setText(f"{len(projects)} de {retired} proyectos retirados con informes")
+        else:
+            self.shown.setText(f"{len(projects)} de {len(self.rows) - retired} proyectos"
+                               + (f" · {retired} retirados con informes (filtro de instalación)"
+                                  if retired else ""))
         while self.grid.count():
             self.grid.takeAt(0).widget().deleteLater()
         self.cards = [Card(p) for p in projects]

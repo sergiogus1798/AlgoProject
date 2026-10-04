@@ -25,6 +25,18 @@ def name(firm: str) -> str:
     return NAMES.get(firm, firm.capitalize())
 
 
+TICKS_HELP = (
+    "Además del modelo elegido arriba, el EA se backtestea una segunda vez en «Every tick based "
+    "on real ticks»: los ticks históricos reales del bróker, con su spread real — la ejecución "
+    "más fiel que da MT5. («Every tick» a secas interpola ticks sintéticos desde las barras M1, "
+    "así que no aporta fidelidad sobre OHLC M1.)\n\n"
+    "El gráfico dibuja tres curvas por empresa — SQX, MT5 en el modelo elegido y MT5 en Real "
+    "ticks — y los cinco criterios se juzgan dos veces, una por pasada. El veredicto que entra "
+    "en el pool sigue siendo el del modelo elegido; el de Real ticks sale al lado.\n\n"
+    "Es mucho más lento: puede tardar horas por empresa (tope de 240 min por pasada). Si el "
+    "modelo elegido ya es real_ticks, la casilla no hace nada: no se corre dos veces.")
+
+
 class FirmLight(QCheckBox):
     """A small square with a light: on in green when the firm is active, off in grey."""
 

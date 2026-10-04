@@ -114,7 +114,8 @@ def strategy_file(source: str, identity: str, version: str = "", project: str = 
     return None, f"origen «{source}» desconocido"
 
 
-def check(path: Path | None, start: str, end: str, model: str, chosen: list[str]) -> dict:
+def check(path: Path | None, start: str, end: str, model: str, chosen: list[str],
+          ticks: bool = False) -> dict:
     """Whether a check may start now, and the sentence the owner confirms.
 
     Returns:
@@ -162,7 +163,10 @@ def check(path: Path | None, start: str, end: str, model: str, chosen: list[str]
             "condiciones, más la exportación del EA a MQL5; el conductor se arranca, corre y "
             "se para, y el proyecto se retira.\n"
             f"3. El EA se compila y se backtestea en el tester de MT5 (modelo «{model}») en la "
-            "cuenta de cada empresa. El terminal queda en la última cuenta usada. No se opera "
+            "cuenta de cada empresa" + (
+                ", y una segunda vez en Real ticks (los ticks reales del bróker: mucho más "
+                "lento, hasta horas); se juzgan y se dibujan las dos pasadas"
+                if ticks and model != "real_ticks" else "") + ". El terminal queda en la última cuenta usada. No se opera "
             "nada: solo backtests.\n"
             "4. Se comparan las dos listas de operaciones con los criterios de aceptación del paso 26.")
     return {"ok": not reasons, "reasons": reasons, "text": text, "asset": asset,

@@ -11,7 +11,8 @@ from ui.desktop.blocks.result import ResultView
 from ui.desktop.blocks.states import colour
 from ui.desktop.jobbutton import JobButton
 from ui.desktop.mt5bridge.forceclose import ForceClose
-from ui.desktop.mt5bridge.render import COLUMNS, FirmLight, fill_runs, filtered, header
+from ui.desktop.mt5bridge.render import (COLUMNS, TICKS_HELP, FirmLight, fill_runs, filtered,
+                                         header)
 from ui.desktop.selection import SELECTION
 from ui.desktop.studypage.net import fetch as daemon_fetch
 from ui.desktop.studypage.net import send as daemon_send
@@ -68,6 +69,9 @@ class VerifyZone(QFrame):
         form.addRow("Desde", self.start)
         form.addRow("Hasta", self.end)
         form.addRow("Modelo del tester", self.model)
+        self.ticks = FirmLight("", "Correr también")
+        self.ticks.setToolTip(TICKS_HELP)
+        form.addRow("Real ticks", self.ticks)
         form.addRow("Empresas", self.firms)
         self.refused = text("", colour("fail"), 12)
         self.button = JobButton("Verificar en SQX y en MT5", "mt5bridge/verify",
@@ -194,7 +198,7 @@ class VerifyZone(QFrame):
         where = self._where() or {"source": "databank", "identity": ""}
         model = self.model.currentText()
         return {**where, "start": self.start.text().strip(), "end": self.end.text().strip(),
-                "model": "" if model == PICK else model,
+                "model": "" if model == PICK else model, "ticks": self.ticks.isChecked(),
                 "firms": [f for f, box in self.boxes.items() if box.isChecked()]}
 
     def confirm(self) -> str | None:

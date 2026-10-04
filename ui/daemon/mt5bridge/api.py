@@ -25,6 +25,7 @@ class Verify(BaseModel):
     start: str
     end: str
     model: str
+    ticks: bool = False         # also a second MT5 pass on real ticks (owner, 2026-10-04)
     firms: list[str]
     nonce: str = ""             # the proof its preflight returned (`proof.py`); `verify` only
 
@@ -82,7 +83,7 @@ def _check(req: Verify) -> dict:
     """The preflight for one request, plus a launcher of the window already queued."""
     path, where = runs.strategy_file(req.source, req.identity, req.version, req.project,
                                      req.databank)
-    got = runs.check(path, req.start, req.end, req.model, req.firms)
+    got = runs.check(path, req.start, req.end, req.model, req.firms, req.ticks)
     got["reasons"] = ([] if path else [where]) + got["reasons"] + queued()
     got["ok"] = not got["reasons"]
     return {**got, "file": str(path) if path else None, "where": where}
@@ -124,7 +125,8 @@ def verify(req: Verify) -> dict:
         return {"error": "no se lanza: " + why}
     start = "mt5" if req.start.strip().upper() == runs.DEEPEST else req.start
     argv = ["-m", "mt5.verify.run", "--strategy", got["file"], "--from", start,
-            "--to", req.end, "--model", req.model, "--firms", ",".join(req.firms)]
+            "--to", req.end, "--model", req.model, "--firms", ",".join(req.firms),
+            *(["--also-real-ticks"] if req.ticks else [])]
     job = jobs.start(LABEL, argv, {"project": "", "databank": req.databank,
                                    "strategy": req.identity, "role": "conductor",
                                    "study": LABEL}, lane="conductor")

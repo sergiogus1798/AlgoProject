@@ -29,6 +29,7 @@ mt5:
   # The tester's leverage is each account's own, read with its conditions.
   collect_every_s: 10
   max_minutes: 60                     # one tester pass; past it the run is given up
+  ticks_max_minutes: 240              # the optional real-ticks pass (--also-real-ticks): far slower
 
 # The clock: SQX stamps its feed's zone, MT5 its server's. The offset in whole hours that
 # pairs the most trades is taken, within ± this many hours, and said.
