@@ -91,14 +91,22 @@ def main() -> None:
         failures.append(f"accumulated: sigma {counted['sigma']:.9f} contra "
                         f"{pooled.std(ddof=1):.9f} de la union")
 
-    # Two units are never averaged together.
+    # An annualised row is brought to the per-day scale before pooling: the same union, same sigma.
     mixed = frame.copy()
-    mixed.loc[mixed.index[0], "score_unit"] = "annualised"
-    try:
-        trials.accumulated(mixed)
-        failures.append("accumulated: agrupo un Sharpe anualizado con uno por observacion")
-    except ValueError:
-        pass
+    first = mixed.index[0]
+    mixed.loc[first, "score_unit"] = "annualised"
+    mixed.loc[first, ["sharpe_mean", "sharpe_std"]] *= np.sqrt(trials.YEAR)
+    converted = trials.accumulated(mixed)
+    if abs(converted["sigma"] - counted["sigma"]) > 1e-9 or converted["unit"] != "per_period":
+        failures.append(f"accumulated: un Sharpe anualizado no vuelve a la escala diaria "
+                        f"({converted['sigma']:.9f} contra {counted['sigma']:.9f})")
+
+    # A study whose only scored rows are not Sharpes still counts its looks, with no sigma.
+    looks = frame.copy()
+    looks["score_unit"] = "p_pass"
+    blank = trials.accumulated(looks)
+    if blank["n"] != counted["n"] or blank["sigma"] == blank["sigma"] or "unit" not in blank:
+        failures.append(f"accumulated: una búsqueda sin Sharpes debe contar N y no dar sigma: {blank}")
 
     # The point of the module: a wider N raises the bar the Sharpe has to clear.
     local = int(frame["n_scored"].iloc[-1])

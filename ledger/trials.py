@@ -6,6 +6,9 @@ import pandas as pd
 from core.significance import moments
 from core.surface import plateau, trials
 
+SHARPE_UNITS = ("per_period", "annualised")   # the only score units that are a Sharpe
+YEAR = 252      # trading days a year, for converting SQX's annualised Sharpes
+
 
 def accumulated(frame: pd.DataFrame, extra: int = 0) -> dict:
     """The number of trials and the spread of their scores, over the whole study.
@@ -29,27 +32,31 @@ def accumulated(frame: pd.DataFrame, extra: int = 0) -> dict:
         spread across every build, retest and screen the study ever ran, and narrower in
         the direction that makes a result look better.
 
-    Raises:
-        ValueError: The searches disagree about the unit their scores were in. Pooling an
-            annualised Sharpe with a per-observation one produces a plausible number that
-            means nothing, and that is the one failure this module must not commit.
+    Only rows whose `score_unit` is a Sharpe are pooled into sigma, annualised ones converted
+    to the per-period scale by 1/sqrt(252) (`unit` is always "per_period"). A row of any other
+    unit (`p_pass`, `ev_bank_usd`) still adds its `n_scored` to N, since those are looks, but
+    its scores are not Sharpes and never reach sigma.
     """
     scored = frame[frame["n_scored"].notna()] if len(frame) else frame
     if not len(scored):
         return {"n": 0, "sigma": float("nan"), "searches": 0}
-    units = set(scored["score_unit"].dropna())
-    if len(units) > 1:
-        raise ValueError(f"ledger: las búsquedas mezclan unidades de score {units}; "
-                         "un Sharpe anualizado y uno por observación no se agrupan")
+    searched = int(scored["n_scored"].sum())
+    scored = scored[scored["score_unit"].isin(SHARPE_UNITS) | scored["score_unit"].isna()]
+    if not len(scored):
+        return {"n": searched + extra, "searched": searched, "extra": extra,
+                "sigma": float("nan"), "mean": float("nan"), "searches": 0, "unit": "per_period"}
+    # annualised rows come to the per-day scale here, once, so no caller has to
+    scale = np.where(scored["score_unit"] == "annualised", 1 / np.sqrt(YEAR), 1.0)
     n = scored["n_scored"].to_numpy(float)
-    mean, sd = scored["sharpe_mean"].to_numpy(float), scored["sharpe_std"].to_numpy(float)
+    mean = scored["sharpe_mean"].to_numpy(float) * scale
+    sd = scored["sharpe_std"].to_numpy(float) * scale
     total = n.sum()
     grand = float((n * mean).sum() / total)
-    population = sd ** 2 * (n - 1) / n
+    population = np.where(n > 1, sd ** 2 * (n - 1) / n, 0.0)
     variance = float((n * (population + mean ** 2)).sum() / total - grand ** 2)
     unbiased = variance * total / (total - 1)
-    return {"n": int(total) + extra, "searched": int(total), "extra": extra, "sigma": float(np.sqrt(max(unbiased, 0.0))),
-            "mean": grand, "searches": int(len(scored)), "unit": units.pop()}
+    return {"n": searched + extra, "searched": searched, "extra": extra, "sigma": float(np.sqrt(max(unbiased, 0.0))),
+            "mean": grand, "searches": int(len(scored)), "unit": "per_period"}
 
 
 def population_n_eff(panel: pd.DataFrame, k_max: int) -> dict:
