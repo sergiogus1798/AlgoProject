@@ -1,11 +1,12 @@
 """Live strategies across the whole fleet: each magic's record, and whether the same magic entered together on every account."""
-from mt5.fleet.app import eas, floors, history, read
+from mt5.fleet.app import eas, floors, fmt, history, read
 
 
 def accounts(rows: list[dict]) -> list[dict]:
     """The fleet's accounts as `record()` and `pairing()` read them: only those whose history the collector has."""
-    return [{"login": r["beat"]["login"], "label": f"{r['beat']['company'].split()[0]} {r['beat']['login']}",
-             "offset": floors.server_offset(r["beat"]), "trades": history.trades(r["deals"]),
+    return [{"login": r["beat"]["login"], "label": fmt.who(r['beat'], r['stage']),
+             "name": fmt.firm_phase(r["stage"]) if r["stage"] else fmt.who(r["beat"], None),
+             "size": r["stage"]["size"] if r["stage"] else None, "offset": floors.server_offset(r["beat"]), "trades": history.trades(r["deals"]),
              "excursions": history.excursions(r["beat"]["login"])} for r in rows if r["deals"] is not None]
 
 

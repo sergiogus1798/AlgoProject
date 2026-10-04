@@ -22,6 +22,11 @@ QFrame#card {{ background: {PANEL}; border: 1px solid {LINE}; border-radius: 8px
 QLabel#cardname {{ color: {DIM}; font-size: 14px; }}
 QLabel#cardvalue {{ font-size: 24px; font-weight: bold; font-family: "DejaVu Sans Mono"; }}
 QScrollArea {{ border: 0; }}
+QCheckBox::indicator {{ width: 16px; height: 16px; border: 1px solid {DIM}; border-radius: 3px; background: {PANEL}; }}
+QCheckBox::indicator:checked {{ background: {ACCENT}; }}
+QCheckBox {{ spacing: 6px; padding: 0 8px; }}
+QComboBox {{ background: {PANEL}; border: 1px solid {LINE}; border-radius: 4px; padding: 4px 8px; }}
+QComboBox QAbstractItemView {{ background: {PANEL}; selection-background-color: #25405c; }}
 QTabWidget::pane {{ border: 1px solid {LINE}; border-radius: 6px; top: -1px; }}
 QTabBar::tab {{ background: {PANEL}; color: {DIM}; border: 1px solid {LINE}; border-bottom: 0;
                 padding: 10px 26px; font-size: 16px; font-weight: bold; margin-right: 4px;

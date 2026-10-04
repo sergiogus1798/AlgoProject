@@ -6,7 +6,7 @@ from datetime import datetime
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QLabel, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
-from mt5.fleet.app import read, state, theme
+from mt5.fleet.app import fmt, read, state, theme
 from mt5.fleet.app.tab_deploy import DeployTab
 from mt5.fleet.app.tab_fleet import FleetTab
 from mt5.fleet.app.tab_health import HealthTab
@@ -82,7 +82,7 @@ class Tracker(QWidget):
             login = r["beat"]["login"]
             if self.notify and r["light"] in (state.RED, state.SILENT) and self.seen.get(login) != r["light"]:
                 subprocess.run(["notify-send", "-u", "critical", "MetaTracker",
-                                f"{r['beat']['company']} · {login}: {r['text']}"], check=False)
+                                f"{fmt.who(r['beat'], r['stage'])}: {r['text']}"], check=False)
             self.seen[login] = r["light"]
 
     def fit(self) -> None:

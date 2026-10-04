@@ -75,11 +75,11 @@ class ReconcileTab(QWidget):
         lines = []
         for key, s in [*summary["strategies"].items(), ("/TOTAL", summary["totals"])]:
             firm, name = key.split("/")
-            lines.append([cell(firm, right=False), cell(name, right=False)] + [cell(fmt_cell(s.get(k))) for k in SUMMARY])
+            lines.append([cell(fmt.firm(firm), right=False), cell(name, right=False)] + [cell(fmt_cell(s.get(k))) for k in SUMMARY])
         widgets.fill(self.summary, lines)
         shown = pairs.head(MAX_PAIRS) if pairs is not None else None
         self.pairs_head.setText("Operaciones emparejadas" + ("" if pairs is None or len(pairs) <= MAX_PAIRS else
                                                              f" (las primeras {MAX_PAIRS} de {len(pairs)})"))
         widgets.fill(self.pairs, [] if shown is None else [
-            [cell(row["firm"], right=False), cell(row["strategy"], right=False)] +
+            [cell(fmt.firm(row["firm"]), right=False), cell(row["strategy"], right=False)] +
             [cell(fmt_cell(row[k])) for k in PAIRED] for _, row in shown.iterrows()])

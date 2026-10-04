@@ -60,3 +60,41 @@ class CurveCanvas(FigureCanvasQTAgg):
         ax.legend(unique.values(), unique.keys(), loc="best", fontsize=12, facecolor=theme.BG,
                   edgecolor=theme.LINE, labelcolor=theme.TEXT)
         self.draw()
+
+
+LINES = [theme.ACCENT, "#ffc832", "#3ddc84", "#ff8fd0", "#b48cff", "#ff9d4d"]   # one per account, distinct
+COMBINED = "#ffffff"
+
+
+class LinesCanvas(CurveCanvas):
+    """A canvas of cumulative-result step lines, one per account, plus an optional combined one."""
+
+    def paint_lines(self, lines: list[dict], ylabel: str, why: str) -> None:
+        """Draw the lines; with none, write `why` in the middle.
+
+        Args:
+            lines: Dicts of `name`, `times` (server epochs), `values`, `colour` and `width`.
+            ylabel: The Y axis' unit.
+            why: The Spanish reason there is nothing to draw.
+        """
+        ax = self.axes
+        ax.clear()
+        ax.set_facecolor(theme.PANEL)
+        for side in ax.spines.values():
+            side.set_color(theme.LINE)
+        ax.tick_params(colors=theme.TEXT, labelsize=12)
+        if not lines:
+            ax.set_axis_off()
+            ax.text(0.5, 0.5, why, ha="center", va="center", color=theme.DIM, fontsize=15, wrap=True,
+                    transform=ax.transAxes)
+            self.draw()
+            return
+        for ln in lines:
+            ax.step([at(t) for t in ln["times"]], ln["values"], where="post", color=ln["colour"],
+                    linewidth=ln["width"], label=ln["name"])
+        ax.axhline(0, color=theme.LINE, linewidth=1.2)
+        ax.set_ylabel(ylabel, color=theme.TEXT, fontsize=12)
+        ax.xaxis.set_major_formatter(DateFormatter("%d-%m"))
+        ax.grid(color=theme.LINE, linewidth=0.8)
+        ax.legend(loc="best", fontsize=12, facecolor=theme.BG, edgecolor=theme.LINE, labelcolor=theme.TEXT)
+        self.draw()

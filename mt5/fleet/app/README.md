@@ -20,6 +20,7 @@ every 30 s) and repaints every `refresh_s`. It never reaches the VPS and writes 
 | `widgets.py` | The Qt pieces: cells, tables, cards, legend, scrolling pages | imported | — |
 | `chart.py` | The matplotlib canvas (`FigureCanvasQTAgg`) of the day's curve | imported | curve → canvas |
 | `curve.py` | The day's equity curve: minute rows, hourly extremes of `hours[]`, the two floors | imported | history → series |
+| `equity.py` | One strategy's cumulative net per account (and the combined sum), win rate, max drawdown in % of size; no Qt (`tests/test_fleet_equity.py`) | imported | trades → series |
 | `state.py` | One row per account (beat, stage, floors, risk, deals, progress) and its light; all reasons listed worst first: silent, red, yellow, green | imported | beats → rows |
 | `floors.py` | The firm's day start, the day's starting balance, the daily and total floors through `portfolio.funded.rules.floors`, the day's worst equity, and why a figure is approximate | imported | beat + stage → distances |
 | `risk.py` | Each position's loss at its SL, the equity if every stop hits, positions with no SL | imported | positions → loss |

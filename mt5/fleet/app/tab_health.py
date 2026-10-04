@@ -47,7 +47,7 @@ class HealthTab(QWidget):
             mins = history.minutes(beat["login"], [beat["day_start"]])
             t = health.terminal(beat, mins, vps)
             d = t["disconnections"]
-            who = f"{beat['company'].split()[0]} {beat['login']}"
+            who = fmt.who(beat, r['stage'])
             lines.append([cell(who, right=False), cell("sí" if t["connected"] else "NO", None if t["connected"]
                                                        else theme.LIGHTS["red"]),
                           cell(f"{t['ping_ms']:.0f} ms", theme.LIGHTS["yellow"] if t["ping_ms"] > 150 else None),

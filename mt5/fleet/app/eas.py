@@ -104,9 +104,9 @@ def account_view(row: dict, now: int) -> dict:
     if sheet is None:
         notes.append("sin hoja en el Excel: no se sabe qué EAs debería llevar")
     if "charts" not in beat:
-        notes.append("el servicio de la VPS es de la versión 1: recárgalo para ver qué EAs hay montados")
+        notes.append("el beacon es de la versión 1: recarga FleetBeacon v2 en ese terminal de la VPS para ver qué EAs hay montados")
     if row["deals"] is None:
-        notes.append("falta el historial de la cuenta (lo envía el servicio de la versión 2: recárgalo en la VPS): no se ven los magics ni las últimas operaciones")
+        notes.append("falta el historial de la cuenta: recarga FleetBeacon v2 en ese terminal de la VPS (Navegador → Servicios → FleetBeacon → Detener e Iniciar); mientras tanto no se ven los magics ni las últimas operaciones")
     if not read.names():
         notes.append("aún no hay registro de magics del reconciliador: no se puede comprobar el magic de cada EA")
     return {"notes": notes, "rows": compare(sheet, beat.get("charts"), trades, beat["positions"], register,

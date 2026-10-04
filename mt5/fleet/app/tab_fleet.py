@@ -54,13 +54,20 @@ def totals(rows: list[dict]) -> dict:
 def account_line(row: dict) -> list:
     """One account's cells in the fleet table."""
     beat, stage, floor, risk = row["beat"], row["stage"], row["floor"], row["risk"]
-    name = f"{stage['firm']} · {stage['phase']}" if stage else beat["company"]
+    name = fmt.firm_phase(stage) if stage else beat["company"]
     text = row["text"] if len(row["text"]) <= SHORT else row["text"][:SHORT - 1] + "…"
     line = [cell("●  " + text, theme.LIGHTS[row["light"]], right=False), cell(name, right=False),
             cell(fmt.money(beat["balance"])), cell(fmt.money(beat["equity"])), signed(beat["floating"])]
     at_stops = risk["equity_at_stops"]
-    stops = cell(fmt.DASH if at_stops is None else ("≈ " if risk["no_sl"] else "") + fmt.money(at_stops),
-                 theme.LIGHTS["red"] if risk["breaks"] else None)
+    stops = cell("— (beacon v1)" if at_stops is None else
+                 ("≈ " if risk["no_sl"] else "") + fmt.money(at_stops), theme.LIGHTS["red"] if risk["breaks"] else None)
+    if at_stops is None:
+        stops.setToolTip("El beacon de esta cuenta es de la versión 1: no trae el tamaño de tick ni el valor del tick, "
+                         "y sin ellos no se puede calcular lo que pierde cada stop. Recarga FleetBeacon v2 en ese "
+                         "terminal de la VPS (Navegador → Servicios → FleetBeacon → Detener e Iniciar).")
+    elif risk["no_sl"]:
+        stops.setToolTip(f"≈ {risk['no_sl']} posición(es) sin SL (p. ej. un trailing que aún no se ha armado): "
+                         "no cuentan, así que la cifra es optimista.")
     if floor is None:
         return line + [cell(fmt.DASH) for _ in range(7)] + [stops, cell(row["age"])]
     limit, mark = read.CFG["red_margin_left"], "≈ " if floor["approx"] else ""
@@ -148,7 +155,7 @@ class FleetTab(QWidget):
         beat, names = r["beat"], read.names()
         firm = r["stage"]["firm"] if r["stage"] else ""
         named = lambda magic, comment: names.get((firm, magic), comment)  # noqa: E731
-        self.detail.setText(f"{beat['company']} · {beat['login']} — {len(beat['positions'])} posiciones abiertas")
+        self.detail.setText(f"{fmt.who(beat, r['stage'])} — {len(beat['positions'])} posiciones abiertas")
         shown = "<br>".join(f"<span style='color:{theme.LIGHTS[level]}'>●</span> {text}" for level, text in r["reasons"])
         self.reasons.setText(shown or "<span style='color:%s'>●</span> Sin motivos de aviso" % theme.LIGHTS["green"])
         approx = r["floor"]["approx"] if r["floor"] else []

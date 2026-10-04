@@ -2,6 +2,28 @@
 from datetime import datetime, timezone
 
 DASH = "—"
+FIRMS = {"ftmo": "FTMO", "hantec": "Hantec Trader", "fundingpips": "Funding Pips"}
+PHASES = {"phase1": "Fase 1", "phase2": "Fase 2", "funded": "Funded"}
+
+
+def firm(key: str) -> str:
+    """A firm's name as the owner writes it; an unknown key stays as it is."""
+    return FIRMS.get(key.lower(), key)
+
+
+def phase(key: str) -> str:
+    """A phase's name as the owner writes it; an unknown key stays as it is."""
+    return PHASES.get(key, key)
+
+
+def firm_phase(stage: dict) -> str:
+    """«FTMO · Funded» for an account's stage."""
+    return f"{firm(stage['firm'])} · {phase(stage['phase'])}"
+
+
+def who(beat: dict, stage: dict | None) -> str:
+    """An account's short name: «Funding Pips 11308943» (the broker's company without a plan)."""
+    return f"{firm(stage['firm'])} {beat['login']}" if stage else f"{beat['company'].split()[0]} {beat['login']}"
 
 
 def money(x: float | None) -> str:

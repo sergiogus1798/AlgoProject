@@ -38,7 +38,7 @@ class DeployTab(QWidget):
         notes, lines = {}, []
         for r in rows:
             view = eas.account_view(r, now)
-            who = f"{r['beat']['company'].split()[0]} {r['beat']['login']}"
+            who = fmt.who(r['beat'], r['stage'])
             for n in view["notes"]:
                 notes.setdefault(n, []).append(who)
             for e in view["rows"]:
