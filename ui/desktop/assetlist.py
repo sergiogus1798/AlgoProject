@@ -39,7 +39,7 @@ class AssetList(QListWidget):
         """
         self.blockSignals(True)
         self.clear()
-        self.section("ACTIVOS")
+        self.section("Activos")
         for a in assets:
             # Colour and not a glyph: the window's font has no ⛔ and draws a box, and a
             # box beside an instrument reads as breakage rather than as its state.

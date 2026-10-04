@@ -23,7 +23,7 @@ PREFLIGHT = (
     "tenga su rango de spread y de slippage, que los números del instrumento sean números, y "
     "que ningún tramo (build, oos1, oos2) empiece antes del primer dato que SQX tiene. Si algo "
     "falta, el paso se queda «bloqueado» y no se construye nada. Un coste marcado "
-    "PROVISIONAL no bloquea, pero se dice: todo lo que se construya encima lo arrastra.\n"
+    "Provisional no bloquea, pero se dice: todo lo que se construya encima lo arrastra.\n"
     "2 · El de lanzar (el ▶ SQX de cada paso, «Lanzar en SQX», «Continuar workflow» y «Correr "
     "workflow»). Se repite en el momento de pulsar: que el proyecto no viva en el maestro, "
     "que esté en registry.csv y en un solo worker; que ese worker esté libre (su puerto no "

@@ -53,7 +53,7 @@ def state_line(got: dict, project: str) -> str:
     run, age = got["run"], got["log_age_s"]
     if run["project"] == project and not run["finished"]:
         pct = f" · {num(run['percent'])} %" if run["percent"] is not None else ""
-        line = chip("CORRIENDO", C["weak"]) + f" &nbsp;tarea <b>{run['current'] or '…'}</b>{pct}"
+        line = chip("Corriendo", C["weak"]) + f" &nbsp;tarea <b>{run['current'] or '…'}</b>{pct}"
         now = next((t for t in got["tasks"] if t["status"] == "running"), None)
         if now:
             line += (f" · <b>{ratio(now)}</b> estrategias · {per(now)} por estrategia · "

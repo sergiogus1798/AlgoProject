@@ -12,7 +12,7 @@ from ui.desktop.theme import C
 # Características judges by what the market profile measured, not by the prior alone (owner,
 # 2026-10-04): verdict → (what the line opens with, its ink).
 VERDICT = {"bien": ("Va bien", C["promising"]), "sin_confirmar": ("Sin confirmar", C["weak"]),
-           "mal": ("Va mal", C["dead"])}
+           "sin_medir": ("Sin medir", C["muted"]), "mal": ("Va mal", C["dead"])}
 TRAITS_HELP = (
     "Cada línea es una familia de estrategias juzgada para este activo.\n\n"
     "Verde «Va bien»: el perfil de mercado la midió a favor en al menos una temporalidad — la "
@@ -20,8 +20,9 @@ TRAITS_HELP = (
     "salida razonable cae en meseta.\n"
     "Ámbar «Sin confirmar»: tu prior la da por Alta o Media, pero nada medido la respalda "
     "todavía.\n"
+    "Gris «Sin medir»: tu prior la da por Baja y nada medido lo confirma ni lo desmiente.\n"
     "Rojo «Va mal»: medida en contra (ni nota ni múltiplo sobre el coste) sin ninguna "
-    "temporalidad a favor, o tu prior la da por Baja.\n\n"
+    "temporalidad a favor.\n\n"
     "Las temporalidades medidas son M15, M30, H1 y H4, sobre el tramo build. «Prior» es tu "
     "matriz cualitativa de familias por activo (H1-H4), que antes era lo único que se leía aquí.")
 
@@ -99,13 +100,13 @@ def trait(symbol: str) -> str:
 
 
 def trait_line(p: dict) -> str:
-    """One family of the Características panel as a coloured line of rich text.
+    """One family of the Características panel as a row of a rich-text table.
 
     Args:
         p: One row of the daemon's `prior`: family, level, long_only, favour, against, verdict.
 
     Returns:
-        «Va bien · Momentum — a favor en H1, H4 · en contra en M15 · prior Alta».
+        The cells «● Va bien», «Momentum», «a favor en H1, H4 · en contra en M15 · prior Alta».
     """
     said, ink = VERDICT[p["verdict"]]
     parts = [f"a favor en {', '.join(p['favour'])}" if p["favour"] else "",
@@ -113,5 +114,28 @@ def trait_line(p: dict) -> str:
              "" if p["favour"] or p["against"] else "nada medido a favor ni en contra",
              f"prior {p['level']}" if p["level"] else "sin prior",
              "solo largos" if p["long_only"] else ""]
-    return (f"<span style='color: {ink};'>● {said} · <b>{family(p['family'])}</b></span> — "
-            + " · ".join(x for x in parts if x))
+    pad = "padding: 2px 18px 2px 0;"
+    return (f"<tr><td style='color: {ink}; {pad}'>● {said}</td>"
+            f"<td style='{pad}'><b>{family(p['family'])}</b></td>"
+            f"<td>{' · '.join(x for x in parts if x)}</td></tr>")
+
+
+def traits_table(prior: list[dict]) -> str:
+    """The whole Características panel: one row per family, the verdicts in one column.
+
+    Args:
+        prior: The daemon's `prior` rows, best first; may be empty.
+
+    Returns:
+        Rich text. With no family measured for, the first line says so: an asset whose rows
+        are all amber, grey and red would otherwise leave the owner looking for the green.
+    """
+    if not prior:
+        return "Sin prior ni perfil medido para este activo"
+    none = "" if any(p["verdict"] == "bien" for p in prior) else (
+        "Ninguna familia medida a favor todavía.<br>")
+    return none + "<table>" + "".join(trait_line(p) for p in prior) + "</table>"
+
+
+LEGEND = " &nbsp; ".join(f"<span style='color: {ink};'>● {said}</span>" for said, ink in
+                         VERDICT.values()) + " &nbsp; — lo que midió el perfil de mercado"

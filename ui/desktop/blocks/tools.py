@@ -58,7 +58,7 @@ def strip(partials: list[dict], beside: Callable[[int], None], merged: Callable[
     box = QWidget()
     lay = QVBoxLayout(box)
     lay.setContentsMargins(0, 4, 0, 4)
-    lay.addWidget(text(f"{label('partial.head').upper()} ({len(partials)})", T["text"], 11, True))
+    lay.addWidget(text(f"{label('partial.head')} ({len(partials)})", T["text"], 11, True))
     back = QPushButton(label("partial.stored"))
     back.setEnabled(showing != "stored")
     back.clicked.connect(stored)

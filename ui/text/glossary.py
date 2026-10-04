@@ -139,7 +139,7 @@ LABELS = {
     # the Estrategia page (plan 24, F4): signal names of a .sqx and the two curves
     "LongEntrySignal": "Entrada larga", "ShortEntrySignal": "Entrada corta",
     "LongExitSignal": "Salida larga", "ShortExitSignal": "Salida corta",
-    "curve.sqx": "SQX (curva diaria)", "curve.real": "SPREAD Y SLIPPAGE REALES",
+    "curve.sqx": "SQX (curva diaria)", "curve.real": "Spread y slippage reales",
     # the configuration knobs by part (encargo 24, F15): `knob()` labels each dotted part of
     # a knob key here first, so a section word reads the same in the rail and the drawer
     "knob.nulls": "Nulos", "knob.null": "Nulo", "knob.run": "Ejecución", "knob.ingest": "Ingesta",

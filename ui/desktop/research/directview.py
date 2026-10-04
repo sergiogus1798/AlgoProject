@@ -40,7 +40,7 @@ class DirectView(QWidget):
         self.steps = text("", T["text"], 14)
         self.said = text("", T["muted"], 13)
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel("EL TABLERO QUE LEE EL DIRECTOR", objectName="kicker"))
+        lay.addWidget(QLabel("El tablero que lee el director", objectName="kicker"))
         lay.addWidget(self.head)
         lay.addWidget(self.board, 1)
         lay.addWidget(self.button)
@@ -66,7 +66,7 @@ class DirectView(QWidget):
         for c in got["cells"]:
             f, p = c["factors"], c["past"]
             warn = [f"prior {c['prior'] or 'ninguna'}", "entra por " + "+".join(c["entered_by"])]
-            warn += ["«MEDIDO EN CONTRA»"] if c["evidence"] == "against" else []
+            warn += ["«Medido en contra»"] if c["evidence"] == "against" else []
             warn += ["pullback"] if c["pullback"] else []
             warn += ["costes provisionales"] if c["provisional_costs"] else []
             free = c["trades_per_year"] is None

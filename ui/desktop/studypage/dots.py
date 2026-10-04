@@ -48,7 +48,7 @@ def says(cell: dict | None) -> str:
     """
     if cell is None:
         return "Sin resultado en ningún databank del proyecto (círculo gris): no ha corrido."
-    stale = " · CADUCADO: se calculó con otra configuración" if cell.get("stale") else ""
+    stale = " · caducado: se calculó con otra configuración" if cell.get("stale") else ""
     where = f" · de {cell['elsewhere']}" if cell.get("elsewhere") else ""
     other = " · versión de otro databank (XML distinto)" if cell.get("other_identity") else ""
     return (f"{label(cell['state'])} — «{cell.get('label') or '—'}» · día "

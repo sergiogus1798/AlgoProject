@@ -92,7 +92,7 @@ class Bars(QWidget):
         for x, w, text, align in ((0, LABEL - 10, HEAD[0], Qt.AlignRight),
                                   (LABEL + span + 10, NUMBERS, HEAD[1], Qt.AlignLeft),
                                   (why_x, self.width() - why_x, HEAD[2], Qt.AlignLeft)):
-            p.drawText(QRectF(x, 3, w, ROW - 4), Qt.AlignVCenter | align, text.upper())
+            p.drawText(QRectF(x, 3, w, ROW - 4), Qt.AlignVCenter | align, text)
         for i, r in enumerate(self.rows, start=1):
             y = i * ROW + 3
             p.setFont(QFont(FACE, 10, QFont.Bold))
@@ -136,7 +136,7 @@ class Funnel(QFrame):
         """Build it empty."""
         super().__init__()
         self.setObjectName("term")
-        kicker = QLabel("EMBUDO DE LA POBLACIÓN")
+        kicker = QLabel("Embudo de la población")
         kicker.setObjectName("kicker")
         self.note = QLabel("")
         self.note.setObjectName("dim")

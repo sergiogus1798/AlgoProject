@@ -41,7 +41,7 @@ class CostCurves(QWidget):
         self.compute = compute
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(QLabel("CURVA DE EQUITY", objectName="kicker"))
+        lay.addWidget(QLabel("Curva de equity", objectName="kicker"))
         switches = QHBoxLayout()
         self.boxes = {}
         for key in ("sqx", "real"):
@@ -58,7 +58,7 @@ class CostCurves(QWidget):
         switches.addStretch(1)
         lay.addLayout(switches)
         lay.addWidget(chart.key([("line", INK[f"{k}.{part}"], f"{name} · {seg}")
-                           for k, name in (("sqx", "SQX"), ("real", "SPREAD Y SLIPPAGE REALES"))
+                           for k, name in (("sqx", "SQX"), ("real", "Spread y slippage reales"))
                            for part, seg in (("IS", "IS"), ("OOS", "OOS1"))]))
         self.curves = SampleCurves(HEIGHT)
         lay.addWidget(self.curves, 1)

@@ -27,7 +27,7 @@ class SqxConfigZone(QFrame):
         super().__init__()
         self.setObjectName("term")
         self.sections: list[Section] = []
-        kicker = QLabel("BIBLIOTECA · CONFIGURACIÓN SQX")
+        kicker = QLabel("Biblioteca · configuración SQX")
         kicker.setObjectName("kicker")
         title = QLabel("Configuración SQX")
         title.setObjectName("h1")
@@ -118,10 +118,10 @@ class SqxConfigZone(QFrame):
 
     def header(self, text: str) -> None:
         """A file's heading, in the index and above its sections."""
-        head = QListWidgetItem(text.upper())
+        head = QListWidgetItem(text)
         head.setFlags(Qt.NoItemFlags)
         self.index.addItem(head)
-        label = QLabel(text.upper())
+        label = QLabel(text)
         label.setObjectName("kicker")
         label.setStyleSheet("font-size: 14px;")
         label.setContentsMargins(0, 14, 0, 2)

@@ -34,7 +34,7 @@ class Panel(QFrame):
         self.dragged = False
         self.columns = columnsview.Views(self)
         head = QHBoxLayout()
-        kicker = QLabel("DATABANKS", objectName="kicker")
+        kicker = QLabel("Databanks", objectName="kicker")
         head.addWidget(kicker)
         # The seal's sentence alone is ~3,000 px: wrapped and of ignored width, or it sets the
         # window's minimum width (3,867 px seen on 2026-09-28).
@@ -150,7 +150,7 @@ class Panel(QFrame):
             return
         spec = self.sub_spec()
         if spec["blocked"]:
-            self.show_lock(f"BLOQUEADO — {spec['blocked']}\n\nEste panel no se lee ni se pinta "
+            self.show_lock(f"Bloqueado — {spec['blocked']}\n\nEste panel no se lee ni se pinta "
                            "hasta entonces: ni tabla, ni curva, ni cifras.")
             return
         bank, project = spec["databank"], self.project

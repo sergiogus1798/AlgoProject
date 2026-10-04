@@ -25,7 +25,7 @@ class Advance(QWidget):
         """Build it off; nothing is aimed yet."""
         super().__init__()
         self.project, self.databank, self.text, self.pinned = "", "", "", False
-        kicker = QLabel("CONTINUAR SOBRE")
+        kicker = QLabel("Continuar sobre")
         kicker.setObjectName("kicker")
         self.bank = QComboBox()
         self.bank.setMinimumContentsLength(18)

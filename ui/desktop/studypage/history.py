@@ -20,7 +20,7 @@ def line(run: dict) -> str:
         Day, the study's own word, the hash, and «CADUCADO» when today's config would not
         sign it.
     """
-    stale = " · CADUCADO" if run["stale"] else ""
+    stale = " · caducado" if run["stale"] else ""
     return (f"{run['day']}  {label(run['state'])} «{run['label'] or '—'}»  "
             f"config {run['config_hash']}{stale}")
 
@@ -39,7 +39,7 @@ class History(QFrame):
         self.setObjectName("term")
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 8, 10, 8)
-        lay.addWidget(text("HISTORIAL", T["text"], 12, True))
+        lay.addWidget(text("Historial", T["text"], 12, True))
         lay.addWidget(text("Clic: ver ese run. Ctrl+clic en dos y «Comparar»: uno al lado "
                            "del otro.", T["muted"], 12))
         self.runs = QListWidget()
@@ -55,7 +55,7 @@ class History(QFrame):
         lay.addWidget(self.both)
         self.skipped = text("", T["faint"], 12)
         lay.addWidget(self.skipped)
-        self.rival_title = text("COMPARAR CON OTRA ESTRATEGIA DE ESTE DATABANK", T["text"], 11,
+        self.rival_title = text("Comparar con otra estrategia de este databank", T["text"], 11,
                                 True)
         lay.addWidget(self.rival_title)
         self.rival = QComboBox()

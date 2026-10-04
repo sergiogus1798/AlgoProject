@@ -37,7 +37,7 @@ class Aggregate(QWidget):
         self.cache: dict[tuple, dict] = {}
         self.shown: tuple = ()
         top = QHBoxLayout()
-        kicker = QLabel("EQUITY AGREGADA")
+        kicker = QLabel("Equity agregada")
         kicker.setObjectName("kicker")
         self.of = QLabel("")
         self.of.setObjectName("dim")

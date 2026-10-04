@@ -69,7 +69,8 @@ class AssetSpans(QWidget):
         self.dates.setSpacing(6)
         self.lay.addLayout(self.dates)
 
-        self.ranges = QWidget()
+        self.ranges = QWidget(objectName="bare")     # else it paints a darker box behind the table
+        self.ranges.setStyleSheet("#bare { background: transparent; }")
         box = QVBoxLayout(self.ranges)
         box.setContentsMargins(0, 0, 0, 0)
         box.setSpacing(6)

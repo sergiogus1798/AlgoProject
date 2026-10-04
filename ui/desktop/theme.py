@@ -238,4 +238,4 @@ def kicker(text: str) -> QLabel:
     Args:
         text: The heading.
     """
-    return QLabel(text.upper(), objectName="kicker")
+    return QLabel(text[:1].upper() + text[1:], objectName="kicker")

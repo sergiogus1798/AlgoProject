@@ -12,21 +12,21 @@ from ui.desktop.theme import C, chip
 # owner acts on them: what stops the run, then what blocks authoring, then what only
 # stains the result. A figure nobody can define is a figure nobody should act on.
 TROUBLE = {
-    "broken": ("ESQUEMA ROTO", C["dead"],
+    "broken": ("Esquema roto", C["dead"],
                "La preflight sale con 3: el fichero no cuadra con su clase, o pide datos que "
                "SQX no tiene."),
-    "pending": ("BLOQUEA LA AUTORÍA", C["dead"],
+    "pending": ("Bloquea la autoría", C["dead"],
                 "La preflight sale con 2 (regla dura 5): sin ese coste pactado no se escribe "
                 "ninguna plantilla ni proyecto para este activo."),
-    "segments": ("TRAMOS SIN FECHAS", C["weak"],
+    "segments": ("Tramos sin fechas", C["weak"],
                  "No bloquea, pero `window()` se niega a inventar una ventana, así que una "
                  "tarea sobre ese tramo falla al configurarse."),
-    "past_data": ("VENTANA POR DELANTE DE LOS DATOS", C["weak"],
+    "past_data": ("Ventana por delante de los datos", C["weak"],
                   "Aviso solo: la ventana es correcta y los datos aún no están sincronizados. "
                   "Es el estado normal del tramo más nuevo."),
-    "mc": ("RANGOS MC RETEST SIN DECIDIR", C["weak"],
+    "mc": ("Rangos MC Retest sin decidir", C["weak"],
            "No bloquea: sólo vuelve ininterpretable esa tarea del MC Retest."),
-    "provisional": ("COSTES PROVISIONALES", C["weak"],
+    "provisional": ("Costes provisionales", C["weak"],
                     "Hay cifra y no bloquea, pero no está pactada con el bróker: TODO "
                     "resultado con coste producido con ella arrastra esa advertencia."),
 }
@@ -87,7 +87,7 @@ class AssetCard(QWidget):
         self.chips.setText("  ".join([
             chip(word(data["class"]), C["accent"], 15), chip(data["broker"], C["muted"]),
             chip(data["sqx_symbol"], C["muted"]),
-            chip(f"Sesión {data['session'] or 'SIN DECIDIR'}",
+            chip(f"Sesión {data['session'] or 'sin decidir'}",
                  C["muted"] if data["session"] else C["dead"]),
             chip(f"Datos {feed['from']} → {feed['to']}" if feed else "SQX no tiene este feed",
                  C["muted"] if feed else C["dead"])]))
@@ -118,7 +118,7 @@ class AssetCard(QWidget):
         rows = self.data["costs"]
         self.costs.setRowCount(len(rows))
         for i, c in enumerate(rows):
-            use = cell("SIN DECIDIR" if c["use"] is None else val(c["use"]),
+            use = cell("Sin decidir" if c["use"] is None else val(c["use"]),
                        "Lo que se aplica de verdad, en la unidad de su clase.")
             if c["use"] is None and c["required"]:
                 use.setForeground(Qt.GlobalColor.red)

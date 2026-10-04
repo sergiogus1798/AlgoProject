@@ -7,7 +7,7 @@ import pandas as pd
 from core.researchpaths import research_profiles_dir
 from studies.research.marketProfile import priorview
 
-VERDICTS = ["bien", "sin_confirmar", "mal"]   # the order the Características panel lists them in
+VERDICTS = ["bien", "sin_confirmar", "sin_medir", "mal"]   # the order the Características panel lists them in
 
 
 @lru_cache(maxsize=1)
@@ -50,7 +50,7 @@ def prior(symbol: str) -> list[dict]:
         favour, against (timeframes measured for and against), verdict}], best first. The
         verdict is the measurement's, not the prior's (owner, 2026-10-04: the prior alone read
         «va muy bien» for four families of every yen cross): `bien` with a timeframe measured
-        for, `mal` with one against and none for or a prior of Baja, `sin_confirmar` otherwise.
+        for, `mal` with one against and none for, `sin_medir` for a prior of Baja nothing measured, `sin_confirmar` otherwise.
         [] for an asset with neither a prior nor a profile.
     """
     folder = research_profiles_dir()
@@ -66,7 +66,8 @@ def prior(symbol: str) -> list[dict]:
         level = priorview.matrix(symbol, f) if known else None
         favour = [t for t, flag in flags.items() if flag == priorview.FOR]
         against = [t for t, flag in flags.items() if flag == priorview.AGAINST]
-        verdict = "bien" if favour else ("mal" if against or level == "Baja" else "sin_confirmar")
+        verdict = ("bien" if favour else "mal" if against
+                   else "sin_medir" if level == "Baja" else "sin_confirmar")
         rows.append({"family": f, "level": level, "long_only": priorview.long_only(symbol, f),
                      "favour": favour, "against": against, "verdict": verdict})
     levels = [*priorview.LEVEL.values(), None]

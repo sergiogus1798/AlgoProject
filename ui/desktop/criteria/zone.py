@@ -109,7 +109,7 @@ class CriteriaZone(QFrame):
                                       "font-weight: 700;")
         self.dev.setVisible(bool(dev["on"]))
         self.dev.setText(
-            f"AVISO — modo desarrollo activo: en el paso {', '.join(dev['at'])}, de las "
+            f"Aviso — modo desarrollo activo: en el paso {', '.join(dev['at'])}, de las "
             f"estrategias que pasan los criterios solo siguen {dev['sample']} elegidas al "
             "azar. Sirve para probar la cadena, no para filtrar; se apaga con `dev.on: false` "
             "en criteria.yaml.")

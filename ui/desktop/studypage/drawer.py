@@ -99,7 +99,7 @@ class Drawer(QFrame):
         self.edits: dict[str, dict[str, str]] = {}          # study -> {key: text}
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 8, 10, 8)
-        self.title = text("CONFIGURACIÓN", T["text"], 12, True)
+        self.title = text("Configuración", T["text"], 12, True)
         lay.addWidget(self.title)
         lay.addWidget(text("Cambia solo la próxima ejecución, como --set. El config.yaml no se "
                            "toca nunca.", T["muted"], 12))
@@ -129,7 +129,7 @@ class Drawer(QFrame):
             title: Its title on screen.
         """
         self.study = study
-        self.title.setText(f"CONFIGURACIÓN · {title}")
+        self.title.setText(f"Configuración · {title}")
         got = fetch("config", study=study)
         self.editors = {}
         self.body = QWidget()
@@ -141,7 +141,7 @@ class Drawer(QFrame):
             grid.addWidget(text("Este estudio no tiene config.yaml: no hay mandos que cambiar.",
                                 T["muted"], 13))
         for section in got.get("sections", []):
-            grid.addWidget(text(knob_words(section["name"]).upper(), T["text"], 11, True))
+            grid.addWidget(text(knob_words(section["name"])[:1].upper() + knob_words(section["name"])[1:], T["text"], 11, True))
             for knob in section["knobs"]:
                 grid.addWidget(self._knob(knob, section["name"]))
         grid.addStretch(1)

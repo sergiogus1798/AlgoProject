@@ -41,7 +41,7 @@ class Rail(QFrame):
         self.painted = 0.0                    # time.monotonic() of that repaint
         self.cards, self.per_row = [], 0      # the step cards, laid by `reflow`
         head = QHBoxLayout()
-        kicker = QLabel("WORKFLOW")
+        kicker = QLabel("Workflow")
         kicker.setObjectName("kicker")
         head.addWidget(kicker)
         self.summary = small("")
@@ -163,7 +163,7 @@ class Rail(QFrame):
         self.backfill.setToolTip(label(offer["why"]))
         self.lines[0].setText(label(data["oos2"]["text"]))
         blind = data["blind"]
-        self.lines[1].setText(("SELLADO — " if blind["sealed"] else "") + label(blind["text"]))
+        self.lines[1].setText(("Sellado — " if blind["sealed"] else "") + label(blind["text"]))
         self.lines[1].setStyleSheet(f"color: {C['weak'] if blind['sealed'] else C['promising']};")
         # A disabled button's tooltip never shows, so a blocked step's reason is a visible line.
         self.lines[2].setText("   ".join(f"paso {s['n']} bloqueado: {s['why']}"

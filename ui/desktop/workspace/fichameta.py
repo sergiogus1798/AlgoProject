@@ -105,7 +105,7 @@ class Meta(QScrollArea):
         inner = QWidget()
         lay = QVBoxLayout(inner)
         lay.setContentsMargins(14, 0, 4, 0)
-        lay.addWidget(QLabel("METADATOS", objectName="kicker"))
+        lay.addWidget(QLabel("Metadatos", objectName="kicker"))
         self.grid = QGridLayout()
         self.grid.setVerticalSpacing(1)
         lay.addLayout(self.grid)

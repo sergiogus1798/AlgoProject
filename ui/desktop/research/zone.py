@@ -44,7 +44,7 @@ class ResearchZone(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("BIBLIOTECA", objectName="kicker"))
+        lay.addWidget(QLabel("Biblioteca", objectName="kicker"))
         lay.addWidget(QLabel("Investigar", objectName="h1"))
         lay.addWidget(text(INTRO, T["muted"], 13))
         lay.addWidget(QFrame(objectName="rule"))

@@ -52,7 +52,7 @@ class Gallery(QFrame):
         self.rows: dict[str, dict] = {}
         self.cards: list[Card] = []
         self.columns = 0
-        kicker = QLabel(label("PROYECTOS"))
+        kicker = QLabel(label("Proyectos"))
         kicker.setObjectName("kicker")
         self.note = QLabel(NOTE)
         self.note.setObjectName("dim")

@@ -54,7 +54,7 @@ class PortfoliosZone(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("PORTFOLIOS", objectName="kicker"))
+        lay.addWidget(QLabel("Portfolios", objectName="kicker"))
         lay.addWidget(QLabel("Estrategias archivadas", objectName="h1"))
         lay.addWidget(text(INTRO, T["muted"], 13))
         self.said = text("", T["muted"], 13)

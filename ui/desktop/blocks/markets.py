@@ -81,7 +81,7 @@ def row(grids: list[dict], consensus: dict | None) -> QWidget:
     lay.addLayout(across)
     if consensus is not None:
         under = QHBoxLayout()
-        lay.addWidget(text(label("markets.consensus").upper(), T["text"], 11, True))
+        lay.addWidget(text(label("markets.consensus")[:1].upper() + label("markets.consensus")[1:], T["text"], 11, True))
         under.addWidget(draw(consensus), 1)
         for _ in grids[1:]:
             under.addWidget(QWidget(), 1)

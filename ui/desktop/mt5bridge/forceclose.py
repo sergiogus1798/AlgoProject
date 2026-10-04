@@ -1,10 +1,9 @@
 """The button for a wedged-open MT5 terminal: close it well if possible, kill it if not."""
-import threading
 from collections.abc import Callable
 
-from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
+from ui.desktop import background
 from ui.desktop.blocks.card import text
 from ui.desktop.theme import T
 
@@ -12,16 +11,16 @@ from ui.desktop.theme import T
 class ForceClose(QWidget):
     """A button that posts to `mt5bridge/close-terminal` off the GUI thread and says how it went."""
 
-    closed = Signal(dict)
-
     def __init__(self, send: Callable[[str, dict], dict]) -> None:
         """Args:
             send: POST a daemon route, never raising.
         """
         super().__init__()
         self.send = send
-        self.closed.connect(self._after)
-        self.button = QPushButton("Si MT5 se queda bloqueado: forzar su cierre")
+        self.button = QPushButton("Forzar cierre de MT5 (corta los backtests en curso)")
+        # Destructive and rare: it must not weigh what «Verificar» weighs beside it.
+        self.button.setStyleSheet(f"QPushButton {{ background: transparent; color: {T['muted']};"
+                                  f" border: 1px solid {T['line']}; font-weight: 400; }}")
         self.button.setToolTip("Para cuando el terminal se queda abierto y ni esta ventana ni tú "
                                "podéis cerrarlo: lo cierra bien si puede, y si no lo mata. Luego "
                                "puedes volver a pulsar «Verificar».")
@@ -36,9 +35,7 @@ class ForceClose(QWidget):
         """Ask the daemon to force the terminal shut, off the GUI thread."""
         self.button.setEnabled(False)
         self.said.setText("cerrando MT5…")
-        threading.Thread(target=lambda: self.closed.emit(self.send("mt5bridge/close-terminal",
-                                                                    {})),
-                         daemon=True).start()
+        background.run(lambda: self.send("mt5bridge/close-terminal", {}), self._after, owner=self)
 
     def _after(self, got: dict) -> None:
         """Say how it went; re-enable the button either way."""

@@ -2,17 +2,16 @@
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFormLayout, QFrame, QHBoxLayout,
-                               QLabel, QLineEdit, QSplitter, QTableWidget, QTableWidgetItem,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QComboBox, QFormLayout, QFrame, QHBoxLayout, QLabel, QLineEdit,
+                               QSplitter, QVBoxLayout, QWidget)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
 from ui.desktop.blocks.states import colour
 from ui.desktop.jobbutton import JobButton
 from ui.desktop.mt5bridge.forceclose import ForceClose
-from ui.desktop.mt5bridge.render import (COLUMNS, TICKS_HELP, FirmLight, fill_runs, filtered,
-                                         header)
+from ui.desktop.mt5bridge.render import (LEGEND, TICKS_HELP, FirmLight, fill_runs, filtered,
+                                         no_result, runs_table)
 from ui.desktop.selection import SELECTION
 from ui.desktop.studypage.net import fetch as daemon_fetch
 from ui.desktop.studypage.net import send as daemon_send
@@ -42,10 +41,11 @@ class VerifyZone(QFrame):
         self.setObjectName("term")
         self.fetch, self.send, self.loaded = fetch, send, False
         self.runs, self.archive, self.folder, self.result = [], [], [], None
+        self.why = "Todavía no se ha verificado ninguna estrategia."
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("MT5 BRIDGE", objectName="kicker"))
+        lay.addWidget(QLabel("MT5 Bridge", objectName="kicker"))
         lay.addWidget(QLabel("Verificar en SQX y en MT5", objectName="h1"))
         lay.addWidget(text(INTRO, T["muted"], 13))
         lay.addWidget(QFrame(objectName="rule"))
@@ -69,9 +69,9 @@ class VerifyZone(QFrame):
         form.addRow("Desde", self.start)
         form.addRow("Hasta", self.end)
         form.addRow("Modelo del tester", self.model)
-        self.ticks = FirmLight("", "Correr también")
+        self.ticks = FirmLight("", "Repetir con Real ticks")
         self.ticks.setToolTip(TICKS_HELP)
-        form.addRow("Real ticks", self.ticks)
+        form.addRow("Segunda pasada", self.ticks)
         form.addRow("Empresas", self.firms)
         self.refused = text("", colour("fail"), 12)
         self.button = JobButton("Verificar en SQX y en MT5", "mt5bridge/verify",
@@ -89,17 +89,16 @@ class VerifyZone(QFrame):
         left.setMinimumWidth(380)
         left.setMaximumWidth(520)
 
-        self.table = QTableWidget(0, len(COLUMNS))
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.verticalHeader().hide()
-        header(self.table)
-        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table = runs_table()
         self.table.itemSelectionChanged.connect(self._picked)
+        right = QWidget()
+        rlay = QVBoxLayout(right)
+        rlay.setContentsMargins(0, 0, 0, 0)
+        rlay.addWidget(self.table, 1)
+        rlay.addWidget(text(LEGEND, T["muted"], 13))
         top = QSplitter(Qt.Horizontal)
         top.addWidget(left)
-        top.addWidget(self.table)
+        top.addWidget(right)
         top.setStretchFactor(1, 1)
 
         self.said = text("", T["muted"], 13)
@@ -113,6 +112,7 @@ class VerifyZone(QFrame):
         split.addWidget(top)
         split.addWidget(below)
         split.setStretchFactor(1, 1)
+        split.setSizes([330, 900])      # the form's height: the result below gets the rest
         lay.addWidget(split, 1)
         SELECTION.changed.connect(lambda _now: self._chosen())
 
@@ -215,8 +215,7 @@ class VerifyZone(QFrame):
         if self.runs:
             self.table.selectRow(0)
         else:
-            self.said.setText("Todavía no se ha verificado ninguna estrategia.")
-            self.view.show_result(None, None)
+            self.view.empty(self.why)
 
     def _picked(self) -> None:
         """Load the chosen check's result, its firms' lights turned on, and show it."""
@@ -226,14 +225,15 @@ class VerifyZone(QFrame):
         run = self.runs[rows[0].row()]
         got = self.fetch("mt5bridge/result", run=run["run"])
         if "error" in got:
-            self.said.setText(got["error"])
-            self.result = None
-            return self.view.show_result(None, None)
+            self.said.setText("")
+            self.result, self.why = None, got["error"]
+            return self.view.empty(self.why)
         meta = got["meta"]
         self.said.setText(f"{meta['strategy']} · {meta['from']} → {meta['to']} · "
                           f"modelo «{meta['model']}»"
                           + (f" · falló: {meta['error']}" if meta.get("error") else ""))
         self.result = got["result"]
+        self.why = no_result(meta)
         for firm, box in self.boxes.items():
             box.blockSignals(True)
             box.setChecked(firm in (run.get("firms") or {}))
@@ -243,4 +243,6 @@ class VerifyZone(QFrame):
     def _render(self) -> None:
         """Draw the loaded result with only the active firms' curves, criteria and columns."""
         active = {f for f, box in self.boxes.items() if box.isChecked()}
-        self.view.show_result(filtered(self.result, active) if self.result else None, None)
+        if not self.result:
+            return self.view.empty(self.why)
+        self.view.show_result(filtered(self.result, active), None)

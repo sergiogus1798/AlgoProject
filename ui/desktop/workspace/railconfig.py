@@ -47,10 +47,10 @@ def needs_line(step: dict, steps: list[dict]) -> tuple[str, bool]:
         return "", False
     missing = [s for s in need if s["state"] not in DONE]
     ready = [s for s in need if s["state"] in DONE]
-    text = ("ANTES HAY QUE LANZAR: " + "   ·   ".join(
+    text = ("Antes hay que lanzar: " + "   ·   ".join(
         f"paso {s['n']} ({label(s['title'])}) — {word(s['state'])}" for s in missing)
         if missing else "")
-    text += (("   ·   ya hechos: " if missing else "REQUISITOS HECHOS: ")
+    text += (("   ·   ya hechos: " if missing else "Requisitos hechos: ")
              + ", ".join(f"✓ {s['n']} {label(s['title'])}" for s in ready) if ready else "")
     return text, bool(missing)
 
@@ -132,8 +132,8 @@ class Drawer(QFrame):
             gone.hide()          # hidden first, or it paints under the new ones until deleted
             gone.deleteLater()
         self.knobs.hide()
-        self.head.setText(f"PASO {step['n']} · {label(step['title'])} — "
-                          f"{word(step['state']).upper()}")
+        self.head.setText(f"Paso {step['n']} · {label(step['title'])} — "
+                          f"{word(step['state'])[:1].upper() + word(step['state'])[1:]}")
         self.head.setStyleSheet(f"color: {ink(step['state'])};")
         self.why.setText(label(step["why"]) if step["why"] else "")
         self.note.setText(STEP_NOTES.get(step["n"], ""))
@@ -205,7 +205,7 @@ class Drawer(QFrame):
         word_label.setStyleSheet(f"color: {ink(state)};")
         word_label.setMinimumWidth(90)
         self.grid.addWidget(word_label, row, 1)
-        cost = f"⚠ {test['spends'].upper()}   ·   " if test["spends"] else ""   # first: never cut
+        cost = f"⚠ {test['spends']}   ·   " if test["spends"] else ""   # first: never cut
         line = small(f"{cost}{readable(test['config'])}   ·   {label(why)}")
         line.setWordWrap(True)
         self.grid.addWidget(line, row, 2)

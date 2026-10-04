@@ -51,7 +51,7 @@ class ProposalView(QWidget):
         lay.addWidget(self.head)
         lay.addWidget(scroll, 1)
         lay.addLayout(row)
-        lay.addWidget(QLabel("LA COLA: QUÉ IDEA ESTÁ EN EL CUSTODIO Y CUÁLES ESPERAN",
+        lay.addWidget(QLabel("La cola: qué idea está en el custodio y cuáles esperan",
                              objectName="kicker"))
         lay.addWidget(self.queue)
         self.timer = QTimer(self)
@@ -118,7 +118,7 @@ class ProposalView(QWidget):
                                               "id": self.p["id"], "idea": name, "question": n,
                                               "text": f.text()}))
             lay.addWidget(field)
-        state = "SE PUEDE LANZAR" if i["launchable"] else f"NO SE LANZA: {e(i['why_not'])}"
+        state = "Se puede lanzar" if i["launchable"] else f"No se lanza: {e(i['why_not'])}"
         lay.addWidget(text(state, C["promising"] if i["launchable"] else C["weak"], 13, True))
         lay.addStretch(1)
         return box

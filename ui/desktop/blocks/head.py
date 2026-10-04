@@ -37,7 +37,7 @@ def head(result: dict, title: str | None) -> QWidget:
 
 def stale(meta: dict) -> QWidget:
     """The red banner of a result computed under another configuration than the drawer's."""
-    banner = text(f"CADUCADO — este resultado se calculó con la configuración "
+    banner = text(f"Caducado — este resultado se calculó con la configuración "
                   f"{meta.get('config_hash', '—')} y la de ahora firma "
                   f"{meta.get('current_hash', '—')}. Responde a otra pregunta: vuelve a "
                   f"correrlo antes de leerlo como respuesta.", colour("fail"), 14, True)

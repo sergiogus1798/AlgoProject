@@ -41,7 +41,7 @@ class DataZone(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("BIBLIOTECA · DATOS", objectName="kicker"))
+        lay.addWidget(QLabel("Biblioteca · datos", objectName="kicker"))
         lay.addWidget(QLabel("Datos", objectName="h1"))
         self.total = text("", T["muted"], 13)
         lay.addWidget(self.total)

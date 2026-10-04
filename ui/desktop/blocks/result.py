@@ -50,8 +50,8 @@ def _glossary(results: list[dict]) -> list[QWidget]:
 
 
 def _section(title: str) -> QWidget:
-    """A small upper-case heading between the parts of the page."""
-    return text(title.upper(), T["text"], 11, True)
+    """A small sentence-case heading between the parts of the page."""
+    return text(title[:1].upper() + title[1:], T["text"], 11, True)
 
 
 class ResultView(QWidget):

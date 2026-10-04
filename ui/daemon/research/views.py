@@ -22,7 +22,7 @@ def records(frame: pd.DataFrame) -> list[dict]:
 
 SEEN = {"naked": "pasa los cuatro filtros", "plateau": "una variante del barrido pasa en meseta",
         "weak": "significativa, paga menos de 2×", "none": "sin evidencia medida",
-        "against": "MEDIDO EN CONTRA"}
+        "against": "Medido en contra"}
 
 
 def profile_map() -> dict:

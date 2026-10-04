@@ -136,7 +136,7 @@ class JobsBar(QWidget):
         # one or why. Newest first, since that is the one the owner just watched fail.
         failed = sorted((j for j in jobs if j.get("rc") not in (None, 0)),
                         key=lambda j: j["started"], reverse=True)
-        self.lay.addWidget(QLabel("TRABAJOS", styleSheet=f"color: {T['faint']}; "
+        self.lay.addWidget(QLabel("Trabajos", styleSheet=f"color: {T['faint']}; "
                                                           "font-weight: 700;"))
         head = f"{num(len(running) + len(self.sqx))} en marcha · {num(len(queued))} en cola"
         self.lay.addWidget(QLabel(head, styleSheet=f"color: {T['text']};"))

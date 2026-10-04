@@ -76,7 +76,7 @@ class Pulse(QFrame):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
         head = QHBoxLayout()
-        head.addWidget(QLabel("PULSO DEL CUSTODIO · SQX_w2 · /proc, LOGS Y SU LÍNEA DE ESTADO",
+        head.addWidget(QLabel("Pulso del custodio · SQX_w2 · /proc, logs y su línea de estado",
                               objectName="kicker"))
         head.addStretch(1)
         now = QPushButton("Leer ahora")
@@ -102,7 +102,7 @@ class Pulse(QFrame):
             grid.addWidget(value, i // 4 * 2 + 1, i % 4)
             self.values[key] = value
         lay.addLayout(grid)
-        lay.addWidget(QLabel("ÚLTIMAS LECTURAS · EN MEMORIA, SE PIERDEN AL CERRAR",
+        lay.addWidget(QLabel("Últimas lecturas · en memoria, se pierden al cerrar",
                              objectName="kicker"))
         self.history = QListWidget()
         self.history.setMaximumHeight(HISTORY_PX)

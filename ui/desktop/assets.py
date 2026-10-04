@@ -9,7 +9,7 @@ from ui.desktop.assetcard import AssetCard
 from ui.desktop.assetforms import NewAssetBox
 from ui.desktop.assetlist import AssetList
 from ui.desktop.assetspans import AssetSpans
-from ui.desktop.assettraits import TRAITS_HELP, trait, trait_line
+from ui.desktop.assettraits import LEGEND, TRAITS_HELP, trait, traits_table
 from ui.desktop.yamltree import YamlTree
 
 MARKETS_WIDTH = 360   # a name, a date and a button per market (owner, 2026-10-04: 310 boxed it in)
@@ -83,9 +83,12 @@ class AssetPage(QFrame):
         tlay = QVBoxLayout(tile)
         tlay.setContentsMargins(10, 8, 10, 8)
         tlay.setSpacing(4)
-        tlay.addWidget(QLabel("Características", objectName="h2"))
+        title = QLabel("Características (?)", objectName="h2")
+        title.setToolTip(TRAITS_HELP)
+        tlay.addWidget(title)
+        tlay.addWidget(QLabel(LEGEND, objectName="muted"))
         self.prior = QLabel()
-        self.prior.setStyleSheet("font-size: 14px;")
+        self.prior.setStyleSheet("font-size: 16px;")
         self.prior.setWordWrap(True)
         self.prior.setToolTip(TRAITS_HELP)
         text = QLabel(trait(self.symbol), objectName="muted")
@@ -100,8 +103,7 @@ class AssetPage(QFrame):
         self.card.fill(data)
         self.spans.fill(data)
         self.tree.fill(self.symbol, data["leaves"])
-        self.prior.setText("<br>".join(trait_line(p) for p in data["prior"])
-                           or "Sin prior ni perfil medido para este activo")
+        self.prior.setText(traits_table(data["prior"]))
 
     def on_edit(self, name: str, path: list, text: str, kind: str) -> None:
         """Write a value the file table changed.

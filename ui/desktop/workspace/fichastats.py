@@ -75,7 +75,7 @@ class Stats(QWidget):
         self.grid.setHorizontalSpacing(18)
         self.grid.setColumnStretch(1, 1)
         left = QVBoxLayout()
-        left.addWidget(QLabel("ESTADÍSTICAS BÁSICAS", objectName="kicker"))
+        left.addWidget(QLabel("Estadísticas básicas", objectName="kicker"))
         left.addLayout(picker)
         left.addWidget(self.reserved)
         left.addLayout(self.grid)

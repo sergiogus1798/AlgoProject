@@ -37,9 +37,9 @@ class MemoryView(QWidget):
         self.family = parts.table(FAMILY)
         lay = QVBoxLayout(self)
         lay.addWidget(self.cover)
-        lay.addWidget(QLabel("EL EMBUDO DE CADA INTENTO", objectName="kicker"))
+        lay.addWidget(QLabel("El embudo de cada intento", objectName="kicker"))
         lay.addWidget(self.attempts, 3)
-        lay.addWidget(QLabel("LO QUE HA DADO CADA FAMILIA, POR CLASE DE ACTIVO", objectName="kicker"))
+        lay.addWidget(QLabel("Lo que ha dado cada familia, por clase de activo", objectName="kicker"))
         lay.addWidget(self.family, 1)
 
     def reload(self) -> None:

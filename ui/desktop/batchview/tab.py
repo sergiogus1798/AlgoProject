@@ -46,7 +46,7 @@ class BatchTab(QFrame):
         self.batch = None
         lay = QVBoxLayout(self)
         lay.setContentsMargins(16, 12, 16, 12)
-        head = QLabel("LOTE DE VARIANTES")
+        head = QLabel("Lote de variantes")
         head.setObjectName("kicker")
         self.note = QLabel()
         self.note.setObjectName("dim")

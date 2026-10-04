@@ -76,7 +76,7 @@ class Ledger(QFrame):
         lay.setSpacing(8)
         head = QHBoxLayout()
         head.addWidget(QLabel("Registro de búsquedas", objectName="h1"))
-        head.addWidget(QLabel("ESTUDIO", objectName="kicker"))
+        head.addWidget(QLabel("Estudio", objectName="kicker"))
         self.pick = QComboBox(minimumWidth=380)
         self.pick.setToolTip("Un estudio es un activo, un timeframe y una familia de plantillas: "
                              "la unidad a la que se le debe la corrección por multiplicidad.")
@@ -145,11 +145,11 @@ class Ledger(QFrame):
         blind = spent["blind"]
         steps = " · ".join(f"{s} {'hecho' if ran else 'pendiente'}" for s, ran in blind["done"].items())
         colour = C["promising"] if blind["open"] else C["weak"]
-        self.blind.setText(f"PASOS 17, 18 Y 19 · {steps}\n{blind['text']}")
+        self.blind.setText(f"Pasos 17, 18 y 19 · {steps}\n{blind['text']}")
         self.blind.setStyleSheet(f"color: {colour}; font-weight: 600;")
         pooled = spent["trials"]
         self.trials.setText(pooled["error"] if "error" in pooled else
-                            f"PROBADO EN TOTAL · N = {num(pooled['n'])} candidatos en "
+                            f"Probado en total · N = {num(pooled['n'])} candidatos en "
                             f"{num(pooled['searches'])} búsqueda(s) · σ = {num(pooled['sigma'])} "
                             f"({pooled['unit']}) — la σ que necesita el Sharpe desinflado")
         self.trials.setToolTip("N y σ agrupan exactamente todas las búsquedas que registraron "

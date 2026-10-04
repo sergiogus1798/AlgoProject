@@ -1,6 +1,6 @@
 ---
 name: ui-shot
-description: See a change to the desktop window (ui/) before saying it is done — shoot the zone offscreen on a scratch daemon, look at the PNG, walk every zone for exceptions — and the checklist for a new zone or view. Use after editing anything under ui/, when the owner gives feedback on how the window looks, or asks for a new view, zone or panel.
+description: See a change to the desktop window (ui/) before saying it is done — shoot the zone offscreen on a scratch daemon, look at the PNG, have the uiCritic agent critique it, walk every zone for exceptions — and the checklist for a new zone or view. Use after editing anything under ui/, when the owner gives feedback on how the window looks, asks for a critique of a zone, or asks for a new view, zone or panel.
 ---
 
 # /ui-shot
@@ -20,6 +20,17 @@ preferences: big readable text, high contrast, tables as small as their content,
 The window opens at 1440×900; the owner's screen is 2560×1440, so a layout question (what sits
 beside what, empty width) is shot with `--size 2560x1400` too.
 What cannot be seen in the shot (a click, a drawer) is said as not verified, not assumed.
+
+## Critique it — an eye that did not write it
+
+After a change the owner asked for by looking at the window, a new zone or view, or when he asks
+for a critique of a zone («critica Activos»): shoot at `--size 2560x1400` and hand the PNG to the
+`uiCritic` agent (`.claude/agents/uiCritic.md`, Sonnet, read-only) — one agent per zone, with the
+PNG path, what the zone is for, what the owner asked, and the zone's source files. It returns at
+most five issues, P0-P3, each with a concrete fix. Fix every P0 and P1 and shoot again; list the
+P2 and P3 to the owner instead of fixing them unasked. Skip it for a change with nothing to look
+at (a daemon fix, a tooltip's text). A session started before the agent file existed runs it as a
+`general-purpose` subagent, `model: "sonnet"`, told to read that file and follow it.
 
 ## Walk every zone
 

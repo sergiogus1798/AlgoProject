@@ -118,7 +118,7 @@ class StepCard(QFrame):
                   else small(self.config()))
         status.setWordWrap(True)
         lay.addWidget(status)
-        lay.addWidget(small(word(step["state"]).upper(), "mono", colour))
+        lay.addWidget(small(word(step["state"])[:1].upper() + word(step["state"])[1:], "mono", colour))
 
     def config(self) -> str:
         """The configuration line: the first test's knobs, or how many tests it has."""
