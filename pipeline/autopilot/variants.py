@@ -9,12 +9,15 @@ from pathlib import Path
 
 from core.datapaths import tmp_dir, variants_dir
 from core.paths import ROOT, project_dir, report_dir, worker_dir
+from core.phases import phase
 from sqx.projects import live, registry
 
 
 def _py(*args: str) -> None:
     """One module run as the skill runs it; its failure ends the step with its own words."""
-    got = subprocess.run([sys.executable, "-m", *args], cwd=ROOT, capture_output=True, text=True)
+    with phase(args[0].rsplit(".", 1)[-1] + (".clear" if "--clear" in args else "")):
+        got = subprocess.run([sys.executable, "-m", *args], cwd=ROOT, capture_output=True,
+                             text=True)
     if got.returncode:
         raise SystemExit(f"{args[0]}: {(got.stderr or got.stdout).strip()[-1500:]}")
 

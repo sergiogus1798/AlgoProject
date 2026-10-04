@@ -14,6 +14,7 @@ from pathlib import Path
 
 from core import worker
 from core.datapaths import template_runs
+from core.phases import phase
 from sqx.projects import crosstfload, stage
 from sqx.templates.registry import RUN_COLUMNS, append
 from ledger import steprows
@@ -144,14 +145,18 @@ def execute(pre: dict, project: str) -> dict:
     port = advance.WORKERS[role]["port"]
     workerguard.refuse_if_up(role, top, port)      # before any copy; again right before start
     say(2, f"comprobando {pre['row']['symbol']} (regla 5)")
-    assets(pre["row"]["symbol"])
+    with phase("assets"):
+        assets(pre["row"]["symbol"])
     say(5, "copiando el proyecto")
-    kept, before = snapshot(pre["cfx"].parent), counts(pre["cfx"].parent)
-    off = configure.run(pre, say)               # a silenced MC Retest stays off
+    with phase("snapshot"):
+        kept, before = snapshot(pre["cfx"].parent), counts(pre["cfx"].parent)
+    with phase("configure"):
+        off = configure.run(pre, say)           # a silenced MC Retest stays off
     titles = [t for t in titles if t not in off]
     for bank in pre.get("fill", []):             # CrossTF_Input (10.5), CrossTF_Mothers (13)
         say(9, f"llenando {bank}")
-        print(crosstfload.fill(bank, project, role), flush=True)
+        with phase("fill", bank):
+            print(crosstfload.fill(bank, project, role), flush=True)
         before = counts(pre["cfx"].parent)      # what the fill wrote is not a loss of the run
     titles += crosstfload.separate_titles(pre["cfx"]) if "CrossTF" in titles else []   # D1/MT4
     say(10, f"activando solo {', '.join(titles)}")
@@ -159,9 +164,11 @@ def execute(pre: dict, project: str) -> dict:
     say(15, f"arrancando el {preflight.ROLES.get(role, role)}")
     workerguard.refuse_if_up(role, top, port)
     try:
-        worker.start(role)          # inside: a start that fails half-way is stopped too
+        with phase("start"):
+            worker.start(role)      # inside: a start that fails half-way is stopped too
         workerguard.mark(role, project)
-        ready(project, role)
+        with phase("ready"):
+            ready(project, role)
         began = time.time()
         offsets = sqxlog.mark(top)
         started_at = dict(offsets)        # `watch` advances `offsets`; the restore reads all
@@ -169,22 +176,26 @@ def execute(pre: dict, project: str) -> dict:
         if "rror" in reply or "Cannot start" in reply:     # «Project has unresolved resources»
             sys.exit(f"SQX rechazó `action=start` de {project}: {reply.strip()}")
         say(60, f"{', '.join(titles)} lanzada(s)")
-        run = watch(project, role, offsets)
+        with phase("sqx", " + ".join(titles)):
+            run = watch(project, role, offsets)
     finally:
         # The job started it (refused above when it was up already), so it stops it.
-        worker.stop(role)
+        with phase("stop"):         # the export after the stop is its own row, inside this one
+            worker.stop(role)
         left = workerguard.stopped(role, top, port)
     if left:
         sys.exit(f"el {role} no se paró ({left}): sus databanks pueden estar a medio escribir; "
                  "no se sigue")
     outputs = {t["output"] for t in chosen}
-    back = restore(pre["cfx"].parent, kept, before, outputs,
-                   sqxlog.matching(top, started_at, INTERRUPTED))
+    with phase("restore"):
+        back = restore(pre["cfx"].parent, kept, before, outputs,
+                       sqxlog.matching(top, started_at, INTERRUPTED))
     if back:
         print(f"restauradas desde la copia {len(back)} estrategia(s) que el sync de SQX borró "
               f"al pararse (Cannot process strategy): {', '.join(back)}", flush=True)
-    after = counts(pre["cfx"].parent)
-    print(compare(before, after, outputs, kept), flush=True)
+    with phase("compare"):
+        after = counts(pre["cfx"].parent)
+        print(compare(before, after, outputs, kept), flush=True)
     for t in chosen:
         if t["type"] == preflight.BUILD:
             print(record(pre, project, after.get(t["output"], 0)), flush=True)

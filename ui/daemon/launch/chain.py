@@ -172,7 +172,7 @@ def python_step(project: str, action: dict, strict: bool = False) -> list[str]:
                 failed.append(f"{key}: no se corrió — {planned}")
             continue
         width = 1 if key in jobs.WIDE else max(1, jobs.SLOTS // jobs.LIGHT)
-        with ThreadPoolExecutor(width) as pool:
+        with launcher.phase("test", key), ThreadPoolExecutor(width) as pool:
             done = list(pool.map(lambda p: (p["label"], *floored(p["argv"])), planned))
         bad = [f"{label}: {tail}" for label, rc, tail in done if rc]
         print(f"{key}: {len(done) - len(bad)} de {len(done)} bien", flush=True)

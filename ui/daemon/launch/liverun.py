@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from core.datapaths import tmp_dir
+from core.phases import phase
 from core.paths import ROOT
 from ledger import steprows
 from sqx.projects import crosstfload, live, stage
@@ -37,8 +38,10 @@ def execute(pre: dict, project: str) -> dict:
     titles = [t["title"] for t in chosen]
     say(2, f"comprobando {pre['row']['symbol']} (regla 5)")
     assets(pre["row"]["symbol"])
-    live.sync(role, project)                 # disk == memory before the copy and the counts
-    kept, before = snapshot(held.parent), counts(held.parent)
+    with phase("sync", "antes"):
+        live.sync(role, project)             # disk == memory before the copy and the counts
+    with phase("snapshot"):
+        kept, before = snapshot(held.parent), counts(held.parent)
     with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
         staged = Path(tmp) / "project.cfx"
         shutil.copy2(held, staged)
@@ -46,7 +49,8 @@ def execute(pre: dict, project: str) -> dict:
         titles = [t for t in titles if t not in off]
         for bank in pre.get("fill", []):         # writes the copy and the databank's folder
             say(9, f"llenando {bank}")
-            print(crosstfload.fill(bank, project, role, staged), flush=True)
+            with phase("fill", bank):
+                print(crosstfload.fill(bank, project, role, staged), flush=True)
         if live.added(staged, held):
             # A project built before the CrossTF tasks were made at step 5: the fill added
             # tasks, which only a closed SQX takes (hard rule 4). Restart chain, then reopen.
@@ -58,19 +62,24 @@ def execute(pre: dict, project: str) -> dict:
         titles += crosstfload.separate_titles(staged) if "CrossTF" in titles else []
         say(10, f"activando solo {', '.join(titles)}")
         stage.just(staged, titles)
-        config = live.push(role, project, staged, held)    # SQX rewrites `held` with the tasks
+        with phase("configure", "push"):
+            config = live.push(role, project, staged, held)  # SQX rewrites `held` with the tasks
     for bank in pre.get("fill", []):
-        print(f"{bank}: {live.load(role, project, bank)} en memoria", flush=True)
+        with phase("fill", bank):
+            print(f"{bank}: {live.load(role, project, bank)} en memoria", flush=True)
         before = counts(held.parent)
     say(60, f"{', '.join(titles)} lanzada(s)")
     began = time.time()
-    end = live.run(role, project, config)
+    with phase("sqx", " + ".join(titles)):
+        end = live.run(role, project, config)
     if "Error" in end:
         sys.exit(f"SQX: {end}")
-    live.sync(role, project)
-    after = counts(held.parent)
+    with phase("sync", "después"):
+        live.sync(role, project)
     outputs = {t["output"] for t in chosen}
-    print(compare(before, after, outputs, kept), flush=True)
+    with phase("compare"):
+        after = counts(held.parent)
+        print(compare(before, after, outputs, kept), flush=True)
     for t in chosen:
         if t["type"] == preflight.BUILD:
             print(record(pre, project, after.get(t["output"], 0)), flush=True)

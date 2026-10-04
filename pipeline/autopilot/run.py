@@ -11,9 +11,10 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+from core import phases
 from core.assetdata import AUTONOMOUS
 from core.paths import DATA
-from pipeline.autopilot import blind, judge, plan, tail, tailrun, variants
+from pipeline.autopilot import blind, judge, plan, tail, tailrun, timing, variants
 from pipeline.autopilot.survivors import Done, mothers
 from ui.daemon.advance import preflight as advance
 from sqx.projects import live
@@ -45,6 +46,8 @@ def summary(out: Path, project: str, done: list[dict], stop: dict, error: str = 
         [f"# Autopiloto · {project} · {out.name}", "",
          "| paso | tipo | s | qué hizo |", "|---|---|---|---|", *rows, "",
          f"Total {total / 60:.1f} min. {end}", ""]), encoding="utf-8")
+    if (out / "fases.csv").exists():      # absent when the first action failed
+        (out / "tiempos.md").write_text(timing.table(out / "fases.csv"), encoding="utf-8")
 
 
 def sqx_step(project: str, actions: list[dict], first: bool, filled: set[str]) -> str:
@@ -141,6 +144,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
         live.start(where["role"])
         done.append({"n": "-", "kind": "arranque", "s": time.monotonic() - began,
                      "what": "sesión GUI del custodio"})
+        phases.row("accion", "- arranque", done[-1]["s"])
     try:
         for i, action in enumerate(actions):
             status(out, f"[{i + 1}/{len(actions)}] paso {action['n']} · {action['kind']}")
@@ -176,6 +180,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
                 empty = got.get("after") == 0     # the cut left nobody: a clean end, after the row
             done.append({"n": action["n"], "kind": action["kind"],
                          "s": time.monotonic() - began, "what": what})
+            phases.row("accion", f"{action['n']} {action['kind']}", done[-1]["s"])
             summary(out, project, done, todo["stop"])
             if empty:
                 raise Done(f"el paso {action['n']} no dejó ninguna superviviente: no queda nada que seguir")
@@ -198,6 +203,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
             live.stop(where["role"])
             done.append({"n": "-", "kind": "parada", "s": time.monotonic() - began,
                          "what": "parada y export final"})
+            phases.row("accion", "- parada", done[-1]["s"])
             summary(out, project, done, todo["stop"])
     status(out, f"FIN · {len(done)} acciones · resumen en {out / 'resumen.md'}")
 
@@ -221,6 +227,7 @@ def main() -> None:
         return
     out = RUNS / a.project / f"{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
+    os.environ[phases.ENV] = str(out / "fases.csv")
     print(f"carpeta del run: {out}", flush=True)
     signal.signal(signal.SIGTERM, chain.cancelled)
     autopilot(a.project, out, a.own_log, a.live, given)

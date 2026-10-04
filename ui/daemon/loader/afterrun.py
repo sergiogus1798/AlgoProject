@@ -21,6 +21,7 @@ from pathlib import Path
 
 from core.assetdata import doctrine
 from core.paths import DATA, ROOT
+from core.phases import phase
 from studies.breakage.mcRetest.inputs.tasks import DATABANK as MCR
 from sqx.projects import live
 from ui.daemon import progress, workerguard
@@ -116,12 +117,14 @@ def export(role: str) -> int:
             if piece not in todo or (piece == "trades" and databank in UNREAD_TRADES):
                 continue
             print(f"exportando {piece} de {project} / {databank}", flush=True)
-            got = subprocess.run([sys.executable, *todo[piece][1]], cwd=ROOT)
+            with phase(f"export.{piece}", f"{project}/{databank}"):
+                got = subprocess.run([sys.executable, *todo[piece][1]], cwd=ROOT)
             failed += got.returncode != 0
     for project in sorted({p for p, _ in banks(top, ran)}):
         for name, cmd in extras(project, role, top):
             print(f"exportando {name} de {project}", flush=True)
-            got = subprocess.run([sys.executable, *cmd], cwd=ROOT)
+            with phase("export.extra", f"{project}/{name}"):
+                got = subprocess.run([sys.executable, *cmd], cwd=ROOT)
             failed += got.returncode != 0
     sign(top, ran)
     return failed
@@ -153,7 +156,8 @@ def main() -> None:
     mark = MARK / f"{a.role}.pid"
     mark.write_text(str(os.getpid()))
     try:
-        failed = export(a.role)
+        with phase("export"):
+            failed = export(a.role)
     finally:
         mark.unlink(missing_ok=True)
     print(f"export tras la parada del {a.role}: " + (f"{failed} pieza(s) fallaron" if failed
