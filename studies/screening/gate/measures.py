@@ -26,7 +26,7 @@ def table(data: dict) -> pd.DataFrame:
     trades = trades.assign(excess=trades["Profit/Loss"] - tradelevel.drift(
         trades, data["bars"], move, market["point_value"]))
     daily = data["curve"].diff()
-    legs = {"IS": daily[:data["split"]].iloc[:-1], "OOS": daily[data["split"]:data["end"]]}
+    legs = {"IS": daily[daily.index < data["split"]], "OOS": daily[data["split"]:data["end"]]}
     parts = []
     for sample, leg in legs.items():
         mine = trades[trades["sample"] == sample]

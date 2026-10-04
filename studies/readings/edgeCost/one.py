@@ -19,7 +19,7 @@ GLOSSARY = [
     {"term": "Coste de breakeven c*", "text": "El coste de ida y vuelta al que la ventaja "
      "neta llega a cero. Es el mismo número que el edge en spreads: el múltiplo de hoy al "
      "que empataría."}]
-HOURS_ES = "hora de entrada (UTC)"
+HOURS_ES = "hora de entrada (reloj del feed)"
 
 
 def measure(priced: pd.DataFrame) -> dict:

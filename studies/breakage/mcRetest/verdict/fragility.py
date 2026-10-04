@@ -90,7 +90,7 @@ def underwater(pnl: np.ndarray, offsets: np.ndarray) -> np.ndarray:
     out = np.empty(offsets.size - 1)
     for k, (start, stop) in enumerate(zip(offsets[:-1], offsets[1:])):
         equity = np.cumsum(pnl[start:stop])
-        out[k] = float(np.mean(equity < np.maximum.accumulate(equity)))
+        out[k] = float(np.mean(equity < np.maximum.accumulate(np.maximum(equity, 0))))
     return out
 
 

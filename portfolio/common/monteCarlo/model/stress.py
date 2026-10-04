@@ -76,7 +76,7 @@ def spread_widen(stream: dict, n: int, rng: np.random.Generator, cfg: dict) -> n
     """
     lo, hi = cfg["spread_scale"]
     factor = rng.uniform(lo, hi, (n, stream["spread"].size))
-    return stream["pnl"] - stream["spread"] * factor
+    return stream["pnl"] - stream["spread"] * (factor - 1.0)
 
 
 STRESS = {"skip": skip, "cost_shock": cost_shock, "fill_degrade": fill_degrade,

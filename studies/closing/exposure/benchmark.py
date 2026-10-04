@@ -91,7 +91,9 @@ def daily(trades: pd.DataFrame, index: pd.DatetimeIndex) -> pd.Series:
         index: The days the benchmark is measured over.
 
     Returns:
-        Account currency per day, zero on days it closed nothing.
+        Account currency per day, zero on days it closed nothing. Profit closed on a day the
+        benchmark lacks (the first day has no move, a holiday has no bar) lands on the next
+        benchmark day, so the series always sums to the trades' profit.
 
         ⚠️ Profit is attributed to the day a trade **closed**, which is what SQX reports.
         A position held over three weeks therefore lands entirely on one day. That makes
@@ -100,7 +102,8 @@ def daily(trades: pd.DataFrame, index: pd.DatetimeIndex) -> pd.Series:
         conservative towards the strategy rather than flattering.
     """
     closed = trades.groupby(trades["Close time"].dt.floor("D"))["Profit/Loss"].sum()
-    return closed.reindex(index, fill_value=0.0)
+    slot = index[np.minimum(index.searchsorted(closed.index), len(index) - 1)]
+    return closed.groupby(slot).sum().reindex(index, fill_value=0.0)
 
 
 def profit(lots: float, moves: pd.Series, point_value: float) -> pd.Series:

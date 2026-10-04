@@ -93,8 +93,8 @@ def design_levels(profile: pd.DataFrame, plateau_call: dict, original: float,
     must = [original, plateau_call["argmax"], plateau_call["from"], plateau_call["to"]]
     reach = max(abs(centre - m) for m in must)
     levels = profile["level"].to_numpy()
-    lo = max(min(centre - reach, original * (1 - min_span)), levels.min())
-    hi = min(max(centre + reach, original * (1 + min_span)), levels.max())
+    lo = max(min(centre - reach, original - abs(original) * min_span), levels.min())
+    hi = min(max(centre + reach, original + abs(original) * min_span), levels.max())
     inside = levels[(levels >= lo) & (levels <= hi)]
     wanted = np.linspace(lo, hi, count)
     snapped = inside[np.abs(inside[None, :] - wanted[:, None]).argmin(axis=1)]

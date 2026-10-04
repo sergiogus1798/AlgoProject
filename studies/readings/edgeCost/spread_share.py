@@ -29,9 +29,11 @@ def measure(trades: pd.DataFrame, feed: str, timeframe: str) -> dict:
         timeframe: The bars the strategies were priced on, e.g. "M30".
 
     Returns:
-        {"IS": price, "OOS": price, ...}: the median entry offset against the bar's own
-        Open, in price units, one per sample segment — this IS the round-trip spread cost
-        in price units, measured, not derived from any declared configuration.
+        {"IS": price, "OOS": price, ...}: the median of entry offset plus exit offset
+        against the bars' own Open, in price units, one per sample segment — spread plus
+        slippage embedded in both fills (a long pays the spread at entry, a short at exit),
+        measured, not derived from any declared configuration. Exits not on a bar open
+        are left out of the median.
 
     Raises:
         SystemExit: No bar library entry for this feed (nothing to measure against), or a
@@ -43,15 +45,19 @@ def measure(trades: pd.DataFrame, feed: str, timeframe: str) -> dict:
         raise SystemExit(f"edgeCost: no hay barras para {feed!r} en la librería — no se puede "
                          "medir el coste de spread real; no se asume ninguna cifra")
     bars = read_bars(feed, timeframe)
-    entry = bars.index.searchsorted(trades["Open time"].to_numpy())
-    bar_open = bars["Open"].to_numpy()[entry]
+    opens, stamps = bars["Open"].to_numpy(), bars.index
     direction = trades["Type"].astype(str).map(DIRECTION).to_numpy()
-    offset = (trades["Open price"].to_numpy() - bar_open) * direction
+    entry = np.maximum(stamps.searchsorted(trades["Open time"].to_numpy(), side="right") - 1, 0)
+    leave = np.minimum(stamps.searchsorted(trades["Close time"].to_numpy()), len(stamps) - 1)
+    landed = stamps[leave] == pd.DatetimeIndex(trades["Close time"])   # only an exit on a bar open
+    offset = (trades["Open price"].to_numpy() - opens[entry]) * direction
+    offset += np.where(landed, (opens[leave] - trades["Close price"].to_numpy()) * direction,
+                       np.nan)
 
     out = {}
     for sample, idx in trades.groupby("sample", observed=True).indices.items():
         if len(idx) < MIN_TRADES:
             raise SystemExit(f"edgeCost: sólo {len(idx)} trades en {feed!r}/{sample}, menos de "
                              f"{MIN_TRADES} — no hay medida de spread fiable para ese tramo")
-        out[sample] = float(np.median(offset[idx]))
+        out[sample] = float(np.nanmedian(offset[idx]))
     return out

@@ -23,7 +23,8 @@ def drawdown(pnl: np.ndarray) -> np.ndarray:
         (measured 2026-09-22 across the XAUUSD corpus).
     """
     curve = np.cumsum(pnl, axis=1)
-    return (np.maximum.accumulate(curve, axis=1) - curve).max(axis=1)
+    peak = np.maximum(np.maximum.accumulate(curve, axis=1), 0.0)
+    return (peak - curve).max(axis=1)
 
 
 def profit_factor(pnl: np.ndarray) -> np.ndarray:

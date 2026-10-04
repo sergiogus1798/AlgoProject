@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 MEANS = {
+    "sin_dato": "la vecindad no tiene puntos para ajustar el modelo: sin dato",
     "spike": "el punto elegido está en un pico: casi nada a su alrededor se le acerca",
     "plateau": "el punto elegido tiene compañía: su vecindad rinde parecido",
     "middling": "el punto elegido no destaca en su propia nube",
@@ -27,10 +28,12 @@ def point(reading: dict, cfg: dict) -> str:
         cfg: The `verdict` block of config.yaml.
 
     Returns:
-        One key of MEANS. The rank alone decides nothing: a rank near 1 with company is a
+        One key of MEANS (`sin_dato` when the neighbourhood is the origin alone). The rank alone decides nothing: a rank near 1 with company is a
         plateau and is the shape you want, and the same rank alone is a peak.
     """
     near = reading["near"]
+    if near["n"] < 2:
+        return "sin_dato"
     if near["q"] < cfg["rank_high"]:
         return "middling"
     return "spike" if near["pi"] <= cfg["plateau_low"] else "plateau"
@@ -46,10 +49,12 @@ def surface(model: dict, rough: float, curve: dict, cfg: dict) -> list[str]:
         cfg: The `verdict` block of config.yaml.
 
     Returns:
-        One or two keys of MEANS. Roughness is read on the model-free measure and the
+        One or two keys of MEANS, `sin_dato` when the fit has no more points than coefficients. Roughness is read on the model-free measure and the
         residual one at once: a quadratic calls every ridge it cannot represent noise, so
         agreeing is what licenses the word.
     """
+    if model["n"] <= 1 + 2 * model["k"] + model["k"] * (model["k"] - 1) // 2:
+        return ["sin_dato"]
     calls = ["rough" if model["roughness"] >= cfg["roughness_high"]
              or rough >= cfg["local_roughness_high"] else "smooth"]
     if curve["slope"] >= cfg["slope_high"]:

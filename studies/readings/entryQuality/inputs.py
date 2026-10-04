@@ -47,7 +47,7 @@ def located(packed: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> dict
     """
     trades = nullinputs.sample(packed, strategy, cfg["sample"]).sort_values("Open time")
     trades = trades.reset_index(drop=True)
-    entry = frame.index.searchsorted(trades["Open time"].to_numpy())
+    entry = np.maximum(frame.index.searchsorted(trades["Open time"].to_numpy(), side="right") - 1, 0)
     value = calibrate.point_value(trades)
     scale = calibrate.atr(frame, cfg["atr"])
     return {"trades": trades, "entry": entry,

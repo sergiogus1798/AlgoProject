@@ -66,7 +66,7 @@ def volatility(day: pd.DataFrame, atr_period: int) -> pd.Series:
         One value per day — the ATR as it stood at the PREVIOUS day's close. The first
         atr_period + 1 are NaN.
     """
-    return _shift(vol_engine.atr(day, {"atr_period": atr_period})["vol"])
+    return vol_engine.atr(day, {"atr_period": atr_period})["vol"]
 
 
 def efficiency(day: pd.DataFrame, window: int) -> pd.Series:

@@ -48,7 +48,7 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: d
     exposure = occupancy.measure(trades, bars, point_value, equity)
     held = occupancy.held(trades, bars.index)["signed"]
     closes = bars["Close"].to_numpy()
-    presence = occupancy.presence(held, np.diff(closes, append=closes[-1]))
+    presence = occupancy.presence(held, np.diff(closes, prepend=closes[0]))
 
     strategy = compare.stats(mine, equity)
     lots = {name: benchmark.CONVENTIONS[name](trades, moves, mine, point_value)

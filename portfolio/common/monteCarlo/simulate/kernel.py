@@ -8,7 +8,8 @@ from numba import njit
 def _row(pnl: np.ndarray, equity0: float, out: np.ndarray) -> None:
     """Every statistic of `metrics.NAMES` for one path, written into `out`."""
     n = pnl.size
-    net = wins = loss = cum = peak = dd = dd_pct = run = worst = 0.0
+    net = wins = loss = cum = dd = dd_pct = run = worst = 0.0
+    peak = equity0
     for k in range(n):
         p = np.float64(pnl[k])
         net += p
@@ -18,7 +19,7 @@ def _row(pnl: np.ndarray, equity0: float, out: np.ndarray) -> None:
             loss -= p
         cum += p
         equity = equity0 + cum
-        peak = equity if k == 0 or equity > peak else peak
+        peak = max(peak, equity)
         dd = max(dd, peak - equity)
         dd_pct = max(dd_pct, (peak - equity) / peak)
         run = run + 1.0 if p < 0.0 else 0.0

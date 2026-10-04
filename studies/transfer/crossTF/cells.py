@@ -17,6 +17,10 @@ DROP_WARNINGS = ("P SATURADO", "CONVENCION INTRABAR")
 # The owner's one Sharpe (daily P&L on trading days, x sqrt(252)), measured beside the null's
 # statistics so the window can draw it; never a key of `engines.nulls.stats`.
 TOTAL = "sharpe_total"
+NO_NULL = {"null_mean": np.nan, "null_sd": np.nan, "z": np.nan}
+# 🔬 2026-10-02 (AlgoData/scratch/calib_step12/null12.py): what two siblings of one mother add
+# beyond her is uncorrelated under the null (0.03 and 0.07), so their sum over sqrt(k) is a z.
+MOST_ALIKE = 0.95
 
 
 def _trusted(said: list[str]) -> list[str]:
@@ -25,7 +29,7 @@ def _trusted(said: list[str]) -> list[str]:
 
 
 def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
-            statistic: str, rung: str, key: str) -> dict:
+            statistic: str, rung: str, key: str, min_trades: int) -> dict:
     """One cell's statistics, their empirical p, and what there is to distrust about them.
 
     The statistics are priced from the bars by `engines.nulls.simulate`, never read off SQX,
@@ -42,10 +46,14 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
             cell's own verdict is read on.
         rung: A key of `engines.nulls.model.RUNGS`.
         key: What identifies the cell, strategy and block; it seeds the cell's monkeys.
+        min_trades: `usable.min_trades` of this study's config; below it the cell gets no p.
 
     Returns:
-        `trades`, `seen`, `p`, `seen_all`, `p_all` and `warnings`. `p` is NaN when the cell
-        has too few trades for one, which is a fact about the cell and not a missing input.
+        `trades`, `seen`, `p`, `null_mean`, `null_sd`, `z` (the headline statistic's distance
+        from its null's mean, in the null's standard deviations: unlike `p` it does not
+        saturate at 1/(draws+1)), `seen_all`, `p_all` and `warnings`. `p` and the three null
+        numbers are NaN when the cell has too few trades for one, which is a fact about the
+        cell and not a missing input.
         `seen_all` also carries `sharpe_total` (`core.significance.annual_sharpe` of the
         cell's own trades, by close date), which is read and never judged: the null draws
         carry no calendar, so it has no p.
@@ -57,19 +65,21 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
     names = nullcfg["statistics"]["report"]
     if rows.empty:
         empty = {n: np.nan for n in names}
-        return {"trades": 0, "seen": np.nan, "p": np.nan,
+        return {"trades": 0, "seen": np.nan, "p": np.nan, **NO_NULL,
                 "seen_all": {**empty, TOTAL: np.nan}, "p_all": empty,
                 "warnings": ["the strategy never traded on this timeframe"]}
     kept = simulate.fixed(rows, frame, nullcfg)
     seen_all = {**simulate.real(kept, names),
                 TOTAL: annual_sharpe(rows["Profit/Loss"].to_numpy(dtype=float), rows["Close time"])}
-    if len(rows) < nullcfg["verdict"]["min_trades"]:
+    if len(rows) < min_trades:
         p_all = {n: np.nan for n in names}
-        return {"trades": len(rows), "seen": seen_all[statistic], "p": np.nan,
+        return {"trades": len(rows), "seen": seen_all[statistic], "p": np.nan, **NO_NULL,
                 "seen_all": seen_all, "p_all": p_all, "warnings": ["too few trades for a p"]}
     drawn = simulate.nulls(kept, rung, nullcfg, key)
     p_all = {n: verdict.pvalue(seen_all[n], drawn[n], n) for n in names}
+    mean, sd = float(np.mean(drawn[statistic])), float(np.std(drawn[statistic], ddof=1))
     return {"trades": len(rows), "seen": seen_all[statistic], "p": p_all[statistic],
+            "null_mean": mean, "null_sd": sd, "z": (seen_all[statistic] - mean) / sd if sd else np.nan,
             "seen_all": seen_all, "p_all": p_all,
             "warnings": _trusted(verdict.distrust(kept, p_all, len(rows), nullcfg))}
 
@@ -121,14 +131,53 @@ def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
         cfg: What `inputs.config` returned.
 
     Returns:
-        The plan with `trades`, `seen`, `p` and `warnings` joined onto it, one row per cell.
+        The plan with what `numbers` returned joined onto it, one row per cell,
+        `corr_vs_baseline` (`correlations`, NaN on a baseline) and what `beyond` adds.
     """
     statistic, rung = cfg["verdict"]["statistic"], cfg["verdict"]["rung"]
     measured = [numbers(tradestore.block(packed, row.strategy, row.block),
                         frames[row.timeframe], nullcfg, statistic, rung,
-                        f"{row.strategy}|{row.block}")
+                        f"{row.strategy}|{row.block}", cfg["usable"]["min_trades"])
                 for row in plan.itertuples()]
-    return pd.concat([plan.reset_index(drop=True), pd.DataFrame(measured)], axis=1)
+    alike = correlations(plan, packed).rename(columns={"corr": "corr_vs_baseline"})
+    out = pd.concat([plan.reset_index(drop=True), pd.DataFrame(measured)], axis=1)
+    return beyond(out.merge(alike[["strategy", "timeframe", "role", "corr_vs_baseline"]],
+                            on=["strategy", "timeframe", "role"], how="left"))
+
+
+def beyond(panel: pd.DataFrame) -> pd.DataFrame:
+    """What each scaled sibling adds to what its mother already showed, and the mother's sum.
+
+    A sibling trades the same asset over the same years, so under no edge its z follows its
+    mother's: with correlation rho, z_sibling given z_mother is N(rho z_mother, 1 - rho^2).
+    `z_new` is the sibling's z with that expectation taken out and rescaled, a standard
+    normal under no edge WHATEVER the mother's luck; rho is the pair's own
+    `corr_vs_baseline`, kept inside [0, `MOST_ALIKE`].
+
+    Args:
+        panel: The measured cells, with `corr_vs_baseline` and the fabrication's columns.
+
+    Returns:
+        The panel with `z_new` on every scaled cell (NaN where either z is), and on each
+        baseline cell, over the siblings `verdict.usable` would read: `combined_n_tested`
+        (those with a `z_new`), `combined_z_new` (their sum over sqrt(n), NaN with none)
+        and `combined_z_new_max`.
+    """
+    mother = panel[panel["role"] == "baseline"].set_index("mother")["z"]
+    scaled = panel["role"] == "scaled"
+    rho = panel.loc[scaled, "corr_vs_baseline"].clip(0.0, MOST_ALIKE).fillna(0.0)
+    theirs = panel.loc[scaled, "mother"].map(mother).to_numpy()
+    panel.loc[scaled, "z_new"] = (panel.loc[scaled, "z"] - rho * theirs) / np.sqrt(1 - rho ** 2)
+    fair = scaled & (panel["unverified"] == 0)
+    new = panel[fair].groupby("mother")["z_new"]
+    summed = pd.DataFrame({"combined_n_tested": new.count(),
+                           "combined_z_new": new.sum(min_count=1) / np.sqrt(new.count()),
+                           "combined_z_new_max": new.max()})
+    base = panel["role"] == "baseline"
+    for name in summed:
+        panel.loc[base, name] = panel.loc[base, "mother"].map(summed[name]).to_numpy()
+    panel.loc[base, "combined_n_tested"] = panel.loc[base, "combined_n_tested"].fillna(0)
+    return panel
 
 
 def matrix(panel: pd.DataFrame, statistic: str) -> pd.DataFrame:
@@ -166,12 +215,14 @@ def correlations(plan: pd.DataFrame, packed: pd.DataFrame) -> pd.DataFrame:
         each one individually made money, which `verdict.read` already judges.
     """
     out = []
+    close = pd.to_datetime(packed["Close time"]).dt.to_period("M")
+    span = pd.period_range(close.min(), close.max(), freq="M")
     for mother, rows_m in plan.groupby("mother", sort=True):
         base_row = rows_m[rows_m["role"] == "baseline"].iloc[0]
         base = monthly(tradestore.block(packed, base_row.strategy, base_row.block))
         for row in rows_m[rows_m["role"] != "baseline"].itertuples():
             other = monthly(tradestore.block(packed, row.strategy, row.block))
-            joined = pd.concat([base, other], axis=1, join="outer").fillna(0.0)
+            joined = pd.concat([base, other], axis=1, join="outer").reindex(span).fillna(0.0)
             n = len(joined)
             corr = float(joined.iloc[:, 0].corr(joined.iloc[:, 1])) if n >= 2 else float("nan")
             out.append({"mother": mother, "timeframe": row.timeframe, "role": row.role,

@@ -60,25 +60,24 @@ def parts(pnl_cents: np.ndarray, offsets: np.ndarray, capital: float) -> dict:
         and returns one value per simulation.
     """
     pnl = pnl_cents.astype(np.float64) / 100.0
-    starts = offsets[:-1]
     wins, losses = np.where(pnl > 0, pnl, 0.0), np.where(pnl < 0, pnl, 0.0)
     shared = {"pnl": pnl, "offsets": offsets, "capital": capital,
               "n": np.diff(offsets).astype(np.float64),
-              "total": np.add.reduceat(pnl, starts),
-              "sq_sum": np.add.reduceat(pnl ** 2, starts),
-              "wins_sum": np.add.reduceat(wins, starts),
-              "losses_sum": np.add.reduceat(losses, starts),
-              "wins_n": np.add.reduceat((pnl > 0).astype(np.float64), starts),
-              "losses_n": np.add.reduceat((pnl < 0).astype(np.float64), starts),
+              "total": drawdown.reduce(np.add, pnl, offsets),
+              "sq_sum": drawdown.reduce(np.add, pnl ** 2, offsets),
+              "wins_sum": drawdown.reduce(np.add, wins, offsets),
+              "losses_sum": drawdown.reduce(np.add, losses, offsets),
+              "wins_n": drawdown.reduce(np.add, (pnl > 0).astype(np.float64), offsets),
+              "losses_n": drawdown.reduce(np.add, (pnl < 0).astype(np.float64), offsets),
               # 🔬 A trade that closed at exactly zero is HALF a win to SQX. Measured
               # 2026-09-24 on USDJPY H1: with 1 zero in 506 trades its Winning Percent is
               # 51.680, exactly between 51.581 (wins/n) and 51.779 ((wins+zeros)/n), and the
               # same split holds on every strategy that has one. Gold never produced a zero,
               # which is why the reconstruction reconciled there and fails here.
-              "wins_rate_n": np.add.reduceat(
-                  np.where(pnl > 0, 1.0, np.where(pnl == 0, 0.5, 0.0)), starts),
-              "largest": np.maximum.reduceat(pnl, starts),
-              "smallest": np.minimum.reduceat(pnl, starts)}
+              "wins_rate_n": drawdown.reduce(
+                  np.add, np.where(pnl > 0, 1.0, np.where(pnl == 0, 0.5, 0.0)), offsets),
+              "largest": drawdown.reduce(np.maximum, pnl, offsets),
+              "smallest": drawdown.reduce(np.minimum, pnl, offsets)}
     return runs.prepare(drawdown.prepare(shared))
 
 

@@ -86,7 +86,7 @@ def fragility(result: dict, cfg: dict) -> list[dict]:
     g, out = cfg["gates"], []
     execution = [key for key in result if key in tasks.ROLE and tasks.ROLE[key] == "execution"]
     kept = [result[key]["fragility"]["net_p5"]["point"] / result[key]["original_net"]
-            for key in execution if result[key]["original_net"]]
+            for key in execution if result[key]["original_net"] > 0]
     if kept and min(kept) < g["exec_keep_frac"]:
         out.append(_flag("execution", "worst_axis", min(kept), g["exec_keep_frac"],
                          "ejecucion_fragil", True))

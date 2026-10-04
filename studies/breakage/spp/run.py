@@ -120,6 +120,7 @@ def brief(result: dict, settings: dict) -> dict:
             "verdict": result["noise"]["verdict"], "metric": metric,
             "n_eff": result["noise"]["n_eff"], "noise_max": result["noise"]["noise_max"],
             "observed_max": result["noise"]["observed_max"],
+            "excess": result["noise"]["excess"],
             "parameters": parameters,
             "frozen": [{"name": n, "value": result["original"][n],
                         "reason": "exact_duplicates",

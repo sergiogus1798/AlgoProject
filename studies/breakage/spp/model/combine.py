@@ -92,10 +92,9 @@ def real_from_trades(trades: pd.DataFrame) -> dict:
         (owner, 2026-09-30). Only called when both windows' trades were exported; the grid
         alone cannot give this because it holds no per-permutation trades.
     """
-    by_day = trades.set_index(pd.to_datetime(trades["Close time"]))["Profit/Loss"]
-    daily = by_day.groupby(by_day.index.normalize()).sum()
-    daily = daily.reindex(pd.date_range(daily.index.min(), daily.index.max(), freq="D"),
-                          fill_value=0.0)
+    day = pd.DatetimeIndex(trades["Close time"]).normalize() + pd.offsets.BDay(0)
+    daily = pd.Series(trades["Profit/Loss"].to_numpy(dtype=float), index=day).groupby(level=0).sum()
+    daily = daily.reindex(pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0)
     downside = float(np.sqrt((daily.clip(upper=0) ** 2).mean()))
     return {"SharpeRatio": float(daily.mean() / daily.std(ddof=1) * np.sqrt(TRADING_DAYS)),
             "SortinoRatio": (float(daily.mean() / downside * np.sqrt(TRADING_DAYS))

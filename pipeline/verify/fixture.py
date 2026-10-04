@@ -14,7 +14,7 @@ PROJECT, DATABANK, STRATEGY, DAY, ASSET = "_selftest", "SELFTEST", "Strategy 0.0
 # The numbers the design brief would carry. Chosen to clear every threshold in
 # config.yaml, so a failing self-test means the pipeline broke and not the thresholds.
 BRIEF = {"strategy": STRATEGY, "verdict": "proceed", "n_eff": 8412,
-         "observed_max": 4.61, "noise_max": 1.83, "parameters": [], "frozen": []}
+         "observed_max": 4.61, "excess": 2.1, "noise_max": 1.83, "parameters": [], "frozen": []}
 
 
 def work() -> Path:

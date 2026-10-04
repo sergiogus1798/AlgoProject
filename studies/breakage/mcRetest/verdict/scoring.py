@@ -50,7 +50,7 @@ def _kept(result: dict, role: str) -> float:
     shares = [result[key]["fragility"]["net_p5"]["point"] / result[key]["original_net"]
               for key in result
               if key in tasks.ROLE and tasks.ROLE[key] == role
-              and result[key]["original_net"] and result[key]["modes"]["perturbed"]]
+              and result[key]["original_net"] > 0 and result[key]["modes"]["perturbed"]]
     return min(shares) if shares else 1.0
 
 

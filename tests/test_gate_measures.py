@@ -12,6 +12,7 @@ from scipy import stats
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from studies.screening.analysis import decay, floating, tradelevel
+from studies.screening.gate import inputs, monkey
 
 
 def curve(mean: float, days: int, seed: int) -> tuple[pd.Series, pd.Series]:
@@ -93,9 +94,61 @@ def test_floating_risk_in_r() -> None:
     assert floating.table(daily[["a"]] * 0, flat, 1000.0, 2.0).at["a", "dd_over_net_year"] == np.inf
 
 
+
+
+
+def test_in_sample_ends_the_day_before_a_split_the_curve_lacks() -> None:
+    """Split on a Saturday: nothing is on that day, so no in-sample day may be dropped."""
+    index = pd.bdate_range("2017-01-02", "2018-06-29")
+    daily = pd.Series(np.random.default_rng(1).normal(1.0, 1.0, len(index)), index=index)
+    split = "2017-12-30"
+    got = decay.diagnose(daily.cumsum(), split, "2018-06-29")
+    kept = daily.iloc[1:][daily.index[1:] < split]   # the curve's diff has no first day
+    assert abs(got["sharpe_is"] - decay.sharpe(kept)) < 1e-12
+
+
+def test_retention_and_concentration_are_nan_on_a_losing_denominator() -> None:
+    """A losing in-sample and a losing out-of-sample: the ratios would read +0.5 and -0.1
+    as if they were a survival; they are undefined."""
+    index = pd.bdate_range("2017-01-02", "2018-12-31")
+    rng = np.random.default_rng(5)
+    daily = pd.Series(rng.normal(-0.2, 1.0, len(index)), index=index)
+    got = decay.diagnose(daily.cumsum(), "2018-01-01", "2018-12-31")
+    assert got["sharpe_is"] < 0 and got["net_profit_oos"] < 0
+    assert np.isnan(got["retention"]) and np.isnan(got["concentration"])
+
+
+def test_familia_runs_bh_over_everyone_the_mono_tested() -> None:
+    """1000 uniform p (all null), the mono screen kept those under 0.05: BH over the ~50
+    survivors would name them all; over the 1000 that entered it names none."""
+    p = pd.Series(np.random.default_rng(2).uniform(size=1000),
+                  index=[f"s{i}" for i in range(1000)])
+    alive = p.index[p <= 0.05]
+    got = monkey.familia({"scores": pd.DataFrame({"mono_p": p})}, alive, {"alpha": 0.05})
+    assert len(alive) > 20 and got["passed"].sum() <= 1
+
+
+def test_monkey_timeframe_comes_from_the_harvest_unless_overridden() -> None:
+    """An H1 harvest with no override is placed on H1 bars, not config.yaml's M30; a mixed
+    harvest refuses; an explicit --set wins."""
+    cfg = {"monkey": {"timeframe": "M30"}}
+    h1 = pd.DataFrame({"TimeFrame [IS]": ["H1", "H1"]})
+    assert inputs.timeframe(h1, cfg, []) == "H1"
+    assert inputs.timeframe(h1, cfg, ["monkey.timeframe=M15"]) == "M15"
+    try:
+        inputs.timeframe(pd.DataFrame({"TimeFrame [IS]": ["H1", "M30"]}), cfg, [])
+        raise AssertionError("a mixed harvest has no single bar grid")
+    except SystemExit:
+        pass
+
+
 if __name__ == "__main__":
     test_lo_t_is_the_daily_t_and_has_no_ceiling()
     test_trade_t_and_its_ar1_twin()
     test_drift_takes_out_exactly_what_the_market_paid()
     test_floating_risk_in_r()
+    test_in_sample_ends_the_day_before_a_split_the_curve_lacks()
+    test_retention_and_concentration_are_nan_on_a_losing_denominator()
+    test_familia_runs_bh_over_everyone_the_mono_tested()
+    test_monkey_timeframe_comes_from_the_harvest_unless_overridden()
     print("ok")

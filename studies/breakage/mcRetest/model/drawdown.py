@@ -54,7 +54,25 @@ def _reduce(values: np.ndarray, p: dict, how: np.ufunc) -> np.ndarray:
     Returns:
         One value per simulation.
     """
-    return how.reduceat(values, p["offsets"][:-1])
+    return reduce(how, values, p["offsets"])
+
+
+def reduce(how: np.ufunc, values: np.ndarray, offsets: np.ndarray) -> np.ndarray:
+    """`how.reduceat` per simulation, with 0 for a simulation that has no trades.
+
+    Args:
+        how: np.add, np.maximum or np.minimum.
+        values: A flat array aligned with the concatenated trades.
+        offsets: Where each simulation starts, length sims + 1.
+
+    Returns:
+        One value per simulation. reduceat alone hands an empty simulation its successor's value.
+    """
+    n = np.diff(offsets)
+    out = np.zeros(n.size)
+    live = n > 0
+    out[live] = how.reduceat(values, offsets[:-1][live])
+    return out
 
 
 def max_drawdown(p: dict) -> np.ndarray:

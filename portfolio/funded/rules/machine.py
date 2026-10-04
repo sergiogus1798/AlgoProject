@@ -23,6 +23,8 @@ def challenge(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], s
         plan: A `catalog.plan()` dict.
         risk: Risk multiplier per stage name (`phase1`, `phase2`, `phase3`).
         start: Day index the challenge begins on.
+            A stage's `time_limit` is in path days (`catalog.plan` converts the calendar days);
+            a target met on the limit day itself passes, in every walker.
         horizon: Trading days the whole challenge (every stage) must pass within, counted from
             `start`; 0 = no limit. Not passed by day `start + horizon - 1` reads "open" — a fail
             found before that day is still a fail, timing does not soften it.
@@ -41,7 +43,7 @@ def challenge(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], s
     for stage in stages:
         k = risk[stage["stage"]]
         baseline = days["float_end"][stage_start - 1] if stage_start > 0 else 0.0
-        b, hw, eod = size, size, size
+        b, hw, eod, carry = size, size, size, baseline * k   # carry: the mark of trades carried in
         trading_days = profitable_days = 0
         profits: list[float] = []
         d = stage_start
@@ -49,8 +51,7 @@ def challenge(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], s
             if deadline is not None and d > deadline:
                 return {"outcome": "open", "stage": stage["stage"], "day": d - 1, "rule": None,
                         "stage_days": stage_days, "flags": plan["flags"]}
-            floating_prev = 0.0 if d == 0 else days["float_end"][d - 1] - baseline
-            e0 = b + floating_prev * k
+            e0 = b + (0.0 if d == 0 else days["float_end"][d - 1]) * k - carry
             dfloor = daily_floor(b, e0, size, stage["daily_loss"], stage["daily_basis"])
             hw = max(hw, e0 + days["high"][d] * k)
             mfloor = max_floor(stage["max_loss_mode"], size, stage["max_loss"], hw, eod)
@@ -59,14 +60,19 @@ def challenge(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], s
                 rule = "daily_loss" if dfloor >= mfloor else "max_loss"
                 return {"outcome": "fail", "stage": stage["stage"], "day": d, "rule": rule,
                         "stage_days": stage_days, "flags": plan["flags"]}
-            b += days["closed"][d] * k
+            day_p = days["closed"][d] * k
+            if carry != 0.0 and days["float_end"][d] == 0.0:
+                # ponytail: the carried mark leaves the balance on the first flat day end, not on
+                # the day each carried trade closes — that needs trade spans (EXECUTION.md §D)
+                day_p, carry = day_p - carry, 0.0
+            b += day_p
             eod = max(eod, b)
             if days["opened"][d] > 0:
                 trading_days += 1
             if (stage["min_days_kind"] == "profitable" and stage["profitable_pct"] is not None
-                    and days["closed"][d] * k >= stage["profitable_pct"] * size):
+                    and day_p >= stage["profitable_pct"] * size):
                 profitable_days += 1
-            profits.append(days["closed"][d] * k)
+            profits.append(day_p)
             if target_met(b, size, stage["target"]):
                 stats = {"trading_days": trading_days, "profitable_days": profitable_days}
                 if days_ok(stats, stage) and consistency_ok(np.array(profits), stage):
@@ -142,6 +148,7 @@ def _sweep_kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, hi
             target, dloss, mloss, mode, basis, mindays, mdkind, ppct, cons, ckind, tlimit, k = \
                 stagemat[si]
             baseline = float_end[stage_start - 1] if stage_start > 0 else 0.0
+            carry = baseline * k
             b = size
             hw = size
             eod = size
@@ -156,14 +163,17 @@ def _sweep_kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, hi
                 if d > deadline:
                     outcome = -1
                     break
-                floating_prev = 0.0 if d == 0 else float_end[d - 1] - baseline
-                e0 = b + floating_prev * k
-                if basis == _BAL:
+                e0 = b + (0.0 if d == 0 else float_end[d - 1]) * k - carry
+                if dloss <= 0.0:
+                    dfloor = -np.inf
+                elif basis == _BAL:
                     dfloor = b - dloss * size
                 else:
                     dfloor = max(b, e0) * (1 - dloss)
                 hw = max(hw, e0 + high[d] * k)
-                if mode == _STATIC:
+                if mloss <= 0.0:
+                    mfloor = -np.inf
+                elif mode == _STATIC:
                     mfloor = size * (1 - mloss)
                 elif mode == _TRAILING:
                     mfloor = min(hw - mloss * size, size)
@@ -174,6 +184,9 @@ def _sweep_kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, hi
                     outcome = 0
                     break
                 day_p = closed[d] * k
+                if carry != 0.0 and float_end[d] == 0.0:
+                    day_p -= carry
+                    carry = 0.0
                 b += day_p
                 eod = max(eod, b)
                 if opened[d] > 0:

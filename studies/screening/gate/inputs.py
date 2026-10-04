@@ -30,6 +30,30 @@ def config(overrides: list[str]) -> dict:
     return study_config.apply(cfg, overrides, {s["name"]: s for s in cfg["screens"]})
 
 
+def timeframe(metrics: pd.DataFrame, cfg: dict, overrides: list[str]) -> str:
+    """The bar grid the monkeys are placed on: an explicit --set, else the harvest's own.
+
+    Args:
+        metrics: `load()["metrics"]`, carrying `TimeFrame [IS]`.
+        cfg: What `config()` returned.
+        overrides: The --set strings the command line gave.
+
+    Returns:
+        The override, else the one timeframe the strategies were built on, else config.yaml's.
+
+    Raises:
+        SystemExit: The harvest mixes timeframes and none was given.
+    """
+    for item in overrides:
+        if item.startswith("monkey.timeframe="):
+            return item.split("=", 1)[1]
+    found = metrics["TimeFrame [IS]"].astype(str).unique() if "TimeFrame [IS]" in metrics else []
+    if len(found) > 1:
+        raise SystemExit(f"gate: la cosecha mezcla timeframes {sorted(found)}; "
+                         "pasa --set monkey.timeframe=<TF>")
+    return found[0] if len(found) == 1 else cfg["monkey"]["timeframe"]
+
+
 def market(feed: str) -> dict:
     """What the measured columns need to know about the asset behind a feed.
 

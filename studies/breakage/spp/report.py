@@ -46,7 +46,7 @@ def main() -> None:
                                                        encoding="utf-8")
         print(markdown.render(got, f"SPP — {name}"))
         print(f"{name:24s} {brief['verdict']:8s} n_eff={brief['n_eff']:6,d}  "
-              f"max {brief['observed_max']:.2f} vs nulo {brief['noise_max']:.2f}  "
+              f"exceso {brief['excess']:.2f} vs nulo {brief['noise_max']:.2f}  "
               f"vivos={len(brief['parameters'])} congelados={len(brief['frozen'])}")
     # The briefs are named by a mangled name; this table is what pairs the folder by identity.
     pd.DataFrame(signed).to_csv(out / "strategies.csv", index=False)

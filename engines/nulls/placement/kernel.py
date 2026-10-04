@@ -6,13 +6,14 @@ from numba import njit
 
 @njit(cache=True, nogil=True, error_model="numpy")
 def batch(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray, enter_px: np.ndarray,
-          size: np.ndarray, charged: np.ndarray, cost: float, scale: float, equity0: float,
+          side: float, size: np.ndarray, charged: np.ndarray, cost: float, scale: float, equity0: float,
           n_bars: int, stats: np.ndarray, curves: np.ndarray) -> None:
     """What `backtest.price`, `metrics.paths`, the mean return and `equity.path` produce.
 
     Args:
         entries, holds: (runs, columns) of entry bar and bars held, after the Friday cut.
         leave_px, enter_px: The fill prices of the market's convention, one per bar.
+        side: +1 for a long run, -1 for a short one: the sign of the move and of its log.
         size, charged: Per real trade; column k reuses trade k modulo their count.
         cost: The cost rate inside the log return.
         scale: The market's unit, dividing the mean return.
@@ -29,18 +30,18 @@ def batch(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray, enter_px
     """
     runs, cols = entries.shape
     steps, m, last = curves.shape[1], size.size, leave_px.size
+    pl, lv = np.empty(cols), np.empty(cols, np.bool_)
     for s in range(runs):
         net = wins = loss = squares = logret = 0.0
         count = 0
-        cum = peak = dd = dd_pct = run = worst_run = 0.0
         for k in range(cols):
             e, out, a = entries[s, k], entries[s, k] + holds[s, k], k % m
             live = out < last and holds[s, k] > 0
             safe = out if live else 0
             p = 0.0
             if live:
-                p = (leave_px[safe] - enter_px[e]) * size[a] - charged[a]
-                logret += np.log(leave_px[safe] / enter_px[e]) - cost
+                p = side * (leave_px[safe] - enter_px[e]) * size[a] - charged[a]
+                logret += side * np.log(leave_px[safe] / enter_px[e]) - cost
                 count += 1
             net += p
             squares += p ** 2
@@ -48,14 +49,18 @@ def batch(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray, enter_px
                 wins += p
             elif p < 0.0:
                 loss -= p
-            cum += p
+            pl[k], lv[k] = p, live
+            curves[s, min((safe * steps) // n_bars, steps - 1)] += p
+        cum = dd = dd_pct = run = worst_run = 0.0
+        peak = equity0
+        for k in np.argsort(entries[s] + holds[s], kind="mergesort"):    # exit order
+            cum += pl[k]
             equity = equity0 + cum
-            peak = equity if k == 0 or equity > peak else peak
+            peak = max(peak, equity)
             dd = max(dd, peak - equity)
             dd_pct = max(dd_pct, (peak - equity) / peak)
-            run = run + 1.0 if (p < 0.0 and live) else 0.0
+            run = run + 1.0 if (pl[k] < 0.0 and lv[k]) else 0.0
             worst_run = max(worst_run, run)
-            curves[s, min((safe * steps) // n_bars, steps - 1)] += p
         mean = net / (count if count > 0 else 1)
         var = (squares - count * mean ** 2) / (count - 1 if count > 1 else 1)
         stats[s, 0] = net

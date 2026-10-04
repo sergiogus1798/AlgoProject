@@ -1,6 +1,12 @@
 """Benjamini-Hochberg over a family of tests: which of them may be named as discoveries."""
 
 
+def _refuse_nan(rows: list[dict]) -> None:
+    """Raise on a NaN p: it sorts nowhere, so it would be named a discovery and misorder the rest."""
+    if any(r["p"] != r["p"] for r in rows):
+        raise ValueError("fdr: NaN p-value in the family; drop untestable rows first")
+
+
 def discoveries(rows: list[dict], alpha: float = 0.05) -> set[str]:
     """Which of a family of tests survive Benjamini-Hochberg control of the FDR.
 
@@ -13,6 +19,7 @@ def discoveries(rows: list[dict], alpha: float = 0.05) -> set[str]:
         outcome at once, so the plain 5% level would be expected to hand back one false
         positive in every twenty metrics tested.
     """
+    _refuse_nan(rows)
     ordered = sorted(rows, key=lambda r: r["p"])
     below = [i for i, r in enumerate(ordered, 1) if r["p"] <= i / len(rows) * alpha]
     return {r["metric"] for r in ordered[: max(below, default=0)]}
@@ -28,6 +35,7 @@ def adjusted(rows: list[dict]) -> dict[str, float]:
         {metric: q}, the smallest FDR at which that test would be named: q <= alpha exactly
         when discoveries(rows, alpha) names it.
     """
+    _refuse_nan(rows)
     ordered = sorted(rows, key=lambda r: r["p"])
     out, q = {}, 1.0
     for i in range(len(ordered), 0, -1):

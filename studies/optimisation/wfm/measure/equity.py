@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 
+from core import significance
+
 POINTS = 101   # 0 to 100 %, one point per percentage point
 
 
@@ -41,8 +43,8 @@ def per_cell(trades: pd.DataFrame, strategy: str) -> pd.DataFrame:
         strategy: Which strategy's cells to read.
 
     Returns:
-        `result`, `net_profit`, `profit_factor`, `sharpe` (daily P/L on business days from
-        the first to the last OOS close, idle days 0, mean/std ×√252), `max_dd` (closed
+        `result`, `net_profit`, `profit_factor`, `sharpe` (`core.significance.annual_sharpe`: daily P/L on
+        business days, idle days 0, a weekend close on Monday, mean/std ×√252), `max_dd` (closed
         trades, in money) and `trades`.
     """
     mine = trades[(trades["strategy"] == strategy) & (trades["sample"] == "OOS")]
@@ -51,14 +53,11 @@ def per_cell(trades: pd.DataFrame, strategy: str) -> pd.DataFrame:
         pl = g["Profit/Loss"].to_numpy(dtype=float)
         if pl.size < 2:
             continue
-        daily = (g.groupby(g["Close time"].dt.normalize())["Profit/Loss"].sum()
-                 .reindex(pd.bdate_range(g["Close time"].min().normalize(),
-                                         g["Close time"].max().normalize()), fill_value=0.0))
         cum = np.cumsum(pl)
         loss = -pl[pl < 0].sum()
         rows.append({"result": str(cell), "net_profit": pl.sum(),
                      "profit_factor": pl[pl > 0].sum() / loss if loss else np.nan,
-                     "sharpe": daily.mean() / daily.std() * np.sqrt(252),
+                     "sharpe": significance.annual_sharpe(pl, g["Close time"].to_numpy()),
                      "max_dd": float((np.maximum.accumulate(np.maximum(cum, 0)) - cum).max()),
                      "trades": pl.size})
     return pd.DataFrame(rows)

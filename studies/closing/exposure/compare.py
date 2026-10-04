@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 YEAR = 365.25
-TRADING_DAYS = 252
+TRADING_DAYS = 252   # SQX's own convention for its Sharpe
 
 
 def stats(daily: pd.Series, equity: float) -> dict:

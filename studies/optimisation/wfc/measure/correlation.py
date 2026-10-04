@@ -31,7 +31,7 @@ def correlation(kept: pd.DataFrame, cols: dict) -> dict:
     Returns:
         The statistic, the sample size, and the width of the band inside which the
         statistic says nothing. With a dozen points the sampling error on a correlation is
-        enormous: `ci95` is the Fisher-z interval, and when it spans zero the honest
+        enormous: `ci95` is the Fisher-z interval with Spearman's variance 1.06/(n-3), and when it spans zero the honest
         reading is "this grid cannot tell", not "there is no relationship".
     """
     n = len(kept)
@@ -40,7 +40,7 @@ def correlation(kept: pd.DataFrame, cols: dict) -> dict:
         return {"n": n, "rho": rho, "ci95": (float("nan"), float("nan")),
                 "pearson": float("nan")}
     z = np.arctanh(np.clip(rho, -0.999999, 0.999999))
-    half = 1.959964 / np.sqrt(n - 3)
+    half = 1.959964 * np.sqrt(1.06 / (n - 3))  # Spearman's z variance (Fieller), not Pearson's 1/(n-3)
     return {"n": n, "rho": rho,
             "ci95": (float(np.tanh(z - half)), float(np.tanh(z + half))),
             "pearson": float(np.corrcoef(kept[cols["is"]], kept[cols["oos"]])[0, 1])}

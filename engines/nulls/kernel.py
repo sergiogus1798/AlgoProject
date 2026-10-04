@@ -30,7 +30,6 @@ def runs(entries: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np
     pnl = np.empty(n)
     for s in range(n_runs):
         net = gain = loss = 0.0
-        curve = peak = dd = 0.0
         for k in range(n):
             e = entries[s, k]
             p = value * sizes[s, k] * (leave_px[e + holds[s, k]] - enter_px[e]) - cost[k]
@@ -40,8 +39,10 @@ def runs(entries: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np
                 gain += p
             elif p < 0.0:
                 loss -= p
-            curve += p
-            peak = curve if k == 0 or curve > peak else peak
+        curve = peak = dd = 0.0
+        for k in np.argsort(entries[s] + holds[s], kind="mergesort"):    # exit order
+            curve += pnl[k]
+            peak = max(peak, curve)
             dd = max(dd, peak - curve)
         mean = net / n
         var = 0.0

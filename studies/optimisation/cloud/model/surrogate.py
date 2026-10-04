@@ -39,7 +39,9 @@ def fit(unit: np.ndarray, y: np.ndarray) -> dict:
     coef = np.linalg.lstsq(matrix, y, rcond=None)[0]
     resid = y - matrix @ coef
     r2 = 1.0 - float(resid.var() / y.var())
-    return {"coef": coef, "k": unit.shape[1], "n": int(y.size), "r2": r2,
+    dof = y.size - matrix.shape[1]
+    r2_adj = 1.0 - (1.0 - r2) * (y.size - 1) / dof if dof > 0 else float("nan")
+    return {"coef": coef, "k": unit.shape[1], "n": int(y.size), "r2": r2, "r2_adj": r2_adj,
             "roughness": 1.0 - r2, "rmse": float(np.sqrt((resid ** 2).mean()))}
 
 

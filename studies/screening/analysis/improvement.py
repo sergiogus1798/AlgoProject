@@ -9,6 +9,7 @@ from core import fanout
 CUTS = (5, 10, 20, 30, 50)
 MIN_SURVIVORS = 200
 DRAWS = 2000
+ALPHA = 0.05
 SEED = 20260904
 
 # What the sweep's workers read, set before the fork.
@@ -84,7 +85,31 @@ def outcome(y: np.ndarray, level: float) -> dict:
     return {"n": int(y.size), "median": float(np.median(y)), "hit": float((y > level).mean())}
 
 
-def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS) -> dict:
+def reach(tests: int) -> int:
+    """Resamples a filter needs before its p can go under Benjamini-Hochberg's first rung.
+
+    Args:
+        tests: Filters judged together, the family the correction covers.
+
+    Returns:
+        The first multiple of DRAWS strictly above tests / ALPHA: the bootstrap p cannot go
+        below one over its resamples, and the lone best of the family is named only at
+        p <= ALPHA / tests. 🔬 2026-10-04: at 2,000 resamples and 210 filters the floor
+        (0.0005) sat above that rung (0.00024), so fewer than three filters on the floor
+        were never named, however strong.
+    """
+    return DRAWS * (round(tests / ALPHA) // DRAWS + 1)
+
+
+def _resampled(rng: np.random.Generator, kept: np.ndarray, level: float,
+               draws: int) -> tuple[np.ndarray, np.ndarray]:
+    """The median and the hit rate of `draws` resamples of the survivors, one block."""
+    draw = kept[rng.integers(0, kept.size, (draws, kept.size))]
+    return np.median(draw, axis=1), (draw > level).mean(axis=1)
+
+
+def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS,
+         reach: int = DRAWS) -> dict:
     """Bootstrap the improvement of the survivors over the whole population.
 
     Args:
@@ -92,10 +117,14 @@ def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS) -> d
         mask: Survivor mask from survivors().
         level: Break-even from breakeven().
         draws: Resamples of the survivors.
+        reach: Resamples a filter is taken to, in blocks of `draws`, when none of its first
+            `draws` puts the median on the other side of the population's: from reach().
 
     Returns:
         d_median and d_hit, survivors minus population, each with a 95% interval as
-        d_median_lo/hi and d_hit_lo/hi, plus p, the two-sided bootstrap p-value of d_median.
+        d_median_lo/hi and d_hit_lo/hi, plus p, the two-sided bootstrap p-value of d_median,
+        never below one over the resamples drawn. A filter that is not extended returns
+        exactly what `draws` resamples give; an extended one reads interval and p off all.
 
     The interval is on the difference, because two separate overlapping intervals would not
     mean the difference is indistinguishable from zero. Only the survivors are resampled: the
@@ -105,9 +134,12 @@ def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS) -> d
     rng = np.random.default_rng(SEED)
     kept = y[mask]
     base = outcome(y, level)
-    draw = kept[rng.integers(0, kept.size, (draws, kept.size))]
-    d_median = np.median(draw, axis=1) - base["median"]
-    d_hit = (draw > level).mean(axis=1) - base["hit"]
+    blocks = [_resampled(rng, kept, level, draws)]
+    first = blocks[0][0] - base["median"]
+    if not min((first <= 0).sum(), (first >= 0).sum()):
+        blocks += [_resampled(rng, kept, level, draws) for _ in range(reach // draws - 1)]
+    d_median = np.concatenate([b[0] for b in blocks]) - base["median"]
+    d_hit = np.concatenate([b[1] for b in blocks]) - base["hit"]
     tail = min(float((d_median <= 0).mean()), float((d_median >= 0).mean()))
     return {"d_median": float(np.median(kept) - base["median"]),
             "d_median_lo": float(np.quantile(d_median, 0.025)),
@@ -115,7 +147,7 @@ def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS) -> d
             "d_hit": float((kept > level).mean() - base["hit"]),
             "d_hit_lo": float(np.quantile(d_hit, 0.025)),
             "d_hit_hi": float(np.quantile(d_hit, 0.975)),
-            "p": max(2 * tail, 1 / draws)}
+            "p": max(2 * tail, 1 / d_median.size)}
 
 
 def _judged(i: int) -> dict:
@@ -130,7 +162,7 @@ def _judged(i: int) -> dict:
     columns, y, level = _SHARED["columns"], _SHARED["y"], _SHARED["level"]
     candidate = _SHARED["judged"][i]
     mask = survivors(columns[candidate["metric"]], candidate)
-    return outcome(y[mask], level) | lift(y, mask, level)
+    return outcome(y[mask], level) | lift(y, mask, level, reach=reach(len(_SHARED["judged"])))
 
 
 def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
@@ -148,6 +180,8 @@ def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
         label, unique so engines.inference.fdr.discoveries can key on it), column, side, cut, the keys
         from outcome() and those from lift(). Candidates leaving fewer than min_n survivors
         are dropped without being tested, so they never enter the family the correction covers.
+        A filter on the floor of its first DRAWS resamples is redrawn to reach(judged), so
+        the rows are meant for fdr.discoveries at ALPHA.
     """
     y, level = columns[target], breakeven(target)
     judged = [c for c in candidates(is_metrics)

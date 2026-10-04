@@ -26,6 +26,8 @@ def distribution(values: np.ndarray) -> dict:
     """
     clean = np.asarray(values, dtype=float)
     clean = clean[np.isfinite(clean)]
+    if not clean.size:
+        return {}
     return {"sharpe_mean": float(clean.mean()), "sharpe_std": float(clean.std(ddof=1)),
             "sharpe_max": float(clean.max()), "n_scored": int(clean.size)}
 

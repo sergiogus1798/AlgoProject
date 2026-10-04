@@ -74,7 +74,7 @@ def paths(pnl: np.ndarray, live: np.ndarray, equity0: float) -> dict:
         the real trades, so it is additive and never compounded.
     """
     equity = equity0 + np.cumsum(pnl, axis=1)
-    peak = np.maximum.accumulate(equity, axis=1)
+    peak = np.maximum(np.maximum.accumulate(equity, axis=1), equity0)
     drop = peak - equity
     dd = drop.max(axis=1)
     net = pnl.sum(axis=1)
@@ -125,12 +125,14 @@ def summarise(values: np.ndarray, seen: float, name: str, qs: list[float]) -> di
     clean = values[np.isfinite(values)]
     better = HIGHER_IS_BETTER[name]
     beaten = np.sum(clean >= seen) if better else np.sum(clean <= seen)
-    return {"p": {q: float(np.percentile(clean, q)) for q in qs},
-            "mean": float(clean.mean()), "median": float(np.median(clean)),
-            "std": float(clean.std(ddof=1)), "observed": float(seen),
-            "rank": float(np.mean(clean <= seen)),
-            "beats": float(np.mean(clean < seen) if better else np.mean(clean > seen)),
-            "p_value": float((1 + beaten) / (1 + clean.size)), "n": int(clean.size)}
+    out = {"p": {q: float(np.percentile(clean, q)) for q in qs},
+           "mean": float(clean.mean()), "median": float(np.median(clean)),
+           "std": float(clean.std(ddof=1)), "observed": float(seen),
+           "rank": float(np.mean(clean <= seen)),
+           "beats": float(np.mean(clean < seen) if better else np.mean(clean > seen)),
+           "p_value": float((1 + beaten) / (1 + clean.size)), "n": int(clean.size)}
+    # an undefined observed statistic (dd = 0 Ret/DD, no losing trade PF) is not the best draw
+    return out if np.isfinite(seen) else {**out, "rank": np.nan, "beats": np.nan, "p_value": np.nan}
 
 
 def shape(values: np.ndarray, seen: float, name: str, bins: int = 60) -> dict:

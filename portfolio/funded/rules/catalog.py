@@ -103,16 +103,20 @@ def _consistency(rules: dict, stage_raw: float | None) -> tuple[float, str | Non
     return (curated, kind, flag)
 
 
-def plan(plan_key: str) -> dict:
+def plan(plan_key: str, days_per_year: float | None = None) -> dict:
     """One plan's stages and rules, normalised, every unconfirmed or conflicting rule named.
 
     Args:
         plan_key: `firm:family:size:ccy`, as `plans()` lists it.
+        days_per_year: Path days in a year of the path set the plan will be walked on. The
+            catalogue's time limit is in calendar days and the walkers count path days; a
+            stage with a limit and no `days_per_year` is refused, never read one for one.
 
     Returns:
         `plan_key, firm, family, size, price, price_ccy, stages` (challenge stages then `funded`,
         each a dict of `stage, target, daily_loss, max_loss, max_loss_mode, daily_basis, min_days,
-        min_days_kind, profitable_pct, consistency, consistency_kind, time_limit, news_ok,
+        min_days_kind, profitable_pct, consistency, consistency_kind, time_limit` (path days, at
+        `days_per_year / 365` as `sim.plans.cash` converts the payout cycle; 0 = none), `news_ok,
         weekend_ok`), `flags` (deduplicated by `rule_key`).
     """
     firm, family = plan_key.split(":")[:2]
@@ -137,6 +141,11 @@ def plan(plan_key: str) -> dict:
     stages = []
     for (stage, target_pct, daily_loss_pct, max_loss_pct, mode, min_days_raw, time_limit,
          consistency_raw, news_ok, weekend_ok) in stage_rows:
+        if daily_loss_pct is None or max_loss_pct is None:     # NULL = not known yet; 0 = no such rule
+            raise NotImplementedError(f"{plan_key} stage {stage}: a loss limit is unknown (NULL)")
+        if time_limit and days_per_year is None:
+            raise NotImplementedError(f"{plan_key} stage {stage}: {time_limit} calendar days of "
+                                      "time limit need the path set's days_per_year")
         min_days, min_days_kind, profitable_pct, md_flag = _min_days(rules, min_days_raw)
         consistency, consistency_kind, c_flag = _consistency(rules, consistency_raw)
         if consistency > 0 and consistency_kind is None:
@@ -149,11 +158,12 @@ def plan(plan_key: str) -> dict:
             if flag is not None:
                 flags[flag["rule_key"]] = flag
         stages.append({
-            "stage": stage, "target": (target_pct or 0) / 100, "daily_loss": (daily_loss_pct or 0) / 100,
-            "max_loss": (max_loss_pct or 0) / 100, "max_loss_mode": mode, "daily_basis": daily_basis,
+            "stage": stage, "target": (target_pct or 0) / 100, "daily_loss": daily_loss_pct / 100,
+            "max_loss": max_loss_pct / 100, "max_loss_mode": mode, "daily_basis": daily_basis,
             "min_days": min_days, "min_days_kind": min_days_kind, "profitable_pct": profitable_pct,
             "consistency": consistency, "consistency_kind": consistency_kind,
-            "time_limit": time_limit or 0, "news_ok": bool(news_ok), "weekend_ok": bool(weekend_ok),
+            "time_limit": max(1, round(time_limit * days_per_year / 365)) if time_limit else 0,
+            "news_ok": bool(news_ok), "weekend_ok": bool(weekend_ok),
         })
     stages.sort(key=lambda s: _STAGE_ORDER[s["stage"]])
     return {"plan_key": plan_key, "firm": firm, "family": family, "size": size, "price": price,

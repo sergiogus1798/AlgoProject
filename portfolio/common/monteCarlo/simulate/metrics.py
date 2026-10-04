@@ -43,7 +43,7 @@ def paths(pnl: np.ndarray, equity0: float) -> dict[str, np.ndarray]:
     being zero for the models that only reorder; summed in float64 it is exact.
     """
     equity = equity0 + np.cumsum(pnl, axis=1, dtype=np.float64)
-    peak = np.maximum.accumulate(equity, axis=1)
+    peak = np.maximum(np.maximum.accumulate(equity, axis=1), equity0)
     drop = peak - equity
     dd = drop.max(axis=1)
     net = pnl.sum(axis=1, dtype=np.float64)

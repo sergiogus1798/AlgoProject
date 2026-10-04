@@ -130,7 +130,7 @@ def load_trades(project: str, databank: str, day: str, strategy: str = "") -> pd
         strategy: One strategy id, or empty for all of them.
 
     Returns:
-        One row per trade: Open time, Close time, Type, Size and cost (USD, `core.trades.cost`),
+        One row per trade: Open time, Close time, Type, Size, cost (USD, `core.trades.cost`) and `pnl` (the original per-trade P/L, USD; what the PSR reads),
         `strategy` naming it under this ingest's own key rather than the harvest's identity
         (`measure/originals.py`). Never a simulation -- a perturbed run carries no times or
         prices to price a random trader against, which is why this is a separate dataset from

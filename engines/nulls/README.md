@@ -15,7 +15,7 @@ not merged: they answer different questions and merging them would move every p.
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names what the package is; holds no code | — | — |
-| `inputs.py` | The knobs — `config()` draws a fresh `nulls.seed` root from OS entropy when it is `null` (the default), and keeps an explicit one — the markets an export holds, the trades of one sample and market (read filtered; an export of several markets refuses without its feed), the bars, and where each trade sits on the bar grid | imported | export + feed → trades, bars, indices |
+| `inputs.py` | The knobs — `config()` draws a fresh 32-bit `nulls.seed` root from OS entropy when it is `null` (the default), and keeps an explicit one; `seeded()` turns a command's `--seed` into that override — the markets an export holds, the trades of one sample and market (read filtered; an export of several markets refuses without its feed), the bars, and where each trade sits on the bar grid | imported | export + feed → trades, bars, indices |
 | `barrier.py` | The triple-barrier exit: stop, target and time limit, vectorised over thousands of runs at once | imported | entries + levels → exit bar, exit price |
 | `kernel.py` | The null runs priced and measured in one compiled numba pass, and the first-touch barrier scan that stops at the first touch; checked against the numpy definitions to 1e-12 | imported | draws + bars → five statistics per run |
 | `model.py` | The ladder of nulls — what each rung holds fixed and what it hands to chance | imported | located trades → entries, holds, sizes |
@@ -96,10 +96,11 @@ order**; its swap follows **its own drawn hold** (for gold and indices a percent
 per night, with the asset's weekday multiplier); random entries are **restricted to the hours the
 strategy trades**; and the test stays **per strategy**, with no population-wide null.
 
-- 🔬 **A null run's drawdown is accumulated in the real trades' order, not its own.**
-  `kernel.runs()` accumulates each run's P/L in trade-index order, but the entries were drawn
-  at random, so `dd` and `retdd` read a shuffled sequence and lose the market's
-  clustering. On one strategy of `XAUUSD/MC_Trades` (632 trades, 2026-09-25), sorting each run
+- 🔬 **A null run's drawdown is read in exit order** (fixed 2026-10-04, in `kernel.runs()` and
+  in `placement/kernel.py`; the peak also starts at the starting balance, 0 cumulative P/L, so
+  a run that opens with a loss counts it). Before, it accumulated each run's P/L in trade-index
+  order, so `dd` and `retdd` read a shuffled sequence and lost the market's
+  clustering; stored `dd`/`retdd` p-values from before are stale. On one strategy of `XAUUSD/MC_Trades` (632 trades, 2026-09-25), sorting each run
   by exit bar raised the null's median drawdown from 27,442 to 29,038 and moved `p_dd` from
   0.018 to 0.0084. `net`, `sharpe` and `pf` do not depend on order.
 - 🤔 **The cost follows the trade, not its drawn holding time.** `calibrate.charged()` folds swap
@@ -115,8 +116,10 @@ strategy trades**; and the test stays **per strategy**, with no population-wide 
   under shared-L3 load the optimum moves smaller, which is untested. For `timing` and
   `timing_sizing` the draws are identical at any chunk; for the two rungs that draw holds and
   entries per block, changing it changes the stream.
-- 🔬 **Direction is not modelled**: P/L is `value × size × (exit − entry)`, long only. The whole
-  XAUUSD export is `Type = Buy`; a short strategy would be priced with the wrong sign.
+- 🔬 **Direction is not modelled, but a pure-short strategy still prices right**: P/L is
+  `value × size × (exit − entry)` and `calibrate.point_value` is a fitted slope, so an all-short
+  strategy gets a negative value (measured −100.18). Only a strategy mixing both sides would
+  break, which rule 13 forbids.
 
 ## Before reading any number from it
 

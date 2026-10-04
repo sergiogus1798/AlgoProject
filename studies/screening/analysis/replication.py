@@ -21,8 +21,12 @@ def hit_gap(reference: np.ndarray, sample: np.ndarray, level: float,
     Returns:
         Keys gap (sample minus reference, as a share) with lo and hi, its 95% interval.
         Both samples are resampled because neither is a subset of the other: these are
-        separate generation runs, so both carry their own sampling error.
+        separate generation runs, so both carry their own sampling error. All three are NaN
+        when either sample is empty -- no strategy cleared a carried threshold -- since
+        there is no hit rate to compare.
     """
+    if not (reference.size and sample.size):
+        return {"gap": float("nan"), "lo": float("nan"), "hi": float("nan")}
     rng = np.random.default_rng(SEED)
     a = (sample[rng.integers(0, sample.size, (draws, sample.size))] > level).mean(axis=1)
     b = (reference[rng.integers(0, reference.size, (draws, reference.size))] > level).mean(axis=1)
@@ -46,7 +50,7 @@ def carried(reference: dict[str, np.ndarray], sample: dict[str, np.ndarray],
         those) and lo/hi, the 95% interval on observed minus predicted. The threshold is the
         reference's quantile in the metric's own units, not the sample's, so a sample already
         selected on that metric shows a share near 1 — that is the point, and it is what
-        makes predicted and observed comparable.
+        makes predicted and observed comparable. With n = 0, observed, lo and hi are NaN.
     """
     level = improvement.breakeven(target)
     column, cut = candidate["metric"], candidate["cut"] / 100
@@ -61,7 +65,7 @@ def carried(reference: dict[str, np.ndarray], sample: dict[str, np.ndarray],
     return {"predicted": float((base > level).mean()),
             "share": float(passes.mean()),
             "n": int(passes.sum()),
-            "observed": float((y > level).mean()),
+            "observed": float((y > level).mean()) if y.size else float("nan"),
             "lo": gap["lo"], "hi": gap["hi"]}
 
 

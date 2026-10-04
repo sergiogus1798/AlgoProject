@@ -10,7 +10,7 @@ to choose a funded portfolio; the bank simulation (F5) will call it too.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `catalog.py` | One plan's stages and rules, normalised, with every unconfirmed or conflicting rule it used named in `flags` | imported | plan key → dict |
+| `catalog.py` | One plan's stages and rules, normalised (`time_limit` in path days: the catalogue's calendar days × `days_per_year` / 365, refused without it), with every unconfirmed or conflicting rule it used named in `flags` | imported | plan key → dict |
 | `floors.py` | One function per rule: the daily floor, the max-loss floor, the target, minimum days, consistency | imported | state → number, bool |
 | `machine.py` | The challenge from one start day (reference) and from many start days at once (numba, identical), with an optional horizon: not passed by start + horizon − 1 reads «open» | imported | day arrays, plan, risk → outcome |
 

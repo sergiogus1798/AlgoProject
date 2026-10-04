@@ -53,7 +53,7 @@ def pooled(cells: pd.DataFrame, confidence: float = 0.95,
         their underlying data -- so it is a floor on the uncertainty, not a measure of it.
         Fisher-z because correlations do not average linearly.
     """
-    rho = cells["rho"].clip(-0.999, 0.999).to_numpy()
+    rho = cells["rho"].dropna().clip(-0.999, 0.999).to_numpy()
     rng = np.random.default_rng(seed)
     draws = rng.integers(0, rho.size, size=(n_resamples, rho.size))
     spread = np.tanh(np.arctanh(rho)[draws].mean(axis=1))

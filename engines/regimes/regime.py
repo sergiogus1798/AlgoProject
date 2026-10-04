@@ -22,7 +22,10 @@ def daily(bars: pd.DataFrame) -> pd.DataFrame:
 
 
 def atr(day: pd.DataFrame, cfg: dict) -> dict:
-    """Wilder-smoothed Average True Range of the daily candles.
+    """Wilder-smoothed Average True Range of the daily candles, lagged one day.
+
+    The value at day D is the ATR at the close of D-1, like garch()'s sigma(D | D-1), so the
+    label of a trade opened during D holds nothing of D's own range.
 
     Args:
         day: What daily() returned.
@@ -38,7 +41,7 @@ def atr(day: pd.DataFrame, cfg: dict) -> dict:
     span = pd.concat([day["High"] - day["Low"], (day["High"] - prev).abs(),
                       (day["Low"] - prev).abs()], axis=1).max(axis=1)
     period = cfg["atr_period"]
-    return {"vol": span.ewm(alpha=1 / period, adjust=False, min_periods=period).mean(),
+    return {"vol": span.ewm(alpha=1 / period, adjust=False, min_periods=period).mean().shift(1),
             "model": f"ATR({period}) diario", "note": ""}
 
 

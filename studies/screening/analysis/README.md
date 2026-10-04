@@ -8,7 +8,7 @@ Libraries, not commands. The entry points that use them live in `../reports/`.
 | `correlations.py` | Pearson/Spearman, the single-test significance floor, and Benjamini-Hochberg over a family of tests | imported | two columns → correlation rows |
 | `improvement.py` | Sweeps candidate IS filters: what each one does to an OOS outcome, with a bootstrap interval on the difference | imported | columns + one target → one row per filter |
 | `replication.py` | Whether a conclusion drawn on one sample holds on another independently generated one: outcome gaps, filter thresholds carried across, rank stability | imported | two samples' columns → gaps and agreement |
-| `decay.py` | How much of each strategy's in-sample edge survived, whether what is left beats its own error bar (Lo 2002 on the daily curve: `sqrt((1 + SR_annual² / 2 / 252) / years)` — fixed 2026-10-02, `knowhow/research/gate-t-scales.md`), and the keep/doubt/discard call | imported | daily equity → one row per strategy |
+| `decay.py` | How much of each strategy's in-sample edge survived, whether what is left beats its own error bar (Lo 2002 on the daily curve, annualised at 252 days, SQX's own convention: `sqrt((1 + SR_annual² / 2 / 252) / years)` — fixed 2026-10-02, `knowhow/research/gate-t-scales.md`), and the keep/doubt/discard call | imported | daily equity → one row per strategy |
 | `tradelevel.py` | The t of a strategy's mean trade, iid and at the AR(1) effective n, and each trade's P&L from the market's own drift over its hold — what the gate's `trade_t` and `drift_excess_t` are made of | imported | trades + bars → t per strategy |
 | `floating.py` | Max drawdown and worst day of the marked-to-market daily equity, worst trade MAE and net per year, all in R | imported | daily equity + trades → one row per strategy |
 
@@ -47,6 +47,15 @@ the owner and none of them adjustable per report:
   on 2026-09-04, after the first sweep found the improvement still rising at its tightest cut and so
   could not say where it stopped paying; at 5% on XAUUSD it visibly flattens.
 
+- **The bootstrap p must be able to reach Benjamini-Hochberg's first rung.** Its floor is one over
+  the resamples drawn, and the lone best of m filters is named only at p ≤ 0.05 / m. 🔬 2026-10-04:
+  at 2,000 resamples and 210 filters the floor (0.0005) sat above that rung (0.00024), so one or
+  two filters on the floor — a weak monotone effect seen only at the two 50 % cuts — could never be
+  named. `lift()` now redraws a filter none of whose first 2,000 resamples cross zero up to
+  `reach(m)`, the first multiple of 2,000 above m / 0.05 (6,000 at m = 210), in blocks of 2,000 so
+  memory is unchanged; every other filter keeps its first-pass numbers bit for bit. Cost on
+  9,897 strategies × 210 filters with 175 on the floor: 2.3 s per outcome, from 1.3-2.4 s.
+
 `replication.py` answers the question `improvement.py` cannot: whether a filter chosen on one
 population still delivers on a different one. Two traps it exists to avoid:
 
@@ -58,6 +67,13 @@ population still delivers on a different one. Two traps it exists to avoid:
 - **Thresholds travel, quantiles do not.** `carried()` takes the reference's cut in the metric's own
   units and applies that number to the other sample. Re-taking "the top 10%" inside an already
   filtered sample would be a different, stricter filter wearing the same name.
+
+- **The reference's best filters are chosen among those the sweep would judge** — at least
+  `MIN_SURVIVORS` (200) kept on the reference; on a reference under 400 strategies there is none
+  and the report says so. The promise is still the maximum of the judged filters' hit rates, so it
+  is optimistic by selection: a mildly negative Δ on every sample is what a null would show.
+- **An empty sample is NaN, not a number.** When no strategy of a sample clears a carried
+  threshold, `hit_gap()` returns NaN for the gap and its interval, and `carried()` n = 0.
 
 Near-duplicate filters move together: six overlapping filters agreeing that a sample beat its
 prediction is one observation, not six. Read the interval on the difference, not the row count.

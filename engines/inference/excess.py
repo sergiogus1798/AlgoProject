@@ -44,13 +44,13 @@ def excess(p: np.ndarray, alpha: float) -> dict:
     extreme enough to be named. The two readings are independent and both belong in a report.
     """
     n = len(p)
-    observed = int((p < alpha).sum())
+    observed = int((p <= alpha).sum())
     null_share = share_null(p)
     expected = null_share * alpha * n
     return {"n": n, "observed": observed, "expected_all_null": alpha * n,
             "expected": expected, "share_null": null_share,
             "excess": observed - alpha * n,
-            "fdr": float(alpha * n / observed) if observed else float("nan")}
+            "fdr": float(min(1.0, alpha * n / observed)) if observed else float("nan")}
 
 
 def resolution(p: np.ndarray, alpha: float, draws: int) -> dict:

@@ -121,7 +121,15 @@ Semantics frozen by the owner (PLAN §12 «Answered», rule machine row) — imp
 - A stage runs on server-day arrays `closed, float_end, low, high` (account currency at unit scale) and
   `opened`, each multiplied by the stage's risk multiplier `k`. It starts the day after the previous
   stage passed, balance = equity = `size`; floating is measured from the start
-  (`float_end − float_end[start−1]`).
+  (`float_end − float_end[start−1]`). A trade carried in books its whole P&L when it closes, so the
+  mark it came in at, `carry = float_end[start−1]·k`, is taken off that day's closed P&L (balance,
+  target, payout, consistency) on **the first day that ends flat** (`float_end[d] = 0`), and from
+  then on floating is read whole: `E0 = B0 + float_end[d−1]·k − carry`, `carry` 0 once booked. Equity
+  is exact every day; the balance is exact while the carried trades are open and from the first flat
+  day end on — profit made before the stage never counts toward its target, floors or payouts.
+  **Ceiling:** between the close of a carried trade and the first flat day end (a portfolio with
+  something always open) the balance is off by that trade's mark. Exact booking needs each carried
+  trade's mark and close day — trade spans, not a day column: it is a start × day quantity. A daily/max-loss limit of 0 is no rule (floor `−inf`).
 - Day loop: `B0` balance at day start, `E0 = B0 + floating`. Daily floor: FTMO `B0 − dl·size`; Hantec
   `base·(1 − dl)` with `base = max(B0, E0)` (unconfirmed → flag). Max floor: `static` `size·(1 − ml)`;
   Hantec `trailing` `min(hw − ml·size, size)` with `hw` the highest **intraday equity** — raised by the

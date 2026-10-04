@@ -15,8 +15,10 @@ def daily_floor(b0: float, e0: float, size: float, pct: float, basis: str) -> fl
             `max(b0, e0)*(1-pct)`).
 
     Returns:
-        Equity strictly below this fails the daily-loss rule.
+        Equity strictly below this fails the daily-loss rule; `-inf` when `pct` is 0 (no rule).
     """
+    if pct <= 0:
+        return -np.inf          # 0 = the firm has no daily-loss rule
     if basis == "balance":
         return b0 - pct * size
     return max(b0, e0) * (1 - pct)
@@ -37,6 +39,8 @@ def max_floor(mode: str, size: float, pct: float, hw: float, eod: float) -> floa
     Returns:
         Equity strictly below this fails the max-loss rule.
     """
+    if pct <= 0:
+        return -np.inf          # 0 = the firm has no max-loss rule
     if mode == "static":
         return size * (1 - pct)
     if mode == "trailing":

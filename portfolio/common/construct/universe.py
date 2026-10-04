@@ -76,8 +76,7 @@ def screen(data: dict, cfg: dict, out: Path) -> dict:
     calendar = {k: (pd.Timestamp(v[0]), pd.Timestamp(v[1]))
                 for k, v in data["manifest"]["calendar"].items()}
     daily = matrix.segment(data["daily"], calendar, "build")
-    monthly = matrix.segment(data["monthly"], calendar, "build")
-    pairs = table.table(daily, monthly, cfg)
+    pairs = table.table(daily, matrix.monthly(daily), cfg)
     pairs.to_parquet(out / "pairs.parquet")
     got = admissible.admissible(pairs, list(daily.columns), cfg)
     print(f"Parejas (solo build): {got['n_admissible_pairs']} admisibles de {got['n_pairs']}; "

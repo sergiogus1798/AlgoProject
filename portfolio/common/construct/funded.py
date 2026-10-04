@@ -87,7 +87,7 @@ def build(pool_name: str, plan_key: str, cfg: dict) -> dict:
     from .equity import matrix
     from .pairs import table
     build_daily = matrix.segment(daily, calendar, "build")
-    pairs = table.table(build_daily, matrix.segment(data["monthly"][usable], calendar, "build"), cfg)
+    pairs = table.table(build_daily, matrix.monthly(build_daily), cfg)
     got = admissible.admissible(pairs, usable, cfg)
     identities = usable
 

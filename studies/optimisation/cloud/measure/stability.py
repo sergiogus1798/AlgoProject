@@ -115,4 +115,4 @@ def origin_rank(per: dict, keep: pd.Index, origin: str) -> pd.Series:
         period afterwards is the picture of a selection, not of an edge.
     """
     frame = per["sharpe"].loc[keep]
-    return frame.le(frame[origin], axis=0).mean(axis=1)
+    return frame.le(frame[origin], axis=0).sum(axis=1) / frame.notna().sum(axis=1)

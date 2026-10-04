@@ -6,7 +6,7 @@ import pandas as pd
 from engines.inference.snooping import superior
 from studies.screening.snoopingScreen import benchmark
 
-YEAR = 252
+YEAR = 252   # SQX's own convention (its SharpeRatio is weekday rows x sqrt(252))
 
 
 def run(data: dict, cfg: dict) -> dict:

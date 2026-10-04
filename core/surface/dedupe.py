@@ -127,6 +127,6 @@ def curve_duplicates(curves: dict[str, pd.Series]) -> pd.Series:
         builtin `hash()`, because Python salts a bytes hash per process: the same input
         would group differently in a report regenerated tomorrow.
     """
-    key = pd.Series({name: hashlib.sha1(curve.to_numpy().tobytes()).digest()
+    key = pd.Series({name: hashlib.sha1(curve.index.asi8.tobytes() + curve.to_numpy().tobytes()).digest()
                      for name, curve in curves.items()})
     return key.duplicated(keep="first")

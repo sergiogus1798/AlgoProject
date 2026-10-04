@@ -1,77 +1,81 @@
-"""What each scaled cell means, once the control and the rounding have had their say."""
+"""What each scaled cell means on oos1, beyond what its mother's own result already explains."""
+
+from statistics import NormalDist
 
 import pandas as pd
 
-# The five readings, in the order the checks are applied. Each names what it blames, which
-# is the whole point of having the control cell: "it died on H4" and "it died when its
-# periods changed" are different findings and only one of them is about timeframes.
+# ⚠️ AN AGENT'S PROPOSAL of 2026-10-02, pending the owner (README, «The reading»). The six
+# readings, in the order the checks are applied. The first three say the test did not happen —
+# a rule reads them as limbo, never as a failure.
 MEANS = {
-    "unusable": "rounding or clamping moved the parameters too far to attribute anything",
-    "silent": "the entry never fired on that timeframe, so there is nothing to judge",
-    "control_failed": "the parameter change alone broke it on its own timeframe",
-    "survives": "beats its own timeframe's entry-timing null",
-    "inherited": "profitable on the new timeframe, but not distinguishable from chance on it",
-    "fails": "does not carry over",
+    "unusable": "carries a custom-block length nobody could rule on: it was not scaled",
+    "silent": "the entry never fired on that timeframe in oos1, so there is nothing to judge",
+    "no_data": "too few oos1 trades, on the sibling or on its mother, for a p",
+    "survives": "beats its own timeframe's null in oos1, beyond what its mother explains",
+    "inherited": "made money in oos1, but no more than its mother's result predicts",
+    "fails": "lost money in oos1",
 }
 
 
-def usable(row: pd.Series, scaling: pd.DataFrame, cfg: dict) -> bool:
-    """Whether a scaled cell's parameters survived the rescaling well enough to be read.
+def usable(row: pd.Series, scaling: pd.DataFrame) -> bool:
+    """Whether a scaled cell could be scaled at all.
 
     Args:
         row: One `scaled` cell of the panel.
         scaling: The manifest `sqx.variants.scale` wrote.
-        cfg: The `usable` section of the study's config.
 
     Returns:
-        False when a period was clamped at the builder's floor or when rounding moved one
-        further than the study's tolerance -- either way the cell is measuring the
-        parameter change as much as the timeframe.
+        False only when a custom block's length nobody could rule on was left unscaled
+        (`sqx/variants/lengths.yaml`). Rounding and the floor no longer discard a sibling
+        (owner, 2026-10-02: «Redondea donde puedas, ya está»): `rounding_shift` and
+        `clamped` stay beside the reading as numbers, so a calibration can measure whether
+        heavily rounded siblings behave differently, and nothing gates on them.
     """
     made = scaling[scaling["name"] == row["strategy"]].iloc[0]
-    return not (cfg["reject_clamped"] and made["clamped"]) \
-        and made["max_rounding_shift"] <= cfg["max_rounding_shift"]
+    return not made.get("unverified", "")
 
 
 def read(panel: pd.DataFrame, scaling: pd.DataFrame, cfg: dict) -> pd.DataFrame:
-    """One reading per scaled cell, with the two cells it was judged against.
+    """One reading per scaled cell, with the numbers it was read from.
 
     Args:
-        panel: What `cells.panel` returned.
+        panel: What `cells.panel` returned: every cell on its oos1 trades.
         scaling: The manifest `sqx.variants.scale` wrote.
         cfg: What `inputs.config` returned.
 
     Returns:
-        One row per scaled cell: its mother, timeframe, statistic, p, the baseline and
-        control it was compared with, and `reading`, a key of `MEANS`.
+        One row per scaled cell: its mother, timeframe, trades, statistic, p, `z`, `z_new`,
+        the baseline and the control beside it, and `reading`, a key of `MEANS`.
 
-    The control is read before the p on purpose, and `silent` before both: the order of
-    the checks is the order of the blame.
+    `survives` asks for both: p under alpha against the cell's own null, and `z_new` over the
+    same level's normal quantile -- a sibling of a lucky mother clears the first one 14-40 %
+    of the time under no edge, the second one 5 %. The control (the sibling's parameters on
+    the mother's bars) is shown and never read: it failed 29 of 46 real readings and
+    inverted for a negative baseline.
     """
-    alpha, drop = cfg["verdict"]["alpha"], cfg["verdict"]["control_drop"]
+    alpha = cfg["verdict"]["alpha"]
+    level = NormalDist().inv_cdf(1 - alpha)
     base = panel[panel["role"] == "baseline"].set_index("mother")["seen"]
     control = panel[panel["role"] == "control"].set_index("strategy")["seen"]
 
     rows = []
     for _, cell in panel[panel["role"] == "scaled"].iterrows():
-        baseline, ctrl = base[cell["mother"]], control[cell["strategy"]]
-        if not usable(cell, scaling, cfg["usable"]):
+        if not usable(cell, scaling):
             reading = "unusable"
-        # A cell with no trades is not a failure: a strategy that never entered has not
-        # lost money there, and grading it as `fails` would count silence as evidence.
         elif cell["trades"] == 0:
             reading = "silent"
-        elif ctrl < baseline * (1 - drop):
-            reading = "control_failed"
-        elif cell["p"] < alpha:
+        elif not cell["z_new"] == cell["z_new"]:
+            reading = "no_data"
+        elif cell["p"] < alpha and cell["z_new"] > level and cell["seen"] > 0:
             reading = "survives"
         elif cell["seen"] > 0:
             reading = "inherited"
         else:
             reading = "fails"
         rows.append({"mother": cell["mother"], "timeframe": cell["timeframe"],
-                     "seen": cell["seen"], "p": cell["p"], "trades": cell["trades"],
-                     "baseline": baseline, "control": ctrl, "reading": reading,
+                     "trades": cell["trades"], "seen": cell["seen"], "p": cell["p"],
+                     "z": cell["z"], "z_new": cell["z_new"], "baseline": base[cell["mother"]],
+                     "control": control[cell["strategy"]], "reading": reading,
                      "warnings": cell["warnings"]})
     return pd.DataFrame(rows)
 
@@ -94,7 +98,7 @@ def unscaled(panel: pd.DataFrame) -> pd.DataFrame:
 
 
 def counts(readings: pd.DataFrame) -> dict:
-    """How the population fell across the five readings, per timeframe.
+    """How the population fell across the readings, per timeframe.
 
     Args:
         readings: What `read` returned.

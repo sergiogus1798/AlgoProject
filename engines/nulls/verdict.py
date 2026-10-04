@@ -24,6 +24,9 @@ def pvalue(seen: float, drawn: np.ndarray, name: str) -> float:
         nicety: without it a real run no draw matched would score exactly 0, which is not a
         probability, and the smallest honest value is 1/(draws+1).
     """
+    if seen != seen:
+        return float("nan")
+    drawn = drawn[~np.isnan(drawn)]
     beaten = (drawn >= seen).sum() if GOOD_HIGH[name] else (drawn <= seen).sum()
     return float((1 + beaten) / (len(drawn) + 1))
 

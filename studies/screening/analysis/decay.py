@@ -16,7 +16,7 @@ def sharpe(returns: pd.Series) -> float:
         returns: Daily change in cumulative P&L.
 
     Returns:
-        Mean over standard deviation, scaled by sqrt(252).
+        Mean over standard deviation, scaled by sqrt(252), SQX's own convention.
     """
     return returns.mean() / returns.std(ddof=1) * np.sqrt(YEAR)
 
@@ -33,10 +33,11 @@ def diagnose(curve: pd.Series, split: str, end: str) -> dict:
         Sharpe either side, what fraction of it survived, the significance of the
         out-of-sample Sharpe, how many of its years were profitable, and how much of its
         profit came from its single best quarter. Concentration above 1.0 means the
-        strategy loses money outside that quarter.
+        strategy loses money outside that quarter. Retention is NaN when the in-sample
+        Sharpe is not positive, concentration when the out-of-sample total is not.
     """
     daily = curve.diff().dropna()
-    before, after = daily[:split][:-1], daily[split:end]
+    before, after = daily[daily.index < split], daily[split:end]
     quarters = after.groupby([after.index.year, after.index.quarter]).sum()
     years = after.groupby(after.index.year).sum()
     edge = sharpe(after)
@@ -45,10 +46,11 @@ def diagnose(curve: pd.Series, split: str, end: str) -> dict:
     # Lo (2002), iid: SE of a per-day Sharpe over T days is sqrt((1 + SR_day**2 / 2) / T);
     # annualised, the squared term is the annual Sharpe's over the days in a year.
     error = np.sqrt((1 + 0.5 * edge ** 2 / YEAR) / (len(after) / YEAR))
-    return {"sharpe_is": sharpe(before), "sharpe_oos": edge,
-            "retention": edge / sharpe(before), "t": edge / error,
+    base = sharpe(before)   # a ratio on a losing denominator flips sign: undefined, not a survival
+    return {"sharpe_is": base, "sharpe_oos": edge,
+            "retention": edge / base if base > 0 else np.nan, "t": edge / error,
             "years_positive": int((years > 0).sum()), "years": len(years),
-            "worst_year": years.min(), "concentration": quarters.max() / total,
+            "worst_year": years.min(), "concentration": quarters.max() / total if total > 0 else np.nan,
             "net_profit_oos": total}
 
 

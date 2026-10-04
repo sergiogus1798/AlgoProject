@@ -17,10 +17,12 @@ def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> dict:
         margin: How far above the null maximum the observed one must sit, as a multiple.
 
     Returns:
-        The effective n, the dispersion, both maxima, their ratio and the call.
+        The effective n, the dispersion, both maxima, the observed maximum's excess over the
+        grid mean, its ratio to the null maximum and the call.
 
         Under the hypothesis that no parameter does anything, the best of N draws with
-        dispersion sigma still lands near sigma * sqrt(2 ln N). A grid whose best point
+        dispersion sigma still lands near mean + sigma * sqrt(2 ln N), so the **excess over
+        the mean** is what is compared (owner, 2026-10-04; no trade floor). A grid whose best point
         does not clear that has found nothing, and neither the saturated phase nor the
         5,000 variants are worth running. **n_eff, not the row count**: inert parameters
         duplicate points and feeding rows would raise the bar against a grid that is
@@ -31,12 +33,13 @@ def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> dict:
     n_eff = int(values.size)
     threshold = plateau.expected_max(float(values.std()), n_eff)
     observed = float(values.max())
+    excess = observed - float(values.mean())
     return {"metric": metric, "n_rows": int(len(frame)), "n_eff": n_eff,
             "sigma": float(values.std()), "observed_max": observed,
-            "noise_max": threshold, "ratio": observed / threshold,
+            "noise_max": threshold, "excess": excess, "ratio": excess / threshold,
             "plateau_area": plateau.plateau_area(values),
             "above_half_max": plateau.above_half_max(values),
-            "verdict": PROCEED if observed > threshold * margin else NOISE}
+            "verdict": PROCEED if excess > threshold * margin else NOISE}
 
 
 def shape(frame: pd.DataFrame, metric: str) -> dict:

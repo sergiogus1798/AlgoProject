@@ -124,10 +124,10 @@ def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict
         computation and decides nothing.
     """
     by_task = per_task(keys, sims, original, strategy, benchmark, cfg)
-    pnl = store.load_pnl(**keys, task="stress", strategy=strategy)
+    trades = store.load_trades(**keys, strategy=strategy)
+    original_pnl = trades["pnl"].to_numpy(dtype=np.float64)
     body = {**by_task,
-            "psr": evidence.analytic_sharpe(
-                pnl.groupby("sim", observed=True)["pnl"].sum().to_numpy(), benchmark),
+            "psr": evidence.analytic_sharpe(original_pnl, benchmark),
             "attribution": attribution.describe(
                 {task: _arrays(sims, task, strategy)["NetProfit"] for task in by_task}, cfg)}
     flags = gates.check(body, provenance, cfg)
@@ -162,6 +162,10 @@ def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: di
         are cross-strategy facts and cannot be computed one strategy at a time -- which is
         why they live here and not in one().
     """
+    if "pnl" not in store.load_trades(**keys):
+        raise SystemExit("mcRetest: este ingest es anterior al 2026-10-04 y no guarda el P/L por "
+                         "operación del original; repite el ingest con "
+                         "`python3 -m studies.breakage.mcRetest.ingest --project <PROYECTO>`")
     sims = store.load_sims(**keys)
     original = store.load_original(**keys)
     bench = benchmarks(trades, asset)

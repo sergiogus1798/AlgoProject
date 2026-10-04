@@ -7,7 +7,7 @@ import pandas as pd
 from core import assets, sqxfile, trades as core_trades
 from core.paths import harvest_dir
 
-KEEP = ["strategy", "Type", "Open time", "Close time", "Size", "cost"]
+KEEP = ["strategy", "Type", "Open time", "Close time", "Size", "cost", "pnl"]
 
 
 def feed_of(path: Path) -> tuple[str, str]:
@@ -70,6 +70,7 @@ def read(project: str, harvest_databank: str, identities: dict[str, str],
     got = frame[(frame["identity"].isin(by_identity)) & (frame["sample"] == "OOS")].copy()
     got["strategy"] = got["identity"].map(by_identity)
     got["cost"] = core_trades.cost(got, point_value)
+    got["pnl"] = got["Profit/Loss"]
     return got[KEEP].reset_index(drop=True)
 
 

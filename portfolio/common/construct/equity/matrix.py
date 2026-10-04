@@ -33,14 +33,16 @@ def segment(frame: pd.DataFrame, calendar: dict, name: str) -> pd.DataFrame:
     """One portfolio calendar segment's rows.
 
     Args:
-        frame: Day-indexed (`stack()`'s output) or month-indexed (`monthly()`'s output).
+        frame: Day-indexed (`stack()`'s output). A segment's months are `monthly()` of this
+            cut, never a cut of the monthly table: a month label that straddles the boundary
+            carries the next segment's days.
         calendar: `inputs.calendar.portfolio()`'s result, naive Timestamps, both inclusive.
         name: Segment name, e.g. "build".
 
     Returns:
         The rows of `frame` that fall inside that segment.
     """
-    lo, hi = calendar[name]
     if isinstance(frame.index, pd.PeriodIndex):
-        return frame.loc[lo.to_period("M"):hi.to_period("M")]
+        raise TypeError("segment() cuts days: sum the months from the cut daily table")
+    lo, hi = calendar[name]
     return frame.loc[lo:hi]

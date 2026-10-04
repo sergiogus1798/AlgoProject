@@ -17,6 +17,7 @@
 - `drift-term-biased-by-side` — Why is the gate's drift_excess_t biased toward one side (long or short) of an asset, and how much?
 - `entry-vs-chance` — Do the entries or the exits carry the edge on this corpus, and how to tell?
 - `eta-squared-vs-duplicates` — Should an inert parameter be frozen by the duplicate test or by eta-squared?
+- `fdr-raises-on-nan-p` — Why does Benjamini-Hochberg raise, and where must NaN p-values be filtered?
 - `fixed-reference-window-edge` — Why use a centered reference window instead of a fixed-boundary one?
 - `funded-bank-ev-read-against-the-monkey` — Why does a zero-edge trader show positive bank EV on some prop plans?
 - `ga-target-choice` — Which genetic-algorithm target should the build optimise, given the run-to-run noise?
@@ -36,10 +37,13 @@
 - `post-selection-bias` — Why is any statistic measured after filtering on the OOS biased?
 - `psr-dsr-two-conventions-jsharpe` — How does our PSR/MinTRL/DSR convention differ from the jsharpe package?
 - `random-entry-nulls` — Why does a monkey verdict depend more on the statistic than on the null?
+- `regime-atr-is-lagged-one-day` — Must I shift engines.regimes.regime.atr by a day before using it?
 - `research-lessons` — What lessons apply to stop-fill simulations, range restriction and p-values at large n?
 - `robustness-monte-carlo` — How much drawdown should an account be sized for versus the backtest, and how many sims?
 - `selected-null-same-pool` — Why does the funded verdict's selected null find the same portfolio as the real pool?
+- `spp-noise-gate-centred-no-floor` — How does the SPP noise gate decide, and is there a minimum trade count?
 - `spp-origin-level-sampled-once` — What happens when an SPP step grid does not contain the original parameter value?
+- `stageb-selector-p-reads-high` — Which P(pass) of stage B's winner may be reported — the one that chose it, or a re-draw?
 - `step6-floor-vs-step8-yield` — How does the step-6 trades-per-year floor affect step-8 yield and Pass counts?
 - `trade-filter-parameter-space` — What does a trade-count floor remove in parameter space before a surface is fitted?
 - `trial-count-half-rule` — When does trials.independent over-count the independent trials of a family?

@@ -15,7 +15,7 @@ and reconciles the rebuild against SQX's own numbers before anything uses it. Co
 | `blocks.py` | The same low and high per 5-minute block on a UTC grid, and a combination's joint daily low and high from them | imported | path → float32 arrays |
 | `excursions.py` | Each trade's MAE and MFE rebuilt from the wicks, and the licence: does the rebuild match SQX's own columns | imported | trades + M1 → per trade, verdict |
 | `sqxcurve.py` | SQX's daily curve — each day's **lowest** equity — per segment, legs and warm-up handled; a known answer, never P&L | imported | `equity.parquet` → frame |
-| `matrix.py` | Per-strategy series stacked to days × N (0 inside history, NaN outside), monthly sums, a segment slice | imported | series → frames |
+| `matrix.py` | Per-strategy series stacked to days × N (0 inside history, NaN outside), monthly sums, a segment slice (days only: a segment's months are summed from its own days, a month-indexed frame is refused) | imported | series → frames |
 | `reconcile.py` | The rebuild's daily lowest equity against SQX's own curve, day by day: exact share, largest gap, verdict | imported | two series → dict |
 | `universe.py` | A pool's universe: sources, one M1 read per feed, rebuild, reconciliation (a member that fails is excluded, never kept silently), daily and monthly matrices in EET, server-day tables and M5 blocks per firm clock | imported by the command | pool → cache folder |
 | `store.py` | The universe cache: folder named by pool hash **and** config fingerprint, write and load | imported | frames → files |

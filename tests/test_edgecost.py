@@ -162,5 +162,36 @@ def main() -> None:
     print("ok")
 
 
+def test_measure_reads_both_fills_of_long_and_short() -> None:
+    """Flat bars at 100; spread 0.02 + slippage 0.01 per fill. A Buy fills 100.03 and exits
+    99.99 (bid + slippage); a Sell fills 99.99 and exits 100.03: both embed 0.04. A Buy
+    stamped inside a bar (10:20) belongs to that bar, not the next one."""
+    index = pd.date_range("2020-01-01", periods=60, freq="1h")
+    bars = pd.DataFrame({"Open": [100.0] * 60}, index=index)
+    n = 40
+    t = pd.DataFrame({"Type": ["Buy"] * n + ["Sell"] * n,
+                      "Open price": [100.03] * n + [99.99] * n,
+                      "Close price": [99.99] * n + [100.03] * n,
+                      "Open time": list(index[:n]) * 2, "Close time": list(index[1:n + 1]) * 2,
+                      "sample": "IS"})
+    real = spread_share.bar_source, spread_share.read_bars
+    spread_share.bar_source = lambda feed: Path(__file__)
+    spread_share.read_bars = lambda feed, timeframe: bars
+    try:
+        for side in ("Buy", "Sell"):
+            got = spread_share.measure(t[t["Type"] == side], FEED, TIMEFRAME)["IS"]
+            assert abs(got - 0.04) < 1e-9, (side, got)
+        bars["Open"] = np.arange(60) + 100.0   # bar k opens at 100 + k
+        inside = t[t["Type"] == "Buy"].assign(**{"Open time": index[:n] + pd.Timedelta("20min")})
+        inside["Open price"] = 100.0 + np.arange(n) + 0.03
+        inside["Close price"] = 100.0 + np.arange(1, n + 1) - 0.01
+        inside["Close time"] = index[1:n + 1]
+        got = spread_share.measure(inside, FEED, TIMEFRAME)["IS"]
+        assert abs(got - 0.04) < 1e-9, got
+    finally:
+        spread_share.bar_source, spread_share.read_bars = real
+
+
 if __name__ == "__main__":
     main()
+    test_measure_reads_both_fills_of_long_and_short()

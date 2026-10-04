@@ -19,13 +19,18 @@ def main() -> None:
     ap.add_argument("--databank", required=True)
     ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_M1")
     ap.add_argument("--set", action="extend", nargs="+", default=[], help="screen.threshold=value")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="root of the monkey screen's random streams; omitted, a fresh one is "
+                         "drawn. The manifest and the scorecard's `mono_seed` record the one "
+                         "used: pass it back to get the same `mono` and `familia`")
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)
     folder = inputs.newest(a.project, a.databank)
     data = inputs.load(folder)
-    data["null_cfg"] = null_inputs.config([f"nulls.draws={cfg['monkey']['draws']}"])
-    data["bars"] = null_inputs.bars(a.feed, cfg["monkey"]["timeframe"])
+    data["null_cfg"] = null_inputs.config([f"nulls.draws={cfg['monkey']['draws']}"]
+                                          + null_inputs.seeded(a.seed))
+    data["bars"] = null_inputs.bars(a.feed, inputs.timeframe(data["metrics"], cfg, a.set))
     data["market"] = inputs.market(a.feed)
     print(f"{len(data['metrics'])} emparejadas + {len(data['missing'])} sin OOS, "
           f"ventana {data['split']} -> {data['end']}\n")
@@ -52,9 +57,10 @@ def main() -> None:
     funnel.to_csv(out / "funnel.csv", index=False)
     write_manifest(out, source,
                    f"python3 -m studies.screening.gate.report --project {a.project} "
-                   f"--databank '{a.databank}' --feed {a.feed}",
+                   f"--databank '{a.databank}' --feed {a.feed} --seed {source['nulls_seed']}",
                    {"entered": len(scores), "survives": int(scores["survives"].sum())})
-    print(f"\n{int(scores['survives'].sum())} de {len(scores)} sobreviven -> {out}")
+    print(f"\n{int(scores['survives'].sum())} de {len(scores)} sobreviven, "
+          f"semilla del mono {source['nulls_seed']} -> {out}")
 
 
 if __name__ == "__main__":

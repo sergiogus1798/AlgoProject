@@ -108,6 +108,7 @@ def run(graph: np.ndarray, score: Callable[[np.ndarray], np.ndarray], seeds: lis
         all_origin += ["seed" if gen == 0 else "ga"] * pop
         all_gen.append(np.full(pop, gen))
 
+        scores = np.where(np.isnan(scores), -np.inf, scores)   # an infeasible combination never wins
         top = int(scores.argmax())
         if scores[top] > best_score:
             best_score, best_mask, stagnant = float(scores[top]), masks[top].copy(), 0

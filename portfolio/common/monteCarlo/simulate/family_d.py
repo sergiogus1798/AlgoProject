@@ -51,6 +51,11 @@ def _slices(source: dict, spans: list[dict], cfg: dict, want_shape: bool = False
     return rows
 
 
+def concentration(nets: list[float], total: float) -> float:
+    """The share of the profit that one volatility tercile holds; NaN when there is no profit to share."""
+    return max(nets) / total if total > 0 else float("nan")
+
+
 def run(source: dict, day: pd.DataFrame, cfg: dict) -> dict:
     """Regime luck: where in time and in market state the edge actually lived.
 
@@ -97,7 +102,7 @@ def run(source: dict, day: pd.DataFrame, cfg: dict) -> dict:
             "regime": {"model": vol["model"], "note": vol["note"],
                        "edges": edges, "coverage": tagged["coverage"],
                        "buckets": buckets, "series": series,
-                       "concentration": max(b["net"] for b in buckets.values()) / total},
+                       "concentration": concentration([b["net"] for b in buckets.values()], total)},
             "stitch": stitch.worst_path(source["pnl"], segments, d["window_sims"],
                                         d["stitch_quantiles"],
                                         cfg["global"]["starting_equity"]),

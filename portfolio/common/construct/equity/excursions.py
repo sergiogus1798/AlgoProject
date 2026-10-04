@@ -37,6 +37,7 @@ def rebuild(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float) -> pd.
     mae = np.empty(len(trades))
     mfe = np.empty(len(trades))
     for i, (a, b, s) in enumerate(zip(open_idx, close_idx, side)):
+        b = max(b, a + 1)           # a trade opened and closed inside one bar reads its own bar
         worst = low[a:b].min() if s > 0 else high[a:b].max()
         best = high[a:b].max() if s > 0 else low[a:b].min()
         mae[i] = min(0.0, s * (worst - open_price[i])) * size[i] * point_value

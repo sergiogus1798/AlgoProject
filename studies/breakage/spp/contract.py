@@ -30,7 +30,7 @@ def verdict(result: dict) -> dict:
     """Whether the family is anything but noise, with the numbers behind the call."""
     n, s = result["noise"], result["shape"]
     label, state, meaning = VERDICT[n["verdict"]]
-    return blocks.verdict(label, state, f"{meaning.capitalize()}: máximo {n['observed_max']:.3f} "
+    return blocks.verdict(label, state, f"{meaning.capitalize()}: exceso del máximo sobre la media {n['excess']:.3f} "
                           f"contra {n['noise_max']:.3f} bajo el nulo σ·√(2·ln n_eff).",
                           n["ratio"],
                           [{"label": "tuplas distintas (n_eff)", "state": "info",

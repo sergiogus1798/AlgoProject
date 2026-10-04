@@ -27,7 +27,8 @@ def run(inputs: dict, cfg: dict) -> dict:
     columns, n, is_metrics = inputs["columns"], inputs["n"], inputs["is"]
     ranked = {t: correlations.predictors(columns, t, is_metrics)
               for t in TARGETS if t in inputs["oos"]}
-    found = {t: fdr.discoveries(rows) for t, rows in ranked.items()}
+    found = {t: fdr.discoveries([r for r in rows if r["p"] == r["p"]])    # a constant column has no p
+             for t, rows in ranked.items()}
     persist = pd.DataFrame(correlations.persistence(columns, metrics.paired(columns)))
     rho = {t: {r["metric"]: r["spearman"] for r in rows} for t, rows in ranked.items()}
     r_crit = correlations.critical_r(n)

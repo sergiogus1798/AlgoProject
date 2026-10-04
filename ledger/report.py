@@ -11,8 +11,6 @@ from core.surface import plateau
 from ledger import gate, record, spend, study as studymod, thresholds, trials
 from studies.research.memory import ideas, sources, trials as research
 
-YEAR = 252      # trading days a year, for converting SQX's annualised Sharpes
-
 
 def returns_of(equity: Path, identity: str) -> np.ndarray:
     """One strategy's per-day returns, from a gate harvest.
@@ -98,8 +96,7 @@ def main() -> None:
 
     last = frame[frame["n_scored"].notna()].iloc[-1]
     local = int(last["n_scored"])
-    sigma = counted["sigma"] / np.sqrt(YEAR) if counted["unit"] == "annualised" \
-        else counted["sigma"]
+    sigma = counted["sigma"]
     widths = (("la última búsqueda", local), ("todas las búsquedas", counted["searched"]),
               ("búsquedas + ideas", counted["n"]))
     for label, n in widths:

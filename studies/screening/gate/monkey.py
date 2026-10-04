@@ -50,7 +50,8 @@ def mono(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
 
         The strategies are independent by construction and are run in parallel, the ones
         with the most trades first (`core.fanout`). Each strategy's monkeys are seeded by its
-        identity, so its p does not depend on which others were in the batch.
+        identity, so its p does not depend on which others were in the batch; `seed` is
+        the root they were drawn from (`mono_seed` in the scorecard), the same on every row.
     """
     trades = data["trades"]
     oos = trades[trades["sample"] == "OOS"]
@@ -78,7 +79,7 @@ def mono(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     ok = (frame["p"] <= cfg["max_p"]) & (frame["corr"] >= verdict.RECONCILE_FLOOR)
     note = "reconcilia " + frame["corr"].round(4).astype(str)
     return pd.DataFrame({"value": frame["p"], "passed": ok, "note": note, "p": frame["p"],
-                         "corr": frame["corr"]})
+                         "corr": frame["corr"], "seed": null_cfg["nulls"]["seed"]})
 
 
 def familia(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
@@ -91,11 +92,13 @@ def familia(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
 
     Returns:
         `value` is the same p the monkey screen produced and `passed` is whether it
-        survives Benjamini-Hochberg over the surviving family. Soft by default: it is a
+        survives Benjamini-Hochberg over everyone the mono screen tested (not just
+        the survivors: selecting on p and shrinking m breaks the FDR guarantee). Soft by default: it is a
         statement about the population, and reading it as a per-strategy verdict is what
         the owner has not decided yet.
     """
+    everyone = data["scores"]["mono_p"].dropna()
+    named = discoveries([{"metric": s, "p": v} for s, v in everyone.items()], cfg["alpha"])
     p = data["scores"]["mono_p"].reindex(alive)
-    named = discoveries([{"metric": s, "p": v} for s, v in p.items()], cfg["alpha"])
     return pd.DataFrame({"value": p, "passed": p.index.isin(named),
-                         "note": f"BH al {cfg['alpha']} sobre {len(p)} supervivientes"})
+                         "note": f"BH al {cfg['alpha']} sobre los {len(everyone)} que entraron al mono"})

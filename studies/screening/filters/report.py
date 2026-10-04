@@ -74,11 +74,13 @@ def main() -> None:
     is_metrics = metrics.measured(columns, metrics.IS)
     targets = [t for t in (a.target or TARGETS) if t in metrics.measured(columns, metrics.OOS)]
     tried = len(improvement.candidates(is_metrics))
-    tabs = []
+    tabs, reach = [], improvement.DRAWS
     for target in targets:
         rows = improvement.sweep(columns, is_metrics, target)
+        reach = improvement.reach(len(rows))
         base = improvement.outcome(columns[target], improvement.breakeven(target))
-        tabs.append(tab(target, base, rows, fdr.discoveries(rows), a.top))
+        tabs.append(tab(target, base, rows, fdr.discoveries([r for r in rows if r["p"] == r["p"]],
+                                                           improvement.ALPHA), a.top))
     got = envelope.envelope(
         MODULE, None, None, {"targets": targets, "top": a.top}, started, tabs,
         warnings=[{"code": "busqueda", "state": "info",
@@ -86,8 +88,13 @@ def main() -> None:
                            f"cortadas al {'/'.join(str(c) for c in improvement.CUTS)} % por "
                            f"los dos lados; sólo se juzgan los que dejan al menos "
                            f"{improvement.MIN_SURVIVORS} estrategias, y se corrigen juntos por "
-                           f"Benjamini-Hochberg. El p del bootstrap no baja de "
-                           f"1/{improvement.DRAWS}: ahí lee el intervalo."},
+                           f"Benjamini-Hochberg al {100 * improvement.ALPHA:g} %. El p del "
+                           f"bootstrap no baja de 1/{reach}: el filtro en el que ninguno de "
+                           f"los primeros {improvement.DRAWS} remuestreos cruza el cero se "
+                           f"remuestrea hasta {reach}, lo justo para que un único filtro "
+                           f"fuerte pueda pasar el primer peldaño de la corrección "
+                           f"({improvement.ALPHA:g} / filtros juzgados). En ese suelo, lee "
+                           f"el intervalo."},
                   {"code": "duplicados", "state": "info",
                    "text": f"{dropped} filas descartadas por compartir todas sus métricas OOS "
                            f"con otra estrategia -- probable mismo trade list bajo otro "

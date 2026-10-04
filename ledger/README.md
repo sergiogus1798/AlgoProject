@@ -58,9 +58,10 @@ the moments of every search exactly — `sum n_i(s_i^2 + m_i^2)/N - grand^2` —
 its candidates to be counted later. Today the DSR is fed the spread inside one mother's variants;
 that spread is narrower than the study's, always in the direction that flatters the result.
 
-⚠️ **It refuses to pool two units.** SQX stores annualised Sharpes and `core.significance` works per
-observation; mixing them yields a plausible number that means nothing. Every row records
-`score_unit`, and `accumulated` raises rather than average across two of them.
+⚠️ **Only Sharpes are pooled into sigma.** SQX stores annualised Sharpes and `core.significance`
+works per observation. Every row records `score_unit`: `per_period` and `annualised` rows are
+pooled (annualised divided by √252, so `sigma` and `unit` are always per period), and any other unit
+(`p_pass`, `ev_bank_usd`) adds its `n_scored` to N — they are looks — but never reaches sigma.
 
 **The ideas spent count too, and only the command knows about them** (owner, 2026-10-02). The
 hypotheses the ideaExpert measured before any search existed are trials of the study: `report.py`

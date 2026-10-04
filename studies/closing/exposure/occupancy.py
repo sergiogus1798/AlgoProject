@@ -22,7 +22,7 @@ def held(trades: pd.DataFrame, index: pd.DatetimeIndex) -> dict:
         pushed one bar forward so the arithmetic never credits a position with zero
         market time, which would make a scalper look like it was never exposed.
     """
-    entry = index.searchsorted(trades["Open time"].to_numpy())
+    entry = np.maximum(index.searchsorted(trades["Open time"].to_numpy(), side="right") - 1, 0)
     leave = index.searchsorted(trades["Close time"].to_numpy())
     leave = np.maximum(leave, entry + 1)
     size = trades["Size"].to_numpy(np.float64)

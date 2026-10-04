@@ -66,8 +66,14 @@ def outcomes(samples: dict, reference: str, target: str) -> pd.DataFrame:
 
 
 def best_filters(ref: dict, target: str, is_metrics: list[str]) -> list[dict]:
-    """The reference's best filters, one per metric, strongest first."""
-    ranked = sorted(improvement.candidates(is_metrics),
+    """The reference's best filters, one per metric, strongest first.
+
+    Only those the sweep itself would judge: a filter leaving fewer than
+    improvement.MIN_SURVIVORS of the reference promises a hit rate that is mostly noise.
+    """
+    judged = [c for c in improvement.candidates(is_metrics)
+              if improvement.survivors(ref[c["metric"]], c).sum() >= improvement.MIN_SURVIVORS]
+    ranked = sorted(judged,
                     key=lambda c: -replication.carried(ref, ref, c, target)["predicted"])
     best, seen = [], set()
     for candidate in ranked:
@@ -108,7 +114,9 @@ def replicated(samples: dict, reference: str, target: str, is_metrics: list[str]
             rows, columns=["filtro", "% previsto", "% de la muestra que pasa", "n",
                            "% observado", "Δ", "Δ IC desde", "Δ IC hasta"]),
             "Previsto es lo que el filtro dio en la referencia. Si casi toda la muestra ya "
-            "pasa el umbral, esa muestra se construyó para cumplirlo."))
+            "pasa el umbral, esa muestra se construyó para cumplirlo." if best else
+            f"Ningún filtro deja al menos {improvement.MIN_SURVIVORS} estrategias en la "
+            f"referencia: no hay umbral que trasladar."))
     return out
 
 

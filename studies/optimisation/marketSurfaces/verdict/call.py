@@ -60,7 +60,7 @@ def mother(rows: pd.DataFrame, declared: int, min_share: float) -> dict:
         the segments disagree — the region travelled in one stretch of history only.
     """
     passed = {s: int((g["state"] == "pass").sum()) for s, g in rows.groupby("segment", sort=False)}
-    reach = [n / declared >= min_share for n in passed.values()]
+    reach = [n / declared >= min_share for n in passed.values()] or [False]
     counts = ", ".join(f"{n} de {declared} en {s}" for s, n in passed.items())
     if all(reach):
         return {"label": "la región viaja", "state": "pass", "passed": passed,

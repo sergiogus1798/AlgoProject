@@ -65,6 +65,8 @@ def expected_max_sharpe(sigma_sr: float, n_eff: int) -> float:
         The expected maximum of n_eff independent draws. It sits below the sqrt(2 ln N)
         bound and is the benchmark the deflated Sharpe subtracts.
     """
+    if n_eff <= 1:
+        return 0.0
     a = stats.norm.isf(1 / n_eff)
     b = stats.norm.isf(1 / (n_eff * np.e))
     return float(sigma_sr * ((1 - EULER) * a + EULER * b))

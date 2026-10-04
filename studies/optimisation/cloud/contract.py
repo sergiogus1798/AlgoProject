@@ -6,7 +6,7 @@ import pandas as pd
 from core.study import blocks, result as envelope
 from studies.optimisation.cloud.verdict import call
 
-STATE = {"spike": "watch", "plateau": "pass", "middling": "info", "smooth": "pass",
+STATE = {"sin_dato": "info", "spike": "watch", "plateau": "pass", "middling": "info", "smooth": "pass",
          "rough": "watch", "off_centre": "watch", "persistent": "pass", "reshuffled": "watch",
          "carried": "watch", "broad": "pass", "drift_high": "watch", "drift_low": "pass"}
 GLOSSARY = [

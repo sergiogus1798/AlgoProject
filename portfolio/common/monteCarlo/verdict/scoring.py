@@ -48,11 +48,15 @@ def subscores(result: dict, cfg: dict) -> dict[str, float]:
     s, d, e = cfg["scoring"], cfg["family_d"], cfg["family_e"]
     a_, b, c = result["A"], result["B"], result["C"]
     ret_dd = result["A"]["runs"][config.HEADLINE]["ret_dd"]["p"][5]
+    # a ratio of two losses reads as a kept profit, and no drawdown at all is the widest margin
+    net = result["observed"]["net"]
+    kept = b["net_5"] / net if net > 0 else float("-inf")
+    margin = s["survival_dd_pct"] / a_["dd_pct_99"] if a_["dd_pct_99"] > 0 else float("inf")
     scores = {
         "A": (curve(a_["inflation"], s["dd_inflation_flag"], 1.0)
-              + curve(s["survival_dd_pct"] / a_["dd_pct_99"], 1.0, 3.0)
+              + curve(margin, 1.0, 3.0)
               + curve(ret_dd, 0.0, 3.0)) / 3,
-        "B": (curve(b["net_5"] / result["observed"]["net"], 0.0, 0.5)
+        "B": (curve(kept, 0.0, 0.5)
               + curve(b["pf_5"], s["min_pf"], 1.5)
               + curve(b["outlier"]["share"], cfg["family_b"]["outlier_frac"], 0.0)) / 3,
         "C": min([curve(c[k]["keep"], cfg["family_c"][limit], 1.0)

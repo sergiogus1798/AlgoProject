@@ -29,7 +29,7 @@ def _place(located: dict, holds: np.ndarray, draws: int, rng: np.random.Generato
         unreachable for every short trade and quietly bias the null away from it.
     """
     lo, hi = located["window"]
-    return (lo + rng.random((draws, holds.shape[1])) * (hi - holds - lo)).astype(np.int64)
+    return (lo + rng.random((draws, holds.shape[1])) * (hi - holds - lo + 1)).astype(np.int64)
 
 
 def timing(located: dict, draws: int, rng: np.random.Generator) -> dict:
