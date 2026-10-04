@@ -61,9 +61,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
-        pct_now: 0.005283
-        price_now: 0.82098
-        price_date: '2026-09-22'
+        pct_now: 0.005002
+        price_now: 0.83563
+        price_date: '2026-10-01'
       the5ers:
         method: SizeBased
         value: 5.0
@@ -72,9 +72,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
-        pct_now: 0.005283
-        price_now: 0.82098
-        price_date: '2026-09-22'
+        pct_now: 0.005002
+        price_now: 0.83563
+        price_date: '2026-10-01'
       hantec:
         method: SizeBased
         value: 5.0
@@ -83,9 +83,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
-        pct_now: 0.005283
-        price_now: 0.82098
-        price_date: '2026-09-22'
+        pct_now: 0.005002
+        price_now: 0.83563
+        price_date: '2026-10-01'
       ftmo:
         method: SizeBased
         value: 5.0
@@ -94,9 +94,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
-        pct_now: 0.005283
-        price_now: 0.82098
-        price_date: '2026-09-22'
+        pct_now: 0.005002
+        price_now: 0.83563
+        price_date: '2026-10-01'
       infinox:
         method: SizeBased
         value: 5.0
@@ -105,9 +105,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
-        pct_now: 0.005283
-        price_now: 0.82098
-        price_date: '2026-09-22'
+        pct_now: 0.005002
+        price_now: 0.83563
+        price_date: '2026-10-01'
       fundednext:
         method: SizeBased
         value: 5.0
@@ -116,9 +116,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
-        pct_now: 0.005283
-        price_now: 0.82098
-        price_date: '2026-09-22'
+        pct_now: 0.005002
+        price_now: 0.83563
+        price_date: '2026-10-01'
       fundingpips:
         method: SizeBased
         value: 5.0
@@ -127,9 +127,9 @@ costs:
         date: '2026-09-29'
         confirmed: true
         note: cifra fija del dueño para todos los brokers de este par (encargo 2026-09-29), sustituye la cifra propia medida antes
-        pct_now: 0.005283
-        price_now: 0.82098
-        price_date: '2026-09-22'
+        pct_now: 0.005002
+        price_now: 0.83563
+        price_date: '2026-10-01'
   slippage_is:
     use: 0.6                 # points — tramo(s) build
     sqx_now: 0.0
@@ -163,8 +163,8 @@ mc_retest:
     max: 1.99
     sqx_now: {min: 1, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
   slippage:
-    min: null
-    max: null
+    min: 0.37
+    max: 1.0
     sqx_now: {min: 0, max: 5}   # el de fábrica de SQX, el mismo en todos los mercados
 
 # Proyectos del maestro que usan este activo. Leído, no decidido.

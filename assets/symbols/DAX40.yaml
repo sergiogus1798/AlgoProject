@@ -62,8 +62,8 @@ costs:
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
         pct_now: 0.0
-        price_now: null
-        price_date: null
+        price_now: 25175.19
+        price_date: '2026-10-01'
       darwinex:
         method: PercentageBased
         value: 0.0
@@ -73,8 +73,8 @@ costs:
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
         pct_now: 0.0
-        price_now: null
-        price_date: null
+        price_now: 25175.19
+        price_date: '2026-10-01'
       infinox:
         method: PercentageBased
         value: 0.0
@@ -84,8 +84,8 @@ costs:
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
         pct_now: 0.0
-        price_now: null
-        price_date: null
+        price_now: 25175.19
+        price_date: '2026-10-01'
       hantec:
         method: PercentageBased
         value: 0.0
@@ -95,8 +95,8 @@ costs:
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
         pct_now: 0.0
-        price_now: null
-        price_date: null
+        price_now: 25175.19
+        price_date: '2026-10-01'
       the5ers:
         method: PercentageBased
         value: 0.0
@@ -106,8 +106,8 @@ costs:
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
         pct_now: 0.0
-        price_now: null
-        price_date: null
+        price_now: 25175.19
+        price_date: '2026-10-01'
       fundednext:
         method: PercentageBased
         value: 0.0
@@ -117,8 +117,8 @@ costs:
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
         pct_now: 0.0
-        price_now: null
-        price_date: null
+        price_now: 25175.19
+        price_date: '2026-10-01'
       fundingpips:
         method: PercentageBased
         value: 0.0
@@ -128,8 +128,8 @@ costs:
         confirmed: true
         note: 'cifra fija del dueño: comisión cero en índices para todos los brokers (encargo 2026-09-29)'
         pct_now: 0.0
-        price_now: null
-        price_date: null
+        price_now: 25175.19
+        price_date: '2026-10-01'
   slippage_is:
     use: 72.66              # points — tramo(s) build
     sqx_now: null
@@ -169,8 +169,8 @@ mc_retest:
     max: 361.53
     sqx_now: null             # el maestro no configura este feed hoy
   slippage:
-    min: null
-    max: null
+    min: 42.56
+    max: 180.77
     sqx_now: null             # el maestro no configura este feed hoy
 
 # Proyectos del maestro que usan este activo. Leído, no decidido.
