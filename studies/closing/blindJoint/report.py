@@ -90,6 +90,8 @@ def main() -> None:
         # the pieces are reported, oos2 stays closed and no ledger row is written.
         refused = ("ninguna madre llega con las cuatro piezas (WFC, CSCV, superficies y WFM): "
                    "no hay nada que leer en oos2")
+    batches = population.loc[population["complete"], "batch"].to_dict()
+    refused = refused or inputs.trades_door(batches)
     if refused and one.chosen(cfg):
         raise PermissionError(f"{refused}. Una lectura elegida necesita el StepM sobre oos2")
     span = inputs.window(a.symbol)
@@ -98,8 +100,7 @@ def main() -> None:
             "source": f"Estudio {study} · WFM {wfm} · lotes de variantes de {a.project} · "
                       f"oos2 {span[0].date()} → {span[1].date()}"}
     if not refused:
-        batches = population.loc[population["complete"], "batch"].to_dict()
-        panel = inputs.panel(batches, span)
+        panel = inputs.panel(batches, span, a.feed)
         data |= {"panel": panel, "moves": inputs.moves(a.feed, panel.index),
                  "point_value": inputs.point_value(a.symbol)}
     got = many.run(data, cfg)

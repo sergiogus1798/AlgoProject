@@ -2,6 +2,7 @@
 
 - `daily-equity-bin` — How do I parse `dailyEquity.bin`: what does each daily value mean and which series is `Main`?
 - `declared-parameters` — How do I list a strategy's tunable parameters: the `<variable>`s with a non-empty `<paramType>`?
+- `equity-reconstruction-usdjpy-gap` — Why did the equity rebuild from trades and M1 miss SQX's daily curve on USDJPY, and what makes it reconcile?
 - `fabricated-variant-identity-differs-from-retest` — Why do a fabricated variant and its retested copy have different `core.sqxfile.identity` values?
 - `five-member-sqx` — Does SQX load and retest a five-member .sqx, and which results does it carry until retested?
 - `grafting-a-stop-loss` — How do I graft a stop loss into a strategy: which two text substitutions turn `SLPT.None` into `ATRBasedValue`?

@@ -4,10 +4,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 from core.datapaths import tmp_dir
 from core.paths import ROOT
+from ledger import steprows
 from sqx.projects import crosstfload, live, stage
 from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
@@ -61,6 +63,7 @@ def execute(pre: dict, project: str) -> dict:
         print(f"{bank}: {live.load(role, project, bank)} en memoria", flush=True)
         before = counts(held.parent)
     say(60, f"{', '.join(titles)} lanzada(s)")
+    began = time.time()
     end = live.run(role, project, config)
     if "Error" in end:
         sys.exit(f"SQX: {end}")
@@ -71,6 +74,7 @@ def execute(pre: dict, project: str) -> dict:
     for t in chosen:
         if t["type"] == preflight.BUILD:
             print(record(pre, project, after.get(t["output"], 0)), flush=True)
+            print(steprows.log_build(project, held.parent / "log", began), flush=True)
     export(role)
     moved = {t["title"]: (before.get(t["output"], 0), after.get(t["output"], 0)) for t in chosen}
     say(100, " · ".join(f"«{t}»: {n0} → {n1}" for t, (n0, n1) in moved.items()))

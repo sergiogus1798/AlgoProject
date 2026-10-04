@@ -29,7 +29,8 @@
 #          matches replaces the fields it names, no match leaves the rule as written:
 #            {fact: K, pass: ">= 2.33", limbo: ">= 1.65", by: {H4: {pass: ">= 2.5", limbo: ">= 1.9"}}}
 #          A strategy's outcome is its worst rule; a strategy without the fact is limbo
-#          (owner, 2026-10-01: odd, but limbo).
+#          (owner, 2026-10-01: odd, but limbo). A rule may say where a missing fact goes:
+#            `missing: pass|limbo|fail` (limbo when absent: today's behaviour).
 #          No rules: every strategy passes. A limbo goes on, marked (owner, 2026-10-01).
 #          Not everything is a number (owner, 2026-10-03):
 #            {fact: K, is: pass}                    a verdict: the test said yes (its fact is 1);
@@ -45,7 +46,7 @@
 # is deleting that line by hand.
 dev:
   on: true
-  sample: 5
+  sample: 10
   at: ["8"]
   seed: null
 
@@ -65,10 +66,11 @@ steps:
   # Fallo»: sólo separa Pass de Limbo.
   "8":
     cut: OOS
+    segment: oos1     # what the cut reads: the ledger row's segment (oos1 when a step omits it)
     rules:
       # R1 — está en el databank OOS y su lista de operaciones no es escasa ni un clon
-      - {fact: gate.scorecard.presencia_passed, pass: ">= 1"}
-      - {fact: gate.scorecard.sanidad_passed, pass: ">= 1"}
+      - {fact: gate.scorecard.presencia_passed, pass: ">= 1", missing: fail}
+      - {fact: gate.scorecard.sanidad_passed, pass: ">= 1", missing: fail}
       # R2 — ganó dinero en oos1 (en oos2: +34 por cada 1.000 a igual número de operaciones)
       - {fact: gate.scorecard.estaticas_value, pass: "> 0"}
       # R2b — sigue ganando al spread real de Darwinex (en oos2: +28). Sin escaneo de spread
@@ -106,7 +108,7 @@ steps:
       # SIN regla, a propósito: p del mono (no separa en oos2: 301 frente a 296 por cada 1.000),
       # edge por coste y snooping (separan, pero repiten a R2), calidad del feed, forma del
       # beneficio y calidad de la entrada (dueño, 2026-10-01: fuera de este criterio).
-  "10": {cut: Retest Markets - Family, rules: []}
-  "12": {cut: CrossTF, rules: []}
-  "14": {cut: MCR 8 Stress, rules: []}
-  "16": {cut: SPP OOS, rules: []}
+  "10": {cut: Retest Markets - Family, segment: oos1, rules: []}
+  "12": {cut: CrossTF, segment: oos1, rules: []}
+  "14": {cut: MCR 8 Stress, segment: oos1, rules: []}
+  "16": {cut: SPP OOS, segment: oos1, rules: []}

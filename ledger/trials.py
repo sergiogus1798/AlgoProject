@@ -59,6 +59,22 @@ def accumulated(frame: pd.DataFrame, extra: int = 0) -> dict:
             "mean": grand, "searches": int(len(scored)), "unit": "per_period"}
 
 
+def overall(frames: list[pd.DataFrame]) -> dict:
+    """N across every study: what the whole project has ever looked at, not one asset's share.
+
+    Args:
+        frames: One `study.read` frame per study (all of `study.studies()`).
+
+    Returns:
+        `accumulated` over their concatenation, plus `studies` that carry rows. Per-study N
+        stays the one the deflated Sharpe uses; this is the larger bound, the honest count of
+        how many ideas had a chance to look good by luck anywhere.
+    """
+    held = [f for f in frames if len(f)]
+    return {**accumulated(pd.concat(held, ignore_index=True) if held else pd.DataFrame()),
+            "studies": len(held)}
+
+
 def population_n_eff(panel: pd.DataFrame, k_max: int) -> dict:
     """How many independent things a whole surviving population really is.
 

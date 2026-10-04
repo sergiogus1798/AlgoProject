@@ -17,3 +17,8 @@ copy it to a temporary folder named as the databank first (`ui/daemon/strategy/m
 `sqxfile.identity(raw/<P>/SPP_IS/2026-09-27/strategies/Strategy 10.11.79.sqx)` = `4d679e0c…`,
 the identity of Results' row in the cosecha; `read()` of that file: `last_test.output = "SPP IS"`;
 the same file under `<tmp>/Results/`: `backtest[0].task = "Build strategies 2"`.
+2026-10-04: `Test_USDJPY_donchianUpperCrossUp_H1` is on no install any more; its 30 step-16.5
+mothers were archived from `raw/<P>/SPP_IS|SPP_OOS|WFM/…/strategies/` and
+`projects/snapshots/<P>/mcr1-crashed-20260930/` with `core.archive archive … --sqx <file>` (the
+writer checks the identity; 12 s each, no SQX command). `candidates.py` prints the line without
+`--sqx`, which fails with «Ningún install guarda esa estrategia» for such a project.

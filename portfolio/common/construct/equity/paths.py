@@ -9,7 +9,27 @@ def _locate(times: np.ndarray, bar_times: np.ndarray) -> np.ndarray:
     return np.searchsorted(bar_times, times, side="right") - 1
 
 
-def minute_path(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float) -> dict[str, np.ndarray]:
+def entry_commission(trades: pd.DataFrame, commission: dict, point_value: float) -> np.ndarray:
+    """Each trade's round-turn commission in account currency, as the asset card states it.
+
+    Args:
+        trades: One strategy's trades of ONE segment (schema T).
+        commission: That segment's `costs.commission.use` entry: `method` and `value`
+            ($ per lot when `SizeBased`, % of the notional at the open when `PercentageBased`).
+        point_value: Account currency per 1.0 of price per lot.
+
+    Returns:
+        One figure per trade, ≥ 0 — what `minute_path` takes off the floating equity from the
+        entry. 🤔 The `PercentageBased` branch has only been reconciled at 0 %.
+    """
+    size = trades["Size"].to_numpy(np.float64)
+    if commission["method"] == "SizeBased":
+        return commission["value"] * size
+    return commission["value"] / 100 * trades["Open price"].to_numpy(np.float64) * point_value * size
+
+
+def minute_path(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
+                commission: np.ndarray | float = 0.0) -> dict[str, np.ndarray]:
     """Every bar's equity for one strategy, relative to its start (contract P).
 
     Args:
@@ -17,6 +37,10 @@ def minute_path(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float) ->
             Size, Profit/Loss.
         bars: M1 bars with High, Low, Close, indexed by naive bar-open minute.
         point_value: Account currency per 1.0 of price per lot.
+        commission: Account currency per trade (`entry_commission`), charged on the floating
+            equity from the entry minute: 🔬 SQX's curve carries the whole round turn while
+            the position is open (`knowhow/sqx-format/equity-reconstruction-usdjpy-gap.md`).
+            It is already inside `Profit/Loss`, so the days still sum to the trades.
 
     Returns:
         `t` (int64 ns, bar open, naive feed clock), `worst`/`best`/`close` (float64, equity
@@ -37,7 +61,7 @@ def minute_path(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float) ->
     size = trades["Size"].to_numpy(np.float64)
     k = side * size * point_value
     is_long = side > 0
-    offset = k * trades["Open price"].to_numpy(np.float64)
+    offset = k * trades["Open price"].to_numpy(np.float64) + commission
     pnl = trades["Profit/Loss"].to_numpy(np.float64)
 
     k_long, k_short, off, opens, realised = (np.zeros(n) for _ in range(5))

@@ -10,7 +10,7 @@ import pandas as pd
 import yaml
 
 from core.paths import ROOT
-from ledger import blind, record, study as studymod, thresholds
+from ledger import blind, record, steprows, study as studymod, thresholds
 
 GATE_CONFIG = ROOT / "studies" / "screening" / "gate" / "config.yaml"
 SCORE = "Sharpe Ratio [OOS]"   # what counts as a candidate's score, in SQX's own units
@@ -90,20 +90,52 @@ def from_gate(folder: Path, study: str, symbol: str, timeframe: str) -> list[dic
     return rows
 
 
+def calib(populations: Path, write: bool) -> None:
+    """Print the calibration populations' rows and their total; append them only on `write`."""
+    found = steprows.calib_rows(populations)
+    frame = pd.DataFrame([{"study": s, **{k: r[k] for k in ("step", "segment", "n_in", "n_out")},
+                           "n_scored": r.get("n_scored")} for s, r in found])
+    print(frame.to_string(index=False))
+    counted = int(frame["n_scored"].sum())
+    print(f"\n{len(found)} filas en {frame['study'].nunique()} estudios; "
+          f"{counted} estrategias entran en N (pasos 6)")
+    if not write:
+        print("(sin --write, o con --dry-run, no se ha escrito nada)")
+        return
+    done = {s for s in frame["study"].unique()
+            if studymod.read(s).get("note", pd.Series(dtype=str)).fillna("").str.startswith(
+                "backfill calibración").any()}
+    if done:
+        raise SystemExit(f"ya tienen filas de calibración: {sorted(done)}; no se reescriben")
+    for sid, row in found:
+        record.append(sid, record.search(sid, row))
+    print("escritas")
+
+
 def main() -> None:
     """Reconstruct one study's ledger from a gate report, or its blind steps, and append it."""
     ap = argparse.ArgumentParser(description=__doc__)
     source = ap.add_mutually_exclusive_group(required=True)
+    source.add_argument("--calib", type=Path, metavar="POPULATIONS_CSV",
+                        help="the Test_Calib_* populations: a step-6 and a step-8 row each "
+                             "(needs no --symbol/--timeframe/--family)")
     source.add_argument("--gate", type=Path,
                         help="a reports/<project>/<databank>/<date>/gate/ directory")
     source.add_argument("--blind", metavar="PROJECT",
                         help="rebuild steps 17, 18 and 19 from this project's results")
     ap.add_argument("--wfm-databank", default="WFM", help="with --blind: the WFM databank")
-    ap.add_argument("--symbol", required=True)
-    ap.add_argument("--timeframe", required=True)
-    ap.add_argument("--family", required=True, help="template or family the population came from")
+    ap.add_argument("--symbol")
+    ap.add_argument("--timeframe")
+    ap.add_argument("--family", help="template or family the population came from")
     ap.add_argument("--write", action="store_true", help="append; without it, only print")
+    ap.add_argument("--dry-run", action="store_true", help="print the rows and their total; "
+                    "overrides --write")
     a = ap.parse_args()
+    if a.calib:
+        calib(a.calib, a.write and not a.dry_run)
+        return
+    if not (a.symbol and a.timeframe and a.family):
+        raise SystemExit("ledger.backfill: --symbol, --timeframe y --family son obligatorios")
 
     study = studymod.study_id(a.symbol, a.timeframe, a.family)
     rows = (from_gate(a.gate, study, a.symbol, a.timeframe) if a.gate else

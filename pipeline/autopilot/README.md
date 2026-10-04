@@ -135,9 +135,10 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
   edgeCost lands its JSONs in step 8's folder of that day (hence `summary.*` for 3 strategies).
 - **Which folder**: `sources.results` sorts by day only, not by databank; a study run on two
   databanks the same day gives `gather` either one.
-- **It honours `ALGO_AUTONOMOUS=1`, it does not set it** (owner, 2026-10-01: the door is not forced on
-  it yet; setting it is his open call, encargo 41 D4). 17, 18, 18.5 and 19 are computed without
-  any of their numbers read, registered, and only then is 20 read — with the variable set, a
-  missing row of 17-19 is a `PermissionError` before any command starts.
+- **It sets `ALGO_AUTONOMOUS=1`** (D4, owner 2026-10-04, in `run.main`; its subprocesses inherit
+  it): the ledger's door refuses `oos2` to every step the policy does not list. 17, 18, 18.5 and 19
+  are computed without any of their numbers read, registered, and only then is 20 read — a
+  missing row of 17-19 is a `PermissionError` before any command starts. ⚠️ Step 20 is not in
+  `_policy.yaml`, so its SPA half is not read (`studies/closing/blindJoint/README.md`).
 - **Batches are named by the brief's `strategy`**, not its file stem (dots, not dashes): batches
   made before 2026-10-02 under `Strategy_20-25-72` are not found by 17-20.

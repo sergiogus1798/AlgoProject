@@ -60,7 +60,7 @@ def main() -> None:
     cfg = inputs.config(a.set)
     folder = inputs.harvest(a.project, a.databank)
     span = inputs.window(a.symbol, cfg["study"]["segment"])
-    panel = inputs.panel(folder, span)
+    panel = inputs.panel(folder, span, a.feed)
     data = {"panel": panel, "moves": inputs.moves(a.feed, panel.index),
             "point_value": inputs.point_value(a.symbol),
             "scores": inputs.scorecard(a.project, a.databank, folder),

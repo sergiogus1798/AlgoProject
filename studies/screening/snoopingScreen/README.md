@@ -18,7 +18,7 @@ config.yaml ─▶ inputs ─▶ benchmark ─▶ measure ─▶ many / one ─�
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, the newest harvest and the gate scorecard written over it, the policy window, the daily panel cut to it, and the asset's price change on the panel's own days | imported | harvest + feed → panel, moves |
+| `inputs.py` | The knobs, the newest harvest and the gate scorecard written over it, the policy window, the close-to-close daily panel rebuilt from the harvest's trades and M1 (refused unless its daily lows reproduce SQX's curve), and the asset's close-to-close change on the same days | imported | harvest + feed → panel, moves |
 | `benchmark.py` | Buy and hold sized to each strategy's own daily volatility, and the excess over it | imported | panel + moves → excess, lots |
 | `measure.py` | The excess panel through the SPA and the StepM, and one row per strategy | imported | excess → p-values, named, table |
 | `one.py` | One strategy as the contract's data: SUPERIOR only when the StepM names it | imported — the window calls it | table row → result |
@@ -44,12 +44,15 @@ time, and tests gold's drift. Sized so its daily P&L is as volatile as the strat
 mean excess is *exactly* a Sharpe ratio above buy and hold's — `tests/test_snooping.py` checks the
 identity. It is the `equal_risk` convention of `studies/closing/exposure`, copied, not imported.
 
-**Marked-to-market days, cut where SQX cuts them.** The panel is `dailyEquity.bin`, which moves on
-days nothing closed (🔬 390 such days on one XAU strategy), so the stationary bootstrap sees the
-serial dependence of positions held for weeks. The last day is dropped (SQX marks an open position
-there and its net profit does not). And 🔬 SQX stamps day D with the equity it *carried into* D:
-the gold price is sampled at each label's own instant; a plain daily resample lags buy and hold
-one day and halves its correlation with the strategies.
+**Close-to-close days, rebuilt — not SQX's curve.** 🔬 `dailyEquity.bin` is each day's LOWEST
+equity, not a mark to market (`knowhow/sqx-format/daily-equity-bin.md`): differenced, it is 14-25 %
+more volatile than daily P&L, inflates the equal-risk benchmark by as much and hides the
+correlation with the asset (0.13-0.28 read, 0.32-0.46 real). So the panel is rebuilt from the
+harvest's trades and the M1 bars (`portfolio/common/construct/equity/closecurve`), each day marked
+at the feed's last M1 close, and buy and hold is the change between those same closes. SQX's curve
+is the known answer: the rebuild's own daily lows must match it within 1 $ on 99 % of the days of
+the median strategy, or the study refuses the harvest (a build on a feed whose clock later changed
+reads 98.6 % and is refused). Cost: ~0.55 CPU-seconds per strategy, 2 min for 3,700 on 16 cores.
 
 **Three p-values, not one.** `lower` and `upper` bracket `consistent`; a wide gap means many
 candidates are clearly worse than buy and hold and are dragging the test.

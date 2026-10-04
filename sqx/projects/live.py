@@ -20,7 +20,8 @@ from sqx.projects import cfxio
 
 SCRIPT = ROOT / "bin" / "sqx-worker.sh"
 MISSES = 5          # polls in a row the port must refuse before `wait` calls the session dead
-END = re.compile(r"Project finished|Project stopped|Error while running project")
+END = re.compile(r"Project finished")
+BAD = re.compile(r"Project stopped|Error while running project|Exception in task|OutOfMemory")  # as wait.sh's
 
 
 def _top(role: str) -> Path:
@@ -117,7 +118,8 @@ def wait(role: str, since: tuple[Path, int]) -> str:
 
     The agent never reads SQX's log: this does, and returns one line. Nothing here stops a
     build: `/project/stop` does not stop one (🔬), so the build ends on its own `time-limit`.
-    SystemExit when the port stays down MISSES polls in a row, or past `worker.MAX_HOURS`.
+    SystemExit when the log shows an abort line (`BAD`), the port stays down MISSES polls in a row,
+    or past `worker.MAX_HOURS`.
     """
     log, offset = since
     began, down = time.monotonic(), 0
@@ -131,6 +133,8 @@ def wait(role: str, since: tuple[Path, int]) -> str:
         for line in whole.decode("utf-8", "replace").splitlines():
             if END.search(line):
                 return line.strip()
+            if BAD.search(line):                      # the abort line: «Project finished» never comes
+                raise SystemExit(f"{role}: SQX abortó la corrida: {line.strip()[:200]} ({log})")
         if not whole and _log(role) != log:           # midnight: its end read, the next day's
             log, offset = _log(role), 0
             continue

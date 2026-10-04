@@ -8,7 +8,7 @@ import re
 EFFECTS = {
     "PROFIT_SHARE_FLEXIBLE": [("reward_share_pct", "funded", "set")],
     "MAX_DRAWDOWN": [("max_loss_pct", "all", "add")],
-    "PROFIT_TARGET": [("profit_target_pct", "phases", "add")],
+    "PROFIT_TARGET": [("profit_target_pct", "phase1", "add")],
     "CONSISTENCY_RULE": [("consistency_pct", "all", "add")],
     "REMOVE_CONSISTENCY_CHALLENGE": [("consistency_pct", "phases", "zero")],
     "WEEKLY_PAYOUT": [("payout_days", "funded", "seven")],

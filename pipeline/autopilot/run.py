@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import os
 import signal
 import sys
 import time
@@ -10,6 +11,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+from core.assetdata import AUTONOMOUS
 from core.paths import DATA
 from pipeline.autopilot import blind, judge, plan, tail, tailrun, variants
 from pipeline.autopilot.survivors import Done, mothers
@@ -142,7 +144,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     try:
         for i, action in enumerate(actions):
             status(out, f"[{i + 1}/{len(actions)}] paso {action['n']} · {action['kind']}")
-            began = time.monotonic()
+            began, empty = time.monotonic(), False
             if action["kind"] == "sqx":
                 if action["n"] == "19":     # the WFM reads oos2: the ledger's door first
                     blind.admit(project, "19")
@@ -171,9 +173,12 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
                 got = judge.judge(project, action["n"], where["role"],
                                   out / f"paso-{action['n']}", cfg)
                 what = f"{got['hechos']} hechos; {got['corte']}"
+                empty = got.get("after") == 0     # the cut left nobody: a clean end, after the row
             done.append({"n": action["n"], "kind": action["kind"],
                          "s": time.monotonic() - began, "what": what})
             summary(out, project, done, todo["stop"])
+            if empty:
+                raise Done(f"el paso {action['n']} no dejó ninguna superviviente: no queda nada que seguir")
     except Done as end:         # a clean stop decided while running: nothing failed
         todo["stop"] = {"n": None, "why": str(end)}
         summary(out, project, done, todo["stop"])
@@ -208,6 +213,7 @@ def main() -> None:
                     help="una sola sesión de SQX (modo GUI) para todos los pasos, sin reinicios")
     tail.flags(ap)
     a = ap.parse_args()
+    os.environ[AUTONOMOUS] = "1"   # D4 (owner, 2026-10-04): oos2's door binds this run and its subprocesses
     given = tail.inputs(a, judge.settings())
     if a.plan:
         print(json.dumps(plan.plan(workflow.workflow(a.project), given), indent=1,

@@ -1560,3 +1560,26 @@ written before that is the window's (owner's choice). The 24-h rule is unchanged
 `→ knowhow/sqx-drive/export-after-every-stop.md`
 
 **Closed 2026-09-29.** Owner, 2026-09-29: one task at a time per worker, but a finished task frees it for any project. The 24 h rule is gone from `advance.busy()`; busy = a live owner lock, the port, or an SQX PID. The 15-min quiet guard stays for a hand-made `stop` (released.json intact).
+
+## 94. 🟢 `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes
+🔬 2026-10-02. Opened from `tools/audit_tests.py` (`tests/test_thresholds.py` is set aside for it).
+- **Trap:** `python3 -m ledger.report --check-thresholds` raises `KeyError: 'UKOIL'` instead of
+  printing the table of declared thresholds against their copies, so nobody can tell whether a
+  threshold drifted. Everything else that reads the ledger is unaffected: `thresholds.value(key)`
+  and `thresholds.fill()` compare the whole key string (🔬 `thresholds.value('feedQuality.K.UKOIL.cash_M1')`
+  returns 20).
+- **Mechanism:** `ledger/thresholds.yaml` points two rows at a config key that contains a dot —
+  `feedQuality.K.UKOIL.cash_M1` and `feedQuality.sessions.UKOIL.cash_M1`, source
+  `studies/data/feedQuality/config.yaml#K.UKOIL.cash_M1`. `walk()` does `dotted.split(".")` and
+  descends `K → UKOIL → cash_M1`, but the config's key is the single string `UKOIL.cash_M1`.
+  The other 12 feeds have no dot (`XAUUSD_M1`), so only Brent's feed (`UKOIL.cash_M1`) breaks it.
+- **Reproduce:** `python3 tests/test_thresholds.py` → `ledger/thresholds.py:105 in walk: KeyError: 'UKOIL'`
+  (via `divergences()` ← `resolve()`).
+- **Fix (not applied — `ledger/` is the owner's):** make `walk` try the longest key that exists
+  at each node (so `UKOIL.cash_M1` is taken whole), or write the pointer with a selector for keys
+  that contain a dot. Then remove the entry from `ASIDE` in `tools/audit_tests.py` — the audit says
+  when it passes again.
+
+**2026-10-03.** `ledger/thresholds.py` `walk()` now takes a key that holds a dot whole: at each mapping the longest run of steps that is a key there wins, so `K.UKOIL.cash_M1` reads `K` then the feed `UKOIL.cash_M1`; selectors and plain nested paths resolve as before and a missing key still raises KeyError. No threshold value and no ledger row changed. Verified: `python3 tests/test_thresholds.py` passes (89 of 89, plus known-answer cases for the dotted key on a fake config), `python3 -m ledger.report --check-thresholds` prints its table again, and the test's entry is gone from `ASIDE` in `tools/audit_tests.py`. Fixed, uncommitted: close it once the owner has committed.
+
+**Closed 2026-10-04.** Verified 2026-10-04: `python3 tests/test_thresholds.py` passes (89 of 89 thresholds read from the ledger).

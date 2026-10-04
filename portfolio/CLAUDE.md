@@ -25,7 +25,9 @@ inventing an answer. What is agreed so far:
 `build` → `oos1`+`oos2`, same pool, siblings, development reads the archive, only validated strategies,
 the funded rules split) are in `DECISIONS.md` «Settled by the owner»; the 2026-09-30 ones (Q1-Q17, fixed
 risk, funded rules) in `PLAN.md` §12 «Answered» and §14; the compute rule (all physical cores, under 80 GB,
-built for speed first) in `EXECUTION.md` (compute rule). Status per milestone: `PLAN.md` §9.
+built for speed first) in `EXECUTION.md` (compute rule); the 2026-10-04 ones, taken by the Council on
+the owner's delegation (Q10, Q11, Q16 provisional, #2, #5, #12, live incubation after `oos2`), in
+`PLAN.md` §12 and `DECISIONS.md`, with the readings they leave open. Status per milestone: `PLAN.md` §9.
 
 **Where a strategy comes from: the archive.** A strategy enters from `AlgoData/archive/<identity>/<version>/`
 (`core/archive/`, encargo 23), frozen with its `.sqx`, its cosecha rows, every study result, the

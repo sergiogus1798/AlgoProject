@@ -260,9 +260,12 @@ it `matrix.slice(build)` and nothing else (test §8.4).
   the **absolute** score (AF tracks it separately from the renormalised one; keep the absolute only).
   Parameters: AF's defaults (300 × 100, elite 0.20, tournament 4, crossover 0.80, mutation 0.40,
   stagnation 10) as knobs, `set_by: AlphaForge` until the owner changes them.
-- **Size of a combination**: `k_min`, `k_max` — **`DECISIONS.md` #2, open**. M3 does not ship
-  without it.
-- **Objective on build** (`objective.py`, Q10): replaces AF's pool-normalised 0.8/0.1/0.1 (the
+- **Size of a combination**: no `k_min`/`k_max` knob. **`DECISIONS.md` #2, decided 2026-10-04:** the
+  funding economics sets it — a member whose smallest trade is under the minimum lot on the 10k
+  account at the top of the risk grid is out; K runs from 1 to the largest admissible combination.
+- **Objective on build** (`objective.py`, **Q10 = (a), 2026-10-04**: the mean of the signed ranks of
+  RAR %, R-cubed, gain-to-pain and P(losing year), taken in a reference set fixed for the run):
+  replaces AF's pool-normalised 0.8/0.1/0.1 (the
   compendium marks it [AF✗]). Whatever the owner picks, it is an absolute number (comparable across
   runs and generations) computed on the equal-weighted combination.
 - **Marginal-contribution admission** (`admission.py`, a second mode, `--mode admission --base <run_id>`):
@@ -270,7 +273,8 @@ it `matrix.slice(build)` and nothing else (test §8.4).
   its increment to the build objective (Euler decomposition for Sharpe, compendium §3.2) is > 0; the
   expected increment is written before the verdict reads anything, the realised one after. AF's
   exhaustive subset enumeration is the fallback for small candidate lists (≤ 20), under the same
-  rule. Q16 settles the increment's definition.
+  rule. **Q16 = (c), provisional, 2026-10-04**; the increment's two readings are a required knob
+  (`real.increment`). Built as `real.py --base <run folder>`, not `--mode admission`.
 - **Exhaustive** when the admissible space is small (`C(clique count)` ≤ `exhaustive_max`), as AF's
   `sampler.py` does; otherwise GA.
 
@@ -294,7 +298,22 @@ longest flat period; P(losing year); Sharpe on daily MTM. 🤔 RAR% on log equit
 until Q5 fixes the unit, compute it on cumulative P&L and say so.
 
 `verdict/null.py` + `decide.py` — the decision (root `CLAUDE.md`: "an analysis ends in a decision"):
-what the portfolio is compared against and what counts as passing is **Q11**. Whatever the reference,
+what the portfolio is compared against and what counts as passing is **Q11 = (d), decided
+2026-10-04** — two readings, in this order, each a ledger row at step 27:
+
+1. **`oos1`: the selected null.** 10,000 admissible random portfolios (`verdict.null_draws`) drawn
+   by the same search from the same pool and graph, each measured on `oos1` exactly as the chosen
+   one. Pass: the chosen portfolio's figure is above their 95th percentile. The random benchmark is
+   read here and never on `build` (owner, 2026-09-29).
+2. **`oos2`: the deflated Sharpe, once.** Only if 1 passed. The chosen portfolio's daily Sharpe on
+   `oos2`, deflated with the ledger's N and the pooled spread of every combination's build Sharpe
+   (`search/trials_real.py` stores them for this); pass: > 0. **One read, of one portfolio**:
+   `gate.allow(27, "oos2", symbol)` for every member's symbol first, the row written whether it
+   passes or not, and no second portfolio of the same pool may ever read it. **Specified, not
+   executed** — nothing has read `oos2`.
+
+After that the segment is spent: what validates the combination from then on is live incubation
+(M9). Whatever the reference,
 the sentence carries the cost next to the gain, e.g. «la cartera de 6 (de 41 admisibles, 30.000
 combinaciones probadas) gana a 6 al azar del mismo pool en el 92 % de las extracciones sobre
 oos1+oos2; DD medio anual −4,1 % contra −6,3 %; deja fuera 35 estrategias». `DECISIONS.md` #12
@@ -348,18 +367,18 @@ the owner changes it, shown as such in the drawer; "—" = blocked, no default, 
 | `pairs.min_overlap_months` · `pairs.insufficient` | — | **Q8** |
 | `pairs.stress_days` · `pairs.stress_quantile` · `pairs.stress_filter` | —, 0.05, — | **Q15**; 5 % from the compendium §4.2 |
 | `pairs.relaxed` | {} | the run; any entry sets `relaxed: true` |
-| `search.k_min` · `search.k_max` | — | **`DECISIONS.md` #2** |
-| `search.objective` | — | **Q10** |
+| `real.account` | 10,000 (with `funded.min_lot`, `funded.risk_grid`: the floor that sizes K) | **`DECISIONS.md` #2**, Council 2026-10-04 |
+| `real.losing_year` · `real.rank_reference` | — (required: `calendar`\|`rolling` · `seeds`) | **Q10 = (a)**, Council 2026-10-04; the two readings are the owner's |
 | `search.mode` | `ga` (`ga` · `admission` · `exhaustive`) | this plan |
 | `search.exhaustive_max` | 100,000 combinations | 🤔 this plan — above it the GA runs |
 | `search.seeds` | 300 (= the population) | AF |
 | `search.ga.{population, generations, elite, tournament, crossover, mutation, stagnation}` | 300, 100, 0.20, 4, 0.80, 0.40, 10 | AF |
-| `search.admission.rule` | — | **Q16** |
+| `real.increment` | — (required for `--base`: `finite`\|`marginal`) | **Q16 = (c)**, provisional, Council 2026-10-04 |
 | `weights.method` | `equal` | owner, 2026-09-29 (the only one) |
 | `weights.unit` | — | **Q5** |
-| `verdict.reference` · `verdict.pass` | — | **Q11** |
+| `verdict.reference` · `verdict.pass` | oos1: 95th percentile of the selected null · oos2: deflated Sharpe > 0, one read | **Q11 = (d)**, Council 2026-10-04 |
 | `verdict.shift_months` | 3 (windows shifted 0-3 months at each end) | compendium §9.1 |
-| `verdict.null_draws` | 10,000 | 🤔 this plan, if Q11 picks a random-combination null |
+| `verdict.null_draws` | 10,000 on the real path (Q11 d); the funded F4 null keeps its own 100 searches | Council 2026-10-04 |
 
 No seed knob: every stochastic step draws fresh entropy and records the root it drew, as
 `engines/nulls` does (owner, 2026-09-29, `knowhow/eng/nulls-seed-fresh-per-run.md`).
@@ -455,23 +474,27 @@ with `python3 tools/depmap.py && python3 tools/checks.py`. Chapter numbers are t
 | **M0** | `core.paths.portfolio_dir`; `inputs/pool.py` (pool CSV, hash, prohibitions); `candidates.py` — lists archivable survivors of every step from the reports' `verdict.csv` files and prints, per candidate, the exact `python3 -m core.archive archive --project … --databank … --identity … --step … --family …` line; **runs none**; the development mark | Q2, Q13, Q14, `DECISIONS.md` #10 (near-survivors in or out); **the owner's go-ahead to archive** (the archive reads SQX install files and the daemon; `core/archive/README.md`) | 77-cartera-pool |
 | **M1** | `inputs/source.py`, `equity/*`: SQX curve + rebuild + reconciliation + matrices, universe cache; tests 2 | Q1, Q3, Q4; M0 for more than one strategy (the rebuild and its tests run on the one archived strategy and synthetic data) | 78-cartera-universo |
 | **M2** | `pairs/*`, `search/admissible.py`, relaxed flag, the Parejas tab data; tests 1 | Q6, Q7, Q8, Q9, Q15 | 78 (same chapter, section) |
-| **M3** | `search/*`, ledger rows, `search.parquet`; tests 3, 4, 5 | **`DECISIONS.md` #2** (K), Q10, Q12, Q16 | 79-cartera-busqueda |
+| **M3** | `search/*`, ledger rows, `search.parquet`; tests 3, 4, 5 | — (all answered 2026-10-04; Q16 provisional) | 96-cartera-busqueda-por-rangos |
 | **M4** | `weights/` with `equal`; test 6 | Q5 | 79 (section) |
-| **M5** | `verdict/*`, `contract/*`, `many.py`, `report.py`, the hand-off package; test 7 | Q11, Q2 (oos2 must exist for the pool), `DECISIONS.md` #12 (labels only) | 80-cartera-veredicto |
+| **M5** | `verdict/*`, `contract/*`, `many.py`, `report.py`, the hand-off package; test 7 | the open readings of Q11 (§12, 6-7); Q2 (oos2 must exist for the pool) | — |
 | **M6** | the prohibition input end to end (hand-written file), `--firm` | encargo 33 for real files; nothing for the format | 80 (section) |
 | **M7** | the «Construir» tab and `ui/daemon/portfolios/`; screenshots | M5 | `71-app-portfolios` extended |
-| **M8** | more weight methods + AF `wf.py` walk-forward as the gate against equal | **`DECISIONS.md` #5** (rebalancing) | 79 (section) |
+| **M8** | more weight methods + AF `wf.py` walk-forward as the gate against equal | — (#5: never rebalance, 2026-10-04) | — |
 
 **Status, 2026-09-30** (`portfolio/EXECUTION.md`):
 
 | # | status |
 |---|---|
-| M0 | ✅ code: `inputs/pool.py`, `inputs/source.py`, `candidates.py` (chapter 77). ⏳ the pool itself: waits for `Test_USDJPY_donchianUpperCrossUp_H1` to finish and for the owner to archive |
+| M0 | ✅ code: `inputs/pool.py`, `inputs/source.py`, `candidates.py` (chapter 77). The pool itself: row «M0 pool» below |
 | M1 | ✅ `equity/*` + `universe.py` (chapter 78): M1 rebuild licensed on the archived strategy (MAE 100 %, MFE 99.9 %, SQX's daily low 100 % of 3,983 days), EET daily matrix, firm-clock day tables and M5 blocks; parallel, 48 strategies in 15 s at 57 GB |
 | M2 | ✅ `pairs/*`, `search/admissible.py`, the screen in `universe.py`: 500 strategies' 124,750 pairs in 30 s on 48 cores, graph in 1 s |
 | F1 | ✅ `portfolio/funded/rules/`: 11 plans ≤ 10k, one-tick known answers, numba sweep = reference (2,500 × 2,500 in 3 ms) |
 | F2 | ✅ engine (chapter 79): fixed-risk sizing from the step-24 stop, stage-A objective on 48 cores (~1,500-1,860 combinations/s, 1.3 GB), greedy + GA, ledger rows (pool study + each member's), the command. ⏳ its first real run: no archived strategy carries the step-24 stop yet |
-| M3-M5, M8 | ⛔ Q10, Q11, Q16, `DECISIONS.md` #2 (real side), #5 |
+| M0 pool | ✅ 2026-10-04: the 30 mothers of `Test_USDJPY_donchianUpperCrossUp_H1` carried to 16.5 are archived (`AlgoData/archive/`, step 16.5, from the files in the data root with `--sqx`: the project is on no install). None carries the step-24 stop; no pool is declared yet (§12, open reading 8) |
+| M3 | ✅ 2026-10-04, code and known answers (`tests/test_portfolio_ranks.py`, chapter 96): `verdict/metrics.py`, `search/objective.py`, `exhaustive.py`, `choose.py`, `admission.py`, `trials_real.py`, the command `real.py`. ⏳ its first real run: a declared pool whose members carry the step-24 stop, and the owner's word on `real.losing_year` |
+| M4 | equal weight is inside M3's objective (the mean of the members' paths); no `weights/` folder until a second method exists (M8) |
+| M5 | 📐 specified 2026-10-04 (§5.5, Q11 d), **not built and not run**: the oos1 null waits on open readings 6-7; the oos2 read is one read, the owner's ledger guards it |
+| M8 | unblocked by #5 (never rebalance); not started |
 
 **The funded path (§14.5) runs F1-F5 after M0-M2 and before M3-M8** — the owner's priority is
 funded accounts first (2026-09-30).
@@ -559,11 +582,11 @@ And below it: (i) reject the pair, (ii) pass it with a flag that the result coun
 (AF: last 3 years of history), (b) the last 60-month window only, (c) other. Note: an index build is
 ~6 years, so a 60-month window gives ~16 windows there.
 
-**Q10 · The search objective on build.** (a) Equal-weight signed ranks of RAR%, R-cubed, gain-to-pain,
+**Q10 · ANSWERED 2026-10-04: (a).** The search objective on build. (a) Equal-weight signed ranks of RAR%, R-cubed, gain-to-pain,
 P(losing year) (compendium §2.7, §9.1). (b) One metric (daily MTM Sharpe, or RAR%/mean annual DD).
 (c) 0/1 rules plus one metric to break ties.
 
-**Q11 · What the verdict compares against, and what passes.** (a) K random admissible combinations
+**Q11 · ANSWERED 2026-10-04: (d) = (a) on oos1 + (c) on oos2.** What the verdict compares against, and what passes. (a) K random admissible combinations
 from the same pool (a "monkey portfolio"): pass if the chosen one beats a set percentile of them on
 oos1+oos2. (b) The equal-weighted whole pool: pass if the chosen portfolio beats it on the robust
 metrics. (c) Absolute bars (e.g. deflated Sharpe > 0 with the ledger's N). (d) A combination. And the
@@ -587,7 +610,7 @@ crises (compendium §3.5). Effective N: (a) participation ratio of the correlati
 eigenvalues, (b) K / (1 + (K−1)·mean ρ), (c) both reported. And is stress-day correlation a
 **filter** at 0.30 or only reported?
 
-**Q16 · Marginal contribution.** A candidate enters when (a) its Euler increment to build Sharpe is
+**Q16 · ANSWERED 2026-10-04, provisional: (c).** Marginal contribution. A candidate enters when (a) its Euler increment to build Sharpe is
 > 0, (b) the build objective of Q10 rises, (c) (a) plus the pairwise filters against every member.
 
 **Q17 · Where the manual chapters go.** (a) Into `10-cierre` (the last family). (b) An eleventh PDF,
@@ -630,10 +653,56 @@ decides case by case.
 | M0 survivors | **what the workflow carried forward is a candidate**: every mother with a 16.5 batch enters at step 16.5 whatever the earlier words said (the line shows them); `mcRetest` FAIL does not exclude; otherwise the word rules above |
 | FTMO 1-step | **no minimum trading days** (FTMO FAQ, confirmed 2026-09-30; the best-day rule sets the practical floor of 2) |
 
-Still open: Q10, Q11, Q16, `DECISIONS.md` #2 (real side), #5, #12, encargo 33 §6.4 and §6.7.
+**Decided by the Council on the owner's delegation, 2026-10-04** («Confío en el criterio de la
+comunidad, hacedlo todo»; five members, confidence-weighted, threshold 2/3; options in
+`docs/AgentPDFs/decisiones-pendientes-2026-10-04.md`). Each is a rule until the owner reverses it:
 
-Open decisions and where they block: `DECISIONS.md` #2 → M3 · #5 → M8 · #10 → M0 · #12 → M5 (words
-only) · #6 → encargo 33, feeds M6's file.
+| Q | answer | what would reverse it |
+|---|---|---|
+| Q10 | **(a): equal-weight signed ranks of RAR %, R-cubed, gain-to-pain and P(losing year)**, on the equal-weighted combination, on `build` (`search/objective.py`, `verdict/metrics.py`) | a build→oos1 retention of the rank score no better than a single metric's on the first real pools (the ledger will show it); or Darwinex's own scoring once it is researched (§14.4) |
+| Q11 | **(d)**: on `oos1` the chosen portfolio must beat the **95th percentile of 10,000 admissible random portfolios drawn by the same search**; on `oos2` its **deflated Sharpe with the ledger's N must be > 0**, read **once**, on the chosen portfolio only (§5.5) | a pool so small that the null redraws the chosen portfolio (the percentile then reads ~50 % whatever the edge); the owner moving the percentile |
+| Q16 | **(c): Euler increment to the build Sharpe > 0 plus the pair filters against every member** — **provisional: unanimous option, low confidence** (`search/admission.py`) | the first pool where (b), the Q10 score rising, and (c) disagree on who enters and (b)'s choice holds better on `oos1`; any owner's word — it stays his call |
+| `DECISIONS.md` #2 | **K and the per-symbol count are set by the funding economics**: the 10k account at the minimum lot, on the real side as on the funded one (§14.4) | an account where the minimum lot does not bind |
+| `DECISIONS.md` #5 | **rebalancing: never** — fixed weights | a weight method that only beats equal weight when re-estimated (M8) |
+| `DECISIONS.md` #12 | **no «unexplained, on probation» category** | the owner opening a separate sleeve |
+| after `oos2` | **what validates the chosen combination once `oos2` is spent is live incubation** (M9, §14.5) — no new backtest segment is carved | — |
+| M0 | **archive the development pool: yes** — done 2026-10-04 for the 30 mothers of `Test_USDJPY_donchianUpperCrossUp_H1` carried to 16.5 (Q2's pool), from files, no SQX command | — |
+
+**Readings the Council's answers leave open** — built as a required knob with no default where the
+code needed one (rule 11), otherwise not built; each is the owner's:
+
+1. **Q10, ranks among what.** A rank needs a set. Exhaustive search: the whole admissible space (no
+   choice). GA: `real.rank_reference` — only `seeds` (the greedy starting cliques, fixed before
+   generation 0) is built; ranking inside each generation is AlphaForge's flaw and is not offered.
+2. **Q10, P(losing year).** `real.losing_year`: `calendar` (share of calendar years of `build` that
+   lose — ~10 values, many ties) or `rolling` (share of every 252-day window). A bootstrap reading
+   (libros §5.6) is not built: it puts noise inside the score.
+3. **Q10, the window.** The compendium's «windows shifted 0-3 months, min/median» is written for the
+   verdict (§5.5). The search scores the whole `build` window once; whether it should score the
+   shifted minimum instead is open.
+4. **Q16, «Euler increment».** `real.increment`: `finite` (Sharpe of the K+1 at equal weight minus
+   the Sharpe of the K) or `marginal` (the derivative at zero weight, SR_c − ρ·SR_base). They
+   disagree on a volatile weak candidate (`tests/test_portfolio_ranks.py`). And several candidates
+   at once: today each is judged against the same fixed base; admitting in sequence is not built.
+5. **#2, the cap.** The minimum lot gives each member a floor risk per trade; nothing in the plan or
+   in `portfolio/funded/` says how much risk may be open at once, so K is today bounded only by the
+   admissible graph, and the run prints K × floor for the owner to see. A per-symbol cap does not
+   exist anywhere.
+6. **Q11, the oos1 figure.** Which figure is compared with the null's 95th percentile (the rank
+   score needs its own reference set; the daily Sharpe; each of the four metrics), and whether «drawn
+   by the same search» means random admissible combinations of the same sizes (cheap) or the winner
+   of a whole search run on each random draw (the F4 reading, 10,000 searches).
+7. **Q11, the ledger's N on oos2.** The N of the pool's study (`PORTFOLIO_<pool>_construct`), of
+   every member's study added up, or `ledger.trials.overall` (the whole project).
+8. **M0, the pool's extent.** `candidates.py` lists 182,464 archive commands today, 182,220 of them
+   step-8 survivors of the `Test_Calib_*` calibration populations (and 182,045 with an empty
+   `--family`). Archived: Q2's reading only. Whether calibration survivors, `XAUUSD` (237 + 214
+   near) and the other `Test_*` projects belong to the development pool is not decided.
+
+Still open besides those: encargo 33 §6.4 and §6.7.
+
+Open decisions and where they block: `DECISIONS.md` #6 → encargo 33, feeds M6's file. (#2, #5, #12
+decided 2026-10-04; #10 on 2026-09-30.)
 
 ## 13 · What the two dossiers say about each question
 
@@ -853,4 +922,4 @@ The engine still comes first; encargo 33's rule functions move up because stage 
 | **F4** | funded verdict on `oos1`+`oos2` with the selected null (M5 with the funded yardstick) | F3, Q11 |
 | **F5** | encargo 33 stage C: the bank simulation, the monkey, add-ons, `h`, the table of 33 §4 | F4 |
 | M3-M8 | the real-account path | as §9 |
-| **M9** | edge A for the chosen portfolio: each month, the members retested in SQX on the bars after `oos2` (a worker job — the owner's go-ahead each time) and the portfolio's paper-OOS row in the ledger, read against the band of equal-length windows of its own history (libros §3.5). **One retest, two readers**: the same fresh-stretch retest feeds the planned `weeklyReconciler` (`OPEN.md` #78 — live trades vs the SQX backtest of the same days), and the §14.2 rebuild applied to the live trades on the broker's M1 gives live floating vs backtest floating — the reconciliation of MAE, not only of P&L | a chosen portfolio; the owner's go-ahead |
+| **M9** | **what validates the combination once `oos2` is spent — live incubation (Council, 2026-10-04).** Edge A for the chosen portfolio: each month, the members retested in SQX on the bars after `oos2` (a worker job — the owner's go-ahead each time) and the portfolio's paper-OOS row in the ledger, read against the band of equal-length windows of its own history (libros §3.5). **One retest, two readers**: the same fresh-stretch retest feeds the planned `weeklyReconciler` (`OPEN.md` #78 — live trades vs the SQX backtest of the same days), and the §14.2 rebuild applied to the live trades on the broker's M1 gives live floating vs backtest floating — the reconciliation of MAE, not only of P&L | a chosen portfolio; the owner's go-ahead |

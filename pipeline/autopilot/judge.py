@@ -1,5 +1,6 @@
 """One judging step: its facts, the criteria, the dev draw, the verdict.csv and the cut in SQX."""
 
+import hashlib
 import random
 import sys
 from pathlib import Path
@@ -9,7 +10,8 @@ import yaml
 
 from core import assetdata
 from core.paths import databank_dir
-from pipeline.autopilot import criteria, facts
+from ledger import record, study as studymod
+from pipeline.autopilot import criteria, facts, survivors
 from sqx.curate import apply_verdict
 from sqx.projects import registry
 from sqx.projects.crosstfload import SIBLING
@@ -45,6 +47,20 @@ def population(project: str, bank: str, role: str) -> pd.DataFrame:
                          for i, fs in files.items() for f in fs])
 
 
+def ledger_row(project: str, n: str, spec: dict, before: int, after: int) -> None:
+    """Sign this cut in the ledger: one row, with the sha256 of criteria.yaml (OPEN 1.3 item 2).
+
+    `segment:` of the step in criteria.yaml says what the cut read; oos1 when it does not
+    (a question for the owner: only step 8 declares it).
+    """
+    who = survivors.about(project)
+    sid = studymod.study_id(who["symbol"], who["timeframe"], who["family"])
+    record.log(sid, {"step": float(n), "launched_by": "autopilot", "symbol": who["symbol"],
+                     "timeframe": who["timeframe"], "segment": spec.get("segment", "oos1"),
+                     "n_in": before, "n_out": after, "criterion": f"criteria.yaml paso {n}",
+                     "config_hash": hashlib.sha256(CRITERIA.read_bytes()).hexdigest()})
+
+
 def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     """Judge step `n` and apply its verdict, worker stopped.
 
@@ -71,6 +87,9 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     if "cut" not in spec:
         sys.exit(f"paso {n}: tiene reglas y criteria.yaml no dice qué databank cortar (`cut`)")
     pop = population(project, spec["cut"], role)
+    if pop.empty:                    # nothing to judge: zero survivors, which `run` ends cleanly
+        return {"n": n, "hechos": len(found), "before": 0, "after": 0, "limbo": [], "seed": None,
+                "corte": f"{spec['cut']}: vacío, nada que juzgar"}
     ids = set(found["identity"]) - {""}
     pop["who"] = [i if i in ids else s for s, i in zip(pop["strategy"], pop["identity"])]
     # A scaled sibling is a measuring device of step 11, never a candidate: it always goes,
@@ -92,6 +111,7 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     drops = int((pop["verdict"] == apply_verdict.DROP).sum())
     cut = apply_verdict.apply(project, spec["cut"], csv, role) if drops else \
         {"before": len(pop), "after": len(pop)}
+    ledger_row(project, n, spec, cut["before"], cut["after"])
     limbo = sorted(pop.loc[(pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP),
                            "strategy"])
     how = f"sorteo de {sample} (semilla {seed})" if sample else "criterios"

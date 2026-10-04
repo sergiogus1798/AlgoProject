@@ -8,6 +8,7 @@ from datetime import date
 from core.paths import report_dir
 from core.study import output, verdicts
 from core.study.render import markdown
+from ledger import steprows
 from studies.optimisation.wfm import many
 from studies.optimisation.wfm.inputs import config
 
@@ -44,6 +45,7 @@ def main() -> None:
     for r in got["table"].itertuples():
         print(f"{r.strategy:22s} {r.verdict:9s} rho={r.rho:+.3f} [{r.low:+.3f}, "
               f"{r.high:+.3f}]  celdas={r.cells:3d}  deriva={r.share_changed:.0%}")
+    print(steprows.log_wfm(args.project, directory, len(got["table"]), " ".join(sys.argv)))
     print(markdown.render(got["population"], title))
     print(f"\n-> {out}")
 

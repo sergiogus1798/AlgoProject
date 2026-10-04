@@ -32,8 +32,8 @@ def spa_tab(got: dict, cfg: dict) -> dict:
     if got["refused"]:
         return envelope.tab("spa", "SPA y StepM sobre oos2", [], note=(
             f"Sin leer. {got['refused']}. Las piezas de 17-19 sí se leen: no abren oos2, "
-            f"leen lo que ya escribieron sus estudios. Para que el paso 20 mire oos2 el dueño "
-            f"añade BlindJoint a reserved_for en assets/_policy.yaml."))
+            f"leen lo que ya escribieron sus estudios. Si quien se niega es la política, el "
+            f"dueño añade BlindJoint a reserved_for en assets/_policy.yaml."))
     spa, t = got["spa"], got["table"]
     return envelope.tab("spa", "SPA y StepM sobre oos2", [
         blocks.table("Las tres p del SPA de Hansen", pd.DataFrame(
@@ -46,8 +46,8 @@ def spa_tab(got: dict, cfg: dict) -> dict:
                 "named_all": "StepM (entrantes)"}),
             f"Sharpe del buy & hold {got['sharpe_bh']:.3f}; FWER {cfg['stepm']['fwer']}; "
             f"{got['days']} días; bloque medio {got['block']} días.")],
-        note="Datos que ninguna criba miró: la curva diaria marcada a mercado de cada madre, "
-             "su propio retest en oos2.")
+        note="Datos que ninguna criba miró: el resultado diario de cada madre de cierre a "
+             "cierre, reconstruido con las operaciones de su retest en oos2 y las barras M1.")
 
 
 def headline(got: dict, cfg: dict, complete: int) -> dict:

@@ -1,7 +1,7 @@
 ---
 q: How do I parse `dailyEquity.bin`: what does each daily value mean and which series is `Main`?
 kw: parse dailyEquity.bin, is SQX daily equity the day's low or close, daily low equity MAE per day, daily equity curve without SQX, sub-period / split OOS study, which dailyEquity.bin (Main vs Portfolio vs AdditionalMarket), equity vs net profit mismatch, open position last bar, is daily equity mark-to-market, which day is the equity stamped, align equity with bars / benchmark, cross-check market curve sum vs NetProfit
-tag: 🔬  date: 2026-09-30  see: sqx-format/result-sections, sqx-format/sqx-zip-members, sqx-format/leg-curve-warmup
+tag: 🔬  date: 2026-10-04  see: sqx-format/equity-reconstruction-usdjpy-gap, research/gate-t-scales, sqx-format/result-sections, sqx-format/sqx-zip-members, sqx-format/leg-curve-warmup
 ---
 # dailyEquity.bin parses: each trading day's LOWEST equity (floating at the M1 wicks), cumulative; take `Main`
 `core/sqxstats.equity(path, result="Main")`: one point per trading day, cumulative from the leg's start.
@@ -11,6 +11,22 @@ from trades + M1 (`portfolio/common/construct/equity/`). Only `Main` matches net
 window boundary; a cross-check market's leg misses net profit (median up to ~475 $) — check by rank.
 
 ## Evidence
+**How much the low-curve biases each reader (🔬 2026-10-04, oos1, three populations of 60 / 3,786 / 3,732 strategies):**
+
+| reader | bias | action |
+|---|---|---|
+| `snoopingScreen` | benchmark 15-26 % oversized; correlation with the asset 0.13-0.28 seen vs 0.32-0.46 real; SPA p 0.72→0.58, 0.95→0.95, 0.79→0.73; StepM names 0 in both | **done 2026-10-04**: reads `equity/closecurve` (0.55 s CPU per strategy) |
+| `blindJoint` | same engine, not measured (reads oos2) | **code done 2026-10-04**, never run; waits for the batch's `trades.parquet` |
+| CSCV | PBO 0.37→0.35, 0.36→0.39, 0.40→0.52 (measured on populations, not on a variant batch) | rebuild needs trades per variant (SQX export at step 16.5) |
+| decay / `degradacion_t` | t = 0.78-0.88× the close-based t; passing 1.65: 19 vs 83 and 63 vs 127; order unchanged (ρ 0.99) | do not rebuild: judge on `drift_excess_t` |
+| WFC | **does not read the curve** | none |
+| exposure | Sharpe 0.97-1.00× | document only |
+| `worst_day_r` | 0.99-1.00× the real daily loss | document only |
+
+Evidence: `AlgoData/scratch/null-fpr-2026-10-04/` `b1_curves.py`, `b2_stats.py`, `b2_all_populations.csv`,
+`b2_Test_Calib_USDJPY_H1_momentumL.csv`, `b2_Test_Calib_USA500_H1_pullbackL_rnd.csv`,
+`b2_Test_USDJPY_donchianUpperCrossUp_H1.csv`, logs `b2_usdjpy.log`, `b2_usa500.log`.
+
 - 🔬 2026-09-30, the archived USDJPY M30 strategy `4d679e…/2026-09-28T0919` (2,094 long trades,
   `USDJPY_DukasM1_the5ers`, clock Asia/Jerusalem): rebuilt day low = previous day's closing equity
   + the day's worst minute (wicks, window entry … exit − 1) against `harvest/equity.parquet`:
@@ -19,7 +35,7 @@ window boundary; a cross-check market's leg misses net profit (median up to ~475
   correlates 0.45 with the rebuilt MTM P&L. Golden: `tests/test_portfolio_universe.py`.
   The first point shows it: day 2008-01-02 reads −1,198.27 = that day's trade's `MAE ($)`, the next
   day −376.79 = its `Profit/Loss`. ⚠ Readers that difference this curve as daily P&L (the variant
-  batches' `equity.parquet` in WFC/CSCV, `snoopingScreen`) read low-to-low changes — `OPEN.md` #88.
+  batches' `equity.parquet` in CSCV) read low-to-low changes — `OPEN.md` #88.
 - ⚠ Superseded reading, kept for its numbers: the rows below took the curve for a mark to market
   with day D = equity carried into D; the correlations with the asset they report are real but
   measure the day's low, not its close.
@@ -28,7 +44,7 @@ window boundary; a cross-check market's leg misses net profit (median up to ~475
   daily changes with gold: **0.147** sampling the M1 close at the label's instant (00:00), 0.174 at
   −6 h, **0.073** with a plain daily resample (close at the end of D) and falling to 0.04 by +12 h.
   USDJPY_emaCross_H1 is flatter (0.10–0.13 across −12…+12 h) but also peaks at or before the label.
-  Used by `studies/screening/snoopingScreen/inputs.py`.
+  Was used by `studies/screening/snoopingScreen/inputs.py` until 2026-10-04.
 - Format: after `aced0005` header, only Java block-data markers — `0x7a` + 4-byte length, `0x77` +
   1-byte length. Concatenated payload: int count, then count × (big-endian int64 epoch millis,
   big-endian float64). No objects (unlike `orders.bin`).

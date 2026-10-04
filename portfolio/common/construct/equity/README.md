@@ -10,7 +10,8 @@ and reconciles the rebuild against SQX's own numbers before anything uses it. Co
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `clock.py` | Naive feed-clock times to UTC; the server day an instant falls in; when a server day ends. `EETUS` = New York + 7 h | imported | times, zone → UTC, day labels |
-| `paths.py` | One strategy's equity minute by minute: realised plus each open position at the minute's worst wick, best wick and close | imported | trades + M1 → arrays |
+| `paths.py` | One strategy's equity minute by minute: realised plus each open position at the minute's worst wick, best wick and close, its round-turn commission charged from the entry (`entry_commission` reads it off the asset card) | imported | trades + M1 → arrays |
+| `closecurve.py` | A whole population of one feed and one segment: point value and commission measured from its own same-day trades, every strategy's close-to-close daily P&L on the feed's days and its lowest-equity curve to reconcile, in parallel; the asset's day closes. What `studies/screening/snoopingScreen` and `studies/closing/blindJoint` read | imported | trades + M1 → days × N |
 | `days.py` | The minute path cut into server days: closed P&L, floating at the day's end, the day's low and high against its opening equity | imported | path, zones → day table |
 | `blocks.py` | The same low and high per 5-minute block on a UTC grid, and a combination's joint daily low and high from them | imported | path → float32 arrays |
 | `excursions.py` | Each trade's MAE and MFE rebuilt from the wicks, and the licence: does the rebuild match SQX's own columns | imported | trades + M1 → per trade, verdict |
@@ -26,5 +27,10 @@ and reconciles the rebuild against SQX's own numbers before anything uses it. Co
 - **The exit minute is not floating**; the realised P&L lands there and anchors the close, so a
   strategy's days sum exactly to its trades' `Profit/Loss` (`knowhow/export/mae-mfe-from-m1.md`).
 - **Swap is not in floating equity**: SQX books it inside `Profit/Loss` at the close.
+- **The commission IS in floating equity, whole, from the entry** (🔬 2026-10-04, 182,389 strategy-days:
+  gap = 5.000 $ × lots). `minute_path` without its `commission` argument matches SQX only on a
+  zero-commission asset; `search/stageb_data.py` still calls it that way.
+- **The card's point value and commission are not the build's** once the card is recalibrated:
+  `closecurve.measured` reads both off the trades (`knowhow/sqx-format/equity-reconstruction-usdjpy-gap.md`).
 - **A combination's intraday low is not the sum of its members' daily lows** (×1.6 too deep):
   sum the 5-minute blocks (`knowhow/perf/intraday-floating-resolution.md`).

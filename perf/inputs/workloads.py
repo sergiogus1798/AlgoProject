@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
-from core import bars
+import pandas as pd
+
+from core import assetdata, bars
 from engines.regimes import regime
 from perf.inputs import sample
 from portfolio.common.monteCarlo import run
@@ -12,6 +14,8 @@ from pipeline.autopilot import facts
 from studies.breakage.mcRetest.measure import store
 from studies.closing.atrCalculator import inputs as atr_inputs, load as atr_load, one as atr_one
 from studies.data.feedQuality import detect as fq_detect, inputs as fq_inputs
+from studies.research.pooledProfile import inputs as pooled_inputs, one as pooled_one
+from studies.research.profilePower import inputs as power_inputs, one as power_one
 from studies.screening.snoopingScreen import inputs as snooping
 from studies.transfer.crossmarket.simulate import paired
 from ui.daemon.workflow import sources
@@ -139,13 +143,17 @@ def snooping_superior(cfg: dict) -> dict:
         cfg: What config.load() returned.
 
     Returns:
-        Panel cells (days × strategies) tested and bytes read. The panel is the raw one,
-        without the benchmark subtracted: the cost is the bootstrap's, and it does not
-        depend on what the columns hold.
+        Panel cells (days × strategies) tested and bytes read. The panel is SQX's stored
+        curve differenced, not the close-to-close rebuild the study reads, and without the
+        benchmark subtracted: the cost is the bootstrap's, and it does not depend on what
+        the columns hold.
     """
     project, databank, asset = cfg["sample"]["harvest"]
     folder = snooping.harvest(project, databank)
-    panel = snooping.panel(folder, snooping.window(asset, "oos1"))
+    lo, hi = snooping.window(asset, "oos1")
+    curve = pd.read_parquet(folder / "equity.parquet")
+    curve = curve[curve["sample"] == "OOS"].pivot(index="day", columns="identity", values="equity")
+    panel = curve[(curve.index >= lo) & (curve.index < hi)].ffill().diff().iloc[1:].fillna(0.0)
     boot, fwer = snooping.config([])["bootstrap"], snooping.config([])["stepm"]["fwer"]
     block = superior.block_length(panel)
     superior.spa(panel, block, boot["reps"], boot["seed"])
@@ -187,3 +195,37 @@ def autopilot_facts(cfg: dict) -> dict:
             for f in r["path"].rglob("*") if f.suffix in (".json", ".parquet", ".csv")]
     return {"scale": len(found), "bytes_in": sample.weight(read)}
 
+
+
+def profilepower_replication(cfg: dict) -> dict:
+    """One planted edge through the profile's own test, on one cell, at a short null.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        Bars of the cell. 250 draws of the 3,000 a replication can take, on an edge large
+        enough never to stop early: the cost is linear in draws and in bars.
+    """
+    study = power_inputs.config(["run.seed=1", "judge.cut=0.05"])
+    study["profile"]["nulls"]["draws"] = 250
+    frame = power_inputs.bars("EURUSD", "H4")
+    power_one.run(("EURUSD", "H4", "channel55", "long", 50.0, 0), frame,
+                  assetdata.load("EURUSD"), study)
+    return {"scale": len(frame), "bytes_in": int(frame.memory_usage().sum())}
+
+
+def pooledprofile_asset(cfg: dict) -> dict:
+    """One asset of a group against the group's joint null, every measure, at a short null.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        Bars of the asset. 20 draws of the 3,000 the study takes: linear in draws and bars.
+    """
+    study = pooled_inputs.config(["run.seed=1"])
+    study["profile"]["nulls"]["draws"] = 20
+    frame = power_inputs.bars("EURUSD", "H4")
+    pooled_one.run("EURUSD", "forex", "H4", frame, assetdata.load("EURUSD"), study)
+    return {"scale": len(frame), "bytes_in": int(frame.memory_usage().sum())}

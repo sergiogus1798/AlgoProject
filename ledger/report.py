@@ -94,6 +94,10 @@ def main() -> None:
     print(f"  aparte, sin sumar: {research.profile_looks(symbol, timeframe, spent['directions'])}"
           " medidas del perfil de mercado y su barrido, corregidas entre sí")
 
+    every = trials.overall([studymod.read(s) for s in studymod.studies()])
+    print(f"  N global entre {every['studies']} estudios: {every['n']} (el de este estudio: "
+          f"{counted['n']}, con sus hipótesis medidas)")
+
     last = frame[frame["n_scored"].notna()].iloc[-1]
     local = int(last["n_scored"])
     sigma = counted["sigma"]

@@ -8,6 +8,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import time
 from datetime import date, datetime
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from core import worker
 from core.datapaths import template_runs
 from sqx.projects import crosstfload, stage
 from sqx.templates.registry import RUN_COLUMNS, append
+from ledger import steprows
 from ui.daemon import workerguard
 from ui.daemon.advance import preflight as advance, sqxlog
 from ui.daemon.advance.run import ready, say, watch
@@ -160,6 +162,7 @@ def execute(pre: dict, project: str) -> dict:
         worker.start(role)          # inside: a start that fails half-way is stopped too
         workerguard.mark(role, project)
         ready(project, role)
+        began = time.time()
         offsets = sqxlog.mark(top)
         started_at = dict(offsets)        # `watch` advances `offsets`; the restore reads all
         reply = worker.call(f"-project action=start name={project}", role)
@@ -185,6 +188,7 @@ def execute(pre: dict, project: str) -> dict:
     for t in chosen:
         if t["type"] == preflight.BUILD:
             print(record(pre, project, after.get(t["output"], 0)), flush=True)
+            print(steprows.log_build(project, pre["cfx"].parent / "log", began), flush=True)
     moved = {t["title"]: (before.get(t["output"], 0), after.get(t["output"], 0)) for t in chosen}
     say(100, " · ".join(f"«{t}»: {run['events'].get(t, '?')}; {n0} → {n1}"
                         for t, (n0, n1) in moved.items()))

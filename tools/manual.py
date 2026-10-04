@@ -65,7 +65,7 @@ FAMILIES = {
         "75-filtro-noticias", "93-metatracker", "94-flota-colector"]),
     "11-cartera": ("Cartera: el pool, el universo, las parejas y la búsqueda de fondeo", [
         "77-cartera-pool", "78-cartera-universo", "79-cartera-fondeo",
-        "87-cartera-etapa-b-y-veredicto", "88-fondeo-caja"]),
+        "87-cartera-etapa-b-y-veredicto", "88-fondeo-caja", "96-cartera-busqueda-por-rangos"]),
     "12-en-real": ("En real: la cuenta contra SQX", [
         "89-reconciliador-semanal"]),
 }

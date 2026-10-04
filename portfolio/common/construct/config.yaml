@@ -43,3 +43,26 @@ search:                         # AlphaForge's GA defaults (PLAN §5.3), set_by 
   seeds: 300
   ga: {population: 300, generations: 100, elite: 0.20, tournament: 4, crossover: 0.80, mutation: 0.40, stagnation: 10}
 
+stageb:                         # F3, stage B of the funded search (PLAN §14.3, §14.3b)
+  shortlist_size: 50            # PLAN §14.3: the top ~50 diverse combinations of a stage-A run
+  max_shared: 0.5               # no two of them share MORE than this share of their members
+  shared_of: null               # REQUIRED, no default (rule 11): smaller | larger — half of WHICH combination when the two differ in K
+  t1_gap: null                  # REQUIRED, no default (rule 11): T1's gap model; the only one built is close_to_open_blocks
+  n_paths: 10000                # PLAN §14.3: paths per Monte Carlo flavour and block length
+  sweep_days: [5, 10, 20, 40]   # owner 2026-09-30: block lengths read besides the measured one (Politis-White); the most pessimistic decides
+  worker_ram_gb: 2.5            # 🔬 2026-10-02: one member's exact-M1 worker on an 8.7 M-bar feed peaks 2.5 GB
+  stability_runs: 8             # the winner's deciding figure recomputed this many times (as monteCarlo's n_stability_runs)
+  stability_tol: 0.02           # 🤔 this plan: a spread above 2 points of P(pass) between repeats says n_paths is too low
+
+verdict:                        # F4, the funded verdict on oos1+oos2 (PLAN §14.3, Q11)
+  null_draws: 100               # 🤔 this plan: null searches, each one stage A on random admissible combinations + stage B
+  null_candidates: 0            # combinations per null search; 0 = as many as the stage-A run evaluated
+  pass_measure: null            # OPEN (Q11): which measure the bar reads — start_p or mc_p; empty = no criterion
+  pass_percentile: null         # OPEN (Q11), the owner's: when he sets it it becomes ledger:portfolio.funded.verdict_percentile; empty = «sin criterio»
+
+real:                           # M3, the search by ranks (PLAN §5.3). Council 2026-10-04 on the owner's delegation: Q10 (a), Q16 (c, provisional), DECISIONS #2
+  account: 10000                # C5: the size is the funding economics' -- the 10k account; a member's floor is the minimum lot on it (funded.min_lot, funded.risk_grid)
+  exhaustive_max: 100000        # 🤔 PLAN §5.7: up to this many admissible combinations every one is scored; above it the GA runs
+  losing_year: null             # REQUIRED, no default (rule 11): calendar (share of calendar years that lose) | rolling (share of 252-day windows)
+  rank_reference: null          # REQUIRED when the GA runs (rule 11): the fixed set the ranks are taken in; the only one built is seeds
+  increment: null               # REQUIRED for --base (rule 11): finite (Sharpe of K+1 minus Sharpe of K) | marginal (SR_c - rho * SR_base)

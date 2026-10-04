@@ -108,7 +108,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 91 | 🟠 | The gate's t was compressed (fixed 2026-10-02); every threshold and null FPR read on the old scale is stale | OPEN.md |
 | 92 | 🟠 | Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02) | OPEN.md |
 | 93 | 🟠 | Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured | OPEN.md |
-| 94 | 🟢 | `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes | OPEN.md |
+| 94 | 🟢 | `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes | docs/OPEN-closed.md |
 | 95 | 🟡 | Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner | OPEN.md |
 | 96 | 🟡 | `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error | OPEN.md |
 | 97 | 🟡 | `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@` | OPEN.md |
@@ -116,6 +116,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 99 | 🟠 | `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line | OPEN.md |
 | 100 | 🟠 | Literature scout built 2026-10-02 — owner decisions pending, 8 questions and 8 entries without a condition | OPEN.md |
 | 101 | 🟡 | A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1 | OPEN.md |
+| 102 | 🟠 | Knowhow cards filed in the wrong domain (weekly quality pass 2026-10-04) — to move or leave, owner's call | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -518,6 +519,8 @@ Hantec on XAUUSD until it is filled in the Activos zone.
 in the table); FundingPips' catalogue is typed and unconfirmed because its site blocks automated
 reading, which is not forced; codes of firms without a public check stay `unverified`.
 
+**2026-10-04.** Council decision 2026-10-04 (F1-F4): FTMO 2-Step fee refund modelled as NO refund per account (rules/ftmo.yaml fee_refund=false, unconfirmed; cost per 1,000 USD of passed account 20.0 -> 30.0 on the 10k plan); Hantec add-on Profit Target -2 % lowers phase 1 only (combos.EFFECTS, moves no number: sold on Express only), Hantec no fee refund, rejected on XAUUSD as today; FundedNext stays candidate, FundingPips blocked. Owner sends the three support messages: scratchpad support_questions.md (c2 session).
+
 ## 88. 🟠 SQX's daily curve is each day's LOW equity, not a mark to market — readers that difference it
 🔬 2026-09-30, portfolio engine wave 1: `dailyEquity.bin` (and every `equity.parquet` built from it)
 holds, per trading day on the feed's clock, the day's **lowest** equity — closed P&L plus open
@@ -531,6 +534,10 @@ golden `tests/test_portfolio_universe.py`.
   correlations are low-to-low. Decide per study whether it matters; a daily MTM series needs trades
   + M1 (`portfolio/common/construct/equity/`).
 - The portfolio engine already uses the curve only as a known answer, never as P&L.
+
+**2026-10-04.** 2026-10-04 point 1.5 measured on three populations (60 / 3,786 / 3,732 strategies, oos1): snoopingScreen benchmark 15-26 % oversized, SPA p 0.72→0.58 / 0.95→0.95 / 0.79→0.73, StepM names 0 either way, rebuild recommended (≈1 s CPU per strategy); blindJoint same engine, not measured; CSCV PBO 0.37→0.35, 0.36→0.39, 0.40→0.52, rebuild needs trades per variant (SQX export at step 16.5); decay t = 0.78-0.88× close-based, order unchanged, use drift_excess_t instead; WFC does not read the curve and exposure/worst_day_r are 0.97-1.00× — WFC and exposure can come off the affected-readers list (exposure: document only). Also: the rebuild in construct/equity/paths.py does not reconcile on USDJPY (0 of 3,732 within 1 $; USA500 97 %); gap in the one strategy opened = 5 $/lot commission while a position is open (cause inferred). Waiting on the owner: harvest trades per variant at 16.5 for the CSCV? Cards: knowhow/sqx-format/daily-equity-bin.md, equity-reconstruction-usdjpy-gap.md; tables AlgoData/scratch/null-fpr-2026-10-04/.
+
+**2026-10-04.** The USDJPY gap of the reconstruction is explained and fixed: SQX takes the whole round-turn commission off the floating equity from the entry, the rebuild booked it at the close (gap / lots = 5.000 $, R² 1.0000 over 182,389 strategy-days). `paths.minute_path` takes a `commission` argument; USDJPY reconciles 3,729 of 3,732 (was 0), USA500 unchanged at 97.3 %. snoopingScreen now reads the close-to-close curve (`equity/closecurve.py`); blindJoint has the same code but refuses its SPA until step 16.5 harvests `trades.parquet` per variant. Still owed: `search/stageb_data.py:62` calls `minute_path` without the commission, universe caches built before today must be rebuilt, the PercentageBased branch is unverified, and a perf target for `closecurve`.
 
 ## 91. 🟠 The gate's t was compressed (fixed 2026-10-02); every threshold and null FPR read on the old scale is stale
 🔬 `studies/screening/analysis/decay.py` put the annualised Sharpe inside Lo's variance term: `t`
@@ -553,6 +560,8 @@ for every paired strategy. → `knowhow/research/gate-t-scales.md`, `studies/scr
   daily-loss figure needs trades + M1 (`portfolio/common/construct/equity/`).
 - Reports written before 2026-10-02 (`gate/scorecard.parquet`, `decay/`) keep the old t; the 23
   `Test_Calib_*` gates were re-run on 2026-10-02, nothing else was.
+
+**2026-10-04.** 2026-10-04 point 1.5 measured: old 1.65 = 1.92 on the corrected scale (oos1 of 5.16 years); no live rule reads that t (min_t = 0.0); the live rule is R3 drift_excess_t ≥ 2.33, FPR under the null 0.00 % [0.23] with costs and 0.58 % [1.08] without; at 1.65 0.07 % [1.8] / 3.6 % [5.8]. The null of 2026-10-01 no longer exists; scratch/null2 replaced it with costs identical to today's asset cards (cost drag 0.84-1.04× six real populations, re-costing moves FPR ≤ 1.3×). Session recommendation: it barely matters, judge on drift_excess_t as R3 does, re-run nothing except XAUUSD/OOS if still used. Owner questions: still using XAUUSD/OOS? which null defines edge, with or without costs? is the XAGUSD card final (not on #76's list)? Card: knowhow/research/gate-t-scales.md; tables AlgoData/scratch/null-fpr-2026-10-04/.
 
 ## Constraints discovered while investigating
 
@@ -635,6 +644,8 @@ and M3-M9 are not. What each milestone waits on:
 - **Development pool waits** for `Test_USDJPY_donchianUpperCrossUp_H1` (custodian, at 16.5 on
   2026-09-30 11:20) to finish: no mother has oos2 trades yet. Then `candidates.py` lists the
   archive commands and the owner archives.
+
+**2026-10-04.** The Council decided the pending calls on the owner's delegation (`portfolio/PLAN.md` §12, `portfolio/DECISIONS.md`): Q10 (a) signed ranks of RAR %, R-cubed, gain-to-pain, P(losing year); Q11 (d) oos1 against the 95th percentile of 10,000 random admissible portfolios, then deflated Sharpe > 0 on oos2 read once; Q16 (c) provisional; #2 size from the 10k account at minimum lot; #5 never rebalance; #12 no probation label; after oos2, live incubation. **M0 pool:** the 30 mothers of `Test_USDJPY_donchianUpperCrossUp_H1` carried to 16.5 are archived (from files with `--sqx`, the project is on no install; none carries the step-24 stop; no pool declared). `candidates.py` now lists 182,464 commands, 182,220 of them `Test_Calib_*` step-8 survivors — not archived, the pool's extent is the owner's. **M3 built** (`real.py`, `search/objective.py`, `exhaustive.py`, `choose.py`, `admission.py`, `trials_real.py`, `verdict/metrics.py`; `tests/test_portfolio_ranks.py`, chapter 96): its first real run needs a declared pool whose members carry the step-24 stop and the owner's `real.losing_year`. **M5 specified, not built; nothing read oos2.** Eight readings left open are listed in PLAN §12 «Readings the Council's answers leave open».
 
 ## 90. 🟡 The autopilot (`pipeline/autopilot/`) — phase 1 ran end to end 2026-10-01 (6 → 16), its holes fixed
 
@@ -740,27 +751,6 @@ proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Op
     must be rebuilt per family before the criteria are taken as final.
 
 **2026-10-03.** 2026-10-03/04: steps 6 and 8 recalibrated (116 base cells, 201 populations, red-teamed) — dossier `docs/AgentPDFs/criterios-pasos-6-a-12-2026-10-04.md`, PROVISIONAL, owner's approval pending; proposals written in `assets/_study.yaml` (ceiling 75/yr, no floor beyond 10/yr, no PF/RetDD) and `pipeline/autopilot/criteria.yaml` (step 8; steps 10 and 12 still `rules: []`). Cards: `knowhow/research/{step6-floor-vs-step8-yield,is-filters-inside-the-build,oos1-oos2-persistence,drift-term-biased-by-side,crosstf-mother-sibling-dependence,crossmarket-effective-markets}.md`. Still open: (1) long builds (180 min, cap 10,000) with a full databank — no IS filter was tested there; (2) the gate's drift-term correction is proposed, NOT applied (`drift_excess_t`, and `crossmarket/simulate/excess.py` with it); (3) `wfc.py` gives extra markets the main's dates; (4) 7-11 % of strategies change identity between the build and the OOS databank (name join; fingerprint agrees 99.7-100 % on 3 populations); (5) the crossmarket and crossTF studies hard-code their window, so oos2 is read from raw exports; (6) `assets/_policy.yaml` oos2 end 2026-09-30 is past the last bar of XAUUSD, XAGUSD and HK50 — an OOS2 task cannot start (`knowhow/sqx-drive/cannot-start-unresolved-past-data.md`); (7) 31 H1 base cells have no oos2 (`oos2_job.sh` not run).
-
-## 94. 🟢 `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes
-🔬 2026-10-02. Opened from `tools/audit_tests.py` (`tests/test_thresholds.py` is set aside for it).
-- **Trap:** `python3 -m ledger.report --check-thresholds` raises `KeyError: 'UKOIL'` instead of
-  printing the table of declared thresholds against their copies, so nobody can tell whether a
-  threshold drifted. Everything else that reads the ledger is unaffected: `thresholds.value(key)`
-  and `thresholds.fill()` compare the whole key string (🔬 `thresholds.value('feedQuality.K.UKOIL.cash_M1')`
-  returns 20).
-- **Mechanism:** `ledger/thresholds.yaml` points two rows at a config key that contains a dot —
-  `feedQuality.K.UKOIL.cash_M1` and `feedQuality.sessions.UKOIL.cash_M1`, source
-  `studies/data/feedQuality/config.yaml#K.UKOIL.cash_M1`. `walk()` does `dotted.split(".")` and
-  descends `K → UKOIL → cash_M1`, but the config's key is the single string `UKOIL.cash_M1`.
-  The other 12 feeds have no dot (`XAUUSD_M1`), so only Brent's feed (`UKOIL.cash_M1`) breaks it.
-- **Reproduce:** `python3 tests/test_thresholds.py` → `ledger/thresholds.py:105 in walk: KeyError: 'UKOIL'`
-  (via `divergences()` ← `resolve()`).
-- **Fix (not applied — `ledger/` is the owner's):** make `walk` try the longest key that exists
-  at each node (so `UKOIL.cash_M1` is taken whole), or write the pointer with a selector for keys
-  that contain a dot. Then remove the entry from `ASIDE` in `tools/audit_tests.py` — the audit says
-  when it passes again.
-
-**2026-10-03.** `ledger/thresholds.py` `walk()` now takes a key that holds a dot whole: at each mapping the longest run of steps that is a key there wins, so `K.UKOIL.cash_M1` reads `K` then the feed `UKOIL.cash_M1`; selectors and plain nested paths resolve as before and a missing key still raises KeyError. No threshold value and no ledger row changed. Verified: `python3 tests/test_thresholds.py` passes (89 of 89, plus known-answer cases for the dotted key on a fake config), `python3 -m ledger.report --check-thresholds` prints its table again, and the test's entry is gone from `ASIDE` in `tools/audit_tests.py`. Fixed, uncommitted: close it once the owner has committed.
 
 ## 95. 🟡 Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner
 📓 2026-10-02. The mechanical audit runs every `tests/test_*.py` (105 on the day) and lists in `ASIDE`
@@ -878,3 +868,19 @@ director stamps, so `proposal.stamp` reads «ya van 3 ideas» and the board row 
 points (= 70.6 × 1/(1 + 3/6)). To do: the stamp leaves out the ideas of the proposal being stamped
 (by idea file), or stamps the board row read before the ideaExpert ran. Not fixed: `ideas.py`
 and the brake are shared with the ledger's trial count (another session's work in motion).
+
+## 102. 🟠 Knowhow cards filed in the wrong domain — found by the weekly quality pass, 2026-10-04
+
+The pass does not move cards (it would change `see:` slugs and the per-domain indexes). Candidates, judged from
+their `q:` and header only (🤔: confirm by reading each card's callers):
+- `knowhow/market-profile/` holds six cards that are not about the market profile: `literature-same-paper-short-title`,
+  `literature-scout-yield`, `paper-search-sources`, `verbatim-quote-matching` (→ `research/`, literature scout);
+  `typed-failure-causes`, `hypothesis-sheet-vs-build`, `ideas-are-ledger-trials`, `reviewer-adds-no-trials`
+  (→ `research/` or `pipeline/`, the idea/autopilot memory).
+- `perf/window-waits-off-gui-thread` is a Qt/window fact (→ `ui/`).
+- `eng/` holds study facts: `monkeyexcess-needs-oos-partner`, `population-signs-a-different-config-than-strategy`,
+  `stale-signs-with-the-runners-overrides`, `decay-needs-build-and-retest`, `isoos-filters-read-the-harvest`,
+  `step25-reads-a-harvest-of-the-traded-version`, `studies-reread-build-yaml` (→ `pipeline/` or `research/`).
+Decision needed: move them (then rerun `python3 tools/knowhowmap.py` and fix every `see:`), or declare the domains broader.
+Also left: `locations/xauusd-corpus` (🤔, 231 strategies, old export) and `export/exits-and-m1-library` (🔬, 757 strategies)
+describe two XAUUSD corpora; neither can be recomputed for the first (OPEN §12) — the owner may retire the older card.

@@ -4,6 +4,7 @@ from datetime import datetime, timezone as tz
 from itertools import groupby
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from core import assetdata, fanout
@@ -68,6 +69,16 @@ def _reconcile_rows(identity: str, s: dict, bars: pd.DataFrame, feed_days: pd.Da
     return rows, excluded
 
 
+def _commission(s: dict) -> np.ndarray:
+    """Each trade's commission, at its own segment's figure of the asset card."""
+    card = assetdata.load(s["symbol"])["costs"]["commission"]["use"]
+    cost = np.zeros(len(s["trades"]))
+    for sample, segment in SEGMENT_OF_SAMPLE.items():
+        leg = (s["trades"]["sample"] == sample).to_numpy()
+        cost[leg] = paths.entry_commission(s["trades"][leg], card[segment], s["point_value"])
+    return cost
+
+
 def _member(identity: str) -> dict:
     """One member, in a worker: its minute path built once, used for everything, never returned.
 
@@ -76,7 +87,7 @@ def _member(identity: str) -> dict:
         float32 M5 arrays per firm clock — megabytes, where the path is ~250 MB.
     """
     s, bars, cfg = _STATE["sources"][identity], _STATE["bars"], _STATE["cfg"]
-    path = paths.minute_path(s["trades"], bars, s["point_value"])
+    path = paths.minute_path(s["trades"], bars, s["point_value"], _commission(s))
     feed_days = days.server_days(path, s["clock"], s["clock"])
     rows, excluded = _reconcile_rows(identity, s, bars, feed_days, cfg)
     ref_days = days.server_days(path, s["clock"], cfg["equity"]["reference_clock"])

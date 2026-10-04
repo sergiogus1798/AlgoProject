@@ -17,7 +17,7 @@ config.yaml ─▶ inputs ──────▶ pieces ─▶ measure ───�
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, the blind door (`ledger.gate.allow_read`), the oos2 door (`gate.allow(20, "oos2")`), the mothers' own oos2 days from their batches, and the asset's moves | imported | ledger + batches + feed → frame, panel, moves |
+| `inputs.py` | The knobs, the blind door (`ledger.gate.allow_read`), the oos2 door (`gate.allow(20, "oos2")`), the trades door (each batch must hold the mother's `trades.parquet`), the mothers' own oos2 days rebuilt close to close from those trades and M1 — refused unless their daily lows reproduce the batch's SQX curve — and the asset's close-to-close moves | imported | ledger + batches + feed → frame, panel, moves |
 | `pieces.py` | Which mothers reached step 20, and what WFC, CSCV, surfaces and WFM said of each — their own state, never re-derived; a mother missing one is listed and never read | imported | batches + WFM report → population |
 | `benchmark.py` | Buy and hold sized to each mother's own daily volatility, and the excess over it (copied from part A) | imported | panel + moves → excess, lots |
 | `readings.py` | **The open decisions as a registry**: how the four pieces combine, and over whom the StepM counts its search | imported | states, named → calls |
@@ -37,9 +37,9 @@ Manual page, in Spanish: `docs/manual/10-cierre.pdf` (cap. 56-paso-20). Known-an
 study wrote it; the mother's oos2 curve against equal-risk buy and hold (the owner's benchmark
 for part A, kept); the SPA's three p-values and the StepM at the FWER of `ledger/thresholds.yaml`.
 
-**Open, exposed rather than chosen (hard rule 11):** `joint.pieces` — `unanimidad`, `sin_fallo`
-or `ninguna` — and `joint.population` — `supervivientes` or `entrantes`. While either is null the
-study computes the call under **every** reading, shows them side by side, writes MANTENER for all
+**Decided 2026-10-04 (P2):** `joint.population` is `entrantes` — the StepM's K is every mother
+that entered step 20. **Still open, exposed rather than chosen (hard rule 11):** `joint.pieces` —
+`unanimidad`, `sin_fallo` or `ninguna`. While it is null the study computes the call under **every** reading, shows them side by side, writes MANTENER for all
 (as part A annotates) and, if it read oos2, a soft ledger row. With both set, `verdict.csv` says
 DESCARTAR for a mother that reading drops.
 
@@ -64,7 +64,14 @@ block — WFC `no_fiable`/`indeciso`/`fiable`, CSCV PBO over 0.5, surfaces `no v
 `equity.parquet` joins build, oos1 and oos2 on daily increments. 🔬 Each leg opens with two months
 of zero-P&L warm-up repeating the previous leg's dates, and the leg is not recorded
 (`knowhow/sqx-format/leg-curve-warmup.md`); oos2 from its policy start is clear of them, and a cut
-that catches a duplicated date raises. The last day is dropped, as SQX marks an open position there.
+that catches a duplicated date raises. 🔬 That curve is each day's LOWEST equity, not a mark to
+market, so since 2026-10-04 it is only the known answer: the panel is the close-to-close P&L rebuilt
+from the mother's oos2 trades and the M1 bars (`portfolio/common/construct/equity/closecurve`, as
+part A), and it is refused unless its own daily lows match the curve. ⚠️ The trades are read from
+`trades.parquet` in the batch folder (schema T plus `variant_id`), which step 16.5 does not write
+yet (decision E3, pending its cost measurement): until it does, `inputs.trades_door` refuses, the
+pieces are read, the SPA is not, and oos2 stays unopened. Proven on synthetic data only
+(`tests/test_close_curve.py`) — the change was never run on a real oos2.
 
 **The StepM is written on `arch`'s SPA**, not `arch`'s `StepM`, which raises when its rounds
 name every column between them — never at part A's K = 200, often at step 20's K of 2 to 5.

@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 import ledger.study as study
+from portfolio.funded.catalog import combos
 from portfolio.funded.rules import catalog
 from portfolio.funded.sim import bank, inputs, measures, plans, run, table
 from portfolio.funded.sim.kernel import C, COLS
@@ -130,9 +131,15 @@ cash = plans.cash(ftmo, owner, 260)
 check("FTMO: a EUR price in USD at the given rate, a 14-day cycle is 10 path days, 1,000 EUR is 1,250 USD",
       abs(cash["price"] - 1.25 * ftmo["price"]) < 1e-9 and (cash["cycle"], cash["budget"], cash["rebuy"]) == (10, 1250.0, 1.0)
       and ftmo["price_ccy"] == "EUR", cash)
-check("FTMO 2-step refunds the fee, per account, and that scope is flagged unconfirmed; a static floor asks nothing",
-      ftmo["refund"] is True and "fee_refund_scope" in {f["rule_key"] for f in ftmo["flags"]}
+check("FTMO 2-step: the prudent reading (no refund per account, Council 2026-10-04) is what the studies read, flagged unconfirmed; a static floor asks nothing",
+      ftmo["refund"] is False and {"fee_refund", "fee_refund_scope"} <= {f["rule_key"] for f in ftmo["flags"]}
       and ftmo["lock"] is False and "funded_floor_after_payout" not in {f["rule_key"] for f in ftmo["flags"]})
+_st = [{"stage": k, "profit_target_pct": t} for k, t in (("phase1", 10.0), ("phase2", 5.0), ("funded", 0))]
+_row = combos._row({"plan_key": "x", "price": 100.0, "price_ccy": "USD", "firm": "hantec", "family": "enhanced",
+                    "size": 1e4, "eas_allowed": 1}, [{**s, **{c: None for c in ("daily_loss_pct", "max_loss_pct", "max_loss_mode", "min_days", "consistency_pct", "reward_share_pct", "payout_days", "news_ok", "weekend_ok")}} for s in _st],
+                   ({"option_key": "PROFIT_TARGET", "effect": "-2%", "price_pct": 25},))
+check("Hantec's Profit Target add-on lowers phase 1 only (prudent reading, support pending)",
+      (_row["p1_target_pct"], _row["p2_target_pct"]) == (8.0, 5.0), _row)
 try:
     plans.terms("hantec:express:10000:USD", "", {**GAPS, "hantec_express_floor_after_payout": "maybe"})
     check("an unreadable floor reading is refused", False)

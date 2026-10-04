@@ -82,7 +82,7 @@ def judged(rule: dict, cols: dict[str, pd.Series], who: str, medians: pd.Series)
 
     Returns:
         (pass|limbo|fail, `fact=value`, or `all(…, …)` / `any(…, …)` of its parts). A
-        missing fact is limbo, inside a compound too: `any` of a pass and a missing is pass.
+        missing fact goes where the rule's `missing:` says (pass|limbo|fail; limbo when it does not), inside a compound too: `any` of a pass and a missing is pass.
     """
     for group, pick in GROUPS.items():
         if group in rule:
@@ -92,7 +92,7 @@ def judged(rule: dict, cols: dict[str, pd.Series], who: str, medians: pd.Series)
     fact = rule["fact"]
     value = cols[fact].get(who) if fact in cols else None
     if value is None or value != value:
-        return "limbo", f"{fact}=sin dato"
+        return rule.get("missing", "limbo"), f"{fact}=sin dato"   # `missing:` is the rule's destination
     return one(value, rule, medians[fact]), f"{fact}={value}"
 
 

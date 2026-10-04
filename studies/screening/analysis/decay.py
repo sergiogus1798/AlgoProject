@@ -6,7 +6,12 @@ import pandas as pd
 YEAR = 252
 MIN_YEARS_POSITIVE = 4      # of the OOS years; 3 of 5 is what a coin flip gives
 MAX_CONCENTRATION = 0.40    # share of OOS profit allowed to come from one quarter
-SIGNIFICANT_T = 1.65        # one-sided 5% on the Sharpe of the OOS stretch
+# NOT a one-sided 5 % test: the curve this t is read on is SQX's daily curve, each day's LOWEST
+# equity, whose low-to-low differences are 14-25 % more volatile than daily P&L — 🔬 the t reads
+# 0.78-0.88 of its close-to-close value on three populations (knowhow/research/gate-t-scales.md).
+# The threshold stays (decision E1, 2026-10-04); the statistic to judge an edge with is the
+# gate's `drift_excess_t` (studies/screening/gate/measures.py), computed from trades.
+SIGNIFICANT_T = 1.65
 
 
 def sharpe(returns: pd.Series) -> float:
