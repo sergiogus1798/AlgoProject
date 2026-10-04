@@ -22,7 +22,7 @@ QUESTIONS = [
                  {"value": "short", "label": "Short"},
                  {"value": "both", "label": "Las dos"}]},
     {"id": "archetype", "kind": "choice", "default": "breakout",
-     "ask": "¿Qué arquetipo es? Es la columna con la que la matriz contesta de qué tienes poco.",
+     "ask": "¿Qué familia es? Es la fila con la que la matriz de cobertura contesta de qué tienes poco.",
      "why": "No cambia el .sqx: cambia dónde cae en la matriz de cobertura.",
      "options": [{"value": a, "label": a} for a in ARCHETYPES]},
     {"id": "random", "kind": "choice", "default": "one_free",

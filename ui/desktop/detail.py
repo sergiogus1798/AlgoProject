@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QHeaderView, QLab
                                QPlainTextEdit, QPushButton, QScrollArea, QTableWidget,
                                QTableWidgetItem, QVBoxLayout, QWidget)
 
-from ui.desktop import client
+from ui.desktop import client, names
 from ui.desktop.shape import shape_panel
 from ui.desktop.theme import (C, STATUS_COLOUR, STATUS_HELP, VERDICT_LABEL, chip, verdict_colour,
                               verdict_label)
@@ -95,7 +95,8 @@ class Detail(QWidget):
                                                                         C["faint"]))]
         for field in ("archetype", "shape", "origin", "created"):
             if t.get(field):
-                parts.append(chip(t[field], C["muted"]))
+                parts.append(chip(names.family(t[field]) if field == "archetype" else t[field],
+                                  C["muted"]))
         label = QLabel(" ".join(parts))
         label.setToolTip(STATUS_HELP.get(t.get("status", ""), ""))
         return label

@@ -1,61 +1,80 @@
-"""What the data root holds, tree by tree: size, files, newest write, and the manifests that sign it."""
+"""What the data root holds, tree by tree: files, formats, newest write, and the manifests that sign it."""
 
+import os
 import re
 import time
+from collections import Counter
 from datetime import datetime
+from pathlib import Path
 
 from core import manifest
 from core.paths import DATA
-from perf.disk import inventory
 from perf.inputs import config
 
 DAY = 86400
+DEPTH = 3          # levels of the tree the window shows
+STAT_UP_TO = 20   # a folder with more files than this is dated by its own mtime, not by each file
 # An archived strategy's folder is named by its identity, which the window never prints
 # (encargo 22 §10): those branches are folded into `archive/`, whose row still counts them.
 IDENTITY = re.compile(r"[0-9a-f]{64}")
 
 
-def _signed() -> dict[str, dict]:
-    """Every branch's manifests: how many sit under it and the newest date one of them carries.
+def _walk() -> dict[str, dict]:
+    """One pass over the data root: files, formats, newest write and manifests of every branch.
 
     Returns:
-        {branch: {"exports": int, "signed": "YYYY-MM-DD", "command": str}} for every
-        ancestor of every `manifest.json`, down to inventory's depth. `command` is the
-        branch's own manifest's, empty when the manifest is further down.
+        {branch: row} for every folder down to `DEPTH` with a file somewhere under it. One
+        `os.walk` and no `stat` per file in a big folder: the nested walks of the old inventory
+        took minutes over the root's 4 million files (`reports/` holds 4 million of them), this
+        takes seconds. ponytail: a folder of more than STAT_UP_TO files is dated by its own
+        mtime, so a file rewritten in place in one of those does not move «última escritura».
     """
-    out: dict[str, dict] = {}
-    for path in DATA.rglob("manifest.json"):
-        parts = path.parent.relative_to(DATA).parts
-        m = manifest.read(path.parent)
-        for depth in range(1, min(len(parts), inventory.DEPTH) + 1):
-            row = out.setdefault("/".join(parts[:depth]),
-                                 {"exports": 0, "signed": "", "command": ""})
-            row["exports"] += 1
-            row["signed"] = max(row["signed"], str(m.get("date", "")))
-            if depth == len(parts):
-                row["command"] = str(m.get("command", ""))
-    return out
+    rows: dict[str, dict] = {}
+    for root, _, files in os.walk(DATA):
+        parts = os.path.relpath(root, DATA).split(os.sep)
+        if not files or parts == ["."]:
+            continue
+        if len(files) > STAT_UP_TO:
+            newest = os.stat(root).st_mtime
+        else:
+            newest = max(os.stat(os.path.join(root, f)).st_mtime for f in files)
+        kinds = Counter(os.path.splitext(f)[1] or "none" for f in files)
+        m = manifest.read(Path(root)) if "manifest.json" in files else None
+        for depth in range(1, min(len(parts), DEPTH) + 1):
+            r = rows.setdefault("/".join(parts[:depth]), {
+                "files": 0, "kinds": Counter(), "newest": 0.0,
+                "exports": 0, "signed": "", "command": ""})
+            r["files"] += len(files)
+            r["kinds"] += kinds
+            r["newest"] = max(r["newest"], newest)
+            if m is not None:
+                r["exports"] += 1
+                r["signed"] = max(r["signed"], str(m.get("date", "")))
+                if depth == len(parts):
+                    r["command"] = str(m.get("command", ""))
+    return rows
 
 
 def catalogue() -> dict:
-    """Every tree of the data root with its size, files, newest write and manifests.
+    """Every tree of the data root with its files, formats, newest write and manifests.
 
     Returns:
-        `{"root", "total_bytes", "stale_days", "rows"}`, root being the data root's folder
-        name only — never the machine's absolute path; each row carries `branch`,
-        `depth`, `bytes`, `files`, `formats`, `newest` (date of the last write), `age_days`,
-        `stale` and, from the manifests, `exports`, `signed` and `command`. Rows come in
-        `perf.disk.inventory`'s order, biggest first; the window nests them by `branch`.
+        `{"root", "stale_days", "rows"}`, root being the data root's folder name only — never
+        the machine's absolute path; each row carries `branch`, `depth`, `files`, `formats`,
+        `newest` (date of the last write), `age_days`, `stale` and, from the manifests,
+        `exports`, `signed` and `command`. Rows come most files first; the window nests them
+        by `branch`. No size: the owner does not read it and it is what made this slow.
     """
-    cfg = config.load()
-    now, signed = time.time(), _signed()
+    stale_days, now = config.load()["disk"]["stale_days"], time.time()
     rows = []
-    for r in inventory.tree(cfg):
-        parts = r["branch"].split("/")
+    for branch, r in sorted(_walk().items(), key=lambda kv: -kv[1]["files"]):
+        parts = branch.split("/")
         if any(IDENTITY.fullmatch(p) for p in parts):
             continue
-        rows.append({**r, "depth": len(parts),
-                     "newest": datetime.fromtimestamp(now - r["age_days"] * DAY).strftime("%Y-%m-%d"),
-                     **signed.get(r["branch"], {"exports": 0, "signed": "", "command": ""})})
-    return {"root": DATA.name, "stale_days": cfg["disk"]["stale_days"], "rows": rows,
-            "total_bytes": sum(r["bytes"] for r in rows if r["depth"] == 1)}
+        age = (now - r["newest"]) / DAY
+        rows.append({"branch": branch, "depth": len(parts), "files": r["files"],
+                     "formats": ", ".join(f"{k} x{n}" for k, n in r["kinds"].most_common(3)),
+                     "age_days": age, "stale": age > stale_days,
+                     "newest": datetime.fromtimestamp(r["newest"]).strftime("%Y-%m-%d"),
+                     "exports": r["exports"], "signed": r["signed"], "command": r["command"]})
+    return {"root": DATA.name, "stale_days": stale_days, "rows": rows}

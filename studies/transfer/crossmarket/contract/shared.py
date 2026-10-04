@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from core.study import blocks
+from core.study.clip import caption
 from core.symbols import alias
 from studies.transfer.crossmarket.simulate import metrics
 
@@ -40,8 +41,8 @@ def distribution(shape: dict, metric: str, title: str, note: str = "",
             "band": [shape["lo_ci"], shape["hi_ci"]],
             "percentiles": {"2.5": shape["lo_ci"], "50": shape["median"],
                             "97.5": shape["hi_ci"]}, "p": p,
-            "note": note or f"El {shape['beats']:.1%} de las simulaciones {worse} que el "
-                            f"backtest real en {metrics.LABELS[metric]}."}
+            "note": (note or f"El {shape['beats']:.1%} de las simulaciones {worse} que el "
+                             f"backtest real en {metrics.LABELS[metric]}.") + caption(shape.get("left_out", 0))}
 
 
 def cone(run_cone: dict, title: str, note: str = "") -> dict:

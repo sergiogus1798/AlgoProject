@@ -11,3 +11,4 @@
 - `ui-tests-pytest-fixture-fake` — Why does a plain parameter in tests/test_ui_*.py get treated as a pytest fixture?
 - `where-window-progress-comes-from` — Where does each progress figure in the window come from, and which runs have none?
 - `window-advances-workflow` — What does «Continuar workflow» check and do before it starts a step?
+- `zones-load-on-first-open` — Why did the window take 8 s to open, and where does a zone's first read happen now?

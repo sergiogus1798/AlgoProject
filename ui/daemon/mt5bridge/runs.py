@@ -10,6 +10,7 @@ from core.paths import MT5_ACCOUNTS, MT5_DATA, STRATEGY_POOLS, archive_dir
 from mt5 import tester, wine
 from mt5.verify import firms
 from ui.daemon.advance import preflight as advance
+from ui.daemon.mt5bridge.display import polish
 from ui.daemon.strategy import locate
 
 RUNS = MT5_DATA / "verify"
@@ -29,6 +30,11 @@ def listing() -> list[dict]:
     return out
 
 
+def firm_names() -> dict[str, str]:
+    """Firm key -> the label the owner reads, for the summary lines."""
+    return {f: firms.label(f) for f in MT5_ACCOUNTS}
+
+
 def result(run: str) -> dict:
     """One check's result.json (the study contract) and its run.json."""
     folder = RUNS / run
@@ -37,7 +43,8 @@ def result(run: str) -> dict:
     meta = json.loads((folder / "run.json").read_text(encoding="utf-8"))
     body = folder / "result.json"
     return {"meta": meta,
-            "result": json.loads(body.read_text(encoding="utf-8")) if body.exists() else None}
+            "result": polish(json.loads(body.read_text(encoding="utf-8")), firm_names())
+            if body.exists() else None}
 
 
 def folder_listing() -> list[dict]:

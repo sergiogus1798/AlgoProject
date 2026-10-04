@@ -26,7 +26,7 @@ manifest.
   read sizing as edge. Which one the owner wants shown first is open; `USD` is first today only
   because it is the export's own number.
 - **Bins** cover p0.5–p99.5 of both samples pooled; what falls outside is folded into the end
-  bins, so each density keeps its area of 1 (`trades.tail_pct`).
+  bins, so each density keeps its area of 1 (axis clipped by `core.study.clip`).
 - **Weight:** ~23 KB of JSON and ~23 KB of HTML per strategy — 200 strategies in 7 s and 9.4 MB;
   a 10,000-strategy harvest would write ~470 MB of pages (measured with the duration
   distribution still in; one fewer block per strategy now).

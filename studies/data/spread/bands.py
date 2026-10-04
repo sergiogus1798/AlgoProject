@@ -50,11 +50,12 @@ def report(symbol: str, d: pd.DataFrame, curves: dict, cfg: dict) -> dict:
     grid = np.linspace(d["price"].min(), d["price"].max(), 60)
     lines = band.predict(curves, grid)
     keep = blocks.thin(len(d), 1500)
-    cloud = {"kind": "scatter", "title": "Spread medio de cada día contra el precio", "x_label": "precio",
-             "y_label": "spread (puntos)", "quadrants": False, "fit": None,
+    cloud = {"kind": "scatter", "title": "Spread medio de cada día contra el precio", "x_label": "Precio",
+             "y_label": "Spread (puntos)", "quadrants": False, "fit": None,
              "points": [{"x": float(p), "y": float(s), "label": f"{t:%Y-%m-%d}", "group": str(t.year)}
                         for t, p, s in zip(d.index[keep], d["price"].iloc[keep], d["spread"].iloc[keep])]}
     curve = {"kind": "lines", "title": "Curvas ajustadas: media y banda", "unit": "puntos",
+             "x_label": "Precio del activo (moneda de cotización)", "y_label": "Spread (puntos)",
              "x": [f"{p:.0f}" for p in grid],
              "series": [{"label": "media" if k == "media" else f"cuantil {float(k):.1%}",
                          "values": lines[k].tolist(), "role": "real" if k == "media" else "reference"}

@@ -14,6 +14,7 @@ from ui.text.brief import full, line
 ROLE = {"custodian": "custodio · SQX_w2", "conductor": "conductor · SQX_w1", "master": "maestro"}
 ORDER = ("custodian", "conductor", "master")     # where a selected project is looked for first
 EVERY_MS = 3000
+RESCAN_TICKS = 10        # 30 s: new projects and installs appear without «Recargar»
 PICKER_TIP = ("La ventana lee ficheros del install y, solo mientras un worker corre el proyecto, "
               "le pide su línea de estado (action=status, lo único que el custodio puede recibir "
               "a mitad de trabajo). No arranca, no para, no reconfigura. Al abrir se elige sola "
@@ -30,7 +31,9 @@ class Running(QFrame):
         self.by_hand = False                 # once the owner picks, the zone stops choosing
         self.timer = QTimer(self)
         self.timer.setInterval(EVERY_MS)
-        self.timer.timeout.connect(self.refresh)
+        self.timer.timeout.connect(self.tick)
+        self.ticks = 0
+        self.running: set[tuple[str, str]] = set()   # (role, project) the last scan saw running
         lay = QVBoxLayout(self)
         lay.setContentsMargins(16, 12, 16, 12)
         lay.setSpacing(8)
@@ -57,6 +60,14 @@ class Running(QFrame):
         split.setSizes([300, 540])
         lay.addWidget(split, 1)
 
+    def tick(self) -> None:
+        """Every tick redraw the chosen project; every `RESCAN_TICKS`th also look for new ones."""
+        self.ticks += 1
+        if self.ticks % RESCAN_TICKS == 0:
+            self.reload()
+        else:
+            self.refresh()
+
     def reload(self) -> None:
         """Ask the daemon which installs and projects exist and what SQX runs, off the GUI
         thread; `listed` chooses what to show."""
@@ -70,9 +81,17 @@ class Running(QFrame):
             self.note.setText(line(got["error"]))
             self.note.setToolTip(full(got["error"]))
             return
+        same = got["installs"] == self.data
         self.data = got["installs"]
         role, project = self.install.currentText(), self.project.currentText()
-        if not self.by_hand:
+        runs = {(r["role"], r["project"]) for r in got["runs"]}
+        fresh = runs - self.running
+        self.running = runs
+        if fresh:                                   # started since the last scan: follow it
+            role, project = min(fresh, key=lambda r: ORDER.index(r[0]) if r[0] in ORDER else 9)
+        elif same and self.install.count():
+            return                                  # nothing new: leave the open combos alone
+        elif not self.by_hand:
             role, project = self.default(got["runs"])
         self.install.clear()
         for r in self.data:
@@ -99,8 +118,9 @@ class Running(QFrame):
             if chosen and chosen in self.data.get(role, []):
                 return role, chosen
         # Never a stock project (Builder, Retester) by default: no run of ours lives there
-        # (CLAUDE.md rule 10), and ours are the ones named Test_ or Trade_ (rule 6).
-        ours = [p for p in self.data.get("custodian", []) if p.startswith(("Test_", "Trade_"))]
+        # (CLAUDE.md rule 10), and ours are the ones named Test_, Trade_ or Research_ (rule 6).
+        ours = [p for p in self.data.get("custodian", [])
+                if p.startswith(("Test_", "Trade_", "Research_"))]
         return "custodian", ours[0] if ours else ""
 
     def fill_projects(self, keep: str) -> None:

@@ -91,8 +91,8 @@ def after_cut(actions: list[dict], cfg: dict) -> list[dict]:
     before the judge, on everyone."""
     out, late = [], {}
     for a in actions:
-        judged = {r["fact"].split(".")[0]
-                  for r in cfg["steps"].get(a["n"], {}).get("rules") or []}
+        judged = {fact.split(".")[0] for fact in judge.criteria.reads(
+            cfg["steps"].get(a["n"], {}).get("rules") or [])}
         moved = [k for k in AFTER_CUT.get(a["n"], [])
                  if a["kind"] == "python" and k in a["tests"] and k not in judged]
         if moved:

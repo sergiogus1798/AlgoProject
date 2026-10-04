@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+from ui.desktop import names
 from ui.desktop.blocks.card import text
 from ui.desktop.research import parts
 from ui.desktop.theme import T
@@ -80,7 +81,7 @@ class MapView(QWidget):
             for c, tf in enumerate(got["timeframes"], 1):
                 self.grid.addWidget(self.button(symbol, tf, got["cells"].get(f"{symbol}|{tf}")),
                                     r, c)
-        keys = "   ".join(f"<span style='color:{parts.FAMILY[f]}'>■</span> {f}"
+        keys = "   ".join(f"<span style='color:{parts.FAMILY[f]}'>■</span> {names.family(f)}"
                           for f in got["families"])
         levels = " · ".join(lv["label"] for lv in reversed(got["levels"]))
         self.legend.setText(f"{keys}<br>Intensidad (tres escalones): {levels}.<br>▲ largo · ▼ "
@@ -93,19 +94,19 @@ class MapView(QWidget):
         best = (cell or {}).get("passing") or []
         measured = bool(best) and best[0]["trades_per_year"] is not None
         b = QPushButton("—" if not best else
-                        f"{parts.SHORT[best[0]['family']]} {parts.ARROW[best[0]['direction']]} "
+                        f"{names.short(best[0]['family'])} {parts.ARROW[best[0]['direction']]} "
                         + (f"{best[0]['multiple']:.0f}x" if measured else "prior"))
         b.setProperty("helpmark", False)
-        b.setMinimumSize(96, 30)
+        b.setMinimumSize(108, 30)       # «BRK ▲ prior» whole: at 96 it lost both ends
         ground = parts.shade(best[0]["family"], best[0]["level"]) if best else parts.GREY
         ink = parts.ink_on(best[0]["level"]) if best else T["faint"]
         b.setStyleSheet(f"QPushButton {{ background: {ground}; color: {ink}; border: 1px solid "
-                        f"{T['line']}; border-radius: 3px; font-weight: 700; font-size: 13px; }}"
+                        f"{T['line']}; border-radius: 3px; font-weight: 700; font-size: 13px; padding: 0; }}"
                         f"QPushButton:hover {{ border: 2px solid {T['text']}; }}")
         b.setToolTip("Ninguna familia está en el tablero (ni prior Alta ni lo medido la admite)" + (
-            f"; la de más puntuación: {cell['best']['family']} {cell['best']['direction']} "
+            f"; la de más puntuación: {names.family(cell['best']['family'])} {cell['best']['direction']} "
             f"({cell['best']['score']})" if cell else "") if not best else "\n".join(
-            f"{p['family']} {p['direction']}: prior {p['prior'] or 'ninguna'}, entra por "
+            f"{names.family(p['family'])} {p['direction']}: prior {p['prior'] or 'ninguna'}, entra por "
             f"{'+'.join(p['entered_by'])}; {p['state']}; " + (
                 f"{p['multiple']}x el coste, {p['trades_per_year']} op/año"
                 if p["trades_per_year"] is not None else "efecto y frecuencia sin medir")
@@ -127,12 +128,12 @@ class MapView(QWidget):
         yes = lambda v: "SÍ" if v else "no"  # noqa: E731
         years = lambda r: f"{parts.num(r['years_with_sign'], 0)}/{parts.num(r['years'], 0)}"  # noqa: E731
         parts.fill(self.families, [
-            [parts.ARROW[f["direction"]], f["family"], parts.num(f["score"], 1), f["lead"],
+            [parts.ARROW[f["direction"]], names.family(f["family"]), parts.num(f["score"], 1), f["lead"],
              parts.num(f["p"], 3), parts.num(f["multiple"], 1), years(f),
              parts.num(f["trades_per_year"], 1), yes(f["passes"])] for f in got["families"]],
             [parts.FAMILY[f["family"]] if f["passes"] else None for f in got["families"]])
         parts.fill(self.measures, [
-            [parts.ARROW[m["direction"]], m["family"], m["measure"], parts.num(m["z"], 1),
+            [parts.ARROW[m["direction"]], names.family(m["family"]), m["measure"], parts.num(m["z"], 1),
              parts.num(m["q"], 3), parts.num(m["multiple"], 1), years(m),
              parts.num(m["trades_per_year"], 1), yes(m["passes"]), m["explanation"]]
             for m in got["measures"]],

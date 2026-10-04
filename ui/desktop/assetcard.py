@@ -63,7 +63,7 @@ class AssetCard(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(6)
 
-        head = QLabel("Costes — doble clic para cambiar", objectName="h2")
+        head = QLabel("Costes (doble clic para cambiar)", objectName="h2")
         head.setToolTip("El ratón encima de una fila dice por qué vale lo que vale.")
         lay.addWidget(head)
         # The `why` is a paragraph: a column for it would take half a page that sits beside
@@ -85,7 +85,7 @@ class AssetCard(QWidget):
         self.title.setText(data["symbol"])
         feed = data["data"]
         self.chips.setText("  ".join([
-            chip(word(data["class"]), C["accent"]), chip(data["broker"], C["muted"]),
+            chip(word(data["class"]), C["accent"], 15), chip(data["broker"], C["muted"]),
             chip(data["sqx_symbol"], C["muted"]),
             chip(f"Sesión {data['session'] or 'SIN DECIDIR'}",
                  C["muted"] if data["session"] else C["dead"]),
@@ -107,7 +107,7 @@ class AssetCard(QWidget):
         """
         bad = [(k, v) for k, v in self.data["problems"].items() if v]
         if not bad:
-            return chip("al día", C["promising"])
+            return chip("al día", C["promising"], 15)
         return "<br>".join(
             chip(TROUBLE[k][0], TROUBLE[k][1]) + ("" if k == "mc" else   # the chip says it all
                 f"  <span style='color:{C['muted']}'>{', '.join(word(x) for x in v)}</span>")

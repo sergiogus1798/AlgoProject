@@ -48,8 +48,7 @@ def _hist(name: str, unit: str, values: np.ndarray, real: float | None, share: f
     arr = arr[np.isfinite(arr)]
     median = float(np.median(arr))
     lo, hi = median - share * abs(median), median + share * abs(median)
-    ends = [float(arr.min()), float(arr.max()), lo, hi] + ([real] if real is not None else [])
-    b = blocks.distribution(name, unit, arr, real, "", span=(min(ends), max(ends)))
+    b = blocks.distribution(name, unit, arr, real, "")
     b["band"] = [lo, hi]
     where = "" if real is None else ("dentro" if lo <= real <= hi else "fuera")
     b["note"] = (f"Banda: mediana ± {share:.0%} de su propio valor."

@@ -26,6 +26,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QInputDialog,  # noqa: E402
                                QMessageBox, QTabBar, QTableWidget)
 
+from shiboken6 import isValid  # noqa: E402
+
 from ui.desktop import client  # noqa: E402
 
 # POSTs that only read: the aggregate curve of chosen rows, a config's hash, the chat's next
@@ -92,12 +94,16 @@ def drive(app: QApplication, zone: object) -> int:
             settle(app, 0.3)
         moved += 1
     for bar in [b for b in zone.findChildren(QTabBar) if b.isVisible()]:
+        if not isValid(bar):        # a tab of another bar rebuilt the page this one lived in
+            continue
         for i in range(min(bar.count(), TABS)):
             if bar.isTabEnabled(i):
                 bar.setCurrentIndex(i)
                 settle(app, 0.4)
         moved += 1
     for table in [t for t in zone.findChildren(QTableWidget) if t.isVisible()]:
+        if not isValid(table):
+            continue
         for r in range(min(table.rowCount(), 3)):
             table.selectRow(r)
             settle(app, 0.1)

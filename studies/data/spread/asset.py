@@ -51,6 +51,9 @@ def _model_tab(errors: pd.DataFrame, chosen: str) -> dict:
     summary = (summary * 100).reset_index()
     wide = (errors.pivot_table(index=["modelo", "sentido"], columns="año", values="error") * 100).reset_index()
     wide.columns = [str(c) for c in wide.columns]
+    for frame in (summary, wide):       # «volatilidad_precio» → «Volatilidad y precio»
+        for col in ("modelo", "sentido"):
+            frame[col] = frame[col].str.replace("_", " y ").str.capitalize()
     return envelope.tab("model", "Modelo", [
         blocks.table("Validación cruzada", summary, f"Elegido: {chosen}. El error es predicho ÷ "
                      "medido − 1 de la media del año; negativo = el modelo se queda corto."),
@@ -84,7 +87,7 @@ def run(symbol: str, facts: dict, yearly: pd.DataFrame, daily: pd.DataFrame, err
     rel, pts = facts["relative"], facts["points"]
     state = "pass" if rel["constant"] else "watch"
     said = blocks.verdict(
-        "relativo constante" if rel["constant"] else f"relativo NO constante → modelo {facts['model']}",
+        "Relativo constante" if rel["constant"] else f"Relativo NO constante → modelo {facts['model']}",
         state,
         f"Peor año del spread relativo a {rel['worst']:.2f} × la mediana de los años (tolerancia "
         f"±{cfg['constancy']['tolerance']:.0%}); en puntos {pts['worst']:.2f} ×. "

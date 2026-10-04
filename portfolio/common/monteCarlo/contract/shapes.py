@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from core.study import blocks
+from core.study.clip import caption
 from portfolio.common.monteCarlo.contract.words import LABELS, UNITS
 
 # A share of the account is stored as a fraction and read as a percentage.
@@ -49,7 +50,7 @@ def distribution(shape: dict, table: dict | None, metric: str, title: str,
     return {"kind": "distribution", "title": title, "unit": UNITS[metric],
             "bins": [float(e) for e in edges], "counts": [int(c) for c in counts],
             "real": shape["observed"] * k, "median": shape["median"] * k, "band": band,
-            "percentiles": pct, "p": None, "note": note}
+            "percentiles": pct, "p": None, "note": note + caption(shape.get("left_out", 0))}
 
 
 def summary(table: dict, metric: str, title: str) -> dict:

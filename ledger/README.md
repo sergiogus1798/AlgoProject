@@ -20,6 +20,7 @@ family: the unit the multiple-testing correction is owed to.
 | `blind.py` | The rows steps 17, 18 and 19 did not write, rebuilt from `wfc.json`, `cscv.json` and the WFM reading, one per segment each read — skipping a batch whose WFC or CSCV recorded itself | imported by `backfill` | results → rows |
 | `report.py` | **The command**: the funnel, what was spent, the blind door, and what the whole search costs the Sharpe — «N candidatos + K hipótesis», the ideaExpert's looks read from `studies.research.memory.trials` | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
 | `thresholds.yaml` | Every threshold of the chain, with who set it and when — **the source**: a module's `config.yaml` holds `ledger:<key>` in its place. Read, never written by code — except `cscv.blocks`, which the window's Configuración SQX › CSCV writes for the owner, stamping `set_by`, `set_on` and a proposed `why` (2026-09-28) | edited by the owner, by hand or from the window | — |
+| `criteria-history.jsonl` | One line per change the window's «Criterios» zone made to `pipeline/autopilot/criteria.yaml` — `at`, `by`, `step`, `what` (añadida, cambiada, borrada, congelado), the rule `before` and `after` — append-only; absent until the first change | written by `ui/daemon/criteria/write.py` | — |
 
 Manual page, in Spanish: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 43-ledger). Tests: `tests/test_ledger.py`, `tests/test_ledger_ideas.py`.
 

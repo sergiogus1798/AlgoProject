@@ -6,17 +6,17 @@ nothing here writes a file of its own, exports anything or reaches SQX. The one 
 `barsDerived/<feed>/<TF>-<fingerprint>.parquet`, as every other reader of the bar library does.
 
 ```
-api ─▶ catalogue ─▶ perf.disk.inventory (bytes, files, formats, age) + every manifest.json
+api ─▶ catalogue ─▶ one os.walk of the data root (files, formats, age) + every manifest.json
     └▶ market ─▶ core.barstore (bars) · spread/<tick feed>/{spread,band}.json · feedQuality/<feed>/feedQuality.json
 ```
 
-**Imports from:** `core/` (`barstore`, `manifest`, `paths`, `datapaths`), `perf/disk`, `perf/inputs` · **Consumed by:** `ui/desktop/datazone` over HTTP
+**Imports from:** `core/` (`barstore`, `manifest`, `paths`, `datapaths`), `perf/inputs` · **Consumed by:** `ui/desktop/datazone` over HTTP
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Package marker, one docstring | imported | — |
 | `api.py` | The five routes: `/api/data/catalogue`, `/api/data/assets`, `/api/data/bars?feed&tf&since`, `/api/data/spread?feed&part`, `/api/data/feedquality?feed`; a feed is checked against the listing of its tree, and a failure is a sentence, never a 500 | imported | request → JSON |
-| `catalogue.py` | Every branch of AlgoData down to three levels with bytes, files, formats, the date of its newest write, whether it is stale, and how many `manifest.json` sign it and the newest date one of them carries | imported | disk → rows |
+| `catalogue.py` | Every branch of AlgoData down to three levels with files, formats (no size: it was what made the zone take minutes),  the date of its newest write, whether it is stale, and how many `manifest.json` sign it and the newest date one of them carries | imported | disk → rows |
 | `market.py` | The assets the three trees know (symbol = feed up to its first `_`) with their bar, tick and quality feeds; one feed's OHLC at D1/H4/H1, columnar; one feed's step-4 report read back as the contract dict its study wrote | imported | disk → JSON |
 
 ## Contracts and traps

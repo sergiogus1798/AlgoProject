@@ -58,9 +58,25 @@ class ResearchZone(QFrame):
             self.reload()
 
     def reload(self) -> None:
-        """Read everything again («Recargar»)."""
+        """Read everything again («Recargar», or the shell on the zone's first opening)."""
+        self.loaded = True
         for view in (self.map, self.memory, self.direct, self.proposal):
             view.reload()
+
+    def open_cell(self, symbol: str, timeframe: str) -> None:
+        """The library's front page asked for one cell: the map, with that cell's measures.
+
+        Args:
+            symbol: The asset; "" opens the map with no cell chosen.
+            timeframe: One of the map's timeframes.
+        """
+        self.tabs.setCurrentWidget(self.map)
+        if symbol:
+            self.map.open(symbol, timeframe)
+
+    def open_proposal(self) -> None:
+        """The library's front page asked for the director's proposal."""
+        self.tabs.setCurrentWidget(self.proposal)
 
     def arrived(self) -> None:
         """The director ended: show its proposal."""

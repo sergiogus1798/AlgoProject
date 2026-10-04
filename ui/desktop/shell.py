@@ -1,8 +1,8 @@
 """The window itself: grouped side navigation, the context bar, one zone inside, one status bar."""
 
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QStackedWidget, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QStackedWidget, QTabBar,
+                               QVBoxLayout, QWidget)
 
 from ui.desktop import client, projectflow as flow
 from ui.desktop.assets import Assets
@@ -11,8 +11,9 @@ from ui.desktop.chat import Chat
 from ui.desktop.cmdpalette import CmdPalette
 from ui.desktop.contextbar import ContextBar
 from ui.desktop.coverage import Matrix as Coverage
+from ui.desktop.criteria.zone import CriteriaZone
 from ui.desktop.datazone.zone import DataZone
-from ui.desktop.nav import ZONES, sidebar
+from ui.desktop.nav import LIBRARY, TIPS, ZONES, sidebar
 from ui.desktop.ops.jobsbar import JobsBar
 from ui.desktop.ops.ledger import Ledger
 from ui.desktop.ops.running import Running
@@ -21,6 +22,7 @@ from ui.desktop.mt5bridge.zone import VerifyZone
 from ui.desktop.portfolios.zone import PortfoliosZone
 from ui.desktop.research.zone import ResearchZone
 from ui.desktop.selection import SELECTION
+from ui.desktop.shellopen import Opens
 from ui.desktop.sqxconfig.zone import SqxConfigZone
 from ui.desktop.theme import C
 from ui.desktop.workspace.gallery import Gallery
@@ -45,7 +47,7 @@ class Said(QLabel):
         self.setToolTip(text)
 
 
-class Shell(QWidget):
+class Shell(Opens, QWidget):
     """The single window. Everything else is a view inside it."""
 
     def __init__(self) -> None:
@@ -73,7 +75,8 @@ class Shell(QWidget):
             "Estrategia": self.estrategia,
             "En marcha": self.running, "Registro de búsquedas": self.ledger,
             "Configuración SQX": SqxConfigZone(), "Datos": DataZone(), "Investigar": ResearchZone(),
-            "Portfolios": PortfoliosZone(), "Verificar": VerifyZone()}
+            "Portfolios": PortfoliosZone(), "Verificar": VerifyZone(),
+            "Criterios": CriteriaZone()}
         self.wire()
 
         right = QVBoxLayout()
@@ -91,6 +94,13 @@ class Shell(QWidget):
             self.stack.addWidget(self.zones[name])
         body = QVBoxLayout()
         body.setContentsMargins(24, 14, 24, 8)
+        # The library's pages, above whichever of them is open (`nav.LIBRARY`).
+        self.library = QTabBar()
+        self.library.setExpanding(False)
+        for name in LIBRARY:
+            self.library.setTabToolTip(self.library.addTab(name), TIPS[name])
+        self.library.currentChanged.connect(lambda i: self.open_zone(LIBRARY[i]))
+        body.addWidget(self.library)
         body.addWidget(self.stack, 1)
         right.addLayout(body, 1)
         foot = QHBoxLayout()
@@ -112,8 +122,13 @@ class Shell(QWidget):
         bar, self.nav = sidebar(self.open_zone, self.refresh, list(self.reloads))
         lay.insertWidget(0, bar)
         lay.addLayout(right, 1)
+        # Each of them is read the first time it is opened, not before the window shows: read
+        # all at once they held the window back ~6 s, Activos alone 5 (📓 2026-10-04). The
+        # gallery is the exception — Ctrl+K lists its projects — and it reads off the GUI thread.
+        self.stale = set(self.reloads) - {"Proyectos"}
+        self.gallery.load()
         self.open_zone(ZONES[0])
-        self.refresh()
+        self.restate()
         self.guard(client.get("health")["sqx"]["installs"])
         # The app's only shortcut. A text field that has the focus keeps Ctrl+K (Qt's «delete
         # to end of line»), the chat's answer box included: the palette never eats typing.
@@ -123,6 +138,7 @@ class Shell(QWidget):
     def wire(self) -> None:
         """Connect the zones that hand the owner on to another zone."""
         self.coverage.picked.connect(self.open_template)
+        self.coverage.go.connect(self.open_library)
         self.chat.authored.connect(self.catalogue.reload)
         self.gallery.opened.connect(self.open_project)
         self.workspace.strategy_chosen.connect(self.open_strategy)
@@ -171,78 +187,31 @@ class Shell(QWidget):
         """
         # Databanks is filled by Proyecto's zone: one project, one fill, both zones.
         flow.catch_up(self, "Proyecto" if name == "Databanks" else name)
+        if name in self.stale:           # its first opening, or the first since «Recargar»
+            self.stale.discard(name)
+            self.reloads[name]()
         self.stack.setCurrentWidget(self.zones[name])
+        # A library page with no sidebar button of its own lights the library's.
+        lit = name if name in self.nav else LIBRARY[0]
         for zone, b in self.nav.items():
-            b.setChecked(zone == name)
-
-    def go_to(self, item: dict) -> None:
-        """Open what one palette row points at: by zone name and SELECTION, never by stack index.
-
-        Args:
-            item: A row as `cmdpalette.CmdPalette.gather` built it; `kind` says which.
-        """
-        kind, fields = item["kind"], {k: item[k] for k in ("project", "asset", "databank")
-                                      if k in item}
-        if kind == "zone":
-            self.open_zone(item["label"])
-        elif kind == "study":
-            self.open_zone("Estrategia")
-            self.estrategia.show_live()
-            if self.ficha.page is not None:
-                self.ficha.page.open_study(item["study"])
-        elif kind == "strategy":
-            SELECTION.choose(**fields, strategy=item["label"], identity=item["identity"])
-            self.estrategia.show_live()
-            self.open_zone("Estrategia")
-        elif kind == "project":
-            self.open_project(item["project"])
-        else:
-            SELECTION.choose(**fields)
-            self.open_zone("Databanks" if kind == "databank" else "Proyecto")
-            if kind == "databank":
-                self.workspace.show_databank(item["databank"])
-
-    def open_project(self, name: str) -> None:
-        """A card or a palette row chose a project: select it, load it if confirmed, show it."""
-        self.status.setText(self.gallery.choose(name))
-        self.open_zone("Proyecto")
-
-    def open_strategy(self, identity: str) -> None:
-        """Databanks' panel chose a strategy by identity: select it and show its ficha."""
-        said = flow.select_strategy(identity, flow.in_panel(self, identity))
-        self.status.setText(said)
-        if not said:
-            self.estrategia.show_live()
-            self.open_zone("Estrategia")
-
-    def open_archived(self, identity: str, version: str) -> None:
-        """PORTFOLIOS' «Importar»: the Estrategia page of one archived version, nothing run.
-
-        Args:
-            identity: The strategy's identity.
-            version: The archived version; "" for the newest.
-        """
-        said = self.estrategia.show_archived(identity, version)
-        self.status.setText(said)
-        if not said:
-            self.open_zone("Estrategia")
-
-    def open_template(self, name: str) -> None:
-        """Jump from a coverage cell to that template's page.
-
-        Args:
-            name: Template name.
-        """
-        self.open_zone("Plantillas")
-        self.catalogue.select(name)
+            b.setChecked(zone == lit)
+        self.library.setVisible(name in LIBRARY)
+        if name in LIBRARY:
+            self.library.blockSignals(True)
+            self.library.setCurrentIndex(LIBRARY.index(name))
+            self.library.blockSignals(False)
 
     def refresh(self) -> None:
         """Reload the zones that load once (`self.reloads`) and restate what is on screen.
 
         Proyecto, Databanks and Estrategia follow SELECTION and read on their own.
         """
-        for reload in self.reloads.values():
-            reload()
+        self.stale = set(self.reloads)
+        self.open_zone(next(n for n in ZONES if self.zones[n] is self.stack.currentWidget()))
+        self.restate()
+
+    def restate(self) -> None:
+        """Say in the status bar what the library's front page was read from."""
         totals = self.coverage.data
         self.status.setText(
             f"registry.csv · runs.csv · library/  —  {len(totals['rows'])} filas × "

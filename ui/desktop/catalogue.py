@@ -4,7 +4,7 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QLineEdit, QListWidget,
                                QListWidgetItem, QSplitter, QVBoxLayout, QWidget)
 
-from ui.desktop import client
+from ui.desktop import client, names
 from ui.desktop.detail import Detail
 from ui.desktop.theme import C, STATUS_COLOUR, VERDICT_COLOUR
 
@@ -22,7 +22,7 @@ def summary(t: dict) -> str:
     if t["orphan"]:
         return "solo en runs.csv — no está en el registro"
     markets = " ".join(f"{r['symbol']}·{r['timeframe']}" for r in t["runs"]) or "sin runs"
-    return f"{t.get('archetype') or 'sin arquetipo'} — {markets}"
+    return f"{names.family(t.get('archetype'))} — {markets}"
 
 
 class Catalogue(QWidget):
@@ -37,9 +37,17 @@ class Catalogue(QWidget):
         lay.addWidget(QLabel("Plantillas", objectName="h1"))
 
         filters = QHBoxLayout()
-        self.search = QLineEdit(placeholderText="Buscar por nombre, arquetipo o activo")
+        self.search = QLineEdit(placeholderText="Buscar por nombre, familia o activo")
         self.search.textChanged.connect(self.fill)
         filters.addWidget(self.search, 1)
+        # The family the library's front page sent here, and the way back to all of them.
+        self.family = QComboBox(toolTip="Sólo las plantillas de una familia. Cobertura abre "
+                                        "esta lista ya filtrada al pulsar una familia.")
+        self.family.addItem("Todas las familias", "")
+        for row in names.TABLE:
+            self.family.addItem(row[names.SHOWN], row[names.REGISTRY])
+        self.family.currentIndexChanged.connect(self.fill)
+        filters.addWidget(self.family)
         self.status = QComboBox()
         self.status.addItem("Todos los estados", "")
         self.status.currentIndexChanged.connect(self.fill)
@@ -73,10 +81,12 @@ class Catalogue(QWidget):
     def fill(self) -> None:
         """Rebuild the list under the current search text and status filter."""
         term = self.search.text().lower()
-        want = self.status.currentData()
+        want, family = self.status.currentData(), self.family.currentData()
         self.list.clear()
         for t in self.data["templates"]:
-            haystack = " ".join([t["name"], t.get("archetype", ""),
+            if family and t.get("archetype") != family:
+                continue
+            haystack = " ".join([t["name"], t.get("archetype", ""), names.family(t.get("archetype")),
                                  *(r["symbol"] + r["timeframe"] for r in t["runs"])]).lower()
             if term and term not in haystack:
                 continue
@@ -87,10 +97,12 @@ class Catalogue(QWidget):
         for d in self.data["drafts"]:
             if term and term not in d["name"].lower():
                 continue
+            if family and d.get("archetype") != family:
+                continue
             if want:
                 continue
             self.add_row(f"{d['name']}  ·  borrador",
-                         f"{d.get('archetype', '')} — sin autorar, del chat",
+                         f"{names.family(d.get('archetype'))} — sin autorar, del chat",
                          VERDICT_COLOUR["weak"], None)
 
     def add_row(self, title: str, subtitle: str, colour: str, name: str | None) -> None:
@@ -147,3 +159,14 @@ class Catalogue(QWidget):
             if self.list.item(i).data(Qt.UserRole) == name:
                 self.list.setCurrentRow(i)
                 return
+
+    def show_family(self, key: str) -> None:
+        """List one family's templates and open the first: where a family of Cobertura leads.
+
+        Args:
+            key: The family in any spelling `names` knows; "" for all of them.
+        """
+        self.search.clear()
+        self.family.setCurrentIndex(max(self.family.findData(names.spelt(key, names.REGISTRY)), 0))
+        if self.list.count():
+            self.list.setCurrentRow(0)

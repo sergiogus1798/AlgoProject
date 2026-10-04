@@ -77,6 +77,8 @@ def _draw(b: dict) -> Callable:
             p.fillRect(QRectF(box.left(), box.top(), box.width(), y(0) - box.top()), above)
             p.fillRect(QRectF(box.left(), y(0), box.width(), box.bottom() - y(0)), below)
         chart.axes(p, box, xt, [(y(v), chart.num(v)) for v in axis.ticks(lo, hi, 5)])
+        if b.get("x_label"):
+            chart.titles(p, box, rect, b["x_label"], b["y_label"])
         p.setBrush(Qt.NoBrush)
         for s, (c, style, width) in zip(b["series"], pens):
             p.setPen(QPen(QColor(c), width, style))

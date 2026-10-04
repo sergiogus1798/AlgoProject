@@ -69,37 +69,6 @@ def chart(cfx: Path, stamp: float) -> tuple[str | None, str | None]:
     return found.group(1).split("_")[0], found.group(2)
 
 
-@cache
-def distinct(project: str, databank: str, stamp: float) -> int:
-    """How many distinct strategies a databank holds, for one state of its folder.
-
-    Args:
-        project: Project name.
-        databank: Databank name.
-        stamp: The folder's mtime, which changes when a file comes or goes: a new stamp is a
-            new entry. Kept here, unbounded (an int per state), because `find.roster`'s own
-            cache holds 64 folders and the gallery walks every databank of every install.
-    """
-    return len(find.roster(project, databank))
-
-
-def banks(name: str, top: Path) -> dict[str, int]:
-    """Strategies per databank, from each databank's roster (identity → name).
-
-    Args:
-        name: Project name.
-        top: The install holding it.
-
-    Returns:
-        Databank → distinct strategies; an empty folder is 0 without hashing anything. The
-        roster is empty while SQX writes the project, so the caller counts a running
-        project by its files instead (`progress.counts`).
-    """
-    folder = top / "user" / "projects" / name / "databanks"
-    return {d.name: distinct(name, d.name, d.stat().st_mtime) if any(d.glob("*.sqx")) else 0
-            for d in sorted(folder.glob("*")) if d.is_dir()}     # none before its first run
-
-
 def ending(run: dict) -> str:
     """How the last start of the log ended: «Project stopped» or «Project finished»."""
     stopped = next((line for line in reversed(run["tail"])
@@ -172,8 +141,9 @@ def card(name: str, where: tuple[str, Path] | None, row: dict, runs_today: dict,
     cfx = folder / "project.cfx"
     symbol, timeframe = chart(cfx, cfx.stat().st_mtime)
     run = runs_today[role]
-    writing = run["project"] == name and not run["finished"]      # what `find.writing` reads
-    counted = progress.counts(folder) if writing else banks(name, top)
+    # Files, not `find.roster`: hashing 21,000 .sqx to drop duplicates held the gallery 36 s
+    # on a cold daemon. A duplicated strategy counts twice here; the databank view dedups.
+    counted = dict(sorted(progress.counts(folder).items()))
     said, why, live = state(role, top, name, run, sum(counted.values()))
     return {**base, "symbol": row.get("symbol") or symbol or runs.guess_asset(name),
             "timeframe": row.get("timeframe") or timeframe, "strategies": sum(counted.values()),

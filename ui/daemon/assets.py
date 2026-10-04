@@ -11,6 +11,7 @@ from core.assets import report
 from core.assetyaml import leaves
 from core.paths import ASSETS, WORKERS
 from sqx.inspect.instruments import registry
+from studies.research.marketProfile import priorview
 
 
 def units(data: dict) -> dict:
@@ -95,7 +96,20 @@ def one(symbol: str) -> dict:
             "notes": list(data.get("notes") or []),
             "projects": list(data.get("projects_using_it") or []),
             "problems": problems(data), "report": report(symbol),
-            "leaves": _leaves(symbol)}
+            "leaves": _leaves(symbol), "prior": prior(symbol)}
+
+
+def prior(symbol: str) -> list[dict]:
+    """The owner's prior for this asset: how well each family suits it, Alta first.
+
+    Returns:
+        [{family, level (Alta/Media/Baja), long_only}], or [] for an asset the prior skips.
+    """
+    if symbol not in priorview.PRIOR["matrix"]:
+        return []
+    rows = [{"family": f, "level": priorview.matrix(symbol, f),
+             "long_only": priorview.long_only(symbol, f)} for f in priorview.PRIOR["families"]]
+    return sorted(rows, key=lambda r: list(priorview.LEVEL.values()).index(r["level"]))
 
 
 def universe(symbol: str) -> dict:
@@ -199,23 +213,6 @@ def set_cost(symbol: str, field: str, text: str, why: str) -> dict:
         The field as written.
     """
     return assetwrite.set_cost(symbol, field, assetwrite.parse(text, "scalar"), why)
-
-
-def why_for(symbol: str, field: str, text: str) -> str:
-    """The `why` the window offers when a cost is about to change.
-
-    Args:
-        symbol: Asset name.
-        field: Cost field.
-        text: The figure about to be written.
-
-    Returns:
-        A line stamped today naming the figure it replaces, for the owner to finish. The
-        word PROVISIONAL is not written for him: `assetcheck.provisional` reads it, and
-        putting it there would decide how provisional his own number is.
-    """
-    old = load(symbol)["costs"][field]["use"]
-    return f"{date.today()} — cambiado desde la app: {old} → {text}. "
 
 
 def create(new: dict) -> dict:

@@ -6,7 +6,8 @@ file, reads a CSV or imports `core/` for anything but the port.**
 ```
 launch ─▶ shell ─▶ nav (the sidebar in four groups) · contextbar (Proyectos › proyecto › estrategia)
                    BIBLIOTECA
-                   coverage  (la matriz, lo primero que se ve)
+                   coverage  (la portada: la matriz, la propuesta del director, las acciones de una celda)
+                             └▶ shell.open_library ─▶ catalogue · palettes · chat · research/  (names: un solo nombre por familia)
                    catalogue ─▶ detail · shape   (la lista y la ficha de una plantilla)
                    chat                  (la entrevista → borrador + comando)
                    palettes ─▶ palettebar · blocktable   (la librería de paletas)
@@ -41,8 +42,9 @@ and the study tabs). The mock on invented data (`workspace/mock.py`, `fake.py`) 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `launch.py` | Start the daemon if absent (replacing an idle one on older code), then open the window; `--zone Z` opens on a zone, `--shot DIR` saves `DIR/<zone>.png` and exits, `--port P` talks to (or starts) the daemon on another port so a shot never touches the owner's | `bin/algoui` | — |
-| `shell.py` | The single window: every zone built by name and wired (gallery → Proyecto, drawer's «→ ver en Databanks» → Databanks, panel → Estrategia, PORTFOLIOS' «Importar» → the archived ficha), the context bar, the stack, the read-only banner, the status line with the jobs strip; `open_zone(name)` for the launchers, `go_to(item)` for Ctrl+K | imported | — |
-| `nav.py` | The sidebar: the five groups (BIBLIOTECA, PROYECTO, OPERACIÓN, PORTFOLIOS, MT5 BRIDGE), one checkable button per zone with its tooltip; «Recargar» at the foot, its tooltip naming what it reloads (`reload_tip`) | imported | — |
+| `shellopen.py` | The `Opens` mixin of `Shell`: how a palette row, a card or a coverage cell hands on to another zone | imported | click → zone |
+| `shell.py` | The single window: every zone built by name, read from the daemon the FIRST time it is opened (`stale`; «Recargar» re-reads the open one and marks the rest), the library's strip of pages above its five views (`open_library`: what a cell of Cobertura opens), and wired (gallery → Proyecto, drawer's «→ ver en Databanks» → Databanks, panel → Estrategia, PORTFOLIOS' «Importar» → the archived ficha), the context bar, the stack, the read-only banner, the status line with the jobs strip; `open_zone(name)` for the launchers, `go_to(item)` for Ctrl+K | imported | — |
+| `nav.py` | The sidebar: the five groups (Biblioteca, Proyecto, Operación, MT5 Bridge, Portfolios — the owner's order of 2026-10-03), and `LIBRARY`, the five template views that are ONE sidebar entry («Cobertura y plantillas») and a strip of pages in the shell (to undo: put the four names back in `GROUPS` and set `LIBRARY = []`); one checkable button per zone with its tooltip; «Recargar» at the foot, its tooltip naming what it reloads (`reload_tip`) | imported | — |
 | `contextbar.py` | The fixed bar on top: `Proyectos › proyecto › estrategia` from `SELECTION`, each crumb opening its zone (the gallery when no project is chosen); databank and asset beside them; the identity only in the strategy crumb's tooltip | imported | selection → crumbs |
 | `loadbar.py` | Beside the crumbs: the selected databank's metrics, trades and cosecha as three chips. Choosing a databank loads what it lacks; polls while loading; `loaded(piece)` makes the shell redraw; ↻ retries what failed | imported | selection → `/api/load` |
 | `selection.py` | `SELECTION`: the one global project/databank/strategy/identity/asset, signal `changed(dict)`; a new project clears what hangs below it | imported | choose → signal |
@@ -55,12 +57,16 @@ and the study tabs). The mock on invented data (`workspace/mock.py`, `fake.py`) 
 | `combofix.py` | Every `QComboBox` popup grows to every option the screen can hold, upwards when the space below runs out, and scrolls beyond (2026-10-01, §1): one application-wide event filter, `install(app)`. The «2 of 4» was Qt's menu-style popup reserving two scroll-arrow strips inside the rows' height; the theme now uses the plain list popup | imported | — |
 | `background.py` | Daemon calls off the GUI thread: `run(work, done, key, owner)`, `get`, `post` on a 4-thread `QThreadPool`; the answer lands in `done` on the GUI thread through one relay object; `key` keeps only the newest answer per stream; a deleted `owner` drops it. Every poll and every reload uses it (owner, 2026-09-28: «la UI se congela») | imported | work → callback |
 | `client.py` | The only way out to the daemon: `send` is the one place a request leaves, with the daemon's session token (`core.uitoken.read`) on it; `aim(port)` points it at another port (`launch --port`, `tools/uiwalk.py`) | imported | path → JSON |
-| `coverage.py` | The matrix of what has been tried, and the counts above it | imported | — |
-| `catalogue.py` | The list of templates and drafts, filtered | imported | — |
+| `coveragecells.py` | The coverage matrix's scale, legend, action list and headline tiles | imported | totals → tiles |
+| `coverage.py` | The library's front page: family × timeframe (or asset, or template) on a four-step scale of runs, the director's board count per cell and its newest proposal, and the chosen cell's four actions (`go`: its templates, its family's palette, a new template, the research map) | imported | — |
+| `names.py` | The one table of family names: every stored spelling (registry, taxonomy, research memory, Spanish label) to the English name the window shows, its short form, and a palette's label | imported | — |
+| `catalogue.py` | The list of templates and drafts, filtered by text, family and status (`show_family`: where a family of Cobertura lands) | imported | — |
 | `detail.py` | One template's page, and the two writes it makes | imported | — |
 | `shape.py` | The panel saying which of a template's holes are free, which are bound to a group, and what it fixes | imported | — |
+| `chatparts.py` | The interview's two helpers: empty a layout and draw one message bubble | imported | text → widget |
 | `chat.py` | The interview that ends in a draft brief, a prompt and «▶ Crear la plantilla con Claude» (`jobbutton`, `POST /api/create/template`) | imported | — |
 | `jobbutton.py` | `JobButton(text, path, body, confirm, ended)`: a confirmation, one POST that queues a daemon job, then `/api/jobs` every 4 s with the job's state and its log's last lines (the author's `PREGUNTA:`/`YA EXISTE:`/`PLANTILLA:` lifted out) under the button | imported | press → job |
+| `palettetext.py` | The line under the palette bar: what the open palette is and whether it does anything | imported | palette → rich text |
 | `palettes.py` | The palette library: the open palette, its blocks by category, and the writes | imported | — |
 | `palettebar.py` | The palette view's top bar: the picker, the policy, the search and the library actions | imported | — |
 | `blocktable.py` | The table of blocks under one palette, and the override picker on each row | imported | — |
@@ -90,6 +96,7 @@ The zones' packages, each with its own README:
 | `portfolios/` | «Portfolios» (PORTFOLIOS): the archived strategies and their versions; «Importar» emits `import_requested(identity, version)` and `ImportedFicha` shows the version as the Estrategia page, every read on `source=archive`, nothing computed; `PortfoliosZone` is what the sidebar wires |
 | `research/` | «Investigar» (BIBLIOTECA): `ResearchZone` — the profile's map (asset × timeframe, colour = dominant passing family, three discrete intensities, a click for the measures each with its explanation), the memory, «▶ Proponer investigación» with the board and the director's steps, and the proposal: three ideas with a veto each, their open questions, «▶ Crear plantillas y lanzar en SQX» behind `/api/research/launch`'s sentence, and the queue (its own README) | imported by `shell.py` | daemon → four tabs |
 | `mt5bridge/` | «Verificar» (MT5 BRIDGE): `VerifyZone` — the form (the strategy chosen in Proyecto or an archived one, the window as two typed dates, the tester's model and the firms, none of them defaulted), «▶ Verificar en SQX y en MT5» as a `JobButton` whose confirmation is `/api/mt5bridge/preflight`'s text or its reasons, every past check (`/api/mt5bridge/runs`) and the chosen one's result drawn by `blocks.result.ResultView` | imported by `shell.py` | daemon → form, list, result |
+| `criteria/` | «Criterios» (PROYECTO): `CriteriaZone` — the pass criteria of every workflow step from `criteria.yaml`, step 6's Build filters read only, the `dev` warning, a dialog to add, change or delete a rule (SQX metric, app test, verdict, compound), «Congelar» and the history of changes |
 
 Dev-only: `QT_QPA_PLATFORM=offscreen python3 tools/uiwalk.py --port P` opens every zone against
 the daemon on port P, drives its combos, tabs and tables with every write refused, and reports

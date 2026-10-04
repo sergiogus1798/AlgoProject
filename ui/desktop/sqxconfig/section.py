@@ -94,11 +94,10 @@ class Section(QFrame):
         self.head = QPushButton()
         self.head.setFlat(True)
         self.head.setCheckable(True)
-        self.head.setStyleSheet("text-align: left; border: none; font-size: 15px;")
+        self.head.setStyleSheet("text-align: left; border: none; font-size: 17px;")
         count = len(section["fields"])
         self.caption = (f"{words(section['key'])}   ·   {count} valor{'es' if count != 1 else ''}"
-                        + (f", {locked} bloqueados" if locked else "")
-                        + f"   ·   {section['source']}")
+                        + (f", {locked} bloqueados" if locked else ""))
         self.head.setToolTip("\n".join(section.get("files", [section["source"]])))
         self.head.toggled.connect(self.fold)
         self.lay = QVBoxLayout(self)
@@ -144,6 +143,7 @@ class Section(QFrame):
             if group != heading:
                 sub = QLabel(group)
                 sub.setObjectName("kicker")
+                sub.setStyleSheet("font-size: 14px;")
                 grid.addWidget(sub, r, 0, 1, 3)
                 heading, r = group, r + 1
                 # WFC and CSCV's study values: one warning under the heading, not one per row
@@ -161,6 +161,7 @@ class Section(QFrame):
                     r += 1
             name = QLabel(words(spec["key"]))
             name.setObjectName("mono")
+            name.setStyleSheet("font-size: 15px;")
             name.setToolTip(" › ".join(str(p) for p in spec["path"]))
             field = Field(spec.get("file", self.section["file"]), spec)
             field.written.connect(self.written)

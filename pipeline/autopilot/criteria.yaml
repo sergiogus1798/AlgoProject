@@ -31,6 +31,18 @@
 #          A strategy's outcome is its worst rule; a strategy without the fact is limbo
 #          (owner, 2026-10-01: odd, but limbo).
 #          No rules: every strategy passes. A limbo goes on, marked (owner, 2026-10-01).
+#          Not everything is a number (owner, 2026-10-03):
+#            {fact: K, is: pass}                    a verdict: the test said yes (its fact is 1);
+#                                                   `is: fail` wants its no (0)
+#            {all: [rule, rule]} / {any: [...]}     a compound: its worst part / its best part;
+#                                                   a part may be any rule, a compound included
+#          `else: limbo` on a rule of any shape: not met is Limbo instead of Fail (the explicit
+#          form of an unreachable limbo). `name:` is the words the window shows for the rule.
+#
+# The window's «Criterios» zone reads and writes this file (ui/daemon/criteria/), comments kept;
+# each change is one line of ledger/criteria-history.jsonl. Its «Congelar» writes
+# `frozen: {on, by, sha}` here, first: from then on the window refuses every write. Lifting it
+# is deleting that line by hand.
 dev:
   on: true
   sample: 5

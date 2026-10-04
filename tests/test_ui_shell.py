@@ -18,7 +18,7 @@ from ui.daemon.loader import state as loadstate  # noqa: E402
 from ui.daemon import jobs, tasklog  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
 from ui.desktop import client  # noqa: E402
-from ui.desktop.nav import ZONES  # noqa: E402
+from ui.desktop.nav import LIBRARY, ZONES  # noqa: E402
 from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.shell import Shell  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
@@ -96,7 +96,9 @@ def test_every_zone() -> None:
         SHELL.open_zone(zone)
         settle(QAPP)
         assert SHELL.stack.currentWidget() is SHELL.zones[zone], zone
-        assert [n for n, b in SHELL.nav.items() if b.isChecked()] == [zone]
+        # A library page has no button of its own: it lights the library's (nav.LIBRARY).
+        lit = zone if zone in SHELL.nav else LIBRARY[0]
+        assert [n for n, b in SHELL.nav.items() if b.isChecked()] == [lit]
 
 
 def wait(app: QApplication, done: object, seconds: float = 60) -> None:

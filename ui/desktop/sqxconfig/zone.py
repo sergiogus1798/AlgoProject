@@ -14,8 +14,8 @@ WARNING = ("Se aplica a los proyectos que se creen a partir de ahora; los existe
            "Cada cambio se escribe en assets/ conservando los comentarios, y git lo ve. WFC y "
            "CSCV escriben además en los config.yaml de sus estudios y, los bloques del CSCV, en "
            "ledger/thresholds.yaml, sellado con tu nombre y la fecha.")
-FILES = {"build": "Construcción y tests · _build.yaml", "classes": "Esquemas de coste · _classes.yaml",
-         "policy": "Política común · _policy.yaml", "markets": "Universo de retest · _markets.yaml"}
+FILES = {"build": "Construcción y tests", "classes": "Esquemas de coste",
+         "policy": "Política común", "markets": "Universo de retest"}
 
 
 class SqxConfigZone(QFrame):
@@ -123,6 +123,7 @@ class SqxConfigZone(QFrame):
         self.index.addItem(head)
         label = QLabel(text.upper())
         label.setObjectName("kicker")
+        label.setStyleSheet("font-size: 14px;")
         label.setContentsMargins(0, 14, 0, 2)
         self.column.addWidget(label)
 

@@ -83,6 +83,25 @@ def axes(p: QPainter, box: QRectF, xt: list[tuple[float, str]],
     p.drawLine(box.bottomLeft(), box.topLeft())
 
 
+def titles(p: QPainter, box: QRectF, rect: QRectF, x_label: str, y_label: str) -> None:
+    """The axes' names: under the x axis, and turned along the y axis.
+
+    Args:
+        p: The painter.
+        box: The plotting rectangle.
+        rect: The whole canvas.
+        x_label, y_label: What each axis is, with its unit.
+    """
+    p.setFont(font(11, True))
+    p.setPen(QColor(T["text"]))
+    p.drawText(QRectF(box.left(), rect.bottom() - 20, box.width(), 18), Qt.AlignHCenter, x_label)
+    p.save()
+    p.translate(14, box.center().y())
+    p.rotate(-90)
+    p.drawText(QRectF(-box.height() / 2, -9, box.height(), 18), Qt.AlignHCenter, y_label)
+    p.restore()
+
+
 def vline(p: QPainter, x: float, box: QRectF, colour: str, width: float = 1.5,
           style: Qt.PenStyle = Qt.SolidLine) -> None:
     """A vertical mark across the plotting rectangle.

@@ -10,9 +10,11 @@ from ui.desktop.assetforms import NewAssetBox
 from ui.desktop.assetlist import AssetList
 from ui.desktop.assetspans import AssetSpans
 from ui.desktop.assettraits import trait
+from ui.desktop.names import family
 from ui.desktop.yamltree import YamlTree
 
-MARKETS_WIDTH = 260   # a name, a date and a button per market: wider only spreads them apart
+MARKETS_WIDTH = 310   # a name, a date and a button per market: wider only spreads them apart
+VERB = {"Alta": "Va muy bien para", "Media": "Va regular para", "Baja": "Va mal para"}
 SIDE_WIDTH = 290      # two date selectors side by side, and a column of prose under them
 
 
@@ -63,8 +65,8 @@ class AssetPage(QFrame):
                 col.addWidget(w, 0, Qt.AlignLeft)
             col.addStretch()
         self.spans.markets.setFixedWidth(MARKETS_WIDTH)
-        for w in (self.spans, side.itemAt(1).widget()):
-            w.setFixedWidth(SIDE_WIDTH)
+        self.spans.setFixedWidth(SIDE_WIDTH)
+        side.itemAt(1).widget().setFixedWidth(SIDE_WIDTH)
         body.addLayout(costs)
         body.addWidget(self.spans.markets)
         body.addLayout(side)
@@ -85,8 +87,11 @@ class AssetPage(QFrame):
         tlay.setContentsMargins(10, 8, 10, 8)
         tlay.setSpacing(4)
         tlay.addWidget(QLabel("Características", objectName="h2"))
+        self.prior = QLabel()
+        self.prior.setStyleSheet("font-size: 14px;")
         text = QLabel(trait(self.symbol), objectName="muted")
         text.setWordWrap(True)
+        tlay.addWidget(self.prior)
         tlay.addWidget(text)
         return tile
 
@@ -96,6 +101,9 @@ class AssetPage(QFrame):
         self.card.fill(data)
         self.spans.fill(data)
         self.tree.fill(self.symbol, data["leaves"])
+        self.prior.setText("<br>".join(
+            f"- {VERB[p['level']]} {family(p['family'])}{' (solo largos)' if p['long_only'] else ''}"
+            for p in data["prior"]) or "- Sin prior para este activo")
 
     def on_edit(self, name: str, path: list, text: str, kind: str) -> None:
         """Write a value the file table changed.

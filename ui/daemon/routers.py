@@ -10,6 +10,7 @@ from ui.daemon.archive.api import ROUTER as ARCHIVE
 from ui.daemon.assetapi import ROUTER as ASSETS
 from ui.daemon.batch.api import ROUTER as BATCH
 from ui.daemon.create.api import ROUTER as CREATE
+from ui.daemon.criteria.api import ROUTER as CRITERIA
 from ui.daemon.data.api import ROUTER as DATA
 from ui.daemon.databank.api import ROUTER as DATABANK
 from ui.daemon.filters.api import ROUTER as FILTERS
@@ -52,4 +53,5 @@ ROUTERS = (
     CREATE,
     MT5BRIDGE,
     RESEARCH,
+    CRITERIA,
 )

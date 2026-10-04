@@ -51,10 +51,9 @@ def compare(title: str, unit: str, is_: np.ndarray, oos: np.ndarray, cfg: dict) 
         A distribution block with two series and its `shift`; `p` repeats the KS p.
     """
     both = np.concatenate([is_, oos])
-    span = tuple(np.percentile(both, [cfg["tail_pct"], 100 - cfg["tail_pct"]]))
     ks = ks_2samp(is_, oos).pvalue
     return blocks.distribution(title, unit, both, None, NOTE, p=ks, bins=cfg["bins"],
-                               series={"IS": is_, "OOS": oos}, span=span,
+                               series={"IS": is_, "OOS": oos},
                                shift={"median": np.median(oos) - np.median(is_), "ks_p": ks})
 
 

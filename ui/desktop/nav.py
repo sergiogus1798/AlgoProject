@@ -13,20 +13,32 @@ from ui.desktop.theme import C
 # The five older PROYECTO zones were retired by F13 of plan 24 (2026-09-28): their content lives
 # in Proyecto and Estrategia (ui/desktop/README.md). Databanks was split out of Proyecto the
 # same day: the two did not fit one screen (owner, 2026-09-28).
+#
+# Owner, 2026-10-03: the five template views are ONE place. The sidebar holds its front page,
+# Cobertura; the other four are pages of the strip the shell shows above it (`LIBRARY`, in the
+# workflow's order: where to look, what exists, a new one, its blocks). They stay zones — a
+# name `open_zone`, Ctrl+K and `--zone` open — but have no sidebar button.
+# To go back to five sidebar entries: put the four names back in «Biblioteca» below and set
+# `LIBRARY = []`. Nothing else reads either.
+LIBRARY = ["Cobertura", "Investigar", "Plantillas", "Nueva plantilla", "Paletas"]
 GROUPS = [
-    # Owner, 2026-10-01: «Investigar», the research director's panel, beside the templates.
-    ("BIBLIOTECA", ["Cobertura", "Plantillas", "Investigar", "Nueva plantilla", "Paletas",
-                    "Activos", "Configuración SQX", "Datos"]),
-    ("PROYECTO", ["Proyectos", "Proyecto", "Databanks", "Estrategia"]),
-    ("OPERACIÓN", ["En marcha", "Registro de búsquedas"]),
-    ("PORTFOLIOS", ["Portfolios"]),
-    # Owner, 2026-09-29: the bridge with MetaTrader 5 is a section of this same window.
-    ("MT5 BRIDGE", ["Verificar"]),
+    ("Biblioteca", ["Cobertura", "Activos", "Configuración SQX", "Datos"]),
+    ("Proyecto", ["Proyectos", "Proyecto", "Databanks", "Estrategia", "Criterios"]),
+    ("Operación", ["En marcha", "Registro de búsquedas"]),
+    # Owner, 2026-09-29: the bridge with MetaTrader 5 is a section of this same window; before
+    # the portfolios, which go last (owner, 2026-10-03).
+    ("MT5 Bridge", ["Verificar"]),
+    ("Portfolios", ["Portfolios"]),
 ]
-ZONES = [name for _, names in GROUPS for name in names]
+SIDEBAR = [name for _, names in GROUPS for name in names]
+ZONES = SIDEBAR + [name for name in LIBRARY if name not in SIDEBAR]
+# The sidebar's own words for a button whose zone is more than its name says.
+LABEL = {"Cobertura": "Cobertura y plantillas"} if LIBRARY else {}
 # What each zone is, on hover.
 TIPS = {
-    "Cobertura": "Lo que se ha probado: plantillas o arquetipos por símbolo y timeframe.",
+    "Cobertura": "La portada de la biblioteca: lo probado por familia, activo y timeframe, la "
+                 "propuesta del director, y desde cada celda sus plantillas, su paleta, una "
+                 "plantilla nueva o lo que se mide ahí.",
     "Plantillas": "La librería de plantillas y borradores, con la ficha de cada una.",
     "Investigar": "Dónde investigar: el mapa de los mercados, la memoria de lo probado, el "
                   "director de investigación y su propuesta de tres ideas.",
@@ -39,6 +51,8 @@ TIPS = {
                 "raíl de pasos — y el embudo de la población.",
     "Databanks": "Los databanks del proyecto elegido: filtros, pestañas por paso, la tabla de "
                  "estrategias y su equity agregada.",
+    "Criterios": "Lo que tiene que cumplir una estrategia en cada paso del workflow para "
+                 "pasar sola al siguiente: se ven, se editan y se congelan.",
     "Estrategia": "La ficha de la estrategia elegida: curvas, estadísticas IS/OOS1/OOS2, "
                   "sus estudios y metadatos.",
     "Configuración SQX": "Los parámetros de entrada de SQX por test, para los proyectos que "
@@ -65,8 +79,9 @@ def reload_tip(zones: list[str]) -> str:
     Returns:
         The sentence: which zones it reloads, and that the others read on their own.
     """
-    return ("Vuelve a leer del demonio: " + ", ".join(zones) + ". Las demás zonas leen solas "
-            "al abrirlas o al cambiar la selección, y no necesitan este botón.")
+    return ("Vuelve a leer del demonio la zona abierta ahora mismo, y deja pendientes de releer "
+            "al abrirlas las demás que leen una sola vez: " + ", ".join(zones) + ". El resto lee "
+            "solo al abrirse o al cambiar la selección, y no necesita este botón.")
 
 
 def sidebar(go: Callable[[str], None], reload: Callable[[], None],
@@ -92,11 +107,12 @@ def sidebar(go: Callable[[str], None], reload: Callable[[], None],
     buttons = {}
     for group, names in GROUPS:
         head = QLabel(group)
-        head.setStyleSheet(f"color:{C['faint']}; font-size:11px; font-weight:700; "
-                           "letter-spacing:1px; padding:12px 16px 4px 16px;")
+        # Owner, 2026-10-03: the titles were 11 px and faint, «pequeñísimos» beside the zones.
+        head.setStyleSheet(f"color:{C['accent']}; font-size:16px; font-weight:700; "
+                           "padding:16px 16px 5px 16px;")
         lay.addWidget(head)
         for name in names:
-            b = QPushButton(name, objectName="nav")
+            b = QPushButton(LABEL.get(name, name), objectName="nav")
             b.setCheckable(True)
             b.setToolTip(TIPS[name])
             b.clicked.connect(lambda _, n=name: go(n))

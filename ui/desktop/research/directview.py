@@ -5,6 +5,7 @@ from collections.abc import Callable
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
+from ui.desktop import names
 from ui.desktop.blocks.card import text
 from ui.desktop.research import parts
 from ui.desktop.theme import T
@@ -69,7 +70,7 @@ class DirectView(QWidget):
             warn += ["pullback"] if c["pullback"] else []
             warn += ["costes provisionales"] if c["provisional_costs"] else []
             free = c["trades_per_year"] is None
-            rows.append([c["rank"], f"{c['symbol']} {c['timeframe']} {c['direction']} {c['family']}",
+            rows.append([c["rank"], f"{c['symbol']} {c['timeframe']} {c['direction']} · {names.family(c['family'])}",
                          c["points"],
                          "sin medir" if free else f"{c['multiple']}x ({f['signal']:.2f})",
                          f"{c['attempts']} ({f['gap']:.2f})",

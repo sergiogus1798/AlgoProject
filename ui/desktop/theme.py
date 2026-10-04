@@ -128,19 +128,20 @@ QTabBar::tab:selected {{ background: {C['raised']}; color: {C['text']};
 """
 
 
-def chip(text: str, colour: str) -> str:
+def chip(text: str, colour: str, size: int = 11) -> str:
     """One coloured label, as the rich text a QLabel renders.
 
     Args:
         text: What the chip says.
         colour: Hex colour of its text and border.
+        size: Font size in px.
 
     Returns:
         HTML for a QLabel. Chips are text and not painted widgets so they sit inside the
         same layouts as everything else and inherit the window's font scaling.
     """
     return (f'<span style="color:{colour}; border:1px solid {colour}; border-radius:9px; '
-            f'padding:1px 8px; font-size:11px;">{text}</span>')
+            f'padding:1px 8px; font-size:{size}px;">{text}</span>')
 
 
 # The second look, for every zone built since 2026-09-25: a terminal of analysis rather than a

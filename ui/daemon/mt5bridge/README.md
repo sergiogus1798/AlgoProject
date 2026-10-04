@@ -7,6 +7,7 @@ itself is `mt5.verify.run` (`mt5/verify/README.md`); this package lists, checks 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | The package's one-line purpose | imported | — |
+| `display.py` | `polish(result, firm_names)` the copy of a stored result the window draws: capitals, the matched-trades and drawdown rows as percentages (`shown`), one green/red callout per firm on the summary | imported by `runs.result` | dict → dict |
 | `runs.py` | `listing()` every `AlgoData/mt5/verify/<run>/run.json`, newest first; `result(run)` its `result.json`; `options()` the saved accounts, the tester's models and the archive; `strategy_file()` the `.sqx` from the archive or `strategy.locate`; `check()` the preflight and the confirmation text | imported | disk → JSON |
 | `api.py` | `GET /api/mt5bridge/options`, `/runs`, `/result?run=`; `POST /preflight` (ok → a one-use `nonce`, `ui/daemon/proof.py`) and `POST /verify` (the same preflight re-run, plus `launch.queued`, the nonce spent against the text it gives now, then one job on the conductor lane labelled `mt5verify`); `POST /close-terminal` — `mt5.wine.close_terminal()`, then `kill_terminal()` if that fails, for a terminal wedged open past the window's own controls | imported | request → JSON |
 

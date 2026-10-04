@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from core.study.clip import clip
+
 NAMES = ("net", "return_pct", "dd", "dd_pct", "ret_dd", "sharpe", "pf", "losing_run")
 
 
@@ -103,12 +105,11 @@ def shape(values: np.ndarray, seen: float, q: int, bins: int = 60) -> dict:
         bins: Histogram bins.
 
     Returns:
-        Bin counts and the range they cover, widened to include the observed value so it is
-        always on the axis. Kept instead of the raw draws: a databank's draws are gigabytes
+        Bin counts and the range they cover, clipped to percentiles 0.5-99.5 (`core.study.clip`). Kept instead of the raw draws: a databank's draws are gigabytes
         and a histogram is a few hundred bytes.
     """
     clean = values[np.isfinite(values)]
-    lo, hi = min(float(clean.min()), seen), max(float(clean.max()), seen)
+    inside, lo, hi = clip(clean)
     # A statistic the model preserves — net profit under a reordering — has a range of
     # zero, or of a few float wobbles around a large number, which no histogram can bin.
     # It is still drawn, as one bar where the backtest sits.
@@ -116,9 +117,10 @@ def shape(values: np.ndarray, seen: float, q: int, bins: int = 60) -> dict:
     if hi - lo < floor:
         middle = (lo + hi) / 2
         lo, hi = middle - floor / 2, middle + floor / 2
-    counts, edges = np.histogram(clean, bins=bins, range=(lo, hi))
+    counts, edges = np.histogram(inside, bins=bins, range=(lo, hi))
     return {"counts": counts.tolist(), "lo": float(edges[0]), "hi": float(edges[-1]),
-            "observed": float(seen), "median": float(np.median(clean)),
+            "left_out": len(clean) - len(inside), "observed": float(seen),
+            "median": float(np.median(clean)),
             "p_report": float(np.percentile(clean, q))}
 
 

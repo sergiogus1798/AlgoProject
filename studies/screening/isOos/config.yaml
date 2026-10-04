@@ -5,4 +5,3 @@
 # La parte de población (mapa de correlaciones) no tiene ningún ajuste.
 trades:
   bins: 40            # barras del histograma, compartidas por IS y OOS
-  tail_pct: 0.5       # las barras cubren del percentil 0,5 al 99,5 de las dos muestras juntas; las colas caen en la primera y la última barra

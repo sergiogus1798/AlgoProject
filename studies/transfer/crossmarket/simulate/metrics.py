@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from core.study.clip import clip
+
 # `sharpe` and `net` answer different questions and can disagree without the study
 # contradicting itself (OPEN.md #72). `sharpe` is scale-free -- it divides out exactly what
 # separates a real trade from a random one -- so a real fleet that is calmer than chance
@@ -141,21 +143,21 @@ def shape(values: np.ndarray, seen: float, name: str, bins: int = 60) -> dict:
         bins: Histogram bins.
 
     Returns:
-        Bin counts and the range they cover, widened to include the real value so it is
-        always on the axis, plus the median, the 2.5 and 97.5 percentiles the figure marks,
+        Bin counts and the range they cover, clipped to percentiles 0.5-99.5 (`core.study.clip`), plus the median, the 2.5 and 97.5 percentiles the figure marks,
         and the share of random runs the real one outperforms. Kept instead of the raw draws: a strategy's draws are hundreds of megabytes
         and a histogram is a few hundred bytes.
     """
     clean = values[np.isfinite(values)]
-    lo, hi = min(float(clean.min()), seen), max(float(clean.max()), seen)
+    inside, lo, hi = clip(clean)
     floor = max(abs(lo), abs(hi), 1.0) * 1e-9 * bins
     if hi - lo < floor:
         middle = (lo + hi) / 2
         lo, hi = middle - floor / 2, middle + floor / 2
-    counts, edges = np.histogram(clean, bins=bins, range=(lo, hi))
+    counts, edges = np.histogram(inside, bins=bins, range=(lo, hi))
     better = HIGHER_IS_BETTER[name]
     return {"counts": counts.tolist(), "lo": float(edges[0]), "hi": float(edges[-1]),
-            "observed": float(seen), "median": float(np.median(clean)),
+            "left_out": len(clean) - len(inside), "observed": float(seen),
+            "median": float(np.median(clean)),
             "lo_ci": float(np.percentile(clean, 2.5)),
             "hi_ci": float(np.percentile(clean, 97.5)),
             "beats": float(np.mean(clean < seen) if better else np.mean(clean > seen)),

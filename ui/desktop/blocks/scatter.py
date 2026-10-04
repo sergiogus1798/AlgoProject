@@ -36,16 +36,7 @@ def _draw(b: dict) -> Callable:
         x, y, sx, sy = _maps(b, box)
         chart.axes(p, box, [(x(v), chart.num(v)) for v in axis.ticks(*sx)],
                    [(y(v), chart.num(v)) for v in axis.ticks(*sy, 5)])
-        p.setFont(chart.font(11, True))
-        p.setPen(QColor(T["text"]))
-        p.drawText(QRectF(box.left(), rect.bottom() - 20, box.width(), 18), Qt.AlignHCenter,
-                   b["x_label"])
-        p.save()
-        p.translate(14, box.center().y())
-        p.rotate(-90)
-        p.drawText(QRectF(-box.height() / 2, -9, box.height(), 18), Qt.AlignHCenter,
-                   b["y_label"])
-        p.restore()
+        chart.titles(p, box, rect, b["x_label"], b["y_label"])
         if b["quadrants"]:
             p.setPen(QPen(QColor(T["muted"]), 1.2))
             if sx[0] < 0 < sx[1]:

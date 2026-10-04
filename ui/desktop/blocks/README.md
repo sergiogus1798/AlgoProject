@@ -37,7 +37,7 @@ tools.report ─▶ screen.screen(result, memory) ─▶ POST /api/study/screen 
 | `grid.py` | Heat map on a discrete scale (`levels`, else eight steps of `scale_range` or of its own range), θ₀ `mark` outlined, every cell labelled when it fits, the scale's key beneath | imported | block → QWidget |
 | `scatter.py` | Points by group, quadrants through zero, fitted line with its r | imported | block → QWidget |
 | `bars.py` | Horizontal bars coloured by state, error whiskers, reference line, value past the whisker; with `vertical`, columns over their labels, each in its item's `ink` when it names one | imported | block → QWidget |
-| `lines.py` | Series over one x axis: a series naming an `ink` in that tone (dashed with `dash`), a lone real series in the real ink, references dashed | imported | block → QWidget |
+| `lines.py` | Series over one x axis (optional `x_label`/`y_label` name the axes): a series naming an `ink` in that tone (dashed with `dash`), a lone real series in the real ink, references dashed | imported | block → QWidget |
 | `table.py` | Sortable table in the study's own order, numbers the window's way, full cell on hover | imported | block → QWidget |
 | `verdict.py` | The label in its state's colour, never without its meaning, and its parts as tiles | imported | block → QWidget |
 | `callout.py` | The `callout` kind (2026-09-30): one coloured, bold sentence the study wants seen ahead of the rest | imported | block → QWidget |

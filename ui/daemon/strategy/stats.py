@@ -10,7 +10,6 @@ from ui.daemon.tearsheet import oos2, tradestats
 HARVEST = {"IS": "IS", "OOS1": "OOS", "OOS2": "OOS2"}     # the window's names → the cosecha's
 JOINED = "IS+OOS1"                                         # both samples as one, IS's curve first
 DEFAULT_UNIT = "USD por operación"                         # owner, 2026-09-30 (feedback §3.1)
-SPAN = (1, 99)          # the histogram's range, in percentiles: the tails pile in the end bins
 
 
 def _figure(value: object) -> float | None:
@@ -26,13 +25,11 @@ def _pf(pnl: pd.Series) -> float | None:
 
 def _histogram(values: pd.Series, unit: str, sample: str) -> dict:
     """The trade distribution of one sample as a contract `distribution` block."""
-    lo, hi = np.percentile(values, SPAN)
     block = blocks.distribution(
         f"Distribución de las operaciones, {sample}", unit, values.to_numpy(), float(values.mean()),
         f"Una barra por tramo de retorno por operación ({unit}). La banda sombreada va del "
-        f"percentil 5 al 95, la línea discontinua es la mediana y la continua la media; las "
-        f"operaciones fuera de los percentiles {SPAN[0]}-{SPAN[1]} se acumulan en la primera y "
-        "la última barra.", bins=40, span=(float(lo), float(hi)))
+        f"percentil 5 al 95, la línea discontinua es la mediana y la "
+        "continua la media.", bins=40)
     return block | {"mark": "media", "row_unit": "$"}
 
 

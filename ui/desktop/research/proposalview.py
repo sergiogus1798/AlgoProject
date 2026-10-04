@@ -6,6 +6,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QCheckBox, QFrame, QHBoxLayout, QLabel, QLineEdit,
                                QMessageBox, QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
+from ui.desktop import names
 from ui.desktop.blocks.card import text
 from ui.desktop.research import parts
 from ui.desktop.research.parts import esc as e
@@ -73,7 +74,7 @@ class ProposalView(QWidget):
                 if p["provisional_costs"] else "")
         self.head.setText(
             f"<b style='font-size:17px;color:{parts.FAMILY[c['family']]}'>{c['symbol']} "
-            f"{c['timeframe']} {c['direction']} · {c['family']}</b> — puesto {b['rank']} del "
+            f"{c['timeframe']} {c['direction']} · {names.family(c['family'])}</b> — puesto {b['rank']} del "
             f"tablero, " + ("efecto sin medir (entra por la prior)" if b["trades_per_year"] is None
                          else f"{b['multiple']}x el coste, {b['trades_per_year']} op/año") + "<br>"
             f"{e(p['diagnosis'])}<br>" + (f"<i>Se aparta del tablero: {e(p['departs'])}</i><br>"
@@ -97,7 +98,7 @@ class ProposalView(QWidget):
         veto.toggled.connect(lambda on, name=i["name"]: self.change(
             "research/veto", {"id": self.p["id"], "idea": name, "vetoed": on}))
         lay.addWidget(veto)
-        families = "<br>".join(f"&nbsp;&nbsp;peso {f['weight']} · {f['family']}: {e(f['reason'])}"
+        families = "<br>".join(f"&nbsp;&nbsp;peso {f['weight']} · {names.family(f['family'])}: {e(f['reason'])}"
                                for f in i["palette"].get("families", []))
         custom = "<br>".join(f"&nbsp;&nbsp;{b['name']}: {e(b['what'])}"
                              for b in i["custom_blocks"]) or "&nbsp;&nbsp;ninguno"

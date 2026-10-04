@@ -148,7 +148,7 @@ class DataZone(QFrame):
         if "error" in body:
             lay.addWidget(text(body["error"], T["muted"], 14))
             return
-        self.total.setText(f"{body['root']}/ · {tree.size(body['total_bytes'])} en "
+        self.total.setText(f"{body['root']}/ · "
                            f"{num(sum(r['files'] for r in body['rows'] if r['depth'] == 1))} "
                            f"ficheros · rancio a partir de {body['stale_days']} días sin escribir")
         lay.addWidget(tree.build(body))

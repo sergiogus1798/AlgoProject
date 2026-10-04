@@ -72,6 +72,31 @@ def state_line(got: dict, project: str) -> str:
                    else f"{faint}  · sin log de hoy</span>")
 
 
+GENETIC_TIP = ("Generación genética. Ninguna estrategia llega al databank hasta que la población "
+               "inicial (población × islas) está completa: por eso se ven muchas estrategias "
+               "generadas y 0 en el databank. SQX no publica en su estado ni en su log la "
+               "generación actual, las islas ni cuánto lleva de la población inicial, así que se "
+               "muestran los ajustes del proyecto y los ficheros de los databanks «Initial "
+               "population» y «Last generation» en disco, que SQX escribe al sincronizar y por "
+               "tanto van con retraso.")
+
+
+def genetic_line(g: dict) -> str:
+    """The line under the state line for a running genetic Build.
+
+    Args:
+        g: `genetic` of `/api/progress`.
+
+    Returns:
+        HTML for a QLabel.
+    """
+    disk = lambda n: "—" if n is None else num(n)  # noqa: E731 — a label, not logic
+    return (f"{chip('GENÉTICA', C['weak'])} &nbsp;población inicial <b>{disk(g['initial'])}</b> / "
+            f"{num(g['population'])} en disco ({num(g['size'])} × {num(g['islands'])} islas) · "
+            f"generaciones <b>{num(g['generations'])}</b> como máximo, la actual no se publica · "
+            f"última generación en disco <b>{disk(g['last'])}</b> &nbsp;<b>[?]</b>")
+
+
 class Tasks(QFrame):
     """The state line, the task table with the running task's bar, and the log tail."""
 
@@ -83,6 +108,8 @@ class Tasks(QFrame):
         lay.setSpacing(8)
         self.state = QLabel("", objectName="mono", wordWrap=True)
         lay.addWidget(self.state)
+        self.genetic = QLabel("", objectName="mono", wordWrap=True, toolTip=GENETIC_TIP)
+        lay.addWidget(self.genetic)
         lay.addWidget(rule())
         split = QSplitter(Qt.Vertical)
         top = QFrame()
@@ -131,6 +158,9 @@ class Tasks(QFrame):
             `got`, for the caller's own line.
         """
         self.state.setText(state_line(got, project))
+        g = got.get("genetic")
+        self.genetic.setVisible(bool(g))
+        self.genetic.setText(genetic_line(g) if g else "")
         self.fill(got["tasks"], got["run"]["percent"])
         self.log.setText("\n".join(got["run"]["tail"]) or "sin líneas de progreso hoy")
         return got

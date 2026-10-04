@@ -36,7 +36,7 @@ FAMILIES = {
         "61-app-proyectos", "65-app-proyecto", "69-app-filtros-y-continuar",
         "68-app-estrategia", "58-app-estudios", "70-app-operacion", "71-app-portfolios",
         "35-app-plantillas", "84-app-investigar", "38-app-activos", "66-app-configuracion-sqx", "67-app-datos",
-        "60-app-pulido", "72-app-crear"]),
+        "60-app-pulido", "72-app-crear", "95-app-criterios"]),
     "03-datos-costes-y-registro": ("Datos, costes y registro de la búsqueda", [
         "13-barras", "57-calidad-del-feed", "59-spread-real", "25-actualizar-datos", "24-costes", "43-ledger",
         "12-rendimiento", "64-archivo", "73-fondeo-catalogo", "74-fondeo-ofertas"]),

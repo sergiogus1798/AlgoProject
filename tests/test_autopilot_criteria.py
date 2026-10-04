@@ -61,8 +61,48 @@ def test_tags_come_from_the_registry() -> None:
         registry.rows = kept
 
 
+# a: t 2.6, test said yes · b: t 1.8, test said no · c: t 3.0, no verdict · d: nothing but net
+SHAPES = pd.DataFrame(
+    [("a", "t", 2.6), ("a", "ok", 1.0), ("b", "t", 1.8), ("b", "ok", 0.0), ("c", "t", 3.0),
+     ("d", "net", 2.0)], columns=["who", "key", "value"])
+WHO = ["a", "b", "c", "d"]
+
+
+def states(rule: dict) -> list[str]:
+    """The outcome of a, b, c and d under one rule."""
+    got = criteria.outcomes(SHAPES, WHO, criteria.resolved([rule], {"H1"}))
+    return [got[w][0] for w in WHO]
+
+
+def test_verdict_rule() -> None:
+    """`is: pass` wants the test's yes (1), `is: fail` its no (0); not met is fail, or limbo
+    with `else: limbo` — which does the same for a threshold; a strategy without the verdict
+    is limbo."""
+    assert states({"fact": "ok", "is": "pass"}) == ["pass", "fail", "limbo", "limbo"]
+    assert states({"fact": "ok", "is": "fail"}) == ["fail", "pass", "limbo", "limbo"]
+    assert states({"fact": "ok", "is": "pass", "else": "limbo"})[1] == "limbo"
+    assert states({"fact": "t", "pass": ">= 2.33", "else": "limbo"})[:2] == ["pass", "limbo"]
+
+
+def test_compound_rule() -> None:
+    """`all` is its worst part and `any` its best, numeric and verdict parts mixed; a missing
+    part is limbo, so `any` of a pass and a missing passes; the reason names every part; a
+    part's `by` is folded in and a compound's facts are all listed."""
+    t, ok = {"fact": "t", "pass": ">= 2.33", "limbo": ">= 1.65"}, {"fact": "ok", "is": "pass"}
+    assert states({"all": [t, ok]}) == ["pass", "fail", "limbo", "limbo"]
+    assert states({"any": [t, ok]}) == ["pass", "limbo", "pass", "limbo"]
+    assert states({"any": [{"all": [t, ok]}, {"fact": "net", "pass": "> 0"}]})[3] == "pass"
+    got = criteria.outcomes(SHAPES, ["b"], [{"all": [t, ok]}])
+    assert got["b"] == ("fail", "fail: all(t=1.8, ok=0.0)")
+    by = {"all": [t | {"by": {"H4": {"pass": ">= 3"}}}, ok]}
+    assert criteria.resolved([by], {"H4"})[0]["all"][0] == t | {"pass": ">= 3"}
+    assert criteria.reads([by, {"fact": "net", "pass": "> 0"}]) == {"t", "ok", "net"}
+
+
 if __name__ == "__main__":
     test_by_takes_the_first_entry_the_project_matches()
     test_outcomes_worst_rule_and_missing_is_limbo()
     test_tags_come_from_the_registry()
+    test_verdict_rule()
+    test_compound_rule()
     print("ok")

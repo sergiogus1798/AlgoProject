@@ -1,8 +1,11 @@
 """The routes of the asset library: every question the assets zone asks, and its writes."""
 
+from datetime import date
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from core.assetdata import load
 from ui.daemon import assets
 
 ROUTER = APIRouter()
@@ -83,6 +86,23 @@ def shared_file(name: str) -> dict[str, object]:
     return assets.shared(name)
 
 
+def why_for(symbol: str, field: str, text: str) -> str:
+    """The `why` the window offers when a cost is about to change.
+
+    Args:
+        symbol: Asset name.
+        field: Cost field.
+        text: The figure about to be written.
+
+    Returns:
+        A line stamped today naming the figure it replaces, for the owner to finish. The
+        word PROVISIONAL is not written for him: `assetcheck.provisional` reads it, and
+        putting it there would decide how provisional his own number is.
+    """
+    old = load(symbol)["costs"][field]["use"]
+    return f"{date.today()} — cambiado desde la app: {old} → {text}. "
+
+
 @ROUTER.get("/api/asset/{symbol}/why")
 def why(symbol: str, field: str, text: str) -> dict[str, str]:
     """The justification the window offers before a cost changes.
@@ -95,7 +115,7 @@ def why(symbol: str, field: str, text: str) -> dict[str, str]:
     Returns:
         A line stamped today naming the figure it replaces, for the owner to finish.
     """
-    return {"why": assets.why_for(symbol, field, text)}
+    return {"why": why_for(symbol, field, text)}
 
 
 @ROUTER.post("/api/assets/value")

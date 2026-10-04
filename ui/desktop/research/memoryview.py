@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
+from ui.desktop import names
 from ui.desktop.blocks.card import text
 from ui.desktop.research import parts
 from ui.desktop.theme import T
@@ -56,13 +57,13 @@ class MemoryView(QWidget):
             f"dirección × familia) tienen algún intento · <b>{len(got['attempts'])}</b> intentos, "
             f"<b>{c['closed']}</b> cerrados con respuesta · <b>{got['ideas']}</b> ideas en el índice.")
         parts.fill(self.attempts, [
-            [a["project"], a["template"], a["family"] or "—",
+            [a["project"], a["template"], names.family(a["family"]) if a["family"] else "—",
              f"{a['symbol']} {a['timeframe']} {a['direction']}",
              a["outcome"], a["custodian_hours"] or "—",
              " → ".join(f"{STAGE[f['stage']]} {int(f['n'])}" for f in a["funnel"]) or "sin embudo",
              a["verdict"] or "—"]
             for a in got["attempts"]],
             [parts.FAMILY.get(a["family"]) for a in got["attempts"]])
-        parts.fill(self.family, [[r["family"], r["asset_class"], r["attempts"], r["closed"],
+        parts.fill(self.family, [[names.family(r["family"]), r["asset_class"], r["attempts"], r["closed"],
                                   r["with_survivors"], r["survivors"]] for r in got["by_family"]],
                    [parts.FAMILY.get(r["family"]) for r in got["by_family"]])

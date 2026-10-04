@@ -7,49 +7,15 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
                                QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
-from ui.desktop import client
+from ui.desktop import client, names
+from ui.desktop.chatparts import bubble, drop
 from ui.desktop.jobbutton import JobButton
-from ui.desktop.theme import C
 
 OPENING = ("Cuatro o cinco preguntas y te dejo el brief escrito: créala desde aquí o pega el "
            "prompt en Claude Code. Lo que no contestes lleva el default, y el brief lo dirá.")
 AUTHOR = ("Claude Code, sin nadie delante, corre /sqx-strategy-template sobre «{name}»: mira el "
           "vocabulario del install, crea el bloque si falta e instala, emite y registra la "
           "plantilla. Si algo es ambiguo no elige: el trabajo acaba con una PREGUNTA. ¿Lanzar?")
-
-
-def drop(layout: QVBoxLayout | QHBoxLayout) -> None:
-    """Delete everything in a layout, however deeply nested.
-
-    Args:
-        layout: The layout to empty. It survives; its contents do not.
-
-    A stretch is an item with neither a widget nor a layout, which is why this is a
-    recursion and not a loop over widgets.
-    """
-    while layout.count():
-        item = layout.takeAt(0)
-        widget = item.widget()
-        if widget:
-            # setParent(None) as well as deleteLater(): the deletion is deferred to the
-            # event loop, and until it runs the old controls keep painting under the new.
-            widget.setParent(None)
-            widget.deleteLater()
-        elif item.layout():
-            drop(item.layout())
-
-
-def bubble(text: str, mine: bool) -> QFrame:
-    """One message of the transcript, a framed label; `mine` (the reader's) sits accented."""
-    f = QFrame()
-    f.setStyleSheet(f"background:{C['accent'] if mine else C['raised']}; border-radius:10px;")
-    lay = QVBoxLayout(f)
-    lay.setContentsMargins(13, 9, 13, 9)
-    label = QLabel(text)
-    label.setWordWrap(True)
-    label.setStyleSheet("background:transparent; color:#ffffff;" if mine else "background:transparent;")
-    lay.addWidget(label)
-    return f
 
 
 class Chat(QWidget):
@@ -68,7 +34,7 @@ class Chat(QWidget):
         head.addWidget(QLabel("Nueva plantilla", objectName="h1"))
         head.addStretch()
         restart = QPushButton("Empezar de nuevo")
-        restart.clicked.connect(self.start)
+        restart.clicked.connect(lambda: self.start())
         head.addWidget(restart)
         lay.addLayout(head)
 
@@ -86,9 +52,17 @@ class Chat(QWidget):
         self.answers: dict[str, str] = {}
         self.start()
 
-    def start(self) -> None:
-        """Clear the transcript and ask the first question."""
-        self.answers = {}
+    def start(self, family: str = "", where: str = "") -> None:
+        """Clear the transcript and ask the first question.
+
+        Args:
+            family: A family already chosen on Cobertura, in any spelling; its question is
+                answered before the interview starts. "" asks it like the others.
+            where: The cell it was chosen on («XAUUSD · H1»), said in the transcript only: a
+                template belongs to no market, so the brief does not carry it.
+        """
+        key = names.spelt(family, names.REGISTRY)
+        self.answers = {"archetype": key} if key else {}
         body = QWidget()
         self.thread = QVBoxLayout(body)
         self.thread.setContentsMargins(4, 4, 4, 4)
@@ -96,6 +70,10 @@ class Chat(QWidget):
         self.thread.addStretch()
         self.scroll.setWidget(body)
         self.say(OPENING, mine=False)
+        if key:
+            self.say(f"Familia ya elegida en Cobertura: {names.family(key)}"
+                     + (f", pensando en {where}" if where else "") + ". «Empezar de nuevo» "
+                     "la vuelve a preguntar.", mine=False)
         self.next()
 
     def say(self, text: str, mine: bool) -> None:
@@ -158,8 +136,9 @@ class Chat(QWidget):
         """
         row = QHBoxLayout()
         for opt in q["options"]:
-            b = QPushButton(opt["label"])
-            b.clicked.connect(lambda _, i=q["id"], o=opt: self.answer(i, o["value"], o["label"]))
+            shown = names.family(opt["label"]) if q["id"] == "archetype" else opt["label"]
+            b = QPushButton(shown)
+            b.clicked.connect(lambda _, i=q["id"], v=opt["value"], t=shown: self.answer(i, v, t))
             row.addWidget(b)
         if q["default"]:
             skip = QPushButton("Elige tú")

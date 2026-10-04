@@ -56,12 +56,12 @@ def extensions(got: list[dict]) -> None:
     a, b = rng.normal(0, 1, 3_000), rng.normal(0.5, 2, 700)
     d = blocks.distribution("d", "USD", np.concatenate([a, b]), None, "n", p=0.02,
                             series={"IS": a, "OOS": b}, shift={"median": 0.5, "ks_p": 0.02},
-                            span=(-3, 5), bins=40)
+                            bins=40)
     r = result.envelope("test", "S", None, {}, time.time(), [result.tab("t", "T", [d])])
     width = np.diff(r["tabs"][0]["blocks"][0]["bins"])
     for s in r["tabs"][0]["blocks"][0]["series"]:
         assert abs(np.dot(s["counts"], width) - 1) < 1e-6, f"{s['label']} is not a density"
-    assert [s["n"] for s in d["series"]] == [3_000, 700] and sum(d["counts"]) == 3_700
+    assert [s["n"] for s in d["series"]] == [3_000, 700] and 3_630 <= sum(d["counts"]) <= 3_670
     assert page.page(r, "T").count("<path") == 2, "the two series were not overlaid"
     assert refused({**d, "series": [{**d["series"][0], "counts": [1.0] * 40}]})
     assert refused({**d, "shift": {"median": 0.5}})
@@ -77,7 +77,7 @@ def main() -> None:
     """Build, validate, serialise and draw; then check what must be refused is refused."""
     got = every_kind()
     d = got[0]
-    assert sum(d["counts"]) == 10_000 and len(d["bins"]) == 61, "histogram lost draws"
+    assert 9_850 <= sum(d["counts"]) <= 9_900 and len(d["bins"]) == 61, "histogram clip is 0.5-99.5"
     assert abs(d["percentiles"]["50"]) < 0.05, "median of N(0,1) far from 0"
     assert len(got[1]["bands"]["50"]) == 30, "cone kept runs instead of percentiles"
     r = result.envelope("test", "S", None, {"k": 1}, time.time(),

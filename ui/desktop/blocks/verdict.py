@@ -15,7 +15,7 @@ def _part(p: dict) -> QLabel:
     c = colour(p["state"])
     value = p.get("value")
     figure = label(p["state"]) if value is None else (
-        f'{chart.num(value)}</span>&nbsp;<span style="color:{c}; font-size:12px;">'
+        f'{p.get("shown") or chart.num(value)}</span>&nbsp;<span style="color:{c}; font-size:12px;">'
         f'{label(p["state"])}')
     tile = QLabel(f'<span style="color:{T["text"]}; font-size:13px;">{p["label"]}</span><br>'
                   f'<span style="color:{c}; font-size:18px; font-weight:700;">{figure}</span>')

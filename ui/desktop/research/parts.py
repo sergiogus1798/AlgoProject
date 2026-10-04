@@ -13,8 +13,7 @@ from ui.desktop.theme import T
 FAMILY = {"tendencia": "#4da3ff", "ruptura": "#ff9a3c", "reversion": "#3ddc84",
           "momentum": "#ff5fa2", "volatilidad": "#ffe14d", "patron": "#35d6d6",
           "sesion": "#b48cff"}
-SHORT = {"tendencia": "TEND", "ruptura": "RUPT", "reversion": "REV", "momentum": "MOM",
-         "volatilidad": "VOL", "patron": "PATR", "sesion": "SES"}
+# The names and the short forms a family is shown with live in `ui.desktop.names`.
 ARROW = {"long": "▲", "short": "▼", "both": "◆"}
 SHARE = {1: 0.30, 2: 0.60, 3: 1.0}       # the three discrete intensities
 GREY = "#2a2a2e"

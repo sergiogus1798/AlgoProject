@@ -4,6 +4,8 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit,
                                QMessageBox, QPushButton, QVBoxLayout)
 
+from ui.desktop import names
+
 POLICY_ES = {"neutral": "Sin etiquetar → entra a peso 1",
              "off": "Sin etiquetar → fuera (la paleta ES su lista)"}
 
@@ -64,7 +66,7 @@ class PaletteBar(QFrame):
 
         Args:
             palettes: The library as the daemon sends it, slug to entry.
-            labels: Family key to its Spanish name.
+            labels: Family key to its Spanish name; unused since `names` shows every family.
             keep: Slug to reselect, when it is still there.
 
         Returns:
@@ -79,7 +81,8 @@ class PaletteBar(QFrame):
                                                   kv[1]["palette"]["label"])):
             p = entry["palette"]
             mark = "★ " if p["origin"] == "default" else ""
-            self.picker.addItem(f"{labels[p['family']]}  ·  {mark}{p['label']}", slug)
+            self.picker.addItem(f"{names.family(p['family'])}  ·  {mark}{names.palette(p['label'])}",
+                                slug)
         if keep:
             self.picker.setCurrentIndex(max(self.picker.findData(keep), 0))
         self.picker.blockSignals(False)

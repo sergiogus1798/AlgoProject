@@ -4,9 +4,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QLabel, QListWidget, QListWidgetItem, QSplitter, QVBoxLayout,
                                QWidget)
 
-from ui.desktop import client
+from ui.desktop import client, names
 from ui.desktop.blocktable import BlockTable
 from ui.desktop.palettebar import PaletteBar
+from ui.desktop.palettetext import describe
 from ui.desktop.theme import C, chip
 
 
@@ -66,6 +67,19 @@ class Palettes(QWidget):
         self.open = self.bar.fill(self.data["palettes"], self.data["family_labels"],
                                   keep or self.open)
         self.on_open(self.open)
+
+    def show_family(self, key: str) -> None:
+        """Open a family's palette — its default one, else its first: Cobertura's «Paleta».
+
+        Args:
+            key: The family in any spelling `names` knows.
+        """
+        family = names.spelt(key, names.TAXONOMY)
+        mine = sorted((p["palette"]["origin"] != "default", slug)
+                      for slug, p in self.data["palettes"].items()
+                      if p["palette"]["family"] == family)
+        if mine:
+            self.bar.picker.setCurrentIndex(self.bar.picker.findData(mine[0][1]))
 
     def on_open(self, name: str) -> None:
         """Open one palette of the library.
@@ -180,7 +194,7 @@ class Palettes(QWidget):
             "tiene de dónde combinar, por encima vuelve el sobreajuste que esto evita.")
         self.bar.save.setEnabled(
             bool(self.pending) or self.bar.policy.currentData() != p["unlabelled"])
-        self.about.setText(self.describe(p, s))
+        self.about.setText(describe(p, s, len(self.data["blocks"])))
         note = ("Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un "
                 "grupo sortea ese grupo y la ignora; un bloque fijo es parte del esqueleto. "
                 "Medido el 2026-09-24.")
@@ -188,36 +202,6 @@ class Palettes(QWidget):
             note += (f"  {chip(str(s['pooled_off']) + ' apagados están en un grupo', C['weak'])}"
                      "  — esos se escapan por esa vía.")
         self.caveat.setText(note)
-
-    def describe(self, p: dict, s: dict) -> str:
-        """The line under the bar saying what the open palette is, and whether it does anything.
-
-        Args:
-            p: The open palette.
-            s: Its summary.
-
-        Returns:
-            Rich text. A palette whose every decision still comes from the unlabelled
-            default is doing nothing, and saying so is the difference between a view that
-            looks broken and one that is honest about being empty.
-        """
-        bits = [chip(self.data["family_labels"][p["family"]], C["accent"]),
-                chip(p["origin"], C["muted"])]
-        if p["based_on"]:
-            bits.append(chip(f"de {p['based_on']}", C["muted"]))
-        head = " ".join(bits) + f'  <span style="color:{C["muted"]}">{p["note"]}</span>'
-        if not s["conditions_ok"]:
-            head += (f'<br><span style="color:{C["dead"]}">⚠️ {s["signal"]["on"]} condiciones: '
-                     "fuera del 90–170 que pide el dueño. "
-                     + ("Faltan bloques por elegir." if s["signal"]["on"] < 90
-                        else "Sobran: esta paleta no está estrechando lo suficiente.")
-                     + "</span>")
-        if s["overridden"] == 0 and s["unlabelled"] == len(self.data["blocks"]):
-            head += (f'<br><span style="color:{C["weak"]}">⚠️ Esta paleta no elige nada '
-                     f'todavía: sus {s["unlabelled"]} bloques salen del valor por defecto, '
-                     "así que deja pasar todo el vocabulario. Elige bloques en la columna "
-                     "Peso, o etiqueta la familia en taxonomy.yaml.</span>")
-        return head
 
     def write(self) -> None:
         """Send the open palette to the daemon and redraw from what it wrote."""

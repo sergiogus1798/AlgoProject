@@ -16,6 +16,10 @@ def shown(value: object) -> str:
     return num(value)
 
 
+# What a fixed option says on screen; the value the file keeps is untouched.
+DISPLAY = {"D": "Day", "W": "Week", "ME": "Month", "sharpe": "Sharpe", "sortino": "Sortino"}
+
+
 def combo(options: list[dict], current: object) -> QComboBox:
     """A dropdown over the fixed options, on the current value.
 
@@ -29,7 +33,7 @@ def combo(options: list[dict], current: object) -> QComboBox:
     """
     box = QComboBox()
     for o in options:
-        box.addItem(o["text"], o["value"])
+        box.addItem(DISPLAY.get(o["text"], o["text"]), o["value"])
     if current not in [o["value"] for o in options]:
         box.addItem(f"{current} (el del fichero, fuera de la lista)", current)
     box.setCurrentIndex(box.findData(current))

@@ -4,6 +4,8 @@ import json
 
 import numpy as np
 
+from core.study import blockcheck, clip
+
 # The five words a block may colour itself with; the window's scale (ui/desktop/theme.py)
 # has one colour per word and no other. MANTENER, FAIL or worth_it live in verdict.csv.
 STATES = ("pass", "fail", "watch", "info", "none")
@@ -76,8 +78,7 @@ def thin(length: int, most: int = 400) -> list[int]:
 def distribution(title: str, unit: str, values: np.ndarray, real: float | None, note: str,
                  p: float | None = None, band: tuple[float, float] = (5, 95),
                  bins: int = 60, series: dict[str, np.ndarray] | None = None,
-                 shift: dict | None = None, span: tuple[float, float] | None = None,
-                 reals: dict[str, float | None] | None = None) -> dict:
+                 shift: dict | None = None, reals: dict[str, float | None] | None = None) -> dict:
     """The null's distribution with the real value marked, aggregated from the raw draws.
 
     Args:
@@ -88,10 +89,9 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
         note: One sentence saying how to read it.
         p: The test's p-value, when it has one.
         band: Percentiles bounding the shaded band.
-        bins: Histogram bins over the draws' range, widened to include the real value.
+        bins: Histogram bins over the percentile 0.5-99.5 range (`core.study.clip`).
         series: Label -> raw values, overlaid on the same bins, each a density of area 1.
         shift: {"median", "ks_p"} between the series, computed by the study.
-        span: The range the bins cover instead; values outside land in the end bins.
         reals: Label -> that series' own real, instead of one shared `real` (SPP IS/OOS).
 
     Returns:
@@ -99,27 +99,28 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
     """
     v = np.asarray(values, dtype=float)
     v = v[np.isfinite(v)]
-    ends = [v.min(), v.max()] + ([] if real is None else [real])
-    lo, hi = span or (min(ends), max(ends))
-    edges = np.histogram_bin_edges(v, bins=bins, range=(lo, hi if hi > lo else lo + 1))
-    counts = np.histogram(np.clip(v, edges[0], edges[-1]), bins=edges)[0]
+    inside, lo, hi = clip.clip(v)
+    edges = np.histogram_bin_edges(inside, bins=bins, range=(lo, hi if hi > lo else lo + 1))
+    counts = np.histogram(inside, bins=edges)[0]
     out = {"kind": "distribution", "title": title, "unit": unit,
            "bins": [float(e) for e in edges], "counts": [int(c) for c in counts],
            "real": None if real is None else _num(real), "median": _num(np.median(v)),
            "band": [_num(np.percentile(v, band[0])), _num(np.percentile(v, band[1]))],
            "percentiles": {str(q): _num(np.percentile(v, q)) for q in PERCENTILES},
-           "p": None if p is None else _num(p), "note": note}
+           "p": None if p is None else _num(p),
+           "note": note + clip.caption(len(v) - len(inside))}
     if series:
         width = np.diff(edges)
         out["series"] = []
         for label, raw in series.items():
             s = np.asarray(raw, dtype=float)
             s = s[np.isfinite(s)]
-            c = np.histogram(np.clip(s, edges[0], edges[-1]), bins=edges)[0]
+            kept = s[(s >= edges[0]) & (s <= edges[-1])]
+            c = np.histogram(kept, bins=edges)[0]
             r = (reals or {}).get(label)
             out["series"].append({"label": label, "n": len(s), "median": _num(np.median(s)),
                                   "real": _num(r) if r is not None else None,
-                                  "counts": [float(x) for x in c / (len(s) * width)]})
+                                  "counts": [float(x) for x in c / (len(kept) * width)]})
     if shift is not None:
         out["shift"] = {"median": _num(shift["median"]), "ks_p": _num(shift["ks_p"])}
     return out
@@ -208,26 +209,6 @@ def _check(block: dict, where: str) -> None:
         raise ValueError(f"{where}: state {wrong} is not one of {STATES}")
 
 
-def _extensions(block: dict, where: str) -> None:
-    """Check the optional keys: a distribution's series and shift, a grid's mark and scale."""
-    if block["kind"] == "distribution":
-        width = np.diff(block["bins"])
-        for s in block.get("series", []):
-            if {"label", "counts", "n", "median"} - set(s) or len(s["counts"]) != len(width):
-                raise ValueError(f"{where}: series {s.get('label')!r} malformed")
-            if abs(float(np.dot(s["counts"], width)) - 1) > 1e-3:
-                raise ValueError(f"{where}: series {s['label']!r} is not a density of area 1")
-        if block.get("shift") is not None and {"median", "ks_p"} - set(block["shift"]):
-            raise ValueError(f"{where}: shift lacks median or ks_p")
-    if block["kind"] == "grid":
-        mark, span = block.get("mark"), block.get("scale_range")
-        if mark is not None and (mark["row"] not in block["rows"]
-                                 or mark["col"] not in block["cols"] or "label" not in mark):
-            raise ValueError(f"{where}: mark {mark} is not a cell of the grid")
-        if span is not None and not (len(span) == 2 and span[0] < span[1]):
-            raise ValueError(f"{where}: scale_range {span} is not [lo, hi]")
-
-
 def validate(result: dict) -> dict:
     """Check a whole study result against the contract and that it serialises as JSON.
 
@@ -242,7 +223,7 @@ def validate(result: dict) -> dict:
     for tab in result["tabs"]:
         for i, block in enumerate(tab["blocks"]):
             _check(block, f"{tab['name']}[{i}]")
-            _extensions(block, f"{tab['name']}[{i}]")
+            blockcheck.extensions(block, f"{tab['name']}[{i}]")
     for w in result.get("warnings", []):
         if w["state"] not in STATES:
             raise ValueError(f"warning {w['code']}: state {w['state']!r}")
