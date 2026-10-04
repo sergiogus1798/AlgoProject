@@ -14,7 +14,10 @@ from scipy import stats as sps
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.surface import dedupe, plateau
+from arch.bootstrap import optimal_block_length
+
 from engines.inference import excess, fdr
+from engines.inference.snooping import superior
 from engines.market import calibrate
 from engines.nulls import inputs, kernel, model, stats, verdict
 from engines.nulls.placement import kernel as pkernel
@@ -199,6 +202,41 @@ def test_excess_fdr_is_a_rate() -> None:
     got = excess.excess(p, 0.05)
     assert got["fdr"] == 1.0
     assert got["excess"] == pytest.approx(-4.0, abs=1e-12)
+
+
+def test_touched_reads_the_last_bar() -> None:
+    """A stop reached only on the last bar of the trade's life is a touch, at that offset."""
+    low, high = np.array([10.0, 10.0, 10.0, 4.0]), np.full(4, 11.0)
+    offset, on_stop, on_target = kernel.touched(np.array([0]), np.array([3]), low, high,
+                                                np.array([5.0]), np.array([20.0]))
+    assert (offset[0], bool(on_stop[0]), bool(on_target[0])) == (3, True, False)
+
+
+def test_placement_log_return_pays_the_cost() -> None:
+    """A flat price leaves the mean log return at minus the cost rate."""
+    st, cv = np.zeros((1, 10)), np.zeros((1, 4))
+    pkernel.batch(np.array([[0, 1]]), np.array([[1, 1]]), np.ones(5), np.ones(5), 1.0, np.ones(2),
+                  np.zeros(2), 0.01, 1.0, 10000.0, 5, st, cv)
+    assert st[0, 9] == pytest.approx(-0.01, abs=1e-12)
+
+
+def test_distrust_flags_a_p_on_the_floor() -> None:
+    """A p equal to the smallest observable one is saturated, not measured."""
+    cfg = {"verdict": {"min_trades": 1}, "nulls": {"draws": 999}}
+    kept = {"checks": {"corr": 1.0}, "levels": {}}
+    said = verdict.distrust(kept, {"net": 1 / 1000, "dd": 0.5}, 100, cfg)
+    assert any(line.startswith("P SATURADO en net:") for line in said)
+
+
+def test_block_length_is_the_median_column() -> None:
+    """One persistent column among noise does not set the block of the whole panel."""
+    rng = np.random.default_rng(11)
+    panel = pd.DataFrame(rng.normal(0, 1, (1500, 5)))
+    for i in range(1, 1500):
+        panel.iloc[i, 0] += 0.9 * panel.iloc[i - 1, 0]
+    lengths = optimal_block_length(panel)["stationary"]
+    assert superior.block_length(panel) == max(1, round(float(lengths.median())))
+    assert superior.block_length(panel) < lengths.max() - 5
 
 
 if __name__ == "__main__":

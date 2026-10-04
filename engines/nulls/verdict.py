@@ -48,8 +48,8 @@ def attribute(seen: dict, per_rung: dict, name: str) -> dict:
         timing itself carried.
     """
     mean = {rung: float(np.mean(values[name])) for rung, values in per_rung.items()}
-    edge = seen[name] - mean["free"]
     sign = 1.0 if GOOD_HIGH[name] else -1.0
+    edge = sign * (seen[name] - mean["free"])     # positive is better, as the channels are
     return {"total": edge,
             "holding_time": sign * (mean["timing"] - mean["timing_holds"]),
             "sizing": sign * (mean["timing"] - mean["timing_sizing"]),
