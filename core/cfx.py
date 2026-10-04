@@ -4,7 +4,7 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
-from core.paths import project_dir
+from core.paths import MASTER, WORKERS, project_dir
 
 SAMPLE_TYPE = {"10": "IS", "20": "OOS", "127": "Full"}
 
@@ -13,13 +13,24 @@ def resolve(project: str) -> Path:
     """Turn a project name or a path into a .cfx path.
 
     Args:
-        project: A project name under the master's user/projects, or a path to a .cfx.
+        project: A project name, looked up on the master first and then on every worker
+            install, or a path to a .cfx.
 
     Returns:
         Path of the project.cfx. Reading it is safe at any time; it touches no SQX state.
+
+    Raises:
+        FileNotFoundError: the name is on none of the installs.
     """
     p = Path(project)
-    return p if p.suffix == ".cfx" else project_dir(project) / "project.cfx"
+    if p.suffix == ".cfx":
+        return p
+    installs = [MASTER] + [w["path"] for w in WORKERS.values()]
+    for install in installs:
+        cfx = project_dir(project, install) / "project.cfx"
+        if cfx.exists():
+            return cfx
+    raise FileNotFoundError(f"{project}: not in user/projects of any of {[str(i) for i in installs]}")
 
 
 def config(project: str) -> ElementTree.Element:

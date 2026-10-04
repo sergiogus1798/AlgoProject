@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from core import assetcheck, assetdata
-from studies.readings.edgeCost import spread_share
+from studies.readings.edgeCost import spread_share, swap
 
 DIRECTION = {"Buy": 1, "Sell": -1}
 
@@ -80,6 +80,10 @@ def per_trade(trades: pd.DataFrame, asset: dict, feed: str, timeframe: str) -> p
         assumed), `commission_cost`, `gross` = `Profit/Loss` + `commission_cost` +
         `spread_cost`, and `cost_today` = today's declared spread (assets/symbols/) plus
         commission — the denominator `one.measure()` reads the edge in multiples of.
+        Encargo 39 adds: `gross_price` = `price_pnl` + `spread_cost`, the gross BEFORE any swap
+        (`gross` still carries whatever swap SQX charged inside `Profit/Loss`); `slippage_cost`
+        and `swap_cost` (positive = paid) modelled at the card's rates, `nights` charged
+        (triple night = 3) and `spread_today`.
     """
     tick = asset["instrument"]["tick_size"]
     point_value = asset["instrument"]["point_value"]
@@ -91,9 +95,18 @@ def per_trade(trades: pd.DataFrame, asset: dict, feed: str, timeframe: str) -> p
                                   trades["sample"])
     gross = trades["Profit/Loss"] + commission_cost + spread_cost
     spread_today = _spread_points(asset, trades["sample"]) * tick * point_value * trades["Size"]
-    return trades.assign(direction=direction, price_pnl=price_pnl, spread_cost=spread_cost,
-                         commission_cost=commission_cost, gross=gross,
-                         cost_today=spread_today + commission_cost)
+    # Slippage is charged in full on the entry AND the exit (knowhow/costs/funded-tick-spread-vs-price.md).
+    fields = assetdata.schema(asset)["slippage"]["fields"]
+    slip_pts = trades["sample"].map({"IS": asset["costs"][fields[0]]["use"],
+                                     "OOS": asset["costs"][fields[-1]]["use"]})
+    slippage_cost = 2 * slip_pts * tick * point_value * trades["Size"]
+    priced = trades.assign(direction=direction, price_pnl=price_pnl, spread_cost=spread_cost,
+                           commission_cost=commission_cost, gross=gross,
+                           spread_today=spread_today, gross_price=price_pnl + spread_cost,
+                           slippage_cost=slippage_cost,
+                           cost_today=spread_today + commission_cost)
+    nights = swap.charged_nights(trades["Open time"], trades["Close time"], asset["swap"])
+    return priced.assign(nights=nights, swap_cost=swap.swap_cost(priced, asset))
 
 
 def warnings(asset: dict) -> list[dict]:

@@ -224,6 +224,7 @@ def main() -> None:
                 "criterion": f"SQX ↔ MT5 en {firm} ({model})",
                 "thresholds": cfg["thresholds"], "note": f"{strategy.stem} · {run_id}"})
             ticks.keep(pieces, summaries, firm, piece, reports[firm]["dir"])
+        summaries[firm]["mt5_history"] = {k: v for k, v in reports[firm]["summary"].items() if k[:5] in ("histo", "first", "start")}
     tabs = []
     if pieces:
         params = judge.params_table(assetdata.sqx_settings(data, "build"), costs)

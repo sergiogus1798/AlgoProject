@@ -12,6 +12,7 @@
 - `fill-and-pricing` — At what prices and moments does SQX fill entries and exits for this fleet?
 - `harvest-equity-vs-trades` — Why do a harvest's daily equity curve and its trade list end at different totals?
 - `mae-mfe-from-m1` — How does SQX compute a trade's MAE and MFE from M1 bars?
+- `maedepth-duration-cut-exit-after-x` — Why does the anomalous-duration cut of the deep-MAE screen mark nothing on a real population?
 - `orderstocsv-schema` — What traps does `orderstocsv` have when exporting every .sqx of a folder in one JVM?
 - `sequential-opt-not-wfc` — Can a sequential optimisation's runs be paired as a walk-forward correlation (WFC)?
 - `spp-export` — How do I export an SPP permutation table when SQX has no CLI export for it?

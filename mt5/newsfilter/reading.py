@@ -92,6 +92,9 @@ def backtest(expert: str, a: argparse.Namespace, tag: str) -> pd.DataFrame:
         time.sleep(10)
         got = tester.collect(started["run"])
         if got["state"] == "done":
+            h = got["summary"]
+            print(f"{expert}: calidad del histórico {h['history_quality_pct']} %, empezó el "
+                  f"{h['start_actual']}" + (f" (se pidió {h['start_asked']})" if h["start_changed"] else ""))
             return pd.read_parquet(got["trades_file"])
         if got["state"] == "no_report":
             raise SystemExit(f"{expert}: {got['hint']}")

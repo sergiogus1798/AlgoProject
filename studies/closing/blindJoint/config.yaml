@@ -23,7 +23,8 @@ joint:
   # `pieces` is an OPEN DECISION OF THE OWNER (hard rule 11). While either key is null the
   # study shows the verdict under every reading side by side, cuts nobody (every row MANTENER)
   # and records a soft row. Both set make one reading the call.
-  pieces: null                # how the four pieces combine: unanimidad (all four pass) or
+  pieces: sin_fallo           # decided 2026-10-04 (owner). How the four pieces combine:
+                              # unanimidad (all four pass) or
                               # sin_fallo (none fails; indeciso/ciego tolerated) or ninguna
                               # (the pieces are context and the StepM decides alone)
   population: entrantes       # decided 2026-10-04 (P2, the Council on the owner's delegation).

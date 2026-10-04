@@ -148,6 +148,12 @@ def step(n: int, note: str) -> None:
                  "at": datetime.now().isoformat(timespec="seconds")})
 
 
+def own_idea_files(draft: dict) -> tuple:
+    """`<SYMBOL>/<file>.md` of the idea files the draft's ideas came from."""
+    return tuple("/".join(Path(i["idea_file"]).parts[-2:]) for i in draft.get("ideas", [])
+                 if i.get("idea_file"))
+
+
 def main() -> None:
     """Accept a draft (check, stamp, save, print its Markdown), or record the director's step."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -159,7 +165,8 @@ def main() -> None:
         step(a.step, a.note)
         print(f"paso {a.step}/{len(STEPS)}: {STEPS[a.step - 1]}")
         return
-    draft, memory = store.read(a.draft), inputs.memory()
+    draft = store.read(a.draft)
+    memory = inputs.memory(own_idea_files(draft))
     problems = check(draft, memory["attempts"])
     if problems:
         sys.exit("La propuesta no se acepta:\n- " + "\n- ".join(problems))

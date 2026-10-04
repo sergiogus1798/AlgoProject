@@ -1,0 +1,20 @@
+# The negative control of the chain (encargo 9): monkeys through its criteria.
+#
+# No threshold lives here. The rules a monkey is judged by are the chain's own —
+# pipeline/autopilot/criteria.yaml, or the file `--criteria` names — and the gate's screens
+# read theirs from ledger/thresholds.yaml as they do for a real population.
+
+monkeys:
+  per_donor: 50     # monkeys drawn on each real strategy's footprint. 200 donors x 50 is the
+                    # 10,000 the owner asked for; the smallest rate a run can see is
+                    # 1 / (donors x per_donor)
+  rung: free        # what a monkey keeps of its donor, a rung of engines/nulls/model.py.
+                    # `free` keeps the trade count and the cost and hands entry, holding time
+                    # and sizing to chance: the monkey. `timing` keeps the donor's own holds
+                    # and sizes — whatever a rung keeps, it gives to the monkey
+  sizing: donor     # how a monkey's trade is sized. `donor`: the size the rung drew (the
+                    # donor's own, or its mean under `free`) — the engine as it is. `atr`:
+                    # re-sized by the ATR of the bar it landed on, at the donor's own
+                    # size x ATR. A donor's size is fitted to the volatility of ITS entry, so
+                    # under `donor` the floating-risk rules (worst day, worst MAE) mostly
+                    # measure that broken pairing. Which is the control is the owner's call

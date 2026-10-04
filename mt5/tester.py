@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 from core.paths import MT5_DATA
@@ -116,6 +117,11 @@ def collect(run: str) -> dict:
     trades = report.trades(deals)
     deals.to_parquet(folder / "deals.parquet")
     trades.to_parquet(folder / "trades.parquet")
+    # ponytail: the journal of the report's own day; a run that crosses midnight reads no line
+    day = datetime.fromtimestamp(htm.stat().st_mtime).strftime("%Y%m%d")
+    log = wine.data_dir() / "Tester" / "logs" / f"{day}.log"
+    summary |= report.start_check(summary, trades, log.read_bytes().decode("utf-16", "replace")
+                                  if log.exists() else "", meta["expert"], meta["start"])
     (folder / "summary.json").write_text(json.dumps(summary, indent=1, ensure_ascii=False))
     return {"state": "done", **meta, "summary": summary, "trades": len(trades),
             "trades_file": str(folder / "trades.parquet"), "dir": str(folder)}

@@ -15,6 +15,7 @@ from ui.daemon.results.catalogue import STUDIES
 LOADERS = {
     "gate": "studies.screening.gate.inputs:config",
     "snoopingScreen": "studies.screening.snoopingScreen.inputs:config",
+    "falsePositives": "studies.screening.falsePositives.inputs:config",
     "crossmarket": "studies.transfer.crossmarket.inputs.config:load",
     "crossTF": "studies.transfer.crossTF.inputs:config",
     "mcRetest": "studies.breakage.mcRetest.inputs.config:load",
@@ -37,6 +38,7 @@ LOADERS = {
     "monteCarlo": "portfolio.common.monteCarlo.inputs.config:load",
     "feedQuality": "studies.data.feedQuality.inputs:config",
     "spread": "studies.data.spread.inputs:config",
+    "maeDepth": "studies.screening.maeDepth.inputs:config",
 }
 
 # A study whose population run signs a config that differs from what LOADERS reads, because

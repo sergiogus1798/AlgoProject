@@ -131,6 +131,18 @@ FIELDS = {
     ("edgeCost", "edge_median"): "Lo mismo con la mediana del bruto: muy por debajo del edge "
                                  "medio, unas pocas operaciones grandes sostienen la media.",
     ("edgeCost", "n"): "Operaciones leídas.",
+    ("edgeCost", "be_all"): "Por cuánto hay que multiplicar los cuatro costes a la vez (comisión, "
+                            "swap, spread y slippage de hoy) para que el edge medio llegue a 0.",
+    ("edgeCost", "be_commission"): "Por cuánto hay que multiplicar la comisión sola para que el "
+                                   "edge medio llegue a 0. Vacío: no cuesta nada.",
+    ("edgeCost", "be_swap"): "Por cuánto hay que multiplicar el swap solo (noches, la triple "
+                             "cuenta 3) para que el edge llegue a 0. Vacío: es un abono.",
+    ("edgeCost", "be_spread"): "Por cuánto hay que multiplicar el spread solo para que el edge "
+                               "medio llegue a 0.",
+    ("edgeCost", "be_slippage"): "Por cuánto hay que multiplicar el slippage solo para que el "
+                                 "edge medio llegue a 0.",
+    ("edgeCost", "bites_first"): "El coste con el menor punto muerto: el que se come antes el "
+                                 "edge si empeora.",
 
     ("mcRetest", "composite"): "Puntuación de 0 a 100: media ponderada de producción, "
                                "ejecución, especificación y datos, cada una la peor de sus "

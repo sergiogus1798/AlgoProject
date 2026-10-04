@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.readings.edgeCost import costs
+from studies.readings.edgeCost import costs, sensitivity, swap
 
 MODULE = "edgeCost"
 GLOSSARY = [
@@ -18,7 +18,14 @@ GLOSSARY = [
      "ventaja."},
     {"term": "Coste de breakeven c*", "text": "El coste de ida y vuelta al que la ventaja "
      "neta llega a cero. Es el mismo número que el edge en spreads: el múltiplo de hoy al "
-     "que empataría."}]
+     "que empataría."},
+    {"term": "Múltiplo de punto muerto", "text": "Por cuánto hay que multiplicar UN coste (los "
+     "demás quedan como hoy) para que el edge medio por operación llegue a 0. 3 = el coste "
+     "puede triplicarse; por debajo de 1 la estrategia ya pierde con el coste de hoy."},
+    {"term": "Swap modelado", "text": "Noches que cruza cada operación (la noche triple vale 3) "
+     "por el swap del activo, largo o corto, al valor del punto y el tamaño. No sale de la "
+     "exportación de SQX, que no trae swap: es el coste de hoy, no el que cobró aquel backtest."}]
+MARGIN_OK = 2.0   # breakeven multiple at or above which a cost has room; config.yaml may override
 HOURS_ES = "hora de entrada (reloj del feed)"
 
 
@@ -77,7 +84,66 @@ def commission_table(got: dict) -> dict:
         "verla sin el spread mezclado.")
 
 
-def tabs(got: dict, recon: dict) -> list[dict]:
+def cost_blocks(priced: pd.DataFrame, asset: dict) -> list[dict]:
+    """One table per cost with its gross and what is left, the swap split, and the swap check."""
+    table = blocks.table(
+        "Cada coste por operación y el edge que deja", sensitivity.cost_table(priced),
+        "Bruto = movimiento de precio + el spread que ya iba en el relleno, SIN swap: es menor que el "
+        "«bruto» de la pestaña anterior en el swap que SQX abonó dentro de Profit/Loss. Los "
+        "cuatro costes están modelados con la ficha del activo de hoy (comisión y swap al peor "
+        "de FTMO/Hantec, spread de Darwinex, slippage dos veces por operación: entrada y "
+        "salida). Un coste negativo es un abono. «Edge que queda» = bruto medio menos ese "
+        "coste solo; en «total», menos los cuatro.")
+    split = blocks.table(
+        "Swap por lado y noches", sensitivity.swap_split(priced),
+        "Una noche suma 1 y la noche triple del activo (assets/_policy.yaml) suma 3. Un lado "
+        "sin operaciones queda en blanco: una estrategia es larga o corta, nunca las dos.")
+    r = swap.reconcile(priced, asset)
+    cols = ["residual medio", "error estándar", "swap modelado (ficha)", "swap modelado (SQX hoy)",
+            "residual sin noches", "residual con noches", "¿Cuadra?"]
+    check = blocks.table(
+        "Swap modelado contra el residuo de la reconciliación", pd.DataFrame([[
+            r["resid_mean"], r["resid_se"], r["model_card"], r["model_sqx_now"],
+            r["resid_no_nights"], r["resid_nights"],
+            {True: "sí", False: "no", None: "sin dato"}[r["agrees"]]]], columns=cols),
+        "El residuo (Profit/Loss + comisión − precio) es el swap que cobró SQX más redondeos y "
+        "el valor fijo del punto (knowhow/costs/sqx-fixed-point-value-jpy.md). Cuadra cuando el "
+        "modelo con el swap que lleva SQX hoy cae a 2 errores estándar del residuo. Si no, "
+        "compara «sin noches» y «con noches»: la diferencia es el swap y nada más. El swap "
+        "«de la ficha» es el del dueño de hoy, no el que cobró aquel backtest.")
+    return [table, split, check]
+
+
+def sensitivity_blocks(priced: pd.DataFrame, margin: float) -> list[dict]:
+    """The ×0..×3 grids (edge and PF per cost) and the breakeven multiples, coloured by margin."""
+    sens = sensitivity.sensitivity(priced)
+    out = []
+    for value, label in (("edge por operación", "Edge por operación"),
+                         ("profit factor neto", "Profit Factor neto")):
+        grid = sens.pivot(index="coste", columns="multiplicador", values=value)
+        grid = grid.loc[[*sensitivity.COSTS, sensitivity.ALL]]
+        grid.columns = [f"×{c:g}" for c in grid.columns]
+        floor = 0.0 if value == "edge por operación" else 1.0
+        t = blocks.table(f"{label} con cada coste multiplicado", grid.reset_index(),
+                         "Cada fila multiplica ese coste solo (los demás, a ×1); «todos» los "
+                         "multiplica a la vez. Verde: sigue ganando. Rojo: ya pierde.")
+        t["states"] = [["info"] + ["pass" if v > floor else "fail" for v in row]
+                       for row in grid.itertuples(index=False)]
+        out.append(t)
+    be = sensitivity.breakeven_table(priced)
+    t = blocks.table(
+        "Múltiplo de punto muerto de cada coste", be,
+        f"A qué múltiplo del coste el edge llega a 0 (los demás, a ×1). Verde: {margin:g} o más, "
+        "hay margen. Rojo: menos, queda poco. El umbral del color es una PROPUESTA; lo fija el "
+        "dueño. En blanco: el coste no muerde (es 0 o un abono).")
+    t["states"] = [["info", "info" if v != v else ("pass" if v >= margin else "fail")]
+                   for v in be["múltiplo de punto muerto"]]
+    out.append(t)
+    return out
+
+
+def tabs(got: dict, recon: dict, priced: pd.DataFrame, asset: dict,
+         margin: float = MARGIN_OK) -> list[dict]:
     """The four readings: the headline numbers, the breakdowns, and the reconciliation."""
     headline = blocks.table(
         "Edge por operación y coste de breakeven", pd.DataFrame([[
@@ -113,6 +179,8 @@ def tabs(got: dict, recon: dict) -> list[dict]:
     # trustworthy before the headline table that uses it — never the other way round.
     return [envelope.tab("reconcile", "Reconciliación", [rec, commission_table(got)]),
             envelope.tab("headline", "Edge y breakeven", [headline, measure_table(got)]),
+            envelope.tab("costs", "Costes", cost_blocks(priced, asset)),
+            envelope.tab("sensitivity", "Sensibilidad", sensitivity_blocks(priced, margin)),
             envelope.tab("sessions", "Por sesión y hora", [by_hour, by_dow])]
 
 
@@ -151,7 +219,10 @@ def run(strategy: str, priced: pd.DataFrame, recon: dict, cfg: dict, asset: dict
                             "suelo 0.99: el bruto de este resultado es decoración hasta "
                             "revisarla."})
     return envelope.envelope(
-        MODULE, strategy, identity, cfg, started, tabs(got, recon), said, warn, GLOSSARY,
+        MODULE, strategy, identity, cfg, started, tabs(got, recon, priced, asset, cfg.get("sensitivity", {}).get("margin_ok", MARGIN_OK)),
+        said, warn, GLOSSARY,
         summary={"n": got["n"], "edge_mean": got["edge_mean"], "edge_median": got["edge_median"],
                  "breakeven_multiple": got["breakeven_multiple"], "reconcile": recon["corr"],
-                 "costs_provisional": provisional})
+                 "costs_provisional": provisional,
+                 "breakeven_all": sensitivity.breakeven(priced),
+                 "bites_first": sensitivity.bites_first(priced)})

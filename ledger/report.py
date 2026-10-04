@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from core.surface import plateau
-from ledger import gate, record, spend, study as studymod, thresholds, trials
+from ledger import gate, record, spend, study as studymod, thresholds, trials, tried
 from studies.research.memory import ideas, sources, trials as research
 
 
@@ -80,10 +80,16 @@ def main() -> None:
     except PermissionError as refusal:
         print(f"  {refusal}")
 
+    swept = tried.summary(a.study)
+    if len(swept):
+        print("\n-- lo probado en barridos (L2): probados K, elegido 1")
+        print(swept.to_string(index=False))
+        print(f"  {int(swept['cuenta'].sum())} pruebas cuentan para N (un barrido sin elegido no cuenta)")
+
     timeframe = frame["timeframe"].iloc[0]
     family = a.study.removeprefix(studymod.study_id(symbol, timeframe, "") + "_")
     spent = research.spent(ideas.index(), sources.templates(), symbol, timeframe, family)
-    counted = trials.accumulated(frame, spent["hypotheses"])
+    counted = trials.accumulated(tried.with_sweeps(frame, a.study), spent["hypotheses"])
     if not counted["n"]:
         print("\n-- ninguna búsqueda registró la distribución de sus candidatos")
         return
@@ -94,7 +100,7 @@ def main() -> None:
     print(f"  aparte, sin sumar: {research.profile_looks(symbol, timeframe, spent['directions'])}"
           " medidas del perfil de mercado y su barrido, corregidas entre sí")
 
-    every = trials.overall([studymod.read(s) for s in studymod.studies()])
+    every = trials.overall([tried.with_sweeps(studymod.read(s), s) for s in studymod.studies()])
     print(f"  N global entre {every['studies']} estudios: {every['n']} (el de este estudio: "
           f"{counted['n']}, con sus hipótesis medidas)")
 

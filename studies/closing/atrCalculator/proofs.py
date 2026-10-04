@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from studies.closing.atrCalculator.mae import before_entry
+from engines.market.excursion import before_entry
 
 SAME = ("Open time", "Close time", "Open price", "Close price")
 STOP = "SL"          # the `Close type` SQX writes for a trade its stop closed (🔬 2026-09-26)

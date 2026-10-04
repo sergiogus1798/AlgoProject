@@ -5,7 +5,8 @@ import time
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.closing.atrCalculator import (grid, mae, noreturn, stability, sqxview, threshold,
+from engines.market import excursion
+from studies.closing.atrCalculator import (grid, noreturn, stability, sqxview, threshold,
                                            transfer, view)
 
 MODULE = "studies.closing.atrCalculator"
@@ -26,7 +27,7 @@ def reading(trades: pd.DataFrame, inputs: dict, cfg: dict) -> dict:
         no return), `shapes` (IS against each OOS window) and `winners` (MAE in ATR of the
         winners per segment).
     """
-    measured = mae.measure(trades, inputs["bars_index"], inputs["atr"], inputs["point_value"])
+    measured = excursion.measure(trades, inputs["bars_index"], inputs["atr"], inputs["point_value"])
     winners = {s: measured.loc[(measured["segment"] == s) & measured["winner"], "mae_atr"]
                .to_numpy() for s in ("build",) + OOS}
     if not len(winners["build"]):

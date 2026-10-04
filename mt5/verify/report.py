@@ -18,10 +18,14 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
     rows = [{"empresa": firms.label(f), "veredicto": "Validada" if s["state"] == "pass" else
             "No validada", "reloj (h)": s["clock_h"], "operaciones SQX": s["sqx_trades"],
              "operaciones MT5": s["mt5_trades"],
+             "calidad histórico MT5 (%)": s["mt5_history"]["history_quality_pct"],
+             "MT5 empezó": s["mt5_history"]["start_actual"] + (
+                 " (movido)" if s["mt5_history"]["start_changed"] else ""),
              "veredicto en Real ticks": {"pass": "Validada", "fail": "No validada"}.get(
                  s.get("ticks_state"), "—")} for f, s in summaries.items()]
     rows += [{"empresa": firms.label(f), "veredicto": "No se pudo verificar", "reloj (h)": None,
-              "operaciones SQX": None, "operaciones MT5": None} for f in refused]
+              "operaciones SQX": None, "operaciones MT5": None,
+              "calidad histórico MT5 (%)": None, "MT5 empezó": None} for f in refused]
     states = [s["state"] for s in summaries.values()]
     # Each firm is judged alone: one that validates is amber, never the red of none (📓 2026-09-30)
     overall = ("pass" if states and all(s == "pass" for s in states) else
@@ -33,6 +37,7 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
             "blocks": [study_result.blocks.table(
                 "Cada empresa", pd.DataFrame(rows, columns=[
                     "empresa", "veredicto", "reloj (h)", "operaciones SQX", "operaciones MT5",
+                    "calidad histórico MT5 (%)", "MT5 empezó",
                     *(["veredicto en Real ticks"] if meta.get("ticks") else [])]),
                 "una estrategia puede valer para una empresa y no para otra")]}
     good = [firms.label(f) for f, s in summaries.items() if s["state"] == "pass"]

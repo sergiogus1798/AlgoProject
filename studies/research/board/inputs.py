@@ -24,18 +24,21 @@ def sweep() -> pd.DataFrame:
     return pd.read_csv(path) if path.exists() else pd.DataFrame(columns=CELL)
 
 
-def memory() -> dict:
+def memory(own_files: tuple = ()) -> dict:
     """The memory, recomputed from its sources (50 ms): nothing stale is ever read.
 
     Returns:
         `attempts` (one row per project run), `ideas` (the index), `by_family`
         (`queries.survivors_by_family`) and `spent` (`queries.ideas_spent`).
+        own_files: `<SYMBOL>/<file>.md` of the proposal being stamped: its ideas are not «spent»
+            yet — only `spent` leaves them out, the ideas index (and the ledger) keeps them.
     """
     index = ideas.index()
     rows = attempts.table({i["idea"] for i in index})
     index = ideas.index(rows)
     return {"attempts": rows, "ideas": index, "by_family": queries.survivors_by_family(rows),
-            "spent": queries.ideas_spent(index)}
+            "spent": queries.ideas_spent(
+                [i for i in index if i["file"] not in own_files])}
 
 
 def asset_class(symbol: str) -> str:

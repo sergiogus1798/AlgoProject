@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.readings.edgeCost import costs, one
+from studies.readings.edgeCost import costs, one, sensitivity
 
 MODULE = one.MODULE
 
@@ -19,7 +19,10 @@ def _row(identity: str, group: pd.DataFrame) -> dict:
     return {"identity": identity, "n": got["n"], "mean_gross": got["mean_gross"],
             "median_gross": got["median_gross"], "mean_cost": got["mean_cost"],
             "edge_mean": got["edge_mean"], "edge_median": got["edge_median"],
-            "breakeven_multiple": got["breakeven_multiple"], "reconcile": corr}
+            "breakeven_multiple": got["breakeven_multiple"], "reconcile": corr,
+            "be_all": sensitivity.breakeven(group),
+            **{f"be_{k}": sensitivity.breakeven(group, k) for k in sensitivity.COSTS},
+            "bites_first": sensitivity.bites_first(group)}
 
 
 def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> dict:
@@ -40,6 +43,8 @@ def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> dict:
     rows = {i: _row(i, g) for i, g in priced.groupby("identity", observed=True)}
     panel = pd.DataFrame(rows).T
     panel.index.name = "identity"
+    num = [c for c in panel.columns if c not in ("bites_first", "identity")]   # DataFrame(rows).T made everything object
+    panel[num] = panel[num].apply(pd.to_numeric)
     panel["strategy"] = names.reindex(panel.index)
     panel = panel.set_index("strategy")
     bar, action = cfg["verdict"]["min_edge_spreads"], cfg["verdict"]["action"]

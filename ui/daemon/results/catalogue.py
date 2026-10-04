@@ -44,6 +44,7 @@ STUDIES = {
     "monteCarlo": ("readings", "portfolio.common.monteCarlo", "Monte Carlo de operaciones", None),
     "feedQuality": ("data", "studies.data.feedQuality", "Calidad del feed", "8"),
     "spread": ("data", "studies.data.spread", "Spread real de Darwinex", "8"),
+    "maeDepth": ("screening", "studies.screening.maeDepth", "Criba del MAE profundo", "8"),
 }
 
 # Gate = its verdict.csv is meant to remove strategies through /curate, which drops exactly
@@ -64,7 +65,7 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     "monkeyExcess": "describe",
     # "annotates and removes nobody" (owner, 2026-09-25): every verdict.csv row is MANTENER
     "snoopingScreen": "describe",
-    # not built yet
+    # monkeys through the chain's criteria: counts the survivors of a null, judges no strategy
     "falsePositives": "describe",
     # many.py: "the verdict /curate applies" — DESCARTAR under the breadth floor
     "crossmarket": "gate",
@@ -103,6 +104,8 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     "feedQuality": lambda cfg: cfg["alarm"]["action"] == "drop",
     # DESCARTAR only with reprice.action = drop; mark today
     "spread": lambda cfg: cfg["reprice"]["action"] == "drop",
+    # DESCARTAR only with verdict.action = drop; mark today (proposal, encargo 27)
+    "maeDepth": lambda cfg: cfg["verdict"]["action"] == "drop",
 }
 
 
@@ -118,6 +121,8 @@ ONE_WHY = {
                     "es una pregunta sobre el conjunto, no sobre una.",
     "snoopingScreen": "SPA y StepM descuentan la búsqueda entera: con una estrategia no hay "
                       "búsqueda que pagar.",
+    "falsePositives": "Es el control negativo de la cadena: sortea monos con la huella de "
+                      "todas las estrategias del databank; de una sola no sale una tasa.",
     "blindJoint": "El StepM del paso 20 cuenta todas las madres que llegaron: una sola no "
                   "paga la búsqueda.",
 }

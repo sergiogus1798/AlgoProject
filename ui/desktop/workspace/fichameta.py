@@ -14,6 +14,16 @@ EXITS = (("stop_loss", "SL"), ("profit_target", "PT"), ("trailing_stop", "traili
          ("break_even", "break even"))
 DAYS = {"MONDAY": "lunes", "TUESDAY": "martes", "WEDNESDAY": "miércoles", "THURSDAY": "jueves",
         "FRIDAY": "viernes", "SATURDAY": "sábado", "SUNDAY": "domingo"}
+# BadStrategyException's bits (core.sqxfile.PROBLEM_BITS), as the owner reads them.
+PROBLEMS = {"NoTrades": "sin operaciones", "TooLittleTrades": "demasiado pocas operaciones",
+            "ZeroPLTrades": "operaciones con P/L cero",
+            "TooShortTrades": "demasiadas operaciones cierran en la misma barra",
+            "ZeroDurationTrades": "operaciones de duración cero",
+            "TooManyOpenTrades": "demasiadas operaciones abiertas",
+            "TooLongTrade": "operaciones sin cerrar al final", "NoFilledTrades": "ninguna orden ejecutada",
+            "OutlierTrade": "una operación enorme que domina el resultado",
+            "AmbiguousTrades": "demasiadas operaciones ambiguas (SL y PT en la misma barra)",
+            "StockpickerShiftChanged": "SQX cambió el shift de una condición"}
 COSTS = (("spread", "spread"), ("slippage", "slippage"), ("min_distance", "min distance"))
 
 
@@ -88,6 +98,12 @@ def rows(meta: dict) -> list[tuple[str, str, str]]:
         if "error" not in task and task["costs"] != last["costs"]:
             out.append((f"⚠ Costes de «{task['task']}»", f"{_costs(task)} — no son los del último "
                         "test guardado en el .sqx", warn))
+    prob = meta["problems"]
+    if prob["value"]:
+        text = ", ".join(PROBLEMS[r] for r in prob["reasons"])
+        if prob["unknown"]:
+            text += f"{', ' if text else ''}bits sin nombre en SQX: {prob['unknown']}"
+        out.append(("⚠ Problemas de SQX", f"{text} (valor {prob['value']})", warn))
     out += [("Nota", note, T["muted"]) for note in meta["notes"]]
     out.append(("Fichero", f"{meta['file']} · {meta['origin']}", T["muted"]))
     return out

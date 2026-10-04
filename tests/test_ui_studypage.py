@@ -148,8 +148,8 @@ def test_strategy() -> None:
     page.bar.run("one")                      # pressed anyway: the daemon refuses too
     assert page.bar.error.text() and not page.bar.ids
 
-    page.open_study("falsePositives")
-    assert page.bar.one.isHidden() and "aún no existe" in page.bar.line.text()
+    page.open_study("falsePositives")        # built 2026-10-04: runs over the whole cosecha
+    assert not page.bar.many.isHidden() and "aún no existe" not in page.bar.line.text()
 
     page.open_study("crossmarket")           # not run on Results: found by name elsewhere (§2)
     assert page.view.results and "de Retest_Markets_-_Family" in page.note.text(), page.note.text()

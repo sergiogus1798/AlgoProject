@@ -5,4 +5,7 @@ TIPS = {
                                 "hoy, por debajo del cual la estrategia se marca. Decisión "
                                 "del dueño, no de este código.",
     "verdict.action": "'mark' sólo colorea el veredicto; 'drop' hace que verdict.csv pida "
-                      "DESCARTAR a quien no llega al umbral. Decisión del dueño."}
+                      "DESCARTAR a quien no llega al umbral. Decisión del dueño.",
+    "sensitivity.margin_ok": "Múltiplo de punto muerto desde el que un coste se pinta en verde "
+                             "(margen para que empeore); por debajo, rojo. Propuesta: la fija "
+                             "el dueño."}

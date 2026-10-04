@@ -27,6 +27,8 @@ inputs ─▶ spread_share ─▶ costs ─▶ one / many ─▶ report
 | `inputs.py` | The knobs, and the harvest this study reads (trades, the timeframe, the identity → strategy name it carries no other way) | imported | folder → frames |
 | `spread_share.py` | **Measures** the round-trip spread actually embedded in the fill price, per feed and sample segment, against the M1 bars — refuses on a feed with no bars, or a segment too small to trust | imported | trades + feed → measured price offset |
 | `costs.py` | Rebuilds gross P&L per trade from the fill prices and the ACTUAL measured cost, reconciles it against what SQX reported, and separately prices today's modelled cost (`assets/symbols/*.yaml`, undiluted) for the edge's denominator; the provisional-cost and issue-26 warnings | imported | trades + asset + feed → priced trades, reconciliation |
+| `swap.py` | **Models the swap per trade** (nights crossed, the triple night counted 3, × the card's long/short rate by the class's `sqx_type`) and checks it against the reconciliation residual | imported | trades + asset card → swap cost per trade |
+| `sensitivity.py` | The four cost tables (commission, swap, spread, slippage), the ×0 to ×3 sensitivity of edge and net PF, and each cost's breakeven multiple (encargo 39) | imported | priced trades → tables |
 | `one.py` | **One strategy against its own edge-per-cost bar, as the contract's data**: the reconciliation (shown first), the headline numbers, the by-hour and by-weekday breakdown | imported — the window calls it | one strategy's priced trades → result |
 | `many.py` | Every strategy of one harvest, judged against the same bar, as one panel | imported | priced trades → panel |
 | `report.py` | **The command**: every strategy of one harvest to `verdict.csv` (`strategy, identity, …, verdict`, identity the harvest's own) and its page, or `--strategy` for one read in full | `python3 -m studies.readings.edgeCost.report --project USDJPY_emaCross_H1 --databank Results --feed USDJPY_M1 [--strategy "Strategy 10.9.51"]` | harvest → reports |
@@ -51,6 +53,11 @@ measured on gold. Measured 2026-09-26 on the harvests this module was verified a
 | `USDJPY_M1` | IS and OOS (one spread field) | 0.002 | 0.001 (0.1 pt × tick 0.01) | 2.0 |
 | `XAUUSD_M1` | IS | 0.08 | 0.05 (5 pt × tick 0.01) | 1.6 |
 | `XAUUSD_M1` | OOS | 0.15 | 0.10 (10 pt × tick 0.01) | 1.5 |
+
+Those figures were taken on the ENTRY side only (2026-10-04 review: SQX puts the spread on
+the ask side, so a long pays it at entry and a short at exit; slippage is charged on both
+fills). `measure()` now sums the entry offset and the exit offset (exits on a bar open), so
+long and short both recover spread + 2 × slippage; recompute the table before quoting it.
 
 None of these is 0.5. The measured value — not the ratio — is what `costs.per_trade()` uses
 for `spread_cost` (the actual cost gross has to remove); the DECLARED spread is used,

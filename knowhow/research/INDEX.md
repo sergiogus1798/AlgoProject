@@ -29,6 +29,7 @@
 - `is-proxies-top-decile` — Which in-sample metrics separate survivors inside the top Sharpe decile?
 - `m1-feed-anomaly-statistics` — Are extreme moves on the Dukascopy M1 feed real events or bad data, and how to mark them?
 - `mintrl-explosion-is-correct` — What does MinTRL return when the Sharpe is below the benchmark Sharpe?
+- `monkey-size-carries-donor-volatility` — Why do random-entry monkeys fail the floating-risk rules (worst MAE, worst day in R) far more than real strategies?
 - `oos1-oos2-persistence` — How much of a strategy's per-trade Sharpe on oos1 persists on oos2, and what is a step-8 line worth there?
 - `pair-filters-false-rejection` — Why do pair filters (tail, rolling max, co-loss) reject independent strategies?
 - `per-trade-usd-conflates-sizing` — Why does a per-trade IS/OOS comparison in USD confuse lot size with edge?

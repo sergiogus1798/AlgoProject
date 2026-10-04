@@ -693,6 +693,27 @@ thresholds:
       el spread relativo al precio se da por constante si la media de cada año completo
       queda a ±20 % de la mediana de los años; si no, se modela para los años sin Darwinex
 
+  - key: feedQuality.K.NIKKEI225_M1
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.NIKKEI225_M1
+    set_by: agente
+    set_on: 2026-10-04
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=94, N20=41, N25=25, N30=14; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2020. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.NIKKEI225_M1
+    value: "Mon 03:00-Mon 23:01, Tue 03:00-Tue 23:01, Wed 03:00-Wed 23:01, Thu 03:00-Thu 23:01, Fri 03:00-Fri 03:02, Fri 03:03-Fri 23:01"
+    source: studies/data/feedQuality/config.yaml#sessions.NIKKEI225_M1
+    set_by: agente
+    set_on: 2026-10-04
+    why: >-
+      deducida del feed (pregunta del 2026-10-04): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
   - key: spread.safety.factor
     value: 1.0
     source: studies/data/spread/config.yaml#safety.factor
@@ -802,3 +823,41 @@ thresholds:
     set_by: dueño
     set_on: 2026-09-30
     why: el stop con el que se opera es SL = X·ATR(20) del paso 24; X = p90 del MAE/ATR de las ganadoras de build, la misma regla para todas, fijada antes de mirar ninguna cartera
+
+  # ── Paso 8 · criba del MAE profundo (encargo 27) ──────────────────────────────────────
+  - key: maeDepth.k
+    value: [3, 4]
+    source: studies/screening/maeDepth/config.yaml#depth.k
+    set_by: agente
+    set_on: 2026-10-04
+    why: >-
+      los k por defecto del encargo 27 (3 y 4 ATR, del dueño 2026-09-28: «MAE superior a 3 o 4
+      ATRs»), fijados antes de mirar. Pendiente de confirmar por el dueño si se leen los dos o
+      manda uno (encargo 27 §3.1.1).
+
+  - key: maeDepth.slippage
+    value: [0.0, 0.25, 0.5]
+    source: studies/screening/maeDepth/config.yaml#depth.slippage
+    set_by: agente
+    set_on: 2026-10-04
+    why: >-
+      los tres deslizamientos por defecto del encargo 27 §2.1, en ATR sobre el nivel -k ATR del
+      contrafactual; studies/CLAUDE.md prohíbe una simulación de stop sin sensibilidad.
+
+  - key: maeDepth.duration_sigma
+    value: 2.5
+    source: studies/screening/maeDepth/config.yaml#anomaly.sigma
+    set_by: dueño
+    set_on: 2026-09-28
+    why: >-
+      «que coincidan un MAE excesivo y una duración de trade a 2,5 desviaciones típicas de la
+      media de trades de ese backtest» — encargo 27 §3, decidido por el dueño.
+
+  - key: maeDepth.action
+    value: mark
+    source: studies/screening/maeDepth/config.yaml#verdict.action
+    set_by: agente
+    set_on: 2026-10-04
+    why: >-
+      propuesta del encargo 27 §3.1.3: marcar y seguir en la primera versión, hasta ver cuántas
+      caen en una población real. Pendiente de confirmar por el dueño.

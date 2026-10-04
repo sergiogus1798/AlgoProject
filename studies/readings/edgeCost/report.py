@@ -55,7 +55,8 @@ def main() -> None:
     output.population(out, "edgeCost", got["population"],
                       f"Edge por coste — {a.project} / {a.databank}")
     got["panel"].to_csv(out / "verdict.csv",
-                        columns=["identity", "edge_mean", "edge_median", "n", "verdict"])
+                        columns=["identity", "edge_mean", "edge_median", "n", "be_all", "be_commission",
+                                 "be_swap", "be_spread", "be_slippage", "bites_first", "verdict"])
     write_manifest(out,
                    {"project": a.project, "databank": a.databank, "feed": a.feed,
                     "input": str((folder / "trades.parquet").resolve())},

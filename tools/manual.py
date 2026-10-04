@@ -44,11 +44,11 @@ FAMILIES = {
         "40-sqx-lab", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
         "06-mover-estrategias", "27-curar", "17-pipeline", "80-autopiloto", "55-retirar-proyectos",
         "62-metadatos-estrategia", "82-perfil-de-mercado", "81-memoria-de-resultados",
-        "83-tablero-de-investigacion", "90-explorador-de-bibliografia",
+        "83-tablero-de-investigacion", "90-explorador-de-bibliografia", "97-inspeccionar-proyectos",
         "91-potencia-del-perfil", "92-perfil-agrupado"]),
     "05-cribado-oos": ("Cribado fuera de muestra", [
         "01-analisis-is-oos", "02-filtros", "03-comparar-muestras", "04-decaimiento",
-        "29-puerta", "49-snooping"]),
+        "29-puerta", "49-snooping", "98-criba-mae-profundo", "99-monos-por-la-cadena"]),
     "06-lecturas": ("Lecturas de una estrategia", [
         "26-nulos", "50-edge-por-coste", "40-forma-del-beneficio", "42-calidad-de-la-entrada",
         "53-mapa-condicional", "51-estructura"]),

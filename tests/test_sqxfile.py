@@ -35,6 +35,12 @@ def parse() -> dict:
 
 def main() -> None:
     """Compare against the golden file, or write it when run with --bless."""
+    # Known-answer (OPEN #97): a dot, a lowercase letter or an `@` is part of the symbol.
+    for entry, want in (("Results/Main: UKOIL.cash_M1_LOM_H1/x", ("UKOIL.cash", "M1_LOM_H1")),
+                        ("Results/Main: SP500ft_Plus02_Infinox/x", ("SP500ft", "Plus02_Infinox")),
+                        ("Results/Main: @ES_D1/x", ("@ES", "D1")),
+                        ("Results/Main: XAUUSD_M1_LOM_M30/x", ("XAUUSD", "M1_LOM_M30"))):
+        assert sqxfile.RESULTS_RE.search(entry).groups() == want, entry
     result = parse()
     if "--bless" in sys.argv:
         GOLDEN.write_text(json.dumps(result, indent=2), encoding="utf-8")

@@ -16,6 +16,7 @@ from studies.closing.atrCalculator import inputs as atr_inputs, load as atr_load
 from studies.data.feedQuality import detect as fq_detect, inputs as fq_inputs
 from studies.research.pooledProfile import inputs as pooled_inputs, one as pooled_one
 from studies.research.profilePower import inputs as power_inputs, one as power_one
+from studies.screening.falsePositives import chain as fp_chain, inputs as fp_inputs, model as fp_model
 from studies.screening.snoopingScreen import inputs as snooping
 from studies.transfer.crossmarket.simulate import paired
 from ui.daemon.workflow import sources
@@ -229,3 +230,21 @@ def pooledprofile_asset(cfg: dict) -> dict:
     frame = power_inputs.bars("EURUSD", "H4")
     pooled_one.run("EURUSD", "forex", "H4", frame, assetdata.load("EURUSD"), study)
     return {"scale": len(frame), "bytes_in": int(frame.memory_usage().sum())}
+
+
+def falsepositives_donor(cfg: dict) -> dict:
+    """One donor's monkeys drawn and read by the gate, at the control's own settings.
+
+    Args:
+        cfg: What config.load() returned.
+
+    Returns:
+        Monkey trades priced and bytes of the harvest read.
+    """
+    project, databank, _ = cfg["sample"]["harvest"]
+    got = fp_inputs.load(project, databank, cfg["sample"]["bars_feed"], 1, fp_inputs.judge.CRITERIA)
+    key, own = next(iter(got["real"]["trades"].groupby("identity", observed=True)))
+    drawn, _ = fp_model.monkeys(own, got["real"]["bars"], got["nullcfg"],
+                                fp_inputs.config([])["monkeys"], key)
+    fp_chain.facts8(fp_chain.as_harvest(drawn, got["real"]), got["gate_cfg"])
+    return {"scale": len(drawn), "bytes_in": sample.weight([Path(got["source"]["harvest"]) / "trades.parquet"])}

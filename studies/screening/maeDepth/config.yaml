@@ -1,0 +1,19 @@
+# La criba del MAE profundo (encargo 27, paso 8). Manual: docs/manual/ (cap. 98-criba-mae-profundo).
+#
+# Mide cuánto depende cada estrategia de operaciones que se fueron k ATR en contra y volvieron.
+# No elige ningún stop: avisa de lo que el paso 24 se encontrará. Los k, los deslizamientos y la
+# acción son del DUEÑO (regla dura 11): viven en ledger/thresholds.yaml y se fijan antes de mirar.
+depth:
+  k: ledger:maeDepth.k                  # distancias en ATR; se leen todas, ninguna manda
+  slippage: ledger:maeDepth.slippage    # deslizamiento sobre -k ATR del contrafactual, en ATR
+  atr_period: 20                        # el ATR(20) de SQX (Wilder), el mismo del paso 24
+
+anomaly:
+  sigma: ledger:maeDepth.duration_sigma # duración >= media + sigma desviaciones, por estrategia y tramo
+
+verdict:
+  # Cuota mínima del beneficio neto que pueden dar las anómalas recuperadas para marcar la
+  # estrategia (0..1). SIN FIJAR: decisión pendiente del dueño (encargo 27 §3.1.2). Mientras sea
+  # null nadie se marca y el informe lo dice; sólo se enseñan las medidas.
+  min_cuota_rec: null
+  action: ledger:maeDepth.action        # mark | drop

@@ -38,7 +38,7 @@ escriben en él.
 
 | fichero | qué construye | depende de |
 |---|---|---|
-| `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 25 pasos, y cuántos llegan. **No se implementa por ahora** (dueño, 2026-09-26) | — |
+| `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 25 pasos, y cuántos llegan. Aparcado el 2026-09-26 y **reabierto por el dueño el 2026-10-04**: `studies/screening/falsePositives/` aplica ya el paso 8; falta el mono del paso 10 y la corrida a escala, que es del dueño | — |
 | `13-alfa-beta.md` | **interrogante aparcado**, no encargo: nadie lo coge hasta cerrar la secuencia individual | — |
 
 ## La tanda del PDF `PARAMETER_SPACE_TESTS`, 2026-09-24
@@ -90,6 +90,8 @@ Salen del dossier `docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md`, ele
 
 | fichero | qué construye | depende de |
 |---|---|---|
+| `25-estacionalidad.md` | desglose estacional de una estrategia: si su resultado se concentra en unos meses, unos días de la semana o unas horas, o está repartido, medido contra el azar. Nace de la comparación con BuildAlpha del 2026-09-27; sin empezar | lo ya exportado (`metrics/` y operaciones); no toca SQX |
+| `26-senal-por-plantilla.md` | desglose de la señal agregado por plantilla, no por estrategia suelta: qué plantillas de la librería merece la pena seguir explotando. Misma comparación con BuildAlpha; sin empezar | métricas y operaciones de proyectos con plantillas de la librería; no toca SQX |
 | `27-criba-mae-profundo.md` | en el paso 8, sobre `build` y `oos1`: qué estrategias viven de operaciones anómalas, las que se fueron 3-4 ATR en contra y además duraron más de media + 2,5 desviaciones (dueño, 2026-09-28); marca antes de que el paso 24 dé sorpresas | — |
 | `28-hueco-aleatorio-a-prueba.md` | ¿aporta el hueco aleatorio de SQX? A: A/B fija contra fija + hueco, automatizado con la skill `/ab-hueco`; B: atribución fija contra hueco en el paso 23; C: bloque de ruido y barrido de complejidad | el custodio libre para A y C |
 | `29-meseta-en-el-tiempo.md` | la región buena de parámetros, ¿en el mismo sitio en `build`, `oos1` y `oos2` por separado? Ampliación del paso 18.5, de mercado contra mercado a tramo contra tramo; y la tabla que dirá si la meseta predice supervivencia | un lote de variantes retesteado; lectura ciega del paso 20 |

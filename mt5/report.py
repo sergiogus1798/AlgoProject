@@ -77,3 +77,35 @@ def trades(deals: pd.DataFrame) -> pd.DataFrame:
             del open_[d.Symbol]
     return pd.DataFrame(rows, columns=["Type", "Open time", "Open price", "Size", "Close time",
                                        "Close price", "Profit/Loss"])
+
+
+def start_check(summary: dict, trades: pd.DataFrame, log: str, expert: str, asked: str) -> dict:
+    """What the tester really covered, beside what was asked. No floor: the quality is reported only.
+
+    Args:
+        summary: `read`'s summary (its `History Quality` cell, e.g. "22%").
+        trades: `trades()` of the same report.
+        log: The tester journal of the run's day, decoded.
+        expert: The run's `Expert=` (as in run.json), to find its pass in the journal.
+        asked: The start date asked, YYYY-MM-DD.
+
+    Returns:
+        {"history_quality_pct": float | None, "first_trade": "YYYY-MM-DD" | None,
+        "start_asked", "start_actual": the date of the journal's «start time changed to» line, or
+        `asked` when there is none, "start_changed": bool}. The journal names the date the
+        tester moved the start to; the first trade only says when the EA first traded.
+    """
+    quality = summary.get("History Quality", "").rstrip("%")
+    actual = asked
+    lines = log.splitlines()
+    mine = [i for i, l in enumerate(lines) if "\tTester\t" in l and expert in l]
+    for l in lines[mine[-1] + 1:] if mine else []:
+        if "\tTester\t" in l and "testing of" in l:
+            break
+        found = re.search(r"start time changed to (\d{4})\.(\d\d)\.(\d\d)", l)
+        if found:
+            actual = "-".join(found.groups())
+            break
+    return {"history_quality_pct": float(quality) if quality else None,
+            "first_trade": str(trades["Open time"].min().date()) if len(trades) else None,
+            "start_asked": asked, "start_actual": actual, "start_changed": actual != asked}

@@ -1561,6 +1561,18 @@ written before that is the window's (owner's choice). The 24-h rule is unchanged
 
 **Closed 2026-09-29.** Owner, 2026-09-29: one task at a time per worker, but a finished task frees it for any project. The 24 h rule is gone from `advance.busy()`; busy = a live owner lock, the port, or an SQX PID. The 15-min quiet guard stays for a hand-made `stop` (released.json intact).
 
+## 92. 🟢 Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02)
+
+`logs/disk-nightly.log` ends with `FUERA DE PRESUPUESTO: reports 5.05 GB > 5 GB`; the data root is 40.57 GB of 90.
+The log lists 41 deletion candidates, 4.86 GB, nothing deleted automatically. The largest are five superseded
+`raw/Test_USDJPY_donchianUpperCrossUp_M30/MCR_All/2026-09-29*` exports (667 MB each, all contained in `2026-09-29-9`),
+and 275 duplicate parquet groups (strategy pnl repeated x11 across the `2026-09-29-N` folders).
+To decide: delete the superseded exports, and find out why one MCR_All export was written 12 times on one day.
+
+**Worse 2026-10-03:** the data root is 88.12 GB of 90 (98 %); `reports` 30.50 GB (budget 5), `snapshots` 8.57 GB (8), `bars` 2.93/3, `harvest` 15.55 GB and `scratch` 6.87 GB unbudgeted. 24 h earlier it was 40.57 GB. Cause: the `Test_Calib_*` projects (`reports/Test_Calib_*`, ~1 GB each, ~100 folders) — not the MCR_All exports. The disk itself has 580 GB free, so only the budget is at stake. The owner decides what to retire.
+
+**Closed 2026-10-04.** Owner, 2026-10-04: the calibration study (Test_Calib_* and Test_Calib10_*) was run at a wrong spread and was deleted whole — reports, raw, metrics, harvest, snapshots/calib2, scratch/calib*, the 260 archived project.cfx, its 300 registry rows and its 56 ledger backfill rows. 95 GB freed; the data root is 51 GB against 90.
+
 ## 94. 🟢 `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes
 🔬 2026-10-02. Opened from `tools/audit_tests.py` (`tests/test_thresholds.py` is set aside for it).
 - **Trap:** `python3 -m ledger.report --check-thresholds` raises `KeyError: 'UKOIL'` instead of
@@ -1583,3 +1595,54 @@ written before that is the window's (owner's choice). The 24-h rule is unchanged
 **2026-10-03.** `ledger/thresholds.py` `walk()` now takes a key that holds a dot whole: at each mapping the longest run of steps that is a key there wins, so `K.UKOIL.cash_M1` reads `K` then the feed `UKOIL.cash_M1`; selectors and plain nested paths resolve as before and a missing key still raises KeyError. No threshold value and no ledger row changed. Verified: `python3 tests/test_thresholds.py` passes (89 of 89, plus known-answer cases for the dotted key on a fake config), `python3 -m ledger.report --check-thresholds` prints its table again, and the test's entry is gone from `ASIDE` in `tools/audit_tests.py`. Fixed, uncommitted: close it once the owner has committed.
 
 **Closed 2026-10-04.** Verified 2026-10-04: `python3 tests/test_thresholds.py` passes (89 of 89 thresholds read from the ledger).
+
+## 97. 🟢 `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@`
+
+Found 2026-10-02 (encargo 42, C3). `RESULTS_RE` wants `[A-Z0-9]+` before the first underscore:
+147 of 10,123 `.sqx` on the three installs read empty (`SP500ft_…`, `@ES`, `@EW`, all on the
+master), and the entry `UKOIL.cash_M1_LOM_H1` does not match either — a strategy built on UKOIL
+would read empty, or, with additional markets, read the first additional market as its symbol.
+Same family as #94. `settings.xml` carries the name whole in `<Result>/<ValuesMap>/<Symbol>`.
+Callers: `describe()`, `mt5.reconcile.register.market`. → `knowhow/eng/outside-parsers-what-they-catch.md`
+
+**Closed 2026-10-04.** RESULTS_RE in core/sqxfile.py now takes [A-Za-z0-9.@]+ before the first underscore. Verified over the 17,423 .sqx of the three installs: 147 files that read empty now read their symbol (@ES, @EW, SP500ft), exactly the 147 of the issue; the 25 still empty carry no Results entry at all (templates). Known-answer assert for UKOIL.cash, SP500ft, @ES and XAUUSD added to tests/test_sqxfile.py, which passes.
+
+## 98. 🟢 Nothing reads SQX's own `StrategyProblems` flag
+
+Found 2026-10-02 (encargo 42, C3). `settings.xml` › `SpecialValuesMap/SettingsMap/StrategyProblems`
+is a bitmask of `BadStrategyException` reasons (no trades, too few, zero-P/L, too short, zero
+duration, too many open, too long, none filled) — the red «Strategy Problems» box of SQX's
+overview. Non-zero in 33 of 3,375 sampled `.sqx` (values 1, 2, 8; e.g. custodian
+`Test_Calib_GBPUSD_H1_rupturaL/OOS/Strategy 15.2.366.sqx`). To do: read it in `core.sqxfile`,
+decode the bits (they live in the jar), and show it on the strategy's sheet. Owner, 2026-10-02:
+show it first; whether the gate cuts on it is decided once the bits seen in our populations are known.
+→ `knowhow/eng/outside-parsers-what-they-catch.md`
+
+**Closed 2026-10-04.** core.sqxfile.strategy_problems() reads StrategyProblems and decodes it with the constants of BadStrategyException in SQTradingLib.jar (1 NoTrades, 2 TooLittleTrades, 4 ZeroPLTrades, 8 TooShortTrades, 16 ZeroDurationTrades, 32 TooManyOpenTrades, 64 TooLongTrade, 256 NoFilledTrades, 512 OutlierTrade, 1024 AmbiguousTrades, 2048 StockpickerShiftChanged; 128 has no constant). sqx.inspect.strategymeta.read() carries it as `problems` and the strategy sheet (ui/desktop/workspace/fichameta.py) shows an amber row when non-zero. Shown only, no gate cuts on it. tests/test_sqx_problems.py passes on a real .sqx with value 8. Open detail for the owner: bit 8's Spanish wording was matched by the order of the explanation strings in the class.
+
+## 99. 🟢 `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line
+
+Found 2026-10-02 (encargo 42, C3). The report's `Period` row repeats the window that was asked.
+`V100545_Strategy_10_1_79_hantec_USDJPY.h_H1_2008-07-01…`: «History Quality 22%», first trade
+2022-06-08, the same 457 trades as the run from 2022-06-01 (itself 76 %); FTMO reads 95–99 %.
+The tester journal says `start time changed to 2008.12.03 … to provide data at beginning`.
+The depth guard (`mt5.verify.run.earliest`) only covers «Desde = MT5»; a typed date, or a
+symbol with holes inside the window, is collected as a normal run and compared with SQX over a
+window MT5 never traded. To do: carry `History Quality` and the first deal's date into the
+run's summary and let step 26 flag a run below a floor the owner names. Owner, 2026-10-02: no
+floor yet — two points (Hantec 76 %, FTMO 95–99 %) are not enough to name one.
+→ `knowhow/eng/outside-parsers-what-they-catch.md`, `knowhow/mt5/mt5-history-depth-first-bar.md`
+
+**Closed 2026-10-04.** mt5.report.start_check() and mt5.tester.collect() now carry history_quality_pct, first_trade, start_asked, start_actual and start_changed; step 26's table (mt5/verify) shows the quality and «MT5 empezó (movido)», and mt5/newsfilter/reading.py prints them. No floor on quality: that number is the owner's. tests/test_mt5_start_check.py passes on the real Hantec USDJPY report (quality 22.0, asked 2008-07-01, actual 2008-12-03, changed). Known limit, marked `ponytail:` in collect(): the tester log is read for the report's own day only.
+
+## 101. 🟢 A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1
+
+Found 2026-10-02 on the first real proposal with sheet and review (encargo 42, front B):
+`AlgoData/research/proposals/20261002-203224-DJ30-H1-long-ruptura`. The cell had 0 ideas and was
+#1 on the board (70.6 points); the ideaExpert files its three ideas in `AlgoData/ideas/` before the
+director stamps, so `proposal.stamp` reads «ya van 3 ideas» and the board row as rank 311, 47.1
+points (= 70.6 × 1/(1 + 3/6)). To do: the stamp leaves out the ideas of the proposal being stamped
+(by idea file), or stamps the board row read before the ideaExpert ran. Not fixed: `ideas.py`
+and the brake are shared with the ledger's trial count (another session's work in motion).
+
+**Closed 2026-10-04.** studies/research/board/inputs.memory(own_files=) leaves the proposal's own idea files out of `spent` only; proposal.own_idea_files(draft) feeds it, so the board row, the rank and the stamp come out as before the ideaExpert ran. The ledger's trial count does not go through memory() and is unchanged. tests/test_research_board_own_ideas.py passes (fixture: 4 spent -> 1).

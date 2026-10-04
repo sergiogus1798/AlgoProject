@@ -93,6 +93,14 @@ def snooping_screen(c: dict, strategy: str) -> list[str] | str:
             "--timeframe", row["timeframe"], "--family", family]
 
 
+def false_positives(c: dict, strategy: str) -> list[str] | str:
+    """The chain's negative control: monkeys on the cosecha's footprint through criteria.yaml."""
+    if not c["harvest"]:
+        return NO_HARVEST
+    return ["-m", "studies.screening.falsePositives.report", "--project", c["project"],
+            "--databank", c["databank"], "--feed", c["feed"]]
+
+
 # key -> {"plan", "one", "many", "sets"}; `sets` says whether the command takes --set. A
 # study the window never starts carries only "why".
 STUDIES = {
@@ -106,6 +114,6 @@ STUDIES = {
     "replication": {"why": "compara varios databanks contra uno de referencia y la ventana "
                            "corre uno: desde la terminal con --reference y --databank"},
     "snoopingScreen": {"plan": snooping_screen, "one": False, "many": True, "sets": True},
-    "falsePositives": {"why": "aún no existe: sólo su README"},
+    "falsePositives": {"plan": false_positives, "one": False, "many": True, "sets": True},
     "analysis": {"why": "no es un estudio: son las matemáticas que comparten los del cribado"},
 }

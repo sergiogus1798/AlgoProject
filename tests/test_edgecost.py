@@ -24,7 +24,8 @@ FEED, TIMEFRAME = "TESTFEED_M1_test", "H1"
 ZERO_COMMISSION = {"build": {"method": "SizeBased", "value": 0.0},
                    "oos1": {"method": "SizeBased", "value": 0.0},
                    "oos2": {"method": "SizeBased", "value": 0.0}}
-FOREX = {"symbol": "TESTX", "class": "forex", "instrument": {"tick_size": TICK,
+FOREX = {"symbol": "TESTX", "class": "forex", "swap": {"triple_swap_on": "WEDNESDAY",
+                                                         "rollout_hour": "23:00"}, "instrument": {"tick_size": TICK,
          "point_value": POINT_VALUE},
          "segments": {"build": {"spread": "is"}, "oos1": {"spread": "oos"},
                       "oos2": {"spread": "oos2"}},

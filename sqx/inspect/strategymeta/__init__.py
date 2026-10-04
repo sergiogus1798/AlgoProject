@@ -24,6 +24,7 @@
   `type`, `active`. `costs` is None for a task with no setup of its own (CustomAnalysis);
   a task whose member the .cfx lacks is an entry with `error` only. Never raises.
 - `asset`, `asset_card_sha256`: the assets/symbols file declaring the feed, hashed TODAY.
+- `problems`: SQX's «Strategy Problems» flag — `core.sqxfile.strategy_problems` ({value, reasons, unknown}).
 - `notes`: Spanish sentences the reader must see next to the numbers.
 """
 
@@ -70,6 +71,7 @@ def read(sqx_path: Path, project_cfx: Path | None = None) -> dict:
     if project_cfx is not None:
         out["backtest"] = settings.producers(project_cfx, sqx_path.parent.name)
         notes += _task_notes(out["backtest"], last)
+    out["problems"] = sqxfile.strategy_problems(sqx_path)
     return {**out, "asset": asset, "asset_card_sha256": card, "notes": notes}
 
 

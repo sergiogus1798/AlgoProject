@@ -106,16 +106,16 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 89 | 🟡 | What the 2026-09-30 H1 workflow run (steps 5-26) left open | OPEN.md |
 | 90 | 🟡 | The autopilot — phase 1 ran end to end 2026-10-01, its holes fixed | OPEN.md |
 | 91 | 🟠 | The gate's t was compressed (fixed 2026-10-02); every threshold and null FPR read on the old scale is stale | OPEN.md |
-| 92 | 🟠 | Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02) | OPEN.md |
-| 93 | 🟠 | Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured | OPEN.md |
+| 92 | 🟢 | Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02) | docs/OPEN-closed.md |
+| 93 | 🔴 | Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured | OPEN.md |
 | 94 | 🟢 | `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes | docs/OPEN-closed.md |
 | 95 | 🟡 | Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner | OPEN.md |
 | 96 | 🟡 | `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error | OPEN.md |
-| 97 | 🟡 | `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@` | OPEN.md |
-| 98 | 🟡 | Nothing reads SQX's own `StrategyProblems` flag | OPEN.md |
-| 99 | 🟠 | `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line | OPEN.md |
+| 97 | 🟢 | `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@` | docs/OPEN-closed.md |
+| 98 | 🟢 | Nothing reads SQX's own `StrategyProblems` flag | docs/OPEN-closed.md |
+| 99 | 🟢 | `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line | docs/OPEN-closed.md |
 | 100 | 🟠 | Literature scout built 2026-10-02 — owner decisions pending, 8 questions and 8 entries without a condition | OPEN.md |
-| 101 | 🟡 | A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1 | OPEN.md |
+| 101 | 🟢 | A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1 | docs/OPEN-closed.md |
 | 102 | 🟠 | Knowhow cards filed in the wrong domain (weekly quality pass 2026-10-04) — to move or leave, owner's call | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
@@ -271,11 +271,15 @@ describes a market that was never wired.
 
 **2026-09-29.** Windows were already set (build → 2019, oos1 2020-2023, oos2 2024 → 2026-08-31) for the five index CFDs; `core.assets` passes for all five. Left for the owner, later: SP500ft's feed and the index sessions in SQX.
 
+**2026-10-04.** The index windows are filled since 2026-10-01 (assets/_policy.yaml: UKOIL, DAX40, DJ30 and the rest carry build/oos1/oos2). What is left is only SP500ft, whose feed does not exist in SQX (data: null), and the index sessions.
+
 ## 38b. 🟡 `/plugin` does not exist here — sqx-lab installed by hand, does not auto-update
 
 **No narrative section was ever written for this issue** — it existed only as a status-table row in the old preamble, preserved here verbatim during the 2026-09-29 OPEN.md cleanup:
 
 > new 2026-09-24: **`/plugin` no existe en este entorno**, así que `sqx-lab` va instalado a mano con `bin/sqx-lab-install.sh`. Funciona igual pero **no se actualiza solo**, y una versión nueva descomprimida encima se lleva la skill local `sqx-spp`. Hay que reejecutar el script tras cada actualización.
+
+**2026-10-04.** bin/sqx-lab-install.sh wires only sqx-custom-block, sqx-random-group and sqx-strategy-template and retires the sqx-spp and sqx-strategy-project links, so a vendor update no longer shadows /spp. The only step left is re-running that script by hand after each update.
 
 ## 42. 🟡 Three Python entry points were never profiled, because they spend `oos2`
 
@@ -315,6 +319,9 @@ for humans (`knowhow/pipeline/oos2-door-binds-only-autonomous.md`), so the SPA o
 human runs step 20. It stays open only for an autonomous agent (`ALGO_AUTONOMOUS=1`), together with
 whether such an agent should be held at all.
 
+**2026-10-04.** Done since this was written: joint.population is decided (entrantes, studies/closing/blindJoint/config.yaml), the WFM writes its own ledger row (studies/optimisation/wfm/report.py calls steprows.log_wfm) and CSCV and WFM are in oos2's reserved_for (assets/_policy.yaml). Still the owner's: joint.pieces is null, so step 20 cuts nobody, and whether an autonomous agent is held out of oos2 for BlindJoint.
+
+**2026-10-04.** Owner, 2026-10-04: joint.pieces = sin_fallo (studies/closing/blindJoint/config.yaml); with population = entrantes step 20 now makes one reading the call. tests/test_blindjoint.py updated and passing. Still open: whether an autonomous agent is held out of oos2 for BlindJoint (not in reserved_for).
 
 ## 76. 🟡 Darwinex's real spread is 3–8× what `assets/` declares — the proposal is the owner's to apply
 
@@ -692,17 +699,7 @@ random draw of 5 at step 8 only; not `ALGO_AUTONOMOUS`. Phase 1 = steps 7 → 16
   dead time is large.
 
 
-## 92. 🟠 Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02)
-
-`logs/disk-nightly.log` ends with `FUERA DE PRESUPUESTO: reports 5.05 GB > 5 GB`; the data root is 40.57 GB of 90.
-The log lists 41 deletion candidates, 4.86 GB, nothing deleted automatically. The largest are five superseded
-`raw/Test_USDJPY_donchianUpperCrossUp_M30/MCR_All/2026-09-29*` exports (667 MB each, all contained in `2026-09-29-9`),
-and 275 duplicate parquet groups (strategy pnl repeated x11 across the `2026-09-29-N` folders).
-To decide: delete the superseded exports, and find out why one MCR_All export was written 12 times on one day.
-
-**Worse 2026-10-03:** the data root is 88.12 GB of 90 (98 %); `reports` 30.50 GB (budget 5), `snapshots` 8.57 GB (8), `bars` 2.93/3, `harvest` 15.55 GB and `scratch` 6.87 GB unbudgeted. 24 h earlier it was 40.57 GB. Cause: the `Test_Calib_*` projects (`reports/Test_Calib_*`, ~1 GB each, ~100 folders) — not the MCR_All exports. The disk itself has 580 GB free, so only the budget is at stake. The owner decides what to retire.
-
-## 93. 🟠 Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured
+## 93. 🔴 Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured
 
 `assets/_study.yaml` (step 6) and step 8 of `pipeline/autopilot/criteria.yaml` carry an agent's
 proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Open:
@@ -752,6 +749,8 @@ proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Op
 
 **2026-10-03.** 2026-10-03/04: steps 6 and 8 recalibrated (116 base cells, 201 populations, red-teamed) — dossier `docs/AgentPDFs/criterios-pasos-6-a-12-2026-10-04.md`, PROVISIONAL, owner's approval pending; proposals written in `assets/_study.yaml` (ceiling 75/yr, no floor beyond 10/yr, no PF/RetDD) and `pipeline/autopilot/criteria.yaml` (step 8; steps 10 and 12 still `rules: []`). Cards: `knowhow/research/{step6-floor-vs-step8-yield,is-filters-inside-the-build,oos1-oos2-persistence,drift-term-biased-by-side,crosstf-mother-sibling-dependence,crossmarket-effective-markets}.md`. Still open: (1) long builds (180 min, cap 10,000) with a full databank — no IS filter was tested there; (2) the gate's drift-term correction is proposed, NOT applied (`drift_excess_t`, and `crossmarket/simulate/excess.py` with it); (3) `wfc.py` gives extra markets the main's dates; (4) 7-11 % of strategies change identity between the build and the OOS databank (name join; fingerprint agrees 99.7-100 % on 3 populations); (5) the crossmarket and crossTF studies hard-code their window, so oos2 is read from raw exports; (6) `assets/_policy.yaml` oos2 end 2026-09-30 is past the last bar of XAUUSD, XAGUSD and HK50 — an OOS2 task cannot start (`knowhow/sqx-drive/cannot-start-unresolved-past-data.md`); (7) 31 H1 base cells have no oos2 (`oos2_job.sh` not run).
 
+**2026-10-04.** Owner, 2026-10-04: the calibration study these criteria were derived from was run at a wrong spread («un fiasco») and its data, registry rows and ledger rows were deleted on his order. The step 6 and 8 figures in assets/_study.yaml therefore rest on nothing that exists any more: do not sign them and do not build on them; they need a new calibration at the recalibrated spreads (commit 3b71384), or the owner's own numbers. The oos2 look of that study happened regardless of the deletion.
+
 ## 95. 🟡 Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner
 📓 2026-10-02. The mechanical audit runs every `tests/test_*.py` (105 on the day) and lists in `ASIDE`
 the ones it does not count as failures: 92 passed, 13 set aside. The thirteenth, `test_thresholds`,
@@ -766,8 +765,8 @@ remove it from ASIDE» when one recovers, so the list cannot rot silently. Reaso
 | `test_feedquality` | `calibration.json` is keyed by the old feed names (`XAUUSD_DukasM1_Infinox…`); the feeds became `XAUUSD_M1` on 2026-10-01 | recalibrate or rekey the file |
 | `test_mt5verify` | 5 assertions fail while `mt5/verify` (`firms.py`, `judge.py`, `run.py`) is being rewritten | the session rewriting it |
 | `test_portfolio_build` | `AttributeError: RangeIndex.to_period` in `portfolio/common/construct/equity/matrix.py` with the test's fixture | a code or fixture bug, not a one-line fix |
-| `test_portfolio_mtm` | golden MAE exactness 0.943 < 0.99 on the real data | drift after the feed rename |
-| `test_portfolio_universe` | golden rebuild vs SQX daily «low» reads «out» (exact 0.96-0.975) | same drift as `test_portfolio_mtm` |
+| ~~`test_portfolio_mtm`~~ | **passes since 2026-10-04**: the drift was the feed's clock alone (Asia/Jerusalem → EETUS); the golden is pinned on its own clock, bar still 0.99 (MAE 1.000) | out of ASIDE; open decision: production still reads clock and commission live for archived strategies (`knowhow/export/archived-trades-vs-reclocked-bars.md`) |
+| ~~`test_portfolio_universe`~~ | **passes since 2026-10-04**: 3,983 of 3,983 days within 1 $ (max 0.16 $) on the archive's clock; the current feed has its own golden, `test_portfolio_golden_current` | out of ASIDE |
 | `test_strategymeta` | the golden's `asset_card_sha256` is not the sha of `assets/symbols/XAUUSD.yaml` after the cost-card edits, and `strategymeta` reads the golden strategies differently | re-freeze the golden after the cost cards settle |
 | `test_ui_columns` | the databank column chooser's default order changed while `ui/daemon/databank/` is modified | the session working on it |
 | `test_ui_research` | the research board's passing cells differ | `studies/research/board`, another session's work in progress |
@@ -800,39 +799,6 @@ the dict `independent` returns (`cscv.json` › `trials`, `ledger.trials.populat
 changed. **Open:** nothing prints the silhouette next to the count in a window or a report line.
 → `knowhow/research/trial-count-half-rule.md`, `knowhow/research/psr-dsr-two-conventions-jsharpe.md`
 
-## 97. 🟡 `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@`
-
-Found 2026-10-02 (encargo 42, C3). `RESULTS_RE` wants `[A-Z0-9]+` before the first underscore:
-147 of 10,123 `.sqx` on the three installs read empty (`SP500ft_…`, `@ES`, `@EW`, all on the
-master), and the entry `UKOIL.cash_M1_LOM_H1` does not match either — a strategy built on UKOIL
-would read empty, or, with additional markets, read the first additional market as its symbol.
-Same family as #94. `settings.xml` carries the name whole in `<Result>/<ValuesMap>/<Symbol>`.
-Callers: `describe()`, `mt5.reconcile.register.market`. → `knowhow/eng/outside-parsers-what-they-catch.md`
-
-## 98. 🟡 Nothing reads SQX's own `StrategyProblems` flag
-
-Found 2026-10-02 (encargo 42, C3). `settings.xml` › `SpecialValuesMap/SettingsMap/StrategyProblems`
-is a bitmask of `BadStrategyException` reasons (no trades, too few, zero-P/L, too short, zero
-duration, too many open, too long, none filled) — the red «Strategy Problems» box of SQX's
-overview. Non-zero in 33 of 3,375 sampled `.sqx` (values 1, 2, 8; e.g. custodian
-`Test_Calib_GBPUSD_H1_rupturaL/OOS/Strategy 15.2.366.sqx`). To do: read it in `core.sqxfile`,
-decode the bits (they live in the jar), and show it on the strategy's sheet. Owner, 2026-10-02:
-show it first; whether the gate cuts on it is decided once the bits seen in our populations are known.
-→ `knowhow/eng/outside-parsers-what-they-catch.md`
-
-## 99. 🟠 `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line
-
-Found 2026-10-02 (encargo 42, C3). The report's `Period` row repeats the window that was asked.
-`V100545_Strategy_10_1_79_hantec_USDJPY.h_H1_2008-07-01…`: «History Quality 22%», first trade
-2022-06-08, the same 457 trades as the run from 2022-06-01 (itself 76 %); FTMO reads 95–99 %.
-The tester journal says `start time changed to 2008.12.03 … to provide data at beginning`.
-The depth guard (`mt5.verify.run.earliest`) only covers «Desde = MT5»; a typed date, or a
-symbol with holes inside the window, is collected as a normal run and compared with SQX over a
-window MT5 never traded. To do: carry `History Quality` and the first deal's date into the
-run's summary and let step 26 flag a run below a floor the owner names. Owner, 2026-10-02: no
-floor yet — two points (Hantec 76 %, FTMO 95–99 %) are not enough to name one.
-→ `knowhow/eng/outside-parsers-what-they-catch.md`, `knowhow/mt5/mt5-history-depth-first-bar.md`
-
 ## 100. 🟠 Literature scout built 2026-10-02 — owner decisions pending, 8 questions and 8 entries without a condition
 
 `studies/research/literature/`, `/literature-scout`, `bin/daily-literature-scout.sh`; day one in
@@ -858,16 +824,6 @@ floor yet — two points (Hantec 76 %, FTMO 95–99 %) are not enough to name on
   calibration ends (~05:40 UTC 4 Oct).
 - `tools/manual.py` refuses to build while chapters 85, 87, 88 and 89 (other sessions') have no family:
   the PDF of family 04 was built alone for chapter 90.
-
-## 101. 🟡 A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1
-
-Found 2026-10-02 on the first real proposal with sheet and review (encargo 42, front B):
-`AlgoData/research/proposals/20261002-203224-DJ30-H1-long-ruptura`. The cell had 0 ideas and was
-#1 on the board (70.6 points); the ideaExpert files its three ideas in `AlgoData/ideas/` before the
-director stamps, so `proposal.stamp` reads «ya van 3 ideas» and the board row as rank 311, 47.1
-points (= 70.6 × 1/(1 + 3/6)). To do: the stamp leaves out the ideas of the proposal being stamped
-(by idea file), or stamps the board row read before the ideaExpert ran. Not fixed: `ideas.py`
-and the brake are shared with the ledger's trial count (another session's work in motion).
 
 ## 102. 🟠 Knowhow cards filed in the wrong domain — found by the weekly quality pass, 2026-10-04
 

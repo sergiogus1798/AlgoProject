@@ -11,7 +11,7 @@ spread and slippage, what that stop costs and whether the result is flat around 
 every percentile side by side — 80, 85, 90 and 95 by default, as many as wanted with `--percentiles`, and **never picks one**. Manual: `docs/manual/10-cierre.pdf` (cap. 54-atr-calculator).
 
 ```
-config.yaml ─▶ inputs/load ─▶ mae ─▶ threshold ─▶ noreturn ─▶ transfer ─▶ grid ──▶ stopgrid.csv
+config.yaml ─▶ inputs/load ─▶ engines.market.excursion ─▶ threshold ─▶ noreturn ─▶ transfer ─▶ grid ──▶ stopgrid.csv
  every knob    trades, bars,   MAE/   X per       where each   does the IS  X·(1±band)   │
                ATR, windows    ATR    percentile  X falls      X hold OOS                 ▼
                                       + interval                              sqx.variants.stopgrid
@@ -26,7 +26,6 @@ config.yaml ─▶ inputs/load ─▶ mae ─▶ threshold ─▶ noreturn ─�
 | `config.yaml` | The percentiles, the bootstrap, the no-return and transfer labels, the grid, the shape tolerance, the proof tolerance | edited | — |
 | `inputs.py` | The knobs, the trades of one or more exports cut into build/oos1/oos2 by `Open time`, the bars, the point value, the batch's manifest | imported | exports + asset → trades, windows |
 | `load.py` | Everything one run reads, once: trades, SQX's ATR on the strategy's timeframe, and which export name holds each mother's trades without a stop | imported | exports (+ batch) → inputs |
-| `mae.py` | Per trade: the ATR of the bar closed before the entry, MAE and net result in that ATR, winner = net P/L > 0 | imported | trades + ATR → per-trade table |
 | `threshold.py` | §2.1: X per percentile of the IS winners' MAE/ATR, its bootstrap interval (every percentile on the same resamples, vectorised in chunks: 36 strategies 182 s → 5.6 s), and the `poco fiable` mark | imported | winners → one X per percentile |
 | `noreturn.py` | §2.2: for each distance, how many IS trades that got there still won and their mean final result; the zone each X falls in | imported | IS trades → curve, zones |
 | `transfer.py` | §2.3: each IS X's effective percentile among the oos1/oos2 winners; KS and Anderson-Darling with D and the median ratio | imported | winners per window → table |

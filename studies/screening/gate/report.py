@@ -9,6 +9,7 @@ from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import output
 from engines.nulls import inputs as null_inputs
+from ledger import tried
 from studies.screening.gate import cascade, inputs, many
 
 
@@ -28,6 +29,8 @@ def main() -> None:
     cfg = inputs.config(a.set)
     folder = inputs.newest(a.project, a.databank)
     data = inputs.load(folder)
+    print(tried.note_project_run(a.project, "studies.screening.gate", folder.name, cfg,
+                                 f"gate.report --set {' '.join(a.set)}".strip()))
     data["null_cfg"] = null_inputs.config([f"nulls.draws={cfg['monkey']['draws']}"]
                                           + null_inputs.seeded(a.seed))
     data["bars"] = null_inputs.bars(a.feed, inputs.timeframe(data["metrics"], cfg, a.set))
