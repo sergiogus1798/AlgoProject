@@ -26,6 +26,17 @@ def export(role: str, project: str) -> None:
                     "--project", project], cwd=ROOT, check=True)
 
 
+def close(role: str, project: str) -> None:
+    """End the session: this project's export, then the stop without the script's own, which
+    unmarked read the whole install (🔬 2026-10-05: 229 s of a 243 s stop re-exporting another
+    project's databanks)."""
+    try:
+        live.sync(role, project)
+        export(role, project)
+    finally:
+        live.stop(role, export=False)
+
+
 def execute(pre: dict, project: str) -> dict:
     """`run.execute` for a live session: same checks and records, SQX never stopped.
 

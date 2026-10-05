@@ -211,7 +211,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     finally:
         if on_live and live.mine(where["role"]):
             began = time.monotonic()
-            live.stop(where["role"])
+            liverun.close(where["role"], project)
             done.append({"n": "-", "kind": "parada", "s": time.monotonic() - began,
                          "what": "parada y export final"})
             phases.row("accion", "- parada", done[-1]["s"])
