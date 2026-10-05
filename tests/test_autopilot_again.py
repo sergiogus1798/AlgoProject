@@ -33,7 +33,8 @@ def test_the_undo_removes_only_what_the_aborted_run_added(tmp_path: Path) -> Non
     for bank, name in (("OOS", "old.sqx"), ("Results", "r.sqx")):
         (tmp_path / "databanks" / bank).mkdir(parents=True)
         (tmp_path / "databanks" / bank / name).touch()
-    undo = call.keeper({"cfx": tmp_path / "p.cfx", "chosen": [{"output": "OOS"}]})
+    undo = call.keeper({"cfx": tmp_path / "p.cfx", "role": "custodian",
+                        "chosen": [{"output": "OOS"}, {"output": ""}]})
     for bank in ("OOS", "Results"):
         (tmp_path / "databanks" / bank / "new.sqx").touch()
     calls: list[int] = []
