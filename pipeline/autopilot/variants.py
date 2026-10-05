@@ -1,5 +1,6 @@
-"""Step 16.5 for the autopilot: wire the three WFC legs, then make → execute → equity → collect → clear per mother."""
+"""Step 16.5 for the autopilot: wire the three WFC legs, then make → execute → equity → collect → clear per mother, then the mothers' trades."""
 
+import json
 import shutil
 import subprocess
 import sys
@@ -48,8 +49,12 @@ def wire(project: str, role: str, markets: bool = True) -> None:
         live.push(role, project, staged, held)
 
 
-def run(project: str, role: str) -> str:
+def run(project: str, role: str, only: set[str] | None = None) -> str:
     """The whole step; one line per mother with its seconds.
+
+    `only`: the survivors of step 16 by name; a brief of a mother its judge cut is skipped.
+    The mother's name is the brief's own `strategy`, never its file stem: the stem swaps dots
+    for dashes, and a batch filed under it is one 17-20 cannot find (🔬 2026-10-02).
 
     The legs' active flags matter only to the restart route: live, `livexec.run` starts them
     by the projectXML it sends.
@@ -84,6 +89,8 @@ def run(project: str, role: str) -> str:
         _py("sqx.variants.collect", "--work", str(work))
         _py("sqx.variants.execute", "--work", str(work), "--project", project, "--clear")
         done.append(f"{strategy} {time.monotonic() - began:.0f} s")
+        works.append(work)
     if not done:
         raise SystemExit(f"{project}: el paso 16 no dejó ningún design brief")
+    _py("sqx.variants.mothertrades", *(x for work in works for x in ("--work", str(work))))
     return "; ".join(done)
