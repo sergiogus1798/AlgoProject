@@ -10,6 +10,7 @@ from pathlib import Path
 from core.datapaths import tmp_dir, variants_dir
 from core.paths import ROOT, project_dir, report_dir, worker_dir
 from core.phases import phase
+from pipeline.autopilot import call
 from sqx.projects import live, registry
 
 
@@ -54,8 +55,10 @@ def run(project: str, role: str) -> str:
     for brief in briefs(project):
         strategy = brief.stem.removeprefix("design_brief_")
         work, began = variants_dir(project, strategy), time.monotonic()
-        _py("sqx.variants.make", "--brief", str(brief), "--project", project, "--out", str(work))
-        _py("sqx.variants.execute", "--work", str(work), "--project", project)
+        call.again(lambda: _py("sqx.variants.make", "--brief", str(brief), "--project",
+                               project, "--out", str(work)))
+        call.again(lambda: _py("sqx.variants.execute", "--work", str(work), "--project",
+                               project))
         _py("sqx.variants.equity", "--work", str(work))
         _py("sqx.variants.collect", "--work", str(work))
         _py("sqx.variants.execute", "--work", str(work), "--project", project, "--clear")

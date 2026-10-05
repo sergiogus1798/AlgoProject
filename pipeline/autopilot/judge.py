@@ -41,8 +41,10 @@ def settings() -> dict:
     return cfg
 
 
-def smoke(project: str) -> None:
-    """Turn the smoke mode on for this run and its subprocesses; a Test_ project only."""
+def smoke(project: str, on: bool) -> None:
+    """Turn the smoke mode on (`--smoke`) for this run and its subprocesses; Test_ only."""
+    if not on:
+        return
     if not project.startswith("Test_"):
         sys.exit("--smoke es solo para proyectos Test_: en los demás juzgan todas las reglas")
     os.environ[SMOKE] = "1"

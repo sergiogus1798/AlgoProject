@@ -15,7 +15,7 @@ from pathlib import Path
 from core import phases
 from core.assetdata import AUTONOMOUS
 from core.paths import DATA
-from pipeline.autopilot import blind, judge, plan, tail, tailrun, timing, variants
+from pipeline.autopilot import blind, call, judge, plan, tail, tailrun, timing, variants
 from pipeline.autopilot.survivors import Done, mothers
 from ui.daemon.advance import preflight as advance
 from sqx.projects import live
@@ -74,7 +74,8 @@ def sqx_step(project: str, actions: list[dict], first: bool, filled: set[str]) -
     if not pre["ok"]:
         sys.exit(f"paso {'+'.join(a['n'] for a in actions)}: no se lanza:\n  "
                  + "\n  ".join(pre["reasons"]))
-    moved = (liverun.execute if live.mine(pre["role"]) else launcher.execute)(pre, project)
+    route = liverun if live.mine(pre["role"]) else launcher
+    moved = call.again(lambda: route.execute(pre, project))
     filled |= {t["output"] for t in pre["chosen"]}
     return " · ".join(f"{t}: {a} → {b}" for t, (a, b) in moved.items())
 
@@ -230,8 +231,7 @@ def main() -> None:
     ap.add_argument("--smoke", action="store_true", help="prueba funcional de un Test_")
     tail.flags(ap)
     a = ap.parse_args()
-    if a.smoke:
-        judge.smoke(a.project)
+    judge.smoke(a.project, a.smoke)
     os.environ[AUTONOMOUS] = "1"   # D4 (owner, 2026-10-04): oos2's door binds this run and its subprocesses
     given = tail.inputs(a, judge.settings())
     if a.plan:
