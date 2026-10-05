@@ -4,6 +4,7 @@ import time
 
 import pandas as pd
 
+from core import fanout
 from core.study import blocks, result as envelope
 from engines.nulls import verdict
 from studies.screening.falsePositives import chain, model
@@ -21,6 +22,21 @@ NOT_APPLIED = {
 }
 
 
+_SHARED: dict = {}     # what `_donor` reads: set before the fan-out, handed over by fork
+
+
+def _donor(key: object) -> pd.DataFrame | str:
+    """One donor's monkeys' step-8 facts, or the reason it is left out."""
+    inputs, own = _SHARED["inputs"], _SHARED["donors"][key]
+    real = inputs["real"]
+    if set(own["sample"]) != set(model.SAMPLES):
+        return "sin operaciones en IS o en OOS"
+    drawn, corr = model.monkeys(own, real["bars"], inputs["nullcfg"], _SHARED["knobs"], key)
+    if corr < verdict.RECONCILE_FLOOR:
+        return f"no reconcilia ({corr:.4f})"
+    return chain.facts8(chain.as_harvest(drawn, real), inputs["gate_cfg"])
+
+
 def population(inputs: dict, cfg: dict) -> tuple[pd.DataFrame, list[dict]]:
     """Every monkey's step-8 facts, donor by donor.
 
@@ -33,21 +49,19 @@ def population(inputs: dict, cfg: dict) -> tuple[pd.DataFrame, list[dict]]:
         one of the two samples (no footprint to match), or a P/L the bars do not reproduce
         (below `verdict.RECONCILE_FLOOR`, encargo 9 §5.2). Nothing else is left out: the
         donors are not screened. A donor's monkeys are judged in their own batch, which
-        changes nothing — no fact of the gate depends on who else is in the population.
+        changes nothing — no fact of the gate depends on who else is in the population:
+        so the donors go one per process (`core.fanout`), 192 s in a row for 1,000 before.
     """
-    real, knobs = inputs["real"], cfg["monkeys"]
-    donors = dict(tuple(real["trades"].groupby("identity", observed=True)))
-    found, skipped = [], []
-    for i, (key, own) in enumerate(donors.items(), 1):
-        if set(own["sample"]) != set(model.SAMPLES):
-            skipped.append({"donante": key, "motivo": "sin operaciones en IS o en OOS"})
-            continue
-        drawn, corr = model.monkeys(own, real["bars"], inputs["nullcfg"], knobs, key)
-        if corr < verdict.RECONCILE_FLOOR:
-            skipped.append({"donante": key, "motivo": f"no reconcilia ({corr:.4f})"})
-            continue
-        found.append(chain.facts8(chain.as_harvest(drawn, real), inputs["gate_cfg"]))
+    donors = dict(tuple(inputs["real"]["trades"].groupby("identity", observed=True)))
+    _SHARED.update(inputs=inputs, knobs=cfg["monkeys"], donors=donors)
+    got = {}
+    for i, (key, res) in enumerate(fanout.run(_donor, {k: len(own) for k, own in donors.items()},
+                                              fanout.CORES), 1):
+        got[key] = res
         envelope.progress(5 + 85 * i // len(donors), f"monos {i}/{len(donors)}")
+    _SHARED.clear()
+    found = [got[k] for k in donors if not isinstance(got[k], str)]     # the donors' own order
+    skipped = [{"donante": k, "motivo": got[k]} for k in donors if isinstance(got[k], str)]
     return pd.concat(found), skipped
 
 
