@@ -84,7 +84,8 @@ def panel(out: Path, cfg: dict, databank: str, stem: str) -> Path:
 
 
 def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
-    """Mirror one leg onto disk; its folder and how many `.sqx` it holds."""
-    live.sync(cfg["role"], cfg["project"], [databank])
+    """Mirror the legs onto disk, the three at once on the first call (the others find it
+    done); this leg's folder and how many `.sqx` it holds."""
+    live.sync(cfg["role"], cfg["project"], [leg["databank"] for leg in legmod.legs()])
     folder = legmod.bank_dir(cfg["role"], cfg["project"], databank)
     return folder, len(list(folder.glob("*.sqx")))

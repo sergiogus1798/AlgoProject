@@ -10,6 +10,7 @@ import time
 import urllib.parse
 import urllib.request
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from pathlib import Path
 
@@ -196,9 +197,11 @@ def sync(role: str, project: str, banks: list[str] | None = None) -> dict[str, i
     listed = call(role, "databankList", projectName=project)["databanks"]
     mem = {d["name"]: d["records"] for d in listed if d["syncType"] != "Auto-sync never"}
     banks = [b for b in banks or mem if b in mem]
-    for bank in banks:
-        if _files(project, role, bank) != mem[bank]:
-            call(role, "synchronizeDatabank", projectName=project, databankName=bank)
+    stale = [b for b in banks if _files(project, role, b) != mem[b]]
+    # At once: SQX writes ~9 MB/s per databank, and three together went at 17 (🔬 2026-10-05).
+    with ThreadPoolExecutor(len(stale) or 1) as pool:
+        list(pool.map(lambda b: call(role, "synchronizeDatabank", projectName=project,
+                                     databankName=b), stale))
     for _ in range(600):
         if all(_files(project, role, b) == mem[b] for b in banks):
             return mem
