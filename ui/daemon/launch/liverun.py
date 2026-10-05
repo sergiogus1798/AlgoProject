@@ -18,6 +18,12 @@ from ui.daemon.launch import run as launcher
 from ui.daemon.launch.run import assets, compare, counts, record, snapshot
 
 
+# The tasks that run slow in a session hours old, and at their speed in one just opened
+# (🔬 2026-10-05, same project, SQX's own task time: WFM 1,837 s aged, 1,275 s fresh, 1,222 s on
+# the restart route; SPP IS 894 against 442). Reopening costs ~100 s. The cause is not known.
+AGED = {*stage.titles("spp"), *stage.titles("wfm")}
+
+
 def export(role: str, project: str) -> None:
     """The export a stop would run, on the files the sync just wrote (`afterrun --live`), of this
     project alone: unmarked, it read every project of the install at each step (🔬 2026-10-05,
@@ -53,6 +59,10 @@ def execute(pre: dict, project: str) -> dict:
     assets(pre["row"]["symbol"])
     with phase("sync", "antes"):
         live.sync(role, project)             # disk == memory before the copy and the counts
+    if AGED & set(titles):
+        with phase("reapertura"):            # disk == memory: the stop loses nothing
+            live.stop(role, export=False)
+            live.start(role)
     with phase("snapshot"):
         kept, before = snapshot(held.parent), counts(held.parent)
     with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
