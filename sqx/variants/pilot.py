@@ -57,12 +57,14 @@ def run(design: dict, settings: dict, live: dict[str, list[float]], work: Path, 
 
     legs = legmod.legs()
     be = livexec.backend(cfg)
+    used = legs[:1] if be is livexec else legs    # live starts what it is sent; leg 1 is read
+    cfg["only"] = [leg["title"] for leg in used]
     ours = be.awake(cfg)
     try:
         say(5, f"cargando el piloto en {project}/{legmod.source()}")
         be.load(folder, cfg)
-        done = be.run(len(table) * len(legs), cfg,
-                           lambda p, line: say(5 + p * 80 // 100, line)) // len(legs)
+        done = be.run(len(table) * len(used), cfg,
+                           lambda p, line: say(5 + p * 80 // 100, line)) // len(used)
         bank, _ = be.synced(done, cfg, legs[0]["databank"])
         rows = united.per_result(bank, legs[0]["segment"], lambda *_a: None)
     finally:

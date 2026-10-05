@@ -55,12 +55,16 @@ def load(folder: Path, cfg: dict) -> None:
 def run(expected: int, cfg: dict, progress: Callable[[int, str], None]) -> int:
     """Run the three legs, and only them (sent as the start's projectXML), and wait.
 
+    `cfg["only"]`: the titles to run instead of the three. The pilot sends the first leg's,
+    the only one it reads: its OOS1 and OOS2 retests were 73 s of 151 per mother, computed
+    and thrown away, and they walked the oos2 reserve for nobody (🔬 2026-10-05).
+
     Returns:
         What the three legs returned between them, as `execute.run` counts it. SystemExit
         unless the run ended on «Project finished»: a stopped or aborted one is a partial batch.
     """
     xml = live.call(cfg["role"], "getConfig", projectName=cfg["project"])["config"]["xml"]
-    config = stage.only(xml, [leg["title"] for leg in legmod.legs()])[0]
+    config = stage.only(xml, cfg.get("only") or [leg["title"] for leg in legmod.legs()])[0]
     progress(0, f"{expected} retests lanzados")
     end = live.run(cfg["role"], cfg["project"], config)
     if "Project finished" not in end:     # «Project stopped» is a cut batch, not a finished one
