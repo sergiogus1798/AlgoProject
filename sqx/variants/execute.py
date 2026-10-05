@@ -167,12 +167,14 @@ def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
     """
     _call(f'-databank action=synctofiles project={cfg["project"]} name={databank}', cfg)
     folder = legmod.bank_dir(cfg["role"], cfg["project"], databank)
-    for _ in range(cfg["sync_tries"]):
+    # 🔬 2026-10-05: SQX writes ~9 MB/s — 3,952 IS variants with 11 extra markets took 166 s,
+    # 24 a second; the wait grows with the batch at a quarter of that, never under the floor.
+    for _ in range(max(cfg["sync_tries"], expected // (6 * cfg["poll_seconds"]))):
         time.sleep(cfg["poll_seconds"])
         on_disk = len(list(folder.glob("*.sqx")))
         if on_disk >= expected:
             return folder, on_disk
-    raise SystemExit(f"{databank}: {on_disk} of {expected} on disk after {cfg['sync_tries']} polls")
+    raise SystemExit(f"{databank}: {on_disk} of {expected} on disk when the wait ran out")
 
 
 def main() -> None:
