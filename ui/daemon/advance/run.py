@@ -21,7 +21,7 @@ from ui.daemon.advance import buildcap, preflight, sqxlog
 from ui.daemon.filters import discards, ledgerrow
 from ui.daemon.launch import configure
 
-POLL, READY_TRIES = 10, 60   # s between two `action=status`; × POLL, the CLI's «not ready» ~20 s
+POLL, READY_TRIES = 3, 200   # s between two `action=status`; × POLL, the CLI's «not ready» ~20 s
 START_WITHIN = 120  # s after `action=start` for «Starting project '<P>'» to reach the log
 # No run lasts this long (a 1,000-variant WFC took hours): past it the job is stuck, and stops.
 MAX_HOURS = 48
