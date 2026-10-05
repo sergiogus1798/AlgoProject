@@ -3,11 +3,15 @@ q: Why does a 5,000-variant WFC load end with fewer strategies in WFC_Build than
 kw: variants missing, WFC_Build fewer files, files before sync 0 after sync 3952, batch too large, 3952 of 5010 on disk, Project finished but IS incomplete, synchronizeDatabank lost strategies
 tag: 🔬  date: 2026-10-05  see: sqx-drive/variant-route, perf/variants-batch-size-and-flush
 ---
-# One load of 5,000 variants loses ~21 % of the IS leg; 2,500 does not — do not load a real mother's 5,000 at once
+# One load of 5,000 variants loses ~21 % of the IS leg on the RESTART route; on a live session it holds
 Trap: SQX says `Project finished` (15,032 retests counted) yet `WFC_Build` holds fewer files than `WFC_OOS1`/`WFC_OOS2`.
 Not an acceptance filter: the loss is random. `execute.synced` catches it (SystemExit «3952 of 5010 on disk»).
-Safe batch size lies between 2,500 and 5,000 and is NOT found; keep loads ≤ 2,500 until it is. 🤔 Cause: memory
-(IS is the heaviest leg; heap was not sampled) — confirm by sampling heap during the flush or loading 3,500-4,000.
+Restart route (sqcli start/stop per batch): 2,500 is safe, 5,000 is not; keep its loads ≤ 2,500.
+Live session (`sqx.projects.live`, the autopilot's default): 5,000 in one load is safe — twice 5,000/5,000/5,000 in
+memory, and 15,000 files (3,649 MB) on disk in 206 s with the three legs flushed at once. Heap peaked at 53 GB of
+80 during the run, never near the cap, so memory is NOT the restart route's cause; that cause stays unknown 🤔
+(its flush runs at SQX's exit). Cost of one real mother live: load 11 s, run 1,564-1,709 s, flush 206 s, clear 11 s.
+`live.sync` gives up after 120 s without a new file (a fixed 120 s was too short for this flush).
 
 ## Evidence
 🔬 Custodian `SQX_w2` (80 GB), `Test_NIKKEI225_M30_simpleL_val`, 10 NIKKEI225 M30 mothers × 500, restart route
