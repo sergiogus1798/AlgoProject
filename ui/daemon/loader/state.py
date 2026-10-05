@@ -9,7 +9,8 @@ from functools import lru_cache
 from pathlib import Path
 from xml.etree import ElementTree
 
-from core import sqxstats
+from core import sqxfile, sqxstats
+from core.fanout import CORES
 from core.paths import export_dir, harvest_dir, metrics_export
 from ui.daemon import jobs
 from ui.daemon.loader import find
@@ -90,7 +91,7 @@ def _entries(path: str, mtime_ns: int, size: int) -> str:
                     _canonical(ElementTree.fromstring(z.read(i)), h)
                     parts.append(f"{i.filename}:{h.hexdigest()}")
                 else:
-                    parts.append(f"{i.filename}:{i.CRC}:{i.file_size}")
+                    parts.append(f"{i.filename}:{sqxfile.mark(z, i)}:{i.file_size}")
             return "|".join(parts)
     except (OSError, zipfile.BadZipFile, ValueError, ElementTree.ParseError, struct.error):
         return f"unreadable:{mtime_ns}:{size}"       # half written: never equal to a sig
