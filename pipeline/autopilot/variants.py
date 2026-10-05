@@ -29,18 +29,22 @@ def briefs(project: str) -> list[Path]:
     return sorted(days[-1].glob("design_brief_*.json")) if days else []
 
 
-def wire(project: str, role: str) -> None:
+def wire(project: str, role: str, markets: bool = True) -> None:
     """Configure the three WFC legs (`sqx.projects.wfc`): on the file with SQX closed, on a copy
-    pushed to it with a live session (hard rule 4)."""
+    pushed to it with a live session (hard rule 4). `markets` off leaves the legs on the main
+    market alone, which is all a pilot reads."""
+    less = [] if markets else ["--no-markets"]
     row = next(r for r in reversed(registry.rows()) if r["name"] == project)
     held = project_dir(project, worker_dir(role)) / "project.cfx"
     if not live.mine(role):
-        _py("sqx.projects.wfc", row["symbol"], "--cfx", str(held), "--timeframe", row["timeframe"])
+        _py("sqx.projects.wfc", row["symbol"], "--cfx", str(held), "--timeframe", row["timeframe"],
+            *less)
         return
     with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
         staged = Path(tmp) / "project.cfx"
         shutil.copy2(held, staged)
-        _py("sqx.projects.wfc", row["symbol"], "--cfx", str(staged), "--timeframe", row["timeframe"])
+        _py("sqx.projects.wfc", row["symbol"], "--cfx", str(staged), "--timeframe",
+            row["timeframe"], *less)
         live.push(role, project, staged, held)
 
 
@@ -50,13 +54,30 @@ def run(project: str, role: str) -> str:
     The legs' active flags matter only to the restart route: live, `livexec.run` starts them
     by the projectXML it sends.
     """
-    wire(project, role)
-    done = []
+    # Live, every mother's pilot runs first and without the legs' extra markets: it reads the
+    # trade count on the main market, and the 11 others were 81 s of its 86 (🔬 2026-10-05,
+    # same counts on 300 of 300). The restart route is left as it was: the pilot inside `make`.
+    apart = live.mine(role)
+    wire(project, role, markets=not apart)
+    todo = []
     for brief in briefs(project):
-        strategy = brief.stem.removeprefix("design_brief_")
-        work, began = variants_dir(project, strategy), time.monotonic()
-        call.again(lambda: _py("sqx.variants.make", "--brief", str(brief), "--project",
-                               project, "--out", str(work)))
+        strategy = json.loads(brief.read_text(encoding="utf-8"))["strategy"]
+        if only is None or strategy in only:
+            todo.append((strategy, variants_dir(project, strategy), ["--brief", str(brief)]))
+
+    def make(work: Path, brief: list[str]) -> float:
+        """One mother's design, pilot and batch of `.sqx`; its seconds."""
+        began = time.monotonic()
+        call.again(lambda: _py("sqx.variants.make", *brief, "--project", project, "--out",
+                               str(work)))
+        return time.monotonic() - began
+
+    spent = {strategy: make(work, brief) for strategy, work, brief in todo} if apart else {}
+    if apart and todo:
+        wire(project, role)
+    done, works = [], []
+    for strategy, work, brief in todo:
+        began = time.monotonic() - (spent[strategy] if apart else make(work, brief))
         call.again(lambda: _py("sqx.variants.execute", "--work", str(work), "--project",
                                project))
         _py("sqx.variants.equity", "--work", str(work))
