@@ -1,5 +1,7 @@
 """`call.again`: one retry on SQX's transient abort, and on nothing else."""
 
+from pathlib import Path
+
 import pytest
 
 from pipeline.autopilot import call
@@ -24,3 +26,16 @@ def test_one_abort_is_retried_and_the_rest_is_not(capsys: pytest.CaptureFixture)
     with pytest.raises(SystemExit):
         call.again(lambda: _failing(1, "paso 14: fallaron", other))
     assert len(other) == 1
+
+
+def test_the_undo_removes_only_what_the_aborted_run_added(tmp_path: Path) -> None:
+    """The output's new files go before the rerun; what was there, and other databanks, stay."""
+    for bank, name in (("OOS", "old.sqx"), ("Results", "r.sqx")):
+        (tmp_path / "databanks" / bank).mkdir(parents=True)
+        (tmp_path / "databanks" / bank / name).touch()
+    undo = call.keeper({"cfx": tmp_path / "p.cfx", "chosen": [{"output": "OOS"}]})
+    for bank in ("OOS", "Results"):
+        (tmp_path / "databanks" / bank / "new.sqx").touch()
+    calls: list[int] = []
+    call.again(lambda: _failing(1, call.ABORT, calls), undo)
+    assert sorted(f.name for f in tmp_path.rglob("*.sqx")) == ["new.sqx", "old.sqx", "r.sqx"]

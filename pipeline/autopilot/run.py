@@ -75,7 +75,7 @@ def sqx_step(project: str, actions: list[dict], first: bool, filled: set[str]) -
         sys.exit(f"paso {'+'.join(a['n'] for a in actions)}: no se lanza:\n  "
                  + "\n  ".join(pre["reasons"]))
     route = liverun if live.mine(pre["role"]) else launcher
-    moved = call.again(lambda: route.execute(pre, project))
+    moved = call.again(lambda: route.execute(pre, project), call.keeper(pre, route is launcher))
     filled |= {t["output"] for t in pre["chosen"]}
     return " · ".join(f"{t}: {a} → {b}" for t, (a, b) in moved.items())
 
