@@ -58,6 +58,11 @@ def banks(top: object, only: str | None = None) -> list[tuple[str, str]]:
 # analysis ran on the last export a skill had made, or said «necesita el export» (📓
 # 2026-09-29: the step-13 run of the window was never ingested, so step 14 read 09-27's).
 # Name → (source databanks, export databank, what marks one export, argv after `-m`).
+# The ingest refuses when a metric misses on max(2, 5 %) of its runs, a share calibrated on
+# hundreds: the ten strategies of a smoke run tripped it with 5 of 70 RecoveryFactor cells at
+# 1.01-1.22x the tolerance and the run ended at step 14 (🔬 2026-10-05). A smoke run passes the
+# ingest's own override; the cells are still excluded and recorded. Never outside `--smoke`.
+SMOKE_SHARE = 0.2
 EXTRA = {
     # The marker is each export's manifest.json, which every export rewrites: a folder's date
     # does not move when a second export of the day overwrites its files, and the WFM was
@@ -97,6 +102,8 @@ def extras(project: str, role: str, top: Path) -> list[tuple[str, list[str]]]:
             while (root / (day if n == 1 else f"{day}-{n}") / "sims").exists():
                 n += 1
             cmd += ["--day", day if n == 1 else f"{day}-{n}"]
+            if os.environ.get("ALGO_SMOKE") == "1":      # `autopilot --smoke`, a Test_ project
+                cmd += ["--set", f"recon.systematic_share={SMOKE_SHARE}"]
         out.append((name, cmd))
     return out
 
