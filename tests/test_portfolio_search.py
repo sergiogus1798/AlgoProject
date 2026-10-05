@@ -111,9 +111,9 @@ def test_ledger(run: dict) -> None:
     check("one ledger row per member plus the pool row", len(rows) == 1 + N)
 
 
-def _grafted_sqx(tmp: Path) -> tuple[str, str]:
+def _grafted_sqx(tmp: Path, x: float = 2.5, name: str = "GRAFTED") -> tuple[str, str]:
     """A fake archive folder holding a strategy grafted with `stoploss.graft` in memory."""
-    portfolio = stoploss.graft((FIXTURES / "nostop_portfolio.xml").read_text(encoding="utf-8"), 2.5)
+    portfolio = stoploss.graft((FIXTURES / "nostop_portfolio.xml").read_text(encoding="utf-8"), x)
     last_settings = """<Settings>
   <RiskMoneyManagement customSettings="false">
     <MoneyManagement>
@@ -130,7 +130,7 @@ def _grafted_sqx(tmp: Path) -> tuple[str, str]:
     </MoneyManagement>
   </RiskMoneyManagement>
 </Settings>"""
-    folder = tmp / "GRAFTED" / "v1"
+    folder = tmp / name / "v1"
     (folder / "harvest").mkdir(parents=True)
     with zipfile.ZipFile(folder / "strategy.sqx", "w") as z:
         z.writestr("strategy_Portfolio.xml", portfolio)
@@ -138,7 +138,7 @@ def _grafted_sqx(tmp: Path) -> tuple[str, str]:
     (folder / "manifest.json").write_text("{}", encoding="utf-8")
     (folder / "view.json").write_text('{"tearsheet": "sin tearsheet"}', encoding="utf-8")
     pd.DataFrame({"Size": [0.5, 0.3, 1.2]}).to_parquet(folder / "harvest" / "trades.parquet")
-    return "GRAFTED", "v1"
+    return name, "v1"
 
 
 def test_risk() -> None:

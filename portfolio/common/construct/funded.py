@@ -11,7 +11,9 @@ import numpy as np
 import pandas as pd
 
 from core.archive import read as archive_read
+from ledger.study import study_id
 from core.datapaths import portfolio_dir
+from core.manifest import fresh_dir
 from portfolio.funded.rules import catalog
 
 from .equity import universe
@@ -22,11 +24,17 @@ RUNS = portfolio_dir() / "runs"
 
 
 def _member_meta(identity: str) -> dict:
-    """symbol, timeframe and family off the member's own archived manifest."""
+    """symbol, timeframe and family off the member's own archived manifest.
+
+    The family is the one the archive named its ledger study with, so the member's rows land
+    in that study: a Simple Strategy has no template folder to read it from («simple:long»).
+    """
     version = archive_read.versions(identity)[-1]
-    row = archive_read.load(identity, version)["manifest"]["registry"]
+    manifest = archive_read.load(identity, version)["manifest"]
+    row = manifest["registry"]
+    prefix = study_id(row["symbol"], row["timeframe"], "") + "_"
     return {"symbol": row["symbol"], "timeframe": row["timeframe"],
-            "family": Path(row["template"]).parent.name}
+            "family": manifest["ledger"]["study"].removeprefix(prefix)}
 
 
 def size_members(kept: list[str]) -> tuple[dict, list[tuple[str, str]]]:
@@ -48,6 +56,14 @@ def size_members(kept: list[str]) -> tuple[dict, list[tuple[str, str]]]:
     return factors, excluded
 
 
+def refuse_uncapped(cfg: dict) -> None:
+    """Stop while the open-risk cap has no size: the owner set the rule, not the fraction (rule 11)."""
+    if cfg["funded"]["open_risk_cap"] is None:
+        raise SystemExit("funded.open_risk_cap no está fijado: qué fracción de la pérdida diaria "
+                         "máxima del plan puede estar en riesgo a la vez (miembros × riesgo por "
+                         "operación). No lleva valor por defecto: --set funded.open_risk_cap=<fracción>")
+
+
 def build(pool_name: str, plan_key: str, cfg: dict) -> dict:
     """Run the whole funded search: universe, sizing, pair screen, greedy seeds + GA.
 
@@ -59,8 +75,9 @@ def build(pool_name: str, plan_key: str, cfg: dict) -> dict:
     Returns:
         `usable`, `excluded_stop`, `graph` (admissible.admissible's dict), `identities`
         (graph order, `usable` members only), `run` (genetic.run's result, with `level`
-        added), `plan`, `members_meta`, `pool`, `wall_s`, `peak_mb`, `root_seed`. `run` is
-        `None` when no member is usable.
+        added), `plan`, `members_meta`, `wall_s`, `peak_mb`, `root_seed`, `relaxed`,
+        `prohibited` (report lines), `cap` (`pairs`: (combination, risk level) pairs evaluated,
+        `capped`: those the open-risk cap forbade). `run` is `None` when no member is usable.
     """
     start = time.perf_counter()
     rng = np.random.default_rng()
@@ -75,7 +92,9 @@ def build(pool_name: str, plan_key: str, cfg: dict) -> dict:
     factors, excluded_stop = size_members(kept)
     usable = [i for i in kept if i in factors]
     result = {"pool_name": pool_name, "plan_key": plan_key, "plan": plan, "kept": kept,
-              "excluded_stop": excluded_stop, "usable": usable, "run": None}
+              "excluded_stop": excluded_stop, "usable": usable, "run": None,
+              "relaxed": cfg["relaxed"], "prohibited": pool_mod.prohibited_lines(pool_name, cfg),
+              "open_risk_cap": cfg["funded"]["open_risk_cap"], "cap": {"pairs": 0, "capped": 0}}
     if not usable:
         result["wall_s"] = time.perf_counter() - start
         result["peak_mb"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
@@ -98,10 +117,13 @@ def build(pool_name: str, plan_key: str, cfg: dict) -> dict:
                                     fc, min_size)
 
     levels_log: list[np.ndarray] = []
+    grid = np.asarray(cfg["funded"]["risk_grid"])
 
     def score(combos: np.ndarray) -> np.ndarray:
         """One generation's best P(pass) per combination, over the risk grid; logs the chosen level."""
         scored = stagea.evaluate(prepared, combos, plan, cfg)
+        result["cap"]["pairs"] += scored.size
+        result["cap"]["capped"] += int(stagea.capped((combos >= 0).sum(axis=1), grid, plan, cfg).sum())
         best_p, best_r = stagea.best(scored, cfg["funded"]["risk_grid"])
         levels_log.append(best_r)
         return best_p
@@ -117,21 +139,26 @@ def build(pool_name: str, plan_key: str, cfg: dict) -> dict:
     return result
 
 
+def new_run(pool_name: str, plan_key: str) -> Path:
+    """A funded run's own new folder, `RUNS/<stamp>_<pool>_<plan>` — never one that exists."""
+    stamp = datetime.now(tz.utc).strftime("%Y-%m-%dT%H%M")
+    return fresh_dir(RUNS / f"{stamp}_{pool_name}_{plan_key.replace(':', '_')}")
+
+
 def write_run(result: dict) -> Path:
     """Write `search.parquet` and `manifest.json` under `RUNS/<stamp>_<pool>_<plan>/`."""
     identities = result["identities"]
     run = result["run"]
-    stamp = datetime.now(tz.utc).strftime("%Y-%m-%dT%H%M")
-    safe_plan = result["plan_key"].replace(":", "_")
-    out = RUNS / f"{stamp}_{result['pool_name']}_{safe_plan}"
-    out.mkdir(parents=True, exist_ok=True)
+    out = new_run(result["pool_name"], result["plan_key"])
     frame = pd.DataFrame({
         "members": ["+".join(identities[i] for i in np.sort(m)) for m in run["members"]],
         "score": run["score"], "level": run["level"], "origin": run["origin"],
         "generation": run["generation"],
     })
     frame.to_parquet(out / "search.parquet")
-    manifest = {"pool": result["pool_name"], "plan": result["plan_key"],
+    manifest = {"pool": result["pool_name"], "plan": result["plan_key"], "firm": result["firm"],
+                "relaxed": result["relaxed"], "open_risk_cap": result["open_risk_cap"],
+                "cap": result["cap"], "n_distinct": int(frame["members"].nunique()),
                 "root_seed": result["root_seed"], "n_scored": len(frame),
                 "best_members": [identities[i] for i in run["best"]["members"]],
                 "best_score": run["best"]["score"], "wall_s": result["wall_s"],
@@ -145,6 +172,9 @@ def summarise(result: dict, out: Path | None) -> str:
     """The Spanish report the owner reads: excluded members, best combinations, cost."""
     lines = [f"Pool '{result['pool_name']}' plan {result['plan_key']}: "
              f"{len(result['kept'])} miembros en el universo"]
+    if result["relaxed"]:
+        lines.append(f"AJUSTADO: umbrales relajados {result['relaxed']} — no es un resultado")
+    lines += result["prohibited"] or ["Sin --firm: no se ha aplicado ninguna prohibición de empresa"]
     for identity, reason in result["excluded_stop"]:
         lines.append(f"  excluida {identity[:12]}…: {reason}")
     if result["run"] is None:
@@ -156,8 +186,12 @@ def summarise(result: dict, out: Path | None) -> str:
     frame = pd.DataFrame({"members": run["members"], "score": run["score"], "level": run["level"]})
     frame = frame.assign(key=frame["members"].map(lambda m: tuple(sorted(m.tolist()))))
     top = frame.sort_values("score", ascending=False).drop_duplicates("key").head(10)
-    lines.append(f"Búsqueda: {len(run['score'])} combinaciones evaluadas en "
-                 f"{run['generations_run']} generaciones")
+    lines.append(f"Búsqueda: {len(run['score'])} combinaciones evaluadas ({frame['key'].nunique()} "
+                 f"distintas) en {run['generations_run']} generaciones")
+    cap, daily = result["cap"], min(s["daily_loss"] for s in result["plan"]["stages"] if s["stage"] != "funded")
+    lines.append(f"Tope de riesgo abierto: miembros × riesgo ≤ {result['open_risk_cap']:g} × pérdida "
+                 f"diaria máxima {daily:.1%} = {result['open_risk_cap'] * daily:.2%} del balance inicial; "
+                 f"prohíbe {cap['capped']} de {cap['pairs']} pares (cartera, riesgo) evaluados")
     for row in top.itertuples():
         names = ", ".join(identities[i][:8] for i in row.key)
         lines.append(f"  K={len(row.key)} P(pass)={row.score:.3f} r={row.level:.3%} [{names}]")
@@ -177,16 +211,21 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--pool", required=True)
     parser.add_argument("--plan", required=True)
+    parser.add_argument("--firm", help="empresa cuyas prohibiciones se quitan del pool: la del plan")
     parser.add_argument("--set", dest="overrides", action="append", default=[])
     args = parser.parse_args()
 
-    cfg = config.load(args.overrides)
+    if args.firm and not args.plan.startswith(args.firm + ":"):
+        raise SystemExit(f"--firm {args.firm} no es la empresa del plan {args.plan}")
+    cfg = pool_mod.scoped(config.load(args.overrides), args.firm, args.plan)
+    refuse_uncapped(cfg)
     result = build(args.pool, args.plan, cfg)
+    result["firm"] = args.firm
     if result["run"] is None:
         summarise(result, None)
         return
     out = write_run(result)
-    trials.record(result["run"], pool_mod.read(args.pool, cfg.get("pool", {}).get("firm")),
+    trials.record(result["run"], pool_mod.declared(args.pool, cfg),
                   args.plan, result["members_meta"], cfg)
     summarise(result, out)
 

@@ -1,0 +1,40 @@
+# portfolio/funded/sim — every knob of the bank simulation (encargo 33, stage C of PLAN §14.3).
+# A `null` under `owner:` or `gaps:` is the owner's decision: the command refuses to run until it
+# is given (--set owner.<key>=<value>), and nothing here fills it in for him.
+
+universe:
+  max_size: 10000               # owner 2026-09-29: accounts of 10k at most
+  ccy: USD                      # owner 2026-09-29: USD accounts only
+
+risk:                           # risk per trade, fraction of the INITIAL balance; one level per phase, every combination counted
+  challenge: [0.0025, 0.005, 0.01]
+  funded: [0.0025, 0.005, 0.01]
+
+addons:
+  max_set: 1                    # largest add-on set simulated (0 none, 1 singles, 2 pairs — encargo 33 §3.5.5)
+
+monkey:
+  model: demean                 # monkey.MODELS; --monkey <file.npz> uses a path set of real random entries instead
+
+compute:
+  threads: 8
+
+owner:
+  budget_eur: 1000              # owner 2026-09-29: 1,000 EUR in the bank account, a hard stop
+  eurusd: null                  # USD per EUR on the day of the calculation, written beside the result — never fetched
+  rebuy: [same_plan, none]      # owner 2026-10-05 (encargo 33 §6.4): BOTH, compared — every policy listed is simulated, shown side by side and
+                                # counted in the ledger's trials. same_plan = buy the same plan again after every failure while cash lasts; none = one account
+  haircuts: [0, 0.25, 0.5, 0.75, 1]   # owner 2026-10-05 (encargo 33 §6.7): the h of the curve EV(h), fractions ascending
+  haircut_decides: 0.5          # owner 2026-10-05 (encargo 33 §6.7): the one h of that list the table is ranked at
+  payout_cushion: null          # fraction of the account size left in the account at each payout; 0 = withdraw everything
+  tax_rate: null                # fraction of every payout that goes to tax; 0 only if he says 0
+  payout_fee: null              # fraction of every payout lost to payment and currency fees
+  p_payout_denied: null         # probability a payout request is denied (the account ends there)
+  p_firm_closes_year: null      # probability the firm closes within a year (nothing more is paid)
+
+gaps:                           # what the catalogue does not hold for a plan of the universe (OPEN.md #85)
+  hantec_fee_refund: null       # true | false — Hantec: is the fee refunded with the first payout?
+  hantec_endurance_payout_days: null   # calendar days between payouts of a funded Endurance (stages.payout_days is NULL)
+  hantec_express_floor_after_payout: null   # stays | initial — the trailing max-loss floor of a funded Express after a payout:
+                                            # stays where the high-water mark put it, or fixed at the initial balance from the first withdrawal (encargo 33 §3.5.4)
+  ftmo_1step_floor_after_payout: null       # stays | initial — the same for the funded FTMO 1-Step (end-of-day trailing)

@@ -19,7 +19,7 @@ from ui.desktop.ops.ledger import Ledger
 from ui.desktop.ops.running import Running
 from ui.desktop.palettes import Palettes
 from ui.desktop.mt5bridge.zone import VerifyZone
-from ui.desktop.portfolios.zone import PortfoliosZone
+from ui.desktop.portfolios.board import PortfoliosBoard
 from ui.desktop.research.zone import ResearchZone
 from ui.desktop.selection import SELECTION
 from ui.desktop.shellopen import Opens
@@ -75,7 +75,7 @@ class Shell(Opens, QWidget):
             "Estrategia": self.estrategia,
             "En marcha": self.running, "Registro de búsquedas": self.ledger,
             "Configuración SQX": SqxConfigZone(), "Datos": DataZone(), "Investigar": ResearchZone(),
-            "Portfolios": PortfoliosZone(), "Verificar": VerifyZone(),
+            "Portfolios": PortfoliosBoard(), "Verificar": VerifyZone(),
             "Criterios": CriteriaZone()}
         self.wire()
 
@@ -192,6 +192,9 @@ class Shell(Opens, QWidget):
             name: One of `nav.ZONES`; a desktop launcher opens the window straight on it
                 (`bin/algoui --zone Proyectos`).
         """
+        name, _, inner = name.partition(" · ")       # «Portfolios · Banco · VE(h)»: a module of the zone
+        if inner:
+            self.zones[name].open(*inner.split(" · "))
         # Databanks is filled by Proyecto's zone: one project, one fill, both zones.
         flow.catch_up(self, "Proyecto" if name == "Databanks" else name)
         if name in self.stale:           # its first opening, or the first since «Recargar»

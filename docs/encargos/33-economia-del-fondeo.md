@@ -279,27 +279,43 @@ Antes de simular, lista y pregunta al dueño, como mínimo:
 1. Los huecos del catálogo de §2 que los Términos no resuelvan sin interpretación.
 2. Cierre del viernes / sin noticias: ¿se descarta la estrategia o se modifica para cumplir?
 3. ¿Se puede cambiar el riesgo entre fase y fondeada (y dentro de la fondeada tras un cobro)?
-4. Tras un suspenso, ¿se recompra el mismo plan siempre, o la política de recompra es parte de la
-   decisión? ~~Y la cifra del presupuesto de caja~~: 1.000 € en total (dueño, 2026-09-29, §3.5).
+4. ~~Tras un suspenso, ¿se recompra el mismo plan siempre, o la política de recompra es parte de la
+   decisión?~~ Las DOS, comparadas (dueño, 2026-10-05): `same_plan` y `none` lado a lado en la
+   tabla; la política es una dimensión buscada y el recuento de pruebas se duplica
+   (`owner.rebuy: [same_plan, none]`). ~~Y la cifra del presupuesto de caja~~: 1.000 € en total
+   (dueño, 2026-09-29, §3.5).
 5. ~~¿Otras divisas de cuenta?~~ Sólo cuentas en USD (dueño, 2026-09-29).
 6. ~~¿Precio de lista o con descuento?~~ De lista: los descuentos se ignoran (dueño, 2026-09-29).
-7. Con qué datos no vistos se valida la combinación elegida (`DECISIONS.md` #11) y qué recortes `h` quiere ver.
+7. Con qué datos no vistos se valida la combinación elegida (`DECISIONS.md` #11) — sigue abierta —
+   ~~y qué recortes `h` quiere ver~~: 0, 25, 50, 75 y 100 %, y decide el 50 % (dueño, 2026-10-05;
+   `owner.haircuts`, `owner.haircut_decides`).
+
+**Lo que la primera corrida real dejó abierto (2026-10-05, raíz de prueba; nada de esto está decidido):**
+el horizonte de la simulación de caja (a 504 días el trader sin edge pierde en todos los planes; a
+1.008, tres planes de suelo fijo le dan VE positivo, porque el mono `demean` no paga costes y un
+suelo fijo regala de media el margen de pérdida a quien no tiene edge); de qué tramos fuera de
+muestra sale el nivel del edge (`--edge-from`); cuánto puede moverse el puesto al cambiar `h` antes
+de llamar frágil a la elección; si la barra es el VE puntual o el extremo bajo de su intervalo; y
+que la rejilla de riesgo de la caja (0,25 / 0,5 / 1 %) no contiene el riesgo del veredicto.
 
 ## 7 · Entregables
 
-1. ✅ `portfolio/funded/catalog/` y el agente `fundingWatcher` (2026-09-29). Falta un test del
-   cálculo de precio contra la fórmula del JS de Hantec.
+1. ✅ `portfolio/funded/catalog/` y el agente `fundingWatcher` (2026-09-29). ✅ El test del cálculo
+   de precio contra la fórmula de la página de Hantec: `tests/test_funded_price.py` (2026-10-05).
 2. `portfolio/funded/rules/` — las reglas como funciones puras, con tests de caso conocido. **Va
    primero** (hito F1 de `portfolio/PLAN.md`): el motor las llama para elegir la cartera fondeada.
-3. `portfolio/funded/sim/` — el ciclo completo de compra → fases → fondeada → cobros, sobre caminos
-   por bloques, con el recorte `h` y el mono.
-4. `portfolio/funded/decide/` — la búsqueda sobre planes × add-ons × riesgo, registrada en el ledger,
-   que devuelve la tabla de §4 por el contrato de estudios (`core/study/CONTRACT.md`).
+3. ✅ `portfolio/funded/sim/` — el ciclo completo de compra → fases → fondeada → cobros, sobre caminos
+   por bloques, con el recorte `h` y el mono. Primera corrida sobre una cartera real (la del pool
+   de prueba del Nikkei, raíz de prueba — no es un resultado) el 2026-10-05; los caminos los saca
+   `portfolio.funded.sim.frompool` de la cartera del veredicto.
+4. ✅ `portfolio/funded/decide/` (2026-10-05) — lee las tablas de §4 y dice la decisión en una frase,
+   con el coste junto a la ganancia, o «ninguno». La búsqueda sobre planes × add-ons × riesgo ×
+   recompra, registrada en el ledger y devuelta por el contrato de estudios, vive en `sim/`.
 5. Una vista en `ui/` (zona PORTFOLIOS o una zona FONDEO, estilo terminal `theme.T`) que pinta la
    tabla, la curva VE(h) y el drawdown de la caja; el dueño edita ahí los huecos del catálogo y el
    precio pagado (memoria: la configuración se edita desde la ventana).
 6. El capítulo del manual en `AlgoData/manual-fuentes/` (regla 8) y las cards de `knowhow/` que salgan.
-7. **Enchufar el VE en `python3 -m portfolio.funded.deals.worth`** (`portfolio/funded/deals/`, dueño
+7. ✅ (2026-10-05) **Enchufar el VE en `python3 -m portfolio.funded.deals.worth`** (`portfolio/funded/deals/`, dueño
    2026-09-29): hoy ese comando juzga una oferta sólo por el suelo sin edge; cuando exista el modelo,
    una oferta se juzga por cuánto sube el VE_banco de cada plan del universo con el precio rebajado.
 8. `portfolio/CLAUDE.md`: las reglas de fondeo quedan escritas ahí primero, y `DECISIONS.md` #6 se

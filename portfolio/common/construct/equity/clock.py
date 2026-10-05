@@ -52,3 +52,22 @@ def day_end(days: pd.DatetimeIndex, zone: str) -> pd.DatetimeIndex:
         so none is NaT.
     """
     return to_utc(days + pd.Timedelta(days=1), zone)[0]
+
+
+def reclock(bars: pd.DataFrame, zone_from: str, zone_to: str) -> pd.DataFrame:
+    """Bars stamped on one feed clock, re-stamped on another: the same instants, new labels.
+
+    Args:
+        bars: Indexed by naive bar-open time on `zone_from`.
+        zone_from, zone_to: As for to_utc().
+
+    Returns:
+        The bars indexed on `zone_to`, sorted. What a strategy archived before a feed changed
+        clock is rebuilt on: 🔬 USDJPY's bars of 2026-10-01 (EETUS) re-stamped to
+        Asia/Jerusalem give back 100 % of the archived golden's 3,983 days. A bar in an hour
+        `zone_from` repeats or skips is dropped; of an hour `zone_to` repeats, the first pass
+        is kept.
+    """
+    utc, _ = to_utc(bars.index, zone_from)
+    stamped = bars[~utc.isna()].set_axis(local(utc[~utc.isna()], zone_to))
+    return stamped[~stamped.index.duplicated()].sort_index()

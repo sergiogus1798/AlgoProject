@@ -12,7 +12,7 @@ from core.barstore import source as bars_of
 from core.manifest import code_version
 from core.study.config import fingerprint
 
-from . import blocks, days, excursions, matrix, paths, reconcile, sqxcurve, store
+from . import blocks, days, excursions, matrix, paths, reconcile, sqxcurve, stopexit, store
 from ..inputs import calendar as calendar_mod
 from ..inputs import pool, source
 
@@ -45,8 +45,9 @@ def _reconcile_rows(identity: str, s: dict, bars: pd.DataFrame, feed_days: pd.Da
         member is excluded (any segment "out", or the excursion licence refused).
     """
     tol, share = cfg["equity"]["excursion_tolerance"], cfg["equity"]["excursion_min_share"]
-    licence = excursions.licence(s["trades"], excursions.rebuild(s["trades"], bars, s["point_value"]),
-                                 tol, share)
+    rebuilt = stopexit.fills(excursions.rebuild(s["trades"], bars, s["point_value"]), s["trades"], bars,
+                             s["point_value"])
+    licence = excursions.licence(s["trades"], rebuilt, tol, share)
     sqx = sqxcurve.from_harvest(s["sqx_equity"], s["symbol"])
     low = reconcile.low_equity(feed_days)
     rows, excluded, before = [], not licence["licensed"], 0.0
@@ -142,8 +143,10 @@ def _processed(loaded: dict, cfg: dict) -> tuple[list[dict], pd.DatetimeIndex]:
     out = []
     by_feed = sorted(loaded, key=lambda i: loaded[i]["feed"])
     for feed, group in groupby(by_feed, key=lambda i: loaded[i]["feed"]):
-        _STATE["bars"] = bars_of(feed, ["High", "Low", "Close"])
+        _STATE["bars"] = bars_of(feed, ["Open", "High", "Low", "Close"])
         costs = {i: len(loaded[i]["trades"]) for i in group}
+        for i in costs:
+            loaded[i]["trades"] = stopexit.retime(loaded[i]["trades"], _STATE["bars"], loaded[i]["timeframe"])
         out += [got for _, got in fanout.run(_member, costs, _workers(_STATE["bars"], len(loaded), cfg))]
     _STATE.clear()
     return out, grid
@@ -157,19 +160,26 @@ def build(pool_name: str, cfg: dict) -> Path:
         cfg: `inputs.config.load()`'s result.
 
     Returns:
-        `store.ROOT/<pool_hash>-<config_fingerprint>/` — the cache key is pool hash AND
-        config fingerprint together, so a config change always gets its own folder and
-        never silently reuses another run's numbers.
+        `store.ROOT/<pool_hash>-<config_fingerprint>-<code>/` — the cache key is pool hash,
+        config fingerprint AND the builder's source (`store.code`) together, so a config or
+        an engine change always gets its own folder and never silently reuses another
+        run's numbers.
     """
-    declared = pool.read(pool_name, cfg.get("pool", {}).get("firm"))
+    declared = pool.declared(pool_name, cfg)
     out = store.folder(declared["hash"], fingerprint(cfg))
     if store.cached(out):
         return out
 
     loaded = {r["identity"]: source.load(r["identity"], r["version"]) for r in declared["members"]}
     processed, grid = _processed(loaded, cfg)
+    # the workers answer in the order they finish: without this a rebuild orders the members
+    # differently and every sum over them moves in its last bits
+    processed.sort(key=lambda m: m["identity"])
     kept = [m for m in processed if not m["excluded"]]
     excluded = [m for m in processed if m["excluded"]]
+    if not kept:
+        raise SystemExit("Ningún miembro del pool concilia con SQX, no hay universo:\n" + "\n".join(
+            f"  {m['identity'][:12]}… {m['rows'][0]['reason'] if m['rows'] else 'sin segmentos'}" for m in excluded))
     daily = matrix.stack({m["identity"]: m["daily_pnl"] for m in kept},
                          {m["identity"]: m["span"] for m in kept})
     reconcile_rows = pd.DataFrame([row for m in processed for row in m["rows"]])
@@ -178,6 +188,8 @@ def build(pool_name: str, cfg: dict) -> Path:
     m5_by_firm = {firm: _m5_blob(kept, firm, zone, grid) for firm, zone in firms.items()}
 
     cal = calendar_mod.portfolio(sorted({m["symbol"] for m in processed}))
+    if cfg["calendar"]["pseudo_oos2_from"]:
+        cal = calendar_mod.pseudo(cal, str(cfg["calendar"]["pseudo_oos2_from"]))
     manifest = {
         "pool": {"name": pool_name, "hash": declared["hash"]},
         "config_fingerprint": fingerprint(cfg),

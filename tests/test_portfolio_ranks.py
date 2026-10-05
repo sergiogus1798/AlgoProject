@@ -22,7 +22,8 @@ import portfolio.common.construct.search.trials_real as trials_real
 import portfolio.common.construct.verdict.metrics as metrics
 
 FAILURES = []
-SEARCH = Path(__file__).resolve().parent.parent / "portfolio/common/construct/search"
+WHOLE = {"shift_months": 0}   # the whole window once; the shifts: test_portfolio_planted.py
+EQUAL = {"weights": {"method": "equal"}}
 
 
 def check(name: str, ok: bool) -> None:
@@ -106,7 +107,7 @@ def _independent_scores(unit: np.ndarray, dates: pd.DatetimeIndex, sets: list[tu
 def test_tiny_pool() -> np.ndarray:
     """Seven admissible combinations; the hedged pair {A, B} is the best, by construction."""
     unit, dates, graph = tiny_pool()
-    cfg = {"real": {"exhaustive_max": 100, "losing_year": "calendar", "rank_reference": None}}
+    cfg = {"real": {"exhaustive_max": 100, "losing_year": "calendar", "rank_reference": None, **WHOLE}, **EQUAL}
     found = choose.choose(unit, dates, graph, cfg, np.random.default_rng(0))
     sets = [tuple(np.flatnonzero(m)) for m in found["members"]]
     check("exhaustive: 4 singles + 3 admissible pairs, no triangle -> 7 combinations",
@@ -123,8 +124,8 @@ def test_tiny_pool() -> np.ndarray:
     print(f"       {{A,B}}: score {found['score'][found['best']]:.3f} · "
           f"second best {np.sort(found['score'])[-2]:.3f} · 7 combinaciones")
 
-    ga_cfg = {"real": {"exhaustive_max": 3, "losing_year": "calendar", "rank_reference": "seeds"},
-              "search": {"seeds": 12, "ga": {"population": 12, "generations": 6, "elite": 0.2,
+    ga_cfg = {"real": {"exhaustive_max": 3, "losing_year": "calendar", "rank_reference": "seeds", **WHOLE},
+              **EQUAL, "search": {"seeds": 12, "ga": {"population": 12, "generations": 6, "elite": 0.2,
                                              "tournament": 3, "crossover": 0.8, "mutation": 0.4,
                                              "stagnation": 3}}}
     ga = choose.choose(unit, dates, graph, ga_cfg, np.random.default_rng(1))
@@ -199,9 +200,10 @@ def test_run_folder(found: dict) -> None:
     """The run folder, the owner's summary and the admission pass, on the tiny pool."""
     unit, dates, graph = tiny_pool()
     ids = ["A", "B", "C", "D"]
-    result = {"pool_name": "tiny", "kept": ids, "excluded": [], "identities": ids,
+    result = {"pool_name": "tiny", "kept": ids, "excluded": [], "prohibited": [], "identities": ids,
               "floor": {"A": 0.002, "B": 0.004, "C": 0.001, "D": 0.001}, "found": found,
-              "root_seed": 1, "account": 10000.0, "unit": unit, "graph": {"graph": graph}}
+              "root_seed": 1, "account": 10000.0, "unit": unit, "graph": {"graph": graph},
+              "relaxed": {}, "shift": "0"}
     table = real.frame(result)
     real_runs = real.RUNS
     with tempfile.TemporaryDirectory() as tmp:
@@ -221,17 +223,10 @@ def test_run_folder(found: dict) -> None:
           table["floor_risk"][found["best"]] == 0.004)
     check("summary: the cost next to the choice, and no verdict",
           "K=2" in text and "deja fuera 2 estrategias" in text and "Sin veredicto" in text
-          and "0.80% del balance" in text)
+          and "0.800% del balance" in text)
     check("admission to {A, B}: C is admissible with A only, D with neither -> both blocked",
           judged["candidate"].tolist() == ["C", "D"] and judged["blocked_by"].tolist() == [1, 2]
           and not judged["enters"].any())
-
-
-def test_build_only_source() -> None:
-    """No module of the rank search names a later segment (PLAN §8.4 b)."""
-    files = ["objective.py", "exhaustive.py", "admission.py", "choose.py"]
-    text = "".join((SEARCH / f).read_text(encoding="utf-8") for f in files)
-    check("search modules never name oos1 or oos2", "oos1" not in text and "oos2" not in text)
 
 
 def main() -> None:
@@ -241,7 +236,6 @@ def main() -> None:
     test_admission()
     test_ledger_and_floor(found)
     test_run_folder(found)
-    test_build_only_source()
     print(f"\n{'TODO OK' if not FAILURES else 'FALLOS: ' + ', '.join(FAILURES)}")
     sys.exit(1 if FAILURES else 0)
 

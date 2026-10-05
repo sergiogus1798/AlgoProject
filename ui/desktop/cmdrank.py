@@ -13,7 +13,7 @@ TAG = {"zone": "zona", "project": "proyecto", "databank": "databank", "strategy"
 ORDER = list(TAG)
 # Other words a zone answers to: the owner still says «ledger» for the search log (22 §9).
 ALIASES = {"Registro de búsquedas": ("ledger",), "En marcha": ("custodio", "generación"),
-           "Portfolios": ("carteras",)}
+           "Portfolios": ("carteras", "correlación", "constructor", "fondeo", "banco", "pesos")}
 
 
 def fold(s: str) -> str:

@@ -6,6 +6,36 @@ import numpy as np
 from portfolio.funded.rules.machine import _MINDAYS, _RISK, _stage_matrix, _sweep_kernel
 
 
+def open_cap(plan: dict, cfg: dict) -> np.ndarray:
+    """The most risk a combination may have open at once, per challenge stage (owner, 2026-10-05).
+
+    K members each risking r of the initial balance on a trade risk K x r when all are open
+    together (the worst case; no netting, no per-symbol cap). That may not exceed
+    `funded.open_risk_cap` of the stage's maximum daily loss -- the catalogue's `daily_loss`,
+    a fraction of the initial balance whatever the firm then measures the day's floor from.
+
+    Returns:
+        float64 [challenge stages], as a fraction of the initial balance.
+    """
+    return np.array([cfg["funded"]["open_risk_cap"] * s["daily_loss"]
+                     for s in plan["stages"] if s["stage"] != "funded"])
+
+
+def capped(k: np.ndarray, risk: np.ndarray, plan: dict, cfg: dict) -> np.ndarray:
+    """Which risk settings the open-risk cap forbids to combinations of `k` members.
+
+    Args:
+        k: int [M], members per combination.
+        risk: float64 [C, stages] risk per trade and stage, or [C] the same in every stage.
+
+    Returns:
+        bool [M, C].
+    """
+    cap = open_cap(plan, cfg)
+    risk = risk[:, None] if risk.ndim == 1 else risk
+    return (np.asarray(k)[:, None, None] * risk[None] > cap + 1e-12).any(axis=2)
+
+
 def evaluate(data: dict, combos: np.ndarray, plan: dict, cfg: dict) -> np.ndarray:
     """P(pass within the horizon) of `plan`, per combination and risk level.
 
@@ -13,11 +43,13 @@ def evaluate(data: dict, combos: np.ndarray, plan: dict, cfg: dict) -> np.ndarra
         data: `stagea_data.prepare()` output.
         combos: int32 [M, K_max], member row indices into `data`, padded with -1.
         plan: A `catalog.plan()` dict.
-        cfg: The construct config (`funded.risk_grid`, `funded.horizon_days`, `funded.min_lot`).
+        cfg: The construct config (`funded.risk_grid`, `funded.horizon_days`, `funded.min_lot`,
+            `funded.open_risk_cap`).
 
     Returns:
         float64 [M, L] — one column per `cfg["funded"]["risk_grid"]` level; NaN where the level
-        is infeasible for that combination (its tightest member's lot below `min_lot / 2`).
+        is infeasible for that combination: its tightest member's lot below `min_lot / 2`, or
+        its members times the level above the open-risk cap (`capped`).
     """
     grid = np.asarray(cfg["funded"]["risk_grid"], dtype=np.float64)
     horizon = int(cfg["funded"]["horizon_days"])
@@ -34,6 +66,7 @@ def evaluate(data: dict, combos: np.ndarray, plan: dict, cfg: dict) -> np.ndarra
                       data["low5"], data["high5"], data["block_day"].astype(np.int64),
                       data["lot_unit"], combos.astype(np.int32), stagemat_base, grid, size,
                       min_lot, starts, horizon, out)
+    out[capped((combos >= 0).sum(axis=1), grid, plan, cfg)] = np.nan
     return out
 
 

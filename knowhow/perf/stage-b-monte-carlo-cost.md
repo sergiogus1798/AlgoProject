@@ -16,4 +16,7 @@ repeats stage B once per null search: 100 searches ≈ 100× that — the verdic
 - Exact M1 part (`stageb_data.prepare`) on the archived USDJPY strategy (8.7 M bars, 10-year build, 1,357 trades): one
   member 6.2 s, worker peak 2.5 GB (`stageb.worker_ram_gb`), 4.5 M minutes × 2 float32 kept per member (36 MB); folding a
   combination's minutes into its days 0.45 s.
+- 🔬 2026-10-05, first real pool (`Test_nikkei_ref`, test root; 10 Nikkei M30 members of ~350 trades in build, one-phase
+  `hantec:express`): 11 finalists of K = 2-4 × 10 risks, the stability re-draws included, 18.5 s wall at 15 cores
+  (272 s CPU), 1.84 GB peak RSS. Perf target `portfolio.stage_b` (synthetic K = 5, two phases): 4.0 s wall, 46 s CPU, 670 MB.
 - 🤔 Not measured: 48 idle cores; a three-phase plan (1,000 settings: the rules' share ×10, still under the laying).

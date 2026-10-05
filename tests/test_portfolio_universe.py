@@ -12,7 +12,7 @@ from core import assetdata  # noqa: E402
 from core.datapaths import variants_dir  # noqa: E402
 from core.paths import archive_dir  # noqa: E402
 from core.barstore import source as bar_source  # noqa: E402
-from portfolio.common.construct.equity import days, matrix, paths, reconcile, sqxcurve  # noqa: E402
+from portfolio.common.construct.equity import clock, days, matrix, paths, reconcile, sqxcurve  # noqa: E402
 from portfolio.common.construct.inputs import source  # noqa: E402
 from portfolio.common.construct.inputs import calendar  # noqa: E402
 
@@ -20,6 +20,7 @@ FAILED = []
 
 HARVEST = (archive_dir() / "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
            / "2026-09-28T0919" / "harvest" / "equity.parquet")
+CLOCK_THEN = "Asia/Jerusalem"      # `USDJPY_DukasM1_the5ers` when the golden was archived
 BATCH = (variants_dir("Test_USDJPY_donchianUpperCrossUp_H1", "Strategy_10.1.79")
          / "equity.parquet")
 
@@ -151,24 +152,47 @@ def test_real_harvest_and_batch() -> None:
 
 
 def test_golden_rebuild_against_sqx_curve() -> None:
-    """The M1 rebuild's daily lowest equity equals SQX's own curve, leg by leg (🔬 max 0.16 $)."""
+    """The M1 rebuild's daily lowest equity equals SQX's own curve, leg by leg (🔬 max 0.16 $).
+
+    On the archive's OWN clock: its trades and SQX's days are stamped in `CLOCK_THEN`, the bars
+    on disk in whatever the registry says today (EETUS since 2026-10-01), so the bars are
+    re-stamped. Without it 129 of 3,906 days miss, all in the weeks the two clocks differ.
+    """
     if not HARVEST.exists():
         check("golden archive present", False, "skipped: archive not found")
         return
     s = source.load(HARVEST.parts[-4], HARVEST.parts[-3])
-    bars = bar_source(s["feed"], ["High", "Low", "Close"])
+    bars = clock.reclock(bar_source(s["feed"], ["High", "Low", "Close"]), s["clock"], CLOCK_THEN)
     sqx = sqxcurve.from_harvest(s["sqx_equity"], s["symbol"])
     for sample, segment in sqxcurve.SAMPLE_TO_SEGMENT.items():
         trades = s["trades"][s["trades"]["sample"] == sample]
         table = days.server_days(paths.minute_path(trades, bars, s["point_value"]),
-                                 s["clock"], s["clock"])
+                                 CLOCK_THEN, CLOCK_THEN)
         got = reconcile.curve(reconcile.low_equity(table),
                               sqx.loc[sqx["segment"] == segment, "low"], 1.0, 0.99)
         check(f"golden {segment}: rebuild == SQX daily low", got["verdict"] == "ok", f"{got}")
 
 
+def test_cache_key_follows_the_code() -> None:
+    """OPEN #104-1: the universe folder is keyed by the builder's source too."""
+    import tempfile
+    from pathlib import Path
+
+    from portfolio.common.construct.equity import store
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "engine.py"
+        src.write_text("X = 1\n")
+        before = store.code((Path(tmp),))
+        src.touch()
+        check("a touch (same bytes) keeps the code key", store.code((Path(tmp),)) == before)
+        src.write_text("X = 2\n")
+        check("a changed source moves the code key", store.code((Path(tmp),)) != before)
+    check("the folder name ends in the code key", store.folder("pool", "cfg").name == f"pool-cfg-{store.code()}")
+
+
 def main() -> int:
     """Run every check and report."""
+    test_cache_key_follows_the_code()
     test_sqx_segment_slice()
     test_batch_warmup_and_duplicates_dropped()
     test_matrix_zero_inside_nan_outside()

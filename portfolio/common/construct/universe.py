@@ -1,6 +1,7 @@
 """THE COMMAND: build (or report the cache of) one pool's universe, in Spanish for the owner."""
 
 import argparse
+import json
 import resource
 import time
 from pathlib import Path
@@ -8,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from .equity import matrix, universe
-from .inputs import config
+from .inputs import config, pool as pool_mod
 from .pairs import table
 from portfolio.common.construct.search import admissible
 
@@ -45,6 +46,7 @@ def summarise(pool_name: str, cfg: dict, out: Path) -> str:
     lines = [f"Universo del pool '{pool_name}' ({manifest['pool']['hash'][:12]}…)"]
     if cfg["relaxed"]:
         lines.append(f"AJUSTADO: umbrales relajados {cfg['relaxed']}")
+    lines += pool_mod.prohibited_lines(pool_name, cfg)
     lines.append(f"Miembros: {len(kept)} conservados, {len(excluded)} excluidos de {len(kept) + len(excluded)}")
     lines += _reconcile_lines(data["reconcile"])
     lines.append("Calendario: " + ", ".join(f"{k} {v[0][:10]}…{v[1][:10]}"
@@ -68,7 +70,9 @@ def screen(data: dict, cfg: dict, out: Path) -> dict:
         data: What `universe.load` returned.
         cfg: The run's config.
         out: The universe folder; `pairs.parquet` is written there (the folder is keyed by the
-            config fingerprint, so a threshold change never reuses it).
+            config fingerprint, so a threshold change never reuses it), and `screen.json`
+            beside it: the thresholds in force, `relaxed`, the admissible `edges` and why
+            each other pair fails — what the window reads, so it never screens by itself.
 
     Returns:
         `search.admissible`'s dict.
@@ -79,6 +83,16 @@ def screen(data: dict, cfg: dict, out: Path) -> dict:
     pairs = table.table(daily, matrix.monthly(daily), cfg)
     pairs.to_parquet(out / "pairs.parquet")
     got = admissible.admissible(pairs, list(daily.columns), cfg)
+    # What the window's «Correlación» paints: the thresholds in force and the screen's outcome
+    # (the folder's key is the config's fingerprint, which does not say what the config was).
+    edges = [[i, j] for a, i in enumerate(daily.columns) for b, j in enumerate(daily.columns)
+             if a < b and got["graph"][a, b]]
+    (out / "screen.json").write_text(json.dumps(
+        {"thresholds": {k: cfg["pairs"][k] for k in config.PAIR_THRESHOLDS}, "relaxed": cfg["relaxed"],
+         "sign": cfg["pairs"]["sign"], "one_sided": cfg["pairs"]["one_sided"],
+         "identities": list(daily.columns), "edges": edges, "failing": got["failing"].to_dict("records"),
+         **{k: got[k] for k in ("counts", "n_pairs", "n_admissible_pairs", "n_without_rolling", "n_in",
+                                "n_out", "effective_n")}}, ensure_ascii=False, default=float), encoding="utf-8")
     print(f"Parejas (solo build): {got['n_admissible_pairs']} admisibles de {got['n_pairs']}; "
           f"{got['n_out']} de {got['n_in']} estrategias tienen al menos una pareja admisible")
     for name, n in sorted(got["counts"].items(), key=lambda kv: -kv[1]):
@@ -95,10 +109,11 @@ def main() -> None:
     """Build the pool's universe (or reuse its cache), print the owner's summary and the pair screen."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--pool", required=True)
+    parser.add_argument("--firm", help="empresa cuyas prohibiciones se quitan del pool")
     parser.add_argument("--set", dest="overrides", action="append", default=[])
     args = parser.parse_args()
 
-    cfg = config.load(args.overrides)
+    cfg = pool_mod.scoped(config.load(args.overrides), args.firm)
     start = time.perf_counter()
     out = universe.build(args.pool, cfg)
     wall = time.perf_counter() - start

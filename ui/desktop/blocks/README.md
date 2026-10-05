@@ -39,7 +39,7 @@ tools.report ─▶ screen.screen(result, memory) ─▶ POST /api/study/screen 
 | `scatter.py` | Points by group (at most 400, seeded sample; the fit uses all), quadrants through zero, fitted line with its r | imported | block → QWidget |
 | `bars.py` | Horizontal bars coloured by state, error whiskers, reference line, value past the whisker; with `vertical`, columns over their labels, each in its item's `ink` when it names one | imported | block → QWidget |
 | `lines.py` | Series over one x axis (optional `x_label`/`y_label` name the axes): a series naming an `ink` in that tone (dashed with `dash`), a lone real series in the real ink, references dashed | imported | block → QWidget |
-| `table.py` | Sortable table in the study's own order, numbers the window's way, full cell on hover | imported | block → QWidget |
+| `table.py` | Sortable table in the study's own order, numbers the window's way, full cell on hover; columns are measured again on first show, in the frame's own font, and a compact table leaves room for its scrollbar | imported | block → QWidget |
 | `verdict.py` | The label in its state's colour, never without its meaning, and its parts as tiles | imported | block → QWidget |
 | `callout.py` | The `callout` kind (2026-09-30): one coloured, bold sentence the study wants seen ahead of the rest | imported | block → QWidget |
 | `desclist.py` | The `list` kind (2026-09-30): a title in bold and a short description under it, one item after another | imported | block → QWidget |

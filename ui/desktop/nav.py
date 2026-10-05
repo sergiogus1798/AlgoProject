@@ -63,8 +63,8 @@ TIPS = {
     "Registro de búsquedas": "Una línea por búsqueda que miró datos y redujo una población, "
                              "los filtros de la ventana incluidos: cuánto se ha buscado en "
                              "cada estudio y qué tramos se han gastado.",
-    "Portfolios": "Las estrategias archivadas: se importan a la ficha de Estrategia tal como "
-                  "se guardaron, sin recalcular nada.",
+    "Portfolios": "Las carteras: correlación entre estrategias, el constructor, el fondeo, la "
+                  "caja y los pesos — y el archivo, que se importa a la ficha de Estrategia.",
     "Verificar": "El paso 26: la estrategia en SQX con las condiciones de cada empresa contra "
                  "su backtest en MT5 en la cuenta de esa empresa.",
 }

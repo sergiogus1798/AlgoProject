@@ -17,6 +17,9 @@ equity:
   excursion_tolerance: 1.0      # account currency: a rebuilt MAE/MFE this close to SQX's counts as exact
   excursion_min_share: 0.99     # share of trades exact on MAE and on MFE that licenses the rebuild
 
+calendar:
+  pseudo_oos2_from: null        # TEST RUNS ONLY (portfolio/testroot): a date inside oos1 from which the calendar calls the rest oos2, never a holdout; null = the policy's calendar
+
 pairs:
   pearson: ledger:portfolio.pairs.pearson
   spearman: ledger:portfolio.pairs.spearman
@@ -38,6 +41,7 @@ funded:                         # F2, the funded search's stage A (PLAN §14.3; 
   risk_grid: [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]  # risk per trade, fraction of the INITIAL balance
   horizon_days: 126             # a pass counts only within ~6 months of trading days of the purchase
   min_lot: 0.01                 # a trade whose lot rounds below it cannot be placed: that risk level is infeasible
+  open_risk_cap: null           # REQUIRED, no default (rule 11; owner 2026-10-05, R5: the cap exists, its size is not set): members x risk per trade <= this fraction of the plan's maximum daily loss; above it a (combination, risk) pair is infeasible. No per-symbol cap
 
 search:                         # AlphaForge's GA defaults (PLAN §5.3), set_by AlphaForge until the owner moves them
   seeds: 300
@@ -46,7 +50,7 @@ search:                         # AlphaForge's GA defaults (PLAN §5.3), set_by 
 stageb:                         # F3, stage B of the funded search (PLAN §14.3, §14.3b)
   shortlist_size: 50            # PLAN §14.3: the top ~50 diverse combinations of a stage-A run
   max_shared: 0.5               # no two of them share MORE than this share of their members
-  shared_of: null               # REQUIRED, no default (rule 11): smaller | larger — half of WHICH combination when the two differ in K
+  shared_of: larger             # owner 2026-10-05: half of the LARGER combination when the two differ in K (the other reading: smaller)
   t1_gap: null                  # REQUIRED, no default (rule 11): T1's gap model; the only one built is close_to_open_blocks
   n_paths: 10000                # PLAN §14.3: paths per Monte Carlo flavour and block length
   sweep_days: [5, 10, 20, 40]   # owner 2026-09-30: block lengths read besides the measured one (Politis-White); the most pessimistic decides
@@ -54,15 +58,33 @@ stageb:                         # F3, stage B of the funded search (PLAN §14.3,
   stability_runs: 8             # the winner's deciding figure recomputed this many times (as monteCarlo's n_stability_runs)
   stability_tol: 0.02           # 🤔 this plan: a spread above 2 points of P(pass) between repeats says n_paths is too low
 
-verdict:                        # F4, the funded verdict on oos1+oos2 (PLAN §14.3, Q11)
-  null_draws: 100               # 🤔 this plan: null searches, each one stage A on random admissible combinations + stage B
+weights:                        # M4 (PLAN §5.4): chosen on build, fixed for good -- never rebalanced (Council 2026-10-04, DECISIONS #5)
+  method: equal                 # owner 2026-09-29: the only one, and the baseline a later one must beat (M8)
+
+wf:                             # M8 (PLAN §5.4): the weight walk-forward (construct.wf) -- a study that reports; it selects nothing, weights.method stays equal
+  lookback_years: 0             # 🤔 phase M8: 0 = every day before the window, so the first estimation is the whole of build -- what DECISIONS #5 holds fixed. AlphaForge used 6
+  step_years: 3                 # AlphaForge: weights re-estimated every 3 years, on 1 January
+  confidence: null              # REQUIRED, no default (rule 11): the two-sided interval a Sharpe difference against equal weight must clear to count as "beats" (e.g. 0.95)
+  bootstrap_draws: 2000         # 🤔 phase M8: stationary-bootstrap resamples of the test days behind that interval; mean block by Politis-White on the equal-weight path
+
+incubation:                     # M9 (PLAN §14.5): the fresh stretch after oos2 against the band of equal-length windows of the portfolio's own history. NOT RUNNING: nothing produces its rows yet
+  figure: null                  # REQUIRED, no default (rule 11): what is read on the stretch -- pnl (its sum, per unit of risk) | sharpe (per day)
+  history: null                 # REQUIRED: the segments whose windows make the band, e.g. [oos1, oos2] or [build, oos1, oos2]
+  band: null                    # REQUIRED: [low, high] percentiles of those windows; a stretch outside is flagged ([5, 100] flags the low side only)
+
+verdict:                        # F4, the funded verdict (PLAN §14.3, Q11 d): oos1 against the selected null, then oos2's deflated Sharpe, once
+  null_draws: 100               # 🤔 this plan: null SEARCHES of the funded path, each one stage A on random admissible combinations + stage B (not real.null_draws)
   null_candidates: 0            # combinations per null search; 0 = as many as the stage-A run evaluated
-  pass_measure: null            # OPEN (Q11): which measure the bar reads — start_p or mc_p; empty = no criterion
-  pass_percentile: null         # OPEN (Q11), the owner's: when he sets it it becomes ledger:portfolio.funded.verdict_percentile; empty = «sin criterio»
+  pass_measure: mc_p            # owner 2026-10-05: the bar reads the P(pass) of the most pessimistic Monte Carlo on oos1 (the other reading: start_p)
+  pass_percentile: null         # OPEN (Q11), the owner's: when he sets it it becomes ledger:portfolio.funded.verdict_percentile; empty = «sin criterio (falta verdict.pass_percentile)» and oos2 is not opened
 
 real:                           # M3, the search by ranks (PLAN §5.3). Council 2026-10-04 on the owner's delegation: Q10 (a), Q16 (c, provisional), DECISIONS #2
   account: 10000                # C5: the size is the funding economics' -- the 10k account; a member's floor is the minimum lot on it (funded.min_lot, funded.risk_grid)
   exhaustive_max: 100000        # 🤔 PLAN §5.7: up to this many admissible combinations every one is scored; above it the GA runs
-  losing_year: null             # REQUIRED, no default (rule 11): calendar (share of calendar years that lose) | rolling (share of 252-day windows)
-  rank_reference: null          # REQUIRED when the GA runs (rule 11): the fixed set the ranks are taken in; the only one built is seeds
-  increment: null               # REQUIRED for --base (rule 11): finite (Sharpe of K+1 minus Sharpe of K) | marginal (SR_c - rho * SR_base)
+  losing_year: calendar         # owner 2026-10-05 (R2): the share of calendar years of build that lose (the other reading: rolling, every 252-day window)
+  rank_reference: seeds         # owner 2026-10-05 (R1): the GA takes its ranks in the greedy starting cliques, fixed before generation 0 (the only set built)
+  shift_months: 3               # owner 2026-10-05 (R3): each combination is scored on build with its start shifted 0, 1, 2 and 3 months, and keeps the minimum
+  shift_minimum: metric         # owner 2026-10-05 (R3): the minimum of WHAT -- each metric takes its worst value over the shifted windows, then the ranks are taken once (the only reading built)
+  increment: finite             # owner 2026-10-05 (R4): Sharpe of the K+1 at equal weight minus the Sharpe of the K (the other reading: marginal, SR_c - rho * SR_base); candidates enter in sequence (Q16)
+  null_draws: ledger:portfolio.verdict.null_draws            # M5 (Q11 d; owner 2026-10-05, R6): random admissible combinations of the chosen portfolio's size K, measured on oos1
+  null_percentile: ledger:portfolio.verdict.null_percentile  # the chosen one's rank score, ranks taken among the draws plus itself, must be above this percentile of theirs

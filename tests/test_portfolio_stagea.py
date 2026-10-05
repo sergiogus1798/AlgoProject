@@ -89,7 +89,7 @@ universe, calendar = _universe(identities, days_idx, closed, low, high, ["test"]
 factors = {i: 1.0 for i in identities}
 factors["big"] = 0.01  # deliberately tiny: makes "big" the lot-feasibility boundary case below
 min_size = {i: 0.01 for i in identities}
-cfg = {"funded": {"risk_grid": [0.001, 0.003, 0.005, 0.008, 0.01], "horizon_days": 20, "min_lot": 0.01}}
+cfg = {"funded": {"risk_grid": [0.001, 0.003, 0.005, 0.008, 0.01], "horizon_days": 20, "min_lot": 0.01, "open_risk_cap": 100.0}}
 data = stagea_data.prepare(universe, "test", identities, calendar, factors, min_size)
 plan = _plan(size=10000.0, target=0.05)
 
@@ -112,6 +112,23 @@ check("infeasible level (r=0.003) reads NaN", np.isnan(big_row[1]), big_row)
 check("boundary level (r=0.005) is feasible", not np.isnan(big_row[2]), big_row)
 check("feasible level (r=0.01) is feasible", not np.isnan(big_row[4]), big_row)
 
+# --- open-risk cap (owner, 2026-10-05): members x risk <= fraction x the plan's daily loss ----------
+# the plan's daily loss is 0.9 of the balance; 0.02 / 0.9 of it leaves 2 % of the balance open at once
+capped_cfg = {"funded": {**cfg["funded"], "open_risk_cap": 0.02 / 0.9}}
+combos_cap = np.full((2, 4), -1, dtype=np.int32)
+combos_cap[0, :2] = [0, 1]
+combos_cap[1] = [0, 1, 2, 3]
+free, held = stagea.evaluate(data, combos_cap, plan, cfg), stagea.evaluate(data, combos_cap, plan, capped_cfg)
+check("cap 2 %: K=2 keeps every level, 2 x 1 % sitting exactly on the cap",
+      not np.isnan(held[0]).any() and np.array_equal(held[0], free[0]), held[0])
+check("cap 2 %: K=4 loses the levels above 0.5 % (0.8 %, 1 %) and keeps the rest untouched",
+      np.isnan(held[1]).tolist() == [False, False, False, True, True]
+      and np.array_equal(held[1][:3], free[1][:3]), held[1])
+check("capped() names the same pairs, per stage when the risk differs by stage",
+      stagea.capped(np.array([2, 4]), np.array(cfg["funded"]["risk_grid"]), plan, capped_cfg).tolist()
+      == np.isnan(held).tolist()
+      and stagea.capped(np.array([4]), np.array([[0.005], [0.006]]), plan, capped_cfg).tolist() == [[False, True]])
+
 # --- horizon: a pass on the last day is not a pass once the deadline closes one day earlier -----
 hidx = pd.bdate_range("2022-01-03", periods=12)
 hclosed = {"p": np.zeros(12), "q": np.zeros(12)}
@@ -126,7 +143,7 @@ hdata = stagea_data.prepare(huniverse, "test", ["p", "q"], hcalendar,
 hplan = _plan(size=3000.0, target=0.05)  # target = 150, met exactly on the last day (index 11)
 hcombo = np.array([[0, 1]], dtype=np.int32)
 for horizon, expected_p in [(12, 1.0), (11, 0.5)]:
-    hcfg = {"funded": {"risk_grid": [0.01], "horizon_days": horizon, "min_lot": 0.001}}
+    hcfg = {"funded": {"risk_grid": [0.01], "horizon_days": horizon, "min_lot": 0.001, "open_risk_cap": 100.0}}
     hscore = stagea.evaluate(hdata, hcombo, hplan, hcfg)[0, 0]
     check(f"horizon={horizon}: P(pass) = {expected_p} (last day counts only within the window)",
           abs(hscore - expected_p) < 1e-9, hscore)
@@ -150,7 +167,7 @@ print(f"server days = {len(big_data['days'])}, build blocks = {big_data['low5'].
       f"(raw grid before the build filter: {n_blocks_raw})")
 
 FUNDED_CFG = {"funded": {"risk_grid": [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008,
-                                        0.009, 0.010], "horizon_days": 126, "min_lot": 0.01}}
+                                        0.009, 0.010], "horizon_days": 126, "min_lot": 0.01, "open_risk_cap": 100.0}}
 M = 480
 combos5 = np.full((M, 10), -1, dtype=np.int32)
 combos10 = np.full((M, 10), -1, dtype=np.int32)

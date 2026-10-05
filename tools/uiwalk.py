@@ -38,9 +38,11 @@ ERRORS: list[tuple[str, str]] = []
 HERE = {"zone": "arranque"}
 
 
-def aim(port: int) -> None:
-    """Point the window's client at the daemon on `port`, with writes refused."""
+def aim(port: int, write: bool = False) -> None:
+    """Point the window's client at the daemon on `port`, with writes refused unless `write`."""
     client.aim(port)
+    if write:       # `uiinventory --write`, on a test root: every «Calcular» really runs
+        return
     get, real = client.get, client.post
 
     def post(path: str, body: dict) -> dict:

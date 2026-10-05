@@ -52,3 +52,20 @@ def read(out_dir: Path) -> dict:
         The parsed manifest.
     """
     return json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+
+
+def fresh_dir(path: Path) -> Path:
+    """Create a folder that did not exist: `path`, or `path` + `_2`, `_3`… when the name is taken.
+
+    Returns:
+        The folder created. For an output named by a stamp to the minute: a second run in
+        the same minute gets its own folder instead of writing over the first's (OPEN #104-4).
+    """
+    n, out = 1, path
+    while True:
+        try:
+            out.mkdir(parents=True)
+            return out
+        except FileExistsError:
+            n += 1
+            out = path.with_name(f"{path.name}_{n}")

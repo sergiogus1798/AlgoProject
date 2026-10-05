@@ -1,9 +1,12 @@
-"""The build score of a combination (Q10 a): equal-weight signed ranks of four path metrics."""
+"""The build score of a combination (Q10 a): signed ranks of four path metrics, shifted minimum."""
 
 import numpy as np
 import pandas as pd
 
+from portfolio.common.construct import weights
 from portfolio.common.construct.verdict import metrics
+
+SHIFT_MINIMUM = ("metric",)      # owner 2026-10-05: the only reading (`real.shift_minimum`)
 
 
 def masks(combos: np.ndarray, n: int) -> np.ndarray:
@@ -14,21 +17,42 @@ def masks(combos: np.ndarray, n: int) -> np.ndarray:
     return out
 
 
+def shifted(paths: np.ndarray, dates: pd.DatetimeIndex, cfg: dict) -> list[dict[str, np.ndarray]]:
+    """`metrics.table` of daily P&L paths on a window with its start shifted 0..n months.
+
+    A metric of one fixed window moves with where the window is cut (Faith: 10-15 % from a
+    few months); the window is read from several starts (owner, 2026-10-05, R3).
+
+    Args:
+        paths: [P, D] daily P&L.
+        dates: The D days.
+        cfg: The construct config (`real.losing_year`, `real.shift_months`).
+
+    Returns:
+        One `metrics.table` dict (each [P]) per shift: [0] is the whole window, [m] the
+        window that starts m calendar months later.
+    """
+    tables = []
+    for months in range(cfg["real"]["shift_months"] + 1):
+        first = dates.searchsorted(dates[0] + pd.DateOffset(months=months))
+        tables.append(metrics.table(paths[:, first:], dates[first:], cfg["real"]["losing_year"]))
+    return tables
+
+
 def measure(unit: np.ndarray, dates: pd.DatetimeIndex, members: np.ndarray,
-            losing_year: str) -> dict[str, np.ndarray]:
-    """`metrics.table` of each equal-weighted combination: the mean of its members' paths.
+            cfg: dict) -> list[dict[str, np.ndarray]]:
+    """`shifted()` of each combination's path on build, the weights set once on the whole of it.
 
     Args:
         unit: [N, D] each member's daily P&L per unit of risk, 0 where it has no history.
         dates: The D build days.
         members: bool [P, N], at least one member per row.
-        losing_year: As `metrics.table`.
+        cfg: The construct config (`weights.method`, `real.losing_year`, `real.shift_months`).
 
     Returns:
-        `metrics.table`'s dict, each [P].
+        `shifted()`'s list for the P combinations.
     """
-    weights = members / members.sum(axis=1, keepdims=True)
-    return metrics.table(weights @ unit, dates, losing_year)
+    return shifted(weights.matrix(pd.DataFrame(unit.T, index=dates), members, cfg) @ unit, dates, cfg)
 
 
 def percentile(values: np.ndarray, reference: np.ndarray) -> np.ndarray:
@@ -57,3 +81,32 @@ def rank_score(table: dict[str, np.ndarray], reference: dict[str, np.ndarray]) -
         pct = percentile(table[name], reference[name])
         parts.append(pct if metrics.SIGN[name] > 0 else 1.0 - pct)
     return np.mean(parts, axis=0)
+
+
+def worst(tables: list[dict[str, np.ndarray]]) -> dict[str, np.ndarray]:
+    """Each ranked metric at its worst over the shifted windows; the Sharpe of the whole one.
+
+    A window with no drawdown (NaN in R-cubed and gain-to-pain) is skipped, not read as worst.
+    """
+    out = {}
+    for name in metrics.NAMES:
+        pick = np.fmin if metrics.SIGN[name] > 0 else np.fmax
+        out[name] = pick.reduce([t[name] for t in tables])
+    return {**out, "sharpe": tables[0]["sharpe"]}
+
+
+def score(tables: list[dict], reference: list[dict]) -> tuple[np.ndarray, dict]:
+    """The shifted minimum of the rank score (owner, 2026-10-05, `real.shift_minimum: metric`).
+
+    Each metric takes its worst value over the shifted windows and the ranks are taken once,
+    on those.
+
+    Args:
+        tables: `measure()` of the combinations to score.
+        reference: `measure()` of the reference combinations.
+
+    Returns:
+        The score [P], and the table it stands on: the worst metrics.
+    """
+    table = worst(tables)
+    return rank_score(table, worst(reference)), table

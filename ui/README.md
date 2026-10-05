@@ -12,7 +12,7 @@ la UI anterior; quiero que en esta máquina esté solo la nueva»). The sidebar 
 | PROYECTO | Proyectos → Proyecto → Databanks → Estrategia · Criterios | «Criterios» (2026-10-03) is not about one project: the pass criteria of every workflow step — `pipeline/autopilot/criteria.yaml`, judged by the autopilot — seen, edited (each change stamped in `ledger/criteria-history.jsonl`) and frozen; it launches nothing (`daemon/criteria/`, `desktop/criteria/`). The other four are one project judged: the gallery of every install's projects; one project's workflow — «Lanzar en SQX», «Continuar workflow» with its databank chooser, the rail and the population's funnel; the same project's databank panel on the whole height, with the filters; one strategy's ficha — curves, IS/OOS1/OOS2 statistics, «Archivar», every study below on the whole width (a study with no data in this databank marked «· sin datos», with a jump to its own databank), the metadata in a window of their own. Proyecto and Databanks were one zone until 2026-09-28: together they did not fit a 1080-px screen |
 | OPERACIÓN | En marcha, Registro de búsquedas (+ the jobs strip in the status bar) | what runs: the custodian's pulse and the SQX project's tasks one by one; the ledger — one line per search that looked at data and reduced a population, the window's filters included |
 | MT5 BRIDGE | Verificar | step 26: one strategy — the one chosen in Proyecto, or an archived one — retested in SQX at each prop firm's conditions and backtested in MT5 on that firm's account, with the five rows of encargo 34 judged; every past check and its result. The owner asked for the bridge as a section of this same window (2026-09-29), not a second app |
-| PORTFOLIOS | Portfolios | the archived strategies; «Importar» opens one on the Estrategia page as it was frozen, nothing recomputed |
+| PORTFOLIOS | Portfolios | the portfolio board in Quant Analyzer's structure: a module rail (Analizar, Correlación, Constructor, Fondeo, Banco, Pesos, Incubación), each with a settings strip whose «Calcular» launches the real command as a daemon job, result tabs, and the databank (Estrategias / Carteras) fixed below; «Archivo» is the archived strategies, where «Importar» opens one on the Estrategia page as it was frozen, nothing recomputed |
 
 Above the zones a fixed context bar reads `Proyectos › proyecto › estrategia` from
 `desktop/selection.py`, the one global selection; each crumb opens its zone, the identity lives
@@ -155,6 +155,7 @@ bin/algoui --zone Proyectos     # open on a zone
 QT_QPA_PLATFORM=offscreen bin/algoui --port 8757 --shot DIR --zone Datos   # a shot on a scratch daemon
 python3 -m ui.daemon.serve      # just the daemon, to see its errors
 QT_QPA_PLATFORM=offscreen python3 tools/uiwalk.py --port P   # dev: every zone against a daemon, 0 exceptions expected
+QT_QPA_PLATFORM=offscreen ALGO_DATA_ROOT=<test root> python3 tools/uiinventory.py --port P --zone Portfolios   # dev: one zone, every control counted and driven (tools/README.md)
 ```
 
 Port: `ui_port` in `config/machine.yaml`, 8765 by default.

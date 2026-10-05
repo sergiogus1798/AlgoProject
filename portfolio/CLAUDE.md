@@ -27,14 +27,21 @@ the funded rules split) are in `DECISIONS.md` «Settled by the owner»; the 2026
 risk, funded rules) in `PLAN.md` §12 «Answered» and §14; the compute rule (all physical cores, under 80 GB,
 built for speed first) in `EXECUTION.md` (compute rule); the 2026-10-04 ones, taken by the Council on
 the owner's delegation (Q10, Q11, Q16 provisional, #2, #5, #12, live incubation after `oos2`), in
-`PLAN.md` §12 and `DECISIONS.md`, with the readings they leave open. Status per milestone: `PLAN.md` §9.
+`PLAN.md` §12 and `DECISIONS.md`, with the readings they leave open; the owner's 2026-10-05 answers
+to those readings (R1-R7, admission in sequence, the funded verdict's measure) in `DECISIONS.md` «Settled by the owner — 2026-10-05».
+Status per milestone: `PLAN.md` §9.
 
 **Where a strategy comes from: the archive.** A strategy enters from `AlgoData/archive/<identity>/<version>/`
 (`core/archive/`, encargo 23), frozen with its `.sqx`, its cosecha rows, every study result, the
 asset card of that day and the ledger count (N strategies tried) that deflates its Sharpe. The
 window's PORTFOLIOS zone lists it and «Importar» shows it as the Estrategia page, read from the
 archive with nothing recomputed (`ui/desktop/portfolios/`). Importing from a live databank waits
-for the owner. The portfolio maths is being built: `common/construct/` (PLAN, EXECUTION).
+for the owner. The portfolio maths is built (2026-10-05) in `common/construct/` and `funded/`, tested only on the relaxed Nikkei test pool in the test root — no real result yet (PLAN §9).
 **What each firm sells and under which rules is already a database**: `funded/catalog/`
 (`AlgoData/funding/funding.sqlite`, Hantec and FTMO, every add-on combination priced), refreshed
 every Sunday by the `fundingWatcher` agent. The economics on top of it is encargo 33.
+
+**Testing this module never writes the real root.** A test run is the real code under
+`ALGO_DATA_ROOT=<AlgoData>/portfolio/_test/root` (`portfolio/testroot/README.md`): its own ledger,
+archive, pools and runs, the pool `Test_nikkei_ref`, relaxed thresholds passed with `--set`. Every
+such process prints «RAÍZ DE PRUEBA» and none of its numbers is a result.

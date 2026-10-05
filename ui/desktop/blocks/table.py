@@ -90,6 +90,30 @@ class Cell(QTableWidgetItem):
         return rank(self.value) < rank(other.value)
 
 
+class Fitted(QTableWidget):
+    """A table that measures its columns again when first shown. Only inside its frame does the
+    stylesheet's font apply (the terminal's monospace, wider than the default): measured before,
+    a long cell was cut with room to spare."""
+
+    compact = False     # a small matrix: as wide as its columns, no wider
+
+    def fit(self) -> None:
+        """Each column as wide as its content, up to `WIDEST`; a compact table's own width with it."""
+        self.resizeColumnsToContents()
+        for j in range(self.columnCount()):
+            self.setColumnWidth(j, min(WIDEST, self.columnWidth(j) + 16))
+        if self.compact:        # a table that scrolls inside itself keeps its last column clear of the bar
+            bar = self.verticalScrollBar().sizeHint().width() if self.rowCount() > VISIBLE else 0
+            self.setMaximumWidth(sum(self.columnWidth(j) for j in range(self.columnCount())) + 6 + bar)
+
+    def showEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
+        """Fit once, with the font the table is really drawn in."""
+        super().showEvent(event)
+        if not self.property("fitted"):
+            self.setProperty("fitted", True)
+            self.fit()
+
+
 def widget(block: dict) -> QWidget:
     """One table, sortable by any column.
 
@@ -102,7 +126,8 @@ def widget(block: dict) -> QWidget:
     b = block
     if not b["rows"]:
         return card(b, text("(vacía: el estudio no dejó ninguna fila aquí)", T["faint"]))
-    table = QTableWidget(len(b["rows"]), len(b["columns"]))
+    table = Fitted(len(b["rows"]), len(b["columns"]))
+    table.compact = bool(b.get("compact"))
     table.setHorizontalHeaderLabels([label(c) for c in b["columns"]])
     help_ = b.get("help") or [None] * len(b["columns"])
     for j, h in enumerate(help_):
@@ -129,15 +154,11 @@ def widget(block: dict) -> QWidget:
     # Enabling sorting sorts at once by column 0; the study's own order is the reading order.
     table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
     table.setSortingEnabled(True)
-    table.resizeColumnsToContents()
-    for j in range(len(b["columns"])):
-        table.setColumnWidth(j, min(WIDEST, table.columnWidth(j) + 16))
     table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
     # A last column of sentences (the «why», «what it says») takes the spare width, so less
     # of it is cut; a last column of numbers does not, or its figures drift to the far edge.
     table.horizontalHeader().setStretchLastSection(align[-1] == "left" and not b.get("compact"))
-    if b.get("compact"):       # a small matrix: as wide as its columns, no wider
-        table.setMaximumWidth(sum(table.columnWidth(j) for j in range(len(b["columns"]))) + 6)
+    table.fit()
     table.verticalHeader().setDefaultSectionSize(26)
     shown = min(len(b["rows"]), VISIBLE)
     table.setFixedHeight(table.horizontalHeader().sizeHint().height() + 26 * shown + 6)

@@ -1,5 +1,6 @@
 """Where a built universe lives on disk, and reading a finished one back."""
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -9,20 +10,34 @@ import pandas as pd
 from core.datapaths import portfolio_dir
 
 ROOT = portfolio_dir() / "universe"
+HERE = Path(__file__).parent
+SOURCES = (HERE, HERE.parent / "inputs")        # the code a universe is built by
+
+
+def code(sources: tuple[Path, ...] = SOURCES) -> str:
+    """Eight hex characters over the bytes of every `.py` that builds a universe.
+
+    The bytes and not the modification time: a checkout or a `touch` must not rebuild.
+    ⚠️ Only `equity/` and `inputs/`: a change in what they import from outside
+    (`core.assetdata`, `core.barstore`, the bars themselves) does not move it.
+    """
+    files = sorted(p for folder_ in sources for p in folder_.glob("*.py"))
+    return hashlib.sha256(b"".join(p.name.encode() + p.read_bytes() for p in files)).hexdigest()[:8]
 
 
 def folder(pool_hash: str, config_fingerprint: str) -> Path:
-    """The cache folder for one pool+config pairing.
+    """The cache folder for one pool, one config and the code that builds it.
 
     Args:
         pool_hash: `inputs.pool.read()`'s `hash`.
         config_fingerprint: `core.study.config.fingerprint()` of the run's config.
 
     Returns:
-        `ROOT/<pool_hash>-<config_fingerprint>/` — the fingerprint lives in the folder name,
-        so a config change can never reuse another config's cache.
+        `ROOT/<pool_hash>-<config_fingerprint>-<code()>/` — all three live in the folder
+        name, so neither a config change nor an engine change reuses another's cache
+        (OPEN #104-1: a stale folder gave P 0.340 against 0.338 after a fix).
     """
-    return ROOT / f"{pool_hash}-{config_fingerprint}"
+    return ROOT / f"{pool_hash}-{config_fingerprint}-{code()}"
 
 
 def cached(out: Path) -> bool:

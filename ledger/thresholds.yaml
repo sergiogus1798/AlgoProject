@@ -824,6 +824,27 @@ thresholds:
     set_on: 2026-09-30
     why: el stop con el que se opera es SL = X·ATR(20) del paso 24; X = p90 del MAE/ATR de las ganadoras de build, la misma regla para todas, fijada antes de mirar ninguna cartera
 
+  # ── Paso 27 · la cartera: el veredicto del camino real (portfolio/PLAN.md §5.5, Q11 d) ──
+  - key: portfolio.verdict.null_draws
+    value: 10000
+    source: portfolio/common/construct/config.yaml#real.null_draws
+    set_by: Council (por delegación del dueño)
+    set_on: 2026-10-04
+    why: >-
+      Q11 (d): en oos1 la cartera elegida se compara con 10.000 carteras admisibles al azar
+      del mismo pool. Dueño 2026-10-05 (R6): son combinaciones admisibles al azar del mismo
+      tamaño K, no una búsqueda por extracción. No es el nulo del camino fondeado
+      (verdict.null_draws, 100 búsquedas enteras, PLAN §14.3)
+
+  - key: portfolio.verdict.null_percentile
+    value: 95
+    source: portfolio/common/construct/config.yaml#real.null_percentile
+    set_by: Council (por delegación del dueño)
+    set_on: 2026-10-04
+    why: >-
+      Q11 (d): la puntuación por rangos de la elegida en oos1 debe superar el percentil 95
+      de las 10.000 al azar (rangos tomados entre las 10.000 y la elegida; dueño 2026-10-05, R6)
+
   # ── Paso 8 · criba del MAE profundo (encargo 27) ──────────────────────────────────────
   - key: maeDepth.k
     value: [3, 4]

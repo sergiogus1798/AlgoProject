@@ -17,6 +17,8 @@ Regla de lectura: «sin medir» y «sin recomendación» significan que las fuen
 | La línea antigua de la t de 1,65 | equivale a 1,92 en la escala corregida (el OOS1 dura 5,16 años) | La **t** mide cuántos errores estándar separa la ventaja de la estrategia de cero; más alta es mejor. Ninguna regla viva lee ya esa t (`min_t = 0,0`). La regla viva es R3 del archivo de criterios (`drift_excess_t ≥ 2,33`, el exceso de deriva medido en t), que nunca estuvo en la escala vieja. |
 | Reconstrucción de la equity del motor de cartera | En USDJPY, 0 de 3.732 estrategias cuadran dentro de 1 $; en USA500, el 97 % | En la única estrategia que se abrió, el hueco coincide con la comisión de 5 $ por lote mientras hay una posición abierta: la causa es una inferencia sobre un caso, no está comprobada en el resto. Apunta a `portfolio/common/construct/equity/paths.py`; no es una decisión, pero conviene saberlo antes de fiarse de una equity de cartera en USDJPY. |
 
+- **Actualización 2026-10-05:** el dueño contestó C2 (R1-R3), C3 (R6, R7, F4 `mc_p`), C4 (incremento finito, en secuencia), C5 (R5, tope sólo de riesgo abierto) y F6 (recompra: las dos; recortes). La cartera está construida y probada sobre el pool relajado `Test_nikkei_ref` en una raíz de prueba; **no existe ningún resultado real**. Siguen abiertas, entre otras: la fracción del tope de riesgo abierto, `verdict.pass_percentile`, `stageb.t1_gap`, `wf.confidence`, `incubation.figure/history/band`, las nueve entradas del banco de fondeo y las que este documento no menciona como respondidas (C1, C6, C7, F5 no se han tocado hoy).
+
 ---
 
 ## Lo que desbloquea la cartera
@@ -48,7 +50,7 @@ Respuesta: ____
 
 **Recomendación:** sin recomendación escrita en el plan (la bibliografía del plan, §3.8, defiende combinar métricas por rangos y avisa de que las métricas de suavidad solas seleccionan fragilidad).
 
-Respuesta: ____
+**Respondida por el dueño (2026-10-05):** puntuación (a) (rangos con signo de las cuatro métricas, ya decidida por el Consejo) con tres lecturas fijadas: R1 los rangos se toman entre las semillas (`real.rank_reference: seeds`); R2 P(año perdedor) por años naturales (`real.losing_year: calendar`); R3 ventana de búsqueda = **mínimo desplazado**: se puntúa `build` con el inicio desplazado 0, 1, 2 y 3 meses y cada métrica toma su peor valor (`real.shift_minimum: metric`). Construido (M3); sólo corrido sobre el pool de prueba relajado.
 
 ### C3. Q11 — contra qué se compara la cartera y qué cuenta como pasar
 
@@ -63,7 +65,7 @@ Respuesta: ____
 
 Además hay que dar el percentil o la barra. **Recomendación:** sin recomendación escrita.
 
-Respuesta: ____
+**Respondida por el dueño (2026-10-05), lado cartera real:** R6 el veredicto de oos1 es la puntuación por rangos de la cartera elegida contra el percentil 95 de 10.000 combinaciones admisibles aleatorias **del mismo tamaño K** (sin búsqueda por cada sorteo); R7 el N del Sharpe deflactado en oos2 es `ledger.trials.overall` (todo el proyecto), una sola lectura. **Lado fondeo:** F4 `verdict.pass_measure: mc_p`. **Sigue abierta:** `verdict.pass_percentile` (el percentil que debe superar la cartera de fondeo; sin él ninguna cartera de fondeo puede pasar) y las lecturas que el código tomó y tú debes confirmar (PLAN §12, lecturas 6-7: Sharpe − máximo esperado de N > 0, K = el de la cartera elegida, «no se puede juzgar» bajo 20 combinaciones).
 
 ### C4. Q16 — cuándo entra una estrategia candidata en la cartera
 
@@ -77,7 +79,7 @@ Respuesta: ____
 
 **Recomendación:** sin recomendación escrita.
 
-Respuesta: ____
+**Respondida por el dueño (2026-10-05):** incremento **finito** (Sharpe de K+1 menos Sharpe de K, `real.increment: finite`) y, con varias candidatas a la vez, **en secuencia**: entra la de mejor incremento, la base crece y el resto se vuelve a juzgar (filtros de pares contra la base nueva e incremento contra la base nueva) hasta que ninguna sirva. Construido (`search/admission.py::sequence`).
 
 ### C5. Decisión nº 2 del plan — cuántas estrategias por cartera y por símbolo
 
@@ -89,7 +91,7 @@ Respuesta: ____
 
 Decide si manda la correlación o la capacidad. **Recomendación:** sin recomendación; tú dijiste el 2026-09-29 que quizá lo decidan la economía o el riesgo.
 
-Respuesta: ____
+**Respondida por el dueño (2026-10-05), lado fondeo (R5):** sólo un **tope de riesgo abierto por plan**, sin tope por símbolo: K × riesgo por operación ≤ fracción × pérdida diaria máxima del plan. **Sigue abierta la fracción** (`funded.open_risk_cap: null`; sin ella la búsqueda de fondeo se niega a arrancar) y la lectura de «pérdida diaria» que tomó el código (PLAN §12 punto 5). Lado cartera real: sin tope, se imprime K × suelo.
 
 ### C6. Decisión nº 5 — rebalanceo de la cartera
 
@@ -176,7 +178,7 @@ Respuesta: ____
 
 `h` es el recorte (haircut) que se aplica a la ventaja medida en OOS; más alto es más prudente. Opciones y costes: sin medir, no están desglosados en `OPEN.md`. **Recomendación:** sin recomendación; ver encargo 33 §6.4 y §6.7.
 
-Respuesta: ____
+**Respondida en parte por el dueño (2026-10-05):** recompra (§6.4) = **las dos, comparadas** (`same_plan` y `none`, dimensión buscada que cuenta en el registro); recortes (§6.7) `h` = 0, 25, 50, 75, 100 %, y decide `h` = 50 % (`owner.haircuts`, `owner.haircut_decides`). **Siguen abiertas:** `owner.eurusd`, `payout_cushion`, `tax_rate`, `payout_fee`, `p_payout_denied`, `p_firm_closes_year`, los tres `gaps.hantec_*`/`ftmo_1step_*` y lo que dejó abierto la primera corrida real (encargo 33 §6).
 
 ---
 
@@ -283,6 +285,8 @@ Medido en tres poblaciones (60, 3.786 y 3.732 estrategias) en OOS1. Efectos de r
 | No | cero | el CSCV sigue leyendo la curva de mínimos |
 
 **Recomendación:** reconstruir (la sesión lo recomienda para `snoopingScreen` y CSCV); para el CSCV el coste real está sin medir.
+
+**Respuesta del dueño (2026-10-04, a medias):** cosechar **sólo la madre** de cada lote — `sqx/variants/mothertrades.py`, un arranque de SQX para todas las madres, segundos. Desbloquea el paso 20 (`blindJoint`). Las operaciones por variante (CSCV reconstruido) siguen sin decidir.
 
 Respuesta: ____
 

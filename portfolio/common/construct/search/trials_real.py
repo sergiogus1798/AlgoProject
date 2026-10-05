@@ -41,21 +41,24 @@ def record(found: dict, pool: dict, members_meta: dict, note: str) -> list[dict]
     return rows
 
 
-def record_admission(judged: pd.DataFrame, pool: dict, members_meta: dict, how: str) -> dict:
-    """Log an admission pass on build: each candidate judged against the base is a trial.
+def record_admission(judged: pd.DataFrame, pool: dict, members_meta: dict, how: str,
+                     note: str) -> dict:
+    """Log an admission pass on build: every judgement of every round is a trial.
 
     Args:
-        judged: `admission.judge()`'s frame.
+        judged: `admission.sequence()`'s frame.
         pool, members_meta: As `record`.
         how: The increment's reading ("finite" or "marginal").
 
     Returns:
-        The row appended to the pool's study; the scores are Sharpe increments, a unit of
-        their own, so they add to N and never to the Sharpes' spread.
+        The row appended to the pool's study: `n_in` candidates, `n_out` admitted, `n_scored`
+        judgements. The scores are Sharpe increments, a unit of their own, so they add to N
+        and never to the Sharpes' spread.
     """
     symbols = "+".join(sorted({m["symbol"] for m in members_meta.values()}))
-    row = {"step": 27, "launched_by": "real", "segment": "build", "n_in": len(judged),
-           "n_out": int(judged["enters"].sum()), "criterion": f"portfolio/admission/{how}",
+    row = {"step": 27, "launched_by": "real", "segment": "build",
+           "n_in": int(judged["candidate"].nunique()), "n_out": int(judged["enters"].sum()),
+           "criterion": f"portfolio/admission/{how}/sequence", "note": note,
            "score_unit": "sharpe_increment", "symbol": symbols, "timeframe": "mixed"}
     return ledger_record.log(f"PORTFOLIO_{pool['hash'][:12]}_construct", row,
                              judged["increment"].to_numpy(float))

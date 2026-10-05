@@ -25,6 +25,7 @@
 - `gate-t-scales` — Why can the gate's three t statistics not be compared with each other?
 - `gates-are-owner-decisions` — Who decides a threshold that removes strategies: the analysis or the owner?
 - `hardest-null` — Does a null that randomises more make the null harder to beat?
+- `incubation-band-is-not-its-nominal-level` — How often does M9's band of equal-length windows flag a healthy portfolio, and how soon a broken one?
 - `is-filters-inside-the-build` — Does an in-sample filter inside the Build (trade floor, PF, Ret/DD, WinningPct) breed better strategies than none?
 - `is-optimisation-vs-oos` — How well does in-sample optimisation rank the out-of-sample results?
 - `is-proxies-top-decile` — Which in-sample metrics separate survivors inside the top Sharpe decile?
@@ -40,6 +41,7 @@
 - `post-selection-bias` — Why is any statistic measured after filtering on the OOS biased?
 - `psr-dsr-two-conventions-jsharpe` — How does our PSR/MinTRL/DSR convention differ from the jsharpe package?
 - `random-entry-nulls` — Why does a monkey verdict depend more on the statistic than on the null?
+- `rank-score-rar-is-a-mean` — Why does the portfolio rank search (M3) pick a single strategy, K = 1, on a pool of similar strategies?
 - `regime-atr-is-lagged-one-day` — Must I shift engines.regimes.regime.atr by a day before using it?
 - `research-lessons` — What lessons apply to stop-fill simulations, range restriction and p-values at large n?
 - `robustness-monte-carlo` — How much drawdown should an account be sized for versus the backtest, and how many sims?
@@ -50,6 +52,7 @@
 - `stageb-selector-p-reads-high` — Which P(pass) of stage B's winner may be reported — the one that chose it, or a re-draw?
 - `step6-floor-vs-step8-yield` — How does the step-6 trades-per-year floor affect step-8 yield and Pass counts?
 - `surfaces-jaccard-lift-flip-null` — Do the surfaces' Jaccard lift, or «the mother inside the other markets' top decile», beat a zero-edge market?
+- `t1-optimistic-on-near-clones` — Why does stage B's trade bootstrap T1 give a higher P(pass) than D, T2 and stage A, and is it a bug?
 - `trade-filter-parameter-space` — What does a trade-count floor remove in parameter space before a surface is fitted?
 - `trial-count-half-rule` — When does trials.independent over-count the independent trials of a family?
 - `wfc-top-persistence-sign-flip-null` — Does the WFC's top persistence, or its median OOS/IS Sharpe ratio, tell a zero-edge variant family from a real one?

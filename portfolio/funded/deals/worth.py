@@ -1,9 +1,10 @@
-"""Is a deal worth it? Every universe plan priced per $1,000 of funded account at the zero-edge floor, with and without today's deals.
+"""Is a deal worth it? Every universe plan at the zero-edge floor and, where a bank table exists, at the bank's expected value — list price against today's.
 
-Provisional: the floor is what a funded account costs when the strategy has no edge (barrier
-geometry, P(+a before −b) = b/(a+b) per phase), per $1,000 of its size because payouts scale with
-size, net of the passing account's fee when the firm refunds it. The expected value with the owner's
-strategies is encargo 33's.
+The floor is what a funded account costs when the strategy has no edge (barrier geometry,
+P(+a before −b) = b/(a+b) per phase), per $1,000 of its size because payouts scale with size, net
+of the passing account's fee when the firm refunds it. The expected value with the owner's
+portfolio is read off the latest bank table of each plan (`portfolio.funded.sim.run`, encargo 33);
+a plan without one is judged by the floor alone, and the output says so.
 """
 
 import argparse
@@ -13,6 +14,7 @@ import urllib.request
 
 from portfolio.funded.catalog.schema import connect
 from portfolio.funded.deals import book
+from portfolio.funded.decide import tables
 
 ECB = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
 
@@ -67,6 +69,62 @@ def board(db: sqlite3.Connection, rate: float) -> list[dict]:
     return rows
 
 
+def with_edge(rows: list[dict], per_plan: dict[str, dict]) -> list[dict]:
+    """Each board plan that has a bank table: its EV at list price and at today's, per re-buy policy.
+
+    A cheaper fee moves the bank's EV by the saving on every purchase that is not refunded. Under
+    `none` (one purchase) that is exact; under `same_plan` it holds the number of purchases of
+    the list-price simulation, though a cheaper fee lets the same cash buy more of them.
+
+    Args:
+        rows: `board()`'s rows.
+        per_plan: `tables.per_plan()`'s dict.
+
+    Returns:
+        One dict per plan × policy: `plan`, `rebuy`, `ev_list`, `ev_se`, `ev_now`, `delta`,
+        `own` (the table's portfolio was chosen for this plan), `adjusted` (it came from a
+        relaxed run), `table` (the bank folder's name), `h`.
+    """
+    out = []
+    for r in rows:
+        entry = per_plan.get(r["plan"])
+        for t in entry["rows"] if entry else []:
+            manifest = entry["table"]["manifest"]
+            # ponytail: purchases held at the list-price run; re-simulate at the deal price if a same_plan verdict hangs on it
+            delta = (r["list"] - r["now"]) * (t["purchases"] - t["refunds"])
+            out.append({"plan": r["plan"], "rebuy": t["rebuy"], "ev_list": t["ev"], "ev_se": t["ev_se"],
+                        "ev_now": t["ev"] + delta, "delta": delta, "own": entry["own"],
+                        "adjusted": bool((manifest["paths"].get("source") or {}).get("relaxed")),
+                        "table": entry["table"]["folder"].name,
+                        "h": manifest["config"]["owner"]["haircut_decides"]})
+    return out
+
+
+def _edge_lines(judged: list[dict], touched: set[str] | None) -> list[str]:
+    """The bank's EV per plan and policy as printed, or the explicit fallback when no table exists."""
+    if not judged:
+        return ["\nSin tabla de caja de ningún plan (portfolio.funded.sim.run no ha corrido sobre una cartera, o "
+                "faltan decisiones tuyas para correrlo): el juicio de arriba es SÓLO el suelo sin edge, no el "
+                "valor esperado con tus estrategias."]
+    out = [f"\nCon tu cartera — VE_banco de la última tabla de caja de cada plan, con h = {judged[0]['h']:.0%} "
+           f"(los planes que no salen aquí no tienen tabla: para ellos vale sólo el suelo de arriba):",
+           f"{'plan':28} {'recompra':9} {'VE lista ± e.t. $':>18} {'VE hoy $':>9} {'Δ oferta':>9}  ¿positivo hoy?"]
+    for j in judged:
+        if touched is not None and j["plan"] not in touched:
+            continue
+        verdict = "sí" if j["ev_now"] > 0 else "no"
+        if (j["ev_list"] > 0) != (j["ev_now"] > 0):
+            verdict += " — LA OFERTA LO CAMBIA"
+        notes = ", ".join(n for n, on in (("cartera de otro plan", not j["own"]),
+                                          ("AJUSTADO: no es un resultado", j["adjusted"])) if on)
+        out.append(f"{j['plan']:28} {j['rebuy']:9} {'%+.1f ± %.1f' % (j['ev_list'], j['ev_se']):>18} "
+                   f"{j['ev_now']:+9.1f} {j['delta']:+9.1f}  {verdict}{' (' + notes + ')' if notes else ''}")
+    out.append(f"Tabla(s): {', '.join(sorted({j['table'] for j in judged}))}. Δ = ahorro por compra no "
+               f"reembolsada; exacto con «none», con «same_plan» a compras constantes. La compra la decide "
+               f"python3 -m portfolio.funded.decide.run.")
+    return out
+
+
 def _money(value: float | None) -> str:
     """A cost for the table, '?' when the floor is unknown."""
     return f"{value:,.1f}" if value else "?"
@@ -92,6 +150,7 @@ def main() -> None:
         prob = f"{'≤' if r['bound'] else ''}{r['p']:.0%}" if r["p"] else "?"
         print(f"{r['plan']:28} {r['list']:8.2f} {r['now']:8.2f} {prob:>8} {_money(r['per_pass_list']):>10} "
               f"{_money(r['per_pass_now']):>8} {before[r['plan']]:>3} → {after[r['plan']]:<3} {r['refund']}")
+    touched = None
     if args.deal_id:
         firm, kind, code = db.execute("SELECT firm, kind, code FROM deals WHERE deal_id = ?",
                                       (args.deal_id,)).fetchone()
@@ -105,8 +164,8 @@ def main() -> None:
                       f"puesto {before[r['plan']]} → {after[r['plan']]} de {len(rows)}")
     print("\n$/k = cuotas esperadas por cada 1.000 $ de cuenta aprobada si la estrategia no tuviera edge, "
           "netas del reembolso de la cuota de la cuenta que aprueba (sólo si la empresa lo da y llega el "
-          "primer cobro). Barreras sin límite diario ni costes; ≤ = trailing, peor aún. Un edge real lo "
-          "baja. El veredicto con tus estrategias es el VE del encargo 33, aún por construir.")
+          "primer cobro). Barreras sin límite diario ni costes; ≤ = trailing, peor aún. Un edge real lo baja.")
+    print("\n".join(_edge_lines(with_edge(rows, tables.per_plan(tables.runs())), touched)))
 
 
 if __name__ == "__main__":

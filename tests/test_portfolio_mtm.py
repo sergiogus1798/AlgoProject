@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core.paths import archive_dir  # noqa: E402
 from core import barstore  # noqa: E402
 from engines.market import calibrate  # noqa: E402
-from portfolio.common.construct.equity import blocks, days, excursions, paths  # noqa: E402
+from portfolio.common.construct.equity import blocks, clock, days, excursions, paths  # noqa: E402
 
 POINT_VALUE = 1000.0
 
@@ -126,7 +126,14 @@ def check_blocks_and_carry() -> None:
 
 
 def check_golden() -> None:
-    """The archived USDJPY strategy: MAE/MFE licence shares, and Σ daily = Σ Profit/Loss."""
+    """The archived USDJPY strategy on ITS OWN inputs: MAE/MFE licence shares, Σ daily = Σ Profit/Loss.
+
+    Archived 2026-09-28 on `USDJPY_DukasM1_the5ers`, stamped in Asia/Jerusalem, at a point value
+    of 653.92 and no commission. Since 2026-10-01 the feed is `USDJPY_M1` in EETUS: on today's
+    bars as they are, the MAE share falls to 0.943 — the clock alone, 🔬 2026-10-04
+    (`knowhow/export/archived-trades-vs-reclocked-bars.md`). The current feed's golden is
+    `test_portfolio_golden_current.py`.
+    """
     root = archive_dir() / "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
     runs = sorted(root.glob("*/harvest/trades.parquet")) if root.exists() else []
     if not runs:
@@ -136,9 +143,10 @@ def check_golden() -> None:
     trades = pd.read_parquet(runs[0])
     feed = "USDJPY_M1"
     t0 = time.perf_counter()
-    bars = barstore.source(feed, ["High", "Low", "Close"])
+    bars = clock.reclock(barstore.source(feed, ["High", "Low", "Close"]), "EETUS", "Asia/Jerusalem")
     t_read = time.perf_counter() - t0
     value = calibrate.point_value(trades)
+    assert abs(value - 653.92) < 0.01, f"the archive's own point value is 653.92, measured {value}"
 
     t0 = time.perf_counter()
     path = paths.minute_path(trades, bars, value)

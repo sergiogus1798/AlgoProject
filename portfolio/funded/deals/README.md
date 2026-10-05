@@ -18,9 +18,14 @@ Every day at 10:00 `bin/daily-funding-deals.sh` runs three stages:
 
 `worth` answers "is it worth it" **provisionally**: every universe plan's expected fees per $1,000
 of funded account at the zero-edge floor (barrier geometry), net of the passing account's refunded
-fee, at list price and with today's deals, and how far the deal moves each plan in that ranking. It
-says nothing about the owner's strategies: that is encargo 33's expected value, and `worth` is where
-it plugs in when it exists. FTMO's euros are converted at the ECB's daily rate.
+fee, at list price and with today's deals, and how far the deal moves each plan in that ranking. That
+floor says nothing about the owner's strategies, so below it `worth` prints **the bank's expected
+value** of each universe plan from the newest bank table that covers it
+(`portfolio.funded.decide.tables`, encargo 33 §7.7): EV at list, EV with today's price —
+`ΔEV = (list − now) × (purchases − refunds)`, exact under re-buy `none`, a constant-purchases
+approximation under `same_plan` — and whether the deal turns a negative EV positive. **With no bank
+table it says so in one explicit line and the judgement stays the zero-edge floor** — it never
+fails for lack of one, so the daily flow is untouched. FTMO's euros are converted at the ECB's daily rate.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
@@ -29,4 +34,4 @@ it plugs in when it exists. FTMO's euros are converted at the ECB's daily rate.
 | `scan.py` | stage 1 | `python3 -m portfolio.funded.deals.scan` | sites → `deals` |
 | `add.py` | put a found code on the books, checked with the firm where it can be | `python3 -m portfolio.funded.deals.add hantec DROP50 --source <url>` | code → `deals` |
 | `notify.py` | stage 3: one desktop notification per new deal in the universe | `python3 -m portfolio.funded.deals.notify` | `deals` → notification |
-| `worth.py` | the provisional verdict: the universe ranked per funded $1,000, list vs today | `python3 -m portfolio.funded.deals.worth [deal_id]` | `deals` + catalogue → stdout |
+| `worth.py` | the universe ranked per funded $1,000 at the zero-edge floor, list vs today, then each plan's bank EV at both prices when a bank table exists | `python3 -m portfolio.funded.deals.worth [deal_id]` | `deals` + catalogue + bank tables → stdout |

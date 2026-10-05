@@ -82,6 +82,7 @@ The surfaces' routers, each a package with its own README, all listed in `router
 | `create/` | `/api/create/options`, `POST /api/create/template`, `POST /api/create/project` | the chat's draft brief (`templates/drafts/`), the library's templates and `assets/symbols/`; queues the headless author (`CLAUDE_BIN -p`) or `core.assets` + `builder --workflow` on the conductor lane — never starts SQX |
 | `archive/` | `/api/archive/list`, `/api/archive/show` | PORTFOLIOS: `AlgoData/archive/` through `core.archive.read` — each archived strategy with its versions, the ledger count frozen that day, and what one version holds and skipped; files only, no job, no SQX |
 | `mt5bridge/` | `/api/mt5bridge/options`, `/runs`, `/result`, `POST /preflight`, `POST /verify` | MT5 BRIDGE › Verificar: `AlgoData/mt5/verify/<run>/{run.json,result.json}`, the archive and `strategy.locate` for the `.sqx`, `core.paths.MT5_ACCOUNTS`; the preflight is `advance.busy` on the conductor plus an open MT5 terminal refused; `verify` queues `python3 -m mt5.verify.run` on the conductor lane, labelled `mt5verify` — a launcher for `winddown` and `launch.queued` |
+| `portfolios/` | `/api/portfolios/state`, `/module`, `/pair`, `/preflight`, `POST /run`, `POST /pool` | PORTFOLIOS: each module's tabs read from `AlgoData/portfolio/`, and «Calcular» as one background job of the real `portfolio.*` command (Python only, never SQX); the two verdicts that may open oos2 need a confirmation nonce — `portfolios/README.md` |
 
 ## Who may call the daemon, and what a launcher needs
 

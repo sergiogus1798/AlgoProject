@@ -47,7 +47,7 @@ tested.
  archive ──▶ POOL (declared, frozen) ──▶ [encargo 33: prohibitions per firm] ──▶ admissible pool
     │                                                                               │
     ▼                                                                               ▼
- UNIVERSE: daily MTM per strategy ─▶ PAIRS (build) ─▶ SEARCH (build) ─▶ WEIGHTS (build) ─▶ VERDICT (oos1+oos2)
+ UNIVERSE: daily MTM per strategy ─▶ PAIRS (build) ─▶ SEARCH (build) ─▶ WEIGHTS (build) ─▶ VERDICT (oos1, then oos2)
                                                                                           │
                                                         hand-off package ◀────────────────┘ ──▶ encargo 33
 ```
@@ -65,6 +65,15 @@ The engine never decides what a firm forbids. It reads a file encargo 33 writes:
 for `real/`), drops every identity listed for that firm **before** the pool is hashed, and reports
 `n_pool`, `n_prohibited` and the rows in its result. `n_in` of the search's ledger row is the pool
 **after** prohibitions. Until encargo 33 exists, the file is hand-written for the tests only.
+
+Built 2026-10-05 (M6, `inputs/pool.py`): `--firm` on `universe`, `real` and `funded` (there it must
+be the plan's firm; `funded_b` inherits it from the stage-A manifest). A strategy that breaks a
+plan's rule is **dropped from that plan's pool, never modified** (owner, encargo 33 §6.2). The firm
+and plan are part of the config fingerprint, so a filtered pool has its own universe folder. Format
+for whoever writes the file: `AlgoData/portfolio/prohibitions/README.md`. 🤔 **Reading of the `plan`
+column, the owner's to confirm:** empty = every plan of the firm; otherwise a prefix of the plan key
+(`hantec:express` covers every size of Express); a command given a firm and no plan (`universe`,
+`real`) applies every row of the firm.
 
 ### 2.2 Hand-off OUT — what encargo 33 receives
 
@@ -113,17 +122,29 @@ portfolio/common/construct/
     trials.py        the evaluated-combination log and the ledger rows (§6)
   weights/           MODELLING — the pluggable submodule
     __init__.py      REGISTRY {name: fn}; fn(build_daily: DataFrame, cfg) -> dict[identity, float]
-    equal.py         1/K — the only method now, the mandatory baseline
-  verdict/           INFERENCE — reads oos1+oos2, never imports search/ or equity/
+    equal.py         1/K — the only method `weights.method` accepts, the mandatory baseline
+    risk_parity.py, min_variance.py, hrp.py   M8: 1/σ · minimum variance on the Ledoit-Wolf covariance · HRP (AF's bug fixed)
+  verdict/           INFERENCE — judges oos1, then oos2 once; never imports search/ or equity/
     metrics.py       window-robust metrics of one daily P&L path (§5.5)
-    null.py          the reference the portfolio must beat (Q11)
-    decide.py        the decision sentence, with its cost next to its gain
+    null.py          the reference the portfolio must beat on oos1 (Q11)
+    deflate.py       the oos2 reading: Sharpe against the expected maximum of the ledger's N
+    hold.py          did the diversification hold out of sample
+    decide.py, decide_real.py   the decision and its sentence, with the cost next to the gain
   contract/          the result as the contract's blocks, tabs in Spanish
     tabs.py, words.py
-  run.py             orchestrator: pool → universe → pairs → search → weights → verdict
-  many.py            many.run(inputs, cfg) -> contract dict (a portfolio run is a population result)
-  report.py          THE COMMAND: python3 -m portfolio.common.construct.report --pool <name> [--firm F] [--set k=v]
+  real.py            the real path's search on build (M3); no `run.py` was built — `report.py` orchestrates
+  segment.py         a combination's path on one segment at build's weights (what the verdicts read)
+  oos2.py            the ONE read of oos2 per pool: stored reading / refusal / gate / deflation / ledger row
+  many.py            many.run(inputs, cfg) -> contract dict: the real verdict (a portfolio run is a population result)
+  funded_verdict.py  the funded verdict (F4): oos1 against the selected null, then oos2.py
+  handoff.py         the hand-off package of §2.2 in <run>/handoff/
+  report.py          THE COMMAND: python3 -m portfolio.common.construct.report --pool <name> [--firm F] [--run <run>] [--set k=v]
   candidates.py      THE COMMAND: python3 -m portfolio.common.construct.candidates — prints archive commands, runs none (M0)
+  walkforward.py     M8, pure: the test windows of oos1, each method's fixed and re-estimated path, the paired bootstrap against equal
+  wf.py              THE COMMAND (M8): python3 -m portfolio.common.construct.wf --pool <name> (--run <run> | --members a,b,c) --set wf.confidence=…
+  incubation/        M9: the record of a judged portfolio, the row contract of its fresh days, the reading against the band
+    record.py, band.py   register/load/validate · the band of equal-length windows of its own history
+    run.py           THE COMMAND (M9): python3 -m portfolio.common.construct.incubation.run register|read — incubation is NOT running
 ```
 
 **Imports, checked against `docs/DEPENDENCIES.md` and `CODESTYLE.md` §5:**
@@ -274,7 +295,8 @@ it `matrix.slice(build)` and nothing else (test §8.4).
   expected increment is written before the verdict reads anything, the realised one after. AF's
   exhaustive subset enumeration is the fallback for small candidate lists (≤ 20), under the same
   rule. **Q16 = (c), provisional, 2026-10-04**; the increment's two readings are a required knob
-  (`real.increment`). Built as `real.py --base <run folder>`, not `--mode admission`.
+  (`real.increment`: `finite`, owner 2026-10-05). Built as `real.py --base <run folder>`, not
+  `--mode admission`; several candidates enter in sequence (owner, 2026-10-05; §12, reading 4).
 - **Exhaustive** when the admissible space is small (`C(clique count)` ≤ `exhaustive_max`), as AF's
   `sampler.py` does; otherwise GA.
 
@@ -286,12 +308,24 @@ build only. The README's table says, per method, what it holds fixed and what it
 (`CODESTYLE.md` §5). What a weight multiplies — the P&L as SQX sized it, or a risk-normalised P&L —
 is **Q5**. Later methods (min-variance with Ledoit-Wolf shrinkage, risk parity, HRP with AF's bug
 fixed, Carver handcrafting) are one file and one row each, and must beat equal weight on OOS through
-AF's `wf.py` weight walk-forward (port as the test) before they may be selected — milestone M8, which
-waits for `DECISIONS.md` #5 (rebalancing).
+AF's `wf.py` weight walk-forward (port as the test) before they may be selected — milestone M8.
 
-### 5.5 Verdict — oos1 + oos2 together
+**Built 2026-10-05** (`wf.py`, `walkforward.py`; chapter 103). Risk parity (1/σ), minimum variance
+on the Ledoit-Wolf (2004) covariance and HRP are in `REGISTRY`; **Carver handcrafting is not built**
+(its grouping thresholds and its diversification multiplier are undecided). Estimation is `build`,
+the test is `oos1` only (`oos2` is never opened), cut in windows of `wf.step_years` from oos1's
+first day. Each method walks two arms — `fixed` (the weights of the first window held, what #5
+allows) and `reestimated` (estimated again at each window) — and each arm is compared with equal
+weight on the same days by the difference of daily Sharpe, its interval from a paired stationary
+bootstrap; «beats» = the whole interval above 0 at `wf.confidence`, which has no default. The
+sentence is one of three: a method beats equal fixed (a candidate for the owner), **only
+re-estimated (the condition that reverses #5)**, or none (equal stays). The command changes no
+knob: `config.load` refuses `weights.method` other than `equal`. Each run is a look at oos1 and
+writes its ledger rows (§6).
 
-`verdict/metrics.py` on the chosen portfolio's daily P&L over oos1+oos2 (compendium §9.1): RAR%
+### 5.5 Verdict — oos1, then oos2 once
+
+`verdict/metrics.py` on the chosen portfolio's daily P&L (compendium §9.1): RAR%
 (annualised slope of a regression of cumulative equity) and R-cubed, each recomputed on windows
 shifted 0-3 months at each end, min and median kept; gain-to-pain; mean annual DD; time under water;
 longest flat period; P(losing year); Sharpe on daily MTM. 🤔 RAR% on log equity needs a capital base;
@@ -301,33 +335,41 @@ until Q5 fixes the unit, compute it on cumulative P&L and say so.
 what the portfolio is compared against and what counts as passing is **Q11 = (d), decided
 2026-10-04** — two readings, in this order, each a ledger row at step 27:
 
-1. **`oos1`: the selected null.** 10,000 admissible random portfolios (`verdict.null_draws`) drawn
-   by the same search from the same pool and graph, each measured on `oos1` exactly as the chosen
-   one. Pass: the chosen portfolio's figure is above their 95th percentile. The random benchmark is
-   read here and never on `build` (owner, 2026-09-29).
-2. **`oos2`: the deflated Sharpe, once.** Only if 1 passed. The chosen portfolio's daily Sharpe on
-   `oos2`, deflated with the ledger's N and the pooled spread of every combination's build Sharpe
-   (`search/trials_real.py` stores them for this); pass: > 0. **One read, of one portfolio**:
-   `gate.allow(27, "oos2", symbol)` for every member's symbol first, the row written whether it
-   passes or not, and no second portfolio of the same pool may ever read it. **Specified, not
-   executed** — nothing has read `oos2`.
+1. **`oos1`: the selected null** (`many.oos1`). 10,000 (`real.null_draws`) random admissible
+   combinations **of the chosen portfolio's size K** — cliques of the same build graph, no search
+   per draw (owner, 2026-10-05, R6; `search/random_k.py`) — each measured on `oos1` exactly as the
+   chosen one. The figure is the **rank score**: the four metrics of §5.4, each one's worst over the
+   shifted starts, mean signed rank inside {the draws + the chosen one}. Pass: above the draws' 95th
+   percentile (`real.null_percentile`). **With fewer than 20 admissible combinations of size K the
+   chosen one is ≥ 5 % of the draws and the bar is its own figure**: the verdict is «NO SE PUEDE
+   JUZGAR», no percentile is printed and oos2 stays shut (K = 1 always ends here unless the pool has
+   over 20 members). The random benchmark is read here and never on `build` (owner, 2026-09-29).
+2. **`oos2`: the deflated Sharpe, once** (`oos2.read`). Only if 1 passed. The chosen portfolio's
+   daily Sharpe on `oos2` minus the expected maximum of N trials (`ledger.trials.deflated`), N =
+   **`ledger.trials.overall`, the whole project** (owner, 2026-10-05, R7), spread = the build
+   Sharpes of the pool's study (`search/trials_real.py` stores them for this); pass: > 0.
+   **One read, of one portfolio**: the pool's study is asked first whether a step-27 `oos2` row
+   exists (same members → the stored reading, never recomputed; other members → refused), then
+   `gate.allow(27, "oos2", symbol)` for every member's symbol, and the row is written whether it
+   passes or not. 🔬 Executed only on synthetic pools and on a **pseudo** oos2 in the test root.
 
 After that the segment is spent: what validates the combination from then on is live incubation
 (M9). Whatever the reference,
 the sentence carries the cost next to the gain, e.g. «la cartera de 6 (de 41 admisibles, 30.000
 combinaciones probadas) gana a 6 al azar del mismo pool en el 92 % de las extracciones sobre
-oos1+oos2; DD medio anual −4,1 % contra −6,3 %; deja fuera 35 estrategias». `DECISIONS.md` #12
+oos1; DD medio anual −4,1 % contra −6,3 %; deja fuera 35 estrategias». `DECISIONS.md` #12
 (an "on probation" label) changes only the words available here.
 
 **Did the diversification hold out of sample?** The pairwise measures of §5.2 (and effective N,
-calm and stress) recomputed for the chosen members on oos1+oos2, every pair, same thresholds. It
+calm and stress) recomputed for the chosen members on the segments the verdict opened, every pair,
+same thresholds. It
 chooses nothing and removes nothing — the combination is fixed before it runs; a pair over threshold
 out of sample is a part of the verdict block with its own state. This takes libros §5.9 «Clones»
 (redundancy shows up in OOS daily P&L) without letting OOS choose the combination. Owner delegated
 the call, 2026-09-30: choosing on OOS would turn the verdict into Katz's 625 % portfolio (libros §3.3
 «bifurcaciones») — the OOS drawdown and co-loss the verdict reads are the very numbers an OOS filter
-would have optimised. Whether a pair over threshold here fails the portfolio or only warns is part of
-Q11.
+would have optimised. A pair over threshold here is reported and fails nothing (built so; the
+owner's to change).
 
 Also reported, not judged: the deflated Sharpe of the chosen portfolio with N from the ledger
 (`ledger.trials.accumulated` + `deflated`), and the build→OOS retention of the objective.
@@ -354,7 +396,9 @@ the owner changes it, shown as such in the drawer; "—" = blocked, no default, 
 | section.key | default | who |
 |---|---|---|
 | `pool.name` | — (argument) | the run |
-| `pool.firm` | null (no prohibitions) | the run |
+| `pool.firm` · `pool.plan` | null (no prohibitions) | the run (`--firm`, `--plan`) |
+| `funded.open_risk_cap` | — | **R5**, owner 2026-10-05 the rule; the fraction is open (§12, reading 5) |
+| `stageb.shared_of` · `stageb.t1_gap` | `larger` · — | owner, 2026-10-05 · open |
 | `equity.source` | — | **Q3** |
 | `equity.clock` | — | **Q4** |
 | `equity.reconcile_max_trades` | 3 | SQX's noise floor, `sqx/variants/curves.py:20` 🔬 |
@@ -368,17 +412,23 @@ the owner changes it, shown as such in the drawer; "—" = blocked, no default, 
 | `pairs.stress_days` · `pairs.stress_quantile` · `pairs.stress_filter` | —, 0.05, — | **Q15**; 5 % from the compendium §4.2 |
 | `pairs.relaxed` | {} | the run; any entry sets `relaxed: true` |
 | `real.account` | 10,000 (with `funded.min_lot`, `funded.risk_grid`: the floor that sizes K) | **`DECISIONS.md` #2**, Council 2026-10-04 |
-| `real.losing_year` · `real.rank_reference` | — (required: `calendar`\|`rolling` · `seeds`) | **Q10 = (a)**, Council 2026-10-04; the two readings are the owner's |
+| `real.losing_year` · `real.rank_reference` | `calendar` · `seeds` | **Q10 = (a)**, Council 2026-10-04; the readings: owner, 2026-10-05 |
+| `real.shift_months` · `real.shift_minimum` | 3 · `metric` | owner, 2026-10-05 (the shifted minimum; each metric's worst over the windows, ranked once — §12, reading 3) |
 | `search.mode` | `ga` (`ga` · `admission` · `exhaustive`) | this plan |
 | `search.exhaustive_max` | 100,000 combinations | 🤔 this plan — above it the GA runs |
 | `search.seeds` | 300 (= the population) | AF |
 | `search.ga.{population, generations, elite, tournament, crossover, mutation, stagnation}` | 300, 100, 0.20, 4, 0.80, 0.40, 10 | AF |
-| `real.increment` | — (required for `--base`: `finite`\|`marginal`) | **Q16 = (c)**, provisional, Council 2026-10-04 |
-| `weights.method` | `equal` | owner, 2026-09-29 (the only one) |
+| `real.increment` | `finite`; candidates enter in sequence | **Q16 = (c)**, provisional, Council 2026-10-04; the reading and the sequence: owner, 2026-10-05 |
+| `weights.method` | `equal` | owner, 2026-09-29 (the only one); `weights/` since 2026-10-05 |
 | `weights.unit` | — | **Q5** |
+| `wf.lookback_years` · `wf.step_years` | 0 (everything before the window, so the first estimation is the whole `build`) · 3 | 🤔 this plan (AF: 6) · AF |
+| `wf.confidence` · `wf.bootstrap_draws` | **null** — the command refuses · 2,000 | **open** · 🤔 this plan |
+| `incubation.figure` · `incubation.history` · `incubation.band` | **null** · **null** · **null** — `register` refuses (`pnl`\|`sharpe` · the segments whose windows make the band · two percentiles) | **open** |
 | `verdict.reference` · `verdict.pass` | oos1: 95th percentile of the selected null · oos2: deflated Sharpe > 0, one read | **Q11 = (d)**, Council 2026-10-04 |
 | `verdict.shift_months` | 3 (windows shifted 0-3 months at each end) | compendium §9.1 |
-| `verdict.null_draws` | 10,000 on the real path (Q11 d); the funded F4 null keeps its own 100 searches | Council 2026-10-04 |
+| `real.null_draws` · `real.null_percentile` | 10,000 · 95 (`ledger:portfolio.verdict.*`): random admissible combinations of the chosen K, on oos1 | Council 2026-10-04; owner 2026-10-05 (R6) |
+| `verdict.null_draws` | 100 whole searches — the funded F4 null, its own knob | 🤔 this plan |
+| `verdict.pass_measure` · `verdict.pass_percentile` | `mc_p` · **null** (the funded bar on oos1; unset = «SIN CRITERIO (falta verdict.pass_percentile)») | owner 2026-10-05 · **open** |
 
 No seed knob: every stochastic step draws fresh entropy and records the root it drew, as
 `engines/nulls` does (owner, 2026-09-29, `knowhow/eng/nulls-seed-fresh-per-run.md`).
@@ -415,8 +465,8 @@ copied verbatim.
 | `generator/genetic.py` (1037) | **rewrite** | keep greedy seeding, operators, stagnation on the absolute score, per-pair cache; drop the whole-history selection (leak), the min-max fitness, the soft DD check; split into `greedy.py` + `genetic.py` |
 | `generator/parallel.py` (74) | **port as is** | SIGINT-safe process pool; 🤔 only if the GA needs processes at all (evaluation is µs) |
 | `generator/pipeline.py` (448) | **rewrite** | its shape becomes `run.py`; the auto-rerun with offset seed goes (each rerun is a trial) |
-| `generator/weighting.py` (324) | **port `equal` now; the rest at M8, fixed** | HRP bug (§1) fixed; min-variance gets shrinkage; its silent `except → risk_parity` fallback goes |
-| `generator/wf.py` (294) | **port at M8** | the weight walk-forward: the test a non-equal method must pass |
+| `generator/weighting.py` (324) | **ported** (`equal` at M4; risk parity, min-variance, HRP at M8, 2026-10-05) | HRP bug (§1) fixed; min-variance gets shrinkage; its silent `except → risk_parity` fallback goes |
+| `generator/wf.py` (294) | **ported at M8, 2026-10-05** (`walkforward.py`, `wf.py`) | the weight walk-forward: the test a non-equal method must pass |
 | `generator/fitness.py` (88) | **drop** | [AF✗] pool-relative 0.8/0.1/0.1; replaced by `objective.py` (Q10) |
 | `generator/scaler.py` (129) | **drop** | sizing to the exact worst day: encargo 33's, and [AF✗] |
 | `generator/validator.py` (131) | **drop** | DD on rescaled closed P&L: encargo 33's |
@@ -481,7 +531,7 @@ with `python3 tools/depmap.py && python3 tools/checks.py`. Chapter numbers are t
 | **M7** | the «Construir» tab and `ui/daemon/portfolios/`; screenshots | M5 | `71-app-portfolios` extended |
 | **M8** | more weight methods + AF `wf.py` walk-forward as the gate against equal | — (#5: never rebalance, 2026-10-04) | — |
 
-**Status, 2026-09-30** (`portfolio/EXECUTION.md`):
+**Status, 2026-10-05** (first built 2026-09-30, `portfolio/EXECUTION.md`; M3-M9, F3-F5 added 2026-10-05):
 
 | # | status |
 |---|---|
@@ -489,12 +539,30 @@ with `python3 tools/depmap.py && python3 tools/checks.py`. Chapter numbers are t
 | M1 | ✅ `equity/*` + `universe.py` (chapter 78): M1 rebuild licensed on the archived strategy (MAE 100 %, MFE 99.9 %, SQX's daily low 100 % of 3,983 days), EET daily matrix, firm-clock day tables and M5 blocks; parallel, 48 strategies in 15 s at 57 GB |
 | M2 | ✅ `pairs/*`, `search/admissible.py`, the screen in `universe.py`: 500 strategies' 124,750 pairs in 30 s on 48 cores, graph in 1 s |
 | F1 | ✅ `portfolio/funded/rules/`: 11 plans ≤ 10k, one-tick known answers, numba sweep = reference (2,500 × 2,500 in 3 ms) |
-| F2 | ✅ engine (chapter 79): fixed-risk sizing from the step-24 stop, stage-A objective on 48 cores (~1,500-1,860 combinations/s, 1.3 GB), greedy + GA, ledger rows (pool study + each member's), the command. ⏳ its first real run: no archived strategy carries the step-24 stop yet |
+| F2 | ✅ engine (chapter 79): fixed-risk sizing from the step-24 stop, stage-A objective on 48 cores (~1,500-1,860 combinations/s, 1.3 GB), greedy + GA, ledger rows (pool study + each member's), the command. 🔬 2026-10-05 first run on `Test_nikkei_ref` (**test root, pair thresholds 0.90, cap passed with `--set`: not a result**): `hantec:express:10000:USD` 4,500 evaluations = 58 distinct of 103 admissible, best K = 3 at r 0.6 %, P(pass) 0.338, 13.5 s, 1.1 GB; `ftmo:2step:10000:USD` K = 3 at 0.8 %, P 0.166. The open-risk cap (R5) is built and required; the stop is read (`tests/test_portfolio_stopread.py`: the same combination with every stop ×2 goes from P 0.339 to 0.102 at 1 %). ⏳ the cap's fraction; a run on a real pool at 0.30 |
+| M6 | ✅ 2026-10-05: prohibitions end to end with a hand-written TEST file (§2.1), `--firm`, members named; `tests/test_portfolio_pool.py`. The real folder holds the format only |
+| F3 | ✅ engine (chapter 87); 🔬 2026-10-05 first real run on the stage-A run above (test root, not a result): 11 diverse finalists × 10 risks in 18.5 s, 1.8 GB; winner K = 4 at 0.6 %: D 0.317, T1 0.359, T2 0.302 (decides), 0.303 on fresh paths, against stage A's 0.328; Politis-White block 1-3 days. The three agree with stage A within 0.03 and T1 is optimistic on near-clones by construction (`knowhow/research/t1-optimistic-on-near-clones.md`). Perf target `portfolio.stage_b`: 4.0 s. ⏳ `stageb.t1_gap`; no verdict without oos2 |
 | M0 pool | ✅ 2026-10-04: the 30 mothers of `Test_USDJPY_donchianUpperCrossUp_H1` carried to 16.5 are archived (`AlgoData/archive/`, step 16.5, from the files in the data root with `--sqx`: the project is on no install). None carries the step-24 stop; no pool is declared yet (§12, open reading 8) |
-| M3 | ✅ 2026-10-04, code and known answers (`tests/test_portfolio_ranks.py`, chapter 96): `verdict/metrics.py`, `search/objective.py`, `exhaustive.py`, `choose.py`, `admission.py`, `trials_real.py`, the command `real.py`. ⏳ its first real run: a declared pool whose members carry the step-24 stop, and the owner's word on `real.losing_year` |
-| M4 | equal weight is inside M3's objective (the mean of the members' paths); no `weights/` folder until a second method exists (M8) |
-| M5 | 📐 specified 2026-10-04 (§5.5, Q11 d), **not built and not run**: the oos1 null waits on open readings 6-7; the oos2 read is one read, the owner's ledger guards it |
-| M8 | unblocked by #5 (never rebalance); not started |
+| M3 | ✅ 2026-10-04, code and known answers (`tests/test_portfolio_ranks.py`, chapter 96): `verdict/metrics.py`, `search/objective.py`, `exhaustive.py`, `choose.py`, `admission.py`, `trials_real.py`, the command `real.py`. The owner's readings of 2026-10-05 are in (R1, R2, R4, the shifted minimum, admission in sequence; `tests/test_portfolio_planted.py`, `_segments.py`, `_ledger.py`). 🔬 2026-10-05 first run on a declared pool with the step-24 stop — `Test_nikkei_ref`, **test root, pair thresholds relaxed to 0.90, not a result**: 103 admissible combinations, K = 1 chosen (ten near-clones). `real.shift_minimum: metric` set by the owner the same day. ⏳ a run on a real pool at 0.30 |
+| M4 | ✅ 2026-10-05: `weights/` with `equal` as the one method (`REGISTRY`, `matrix`), read by `search/objective.py`; the Nikkei test run's `search.parquet` is byte-identical before and after the extraction; `tests/test_portfolio_weights.py`. The unit a weight multiplies is the fixed-risk P&L (§12, F2 unit of risk: «for funded and for everything») |
+| M5 | ✅ 2026-10-05, built (chapter 101; `tests/test_portfolio_verdict_real.py`): `report.py`, `many.py`, `oos2.py`, `segment.py`, `handoff.py`, `contract/`, `verdict/deflate.py`, `decide_real.py`, `search/random_k.py`; thresholds `ledger:portfolio.verdict.null_draws` 10,000 and `.null_percentile` 95. Known answers: a planted trio beats the bar, a random trio of noise passes 5.0 % of 200 seeds, oos2 read once then stored / refused. 🔬 `Test_nikkei_ref`, **test root, relaxed, pseudo oos2, not a result**: K = 1 → «NO SE PUEDE JUZGAR» (10 admissible singles, the chosen one 9.8 % of the draws); a forced K = 3 → percentile 91.6 % of 37 trios, «NO PASA (oos1)»; 3.6-12 s. The real path's oos2 read has run on synthetic pools only. ⏳ the owner's readings in §12, 6-7; a pool with ≥ 20 admissible combinations of the chosen K |
+| F4 | ✅ 2026-10-05, rebuilt on Q11 (d) (`funded_verdict.py`, chapter 87; `tests/test_portfolio_verdict.py`, `_verdict_funded.py`): oos1 alone on `mc_p`, then `oos2.read`. **The bar `verdict.pass_percentile` is unset**: the committed verdict is «SIN CRITERIO (falta verdict.pass_percentile)». 🔬 same test run as F3, 20 null searches (a test value; ~22 s per null search idle, 35-39 s busy, 2.0 GB): winner K = 2 at the 35th percentile on `mc_p` → SIN CRITERIO; with a TEST bar of 0.0 the pseudo oos2 was read once — Sharpe 0.0015 against 0.0273 expected from N = 383,600 (the test ledger), «NO PASA (oos2)» — and the next run, whose stage B chose another winner, was refused the segment. **Stage B's winner changed in each of three runs** (finalists within 0.003 of each other) |
+| F5 | ✅ 2026-10-05, built (`funded/sim/`, `funded/decide/`, `deals.worth`; chapters 88, 102; `tests/test_funded_{sim,bank,price,decide}.py`). 🔬 the F4 test run's portfolio (K = 4, Hantec Express 10k), **test root, relaxed, test owner inputs, not a result**: 10,000 × 504 days, OOS edge 20 % of build's; 2,610 configurations in 86 s; the plan the portfolio was built for loses (EV at h = 50 % −71 ± 1 $ without re-buy, −176 with); the same paths on FTMO 2-Step and 1-Step 10k without re-buy give +10 to +14 ± 3-4 $ on two seeds, not eligible (another plan's portfolio); `none` beats `same_plan` on every plan; decision «ninguno». ⏳ the owner's inputs still `null` (`sim/README.md`), the horizon, and a funded verdict that passes — `verdict.pass_percentile` unset blocks any purchase |
+| M8 | ✅ 2026-10-05, built (`weights/{risk_parity,min_variance,hrp}.py`, `walkforward.py`, `wf.py`; chapter 103; `tests/test_portfolio_weights.py`, `tests/test_portfolio_wf.py`). Known answers: 1/σ by hand, Ledoit-Wolf intensity, HRP invariant to column order, a planted volatility swap read «only re-estimated» by the three methods, noise read «none». 🔬 `Test_nikkei_ref`, **test root, relaxed 0.90, pseudo oos2, `wf.confidence=0.95` and `wf.step_years=1` as test values — a code test, not a finding**: forced K=3 and the 5-clique, 518 oos1 days in 2 windows, no arm beats equal (K=3 best: min-variance re-estimated +0.0029 [−0.0047, +0.0102] of daily Sharpe; K=5: every method below equal). `weights.method` stays `equal`; #5 not reversed. Not built: Carver handcrafting. Open: §12 readings 10-11 |
+| M9 | **contract and reading built 2026-10-05; incubation is NOT running** (`incubation/`; chapter 104; `tests/test_portfolio_incubation.py`). Built: the frozen record of a judged portfolio, the row contract of its fresh days (the hand-off's `daily.parquet` columns, segment `incubation`, source `paper`\|`live`), the validator, the reading against the band of equal-length windows of its own history, one ledger row per reading. 🔬 on synthetic «live» rows only (test root). **Not built**: what produces the rows (the monthly SQX retest — a worker job with the owner's go-ahead — and the live-trade conversion), any stopping rule, the size ramp. 🔬 the band is not its nominal level: a [5, 95] band from ~10 independent windows flags a healthy portfolio 9.7 % of the time, and 12 monthly readings flag it at least once in 24 % (`knowhow/research/incubation-band-is-not-its-nominal-level.md`). Open: §12 reading 12 |
+| M7 | ✅ 2026-10-05, built: `ui/daemon/portfolios/` (readers, `commands.plan` with the Spanish refusals and the oos2 confirmation, `bankjob`) and `ui/desktop/portfolios/` (board, module pages, calc, matrix, databank; the archive viewer stays as rail entry «Archivo»); `tests/test_ui_portfolios.py`. «Calcular» really ran on the test root (universe, real search, stage A, bank chain); the verdict (`report`) and `funded_b` buttons were exercised only up to preflight, dialog and nonce with the job stubbed. Not built: column-set chooser, checkboxes in «Carteras», segment shading; the null histogram lacks the p95 line |
+
+
+**Verification level, 2026-10-05 — read before trusting any row above.** Every piece is built, has a
+known-answer test, and ran on the **relaxed `Test_nikkei_ref` pool under the test root**
+(`AlgoData/portfolio/_test/root`, pair thresholds 0.90, a pseudo oos2 cut from the tail, test values
+for the null knobs). **No real result exists**: no real pool has been run, the real root holds no
+portfolio run, ledger row or bank table, a real `oos2` has not been read, and incubation is not
+running. Knobs still `null` (the real run refuses): `funded.open_risk_cap`, `stageb.t1_gap`,
+`verdict.pass_percentile`, `wf.confidence`, `incubation.figure/history/band`, and in `funded/sim/config.yaml`
+`owner.eurusd`, `payout_cushion`, `tax_rate`, `payout_fee`, `p_payout_denied`, `p_firm_closes_year`,
+`gaps.hantec_endurance_payout_days`, `gaps.hantec_express_floor_after_payout`,
+`gaps.ftmo_1step_floor_after_payout`. Unfixed findings: `OPEN.md` #104.
 
 **The funded path (§14.5) runs F1-F5 after M0-M2 and before M3-M8** — the owner's priority is
 funded accounts first (2026-09-30).
@@ -513,8 +581,8 @@ verdict line, and each would be one more trial in the ledger.
 
 ## 11 · Risks and traps
 
-- **No oos2 in the archive** (§1). Without Q2 answered the verdict cannot run on the development
-  pool; building M5 against oos1 alone would silently change what "verdict" means.
+- **No oos2 in the archive** (§1). On a pool without oos2 days the verdict can pass oos1 and then
+  says «SIN VEREDICTO» for want of oos2 — it never calls an oos1 pass a verdict.
 - **Mixed calendars** (§1 segments). An FX strategy is in oos1 in 2018-2019 while an index strategy
   is still in build: a naive calendar cut leaks one into the other (Q1).
 - **Different feed clocks.** Infinox EET and the5ers Asia/Jerusalem change DST on different dates;
@@ -671,35 +739,78 @@ comunidad, hacedlo todo»; five members, confidence-weighted, threshold 2/3; opt
 **Readings the Council's answers leave open** — built as a required knob with no default where the
 code needed one (rule 11), otherwise not built; each is the owner's:
 
-1. **Q10, ranks among what.** A rank needs a set. Exhaustive search: the whole admissible space (no
-   choice). GA: `real.rank_reference` — only `seeds` (the greedy starting cliques, fixed before
-   generation 0) is built; ranking inside each generation is AlphaForge's flaw and is not offered.
-2. **Q10, P(losing year).** `real.losing_year`: `calendar` (share of calendar years of `build` that
-   lose — ~10 values, many ties) or `rolling` (share of every 252-day window). A bootstrap reading
-   (libros §5.6) is not built: it puts noise inside the score.
-3. **Q10, the window.** The compendium's «windows shifted 0-3 months, min/median» is written for the
-   verdict (§5.5). The search scores the whole `build` window once; whether it should score the
-   shifted minimum instead is open.
-4. **Q16, «Euler increment».** `real.increment`: `finite` (Sharpe of the K+1 at equal weight minus
-   the Sharpe of the K) or `marginal` (the derivative at zero weight, SR_c − ρ·SR_base). They
-   disagree on a volatile weak candidate (`tests/test_portfolio_ranks.py`). And several candidates
-   at once: today each is judged against the same fixed base; admitting in sequence is not built.
-5. **#2, the cap.** The minimum lot gives each member a floor risk per trade; nothing in the plan or
-   in `portfolio/funded/` says how much risk may be open at once, so K is today bounded only by the
-   admissible graph, and the run prints K × floor for the owner to see. A per-symbol cap does not
-   exist anywhere.
-6. **Q11, the oos1 figure.** Which figure is compared with the null's 95th percentile (the rank
-   score needs its own reference set; the daily Sharpe; each of the four metrics), and whether «drawn
-   by the same search» means random admissible combinations of the same sizes (cheap) or the winner
-   of a whole search run on each random draw (the F4 reading, 10,000 searches).
-7. **Q11, the ledger's N on oos2.** The N of the pool's study (`PORTFOLIO_<pool>_construct`), of
-   every member's study added up, or `ledger.trials.overall` (the whole project).
+1. **Q10, ranks among what. DECIDED — owner, 2026-10-05: `real.rank_reference: seeds`.**
+   Exhaustive search: the whole admissible space (no choice). GA: the greedy starting cliques,
+   fixed before generation 0; ranking inside each generation is AlphaForge's flaw and is not offered.
+2. **Q10, P(losing year). DECIDED — owner, 2026-10-05: `real.losing_year: calendar`** (share of
+   calendar years of `build` that lose — ~10 values, many ties). `rolling` (every 252-day window)
+   stays built behind the knob. A bootstrap reading (libros §5.6) is not built.
+3. **Q10, the window. DECIDED — owner, 2026-10-05: the shifted minimum.** The search scores each
+   combination on `build` with its **start** shifted 0, 1, 2 and 3 months (`real.shift_months: 3`,
+   `search/objective.py::measure`) and keeps the minimum; the whole-window-once reading is gone.
+   **The minimum of what — DECIDED, owner, 2026-10-05: `real.shift_minimum: metric`**: each metric
+   takes its worst value over the four windows and the ranks are taken once (what §5.5 and the
+   compendium §9.1 say of RAR % and R-cubed). The other reading (ranks inside each window, the
+   lowest rank score kept) was not chosen and is no longer built.
+4. **Q16, «Euler increment». DECIDED — owner, 2026-10-05: `real.increment: finite`** (Sharpe of
+   the K+1 at equal weight minus the Sharpe of the K; `marginal` stays built behind the knob), **and
+   several candidates enter IN SEQUENCE**: the best increment among the admissible enters, the base
+   grows, the rest are re-judged — pair filters against every member of the new base, increment
+   against the new base — until none is admissible with increment > 0 (`search/admission.py::sequence`;
+   every judgement of every round is a ledger trial). Q16 (c) itself stays provisional.
+5. **#2, the cap. RULE DECIDED — owner, 2026-10-05 (R5); the fraction is OPEN.** In the funded
+   search the risk open at once is capped per plan: K × risk per trade ≤ `funded.open_risk_cap` ×
+   the plan's maximum daily loss (`search/stagea.py::open_cap`, `capped`). The knob ships `null`
+   and `funded`/`funded_b` refuse to start without it. No per-symbol cap. 🤔 **Two readings the
+   code took, the owner's to confirm:** «the plan's maximum daily loss» is the catalogue's
+   `daily_loss` as a fraction of the **initial** balance whatever the plan's daily basis (balance,
+   or the higher of balance and equity), and the trailing maximum loss plays no part; with one risk
+   for every phase (stage A) the tightest challenge phase binds, with a risk per phase (stage B)
+   each phase has its own. The real path (`real.py`) still has no cap: K × floor is printed.
+6. **Q11, the oos1 figure. DECIDED — owner, 2026-10-05 (R6):** the **rank score** (the four
+   signed ranks of the search, taken among the 10,000 draws plus the chosen one), and the null is
+   **random admissible combinations of the same size K**, no search per draw. 🤔 Readings the code
+   took, his to confirm: «same size» is the chosen portfolio's K; each metric is its worst over the
+   shifted starts on oos1, as on build; under 20 admissible combinations of that K the answer is
+   «no se puede juzgar», neither pass nor fail.
+7. **Q11, the ledger's N on oos2. DECIDED — owner, 2026-10-05 (R7): `ledger.trials.overall`**, the
+   whole project. 🤔 Readings the code took: «deflated Sharpe > 0» is the Sharpe minus the expected
+   maximum of N trials (DSR > 0.5), not DSR > 0.95; the spread is the pool's own build Sharpes, so a
+   pool searched by the funded path alone cannot be deflated and its oos2 stays shut; the read is
+   one **per pool** — the real path and every funded plan of one pool share it; `overall` counts a
+   portfolio search once in the pool's study and once more in each member's (Q12 b), so N is
+   inflated by the portfolio rows.
 8. **M0, the pool's extent.** `candidates.py` lists 182,464 archive commands today, 182,220 of them
    step-8 survivors of the `Test_Calib_*` calibration populations (and 182,045 with an empty
    `--family`). Archived: Q2's reading only. Whether calibration survivors, `XAUUSD` (237 + 214
    near) and the other `Test_*` projects belong to the development pool is not decided.
+9. **Q10/R1, the GA's reference saturates** (found 2026-10-05, 🔬 on the planted pool of
+   `tests/portfolio_planted.py` forced to the GA). `seeds` are greedy MAXIMAL cliques; a combination
+   that beats every seed on the four metrics scores 1.0, every better one scores 1.0 too, and the GA
+   stops on stagnation without ever trying the small K where the best portfolio was ({A, B}; it
+   returned {A, B, N0, N1, N3}). The exhaustive search is not affected and is what runs up to
+   `real.exhaustive_max` = 100,000 combinations (~70 s with the four windows). Whether to raise
+   that limit (1,000,000 ≈ 11 min on one core), or to rank the GA in another fixed set (random
+   cliques of every size), is the owner's — nothing changed.
+10. **M8, what «beats equal weight» means** (built 2026-10-05). `wf.confidence` has no default
+   and the command refuses without it. Built on this plan's reading, each the owner's to move:
+   the figure is the difference of daily Sharpe (not the Q10 rank score); no correction for the
+   number of arms compared (6 two-sided intervals at 95 % find a «winner» by chance up to one run in seven,
+   1 − 0.975⁶); the test is oos1 alone, so every run is one more look at it; `wf.lookback_years`
+   0 (expanding) against AF's rolling 6; the reversal condition of #5 is read literally — the
+   re-estimated arm beats equal and the fixed arm does not.
+11. **M8, which methods.** Risk parity, minimum variance and HRP are built; Carver handcrafting
+   is not (its correlation groups and its diversification multiplier need thresholds nobody set).
+12. **M9, everything the plan does not fix.** `incubation.figure`, `.history` and `.band` are
+   null. Not decided and not built: how many flagged readings retire a portfolio or a member, how
+   long incubation lasts, the correction for reading every month, the size ramp, whether a
+   portfolio whose verdict failed may be registered (today it may; the verdict is written in the
+   record), and whether each reading takes the whole fresh stretch since registration (built) or
+   only the last month.
 
-Still open besides those: encargo 33 §6.4 and §6.7.
+Encargo 33 §6.4 (re-buy: both policies, compared) and the haircuts of §6.7 (0-100 % in quarters, 50 % decides) were
+answered by the owner on 2026-10-05 (`funded/sim/config.yaml`). Still open besides those: the unseen data of §6.7
+(`DECISIONS.md` #11) and what encargo 33 §6 lists under «Lo que la primera corrida real dejó abierto».
 
 Open decisions and where they block: `DECISIONS.md` #6 → encargo 33, feeds M6's file. (#2, #5, #12
 decided 2026-10-04; #10 on 2026-09-30.)
@@ -826,7 +937,7 @@ gives the `python` lane many.
 |---|---|---|---|---|---|
 | **A · search** | engine `objective.py` `funded` | every combination the GA evaluates, one plan | the plan's rule machine run from **every start day of `build`** on the real path (start-date distribution, libros §5.6, compendium §7.2 — no resampling), on unit-risk daily `close` and the **M5 joint** `low`/`high`, over a grid of ~10 risk levels → best empirical P(pass) | M5 joint 20 ms 🔬 + rules ~2.5 M steps ≈ 2-5 ms 🤔 | ~30,000 per plan → ~12 min on one core, ~1 min on 12 |
 | **B · shortlist** | engine | top ~50 **diverse** combinations of stage A per plan (no two sharing more than half their members) | **exact** intraday `low`/`high` from M1; rule machine on **joint-daily block bootstrap** (~20 days) **and** trade bootstrap (owner: MC of every kind, `portfolio/CLAUDE.md`), 10,000 paths × risk grid → P(pass) per phase, time to pass, which rule fails | ~10,000 × 250 × 10 ≈ 25 M steps ≈ 50-100 ms | 50 per plan → seconds |
-| **verdict** | engine `verdict/` | stage B's winner per plan | the same measures on `oos1`+`oos2`, against the selected null (the same search run on random admissible combinations), plus «did the diversification hold» | — | 1 per plan |
+| **verdict** | engine `verdict/` | stage B's winner per plan | the same measures on `oos1` alone, against the selected null (the same search run on random admissible combinations), then the deflated Sharpe on `oos2` once (Q11 d), plus «did the diversification hold» | — | 1 per plan |
 | **C · bank** | encargo 33 `funded/sim/` | the verdict's winner per plan, and the monkey | **one long bootstrapped path per draw; accounts are bought one after another on it** — each new account starts the day the previous failed or paid out, so consecutive accounts share the regime and fail together as they would (encargo 33 §1.3); fees, rebuys, phases, payouts every N days, add-ons, haircut `h`, the 1,000 € budget; outputs the bank's EV, its drawdown, P(first payout) | ~10,000 draws × ~1,250 days ≈ 12 M steps ≈ 30-60 ms per (plan, add-on set, risk per phase) | ~9 plans × add-on sets × risk grid → minutes |
 
 Why stage A uses the real path and not a Monte Carlo: it must rank 30,000 candidates on one segment
@@ -891,7 +1002,9 @@ Cost 🤔 (from the measured 0.022 s to lay one member's 2,094 trades over 14 ye
 **challenge horizon** (~6 months), not 14 years, so ~10 ms per 10-member path at M5 → 10,000 paths
 ≈ 100 s per combination → the 50 finalists of a plan ≈ 80 min on one core, ~7 min on 12. Stage C
 (years-long bank paths over plans × add-ons × risk) is heavier: there the sweep runs on D and the
-top configurations are re-run on T1/T2. A perf target measures it before F3 ships.
+top configurations are re-run on T1/T2. A perf target measures it before F3 ships —
+🔬 `portfolio.stage_b`, 2026-10-05: one 5-member combination, 11 path sets × 10,000 paths × 100
+risk settings, 4.0 s wall (46 s CPU), 670 MB.
 
 ### 14.4 What moves
 
@@ -919,7 +1032,7 @@ The engine still comes first; encargo 33's rule functions move up because stage 
 | **F1** | encargo 33 deliverable 2: the rule machine as pure functions, FTMO and Hantec ≤ 10k USD plans, known-answer paths that break each rule by one tick | 33 §6 questions 1-3 (catalogue gaps, Friday close / news, risk per phase) |
 | **F2** | stage A: `objective.py` `funded`, K up to the lot-feasible maximum | F1, M2 |
 | **F3** | stage B: exact joint intraday, both bootstraps, shortlist | F2 |
-| **F4** | funded verdict on `oos1`+`oos2` with the selected null (M5 with the funded yardstick) | F3, Q11 |
+| **F4** | funded verdict: `oos1` against the selected null, then `oos2` once (M5 with the funded yardstick; `funded_verdict.py`) | F3, Q11; the bar `verdict.pass_percentile` is the owner's, unset |
 | **F5** | encargo 33 stage C: the bank simulation, the monkey, add-ons, `h`, the table of 33 §4 | F4 |
 | M3-M8 | the real-account path | as §9 |
-| **M9** | **what validates the combination once `oos2` is spent — live incubation (Council, 2026-10-04).** Edge A for the chosen portfolio: each month, the members retested in SQX on the bars after `oos2` (a worker job — the owner's go-ahead each time) and the portfolio's paper-OOS row in the ledger, read against the band of equal-length windows of its own history (libros §3.5). **One retest, two readers**: the same fresh-stretch retest feeds the planned `weeklyReconciler` (`OPEN.md` #78 — live trades vs the SQX backtest of the same days), and the §14.2 rebuild applied to the live trades on the broker's M1 gives live floating vs backtest floating — the reconciliation of MAE, not only of P&L | a chosen portfolio; the owner's go-ahead |
+| **M9** | **what validates the combination once `oos2` is spent — live incubation (Council, 2026-10-04).** Edge A for the chosen portfolio: each month, the members retested in SQX on the bars after `oos2` (a worker job — the owner's go-ahead each time) and the portfolio's paper-OOS row in the ledger, read against the band of equal-length windows of its own history (libros §3.5). **One retest, two readers**: the same fresh-stretch retest feeds the planned `weeklyReconciler` (`OPEN.md` #78 — live trades vs the SQX backtest of the same days), and the §14.2 rebuild applied to the live trades on the broker's M1 gives live floating vs backtest floating — the reconciliation of MAE, not only of P&L. **2026-10-05: the record, the row contract and the reading are built (`incubation/`); nothing produces rows yet — incubation is not running** | a chosen portfolio; the owner's go-ahead |

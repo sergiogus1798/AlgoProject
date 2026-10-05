@@ -1,5 +1,7 @@
 """Every path and port in the project. The only module allowed to know where things live."""
 
+import os
+import sys
 from pathlib import Path
 
 import yaml
@@ -13,7 +15,10 @@ _CFG = yaml.safe_load(_FILE.read_text(encoding="utf-8"))
 
 MASTER = Path(_CFG["sqx_master"]).expanduser()
 WORKER = Path(_CFG["sqx_worker"]).expanduser()
-DATA = Path(_CFG["data_root"]).expanduser()
+_TEST = os.environ.get("ALGO_DATA_ROOT")   # every write of this process goes to a test root (`portfolio/testroot.py`)
+DATA = Path(_TEST or _CFG["data_root"]).expanduser()
+if _TEST:
+    print(f"RAÍZ DE PRUEBA: {DATA} — lo que salga de aquí no es un resultado", file=sys.stderr)
 # Optional: no browser is needed unless the manual is rendered to PDF.
 BROWSER = Path(_CFG.get("browser", "")).expanduser()
 WORKER_PORT = _CFG["worker_port"]
@@ -223,11 +228,7 @@ def feed_quality_dir(feed: str = "") -> Path:
 
 
 def perf_dir() -> Path:
-    """Where the performance catalogue keeps its history.
-
-    Returns:
-        Path under the data root. One row per measurement, appended forever, never rewritten.
-    """
+    """The performance catalogue's history: one row per measurement, appended, never rewritten."""
     return DATA / "profiling"
 
 
@@ -238,9 +239,8 @@ def ledger_file(study: str) -> Path:
         study: Study id, e.g. "XAUUSD_M30_DirectionalMomentum".
 
     Returns:
-        A `.jsonl` under the data root, one line per search, appended and never rewritten.
-        It lives with the data and not in the repository because it grows with every run
-        and because it is a record of what happened on this machine, not source.
+        A `.jsonl` under the data root, one line per search, appended and never rewritten:
+        a record of what happened on this machine, not source.
     """
     return DATA / "ledger" / f"{study}.jsonl"
 

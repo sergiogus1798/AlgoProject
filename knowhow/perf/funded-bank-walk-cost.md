@@ -14,3 +14,7 @@ one `low` copy per haircut (200 MB each) and the monkey's.
 `bank.simulate`, median of 7, synthetic paths, 2026-10-02 13:57: Hantec Express 10k 132.7 ms (1 thread)
 / 69.2 (8); FTMO 2-step 115.7 / 31.0; Hantec Endurance 115.4 / 42.1. Full-scale command:
 `python3 -m portfolio.funded.sim.run --paths <10k×1250.npz> … --set compute.threads=8`.
+2026-10-05, first run on a real portfolio's path set (10,000 × 504 days, both re-buy policies, 2,610
+configurations + monkey + 5 haircuts), other jobs on the machine: 86-88 s wall, 368 s CPU = 33 ms per
+configuration. `frompool` (drawing the paths, T2@2, K = 4): 11.6 s. Perf target `portfolio.funded_bank`.
+

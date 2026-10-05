@@ -5,9 +5,11 @@ Written 2026-09-30 by the orchestrating session, after the owner answered the qu
 against which signature**. Interfaces here are frozen: an agent implements them and never invents a
 cross-module contract. A change to a signature is made here first, by the orchestrator.
 
-Milestones run in this session: **M0 (code only), M1 (with §14.2), M2, F1**. Not run, and why:
-M3/M4/M5/M8 (Q10, Q11, Q16, `DECISIONS.md` #2 real side, #5); F2 (needs the definition of a
-strategy's unit of risk — asked when F1 and M2 are verified); F3-F5 (after F2); M6-M7, M9 (after M5).
+Milestones run in this session (2026-09-30): **M0 (code only), M1 (with §14.2), M2, F1**.
+Status 2026-10-05: **every milestone M0-M9 and F1-F5 is built**, with known-answer tests, and has run on
+the relaxed `Test_nikkei_ref` pool under the test root only (`PLAN.md` §9). Not built: Carver
+handcrafting (M8), anything that produces incubation rows (M9, not running). **No real result
+exists**: no real pool run, nothing in the real root, knobs still `null` listed in `PLAN.md` §9.
 The development pool itself waits for `Test_USDJPY_donchianUpperCrossUp_H1` to finish (Q2).
 
 ## 0 · Written by the orchestrator before any agent starts

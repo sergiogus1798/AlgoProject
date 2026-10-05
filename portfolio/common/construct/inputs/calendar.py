@@ -44,6 +44,21 @@ def combine(segments_by_symbol: dict[str, dict]) -> dict:
     return calendar
 
 
+def pseudo(calendar: dict, start: str) -> dict:
+    """A test calendar: oos1 cut at a date, its tail renamed oos2 — the real oos2 is not in it.
+
+    Args:
+        calendar: `combine()`'s result.
+        start: First day of the pseudo oos2, inside oos1 (`calendar.pseudo_oos2_from`).
+
+    Returns:
+        The calendar with `oos1` ending the day before and `oos2` running to oos1's own end.
+        It exercises the code that reads a later segment; it is never a holdout.
+    """
+    cut, (lo, hi) = pd.Timestamp(start), calendar["oos1"]
+    return {**calendar, "oos1": (lo, cut - pd.Timedelta(days=1)), "oos2": (cut, hi)}
+
+
 def portfolio(symbols: list[str]) -> dict:
     """The portfolio calendar over a list of assets, read from `assets/_policy.yaml`."""
     return combine({symbol: assetdata.load(symbol)["segments"] for symbol in symbols})
