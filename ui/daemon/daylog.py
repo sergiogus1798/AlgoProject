@@ -66,7 +66,14 @@ def log_lines(install: Path) -> tuple[list[str], float]:
                 data = fh.read(size - read)
             cut = data.rfind(b"\n") + 1        # a line SQX is still writing waits
             read += cut
-            fresh = [line for line in data[:cut].decode("utf-8", errors="replace").splitlines()
+            data = data[:cut]
+            # `trim` drops what precedes the last start, so it is not even decoded: 🔬
+            # 2026-10-05, a 452 MB day cost every new process 20 s of regex to keep 300 lines.
+            at = max(data.rfind(b"Starting project '"), data.rfind(b"Creating project log at '"))
+            first = data.rfind(b"\n", 0, max(at, 0)) + 1
+            if at >= 0 and STARTING.search(data[first:data.find(b"\n", at)].decode("utf-8", "replace")):
+                data, kept = data[first:], []
+            fresh = [line for line in data.decode("utf-8", errors="replace").splitlines()
                      if STARTING.search(line) or PROGRESS.search(line) or PERCENT.search(line)]
             kept = trim(kept + fresh)
         _SEEN[f] = (read, kept)
