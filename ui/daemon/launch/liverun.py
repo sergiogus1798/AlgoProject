@@ -18,10 +18,12 @@ from ui.daemon.launch import run as launcher
 from ui.daemon.launch.run import assets, compare, counts, record, snapshot
 
 
-def export(role: str) -> None:
-    """The export a stop would run, on the files the sync just wrote (`afterrun --live`)."""
-    subprocess.run([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live"],
-                   cwd=ROOT, check=True)
+def export(role: str, project: str) -> None:
+    """The export a stop would run, on the files the sync just wrote (`afterrun --live`), of this
+    project alone: unmarked, it read every project of the install at each step (🔬 2026-10-05,
+    ~60 s a step and another session's databanks re-exported)."""
+    subprocess.run([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live",
+                    "--project", project], cwd=ROOT, check=True)
 
 
 def execute(pre: dict, project: str) -> dict:
@@ -84,7 +86,7 @@ def execute(pre: dict, project: str) -> dict:
         if t["type"] == preflight.BUILD:
             print(record(pre, project, after.get(t["output"], 0)), flush=True)
             print(steprows.log_build(project, held.parent / "log", began), flush=True)
-    export(role)
+    export(role, project)
     moved = {t["title"]: (before.get(t["output"], 0), after.get(t["output"], 0)) for t in chosen}
     say(100, " · ".join(f"«{t}»: {n0} → {n1}" for t, (n0, n1) in moved.items()))
     return moved

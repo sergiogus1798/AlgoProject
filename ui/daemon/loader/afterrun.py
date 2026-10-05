@@ -108,7 +108,7 @@ def extras(project: str, role: str, top: Path) -> list[tuple[str, list[str]]]:
     return out
 
 
-def export(role: str) -> int:
+def export(role: str, only: str | None = None) -> int:
     """Run what the loader would queue for each databank of the project that ran; return the
     failures. The launcher marks that project (`workerguard.mark`) and the mark outlives this
     export; a stop with no mark (a skill's own start) exports the whole install as before.
@@ -116,7 +116,7 @@ def export(role: str) -> int:
     project that nobody had run — owner: «qué coño estás exportando».
     """
     top = progress.installs()[role]
-    ran = (workerguard.marked(role) or {}).get("project")
+    ran = only or (workerguard.marked(role) or {}).get("project")
     failed = 0
     for project, databank in banks(top, ran):
         todo = state.commands(project, state.status(project, databank))
@@ -154,6 +154,7 @@ def main() -> None:
     ap.add_argument("--role", required=True, help="el install que se acaba de parar")
     ap.add_argument("--live", action="store_true",
                     help="sesión GUI arriba con sus databanks recién sincronizados (sqx.projects.live)")
+    ap.add_argument("--project", help="solo este proyecto: el que acaba de correr en la sesión viva")
     a = ap.parse_args()
     if os.environ.get("ALGO_NO_EXPORT") == "1" or a.role == "master":
         return
@@ -164,7 +165,7 @@ def main() -> None:
     mark.write_text(str(os.getpid()))
     try:
         with phase("export"):
-            failed = export(a.role)
+            failed = export(a.role, a.project)
     finally:
         mark.unlink(missing_ok=True)
     print(f"export tras la parada del {a.role}: " + (f"{failed} pieza(s) fallaron" if failed
