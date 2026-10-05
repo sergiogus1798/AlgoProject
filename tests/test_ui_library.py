@@ -65,12 +65,14 @@ def test_zones_load_when_first_opened() -> None:
 def test_a_family_leads_to_its_templates() -> None:
     """Clicking a family's name opens Plantillas with only that family's templates."""
     SHELL.open_zone("Cobertura")
-    SHELL.coverage.on_row(SHELL.coverage.data["rows"].index("breakout"))
-    assert on_screen() == "Plantillas" and SHELL.catalogue.family.currentData() == "breakout"
+    # Whichever family the library holds today: `breakout` went empty on 2026-10-05.
+    family = client.get("templates")["templates"][0]["archetype"]
+    SHELL.coverage.on_row(SHELL.coverage.data["rows"].index(family))
+    assert on_screen() == "Plantillas" and SHELL.catalogue.family.currentData() == family
     listed = [SHELL.catalogue.list.item(i).data(Qt.UserRole)
               for i in range(SHELL.catalogue.list.count())]
     by_name = {t["name"]: t for t in SHELL.catalogue.data["templates"]}
-    assert listed and all(by_name[n]["archetype"] == "breakout" for n in listed)
+    assert listed and all(by_name[n]["archetype"] == family for n in listed)
     assert SHELL.nav["Cobertura"].isChecked() and SHELL.library.isVisibleTo(SHELL)
     assert SHELL.library.currentIndex() == LIBRARY.index("Plantillas")
 

@@ -6,7 +6,7 @@ tag: 📓  date: 2026-10-02  see: authoring/simple-strategy-build-xml, authoring
 # «What to build» counts conditions PER RANDOM HOLE in a template, and per strategy only in a Simple Strategy
 Owner, 2026-10-02, «fundamental»: **at most 2 entry and 2 exit conditions per strategy, never 3**. `buildrules.what_to_build` writes it on every Build (`minConditions`…`maxExitConditions` of `<Chart name="Main chart">`):
 - **Simple Strategy:** `complexity.simple` of `assets/_build.yaml` as written — entry **1..2**, exit **1..2** (the exit condition is mandatory ONLY here; owner, same day).
-- **Template:** per side `0..(2 − fixed)`; a side with nothing fixed keeps its floor (entry 1, exit 0 — a template's exit stays optional, 0..2). `builder` refuses two free holes on a side, and fixed + hole > 2.
+- **Template:** per side `0..(2 − fixed)`; a side with nothing fixed keeps its floor (entry 1, exit 0 — a template's exit stays optional, 0..2). `builder` refuses two free holes on a side, and fixed + hole > 2. The same condition written twice on a side — same blocks, different periods (double ROC, double Vortex) — counts as ONE fixed (owner, 2026-10-05; `holes._count`), so those templates carry 3 entry conditions. 🔬 on the library's `doubleROC*`/`doubleVortex*`.
 - ⚠️ SQX has ONE range for every hole of a side, and this project's "fixed" condition is itself a hole bound to a one-item group (`sqx/templates/build.py`), filled by that same range: such a side is written **1..1** (idea + exactly one random), never 0..1, which could leave the idea out. 🤔 untested in SQX either way.
 - Count it on the project, never assume: `python3 -m sqx.projects.buildingblocks --project P --count`.
 

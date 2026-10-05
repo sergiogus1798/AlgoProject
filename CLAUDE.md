@@ -103,7 +103,8 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     `RandomCondition` is filled with — so 1 fixed + 1 hole means «What to build» **0..1** on that
     side, 2 fixed means **no hole**, and never two holes on one side (0..4 conditions) — a template
     of nothing but random holes is a Simple Strategy: use that, no template is authored. Same for
-    exits. → `knowhow/authoring/condition-count-simple-vs-template.md`
+    exits. The same condition twice on two periods (double ROC, double Vortex) counts as one
+    fixed (owner, 2026-10-05). → `knowhow/authoring/condition-count-simple-vs-template.md`
 15. **What the builder may draw** (owner, 2026-10-02): **no time blocks** — BarTime, CurrentTime, day
     of week / of month, any block that reads the clock or the calendar — in any study or generation;
     **no stop/limit entry blocks** while orders are at market (they only work with stop or limit
