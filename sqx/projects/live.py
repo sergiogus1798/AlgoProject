@@ -202,11 +202,15 @@ def sync(role: str, project: str, banks: list[str] | None = None) -> dict[str, i
     with ThreadPoolExecutor(len(stale) or 1) as pool:
         list(pool.map(lambda b: call(role, "synchronizeDatabank", projectName=project,
                                      databankName=b), stale))
-    for _ in range(600):
-        if all(_files(project, role, b) == mem[b] for b in banks):
+    last, idle = None, 0
+    while idle < 600:       # 120 s with no new file: a 15,000-strategy flush takes longer than that
+        disk = {b: _files(project, role, b) for b in banks}
+        if all(disk[b] == mem[b] for b in banks):
             return mem
+        idle, last = (0, disk) if disk != last else (idle + 1, last)
         time.sleep(0.2)
-    raise SystemExit(f"{project}: el disco no llegó a igualar la memoria en 120 s: {mem}")
+    raise SystemExit(f"{project}: el disco se paró 120 s sin igualar la memoria: disco {disk}, "
+                     f"memoria {({b: mem[b] for b in banks})}")
 
 
 def cut(role: str, project: str, bank: str, names: list[str]) -> int:
