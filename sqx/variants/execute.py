@@ -234,7 +234,7 @@ def main() -> None:
                                   "n_on_disk": on_disk})
     finally:
         if ours:
-            worker.stop(cfg["role"])
+            worker.stop(cfg["role"], export=False)   # only WFC databanks: `afterrun.skipped`
 
     print(f"PROGRESS 100 {done} variantes x {len(legs)} tramos, "
           + ", ".join(f"{h['segment']}: {h['n_on_disk']} en disco" for h in harvest),

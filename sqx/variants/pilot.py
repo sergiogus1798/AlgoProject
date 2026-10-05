@@ -67,7 +67,7 @@ def run(design: dict, settings: dict, live: dict[str, list[float]], work: Path, 
         rows = united.per_result(bank, legs[0]["segment"], lambda *_a: None)
     finally:
         if ours:
-            worker.stop(cfg["role"])
+            worker.stop(cfg["role"], export=False)   # as `execute`: nothing to export
 
     main_rows = rows[rows["market"] == legmod.MAIN].copy()
     main_rows["variant_id"] = main_rows["variant_id"].str.replace(COLLISION, "", regex=True)
