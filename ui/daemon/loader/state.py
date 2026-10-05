@@ -5,7 +5,8 @@ import hashlib
 import re
 import struct
 import zipfile
-from functools import lru_cache
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import get_context
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -75,13 +76,11 @@ def _canonical(node: ElementTree.Element, h: "hashlib._Hash") -> None:
         h.update(part)
 
 
-@lru_cache(maxsize=8192)
-def _entries(path: str, mtime_ns: int, size: int) -> str:
-    """One .sqx's content: its zip entries' CRCs, every XML entry read order-free (mtime and
-    size are only the cache key). Not only settings.xml: each result's
-    `MonteCarloManipulation_Results.xml` holds the same hash-ordered SQStats, so a bare start
-    and stop moved all 571 fingerprints of a build databank and every stop re-exported it
-    (🔬 2026-10-01)."""
+def _entries(key: tuple[str, int, int]) -> str:
+    """One .sqx's content (`key`: path, mtime_ns, size): its zip entries' CRCs, every XML entry
+    read order-free — each result's `MonteCarloManipulation_Results.xml` holds hash-ordered
+    SQStats too, and a bare stop moved all 571 fingerprints of a databank (🔬 2026-10-01)."""
+    path, mtime_ns, size = key
     try:
         with zipfile.ZipFile(path) as z:
             parts = []
@@ -102,11 +101,11 @@ POOL_FROM = 20                                           # fewer files than this
 
 
 def fingerprint(sources: list[Path]) -> str:
-    """What the strategies are, not when SQX last saved them.
+    """What the strategies are, not when SQX last saved them: its periodic sync rewrites every
+    .sqx with the save time on each zip entry and nothing else changed.
 
-    SQX rewrites every .sqx of every databank on its periodic sync, stamping each zip entry
-    with the save time, so a file's date moved with nothing in it changed. The zip's own
-    index carries each entry's CRC; settings.xml is read, its statistics in name order.
+    One file is ~19 ms, so 10,000 cost 3.2 min per call, several calls per stop
+    (🔬 2026-10-04): the files not seen at their current date are read on every core.
     """
     files = sorted(sources)
     keys = [(str(f), st.st_mtime_ns, st.st_size) for f in files for st in [f.stat()]]
@@ -118,9 +117,8 @@ def fingerprint(sources: list[Path]) -> str:
             SEEN.update((k[0], (k, got)) for k, got in zip(cold, read))
     SEEN.update((k[0], (k, _entries(k))) for k in cold if SEEN.get(k[0], (None,))[0] != k)
     h = hashlib.blake2b(digest_size=16)
-    for f in sorted(sources):
-        st = f.stat()
-        h.update(f"{f.name}={_entries(str(f), st.st_mtime_ns, st.st_size)}\n".encode())
+    for f, k in zip(files, keys):
+        h.update(f"{f.name}={SEEN[k[0]][1]}\n".encode())
     return h.hexdigest()
 
 
