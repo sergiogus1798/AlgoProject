@@ -226,8 +226,8 @@ def main() -> None:
     ap.add_argument("--plan", action="store_true", help="solo escribe el plan, no corre nada")
     ap.add_argument("--own-log", action="store_true",
                     help="el log reciente del worker lo escribiste tú: no esperes sus 15 min")
-    ap.add_argument("--live", action="store_true",
-                    help="una sola sesión de SQX (modo GUI) para todos los pasos, sin reinicios")
+    ap.add_argument("--restart", action="store_true",
+                    help="marcha atrás: SQX arranca y para en cada paso (lo normal es una sola sesión)")
     ap.add_argument("--smoke", action="store_true", help="prueba funcional de un Test_")
     tail.flags(ap)
     a = ap.parse_args()
@@ -243,7 +243,7 @@ def main() -> None:
     os.environ[phases.ENV] = str(out / "fases.csv")
     print(f"carpeta del run: {out}", flush=True)
     signal.signal(signal.SIGTERM, chain.cancelled)
-    autopilot(a.project, out, a.own_log, a.live, given)
+    autopilot(a.project, out, a.own_log, not a.restart, given)
 
 
 if __name__ == "__main__":
