@@ -132,6 +132,15 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     the whole conversation. The owner watches progress in the window (`ui/daemon/ops/pulse.py`).
     The command is `.claude/skills/sqx-wait/wait.sh` (`/sqx-wait`) — never a hand-written loop.
     → `knowhow/eng/token-spend-is-context-reread.md`
+19. **The workflow runs through ONE command, never step by step by hand.** Owner, 2026-10-05, «regla
+    dura»: `bin/workflow.sh` — `simple` (no template, `/workflow-simple`), `template` (an authored
+    `.sqx`, `/workflow-template`), `run` (an existing project, from where its rail is) — creates
+    the project and runs steps 6 to 25 in one SQX session (`pipeline.autopilot.run`; 160 min for
+    1,000 strategies and 10 mothers, 230 by hand). Every choice is an argument the owner gives; a
+    missing one is a question (rule 11). Nothing CPU-heavy runs beside it (it doubled SQX's task
+    times), and a failure gets the skill's three tries, then a report — never a hand-driven step, an
+    edit to `criteria.yaml` or a direct call to SQX to get past it. What each step reads and fills:
+    `.claude/skills/workflow-simple/steps.md`.
 
 ## ROUTER — read only what the task needs
 

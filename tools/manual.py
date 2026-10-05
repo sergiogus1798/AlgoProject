@@ -42,7 +42,7 @@ FAMILIES = {
         "12-rendimiento", "64-archivo", "73-fondeo-catalogo", "74-fondeo-ofertas"]),
     "04-sqx-plantillas-y-proyectos": ("SQX: bloques, plantillas y proyectos", [
         "40-sqx-lab", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
-        "06-mover-estrategias", "27-curar", "17-pipeline", "80-autopiloto", "55-retirar-proyectos",
+        "06-mover-estrategias", "27-curar", "17-pipeline", "80-autopiloto", "105-workflow-de-un-comando", "55-retirar-proyectos",
         "62-metadatos-estrategia", "82-perfil-de-mercado", "81-memoria-de-resultados",
         "83-tablero-de-investigacion", "90-explorador-de-bibliografia", "97-inspeccionar-proyectos",
         "91-potencia-del-perfil", "92-perfil-agrupado"]),

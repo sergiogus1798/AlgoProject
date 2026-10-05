@@ -5,8 +5,7 @@ tag: 🔬  date: 2026-10-05  see: sqx-drive/variant-route, perf/variants-batch-s
 ---
 # One load of 5,000 variants loses ~21 % of the IS leg on the RESTART route; on a live session it holds
 Trap: SQX says `Project finished` (15,032 retests counted) yet `WFC_Build` holds fewer files than `WFC_OOS1`/`WFC_OOS2`.
-Not an acceptance filter: the loss is random. `execute.synced` catches it (SystemExit «3952 of 5010 on disk»).
-Restart route (sqcli start/stop per batch): 2,500 is safe, 5,000 is not; keep its loads ≤ 2,500.
+Random, not an acceptance filter; `execute.synced` catches it. Restart route: 2,500 safe, 5,000 not — keep loads ≤ 2,500.
 Live session (`sqx.projects.live`, the autopilot's default): 5,000 in one load is safe — twice 5,000/5,000/5,000 in
 memory, and 15,000 files (3,649 MB) on disk in 206 s with the three legs flushed at once. Heap peaked at 53 GB of
 80 during the run, never near the cap, so memory is NOT the restart route's cause; that cause stays unknown 🤔
