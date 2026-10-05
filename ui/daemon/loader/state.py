@@ -97,6 +97,10 @@ def _entries(path: str, mtime_ns: int, size: int) -> str:
         return f"unreadable:{mtime_ns}:{size}"       # half written: never equal to a sig
 
 
+SEEN: dict[str, tuple[tuple[str, int, int], str]] = {}   # path → (key, content): one per file
+POOL_FROM = 20                                           # fewer files than this: read here
+
+
 def fingerprint(sources: list[Path]) -> str:
     """What the strategies are, not when SQX last saved them.
 
@@ -104,6 +108,15 @@ def fingerprint(sources: list[Path]) -> str:
     with the save time, so a file's date moved with nothing in it changed. The zip's own
     index carries each entry's CRC; settings.xml is read, its statistics in name order.
     """
+    files = sorted(sources)
+    keys = [(str(f), st.st_mtime_ns, st.st_size) for f in files for st in [f.stat()]]
+    cold = [k for k in keys if SEEN.get(k[0], (None,))[0] != k]
+    if len(cold) >= POOL_FROM:
+        with ProcessPoolExecutor(max_workers=min(CORES, len(cold)),
+                                 mp_context=get_context("fork")) as pool:
+            read = pool.map(_entries, cold, chunksize=max(1, min(50, len(cold) // CORES)))
+            SEEN.update((k[0], (k, got)) for k, got in zip(cold, read))
+    SEEN.update((k[0], (k, _entries(k))) for k in cold if SEEN.get(k[0], (None,))[0] != k)
     h = hashlib.blake2b(digest_size=16)
     for f in sorted(sources):
         st = f.stat()
