@@ -1,8 +1,10 @@
 """The dialog that adds or changes one criterion: a number, a verdict or a compound of them."""
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QListWidget, QPushButton, QVBoxLayout)
+                               QListWidget, QPushButton, QVBoxLayout, QWidget)
 
+from ui.desktop.criteria.overrides import by_built, by_line, by_rows
 from ui.desktop.theme import C
 
 KINDS = ("Métrica SQX", "Test de la app", "Veredicto", "Compuesto")
@@ -23,6 +25,8 @@ HELP = {
             "Limbo: este criterio nunca elimina a nadie, solo marca.",
     "join": "Todas: el resultado es el de su peor condición. Alguna: el de la mejor — basta "
             "con que una pase.",
+    "by": "Un umbral distinto por temporalidad (H4), activo (XAUUSD) o clase (forex); «H4+forex» "
+          "exige ambas.",
     "name": "Opcional: las palabras con que la tabla nombra este criterio.",
 }
 
@@ -73,29 +77,30 @@ class RuleDialog(QDialog):
         drop.setToolTip("Quita de la regla compuesta la condición seleccionada.")
         add.clicked.connect(self.add_part)
         drop.clicked.connect(self.drop_part)
+        self.by_box, self.by_lines = QVBoxLayout(), []
+        grow = QPushButton("+", clicked=lambda: self.add_by("", "", ""), maximumWidth=40)
+        self.by_box.addWidget(grow, alignment=Qt.AlignLeft)
         self.buttons = QHBoxLayout()
-        self.buttons.addWidget(add)
-        self.buttons.addWidget(drop)
+        for w in (add, drop):
+            self.buttons.addWidget(w)
         self.buttons.addStretch(1)
         self.form = QFormLayout()
         self.rows = {"kind": self.kind, "name": self.name, "fact": self.fact, "shape": self.shape,
                      "pass": self.pair(self.op, self.value), "want": self.want,
                      "limbo": self.pair(self.lop, self.lvalue), "miss": self.miss,
-                     "join": self.join, "parts": self.list, "edit": self.buttons}
+                     "by": self.by_box, "join": self.join, "parts": self.list, "edit": self.buttons}
         labels = {"kind": "Tipo", "name": "Nombre", "fact": "Dato", "shape": "Forma",
                   "pass": "Pasa si", "want": "Tiene que decir", "limbo": "Limbo si",
-                  "miss": "Si no cumple", "join": "Unir con", "parts": "Condiciones", "edit": ""}
+                  "miss": "Si no cumple", "by": "Ajustes por activo o temporalidad", "join": "Unir con", "parts": "Condiciones", "edit": ""}
         for key, field in self.rows.items():
-            label = QLabel(labels[key])
-            label.setToolTip(HELP.get(key, ""))
+            label = QLabel(labels[key], toolTip=HELP.get(key, ""))
             if hasattr(field, "setToolTip"):
                 field.setToolTip(HELP.get(key, ""))
             self.form.addRow(label, field)
         self.note = QLabel("")
         self.note.setWordWrap(True)
         self.note.setStyleSheet(f"color: {C['weak']};")
-        save, cancel = QPushButton("Guardar"), QPushButton("Cancelar")
-        delete = QPushButton("Borrar")
+        save, cancel, delete = QPushButton("Guardar"), QPushButton("Cancelar"), QPushButton("Borrar")
         save.setDefault(True)
         save.clicked.connect(self.save)
         cancel.clicked.connect(self.reject)
@@ -146,6 +151,8 @@ class RuleDialog(QDialog):
                 op.setCurrentText(sign)
                 value.setText(number)
         self.list.addItems([told(p) for p in self.parts])
+        for row in by_rows(rule.get("by")):
+            self.add_by(*row)
         self.wanted = fact
 
     def arrange(self) -> None:
@@ -155,7 +162,7 @@ class RuleDialog(QDialog):
         shown = {"kind": True, "name": not self.nested, "fact": kind != COMPOUND, "shape": number,
                  "pass": number, "limbo": number, "want": kind == VERDICT,
                  "miss": kind != COMPOUND, "join": kind == COMPOUND, "parts": kind == COMPOUND,
-                 "edit": kind == COMPOUND}
+                 "edit": kind == COMPOUND, "by": kind != COMPOUND}
         for key, on in shown.items():
             self.form.setRowVisible(self.rows[key], on)
         self.op.setVisible(number and not median)
@@ -172,11 +179,18 @@ class RuleDialog(QDialog):
         self.fact.setCurrentIndex(at)
         if at < 0:
             self.fact.setEditText(typed)
-        by = f" Sus excepciones ({', '.join(self.by)}) se conservan: se editan en " \
-             "criteria.yaml." if self.by else ""
+        by = f" Sus excepciones ({', '.join(self.by)}) se conservan: se editan en criteria.yaml." \
+            if self.by and kind == COMPOUND else ""
         none = "Este paso no tiene métricas de SQX entre sus datos: escribe la clave a mano, " \
                "o usa un test de la app." if kind == SQX and not offered else ""
         self.note.setText(none + by)
+
+    def add_by(self, key: str, passes: str, limbo: str) -> None:
+        """One override row: key, pass text, limbo text and the «−» that deletes it."""
+        boxes, line, drop = by_line(key, passes, limbo)
+        drop.clicked.connect(lambda: (self.by_lines.remove(boxes), line.deleteLater()))
+        self.by_lines.append(boxes)
+        self.by_box.insertWidget(self.by_box.count() - 1, line)
 
     def add_part(self) -> None:
         """Open the same dialog for one condition of the compound and append what it built."""
@@ -216,7 +230,9 @@ class RuleDialog(QDialog):
                 rule["limbo"] = f"{self.lop.currentText()} {limbo}"
         if self.miss.currentIndex() == 1:
             rule["else"] = "limbo"
-        return rule | ({"by": self.by} if self.by else {})
+        by = self.by if kind == COMPOUND else by_built(
+            [tuple(b.text() for b in line) for line in self.by_lines], self.by)
+        return rule | ({"by": by} if by else {})
 
     def save(self) -> None:
         """Close with the rule built, or say which box is not a number."""

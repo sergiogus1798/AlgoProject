@@ -73,7 +73,8 @@ def test_state_write_stamp_freeze() -> None:
             assert rule(c, n="16", at=0, was=BOTH)[0] == 200
             text = copy.read_text(encoding="utf-8")
             got = yaml.safe_load(text)["steps"]
-            assert got["10"]["rules"] == [VERDICT] and got["16"]["rules"] == []
+            had = yaml.safe_load(before)["steps"]["10"]["rules"]
+            assert got["10"]["rules"] == had + [VERDICT] and got["16"]["rules"] == []
             assert got["8"]["rules"][0] == new and got["8"]["rules"][1:] == cfg["rules"][1:]
             assert sum(line.strip().startswith("#") for line in text.splitlines()) == comments
             lines = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
@@ -82,7 +83,7 @@ def test_state_write_stamp_freeze() -> None:
             assert lines[2]["before"] == first["rule"] and lines[2]["after"] == new
             assert lines[3]["after"] is None and all(h["at"] and h["by"] for h in lines)
             state = c.get("/api/criteria").json()
-            ten = state["steps"][1]["rows"][0]
+            ten = state["steps"][1]["rows"][-1]
             assert (ten["kind"], ten["passes"], ten["limbo"]) == ("Veredicto", "Aprobado",
                                                                   "Si no cumple")
             assert state["history"][0]["what"] == "borrada"           # newest first
@@ -116,7 +117,18 @@ def test_labels() -> None:
     assert both["passes"].startswith("Todas:\n") and ">= 20" in both["passes"]
 
 
+def test_by_rows() -> None:
+    """The override rows rebuild `by`: empty keys dropped, empty texts omitted, unknown fields kept."""
+    from ui.desktop.criteria.overrides import by_built, by_rows
+    old = {"H4": {"pass": ">= 2.5", "limbo": ">= 1.65", "else": "limbo"}, "H1": {"pass": ">= 1"}}
+    assert by_built(by_rows(old), old) == old
+    got = by_built([("H4", ">= 3", ""), ("  ", "x", "y"), ("forex", "", ">= 1")], old)
+    assert got == {"H4": {"else": "limbo", "pass": ">= 3"}, "forex": {"limbo": ">= 1"}}
+    assert by_built([], old) == {}
+
+
 if __name__ == "__main__":
+    test_by_rows()
     test_state_write_stamp_freeze()
     test_labels()
     print("ok")
