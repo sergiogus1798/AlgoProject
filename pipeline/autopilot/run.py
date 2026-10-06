@@ -143,9 +143,8 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
         sys.exit("el worker no está libre:\n  " + "\n  ".join(busy))
     cfg = judge.settings()
     todo = plan.plan(workflow.workflow(project), given)
-    (out / "plan.json").write_text(json.dumps(todo, indent=1, ensure_ascii=False),
-                                   encoding="utf-8")
-    done, filled, ran_sqx = [], set(), own_log
+    (out / "plan.json").write_text(json.dumps(todo, indent=1, ensure_ascii=False), encoding="utf-8")
+    done, filled, ran_sqx, bad, t0 = [], set(), own_log, None, time.time()
     actions = after_cut(merged(todo["do"]), cfg)
     if on_live:
         began = time.monotonic()
@@ -166,8 +165,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
                 # A build stopped on its time cap does not go on to the OOS (`buildcap`): the
                 # rail still shows those steps to do, so they run now, in a start of their own.
                 ns = {s["n"] for s in action["steps"]}
-                left = [a for a in plan.plan(workflow.workflow(project), given)["do"]
-                        if a["kind"] == "sqx" and a["n"] in ns]
+                left = [a for a in plan.plan(workflow.workflow(project), given)["do"] if a["kind"] == "sqx" and a["n"] in ns]
                 if left:
                     what += " · " + sqx_step(project, left, False, filled)
             elif action["kind"] == "variants":
@@ -200,6 +198,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     except BaseException as failed:
         at = sum(d["n"] != "-" for d in done)
         n = actions[at]["n"] if at < len(actions) else "final"   # failed after the last action
+        bad = dict(actions[at], since=t0) if at < len(actions) and actions[at]["kind"] == "sqx" else None
         (out / "fallo.md").write_text(
             f"# Fallo en el paso {n}\n\n{failed}\n\n```\n"
             + "".join(traceback.format_exc().splitlines(keepends=True)[-TAIL:]) + "```\n",
@@ -211,7 +210,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     finally:
         if on_live and live.mine(where["role"]):
             began = time.monotonic()
-            liverun.close(where["role"], project)
+            liverun.close(where["role"], project, bad)
             done.append({"n": "-", "kind": "parada", "s": time.monotonic() - began,
                          "what": "parada y export final"})
             phases.row("accion", "- parada", done[-1]["s"])

@@ -714,6 +714,279 @@ thresholds:
       deducida del feed (pregunta del 2026-10-04): minutos con vela en al menos
       0.5 de las semanas de 2015–2019
 
+  - key: feedQuality.K.DAX40_M1
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.DAX40_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=67, N20=20, N25=9, N30=5; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2019. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.DAX40_M1
+    value: "Mon 09:00-Mon 23:01, Tue 09:00-Tue 23:01, Wed 09:00-Wed 23:01, Thu 09:00-Thu 23:01, Fri 09:00-Fri 23:01"
+    source: studies/data/feedQuality/config.yaml#sessions.DAX40_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.DJ30_M1
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.DJ30_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=111, N20=39, N25=16, N30=7; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2019. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.DJ30_M1
+    value: "Mon 09:00-Mon 23:01, Tue 09:00-Tue 23:01, Wed 09:00-Wed 23:01, Thu 09:00-Thu 23:01, Fri 09:00-Fri 23:01"
+    source: studies/data/feedQuality/config.yaml#sessions.DJ30_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.USA500_M1
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.USA500_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=247, N20=83, N25=41, N30=24; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2020. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.USA500_M1
+    value: "Mon 09:00-Mon 23:01, Tue 09:00-Tue 23:01, Wed 09:00-Wed 23:01, Thu 09:00-Thu 23:01, Fri 09:00-Fri 23:01"
+    source: studies/data/feedQuality/config.yaml#sessions.USA500_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.USATEC_M1
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.USATEC_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=100, N20=36, N25=14, N30=10; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2019. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.USATEC_M1
+    value: "Mon 09:00-Mon 23:01, Tue 09:00-Tue 23:01, Wed 09:00-Wed 23:01, Thu 09:00-Thu 23:01, Fri 09:00-Fri 23:01"
+    source: studies/data/feedQuality/config.yaml#sessions.USATEC_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.USOIL.cash_M1
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.USOIL.cash_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=98, N20=39, N25=20, N30=9; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2020. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.USOIL.cash_M1
+    value: "Mon 01:00-Tue 00:00, Tue 01:00-Wed 00:00, Wed 01:00-Thu 00:00, Thu 01:00-Fri 00:00, Fri 01:00-Fri 23:45"
+    source: studies/data/feedQuality/config.yaml#sessions.USOIL.cash_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.AUDNZD_M1
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.AUDNZD_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=137, N20=71, N25=43, N30=25; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2009. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.AUDNZD_M1
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.AUDNZD_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.AUS200_M1
+    value: 15
+    source: studies/data/feedQuality/config.yaml#K.AUS200_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=22, N20=11, N25=6, N30=3; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2018. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.AUS200_M1
+    value: "Mon 02:50-Mon 23:00, Tue 02:50-Tue 23:00, Wed 02:50-Wed 23:00, Thu 02:50-Thu 23:00, Fri 02:50-Fri 23:00"
+    source: studies/data/feedQuality/config.yaml#sessions.AUS200_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.EURAUD_M1
+    value: 20
+    source: studies/data/feedQuality/config.yaml#K.EURAUD_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=112, N20=51, N25=28, N30=19; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2007. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.EURAUD_M1
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.EURAUD_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.EURGBP_M1
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.EURGBP_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=169, N20=80, N25=41, N30=26; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2005. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.EURGBP_M1
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.EURGBP_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.HK50_M1
+    value: 15
+    source: studies/data/feedQuality/config.yaml#K.HK50_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=24, N20=8, N25=3, N30=2; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2012. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.HK50_M1
+    value: "Mon 04:15-Mon 07:01, Mon 08:00-Mon 18:45, Tue 04:15-Tue 07:01, Tue 08:00-Tue 18:45, Wed 04:15-Wed 07:01, Wed 08:00-Wed 18:45, Thu 04:15-Thu 07:01, Thu 08:00-Thu 18:45, Fri 04:15-Fri 07:01, Fri 08:00-Fri 18:45"
+    source: studies/data/feedQuality/config.yaml#sessions.HK50_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.NZDUSD_M1
+    value: 30
+    source: studies/data/feedQuality/config.yaml#K.NZDUSD_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=249, N20=120, N25=61, N30=36; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2025. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.NZDUSD_M1
+    value: "Mon 00:00-Sat 00:00"
+    source: studies/data/feedQuality/config.yaml#sessions.NZDUSD_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.UK100_M1
+    value: 25
+    source: studies/data/feedQuality/config.yaml#K.UK100_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=149, N20=65, N25=32, N30=20; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2025. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.UK100_M1
+    value: "Mon 09:00-Mon 23:01, Tue 09:00-Tue 23:01, Wed 09:00-Wed 23:01, Thu 09:00-Thu 23:01, Fri 09:00-Fri 23:01"
+    source: studies/data/feedQuality/config.yaml#sessions.UK100_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
+  - key: feedQuality.K.XCUUSD_M1
+    value: 15
+    source: studies/data/feedQuality/config.yaml#K.XCUUSD_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      criterio de la decisión 3 medido por studies.data.feedQuality.calibrate: medianas de
+      picos de cierre por año 2013–2019 N15=18, N20=6, N25=4, N30=1; escala 52 semanas
+      retrospectiva, arranque 13, suelo 3 ticks y
+      0.25 × mediana. Año estable 2018. Se recalcula sólo si
+      cambia el proveedor del feed
+
+  - key: feedQuality.sessions.XCUUSD_M1
+    value: "Mon 01:00-Mon 01:41, Mon 01:42-Mon 01:54, Mon 01:55-Mon 06:51, Mon 06:55-Mon 06:58, Mon 07:00-Mon 07:05, Mon 07:07-Mon 07:09, Mon 07:10-Mon 07:12, Mon 07:13-Mon 07:15, Mon 07:16-Mon 07:18, Mon 07:21-Mon 07:22, Mon 07:23-Mon 07:26, Mon 07:28-Mon 21:38, Mon 21:39-Mon 21:46, Mon 21:47-Mon 21:53, Mon 21:56-Mon 21:57, Mon 21:58-Mon 22:07, Mon 22:08-Mon 22:11, Mon 22:12-Mon 22:13, Mon 22:14-Mon 22:18, Mon 22:20-Mon 22:22, Mon 22:24-Mon 22:25, Mon 22:26-Mon 22:28, Mon 22:29-Mon 22:36, Mon 22:37-Mon 22:38, Mon 22:43-Mon 22:44, Mon 22:45-Mon 22:48, Mon 22:49-Mon 22:52, Mon 22:53-Mon 23:04, Mon 23:10-Mon 23:11, Mon 23:14-Mon 23:15, Mon 23:25-Mon 23:26, Mon 23:29-Mon 23:31, Mon 23:40-Mon 23:41, Mon 23:45-Mon 23:46, Mon 23:50-Mon 23:52, Mon 23:55-Tue 00:00, Tue 01:00-Tue 01:13, Tue 01:15-Tue 01:16, Tue 01:35-Tue 01:36, Tue 02:00-Tue 02:01, Tue 02:02-Tue 02:03, Tue 02:05-Tue 02:06, Tue 02:20-Tue 02:21, Tue 02:30-Tue 02:32, Tue 02:34-Tue 02:35, Tue 02:37-Tue 02:38, Tue 02:39-Tue 02:41, Tue 02:42-Tue 02:43, Tue 02:44-Tue 02:46, Tue 02:47-Tue 06:43, Tue 06:44-Tue 06:46, Tue 06:47-Tue 06:48, Tue 06:49-Tue 06:51, Tue 06:52-Tue 06:53, Tue 06:57-Tue 07:07, Tue 07:08-Tue 07:10, Tue 07:12-Tue 07:14, Tue 07:15-Tue 07:16, Tue 07:17-Tue 07:18, Tue 07:20-Tue 07:22, Tue 07:23-Tue 23:05, Tue 23:06-Tue 23:07, Tue 23:09-Tue 23:12, Tue 23:13-Tue 23:15, Tue 23:25-Tue 23:26, Tue 23:29-Tue 23:36, Tue 23:38-Tue 23:41, Tue 23:43-Wed 00:00, Wed 01:00-Wed 01:09, Wed 01:10-Wed 01:17, Wed 01:18-Wed 01:21, Wed 01:45-Wed 01:46, Wed 01:56-Wed 01:57, Wed 02:00-Wed 02:02, Wed 02:12-Wed 02:16, Wed 02:23-Wed 02:24, Wed 02:27-Wed 02:28, Wed 02:29-Wed 02:31, Wed 02:33-Wed 02:34, Wed 02:35-Wed 02:36, Wed 02:37-Wed 02:38, Wed 02:39-Wed 02:42, Wed 02:43-Wed 06:56, Wed 06:58-Wed 07:15, Wed 07:16-Wed 07:17, Wed 07:18-Wed 23:06, Wed 23:10-Wed 23:16, Wed 23:17-Wed 23:18, Wed 23:29-Wed 23:31, Wed 23:35-Wed 23:36, Wed 23:39-Wed 23:41, Wed 23:43-Thu 00:00, Thu 01:00-Thu 01:17, Thu 01:18-Thu 01:19, Thu 01:20-Thu 01:21, Thu 01:25-Thu 01:26, Thu 01:30-Thu 01:31, Thu 01:35-Thu 01:37, Thu 01:45-Thu 01:46, Thu 01:48-Thu 01:49, Thu 01:59-Thu 02:05, Thu 02:06-Thu 02:08, Thu 02:10-Thu 02:11, Thu 02:12-Thu 02:14, Thu 02:16-Thu 02:17, Thu 02:19-Thu 02:21, Thu 02:30-Thu 02:32, Thu 02:33-Thu 02:36, Thu 02:38-Thu 02:39, Thu 02:40-Thu 02:42, Thu 02:43-Thu 06:47, Thu 06:48-Thu 07:23, Thu 07:24-Thu 23:05, Thu 23:10-Thu 23:11, Thu 23:12-Thu 23:13, Thu 23:14-Thu 23:15, Thu 23:25-Thu 23:26, Thu 23:29-Thu 23:31, Thu 23:37-Thu 23:38, Thu 23:40-Thu 23:41, Thu 23:44-Thu 23:46, Thu 23:47-Thu 23:48, Thu 23:49-Fri 00:00, Fri 01:00-Fri 01:09, Fri 01:10-Fri 01:12, Fri 01:13-Fri 01:17, Fri 01:25-Fri 01:26, Fri 01:30-Fri 01:31, Fri 01:35-Fri 01:36, Fri 01:38-Fri 01:39, Fri 01:58-Fri 02:02, Fri 02:04-Fri 02:06, Fri 02:08-Fri 02:10, Fri 02:12-Fri 02:14, Fri 02:15-Fri 02:16, Fri 02:25-Fri 02:26, Fri 02:29-Fri 02:33, Fri 02:37-Fri 02:39, Fri 02:40-Fri 06:51, Fri 06:52-Fri 23:07, Fri 23:08-Fri 23:12, Fri 23:13-Fri 23:15, Fri 23:30-Fri 23:31"
+    source: studies/data/feedQuality/config.yaml#sessions.XCUUSD_M1
+    set_by: agente
+    set_on: 2026-10-06
+    why: >-
+      deducida del feed (pregunta del 2026-10-06): minutos con vela en al menos
+      0.5 de las semanas de 2015–2019
+
   - key: spread.safety.factor
     value: 1.0
     source: studies/data/spread/config.yaml#safety.factor

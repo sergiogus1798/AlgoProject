@@ -22,16 +22,29 @@ def config(overrides: list[str]) -> dict:
 
     Returns:
         What config.yaml holds. `nulls.seed` null (the default) is resolved here to a fresh
-        root drawn from OS entropy (`np.random.SeedSequence().entropy`), once per call —
-        every worker forked after this call inherits the same root, so a strategy's monkeys
-        still depend on nothing but the root, its own key and the rung (`simulate.nulls`).
-        An explicit int, from config.yaml or `--set nulls.seed=<int>`, is kept as given, so
-        a run is reproduced by recording the root a first run drew and passing it back in.
+        root drawn from OS entropy, once per call — every worker forked after this call
+        inherits the same root, so a strategy's monkeys still depend on nothing but the
+        root, its own key and the rung (`simulate.nulls`). The fresh root is 32 bits: it
+        survives a float, a CSV cell and a facts line exactly, which a 128-bit one did not.
+        An explicit int, from config.yaml, `--set nulls.seed=<int>` or a command's `--seed`,
+        is kept as given, so a run is reproduced by passing back the root a first run wrote.
     """
     cfg = study_config.load(CONFIG, overrides)
     if cfg["nulls"]["seed"] is None:
-        cfg["nulls"]["seed"] = int(np.random.SeedSequence().entropy)
+        cfg["nulls"]["seed"] = int(np.random.SeedSequence().generate_state(1)[0])
     return cfg
+
+
+def seeded(seed: int | None) -> list[str]:
+    """A command's `--seed` as the override config() takes.
+
+    Args:
+        seed: The root to reproduce, or None for a fresh one.
+
+    Returns:
+        `["nulls.seed=<seed>"]`, or nothing when no seed was asked for.
+    """
+    return [] if seed is None else [f"nulls.seed={seed}"]
 
 
 def markets(packed: Path) -> list[str]:

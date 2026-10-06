@@ -26,11 +26,11 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 | `screens.py` | The five cheap screens and the registry the cascade reads | imported | harvest + survivors → value, passed |
 | `monkey.py` | The two screens that need the null study: the monkey, and the family correction over it | imported | trades + bars → p |
 | `redundancy.py` | The soft screen: are these N strategies or one repeated N times | imported | equity → groups |
-| `cascade.py` | Runs the screens in the config's order, each over what the last left, and writes the verdicts; the scorecard keeps every column a screen returns as `<screen>_<column>` (degradacion's `t`, `years_positive`, `concentration`; mono's `p`, `corr`) — the autopilot judges them as `gate.scorecard.*`. A strategy killed by a hard screen keeps that screen's `_passed` = False and `survives` = False, and nothing for the screens after it | imported | harvest → scorecard, funnel |
+| `cascade.py` | Runs the screens in the config's order, each over what the last left, and writes the verdicts; the scorecard keeps every column a screen returns as `<screen>_<column>` (degradacion's `t`, `years_positive`, `concentration`; mono's `p`, `corr`, `seed`) — the autopilot judges them as `gate.scorecard.*`. A strategy killed by a hard screen keeps that screen's `_passed` = False and `survives` = False, and nothing for the screens after it | imported | harvest → scorecard, funnel |
 | `measures.py` | The scorecard's **measured** columns, for every paired strategy whichever screen it died at: `trade_t`, `drift_excess_t`, trades per year, and the floating risk in R. No screen reads them | imported | trades + equity + bars → 14 columns |
 | `one.py` | One strategy through the gate as the contract's data: MANTENER or DESCARTAR, and every screen with its number | imported — the window calls it | scorecard row → result |
 | `many.py` | The cascade and the funnel as one result, and every strategy's own | imported | harvest → results |
-| `report.py` | **The gate over one harvest** | `python3 -m studies.screening.gate.report --project P --databank build --feed XAUUSD_M1` | harvest → `scorecard.parquet`, `funnel.csv`, two `verdict.csv`, `gate.md`/`.html`/`.json`, one page per strategy |
+| `report.py` | **The gate over one harvest**. `--seed N` fixes the root of the monkey screen's streams (same seed, same scorecard byte for byte); without it a fresh one is drawn. The root used is in the manifest (`nulls_seed`, and in its `command`) and in the scorecard's `mono_seed` (the fact `gate.scorecard.mono_seed`) | `python3 -m studies.screening.gate.report --project P --databank build --feed XAUUSD_M1 [--seed 20261002]` | harvest → `scorecard.parquet`, `funnel.csv`, two `verdict.csv`, `gate.md`/`.html`/`.json`, one page per strategy |
 | `tooltips.py` | One sentence per `config.yaml` knob, addressed by the screen's name, for the window's configuration drawer | imported | — |
 | `config.yaml` | The screens as data: order, kind, and why each exists. Each threshold is a `ledger:<key>` placeholder: the number lives in `ledger/thresholds.yaml`, and `inputs.config()` fills it in before applying `--set` | edited | — |
 
@@ -89,13 +89,16 @@ changing a threshold re-judges without recomputing anything that costs machine t
 `verdict_build.csv` names the **build** databank's, and it is the only one that can carry the
 strategies SQX dropped from the retest: they have no name in the retest databank at all.
 
+The monkey screen places its random entries on the harvest's own build timeframe (`inputs.timeframe`;
+a mixed harvest refuses); `--set monkey.timeframe=` wins over it.
+
 ## What is hard and what is soft
 
 `kind: hard` eliminates; `kind: soft` measures everybody and eliminates nobody. Two screens are soft
 on purpose:
 
-- **`familia`** is a statement about the population — how many of the survivors chance alone would
-  have handed over — and reading Benjamini-Hochberg as a per-strategy verdict is a decision the owner
+- **`familia`** is a statement about the population — how many of everyone the `mono` screen tested chance alone would
+  have handed over (BH runs over that whole family, not over the survivors of the p screen) — and reading Benjamini-Hochberg as a per-strategy verdict is a decision the owner
   has not taken.
 - **`redundancia`** groups by the strategy's own structure — the ordered block keys of its XML, with
   parameter values ignored — which replaced grouping by equity correlation (owner, 2026-09-23):

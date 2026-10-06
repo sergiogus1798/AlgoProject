@@ -32,7 +32,7 @@ def run(data: dict, cfg: dict, say: bool = True) -> tuple[pd.DataFrame, pd.DataF
     Returns:
         The scorecard — one row per identity, `<screen>_<column>` for every column a screen
         returned (value, passed, note; degradacion's t, years_positive, concentration; mono's
-        p and corr) plus `died_at` and `survives` —
+        p, corr and seed) plus `died_at` and `survives` —
         and the funnel, one row per screen with how many entered, passed and died.
 
         A strategy that dies in a hard screen is not handed to the next one, so its later

@@ -11,7 +11,7 @@ nulls:
                               # 2026-09-29: "no quiero una misma semilla, quiero un test del
                               # mono truly different"); `engines.nulls.inputs.config` draws it
                               # once per run and every caller records the root it drew. Set an
-                              # explicit int here, or `--set nulls.seed=<int>`, to reproduce
+                              # explicit int here, `--set nulls.seed=<int>` or `--seed <int>`, to reproduce
                               # one run exactly
   chunk_trades: 200000       # trade valuations per seeded block. Sets the cache footprint
                              # (swept 2026-09-25: fastest at 130-220 k) AND the random

@@ -79,7 +79,7 @@ replaced by TRUE — needs the strategy's logic edited, which is that encargo.
   7.4 % of bars held — that is rare, and dropping the overlaps would change `n` and make the
   statistic incomparable to the real run.
 - **The trade count is never randomised.** Varying it changes `n`, and with it the sampling
-  distribution of every statistic. `crossmarket/POSSIBLE_IMPROVEMENTS.md` §1 lists the same gap.
+  distribution of every statistic. `studies/transfer/crossmarket/POSSIBLE_IMPROVEMENTS.md` §1 lists the same gap.
 - **A matched size is the real trade's own size**, so it carries the ATR of the *real* entry and
   leaks a little of when the strategy chose to enter. Re-deriving it as `c / ATR(random entry)`
   needs the ATR period the strategy actually used, which is in its `.sqx` and is not fitted here:

@@ -1,23 +1,27 @@
 """What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps."""
 
+from pipeline.autopilot import tail
 from ui.daemon.launch import chainplan
 from ui.daemon.launch.steps import ELSEWHERE
 
 
-def plan(data: dict) -> dict:
+def plan(data: dict, given: dict = tail.NOTHING) -> dict:
     """Walk the rail as `chainplan.plan` does, judging instead of stopping.
 
     Args:
         data: GET /api/workflow's answer (`ui.daemon.workflow.api.workflow`).
+        given: The tail's inputs (`tail.inputs`): the panel databanks of 21-22, step 26's
+            parameters, the steps with rules. Without them the tail stops where it needs one.
 
     Returns:
-        `do` — [{n, title, kind: sqx|python|judge, tests}] in order — and `stop` —
-        {n, why}, n None when the rail runs out. A judging step (8, 10, 12, 14, 16) gets a
-        `judge` right before the next SQX step that still has to run: cutting before a step
-        already done would cut for nothing. It stops where the chain does — what a person
-        does (1-5), 16.5, the 19 that reads oos2, anything running, and an SQX step with no
-        task to start (25.5). A judging step left pending at the stop is judged there: its
-        facts are recorded, and a cut it makes is what the next step will read.
+        `do` — [{n, title, kind, tests}] in order — and `stop` — {n, why}, n None when the
+        rail runs out. Up to 16.5 the kinds are sqx, python, judge and variants: a judging
+        step (8, 10, 12, 14, 16) gets a `judge` right before the next SQX step that still
+        has to run: cutting before a step already done would cut for nothing. From 17 on
+        the walk is `tail.walk`'s. It stops at what a person does (1-5), anything running,
+        an SQX step with no task to start, and where the tail says. A judging step left
+        pending at the stop is judged there: its facts are recorded, and a cut it makes is
+        what the next step will read.
     """
     do, stale, pending = [], False, None
 
@@ -33,6 +37,8 @@ def plan(data: dict) -> dict:
             if state != "done":
                 return halt(n, chainplan.BEFORE[chainplan.HOW[n]])
             continue
+        if n == tail.FIRST:
+            return tail.walk(data["steps"], do, stale, pending, data.get("family"), given)
         if state == "running":
             return halt(n, "está en marcha")
         if step["kind"] == "python":
@@ -53,8 +59,8 @@ def plan(data: dict) -> dict:
             do.append({"n": n, "title": step["title"], "kind": "variants", "tests": []})
             stale = True
             continue
-        if n in chainplan.OOS2 or n in ELSEWHERE:
-            return halt(n, chainplan.OOS2.get(n) or ELSEWHERE[n])
+        if n in ELSEWHERE:
+            return halt(n, ELSEWHERE[n])
         if not step.get("stage"):
             return halt(n, "no tiene tareas de SQX que el autopiloto sepa lanzar")
         if pending:

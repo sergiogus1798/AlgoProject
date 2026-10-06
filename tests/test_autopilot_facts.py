@@ -60,6 +60,27 @@ def test_folder_reads_every_per_strategy_number() -> None:
         assert not any(k.startswith("nulls_csv") for _, k in keyed(facts.from_folder("s", out)))
 
 
+def test_a_per_market_parquet_gives_one_key_per_market() -> None:
+    """crossmarket's `markets.parquet` — one row per strategy and market — reaches a rule as
+    `markets.<market>.<col>`; a table that repeats a (strategy, market) pair is still skipped."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp)
+        table = pd.DataFrame({"strategy": ["A", "A", "B"], "identity": ["ia", "ia", "ib"],
+                              "market": ["EURUSD_M1", "UKOIL.cash_M1", "EURUSD_M1"],
+                              "category": ["family"] * 3, "excess_t": [2.1, -0.4, 0.3]})
+        table.to_parquet(out / "markets.parquet")
+        rows = facts.from_folder("crossmarket", out)
+        got = keyed(rows)
+        assert got[("A", "markets.eurusd_m1.excess_t")] == 2.1
+        assert got[("A", "markets.ukoil_cash_m1.excess_t")] == -0.4
+        assert got[("B", "markets.eurusd_m1.excess_t")] == 0.3
+        assert ("B", "markets.ukoil_cash_m1.excess_t") not in got
+        assert {r["identity"] for r in rows} == {"ia", "ib"}
+        assert not any("category" in k or k.endswith(".market") for _, k in got)
+        pd.concat([table, table]).to_parquet(out / "markets.parquet")
+        assert facts.from_folder("crossmarket", out) == []
+
+
 def test_reading_and_delay_rows_are_addressable() -> None:
     """A reading (a verdict block in a tab) gives `<tab>.verdict_pass`; entryQuality's delay
     table keeps `d` as its first cell, so the 1-bar row has one key on any timeframe."""
@@ -135,6 +156,7 @@ def test_after_cut_keeps_a_judged_reading_before_the_judge() -> None:
 
 if __name__ == "__main__":
     test_folder_reads_every_per_strategy_number()
+    test_a_per_market_parquet_gives_one_key_per_market()
     test_reading_and_delay_rows_are_addressable()
     test_cascade_keeps_every_column_a_screen_returns()
     test_an_early_death_is_an_explicit_zero()

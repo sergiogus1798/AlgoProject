@@ -111,7 +111,8 @@ def per_strategy(study: str, df: pd.DataFrame, prefix: str, skip: set[str]) -> l
 def from_folder(study: str, folder: Path) -> list[dict]:
     """The rows of one result folder: its per-strategy JSONs, its one-row-per-strategy parquets
     and CSVs (`CSVS`), `verdict_csv.drop` (1 when the study itself said DESCARTAR) and, where
-    the CSV has a `verdict_state`, `verdict_csv.state_pass` (1 when it is pass).
+    the CSV has a `verdict_state`, `verdict_csv.state_pass` (1 when it is pass). A parquet with
+    one row per strategy AND `market` gives `<stem>.<market>.<col>`, one key per market.
 
     A parquet indexed by identity (the gate's scorecard) gets it as a column, so its facts join
     the databank by identity like every other study's. Rows without a strategy name (the
@@ -128,6 +129,11 @@ def from_folder(study: str, folder: Path) -> list[dict]:
         if "strategy" not in df.columns:
             continue
         df = df[df["strategy"].notna()]
+        if "market" in df.columns and not df.duplicated(["strategy", "market"]).any():
+            for market, part in df.groupby("market", sort=True):    # crossmarket's markets.parquet
+                rows += per_strategy(study, part, f"{slug(f.stem)}.{slug(market)}",
+                                     {"strategy", "identity", "market"})
+            continue
         if df["strategy"].duplicated().any():
             continue        # a trade or cell table: its rows are not one per strategy
         rows += per_strategy(study, df, slug(f.stem), {"strategy", "identity"})
@@ -158,9 +164,9 @@ def crosstf_rows(folder: Path) -> list[dict]:
     Keys under `crossTF.`:
         `cells.<role>.<tf>.<metric>` — role baseline (the mother on its own timeframe),
             unscaled, scaled, control; tf is the cell's timeframe, and for a scaled sibling's
-            control (run on the mother's timeframe) the sibling's target. Metrics: trades,
-            seen, p, and every statistic of `seen_all` / `p_all` (`net`, `p_net`…).
-        `cells.<role>.<tf>.<stat>_vs_original` — that statistic over the baseline's.
+            control (run on the mother's timeframe) the sibling's target. Metrics: every
+            numeric column (trades, p, z, `z_new`…) and `seen_all` / `p_all` (`net`, `p_net`…).
+        `…<stat>_vs_original` — over the baseline's; `combined.*` — her siblings' sum.
         `reading.<tf>.<reading>` — 1 for the study's reading of that sibling, 0 for every other
             reading of `verdict.MEANS`; `reading.n_<reading>` counts them, 0 included — an
             absent count would read as a missing fact, and a missing fact is limbo.
@@ -179,10 +185,10 @@ def crosstf_rows(folder: Path) -> list[dict]:
         hit = TARGET.search(r.strategy)
         tf = hit.group(1) if hit else r.timeframe
         at = f"cells.{r.role}.{tf}"
-        for k, v in [("trades", r.trades), ("seen", r.seen), ("p", r.p),
+        for k, v in [*((c, getattr(r, c)) for c in cells.columns if c != "block"),
                      *(r.seen_all or {}).items(),
                      *((f"p_{k}", v) for k, v in (r.p_all or {}).items())]:
-            add(r.mother, f"{at}.{k}", v)
+            add(r.mother, k.replace("_", ".", 1) if k[:9] == "combined_" else f"{at}.{k}", v)
         for k, v in (r.seen_all or {}).items() if r.role != "baseline" else []:
             base = original.get((r.mother, k))
             if v is not None and base:

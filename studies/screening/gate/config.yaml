@@ -72,8 +72,8 @@ screens:
     kind: soft
     alpha: ledger:gate.familia.alpha
     why: >-
-      de los que pasan el mono, cuantos daria el azar. Corrige Benjamini-Hochberg sobre la
-      familia superviviente. SOFT: informa, no elimina, hasta que el dueño vea el exceso
+      de los que pasan el mono, cuantos daria el azar. Corrige Benjamini-Hochberg sobre todas
+      las que entraron al mono (no solo las que pasaron su p). SOFT: informa, no elimina, hasta que el dueño vea el exceso
 
   - name: redundancia
     kind: soft

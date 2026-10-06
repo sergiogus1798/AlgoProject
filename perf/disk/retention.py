@@ -1,7 +1,6 @@
 """What could be deleted and how much it would free. Proposes; never deletes, never moves."""
 
 import json
-import time
 from pathlib import Path
 
 from core.paths import DATA

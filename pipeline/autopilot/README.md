@@ -14,7 +14,19 @@ at random among those that pass. The point is a fast run that proves the chain, 
 **Smoke mode** (`run --smoke`, `Test_` projects only, 2026-10-04): a functional test of the chain.
 Only the rules on `judge.READABLE` facts judge (presence, sanity, trades per year), at every step,
 so the dev draw always has someone to keep; `criteria.yaml` is not touched. 🔬 1,000 Simple
-Strategy longs on NIKKEI225 M30 left 0 alive at step 8 under the real rules and the run ended there.
+Strategy longs on NIKKEI225 M30 left 0 alive at step 8 under the real rules and the run ended there. Under `--smoke` the post-stop MC Retest ingest also gets
+`--set recon.systematic_share=0.2` (`ui/daemon/loader/afterrun.py` SMOKE_SHARE): with ten strategies its guard
+(max(2, 5 % of runs) misses = «wrong formula») tripped on 5 of 70 RecoveryFactor cells at 1.01-1.22× tolerance
+and ended the run at step 14; the cells are still excluded and recorded.
+
+**One automatic retry** (`call.py` `again`, 2026-10-05): SQX's transient abort («Error while running project»,
+fastutil NullPointerException after «Task finished») reruns the action ONCE — in the SQX step (live or `--restart`
+route), in the variants' make/execute and in the closing retests of 23-24. Before rerunning an SQX
+step, `call.keeper` removes from the chosen tasks' output databanks every .sqx the aborted attempt added (a
+retest does not clear its output: a plain rerun doubled 1,000 to 2,000, the copies named `Strategy X(1)`):
+on the live route it stops the project and cuts the extra strategies from the output databank; on `--restart` it unlinks the extra .sqx. → `knowhow/sqx-drive/mcr-nullpointer-fastutil-transient.md`
+**Step 24:** if a pass fails, `closing.py` moves the half-done batch to `<run>/paso-24-abortado`; otherwise
+pass 1's report alone made the rail call 24 done and step 25 crashed on the missing `pass2/ran.json`.
 
 **Cheap to watch.** Everything an agent needs is three small files in the run's folder; it never
 reads SQX's log. `estado.txt` (one line, overwritten), `resumen.md` (one row per action, seconds
@@ -26,8 +38,8 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `variants.py` | Step 16.5 as an autopilot action: `wire` the three WFC legs (`sqx.projects.wfc`, on a pushed copy when a live session is up), then per design brief of step 16 `make` → `execute` → `equity` → `collect` → `execute --clear` | imported | a project after step 16 → one batch per mother harvested, the four databanks empty |
-| `run.py` | The loop: `advance.where`/`busy` refusals, the plan, then per action an SQX step (`launch.preflight.check` + `launch.run.execute`: one start, «Project finished», one stop), a Python step (`chain.python_step`), a judge, the variants (only the survivors of 16), or — from 17 on — `tailrun.run`; a `survivors.Done` ends it cleanly (its reason is the stop in resumen.md), the first failure writes `fallo.md` | `python3 -m pipeline.autopilot.run --project P [--panel 21=D --panel 22=D] [--mt5-from … --mt5-to … --mt5-model … --mt5-firms a,b]` · `--plan` prints the plan and runs nothing | a project → `AlgoData/autopilot/<P>/<stamp>/{plan.json, estado.txt, resumen.md, fallo.md, paso-<n>/, finalistas.json}` |
+| `variants.py` | Step 16.5 as an autopilot action: `wire` the three WFC legs (`sqx.projects.wfc`, on a pushed copy when a live session is up), then per design brief of step 16 `make` → `execute` → `equity` → `collect` → `execute --clear`. Live route (default): all mothers' pilots run first with the WFC legs wired without the 11 extra markets (the pilot reads only the main market's trade count: 81 s → 4 s each), then the legs are rewired with markets and each mother runs execute → equity → collect → clear; `--restart` keeps the pilot inside `make`, per mother. After each live step the export reads only the project that ran (`afterrun --project`) | imported | a project after step 16 → one batch per mother harvested, the four databanks empty |
+| `run.py` | The loop: `advance.where`/`busy` refusals, the plan, then per action an SQX step (`launch.preflight.check` + `launch.run.execute`: one start, «Project finished», one stop), a Python step (`chain.python_step`), a judge, the variants (only the survivors of 16), or — from 17 on — `tailrun.run`; a `survivors.Done` ends it cleanly (its reason is the stop in resumen.md), the first failure writes `fallo.md` | `python3 -m pipeline.autopilot.run --project P [--panel 21=D --panel 22=D] [--mt5-from … --mt5-to … --mt5-model … --mt5-firms a,b]` · `--plan` prints the plan and runs nothing | a project → `AlgoData/autopilot/<P>/<stamp>/{plan.json, estado.txt, resumen.md, fallo.md, fases.csv, tiempos.md, paso-<n>/, paso-24-abortado/, finalistas.json}`; `fases.csv` (began epoch, seconds, phase, detail, pid) is written by `core/phases.py` because the autopilot sets env `ALGO_PHASES`; `tiempos.md` is `timing.py`'s; `paso-24-abortado/` exists only after a failed pass (below) |
 | `timing.py` | Where the wall clock went: `fases.csv` (every `core.phases` block of the run and its subprocesses — start, ready, sqx, stop, export per piece, sync, snapshot, each test, each variants module) folded into `tiempos.md`, one row per action with its seconds by column (`sqx` apart from arranque, parada, export, sync, copias, resto; a nested phase's seconds leave its parent) and the twelve longest phases; rewritten after every action | imported | `<run>/fases.csv` → `<run>/tiempos.md` |
 | `plan.py` | The rail walked as `chainplan.plan` walks it up to 16.5, with a `judge` before the next SQX step that still has to run; from 17 on it is `tail.walk`'s | imported | GET /api/workflow + the tail's inputs → `{do, stop}` |
 | `tail.py` | The plan 17 → 26: the three blind looks (planned whenever any of 17-19 is open), `sqx` 19, its reading, the ledger rows, 20 and its judge, 21-22 on the databanks given, 23, 24, 25, the finalists, 26; clean stops without a family, without `--panel`, without every `--mt5-*`; and those flags | imported | rail steps + inputs → actions, stop |
