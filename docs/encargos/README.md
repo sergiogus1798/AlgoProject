@@ -139,6 +139,8 @@ hoy: la calibración del día 4 se borró entera por el spread y no queda herram
 |---|---|---|
 | `42-recalibracion-pasos-6-7-8.md` | la receta de filtros del IS en SQX (paso 6) y las reglas Pasa / Limbo / Falla del primer cribado OOS (pasos 7-8), por activo × marco × familia, sobre poblaciones sin seleccionar con su gemela aleatoria y nulos nuevos; incluye el punto 1.5 del plan 41 | ocho decisiones del dueño, la primera el carril (regla 19) |
 | `43-criterios-pasos-10-a-20.md` | una regla medida, o una razón escrita, para los pasos 10, 12, 14, 16 y 20; es el punto 1.6 del plan 41 | el 42 entregado |
+| `44-puerta-is-oos-paso-8.md` | la puerta IS/OOS nueva del paso 8, tras la revisión del dueño del 2026-10-06: R3 con la deriva por ventana y sin Limbo; R5 a R9b, calidad de datos, retraso de una barra y mono rediseñados; la cascada de la regla más barata a la más cara; todos los parámetros en la ventana; y las dos poblaciones de prueba con las que se fijan las líneas | nada; lleva su tabla de estado |
+| `45-modulo-de-fondeo.md` | el riesgo máximo por operación que admite una cartera dentro del límite diario y total de una cuenta de fondeo (adonde van R9a y R9c al salir del paso 8): la cola del peor día y el drawdown esperado de la cartera | el 44 (parte L y el bootstrap de R6); cinco decisiones del dueño antes de programar |
 
 ## Lo que no es un encargo
 

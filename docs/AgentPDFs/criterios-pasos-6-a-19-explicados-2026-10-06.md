@@ -224,7 +224,7 @@ Las reglas del paso 8 tal como están hoy. La columna «origen» distingue lo qu
 | `drift_excess_t` en H4 | ≥ 2,5 | 1,65 a 2,5 | < 1,65 | **Council**, «dudosa» |
 | `drift_excess_t` en H1 | inalcanzable (`>= 1000`) | ≥ 1,65 | < 1,65 | **Council** |
 | `is_trades_per_year`, suelo | ≥ 35 | 20 a 35 (H4: 15 a 35) | por debajo | **Council** |
-| `is_trades_per_year`, techo | ≤ 75 (H4: ≤ 50) | H4: 50 a 65 | por encima | **Council** (H4: previa, «no recalibrado») |
+| ~~`is_trades_per_year`, techo~~ | — | — | — | **retirada el 2026-10-06** |
 | `oos_trades_per_year` | ≥ 15 | 10 a 15 | < 10 | previa |
 | `operaciones_oos` | ≥ 100 | < 100 | nunca | **Council** |
 | `edge_mean` | ≥ 2 | 1,25 a 2, o sin dato | < 1,25 | **Council** (banda del paso 25) |

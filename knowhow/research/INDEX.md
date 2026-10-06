@@ -54,6 +54,7 @@
 - `surfaces-jaccard-lift-flip-null` — Do the surfaces' Jaccard lift, or «the mother inside the other markets' top decile», beat a zero-edge market?
 - `t1-optimistic-on-near-clones` — Why does stage B's trade bootstrap T1 give a higher P(pass) than D, T2 and stage A, and is it a bug?
 - `trade-filter-parameter-space` — What does a trade-count floor remove in parameter space before a surface is fitted?
+- `trade-t-vs-frequency-and-skew` — Does a higher trade frequency buy the trade-level t more power, and does skew distort its false-positive rate?
 - `trial-count-half-rule` — When does trials.independent over-count the independent trials of a family?
 - `wfc-top-persistence-sign-flip-null` — Does the WFC's top persistence, or its median OOS/IS Sharpe ratio, tell a zero-edge variant family from a real one?
 - `wfm-cells-are-not-independent` — How many independent curves are the 30 WFM cells worth?
