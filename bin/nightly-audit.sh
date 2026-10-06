@@ -56,7 +56,9 @@ flock -n 9 || { echo "$(date -Is) another nightly audit is running; skipped"; ex
 echo "=== $(date -Is) nightly audit start"
 
 python3 tools/daily_audit.py
-echo "--- mechanical half exit $?"
+# Exit 1 is the script saying it FOUND something (a failed test, a corrupt archive, an export with no
+# manifest), all of it in the -mechanical.md report. It is not a failed job.
+echo "--- mechanical half exit $? (0 clean, 1 findings in the -mechanical.md report; anything else is a crash)"
 
 if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
   echo "--- no claude binary found; agent half skipped"; exit 1

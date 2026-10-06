@@ -1,11 +1,9 @@
-"""How far a surface moved between two windows, in units, in rank, and quantile by quantile."""
+"""How far a surface moved between two windows, in units and in rank."""
 
 import numpy as np
-import pandas as pd
 from scipy import stats
 
 WALSH_CAP = 4000
-QUANTILES = (0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95)
 
 
 def hodges_lehmann(before: np.ndarray, after: np.ndarray, seed: int = 0) -> float:
@@ -43,27 +41,6 @@ def cliff_delta(before: np.ndarray, after: np.ndarray) -> float:
     """
     u = stats.mannwhitneyu(after, before, alternative="two-sided").statistic
     return float(2 * u / (after.size * before.size) - 1)
-
-
-def quantile_shift(before: np.ndarray, after: np.ndarray,
-                   probs: tuple[float, ...] = QUANTILES) -> pd.DataFrame:
-    """The quantile-quantile displacement curve, which carries more than any single number.
-
-    Args:
-        before: Values in the first window.
-        after: Values in the second.
-        probs: Where to read both distributions.
-
-    Returns:
-        One row per probability with both quantiles and `shift` = before - after. Parallel
-        to the diagonal means the whole surface dropped, which is a regime change; a curve
-        that widens towards the top means the tail fell further than the median, which is
-        the signature of overfitting, because the tail is where a deployed strategy is
-        chosen from.
-    """
-    q_before, q_after = np.quantile(before, probs), np.quantile(after, probs)
-    return pd.DataFrame({"prob": probs, "before": q_before, "after": q_after,
-                         "shift": q_before - q_after})
 
 
 def tail_excess(before: np.ndarray, after: np.ndarray,

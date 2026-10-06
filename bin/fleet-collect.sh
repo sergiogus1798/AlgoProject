@@ -22,4 +22,10 @@ LOCK="$DATA/logs/.fleet-collect.lock"
 exec >>"$LOG" 2>&1
 exec 9>"$LOCK"
 flock -n 9 || exit 0
-python3 -m mt5.fleet.collect || echo "$(date '+%Y-%m-%d %H:%M:%S') FAIL collect exit $?"
+python3 -m mt5.fleet.collect || {
+  rc=$?; echo "$(date '+%Y-%m-%d %H:%M:%S') FAIL collect exit $rc"
+  # A silent VPS exits 0: this is the collector itself crashing. One alert a day, not one a minute.
+  if [ ! -e "$DATA/audit/ERROR-fleet-collect-$(date +%F).txt" ]; then
+    . "$ROOT/bin/lib-agent-alert.sh"; agent_alert fleet-collect "mt5.fleet.collect exited $rc"
+  fi
+}

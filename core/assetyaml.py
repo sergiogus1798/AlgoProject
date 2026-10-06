@@ -1,6 +1,7 @@
 """The assets/ YAML files read and written without losing a comment — the only round-trip here."""
 
 import re
+import threading
 from pathlib import Path
 
 import yaml
@@ -15,6 +16,13 @@ _Y.indent(mapping=2, sequence=4, offset=2)   # the indentation assets/ already u
 # a load+dump of the four shared files and the nineteen symbol files is byte-identical.
 _Y.representer.add_representer(
     type(None), lambda r, d: r.represent_scalar("tag:yaml.org,2002:null", "null"))
+
+
+# One ruamel instance keeps its reader, scanner and parser on itself: two threads loading at
+# once read each other's buffer and raise wherever the scanner happens to be (the daemon
+# serves each request from a thread pool — measured 2026-10-06, a different ScannerError or
+# IndexError on a valid file every run of tests/test_ui_shell.py).
+_LOCK = threading.Lock()
 
 
 class _Loader(yaml.SafeLoader):
@@ -49,7 +57,9 @@ def read(path: Path) -> object:
         A CommentedMap: a dict that also remembers every comment and every line number, so
         writing it back changes only the value that was changed.
     """
-    return _Y.load(path.read_text(encoding="utf-8"))
+    text = path.read_text(encoding="utf-8")
+    with _LOCK:
+        return _Y.load(text)
 
 
 def write(path: Path, data: object) -> None:
@@ -61,7 +71,7 @@ def write(path: Path, data: object) -> None:
     """
     # Dumped aside first: a value YAML cannot represent must not leave the file empty.
     tmp = path.with_suffix(path.suffix + ".tmp")
-    with tmp.open("w", encoding="utf-8") as f:
+    with _LOCK, tmp.open("w", encoding="utf-8") as f:
         _Y.dump(data, f)
     tmp.replace(path)
 

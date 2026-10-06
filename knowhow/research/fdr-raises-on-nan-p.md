@@ -7,4 +7,4 @@ tag: 🔬  date: 2026-10-04
 Callers drop NaN-p rows before the FDR and keep them in the output table: `gate`, `isOos/many.py`, `filters/report.py`.
 
 ## Evidence
-2026-10-04 cleanup (`CALC_REVIEW.md`).
+2026-10-04 cleanup (`CALC_REVIEW.md`, deleted 2026-10-06).

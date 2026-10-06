@@ -12,7 +12,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import tickfile
-from studies.data.spread import band, reprice
+from studies.data.spread import band, reprice, verdict
 
 T0 = 1_600_000_020_000                  # 2020-09-13 12:27:00 UTC, the start of a minute
 WIDTH = {1: 0, 2: 1, 4: 2, 8: 3}
@@ -123,6 +123,16 @@ def main() -> None:
     above = (out["% por encima"] * out["días"]).sum() / out["días"].sum()
     if abs(curves["media"]["b"] - 0.5) > 0.02 or not (1.5 < below < 3.5 and 1.5 < above < 3.5):
         failures.append(f"band: b={curves['media']['b']:.3f}, fuera {below:.1f} % / {above:.1f} %")
+
+    # One definition of a segment's points: price doubles while the relative spread halves.
+    # mean(rel) 1.5e-4 at mean price 150 with a 0.01 tick = 2.25 points, in the report's
+    # table and in the function the onboarding calls.
+    seg = pd.DataFrame({"rel": [2e-4, 1e-4], "price": [100.0, 200.0], "source": "medido"},
+                       index=pd.to_datetime(["2020-01-01", "2020-01-02"]))
+    window = {"build": (seg.index[0].value // 10**6, (seg.index[-1] + pd.Timedelta(days=1)).value // 10**6)}
+    shown = verdict.propose(seg, window, 0.01, 1.0)["puntos equivalentes"].iloc[0]
+    if not np.allclose([shown, verdict.points(seg, 0.01, 1.0)], 2.25):
+        failures.append(f"points of a segment: report {shown}, onboard {verdict.points(seg, 0.01, 1.0)} != 2.25")
 
     print("\n".join(failures) if failures else "ok")
     sys.exit(bool(failures))

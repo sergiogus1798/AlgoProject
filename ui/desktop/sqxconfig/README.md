@@ -1,9 +1,8 @@
 # ui/desktop/sqxconfig — Configuración SQX
 
 The zone of encargo 22 §8.2 (plan 24 F9), in BIBLIOTECA: every SQX setting a new project is built
-and tested with, one foldable section per test, a dropdown wherever the values are fixed. F2 wires
-`SqxConfigZone` into the sidebar; until then `python3 -m ui.desktop.sqxconfig.preview` opens it
-alone over the running daemon.
+and tested with, one foldable section per test, a dropdown wherever the values are fixed. `SqxConfigZone` is wired into the sidebar in `shell.py`; `python3 -m ui.desktop.sqxconfig.preview` is a
+standalone viewer that opens it alone over the running daemon.
 
 ```
 SqxConfigZone (zone) ── index of sections │ scroll of Section (section) ── one Field (field) per value

@@ -43,7 +43,8 @@ def frame(files: dict[str, Path]) -> pd.DataFrame:
         emits them — the block a task did not fill carries SQX's zeros. `Param Count (IS)` is
         overwritten with `sqxfile.param_count(f)` (OPEN #17: SQX's own value is frozen at
         whichever `compute()` first ran under, often the old, inflated definition), and
-        `Param Count source` names where it came from.
+        `Param Count source` names where it came from; `DoF Ratio (IS)` is the IS trades
+        over that count. SQX no longer carries either column.
     """
     rows = []
     for name, f in files.items():
@@ -59,5 +60,10 @@ def frame(files: dict[str, Path]) -> pd.DataFrame:
         # says so rather than passing the number off as SQX's own.
         row["Param Count (IS)"] = sqxfile.param_count(f)
         row["Param Count source"] = "python (core.sqxfile.param_count)"
+        # Both snippets were removed from the three installs on 2026-10-06 (they raised on
+        # every WFM step and flooded the log), so a new strategy stores neither key: the
+        # ratio is trades over the count above, for a strategy of any age.
+        row["DoF Ratio (IS)"] = (round(row["# of trades (IS)"] / row["Param Count (IS)"], 2)
+                                 if row["Param Count (IS)"] else 0)
         rows.append(row)
     return pd.DataFrame(rows)

@@ -15,12 +15,12 @@ tag: 🔬  date: 2026-10-04  see: perf/review-path-after-sqx, conditions/selecti
 ## Evidence
 - 📓 Simple Strategy builds (2026-10-02/03) accept far faster than the free-shell template: ≈ 60k generated in 3 min, 10-20k accepted at a 2-6 min box on indices. Acceptance per cell 1-34 % (median 5.5 %); M30 and yen crosses are slow (25 base cells accepted < 300 in 2 min and needed a 10-minute box). The search needs ~2 min to start producing.
 - 📓 Custodian JVM RSS reaches 64-79 GB on 4-6 min builds. Its shutdown sync of 3 databanks × 20k files exceeds `sqx-worker.sh`'s 5-minute wait: not a hang — wait up to 40 min for the port.
-- `AlgoData/scratch/calib2/synth_final/synthesis.md` (acceptance table), `STATE.md` (queue v9).
+- `AlgoData/scratch/calib2/synth_final/synthesis.md` (deleted 2026-10-04) (acceptance table), `STATE.md` (queue v9).
 - `Test_Calib_USDJPY_H1` (donchianUpperCrossUp, 96 cores): 10,000 in `Results` 60 s after start, 114,489 generated in 145 s, 2.9 M generated/h. Donor filters applied afterwards to its IS metrics keep 71 of 5026.
 - `Test_Calib_XAUUSD_H1`: watchdog stop at 7,056 after 35 s; 7,085 on disk. OOS retest of 7,084: 83 s.
 - Free shell (`freeShellLong`, both holes free, 842 blocks on): 2 % accepted in the first minute, 34 % after five; 5,059 in 5 min (18,367 generated).
 - `StopCondition type="passed-count" passedStrategies="8000"`: the build ended near 5,026 instead — 🤔 not understood, not relied on.
 - 2026-10-01 19:05: custodian killed mid-stop → `OOS` 0 files, `Results/Strategy 19.18.60.sqx` 8,197 bytes "not a zip file".
-- One start, 6-min `time-limit`, free shell, 96 cores (`AlgoData/scratch/calib_queue/queue.sh` v2): XAUUSD H1 genetic 6,986 accepted of 23,482 (acceptance 2 % in minute 1, 35 % in minute 6), OOS retest of them 105 s, stop 55 s, 576 s from one population leaving SQX to the next; random generation 1,059 (long) and 393 (short) of ~23,000 on USDJPY H1, 450 s. Two starts with the export at each stop were 20-40 min.
+- One start, 6-min `time-limit`, free shell, 96 cores (`AlgoData/scratch/calib_queue/queue.sh` (deleted 2026-10-04) v2): XAUUSD H1 genetic 6,986 accepted of 23,482 (acceptance 2 % in minute 1, 35 % in minute 6), OOS retest of them 105 s, stop 55 s, 576 s from one population leaving SQX to the next; random generation 1,059 (long) and 393 (short) of ~23,000 on USDJPY H1, 450 s. Two starts with the export at each stop were 20-40 min.
 - Other projects' databanks are not rewritten by a start or a stop of the install (mtimes unchanged over two later stops of the install): project n is exported while the custodian builds n+1.
-- Block keys per strategy: `signal/Item[AND]/Block/Item` of `strategy_Portfolio.xml`; dumped to `harvest/<P>/Results/<day>/blocks.parquet` by `AlgoData/scratch/calib_queue/blockdump.py`.
+- Block keys per strategy: `signal/Item[AND]/Block/Item` of `strategy_Portfolio.xml`; dumped to `harvest/<P>/Results/<day>/blocks.parquet` by `AlgoData/scratch/calib_queue/blockdump.py` (deleted 2026-10-04).

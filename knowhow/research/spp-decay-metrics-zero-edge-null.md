@@ -40,5 +40,5 @@ Quantiles 5/25/50/75/95 — real (across the 10) | null (median across the 10 of
 | distance of the original, in IQR (12 metric × side) | medians −0.27 … +0.39 | own grid p5/p95 ≈ −1.2 / +1.3 (Sharpe, Net Profit), −0.8 / +1.9 (PF, Ret/DD, DD) | 0 / 120 outside |
 
 In % of the median the same distance spans −53 … +147 % (Net Profit, Ret/DD): «± 30 %» fails half of
-originals that sit well inside their own grid. Reproduce: scratch `criteria/spp_null.py` logic =
+originals that sit well inside their own grid. Reproduce: scratch `criteria/spp_null.py` (removed) logic =
 `decay.measure` per strategy; test `tests/test_spp_decay.py`.

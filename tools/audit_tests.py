@@ -21,26 +21,15 @@ ASIDE: dict[str, tuple[str, str]] = {
     "tests/test_commission_segments.py": (
         "Darwinex's commission is PercentageBased 0.005 in the asset cards, the donor's Build and "
         "Retest Setup still say SizeBased 5.0: cost cards in motion (assets/_build.yaml)", "2026-10-02"),
-    "tests/test_feedquality.py": (
-        "calibration.json is keyed by the old feed names (XAUUSD_DukasM1_Infinox...), the feeds were "
-        "renamed XAUUSD_M1 on 2026-10-01: recalibrate or rekey", "2026-10-02"),
     "tests/test_mt5verify.py": (
         "5 assertions fail while mt5/verify is being rewritten by another session (firms.py, "
         "judge.py, run.py uncommitted)", "2026-10-02"),
     "tests/test_portfolio_build.py": (
         "AttributeError: RangeIndex.to_period in portfolio/common/construct/equity/matrix.py with the "
         "test's fixture: a code or fixture bug to look at, not a one-line fix", "2026-10-02"),
-    "tests/test_portfolio_mtm.py": (
-        "golden MAE exactness 0.943 < 0.99 on the real data: drift after the feed rename", "2026-10-02"),
-    "tests/test_portfolio_universe.py": (
-        "golden rebuild vs SQX daily 'low' reads 'out' (exact 0.96-0.975): same drift as "
-        "test_portfolio_mtm", "2026-10-02"),
     "tests/test_strategymeta.py": (
         "golden's asset_card_sha256 is not the sha of assets/symbols/XAUUSD.yaml after the cost-card "
         "edits, and strategymeta reads the golden strategies differently", "2026-10-02"),
-    "tests/test_ui_columns.py": (
-        "the databank column chooser's default order changed while ui/daemon/databank/ is modified "
-        "by another session", "2026-10-02"),
     "tests/test_ui_research.py": (
         "the research board's passing cells differ: studies/research/board is another session's "
         "work in progress", "2026-10-02"),
@@ -56,7 +45,11 @@ ASIDE: dict[str, tuple[str, str]] = {
 
 
 def run_one(path: str) -> tuple[str, int, float, str]:
-    """Run one test file the way its README says: a plain script, or pytest when it has no main.
+    """Run one test file the way its README says: a plain script, or pytest when it only defines tests.
+
+    pytest gets a file that defines `def test_` and has no `__main__`; anything else runs as a script —
+    a file of module-level asserts would make pytest exit 5 (nothing collected), and one that ends in a
+    module-level `sys.exit` an INTERNALERROR.
 
     Args:
         path: Repository-relative path of the test file.
@@ -64,7 +57,8 @@ def run_one(path: str) -> tuple[str, int, float, str]:
     Returns:
         (path, exit code, seconds, last 40 lines of output). A timeout is exit code 124.
     """
-    pytest_style = "__main__" not in (ROOT / path).read_text(encoding="utf-8")
+    text = (ROOT / path).read_text(encoding="utf-8")
+    pytest_style = "__main__" not in text and "def test_" in text
     command = ["python3", "-m", "pytest", "-q", path] if pytest_style else ["python3", path]
     env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
     start = time.time()

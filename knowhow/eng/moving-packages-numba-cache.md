@@ -11,5 +11,5 @@ tag: 🔬  date: 2026-09-25  see: eng/moving-module-into-layer, perf/numba-divis
 ## Evidence
 Refactor `strategies/`, `tasks/`, `nulls/`, `gate/` → `studies/`, `engines/`, `portfolio/common/monteCarlo` (2026-09-25).
 - After phase 2 (`nulls.kernel` → `engines.nulls.kernel`) the regression failed with `ModuleNotFoundError: No module named 'nulls.kernel'` from inside numba's cache loader; deleting every `__pycache__` fixed it, no code change.
-- It also rewrote `client.get("gate/harvests")` and three siblings in `ui/desktop/gate.py` (the IS/OOS zone answered 404) and `ledger/backfill.py`'s `criterion: f"gate/{screen}"`, which would have split new ledger rows from the old ones. Both restored to `gate/`.
+- It also rewrote `client.get("gate/harvests")` and three siblings in `ui/daemon/gate.py` (the IS/OOS zone answered 404) and `ledger/backfill.py`'s `criterion: f"gate/{screen}"`, which would have split new ledger rows from the old ones. Both restored to `gate/`.
 - The AST+text mover rewrote module paths inside `audit/` daily reports; restored with `git checkout <pre-move commit> -- audit`.

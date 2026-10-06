@@ -10,18 +10,26 @@
 # pruning moves the bytes, it does not discard them. `--auto` archives first, which
 # is what makes a frequent prune actually reclaim anything.
 #
-# Never touches the current day's log: SQX holds it open and appends to it.
+# Never touches the current day's log, nor any file a process holds open: SQX appends to it.
+#
+# Two retentions, because days alone did not bound the folder (2026-10-06: the custodian held
+# 1.8 GB, one past day of 854 MB, all of it archived and none of it a week old): a small log
+# stays KEEP_DAYS for a quick grep; a past day's log above BIG_MB is an error storm and goes
+# as soon as its .gz is up to date and it has been quiet for an hour (a run that crosses midnight
+# writes on in yesterday's file for a moment) — read it with `zgrep` in the archive.
 #
 # Usage:
 #   sqx-log-prune            archived logs older than KEEP_DAYS go; verbose
 #   sqx-log-prune --dry-run  list what would go; delete nothing
 #   sqx-log-prune --auto     archive, then prune, quietly, at most once per MIN_HOURS.
 #                            Meant for hooks and for sqx-worker.sh — safe to call often.
-#   KEEP_DAYS=14 sqx-log-prune
+#   KEEP_DAYS=14 BIG_MB=100 sqx-log-prune
+#   ONLY="SQX_w1 SQX_w2" sqx-log-prune   only these installs (folder names)
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KEEP_DAYS="${KEEP_DAYS:-7}"
+BIG_MB="${BIG_MB:-20}"          # an archived past-day log above this goes whatever its age
 MIN_HOURS="${MIN_HOURS:-4}"     # --auto does nothing if it ran more recently than this
 WARN_MB="${WARN_MB:-200}"       # a current-day log above this is shouted about
 
@@ -76,6 +84,9 @@ for install in "${INSTALLS[@]}"; do
   logdir="$install/user/log"
   archdir="$DATA/logs/$name"
   [ -d "$logdir" ] || continue
+  [ -n "${ONLY:-}" ] && [[ " $ONLY " != *" $name "* ]] && continue
+  # What any process holds open in this folder, read from /proc: never deleted, whatever its name.
+  held=$(find /proc/[0-9]*/fd -lname "$logdir/*" -printf '%l\n' 2>/dev/null | sort -u)
   [ "$AUTO" = 1 ] || echo "== $name  (archivo: $archdir)"
 
   # The live day: open, appended to, never deletable. Pruning cannot help, so the
@@ -94,11 +105,12 @@ for install in "${INSTALLS[@]}"; do
     base=$(basename "$f")
     # Belt and braces: -mtime cannot return today's file, but KEEP_DAYS=0 could.
     [ "$base" = "$TODAY" ] && continue
+    grep -qxF "$f" <<< "$held" && continue
     # Delete only what the archiver already holds.
     rel="${f#$logdir/}"
     gz="$archdir/$rel.gz"
-    if [ ! -f "$gz" ]; then
-      say "KEEP    $base — sin copia en el archivo, no se borra"
+    if [ ! -f "$gz" ] || [ "$f" -nt "$gz" ]; then
+      say "KEEP    $base — sin copia al dia en el archivo, no se borra"
       kept_unarchived=$((kept_unarchived+1))
       continue
     fi
@@ -110,7 +122,7 @@ for install in "${INSTALLS[@]}"; do
       [ "$AUTO" = 1 ] || printf '   deleted %-30s %12d bytes\n' "$base" "$size"
     fi
     freed=$((freed+size))
-  done < <(find "$logdir" -type f -name '*.log' -mtime "+$KEEP_DAYS" -print0 | sort -z)
+  done < <(find "$logdir" -type f -name '*.log' \( -mtime "+$KEEP_DAYS" -o \( -size "+${BIG_MB}M" -mmin +60 \) \) -print0 | sort -z)
 done
 
 human=$(numfmt --to=iec "$freed" 2>/dev/null || echo "$freed B")

@@ -106,7 +106,7 @@ file to open for which task. Read `CODESTYLE.md` before writing Python, and the 
 
 Skills (`.claude/skills/`, catalogued in `docs/SKILLS.md`) turn each workflow step the owner runs
 again into one command — `/template-run`, `/oos-gate`, `/crossmarket`, `/crosstf`, `/mcretest`,
-`/spp`, `/variants`, `/wfm`, `/export`, `/curate`, `/translate` and others. Scheduled agents
+`/spp`, `/variants`, `/wfm`, `/export`, `/curate` and others. Scheduled agents
 (`.claude/agents/`, launched by `bin/`) keep the project honest unattended: a nightly audit,
 documenter and fixer, a daily commit proposal at 05:45 (propose only: the owner commits, with one «sí» to `python3 -m tools.commit_apply`), a weekly project janitor, and the prop-firm catalogue watcher and daily deal
 hunter. Their reports go to `AlgoData/audit/`. `/sync` keeps this GitHub copy equal to the machine —

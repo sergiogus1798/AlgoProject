@@ -26,10 +26,11 @@ tag: 🔬  date: 2026-09-30  see: ui/qt-reload-inside-own-signal
 - `ui/desktop/blocks/result.py` sets `Ignored` on every page but the current one; a short tab sat on
   the blank height of a long one.
 - `QFontMetrics(QFont(f)).inFontUcs4(ord(ch))` over `QFontDatabase.families()`, 2026-09-26: ⛔ 0, 👁 0,
-  ⊘ 21, ◉ 21; `fc-list | grep -ci emoji` → 0. `ui/desktop/matrix/paint.py` drew the red disc and eye
+  ⊘ 21, ◉ 21; `fc-list | grep -ci emoji` → 0. `ui/desktop/matrix/paint.py` (removed) drew the red disc and eye
   (retired with Población by F13, 2026-09-28; `studypage/notes.py` keeps ⊘/◉).
 - `ui/desktop/batchview/`, 2026-09-27: `self.metric = ...` on the parallel-coordinates widget segfaulted on the first paint / devicePixelRatio query; renamed, fixed (its README).
 - `ui/desktop/workspace/filters.py`, 2026-09-28: the filter row's `self.metric` QComboBox segfaulted on the
   first `grab()` offscreen (F15 shots); renamed `self.column`.
 - `ui/desktop/theme.py`, 2026-09-27: with only `QTabBar::tab` rules the Estrategia page's family bar kept a
   near-white rule under it (`--shot` capture); `qproperty-drawBase: 0` removed it.
+- 🔬 2026-10-06: a monkey population report took ~9 s to open. `bars._geometry` measured every label of a 1,000-bar chart with `QFontMetrics.horizontalAdvance` on each paint and each mouse move (465,000 calls); the face is monospace, so it now measures the longest only. `table.widget` built the header's words and the alignment flag per cell (350,000 cells): hoisted per column, 8.3 → 6.8 s on a 9,959 × 35 table — the rest is one `QTableWidgetItem` per cell, which only a model/view table would remove.

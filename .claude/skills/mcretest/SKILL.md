@@ -6,7 +6,7 @@ description: Configure the eight MC Retest tasks of a custom SQX project — one
 # /mcretest
 
 Step 13 of the workflow, the SQX half. It leaves the eight MC Retest tasks of a custom project
-configured and ready to run. Reading what they produce is `/retest` → `studies/breakage/mcRetest/`
+configured and ready to run. Reading what they produce is `studies/breakage/mcRetest/`
 (step 14), and the Monte Carlo that reorders trades is OUT of the workflow on purpose.
 
 ## The one thing to understand first
@@ -25,6 +25,14 @@ That imposes two things, and the command writes both:
 
 That is why **all eight read the same databank**: they are eight readings of one population, not a
 funnel.
+
+## The Exits rule — 🔬 2026-10-06
+
+`RandomizeExitParameters` («MCR 6 Exits», and one of «MCR 8 Stress»'s methods) is written **only** if
+some strategy of the input population has an exit method set — stop loss, profit target, trailing,
+move to BE or exit after bars (`sqx.projects.orders.with_exits`: a Param `exitMethod="true"` whose
+Formula is not `.None` or whose value is not 0). Over condition-only exits SQX's MC sub-jobs never
+return and the task sits for ever with nothing in the log. → `knowhow/sqx-drive/retest-task-hangs-silently-deadline.md`
 
 ## The MinDist rule — the owner's, 2026-09-23
 

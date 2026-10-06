@@ -94,9 +94,6 @@ reprice:
   near_minutes: 5               # un tick a más de estos minutos de la hora de la operación no vale: se usa el modelo
   judge: spread_slippage        # spread | spread_slippage: contra qué versión se dice «se rompe»
   action: mark                  # mark | drop: si el reajuste que no cubre el spread real escribe DESCARTAR
-mc:                              # el rango de mc_retest.spread/slippage que escribe onboard.plan()
-  grain: 0.1                    # el paso de RandomizeSpread/RandomizeSlippage en SQX, mismas unidades que spread_is
-  min_steps: 10                 # el rango debe cubrir al menos esto pasos de `grain`, si no la tarea sale sin forma
 band:                           # la curva spread = a · precio^b y sus límites (dueño, 2026-09-27), un informe por activo
   assets:                       # activo -> su feed de ticks; sólo hacen falta los ticks
     DAX40: DAX40_TICK

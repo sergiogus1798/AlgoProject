@@ -15,6 +15,7 @@
 - `cscv-daily-returns` — Is a daily-returns panel in the CSCV mostly zeros, and what does it rank?
 - `cusum-blind-spot` — Does a CUSUM non-rejection show a strategy is stable?
 - `daily-block-seams` — How must a daily block bootstrap treat floating equity at each block seam?
+- `darwinex-darwinia-published-rules` — What does Darwinex publish on DARWIN risk normalisation, D-Score, DarwinIA SILVER/GOLD and trading constraints?
 - `drift-term-biased-by-side` — Why is the gate's drift_excess_t biased toward one side (long or short) of an asset, and how much?
 - `entry-vs-chance` — Do the entries or the exits carry the edge on this corpus, and how to tell?
 - `eta-squared-vs-duplicates` — Should an inert parameter be frozen by the duplicate test or by eta-squared?
@@ -50,7 +51,6 @@
 - `spp-noise-gate-centred-no-floor` — How does the SPP noise gate decide, and is there a minimum trade count?
 - `spp-origin-level-sampled-once` — What happens when an SPP step grid does not contain the original parameter value?
 - `stageb-selector-p-reads-high` — Which P(pass) of stage B's winner may be reported — the one that chose it, or a re-draw?
-- `step6-floor-vs-step8-yield` — How does the step-6 trades-per-year floor affect step-8 yield and Pass counts?
 - `surfaces-jaccard-lift-flip-null` — Do the surfaces' Jaccard lift, or «the mother inside the other markets' top decile», beat a zero-edge market?
 - `t1-optimistic-on-near-clones` — Why does stage B's trade bootstrap T1 give a higher P(pass) than D, T2 and stage A, and is it a bug?
 - `trade-filter-parameter-space` — What does a trade-count floor remove in parameter space before a surface is fitted?

@@ -44,6 +44,11 @@ for it. He knows, and it is deliberate. On SQX you report only these three thing
   current that is in fact stale or unreadable.
 - **Log files too large.** `~/Desktop/SQX/user/log` and the worker's equivalent: total size, the
   largest files, anything growing fast enough to matter. Give the size and the path, nothing else.
+  `bin/sqx-log-prune.sh` removes an archived past-day log above 20 MB at 04:15 and on every session
+  start, so a big log of yesterday at 03:00 is expected. A finding is only: the current day's log
+  above 200 MB, a past-day log the prune's own log (`logs/prune.log`) says it kept (`KEEP`), or a
+  folder above 500 MB two nights running. The `TradingSetup.StrategyClass is not set` traces are
+  known noise of the Param Count column (`knowhow/eng/log-retention.md`): never re-described.
 - **A custom block or a project archive is corrupt.** Blocks and groups under the install that fail
   to parse, name an indicator or parameter the install does not have, or whose code cannot do what
   its name claims. Same for archives: run `python3 -m sqx.inspect.dump_project <P>` for each
@@ -58,12 +63,15 @@ Anything else about SQX is out of scope unless the owner asks for it by name.
 - Run `python3 tools/depmap.py && python3 tools/checks.py` and report what fails.
 - Then add what no script can see: duplicated logic across scripts, dead code, a tool whose README
   row no longer describes what it does.
-- Data: every export under `raw/<project>/<databank>/<date>/` must carry a `manifest.json` at that
-  root (partition subfolders share it). The mechanical report already lists the ones that do not;
-  add any manifest whose `code_version` names a commit that no longer exists.
+- Data: every export under `raw/<project>/<databank>/<date>/` must carry a `manifest.json` in the folder that
+  holds its data files or in any folder above it (`spp/`, `wfm/`, `wfc_pairs/`, `strategies/` each carry their
+  own). The mechanical report lists the ones that do not, and the manifests whose `code_version` is not a
+  commit; `migrated from AlgoProject_Old, pre-git` is an accepted marker. Do not re-derive either.
 - The unattended jobs: the last entry of `nightly-audit.log`, `nightly-docs.log`, `nightly-fix.log`, `disk-nightly.log` (a broken budget)
   and `weekly-data-update.log` (a refused update, a `.sqx` count that fell, days a feed refused)
   under the data root's `logs/`. Report a job that failed or did not run when cron says it should.
+  `mechanical half exit 1` is not a failure: it means the mechanical report has findings, and they
+  are in that report. Only another exit code, or no `wrote …-mechanical.md` line, is a broken job.
 - Results cited in `knowhow/` or `docs/` whose generating script has since changed.
 - **Asset overrides**: compare `assets/*.yaml` against `python3 -m sqx.inspect.instruments`.
   Report where SQX changed under a recorded `sqx_default`, and every asset still carrying
@@ -104,6 +112,13 @@ section (next free number, status emoji in the heading) placed in numeric order 
 open sections, **and** a matching row added to the Index table near the top (`| N | status | title
 | OPEN.md |`). Closed issues live in `docs/OPEN-closed.md`, not here — read `OPEN.md`'s own index
 before deciding a number is free.
+
+**By design — never a finding, not even in the closing line:** a file that `git status` shows as
+modified or untracked (the owner commits, hard rule 12 — `docs/DEPENDENCIES.md` among them: the
+mechanical report says `stale, regenerated` only when its content really changed); a project,
+databank or export of `Test_Calib_*` that is gone (the owner deleted that calibration whole on
+2026-10-04); a project of ours sitting in the master (one he copied to look at); a test listed
+under «apartadas» that still fails.
 
 Findings that the scope above no longer covers get **dropped from `state.json` without being
 reported** — not as resolved, not as a note. Leave any `OPEN.md` entry they already have alone;

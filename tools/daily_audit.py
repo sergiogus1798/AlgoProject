@@ -9,6 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core import manifest
 from core.paths import AUDIT, DATA, MASTER, ROOT
 from tools import audit_tests
 
@@ -26,6 +27,9 @@ def run(*command: str) -> tuple[int, str]:
     return p.returncode, (p.stdout + p.stderr).strip()
 
 
+WONT_FIX = {"Infinox_SP500ft_H4_HighPrecision"}   # OPEN.md #3: the owner's decision, not a nightly finding
+
+
 def corrupt_projects() -> list[str]:
     """Projects whose config.xml references task files their archive lacks.
 
@@ -35,7 +39,7 @@ def corrupt_projects() -> list[str]:
     """
     bad = []
     for d in sorted((MASTER / "user/projects").iterdir()):
-        if not (d / "project.cfx").exists():
+        if d.name in WONT_FIX or not (d / "project.cfx").exists():
             continue
         code, _ = run("python3", "-m", "sqx.inspect.dump_project", d.name, "-o", "/dev/null")
         if code:
@@ -63,6 +67,21 @@ def exports_without_manifest() -> list[str]:
     return sorted(missing)
 
 
+def manifests_of_unknown_code() -> list[str]:
+    """Exports whose manifest names code that cannot be found again.
+
+    Returns:
+        One `<export folder> (<code_version>)` per distinct `code_version` under the data root
+        that is neither a commit of this repository ("-dirty" aside) nor `manifest.PRE_GIT`.
+    """
+    seen = {}
+    for m in sorted((DATA / "raw").rglob("manifest.json")):
+        seen.setdefault(json.loads(m.read_text(encoding="utf-8")).get("code_version", ""), m.parent)
+    return [f"{d.relative_to(DATA)} ({v or 'no code_version'})" for v, d in seen.items()
+            if v != manifest.PRE_GIT
+            and run("git", "cat-file", "-e", v.removesuffix("-dirty") + "^{commit}")[0]]
+
+
 def undecided_assets() -> list[str]:
     """Assets a live project uses whose real spread or commission is still undecided.
 
@@ -84,11 +103,16 @@ def main() -> None:
     checks_code, checks_out = run("python3", "tools/checks.py")
     results, wall = audit_tests.run_all()
     tests_row, tests_failed = audit_tests.report(results, wall)
+    # Stale = depmap changed the file just now. Uncommitted is not stale: the owner commits (rule 12),
+    # so `git status` called it dirty every night between two of his commits.
+    deps = ROOT / "docs/DEPENDENCIES.md"
+    before = deps.read_bytes() if deps.exists() else b""
     depmap_code, _ = run("python3", "tools/depmap.py")
-    dirty = run("git", "status", "--porcelain", "docs/DEPENDENCIES.md")[1]
+    dirty = deps.read_bytes() != before
 
     bad = corrupt_projects()
     no_manifest = exports_without_manifest()
+    unknown_code = manifests_of_unknown_code()
     undecided = undecided_assets()
 
     lines = [f"# Mechanical audit {date.today().isoformat()}", "",
@@ -100,6 +124,7 @@ def main() -> None:
              f"| `docs/DEPENDENCIES.md` | {'stale, regenerated' if dirty else 'current'} |",
              f"| projects that fail to render | {', '.join(bad) or 'none'} |",
              f"| exports without a manifest | {', '.join(no_manifest) or 'none'} |",
+             f"| manifests naming unknown code | {', '.join(unknown_code) or 'none'} |",
              f"| assets in use, cost still undecided | {', '.join(undecided) or 'none'} |"]
     if checks_code:
         lines += ["", "## checks.py output", "", "```", checks_out, "```"]

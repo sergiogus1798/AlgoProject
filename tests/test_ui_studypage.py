@@ -31,7 +31,8 @@ from ui.desktop.workspace.fichaorigin import default_study  # noqa: E402
 
 # Since F13 (2026-09-28): the USDJPY Donchian project; its gate ran on 09-27 and 09-28.
 PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
-MOTHER = "Strategy 9.27.83"          # the one with a variant batch (strategyPermutations/)
+MOTHER = "Strategy 9.27.83"
+LOTE_PROJECT = "Trade_NIKKEI225_M30_volatilidadL"   # a kept project with variant batches (strategyPermutations/)
 NO_BATCH = "Strategy 4.10.81"        # one of Results no 16.5 has fabricated variants for
 RUN = "--run" in sys.argv
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
@@ -162,18 +163,22 @@ def test_strategy() -> None:
 def test_lote() -> None:
     """«Lote» sits beside the drawer only while the WFC study is open on a mother with a batch —
     it left the Ficha on 2026-09-29 (a strategy can have no batch)."""
-    bank = HTTP.get("/api/matrix", params={"project": PROJECT, "databank": DATABANK}).json()
+    bank = HTTP.get("/api/matrix", params={"project": LOTE_PROJECT, "databank": DATABANK}).json()
     names = {s["strategy"]: s["identity"] for s in bank["strategies"]}
-    SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=MOTHER,
-                     identity=names[MOTHER], asset="USDJPY")
+    has = {n: HTTP.get("/api/batch/has", params={"project": LOTE_PROJECT, "strategy": n}).json()["has_batch"]
+           for n in names}
+    mother = next(n for n in names if has[n])
+    no_batch = next(n for n in names if not has[n])
+    SELECTION.choose(project=LOTE_PROJECT, databank=DATABANK, strategy=mother,
+                     identity=names[mother], asset="NIKKEI225")
     page = StrategyPage()
     page.open_study("wfc")
     assert page.lote is not None and page.side.isTabVisible(page.side.indexOf(page.lote))
     shot(page, "lote-wfc")
     page.open_study("gate")                  # another study: the tab hides again
     assert not page.side.isTabVisible(page.side.indexOf(page.lote))
-    SELECTION.choose(project=PROJECT, databank=DATABANK, strategy=NO_BATCH,
-                     identity=names[NO_BATCH], asset="USDJPY")
+    SELECTION.choose(project=LOTE_PROJECT, databank=DATABANK, strategy=no_batch,
+                     identity=names[no_batch], asset="NIKKEI225")
     page.open_study("wfc")
     assert page.lote is None or not page.side.isTabVisible(page.side.indexOf(page.lote))
     page.deleteLater()

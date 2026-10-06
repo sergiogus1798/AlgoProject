@@ -3,8 +3,10 @@
 feed, and a failed build must leave nothing behind (OPEN.md issues 34-35).
 
 Builds are staged into a throwaway temp directory standing in for a headless install —
-`sqx.projects.builder.worker_dir` is monkeypatched, so this never touches a real SQX
-install, never talks to a worker's HTTP API, and writes no data outside /tmp.
+`sqx.projects.builder.worker_dir` is monkeypatched, and the feed and the session come from
+the data root's copy of SQX's registry, so this never opens a real SQX install — what a
+worker happens to hold today cannot change the answer (it did, 2026-10-03) — never talks
+to a worker's HTTP API, and writes no data outside /tmp.
 """
 
 import shutil
@@ -15,17 +17,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.datapaths import projects_backup
-from core.paths import MASTER
-from sqx.projects import builder, source
+from core.datapaths import cache_dir, projects_backup
+from sqx.projects import builder, registryxml, sessiondb
 
 TEMPLATE = (Path(__file__).resolve().parent.parent / "tools/sqx-lab/plugins/sqx-lab/skills/"
             "sqx-strategy-template/engine/skeletons/market_skeleton.sqx")
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
-# A project SQX itself wrote and that carries both USDJPY's session and its feed —
-# read-only, on the master. `source.pick` would find this one on its own; passed
-# explicitly here so the test does not depend on what else is on disk today.
-USDJPY_SOURCE = MASTER / "user/projects/USDJPY/project.cfx"
+# The copy of SQX's registry `sessiondb.copy` keeps on the data root. Pinned, so the test
+# neither stats the master's original nor borrows from a project of a live install.
+REGISTRY = cache_dir("sessions") / "data.db"
 
 FAILURES: list[str] = []
 
@@ -49,15 +49,16 @@ def project_texts(cfx: Path) -> dict[str, str]:
 def test_usdjpy_feedswap() -> None:
     """Building USDJPY from the XAUUSD donor must carry no trace of gold."""
     print("test_usdjpy_feedswap")
-    if not USDJPY_SOURCE.exists():
-        print(f"  SKIP — {USDJPY_SOURCE} not on this machine")
+    if not REGISTRY.exists():
+        print(f"  SKIP — {REGISTRY} not on this machine")
         return
+    sessiondb.copy = lambda: REGISTRY
     with tempfile.TemporaryDirectory(prefix="sqx-test-install-") as install:
         builder.worker_dir = lambda role: Path(install)
         done = builder.build(
             name="Test_fixture_usdjpy_feedswap", template=TEMPLATE, symbol="USDJPY",
             role="conductor", timeframe="M30", strategies=50, minutes=5, donor=DONOR,
-            session_from=USDJPY_SOURCE)
+            session_from=None)
 
         out = Path(done["cfx"])
         check("project.cfx installed", out.exists())
@@ -84,26 +85,28 @@ def test_usdjpy_feedswap() -> None:
 
 
 def test_failed_build_leaves_nothing() -> None:
-    """No project SQX has ever written defines an index's session. That must refuse
-    cleanly, before touching the install — not after a half-built .cfx is on disk."""
+    """A feed that neither a project nor SQX's registry defines must refuse cleanly, before
+    touching the install — not after a half-built .cfx is on disk. No project is offered
+    (`session_from=None`) and the registry, which does hold DAX40's feed, answers "no such
+    feed" for the test."""
     print("test_failed_build_leaves_nothing")
-    from core.assetdata import load
-    asset = load("USA500")
-    borrow = source.pick(DONOR, asset["session"], asset["sqx_symbol"])
-    check("precondition: no project defines USA500's session yet (documents today's gap)",
-          borrow is None, str(borrow))
+    if not REGISTRY.exists():
+        print(f"  SKIP — {REGISTRY} not on this machine")
+        return
+    sessiondb.copy = lambda: REGISTRY
+    registryxml.definitions = lambda feed: None
 
     with tempfile.TemporaryDirectory(prefix="sqx-test-install-") as install:
         builder.worker_dir = lambda role: Path(install)
-        raised = False
+        raised = ""
         try:
             builder.build(
-                name="Test_fixture_usa500_feedswap", template=TEMPLATE, symbol="USA500",
+                name="Test_fixture_dax40_feedswap", template=TEMPLATE, symbol="DAX40",
                 role="conductor", timeframe="M30", strategies=50, minutes=5, donor=DONOR,
-                session_from=borrow)
-        except SystemExit:
-            raised = True
-        check("build refuses (SystemExit)", raised)
+                session_from=None)
+        except SystemExit as e:
+            raised = str(e)
+        check("build refuses for the missing feed (SystemExit)", "falta el FEED" in raised, raised)
         leftover = list(Path(install, "user", "projects").glob("*")) \
             if Path(install, "user", "projects").exists() else []
         check("nothing left in the install after the refusal", not leftover, str(leftover))

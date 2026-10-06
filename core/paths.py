@@ -70,19 +70,6 @@ def worker_dir(role: str = "conductor") -> Path:
     return WORKERS[role]["path"]
 
 
-def worker_staging(role: str = "conductor") -> Path:
-    """The Retester/Results databank one install exports through.
-
-    Args:
-        role: Worker role, as in worker_dir.
-
-    Returns:
-        Path inside that install. Exports stage a copy of the strategies here because a
-        databank's folder can be empty while SQX holds its records in memory.
-    """
-    return WORKERS[role]["path"] / STAGING_REL
-
-
 def project_dir(name: str, install: Path = MASTER) -> Path:
     """Folder of one SQX project.
 

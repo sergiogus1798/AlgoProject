@@ -86,8 +86,8 @@ A third install costs **~3 GB, not 98**: `user/data/History` is a symlink to the
 the three H2 bar files are copied.
 
 In `machine.yaml`, the conductor is `sqx_worker` + `worker_port`; every other role goes under
-`sqx_workers` as `path` + `port`. `core/paths.py` exposes them as `WORKERS`, `worker_dir(role)` and
-`worker_staging(role)`; `WORKER`, `WORKER_PORT` and `STAGING` still mean the conductor. Asking for a
+`sqx_workers` as `path` + `port`. `core/paths.py` exposes them as `WORKERS` and `worker_dir(role)`;
+`WORKER`, `WORKER_PORT` and `STAGING` still mean the conductor. Asking for a
 role `machine.yaml` does not define raises — which is the right answer on a two-install machine.
 
 ⚠️ **Check the SQX licence before running more than one headless instance.** Nobody has read the

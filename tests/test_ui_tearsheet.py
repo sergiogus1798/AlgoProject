@@ -169,7 +169,9 @@ def test_draw(app: QApplication) -> None:
     shot(page, "ficha-scrolled")
     view.scroll.verticalScrollBar().setValue(3200)
     shot(page, "ficha-bottom")
-    assert [page.ficha.tabs.tabText(k) for k in range(page.ficha.tabs.count())] == ["IS/OOS"]
+    # The monkey's OOS reading joined the Ficha on 2026-10-04 (owner's feedback, ficha.SUBS).
+    assert [page.ficha.tabs.tabText(k) for k in range(page.ficha.tabs.count())] == [
+        "IS/OOS", "Entrada aleatoria · OOS principal"]
     page.ficha.top.setChecked(True)                  # the P&L asked again without its best 5 %
     page.ficha.dd.button(1).click()                  # and the drawdown in $
     app.processEvents()

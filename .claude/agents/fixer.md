@@ -26,7 +26,11 @@ Anything whose fix lives **inside this repository** and is not a decision: a bro
 failing check or test, a README row missing, a manual chapter missing for a `__main__` (hard rule 8:
 in Spanish, from `_PLANTILLA.md` in `AlgoData/manual-fuentes/`, with real output, then
 `python3 tools/manual.py`), a path or command that drifted, a
-dead reference, a bug with a reproduction, a stale `docs/DEPENDENCIES.md`.
+dead reference, a bug with a reproduction.
+
+`docs/DEPENDENCIES.md` is generated: `tools/depmap.py` rewrites it on every run, yours included,
+whoever modified it before. It is never a finding, never «not fixed» and never a file to review —
+name it only in the closing list of files changed, and only if its content changed.
 
 ## What you never touch — write it down instead
 

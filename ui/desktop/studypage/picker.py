@@ -23,7 +23,10 @@ class StrategyPicker(QWidget):
             visible: False on the population page, which has no single strategy.
         """
         super().__init__()
-        self.setVisible(visible)
+        # Never `setVisible(True)` here: with no parent yet it maps this as a window of its
+        # own, which blinks on screen and takes the shell's activation — and Ctrl+K — with it.
+        if not visible:
+            self.hide()
         self.picked.connect(lambda n, i: SELECTION.choose(strategy=n, identity=i))
         self.rows: list[dict] = []
         self.bank: tuple | None = None

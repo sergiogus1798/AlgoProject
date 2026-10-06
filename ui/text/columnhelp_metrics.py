@@ -71,8 +71,8 @@ METRICS = {
     "TRL Ratio": "Operaciones que tiene entre las mínimas (MinTRL) que necesitaría para un PSR "
                  "de 0,95 con su Sharpe, asimetría y curtosis. Por encima de 1 el historial "
                  "basta para fiarse del Sharpe; por debajo, todavía no.",
-    "DoF Ratio": "Operaciones por parámetro optimizado (columna propia del proyecto; cuenta "
-                 "periodos, shifts, constantes, otros parámetros y salidas usadas). Su autor "
+    "DoF Ratio": "Operaciones del IS por parámetro optimizado: «# of trades» entre «Param Count», "
+                 "calculado por el proyecto (SQX ya no lleva esta columna). Su autor "
                  "marca más de 10 cómodo, de 5 a 10 sospechoso y menos de 5 muy sospechoso.",
     "Param Count": "Parámetros que la búsqueda pudo mover: periodos, constantes, niveles de "
                    "entrada, otros parámetros y salidas usadas. El proyecto lo recalcula del "

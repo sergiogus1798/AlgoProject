@@ -7,7 +7,7 @@ tag: 🔬  date: 2026-09-30  see: export/data-all-crossmarket, export/wfm-export
 - Cross-market: `Symbol` — never the packed `block` column, which is wrong there. Same symbol (old CrossTF): **nothing separates the blocks** — the k-th occurrence of a ticket labels blocks by how fast each trades, not by Setup order. Since 2026-09-30 Cross TF runs one task per timeframe (`sqx.projects.crosstf`), one export each.
 - WFM (31 results): cut where `Sample type` turns `IS` → 30 cell blocks (`core/wftrades.chunks()`).
 - Assign a trade to a WF step with `searchsorted` over the next step's `runFrom`, never `runFrom <= t <= runTo`.
-- `tradestore.pack()` returns `torn_blocks`; non-empty = blocks are guesses.
+- `core.tradepack.pack()` returns `torn_blocks`; non-empty = blocks are guesses.
 
 ## Evidence
 - CrossTF CSV is sorted by open time with blocks interleaved. Old "new block where ticket stops growing" split one strategy into 173 pieces

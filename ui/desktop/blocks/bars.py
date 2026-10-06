@@ -17,8 +17,10 @@ TOP, BOTTOM, RIGHT = 14, 40, 100
 def _geometry(b: dict, rect: QRectF) -> tuple[float, float, tuple[float, float], Callable]:
     """The label column's width, the row height, the value range and its pixel map."""
     items = b["items"]
-    left = min(340, 16 + max(QFontMetrics(chart.font(11)).horizontalAdvance(i["label"])
-                             for i in items))
+    # The face is monospace: the longest label is the widest. Measuring every one of a
+    # population's 1,000 bars on each paint and each mouse move took seconds.
+    longest = max((i["label"] for i in items), key=len)
+    left = min(340, 16 + QFontMetrics(chart.font(11)).horizontalAdvance(longest))
     row = max(30.0, min(56.0, (rect.height() - TOP - BOTTOM) / len(items)))
     ends = [0.0] + [i["value"] for i in items if i["value"] is not None]
     ends += [e for i in items for e in (i.get("error") or []) if e is not None]

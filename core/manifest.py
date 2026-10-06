@@ -7,6 +7,11 @@ from pathlib import Path
 
 from core.paths import ROOT
 
+# A truthful record, not an error: exports carried over from AlgoProject_Old predate the
+# repository, so no commit can ever name the code that wrote them. The audit accepts this
+# marker by name (`tools/daily_audit.manifests_of_unknown_code`) instead of reporting it nightly.
+PRE_GIT = "migrated from AlgoProject_Old, pre-git"
+
 
 def code_version() -> str:
     """Git commit the current working tree is on.

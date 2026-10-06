@@ -5,7 +5,7 @@ import json
 import os
 import sys
 import time
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -18,7 +18,11 @@ from core.paths import DATA  # noqa: E402
 from ui.desktop.blocks import chart, kinds, result, tabpage  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 
-PER_STUDY = 3          # strategy files sampled per study; every population file is drawn
+# Every stored result is drawn, with its long tables cut to this many rows: what grows with
+# the data root is the rows of the population tables (a monkey table of 10,000 × 35 takes 7 s
+# to draw), not the kinds of block, and the test never ended inside the nightly 300 s.
+ROWS = 200
+PER_STUDY = 3
 SYNTHETIC = [          # kinds no stored report carries yet, so they are built here
     {"kind": "scatter", "title": "s", "x_label": "IS", "y_label": "OOS", "quadrants": True,
      "points": [{"x": -1.0, "y": 0.5, "label": "a", "group": "g1"},
@@ -37,18 +41,16 @@ SYNTHETIC = [          # kinds no stored report carries yet, so they are built h
 def fixtures() -> list[Path]:
     """Every population result, and a few strategy results of each study."""
     root = DATA / "reports"
-    out, per = [], defaultdict(int)
+    out, per = [], Counter()
     for f in sorted(root.glob("**/*.json")):
         if f.name == "manifest.json" or f.name.startswith("design_brief"):
             continue
-        if f.parent.name == "estrategias":
-            study = f.parent.parent.name
-            per[study] += 1
-            if per[study] > PER_STUDY:
-                continue
-        elif f.stem != f.parent.name:
-            continue
-        out.append(f)
+        if f.parent.name == "estrategias":     # tens of thousands, one shape per study
+            per[f.parent.parent.name] += 1
+            if per[f.parent.parent.name] <= PER_STUDY:
+                out.append(f)
+        elif f.stem == f.parent.name:
+            out.append(f)
     return out
 
 
@@ -57,6 +59,8 @@ def check_file(path: Path, view: result.ResultView, seen: Counter) -> None:
     data = json.loads(path.read_text(encoding="utf-8"))
     for tab in data["tabs"]:
         for b in tab["blocks"]:
+            if b["kind"] == "table":
+                b.update({k: b[k][:ROWS] for k in ("rows", "states", "tips") if b.get(k)})
             w = kinds.draw(b)
             assert not (isinstance(w, QLabel) and "No se pudo dibujar" in w.text()), \
                 f"{path}: {b['kind']} «{b.get('title')}» failed: {w.text()}"

@@ -21,7 +21,7 @@ config.**
 | commission | 0 | 8 USD/lot round trip → % of notional at Darwinex's last price | 8 USD/lot |
 | swap | worst of FTMO and Hantec per side, live from MT5 (`fundedswap`, owner 2026-10-01): % annual | same | same, in SQX points |
 | triple swap | FRIDAY | WEDNESDAY | WEDNESDAY |
-| MC Retest spread | quantiles 2.5–97.5 % of measured day ÷ model mean, × the build spread | same | same |
+| MC Retest spread | not written: null bounds resolve to 0.5×–2× of each segment's cost (`core.assetranges.mc_retest`, owner 2026-10-04) | same | same |
 
 ⚠️ The metal/forex segments are gold's and the pairs' as they were; the owner did not restate them.
 
@@ -66,12 +66,12 @@ Say both in the report.
 ## What to report
 
 The card, in Spanish, as a table: the spread per segment and what was declared, slippage,
-commission, swap, triple swap, MC Retest range in points and in multiples, and the model used for
+commission, swap, triple swap, and the model used for
 the build with its validation error. Then:
 
 - **Every value that was a default, not a measurement:** commission, swap, the metal/forex windows.
-- **A thin MC Retest range:** SQX draws on 0.1-point steps (`knowhow/costs/mc-retest-ranges.md`),
-  so a range under ~5 steps gives few distinct runs.
+- **The MC Retest range is not written** (owner, 2026-10-04): the card's bounds stay null and
+  resolve to multiples of each segment's cost (`python3 -m core.assets <SYMBOL>` shows them).
 
 End as every task ends: the files changed, then **¿Quieres hacer el commit?**
 

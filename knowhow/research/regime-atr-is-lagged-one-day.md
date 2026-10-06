@@ -7,4 +7,4 @@ tag: 🔬  date: 2026-10-04
 Value at D = ATR at close of D-1, like `garch()`. `conditionalMap` shifted again (double lag), fixed. `studies/research/marketProfile/context.py` only takes its mean, unaffected.
 
 ## Evidence
-2026-10-04 cleanup (`CALC_REVIEW.md`).
+2026-10-04 cleanup (`CALC_REVIEW.md`, deleted 2026-10-06).

@@ -32,8 +32,8 @@ Estados: ⬜ sin empezar · 🟡 en curso · ✅ hecho · 🔴 espera al dueño.
 | 1.2 | Firma provisional de los pasos 6 y 8 | DUEÑO | S | 1.1 | 🔴 |
 | 1.3 | Registro completo | sesión | M | — | 🟡 |
 | 1.4 | Autopilot: lo mínimo para una población nula | sesión | S-M | — | 🟡 |
-| 1.5 | Nulos en la escala nueva de la t y curva de mínimos | sesión | M | — | ⬜ |
-| 1.6 | Reglas de 10, 12, 14, 16 y paso 20 | sesión + DUEÑO | M | 1.2, 1.5 | ⬜ |
+| 1.5 | Nulos en la escala nueva de la t y curva de mínimos (encargo 42 §3) | sesión | M | — | ⬜ |
+| 1.6 | Reglas de 10, 12, 14, 16 y paso 20 (encargo 43) | sesión + DUEÑO | M | 1.2, 1.5 | ⬜ |
 | 1.7 | Monos por la cadena en Python (encargo 9) | sesión | L | 1.3, 1.6 | 🟡 |
 | 1.8 | Monos seleccionados en SQX (encargo 30) | sesión | L | 1.4, 1.7 | ⬜ |
 | 1.9 | Congelación final de umbrales | DUEÑO | S | 1.7, 1.8 | ⬜ |

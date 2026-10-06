@@ -22,7 +22,7 @@ DataZone ─▶ asset picker (data/assets) · tabs, each fetched on first openin
 | `tree.py` | The catalogue as a tree nested by path, biggest first at each level; sizes in B/KB/MB/GB; a stale date in amber; the command of a branch's own manifest on hover | imported | catalogue → QTreeWidget |
 | `pages.py` | `BarsPage` (timeframe and period pickers, the head line, the chart and its key) and `StudyPage` (one step-4 report in a `ResultView`) | imported | asset → page |
 | `candles.py` | The price painter: candles (blue up, orange down) when every bar gets 3 px, otherwise each pixel column's high–low range and its last close; hover per candle or column | imported | bars → Canvas |
-| `preview.py` | The zone alone in a window until the sidebar wires it; `--shot DIR` saves every tab as a PNG | `python3 -m ui.desktop.datazone.preview [--asset S] [--tab T] [--shot DIR]` | daemon → window · PNGs |
+| `preview.py` | The zone alone in a window (standalone viewer; the zone is wired in `shell.py`); `--shot DIR` saves every tab as a PNG | `python3 -m ui.desktop.datazone.preview [--asset S] [--tab T] [--shot DIR]` | daemon → window · PNGs |
 
 ## Contracts and traps
 

@@ -7,4 +7,4 @@ tag: 🔬  date: 2026-10-04
 The gate compares (max − mean) of the neighbourhood with σ·√(2 ln N). Centred, owner's decision 2026-10-04. No trade floor (owner: «sin suelo»).
 
 ## Evidence
-2026-10-04 cleanup (`CALC_REVIEW.md`).
+2026-10-04 cleanup (`CALC_REVIEW.md`, deleted 2026-10-06).

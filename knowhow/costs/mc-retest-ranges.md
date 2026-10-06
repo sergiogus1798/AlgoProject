@@ -43,3 +43,6 @@ resolves 0.5×–2× (or the card's `multiples`) of that segment's spread and sl
   same multiples, same convention as the declared `slippage_*` costs — and `apply()` writes both;
   USDJPY comes out `0.01–0.51`. Nothing has been written to `assets/`: the owner decides the ranges
   in the morning, this only fixes the computation.
+- 🔬 2026-10-06: `onboard.mc_range` and `config.yaml` → `mc:` are removed; the onboarding no longer writes bounds, so a new card
+  resolves like the 27 recalibrated on 2026-10-04. A segment's points now have one definition, `spread.verdict.points`
+  (mean relative spread × the segment's mean price ÷ tick), shared by the report and the onboarding (`tests/test_spread.py`).

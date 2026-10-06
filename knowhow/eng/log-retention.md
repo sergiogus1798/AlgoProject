@@ -5,11 +5,13 @@ tag: 🔬  date: 2026-10-01  see: columns/custom-columns-stored, columns/edge-de
 ---
 # Logs: archive first, prune only what has a `.gz`, never today's file
 `sqx.export.archive_logs` gzips every install's logs to `AlgoData/logs/<install>/`; `bin/sqx-log-prune.sh` deletes a live log only if its
-`.gz` exists (else prints `KEEP … sin copia en el archivo`), keeps 7 days (`KEEP_DAYS`), skips `log_$(date +%Y_%m_%d).log` by name.
+`.gz` exists and is newer than the log (else prints `KEEP … sin copia en el archivo`), keeps 7 days (`KEEP_DAYS`) — but an archived past-day log above
+`BIG_MB` (20), quiet for an hour, goes at any age — skips `log_$(date +%Y_%m_%d).log` by name and any file a process holds open; `ONLY="SQX_w1 SQX_w2"` restricts installs.
 Run `--auto` (archive then prune, rate-limited, silent unless bytes moved; shouts when today's log > `WARN_MB` 200). SQX prunes nothing.
-Big logs are tailed/grepped, never opened. The storm's cause stays unrepaired (owner, `OPEN.md` issue 3 ⚪), so pruning is permanent; readers of the master log filter `ProgressEngine` at source.
+Big logs are tailed/grepped, never opened. The storm's cause — the custom columns `ParameterCount` and `DoFRatio` raising on every WF step — is removed from the conductor (2026-10-06, `columns/param-count`), pending on the custodian and the master; pruning stays; readers of the master log filter `ProgressEngine` at source.
 
 ## Evidence
+- 🔬 2026-10-06: age-only retention left 2.6 GB of already-archived storm logs on the workers (`liberados: 0 bytes` nightly); with the size rule SQX_w1 893 MB → 38 MB, SQX_w2 1.8 GB → 5.7 MB.
 - Master 2026-09-21: 35 files, 4.5 GB — `log_2026_08_18.log` 4.4 GB, `log_2026_09_20.log` 55.5 MB, `log_2026_09_19.log` 1.2 MB, idle day ~130 KB (34,000×).
   Not: "SQX keeps 14 days / prunes on start" (`archive_logs.py` docstring) — files from 2026-06-13 still present.
 - 📓 4.66 GB day: 43.9 M lines, 39.8 M Java frames; 2 M × `TradingException: Setting 'TradingSetup.StrategyClass' is not set.` from `StatsComputer` in

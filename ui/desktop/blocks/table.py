@@ -141,15 +141,19 @@ def widget(block: dict) -> QWidget:
     market = [c.lower() in MARKET_COLS for c in b["columns"]]
     percent = [bool(PERCENT.search(str(c)) or PERCENT.search(label(c))) for c in b["columns"]]
     states, tips = b.get("states"), b.get("tips")
+    # Per column, not per cell: a population table is 10,000 rows × 35 columns, and the
+    # header's words and the alignment flag were a third of the seconds it took to draw.
+    heads = [label(c) for c in b["columns"]]
+    flags = [(Qt.AlignRight if a == "right" else Qt.AlignLeft) | Qt.AlignVCenter for a in align]
+    compact = bool(b.get("compact"))
     for i, row in enumerate(b["rows"]):
         for j, v in enumerate(row):
-            cell = Cell(v, market[j], states[i][j] if states else None, percent[j],
-                        bool(b.get("compact")))
-            cell.setTextAlignment((Qt.AlignRight if align[j] == "right" else Qt.AlignLeft)
-                                  | Qt.AlignVCenter)
-            full = v if isinstance(v, str) else chart.num(v)       # never 1e-05, even on hover
+            cell = Cell(v, market[j], states[i][j] if states else None, percent[j], compact)
+            cell.setTextAlignment(flags[j])
+            # never 1e-05, even on hover; a plain figure is already printed that way
+            full = v if isinstance(v, str) else chart.num(v) if percent[j] or market[j] else cell.text()
             own = tips[i][j] if tips else None       # a study's own hover, e.g. WFM's conditions
-            cell.setToolTip(own or f"{label(b['columns'][j])}: {full}")
+            cell.setToolTip(own or f"{heads[j]}: {full}")
             table.setItem(i, j, cell)
     # Enabling sorting sorts at once by column 0; the study's own order is the reading order.
     table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)

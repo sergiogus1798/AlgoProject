@@ -70,6 +70,22 @@ def reconstruct(days: pd.DataFrame, vol: pd.DataFrame, name: str) -> pd.DataFram
                          "source": np.where(vol.index.isin(days.index), "medido", "modelo")})
 
 
+def points(part: pd.DataFrame, tick: float, factor: float) -> float:
+    """A segment's spread in SQX points: its mean relative spread at its mean price.
+
+    Args:
+        part: The segment's days of `reconstruct()` (`rel`, `price`).
+        tick: `assets/`'s tick size.
+        factor: The safety factor.
+
+    Returns:
+        The points the segment's task declares. One function for the report and for the
+        onboarding (owner, 2026-10-04: a % of the segment's mean price) — they used to
+        disagree whenever spread and price moved together inside a segment.
+    """
+    return float(part["rel"].mean() * part["price"].mean() / tick * factor)
+
+
 def propose(daily: pd.DataFrame, windows: dict, tick: float, factor: float) -> pd.DataFrame:
     """What each segment should carry in SQX, from the reconstructed spread times the owner's factor.
 
@@ -83,17 +99,17 @@ def propose(daily: pd.DataFrame, windows: dict, tick: float, factor: float) -> p
         One row per segment: the share of its days measured, the mean relative spread, the
         commission in % that charges it once per trade (SQX charges `PercentageBased` once,
         on the open — OPEN.md #26), and the equivalent spread in points at the segment's
-        median price.
+        mean price (`points`).
     """
     rows = []
     for segment, (start, end) in windows.items():
         part = daily[(daily.index >= pd.Timestamp(start, unit="ms")) & (daily.index < pd.Timestamp(end, unit="ms"))]
         rel = float(part["rel"].mean())
-        price = float(part["price"].median())
+        price = float(part["price"].mean())
         rows.append({"tramo": segment, "desde": f"{part.index[0]:%Y-%m-%d}", "hasta": f"{part.index[-1]:%Y-%m-%d}",
                      "% días medidos": float((part["source"] == "medido").mean() * 100),
                      "spread medio (pb)": rel * BPS, "comisión % propuesta": rel * factor * 100,
-                     "precio mediano": price, "puntos equivalentes": rel * factor * price / tick})
+                     "precio medio": price, "puntos equivalentes": points(part, tick, factor)})
     return pd.DataFrame(rows)
 
 

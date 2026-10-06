@@ -30,6 +30,9 @@ dueño viven en `OPEN.md` §50), el **37** (la matriz del WFM con sus 10 condici
 SQX, commit `5d2d0dc`) y el **42** (noticias en el tester, la memoria con causas y el revisor, y los
 tres contrastes, commit `69c4ada`; la lectura real con y sin filtro espera la estrategia y la firma
 del dueño, `OPEN.md` §85, y lo que encontró está en §96-§99 y §101).
+El 2026-10-06 salieron, por orden del dueño, el **27** (la criba de MAE profundo está construida en
+`studies/screening/maeDepth/`; su umbral sigue siendo decisión suya) y el **32** (`ledger/tried.py`
+registra lo que prueba cada barrido).
 
 ## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
 
@@ -92,12 +95,10 @@ Salen del dossier `docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md`, ele
 |---|---|---|
 | `25-estacionalidad.md` | desglose estacional de una estrategia: si su resultado se concentra en unos meses, unos días de la semana o unas horas, o está repartido, medido contra el azar. Nace de la comparación con BuildAlpha del 2026-09-27; sin empezar | lo ya exportado (`metrics/` y operaciones); no toca SQX |
 | `26-senal-por-plantilla.md` | desglose de la señal agregado por plantilla, no por estrategia suelta: qué plantillas de la librería merece la pena seguir explotando. Misma comparación con BuildAlpha; sin empezar | métricas y operaciones de proyectos con plantillas de la librería; no toca SQX |
-| `27-criba-mae-profundo.md` | en el paso 8, sobre `build` y `oos1`: qué estrategias viven de operaciones anómalas, las que se fueron 3-4 ATR en contra y además duraron más de media + 2,5 desviaciones (dueño, 2026-09-28); marca antes de que el paso 24 dé sorpresas | — |
-| `28-hueco-aleatorio-a-prueba.md` | ¿aporta el hueco aleatorio de SQX? A: A/B fija contra fija + hueco, automatizado con la skill `/ab-hueco`; B: atribución fija contra hueco en el paso 23; C: bloque de ruido y barrido de complejidad | el custodio libre para A y C |
+| `28-hueco-aleatorio-a-prueba.md` | ¿aporta el hueco aleatorio de SQX? A: A/B fija contra fija + hueco, automatizado con la skill `/ab-hueco` (por construir); B: atribución fija contra hueco en el paso 23; C: bloque de ruido y barrido de complejidad | el custodio libre para A y C |
 | `29-meseta-en-el-tiempo.md` | la región buena de parámetros, ¿en el mismo sitio en `build`, `oos1` y `oos2` por separado? Ampliación del paso 18.5, de mercado contra mercado a tramo contra tramo; y la tabla que dirá si la meseta predice supervivencia | un lote de variantes retesteado; lectura ciega del paso 20 |
 | `30-monos-seleccionados-en-sqx.md` | monos de entrada aleatoria construidos y seleccionados por el Builder de SQX con el bloque RAND, pasados por la cadena real: la tasa de falsos positivos con la selección incluida. Construye además `RandomEntrySeeded`, el bloque con semilla. Reabierto por el dueño el 2026-09-28 | instalar los bloques en el custodio; 28 C depende de él |
 | `31-mapa-ventaja-sobre-el-mono.md` | una capa nueva del paso 18.5: la rejilla mercado × parámetro coloreada por la ventaja sobre el mono de cada celda, no por el beneficio neto, con corrección por pruebas múltiples. Necesita exportar operaciones del lote por mercado: medir antes lo que cuesta | un lote de variantes retesteado en los mercados; un worker libre para el export |
-| `32-registrar-todo-lo-probado.md` | que todo barrido de parámetros, umbrales o configuraciones deje escrito lo que probó y cuál eligió: contrato L2 del ledger, detección de reejecuciones con `--set`, orden `ledger.tried` para barridos a mano y procedencia de cada idea; el N del Sharpe deflactado lo usa | — |
 | `33-economia-del-fondeo.md` | el fondeo como flujo de caja banco ↔ empresa: catálogo de planes y add-ons extraído (Hantec ya, 44 planes), reglas como máquina de estados sobre equity flotante, ciclo compra → fases → fondeada → cobros simulado por bloques, contra el mono y con recorte del edge; devuelve qué plan, add-ons y riesgo comprar. Contesta `portfolio/DECISIONS.md` #6 | una cartera en el archivo; los huecos del catálogo confirmados por el dueño |
 | `34-validacion-mt5-pool.md` | el paso 26: la estrategia ya buena en 1-25 se backtestea en MT5 con la feed de cada empresa; SQX traducido a su reloj y sus costes se compara en operaciones, P&L diario del servidor, peor día y drawdown intradía con umbrales fijados antes; si coincide, entra en el pool validado de esa empresa, lo único que lee la cartera | OPEN.md #78 |
 
@@ -127,6 +128,17 @@ puntos que la sesión de esa noche dejó a medias y que no son un arreglo de una
 | `39-edge-segun-los-costes.md` | Edge por coste completo: el swap de cada operación modelado (hoy solo un residuo), una tabla por coste y la sensibilidad del edge a cada coste ×0…×3 con su punto muerto, por estrategia y en la población | el umbral del color, del dueño |
 | `40-cerebro-con-probabilidades.md` | una regresión logística que da a cada estrategia la probabilidad de pasar el paso siguiente, calibrada con nuestros datos (prototipo sobre 49.124 de XAUUSD: AUC 0,69-0,74, bien calibrada), como estudio y como regla de `criteria.yaml` con su coste | el objetivo y el corte de `p`, del dueño; runs completos para el objetivo bueno |
 | `41-fases-0-y-1.md` | **plan vivo** de las fases 0 y 1 del dossier `estado-y-direccion-2026-10-02`: proteger lo hecho (cortafuegos, commit, copia) y que la fábrica decida (criterios firmados, registro completo, monos de punta a punta con los encargos 9 y 30). Lleva tabla de estado y bitácora; cada sesión actualiza su punto | las decisiones D1-D7 del dueño; los encargos 9 y 30 |
+
+## La recalibración de los criterios, 2026-10-06
+
+Salen de los dos prompts del 2026-10-02 (`docs/AgentPDFs/prompt-recalibracion-pasos-6-7-8` y
+`prompt-criterios-otros-pasos`, borrados; en git hasta `936e394`), reescritos contra el estado de
+hoy: la calibración del día 4 se borró entera por el spread y no queda herramienta ni nulo en disco.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `42-recalibracion-pasos-6-7-8.md` | la receta de filtros del IS en SQX (paso 6) y las reglas Pasa / Limbo / Falla del primer cribado OOS (pasos 7-8), por activo × marco × familia, sobre poblaciones sin seleccionar con su gemela aleatoria y nulos nuevos; incluye el punto 1.5 del plan 41 | ocho decisiones del dueño, la primera el carril (regla 19) |
+| `43-criterios-pasos-10-a-20.md` | una regla medida, o una razón escrita, para los pasos 10, 12, 14, 16 y 20; es el punto 1.6 del plan 41 | el 42 entregado |
 
 ## Lo que no es un encargo
 

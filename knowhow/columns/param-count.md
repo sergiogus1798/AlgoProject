@@ -8,6 +8,9 @@ The old count included ~8 noise items of every 14 (5 signal/magic variables + Sh
 filters the **result** of `StrategyBase.transformToVariables(symmetry, paramTypes)` by
 `Variable.getParamType()` — a filter on the input map is not enough. Keep the transform: counting
 `<Variables>` alone scores hardcoded strategies 0.
+**Since 2026-10-06 SQX no longer carries the column** (owner: `ParameterCount.java` and `DoFRatio.java` removed, with their
+view and settings entries; done on the conductor, pending on the custodian and the master — `OPEN.md` #86): the number is
+`core.sqxfile.param_count`, and «DoF Ratio» is the IS trades over it (`core.sqxview.frame`).
 
 ## Evidence
 600 `.sqx` sampled from every project's databanks:
@@ -31,5 +34,6 @@ filters the **result** of `StrategyBase.transformToVariables(symmetry, paramType
   in `COUNTED_PARAM_TYPES` (Period, Constant, EntryLevel, OtherParam, ExitUsed) — and is right
   for a strategy of any age, since it never reads SQX's frozen `ParameterCount`. `core.sqxview.
   frame()` overwrites `Param Count (IS)` with it and adds `Param Count source` so the column
-  never passes for SQX's own number. Known-answer test: `tests/test_param_count.py` against
+  never passes for SQX's own number. Known-answer test: `tests/test_sqxfile.py` (golden `param_count`) against
   `tests/fixtures/strategy.sqx` (4 `ParamTypePeriod` + 3 `ParamTypeExitUsed` = 7).
+- 🔬 2026-10-06 conductor: with the two `.java` and their lines in `snippets.txt`, six `.vw` views and `settings.xml` removed, SQX logs `Snippets are not synchronized … Deleting hash file to recompile` and two `Unable to create instance` errors on the first start only; the second start is clean. Copies of every file touched and the script: `AlgoData/snapshots/sqx-columns-2026-10-06/`.

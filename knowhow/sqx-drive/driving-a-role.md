@@ -1,10 +1,10 @@
 ---
 q: How do scripts pick a worker install: where are roles defined and what does `--role ROLE` resolve to?
-kw: worker roles conductor custodian in Python and bash; core/paths WORKERS worker_dir worker_staging; --role flag; sync_bars rsync creates destination; port triple formula
+kw: worker roles conductor custodian in Python and bash; core/paths WORKERS worker_dir; --role flag; sync_bars rsync creates destination; port triple formula
 tag: 🔬  date: 2026-09-21  see: sqx-drive/three-install-topology, sqx-drive/version-stamps-stale
 ---
 # Roles live only in `core/paths.py`; scripts take `--role ROLE` and ask Python for the install
-`core/paths.py`: `WORKERS` (role → `{"path","port"}`), `worker_dir(role)`, `worker_staging(role)`.
+`core/paths.py`: `WORKERS` (role → `{"path","port"}`), `worker_dir(role)`.
 `core/worker.call/start/stop/wait_ready(..., role="conductor")`. `bin/sqx-worker.sh --role ROLE`,
 `bin/clone-sqx-worker.sh ROLE`. Unknown role → `KeyError`, never a fallback to the conductor.
 Port triple from the CLI port: editor = cli+1, web = 8080 + (cli−5050)/10.

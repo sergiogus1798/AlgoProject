@@ -66,9 +66,8 @@ def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
     name = rules["model"] or verdict.choose(
         verdict.constancy(yearly, "pb media", cfg["constancy"]["tolerance"]), errors)
     daily = verdict.reconstruct(days, vol, name)
-    points = daily["rel"] * daily["price"] / tick
-    per = {k: round(float(points[(daily.index >= pd.Timestamp(a, unit="ms"))
-                                  & (daily.index < pd.Timestamp(b, unit="ms"))].mean() * factor), 2)
+    per = {k: round(verdict.points(daily[(daily.index >= pd.Timestamp(a, unit="ms"))
+                                         & (daily.index < pd.Timestamp(b, unit="ms"))], tick, factor), 2)
            for k, (a, b) in windows.items()}
     forex = kind == "forex"
     # One per segment for every kind (owner, 2026-09-30): forex used to get one mean.
@@ -85,51 +84,12 @@ def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
         swaps = registry.broker_swaps(symbol, tick)
     else:
         swaps = {"long": float(rules["swap"][0]), "short": float(rules["swap"][1])}
-    k = verdict.mc_multiples(days, name, [cfg["band"]["quantiles"][0], cfg["band"]["quantiles"][-1]])
-    base = spreads["spread_is"]
-    mc_spread, mc_slippage = mc_range(base, k, cfg["mc"])
     return {"symbol": symbol, "kind": kind, "class": "forex" if forex else "no_forex", "bars": bars,
             "ticks": ticks, "broker": registry.broker(bars), "instrument": inst, "segments": segs,
             "data": registry.data_range(bars), "model": name, "per_segment": per, "spreads": spreads,
             "slippage": slips, "commission": commission, "price": price, "swap": swaps,
-            "triple_swap_on": rules["triple_swap_on"], "mc_spread": mc_spread,
-            "mc_slippage": mc_slippage, "mc_multiples": k, "factor": factor}
-
-
-def mc_range(base: float, k: dict, cfg: dict) -> tuple[tuple[float, float], tuple[float, float]]:
-    """The MC Retest's spread and slippage ranges, widened to a floor SQX can actually draw from.
-
-    Args:
-        base: The build segment's own declared spread (points), what the multiples scale.
-        k: `verdict.mc_multiples()`'s {"min", "max"} ratios.
-        cfg: The `mc` section of config.yaml (`grain`, `min_steps`).
-
-    Returns:
-        `(spread, slippage)`, each a `(min, max)` in points. SQX's `RandomizeSpread` and
-        `RandomizeSlippage` draw on a grain of about `cfg["grain"]` points (measured on
-        USDJPY, `knowhow/costs/mc-retest-ranges.md`): a band narrower than `min_steps` of
-        that grain gives too few distinct outcomes for the task to have a shape
-        (`tarea_sin_dispersion`) — a low-spread pair's multiplicative band (≈0.65x-1.47x of a
-        small `base`) is exactly where this bites. The band is widened around its own centre,
-        never shifted, so the multiplicative quantiles still say what they said; a floor that
-        would push the low end below zero pulls the whole band up instead, since a negative
-        spread is not a thing SQX can draw. Slippage is declared as half the spread everywhere
-        else in this module (`slips` above), so its range is exactly half of the (already
-        floored) spread range — not floored again on its own, since halving it never worsens
-        the same grain check for the spread task, which is the one seen jammed at ~35-39k in
-        practice (2026-09-30 feedback §6).
-    """
-    lo, hi = base * k["min"], base * k["max"]
-    floor = cfg["grain"] * cfg["min_steps"]
-    if hi - lo < floor:
-        mid = (lo + hi) / 2
-        lo, hi = mid - floor / 2, mid + floor / 2
-    if lo < 0:
-        hi -= lo
-        lo = 0.0
-    spread = (round(lo, 2), round(hi, 2))
-    slippage = (round(lo / 2, 2), round(hi / 2, 2))
-    return spread, slippage
+            "triple_swap_on": rules["triple_swap_on"], "factor": factor,
+            "slippage_share": cfg["safety"]["slippage_share"]}
 
 
 def apply(p: dict, cfg: dict, spread_only: bool) -> None:
@@ -138,8 +98,10 @@ def apply(p: dict, cfg: dict, spread_only: bool) -> None:
     Args:
         p: plan().
         cfg: inputs.config().
-        spread_only: Write only spreads, slippage and the MC Retest range, and leave the
-            segments, commission and swap an existing asset already carries.
+        spread_only: Write only spreads and slippage, and leave the segments, commission
+            and swap an existing asset already carries. The MC Retest range is never
+            written: a card's null bounds resolve to multiples of each segment's own cost
+            (`core.assetranges.mc_retest`; owner, 2026-10-04).
     """
     s, day = p["symbol"], "onboard " + pd.Timestamp.now().strftime("%Y-%m-%d")
     if not (SYMBOLS / f"{s}.yaml").exists():
@@ -155,14 +117,10 @@ def apply(p: dict, cfg: dict, spread_only: bool) -> None:
         assetwrite.set_cost(s, f, float(v), f"{day} — spread medio de Darwinex del tramo {how}. "
                             "studies.data.spread.onboard", after=list(p["spreads"])[i - 1])
     for i, (f, v) in enumerate(p["slippage"].items()):
-        assetwrite.set_cost(s, f, float(v), f"{day} — la mitad del spread de su tramo, default del dueño.",
+        assetwrite.set_cost(s, f, float(v), f"{day} — {p['slippage_share']:.0%} del spread de su tramo (dueño, 2026-10-04).",
                             after=list(p["slippage"])[i - 1])
     if not spread_only:
         _commission_and_swap(p, cfg, day)
-    assetwrite.set_value(s, ["mc_retest", "spread", "min"], float(p["mc_spread"][0]))
-    assetwrite.set_value(s, ["mc_retest", "spread", "max"], float(p["mc_spread"][1]))
-    assetwrite.set_value(s, ["mc_retest", "slippage", "min"], float(p["mc_slippage"][0]))
-    assetwrite.set_value(s, ["mc_retest", "slippage", "max"], float(p["mc_slippage"][1]))
     doc = read(CONFIG)
     doc["assets"][s] = {"ticks": p["ticks"], "bars": p["bars"]}
     doc["band"]["assets"][s] = p["ticks"]
@@ -199,7 +157,7 @@ def main() -> None:
     ap.add_argument("--ticks", default="", help="the Darwinex tick feed when there are several")
     ap.add_argument("--write", action="store_true", help="write it; without it, only print")
     ap.add_argument("--spread-only", action="store_true",
-                    help="existing asset: write spreads, slippage and MC range, keep segments, commission, swap")
+                    help="existing asset: write spreads and slippage, keep segments, commission, swap")
     a = ap.parse_args()
     cfg = inputs.config([])
     found = registry.feeds(a.symbol)
@@ -212,9 +170,8 @@ def main() -> None:
     rows = [("modelo del build", p["model"]), ("spread por tramo (puntos, × factor)", p["per_segment"]),
             ("spreads a declarar", p["spreads"]), ("slippage", p["slippage"]),
             ("comisión", p["commission"]), ("swap largo/corto", p["swap"].get("pending") or (p["swap"]["long"], p["swap"]["short"])),
-            ("triple swap", p["triple_swap_on"]), ("MC Retest spread (puntos)", p["mc_spread"]),
-            ("MC Retest slippage (puntos)", p["mc_slippage"]),
-            ("  en múltiplos", {k: round(v, 2) for k, v in p["mc_multiples"].items()}),
+            ("triple swap", p["triple_swap_on"]),
+            ("MC Retest", "sin escribir: múltiplos del coste de cada tramo (core.assetranges)"),
             ("tramos", p["segments"]), ("instrumento", p["instrument"])]
     print(f"{a.symbol} ({a.kind}) — {p['bars']} + {p['ticks']}")
     print("\n".join(f"  {k:36} {v}" for k, v in rows))

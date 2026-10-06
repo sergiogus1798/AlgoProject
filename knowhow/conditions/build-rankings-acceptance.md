@@ -12,7 +12,7 @@ populations): `NumberOfTrades`, `ProfitFactor`, `NetProfit`, `ReturnDDRatio`, `W
 Build has no `<OutOfSample><Range>`; 11 ≡ 10 and 40 is never stored.
 
 ## Evidence
-- 2026-10-02/03: `ReturnDDRatio` and `WinningPct` checked by their own IS columns in `AlgoData/scratch/calib2/adaptive/RECIPE.md` §6 (arms ab3-ab7, ab4).
+- 2026-10-02/03: `ReturnDDRatio` and `WinningPct` checked by their own IS columns in `AlgoData/scratch/calib2/adaptive/RECIPE.md` (deleted 2026-10-04) §6 (arms ab3-ab7, ab4).
 - Before 2026-10-02 every project carried the frozen donor's `NumberOfTrades > 500`, `SortinoRatio > 0.6`,
   `Stagnation < 540` (sampleType 127), which no repo file stated.
 - Trade bounds are totals: trades/yr × build years (XAUUSD 10.0, DAX40 6.25) — the donor's 500 was 50/yr on FX and 80/yr on DAX40. The compact one-line `<Condition>` shape `acceptance.condition` writes is honoured.
@@ -20,8 +20,8 @@ Build has no `<OutOfSample><Range>`; 11 ≡ 10 and 40 is never stored.
   offset < `<Rankings>`. `tests/test_build_acceptance.py`: golden XML, `<BuildMode>` byte-equal after the write.
 - sampleType codes from SQX's JS bundle: in 10 · ist 11 · isv 40 · out 20 · oos1..10 21-30 · full 127.
 - `--acceptance calibration`: `NumberOfTrades >= 100 & NetProfit > 0`, build MonteCarloManipulation off
-  (its conditions are off after `set_crosschecks`; it only costs CPU). Replaces `calib_queue/calib_filters.py`.
-- 🔬 2026-10-02 A/B, 3 cells × 4 arms, 6-min GA builds (`AlgoData/scratch/calib_final/ab_build.md`): a real floor in the
+  (its conditions are off after `set_crosschecks`; it only costs CPU). Replaces `calib_queue/calib_filters.py` (deleted 2026-10-04).
+- 🔬 2026-10-02 A/B, 3 cells × 4 arms, 6-min GA builds (`AlgoData/scratch/calib_final/ab_build.md` (deleted 2026-10-04)): a real floor in the
   Build (30-75 trades/yr & PF ≥ 1.20) yields fewer OOS-good per accepted than calibration filters (4.8→2.0 %, 13.6→8.9 %,
   0.48→0.07 %) and no more than the same cut applied after the build; 40-75 and 50-100 are worse. SQX honoured the
   written bounds exactly (accepted IS trades 300–748, PF ≥ 1.20). One build per arm.

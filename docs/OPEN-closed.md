@@ -1646,3 +1646,30 @@ points (= 70.6 × 1/(1 + 3/6)). To do: the stamp leaves out the ideas of the pro
 and the brake are shared with the ledger's trial count (another session's work in motion).
 
 **Closed 2026-10-04.** studies/research/board/inputs.memory(own_files=) leaves the proposal's own idea files out of `spent` only; proposal.own_idea_files(draft) feeds it, so the board row, the rank and the stamp come out as before the ideaExpert ran. The ledger's trial count does not go through memory() and is unchanged. tests/test_research_board_own_ideas.py passes (fixture: 4 spent -> 1).
+
+## 103. 🟢 `sqx.inspect.instruments` crashes on an empty `commissions` attribute — found by the audit, 2026-10-05
+
+`python3 -m sqx.inspect.instruments` dies with `ElementTree.ParseError: no element found` in `commission()` (`sqx/inspect/instruments.py:28`). Master projects `Builder` and `Test_Calib_NIKKEI225_M30_volatilidadL_ab8_r1` have an `InstrumentInfo` whose `commissions` is empty. Until it tolerates an empty string, the audit cannot compare `assets/*.yaml` `sqx_default` against SQX. Fix: return `""` for an empty `raw`. Found, not fixed (auditor changes no code).
+
+**Closed 2026-10-06.** `sqx/inspect/instruments.py`: `commission()` returns "" for an empty value and the caller reads the attribute with `.get`, so an empty or missing `commissions` no longer raises. Known answer on inline XML: `tests/test_inspect_instruments.py` (2 passed). The master's project was not touched.
+
+## 105. 🟢 `sqx.variants.execute.synced` raises ZeroDivisionError when `poll_seconds` is 0 — found by the audit, 2026-10-06
+
+`sqx/variants/execute.py:171` computes `expected // (6 * cfg["poll_seconds"])` (added by the 2026-10-05 deadline edit). With `poll_seconds: 0` the retest harvest crashes instead of exiting cleanly; `tests/test_deadlines.py::test_synced_short_raises` fails on it. Fix: guard the divisor (`max(1, …)`). Not fixed by the auditor.
+
+**Closed 2026-10-06.** `sqx/variants/execute.py` `synced`: the divisor is `max(1, cfg["poll_seconds"])`; `tests/test_deadlines` passes (audit fixes report of 2026-10-06).
+
+## 106. 🟢 Leftovers of the September infra and calculation reviews — the reports are deleted, these are what they left open
+
+📓 2026-10-06. `INFRA_REVIEW.md`, `CALC_REVIEW.md`, `CLEANUP_REPORT.md` and `CLEANUP_STATUS.md` were deleted from the root on the owner's order (they are in git history up to `936e394`: `git show 936e394:CALC_REVIEW.md`). Everything else in them was executed; these items were not, and each was re-checked against the code today. Their old labels are kept so the history can be searched.
+
+1. **m30 — one spread segment, two different «points» (suspicion, never run; the owner's call).** `studies/data/spread/verdict.py:97` reports `mean(rel) × factor × median(price) / tick`; `studies/data/spread/onboard.py:69-72` writes `mean(rel × price) / tick × factor` into `assets/`. They differ when spread and price move together inside a segment, so the report shows one figure and the card receives another. And `mc_range` (`onboard.py:88-90`) multiplies the 2.5-97.5 % day ratios by `spread_is`, which already carries the 1.25 factor: the MC Retest band is the measured dispersion shifted 25 % up. Either may be intended. Check: `python3 -m studies.data.spread.onboard --symbol XAUUSD --kind metal` (no `--write`) against the scan's `summary.json` for the same segment. Fix if confirmed: one function for «points of a segment», called by both; test: a segment where price doubles and `rel` halves gives the same points on both paths.
+2. **B6 / C10 — `installs()` exists three times with two key orders.** `core/worker.py:157` (master first), `ui/daemon/projdisk.py:12` (master last — the order `projects/sources.py` needs), `sqx/projects/cfxio.py:17` (`_installs`, with ports). Keep one, choose the order on purpose.
+3. **B8 — `bin/fleet-collect.sh` starts Python twice a minute** (`:17` only to read the data root) and a Python crash looks the same in the log as a silent VPS (`:25`). Read the root without Python; alert only on exit codes that are not «VPS silent».
+4. **B12 — `core/surface/shift.py:48` `quantile_shift` is dead** (no caller). Delete it.
+5. **D10 — `core/paths.py:73` `worker_staging` has no caller**, yet `docs/SETUP-NEW-MACHINE.md:90` and `knowhow/sqx-drive/driving-a-role.md:7` document it. Delete it and both mentions, or keep it — the owner's preference.
+6. **D7 — two pinned packages a major version behind**: `mcp==1.29.1` (only `mt5/server.py` imports it; 2.x moved APIs) and `arch==7.2.0`. Left pinned on purpose; upgrade only with a reason.
+
+Not carried over: C14 (the gallery recreates its cards on every filter change: 20 ms with 230 projects, the review itself said to skip it).
+
+**Closed 2026-10-06.** All six resolved 2026-10-06. (1) m30: the safety factor is 1.0 since 2026-10-04, so the MC band no longer carries 1.25; a segment's points now have one definition, `studies.data.spread.verdict.points` (mean relative spread × the segment's mean price ÷ tick — the 2026-10-04 convention), called by the report and by the onboarding, with a known answer in `tests/test_spread.py`; the onboarding no longer writes MC Retest bounds (`mc_range` and `config.yaml` `mc:` deleted), so a new card resolves to multiples like the recalibrated ones. Dry run on XAUUSD: build 13.31 points against the card's 13.33. Still true and not changed: the onboarding measures Darwinex's ticks, while the 27 cards were recalibrated from the prop firms' ticks by a script that is not in the repo. (2) B6/C10: no change — `retire.py` and `vocabulary.py` already import `core.worker.installs`; `ui/daemon/projdisk.installs` keeps the workers first on purpose and `cfxio._installs` adds ports. (3) B8: resolving the data root costs 43 ms, left as it is; a crash of the collector now raises one alert a day through `bin/lib-agent-alert.sh`. (4) B12 `quantile_shift` and (5) D10 `worker_staging` deleted with their mentions. (6) D7: `arch` 8.0.0 was installed and reverted — `tests/test_snooping.py` went from 12 s to over 400 s on it; `mcp` 2.x brings six new dependencies and a moved API for no gain. Both stay pinned.

@@ -14,20 +14,20 @@ from core.paths import MASTER
 
 FIELDS = ("instrument", "tickSize", "minDistance", "defaultSpread", "defaultSlippage",
           "decimals", "pointValue")
-# The MC Retest randomize methods that carry a {Min, Max} range, and the `mc_retest.<key>`
-# of assets/symbols/<S>.yaml each feeds.
-MC_METHODS = {"RandomizeSpread": "spread", "RandomizeSlippage": "slippage"}
 
 
 def commission(raw: str) -> str:
     """Readable form of the commission method stored as escaped XML.
 
     Args:
-        raw: The InstrumentInfo commissions attribute, HTML-escaped XML.
+        raw: The InstrumentInfo commissions attribute, HTML-escaped XML. Empty when SQX
+            wrote the instrument with no commission at all (the stock `Builder`, OPEN.md #103).
 
     Returns:
-        "<Method> <amount>", e.g. "SizeBased 8", or "" when no method is in use.
+        "<Method> <amount>", e.g. "SizeBased 8", or "" when no method is in use or declared.
     """
+    if not raw.strip():
+        return ""
     node = ElementTree.fromstring(html.unescape(raw))
     if node.get("use") != "true":
         return ""
@@ -55,7 +55,7 @@ def instruments(cfx: Path) -> dict[str, dict]:
                 symbol, attrs = block
                 info = dict(re.findall(r'(\w+)="([^"]*)"', attrs))
                 found[symbol] = {k: info.get(k) for k in FIELDS}
-                found[symbol]["commission"] = commission(info["commissions"])
+                found[symbol]["commission"] = commission(info.get("commissions", ""))
                 found[symbol]["swap"] = 'use="true"' in html.unescape(info.get("swap", ""))
     return found
 
@@ -94,50 +94,6 @@ def registry(root: Path, sqx_symbol: str) -> dict[str, object]:
     out |= {f"swap_{k}": {"type": sw.get("type"), "value": float(sw[k]) if k in sw else None}
             for k in ("long", "short")}
     return out
-
-
-def mc_ranges(root: Path, sqx_symbol: str) -> dict[str, dict] | None:
-    """The MC Retest spread/slippage ranges one install's own projects carry for a symbol.
-
-    Reads whatever `project.cfx` already sits on disk under `root/user/projects/` — never
-    starts or queries the install (feedback 2026-09-29 §1.7: MC Retest runs on the custodian,
-    so its own carried range is what the Activos card should show, not the master's).
-
-    Args:
-        root: An install's folder, e.g. `core.paths.WORKERS["custodian"]["path"]`.
-        sqx_symbol: The feed name, as `assets/symbols/<S>.yaml`'s `sqx_symbol` names it.
-
-    Returns:
-        {"spread": {min, max}, "slippage": {min, max}} from the first project whose MC Retest
-        tasks carry this symbol, each method from the task that draws it, a key missing when
-        no task draws it; None when this install has no project with one yet.
-    """
-    projects = root / "user/projects"
-    if not projects.is_dir():
-        return None
-    for d in sorted(projects.iterdir()):
-        cfx, got = d / "project.cfx", {}
-        if not cfx.exists():
-            continue
-        with zipfile.ZipFile(cfx) as z:
-            for name in z.namelist():
-                if name == "config.xml":
-                    continue
-                text = z.read(name).decode("utf-8", "replace")
-                # The feed is the chart's symbol; `instrument=` spells it without its data
-                # source (`USDJPY_the5ers`), so it never matched (📓 2026-09-30, column empty).
-                if (f'<Chart symbol="{sqx_symbol}"' not in text
-                        or '<MonteCarloRetest use="true"' not in text):
-                    continue
-                for method, key in MC_METHODS.items():
-                    m = re.search(rf'<Method use="true" type="{method}">\s*<Params>\s*'
-                                 r'<Param key="Min"[^>]*>([\d.]+)</Param>\s*'
-                                 r'<Param key="Max"[^>]*>([\d.]+)</Param>', text)
-                    if m and key not in got:       # the eight tasks each draw one method
-                        got[key] = {"min": float(m.group(1)), "max": float(m.group(2))}
-            if got:
-                return got
-    return None
 
 
 def main() -> None:

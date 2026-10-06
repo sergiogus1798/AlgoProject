@@ -62,19 +62,20 @@ def test_screen_draws_what_it_keeps() -> None:
     e3 = json.loads(ISOOS.read_text(encoding="utf-8"))
     kept, shown = drawn(screen(e3, {}))
     assert kept == shown == 4, (kept, shown)
-    got = screen(surfaces(), {"rejillas": {"_markets": ["EURUSD", "GBPUSD", "AUDUSD"],
+    got = screen(surfaces(), {"rejillas": {"_markets": ["USDJPY", "GBPUSD", "AUDUSD"],
                                           "segment": "oos1"}})
     kept, shown = drawn(got)
     assert kept == shown == 5, (kept, shown)       # 3 markets + consensus, and consensus tab's own
     titles = [b["title"] for b in got["tabs"][0]["blocks"]]
-    assert titles == ["EURUSD — oos1", "GBPUSD — oos1", "AUDUSD — oos1", "Consenso — oos1"], titles
-    assert "Mercado: EURUSD, GBPUSD, AUDUSD" in got["tabs"][0]["note"]
+    assert titles == ["USDJPY — oos1", "GBPUSD — oos1", "AUDUSD — oos1", "Consenso — oos1"], titles
+    assert "Mercado: USDJPY, GBPUSD, AUDUSD" in got["tabs"][0]["note"]
     md = markdown.render(got, "t")
     assert md.count("θ₀: fila 2, columna a") == 5, md
 
 
 def test_split_and_picker() -> None:
-    """Three markets on one scale plus the consensus of the same segment; a fourth press drops the oldest."""
+    """Three markets on one scale plus the consensus of the same segment; a fourth press drops the
+    oldest that is not the main market, which stays on and on the left (owner, 2026-10-04)."""
     tab = surfaces()["tabs"][0]
     pool = [b for t in surfaces()["tabs"] for b in t["blocks"]]
     plain, maps, consensus = markets.split(tab, {"segment": "build"}, pool)
@@ -84,10 +85,10 @@ def test_split_and_picker() -> None:
     row = markets.picker(tab, ["USDJPY", "EURUSD", "GBPUSD"], seen.append)
     buttons = {b.text(): b for b in row.findChildren(QPushButton)}
     buttons["AUDUSD"].setChecked(True)
-    assert seen[-1] == ["EURUSD", "GBPUSD", "AUDUSD"] and not buttons["USDJPY"].isChecked(), seen
-    for m in ("EURUSD", "GBPUSD", "AUDUSD"):
+    assert seen[-1] == ["USDJPY", "GBPUSD", "AUDUSD"] and not buttons["EURUSD"].isChecked(), seen
+    for m in ("GBPUSD", "AUDUSD", "USDJPY"):
         buttons[m].setChecked(False)
-    assert seen[-1] == ["AUDUSD"] and buttons["AUDUSD"].isChecked(), seen   # never below one
+    assert seen[-1] == ["USDJPY"] and buttons["USDJPY"].isChecked(), seen   # never without the main one
 
 
 def test_partials_and_merge() -> None:

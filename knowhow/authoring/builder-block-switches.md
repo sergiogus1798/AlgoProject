@@ -14,7 +14,7 @@ Rule 15 is in `rewrite` (2026-10-02): a `category="stopLimitBlocks"` entry and a
 
 ## Evidence
 - 🔬 2026-10-02 pilot: SQX does **not** honour palette weights for the generic comparison operators / value blocks — 69 % of entry conditions were a comparator on one of two values, though they were 2.4 % of the weight. Among **named signal blocks** weights are honoured (77.5 : 10.8 : 11.7 used vs 78.0 : 13.0 : 8.9 by weight), so the v3 family palettes (`*_base_v3`, 99-127 blocks) carry named signal blocks only.
-- Pilot: `AlgoData/scratch/calib2/` (`PILOT_READY`; `synth_final/synthesis.md` §0b repeats the test on the final populations).
+- Pilot: `AlgoData/scratch/calib2/` (deleted 2026-10-04) (`PILOT_READY`; `synth_final/synthesis.md` §0b repeats the test on the final populations).
 Donor `AlgoData/projectsBackup/XAUUSD_base_2026-09-21`; `Build-Task3.xml` 2.9 MB vs Retest 40 KB.
 | `category` | entries | keys | gates | on in donor |
 |---|---|---|---|---|
