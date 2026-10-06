@@ -44,8 +44,9 @@ metrics; the reverse import stays forbidden) · **Consumed by:** `../funded.py`,
   are MAXIMAL cliques (K 4-6, diluted), so any combination better than all of them scores 1.0 and the
   search stops on stagnation after 12 generations having scored K ≤ 2 three times in 3,600. It
   returned {A, B, N0, N1, N3}; the exhaustive search of the same 159 combinations returns {A, B}.
-  Only pools above `real.exhaustive_max` (100,000 combinations) reach the GA. Open, the owner's
-  (PLAN §12, reading 9).
+  Only pools above `real.exhaustive_max` reach the GA: 1,000,000 combinations since 2026-10-05
+  (owner; was 100,000; ~11 min on one core at the limit, OPEN #104). Above it the GA still runs
+  and its rank score still saturates — open, the owner's (PLAN §12, reading 9).
 - **The table a run stores is the one its score stands on**: the four metrics of `search.parquet`
   are each the worst of the shifted windows. The Sharpe is always the whole window's (the ledger's spread).
 - **Admitting against a fixed base lets two clones of one idea both in** — each helps alone. `sequence`

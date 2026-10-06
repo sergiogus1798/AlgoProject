@@ -415,7 +415,7 @@ the owner changes it, shown as such in the drawer; "—" = blocked, no default, 
 | `real.losing_year` · `real.rank_reference` | `calendar` · `seeds` | **Q10 = (a)**, Council 2026-10-04; the readings: owner, 2026-10-05 |
 | `real.shift_months` · `real.shift_minimum` | 3 · `metric` | owner, 2026-10-05 (the shifted minimum; each metric's worst over the windows, ranked once — §12, reading 3) |
 | `search.mode` | `ga` (`ga` · `admission` · `exhaustive`) | this plan |
-| `search.exhaustive_max` | 100,000 combinations | 🤔 this plan — above it the GA runs |
+| `search.exhaustive_max` | 1,000,000 combinations | owner, 2026-10-05 (was 100,000; ~11 min on one core at the limit) — above it the GA runs and its rank score still saturates (open, §12 reading 9) |
 | `search.seeds` | 300 (= the population) | AF |
 | `search.ga.{population, generations, elite, tournament, crossover, mutation, stagnation}` | 300, 100, 0.20, 4, 0.80, 0.40, 10 | AF |
 | `real.increment` | `finite`; candidates enter in sequence | **Q16 = (c)**, provisional, Council 2026-10-04; the reading and the sequence: owner, 2026-10-05 |
@@ -789,9 +789,10 @@ code needed one (rule 11), otherwise not built; each is the owner's:
    that beats every seed on the four metrics scores 1.0, every better one scores 1.0 too, and the GA
    stops on stagnation without ever trying the small K where the best portfolio was ({A, B}; it
    returned {A, B, N0, N1, N3}). The exhaustive search is not affected and is what runs up to
-   `real.exhaustive_max` = 100,000 combinations (~70 s with the four windows). Whether to raise
-   that limit (1,000,000 ≈ 11 min on one core), or to rank the GA in another fixed set (random
-   cliques of every size), is the owner's — nothing changed.
+   `real.exhaustive_max` = 1,000,000 combinations (raised from 100,000 by the owner, 2026-10-05:
+   ~11 min on one core at the limit; 100,000 took ~70 s with the four windows). Above the limit the
+   GA still runs and its rank score still saturates; ranking the GA in another fixed set (random
+   cliques of every size) stays the owner's — open.
 10. **M8, what «beats equal weight» means** (built 2026-10-05). `wf.confidence` has no default
    and the command refuses without it. Built on this plan's reading, each the owner's to move:
    the figure is the difference of daily Sharpe (not the Q10 rank score); no correction for the

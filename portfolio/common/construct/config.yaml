@@ -80,7 +80,7 @@ verdict:                        # F4, the funded verdict (PLAN §14.3, Q11 d): o
 
 real:                           # M3, the search by ranks (PLAN §5.3). Council 2026-10-04 on the owner's delegation: Q10 (a), Q16 (c, provisional), DECISIONS #2
   account: 10000                # C5: the size is the funding economics' -- the 10k account; a member's floor is the minimum lot on it (funded.min_lot, funded.risk_grid)
-  exhaustive_max: 100000        # 🤔 PLAN §5.7: up to this many admissible combinations every one is scored; above it the GA runs
+  exhaustive_max: 1000000       # owner, 2026-10-05 («sube», OPEN #104-3; was 100000): up to this many admissible combinations every one is scored (~11 min on one core at the limit); above it the GA runs, and its rank score still saturates there
   losing_year: calendar         # owner 2026-10-05 (R2): the share of calendar years of build that lose (the other reading: rolling, every 252-day window)
   rank_reference: seeds         # owner 2026-10-05 (R1): the GA takes its ranks in the greedy starting cliques, fixed before generation 0 (the only set built)
   shift_months: 3               # owner 2026-10-05 (R3): each combination is scored on build with its start shifted 0, 1, 2 and 3 months, and keeps the minimum

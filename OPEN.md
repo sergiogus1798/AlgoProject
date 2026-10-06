@@ -118,6 +118,8 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 101 | 🟢 | A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1 | docs/OPEN-closed.md |
 | 102 | 🟠 | Knowhow cards filed in the wrong domain (weekly quality pass 2026-10-04) — to move or leave, owner's call | OPEN.md |
 | 104 | 🟡 | Portfolio build 2026-10-05: six findings left unfixed (universe cache, frozen version, GA rank saturation, `funded_b` overwrite, pyarrow abort, `test_portfolio_build`) | OPEN.md |
+| 105 | 🟢 | `execute.synced` divides by `poll_seconds`: 0 raises ZeroDivisionError instead of SystemExit | docs/OPEN-closed.md |
+| 106 | 🟡 | Leftovers of the September infra and calculation reviews (reports deleted 2026-10-06): one spread suspicion (m30), five small infra items | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -225,6 +227,8 @@ after being deleted. It also cannot catch a call-site broken by a signature chan
 taking a universe dict, and only failed at runtime. Both classes of drift are cheap to check.
 
 **2026-09-29.** Owner, 2026-09-29: delete the 757 (the master XAUUSD project's `Retest Markets - Family` and `MC Trades`, 757 .sqx each, plus `AlgoData/raw|reports/XAUUSD/Retest_Markets_-_Family`). The master was closed; the deletion was refused by the session's safety classifier and waits on the owner running it or allowing it.
+
+**2026-10-06.** The owner's 2026-09-29 decision is carried out on the data root: `raw|reports|metrics/XAUUSD/Retest_Markets_-_Family` and `raw|metrics/XAUUSD/MC_Trades` deleted (36 MB; no code read them). The 757 `.sqx` inside the master's XAUUSD project stay his to delete.
 
 ---
 
@@ -622,6 +626,8 @@ Opened by the unattended docs pass from `audit/2026-09-30.md`. None is a documen
 - 📓 **Custodian log 704 MB**: `log_2026_09_29.log` 526 MB, ~220k × `TradingException: Setting 'TradingSetup.StrategyClass' is not set` in `WFSimulationJob`.
   Same storm as `knowhow/eng/log-retention.md`; the archiver + prune handle it (SQX config is the owner's). Repeated 2026-09-30: `log_2026_09_30.log` 167 MB, 70,212 `StrategyClass` lines; custodian folder 861 MB (audit 2026-10-01). Archiver + prune handle it; cause stays with the owner.
 
+**2026-10-06.** Manifests: four of the five nightly findings were false positives (the manifest sits beside the data in `spp/`, `wfm/`, `wfc_pairs/`, `strategies/`; the auditor's instruction demanded it at the root and is rewritten); the fifth, a torn trades export of the retired `Test_USDJPY_donchianUpperCrossUp_M30/SPP_IS/2026-09-27`, is deleted, and `daily_audit.exports_without_manifest()` returns []. The `export_trades` wipe of the SPP folder was already fixed in `89e3a7c`; `tests/test_export_manifests.py` now proves it. The pre-git `code_version` is a named exception (`core.manifest.PRE_GIT`). Worker logs: the prune deleted by age only, so archived storm logs stayed (2.6 GB); it now drops an archived past-day log above 20 MB at any age (SQX_w1 893 MB → 38 MB, SQX_w2 1.8 GB → 5.7 MB).
+
 ## 87. 🟠 Portfolio construction engine — M0-M2, F1 and the F2 engine built 2026-09-30; the owner's calls gate each milestone
 
 The plan is `portfolio/PLAN.md`; the order is in `portfolio/CLAUDE.md` (M0-M2 → F1-F5 funded → M3-M8
@@ -756,6 +762,8 @@ proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Op
 
 **2026-10-04.** Owner, 2026-10-04: the calibration study these criteria were derived from was run at a wrong spread («un fiasco») and its data, registry rows and ledger rows were deleted on his order. The step 6 and 8 figures in assets/_study.yaml therefore rest on nothing that exists any more: do not sign them and do not build on them; they need a new calibration at the recalibrated spreads (commit 3b71384), or the owner's own numbers. The oos2 look of that study happened regardless of the deletion.
 
+**2026-10-06.** Cleanup by the owner's order: nothing named `Test_Calib_*` is left under `harvest`, `reports`, `raw` or `metrics`, and `AlgoData/scratch/{null2,null-fpr-2026-10-04,close-curve-2026-10-04}` are deleted, as is the card `research/step6-floor-vs-step8-yield` (its numbers came from the invalid calibration). The sentence above about ~28 remaining trees no longer holds.
+
 ## 95. 🟡 Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner
 📓 2026-10-02. The mechanical audit runs every `tests/test_*.py` (105 on the day) and lists in `ASIDE`
 the ones it does not count as failures: 92 passed, 13 set aside. The thirteenth, `test_thresholds`,
@@ -783,6 +791,8 @@ Decision for the owner: none yet. Each row closes when its test passes again and
 `ASIDE`; close this issue when `ASIDE` is empty or holds only entries with an open OPEN number.
 Reproduce: `python3 tools/audit_tests.py` or the single file (`python3 tests/test_<name>.py`, or
 `python3 -m pytest -q tests/test_<name>.py` when it has no `__main__`).
+
+**2026-10-06.** `test_feedquality` and `test_ui_columns` pass and left `ASIDE` (8 remain). The runner now sends a file to pytest only if it has no `__main__` and defines `def test_`: eight nightly false failures gone. Fixed today: `test_builder_feedswap` (no live install read), `test_ui_shell` (a shared ruamel `YAML()` was loaded from several threads — lock in `core/assetyaml.py`), `test_ui_blocks` (three population reports per study, 103 s), `test_ui_cmdpalette` (a real window bug in `studypage/picker.py`), `test_ui_screen`, `test_ui_tearsheet`, `test_ui_campaign`, `test_ui_studypage` (its batch fixture now a kept `Trade_` project).
 
 ## 96. 🟡 `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error
 
@@ -859,3 +869,17 @@ describe two XAUUSD corpora; neither can be recomputed for the first (OPEN §12)
 
 **2026-10-05.** 2026-10-05, the walk of the PORTFOLIOS zone (`tools/uiinventory.py`). **Fixed, each with its test:** (1) the universe folder is now keyed `<pool hash>-<config fingerprint>-<code hash>` (`construct/equity/store.py`, `tests/test_portfolio_universe.py`) — a `--set` still makes its own folder; (4, the overwrite half) every run folder is made exclusively (`core.manifest.fresh_dir`: `_2`, `_3`… within one minute) and a second stage B on a run that holds one goes to a run aside with `stage_a_run` in its manifest, the first left byte for byte (`funded_b.target`, `tests/test_portfolio_verdict_funded.py`; seen through the window on a disposable root); (5) the planted-pool tests take `pa.set_cpu_count(1)` from `tests/portfolio_planted.py`: 9 of 60 aborts before, 0 of 180 after — nothing project-wide changed. **Investigated, not fixed:** (6) is a stale fixture, not portfolio code — `USDJPY_DukasM1_the5ers` now maps to `USDJPY_M1` on the EETUS clock (commit 1f22b6f) while the archived trades are stamped Asia/Jerusalem, and the card charges 5 $/lot since d8e1ffe where the strategy was built at 0: re-stamped and at commission 0 it reconciles 1.0000/1.0000, max gap 0.2 $ (as archived 0.44/0.39). Pinning the fixture to its archive-time conditions or moving it to a strategy archived on `USDJPY_M1` is the owner's. **Still open, the owner's:** (2) which archived version sizes a member, (3) the rank reference above `real.exhaustive_max`, (4) which near-tied finalist is «the» portfolio (no seed recorded yet).
 
+**2026-10-05.** Item 3 decided (owner, 2026-10-05, «sube»): `real.exhaustive_max` is now 1,000,000 combinations (~11 min on one core at the limit); `portfolio/common/construct/search/README.md` and `portfolio/PLAN.md` say so; above the limit the GA still runs and its rank score still saturates — still open. Item 6 (owner, 2026-10-05: «Usa las condiciones más actualizadas que tenemos»): the test must run on today's conditions, no re-stamping shim, no skip. Found: nothing in the archive reconciles under today's conditions. The only archives after 2026-10-01 are the 30 mothers of `Test_USDJPY_donchianUpperCrossUp_H1` (2026-10-04, step 16.5), all on feed `USDJPY_DukasM1_the5ers`; 15 have a harvest, the other 15 no `harvest/` at all (FileNotFoundError). The 15 with one are refused by the universe builder on the MAE/MFE licence (0.73-0.97 exact, floor 0.99) and reconcile 0.92-0.99 on build and oos1 (e.g. 16425b8a: licence 0.97/0.99, build 0.98, oos1 0.99), so they fail the same way as the golden 4d679e0c (0.44) but closer, which points to the same feed-clock mismatch (archived stamps vs the EETUS bars now behind that feed name) at a smaller scale. `tests/test_portfolio_build.py` is unchanged and still fails; the owner decides whether the equity reconstruction or the archived stamping is what to fix, or whether to archive a fresh strategy after the feeds settle. Items 2 and 4 remain.
+
+## 106. 🟡 Leftovers of the September infra and calculation reviews — the reports are deleted, these are what they left open
+
+📓 2026-10-06. `INFRA_REVIEW.md`, `CALC_REVIEW.md`, `CLEANUP_REPORT.md` and `CLEANUP_STATUS.md` were deleted from the root on the owner's order (they are in git history up to `936e394`: `git show 936e394:CALC_REVIEW.md`). Everything else in them was executed; these items were not, and each was re-checked against the code today. Their old labels are kept so the history can be searched.
+
+1. **m30 — one spread segment, two different «points» (suspicion, never run; the owner's call).** `studies/data/spread/verdict.py:97` reports `mean(rel) × factor × median(price) / tick`; `studies/data/spread/onboard.py:69-72` writes `mean(rel × price) / tick × factor` into `assets/`. They differ when spread and price move together inside a segment, so the report shows one figure and the card receives another. And `mc_range` (`onboard.py:88-90`) multiplies the 2.5-97.5 % day ratios by `spread_is`, which already carries the 1.25 factor: the MC Retest band is the measured dispersion shifted 25 % up. Either may be intended. Check: `python3 -m studies.data.spread.onboard --symbol XAUUSD --kind metal` (no `--write`) against the scan's `summary.json` for the same segment. Fix if confirmed: one function for «points of a segment», called by both; test: a segment where price doubles and `rel` halves gives the same points on both paths.
+2. **B6 / C10 — `installs()` exists three times with two key orders.** `core/worker.py:157` (master first), `ui/daemon/projdisk.py:12` (master last — the order `projects/sources.py` needs), `sqx/projects/cfxio.py:17` (`_installs`, with ports). Keep one, choose the order on purpose.
+3. **B8 — `bin/fleet-collect.sh` starts Python twice a minute** (`:17` only to read the data root) and a Python crash looks the same in the log as a silent VPS (`:25`). Read the root without Python; alert only on exit codes that are not «VPS silent».
+4. **B12 — `core/surface/shift.py:48` `quantile_shift` is dead** (no caller). Delete it.
+5. **D10 — `core/paths.py:73` `worker_staging` has no caller**, yet `docs/SETUP-NEW-MACHINE.md:90` and `knowhow/sqx-drive/driving-a-role.md:7` document it. Delete it and both mentions, or keep it — the owner's preference.
+6. **D7 — two pinned packages a major version behind**: `mcp==1.29.1` (only `mt5/server.py` imports it; 2.x moved APIs) and `arch==7.2.0`. Left pinned on purpose; upgrade only with a reason.
+
+Not carried over: C14 (the gallery recreates its cards on every filter change: 20 ms with 230 projects, the review itself said to skip it).
