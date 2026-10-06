@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """R5 and R5d of the gate (level 1b, centred): the same trading rate reads zero, a population
 under the minimum is not centred, a population that falls as one keeps what exceeds the cap,
-and an excess with no trend has no slope."""
+an excess with no trend has no slope, the projected excess uses the centred slope at half
+oos1, a strategy of both sides is a population apart, and the fallen keep their facts."""
 
 import sys
 from collections.abc import Callable
@@ -98,28 +99,51 @@ def test_dispersion_is_variance_over_mean_and_ignores_a_part_year() -> None:
 
 
 def test_no_trend_no_slope() -> None:
-    """A constant excess of 7 under noise with no slope: t_b = 0 and the end of oos1 keeps the 7."""
+    """A constant excess of 7 under noise with no slope: t_b = 0 and e_fin keeps the 7."""
     out = facts(harvest(3, 40, lambda years: 7 + 0 * years))
     assert out["t_b"] == pytest.approx(0, abs=1e-9)
     assert out["e_fin"] == pytest.approx(7)
 
 
 def test_a_planted_slope_is_recovered_and_the_common_one_is_subtracted() -> None:
-    """Excess = 5 - 30 x years to the end: b = -30 a year, 5 left at the end. Alone it is a
-    decay (se = sd of NOISE / sqrt(sum of squared time), widened by the residuals' AR(1));
-    in a population that all decays alike it is the market's, t_b = 0, and e_fin is still 5."""
+    """Excess = 5 - 30 x years to the end: b = -30 a year around a mean of 5 + 30 x the mean
+    years left. Alone it is a decay (se = sd of NOISE / sqrt(sum of squared time), widened by
+    the residuals' AR(1)) and e_fin = mean - 30 x 4 / 2; in a population that all decays alike
+    the slope is the market's: t_b = 0 and e_fin is the mean."""
     data = harvest(3, 40, lambda years: 5 - 30 * years)
     fit = centred.slope(data["oos"], "excess", (data["oos"]["close_time"] - pd.Timestamp("2022-01-01"))
                         / pd.Timedelta(days=centred.YEAR)).iloc[0]
-    assert fit["b"] == pytest.approx(-30) and fit["at_zero"] == pytest.approx(5)
+    mean = data["oos"]["excess"].mean()
+    assert fit["b"] == pytest.approx(-30) and fit["mean"] == pytest.approx(mean)
+    assert mean == pytest.approx(5 + 30 * 2.004, abs=0.1)    # the trades centre 2.004 years from the end
     years = np.linspace(0, (pd.Timestamp("2021-12-20") - pd.Timestamp("2018-01-10")).days / 365.25, 160)
     rho = (NOISE[1:] * NOISE[:-1]).sum() / 160
     plain = np.sqrt(160 / 158 / ((years - years.mean()) ** 2).sum())
     assert rho == pytest.approx(0, abs=0.01) and fit["se"] == pytest.approx(plain, rel=0.02)
     alone = facts(data)
     assert alone["t_b"] == pytest.approx(-30 / fit["se"]) and alone["t_b"] < -1.65
+    assert alone["e_fin"] == pytest.approx(mean - 30 * MARKET["years"]["OOS"] / 2)
     crowd = facts(harvest(CFG["centring"]["min_strategies"], 40, lambda years: 5 - 30 * years))
-    assert crowd["t_b"] == pytest.approx(0, abs=1e-6) and crowd["e_fin"] == pytest.approx(5)
+    assert crowd["t_b"] == pytest.approx(0, abs=1e-6) and crowd["e_fin"] == pytest.approx(mean)
+
+
+def test_both_sides_is_a_population_apart() -> None:
+    """30 longs and one strategy that also sells, all trading 60 % less: the longs are centred,
+    the one of both sides is alone in its population and is not."""
+    data = harvest(CFG["centring"]["min_strategies"] + 1, 16)
+    mixed = data["oos"]["identity"] == "s30"
+    data["oos"].loc[mixed, "side"] = np.tile([1.0, 1.0, 1.0, -1.0], 16)    # mostly long
+    out = level1b_centred.run(data, pd.Index(["s0"]), CFG)["z_frec"]
+    se = np.sqrt(CFG["frequency"]["phi_min"] * (1 / BUILD + 1 / 64))
+    assert out["s30"] == pytest.approx(np.log(0.4) / se)
+    assert out.drop("s30").to_numpy() == pytest.approx((np.log(0.4) + 0.35) / se)
+
+
+def test_the_fallen_keep_their_facts() -> None:
+    """Only s1 is alive: the three strategies of the table come back, each with its facts."""
+    out = level1b_centred.run(harvest(3, 40, lambda years: 7 + 0 * years), pd.Index(["s1"]), CFG)
+    assert sorted(out.index) == ["s0", "s1", "s2"] and out.notna().all().all()
+    assert list(out.columns) == list(level1b_centred.FACTS)
 
 
 def test_too_few_trades_leave_the_facts_empty() -> None:

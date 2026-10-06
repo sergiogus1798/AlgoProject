@@ -27,7 +27,7 @@ TABLES = {
     "estaticas_value": [(5, P), (0, F), (-3, F), (None, L)],                          # R2
     "is_trades_per_year": [(35, P), (34.9, L), (20, L), (19.9, F), (None, L)],        # R4a
     "sanidad_value": [(100, P), (99, L), (0, L), (None, L)],                          # R5b
-    "drift_excess_t": [(1.65, P), (1.64, F), (-2, F), (None, L)],                     # R3
+    "drift_excess_t": [(1.65, P), (1.64, F), (-2, F), (None, F)],                     # R3
     "z_frec": [(0, P), (1.5, P), (-1.5, P), (1.51, L), (3.5, L), (-3.5, L), (3.51, F),
                (-3.51, F), (None, L)],                                                # R5
     "edge_mean_oos t_exceso_k": [(2, 1.65, P), (2, 1.64, L), (1.99, 3, L), (1.25, 3, L),

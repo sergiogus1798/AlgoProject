@@ -39,17 +39,20 @@ def test_audited_trades_reproduce_sqx() -> None:
         tolerance = 0.02 + 2 * c["tick_size"] * c["point_value"] * g["size"]
         over = np.abs(got - g["sqx_pnl"]) - tolerance
         assert (over <= 0).all(), f"{name} {segment}: worst trade {over.max():+.4f} USD over"
+        gross = c["point_value"] * g["size"] * (g["close_bar"] - g["open_bar"])
+        assert (np.abs(got + cost - gross) <= tolerance).all(), f"{name} {segment}: pnl + cost is not the gross"
         assert (cost > 0).all(), f"{name} {segment}: a trade was charged nothing"
 
 
 def test_flat_price_loses_exactly_its_cost() -> None:
-    """Same open in and out, no night: 6 x (0.05 + 2 x 0.02) = 0.54."""
+    """Same open in and out, no night, costs on the tick: 6 x (0.05 + 2 x 0.02) = 0.54 both ways."""
     got, cost = reprice.pnl(100.0, 100.0, *DAY, 1, 3.0, HAND)
     assert got == -0.54 and cost == 0.54, (got, cost)
 
 
 def test_long_and_short_are_symmetric() -> None:
-    """The same 10.00 move costs both sides the same 0.54: +59.46 long, -60.54 short."""
+    """The same 10.00 move costs both sides the same 0.54: +59.46 long (100.07 -> 109.98),
+    -60.54 short (99.93 -> 110.02, the spread on the entry)."""
     got, cost = reprice.pnl(100.0, 110.0, *DAY, np.array([1, -1]), 3.0, HAND)
     assert np.allclose(got, [59.46, -60.54], atol=1e-9), got
     assert np.allclose(cost, 0.54, atol=1e-9), cost
@@ -74,15 +77,23 @@ def test_triple_swap_night() -> None:
     """Flat over a Friday 23:00: 3 nights x 6 x fill x 3.6 % / 360 on top of the 0.54."""
     fri = (np.datetime64("2024-01-05T22:30"), np.datetime64("2024-01-05T23:30"))
     long, _ = reprice.pnl(100.0, 100.0, *fri, 1, 3.0, HAND)        # fill 100.07 -> swap 0.180126
-    short, _ = reprice.pnl(100.0, 100.0, *fri, -1, 3.0, HAND)      # fill 99.98, 1.8 % -> 0.089982
+    short, _ = reprice.pnl(100.0, 100.0, *fri, -1, 3.0, HAND)      # fill 99.93, 1.8 % -> 0.089937
     assert (long, short) == (-0.72, -0.63), (long, short)
+
+
+def test_swap_in_points_and_a_credit() -> None:
+    """Forex: a night is 6 x tick_step x points. Long -50 pays 0.30, short +20 is paid 0.12."""
+    c = {**HAND, "tick_step": 0.001, "swap_long": -50.0, "swap_short": 20.0}
+    mon = (np.datetime64("2024-01-08T22:30"), np.datetime64("2024-01-09T00:00"))
+    got, cost = reprice.pnl(100.0, 100.0, *mon, np.array([1, -1]), 3.0, c)
+    assert np.allclose(got, [-0.84, -0.42], atol=1e-9) and np.allclose(cost, [0.84, 0.42], atol=1e-9), (got, cost)
 
 
 def test_cost_off_the_tick_rounds_the_fill() -> None:
     """Tick 0.25, spread 0.30, slippage 0.05: in at 100.35 -> 100.25, out at 99.95 -> 100.00."""
     c = {**HAND, "tick_size": 0.25, "spread": 0.30, "slippage": 0.05}
     got, cost = reprice.pnl(100.0, 100.0, *DAY, 1, 3.0, c)
-    assert got == -1.5 and cost == 1.5, (got, cost)      # 6 x 0.25, not the declared 6 x 0.40
+    assert got == -1.5 and np.isclose(cost, 2.4), (got, cost)      # paid 6 x 0.25, declared 6 x 0.40
 
 
 def test_commission_once_on_the_open() -> None:
@@ -114,7 +125,10 @@ def test_costs_come_from_the_card() -> None:
     assert np.isclose(c["spread"], card["costs"]["spread_oos"]["use"] * 0.01)
     assert np.isclose(c["slippage"], card["costs"]["slippage_oos"]["use"] * 0.01)
     assert c["swap_long"] == card["costs"]["swap_long"]["use"] < 0
-    assert set(c) == set(reprice.Costs.__annotations__)
+    assert set(c) == set(reprice.Costs.__annotations__) and c["tick_step"] is None
+    fx, yen = reprice.costs("EURUSD_M1", "oos1"), load("USDJPY")
+    assert np.isclose(fx["tick_step"], 0.00001) and (fx["triple"], fx["rollover"]) == (2, 23)
+    assert reprice.costs("USDJPY_M1", "oos1")["swap_short"] == yen["costs"]["swap_short"]["use"]
 
 
 if __name__ == "__main__":

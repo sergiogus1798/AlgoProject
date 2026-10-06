@@ -24,19 +24,22 @@ def excess(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], cost
 
     Returns:
         reprice.pnl at the opens of the moved bars, original lots, minus tradelevel.drift_term
-        over the moved hold. An entry is never moved past its exit: a one-bar trade entered a
-        bar late opens and closes on the same open and pays only its costs. NaN where the
-        moved entry leaves the span and the drift term has no window for it.
+        over the moved hold, the drift window being that of the moved open. NaN where the
+        trade does not exist under the shift — the entry moved onto or past its exit — and
+        where the moved entry leaves the span and the drift term has no window for it.
     """
     leave = bars.index.get_indexer(trades["close_time"]) + shift[1]
-    enter = np.minimum(bars.index.get_indexer(trades["open_time"]) + shift[0], leave)
+    enter = bars.index.get_indexer(trades["open_time"]) + shift[0]
+    gone = (enter >= leave) & (shift[0] > shift[1])
+    enter = np.minimum(enter, leave)
     when, side, lots = bars.index.to_numpy(), trades["side"].to_numpy(), trades["lots"].to_numpy()
     pnl, _ = reprice.pnl(reprice.fills(bars, enter), reprice.fills(bars, leave), when[enter],
                          when[leave], side, lots, costs)
     moved = pd.DataFrame({"Open time": when[enter], "Close time": when[leave],
                           "Type": np.where(side < 0, "Sell", "Buy"), "Size": lots})
-    return pnl - tradelevel.drift_term(moved, bars, span, drift["window"], drift["variant"],
-                                       costs["point_value"])[0]
+    term = tradelevel.drift_term(moved, bars, span, drift["window"], drift["variant"],
+                                 costs["point_value"])[0]
+    return np.where(gone, np.nan, pnl - term)
 
 
 def measure(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str],
@@ -54,8 +57,8 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str],
         One row per identity and variant, variants in the order given: `identity`, `variant`,
         `ret` (mean moved excess over mean original excess; NaN when the original mean is not
         positive), `t_delta` (mean / sd x sqrt(n) of original minus moved, trade by trade) and
-        `t`, level 1a's t on the moved excess. A trade the variant cannot price is left out of
-        both of its means.
+        `t`, level 1a's t on the moved excess. A trade that does not exist under the variant, or
+        that it cannot price, is left out of both of its means.
     """
     t = tradelevel.t_skew_kurt if drift["se_skew_kurt"] else tradelevel.t
     rows = []

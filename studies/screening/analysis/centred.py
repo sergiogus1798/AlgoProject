@@ -85,13 +85,13 @@ def slope(trades: pd.DataFrame, value: str, years: np.ndarray) -> pd.DataFrame:
     Args:
         trades: One sample's trades, already in time order within each `identity`.
         value: The column regressed, in account currency.
-        years: When each trade counts, in years from the instant `at_zero` is projected to.
+        years: When each trade counts, in years from any common origin.
 
     Returns:
         Indexed by identity: `n`; `b`, the column's change per year; `se`, its standard error
         at the residuals' AR(1) effective n — tradelevel.t()'s: n(1 - rho) / (1 + rho), capped
-        at n and floored at 2; and `at_zero`, the fitted value at years = 0. `se` is empty
-        under three trades.
+        at n and floored at 2; and `mean`, the column's mean, which is the fitted value at the
+        trades' mean time. `se` is empty under three trades.
     """
     key = trades["identity"].to_numpy()
     frame = pd.DataFrame({"x": np.asarray(years, dtype=float), "y": trades[value].to_numpy()})
@@ -107,4 +107,4 @@ def slope(trades: pd.DataFrame, value: str, years: np.ndarray) -> pd.DataFrame:
     effective = np.minimum(n * (1 - rho) / (1 + rho), n).clip(lower=2)
     variance = (sums["g0"] / (n - 2) / moments["xx"].sum()).where(n > 2)
     return pd.DataFrame({"n": n, "b": b, "se": np.sqrt(variance * n / effective),
-                         "at_zero": mean["y"] - b * mean["x"]})
+                         "mean": mean["y"]})

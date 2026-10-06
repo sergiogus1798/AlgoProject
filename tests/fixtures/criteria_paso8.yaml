@@ -24,7 +24,7 @@ steps:
       - {fact: gate.scorecard.sanidad_value, pass: ">= 100", else: limbo}
       # ── nivel 1a ──
       # R3 — t del exceso. Sin Limbo y sin excepciones por timeframe
-      - {fact: gate.scorecard.drift_excess_t, pass: ">= 1.65"}
+      - {fact: gate.scorecard.drift_excess_t, pass: ">= 1.65", missing: fail}
       # ── nivel 1b ──
       # R5 — estabilidad de la frecuencia, |z|: el formato no tiene valor absoluto, asi que son
       # dos reglas de un lado

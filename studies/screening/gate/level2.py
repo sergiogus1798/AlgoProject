@@ -36,6 +36,8 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         raw = data["trades"]
         raw = raw[(raw["sample"] == "IS") & raw["identity"].isin(alive)]
         raw = raw.sort_values(["identity", "Close time"])
+        on_grid = [bars.index.get_indexer(raw[k]) >= 0 for k in ("Open time", "Close time")]
+        assert np.all(on_grid), "a build trade is stamped off the bar grid"
         build = pd.DataFrame({
             "identity": raw["identity"].to_numpy(), "open_time": raw["Open time"].to_numpy(),
             "close_time": raw["Close time"].to_numpy(), "lots": raw["Size"].to_numpy(),

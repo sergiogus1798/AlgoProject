@@ -10,7 +10,7 @@ FACTS = ("drift_excess_t",)
 
 
 def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
-    """R3 for the strategies alive, and the per-trade table of oos1 for every paired one.
+    """R3 for the strategies alive, and the per-trade table of their oos1 trades.
 
     Args:
         data: The harvest as `inputs.load` gives it, plus `bars` (the strategies' own
@@ -23,15 +23,17 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         Indexed by `alive`: `drift_excess_t`, the AR(1) t of the oos1 trades' excess — the
         common repricer's P/L minus `tradelevel.drift_term` — with the skewness and kurtosis
         standard error when `drift.se_skew_kurt`. It also writes `operaciones.parquet` into
-        `out` and leaves it in `data["oos"]`: one row per oos1 trade in time order within each
-        identity, with `identity`, `open_time`, `close_time`, `side` (+1 / -1), `lots`, `pnl`
+        `out` and leaves it in `data["oos"]`: one row per oos1 trade of the strategies in
+        `alive` — nobody the cascade already dropped is repriced — in time order within each identity, with `identity`, `open_time`, `close_time`, `side` (+1 / -1), `lots`, `pnl`
         and `cost` (reprice.pnl), `drift`, `excess` and `window`, the calendar window it
         opened in.
     """
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
         return pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
     bars, drift = data["bars"], cfg["drift"]
-    oos = data["trades"][data["trades"]["sample"] == "OOS"].sort_values(["identity", "Close time"])
+    trades = data["trades"]
+    oos = (trades[(trades["sample"] == "OOS") & trades["identity"].isin(alive)]
+           .sort_values(["identity", "Close time"]))
     enter, leave = (bars.index.get_indexer(oos[k]) for k in ("Open time", "Close time"))
     assert (enter >= 0).all() and (leave >= 0).all(), "an oos1 trade is stamped off the bar grid"
     side = np.where(oos["Type"].astype(str) == "Sell", -1.0, 1.0)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The one-bar delay of the gate (level 2): a price that does not move where a fill could land
 keeps all of the edge, an edge made in the entry bar alone keeps none of it when the entry
-slips, a mean excess that is not positive leaves both facts empty, and the unmoved variant is
-level 1a's own excess."""
+slips, a mean excess that is not positive leaves both facts empty, the unmoved variant is
+level 1a's own excess, and a trade shorter than the shift leaves the variant."""
 
 import sys
 import tempfile
@@ -93,13 +93,14 @@ def test_mean_excess_not_positive_leaves_both_facts_empty() -> None:
     assert list(again.columns) == list(level2.FACTS)
 
 
-def test_unmoved_variant_is_level_1a_and_a_one_bar_trade_pays_only_costs() -> None:
+def test_unmoved_variant_is_level_1a_and_a_one_bar_trade_leaves_the_late_entry() -> None:
     """With costs and the per-window drift: shift (0, 0) reproduces level 1a's excess to the
-    cent, and a one-bar trade entered a bar late is a round trip on one open."""
+    cent, and a one-bar trade does not exist entered a bar late: out of both means of E+1 (and
+    of no other variant), so E+1's retention is that of the longer trades alone."""
     index = pd.date_range(SPAN[0], periods=6000, freq="1h")
     close = 500.0 + np.random.default_rng(3).integers(-30, 34, len(index)).cumsum() / 100
     frame = pd.DataFrame({"Open": np.r_[500.0, close[:-1]], "Close": close}, index=index)
-    paid = {**FREE, "spread": 0.5, "slippage": 0.1, "swap_long": -5.0}
+    paid = {**FREE, "spread": -0.5, "slippage": 0.1, "swap_long": -5.0}   # a rebate: mean > 0
     at = np.arange(50, 5900, 13)
     harvest = pd.DataFrame({"identity": "x", "Type": "Buy", "Open time": index[at],
                             "Close time": index[at + 1 + at % 7], "Size": 1.0, "sample": "OOS"})
@@ -109,9 +110,13 @@ def test_unmoved_variant_is_level_1a_and_a_one_bar_trade_pays_only_costs() -> No
     assert np.allclose(delay.excess(oos, frame, SPAN, paid, drift), oos["excess"], atol=1e-9)
     late = delay.excess(oos, frame, SPAN, paid, drift, delay.SHIFTS["E+1"])
     one_bar = (at % 7 == 0)
-    assert np.allclose(late[one_bar], -(paid["spread"] + 2 * paid["slippage"]))
-    assert oos["excess"].mean() < 0 and table["ret"].isna().all()    # costs ate it: no ratio
-    assert np.isfinite(table[["t_delta", "t"]].to_numpy()).all()
+    assert np.isnan(late[one_bar]).all() and np.isfinite(late[~one_bar]).all()
+    for name in ("S+1", "ES+1"):
+        assert np.isfinite(delay.excess(oos, frame, SPAN, paid, drift, delay.SHIFTS[name])).all()
+    assert oos["excess"].mean() > 0
+    assert np.isclose(table.loc[("x", "E+1"), "ret"],
+                      late[~one_bar].mean() / oos["excess"][~one_bar].mean())
+    assert np.isfinite(table.to_numpy(float)).all()
 
 
 def test_on_build_writes_the_build_table_and_changes_no_fact() -> None:

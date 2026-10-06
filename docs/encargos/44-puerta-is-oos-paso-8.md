@@ -74,6 +74,10 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
   no haya workflow de otra sesión; y 25 lecturas con dos caminos esperan al dueño (la lista, en
   la respuesta de la sesión: reglas sin dato y bordes, coste de R5c, forex, cortos, anomalías
   que cuentan, `e_fin`, operación más corta que el retraso, P/L del build en R6…).
+- 2026-10-06 · las 25 lecturas respondidas (P.5 bis) y aplicadas en `reprice.py`, `level1a.py`,
+  `centred.py`, `delay.py` y el fixture. A medias: los rangos de swap de forex que dio el dueño
+  no encajan en ninguna unidad (preguntado); sigue esperando a que no haya workflow el arreglo
+  de B1, B2, D-m, G2 e I.
 
 ---
 
@@ -589,6 +593,13 @@ función, `nights(open_time, close_time, costs)`; `Costs` es un dict con `point_
 `swap_short`, `triple`, `rollover`. Cortos y comisión ≠ 0, sin verificar. `costs()` **rechaza
 las fichas de forex** (swap en puntos): pendiente del dueño.
 
+**Tras las lecturas del dueño (2026-10-06):** `cost` es la fórmula sin redondear; el corto lleva
+el spread en la entrada; forex se precia en puntos con `tick_step` = tick / 10 (clave opcional
+nueva de `Costs`); el signo del swap es el de la ficha y el de MT5 en los dos lados (negativo =
+paga quien tiene la posición; comprobado contra Hantec en USDJPY, EURUSD, XAUUSD y JP225). Sin
+verificar contra SQX: cortos, swap en puntos y comisión ≠ 0. El nivel 1b centrado devuelve más
+estrategias que las vivas: la cascada une por identidad, nunca por posición.
+
 **Claves nuevas del `config.yaml` de la puerta** (valor de partida):
 `cascade.on: true` · `drift.window: year` (`year` | `semester` | `quarter`; nada menor) ·
 `drift.variant: b` (`a`-`d`, provisional hasta D-m) · `drift.se_skew_kurt: true` ·
@@ -771,6 +782,31 @@ plantilla o simple, cuántas): son del dueño.
   `knowhow/`, la tabla de estado y la bitácora.
 - En cada parada del dueño entrega la lista de ficheros y **¿Quieres hacer el commit?**; entre
   paradas no hay commit.
+
+## P.5 bis · Lecturas del dueño tras las oleadas 0-3 (2026-10-06) — no se reabren
+
+1. R3 sin dato **falla** (`missing: fail`). 2-3. Los hechos que faltan en las reglas de dos
+   hechos y los bordes de las bandas, como están en el fixture. 4. `phi_min`/`phi_max` iguales a
+   las líneas de z: buscado. 5. La calidad de datos no tiene variantes propias.
+6. Forex: `tick_step` = tick / 10, comprobando que el swap por noche sale en su orden (USDJPY
+   0,4-0,8; EURUSD 0,2-0,4). 7. «El coste» es **la fórmula** (spread + 2 × slippage + swap +
+   comisión), sin redondeos. 8. Cortos: el spread, **en la entrada**. 9. El signo del swap corto
+   no se supone: se mira en los swaps de hoy en MT5. 10. Comisión por tamaño: una vez, en la
+   apertura.
+11. Se carga el error estándar con sesgo y curtosis; AR(1) dentro o fuera lo decide el dueño en
+    la parada 1, con las cuatro combinaciones de D-m. 12. Desviación con n (ddof 0): es la
+    lectura con la que la fórmula se reduce exactamente a la t clásica.
+13. **La cascada corta de verdad:** el nivel 1a sólo precia a las que pasan el nivel 0, y los
+    niveles 2 y 3 sólo a las vivas, de lo más ligero a lo más pesado.
+14. Cuentan **todas** las anomalías del inventario.
+15. `e_fin` con la pendiente **centrada**. 16. `e_fin` a **mitad** de periodo. 17. Las caídas
+    que llegaron al nivel 1b **llevan** `t_b` y `e_fin`. 18. La que opera los dos lados va a una
+    población **«ambos»**.
+19. Una operación más corta que el retraso **no existe** en esa variante (sale de las dos
+    medias). 20. La ventana de deriva de la movida es la de su apertura movida. 21.
+    `delay.on_build` sólo anota.
+22. El P/L del build para R6 es el del repreciado común a los costes del build. 23. El
+    trimestre de R7, por apertura. 24. Los bloques nunca dan la vuelta. 25. R6 sobre el P/L.
 
 ## P.6 · Riesgos, y cómo se detecta cada uno
 

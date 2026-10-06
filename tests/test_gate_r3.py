@@ -222,6 +222,25 @@ def test_the_level_reprices_and_judges_the_excess() -> None:
         assert (facts["drift_excess_t"] < 0).all()             # no timing, and it paid costs
 
 
+def test_a_strategy_the_cascade_dropped_is_not_repriced() -> None:
+    """Only the identities in `alive` reach the table (file and `data["oos"]`) and the facts:
+    one that fell at level 0 has no row. With everyone alive, everyone is there."""
+    frame = bars(calm=(4, 4), wild=(4, 4))
+    cuts = always_in(frame)
+    both = pd.concat([held(frame, cuts[::2]).assign(identity="fell"),
+                      held(frame, cuts).assign(identity="alive")], ignore_index=True)
+    cfg = {"drift": {"window": "year", "variant": "b", "se_skew_kurt": True}}
+    for alive in (["alive"], ["alive", "fell"]):
+        with tempfile.TemporaryDirectory() as out:
+            data = {"trades": both, "bars": frame, "costs": FREE, "out": Path(out),
+                    "market": {"windows": {"OOS": SPAN}}}
+            facts = level1a.run(data, pd.Index(alive), cfg)
+            written = pd.read_parquet(Path(out) / "operaciones.parquet")
+        assert set(written["identity"]) == set(data["oos"]["identity"]) == set(alive)
+        assert list(facts.index) == alive and facts["drift_excess_t"].notna().all()
+        assert (written["identity"] == "alive").sum() == len(cuts) - 1
+
+
 if __name__ == "__main__":
     for check in [v for k, v in sorted(globals().items()) if k.startswith("test_")]:
         check()

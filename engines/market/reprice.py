@@ -8,12 +8,14 @@ import pandas as pd
 from core.assetdata import load, schema, sqx_settings, symbol_for
 
 # `spread` and `slippage` in PRICE units (card points x tick_size). `swap_long` / `swap_short`
-# as the card signs them: percent per year, negative = the holder pays. `triple` is the weekday
-# (Monday 0) whose night counts three, `rollover` the hour the night is charged at.
+# as the card and MetaTrader 5 sign them, both sides alike: negative = the holder pays, positive
+# = the holder is paid. Percent per year, unless `tick_step` is set: then points per night, a
+# point being one tick_step of price. `triple` is the weekday (Monday 0) whose night counts
+# three, `rollover` the hour the night is charged at.
 Costs = TypedDict("Costs", {"point_value": float, "tick_size": float, "spread": float,
                             "slippage": float, "commission_method": str, "commission": float,
                             "swap_long": float, "swap_short": float, "triple": int,
-                            "rollover": int})
+                            "rollover": int, "tick_step": float | None})      # may be absent: percent
 
 WEEKDAYS = ("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY")
 DAY, EPOCH_WEEKDAY = 86400, 3      # seconds; 1970-01-01 was a Thursday
@@ -27,18 +29,19 @@ def costs(feed: str, segment: str) -> Costs:
         segment: "build", "oos1" or "oos2"; picks the spread, the slippage and the commission.
 
     Returns:
-        The card's costs for that segment. Refuses a card whose swap is not `percent`: a
-        `points` swap (every forex card) is in tickStep, which the card does not carry.
+        The card's costs for that segment. A `points` swap (every forex card) is in tickStep,
+        which the card does not carry: taken as tick_size / 10 (owner, 2026-10-06).
     """
     data = load(symbol_for(feed))
-    assert schema(data)["swap"]["sqx_type"] == "percent", f"{feed}: swap is not percent per year"
     s, tick = sqx_settings(data, segment), data["instrument"]["tick_size"]
+    points = schema(data)["swap"]["sqx_type"] == "points"
     return {"point_value": data["instrument"]["point_value"], "tick_size": tick,
             "spread": s["defaultSpread"] * tick, "slippage": s["defaultSlippage"] * tick,
             "commission_method": s["commission"]["method"], "commission": s["commission"]["value"],
             "swap_long": s["swap"]["long"], "swap_short": s["swap"]["short"],
             "triple": WEEKDAYS.index(s["swap"]["triple_swap_on"]),
-            "rollover": int(str(s["swap"]["rollout_hour"]).split(":")[0])}
+            "rollover": int(str(s["swap"]["rollout_hour"]).split(":")[0]),
+            "tick_step": tick / 10 if points else None}
 
 
 def _rollovers_before(time: np.ndarray, costs: Costs) -> np.ndarray:
@@ -73,11 +76,11 @@ def pnl(open_px: np.ndarray, close_px: np.ndarray, open_time: np.ndarray,
     applied here and only here, so a fill passed in would be charged them twice.
 
     Audited against SQX to `0.02 + 2 * tick_size * point_value * size` per trade on longs at
-    zero commission (knowhow/research/monkey-reprice-audit.md). UNVERIFIED, written from SQX's
-    documented convention and never reconciled trade by trade: shorts (sell at the bar open
-    minus slippage, buy back at open + spread + slippage, `swap_short` on the entry fill) and
-    a non-zero commission (charged once, at the open: `PercentageBased` on the entry notional,
-    `SizeBased` per lot).
+    zero commission with a percent swap (knowhow/research/monkey-reprice-audit.md). UNVERIFIED
+    against SQX, never reconciled trade by trade: shorts (the literal mirror, owner 2026-10-06:
+    sell at open - spread - slippage, buy back at open + slippage; `swap_short` applied with
+    the long's sign rule), a non-zero commission (once, at the open: `PercentageBased` on the
+    entry notional, `SizeBased` per lot) and a swap in points (forex).
 
     Args:
         open_px, close_px: Raw bar opens, in price.
@@ -88,23 +91,21 @@ def pnl(open_px: np.ndarray, close_px: np.ndarray, open_time: np.ndarray,
 
     Returns:
         (pnl, cost) in account currency, the inputs' shape. `pnl` is rounded to the cent as SQX
-        reports it; `cost` is the raw bar-to-bar move minus `pnl`, so `pnl + cost` is exactly
-        the gross: `point_value * size * (spread + 2 * slippage)` + swap + commission, plus the
-        tick and cent rounding of that trade.
+        reports it. `cost` is the declared charge, unrounded: `point_value * size * (spread +
+        2 * slippage)` + swap + commission, negative swap being a credit; so `pnl + cost` is
+        the bar-to-bar gross only up to the tick and cent rounding of that trade.
     """
-    tick, value = costs["tick_size"], costs["point_value"] * np.asarray(size, float)
-    side = np.asarray(side, float)
-    long = side > 0
-    buy = lambda px: np.round((px + costs["spread"] + costs["slippage"]) / tick) * tick
-    sell = lambda px: np.round((px - costs["slippage"]) / tick) * tick
-    entry = np.where(long, buy(open_px), sell(open_px))
-    leave = np.where(long, sell(close_px), buy(close_px))
-    rate = np.where(long, costs["swap_long"], costs["swap_short"]) / 100 / 360
-    swap = -value * entry * rate * nights(open_time, close_time, costs)
-    commission = {"PercentageBased": value * entry / 100, "SizeBased": np.asarray(size, float)
-                  }[costs["commission_method"]] * costs["commission"]
-    net = np.round(value * side * (leave - entry) - swap - commission, 2)
-    return net, value * side * (np.asarray(close_px) - np.asarray(open_px)) - net
+    size, side = np.asarray(size, float), np.asarray(side, float)
+    tick, value, slip = costs["tick_size"], costs["point_value"] * size, costs["slippage"]
+    entry = np.round((open_px + side * (costs["spread"] + slip)) / tick) * tick
+    leave = np.round((close_px - side * slip) / tick) * tick
+    rate, step = np.where(side > 0, costs["swap_long"], costs["swap_short"]), costs.get("tick_step")
+    night = value * (entry * rate / 100 / 360 if step is None else step * rate)
+    charge = (-night * nights(open_time, close_time, costs)
+              + {"PercentageBased": value * entry / 100, "SizeBased": size
+                 }[costs["commission_method"]] * costs["commission"])
+    net = np.round(value * side * (leave - entry) - charge, 2)
+    return net, value * (costs["spread"] + 2 * slip) + charge
 
 
 def fills(bars: pd.DataFrame, positions: np.ndarray) -> np.ndarray:
