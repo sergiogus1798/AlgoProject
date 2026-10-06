@@ -42,7 +42,7 @@ result carries a warning while that file is not frozen: every rule in it is then
 
 | step | applied to a monkey | why not |
 |---|---|---|
-| 8 | every rule on a `gate.scorecard.*` fact and the OOS trade count, by the gate's own `cascade.run` and `measures.table` | `spread.verdict_csv.neto_con_slippage_real_oos` and `edgeCost.*` need Darwinex's tick scan and the SQX task's flat spread: no fact, rule not applied, listed in `reglas.csv` with `applied = False` |
+| 8 | every rule on a `gate.scorecard.*` fact and the OOS trade count, by the gate's own `cascade.run` and `measures.table` | `edgeCost.*` needs Darwinex's tick scan and the SQX task's flat spread: no fact, rule not applied, listed in `reglas.csv` with `applied = False` |
 | 10 | nothing | the monkey on the other markets — its donor's retest footprint placed on each market's bars (`engines/nulls/placement`) — is not built |
 | 12 | nothing | scaled siblings are fabricated by SQX from parameters; a monkey has none. The rule never fails anyway |
 | 14 | nothing | MC Retest's combined stress is an SQX task with no Python model |

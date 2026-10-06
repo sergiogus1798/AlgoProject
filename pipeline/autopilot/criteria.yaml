@@ -60,7 +60,7 @@ steps:
   # El paso 8 LIMPIA, no prueba: lo que pasa bien oos1 va algo mejor en oos2 (+52 por cada 1.000
   # a t >= 1,65, a igual número de operaciones) pero el 60 % sigue acabando en negativo. Por eso
   # Fallo es sólo lo claramente malo, y la t decide entre Limbo y Pass. Medido sobre las 116
-  # celdas con «Fallo = R1, R2, R2b o R9»: 734 Fallo, 259 Limbo, 6,2 Limbo con t >= 1,65 y 0,9
+  # celdas con «Fallo = R1, R2, R2b o R9» (R2b ya retirada: la cuenta es anterior): 734 Fallo, 259 Limbo, 6,2 Limbo con t >= 1,65 y 0,9
   # Pass por cada 1.000 (las reglas del 2026-10-02 daban 997 / 3,1 / 0,04). Las líneas de Pass de
   # R4-R8 de abajo no entran en esa cuenta: la harán algo más estricta.
   # Un «limbo» imposible de incumplir (">= -1000", "<= 1000") quiere decir «esta regla nunca da
@@ -74,9 +74,9 @@ steps:
       - {fact: gate.scorecard.sanidad_passed, pass: ">= 1", missing: fail}
       # R2 — ganó dinero en oos1 (en oos2: +34 por cada 1.000 a igual número de operaciones)
       - {fact: gate.scorecard.estaticas_value, pass: "> 0"}
-      # R2b — sigue ganando al spread real de Darwinex (en oos2: +28). Sin escaneo de spread
-      # para el activo el dato falta, y un dato que falta es Limbo.
-      - {fact: spread.verdict_csv.neto_con_slippage_real_oos, pass: "> 0"}
+      # R2b (neto al spread real de Darwinex) retirada por el dueño, 2026-10-06: su «real» era la
+      # referencia anterior a la recalibración de costes del 2026-10-04 (Darwinex + slippage a la
+      # mitad del spread) y no descartaba nada que la t no descartase ya.
       # R3 — t de la operación en oos1 descontando la deriva del mercado. Nunca da Fallo: 2,33 es
       # la línea de Pass (en oos2: +103 por cada 1.000, sobre pocas celdas) y por debajo es Limbo.
       # ⚠️ El término de deriva de la puerta está sesgado por el lado (tamaño ∝ 1/ATR): hasta
