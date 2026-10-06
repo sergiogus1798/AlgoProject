@@ -87,3 +87,62 @@ screens:
 monkey:
   draws: 2000        # corridas nulas por estrategia. engines/nulls/config.yaml manda en el resto
   timeframe: M30
+  seed:              # raiz de los sorteos del mono de niveles. Vacia = nueva en cada corrida; la
+                     # usada queda en el scorecard (mono_seed)
+
+# ── Encargo 44: la puerta por niveles (levels.py) ─────────────────────────────────────────
+# Las claves de aqui abajo, y monkey.seed, las leen los niveles nuevos. Hasta que el paquete I
+# conmute la puerta, nada de produccion las lee: la cascada de arriba sigue siendo la que corre.
+# Los sorteos del mono de niveles seran 5000 (P.3): monkey.draws sigue en 2000 porque es el
+# de la criba `mono` viva; lo sube quien conmute.
+
+cascade:
+  "on": true         # una estrategia sale en su primer Falla y no se le calcula nada mas.
+                     # false = se calcula todo para todas (poblaciones de prueba, calibracion).
+                     # Entre comillas: YAML lee un `on` suelto como el booleano true
+
+drift:               # R3: el exceso de cada operacion sobre la deriva del mercado
+  window: year       # ventana de calendario dentro de oos1 en la que se mide el movimiento
+                     # medio, y en la que se sortean los monos: year | semester | quarter.
+                     # Nada menor: al acercarse a la duracion de una operacion el exceso -> 0
+  variant: b         # termino de deriva: a = el de hoy · b = movimiento por ventana ·
+                     # c = operacion ciega de la misma duracion · d = b y c. PROVISIONAL
+                     # hasta que D-m mida el sesgo de las cuatro
+  se_skew_kurt: true # error estandar de la t corregido por sesgo y curtosis del exceso
+
+frequency:           # R5: sobredispersion φ de la frecuencia, estimada en el build
+  phi_min: 1.5       # cota inferior de φ
+  phi_max: 3.5       # cota superior de φ
+
+centring:            # R5 y R5d: el centro de la poblacion (mismo activo, timeframe y lado)
+  min_strategies: 30 # con menos estrategias no se centra
+  cap_log_rate: 0.35 # tope del centro de R5, en logaritmo del cociente de frecuencias
+                     # (-30 % / +42 %): lo que pase de ahi se queda en la z de cada una
+  cap_slope:         # tope del centro de R5d, en unidades de la pendiente. Sin valor: lo
+                     # propone K-m con las poblaciones de prueba
+
+cost_stress:
+  k: 1.25            # R5c: t_exceso_k resta a cada operacion (k - 1) x su coste
+
+concentration:       # R8: la t de R3 sin lo mejor
+  drop_trades: 3     # cuantas de las mejores operaciones se quitan
+  drop_period: quarter   # el mejor periodo natural que se quita
+
+mae:
+  percentile: 95     # R9b: percentil de |MAE| / 1R sobre las operaciones de oos1
+
+delay:               # nivel 2: la ejecucion una barra tarde
+  variants: ["E+1", "S+1", "ES+1"]   # E = entrada, S = salida, ES = las dos, en la apertura
+                     # de la barra siguiente; se juzga la peor. Admite "E-1"
+  on_build: false    # true = tambien sobre las operaciones del build
+
+homogeneity:         # R7: Q del exceso por periodo, contra operaciones barajadas entre periodos
+  permutations: 5000
+  period: quarter
+  min_trades: 5      # un periodo con menos operaciones se une al siguiente
+  seed:              # vacia = nueva en cada corrida; la usada queda en el scorecard (q_seed)
+
+drawdown:            # R6: el drawdown de oos1 contra las operaciones del build remuestreadas
+  block: 8           # longitud del bloque, en operaciones
+  sequences: 5000    # secuencias remuestreadas, cada una de tantas operaciones como oos1
+  seed:              # vacia = nueva en cada corrida; la usada queda en el scorecard (dd_seed)

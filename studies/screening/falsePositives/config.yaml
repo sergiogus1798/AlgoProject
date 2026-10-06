@@ -18,3 +18,8 @@ monkeys:
                     # size x ATR. A donor's size is fitted to the volatility of ITS entry, so
                     # under `donor` the floating-risk rules (worst day, worst MAE) mostly
                     # measure that broken pairing. Which is the control is the owner's call
+
+population:         # encargo 44, parte K: las poblaciones de prueba con ventaja plantada
+  per_level: 5000   # estrategias por nivel de ventaja
+  edges: [0.05, 0.10, 0.15]   # niveles de ventaja plantada, uno por poblacion
+  seed:             # vacia = nueva en cada corrida, anotada en el resultado

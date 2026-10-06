@@ -1,0 +1,71 @@
+# Encargo 44, oleada 0: el bloque del paso "8" con las 16 reglas de la tabla final (§1.2), en el
+# formato de pipeline/autopilot/criteria.yaml. Lo lee SOLO tests/test_gate_rules.py: produccion
+# nunca lee de tests/fixtures/. El paquete I pasa estas reglas a criteria.yaml y borra este fichero.
+#
+# Como se leen (pipeline/autopilot/criteria.py): `pass` y `limbo` son lineas, lo demas es Falla;
+# `else: limbo` = la regla nunca da Falla; `all` = la peor de sus partes, `any` = la mejor; un
+# hecho que falta va a `missing:` y, si la regla no lo dice, a Limbo.
+steps:
+  "8":
+    cut: OOS
+    segment: oos1
+    rules:
+      # ── nivel 0 ──
+      # R1a — la estrategia del build aparece en el retest
+      - {fact: gate.scorecard.presencia_passed, pass: ">= 1", missing: fail}
+      # R1b — sanidad y clones, como hoy
+      - {fact: gate.scorecard.sanidad_passed, pass: ">= 1", missing: fail}
+      # R2 — neto de oos1
+      - {fact: gate.scorecard.estaticas_value, pass: "> 0"}
+      # R4a — operaciones al año en el build
+      - {fact: gate.scorecard.is_trades_per_year, pass: ">= 35", limbo: ">= 20",
+         by: {H4: {pass: ">= 35", limbo: ">= 15"}}}
+      # R5b — operaciones en oos1. Nunca da Falla
+      - {fact: gate.scorecard.sanidad_value, pass: ">= 100", else: limbo}
+      # ── nivel 1a ──
+      # R3 — t del exceso. Sin Limbo y sin excepciones por timeframe
+      - {fact: gate.scorecard.drift_excess_t, pass: ">= 1.65"}
+      # ── nivel 1b ──
+      # R5 — estabilidad de la frecuencia, |z|: el formato no tiene valor absoluto, asi que son
+      # dos reglas de un lado
+      - {fact: gate.scorecard.z_frec, pass: "<= 1.5", limbo: "<= 3.5"}
+      - {fact: gate.scorecard.z_frec, pass: ">= -1.5", limbo: ">= -3.5"}
+      # R5c — ventaja frente al coste: Pasa con t(k) >= 1,65 y edge >= 2; Falla solo con
+      # edge < 1,25; la t(k) baja nunca pasa de Limbo
+      - all:
+          - {fact: gate.scorecard.edge_mean_oos, pass: ">= 2", limbo: ">= 1.25"}
+          - {fact: gate.scorecard.t_exceso_k, pass: ">= 1.65", else: limbo}
+      # R5d — degradacion dentro de oos1: t_b < -1,65 es Limbo, y Falla solo si ademas e_fin <= 0
+      - all:
+          - {fact: gate.scorecard.t_b, pass: ">= -1.65", else: limbo}
+          - any:
+              - {fact: gate.scorecard.t_b, pass: ">= -1.65"}
+              - {fact: gate.scorecard.e_fin, pass: "> 0"}
+      # R8 — concentracion: las dos t >= 1,65 Pasa; alguna <= 0 Falla
+      - all:
+          - {fact: gate.scorecard.t_sin_mejor_trimestre, pass: ">= 1.65", limbo: "> 0"}
+          - {fact: gate.scorecard.t_sin_3_mejores, pass: ">= 1.65", limbo: "> 0"}
+      # R9b — percentil 95 de la MAE, en R (positivo)
+      - {fact: gate.scorecard.mae_p95_r, pass: "<= 1.5", limbo: "<= 2.5"}
+      # Calidad de datos — Pasa con ret >= 0,60 o ninguna operacion afectada; Falla solo con
+      # ret < 0,25 y t_a > 1,65 (la tercera parte: Limbo si t_a <= 1,65, nunca Pasa por si sola)
+      - any:
+          - {fact: gate.scorecard.n_afectadas, pass: "== 0"}
+          - {fact: gate.scorecard.ret_datos, pass: ">= 0.6", limbo: ">= 0.25"}
+          - all:
+              - {fact: gate.scorecard.t_a, pass: "<= 1.65"}
+              - {fact: gate.scorecard.ret_datos, pass: ">= 0.6", else: limbo}
+      # ── nivel 2 ──
+      # Retraso de una barra — como la calidad de datos, sobre la peor variante
+      - any:
+          - {fact: gate.scorecard.retraso_ret_min, pass: ">= 0.6", limbo: ">= 0.25"}
+          - all:
+              - {fact: gate.scorecard.retraso_t_delta, pass: "<= 1.65"}
+              - {fact: gate.scorecard.retraso_ret_min, pass: ">= 0.6", else: limbo}
+      # ── nivel 3 ──
+      # R7 — homogeneidad por trimestres. Nunca da Falla
+      - {fact: gate.scorecard.q_p, pass: "> 0.05", else: limbo}
+      # R6 — drawdown
+      - {fact: gate.scorecard.dd_p, pass: "> 0.10", limbo: "> 0.01"}
+      # Mono. Nunca da Falla
+      - {fact: gate.scorecard.z_mono, pass: ">= 1.65", else: limbo}

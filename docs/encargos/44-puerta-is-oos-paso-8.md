@@ -38,12 +38,12 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
 | — | R4b retirada (techo de 75 operaciones al año) | **hecho** (2026-10-06) |
 | A | inventario de lo implementado | **hecho** (2026-10-06; lo que cambia el encargo, en P.1) |
 | — | plan de ejecución (al final de este fichero) | **aprobado** (2026-10-06); oleada 0 en marcha |
-| B | identidades build → retest (R1a) | pendiente |
-| C | auditoría del repreciado del mono y repreciado común | pendiente |
-| D | R3: deriva por ventana, error estándar con sesgo y curtosis, sin excepciones | pendiente |
-| E | R5, R5b, R5c, R5d, R8, R9b, calidad de datos | pendiente |
-| F | retraso de una barra | pendiente |
-| G | R7, R6, mono | pendiente |
+| B | identidades build → retest (R1a) | reproducido (2026-10-06); el arreglo espera a que no haya workflow |
+| C | auditoría del repreciado del mono y repreciado común | **hecho** (2026-10-06; forex pendiente del dueño) |
+| D | R3: deriva por ventana, error estándar con sesgo y curtosis, sin excepciones | programado (2026-10-06); falta medir (D-m) y la parada 1 |
+| E | R5, R5b, R5c, R5d, R8, R9b, calidad de datos | programado (2026-10-06), sin conmutar |
+| F | retraso de una barra | programado (2026-10-06), sin conmutar |
+| G | R7, R6, mono | R7 y R6 programados (2026-10-06); el mono (G2) espera |
 | H | lo que se borra | pendiente |
 | I | la cascada y el juez | pendiente |
 | J | parámetros en la ventana | pendiente |
@@ -57,6 +57,23 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
 - 2026-10-06 · parte A y «Plan de ejecución» (P.1-P.7), pasado por el Council y por un ataque
   sin contexto; cuatro decisiones del dueño (P.2). Ni una línea de código. A medias: las
   preguntas de P.7 y el sí del dueño para lanzar la oleada 0.
+- 2026-10-06 · plan aprobado, P.7 respondida. Oleada 0: **0** hecho (esqueleto, claves, 16
+  reglas en fixture; `monkey.draws` sigue en 2.000 hasta I), **E0-m** hecho (feedQuality murió
+  por falta de inventario; hoy no falta ninguno), **C1-m** hecho (el mono no cobra spread ni
+  slippage: tarjeta «monkey-reprice-audit»; convención y tolerancia para C2 en ella), **B1**
+  reproducido (1.557 de 10.000 caen por presencia; 29 revivirían) — su arreglo es sólo
+  `judge.py:117` y espera, con **B2**, a que no haya workflow corriendo. A medias: cinco
+  lecturas de reglas pedidas al dueño por el paquete 0; C2 lanzado.
+- 2026-10-06 · **C2** hecho (`engines/market/reprice.py`, firma congelada en P.3; rechaza forex:
+  swap en puntos, pendiente del dueño). **D** hecho (`drift_term` a-d, `t_skew_kurt`,
+  `level1a.py`; nada de hoy cambia). Esperan a que no haya workflow: arreglo de B1, B2, D-m y
+  G2. Oleada 3 lanzada sin G2. Preguntas abiertas al dueño: 5 del paquete 0, 5 de C2, 3 de D.
+- 2026-10-06 · oleada 3 hecha salvo G2: **E1**, **E2**, **E3**, **F**, **G1** (los cinco niveles
+  rellenos, sus tests en verde; nada de producción los llama). Parado aquí: lo que queda (arreglo
+  de B1, B2, D-m, G2 y la conmutación I) toca ficheros vivos o carga la máquina y espera a que
+  no haya workflow de otra sesión; y 25 lecturas con dos caminos esperan al dueño (la lista, en
+  la respuesta de la sesión: reglas sin dato y bordes, coste de R5c, forex, cortos, anomalías
+  que cuentan, `e_fin`, operación más corta que el retraso, P/L del build en R6…).
 
 ---
 
@@ -527,6 +544,19 @@ como dato (`AlgoData/feedQuality/<feed>/events.parquet`).
   dividen por el exceso medio: con media ≤ 0 el hecho queda vacío (no «pasa» por ser un
   negativo entre un negativo). Con la cascada encendida no ocurre —llegan las que pasan R3—;
   con ella apagada, K-m mide esas reglas sólo sobre las de media positiva y lo dice.
+- **Lo que recibe un nivel en `data`** (fijado por D, 2026-10-06): `trades`, `bars`, `market`
+  (con `windows["OOS"]`), `costs` = `reprice.costs(feed, "oos1")`, `out` = la carpeta del informe
+  de la puerta (`Path`), y desde el nivel 1a `oos`, la tabla por operación (de **todas** las
+  pareadas, no sólo las vivas). Con `data` vacío un nivel devuelve sus hechos vacíos: lo usa
+  `tests/test_gate_rules.py`. Las claves `costs` y `out` las pone el paquete I.
+- **Lo que la oleada 3 pide al paquete I** (2026-10-06): `data["quality"]` =
+  `core.paths.feed_quality_dir(feed)` (se omite si el feed no tiene inventario); `data["build"]`,
+  la tabla por operación del build (`identity`, `pnl`, en orden de cierre) para R6;
+  `data["costs_build"]` sólo con `delay.on_build`; `market["windows"]["IS"]` tiene que ser la
+  ventana que el build recorrió de verdad (si es más ancha, R5 inventa años a cero); una corrida
+  = un activo y un timeframe; los niveles dejan `retraso.parquet` en `out`; `monkey.draws` sube a
+  5.000 al conmutar. Petición a `tradelevel.drift_term`: aceptar las etiquetas de ventana de la
+  operación original (pregunta abierta del retraso).
 - **`cayo_regla` es texto** y `facts.number()` descarta el texto (`pipeline/autopilot/facts.py:34-47`):
   el juez lo lee del scorecard; lo resuelve el paquete I, que posee `facts.py`.
 
@@ -550,6 +580,14 @@ auditoría y queda congelada al cerrar la oleada 1, antes de que D la use:
 - `pnl(open_px, close_px, open_time, close_time, side, size, costs) -> (pnl, cost)` — arrays de
   cualquier forma igual; devuelve el P/L en dinero y **el coste cobrado** a cada operación.
 - `fills(bars, positions) -> px` — el precio de ejecución de una operación movida o sorteada.
+
+**Congelada el 2026-10-06 (C2 hecho; manda sobre las tres líneas de arriba):** `open_px` y
+`close_px` son aperturas de barra **en crudo**, nunca precios de SQX (se cobraría dos veces);
+`fills` devuelve la apertura en crudo de la fila `positions`; `side` es +1 / −1; hay una cuarta
+función, `nights(open_time, close_time, costs)`; `Costs` es un dict con `point_value`,
+`tick_size`, `spread`, `slippage` (en precio), `commission_method`, `commission`, `swap_long`,
+`swap_short`, `triple`, `rollover`. Cortos y comisión ≠ 0, sin verificar. `costs()` **rechaza
+las fichas de forex** (swap en puntos): pendiente del dueño.
 
 **Claves nuevas del `config.yaml` de la puerta** (valor de partida):
 `cascade.on: true` · `drift.window: year` (`year` | `semester` | `quarter`; nada menor) ·

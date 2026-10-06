@@ -3,6 +3,14 @@
 import numpy as np
 import pandas as pd
 
+from engines.market.calibrate import atr
+
+# The calendar windows a drift may be measured over: months spanned and the letter of the label.
+# Nothing shorter than a quarter: as the window nears a trade's hold its drift IS the trade's move.
+WINDOWS = {"year": (12, ""), "semester": (6, "H"), "quarter": (3, "Q")}
+# The drift term's variants: (one move per calendar window, the blind trade for the mean bar).
+VARIANTS = {"a": (False, False), "b": (True, False), "c": (False, True), "d": (True, True)}
+
 
 def mean_move(bars: pd.DataFrame, windows: dict) -> dict:
     """The market's mean bar-to-bar close change over each sample's window.
@@ -62,3 +70,106 @@ def t(trades: pd.DataFrame, value: str) -> pd.DataFrame:
     effective = np.minimum(n * (1 - rho) / (1 + rho), n).clip(lower=2)
     iid = by.mean() / by.std(ddof=1) * np.sqrt(n)
     return pd.DataFrame({"n": n, "iid": iid, "ar1": iid * np.sqrt(effective / n)})
+
+
+def calendar(time: pd.Series | pd.DatetimeIndex, window: str) -> np.ndarray:
+    """The calendar window each stamp falls in.
+
+    Args:
+        time: Datetimes.
+        window: A key of `WINDOWS`; anything else is refused.
+
+    Returns:
+        One label per stamp: "2020", "2020H1" or "2020Q3".
+    """
+    assert window in WINDOWS, f"drift window {window!r}: year, semester or quarter, nothing shorter"
+    months, letter = WINDOWS[window]
+    stamps = pd.DatetimeIndex(time)
+    year = stamps.year.astype(str)
+    part = ((stamps.month - 1) // months + 1).astype(str)
+    return np.asarray(year + letter + part if letter else year)
+
+
+def drift_term(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], window: str,
+               variant: str, point_value: float) -> tuple[np.ndarray, np.ndarray]:
+    """What the market paid each trade for being in it, under one of the four drift terms.
+
+    Args:
+        trades: One sample's trades: `Open time`, `Close time`, `Type` and `Size`.
+        bars: The bars of the strategy's own timeframe, the whole file, indexed by open time.
+        span: (first, last) of the sample, as strings a DatetimeIndex slices by.
+        window: A key of `WINDOWS`.
+        variant: A key of `VARIANTS`. `a` is drift() with one mean move for the whole span;
+            `b` the same with one mean move per calendar window, each trade taking that of
+            the window it opened in; `c` side x size x point value x W(h), W(h) the mean of
+            open[j + h] - open[j] over every bar j of the span weighted by 1 / ATR at j —
+            what a trade of that hold earns entered blind and sized as the doctrine sizes;
+            `d` is `c` with W(h) taken over the bars of the trade's own window.
+        point_value: Account currency per 1.0 of price per 1.0 lot.
+
+    Returns:
+        (drift per trade in account currency, each trade's window label). `a` and `b` assume
+        every bar held was a mean bar, which leaves a break-even trader sized by 1 / ATR a
+        remainder of opposite sign for longs and shorts; `c` and `d` do not.
+    """
+    per_window, blind = VARIANTS[variant]
+    label = calendar(trades["Open time"], window)
+    inside = np.arange(len(bars))[bars.index.slice_indexer(*span)]
+    pool = calendar(bars.index[inside], window) if per_window else np.full(len(inside), "")
+    mine = trades.assign(sample=label if per_window else "")
+    if not blind:
+        move = bars["Close"].diff().iloc[inside].groupby(pool).mean().to_dict()
+        return drift(mine, bars, move, point_value), label
+    opened, grid = bars["Open"].to_numpy(), bars.index.to_numpy()
+    weight = 1.0 / np.r_[np.nan, atr(bars)[:-1]]
+    weight[~np.isfinite(weight)] = 0.0
+    held = (np.searchsorted(grid, trades["Close time"].to_numpy(), side="right")
+            - np.searchsorted(grid, trades["Open time"].to_numpy(), side="right"))
+    keys = pd.MultiIndex.from_arrays([mine["sample"].to_numpy(), held])
+    moved = {}
+    for group, hold in keys.unique():
+        at = inside[pool == group]
+        at = at[at + hold < len(opened)]
+        moved[group, hold] = (((opened[at + hold] - opened[at]) * weight[at]).sum()
+                              / weight[at].sum())
+    side = np.where(trades["Type"].astype(str) == "Sell", -1.0, 1.0)
+    return (side * trades["Size"].to_numpy() * point_value
+            * pd.Series(moved).reindex(keys).to_numpy(), label)
+
+
+def skew_kurt_t(s: np.ndarray, n: np.ndarray, skew: np.ndarray, kurt: np.ndarray) -> np.ndarray:
+    """The t of a mean with the Probabilistic Sharpe Ratio's standard error.
+
+    Args:
+        s: Mean over standard deviation, the deviation taken over n (not n - 1).
+        n: Observations.
+        skew: Third standardised moment; 0 when symmetric.
+        kurt: Fourth standardised moment; 3 for a normal.
+
+    Returns:
+        s x sqrt(n - 1) over sqrt(1 - skew x s + (kurt - 1) / 4 x s^2). The numerator alone is
+        the usual mean / sd(n - 1) x sqrt(n); a loss tail (negative skew) on a positive mean
+        lowers it. The radicand cannot go negative: kurt >= skew^2 + 1 for any sample.
+    """
+    return s * np.sqrt(n - 1) / np.sqrt(1 - skew * s + (kurt - 1) / 4 * s * s)
+
+
+def t_skew_kurt(trades: pd.DataFrame, value: str) -> pd.DataFrame:
+    """t() with its standard error corrected for the column's own skewness and kurtosis.
+
+    Args:
+        trades: One sample's trades, already in time order within each `identity`.
+        value: The column to test, in account currency.
+
+    Returns:
+        t()'s frame: `n`, `iid` — skew_kurt_t() of the column's own moments — and `ar1`, that
+        one at t()'s AR(1) effective n.
+    """
+    plain = t(trades, value)
+    by = trades.groupby("identity", sort=False)[value]
+    x = trades[value] - by.transform("mean")
+    m = (pd.DataFrame({k: x ** k for k in (2, 3, 4)})
+         .groupby(trades["identity"].to_numpy(), sort=False).mean().reindex(plain.index))
+    iid = skew_kurt_t(by.mean() / np.sqrt(m[2]), plain["n"], m[3] / m[2] ** 1.5,
+                      m[4] / m[2] ** 2)
+    return plain.assign(iid=iid, ar1=iid * plain["ar1"] / plain["iid"])
