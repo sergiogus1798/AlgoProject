@@ -28,7 +28,8 @@ def thresholds_of(screen: str) -> dict:
         funnel read without its thresholds says nothing.
     """
     screens = thresholds.fill(yaml.safe_load(GATE_CONFIG.read_text(encoding="utf-8")))["screens"]
-    row = next(s for s in screens if s["name"] == screen)
+    # Since encargo 44 a funnel row is a step-8 rule whose label carries its own line.
+    row = next((s for s in screens if s["name"] == screen), {})
     return {k: v for k, v in row.items() if k not in ("name", "kind", "why")}
 
 

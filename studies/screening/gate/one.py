@@ -1,16 +1,17 @@
-"""One strategy through the gate, as the contract's data: every screen, its number, where it died."""
+"""One strategy through the gate, as the contract's data: where it fell, and every fact of every level."""
 
 import time
 
 import pandas as pd
 
 from core.study import blocks, result as envelope
+from studies.screening.gate.levels import LEVELS
 
 MODULE = "gate"
 
 
 def run(identity: str, scores: pd.DataFrame, cfg: dict) -> dict:
-    """What every screen measured on one strategy, read off the scorecard.
+    """What every level measured on one strategy, read off the scorecard.
 
     Args:
         identity: The strategy's identity, the scorecard's index.
@@ -18,35 +19,28 @@ def run(identity: str, scores: pd.DataFrame, cfg: dict) -> dict:
         cfg: What inputs.config() returned.
 
     Returns:
-        The contract dict: MANTENER or DESCARTAR with the screen that decided it, and one
-        row per screen. A screen after the one that killed it was not run on it.
+        The contract dict. The verdict is the one the judge will give from these facts:
+        DESCARTAR with the level and the rule it fell at, LIMBO with the rules that leave it
+        there, or MANTENER; and one row per fact. A level after the one it fell at was not
+        run on it.
     """
     started = time.time()
     r = scores.loc[identity]
-    names = [s["name"] for s in cfg["screens"]]
-    kind = {s["name"]: s["kind"] for s in cfg["screens"]}
-    died = r["died_at"] if isinstance(r["died_at"], str) and r["died_at"] else None
-
-    def state(name: str) -> str:
-        """pass, fail, or none for a screen this strategy never reached."""
-        got = r[f"{name}_passed"]
-        return "none" if pd.isna(got) else "pass" if bool(got) else (
-            "fail" if kind[name] == "hard" else "watch")
-
-    parts = [{"label": n, "state": state(n), "value": r[f"{n}_value"],
-              "note": r[f"{n}_note"] if isinstance(r[f"{n}_note"], str) else ""}
-             for n in names]
-    said = blocks.verdict(
-        "MANTENER" if r["survives"] else "DESCARTAR", "pass" if r["survives"] else "fail",
-        "Pasó todas las cribas duras." if r["survives"] else
-        f"Murió en {died}: {r[f'{died}_note']}", None, parts)
-    table = blocks.table("Cada criba", pd.DataFrame(
-        [[n, kind[n], p["value"], {"pass": "pasa", "fail": "muere", "watch": "avisa",
-                                   "none": "no llegó"}[p["state"]], p["note"]]
-         for n, p in zip(names, parts)], columns=["criba", "tipo", "valor", "resultado",
-                                                  "qué midió"]),
-        "Las cribas blandas (familia, redundancia) informan y no eliminan.")
+    doubt = r["limbo"] if isinstance(r["limbo"], str) else ""
+    if not r["survives"]:
+        said = blocks.verdict("DESCARTAR", "fail",
+                              f"Cayó en el nivel {r['cayo_nivel']}: {r['cayo_regla']}")
+    elif doubt:
+        said = blocks.verdict("LIMBO", "watch", f"Sigue, en limbo por: {doubt}")
+    else:
+        said = blocks.verdict("MANTENER", "pass", "Pasa todas las reglas del paso 8.")
+    table = blocks.table("Cada hecho", pd.DataFrame(
+        [[fact, level, None if pd.isna(r[fact]) else float(r[fact])]
+         for level, module in LEVELS for fact in module.FACTS],
+        columns=["hecho", "nivel", "valor"]),
+        "Un hecho sin valor es de un nivel al que la estrategia no llegó, o no se pudo medir.")
     name = r["strategy"] if isinstance(r["strategy"], str) else r["strategy_build"]
     return envelope.envelope(MODULE, name, identity, cfg, started,
-                             [envelope.tab("screens", "Las cribas, una a una", [table])], said,
-                             summary={"survives": bool(r["survives"]), "died_at": died or ""})
+                             [envelope.tab("levels", "Los niveles, hecho a hecho", [table])], said,
+                             summary={"survives": bool(r["survives"]),
+                                      "cayo_nivel": r["cayo_nivel"] or ""})

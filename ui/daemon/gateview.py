@@ -70,8 +70,8 @@ def gate(project: str, databank: str, day: str) -> dict:
 
     Returns:
         `source` from the report's manifest, `funnel` rows, `screens` with the thresholds
-        printed, and `rows` — one per strategy with identity, both names, where it died,
-        whether it survives and every screen's value, pass and note.
+        printed, and `rows` — one per strategy with identity, both names, the level and rule
+        it fell at (`cayo_nivel`, `cayo_regla`), whether it survives and every level's facts.
     """
     folder = DATA / "reports" / project / databank / day / "gate"
     m = manifest(folder)

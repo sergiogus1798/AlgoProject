@@ -84,8 +84,7 @@ def test_buttons() -> None:
     got["8"].findChildren(QPushButton)[0].click()
     assert ASKED == ["Correr el paso 8"], "nothing ticked: it asks before running them all"
     body = next(b for p, b in SENT if p == "POST workflow/run")
-    assert [t["key"] for t in body["tests"]] == ["gate", "edgeCost", "feedQuality",
-                                                 "spread"], "snoopingScreen writes the ledger"
+    assert [t["key"] for t in body["tests"]] == ["gate"], "step 8 is the gate alone"
     six, seven = got["6"].findChildren(QPushButton)[0], got["7"].findChildren(QPushButton)[0]
     assert six.text() == "▶ SQX" and six.isEnabled() and not seven.isEnabled()
     assert "Results" in got["7"].why, got["7"].why

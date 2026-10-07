@@ -15,16 +15,24 @@ from ledger import gate
 from pipeline.autopilot import judge, run
 
 
-def test_missing_is_fail_in_exactly_the_two_sanity_rules() -> None:
-    """R3: presencia/sanidad `fail`, every other rule `limbo`, `pass` nowhere."""
+def leaves(rule: dict) -> list[dict]:
+    """The one-fact rules of a rule, a compound's parts unfolded to any depth."""
+    parts = rule.get("all") or rule.get("any")
+    return [leaf for part in parts for leaf in leaves(part)] if parts else [rule]
+
+
+def test_missing_is_fail_in_exactly_the_sanity_rules_and_r3() -> None:
+    """presencia/sanidad and R3 (owner, 2026-10-06: R3 with no data fails) `fail`, every other
+    rule `limbo`, `pass` nowhere."""
     seen = {}
     for spec in judge.settings()["steps"].values():
         for rule in spec["rules"]:
-            for r in rule.get("all", rule.get("any", [rule])):
-                seen[r["fact"]] = r.get("missing", "limbo")
-    assert {k for k, v in seen.items() if v == "fail"} == {
-        "gate.scorecard.presencia_passed", "gate.scorecard.sanidad_passed"}
-    assert "pass" not in seen.values()
+            for r in leaves(rule):
+                seen.setdefault(r["fact"], set()).add(r.get("missing", "limbo"))
+    assert {k for k, v in seen.items() if "fail" in v} == {
+        "gate.scorecard.presencia_passed", "gate.scorecard.sanidad_passed",
+        "gate.scorecard.drift_excess_t"}
+    assert not any("pass" in v for v in seen.values())
 
 
 def test_steps_8_to_16_declare_oos1() -> None:

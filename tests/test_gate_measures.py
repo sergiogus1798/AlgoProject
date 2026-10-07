@@ -12,7 +12,7 @@ from scipy import stats
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from studies.screening.analysis import decay, floating, tradelevel
-from studies.screening.gate import inputs, monkey
+from studies.screening.gate import inputs
 
 
 def curve(mean: float, days: int, seed: int) -> tuple[pd.Series, pd.Series]:
@@ -118,16 +118,6 @@ def test_retention_and_concentration_are_nan_on_a_losing_denominator() -> None:
     assert np.isnan(got["retention"]) and np.isnan(got["concentration"])
 
 
-def test_familia_runs_bh_over_everyone_the_mono_tested() -> None:
-    """1000 uniform p (all null), the mono screen kept those under 0.05: BH over the ~50
-    survivors would name them all; over the 1000 that entered it names none."""
-    p = pd.Series(np.random.default_rng(2).uniform(size=1000),
-                  index=[f"s{i}" for i in range(1000)])
-    alive = p.index[p <= 0.05]
-    got = monkey.familia({"scores": pd.DataFrame({"mono_p": p})}, alive, {"alpha": 0.05})
-    assert len(alive) > 20 and got["passed"].sum() <= 1
-
-
 def test_monkey_timeframe_comes_from_the_harvest_unless_overridden() -> None:
     """An H1 harvest with no override is placed on H1 bars, not config.yaml's M30; a mixed
     harvest refuses; an explicit --set wins."""
@@ -149,6 +139,5 @@ if __name__ == "__main__":
     test_floating_risk_in_r()
     test_in_sample_ends_the_day_before_a_split_the_curve_lacks()
     test_retention_and_concentration_are_nan_on_a_losing_denominator()
-    test_familia_runs_bh_over_everyone_the_mono_tested()
     test_monkey_timeframe_comes_from_the_harvest_unless_overridden()
     print("ok")

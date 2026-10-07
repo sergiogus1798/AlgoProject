@@ -27,41 +27,6 @@ thresholds:
     set_on: 2026-09-23
     why: una estrategia con cuatro trades fuera de muestra no tiene error estándar que leer
 
-  - key: gate.degradacion.min_retention
-    value: 0.0
-    source: studies/screening/gate/config.yaml#screens[name=degradacion].min_retention
-    set_by: dueño
-    set_on: 2026-09-23
-    why: laxo a propósito — hoy sólo pide que la pendiente fuera de muestra sea positiva
-
-  - key: gate.degradacion.max_concentration
-    value: 1.0
-    source: studies/screening/gate/config.yaml#screens[name=degradacion].max_concentration
-    set_by: dueño
-    set_on: 2026-09-23
-    why: laxo a propósito; el suelo real lo pondrá el dueño cuando vea la distribución
-
-  - key: gate.forma.max_dd_ratio
-    value: 5.0
-    source: studies/screening/gate/config.yaml#screens[name=forma].max_dd_ratio
-    set_by: dueño
-    set_on: 2026-09-23
-    why: un múltiplo de 5 es casi no pedir nada
-
-  - key: gate.mono.max_p
-    value: 0.50
-    source: studies/screening/gate/config.yaml#screens[name=mono].max_p
-    set_by: dueño
-    set_on: 2026-09-23
-    why: la mediana del mono — hoy sólo pide estar en la mitad buena
-
-  - key: gate.familia.alpha
-    value: 0.05
-    source: studies/screening/gate/config.yaml#screens[name=familia].alpha
-    set_by: dueño
-    set_on: 2026-09-23
-    why: Benjamini-Hochberg sobre la familia superviviente; SOFT hasta que el dueño vea el exceso
-
   - key: snoopingScreen.stepm.fwer
     value: 0.05
     source: studies/screening/snoopingScreen/config.yaml#stepm.fwer

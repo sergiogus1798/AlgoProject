@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.autopilot import criteria
 from studies.screening.gate import levels
 
-FIXTURE = Path(__file__).with_name("fixtures") / "criteria_paso8.yaml"
-RULES = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))["steps"]["8"]["rules"]
+CRITERIA = Path(__file__).resolve().parent.parent / "pipeline" / "autopilot" / "criteria.yaml"
+RULES = yaml.safe_load(CRITERIA.read_text(encoding="utf-8"))["steps"]["8"]["rules"]
 PREFIX = "gate.scorecard."
 P, L, F = "pass", "limbo", "fail"
 
@@ -53,7 +53,7 @@ TABLES = {
 
 
 def verdict(key: str, values: tuple, tags: set[str]) -> str:
-    """What the fixture's rules that read exactly the facts of `key` say of one strategy."""
+    """What the step-8 rules that read exactly the facts of `key` say of one strategy."""
     names = [PREFIX + name for name in key.split()]
     rules = [r for r in RULES if criteria.reads([r]) == set(names)]
     rows = [("s", n, float(v)) for n, v in zip(names, values, strict=True) if v is not None]
@@ -62,7 +62,7 @@ def verdict(key: str, values: tuple, tags: set[str]) -> str:
 
 
 def test_sixteen_rules_and_every_one_has_its_table() -> None:
-    """The fixture groups into the 16 rules of §1.2 (R5 is two one-sided lines), each with a
+    """Step 8 of criteria.yaml groups into the 16 rules of §1.2 (R5 is two one-sided lines), each with a
     table that holds a Pass, a missing fact, and the Limbo and the Fail the rule can give."""
     groups = {frozenset(criteria.reads([r])) for r in RULES}
     assert len(groups) == 16 and len(RULES) == 17, (len(groups), len(RULES))

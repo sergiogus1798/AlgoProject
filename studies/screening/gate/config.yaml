@@ -1,18 +1,12 @@
-# Las cribas, en orden, como datos. `cascade.py` lee este fichero y nada mas decide que es
-# la puerta. Añadir la octava criba es añadir una fila aqui y una funcion en screens.py.
+# La puerta por niveles (encargo 44). Lo que decide quien cae son las reglas del paso "8" de
+# pipeline/autopilot/criteria.yaml: cada nivel (levels.py) calcula sus hechos y la cascada
+# juzga tras el las reglas que los leen. Este fichero lleva los mandos de los calculos.
 #
-# Campos de cada fila:
-#   name   como la llaman el scorecard, el veredicto y el informe
-#   kind   hard = elimina a quien no pasa · soft = mide y no elimina a nadie
-#   why    por que existe, en una frase; se copia al informe
-#   resto  los umbrales que lee su propia funcion
-#          `ledger:<clave>` = el numero vive en ledger/thresholds.yaml, con quien lo puso y
-#          cuando; inputs.config() lo sustituye al leer. Cambiarlo es del dueño, alli.
-#
-# ⚠️ TODOS LOS UMBRALES DE AQUI SON DELIBERADAMENTE LAXOS. Decision del dueño, 2026-09-23:
-# estan puestos para VER cuanta poblacion mata cada criba sobre datos reales, no para
-# seleccionar nada. Ninguno de estos numeros esta decidido; apretarlos viene despues, con
-# la distribucion delante. Ver el apendice A de docs/AgentPDFs/puerta-oos-2026-09-23.md.
+# `screens` son las cribas del nivel 0 (presencia, sanidad, estaticas: dan hechos, no eliminan
+# por si solas) y `redundancia`, que anota. Campos: name · kind (hard = su hecho alimenta una
+# regla que puede dar Falla; soft = solo anota) · why · y los umbrales de su funcion.
+# `ledger:<clave>` = el numero vive en ledger/thresholds.yaml, con quien lo puso y cuando;
+# inputs.config() lo sustituye al leer. Cambiarlo es del dueño, alli.
 
 # Las metricas vienen de DOS databanks, porque SQX solo admite un spread y un slippage por
 # backtest y la ventana es de años: la de construccion y la de retesteo. Cada metrica aparece
@@ -36,44 +30,9 @@ screens:
 
   - name: estaticas
     kind: hard
-    keep: "`Net profit [OOS]` > 0"
-    value: "Net profit [OOS]"
     why: >-
-      el suelo de metricas estaticas sobre el periodo fuera de muestra. Laxo a proposito:
-      hoy solo pide no perder dinero
-
-  - name: degradacion
-    kind: hard
-    min_retention: ledger:gate.degradacion.min_retention
-    min_t: 0.0
-    min_years_positive: 1
-    max_concentration: ledger:gate.degradacion.max_concentration
-    why: >-
-      cuanto del filo dentro de muestra sobrevivio, y si lo que queda bate a su propio error
-      estandar. Laxo a proposito: hoy solo pide que la pendiente fuera de muestra sea positiva
-
-  - name: forma
-    kind: hard
-    max_dd_ratio: ledger:gate.forma.max_dd_ratio
-    why: >-
-      si el peor descenso fuera de muestra cabe en lo que dentro de muestra hacia esperar.
-      Un multiplo de 5 es casi no pedir nada
-
-  - name: mono
-    kind: hard
-    statistic: sharpe
-    rung: timing
-    max_p: ledger:gate.mono.max_p
-    why: >-
-      si bate a un aleatorio con la misma oportunidad de mercado. max_p 0.50 es la mediana
-      del mono: hoy solo pide estar en la mitad buena
-
-  - name: familia
-    kind: soft
-    alpha: ledger:gate.familia.alpha
-    why: >-
-      de los que pasan el mono, cuantos daria el azar. Corrige Benjamini-Hochberg sobre todas
-      las que entraron al mono (no solo las que pasaron su p). SOFT: informa, no elimina, hasta que el dueño vea el exceso
+      el neto de oos1 del databank de retesteo (`Net profit [OOS]`): la regla R2 pide que
+      sea positivo
 
   - name: redundancia
     kind: soft
@@ -85,16 +44,10 @@ screens:
       a nadie. El valor de la criba es el TAMAÑO del grupo
 
 monkey:
-  draws: 2000        # corridas nulas por estrategia. engines/nulls/config.yaml manda en el resto
-  timeframe: M30
-  seed:              # raiz de los sorteos del mono de niveles. Vacia = nueva en cada corrida; la
-                     # usada queda en el scorecard (mono_seed)
-
-# ── Encargo 44: la puerta por niveles (levels.py) ─────────────────────────────────────────
-# Las claves de aqui abajo, y monkey.seed, las leen los niveles nuevos. Hasta que el paquete I
-# conmute la puerta, nada de produccion las lee: la cascada de arriba sigue siendo la que corre.
-# Los sorteos del mono de niveles seran 5000 (P.3): monkey.draws sigue en 2000 porque es el
-# de la criba `mono` viva; lo sube quien conmute.
+  draws: 5000        # sorteos por estrategia del mono del nivel 3c
+  timeframe: M30     # solo si la cosecha no trae `TimeFrame [IS]`: las barras de la corrida
+  seed:              # raiz de los sorteos del mono. Vacia = nueva en cada corrida; la usada
+                     # queda en el scorecard (mono_seed)
 
 cascade:
   "on": true         # una estrategia sale en su primer Falla y no se le calcula nada mas.

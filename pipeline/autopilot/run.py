@@ -94,7 +94,7 @@ def merged(todo: list[dict]) -> list[dict]:
 
 # Per-strategy readings outside the sequence that run on the survivors of step 8's cut, not on
 # the whole build (owner, 2026-10-01: 200 of step 8's 297 s were these two on all 571).
-AFTER_CUT = {"8": ["profitShape", "entryQuality"]}
+AFTER_CUT = {"8": ["monkey", "profitShape", "entryQuality"]}
 
 
 def after_cut(actions: list[dict], cfg: dict) -> list[dict]:

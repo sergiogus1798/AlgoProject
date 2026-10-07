@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The autopilot's facts: every number a step-8 study writes per strategy reaches a key a
-criteria.yaml rule can name, joined by identity, and the gate keeps every screen's numbers."""
+criteria.yaml rule can name, joined by identity."""
 
 import sys
 import tempfile
@@ -12,7 +12,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.autopilot import facts, run
 from studies.readings.entryQuality import contract
-from studies.screening.gate import cascade, one
 
 
 def keyed(rows: list[dict]) -> dict[tuple[str, str], float]:
@@ -25,10 +24,9 @@ def test_folder_reads_every_per_strategy_number() -> None:
     True/False and words, a one-market nulls.csv and a two-market one."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp)
-        pd.DataFrame({"strategy": ["A", "B", None, None], "died_at": [None, "mono", "presencia",
-                                                                     "presencia"],
-                      "mono_passed": [True, False, None, None],
-                      "degradacion_t": [2.5, 1.0, None, None], "survives": [True, False] * 2},
+        pd.DataFrame({"strategy": ["A", "B", None, None], "cayo_nivel": [None, "1a", "0", "0"],
+                      "sanidad_passed": [True, False, None, None],
+                      "drift_excess_t": [2.5, 1.0, None, None], "survives": [True, False] * 2},
                      index=pd.Index(["ia", "ib", "ic", "id"], name="identity")
                      ).to_parquet(out / "scorecard.parquet")
         pd.DataFrame({"strategy": ["A", "B"], "identity": ["ia", "ib"],
@@ -40,10 +38,10 @@ def test_folder_reads_every_per_strategy_number() -> None:
                       "p_timing_sharpe": [0.01, 0.6]}).to_csv(out / "nulls.csv", index=False)
         rows = facts.from_folder("s", out)
         got = keyed(rows)
-        assert got[("A", "scorecard.mono_passed")] == 1.0
-        assert got[("B", "scorecard.mono_passed")] == 0.0
-        assert got[("A", "scorecard.degradacion_t")] == 2.5
-        assert ("B", "scorecard.degradacion_t") in got
+        assert got[("A", "scorecard.sanidad_passed")] == 1.0
+        assert got[("B", "scorecard.sanidad_passed")] == 0.0
+        assert got[("A", "scorecard.drift_excess_t")] == 2.5
+        assert ("B", "scorecard.drift_excess_t") in got
         assert {r["identity"] for r in rows if r["key"].startswith("scorecard.")} == {"ia", "ib"}
         assert got[("A", "verdict_csv.neto_con_slippage_real_oos")] == 12.5
         assert got[("A", "verdict_csv.superior")] == 1.0
@@ -94,71 +92,25 @@ def test_reading_and_delay_rows_are_addressable() -> None:
     assert got["delay.en_minutos.2.entregado"] == 9.0
 
 
-def test_cascade_keeps_every_column_a_screen_returns() -> None:
-    """degradacion's t, years and concentration land in the scorecard as their own columns."""
-    def first(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
-        """A screen with two extra numbers beside value, passed and note."""
-        return pd.DataFrame({"value": 1.0, "passed": alive == "a", "note": "", "t": 2.0,
-                             "years_positive": 3.0}, index=alive)
-
-    cascade.SCREENS["fake"] = first
-    data = {"metrics": pd.DataFrame({"strategy": ["A", "B"], "strategy_build": ["A", "B"]},
-                                    index=pd.Index(["a", "b"], name="identity")),
-            "missing": pd.DataFrame(columns=["identity", "strategy_build"])}
-    scores, _ = cascade.run(data, {"screens": [{"name": "fake", "kind": "hard"}]}, say=False)
-    assert list(scores["fake_t"]) == [2.0, 2.0] and list(scores["fake_years_positive"]) == [3.0] * 2
-    assert list(scores["survives"]) == [True, False]
-    del cascade.SCREENS["fake"]
-
-
-def test_an_early_death_is_an_explicit_zero() -> None:
-    """A strategy that dies at the first hard screen still has `<screen>_passed` = 0 for it,
-    `survives` = 0 and `verdict.pass` = 0 — facts a rule can fail it on — and no fact at all
-    for the screen it never reached (missing = limbo, owner 2026-10-01)."""
-    def early(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
-        """Passes only `a`."""
-        return pd.DataFrame({"value": 1.0, "passed": alive == "a", "note": ""}, index=alive)
-
-    def late(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
-        """Passes whoever reaches it."""
-        return pd.DataFrame({"value": 2.0, "passed": True, "note": ""}, index=alive)
-
-    cascade.SCREENS.update(early=early, late=late)
-    cfg = {"screens": [{"name": "early", "kind": "hard"}, {"name": "late", "kind": "hard"}]}
-    data = {"metrics": pd.DataFrame({"strategy": ["A", "B"], "strategy_build": ["A", "B"]},
-                                    index=pd.Index(["a", "b"], name="identity")),
-            "missing": pd.DataFrame(columns=["identity", "strategy_build"])}
-    scores, _ = cascade.run(data, cfg, say=False)
-    with tempfile.TemporaryDirectory() as tmp:
-        scores.to_parquet(Path(tmp) / "scorecard.parquet")
-        got = keyed(facts.from_folder("gate", Path(tmp)))
-    assert got[("B", "scorecard.early_passed")] == 0.0 and got[("B", "scorecard.survives")] == 0.0
-    assert got[("A", "scorecard.late_passed")] == 1.0 and got[("A", "scorecard.survives")] == 1.0
-    assert ("B", "scorecard.late_passed") not in got and ("B", "scorecard.late_value") not in got
-    said = {n: dict(facts.flatten(one.run(i, scores, cfg))) for n, i in (("A", "a"), ("B", "b"))}
-    assert said["A"]["verdict.pass"] is True and said["B"]["verdict.pass"] is False
-    del cascade.SCREENS["early"], cascade.SCREENS["late"]
-
-
 def test_after_cut_keeps_a_judged_reading_before_the_judge() -> None:
-    """profitShape runs before step 8's judge when a rule names it; entryQuality still after."""
+    """profitShape runs before step 8's judge when a rule names it; the monkey and entryQuality
+    after the cut, on whoever is left."""
     actions = [{"n": "8", "kind": "python", "title": "t",
                 "tests": ["gate", "monkey", "profitShape", "entryQuality"]},
                {"n": "8", "kind": "judge"}]
     cfg = {"steps": {"8": {"rules": [{"fact": "profitShape.concentration.verdict_pass",
                                       "pass": ">= 1"}]}}}
     got = run.after_cut(actions, cfg)
-    assert got[0]["tests"] == ["gate", "monkey", "profitShape"]
-    assert got[1]["kind"] == "judge" and got[2]["tests"] == ["entryQuality"] and got[2]["cut"]
+    assert got[0]["tests"] == ["gate", "profitShape"]
+    assert got[1]["kind"] == "judge" and got[2]["tests"] == ["monkey", "entryQuality"]
+    assert got[2]["cut"]
     plain = run.after_cut(actions, {"steps": {"8": {"rules": []}}})
-    assert plain[2]["tests"] == ["profitShape", "entryQuality"]
+    assert plain[2]["tests"] == ["monkey", "profitShape", "entryQuality"]
 
 
 if __name__ == "__main__":
     test_folder_reads_every_per_strategy_number()
     test_a_per_market_parquet_gives_one_key_per_market()
     test_reading_and_delay_rows_are_addressable()
-    test_cascade_keeps_every_column_a_screen_returns()
-    test_an_early_death_is_an_explicit_zero()
     test_after_cut_keeps_a_judged_reading_before_the_judge()
     print("ok")

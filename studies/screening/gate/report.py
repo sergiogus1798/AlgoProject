@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The gate over one databank: the cascade, the scorecard, and the verdict SQX can apply."""
+"""The gate over one databank: the levels, the scorecard, and the verdict SQX can apply."""
 
 import argparse
 import shutil
@@ -8,45 +8,56 @@ from datetime import date
 from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import output
-from engines.nulls import inputs as null_inputs
 from ledger import tried
+from pipeline.autopilot import criteria, judge
 from studies.screening.gate import cascade, inputs, many
+from studies.screening.gate.levels import LEVELS
+
+SEEDS = {"monkey": "mono_seed", "homogeneity": "q_seed", "drawdown": "dd_seed"}
 
 
 def main() -> None:
-    """Read a databank's newest harvest, run every screen, and write what survived."""
+    """Read a databank's newest harvest, run every level, and write what stands."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
     ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_M1")
-    ap.add_argument("--set", action="extend", nargs="+", default=[], help="screen.threshold=value")
+    ap.add_argument("--set", action="extend", nargs="+", default=[], help="section.key=value")
     ap.add_argument("--seed", type=int, default=None,
-                    help="root of the monkey screen's random streams; omitted, a fresh one is "
-                         "drawn. The manifest and the scorecard's `mono_seed` record the one "
-                         "used: pass it back to get the same `mono` and `familia`")
+                    help="one root for the three resamplings (R7, R6, the monkey); omitted, "
+                         "each draws a fresh one. The scorecard records the ones used "
+                         "(q_seed, dd_seed, mono_seed) and the manifest the --set that "
+                         "replays them")
+    ap.add_argument("--from-level", default="0", choices=sorted({level for level, _ in LEVELS}),
+                    help="resume today's report at this level: the levels before it are "
+                         "read back from its scorecard")
     a = ap.parse_args()
 
-    cfg = inputs.config(a.set)
+    sets = a.set + ([] if a.seed is None else [f"{knob}.seed={a.seed}" for knob in SEEDS])
+    cfg = inputs.config(sets)
     folder = inputs.newest(a.project, a.databank)
+    out = report_dir(a.project, a.databank, date.today().isoformat()) / "gate"
     data = inputs.load(folder)
+    data = inputs.staged(data, a.feed, inputs.timeframe(data["metrics"], cfg, a.set), out)
+    # The judge's own rules, read as the judge reads them (smoke mode included): the cascade
+    # and the cut cannot disagree.
+    rules = criteria.resolved(judge.settings()["steps"]["8"].get("rules") or [],
+                              judge.tags(a.project))
     print(tried.note_project_run(a.project, "studies.screening.gate", folder.name, cfg,
                                  f"gate.report --set {' '.join(a.set)}".strip()))
-    data["null_cfg"] = null_inputs.config([f"nulls.draws={cfg['monkey']['draws']}"]
-                                          + null_inputs.seeded(a.seed))
-    data["bars"] = null_inputs.bars(a.feed, inputs.timeframe(data["metrics"], cfg, a.set))
-    data["market"] = inputs.market(a.feed)
     print(f"{len(data['metrics'])} emparejadas + {len(data['missing'])} sin OOS, "
           f"ventana {data['split']} -> {data['end']}\n")
 
     source = {"project": a.project, "databank": a.databank, "feed": a.feed,
               "harvest": str(folder), "split": data["split"], "end": data["end"],
-              "missing_oos": len(data["missing"]),
-              "screens": [s["name"] for s in cfg["screens"]], "overrides": a.set,
-              "nulls_seed": data["null_cfg"]["nulls"]["seed"]}
-    got = many.run(data, cfg, source)
+              "missing_oos": len(data["missing"]), "levels": [level for level, _ in LEVELS],
+              "cascade": cfg["cascade"]["on"], "overrides": a.set}
+    got = many.run(data, cfg, rules, source, a.from_level)
     scores, funnel = got["scores"], got["funnel"]
+    used = {knob: int(scores[column].dropna().iloc[0]) for knob, column in SEEDS.items()
+            if scores[column].notna().any()}
+    source["seeds"] = used
 
-    out = report_dir(a.project, a.databank, date.today().isoformat()) / "gate"
     title = f"Puerta OOS — {a.project} / {a.databank}"
     output.population(out, "gate", got["population"], title)
     # A rerun the same day lands in this same folder: the last run's strategies go first, or
@@ -58,12 +69,13 @@ def main() -> None:
     cascade.verdict(scores, "strategy").to_csv(out / "verdict.csv", index=False)
     cascade.verdict(scores, "strategy_build").to_csv(out / "verdict_build.csv", index=False)
     funnel.to_csv(out / "funnel.csv", index=False)
+    replay = " ".join(a.set + [f"{knob}.seed={seed}" for knob, seed in used.items()])
     write_manifest(out, source,
                    f"python3 -m studies.screening.gate.report --project {a.project} "
-                   f"--databank '{a.databank}' --feed {a.feed} --seed {source['nulls_seed']}",
+                   f"--databank '{a.databank}' --feed {a.feed}"
+                   + (f" --set {replay}" if replay else ""),
                    {"entered": len(scores), "survives": int(scores["survives"].sum())})
-    print(f"\n{int(scores['survives'].sum())} de {len(scores)} sobreviven, "
-          f"semilla del mono {source['nulls_seed']} -> {out}")
+    print(f"\n{int(scores['survives'].sum())} de {len(scores)} siguen, semillas {used} -> {out}")
 
 
 if __name__ == "__main__":

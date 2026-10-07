@@ -45,7 +45,7 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
 | F | retraso de una barra | programado (2026-10-06), sin conmutar |
 | G | R7, R6, mono | programados (2026-10-06), sin conmutar; las cuatro lecturas del mono confirmadas (dueño, 2026-10-07) |
 | H | lo que se borra | pendiente |
-| I | la cascada y el juez | pendiente |
+| I | la cascada y el juez | **conmutado** (2026-10-07): la puerta corre por niveles y el juez lee las 16 reglas; `dev.on` sin tocar |
 | J | parámetros en la ventana | pendiente |
 | K | poblaciones de prueba, líneas, `dev.on` | pendiente |
 | L | datos para el módulo de fondeo | pendiente |
@@ -92,6 +92,21 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
   mirar al futuro), escalones con tamaño de doctrina (ATR o lote medio, nunca los lotes del
   donante), el mono paga los costes de la estrategia, y las duraciones se sortean de todo el
   oos1. Falta la conmutación I.
+- 2026-10-07 · **I** hecho. (a) sobre las 3.000 de USA500, cascada encendida y apagada dan el
+  mismo veredicto (140 s apagada, 1 s encendida); (b) conmutado: fuera `gate/monkey.py`, el
+  fixture y cinco filas del ledger; paso 8 = `gate` solo. USA500 deja **0** supervivientes (358
+  caen por operaciones/año en IS, 2.248 por R3: su máximo es 1,11). A medias, fuera de la fila de I:
+  `ledger/backfill.py` lee `funnel.csv` por nombre de criba, `gate/redundancy.py:38` rompe sin
+  supervivientes, y el README de la puerta, `pipeline/autopilot/README.md`, las skills
+  `oos-gate` y `workflow-simple`, el capítulo 29 del manual, `ui/text/glossary.py` y
+  `studies/research/memory/config.yaml` describen la puerta vieja (paquetes H y M). Preguntado
+  al dueño: con qué población se centran R5 y R5d con la cascada apagada.
+- 2026-10-07 · el dueño: R5 y R5d se centran sobre las que llegan a ese nivel; la cascada
+  apagada es sólo diagnóstico. Que no pase ninguna de IBS es normal; los valores de cada
+  criterio, como parámetros de entrada (paquete J). Arreglado: el nivel 0 vive en `level0.py`
+  (`screens.py` renombrado, el esqueleto fuera), `ledger/backfill.py` ya no rompe con una fila
+  de regla, `redundancy.py` ya no rompe sin supervivientes. Sigue para H y M la documentación
+  que describe la puerta vieja.
 
 ---
 

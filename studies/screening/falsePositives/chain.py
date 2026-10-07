@@ -6,11 +6,8 @@ import pandas as pd
 
 from pipeline.autopilot import criteria
 from studies.screening.falsePositives import model
-from studies.screening.gate import cascade, measures
+from studies.screening.gate import level0, measures
 
-# The gate's screens a rule of criteria.yaml reads a column of. `mono`, `familia` and
-# `redundancia` feed no rule, and running after `forma` they blank no column of the others.
-GATE_SCREENS = ("presencia", "sanidad", "estaticas", "degradacion", "forma")
 TRADES_OOS = "spread.verdict_csv.operaciones_oos"
 
 
@@ -37,7 +34,7 @@ def as_harvest(trades: pd.DataFrame, real: dict) -> dict:
 
 
 def facts8(data: dict, gate_cfg: dict) -> pd.DataFrame:
-    """Step 8's facts, by the gate's own cascade and measures.
+    """Step 8's facts the harvest alone gives: the gate's level 0 and its measured columns.
 
     Args:
         data: A harvest, real (gate `inputs.load`) or as_harvest()'s.
@@ -45,16 +42,12 @@ def facts8(data: dict, gate_cfg: dict) -> pd.DataFrame:
 
     Returns:
         Indexed by identity, one column per fact under the key the autopilot gives it
-        (`gate.scorecard.<column>`, and the out-of-sample trade count the spread study
-        reports). A strategy that died in a hard screen keeps its later columns blank, as in
-        the real scorecard, so a rule on them meets the same missing fact.
+        (`gate.scorecard.<column>`, and the out-of-sample trade count under its old name).
+        The levels past 0 need the staged harvest (`gate.inputs.staged`: costs, the report
+        folder) and are not run here: `walk` reports their rules as not applied.
     """
-    screens = [s for s in gate_cfg["screens"] if s["name"] in GATE_SCREENS]
-    scores, _ = cascade.run(data, {**gate_cfg, "screens": screens}, say=False)
-    scores = scores.join(measures.table(data))
-    wide = pd.DataFrame({f"gate.scorecard.{c}": scores[c].astype(float) for c in scores
-                         if c not in ("strategy", "strategy_build", "died_at")
-                         and not c.endswith("_note")})
+    scores = level0.run(data, data["metrics"].index, gate_cfg).join(measures.table(data))
+    wide = scores.astype(float).add_prefix("gate.scorecard.")
     wide[TRADES_OOS] = scores["sanidad_value"].astype(float)
     return wide
 

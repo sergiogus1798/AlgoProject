@@ -27,7 +27,7 @@ S = [
     ("6", "Build", "Configuración del build", "sqx", "sqx", [], "Puerta IS/OOS", "", ()),
     ("7", "Retest OOS", "Retest OOS en SQX", "sqx", "sqx", [], "Puerta IS/OOS", "", ()),
     ("8", "Análisis IS/OOS", "Análisis IS/OOS en Python", "python", "study",
-     ["gate", "edgeCost", "snoopingScreen", "feedQuality", "spread"], "Puerta IS/OOS", "",
+     ["gate"], "Puerta IS/OOS", "",
      ("oos", "build")),
     ("9", "Retest crossmarkets", "Retest crossmarkets en SQX", "sqx", "sqx", [],
      "Cross Market", "", ()),

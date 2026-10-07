@@ -1,4 +1,4 @@
-"""The population's funnel of one project: the gate's screens, then each later step's in and out."""
+"""The population's funnel of one project: the gate's rules by level, then each later step's in and out."""
 
 import pandas as pd
 
@@ -12,7 +12,7 @@ WAITING = {"sealed": "sellado", "running": "corriendo", "blocked": "bloqueado"}
 
 
 def gate_rows(project: str) -> tuple[list[dict], str]:
-    """The newest gate report's `funnel.csv`, one row per screen, with the screen's why.
+    """The newest gate report's `funnel.csv`, one row per rule (`screen` holds its label), level by level.
 
     Returns:
         (rows, the databank and day it came from, or ''). A soft screen marks and removes

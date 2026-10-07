@@ -24,8 +24,9 @@ KEEP = "MANTENER"     # anything but DESCARTAR keeps a strategy (sqx/curate/READ
 # strategy can be read at all are kept, so the dev draw always has someone to draw (🔬 2026-10-04,
 # 1,000 built, 0 alive at step 8: the run ended there and tested nothing after it).
 SMOKE = "ALGO_SMOKE"
-READABLE = {"gate.scorecard.presencia_passed", "gate.scorecard.sanidad_passed",
-            "gate.scorecard.is_trades_per_year", "gate.scorecard.oos_trades_per_year"}
+READABLE = {"gate.scorecard." + fact for fact in (     # the gate's level 0
+    "presencia_passed", "sanidad_passed", "sanidad_value", "estaticas_value",
+    "is_trades_per_year")}
 
 
 def settings() -> dict:
@@ -91,6 +92,25 @@ def resolve(pop: pd.DataFrame, found: pd.DataFrame) -> tuple[pd.Series, pd.Serie
     return who, theirs.where(held | named.isna(), named)
 
 
+def fallen(project: str, pop: pd.DataFrame) -> dict[str, str]:
+    """Why the gate's cascade dropped each strategy it dropped: `who` → its first failed rule.
+
+    The gate stops computing at a strategy's first Fail, so every rule of a later level reads
+    «sin dato» for it: the reason is the one rule the scorecard names (`cayo_nivel`,
+    `cayo_regla`), which is text and so not among the facts.
+    """
+    found = [r for r in facts.sources.results(project, "gate", None) if r["path"].is_dir()]
+    if not found:
+        return {}
+    card = pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index()
+    if "cayo_regla" not in card:        # a scorecard written before the gate ran by levels
+        return {}
+    card = card[card["strategy"].notna() & card["cayo_regla"].notna()]
+    _, who = resolve(pop, card)
+    return {w: f"fail: {rule} (nivel {level})"
+            for w, level, rule in zip(who, card["cayo_nivel"], card["cayo_regla"])}
+
+
 def ledger_row(project: str, n: str, spec: dict, before: int, after: int) -> None:
     """Sign this cut in the ledger: one row, with the sha256 of criteria.yaml (OPEN 1.3 item 2).
 
@@ -140,6 +160,9 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     sibling = pop["strategy"].map(lambda name: bool(SIBLING.search(name)))
     mothers = sorted(set(pop.loc[~sibling, "who"]))
     judged = criteria.outcomes(found[found["who"].isin(mothers)], mothers, rules)
+    if "gate" in facts.BY_N[n]["studies"]:
+        judged |= {w: ("fail", why) for w, why in fallen(project, pop).items()
+                   if w in judged and judged[w][0] == "fail"}
     judged |= {w: ("fail", "hermana escalada: solo sigue la madre") for w in pop.loc[sibling, "who"]}
     alive = sorted({w for w, (state, _) in judged.items() if state != "fail"})
     seed = dev["seed"] if dev["seed"] is not None else random.randrange(2**32)

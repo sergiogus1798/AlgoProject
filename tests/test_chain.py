@@ -64,7 +64,7 @@ def test_stop_rule(root: Path) -> None:
     got = chainplan.plan(rail({"6": "pending", "7": "pending", "9": "pending"}, "done"))
     assert [(a["n"], a["kind"]) for a in got["do"]] == [("6", "sqx"), ("7", "sqx"),
                                                         ("8", "python")], got
-    assert got["do"][2]["tests"] == ["gate", "edgeCost", "feedQuality", "spread"], got
+    assert got["do"][2]["tests"] == ["gate"], got
     assert got["stop"]["n"] == "9" and "decides tú" in got["stop"]["why"], got
     again = chainplan.plan(rail({"9": "pending", "10.5": "pending"}, "done"))
     assert [a["n"] for a in again["do"]] == ["9", "10"] and again["stop"]["n"] == "10.5", again
@@ -133,7 +133,7 @@ def test_chain_runs(root: Path) -> None:
     chain.chain(P)
     kinds = [x[0] if x[0] != "cmd" else x[1] for x in CALLS if x[0] not in ("state", "call")]
     assert kinds == ["assets", "just", "start", "stop", "assets", "just", "start", "stop",
-                     "gate", "edgeCost", "feedQuality", "spread"], kinds
+                     "gate"], kinds
     assert [x[2] for x in CALLS if x[0] == "just"] == [["CONSTRUCCION"], ["OOS"]], CALLS
 
 

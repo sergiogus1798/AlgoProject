@@ -32,6 +32,8 @@ def redundancia(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         tidy the list. What this buys is knowing that "40 survivors" may be 6 distinct
         ideas before a portfolio is built on them.
     """
+    if not len(alive):  # nobody standing: nothing to group
+        return pd.DataFrame(columns=["value", "passed", "note"])
     shape = data["metrics"].loc[alive, "structure"]
     size = shape.map(shape.value_counts())
     first = shape.map(data["metrics"].loc[alive].groupby("structure")["strategy"].first())
