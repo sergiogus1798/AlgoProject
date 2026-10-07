@@ -17,10 +17,8 @@ SEALED = ("wfc", "cscv", "wfm", "blindJoint")
 
 # A study field the databank table never shows as a column, though the study keeps it (other
 # tables, the ficha's own view, read the entry directly): the owner's Cross Market databank
-# read (2026-09-30) — «Familia», «Faltan», «Avisos», «Nota» clutter the table without deciding
-# anything there.
-HIDDEN_FIELDS = {("crossmarket", "family"), ("crossmarket", "missing"),
-                 ("crossmarket", "warnings"), ("crossmarket", "note"),
+# read (2026-09-30) — «Nota» clutters the table without deciding anything there.
+HIDDEN_FIELDS = {("crossmarket", "note"),
                  ("mcRetest", "qué perturba"), ("mcRetest", "operaciones vs original"),
                  ("mcRetest", "forma"), ("blindJoint", "reason")}
 # 🔬 2026-10-04: opening a project asks for the same 10,000-row table three times at once

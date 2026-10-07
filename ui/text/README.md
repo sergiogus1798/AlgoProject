@@ -12,6 +12,7 @@ daemon never imports the window, so they moved here.
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `glossary.py` | The one glossary of visible labels: `label(key)` → the Spanish words, initial capital; an unknown identifier (`null.chunk3_traits`) is humanised, never shown raw. New keys are appended at the end of `LABELS`. `knob(key)` labels a config knob part by part (`knob.<part>` first): «Nulos › Corridas», never `nulls.draws` | imported | key → label |
+| `glossary_crossmarket.py` | The Spanish labels of cross-market's verdict.csv columns (P1-P9), merged into `glossary.LABELS` | imported | key → label |
 | `verdictwords.py` | `verdict_word(v)`: a study's raw verdict word (`fails`, `pass`, `blind`) in Spanish, sentence case; any other value unchanged | imported by the databank table's model | word → word |
 | `buttonhelp.py` | What every button does: `help_for(text, scopes)` finds the sentence by the button's text, `normalise`d (no ▶ ↻ × signs, no «(3)» or «17-19» counts, no «quoted» names, lower case); a «Clase › texto» entry wins for a button inside that class | imported | text → sentence |
 | `buttonhelp_texts.py` | The registry itself, `HELP`: one or two Spanish sentences per button text, grounded in what its slot does — whether it writes, whether it asks first, whether it touches SQX | imported | — |

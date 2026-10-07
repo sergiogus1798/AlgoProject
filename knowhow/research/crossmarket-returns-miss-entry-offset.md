@@ -10,7 +10,7 @@ every trade at :30 matched the bar half an hour early, and losers read as winner
 comes from the export's `manifest.json`. (2) `cost_rate()` came from `core.trades.cost()`, gross from
 the FILL prices, which leaves out the offset where SQX puts spread and slippage while the returns are
 priced from the bar opens; it now comes from `setting()["charged"]` (gross from the bars − P/L).
-Check after any change: PF of the study's returns vs PF of the export's `Profit/Loss` per `Symbol`.
+The old study's verdict and `worst_pf` were retired on 2026-10-07 (encargo 46); the lesson (price an export on its own bars, charge the entry offset) holds for any reader of an export. Check after any change: PF of the study's returns vs PF of the export's `Profit/Loss` per `Symbol`.
 
 ## Evidence
 `Test_USDJPY_donchianUpperCrossUp_M30`, `Retest Markets - Family`, 8 long-only market-entry M30

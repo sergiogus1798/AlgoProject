@@ -49,7 +49,7 @@ variants) and 26-09 (`USDJPY_workflow_profiling_v1`, all 25 steps touched, 7 of 
   - `snoopingScreen` 1.5 GB is `barstore.read(feed, "M1")` — all 8.7 M M1 bars, five columns, to
     sample one close per day. `Close` alone: 0.60 GB.
   - `crossmarket.report` batch: 84 % of a task is the 25,000-draw `block_shift` null
-    (`backtest.drawn`), yet `breadth.judge` reads only `expectancy_ci_lo`. Tree PSS 7.2 GB at the
+    (`backtest.drawn`), yet `breadth.judge` read only `expectancy_ci_lo` (all deleted 2026-10-07, encargo 46; step 10 is now the `travel/` tensor). Tree PSS 7.2 GB at the
     default 96 workers, 6.1 GB at 48 (same wall, 17 s), 3.9 GB at 24 (19.7 s).
   - `mcRetest.report` 3.9 GB PSS for 8 strategies (~0.43 GB per worker, `os.cpu_count()` workers).
   - The step table's `pico_mb` (`/usr/bin/time -v`) is the largest single process: crossmarket

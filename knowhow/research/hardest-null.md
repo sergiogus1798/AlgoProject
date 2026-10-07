@@ -10,6 +10,6 @@ A strategy surviving all four nulls says more than one surviving only it. A meas
 may be measuring a bug: ask what else must be true first.
 
 ## Evidence
-`studies/transfer/crossmarket`, four random-entry nulls (three re-lay the whole run from a random start).
+The old `studies/transfer/crossmarket` study's four random-entry nulls (three re-lay the whole run from a random start); that study's code and statistics were retired on 2026-10-07 (encargo 46), the null spreads below are data about the nulls and still stand.
 - Unbounded sample: `block_shift` σ 0.073 vs 0.095 on XAGUSD, lowest p everywhere — mostly the wider-bar-file artefact.
 - Window bounded: narrowest null in 5 of 8 (strategy, market) pairs, lowest p in 7 of 8.

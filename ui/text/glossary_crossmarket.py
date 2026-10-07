@@ -1,0 +1,28 @@
+"""The Spanish words for cross-market's verdict.csv columns («¿la lógica viaja?», encargo 46)."""
+
+LABELS = {
+    "markets_valid": "Mercados válidos",
+    "invalid_fraction": "Fracción no válida",
+    "fixed_distance": "P1 · Distancias fijas",
+    "freq_off": "P2 · Mercados con otra frecuencia",
+    "freq_off_fraction": "P2 · Fracción con otra frecuencia",
+    "z_conj": "P3 · z conjunta",
+    "p_conj": "P3 · p conjunta",
+    "z_conj_v2": "P4 · z en V2",
+    "z_conj_v0": "z en V0",
+    "z_conj_v1": "z en V1",
+    "z_minus_market": "P5 · z quitando un mercado",
+    "minus_market": "Mercado quitado",
+    "p_breadth": "P6 · p de amplitud",
+    "breadth_count": "Mercados a favor",
+    "tau_half": "P7 · τ en la mitad",
+    "e_principal": "Ventaja del principal",
+    "worse": "P8 · Mercados en contra",
+    "worse_fraction": "P8 · Fracción en contra",
+    "z_beta": "P9 · z de la pendiente",
+    "e_end": "P9 · Ventaja al final",
+    "beta": "Pendiente por año",
+    "e_end_ratio": "Ventaja final / media",
+    "net_t_pooled": "t conjunta sobre el neto",
+    "z_freq": "z de frecuencia",
+}

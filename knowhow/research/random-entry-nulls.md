@@ -56,7 +56,7 @@ IS+OOS); < `confidence.MEAN_PROVISIONAL` OOS trades → NaN + `data`/`oos_thin` 
 sides); < `run.MIN_OOS_TRADES` (5) → printed warning, still computed. KAT:
 `tests/test_montecarlo_oos.py`. `crossmarket` already compliant: additional markets run their
 whole window (never selected on); the main market's full backtest shows only as "referencia",
-excluded from the verdict; the OOS reading is `orchestrate/stretch.py`'s `oos_tab`.
+excluded from the verdict; the OOS reading was `orchestrate/stretch.py`'s `oos_tab` (deleted 2026-10-07, encargo 46; see git history before that commit).
 `gate.monkey` already filters `sample == "OOS"`. `monkey.report --sample` defaults `OOS1`; not a
 hard refusal — an additional market legitimately reads `IST` too (never selected on either
 sample), so its help text spells out the distinction. `crossTF` reads a retest task's own

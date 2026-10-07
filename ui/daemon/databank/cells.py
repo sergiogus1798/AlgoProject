@@ -16,11 +16,8 @@ KEYS = {"strategy", "identity", "verdict", "verdict_state", "mother"}
 SPLIT = {"crossTF": "timeframe"}
 
 # A per-strategy table whose rows become sub-panels: its title, first column the sub's name
-# (the eight MC Retest tasks, the markets of the cross-market Timing Alpha test). "Pareado
-# (1b)" was the table's title before the owner's 2026-09-30 rename (§4.15, no "1A"/"1B"
-# anywhere) — updated to the current title in contract/tests.py::paired_tab, or this lookup
-# silently finds nothing and every Timing Alpha sub-panel comes back empty.
-SUBTABLE = {"mcRetest": "Qué hizo cada tarea", "crossmarket": "El Alpha en todas sus unidades"}
+# (the eight MC Retest tasks).
+SUBTABLE = {"mcRetest": "Qué hizo cada tarea"}
 
 # How bad a state is, to give a strategy split in several rows one state of its own.
 SEVERITY = ("fail", "watch", "pass", "info", "none")

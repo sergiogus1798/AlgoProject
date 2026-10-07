@@ -1,137 +1,88 @@
-"""Every strategy of one export judged on breadth: the verdict /curate applies, as one result."""
+"""Every strategy of one export measured on «does the logic travel?»: travel.run's files, read as one result.
 
-import os
+The study no longer calls MANTENER or DESCARTAR: it writes the facts (P1-P9, encargo 46) and
+`pipeline/autopilot/criteria.yaml` step 10 decides.
+"""
+
+import json
+import tempfile
 import time
+from pathlib import Path
 
 import pandas as pd
 
-from core import fanout, tradestore
+from core import paths
 from core.study import blocks, result as envelope
-from studies.transfer.crossmarket.inputs.config import batch as batch_cfg
-from studies.transfer.crossmarket.orchestrate import market as market_run
-from studies.transfer.crossmarket.verdict import breadth, inference
+from studies.transfer.crossmarket.contract import tabs
+from studies.transfer.crossmarket.travel import run as travel
 
-COLUMNS = ["strategy", "identity", "verdict", "reason", "markets", "cleared", "fraction",
-           "under_alpha", "paired_under_alpha", "edge_r", "worst_pf", "median_pf", "pf_cv",
-           "family", "missing", "warnings"]
-
-# What the workers read: the whole export and every feed's bars, which is gigabytes. Set
-# once before the pool is built and never written again, so `fork` hands each worker the
-# same pages instead of pickling them one per strategy.
-_SHARED: dict = {}
+WORD = "info"       # the `verdict` column verdict.csv and /curate require: measured, no call made here
+HEAD = ["strategy", "identity", "verdict"]
 
 
-def _market(task: tuple[str, str]) -> dict:
-    """One strategy on one market, in a worker that inherited the export by fork.
+def measure(inputs: dict, overrides: list[str] | None = None) -> dict:
+    """One `travel.run` over the whole export, read back.
 
-    The unit of work is the market, not the strategy: 🔬 2026-09-25, on 96 strategies the
-    largest one alone took 453 s and set the wall clock from 24 processes up, while its nine
-    markets are independent — every model and test seeds its own generator.
+    Args:
+        inputs: What load.load() returned (only project, databank, asset and export are used).
+        overrides: The `--set` values the cfg was loaded with; `travel.run` loads its own.
+
+    Returns:
+        `verdict` and `markets` (frames), `checks` (§7.1 per market), `excluded` ((market, cell)
+        pairs left out) and `d_y` (P9's series per strategy).
     """
-    name, feed = task
-    try:
-        got, cfg = _SHARED["inputs"], _SHARED["cfg"]
-        market = next(m for m in got["universe"]["markets"] if m["feed"] == feed)
-        trades = tradestore.market(got["trades"], name, feed)
-        # Fewer draws per batch on a long market, the same draws: block_shift's are keyed by
-        # the calendar, and 🔬 2026-09-26 its rows came out identical at chunks of 500 and 137.
-        n = cfg["nulls"]
-        cfg = {**cfg,
-               "nulls": {**n, "chunk": max(1, min(n["chunk"], n["batch_cells"] // len(trades)))}}
-        return market_run.verdict_row(cfg, market, trades, got["bars"][feed])
-    except Exception as e:
-        # §4.3 (owner, 2026-09-30): one market's failure used to end the whole population job
-        # with a traceback that never said which of the (strategy, market) tasks broke, or on
-        # what — the run bar only showed "un trabajo terminó con error". Named here, once, so
-        # it survives `ProcessPoolExecutor`'s re-raise and lands in the job's own log tail.
-        raise RuntimeError(f"{name} en {feed}: {e}") from e
+    scratch = paths.DATA / "scratch"      # travel.run refuses the live reports folder: it writes here
+    scratch.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=scratch, prefix="crossmarket_") as tmp:
+        out = Path(tmp) / "travel"
+        got = travel.run(inputs["project"], inputs["databank"], inputs["asset"], inputs["export"],
+                         out, overrides)
+        info = json.loads((out / "crossmarket.json").read_text(encoding="utf-8"))
+    return {**got, "excluded": info["excluded"], "d_y": info["d_y"]}
 
 
-def row(name: str, rows: list[dict], missing: int, inputs: dict, cfg: dict) -> dict:
-    """One strategy's line: its breadth, its verdict, and the numbers beside it."""
-    per_market = pd.DataFrame(rows)
-    got = {"family": inference.family(per_market), "missing": missing,
-           **breadth.summary(per_market, cfg["diagnostics"]["alpha"])}
-    verdict, reason = breadth.judge(got, cfg["verdict"]["breadth_floor"])
-    return {"strategy": name, "identity": inputs["identity"].get(name), "verdict": verdict,
-            "reason": reason, "markets": got["markets"], "cleared": got["cleared"],
-            "fraction": round(got["fraction"], 4), "under_alpha": got["under_alpha"],
-            "paired_under_alpha": got["paired_under_alpha"], "edge_r": round(got["edge_r"], 6),
-            "worst_pf": round(got["worst_market"]["pf"], 4),
-            "median_pf": round(got["median_pf"], 4), "pf_cv": round(got["pf_cv"], 4),
-            "family": got["family"], "missing": got["missing"], "warnings": got["warnings"]}
-
-
-def population(table: pd.DataFrame, cfg: dict, started: float) -> dict:
-    """The export read as one result: how many kept, and every strategy's breadth."""
-    kept = int((table.verdict == "MANTENER").sum())
-    floor = cfg["verdict"]["breadth_floor"]
+def population(table: pd.DataFrame, got: dict, cfg: dict, started: float) -> dict:
+    """The export read as one result: every strategy's numbers and the market checks."""
+    checks = pd.DataFrame(got["checks"])
     return envelope.envelope(
         "studies.transfer.crossmarket", None, None, cfg, started,
-        [envelope.tab("summary", "Amplitud", [
-            {"kind": "bars", "title": "Fracción de mercados con la esperanza sobre cero",
-             "unit": "", "reference": floor,
-             "items": [{"label": r.strategy, "value": r.fraction, "error": None,
-                        "state": "pass" if r.verdict == "MANTENER" else "fail"}
-                       for r in table.itertuples()]},
-            blocks.table("Estrategia a estrategia", table.drop(columns=["identity"]))])],
-        blocks.verdict(f"{kept} de {len(table)}", "pass" if kept else "fail",
-                       f"{kept} estrategias con al menos el {floor:.0%} de sus mercados con el "
-                       f"intervalo de la esperanza por encima de cero. Es la única criba; los "
-                       f"p-valores no deciden."))
+        [envelope.tab("summary", "Resumen", [
+            {"kind": "bars", "title": "z conjunta frente al azar, por estrategia", "unit": "z",
+             "reference": 0.0,
+             "items": [{"label": r.strategy, "value": r.z_conj, "error": None, "state": "info"}
+                       for r in table.itertuples() if r.z_conj == r.z_conj]},
+            blocks.table("Estrategia a estrategia", table.drop(columns=["identity"]))]),
+         envelope.tab("markets", "Mercados", [
+             blocks.table("Controles previos de cada mercado", checks,
+                          "Un mercado no válido queda fuera de todas las pruebas."),
+             blocks.table("Pares (mercado, celda) sin dato", pd.DataFrame(
+                 got["excluded"], columns=["market", "cell", "displaced_share"]),
+                 "Celdas con huecos de datos: se leen como sin dato, nunca como 0.")])],
+        blocks.verdict(f"{len(table)} medidas", "info",
+                       f"{len(table)} estrategias medidas. El estudio no decide: lo hace el juez, "
+                       f"con las reglas P1-P9 de criteria.yaml."))
 
 
-def run(inputs: dict, cfg: dict, workers: int = 0) -> dict:
-    """Every (strategy, market) it traded on, one task each, longest first.
+def run(inputs: dict, cfg: dict, workers: int = 0, overrides: list[str] | None = None) -> dict:
+    """Measure every strategy of the export in one pass.
 
     Args:
         inputs: What load.load() returned.
-        cfg: What config.load() returned.
-        workers: Markets studied at once; 0 is every core. Each holds its own null batches,
-            so this is the knob that trades RAM for wall clock.
+        cfg: What config.load(overrides) returned; it signs the result.
+        workers: Kept for the command line; the travel run is one process.
+        overrides: The same `--set` values cfg was loaded with.
 
     Returns:
-        {"population": the export's result, "table": one row per strategy}. No per-strategy
-        contract: judging breadth needs the headline null only, and the full analysis of a
-        strategy — one.run() — is minutes of simulation the verdict never reads. The null
-        runs `nulls.batch_draws`, not `nulls.draws`: here its p is reported, never judged.
+        {"population": the export's result, "table": one row per strategy (verdict.csv),
+        "markets": one row per strategy and market (markets.parquet)}.
     """
     started = time.time()
-    assert cfg["nulls"]["headline"] == "block_shift", (
-        "el lote adapta el tamaño de tanda a cada mercado, y sólo block_shift da los mismos "
-        "sorteos con cualquier tanda; los otros modelos cambiarían con ella")
-    cfg = batch_cfg(cfg)
-    feeds = {m["feed"] for m in inputs["universe"]["markets"]}
-    trades = inputs["trades"][inputs["trades"]["Symbol"].isin(feeds)]
-    counts = trades.groupby(["strategy", "Symbol"], observed=True).size()
-    traded = trades.groupby("strategy", observed=True).size()
-    # A strategy that never fired on one of the other markets has nothing to judge; it is a
-    # result about the strategy, written as one, and it never reaches a worker.
-    silent = [{**dict.fromkeys(COLUMNS, ""), "strategy": n, "identity": inputs["identity"].get(n),
-               "verdict": "DESCARTAR", "markets": 0, "cleared": 0, "fraction": 0.0,
-               "missing": len(feeds), "reason": f"no disparó ni una vez en ninguno de los "
-                                                f"{len(feeds)} mercados: no hay nada que juzgar"}
-              for n in inputs["strategies"] if int(traded.get(n, 0)) == 0]
-    wanted = [n for n in inputs["strategies"] if int(traded.get(n, 0))]
-    order = [m["feed"] for m in inputs["universe"]["markets"]]
-    costs = {(n, f): int(counts.get((n, f), 0)) for n in wanted for f in order
-             if counts.get((n, f), 0) > 0}
-    left = {n: sum(1 for k in costs if k[0] == n) for n in wanted}
-    _SHARED.update(inputs=inputs, cfg=cfg)
-    # The smallest task, run here first: every kernel specialisation gets compiled in the
-    # parent, and the fork hands the machine code to every worker instead of each compiling.
-    _market(min(costs, key=costs.get))
-    done, rows = {n: {} for n in wanted}, list(silent)
-    for (name, feed), market_row in fanout.run(_market, costs, workers or os.cpu_count()):
-        done[name][feed] = market_row
-        if len(done[name]) < left[name]:
-            continue
-        line = row(name, [done[name][f] for f in order if f in done[name]],
-                   len(feeds) - left[name], inputs, cfg)
-        del done[name]
-        rows.append(line)
-        envelope.progress(100 * (len(rows) - len(silent)) // max(len(wanted), 1),
-                          f"{name} {line['verdict']} — {line['reason']}")
-    table = pd.DataFrame(rows)[COLUMNS].sort_values(
-        "strategy", key=lambda s: s.map(inputs["strategies"].index))
-    return {"population": population(table, cfg, started), "table": table}
+    got = measure(inputs, overrides)
+    ident = inputs["identity"]
+    table = got["verdict"].assign(identity=lambda t: t["strategy"].map(ident), verdict=WORD)
+    table = table[[*HEAD, *table.columns.difference(HEAD, sort=False)]]
+    markets = got["markets"].assign(identity=lambda t: t["strategy"].map(ident))
+    envelope.progress(100, f"{len(table)} estrategias medidas")
+    return {"population": population(table, got, cfg, started), "table": table,
+            "markets": markets[["strategy", "identity", *markets.columns.difference(
+                ["strategy", "identity"], sort=False)]]}

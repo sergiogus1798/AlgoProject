@@ -28,7 +28,7 @@ def crossmarket(a: argparse.Namespace) -> dict:
         The partial contract dict: that market's blocks, no verdict.
     """
     return cm_one.run(a.strategy, cm_load.load(a.project, a.databank, a.asset, a.day),
-                      cm_config.load(a.set), a.only)
+                      cm_config.load(a.set), a.only, a.set)
 
 
 def monte_carlo(a: argparse.Namespace) -> dict:

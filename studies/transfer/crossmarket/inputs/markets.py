@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import assets
+from core import assetdata, assets
 
 UNCLASSIFIED = "sin clasificar"
 
@@ -84,6 +84,26 @@ def declared(symbol: str) -> list[str]:
                              for m in markets_]
 
 
+def own_window(feed: str) -> dict[str, str] | None:
+    """The stretch one market may be read on: its OWN build start to its OWN oos1 end.
+
+    Args:
+        feed: SQX symbol.
+
+    Returns:
+        {"from": ..., "to": ...} as ISO dates, from the card that declares the feed; None
+        when no card does. Owner, 2026-10-02: a market's `oos2` is never read here, whoever
+        the strategy was built on — an index main's dates run a year past gold's oos1.
+    """
+    owner = assetdata.symbol_for(feed)
+    if not owner:
+        return None
+    data = assetdata.load(owner)
+    last = data["segments"]["oos1"]["to"]
+    return {"from": assetdata.segment_start(data, "build"),
+            "to": f"{last}-12-31" if isinstance(last, int) else str(last)}
+
+
 def universe(symbol: str, trades: Path) -> dict:
     """Reconcile what the export carries against what assets/_markets.yaml declares.
 
@@ -97,7 +117,8 @@ def universe(symbol: str, trades: Path) -> dict:
         export was priced on the declared H1 bars, every trade at :30 matched the bar half
         an hour early, and 8 strategies losing on 8 of 9 markets were read as profitable on
         all 9. `markets` is one row per feed the export
-        carries besides the base asset, each with its category and data_from — a feed the
+        carries besides the base asset, each with its category, data_from and own window
+        (`own_window`: `window_from`, `window_to`, None for a feed no card declares) — a feed the
         declaration does not name is kept and marked UNCLASSIFIED rather than dropped, so a
         mismatch is visible instead of silently shrinking the study. `absent` names the
         declared feeds the export has no trades for, which is the other half of the same
@@ -110,7 +131,9 @@ def universe(symbol: str, trades: Path) -> dict:
         encoding="utf-8"))["source"]["timeframes"]
     return {"main": spec["main"], "timeframe": timeframe,
             "markets": [{"feed": f, "category": known.get(f, UNCLASSIFIED),
-                         "data_from": first.get(f, "unknown")} for f in present],
+                         "data_from": first.get(f, "unknown"),
+                         "window_from": (own_window(f) or {}).get("from"),
+                         "window_to": (own_window(f) or {}).get("to")} for f in present],
             "absent": sorted(set(known) - set(present))}
 
 

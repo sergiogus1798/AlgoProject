@@ -10,6 +10,6 @@ answers a different question ("did sequence matter", net profit invariant) and i
 Event sweeps: sort closes before opens at equal timestamps (`np.lexsort((moves, times))`).
 
 ## Evidence
-- `studies/transfer/crossmarket/simulate/portfolio.py` (removed). Trade-level (even block) bootstrap draws trades that never
+- `studies/transfer/crossmarket/simulate/portfolio.py` (deleted; the old step-10 statistic was retired on 2026-10-07, encargo 46; finding still holds). Trade-level (even block) bootstrap draws trades that never
   co-occurred and reports a falsely narrow drawdown interval.
 - 🤔 Sweep over `(open, +1)`/`(close, −1)` reported 4 concurrent positions across 3 markets: re-entry on its own exit bar counted twice.

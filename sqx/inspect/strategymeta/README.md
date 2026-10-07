@@ -10,6 +10,7 @@ the strategy archive consume them.
 | `__main__.py` | The CLI: prints `read()` as JSON | `python3 -m sqx.inspect.strategymeta <file.sqx> [--cfx <project.cfx>]` | → stdout |
 | `rules.py` | `strategy_Portfolio.xml`: direction, entry and exit conditions with their values, entry orders and their exit methods | imported | parsed XML → rows |
 | `settings.py` | `settings.xml` and `lastSettings.xml`: trading options, the last test's window, costs and sizing; the `.cfx` tasks writing a databank; today's asset card hash | imported | `.sqx`/`.cfx` → dicts |
+| `fixed_distance.py` | `fixed_distances(sqx\|xml\|root)`: fixed pips parameters (stop, target, trailing, break-even, pips filters); empty = none | imported | `.sqx`/XML → rows |
 
 Three sources, three meanings. `last_test` is what the stored results were computed with
 (`lastSettings.xml`, inside the `.sqx`). `backtest` is what the project's task says **today** —

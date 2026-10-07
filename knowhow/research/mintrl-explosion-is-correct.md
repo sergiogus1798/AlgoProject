@@ -9,8 +9,8 @@ tag: 🔬  date: 2026-10-01  see: research/random-entry-nulls
 finite number (USDCHF: 35,426) that read as "reachable with more data". It is not: no sample makes
 SR > SR* significant when the observed SR sits under it. Since 2026-10-01
 `core.significance.min_track_record` returns `needed=None, enough=False` when SR ≤ SR*, and the
-Cross Market table prints «No alcanzable» in red. Above SR* the formula is unchanged and correct
-(γ₄ raw kurtosis; SR and SR* both per-trade, never annualised — `sharpe_total` never enters it).
+old Cross Market table printed «No alcanzable» in red (retired on 2026-10-07, encargo 46). Above SR* the formula is unchanged and correct
+(γ₄ raw kurtosis; SR and SR* both per-trade, never annualised).
 
 ## Evidence
 

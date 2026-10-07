@@ -1,8 +1,6 @@
 """Recover from the real trades what SQX charged and how it sized, and prove it reconciles.
 
-Second copy of the point-value and cost measurement `crossmarket/mechanics/pricing.py` makes.
-`studies/CLAUDE.md` promotes a helper to `core/` when a **third** study wants it; two
-copies stay where they are, and this note is here so the third one is recognised as the third.
+The point-value and cost measurement the travel test's validity controls (`studies/transfer/crossmarket/travel/validity.py`) and step 8's repricer read.
 """
 
 import numpy as np

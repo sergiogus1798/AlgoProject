@@ -21,7 +21,7 @@ Full tables: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento).
   strategy, 13 % filtering trades by an `object` column). Cached ATR + grouping by identity + fork:
   `studies.screening.gate.report` 31.1 → 6.1 s, 500×29 `scorecard` identical.
 - `engines/nulls/stats.py:measure()` built all five stats then filtered: 22.45 ms vs 1.75 ms `sharpe` only (12.8×) = 46 % of step 8.
-- ⚠️ `crossmarket/simulate/stress.py:degraded()` built 25,000 runs × trades of booleans: 816 MB/market → 94.5 GB (aborted). Chunks of 500 runs: 140 MB; 72 procs 22 GB. Output identical (issue #68, closed).
+- ⚠️ `crossmarket/simulate/stress.py:degraded()` (deleted 2026-10-07, encargo 46; the memory lesson stands) built 25,000 runs × trades of booleans: 816 MB/market → 94.5 GB (aborted). Chunks of 500 runs: 140 MB; 72 procs 22 GB. Output identical (issue #68, closed).
 - Memory binds before time: `gate.harvest` 4.56 GB/1,000 files; `export_retest` 6.3 GB/500 × 9 markets; `retest.ingest` 7.5 GB summed RSS.
 - SQX is more efficient with big batches: build 0.32 s/strategy at 50, 0.06 s at 500; crossmarket 9 markets 4.9 s at 17, 0.59 s at 500 → linear extrapolation overestimates SQX 4–8×.
 - Per-strategy tasks, 96 strategies: 12 procs 1,041 s (75 % eff.), 24 → 759 (51 %), 48 → 695 (28 %), 72 → 674, 96 → 660 (15 %); serial part 0.83 s; one strategy (12–117,612 trades in batch) = 453 s alone.

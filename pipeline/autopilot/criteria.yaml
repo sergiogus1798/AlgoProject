@@ -125,10 +125,61 @@ steps:
   "10":
     cut: Retest Markets - Family
     segment: oos1
+    # Paso 10 — «¿la lógica viaja?» (encargo 46): P1-P9 de la propuesta del dueño del 2026-10-06
+    # (criterios-paso-10-otros-mercados-propuesta.md, §7.2 y §7.3), lo que mide
+    # studies/transfer/crossmarket/travel. PROVISIONAL y SIN CALIBRAR: las líneas son las de la
+    # propuesta; falta pasar la población nula y la de ventaja plantada. P7 sin dato (tau_half
+    # vacío mientras el mono del paso 8 no entregue e_principal) da Limbo: hasta entonces
+    # ninguna estrategia pasa el paso 10. Una condición con dos hechos (frecuencia, mercados en
+    # contra, degradación) es una regla compuesta: `all` = la peor parte, `any` = la mejor.
     rules:
-      # Council: half the markets at >=0.5x the original AND pooled t>=2.33 PASS; pooled t<1.0 FAIL. Stouffer is never a criterion.
-      - {fact: crossmarket.verdict_csv.excess_t_vs_main_half, pass: ">= 0.5", limbo: "> 0", missing: limbo}
-      - {fact: crossmarket.verdict_csv.excess_t_pooled, pass: ">= 2.33", limbo: ">= 1.0"}
+      # 7.1 — controles previos: la lista de mercados es usable
+      - {name: "Mercados válidos de la lista", fact: crossmarket.verdict_csv.invalid_fraction,
+         pass: "<= 0.25", else: limbo}
+      # P1 — unidades de las reglas: distancias fijas en puntos o pips no viajan
+      - {name: "P1 · Reglas sin distancias fijas", fact: crossmarket.verdict_csv.fixed_distance,
+         pass: "<= 0", else: limbo}
+      # P2 — frecuencia por mercado: 0 mercados fuera pasa, 1-2 Limbo, 3 o más (o más del 25 %) Falla
+      - name: "P2 · Frecuencia de operar en cada mercado"
+        all:
+          - {fact: crossmarket.verdict_csv.freq_off, pass: "<= 0", limbo: "<= 2"}
+          - {fact: crossmarket.verdict_csv.freq_off_fraction, pass: "<= 0.25"}
+      # P3 — z conjunta frente al azar, ventana completa
+      - {name: "P3 · Mejor que el azar en el conjunto", fact: crossmarket.verdict_csv.z_conj,
+         pass: ">= 2.33", limbo: ">= 0"}
+      # P4 — z conjunta en V2 (los años de oos1 del principal)
+      - {name: "P4 · Sigue en los años que no vio", fact: crossmarket.verdict_csv.z_conj_v2,
+         pass: ">= 0", limbo: "> -1.65"}
+      # P5 — quitando cada mercado: la evidencia no cuelga de uno. Nunca da Falla
+      - {name: "P5 · No depende de un solo mercado", fact: crossmarket.verdict_csv.z_minus_market,
+         pass: ">= 1.65", else: limbo}
+      # P6 — amplitud: la dirección se repite en más mercados de lo que daría la suerte. Nunca da Falla
+      - {name: "P6 · Amplitud entre mercados", fact: crossmarket.verdict_csv.p_breadth,
+         pass: "<= 0.10", else: limbo}
+      # P7 — rendimiento mínimo en la mitad de los mercados, frente a casa. Sin dato: Limbo
+      - {name: "P7 · Rendimiento mínimo en la mitad", fact: crossmarket.verdict_csv.tau_half,
+         pass: ">= 0.5", limbo: "> 0", missing: limbo}
+      # P8 — mercados en contra: hasta 1 pasa, 2 Limbo, 3 o más (o más del 25 %) Falla
+      - name: "P8 · Mercados en contra"
+        all:
+          - {fact: crossmarket.verdict_csv.worse, pass: "<= 1", limbo: "<= 2"}
+          - {fact: crossmarket.verdict_csv.worse_fraction, pass: "<= 0.25"}
+      # P9 (§7.3) — degradación en el tiempo, relajada. Con z = z_beta y e = e_end:
+      #   Pasa:  z > -1.65, o (z > -2.33 y e > 0)
+      #   Falla: z <= -2.33 y e <= 0
+      #   Limbo: lo demás (cae claro pero queda ventaja; cae algo y ya no queda; sin dato)
+      # Primera parte: Pasa cuando alguna de las dos vías se cumple, Limbo si sólo cae algo sin
+      # ventaja o cae mucho con ventaja. Segunda: Falla sólo si fallan las dos condiciones.
+      - name: "P9 · Degradación en el tiempo"
+        all:
+          - any:
+              - {fact: crossmarket.verdict_csv.z_beta, pass: "> -1.65"}
+              - all:
+                  - {fact: crossmarket.verdict_csv.z_beta, pass: "> -2.33", else: limbo}
+                  - {fact: crossmarket.verdict_csv.e_end, pass: "> 0", else: limbo}
+          - any:
+              - {fact: crossmarket.verdict_csv.z_beta, pass: "> -2.33"}
+              - {fact: crossmarket.verdict_csv.e_end, pass: "> 0"}
   "12":
     cut: CrossTF
     segment: oos1
