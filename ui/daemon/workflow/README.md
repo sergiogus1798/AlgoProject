@@ -57,7 +57,7 @@ the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, w
   16.5) is read after the task, from the databank panel, never from the rail — a study that is
   not a test of that step, and a test `tests.one` does not mark runnable.
 - **What costs more than CPU** (`tests.SPENDS`: wfc, cscv, marketSurfaces, wfm, blindJoint read
-  oos2; snoopingScreen writes a ledger row) carries `spends`; with steps 21-25 it has
+  oos2; blindJoint writes a ledger row) carries `spends`; with steps 21-25 it has
   `auto` false: never ticked by default, never in «correr todo», and the window asks before
   each run.
 - **Step 20** is refused while `ledger.gate.allow_read` refuses, before the runner is asked.

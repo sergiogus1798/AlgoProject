@@ -4,45 +4,17 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
                                QListWidget, QPushButton, QVBoxLayout, QWidget)
 
-from ui.desktop.criteria.overrides import by_built, by_line, by_rows
+from ui.desktop.criteria.overrides import HELP, KNOWN, by_built, by_line, by_rows, told
 from ui.desktop.theme import C
 
 KINDS = ("Métrica SQX", "Test de la app", "Veredicto", "Compuesto")
 SQX, APP, VERDICT, COMPOUND = range(4)
 OPS = (">=", ">", "<=", "<", "==")
-HELP = {
-    "kind": "Métrica SQX: un número que SQX calculó y el estudio copió del databank. Test de "
-            "la app: un número de un estudio propio. Veredicto: un test que responde Aprobado "
-            "o Suspenso. Compuesto: varias condiciones unidas por «todas» o «alguna».",
-    "fact": "El dato que se mira, de los que el paso reunió en su último run del autopilot. "
-            "Se puede escribir a mano la clave de uno que aún no esté en la lista.",
-    "shape": "Umbral: el dato comparado con un número. Cerca de la mediana: el dato a menos "
-             "de ±X % de la mediana de la población que se juzga (el databank que se corta).",
-    "pass": "Lo que tiene que cumplir para pasar.",
-    "limbo": "Opcional. Si no pasa pero cumple esto, queda en Limbo: sigue adelante, marcada. "
-             "Vacío: no hay banda de limbo.",
-    "miss": "Qué es no cumplir ni la condición ni el limbo. Fallo: la estrategia se elimina. "
-            "Limbo: este criterio nunca elimina a nadie, solo marca.",
-    "join": "Todas: el resultado es el de su peor condición. Alguna: el de la mejor — basta "
-            "con que una pase.",
-    "by": "Un umbral distinto por temporalidad (H4), activo (XAUUSD) o clase (forex); «H4+forex» "
-          "exige ambas.",
-    "name": "Opcional: las palabras con que la tabla nombra este criterio.",
-}
-
-
-def told(rule: dict) -> str:
-    """A compound's part in one line, for the list."""
-    test = {"pass": "Aprobado", "fail": "Suspenso"}[rule["is"]] if "is" in rule else \
-        f"±{100 * rule['near_median']:g} % de la mediana" if "near_median" in rule else rule["pass"]
-    return f"{rule['fact']}   {test}" + (f"   · limbo {rule['limbo']}" if "limbo" in rule else "")
-
-
 class RuleDialog(QDialog):
     """One rule edited. `rule` holds what «Guardar» built; `deleted` says «Borrar» was pressed."""
 
     def __init__(self, parent: object, title: str, facts: list[dict], rule: dict | None = None,
-                 nested: bool = False) -> None:
+                 nested: bool = False, why: str = "") -> None:
         """Build the form and fill it.
 
         Args:
@@ -51,12 +23,15 @@ class RuleDialog(QDialog):
             facts: `{fact, label, sqx}`, the step's menu.
             rule: The rule being changed; None for a new one.
             nested: A compound's part: no compound inside, no name, no delete.
+            why: The comment criteria.yaml carries above the rule: the rule's own sentence.
         """
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setMinimumWidth(760)
         self.facts, self.rule, self.deleted = facts, None, False
         self.by = (rule or {}).get("by")
+        self.rest = {k: v for k, v in (rule or {}).items() if k not in KNOWN}   # kept as found
+        self.had_missing = "missing" in (rule or {})
         self.parts: list[dict] = list((rule or {}).get("all") or (rule or {}).get("any") or [])
         self.kind = QComboBox()
         self.kind.addItems(KINDS[:COMPOUND] if nested else KINDS)
@@ -70,6 +45,8 @@ class RuleDialog(QDialog):
         self.want.addItems(["Aprobado", "Suspenso"])
         self.miss.addItems(["Fallo", "Limbo (nunca elimina)"])
         self.join.addItems(["Todas las condiciones", "Alguna de las condiciones"])
+        self.absent = QComboBox()
+        self.absent.addItems(["Limbo", "Fallo", "Pasa"])
         self.list = QListWidget()
         self.list.setFixedHeight(110)
         add, drop = QPushButton("Añadir condición"), QPushButton("Quitar condición")
@@ -88,10 +65,10 @@ class RuleDialog(QDialog):
         self.rows = {"kind": self.kind, "name": self.name, "fact": self.fact, "shape": self.shape,
                      "pass": self.pair(self.op, self.value), "want": self.want,
                      "limbo": self.pair(self.lop, self.lvalue), "miss": self.miss,
-                     "by": self.by_box, "join": self.join, "parts": self.list, "edit": self.buttons}
+                     "absent": self.absent, "by": self.by_box, "join": self.join, "parts": self.list, "edit": self.buttons}
         labels = {"kind": "Tipo", "name": "Nombre", "fact": "Dato", "shape": "Forma",
                   "pass": "Pasa si", "want": "Tiene que decir", "limbo": "Limbo si",
-                  "miss": "Si no cumple", "by": "Ajustes por activo o temporalidad", "join": "Unir con", "parts": "Condiciones", "edit": ""}
+                  "miss": "Si no cumple", "absent": "Si falta el dato", "by": "Ajustes por activo o temporalidad", "join": "Unir con", "parts": "Condiciones", "edit": ""}
         for key, field in self.rows.items():
             label = QLabel(labels[key], toolTip=HELP.get(key, ""))
             if hasattr(field, "setToolTip"):
@@ -113,6 +90,11 @@ class RuleDialog(QDialog):
         foot.addWidget(cancel)
         foot.addWidget(save)
         lay = QVBoxLayout(self)
+        if why:
+            sentence = QLabel(why)
+            sentence.setWordWrap(True)
+            sentence.setStyleSheet(f"color: {C['weak']};")
+            lay.addWidget(sentence)
         lay.addLayout(self.form)
         lay.addWidget(self.note)
         lay.addLayout(foot)
@@ -140,6 +122,8 @@ class RuleDialog(QDialog):
         self.join.setCurrentIndex(1 if "any" in rule else 0)
         self.want.setCurrentIndex(1 if rule.get("is") == "fail" else 0)
         self.miss.setCurrentIndex(1 if rule.get("else") == "limbo" else 0)
+        self.absent.setCurrentText({"limbo": "Limbo", "fail": "Fallo", "pass": "Pasa"}[
+            rule.get("missing", "limbo")])
         self.shape.setCurrentIndex(1 if "near_median" in rule else 0)
         if "near_median" in rule:
             self.value.setText(f"{100 * rule['near_median']:g}")
@@ -161,7 +145,7 @@ class RuleDialog(QDialog):
         number = kind in (SQX, APP)
         shown = {"kind": True, "name": not self.nested, "fact": kind != COMPOUND, "shape": number,
                  "pass": number, "limbo": number, "want": kind == VERDICT,
-                 "miss": kind != COMPOUND, "join": kind == COMPOUND, "parts": kind == COMPOUND,
+                 "miss": kind != COMPOUND, "absent": kind != COMPOUND, "join": kind == COMPOUND, "parts": kind == COMPOUND,
                  "edit": kind == COMPOUND, "by": kind != COMPOUND}
         for key, on in shown.items():
             self.form.setRowVisible(self.rows[key], on)
@@ -212,7 +196,7 @@ class RuleDialog(QDialog):
         kind = self.kind.currentIndex()
         name = {"name": self.name.text().strip()} if self.name.text().strip() else {}
         if kind == COMPOUND:
-            return name | {("all", "any")[self.join.currentIndex()]: self.parts}
+            return name | {("all", "any")[self.join.currentIndex()]: self.parts} | self.rest
         at = self.fact.findText(self.fact.currentText())
         rule = name | {"fact": self.fact.itemData(at) if at >= 0
                        else self.fact.currentText().strip()}
@@ -230,9 +214,12 @@ class RuleDialog(QDialog):
                 rule["limbo"] = f"{self.lop.currentText()} {limbo}"
         if self.miss.currentIndex() == 1:
             rule["else"] = "limbo"
+        gone = {"Limbo": "limbo", "Fallo": "fail", "Pasa": "pass"}[self.absent.currentText()]
+        if gone != "limbo" or self.had_missing:
+            rule["missing"] = gone
         by = self.by if kind == COMPOUND else by_built(
             [tuple(b.text() for b in line) for line in self.by_lines], self.by)
-        return rule | ({"by": by} if by else {})
+        return rule | ({"by": by} if by else {}) | self.rest
 
     def save(self) -> None:
         """Close with the rule built, or say which box is not a number."""

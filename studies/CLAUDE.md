@@ -6,13 +6,13 @@ and the catalogue of the window (`docs/AgentPDFs/catalogo-para-la-ui-2026-09-25.
 
 | family | the question | steps | studies |
 |---|---|---|---|
-| `screening/` | of thousands, which deserve to go on? | 7–8 | `gate`, `isOos`, `filters`, `replication`, `decay`, `monkeyExcess`, `snoopingScreen`, `maeDepth`, `falsePositives` (the chain's negative control) (+ `analysis/`, their shared maths) |
+| `screening/` | of thousands, which deserve to go on? | 7–8 (step 8 judges `gate` alone) | `gate`, `isOos`, `filters`, `replication`, `decay`, `monkeyExcess`, `maeDepth`, `falsePositives` (the chain's negative control) (+ `analysis/`, their shared maths) |
 | `transfer/` | does the edge work away from where it was built? | 9–12 | `crossmarket`, `crossTF` |
 | `breakage/` | had the world been slightly different, what breaks it? | 13–16 | `mcRetest`, `spp` |
 | `optimisation/` | does optimising buy anything, or is choosing parameters overfitting? | 16.5–19 | `cloud`, `wfc`, `cscv`, `marketSurfaces` (18.5), `wfm` |
 | `closing/` | the final call, the shape of the edge, and the stop it trades with | 20–21, 24 | `blindJoint` (20), `exposure`, `atrCalculator` (24) |
-| `readings/` | what one strategy's result is made of | 8, 22, 23, 25 | `monkey`, `profitShape`, `entryQuality`, `edgeCost` (8 and 25), `conditionalMap` (22), `structure` (23) |
-| `data/` | are the inputs fit to judge with? | 4, 8 | `feedQuality` (encargo 17), `spread` |
+| `readings/` | what one strategy's result is made of | 8, 22, 23, 25 | `monkey`, `entryQuality`, `edgeCost` (8 and 25), `conditionalMap` (22), `structure` (23) |
+| `data/` | are the inputs fit to judge with? | 4, 8 | `feedQuality` (encargo 17), `spread` (step 4 only: its step-8 reading is gone) |
 | `research/` | where to look next, before any idea exists: what behaviour each asset × timeframe × direction shows against chance, how small an edge that profile can see, what was already tried, the literature | step 1 | `marketProfile`, `profilePower`, `pooledProfile`, `board`, `memory`, `literature` |
 
 `research/` is a subsystem, not a set of independent studies: its modules import each other
@@ -61,21 +61,13 @@ dated and immutable. **Reports accumulate**: the CSV is reproducible from SQX, t
 
 ## Traps that have already produced wrong answers
 
-- **Deduplicate on the exported trade list**, not on the name and not on the XML hash: 45 of 231
-  strategies had byte-identical trades under different hashes.
-- **A stored result covers whatever window it was last retested over.** Check before pooling.
-- **Two structurally different populations can share one databank.** Split before you average.
-- **Multiple testing is the default condition**, not an edge case: say what the search space was
-  before claiming an edge. A correlation inside a sample selected on that metric is attenuated by
-  construction — compare outcomes, never correlations, across samples.
-- **MAE and MFE are in account currency, not points**, and each trade has its own size:
-  `price = abs(MAE_$) / (Size * pointValue)`. Drop the last row when its close price is blank.
-- **Never present a stop simulation without a slippage sensitivity**
-  (`knowhow/research/research-lessons.md`). The generated XAUUSD strategies carry no stop, no
-  target and no trailing — check what a strategy does before assuming the builder's settings.
-- **1.2 % of XAUUSD entries do not land on a bar open**, far more on other projects: pending orders
-  filled inside a bar, a price-conditional selection any study placing synthetic trades must
-  measure first.
-- **A translation is not done until it reconciles** against the trades SQX exported, and neither
-  is a null: `engines/market/calibrate.convention()` and `crossmarket`'s `pricing.reconcile()`
-  refuse to read a market they could not reproduce. The convention measured is open-to-open.
+Each trap lives as a card; read it before building the study that touches it.
+
+- **Duplicates, stale windows, mixed populations, multiple testing, slippage on stop
+  simulations** → `knowhow/research/research-lessons.md`; dedup on the exported trade list →
+  `knowhow/export/what-a-project-stores.md`.
+- **MAE/MFE units and per-trade size** → `knowhow/export/mae-mfe-from-m1.md`,
+  `knowhow/export/orderstocsv-schema.md`.
+- **Entries off the bar open, open-to-open convention, reconcile before trusting a translation
+  or a null** → `knowhow/export/fill-and-pricing.md`,
+  `knowhow/research/crossmarket-returns-miss-entry-offset.md`.

@@ -13,6 +13,8 @@ strategy 6.9 % of the time at the 5 % line and 2.1 % at the 1 % line.
   a fixed `s` overstates what frequency buys. Skew within ±0.8 moves the rate only 5.8 → 4.7 %.
 
 ## Evidence
+⚠️ 2026-10-07: the REAL-population pass counts below were priced with every exit at a bar open; stop-loss exits (30-37 % of trades in IBS, doubleROC, volatilidadL, simpleL) were inflated by ~+300 USD each (`knowhow/export/off-grid-stamps-and-stop-exits.md`). The stored full populations lack `Close type`, so they could not be re-priced; only the monkey (no-edge) numbers stand as measured.
+
 OOS (oos1) trades of four populations at the 2026-10-04 costs; scratch script, 2026-10-06.
 
 Share with `drift_excess_t >= 1.65` by oos trades/year (N strategies):

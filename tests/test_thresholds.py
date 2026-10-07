@@ -12,8 +12,7 @@ from ledger import thresholds
 
 # Every threshold these modules' config.yaml points at must be read through the ledger.
 # A module joins the list the commit it is migrated; it never leaves it.
-MIGRATED = ("studies/screening/gate/", "studies/screening/snoopingScreen/",
-            "studies/readings/profitShape/", "studies/readings/entryQuality/",
+MIGRATED = ("studies/screening/gate/", "studies/readings/entryQuality/",
             "studies/optimisation/cloud/", "studies/optimisation/cscv/",
             "studies/optimisation/marketSurfaces/", "studies/readings/edgeCost/")
 

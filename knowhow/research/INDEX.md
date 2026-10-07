@@ -28,6 +28,7 @@
 - `gates-are-owner-decisions` — Who decides a threshold that removes strategies: the analysis or the owner?
 - `hardest-null` — Does a null that randomises more make the null harder to beat?
 - `incubation-band-is-not-its-nominal-level` — How often does M9's band of equal-length windows flag a healthy portfolio, and how soon a broken one?
+- `index-feed-holes-and-the-shift-null` — Why did a no-edge population read z_conj +0.44 in V1, and what do the index feeds' holes do to a shift null?
 - `is-filters-inside-the-build` — Does an in-sample filter inside the Build (trade floor, PF, Ret/DD, WinningPct) breed better strategies than none?
 - `is-optimisation-vs-oos` — How well does in-sample optimisation rank the out-of-sample results?
 - `is-proxies-top-decile` — Which in-sample metrics separate survivors inside the top Sharpe decile?
@@ -63,5 +64,4 @@
 - `wfm-cells-are-not-independent` — How many independent curves are the 30 WFM cells worth?
 - `window-filters-are-ledger-searches` — Does a filter applied in the window count as a search in the ledger?
 - `xauusd-reopen-bar-drift` — Where does the XAUUSD Asian drift live relative to the 01:00 EET reopen?
-- `zero-drift-division` — Why never divide by a market drift that may be zero, and what to report instead?
 - `zero-duration-trades` — Why print both the run's trade count and the count a bar-grid test could compare?

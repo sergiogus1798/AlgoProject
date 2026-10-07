@@ -14,7 +14,7 @@ def folder(export: Path, module: str) -> Path:
 
     Args:
         export: A trades.parquet (or any file) inside raw/<project>/<databank>/<day>/.
-        module: The module's report folder name, e.g. "profitShape".
+        module: The module's report folder name, e.g. "entryQuality".
 
     Returns:
         reports/<project>/<databank>/<day>/<module>/, project and databank read from the

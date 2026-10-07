@@ -73,26 +73,6 @@ def feed_quality(c: dict, strategy: str) -> list[str] | str:
              c["databank"], "--feed", c["feed"]] + (["--strategy", strategy] if strategy else []))
 
 
-def spread(c: dict, strategy: str) -> list[str] | str:
-    """Each strategy repriced at Darwinex's real spread; needs the asset's step-4 scan."""
-    if not c["harvest"]:
-        return NO_HARVEST
-    return (["-m", "studies.data.spread.report", "--project", c["project"], "--databank",
-             c["databank"], "--feed", c["feed"]] + (["--strategy", strategy] if strategy else []))
-
-
-def snooping_screen(c: dict, strategy: str) -> list[str] | str:
-    """SPA and StepM of the gate's survivors against buy and hold, signed under the family."""
-    row, family = where.enrolled(c["project"]), where.family(c["project"])
-    if family is None:
-        return where.no_family(c["project"])
-    if not c["harvest"]:
-        return NO_HARVEST
-    return ["-m", "studies.screening.snoopingScreen.report", "--project", c["project"],
-            "--databank", c["databank"], "--feed", c["feed"], "--symbol", c["asset"],
-            "--timeframe", row["timeframe"], "--family", family]
-
-
 def false_positives(c: dict, strategy: str) -> list[str] | str:
     """The chain's negative control: monkeys on the cosecha's footprint through criteria.yaml."""
     if not c["harvest"]:
@@ -110,10 +90,8 @@ STUDIES = {
     "decay": {"plan": decay, "one": True, "many": True, "sets": False},
     "monkeyExcess": {"plan": monkey_excess, "one": False, "many": True, "sets": False},
     "feedQuality": {"plan": feed_quality, "one": True, "many": True, "sets": True},
-    "spread": {"plan": spread, "one": True, "many": True, "sets": True},
     "replication": {"why": "compara varios databanks contra uno de referencia y la ventana "
                            "corre uno: desde la terminal con --reference y --databank"},
-    "snoopingScreen": {"plan": snooping_screen, "one": False, "many": True, "sets": True},
     "falsePositives": {"plan": false_positives, "one": False, "many": True, "sets": True},
     "analysis": {"why": "no es un estudio: son las matemáticas que comparten los del cribado"},
 }

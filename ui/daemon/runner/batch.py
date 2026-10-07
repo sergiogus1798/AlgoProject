@@ -9,7 +9,7 @@ from core import fanout
 from ui.daemon import jobs
 
 # 🔬 2026-09-28, owner's feedback «la UI se congela … no usa todos los cores»: a population
-# run was one process per strategy (207 for profitShape), each ~1 s of which 0.7 s is Python
+# run was one process per strategy (207 for a reading), each ~1 s of which 0.7 s is Python
 # importing pandas and the study, and 16 at a time. One process imports once and forks.
 RESERVE = 4              # physical cores left to the window, the daemon and the OS
 PER_WORKER_GB = 0.6      # a forked worker's own pages over a 12 MB trades export, rounded up

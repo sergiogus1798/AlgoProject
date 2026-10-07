@@ -5,7 +5,8 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
-from sqx.projects import stage
+from sqx.projects import crosstfload, stage
+from sqx.projects.workflow import CROSSTF_BUILD
 from ui.daemon.workflow.steps import STEPS
 
 BY_N = {s["n"]: s for s in STEPS}
@@ -100,8 +101,12 @@ def of_step(n: str, cfx: Path) -> dict:
         return {"refuse": f"el paso {n} no es un paso de SQX"}
     if n in ELSEWHERE:
         return {"refuse": ELSEWHERE[n], "elsewhere": True}
+    if n == CROSSTF_BUILD["step"]:      # 11.7: the build twins this project carries, not a stage's
+        got = [t["title"] for t in crosstfload.phase2_tasks(cfx)]
+        return {"titles": got, "off": {}} if got else {
+            "refuse": "el proyecto no lleva tareas de fase 2 (CrossTF <TF> build): el 11.7 no aplica"}
     if "stage" not in spec:
-        # A new SQX step with no stage in `workflow.steps.STAGE` (25.5, 2026-09-29) raised
+        # A new SQX step with no stage in `workflow.steps.STAGE` (2026-09-29) raised
         # KeyError here and /api/launch/steps answered 500: every ▶ SQX of the rail went grey.
         return {"refuse": f"el paso {n} no tiene tareas de SQX que la ventana sepa lanzar"}
     wanted = stage.titles(spec["stage"])

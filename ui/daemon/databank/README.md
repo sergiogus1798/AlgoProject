@@ -2,7 +2,7 @@
 
 What the bottom strip of Proyecto (encargo 22 §4.2, §4.3) reads: the two rows of tabs, one
 databank as a table (a row per strategy, SQX's metrics, a column group per study), its aggregate
-equity (SQX's and at Darwinex's real spread and slippage), the population's funnel, and
+equity (SQX's), the population's funnel, and
 «Recargar databank». Read-only on disk except the owner's column choice (`columns.py`);
 nothing here sends a command to SQX.
 
@@ -17,7 +17,7 @@ nothing here sends a command to SQX.
 | `batches.py` | The studies of a mother's variant batch — `cloud`, `wfc` (each `wfc_<composition>.json` a sub-panel), `cscv`, `marketSurfaces` — keyed by her name; two batches of one mother say so instead of a figure (OPEN §51) | imported | `strategyPermutations/`, `pipeline/` → entries |
 | `metrics.py` | The databank's SQX metrics: the newest cosecha (by identity, IS + OOS) or else `metrics/<P>/<D>/metrics.csv` (by name), a sample where a strategy made no trade blanked to «—» (a Cross Market/TF task files `build..oos1` under OOS; its IS was zeros painted red) | imported | parquet / csv → frame |
 | `table.py` | `GET /api/databank/table`: rows = roster (or, with the files gone, the cosecha's and the reports' strategies), metric columns (a row the cosecha lacks — no OOS retest — read from the databank's metrics export by name), one column group per study; drops wfc/cscv/wfm/blindJoint while the ledger's door is shut | imported | project, databank → payload |
-| `equity.py` | `GET`/`POST /api/databank/equity`: the cosecha's daily P&L summed over strategies, IS then OOS, and the same with the `spread` report's per-trade correction added by closing day; `ids` keeps only those identities (the rows a filter left visible; POST for long lists), `of` says `todas` or how many | imported | parquet → curves + stats |
+| `equity.py` | `GET`/`POST /api/databank/equity`: the cosecha's daily P&L summed over strategies, IS then OOS; `ids` keeps only those identities (the rows a filter left visible; POST for long lists), `of` says `todas` or how many | imported | parquet → curves + stats |
 | `layout.py` | `GET /api/databank/panels`: the seven tabs (WFM, WFC, CSCV and Market Surfaces merged into one window-only virtual tab since 2026-09-30 §2/§8 — no SQX project or databank changes), each sub-panel with its databank (where its study reported, else the one its stage's task writes per `project.cfx` or, with no install holding the project, the data root's folder of that name, else the build's; the batch studies on the smallest of WFM/SPP that holds every mother — the WFC tasks' databanks hold variants), one «Resumen» per tab except Cross TF's timeframes (owner, 2026-10-01: gate screens, markets, MCR tasks and WFC compositions are read in the strategy view); 17-20 locked with the ledger's sentence | imported | project → tabs |
 | `funnel.py` | `GET /api/databank/funnel`: the newest gate's `funnel.csv` with each screen's why, then every later Python step `/api/workflow` counted; sealed and running steps without a count | imported | project → rows |
 | `segments.py` | `GET /api/databank/segments`: the IS+OOS1 figures SQX's export does not carry — net, trades, PF, % winners, Drawdown, Ret/DD — from the newest cosecha's IS and OOS trades together, per identity; `no_oos` (IS trades, no OOS one), `oos` (the span the OOS trades' `Sample type` names, OOS1 on the USDJPY cosecha); no union unless that span is OOS1; without a cosecha, `why` and `oos` None | imported | `trades.parquet` → {union, rows, why} |

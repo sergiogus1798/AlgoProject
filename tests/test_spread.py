@@ -12,7 +12,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import tickfile
-from studies.data.spread import band, reprice, verdict
+from studies.data.spread import band, verdict
 
 T0 = 1_600_000_020_000                  # 2020-09-13 12:27:00 UTC, the start of a minute
 WIDTH = {1: 0, 2: 1, 4: 2, 8: 3}
@@ -83,33 +83,6 @@ def main() -> None:
         if not np.allclose(np.asarray(value, float), np.asarray(want, float), rtol=0, atol=1e-9) \
                 if not isinstance(want, pd.Timestamp) else value != want:
             failures.append(f"{name}: {value} != {want}")
-
-    # A long pays the spread standing at its entry, a short at its exit; SQX charged 0.10 of
-    # spread and 0.05 of slippage per fill. The long enters at 12:27 (0.2) and exits at 12:28
-    # (0.5): spread (0.10-0.2)*2*100 = -20 -> 80, slippage (2*0.05 - (0.2+0.5)/2)*2*100 = -50
-    # -> 30. The short enters an hour before any tick, so its entry is modelled (0.001 * 105 =
-    # 0.105), and exits at 12:28 (0.5): 400 - 40 = 360, then (0.1 - 0.3025)*100 -> 339.75.
-    trades = pd.DataFrame({
-        "Type": ["Buy", "Sell"], "sample": ["IS", "IS"], "Size": [2.0, 1.0],
-        "Open time": pd.to_datetime([T0, T0 - 3_600_000], unit="ms"),
-        "Close time": pd.to_datetime([T0 + 60_000, T0 + 60_000], unit="ms"),
-        "Open price": [100.2, 105.0], "Close price": [101.0, 101.0], "Profit/Loss": [100.0, 400.0]})
-    daily = pd.DataFrame({"rel": [0.001]}, index=[pd.Timestamp(T0, unit="ms").normalize()])
-    paid = reprice.paid(trades, got, daily, pd.Series(1.0, range(24)), 5)
-    adjusted = reprice.adjust(trades, paid, {"IS": 0.10}, 100.0)
-    slipped = reprice.slip(trades, paid, adjusted, {"IS": 0.05}, 100.0)
-    if not np.allclose(paid["real"], [0.2, 0.5]) or list(paid["source"]) != ["tick", "tick"]:
-        failures.append(f"paid(): {paid[['real', 'source']].to_dict('list')}")
-    if not np.allclose(paid["entry"], [0.2, 0.105]) or not np.allclose(paid["exit"], [0.5, 0.5]):
-        failures.append(f"paid() entry/exit: {paid[['entry', 'exit']].to_dict('list')}")
-    if not np.allclose(adjusted, [80.0, 360.0]):
-        failures.append(f"adjust(): {adjusted.tolist()} != [80, 360]")
-    if not np.allclose(slipped, [30.0, 339.75]):
-        failures.append(f"slip(): {slipped.tolist()} != [30, 339.75]")
-    kept = reprice.stored(trades.assign(identity="a").join(paid).assign(adjusted=adjusted, slipped=slipped),
-                          {"IS": 0.10}, pd.Series({"a": "Strategy A"}))
-    if kept["Profit/Loss"].tolist() != [100.0, 400.0] or not np.allclose(kept["Profit/Loss spread y slippage reales"], [30, 339.75]):
-        failures.append("stored(): SQX's P/L must stay untouched beside both adjusted ones")
 
     # A spread built as 2 · price^0.5 times lognormal noise: the mean's exponent must read 0.5
     # and the 2.5-97.5 % band must leave ~2.5 % out on each side.

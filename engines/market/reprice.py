@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 
 from core.assetdata import load, schema, sqx_settings, symbol_for
+from core.barstore import source
+from core.symbols import current
 
 # `spread` and `slippage` in PRICE units (card points x tick_size). `swap_long` / `swap_short`
 # as the card and MetaTrader 5 sign them, both sides alike: negative = the holder pays, positive
@@ -19,6 +21,10 @@ Costs = TypedDict("Costs", {"point_value": float, "tick_size": float, "spread": 
 
 WEEKDAYS = ("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY")
 DAY, EPOCH_WEEKDAY = 86400, 3      # seconds; 1970-01-01 was a Thursday
+# SQX's `Close type`, by where the exit fills: at a price of its own inside the bar it is
+# stamped with (SL measured; PT by the owner's rule, none harvested yet), or at a bar open.
+AT_PRICE = ("SL", "PT")
+AT_OPEN = ("Exit After X Bars", "Exit Signal", "End Of Friday (Time)", "EndTest", "Deleted")
 
 
 def costs(feed: str, segment: str) -> Costs:
@@ -119,3 +125,80 @@ def fills(bars: pd.DataFrame, positions: np.ndarray) -> np.ndarray:
         `Open` at those positions, to pass to pnl() as `open_px` or `close_px`.
     """
     return bars["Open"].to_numpy()[positions]
+
+
+def located(bars: pd.DataFrame, time: np.ndarray, feed: str | None) -> np.ndarray:
+    """The bar each of SQX's stamps belongs to.
+
+    Args:
+        bars: The strategies' own timeframe, indexed by open time.
+        time: Naive datetimes as SQX stamped them, 1-D.
+        feed: SQX feed name, whose M1 bars `bars` were resampled from; None for trades
+            that are on the bar grid by construction.
+
+    Returns:
+        Bar positions, -1 where the stamp is no bar's. SQX opens a bar at its first M1
+        minute, so a bar whose first minutes are missing is stamped late (00:31 for the
+        00:30 bar) and fills at that minute's open, which IS the resampled bar's `Open`: a
+        stamp off the grid is its bar's only when no M1 minute precedes it inside the bar
+        (knowhow/export/off-grid-stamps-and-stop-exits.md).
+    """
+    grid, time = bars.index, np.asarray(time, "datetime64[ns]")
+    at = grid.searchsorted(time, side="right") - 1
+    late = np.flatnonzero((at < 0) | (grid.to_numpy()[at] != time))
+    if late.size:
+        minutes = source(current(feed), ["Open"]).index if feed else grid[:0]
+        first = minutes.searchsorted(grid.to_numpy()[at[late]])
+        ok = (at[late] >= 0) & (first < len(minutes))
+        ok[ok] = minutes.to_numpy()[first[ok]] == time[late[ok]]
+        at[late[~ok]] = -1
+    return at
+
+
+def real(trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs,
+         feed: str | None = None) -> pd.DataFrame:
+    """SQX's own trades priced by pnl(): the one place a harvested trade becomes fills.
+
+    Args:
+        trades: `identity`, `Type`, `Open time`, `Close time`, `Size`, and from a harvest
+            `Close type` and `Close price`. A frame without `Close type` is a drawn
+            population (monkeys): every exit is a bar open.
+        bars: The strategies' own timeframe, indexed by open time, with `Open`; `Low` and
+            `High` too when an exit is one of AT_PRICE.
+        costs: As costs() returns it, of the segment the trades ran in.
+        feed: As located() takes it.
+
+    Returns:
+        Indexed as `trades`: `enter` and `leave` (bar positions, located()), `side`, `pnl`
+        and `cost` (pnl(), on SQX's stamps), and `stop`, the raw exit price of an AT_PRICE
+        exit and NaN on a bar exit. An AT_PRICE exit fills at SQX's `Close price` and not at
+        the open of the bar it is stamped with, which the stop was hit AFTER (owner,
+        2026-10-07): raw = `Close price` + side x slippage, so pnl() lands on SQX's fill.
+        Reproduces SQX to 0.02 on 834 long SL exits; shorts and PT unverified. Raises on a
+        stamp that is no bar's, a `Close type` in neither list and a price exit outside its
+        bar's range by more than spread + slippage, naming the strategies: dropping them
+        would drop the stopped trades and inflate every t.
+    """
+    time = [trades[k].to_numpy() for k in ("Open time", "Close time")]
+    enter, leave = (located(bars, t, feed) for t in time)
+    side = np.where(trades["Type"].astype(str) == "Sell", -1.0, 1.0)
+    stop, known = np.full(len(trades), np.nan), np.ones(len(trades), bool)
+    if "Close type" in trades:
+        kind, px = trades["Close type"].astype(str), trades["Close price"].to_numpy()
+        priced, reach = kind.isin(AT_PRICE).to_numpy(), costs["spread"] + costs["slippage"]
+        known = kind.isin(AT_OPEN).to_numpy()
+        if priced.any():
+            low, high = (bars[k].to_numpy()[leave] for k in ("Low", "High"))
+            known |= priced & (px >= low - reach) & (px <= high + reach)
+            stop[priced] = (px + side * costs["slippage"])[priced]
+    bad = (enter < 0) | (leave < 0) | ~known
+    if bad.any():
+        raise ValueError(
+            f"{bad.sum()} trades the common repricer cannot fill (a stamp that is no bar's, "
+            f"an unknown Close type or a price exit outside its bar): strategies "
+            f"{trades.loc[bad, 'identity'].unique()[:5].tolist()}, first at "
+            f"{trades.loc[bad, 'Close time'].min()}")
+    net, cost = pnl(fills(bars, enter), np.where(np.isnan(stop), fills(bars, leave), stop),
+                    *time, side, trades["Size"].to_numpy(), costs)
+    return pd.DataFrame({"enter": enter, "leave": leave, "side": side, "stop": stop,
+                         "pnl": net, "cost": cost}, index=trades.index)

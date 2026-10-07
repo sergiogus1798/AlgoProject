@@ -1,5 +1,6 @@
 """One value of a WFC or CSCV study file written from the window, comments kept, the ledger stamped."""
 
+import re
 from datetime import date
 from math import isclose
 
@@ -58,6 +59,17 @@ def _pair(name: str, doc: object, path: list, new: object) -> str:
     if name == "thresholds" and path[-1] == "value" and doc["thresholds"][path[1]]["key"] == "cscv.blocks":
         if new % 2:
             raise ValueError(f"{new} es impar: el CSCV parte el historial en dos mitades iguales.")
+    if name == "gatecfg" and path[0] == "frequency":
+        both = {**doc["frequency"], path[-1]: new}
+        if both["phi_min"] > both["phi_max"]:
+            raise ValueError(f"phi_min {both['phi_min']} quedaría por encima de phi_max {both['phi_max']}.")
+    if name == "gatecfg" and path == ["delay", "variants"]:
+        bad = [v for v in new if not re.fullmatch(r"(E|S|ES)[+-]1", str(v))]
+        if bad:
+            raise ValueError(f"{bad}: un retraso es E, S o ES seguido de +1 o -1 (E+1, ES-1…).")
+    if (name, path) == ("fpcfg", ["population", "edges"]) and not all(
+            isinstance(v, (int, float)) and v > 0 for v in new):
+        raise ValueError("Los niveles de ventaja son números mayores que 0.")
     if name == "sppdesign" and path[-1] in ("min_levels", "max_levels"):
         levels = {**doc["design"], path[-1]: new}
         if levels["min_levels"] > levels["max_levels"]:
@@ -116,6 +128,8 @@ def set_field(name: str, path: list, value: object) -> dict:
         new = str(value).strip()
         if not new:
             raise ValueError("El porqué no puede quedar vacío: es lo que dice por qué el umbral vale eso.")
+    elif kind.get("optional") and str(value).strip() == "":
+        new = None   # blank on purpose: a new seed each run, a cap left open
     else:
         new = _typed(old, coerce(kind, old, value))
     note = _pair(name, doc, list(path), new)

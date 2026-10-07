@@ -1,28 +1,25 @@
-# spread — what the spread really is, and what a strategy earns once it pays it
+# spread — what the spread really is
 
 Built 2026-09-27 on the owner's request: building on Dukascopy's M1 and retesting at DATATICK
 on Darwinex is embarrassingly expensive, and the one thing Darwinex's tick feed has that
 Dukascopy's bars lack is the ask — the spread. XAUUSD and USDJPY first (owner, same day): an
-asset whose price and spread explode, and a forex pair supposed to stay put. Two halves:
+asset whose price and spread explode, and a forex pair supposed to stay put. One half stays:
 
 - **Step 4 — describe the spread.** Per asset, independent of any strategy: the spread of every
   minute of Darwinex's ticks, by year in points and in basis points of price, by hour; whether
   the relative spread is constant (owner's ±20 %); if not, which model reconstructs it best back
   to Dukascopy's first day; and the cost each segment should carry in SQX, times the owner's 1.25.
-- **Step 8 — reprice.** Per strategy of a gate harvest: SQX's flat spread given back and the real
-  one taken, trade by trade, at the minute each trade pays it. Which strategies stop earning.
 
 ```
 core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀─ model.MODELS) ─▶ asset / scan     step 4
-                 inputs ─▶ reprice (daily.parquet, hours.parquet from the scan) ─▶ one / many / report   step 8
 ```
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `config.yaml` | Every knob; the owner's two numbers are `ledger:` placeholders | — | — |
 | `tooltips.py` | One Spanish sentence per knob, for the window's drawer | imported | — |
-| `inputs.py` | The knobs, a tick feed's minute table cached against the `.dat`'s stamp, Dukascopy's daily volatility, a harvest's trades and names, and the spread each of its tasks charged (from the live or the retired `project.cfx`) | imported | files → frames |
-| `measure.py` | The spread per day beside the volatility, per year, per hour, per weekday × hour; the spread standing at any instant | imported | minutes → tables |
+| `inputs.py` | The knobs, a tick feed's minute table cached against the `.dat`'s stamp, Dukascopy's daily volatility | imported | files → frames |
+| `measure.py` | The spread per day beside the volatility, per year, per hour, per weekday × hour | imported | minutes → tables |
 | `model.py` | **The four models** of the daily relative spread, one contract and one registry | imported | days → params → days |
 | `verdict.py` | Constancy against the tolerance, the two-way validation, the model chosen, the reconstruction and the proposal per segment | imported | tables → decision |
 | `asset.py` | One asset's report as the contract's data | imported | tables → result |
@@ -32,10 +29,6 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
 | `bands.py` | **The band's command**, one report per asset; the extreme quantiles are the MC Retest's RandomizeSpread Min and Max | `python3 -m studies.data.spread.bands [--symbol S]` | ticks → `spread/<tick feed>/band.{json,html,md}`, `band_days.parquet`, `band_summary.json` |
 | `registry.py` | What SQX's own `data.db` says of a symbol, read-only: its DukasM1 and DarwTick feeds, instrument, data range, and the mean swap of every broker's variant | imported | symbol → facts |
 | `onboard.py` | **The asset onboarding command** (`/asset-onboard`): plans segments, spreads, slippage, commission, swap and triple swap by the owner's rules (the MC Retest range is not written: null bounds resolve in `core.assetranges`) in `onboard:`; with `--write`, the one module here that writes `assets/`, through `core.assetwrite` | `python3 -m studies.data.spread.onboard --symbol S --kind index\|metal\|forex [--write] [--spread-only]` | symbol → `assets/symbols/<S>.yaml` |
-| `reprice.py` | The spread each trade really paid (tick or model), its adjusted P/L, and the twin table kept on disk | imported | trades → trades |
-| `one.py` | One strategy's reading as the contract's data | imported | trades → result |
-| `many.py` | The population panel and the verdict per strategy | imported | results → panel |
-| `report.py` | **Step 8's command**, after `gate.report` and `scan` | `python3 -m studies.data.spread.report --project P --databank D --feed F [--strategy S]` | harvest → `reports/<P>/<D>/<day>/spread/`: `trades.parquet` (every trade with SQX's P/L and the one at the real spread), `verdict.csv` |
 
 ## Decisions the code carries, and whose they are
 
@@ -64,15 +57,6 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
   invokes (`/asset-onboard`) and which writes only through `core.assetwrite`.
 - **Onboarding rules are data** (`onboard:` in `config.yaml`, owner 2026-09-27): per kind the
   segments, commission, swap, triple-swap night and the build model; the factor is the ledger's.
-- **Three versions of every trade are kept** (owner, 2026-09-27): `trades.parquet` carries the
-  harvest's columns untouched — `Profit/Loss` is SQX's, at the costs its task declared — and
-  beside them the spread at entry and at exit, `Profit/Loss spread real` and `Profit/Loss spread y
-  slippage reales`. SQX charges its slippage on BOTH fills (gold: +0.025 at entry, −0.025 at exit
-  at 2.5 points); the variable one is half the real spread at each fill, the owner's convention.
-  `reprice.judge` says which version «se rompe» is read against (default: both costs). The page of a
-  strategy draws the three curves per segment, each from zero, since each segment is its own backtest.
-- **`action: mark`**: the repricing flags the strategies the real spread breaks; `drop` would
-  write DESCARTAR for /curate.
 
 - **The band models the daily MEAN spread** (owner, 2026-09-27: «el spread medio diario … y su
   desviación»): SQX's MC Retest draws ONE spread per simulation for the whole backtest
@@ -88,6 +72,3 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
 - **USDJPY's chosen model leans on the price level**, which over 2017–2026 moved with time;
   back in 2011–2012 (USDJPY at 76–80) it predicts the thinnest spreads of all. See
   `POSSIBLE_IMPROVEMENTS.md`.
-- **The repricing changes the spread only**, not Darwinex's own bid path (0.09 median difference
-  on gold, 0.001 on USDJPY against Dukascopy's close). It has not yet been checked against a
-  real DATATICK retest on Darwinex — the test that would license it as that retest's stand-in.

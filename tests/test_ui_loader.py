@@ -108,7 +108,7 @@ def test_conductor_one_at_a_time() -> None:
     """Two conductor jobs: the first runs, the second waits; python jobs are not held back."""
     ids = [jobs.start("cargar trades", SLEEPER, {"project": "p", "databank": "d", "strategy": ""},
                       lane="conductor")["id"] for _ in range(2)]
-    light = jobs.start("profitShape", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"})["id"]
+    light = jobs.start("entryQuality", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"})["id"]
     time.sleep(0.5)
     now = {j["id"]: j for j in jobs.listing()}
     assert now[ids[0]]["queued"] is None and now[ids[1]]["queued"] is not None, now
@@ -152,6 +152,18 @@ def test_resave_is_not_a_change() -> None:
         save(sqx, b"<other rules/>", (2026, 9, 29, 11, 0, 0))
         os.utime(sqx, (time.time() + 10,) * 2)
         assert state.age(done, [sqx]) == "stale", "new content is"
+        many = [bank / f"Strategy 3.{i}.sqx" for i in range(state.POOL_FROM)]
+        for i, f in enumerate(many):
+            save(f, f"<rules n='{i}'/>".encode(), (2026, 10, 4, 12, 0, 0))
+        pooled = state.fingerprint(many)
+        state.SEEN.clear()
+        assert pooled == state.fingerprint(many[:1] + many[1:]), "the same from the cache"
+        state.SEEN.clear()
+        state.POOL_FROM, kept = len(many) + 1, state.POOL_FROM
+        try:
+            assert pooled == state.fingerprint(many), "read on every core or here: one answer"
+        finally:
+            state.POOL_FROM = kept
 
 
 if __name__ == "__main__":

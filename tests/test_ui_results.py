@@ -41,7 +41,7 @@ def check_catalogue(c: TestClient, failures: list[str]) -> None:
     """Every study folder is listed once, in family order, with a known role."""
     got = c.get("/api/catalogue").json()["studies"]
     keys = [s["key"] for s in got]
-    folders = {p.name for p in ROOT.glob("studies/*/*") if p.is_dir()} - {"analysis"}
+    folders = {p.name for p in ROOT.glob("studies/*/*") if p.is_dir()} - {"analysis", "spread"}
     if set(keys) != folders | {"monteCarlo"} or len(keys) != len(set(keys)):
         failures.append(f"el catálogo no casa con studies/: {sorted(set(keys) ^ folders)}")
     order = [catalogue.FAMILIES.index(s["family"]) for s in got]

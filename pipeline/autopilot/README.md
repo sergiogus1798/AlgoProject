@@ -47,11 +47,13 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
 | `pasos.csv` | (written by `run.py` next to `estado.txt`) one row per step start, end or failure — `paso, estado (empezó/hecho/falló), hora` — which the window's «En marcha» reads to show each Python step after a daemon restart | — | — |
 | `survivors.py` | Who walks the tail: one row per identity of the databank the last judged step cut (`cut` of 16, later of 20-25), `about(project)` (symbol, timeframe, feed, family) and `Done`, the clean stop | imported | project, step → mothers |
 | `blind.py` | 17, 18, 18.5 per mother (door asked first, a mother with her result skipped unless `redo`), the WFM reading, the ledger rows 17-19 still lack (per project, once per WFM reading) then `gate.allow_read`, and step 20 through the same door | imported | batches + WFM export → results, ledger rows |
+| `kept.py` | after the WFM reading: per strategy in the WFM databank, joined **by name** to its step-8 scorecard row (identities do not survive the retest chain: 0 of 10 matched, 10 of 10 by name), its oos1 daily-low equity in R and `oos_worst_day_r`, `dd_esperado_p95_r`, `oos_net_per_year_r`, for the funding module (encargo 45) | imported by `tailrun` (kind `kept`) | WFM verdict + gate scorecard + harvest → `KEPT/<project>/kept.csv`, `curves.parquet` |
 | `closing.py` | 21-22 as the window builds them on the databank given; 23 (`structural.make` → retest → `keep` → export build+oos1 → `structure.report` → clear) and 24 (two `stopgrid` passes, each retested, exported and read) in the project's own three WFC legs, the project copied aside before each retest | imported | mothers → `structural/<P>/<stamp>/`, `atrCalculator/<P>/<stamp>/pass{1,2}/` |
 | `traded.py` | The version that will be traded: each mother's step-24 variant at `ledger:portfolio.funded.stop_percentile`, grid step 0; its build and oos1 trades filed as the cosecha `Stop_p<P>` (keyed by the mother's identity); step 25's edgeCost per strategy on it; a mother without a stop is named and left out | imported | pass2 manifest + stopgrid export → `harvest/<P>/Stop_p<P>/<day>/`, edgeCost results |
 | `finalists.py` | `finalistas.json` — `{strategy, identity, mother, sqx, symbol, timeframe, stop: {percentile, x}}`, `sqx` the fabricated grafted file — and step 26 handed to `mt5.verify.autopilot` (imported late); its `check` not ok is a clean stop | imported | mothers → `<run>/finalistas.json`, step 26's line |
 | `call.py` | The one door every command of the tail goes through: `run(argv)` (a `chain.command`, output never shown) and `window(...)`, the argv `runner.table.jobs` builds | imported | argv → done, or SystemExit with its tail |
-| `facts.py` | Every number of a step's studies **and its extras** (`steps.EXTRA`: step 8's monkey, profitShape, entryQuality), from each one's newest result: per-strategy contract JSONs (summary, verdict parts, distribution stats, table cells, a tab's reading as `<tab>.verdict_pass`), one-row-per-strategy parquets (every column with a number, object-dtype pass flags included; a parquet indexed by identity joins by it), one-row-per-strategy-and-market parquets as `<stem>.<market>.<col>` (crossmarket's `markets.parquet`), and every number of `verdict.csv` and `nulls.csv` as `<study>.verdict_csv.<col>` / `nulls_csv.<col>` ("True"/"False" as 1/0), plus `verdict_csv.drop` and, for spread, `verdict_csv.state_pass`. Key = `<study>.<tab>.<block>.<row>.<column>`, accents dropped; a repeated key gets `#2`. Step 12 is shaped per MOTHER (`crosstf_rows`): `crossTF.cells.<role>.<tf>.<stat>`, `…_vs_original`, `crossTF.reading.<tf>.<reading>` and `reading.n_<reading>`, zeros included | `python3 -m pipeline.autopilot.facts --project P --step 8 [--grep gate.]` lists keys with count, median and range | study results → long frame `study, strategy, identity, key, value` |
+| `facts.py` | Every number of a step's studies **and its extras** (`steps.EXTRA`: step 8's monkey, entryQuality), from each one's newest result: per-strategy contract JSONs (summary, verdict parts, distribution stats, table cells, a tab's reading as `<tab>.verdict_pass`), one-row-per-strategy parquets (every column with a number, object-dtype pass flags included; a parquet indexed by identity joins by it), one-row-per-strategy-and-market parquets as `<stem>.<market>.<col>` (crossmarket's `markets.parquet`), and every number of `verdict.csv` and `nulls.csv` as `<study>.verdict_csv.<col>` / `nulls_csv.<col>` ("True"/"False" as 1/0), plus `verdict_csv.drop` and, for spread, `verdict_csv.state_pass`. Key = `<study>.<tab>.<block>.<row>.<column>`, accents dropped; a repeated key gets `#2`. Step 12 is shaped per MOTHER (`crosstf_rows`): `crossTF.cells.<role>.<tf>.<stat>`, `…_vs_original`, `crossTF.reading.<tf>.<reading>` and `reading.n_<reading>`, zeros included | `python3 -m pipeline.autopilot.facts --project P --step 8 [--grep gate.]` lists keys with count, median and range | study results → long frame `study, strategy, identity, key, value` |
+| `tffacts.py` | The redesigned step-12 facts (encargo 47): `crossTF.tf.state`, `.phase1`, `.t1`, `.t2a`, `.t2b`, `.t3` per mother and `crossTF.tf.<TF>.<column>` per mother and sibling timeframe, from `tf_mothers.csv` and `tf_siblings.parquet`. A state is a number — **pass 1, limbo 0, fail −1** — so a rule reads `pass: ">= 1", limbo: ">= 0"`; an empty state is no fact (limbo by `missing:`); no file, no facts. Written beside the old facts, not cutting yet | imported by `facts.py` | the study's two files → fact rows |
 | `criteria.py` | The inference: one rule → pass/limbo/fail (a threshold, distance to the population's median, or — 2026-10-03 — a verdict, `is: pass`/`is: fail` on a 1/0 fact; `else: limbo` on any of them makes not-met a limbo instead of a fail); a compound `all: [...]` / `any: [...]` is its worst / its best part, nested freely (`judged`); `reads` lists every fact the rules name, parts included; a strategy's outcome is its worst rule; a missing fact is limbo. `resolved` folds a rule's `by` in first: `by: {H4: {pass: ">= 2.5"}}` replaces the fields it names when the project has that tag — its timeframe, symbol or asset class (`judge.tags`, from the project registry); several joined by `+` must all hold, the first matching entry wins, no match leaves the rule as written | imported | facts + rules → `{id: (outcome, reason)}` |
 | `judge.py` | One judging step: facts to `hechos.parquet`, the databank's files by identity, the criteria, the dev draw (seed recorded), `verdict.csv` (`strategy, verdict, identity, outcome, reason`), the cut | imported | step → databank cut, `paso-<n>/` |
 | `criteria.yaml` | The rules and the dev draw, commented. Also read and written by the window's «Criterios» zone (`ui/daemon/criteria/`): each change stamped in `ledger/criteria-history.jsonl`, and `frozen: {on, by, sha}` once the owner freezes them | edited, by hand or from the window | — |
@@ -76,10 +78,10 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
 - **The median of a `near_median` rule is over the databank being cut**, not over every strategy
   the study read (the gate also reads the build's strategies that never reached `OOS`).
 - **The chain's tests at step 8 include the readings outside the sequence** (`monkey`,
-  `profitShape`, `entryQuality`): their numbers are facts of step 8 too (`facts.gather` reads
-  `studies` + `extra`). `profitShape` and `entryQuality` run AFTER step 8's cut, on its
+  `entryQuality`): their numbers are facts of step 8 too (`facts.gather` reads
+  `studies` + `extra`). `entryQuality` runs AFTER step 8's cut, on its
   survivors only (`run.AFTER_CUT`, owner 2026-10-01: they were 200 of the step's 297 s on all
-  571) — **unless a step-8 rule names them** (`profitShape.…`): then they run before the judge,
+  571) — **unless a step-8 rule names them** (`entryQuality.…`): then they run before the judge,
   on everyone, and pay those seconds. Not named, their facts in `hechos.parquet` are whatever
   their newest folder holds (an earlier run's survivors) and judge nothing.
 - **Missing is limbo, and the gate is a cascade**: a strategy that died at `estaticas` has no
@@ -107,8 +109,6 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
   - edgeCost: `edgeCost.verdict_csv.edge_mean`, `edge_median` (gross edge per trade in units of
     today's spread + commission, IS+OOS pooled, higher better), `n`. Its `summary.*` exist only
     for strategies read one by one (step 25) — never write a rule on them at 8.
-  - snoopingScreen: `snoopingScreen.summary.sharpe` (OOS daily Sharpe), `excess_day` (USD/day
-    over equal-risk buy & hold, > 0 beats it), `verdict.pass` (StepM names it).
   - feedQuality: `feedQuality.verdict_csv.p` (only with ≥ 10 flagged trades; < 0.01 is the
     alarm), `flagged`, `at_risk` (flagged share of net, lower better), `n`.
   - spread: `spread.verdict_csv.state_pass` (no segment broken at Darwinex's real spread),
@@ -116,41 +116,24 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
     `neto_sqx_*`, `pf_sqx_*`, `spread_real_medio_puntos_*`.
   - monkey: `monkey.nulls_csv.p_<rung>_<stat>` (rung timing, timing_holds, timing_sizing, free;
     stat net, sharpe, pf, retdd, dd; lower = beats the random trader), `reconcile`, `real_*`.
-  - profitShape: `profitShape.<concentration|dependence|breaks>.verdict_pass` (1 = spread,
-    independent, stable) and every table cell, e.g. `…concentration.cuanto_pesan_los_mejores.*`.
   - entryQuality: `entryQuality.<eratio|delay>.verdict_pass` (signal, latency_robust),
     `entryQuality.eratio.en_algunos_horizontes.<k>.*`, and
     `entryQuality.delay.en_barras_de_la_estrategia.<d>.dcr` (share of gross edge given up by
     entering d bars late) — the row keyed by `d` only on results written after 2026-10-01.
-- **Step 10's keys** (`--grep crossmarket.`; results written after 2026-10-02): the study's own
-  breadth call is `crossmarket.verdict_csv.drop` / `fraction` / `cleared` / `markets` (0 when the
-  strategy never fired on any other market — a silent strategy has no other fact, so pair any
-  rule with `markets >= 1` or it reads Limbo). Measured, no level applied:
-  `verdict_csv.excess_t_pooled` (step 8's `drift_excess_t` on the weekly excess P/L of every
-  additional market summed: cost-inclusive, and two markets that are one trade count once),
-  `excess_t_stouffer` (assumes the markets independent), `excess_t_max` / `_2nd` / `_3rd` /
-  `_q75` / `_median` / `_min` («≥ x in at least k markets» is `excess_t_<k-th> >= x`),
-  `excess_t_half` (the value at least half of the markets reach),
-  **`excess_blind_t_pooled` and `excess_blind_t_half`** (the same two with the unbiased drift term — the
-  blind trade of the same hold; a break-even long and short are both centred on zero, so ONE line
-  serves both sides: put the pooled rule on this one),
-  `markets_effective`, `trades_total`, `trades_min`, `net_total` (USD), `net_positive`,
-  `p_median`, `p_min`, `z_median` (the block-shift null: against random entries paying the SAME
-  cost, so a strategy can clear it and lose money), `a_cleared`, `expectancy_positive`. Beside
-  the original (the export's main block — the step-9 task's main test, `oos1` today):
-  `main_<stat>` and `<stat>_vs_main_half` for stat in `excess_t`, `trade_t`, `pf_sqx`,
-  `net_per_trade`, `sharpe_sqx` — the ratio market / original that at least half of the markets
-  reach, so «half of them at x times the original» is `>= x`; no fact (Limbo) when the
-  original is not above zero, where `excess_t_minus_main_half` (a difference) still exists. By
-  category of `_markets.yaml`: `family_` / `structural_` + `markets`, `net_positive`,
-  `excess_t_pooled`, `excess_t_half`, `excess_t_vs_main_half`, `excess_blind_t_pooled`,
-  `excess_blind_t_half`, `net_per_trade_vs_main_half`; absent for a category with no
-  market. Per
-  market: `crossmarket.markets.<feed>.<col>` from `markets.parquet` (`excess_t`, `trade_t`,
-  `trades`, `net_sqx`, `p`, `z`, `pf`, …) — the feeds differ by source asset, so a rule on one
-  needs `by: <SYMBOL>`. Both sides are read (short support 2026-10-02); a market is read only on
-  its own build..oos1 (`markets.<feed>.window_*`, `traded_*` are in `markets.parquet` as text).
-- **Same-day reruns**: the gate and snoopingScreen clear their `estrategias/` before writing;
+- **Step 10's keys** (`--grep crossmarket.`; results written after 2026-10-07, encargo 46): one row
+  per strategy of `crossmarket.verdict_csv.<col>`, the facts P1-P9 read: `invalid_fraction`
+  (share of the listed markets §7.1 refuses), `fixed_distance` (P1), `freq_off` / `freq_off_fraction`
+  (P2), `z_conj` (P3, all valid markets and every window V0+V1+V2 against the joint random runs, on
+  gross R by default), `z_conj_v2` / `z_conj_v0` / `z_conj_v1` (P4 and its siblings),
+  `z_minus_market` (P5, the worst all-but-one z), `p_breadth` / `breadth_count` (P6),
+  `tau_half` / `e_principal` (P7), `worse` / `worse_fraction` (P8, markets at z <= `worse_z`),
+  `z_beta` / `e_end` / `beta` / `e_end_ratio` (P9, the yearly edge's slope and last level),
+  `net_t_pooled` (annotation: SQX's weekly pooled net t, judges nothing), `markets`,
+  `markets_valid`, `trades`. A fact is empty when its data is: Limbo. Per market:
+  `crossmarket.markets.<feed>.<col>` from `markets.parquet` (`valid`, `invalid_reason`, `z`,
+  `trades`, ...) — the feeds differ by source asset, so a rule on one needs `by: <SYMBOL>`.
+  Both sides are read; a market is read only on its own build..oos1 window.
+- **Same-day reruns**: the gate clears their `estrategias/` before writing;
   the others write no per-strategy JSON in a population run, but a step-25 `--strategy` run of
   edgeCost lands its JSONs in step 8's folder of that day (hence `summary.*` for 3 strategies).
 - **Which folder**: `sources.results` sorts by day only, not by databank; a study run on two
@@ -163,3 +146,23 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
   counted (`studies/closing/blindJoint/README.md`).
 - **Batches are named by the brief's `strategy`**, not its file stem (dots, not dashes): batches
   made before 2026-10-02 under `Strategy_20-25-72` are not found by 17-20.
+
+## Steps 11 → 11.5 → 11.7 → 12 (encargo 47, part P)
+
+`plan.plan` walks the cascade in this order: **11** SQX on oos1, **11.5** the cross-TF study (phase 1:
+only oos1 data exists, so T1 and T2b read «no data») and its judge, **11.7** SQX on the `build` window
+for the twins (`CrossTF <TF> build`), **12** the same study again (now with build data) and its judge.
+The study is one command at both steps, with no flag: it finds the build trades by itself
+(`studies/transfer/crossTF/tf/inputs.build_banks`; `afterrun` exports the `CrossTF_<TF>_build`
+databanks after 11.7 like any other).
+
+- **11.5 cuts nobody** until the owner says «corta»: `criteria.yaml` › `"11.5"` has `rules: []`, and
+  `cut: CrossTF_Input`, `siblings: follow`. With rules, a mother that fails leaves `CrossTF_Input` **with
+  her siblings** and the siblings of the mothers that stay are kept (`judge.siblings`), because 11.7
+  reads that databank. 11.7 does not refill it (`launch/preflight.judge`: `fed` is empty for step 11.7).
+- **12** is as before: `crossTF.combined.z_new`, every sibling dropped, only the mother goes on.
+- **A project without twins** (`derive.phase2` gives `titles: []`): `plan` returns the step in `skipped`
+  (`run` prints «paso 11.7 saltado: …») and the 11.5 judge is flushed where 11.7 would have; 12 judges
+  with «sin dato». The twins' titles are `sqx.projects.crosstfload.phase2_tasks`, and `launch/steps.of_step`
+  gives them for step 11.7, which is deliberately not in `stages.yaml`.
+- **Facts** `crossTF.tf.*` (`tffacts.py`): states are numbers, pass 1 / limbo 0 / fail −1.

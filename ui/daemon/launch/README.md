@@ -27,7 +27,7 @@ watcher it reuses.
 Python step already done is skipped (its leftover tests run with their own ▶ PY) unless an SQX step
 ran earlier in this press, which makes everything after it rerun. A Python step runs the tests
 «todas las pruebas Python pendientes» runs (`auto`: never `workflow.tests.SPENDS` — wfc, cscv,
-marketSurfaces, wfm, blindJoint, snoopingScreen — never 21-25, never what the window refuses). A
+marketSurfaces, wfm, blindJoint — never 21-25, never what the window refuses). A
 judging step (8, 10, 12, 14, 16 — the even steps' verdict contract) that is not done, or ran in
 this press, **always** halts the chain before the next SQX step; one not done with no test the
 chain can run halts at itself. The only crossing: a press that starts ON the SQX step, its judge

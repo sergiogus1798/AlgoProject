@@ -13,6 +13,8 @@ with the move that follows and a break-even long keeps `pv·h·cov(Size, move)` 
 Use `d` (or `c`); never `b`. A second bias, the CALENDAR footprint, only a per-window term touches, and partly (Evidence).
 
 ## Evidence
+⚠️ 2026-10-07: the REAL-population pass counts below were priced with every exit at a bar open; stop-loss exits (30-37 % of trades in IBS, doubleROC, volatilidadL, simpleL) were inflated by ~+300 USD each (`knowhow/export/off-grid-stamps-and-stop-exits.md`). The stored full populations lack `Close type`, so they could not be re-priced; only the monkey (no-edge) numbers stand as measured.
+
 Calendar footprint (the strategy trades more in some quarters): only a per-window term touches it, and only partly — mean |t| a 0.22, c 0.21, d-year 0.15, d-semester 0.12; USA500 H1 IBS long −0.61 / −0.52 / −0.46 / −0.33. Until `d` is live read lifts WITHIN asset × side × timeframe.
 
 - 🔬 D-m, 2026-10-06 (`scratch/encargo44/dm/`, tables in `AlgoData/scratch/encargo44_dm/`). No-edge strategy = a real
@@ -45,4 +47,4 @@ Calendar footprint (the strategy trades more in some quarters): only a per-windo
 - 📓 Toolkit count (not recomputed by the red team): of 115 thresholds, 45 looked side-dependent with the gate's term, 8 with the corrected one.
 - A bug found on the way: `c[i0−1]` with i0 = 0 on the five index frames read the last close; `null2/run2.py` `prepare`
   still has it, so null2's IS columns of those indices are wrong (its OOS columns are not).
-- `studies/transfer/crossmarket/simulate/excess.py` copies the gate's term on purpose: change both together.
+- The cross-market copy of the gate's term (`simulate/excess.py`) was deleted on 2026-10-07 (encargo 46); only the gate's term remains.

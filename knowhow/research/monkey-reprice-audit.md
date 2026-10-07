@@ -10,7 +10,7 @@ tag: 🔬  date: 2026-10-06  see: export/fill-and-pricing, costs/per-task-costs,
   `swap = PV·size·entry_fill·(pct/100/360)·nights` · `P/L = round(PV·size·(exit − entry) − swap, 0.01)`.
 - `nights` = rollovers T (declared hour, Mon–Fri) with `open ≤ T < close`; the triple night counts 3. Card values, not fitted: 23:00, FRIDAY, PV 0.063137.
 - Tolerance per trade: `0.02 USD + 2·tick·PV·size` (cents rounding + one tick per fill). The tick term is only spent when a declared cost falls within ~0.1 tick of a half tick (build: 304.11+106.44 → x.55, 106.44 → x.44); SQX then lands on either side, not reproduced bit for bit.
-- Not measured here: shorts (all 1,312 trades are Buy), a non-zero commission, stops/targets, stamps off the bar grid (0 seen).
+- Not measured here: shorts (all 1,312 trades are Buy), a non-zero commission. Stops and stamps off the bar grid: `export/off-grid-stamps-and-stop-exits`.
 
 
 ## Evidence

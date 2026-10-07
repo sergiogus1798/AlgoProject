@@ -8,7 +8,7 @@ on the day of archiving (measured 2026-09-28, JSON diff empty).
 
 ```
 api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · locate.cfx ─▶ strategymeta.read
-    ├▶ costcurve.curve ◀─ tearsheet.harvest.read · costcurve.repriced (member file, then population; also read by tearsheet.pnl)
+    ├▶ costcurve.curve ◀─ tearsheet.harvest.read
     ├▶ stats.build ─▶ tearsheet.tradestats (shape, returns) · tearsheet.oos2 (door, oos2 cosecha)
     ├▶ archived.* ─▶ core.archive.read (also used by results/, tearsheet/, tearmarket/)
     └▶ POST archive ─▶ archive_write ─▶ archive_view ─▶ results/, tearsheet/, gateview (family = the template folder of registry.csv)
@@ -25,8 +25,8 @@ api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · 
 | `api.py` | `ROUTER`: `GET /api/strategy/meta`, `/costcurve`, `/stats` (both with an optional `strategy` name, and a `note` saying whose cosecha was borrowed — `tearsheet.borrow`), `POST /api/strategy/archive`; a refusal is `{"error"}`, never a 500 | imported | request → JSON |
 | `locate.py` | The strategy's `.sqx` — the install holding the databank, else an export's copy under `raw/<P>/*/*/strategies/`, else the newest archived version — by identity; the project's `project.cfx` | imported | identity → path, sentence |
 | `meta.py` | E2's fields of the located file (a copy outside the databank folder is read from a temporary folder named as the databank) or of the archived version | imported | path → dict |
-| `costcurve.py` | SQX's daily curve and the same corrected by the `spread` study's repriced trades, IS then OOS1 on one axis, with `days` for the year ticks; nets and DDs. `repriced` (the report's rows of one strategy) is also what `tearsheet.pnl` corrects each sample with | imported | cosecha rows + trades → curves |
-| `stats.py` | Per sample (IS, OOS1, IS+OOS1 — OOS's curve continued from IS's end, no SQX Sharpe —, OOS2): trades, nets (SQX and real), Profit Factor, win rate, DD, Sharpe; the return's mean, std, skew and excess kurtosis in «$/lote» or «$/trade»; and its distribution per unit (USD por lote by default) as a `distribution` block whose percentile row reads «1%»… in $ (`row_unit`) | imported | cosecha rows → dict |
+| `costcurve.py` | SQX's daily curve, IS then OOS1 on one axis, with `days` for the year ticks; nets and DD | imported | cosecha rows + trades → curves |
+| `stats.py` | Per sample (IS, OOS1, IS+OOS1 — OOS's curve continued from IS's end, no SQX Sharpe —, OOS2): trades, net, Profit Factor, win rate, DD, Sharpe; the return's mean, std, skew and excess kurtosis in «$/lote» or «$/trade»; and its distribution per unit (USD por lote by default) as a `distribution` block whose percentile row reads «1%»… in $ (`row_unit`) | imported | cosecha rows → dict |
 | `archived.py` | The `source=archive` answers: `load`, `tearsheet`, `harvest_folder`, and `/api/result`, `/api/history`, `/api/matrix` from the frozen view | imported | archive → the live shapes |
 | `archive_write.py` | `archive(project, databank, identity, step, note, *, family, sqx=None) -> Path`: locates the `.sqx` on the install by file read (refusing while SQX runs the project), freezes everything, seals it; moved here from `core/archive/` (D4, 2026-10-04) | imported | a live strategy → `archive/<identity>/<stamp>/` |
 | `archive_view.py` | Captures what the daemon serves today: `runs.result` per study and its population, the matrix row, `harvest.read`, the gate report and sheet | imported | live daemon reads → `view.json` + parquet |
@@ -45,9 +45,6 @@ api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · 
 - **E2's reader matches the project's tasks by the .sqx's folder name**, so a copy found in
   `raw/…/strategies/` is copied to a temporary folder named as the databank before reading;
   read in place, `backtest` would list no task.
-- **The real curve needs the `spread` report.** A run on the strategy alone writes
-  `estrategias/<name>.trades.parquet`, a population run `trades.parquet`; both are read, newest
-  day first. Missing → `real: None`, and the window offers «calcular» (`spread`, scope one/many).
 - **«Archivar» needs the template family** (`runner.where.family`): without it the ledger count
   cannot be signed, and the route refuses with `where.no_family`'s sentence.
 - **Per lot needs `Size`.** `tearsheet.harvest.TRADES` carries it since 2026-09-28; versions

@@ -212,7 +212,7 @@ def test_the_level_reprices_and_judges_the_excess() -> None:
     for corrected, t in ((True, tradelevel.t_skew_kurt), (False, tradelevel.t)):
         facts, table = gate(both, frame, costs, se_skew_kurt=corrected)
         assert list(table.columns) == ["identity", "open_time", "close_time", "side", "lots",
-                                       "pnl", "cost", "drift", "excess", "window"]
+                                       "pnl", "cost", "drift", "excess", "window", "stop"]
         mine = table[table["identity"] == "a"]
         assert np.allclose(mine["pnl"] + mine["cost"], gross(held(frame, cuts), frame), atol=1e-9)
         assert np.allclose(mine["cost"], 0.50, atol=1e-9)      # spread + slippage in and out

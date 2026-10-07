@@ -1,198 +1,78 @@
 #!/usr/bin/env python3
-"""edgeCost's gross reconstruction, reconciliation and edge maths on trades built by hand.
-
-Review BLOCKER (2026-09-26): a single `SPREAD_SHARE = 0.5` was wrong even for feeds it was
-never checked against. `spread_share.measure()` replaces it, and is tested here against
-synthetic bars built so the answer is known — never against real `AlgoData/bars/*` files,
-which are machine-specific data and may not exist on another machine (CODESTYLE rule 6).
-"""
+"""edgeCost on trades built by hand: oos1 only, the common repricer's cost as the denominator."""
 
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.readings.edgeCost import costs, many, one, spread_share  # noqa: E402
+from engines.market import reprice  # noqa: E402
+from studies.readings.edgeCost import costs, many, one  # noqa: E402
+from studies.screening.analysis import onepass  # noqa: E402
 
-TICK, POINT_VALUE, SPREAD = 0.1, 10.0, 2.0   # declared spread, in points, "today"
-FEED, TIMEFRAME = "TESTFEED_M1_test", "H1"
-
-# commission.use, owner 2026-09-29: one {method, value} per segment, never a flat figure.
-ZERO_COMMISSION = {"build": {"method": "SizeBased", "value": 0.0},
-                   "oos1": {"method": "SizeBased", "value": 0.0},
-                   "oos2": {"method": "SizeBased", "value": 0.0}}
-FOREX = {"symbol": "TESTX", "class": "forex", "swap": {"triple_swap_on": "WEDNESDAY",
-                                                         "rollout_hour": "23:00"}, "instrument": {"tick_size": TICK,
-         "point_value": POINT_VALUE},
-         "segments": {"build": {"spread": "is"}, "oos1": {"spread": "oos"},
-                      "oos2": {"spread": "oos2"}},
-        "costs": {"spread_is": {"use": SPREAD, "why": "test"},
-                  "spread_oos": {"use": SPREAD, "why": "test"},
-                  "spread_oos2": {"use": SPREAD, "why": "test"},
-                  "slippage_oos2": {"use": 0.0, "why": "test"},
-                  "commission": {"use": ZERO_COMMISSION, "why": "test"},
-                  "slippage_is": {"use": 0.0, "why": "test"},
-                  "slippage_oos": {"use": 0.0, "why": "test"},
-                  "swap_long": {"use": 0.0, "why": "test"},
-                  "swap_short": {"use": 0.0, "why": "test"}}}
-
-MEASURED_OFFSET = 0.1   # the price-unit spread this test pretends to measure off the bars
+COSTS = {"point_value": 10.0, "tick_size": 0.1, "spread": 0.2, "slippage": 0.1,
+         "commission_method": "SizeBased", "commission": 1.0, "swap_long": -2.0,
+         "swap_short": -2.0, "triple": 2, "rollover": 23, "tick_step": None}
+BARS = pd.DataFrame({"Open": 100 + np.cumsum(np.random.default_rng(0).normal(0, 0.3, 400))},
+                    index=pd.date_range("2020-01-01", periods=400, freq="1h"))
+CFG = {"verdict": {"min_edge_spreads": 2.0, "action": "mark"}}
 
 
-def trades_by_hand() -> pd.DataFrame:
-    """Three trades whose gross, cost and edge are known by construction. Size never constant."""
-    rows = [{"Open price": 100.0, "Close price": 101.0, "Size": 3.0},
-            {"Open price": 50.0, "Close price": 49.0, "Size": 1.0},
-            {"Open price": 200.0, "Close price": 202.0, "Size": 5.0}]
-    direction = 1
-    df = pd.DataFrame(rows)
-    df["Type"] = "Buy"
-    df["Open time"] = pd.to_datetime(["2020-01-06 10:00", "2020-01-07 15:00", "2020-01-08 20:00"])
-    df["Close time"] = df["Open time"]
-    df["sample"] = "IS"
-    df["identity"] = "strat-a"
-    df["Profit/Loss"] = (df["Close price"] - df["Open price"]) * direction * df["Size"] * POINT_VALUE
-    return df
+def trades() -> pd.DataFrame:
+    """Two identities, IS and OOS rows, longs and shorts, some held over a rollover."""
+    rng, rows = np.random.default_rng(1), []
+    for identity in ("a", "b"):
+        for sample in ("IS", "OOS"):
+            for _ in range(30):
+                i = int(rng.integers(0, 350))
+                rows.append({"identity": identity, "sample": sample, "Open time": BARS.index[i],
+                             "Close time": BARS.index[i + int(rng.integers(1, 40))],
+                             "Type": rng.choice(["Buy", "Sell"]), "Size": 0.5 + rng.random()})
+    return pd.DataFrame(rows)
 
 
-def stub_measure() -> None:
-    """Replace spread_share.measure with a fixed, known answer — no real bar file needed."""
-    spread_share.measure = lambda trades, feed, timeframe: {"IS": MEASURED_OFFSET, "OOS": MEASURED_OFFSET}
+def test_edge_equals_the_gates_edge_mean_oos(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Known answer: on the same oos1 trades, edgeCost's edge_mean is the gate's edge_mean_oos."""
+    monkeypatch.setattr(costs, "warnings", lambda asset: [])
+    t = trades()
+    oos = t[t["sample"] == "OOS"]
+    priced = costs.price(oos, BARS, COSTS)
+    # the gate's own table, built the way level 1a builds it
+    enter, leave = (BARS.index.get_indexer(oos[k]) for k in ("Open time", "Close time"))
+    side = np.where(oos["Type"] == "Sell", -1.0, 1.0)
+    pnl, cost = reprice.pnl(reprice.fills(BARS, enter), reprice.fills(BARS, leave),
+                            oos["Open time"].to_numpy(), oos["Close time"].to_numpy(), side,
+                            oos["Size"].to_numpy(), COSTS)
+    gate = onepass.edge_mean(pd.DataFrame({"identity": oos["identity"].to_numpy(),
+                                           "pnl": pnl, "cost": cost}))
+    names = pd.Series({"a": "Strategy a", "b": "Strategy b"})
+    panel = many.run(priced, names, CFG, {})["panel"]
+    for identity, name in names.items():
+        assert panel.loc[name, "edge_mean"] == pytest.approx(gate[identity])
+        assert one.measure(priced[priced["identity"] == identity])["edge_mean"] == pytest.approx(
+            gate[identity])
 
 
-def main() -> None:
-    """Gross, reconciliation and edge against the numbers worked out on paper above."""
-    assert len({3.0, 1.0, 5.0}) == 3, "the fixture must vary Size, never hold it constant"
-    real_measure = spread_share.measure
-    stub_measure()
-    try:
-        priced = costs.per_trade(trades_by_hand(), FOREX, FEED, TIMEFRAME)
-    finally:
-        spread_share.measure = real_measure
-
-    # spread_cost = MEASURED_OFFSET (price units) * point_value * Size — the ACTUAL cost,
-    # never a fraction of the declared spread.
-    expected_spread_cost = [MEASURED_OFFSET * POINT_VALUE * s for s in (3.0, 1.0, 5.0)]
-    assert priced["spread_cost"].round(6).tolist() == expected_spread_cost, priced["spread_cost"].tolist()
-    assert priced["commission_cost"].eq(0.0).all()
-
-    expected_gross = [33.0, -9.0, 105.0]   # P/L + 0 commission + spread_cost above
-    assert priced["gross"].round(6).tolist() == expected_gross, priced["gross"].tolist()
-
-    # cost_today uses the DECLARED spread (2.0 points), never the measured one: it is "what
-    # this would cost today", the encargo's own definition of the edge's unit.
-    expected_cost_today = [SPREAD * TICK * POINT_VALUE * s for s in (3.0, 1.0, 5.0)]
-    assert priced["cost_today"].round(6).tolist() == expected_cost_today, priced["cost_today"].tolist()
-
-    recon = costs.reconcile(priced)
-    assert abs(recon["corr"] - 1.0) < 1e-9, f"exact-by-construction trades must reconcile: {recon}"
-    assert abs(recon["resid_mean"]) < 1e-9
-
-    got = one.measure(priced)
-    mean_cost_today = sum(expected_cost_today) / 3
-    assert abs(got["mean_gross"] - 43.0) < 1e-9, got["mean_gross"]
-    assert abs(got["median_gross"] - 33.0) < 1e-9, got["median_gross"]
-    assert abs(got["mean_cost"] - mean_cost_today) < 1e-9, got["mean_cost"]
-    assert abs(got["edge_mean"] - 43.0 / mean_cost_today) < 1e-9, got["edge_mean"]
-    assert abs(got["edge_median"] - 33.0 / mean_cost_today) < 1e-9, got["edge_median"]
-    assert got["breakeven_multiple"] == got["edge_mean"]
-
-    # The verdict: no owner threshold in this test crosses the fixture's edge, so it must pass.
-    cfg = {"verdict": {"min_edge_spreads": 2.0, "action": "mark"}}
-    result = one.run("strat-a", priced, recon, cfg, FOREX, identity="strat-a")
-    assert result["verdict"]["state"] == "pass", result["verdict"]
-    assert result["tabs"][0]["name"] == "reconcile", "reconciliation must render before the headline"
-    assert result["tabs"][1]["name"] == "headline"
-    assert "Reconciliación" in result["verdict"]["meaning"], "the verdict text must lead with it"
-    assert result["summary"]["costs_provisional"] is False, "forex with no PROVISIONAL why"
-
-    # A no_forex asset carries no commission warning: issue 26 settled once per trade (2026-09-27).
-    no_forex = {**FOREX, "class": "no_forex",
-               "segments": {"build": {"spread": "is"}, "oos1": {"spread": "oos"}},
-               "costs": dict(FOREX["costs"])}
-    warn_codes = {w["code"] for w in costs.warnings(no_forex)}
-    assert "issue26" not in warn_codes, warn_codes
-
-    # A PROVISIONAL cost stamps the result, forex or not.
-    stood_in = {**FOREX, "costs": {**FOREX["costs"],
-               "spread_is": {"use": SPREAD, "why": "PROVISIONAL, not agreed with the broker"}}}
-    assert {"provisional"} <= {w["code"] for w in costs.warnings(stood_in)}
-
-    # many.run() must find the same strategy and the same numbers through the population path.
-    stub_measure()
-    try:
-        names = pd.Series({"strat-a": "Strategy 1.1.1"})
-        panel = many.run(priced, names, cfg, FOREX)["panel"]
-    finally:
-        spread_share.measure = real_measure
-    row = panel.loc["Strategy 1.1.1"]
-    assert abs(row["edge_mean"] - got["edge_mean"]) < 1e-9
-    assert row["verdict"] == "MANTENER"
-
-    # action=drop below the bar must ask curate to discard it.
-    cfg_drop = {"verdict": {"min_edge_spreads": 100.0, "action": "drop"}}
-    panel_drop = many.run(priced, names, cfg_drop, FOREX)["panel"]
-    assert panel_drop.loc["Strategy 1.1.1", "verdict"] == "DESCARTAR"
-
-    # A feed with no bar library entry must refuse outright, never fall back to a guess.
-    try:
-        spread_share.measure(trades_by_hand(), "NO_SUCH_FEED_ANYWHERE", "H1")
-        raise AssertionError("an unmeasured feed must raise, not silently price at some default")
-    except SystemExit:
-        pass
-
-    # A sample with too few trades to trust a median must also refuse, on a feed whose bars
-    # DO exist — the count check, not the missing-file check, must be what fires here.
-    real_bar_source, real_read_bars = spread_share.bar_source, spread_share.read_bars
-    bars = pd.DataFrame({"Open": [100.0] * 200}, index=pd.date_range("2020-01-01", periods=200,
-                                                                     freq="1h"))
-    spread_share.bar_source = lambda feed: Path(__file__)   # any file that exists
-    spread_share.read_bars = lambda feed, timeframe: bars
-    try:
-        few = trades_by_hand().iloc[:2]   # 2 < MIN_TRADES
-        spread_share.measure(few, FEED, TIMEFRAME)
-        raise AssertionError("fewer than MIN_TRADES trades must refuse, not average anyway")
-    except SystemExit:
-        pass
-    finally:
-        spread_share.bar_source, spread_share.read_bars = real_bar_source, real_read_bars
-
-    print("ok")
+def test_per_trade_reads_only_oos(monkeypatch: pytest.MonkeyPatch) -> None:
+    """IS rows never reach the table, and the costs are the oos1 segment's."""
+    seen = {}
+    monkeypatch.setattr(costs, "read_bars", lambda feed, tf: BARS)
+    monkeypatch.setattr(reprice, "costs", lambda feed, segment: seen.setdefault("s", segment) and COSTS)
+    t = trades()
+    assert len(costs.per_trade(t, "X_M1", "H1")) == (t["sample"] == "OOS").sum()
+    assert seen["s"] == "oos1"
 
 
-def test_measure_reads_both_fills_of_long_and_short() -> None:
-    """Flat bars at 100; spread 0.02 + slippage 0.01 per fill. A Buy fills 100.03 and exits
-    99.99 (bid + slippage); a Sell fills 99.99 and exits 100.03: both embed 0.04. A Buy
-    stamped inside a bar (10:20) belongs to that bar, not the next one."""
-    index = pd.date_range("2020-01-01", periods=60, freq="1h")
-    bars = pd.DataFrame({"Open": [100.0] * 60}, index=index)
-    n = 40
-    t = pd.DataFrame({"Type": ["Buy"] * n + ["Sell"] * n,
-                      "Open price": [100.03] * n + [99.99] * n,
-                      "Close price": [99.99] * n + [100.03] * n,
-                      "Open time": list(index[:n]) * 2, "Close time": list(index[1:n + 1]) * 2,
-                      "sample": "IS"})
-    real = spread_share.bar_source, spread_share.read_bars
-    spread_share.bar_source = lambda feed: Path(__file__)
-    spread_share.read_bars = lambda feed, timeframe: bars
-    try:
-        for side in ("Buy", "Sell"):
-            got = spread_share.measure(t[t["Type"] == side], FEED, TIMEFRAME)["IS"]
-            assert abs(got - 0.04) < 1e-9, (side, got)
-        bars["Open"] = np.arange(60) + 100.0   # bar k opens at 100 + k
-        inside = t[t["Type"] == "Buy"].assign(**{"Open time": index[:n] + pd.Timedelta("20min")})
-        inside["Open price"] = 100.0 + np.arange(n) + 0.03
-        inside["Close price"] = 100.0 + np.arange(1, n + 1) - 0.01
-        inside["Close time"] = index[1:n + 1]
-        got = spread_share.measure(inside, FEED, TIMEFRAME)["IS"]
-        assert abs(got - 0.04) < 1e-9, got
-    finally:
-        spread_share.bar_source, spread_share.read_bars = real
+def test_off_grid_trade_is_refused() -> None:
+    """A trade stamped between bars cannot be repriced from a bar open."""
+    t = trades().head(3).assign(**{"Open time": BARS.index[5] + pd.Timedelta(minutes=7)})
+    with pytest.raises(ValueError, match="strategies"):
+        costs.price(t, BARS, COSTS)
 
 
 if __name__ == "__main__":
-    main()
-    test_measure_reads_both_fills_of_long_and_short()
+    sys.exit(pytest.main([__file__, "-q"]))

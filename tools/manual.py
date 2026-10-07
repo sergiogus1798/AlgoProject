@@ -48,9 +48,9 @@ FAMILIES = {
         "91-potencia-del-perfil", "92-perfil-agrupado"]),
     "05-cribado-oos": ("Cribado fuera de muestra", [
         "01-analisis-is-oos", "02-filtros", "03-comparar-muestras", "04-decaimiento",
-        "29-puerta", "49-snooping", "98-criba-mae-profundo", "99-monos-por-la-cadena"]),
+        "29-puerta", "98-criba-mae-profundo", "99-monos-por-la-cadena"]),
     "06-lecturas": ("Lecturas de una estrategia", [
-        "26-nulos", "50-edge-por-coste", "40-forma-del-beneficio", "42-calidad-de-la-entrada",
+        "26-nulos", "50-edge-por-coste", "42-calidad-de-la-entrada",
         "53-mapa-condicional", "51-estructura"]),
     "07-otros-mercados-y-timeframes": ("Otros mercados y otros timeframes", [
         "30-crossmarket", "05-retest-mercados", "39-crossmarket-lote", "31-crosstf"]),

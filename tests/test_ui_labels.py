@@ -33,7 +33,7 @@ def test_filter_words() -> None:
     """Every kind of filterable column has words, and the criterion writes no `:g` number."""
     cases = {"crossTF.H1.p": "Cross-timeframe · H1 · p",
              "mcRetest.stress_net_p5": "MC Retest · Neto p5 bajo estrés",
-             "spread.operaciones": "Spread real de Darwinex · Operaciones",
+             "feedQuality.operaciones": "Calidad del feed · Operaciones",
              "Net profit (IS)": "Net Profit IS",
              "dist:monkey/Sharpe [R]": "Distribución · Test del mono · Sharpe [R]"}
     for key, words in cases.items():

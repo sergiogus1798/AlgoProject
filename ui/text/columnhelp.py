@@ -11,9 +11,11 @@ from ui.text.columnhelp_closing import ATR, BENCH, LOTS, STRAT, WINNERS, atr, ex
 from ui.text.columnhelp_criteria import criteria
 from ui.text.columnhelp_fields import FIELDS
 from ui.text.columnhelp_metrics import METRICS
+from ui.text.columnhelp_tf import TF
 from ui.text.columnhelp_verdicts import VERDICTS
 
-STUDY = {**{(s, "verdict"): text for s, text in VERDICTS.items()}, **FIELDS}
+STUDY = {**{(s, "verdict"): text for s, text in VERDICTS.items()}, **FIELDS,
+         **{("crossTF", k): v[1] for k, v in TF.items()}}
 
 # Short Spanish headers for the raw field names, at most 22 characters. The owner's technical
 # words stay in English (Net Profit, Sharpe, PF, CAGR, OOS1…).
@@ -38,17 +40,32 @@ LABEL = {
     ("crossTF", "seen"): "Sharpe escalada", ("crossTF", "p"): "p",
     ("crossTF", "baseline"): "Sharpe madre", ("crossTF", "control"): "Sharpe control",
     ("crossTF", "reading"): "Lectura", ("crossTF", "trades"): "Operaciones",
-    ("crossmarket", "reason"): "Motivo", ("crossmarket", "markets"): "Mercados",
-    ("crossmarket", "cleared"): "Mercados superados", ("crossmarket", "fraction"): "Amplitud",
-    ("crossmarket", "under_alpha"): "Calendar Shift p ≤ α",
-    ("crossmarket", "paired_under_alpha"): "Timing Alpha p ≤ α",
-    ("crossmarket", "edge_r"): "Ventaja (ATR)", ("crossmarket", "worst_pf"): "Peor PF",
-    ("crossmarket", "median_pf"): "PF mediano", ("crossmarket", "pf_cv"): "STD del PF",
+    ("crossmarket", "markets"): "Mercados",
+    ("crossmarket", "markets_valid"): "Mercados válidos",
+    ("crossmarket", "invalid_fraction"): "Fracción no válida",
+    ("crossmarket", "fixed_distance"): "P1 · Dist. fijas",
+    ("crossmarket", "freq_off"): "P2 · Frec. distinta",
+    ("crossmarket", "freq_off_fraction"): "P2 · Fracción frec.",
+    ("crossmarket", "z_conj"): "P3 · z conjunta",
+    ("crossmarket", "p_conj"): "P3 · p conjunta",
+    ("crossmarket", "z_conj_v2"): "P4 · z en V2",
+    ("crossmarket", "z_conj_v0"): "z en V0",
+    ("crossmarket", "z_conj_v1"): "z en V1",
+    ("crossmarket", "z_minus_market"): "P5 · z sin un mercado",
+    ("crossmarket", "minus_market"): "Mercado quitado",
+    ("crossmarket", "p_breadth"): "P6 · p amplitud",
+    ("crossmarket", "breadth_count"): "Mercados a favor",
+    ("crossmarket", "tau_half"): "P7 · τ en la mitad",
+    ("crossmarket", "e_principal"): "Ventaja del principal",
+    ("crossmarket", "worse"): "P8 · En contra",
+    ("crossmarket", "worse_fraction"): "P8 · Fracción contra",
+    ("crossmarket", "z_beta"): "P9 · z pendiente",
+    ("crossmarket", "e_end"): "P9 · Ventaja final",
+    ("crossmarket", "beta"): "Pendiente por año",
+    ("crossmarket", "e_end_ratio"): "Ventaja final / media",
+    ("crossmarket", "net_t_pooled"): "t conjunta (neto)",
+    ("crossmarket", "trades"): "Operaciones",
     ("edgeCost", "edge_mean"): "Edge medio (× coste)",
-    ("edgeCost", "edge_median"): "Edge mediano (× coste)", ("edgeCost", "n"): "Operaciones",
-    ("edgeCost", "be_all"): "Punto muerto: todos", ("edgeCost", "be_commission"): "Punto muerto: comisión",
-    ("edgeCost", "be_swap"): "Punto muerto: swap", ("edgeCost", "be_spread"): "Punto muerto: spread",
-    ("edgeCost", "be_slippage"): "Punto muerto: slippage", ("edgeCost", "bites_first"): "Coste que muerde",
     ("mcRetest", "composite"): "Compuesto", ("mcRetest", "binding"): "Lo que limita",
     ("mcRetest", "stress_net_p5"): "Net Profit p5 estrés",
     ("mcRetest", "stress_cvar_dd_pct"): "CVaR DD % estrés", ("mcRetest", "vetoes"): "Vetos",
@@ -113,6 +130,8 @@ def label_for(study: str, field: str) -> str | None:
     """
     if (study, field) in LABEL:
         return LABEL[(study, field)]
+    if study == "crossTF" and field in TF:
+        return TF[field][0]
     if study == "exposure" and (got := BENCH.match(field)):
         return f"{STAT_LABEL[got[2]]} {SIZING_LABEL[got[1]]}"
     if study == "exposure" and (got := STRAT.match(field)):

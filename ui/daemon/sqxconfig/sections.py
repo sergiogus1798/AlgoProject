@@ -125,7 +125,7 @@ def where(fields: list[dict]) -> list[str]:
 
 
 def with_studies(sections: list[dict]) -> list[dict]:
-    """The `wfc` section with the study values behind it, and a CSCV section after it.
+    """The `wfc` section with the study values behind it, then the CSCV, the gate and falsePositives.
 
     Args:
         sections: What `one_file("build")` returned.
@@ -149,6 +149,10 @@ def with_studies(sections: list[dict]) -> list[dict]:
         out.append({"file": "build", "key": "cscv", "groups": [], "fields": cscv,
                     "help": studies.CSCV_HELP, "files": where(cscv),
                     "source": f"{len(where(cscv))} ficheros de estudio"})
+        for key, text in (("gate", studies.GATE_HELP), ("falsepositives", studies.FP_HELP)):
+            rows = [{**f, "help": clean(f["help"])} for f in studies.fields(key)]
+            out.append({"file": "build", "key": key, "groups": [], "fields": rows, "help": text,
+                        "files": where(rows), "source": f"{len(where(rows))} ficheros de estudio"})
     return out
 
 

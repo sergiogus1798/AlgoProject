@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from pipeline.autopilot import blind, closing, finalists, survivors, traded
+from pipeline.autopilot import blind, closing, finalists, kept, survivors, traded
 
-KINDS = {"blind", "wfm", "ledger", "joint", "reading", "structural", "stop", "edge",
+KINDS = {"blind", "wfm", "kept", "ledger", "joint", "reading", "structural", "stop", "edge",
          "finalists", "mt5verify"}
 
 
@@ -45,4 +45,6 @@ def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
         return closing.stop(project, role, mothers, out.name)
     if kind == "edge":
         return traded.edge(project, mothers)
+    if kind == "kept":
+        return kept.save(project, blind.bank(project))
     return finalists.write(project, mothers, out)

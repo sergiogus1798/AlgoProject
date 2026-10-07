@@ -65,14 +65,14 @@ def test_a_per_market_parquet_gives_one_key_per_market() -> None:
         out = Path(tmp)
         table = pd.DataFrame({"strategy": ["A", "A", "B"], "identity": ["ia", "ia", "ib"],
                               "market": ["EURUSD_M1", "UKOIL.cash_M1", "EURUSD_M1"],
-                              "category": ["family"] * 3, "excess_t": [2.1, -0.4, 0.3]})
+                              "category": ["family"] * 3, "z": [2.1, -0.4, 0.3]})
         table.to_parquet(out / "markets.parquet")
         rows = facts.from_folder("crossmarket", out)
         got = keyed(rows)
-        assert got[("A", "markets.eurusd_m1.excess_t")] == 2.1
-        assert got[("A", "markets.ukoil_cash_m1.excess_t")] == -0.4
-        assert got[("B", "markets.eurusd_m1.excess_t")] == 0.3
-        assert ("B", "markets.ukoil_cash_m1.excess_t") not in got
+        assert got[("A", "markets.eurusd_m1.z")] == 2.1
+        assert got[("A", "markets.ukoil_cash_m1.z")] == -0.4
+        assert got[("B", "markets.eurusd_m1.z")] == 0.3
+        assert ("B", "markets.ukoil_cash_m1.z") not in got
         assert {r["identity"] for r in rows} == {"ia", "ib"}
         assert not any("category" in k or k.endswith(".market") for _, k in got)
         pd.concat([table, table]).to_parquet(out / "markets.parquet")
@@ -93,19 +93,19 @@ def test_reading_and_delay_rows_are_addressable() -> None:
 
 
 def test_after_cut_keeps_a_judged_reading_before_the_judge() -> None:
-    """profitShape runs before step 8's judge when a rule names it; the monkey and entryQuality
-    after the cut, on whoever is left."""
+    """entryQuality runs before step 8's judge when a rule names it; the monkey after the cut,
+    on whoever is left."""
     actions = [{"n": "8", "kind": "python", "title": "t",
-                "tests": ["gate", "monkey", "profitShape", "entryQuality"]},
+                "tests": ["gate", "monkey", "entryQuality"]},
                {"n": "8", "kind": "judge"}]
-    cfg = {"steps": {"8": {"rules": [{"fact": "profitShape.concentration.verdict_pass",
+    cfg = {"steps": {"8": {"rules": [{"fact": "entryQuality.concentration.verdict_pass",
                                       "pass": ">= 1"}]}}}
     got = run.after_cut(actions, cfg)
-    assert got[0]["tests"] == ["gate", "profitShape"]
-    assert got[1]["kind"] == "judge" and got[2]["tests"] == ["monkey", "entryQuality"]
+    assert got[0]["tests"] == ["gate", "entryQuality"]
+    assert got[1]["kind"] == "judge" and got[2]["tests"] == ["monkey"]
     assert got[2]["cut"]
     plain = run.after_cut(actions, {"steps": {"8": {"rules": []}}})
-    assert plain[2]["tests"] == ["monkey", "profitShape", "entryQuality"]
+    assert plain[2]["tests"] == ["monkey", "entryQuality"]
 
 
 if __name__ == "__main__":

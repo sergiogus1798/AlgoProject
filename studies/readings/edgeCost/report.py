@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Edge per operation and breakeven cost — encargo 11. Step 8 over a harvest, or step 25 alone.
+"""Edge per operation over the cost paid, oos1 only — encargo 11, redefined by encargo 44. Step 8 or step 25.
 
 Reads a `studies.screening.gate.harvest` folder's `trades.parquet`/`metrics.parquet` — the
 same shape a step-25 per-strategy trade export carries, so one command serves both places of
@@ -7,14 +7,13 @@ the workflow named in `docs/AgentPDFs/WORKFLOW.md`.
 """
 
 import argparse
-import json
 from datetime import date
 
 from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import output
 from core.study.render import markdown
-from studies.readings.edgeCost import costs, inputs, many, one, spread_share
+from studies.readings.edgeCost import costs, inputs, many, one
 
 
 def main() -> None:
@@ -31,32 +30,26 @@ def main() -> None:
     folder = inputs.newest(a.project, a.databank)
     asset = costs.asset_for(a.feed)
     timeframe = inputs.timeframe(folder)
-    priced = costs.per_trade(inputs.trades(folder), asset, a.feed, timeframe)
+    priced = costs.per_trade(inputs.trades(folder), a.feed, timeframe)
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "edgeCost"
 
     if a.strategy:
         names = inputs.names(folder)
         identity = names[names == a.strategy].index[0]
         mine = priced[priced["identity"] == identity]
-        got = one.run(a.strategy, mine, costs.reconcile(mine), cfg, asset, identity)
+        got = one.run(a.strategy, mine, cfg, asset, identity)
         title = f"Edge por coste — {a.strategy}"
         lede = f"{asset['symbol']}, feed {a.feed}."
         print(markdown.render(got, title))
         print(f"-> {output.member(out, got, title, lede)}")
         return
 
-    print(f"spread realmente cobrado, medido contra la barra {timeframe}: "
-         f"{spread_share.measure(inputs.trades(folder), a.feed, timeframe)}")
     names = inputs.names(folder)
     got = many.run(priced, names, cfg, asset)
-    recon = costs.reconcile(priced)
-    print(f"reconciliación sobre toda la cosecha: corr {recon['corr']:.6f}, n={recon['n']}")
-    print(json.dumps(recon["example"], indent=2, ensure_ascii=False))
     output.population(out, "edgeCost", got["population"],
                       f"Edge por coste — {a.project} / {a.databank}")
     got["panel"].to_csv(out / "verdict.csv",
-                        columns=["identity", "edge_mean", "edge_median", "n", "be_all", "be_commission",
-                                 "be_swap", "be_spread", "be_slippage", "bites_first", "verdict"])
+                        columns=["identity", "edge_mean", "verdict"])
     write_manifest(out,
                    {"project": a.project, "databank": a.databank, "feed": a.feed,
                     "input": str((folder / "trades.parquet").resolve())},

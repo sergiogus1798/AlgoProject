@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from core import assetdata, bars
+from core.paths import DATA
 from engines.regimes import regime
 from perf.inputs import sample
 from portfolio.common.monteCarlo import run
@@ -17,8 +18,7 @@ from studies.data.feedQuality import detect as fq_detect, inputs as fq_inputs
 from studies.research.pooledProfile import inputs as pooled_inputs, one as pooled_one
 from studies.research.profilePower import inputs as power_inputs, one as power_one
 from studies.screening.falsePositives import chain as fp_chain, inputs as fp_inputs, model as fp_model
-from studies.screening.snoopingScreen import inputs as snooping
-from studies.transfer.crossmarket.simulate import paired
+from studies.closing.blindJoint import inputs as joint
 from ui.daemon.workflow import sources
 
 
@@ -100,24 +100,6 @@ def retest_load_sims(cfg: dict) -> dict:
     return {"scale": len(frame), "bytes_in": size}
 
 
-def crossmarket_paired(cfg: dict) -> dict:
-    """The blind-window reference the cross-market study builds for every holding period.
-
-    Args:
-        cfg: What config.load() returned.
-
-    Returns:
-        Bars covered and bytes read. Run over the same spread of holding periods the study
-        uses, because the cost of this kernel is one pass per period, not one in total.
-    """
-    path = sample.bars(cfg)
-    frame = bars.read(path)
-    enter, leave = frame["Open"].to_numpy(), frame["Close"].to_numpy()
-    for hold in (8, 16, 32, 64, 128):
-        paired.centered_means(enter, leave, hold, half=1000)
-    return {"scale": len(frame), "bytes_in": sample.weight([path])}
-
-
 def atrcalculator_reading(cfg: dict) -> dict:
     """The ATR stop study's reading (§2) on every strategy of one export, bootstrap included.
 
@@ -138,25 +120,24 @@ def atrcalculator_reading(cfg: dict) -> dict:
 
 
 def snooping_superior(cfg: dict) -> dict:
-    """The SPA and the StepM over one gate harvest's daily panel, at the study's own settings.
+    """The SPA and the StepM over one gate harvest's daily panel, at step 20's settings.
 
     Args:
         cfg: What config.load() returned.
 
     Returns:
         Panel cells (days × strategies) tested and bytes read. The panel is SQX's stored
-        curve differenced, not the close-to-close rebuild the study reads, and without the
-        benchmark subtracted: the cost is the bootstrap's, and it does not depend on what
-        the columns hold.
+        curve differenced, without the benchmark subtracted: the cost is the bootstrap's,
+        whatever the columns hold.
     """
     project, databank, asset = cfg["sample"]["harvest"]
-    folder = snooping.harvest(project, databank)
-    lo, hi = snooping.window(asset, "oos1")
+    folder = sorted((DATA / "harvest" / project / databank.replace(" ", "_")).glob("*/"))[-1]
+    lo, hi = (pd.Timestamp(t, unit="ms") for t in assetdata.window(assetdata.load(asset), "oos1"))
     curve = pd.read_parquet(folder / "equity.parquet")
     curve = curve[curve["sample"] == "OOS"].pivot(index="day", columns="identity", values="equity")
     panel = curve[(curve.index >= lo) & (curve.index < hi)].ffill().diff().iloc[1:].fillna(0.0)
-    boot, fwer = snooping.config([])["bootstrap"], snooping.config([])["stepm"]["fwer"]
-    block = superior.block_length(panel)
+    conf, block = joint.config([]), superior.block_length(panel)
+    boot, fwer = conf["bootstrap"], conf["stepm"]["fwer"]
     superior.spa(panel, block, boot["reps"], boot["seed"])
     superior.stepm(panel, fwer, block, boot["reps"], boot["seed"])
     return {"scale": int(panel.size), "bytes_in": sample.weight([folder / "equity.parquet"])}

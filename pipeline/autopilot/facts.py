@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from pipeline.autopilot import tffacts
 from studies.transfer.crossTF.verdict import MEANS
 from ui.daemon.workflow import sources
 from ui.daemon.workflow.steps import STEPS
@@ -52,7 +53,7 @@ def block(b: dict) -> list[tuple[str, float | None]]:
 
     A distribution gives its real value, median, p and percentiles; a table every numeric
     cell as `<title>.<first cell of the row>.<column>`; a verdict `verdict_pass` (1 when its
-    state is pass: a reading such as profitShape's `spread`) and each part's value. The other
+    state is pass) and each part's value. The other
     kinds are pictures of series and give nothing a rule can test.
     """
     t = slug(b.get("title") or b.get("label") or b["kind"])
@@ -92,11 +93,8 @@ def flatten(result: dict) -> list[tuple[str, float | None]]:
 
 
 def per_strategy(study: str, df: pd.DataFrame, prefix: str, skip: set[str]) -> list[dict]:
-    """Every column of a one-row-per-strategy table that holds a number, as `<prefix>.<col>`.
-
-    A column with any number in it is read; its text cells (and a bool column's None, where a
-    cascade never reached the strategy) are dropped by the caller as not numbers.
-    """
+    """Every column of a one-row-per-strategy table with a number in it, as `<prefix>.<col>`;
+    its text cells and None (a cascade that never reached the strategy) the caller drops."""
     ids = df["identity"].fillna("") if "identity" in df.columns else pd.Series("", index=df.index)
     rows = []
     for col in df.columns.difference(skip, sort=False):
@@ -168,8 +166,9 @@ def crosstf_rows(folder: Path) -> list[dict]:
             numeric column (trades, p, z, `z_new`…) and `seen_all` / `p_all` (`net`, `p_net`…).
         `…<stat>_vs_original` — over the baseline's; `combined.*` — her siblings' sum.
         `reading.<tf>.<reading>` — 1 for the study's reading of that sibling, 0 for every other
-            reading of `verdict.MEANS`; `reading.n_<reading>` counts them, 0 included — an
-            absent count would read as a missing fact, and a missing fact is limbo.
+            reading of `verdict.MEANS`; `reading.n_<reading>` counts them, 0 included (absent
+            would read as a missing fact, and that is limbo).
+        `tf.*` — T0-T4, beside the old and not yet cutting: `tffacts.rows`.
     """
     cells = pd.read_parquet(folder / "cells.parquet")
     rows = []
@@ -200,12 +199,12 @@ def crosstf_rows(folder: Path) -> list[dict]:
     for mother, got in readings.groupby("mother")["reading"]:
         for reading in MEANS:
             add(mother, f"reading.n_{reading}", (got == reading).sum())
-    return rows
+    return rows + tffacts.rows(folder)
 
 
 def gather(project: str, n: str) -> pd.DataFrame:
     """Every number the studies of step `n` and its extras (`steps.EXTRA`: step 8's monkey,
-    profitShape, entryQuality) wrote for `project`, from each one's newest result.
+    entryQuality) wrote for `project`, from each one's newest result.
 
     Args:
         project: Project name.

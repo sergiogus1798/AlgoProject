@@ -9,9 +9,3 @@
 verdict:
   min_edge_spreads: ledger:edgeCost.min_edge_spreads
   action: ledger:edgeCost.action
-
-# Color de las tablas de sensibilidad (encargo 39). PROPUESTA, no fijada: la fija el DUEÑO.
-# Múltiplo de punto muerto a partir del cual un coste se pinta en verde (hay margen para que
-# empeore); por debajo, rojo. Ver el informe del encargo para el reparto medido de la población.
-sensitivity:
-  margin_ok: 2.0

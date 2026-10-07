@@ -32,8 +32,7 @@ def _histogram(values: pd.Series, unit: str, sample: str) -> dict:
     return block | {"mark": "media", "row_unit": "$"}
 
 
-def one(sample: str, equity: pd.DataFrame, trades: pd.DataFrame, metrics: dict,
-        real_net: float | None) -> dict:
+def one(sample: str, equity: pd.DataFrame, trades: pd.DataFrame, metrics: dict) -> dict:
     """One sample's figures and, per unit, its return distribution.
 
     Args:
@@ -41,11 +40,9 @@ def one(sample: str, equity: pd.DataFrame, trades: pd.DataFrame, metrics: dict,
         equity: The sample's daily cumulative P&L (`day`, `equity`).
         trades: The sample's trades.
         metrics: The cosecha's SQX metrics row; the joined sample has no Sharpe there.
-        real_net: The net at the real spread and slippage from the `spread` study, None when
-            that study has not repriced this strategy.
 
     Returns:
-        `rows` [{label, value, unit, study}] — `study` names what computes a None — and
+        `rows` [{label, value, unit}] and
         `returns` {unit: {rows, histogram}}.
     """
     pnl = trades["Profit/Loss"].astype(float)
@@ -53,8 +50,6 @@ def one(sample: str, equity: pd.DataFrame, trades: pd.DataFrame, metrics: dict,
     sharpe = metrics.get(f"Sharpe Ratio [{HARVEST[sample]}]") if sample in HARVEST else None
     rows = [{"label": "Operaciones", "value": len(trades), "unit": ""},
             {"label": "Net Profit (SQX, suma de operaciones)", "value": float(pnl.sum()), "unit": "USD"},
-            {"label": "Net Profit con spread y slippage reales (suma de operaciones)", "value": real_net,
-             "unit": "USD", "study": "spread"},
             {"label": "Profit Factor", "value": _pf(pnl), "unit": ""},
             {"label": "Win Rate", "value": float((pnl > 0).mean() * 100) if len(pnl) else None,
              "unit": "%"},
@@ -72,48 +67,44 @@ def one(sample: str, equity: pd.DataFrame, trades: pd.DataFrame, metrics: dict,
     return {"rows": rows, "returns": returns}
 
 
-def joined(data: dict, real: dict) -> tuple[pd.DataFrame, pd.DataFrame, float | None]:
+def joined(data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     """IS and OOS1 as one sample: OOS's daily curve continued from IS's last value.
 
     Returns:
-        (the daily curve, the trades, the real-cost net — None unless both samples have one).
+        (the daily curve, the trades).
     """
     eq = data["equity"][data["equity"]["sample"].isin(("IS", "OOS"))].sort_values(["sample", "day"])
     first = eq[eq["sample"] == "IS"]["equity"]
     lift = (eq["sample"] == "OOS") * (float(first.iloc[-1]) if len(first) else 0.0)
     trades = data["trades"][data["trades"]["sample"].isin(("IS", "OOS"))]
-    net = real["IS"] + real["OOS"] if {"IS", "OOS"} <= set(real) else None
-    return eq.assign(equity=eq["equity"] + lift), trades, net
+    return eq.assign(equity=eq["equity"] + lift), trades
 
 
-def build(project: str, data: dict, curve: dict, live: bool) -> dict:
+def build(project: str, data: dict, live: bool) -> dict:
     """Every sample of one strategy.
 
     Args:
         project: Project name, whose ledger opens OOS2.
         data: `harvest.read`'s dict, live or archived.
-        curve: `costcurve.curve` of the same strategy, for the real-cost nets.
         live: False for an archived version, which never holds OOS2.
 
     Returns:
         `strategy`, `harvest_day`, `units`, `default_unit`, and `samples` {IS, OOS1, IS+OOS1,
         OOS2}: each `one`'s dict, or `{blocked, why?}` for OOS2 while sealed or without export.
     """
-    real = curve["real_net"] or {}
     samples = {}
     for sample in ("IS", "OOS1"):
         tag = HARVEST[sample]
         samples[sample] = one(sample, data["equity"][data["equity"]["sample"] == tag],
-                              data["trades"][data["trades"]["sample"] == tag], data["metrics"],
-                              real.get(tag))
-    equity, trades, net = joined(data, real)
-    samples[JOINED] = one(JOINED, equity, trades, data["metrics"], net)
+                              data["trades"][data["trades"]["sample"] == tag], data["metrics"])
+    equity, trades = joined(data)
+    samples[JOINED] = one(JOINED, equity, trades, data["metrics"])
     locked = oos2.blocked(project)
     if locked:
         samples["OOS2"] = locked
     else:
         got = oos2.read(project, data["identity"]) if live else "el archivo no guarda OOS2"
         samples["OOS2"] = ({"blocked": got} if isinstance(got, str) else
-                           one("OOS2", got["equity"], got["trades"], got["metrics"], None))
+                           one("OOS2", got["equity"], got["trades"], got["metrics"]))
     return {"strategy": data["strategy"], "harvest_day": data["day"],
             "units": list(tradestats.UNITS), "default_unit": DEFAULT_UNIT, "samples": samples}

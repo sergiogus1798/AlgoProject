@@ -14,7 +14,6 @@ from ui.daemon.results.catalogue import STUDIES
 # different hash than the study does. A study absent here has no config.yaml.
 LOADERS = {
     "gate": "studies.screening.gate.inputs:config",
-    "snoopingScreen": "studies.screening.snoopingScreen.inputs:config",
     "falsePositives": "studies.screening.falsePositives.inputs:config",
     "crossmarket": "studies.transfer.crossmarket.inputs.config:load",
     "crossTF": "studies.transfer.crossTF.inputs:config",
@@ -30,24 +29,20 @@ LOADERS = {
     "atrCalculator": "studies.closing.atrCalculator.inputs:config",
     # the monkey has no config.yaml of its own: its knobs are the null engine's
     "monkey": "engines.nulls.inputs:config",
-    "profitShape": "studies.readings.profitShape.inputs:config",
     "entryQuality": "studies.readings.entryQuality.inputs:config",
     "edgeCost": "studies.readings.edgeCost.inputs:config",
     "conditionalMap": "studies.readings.conditionalMap.inputs:config",
     "structure": "studies.readings.structure.inputs:config",
     "monteCarlo": "portfolio.common.monteCarlo.inputs.config:load",
     "feedQuality": "studies.data.feedQuality.inputs:config",
-    "spread": "studies.data.spread.inputs:config",
     "maeDepth": "studies.screening.maeDepth.inputs:config",
 }
 
 # A study whose population run signs a config that differs from what LOADERS reads, because
-# it substitutes one knob before fingerprinting (crossmarket: `nulls.draws` -> `nulls.
-# batch_draws`, `many.run`'s own docstring). Absent here, the population and per-strategy
-# scopes sign the same config. OPEN #52: without this, a population result always read stale.
-LOADERS_POPULATION = {
-    "crossmarket": "studies.transfer.crossmarket.inputs.config:population",
-}
+# it substitutes one knob before fingerprinting. Absent here, the population and per-strategy
+# scopes sign the same config. None today: crossmarket's `nulls.draws` -> `batch_draws`
+# substitution went with its old simulation (encargo 46).
+LOADERS_POPULATION: dict[str, str] = {}
 
 # Prose copied into reports, not a knob: the gate's screens each carry a `why`.
 NOT_KNOBS = ("why",)

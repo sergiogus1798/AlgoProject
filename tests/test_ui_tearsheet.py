@@ -26,7 +26,7 @@ from ui.desktop.theme import QSS  # noqa: E402
 
 # The USDJPY Donchian project's newest cosecha, the one the routes read (2026-09-29: Results cut
 # to 21; the 5.16.75 pinned before went with the other 178). Strategy 13.14.82 is among the 21
-# and has a spread report, so its P&L carries the real curve.
+# and its harvest.
 PROJECT, DATABANK, STRATEGY = ("Test_USDJPY_donchianUpperCrossUp_M30", "Results",
                                "Strategy 13.14.82")
 IDENTITY = "47da0743d600c27cedda1f78cc30de3ebd4935f6624d8ffbf4e9cc0e0e6140dd"
@@ -75,7 +75,7 @@ def block(result: dict, sample: str, title: str) -> dict:
 
 
 def test_sheet(http: TestClient) -> None:
-    """IS and OOS apart, years summing to the curve, the real and the top-less curves, < 1 s warm."""
+    """IS and OOS apart, years summing to the curve, the top-less curve, < 1 s warm."""
     ask(http, "tearsheet")
     started = time.time()
     got = ask(http, "tearsheet")
@@ -91,9 +91,9 @@ def test_sheet(http: TestClient) -> None:
         assert abs(sum(i["value"] for i in years["items"]) - float(equity["equity"].iloc[-1])) < 0.05
         curve = block(got, s, "P&L acumulado")
         assert curve["x"][0] == f"{equity['day'].iloc[0]:%Y-%m-%d}", s   # nothing of the other
-        assert [x["ink"] for x in curve["series"]] == [f"sqx.{s}", f"real.{s}"], s
+        assert [x["ink"] for x in curve["series"]] == [f"sqx.{s}"], s
         assert round(curve["series"][0]["values"][-1], 2) == round(float(equity["equity"].iloc[-1]), 2)
-        assert len(block(cut, s, "P&L acumulado")["series"]) == 4, s
+        assert len(block(cut, s, "P&L acumulado")["series"]) == 2, s
         assert block(got, s, "Drawdown")["unit"] == "%" and block(cut, s, "Drawdown")["unit"] == "$"
     assert "error" in ask(http, "tearsheet", dd="€")
     print(f"    tearsheet warm {warm:.2f} s")
@@ -176,7 +176,7 @@ def test_draw(app: QApplication) -> None:
     page.ficha.dd.button(1).click()                  # and the drawdown in $
     app.processEvents()
     pnl = [b for b in view.results[0]["tabs"][0]["blocks"] if b["title"] == "P&L acumulado"][0]
-    assert len(pnl["series"]) == 4, [x["label"] for x in pnl["series"]]
+    assert len(pnl["series"]) == 2, [x["label"] for x in pnl["series"]]
     shot(page, "ficha-top")
     page.open_study("gate")                  # a study leaves the Ficha and brings the run bar
     assert not page.on_ficha() and page.bar.isVisibleTo(page) and page.view.results

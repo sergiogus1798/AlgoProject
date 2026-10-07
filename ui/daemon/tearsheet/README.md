@@ -2,15 +2,14 @@
 
 Order items 1 and 2 of `scratch/ui-order-2026-09-27.md`, trimmed by the owner on 2026-09-28: what
 the harvest holds about the strategy SELECTION names, as two contract results the window draws
-with `blocks.ResultView`. Per sample, three blocks: «P&L acumulado» (SQX's daily curve and the one
-at the real spread and slippage, each dashed again without its best X % of trades when `top` is
-set), «Drawdown» (SQX's curve below its peak, in % or in $) and «P&L por año» (columns). The
+with `blocks.ResultView`. Per sample, three blocks: «P&L acumulado» (SQX's daily curve, dashed again
+without its best X % of trades when `top` is set), «Drawdown» (SQX's curve below its peak, in % or in $) and «P&L por año» (columns). The
 monthly grids, the facts table, the rolling windows, the 5 % concentration bar and the episodes
 table were removed with it. Arithmetic only (cumulative sums, drawdowns, yearly sums); no study.
 
 ```
 api ─▶ harvest.read (newest harvest/<P>/<D>/<day>/, pyarrow filter on identity, IS/OOS asserted)
-     ├ sheet.build ─▶ pnl.curves ◀─ strategy.costcurve.repriced (the spread report's trades)
+     ├ sheet.build ─▶ pnl.curves
      │              · drawdowns.underwater · months.monthly/yearly     (tabs «IS», «OOS»)
      └ exits.build ─▶ tradestats.by_exit · exit_paths                  (tabs «IS», «OOS»)
 ```
@@ -23,10 +22,10 @@ api ─▶ harvest.read (newest harvest/<P>/<D>/<day>/, pyarrow filter on identi
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `__init__.py` | Names the package; holds no code | — | — |
-| `api.py` | `ROUTER`: `GET /api/tearsheet` (`&top=0-50&dd=%\|$`) and `GET /api/tearsheet/exits`, `?project&databank&identity&sample=&source=live\|archive&version=`; `sample` IS, OOS1 (or OOS) keeps one tab, OOS2 goes through `oos2`; the `spread` report folders live or frozen in the version; a refusal is `{"error"}`, never a 500 | imported | request → contract dict |
+| `api.py` | `ROUTER`: `GET /api/tearsheet` (`&top=0-50&dd=%\|$`) and `GET /api/tearsheet/exits`, `?project&databank&identity&sample=&source=live\|archive&version=`; `sample` IS, OOS1 (or OOS) keeps one tab, OOS2 goes through `oos2`; a refusal is `{"error"}`, never a 500 | imported | request → contract dict |
 | `harvest.py` | The newest cosecha of (P, D), one identity's equity, trades and metrics row; refuses a sample outside IS/OOS; the sentence naming the harvest command when there is none | imported | disk → dict · sentence |
 | `borrow.py` | A databank with no cosecha of its own (Cross Market, Cross TF, MCR, SPP, WFM…) reads a cosecha of the project: the **same identity** first (the MCR_All ingest keeps the build's), else **by name** (the databank's roster, else the `strategy` the page passes, in either spelling) — and the Ficha carries a warning saying which; cut or doubled names answer a grey sentence | imported by `harvest.read` | roster + cosecha → (databank, identity, note) |
-| `pnl.py` | One sample's curves on one daily index: SQX's, the real one (SQX's corrected on each closing day by the repriced trades), and each without its own best `top` % of trades | imported | curve, trades, repriced → series |
+| `pnl.py` | One sample's curves on one daily index: SQX's, and without its best `top` % of trades | imported | curve, trades → series |
 | `drawdowns.py` | Underwater in money and in % of the account's peak | imported | daily curve → series |
 | `months.py` | Monthly P&L exact to the cent, and the years they add up to | imported | daily curve → months, years |
 | `tradestats.py` | Starting capital, the per-exit table and one cumulative path per exit type; per-trade returns in USD per lot or per trade (`SHORT`: «$/lote», «$/trade») and their shape (mean, std, skew, excess kurtosis) | imported | trades → numbers |
@@ -36,7 +35,7 @@ api ─▶ harvest.read (newest harvest/<P>/<D>/<day>/, pyarrow filter on identi
 
 Test: `python3 tests/test_ui_tearsheet.py` — both routes on
 `harvest/Test_USDJPY_donchianUpperCrossUp_M30/Results/2026-09-28/` (≈0.3 s warm): the three
-blocks per sample, years summing to the curve, the real curve present, four series with `top`,
+blocks per sample, years summing to the curve, two series with `top`,
 the drawdown's unit, exits summing to the trades, the refusals on synthetic cosechas, and the
 Ficha drawn offscreen with its switches (grabs `scratch/ui-plan/shots/H1-*.png`).
 
@@ -56,10 +55,6 @@ Ficha drawn offscreen with its switches (grabs `scratch/ui-plan/shots/H1-*.png`)
 - **Two P&L totals, two sources.** The P&L, the drawdown and the years read `equity.parquet`
   (SQX's daily curve from the .sqx); the exits sum `trades.parquet`. They differ by tens of dollars
   on real strategies, and each note names its source.
-- **The real curve needs the `spread` report**, as the basic panel's (`strategy/costcurve`):
-  without one the P&L draws SQX's curve alone and its note says so. OOS2 never has one.
-- **«Sin el top X %» ranks each curve in its own column**: SQX's best trades by `Profit/Loss`,
-  the real curve's by the repriced column — at least one trade, taken off on its close day.
 - **% drawdown needs the account.** The P&L curve peaks at 0 on day one, so the percentage is
   of the balance at the peak: capital (first `Balance` − its `Profit/Loss`) plus the peak P&L;
   a sample without trades falls back to $.

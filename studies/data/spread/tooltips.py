@@ -16,12 +16,6 @@ TIPS = {
                    "`relativo` es el spread proporcional al precio.",
     "safety.factor": "Margen sobre el spread medido al proponer el coste que se declara en SQX.",
     "safety.slippage_share": "El slippage que se declara es esta parte del spread medido (antes la mitad).",
-    "reprice.near_minutes": "Una operación cuyo minuto no tiene tick de Darwinex a menos de "
-                            "estos minutos se reajusta con el spread del modelo, no con uno real.",
-    "reprice.judge": "Contra qué se juzga si una estrategia se rompe: sólo el spread real, o el "
-                     "spread real más un slippage que es la mitad de él en cada relleno.",
-    "reprice.action": "mark sólo señala la estrategia que no cubre el spread real; drop escribe "
-                      "DESCARTAR en verdict.csv para que /curate la saque.",
     "band.assets": "Cada activo con su feed de ticks de Darwinex: la curva sólo necesita los ticks.",
     "band.quantiles": "Los cuantiles del spread diario que se ajustan como curvas del precio; el "
                       "primero y el último dan el Min y el Max del MC Retest de spread.",

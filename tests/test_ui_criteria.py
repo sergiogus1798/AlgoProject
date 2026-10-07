@@ -127,7 +127,41 @@ def test_by_rows() -> None:
     assert by_built([], old) == {}
 
 
+def test_missing_and_nested_roundtrip() -> None:
+    """Step 8's live rules go through the dialog unchanged — `missing: fail`, the nested R5d — and
+    saved over a copy, the YAML differs only in the rule edited."""
+    import os
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+    from ui.desktop.criteria.dialog import RuleDialog
+    app = QApplication.instance() or QApplication([])
+    live = yaml.safe_load(REAL.read_text(encoding="utf-8"))["steps"]["8"]["rules"]
+    nested = next(r for r in live if "all" in r and any("any" in p for p in r["all"]))
+    gone = next(r for r in live if r.get("missing") == "fail")
+    for r in live:
+        d = RuleDialog(None, "t", [], r, why="frase")
+        assert d.built() == r, r
+    assert app and "missing" in RuleDialog(None, "t", [], gone).built()
+    with tempfile.TemporaryDirectory() as tmp:
+        copy, log = Path(tmp) / "criteria.yaml", Path(tmp) / "history.jsonl"
+        shutil.copy(REAL, copy)
+        with mock.patch.dict(read.FILES, {"criteria": copy, "history": log}):
+            c = http()
+            for old in (gone, nested):
+                d = RuleDialog(None, "t", [], old)
+                if "fact" in old:
+                    d.value.setText("2")
+                new = d.built()
+                assert rule(c, n="8", at=live.index(old), rule=new, was=old)[0] == 200
+                after = yaml.safe_load(copy.read_text(encoding="utf-8"))["steps"]["8"]["rules"]
+                live2 = [new if r is old else r for r in live]
+                assert after == live2 and (new != old) == ("fact" in old)
+                live = live2
+            assert rule(c, n="8", rule={"fact": "x", "pass": ">= 1", "missing": "boom"})[0] == 422
+
+
 if __name__ == "__main__":
+    test_missing_and_nested_roundtrip()
     test_by_rows()
     test_state_write_stamp_freeze()
     test_labels()

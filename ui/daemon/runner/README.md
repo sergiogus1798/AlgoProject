@@ -16,7 +16,7 @@ install over HTTP or starts one.
 | `batchrun.py` | The batch itself: `nice 10`, one BLAS thread, imports each study once, forks `workers` processes (`core.fanout`), runs each strategy's `-m` command in one of them through `runpy` into `batches/<plan>/NNNN.log`, prints `PROGRESS` per strategy and the tail of each failure; exit 1 only when every strategy failed | `python3 -m ui.daemon.runner.batchrun --plan P --workers N` (the daemon starts it) | plan → per-strategy results + log |
 | `offer.py` | `offer(project, databank, strategy, asset)`: every study the runner refuses here for this strategy, its sentence, and `go` — the databank its Databanks tab reads (`layout.TABS`) when that one holds exactly one strategy of the same name, else why not (absent, a name collision, or the databank unreadable: on no install or SQX writing it). ~1.2 s, so the window asks it off the GUI thread | imported | place → `{study: {why, go}}` |
 | `table.py` | Every study's entry, merged; one request into its jobs, or the reason none can start | imported | request → argv list · sentence |
-| `screening.py` | The command lines of steps 4-8: gate, isOos, filters, decay, monkeyExcess, feedQuality, spread, snoopingScreen, and why the rest cannot start | imported | context → argv · sentence |
+| `screening.py` | The command lines of steps 4-8: gate, isOos, filters, decay, monkeyExcess, feedQuality, spread, and why the rest cannot start | imported | context → argv · sentence |
 | `transfer.py` | The command lines of steps 9-16: crossmarket, crossTF, mcRetest, spp; crossmarket's per-market sub-tests | imported | context → argv · sentence |
 | `optimisation.py` | The command lines of steps 16.5-19: cloud, wfc, cscv, marketSurfaces over a mother's batch, and wfm | imported | context → argv · sentence |
 | `readings.py` | The command lines of readings, closing (blindJoint included) and the trade Monte Carlo | imported | context → argv · sentence |
@@ -42,7 +42,7 @@ install over HTTP or starts one.
   stored result (`/api/study/only?strategy=`), mapped back to the sub-test label by the rerun.
 - **A batch study (cloud, wfc, cscv, marketSurfaces) refuses when the mother has two batches**,
   `strategyPermutations/` and `pipeline/`: which one is the owner's call.
-- **Studies that sign a ledger row under a template family** (snoopingScreen, wfc, cscv,
+- **Studies that sign a ledger row under a template family** (wfc, cscv,
   marketSurfaces, blindJoint) get `--family` = the template's name in
   `AlgoData/projects/registry.csv` (owner, Q9 of plan 24): a library template is
   `<name>/template.sqx`, so the name is its folder, not the file's stem. A project with no

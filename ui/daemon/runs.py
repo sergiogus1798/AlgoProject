@@ -115,14 +115,6 @@ def atr_calculator(c: dict) -> list[str] | str:
             "--timeframe", frames[0], "--strategy", c["strategy"]]
 
 
-def profitshape(c: dict) -> list[str] | str:
-    """Which few trades and months the result depends on; prints, writes nothing."""
-    if own_trades(c):
-        return own_trades(c)
-    return ["-m", "studies.readings.profitShape.report", "--export", c["trades"], "--strategy",
-            c["strategy"]]
-
-
 def entryquality(c: dict) -> list[str] | str:
     """The entry alone, against random entries at the same hours; prints, writes nothing."""
     if own_trades(c):
@@ -157,7 +149,7 @@ def crossmarket(c: dict) -> list[str] | str:
 
 RUNS = {"gate": gate, "monteCarlo": monte_carlo, "monkey": nulls, "exposure": exposure,
         "atrCalculator": atr_calculator,
-        "profitShape": profitshape, "entryQuality": entryquality, "decay": decay,
+        "entryQuality": entryquality, "decay": decay,
         "mcRetest": mc_retest, "wfm": wfm, "crossmarket": crossmarket,
         "curate": lambda c: "es una skill: /curate, desde Claude Code",
         "wfc": lambda c: "se corre desde el pipeline, sobre el lote de variantes"}

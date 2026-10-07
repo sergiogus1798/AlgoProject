@@ -99,50 +99,58 @@ FIELDS = {
     ("crossTF", "trades"): "Operaciones de la hermana escalada en ese timeframe. Con 0 la "
                            "lectura es silent: no operar no es fallar.",
 
-    ("crossmarket", "reason"): "La frase del veredicto: cuántos mercados de cuántos tienen la "
-                               "esperanza por encima de cero, contra el umbral.",
-    ("crossmarket", "markets"): "Mercados en los que se pudo leer la estrategia.",
-    ("crossmarket", "cleared"): "Mercados cuyo intervalo 5–95 % de la esperanza por operación, "
-                                "ya con coste, queda entero por encima de cero.",
-    ("crossmarket", "fraction"): "Mercados superados entre mercados leídos, de 0 a 1. Por "
-                                 "debajo de 0,5 la estrategia se descarta.",
-    ("crossmarket", "under_alpha"): "Mercados con p de 0,05 o menos contra Calendar Shift, que "
-                                    "mueve cada operación semanas enteras dentro de su "
-                                    "semestre. Se cuenta, no decide.",
-    ("crossmarket", "paired_under_alpha"): "Mercados con p de 0,05 o menos en Timing Alpha: "
-                                           "cada operación contra todas las ventanas de su "
-                                           "duración cerca de ella. Dice si sus entradas eligen "
-                                           "momento; se cuenta, no decide.",
-    ("crossmarket", "edge_r"): "Mediana entre mercados del retorno medio por operación real "
-                               "menos el mediano de los backtests al azar (Calendar Shift), en "
-                               "ATR mediano de cada mercado. Positivo = entra mejor que el "
-                               "azar.",
-    ("crossmarket", "worst_pf"): "Profit Factor del peor mercado, sobre los retornos por "
-                                 "operación que Python reconstruye en sus barras con su coste.",
-    ("crossmarket", "median_pf"): "Mediana del Profit Factor entre mercados, con el mismo "
-                                  "cálculo que el peor.",
-    ("crossmarket", "pf_cv"): "Desviación típica del Profit Factor entre mercados. Baja = se "
-                              "comporta parecido en todos; alta = uno o dos mercados con suerte "
-                              "cargan el resultado. Vacía con un solo mercado.",
+    ("crossmarket", "markets"): "Mercados de la lista de la estrategia, válidos o no.",
+    ("crossmarket", "markets_valid"): "Mercados que pasan los controles previos (precios alineados, "
+                                      "valor del punto y costes bien). Sólo con ellos se prueba.",
+    ("crossmarket", "invalid_fraction"): "Parte de la lista que no se pudo usar. Si pasa del 25 % "
+                                         "la prueba entera queda en duda.",
+    ("crossmarket", "fixed_distance"): "Cuántos parámetros de la estrategia son distancias fijas "
+                                       "en puntos o pips (un stop de 50 puntos). No significan lo "
+                                       "mismo en otro mercado. 0 = ninguno.",
+    ("crossmarket", "freq_off"): "Mercados donde la estrategia opera con una frecuencia muy distinta "
+                                 "a la esperable por su mercado principal: su regla no se traslada.",
+    ("crossmarket", "freq_off_fraction"): "Mercados con otra frecuencia entre mercados válidos, de 0 "
+                                          "a 1.",
+    ("crossmarket", "z_conj"): "Cuántas desviaciones del azar gana la estrategia sumando todos los "
+                               "mercados. El azar son sus mismas entradas movidas semanas enteras. "
+                               "2,33 ≈ una probabilidad del 1 % de que sea suerte.",
+    ("crossmarket", "p_conj"): "Probabilidad de que el azar iguale o supere el resultado conjunto "
+                               "real. Cuanto más baja, menos parece suerte.",
+    ("crossmarket", "z_conj_v2"): "La z conjunta sólo en V2, los años de oos1 del principal: años "
+                                  "que el generador no vio. Negativa = dejó de funcionar ahí.",
+    ("crossmarket", "z_conj_v0"): "La z conjunta en V0, los años anteriores al build del principal. "
+                                  "Anotada, no juzga.",
+    ("crossmarket", "z_conj_v1"): "La z conjunta en V1, los años del build del principal, donde la "
+                                  "estrategia se ajustó. Anotada, no juzga.",
+    ("crossmarket", "z_minus_market"): "La z conjunta más baja que sale al quitar, de uno en uno, cada "
+                                       "mercado. Alta = no cuelga de un solo mercado.",
+    ("crossmarket", "minus_market"): "El mercado cuya retirada baja más la z conjunta.",
+    ("crossmarket", "p_breadth"): "Probabilidad de que tantos mercados salgan a favor sólo por suerte. "
+                                  "Baja = la ventaja se repite en más mercados de lo que daría el azar.",
+    ("crossmarket", "breadth_count"): "Mercados donde la estrategia gana más que el azar en su "
+                                      "mediana.",
+    ("crossmarket", "tau_half"): "Ventaja por operación que mantiene en la mitad de los mercados, "
+                                 "como parte de la que tiene en el principal. Vacía hasta que el paso 8 "
+                                 "entregue la ventaja del principal.",
+    ("crossmarket", "e_principal"): "Ventaja por operación de la estrategia en su mercado principal "
+                                    "(el denominador de P7). Vacía hasta que la entregue el paso 8.",
+    ("crossmarket", "worse"): "Mercados donde la estrategia va claramente peor que el azar (z de ese "
+                              "mercado de −1,65 o menos).",
+    ("crossmarket", "worse_fraction"): "Mercados en contra entre mercados válidos, de 0 a 1.",
+    ("crossmarket", "z_beta"): "Cuántas desviaciones se aparta del azar la pendiente de su ventaja año "
+                               "a año. Muy negativa = la ventaja se apaga con el tiempo.",
+    ("crossmarket", "e_end"): "Ventaja por operación que la tendencia anual estima para el último año. "
+                              "Positiva = al final aún queda ventaja.",
+    ("crossmarket", "beta"): "Cuánto cambia por año la ventaja por operación, en R. Anotada.",
+    ("crossmarket", "e_end_ratio"): "Ventaja estimada del último año entre la ventaja media de todos los "
+                                    "años. Anotada.",
+    ("crossmarket", "net_t_pooled"): "t semanal del neto de SQX sumado en los mercados válidos. Anotada, "
+                                     "no juzga: no usa las corridas al azar.",
+    ("crossmarket", "trades"): "Operaciones de la estrategia en los mercados válidos.",
 
-    ("edgeCost", "edge_mean"): "Beneficio bruto medio por operación (antes de spread y "
-                               "comisión) entre el coste medio por operación que se modela hoy "
-                               "(spread declarado del activo más comisión). Se juzga contra 2.",
-    ("edgeCost", "edge_median"): "Lo mismo con la mediana del bruto: muy por debajo del edge "
-                                 "medio, unas pocas operaciones grandes sostienen la media.",
-    ("edgeCost", "n"): "Operaciones leídas.",
-    ("edgeCost", "be_all"): "Por cuánto hay que multiplicar los cuatro costes a la vez (comisión, "
-                            "swap, spread y slippage de hoy) para que el edge medio llegue a 0.",
-    ("edgeCost", "be_commission"): "Por cuánto hay que multiplicar la comisión sola para que el "
-                                   "edge medio llegue a 0. Vacío: no cuesta nada.",
-    ("edgeCost", "be_swap"): "Por cuánto hay que multiplicar el swap solo (noches, la triple "
-                             "cuenta 3) para que el edge llegue a 0. Vacío: es un abono.",
-    ("edgeCost", "be_spread"): "Por cuánto hay que multiplicar el spread solo para que el edge "
-                               "medio llegue a 0.",
-    ("edgeCost", "be_slippage"): "Por cuánto hay que multiplicar el slippage solo para que el "
-                                 "edge medio llegue a 0.",
-    ("edgeCost", "bites_first"): "El coste con el menor punto muerto: el que se come antes el "
-                                 "edge si empeora.",
+    ("edgeCost", "edge_mean"): "Beneficio bruto medio por operación (antes de costes) entre el "
+                               "coste medio que pagó, sólo en oos1 y con el repreciado común "
+                               "(el mismo número que la puerta). Se juzga contra 2.",
 
     ("mcRetest", "composite"): "Puntuación de 0 a 100: media ponderada de producción, "
                                "ejecución, especificación y datos, cada una la peor de sus "

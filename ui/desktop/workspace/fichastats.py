@@ -7,13 +7,12 @@ from ui.desktop.blocks.kinds import draw
 from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.desktop.theme import C, T, clear
-from ui.desktop.workspace.fichajobs import Compute, uncomputed
+from ui.desktop.workspace.fichajobs import Compute
 
 SEGMENTS = ("IS", "OOS1", "IS+OOS1", "OOS2")
 LOCKED = SEGMENTS.index("OOS2")
 # The four figures the owner reads first, one step larger (2026-09-28); their names keep the grey.
-BIG = ("Operaciones", "Net Profit (SQX, suma de operaciones)",
-       "Net Profit con spread y slippage reales (suma de operaciones)", "Profit Factor")
+BIG = ("Operaciones", "Net Profit (SQX, suma de operaciones)", "Profit Factor")
 PICKED = (f"QPushButton:checked {{ border-color: {C['accent']}; background: {T['select']}; }}"
           f"QPushButton:disabled {{ color: {T['faint']}; border: 1px dashed {T['faint']}; }}")
 
@@ -123,10 +122,7 @@ class Stats(QWidget):
             self.grid.addWidget(name, i, 0)
             if row.get("head"):
                 continue
-            if row["value"] is None and row.get("study"):
-                self.grid.addLayout(uncomputed(row["study"], self.compute), i, 1)
-            else:
-                self.grid.addWidget(figure(row), i, 1)
+            self.grid.addWidget(figure(row), i, 1)
         if shape.get("histogram"):
             self.chart.addWidget(draw(shape["histogram"]))
         self.chart.addStretch(1)

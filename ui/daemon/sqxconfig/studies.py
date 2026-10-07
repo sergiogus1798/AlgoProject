@@ -18,12 +18,17 @@ from sqx.variants.tooltips import TIPS as FACTORY_TIPS
 from studies.breakage.spp.tooltips import TIPS as SPP_TIPS
 from studies.optimisation.cscv.tooltips import TIPS as CSCV_TIPS
 from studies.optimisation.wfc.tooltips import TIPS as WFC_TIPS
+from studies.screening.analysis.tradelevel import WINDOWS
+from studies.screening.falsePositives.tooltips import TIPS as FP_TIPS
+from studies.screening.gate.tooltips import TIPS as GATE_TIPS
 from ui.daemon.sqxconfig.options import choice
 
 # Short names the window sends back, so it never sends a path; REL is what the window prints.
 REL = {"variants": "sqx/variants/config.yaml", "sppdesign": "studies/breakage/spp/config.yaml",
        "batch": "engines/variants/config.yaml", "wfcstudy": "studies/optimisation/wfc/config.yaml",
-       "cscvstudy": "studies/optimisation/cscv/config.yaml", "thresholds": "ledger/thresholds.yaml"}
+       "cscvstudy": "studies/optimisation/cscv/config.yaml", "thresholds": "ledger/thresholds.yaml",
+       "gatecfg": "studies/screening/gate/config.yaml",
+       "fpcfg": "studies/screening/falsePositives/config.yaml"}
 FILES = {name: ROOT / rel for name, rel in REL.items()}
 
 # (file, the branch shown, its heading) per section, in the order the section lists them.
@@ -36,6 +41,22 @@ PARTS = {
             ("wfcstudy", [], "Lectura del WFC")],
     "cscv": [("cscvstudy", ["cscv"], "El CSCV"),
              ("batch", [], "Lectura del lote · compartido con el WFC")],
+    # Step 8, owner 2026-10-07: every value a rule of the gate reads is an input. The rules'
+    # own thresholds live in pipeline/autopilot/criteria.yaml, not here.
+    "gate": [("gatecfg", ["screens"], "Cribas del nivel 0"),
+             ("gatecfg", ["cascade"], "Cascada"),
+             ("gatecfg", ["drift"], "R3 · la deriva del mercado"),
+             ("gatecfg", ["frequency"], "R5 · sobredispersión de la frecuencia"),
+             ("gatecfg", ["centring"], "R5 y R5d · el centro de la población"),
+             ("gatecfg", ["cost_stress"], "R5c · el coste estresado"),
+             ("gatecfg", ["concentration"], "R8 · la t sin lo mejor"),
+             ("gatecfg", ["mae"], "R9b · la peor excursión en contra"),
+             ("gatecfg", ["delay"], "Nivel 2 · ejecución una barra tarde"),
+             ("gatecfg", ["homogeneity"], "R7 · homogeneidad por periodo"),
+             ("gatecfg", ["drawdown"], "R6 · el drawdown contra el build"),
+             ("gatecfg", ["monkey"], "Nivel 3c · el mono")],
+    "falsepositives": [("fpcfg", ["monkeys"], "Los monos de la cadena"),
+                       ("fpcfg", ["population"], "Poblaciones de prueba con ventaja plantada")],
 }
 
 PLACEHOLDER = "ledger:"   # what a config.yaml writes where the ledger owns the number
@@ -52,9 +73,24 @@ RANGES = {("sppdesign", "n_target"): (1, None), ("sppdesign", "min_span"): SHARE
           ("batch", "min_trades"): (0, None), ("wfcstudy", "rho_floor"): (-1, 1),
           ("wfcstudy", "table_ends"): (1, None), ("cscvstudy", "plateau_radius"): (1, None),
           ("cscvstudy", "bootstrap"): (1, None), ("cscvstudy", "cluster_k_max"): (1, None),
-          ("thresholds", "cscv.blocks"): (4, 20)}
+          ("thresholds", "cscv.blocks"): (4, 20),
+          # Step 8. A repetition count starts at 5,000 (encargo 44, J1): fewer is a coarse p.
+          ("gatecfg", "draws"): (5000, None), ("gatecfg", "permutations"): (5000, None),
+          ("gatecfg", "sequences"): (5000, None), ("gatecfg", "phi_min"): (0, None),
+          ("gatecfg", "phi_max"): (0, None), ("gatecfg", "min_strategies"): (2, None),
+          ("gatecfg", "cap_log_rate"): (0, None), ("gatecfg", "cap_slope"): (0, None),
+          ("gatecfg", "k"): (1, None), ("gatecfg", "drop_trades"): (0, None),
+          ("gatecfg", "percentile"): (50, 100), ("gatecfg", "block"): (1, None),
+          ("gatecfg", "seed"): (0, None), ("gatecfg", "min_trades"): (0, None),
+          ("fpcfg", "per_donor"): (1, None), ("fpcfg", "per_level"): (1, None),
+          ("fpcfg", "seed"): (0, None)}
+# A key that may be blank: a blank seed draws a new one each run, a blank cap leaves it open.
+OPTIONAL = {("gatecfg", "seed"), ("gatecfg", "cap_slope"), ("fpcfg", "seed")}
 CHOICES = {("batch", "split_mode"): list(SHORTCUTS), ("cscvstudy", "period"): ["D", "W", "ME"],
-           ("cscvstudy", "score"): list(SCORES)}
+           ("cscvstudy", "score"): list(SCORES),
+           ("gatecfg", "window"): list(WINDOWS), ("gatecfg", "variant"): list("abcd"),
+           ("gatecfg", "drop_period"): list(WINDOWS), ("gatecfg", "period"): list(WINDOWS),
+           ("fpcfg", "rung"): ["free", "timing"], ("fpcfg", "sizing"): ["donor", "atr"]}
 # The two studies re-read these at analysis time: a batch already harvested reads differently.
 # Said once per group, not per row: in CSCV every row would carry it.
 REREAD = ("batch", "wfcstudy", "cscvstudy", "thresholds")
@@ -64,12 +100,17 @@ WARN = ("⚠ El WFC y el CSCV leen estos valores al leer el lote, no al fabricar
 # each value's help is its study's own Spanish tooltip. `batch` is the exception, its comments
 # are already the owner's words, in Spanish.
 TIPS = {"variants": FACTORY_TIPS, "sppdesign": SPP_TIPS, "wfcstudy": WFC_TIPS,
-        "cscvstudy": CSCV_TIPS}
+        "cscvstudy": CSCV_TIPS, "gatecfg": GATE_TIPS, "fpcfg": FP_TIPS}
 CSCV_HELP = ("Paso 18. Donde el WFC pregunta si esta superficie se mantuvo fuera de muestra, el "
              "CSCV pregunta lo que hay detrás: ¿la MANERA de elegir parámetros tiende a "
              "sobreajustar? Parte la historia en bloques, prueba cada mitad posible como dentro "
              "de muestra contra la otra, y cuenta cuántas veces la variante elegida dentro queda "
              "por debajo de la mediana fuera: eso es el PBO. Lee siempre build+oos1+oos2.")
+GATE_HELP = ("Paso 8. Cada valor que lee la puerta, por nivel: cuánto se resta de deriva, cuántos "
+             "sorteos, qué tope. Los umbrales con los que se juzga cada regla (>= 100, > 0…) viven "
+             "en pipeline/autopilot/criteria.yaml, no aquí.")
+FP_HELP = ("Falsos positivos. El control negativo de la cadena: monos que la cadena juzga como a "
+           "una población real, y las poblaciones de prueba con ventaja plantada.")
 
 
 def spec(name: str, path: list, value: object, threshold: str = "") -> dict:
@@ -92,6 +133,9 @@ def spec(name: str, path: list, value: object, threshold: str = "") -> dict:
         return {"type": "choice", "options": choice(CHOICES[name, last])}
     if (name, last) == ("cscvstudy", "rules"):
         return {"type": "choices", "options": choice(list(RULES))}
+    if (name, last) in OPTIONAL:   # empty or a number, never anything else
+        lo, hi = RANGES[name, last]
+        return {"type": "number", "min": lo, "max": hi, "optional": True}
     if isinstance(value, bool):
         return {"type": "bool", "options": [{"value": True, "text": "sí · true"},
                                             {"value": False, "text": "no · false"}]}
@@ -123,7 +167,7 @@ def blocks_help(n: int) -> str:
     return f"{n} bloques dan C({n},{n // 2}) = {many} particiones"
 
 
-def ledger_fields(key: str, hint: str, group: str, base: list) -> list[dict]:
+def ledger_fields(key: str, hint: str, group: str, base: list, warn: str = WARN) -> list[dict]:
     """A `ledger:<key>` placeholder as the two values the window edits: the number and its why.
 
     Args:
@@ -131,6 +175,7 @@ def ledger_fields(key: str, hint: str, group: str, base: list) -> list[dict]:
         hint: The placeholder's own help, from `help_of`.
         group: The heading it sits under.
         base: The placeholder's path, so the heading nests the way its neighbours do.
+        warn: The sentence said once under the heading.
 
     Returns:
         Two fields of the file "thresholds". Who set it and when go into the help, so the
@@ -145,7 +190,7 @@ def ledger_fields(key: str, hint: str, group: str, base: list) -> list[dict]:
     stamp = f"Umbral congelado del Ledger ({key}): fijado por {r['set_by']} el {r['set_on']}."
     value = r["value"]
     extra = blocks_help(value) + ". " if key == "cscv.blocks" else ""
-    common = {"file": "thresholds", "group": group, "base": ["thresholds", i], "group_help": WARN}
+    common = {"file": "thresholds", "group": group, "base": ["thresholds", i], "group_help": warn}
     return [{**common, "path": ["thresholds", i, "value"], "key": base[-1], "value": value,
              "help": f"{extra}{stamp} {hint}".strip(), **spec("thresholds", ["value"], value, key)},
             {**common, "path": ["thresholds", i, "why"], "key": "why", "value": r["why"],
@@ -168,6 +213,8 @@ def help_of(name: str, path: list, leaf: dict) -> str:
     if name not in TIPS:
         return leaf["hint"]
     tips = TIPS[name]
+    if name == "gatecfg" and path[0] == "screens":   # a screen's knob is keyed by its name
+        path = [read(FILES[name])["screens"][path[1]]["name"], *path[2:]]
     for depth in range(len(path), 0, -1):
         if ".".join(map(str, path[:depth])) in tips:
             return tips[".".join(map(str, path[:depth]))]
@@ -189,12 +236,12 @@ def fields(section: str) -> list[dict]:
     for name, branch, group in PARTS[section]:
         for leaf in leaves(FILES[name]):
             path = leaf["path"]
-            if path[:len(branch)] != branch:
+            if path[:len(branch)] != branch or (path[0] == "screens" and path[-1] != "min_trades"):
                 continue
             value = leaf["value"]
             if isinstance(value, str) and value.startswith(PLACEHOLDER):
                 out += ledger_fields(value.removeprefix(PLACEHOLDER), help_of(name, path, leaf),
-                                     group, path)
+                                     group, path, "" if name in ("gatecfg", "fpcfg") else WARN)
                 continue
             out.append({"file": name, "group": group, "base": branch, "path": path,
                         "key": leaf["label"], "value": value, "help": help_of(name, path, leaf),

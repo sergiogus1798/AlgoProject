@@ -90,7 +90,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 73 | ⚪ | Three global `sqx-lab` skills are retirement candidates — owner's call | docs/OPEN-closed.md |
 | 74 | 🟢 | Steps 23, 24 and 25 export into the same `raw/<P>/WFC_*/<day>/` and overwrite... | docs/OPEN-closed.md |
 | 75 | 🟢 | `sqx-worker.sh stop` sent right after `start` is lost | docs/OPEN-closed.md |
-| 76 | 🟡 | Darwinex's real spread is 3–8× what `assets/` declares — the proposal is the... | OPEN.md |
+| 76 | ⚪ | Darwinex's real spread is 3–8× what `assets/` declares — the proposal is the... | docs/OPEN-closed.md |
 | 77 | ⚪ | A one-item random group's hole can still drift to a different block | docs/OPEN-closed.md |
 | 78 | 🟡 | MetaTrader 5 under Wine: built, not yet run | OPEN.md |
 | 79 | 🟢 | SPP marginal profiles read θ₀'s lone level as argmax and spike | docs/OPEN-closed.md |
@@ -121,6 +121,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 104 | 🟡 | Portfolio build 2026-10-05: six findings left unfixed (universe cache, frozen version, GA rank saturation, `funded_b` overwrite, pyarrow abort, `test_portfolio_build`) | OPEN.md |
 | 105 | 🟢 | `execute.synced` divides by `poll_seconds`: 0 raises ZeroDivisionError instead of SystemExit | docs/OPEN-closed.md |
 | 106 | 🟢 | Leftovers of the September infra and calculation reviews (reports deleted 2026-10-06): one spread suspicion (m30), five small infra items | docs/OPEN-closed.md |
+| 107 | 🟡 | Seven tests fail in the 2026-10-07 mechanical audit: four depend on data deleted by the 10-06 disk cleanup, one on cwd (`afterrun` stop path), two undiagnosed | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -231,6 +232,8 @@ taking a universe dict, and only failed at runtime. Both classes of drift are ch
 
 **2026-10-06.** The owner's 2026-09-29 decision is carried out on the data root: `raw|reports|metrics/XAUUSD/Retest_Markets_-_Family` and `raw|metrics/XAUUSD/MC_Trades` deleted (36 MB; no code read them). The 757 `.sqx` inside the master's XAUUSD project stay his to delete.
 
+**2026-10-07.** The study this section describes was replaced by encargo 46 (2026-10-07): step 10 now asks «does the logic travel?» through nine facts P1-P9 read from one joint tensor of year-shifted random runs (studies/transfer/crossmarket/travel/, judged on gross R), and the old nulls-per-market, breadth, Fieller, Timing Alpha, exposure and window-sweep code (simulate/, verdict/, mechanics/, orchestrate/, six contract/ files) was deleted. The state of play below is history; what is left open is the calibration of the P1-P9 lines (criteria.yaml, PROVISIONAL).
+
 ---
 
 ## 28. 🟠 `DAX40`'s feed is in SQX's registry but in no project — builds, not yet run
@@ -328,31 +331,6 @@ whether such an agent should be held at all.
 **2026-10-04.** Done since this was written: joint.population is decided (entrantes, studies/closing/blindJoint/config.yaml), the WFM writes its own ledger row (studies/optimisation/wfm/report.py calls steprows.log_wfm) and CSCV and WFM are in oos2's reserved_for (assets/_policy.yaml). Still the owner's: joint.pieces is null, so step 20 cuts nobody, and whether an autonomous agent is held out of oos2 for BlindJoint.
 
 **2026-10-04.** Owner, 2026-10-04: joint.pieces = sin_fallo (studies/closing/blindJoint/config.yaml); with population = entrantes step 20 now makes one reading the call. tests/test_blindjoint.py updated and passing. Still open: whether an autonomous agent is held out of oos2 for BlindJoint (not in reserved_for).
-
-## 76. 🟡 Darwinex's real spread is 3–8× what `assets/` declares — the proposal is the owner's to apply
-
-`python3 -m studies.data.spread.scan` (2026-09-27), mean opening spread of Darwinex's ticks:
-XAUUSD 9 → 63 points 2017 → 2026 against the declared 5 (build) / 10 (oos); USDJPY 4.7 → 10.4
-points against 0.1. Neither is constant relative to price (owner's ±20 %: gold's worst year 1.96×,
-USDJPY's 1.44×), so the study models the years before October 2017 and proposes, with the owner's
-factor 1.25, a `%` commission per segment — XAUUSD 0.0131 / 0.0138 / 0.0118 % (build / oos1 /
-oos2), USDJPY 0.0048 / 0.0052 / 0.0078 % — or 16 / 24 / 31 and 0.5 / 0.6 / 1.2 points.
-`AlgoData/spread/<tick feed>/spread.html` has the table. **Applied 2026-09-27** to XAUUSD and the ten pairs too (`onboard --spread-only`: spreads, slippage = half, MC spread range; commission and swap kept). **Applied 2026-09-27 to the five index CFDs** on the owner's order: build data start–2019, oos1 2020–2023, oos2 2024–2026-08-31 with its own `spread_oos2` (the schema now allows a segment-named half), oos1/oos2 = Darwinex's mean daily spread in that segment × 1.25; build = the spread PROPORTIONAL to price (owner's option A, `model.fixed`) × 1.25, although fixed-points validates better; slippage = half; MC Retest spread range = the 2.5–97.5 % multiples of measured ÷ proportional mean, times the build spread. Their commission is still null and blocks authoring. Study: `docs/AgentPDFs/spread-real-2026-09-27.pdf`.
-
-Three things are still open:
-- **The repricing against SQX itself.** `studies.data.spread.report` swaps SQX's flat spread for
-  the real one trade by trade (3 of 115 gold and 3 of 100 USDJPY strategies stop earning OOS). It
-  has not been compared with a real DATATICK retest on `*_DarwTick_*` — one short worker job on
-  a few strategies of an existing harvest licenses it as that retest's stand-in.
-- **USDJPY's model leans on the price level** (`studies/data/spread/POSSIBLE_IMPROVEMENTS.md`):
-  back in 2011–2012 it predicts the thinnest spreads of the history.
-- **The «poquito de spread»** the owner keeps on top of the `%` is his to name.
-
-**2026-09-29.** The spread study was applied (see above). Left: the owner's «poquito de spread» on top of the %, and whether to license the repricing with one short DATATICK retest on a worker.
-
-**2026-09-29.** Owner, 2026-09-29: the «poquito de spread» is what `assets/` already carries — the measured spread × 1.25 as a spread on top of the commission (e.g. USDJPY 0.65 points + 8 $/lot). Left: the DATATICK retest that would license the repricing, and USDJPY's price-level model.
-
-**2026-09-29.** Owner: make the DATATICK check part of the workflow, once, at the end. Now encargo 36 (`docs/encargos/36-licencia-reprecio-datatick.md`) and step 25.5 of `WORKFLOW.md`, after 17-20 and 25, before 26: a real `*_DarwTick_*` retest of a few survivors compared trade by trade with `studies.data.spread.report`. Left: the owner's acceptance bar (R difference or verdict match), and building it.
 
 ## 78. 🟡 MetaTrader 5 under Wine: built, not yet run
 
@@ -876,3 +854,19 @@ describe two XAUUSD corpora; neither can be recomputed for the first (OPEN §12)
 
 **2026-10-05.** Item 3 decided (owner, 2026-10-05, «sube»): `real.exhaustive_max` is now 1,000,000 combinations (~11 min on one core at the limit); `portfolio/common/construct/search/README.md` and `portfolio/PLAN.md` say so; above the limit the GA still runs and its rank score still saturates — still open. Item 6 (owner, 2026-10-05: «Usa las condiciones más actualizadas que tenemos»): the test must run on today's conditions, no re-stamping shim, no skip. Found: nothing in the archive reconciles under today's conditions. The only archives after 2026-10-01 are the 30 mothers of `Test_USDJPY_donchianUpperCrossUp_H1` (2026-10-04, step 16.5), all on feed `USDJPY_DukasM1_the5ers`; 15 have a harvest, the other 15 no `harvest/` at all (FileNotFoundError). The 15 with one are refused by the universe builder on the MAE/MFE licence (0.73-0.97 exact, floor 0.99) and reconcile 0.92-0.99 on build and oos1 (e.g. 16425b8a: licence 0.97/0.99, build 0.98, oos1 0.99), so they fail the same way as the golden 4d679e0c (0.44) but closer, which points to the same feed-clock mismatch (archived stamps vs the EETUS bars now behind that feed name) at a smaller scale. `tests/test_portfolio_build.py` is unchanged and still fails; the owner decides whether the equity reconstruction or the archived stamping is what to fix, or whether to archive a fresh strategy after the feeds settle. Items 2 and 4 remain.
 
+
+## 107. 🟡 Seven tests fail in the 2026-10-07 mechanical audit
+
+Source: `AlgoData/audit/2026-10-07-mechanical.md` (242 run, 227 ok, 7 failed). Not fixed here (documentation pass).
+
+| test | failure | provenance |
+|---|---|---|
+| `test_ui_batch` | asserts `strategyPermutations/<REAL>/metrics.parquet` (line 194); data gone | 📓 log; cause (10-06 disk cleanup) 🤔 — confirm by checking which cleanup removed it |
+| `test_autopilot_closing` | no variants batch with `metrics.parquet, collected.json` for Strategy 10.9.72 | 📓 same 🤔 |
+| `test_portfolio_universe` | only check failing: «real fixtures present skipped: files not found» | 📓 same 🤔 |
+| `test_mt5_start_check` | reads Tester journal `…/Tester/logs/20260930.log`, no longer on disk | 📓 |
+| `test_worker_lifecycle` | stop path runs `python3 -m ui.daemon.loader.afterrun` from a cwd outside the repo → `No module named 'ui'` | 📓; possible real bug in `bin/sqx-worker.sh stop` run from another cwd |
+| `test_sqx_live` | `KeyError: 'strategies'` at `sqx/projects/live.py:235` (`listStrategies` reply) | 📓; stub vs contract not diagnosed |
+| `test_variants` | shapes/hash dump differs | 📓; not diagnosed |
+
+Fix direction: point the data-dependent tests at a fixture; set cwd/`PYTHONPATH` in `bin/sqx-worker.sh`.

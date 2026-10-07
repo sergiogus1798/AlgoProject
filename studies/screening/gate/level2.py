@@ -1,8 +1,8 @@
 """Level 2 of the gate: what the edge keeps when entry, exit or both slip one bar."""
 
-import numpy as np
 import pandas as pd
 
+from engines.market import reprice
 from studies.screening.analysis import delay
 
 FACTS = ("retraso_ret_min", "retraso_t_delta")
@@ -36,12 +36,12 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         raw = data["trades"]
         raw = raw[(raw["sample"] == "IS") & raw["identity"].isin(alive)]
         raw = raw.sort_values(["identity", "Close time"])
-        on_grid = [bars.index.get_indexer(raw[k]) >= 0 for k in ("Open time", "Close time")]
-        assert np.all(on_grid), "a build trade is stamped off the bar grid"
+        priced = reprice.real(raw, bars, data["costs_build"], data.get("feed"))
+        when = bars.index.to_numpy()
         build = pd.DataFrame({
-            "identity": raw["identity"].to_numpy(), "open_time": raw["Open time"].to_numpy(),
-            "close_time": raw["Close time"].to_numpy(), "lots": raw["Size"].to_numpy(),
-            "side": np.where(raw["Type"].astype(str) == "Sell", -1.0, 1.0)})
+            "identity": raw["identity"].to_numpy(), "open_time": when[priced["enter"]],
+            "close_time": when[priced["leave"]], "lots": raw["Size"].to_numpy(),
+            "side": priced["side"].to_numpy(), "stop": priced["stop"].to_numpy()})
         build["excess"] = delay.excess(build, bars, windows["IS"], data["costs_build"], drift)
         delay.measure(build, bars, windows["IS"], data["costs_build"], drift, variants) \
             .to_parquet(data["out"] / "retraso_build.parquet", index=False)

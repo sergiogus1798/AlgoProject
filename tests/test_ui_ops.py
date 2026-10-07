@@ -168,7 +168,7 @@ def test_widgets_paint_offscreen() -> None:
     bar = JobsBar()
     bar.poll.stop()
     bar.show_jobs([
-        {"id": "1", "label": "profitShape", "study": "profitShape", "percent": 45,
+        {"id": "1", "label": "entryQuality", "study": "entryQuality", "percent": 45,
          "state": "bootstrap", "lane": "python", "started": "21:00:00", "rc": None, "tail": []},
         {"id": "2", "label": "cscv", "started": "21:00:05", "rc": None, "tail": []},
         {"id": "3", "label": "gate", "study": "gate", "queued": 1, "started": "21:00:09",

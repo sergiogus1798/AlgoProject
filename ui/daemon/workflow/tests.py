@@ -7,15 +7,14 @@ from ui.daemon.workflow import sources
 
 # The studies that sign their look in the ledger under the template family (owner, Q9 of
 # plan 24): without a template in the registry they never start from the window.
-SIGNED = {"wfc", "cscv", "marketSurfaces", "snoopingScreen", "blindJoint"}
+SIGNED = {"wfc", "cscv", "marketSurfaces", "blindJoint"}
 # What a run of these costs beyond CPU: a look at the reserved oos2, or a ledger row. They are
 # never ticked by default nor in «correr todo»; the window asks before each run.
 SPENDS = {"wfc": "lee el oos2 y escribe su fila en el ledger",
           "cscv": "lee el oos2 y escribe su fila en el ledger",
           "marketSurfaces": "lee el oos2 y escribe su fila en el ledger",
           "wfm": "lee el oos2 de la Walk Forward Matrix",
-          "blindJoint": "lee el oos2 del paso 20 y escribe su fila en el ledger",
-          "snoopingScreen": "escribe una fila en el ledger (una búsqueda más de este estudio)"}
+          "blindJoint": "lee el oos2 del paso 20 y escribe su fila en el ledger"}
 SQX_STEP = ("paso de SQX: su tarea se lanza con el ▶ SQX de la tarjeta; su análisis se corre "
             "después con «▶▶ toda la población» en la ficha de una de sus estrategias")
 # Jobs that run SQX on a project (`ui/daemon/launch`, `advance`): no test starts on it meanwhile.

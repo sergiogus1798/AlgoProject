@@ -8,6 +8,7 @@
 #   preflight — `core.assetcheck` on the project's asset, today
 #   project   — the project's folder in an install
 #   sqx       — the tasks `sqx.projects.stage.titles(stage)` names, read from the install
+#   phase2    — 11.7: the build-window CrossTF twins the project carries (`crosstfload.phase2_tasks`)
 #   study     — a contract result of any key in `studies`, under the data root
 #   variants  — the mothers' batches in strategyPermutations/<project>/
 #   blind     — step 20: the ledger's door, then the blindJoint result
@@ -36,6 +37,10 @@ S = [
     ("10.5", "Preparación crossTF", "Preparación crossTF", "sqx", "bank", [],
      "Cross Timeframe", "", ()),
     ("11", "Retest crossTF", "Retest crossTimeframes en SQX", "sqx", "sqx", [],
+     "Cross Timeframe", "", ()),
+    ("11.5", "Criba de fase 1", "Criba de fase 1 de crossTF en Python", "python", "study",
+     ["crossTF"], "Cross Timeframe", "", ("crosstf",)),
+    ("11.7", "Retest crossTF build", "Retest crossTF en el build en SQX", "sqx", "phase2", [],
      "Cross Timeframe", "", ()),
     ("12", "Análisis crossTF", "Análisis crossTFs en Python", "python", "study", ["crossTF"],
      "Cross Timeframe", "", ("crosstf",)),
@@ -68,15 +73,13 @@ S = [
      "Cierre", "Stop ATR", ()),
     ("25", "Edge por coste, por estrategia", "Edge por coste, por estrategia", "python",
      "study", ["edgeCost"], "Cierre", "Edge por coste", ()),
-    ("25.5", "Licencia del reprecio", "Licencia del reprecio", "sqx", "study", [], "Cierre", "",
-     ()),
     ("26", "Validación MT5", "Validación en MT5 con la feed de cada empresa de fondeo → pool validado",
      "python", "study", ["mt5Validation"], "Cierre", "", ()),
 ]
 # The SQX stage each SQX step reads its tasks from (`sqx.projects.stage.titles`).
 STAGE = {"6": "build", "7": "oos", "9": "crossmarket", "11": "crosstf", "13": "mcretest",
          "15": "spp", "16.5": "wfc", "19": "wfm"}
-EXTRA = {"8": ["monkey", "profitShape", "entryQuality"]}
+EXTRA = {"8": ["monkey", "entryQuality"]}
 KEYS = ("n", "title", "doc", "kind", "how", "studies", "tab", "sub", "feeds")
 STEPS = [dict(zip(KEYS, row)) | ({"stage": STAGE[row[0]]} if row[0] in STAGE else {})
          | ({"bank": "CrossTF_Input"} if row[0] == "10.5" else {})

@@ -3,27 +3,24 @@
 import numpy as np
 import pandas as pd
 
-from engines.nulls import barrier, model, simulate
+from engines.nulls import barrier, model, simulate, windowed
 
 SAMPLES = ("IS", "OOS")     # the gate's names: the asset's `build` segment and its `oos1`
 
 
 def atr_sized(kept: dict, enter: np.ndarray) -> np.ndarray:
-    """Each drawn trade sized by the volatility of the bar it landed on.
+    """Each drawn trade sized by the volatility known when it opens, as the gate's monkey is.
 
     Args:
         kept: What simulate.fixed() returned for the donor.
         enter: Entry bar of every drawn trade.
 
     Returns:
-        `c / ATR(entry)`, `c` the donor's median size x ATR at its own entries. The donor's
-        own size carries the ATR of the REAL entry: moved to a bar twice as volatile it risks
-        twice the money, which no sizing rule would have allowed (🔬 2026-10-04, 300 XAUUSD
-        H1 donors: 79 % of `timing` monkeys showed a trade 5R under water against 1 % of the
-        real ones). The ATR period is the engine's, not the strategy's, which is not fitted.
+        `windowed.atr_sized` on the ATR of the bar BEFORE each entry: the bar's own would be
+        looking ahead (owner, 2026-10-07). The ATR period is the engine's, not the strategy's.
     """
-    located, atr = kept["located"], kept["atr"]
-    return np.median(located["size"] * atr[located["entry"]]) / atr[enter]
+    located, known = kept["located"], np.r_[np.nan, kept["atr"][:-1]]
+    return windowed.atr_sized(known, located["entry"], located["size"], enter)
 
 
 SIZING = {"donor": lambda kept, enter, sizes: sizes,
@@ -65,6 +62,7 @@ def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict
                  for k, v in model.RUNGS[rung](kept["located"], draws, rng).items()}
         bars, enter = kept["bars"], drawn["entries"]
         drawn["sizes"] = SIZING[knobs["sizing"]](kept, enter, drawn["sizes"])
+        assert np.isfinite(drawn["sizes"]).all(), f"{key}: a {sample} trade has no ATR to size by"
         leave, price = barrier.exits(enter, drawn["holds"], bars, {}, "pessimistic")
         pnl = barrier.pnl(enter, leave, price, drawn["sizes"], bars["enter_px"],
                           np.tile(kept["cost"], draws), kept["value"])
@@ -103,3 +101,22 @@ def curve(trades: pd.DataFrame, first: str, end: str) -> pd.DataFrame:
                                 values="Profit/Loss", aggfunc="sum")
     days = pd.bdate_range(first, end).union(booked.index)
     return booked.reindex(days).fillna(0.0).cumsum()
+
+
+def planted(oos: pd.DataFrame, edge: float) -> tuple[pd.DataFrame, pd.Series]:
+    """The gate's per-trade table of oos1 with an edge of known size added to every trade.
+
+    Args:
+        oos: Level 1a's table: `identity`, `pnl` and `excess`.
+        edge: The planted Sharpe per trade.
+
+    Returns:
+        The table with `edge x sd(that strategy's excess)` added to the `pnl` and the `excess`
+        of each of its trades, and that amount per identity. The sd does not move, so the plain
+        t rises by edge x sqrt(n) exactly. The edge is added to the mean the monkey already
+        has, which net of the declared costs is below zero: a planted 0.15 is a net Sharpe of
+        0.15 minus mean cost / sd, not of 0.15.
+    """
+    add = edge * oos.groupby("identity", sort=False)["excess"].transform("std")
+    return (oos.assign(pnl=oos["pnl"] + add, excess=oos["excess"] + add),
+            add.groupby(oos["identity"], sort=False).first())

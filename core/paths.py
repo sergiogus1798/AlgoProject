@@ -50,6 +50,7 @@ TAXONOMY = ROOT / "sqx" / "blocks" / "taxonomy.yaml"
 PALETTES = ROOT / "sqx" / "blocks" / "palettes"
 MANUAL = ROOT / "docs" / "manual"
 MANUAL_SRC = DATA / "manual-fuentes"   # the chapters and screenshots; the owner reads only the PDFs
+KEPT = DATA / "kept"   # per project, what the funding module reads of each strategy that passed the WFM
 AUDIT = DATA / "audit"   # the unattended agents' reports and the auditor's state.json
 VIEWS_REL = "user/settings/views/databanks"
 STAGING_REL = "user/projects/Retester/databanks/Results"

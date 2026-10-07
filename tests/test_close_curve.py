@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The close-to-close rebuild on a hand-computed case: commission from the entry, and both studies' panels."""
+"""The close-to-close rebuild on a hand-computed case: commission from the entry, and the joint study's panel."""
 
 import sys
 import tempfile
@@ -12,7 +12,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from portfolio.common.construct.equity import closecurve, days, paths, reconcile  # noqa: E402
 from studies.closing.blindJoint import inputs as joint  # noqa: E402
-from studies.screening.snoopingScreen import inputs as screen  # noqa: E402
 
 VALUE, PER_LOT = 1000.0, 5.0
 D1, D2, D3 = (pd.Timestamp(d) for d in ("2024-01-02", "2024-01-03", "2024-01-04"))
@@ -35,13 +34,6 @@ TRADES = pd.DataFrame({
     "Profit/Loss": [30.0, 15.0, -15.0], "sample": "OOS"})
 PROFIT = pd.DataFrame({"A": [-10.0, 40.0, 0.0], "B": [0.0, 15.0, -15.0]}, index=[D1, D2, D3])
 LOW = pd.DataFrame({"A": [-110.0, -110.0, 30.0], "B": [0.0, -55.0, -40.0]}, index=[D1, D2, D3])
-
-
-def harvest(folder: Path, low: pd.DataFrame) -> None:
-    """A gate harvest: the trades, and SQX's curve — each day's lowest equity — long form."""
-    TRADES.to_parquet(folder / "trades.parquet")
-    low.rename_axis("day").reset_index().melt("day", var_name="identity", value_name="equity") \
-        .assign(sample="OOS").to_parquet(folder / "equity.parquet")
 
 
 def batch(folder: Path, mother: str, with_trades: bool) -> Path:
@@ -83,21 +75,9 @@ def main() -> None:
     if not np.allclose(profit, PROFIT) or not np.allclose(low.fillna(LOW), LOW):
         failures.append(f"panel:\n{profit}\n{low}")
 
-    screen.read_bars = joint.read_bars = lambda feed, columns: BARS[columns]
+    joint.read_bars = lambda feed, columns: BARS[columns]
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        harvest(tmp, LOW)
-        got = screen.panel(tmp, SPAN, "X_M1")
-        moves = screen.moves("X_M1", got.index)
-        if not np.allclose(got, PROFIT) or not np.allclose(moves.iloc[1:], [0.01, -0.02]):
-            failures.append(f"snoopingScreen:\n{got}\n{moves}")
-        harvest(tmp, LOW + 10.0 * (LOW != 0))      # the curve of a backtest without commission
-        try:
-            screen.panel(tmp, SPAN, "X_M1")
-            failures.append("snoopingScreen leyó un panel que no reconcilia con la curva de SQX")
-        except ValueError:
-            pass
-
         batches = {"A": batch(tmp / "a", "A", True), "B": batch(tmp / "b", "B", True)}
         got = joint.panel(batches, SPAN, "X_M1")
         if not np.allclose(got, PROFIT) or joint.trades_door(batches) is not None \

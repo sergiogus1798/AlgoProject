@@ -95,7 +95,7 @@ def test_queue_and_cancel() -> None:
     assert http.post("/api/jobs/nope/cancel").json() == {"ok": False}
     for i in ids[1:]:
         http.post(f"/api/jobs/{i}/cancel")
-    light = [jobs.start("profitShape", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"})["id"]
+    light = [jobs.start("entryQuality", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"})["id"]
              for _ in range(jobs.SLOTS // jobs.LIGHT + 1)]
     now = listed(http)
     assert [now[i]["queued"] for i in light].count(None) == jobs.SLOTS // jobs.LIGHT, now
@@ -116,7 +116,7 @@ def test_refusals() -> None:
     jobs.start = lambda *a, **k: started.append(a) or {"id": "x"}
     body = {"project": PROJECT, "databank": DATABANK, "strategies": [STRATEGY], "asset": "USDJPY"}
     try:
-        for study, scope, extra in [("profitShape", "many", {}), ("gate", "one", {}),
+        for study, scope, extra in [("entryQuality", "many", {}), ("gate", "one", {}),
                                     ("gate", "many", {"only": "x"}), ("edgeCost", "one", {"asset": ""}),
                                     ("edgeCost", "one", {"asset": "NOPE"}), ("nope", "many", {})]:
             got = http.post("/api/study/run", json=body | {"study": study, "scope": scope} | extra)

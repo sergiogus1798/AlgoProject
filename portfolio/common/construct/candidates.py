@@ -12,11 +12,11 @@ from core.datapaths import project_registry, variants_dir
 from core.paths import DATA
 
 # studies/CLAUDE.md's family table: which numbered workflow step a study's verdict.csv judges.
-# `cloud`, `profitShape` and `entryQuality` are deliberately absent — WORKFLOW.md calls them
+# `cloud` and `entryQuality` are deliberately absent — WORKFLOW.md calls them
 # extra readings, not steps, so they never enter the furthest-step count.
 STUDY_STEP = {
     "gate": "8", "isOos": "8", "filters": "8", "replication": "8", "decay": "8",
-    "monkeyExcess": "8", "snoopingScreen": "8", "feedQuality": "8", "spread": "8",
+    "monkeyExcess": "8", "feedQuality": "8",
     "edgeCost": "8", "monkey": "8",
     "crossmarket": "10", "crossTF": "12", "mcRetest": "14", "spp": "16",
     "wfc": "17", "cscv": "18", "marketSurfaces": "18.5", "wfm": "19",

@@ -31,6 +31,8 @@ def check(rule: dict) -> None:
         return
     if not str(rule.get("fact") or "").strip():
         raise ValueError("Falta el dato que la regla mira.")
+    if rule.get("missing", "limbo") not in ("pass", "limbo", "fail"):
+        raise ValueError("`missing` solo admite «pass», «limbo» o «fail».")
     if rule.get("else", "limbo") != "limbo":
         raise ValueError("`else` solo admite «limbo»: sin él, no cumplir es Fallo.")
     for tags, fields in (rule.get("by") or {}).items():

@@ -40,12 +40,6 @@ def monkey(c: dict, strategy: str) -> list[str] | str:
             + (["--strategy", strategy] if strategy else []))
 
 
-def profit_shape(c: dict, strategy: str) -> list[str] | str:
-    """Which few trades and months one strategy's result rests on."""
-    return runs.own_trades(c) or ["-m", "studies.readings.profitShape.report", "--export",
-                                  c["trades"], "--strategy", strategy]
-
-
 def entry_quality(c: dict, strategy: str) -> list[str] | str:
     """One strategy's entries against random ones at the same hours, on its own feed and grid."""
     if runs.own_trades(c):
@@ -122,8 +116,6 @@ def blind_joint(c: dict, strategy: str) -> list[str] | str:
 
 STUDIES = {
     "monkey": {"plan": monkey, "one": True, "many": True, "sets": True},
-    "profitShape": {"plan": profit_shape, "one": True, "many": True, "sets": True,
-                    "population": exported},
     "entryQuality": {"plan": entry_quality, "one": True, "many": True, "sets": True,
                      "population": exported},
     "edgeCost": {"plan": edge_cost, "one": True, "many": True, "sets": True},

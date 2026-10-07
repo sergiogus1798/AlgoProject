@@ -63,11 +63,11 @@ def test_the_whole_tail_in_order() -> None:
     21-25, the finalists, step 26 — and every blind look redone, the batches being new."""
     got = plan.plan(rail(), GIVEN)
     assert kinds(got) == [("16", "judge"), ("16.5", "variants"), *BLOCK, ("19", "sqx"),
-                          ("19", "wfm"), ("19", "ledger"), ("20", "joint"), ("20", "judge"),
+                          ("19", "wfm"), ("19", "kept"), ("19", "ledger"), ("20", "joint"), ("20", "judge"),
                           *CLOSING, ("26", "mt5verify")]
     assert got["stop"] == {"n": None, "why": "no queda ningún paso"}
     assert all(a["redo"] for a in got["do"] if a["kind"] == "blind")
-    assert got["do"][-1]["params"] == MT5 and got["do"][10]["databank"] == "OOS"
+    assert got["do"][-1]["params"] == MT5 and got["do"][11]["databank"] == "OOS"
     json.dumps(got)     # plan.json is written as it comes
 
 
@@ -98,7 +98,7 @@ def test_a_rerun_takes_up_where_it_stopped() -> None:
     """17 and 18 done, 19 not: the looks are planned without `redo` (a mother with her
     result is skipped when run), the WFM runs, and everything after it runs again."""
     got = plan.plan(rail("19", s16_5="done"), GIVEN)
-    assert kinds(got) == [*BLOCK, ("19", "sqx"), ("19", "wfm"), ("19", "ledger"),
+    assert kinds(got) == [*BLOCK, ("19", "sqx"), ("19", "wfm"), ("19", "kept"), ("19", "ledger"),
                           ("20", "joint"), ("20", "judge"), *CLOSING, ("26", "mt5verify")]
     assert not any(a["redo"] for a in got["do"] if a["kind"] == "blind")
 

@@ -6,23 +6,9 @@ import numpy as np
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.readings.edgeCost import costs, one, sensitivity
+from studies.readings.edgeCost import costs, one
 
 MODULE = one.MODULE
-
-
-def _row(identity: str, group: pd.DataFrame) -> dict:
-    """One strategy's line: its edge measures and its own reconciliation."""
-    got = one.measure(group)
-    target = group["Profit/Loss"] + group["commission_cost"]
-    corr = float(np.corrcoef(group["price_pnl"], target)[0, 1]) if len(group) > 1 else float("nan")
-    return {"identity": identity, "n": got["n"], "mean_gross": got["mean_gross"],
-            "median_gross": got["median_gross"], "mean_cost": got["mean_cost"],
-            "edge_mean": got["edge_mean"], "edge_median": got["edge_median"],
-            "breakeven_multiple": got["breakeven_multiple"], "reconcile": corr,
-            "be_all": sensitivity.breakeven(group),
-            **{f"be_{k}": sensitivity.breakeven(group, k) for k in sensitivity.COSTS},
-            "bites_first": sensitivity.bites_first(group)}
 
 
 def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> dict:
@@ -40,33 +26,25 @@ def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> dict:
         and the window's population table read}.
     """
     started = time.time()
-    rows = {i: _row(i, g) for i, g in priced.groupby("identity", observed=True)}
-    panel = pd.DataFrame(rows).T
-    panel.index.name = "identity"
-    num = [c for c in panel.columns if c not in ("bites_first", "identity")]   # DataFrame(rows).T made everything object
-    panel[num] = panel[num].apply(pd.to_numeric)
+    by = priced.assign(gross=priced["pnl"] + priced["cost"]).groupby("identity", observed=True)
+    panel = pd.DataFrame({"mean_gross": by["gross"].mean(), "mean_cost": by["cost"].mean()})
+    panel["edge_mean"] = panel["mean_gross"] / panel["mean_cost"]
     panel["strategy"] = names.reindex(panel.index)
-    panel = panel.set_index("strategy")
+    panel = panel.reset_index().set_index("strategy")
     bar, action = cfg["verdict"]["min_edge_spreads"], cfg["verdict"]["action"]
     below = panel["edge_mean"] < bar
     panel["verdict"] = np.where(below & (action == "drop"), "DESCARTAR", "MANTENER")
-
-    # A bar per strategy used to read as one solid line across the panel once there were more
-    # than a few dozen (feedback §9.5, 2026-09-30): a table, coloured green/red by the same
-    # threshold, sorts and reads at any population size.
     shown = panel.reset_index()
-    states = [["pass" if not b else "fail"] * len(shown.columns) for b in below]
     table = blocks.table(
         "Cada estrategia contra su coste", shown,
-        f"Verde: edge medio por encima de {bar} spreads. Rojo: por debajo "
+        f"Verde: edge medio por encima de {bar}. Rojo: por debajo "
         f"({'sólo marcadas' if action == 'mark' else 'DESCARTAR en curate'}). "
-        "edge en spreads = bruto medio / coste de ida y vuelta modelado hoy; c* es el "
-        "mismo número.")
-    table["states"] = states
+        "edge = bruto medio / coste pagado medio, sólo oos1.")
+    table["states"] = [["pass" if not b else "fail"] * len(shown.columns) for b in below]
     population = envelope.envelope(
         MODULE, None, None, cfg, started,
         [envelope.tab("panel", "Cada estrategia contra su coste", [table],
-                      note=f"{int(below.sum())} de {len(panel)} por debajo de {bar} spreads "
+                      note=f"{int(below.sum())} de {len(panel)} por debajo de {bar} "
                            f"({'sólo marcadas' if action == 'mark' else 'DESCARTAR en curate'})."
                       )], warnings=costs.warnings(asset), glossary=one.GLOSSARY)
     return {"population": population, "panel": panel}

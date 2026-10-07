@@ -15,7 +15,9 @@ def excess(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], cost
     """Each trade's excess over the market's drift with its fills moved, as level 1a prices it.
 
     Args:
-        trades: `open_time`, `close_time` (on the bar grid), `side` (+1 / -1) and `lots`.
+        trades: `open_time`, `close_time` (on the bar grid), `side` (+1 / -1), `lots` and
+            `stop`, the raw price of an exit filled inside its bar, NaN on a bar exit — level
+            1a's columns.
         bars: The strategies' own timeframe, the whole file, indexed by open time.
         span: (first, last) of the trades' sample.
         costs: As reprice.costs() returns it, for that sample's segment.
@@ -24,17 +26,23 @@ def excess(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], cost
 
     Returns:
         reprice.pnl at the opens of the moved bars, original lots, minus tradelevel.drift_term
-        over the moved hold, the drift window being that of the moved open. NaN where the
-        trade does not exist under the shift — the entry moved onto or past its exit — and
-        where the moved entry leaves the span and the drift term has no window for it.
+        over the moved hold. A `stop` exit never moves: a stop is an order resting at the
+        broker, which a late signal does not delay, so it stays at its price and its bar
+        under every shift and only the entry slips. The drift window is that of the moved
+        open. NaN where the trade does not exist under the shift — the entry moved onto or
+        past its exit — and where the moved entry leaves the span and the drift term has no
+        window for it.
     """
-    leave = bars.index.get_indexer(trades["close_time"]) + shift[1]
+    stop = trades["stop"].to_numpy()
+    late = shift[1] * np.isnan(stop)
+    leave = bars.index.get_indexer(trades["close_time"]) + late
     enter = bars.index.get_indexer(trades["open_time"]) + shift[0]
-    gone = (enter >= leave) & (shift[0] > shift[1])
+    gone = (enter >= leave) & (shift[0] > late)
     enter = np.minimum(enter, leave)
     when, side, lots = bars.index.to_numpy(), trades["side"].to_numpy(), trades["lots"].to_numpy()
-    pnl, _ = reprice.pnl(reprice.fills(bars, enter), reprice.fills(bars, leave), when[enter],
-                         when[leave], side, lots, costs)
+    pnl, _ = reprice.pnl(reprice.fills(bars, enter),
+                         np.where(np.isnan(stop), reprice.fills(bars, leave), stop),
+                         when[enter], when[leave], side, lots, costs)
     moved = pd.DataFrame({"Open time": when[enter], "Close time": when[leave],
                           "Type": np.where(side < 0, "Sell", "Buy"), "Size": lots})
     term = tradelevel.drift_term(moved, bars, span, drift["window"], drift["variant"],

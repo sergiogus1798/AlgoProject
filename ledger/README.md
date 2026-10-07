@@ -89,7 +89,7 @@ informative count in the note.
 `thresholds.fill` over the parsed file *before* any `--set` override, so an override is still held
 to the number's type and the window's drawer still shows the knob. The placeholder keeps the key in
 its place: the gate prints a screen's thresholds in row order. 🔬 All six modules that declare one
-(gate, snoopingScreen, profitShape, entryQuality, cloud, cscv — 14 keys) came out byte-identical on
+(gate, entryQuality, cloud, cscv — measured when six modules carried one) came out byte-identical on
 real data after the move, fingerprint included (`knowhow/pipeline/thresholds-live-in-the-ledger.md`). A key missing from
 the register, or appended twice by two branches, raises on read. `ledger.report
 --check-thresholds` says of each row whether its module reads it from here (`ledger`) or still

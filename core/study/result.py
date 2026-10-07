@@ -26,7 +26,7 @@ def envelope(module: str, strategy: str | None, identity: str | None, cfg: dict,
     """One strategy's (or one population's) whole result, checked against the contract.
 
     Args:
-        module: The module's dotted name, e.g. "studies.readings.profitShape".
+        module: The module's dotted name, e.g. "studies.readings.entryQuality".
         strategy: The strategy's name, None for a population result.
         identity: SHA-256 of its normalised XML (core.sqxfile.identity), None when the input
             does not carry it; the name alone does not identify a strategy.

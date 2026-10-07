@@ -93,8 +93,8 @@ def merged(todo: list[dict]) -> list[dict]:
 
 
 # Per-strategy readings outside the sequence that run on the survivors of step 8's cut, not on
-# the whole build (owner, 2026-10-01: 200 of step 8's 297 s were these two on all 571).
-AFTER_CUT = {"8": ["monkey", "profitShape", "entryQuality"]}
+# the whole build (owner, 2026-10-01: 200 of step 8's 297 s were these on all 571).
+AFTER_CUT = {"8": ["monkey", "entryQuality"]}
 
 
 def after_cut(actions: list[dict], cfg: dict) -> list[dict]:
@@ -143,6 +143,8 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
         sys.exit("el worker no está libre:\n  " + "\n  ".join(busy))
     cfg = judge.settings()
     todo = plan.plan(workflow.workflow(project), given)
+    for skip in todo.get("skipped", []):
+        print(f"paso {skip['n']} saltado: {skip['why']}", flush=True)
     (out / "plan.json").write_text(json.dumps(todo, indent=1, ensure_ascii=False), encoding="utf-8")
     done, filled, ran_sqx, bad, t0 = [], set(), own_log, None, time.time()
     actions = after_cut(merged(todo["do"]), cfg)
@@ -162,8 +164,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
                     blind.admit(project, "19")
                 what = sqx_step(project, action["steps"], not ran_sqx, filled)
                 ran_sqx = True
-                # A build stopped on its time cap does not go on to the OOS (`buildcap`): the
-                # rail still shows those steps to do, so they run now, in a start of their own.
+                # A build stopped on its time cap (`buildcap`) skips the OOS: it runs now, alone.
                 ns = {s["n"] for s in action["steps"]}
                 left = [a for a in plan.plan(workflow.workflow(project), given)["do"] if a["kind"] == "sqx" and a["n"] in ns]
                 if left:

@@ -16,13 +16,9 @@ VERDICTS = {
              "significativo, la mayoría de sus años ganan y ningún trimestre concentra el "
              "beneficio. DUDOSA: le queda filo, pero no basta. DESCARTAR: no le queda filo, "
              "pierde la mayoría de sus años o debe el beneficio a un trimestre.",
-    "snoopingScreen": "¿Bate al buy & hold a igual riesgo una vez pagada la búsqueda entera "
-                      "(SPA de Hansen, StepM de Romano y Wolf)? SUPERIOR si el StepM la nombra, "
-                      "NO SUPERIOR si no. Anota y no corta: en verdict.csv todas son MANTENER.",
-    "crossmarket": "¿Aparece la ventaja en mercados que la estrategia nunca vio? MANTENER si al "
-                   "menos en la mitad de sus mercados el intervalo de la esperanza por "
-                   "operación (bootstrap 5–95 %, con coste) queda por encima de cero; DESCARTAR "
-                   "si no. Es la única criba: los p se enseñan y no deciden.",
+    "crossmarket": "¿La lógica de la estrategia viaja a otros mercados? El estudio ya no decide: "
+                   "mide P1-P9 y deja las cifras en las columnas. Quien dice Pasa, Limbo o Falla es "
+                   "el juez, con las reglas de la zona «Criterios».",
     "crossTF": "¿Sobrevive la ventaja leída en un timeframe más lento, con los periodos "
                "escalados? Por timeframe: survives (bate al nulo de cuándo entra allí), "
                "inherited (gana pero no se distingue del azar), fails (no se transfiere), "
@@ -74,14 +70,11 @@ VERDICTS = {
                   "desde 80, ACCEPTABLE desde 65, MARGINAL desde 50, FAIL por debajo o con un "
                   "veto, INCONCLUSIVE si lo que falla es la muestra. No pregunta si el edge es "
                   "real.",
-    "profitShape": "¿De qué pocas cosas está hecho el resultado? Concentración, independencia "
-                   "de las operaciones y ruptura de la media, cada una con su lectura en su "
-                   "pestaña; sin veredicto global: «descriptivo».",
     "entryQuality": "¿La entrada lleva información o valdría cualquiera? Contra entradas al "
                     "azar a las mismas horas, y entrando una barra tarde; cada lectura en su "
                     "pestaña, sin veredicto global: «descriptivo».",
-    "edgeCost": "¿Cuánto edge bruto lleva cada operación sobre lo que cuesta hoy? «por encima "
-                "del umbral» si el edge medio llega a 2 veces el coste por operación, «por "
+    "edgeCost": "¿Cuánto edge bruto lleva cada operación sobre el coste que pagó en oos1? «por "
+                "encima del umbral» si el edge medio llega a 2 veces ese coste, «por "
                 "debajo» si no. En verdict.csv, DESCARTAR sólo si el dueño eligió eliminar.",
     "conditionalMap": "Dónde, en la rejilla de estados del mercado al entrar, gana la "
                       "estrategia: P&L medio, su intervalo y tasa de acierto por celda. Fabrica "
@@ -93,7 +86,4 @@ VERDICTS = {
                    "congelados, huecos)? «alarma» si las operaciones que tocan uno llevan más "
                    "de lo que daría el azar; «sin alarma» si no; «insuficiente» con menos de 10 "
                    "marcadas. DESCARTAR sólo si el dueño eligió eliminar.",
-    "spread": "¿Sigue ganando pagando el spread y el slippage reales de Darwinex en vez del "
-              "spread plano de SQX? «cubre el spread real», o «se rompe en IS/OOS» donde un "
-              "neto positivo deja de serlo. DESCARTAR sólo si el dueño eligió eliminar.",
 }

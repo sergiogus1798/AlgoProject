@@ -1,4 +1,4 @@
-"""The databank's aggregate equity beside the table: SQX's and the real-cost curve, with stats."""
+"""The databank's aggregate equity beside the table: SQX's curve, with stats."""
 
 import httpx
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
@@ -20,9 +20,8 @@ def ask(path: str, **params: str) -> dict:
 
 
 class Aggregate(QWidget):
-    """The two curves, each with its switch, the IS/OOS boundary and the stats. No line under
-    them names the cosecha or the spread report (owner, 2026-09-28): why the real curve is
-    missing is the tooltip of its switch."""
+    """The curve with its switch, the IS/OOS boundary and the stats. No line under it names
+    the cosecha (owner, 2026-09-28)."""
 
     def __init__(self) -> None:
         """Build it empty, at the width the panel's splitter gives it: the curve takes every
@@ -47,7 +46,7 @@ class Aggregate(QWidget):
         self.curves = Curves(80)
         switches = QHBoxLayout()
         self.boxes = {}
-        for key in ("sqx", "real"):
+        for key in ("sqx",):
             box = QCheckBox(NAME[key])
             box.setChecked(True)
             box.setStyleSheet(f"color: {INK[key]};")
@@ -98,17 +97,15 @@ class Aggregate(QWidget):
         """Paint GET /api/databank/equity's answer, or its error in place of the stats.
 
         Args:
-            curve: `sqx`, `real` (None without a spread report), `split`, `stats` and
-                `real_why` — or `error`.
+            curve: `sqx`, `split`, `stats` — or `error`.
         """
         of = curve.get("of")
         self.of.setText("" if of is None else "· de todas las filas" if of == "todas"
                         else f"· {num(of)} visibles")
         if "error" in curve:
-            self.curves.fill([0.0, 0.0], [])
+            self.curves.fill([0.0, 0.0])
             self.stats.setText(curve["error"])
             return
-        self.curves.fill(curve["sqx"], curve["real"] or [], curve.get("split"))
+        self.curves.fill(curve["sqx"], curve.get("split"))
         pairs = [f"{k}: {num(v)}" for k, v in curve["stats"].items()]
         self.stats.setText("\n".join("   ".join(pairs[i:i + 2]) for i in range(0, len(pairs), 2)))
-        self.boxes["real"].setToolTip(curve.get("real_why") or "")

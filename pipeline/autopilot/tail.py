@@ -56,12 +56,11 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
     Returns:
         `do` and `stop` {n, why}, as `plan.plan`. In order: the blind looks 17, 18, 18.5 (a
         look skips a mother that has its result unless `redo`), the WFM in SQX and its
-        reading, the ledger rows of 17-19 and the door, step 20 and its judge, 21-22 on the
+        reading and what the funding module keeps of each that passed it (`kept`), the ledger rows of 17-19 and the door, step 20 and its judge, 21-22 on the
         databanks given, 23 and 24 in SQX, 25, the finalists, 26. A step done is skipped;
         the block's looks are planned whenever any of 17-19 is not, because the rail calls a
         step done as soon as ONE mother has its result. 20, and any of 21-25 with rules, is
-        judged right after it runs. 25.5 is not in the chain. It stops, cleanly, at a step
-        in marcha, without a family, at 21 or 22 without their databank, and before 26
+        judged right after it runs. It stops, cleanly, at a step in marcha, without a family, at 21 or 22 without their databank, and before 26
         without every one of its parameters.
     """
     by = {s["n"]: s for s in steps}
@@ -117,6 +116,7 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         if ran or not any(t["key"] == "wfm" and t["state"] == "done"
                           for t in by["19"].get("tests", [])):
             add("19", "wfm", title="lectura de la WFM")
+            add("19", "kept", title="guardar para fondeo")
         stale = True        # a piece of the block is new: 20 and what follows read it again
     if running == "20":
         return halt("20", "está en marcha")

@@ -29,29 +29,12 @@ thresholds:
 
   - key: snoopingScreen.stepm.fwer
     value: 0.05
-    source: studies/screening/snoopingScreen/config.yaml#stepm.fwer
+    source: studies/closing/blindJoint/config.yaml#stepm.fwer
     set_by: dueño
     set_on: 2026-09-25
-    why: probabilidad de nombrar al menos una que no bate al buy & hold a igual riesgo; anota, no corta
+    why: probabilidad de nombrar al menos una que no bate al buy & hold a igual riesgo (la lee el paso 20)
 
   # ── Lecturas por estrategia ───────────────────────────────────────────────────────────
-  - key: profitShape.max_top5
-    value: 0.60
-    source: studies/readings/profitShape/config.yaml#verdict.max_top5
-    set_by: agente
-    set_on: 2026-09-24
-    why: >-
-      cuota del beneficio que puede llevarse el mejor 5 % de las operaciones. PROVISIONAL —
-      un seguidor de tendencia está sesgado por diseño y el suelo correcto sale de comparar
-      con entradas aleatorias, no de elegirlo a ojo
-
-  - key: profitShape.alpha
-    value: 0.05
-    source: studies/readings/profitShape/config.yaml#verdict.alpha
-    set_by: agente
-    set_on: 2026-09-24
-    why: para el Ljung-Box y la racha perdedora
-
   - key: entryQuality.dcr_high
     value: 0.30
     source: studies/readings/entryQuality/config.yaml#verdict.dcr_high

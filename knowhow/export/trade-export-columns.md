@@ -7,7 +7,7 @@ tag: 🔬  date: 2026-09-26  see: export/orderstocsv-schema, export/storage-form
 - Drop `Ticket` only if the file passes `tradestore.ordered()` (open-time sorted, no dup open times, no overlaps); else keep it.
 - Drop `Symbol` only under `data=main`; under `data=all` it is the sole market separator (`tradestore.pack(per_market=True)` keeps it).
 - Every export carries `Symbol` since 2026-09-24, one-market too: cross-market means **more than one distinct feed** in it, never "the column exists". Filter on `Symbol` only with a feed in hand.
-- `Balance` is derivable but kept (owner's decision). `Close type` is NOT disposable.
+- `Balance` is derivable but kept (owner's decision). `Close type` (and `Close price`) is NOT disposable: `reprice.real` fills a stop at its price only through it. Never store a trade table without both (the 2026-10-06 `reports/*/spread/trades.parquet` did; its stopped trades cannot be repriced — rebuild from `raw/<P>/<bank>/<day>/trades.parquet`).
 - Keep packed text columns categorical. Per-strategy work: read once, split with `tradestore.by_strategy()`.
 
 ## Evidence

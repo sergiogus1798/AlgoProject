@@ -21,7 +21,7 @@ ONLY = {"crossmarket": transfer.only_options}
 # every OOS value stuck at the SQX default (std 0, `analysis.metrics.measured` drops them all):
 # zero targets, zero tabs, and the window read that as no result at all (feedback 2026-09-29
 # §1.4). Redirected here for the same reason, to the databank whose export actually carries OOS.
-SAMPLED = {"monkey", "profitShape", "entryQuality", "exposure", "monkeyExcess", "filters"}
+SAMPLED = {"monkey", "entryQuality", "exposure", "monkeyExcess", "filters"}
 
 
 def oos1(c: dict) -> bool:

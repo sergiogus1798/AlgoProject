@@ -13,8 +13,8 @@ from sqx.variants import legs as legmod
 
 KEY = "portfolio.funded.stop_percentile"     # owner, 2026-09-30: one rule for every strategy
 TAG = "stopgrid"                             # the export tag of step 24's batches
-# Step 25 reads what step 8 reads, at the same two cost segments (`edgeCost.costs`): build
-# as IS, oos1 as OOS. oos2 is not its to read (`assets/_policy.yaml`).
+# The export labels build as IS and oos1 as OOS; `edgeCost` reads only the oos1 rows
+# (encargo 44). oos2 is not its to read (`assets/_policy.yaml`).
 SAMPLE = {"build": "IS", "oos1": "OOS"}
 COLUMNS = ["Type", "Open time", "Open price", "Size", "Close time", "Close price",
            "Profit/Loss", "Balance", "Sample type", "Close type", "MAE ($)", "MFE ($)"]

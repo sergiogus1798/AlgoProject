@@ -26,11 +26,13 @@ FIELDS = {
     "cloud": ["drift_median", "dropped", "gap", "point", "r2", "rho_median", "roughness",
               "surface", "temporal", "variants"],
     "crossTF": ["baseline", "control", "p", "reading", "seen", "trades"],
-    "crossmarket": ["cleared", "edge_r", "fraction", "markets", "median_pf",
-                    "paired_under_alpha", "pf_cv", "reason", "under_alpha", "worst_pf"],
+    "crossmarket": ["markets", "markets_valid", "invalid_fraction", "fixed_distance", "freq_off",
+                    "freq_off_fraction", "z_conj", "p_conj", "z_conj_v2", "z_conj_v0", "z_conj_v1",
+                    "z_minus_market", "minus_market", "p_breadth", "breadth_count", "tau_half",
+                    "e_principal", "worse", "worse_fraction", "z_beta", "e_end", "beta",
+                    "e_end_ratio", "net_t_pooled", "trades"],
     "cscv": ["score"], "wfc": ["score"],
-    "edgeCost": ["edge_mean", "edge_median", "n", "be_all", "be_commission", "be_swap",
-                 "be_spread", "be_slippage", "bites_first"],
+    "edgeCost": ["edge_mean"],
     "exposure": ["aligned", "captured", "days", "dd_ratio", "efficiency", "equity_start",
                  "hours_off", "n", "reasons", "return_per_exposure_pct", "return_ratio",
                  "exp_avg_notional_pct", "exp_hours_per_week", "exp_notional_when_in_pct",
@@ -45,7 +47,7 @@ FIELDS = {
             "steps"],
 }
 VERDICT_ONLY = ("conditionalMap", "decay", "entryQuality", "feedQuality", "gate", "isOos",
-                "monkey", "monteCarlo", "profitShape", "snoopingScreen", "spp", "spread",
+                "monkey", "monteCarlo", "spp",
                 "structure")
 
 

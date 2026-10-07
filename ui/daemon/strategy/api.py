@@ -1,6 +1,4 @@
-"""The Estrategia page's routes: metadata, basic stats, the two curves, and «Archivar»."""
-
-from pathlib import Path
+"""The Estrategia page's routes: metadata, basic stats, the curve, and «Archivar»."""
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -25,22 +23,18 @@ class Archive(BaseModel):
 
 
 def _read(project: str, databank: str, identity: str, source: str,
-          version: str, strategy: str = "") -> tuple[dict | str, list]:
-    """The cosecha rows and the spread reports of one strategy, live or archived; a databank
-    without a cosecha borrows one of the project's (`tearsheet.borrow`: same XML, else by
-    `strategy`'s name), and the dict's `databank` and `note` say which.
+          version: str, strategy: str = "") -> dict | str:
+    """The cosecha rows of one strategy, live or archived; a databank without a cosecha
+    borrows one of the project's (`tearsheet.borrow`: same XML, else by `strategy`'s name),
+    and the dict's `databank` and `note` say which.
 
     Returns:
-        (`harvest.read`'s dict or the refusal sentence, the `spread` report folders).
+        `harvest.read`'s dict or the refusal sentence.
     """
     if source == "live":
-        data = harvest.read(project, databank, identity, strategy)
-        home = data.get("databank", databank) if isinstance(data, dict) else databank
-        return data, costcurve.reports(project, home)
+        return harvest.read(project, databank, identity, strategy)
     got = archived.load(identity, version)
-    if isinstance(got, str):
-        return got, []
-    return archived.tearsheet(identity, version), costcurve.frozen(Path(got["folder"]), databank)
+    return got if isinstance(got, str) else archived.tearsheet(identity, version)
 
 
 def _asked(project: str, databank: str, identity: str, source: str) -> dict | None:
@@ -72,20 +66,19 @@ def strategy_meta(project: str = "", databank: str = "", identity: str = "",
 @ROUTER.get("/api/strategy/costcurve")
 def strategy_costcurve(project: str = "", databank: str = "", identity: str = "",
                        source: str = "live", version: str = "", strategy: str = "") -> dict:
-    """SQX's equity and the one at the real spread and slippage, IS then OOS1.
+    """SQX's equity, IS then OOS1.
 
     Returns:
-        As `costcurve.curve`, plus `asset` for the «calcular» button and `note` (where the
-        cosecha came from, "" for this databank's own); or `{"error"}`.
+        As `costcurve.curve`, plus `asset` and `note` (where the cosecha came from, "" for
+        this databank's own); or `{"error"}`.
     """
     refused = _asked(project, databank, identity, source)
     if refused:
         return refused
-    data, spread = _read(project, databank, identity, source, version, strategy)
+    data = _read(project, databank, identity, source, version, strategy)
     if isinstance(data, str):
         return {"error": data, "absent": isinstance(data, harvest.Absent)}
-    return costcurve.curve(data, spread) | {"asset": guess_asset(project),
-                                            "note": data.get("note", "")}
+    return costcurve.curve(data) | {"asset": guess_asset(project), "note": data.get("note", "")}
 
 
 @ROUTER.get("/api/strategy/stats")
@@ -100,11 +93,10 @@ def strategy_stats(project: str = "", databank: str = "", identity: str = "",
     refused = _asked(project, databank, identity, source)
     if refused:
         return refused
-    data, spread = _read(project, databank, identity, source, version, strategy)
+    data = _read(project, databank, identity, source, version, strategy)
     if isinstance(data, str):
         return {"error": data, "absent": isinstance(data, harvest.Absent)}
-    curve = costcurve.curve(data, spread)
-    return stats.build(project, data, curve, source == "live") | {
+    return stats.build(project, data, source == "live") | {
         "asset": guess_asset(project), "note": data.get("note", "")}
 
 

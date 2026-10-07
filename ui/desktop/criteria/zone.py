@@ -175,7 +175,8 @@ class CriteriaZone(QFrame):
             self.say("Los criterios están congelados: no se cambian.", C["weak"])
             return
         was = step["rows"][at]["rule"] if at is not None else None
-        dialog = RuleDialog(self, f"Paso {step['n']} · {step['title']}", step["facts"], was)
+        dialog = RuleDialog(self, f"Paso {step['n']} · {step['title']}", step["facts"], was,
+                              why=step["rows"][at].get("why", "") if at is not None else "")
         if not dialog.exec():
             return
         self.send("criteria/rule", {"n": step["n"], "at": at, "was": was,

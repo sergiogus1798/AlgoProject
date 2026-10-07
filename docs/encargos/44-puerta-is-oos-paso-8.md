@@ -44,11 +44,11 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
 | E | R5, R5b, R5c, R5d, R8, R9b, calidad de datos | programado (2026-10-06), sin conmutar |
 | F | retraso de una barra | programado (2026-10-06), sin conmutar |
 | G | R7, R6, mono | programados (2026-10-06), sin conmutar; las cuatro lecturas del mono confirmadas (dueño, 2026-10-07) |
-| H | lo que se borra | pendiente |
+| H | lo que se borra | **hecho** (2026-10-07): spread del paso 8 y el 25.5, `snoopingScreen`, `profitShape`; `edgeCost` a la definición nueva |
 | I | la cascada y el juez | **conmutado** (2026-10-07): la puerta corre por niveles y el juez lee las 16 reglas; `dev.on` sin tocar |
-| J | parámetros en la ventana | pendiente |
-| K | poblaciones de prueba, líneas, `dev.on` | pendiente |
-| L | datos para el módulo de fondeo | pendiente |
+| J | parámetros en la ventana | J1 y J2 **hechos** (2026-10-07); falta J3 (capturas) |
+| K | poblaciones de prueba, líneas, `dev.on` | `falsePositives` por la cadena nueva **hecho** (2026-10-07); falta K-m, las líneas y `dev.on` |
+| L | datos para el módulo de fondeo | **hecho** (2026-10-07): `pipeline/autopilot/kept.py`, enlace por nombre |
 | M | documentación | pendiente |
 
 **Bitácora** (una línea por sesión: fecha, qué partes, qué quedó a medias):
@@ -107,6 +107,24 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
   (`screens.py` renombrado, el esqueleto fuera), `ledger/backfill.py` ya no rompe con una fila
   de regla, `redundancy.py` ya no rompe sin supervivientes. Sigue para H y M la documentación
   que describe la puerta vieja.
+- 2026-10-07 · oleada 5 hecha: **H1**, **H2**, **H3**, **J1**, **J2**, **K**, **L**. **Roto y
+  preguntado al dueño:** una operación de oos1 cerrada dentro de una barra (stop o target) para
+  el paso 8 (`level1a.py:38`, assert) y el paso 25 (`edgeCost/costs.py:48`); 0,04-0,14 % de las
+  operaciones en donchian, emaCloseCross y timeRangeBreakout, y todas las versiones con stop del
+  paso 25. Otras preguntas abiertas: ventaja plantada bruta o neta en K (mueve todo K-m: R3 deja
+  pasar 0,25 % de nulos y 33 % de Sharpe 0,15 con costes, no 5 % y 67 %), la curva de L como
+  equity o como cambios diarios, y si el percentil 95 del drawdown esperado se expone. A medias:
+  J3, Z0, P, K-m (oleada 6) y la documentación (M).
+- 2026-10-07 · **el repreciado inflaba los stops**: SQX sella un stop con la apertura de su
+  barra y lo llena al precio del stop; `reprice` lo llenaba a la apertura (+290 a +370 USD por
+  operación parada, 30-37 % de las operaciones de toda población con stop). Arreglado en
+  `reprice.real` (reproduce a SQX en NIKKEI225 y USA500); los 35 sellos fuera de rejilla eran
+  salidas a la apertura de una barra sin sus primeros minutos de M1. **Invalidado:** los pases
+  de estrategias reales de D-m (parada 1) y el embudo de USA500 de I, en las poblaciones con
+  stop; no se pueden rehacer porque las poblaciones enteras guardadas no llevan `Close type`
+  (sólo las cosechas, que son de supervivientes). La elección de la variante d se midió con
+  monos sin stop y sigue en pie. Preguntado al dueño: mono sin stop, retraso de una parada,
+  `tick_size` de USDJPY.
 
 ---
 

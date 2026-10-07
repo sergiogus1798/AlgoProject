@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QHeaderView, QLabel, QTableWidget, QTableWidgetItem
 
-from ui.desktop.criteria.dialog import HELP
+from ui.desktop.criteria.overrides import HELP
 from ui.desktop.theme import C
 
 COLUMNS = ("Criterio", "Tipo", "Condición", "Limbo", "Excepciones")

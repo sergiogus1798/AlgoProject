@@ -108,15 +108,6 @@ Salen del dossier `docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md`, ele
 |---|---|---|
 | `35-flota-mt5-en-la-vps.md` | las cuentas de fondeo en vivo de la VPS Windows, vistas desde la ventana del Linux (estado, semáforo contra los límites de cada empresa, conciliación con SQX por magic), y el despliegue de EAs desde una carpeta de `.mq5` y el Excel del dueño con perfiles de gráficos generados; más el exportador de carteras (magic, riesgo, noticias, comentario, nombre) | specs de la VPS y la plantilla de Excel del dueño; el exportador, de OPEN.md #78.3 |
 
-## La licencia del reprecio, 2026-09-29
-
-Sale de `OPEN.md` §76: `studies.data.spread.report` sustituye a un retest DATATICK real sin haber
-sido contrastado con uno.
-
-| fichero | qué construye | depende de |
-|---|---|---|
-| `36-licencia-reprecio-datatick.md` | el paso 25.5 del `WORKFLOW.md`: un retest DATATICK real (`*_DarwTick_*`) en el custodio, sobre un puñado de supervivientes ya existentes, contra el reprecio de Python operación por operación — licencia el atajo o dice qué le falta. Nota de paso: el modelo de USDJPY se apoya en el nivel de precio (`studies/data/spread/POSSIBLE_IMPROVEMENTS.md`) | un worker libre; el umbral de aceptación, del dueño |
-
 ## Lo que quedó sin hacer del feedback de la ventana, 2026-10-01
 
 Salen de la auditoría del feedback del 2026-09-30 (`AlgoData/audit/feedback-ui-2026-09-30/`): tres
@@ -140,7 +131,9 @@ hoy: la calibración del día 4 se borró entera por el spread y no queda herram
 | `42-recalibracion-pasos-6-7-8.md` | la receta de filtros del IS en SQX (paso 6) y las reglas Pasa / Limbo / Falla del primer cribado OOS (pasos 7-8), por activo × marco × familia, sobre poblaciones sin seleccionar con su gemela aleatoria y nulos nuevos; incluye el punto 1.5 del plan 41 | ocho decisiones del dueño, la primera el carril (regla 19) |
 | `43-criterios-pasos-10-a-20.md` | una regla medida, o una razón escrita, para los pasos 10, 12, 14, 16 y 20; es el punto 1.6 del plan 41 | el 42 entregado |
 | `44-puerta-is-oos-paso-8.md` | la puerta IS/OOS nueva del paso 8, tras la revisión del dueño del 2026-10-06: R3 con la deriva por ventana y sin Limbo; R5 a R9b, calidad de datos, retraso de una barra y mono rediseñados; la cascada de la regla más barata a la más cara; todos los parámetros en la ventana; y las dos poblaciones de prueba con las que se fijan las líneas | nada; lleva su tabla de estado |
+| `46-paso-10-otros-mercados-la-logica-viaja.md` | **plan vivo**: el paso 10 nuevo — P1-P9 de la propuesta del dueño del 2026-10-06, todo contra las mismas corridas al azar conjuntas (z conjunta, V2, quitar cada mercado, amplitud, τ½, mercados en contra, frecuencia, degradación); se construye al lado y el corte espera al dueño | el mono del 44 para `e_principal` (P7) |
 | `45-modulo-de-fondeo.md` | el riesgo máximo por operación que admite una cartera dentro del límite diario y total de una cuenta de fondeo (adonde van R9a y R9c al salir del paso 8): la cola del peor día y el drawdown esperado de la cartera | el 44 (parte L y el bootstrap de R6); cinco decisiones del dueño antes de programar |
+| `47-paso-12-otras-temporalidades-pico-aislado.md` | **plan vivo**: los pasos 10.5, 11 y 12 nuevos — T0-T4 de la propuesta del dueño del 2026-10-07 (comparabilidad, frecuencia, retención en oos1, hermana frente al azar en el build, TF lejano, coincidencia) contra corridas al azar conjuntas por año; hermana M15, coeficientes escalados con el cociente de ATR, cascada 11 · 11.5 · 11.7 · 12; se construye al lado y el corte espera al dueño | las piezas del 46 (`travel/`), que se importan sin editar |
 
 ## Lo que no es un encargo
 

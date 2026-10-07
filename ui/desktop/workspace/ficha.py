@@ -59,7 +59,7 @@ class Ficha(QFrame):
         head.addStretch(1)
         for w in (self.said, self.keep, self.fold, self.info):
             head.addWidget(w)
-        self.curves, self.stats = CostCurves(self.compute), Stats(self.compute)
+        self.curves, self.stats = CostCurves(), Stats(self.compute)
         self.basic = QFrame(objectName="basic")
         self.basic.setStyleSheet(f"QFrame#basic {{ border-bottom: 1px solid {T['rule']}; }}")
         row = QHBoxLayout(self.basic)

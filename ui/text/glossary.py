@@ -2,6 +2,8 @@
 
 import re
 
+from ui.text import glossary_crossmarket
+
 # Metric and column keys the window shows today, by the spelling their writer uses: SQX's
 # metric names, the report columns of the studies, the gate's screens and the config knobs.
 # Append new keys at the end (plan 24 §5): never change an existing one, a view may rely on it.
@@ -29,13 +31,13 @@ LABELS = {
     "oos_pct": "OOS %", "net_profit_oos": "Net Profit OOS", "retention": "Retención",
     "edge_r": "Ventaja en R", "real_r": "R real", "null_r": "R del nulo",
     "null_trades": "Operaciones del nulo", "p": "p", "p_min": "p mínimo",
-    "p_median": "p mediano", "paired_p": "p emparejado", "rho": "ρ", "t": "t",
+    "p_median": "p mediano", "rho": "ρ", "t": "t",
     "outlier_share": "Peso de los atípicos", "concentration": "Concentración",
     "years_positive": "Años positivos", "worst_year": "Peor año",
-    "worst_pf": "Peor PF", "worst_market": "Peor mercado", "windows_ok": "Ventanas que pasan",
+    "windows_ok": "Ventanas que pasan",
     "high_vol_net": "Neto en alta volatilidad", "inflation": "Inflación",
-    "limit": "Límite", "vetoes": "Vetos", "under_alpha": "Bajo α",
-    "paired_under_alpha": "Bajo α emparejado", "hold_median": "Duración mediana",
+    "limit": "Límite", "vetoes": "Vetos",
+    "hold_median": "Duración mediana",
     "cost_rate": "Coste por operación", "slippage_decay": "Caída por slippage",
     "fill_error": "Error de llenado", "resolution": "Resolución", "reading": "Lectura",
     "mother": "Madre", "model": "Modelo", "parameter": "Parámetro", "paso": "Paso",
@@ -57,7 +59,8 @@ LABELS = {
     "sqx.databank": "Databank", "sqx.precision": "Precisión",
     "sqx.crosschecks": "Crosschecks", "sqx.crossmarket": "Cross-market",
     "sqx.crosstf": "Cross-timeframe (CrossTF)", "sqx.mc_retest": "MC Retest",
-    "sqx.wfc": "WFC", "sqx.cscv": "CSCV", "sqx.spp": "SPP", "sqx.wfm": "Walk Forward Matrix (WFM)",
+    "sqx.wfc": "WFC", "sqx.cscv": "CSCV", "sqx.gate": "Puerta (paso 8)",
+    "sqx.falsepositives": "Falsos positivos", "sqx.spp": "SPP", "sqx.wfm": "Walk Forward Matrix (WFM)",
     "sqx.forex": "Clase forex", "sqx.no_forex": "Clase no forex",
     "sqx.segments_default": "Tramos: qué es cada uno", "sqx.swap": "Swap",
     "sqx.universe": "Mercados de retest",
@@ -124,7 +127,7 @@ LABELS = {
     # the databank panel (plan 24, F3b): verdict.csv columns and batch summaries it shows
     "cleared": "Mercados superados", "fraction": "Fracción", "binding": "Tramo que manda",
     "blocked_by": "Bloqueada por", "seen": "Visto", "baseline": "Referencia",
-    "control": "Control", "pf_cv": "STD del PF", "missing": "Faltan", "broken": "Se rompe en",
+    "control": "Control", "missing": "Faltan", "broken": "Se rompe en",
     "score": "Puntuación", "point": "Punto", "surface": "Superficie", "temporal": "Temporal",
     "variants": "Variantes", "dropped": "Descartadas", "r2": "R²", "gap": "Hueco",
     "rho_median": "ρ mediana", "drift_median": "Deriva mediana", "roughness": "Rugosidad",
@@ -139,7 +142,7 @@ LABELS = {
     # the Estrategia page (plan 24, F4): signal names of a .sqx and the two curves
     "LongEntrySignal": "Entrada larga", "ShortEntrySignal": "Entrada corta",
     "LongExitSignal": "Salida larga", "ShortExitSignal": "Salida corta",
-    "curve.sqx": "SQX (curva diaria)", "curve.real": "Spread y slippage reales",
+    "curve.sqx": "SQX (curva diaria)",
     # the configuration knobs by part (encargo 24, F15): `knob()` labels each dotted part of
     # a knob key here first, so a section word reads the same in the rail and the drawer
     "knob.nulls": "Nulos", "knob.null": "Nulo", "knob.run": "Ejecución", "knob.ingest": "Ingesta",
@@ -162,6 +165,7 @@ LABELS = {
     "knob.tolerance": "Tolerancia", "knob.action": "Acción", "knob.factor": "Factor",
     "knob.capital": "Capital", "knob.workers": "Procesos", "knob.blocks": "Bloques",
     "knob.period": "Periodo", "knob.percentiles": "Percentiles",
+    "invalid_reason": "Motivo no válido",
     "knob.split_mode": "Modo de corte", "knob.rho_floor": "Suelo de ρ",
     "knob.statistic": "Estadístico", "knob.rung": "Peldaño", "knob.sizing": "Tamaño de posición",
     "knob.fwer": "FWER", "knob.reps": "Repeticiones", "knob.models": "Modelos",
@@ -196,6 +200,7 @@ LABELS = {
     "knob.proof": "Prueba", "knob.barrier": "Barrera", "knob.statistics": "Estadísticos",
     "knob.dependence": "Dependencia", "knob.breaks": "Rupturas", "knob.delay": "Retraso",
 }
+LABELS.update(glossary_crossmarket.LABELS)   # appended last, as every new key is
 
 # Words a humanised key spells its own way: acronyms in capitals, a few English words in Spanish.
 WORDS = {"null": "nulo", "r": "R", "is": "IS", "oos": "OOS", "oos1": "OOS1", "oos2": "OOS2", "pf": "PF", "dd": "DD",

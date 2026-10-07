@@ -91,10 +91,10 @@ def staged(data: dict, feed: str, frame: str, out: Path) -> dict:
     Returns:
         `data`, with `bars` (the strategies' own timeframe, the whole file), `market`,
         `costs` and `costs_build` (reprice.costs of the feed's oos1 and build segments),
-        `out`, and `quality`, the feed's anomaly inventory, left out when it has none.
+        `out`, `feed`, and `quality`, the feed's anomaly inventory, left out when it has none.
     """
     out.mkdir(parents=True, exist_ok=True)
-    data.update(bars=read_bars(feed, frame), market=market(feed), out=out,
+    data.update(bars=read_bars(feed, frame), market=market(feed), out=out, feed=feed,
                 costs=reprice.costs(feed, "oos1"), costs_build=reprice.costs(feed, "build"))
     if (feed_quality_dir(current(feed)) / "events.parquet").exists():
         data["quality"] = feed_quality_dir(current(feed))
@@ -109,19 +109,14 @@ def build_pnl(data: dict, alive: pd.Index) -> pd.DataFrame:
         alive: Identities still in the cascade.
 
     Returns:
-        `identity` and `pnl` (reprice.pnl at the build segment's costs), in close-time order
+        `identity` and `pnl` (reprice.real at the build segment's costs), in close-time order
         within each identity.
     """
     bars, raw = data["bars"], data["trades"]
     raw = (raw[(raw["sample"] == "IS") & raw["identity"].isin(alive)]
            .sort_values(["identity", "Close time"]))
-    enter, leave = (bars.index.get_indexer(raw[k]) for k in ("Open time", "Close time"))
-    assert (enter >= 0).all() and (leave >= 0).all(), "a build trade is stamped off the bar grid"
-    side = np.where(raw["Type"].astype(str) == "Sell", -1.0, 1.0)
-    pnl, _ = reprice.pnl(reprice.fills(bars, enter), reprice.fills(bars, leave),
-                         raw["Open time"].to_numpy(), raw["Close time"].to_numpy(), side,
-                         raw["Size"].to_numpy(), data["costs_build"])
-    return pd.DataFrame({"identity": raw["identity"].to_numpy(), "pnl": pnl})
+    priced = reprice.real(raw, bars, data["costs_build"], data.get("feed"))
+    return pd.DataFrame({"identity": raw["identity"].to_numpy(), "pnl": priced["pnl"].to_numpy()})
 
 
 def newest(project: str, databank: str) -> Path:

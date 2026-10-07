@@ -129,6 +129,31 @@ def test_on_build_writes_the_build_table_and_changes_no_fact() -> None:
     pd.testing.assert_frame_equal(data["written"]["retraso_build.parquet"],
                                   data["written"]["retraso.parquet"])
 
+def test_a_stop_exit_never_moves() -> None:
+    """Known answer: level 1a prices a stop-loss at SQX's price instead of dying or filling it
+    at its bar's open, and level 2 leaves that exit where it was — S+1 changes nothing of a
+    stopped trade and ES+1 is its E+1 — while a bar exit still slips."""
+    index = pd.date_range(SPAN[0], periods=6000, freq="1h")
+    open_ = 500.0 + np.random.default_rng(3).integers(-30, 34, len(index)).cumsum() / 100
+    frame = pd.DataFrame({"Open": open_, "Close": np.r_[open_[1:], open_[-1]], "Low": open_ - 1,
+                          "High": open_ + 1}, index=index)
+    at = np.arange(50, 5900, 13)
+    stopped = np.arange(len(at)) % 2 == 0
+    harvest = pd.DataFrame({
+        "identity": "x", "Type": "Buy", "Open time": index[at], "Close time": index[at + 3],
+        "Size": 1.0, "sample": "OOS", "Close price": open_[at + 3] - 0.5,
+        "Close type": np.where(stopped, "SL", "Exit After X Bars")})
+    _, _, data = gate(harvest, frame)
+    oos = data["oos"]
+    assert np.allclose(oos["pnl"], open_[at + 3] - 0.5 * stopped - open_[at])
+    assert np.allclose(oos["stop"][stopped], open_[at + 3][stopped] - 0.5)
+    assert oos["stop"][~stopped].isna().all()
+    moved = {name: delay.excess(oos, frame, SPAN, FREE, DRIFT, delay.SHIFTS[name])
+             for name in ("E+1", "S+1", "ES+1")}
+    assert np.allclose(moved["S+1"][stopped], oos["excess"][stopped])
+    assert np.allclose(moved["ES+1"][stopped], moved["E+1"][stopped])
+    assert not np.isclose(moved["S+1"][~stopped], oos["excess"][~stopped]).all()
+
 
 if __name__ == "__main__":
     for check in [v for k, v in sorted(globals().items()) if k.startswith("test_")]:

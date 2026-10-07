@@ -19,8 +19,6 @@ STUDIES = {
     "replication": ("screening", "studies.screening.replication", "Replicación", "8"),
     "decay": ("screening", "studies.screening.decay", "Decaimiento IS→OOS", "8"),
     "monkeyExcess": ("screening", "studies.screening.monkeyExcess", "Exceso sobre el mono", "8"),
-    "snoopingScreen": ("screening", "studies.screening.snoopingScreen",
-                       "SPA y StepM contra buy & hold", "8"),
     "falsePositives": ("screening", "studies.screening.falsePositives", "Falsos positivos", "8"),
     "crossmarket": ("transfer", "studies.transfer.crossmarket", "Cross-market", "10"),
     "crossTF": ("transfer", "studies.transfer.crossTF", "Cross-timeframe", "12"),
@@ -36,14 +34,12 @@ STUDIES = {
     "exposure": ("closing", "studies.closing.exposure", "Exposición contra buy & hold", "21"),
     "atrCalculator": ("closing", "studies.closing.atrCalculator", "Stop loss ATR", "24"),
     "monkey": ("readings", "studies.readings.monkey", "Test del mono", None),
-    "profitShape": ("readings", "studies.readings.profitShape", "Forma del beneficio", None),
     "entryQuality": ("readings", "studies.readings.entryQuality", "Calidad de la entrada", None),
     "edgeCost": ("readings", "studies.readings.edgeCost", "Edge por coste", "8"),
     "conditionalMap": ("readings", "studies.readings.conditionalMap", "Mapa condicional", "22"),
     "structure": ("readings", "studies.readings.structure", "Estructura", "23"),
     "monteCarlo": ("readings", "portfolio.common.monteCarlo", "Monte Carlo de operaciones", None),
     "feedQuality": ("data", "studies.data.feedQuality", "Calidad del feed", "8"),
-    "spread": ("data", "studies.data.spread", "Spread real de Darwinex", "8"),
     "maeDepth": ("screening", "studies.screening.maeDepth", "Criba del MAE profundo", "8"),
 }
 
@@ -63,8 +59,6 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     "decay": "gate",
     # counts how many beat their monkeys and how many chance gives; population reading
     "monkeyExcess": "describe",
-    # "annotates and removes nobody" (owner, 2026-09-25): every verdict.csv row is MANTENER
-    "snoopingScreen": "describe",
     # monkeys through the chain's criteria: counts the survivors of a null, judges no strategy
     "falsePositives": "describe",
     # many.py: "the verdict /curate applies" — DESCARTAR under the breadth floor
@@ -90,7 +84,6 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     "atrCalculator": "describe",
     # the trade-level readings describe one strategy; none writes DESCARTAR
     "monkey": "describe",
-    "profitShape": "describe",
     "entryQuality": "describe",
     # "fabrica hipótesis, no filtra" (WORKFLOW step 22)
     "conditionalMap": "describe",
@@ -102,8 +95,6 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     "edgeCost": lambda cfg: cfg["verdict"]["action"] == "drop",
     # DESCARTAR only with alarm.action = drop; mark today (ledger, owner 2026-09-26)
     "feedQuality": lambda cfg: cfg["alarm"]["action"] == "drop",
-    # DESCARTAR only with reprice.action = drop; mark today
-    "spread": lambda cfg: cfg["reprice"]["action"] == "drop",
     # DESCARTAR only with verdict.action = drop; mark today (proposal, encargo 27)
     "maeDepth": lambda cfg: cfg["verdict"]["action"] == "drop",
 }
@@ -119,8 +110,6 @@ ONE_WHY = {
                "fuera: con una sola estrategia no hay nada que cortar.",
     "monkeyExcess": "Cuenta cuántas estrategias baten a su mono frente a cuántas daría el azar: "
                     "es una pregunta sobre el conjunto, no sobre una.",
-    "snoopingScreen": "SPA y StepM descuentan la búsqueda entera: con una estrategia no hay "
-                      "búsqueda que pagar.",
     "falsePositives": "Es el control negativo de la cadena: sortea monos con la huella de "
                       "todas las estrategias del databank; de una sola no sale una tasa.",
     "blindJoint": "El StepM del paso 20 cuenta todas las madres que llegaron: una sola no "
@@ -137,7 +126,7 @@ def folder(key: str) -> Path:
     """The study's source folder.
 
     Args:
-        key: Study key, e.g. "profitShape".
+        key: Study key, e.g. "entryQuality".
 
     Returns:
         Path under the repository.

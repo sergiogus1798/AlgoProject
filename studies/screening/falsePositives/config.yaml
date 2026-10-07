@@ -5,21 +5,24 @@
 # read theirs from ledger/thresholds.yaml as they do for a real population.
 
 monkeys:
-  per_donor: 50     # monkeys drawn on each real strategy's footprint. 200 donors x 50 is the
-                    # 10,000 the owner asked for; the smallest rate a run can see is
-                    # 1 / (donors x per_donor)
+  per_donor: 50     # monkeys drawn on each real strategy's footprint. The smallest rate a
+                    # run can see is 1 / (donors x per_donor)
   rung: free        # what a monkey keeps of its donor, a rung of engines/nulls/model.py.
                     # `free` keeps the trade count and the cost and hands entry, holding time
                     # and sizing to chance: the monkey. `timing` keeps the donor's own holds
                     # and sizes — whatever a rung keeps, it gives to the monkey
-  sizing: donor     # how a monkey's trade is sized. `donor`: the size the rung drew (the
-                    # donor's own, or its mean under `free`) — the engine as it is. `atr`:
-                    # re-sized by the ATR of the bar it landed on, at the donor's own
-                    # size x ATR. A donor's size is fitted to the volatility of ITS entry, so
-                    # under `donor` the floating-risk rules (worst day, worst MAE) mostly
-                    # measure that broken pairing. Which is the control is the owner's call
+  sizing: atr       # how a monkey's trade is sized. `atr`: by the ATR of the bar before the
+                    # one it landed on, at the donor's own size x ATR — the doctrine's sizing
+                    # and the gate's monkey's (owner, 2026-10-07). `donor`: the size the rung
+                    # drew (the donor's own, or its mean under `free`): fitted to the
+                    # volatility of the DONOR's entry, so the floating-risk rules then mostly
+                    # measure that broken pairing
 
-population:         # encargo 44, parte K: las poblaciones de prueba con ventaja plantada
-  per_level: 5000   # estrategias por nivel de ventaja
-  edges: [0.05, 0.10, 0.15]   # niveles de ventaja plantada, uno por poblacion
-  seed:             # vacia = nueva en cada corrida, anotada en el resultado
+population:         # encargo 44, part K: the test populations, the whole chain, cascade off
+  per_level: 5000   # strategies per population: per_level / per_donor donors are drawn from
+                    # the harvest, and the same monkeys make every population
+  edges: [0.05, 0.10, 0.15]   # planted Sharpe per trade, one population each beside the
+                    # null one (0): every oos1 trade gains edge x the sd of its strategy's
+                    # excess, on top of what the monkey already has, costs paid
+  seed:             # root of every draw; empty = fresh on each run, written in the result.
+                    # `--seed` wins over it

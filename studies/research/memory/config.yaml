@@ -138,7 +138,6 @@ causes:
     - {fact: "gate.scorecard.*_dd_over_net_year", cause: funding_rule}
     - {fact: "monkey.*", cause: not_beyond_random}
     - {fact: "monkeyExcess.*", cause: not_beyond_random}
-    - {fact: "snoopingScreen.*", cause: not_beyond_random}
     - {fact: "spread.*", cause: cost_kills}
     - {fact: "edgeCost.*", cause: cost_kills}
     - {fact: "crossmarket.*", cause: single_market}

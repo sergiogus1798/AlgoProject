@@ -65,22 +65,3 @@ def quantiles(values: pd.Series) -> dict:
     """The median to the 99th percentile and the mean, one entry each."""
     got = {f"p{int(q * 100)}": float(values.quantile(q)) for q in QUANTILES}
     return {**got, "media": float(values.mean())}
-
-
-def at(m: pd.DataFrame, when: pd.Series, near_minutes: int) -> pd.Series:
-    """The spread a market order placed at each instant found: the first tick at or after it.
-
-    Args:
-        m: `inputs.minutes()`.
-        when: Instants on the feed clock.
-        near_minutes: Farther than this from the instant, the minute found is not that
-            order's: NaN is returned and the caller models it.
-
-    Returns:
-        Spread in price per instant, aligned on `when`'s index.
-    """
-    index = m.index.to_numpy()
-    pos = np.minimum(index.searchsorted(when.to_numpy()), len(index) - 1)
-    near = (index[pos] - when.to_numpy()) <= np.timedelta64(near_minutes, "m")
-    near &= index[pos] >= when.to_numpy()
-    return pd.Series(np.where(near, m["spread_open"].to_numpy()[pos], np.nan), when.index)

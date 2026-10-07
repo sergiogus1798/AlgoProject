@@ -1,4 +1,4 @@
-"""Two cumulative equity curves on one axis, SQX's and the real-cost one, each switchable."""
+"""SQX's cumulative equity curve, switchable, with the IS / OOS1 boundary."""
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPaintEvent, QPen, QPolygonF
@@ -10,8 +10,8 @@ from ui.text.numbers import num
 from ui.desktop.theme import C, MONO, T
 
 FACE = MONO.split(",")[0].strip('"')
-INK = {"sqx": C["accent"], "real": C["weak"]} | CURVE     # "sqx.IS", "real.OOS"…: per sample
-NAME = {"sqx": "SQX", "real": "spread y slippage reales"}
+INK = {"sqx": C["accent"]} | CURVE     # "sqx.IS", "sqx.OOS": per sample
+NAME = {"sqx": "SQX"}
 
 
 class Curves(QWidget):
@@ -22,19 +22,18 @@ class Curves(QWidget):
         """Start empty at a fixed height."""
         super().__init__()
         self.series: dict[str, list[float]] = {}
-        self.shown = {"sqx": True, "real": True}
+        self.shown = {"sqx": True}
         self.split: int | None = None
         self.setMinimumHeight(height)
 
-    def fill(self, sqx: list[float], real: list[float], split: int | None = None) -> None:
-        """Replace both curves.
+    def fill(self, sqx: list[float], split: int | None = None) -> None:
+        """Replace the curve.
 
         Args:
             sqx: Cumulative daily P&L as SQX computed it.
-            real: The same, with the real spread and slippage.
             split: Index where OOS1 starts, or None for a databank aggregate.
         """
-        self.series, self.split = {"sqx": sqx, "real": real}, split
+        self.series, self.split = {"sqx": sqx}, split
         self.update()
 
     def toggle(self, key: str, on: bool) -> None:
@@ -97,16 +96,16 @@ class SampleCurves(Curves):
         super().__init__(height)
         self.days: list[str] = []
 
-    def fill(self, sqx: list[float], real: list[float], split: int | None = None,
+    def fill(self, sqx: list[float], split: int | None = None,
              days: list[str] = ()) -> None:
-        """Replace both curves.
+        """Replace the curve.
 
         Args:
-            sqx, real, split: As `Curves.fill`.
+            sqx, split: As `Curves.fill`.
             days: "YYYY-MM-DD" per point, which place the year ticks.
         """
         self.days = list(days)
-        super().fill(sqx, real, split)
+        super().fill(sqx, split)
 
     def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802 — Qt's name
         """Draw the grid, the ticks, the boundary and the visible curves in their sample's tone.

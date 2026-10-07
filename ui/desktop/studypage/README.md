@@ -86,7 +86,7 @@ Grabs in `scratch/ui-plan/shots/E-*.png`. The Ficha: `python3 tests/test_ui_tear
   edits; `entryQuality` and `conditionalMap` get extra `--set` from the runner (feed, timeframe),
   so their «coincide» compares the owner's knobs only.
 - **The catalogue's `one`/`many`/`runnable`/`why_not` are the runner's** (`ui.daemon.runner.table`,
-  wired 2026-09-26): a study the runner refuses (snoopingScreen, marketSurfaces, blindJoint…)
+  wired 2026-09-26): a study the runner refuses (marketSurfaces, blindJoint…)
   shows its sentence instead of a button, and the headline says «se corre sobre» its scopes.
 - **One job at a time per page.** The buttons wait while a job of this page runs; the bar polls
   `/api/jobs` only then, and when every job ended reloads the dots and the newest result. The
