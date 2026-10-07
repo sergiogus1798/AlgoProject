@@ -54,5 +54,7 @@ TIPS = {
                       "las rachas.",
     "drawdown.sequences": "Secuencias remuestreadas con las que se compara el drawdown; más, "
                           "una p más fina y más tiempo.",
+    "drawdown.percentile": "Percentil de los drawdowns remuestreados que se guarda como drawdown "
+                           "esperado, en R: 95 = solo 1 de cada 20 secuencias cae más.",
     "drawdown.seed": "Raíz del remuestreo; vacía, cada corrida sortea una nueva y la anota en "
                      "el scorecard."}

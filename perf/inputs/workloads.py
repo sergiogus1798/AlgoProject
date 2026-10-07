@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from core import assetdata, bars
-from core.paths import DATA
+from core.paths import DATA, harvest_dir
 from engines.regimes import regime
 from perf.inputs import sample
 from portfolio.common.monteCarlo import run
@@ -214,7 +214,7 @@ def pooledprofile_asset(cfg: dict) -> dict:
 
 
 def falsepositives_donor(cfg: dict) -> dict:
-    """One donor's monkeys drawn and read by the gate, at the control's own settings.
+    """One donor's monkeys drawn and read by the whole chain, cascade off, at the control's settings.
 
     Args:
         cfg: What config.load() returned.
@@ -222,8 +222,10 @@ def falsepositives_donor(cfg: dict) -> dict:
     Returns:
         Monkey trades priced and bytes of the harvest read.
     """
-    project, databank, _ = cfg["sample"]["harvest"]
-    got = fp_inputs.load(project, databank, cfg["sample"]["bars_feed"], 1, fp_inputs.judge.CRITERIA)
+    project, databank, _ = cfg["sample"]["gate"]["harvest"]
+    gate = cfg["sample"]["gate"]
+    got = fp_inputs.load(project, databank, gate["feed"], 1, fp_inputs.judge.CRITERIA,
+                         harvest_dir(*gate["harvest"]))
     key, own = next(iter(got["real"]["trades"].groupby("identity", observed=True)))
     drawn, _ = fp_model.monkeys(own, got["real"]["bars"], got["nullcfg"],
                                 fp_inputs.config([])["monkeys"], key)

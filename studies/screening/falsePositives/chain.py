@@ -95,7 +95,8 @@ def facts8(data: dict, gate_cfg: dict, edge: float = 0.0) -> pd.DataFrame:
     Args:
         data: A staged harvest, real (inputs.load()'s `real`) or as_harvest()'s.
         gate_cfg: The gate's `inputs.config()`.
-        edge: Sharpe per trade planted on every oos1 trade (model.planted); 0 plants nothing.
+        edge: Sharpe per trade, net of costs, planted on every oos1 trade (model.planted); 0
+            plants nothing.
             Only for a harvest of monkeys: the curve is rebuilt from closed trades.
 
     Returns:
@@ -105,8 +106,8 @@ def facts8(data: dict, gate_cfg: dict, edge: float = 0.0) -> pd.DataFrame:
         the population (R5, R5d) are centred on everyone: diagnostic only (owner,
         2026-10-07). The levels' per-trade tables go to a folder that dies with the call.
 
-        The planted edge is a constant per trade: it does not depend on the fill, so it
-        survives the one-bar delay whole (_delayed).
+        The planted edge is a constant per trade (the mean cost it pays back included): it
+        does not depend on the fill, so it survives the one-bar delay whole (_delayed).
     """
     everyone = cascade.population(data).index
     scores = pd.DataFrame(index=everyone)

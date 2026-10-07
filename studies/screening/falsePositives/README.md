@@ -41,20 +41,28 @@ the same way inside the donor's build window, because step 8's rules read it (tr
 the frequency's stability, R6's resampled drawdown); no p and no significance is taken on it, and
 no edge is planted on it.
 
-**The planted edge** (`model.planted`): every oos1 trade of a monkey gains `edge x the sd of that
-monkey's excess` — level 1a's excess, the repricer's P/L minus the drift term. Three things
+**The planted edge** (`model.planted`) is **net of costs** (owner, 2026-10-07): a population
+labelled 0.15 answers «if a strategy earns 0.15 after costs, does the gate see it?». Every oos1
+trade of a monkey gains one constant: `edge x the sd of that monkey's excess` plus `that monkey's
+mean cost per trade`. The series is level 1a's `excess` — the repricer's P/L after the declared
+costs, minus the drift term — which is what R3's `drift_excess_t` is the t of. Three things
 follow, and each moves how a rate is read:
 
-- **It is added on top of what the monkey has, and the monkey pays the declared costs.** The
-  null population's mean excess is below zero by its cost, so a planted 0.15 is a net Sharpe of
-  0.15 minus mean cost / sd. 🔬 2026-10-07, synthetic driftless walk, 196 oos1 trades of 1 to 5
-  bars, 1,000 monkeys (`tests/test_false_positives.py`): **gross** of costs R3 (`drift_excess_t
-  >= 1.65`) passes 4.1 % of the null population and 62 % of the 0.15 one; with a spread worth
-  0.81 of t, 0.25 % and 33 %. The textbook 5 % and 67 % are the plain t's: the gate's t is at
-  the AR(1) effective n over the skewness-and-kurtosis error, which only shrink it (the lift was
-  2.02, not 0.15 x 14 = 2.1; with holds up to 40 bars, whose trades overlap, 1.89 and 2.0 % /
-  58 %). On real populations a no-edge strategy crosses R3 4.05 % gross and 0.87 % net
-  (`knowhow/research/gate-t-scales.md`).
+- **The cost is paid back on average, the luck is kept.** The monkey's expected net excess per
+  trade becomes `edge x sd`; its own draw still scatters around it, so the plain t is
+  `edge x sqrt(n)` plus a standard normal, not a fixed number. The null population is not
+  planted and keeps paying. 🔬 2026-10-07, synthetic driftless walk, 196 oos1 trades of 1 to 5
+  bars, 1,000 monkeys, a spread worth 0.83 of t (`tests/test_false_positives.py`): R3
+  (`drift_excess_t >= 1.65`) passes **0.9 %** of the null population, **13.2 %** of the 0.05
+  one, **33.8 %** of the 0.10 one and **62.0 %** of the 0.15 one; with no cost charged the null
+  is 4.1 % and the planted three the same (13.2 / 33.8 / 62.1 %). The textbook 5 % and 67 % are
+  the plain t's: the gate's t is at the AR(1) effective n over the skewness-and-kurtosis error,
+  which only shrink it (the 0.15 lift is 2.01, not 0.15 x 14 = 2.1; with holds up to 40 bars,
+  whose trades overlap, it was 1.89 and 58 %). On real populations a no-edge strategy crosses
+  R3 4.05 % gross and 0.87 % net (`knowhow/research/gate-t-scales.md`).
+- **Against the gate's own monkey the planted strategy is ahead by the cost too**: that monkey
+  pays, so `z_mono` rises by (edge + mean cost / sd) x sqrt(n) — 🔬 2.92 in the run above, 2.11
+  with no cost.
 - **It is a constant per trade, so it does not depend on the fill**: the one-bar delay keeps it
   whole. Level 2 reprices the moved trade from the bars, so `chain._delayed` adds the plant back
   to the moved mean and takes `retraso_t_delta` from the table before the plant (exact unless a

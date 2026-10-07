@@ -3,8 +3,9 @@
 line a monkey that keeps its donor's holds and sizes earns exactly what the donor earned; a
 hand-built population walks criteria.yaml's steps to a funnel counted by hand; and on a random
 walk the null population crosses R3 a little under the normal's 5 % and a planted Sharpe of 0.15
-on 196 trades a little under its 67 % — gross of costs — and both lower once the cost is paid;
-and the study end to end on six synthetic donors."""
+on 196 trades a little under its 67 %; once a cost is charged the null population crosses less
+and the planted one the same 62 %, because the edge is planted NET of costs; and the study end
+to end on six synthetic donors."""
 
 import json
 import sys
@@ -111,7 +112,8 @@ def crossing(costs: dict, monkeys: int, longest: int = 6) -> tuple[pd.DataFrame,
 
 
 def test_r3_lets_through_the_line_s_own_rate_and_keeps_a_planted_edge() -> None:
-    """GROSS of costs (the repricer charges nothing), trades short and sparse. The plain t would
+    """No costs (the repricer charges nothing, so net is gross), trades short and sparse. The
+    convention: the gate's t (R3) of the oos1 excess, pass at >= 1.65. The plain t would
     clear 1.65 at the normal's 4.95 %, and with a Sharpe of 0.15 per trade on 196 trades, which
     lifts it by 0.15 x 14 = 2.1, at P(z >= -0.45) = 67 %. The gate's t is that one at the AR(1)
     effective n, which only ever shrinks it, over the skewness-and-kurtosis error: 🔬 4.1 % and
@@ -134,15 +136,19 @@ def test_r3_lets_through_the_line_s_own_rate_and_keeps_a_planted_edge() -> None:
         assert null[scored + fact].notna().all(), fact
 
 
-def test_a_monkey_that_pays_costs_crosses_r3_less_and_so_does_its_planted_edge() -> None:
-    """NET of costs, which is what the control measures on a real harvest: the planted Sharpe is
-    added to a mean the spread already pushed under zero (here by 0.81 of t), so both rates
-    fall — 🔬 0.25 % and 33 % — while the plant is still the same lift on top."""
+def test_a_planted_edge_is_net_of_costs_and_the_null_monkey_still_pays() -> None:
+    """A spread worth 0.83 of t is charged. The null population pays it and crosses R3 less (🔬
+    0.9 % of 1,000, against 4.1 % free). The planted one is a NET Sharpe of 0.15 (owner,
+    2026-10-07): each trade gains 0.15 x sd of the excess plus the monkey's mean cost, so its
+    gate's t is the free run's — 🔬 mean 1.96 and 62.0 % over 1.65 on 1,000 monkeys, 62.1 % free
+    — and the lift over the paying null is the edge's 2.01 plus the cost's 0.78. 400 monkeys
+    here: the share's binomial sd is 2.4 points, the bounds are three of them."""
     fanout.CORES = min(fanout.CORES, 4)
     null, edge = crossing({**FREE, "spread": 0.1}, 400)
-    assert (null[R3] >= 1.65).mean() < 0.02
-    assert 0.2 < (edge[R3] >= 1.65).mean() < 0.45
-    assert 1.9 < (edge[R3] - null[R3]).mean() < 0.15 * N_OOS ** 0.5
+    assert (null[R3] >= 1.65).mean() < 0.03 and -1.0 < null[R3].mean() < -0.65
+    assert 0.55 <= (edge[R3] >= 1.65).mean() <= 0.69
+    assert 1.85 < edge[R3].mean() < 0.15 * N_OOS ** 0.5
+    assert 2.6 < (edge[R3] - null[R3]).mean() < 3.0
 
 
 def test_every_population_walks_the_real_criteria_side_by_side() -> None:
@@ -203,5 +209,5 @@ if __name__ == "__main__":
     test_the_funnel_of_a_hand_built_population()
     test_every_population_walks_the_real_criteria_side_by_side()
     test_r3_lets_through_the_line_s_own_rate_and_keeps_a_planted_edge()
-    test_a_monkey_that_pays_costs_crosses_r3_less_and_so_does_its_planted_edge()
+    test_a_planted_edge_is_net_of_costs_and_the_null_monkey_still_pays()
     print("ok")

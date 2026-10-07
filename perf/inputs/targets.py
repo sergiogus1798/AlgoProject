@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 
-from perf.inputs import construct, parsers, workloads
+from perf.inputs import construct, gate, parsers, workloads
 
 # Adding a target is a function in workloads.py or parsers.py and one row here. Nothing
 # else changes: the harness, the history and the panel all read this dict. `unit` is what
@@ -23,6 +23,14 @@ TARGETS: dict[str, dict] = {
     "feedquality.detect": {"area": "strategies", "unit": "bars",
                            "call": workloads.feedquality_detect},
     "autopilot.facts": {"area": "strategies", "unit": "rows", "call": workloads.autopilot_facts},
+    "gate.stage": {"area": "gate", "unit": "strategies", "call": gate.gate_stage},
+    "gate.level0": {"area": "gate", "unit": "strategies", "call": gate.gate_level0},
+    "gate.level1a": {"area": "gate", "unit": "strategies", "call": gate.gate_level1a},
+    "gate.level1b": {"area": "gate", "unit": "strategies", "call": gate.gate_level1b},
+    "gate.level2": {"area": "gate", "unit": "strategies", "call": gate.gate_level2},
+    "gate.level3ab": {"area": "gate", "unit": "strategies", "call": gate.gate_level3ab},
+    "gate.monkey": {"area": "gate", "unit": "strategies", "call": gate.gate_monkey},
+    "gate.kept": {"area": "gate", "unit": "strategies", "call": gate.kept_rows},
     "falsepositives.donor": {"area": "strategies", "unit": "trades",
                              "call": workloads.falsepositives_donor},
     "profilepower.replication": {"area": "research", "unit": "bars",

@@ -85,7 +85,7 @@ El peor día observado en oos1 es una sola observación del extremo, y el siguie
 
 ## 3 · El drawdown esperado de la cartera — `DD_95`
 
-El paso 8 deja por estrategia `gate.scorecard.dd_esperado_p95_r`: el percentil 95 del drawdown
+El paso 8 deja por estrategia `gate.scorecard.dd_esperado_r` (antes `dd_esperado_p95_r`; el percentil es `drawdown.percentile` de la puerta, 95 de serie): el percentil 95 del drawdown
 en el bootstrap por bloques de R6. **El de la cartera no es la suma** de los de sus estrategias:
 se recalcula sobre la curva de la cartera con el mismo método (bloques, 5.000 secuencias),
 conservando la simultaneidad — los bloques se cortan por fecha, los mismos para todas las
@@ -164,7 +164,7 @@ consulta.
 
 - Respuesta conocida: sobre pérdidas diarias simuladas de una Pareto generalizada con
   parámetros dados, `q_día` cae dentro de su intervalo en la proporción que dice el nivel.
-- Una cartera de una sola estrategia da el mismo `DD_95` que `dd_esperado_p95_r` de la puerta.
+- Una cartera de una sola estrategia da el mismo `DD_95` que `dd_esperado_r` de la puerta.
 - Dos estrategias idénticas en cartera doblan `q_día` y `DD_95`; dos que nunca coinciden, no.
 - Con los límites de un plan real del catálogo, `riesgo_max` sale a mano igual que en el módulo.
 - `python3 -m pytest -q tests/<fichero>` de cada test nuevo.

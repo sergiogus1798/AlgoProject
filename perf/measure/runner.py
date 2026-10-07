@@ -3,16 +3,30 @@
 import argparse
 import cProfile
 import json
+import os
 import resource
 import threading
 import time
 import tracemalloc
+
+import psutil
 from pathlib import Path
 
 from perf.inputs import config
 from perf.inputs.targets import TARGETS
 
 MB = 1024 * 1024
+
+
+def _cpu() -> float:
+    """CPU seconds of this process and every process under it, alive or already reaped."""
+    alive = 0.0
+    for child in psutil.Process().children(recursive=True):
+        try:
+            alive += sum(child.cpu_times()[:2])
+        except psutil.Error:        # gone between the listing and the read: os.times() has it
+            pass
+    return sum(os.times()[:4]) + alive
 
 
 def _watch(state: dict, done: threading.Event, every: float) -> None:
@@ -42,7 +56,7 @@ def measure(name: str, cfg: dict, memtop: int = 0) -> dict:
         memtop: How many allocation sites to report, largest first; 0 to report none.
 
     Returns:
-        Wall and CPU seconds, peak Python allocation and peak RSS of this process, plus the
+        Wall seconds, CPU seconds of the whole process tree (workers included), peak Python allocation and peak RSS of this process, plus the
         scale and bytes the target reported. `alloc_peak_mb` counts only what Python
         allocated here: numpy buffers inside a worker process are invisible to it, which is
         why the harness samples the whole tree's RSS as well.
@@ -53,9 +67,9 @@ def measure(name: str, cfg: dict, memtop: int = 0) -> dict:
                                                     cfg["harness"]["sample_ms"] / 1000))
     if memtop:
         watcher.start()
-    wall, cpu = time.perf_counter(), time.process_time()
+    wall, cpu = time.perf_counter(), _cpu()
     out = TARGETS[name]["call"](cfg)
-    wall, cpu = time.perf_counter() - wall, time.process_time() - cpu
+    wall, cpu = time.perf_counter() - wall, _cpu() - cpu
     done.set()
     if memtop:
         watcher.join()

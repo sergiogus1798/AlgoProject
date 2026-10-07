@@ -2,7 +2,7 @@
 
 import re
 
-from ui.text import glossary_crossmarket
+from ui.text import glossary_crossmarket, glossary_gate
 
 # Metric and column keys the window shows today, by the spelling their writer uses: SQX's
 # metric names, the report columns of the studies, the gate's screens and the config knobs.
@@ -44,9 +44,9 @@ LABELS = {
     "n_in": "N dentro", "n_out": "N fuera", "n_steps": "N pasos",
     "min_track_needed": "Historia mínima necesaria", "min_track_enough": "Historia suficiente",
     "stress_net_p5": "Neto p5 bajo estrés", "stress_cvar_dd_pct": "CVaR del DD % bajo estrés",
-    # the gate's screens (studies/screening/gate/config.yaml)
+    # the gate's level-0 screens (studies/screening/gate/config.yaml); the later screens died
+    # with encargo 44, their rules are the facts below
     "presencia": "Presencia", "sanidad": "Sanidad", "estaticas": "Estáticas",
-    "degradacion": "Degradación", "forma": "Forma", "mono": "Mono", "familia": "Familia",
     "redundancia": "Redundancia",
     # config knobs, section.knob as the drawer names them
     "null.draws": "Nulo · runs", "null.chunk": "Nulo · runs por lote",
@@ -200,7 +200,8 @@ LABELS = {
     "knob.proof": "Prueba", "knob.barrier": "Barrera", "knob.statistics": "Estadísticos",
     "knob.dependence": "Dependencia", "knob.breaks": "Rupturas", "knob.delay": "Retraso",
 }
-LABELS.update(glossary_crossmarket.LABELS)   # appended last, as every new key is
+LABELS.update(glossary_crossmarket.LABELS)
+LABELS.update(glossary_gate.LABELS)   # appended last, as every new key is
 
 # Words a humanised key spells its own way: acronyms in capitals, a few English words in Spanish.
 WORDS = {"null": "nulo", "r": "R", "is": "IS", "oos": "OOS", "oos1": "OOS1", "oos2": "OOS2", "pf": "PF", "dd": "DD",

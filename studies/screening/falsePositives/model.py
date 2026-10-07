@@ -104,19 +104,23 @@ def curve(trades: pd.DataFrame, first: str, end: str) -> pd.DataFrame:
 
 
 def planted(oos: pd.DataFrame, edge: float) -> tuple[pd.DataFrame, pd.Series]:
-    """The gate's per-trade table of oos1 with an edge of known size added to every trade.
+    """The gate's per-trade table of oos1 with an edge of known size, NET of costs, planted.
 
     Args:
-        oos: Level 1a's table: `identity`, `pnl` and `excess`.
-        edge: The planted Sharpe per trade.
+        oos: Level 1a's table: `identity`, `pnl`, `cost` and `excess`.
+        edge: The planted Sharpe per trade, net of the costs the gate charges.
 
     Returns:
-        The table with `edge x sd(that strategy's excess)` added to the `pnl` and the `excess`
-        of each of its trades, and that amount per identity. The sd does not move, so the plain
-        t rises by edge x sqrt(n) exactly. The edge is added to the mean the monkey already
-        has, which net of the declared costs is below zero: a planted 0.15 is a net Sharpe of
-        0.15 minus mean cost / sd, not of 0.15.
+        The table with one constant per strategy added to the `pnl` and the `excess` of each
+        of its trades, and that constant per identity: `edge x sd(its excess)` plus its mean
+        `cost` per trade (owner, 2026-10-07). `excess` is the series R3 judges — the
+        repricer's P/L after the declared costs, minus the drift term — and its sd does not
+        move, so the monkey's cost is paid back on average and what is left is its luck
+        around `edge x sd`: an expected net Sharpe of `edge`, and a plain t that rises by
+        (edge + mean cost / sd) x sqrt(n) exactly. The null population is not planted and
+        keeps paying.
     """
-    add = edge * oos.groupby("identity", sort=False)["excess"].transform("std")
+    by = oos.groupby("identity", sort=False)
+    add = edge * by["excess"].transform("std") + by["cost"].transform("mean")
     return (oos.assign(pnl=oos["pnl"] + add, excess=oos["excess"] + add),
             add.groupby(oos["identity"], sort=False).first())

@@ -98,4 +98,5 @@ homogeneity:         # R7: Q del exceso por periodo, contra operaciones barajada
 drawdown:            # R6: el drawdown de oos1 contra las operaciones del build remuestreadas
   block: 8           # longitud del bloque, en operaciones
   sequences: 5000    # secuencias remuestreadas, cada una de tantas operaciones como oos1
+  percentile: 95     # percentil de esos drawdowns que se guarda como drawdown esperado (dd_esperado_r)
   seed:              # vacia = nueva en cada corrida; la usada queda en el scorecard (dd_seed)

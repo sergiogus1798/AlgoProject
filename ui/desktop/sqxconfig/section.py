@@ -11,8 +11,15 @@ HELP_WIDTH = 440   # px of the per-value comment beside its editor
 SHORT = 420        # characters of a long comment shown before «seguir leyendo»
 
 
-def words(key: object) -> str:
-    """The label of one key of the settings files, the zone's own glossary entry first."""
+def words(key: object, path: list | None = None) -> str:
+    """The label of one key of the settings files, the zone's own glossary entry first.
+
+    With the key's `path`, an entry for that exact path (`sqx.delay.variants`) wins over the
+    bare key's (`sqx.variants` is the WFC's «Mín. variantes por madre»).
+    """
+    exact = "sqx." + ".".join(map(str, path)) if path else ""
+    if exact in LABELS:
+        return label(exact)
     return label(f"sqx.{key}") if f"sqx.{key}" in LABELS else label(key)
 
 
@@ -159,7 +166,7 @@ class Section(QFrame):
                     told.add(g["help"])
                     grid.addWidget(note(g["help"]), r, 0, 1, 3)
                     r += 1
-            name = QLabel(words(spec["key"]))
+            name = QLabel(words(spec["key"], spec["path"]))
             name.setObjectName("mono")
             name.setStyleSheet("font-size: 15px;")
             name.setToolTip(" › ".join(str(p) for p in spec["path"]))

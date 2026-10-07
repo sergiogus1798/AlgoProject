@@ -8,7 +8,7 @@ from core.paths import DATA, KEPT, report_dir
 from pipeline.autopilot import survivors
 from studies.screening.gate import inputs
 
-FACTS = ("oos_worst_day_r", "dd_esperado_p95_r", "oos_net_per_year_r")
+FACTS = ("oos_worst_day_r", "dd_esperado_r", "oos_net_per_year_r")
 
 
 def rows(card: pd.DataFrame, passed: list[str], equity: pd.DataFrame, risk: float

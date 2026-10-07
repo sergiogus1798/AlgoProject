@@ -46,7 +46,7 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
 | G | R7, R6, mono | programados (2026-10-06), sin conmutar; las cuatro lecturas del mono confirmadas (dueño, 2026-10-07) |
 | H | lo que se borra | **hecho** (2026-10-07): spread del paso 8 y el 25.5, `snoopingScreen`, `profitShape`; `edgeCost` a la definición nueva |
 | I | la cascada y el juez | **conmutado** (2026-10-07): la puerta corre por niveles y el juez lee las 16 reglas; `dev.on` sin tocar |
-| J | parámetros en la ventana | J1 y J2 **hechos** (2026-10-07); falta J3 (capturas) |
+| J | parámetros en la ventana | **hecho** (2026-10-07): J1, J2 y J3 (embudo por nivel, capturas, 22 de 23 parámetros mueven su hecho) |
 | K | poblaciones de prueba, líneas, `dev.on` | `falsePositives` por la cadena nueva **hecho** (2026-10-07); falta K-m, las líneas y `dev.on` |
 | L | datos para el módulo de fondeo | **hecho** (2026-10-07): `pipeline/autopilot/kept.py`, enlace por nombre |
 | M | documentación | pendiente |
@@ -125,6 +125,25 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
   (sólo las cosechas, que son de supervivientes). La elección de la variante d se midió con
   monos sin stop y sigue en pie. Preguntado al dueño: mono sin stop, retraso de una parada,
   `tick_size` de USDJPY.
+- 2026-10-07 · oleada 5 y el arreglo de los stops, comiteados (`90d516d`). El dueño: las
+  poblaciones a medias se olvidan y se harán otras (no se repite ningún retest); la ventaja
+  plantada de `falsePositives` es **neta de costes**; el mono **sin stop** vale; la curva de
+  fondeo se queda como equity desde 0 en R. Lanzados: la ventaja neta en K, J3 y P. K-m espera
+  a poblaciones nuevas con la máquina libre; después, parada 2 (líneas), Z1, M y parada 3.
+- 2026-10-07 · hechos **J3** (más cuatro retoques de la ventana), **P** (ocho objetivos `gate.*`
+  y `falsepositives.donor` en el catálogo) y la ventaja plantada **neta** en K (R3 deja pasar
+  0,9 % de nulos, 13 %, 34 % y 62 % de 0,05, 0,10 y 0,15 en el caso sintético de 196
+  operaciones). Queda de la oleada 6 sólo **K-m**. A medias: el `tick_size` de la ficha de
+  USDJPY (0,01 con precios de 3 decimales) y el `cpu_s` del catálogo, que no cuenta los hijos.
+- 2026-10-07 · USDJPY resuelto: la ficha estaba bien (`tick_size` es el pip de SQX); era el
+  repreciado, que redondeaba el fill de forex al pip y no al paso del precio (`tick_step`).
+  Corregido en `reprice.pnl`: 973 operaciones de doubleROC a 0,01 USD de SQX (antes hasta 77,73),
+  lo que verifica también el swap en puntos sobre largos.
+- 2026-10-07 · Dueño: (1) el percentil del drawdown esperado pasa a parámetro — `drawdown.percentile`
+  (95 de serie) en la puerta y en la ventana; el dato se llama ahora `dd_esperado_r` (antes
+  `dd_esperado_p95_r`; el paquete M lo cambia en la especificación). (2) `OPEN.md` #76 se queda
+  cerrado. (3) `cpu_s` del catálogo cuenta todo el árbol de procesos (`perf/measure/runner.py`);
+  las filas ya medidas se corrigen al volver a medir.
 
 ---
 

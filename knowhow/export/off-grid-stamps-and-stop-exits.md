@@ -12,6 +12,8 @@ tag: 🔬  date: 2026-10-07  see: research/monkey-reprice-audit, export/fill-and
 - Not measured: shorts, PT (none harvested), a stop under M1-precision stamps (would be refused, not mispriced).
 
 ## Evidence
+🔬 2026-10-07: the USDJPY residue below (−0.61 vs SQX −2.46) was the repricer rounding forex fills to the pip (`tick_size` 0.01) instead of the price step (`tick_step` 0.001); fixed in `reprice.pnl`, 973 trades now within 0.01 USD of SQX. The card was right.
+
 Newest harvest of each of 18 projects under `AlgoData/harvest/`, bars `core.barstore.read`, costs `reprice.costs` of today's card.
 
 | population, oos1 | trades | stops | repriced before | now | SQX |

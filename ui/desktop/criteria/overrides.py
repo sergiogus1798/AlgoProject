@@ -2,6 +2,8 @@
 
 from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QWidget
 
+from ui.text.glossary import LABELS, label
+
 
 def by_line(key: str, passes: str, limbo: str) -> tuple[tuple, QWidget, QPushButton]:
     """The widgets of one override row: its three boxes, the row, and its «−» button."""
@@ -71,5 +73,8 @@ def told(rule: dict) -> str:
         return f"{word} de {len(parts)}:  " + "  /  ".join(told(p) for p in parts)
     test = {"pass": "Aprobado", "fail": "Suspenso"}[rule["is"]] if "is" in rule else \
         f"±{100 * rule['near_median']:g} % de la mediana" if "near_median" in rule else rule["pass"]
-    return f"{rule['fact']}   {test}" + (f"   · limbo {rule['limbo']}" if "limbo" in rule else "") \
+    tail = rule["fact"].rsplit(".", 1)[-1]
+    # the gate's facts in the funnel's own words, the raw key kept beside as secondary text
+    said = f"{label(tail)}   ·   {rule['fact']}" if tail in LABELS else rule["fact"]
+    return f"{said}   {test}" + (f"   · limbo {rule['limbo']}" if "limbo" in rule else "") \
         + (f"   · sin dato: {rule['missing']}" if "missing" in rule else "")

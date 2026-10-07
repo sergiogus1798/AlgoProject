@@ -5,8 +5,7 @@ import pandas as pd
 
 from studies.screening.analysis import resample, tradelevel
 
-FACTS = ("q_p", "q_seed", "dd_p", "dd_esperado_p95_r", "dd_seed")
-EXPECTED = 95      # the percentile `dd_esperado_p95_r` carries in its own name
+FACTS = ("q_p", "q_seed", "dd_p", "dd_esperado_r", "dd_seed")
 
 
 def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
@@ -24,7 +23,8 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         across the calendar periods the trades opened in (`homogeneity.period`, periods under
         `homogeneity.min_trades` joined to the next). `dd_p`: the share of block-bootstrapped
         sequences of the build's P/L, shifted to oos1's mean and as long as oos1, whose maximum
-        drawdown reaches oos1's own; `dd_esperado_p95_r`: their 95th percentile, in R. `q_seed`
+        drawdown reaches oos1's own; `dd_esperado_r`: their `drawdown.percentile`
+        (95 as shipped), in R. `q_seed`
         and `dd_seed` are the roots each resampling used — the config's, or fresh when null.
         A strategy with no build trades has no `dd_*`; one with a single period, no `q_p`.
     """
@@ -47,7 +47,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
             simulated = resample.drawdowns(build[identity], pnl.mean(), len(pnl), fall["block"],
                                            fall["sequences"], resample.stream(dd_seed, str(identity)))
             row["dd_p"] = resample.p_upper(simulated, resample.max_drawdown(pnl))
-            row["dd_esperado_p95_r"] = np.percentile(simulated, EXPECTED) / risk
+            row["dd_esperado_r"] = np.percentile(simulated, fall["percentile"]) / risk
         rows[identity] = row
     facts = pd.DataFrame.from_dict(rows, orient="index").reindex(index=alive, columns=list(FACTS))
     return facts.assign(q_seed=float(q_seed), dd_seed=float(dd_seed))

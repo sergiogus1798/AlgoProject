@@ -21,8 +21,9 @@ monkeys:
 population:         # encargo 44, part K: the test populations, the whole chain, cascade off
   per_level: 5000   # strategies per population: per_level / per_donor donors are drawn from
                     # the harvest, and the same monkeys make every population
-  edges: [0.05, 0.10, 0.15]   # planted Sharpe per trade, one population each beside the
-                    # null one (0): every oos1 trade gains edge x the sd of its strategy's
-                    # excess, on top of what the monkey already has, costs paid
+  edges: [0.05, 0.10, 0.15]   # planted Sharpe per trade NET of costs, one population each
+                    # beside the null one (0): every oos1 trade gains edge x the sd of its
+                    # strategy's excess plus its mean cost per trade, so what is left after
+                    # the costs the gate charges is the edge (owner, 2026-10-07)
   seed:             # root of every draw; empty = fresh on each run, written in the result.
                     # `--seed` wins over it

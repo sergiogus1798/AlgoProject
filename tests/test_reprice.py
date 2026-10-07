@@ -96,6 +96,14 @@ def test_cost_off_the_tick_rounds_the_fill() -> None:
     assert got == -1.5 and np.isclose(cost, 2.4), (got, cost)      # paid 6 x 0.25, declared 6 x 0.40
 
 
+def test_forex_fill_rounds_to_the_price_step_not_the_pip() -> None:
+    """A card with `tick_step` (forex) rounds the fill to it: the pip would swallow the cost."""
+    c = {**HAND, "tick_size": 0.01, "tick_step": 0.001, "spread": 0.004, "slippage": 0.0}
+    got, _ = reprice.pnl(100.0, 100.0, *DAY, 1, 3.0, c)
+    assert got == -0.02                 # fill 100.004, not 100.00: 0.004 x 2.0 x 3 lots = 0.024
+    assert reprice.pnl(100.0, 100.0, *DAY, 1, 3.0, {**c, "tick_step": None})[0] == 0.0
+
+
 def test_commission_once_on_the_open() -> None:
     """0.01 % of the entry notional (6 x 100.07), or 8 USD per lot: on top of the 0.54."""
     pct, _ = reprice.pnl(100.0, 100.0, *DAY, 1, 3.0, {**HAND, "commission": 0.01})

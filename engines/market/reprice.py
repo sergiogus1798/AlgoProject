@@ -85,8 +85,9 @@ def pnl(open_px: np.ndarray, close_px: np.ndarray, open_time: np.ndarray,
     zero commission with a percent swap (knowhow/research/monkey-reprice-audit.md). UNVERIFIED
     against SQX, never reconciled trade by trade: shorts (the literal mirror, owner 2026-10-06:
     sell at open - spread - slippage, buy back at open + slippage; `swap_short` applied with
-    the long's sign rule), a non-zero commission (once, at the open: `PercentageBased` on the
-    entry notional, `SizeBased` per lot) and a swap in points (forex).
+    the long's sign rule) and a non-zero commission (once, at the open: `PercentageBased` on the
+    entry notional, `SizeBased` per lot). A swap in points is verified on longs (USDJPY, 973
+    trades to 0.01 USD, knowhow/export/off-grid-stamps-and-stop-exits.md).
 
     Args:
         open_px, close_px: Raw bar opens, in price.
@@ -102,7 +103,10 @@ def pnl(open_px: np.ndarray, close_px: np.ndarray, open_time: np.ndarray,
         the bar-to-bar gross only up to the tick and cent rounding of that trade.
     """
     size, side = np.asarray(size, float), np.asarray(side, float)
-    tick, value, slip = costs["tick_size"], costs["point_value"] * size, costs["slippage"]
+    # Forex prices move in tickStep (a tenth of the pip the card calls tick_size): fills round
+    # to it. 🔬 2026-10-07, USDJPY M30, 973 trades: max gap to SQX 77.73 USD -> 0.01.
+    tick = costs.get("tick_step") or costs["tick_size"]
+    value, slip = costs["point_value"] * size, costs["slippage"]
     entry = np.round((open_px + side * (costs["spread"] + slip)) / tick) * tick
     leave = np.round((close_px - side * slip) / tick) * tick
     rate, step = np.where(side > 0, costs["swap_long"], costs["swap_short"]), costs.get("tick_step")

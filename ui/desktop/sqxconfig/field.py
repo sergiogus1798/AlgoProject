@@ -17,7 +17,8 @@ def shown(value: object) -> str:
 
 
 # What a fixed option says on screen; the value the file keeps is untouched.
-DISPLAY = {"D": "Day", "W": "Week", "ME": "Month", "sharpe": "Sharpe", "sortino": "Sortino"}
+DISPLAY = {"D": "Day", "W": "Week", "ME": "Month", "sharpe": "Sharpe", "sortino": "Sortino",
+           "year": "año · year", "semester": "semestre · semester", "quarter": "trimestre · quarter"}
 
 
 def combo(options: list[dict], current: object) -> QComboBox:

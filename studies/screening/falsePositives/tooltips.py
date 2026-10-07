@@ -10,8 +10,9 @@ TIPS = {
                       "de la donante.",
     "population.per_level": "Estrategias por población de prueba: se sortean per_level / "
                             "per_donor donantes de la cosecha. Más, tasas más finas y más tiempo.",
-    "population.edges": "Los niveles de ventaja plantada (Sharpe por operación), una población "
-                        "cada uno además de la nula.",
+    "population.edges": "Los niveles de ventaja plantada (Sharpe por operación, neto: lo que "
+                        "queda después de los costes), una población cada uno además de la "
+                        "nula.",
     "population.seed": "Raíz de todos los sorteos; vacía, cada corrida sortea una nueva y la "
                        "anota. Con la misma raíz la corrida se repite igual.",
 }

@@ -134,7 +134,7 @@ def run(inputs: dict, cfg: dict) -> dict:
         MODULE, None, None, cfg, started,
         [envelope.tab("embudo", "El embudo, por población", [
             blocks.table("Paso a paso", funnel.drop(columns=["segment", "rules", "applied"]),
-                         "nivel = la ventaja plantada (Sharpe por operación); «nula» no lleva "
+                         "nivel = la ventaja plantada (Sharpe por operación, neto de costes); «nula» no lleva "
                          "ninguna. n_out = pass + limbo: un limbo sigue. Un paso sin aplicar "
                          "deja pasar a todos, y desde ahí los vivos son un techo, no una medida."),
             blocks.table("El mono pierde dinero", pd.DataFrame([money]),

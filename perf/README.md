@@ -35,5 +35,7 @@ python3 -m perf.disk.report                    # inventory AlgoData: size, dupli
   regression, and the panel would say it was if it compared wall clock.
 - **A change smaller than the measurement's own spread is called `noisy`, not `steady`.** Saying
   steady would claim the instrument can see something it cannot.
+- **`cpu_s` is the whole process tree too** (owner, 2026-10-07): the runner adds its reaped and
+  its living children to its own CPU time. Rows measured before that date count the parent only.
 - **The memory number is the whole process tree.** `ru_maxrss` of a parent that spawns 96 workers
   reports the largest single child, not the sum, and is wrong by an order of magnitude here.

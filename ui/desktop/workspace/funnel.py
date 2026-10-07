@@ -8,16 +8,16 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent
 from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
 from ui.desktop import background, client
-from ui.text.glossary import label
+from ui.text.glossary import LABELS, label
 from ui.text.numbers import num
 from ui.desktop.theme import C, MONO, T
 
 ROW = 24
-LABEL = 250
+LABEL = 470
 NUMBERS = 230
 FACE = MONO.split(",")[0].strip('"')
 # The header row over the columns (owner, 2026-09-28: «Razón · Steps» on top).
-HEAD = ("Criba (pasos del workflow)", "Entran → pasan", "Razón")
+HEAD = ("Criba (nivel · regla de la puerta)", "Entran → pasan", "Razón")
 SENTENCE = re.compile(r"(^|[.·]\s+)([a-záéíóúñ])(?!\w*_)")
 LEADING_KEY = re.compile(r"^[a-z]\w*(?= sobre |: )")     # «wfc: 1 lote…», «spp sobre SPP_IS…»
 
@@ -45,6 +45,19 @@ def step_numbers(steps: list[dict]) -> dict[str, str]:
     return out
 
 
+def rule_words(text: str) -> str:
+    """A gate rule's label — «drift_excess_t >= 1.65», the fact and its pass line — in words.
+
+    Each token that is a fact the glossary knows is said in Spanish; the pass line stays.
+    """
+    tokens = text.split()
+    facts = [label(t) for t in tokens if t in LABELS]
+    if len(facts) > 1:      # a compound rule names its facts with no pass line: «e_fin t_b»
+        facts = [f[0].lower() + f[1:] if f[1:2].islower() else f for f in facts]
+        return " y ".join(facts) + "".join(" " + t for t in tokens if t not in LABELS)
+    return " ".join(label(t) if t in LABELS else t for t in tokens)
+
+
 class Bars(QWidget):
     """One bar per screen, to the scale of the first: green what passed, red what died, grey
     a soft screen or one still running. A row with no count yet (sealed by the ledger, still
@@ -57,7 +70,9 @@ class Bars(QWidget):
         self.steps: dict[str, str] = {}      # row screen → its steps, `step_numbers`
 
     def name(self, r: dict) -> str:
-        """A row's label with the steps it stands for: «Estáticas (8)»."""
+        """A row's label with the steps it stands for: «Estáticas (8)»; a gate rule, by level."""
+        if r.get("level"):
+            return f"{r['level']} · {rule_words(r['screen'])}"
         n = self.steps.get(r["screen"]) or (self.steps.get("gate", "")
                                            if r.get("kind") in ("hard", "soft")
                                            and not r["screen"].startswith("Filtro") else "")
@@ -97,8 +112,9 @@ class Bars(QWidget):
             y = i * ROW + 3
             p.setFont(QFont(FACE, 10, QFont.Bold))
             p.setPen(QColor(T["text"]))
+            # elided on the right: a long compound rule used to lose its level at the left edge
             p.drawText(QRectF(0, y, LABEL - 10, ROW - 4), Qt.AlignVCenter | Qt.AlignRight,
-                       self.name(r))
+                       p.fontMetrics().elidedText(self.name(r), Qt.ElideRight, LABEL - 10))
             p.setPen(Qt.NoPen)
             soft = r.get("kind") == "soft"
             if r["entered"] is None:

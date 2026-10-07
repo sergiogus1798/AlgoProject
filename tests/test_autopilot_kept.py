@@ -14,7 +14,7 @@ from pipeline.autopilot import kept
 def make() -> tuple[pd.DataFrame, pd.DataFrame]:
     """A three-strategy scorecard and a four-day harvest, IS ending on day two."""
     card = pd.DataFrame({"strategy": ["A", "B", "C"], "oos_worst_day_r": [-1.0, -2.0, -3.0],
-                         "dd_esperado_p95_r": [5.0, 6.0, None], "oos_net_per_year_r": [10.0, 5.0, 1.0]},
+                         "dd_esperado_r": [5.0, 6.0, None], "oos_net_per_year_r": [10.0, 5.0, 1.0]},
                         index=pd.Index(["ia", "ib", "ic"], name="identity"))
     days = pd.date_range("2020-01-01", periods=4)      # IS ends day 2, oos1 is days 3-4
     eq = [pd.DataFrame({"day": days, "identity": i, "equity": v, "sample": s})

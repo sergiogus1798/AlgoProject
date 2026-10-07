@@ -22,7 +22,7 @@ def cfg(seed: int | None = 7) -> dict:
     """The two config sections the level reads, at test size."""
     return {"homogeneity": {"permutations": REPEATS, "period": "quarter", "min_trades": 5,
                             "seed": seed},
-            "drawdown": {"block": 8, "sequences": REPEATS, "seed": seed}}
+            "drawdown": {"block": 8, "sequences": REPEATS, "percentile": 95, "seed": seed}}
 
 
 def table(identity: str, per_quarter: list[np.ndarray]) -> pd.DataFrame:
@@ -120,14 +120,14 @@ def test_drawdown_sees_clustered_losses() -> None:
 
 
 def test_expected_drawdown_is_in_r_and_scale_free() -> None:
-    """dd_esperado_p95_r is the simulated 95th percentile over 1R; dd_p does not see the unit."""
+    """dd_esperado_r is the simulated 95th percentile over 1R; dd_p does not see the unit."""
     data = population()
     facts = level3ab.run(data, pd.Index(["same", "one", "noise"]), cfg())
     doubled = level3ab.run({**data, "market": {"risk": 2000.0}}, facts.index, cfg())
-    assert np.allclose(facts["dd_esperado_p95_r"].dropna(), 2 * doubled["dd_esperado_p95_r"].dropna())
-    assert (facts["dd_esperado_p95_r"].dropna() > 0).all()
+    assert np.allclose(facts["dd_esperado_r"].dropna(), 2 * doubled["dd_esperado_r"].dropna())
+    assert (facts["dd_esperado_r"].dropna() > 0).all()
     assert facts.loc[["same", "one"], "dd_p"].between(0, 1).all()
-    assert facts.loc["noise", ["dd_p", "dd_esperado_p95_r"]].isna().all()     # no build trades
+    assert facts.loc["noise", ["dd_p", "dd_esperado_r"]].isna().all()     # no build trades
     assert not np.isnan(facts.loc["noise", "q_p"])
 
 
@@ -139,7 +139,7 @@ def test_same_seed_same_result_bit_for_bit() -> None:
     assert (first[["q_seed", "dd_seed"]] == 7).all().all()
     alone = level3ab.run(data, pd.Index(["one"]), cfg(7))
     assert alone.loc["one"].equals(first.loc["one"])
-    assert not first["dd_esperado_p95_r"].equals(level3ab.run(data, alive, cfg(8))["dd_esperado_p95_r"])
+    assert not first["dd_esperado_r"].equals(level3ab.run(data, alive, cfg(8))["dd_esperado_r"])
 
 
 def test_null_seed_is_fresh_recorded_and_replays() -> None:
