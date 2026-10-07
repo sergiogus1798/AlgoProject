@@ -1,6 +1,6 @@
 ---
 q: Why must a cross-market null share one shift across markets, and how do I test it?
-kw: joint null, cross-market null, year shift, week shift, 53 weeks wrap, z_conj sd 2.17, z inflated, zero-fill missing market-year, NaN vs 0, paso 10 travel, no-edge battery, config hash stale, gross vs net, judge_on, ATR-conditioned cost in R
+kw: joint null, cross-market null, year shift, week shift, 53 weeks wrap, z_conj sd 2.17, z inflated, zero-fill missing market-year, NaN vs 0, paso 10 travel, no-edge battery, config hash stale, gross vs net, judge_on, ATR-conditioned cost in R, placebo not centred, high ATR entries, conditional drift, path-level se, shared path
 tag: 🔬  date: 2026-10-07
 ---
 # One seed for all markets makes the null joint; a battery of independent entries cannot tell
@@ -29,5 +29,25 @@ shifts both read sd(z_conj) ≈ 1.01 (🔬); with coinciding entries, per-market
 - Gross vs net: cost in R does not cancel against the shifted copies when entries are ATR-conditioned
   (cost / ATR at entry moves with the shift). No-edge population entering on the top third of ATR,
   200 strategies: z_conj on net reads +0.98 (centre should be 0), on gross +0.30 (full), and per window
-  V0 −0.56, V1 +0.45, V2 +0.14 on gross (se 0.06). The gross residual is unexplained (🔬). Hence
-  `travel.judge_on: gross`.
+  V0 −0.56, V1 +0.45, V2 +0.14 on gross (se 0.06). Hence `travel.judge_on: gross`.
+- The gross +0.30 is the realised history, not the apparatus (🔬, `scratch/d2/residuo.py`, `synth_vol.py`,
+  output `AlgoData/scratch/paso10_travel/2026-10-07-residuo/`). The 200 placebos share ONE path, so se 0.06
+  is not the se of a bias: by year the residual is +1.39 R/yr, se 1.40, t = 1.0 (16 years, 8 positive).
+  V0 is 2008 alone (−5.8 of −7.8 R; only EURUSD, USDJPY and gold have bars then), V1 is 2014-15 (+21.6 of +23.9 R,
+  +18.3 of it on the indices), V2 is 2021 +10.3 against 2020 −5.5.
+  - At FIXED lots the pattern stays (full +0.39, V0 −0.45, V1 +0.54, V2 +0.25): it is the price move after
+    a high-ATR entry, not the R denominator, which alone is worth −0.10 z (🤔 scaled from the ATR ratio
+    1.64 real / 1.27 shifted).
+  - Not the shift mechanics: trades per run 3242.5 real / 3242.6 shifted; V0 has 0.01 % of shifted entries
+    off the week grid and the largest |z|; by market the sign follows the asset class (USA500 +0.54,
+    DJ30 +0.50, UK100 +0.48, DAX +0.40; gold −0.49, EURUSD −0.25), not the share of holes (HK50 0.25:
+    +0.27, AUS200 0.18: 0.00).
+  - Synthetic, volatility clustering, 200 independent worlds × 10 strategies, production tensor: zero
+    conditional mean −0.03 (se 0.04); constant drift −0.39 (se 0.04, the denominator: a long sized on a
+    high ATR collects fewer R of drift than its copies — a SHORT reads +0.39 with no edge); drift ∝
+    variance +0.18; uniform entries with drift 0.00 (se 0.02). The mean z of one world's population has
+    sd 0.5 between worlds: a template's whole population carries a common offset of that size.
+  - On gross, short is the exact mirror (|z_long + z_short| < 2e-5): a short placebo discriminates nothing.
+  - Consequence: for a template with a fixed state condition the no-edge reference is the placebo that
+    keeps that condition, not z = 0: its 95th percentile here is 1.60 full, 1.82 V1, 0.88 V0, 1.36 V2
+    (sd of z 0.79, below 1), so z ≥ 1.65 rejects 4.0 % full and 9.5 % in V1.

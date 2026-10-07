@@ -328,3 +328,140 @@ python3 tools/checks.py`.
 
 Qué hiciste · qué verificaste, con la salida pegada · qué dejaste sin hacer y por qué · qué
 descubriste para `knowhow/` · la lista de ficheros cambiados. Actualiza la tabla de estado.
+
+## Para el agente de la UI — lo que cambió y lo que hay que adaptar (2026-10-07)
+
+Inventario hecho leyendo código y corriendo comprobaciones baratas; no se ha tocado ninguna línea de
+`ui/`. La pestaña Cross Market **no se ha mirado ni capturado nunca** con el estudio nuevo: todo lo
+de abajo es lectura de código, no de pantalla. Las rutas de `ui/` son relativas a la raíz del repo.
+
+### (a) Qué cambió
+
+| antes (estudio viejo) | ahora (`travel/`, encargo 46) |
+|---|---|
+| veredicto propio MANTENER/DESCARTAR de `many.py` | el estudio no decide: `verdict.csv` lleva `verdict = "info"` y el juez de `criteria.yaml` paso "10" dice Pasa/Limbo/Falla (10 reglas) |
+| columnas `excess_t_*`, `paired_p`, `stouffer`, ratios de Sharpe/E, `family`, `missing`, `warnings` | 25 columnas P1-P9 (`markets_valid`, `fixed_distance`, `freq_off`, `z_conj`, `z_conj_v0/v1/v2`, `z_minus_market`, `p_breadth`, `tau_half`, `worse`, `z_beta`, `e_end`, `net_t_pooled`, `trades`…) |
+| `markets.parquet` con la tabla «El Alpha en todas sus unidades» y el modelo por mercado | `markets.parquet`: `z, p, e, trades, z_freq, valid, invalid_reason`, una fila por estrategia y mercado, el principal incluido |
+| pestañas de la ficha: resumen, sweep/barrido, envolventes, equity, estratos, `oos` (entrada aleatoria en el OOS del principal) | tres pestañas en `contract/tabs.py`: `resumen`, `mercados`, `anos`; **ya no existe la pestaña `oos`** |
+| grupos de config `nulls`, `sweep`, `joint`, `strata`, `equity`, `bootstrap`, `exposure`, `paired`, `verdict`, `diagnostics` | un solo grupo `travel:` (16 perillas: `draws, seed, judge_on, shift_unit, shift_step, min_trades_market, worse_z, frequency.*, validity.*, degradation.*`) |
+| tres ventanas implícitas en tablas sueltas | V0 (antes del build del principal), V1 (su build), V2 (su oos1): `z_conj_v0/v1/v2` |
+
+### (b) Qué hay que cambiar en la ventana
+
+1. **Pestaña `oos` desaparecida, sub-pestaña muerta.** `ui/desktop/studypage/ficha.py:18` (`SUBS`) y
+   `:168-178` (`_random_oos`) buscan la pestaña `oos` del resultado crossmarket: ya no se emite, así que
+   «Entrada aleatoria · OOS principal» dirá siempre «Sin resultado». Decidir con el dueño: quitar la
+   sub-pestaña o alimentarla de otro estudio (el mono del paso 8). El mismo supuesto está en
+   `ui/desktop/studypage/compare.py:25-40` (filtra `oos`, ya no hace falta) y en los textos de
+   `ui/desktop/studypage/README.md:32,41` y `ui/desktop/workspace/ficha.py:100`.
+2. **Perillas de texto libre que son listas.** `ui/daemon/results/knobs.py:56` (`CHOICES`) sólo conoce
+   `split_mode`. `travel.judge_on` (gross|net), `travel.shift_unit` (year|semester) y `travel.shift_step`
+   (week|day) salen como cajas de texto; añadirlas a `CHOICES` con la clave punteada.
+3. **Tooltips por perilla.** `studies/transfer/crossmarket/tooltips.py` da un texto por grupo
+   (`travel.frequency`, `travel.validity`, `travel.degradation`) y `knobs.py:160-177` (`_tip`) lo hereda a
+   las hojas: las 4 hojas de `validity` y las 3 de `frequency` enseñan la misma frase larga (la de
+   `validity` ocupa 11 líneas). Escribir una frase por hoja (`travel.validity.max_fill_error`,
+   `max_displaced_share`, `point_value_margin`, `flat_atr_fraction`, `travel.frequency.z/phi_min/phi_max`,
+   `travel.degradation.min_trades_year/min_years`) y ver cómo queda el cajón.
+4. **Opciones «una sola mercado» sin el principal.** `ui/daemon/runner/transfer.py:75-84`
+   (`only_options`) excluye el mercado base (`f != c["feed"]`), pero el estudio nuevo incluye al principal
+   como fila de `markets.parquet`, y `one.run(only=…)` lo acepta. Además la etiqueta es el feed crudo
+   (`AUS200_M1`) y la pestaña usa `alias` (`contract/tabs.py:mercado`): usar el mismo nombre.
+5. **Pestaña `mercados` por pintar a mano.** `studies/transfer/crossmarket/contract/tabs.py:60-80`: la
+   barra «z de cada mercado» omite las z vacías, los motivos no válidos salen crudos (`fill_mismatch 0.581
+   ATR`; sin traducción), las columnas «Válido» y «Motivo no válido» no tienen «?», y la tabla no marca en
+   color los mercados con `z <= worse_z` (sólo la barra). Mirar y decidir con la captura.
+6. **Rol del estudio en el catálogo.** `ui/daemon/results/catalogue.py:64-65` sigue diciendo
+   `"crossmarket": "gate"` con el comentario «DESCARTAR under the breadth floor»; el estudio nunca
+   descarta (`many.py:WORD = "info"`). Ver si «gate» sigue siendo el rol correcto (afecta a qué hace
+   /curate y a cómo se agrupa) y corregir el comentario.
+7. **Resumen de población (`many.py:population`).** Pinta la barra «z conjunta por estrategia» con el
+   nombre de estrategia crudo y una tabla con las 25 columnas sin ordenar por prueba; no hay lectura
+   Pasa/Limbo/Falla por regla P1-P9 junto a los números. Ver si la zona «Criterios» ya basta o si la
+   pestaña debe enseñar, por estrategia, qué regla (nombres del paso "10" en `criteria.yaml:127-170`) la
+   deja en Limbo. Hoy la pestaña enseña cifras, no el veredicto que sale de ellas.
+8. **Ventanas V0/V1/V2.** Sólo salen como tres filas de «Resumen» y en la ayuda de `z_conj_v*`
+   (`ui/text/columnhelp_fields.py:119-124`); no hay una vista que las compare lado a lado ni diga qué años
+   son cada una (salen de los tramos `build` y `oos1` del principal, `core.assetdata`).
+9. **Ayuda de columnas.** Hecho y completo: las 25 columnas de `verdict.csv` tienen etiqueta
+   (`ui/text/glossary_crossmarket.py`, fundida en `ui/text/glossary.py:219`), nombre corto
+   (`ui/text/columnhelp.py:43-69`) y «?» (`ui/text/columnhelp_fields.py:102-149`); comprobado con las diez
+   de `AlgoData/scratch/paso10_travel/2026-10-07-tras-borrado/`. Faltan «?» para las columnas de
+   `markets.parquet` (`z, p, e, trades, z_freq, valid, invalid_reason`) y para la columna `strategy`.
+10. **Ocultar columnas.** `ui/daemon/databank/table.py:19-23`: `HIDDEN_FIELDS` oculta sólo `note`; con 25
+    columnas, decidir cuáles (p. ej. `breadth_count`, `e_end_ratio`, `beta`, `markets`) quedan fuera de la
+    tabla del databank y cuáles son la vista mínima. El orden de columnas de `layout.py:17` es el de
+    `verdict.csv`, no el de P1 a P9.
+11. **Resultados guardados caducados.** Hay 19 carpetas `AlgoData/reports/*/*/*/crossmarket` con el
+    esquema viejo (p. ej. `Test_NIKKEI225_M30_simpleL_auto/Retest_Markets_-_Family/2026-10-05`). La config
+    cambió entera, así que `ui/daemon/results/stale.py` los marca caducados y la pestaña los pinta con
+    las columnas y las pestañas viejas. Decidir si se dejan marcadas, se ocultan o se reejecutan (SQX no
+    hace falta: el estudio lee el export, pero cuesta 21 s por corrida de diez).
+12. **Capturas viejas y capítulos.** Los seis `crossmarket-*.png` de
+    `AlgoData/manual-fuentes/assets/` (barrido-bloques, barrido-curva, barrido-distribuciones,
+    barrido-resumen, nulo-conjunto, salidas) ya no los cita ningún `.md`; borrarlos tras la captura nueva.
+    Los capítulos `30-crossmarket.md` (línea ~50) y `39-crossmarket-lote.md` dicen «captura pendiente»: al
+    capturar la pestaña, sustituir ese aviso (`/manual-chapter`, regla 8).
+13. **Textos del código, sin cambio funcional.** `ui/daemon/results/knobs.py:43` (comentario
+    `LOADERS_POPULATION`, ya correcto), `ui/desktop/blocks/verdict.py:50` y `ui/desktop/blocks/table.py:183`
+    (el ejemplo «P por modelo» de crossmarket ya no existe: cambiar el ejemplo por otro estudio) y
+    `ui/daemon/databank/README.md:16,44,59` (hablan de la tabla por mercado de crossmarket y del
+    «Alpha en todas sus unidades»: `SUBTABLE` ya sólo tiene `mcRetest`).
+14. **Grep de nombres viejos.** En `ui/`, `ui/text/` y `studies/transfer/crossmarket/{contract,report.py,
+    one.py,many.py,tooltips.py}` no queda ninguna de `excess_t`, `paired_p`, `stouffer`, `markets_effective`,
+    `vs_main_half`, `risk_normalised`, `sharpe_total`, `expectancy_ci`, `timing alpha`: el borrado de la
+    parte F llegó limpio a la ventana. Lo que queda son los puntos 1-13 de arriba.
+
+### (c) Qué falla hoy
+
+Corrida: `pytest tests/test_ui_*.py tests/test_columnhelp.py tests/test_crossmarket*.py` → 14 fallos, 8
+errores, 105 pasan, 5 saltados (274 s). **Ninguno lo causa el paso 10**: `test_columnhelp.py` y todos los
+`test_crossmarket*.py` pasan. (La orden pedida con `-k "ui or …"` sobre todo `tests/` revienta con
+`INTERNALERROR … SystemExit: 0` al importar `tests/test_oracle_draws.py:228`, que hace `sys.exit` a nivel
+de módulo: es de otra sesión, no tiene que ver con la ventana.)
+
+1. `tests/test_ui_criteria.py::test_state_write_stamp_freeze` — `assert ['8','10','11.5','12','14'] ==
+   ['8','10','12','14','16']` (línea 51): otra sesión añadió el paso `11.5` a `criteria.yaml`.
+2. `tests/test_ui_batch.py::test_real`, `test_human`, `test_view` — «Strategy_9.27.83 no tiene lote de
+   variantes en este proyecto»: depende de datos reales del proyecto `Test_USDJPY_…`; ajeno.
+3. `tests/test_ui_research.py::test_routes_read_the_real_profile` (`KeyError: 'measures'`, línea 95) y
+   `test_views_offscreen` (`rowCount 0 > 30`, línea 208): perfil de mercado; ajeno. Fallan también en una
+   segunda corrida aislada.
+4. `tests/test_ui_gate.py::test_window_client_sends_token` (`no token file yet: the gate must refuse`,
+   línea 107; `404 == 403`): el cliente de prueba no recibe el 403 esperado; ajeno, y falla igual aislado.
+5. Con `httpx.HTTPStatusError 404` sobre `/api/templates`, `/api/palettes`, `/api/assets` y
+   `/api/launch/preflight` fallaron `test_ui_cmdpalette::test_text_field_keeps_ctrl_k`,
+   `test_ui_library` (3), `test_ui_shell::test_every_zone` y `test_grabs`; `test_panel_to_strategy`
+   («el panel de Databanks salió vacío»; aislado: `ConnectError 111`). Esas rutas **existen hoy** en
+   `ui.daemon.app.APP` (129 rutas) y `test_ui_library`/`test_ui_cmdpalette` pasaron al repetirlos: fue otra
+   sesión editando `ui/daemon/routers.py` (añade `CAMPAIGN`) durante la corrida. Repetir `test_ui_shell`
+   con el árbol quieto.
+6. `tests/test_ui_tearmarket.py` y `test_ui_tearsheet.py` (8 errores): `fixture 'http' not found` /
+   `fixture 'app' not found` — son scripts que no se escriben como tests de pytest; ajeno, antiguo.
+7. Importación del daemon: `python3 -c "import ui.daemon.results.rerun, ui.daemon.results.knobs,
+   ui.daemon.databank.cells, ui.daemon.databank.table, studies.transfer.crossmarket.contract.tabs"`
+   pasa sin error. `knobs.config("crossmarket", [], False)` devuelve las 16 hojas de `travel`. Y con las
+   diez de `…/2026-10-07-tras-borrado/travel/`, `contract.tabs.strategy_tabs` y `tabs.warnings` construyen
+   las tres pestañas sin error (110 filas de mercados, 10 no válidas, todas `fill_mismatch`).
+   **No se pudo** construir el payload completo por el demonio (`/api/result`): esa carpeta guarda
+   `crossmarket.json` con la forma de `travel.run` (config, cuts, cells…), no el contrato de la ventana;
+   hace falta una corrida de `report.py` sobre un export real para pintar la pestaña.
+8. `python3 tools/checks.py` da «0 problems» después de escribir esta sección (una corrida previa dio 1, de otra sesión, ya resuelto).
+
+### (d) Cómo comprobarlo
+
+- Tests del estudio y del texto: `python3 -m pytest tests/test_crossmarket*.py
+  tests/test_strategymeta_fixed_distance.py tests/test_columnhelp.py -q` (verdes hoy).
+- Tests de la ventana, por separado (no sobre todo `tests/`): `python3 -m pytest tests/test_ui_runner.py
+  tests/test_ui_screen.py tests/test_ui_studypage.py tests/test_ui_results.py -q`, y `test_ui_shell.py`
+  con nadie más editando `ui/`.
+- Un resultado de la pestaña: `python3 -m studies.transfer.crossmarket.report --project P --databank D
+  --asset A --day AAAA-MM-DD [--strategy S] --set travel.draws=500` (corrida de prueba, sin SQX).
+- **La pestaña Cross Market hay que fotografiarla con `/ui-shot`**
+  (`QT_QPA_PLATFORM=offscreen bin/algoui --port 8757 --shot $S --zone Databanks`, y luego abrir una
+  estrategia desde la pestaña Cross Market) y pasar el PNG al agente `uiCritic`. Hasta ahora el encargo
+  anota «sin captura de la pestaña»: no hay forma de dispararla con proyecto elegido, y eso es lo primero
+  que hay que resolver (una opción en `--shot`, o abrir la estrategia por código).
+- Al terminar: `python3 tools/depmap.py && python3 tools/checks.py`, la captura nueva en
+  `AlgoData/manual-fuentes/assets/`, el aviso «captura pendiente» fuera de los capítulos 30 y 39 y
+  `python3 tools/manual.py`.
