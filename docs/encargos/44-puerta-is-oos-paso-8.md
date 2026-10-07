@@ -38,12 +38,12 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
 | — | R4b retirada (techo de 75 operaciones al año) | **hecho** (2026-10-06) |
 | A | inventario de lo implementado | **hecho** (2026-10-06; lo que cambia el encargo, en P.1) |
 | — | plan de ejecución (al final de este fichero) | **aprobado** (2026-10-06); oleada 0 en marcha |
-| B | identidades build → retest (R1a) | reproducido (2026-10-06); el arreglo espera a que no haya workflow |
+| B | identidades build → retest (R1a) | **hecho** (2026-10-06): `judge.resolve` y `harvest.set_aside`; la causa del cambio de identidad sigue sin nombre |
 | C | auditoría del repreciado del mono y repreciado común | **hecho** (2026-10-06; forex pendiente del dueño) |
-| D | R3: deriva por ventana, error estándar con sesgo y curtosis, sin excepciones | programado (2026-10-06); falta medir (D-m) y la parada 1 |
+| D | R3: deriva por ventana, error estándar con sesgo y curtosis, sin excepciones | **hecho** (D-m, 2026-10-06); parada 1: variante **d** (dueño, 2026-10-07), ventana año y AR(1) fuera de la fórmula sin cambiar |
 | E | R5, R5b, R5c, R5d, R8, R9b, calidad de datos | programado (2026-10-06), sin conmutar |
 | F | retraso de una barra | programado (2026-10-06), sin conmutar |
-| G | R7, R6, mono | R7 y R6 programados (2026-10-06); el mono (G2) espera |
+| G | R7, R6, mono | programados (2026-10-06), sin conmutar; las cuatro lecturas del mono confirmadas (dueño, 2026-10-07) |
 | H | lo que se borra | pendiente |
 | I | la cascada y el juez | pendiente |
 | J | parámetros en la ventana | pendiente |
@@ -78,6 +78,20 @@ anteriores a varias decisiones; las diferencias están en la sección 1.3.
   `centred.py`, `delay.py` y el fixture. A medias: los rangos de swap de forex que dio el dueño
   no encajan en ninguna unidad (preguntado); sigue esperando a que no haya workflow el arreglo
   de B1, B2, D-m, G2 e I.
+- 2026-10-06 · ventana sin workflow ajeno (campaña de la otra sesión acabada a las 23:22):
+  arreglo de **B1** (`judge.resolve`: 1.557 fallos de presencia → 0 en la corrida de ejemplo, 0
+  veredictos movidos en 28 pasos guardados), **B2** (`harvest.set_aside` → `_aparte/`), **G2**
+  (`engines/nulls/windowed.py`, `level3c.py`; 0,23 s de núcleo por estrategia a 5.000 tiradas) y
+  **D-m** (26.159 reales y 240.000 sin ventaja: la variante d deja 0,017 de t de sesgo por lado
+  frente a 0,09 de hoy; b es peor que hoy). A medias: ⏸ parada 1 (variante, ventana, AR(1)) y
+  cuatro lecturas del mono (ATR de qué barra, los escalones, costes sí/no, de dónde las
+  duraciones); `drift.variant` sigue en `b` hasta la respuesta; falta la conmutación I.
+- 2026-10-07 · parada 1: el dueño elige la variante **d** (`drift.variant: d`); de la ventana y
+  del AR(1) no dijo nada: siguen en año y fuera de la fórmula. Las cuatro lecturas del mono,
+  como están programadas: tamaño con el ATR de la barra anterior (el de la propia barra sería
+  mirar al futuro), escalones con tamaño de doctrina (ATR o lote medio, nunca los lotes del
+  donante), el mono paga los costes de la estrategia, y las duraciones se sortean de todo el
+  oos1. Falta la conmutación I.
 
 ---
 
@@ -245,6 +259,7 @@ AR(1)** que ya usa la puerta: hazlo antes de cargarla.
 **D.4 · La línea.** `pass: ">= 1.65"` (p = 0,05, una cola) y nada más: **sin Limbo y sin
 excepciones por timeframe** — fuera las `by` de H4 y de H1. Coste a decir al entregar: de 10.000
 estrategias sin ventaja pasan por azar unas 390 con el dato de hoy (3,9 %); se vuelve a medir.
+(Medido por D-m el 2026-10-06 con 240.000 estrategias sin ventaja: unas 405 en bruto y unas 87 netas de costes oos1.)
 
 **Ficheros:** `studies/screening/analysis/tradelevel.py`, `studies/screening/gate/measures.py`,
 el `config.yaml` de la puerta, sus tests, `criteria.yaml`,

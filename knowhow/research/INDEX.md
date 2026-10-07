@@ -23,6 +23,7 @@
 - `fixed-reference-window-edge` — Why use a centered reference window instead of a fixed-boundary one?
 - `funded-bank-ev-read-against-the-monkey` — Why does a zero-edge trader show positive bank EV on some prop plans?
 - `ga-target-choice` — Which genetic-algorithm target should the build optimise, given the run-to-run noise?
+- `gate-monkey-z-tracks-drift-t` — Does the gate's monkey z add information beyond R3's drift-excess t on a cost-bound asset?
 - `gate-t-scales` — Why can the gate's three t statistics not be compared with each other?
 - `gates-are-owner-decisions` — Who decides a threshold that removes strategies: the analysis or the owner?
 - `hardest-null` — Does a null that randomises more make the null harder to beat?
@@ -30,6 +31,7 @@
 - `is-filters-inside-the-build` — Does an in-sample filter inside the Build (trade floor, PF, Ret/DD, WinningPct) breed better strategies than none?
 - `is-optimisation-vs-oos` — How well does in-sample optimisation rank the out-of-sample results?
 - `is-proxies-top-decile` — Which in-sample metrics separate survivors inside the top Sharpe decile?
+- `joint-null-year-shift` — Why must a cross-market null share one shift across markets, and how do I test it?
 - `m1-feed-anomaly-statistics` — Are extreme moves on the Dukascopy M1 feed real events or bad data, and how to mark them?
 - `mcretest-original-among-reruns` — Is the MC Retest's «the original is not an outlier of its re-runs» usable as a criterion?
 - `mintrl-explosion-is-correct` — What does MinTRL return when the Sharpe is below the benchmark Sharpe?

@@ -5,6 +5,7 @@
 - `equity-reconstruction-usdjpy-gap` — Why did the equity rebuild from trades and M1 miss SQX's daily curve on USDJPY, and what makes it reconcile?
 - `fabricated-variant-identity-differs-from-retest` — Why do a fabricated variant and its retested copy have different `core.sqxfile.identity` values?
 - `five-member-sqx` — Does SQX load and retest a five-member .sqx, and which results does it carry until retested?
+- `fixed-distance-keys` — Which keys in strategy_Portfolio.xml mark a fixed pips distance (stop, target, trailing, break-even, filter)?
 - `grafting-a-stop-loss` — How do I graft a stop loss into a strategy: which two text substitutions turn `SLPT.None` into `ATRBasedValue`?
 - `how-a-strategy-was-tested` — How do I find the task a .sqx was last tested with, through `lastSettings.xml`?
 - `identity-differs-across-databanks` — Why does the identity a study records for a strategy change between databanks of one project?
@@ -16,6 +17,7 @@
 - `money-management-atr-fixed-risk` — How does the workflow size each trade: fixed $1,000 risk over 4*ATR(20)?
 - `oos-range-marker` — Where is a task's out-of-sample span stored: `<OutOfSample><Range/></OutOfSample>` under `<Data>`?
 - `optimization-profile-bin` — How do I read `optimizationProfile.bin`, the SPP profile, with `core/optprofile.py`?
+- `optimization-profile-byte-order` — Why does an SPP databank look changed after every SQX save though nothing in it changed?
 - `project-cfx` — What is inside `project.cfx` and when does SQX rewrite it?
 - `result-sections` — Why must I scope the several SQStats sections of `settings.xml`, one per result?
 - `retest-rewrites-sqstats` — Does a retest rewrite a strategy's inherited SQStats, so the variant chain is sound?

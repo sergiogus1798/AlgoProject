@@ -23,6 +23,7 @@ not merged: they answer different questions and merging them would move every p.
 | `simulate.py` | The real run and its null runs, priced identically, in batches | imported | trades + bars + rung → statistics |
 | `verdict.py` | The empirical p, the attribution across the ladder, and every reason to distrust them | imported | statistics → p, channels, warnings |
 | `filter.py` | The random-filter benchmark: a filter against dropping the same share of trades at random | imported | two trade lists → p |
+| `windowed.py` | The gate's monkey (level 3c): every trade re-entered at a uniform bar of the calendar window it opened in, sized `c / ATR` at the drawn bar and priced by `engines.market.reprice` at the declared costs — spread and slippage charged, which the ladder never does; `z()` is the real run among its monkeys in their standard deviations | imported | located trades + bars + costs → mean P/L per trade of every monkey |
 | `config.yaml` | The engine's knobs: draws, rungs, barriers, statistics, the p floor | edited, or `--set section.key=value` through the study | — |
 | `placement/` | The cross-market placement models and their compiled kernel | imported | envelope → entries, holds |
 
@@ -72,6 +73,26 @@ version traded more.
 Its input today is a pair of exports that differ by a parameter hardened far enough to act as a
 filter. The pair that would answer the question properly — the same strategy with a condition
 replaced by TRUE — needs the strategy's logic edited, which is that encargo.
+
+## The windowed monkey is a third family, and it leaves the ladder alone
+
+`windowed.py` answers the gate's question (encargo 44, level 3c) and shares only the rung names
+with the ladder. Three differences, each on purpose:
+
+- **Where a draw lands**: inside the calendar window the real trade opened in (the gate's
+  `drift.window`, R3's own), not anywhere in the sample — so it measures the entry inside its
+  regime, not how long the strategy sat in the good years. The exit may cross the window; it never
+  leaves the sample.
+- **What it is sized with**: `atr_sized()` at the drawn bar, with the ATR known at that bar's open
+  (the previous bar's). The rungs that strip the sizing use the strategy's mean lots.
+- **What it is charged**: `reprice.pnl` from raw bar opens at `reprice.costs(feed, segment)`, so
+  every draw pays spread, slippage, swap and commission. The ladder charges `calibrate.charged`,
+  which holds swap and commission only (`knowhow/research/monkey-reprice-audit.md`).
+
+Its random numbers come from the generator the caller hands it and from nothing else: `BLOCK`
+only cuts the pricing into pieces, and `tests/test_gate_mono.py` proves a different block draws the
+same monkeys. 🔬 2026-10-06, USA500 H1, one core: 60 ns per trade valuation — 0.24 s for a strategy
+of 199 oos1 trades, four rungs, 5,000 draws; about 10 MB over the process's own memory.
 
 ## What is deliberately not handled
 

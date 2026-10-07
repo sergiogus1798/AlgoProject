@@ -105,9 +105,9 @@ drift:               # R3: el exceso de cada operacion sobre la deriva del merca
   window: year       # ventana de calendario dentro de oos1 en la que se mide el movimiento
                      # medio, y en la que se sortean los monos: year | semester | quarter.
                      # Nada menor: al acercarse a la duracion de una operacion el exceso -> 0
-  variant: b         # termino de deriva: a = el de hoy · b = movimiento por ventana ·
-                     # c = operacion ciega de la misma duracion · d = b y c. PROVISIONAL
-                     # hasta que D-m mida el sesgo de las cuatro
+  variant: d         # termino de deriva: a = el de hoy · b = movimiento por ventana ·
+                     # c = operacion ciega de la misma duracion · d = b y c. Dueno,
+                     # 2026-10-07, tras D-m: d deja 0,017 de t de sesgo por lado (a 0,09)
   se_skew_kurt: true # error estandar de la t corregido por sesgo y curtosis del exceso
 
 frequency:           # R5: sobredispersion φ de la frecuencia, estimada en el build

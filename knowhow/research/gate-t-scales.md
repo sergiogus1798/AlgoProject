@@ -1,7 +1,7 @@
 ---
 q: Why can the gate's three t statistics not be compared with each other?
 kw: gate degradacion_t scale, mark-to-market vs closed-trade mismatch, Lo (2002) t of the Sharpe units bug annualised Sharpe in variance term, t ceiling sqrt(2 years) 3.16, null FPR not comparable, trade_t drift_excess_t which t to judge on, decay.py t
-tag: 🔬  date: 2026-10-04  see: sqx-format/equity-reconstruction-usdjpy-gap, drift-term-biased-by-side, sqx-format/daily-equity-bin, research/random-entry-nulls, research/post-selection-bias, research/gates-are-owner-decisions
+tag: 🔬  date: 2026-10-06  see: sqx-format/equity-reconstruction-usdjpy-gap, drift-term-biased-by-side, sqx-format/daily-equity-bin, research/random-entry-nulls, research/post-selection-bias, research/gates-are-owner-decisions
 ---
 # The gate's three t's are three scales; before 2026-10-02 `degradacion_t` was compressed and capped
 Judge on `gate.scorecard.drift_excess_t` (or `trade_t`); never compare a t across these, nor against a null
@@ -10,10 +10,14 @@ computed on another one. `degradacion_t` (Lo 2002 on SQX's daily equity: each da
 FPRs read at the gate's line are 2–4× too high. Scorecards and decay reports from **before 2026-10-02** carry
 the bugged t: old 1.3 / 1.65 / 2.0 = new 1.42 / 1.92 / 2.55 on a 5-year oos1 (1.46 / 2.03 / 2.82 on 4 years),
 and the old one could not exceed √(2·years).
-
-`drift_excess_t` itself is side-biased (long vs short, ±0.02-0.27 t): `drift-term-biased-by-side.md`.
+Variants a, b of the drift term are side-biased (`drift-term-biased-by-side.md`); a no-edge strategy crosses 1.65 4 % gross, ~0.9 % net, not 5 % (Evidence).
 
 ## Evidence
+`drift_excess_t` with the mean-bar term (variants a, b) is side-biased, ±0.05-0.33 t; the blind-trade term (c, d)
+leaves ≤ 0.06: `drift-term-biased-by-side.md`. A no-edge strategy does NOT cross 1.65 5 % of the time: 🔬 2026-10-06,
+240,000 random-entry strategies, gross of costs, 4.0-4.5 % by formula (plain iid 4.0, plain AR(1) 3.7, skew-kurt iid
+4.4, skew-kurt AR(1) 4.05), net of oos1 costs 0.7-1.0 % — R3's line lets through ~90 per 10,000, not 390.
+
 **Which line is live (🔬 2026-10-04, OPEN.md #91):** the old 1.65 = 1.92 on the corrected scale (oos1 of 5.16 years).
 No live rule reads that t (`min_t` = 0.0); the live rule is R3 of `pipeline/autopilot/criteria.yaml`,
 `drift_excess_t` ≥ 2.33, which was never on the old scale. FPR under the null, H1, 40-100 trades/year,

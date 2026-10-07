@@ -4,13 +4,14 @@ kw: monkey real_net higher than SQX; 45464 vs 38465; 6999 USD gap; repricing aud
 tag: 🔬  date: 2026-10-06  see: export/fill-and-pricing, costs/per-task-costs, costs/where-the-spread-is
 ---
 # The monkey never charges spread or slippage: they sit in SQX's fill prices, not in its residual "cost"
-- `calibrate.charged()` = `v·size·(Close price − Open price) − P/L` is taken from SQX's **fills**, so it holds only swap (+ commission). `kernel.runs` then moves **bar open to bar open**. Gap = `v·size·(spread + 2·slippage)` per trade, exactly; the real run and every null are under-charged alike.
+- `calibrate.charged()` = `v·size·(Close price − Open price) − P/L` is taken from SQX's **fills**, so it holds only swap (+ commission). `kernel.runs` then moves **bar open to bar open**. Gap = `v·size·(spread + 2·slippage)` per trade, exactly; the real run and every null are under-charged alike. Closed for the gate only (`engines/nulls/windowed.py`); the ladder (`engines/nulls` simulate path) and its ~35 importers still charge none.
 - SQX, long, market orders, reproduced from bars + the task's declared costs alone:
   `entry = round(Open[entry bar] + spread + slippage, tick)` · `exit = round(Open[exit bar] − slippage, tick)` ·
   `swap = PV·size·entry_fill·(pct/100/360)·nights` · `P/L = round(PV·size·(exit − entry) − swap, 0.01)`.
 - `nights` = rollovers T (declared hour, Mon–Fri) with `open ≤ T < close`; the triple night counts 3. Card values, not fitted: 23:00, FRIDAY, PV 0.063137.
 - Tolerance per trade: `0.02 USD + 2·tick·PV·size` (cents rounding + one tick per fill). The tick term is only spent when a declared cost falls within ~0.1 tick of a half tick (build: 304.11+106.44 → x.55, 106.44 → x.44); SQX then lands on either side, not reproduced bit for bit.
 - Not measured here: shorts (all 1,312 trades are Buy), a non-zero commission, stops/targets, stamps off the bar grid (0 seen).
+
 
 ## Evidence
 `scratch/encargo44/{audit,swap,reprice_check}.py` (`PYTHONPATH=. python3 …`), `Trade_NIKKEI225_M30_volatilidadL`, oos1, trades from

@@ -66,6 +66,31 @@ def population(project: str, bank: str, role: str) -> pd.DataFrame:
                          for i, fs in files.items() for f in fs])
 
 
+def resolve(pop: pd.DataFrame, found: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+    """The key each file of the cut databank and each fact is judged under: the one lookup.
+
+    Args:
+        pop: The databank being cut: `strategy` (file name) and `identity`, one row per file.
+        found: The facts: `strategy` and `identity` ("" when a study files by name only).
+
+    Returns:
+        (`who` of every row of `pop`, `who` of every row of `found`). A file is its identity
+        when any fact carries it, else its name; a fact is its identity, or its strategy name
+        when it has none. A fact filed under an identity the cut databank does NOT hold — the
+        gate, spread and edgeCost key by the BUILD's, which a retest can change (🔬 2026-10-06:
+        1,557 of 10,000 failed presence for it, 29 of them alive on their own numbers) — is the
+        file of the same name: a name is unique inside one databank. A fact without identity
+        keeps its key, so nothing moves for a strategy whose identity held.
+    """
+    ids = set(found["identity"]) - {""}
+    who = pd.Series([i if i in ids else s for s, i in zip(pop["strategy"], pop["identity"])],
+                    index=pop.index, dtype=object)
+    theirs = found["identity"].where(found["identity"] != "", found["strategy"])
+    named = found["strategy"].map(dict(zip(pop["strategy"], who)))
+    held = found["identity"].isin(set(pop["identity"]) | {""})
+    return who, theirs.where(held | named.isna(), named)
+
+
 def ledger_row(project: str, n: str, spec: dict, before: int, after: int) -> None:
     """Sign this cut in the ledger: one row, with the sha256 of criteria.yaml (OPEN 1.3 item 2).
 
@@ -109,12 +134,10 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     if pop.empty:                    # nothing to judge: zero survivors, which `run` ends cleanly
         return {"n": n, "hechos": len(found), "before": 0, "after": 0, "limbo": [], "seed": None,
                 "corte": f"{spec['cut']}: vacío, nada que juzgar"}
-    ids = set(found["identity"]) - {""}
-    pop["who"] = [i if i in ids else s for s, i in zip(pop["strategy"], pop["identity"])]
+    pop["who"], found["who"] = resolve(pop, found)
     # A scaled sibling is a measuring device of step 11, never a candidate: it always goes,
     # and only its mother, on her own timeframe and unscaled, is judged (owner, 2026-10-01).
     sibling = pop["strategy"].map(lambda name: bool(SIBLING.search(name)))
-    found["who"] = found["identity"].where(found["identity"] != "", found["strategy"])
     mothers = sorted(set(pop.loc[~sibling, "who"]))
     judged = criteria.outcomes(found[found["who"].isin(mothers)], mothers, rules)
     judged |= {w: ("fail", "hermana escalada: solo sigue la madre") for w in pop.loc[sibling, "who"]}

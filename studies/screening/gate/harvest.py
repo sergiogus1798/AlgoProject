@@ -3,7 +3,8 @@
 
 import argparse
 import random
-from datetime import date
+import shutil
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -48,6 +49,31 @@ def export(folder: Path, a: argparse.Namespace, databank: str, files: list[Path]
     print(f"wrote {folder}")
 
 
+def set_aside(out: Path, identities: set) -> Path | None:
+    """Move a same-day harvest of a DIFFERENT set of strategies out of the way before a new one.
+
+    Args:
+        out: The day folder about to be written (`core.paths.harvest_dir`).
+        identities: The strategies the new harvest holds.
+
+    Returns:
+        Where the old one went, or None when there was nothing to move (no folder, or the same
+        set, which is simply overwritten).
+
+    It goes to `<databank>/_aparte/<day>.<HHMMSS>/`: two levels under the databank, so none of
+    the readers that glob `<databank>/*/metrics.parquet`, `<project>/*/*/metrics.parquet` or
+    `*/*/manifest.json` meets it, and "the newest" stays the day folder. Whoever wants it reads
+    it by explicit path.
+    """
+    old = out / "metrics.parquet"
+    if not old.exists() or set(pd.read_parquet(old, columns=[]).index) == set(identities):
+        return None
+    dest = out.parent / "_aparte" / f"{out.name}.{datetime.now():%H%M%S}"
+    dest.parent.mkdir(exist_ok=True)
+    shutil.move(str(out), dest)
+    return dest
+
+
 def main() -> None:
     """Match the two databanks on identity, take both, and write the joined tables."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -75,6 +101,8 @@ def main() -> None:
         matched = sorted(random.Random(SAMPLE_SEED).sample(matched, a.limit))
 
     out = harvest_dir(a.project, a.databank, date.today().isoformat())
+    if (moved := set_aside(out, set(matched))):
+        print(f"cosecha anterior de otro conjunto apartada en {moved}")
     out.mkdir(parents=True, exist_ok=True)
     taken = {side: [pairs[i][n] for i in matched] for n, side in enumerate(("IS", "OOS"))}
     # A databank's export holds ALL its strategies: a side the pairing left some out of

@@ -36,4 +36,22 @@ Null bootstrap (400 strategies per population, each strategy's trades centred on
 The PSR standard error (`1 − γ3·s + (γ4−1)/4·s²`) lowers the t of USA500's strategies with t > 1 by
 7 % (median) and restores the nominal rate: same bootstrap with the PSR t, USA500 5.1 % / 1.08 %,
 NIKKEI225 5.2 / 1.15, USDJPY 5.3 / 1.17, XAUUSD 5.1 / 1.11 (Johnson's t: 5.6 / 1.36 on USA500). IID
-resampling: not yet checked together with the gate's AR(1) effective n.
+resampling.
+
+**With the AR(1) effective n (🔬 2026-10-06, encargo 44 D-m).** FPR at 1.65, plain iid / plain AR(1) / skew-kurt iid /
+skew-kurt AR(1):
+
+| no-edge world | plain iid | plain AR(1) | s-k iid | s-k AR(1) |
+|---|---|---|---|---|
+| 240,000 random-entry strategies, gross, term d-year | 4.02 | 3.68 | 4.42 | 4.05 |
+| same, today's term a | 4.10 | 3.72 | 4.54 | 4.16 |
+| USA500 H1 IBS, centred trades, iid bootstrap | 6.84 | 6.29 | 5.09 | 4.58 |
+| same, blocks of 5 (keeps serial dependence) | 4.88 | 4.54 | 3.35 | 3.03 |
+| USDJPY H1 donchian, blocks of 5 | 5.58 | 5.21 | 5.44 | 5.08 |
+| NIKKEI225 M30 volatilidadL, blocks of 5 | 4.69 | 4.24 | 4.85 | 4.39 |
+
+The AR(1) n is a multiplier outside the formula, capped at n: it only ever lowers t. It takes 0.3-0.5 points of FPR
+everywhere, is needed only where trades are positively dependent (USDJPY donchian: 5.4 → 5.1), and cannot correct
+negative dependence (USA500 IBS, XAUUSD breakouts: already under 5 %). On 26,159 real strategies with term d-year it
+costs 43 of 625 passes (6.9 %); the skew-kurt error ADDS 39 to plain's 586 (most populations here have a positive or
+near-zero skew at the pass line). Scripts `scratch/encargo44/dm/`, tables `AlgoData/scratch/encargo44_dm/`.

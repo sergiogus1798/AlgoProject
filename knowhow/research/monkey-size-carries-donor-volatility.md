@@ -11,6 +11,8 @@ of the chain. `studies/screening/falsePositives` offers `monkeys.sizing=atr` (re
 monkey's own entry, engine ATR 14); report both and let the owner pick. Rules on net, t and trade
 count are barely moved by it.
 
+🔬 2026-10-06 On a 90-trade strategy (USA500 H1) real lots average 19.4 and ATR-sized draws 31.1, because it enters in high volatility: the ATR-sized draw matches the median risk, not the mean lots.
+
 ## Evidence
 `Test_XAUUSD_donchianUpperCrossUp2_H1/Results` harvest 2026-10-01, 300 donors x 10 monkeys, seed 9,
 criteria.yaml of 2026-10-04 (H1: t >= 1.65 is limbo, no pass):
