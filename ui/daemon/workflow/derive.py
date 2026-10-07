@@ -2,6 +2,7 @@
 
 from core.assetcheck import pending, provisional, validate
 from core.assetdata import load
+from sqx.projects.crosstfload import phase2_tasks
 from sqx.projects.stage import titles
 from ui.daemon import jobs
 from ui.daemon.workflow import sources
@@ -53,12 +54,14 @@ def project(spec: dict, ctx: dict) -> dict:
                 day=sources.day_of(view["folder"] / "project.cfx"))
 
 
-def sqx(spec: dict, ctx: dict) -> dict:
-    """An SQX step: its tasks' output on disk, today's runs, the install log's current task."""
+def sqx(spec: dict, ctx: dict, names: list[str] | None = None) -> dict:
+    """An SQX step: its tasks' output on disk, today's runs, the install log's current task.
+
+    `names`: the task titles when they are not a stage's (`phase2`)."""
     view = ctx["sqx"]
     if not view:
         return step("missing", "El proyecto no está en ninguna instalación: no hay tareas.")
-    names = titles(spec["stage"])
+    names = names or titles(spec["stage"])
     tasks = [t for t in view["tasks"] if t["title"] in names]
     if not tasks:
         return step("missing", f"El proyecto no tiene las tareas {', '.join(names)}.")
@@ -84,7 +87,7 @@ def sqx(spec: dict, ctx: dict) -> dict:
         n_in, n_out = tested[-1]["tested"], tested[-1]["passed"]
         how = f"Hoy «{tested[-1]['title']}» probó {n_in} y pasaron {n_out}"
     else:
-        n_in = view["banks"].get(tasks[0]["input"]) if spec["stage"] != "build" else None
+        n_in = view["banks"].get(tasks[0]["input"]) if spec.get("stage") != "build" else None
         n_out = held[tasks[-1]["title"]]
         how = "Sin run de hoy en el log del proyecto: cuentas del databank"
     day = (runs[-1]["started"][:10] if runs else
@@ -92,6 +95,21 @@ def sqx(spec: dict, ctx: dict) -> dict:
     return step("done", f"{killed}{how}. En disco: {listing}"
                         + sources.curated(ctx["project"], tasks[-1]["output"]) + ".",
                 n_in, n_out, day)
+
+
+def phase2(spec: dict, ctx: dict) -> dict:
+    """Step 11.7: the build-window CrossTF twins, read as `sqx` reads a stage; `titles` names them.
+
+    A project made before they existed has none: the step is done by not applying, and says so
+    (both chains skip it on that empty `titles`)."""
+    view = ctx["sqx"]
+    if not view:
+        return sqx(spec, ctx) | {"titles": []}
+    names = [t["title"] for t in phase2_tasks(view["folder"] / "project.cfx")]
+    if not names:
+        return step("done", "Este proyecto no lleva tareas de fase 2 (CrossTF <TF> build): el "
+                            "paso no aplica y el 12 juzga sin datos del build.") | {"titles": []}
+    return sqx(spec, ctx, names) | {"titles": names}
 
 
 def running_job(ctx: dict, spec: dict) -> dict | None:
@@ -172,4 +190,4 @@ def seal(spec: dict, row: dict, ctx: dict) -> dict:
 
 
 HOW = {"template": template, "preflight": preflight, "project": project, "sqx": sqx,
-       "study": study, "variants": variants, "bank": bank, "blind": blind}
+       "phase2": phase2, "study": study, "variants": variants, "bank": bank, "blind": blind}

@@ -9,6 +9,7 @@ one task at a time per worker, and the moment one finishes, launching another is
 
 from core.paths import databank_dir, project_dir
 from sqx.projects import crosstfload
+from sqx.projects.workflow import CROSSTF_BUILD
 from ui.daemon import progress
 from ui.daemon.advance import confirm, preflight as advance
 from ui.daemon.launch import steps as launchsteps
@@ -113,8 +114,10 @@ def judge(project: str, got: dict, reasons: list[str], titles: str | list[str] =
     made = {t["output"] for t in chosen} | set(filled)   # filled before this task reads it
     # CrossTF_Input and CrossTF_Mothers are no task's output: the run fills them from their
     # feeder just before the start (`crosstfload`), so an empty one is not a refusal.
-    fed = crosstfload.feeders({t["title"]: {"Input": t["input"], "Output": t["output"]}
-                               for t in got["tasks"]})
+    # Step 11.7 reads CrossTF_Input as step 11.5 left it: refilling it would bring back the
+    # mothers that cut dropped (encargo 47, part P).
+    fed = {} if step == CROSSTF_BUILD["step"] else crosstfload.feeders(
+        {t["title"]: {"Input": t["input"], "Output": t["output"]} for t in got["tasks"]})
     fill = sorted({t["input"] for t in chosen if t["input"] in fed})
     for t in chosen:
         if t["type"] == BUILD and got["role"] != "custodian":

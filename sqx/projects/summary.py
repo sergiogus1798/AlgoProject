@@ -21,7 +21,7 @@ def say(done: dict, role: str) -> None:
           f"/ {done['minutes']} min")
     if done["added"]:
         print(f"  workflow  + {', '.join(done['added'])}: todas las tareas del workflow, "
-              "activas sólo CONSTRUCCION y OOS. CrossTF va a build..oos1; las WFC se "
+              "activas sólo CONSTRUCCION y OOS. CrossTF va a oos1; las WFC se "
               "precian con sqx.projects.wfc")
     bars = done["exit_bars"]
     # A project with no Build task has no generator, so there are no exit bounds to report.

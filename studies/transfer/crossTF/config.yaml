@@ -12,15 +12,20 @@ run:
   # assets/_build.yaml for it. Set a list only for a task written with --timeframes; a wrong
   # list reads every cell off the wrong bars, silently -- `report.py` prints the mapping.
   blocks: null
+  # The root of the timing nulls. null = a fresh one every run, recorded in the manifest
+  # (`nulls_seed`); `--seed N` or `--set run.seed=N` replays a run exactly. A rule that reads
+  # a p or a z as an outcome needs it fixed (knowhow/eng/nulls-seed-fresh-per-run.md).
+  seed: null
 
 usable:
-  # A scaled cell whose parameters were mangled by rounding does not answer the question:
-  # whatever it shows could be the rounding rather than the timeframe. Measured 2026-09-23
-  # on the three mothers: H1->H4 moves a parameter by at most 20%, H1->D1 by up to 586%
-  # with every period clamped, which is why D1 is fabricated but never read as scaled.
-  max_rounding_shift: 0.15
-  reject_clamped: true
-  min_trades: 30             # matches studies/readings/monkey/config.yaml; below it no p is computed
+  # Owner, 2026-10-02: «Redondea donde puedas, ya está». A sibling is NOT discarded for rounding
+  # or for hitting the floor: `max_rounding_shift` (0.15) and `reject_clamped` are gone as gates.
+  # Each length is rounded to the nearest integer, floor 2, and the sibling is read like any
+  # other; `rounding_shift` and `clamped` stay as displayed numbers and facts, so a calibration
+  # can MEASURE whether heavily rounded siblings behave differently. `unusable` is left only
+  # for a sibling carrying a custom-block length nobody could rule on (sqx/variants/lengths.yaml).
+  min_trades: 30             # matches studies/readings/monkey/config.yaml; below it no p is
+                             # computed (engines/nulls) and the cell reads `no_data`
 
 verdict:
   statistic: sharpe          # scale-free, so it compares across timeframes with different
@@ -28,6 +33,41 @@ verdict:
   rung: timing               # the null that randomises entry timing alone, holding the
                              # opportunity set fixed -- the rung that says whether the edge
                              # on this timeframe is its own or inherited from the source
-  alpha: 0.05
-  control_drop: 0.50         # how much of the baseline statistic the control cell may lose
-                             # before the scaled cell stops being attributable to timeframe
+  alpha: 0.05                # on the cell's own p AND, as a normal quantile, on `z_new`: what
+                             # the sibling adds beyond its mother's result (cells.beyond)
+
+# «¿Pico aislado en su TF?» — T0 to T4 (encargo 47, studies/transfer/crossTF/tf/). Written BESIDE
+# the reading above (`tf_siblings.parquet`, `tf_mothers.csv`); it judges nothing until the owner
+# cuts: the live rule is still `crossTF.combined.z_new`.
+tf:
+  neighbours: {M30: [M15, H1], H1: [M30, H4]}   # per mother timeframe, the two siblings that decide
+  far: {M30: H4}                # the far sibling: annotated, and it lowers a pass to limbo (T3).
+                                # Any other sibling of the batch (D1 for an H1 mother) is only annotated
+  runs:                         # the joint random runs, as step 10's (crossmarket/travel)
+    draws: 5000                 # B per window; the same runs for a mother and all her siblings
+    seed: 20261007              # keyed with each calendar cell; written in tf_mothers.csv
+    judge_on: gross             # gross | net — what z_delta and z_build are read on (the cost in R is
+                                # cost / ATR at entry: it does not cancel against shifted copies);
+                                # `e`, `ret` and `ret_build` are always on net R
+    shift_unit: year            # the block a run's trades move inside; split at build and oos1
+    shift_step: week            # whole weeks: keeps weekday and hour
+    flat_atr_fraction: 0.02     # a bar whose ATR is under this share of the median is defective
+    max_displaced_share: 0.20   # a calendar cell where a shift displaces more entries than this
+                                # onto a later bar (a hole in the data) is left out, in every timeframe
+  comparable:                   # T0: a sibling beyond these is another strategy, and is not read
+    rounding_shift: 0.25        # the largest relative move rounding gave one of its lengths
+    min_trades: 30              # in the window a test reads (build + oos1 together for T1)
+  frequency:                    # T1, build + oos1: |z_frec| up to `pass` passes, over `fail` fails
+    pass: 1.5
+    fail: 3.5
+    phi_min: 1.5                # bounds of the overdispersion of the mother's yearly counts
+    phi_max: 3.5
+    min_population: 5           # comparable siblings of one timeframe in the batch under which
+                                # there is no population: T1 is «no data», the percentile empty
+  retention:                    # T2a, oos1
+    pass: 0.5                   # ret = e_sibling / e_mother at or over it passes
+    z: 1.65                     # ret <= 0 fails only with z_delta at or over it
+    low: 0.25                   # isolated peak: one neighbour fails and the other is under it
+  build:                        # T2b, the sibling against chance in the build
+    pass: 1.65                  # z_build at or over it passes
+    fail: 0.0                   # at or under it fails

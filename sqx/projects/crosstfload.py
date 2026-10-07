@@ -155,6 +155,14 @@ def separate_titles(cfx: Path) -> list[str]:
         return crosstfsolo.present(z.read("config.xml").decode("utf-8"))
 
 
+def phase2_tasks(cfx: Path) -> list[dict]:
+    """The phase-2 tasks of a project (step 11.7) as {timeframe, title, databank}; [] when it
+    has none — a project built before encargo 47 — never an exception. Step 11.7 runs
+    `stage.just(cfx, [t["title"] for t in phase2_tasks(cfx)])`; step 11 needs no change."""
+    with zipfile.ZipFile(cfx) as z:
+        return crosstfsolo.present_phase2(z.read("config.xml").decode("utf-8"))
+
+
 def fill(bank: str, project: str, role: str, cfx: Path | None = None,
          folder: Path | None = None, targets: list[str] | None = None) -> str:
     """Fill one of the two databanks and say what went in, in the owner's words.

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from core.paths import report_dir
 from ui.daemon import diskmemo
+from ui.daemon.results import tfrows
 
 # A study's own verdict words (verdict.csv, for /curate) on the contract's five-state scale,
 # for a report that wrote no per-strategy JSON. Each row copies the study's own STATE map.
@@ -206,9 +207,9 @@ def verdicts(folder: Path) -> dict[str, dict] | None:
 
 
 def _rows(path: Path) -> list[dict]:
-    """A verdict.csv as its rows, every column kept as text."""
+    """A verdict.csv as its rows, every column kept as text — a cross-TF one with its `tf_*`."""
     with path.open(encoding="utf-8", newline="") as fh:
-        return list(csv.DictReader(fh))
+        return tfrows.merge(list(csv.DictReader(fh)), path.parent)
 
 
 def rows(folder: Path) -> list[dict]:

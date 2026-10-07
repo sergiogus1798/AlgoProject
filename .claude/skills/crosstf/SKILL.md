@@ -36,6 +36,25 @@ siblings and inverted for a negative baseline — periods ÷ 4 on the mother's b
 strategy, not a rounding check. What prices the sibling now is `z_new`: its z with what its
 mother's result already explains taken out (a sibling re-reads the same asset over the same years).
 
+## The cascade, steps 10.5 → 11 → 11.5 → 11.7 → 12 (encargo 47, built beside the live rule)
+
+- **10.5** fabricates the siblings and fills `CrossTF_Input`. M30 mothers get **M15, H1, H4**
+  (`crosstf.timeframes`; SQX builds M15 from M1). Every coefficient that multiplies a per-bar
+  measure (`bar` in `sqx/variants/ranges.yaml`) is written `k / c`, `c` = the measured median-ATR
+  ratio of the sibling's timeframe over the mother's (`--symbol` picks the asset; default, the first
+  mother's). `window` and `other` coefficients stay; an unclassified one marks the sibling
+  `unverified`. At 10.5 strategies carry no stop (it is grafted at step 24), so today only
+  condition-block coefficients move.
+- **11** SQX on oos1: `CrossTF` and `CrossTF <TF>` (→ `CrossTF_<TF>`).
+- **11.5** python: the new study, phase 1 (T0, T2a, T3 on oos1). It cuts nobody until the owner
+  says «corta»; then it drops a failing mother WITH her siblings from `CrossTF_Input`.
+- **11.7** SQX on `build`: the phase-2 tasks `CrossTF <TF> build` → databank `CrossTF_<TF>_build`,
+  only the mothers still in `CrossTF_Input`; it does NOT refill `CrossTF_Input`; `afterrun`
+  exports the databanks. A project without those tasks skips it with a line.
+- **12** python: the same study with the build (T1, T2b). **Live rule today: `crossTF.combined.z_new`.**
+  The new reading (T0-T4, `tf_siblings.parquet`, `tf_mothers.csv`, facts `crossTF.tf.*`) is
+  emitted beside it: `studies/transfer/crossTF/README.md`.
+
 ## Run it — from the window (the usual path)
 
 Since 2026-09-29 the window does steps 10.5 and 11 in one press: ▶ SQX of step 11 (or «Correr
@@ -65,6 +84,7 @@ rule is left unscaled and its sibling comes back `unusable`.
 
 ```bash
 python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1   # M30 + H4 + D1
+#   [--symbol <SYMBOL>]  asset whose bars give c (default: the first mother's)
 ```
 
 **The batch has a declared home** (hard rule 7 — heavy data never in the repo):
@@ -112,7 +132,7 @@ python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/proje
 The timeframes, the window and the precision come from `crosstf:` in `assets/_build.yaml`
 (`segment: oos1`, `precision: 1` — owner, 2026-10-02: the step reads oos1 only, at the selected
 timeframe's precision). The timeframes depend on the one the strategy was built
-on: **from M30, H1 and H4** (owner, 2026-09-26); **from H1, M30, H4 and D1** (owner, 2026-09-29).
+on: **from M30: M15, H1 and H4** (owner, 2026-10-07; H1 and H4 since 2026-09-26); **from H1: M30, H4 and D1** (owner, 2026-09-29).
 H12 is a custom SQX timeframe and works as-is in a task if named (→ `knowhow/sqx-drive/custom-timeframe-h12.md`).
 `sqx.variants.scale --source H1` fabricates every sibling of the list by default. The study derives the same block order itself — the siblings'
 `source_tf` in `scaling.parquet`, then this list (2026-09-27; it used to be a hand-edited
@@ -168,10 +188,10 @@ the `Symbol` column, which is identical across the timeframes of one asset.
 
 ## Say this when reporting
 
-- **The H4 stop is physically about twice as wide in price than the H1 one.** Only periods and bar
-  exits are scaled, so `StopLossCoef` and `ProfitTargetCoef` are written through unchanged while the
-  range they multiply grows with aggregation. Declared property of the comparison, not a bug — but
-  never describe an H4 cell as a clean "same strategy, slower clock".
+- **Per-bar coefficients are divided by the measured ATR ratio `c`** (since 2026-10-07; before, the
+  H4 stop was about twice as wide in price as the H1 one). Say how many coefficients moved
+  (`n_coef_scaled`) and how many siblings are `unverified`. `k / c` with c < 1 can exceed a block's
+  `maxValue`; whether SQX accepts it is unverified until a real run.
 - The share of siblings with a clamped length and their rounding shift, as a description: they are
   read like any other (owner, 2026-10-02), and whether they behave differently is a thing to measure.
 - That the result is correlated with what the OOS gate already knew, and is worth less per CPU-hour

@@ -111,6 +111,29 @@ def fallen(project: str, pop: pd.DataFrame) -> dict[str, str]:
             for w, level, rule in zip(who, card["cayo_nivel"], card["cayo_regla"])}
 
 
+def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict, follow: bool) -> dict:
+    """What happens to the scaled siblings of the databank being cut.
+
+    Args:
+        pop: The databank being cut, with `strategy` and `who`.
+        is_sibling: Which rows of `pop` are scaled siblings.
+        judged: The mothers' outcomes, `who` → (state, why).
+        follow: `siblings: follow` in the step's criteria — step 11.5, whose databank feeds
+            11.7 and still needs them: a sibling leaves only with its mother. Otherwise (step
+            12, as always) every sibling goes: only the mother is a candidate.
+
+    Returns:
+        `who` of every sibling → (state, why).
+    """
+    mine = pop[is_sibling]
+    if not follow:
+        return {w: ("fail", "hermana escalada: solo sigue la madre") for w in mine["who"]}
+    by_name = dict(zip(pop["strategy"], pop["who"]))
+    return {w: judged.get(by_name.get(SIBLING.sub("", name)),
+                          ("fail", "hermana sin su madre en el databank"))
+            for name, w in zip(mine["strategy"], mine["who"])}
+
+
 def ledger_row(project: str, n: str, spec: dict, before: int, after: int) -> None:
     """Sign this cut in the ledger: one row, with the sha256 of criteria.yaml (OPEN 1.3 item 2).
 
@@ -163,7 +186,7 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     if "gate" in facts.BY_N[n]["studies"]:
         judged |= {w: ("fail", why) for w, why in fallen(project, pop).items()
                    if w in judged and judged[w][0] == "fail"}
-    judged |= {w: ("fail", "hermana escalada: solo sigue la madre") for w in pop.loc[sibling, "who"]}
+    judged |= siblings(pop, sibling, judged, spec.get("siblings") == "follow")
     alive = sorted({w for w, (state, _) in judged.items() if state != "fail"})
     seed = dev["seed"] if dev["seed"] is not None else random.randrange(2**32)
     keep = set(random.Random(seed).sample(alive, min(sample, len(alive))) if sample else alive)
@@ -177,8 +200,8 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     cut = apply_verdict.apply(project, spec["cut"], csv, role) if drops else \
         {"before": len(pop), "after": len(pop)}
     ledger_row(project, n, spec, cut["before"], cut["after"])
-    limbo = sorted(pop.loc[(pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP),
-                           "strategy"])
+    kept = (pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP) & ~sibling
+    limbo = sorted(pop.loc[kept, "strategy"])
     how = f"sorteo de {sample} (semilla {seed})" if sample else "criterios"
     return {"n": n, "hechos": len(found), "before": cut["before"], "after": cut["after"],
             "limbo": limbo, "seed": seed if sample else None,

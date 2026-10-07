@@ -13,6 +13,8 @@ start) from inside the launch of 11, and fills `CrossTF_Mothers` (mothers withou
 before 13 — the eight MCR tasks of a `--workflow` project read that, not `Results`.
 
 ## Evidence
+- 🔬 Step 11.5 may cut `CrossTF_Input` (a failing mother out WITH her siblings, `siblings: follow`); step 11.7 reads
+  it as 11.5 left it and must NOT refill it, or the cut mothers come back (`ui/daemon/launch/preflight.py:117`).
 - `Test_USDJPY_donchianUpperCrossUp_M30` on SQX_w2: every global_log shows `CrossTF_Input (0)`, `CrossTF (0)`;
   no «Task: CrossTF» line. MCR 1-8 ran 2026-09-29 06:48 with Input `Results` (the mcretest `--input`).
 - `AlgoData/metrics/<P>/CrossTF/metrics.csv` = `\n`, manifest `worker_saw: 0`. `pd.read_csv` →

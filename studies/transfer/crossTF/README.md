@@ -1,6 +1,6 @@
 # studies/transfer/crossTF — does the edge survive being looked at on a slower clock?
 
-One study, one folder. A strategy built on H1 is rescaled to H4, run on both, and asked
+One study, one folder. A strategy built on H1 is rescaled to H4 (or M30 to M15), run on both, and asked
 whether what it earns on H4 is its own or inherited from H1. Read
 `docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 31-crosstf) before running it.
 
@@ -30,7 +30,39 @@ verdict itself never moves with a selector; it is read once, off `config.yaml`'s
 against the **same null** (`verdict.rung`, `timing` by default: it shuffles only *when* each
 trade enters, on that cell's own timeframe's bars); only the bars it is drawn on change.
 
-## The reading — ⚠️ an agent's proposal of 2026-10-02, pending the owner
+## The new reading — «is the edge an isolated peak on its timeframe?» (encargo 47) — ⚠️ built BESIDE, NOT yet the live rule
+
+Owner, 2026-10-07: the step-12 criteria are redesigned and written **next to** the old reading. The
+**live rule is still `crossTF.combined.z_new`** (`criteria.yaml`, step 12) until a real run validates
+the new one and the owner says «corta»; until then the new tests emit facts and judge nobody. Code
+and tables: `tf/README.md`. The cut package (the two rules to paste, the list of what is deleted) is
+at the end of `docs/encargos/47-paso-12-otras-temporalidades-pico-aislado.md`.
+
+- **One null for the whole family.** A mother and all her siblings go through the *same* random
+  runs: one whole-week shift per calendar year and run, never across the build / oos1 frontier,
+  priced by the one repricer at the doctrine's size, in R (`tf.runs`: 5,000 draws, a fixed seed,
+  written in the output). A calendar cell with a data hole in ANY timeframe is dropped in all of them.
+- **Two windows.** oos1 (step 11) and `build` (step 11.7, the phase-2 twins `CrossTF <TF> build` →
+  databank `CrossTF_<TF>_build`). The mother's build trades come from where they already exist.
+- **Tests, per sibling then per mother.** `T0` comparable (not `unverified`/`clamped`, rounding
+  shift ≤ 0.25, ≥ 30 trades in the window) · `T1` trade frequency `z_frec` (build + oos1; 1.5 passes,
+  3.5 fails) · `T2a` oos1 retention `ret` and `z_delta` (0.5 · 1.65; isolated peak at 0.25) · `T2b`
+  build `z_build` (1.65 · 0; isolated peak = both neighbours ≤ 0) · `T3` the far sibling failing T2a
+  lowers a PASS to LIMBO · `T4` entry overlap and build retention, annotated only.
+- **The cascade.** 11 SQX on oos1 → **11.5** this study, phase 1 (T0, T2a, T3 with what oos1 has;
+  T1 and T2b read «no data») → **11.7** SQX on `build`, only the mothers still in `CrossTF_Input`
+  (skipped, with a line, in a project without phase-2 tasks) → **12** the same study again, with the
+  build. With no cut yet, 11.5 drops nobody, so every mother runs phase 2 — what the validation needs.
+- **Neighbours.** M30 mother: M15 and H1, far H4. H1 mother: M30 and H4, no far one; D1 only annotated.
+- **Outputs**, in the run's folder beside the old ones: `tf_siblings.parquet` (one row per mother ×
+  timeframe: T0 and its reason, `z_frec`, `e`, `ret`, `z_delta`, `z_build`, window matches,
+  `ret_build` and its percentile, a state per test) and `tf_mothers.csv` (one row per mother: states of
+  T1/T2a/T2b/T3, `phase1`, `state`, seed, runs). States are `pass | limbo | fail`; the autopilot reads
+  them as numbers (pass 1, limbo 0, fail −1) in facts `crossTF.tf.*` (`pipeline/autopilot/tffacts.py`).
+- **Open owner decisions** (K-1 the R of `ret`, K-2 a lone neighbour that fails, K-3 T4's window):
+  `tf/README.md` › Open readings. Not verified on real SQX data yet: `OPEN.md` #108.
+
+## The reading of 2026-10-02 (still LIVE) — ⚠️ an agent's proposal, pending the owner
 
 The owner decided that day that **the step reads oos1 only**; how the reading follows is this
 proposal (`verdict.py`, `cells.beyond`, `tests/test_crosstf_facts.py`), not yet approved.
@@ -72,14 +104,18 @@ of 2026-10-02 runs without it (owner: «quítalo») through `crosstfload --targe
 leaves the doctrine and the D1 task's design alone. Every other target runs and is read for
 every mother: M30 → H1 and H4, H1 → M30 and H4.
 
-## What this study deliberately does not correct for
+## What the fabrication scales (changed 2026-10-07, encargo 47 part F)
 
-The scaling rule is the owner's, 2026-09-23: **periods and bar-count exits, nothing else**
-(`sqx/variants/lengths.py`: what SQX types a period, plus the custom-block table). So a `StopLossCoef` of 2 is written through
-unchanged, and because the range it multiplies grows when bars are aggregated, **the H4 stop
-is physically about twice as wide in price as the H1 one.** That is a declared property of
-the comparison, not a bug — but it means an H4 cell is never a clean "same strategy, slower
-clock", and nothing downstream should describe it as one.
+The owner's rule of 2026-09-23 was «periods and bar-count exits, nothing else», which left the H4
+stop physically about twice as wide in price as the H1 one. It is superseded: the sibling also
+carries every coefficient that multiplies a **per-bar** measure (`bar` in `sqx/variants/ranges.yaml`:
+an ATR multiple, a candle-range multiple) divided by `c`, the measured ratio of the median ATR on
+its timeframe over the mother's (build + oos1 of the asset). `window` (a Bollinger deviation over N
+bars, already scaled) and `other` (thresholds without price units) do not move; a coefficient on an
+unclassified measure marks the sibling `unverified` (T0 reads it). At step 10.5 strategies carry no
+stop or target (`assets/_build.yaml` `stop_loss`/`profit_target` false; the stop is grafted at step
+24), so today only condition-block coefficients move. The old declared property below applies to the
+2026-10-02 reading's runs made before the change. `knowhow/sqx-drive/crosstf-scaling-coefficients.md`.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

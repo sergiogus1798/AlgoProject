@@ -14,8 +14,9 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
             parameters, the steps with rules. Without them the tail stops where it needs one.
 
     Returns:
-        `do` — [{n, title, kind, tests}] in order — and `stop` — {n, why}, n None when the
-        rail runs out. Up to 16.5 the kinds are sqx, python, judge and variants: a judging
+        `do` — [{n, title, kind, tests}] in order — `skipped` — [{n, why}], the steps that do
+        not apply to this project (11.7 without phase-2 tasks) — and `stop` — {n, why}, n None
+        when the rail runs out. Up to 16.5 the kinds are sqx, python, judge and variants: a judging
         step (8, 10, 12, 14, 16) gets a `judge` right before the next SQX step that still
         has to run: cutting before a step already done would cut for nothing. From 17 on
         the walk is `tail.walk`'s. It stops at what a person does (1-5), anything running,
@@ -23,13 +24,13 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
         pending at the stop is judged there: its facts are recorded, and a cut it makes is
         what the next step will read.
     """
-    do, stale, pending = [], False, None
+    do, skipped, stale, pending = [], [], False, None
 
     def halt(n: str | None, why: str) -> dict:
         """The plan, ending before step `n` with the pending judge, if any, done first."""
         if pending:
             do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})
-        return {"do": do, "stop": {"n": n, "why": why}}
+        return {"do": do, "skipped": skipped, "stop": {"n": n, "why": why}}
 
     for step in data["steps"]:
         n, state = step["n"], step["state"]
@@ -47,6 +48,15 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
                 do.append({"n": n, "title": step["title"], "kind": "python", "tests": keys})
             pending = n if n in chainplan.JUDGES else pending
             continue
+        if n == chainplan.PHASE2 and not step.get("titles"):
+            # An older project has no phase-2 tasks: 11.7 is skipped. The 11.5 judge, when 11.5
+            # runs in this plan, goes now where the SQX step would have flushed it, or the 12
+            # would take its place; a 11.5 left done is not judged again.
+            skipped.append({"n": n, "why": "el proyecto no lleva tareas de fase 2: se salta"})
+            if pending and any(a["n"] == pending for a in do):
+                do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})
+                pending = None
+            continue
         if state == "done" and not stale:
             pending = None
             continue
@@ -61,7 +71,7 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
             continue
         if n in ELSEWHERE:
             return halt(n, ELSEWHERE[n])
-        if not step.get("stage"):
+        if not step.get("stage") and n != chainplan.PHASE2:
             return halt(n, "no tiene tareas de SQX que el autopiloto sepa lanzar")
         if pending:
             do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})

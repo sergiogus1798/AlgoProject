@@ -170,7 +170,7 @@ crosstf:
   # corre el timeframe de la madre → `CrossTF`; «CrossTF <TF>» cada uno → `CrossTF_<TF>`.
   # El orden de la lista es el de `blocks.json`, que es lo que lee el estudio.
   timeframes:
-    M30: [H1, H4]
+    M30: [M15, H1, H4]
     H1: [M30, H4, D1]
   # El motor de cada timeframe, si no es el de `engine`. D1 con MetaTrader 4 (dueño,
   # 2026-09-30): en D1 la estrategia sólo entra a las 00:00 y la sesión de las fondeadas abre

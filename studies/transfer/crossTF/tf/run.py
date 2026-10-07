@@ -1,0 +1,56 @@
+"""The runner of the T0-T4 reading: what the study loaded in, `tf_siblings.parquet` and `tf_mothers.csv` out, beside the old reading."""
+
+from pathlib import Path
+
+import pandas as pd
+
+from studies.transfer.crossmarket.travel import sizing
+from studies.transfer.crossTF.tf import inputs, table
+
+SIBLINGS, MOTHERS = "tf_siblings.parquet", "tf_mothers.csv"
+
+
+def read(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[str, pd.DataFrame],
+         costs: dict | None, cuts: dict | None, params: dict, tf: dict, source: str,
+         identity: dict, reason: str = "") -> dict[str, pd.DataFrame]:
+    """Both tables from plain data: no file, no asset card, no SQX.
+
+    Args:
+        made, trades, bars, costs, cuts, params, tf, source: As `table.measure` takes them;
+            `costs` and `cuts` are None when `reason` says the batch cannot be priced.
+        identity: Mother name to identity.
+        reason: Why nothing can be measured; "" when it can.
+
+    Returns:
+        `siblings` (`table.SIBLINGS`, one row per mother and sibling timeframe) and `mothers`
+        (`table.MOTHERS`, one row per mother). With `trades["build"]` None the frame is the
+        phase-1 reading: T1 and T2b are limbo with `no_build_data`, `phase1` is final.
+    """
+    measured = table.blank(made) if reason else table.measure(made, trades, bars, costs, cuts,
+                                                               params, tf, source)
+    siblings = table.judge(measured, tf, source, reason)
+    return {"siblings": siblings, "mothers": table.mothers(siblings, tf, source, identity)}
+
+
+def write(out: Path, got: dict, cfg: dict, export: Path, directory: Path) -> dict[str, pd.DataFrame]:
+    """Read a loaded batch with T0-T4 and write the two files into the run's folder.
+
+    Args:
+        out: The study's report folder of this run; the old reading is already written there.
+        got: What `crossTF.many.load` returned.
+        cfg: What `crossTF.inputs.config` returned, `run.blocks` resolved by that load.
+        export: The `CrossTF` `trades.parquet` read.
+        directory: The batch's folder, which holds `scaling.parquet` and `blocks.json`.
+
+    Returns:
+        What read() returned; written as `tf_siblings.parquet` and `tf_mothers.csv`.
+    """
+    made = inputs.made(got["plan"])
+    costs, cuts, reason = inputs.cards(got["feed"])
+    trades = {"oos1": inputs.oos1(got["plan"], got["trades"]),
+              "build": None if reason else inputs.build(export, directory, got["identity"])}
+    both = read(made, trades, got["frames"], costs, cuts, sizing.doctrine(), cfg["tf"],
+                cfg["run"]["blocks"][0], got["identity"], reason)
+    both["siblings"].to_parquet(out / SIBLINGS, index=False)
+    both["mothers"].to_csv(out / MOTHERS, index=False)
+    return both

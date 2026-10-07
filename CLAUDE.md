@@ -164,7 +164,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | running something, or explaining to a human how to | the chapter in `AlgoData/manual-fuentes/` (`00-empezar.md`, then that module's); the owner gets the PDF in `docs/manual/` |
 | what one SQX project actually does | regenerate on demand: `sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
 | what is broken or pending | `OPEN.md` — read its index at the top, then only the section you need (`grep -n '^## <N>' OPEN.md`); closed issues are in `docs/OPEN-closed.md` |
-| **la secuencia entera, de la idea a la estrategia superviviente — los 26 pasos (1-26, más 10.5, 16.5 y 18.5) y en cuál estás** | `docs/AgentPDFs/WORKFLOW.md` — manda sobre el orden que digan los otros dos dossiers |
+| **la secuencia entera, de la idea a la estrategia superviviente — los 26 pasos (1-26, más 10.5, 11.5, 11.7, 16.5 y 18.5) y en cuál estás** | `docs/AgentPDFs/WORKFLOW.md` — manda sobre el orden que digan los otros dos dossiers |
 | **what to work on next** | `docs/AgentPDFs/WORKFLOW.md` §«Lo que bloquea hoy», then `OPEN.md` |
 | what published research says of an asset, the papers the `literatureScout` read, rejected and extracted, and the queue of entries waiting to be measured | `python3 -m studies.research.literature.report [--for <SYMBOL>]`, then `studies/research/literature/README.md` — fed daily by `bin/daily-literature-scout.sh`, by hand with `/literature-scout` |
 | **la ventana de escritorio: la librería de plantillas, su cobertura y el chat que redacta una nueva** | `ui/README.md`, then `docs/manual/02-la-ventana.pdf` (cap. 35-app-plantillas) |

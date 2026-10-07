@@ -8,7 +8,10 @@ HOW = {s["n"]: s["how"] for s in STEPS}
 # Python steps that judge strategies: each emits a `strategy, verdict` CSV that /curate or the
 # window's filters apply before the next SQX task (WORKFLOW.md, «El contrato que une los pasos
 # pares»). A task after one of them must not read a population nobody has looked at.
-JUDGES = {"8", "10", "12", "14", "16"}
+# 11.5 judges too: without a cutting rule today (encargo 47), it records its facts and cuts nobody.
+JUDGES = {"8", "10", "11.5", "12", "14", "16"}
+# The step of the build-window CrossTF twins: skipped, with its one line, in a project without them.
+PHASE2 = "11.7"
 # SQX steps that read oos2 (WORKFLOW.md, «Qué segmento toca cada paso»): never in the chain,
 # like the studies `workflow.tests.SPENDS` names.
 OOS2 = {"19": "la Walk Forward Matrix lee el oos2: se lanza con su ▶ SQX, a mano"}
@@ -24,13 +27,14 @@ RULE = ("La cadena corre, en el orden de WORKFLOW.md, cada paso pendiente: los d
         "Python que corre «todas las pruebas Python pendientes» (nunca las que leen el oos2 o "
         "escriben en el ledger, ni 21-25). Tras un paso de SQX corrido en esta pulsación, lo "
         "que le sigue se vuelve a correr entero: su entrada cambió. Se para SIEMPRE antes de la "
-        "siguiente tarea de SQX cuando entre medias hay un paso de Python que juzga (8, 10, 12, "
-        "14, 16) y que no estaba hecho o se ha corrido en esta pulsación: ahí decides tú el "
+        "siguiente tarea de SQX cuando entre medias hay un paso de Python que juzga (8, 10, 11.5, "
+        "12, 14, 16) y que no estaba hecho o se ha corrido en esta pulsación: ahí decides tú el "
         "corte (filtros y «Continuar workflow», o nada) y vuelves a pulsar; sólo una pulsación "
         "que empieza en esa tarea de SQX, con su análisis ya hecho, la cruza. También se para "
         "en lo que la ventana no lanza (5, 16.5), en el 19 (lee el oos2), en cualquier "
         "paso en marcha y en el primer fallo. El 10.5 no para: lo prepara el propio arranque "
-        "del 11 (las supervivientes de Cross Market escaladas, a CrossTF_Input).")
+        "del 11 (las supervivientes de Cross Market escaladas, a CrossTF_Input). El 11.7 se "
+        "salta en un proyecto sin tareas de fase 2.")
 
 
 def tests(step: dict, stale: bool) -> list[str]:
@@ -92,6 +96,8 @@ def plan(data: dict) -> dict:
                                       "correr: córrelo con su ▶ PY y decide el corte")
                 judged = True
             continue
+        if n == PHASE2 and not step.get("titles"):
+            continue            # an older project has no phase-2 tasks: the 12 judges without them
         if judged:
             return halt(step, "antes de esta tarea de SQX hay un corte que decides tú: mira el "
                               "análisis, filtra y «Continuar workflow» (o nada) y vuelve a pulsar")

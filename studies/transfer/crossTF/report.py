@@ -12,6 +12,7 @@ from core.paths import export_dir
 from core.study import output, verdicts
 from core.study.render import markdown
 from studies.transfer.crossTF import inputs, many
+from studies.transfer.crossTF.tf import run as tf_run
 
 
 def write(out: Path, got: dict, identity: str | None, strategy: str | None, title: str,
@@ -56,11 +57,15 @@ def main() -> None:
     ap.add_argument("--out", type=Path, help="also write every cell here as Parquet")
     ap.add_argument("--strategy", help="one mother alone (feedback §5: «Run solo esta "
                                        "estrategia»), instead of every mother of the batch")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="root of the timing nulls, to replay a run exactly; a fresh one when "
+                         "absent, recorded in the manifest as `nulls_seed`")
     ap.add_argument("--set", dest="overrides",
                     action="extend", nargs="+", default=[], metavar="KEY=VALUE")
     a = ap.parse_args()
 
     cfg = inputs.config(a.overrides)
+    cfg["run"]["seed"] = a.seed if a.seed is not None else cfg["run"]["seed"]
     feed = load(a.asset)["sqx_symbol"]
     export = export_dir(a.project, a.databank, a.day) / "trades.parquet"
     scaling = crosstf_dir(a.project, a.fabricated or a.day) / "scaling.parquet"
@@ -74,7 +79,12 @@ def main() -> None:
     if a.out:
         a.out.parent.mkdir(parents=True, exist_ok=True)
         got["panel"].to_parquet(a.out, index=False)
-    print(f"-> {out}")
+    print(f"semilla de los nulos {got['nulls_seed']} -> {out}")
+    if not a.strategy:
+        # T0-T4 (encargo 47), beside the reading above and after it is on disk: it judges
+        # nothing until the owner cuts, and if it raises the old files are already written.
+        new = tf_run.write(out, loaded, cfg, export, scaling.parent)["mothers"]["state"]
+        print(f"T0-T4 (sin cortar): {new.value_counts().to_dict()} -> {out / tf_run.MOTHERS}")
 
 
 if __name__ == "__main__":

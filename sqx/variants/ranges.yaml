@@ -1,0 +1,169 @@
+# What each non-length parameter of a block multiplies or is compared with, so `sqx.variants.scale` knows
+# which coefficients move with the timeframe (encargo 47 part F, owner 2026-10-07). `lengths.yaml` rules the
+# lengths; this table rules everything else, read off each block's FORMULA (customBlocks.xml and the
+# indicator's .java under user/extend/Snippets and internal/extend/Snippets) — never off the name:
+#   bar         multiplies a PER-BAR measure (ATR, a candle's range) set against a price path -> divided by
+#               the measured ATR ratio c (`ranges.ratio`): k_sibling = k_mother / c
+#   window      multiplies, or is compared with, a measure over N bars (deviation of N closes, distance from
+#               an N-bar mean): with N already scaled it covers the same hours -> not scaled
+#   other       a threshold with no price unit (a percentile, an oscillator level, a ratio inside one
+#               candle, a smoothing constant), or a parameter the block's comparison never reads -> not scaled
+#   unverified  the formula shows it moves with the bar but not by c, or has two readings -> NOT scaled, and
+#               the sibling is flagged (`unverified` in scaling.parquet: not comparable, T0)
+# A custom block's double that is NOT listed is unverified. Reviewed by the owner: edit a ruling here.
+
+# Built-in blocks. First rule whose `block` (regex, searched in the block key) and `param` match wins. A
+# built-in double SQX types `ParamTypeConstant` (a level, a number) is never a coefficient; any other
+# built-in double without a rule here is unverified. `SLPT.ATRBasedValue` (stop, target) needs no row:
+# `ranges.py` reads the formula itself — its coefficient is bar, its literal ATR period a length.
+_builtin:
+  - {block: SuperTrend, param: ATRMult, measure: bar}            # median -/+ ATRMult x ATR (SuperTrend.java)
+  - {block: "^(KC|KeltnerChannel|MTKeltnerChannel)", param: Deviation, measure: bar}  # middle -/+ Deviation x mean of (High - Low) (KeltnerChannel.java)
+  - {block: "^(BB|BollingerBands)", param: Deviation, measure: window}   # stdev of N closes
+  - {block: AnchoredVWAP, param: "(Fast|Slow)?StdDevMult", measure: window}  # stdev around the VWAP since the session opened (AnchoredVWAP.java); SQX types the Fast/Slow pair a period, and it is not one
+  - {block: "^(PSAR|ParabolicSAR)", param: "Step|Maximum", measure: other}   # acceleration factors
+  - {block: LaguerreRSI, param: Gamma, measure: other}           # a smoothing constant
+  - {block: EhlersMotherOfAdaptiveMovingAverages, param: "FastLimit|SlowLimit", measure: other}  # alpha limits
+
+CBlock_ATRCrossMAATR: {}
+CBlock_ATRRankHighVol:
+  Double3: other       # compared with a 0..100 percent rank
+CBlock_ATRRankLowVol:
+  Double3: other       # compared with a 0..100 percent rank
+CBlock_BBBreakoutDown:
+  Double3: window      # Close x BollingerBands: Deviation x stdev of N closes
+CBlock_BBBreakoutUp:
+  Double3: window      # Close x BollingerBands: Deviation x stdev of N closes
+CBlock_BBWRPercent:
+  Double3: window      # BBWidthRatio = (upper - lower) / middle: Deviation x stdev of N closes
+  Double4: other       # the percentile of IsLowerPercentil
+CBlock_BreakoutDonchianLong: {}
+CBlock_BreakoutDonchianLong_2: {}
+CBlock_CMMAIsAboveLevel:
+  Double1: other       # compared with CMMA = 100 x normal_cdf(...) - 50, already divided by LogATR x sqrt(N) (CMMA.java)
+CBlock_CMMAIsAboveLevel_2:
+  Double1: other       # compared with CMMA = 100 x normal_cdf(...) - 50, already divided by LogATR x sqrt(N) (CMMA.java)
+CBlock_CMMAIsAboveLevel_3:
+  Double1: other       # compared with CMMA = 100 x normal_cdf(...) - 50, already divided by LogATR x sqrt(N) (CMMA.java)
+CBlock_CMMAIsAboveLevel_3_2:
+  Double1: other       # compared with CMMA = 100 x normal_cdf(...) - 50, already divided by LogATR x sqrt(N) (CMMA.java)
+CBlock_CSSARegimeAbove50:
+  Double3: other       # compared with a 0..100 percent rank
+CBlock_CSSARegimeBelow50:
+  Double3: other       # compared with a 0..100 percent rank
+CBlock_CandleBreakoutLong:
+  Double2: unverified  # TWO READINGS (encargo 47 F): body of one candle > Mult x ATR. Mult multiplies a per-bar measure (bar), but both sides are per-bar, so it is a ratio (other)
+CBlock_CandleBreakoutLong_2:
+  Double2: unverified  # TWO READINGS (encargo 47 F): body of one candle > Mult x ATR. Mult multiplies a per-bar measure (bar), but both sides are per-bar, so it is a ratio (other)
+CBlock_CandleSmallUpperWick:
+  Double2: other       # (Close - Open) / (High - Open) of one candle: a ratio
+CBlock_CandleSmallUpperWick_2:
+  Double2: other       # (Close - Open) / (High - Open) of one candle: a ratio
+CBlock_ChoppinessChoppy:
+  Double3: other       # compared with the Choppiness index, 0..100
+CBlock_ChoppinessTrending:
+  Double3: other       # compared with the Choppiness index, 0..100
+CBlock_CrossAboveMA: {}
+CBlock_CrossAboveMA_2: {}
+CBlock_CrossAboveMA_3: {}
+CBlock_CrossAboveMA_4: {}
+CBlock_CrossAboveMA_6: {}
+CBlock_CrossAboveMA_7: {}
+CBlock_DPOAbove0:
+  Double3: window      # a price level against DPO = Close - mean of N closes (DPO.java)
+CBlock_DPOBelow0:
+  Double3: window      # a price level against DPO = Close - mean of N closes (DPO.java)
+CBlock_DisparityAbove0:
+  Double3: window      # percent distance of Close from its N-bar EMA (DisparityIndex.java)
+CBlock_DisparityBelow0:
+  Double3: window      # percent distance of Close from its N-bar EMA (DisparityIndex.java)
+CBlock_EMAMAIsRising_2_2:
+  Double1: other       # MAMA's fast alpha limit: a smoothing constant, no price measure
+  Double2: other       # MAMA's slow alpha limit: a smoothing constant, no price measure
+CBlock_EMAMAIsRising_2_2_2:
+  Double1: other       # MAMA's fast alpha limit: a smoothing constant, no price measure
+  Double2: other       # MAMA's slow alpha limit: a smoothing constant, no price measure
+CBlock_EMAMAIsRising_2_2_2_2:
+  Double1: other       # MAMA's fast alpha limit: a smoothing constant, no price measure
+  Double2: other       # MAMA's slow alpha limit: a smoothing constant, no price measure
+CBlock_EMAMAIsRising_2_3:
+  Double1: other       # MAMA's fast alpha limit: a smoothing constant, no price measure
+  Double2: other       # MAMA's slow alpha limit: a smoothing constant, no price measure
+CBlock_EntropyHigh:
+  Double3: unverified  # a level in per-bar log-return units (EntropyMath.java: ~ mean - rms^2/2 of one-bar returns): it moves with the bar, and not by the ATR ratio
+CBlock_EntropyLow:
+  Double3: unverified  # a level in per-bar log-return units (EntropyMath.java: ~ mean - rms^2/2 of one-bar returns): it moves with the bar, and not by the ATR ratio
+CBlock_HursExponentIsAboveLevel:
+  Double1: other       # compared with the Hurst exponent, 0..1
+CBlock_HursExponentIsAboveLevel_2:
+  Double1: other       # compared with the Hurst exponent, 0..1
+CBlock_HursExponentIsAboveLevel_3: {}
+CBlock_HursExponentIsAboveLevel_3_2: {}
+CBlock_IBSCloseLarger:
+  Double3: other       # (Close|Open - Low) / (High - Low) of one candle: a ratio
+CBlock_IBSCloseLarger_2:
+  Double3: other       # (Close|Open - Low) / (High - Low) of one candle: a ratio
+CBlock_IBSCloseLarger_3:
+  Double3: other       # (Close|Open - Low) / (High - Low) of one candle: a ratio
+CBlock_IBSCloseLarger_4:
+  Double3: other       # (Close|Open - Low) / (High - Low) of one candle: a ratio
+CBlock_KSBreakOff: {}
+CBlock_KSBreakOn: {}
+CBlock_PMaxFlipDown:
+  Double3: bar         # Close x ATRTrailingStops = Close -/+ ATRMultiplier x ATR (ATRTrailingStops.java); its smoothing period is a literal 100
+CBlock_PMaxFlipUp:
+  Double3: bar         # Close x ATRTrailingStops = Close -/+ ATRMultiplier x ATR (ATRTrailingStops.java); its smoothing period is a literal 100
+CBlock_QQEModBuy:
+  Double3: other       # compared with QQE, on the RSI's 0..100 scale
+CBlock_QQEModSell:
+  Double3: other       # compared with QQE, on the RSI's 0..100 scale
+CBlock_RMICrossDown: {}
+CBlock_RMICrossUp: {}
+CBlock_SmoothedRSIRising_3_3:
+  Double1: other       # compared with the smoothed RSI, 0..100
+CBlock_SmoothedRSIRising_3_3_2:
+  Double1: other       # compared with the smoothed RSI, 0..100
+CBlock_SqueezeMomentumNeg: {}
+CBlock_SqueezeMomentumPos: {}
+CBlock_SqueezeOff: {}
+CBlock_SqueezeOn: {}
+CBlock_StochWeightsDown:
+  Double3: other       # compared with the Stochastic, 0..100
+CBlock_StochWeightsUp:
+  Double3: other       # compared with the Stochastic, 0..100
+CBlock_StrongCandle:
+  Double2: other       # (Close - Open) / (High - Low) of one candle: a ratio
+CBlock_TRSICrossDown: {}
+CBlock_TRSICrossUp: {}
+CBlock_WAEPosAboveExplosion:
+  Double1: window      # BBStdev: Explosion = upper - lower Bollinger band = 2 x BBStdev x stdev of N medians (WAE.java)
+  Double2: other       # inert: DeadZonePip x ATR feeds only the Dead line, which the block never reads
+  Period5: unverified  # Sensetive x the ONE-BAR change of MACD, compared with a window measure: it moves with the bar, and not by the ATR ratio (a smoothed line's step grows with the bar's length, not its root)
+CBlock_WAEPosAboveExplosion_2:
+  Double1: window      # BBStdev: Explosion = upper - lower Bollinger band = 2 x BBStdev x stdev of N medians (WAE.java)
+  Double2: other       # inert: DeadZonePip x ATR feeds only the Dead line, which the block never reads
+  Period5: unverified  # Sensetive x the ONE-BAR change of MACD, compared with a window measure: it moves with the bar, and not by the ATR ratio (a smoothed line's step grows with the bar's length, not its root)
+CBlock_WAEPosAboveExplosion_2_2:
+  Double1: other       # inert: the block only asks whether Explosion is rising, which no positive factor changes
+  Double2: other       # inert: DeadZonePip x ATR feeds only the Dead line, which the block never reads
+  Period5: other       # inert: the block only asks whether the trend line is rising, which no positive factor changes
+CBlock_WAEPosAboveExplosion_2_2_2:
+  Double1: other       # inert: the block only asks whether Explosion is rising, which no positive factor changes
+  Double2: other       # inert: DeadZonePip x ATR feeds only the Dead line, which the block never reads
+  Period5: other       # inert: the block only asks whether the trend line is rising, which no positive factor changes
+CBlock_WAEPosAboveExplosion_2_2_3:
+  Double1: window      # BBStdev: Explosion = upper - lower Bollinger band = 2 x BBStdev x stdev of N medians (WAE.java)
+  Double2: other       # inert: DeadZonePip x ATR feeds only the Dead line, which the block never reads
+  Period5: unverified  # Sensetive x the ONE-BAR change of MACD, compared with a window measure: it moves with the bar, and not by the ATR ratio (a smoothed line's step grows with the bar's length, not its root)
+CBlock_WAEPosAboveExplosion_2_2_3_2:
+  Double1: window      # BBStdev: Explosion = upper - lower Bollinger band = 2 x BBStdev x stdev of N medians (WAE.java)
+  Double2: other       # inert: DeadZonePip x ATR feeds only the Dead line, which the block never reads
+  Period5: unverified  # Sensetive x the ONE-BAR change of MACD, compared with a window measure: it moves with the bar, and not by the ATR ratio (a smoothed line's step grows with the bar's length, not its root)
+CBlock_WassersteinShiftHigh:
+  Double3: other       # distance / price range of 2N bars x 100 (WassersteinDistance.java): normalised
+CBlock_WassersteinShiftLow:
+  Double3: other       # distance / price range of 2N bars x 100 (WassersteinDistance.java): normalised
+CBlock_ZScoreStretchedDown:
+  Double3: other       # (Close - mean) / stdev of N closes: in deviations
+CBlock_ZScoreStretchedUp:
+  Double3: other       # (Close - mean) / stdev of N closes: in deviations

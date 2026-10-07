@@ -1,7 +1,7 @@
 ---
 q: How is Cross TF wired: one retest task per timeframe, and which engine does D1 use?
 kw: Cross TF one task per timeframe; CrossTF M30 H4 D1 tasks; CrossTF_D1 databank; D1 MetaTrader 4 engine no session; why not RetestOnAdditionalMarkets for timeframes; crossTF blocks.json databanks; crosstf.engines
-tag: 🔬  date: 2026-09-30  see: export/data-all-blocks, sqx-drive/crosstf-input-filled-by-no-task
+tag: 🔬  date: 2026-09-30  see: export/data-all-blocks, sqx-drive/crosstf-scaling-coefficients, sqx-drive/crosstf-input-filled-by-no-task
 ---
 # Cross TF runs one retest per timeframe, never blocks of the cross-check; D1 on the MetaTrader 4 engine
 `sqx.projects.crosstf.wire` writes `CrossTF` (the mothers' timeframe, cross-check OFF) and one
@@ -13,6 +13,10 @@ the engine per timeframe (D1 → `MetaTrader4`). `blocks.json` lists `blocks` an
 MT5 engine a D1 strategy enters at 00:00 while a prop firm's session opens at 00:05 — it traded nothing.
 
 ## Evidence
+- 🔬 Phase 2 (encargo 47): per sibling timeframe a twin task «CrossTF <TF> build» → databank `CrossTF_<TF>_build`
+  (`sqx/projects/workflow.py` `CROSSTF_BUILD`), on the `build` window, read by step 11.7. It is deliberately NOT in
+  `stages.yaml`: it is selected with `stage.just` (`crosstfload.phase2_tasks`), and `afterrun` exports its databank
+  with no extra wiring. M30 mothers now run M15, H1, H4.
 - 🔬 2026-09-30, `Test_USDJPY_donchianUpperCrossUp_H1`, 30 mothers + 90 siblings (120 per task):
   `CrossTF` 148,430 trades, all opens on the hour; `CrossTF_M30` 273,513, 52.4 % opening at :30;
   `CrossTF_H4` 42,934, opens only at 4/8/12/16/20 h; `CrossTF_D1` (MetaTrader 4) 8,861, all at 00:00 —

@@ -122,6 +122,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 105 | 🟢 | `execute.synced` divides by `poll_seconds`: 0 raises ZeroDivisionError instead of SystemExit | docs/OPEN-closed.md |
 | 106 | 🟢 | Leftovers of the September infra and calculation reviews (reports deleted 2026-10-06): one spread suspicion (m30), five small infra items | docs/OPEN-closed.md |
 | 107 | 🟡 | Seven tests fail in the 2026-10-07 mechanical audit: four depend on data deleted by the 10-06 disk cleanup, one on cwd (`afterrun` stop path), two undiagnosed | OPEN.md |
+| 108 | 🟠 | Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one: waits for the first real run and the owner's «corta» | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -870,3 +871,24 @@ Source: `AlgoData/audit/2026-10-07-mechanical.md` (242 run, 227 ok, 7 failed). N
 | `test_variants` | shapes/hash dump differs | 📓; not diagnosed |
 
 Fix direction: point the data-dependent tests at a fixture; set cwd/`PYTHONPATH` in `bin/sqx-worker.sh`.
+
+
+## 108. 🟠 Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one: waits for the first real run and the owner's «corta»
+
+Encargo 47 (`docs/encargos/47-paso-12-otras-temporalidades-pico-aislado.md`), parts K, F, S, P and D done 2026-10-07 without SQX. The live rule is still `crossTF.combined.z_new`; parts V (validation, the cut) and B (deleting the old reading) wait. Spanish name of the issue: «paso 12 nuevo construido al lado: espera la primera corrida real (parte V) y el corte del dueño».
+
+**Only SQX can verify (part V):**
+- the phase-2 tasks `CrossTF <TF> build` run and write their databanks `CrossTF_<TF>_build`;
+- whether a re-run task overwrites or appends to its databank;
+- periods doubled on M15 (M30 mothers) are accepted by every indicator;
+- `k / c` with c < 1 may exceed a block's `maxValue` (PMax 10.99 → 15.6 on M15, per the encargo): does SQX accept it;
+- the cost in time of phase 2 (proposal §8.5);
+- `z_delta` and `z_build` centred on 0 with real edgeless mothers (proposal §8.7; the synthetic battery is fine);
+- `apply_verdict` on `CrossTF_Input` at 11.5 (mother out with her siblings, the others kept);
+- a re-run of 11.5 may read a stale `CrossTF_<TF>_build` export.
+
+**Owner decisions pending:**
+- K-1: the R of `ret` (each timeframe's own, as implemented, or the mother's via `c`);
+- K-2: a lone measured neighbour that fails T2a or T2b (its NO PASA, or LIMBO as implemented);
+- K-3: the window of T4 (the mother's bar, as implemented, or the slower of the two);
+- `CBlock_CandleBreakoutLong*.Double2` («body > Mult × ATR»): `bar` or a ratio `other` (today `unverified` in `sqx/variants/ranges.yaml`).

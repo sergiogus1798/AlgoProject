@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from core import assetdata
 from core.assetdata import doctrine
 from core.barstore import read as read_bars
 from core.study import config as study_config
@@ -90,6 +91,23 @@ def gather(directory: Path, export: Path, packed: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+def oos(packed: pd.DataFrame, feed: str) -> pd.DataFrame:
+    """The trades that open inside the asset's oos1, the only ones this study reads.
+
+    Owner, 2026-10-02: the step reads oos1 alone — a random-entry null is never drawn over
+    the sample a mother was selected on. The SQX task retests only oos1 since that day
+    (`crosstf.segment`); an export of the old `build..oos1` window is cut here to the same.
+
+    Args:
+        packed: What `gather` returned.
+        feed: SQX symbol the cells ran on; the asset that declares it owns the segments.
+    """
+    data = assetdata.load(assetdata.symbol_for(feed))
+    start, end = (pd.Timestamp(ms, unit="ms") for ms in assetdata.window(data, "oos1"))
+    opened = pd.to_datetime(packed["Open time"])
+    return packed[(opened >= start) & (opened < end)].reset_index(drop=True)
+
+
 def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
     """Which (strategy, block) pairs are a cell, and what each one means.
 
@@ -104,7 +122,9 @@ def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
         blocks: Timeframe per result block, block 0 first.
 
     Returns:
-        One row per cell: `strategy`, `block`, `timeframe`, `role`, `mother`.
+        One row per cell: `strategy`, `block`, `timeframe`, `role`, `mother`; a scaled sibling's
+        two cells also carry what the fabrication did to it (`ratio`, `n_scaled`,
+        `rounding_shift`, `clamped` and `unverified` as 1/0), NaN on the mother's own cells.
     """
     rows = []
     for mother in sorted(scaling["mother"].unique()):
@@ -113,10 +133,13 @@ def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
                          "role": "baseline" if index == 0 else "unscaled",
                          "mother": mother})
     for row in scaling.itertuples():
+        made = {"mother": row.mother, "ratio": row.ratio, "n_scaled": row.n_scaled,
+                "rounding_shift": row.max_rounding_shift, "clamped": float(row.clamped),
+                "unverified": float(bool(getattr(row, "unverified", "")))}
         rows.append({"strategy": row.name, "block": blocks.index(row.target_tf),
-                     "timeframe": row.target_tf, "role": "scaled", "mother": row.mother})
+                     "timeframe": row.target_tf, "role": "scaled", **made})
         rows.append({"strategy": row.name, "block": 0, "timeframe": blocks[0],
-                     "role": "control", "mother": row.mother})
+                     "role": "control", **made})
     return pd.DataFrame(rows)
 
 

@@ -79,7 +79,8 @@ def test_stop_rule(root: Path) -> None:
     judge = chainplan.plan(rail({"8": "pending", "9": "pending"}))
     assert [a["n"] for a in judge["do"]] == ["8"] and judge["stop"]["n"] == "9", judge
     busy = chainplan.plan(rail({"11": "pending", "12": "running", "13": "pending"}, "done"))
-    assert [a["n"] for a in busy["do"]] == ["11"] and busy["stop"]["n"] == "12", busy
+    # 11.5 (encargo 47) reruns after the 11 like any Python step, 11.7 has no twins here: skipped
+    assert [a["n"] for a in busy["do"]] == ["11", "11.5"] and busy["stop"]["n"] == "12", busy
     idle = chainplan.plan(rail({"8": "blocked", "9": "pending"}, "done"))
     assert idle["do"] == [] and idle["stop"]["n"] == "8", "a judge not done halts, tests or not"
 

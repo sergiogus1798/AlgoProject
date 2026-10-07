@@ -21,6 +21,12 @@ SOURCE = "OOS"                        # the plain retest every added task is cop
 # way before step 13).
 CROSSTF = {"title": "CrossTF", "input": "CrossTF_Input", "output": "CrossTF",
            "mothers": "CrossTF_Mothers"}
+# Phase 2 of step 12 (encargo 47, part S): a twin of each sibling timeframe's «CrossTF <TF>» task
+# over the `build` window, same input, its own databank — the names of every one are here and
+# nowhere else. Created at step 5 with the rest; step 11 runs only the oos1 tasks, step 11.7
+# only these. D1 (MetaTrader 4) is phase 1 only: it is annotated, it neither judges nor brakes.
+CROSSTF_BUILD = {"title": "CrossTF {tf} build", "databank": "CrossTF_{tf}_build",
+                 "segment": "build", "step": "11.7", "skip": ("D1",)}
 
 
 def steps() -> list[str]:
@@ -115,8 +121,9 @@ def finish(cfx: Path, symbol: str) -> None:
         symbol: Asset name.
 
     `configure` prices every retest on `oos1`; the cross-timeframe check runs over
-    `crosstf.segment` (build..oos1), and its extra timeframes inherit the main test's dates, so
-    the main test has to carry that span or every cell is read over the wrong window.
+    `crosstf.segment` (oos1), and its extra timeframes inherit the main test's dates, so the
+    main test has to carry that span or every cell is read over the wrong window. Each sibling
+    timeframe's phase-2 twin (`CROSSTF_BUILD`) is copied from it over `build`, at build costs.
     """
     members = cfxio.members(cfx)
     from sqx.projects import crosstf, crosstfsolo      # both import this module
@@ -128,5 +135,8 @@ def finish(cfx: Path, symbol: str) -> None:
     main = crosstf.set_main(text[0], symbol)[0]
     for solo in crosstfsolo.planned(crosstf.main_chart(main)[1]):
         crosstfsolo.write(members, main, solo)
+    twin = set_span(main, load(symbol), CROSSTF_BUILD["segment"])[0]
+    for solo in crosstfsolo.phase2(crosstf.main_chart(main)[1]):
+        crosstfsolo.write(members, twin, solo)
     cfxio.write(cfx, members)
     apply(cfx, ["build", "oos"])

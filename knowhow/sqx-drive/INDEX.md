@@ -5,6 +5,7 @@
 - `crosstf-input-filled-by-no-task` — What fills `CrossTF_Input` before step 11, given that no task writes it?
 - `crosstf-one-task-per-timeframe` — How is Cross TF wired: one retest task per timeframe, and which engine does D1 use?
 - `crosstf-period-source` — What counts as a period (bar length) to rescale when building a cross-timeframe sibling?
+- `crosstf-scaling-coefficients` — Which coefficients of a cross-timeframe sibling are divided by the ATR ratio c, and what does step 10.5 actually scale?
 - `custom-timeframe-h12` — How does SQX run a custom timeframe like H12 in a task's `<Setup>`?
 - `driving-a-role` — How do scripts pick a worker install: where are roles defined and what does `--role ROLE` resolve to?
 - `export-after-every-stop` — What does `bin/sqx-worker.sh stop` export from the install's databanks, and what decides that the worker is busy?

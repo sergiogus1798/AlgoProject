@@ -38,7 +38,7 @@ def test_missing_is_fail_in_exactly_the_sanity_rules_and_r3() -> None:
 def test_steps_8_to_16_declare_oos1() -> None:
     """R4: no step relies on the judge's default segment."""
     steps = judge.settings()["steps"]
-    assert {n for n in steps if 8 <= int(n) <= 16 and steps[n].get("segment") != "oos1"} == set()
+    assert {n for n in steps if 8 <= float(n) <= 16 and steps[n].get("segment") != "oos1"} == set()
 
 
 def test_the_autopilot_entry_shuts_the_oos2_door(monkeypatch: pytest.MonkeyPatch) -> None:

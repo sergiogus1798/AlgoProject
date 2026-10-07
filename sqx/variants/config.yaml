@@ -129,8 +129,10 @@ spp:
   timeout_s: 3600         # an SPP reports nothing until it finishes; this is the only cap
 
 crosstf:
-  # Which parameters move when the timeframe moves. OWNER'S RULE, 2026-09-23: periods and
-  # bar-count exits, NOTHING ELSE. Since 2026-10-02 («arregla el escalado») a period is what SQX
+  # Which parameters move when the timeframe moves. OWNER'S RULE, 2026-10-07 (encargo 47; it
+  # replaces «periods and bar-count exits, NOTHING ELSE» of 2026-09-23): periods, bar-count
+  # exits, and the coefficients that multiply a PER-BAR measure — those divided by the measured
+  # ATR ratio c. Nothing else. Since 2026-10-02 («arregla el escalado») a period is what SQX
   # itself types one — `<paramType>ParamTypePeriod</paramType>` on the variable, which is how
   # MACD's Fast/Slow/Smooth, the Stochastic's slowing, WaveTrend's lengths, QQE's smoothing and
   # BH Ergodic's R/S/U/trigger are reached: no name pattern matched them, and 65 % of a
@@ -141,10 +143,15 @@ crosstf:
   # `ParamTypeExitUsed`, the #Bars# of "Is rising" — and for a file older than the field.
   # They never claim a variable SQX types a shift.
   #
-  # Deliberately never scaled, and the consequence stated so nobody reads a cell as clean:
-  #   *Coef*, *Mult*, *Deviation*  multiply a volatility or range measure that grows when
-  #                                bars are aggregated, so a StopLossCoef left at 2 is a
-  #                                physically ~2x wider stop on H4 than on H1.
+  # Coefficients (`ranges.yaml`, `sqx.variants.ranges`): a stop or target `X * ATR`, SuperTrend's
+  # and Keltner's multiple, a custom block's ATR multiple are `bar` — on H1 the ATR of an M30
+  # mother is ~1.42 times bigger, so the same X is a wider stop in price; the sibling carries
+  # X / c and keeps the mother's distance. c = median ATR on the sibling's timeframe (period
+  # already scaled) / median ATR on the mother's, over build + oos1 of the asset. A Bollinger
+  # deviation is `window` (N bars, already scaled, cover the same hours) and stays. What the
+  # table cannot rule is left alone and the sibling flagged `unverified`.
+  #
+  # Still never scaled:
   #   *Lvl*                        oscillator thresholds, bounded 0..100, dimensionless.
   #   *Shift*, *Shf*               fixed at 1 by the builder; 1/4 is not a bar.
   #   *Mth*, *Fld*, *Str*          categorical selectors, not quantities.
@@ -155,4 +162,5 @@ crosstf:
     - "Bars\\d*$"
 
   floor: 2        # the builder's own minPeriod; a scaled period below it is clamped and flagged
+  atr_period: 20  # the period c is measured at on the mother's timeframe: the grafted stop's
   shape: minimal  # 13.7 KB per file, and the parent's results cannot ride along

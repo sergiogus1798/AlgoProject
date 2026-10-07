@@ -18,6 +18,8 @@
 #          Step 16 cuts «SPP OOS»: the WFM (19) reads it, and 16.5 takes the survivors from it,
 #          matched to their «SPP IS» counterparts, and designs from the combined backtest
 #          (owner, 2026-10-01).
+#   siblings  `follow` — a scaled sibling in the cut databank leaves only with its mother
+#          (step 11.5: its databank feeds 11.7); absent, every sibling goes, as at step 12.
 #   rules  each one tests one fact, a key of the step's hechos.parquet
 #          (`python3 -m pipeline.autopilot.facts --project P --step N` lists them), and gives
 #          pass, limbo or fail:
@@ -180,6 +182,16 @@ steps:
           - any:
               - {fact: crossmarket.verdict_csv.z_beta, pass: "> -2.33"}
               - {fact: crossmarket.verdict_csv.e_end, pass: "> 0"}
+  "11.5":
+    # Criba de fase 1 de crossTF (encargo 47): T0, T2a y T3 con lo que hay en oos1. SIN regla que
+    # corte hasta el «corta» del dueño (la regla lista para pegar está en docs/encargos/47-…,
+    # «Paquete del corte»): el paso registra sus hechos `crossTF.tf.*` y no quita a nadie.
+    # Cuando corte, lo hará en CrossTF_Input, lo que el 11.7 lee: sale la madre que falle y sus
+    # hermanas (`siblings: follow`); las hermanas de las que siguen se quedan para el build.
+    cut: CrossTF_Input
+    segment: oos1
+    siblings: follow
+    rules: []
   "12":
     cut: CrossTF
     segment: oos1

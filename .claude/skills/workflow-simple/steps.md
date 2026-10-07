@@ -14,9 +14,11 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 | 9 | sqx | `Retest Markets - Family` | `OOS` (the cut's databank) | `Retest Markets - Family` | - |
 | 10 | python | crossmarket | `Retest Markets - Family` | facts | - |
 | 10 | judge | P1-P9 of encargo 46 (`criteria.yaml` step 10, provisional): `invalid_fraction`, `fixed_distance`, `freq_off`/`freq_off_fraction`, `z_conj`, `z_conj_v2`, `z_minus_market`, `p_breadth`, `tau_half` (empty until step 8 hands over `e_principal`: limbo), `worse`/`worse_fraction`, `z_beta`+`e_end`; the study writes no verdict of its own | facts | `paso-10/` | `Retest Markets - Family` |
-| 10.5 | python (inside 11) | `sqx.projects.crosstfload`: survivors scaled, loaded with the worker stopped | `Retest Markets - Family` | `CrossTF_Input` | - |
-| 11 | sqx | `CrossTF` | `CrossTF_Input` | `CrossTF` | - |
-| 12 | python | crossTF | `CrossTF` | facts | - |
+| 10.5 | python (inside 11) | `sqx.projects.crosstfload`: survivors scaled (M30 mothers: M15, H1, H4; per-bar coefficients ÷ the measured ATR ratio), loaded with the worker stopped | `Retest Markets - Family` | `CrossTF_Input` | - |
+| 11 | sqx | `CrossTF`, `CrossTF <TF>` (oos1) | `CrossTF_Input` | `CrossTF`, `CrossTF_<TF>` | - |
+| 11.5 | python | crossTF, new study phase 1 (T0, T2a, T3) | `CrossTF*` | facts `crossTF.tf.*` | none yet (`rules: []`, `cut: CrossTF_Input`, `siblings: follow`) |
+| 11.7 | sqx | phase-2 tasks `CrossTF <TF> build`; skipped with a line if the project has none; does not refill `CrossTF_Input` | `CrossTF_Input` (as 11.5 left it) | `CrossTF_<TF>_build` | - |
+| 12 | python | crossTF (adds the build: T1, T2b) | `CrossTF*`, `CrossTF_<TF>_build` | facts | - |
 | 12 | judge | `crossTF.combined.z_new` | facts | `paso-12/` | `CrossTF` |
 | 13 | sqx | `MCR 1 Bar` .. `MCR 8 Stress` (MCR 4 MinDist only for stop/limit orders) | `CrossTF_Mothers` (copied from `CrossTF` before 13) | `MCR 1`..`MCR 8` | - |
 | 14 | python | mcRetest | `MCR *` | facts | - |
