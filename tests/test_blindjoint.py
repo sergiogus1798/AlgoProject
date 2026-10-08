@@ -11,7 +11,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ledger import gate
-from studies.closing.blindJoint import inputs, many, measure, one, readings
+from studies.closing.blindJoint import inputs, many, measure, one, readings, report
 from studies.closing.blindJoint.pieces import PIECES
 
 DAYS, K, SEEDS = 1250, 5, 20
@@ -102,12 +102,35 @@ def main() -> None:
     member = {m["strategy"]: m for m in got["members"]}
     if member["b"]["verdict"]["label"] != "Incompleta" or "b" in got["measured"]["states"].index:
         failures.append("una madre incompleta se ha leído")
-    if set(got["measured"]["calls"].loc["a"]) != {"none"}:
+    # `peor` does not wait for the StepM: its call is the mother's worst piece, oos2 or not
+    worst = readings.label((readings.WORST, "entrantes"))
+    if set(got["measured"]["calls"].loc["a"].drop(worst)) != {"none"}:
         failures.append("sin oos2 la llamada de una madre que pasa las piezas debe quedar sin leer")
     if one.chosen(open_cfg) is not None or got["population"]["verdict"]["label"] != "Sin regla":
         failures.append("sin regla del dueño el paso 20 ha elegido una lectura")
-    if one.chosen(CFG) != ("sin_fallo", "entrantes"):               # owner, 2026-10-04
-        failures.append("el paso 20 no lee la regla del dueño: sin_fallo sobre las entrantes")
+    if one.chosen(CFG) != ("peor", "entrantes"):                    # owner, 2026-10-07, provisional
+        failures.append("el paso 20 no lee la regla del dueño: el peor estado sobre las entrantes")
+
+    # «the worst state wins»: any fail DESCARTAR, else any watch REVISAR, else MANTENER
+    three = mothers({"cae": ["pass", "watch", "fail", "pass"], "duda": ["pass", "pass", "watch", "pass"],
+                     "sigue": ["pass"] * 4}).assign(identity="i")
+    judged = many.run({"population": three, "refused": "política", "source": "test"}, CFG)
+    table = report.verdict_table(three, judged["measured"], CFG).set_index("strategy")["verdict"]
+    if table.to_dict() != {"cae": "DESCARTAR", "duda": "REVISAR", "sigue": "MANTENER"}:
+        failures.append(f"peor: el peor estado no manda ({table.to_dict()})")
+    said = {m["strategy"]: m["verdict"]["label"] for m in judged["members"]}
+    if said != {"cae": "No pasa", "duda": "Revisar", "sigue": "Pasa"}:
+        failures.append(f"peor: la ficha de cada madre no dice su llamada ({said})")
+    warned = [w["text"] for w in judged["population"]["warnings"] if w["code"] == "policy"]
+    if len(warned) != 1 or "Falta el StepM" not in warned[0] or "política" not in warned[0]:
+        failures.append(f"peor sin StepM debe avisar de que falta y por qué ({warned})")
+    report.need_stepm("política", CFG)                  # `peor` decides without the StepM
+    report.need_stepm(None, {**CFG, "joint": {**CFG["joint"], "pieces": "unanimidad"}})
+    try:
+        report.need_stepm("política", {**CFG, "joint": {**CFG["joint"], "pieces": "unanimidad"}})
+        failures.append("una lectura que usa el StepM debe seguir levantando sin él")
+    except PermissionError:
+        pass
     if many.run(refused, CFG)["population"]["verdict"]["label"] == "Sin regla":
         failures.append("con la regla del dueño el paso 20 sigue diciendo SIN REGLA")
 

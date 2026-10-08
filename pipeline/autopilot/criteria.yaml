@@ -8,13 +8,13 @@
 #
 # steps — one entry per judging step:
 #   cut    the databank the next SQX task reads: where the verdict is applied. A step with
-#          rules and no `cut` stops the run.
+#          rules and no `cut` stops the run; `cut: null` judges and writes but deletes nothing.
 #          Step 12 cuts CrossTF, before step 13 copies its mothers to CrossTF_Mothers: a mother
 #          is judged by her siblings' facts (`crossTF.cells.<role>.<tf>.*`, `crossTF.reading.*`)
 #          and, if she passes, only she goes on — on her own timeframe, unscaled. Every scaled
 #          sibling in a cut databank always goes (owner, 2026-10-01).
-#          Step 14 cuts «MCR 8 Stress», the one of the eight MCR databanks SPP IS reads; the
-#          other seven keep everyone and nothing reads them again (owner, 2026-10-01).
+#          Step 14 cuts «MCR 7 OHLC», the MCR databank SPP IS reads (owner, 2026-10-07; it was
+#          «MCR 8 Stress»); the other MCR databanks keep everyone and nothing reads them again.
 #          Step 16 cuts «SPP OOS»: the WFM (19) reads it, and 16.5 takes the survivors from it,
 #          matched to their «SPP IS» counterparts, and designs from the combined backtest
 #          (owner, 2026-10-01).
@@ -56,7 +56,7 @@ dev:
   seed: null
 
 steps:
-  # PROVISIONAL (Council 2026-10-04): do not freeze before a null population has run the chain. Steps 17, 18, 19, 21, 23, 24 annotate only: no rule on purpose.
+  # PROVISIONAL (Council 2026-10-04): do not freeze before a null population has run the chain. Steps 21, 23, 24 annotate only: no rule on purpose.
   # Paso 8 — la puerta por niveles (encargo 44, conmutada el 2026-10-07): 16 reglas (R5 son dos
   # líneas de un lado), en el orden de los niveles de studies/screening/gate/levels.py. La
   # puerta juzga cada regla tras el nivel que da su hecho y la estrategia sale en su primer
@@ -199,13 +199,106 @@ steps:
       # Council: z_new>=2.33 PASS; below it LIMBO, never FAIL. Raw z never counts.
       - {fact: crossTF.combined.z_new, pass: ">= 2.33", else: limbo}
   "14":
-    cut: MCR 8 Stress
+    cut: MCR 7 OHLC
     segment: oos1
+    # Paso 14 — «¿es frágil?»: T1, T2 y T3 de studies/breakage/mcRetest (pestaña «Fragilidad»),
+    # la retención del EXCESO sobre la deriva del mercado. Umbrales PROVISIONALES (dueño,
+    # 2026-10-07): son los de la propuesta, sin calibrar con población nula ni plantada. Pasar
+    # aquí es «no es frágil», no «tiene ventaja». Sin dato (sin lote de vecinas, ingesta sin las
+    # operaciones del build, exceso del original no positivo) es Limbo en todas.
     rules:
-      # Council: kill-only. Surviving this is not evidence, only "not dead".
-      - {fact: mcRetest.stress.la_cola.profit_factor_p5.valor, pass: ">= 1.0"}
+      # T1 build — vecinas de parámetros y salidas (fábrica de variantes, exceso exacto).
+      #   Pasa: ret_med >= 0.6 y f_pos >= 0.9 · Falla: ret_med < 0.3 o f_pos < 0.7 · Limbo: lo demás
+      - name: "T1 · Las vecinas conservan el exceso (build)"
+        all:
+          - {fact: mcRetest.fragilidad.t1.build.ret_med, pass: ">= 0.6", limbo: ">= 0.3", missing: limbo}
+          - {fact: mcRetest.fragilidad.t1.build.f_pos, pass: ">= 0.9", limbo: ">= 0.7", missing: limbo}
+      # T1 oos1 — sólo descarta: la vecina típica no puede perder el exceso fuera de muestra
+      - {name: "T1 · Las vecinas siguen en positivo (oos1)",
+         fact: mcRetest.fragilidad.t1.oos1.ret_med, pass: "> 0", missing: limbo}
+      # T2 build — histórico retocado (MCR 7 OHLC), medida aproximada
+      - {name: "T2 · Aguanta otro histórico (build)",
+         fact: mcRetest.fragilidad.t2.build.ret_med_aprox, pass: ">= 0.6", limbo: ">= 0.25", missing: limbo}
+      # T3 build — control de la barra inicial (MCR 1 Bar). Nunca da Falla
+      - {name: "T3 · Control de la barra inicial (build)",
+         fact: mcRetest.fragilidad.t3.build.ret_med, pass: ">= 0.8", else: limbo, missing: limbo}
   "16":
     cut: SPP OOS
     segment: oos1
     # Council: FAIL-only on a peak solution / grid mean - 1 sd < 0; neither is exposed as a fact yet, so no rule.
     rules: []
+  "16.5":
+    # Fábrica de variantes y nube (encargo 48): un lote y un mapa que no cortan nada. Sin regla.
+    cut: null
+    rules: []
+  "17":
+    # Paso 17 — «¿elegir por el pasado sirve fuera?» (propuesta criterios-paso-17-wfc, §6; dueño,
+    # 2026-10-07). Sólo la composición c1 (build+oos1 → oos2) decide. `wfc.c1.estado` es un
+    # NÚMERO (los hechos lo son): pasa = 1, limbo = 0, no_pasa = -1. PASA es un veto levantado,
+    # no un voto a favor. Tabla (dueño, 2026-10-08: el nivel LLEVA significancia, como en el
+    # encargo 48): orden positivo o neutro, mediana neta del top fuera > 0 y `p_nivel` <=
+    # `wfc.level_alpha` = PASA; mediana > 0 sin significancia, u orden perverso con el top
+    # ganando = LIMBO; mediana del top <= 0 = NO PASA; sin dato = LIMBO. oos2 sigue sellado hasta que
+    # `studies.optimisation.wfc.calibrate` registre su calibración para este fichero
+    # (`ledger.gate.seal`). `cut: null` a propósito (dueño, 2026-10-07): el 17 sólo anota —
+    # el juez evalúa su regla, escribe hechos, veredicto y fila del ledger y no borra nada en
+    # SQX; 18, 18.5 y 19 corren para toda superviviente y el 20 lee NO PASA como fallo.
+    cut: null
+    segment: oos2
+    rules:
+      - {name: "WFC · el top gana fuera y elegir no empeora (c1)",
+         fact: wfc.c1.estado, pass: ">= 1", limbo: ">= 0", missing: limbo}
+  "18":
+    # Paso 18 — CSCV y PBO (propuesta criterios-paso-18-cscv, §6.1 y §7; dueño, 2026-10-07).
+    # NO PASA si la elegida pierde fuera en la mitad o más de las particiones (P_pérdida >= 0,5)
+    # o si el PBO llega al p95 de su nulo (`cscv.pbo_sobre_p95` = 1); LIMBO si la P_pérdida llega al p95 de su nulo
+    # (`cscv.p_perdida_sobre_p95` = 1; dueño, 2026-10-08: sin banda 0,25-0,5); PASA («no descarta») el resto; sin dato (menos de 30 variantes) = LIMBO.
+    # Los cortes 0,25 y 0,5 son provisionales hasta calibrar. La gramática sólo dice cuándo se
+    # PASA: lo que no llega ni a `pass` ni a `limbo` es Falla (`else` ausente = fail). Lee el
+    # histórico entero (oos2 dentro): es del bloque ciego. `cut: null`: anota y juzga, no borra.
+    cut: null
+    segment: build+oos1+oos2
+    rules:
+      - {name: "CSCV · la elegida no pierde fuera (P de pérdida)",
+         fact: cscv.p_perdida, pass: "< 0.5", missing: limbo}
+      - {name: "CSCV · la P de pérdida no llega al p95 de su nulo (dueño, 2026-10-08)",
+         fact: cscv.p_perdida_sobre_p95, pass: "< 1", else: limbo, missing: limbo}
+      - {name: "CSCV · el PBO no llega al p95 de su nulo",
+         fact: cscv.pbo_sobre_p95, pass: "< 1", missing: limbo}
+  "18.5":
+    # Paso 18.5 — superficies por mercado (propuesta criterios-paso-18.5-superficies, §5 y §9;
+    # dueño, 2026-10-07). El paso se parte: la lectura que decide (build+oos1) se corre y se
+    # juzga tras el 16.5, ANTES del bloque ciego; dentro del bloque se relee con oos2 y se
+    # vuelve a juzgar al cierre, y oos2 sólo puede añadir LIMBO. `orden.estado` es un NÚMERO:
+    # positivo = 1, neutro = 0, perverso = -1 (sin_dato = hecho ausente = LIMBO). Orden perverso
+    # = NO PASA; prima del 20 % mejor <= p5 de su nulo = LIMBO; orden perverso en oos2 = LIMBO,
+    # y ausente (antes del bloque ciego) no cuenta. `cut: null`: anota y juzga, no borra.
+    cut: null
+    segment: build+oos1
+    rules:
+      - {name: "Superficies · el orden entre mercados no es perverso",
+         fact: marketSurfaces.orden.estado, pass: ">= 0", missing: limbo}
+      - {name: "Superficies · la prima del 20 % mejor no cae bajo el p5 de su nulo",
+         fact: marketSurfaces.prima.bajo_p5, pass: "< 1", else: limbo, missing: limbo}
+      - {name: "Superficies · el orden en oos2 no es perverso (bloque ciego)",
+         fact: marketSurfaces.oos2.perverso, pass: "< 1", else: limbo, missing: pass}
+      - {name: "Superficies · oos2 se pudo leer (bloque ciego; dueño, 2026-10-08)",
+         fact: marketSurfaces.oos2.sin_dato, pass: "< 1", else: limbo, missing: pass}
+  "19":
+    # Paso 19 — Walk Forward Matrix (propuesta criterios-paso-19-wfm, §5; dueño, 2026-10-07).
+    # L1, siempre: NO PASA si p- <= 0,05 (reoptimizada pierde en dato limpio más que el ruido);
+    # LIMBO si la mediana del exceso en oos2 <= 0 sin esa significancia; PASA el resto. Las dos
+    # reglas `wfm.reopt.*` sólo existen con `modo_real: reoptimizado` (dueño, 2026-10-07: por
+    # defecto `fijo`): en modo fijo el estudio no emite esos hechos y `missing: pass` hace que
+    # no cuenten; cuando existen sólo pueden dar LIMBO. `cut: null`: anota y juzga, no borra.
+    cut: null
+    segment: oos2
+    rules:
+      - {name: "WFM · L1 no pierde en oos2 más de lo que explica el ruido (p−)",
+         fact: wfm.l1.p_menos, pass: "> 0.05", missing: limbo}
+      - {name: "WFM · L1 gana en oos2 (mediana del exceso)",
+         fact: wfm.l1.mediana_exceso, pass: "> 0", else: limbo, missing: limbo}
+      - {name: "WFM · la celda que se va a operar gana (sólo reoptimizado)",
+         fact: wfm.reopt.centro_exceso, pass: "> 0", else: limbo, missing: pass}
+      - {name: "WFM · reoptimizar no empeora a congelar (sólo reoptimizado)",
+         fact: wfm.reopt.l2_p_menos, pass: "> 0.05", else: limbo, missing: pass}

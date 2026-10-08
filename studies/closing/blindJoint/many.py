@@ -63,8 +63,11 @@ def headline(got: dict, cfg: dict, complete: int) -> dict:
              for r, n in counts.items()]
     if reading:
         n = counts[readings.label(reading)]
-        return blocks.verdict(f"{n} de {complete} pasan el paso 20", "pass" if n else "fail",
-                              f"Lectura {words.reading(reading)}.", None, parts)
+        review = int((got["calls"][readings.label(reading)] == "watch").sum())   # `peor` only
+        return blocks.verdict(f"{n} de {complete} pasan el paso 20",
+                              "pass" if n else "watch" if review else "fail",
+                              f"Lectura {words.reading(reading)}."
+                              + f" {review} a revisar." * bool(review), None, parts)
     sure = [readings.label(r) for r in readings.names()
             if not readings.kept(got["states"], r[0])]
     return blocks.verdict(
@@ -99,7 +102,9 @@ def run(data: dict, cfg: dict) -> dict:
                 "estado es el del propio estudio: el paso 20 no re-deriva ningún umbral.")],
             note=data["source"]),
         spa_tab(got, cfg)]
-    warnings = ([{"code": "policy", "state": "watch", "text": got["refused"]}]
+    warnings = ([{"code": "policy", "state": "watch",
+                  "text": f"Falta el StepM: no se pudo calcular ({got['refused']}). El veredicto sale "
+                          f"sólo de los cuatro estados; no hay contraste con el buy & hold en oos2."}]
                 if got["refused"] else []) + [
         {"code": "incomplete", "state": "watch",
          "text": f"{m}: le falta {', '.join(NAMES[p] for p in r['missing'])}; no se lee"}

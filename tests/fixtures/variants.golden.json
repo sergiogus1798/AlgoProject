@@ -1,7 +1,7 @@
 {
   "values": {
-    "11111111-1111-1111-1111-111111111111": "11111",
-    "33333333-2222-1111-3333-333333333333": "false",
+    "MagicNumber": "11111",
+    "ShortEntrySignal": "false",
     "AroonCrossesPeriod1": "88",
     "StochasticKPeriod1": "21",
     "StochasticDPeriod1": "3",

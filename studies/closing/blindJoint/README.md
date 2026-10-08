@@ -20,7 +20,7 @@ config.yaml ─▶ inputs ──────▶ pieces ─▶ measure ───�
 | `inputs.py` | The knobs, the blind door (`ledger.gate.allow_read`), the oos2 door (`gate.allow(20, "oos2")`), the trades door (each batch must hold the mother's `trades.parquet`), the mothers' own oos2 days rebuilt close to close from those trades and M1 — refused unless their daily lows reproduce the batch's SQX curve — and the asset's close-to-close moves | imported | ledger + batches + feed → frame, panel, moves |
 | `pieces.py` | Which mothers reached step 20, and what WFC, CSCV, surfaces and WFM said of each — their own state, never re-derived; a mother missing one is listed and never read | imported | batches + WFM report → population |
 | `benchmark.py` | Buy and hold sized to each mother's own daily volatility, and the excess over it (copied from part A) | imported | panel + moves → excess, lots |
-| `readings.py` | **The open decisions as a registry**: how the four pieces combine, and over whom the StepM counts its search | imported | states, named → calls |
+| `readings.py` | **The open decisions as a registry**: how the four pieces combine, and over whom the StepM counts its search; `peor` (provisional), the one reading with three calls | imported | states, named → calls |
 | `measure.py` | The excess panel through the SPA and a StepM per reading, one row per mother | imported | inputs → p-values, named, calls |
 | `one.py` | One mother as the contract's data: her four pieces as parts, her call under every reading | imported — the window calls it | row → result |
 | `many.py` | The population: the pieces grid, the readings grid, the SPA tab | imported | inputs → results |
@@ -48,7 +48,16 @@ DESCARTAR for a mother that reading drops.
 and ATRStop. Step 20 is not listed, so today the SPA half is **not read** and nothing is spent:
 the report says so, the pieces are still read (they open no raw segment), and no ledger row is
 written. The word the owner would add is `BlindJoint` (`ledger/gate.py` `STEPS`). A chosen
-reading needs the StepM, so choosing one while the policy refuses oos2 raises.
+reading that uses the StepM (every one but `peor`) raises while the policy refuses oos2 (`report.need_stepm`).
+
+**Provisional since 2026-10-07 (owner), until step 20 is redesigned: `joint.pieces: peor`** — «the
+worst state wins» over the four states 17, 18, 18.5 and 19 now give (PASA / LIMBO / NO PASA =
+`verdict.state` pass / watch / fail): any fail → `DESCARTAR`, else any watch → `REVISAR` (kept:
+anything but DESCARTAR keeps), else `MANTENER`. It lives in ONE place (`readings.WORST`, `worst`).
+The StepM and the SPA are computed and shown as before and decide nothing under it; the call does
+not wait for them: when oos2 or the mother's trades are refused (owner, 2026-10-08) the verdict is still given from the four
+states, no ledger row is written (oos2 was not opened) and the result carries the warning «Falta el StepM» with the reason. The ledger row's `n_out` counts whoever is not dropped. `sin_fallo`, `unanimidad` and
+`ninguna` are still there, side by side in `readings.csv`.
 
 ## The four things this module exists to get right
 
@@ -57,7 +66,8 @@ reading needs the StepM, so choosing one while the policy refuses oos2 raises.
 themselves (`knowhow/pipeline/blind-steps-write-no-ledger-rows.md`); `python3 -m ledger.backfill
 --blind <project>` rebuilds them from their results, marked `backfill`.
 
-**A piece's threshold lives in its study.** The state is read from each result's `verdict`
+**A piece's threshold lives in its study.** Only the small result is opened
+(`<batch>/estudios/<study>.json`, the WFM's page), never a study's heavy detail. The state is read from each result's `verdict`
 block — WFC `no_fiable`/`indeciso`/`fiable`, CSCV PBO over 0.5, surfaces `no viaja`/`a medias`/
 `viaja`, WFM `perverse`/`blind`/`predicts`. Step 20 moves none of them.
 

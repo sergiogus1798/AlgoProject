@@ -11,6 +11,17 @@ PROCEED, REJECT = "proceed", "reject"
 SKIP = {"state.json", "verdict.json"}
 
 
+def flat(prefix: str, node: dict) -> dict:
+    """The numeric leaves of a nested dict under dotted keys: {"c1": {"rho": 1}} -> {"p.c1.rho": 1}."""
+    out = {}
+    for k, v in node.items():
+        if isinstance(v, dict):
+            out |= flat(f"{prefix}.{k}", v)
+        elif isinstance(v, (int, float)) and not isinstance(v, bool):
+            out[f"{prefix}.{k}"] = v
+    return out
+
+
 def numbers(work: Path, brief: Path) -> dict:
     """Every figure the earlier stages left, under one flat namespace.
 
@@ -32,6 +43,8 @@ def numbers(work: Path, brief: Path) -> dict:
         got = json.loads(path.read_text(encoding="utf-8"))
         found |= {f"{source}.{k}": v for k, v in got.items()
                   if isinstance(v, (int, float)) and not isinstance(v, bool)}
+    for path in sorted((work / "estudios").glob("*.json")):
+        found |= flat(path.stem, json.loads(path.read_text(encoding="utf-8")).get("facts", {}))
     return found
 
 
@@ -50,11 +63,12 @@ def judge(found: dict, rules: list[dict]) -> list[dict]:
     broken = []
     for rule in rules:
         value = found[rule["number"]]
-        low, high = rule.get("min"), rule.get("max")
-        if (low is not None and value < low) or (high is not None and value > high):
+        low, high, under = rule.get("min"), rule.get("max"), rule.get("under")
+        if (low is not None and value < low) or (high is not None and value > high) \
+                or (under is not None and value >= under):
             broken.append({"number": rule["number"], "value": value,
-                           "limit": low if low is not None else high,
-                           "bound": "min" if low is not None else "max",
+                           "limit": next(x for x in (low, high, under) if x is not None),
+                           "bound": "min" if low is not None else "max" if high is not None else "under",
                            "why": rule["why"]})
     return broken
 

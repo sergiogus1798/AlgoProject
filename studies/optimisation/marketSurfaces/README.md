@@ -1,107 +1,104 @@
-# marketSurfaces — is the good region of parameters the same one on other markets?
+# marketSurfaces — is what is best on the main market also best on the others?
 
-Encargo 15 (sections A4 and B3 of the owner's `PARAMETER_SPACE_TESTS.pdf`). WORKFLOW step **18.5**:
-same level as the WFC and the CSCV, it reads the variant batch of step 16.5 and its result joins the
-blind read of step 20 (owner, 2026-09-26). It never talks to SQX and never runs a backtest.
-
-That a strategy wins on another market is weak evidence — it may simply be long a correlated asset.
-That **the same region of parameters** is the good one on two markets is not: a backtest's luck does
-not produce that. So each variant of the batch, already retested on every market of
-`assets/_markets.yaml`, gives one surface per market and segment, and between every pair (a, b):
+WORKFLOW step **18.5**, rewritten on 2026-10-07 from the owner's
+`criterios-paso-18.5-superficies-propuesta.md`. It reads the variant batch of step 16.5, never talks
+to SQX and never runs a backtest.
 
 ```
-rho_ab = Spearman(M^a, M^b) over the variants both keep        the order of the variants
-J_ab   = |T^a ∩ T^b| / |T^a ∪ T^b|, T = top decile             the overlap of the best ones
+python3 -m studies.optimisation.marketSurfaces.report --work <batch> --family <f> [--oos2] [--out DIR] [--set a.b=v]
 ```
 
-`M` is **net profit per segment**, the metric the WFC reads (`engines/variants/panel.columns`), so
-this rho and the WFC's speak about the same number. Ranks, so account currency and each market's
-size of move drop out.
+That a strategy wins on another market is weak evidence. That **the order of its variants** carries
+over is not: a backtest's luck does not produce that. Per declared market *m* of
+`assets/_markets.yaml`:
 
 ```
-config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ contract
- every knob    cells per  rho, J,    pair       the six
-               market and the three  states,    tabs
-               segment    checks     the call
+rho_m   = Spearman(gross excess on the main market, gross excess on m)   over the common variants
+rho_bar = sum(w_m rho_m) / sum(w_m)                                       what decides
 ```
 
-| folder | the question it answers | read its README before |
-|---|---|---|
-| `inputs/` | which cells, which markets, which costs? | touching the segment filter or the floor |
-| `measure/` | what are rho, J, the checks and the main-asset plateau? | touching the null, the dedupe or `region_radius`/`region_delta` |
-| `verdict/` | what does a pair mean, and what does the mother get? | moving a threshold |
-| `contract/` | how is it drawn? | adding a figure |
+| file | what it does |
+|---|---|
+| `config.yaml` | every knob; the tuned ones point at `ledger/thresholds.yaml` (`marketSurfaces.*`) |
+| `tooltips.py` | one Spanish sentence per knob, for the window's drawer |
+| `one.py` | `legs` (which legs are read where), `measure` (the common sets, the readings, the reference) and `facts` (what the judge and step 20 read, and the state) |
+| `report.py` | the command: asks the ledger's door, reads, measures, writes, logs the look |
 
-| file | what it does | run it | in → out |
-|---|---|---|---|
-| `one.py` | Every number of one batch (`measure`) and the contract's result of them (`result`, `run`) | imported — the window calls `run` | batch → result |
-| `report.py` | **The command**: asks the ledger's door for each segment before opening anything, writes `marketSurfaces.json/.html/.md`, `pairs.csv`, `checks.csv`, `verdict.csv`, and one ledger row per segment | `python3 -m studies.optimisation.marketSurfaces.report --work <batch> --family <F> [--out <dir>]` | batch → reading + ledger |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `config.yaml` | Segments, metric, top share, `region_radius`/`region_delta`, `extra_metrics` (Profit Factor, Sharpe, Ret/DD) and `density_metrics` (Sortino) and the three thresholds (registered in `ledger/thresholds.yaml`) | edited, or `--set key=value` | — |
-| `measure/region.py` | The plateau detected on the main asset (θ₀'s own neighbourhood box and score band), its 2D projection for a heatmap's outline, and the inside/outside/overall table | imported | cells, params → plateau, table |
+| folder | the question it answers |
+|---|---|
+| `inputs/` | which markets, which variants, which weekly excess? |
+| `measure/` | what are the numbers? |
+| `verdict/` | what do they mean? |
+| `contract/` | how is it read? |
 
-Manual page, in Spanish: `docs/manual/09-optimizacion.pdf` (cap. 52-superficies-mercado). Known-answer test:
-`tests/test_marketsurfaces.py`.
+## Two readings, one command
 
-🔬 **What it costs**, measured 2026-09-26 on the three USDJPY batches (5,000 variants × 10 markets ×
-2 segments, `equity_markets.parquet` 430-745 MB): **9-11 s wall, 2.2-2.4 GB peak RSS**. The 228 M-row
-file is only read per (market, segment) with the filter pushed down, for the checks.
+| reading | main market | other markets | when | what it can do |
+|---|---|---|---|---|
+| deciding | build+oos1 | build+oos1 | always | `perverso` → NO PASA; `sin_dato` → LIMBO |
+| oos2 | build+oos1 | oos2 | only with `--oos2` (blind block) | `perverso` or `sin_dato` → LIMBO, nothing else |
 
-## The five things this module exists to get right
+Without `--oos2` no oos2 leg is asked of the parquet (`one.legs`, and the leg filter is pushed into
+the read), the door is asked for build and oos1 only, and no `oos2.*` fact is written. The main
+market's oos2 is never read by either reading.
 
-**`oos2` is never opened.** The segment is a parameter, default `build` and `oos1`, and
-`report.py` calls `ledger.gate.allow(18.5, segment, symbol)` for each one before reading a byte;
-the Parquet read carries the segment filter, so a reserved row is never materialised. Whether this
-step should join the oos2 group is the owner's decision (BOARD, 2026-09-26), not a knob.
+## What is measured
 
-**All declared markets, always.** The markets come from `_markets.yaml`, fixed before anything was
-looked at, and the call's denominator is their count. Nine were looked at; nine are reported.
+- **Excess**: `engines.weekly.panel` reprices each market's trades on its own bars at its own cost
+  card (`reprice.costs(feed, leg)`), minus the gate's drift (`studies/screening/gate/config.yaml`,
+  `drift`). Gross (before costs) orders the variants; net prices the premium.
+- **Usable on the main market**: not an exact duplicate (fingerprint of its `Main` trades over
+  build+oos1, the mother first) and at or over both floors of `engines/variants/config.yaml`
+  (`panel`). **Common set of m**: those that also reach `floor_oos_per_year` × the years m has data.
+- **A market enters the mean** with at least `markets.min_common` common variants and at most
+  `markets.max_ties` of them tied (a variant is tied when another has exactly its gross excess).
+- **Weights**: 1, or 1 shared among the members of a `near_identical` group that enter the mean.
+- **Null** (`engines.weekly.flip`): one sign per week, the same for every variant and every other
+  market; the main market is never flipped. `p_mas`, `p_menos`, `nulo_p5`, `nulo_p95` are its tails.
+  The weeks are the main asset's leg windows on every market; the week two legs share takes one sign.
+- **Premium**: the top `premium.top_share` of the usable variants by NET excess on the main market;
+  per market (median of the top − median of all) / IQR over its common set; the weighted mean over
+  the same markets, against the same signs applied to the net panels. At or under
+  `premium.percentile` of that null → LIMBO.
+- **Reference**: Spearman of the main market's build against its oos1; the ratio rho_bar / rho_auto
+  is written only when rho_auto exceeds `reference.min_rho`. Annotated.
+- **Power**: for each rho* of `power.rhos`, `power.draws` no-edge draws of every included market (the
+  real weeks under fresh signs), their normal scores mixed with the main market's as
+  r·x + sqrt(1−r²)·z, r = 2 sin(π rho*/6) (a Gaussian pair of Pearson r has Spearman rho* exactly);
+  the share whose joint rho the real family's null reads positive. Annotated.
+- **Weekend straddle**: when more than `null.straddle_max` of the other markets' trades close on a
+  Monday or Tuesday after an open weekend, the deciding order is drawn again with two-week blocks
+  (`orden.estado_2sem`, a warning). It does not change the state.
 
-**The costs are provisional, and every output says so.** On 2026-09-26 the nine pairs and USDJPY
-carry SQX's factory defaults, commission zero (`core.assets`). The flag is read from
-`assets/symbols/` on every run (`inputs.surfaces.provisional`) and opens the first tab, the verdict
-and the warnings. A per-trade cost moves high-frequency variants most, so it can reorder a surface.
+## Facts (`marketSurfaces.<...>` once flattened)
 
-**Rows are not observations.** Two tuples that ran the same backtest count once (`core.surface`);
-🔬 on two of the three batches only 36-45 % of the 5,000 variants carry a distinct result.
+`orden.estado` (positivo / neutro / perverso; **absent** when there is no data), `orden.{rho, p_mas,
+p_menos, nulo_p5, nulo_p95, mercados (sum of weights), n_mercados, finde, estado_2sem}`,
+`prima.{valor, nulo_p5, bajo_p5}`, `auto.{rho, cociente}`, `potencia.{r01, r02, r03}`, `variantes`,
+`duplicados`, `costes.descuadre`, and with `--oos2` only `oos2.{rho, p_mas, p_menos, mercados,
+sin_dato, perverso (absent when sin_dato = 1)}`. State: `fail` on a perverse deciding order; `watch` without data, with a low premium or
+with a perverse or unreadable oos2; else `pass` («la zona viaja» when positive, «no descarta» when neutral).
 
-**Long-only net profit is partly exposure times the market's drift.** Two markets that drifted
-apart rank the variants against each other by time-in-market alone. `rho_neutral` removes each
-market's exposure from its own ranks; 🔬 23-1-46 `oos1`, USDJPY against AUDUSD, reads −0.87 raw and
-much less without it. **The call is on `rho_neutral`** (owner, OPEN.md §48, 2026-09-29) — the raw
-rho (the WFC's metric) is kept beside it in every table and bar chart, displayed but never decided
-on, because it is the one that exposure alone can carry.
+## What it writes, in `<batch>/estudios/`
 
-## The surfaces the window draws (encargo 24 E4, 22 §6.2; redesigned 2026-09-30 §8.5)
+`marketSurfaces.json` (small: envelope, summary, facts, four light tabs; `.html` and `.md` from the
+same dict), `marketSurfaces_detalle.json` (the grids, loaded by nobody who decides), `mercados.csv`,
+`verdict.csv`. `summary.segundos` is the run's time.
 
-Beside the distribution per market, the contract draws the surface itself: for **every ordered
-pair of parameters** a `grid` per market, segment and metric (Net Profit and `extra_metrics`,
-all precomputed — a drop-down switches, no second run) — the median of the variants that used
-each pair of levels, the mother left out — with θ₀ marked and **one colour scale across the
-markets** of that pair, segment and metric (`scale_range`). The owner picks the pair on two
-drop-downs, «Eje X» and «Eje Y» (owner, 2026-09-27, Q13).
+## Readings chosen where the proposal left room — open questions for the owner
 
-**The region drawn on every market's heatmap is the one plateau detected on the main asset**
-(`measure.region.plateau`: θ₀'s own neighbourhood box and score band, the same numbers
-`cloud.config.neighbourhood` uses for A1/C1) — carried over as-is, never recomputed per market
-(owner, 2026-09-30: "la región = la meseta detectada en el activo principal"). It is outlined
-(`grid["region"]`, a faint border, never hides a cell's own number) rather than filled, and the
-**«región» tab** puts a number on it: each market's performance inside that fixed set of
-variants against outside it and against the whole batch. The pre-existing **consensus map**
-answers a different question and is kept beside it, not replaced: per cell, in how many markets
-it is in *that market's own* top decile (`top_share`), `levels` 0..N — a region that travels on
-its own terms is a high, continuous patch with θ₀ inside it.
+1. **«Fewer than 5 markets (with weights)»** is read as the SUM OF WEIGHTS under
+   `markets.min_weight` (the US trio counts 1), not the count of markets.
+2. **The power's planted family** is the Gaussian-copula mix above, judged against the real family's
+   null. A weekly lean added to the panels would be the other reading; it needs a scale per market.
+3. **The top** is one set, picked on the main market's net excess among its usable variants, then
+   intersected with each market's common set — not a top re-picked per common set, nor by gross.
+4. **Ties** are exact equality of the gross excess, counted as the share of variants with a twin.
+5. **Duplicates** are told on the main market's build+oos1 trades only, so the deciding reading
+   never opens oos2.
+6. **An oos2 reading without data** writes `oos2.sin_dato = 1` and NO `oos2.perverso` (owner, 2026-10-08): it was run and could not be read, which is LIMBO, not a pass. With data: `sin_dato = 0` and `perverso`.
+7. The proposal's per-year scaling is not applied: a rho and an IQR-scaled premium do not move with it.
 
-🔬 The main-asset plateau can be tiny: at ~500 variants across six live parameters it is
-routinely just θ₀ itself (`knowhow/research/plateau-radius-degenerates-at-six-params.md`) — the
-«región» table then reads n=1 "inside", correctly, not as a bug. 🔬 On the 150-variant `minimal`
-batch of `Test_USDJPY_donchianUpperCrossUp_M30` most heatmap cells hold one variant or none
-either way: neither the consensus map nor the region table means much below the full design.
-
-## What it does not tell you
-
-- **Anything about oos2**, by construction.
-- **Whether the edge is real on the other market.** A shared region at provisional costs says the
-  ordering travels, not that it pays: that is `studies/transfer/crossmarket/`.
-- **Structural markets.** `_markets.yaml` has none for USDJPY; the nine are one macro family, so
-  passing is the easy test and failing is the informative one.
+Not run on a real batch: on 2026-10-07 no `variant_trades.parquet` existed under the data root. The
+code is checked on synthetic panels only (`tests/test_marketsurfaces.py`); measured there, 500
+variants × 11 markets × 620 weeks × 2,000 draws take 18 s (28 s with `--oos2`), reading excluded.

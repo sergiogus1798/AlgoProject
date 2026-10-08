@@ -44,27 +44,6 @@ thresholds:
       una barra de retraso que se lleve el 30 % de la esperanza bruta es fragilidad a la
       latencia o información del futuro. Sale del PDF del dueño (TRADE_LEVEL_TESTS §4)
 
-  - key: parameterCloud.rank_high
-    value: 0.95
-    source: studies/optimisation/cloud/config.yaml#verdict.rank_high
-    set_by: agente
-    set_on: 2026-09-24
-    why: por encima de esto la original es la cima de su vecindad; sólo se lee junto a plateau_low
-
-  - key: parameterCloud.plateau_low
-    value: 0.15
-    source: studies/optimisation/cloud/config.yaml#verdict.plateau_low
-    set_by: agente
-    set_on: 2026-09-24
-    why: por debajo de esto no tiene compañía, que es la forma de un pico de ruido
-
-  - key: parameterCloud.rho_low
-    value: 0.20
-    source: studies/optimisation/cloud/config.yaml#verdict.rho_low
-    set_by: agente
-    set_on: 2026-09-24
-    why: mediana de la persistencia del orden entre periodos por debajo de esto = superficie rebarajada
-
   # ── Paso 18 · el CSCV ─────────────────────────────────────────────────────────────────
   - key: cscv.blocks
     value: 16
@@ -74,33 +53,146 @@ thresholds:
     why: antes 12 (C(12,6) = 924 particiones); el dueño sube a 16 (C(16,8) = 12.870) en la
       pasada de feedback de UI del 2026-09-30 (FEEDBACK §8.4)
 
-  # ── Paso 18.5 · superficies por mercado ───────────────────────────────────────────────
-  - key: marketSurfaces.rho_floor
-    value: 0.30
-    source: studies/optimisation/marketSurfaces/config.yaml#rho_floor
-    set_by: agente
-    set_on: 2026-09-26
-    why: >-
-      el mismo suelo que el WFC y por la misma razón: por debajo de 0,30 dos rankings comparten
-      menos del 9 % de su varianza. Fijado antes de mirar ningún lote
-
-  - key: marketSurfaces.j_quantile
-    value: 0.975
-    source: studies/optimisation/marketSurfaces/config.yaml#j_quantile
-    set_by: agente
-    set_on: 2026-09-26
-    why: >-
-      percentil del Jaccard de dos órdenes independientes (hipergeométrica) que el observado
-      tiene que superar. Optimista: el diseño agrupa variantes y el nulo real es más ancho
-
-  - key: marketSurfaces.min_share
+  - key: cscv.p_perdida_fail
     value: 0.5
-    source: studies/optimisation/marketSurfaces/config.yaml#min_share
-    set_by: agente
-    set_on: 2026-09-26
-    why: >-
-      la mitad de los mercados declarados, en cada tramo leído, para decir que la región viaja.
-      PROVISIONAL hasta que el dueño lo fije
+    source: studies/optimisation/cscv/config.yaml#state.p_perdida_fail
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "NO PASA si la elegida pierde fuera en la mitad de las particiones o más (propuesta del paso 18 §6.1). Provisional hasta calibrar con población sin ventaja y con ventaja plantada"
+
+  - key: cscv.p_perdida_null_pct
+    value: 95
+    source: studies/optimisation/cscv/config.yaml#state.p_perdida_null_pct
+    set_by: dueño
+    set_on: 2026-10-08
+    why: "LIMBO si la P de pérdida de la elegida supera este percentil de la P de pérdida de su propio nulo. Sustituye al corte fijo de 0,25 (cscv.p_perdida_limbo, 2026-10-07), que quedaba por debajo de la mediana del nulo sin ventaja (0,36-0,38)"
+
+  - key: cscv.null_draws
+    value: 200
+    source: studies/optimisation/cscv/config.yaml#null.draws
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "sorteos del nulo por madre y por tipo (B): 200 para empezar; subirlo sólo afina los percentiles del nulo (propuesta §5.4)"
+
+  - key: cscv.null_block_weeks
+    value: 4
+    source: studies/optimisation/cscv/config.yaml#null.block_weeks
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "longitud media, en semanas, de los bloques del remuestreo estacionario del nulo (propuesta §5.2 y decisión abierta §9.2)"
+
+  - key: cscv.floor_per_param
+    value: 15
+    source: studies/optimisation/cscv/config.yaml#panel.floor_per_param
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "operaciones en el histórico COMPLETO por parámetro vivo: el CSCV usa el histórico entero, así que el suelo también (propuesta §2.3)"
+
+  - key: cscv.floor_per_year
+    value: 10
+    source: studies/optimisation/cscv/config.yaml#panel.floor_per_year
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "operaciones por año sobre el histórico completo (propuesta §2.3)"
+
+  - key: cscv.min_variants
+    value: 30
+    source: studies/optimisation/cscv/config.yaml#panel.min_variants
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "con menos variantes tras los filtros el paso 18 dice «sin dato» y queda en LIMBO (propuesta §6.1)"
+
+  # ── Paso 18.5 · superficies por mercado ───────────────────────────────────────────────
+  - key: marketSurfaces.null_draws
+    value: 2000
+    source: studies/optimisation/marketSurfaces/config.yaml#null.draws
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "sorteos del nulo conjunto de volteo de signos por semanas (propuesta del paso 18.5, §3.3)"
+
+  - key: marketSurfaces.null_block_weeks
+    value: 1
+    source: studies/optimisation/marketSurfaces/config.yaml#null.block_weeks
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "semanas por bloque del volteo; con más del `straddle_max` de operaciones a caballo de un fin de semana el orden se clasifica además con 2"
+
+  - key: marketSurfaces.alpha
+    value: 0.05
+    source: studies/optimisation/marketSurfaces/config.yaml#null.alpha
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "corte de p+ (orden positivo) y de p- (orden perverso) de la rho conjunta (propuesta del paso 18.5, §5.1)"
+
+  - key: marketSurfaces.seed
+    value: 0
+    source: studies/optimisation/marketSurfaces/config.yaml#null.seed
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "semilla raíz; cada nulo (lectura principal, oos2, bloques de dos semanas) es una hija"
+
+  - key: marketSurfaces.straddle_max
+    value: 0.1
+    source: studies/optimisation/marketSurfaces/config.yaml#null.straddle_max
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "fracción de operaciones de los otros mercados cerradas lunes o martes tras un fin de semana a partir de la cual se avisa y se repite el nulo en bloques de dos semanas (§3.3); no cambia el estado"
+
+  - key: marketSurfaces.min_common
+    value: 50
+    source: studies/optimisation/marketSurfaces/config.yaml#markets.min_common
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "variantes utilizables a la vez en el principal y en el mercado por debajo de las cuales ese mercado no entra en la media (§2.3)"
+
+  - key: marketSurfaces.max_ties
+    value: 0.5
+    source: studies/optimisation/marketSurfaces/config.yaml#markets.max_ties
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "fracción de variantes empatadas en un mercado por encima de la cual no entra en la media (§2.4)"
+
+  - key: marketSurfaces.min_weight
+    value: 5.0
+    source: studies/optimisation/marketSurfaces/config.yaml#markets.min_weight
+    set_by: "provisional: la propuesta dice «menos de 5 mercados en la media (con los pesos)» y el agente que implementó el paso 18.5 (2026-10-07) lo leyó como SUMA DE PESOS; pendiente de que el dueño lo confirme"
+    set_on: 2026-10-07
+    why: "suma de pesos de los mercados en la media por debajo de la cual el orden es «sin dato» = LIMBO (§5.1)"
+
+  - key: marketSurfaces.top_share
+    value: 0.2
+    source: studies/optimisation/marketSurfaces/config.yaml#premium.top_share
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "fracción de variantes que forma el top del principal en la prima (§3.4)"
+
+  - key: marketSurfaces.premium_percentile
+    value: 5
+    source: studies/optimisation/marketSurfaces/config.yaml#premium.percentile
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "percentil del nulo de la prima conjunta en el que, o por debajo del cual, el paso da LIMBO (§5.2); sin calibrar (§10.1)"
+
+  - key: marketSurfaces.auto_min_rho
+    value: 0.1
+    source: studies/optimisation/marketSurfaces/config.yaml#reference.min_rho
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "rho del principal contra sí mismo (build frente a oos1) por encima de la cual se escribe el cociente rho conjunta / rho propia (§3.5)"
+
+  - key: marketSurfaces.power_draws
+    value: 200
+    source: studies/optimisation/marketSurfaces/config.yaml#power.draws
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "familias con transmisión plantada por cada rho verdadera de la curva de potencia (§3.6)"
+
+  - key: marketSurfaces.cost_max_share
+    value: 0.01
+    source: studies/optimisation/marketSurfaces/config.yaml#costs.max_share
+    set_by: "dueño"
+    set_on: 2026-10-07
+    why: "fracción de variantes de un mercado cuyo P/L reconstruido no reproduce el NetProfit de SQX a partir de la cual el estudio avisa (§2.2)"
 
   # ── Paso 8 y paso 25 · edge por coste (encargo 11) ────────────────────────────────────
   - key: edgeCost.min_edge_spreads
@@ -1103,3 +1195,228 @@ thresholds:
     why: >-
       propuesta del encargo 27 §3.1.3: marcar y seguir en la primera versión, hasta ver cuántas
       caen en una población real. Pendiente de confirmar por el dueño.
+
+  # ── Pasos 16.5 y 17 · fábrica, nube y WFC (encargo 48; propuestas del 2026-10-07) ───────
+  - key: variants.n_min
+    value: 1000
+    source: sqx/variants/config.yaml#size.n_min
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "tamaño mínimo del lote de variantes: min(n_max, max(n_min, per_coefficient × p))"
+
+  - key: variants.n_max
+    value: 5000
+    source: sqx/variants/config.yaml#size.n_max
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "tope del lote; si se llega a él se avisa en el manifiesto"
+
+  - key: variants.per_coefficient
+    value: 8
+    source: sqx/variants/config.yaml#size.per_coefficient
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "variantes por coeficiente de la superficie cuadrática de p parámetros vivos"
+
+  - key: wfc.floor_is_per_param
+    value: 15
+    source: engines/variants/config.yaml#panel.floor_is_per_param
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "operaciones dentro de muestra por parámetro vivo: suelo de grados de libertad, con menos una variante se ajusta al ruido"
+
+  - key: wfc.floor_oos_per_year
+    value: 10
+    source: engines/variants/config.yaml#panel.floor_oos_per_year
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "operaciones fuera de muestra por año de la ventana: fuera no se ajusta nada, sólo hace falta poder medir el exceso por año"
+
+  - key: wfc.min_variants
+    value: 30
+    source: engines/variants/config.yaml#panel.min_variants
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "por debajo de estas variantes tras los filtros el paso 17 dice «sin dato»"
+
+  - key: wfc.null_draws
+    value: 2000
+    source: studies/optimisation/wfc/config.yaml#null.draws
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "sorteos del nulo de volteo de signos por semana (B)"
+
+  - key: wfc.null_block_weeks
+    value: 1
+    source: studies/optimisation/wfc/config.yaml#null.block_weeks
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "semanas por bloque del volteo de signos: cada operación cuenta entera en la semana en que cierra (propuesta del paso 17, §4.3)"
+
+  - key: wfc.straddle_warn
+    value: 0.1
+    source: studies/optimisation/wfc/config.yaml#null.straddle_warn
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "fracción de operaciones de fuera que cierran lunes o martes tras pasar el fin de semana abiertas; por encima se avisa y el nulo se recalcula con bloques más anchos (propuesta del paso 17, §4.3)"
+
+  - key: wfc.straddle_block_weeks
+    value: 2
+    source: studies/optimisation/wfc/config.yaml#annotate.block_weeks
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "semanas por bloque del nulo que se recalcula cuando se pasa `wfc.straddle_warn`; sólo se anota, no decide"
+
+  - key: wfc.sqx_gap_tolerance
+    value: 1.0
+    source: studies/optimisation/wfc/config.yaml#check.sqx_tolerance
+    set_by: "provisional, propuesto por el agente que adaptó el WFC a la propuesta (2026-10-07); no lo ha fijado el dueño"
+    set_on: 2026-10-07
+    why: "divisa de la cuenta que el neto reconstruido de una variante puede separarse del NetProfit de SQX en un tramo sin contar como descuadre"
+
+  - key: wfc.sqx_gap_relative
+    value: 0.01
+    source: studies/optimisation/wfc/config.yaml#check.sqx_relative
+    set_by: "provisional, propuesto por el agente que adaptó el WFC a la propuesta (2026-10-07); no lo ha fijado el dueño"
+    set_on: 2026-10-07
+    why: "más esta fracción del |NetProfit| del tramo: la tolerancia relativa del mismo descuadre"
+
+  - key: wfc.alpha
+    value: 0.05
+    source: studies/optimisation/wfc/config.yaml#null.alpha
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "corte de p+ y p- al clasificar el orden"
+
+  - key: wfc.rho_strong
+    value: 0.3
+    source: studies/optimisation/wfc/config.yaml#order.rho_strong
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "ρ de Spearman a partir de la cual se etiqueta «fuerte»"
+
+  - key: wfc.top_share
+    value: 0.2
+    source: studies/optimisation/wfc/config.yaml#level.top_share
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "fracción de variantes que forma el top por exceso de dentro (la propuesta dice percentil 80)"
+
+  - key: wfc.deciding
+    value: build+oos1__oos2
+    source: studies/optimisation/wfc/config.yaml#deciding
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "la composición que decide el estado del paso 17 (c1)"
+
+  - key: wfc.seed
+    value: 0
+    source: studies/optimisation/wfc/config.yaml#null.seed
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "semilla del nulo de volteo"
+
+  - key: parameterCloud.shuffles
+    value: 200
+    source: studies/optimisation/cloud/config.yaml#shuffles
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "barajados para la referencia del R² ajustado"
+
+  - key: parameterCloud.shuffle_percentile
+    value: 95
+    source: studies/optimisation/cloud/config.yaml#shuffle_percentile
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "percentil de la referencia barajada: el R² es «legible» sólo si lo supera"
+
+  - key: parameterCloud.heatmap_pairs
+    value: 4
+    source: studies/optimisation/cloud/config.yaml#heatmap_pairs
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "cuántos parámetros, los de mayor índice de Sobol total, se cruzan de dos en dos en los mapas de calor"
+
+  - key: wfc.calibration.families
+    value: 300
+    source: studies/optimisation/wfc/calibrate/config.yaml#families
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "familias sintéticas por casilla de la calibración"
+
+  - key: wfc.calibration.max_false_pass
+    value: 0.4
+    source: studies/optimisation/wfc/calibrate/config.yaml#max_false_pass
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "tope del falso PASA sin ventaja; del Council (2026-10-07), provisional hasta que el dueño lo confirme"
+
+  - key: wfc.calibration.max_false_fail
+    value: 0.25
+    source: studies/optimisation/wfc/calibrate/config.yaml#max_false_fail
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "tope del falso NO PASA con ventaja plantada (el error irreversible: un NO PASA no se revisa); del Council (2026-10-07), provisional hasta que el dueño lo confirme"
+
+  - key: wfc.r_sel_min_gap
+    value: 0.05
+    source: studies/optimisation/wfc/config.yaml#level.r_sel_min_gap
+    set_by: "provisional, propuesto por el agente que implementó el WFC (2026-10-07); no lo ha fijado el dueño"
+    set_on: 2026-10-07
+    why: "R_sel se escribe «sin dato» si la prima del top dentro no supera esta fracción del rango intercuartílico de dentro"
+
+  - key: wfc.level_alpha
+    value: 0.05
+    source: studies/optimisation/wfc/config.yaml#level.alpha
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "corte del p del nivel del top en su nulo de volteo semanal (exceso neto, los mismos sorteos del orden). DECIDE (encargo 48, decisiones 5 y 6; dueño, confirmado el 2026-10-08): el top gana fuera sólo si su mediana es > 0 y p_nivel <= este corte; mediana > 0 sin superarlo = LIMBO; mediana <= 0 = NO PASA"
+
+  - key: wfm.alpha
+    value: 0.05
+    source: studies/optimisation/wfm/config.yaml#null.alpha
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "corte de las dos colas de L1 en el nulo de volteo por semanas: p− ≤ este valor es NO PASA, p+ ≤ este valor es «reoptimizar gana»; también el de L2 en modo reoptimizado (propuesta del paso 19, §5)"
+
+  - key: wfm.null_draws
+    value: 2000
+    source: studies/optimisation/wfm/config.yaml#null.draws
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "juegos de signos por semana del nulo de la WFM, en total por madre y los mismos para las 30 celdas (propuesta del paso 19, §4.2)"
+
+  - key: wfm.seed
+    value: 0
+    source: studies/optimisation/wfm/config.yaml#null.seed
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "semilla raíz del nulo de la WFM; cada madre recibe una hija por su posición en el export"
+
+  - key: wfm.straddle_max
+    value: 0.1
+    source: studies/optimisation/wfm/config.yaml#null.straddle_max
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "fracción de operaciones cerradas lunes o martes tras un fin de semana a partir de la cual se avisa y el nulo se repite en bloques de dos semanas (propuesta del paso 19, §4.2); no cambia el estado"
+
+  - key: wfm.skew_warn
+    value: 1.0
+    source: studies/optimisation/wfm/config.yaml#null.skew_warn
+    set_by: "provisional, propuesto por el agente que implementó el paso 19 (2026-10-07); no lo ha fijado el dueño"
+    set_on: 2026-10-07
+    why: "asimetría de la serie semanal de la mediana de celdas a partir de la cual el resultado avisa de que la cola baja del nulo rechaza de más con exceso de sesgo positivo (13 % al 5 % nominal, engines/weekly/README.md); no cambia el estado"
+
+  - key: wfm.centre_runs
+    value: 10
+    source: studies/optimisation/wfm/config.yaml#centre.runs
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "pasadas de la celda de operación en modo reoptimizado: el centro de la matriz, fijado antes de correr (propuesta del paso 19, §4.3)"
+
+  - key: wfm.centre_oos_pct
+    value: 30
+    source: studies/optimisation/wfm/config.yaml#centre.oos_pct
+    set_by: dueño
+    set_on: 2026-10-07
+    why: "% fuera de muestra de la celda de operación en modo reoptimizado: el centro de la matriz (propuesta del paso 19, §4.3)"

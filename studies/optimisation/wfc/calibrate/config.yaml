@@ -1,0 +1,38 @@
+# The calibration of step 17's criterion (encargo 48, part C): how often the owner's table
+# says PASA of a family with no edge, and how often it misses one with a planted edge.
+# `ledger:<key>`: the number lives in ledger/thresholds.yaml, with who set it and when.
+
+families: ledger:wfc.calibration.families              # synthetic families per scenario
+max_false_pass: ledger:wfc.calibration.max_false_pass      # cap on PASA with no edge
+max_false_fail: ledger:wfc.calibration.max_false_fail      # cap on NO PASA with a planted edge
+seed: 48
+
+# One synthetic family: every variant's week is its mean + its loading on one common factor
+# + noise of its own.
+family:
+  variants: 300
+  years_in: 15.0        # build + oos1, the inside of the deciding composition
+  # Standard deviation of a variant's own weekly noise, the common factor's being 1. It sets
+  # how alike the variants are. 0.4 gives the rho of a family with no edge a null deviation
+  # of about 0.23 (5 %-95 % of families: 0.05 to 0.43); the reference run measured 0.09 to
+  # 0.41, median 0.26, on real batches (proposal of step 17, section 4.2).
+  own_noise: 0.4
+  order_spread: 0.5     # «ventaja con orden»: spread of the edge across variants, as a share of it
+
+# The scenarios: every kind of family at every out-of-sample length.
+grid:
+  years_out: [1.0, 2.75, 5.0]     # 2.75 is the proposal's oos2, 5 the asset cards' oos1
+  edges: [0.25, 0.5, 1.0]         # planted edge, as annualised Sharpe of the weekly excess
+  costs: [-0.1, -0.25, -0.5]      # no edge and a negative mean (costs), same unit
+
+# The two cells the register's `abre` is computed from, with the criterion (null on the level):
+# PASA with no edge and no cost, and not-PASA with this planted edge (the worse of with and
+# without order), both at this out-of-sample length.
+reference:
+  years_out: 2.75
+  edge: 0.5
+
+# The reference cells again with the variants less alike (1.0, the families of
+# tests/test_wfc_families.py) and more alike (0.2) than `family.own_noise`.
+sensitivity:
+  own_noise: [1.0, 0.2]

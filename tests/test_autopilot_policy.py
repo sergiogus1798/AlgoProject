@@ -23,7 +23,7 @@ def leaves(rule: dict) -> list[dict]:
 
 def test_missing_is_fail_in_exactly_the_sanity_rules_and_r3() -> None:
     """presencia/sanidad and R3 (owner, 2026-10-06: R3 with no data fails) `fail`, every other
-    rule `limbo`, `pass` nowhere."""
+    rule `limbo`, `pass` only on the four facts that are absent by design."""
     seen = {}
     for spec in judge.settings()["steps"].values():
         for rule in spec["rules"]:
@@ -32,7 +32,10 @@ def test_missing_is_fail_in_exactly_the_sanity_rules_and_r3() -> None:
     assert {k for k, v in seen.items() if "fail" in v} == {
         "gate.scorecard.presencia_passed", "gate.scorecard.sanidad_passed",
         "gate.scorecard.drift_excess_t"}
-    assert not any("pass" in v for v in seen.values())
+    # `pass` only where a fact is absent by design: 18.5's oos2 reading before the blind
+    # block, and the WFM's reoptimised rules in modo fijo (owner, 2026-10-07)
+    assert {k for k, v in seen.items() if "pass" in v} == {
+        "marketSurfaces.oos2.perverso", "marketSurfaces.oos2.sin_dato", "wfm.reopt.centro_exceso", "wfm.reopt.l2_p_menos"}
 
 
 def test_steps_8_to_16_declare_oos1() -> None:

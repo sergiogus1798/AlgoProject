@@ -17,6 +17,9 @@ from ledger import record, study as studymod
 from studies.closing.blindJoint import inputs, many, one, pieces, readings
 
 
+VERDICT = {"fail": "DESCARTAR", "watch": "REVISAR"}     # any other call keeps: MANTENER
+
+
 def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict:
     """Record step 20's look at oos2 in the study's ledger.
 
@@ -27,7 +30,8 @@ def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict
         span: The oos2 window.
 
     Returns:
-        The row as written. Under a chosen reading `n_out` is how many pass it; with no
+        The row as written. Under a chosen reading `n_out` is how many it does not drop
+        (those that pass it, and under `peor` those left to review); with no
         reading chosen the row is soft (`n_out = n_in`) and every reading's count goes in
         the note, as a soft screen is recorded (`ledger/README.md`). The scores are the
         mothers' per-day Sharpe ratios, never annualised.
@@ -40,7 +44,7 @@ def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict
         "config_hash": fingerprint(cfg), "symbol": a.symbol, "timeframe": a.timeframe,
         "segment": inputs.SEGMENT, "window_from": str(span[0].date()),
         "window_to": str(span[1].date()), "n_in": k,
-        "n_out": counts[readings.label(reading)] if reading else k,
+        "n_out": int((got["calls"][readings.label(reading)] != "fail").sum()) if reading else k,
         "criterion": f"blindJoint/{readings.label(reading) if reading else 'sin_regla'}",
         "thresholds": {"fwer": cfg["stepm"]["fwer"], "benchmark": cfg["benchmark"]["sizing"],
                        **cfg["joint"]},
@@ -51,7 +55,8 @@ def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict
 
 
 def verdict_table(population: pd.DataFrame, got: dict, cfg: dict) -> pd.DataFrame:
-    """One row per mother for /curate: DESCARTAR only under a chosen reading that drops her."""
+    """One row per mother for /curate: DESCARTAR only under a chosen reading that drops her,
+    REVISAR (kept, like anything but DESCARTAR) for a `watch` under `peor`."""
     reading = one.chosen(cfg)
     rows = []
     for mother, row in population.iterrows():
@@ -61,10 +66,17 @@ def verdict_table(population: pd.DataFrame, got: dict, cfg: dict) -> pd.DataFram
                   f"lectura {readings.label(reading)}: {one.CALL[call]}" if reading else
                   "sin regla del dueño: anota y no corta")
         rows.append({"strategy": mother, "identity": row["identity"],
-                     "verdict": "DESCARTAR" if call == "fail" else "MANTENER",
+                     "verdict": VERDICT.get(call, "MANTENER"),
                      "reason": reason,
                      **{p: row[p]["state"] if row["complete"] else None for p in pieces.PIECES}})
     return pd.DataFrame(rows)
+
+
+def need_stepm(refused: str | None, cfg: dict) -> None:
+    """Raise when the StepM could not be read and the chosen reading needs it (every one but `peor`)."""
+    reading = one.chosen(cfg)
+    if refused and reading and reading[0] != readings.WORST:
+        raise PermissionError(f"{refused}. Una lectura elegida necesita el StepM sobre oos2")
 
 
 def main() -> None:
@@ -92,8 +104,7 @@ def main() -> None:
                    "no hay nada que leer en oos2")
     batches = population.loc[population["complete"], "batch"].to_dict()
     refused = refused or inputs.trades_door(batches)
-    if refused and one.chosen(cfg):
-        raise PermissionError(f"{refused}. Una lectura elegida necesita el StepM sobre oos2")
+    need_stepm(refused, cfg)
     span = inputs.window(a.symbol)
     wfm = Path(population["wfm_source"].iloc[0])
     data = {"population": population, "refused": refused,

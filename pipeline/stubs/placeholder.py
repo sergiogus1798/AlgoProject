@@ -27,11 +27,12 @@ SHAPE = {"sppultra": {"verdict": "proceed", "n_eff": 8412},
          "build": {"n": 5000, "bytes": 70000000},
          "ran": {"n_loaded": 5000, "n_returned": 5000, "n_on_disk": 5000},
          "collected": {"n": 5000, "canaries_distinct": 4},
-         "wfc": {"n": 1001, "rho": 0.41, "call": "fiable", "pairs": 1200},
-         "equity": {"n": 5000, "days": 3925, "bytes": 30000000, "mismatch": 0,
-                    "open_at_end": 890},
-         "cscv": {"pbo_argmax": 0.41, "pbo_plateau_centre": 0.05, "dsr": 0.66,
-                  "n_clusters": 21, "slope": 0.42}}
+         "wfc": {"n": 1001, "rho": 0.41, "call": "pasa", "p_mas": 0.01, "p_menos": 0.99,
+                 "composition": "c1", "in_sample": "build+oos1", "out_of_sample": "oos2"},
+         "equity": {"n": 5000, "days": 3925, "bytes": 30000000, "unreadable": 0,
+                    "open_at_end": 890, "markets": 1},
+         "cscv": {"facts": {"n": 1001, "pbo": 0.41, "p_perdida": 0.2, "p_perdida_sobre_p95": 0,
+                            "pbo_sobre_p95": 0, "nulo": {"pbo_p95": 0.6, "p_perdida_p95": 0.4}}}}
 
 
 def digest(path: Path) -> str:
@@ -88,7 +89,9 @@ def main() -> None:
     out = dict(SHAPE[args.stage], placeholder=True)
     if args.stage == "collected":
         out |= leftovers(args.work)
-    (args.work / f"{args.stage}.json").write_text(
+    target = args.work / "estudios" / "cscv.json" if args.stage == "cscv" else args.work / f"{args.stage}.json"
+    target.parent.mkdir(exist_ok=True)
+    target.write_text(
         json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
 
 

@@ -3,8 +3,8 @@
 - `arch-stepm-empty-panel` — Why does arch's StepM raise a zero-size array ValueError at small K?
 - `bar-file-wider-than-backtest` — Why must bars be sliced to the backtest's own span before any null or benchmark?
 - `buy-and-hold` — Which sizing convention must a buy-and-hold benchmark name to count as a result?
-- `cloud-neighbourhood-empty-at-high-dimension` — Why do the parameter cloud's A1 and A3 read "Sin dato" on a mother with many parameters?
 - `cloud-ranking-stability` — Can a profitable, smooth variant cloud still reshuffle which member is best each year?
+- `cloud-sobol-ranking-from-noise` — Does a quadratic surface fitted to pure noise still give a Sobol ranking, and what R² is that noise worth?
 - `contemporaneous-dependence-bootstrap` — Why bootstrap a multi-market portfolio by whole calendar blocks instead of by trades?
 - `cross-market-rank-exposure` — Why does a cross-market Spearman of net profit partly measure time-in-market and drift?
 - `crossmarket-effective-markets` — How many independent markets are in a cross-market list, and which pooled rules are valid tests?
@@ -13,6 +13,7 @@
 - `cscv-always-reads-oos2` — Why must a CSCV run on a real batch never be used as a regression test?
 - `cscv-chosen-point-slope-seesaw` — Why is the CSCV chosen-point IS/OOS slope negative even when PBO is low?
 - `cscv-daily-returns` — Is a daily-returns panel in the CSCV mostly zeros, and what does it rank?
+- `cscv-null-probability-of-loss-above-limbo-cut` — Does the CSCV's LIMBO rule (loss above its null's p95) ever fire on correlated variants?
 - `cusum-blind-spot` — Does a CUSUM non-rejection show a strategy is stable?
 - `daily-block-seams` — How must a daily block bootstrap treat floating equity at each block seam?
 - `darwinex-darwinia-published-rules` — What does Darwinex publish on DARWIN risk normalisation, D-Score, DarwinIA SILVER/GOLD and trading constraints?
@@ -26,6 +27,7 @@
 - `gate-monkey-z-tracks-drift-t` — Does the gate's monkey z add information beyond R3's drift-excess t on a cost-bound asset?
 - `gate-t-scales` — Why can the gate's three t statistics not be compared with each other?
 - `gates-are-owner-decisions` — Who decides a threshold that removes strategies: the analysis or the owner?
+- `genetic-build-islands-are-the-sampling-unit` — Are the strategies of one SQX genetic build independent draws when I compare two builds or count survivors?
 - `hardest-null` — Does a null that randomises more make the null harder to beat?
 - `incubation-band-is-not-its-nominal-level` — How often does M9's band of equal-length windows flag a healthy portfolio, and how soon a broken one?
 - `index-feed-holes-and-the-shift-null` — Why did a no-edge population read z_conj +0.44 in V1, and what do the index feeds' holes do to a shift null?
@@ -60,7 +62,9 @@
 - `trade-filter-parameter-space` — What does a trade-count floor remove in parameter space before a surface is fitted?
 - `trade-t-vs-frequency-and-skew` — Does a higher trade frequency buy the trade-level t more power, and does skew distort its false-positive rate?
 - `trial-count-half-rule` — When does trials.independent over-count the independent trials of a family?
-- `wfc-top-persistence-sign-flip-null` — Does the WFC's top persistence, or its median OOS/IS Sharpe ratio, tell a zero-edge variant family from a real one?
+- `weekly-flip-null-skewed-lower-tail` — Does the weekly sign-flip null keep its size on skewed weekly excess, for a median statistic?
+- `wfc-dependence-moves-missed-pass` — Does making the variants more alike change the WFC's false PASA or its missed PASA?
+- `wfc-top-persistence-sign-flip-null` — Why does step 17's level pass half of the no-edge families, and does its null decide?
 - `wfm-cells-are-not-independent` — How many independent curves are the 30 WFM cells worth?
 - `window-filters-are-ledger-searches` — Does a filter applied in the window count as a search in the ledger?
 - `xauusd-reopen-bar-drift` — Where does the XAUUSD Asian drift live relative to the 01:00 EET reopen?

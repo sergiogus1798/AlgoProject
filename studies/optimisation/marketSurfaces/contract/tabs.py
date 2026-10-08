@@ -1,145 +1,139 @@
-"""The study's numbers as the contract's tabs: the reading, the two matrices, the surfaces, the checks."""
+"""Step 18.5 as the contract's blocks: the call, the joint rho against its null, the markets, the premium, the power."""
 
+import numpy as np
 import pandas as pd
 
-from core.study import blocks, result
+from core.study import blocks, result as envelope
+from studies.optimisation.marketSurfaces.contract import words as w
 
-RHO_LEVELS = [-0.5, -0.3, 0.0, 0.3, 0.5, 0.7]
-COSTS = ("Costes provisionales: los 9 pares y el principal se retestearon con los valores por "
-         "defecto de SQX, con comisión cero. El coste por operación mueve más a las variantes que "
-         "más operan, así que puede reordenar una superficie: lee esto como provisional hasta "
-         "que el dueño fije los costes de The5ers.")
+WINDOW = {"principal": "build+oos1 en los otros mercados", "oos2": "oos2 en los otros mercados"}
 
 
-TERMS = {
-    "Jaccard": "Solape entre las mejores combinaciones de parámetros de dos mercados: la "
-               "intersección dividida por la unión de sus deciles superiores, J = |A∩B| / |A∪B|. "
-               "1 = las mejores combinaciones son las mismas en los dos; 0 = ninguna en común. "
-               "Por azar, con el decil, sale en torno a 0,05: lo que importa es cuánto lo supera.",
-    "Jaccard por azar": "El Jaccard que darían dos órdenes de variantes independientes, y el "
-                        "percentil alto de ese azar que el Jaccard observado tiene que superar.",
-    "Spearman": "Correlación de rangos del Net Profit de cada variante entre el principal y "
-                "este mercado: 1 = las ordenan igual, 0 = sin relación, −1 = al revés.",
-    "n_eff": "Variantes con un resultado distinto en el par: dos tuplas que dan el mismo "
-             "backtest cuentan una vez.",
-    "exposure": "Spearman tras quitar a cada mercado lo que explica su tiempo dentro: aísla la "
-                "región de parámetros de la deriva del mercado.",
-    "Solape": "Cuántas variantes del decil superior comparten el principal y este mercado, "
-              "sobre el tamaño del decil.",
-}
+def es(value: float | None, pattern: str = "{:.2f}") -> str:
+    """A number inside a sentence, decimal comma; «sin dato» when there is none."""
+    return "sin dato" if value is None or not np.isfinite(value) else pattern.format(value).replace(".", ",")
 
 
-def short(feed: str) -> str:
-    """"EURUSD_M1" -> "EURUSD"."""
-    return feed.split("_")[0]
+def verdict(facts: dict, state: str, main: str, cfg: dict) -> dict:
+    """The step's state, its label and the sentence of each reading that made it."""
+    order, premium = facts["orden"], facts["prima"]
+    said = order.get("estado", "sin_dato")
+    meaning = w.MEANING[said].format(main=main, p_mas=es(order["p_mas"], "{:.3f}"),
+                                     p_menos=es(order["p_menos"], "{:.3f}"),
+                                     peso=es(order["mercados"]), need=es(cfg["markets"]["min_weight"], "{:g}"))
+    parts = [{"label": "Orden conjunto (decide)", "value": order["rho"], "note": w.ORDER[said],
+              "state": {"perverso": "fail", "sin_dato": "watch"}.get(said, "pass")}]
+    low = premium.get("bajo_p5")
+    if low:
+        meaning += w.LOW.format(share=es(100 * cfg["premium"]["top_share"], "{:g}"), main=main,
+                                pi=es(premium["valor"]), cut=es(premium["nulo_p5"]),
+                                pct=es(cfg["premium"]["percentile"], "{:g}"))
+    parts.append({"label": "Prima del top (neto)", "value": premium["valor"],
+                  "state": "none" if low is None else "watch" if low else "pass",
+                  "note": f"corte del nulo {es(premium['nulo_p5'])}"})
+    if "oos2" in facts:
+        bad = facts["oos2"].get("perverso", 0)
+        blind = facts["oos2"]["sin_dato"]
+        meaning += w.LATER.format(p_menos=es(facts["oos2"]["p_menos"], "{:.3f}")) * bad
+        parts.append({"label": "Orden en oos2", "value": facts["oos2"]["rho"],
+                      "state": "watch" if bad or blind else "pass",
+                      "note": f"p− {es(facts['oos2']['p_menos'], '{:.3f}')}"})
+    return blocks.verdict(w.LABEL[state, state == "pass" and said == "positivo"], state, meaning,
+                          f"ρ {es(order['rho'])}", parts)
 
 
-def selector(segments: list[str]) -> dict:
-    """The segment drop-down every tab shares."""
-    return {"key": "segment", "label": "Tramo", "options": segments, "default": segments[0]}
+def joint(found: dict, title: str, note: str) -> list[dict]:
+    """The joint rho marked on its null; nothing when no market entered the mean."""
+    if not len(found["nulo"]):
+        return []
+    return [blocks.distribution(title, "", found["nulo"], found["orden"]["rho"], note,
+                                p=found["orden"]["p_mas"], sign_shade=False)]
 
 
-def reading(rows: pd.DataFrame, segments: list[str], floor: float) -> dict:
-    """The main market against each declared one: the table and the bars of rho.
-
-    Args:
-        rows: `verdict.call.against_main` with `origin_pct` added.
-        segments: The segments read.
-        floor: The rho floor, drawn as the bars' reference.
-
-    Returns:
-        The first tab.
-    """
-    out = []
-    for segment in segments:
-        one = rows[rows["segment"] == segment]
-        table = pd.DataFrame({
-            "Mercado": one["market"].map(short), "n efectivo": one["n_eff"],
-            "Spearman": one["rho"], "Spearman (inf.)": one["rho_lo"],
-            "Spearman (sup.)": one["rho_hi"], "Spearman sin exposición": one["rho_neutral"],
-            "Jaccard": one["j"], "Jaccard por azar": one["j0"],
-            "Jaccard (banda alta del azar)": one["j_hi"],
-            "Solape": one["overlap"].astype(str) + "/" + one["k"].astype(str),
-            "Madre (%)": one["origin_pct"], "Estado": one["state"]})
-        out.append({**blocks.table(
-            f"Principal contra cada mercado — {segment}", table,
-            "Spearman: correlación de rangos del Net Profit entre variantes, con su intervalo "
-            "al 95 %. Jaccard: solape de los deciles superiores (ver el glosario); "
-            "«por azar» es lo que dan dos órdenes independientes y «banda alta» su percentil "
-            "alto. Madre: dónde cae la madre en ese mercado (100 = la mejor). «Sin exposición»: "
-            "el mismo Spearman quitando a cada mercado lo que explica su tiempo dentro — en "
-            "estrategias sólo largas, parte del orden es exposición por deriva del mercado, no "
-            "región de parámetros."),
-            "help": [None, TERMS["n_eff"], TERMS["Spearman"], None, None, TERMS["exposure"],
-                     TERMS["Jaccard"], TERMS["Jaccard por azar"], TERMS["Jaccard por azar"],
-                     TERMS["Solape"], None, None],
-            "select": {"segment": segment}})
-        out.append({"kind": "bars", "title": f"Spearman con el principal — {segment}", "unit": "",
-                    "items": [{"label": short(m), "value": r, "error": [lo, hi], "state": s}
-                              for m, r, lo, hi, s in zip(one["market"], one["rho"],
-                                                         one["rho_lo"], one["rho_hi"],
-                                                         one["state"])],
-                    "reference": floor, "select": {"segment": segment}})
-    return result.tab("lectura", "La lectura", out, [selector(segments)],
-                      "¿La región buena de parámetros en el mercado principal es también la "
-                      "buena en los otros? " + COSTS)
+def per_market(found: dict, cfg: dict) -> dict:
+    """One row per declared market: its rho, its tails, its common set, its weight. Decides nothing."""
+    m = found["mercados"]
+    frame = pd.DataFrame({
+        "Mercado": m["feed"], "Categoría": m["category"].map(lambda c: w.CATEGORY.get(c, c)),
+        "ρ": m["rho"], "p+": m["p_mas"], "p−": m["p_menos"], "Variantes comunes": m["n"],
+        "Empates (%)": 100 * m["ties"], "Peso": m["weight"], "Prima π": m["prima"],
+        "Madre (%)": m["madre"], "Entra": np.where(m["included"], "sí", "no")})
+    note = w.MARKETS_NOTE.format(common=cfg["markets"]["min_common"],
+                                 ties=es(100 * cfg["markets"]["max_ties"], "{:g}"))
+    return blocks.table(w.MARKETS_TITLE, frame, note, digits=3) | {
+        "compact": True, "help": [w.MARKETS[c] for c in frame.columns]}
 
 
-def matrices(pairs: pd.DataFrame, segments: list[str], order: list[str]) -> dict:
-    """rho_ab and J_ab between every pair of markets, one grid each per segment.
-
-    Args:
-        pairs: `measure.pairs.matrix` of every segment, with a `segment` column.
-        segments: The segments read.
-        order: Market order, the main one first.
-
-    Returns:
-        The second tab.
-    """
-    names = [short(m) for m in order]
-    out = []
-    for segment in segments:
-        one = pairs[pairs["segment"] == segment]
-        both = pd.concat([one, one.rename(columns={"a": "b", "b": "a"})]).drop_duplicates(["a", "b"])
-        for key, title, levels in (("rho", "Spearman", RHO_LEVELS),
-                                   ("j", "Jaccard del decil superior", None)):
-            grid = both.pivot(index="a", columns="b", values=key).reindex(index=order, columns=order)
-            j0 = float(one["j0"].median())
-            out.append({"kind": "grid", "title": f"{title} — {segment}", "rows": names,
-                        "cols": names, "values": grid.to_numpy().tolist(),
-                        "scale": "discrete",
-                        "levels": levels or [round(j0, 3), round(2 * j0, 3), 0.2, 0.3, 0.5],
-                        "labels": None, "select": {"segment": segment}})
-    return result.tab("matrices", "Todos los pares", out, [selector(segments)],
-                      "Cada casilla compara dos mercados sobre las mismas variantes. La "
-                      "diagonal es 1 por construcción: es el control de que las variantes se "
-                      "emparejaron por su identificador.")
+def categories(found: dict) -> dict:
+    """The joint rho of each category of `_markets.yaml` on its own."""
+    rows = [[w.CATEGORY.get(c, c), got["rho"], got["p_mas"], got["p_menos"], got["peso"],
+             got["mercados"]] for c, got in found["categorias"].items()]
+    frame = pd.DataFrame(rows, columns=["Categoría", "ρ conjunta", "p+", "p−", "Peso", "Mercados"])
+    return blocks.table(w.CATEGORIES_TITLE, frame.astype({"ρ conjunta": float, "p+": float, "p−": float}),
+                        w.CATEGORIES_NOTE, digits=3) | {"compact": True, "help": w.CATEGORIES}
 
 
-def checks(found: pd.DataFrame, diagonal: pd.DataFrame, agrees: float) -> dict:
-    """The three verifications of §3 of the encargo.
+def order(found: dict, name: str, main: str, lede: str, cfg: dict) -> dict:
+    """One reading's tab: the joint rho on its null, the markets, the categories."""
+    note = w.JOINT_NOTE.format(main=main, draws=cfg["null"]["draws"])
+    return envelope.tab(
+        name, f"El orden en otros mercados — {WINDOW[name]}",
+        [*joint(found, w.JOINT_TITLE.format(window=WINDOW[name]), note), per_market(found, cfg),
+         categories(found)], note=lede)
 
-    Args:
-        found: `measure.verify.markets` and `measure.verify.main`, concatenated.
-        diagonal: `measure.verify.diagonal`.
-        agrees: The rank agreement a curve must reach.
 
-    Returns:
-        The fourth tab.
-    """
-    table = found.assign(market=found["market"].map(short)).rename(columns={
-        "check": "Comprobación", "market": "Mercado", "segment": "Tramo", "n": "n",
-        "rho": "Spearman", "rho_wrong": "Spearman (mercado equivocado)",
-        "within_1usd": "Dentro de 1 USD", "gap_median": "Diferencia mediana",
-        "gap_max": "Diferencia máxima"})
-    diag = diagonal.assign(a=diagonal["a"].map(short)).rename(columns={
-        "segment": "Tramo", "a": "Mercado", "rho": "Spearman", "j": "Jaccard"})
-    return result.tab("verificacion", "Verificación", [
-        blocks.table("La superficie sale del resultado correcto", table,
-                     f"Spearman: orden de la curva diaria sumada contra el Net Profit de SQX; "
-                     f"tiene que pasar de {agrees}. «Mercado equivocado»: la misma curva contra "
-                     f"el mercado siguiente, que es lo que daría un emparejamiento erróneo. Los "
-                     f"dólares no tienen por qué cuadrar (ver «Dentro de 1 USD»)."),
-        blocks.table("Spearman y Jaccard de cada mercado consigo mismo", diag,
-                     "Tienen que ser exactamente 1: si no, las variantes no se emparejaron "
-                     "por identidad.")])
+def premium(found: dict, main: str, cfg: dict) -> dict:
+    """The premium tab: the joint premium marked on its own null."""
+    share, pct = (es(v, "{:g}") for v in (100 * cfg["premium"]["top_share"], cfg["premium"]["percentile"]))
+    note = w.PREMIUM_NOTE.format(share=share, main=main, pct=pct, cut=es(found["prima"]["nulo_p"]))
+    draws = found["prima_nulo"]
+    shown = [blocks.distribution(w.PREMIUM_TITLE.format(share=share), "RIC", draws,
+                                 found["prima"]["valor"], note)] if np.isfinite(draws).any() else []
+    return envelope.tab("prima", f"La prima del {share} % mejor, en dinero", shown, note=note)
+
+
+def reference(facts: dict, main: str, cfg: dict) -> dict:
+    """The reference tab: the main market against itself, and the power curve."""
+    auto, alpha = facts["auto"], cfg["null"]["alpha"]
+    frame = pd.DataFrame([[auto["rho"], facts["orden"]["rho"], auto.get("cociente")]],
+                         columns=["ρ propia (build → oos1)", "ρ conjunta entre mercados",
+                                  "Cociente"]).astype(float)
+    table = blocks.table(w.REFERENCE_TITLE.format(main=main), frame, w.REFERENCE_NOTE.format(
+        main=main, floor=es(cfg["reference"]["min_rho"], "{:g}")), digits=3) | {
+        "compact": True, "help": w.REFERENCE}
+    bars = {"kind": "bars", "title": w.POWER_TITLE, "unit": "%", "reference": 100 * alpha,
+            "note": w.POWER_NOTE.format(draws=cfg["power"]["draws"], main=main, alpha=es(alpha, "{:g}")),
+            "items": [{"label": f"ρ verdadera {es(int(k[1:]) / 10, '{:.1f}')}", "value": 100 * v,
+                       "error": None, "state": "info"} for k, v in facts["potencia"].items()]}
+    return envelope.tab("referencia", "Referencia y potencia", [table, bars])
+
+
+def tabs(measured: dict, facts: dict, main: str, cfg: dict) -> list[dict]:
+    """The tabs of the small result: the deciding order, the premium, the reference, and oos2 when read."""
+    m = measured["principal"]["mercados"]
+    cats = ", ".join(f"{n} {w.CATEGORY.get(c, c)}" for c, n in m["category"].value_counts(sort=False).items())
+    lede = {k: w.TAB_NOTE.format(main=main, n=len(m), cats=cats, window=WINDOW[k]) for k in WINDOW}
+    return [order(measured["principal"], "principal", main, lede["principal"], cfg),
+            premium(measured["principal"], main, cfg), reference(facts, main, cfg),
+            *([order(measured["oos2"], "oos2", main, lede["oos2"], cfg)] if measured["oos2"] else [])]
+
+
+def warnings(measured: dict, facts: dict, provisional: list[str], cfg: dict) -> list[dict]:
+    """What colours the result without changing its state."""
+    m, out = measured["principal"]["mercados"], []
+    absent = list(m.loc[m["n"] == 0, "feed"])
+    left = [f"{r.feed} ({r.n} comunes, {es(100 * r.ties, '{:.0f}')} % empates)"
+            for r in m.itertuples() if not r.included and r.n]
+    off = [k for k, v in measured["gaps"].items() if v > cfg["costs"]["max_share"]]
+    for code, state, text, names in (
+            ("costs_provisional", "watch", w.COSTS, provisional), ("market_absent", "watch", w.ABSENT, absent),
+            ("market_out", "info", w.OUT, left), ("cost_gap", "watch", w.GAP, off)):
+        if names:
+            out.append({"code": code, "state": state, "text": text.format(
+                markets=", ".join(names), share=es(100 * cfg["costs"]["max_share"], "{:g}"))})
+    if measured["dos_semanas"]:
+        out.append({"code": "weekend_straddle", "state": "watch", "text": w.STRADDLE.format(
+            share=es(100 * measured["straddle"], "{:.1f}"),
+            limit=es(100 * cfg["null"]["straddle_max"], "{:g}"),
+            again=w.ORDER[facts["orden"].get("estado_2sem", "sin_dato")])})
+    return out

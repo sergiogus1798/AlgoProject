@@ -21,6 +21,7 @@
 # Placeholders: {project} {databank} {strategy} {safe} {day} {work} {reports}
 #   {work}     pipeline/<project>/<safe>
 #   {reports}  reports/<project>/<databank>/<day>
+#   {family}   the template family the WFC signs its rows with (run.py --family)
 #   {sample}   how many variants to fabricate, from pipeline/config.yaml
 #   {safe}     the strategy name with spaces as _ and dots as -, the same spelling
 #              sppUltra already uses for its brief filenames
@@ -138,7 +139,7 @@ stages:
           se reteseo nada y nada de lo que se mida despues quiere decir nada
 
   - name: wfc
-    command: python3 -m studies.optimisation.wfc.report --work {work}
+    command: python3 -m studies.optimisation.wfc.report --work {work} --family {family}
     needs: ["{work}/collected.json"]
     produces: ["{work}/wfc.json", "{work}/estudios/wfc.html"]
     record: [n, rho, call]
@@ -153,11 +154,11 @@ stages:
   - name: cscv
     command: python3 -m studies.optimisation.cscv.report --work {work}
     needs: ["{work}/wfc.json", "{work}/equity.parquet"]
-    produces: ["{work}/cscv.json", "{work}/estudios/cscv.html"]
-    record: [pbo_argmax, pbo_plateau_centre, dsr, n_clusters, slope]
+    produces: ["{work}/estudios/cscv.json", "{work}/estudios/cscv.html"]
+    # No `record`: the study writes its numbers under `facts`, not at the top level.
 
   - name: verdict
     command: python3 -m pipeline.stages.verdict --work {work} --brief {reports}/spp/design_brief_{safe}.json
-    needs: ["{work}/wfc.json", "{work}/cscv.json"]
+    needs: ["{work}/wfc.json", "{work}/estudios/cscv.json"]
     produces: ["{work}/verdict.json"]
     recompute: true

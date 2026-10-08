@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Property test for the CSCV on panels whose answer is known by construction — above all
-the block-shuffled one, where a surface with real dispersion must still read as luck."""
+"""Step 18 on panels whose answer is known by construction: the CSCV, its null, its power, its state."""
 
 import sys
-import tempfile
-from collections.abc import Callable
+import time
 from pathlib import Path
 
 import numpy as np
@@ -12,231 +10,211 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.surface import trials as counting
-from engines.variants import panel as variants
-from studies.optimisation.cscv.measure import cscv, rules
-from studies.optimisation.cscv.verdict import summary, trials
+from core import fanout
+from studies.optimisation.cscv.inputs import config
+from studies.optimisation.cscv.measure import cscv, null, outputs, queue
+from studies.optimisation.cscv.verdict import state
 
-N, T, BLOCKS, SEED = 60, 400, 10, 20260922
-# One panel proves nothing about the null: measured 2026-09-22, the PBO of pure noise has
-# a standard deviation of 0.21 across seeds at this width, because the 252 partitions
-# overlap heavily and are nothing like 252 independent observations. The properties below
-# are therefore checked on the average over many panels, which is what has an expectation.
-SEEDS = 12
-
-
-def dates(periods: int) -> pd.DatetimeIndex:
-    """A weekly index of the right length.
-
-    Args:
-        periods: How many rows.
-
-    Returns:
-        Weekly timestamps, which is the period the study aggregates to.
-    """
-    return pd.date_range("2008-01-06", periods=periods, freq="W")
+BINS, REACH, TOL = 256, 6.0, 0.01
+# What the implementation of 2026-10-04 (`measure/cscv.py::run`, argmax, Sharpe, deleted on
+# 2026-10-07) returned on golden(seed), 10 blocks: PBO, sum of picks, mean Sharpe out and in.
+# The same code gave the same PBO as the new one, to the last digit, on the ten mothers of
+# Trade_NIKKEI225_M30_volatilidadL (daily cells, N 215-438) before it was deleted.
+GOLDEN = {0: (0.7023809523809523, 3412, -0.047498337683781616, 0.1601614430810656),
+          1: (0.20634920634920634, 1475, 0.058620394797931914, 0.167066239634462),
+          2: (0.011904761904761904, 792, 0.3854636138141632, 0.39312573270336554),
+          3: (0.0, 756, 0.4699741397147749, 0.46997413971477486)}
 
 
-def panels(seed: int = SEED) -> dict[str, pd.DataFrame]:
-    """Three panels whose probability of backtest overfitting is decided in advance.
-
-    Args:
-        seed: Fixes every draw.
-
-    Returns:
-        Name to a periods-by-variants frame.
-
-        `noise` has no edge anywhere, so choosing the in-sample best must be worth
-        nothing. `edge` has one column that genuinely earns, so choosing must be worth
-        everything. `shuffled` is the one that matters: every block ranks the variants
-        independently, so the surface has real dispersion in every window and none of it
-        carries -- the failure a single in-sample/out-of-sample split cannot see.
-    """
+def golden(seed: int) -> np.ndarray:
+    """The panel the frozen numbers were computed on: 203 rows, 24 correlated columns."""
     rng = np.random.default_rng(seed)
-    noise = rng.normal(0, 1, (T, N))
-
-    edge = rng.normal(0, 1, (T, N))
-    edge[:, 7] = rng.normal(0.9, 1, T)
-
-    shuffled = np.empty((T, N))
-    for rows in np.array_split(np.arange(T), BLOCKS):
-        shuffled[rows] = rng.normal(rng.normal(0, 0.6, N), 1, (len(rows), N))
-
-    return {name: pd.DataFrame(v, index=dates(T),
-                               columns=[f"P{i:05d}" for i in range(N)])
-            for name, v in {"noise": noise, "edge": edge, "shuffled": shuffled}.items()}
+    x = rng.normal(0.02 * seed, 1, (203, 24)) + 0.5 * rng.normal(0, 1, (203, 1))
+    x[:, 3] += 0.15 * seed
+    return x
 
 
-def spiky() -> tuple[np.ndarray, pd.DataFrame]:
-    """A surface with a broad good region and one isolated better point.
-
-    Returns:
-        (score, grid) over an 11 by 11 parameter grid. The lone spike scores highest, and
-        a five-by-five plateau scores well everywhere. Which of the two a rule takes is
-        the entire difference between the rules.
-    """
-    a, b = np.meshgrid(np.arange(11), np.arange(11), indexing="ij")
-    a, b = a.ravel(), b.ravel()
-    score = np.zeros(a.size)
-    score[(abs(a - 3) <= 2) & (abs(b - 3) <= 2)] = 1.0
-    score[(a == 9) & (b == 9)] = 2.0
-    return score, pd.DataFrame({"param_x": a, "param_y": b})
+def noise(seed: int, weeks: int = 400, width: int = 60, mean: float = 0.0,
+          shared: float = 0.6) -> np.ndarray:
+    """A panel with nothing to choose: fat tails, columns correlated `shared` through one factor."""
+    rng = np.random.default_rng(seed)
+    return (np.sqrt(shared) * rng.standard_t(5, (weeks, 1))
+            + np.sqrt(1 - shared) * rng.standard_t(5, (weeks, width))) / np.sqrt(5 / 3) + mean
 
 
-def by_rows(wide: pd.DataFrame, blocks: int, rule: Callable, grid: pd.DataFrame,
-            rng: np.random.Generator, score: str) -> pd.DataFrame:
-    """The CSCV as it was computed before 2026-10-01: rows concatenated, one partition at a time.
-
-    Args:
-        wide, blocks, rule, grid, rng: As `cscv.run`.
-        score: A key of `cscv.SCORES`.
-
-    Returns:
-        The same frame `cscv.run` returns, off the plain per-row score -- the reference the
-        block-sum version must reproduce.
-    """
-    measure = cscv.SCORES[score]
-    pieces = np.array_split(np.arange(len(wide)), blocks)
-    values, n = wide.to_numpy(), wide.shape[1]
-    rows = []
-    for inside in cscv.partitions(blocks):
-        outside = [b for b in range(blocks) if b not in inside]
-        train = measure(values[np.concatenate([pieces[b] for b in inside])])
-        held = values[np.concatenate([pieces[b] for b in outside])]
-        test = measure(held)
-        pick = rule(train, grid, rng)
-        omega = (int((test < test[pick]).sum()) + 1) / (n + 1)
-        slope, intercept = np.polyfit(train, test, 1)
-        rows.append({"pick": pick, "omega": omega, "lam": float(np.log(omega / (1 - omega))),
-                     "is_score": float(train[pick]), "oos_score": float(test[pick]),
-                     "oos_median": float(np.median(test)), "slope": float(slope),
-                     "r2": float(np.corrcoef(train, test)[0, 1] ** 2),
-                     "oos_pnl": float(held[:, pick].sum())})
-    return pd.DataFrame(rows)
+def run(values: np.ndarray, blocks: int = 10, track: int | None = None) -> dict:
+    """One CSCV of a panel."""
+    return cscv.run(cscv.sums(values, blocks), cscv.partitions(blocks), 64, BINS, REACH, track)
 
 
-def daily_panel() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """A joined equity file with two overlapping legs, and the panel it must read as.
-
-    Returns:
-        (what `engines.variants.panel.panel(work, "D")` read off it, the expected frame):
-        the overlapping date summed, the weekend never filled, the last day dropped.
-    """
-    leg1 = pd.DataFrame({"P0": [1.0, 0.0, 2.0], "P1": [0.0, 0.0, -1.0]},
-                        index=pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06"]))
-    leg2 = pd.DataFrame({"P0": [0.5, 3.0, 4.0], "P1": [0.0, 1.0, 9.0]},
-                        index=pd.to_datetime(["2020-01-06", "2020-01-07", "2020-01-08"]))
-    with tempfile.TemporaryDirectory() as tmp:
-        pd.concat([leg1, leg2]).sort_index().to_parquet(Path(tmp) / "equity.parquet")
-        got = variants.panel(Path(tmp), "D")
-    want = pd.DataFrame({"P0": [1.0, 0.0, 2.5, 3.0], "P1": [0.0, 0.0, -1.0, 1.0]},
-                        index=pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06",
-                                              "2020-01-07"]))
-    return got, want
-
-
-def check(failures: list, ok: bool, said: str) -> None:
-    """Record one property and say how it went.
-
-    Args:
-        failures: Collected failures, appended to when `ok` is false.
-        ok: Whether the property held.
-        said: What was being checked.
-    """
-    print(f"  {'ok  ' if ok else 'FALLA'} {said}")
-    if not ok:
-        failures.append(said)
+def by_rows(values: np.ndarray, blocks: int) -> dict:
+    """The CSCV with nothing clever: rows concatenated, one partition at a time, both ways."""
+    pieces = np.array_split(np.arange(len(values)), blocks)
+    rows = {"pick": [], "sr_in": [], "sr_out": [], "omega": []}
+    for half in cscv.partitions(blocks).astype(bool):
+        for inside in (half, ~half):
+            a = values[np.concatenate([p for p, use in zip(pieces, inside) if use])]
+            b = values[np.concatenate([p for p, use in zip(pieces, inside) if not use])]
+            sa, sb = (np.where(v.std(0, ddof=1) > 0, v.mean(0) / np.where(v.std(0, ddof=1) > 0,
+                                                                         v.std(0, ddof=1), 1), 0)
+                      for v in (a, b))
+            pick = int(sa.argmax())
+            rows["pick"].append(pick)
+            rows["sr_in"].append(sa[pick])
+            rows["sr_out"].append(sb[pick])
+            rows["omega"].append(((sb < sb[pick]).sum() + 1) / (values.shape[1] + 1))
+    return {k: np.array(v) for k, v in rows.items()}
 
 
-def main() -> None:
-    """Fail loudly on the first property that does not hold."""
-    failures = []
-    rng = np.random.default_rng(SEED)
-    grids = panels()
+def cfg_of(*overrides: str) -> dict:
+    """The study's config with a small null, for tests."""
+    return config.load(["null.draws=40", "perf.workers=8", *overrides])
 
-    print("## las particiones")
-    parts = cscv.partitions(BLOCKS)
-    check(failures, len(parts) == 252, f"C(10,5) = 252 particiones, hay {len(parts)}")
-    check(failures, all(len(p) == BLOCKS // 2 for p in parts),
-          "cada mitad de entrenamiento tiene 5 bloques")
-    check(failures, len(set(parts)) == len(parts), "ninguna particion se repite")
 
-    print(f"\n## el PBO sobre paneles de respuesta conocida, {SEEDS} paneles de cada uno")
-    grid = pd.DataFrame({"param_i": range(N)})
-    runs = {name: [] for name in grids}
-    for seed in range(SEEDS):
-        for name, panel in panels(seed).items():
-            runs[name].append(summary.everything(
-                cscv.run(panel, BLOCKS, rules.argmax, grid, np.random.default_rng(seed))))
-    found = {name: pd.DataFrame(rows) for name, rows in runs.items()}
-    for name, rows in found.items():
-        print(f"     {name:9s} PBO medio {rows['pbo'].mean():.2f} "
-              f"(desv {rows['pbo'].std():.2f})  pendiente media {rows['slope'].mean():+.2f}")
-    check(failures, abs(found["noise"]["pbo"].mean() - 0.5) < 0.1,
-          "ruido puro: el PBO medio ronda 0,5, elegir no compra nada")
-    check(failures, found["edge"]["pbo"].mean() < 0.05,
-          "una columna con ventaja real: el PBO se va a cero")
-    check(failures, (found["edge"]["dominance"] == "primer_orden").all(),
-          "y elegir domina a quedarse con la mediana, en todos los paneles")
-    check(failures, abs(found["shuffled"]["pbo"].mean() - 0.5) < 0.1,
-          "barajado por bloques: dispersion real en cada ventana y PBO en 0,5 igual")
-    check(failures, abs(found["noise"]["slope"].mean()) < 0.1,
-          "sin ventaja, el arrastre entre todas las variantes es cero")
-    check(failures, found["edge"]["slope"].mean() > 0.3,
-          "con una ventaja real, el arrastre es claramente positivo")
-    check(failures, abs(found["shuffled"]["slope"].mean()) < 0.1,
-          "barajado por bloques: dispersion real y arrastre cero, que es el caso ciego")
+def test_the_partitions_are_every_half_once() -> None:
+    """C(15,7) = 6,435 halves hold the first block; with their complements, C(16,8) = 12,870."""
+    member = cscv.partitions(16)
+    assert member.shape == (6435, 16) and (member.sum(axis=1) == 8).all() and (member[:, 0] == 1).all()
+    both = np.vstack([member, 1 - member])
+    assert len(np.unique(both, axis=0)) == 12870
 
-    print("\n## la matriz diaria y las sumas por bloque")
-    got, want = daily_panel()
-    check(failures, got.equals(want), "el panel D suma la fecha que dos tramos comparten, no "
-          "rellena el fin de semana y descarta el último día")
-    wide = panels(SEED)["edge"].iloc[:, :25]
-    wide.iloc[:40, 3] = 0.0
-    wide.iloc[:, 5] = wide.iloc[:, 5].abs()  # never loses: Sortino places it on top
-    small = pd.DataFrame({"param_i": range(wide.shape[1])})
-    for score in cscv.SCORES:
-        for name in ("argmax", "plateau_centre"):
-            rule = rules.pick(name, 1)
-            fast = cscv.run(wide, BLOCKS, rule, small, np.random.default_rng(1), score)
-            slow = by_rows(wide, BLOCKS, rule, small, np.random.default_rng(1), score)
-            same = (fast["pick"].equals(slow["pick"])
-                    and np.allclose(fast.drop(columns="pick"), slow.drop(columns="pick"),
-                                rtol=1e-9, atol=1e-9))
-            check(failures, same, f"{score} {name}: las sumas por bloque dan lo mismo que "
-                  "concatenar filas, partición a partición")
 
-    print("\n## el signo de lambda")
-    records = cscv.run(grids["edge"], BLOCKS, rules.argmax,
-                       pd.DataFrame({"param_i": range(N)}), rng)
-    agree = ((records["omega"] > 0.5) == (records["lam"] > 0)).all()
-    check(failures, bool(agree), "lambda es positiva exactamente cuando omega pasa de 0,5")
+def test_the_vectorised_pbo_is_the_old_implementation_s() -> None:
+    """§8.5.1: the frozen numbers of the deleted implementation, reproduced within 1e-4."""
+    for seed, (pbo, picks, out, inside) in GOLDEN.items():
+        found = run(golden(seed))
+        assert abs(float((found["omega"] <= 0.5).mean()) - pbo) <= 1e-4, seed
+        assert int(found["pick"].sum()) == picks
+        assert np.isclose(found["sr_out"].mean(), out) and np.isclose(found["sr_in"].mean(), inside)
 
-    print("\n## las reglas de seleccion")
-    score, grid = spiky()
-    picked = rules.argmax(score, grid, rng)
-    centred = rules.plateau_centre(score, grid, rng, 1)
-    check(failures, grid.loc[picked, "param_x"] == 9,
-          "argmax se queda con el pico aislado")
-    check(failures, abs(grid.loc[centred, "param_x"] - 3) <= 1
-          and abs(grid.loc[centred, "param_y"] - 3) <= 1,
-          "el centro de meseta se queda dentro de la meseta")
 
-    print("\n## cuantas pruebas independientes hay")
-    base = rng.normal(0, 1, (T, 3))
-    family = pd.DataFrame(
-        {f"g{g}_{i}": base[:, g] + rng.normal(0, 0.15, T) for g in range(3) for i in range(20)},
-        index=dates(T))
-    counted = counting.independent(family, 20)
-    print(f"     tres familias correlacionadas -> {counted}")
-    check(failures, counted["n_clusters"] == 3,
-          "tres grupos de variantes correlacionadas cuentan como tres pruebas")
+def test_block_sums_equal_concatenated_rows_partition_by_partition() -> None:
+    """Unequal blocks, a column that never moves and one flat for half the history."""
+    x = golden(1)
+    x[:, 5] = 0.0
+    x[:110, 7] = 0.0
+    fast, slow = run(x, 8), by_rows(x, 8)
+    order = np.lexsort((fast["sr_in"], fast["sr_out"])), np.lexsort((slow["sr_in"], slow["sr_out"]))
+    for key in ("sr_in", "sr_out", "omega"):
+        assert np.allclose(fast[key][order[0]], slow[key][order[1]], rtol=1e-9, atol=1e-12), key
+    assert sorted(fast["pick"]) == sorted(slow["pick"])
 
-    print()
-    if failures:
-        sys.exit(f"{len(failures)} propiedades rotas: {failures}")
-    print("todas las propiedades se cumplen")
+
+def test_one_real_edge_reads_no_overfitting() -> None:
+    """A column that truly earns: PBO near 0, the pick never loses, choosing dominates chance."""
+    x = noise(3)
+    x[:, 7] += 0.45
+    said = outputs.summary(run(x), TOL)
+    assert said["pbo"] < 0.02 and said["p_perdida"] < 0.02, said
+    assert said["primer_orden"] and said["segundo_orden"] and said["hc"] < 0.5
+
+
+def test_the_seesaw_without_resampling() -> None:
+    """Means removed and nothing redrawn (Witzany's table 3): the pick loses outside whenever it won inside."""
+    u = null.standard(noise(4))["u"]
+    said = outputs.summary(run(u), TOL)
+    assert said["p_perdida"] > 0.97 and said["pbo"] > 0.95 and said["beta"] < -0.8, said
+
+
+def test_noise_loses_as_often_as_two_independent_halves_predict() -> None:
+    """Halves of i.i.d. weeks are independent, so E[P(loss)] = Phi(-Sharpe x sqrt(weeks / 2))."""
+    from scipy.stats import norm
+    for mean, weeks in ((0.0, 400), (0.1, 400)):
+        got = np.mean([outputs.summary(run(noise(s, weeks, 60, mean, 0.0)), TOL)["p_perdida"]
+                       for s in range(60)])
+        want = norm.cdf(-mean * np.sqrt(weeks / 2))
+        print(f"     ruido puro, Sharpe semanal {mean}: P pérdida media {got:.3f}, predicha {want:.3f}")
+        assert abs(got - want) < 0.06, (mean, got, want)
+
+
+def test_dominance_against_all_variants_by_hand() -> None:
+    """Four lists against «all» = {-1, +1} in equal parts, on 8 bins over [-2, 2)."""
+    found = {"lo": -2.0, "hi": 2.0, "hist": np.array([0, 0, 50, 0, 0, 0, 50, 0])}
+    better, same = np.full(10, 1.0), np.array([-1.0, 1.0] * 5)
+    assert outputs.dominance(better, found, 0.0) == {"primer_orden": True, "segundo_orden": True, "brecha": 0.0}
+    assert outputs.dominance(same, found, 0.0)["primer_orden"]
+    worse = outputs.dominance(np.full(10, -1.0), found, 0.0)
+    assert not worse["primer_orden"] and not worse["segundo_orden"] and worse["brecha"] == 0.5
+    sure = outputs.dominance(np.zeros(10), found, 0.0)       # same mean, no spread
+    assert not sure["primer_orden"] and sure["segundo_orden"] and sure["brecha"] == 0.5
+    assert outputs.dominance(np.array([1.0] * 99 + [-1.5]), found, 0.01)["primer_orden"]   # tolerance
+
+
+def test_the_null_equalises_every_column_to_the_median_sharpe() -> None:
+    """u + m: each column's Sharpe is the panel's median one; redrawn sums are the panel's."""
+    x = noise(5) + np.linspace(-0.1, 0.3, 60)
+    shared = null.standard(x)
+    z = shared["u"] + shared["m"]
+    assert np.allclose(z.mean(0) / z.std(0, ddof=1), np.median(x.mean(0) / x.std(0, ddof=1)))
+    rows = np.random.default_rng(1).integers(0, len(x), len(x))
+    mean = np.full(60, shared["m"])
+    mean[:6] += 0.02
+    got, want = null.redrawn(shared, rows, mean, 10), cscv.sums((shared["u"] + mean)[rows], 10)
+    assert all(np.allclose(got[k], want[k]) for k in ("n", "s1", "s2"))
+
+
+def panels(count: int, width: int = 60, weeks: int = 400) -> dict:
+    """Several no-edge mothers for the queue."""
+    return {f"m{i}": {"net": noise(10 + i, weeks, width, 0.03), "track": 0,
+                      "gross": noise(10 + i, weeks, width, 0.04)} for i in range(count)}
+
+
+def test_same_seed_same_null_for_1_8_and_96_processes() -> None:
+    """§8.5.2: every draw seeds its own stream, so the cut of the queue changes nothing."""
+    got = [queue.run(panels(1), cfg_of(f"perf.workers={w}"))[0]["m0"]["draws"] for w in (1, 8, 96)]
+    for other in got[1:]:
+        for kind in got[0]:
+            pd.testing.assert_frame_equal(got[0][kind], other[kind])
+    alone = queue.run({"m1": panels(2)["m1"]}, cfg_of())[0]["m1"]["draws"]["nulo"]
+    pd.testing.assert_frame_equal(alone, queue.run(panels(2), cfg_of())[0]["m1"]["draws"]["nulo"])
+
+
+def test_the_null_centres_on_a_half_and_the_planted_edge_is_seen() -> None:
+    """§8.5.3 and §8.5.4: null PBO median in 0.4-0.6 on no-edge panels; power grows with delta."""
+    found, _ = queue.run(panels(6, 150, 784), cfg_of("null.draws=80", "perf.workers=96"))
+    power = {}
+    for name, got in found.items():
+        pbo = got["draws"]["nulo"]["pbo"]
+        assert 0.4 <= pbo.median() <= 0.6, (name, pbo.median())
+        assert 0.4 <= got["draws"]["nulo_bruto"]["pbo"].median() <= 0.6
+        power[name] = [float((got["draws"][k]["pbo"] < np.percentile(pbo, 5)).mean())
+                       for k in ("d01", "d02", "d03")]
+    mean = np.mean(list(power.values()), axis=0)
+    print(f"     potencia media en 6 paneles sin ventaja (150 variantes, 784 semanas, 80 sorteos): "
+          f"d=0,1 {mean[0]:.2f} · d=0,2 {mean[1]:.2f} · d=0,3 {mean[2]:.2f}")
+    assert mean[2] > 0.25 and mean[2] > mean[0], mean
+
+
+def test_the_queue_scales_with_the_processes() -> None:
+    """§8.5.5, with a modest bound: the machine is shared. The real ratio is printed."""
+    wall = {}
+    for workers in (1, 96):
+        began = time.time()
+        queue.run({"m": {"net": noise(1, 784, 300, 0.03), "gross": noise(2, 784, 300, 0.03),
+                         "track": None}}, cfg_of("null.draws=48", f"perf.workers={workers}"))
+        wall[workers] = time.time() - began
+    print(f"     240 CSCV de 300 variantes: {wall[1]:.1f} s con 1 proceso, {wall[96]:.1f} s con "
+          f"{fanout.CORES} (pedidos 96): x{wall[1] / wall[96]:.1f}")
+    assert wall[1] / wall[96] > 4, wall
+
+
+def test_the_state_follows_the_proposal_s_table() -> None:
+    """NO PASA on loss >= 0.5 or PBO over its p95; LIMBO on loss over its null's p95 or too few; else PASA."""
+    cfg = cfg_of()
+    base = {"n": 100, "p_perdida": 0.1, "pbo_sobre_p95": 0, "p_perdida_sobre_p95": 0}
+    assert state.state(base, cfg) == "pasa"
+    assert state.state(base | {"p_perdida": 0.45}, cfg) == "pasa"       # no fixed cut under 0.5
+    assert state.state(base | {"p_perdida_sobre_p95": 1}, cfg) == "limbo"
+    assert state.state(base | {"p_perdida": 0.5}, cfg) == "no_pasa"
+    assert state.state(base | {"p_perdida": 0.5, "p_perdida_sobre_p95": 1}, cfg) == "no_pasa"
+    assert state.state(base | {"pbo_sobre_p95": 1, "p_perdida_sobre_p95": 1}, cfg) == "no_pasa"
+    assert state.state({"n": 29}, cfg) == "limbo"
 
 
 if __name__ == "__main__":
-    main()
+    for name, test in list(globals().items()):
+        if name.startswith("test_"):
+            began = time.time()
+            test()
+            print(f"  ok   {name} ({time.time() - began:.1f} s)")
+    print("todas las propiedades se cumplen")

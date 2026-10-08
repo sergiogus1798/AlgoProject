@@ -94,7 +94,7 @@ def merged(todo: list[dict]) -> list[dict]:
 
 # Per-strategy readings outside the sequence that run on the survivors of step 8's cut, not on
 # the whole build (owner, 2026-10-01: 200 of step 8's 297 s were these on all 571).
-AFTER_CUT = {"8": ["monkey", "entryQuality"]}
+AFTER_CUT = {"8": ["monkey", "monkeyExcess", "entryQuality"]}   # monkeyExcess reads monkey's panel
 
 
 def after_cut(actions: list[dict], cfg: dict) -> list[dict]:
@@ -163,7 +163,6 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
                 if action["n"] == "19":     # the WFM reads oos2: the ledger's door first
                     blind.admit(project, "19")
                 what = sqx_step(project, action["steps"], not ran_sqx, filled)
-                ran_sqx = True
                 # A build stopped on its time cap (`buildcap`) skips the OOS: it runs now, alone.
                 ns = {s["n"] for s in action["steps"]}
                 left = [a for a in plan.plan(workflow.workflow(project), given)["do"] if a["kind"] == "sqx" and a["n"] in ns]
@@ -183,9 +182,10 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
                 what = ", ".join(action["tests"])
             else:
                 got = judge.judge(project, action["n"], where["role"],
-                                  out / f"paso-{action['n']}", cfg)
+                                  out / f"paso-{action['n']}", cfg, action.get("segment"))
                 what = f"{got['hechos']} hechos; {got['corte']}"
                 empty = got.get("after") == 0     # the cut left nobody: a clean end, after the row
+            ran_sqx = ran_sqx or action["kind"] in ("sqx", "neighbours", "variants")   # T1 and the factory wrote the log too
             done.append({"n": action["n"], "kind": action["kind"],
                          "s": time.monotonic() - began, "what": what})
             phases.row("accion", f"{action['n']} {action['kind']}", done[-1]["s"])

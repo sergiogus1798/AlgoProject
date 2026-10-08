@@ -74,7 +74,8 @@ def chain(ctx: dict) -> list[dict]:
         if row["name"] in placeholder.SHAPE:
             row = row | {"command": f"python3 -m pipeline.stubs.placeholder "
                                     f"--stage {row['name']} --work {{work}}",
-                         "produces": [f"{{work}}/{row['name']}.json"]}
+                         "produces": [next((p for p in row["produces"] if p.endswith(f"/{row['name']}.json")),
+                                          f"{{work}}/{row['name']}.json")]}
             row.pop("record_from", None)
         rows.append(recipe.resolve(row, ctx))
     return rows

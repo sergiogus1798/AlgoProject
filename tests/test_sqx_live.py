@@ -101,7 +101,7 @@ def test_a_slow_load_raises_before_any_sync_and_keeps_its_copy() -> None:
     aside, synced = top / "aside", []
     aside.mkdir()
     fakes = [(live, "_top", lambda role: top), (live, "tmp_dir", lambda: aside),
-             (live, "call", lambda role, action, **params: {}),
+             (live, "call", lambda role, action, **params: {"strategies": []}),
              (live, "sync", lambda role, project, banks=None: synced.append(banks)),
              (time, "sleep", lambda s: None)]
     with patched(*fakes, (live, "records", lambda role, project: {"Results": 2})):

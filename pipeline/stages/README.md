@@ -48,6 +48,6 @@ machine time.
 ## The verdict
 
 `verdict.py` reads `brief.*` from the design brief and `<stem>.*` from every JSON the stages left
-in the work directory, flattens them into one namespace, and compares them against the rules in
-`config.yaml`. A rule naming a number nothing produced raises instead of passing: **a threshold
+in the work directory, plus the `facts` of every `estudios/<study>.json` (as `cscv.p_perdida`), flattens them into one namespace, and compares them against the rules in
+`config.yaml` (`min`, `max`, or `under`: fails at or above it). A rule naming a number nothing produced raises instead of passing: **a threshold
 silently skipped is a strategy silently approved.**

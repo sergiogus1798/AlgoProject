@@ -1,16 +1,45 @@
-# Every tunable of the walk-forward correlation. The trade floor and the split it reads the
-# batch at are shared with the CSCV and live in engines/variants/config.yaml.
+# Every tunable of the walk-forward correlation (step 17; owner's proposal of 2026-10-07).
+# `ledger:<key>`: the number lives in ledger/thresholds.yaml, with who set it and when.
+# The trade floors and the minimum of variants are shared with the panel's filters and live
+# in engines/variants/config.yaml (`panel`).
 
-# The rho below which ranking by in-sample profit is not worth doing. Not a law: it is the
-# owner's threshold and changing it re-runs only the verdict, never the measurement.
-rho_floor: 0.30
-# Only for the OOS/IS Sharpe histogram (visual, not a criterion): a variant enters the ratio
-# only if its in-sample Sharpe is above this, because a ratio explodes when the denominator is
-# near zero or negative. The count left out is printed under the figure.
-sharpe_floor: 0.1
-# Persistence of the top (owner, 2026-10-04: computed and shown, no threshold yet): of the
-# variants in the best `top` share of the build by net profit, how many stay in the best `keep`
-# share of each out-of-sample window. By chance it is `keep`; the fact published is the excess.
-persistence:
-  top: 0.20
-  keep: 0.50
+# The composition whose state is the step's: PASA / LIMBO / NO PASA is said of this one
+# alone; the other two are measured and annotated beside it.
+deciding: ledger:wfc.deciding
+
+# The sign-flip null: each out-of-sample WEEK takes one random sign, the same for every
+# variant, so the family keeps its dependence and loses its edge; a trade counts whole in the
+# week it closes in. The order (rho) is read on the excess before costs, the level after them.
+# Quoted: YAML reads a bare `null` as the empty value.
+"null":
+  draws: ledger:wfc.null_draws              # sign vectors drawn (B)
+  block_weeks: ledger:wfc.null_block_weeks  # consecutive weeks that share one sign
+  # Share of the out-of-sample trades closed on a Monday or Tuesday after a weekend held
+  # open. Above it the step warns and draws the null again in `annotate.block_weeks`.
+  straddle_warn: ledger:wfc.straddle_warn
+  alpha: ledger:wfc.alpha                   # cut on p+ (positivo) and on p- (perverso)
+  seed: ledger:wfc.seed
+
+order:
+  rho_strong: ledger:wfc.rho_strong       # a positive order at or above this rho is «fuerte»
+
+level:
+  top_share: ledger:wfc.top_share         # the in-sample top an optimiser would pick
+  # The top wins when its out-of-sample median is above zero AND beats the sign-flip null:
+  # `p_nivel` (the order's very sign draws, on net) at or under this cut. Above zero without
+  # beating it is LIMBO; at or under zero is NO PASA (encargo 48; owner, 2026-10-08).
+  alpha: ledger:wfc.level_alpha
+  # R_sel is written «sin dato» unless the top's in-sample premium (its median minus the
+  # family's) exceeds this share of the in-sample interquartile range. Provisional: the
+  # Council asked for the guard and gave no number (encargo 48, question to the owner).
+  r_sel_min_gap: ledger:wfc.r_sel_min_gap
+
+# Annotated beside the decision, never deciding.
+annotate:
+  block_weeks: ledger:wfc.straddle_block_weeks   # the null again, when too many trades straddle a weekend
+
+# The one check on the reconstructed costs: each variant's repriced net profit against SQX's
+# NetProfit, leg by leg. A variant is off beyond tolerance + relative x |NetProfit|.
+check:
+  sqx_tolerance: ledger:wfc.sqx_gap_tolerance    # account currency
+  sqx_relative: ledger:wfc.sqx_gap_relative

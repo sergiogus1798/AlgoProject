@@ -38,21 +38,23 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `variants.py` | Step 16.5 as an autopilot action: `wire` the three WFC legs (`sqx.projects.wfc`, on a pushed copy when a live session is up), then per design brief of step 16 `make` → `execute` → `equity` → `collect` → `execute --clear`. Live route (default): all mothers' pilots run first with the WFC legs wired without the 11 extra markets (the pilot reads only the main market's trade count: 81 s → 4 s each), then the legs are rewired with markets and each mother runs execute → equity → collect → clear; `--restart` keeps the pilot inside `make`, per mother. After each live step the export reads only the project that ran (`afterrun --project`) | imported | a project after step 16 → one batch per mother harvested, the four databanks empty |
+| `variants.py` | Step 16.5 as an autopilot action: `wire` the three WFC legs (`sqx.projects.wfc`, on a pushed copy when a live session is up), then per design brief of step 16 `make` → `execute` → `equity` → `collect` → `execute --clear`. Live route (default): all mothers' pilots run first with the WFC legs wired without the 11 extra markets (the pilot reads only the main market's trade count: 81 s → 4 s each), then the legs are rewired with markets and each mother runs execute → equity → collect → clear; `--restart` keeps the pilot inside `make`, per mother. After each live step the export reads only the project that ran (`afterrun --project`). Last, with every batch on disk, each mother's parameter map (`studies.optimisation.cloud.report`: no rule, build and oos1 only) | imported | a project after step 16 → one batch per mother harvested and mapped, the four databanks empty |
+| `neighbours.py` | Step 13's T1 batch as an autopilot action (kind `neighbours`, dispatched by `tailrun`): `entering` — the mothers CrossTF holds after step 12's cut, never a scaled sibling — then `run`: rule 5, the WFC legs wired without extra markets and only `neighbours.legs` (WFC 1 IS, WFC 2 OOS1) switched on, `sqx.variants.neighbourbatch` make → retest (project copied aside) → trades exported under the tag `neighbours` → `studies.breakage.mcRetest.neighbours.t1` → the WFC databanks emptied. It leaves only those two legs active: the SQX step after it stages its own tasks | imported | the mothers in `CrossTF` → `AlgoData/neighbours/<P>/<stamp>/`, `raw/<P>/T1_Neighbours/<day>/neighbours.parquet` |
 | `run.py` | The loop: `advance.where`/`busy` refusals, the plan, then per action an SQX step (`launch.preflight.check` + `launch.run.execute`: one start, «Project finished», one stop), a Python step (`chain.python_step`), a judge, the variants (only the survivors of 16), or — from 17 on — `tailrun.run`; a `survivors.Done` ends it cleanly (its reason is the stop in resumen.md), the first failure writes `fallo.md` | `python3 -m pipeline.autopilot.run --project P [--panel 21=D --panel 22=D] [--mt5-from … --mt5-to … --mt5-model … --mt5-firms a,b]` · `--plan` prints the plan and runs nothing | a project → `AlgoData/autopilot/<P>/<stamp>/{plan.json, estado.txt, resumen.md, fallo.md, fases.csv, tiempos.md, paso-<n>/, paso-24-abortado/, finalistas.json}`; `fases.csv` (began epoch, seconds, phase, detail, pid) is written by `core/phases.py` because the autopilot sets env `ALGO_PHASES`; `tiempos.md` is `timing.py`'s; `paso-24-abortado/` exists only after a failed pass (below) |
 | `timing.py` | Where the wall clock went: `fases.csv` (every `core.phases` block of the run and its subprocesses — start, ready, sqx, stop, export per piece, sync, snapshot, each test, each variants module) folded into `tiempos.md`, one row per action with its seconds by column (`sqx` apart from arranque, parada, export, sync, copias, resto; a nested phase's seconds leave its parent) and the twelve longest phases; rewritten after every action | imported | `<run>/fases.csv` → `<run>/tiempos.md` |
-| `plan.py` | The rail walked as `chainplan.plan` walks it up to 16.5, with a `judge` before the next SQX step that still has to run; from 17 on it is `tail.walk`'s | imported | GET /api/workflow + the tail's inputs → `{do, stop}` |
-| `tail.py` | The plan 17 → 26: the three blind looks (planned whenever any of 17-19 is open), `sqx` 19, its reading, the ledger rows, 20 and its judge, 21-22 on the databanks given, 23, 24, 25, the finalists, 26; clean stops without a family, without `--panel`, without every `--mt5-*`; and those flags | imported | rail steps + inputs → actions, stop |
-| `tailrun.py` | One tail action run: its kind → the module that does it, with the mothers of that step | imported | action → one line for resumen.md |
+| `plan.py` | The rail walked as `chainplan.plan` walks it up to 16.5, with a `judge` before the next SQX step that still has to run, and step 13's `neighbours` action right before its SQX tasks; an SQX step whose tasks the project does not carry (`bin/workflow.sh … --until`) ends the plan there, the pending judge done first; from 17 on it is `tail.walk`'s | imported | GET /api/workflow + the tail's inputs → `{do, stop}` |
+| `tail.py` | The plan 17 → 26: 18.5's deciding reading without oos2 and its judge, the three blind looks (planned whenever any of 17-19 is open), 17, 18 and 18.5 judged as they close (18.5's judge action carries `segment: build+oos1+oos2`, which `judge.judge` writes into its ledger row instead of the criteria's `build+oos1`), `sqx` 19, its reading, 19 judged, the ledger rows, 20 and its judge (a judge only where `criteria.yaml` has rules), 21-22 on the databanks given, 23, 24, 25, the finalists, 26; clean stops without a family, without `--panel`, without every `--mt5-*`; and those flags | imported | rail steps + inputs → actions, stop |
+| `tailrun.py` | One tail action run: its kind → the module that does it, with the mothers of that step; also step 13's `neighbours` (T1), with `neighbours.entering` | imported | action → one line for resumen.md |
 | `pasos.csv` | (written by `run.py` next to `estado.txt`) one row per step start, end or failure — `paso, estado (empezó/hecho/falló), hora` — which the window's «En marcha» reads to show each Python step after a daemon restart | — | — |
 | `survivors.py` | Who walks the tail: one row per identity of the databank the last judged step cut (`cut` of 16, later of 20-25), `about(project)` (symbol, timeframe, feed, family) and `Done`, the clean stop | imported | project, step → mothers |
-| `blind.py` | 17, 18, 18.5 per mother (door asked first, a mother with her result skipped unless `redo`), the WFM reading, the ledger rows 17-19 still lack (per project, once per WFM reading) then `gate.allow_read`, and step 20 through the same door | imported | batches + WFM export → results, ledger rows |
+| `blind.py` | 17, 18, 18.5 per mother (door asked first, a mother with her result skipped unless `redo`; with `oos2=False` — 18.5 before the block — the door is not asked and the study runs without its `OOS2` flag, `--oos2`; inside the block a result without `facts.oos2` is run again), the WFM reading, the ledger rows 17-19 still lack (per project, once per WFM reading) then `gate.allow_read`, and step 20 through the same door | imported | batches + WFM export → results, ledger rows |
 | `kept.py` | after the WFM reading: per strategy in the WFM databank, joined **by name** to its step-8 scorecard row (identities do not survive the retest chain: 0 of 10 matched, 10 of 10 by name), its oos1 daily-low equity in R and `oos_worst_day_r`, `dd_esperado_r`, `oos_net_per_year_r`, for the funding module (encargo 45) | imported by `tailrun` (kind `kept`) | WFM verdict + gate scorecard + harvest → `KEPT/<project>/kept.csv`, `curves.parquet` |
 | `closing.py` | 21-22 as the window builds them on the databank given; 23 (`structural.make` → retest → `keep` → export build+oos1 → `structure.report` → clear) and 24 (two `stopgrid` passes, each retested, exported and read) in the project's own three WFC legs, the project copied aside before each retest | imported | mothers → `structural/<P>/<stamp>/`, `atrCalculator/<P>/<stamp>/pass{1,2}/` |
 | `traded.py` | The version that will be traded: each mother's step-24 variant at `ledger:portfolio.funded.stop_percentile`, grid step 0; its build and oos1 trades filed as the cosecha `Stop_p<P>` (keyed by the mother's identity); step 25's edgeCost per strategy on it; a mother without a stop is named and left out | imported | pass2 manifest + stopgrid export → `harvest/<P>/Stop_p<P>/<day>/`, edgeCost results |
 | `finalists.py` | `finalistas.json` — `{strategy, identity, mother, sqx, symbol, timeframe, stop: {percentile, x}}`, `sqx` the fabricated grafted file — and step 26 handed to `mt5.verify.autopilot` (imported late); its `check` not ok is a clean stop | imported | mothers → `<run>/finalistas.json`, step 26's line |
 | `call.py` | The one door every command of the tail goes through: `run(argv)` (a `chain.command`, output never shown) and `window(...)`, the argv `runner.table.jobs` builds | imported | argv → done, or SystemExit with its tail |
 | `facts.py` | Every number of a step's studies **and its extras** (`steps.EXTRA`: step 8's monkey, entryQuality), from each one's newest result: per-strategy contract JSONs (summary, verdict parts, distribution stats, table cells, a tab's reading as `<tab>.verdict_pass`), one-row-per-strategy parquets (every column with a number, object-dtype pass flags included; a parquet indexed by identity joins by it), one-row-per-strategy-and-market parquets as `<stem>.<market>.<col>` (crossmarket's `markets.parquet`), and every number of `verdict.csv` and `nulls.csv` as `<study>.verdict_csv.<col>` / `nulls_csv.<col>` ("True"/"False" as 1/0), plus `verdict_csv.drop` and, for spread, `verdict_csv.state_pass`. Key = `<study>.<tab>.<block>.<row>.<column>`, accents dropped; a repeated key gets `#2`. Step 12 is shaped per MOTHER (`crosstf_rows`): `crossTF.cells.<role>.<tf>.<stat>`, `…_vs_original`, `crossTF.reading.<tf>.<reading>` and `reading.n_<reading>`, zeros included | `python3 -m pipeline.autopilot.facts --project P --step 8 [--grep gate.]` lists keys with count, median and range | study results → long frame `study, strategy, identity, key, value` |
+| `batchfacts.py` | The facts of a result that is one FILE per mother (`<batch>/estudios/<study>.json`): its `facts` dict flattened with dots (`wfc.c1.estado`...), state words as numbers (`WORDS`), and `number`, the cell-to-float rule `facts.py` also uses; `flat`, the same flattening for the `facts` of a per-strategy page (the WFM's `estrategias/<name>.json`) | imported by `facts.py` (`file_rows`, `from_folder`) | the file → fact rows |
 | `tffacts.py` | The redesigned step-12 facts (encargo 47): `crossTF.tf.state`, `.phase1`, `.t1`, `.t2a`, `.t2b`, `.t3` per mother and `crossTF.tf.<TF>.<column>` per mother and sibling timeframe, from `tf_mothers.csv` and `tf_siblings.parquet`. A state is a number — **pass 1, limbo 0, fail −1** — so a rule reads `pass: ">= 1", limbo: ">= 0"`; an empty state is no fact (limbo by `missing:`); no file, no facts. Written beside the old facts, not cutting yet | imported by `facts.py` | the study's two files → fact rows |
 | `criteria.py` | The inference: one rule → pass/limbo/fail (a threshold, distance to the population's median, or — 2026-10-03 — a verdict, `is: pass`/`is: fail` on a 1/0 fact; `else: limbo` on any of them makes not-met a limbo instead of a fail); a compound `all: [...]` / `any: [...]` is its worst / its best part, nested freely (`judged`); `reads` lists every fact the rules name, parts included; a strategy's outcome is its worst rule; a missing fact is limbo. `resolved` folds a rule's `by` in first: `by: {H4: {pass: ">= 2.5"}}` replaces the fields it names when the project has that tag — its timeframe, symbol or asset class (`judge.tags`, from the project registry); several joined by `+` must all hold, the first matching entry wins, no match leaves the rule as written | imported | facts + rules → `{id: (outcome, reason)}` |
 | `judge.py` | One judging step: facts to `hechos.parquet`, the databank's files by identity, the criteria, the dev draw (seed recorded), `verdict.csv` (`strategy, verdict, identity, outcome, reason`), the cut | imported | step → databank cut, `paso-<n>/` |
@@ -70,8 +72,10 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
   refills `CrossTF_Mothers` from it (`crosstfload.load_mothers`) — cutting `CrossTF_Mothers`
   would be undone. The baseline cell (the mother on her own timeframe) had 0 trades on every
   mother of the 2026-09-30 run (`OPEN.md` §89), so `_vs_original` facts are absent until it is fixed.
-- **Step 14 cuts `MCR 8 Stress`, step 16 cuts `SPP OOS`** (owner, 2026-10-01): each is what the
-  next task reads — SPP IS reads only the eighth MCR databank, and the WFM reads SPP OOS. Phase 2
+- **Step 14 cuts `MCR 7 OHLC`, step 16 cuts `SPP OOS`** (owner, 2026-10-07; 14 cut `MCR 8 Stress`
+  until then): each is what the next task reads — SPP IS reads the last MC Retest task's
+  databank (the builder's chain; `tests/test_autopilot_step13.py` pins it), and the WFM reads
+  SPP OOS. Phase 2
   takes 16.5's mothers as those left in `SPP OOS`, each matched to her `SPP IS` counterpart, and
   designs the variants from the combined backtest's metrics (owner, 2026-10-01) — not every
   mother of the SPP export, as `pipeline.run.mothers` does today.
@@ -79,7 +83,8 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
   the study read (the gate also reads the build's strategies that never reached `OOS`).
 - **The chain's tests at step 8 include the readings outside the sequence** (`monkey`,
   `entryQuality`): their numbers are facts of step 8 too (`facts.gather` reads
-  `studies` + `extra`). `entryQuality` runs AFTER step 8's cut, on its
+  `studies` + `extra`). `entryQuality`, `monkey` and `monkeyExcess` (it reads the panel
+  `monkey` writes, so the two never split) run AFTER step 8's cut, on its
   survivors only (`run.AFTER_CUT`, owner 2026-10-01: they were 200 of the step's 297 s on all
   571) — **unless a step-8 rule names them** (`entryQuality.…`): then they run before the judge,
   on everyone, and pay those seconds. Not named, their facts in `hechos.parquet` are whatever
@@ -140,7 +145,7 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
   databanks the same day gives `gather` either one.
 - **It sets `ALGO_AUTONOMOUS=1`** (D4, owner 2026-10-04, in `run.main`; its subprocesses inherit
   it): the ledger's door refuses `oos2` to every step the policy does not list. 17, 18, 18.5 and 19
-  are computed without any of their numbers read, registered, and only then is 20 read — a
+  are computed, judged by `criteria.yaml` without a number shown (below), registered, and only then is 20 read — a
   missing row of 17-19 is a `PermissionError` before any command starts. Step 20 (`BlindJoint`) is in
   `_policy.yaml`'s `reserved_for` since 2026-10-04 (owner): its StepM over oos2 is read, one look
   counted (`studies/closing/blindJoint/README.md`).
@@ -166,3 +171,57 @@ databanks after 11.7 like any other).
   with «sin dato». The twins' titles are `sqx.projects.crosstfload.phase2_tasks`, and `launch/steps.of_step`
   gives them for step 11.7, which is deliberately not in `stages.yaml`.
 - **Facts** `crossTF.tf.*` (`tffacts.py`): states are numbers, pass 1 / limbo 0 / fail −1.
+
+## Steps 17 → 19 judged, 18.5 split (owner, 2026-10-07)
+
+`tail.walk` gives, when any of 17-19 has to run: **18.5 `blind` with `oos2: false`** (the deciding
+reading, build+oos1: no door asked, no `--oos2`) → **18.5 `judge`** → the looks **17, 18, 18.5**
+(`oos2: true`; 18.5 recomputes with `--oos2`) → **`judge` 17, 18, 18.5** → 19 `sqx` → `wfm` → `kept`
+→ **19 `judge`** → the ledger rows → 20. A judge is planned only for a step `criteria.yaml` gives
+rules; all four are `cut: null` — facts, `verdict.csv` and a ledger row, nothing deleted in SQX.
+
+- **Facts** are each study's `facts` dict, the study's key in front: `cscv.p_perdida`,
+  `cscv.pbo_sobre_p95`; `marketSurfaces.orden.estado` (positivo 1, neutro 0, perverso −1; sin_dato
+  = absent = Limbo), `.prima.bajo_p5`, `.oos2.perverso` (absent until the blind look: `missing:
+  pass`); `wfm.l1.p_menos`, `wfm.l1.mediana_exceso`, and `wfm.reopt.centro_exceso` /
+  `wfm.reopt.l2_p_menos` only with `modo_real: reoptimizado` (`missing: pass`: modo fijo is not
+  hurt). The WFM's come from its page `estrategias/<name>.json` (`facts.from_folder`), joined to
+  `SPP OOS` by name when the identity changed in the retest (`judge.resolve`).
+- **The grammar says when a rule PASSES**: the specs' `fail: ">= 0.5"` is written `pass: "< 0.25",
+  limbo: "< 0.5"` (not met = Fail, the default), and «can only give Limbo» is `else: limbo`.
+- **18.5 is judged twice** and its ledger row says `build+oos1` both times; the look at oos2 is
+  the study's own row (`engines.variants.look`). The second judgement can only add Limbo.
+- **A judge's ledger row is a row of that step**: once 17, 18 and 19 are judged, `gate.allow_read`
+  sees all three — 19's judge runs only after the WFM's reading, so the door still means «the
+  three ran». `blind.register` writes the studies' own rows as before.
+- **Step 20** reads each study's `verdict.state` under `joint.pieces: peor` — provisional, the
+  worst state wins (`studies/closing/blindJoint/README.md`); `criteria.yaml` has no rules for 20.
+
+## Steps 13 → 14 (MC Retest v2, owner 2026-10-07)
+
+`plan.plan` gives, when step 13 has to run: **12's judge** (if pending) → **13 `neighbours`** (T1) →
+**13 `sqx`** (`stages.yaml` › `mcretest`: MCR 1 Bar, MCR 7 OHLC, and MCR 4 MinDist only with
+stop/limit orders) → **14 `python`** (mcRetest) → **14 `judge`** → 15.
+
+- **T1 goes first.** Its mothers are who step 12's cut left in `CrossTF` — the files the SQX step
+  then copies to `CrossTF_Mothers`. Its table is stored under the day it was measured, and the
+  study looks for the newest one **up to its ingest's day**: measured after the ingest, a run past
+  midnight would find none and judge everyone Limbo. And a run that dies inside T1 leaves step 13
+  to do: the next run plans both again. A step 13 already done plans no T1.
+- **The ingest is the SQX step's own stop** (`afterrun`: every databank's harvest, then `MCR_All`),
+  so it is fresh and after the `Results` harvest whenever 13 ran in this run. T2 and T3 need an
+  ingest written since 2026-10-07 (it stores the build's dated trades); an older one — step 13
+  done before that date and resumed at 14 — reads «sin dato»: Limbo, said in the reason.
+- **Facts** (`--grep mcRetest.fragilidad`): `mcRetest.fragilidad.t1.{build,oos1}.{ret_med, ret_p5,
+  f_pos, ret_benef, beta_share, n}`, `t1.ambas.rho_vec`, `t2.build.{ret_med_aprox, ret_p5_aprox,
+  f_pos, ret_benef, same_count_frac, count_dev_med, n}`, `t3.build.{ret_med, ret_p5, matched_frac,
+  identical_frac, distinct, n}`. The rules read five of them (`criteria.yaml` › `"14"`,
+  provisional); a strategy without a neighbour batch has no `t1.*` fact at all.
+- **The study's own verdict judges nothing**: without the `stress` task it is INCONCLUSIVE and
+  `mcRetest.stress.*` no longer exists.
+- **A project built before 2026-10-07** still carries the eight MCR tasks: step 13 runs only the
+  stage's three, but its `SPP IS` reads `MCR 8 Stress`, which nothing fills or cuts any more.
+  Before its step 15, worker stopped: `python3 -m sqx.projects.spp <SYMBOL> --cfx <project.cfx>
+  --input "MCR 7 OHLC"`. Its five idle MCR databanks, if an old run left strategies in them,
+  still enter the `MCR_All` ingest.
+- **The window's ▶ SQX of step 13 and «Correr workflow» do not run T1**: only the autopilot does.

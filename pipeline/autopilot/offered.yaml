@@ -6,9 +6,214 @@
 # threshold is read from); one the null covers stays a diagnostic of its panel and is not
 # listed. Step → list of {fact, name, card}.
 "17":
-  - fact: wfc.summary.exceso_persistencia_minimo
-    name: "WFC · exceso de persistencia del top, peor ventana"
+  - fact: wfc.c1.estado
+    name: "WFC c1 · estado (PASA / LIMBO / NO PASA, 1 / 0 / −1)"
     card: knowhow/research/wfc-top-persistence-sign-flip-null.md
-  - fact: wfc.summary.exceso_persistencia_oos1
-    name: "WFC · exceso de persistencia del top en OOS1"
+  - fact: wfc.c1.rho
+    name: "WFC c1 · ρ de Spearman"
     card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c1.p_mas
+    name: "WFC c1 · p+"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c1.p_menos
+    name: "WFC c1 · p−"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c1.nivel_top
+    name: "WFC c1 · nivel del top fuera"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c1.p_nivel
+    name: "WFC c1 · p del nivel del top (nulo de volteo)"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c1.r_sel
+    name: "WFC c1 · R_sel"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c2.rho
+    name: "WFC c2 · ρ de Spearman"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c2.p_mas
+    name: "WFC c2 · p+"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c2.p_menos
+    name: "WFC c2 · p−"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c2.nivel_top
+    name: "WFC c2 · nivel del top fuera"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c2.p_nivel
+    name: "WFC c2 · p del nivel del top (nulo de volteo)"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c2.r_sel
+    name: "WFC c2 · R_sel"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c3.rho
+    name: "WFC c3 · ρ de Spearman"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c3.p_mas
+    name: "WFC c3 · p+"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c3.p_menos
+    name: "WFC c3 · p−"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c3.nivel_top
+    name: "WFC c3 · nivel del top fuera"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c3.p_nivel
+    name: "WFC c3 · p del nivel del top (nulo de volteo)"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c3.r_sel
+    name: "WFC c3 · R_sel"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+  - fact: wfc.c1.rho_parcial
+    name: "WFC c1 · ρ parcial (quitando las operaciones de dentro y de fuera)"
+    card: knowhow/research/wfc-top-persistence-sign-flip-null.md
+"16.5":
+  - fact: cloud.build.r2_ajustado
+    name: "Nube · R² ajustado en build"
+    card: studies/optimisation/cloud/README.md
+  - fact: cloud.build.r2_barajado
+    name: "Nube · R² barajado en build"
+    card: studies/optimisation/cloud/README.md
+  - fact: cloud.build.legible
+    name: "Nube · legible en build"
+    card: studies/optimisation/cloud/README.md
+"18":
+  - fact: cscv.pbo
+    name: "CSCV · PBO"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.pbo_p
+    name: "CSCV · p del PBO contra su nulo"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.nulo.pbo_p5
+    name: "CSCV · PBO del nulo, p5"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.nulo.pbo_p95
+    name: "CSCV · PBO del nulo, p95"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.nulo.pbo_mediana
+    name: "CSCV · PBO del nulo, mediana"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.nulo.p_perdida
+    name: "CSCV · P de pérdida en el nulo"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.p_perdida_sobre_p95
+    name: "CSCV · P de pérdida sobre el p95 de su nulo"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.nulo.p_perdida_p95
+    name: "CSCV · P de pérdida del nulo, p95"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.beta
+    name: "CSCV · pendiente de la degradación (β)"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.r2
+    name: "CSCV · R² de la degradación"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.orden_estable
+    name: "CSCV · orden estable (1 / 0)"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.hc
+    name: "CSCV · recorte de Haircut"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.duplicados_pct
+    name: "CSCV · % de variantes duplicadas"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.potencia.d01
+    name: "CSCV · potencia con ventaja plantada 0,1"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.potencia.d02
+    name: "CSCV · potencia con ventaja plantada 0,2"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.potencia.d03
+    name: "CSCV · potencia con ventaja plantada 0,3"
+    card: studies/optimisation/cscv/README.md
+  - fact: cscv.n
+    name: "CSCV · variantes en el panel"
+    card: studies/optimisation/cscv/README.md
+"18.5":
+  - fact: marketSurfaces.orden.rho
+    name: "Superficies · ρ conjunta (build+oos1)"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.orden.p_mas
+    name: "Superficies · p+ del orden"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.orden.p_menos
+    name: "Superficies · p− del orden"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.orden.nulo_p5
+    name: "Superficies · ρ del nulo, p5"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.orden.nulo_p95
+    name: "Superficies · ρ del nulo, p95"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.orden.mercados
+    name: "Superficies · mercados en la media"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.prima.valor
+    name: "Superficies · prima del 20 % mejor"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.prima.nulo_p5
+    name: "Superficies · prima del nulo, p5"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.auto.rho
+    name: "Superficies · ρ del mercado contra sí mismo"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.auto.cociente
+    name: "Superficies · ρ conjunta / ρ auto"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.potencia.r01
+    name: "Superficies · potencia con ρ plantada 0,1"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.potencia.r02
+    name: "Superficies · potencia con ρ plantada 0,2"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.potencia.r03
+    name: "Superficies · potencia con ρ plantada 0,3"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.oos2.rho
+    name: "Superficies · ρ conjunta en oos2"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.oos2.p_mas
+    name: "Superficies · p+ en oos2"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.oos2.p_menos
+    name: "Superficies · p− en oos2"
+    card: studies/optimisation/marketSurfaces/README.md
+  - fact: marketSurfaces.oos2.sin_dato
+    name: "Superficies · oos2 sin dato (1 = no se pudo leer)"
+    card: studies/optimisation/marketSurfaces/README.md
+"19":
+  - fact: wfm.l1.p_mas
+    name: "WFM · L1 · p+"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.l1.nulo_p5
+    name: "WFM · L1 · nulo, p5"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.l1.nulo_p95
+    name: "WFM · L1 · nulo, p95"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.l2.delta
+    name: "WFM · L2 · reoptimizar menos congelar"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.l2.p_mas
+    name: "WFM · L2 · p+"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.l2.p_menos
+    name: "WFM · L2 · p−"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.centro.exceso_oos2
+    name: "WFM · exceso de la celda central en oos2"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.celdas_efectivas
+    name: "WFM · celdas efectivas"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.frac_celdas_positivas
+    name: "WFM · fracción de celdas positivas"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.deriva
+    name: "WFM · deriva de los parámetros"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.area.celdas
+    name: "WFM · celdas del área de SQX"
+    card: studies/optimisation/wfm/README.md
+  - fact: wfm.area.pasa
+    name: "WFM · regla de área de SQX (1 / 0)"
+    card: studies/optimisation/wfm/README.md

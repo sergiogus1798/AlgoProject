@@ -6,6 +6,9 @@ FIRST = "17"
 DONE = ("done", "sealed")       # sealed: 17-19 done, hidden by the ledger's door
 # Computed per mother over her variant batch, one after another, and read only at step 20.
 BLOCK = {"17": "wfc", "18": "cscv", "18.5": "marketSurfaces"}
+# Split (owner, 2026-10-07): its deciding reading (build+oos1) is run and judged after 16.5,
+# before any look at oos2; inside the block it is read again with oos2, which can only add Limbo.
+SPLIT = "18.5"
 # Their tests read «the databank the panel shows» (`workflow.steps`, feeds ()): the rail
 # knows none, and the 2026-09-30 hand run used two (exposure on CrossTF_Mothers, the map on
 # Results). Not chosen here (hard rule 11): `--panel 21=<databank>`, or a clean stop.
@@ -54,9 +57,12 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         given: `inputs()`.
 
     Returns:
-        `do` and `stop` {n, why}, as `plan.plan`. In order: the blind looks 17, 18, 18.5 (a
-        look skips a mother that has its result unless `redo`), the WFM in SQX and its
-        reading and what the funding module keeps of each that passed it (`kept`), the ledger rows of 17-19 and the door, step 20 and its judge, 21-22 on the
+        `do` and `stop` {n, why}, as `plan.plan`. In order: 18.5's deciding reading (`SPLIT`,
+        `oos2: False`) and its judge; the blind looks 17, 18, 18.5 (a look skips a mother
+        that has its result unless `redo`), then 17, 18 and 18.5 judged as the looks close; the
+        WFM in SQX, its reading, what the funding module keeps of each that passed it (`kept`)
+        and 19 judged — a judge only for a step `criteria.yaml` gives rules; the ledger rows
+        of 17-19 and the door, step 20 and its judge, 21-22 on the
         databanks given, 23 and 24 in SQX, 25, the finalists, 26. A step done is skipped;
         the block's looks are planned whenever any of 17-19 is not, because the rail calls a
         step done as soon as ONE mother has its result. 20, and any of 21-25 with rules, is
@@ -71,6 +77,11 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         if pending:
             do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})
         pending = None
+
+    def judge(n: str, **more: object) -> None:
+        """Step `n` judged here, when `criteria.yaml` gives it rules."""
+        if n in given["judged"]:
+            add(n, "judge", title="juicio", **more)
 
     def halt(n: str | None, why: str) -> dict:
         """The plan, ending before step `n`."""
@@ -104,10 +115,16 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
     if (block or due("20")) and not family:
         return halt(FIRST if block else "20", NO_FAMILY)
     if block:
+        if running == SPLIT:
+            return halt(SPLIT, "está en marcha")
+        add(SPLIT, "blind", tests=[BLOCK[SPLIT]], redo=stale, oos2=False)
+        judge(SPLIT)
         for n, key in BLOCK.items():
             if n == running:
                 return halt(n, "está en marcha")
-            add(n, "blind", tests=[key], redo=stale)
+            add(n, "blind", tests=[key], redo=stale, oos2=True)
+        for n in BLOCK:         # each state is judged as the block's looks close, before the WFM
+            judge(n, **({"segment": "build+oos1+oos2"} if n == SPLIT else {}))   # 18.5 read oos2 this time
         if running == "19":
             return halt("19", "está en marcha")
         ran = due("19")
@@ -117,6 +134,7 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
                           for t in by["19"].get("tests", [])):
             add("19", "wfm", title="lectura de la WFM")
             add("19", "kept", title="guardar para fondeo")
+        judge("19")
         stale = True        # a piece of the block is new: 20 and what follows read it again
     if running == "20":
         return halt("20", "está en marcha")

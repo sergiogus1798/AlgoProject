@@ -2,22 +2,12 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `summary.py` | What a run of partitions says: PBO, carry-over, probability of loss, dominance | rows → numbers |
-| `trials.py` | The deflated Sharpe, given a count of independent trials | panel, n_eff → DSR |
-| `cost.py` | What each rule cost on the split that actually happened, and how far the optimum moved | panel → percentiles |
+| `state.py` | The facts of the plan's contract for step 18 (real against the null's tails, power, dominance, the mother) and the state | readings, draws, counts, cfg → facts |
 
-**The PBO of pure noise has a standard deviation of 0.21** (measured 2026-09-22 over twelve
-synthetic panels of 252). The partitions overlap heavily and are nothing like as many independent
-observations, so 0.45 and 0.55 are not distinguishable and the 50 % gate is a coarse filter. Moving
-from 252 partitions to 924 moved `argmax` on the measured grid from 41 % to 30 %: the same reading,
-and a reason not to quote either figure to the decimal.
+`cscv.p_perdida`, `cscv.pbo_sobre_p95` and `cscv.p_perdida_sobre_p95` decide (the autopilot's
+`criteria.yaml` reads the first and the last by these names); everything else is annotated. The
+cut and the percentile come from the config (`ledger:` rows). The PBO's cut is the p95 of its own
+null and has no number: a fixed 0.5 misreads a statistic whose no-edge deviation is 0.11 to 0.14.
+`p_perdida_sobre_p95` is strict (>): a pick that never loses is not over a null that never loses.
 
-**The counting itself moved to `core.surface.trials`** on 2026-09-24, when the global ledger needed
-the same n_eff over a whole surviving population rather than over one mother's variants. The rule
-it carries went with it: **it refuses any split where one cluster holds half the variants.** Left alone the
-silhouette picks the most flattering answer — 478 against 1 counts as two trials and deflates
-nothing. On the measured grid that refusal is the difference between reporting 2 independent trials
-and 21, and between a deflated Sharpe of 0.91 and 0.66.
-
-`cost` is the only thing here that looks at the real chronological split; everything else is
-combinatorial and says nothing about this history.
+**Must never hold**: a computation over the panel, an import of `measure/`.

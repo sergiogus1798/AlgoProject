@@ -134,21 +134,22 @@ def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict, follow: boo
             for name, w in zip(mine["strategy"], mine["who"])}
 
 
-def ledger_row(project: str, n: str, spec: dict, before: int, after: int) -> None:
+def ledger_row(project: str, n: str, spec: dict, before: int, after: int, segment: str | None = None) -> None:
     """Sign this cut in the ledger: one row, with the sha256 of criteria.yaml (OPEN 1.3 item 2).
 
     `segment:` of the step in criteria.yaml says what the cut read; oos1 when it does not
-    (a question for the owner: only step 8 declares it).
+    (a question for the owner: only step 8 declares it). `segment` overrides it (18.5's second
+    judgement, read with oos2).
     """
     who = survivors.about(project)
     sid = studymod.study_id(who["symbol"], who["timeframe"], who["family"])
     record.log(sid, {"step": float(n), "launched_by": "autopilot", "symbol": who["symbol"],
-                     "timeframe": who["timeframe"], "segment": spec.get("segment", "oos1"),
+                     "timeframe": who["timeframe"], "segment": segment or spec.get("segment", "oos1"),
                      "n_in": before, "n_out": after, "criterion": f"criteria.yaml paso {n}",
                      "config_hash": hashlib.sha256(CRITERIA.read_bytes()).hexdigest()})
 
 
-def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
+def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | None = None) -> dict:
     """Judge step `n` and apply its verdict, worker stopped.
 
     Args:
@@ -157,6 +158,7 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
         role: The worker holding the project.
         out: This step's folder in the run: hechos.parquet and verdict.csv land here.
         cfg: `settings()`.
+        segment: Ledger segment overriding the step's own `segment:`; None keeps it.
 
     Returns:
         `n`, `hechos` (rows gathered), `corte` (what was done, one line), and when a verdict
@@ -173,10 +175,14 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
         return {"n": n, "hechos": len(found), "corte": "ninguno: el paso no tiene criterio"}
     if "cut" not in spec:
         sys.exit(f"paso {n}: tiene reglas y criteria.yaml no dice qué databank cortar (`cut`)")
-    pop = population(project, spec["cut"], role)
+    note = spec["cut"] is None       # `cut: null`: judged and written, nothing deleted (step 17)
+    bank = survivors.bank(cfg, n) if note else spec["cut"]
+    if note:
+        sample = None
+    pop = population(project, bank, role)
     if pop.empty:                    # nothing to judge: zero survivors, which `run` ends cleanly
         return {"n": n, "hechos": len(found), "before": 0, "after": 0, "limbo": [], "seed": None,
-                "corte": f"{spec['cut']}: vacío, nada que juzgar"}
+                "corte": f"{bank}: vacío, nada que juzgar"}
     pop["who"], found["who"] = resolve(pop, found)
     # A scaled sibling is a measuring device of step 11, never a candidate: it always goes,
     # and only its mother, on her own timeframe and unscaled, is judged (owner, 2026-10-01).
@@ -193,17 +199,17 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict) -> dict:
     pop["outcome"] = [judged[w][0] for w in pop["who"]]
     pop["reason"] = [judged[w][1] or ("fuera del sorteo de desarrollo" if w not in keep else "")
                      for w in pop["who"]]
-    pop["verdict"] = [KEEP if w in keep else apply_verdict.DROP for w in pop["who"]]
+    pop["verdict"] = [KEEP if note or w in keep else apply_verdict.DROP for w in pop["who"]]
     csv = out / "verdict.csv"
     pop[["strategy", "verdict", "identity", "outcome", "reason"]].to_csv(csv, index=False)
     drops = int((pop["verdict"] == apply_verdict.DROP).sum())
-    cut = apply_verdict.apply(project, spec["cut"], csv, role) if drops else \
+    cut = apply_verdict.apply(project, bank, csv, role) if drops else \
         {"before": len(pop), "after": len(pop)}
-    ledger_row(project, n, spec, cut["before"], cut["after"])
+    ledger_row(project, n, spec, cut["before"], cut["after"], segment)
     kept = (pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP) & ~sibling
     limbo = sorted(pop.loc[kept, "strategy"])
     how = f"sorteo de {sample} (semilla {seed})" if sample else "criterios"
     return {"n": n, "hechos": len(found), "before": cut["before"], "after": cut["after"],
             "limbo": limbo, "seed": seed if sample else None,
-            "corte": f"{spec['cut']}: {cut['before']} → {cut['after']} por {how}"
+            "corte": f"{bank}: {cut['before']} → {cut['after']} por {how}" + (" (anota, no corta)" if note else "")
                      + (f", {len(limbo)} en limbo" if limbo else "")}
