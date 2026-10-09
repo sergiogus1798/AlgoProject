@@ -40,8 +40,9 @@ verdict:
 # the reading above (`tf_siblings.parquet`, `tf_mothers.csv`); it judges nothing until the owner
 # cuts: the live rule is still `crossTF.combined.z_new`.
 tf:
-  neighbours: {M30: [M15, H1], H1: [M30, H4]}   # per mother timeframe, the two siblings that decide
-  far: {M30: H4}                # the far sibling: annotated, and it lowers a pass to limbo (T3).
+  # per mother timeframe, the two siblings that decide (M15 and H4 added with their sisters, 2026-10-09)
+  neighbours: {M15: [M10, M30], M30: [M15, H1], H1: [M30, H4], H4: [H1, H12]}
+  far: {M15: H1, M30: H4, H4: M30}   # the far sibling: annotated, and it lowers a pass to limbo (T3).
                                 # Any other sibling of the batch is only annotated
   runs:                         # the joint random runs, as step 10's (crossmarket/travel)
     draws: 5000                 # B per window; the same runs for a mother and all her siblings

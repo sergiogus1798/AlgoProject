@@ -53,7 +53,7 @@ at the end of `docs/encargos/47-paso-12-otras-temporalidades-pico-aislado.md`.
   T1 and T2b read «no data») → **11.7** SQX on `build`, only the mothers still in `CrossTF_Input`
   (skipped, with a line, in a project without phase-2 tasks) → **12** the same study again, with the
   build. With no cut yet, 11.5 drops nobody, so every mother runs phase 2 — what the validation needs.
-- **Neighbours.** M30 mother: M15 and H1, far H4. H1 mother: M30 and H4, no far one.
+- **Neighbours** (`config.yaml`, 2026-10-09): `neighbours` M15: M10, M30 · M30: M15, H1 · H1: M30, H4 · H4: H1, H12; `far` M15: H1 · M30: H4 · H4: M30 (H1 has none). The M15 and H4 rows were set by Claude by analogy; the owner has not confirmed them. Sisters built per mother: `assets/_build.yaml` `crosstf.timeframes` (M15 → M10, M30, H1 · H4 → M30, H1, H12).
 - **Outputs**, in the run's folder beside the old ones: `tf_siblings.parquet` (one row per mother ×
   timeframe: T0 and its reason, `z_frec`, `e`, `ret`, `z_delta`, `z_build`, window matches,
   `ret_build` and its percentile, a state per test) and `tf_mothers.csv` (one row per mother: states of
@@ -98,7 +98,7 @@ proposal (`verdict.py`, `cells.beyond`, `tests/test_crosstf_facts.py`), not yet 
 - **A seed.** `--seed N` (or `run.seed`) replays the nulls exactly; the manifest records
   `nulls_seed` either way. A rule on a p or a z needs it fixed.
 
-**D1.** Removed by the owner on 2026-10-09: no mother timeframe lists it, no D1 sibling or task is made, and no timeframe has an engine of its own. M30 → M15, H1 and H4; H1 → M30 and H4.
+**D1.** Removed by the owner on 2026-10-09: no mother timeframe lists it, no D1 sibling or task is made, and no timeframe has an engine of its own. M30 → M15, H1 and H4; H1 → M30 and H4; M15 → M10, M30, H1; H4 → M30, H1, H12.
 
 ## What the fabrication scales (changed 2026-10-07, encargo 47 part F)
 

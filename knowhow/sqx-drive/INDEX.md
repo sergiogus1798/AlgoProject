@@ -6,7 +6,7 @@
 - `crosstf-one-task-per-timeframe` — How is Cross TF wired: one retest task per timeframe, and what happened to D1?
 - `crosstf-period-source` — What counts as a period (bar length) to rescale when building a cross-timeframe sibling?
 - `crosstf-scaling-coefficients` — Which coefficients of a cross-timeframe sibling are divided by the ATR ratio c, and what does step 10.5 actually scale?
-- `custom-timeframe-h12` — How does SQX run a custom timeframe like H12 in a task's `<Setup>`?
+- `custom-timeframe-h12` — How does SQX run a custom timeframe like H12 or M10 in a task's `<Setup>`?
 - `driving-a-role` — How do scripts pick a worker install: where are roles defined and what does `--role ROLE` resolve to?
 - `export-after-every-stop` — What does `bin/sqx-worker.sh stop` export from the install's databanks, and what decides that the worker is busy?
 - `export-mql5-source-headless` — How do I get MQL5 source out of SQX headless, given that no sqcli verb writes it?
@@ -30,6 +30,7 @@
 - `spp-headless` — Does a headless SPP persist its results, and how do I judge its progress (JVM RSS, one per install)?
 - `spp-task-type` — Which task type is the SPP (`OptProfileSysParamPermutation`) and why does `SequentialOptimization` write no profile?
 - `start-before-databanks-load` — Why does a task started while SQX is still loading its databanks retest nothing?
+- `stop-killed-mid-save-truncated-sqx` — Why does the custodian refuse to start with «los databanks no terminaron de cargarse en 5 min»?
 - `study-cli-defaults-to-master` — Why does a study's CLI default to the master install, and who must resolve the real install?
 - `three-install-topology` — What are the three SQX installs (master, conductor W1, custodian W2), their ports and what each is for?
 - `transient-abort-automatic-retry` — What does the autopilot do when SQX aborts with «Error while running project», and why must the rerun undo first?

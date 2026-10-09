@@ -38,7 +38,7 @@ mother's result already explains taken out (a sibling re-reads the same asset ov
 
 ## The cascade, steps 10.5 → 11 → 11.5 → 11.7 → 12 (encargo 47, built beside the live rule)
 
-- **10.5** fabricates the siblings and fills `CrossTF_Input`. M30 mothers get **M15, H1, H4**
+- **10.5** fabricates the siblings and fills `CrossTF_Input`. M30 mothers get **M15, H1, H4** (M15 → M10, M30, H1; H4 → M30, H1, H12)
   (`crosstf.timeframes`; SQX builds M15 from M1). Every coefficient that multiplies a per-bar
   measure (`bar` in `sqx/variants/ranges.yaml`) is written `k / c`, `c` = the measured median-ATR
   ratio of the sibling's timeframe over the mother's (`--symbol` picks the asset; default, the first
@@ -131,8 +131,8 @@ python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/proje
 The timeframes, the window and the precision come from `crosstf:` in `assets/_build.yaml`
 (`segment: oos1`, `precision: 1` — owner, 2026-10-02: the step reads oos1 only, at the selected
 timeframe's precision). The timeframes depend on the one the strategy was built
-on: **from M30: M15, H1 and H4** (owner, 2026-10-07; H1 and H4 since 2026-09-26); **from H1: M30 and H4** (owner, 2026-09-29; D1 removed 2026-10-09).
-H12 is a custom SQX timeframe and works as-is in a task if named (→ `knowhow/sqx-drive/custom-timeframe-h12.md`).
+on: **from M30: M15, H1 and H4** (owner, 2026-10-07; H1 and H4 since 2026-09-26); **from H1: M30 and H4** (owner, 2026-09-29; D1 removed 2026-10-09); **from M15: M10, M30, H1** and **from H4: M30, H1, H12** (owner, 2026-10-09; H12 over H8 was Claude's pick). A mother timeframe absent from `crosstf.timeframes` is refused at the build.
+H12 and M10 are custom SQX timeframes and works as-is in a task if named (→ `knowhow/sqx-drive/custom-timeframe-h12.md`).
 `sqx.variants.scale --source H1` fabricates every sibling of the list by default. The study derives the same block order itself — the siblings'
 `source_tf` in `scaling.parquet`, then this list (2026-09-27; it used to be a hand-edited
 `run.blocks`). H12 siblings of short

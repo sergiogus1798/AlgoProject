@@ -13,6 +13,7 @@ The crossTF facts of runs before the fix (`n_build`, `e_build`, `z_build`, `ret_
 The D1 sister (always `clamped`, ~30 oos1 trades) no longer exists: the owner removed D1 from crossTF on 2026-10-09.
 
 ## Evidence
+- 🔬 After the fix, inside a run (EURUSD H1, `Test_EURUSD_H1_tendenciaL_chk8`, 2026-10-09): `z_build` 0.82, -0.43, 1.51, 1.31 with `n_build` 289-561: centred.
 - 🔬 Mean `z_build` by sister TF: M15 +0.7..+1.1, M30 +1.2..+1.7, H1 -2.1..+2.5, H4 -9.7 (cal2), +12 (cal1), +14.8 (cal3), +5.9 (cal5). Within-run ranges: -10..+13 (cal4 H4), -5..+16 (cal5 H4).
 - 🔬 D1 sister clamped (and almost without trades) in every mother: cal1 8/8, cal3 2/2, cal4 17/17.
 - 🔬 cal5 (DAX40 M30), median `n_build` per sister before → after the fix: M15 217 → 166, H1 788 → 166, H4 1,057 → 156.

@@ -170,9 +170,13 @@ crosstf:
   # nada los separa (se leían por el ritmo de operaciones, no por el timeframe). «CrossTF»
   # corre el timeframe de la madre → `CrossTF`; «CrossTF <TF>» cada uno → `CrossTF_<TF>`.
   # El orden de la lista es el de `blocks.json`, que es lo que lee el estudio.
+  # Desde M15: M10, M30 y H1; desde H4: M30, H1 y H12 (dueño, 2026-10-09; H12 y no H8 porque SQX y
+  # el escalado ya lo corrían). Una madre cuyo timeframe no esté aquí no se puede construir.
   timeframes:
+    M15: [M10, M30, H1]
     M30: [M15, H1, H4]
     H1: [M30, H4]
+    H4: [M30, H1, H12]
 
 # ─── MC Retest ─────────────────────────────────────────────────────────────────────────
 # Paso 13 del workflow. Ocho tareas, cada una perturbando UNA cosa y volviendo a correr el

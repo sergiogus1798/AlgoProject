@@ -209,7 +209,7 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     ledger_row(project, n, spec, cut["before"], cut["after"], segment)
     kept = (pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP) & ~sibling
     limbo = sorted(pop.loc[kept, "strategy"])
-    how = f"sorteo de {sample} (semilla {seed})" if sample else "criterios"
+    how = f"sorteo de {sample} (semilla {seed})" if len(keep) < len(alive) else "criterios"
     return {"n": n, "hechos": len(found), "before": cut["before"], "after": cut["after"],
             "limbo": limbo, "seed": seed if sample else None,
             "corte": f"{bank}: {cut['before']} → {cut['after']} por {how}" + (" (anota, no corta)" if note else "")

@@ -350,13 +350,21 @@ case "${1:-}" in
     if alive; then
       # Owner, 2026-10-06: an SQX that does not leave is killed, never left for him to kill from the
       # system monitor. Not while it is still saving: its log moves while the shutdown sync writes
-      # databanks (minutes with many projects), so wait while it moves, up to 15 min; 60 s of
-      # silence with the process still here is the hang. Then SIGTERM by PID, SIGKILL what remains.
+      # databanks (minutes with many projects), so wait while it or its projects' files move, up to
+      # 15 min; 60 s of silence with the process still here is the hang. Then SIGTERM by PID, SIGKILL what remains.
       LOGF="$WORKER/user/log/StrategyQuant/log_$(date +%Y_%m_%d).log"
-      echo "$ROLE still here after $STOP_WAIT s: waiting while its log moves (it may be saving)"
+      echo "$ROLE still here after $STOP_WAIT s: waiting while its log or its files move (it may be saving)"
       for _ in $(seq 1 60); do
         alive || break
-        if [ -f "$LOGF" ] && [ $(( $(date +%s) - $(stat -c %Y "$LOGF") )) -lt 60 ]; then sleep 15; else break; fi
+        # The log alone is not the sign: a 10,000-strategy databank is written for over two minutes
+        # without a line, and the kill landed in the middle of it and left a truncated .sqx that
+        # blocked the next start (2026-10-09). A file written under user/projects counts as moving.
+        if { [ -f "$LOGF" ] && [ $(( $(date +%s) - $(stat -c %Y "$LOGF") )) -lt 60 ]; } \
+           || [ -n "$(find "$WORKER/user/projects" -type f -mmin -1 -print -quit 2>/dev/null)" ]; then
+          sleep 15
+        else
+          break
+        fi
       done
       if alive; then
         echo "   $ROLE silent for 60 s and not leaving: killing by PID $(install_pids | tr '\n' ' ')(never by pattern)"

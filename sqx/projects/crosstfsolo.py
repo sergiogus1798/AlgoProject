@@ -30,6 +30,9 @@ def planned(source: str, only: list[str] | None = None, d: dict | None = None) -
     """
     d = d or doctrine()
     study = d["crosstf"]
+    if source not in study["timeframes"]:
+        raise SystemExit(f"assets/_build.yaml: `crosstf.timeframes` no dice en qué timeframes se "
+                         f"reprueba una madre {source} — decídelo antes de construir.")
     return [{"timeframe": tf, "title": f"{CROSSTF['title']} {tf}",
              "databank": f"{CROSSTF['output']}_{tf}",
              "engine": d["engine"]}

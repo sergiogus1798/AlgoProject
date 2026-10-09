@@ -22,7 +22,8 @@ from sqx.variants.build import rewrite
 CONFIG = ROOT / "sqx" / "variants" / "config.yaml"
 
 # A timeframe is only ever a number of minutes here, which is what makes a ratio meaningful.
-MINUTES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "H12": 720, "D1": 1440}
+MINUTES = {"M1": 1, "M5": 5, "M10": 10, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "H12": 720,
+           "D1": 1440}
 
 
 def knobs() -> dict:

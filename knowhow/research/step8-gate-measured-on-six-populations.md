@@ -9,6 +9,7 @@ Thresholds are the owner's; these are measures, not a change. Raising R3 from 1.
 reglas» there). A clean «Pasa» at step 8: 1 strategy in all six runs; the rest of the survivors are Limbo.
 
 ## Evidence
+- 🔬 Populations seven and eight (2026-10-09). EURUSD H1, 10,000 strategies: null 23, planted 0.05 → 962, 0.10 → 2,541, 0.15 → 3,783 of 5,000; real 41 of 10,000 (6 pass + 35 limbo). USATEC M15 `doubleROCLong`, 10,000 built, median 122 trades/year, no ceiling: real 0 of 10,000 survive (7,077 fall on R3 `drift_excess_t`, median -0.54, max 1.69; 2,908 on R2); null 1 of 5,000, planted 0.05 → 15, 0.10 → 23, 0.15 → 24 of 5,000; null monkeys pass R3 >= 1.65 at 0.42 %. On a high-frequency population the gate has almost no power: a 0 there says nothing about the strategies.
 Six runs, 10,000 strategies each, 30 min build, long only, R3 = 1.65 (2026-10-08/09): cal1 DJ30 H1, cal2 USDCAD M30, cal3 EURJPY H1 template, cal4 GBPUSD H1, cal5 DAX40 M30, cal6 NIKKEI225 H1 template. Reports `AlgoData/reports/Test_<...>_calN/`.
 
 | share surviving step 8 (pass+limbo) | cal1 | cal2 | cal3 | cal4 | cal5 | cal6 |

@@ -64,6 +64,8 @@ what ran, seconds, the cut (in → out), and where it stopped. Then, by the last
 | `FALLO en el paso N: …` | failed | report N and the first lines of `fallo.md`; then §4 |
 | `workflow: …` (no status line) | refused before starting | report the sentence as it is; do not work around it |
 
+Refusal «custodian: los databanks no terminaron de cargarse en 5 min; no se toca nada»: a `stop` killed SQX mid-save and left a truncated `.sqx`. Do not retry; report it (`knowhow/sqx-drive/stop-killed-mid-save-truncated-sqx.md`).
+
 ## 4. After a failure — exactly this, nothing else
 
 1. `bin/sqx-worker.sh --role custodian status`. If it is up and its owner is this session:
