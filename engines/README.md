@@ -10,6 +10,8 @@ engines and never another study — that is the rule this folder exists to keep.
 | `resample/` | Reorderings and resamplings of a trade sequence | Monte Carlo, the cross-market portfolio |
 | `regimes/` | The volatility state a trade was opened into | Monte Carlo |
 | `inference/` | Correcting for the search: Benjamini-Hochberg, the excess over chance, SPA and StepM | the gate, the population readings, the snooping screen |
+| `weekly/` | Trades into weeks × units of excess, gross and net, each trade whole in the week it closes in; the shared-sign weekly flip null, its p-values and a bulk Spearman | the WFC, the CSCV, market surfaces, the WFM |
+| `variants/` | A retested variant batch read back: usable points, the in-sample / out-of-sample boundary, the per-period panel, the filters, duplicates by fingerprint, the excess over drift | the WFC, the CSCV, the WFM |
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

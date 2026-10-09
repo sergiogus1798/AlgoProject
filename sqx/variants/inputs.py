@@ -7,19 +7,32 @@ import pandas as pd
 import yaml
 
 from core.datapaths import variants_dir
-from core.paths import DATA
+from core.paths import ROOT
 
 HERE = Path(__file__).resolve().parent
 ORIGINAL = -1
+
+
+def ledger(node: object) -> object:
+    """A parsed config with every `ledger:<key>` replaced by that row of `thresholds.yaml`.
+
+    `sqx` may not import `ledger`, so the rows are read from the file as plain YAML.
+    """
+    if isinstance(node, dict):
+        return {k: ledger(v) for k, v in node.items()}
+    if isinstance(node, str) and node.startswith("ledger:"):
+        rows = yaml.safe_load((ROOT / "ledger" / "thresholds.yaml").read_text(encoding="utf-8"))
+        return next(r["value"] for r in rows["thresholds"] if r["key"] == node[7:])
+    return node
 
 
 def load() -> dict:
     """The factory's settings.
 
     Returns:
-        The parsed `config.yaml`, unmodified.
+        The parsed `config.yaml`, its `ledger:` numbers filled in.
     """
-    return yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8"))
+    return ledger(yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8")))
 
 
 def brief(path: Path) -> dict:
@@ -29,10 +42,16 @@ def brief(path: Path) -> dict:
         path: A `design_brief_<strategy>.json` written by `studies/breakage/spp`.
 
     Returns:
-        Contract C1 as it stands on disk: the live parameters with their levels, the
-        frozen ones with their values, the stratum shares and the target count.
+        Contract C1 as it stands on disk: each parameter with its `class` (live, shift) and
+        its `plateau`, the frozen ones with their values.
+
+        A brief read from the OUT-of-sample SPP is refused: the box is drawn on build only,
+        or the open WFC composition would be contaminated by the design (§2.1).
     """
-    return json.loads(path.read_text(encoding="utf-8"))
+    got = json.loads(path.read_text(encoding="utf-8"))
+    if Path(got["source"]).parent.parent.name.upper().endswith("_OOS"):
+        raise SystemExit(f"{path.name}: its profile comes from the SPP OOS; the design reads build only")
+    return got
 
 
 def source(design: dict) -> Path:

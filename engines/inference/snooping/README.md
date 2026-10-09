@@ -8,7 +8,7 @@ benchmark is, and what a named strategy means, is the study's business
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `superior.py` | The stationary bootstrap's block length (Politis–White), the SPA's three p-values, and the StepM set | imported | T×K excess panel → p-values, names |
+| `superior.py` | The stationary bootstrap's block length (Politis–White), the SPA's three p-values, and the StepM set; `spa(..., drawn)` fills the dict it is given with the bootstrap its p-values were counted on | imported | T×K excess panel → p-values, names |
 
 Used by `studies/closing/blindJoint/` (step 20; the step-8 screen that also used it is gone). 🔬 The StepM is the step-down written on `arch`'s `SPA`, not `arch`'s own
 `StepM`: in 7.2.0 that loops while the *last* round named fewer than K and raises on an empty

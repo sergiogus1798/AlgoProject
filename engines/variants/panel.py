@@ -14,8 +14,11 @@ from core import assetdata
 # `sqx.variants.collect` writes a column per segment and per union, so every composition is a
 # choice of columns and never a new backtest.
 SEGMENTS = ("build", "oos1", "oos2")
-COMPOSITIONS = ((("build",), ("oos1",)), (("build",), ("oos2",)),
-                (("build",), ("oos1", "oos2")), (("build", "oos1"), ("oos2",)))
+# Step 17's three compositions, each under its own key (encargo 48): c1 decides, c2 and c3
+# are annotated. `build -> oos1` alone is out (it spends nothing the others do not).
+KEYS = {"c1": (("build", "oos1"), ("oos2",)), "c2": (("build",), ("oos1", "oos2")),
+        "c3": (("build",), ("oos2",))}
+COMPOSITIONS = tuple(KEYS.values())
 
 # The two readings of 2026-09-24, kept as names. `oos1_oos2` asks the ordinary question — does
 # the build predict everything after it. `oos2_only` asks the strict one: with build AND oos1
@@ -46,6 +49,11 @@ def composition(inside: list[str], outside: list[str]) -> tuple[tuple, tuple]:
             f"`build` va siempre dentro; dentro es build o build,oos1; fuera, lo que queda "
             f"de {', '.join(SEGMENTS)} (oos1 puede quedarse fuera de las dos)")
     return comp
+
+
+def key(comp: tuple[tuple, tuple]) -> str:
+    """The composition's own key, `c1`, `c2` or `c3`: distinct for each, unlike a bare outside side."""
+    return next(k for k, c in KEYS.items() if c == comp)
 
 
 def label(comp: tuple[tuple, tuple]) -> str:

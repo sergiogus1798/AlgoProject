@@ -88,7 +88,7 @@ def main() -> None:
 
     design = inputs.brief(a.brief)
     settings = inputs.load()
-    live = levels.live(design, settings["minimum"])
+    live = levels.live(design)
     banned, report = run(design, settings, live, a.out, a.project,
                          lambda pct, line: print(f"PROGRESS {pct} {line}", flush=True))
     a.out.mkdir(parents=True, exist_ok=True)

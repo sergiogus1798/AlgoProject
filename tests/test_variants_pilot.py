@@ -21,25 +21,23 @@ def check(failures: list, ok: bool, said: str) -> None:
         failures.append(said)
 
 
-def brief(n_target: int = 40) -> dict:
+def brief() -> dict:
     """A minimal design brief, enough for `plan.build` to run end to end."""
     return {
-        "strategy": "Strategy TEST", "verdict": "no_fiable", "n_target": n_target,
-        "strata": {"neighbourhood": 0.2, "factorial": 0.6, "coverage": 0.2},
+        "strategy": "Strategy TEST", "verdict": "no_fiable",
         "parameters": [
             {"name": "Period1", "original": 20.0, "levels": [10.0, 20.0, 30.0, 40.0],
-             "center": 20.0, "eta2": 0.6},
+             "center": 20.0, "eta2": 0.6, "class": "live", "plateau": {"from": 10, "to": 40}},
             {"name": "Coef1", "original": 2.0, "levels": [1.0, 2.0, 3.0],
-             "center": 2.0, "eta2": 0.2}],
-        "frozen": [{"name": "Shift1", "value": 1.0}]}
+             "center": 2.0, "eta2": 0.2, "class": "live", "plateau": {"from": 1, "to": 3}}],
+        "frozen": [{"name": "Shift1", "value": 1.0, "class": "frozen"}]}
 
 
 def settings() -> dict:
-    """The `config.yaml` blocks `plan.build` reads, minimal versions."""
-    return {"minimum": {"variants": 1, "widen_step": 0.05, "max_span": 0.60},
-           "design": {"neighbourhood": {"radius": 2}, "factorial": {"min_levels": 2},
-                      "frozen": {"span": 0.30, "steps": 5}, "seed": 20260921},
-           "canaries": {"n": 3, "inert_pairs": True}}
+    """The `config.yaml` blocks `plan.build` reads, minimal versions (ledger numbers explicit)."""
+    return {"size": {"n_min": 40, "n_max": 50, "per_coefficient": 1},
+            "design": {"frozen": {"span": 0.30, "steps": 5}, "seed": 20260921},
+            "canaries": {"n": 3, "inert_pairs": True}}
 
 
 def empty_known(names: list[str]) -> pd.DataFrame:

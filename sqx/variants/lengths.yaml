@@ -1,0 +1,269 @@
+# Which parameters of a CUSTOM block are lengths in bars, so `sqx.variants.scale` moves them with the timeframe.
+#
+# Built-in blocks need no row: SQX types each variable in the .sqx (<paramType>ParamTypePeriod</paramType>) and
+# `scale.py` reads that. A custom block declares its parameters as plain Int/Double, SQX types them
+# ParamTypeOtherParam, and only the block's own definition says what each one feeds. This table is that
+# reading, block by block, for every custom block of the six v3 palettes (sqx/blocks/palettes/*_v3.yaml):
+#   length      every inner parameter it feeds is a period or a bar count -> scaled
+#   other       a level, a multiplier, a number, a shift -> never scaled (owner, 2026-09-23)
+#   unverified  could not be read off the definition -> NOT scaled, and the sibling is flagged
+#               (`unverified` in scaling.parquet; the study reads it as not tested)
+# The comment on each line is what the parameter is called and what it is bound to inside the block.
+# Generated 2026-10-02 from SQX_w2/user/settings/customBlocks.xml by
+# AlgoData/scratch/calib_step12/lengths_table.py and reviewed by hand; edit a ruling here, not there.
+# A custom block that is NOT listed is treated as unverified.
+
+CBlock_ATRCrossMAATR:
+  Int2:    length      # PeriodATR -> #Period#[period]
+  Int3:    length      # PeriodEMA -> #Period#[period]
+CBlock_ATRRankHighVol:
+  Int2:    length      # ATR Period -> #ATRPeriod#[period]
+  Int3:    length      # Rank Lookback -> #Lenght#[period]
+  Double3: other       # Vol Level -> #Number#[-]
+CBlock_ATRRankLowVol:
+  Int2:    length      # ATR Period -> #ATRPeriod#[period]
+  Int3:    length      # Rank Lookback -> #Lenght#[period]
+  Double3: other       # Vol Level -> #Number#[-]
+CBlock_BBBreakoutDown:
+  Int2:    length      # BB Period -> #Period#[period]
+  Double3: other       # BB Deviation -> #Deviation#[-]
+CBlock_BBBreakoutUp:
+  Int2:    length      # BB Period -> #Period#[period]
+  Double3: other       # BB Deviation -> #Deviation#[-]
+CBlock_BBWRPercent:
+  Int2:    length      # PeriodBB -> #Period#[period]
+  Double3: other       # WidthBB -> #Deviation#[-]
+  Double4: other       # Percentile -> #Percentile#[-]
+  Int5:    length      # BarsHistory -> #Bars#[-]
+CBlock_BreakoutDonchianLong:
+  Int2:    length      # PeriodDonchian -> #Period#[period]
+CBlock_BreakoutDonchianLong_2:
+  Int2:    length      # PeriodDonchian -> #Period#[period]
+CBlock_CMMAIsAboveLevel:
+  Period1: length      # Lookback_Period -> #Lookback#[period]
+  Period2: length      # ATR_Lenght -> #ATRLength#[period]
+  Double1: other       # Level -> #Number#[-]
+CBlock_CMMAIsAboveLevel_2:
+  Period1: length      # Lookback_Period -> #Lookback#[period]
+  Period2: length      # ATR_Lenght -> #ATRLength#[period]
+  Double1: other       # Level -> #Number#[-]
+CBlock_CMMAIsAboveLevel_3:
+  Period1: length      # Lookback_Period -> #Lookback#[period], #Lookback#[period]
+  Period2: length      # ATR_Lenght -> #ATRLength#[period], #ATRLength#[period]
+  Double1: other       # Level -> #Number#[-], #Number#[-]
+CBlock_CMMAIsAboveLevel_3_2:
+  Period1: length      # Lookback_Period -> #Lookback#[period], #Lookback#[period]
+  Period2: length      # ATR_Lenght -> #ATRLength#[period], #ATRLength#[period]
+  Double1: other       # Level -> #Number#[-], #Number#[-]
+CBlock_CSSARegimeAbove50:
+  Int2:    length      # Perc Rank Period -> #PercRankPeriod#[period]
+  Double3: other       # Regime Level -> #Number#[-]
+CBlock_CSSARegimeBelow50:
+  Int2:    length      # Perc Rank Period -> #PercRankPeriod#[period]
+  Double3: other       # Regime Level -> #Number#[-]
+CBlock_CandleBreakoutLong:
+  Double2: other       # Mult -> #Number#[-]
+  Int3:    length      # PeriodATR -> #Period#[period]
+CBlock_CandleBreakoutLong_2:
+  Double2: other       # Mult -> #Number#[-]
+  Int3:    length      # PeriodATR -> #Period#[period]
+CBlock_CandleSmallUpperWick:
+  Double2: other       # Ratio -> #Number#[-]
+CBlock_CandleSmallUpperWick_2:
+  Double2: other       # Ratio -> #Number#[-]
+CBlock_ChoppinessChoppy:
+  Int2:    length      # Choppiness Period -> #Period#[period]
+  Double3: other       # Chop Level -> #Number#[-]
+CBlock_ChoppinessTrending:
+  Int2:    length      # Choppiness Period -> #Period#[period]
+  Double3: other       # Trend Level -> #Number#[-]
+CBlock_CrossAboveMA:
+  Int2:    length      # PeriodFast -> #Period#[period]
+  Int3:    length      # PeriodSlow -> #Period#[period]
+CBlock_CrossAboveMA_2:
+  Int2:    length      # PeriodFast -> #Period#[period]
+  Int3:    length      # PeriodSlow -> #Period#[period]
+CBlock_CrossAboveMA_3:
+  Int2:    length      # PeriodFast -> #Period#[period]
+  Int3:    length      # PeriodSlow -> #Period#[period]
+CBlock_CrossAboveMA_4:
+  Int2:    length      # PeriodFast -> #Period#[period]
+  Int3:    length      # PeriodSlow -> #Period#[period]
+CBlock_CrossAboveMA_6:
+  Int2:    length      # PeriodFast -> #Period#[period]
+  Int3:    length      # PeriodSlow -> #Period#[period]
+CBlock_CrossAboveMA_7:
+  Int2:    length      # PeriodFast -> #Period#[period]
+  Int3:    length      # PeriodSlow -> #Period#[period]
+CBlock_DPOAbove0:
+  Int2:    length      # DPO Period -> #Period#[period]
+  Double3: other       # DPO Level -> #Number#[-]
+CBlock_DPOBelow0:
+  Int2:    length      # DPO Period -> #Period#[period]
+  Double3: other       # DPO Level -> #Number#[-]
+CBlock_DisparityAbove0:
+  Int2:    length      # Disparity Period -> #Period#[period]
+  Double3: other       # Disparity Level -> #Number#[-]
+CBlock_DisparityBelow0:
+  Int2:    length      # Disparity Period -> #Period#[period]
+  Double3: other       # Disparity Level -> #Number#[-]
+CBlock_EMAMAIsRising_2_2:
+  Int1:    length      # BarsRising -> #Bars#[-]
+  Double1: other       # FastLimit -> #FastLimit#[-]
+  Double2: other       # SlowLimit -> #SlowLimit#[-]
+CBlock_EMAMAIsRising_2_2_2:
+  Double1: other       # FastLimit -> #FastLimit#[-], #FastLimit#[-]
+  Double2: other       # SlowLimit -> #SlowLimit#[-], #SlowLimit#[-]
+CBlock_EMAMAIsRising_2_2_2_2:
+  Double1: other       # FastLimit -> #FastLimit#[-], #FastLimit#[-]
+  Double2: other       # SlowLimit -> #SlowLimit#[-], #SlowLimit#[-]
+CBlock_EMAMAIsRising_2_3:
+  Int1:    length      # BarsFalling -> #Bars#[-]
+  Double1: other       # FastLimit -> #FastLimit#[-]
+  Double2: other       # SlowLimit -> #SlowLimit#[-]
+CBlock_EntropyHigh:
+  Int2:    length      # Entropy Period -> #EMPeriod#[period]
+  Double3: other       # Entropy Level -> #Number#[-]
+CBlock_EntropyLow:
+  Int2:    length      # Entropy Period -> #EMPeriod#[period]
+  Double3: other       # Entropy Level -> #Number#[-]
+CBlock_HursExponentIsAboveLevel:
+  Period1: length      # HurstExponent_Period -> #Period#[period]
+  Double1: other       # Level -> #Number#[-]
+CBlock_HursExponentIsAboveLevel_2:
+  Period1: length      # HurstExponent_Period -> #Period#[period]
+  Double1: other       # Level -> #Number#[-]
+CBlock_HursExponentIsAboveLevel_3:
+  Period1: length      # HurstExponent_Period -> #Period#[period]
+CBlock_HursExponentIsAboveLevel_3_2:
+  Period1: length      # HurstExponent_Period -> #Period#[period]
+CBlock_IBSCloseLarger:
+  Double3: other       # IBS -> #Number#[-]
+CBlock_IBSCloseLarger_2:
+  Double3: other       # IBS -> #Number#[-]
+CBlock_IBSCloseLarger_3:
+  Double3: other       # IBS -> #Number#[-]
+CBlock_IBSCloseLarger_4:
+  Double3: other       # IBS -> #Number#[-]
+CBlock_KSBreakOff:
+  Period1: length      # Recent Period -> #Period1#[period]
+  Period2: length      # Historical Period -> #Period2#[period]
+CBlock_KSBreakOn:
+  Period1: length      # Recent Period -> #Period1#[period]
+  Period2: length      # Historical Period -> #Period2#[period]
+CBlock_PMaxFlipDown:
+  Int2:    length      # ATR Period -> #ATRPeriod#[period]
+  Double3: other       # ATR Mult -> #ATRMultiplier#[-]
+CBlock_PMaxFlipUp:
+  Int2:    length      # ATR Period -> #ATRPeriod#[period]
+  Double3: other       # ATR Mult -> #ATRMultiplier#[-]
+CBlock_QQEModBuy:
+  Int2:    length      # QQE RSI Period -> #RSIPeriod#[period]
+  Double3: other       # Mid Level -> #Number#[-]
+CBlock_QQEModSell:
+  Int2:    length      # QQE RSI Period -> #RSIPeriod#[period]
+  Double3: other       # Mid Level -> #Number#[-]
+CBlock_RMICrossDown:
+  Int2:    length      # RSI Period -> #RSIPeriod#[period], #RSIPeriod#[period]
+CBlock_RMICrossUp:
+  Int2:    length      # RSI Period -> #RSIPeriod#[period], #RSIPeriod#[period]
+CBlock_SmoothedRSIRising_3_3:
+  Period1: length      # RSI_Period -> #RSIPeriod#[period], #RSIPeriod#[period], #RSIPeriod#[period], #RSIPeriod#[period], #RSIPeriod#[period]
+  Period2: length      # MA_Period -> #MAPeriod#[period], #MAPeriod#[period], #MAPeriod#[period], #MAPeriod#[period], #MAPeriod#[period]
+  Double1: other       # Level -> #Number#[-]
+CBlock_SmoothedRSIRising_3_3_2:
+  Period1: length      # RSI_Period -> #RSIPeriod#[period], #RSIPeriod#[period], #RSIPeriod#[period], #RSIPeriod#[period], #RSIPeriod#[period]
+  Period2: length      # MA_Period -> #MAPeriod#[period], #MAPeriod#[period], #MAPeriod#[period], #MAPeriod#[period], #MAPeriod#[period]
+  Double1: other       # Level -> #Number#[-]
+CBlock_SqueezeMomentumNeg:
+  Int2:    length      # Squeeze Period -> #BBPeriod#[period], #KCPeriod#[period]
+CBlock_SqueezeMomentumPos:
+  Int2:    length      # Squeeze Period -> #BBPeriod#[period], #KCPeriod#[period]
+CBlock_SqueezeOff:
+  Int2:    length      # Squeeze Period -> #BBPeriod#[period], #KCPeriod#[period]
+CBlock_SqueezeOn:
+  Int2:    length      # Squeeze Period -> #BBPeriod#[period], #KCPeriod#[period]
+CBlock_StochWeightsDown:
+  Int2:    length      # Stoch K -> #KPeriod#[period], #KPeriod#[period], #KPeriod#[period]
+  Double3: other       # Mid Level -> #Number#[-]
+CBlock_StochWeightsUp:
+  Int2:    length      # Stoch K -> #KPeriod#[period], #KPeriod#[period], #KPeriod#[period]
+  Double3: other       # Mid Level -> #Number#[-]
+CBlock_StrongCandle:
+  Double2: other       # Ratio -> #Number#[-]
+CBlock_TRSICrossDown:
+  Int2:    length      # RSI Period -> #RSIPeriod#[period], #RSIPeriod#[period]
+  Int3:    length      # MA Period -> #MAPeriod#[period], #MAPeriod#[period]
+CBlock_TRSICrossUp:
+  Int2:    length      # RSI Period -> #RSIPeriod#[period], #RSIPeriod#[period]
+  Int3:    length      # MA Period -> #MAPeriod#[period], #MAPeriod#[period]
+CBlock_WAEPosAboveExplosion:
+  Period1: length      # FastMa -> #FastMAPeriod#[period], #FastMAPeriod#[period]
+  Period2: length      # SlowMA -> #SlowMAPeriod#[period], #SlowMAPeriod#[period]
+  Period3: length      # SignalMA -> #SignalMAPeriod#[period], #SignalMAPeriod#[period]
+  Period4: length      # BBPeriod -> #BBPeriod#[period], #BBPeriod#[period]
+  Double1: other       # BY HAND, not a length (WAE.java): BBStdev -> #BBStdvPeriod#[period], #BBStdvPeriod#[period]
+  Period6: length      # ATRPeriod -> #ATRPeriod#[period], #ATRPeriod#[period]
+  Double2: other       # DeadZonePip -> #DeadZonePip#[-], #DeadZonePip#[-]
+  Period5: other       # BY HAND, not a length (WAE.java): Sensetive -> #Sensetive#[period], #Sensetive#[period]
+CBlock_WAEPosAboveExplosion_2:
+  Period1: length      # FastMa -> #FastMAPeriod#[period], #FastMAPeriod#[period]
+  Period2: length      # SlowMA -> #SlowMAPeriod#[period], #SlowMAPeriod#[period]
+  Period3: length      # SignalMA -> #SignalMAPeriod#[period], #SignalMAPeriod#[period]
+  Period4: length      # BBPeriod -> #BBPeriod#[period], #BBPeriod#[period]
+  Double1: other       # BY HAND, not a length (WAE.java): BBStdev -> #BBStdvPeriod#[period], #BBStdvPeriod#[period]
+  Period6: length      # ATRPeriod -> #ATRPeriod#[period], #ATRPeriod#[period]
+  Double2: other       # DeadZonePip -> #DeadZonePip#[-], #DeadZonePip#[-]
+  Period5: other       # BY HAND, not a length (WAE.java): Sensetive -> #Sensetive#[period], #Sensetive#[period]
+CBlock_WAEPosAboveExplosion_2_2:
+  Period1: length      # FastMa -> #FastMAPeriod#[period], #FastMAPeriod#[period]
+  Period2: length      # SlowMA -> #SlowMAPeriod#[period], #SlowMAPeriod#[period]
+  Period3: length      # SignalMA -> #SignalMAPeriod#[period], #SignalMAPeriod#[period]
+  Period4: length      # BBPeriod -> #BBPeriod#[period], #BBPeriod#[period]
+  Double1: other       # BY HAND, not a length (WAE.java): BBStdev -> #BBStdvPeriod#[period], #BBStdvPeriod#[period]
+  Period6: length      # ATRPeriod -> #ATRPeriod#[period], #ATRPeriod#[period]
+  Double2: other       # DeadZonePip -> #DeadZonePip#[-], #DeadZonePip#[-]
+  Period5: other       # BY HAND, not a length (WAE.java): Sensetive -> #Sensetive#[period], #Sensetive#[period]
+  Int1:    length      # NoBars -> #Bars#[-], #Bars#[-]
+CBlock_WAEPosAboveExplosion_2_2_2:
+  Period1: length      # FastMa -> #FastMAPeriod#[period], #FastMAPeriod#[period]
+  Period2: length      # SlowMA -> #SlowMAPeriod#[period], #SlowMAPeriod#[period]
+  Period3: length      # SignalMA -> #SignalMAPeriod#[period], #SignalMAPeriod#[period]
+  Period4: length      # BBPeriod -> #BBPeriod#[period], #BBPeriod#[period]
+  Double1: other       # BY HAND, not a length (WAE.java): BBStdev -> #BBStdvPeriod#[period], #BBStdvPeriod#[period]
+  Period6: length      # ATRPeriod -> #ATRPeriod#[period], #ATRPeriod#[period]
+  Double2: other       # DeadZonePip -> #DeadZonePip#[-], #DeadZonePip#[-]
+  Period5: other       # BY HAND, not a length (WAE.java): Sensetive -> #Sensetive#[period], #Sensetive#[period]
+  Int1:    length      # NoBars -> #Bars#[-], #Bars#[-]
+CBlock_WAEPosAboveExplosion_2_2_3:
+  Period1: length      # FastMa -> #FastMAPeriod#[period], #FastMAPeriod#[period]
+  Period2: length      # SlowMA -> #SlowMAPeriod#[period], #SlowMAPeriod#[period]
+  Period3: length      # SignalMA -> #SignalMAPeriod#[period], #SignalMAPeriod#[period]
+  Period4: length      # BBPeriod -> #BBPeriod#[period], #BBPeriod#[period]
+  Double1: other       # BY HAND, not a length (WAE.java): BBStdev -> #BBStdvPeriod#[period], #BBStdvPeriod#[period]
+  Period6: length      # ATRPeriod -> #ATRPeriod#[period], #ATRPeriod#[period]
+  Double2: other       # DeadZonePip -> #DeadZonePip#[-], #DeadZonePip#[-]
+  Period5: other       # BY HAND, not a length (WAE.java): Sensetive -> #Sensetive#[period], #Sensetive#[period]
+  Int1:    unverified  # NoBars -> nothing found
+CBlock_WAEPosAboveExplosion_2_2_3_2:
+  Period1: length      # FastMa -> #FastMAPeriod#[period], #FastMAPeriod#[period]
+  Period2: length      # SlowMA -> #SlowMAPeriod#[period], #SlowMAPeriod#[period]
+  Period3: length      # SignalMA -> #SignalMAPeriod#[period], #SignalMAPeriod#[period]
+  Period4: length      # BBPeriod -> #BBPeriod#[period], #BBPeriod#[period]
+  Double1: other       # BY HAND, not a length (WAE.java): BBStdev -> #BBStdvPeriod#[period], #BBStdvPeriod#[period]
+  Period6: length      # ATRPeriod -> #ATRPeriod#[period], #ATRPeriod#[period]
+  Double2: other       # DeadZonePip -> #DeadZonePip#[-], #DeadZonePip#[-]
+  Period5: other       # BY HAND, not a length (WAE.java): Sensetive -> #Sensetive#[period], #Sensetive#[period]
+  Int1:    unverified  # NoBars -> nothing found
+CBlock_WassersteinShiftHigh:
+  Int2:    length      # Wasserstein Period -> #Period#[period]
+  Double3: other       # Shift Level -> #Number#[-]
+CBlock_WassersteinShiftLow:
+  Int2:    length      # Wasserstein Period -> #Period#[period]
+  Double3: other       # Shift Level -> #Number#[-]
+CBlock_ZScoreStretchedDown:
+  Int2:    length      # ZScore Period -> #Period#[period]
+  Double3: other       # Lower Z -> #Number#[-]
+CBlock_ZScoreStretchedUp:
+  Int2:    length      # ZScore Period -> #Period#[period]
+  Double3: other       # Upper Z -> #Number#[-]

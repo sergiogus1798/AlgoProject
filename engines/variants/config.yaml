@@ -1,6 +1,8 @@
-# The knobs of reading a retested variant batch that the WFC and the CSCV must share: the
-# rho and the PBO are two statements about one set of points, so which points and which
-# split cannot live in two files that may drift. Each study loads this beside its own.
+# The knobs of reading a retested variant batch that more than one study shares: only the
+# `panel` section at the bottom is read today (by the WFC and the market surfaces; the CSCV has
+# its own `panel` in its config.yaml). `min_trades` and `split_mode` were the CSCV's and the
+# old WFC's; since the redesign of 2026-10-07 NO study reads them — they stay, and are still
+# loaded into those studies' config and its fingerprint, until the owner says to delete them.
 
 # ⚠️ Este suelo es EL SEGUNDO, y actúa sobre lo que ya sobrevivió al primero. El duro está
 # en `wfc.min_trades_total` de `assets/_build.yaml`: 50 operaciones en TOTAL sobre
@@ -23,7 +25,7 @@ min_trades: 50
 # `build` o `build+oos1`; fuera es lo que queda, y `oos1` puede quedarse fuera de las dos.
 # Las cuatro composiciones admitidas, y las dos que tienen nombre desde el 2026-09-24:
 #
-#   IS build        OOS oos1          (el WFC con --inside build --outside oos1)
+#   IS build        OOS oos1          (ya no la lee el WFC)
 #   IS build        OOS oos2          (oos1 apagado)
 #   IS build        OOS oos1 + oos2   = oos1_oos2   la pregunta normal: ¿lo construido
 #                                                   predice todo lo que vino después?
@@ -31,16 +33,23 @@ min_trades: 50
 #                                                   primeros tramos, ¿sigue apareciendo en el
 #                                                   que no ha mirado nadie?
 #
-# Aquí sólo cabe un nombre. `studies.optimisation.wfc.report --inside/--outside` o `--split`
-# lo pisa para una ejecución suelta, y cada composición leída escribe su renglón en el Ledger
-# (uno por tramo) y sus propios ficheros `estudios/wfc_<dentro>__<fuera>.*`. Ninguna vuelve a
-# hacer un backtest: `sqx.variants.collect` deja en `metrics.parquet` las columnas de todas.
-# Una que toque `oos2` pasa antes por la puerta (`ledger.gate.allow`).
+# Aquí sólo cabe un nombre. Desde el rediseño del 2026-10-07 (pasos 17 y 18) NO lo lee ningún
+# estudio: el CSCV lee la historia entera y el WFC ya no elige composición, mide siempre las tres de `panel.KEYS` (c1 decide, c2 y c3 se
+# anotan) en un solo `estudios/wfc.*` y no tiene `--inside/--outside/--split`. Ninguna vuelve
+# a hacer un backtest: `sqx.variants.collect` deja en `metrics.parquet` las columnas de todas.
+# Una que toque `oos2` pasa antes por la puerta (`ledger.gate.allow`) y por el sello
+# (`ledger.gate.seal`).
 #
-# ⚠️ El CSCV no cambia con esto: `cscv.run` parte el historial en 16 bloques y lee sus 12.870
-# particiones (C(16,8)); no mira la frontera declarada, así que el PBO es el MISMO número en
-# todas las composiciones, y siempre lee build+oos1+oos2 (dueño, 2026-09-27). Lo que sí se
-# mueve son los cuatro números cronológicos que van al lado en el mismo informe: el coste de
-# cada regla de selección, el Sharpe desinflado, el número de pruebas independientes y el
-# drift — y ésos se leen en ESTE nombre.
+# ⚠️ El CSCV nunca cambió con esto: parte el historial en 16 bloques y lee sus 12.870
+# particiones (C(16,8)), siempre build+oos1+oos2. Los cuatro números cronológicos que antes
+# se leían en este nombre (coste de cada regla, Sharpe desinflado, pruebas independientes,
+# drift) ya no existen en el informe.
 split_mode: oos2_only
+
+# ─── Los filtros del panel (encargo 48, parte P; propuesta del 17 §2) ──────────────────────
+# Cada número es una fila de `ledger/thresholds.yaml` (dueño, 2026-10-07). Sección propia
+# (`panel`) para que `studies/optimisation/wfc/config.yaml` no la pise al mezclarse.
+panel:
+  floor_is_per_param: ledger:wfc.floor_is_per_param    # operaciones dentro por parámetro vivo
+  floor_oos_per_year: ledger:wfc.floor_oos_per_year    # operaciones fuera por año de la ventana
+  min_variants: ledger:wfc.min_variants                # por debajo, «sin dato»

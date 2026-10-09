@@ -22,7 +22,8 @@ def block_length(excess: pd.DataFrame) -> int:
     return max(1, int(round(float(lengths.median()))))
 
 
-def spa(excess: pd.DataFrame, block: int, reps: int, seed: int) -> dict:
+def spa(excess: pd.DataFrame, block: int, reps: int, seed: int,
+        drawn: dict | None = None) -> dict:
     """Hansen's test of superior predictive ability over the whole panel.
 
     Args:
@@ -30,6 +31,9 @@ def spa(excess: pd.DataFrame, block: int, reps: int, seed: int) -> dict:
         block: Mean block length.
         reps: Bootstrap replications.
         seed: Seed of the bootstrap.
+        drawn: When given, filled with what the p values were counted on: `observed` (the
+            largest mean excess of the panel, as the test scales it) and, under each of the
+            three names, that statistic over every bootstrap replication.
 
     Returns:
         {"lower", "consistent", "upper"}: the p of "no strategy beats its benchmark". The
@@ -40,6 +44,11 @@ def spa(excess: pd.DataFrame, block: int, reps: int, seed: int) -> dict:
     test = SPA(np.zeros(len(excess)), -excess, block_size=block, reps=reps,
                bootstrap="stationary", seed=seed)
     test.compute()
+    if drawn is not None:       # arch keeps them private; the p is (simulated > observed).mean()
+        keep = test._selector
+        simulated = np.max(test._simulated_vals[keep, :, :], axis=0)
+        drawn["observed"] = float(np.max(test._loss_diff[:, keep].mean(axis=0)))
+        drawn.update({k: simulated[:, i] for i, k in enumerate(("lower", "consistent", "upper"))})
     return {k: float(v) for k, v in test.pvalues.items()}
 
 

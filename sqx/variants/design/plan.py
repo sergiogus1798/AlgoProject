@@ -2,127 +2,89 @@
 
 import math
 
-import numpy as np
 import pandas as pd
 
 from sqx.variants import tuples
-from sqx.variants.design import canaries, levels, strata
+from sqx.variants.design import canaries, levels, lhs
 
-ORDER = ["neighbourhood", "factorial", "coverage"]
-CONTROLS = ("origin", "canary")
-OVERDRAW = 2
+CONTROLS = ("origin", "canary", "inert")
 
 
-def _context(name: str, design: dict, settings: dict, live: dict) -> dict:
-    """Everything one stratum needs beyond its levels and its budget.
+def size(live: int, cfg: dict) -> tuple[int, bool]:
+    """How many variants a mother gets: `min(n_max, max(n_min, per_coefficient * p))`.
 
     Args:
-        name: Which stratum.
-        design: A parsed brief.
-        settings: The `design` block of `config.yaml`.
-        live: Levels of the live parameters.
+        live: How many parameters move (`k`).
+        cfg: The `size` block of `config.yaml`: `n_min`, `n_max`, `per_coefficient`.
 
     Returns:
-        The context dict that stratum reads. They share one signature, so the extras go
-        here rather than into three different argument lists.
+        The count and whether the cap cut it: `p = 1 + 2k + k(k-1)/2` coefficients of the
+        quadratic map, and fewer than `per_coefficient` variants per coefficient past the cap.
     """
-    return {"centre": levels.centre(design, live), "radius": settings["neighbourhood"]["radius"],
-            "weights": levels.weights(design), "min_levels": settings["factorial"]["min_levels"],
-            "seed": settings["seed"],
-            # Per stratum and not per run: str.__hash__ is salted, so a seed built from the
-            # name would give a different design on every interpreter.
-            "rng": np.random.default_rng(settings["seed"] + ORDER.index(name))}
+    p = 1 + 2 * live + live * (live - 1) // 2
+    want = cfg["per_coefficient"] * p
+    return min(cfg["n_max"], max(cfg["n_min"], want)), want > cfg["n_max"]
 
 
 def build(design: dict, settings: dict, table: pd.DataFrame,
-         banned: dict[str, set] | None = None) -> tuple[pd.DataFrame, dict]:
+          banned: dict[str, set] | None = None) -> tuple[pd.DataFrame, dict]:
     """The whole batch: which tuples, in which stratum, under which identifier.
 
     Args:
         design: A parsed brief, contract C1.
-        settings: The parsed `config.yaml`.
+        settings: The parsed `config.yaml`, ledger numbers filled in.
         table: Output of `inputs.known`, the source of the canary expectations.
         banned: `design.pilot.decide`'s first return value, or `None` when the pilot did
-            not run. A live parameter's dropped levels are removed from what every stratum
-            samples from -- never the whole parameter, and never applied if it would leave
-            fewer than two levels, which mirrors `pilot.decide`'s own floor so the two
-            never disagree about how much of a parameter survives.
+            not run. A live parameter's dropped levels are removed from what the draw may
+            land on -- never the whole parameter, never one that would leave fewer than two
+            levels, and never the origin's own value.
 
     Returns:
-        The plan and a report of how it was filled. `report["pilot_dropped"]` names every
-        level actually removed by `banned`, so a batch fabricated after the pilot always
-        says in its own manifest what changed and why -- never a silent difference from one
-        fabricated without it.
+        The plan and a report of how it was filled. `n` variants of stratum `lhs` PLUS the
+        controls (origin `P00000`, canaries, inert pairs), which no study analyses.
 
-        `n_target` is a **cap, never a quota**. A tuple is never repeated to reach it: the
-        controls go in first and count against the target, then each stratum takes its
-        share of what is left, and a stratum that cannot fill its share hands the
-        remainder to the next one. When the
-        whole design space is smaller than the target the factory builds all of it and the
-        report says so, which is the honest answer and also the common one -- the brief for
-        `Strategy 17.9.39` spans 3,888 live tuples against a target of 5,000.
-
-        Deduplication is over the tuple, across strata and controls alike, and the first
-        stratum to produce a tuple keeps it. Two identical `.sqx` in one databank are one
-        strategy after SQX is done with them, so a duplicate is not a wasted slot, it is a
-        row of the manifest with no file behind it.
+        `n` is a cap, never a quota. A tuple is never repeated to reach it: duplicates after
+        rounding are dropped and counted in `shortfall`, and a plateau with fewer distinct
+        tuples than `n` just gives fewer (the report says so). Frozen parameters and shifts
+        sit at the mother's value in every `lhs` row.
     """
-    live = levels.live(design, settings["minimum"])
-    origin_values = levels.origin(design)
-    pilot_dropped = {}
+    live = levels.live(design)
+    origin = levels.origin(design)
+    kept, pilot_dropped = dict(live), {}
     for name, bad in (banned or {}).items():
         if name not in live:
             continue
-        # The origin tuple is already proven to trade -- the pilot never gets to remove it,
-        # whatever region its own value happened to sample into.
-        bad = bad - {origin_values.get(name)}
-        kept = [v for v in live[name] if v not in bad]
-        if len(kept) < 2:
-            continue
-        removed = sorted(set(live[name]) - set(kept))
-        if removed:
-            pilot_dropped[name] = removed
-            live[name] = kept
-    fixed = levels.frozen(design, settings["design"]["frozen"])
-    everything = {**live, **fixed}
-    origin = origin_values
-    frozen_values = {f["name"]: float(f["value"]) for f in design["frozen"]}
+        keep = [v for v in live[name] if v not in bad - {origin.get(name)}]
+        if len(keep) >= 2 and len(keep) < len(live[name]):
+            pilot_dropped[name] = sorted(set(live[name]) - set(keep))
+            kept[name] = keep
+    everything = {**live, **levels.frozen(design, settings["design"]["frozen"])}
 
     rows, seen = [], set()
     for control in canaries.rows(design, everything, origin, table, settings["canaries"]):
         digest = tuples.tuple_hash(control["values"])
+        if digest not in seen:
+            seen.add(digest)
+            rows.append({**control, "tuple_hash": digest})
+    controls = len(rows)
+
+    asked, capped = size(len(live), settings["size"])
+    fixed = {name: value for name, value in origin.items() if name not in live}
+    for values in lhs.draw(live, kept, asked, settings["design"]["seed"]):
+        complete = {**fixed, **values}
+        digest = tuples.tuple_hash(complete)
         if digest in seen:
             continue
         seen.add(digest)
-        rows.append({**control, "tuple_hash": digest})
+        rows.append({"values": complete, "stratum": "lhs", "origin": False,
+                     "expect_netprofit": None, "expect_trades": None,
+                     "expect_same_as": None, "tuple_hash": digest})
 
-    report = {"controls": len(rows), "live_space": math.prod(len(v) for v in live.values()),
-              "full_space": math.prod(len(v) for v in everything.values()), "strata": {}}
-    carry, room = 0, design["n_target"] - len(rows)
-    for name in ORDER:
-        budget = int(round(design["strata"][name] * room)) + carry
-        pool = everything if name == "coverage" else live
-        asked = budget * OVERDRAW if name == "coverage" else budget
-        kept = 0
-        for values in strata.STRATA[name](pool, asked, _context(name, design, settings["design"], live)):
-            if kept == budget:
-                break
-            complete = values if name == "coverage" else {**values, **frozen_values}
-            digest = tuples.tuple_hash(complete)
-            if digest in seen:
-                continue
-            seen.add(digest)
-            kept += 1
-            rows.append({"values": complete, "stratum": name, "origin": False,
-                         "expect_netprofit": None, "expect_trades": None,
-                         "expect_same_as": None, "tuple_hash": digest})
-        report["strata"][name] = {"budget": budget, "kept": kept}
-        carry = budget - kept
-
-    report["n"] = len(rows)
-    report["shortfall"] = design["n_target"] - len(rows)
-    report["pilot_dropped"] = pilot_dropped
-    return _frame(rows), report
+    return _frame(rows), {
+        "controls": controls, "live": len(live), "asked": asked, "capped": capped,
+        "live_space": math.prod(len(v) for v in live.values()), "n": len(rows),
+        "kept": len(rows) - controls, "shortfall": asked - (len(rows) - controls),
+        "pilot_dropped": pilot_dropped}
 
 
 def _frame(rows: list[dict]) -> pd.DataFrame:

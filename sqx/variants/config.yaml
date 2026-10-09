@@ -1,32 +1,26 @@
 # Every tunable of the variant factory, in one place. Nothing below is hidden in code.
-# The shares between strata and the target count are NOT here: they arrive in the design
-# brief (contract C1), because they are a property of the strategy being studied.
+# The batch size is `size:` below (ledger numbers); the plateau and class of each parameter
+# arrive in the design brief (contract C1), because they are a property of the strategy.
 
 design:
-  # A design is reproducible or it is not a design. Every sampler draws from this seed.
+  # A design is reproducible or it is not a design. The Latin hypercube draws from this seed.
+  # The design itself is always a Latin hypercube (`design/lhs.py`): points spread evenly over the
+  # in-sample plateau of every live parameter; frozen parameters and shifts stay at the
+  # mother's value in every variant (encargo 48, part F).
   seed: 20260921
-  neighbourhood:
-    radius: 2             # how far from the centre tuple the dense grid reaches, in level steps
-  factorial:
-    min_levels: 2         # the coarse grid never drops below the two ends of a span
   frozen:
-    # The coverage stratum varies the frozen parameters too -- that is what makes it a
-    # check on the freezing decision instead of a restatement of it. The brief carries no
-    # range for a frozen parameter, only the value it is pinned at, so the range is
-    # rebuilt the way SQX builds its own permutation ranges (knowhow/sqx-format/declared-parameters.md,
-    # measured): +/-30 % of the value. A shift is never varied (owner, 2026-09-26): it stays at
-    # the value the strategy was built with.
+    # Only the inert pairs read this: a frozen parameter moved this far from the mother's value
+    # must return her exact result, which is the check on the freezing decision. A shift is
+    # never varied (owner, 2026-09-26): it stays at the value the strategy was built with.
     span: 0.30
     steps: 5
 
-minimum:
-  # Owner, 2026-09-26: every mother is studied with at least this many distinct variants. When
-  # its +/-30 % holds fewer (integer parameters with small values), the integer spans widen by
-  # `widen_step` of the original value per side until it does, up to `max_span`, and whatever
-  # is still missing is printed as a shortfall. `make --min-variants` overrides `variants`.
-  variants: 1000
-  widen_step: 0.05
-  max_span: 0.60
+size:
+  # `n = min(n_max, max(n_min, per_coefficient * p))`, p = 1 + 2k + k(k-1)/2 for k live
+  # parameters (owner, 2026-10-07). The numbers are the ledger's: ledger/thresholds.yaml.
+  n_min: ledger:variants.n_min
+  n_max: ledger:variants.n_max
+  per_coefficient: ledger:variants.per_coefficient
 
 pilot:
   # Owner, OPEN.md §41, 2026-09-29: half a batch can trade too little to be a point on a
@@ -164,3 +158,20 @@ crosstf:
   floor: 2        # the builder's own minPeriod; a scaled period below it is clamped and flagged
   atr_period: 20  # the period c is measured at on the mother's timeframe: the grafted stop's
   shape: minimal  # 13.7 KB per file, and the parent's results cannot ride along
+
+neighbours:
+  # Step 14's T1 «especificación» (owner, 2026-10-07): per mother, N neighbours with EVERY declared
+  # parameter moved at once, retested over build and oos1 and priced trade by trade. A declared
+  # parameter is a numeric variable SQX gave a <paramType> (MagicNumber has none and never moves).
+  n: 500            # neighbours drawn per mother; a cap, never a quota: duplicates are dropped, not redrawn
+  entry_pct: 15     # entry and indicator parameters move uniformly within +/- this percent of the mother's value
+  exit_pct: 30      # exit parameters (paramType ParamTypeExitUsed: ExitAfterBars, stop and target coefficients)
+  # Never moved, by name (regex, `search`), on top of what SQX itself types ParamTypeShift. The
+  # role is the END of the name: `CBlock_WssShfInt1` is a custom block's own integer, not a shift.
+  fixed:
+    - "(Shift|Shf)\\d*$"                                                  # shifts (owner: untouched)
+    - "(Method|Mth|Mode|Mde|Type|AppliedPrice|AppPrc|Fld|Str)\\d*$"       # selectors: an enum is not a quantity
+  seed: 0           # mixed with the mother's name, so each mother has its own draw and a rerun repeats it
+  int_floor: 1      # a rounded integer never drops below this (a period of 0 bars); a mother already below it is left free
+  legs: [WFC 1 IS, WFC 2 OOS1]   # the legs retested, by title. NEVER `WFC 3 OOS2`: oos2 is reserved
+  shape: minimal    # 13.7 KB per file, and the mother's own results cannot ride along in a neighbour

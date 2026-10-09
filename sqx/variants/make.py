@@ -51,10 +51,7 @@ def main() -> None:
                     help="fabricate only the first N rows of the plan; the design is unchanged")
     ap.add_argument("--sample", type=int,
                     help="fabricate N rows SPREAD across the plan instead of its first N: "
-                         "the controls, then evenly spaced picks from every stratum")
-    ap.add_argument("--min-variants", type=int,
-                    help="the fewest distinct variants a mother may get; config minimum.variants "
-                         "(1000) when absent. Integer spans widen past +/-30 %% to reach it")
+                         "the controls, then evenly spaced picks from the hypercube")
     ap.add_argument("--design-only", action="store_true",
                     help="write the plan and stop, without fabricating anything (and "
                          "without running the pilot: it needs the full retest's project)")
@@ -67,8 +64,6 @@ def main() -> None:
 
     design = inputs.brief(args.brief)
     settings = inputs.load()
-    if args.min_variants:
-        settings["minimum"]["variants"] = args.min_variants
     parent = inputs.source(design)
     preflight(parent)
     out = args.out or inputs.out_dir(args.project, design["strategy"])
@@ -76,7 +71,7 @@ def main() -> None:
 
     banned, pilot_report = {}, {"skipped": True}
     if not args.design_only and not args.no_pilot and settings["pilot"]["enabled"]:
-        live = levels.live(design, settings["minimum"])
+        live = levels.live(design)
         banned, pilot_report = pilotmod.run(
             design, settings, live, out, args.project,
             lambda pct, line: print(f"PROGRESS {pct} {line}", flush=True))
@@ -90,16 +85,16 @@ def main() -> None:
     report["pilot"] = pilot_report
     table.to_csv(out / "plan.csv", index=False)
     print(f"\n{design['strategy']}  verdict={design['verdict']}  "
-          f"live space {report['live_space']:,} tuples, with the frozen {report['full_space']:,}")
-    for name, got in report["strata"].items():
-        print(f"  {name:14s} budget {got['budget']:5,d}  kept {got['kept']:5,d}")
+          f"live space {report['live_space']:,} tuples")
+    print(f"  {'lhs':14s} asked {report['asked']:5,d}  kept {report['kept']:5,d}  "
+          f"({report['live']} live parameters, {report['live_space']:,} tuples in the plateau)")
     print(f"  {'controls':14s}              kept {report['controls']:5,d}")
-    print(f"  planned {report['n']:,} of a target {design['n_target']:,} "
-          f"(shortfall {report['shortfall']:,})")
-    if report["live_space"] < settings["minimum"]["variants"]:
-        print(f"  ⚠️ only {report['live_space']:,} distinct tuples even at "
-              f"+/-{settings['minimum']['max_span']:.0%}: below the minimum of "
-              f"{settings['minimum']['variants']:,}")
+    if report["capped"]:
+        print(f"  ⚠️ the cap {settings['size']['n_max']:,} cut the batch: fewer than "
+              f"{settings['size']['per_coefficient']} variants per coefficient of the map")
+    if report["shortfall"]:
+        print(f"  ⚠️ {report['shortfall']:,} fewer than asked: the plateau holds "
+              f"{report['live_space']:,} distinct tuples, duplicates are never repeated")
     # The plan report is written whether or not fabrication follows, so `--design-only` is a
     # complete stage rather than a preview: what it leaves behind is what the next stage and
     # the pipeline ledger read.
@@ -122,7 +117,8 @@ def main() -> None:
     # the batch as a whole came out, which is the one thing a ledger wants to record.
     (out / "build.json").write_text(
         json.dumps({"n": written["files"], "bytes": written["bytes"],
-                    "shape": written["shape"]} | checks, indent=2), encoding="utf-8")
+                    "shape": written["shape"], "capped": report["capped"],
+                    "shortfall": report["shortfall"]} | checks, indent=2), encoding="utf-8")
     print(json.dumps(checks, indent=2))
     print(f"\n-> {out}")
     broken = checks["missing"] or checks["unexpected"] or checks["tuple_mismatch"]

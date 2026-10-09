@@ -3,13 +3,13 @@
 
 import argparse
 import re
-import subprocess
 import sys
 import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
+from core import worker
 from core.datapaths import projects_backup
 from core.paths import WORKERS, worker_dir
 from sqx.projects import cfxio
@@ -186,11 +186,9 @@ def write(cfx: Path, task: str, kind: str, role: str) -> Path:
         SystemExit: The install is running (hard rule 4), or the project carries no task
             titled `TITLES[kind]`.
     """
-    listening = subprocess.run(["ss", "-ltn"], capture_output=True, text=True).stdout
-    if f':{WORKERS[role]["port"]} ' in listening:
+    if worker.listening(WORKERS[role]["port"]):
         raise SystemExit(f"{role} esta levantado: paralo antes de reescribir {cfx.parent.name}")
-    with zipfile.ZipFile(cfx) as z:
-        members = {n: z.read(n) for n in z.namelist()}
+    members = cfxio.members(cfx)
     member = member_of(members["config.xml"].decode("utf-8"), TITLES[kind])
     if not member:
         raise SystemExit(f"{cfx.parent.name} no lleva la tarea {TITLES[kind]!r}: un proyecto "

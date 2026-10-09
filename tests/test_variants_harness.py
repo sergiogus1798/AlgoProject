@@ -5,7 +5,6 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
-from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -48,9 +47,9 @@ def read_all(path: Path) -> dict[str, bytes]:
         return {n: z.read(n) for n in z.namelist()}
 
 
-def no_port(*_a, **_k) -> SimpleNamespace:
-    """Stand in for `subprocess.run(["ss", "-ltn"], ...)`: no install is listening."""
-    return SimpleNamespace(stdout="")
+def no_port(*_a, **_k) -> bool:
+    """Stand in for `worker.listening`: no install is listening."""
+    return False
 
 
 def check(failures: list, ok: bool, said: str) -> None:
@@ -63,7 +62,7 @@ def check(failures: list, ok: bool, said: str) -> None:
 def main() -> None:
     """Run every property, and raise if one of them broke."""
     failures: list[str] = []
-    harness.subprocess.run = no_port   # no real install is ever consulted by this test
+    harness.worker.listening = no_port   # no real install is ever consulted by this test
 
     with tempfile.TemporaryDirectory(prefix="sqx-harness-test-") as tmp:
         cfx = Path(tmp) / "project.cfx"

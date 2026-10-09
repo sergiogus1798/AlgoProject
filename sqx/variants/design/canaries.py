@@ -46,7 +46,7 @@ def rows(design: dict, levels: dict[str, list[float]], origin: dict[str, float],
         - **known-result canaries**, stratum `canary`. Their NetProfit and trade count are
           what SQX stored for that exact tuple, so they are an absolute check on the whole
           chain -- design, rewrite, load, retest, export.
-        - **inert pairs**, stratum `canary`. The origin with one frozen parameter moved as
+        - **inert pairs**, stratum `inert`. The origin with one frozen parameter moved as
           far as its rebuilt range goes. The brief froze it because it provably never
           moved a backtest, so each of these must come back equal to the origin. They are
           the only control that tests the freezing decision itself.
@@ -79,7 +79,7 @@ def rows(design: dict, levels: dict[str, list[float]], origin: dict[str, float],
             far = max(levels[name], key=lambda v: abs(v - float(item["value"])))
             values = dict(origin)
             values[name] = far
-            out.append({"values": values, "stratum": "canary", "origin": False,
+            out.append({"values": values, "stratum": "inert", "origin": False,
                         "expect_netprofit": None, "expect_trades": None,
                         "expect_same_as": ORIGIN})
     return out

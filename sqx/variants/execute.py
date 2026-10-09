@@ -169,7 +169,7 @@ def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
     folder = legmod.bank_dir(cfg["role"], cfg["project"], databank)
     # 🔬 2026-10-05: SQX writes ~9 MB/s — 3,952 IS variants with 11 extra markets took 166 s,
     # 24 a second; the wait grows with the batch at a quarter of that, never under the floor.
-    for _ in range(max(cfg["sync_tries"], expected // (6 * cfg["poll_seconds"]))):
+    for _ in range(max(cfg["sync_tries"], expected // (6 * max(1, cfg["poll_seconds"])))):
         time.sleep(cfg["poll_seconds"])
         on_disk = len(list(folder.glob("*.sqx")))
         if on_disk >= expected:

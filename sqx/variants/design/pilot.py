@@ -17,7 +17,7 @@ def sample(live: dict[str, list[float]], cfg: dict) -> pd.DataFrame:
 
     Returns:
         One row per pilot tuple, `pilot_id` (`X00000` and up) first. Sobol, the same way
-        `design.strata.coverage` draws -- a power-of-two block cut down to `sample`,
+        the old coverage stratum drew -- a power-of-two block cut down to `sample`,
         because its balance properties hold on those block sizes and no other.
     """
     names = sorted(live)

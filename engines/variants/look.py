@@ -38,11 +38,12 @@ def admit(step: float, segments: tuple, symbol: str) -> None:
         symbol: The asset.
 
     Raises:
-        PermissionError: From `ledger.gate.allow`, left to stop the run: a refused look must
+        PermissionError: From `ledger.gate.allow` or `ledger.gate.seal`, left to stop the run: a refused look must
             not have happened, so the refusal comes before the parquet is read.
     """
     for segment in segments:
         gate.allow(step, segment, symbol)
+        gate.seal(step, segment, symbol)
 
 
 def offered(symbol: str) -> list[str]:
@@ -84,3 +85,15 @@ def log(work: Path, family: str, row: dict, segments: tuple) -> list[dict]:
     note = f"lote {work.name}" + (f" · {row['note']}" if row.get("note") else "")
     return [record.log(sid, {**row, "symbol": symbol, "timeframe": timeframe,
                              "segment": s, "note": note}) for s in segments]
+
+
+def log_all(work: Path, family: str, row: dict) -> list[dict]:
+    """The three compositions of step 17 written as looks: every segment each one reads, `criterion` its label.
+
+    Args:
+        work, family: As `log`.
+        row: As `log`, without `criterion`.
+    """
+    return [r for comp in panel.COMPOSITIONS
+            for r in log(work, family, {**row, "criterion": panel.label(comp)},
+                         comp[0] + comp[1])]

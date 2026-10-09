@@ -12,9 +12,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from core.assetdata import doctrine
 from core.paths import DATA
-from sqx.variants import legs as legmod, united
+from sqx.variants import legs as legmod, mothertrades, united
 
 NAME = "Strategy Name"
 # The two ways the owner reads one batch, and they are not a preference: the whole point of
@@ -90,15 +89,13 @@ def join(rows: pd.DataFrame, manifest: pd.DataFrame,
         `<StrategyName>`. The collision suffix SQX appends to a duplicate (`P00000(1)`) is
         stripped first, so a batch loaded twice still joins.
 
-        ⚠️ **C3 carries only the backtests that clear `wfc.min_trades_total`.** The
-        exclusion is structural rather than a flag downstream studies have to remember: a
-        consumer that forgot it would put the degenerate corners of the grid back into the
-        correlation. What was excluded stays in `segments.parquet`, marked, and is counted
-        in `collected.json`.
+        **No variant is dropped for trading little** (encargo 48 F, owner 2026-10-07): the
+        floors depend on each study's window (15 per live parameter inside, 10 per year
+        outside), so each study applies its own. `usable` is still written, true for every
+        backtest -- `marketSurfaces` reads it -- and `trades_total` says how much it traded.
     """
     rows = rows.assign(variant_id=rows["variant_id"].str.replace(COLLISION, "", regex=True))
-    floor = doctrine()["wfc"]["min_trades_total"]
-    rows = rows.merge(united.thin(rows, floor, segments), on=["variant_id", "market"],
+    rows = rows.merge(united.thin(rows, 0, segments), on=["variant_id", "market"],
                       how="left")
     kept = rows[rows["usable"].fillna(False)]
     table = united.wide(kept)
@@ -107,7 +104,7 @@ def join(rows: pd.DataFrame, manifest: pd.DataFrame,
     thin_ids = sorted(set(rows["variant_id"]) - set(table["variant_id"]))
     missing = sorted(set(manifest["variant_id"]) - set(rows["variant_id"]))
     extra = sorted(set(rows["variant_id"]) - set(manifest["variant_id"]))
-    return rows, merged, {"missing": missing, "unexpected": extra, "floor": int(floor),
+    return rows, merged, {"missing": missing, "unexpected": extra, "floor": 0,
                           "thin": len(thin_ids), "thin_ids": thin_ids[:20],
                           "thin_cells": int((~rows["usable"].fillna(False)).sum())}
 
@@ -121,18 +118,12 @@ def canaries(merged: pd.DataFrame) -> dict:
     Returns:
         The count of controls and how many distinct build-segment results they produced.
 
-        ⚠️ A control that did not clear `wfc.min_trades_total` is not here to be counted:
-        C3 excludes it like any other thin backtest. That is the right answer — a canary
-        that barely trades cannot tell you whether the batch ran — but it means a batch of
-        canaries that all trade too little fails this check for the other reason. The
-        `thin` count in `collected.json` is what tells the two apart.
-
         **This is the detector for the failure this module exists to prevent.** A variant
         that was never actually run keeps the parent's `SQStats`, so it exports the
         parent's metrics rather than looking empty. If every control returns one identical
         number, nothing ran, and no amount of downstream analysis will say so.
     """
-    controls = merged[merged["stratum"].isin(["canary", "origin"])]
+    controls = merged[merged["stratum"].isin(["canary", "inert", "origin"])]
     profits = controls["NetProfit (build)"].dropna()
     return {"n": len(controls), "distinct_netprofit": int(profits.nunique()),
             "all_identical": bool(len(profits) > 1 and profits.nunique() == 1)}
@@ -176,6 +167,7 @@ def main() -> None:
     rows.to_parquet(a.work / "segments.parquet", index=False)
     print(f"PROGRESS 85 {len(merged)} filas unidas", flush=True)
     merged.to_parquet(a.work / "metrics.parquet", index=False)
+    mothertrades.keep(a.work, ran["legs"])
 
     found = canaries(merged)
     markets = sorted(set(rows["market"]) - {legmod.MAIN})

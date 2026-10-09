@@ -1,48 +1,33 @@
-"""The values each parameter may take: the brief's own for the live ones, a rebuilt range for the frozen."""
+"""The values each parameter may take: the plateau for the live ones, a rebuilt range for the frozen."""
 
 import numpy as np
 
 SHIFT = "shift1"
 
 
-def live(design: dict, minimum: dict) -> dict[str, list[float]]:
-    """The values each parameter that moves the result may take.
+def live(design: dict) -> dict[str, list[float]]:
+    """The values each LIVE parameter may take: its plateau on the in-sample SPP, nothing wider.
 
     Args:
-        design: A parsed brief.
-        minimum: The `minimum` block of `config.yaml`: `variants`, `widen_step`, `max_span`.
+        design: A parsed brief; each parameter carries `class` (live, shift) and `plateau`.
 
     Returns:
-        Parameter name to its values, ascending. An integer parameter takes EVERY integer
-        across the brief's span (at least +/-30 %, never narrowed), not only the brief's
-        nine levels — a period 14..26 is thirteen values, not nine. A decimal one keeps the
-        brief's levels. If the product still holds fewer than `minimum["variants"]` tuples,
-        the integer spans widen symmetrically around the original, `widen_step` at a time,
-        up to `max_span` (owner, 2026-09-26: never fewer than a thousand variants).
+        Parameter name to its values, ascending. An integer parameter takes EVERY integer of
+        `[plateau.from, plateau.to]`; a decimal one the brief's own levels inside it, with
+        both ends. A shift is not here: it is fixed at the mother's value in every variant.
+        The box is drawn from the build window only (hard rule of the proposal, §2.1).
     """
-    briefed = {p["name"]: (float(p["original"]), sorted(float(v) for v in p["levels"]))
-               for p in design["parameters"]}
-    integral = {n for n, (_, v) in briefed.items() if all(x.is_integer() for x in v)}
-
-    def fill(span: float) -> dict[str, list[float]]:
-        """Every parameter's values with the integer spans at least +/-`span` of the original."""
-        out = {}
-        for name, (origin, values) in briefed.items():
-            if name not in integral or len(values) == 1:
-                out[name] = values
-                continue
-            lo = min(values[0], np.floor(origin * (1 - span)))
-            hi = max(values[-1], np.ceil(origin * (1 + span)))
-            out[name] = [float(v) for v in range(int(max(lo, 1)), int(hi) + 1)]
-        return out
-
-    span = 0.0
-    got = fill(span)
-    while (np.prod([len(v) for v in got.values()]) < minimum["variants"]
-           and span < minimum["max_span"] and integral):
-        span = round(span + minimum["widen_step"], 6)
-        got = fill(span)
-    return got
+    out = {}
+    for p in design["parameters"]:
+        if p["class"] != "live":
+            continue
+        lo, hi = float(p["plateau"]["from"]), float(p["plateau"]["to"])
+        if all(float(x).is_integer() for x in (p["original"], lo, hi)):
+            out[p["name"]] = [float(v) for v in range(int(lo), int(hi) + 1)]
+        else:
+            inside = {float(v) for v in p["levels"] if lo <= v <= hi}
+            out[p["name"]] = sorted(inside | {lo, hi})
+    return out
 
 
 def frozen(design: dict, settings: dict) -> dict[str, list[float]]:
@@ -90,47 +75,3 @@ def origin(design: dict) -> dict[str, float]:
     values = {p["name"]: float(p["original"]) for p in design["parameters"]}
     values.update({f["name"]: float(f["value"]) for f in design["frozen"]})
     return values
-
-
-def nearest(values: list[float], target: float) -> int:
-    """Index of the level closest to a value.
-
-    Args:
-        values: One parameter's levels, ascending.
-        target: The value to locate.
-
-    Returns:
-        Position in `values`. Ties go to the lower level, which keeps the choice
-        deterministic rather than dependent on floating-point noise.
-    """
-    return int(np.argmin([abs(v - target) for v in values]))
-
-
-def centre(design: dict, levels: dict[str, list[float]]) -> dict[str, int]:
-    """Where the dense stratum is centred, as an index per parameter.
-
-    Args:
-        design: A parsed brief.
-        levels: Output of `live`.
-
-    Returns:
-        Parameter name to level index. The brief's `center` is the midpoint of the
-        in-sample plateau, which need not be one of the levels, so it is snapped to the
-        nearest one.
-    """
-    return {p["name"]: nearest(levels[p["name"]], float(p["center"]))
-            for p in design["parameters"]}
-
-
-def weights(design: dict) -> dict[str, float]:
-    """How much variance each live parameter explains.
-
-    Args:
-        design: A parsed brief.
-
-    Returns:
-        Parameter name to eta-squared. The coarse factorial spends its budget in this
-        order, so the parameter that decides the result is resolved finely and the one
-        that barely moves it gets its two ends and nothing more.
-    """
-    return {p["name"]: float(p["eta2"]) for p in design["parameters"]}

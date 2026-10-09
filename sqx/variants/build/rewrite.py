@@ -17,7 +17,7 @@ SHAPES = {"full": lambda name: True,
           "minimal": lambda name: name in MINIMAL}
 
 VARIABLE = re.compile(r"<variable\b[^>]*>.*?</variable>", re.S)
-FIELD = {key: re.compile(rf"<{key}>(.*?)</{key}>", re.S) for key in ("id", "type", "value")}
+FIELD = {key: re.compile(rf"<{key}>(.*?)</{key}>", re.S) for key in ("name", "type", "value")}
 RESULT_NAME = re.compile(r'(<ResultsGroup\b[^>]*?ResultName=")[^"]*(")')
 STRATEGY_NAME = re.compile(r'(<StrategyName type="String">)[^<]*(</StrategyName>)')
 FINGERPRINT = re.compile(r"<Fingerprint\b.*?</Fingerprint>", re.S)
@@ -26,7 +26,9 @@ STAMP = re.compile(r"<!--variant_id:([^-]*)-->")
 
 
 def declared(portfolio: str) -> dict[str, str]:
-    """Every variable the strategy declares and its type.
+    """Every variable the strategy declares and its type, by `<name>`.
+
+    A block's variable has a GUID `<id>` but SPP and the briefs speak names.
 
     Args:
         portfolio: Text of `strategy_Portfolio.xml`.
@@ -35,7 +37,7 @@ def declared(portfolio: str) -> dict[str, str]:
         Variable name to `int`, `double` or `boolean`. The type decides how a value is
         written back: `67.0` into an int parameter is not the same file as `67`.
     """
-    return {FIELD["id"].search(b).group(1): FIELD["type"].search(b).group(1)
+    return {FIELD["name"].search(b).group(1): FIELD["type"].search(b).group(1)
             for b in VARIABLE.findall(portfolio)}
 
 
@@ -50,7 +52,7 @@ def values(portfolio: str) -> dict[str, str]:
         reference the variable by name, so rewriting `<value>` rewrites the rule.
         `settings.xml` carries no parameter names at all.
     """
-    return {FIELD["id"].search(b).group(1): FIELD["value"].search(b).group(1)
+    return {FIELD["name"].search(b).group(1): FIELD["value"].search(b).group(1)
             for b in VARIABLE.findall(portfolio)}
 
 
@@ -95,7 +97,7 @@ def set_values(portfolio: str, wanted: dict[str, float]) -> str:
             The block, rewritten or untouched.
         """
         block = match.group(0)
-        name = FIELD["id"].search(block).group(1)
+        name = FIELD["name"].search(block).group(1)
         if name not in wanted:
             return block
         hit.add(name)
