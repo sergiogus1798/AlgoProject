@@ -58,5 +58,6 @@ MODULES = {
         "selectors": (), "launchers": ()},
 }
 ARCHIVE = "Archivo"
+CAMPAIGN = "Campaña"
 STATIC = {"freq": [("monthly", "Mensual"), ("daily", "Diaria")]}
 PREFILLED = {"n_paths": "10000"}

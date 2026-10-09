@@ -78,6 +78,12 @@ class ArchivedStudies(QFrame):
                                 f"{', paso ' + s['step'] if s['step'] else ''} · corrió el "
                                 f"{s['day']} · configuración {s['config_hash'] or '—'}")
                 self.menu.addItem(item)
+        for e in shown.get("extras", []):
+            item = QListWidgetItem(f"Campaña · paso {e['step']} › {e['title']}")
+            item.setData(Qt.UserRole, ("extra", e["key"], ""))
+            item.setToolTip("Resultado que el archivo no puede emparejar por identidad (lleva otra "
+                            "firma en su databank): se guardó en la carpeta del workflow, de la madre.")
+            self.menu.addItem(item)
         self.menu.blockSignals(False)
         self.menu.setCurrentRow(0)
 
@@ -92,6 +98,16 @@ class ArchivedStudies(QFrame):
         self.gallery.hide()
         where = {"project": s["project"], "databank": databank, "identity": s["identity"],
                  "source": "archive", "version": s["version"]}
+        mother = (f" · de la madre «{s['strategy']}»" if s.get("label") and s["label"] != s["strategy"]
+                  else "")
+        if kind == "extra":
+            got = self.fetch("campaign/extra", workflow=s["workflow"], key=key)
+            if "error" in got:
+                return self._say(got["error"])
+            self.view.show_result(got["result"], got["meta"])
+            self._no_report()
+            return self.note.setText(f"{item.text()} · corrió el {got['meta']['day'] or '—'} · "
+                                     f"guardado en la carpeta del workflow{mother}")
         if kind == "study":
             got = self.fetch("result", **where, study=key, strategy=s["strategy"])
             whole = ""
@@ -106,9 +122,9 @@ class ArchivedStudies(QFrame):
             self.view.show_result(got["result"], got["meta"])
             self._no_report()
             return self.note.setText(f"{item.text()} · corrió el {got['meta']['day'] or '—'} · "
-                                     f"leído de la versión {s['version']} del archivo{whole}")
+                                     f"leído de la versión {s['version']} del archivo{whole}{mother}")
         _, route, asset = next(e for e in SHEETS if e[0] == key)
-        self.note.setText(f"{item.text()} · de la versión {s['version']} del archivo")
+        self.note.setText(f"{item.text()} · de la versión {s['version']} del archivo{mother}")
         if route is None:
             self.view.hide()
             self.gallery.show()

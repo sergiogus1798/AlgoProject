@@ -1,0 +1,23 @@
+# The campaign — which cells it may queue and what each run is given. Edit here, nowhere else.
+
+direction: long                 # owner, 2026-10-05: long only for now
+timeframes: [M30, H1, H4]       # owner, 2026-10-05
+
+# The Build task's two caps as bin/workflow.sh takes them. Under SQX's `time-limit` stop (the only
+# one the live session honours) the build always runs `minutes`; `strategies` is the databank's
+# size, which keeps the best N.
+strategies: 10000
+minutes: 180
+
+# A test cell (`plan --test`): a short build to prove the chain, in a Test_ project, never counted
+# as the cell's real run (owner, 2026-10-05).
+# `precision: 1` is SQX's «selected timeframe only» on every task (owner, 2026-10-06: fast tests).
+test: {strategies: 3000, minutes: 15, precision: 1}
+
+min_free_gb: 50                 # the loop does not start a cell with less free under the data root
+failures_in_a_row: 2            # this many failed cells running stop the loop: the fault is not the cell's
+
+# A template written for one asset class is offered only there (owner, 2026-10-05); the rest go
+# wherever the board admits their family. Classes as the board names them.
+asset_class:
+  indicesIBS: index

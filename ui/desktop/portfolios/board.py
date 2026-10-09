@@ -10,11 +10,13 @@ from ui.desktop.blocks.states import colour
 from ui.desktop.portfolios import strips
 from ui.desktop.portfolios.databank import Databank
 from ui.desktop.portfolios.modulepage import ModulePage
+from ui.desktop.portfolios.campaign import CampaignPage
 from ui.desktop.portfolios.zone import PortfoliosZone as ArchivePage
 from ui.desktop.theme import T
 
 TEST = "RAÍZ DE PRUEBA — {root}: nada de lo que se vea o se calcule aquí es un resultado."
-TIPS = {"Archivo": "Las versiones archivadas de la estrategia elegida y «Importar esta versión»."}
+TIPS = {"Archivo": "Las versiones archivadas de la estrategia elegida y «Importar esta versión».",
+        "Campaña": "Los workflows completos que guardó la campaña: embudo, tiempos y sus estrategias con todos sus resultados."}
 
 
 class PortfoliosBoard(QFrame):
@@ -24,6 +26,7 @@ class PortfoliosBoard(QFrame):
     and `chosen` are still its own."""
 
     import_requested = Signal(str, str)
+    campaign_requested = Signal(str, list, int)
 
     def __init__(self) -> None:
         """Build the skeleton; the daemon is asked nothing until the zone is first shown."""
@@ -54,8 +57,10 @@ class PortfoliosBoard(QFrame):
         self.archive = ArchivePage()
         self.archive.loaded = True          # this zone reloads it, with its own state
         self.archive.import_requested.connect(self.import_requested)
+        self.campaign = CampaignPage()
+        self.campaign.campaign_requested.connect(self.campaign_requested)
         self.pages = {name: ModulePage(name, self) for name in strips.MODULES}
-        for name, page in (self.pages | {strips.ARCHIVE: self.archive}).items():
+        for name, page in (self.pages | {strips.ARCHIVE: self.archive, strips.CAMPAIGN: self.campaign}).items():
             self.rail.addItem(name)
             self.rail.item(self.rail.count() - 1).setToolTip(TIPS.get(name) or strips.MODULES[name]["intro"])
             self.stack.addWidget(page)
@@ -88,6 +93,7 @@ class PortfoliosBoard(QFrame):
         """Read the archive and what exists under the portfolio folder again."""
         self.loaded = True
         self.archive.reload()
+        self.campaign.reload()
         background.get("portfolios/state", self.filled, "portfolios:state", self)
 
     def filled(self, got: dict) -> None:

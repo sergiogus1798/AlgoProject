@@ -7,6 +7,7 @@ router = one line appended to `ROUTERS`; never reorder (plan 24 §5).
 from ui.daemon.advance.api import ROUTER as ADVANCE
 from ui.daemon.launch.api import ROUTER as LAUNCH
 from ui.daemon.archive.api import ROUTER as ARCHIVE
+from ui.daemon.campaign.api import ROUTER as CAMPAIGN
 from ui.daemon.assetapi import ROUTER as ASSETS
 from ui.daemon.batch.api import ROUTER as BATCH
 from ui.daemon.create.api import ROUTER as CREATE
@@ -56,4 +57,5 @@ ROUTERS = (
     RESEARCH,
     CRITERIA,
     PORTFOLIOS,
+    CAMPAIGN,
 )
