@@ -123,6 +123,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 106 | 🟢 | Leftovers of the September infra and calculation reviews (reports deleted 2026-10-06): one spread suspicion (m30), five small infra items | docs/OPEN-closed.md |
 | 107 | 🟡 | Seven tests fail in the 2026-10-07 mechanical audit: four depend on data deleted by the 10-06 disk cleanup, one on cwd (`afterrun` stop path), two undiagnosed | OPEN.md |
 | 108 | 🟠 | Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one: waits for the first real run and the owner's «corta» | OPEN.md |
+| 109 | 🟠 | mcRetest «Estrategia a estrategia» table fails to draw in the window: 11 help entries for 8 columns | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -332,6 +333,8 @@ whether such an agent should be held at all.
 **2026-10-04.** Done since this was written: joint.population is decided (entrantes, studies/closing/blindJoint/config.yaml), the WFM writes its own ledger row (studies/optimisation/wfm/report.py calls steprows.log_wfm) and CSCV and WFM are in oos2's reserved_for (assets/_policy.yaml). Still the owner's: joint.pieces is null, so step 20 cuts nobody, and whether an autonomous agent is held out of oos2 for BlindJoint.
 
 **2026-10-04.** Owner, 2026-10-04: joint.pieces = sin_fallo (studies/closing/blindJoint/config.yaml); with population = entrantes step 20 now makes one reading the call. tests/test_blindjoint.py updated and passing. Still open: whether an autonomous agent is held out of oos2 for BlindJoint (not in reserved_for).
+
+**2026-10-07.** Encargo 48 (steps 16.5 and 17 rebuilt, 2026-10-07), part V still open: a real variant batch with `variant_trades.parquet` has never been produced, so the real read in `studies/optimisation/wfc/inputs/batch.py`, the export in `pipeline/autopilot/variants.py` (`export_retest --batch variants` + `sqx.variants.varianttrades`), the build -> oos1 rehearsal of `studies.optimisation.wfc.calibrate` (probed only on a synthetic batch) and the window's two zones (WFC and parameter cloud) are unverified against real data. The owner then put a sign-flip null on the level (PASA needs the top median > 0 and its p <= 0.05; a top that wins without beating the null is LIMBO), and the recalibration wrote `abre: true` (false PASA with no edge 0.02 under the 0.40 cap, false NO PASA at Sharpe 0.5 0.22 under 0.25; `AlgoData/ledger/wfc_calibration.md`), so `ledger.gate.seal` now lets step 17 read oos2: the first read must be the real blind block, never a test. Step 20 now translates the state (PASA = no failure, NO PASA = failure, LIMBO = undecided); the old ledger-row wiring problem above is superseded for the WFC, which writes one row per segment via `engines/variants/look.py`.
 
 ## 78. 🟡 MetaTrader 5 under Wine: built, not yet run
 
@@ -872,6 +875,16 @@ Source: `AlgoData/audit/2026-10-07-mechanical.md` (242 run, 227 ok, 7 failed). N
 
 Fix direction: point the data-dependent tests at a fixture; set cwd/`PYTHONPATH` in `bin/sqx-worker.sh`.
 
+**2026-10-08 (documentation pass).** The 10-08 mechanical audit (`AlgoData/audit/2026-10-08-mechanical.md`: 265 run, 249 ok, 9 failed) repeats these seven and adds three — 📓 from the report, none diagnosed here:
+
+| test | failure |
+|---|---|
+| `test_batches` | `No module named 'studies'` at line 6 — run without the repo root on `PYTHONPATH` |
+| `test_ui_blocks` | `KeyError: 'tabs'` at `tests/test_ui_blocks.py:60`: a block JSON has no `tabs` (test or data drifted; yesterday a shell timeout) |
+| `test_feed_from_db` | fixture ranges end the day after the last bar (bars now end 2026-10-0x) and `B.xml` reads timezone `XEETUS` vs registry `EETUS` — time-dependent fixture dates |
+
+`bin/sqx-worker.sh` line 386 already runs `afterrun` inside `cd "$ROOT"`, so the `test_worker_lifecycle` failure 🤔 comes from the test's own call or an uncommitted edit — confirm by rerunning it after the script's change is committed.
+
 
 ## 108. 🟠 Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one: waits for the first real run and the owner's «corta»
 
@@ -892,3 +905,14 @@ Encargo 47 (`docs/encargos/47-paso-12-otras-temporalidades-pico-aislado.md`), pa
 - K-2: a lone measured neighbour that fails T2a or T2b (its NO PASA, or LIMBO as implemented);
 - K-3: the window of T4 (the mother's bar, as implemented, or the slower of the two);
 - `CBlock_CandleBreakoutLong*.Double2` («body > Mult × ATR»): `bar` or a ratio `other` (today `unverified` in `sqx/variants/ranges.yaml`).
+
+## 109. 🟠 mcRetest «Estrategia a estrategia» does not draw: `help` longer than `columns`
+
+Found by the 2026-10-09 audit (`tests/test_ui_blocks.py`). `studies/breakage/mcRetest/many.py:34-35` sets
+`strategy_table["help"] = SHOWN_HELP + criteria.HELP[1:4]` (11 entries) whatever the table holds; for
+`reports/Test_USDJPY_M30_doubleROCLong_10k/MCR_All/2026-10-08/mcRetest/mcRetest.json` the table has 8 columns,
+so `ui/desktop/blocks/table.py:137` gets `horizontalHeaderItem(j) is None` and the window shows «No se pudo dibujar».
+Fix: build `help` from the columns actually present (or truncate to `len(columns)`), and make `table.py` skip a missing item.
+Also: `raw/<project>/T1_Neighbours/<day>/` (written by `studies/breakage/mcRetest/neighbours/t1.py:126`) carries no `manifest.json`.
+Also (audit 2026-10-09): `tools/checks.py` fails on `pipeline/autopilot/run.py` at 256 lines (max 250) after the 10-08 edit — split it; `test_export_manifests` fails its output-folder listing assert while `sqx/export` has uncommitted edits — rerun after the commit.
+

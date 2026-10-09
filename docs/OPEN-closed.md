@@ -1474,6 +1474,33 @@ works. `stop` could wait for "CLI is now ready" in the worker log before sending
 
 **Closed 2026-09-29.** `bin/sqx-worker.sh stop` waits up to 30 s for `SQX CLI is now ready` before sending `-exit`.
 
+## 76. ⚪ Darwinex's real spread is 3–8× what `assets/` declares — the proposal is the owner's to apply
+
+`python3 -m studies.data.spread.scan` (2026-09-27), mean opening spread of Darwinex's ticks:
+XAUUSD 9 → 63 points 2017 → 2026 against the declared 5 (build) / 10 (oos); USDJPY 4.7 → 10.4
+points against 0.1. Neither is constant relative to price (owner's ±20 %: gold's worst year 1.96×,
+USDJPY's 1.44×), so the study models the years before October 2017 and proposes, with the owner's
+factor 1.25, a `%` commission per segment — XAUUSD 0.0131 / 0.0138 / 0.0118 % (build / oos1 /
+oos2), USDJPY 0.0048 / 0.0052 / 0.0078 % — or 16 / 24 / 31 and 0.5 / 0.6 / 1.2 points.
+`AlgoData/spread/<tick feed>/spread.html` has the table. **Applied 2026-09-27** to XAUUSD and the ten pairs too (`onboard --spread-only`: spreads, slippage = half, MC spread range; commission and swap kept). **Applied 2026-09-27 to the five index CFDs** on the owner's order: build data start–2019, oos1 2020–2023, oos2 2024–2026-08-31 with its own `spread_oos2` (the schema now allows a segment-named half), oos1/oos2 = Darwinex's mean daily spread in that segment × 1.25; build = the spread PROPORTIONAL to price (owner's option A, `model.fixed`) × 1.25, although fixed-points validates better; slippage = half; MC Retest spread range = the 2.5–97.5 % multiples of measured ÷ proportional mean, times the build spread. Their commission is still null and blocks authoring. Study: `docs/AgentPDFs/spread-real-2026-09-27.pdf`.
+
+Three things are still open:
+- **The repricing against SQX itself.** `studies.data.spread.report` swaps SQX's flat spread for
+  the real one trade by trade (3 of 115 gold and 3 of 100 USDJPY strategies stop earning OOS). It
+  has not been compared with a real DATATICK retest on `*_DarwTick_*` — one short worker job on
+  a few strategies of an existing harvest licenses it as that retest's stand-in.
+- **USDJPY's model leans on the price level** (`studies/data/spread/POSSIBLE_IMPROVEMENTS.md`):
+  back in 2011–2012 it predicts the thinnest spreads of the history.
+- **The «poquito de spread»** the owner keeps on top of the `%` is his to name.
+
+**2026-09-29.** The spread study was applied (see above). Left: the owner's «poquito de spread» on top of the %, and whether to license the repricing with one short DATATICK retest on a worker.
+
+**2026-09-29.** Owner, 2026-09-29: the «poquito de spread» is what `assets/` already carries — the measured spread × 1.25 as a spread on top of the commission (e.g. USDJPY 0.65 points + 8 $/lot). Left: the DATATICK retest that would license the repricing, and USDJPY's price-level model.
+
+**2026-09-29.** Owner: make the DATATICK check part of the workflow, once, at the end. Now encargo 36 (`docs/encargos/36-licencia-reprecio-datatick.md`) and step 25.5 of `WORKFLOW.md`, after 17-20 and 25, before 26: a real `*_DarwTick_*` retest of a few survivors compared trade by trade with `studies.data.spread.report`. Left: the owner's acceptance bar (R difference or verdict match), and building it.
+
+**Closed 2026-10-07.** Closed 2026-10-07 (encargo 44, package H1, owner decision P.2-4): the spread study's step-8 half (`reprice.py`, `one.py`, `many.py`, `report.py`), step 25.5 and encargo 36 were deleted, so the DATATICK licence of the repricing has no object any more. The measured spreads were applied to the asset cards on 2026-09-27 and the owner's «poquito de spread» settled on 2026-09-29. What stays: step 4 (`scan`, `onboard`, `bands`, `fundedswap`) and USDJPY's price-level model, tracked in `studies/data/spread/POSSIBLE_IMPROVEMENTS.md`; the trade-level repricer is now `engines/market/reprice.py`.
+
 ## 77. ⚪ A one-item random group's hole can still drift to a different block
 
 Re-running the USDJPY M30 workflow end to end on 2026-09-27 to verify §57–§63, `template_check`
