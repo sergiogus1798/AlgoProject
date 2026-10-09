@@ -39,7 +39,8 @@ FAMILIES = {
         "60-app-pulido", "72-app-crear", "95-app-criterios"]),
     "03-datos-costes-y-registro": ("Datos, costes y registro de la búsqueda", [
         "13-barras", "57-calidad-del-feed", "59-spread-real", "25-actualizar-datos", "24-costes", "43-ledger",
-        "12-rendimiento", "64-archivo", "73-fondeo-catalogo", "74-fondeo-ofertas"]),
+        "12-rendimiento", "64-archivo", "109-almacen-de-estrategias", "73-fondeo-catalogo",
+        "74-fondeo-ofertas"]),
     "04-sqx-plantillas-y-proyectos": ("SQX: bloques, plantillas y proyectos", [
         "40-sqx-lab", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
         "06-mover-estrategias", "27-curar", "17-pipeline", "80-autopiloto", "105-workflow-de-un-comando", "106-campana", "55-retirar-proyectos",
@@ -48,7 +49,8 @@ FAMILIES = {
         "91-potencia-del-perfil", "92-perfil-agrupado"]),
     "05-cribado-oos": ("Cribado fuera de muestra", [
         "01-analisis-is-oos", "02-filtros", "03-comparar-muestras", "04-decaimiento",
-        "29-puerta", "98-criba-mae-profundo", "99-monos-por-la-cadena"]),
+        "29-puerta", "98-criba-mae-profundo", "99-monos-por-la-cadena",
+        "108-lotes-de-una-celda"]),
     "06-lecturas": ("Lecturas de una estrategia", [
         "26-nulos", "50-edge-por-coste", "42-calidad-de-la-entrada",
         "53-mapa-condicional", "51-estructura"]),
@@ -58,7 +60,7 @@ FAMILIES = {
         "07-montecarlo", "32-mcretest", "11-retest-mc"]),
     "09-optimizacion": ("Parámetros: SPP, variantes, WFC, CSCV y WFM", [
         "33-spp", "08-spp", "09-diccionario-spp", "15-sppultra", "18-variantes",
-        "37-wfc-retest", "19-wfc", "25-cscv", "39-nube-de-parametros",
+        "37-wfc-retest", "19-wfc", "107-wfc-calibracion", "25-cscv", "39-nube-de-parametros",
         "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix"]),
     "10-cierre": ("El cierre: paso 20, exposición, stop y MetaTrader 5", [
         "56-paso-20", "85-autopiloto-cierre", "38-exposicion", "54-atr-calculator", "60-mt5", "76-mt5-verificar", "86-mt5-pool-validado",

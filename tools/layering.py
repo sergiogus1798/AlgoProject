@@ -16,6 +16,7 @@ ALLOW: set[tuple[str, str]] = {
     (".claude/skills/dossier-pdf/render.py", "tools"),
     ("core/archive/manifest.py", "ledger"),
     ("core/archive/cli.py", "ui.daemon"),
+    ("engines/variants/excess.py", "studies"),
     ("mt5/reconcile/sqxside.py", "ui.daemon"),
     ("mt5/verify/autopilot.py", "ui.daemon"),
     ("mt5/verify/run.py", "ui.daemon"),
@@ -26,6 +27,7 @@ ALLOW: set[tuple[str, str]] = {
     ("pipeline/autopilot/closing.py", "ui.daemon"),
     ("pipeline/autopilot/facts.py", "ui.daemon"),
     ("pipeline/autopilot/judge.py", "ui.daemon"),
+    ("pipeline/autopilot/neighbours.py", "ui.daemon"),   # 2026-10-07: closing.py's launcher, for step 13's T1
     ("pipeline/autopilot/plan.py", "ui.daemon"),
     ("pipeline/autopilot/run.py", "ui.daemon"),
     ("pipeline/autopilot/survivors.py", "ui.daemon"),

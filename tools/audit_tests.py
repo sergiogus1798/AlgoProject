@@ -36,9 +36,6 @@ ASIDE: dict[str, tuple[str, str]] = {
     "tests/test_ui_results.py": (
         "the results catalogue does not match studies/ (board, marketProfile, memory, monteCarlo): "
         "ui/daemon/results/ and studies/research are in motion in another session", "2026-10-02"),
-    "tests/test_ui_sqxconfig_studies.py": (
-        "the ledger changed more than its three lines (sealed 2026-10-02): the test's expectation "
-        "of ledger/thresholds.yaml is out of date", "2026-10-02"),
     "tests/test_ui_strategy.py": (
         "strategy meta has no 'backtest' key: ui/daemon/ is modified by another session", "2026-10-02"),
 }

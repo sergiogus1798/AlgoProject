@@ -28,9 +28,10 @@ def internal_names(files: list[Path]) -> set[str]:
         files: Project Python files.
 
     Returns:
-        Package directory names plus every module stem, e.g. {"core", "plots"}.
+        Package directory names (any depth: a folder with no `__init__.py` is still imported
+        relatively) plus every module stem, e.g. {"core", "plots"}.
     """
-    names = {p.stem for p in files}
+    names = {p.stem for p in files} | {p.parent.name for p in files}
     names |= {p.relative_to(ROOT).parts[0] for p in files if len(p.relative_to(ROOT).parts) > 1}
     return names
 
