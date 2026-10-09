@@ -10,6 +10,7 @@ COLUMNS = ["idea", "symbol", "timeframe", "direction", "date", "rank", "hypothes
 HEADING = re.compile(r"^### Idea (\d+)[^—\n]*— `(\w+)` · (M15|M30|H1|H4|D1)\b(.*)$", re.M)
 HYPOTHESES = re.compile(r"Hip[oó]tesis medidas:?\s*\**\s*(\d+)")
 ORIGIN = re.compile(r"^\W*Origen:?\W*\s*(.+)$", re.M | re.I)
+PUBLISHED = ("libro", "bibliograf", "paper")    # an origin that carries its author's trials
 
 
 def direction(tail: str) -> str:
@@ -30,7 +31,8 @@ def parse(text: str, symbol: str, name: str) -> list[dict]:
         the file's own count (the largest of its «Hipótesis medidas: N» lines — an addendum restates
         the running total — shared by its ideas) or ''.
         `origin` is the text of an `Origen:` line inside the idea's section, '' when the file
-        gives none; `from_book` is yes/no only when that line exists, else unknown — a book idea
+        gives none; `from_book` is yes/no only when that line exists (yes for a book, a paper or
+        an entry of the literature file), else unknown — a published idea
         carries its author's trials, so unknown is not a no.
     """
     counted = [int(n) for n in HYPOTHESES.findall(text)]
@@ -43,7 +45,8 @@ def parse(text: str, symbol: str, name: str) -> list[dict]:
                      "direction": direction(m[4]), "date": name[:10], "rank": int(m[1]),
                      "hypotheses_measured": max(counted) if counted else "",
                      "origin": origin[1].strip() if origin else "",
-                     "from_book": ("yes" if "libro" in origin[1].lower() else "no")
+                     "from_book": ("yes" if any(w in origin[1].lower() for w in PUBLISHED)
+                                   else "no")
                      if origin else "unknown", "file": f"{symbol}/{name}"})
     return rows
 

@@ -5,7 +5,7 @@ import yaml
 
 from core.researchpaths import research_profiles_dir
 
-FILE = "edges-2026-10-02.yaml"
+FILES = ("edges-*.yaml", "scout-*.yaml")    # built by hand; added by the literature scout
 CLASSES = {"indices": ["DAX40", "DJ30", "NIKKEI225", "USA500", "USATEC"],
            "forex": ["AUDJPY", "AUDUSD", "CADJPY", "EURJPY", "EURUSD", "GBPJPY", "GBPUSD", "USDCAD",
                      "USDCHF", "USDJPY"],
@@ -27,9 +27,10 @@ WHY = {
 
 
 def entries() -> list[dict]:
-    """The literature file's entries, as written by the literature agent."""
-    path = research_profiles_dir().parent / "literature" / FILE
-    return yaml.safe_load(path.read_text(encoding="utf-8"))["entries"]
+    """Every literature entry: the hand-built file's, then the scout's, oldest first."""
+    root = research_profiles_dir().parent / "literature"
+    files = [f for pattern in FILES for f in sorted(root.glob(pattern))]
+    return [e for f in files for e in yaml.safe_load(f.read_text(encoding="utf-8"))["entries"]]
 
 
 def tested(cfg: dict) -> dict[str, list[str]]:

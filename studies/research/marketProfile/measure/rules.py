@@ -6,6 +6,9 @@ from studies.research.marketProfile.measure.position import walk
 from studies.research.marketProfile.measure.trades import prev, tstat
 
 
+BAND = float(np.log(1 / 0.99))   # TR-65's 1 % filter, on log prices
+
+
 def _first(mask: np.ndarray) -> np.ndarray:
     """The bar a condition becomes true, not the bars it stays true."""
     return mask & ~prev(mask)
@@ -42,8 +45,11 @@ CONDITIONS = {
     "bar2atr": lambda x: (x["c"] - x["o"]) > 2.0 * x["atr1"],
     # the literature's own entries (AlgoData/research/literature/edges-2026-10-02.yaml)
     "mom_d252": lambda x: x["d1_mom"][252] > 0,
-    "slow_d50_200": lambda x: x["d1_above"][50] > x["d1_above"][200],
-    "fast_d5_20": lambda x: x["d1_above"][5] > x["d1_above"][20],
+    # `d1_above[n]` is the close LESS its n-day mean: the short mean is above the long one when
+    # the close is further above the long mean, so the comparison runs the other way (fixed
+    # 2026-10-02: it read «SMA50 > SMA200» as written and measured SMA50 < SMA200).
+    "slow_d50_200": lambda x: x["d1_above"][50] < x["d1_above"][200],
+    "fast_d5_20": lambda x: x["d1_above"][5] < x["d1_above"][20],
     "band10": lambda x: x["c"] > x["sma10"] + x["sd10"],
     "band_d10": lambda x: x["c"] > x["d1_mid"][10] + x["d1_sd"][10],
     "strong_d20": lambda x: x["d1_band"][20] > 1,
@@ -63,6 +69,18 @@ CONDITIONS = {
     "keltner225": lambda x: _first(x["c"] < x["sma"] - 2.25 * x["atr"]),
     "break_d85": lambda x: _first(x["c"] > x["d1_hi"][85]),
     "week_up": lambda x: x["d1_mom"][5] > 0,
+    # the D1 close and its means, with and without the paper's 1 % band (TR-65): the band is on
+    # the log close, so 1 % is log(1 / 0.99)
+    "d1_over_sma50": lambda x: x["d1_above"][50] > 0,
+    "d1_over_sma150": lambda x: x["d1_above"][150] > 0,
+    "d1_sma5_over_150": lambda x: x["d1_above"][5] < x["d1_above"][150],
+    "d1_over_sma50_1pc": lambda x: x["d1_above"][50] > BAND,
+    "d1_over_sma150_1pc": lambda x: x["d1_above"][150] > BAND,
+    "d1_sma5_over_150_1pc": lambda x: x["d1_above"][150] - x["d1_above"][5] > BAND,
+    # the trading-range break on closes, n bars of the cell (BRK-60, the scout's first batch)
+    "trbo50": lambda x: _first(x["c"] > x["chi"][50]),
+    "trbo150": lambda x: _first(x["c"] > x["chi"][150]),
+    "trbo200": lambda x: _first(x["c"] > x["chi"][200]),
     # the wider frame (filters)
     "mom_d200": lambda x: x["d1_mom"][200] > 0,
     "vol_high": lambda x: x["d1_high"] > 1,
@@ -86,6 +104,12 @@ CONDITIONS = {
     "below_d1_open": lambda x: x["c"] < x["d1_open"],
     "d1_above_sma20": lambda x: x["d1_above"][20] > 0,
     "out10_high": lambda x: x["d1_out"] > 0,
+    "d1_under_sma50_1pc": lambda x: x["d1_above"][50] < -BAND,
+    "d1_under_sma150_1pc": lambda x: x["d1_above"][150] < -BAND,
+    "d1_sma5_under_150_1pc": lambda x: x["d1_above"][5] - x["d1_above"][150] > BAND,
+    "under_c50": lambda x: x["c"] < x["clo"][50],
+    "under_c150": lambda x: x["c"] < x["clo"][150],
+    "under_c200": lambda x: x["c"] < x["clo"][200],
 }
 RULERS = {"bar": "atr1", "day": "d1_atr"}    # what a trailing exit counts its distance in
 

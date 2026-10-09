@@ -1,0 +1,24 @@
+# Every tunable of the pooled profile. Nothing below is hidden in code.
+#
+# The market profile's measures judged per GROUP (asset class x timeframe x direction x measure)
+# instead of per asset. The measures, the null, its block, its draws and the four filters are
+# marketProfile's own, read from ITS config: this study changes none of them. `build` only.
+
+run:
+  timeframes: [M15, M30, H1, H4]   # the director's grid
+  workers: 4                       # processes, one asset x timeframe each, at nice 19
+  budget_bytes: 8000000000         # most memory the judge may hold: every cell's null draws of
+                                   # one group at a time (assets x draws x tests x 4 bytes)
+  seed: null                       # null = a fresh root from OS entropy, kept in seed.json so a
+                                   # resumed run draws the same joint resamples
+
+groups:
+  by: asset_class                  # the classes of studies/research/memory/config.yaml (owner,
+                                   # 2026-10-02): forex, index, metal, energy
+  min_assets: 2                    # a group test needs this many assets with enough trades
+
+judge:
+  alpha: 0.05                      # Benjamini-Hochberg FDR over every group test of the run
+  clock: false                     # clock measures are left out: they never reach the board
+  placebos: 200                    # null draws judged as if they were the real series: how many
+                                   # groups the procedure names when there is nothing

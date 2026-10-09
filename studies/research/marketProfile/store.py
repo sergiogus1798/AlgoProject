@@ -36,6 +36,23 @@ def save(symbol: str, got: list[dict], meta: dict) -> None:
                                             encoding="utf-8")
 
 
+def extend(symbol: str, rows: list[dict], meta: dict) -> None:
+    """Add measure rows to an asset's stored cells, and the top-up's record to its side file.
+
+    Args:
+        symbol: Asset name, already measured.
+        rows: Measure rows of the measures it lacked (one.run's `rows`).
+        meta: The measures added, their seed, timings and date.
+    """
+    path = cells() / f"{symbol}.parquet"
+    pd.concat([pd.read_parquet(path), pd.DataFrame(rows)], ignore_index=True).to_parquet(
+        path, index=False)
+    side = cells() / f"{symbol}.json"
+    held = json.loads(side.read_text(encoding="utf-8"))
+    held.setdefault("top_ups", []).append(meta)
+    side.write_text(json.dumps(held, default=float, indent=1), encoding="utf-8")
+
+
 def load() -> dict:
     """Everything measured so far.
 

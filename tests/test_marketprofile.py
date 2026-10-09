@@ -60,6 +60,24 @@ def profile(bars: pd.DataFrame, cfg: dict) -> dict:
             "scores": judged["scores"].set_index(["direction", "family"])}
 
 
+def test_mean_order() -> None:
+    """«Short mean above long mean» reads that way: `d1_above[n]` is the close LESS its mean.
+
+    Until 2026-10-02 `slow_d50_200` and `fast_d5_20` compared the two distances the wrong way
+    round and measured the short mean BELOW the long one.
+    """
+    from studies.research.marketProfile.measure.rules import BAND, met
+    close = np.zeros(2)
+    sma = {5: np.array([0.03, -0.03]), 20: np.array([0.02, -0.02]), 50: np.array([0.02, -0.02]),
+           150: np.array([0.0, 0.0]), 200: np.array([0.0, 0.0])}   # day 0 up, day 1 down
+    x = {"d1_above": {n: close - v for n, v in sma.items()}}
+    assert list(met(x, "slow_d50_200")) == [True, False]
+    assert list(met(x, "fast_d5_20")) == [True, False]
+    assert list(met(x, "d1_sma5_over_150")) == [True, False]
+    assert list(met(x, "d1_sma5_over_150_1pc")) == [0.03 > BAND, False]
+    assert list(met(x, "d1_sma5_under_150_1pc")) == [False, 0.03 > BAND]
+
+
 def test_families(cfg: dict) -> None:
     """Persistence scores trend, anti-persistence scores reversion, noise passes nothing."""
     trend = profile(synthetic(0.2, 1), cfg)
@@ -178,6 +196,7 @@ def main() -> None:
     with threadpool_limits(1):   # BLAS threads fight each other on arrays this small
         test_families(cfg)
         test_build_only(cfg)
+        test_mean_order()
         test_fourth_filter(cfg)
         test_clock_and_alternative(cfg)
     print("OK test_marketprofile")

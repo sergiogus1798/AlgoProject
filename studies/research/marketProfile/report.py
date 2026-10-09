@@ -13,8 +13,8 @@ from core.researchpaths import research_profiles_dir
 from core.study import output, result
 from core.study.config import fingerprint
 from studies.research.marketProfile import (bibliography, contract, familias, favourable,
-                                             favourablemd, inputs, ledgerrows, many, one, store,
-                                             sweep, sweepjudge, variance)
+                                             favourablemd, inputs, ledgerrows, literature, many,
+                                             one, store, sweep, sweepjudge, topup, variance)
 
 STATE = {}
 TITLE = "Perfil de mercado"
@@ -50,6 +50,19 @@ def measure(symbol: str) -> dict:
         "computed_at": datetime.now().isoformat("T", "seconds")})
     return {"status": "ok", "bars": bars, "wall_s": walls, "from": str(m1.index[0]),
             "to": str(m1.index[-1])}
+
+
+def top_up(symbol: str) -> dict:
+    """One measured asset's missing measures, added to its stored cells."""
+    return topup.run(symbol, STATE["cfg"])
+
+
+def config(overrides: list[str]) -> dict:
+    """The config with its overrides, and the literature scout's measures after its own."""
+    cfg = literature.extend(inputs.config(overrides))
+    for line in cfg["literature_skipped"]:
+        print(f"BIBLIOGRAFÍA sin medir — {line}")
+    return cfg
 
 
 def sweep_cell(key: tuple) -> pd.DataFrame:
@@ -139,25 +152,29 @@ def main() -> None:
                     help="only the literature file's entries beside what the map measured")
     ap.add_argument("--sweep", action="store_true",
                     help="the exit and parameter sweep, a separate study written to sweep/")
+    ap.add_argument("--top-up", action="store_true",
+                    help="measure, on the assets already stored, only the measures they lack")
     ap.add_argument("--familias", action="store_true",
                     help="only rewrite assets/FAMILIAS.md from the map, the sweep and the prior")
     a = ap.parse_args()
     if a.familias:
-        return familias_document(inputs.config(a.overrides))
+        return familias_document(config(a.overrides))
     if a.sweep:
-        return sweep_all(inputs.config(a.overrides), a.symbols, a.judge_only)
+        return sweep_all(config(a.overrides), a.symbols, a.judge_only)
     if a.favourable:
         return favourable_tables()
     if a.bibliography:
         measures = pd.read_csv(research_profiles_dir() / "measures.csv")
-        return print(bibliography.markdown(measures, inputs.config(a.overrides)))
+        return print(bibliography.markdown(measures, config(a.overrides)))
     started = time.time()
-    cfg = inputs.config(a.overrides)
+    cfg = config(a.overrides)
     STATE["cfg"] = cfg
     todo = [] if a.judge_only else [s for s in a.symbols if a.force or s not in store.done()]
+    if a.top_up and not a.judge_only:
+        todo = [s for s in a.symbols if s in store.done()]
     status = {}
-    for k, (symbol, got) in enumerate(fanout.run(measure, {s: 1 for s in todo},
-                                                 cfg["run"]["workers"]), 1):
+    for k, (symbol, got) in enumerate(fanout.run(top_up if a.top_up else measure,
+                                                 {s: 1 for s in todo}, cfg["run"]["workers"]), 1):
         status[symbol] = got
         result.progress(90 * k // len(todo), f"{symbol}: {got['status']} {got.get('wall_s', '')}")
     stored = store.load()
@@ -165,6 +182,9 @@ def main() -> None:
     out = store.write(judged, stored)
     measured = [s for s, g in status.items() if g["status"] == "ok"]
     fresh = judged["measures"][judged["measures"]["symbol"].isin(measured)]
+    if a.top_up:
+        added = {n for g in status.values() for n in g.get("measures", [])}
+        fresh = fresh[fresh["measure"].isin(added)]
     ledgerrows.append(out / "ledger.jsonl", ledgerrows.rows(fresh, cfg))
     got = contract.build(judged, stored["context"], cfg, started)
     output.population(out, "profile", got, TITLE, LEDE)

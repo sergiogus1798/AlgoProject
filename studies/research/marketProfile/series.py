@@ -83,7 +83,8 @@ def derive(x: dict, cfg: dict) -> dict:
         x plus `atr` (mean true range, in logs) and `atr1` (the same one bar earlier, so a
         bar never inflates its own ruler), `sma` and `sd` of the close, the bar's range `rg`,
         the narrowest and widest bar of the last `narrow`, and per channel length the highest
-        high and lowest low of the bars BEFORE each one.
+        high and lowest low of the bars BEFORE each one (`hi`, `lo`) and, per close-channel
+        length, their highest and lowest close (`chi`, `clo`).
     """
     o, h, l, c = x["o"], x["h"], x["l"], x["c"]
     before = np.concatenate([[c[0]], c[:-1]])
@@ -93,12 +94,14 @@ def derive(x: dict, cfg: dict) -> dict:
     sd = np.sqrt(np.maximum(_mean(base * base, cfg["mean"]) - sma * sma, 0.0))
     rg = pd.Series(h - l)
     roll = rg.rolling(cfg["narrow"])
-    hs, ls = pd.Series(h), pd.Series(l)
+    hs, ls, cs = pd.Series(h), pd.Series(l), pd.Series(c)
     return {"o": o, "h": h, "l": l, "c": c, "atr": atr, "atr1": _lag(atr), "sma": sma + c[0],
             "sd": sd, "rg": rg.to_numpy(), "narrow": (rg == roll.min()).to_numpy(),
             "wide": (rg == roll.max()).to_numpy(),
             "hi": {n: _lag(hs.rolling(n).max().to_numpy()) for n in cfg["channels"]},
-            "lo": {n: _lag(ls.rolling(n).min().to_numpy()) for n in cfg["channels"]}}
+            "lo": {n: _lag(ls.rolling(n).min().to_numpy()) for n in cfg["channels"]},
+            "chi": {n: _lag(cs.rolling(n).max().to_numpy()) for n in cfg["close_channels"]},
+            "clo": {n: _lag(cs.rolling(n).min().to_numpy()) for n in cfg["close_channels"]}}
 
 
 def mirror(d: dict) -> dict:
@@ -112,7 +115,9 @@ def mirror(d: dict) -> dict:
         short entry on the real series, bar for bar.
     """
     return {**d, "o": -d["o"], "h": -d["l"], "l": -d["h"], "c": -d["c"], "sma": -d["sma"],
-            "hi": {n: -v for n, v in d["lo"].items()}, "lo": {n: -v for n, v in d["hi"].items()}}
+            "hi": {n: -v for n, v in d["lo"].items()}, "lo": {n: -v for n, v in d["hi"].items()},
+            "chi": {n: -v for n, v in d["clo"].items()},
+            "clo": {n: -v for n, v in d["chi"].items()}}
 
 
 def gaps(x: dict) -> dict:

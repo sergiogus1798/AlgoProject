@@ -1,0 +1,84 @@
+# Every knob of the literature scout. Python searches, dedupes, validates and stores; the
+# `literatureScout` agent only reads a paper and writes a draft entry.
+
+run:
+  papers: 20                 # new papers one run takes from the search
+  per_query: 3               # at most this many from one query — two from arXiv for each one
+                             # from OpenAlex — so twenty papers span several queries
+  pages: 5                   # result pages a query is followed down while its first ones are known
+  pause_s: 3.0               # arXiv asks for one request every three seconds
+  model: opus                # the call that reads a paper and extracts its rules (owner,
+                             # 2026-10-02: «lo que necesites para leer y entender los papers»)
+  triage_model: sonnet       # the one call that sorts the abstracts by the hard filters
+  budget_tokens: 3000000     # a runaway guard, not a ration: the run launches no further call
+                             # past this (a full run of 20 papers is about 150-400k). Cost is
+                             # told in tokens, never dollars: the owner pays a monthly plan
+
+sources:
+  arxiv:
+    enabled: true
+    categories: [q-fin.TR, q-fin.PM, q-fin.ST, q-fin.CP]
+  openalex:
+    enabled: true            # also where SSRN is reachable: SSRN itself answers 403 to a script
+    from_year: 1990
+    open_pdf: true           # only works with an open PDF (owner, 2026-10-02): in the first batch
+                             # none of the 13 papers read from the abstract alone gave an entry
+    field: 20                # OpenAlex field of the primary topic: economics, econometrics and
+                             # finance. Without it «futures» brings flood plains and alloys
+  repos:
+    enabled: true            # owner, 2026-10-02: strategy collections enter with the lowest grade,
+                             # `code repository`, and only an item that reports its own backtest
+    per_run: 3               # items of each collection a run takes, beside its papers
+    collections:
+      - {repo: StockSharp/AlgoTrading, kind: stocksharp}        # 3,811 short strategies
+      - {repo: rolling-panda-san/notebooks, kind: notebooks}    # ~28 papers replicated
+
+  web:
+    enabled: true            # practitioner sites the owner named (2026-10-02). `link` is a regular
+    per_run: 3               # expression over the index page whose group is an article's URL.
+    sites:                   # Not here because they refuse a script: traders.com, SSRN and the
+                             # Alpha Architect blog pages (Cloudflare), Semantic Scholar (429).
+      - {name: oxfordstrat, index: "https://oxfordstrat.com/resources/",
+         link: 'href="(https://oxfordstrat\.com/trading-strategies/[^"/]+/)"'}
+      - {name: quantpedia, index: "https://quantpedia.com/screener/",
+         link: 'href="(/strategies/[^"/]+/?)"'}
+      - {name: aqr, index: "https://www.aqr.com/Insights/Research",
+         link: 'href="(/Insights/Research/[^"/]+/[^"]+)"'}
+
+# What is searched, one board family each. A query is rotated, not exhausted: a run asks every
+# query for its newest and most relevant papers and keeps the ones never seen.
+queries:
+  - {family: tendencia,   text: "time series momentum"}
+  - {family: tendencia,   text: "trend following moving average rule"}
+  - {family: ruptura,     text: "channel breakout trading rule"}
+  - {family: reversion,   text: "mean reversion trading rule"}
+  - {family: reversion,   text: "short-term reversal futures"}
+  - {family: momentum,    text: "intraday momentum"}
+  - {family: volatilidad, text: "volatility breakout trading"}
+  - {family: patron,      text: "candlestick patterns profitability"}
+  - {family: tendencia,   text: "technical trading rules foreign exchange"}
+  - {family: tendencia,   text: "technical trading rules gold"}
+  - {family: tendencia,   text: "technical trading rules crude oil futures"}
+  - {family: reversion,   text: "technical trading rules stock index futures"}
+
+# What the extracting agent reads instead of the whole paper (`scout excerpt`): the abstract and
+# the pages where these words are densest.
+excerpt:
+  pages: 6
+  words: [rule, signal, buy, sell, long, short, enter, exit, position, sample, period, data,
+          out-of-sample, parameter, transaction cost, sharpe, return]
+
+anchors:
+  min_chars: 20              # a quote shorter than this is a word, not a sentence of the source
+
+dedupe:
+  similar: 0.6               # Jaccard of two rules' words at or above this: shown as «parecida a»
+
+# The assets a class-level entry speaks of, and the id prefix of each family.
+classes:
+  indices: [AUS200, DAX40, DJ30, HK50, NIKKEI225, UK100, USA500, USATEC]
+  forex: [AUDJPY, AUDNZD, AUDUSD, CADJPY, EURAUD, EURGBP, EURJPY, EURUSD, GBPJPY, GBPUSD, NZDUSD,
+          USDCAD, USDCHF, USDJPY]
+  metals: [XAGUSD, XAUUSD, XCUUSD]
+  oils: [UKOIL, USOIL]
+prefix: {tendencia: TR, ruptura: BRK, reversion: REV, momentum: MOM, volatilidad: VOL, patron: PAT}

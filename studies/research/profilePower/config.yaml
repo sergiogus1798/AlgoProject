@@ -1,0 +1,36 @@
+# Every tunable of the profile's power study (positive controls). Nothing below is hidden in code.
+#
+# It plants an edge of known size in the `build` bars of a cell and runs the market profile's own
+# test on it (studies.research.marketProfile.one.against_null: same null, same block, same draws).
+# The profile's knobs — the null, the block, the four filters — are read from ITS config and are
+# not repeated here: this study changes none of them.
+
+run:
+  cells: [XAUUSD/H1, XAUUSD/H4, EURUSD/H1, EURUSD/H4, USA500/H1, USA500/H4]   # blocklen.py's cells
+  workers: 4                       # processes, one replication each, at nice 19
+  budget_bytes: 8000000000         # most memory the fan-out may hold; workers are cut to fit.
+  process_bytes: 900000000         # what one worker holds (measured 2026-10-02: 0.8-0.9 GB RSS)
+  seed: null                       # null = a fresh root from OS entropy, recorded in run.json
+
+plant:
+  how: condition                   # a key of plant.PLANTS: `condition` tests the measure, `random`
+                                   # (the control) the same bars' worth of drift where no rule fires
+  # Gross mean gain per trade, in round-trip costs. Up to 25: a rule held for weeks earns tens
+  # of costs by chance alone, and nothing smaller is visible in it.
+  effects: [0.0, 0.5, 1.0, 2.0, 5.0, 10.0, 25.0]
+  replications: 8                  # sign-flipped copies of each cell; the same copies for every
+                                   # measure and effect (common random numbers)
+  directions: [long]               # the base has no direction, so short is the mirror image
+  # The measure that carries each family's plant; a dense and a sparse one where the family has
+  # both, because the trade count is what the power lives on. No clock measure.
+  measures: [look48_hold16, tsmom_d60_run, channel55, donchian_d20_opp, extreme2, rsi2_up200_sma5,
+             bar2atr, narrow_break, run3_follow, prev_day_break]
+
+judge:
+  cut: null                        # the raw p a test must reach. null = the cut-off the map's
+                                   # Benjamini-Hochberg imposes TODAY: the largest p it named in
+                                   # AlgoData/research/profiles/measures.csv (0.00167 on 2026-10-02)
+  chunk: 250                       # null draws per call; a replication stops at the first chunk
+                                   # after which the cut is out of reach (exact, not approximate)
+  single_level: 0.05               # the uncorrected test: one rule alone, judged on the first chunk
+  power: 0.8                       # the detection rate the minimum detectable effect is read at
