@@ -16,7 +16,7 @@ candidate is judged against a null rather than against zero, and every look at t
 - **Nulls that fit the question.** Random-entry traders with the strategy's own exits and costs,
   joint year-shift nulls for cross-market and cross-timeframe transfer, CSCV for the probability of
   backtest overfitting, stepwise multiple-testing inference over the survivors (`engines/`).
-- **Three out-of-sample windows, one of them blind.** Strategies are built on `build`, screened on
+- **Three windows, one of them blind.** Strategies are built on `build`, screened on
   `oos1`, and `oos2` stays reserved for the final joint verdict.
 - **Pessimistic costs.** Measured spread per session segment, slippage, and commission and swap at
   the worst of the brokers traded, set per task (`assets/`).
