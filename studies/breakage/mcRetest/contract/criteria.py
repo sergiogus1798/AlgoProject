@@ -50,6 +50,8 @@ def table(got: dict) -> dict:
 
 def summary(got: dict) -> dict:
     """The production task's three numbers: verdict.csv columns, hence the databank table's."""
+    if "stress" not in got:
+        return {}
     p = got["stress"]["place"]
     return {"percentil_original_estres": round(p["percentile"], 1),
             "brecha_mediana_pct_estres": None if p["gap_pct"] is None else round(p["gap_pct"], 1),

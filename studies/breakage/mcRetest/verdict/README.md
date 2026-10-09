@@ -13,7 +13,7 @@ not added however standard it is.
 | `modes.py` | **Question 2 — does it decay, or collapse?** Whether the outcome is one regime or two, how far from normal it is, and whether the strategy still traded | imported | metrics → shape, collapse |
 | `attribution.py` | **Question 3 — what breaks it?** Which task's damage is real against the `bar` control, and Benjamini-Yekutieli across the pool | imported | metrics → attribution |
 | `evidence.py` | **Question 4 — do I believe it?** The retest sims' own Sharpe against a benchmark, the analytic PSR of the original P/L against the same benchmark — a same-footprint random trader's own Sharpe, priced from the strategy's harvested **out-of-sample** trades and `core.barstore`'s bars (OPEN.md #71; never the build, owner 2026-09-29 — `measure/originals.py` keeps only `sample == "OOS"`) — effective bets, the corrected p-values and rank stability | imported | metrics + P/L → evidence |
-| `gates.py` | Every threshold in the study, and what only warns | imported | body → flags |
+| `gates.py` | Every threshold in the study, and what only warns. Without the production task (`stress`, off the chain since 2026-10-07) `production()` raises the one data veto `sin_tarea_de_produccion`, so the verdict reads INCONCLUSIVE, never FAIL; `scoring` gives that role 0 | imported | body → flags |
 | `scoring.py` | Sub-scores, composite and verdict tier | imported | body + flags → verdict |
 
 ## Two guards that decide whether a test may run at all

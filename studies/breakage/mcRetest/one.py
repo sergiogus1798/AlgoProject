@@ -2,9 +2,10 @@
 
 import time
 
-from core.study import result as envelope
+from core.study import draws, result as envelope
 from studies.breakage.mcRetest import run as study
-from studies.breakage.mcRetest.contract import tabs
+from studies.breakage.mcRetest.contract import retention, tabs
+from studies.breakage.mcRetest.measure import excess
 from studies.breakage.mcRetest.inputs import tasks
 
 MODULE = "studies.breakage.mcRetest"
@@ -45,14 +46,23 @@ def contract(got: dict, inputs: dict, cfg: dict, started: float) -> dict:
         started: When the computation began.
 
     Returns:
-        Verdict, five tabs, glossary and the summary row.
+        Verdict, the tabs of what ran, glossary and the summary row, and `draws`: each task's
+        re-executions as `core.study.draws` rows (the report pops it before writing). `inputs["t1"]`, when
+        something put it there, is {strategy: T1 facts} for `retention.tab`.
     """
+    t1 = (inputs.get("t1") or {}).get(got["strategy"])
+    made = [tabs.verdict_tab(got), retention.tab(got, t1), tabs.cost_tab(got, cfg),
+            tabs.stress_tab(got), tabs.tasks_tab(got), tabs.levels_tab(got, inputs["levels"], cfg)]
+    identity = inputs["identity"].get(got["strategy"])
+    kept = [draws.record("mcRetest", "net_p5", got[t]["original_net"], got[t]["_net"],
+                         identity or "", strategy=got["strategy"], seed=None, task=t,
+                         unit="Net Profit de las re-ejecuciones de SQX, USD")
+            for t in tasks.TASKS if t in got]
     return envelope.envelope(
-        MODULE, got["strategy"], inputs["identity"].get(got["strategy"]), cfg, started,
-        [tabs.verdict_tab(got), tabs.cost_tab(got, cfg), tabs.stress_tab(got),
-         tabs.tasks_tab(got), tabs.levels_tab(got, inputs["levels"], cfg)],
-        tabs.verdict_block(got), warnings=tabs.sparse_warnings(got), glossary=GLOSSARY,
-        summary=tabs.summary(got))
+        MODULE, got["strategy"], identity, cfg, started,
+        [t for t in made if t], tabs.verdict_block(got),
+        warnings=tabs.sparse_warnings(got) + retention.warnings(got), glossary=GLOSSARY,
+        summary=tabs.summary(got)) | {"draws": kept}
 
 
 def run(strategy: str, inputs: dict, cfg: dict) -> dict:
@@ -67,11 +77,11 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
         The contract dict.
     """
     started = time.time()
-    envelope.progress(10, f"leyendo las ocho tareas de {strategy}")
+    envelope.progress(10, f"leyendo las tareas de {strategy}")
     provenance = {t: inputs["provenance"][f"{t}/{strategy}"] for t in tasks.TASKS
                   if f"{t}/{strategy}" in inputs["provenance"]}
     bench = study.benchmarks(inputs["trades"], inputs["asset"]).get(strategy, 0.0)
     got = study.one(inputs["keys"], inputs["sims"], inputs["original"], provenance, strategy,
-                    bench, cfg)
+                    bench, cfg, excess.context(inputs["keys"], inputs["asset"]))
     envelope.progress(100, "hecho")
     return contract(got, inputs, cfg, started)

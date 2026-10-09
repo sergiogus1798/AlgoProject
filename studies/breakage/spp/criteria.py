@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks, draws, result as envelope
 from studies.breakage.spp.model import combine
 
 TITLE = "Métricas para criterios — sin umbral todavía"
@@ -68,6 +68,20 @@ def flat(measured: dict) -> dict:
         out |= {f"decaimiento_{TOKEN[col]}": d["ratio"], f"A_{TOKEN[col]}": d["a"],
                 f"Wasserstein_{TOKEN[col]}": d["w"]}
     return out
+
+
+def recorded(strategy: str, identity: str | None, sides: dict[str, tuple]) -> list[dict]:
+    """Each window's permutation grid behind its `distancia_IQR_*` columns, as `draws` rows.
+
+    Args:
+        strategy: Its name.
+        identity: Its identity, when known.
+        sides: Side (`IS`, `OOS1`) -> (the `without_original` grid, the real row).
+    """
+    return [draws.record("spp", f"distancia_IQR_{side}_{TOKEN[col]}", float(real[col]),
+                         pop[col].to_numpy(float), identity or "", strategy=strategy, seed=None,
+                         side=side, unit="permutaciones de SQX")
+            for side, (pop, real) in sides.items() for col, _, _ in combine.METRICS]
 
 
 def tab(measured: dict) -> dict:

@@ -17,6 +17,16 @@ TIPS = {
     "design.min_levels": "Niveles mínimos de un parámetro vivo.",
     "design.max_levels": "Niveles máximos, explique la varianza que explique.",
     "design.plateau_share": "Cuánto por debajo del mejor nivel sigue contando como meseta.",
+    "grid.min_trades": "Una permutación con menos operaciones que esto en la ventana queda fuera de "
+                       "todas las estadísticas del mapa.",
+    "grid.fixed": "Parámetros que se quedan en el valor de la madre (patrones, sin distinguir "
+                  "mayúsculas): los desplazamientos. Las permutaciones donde alguno cambia quedan "
+                  "fuera de las estadísticas.",
+    "grid.iqr_floor": "Si el IQR de la rejilla es menor que esta fracción del mayor entre |mediana| "
+                      "y |real|, la rejilla es plana y d no se calcula.",
+    "grid.min_noise_n": "Con menos permutaciones que esto no se calcula la anotación «sobresale».",
+    "profile.metric": "La métrica del perfil de cada parámetro, su meseta y su centro: SharpeRatio "
+                      "o AvgProfitPerYear (beneficio por año).",
     "panel1.band_share": "Ancho de la banda de cada histograma: mediana ± este porcentaje de "
                          "su propio valor. 0.30 es ±30 %.",
     "criteria.is_floor": "Suelo de la mediana IS por métrica: por debajo no se publica el "

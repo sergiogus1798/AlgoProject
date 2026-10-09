@@ -4,7 +4,7 @@ from pathlib import Path
 
 from core.surface import dedupe
 from studies.breakage.spp.inputs import export
-from studies.breakage.spp.model import influence, profile
+from studies.breakage.spp.model import influence, mapa, profile
 from studies.breakage.spp.verdict import noise
 
 
@@ -27,15 +27,19 @@ def read(directory: Path, strategy: str, settings: dict) -> dict:
     grid = dedupe.drop_sentinels(export.grid(directory, strategy))
     metrics = [metric] + [m for m in read_cfg["companion_metrics"] if m != metric]
 
-    marginal_grid = export.without_original(grid)
+    # The profile reads the floored grid (no shift rows, no thin permutations) on its own metric.
+    pmetric = settings["profile"]["metric"]
+    marginal_grid, _ = mapa.floored(export.grid(directory, strategy), names, settings["grid"])
+    if marginal_grid.empty:
+        marginal_grid = export.without_original(grid)
     profiles = {}
     for name in names:
-        curve = profile.marginal(marginal_grid, name, metric)
+        curve = profile.marginal(marginal_grid, name, pmetric)
         shape = profile.plateau(curve, design["plateau_share"])
         profiles[name] = {"curve": curve, "plateau": shape}
 
     return {"strategy": strategy, "source": str(directory), "metric": metric,
-            "parameters": names, "grid": grid,
+            "parameters": names, "grid": grid, "profile_metric": pmetric,
             "eta2": influence.eta_squared(grid, names, metrics),
             "duplicates": influence.duplicate_test(grid, names),
             "profiles": profiles,
@@ -100,12 +104,17 @@ def brief(result: dict, settings: dict) -> dict:
     for name in live:
         curve, shape = result["profiles"][name]["curve"], result["profiles"][name]["plateau"]
         count = levels_for(float(eta2[name]), shares, design)
+        shift = mapa.is_fixed(name, settings["grid"]["fixed"])
         parameters.append({
             "name": name, "eta2": float(eta2[name]), "inert": bool(dup.loc[name, "inert"]),
             "center": shape["center"], "center_rule": "plateau_midpoint",
             # A shift stays where it was built (owner, 2026-09-26): it changes which bar the
             # rule reads, not how sensitive the rule is.
-            "levels": ([float(result["original"][name])] if name.lower().endswith("shift1") else
+            # `class` and `plateau` are what the variant factory's Latin hypercube reads
+            # (encargo 48 F): a live parameter moves inside [from, to], a shift never moves.
+            "class": "shift" if shift else "live",
+            "plateau": {"from": shape["from"], "to": shape["to"]},
+            "levels": ([float(result["original"][name])] if shift else
                        profile.design_levels(curve, shape, result["original"][name], count,
                                              design["min_span"])),
             "original": float(result["original"][name]), "argmax_is": shape["argmax"],
@@ -114,15 +123,16 @@ def brief(result: dict, settings: dict) -> dict:
             # wearing another name, and a deployment sitting on it has no margin either
             # side. The fabrication stage must not read that centre as stable.
             "spike": shape["width"] == 1,
-            "is_shift": name.lower().endswith("shift1")})
+            "is_shift": shift})
 
     return {"strategy": result["strategy"], "source": result["source"],
             "verdict": result["noise"]["verdict"], "metric": metric,
+            "profile_metric": result["profile_metric"],
             "n_eff": result["noise"]["n_eff"], "noise_max": result["noise"]["noise_max"],
             "observed_max": result["noise"]["observed_max"],
             "excess": result["noise"]["excess"],
             "parameters": parameters,
             "frozen": [{"name": n, "value": result["original"][n],
-                        "reason": "exact_duplicates",
+                        "reason": "exact_duplicates", "class": "frozen",
                         "groups": int(dup.loc[n, "groups"])} for n in frozen],
             "strata": design["strata"], "n_target": design["n_target"]}

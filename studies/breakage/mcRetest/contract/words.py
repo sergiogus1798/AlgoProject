@@ -33,7 +33,11 @@ SENTENCES = {
         "tiene todos los rangos desplazados y no se lee.",
     "reconciliacion_fallida":
         "Alguna métrica reconstruida ya no reproduce lo que SQX calculó. Ningún número de este "
-        "informe es fiable hasta que eso se resuelva."}
+        "informe es fiable hasta que eso se resuelva.",
+    "sin_tarea_de_produccion":
+        "El estrés combinado no corrió (fuera de la cadena desde el 2026-10-07), así que este "
+        "veredicto antiguo no tiene con qué juzgar. El paso se juzga por la retención del "
+        "exceso: pestaña «Fragilidad»."}
 
 # What each task perturbs, in the report's language. tasks.PERTURBS is the English contract the
 # code reasons about; this is the sentence the owner reads. Two tables, one meaning, on purpose.
@@ -90,10 +94,12 @@ def battery(result: dict) -> list[list[str]]:
         Rows of (fact, value, what it means).
     """
     enb, mult, ranks = result["effective_bets"], result["multiplicity"], result["rank_stability"]
+    bets = ("sin dato: sin el estrés combinado no hay equity diaria" if enb is None else
+            f"{enb['enb']:.2f} de {enb['n']} ({enb['ratio']:.1%})")
     order = (f"no evaluable con {ranks['n']} estrategias, hacen falta {ranks['needed']}"
              if not ranks["measurable"] else
              f"tau de Kendall {ranks['tau']:+.2f} (p = {ranks['p']:.3f})")
-    return [["Apuestas efectivas", f"{enb['enb']:.2f} de {enb['n']} ({enb['ratio']:.1%})",
+    return [["Apuestas efectivas", bets,
              "Comparten plantilla de generación, pero sus retornos diarios apenas se "
              "correlacionan: la plantilla fija la forma de las reglas, no el momento."],
             ["Multiplicidad", f"{mult['pool']} contrastes, {mult['method'].upper()} factor "

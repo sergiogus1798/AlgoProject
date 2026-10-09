@@ -61,7 +61,8 @@ def run(inputs: dict, cfg: dict) -> dict:
         cfg: What config.load() returned.
 
     Returns:
-        {"population": the ingest's result, "members": one result per strategy}.
+        {"population": the ingest's result, "members": one result per strategy, "draws": their
+        `core.study.draws` rows}.
     """
     started = time.time()
     envelope.progress(5, "leyendo el ingest y repartiendo estrategias")
@@ -69,5 +70,7 @@ def run(inputs: dict, cfg: dict) -> dict:
                           inputs["asset"], cfg)
     members = [one.contract(got, inputs, cfg, started)
                for _, got in sorted(result["strategies"].items())]
+    kept = [d for m in members for d in m.pop("draws")]
     envelope.progress(100, f"{len(members)} estrategias")
-    return {"population": population(result, members, cfg, started), "members": members}
+    return {"population": population(result, members, cfg, started), "members": members,
+            "draws": kept}

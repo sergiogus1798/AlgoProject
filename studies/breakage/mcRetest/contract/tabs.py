@@ -43,9 +43,11 @@ def verdict_tab(got: dict) -> dict:
                    for k, x in got["verdict"]["subscores"].items()]}])
 
 
-def cost_tab(got: dict, cfg: dict) -> dict:
+def cost_tab(got: dict, cfg: dict) -> dict | None:
     """Which perturbation cost most, in units of what the control moves on its own."""
     a = got["attribution"]
+    if a is None:
+        return None
     floor = cfg["attribution"]["min_control_sigma"]
     return envelope.tab("cost", "Qué la rompe", [
         {"kind": "bars", "title": "Coste de cada tarea, en sigmas del control",
@@ -71,8 +73,10 @@ def cost_tab(got: dict, cfg: dict) -> dict:
                      "Dispersión frente al control"]))])
 
 
-def stress_tab(got: dict) -> dict:
-    """The production task alone: its outcome, its equity fan and its tail."""
+def stress_tab(got: dict) -> dict | None:
+    """The production task alone: its outcome, its equity fan and its tail; None if it did not run."""
+    if "stress" not in got:
+        return None
     entry, tail = got["stress"], got["stress"]["fragility"]
     fan = entry["fan"]
     return envelope.tab("stress", "Estrés combinado", [
@@ -121,7 +125,7 @@ def tasks_tab(got: dict) -> dict:
     curves = [_fan_cone(f"{tasks.TITLES[t]}: abanico de equity", got[t]["fan"]) for t in present
               if got[t]["modes"]["perturbed"]]
     missing = [tasks.TITLES[t] for t in tasks.TASKS if t not in got]
-    return envelope.tab("tasks", "Las ocho tareas", [
+    return envelope.tab("tasks", "Las tareas", [
         blocks.table("Qué hizo cada tarea", pd.DataFrame(
             rows, columns=["Tarea", "Net Profit p5 (USD)", "Mediana Monte Carlo (USD)",
                            "Backtest original (USD)", "Drawdown CVaR (%)"]),
@@ -193,10 +197,10 @@ def sparse_warnings(got: dict) -> list[dict]:
 
 
 def summary(got: dict) -> dict:
-    """The flat row verdict.csv carries."""
-    v, s = got["verdict"], got["stress"]["fragility"]
+    """The flat row verdict.csv carries; the stress columns are empty when it did not run."""
+    v, s = got["verdict"], got.get("stress", {}).get("fragility")
     return {"verdict": v["verdict"], "composite": v["composite"], "binding": v["binding"],
-            "stress_net_p5": round(s["net_p5"]["point"], 2),
-            "stress_cvar_dd_pct": round(s["drawdown"]["cvar"], 2),
+            "stress_net_p5": round(s["net_p5"]["point"], 2) if s else None,
+            "stress_cvar_dd_pct": round(s["drawdown"]["cvar"], 2) if s else None,
             "vetoes": "; ".join(v["vetoes"]), "blocked_by": "; ".join(v["blocked_by"]),
             **criteria.summary(got)}

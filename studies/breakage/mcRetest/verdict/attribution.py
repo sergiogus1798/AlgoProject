@@ -94,7 +94,7 @@ def ranking(per_task: dict, control: str, sigma: float) -> list[dict]:
     return sorted(out, key=lambda row: -row["cost"])
 
 
-def describe(per_task: dict, cfg: dict) -> dict:
+def describe(per_task: dict, cfg: dict) -> dict | None:
     """Everything question 3 asks of one strategy.
 
     Args:
@@ -104,9 +104,12 @@ def describe(per_task: dict, cfg: dict) -> dict:
     Returns:
         The ranking of what cost most, and the named contrasts of tasks.CONTRASTS with the
         question each one asks. Nothing outside that list is compared: a contrast with no
-        question behind it is a p-value looking for a use.
+        question behind it is a p-value looking for a use. None when the control did not
+        run: without its dispersion no effect has a unit.
     """
     control = cfg["attribution"]["control_task"]
+    if control not in per_task:
+        return None
     sigma = control_sigma(per_task[control])
     pairs = {}
     for left, right, asks in tasks.CONTRASTS:

@@ -8,7 +8,7 @@ import pandas as pd
 from core.study import identity, output, result as envelope
 from studies.breakage.spp import contract, criteria, run as reading
 from studies.breakage.spp.inputs import config, export
-from studies.breakage.spp.model import combine, decay
+from studies.breakage.spp.model import combine, decay, mapa
 
 MODULE = "studies.breakage.spp"
 COMBINED = "IS + OOS1 combinado"
@@ -58,6 +58,8 @@ def _side(directory: Path | None, strategy: str) -> tuple[pd.DataFrame | None, p
     if directory is None:
         return None, None
     grid = export.grid(directory, strategy)
+    if grid.empty:      # the other databank holds this strategy under another name, or not at all
+        return None, None
     return export.without_original(grid), grid.loc[-1]
 
 
@@ -100,7 +102,8 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict:
         against OOS1 overlaid) when both exports exist, the criteria metrics, and the noise
         verdict. Its summary carries `brief`, the `design_brief.json` the fabrication stage
         consumes — computed exactly as before, independent of the panels — and `criterios`,
-        the criteria metrics as the flat row `report` writes to verdict.csv.
+        the criteria metrics as the flat row `report` writes to verdict.csv. `draws` rides
+        beside it: the permutation grids as `core.study.draws` rows, popped by `report`.
     """
     started = time.time()
     found = reading.read(directory, strategy, cfg)
@@ -127,14 +130,27 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict:
         notes.append({"code": "sin_oos", "state": "info",
                       "text": "Solo hay export de un lado (IS u OOS) de este proyecto: no hay "
                               "con qué solapar IS y OOS1."})
+    windows = {}
+    for tab_name, title, folder in (("build", "Mapa del build (SPP IS)", is_dir),
+                                    ("oos1", "Mapa de oos1 (SPP OOS)", oos_dir)):
+        grid = None if folder is None else export.grid(folder, strategy)
+        if grid is not None and not grid.empty:
+            windows[tab_name] = mapa.window(grid, export.parameters(folder, strategy), cfg)
+            tabs.append(contract.map_tab(tab_name, title, windows[tab_name]))
+    if len(windows) == 2:
+        tabs.append(contract.windows_tab(mapa.across(windows["build"], windows["oos1"], cfg),
+                                         windows["build"], windows["oos1"]))
     measured = decay.measure(is_pop, oos_pop, is_real, oos_real, cfg["criteria"]) \
         if is_pop is not None else None
     if measured:
         tabs.append(criteria.tab(measured))
     ident = output.identify(directory, [strategy])[strategy]
+    kept = criteria.recorded(strategy, ident, {side: (pop, real) for side, pop, real in (
+        ("IS", is_pop, is_real), ("OOS1", oos_pop, oos_real)) if pop is not None})
     return envelope.envelope(
         MODULE, strategy, ident, cfg, started, tabs, contract.verdict(found),
         notes + identity.warning(ident), GLOSSARY,
         summary={"verdict": brief["verdict"], "n_eff": brief["n_eff"],
+                "combinaciones_distintas": brief["n_eff"],
                 "live": len(brief["parameters"]), "frozen": len(brief["frozen"]),
-                "brief": brief, "criterios": criteria.flat(measured) if measured else {}})
+                "brief": brief, "criterios": criteria.flat(measured) if measured else {}}) | {"draws": kept}

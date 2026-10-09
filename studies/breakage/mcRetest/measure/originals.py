@@ -10,19 +10,21 @@ from core.paths import harvest_dir
 KEEP = ["strategy", "Type", "Open time", "Close time", "Size", "cost", "pnl"]
 
 
-def feed_of(path: Path) -> tuple[str, str]:
-    """Asset symbol and its `core.barstore` feed key, off one strategy of the databank.
+def feed_of(path: Path) -> tuple[str, str, str]:
+    """Asset symbol, its `core.barstore` feed key and the timeframe, off one strategy.
 
     Args:
         path: Any .sqx of the project -- every strategy of one project runs on the same feed.
 
     Returns:
-        (symbol, feed), e.g. ("USDJPY", "USDJPY_M1"). `sqxfile.symbol()` returns
-        the feed with the `_LOM_<timeframe>` suffix SQX appends for its own fill model; cutting
-        it there is what turns it into the directory name `core.barstore` actually holds.
+        (symbol, feed, timeframe), e.g. ("USDJPY", "USDJPY_M1", "H1"). `sqxfile.symbol()`
+        returns the feed with the `_LOM_<timeframe>` suffix SQX appends for its own fill model;
+        cutting it there is what turns it into the directory name `core.barstore` actually
+        holds, and what is cut off is the grid the strategy trades on.
     """
     symbol, fed = sqxfile.symbol(path)
-    return symbol, f"{symbol}_{fed.split('_LOM_')[0]}"
+    feed, _, timeframe = fed.partition("_LOM_")
+    return symbol, f"{symbol}_{feed}", timeframe
 
 
 def newest_harvest(project: str, databank: str) -> Path:
@@ -45,16 +47,19 @@ def newest_harvest(project: str, databank: str) -> Path:
 
 
 def read(project: str, harvest_databank: str, identities: dict[str, str],
-         point_value: float) -> pd.DataFrame:
+         point_value: float, sample: str = "OOS") -> pd.DataFrame:
     """This ingest's own strategies, priced from their harvest's trade list.
 
     Args:
         project: SQX project name.
         harvest_databank: The build databank the harvest paired, e.g. "Results".
-        identities: {strategy: identity}, from the stress task's provenance -- a perturbation
+        identities: {strategy: identity}, from any task's provenance -- a perturbation
             never rewrites a strategy's rules, so its identity is the harvest's own join key.
         point_value: Account currency per 1.0 of price per 1.0 lot (`core.assets`), for the
             cost `core.trades.cost()` recovers.
+        sample: "OOS", or "IS" for the build's own trades: the backtest the `bar` and `ohlc`
+            tasks perturb, whose dates T2 and T3 need (`measure/excess.py`) and nothing else
+            may read.
 
     Returns:
         One row per **out-of-sample** trade of the strategies this ingest covers, `KEEP`
@@ -67,7 +72,7 @@ def read(project: str, harvest_databank: str, identities: dict[str, str],
     """
     frame = pd.read_parquet(newest_harvest(project, harvest_databank) / "trades.parquet")
     by_identity = {identity: strategy for strategy, identity in identities.items()}
-    got = frame[(frame["identity"].isin(by_identity)) & (frame["sample"] == "OOS")].copy()
+    got = frame[(frame["identity"].isin(by_identity)) & (frame["sample"] == sample)].copy()
     got["strategy"] = got["identity"].map(by_identity)
     got["cost"] = core_trades.cost(got, point_value)
     got["pnl"] = got["Profit/Loss"]

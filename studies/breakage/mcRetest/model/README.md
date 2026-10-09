@@ -18,6 +18,8 @@ metric is*, `measure/` says *what its value was on these runs, and whether that 
 | `drawdown.py` | Every drawdown metric, and the account-capital denominator the four of them share | imported | parts → arrays |
 | `runs.py` | Streaks of wins and losses, and the runs test SQX scores their randomness with | imported | parts → arrays |
 | `place.py` | The criteria metrics (owner, 2026-10-04: computed and shown, no threshold): where the original backtest sits among a task's re-runs — its percentile, the median's gap as a share of the original (missing when the original is near zero) and the same distance in IQRs of the re-runs | imported | re-runs + original → percentile, gaps |
+| `retention.py` | **The measure steps 13-14 judge with**, shared with `neighbours/` (T1): `retention(runs, original)` → `ret_med`, `ret_p5`, `f_pos`, `n` — what the re-runs keep of the original's total, NaN when the original is not positive | imported | totals → shares |
+| `tails.py` | What gives a date to an undated re-run: `common_suffix`, the trades it shares with the original counted from the last one back, and `window_excess`, a `bar` re-run's excess inside the common window — exact over the shared tail, approximate over an unshared head | imported | P/L vectors → tail, excess |
 
 ## The calibration, and why it is not optional
 

@@ -2,12 +2,15 @@
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from core.paths import export_dir
 
 SIMS, LEVELS, ORIGINAL, PNL, RETURNS, TRADES = ("sims", "levels", "original", "pnl", "returns",
                                                 "trades")
+# What T2 and T3 date a P/L with (2026-10-07): the original's build trades, and its P/L vector.
+BUILD, ORIGINAL_PNL = "build", "original_pnl"
 
 
 def root(project: str, databank: str, day: str) -> Path:
@@ -140,6 +143,43 @@ def load_trades(project: str, databank: str, day: str, strategy: str = "") -> pd
     return pd.read_parquet(root(project, databank, day) / TRADES, filters=filters)
 
 
+def load_build(project: str, databank: str, day: str, strategy: str) -> pd.DataFrame:
+    """The unperturbed **build** trade list of one strategy, dated, from its harvest.
+
+    Args:
+        project: SQX project name.
+        databank: Ingest run name.
+        day: Ingest date.
+        strategy: One strategy id.
+
+    Returns:
+        The columns of load_trades(), over the window the `bar` and `ohlc` tasks re-run. It is
+        what gives dates to `load_original_pnl()`, which has none.
+    """
+    return pd.read_parquet(root(project, databank, day) / BUILD,
+                           filters=[("strategy", "==", strategy)])
+
+
+def load_original_pnl(project: str, databank: str, day: str, task: str,
+                      strategy: str) -> np.ndarray:
+    """The P/L vector of the backtest one task's simulations were perturbed away from.
+
+    Args:
+        project: SQX project name.
+        databank: Ingest run name.
+        day: Ingest date.
+        task: One task key.
+        strategy: One strategy id.
+
+    Returns:
+        USD per trade, chronological, by the same division as load_pnl(): a re-run's trade
+        that is the original's compares equal to it.
+    """
+    frame = pd.read_parquet(root(project, databank, day) / ORIGINAL_PNL,
+                            filters=[("task", "==", task), ("strategy", "==", strategy)])
+    return (frame["pnl_cents"] / 100.0).to_numpy()
+
+
 def load_returns(project: str, databank: str, day: str) -> pd.DataFrame:
     """Daily profit of each strategy's original backtest, one column per strategy.
 
@@ -151,7 +191,10 @@ def load_returns(project: str, databank: str, day: str) -> pd.DataFrame:
     Returns:
         A frame indexed by date with one column per strategy. This is the study's only
         dated series -- a simulation file carries no dates at all -- and so the only
-        possible input to a correlation between strategies.
+        possible input to a correlation between strategies. It comes from the production
+        task alone: an ingest without it has no columns here.
     """
     frame = pd.read_parquet(root(project, databank, day) / RETURNS)
+    if frame.empty:
+        return pd.DataFrame()
     return frame.pivot(index="date", columns="strategy", values="ret").fillna(0.0)

@@ -32,6 +32,22 @@ design:
   max_levels: 9           # nor more, however much variance it explains
   plateau_share: 0.5      # how far below the best level still counts as plateau
 
+grid:
+  # The grid every map statistic reads (step 16, owner 2026-10-07): per window, without the mother,
+  # exact duplicates, shift rows and permutations under the trade floor.
+  min_trades: 30          # a permutation with fewer trades in the window is left out of every statistic
+  fixed: ["*Shift[0-9]", "*Shf[0-9]"]   # parameters held at the mother's value (case-insensitive patterns,
+                          # `*Shf*` alone also caught the real periods of CBlock_WssShfDbl31/Int21):
+                          # kept at one level in the profile and the brief, and every permutation
+                          # where one of them differs from the mother is left out of the statistics
+  iqr_floor: 0.001        # d is NaN when the IQR is under this share of max(|median|, |real|): a flat grid
+  min_noise_n: 10         # fewer rows than this and the `sobresale` annotation is not computed
+
+profile:
+  # The metric each parameter's profile, its plateau and its centre are read on, over the floored grid.
+  # SharpeRatio or AvgProfitPerYear (benefit per year).
+  metric: SharpeRatio
+
 panel1:
   # The window's histograms: mediana ± this share of its own value (owner, 2026-09-30, §7).
   band_share: 0.30

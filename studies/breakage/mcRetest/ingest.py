@@ -40,8 +40,8 @@ def one(path: Path, task: str, cfg: dict) -> dict:
     sims = sqxretest.simulations(path)
     stored = sqxretest.levels(path)
     metrics = recon.frame(sims["pnl"], sims["offsets"], capital)
-    original = recon.frame(sqxretest.original(path),
-                           np.array([0, sqxretest.original(path).size]), capital)
+    base = sqxretest.original(path)
+    original = recon.frame(base, np.array([0, base.size]), capital)
     usable = tasks.usable(got)
 
     keys = {"task": task, "strategy": strategy}
@@ -64,6 +64,7 @@ def one(path: Path, task: str, cfg: dict) -> dict:
 
     return {**keys, "sims": sim_rows, "levels": level_rows, "pnl": pnl_rows, "returns": returns,
             "original": pd.DataFrame([{**keys, **{k: float(v[0]) for k, v in original.items()}}]),
+            "original_pnl": pd.DataFrame({**keys, "pnl_cents": base}),
             "provenance": {**got, "usable": usable, "stored_only": integrity.stored_only(stored),
                            "identity": sqxfile.identity(path)},
             "reconciliation": (integrity.reconcile(metrics, stored, cfg,
@@ -116,10 +117,9 @@ def collect(project: str, cfg: dict, limit: int | None, staging: Path,
             absent.append(tasks.DATABANK[task])
             continue
         jobs += [(path, task, cfg, staging) for path in found[:limit]]
-    required = [t for t in ("bar", "stress") if tasks.DATABANK[t] in absent]
-    assert not required, (f"faltan las tareas {', '.join(required)}, que no son opcionales: "
-                          "`bar` es el denominador de toda comparación y `stress` es la que "
-                          "ordena las estrategias por su cola")
+    # Only the control is required: since 2026-10-07 the chain runs `bar` and `ohlc` alone.
+    assert tasks.DATABANK["bar"] not in absent, (
+        "falta la tarea `bar`, que no es opcional: es el denominador de toda comparación")
     if absent:
         print(f"sin correr, se leen las demás: {', '.join(absent)}")
     with ProcessPoolExecutor(max_workers=min(len(jobs), cfg["ingest"]["workers"]
@@ -164,7 +164,7 @@ def report(results: list[dict], share: float) -> tuple[list[str], list[str], dic
 
 
 def main() -> None:
-    """Read the eight task databanks and write one dated, immutable export."""
+    """Read the task databanks that ran and write one dated, immutable export."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", required=True)
     parser.add_argument("--databank", default="MCR_All", help="name for this ingest run")
@@ -204,7 +204,7 @@ def main() -> None:
     codec = cfg["ingest"]["compression"]
     counts = {}
     for name, parts in (("sims", ["task", "strategy"]), ("levels", ["task"]),
-                        ("original", []), ("returns", [])):
+                        ("original", []), ("original_pnl", []), ("returns", [])):
         frame = pd.concat([entry[name] for entry in results], ignore_index=True)
         counts[name] = store.write(frame, out / name, parts, codec)
     shutil.move(staging, out / store.PNL)
@@ -213,14 +213,16 @@ def main() -> None:
     # The original trade list is a fact about the strategy, not about a task: one copy per
     # strategy, priced from its own harvest (OPEN.md #71), never per (task, strategy) like
     # everything above.
-    identities = {e["strategy"]: e["provenance"]["identity"]
-                 for e in results if e["task"] == "stress"}
-    sample = next(iter(sorted(databank_dir(args.project, tasks.DATABANK["stress"],
-                                           install).glob("*.sqx"))))
-    symbol, feed = originals.feed_of(sample)
+    identities = {e["strategy"]: e["provenance"]["identity"] for e in results}
+    sample = next(p for t in tasks.TASKS for p in sorted(
+        databank_dir(args.project, tasks.DATABANK[t], install).glob("*.sqx")))
+    symbol, feed, timeframe = originals.feed_of(sample)
     point_value = originals.asset_point_value(symbol)
-    harvested = originals.read(args.project, args.harvest_databank, identities, point_value)
-    counts["trades"] = store.write(harvested, out / store.TRADES, ["strategy"], codec)
+    # The build's trades date the P/L of `bar` and `ohlc` (T2, T3); the OOS ones feed footprint().
+    for name, side in ((store.BUILD, "IS"), (store.TRADES, "OOS")):
+        harvested = originals.read(args.project, args.harvest_databank, identities, point_value,
+                                   side)
+        counts[name] = store.write(harvested, out / name, ["strategy"], codec)
     missing = sorted(set(identities) - set(harvested["strategy"].unique()))
     if missing:
         print(f"  sin operaciones originales (no emparejadas en su cosecha): "
@@ -231,7 +233,8 @@ def main() -> None:
                    {"install": str(install), "project": args.project,
                     "tasks": {e["task"] + "/" + e["strategy"]: e["provenance"] for e in results},
                     "unusable_level_tables": short, "asset": {"symbol": symbol, "feed": feed,
-                                                              "point_value": point_value},
+                                                              "point_value": point_value,
+                                                              "timeframe": timeframe},
                     "harvest_databank": args.harvest_databank,
                     "integrity": summary, "config": config.flatten(cfg)},
                    " ".join(sys.argv), counts)

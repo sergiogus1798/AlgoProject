@@ -66,15 +66,16 @@ def subscores(result: dict, cfg: dict) -> dict[str, float]:
         one task take the **worst** of their parts and never an average: surviving two
         execution stresses and failing the third is an execution problem, and averaging it
         away is how a fragile system passes. The control task scores nothing -- it is the
-        denominator, not a competitor.
+        denominator, not a competitor. Without the production task its score is 0: nothing
+        was measured, and `gates.production` has already made the verdict INCONCLUSIVE.
     """
-    stress = result["stress"]
+    stress = result.get("stress")
     g = cfg["gates"]
     return {
         "production": min(
             curve(stress["fragility"]["net_p5"]["point"], 0.0, stress["original_net"] * 0.5),
             curve(stress["fragility"]["drawdown"]["cvar"], g["survival_dd_pct"] * 100, 5.0),
-            curve(stress["evidence"]["p_positive"], 0.5, 1.0)),
+            curve(stress["evidence"]["p_positive"], 0.5, 1.0)) if stress else 0.0,
         "execution": curve(_kept(result, "execution"), g["exec_keep_frac"], 1.0),
         "specification": curve(_kept(result, "specification"), 0.0, 1.0),
         "data": curve(_kept(result, "data"), 0.0, 1.0)}

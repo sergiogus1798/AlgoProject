@@ -16,7 +16,8 @@ exactly the trap these READMEs exist to prevent.
 |---|---|---|---|
 | `integrity.py` | Rebuilds the confidence table from the simulations and checks it against the one SQX stored, and proves every metric is accounted for | imported | metrics + stored → agreement |
 | `store.py` | Where the parquet lives, how it is partitioned, and the only way anything reads it back | imported | keys → frames |
-| `originals.py` | The unperturbed **out-of-sample** trade list each strategy actually produced, joined in from its own harvest by identity, `sample == "OOS"` only (owner, 2026-09-29), with `core.trades.cost()` already added | imported | project + identities + point value → trades |
+| `originals.py` | The unperturbed trade list each strategy actually produced, joined in from its own harvest by identity: `sample == "OOS"` for `footprint()` (the default; owner, 2026-09-29) and `sample == "IS"` — the build, the backtest `bar` and `ohlc` perturb — for the dates T2 and T3 need, each its own dataset (`trades`, `build`); `sample == "OOS"` only reaches the benchmark, with `core.trades.cost()` already added | imported | project + identities + point value → trades |
+| `excess.py` | **T2 and T3.** The original's per-trade excess — SQX's own P/L (the kind of number a re-run carries; never the repriced one) minus `studies.screening.analysis.tradelevel.drift_term` at step 8's own window and variant — then `t2` (the `ohlc` re-runs' approximate excess) and `t3` (the `bar` re-runs in the common window, by matching tails). Numbers only: the cuts are in `pipeline/autopilot/criteria.yaml` | imported | build trades + original P/L + re-runs → facts |
 
 The command that drives them is `../ingest.py`, in the module root with the other entry points.
 
@@ -66,3 +67,33 @@ three ranks are a hair apart and it costs nothing.
   same-footprint random trader instead of zero (OPEN.md #71) — never read for anything a
   simulation could answer instead. It is never the build side: the strategy was selected on that,
   so a footprint priced there would score the search, not the edge (owner, 2026-09-29).
+
+## T2 and T3: what a re-run's P/L can and cannot be dated with
+
+SQX stores, per simulation, the P/L per trade in cents and nothing else
+(`knowhow/sqx-format/mc-retest-storage.md`). The excess over the drift needs dates, side and size, so
+it is exact only for the original, whose build trades the harvest holds. 🔬 2026-10-07, 26 strategies
+of four projects: the harvest's `IS` trades and `core.sqxretest.original()` of the `bar` and `ohlc`
+tasks are the same trades one to one — same count, each P/L within one cent (the harvest rounds, the
+.bin truncates). `excess.original()` checks exactly that and returns None otherwise.
+
+- **T2 (`ohlc`)** subtracts from every re-run's total the drift the ORIGINAL collected. Its support
+  is that a re-run trades almost when the original did: measured, the trade count moves by a median
+  0-3 % of the original's, although the share of runs with *exactly* its count is anywhere from 0 to
+  1 — read `count_dev_med`, not `same_count_frac` alone. The fact names say `aprox`.
+- **T3 (`bar`)** compares only inside the common window: the original's trades opened after
+  `RandomizeStartingBar.MaxChange` bars (off the run's own provenance) from the build's first bar. A
+  re-run is dated by the tail it shares with the original, at least `fragility.min_tail` trades.
+  Covering the whole window, its excess there is the original's, exactly. Parting inside it, the
+  unshared head is P/L without dates: head P/L minus the original's drift over the uncovered part of
+  the window, pro rata to the head's trade count (a run that only *lost* trades there collected no
+  drift) — and the head's trades from before the window cannot be told apart, so they are counted in:
+  an error of at most the trades of those bars, 0-4 of 135-736 measured. No tail, no count. Fewer
+  than `fragility.min_matched` dated, or one single result in all the runs: no retention, which the
+  judge reads as LIMBO. It never fails anything.
+- 🔬 same day, same 26: every re-run with the original's trade count shares a tail of `min_tail` or
+  more and is identical inside the window (100 %), while only 0-9 % of them are the original trade
+  for trade on USA500 and on NIKKEI225's reference project — they differ in the first trades, the ones the window leaves
+  out. 67-100 % of all runs are identical in the window, so **`ret_med` was 1.000 on all 24 with a
+  positive excess**: the median is a control that says «the path does not matter», and what parts
+  shows in `ret_p5` (0.91-1.00) and `identical_frac`.

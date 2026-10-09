@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from core.paths import report_dir
-from core.study import output, verdicts
+from core.study import draws, output, verdicts
 from studies.breakage.mcRetest import load, many, one
 from studies.breakage.mcRetest.contract import words
 from studies.breakage.mcRetest.inputs import config
@@ -62,6 +62,7 @@ def write_one(out: Path, inputs: dict, cfg: dict, strategy: str) -> Path:
     if inputs["trades"] is not None:
         inputs = {**inputs, "trades": inputs["trades"][inputs["trades"]["strategy"] == name]}
     got = one.run(name, inputs, cfg)
+    draws.merge(out, got.pop("draws", []))
     return output.member(out, got, f"Monte Carlo Retest — {name}", LEDE)
 
 
@@ -92,6 +93,7 @@ def main() -> None:
     for m in got["members"]:
         output.member(out, m, f"Monte Carlo Retest — {m['strategy']}", LEDE)
     output.population(out, "mcRetest", got["population"], title, LEDE)
+    draws.save(out, got.get("draws", []))
     table = many.table(got["members"])
     verdicts.write(out, table, inputs["folder"], " ".join(sys.argv), args.overrides)
     print(f"report: {len(table)} strategies -> {out}")

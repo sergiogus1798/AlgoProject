@@ -30,6 +30,10 @@ one of those runs actually means*.
   simulations themselves are fine, because indices truncate at the tail and never gap. The
   reconstructed channel stays valid; only the stored one is lost. **3 of the 40 runs are like this**
   (`bar/1.19.29`, `exits/1.19.29`, `ohlc/41.5.25`), measured 2026-09-18.
+- **A task that did not run is absent, not an error.** Since 2026-10-07 the chain runs `bar` and
+  `ohlc` (and `mindist` on stop or limit orders); `ingest` requires only `bar`, and everything
+  downstream reads the tasks an ingest holds. `verify` still refuses a databank that holds the
+  wrong methods.
 - **`bar` is a control, not a test, and `ROLE` says so.** A backtest re-run with nothing meaningful
   changed still moves — measured, σ of 57 to 579 USD against 4,089 to 11,923 for `params`. Every
   other task's effect is reported in units of that floor. Give it a threshold and it fires on

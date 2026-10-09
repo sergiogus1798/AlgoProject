@@ -7,11 +7,13 @@ from studies.breakage.mcRetest.inputs import tasks
 # attached is a verdict nobody can argue with.
 VETOES = ("beneficio_no_robusto", "drawdown_insostenible", "colapso_de_regimen",
           "edge_indistinguible_de_cero", "ejecucion_fragil", "sobreajuste_de_parametros",
-          "tarea_sin_dispersion", "tabla_de_niveles_corrupta", "reconciliacion_fallida")
+          "tarea_sin_dispersion", "tabla_de_niveles_corrupta", "reconciliacion_fallida",
+          "sin_tarea_de_produccion")
 
 # Vetoes that mean "this could not be judged", not "this failed". They block a pass without
 # claiming the strategy is bad, and scoring maps them to INCONCLUSIVE.
-DATA_VETOES = ("tarea_sin_dispersion", "tabla_de_niveles_corrupta", "reconciliacion_fallida")
+DATA_VETOES = ("tarea_sin_dispersion", "tabla_de_niveles_corrupta", "reconciliacion_fallida",
+               "sin_tarea_de_produccion")
 
 
 def _flag(group: str, test: str, value: float, limit: float, veto: str, gate: bool) -> dict:
@@ -45,8 +47,12 @@ def production(result: dict, cfg: dict) -> list[dict]:
         outcome, for two reasons that are both structural: it is the only one run on the
         full sample with real out-of-sample trades, and the other seven measure a
         *sensitivity* rather than a result. A drawdown percentile from an in-sample re-run
-        is not a number to size an account against.
+        is not a number to size an account against. Without that task (off the chain since
+        2026-10-07) nothing here can be judged, and the one flag says so: a data veto, so this
+        study's own verdict reads INCONCLUSIVE and never FAIL.
     """
+    if "stress" not in result:
+        return [_flag("data", "stress", 0, 0, "sin_tarea_de_produccion", False)]
     g, got = cfg["gates"], result["stress"]
     out = []
     if got["fragility"]["net_p5"]["point"] <= 0:

@@ -6,7 +6,7 @@ import pandas as pd
 from core import barstore, fanout
 
 from studies.breakage.mcRetest.inputs import tasks
-from studies.breakage.mcRetest.measure import store
+from studies.breakage.mcRetest.measure import excess, store
 from studies.breakage.mcRetest.model import place
 from studies.breakage.mcRetest.verdict import (attribution, evidence, fragility, gates, modes,
                                                scoring)
@@ -116,7 +116,7 @@ def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: s
 
 
 def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict,
-        strategy: str, benchmark: float, cfg: dict) -> dict:
+        strategy: str, benchmark: float, cfg: dict, context: dict | None = None) -> dict:
     """Everything the study concludes about one strategy.
 
     Args:
@@ -127,11 +127,13 @@ def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict
         strategy: One strategy id.
         benchmark: What benchmarks() returned for this strategy, 0.0 if absent.
         cfg: What inputs.config.load() returned.
+        context: What `excess.context()` returned; None leaves T2 and T3 without data.
 
     Returns:
-        The four questions, the flags and the verdict. Produces numbers and judges none of
-        them: `gates` owns every threshold and computes nothing, and this owns the
-        computation and decides nothing.
+        The four questions, the flags and the verdict, and `retention` (T2 and T3). Produces
+        numbers and judges none of them: `gates` owns every threshold and computes nothing,
+        and this owns the computation and decides nothing. A task that did not run is a key
+        that is not there; without the control there is no `attribution`.
     """
     by_task = per_task(keys, sims, original, strategy, benchmark, cfg)
     trades = store.load_trades(**keys, strategy=strategy)
@@ -139,7 +141,8 @@ def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict
     body = {**by_task,
             "psr": evidence.analytic_sharpe(original_pnl, benchmark),
             "attribution": attribution.describe(
-                {task: _arrays(sims, task, strategy)["NetProfit"] for task in by_task}, cfg)}
+                {task: _arrays(sims, task, strategy)["NetProfit"] for task in by_task}, cfg),
+            "retention": excess.describe(keys, strategy, provenance, context, cfg)}
     flags = gates.check(body, provenance, cfg)
     scores = scoring.subscores(body, cfg)
     return {"strategy": strategy, **body, "flags": flags,
@@ -152,7 +155,7 @@ def _one(name: str) -> dict:
     return one(got["keys"], got["sims"], got["original"],
                {task: got["provenance"][f"{task}/{name}"] for task in tasks.TASKS
                 if f"{task}/{name}" in got["provenance"]}, name,
-               got["benchmarks"].get(name, 0.0), got["cfg"])
+               got["benchmarks"].get(name, 0.0), got["cfg"], got["context"])
 
 
 def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: dict | None,
@@ -194,7 +197,7 @@ def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: di
     # One strategy per process, the one with most simulations first: each reads its own
     # P&L partitions and nothing crosses between them until the pool below.
     _SHARED.update(keys=keys, sims=sims, original=original, provenance=provenance,
-                  benchmarks=bench, cfg=cfg)
+                  benchmarks=bench, cfg=cfg, context=excess.context(keys, asset))
     got = dict(fanout.run(_one, {n: int((sims["strategy"] == n).sum()) for n in names},
                           WORKERS))
     per = {name: got[name] for name in names}
@@ -203,8 +206,11 @@ def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: di
             for name, got in per.items() for task in tasks.TASKS
             if task in got and got[task]["modes"]["discriminated"]}
     base = original[original["task"] == "bar"].set_index("strategy")["NetProfit"].to_dict()
-    tail = {name: got["stress"]["fragility"]["net_p5"]["point"] for name, got in per.items()}
+    # Without the production task there is no tail to rank by and no daily equity to correlate.
+    tail = {name: got["stress"]["fragility"]["net_p5"]["point"] for name, got in per.items()
+            if "stress" in got}
+    daily = store.load_returns(**keys)
     return {"strategies": per,
-            "effective_bets": evidence.effective_bets(store.load_returns(**keys)),
+            "effective_bets": evidence.effective_bets(daily) if daily.shape[1] else None,
             "multiplicity": evidence.corrected(pool, cfg),
             "rank_stability": evidence.rank_stability(base, tail, cfg)}
