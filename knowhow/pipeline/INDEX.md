@@ -4,7 +4,11 @@
 - `blind-door-is-per-study-not-per-project` — Is the blind door scoped per project or per study, and what does backfill --blind cover?
 - `blind-steps-write-no-ledger-rows` — Which blind steps (WFC, CSCV, WFM) record their own look in the ledger?
 - `collect-never-hashed-its-own-files` — Why was metrics.parquet never hashed by collect, and what rewrote it afterwards?
+- `monkey-after-cut-has-no-cap` — Why did a run sit for hours in "paso 8 · python" after the judge?
+- `monkeyexcess-after-the-cut` — Why does the autopilot not run monkeyExcess after step 8's cut?
 - `oos2-door-binds-only-autonomous` — Who is bound by the oos2 reservation and the step-20 blind door?
 - `pipeline-run-guards` — How should a pipeline run separate invalid-measurement gates from not-good-enough thresholds?
 - `resumable-jobs` — What three separate facts must hold for a resumable job to skip its work?
+- `step10-p1-p7-never-have-data` — Why can step 10 never give "Pasa"?
+- `step12-zbuild-not-centred-and-d1-sister-empty` — Why is step 12's z_build of scaled sisters not centred on 0, and why is the D1 sister empty?
 - `thresholds-live-in-the-ledger` — Where does a threshold's number live, and what does config.yaml hold instead?
