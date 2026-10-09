@@ -16,7 +16,7 @@ Read its output back to the owner, saying which values you are applying and wher
 SQX. It exits **2** when a required cost still carries `use: null` — the owner has not decided yet.
 **Stop and ask. Do not pick a value.** It exits **3** when the file does not match its class.
 
-## Four files, and only one of them is per asset
+## Seven shared files, and only one folder is per asset
 
 ```
 assets/
@@ -27,6 +27,8 @@ assets/
   _build.yaml        the build doctrine: rule complexity, order types, exits, sizing, hours,
                      precision and cross-checks. What SHAPE a strategy may have, as opposed to
                      what it costs to trade one.
+  _aliases.yaml      explicit overrides for `core.symbols.alias()`, where the leading-ticker rule gets a name wrong.
+  _feed_renames.yaml old SQX feed names -> the names held since 2026-10-01 (`core.symbols.current()`).
   _study.yaml        the Build's acceptance filters (step 6): which generated strategies are kept —
                      trades per year by timeframe, profit factor, net profit, all read in-sample
                      (sampleType 10). Defaults, then per class, then per symbol; a missing value
@@ -39,8 +41,8 @@ assets/
 A retired asset lives in `symbols/_retired/`, which `symbols()` does not glob: out of the library,
 not lost, and its `_policy.yaml` block stays so a restore brings its windows back.
 
-The four shared files sit at the top; the per-instrument ones live in `symbols/`, so the
-directory shows four entries instead of twenty. `core.assets.symbols()` globs `symbols/` and nothing
+The shared files sit at the top; the per-instrument ones live in `symbols/`, so the
+directory shows a handful of entries instead of dozens. `core.assets.symbols()` globs `symbols/` and nothing
 else. What a session reads is `load(<SYMBOL>)`, which folds the policy in and hands back one dict —
 the lookup unit is still the asset, exactly as before.
 
@@ -106,7 +108,7 @@ index CFDs do since 2026-09-27: their spread fell or rose between the two OOS wi
   Hantec **10**. → `knowhow/costs/mt5-points-to-sqx-points.md`
 
 Its time windows are **not** here: they live in `_policy.yaml` under `segments: <SYMBOL>:`, all
-seventeen together, next to the date range SQX actually holds for that feed.
+all together, next to the date range SQX actually holds for that feed.
 
 ## MC Retest ranges
 
@@ -168,7 +170,7 @@ day stays behind alone, and the same script retries it on each later Saturday at
 |---|---|---|
 | `build` | generation. The only sample the builder ever sees | `is` |
 | `oos1` | everything from the retest through the SPPs | `oos` |
-| `oos2` | the last out-of-sample: WFC, CSCV, market surfaces, WFM, ATR stop | `oos` |
+| `oos2` | the last out-of-sample: WFC, CSCV, market surfaces, WFM, the joint blind test (BlindJoint), ATR stop | `oos` |
 
 `reserved_for` binds only an autonomous agent (`ALGO_AUTONOMOUS=1`, `core.assetdata.enforced`):
 owner, 2026-09-28, a human may look at any segment whenever. Under that flag the preflight prints
@@ -177,7 +179,7 @@ it with a warning and `ledger.gate` refuses other steps.
 **Why per asset.** Histories do not start together: gold has M1 from 2003-05-05 and is built from
 2008, while the DAX40 has nothing before 2013-09-30 and a 2008 window would silently run short.
 `data` is refreshed with **`python3 -m core.assets --dataranges`**, which asks the conductor and
-rewrites all seventeen lines — run it after every "Update all" on the master. It sits next to the
+rewrites every asset's line — run it after every "Update all" on the master. It sits next to the
 windows precisely so the mismatch is visible. Two checks, and only one of them stops the work:
 
 - `before_data()` — a segment starting before its feed does. **Fatal**, the preflight exits 3: that
@@ -197,6 +199,8 @@ categories that answer different questions:
 - `family` — same economic driver. The easy test: passing it proves little, failing it says a lot.
 - `structural` — similar structure (volatility, session, noise) with **no** shared driver. The hard
   test: transferring here means the logic caught something about price movement, not a macro factor.
+
+An optional `near_identical` key (owner, 2026-10-07) lists groups of feeds of one asset's block that are almost the same market (USA500, USATEC, DJ30); a group shares a total weight of 1 when market surfaces average across markets. Only `studies/optimisation/marketSurfaces` reads it.
 
 **The list is fixed before any result is looked at.** Choosing markets after seeing where the
 strategies work turns the test into a selection and its p-values into decoration. The file

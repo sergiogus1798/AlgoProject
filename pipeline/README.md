@@ -7,7 +7,7 @@ disk hygiene are the requirement here rather than a quality detail.
 
 ```
 recipe.yaml ─▶ stages ─▶ ledger ─▶ cleanup
- the seven     run one   what is   delete only what
+ the twelve    run one   what is   delete only what
  as data       as its    happening the ledger proves
                own       right     is recoverable
                process   now
@@ -18,7 +18,7 @@ thrown away when the daemon arrives; written as a **job with a ledger**, the dae
 server on top of it. Three consequences, and they are the design:
 
 - **Stages are data, not code.** `recipe.yaml` is the only place that says what a pipeline is, and
-  the daemon will read the same file. Adding the eighth stage is adding a row.
+  the daemon will read the same file. Adding a thirteenth stage is adding a row.
 - **The ledger is written during a stage, never at its end.** A stage that runs forty minutes and
   says nothing until it finishes is indistinguishable from a hung one.
 - **The ledger survives the deletion.** It weighs kilobytes; the data it describes weighs gigabytes.
@@ -28,15 +28,16 @@ server on top of it. Three consequences, and they are the design:
 |---|---|---|
 | `ledger/` | what is happening right now, and what happened | changing `state.json`; other modules read it |
 | `stages/` | what a stage is, how one is run, and when it refuses | adding a gate or wiring a real module in |
-| `stubs/` | what stands in for the five modules not built yet | wiring a real module in |
+| `stubs/` | the placeholder `verify/` swaps in for every row's command | touching `verify/` |
 | `verify/` | is this still a pipeline and not a script? | touching progress or resumption |
 | `autopilot/` | one PROJECT's workflow, 7 → 16, unattended: the window's chain judging by `criteria.yaml` instead of stopping (owner, 2026-10-01) | running a workflow without stops, or writing criteria |
+| `campaign/` | the unattended loop over template × asset × timeframe: a ledger, pre-registered batches, one `workflow.sh template` per cell, each result kept with its strategies in the archive (owner, 2026-10-05) | running or planning the campaign |
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `run.py` | the whole chain over every mother of a project | `python3 -m pipeline.run --project XAUUSD --databank SPP_IS` | SPP export → one `state.json` and one `verdict.json` per strategy |
-| `cleanup.py` | deletes a finished mother's variant data, only what the ledger proves is recoverable | `python3 -m pipeline.cleanup --project XAUUSD --strategy "Strategy 17.9.39"` | ledger → freed bytes |
-| `recipe.yaml` | the seven stages: command, entry gate, exit gate | edited | — |
+| `cleanup.py` | deletes a finished mother's variant data, only what the ledger proves is recoverable | `python3 -m pipeline.cleanup --project XAUUSD --strategy "Strategy 17.9.39" [--apply]` | ledger → freed bytes |
+| `recipe.yaml` | the twelve stages: command, entry gate, exit gate | edited | — |
 | `config.yaml` | every tunable, grouped by the layer that reads it | edited | — |
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 17-pipeline).
@@ -56,21 +57,20 @@ the sweep to that folder makes reaching it impossible rather than merely forbidd
 that does not depend on the manifest's `origin` flag being right.
 
 **A stage joins by adding one print, not an import.** The whole coupling between this module and
-the five that will fill it is the line `PROGRESS <0..100> <status>` on stdout. Anything else a
+the modules it runs is the line `PROGRESS <0..100> <status>` on stdout. Anything else a
 stage prints becomes its status line without moving the bar, so a module that never adopts the
 protocol still proves it is alive.
 
 ## What is wired, and what is standing in
 
-`sppultra`, `design` and `build` run real modules. `design` and `build` are the same entry point
+All twelve rows run real modules (`spp_is`, `spp_oos`, `spp_export`, `sppultra`, `design`, `build`, `ran`, `equity`, `collected`, `wfc`, `cscv`, `verdict`). `design` and `build` are the same entry point
 twice — `sqx.variants.make` with and without `--design-only` — which is safe because the design is
 seeded from `sqx/variants/config.yaml` and reproduces exactly. Both are pointed at `{work}` with
 `--out`, so a mother's batch lands beside its own ledger rather than in `variants/<project>/…`,
 which is where the command writes when a human runs it.
 
-The remaining three rows (`ran`, `collected`, `wfc`) point at `stubs/placeholder.py`, and each
-carries a comment with the line it becomes. **Wiring a real module in is editing `command` and
-`produces` on its row** — no Python in this folder changes.
+`stubs/placeholder.py` is no longer a gap-filler: it exists for `verify/`. Wiring a module in is editing `command` and
+`produces` on its row — no Python in this folder changes.
 
 ⚠️ `verify/` deliberately does **not** run the real rows: it swaps every command for the
 placeholder, because what it tests is the ledger — ordering, resumption, `progress` monotonicity,

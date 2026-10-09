@@ -7,8 +7,8 @@ desktop window drives the whole chain and shows its results.
 ## The sequence
 
 `docs/AgentPDFs/WORKFLOW.md` is the one ordering of the work, from an idea in the chat to a
-strategy validated in MetaTrader 5 on each prop firm's account — 26 steps, each with its status and
-what blocks it today. In short:
+strategy validated in MetaTrader 5 on each prop firm's account — 26 steps (plus 10.5, 11.5, 11.7,
+16.5 and 18.5), each with its status and what blocks it today. In short:
 
 | steps | what happens | where |
 |---|---|---|
@@ -21,6 +21,27 @@ what blocks it today. In short:
 | 26 | the survivor in SQX at each prop firm's conditions against its MT5 backtest on that firm's account | `mt5/verify/` |
 | after | combining survivors, the funded path first | `portfolio/` |
 
+Steps 5 to 25 run through **one command**, never step by step by hand:
+
+```bash
+bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES>
+bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES>
+bin/workflow.sh run      <PROJECT>      # an existing project, from where its rail is
+bin/workflow.sh plan     <PROJECT>      # prints what `run` would do, runs nothing
+```
+
+It creates the custom project on the custodian and runs every SQX task and Python study in one
+session (`pipeline/autopilot/`), judging each step by the frozen `criteria.yaml` and cutting in SQX
+instead of stopping. The campaign (`pipeline/campaign/`) loops it unattended over template × asset ×
+timeframe. A strategy that passes the gate of step 8 is saved at once in the strategy store
+(`core/store/`) — its `.sqx`, every later test's results and its trades — because a genetic build
+cannot be reproduced; a project is not retired until its survivors are whole there.
+
+Before step 1 there is a research chain that decides where to look: the literature scout reads
+published research into quote-anchored entries, the market profile measures them, and the research
+director proposes one asset × timeframe × direction × family cell with three ideas for the owner to
+veto (`studies/research/`).
+
 ## The folders
 
 | folder | what it is |
@@ -30,10 +51,10 @@ what blocks it today. In short:
 | `studies/` | Every question asked of a strategy or a population, one folder each, grouped by workflow family. Each returns the contract of `core/study/`, and the window paints it |
 | `engines/` | What the studies compute with: trade pricing, null models, resampling, regimes, multiple-testing inference, variants |
 | `ledger/` | The global search ledger — one line per search that reduced a population — and the thresholds frozen before looking |
-| `pipeline/` | One mother strategy in, one verdict out, unattended and resumable |
+| `pipeline/` | The workflow unattended: the autopilot behind `bin/workflow.sh`, the campaign over template × asset × timeframe, and one mother strategy in, one verdict out, resumable |
 | `portfolio/` | Combining strategies, separately for funded accounts and real capital; the prop-firm catalogue and discounts |
-| `mt5/` | MetaTrader 5 under Wine: backtesting SQX's EAs in its tester, the MCP server over the terminal (no order tools), and step 26 |
-| `core/` | The shared library: paths, assets and costs, SQX readers, the study contract |
+| `mt5/` | MetaTrader 5 under Wine: backtesting SQX's EAs in its tester, the MCP server over the terminal (no order tools), step 26, the weekly reconciliation against live accounts and the fleet on the VPS |
+| `core/` | The shared library: paths, assets and costs, SQX readers, the study contract, the strategy store |
 | `assets/` | Per-asset costs, segments and ranges. Read with `python3 -m core.assets <SYMBOL>` before authoring anything |
 | `knowhow/` | The facts that cost time to discover, one card each, tagged tested / from logs / inferred |
 | `perf/` | The cost catalogue — what each expensive part takes in time, memory and disk |
@@ -104,12 +125,14 @@ file to open for which task. Read `CODESTYLE.md` before writing Python, and the 
 `README.md`. What is broken or pending is `OPEN.md`; where an old path went (`tasks/`,
 `strategies/`, …) is `docs/MAPA-DE-CARPETAS.md`.
 
-Skills (`.claude/skills/`, catalogued in `docs/SKILLS.md`) turn each workflow step the owner runs
-again into one command — `/template-run`, `/oos-gate`, `/crossmarket`, `/crosstf`, `/mcretest`,
-`/spp`, `/variants`, `/wfm`, `/export`, `/curate` and others. Scheduled agents
+Skills (`.claude/skills/`, catalogued in `docs/SKILLS.md`) turn each chain the owner runs again
+into one command — `/workflow-simple` and `/workflow-template` for the whole workflow, `/store-save`,
+`/store-open` and `/store-resume` for the strategy store, `/research-direct` and `/literature-scout`
+for the research chain, and one per step (`/oos-gate`, `/crossmarket`, `/crosstf`, `/mcretest`,
+`/spp`, `/variants`, `/wfm`, `/export`, `/curate` and others) for testing a step on its own. Scheduled agents
 (`.claude/agents/`, launched by `bin/`) keep the project honest unattended: a nightly audit,
-documenter and fixer, a daily commit proposal at 05:45 (propose only: the owner commits, with one «sí» to `python3 -m tools.commit_apply`), a weekly project janitor, and the prop-firm catalogue watcher and daily deal
-hunter. Their reports go to `AlgoData/audit/`. `/sync` keeps this GitHub copy equal to the machine —
+documenter and fixer, a daily commit proposal at 05:45 (propose only: the owner commits, with one «sí» to `python3 -m tools.commit_apply`), a weekly project janitor, the prop-firm catalogue watcher and daily deal
+hunter, the daily literature scout and the weekly MT5 reconciliation. Their reports go to `AlgoData/audit/`. `/sync` keeps this GitHub copy equal to the machine —
 see `docs/manual/01-empezar.pdf`.
 
 Two scheduled jobs need no model and so are plain cron scripts, not agents:

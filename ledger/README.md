@@ -12,7 +12,7 @@ family: the unit the multiple-testing correction is owed to.
 |---|---|---|---|
 | `study.py` | What a study is, where its ledger lives, and contract **L1** — the columns of a search | imported | ids → path, frame |
 | `record.py` | Builds a row, checks the door, appends it; and the study's funnel | imported | a search → a line |
-| `gate.py` | **The one-way door**, shut only for an autonomous agent: who may read a reserved segment, and when 17-19 may be read | imported | step, segment → pass or raise |
+| `gate.py` | **The one-way door**, shut only for an autonomous agent: who may read a reserved segment, and when 17-19 may be read — plus `seal` (encargo 48), shut for everyone: step 17 reads a reserved segment only with a written, calibrated `criteria.yaml` entry (`wfc_calibration.json`, owner 2026-10-07) | imported | step, segment → pass or raise |
 | `trials.py` | N and the pooled sigma over every search — plus the `extra` looks the caller passes, which raise N and leave sigma alone — the population's n_eff, and the deflated Sharpe that follows | imported | ledger (+ extra) → N, sigma, DSR |
 | `spend.py` | The map of spent data: how often each segment has been read, and what is left virgin | imported | ledger → segments |
 | `thresholds.py` | **The accessor**: `value(key)` and `fill(cfg)`, which a module's `config()` runs over its parsed `config.yaml` to replace every `ledger:<key>`; and the check of which rows are read through it | imported | register → numbers, divergences |
@@ -38,13 +38,12 @@ symbol)` runs *before* the row is written, reads `assets/_policy.yaml` every cal
 17, 18 and 19 until all three have run. Either way the row is written: the ledger keeps counting
 every look, which the deflated Sharpe needs whoever looked.
 
-⚠️ **The WFC and the CSCV record their own look; the WFM still does not.** Since 2026-09-27
+⚠️ **The WFC and the CSCV record their own look; the WFM does it through `steprows.log_wfm`.** Since 2026-09-27
 (encargo 24, E1) `studies.optimisation.wfc.report` and `…cscv.report` ask `gate.allow` for every
 segment before opening the batch and then write one row per segment read through `record.log`
 (`engines/variants/look.py`): the WFC one per segment of its composition (step 17,
 `criterion: wfc/<inside>__<outside>`), the CSCV three — `build`, `oos1`, `oos2` (step 18), since its
-12,870 partitions cut the whole history. The WFM (19) still writes none, so the blind door opens only
-after `backfill --blind`, which rebuilds the missing rows from the results on disk, marked
+12,870 partitions cut the whole history. The WFM (19) writes its three rows through `steprows.log_wfm` (called by `wfm.report`); `backfill --blind` rebuilds any missing rows from the results on disk, marked
 `backfill`, **skips a batch whose WFC or CSCV already wrote its own** (a live row's note opens
 `lote <batch>`), and refuses to write a step twice (`knowhow/pipeline/blind-steps-write-no-ledger-rows.md`).
 `BlindJoint` in `STEPS` is step 20's SPA on `oos2` (`studies/closing/blindJoint/`) — the word the

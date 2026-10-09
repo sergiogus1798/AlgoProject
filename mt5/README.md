@@ -47,6 +47,8 @@ without the filter — keeps the calendar history (MT5's and Forex Factory's, fr
 `MT5_DATA/calendar/`, and measures what the rule costs a strategy in the Strategy Tester, where the
 patched EA reads that history from `Common\Files` (`/ea-news`, its own README).
 
+`fleet/` is the live MT5 fleet on the VPS: the FleetBeacon service, the collector and MetaTracker (its own README, `CONTRACT.md`). `reconcile/` is the weeklyReconciler: the live accounts against the SQX backtest of the same week, descriptive, no pass bar (its own README, OPEN.md #78). `symbols.csv` maps each SQX symbol to its FTMO and Hantec names.
+
 `indicators/` is the project's MQL5 indicator set, in MQL5's own `Indicators/` and `Include/` layout: the
 add-on `Sq*` indicators SQX does not ship, and the owner's versions of `SqBBWidthRatio`,
 `SqSRPercentRank` and `SqSuperTrend` (no rounding to 6 decimals, a range check instead of
