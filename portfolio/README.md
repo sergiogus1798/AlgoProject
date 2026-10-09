@@ -9,23 +9,40 @@ balance, not a Sharpe ratio. Shared machinery lives in `common/`.
 
 ## Layout
 
-| folder | what it holds | state |
-|---|---|---|
-| `common/construct/` | the construction engine: pool, M1 equity rebuild, pair measures, search, weights, verdict on `oos1` then `oos2` | built, test pool only |
-| `common/monteCarlo/` | trade-level Monte Carlo of one strategy or portfolio: how much of the result is luck, and of what kind | built |
-| `funded/catalog/` | prop-firm plan database (price, rules per stage, add-ons, every add-on combination priced) | built, refreshed weekly by an agent |
-| `funded/deals/` | daily scan of firm discounts, notification, and a worth-it verdict | built |
-| `funded/rules/` | a challenge as a state machine over server days | built, known-answer tested |
-| `funded/sim/` | bank simulation over many accounts bought in sequence | built, test pool only |
-| `funded/decide/` | reads the bank tables and says which account to buy, with its cost | built, nothing real to read yet |
-| `real/` | the own-capital path | **empty** (a `.gitkeep`) |
-| `testroot/` | a second data root so tests run the real code without touching real data | built |
+| folder | what it holds |
+|---|---|
+| `common/construct/` | the construction engine: pool, M1 equity rebuild, pair measures, search, weights, verdict on `oos1` then `oos2` |
+| `common/monteCarlo/` | trade-level Monte Carlo of one strategy or portfolio: how much of the result is luck, and of what kind |
+| `funded/catalog/` | prop-firm plan database (price, rules per stage, add-ons, every add-on combination priced) |
+| `funded/deals/` | daily scan of firm discounts, notification, and a worth-it verdict |
+| `funded/rules/` | a challenge as a state machine over server days |
+| `funded/sim/` | bank simulation over many accounts bought in sequence |
+| `funded/decide/` | reads the bank tables and says which account to buy, with its cost |
+| `real/` | the own-capital path |
+| `testroot/` | a second data root so tests run the real code without touching real data |
 
 Plans and decisions: `PLAN.md` (layout, data shapes, milestones, §14 the funded path), `DECISIONS.md`
 (settled and open questions), `EXECUTION.md` (contracts between files), `BUILD_COMPENDIUM.md`
 (practices and traps gathered before building), `CLAUDE.md` (rules for sessions working here).
 
 ## Method
+
+### The funded path: "4D chess"
+
+A funded account is not capital: a fee is paid — a premium — and payouts arrive until a rule breaks
+the account. A strategy that is excellent on real capital can have negative expected value here (one
+5 % day a year is enough to fail), and a dull, quiet one can be positive. Valuing that takes four
+levels at once, each built on the results of the one below — the owner's name for it is *Ajedrez 4D*
+(`docs/AgentPDFs/Ajedrez4D-2026-09-30.md`, in Spanish):
+
+| level | the game | what it produces |
+|---|---|---|
+| 0 · the material | every trade's floating P&L, minute by minute, from M1 wicks — a trade list gives the size of an adverse excursion, the rules punish its *timing* | per server day: closed P&L, floating, lowest and highest equity; a portfolio's worst moment, which is not the sum of its members' |
+| 1 · one game | one account as a state machine over those days, at a chosen risk per trade | P(pass), P(fail) and on which rule, over three kinds of resampled paths — the most pessimistic rules |
+| 2 · the bank | accounts bought one after another on one long path, fees, re-buys and refunds included | the expected value of the owner's bank, not of the account |
+| 3 · the choice | every firm × plan × add-on combination × portfolio × risk | which account to buy, or «none» when nothing beats a random-entry baseline |
+
+The pieces, level by level:
 
 **Selection discipline.** A combination is chosen reading only `build`, judged on `oos1`, then on
 `oos2` once. Correlation is measured between equity curves, not between metrics, and a portfolio's
@@ -53,8 +70,7 @@ members independent, and windows of history.
 `VE_banco = E[Σ payouts received] − E[Σ prices paid]`, re-buys and fee refunds included. One long path
 per draw; accounts are bought one after another on it. Edge is haircut or set to zero (a random-entry
 baseline), and `funded/decide/` recommends a plan only if it passes its gates, the last being EV above
-that baseline. Otherwise it answers «ninguno». Owner inputs still `null` in `funded/sim/config.yaml`
-(tax rate, payout fee, denial and closure probabilities…) make the real run refuse to start.
+that baseline. Otherwise it answers «ninguno».
 
 **Trade-level Monte Carlo** (`common/monteCarlo/`) runs after a strategy is accepted and does not ask
 whether the edge is real. Five families: A and B resample order and composition (block bootstrap
@@ -91,13 +107,3 @@ All verified to exist as modules; run from the repo root.
 | `python3 -m portfolio.testroot.build` | create the test root |
 
 Tests: `tests/test_portfolio_*.py`.
-
-## Status
-
-Honest summary, from `PLAN.md` §9 (2026-10-05): every piece above is built and has a known-answer
-test, but ran only on the relaxed `Test_nikkei_ref` pool under the test root (pair thresholds 0.90,
-a pseudo `oos2` cut from the tail). **No real result exists**: no real pool has been run, the real
-data root holds no portfolio run, ledger row or bank table, a real `oos2` has not been read, and
-incubation is not running. `real/` is empty. Several knobs are still `null` and make a real run
-refuse (see `PLAN.md` §9). Unfixed findings: `OPEN.md` #104. Any number printed under the test root
-is marked «RAÍZ DE PRUEBA» and is not a result.

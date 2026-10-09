@@ -64,7 +64,6 @@ Stated here because it is the first thing a reader should ask:
 - The deflated Sharpe is fed the dispersion inside one mother's variants, which is narrower than
   the whole study's and errs in the flattering direction (`ledger/README.md`).
 - The `oos2` reservation is enforced in code for autonomous agents; a person can still read it.
-- `portfolio/` has run only on a test pool: there is no live portfolio result yet.
 
 ## Research before the search
 
@@ -109,6 +108,17 @@ A person decides wherever a decision spends compute or commits to a result:
 | research | scout, profile, board, the director's proposal and its adversarial review | which proposal to run; an ambiguous rule is a question, never a silent default |
 | workflow | project creation, every task and study, every cut | every argument of the run; each launch from the window is confirmation-gated |
 | upkeep | nightly audit, documentation and fix agents; a daily commit proposal | the commit — agents propose, they never commit or push |
+
+## After the survivors: the funded path
+
+A prop-firm account is an option bought for a fee, so the objective is the cash flow between the
+owner's bank and the firm, not the account's return. `portfolio/` values it on four levels, each
+built on the one below — "4D chess": every trade's floating equity rebuilt minute by minute from M1
+wicks; one account as a state machine over the firm's server days; a bank buying accounts one after
+another, re-buys and refunds included; and the choice over firm × plan × add-ons × portfolio × risk,
+which answers «none» when nothing beats a random-entry baseline. → `portfolio/README.md`
+
+## Tested against known answers
 
 Known-answer and golden tests (`tests/`, 270+ files) pin the statistics: planted edges that must be
 found, no-edge panels that must reject at the nominal rate, and SQX file formats read back exactly.
