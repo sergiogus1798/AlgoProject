@@ -163,5 +163,4 @@ the failure mode that matters.
 
 What the clone lacks (`config/machine.yaml`, the data root, `AlgoData/manual-fuentes/`) and the
 steps to set it up are in the owner's chapter `AlgoData/manual-fuentes/10-github.md` (PDF in
-`docs/manual/`). Afterwards `python3 tools/checks.py` must be green. On Windows, only the analysis
-half runs — see the Windows section of `README.md`.
+`docs/manual/`). Afterwards `python3 tools/checks.py` must be green.

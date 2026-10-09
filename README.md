@@ -1,56 +1,93 @@
 # AlgoProject
 
-A research pipeline for systematic trading strategies, from a published idea to a strategy
-validated in MetaTrader 5 on prop-firm and real accounts. StrategyQuant X generates and
-robustness-tests candidates; Python does the statistics that decide which of them are real; a
-desktop window drives the whole chain and shows its results.
+A research pipeline for systematic trading strategies: from a rule in a published paper to a
+strategy validated in MetaTrader 5 on prop-firm and real accounts. StrategyQuant X searches the
+strategy space and re-runs backtests; Python does the inference that decides which results are
+real; a desktop window drives the chain and shows every verdict.
 
-## What it is built around
+The premise is that **a backtest is a search result, and most search results are selection
+artefacts**. So the pipeline is built to reject: every candidate is judged against a null generated
+for that question, every search that narrowed a population is counted, and the last data window is
+opened once.
 
-**Most backtested edges are selection artefacts, so the pipeline is designed to reject.** Every
-candidate is judged against a null rather than against zero, and every look at the data is counted:
+## Design principles
 
-- **Thresholds frozen before looking.** Each judging step reads its criteria from `ledger/`, set
-  before the population exists; a global search ledger records every search that reduced a
-  population, so multiple testing is corrected over what was actually tried.
-- **Nulls that fit the question.** Random-entry traders with the strategy's own exits and costs,
-  joint year-shift nulls for cross-market and cross-timeframe transfer, CSCV for the probability of
-  backtest overfitting, stepwise multiple-testing inference over the survivors (`engines/`).
-- **Three windows, one of them blind.** Strategies are built on `build`, screened on
-  `oos1`, and `oos2` stays reserved for the final joint verdict.
-- **Pessimistic costs.** Measured spread per session segment, slippage, and commission and swap at
-  the worst of the brokers traded, set per task (`assets/`).
-
-## Automated research, supervised
-
-The chain runs unattended, and a person decides at every point where a decision spends compute or
-commits to a result:
-
-| stage | what runs by itself | what the owner decides |
-|---|---|---|
-| research | a daily scout reads published research and extracts each rule as an entry anchored to verbatim quotes; a market profile measures the entries; a director agent ranks asset × timeframe × direction × family cells and brings three ideas, each attacked by a reviewer agent before any CPU is spent | which proposal to run — a veto in the window; an ambiguous rule is a question, never a silent default |
-| workflow | one command creates the project and runs steps 5 to 25 — every SQX task and Python study — judging each step by the frozen criteria and cutting the population itself; a campaign loops it over template × asset × timeframe | every argument of the run, and each launch from the window is confirmation-gated |
-| upkeep | nightly audit, documentation and fix agents; a daily commit proposal | the commit — agents propose, they never commit or push |
-
+- **A null per question, not a threshold on a metric.** "Profit factor above 1.3" says nothing
+  about what chance produces on the same market with the same costs. Each judging step states its
+  null and reads a z or a p against it.
+- **Three windows.** The builder sees only `build`. The out-of-sample retest and the robustness
+  steps read `oos1`. `oos2` is reserved by name for the six studies of the final stage
+  (`assets/_policy.yaml`) and rolls forward monthly. For gold: 2008–2017 · 2018–2022 · 2023–today.
+- **Thresholds are data with an author and a date.** They live in `pipeline/autopilot/criteria.yaml`
+  and `ledger/thresholds.yaml`, every change is appended to a history file, and each rule returns
+  *pass*, *limbo* or *fail* — a missing fact is limbo, never a pass.
+- **The search is counted.** `ledger/` holds one line per search that reduced a population; the
+  trial count N and the cross-trial dispersion pooled from it feed the deflated Sharpe ratio.
+- **Costs are pessimistic and per task.** Spread is the widest broker's time-weighted mean as a
+  percentage of price, slippage 35 % of it, commission and swap the worse of the firms traded
+  (`assets/RULES.md`). The nulls pay the same costs as the strategy.
+- **Excess, not return.** Results are read as excess over the market's own drift rather than as
+  raw return.
 
 ## The sequence
 
-`docs/AgentPDFs/WORKFLOW.md` is the one ordering of the work, from an idea in the chat to a
-strategy validated in MetaTrader 5 on each prop firm's account — 26 steps (plus 10.5, 11.5, 11.7,
-16.5 and 18.5), each with its status and what blocks it today. In short:
+`docs/AgentPDFs/WORKFLOW.md` is the one ordering of the work — 26 steps (plus 10.5, 11.5, 11.7,
+16.5 and 18.5). What each stage asks, and against what:
 
-| steps | what happens | where |
-|---|---|---|
-| 1–6 | idea → block vocabulary → template → cost preflight → a custom SQX project and its build | `sqx/`, `core/assets.py` |
-| 7–8 | retest out of sample in SQX, then screen the population down to candidates | `studies/screening/`, `studies/readings/` |
-| 9–12 | does the edge survive other markets and other timeframes? | `studies/transfer/` |
-| 13–16 | Monte Carlo retests and parameter permutation: what breaks it? | `studies/breakage/` |
-| 16.5–19 | variants, walk-forward correlation, CSCV, walk-forward matrix: does optimising buy anything? | `studies/optimisation/`, `sqx/variants/` |
-| 20–25 | the joint blind verdict, exposure, conditional map and structure, the stop for MT5, edge per cost | `studies/closing/`, `studies/readings/` |
-| 26 | the survivor in SQX at each prop firm's conditions against its MT5 backtest on that firm's account | `mt5/verify/` |
-| after | combining survivors, the funded path first | `portfolio/` |
+| steps | question | statistic and null | where |
+|---|---|---|---|
+| 1–6 | what to build | an idea becomes block vocabulary, a template, a cost preflight and a custom SQX project; at most two entry and two exit conditions, one direction, no clock blocks | `sqx/`, `core/assets.py` |
+| 7–8 | does a build-selected strategy survive `oos1`? | a 16-rule cascade: t of the excess over drift, z against a **windowed random-entry null** (each trade re-entered at a uniform bar of the calendar window it opened in, ATR-sized, costs charged; 5,000 draws), a homogeneity permutation test, a block-bootstrap drawdown test | `studies/screening/gate/`, `engines/nulls/` |
+| 9–12 | does the logic travel to other markets and timeframes? | z of the real run against 5,000 runs of the same trades **shifted by whole weeks inside each calendar year**, one shift per year shared across markets, so cross-market dependence is kept in the null | `studies/transfer/` |
+| 13–16 | what breaks it? | ~1,000 SQX re-runs of the whole backtest per perturbed input; retention of the excess, attribution under Benjamini–Yekutieli; System Parameter Permutation as a map, never a filter | `studies/breakage/` |
+| 16.5 | is the parameter surface a plateau or a spike? | variants from a Latin-hypercube design; Sobol indices of a fitted quadratic surface against a shuffled-metric R² | `sqx/variants/`, `studies/optimisation/cloud/` |
+| 17 | does in-sample rank predict out-of-sample rank? | Spearman ρ of IS against OOS excess over the variants, against a weekly sign-flip null | `studies/optimisation/wfc/` |
+| 18 | how likely is the selection to be overfit? | **CSCV** (Bailey, Borwein, López de Prado, Zhu): 16 blocks, 12,870 partitions; PBO and P(loss) read against their own null's 95th percentile (stationary bootstrap of weeks). It can discard and never confirms | `studies/optimisation/cscv/` |
+| 18.5–19 | is the variant order stable across markets, and does re-optimising pay? | Spearman ρ of variant order across markets; a 30-cell walk-forward matrix, median net `oos2` excess against a shared-sign weekly flip null | `studies/optimisation/` |
+| 20 | the joint blind verdict on `oos2` | Hansen's **SPA** and Romano–Wolf's **StepM** against buy-and-hold, Politis–White block length | `studies/closing/blindJoint/`, `engines/inference/snooping/` |
+| 21–25 | what is the survivor made of? | return per unit of market time at equal risk; a conditional map over volatility × trend terciles; ablation and inversion of each entry condition; the stop from the MAE distribution of in-sample winners; edge per unit of cost. Descriptive — none of these selects | `studies/closing/`, `studies/readings/` |
+| 26 | does MetaTrader 5 agree? | the strategy priced in SQX at each prop firm's conditions against its MT5 tester run on that firm's account, trades paired by entry time | `mt5/verify/` |
+| after | combining survivors | prop-firm rules simulated on floating equity rebuilt from M1 wicks (MAE/MFE), a trade-level Monte Carlo, and the expected value of a bank of funded accounts | `portfolio/` |
 
-Steps 5 to 25 run through **one command**, never step by step by hand:
+Shared machinery lives in `engines/`: i.i.d. and stationary bootstraps and block shuffles
+(`resample/`), the random-entry nulls (`nulls/`), weekly sign-flip nulls (`weekly/`), volatility
+regimes by ATR or GARCH(1,1) terciles (`regimes/`), and Benjamini–Hochberg, Storey's null share,
+SPA and StepM (`inference/`). PSR, MinTRL and the deflated Sharpe follow Bailey–López de Prado.
+
+### What is not settled
+
+Stated here because it is the first thing a reader should ask:
+
+- The thresholds of steps 10 and 14 are marked provisional and uncalibrated in `criteria.yaml`.
+- Under the current provisional rule, step 20's verdict is the worst state of steps 17–19; SPA and
+  StepM are computed and shown, and decide nothing yet.
+- The deflated Sharpe is fed the dispersion inside one mother's variants, which is narrower than
+  the whole study's and errs in the flattering direction (`ledger/README.md`).
+- The `oos2` reservation is enforced in code for autonomous agents; a person can still read it.
+- `portfolio/` has run only on a test pool: there is no live portfolio result yet.
+
+## Research before the search
+
+Where to point the builder is itself a multiple-testing problem, handled before any strategy
+exists (`studies/research/`):
+
+- **Literature** — a daily scout reads arXiv q-fin and OpenAlex, rejects each paper by nine hard
+  filters with the sentence that shows why, and extracts each surviving rule as an entry whose
+  fields are anchored to quotes verified verbatim against the stored source.
+- **Market profile** — 19 assets × four timeframes × long/short × seven idea families: 14,364
+  tests on `build` only, each against block-resampled series, Benjamini–Hochberg over all of them.
+  A cell must be significant, pay twice its cost, be stable across the build years and trade
+  enough.
+- **Power** — an edge of known size is planted and put through the profile's own test, which gives
+  the power curve and the minimum detectable effect: what an empty cell does and does not rule out.
+- **Pooling** — per asset group, a Stouffer sum of each asset's z against a joint resampling null,
+  with DerSimonian–Laird shrinkage.
+- **Board** — cells ranked by prior, evidence, signal, gap and past results; a director agent picks
+  one and brings three ideas, each attacked by a reviewer agent before any CPU is spent.
+
+## Automated, supervised
+
+Steps 5 to 25 run through one command, in one SQX session:
 
 ```bash
 bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES>
@@ -59,17 +96,22 @@ bin/workflow.sh run      <PROJECT>      # an existing project, from where its ra
 bin/workflow.sh plan     <PROJECT>      # prints what `run` would do, runs nothing
 ```
 
-It creates the custom project on the custodian and runs every SQX task and Python study in one
-session (`pipeline/autopilot/`), judging each step by the frozen `criteria.yaml` and cutting in SQX
-instead of stopping. The campaign (`pipeline/campaign/`) loops it unattended over template × asset ×
-timeframe. A strategy that passes the gate of step 8 is saved at once in the strategy store
-(`core/store/`) — its `.sqx`, every later test's results and its trades — because a genetic build
-cannot be reproduced; a project is not retired until its survivors are whole there.
+The autopilot (`pipeline/autopilot/`) runs every SQX task and Python study, judges each step by
+the criteria file and cuts the population in SQX itself; the campaign (`pipeline/campaign/`) loops
+it over template × asset × timeframe. A strategy that passes step 8 is saved at once in the
+strategy store (`core/store/`) with every later test's results and trades — a genetic build cannot
+be reproduced.
 
-Before step 1 there is a research chain that decides where to look: the literature scout reads
-published research into quote-anchored entries, the market profile measures them, and the research
-director proposes one asset × timeframe × direction × family cell with three ideas for the owner to
-veto (`studies/research/`).
+A person decides wherever a decision spends compute or commits to a result:
+
+| stage | runs by itself | the owner decides |
+|---|---|---|
+| research | scout, profile, board, the director's proposal and its adversarial review | which proposal to run; an ambiguous rule is a question, never a silent default |
+| workflow | project creation, every task and study, every cut | every argument of the run; each launch from the window is confirmation-gated |
+| upkeep | nightly audit, documentation and fix agents; a daily commit proposal | the commit — agents propose, they never commit or push |
+
+Known-answer and golden tests (`tests/`, 270+ files) pin the statistics: planted edges that must be
+found, no-edge panels that must reject at the nominal rate, and SQX file formats read back exactly.
 
 ## The folders
 
@@ -119,33 +161,6 @@ That covers a machine that only analyses already-exported data. Setting up **Str
 — how many installs, cloning the headless workers, the port triples, and the check that stops a
 worker being a silent alias of the master — is `docs/SETUP-NEW-MACHINE.md`. MetaTrader 5 under Wine
 is `bin/mt5-install.sh` and `mt5/README.md`.
-
-## Windows
-
-The project splits in two, and only one half is tied to Linux.
-
-| half | what it does | Windows |
-|---|---|---|
-| export and curation | `core/worker.py`, `core/exportdrv.py`, `sqx/export/`, `sqx/curate/` | **no** — they all shell out to `bin/sqx-worker.sh`, which needs `rsync`, `ss`, `curl` and `setsid`. They raise a clear `RuntimeError` instead of failing obscurely |
-| analysis | `studies/`, `engines/`, `portfolio/`, over CSVs already in the data root | **yes** |
-| the desktop app | `ui/` | **yes**, with no SQX install — `bin\algoui.cmd` |
-
-Set up exactly as above, with forward slashes in `machine.yaml`, and drop the `sqx_workers` and
-`strategy_pools` blocks:
-
-```yaml
-data_root: C:/Users/<you>/Desktop/AlgoData
-sqx_master: C:/none      # required to be present, never opened on Windows
-sqx_worker: C:/none
-```
-
-`bin\algoui.cmd` sets `PYTHONUTF8=1` before starting the window, and the daemon's jobs get it too:
-without it Python on Windows reads and prints in cp1252. With no install, a template's page shows
-its bound holes as bound to a group this install lacks — the group names live in the install's
-`blockGroups.xml`. Verified on 2026-09-26 by a clean copy of the tree with no SQX path, every zone
-walked offscreen; not yet on a real Windows box.
-
-Porting `sqx-worker.sh` to cross-platform Python would remove the split; it is not done.
 
 ## Working here
 
