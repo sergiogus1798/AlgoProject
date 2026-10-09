@@ -1166,13 +1166,13 @@ CSSA Market Regime:
     origin: native
     form: 'CSSA Market Regime(@Chart@#HLSumPeriod#,#HLPeriod#,#AvgPeriod#,#PercRankPeriod#)[#Shift#] is above #Level#'
     groups: []
-    archetypes: {breakout: 1, mean_reversion: 2, trend: 2, momentum: 1, volatility: 2, pattern: 1, session: 1}
+    archetypes: {breakout: 1, mean_reversion: 2, trend: 1, momentum: 1, volatility: 2, pattern: 1, session: 1}
   CSSAMarketRegimeBelowLevel:
     roles: [signal]
     origin: native
     form: 'CSSA Market Regime(@Chart@#HLSumPeriod#,#HLPeriod#,#AvgPeriod#,#PercRankPeriod#)[#Shift#] is below #Level#'
     groups: []
-    archetypes: {breakout: 1, mean_reversion: 2, trend: 2, momentum: 1, volatility: 2, pattern: 1, session: 1}
+    archetypes: {breakout: 1, mean_reversion: 1, trend: 2, momentum: 1, volatility: 2, pattern: 1, session: 1}
 Candle Patterns:
   BearishEngulfing:
     roles: [signal]
@@ -4628,28 +4628,28 @@ TTM Squeeze:
     origin: native
     form: TTM Squeeze Momentum crosses Level Down(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#,#Level#)
     groups: []
-    archetypes: {breakout: 1, mean_reversion: 1, trend: 2, momentum: 3, volatility: 2, pattern: 1, session: 1}
+    archetypes: {breakout: 3, mean_reversion: 1, trend: 1, momentum: 2, volatility: 2, pattern: 1, session: 1}
     help: Is triggered if TTM Squeeze Momentum crosses Level Down and Squeeze is ON
   TTMSqueezeMomentumCrossLevelUP:
     roles: [signal]
     origin: native
     form: TTM Squeeze Momentum crosses Level UP(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#,#Level#)
     groups: []
-    archetypes: {breakout: 1, mean_reversion: 1, trend: 2, momentum: 3, volatility: 2, pattern: 1, session: 1}
+    archetypes: {breakout: 3, mean_reversion: 1, trend: 1, momentum: 2, volatility: 2, pattern: 1, session: 1}
     help: Is triggered if TTM Squeeze Momentum crosses Level UP and Squeeze is ON
   TTMSqueezeMomentumIsFalling:
     roles: [signal]
     origin: native
     form: TTM Squeeze Momentum is falling(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#)
     groups: []
-    archetypes: {breakout: 1, mean_reversion: 1, trend: 2, momentum: 3, volatility: 2, pattern: 1, session: 1}
+    archetypes: {breakout: 3, mean_reversion: 1, trend: 1, momentum: 2, volatility: 2, pattern: 1, session: 1}
     help: Is triggered if TTMSqueeze Momentum is falling 2 bars
   TTMSqueezeMomentumIsRising:
     roles: [signal]
     origin: native
     form: TTMSqueeze Momentum is rising(@Chart@#BBPeriod#,#KCPeriod#,#LinRegPeriod#,#MomPeriod#,#BBDeviation#,#NumATRs#)
     groups: []
-    archetypes: {breakout: 1, mean_reversion: 1, trend: 2, momentum: 3, volatility: 2, pattern: 1, session: 1}
+    archetypes: {breakout: 3, mean_reversion: 1, trend: 1, momentum: 2, volatility: 2, pattern: 1, session: 1}
     help: Is triggered if TTM Squeeze Momentum is rising 2 bars
 Trend:
   IsDowntrend:
@@ -4672,14 +4672,14 @@ TrendRegime_user:
     origin: own
     form: CSSA Market Regime > 50 (regime A)
     groups: [TrendRegimeFilters]
-    archetypes: {breakout: 1, mean_reversion: 2, trend: 2, momentum: 1, volatility: 2, pattern: 1, session: 1}
+    archetypes: {breakout: 1, mean_reversion: 2, trend: 1, momentum: 1, volatility: 2, pattern: 1, session: 1}
     help: CSSA Market Regime above the midline (one regime state). Verify polarity on first import.
   CBlock_CSSARegimeBelow50:
     roles: [signal]
     origin: own
     form: CSSA Market Regime < 50 (regime B)
     groups: [TrendRegimeFilters]
-    archetypes: {breakout: 1, mean_reversion: 2, trend: 2, momentum: 1, volatility: 2, pattern: 1, session: 1}
+    archetypes: {breakout: 1, mean_reversion: 1, trend: 2, momentum: 1, volatility: 2, pattern: 1, session: 1}
     help: CSSA Market Regime below the midline (other regime state). Verify polarity on first import.
   CBlock_ChoppinessChoppy:
     roles: [signal]

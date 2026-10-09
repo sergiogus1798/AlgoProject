@@ -1,0 +1,137 @@
+# Paleta «Ruptura — base (v3, 90-150)» — familia Ruptura.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `breakout`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: ruptura_base_v3
+label: Ruptura — base (v3, 90-150)
+family: breakout
+origin: propia
+based_on: ruptura_base_v2
+created: '2026-10-02'
+note: 'Paleta de familia v3 para poblaciones Simple Strategy (entrada 1..2, salida
+  1..2, todo a mercado, una dirección por build): de aquí salen la entrada Y la salida.
+  Peso 3 = todas las señales propias de la ruptura, no una por clase: rango de N barras
+  (Donchian, Highest/Lowest, nube), Bollinger, Keltner (canal de ATR), vela de expansión
+  y salida de compresión con dirección (los TTM Squeeze Momentum nativos exigen squeeze
+  ON: leído en su código). Peso 2 = su contexto: la volatilidad (comprimida antes,
+  expandiéndose después) y el arranque de tendencia. Peso 1 = lo ortogonal para la
+  segunda condición y las salidas: reversión (contraria: tendencia con contratendencia),
+  ruptura fallida, pérdida de media/trailing y cuatro velas. Fuera: tendencia y momentum
+  como segunda condición (son iguales a la ruptura: nunca dos iguales), reloj y calendario,
+  ruptura de franja horaria, niveles de sesión y del día (HighD/LowD…: dependen de
+  una franja), volumen, y niveles stop/limit. Lo medido: ruptura larga en H1 es donde
+  prior y medida coinciden; el coste es el muro.'
+unlabelled: 'off'
+# 2026-10-02 (calibration pilot): the value blocks and the generic comparison operators were
+# taken out. SQX does not weigh them: in the pilot 69 % of entry conditions were a comparator
+# on one of two values, whatever the weights said. Named signal blocks only.
+overrides:
+  CBlock_BreakoutDonchianLong: 3
+  CBlock_BreakoutDonchianLong_2: 3
+  BarOpensAboveHighestAfterOpenBelow: 3
+  BarOpensBelowLowestAfterOpenAbove: 3
+  IchimokuKumoBreakoutBullish: 3
+  IchimokuKumoBreakoutBearish: 3
+  CBlock_BBBreakoutUp: 3
+  CBlock_BBBreakoutDown: 3
+  BBBarOpensAboveUpAfterOpenBelow: 3
+  BBBarOpensBelowDownAfterOpenAbove: 3
+  BBBarClosesAboveUp: 3
+  BBBarClosesBelowDown: 3
+  BBBarOpensAboveUp: 3
+  BBBarOpensBelowDown: 3
+  KCBarOpensAboveUpperAfterOpenBelow: 3
+  KCBarOpensBelowLowerAfterOpenAbove: 3
+  KCBarClosesAboveUpper: 3
+  KCBarClosesBelowLower: 3
+  KCBarOpensAboveUpper: 3
+  KCBarOpensBelowLower: 3
+  CBlock_CandleBreakoutLong: 3
+  CBlock_CandleBreakoutLong_2: 3
+  CBlock_StrongCandle: 3
+  TTMSqueezeMomentumCrossLevelUP: 3
+  TTMSqueezeMomentumCrossLevelDown: 3
+  TTMSqueezeMomentumIsRising: 3
+  TTMSqueezeMomentumIsFalling: 3
+  CBlock_SqueezeOn: 2
+  CBlock_SqueezeOff: 2
+  CBlock_BBWRPercent: 2
+  CBlock_ATRRankHighVol: 2
+  CBlock_ATRRankLowVol: 2
+  ATRPercentRankAboveLevel: 2
+  ATRPercentRankBelowLevel: 2
+  ATRPercentRankCrossUP: 2
+  ATRPercentRankCrossDown: 2
+  ATRPercentAboveLevel: 2
+  ATRPercentBelowLevel: 2
+  ATRPercentCrossUP: 2
+  ATRPercentCrossDown: 2
+  ATRRising: 2
+  ATRFalling: 2
+  ATRChangesUp: 2
+  ATRChangesDown: 2
+  ATRPercentRankRising: 2
+  ATRPercentRankFalling: 2
+  StdDevRising: 2
+  StdDevFalling: 2
+  StdDevChangesUp: 2
+  StdDevChangesDown: 2
+  CBlock_ATRCrossMAATR: 2
+  BBUpperRising: 2
+  BBUpperFalling: 2
+  BBLowerRising: 2
+  BBLowerFalling: 2
+  KCUpperRising: 2
+  KCUpperFalling: 2
+  KCLowerRising: 2
+  KCLowerFalling: 2
+  CBlock_KSBreakOn: 2
+  CBlock_KSBreakOff: 2
+  CBlock_WassersteinShiftHigh: 2
+  CBlock_WassersteinShiftLow: 2
+  CBlock_WAEPosAboveExplosion_2_2_3: 2
+  CBlock_WAEPosAboveExplosion_2_2_3_2: 2
+  ADXRising: 2
+  ADXCrossUp: 2
+  ADXHigher: 2
+  KERaboveLevel: 2
+  RSILower: 1
+  RSIHigher: 1
+  StochSlowDLower: 1
+  StochSlowDHigher: 1
+  CCILower: 1
+  CCIHigher: 1
+  WPRLower: 1
+  WPRHigher: 1
+  CBlock_ZScoreStretchedDown: 1
+  CBlock_ZScoreStretchedUp: 1
+  CBlock_IBSCloseLarger: 1
+  CBlock_IBSCloseLarger_2: 1
+  BBBarOpensAboveDownAfterOpenBelow: 1
+  BBBarOpensBelowUpAfterOpenAbove: 1
+  KCBarOpensAboveLowerAfterOpenBelow: 1
+  KCBarOpensBelowUpperAfterOpenAbove: 1
+  BarOpensAboveLowestAfterOpenBelow: 1
+  BarOpensBelowHighestAfterOpenAbove: 1
+  MABarClosesAbove: 1
+  MABarClosesBelow: 1
+  BarClosesAboveSuperTrend: 1
+  BarClosesBelowSuperTrend: 1
+  CBlock_PMaxFlipUp: 1
+  CBlock_PMaxFlipDown: 1
+  PSARBarHigher: 1
+  PSARBarLower: 1
+  BullishEngulfing: 1
+  BearishEngulfing: 1
+  CBlock_CandleSmallUpperWick: 1
+  CBlock_CandleSmallUpperWick_2: 1

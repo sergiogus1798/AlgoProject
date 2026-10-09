@@ -1,0 +1,149 @@
+# Paleta «Volatilidad — base (v3, 90-150)» — familia Volatilidad.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `volatility`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: volatilidad_base_v3
+label: Volatilidad — base (v3, 90-150)
+family: volatility
+origin: propia
+based_on: volatilidad_base
+created: '2026-10-02'
+note: 'Paleta de familia v3 para poblaciones Simple Strategy (entrada 1..2, salida
+  1..2, todo a mercado, una dirección por build): de aquí salen la entrada Y la salida.
+  Peso 3 = todas las señales propias de la volatilidad, ninguna con dirección: nivel
+  contra su propia historia, si sube o baja, compresión y liberación (polaridad del
+  Squeeze comprobada en el código del indicador: ON = Bollinger dentro de Keltner)
+  y cambio de distribución. Peso 2 = el régimen tendencia/rango en sus dos lados y
+  la apertura de las bandas. Peso 1 = la dirección, que esta familia no trae: una
+  muestra corta de cada familia de precio (ruptura, momentum, tendencia, reversión)
+  y cuatro velas, para que la segunda condición y la salida tengan con qué. Fuera:
+  ATR y StdDev contra un nivel fijo en puntos (no viaja entre activos ni entre años),
+  Ulcer Index (modos sin verificar), CUSUM, reloj, calendario, volumen y niveles stop/limit.'
+unlabelled: 'off'
+# 2026-10-02 (calibration pilot): the value blocks and the generic comparison operators were
+# taken out. SQX does not weigh them: in the pilot 69 % of entry conditions were a comparator
+# on one of two values, whatever the weights said. Named signal blocks only.
+overrides:
+  CBlock_ATRRankHighVol: 3
+  CBlock_ATRRankLowVol: 3
+  ATRPercentRankAboveLevel: 3
+  ATRPercentRankBelowLevel: 3
+  ATRPercentRankCrossUP: 3
+  ATRPercentRankCrossDown: 3
+  ATRPercentAboveLevel: 3
+  ATRPercentBelowLevel: 3
+  ATRPercentCrossUP: 3
+  ATRPercentCrossDown: 3
+  ATRRising: 3
+  ATRFalling: 3
+  ATRChangesUp: 3
+  ATRChangesDown: 3
+  ATRPercentRankRising: 3
+  ATRPercentRankFalling: 3
+  StdDevRising: 3
+  StdDevFalling: 3
+  StdDevChangesUp: 3
+  StdDevChangesDown: 3
+  CBlock_ATRCrossMAATR: 3
+  CBlock_SqueezeOn: 3
+  CBlock_SqueezeOff: 3
+  CBlock_BBWRPercent: 3
+  CBlock_KSBreakOn: 3
+  CBlock_KSBreakOff: 3
+  CBlock_WassersteinShiftHigh: 3
+  CBlock_WassersteinShiftLow: 3
+  CBlock_WAEPosAboveExplosion_2_2_3: 3
+  CBlock_WAEPosAboveExplosion_2_2_3_2: 3
+  BBUpperRising: 2
+  BBUpperFalling: 2
+  BBLowerRising: 2
+  BBLowerFalling: 2
+  KCUpperRising: 2
+  KCUpperFalling: 2
+  KCLowerRising: 2
+  KCLowerFalling: 2
+  ADXHigher: 2
+  ADXRising: 2
+  ADXCrossUp: 2
+  ADXChangesUp: 2
+  CBlock_ChoppinessTrending: 2
+  ChoppinessIndexBelowLevel: 2
+  ChoppinessIndexCrossesBelowLevel: 2
+  ChoppinessIndexFalling: 2
+  CBlock_HursExponentIsAboveLevel_3: 2
+  CBlock_HursExponentIsAboveLevel: 2
+  KERaboveLevel: 2
+  CBlock_EntropyLow: 2
+  EntropyMathBelowLevel: 2
+  EntropyMathCrossBelowLevel: 2
+  CSSAMarketRegimeBelowLevel: 2
+  CBlock_CSSARegimeBelow50: 2
+  ADXLower: 2
+  ADXFalling: 2
+  ADXCrossDown: 2
+  ADXChangesDown: 2
+  CBlock_ChoppinessChoppy: 2
+  ChoppinessIndexAboveLevel: 2
+  ChoppinessIndexCrossesAboveLevel: 2
+  ChoppinessIndexRising: 2
+  CBlock_HursExponentIsAboveLevel_3_2: 2
+  CBlock_HursExponentIsAboveLevel_2: 2
+  KERbelowLevel: 2
+  CBlock_EntropyHigh: 2
+  EntropyMathAboveLevel: 2
+  EntropyMathCrossAboveLevel: 2
+  CSSAMarketRegimeAboveLevel: 2
+  CBlock_CSSARegimeAbove50: 2
+  SuperTrendInRange: 2
+  CBlock_BreakoutDonchianLong: 1
+  CBlock_BreakoutDonchianLong_2: 1
+  CBlock_BBBreakoutUp: 1
+  CBlock_BBBreakoutDown: 1
+  CBlock_CandleBreakoutLong: 1
+  CBlock_CandleBreakoutLong_2: 1
+  BarOpensAboveHighestAfterOpenBelow: 1
+  BarOpensBelowLowestAfterOpenAbove: 1
+  KCBarOpensAboveUpperAfterOpenBelow: 1
+  KCBarOpensBelowLowerAfterOpenAbove: 1
+  TTMSqueezeMomentumCrossLevelUP: 1
+  TTMSqueezeMomentumCrossLevelDown: 1
+  ROCAboveLevel: 1
+  ROCBelowLevel: 1
+  MACDMainHigherSignal: 1
+  MACDMainLowerSignal: 1
+  CBlock_WAEPosAboveExplosion: 1
+  CBlock_WAEPosAboveExplosion_2: 1
+  OSMAHigherZero: 1
+  OSMALowerZero: 1
+  MARising: 1
+  MAFalling: 1
+  MABarClosesAbove: 1
+  MABarClosesBelow: 1
+  SuperTrendUPTrend: 1
+  SuperTrendDownTrend: 1
+  DIPlusHigher: 1
+  DIPlusLower: 1
+  RSILower: 1
+  RSIHigher: 1
+  CBlock_ZScoreStretchedDown: 1
+  CBlock_ZScoreStretchedUp: 1
+  CBlock_IBSCloseLarger: 1
+  CBlock_IBSCloseLarger_2: 1
+  BBBarOpensAboveDownAfterOpenBelow: 1
+  BBBarOpensBelowUpAfterOpenAbove: 1
+  StochSlowDLower: 1
+  StochSlowDHigher: 1
+  BullishEngulfing: 1
+  BearishEngulfing: 1
+  Hammer: 1
+  ShootingStar: 1

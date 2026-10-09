@@ -1,0 +1,140 @@
+# Paleta «Momentum — base (v3, 90-150)» — familia Momentum.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `momentum`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: momentum_base_v3
+label: Momentum — base (v3, 90-150)
+family: momentum
+origin: propia
+based_on: momentum_base
+created: '2026-10-02'
+note: 'Paleta de familia v3 para poblaciones Simple Strategy (entrada 1..2, salida
+  1..2, todo a mercado, una dirección por build): de aquí salen la entrada Y la salida.
+  Peso 3 = todas las señales propias del momentum: velocidad (ROC y Momentum, que
+  en SQX es un cociente ×100 y viaja entre activos), aceleración (MACD contra su señal,
+  OSMA, Awesome), impulso que supera a la volatilidad (Waddah Attar, RVI) y cada oscilador
+  contra su propia señal. El MISMO oscilador contra un nivel es reversión y vive en
+  la otra paleta: por eso los pesos 3 no se pisan. Peso 2 = su contexto: movimiento
+  limpio y volatilidad. Peso 1 = lo ortogonal: el agotamiento (reversión, la contraria),
+  la pérdida de media/trailing como salida y cuatro velas. Fuera: tendencia y ruptura
+  como segunda condición (son iguales: nunca dos iguales), MACD > 0 (tendencia), Bulls/Bears
+  y Disparity (distancia a la media), Reflex y los Woodies (sin verificar), reloj,
+  calendario, volumen y niveles stop/limit. Lo medido: momentum largo en H1 es, con
+  la ruptura, donde prior y medida coinciden.'
+unlabelled: 'off'
+# 2026-10-02 (calibration pilot): the value blocks and the generic comparison operators were
+# taken out. SQX does not weigh them: in the pilot 69 % of entry conditions were a comparator
+# on one of two values, whatever the weights said. Named signal blocks only.
+overrides:
+  ROCAboveLevel: 3
+  ROCBelowLevel: 3
+  ROCCrossesAboveLevel: 3
+  ROCCrossesBelowLevel: 3
+  ROCRising: 3
+  ROCFalling: 3
+  MomHigher: 3
+  MomLower: 3
+  MomCrossUp: 3
+  MomCrossDown: 3
+  MomRising: 3
+  MomFalling: 3
+  MACDMainHigherSignal: 3
+  MACDMainLowerSignal: 3
+  MACDMainCrossAboveSignal: 3
+  MACDMainCrossBelowSignal: 3
+  MACDMainRising: 3
+  MACDMainFalling: 3
+  OSMAHigherZero: 3
+  OSMALowerZero: 3
+  OSMACrossZeroUp: 3
+  OSMACrossZeroDown: 3
+  OSMARising: 3
+  OSMAFalling: 3
+  AWOHigher: 3
+  AWOLower: 3
+  AWOCrossUp: 3
+  AWOCrossDown: 3
+  AWORising: 3
+  AWOFalling: 3
+  CBlock_WAEPosAboveExplosion: 3
+  CBlock_WAEPosAboveExplosion_2: 3
+  CBlock_WAEPosAboveExplosion_2_2_2: 3
+  CBlock_WAEPosAboveExplosion_2_2: 3
+  CBlock_SqueezeMomentumPos: 3
+  CBlock_SqueezeMomentumNeg: 3
+  RVIAboveLevel: 3
+  RVIBelowLevel: 3
+  RVIRising: 3
+  RVIFalling: 3
+  QQEValue1HigherValue2: 3
+  QQEValue1LowerValue2: 3
+  QQEValue1CrossAboveValue2: 3
+  QQEValue1CrossBelowValue2: 3
+  CBlock_QQEModBuy: 3
+  CBlock_QQEModSell: 3
+  StochFastKUp: 3
+  StochFastKDown: 3
+  WaveTrendMainHigherSignal: 3
+  WaveTrendMainLowerSignal: 3
+  WaveTrendMainCrossAboveSignal: 3
+  WaveTrendMainCrossBelowSignal: 3
+  DSSBressertRising: 3
+  DSSBressertFalling: 3
+  DSSBressertCrossUP: 3
+  DSSBressertCrossDown: 3
+  BHErgodicUP: 3
+  BHErgodicDown: 3
+  BHErgodicCrossUP: 3
+  BHErgodicCrossDown: 3
+  CBlock_TRSICrossUp: 3
+  CBlock_TRSICrossDown: 3
+  CBlock_RMICrossUp: 3
+  CBlock_RMICrossDown: 3
+  ADXHigher: 2
+  ADXRising: 2
+  KERaboveLevel: 2
+  CBlock_HursExponentIsAboveLevel_3: 2
+  CBlock_ChoppinessTrending: 2
+  ChoppinessIndexBelowLevel: 2
+  CBlock_ATRRankHighVol: 2
+  CBlock_ATRRankLowVol: 2
+  ATRRising: 2
+  ATRFalling: 2
+  CBlock_ATRCrossMAATR: 2
+  CBlock_SqueezeOn: 2
+  CBlock_SqueezeOff: 2
+  CBlock_BBWRPercent: 2
+  ATRPercentRankAboveLevel: 2
+  ATRPercentRankBelowLevel: 2
+  RSILower: 1
+  RSIHigher: 1
+  StochSlowDLower: 1
+  StochSlowDHigher: 1
+  CCILower: 1
+  CCIHigher: 1
+  WPRLower: 1
+  WPRHigher: 1
+  CBlock_ZScoreStretchedDown: 1
+  CBlock_ZScoreStretchedUp: 1
+  CBlock_IBSCloseLarger: 1
+  CBlock_IBSCloseLarger_2: 1
+  MABarClosesAbove: 1
+  MABarClosesBelow: 1
+  BarClosesAboveSuperTrend: 1
+  BarClosesBelowSuperTrend: 1
+  ADXFalling: 1
+  ADXLower: 1
+  BullishEngulfing: 1
+  BearishEngulfing: 1
+  Hammer: 1
+  ShootingStar: 1

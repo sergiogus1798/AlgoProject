@@ -1,0 +1,176 @@
+# Paleta «IBS diario bajo — USA500 H1 largo» — familia Reversión a la media.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `mean_reversion`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: indicesIBS_USA500_H1
+label: IBS diario bajo — USA500 H1 largo
+family: mean_reversion
+origin: propia
+based_on: null
+created: '2026-10-05'
+note: 'Hueco libre único de indicesIBS en USA500 H1, largo, en AND con un ESTADO que
+  dura todo el día (IBS de la vela diaria de ayer < 0,2; sale con IBS > 0,8). El hueco
+  pone el régimen y el momento dentro del día, por las dos reglas del director para
+  una fija de reversión. Peso 3 = régimen de volatilidad como estado (ortogonal; la
+  reversión paga con volatilidad alta, REV-39, y la medida líder de la celda pide
+  ATR bajando: los dos lados). Peso 2 = fuerza de tendencia o rango (ADX, Choppiness,
+  Hurst, KER, entropía, CSSA), la tendencia ALCISTA como contexto (comprar la caída
+  dentro de la subida: pullback, prior Alta en USA500), el momentum ya girado al alza
+  como estado, y el VWAP anclado de la sesión. Peso 1 = los eventos (cruces al alza
+  de momentum y tendencia, cruces de volatilidad y de régimen) y la dirección de las
+  bandas: IBS < 0,2 da ~39 operaciones/año sin filtro y el suelo es 35, así que un
+  evento raro deja la estrategia sin muestra. Fuera: la propia familia (osciladores
+  en extremo, IBS, ZScore, reentrada en banda: nunca dos iguales), toda la ruptura
+  (eventos raros y entrada tardía), los patrones de velas (medido en USA500: no pagan
+  el coste, 7 de 8 celdas), el lado bajista de tendencia y momentum, los comparadores
+  con valores (OpenD, HighD, LowD, Close: SQX no respeta su peso y HighD/LowD repiten
+  el dato de la fija), el volumen, reloj y calendario, y los niveles stop/limit (entrada
+  a mercado; ningún indicador ni nivel encendido).'
+unlabelled: 'off'
+overrides:
+  CBlock_ATRRankHighVol: 3
+  CBlock_ATRRankLowVol: 3
+  ATRPercentRankAboveLevel: 3
+  ATRPercentRankBelowLevel: 3
+  ATRPercentAboveLevel: 3
+  ATRPercentBelowLevel: 3
+  ATRRising: 3
+  ATRFalling: 3
+  ATRPercentRankRising: 3
+  ATRPercentRankFalling: 3
+  StdDevRising: 3
+  StdDevFalling: 3
+  CBlock_SqueezeOn: 3
+  CBlock_SqueezeOff: 3
+  CBlock_BBWRPercent: 3
+  CBlock_KSBreakOn: 3
+  CBlock_KSBreakOff: 3
+  CBlock_WassersteinShiftHigh: 3
+  CBlock_WassersteinShiftLow: 3
+  ADXHigher: 2
+  ADXRising: 2
+  ADXLower: 2
+  ADXFalling: 2
+  CBlock_ChoppinessTrending: 2
+  ChoppinessIndexBelowLevel: 2
+  ChoppinessIndexFalling: 2
+  CBlock_ChoppinessChoppy: 2
+  ChoppinessIndexAboveLevel: 2
+  ChoppinessIndexRising: 2
+  CBlock_HursExponentIsAboveLevel_3: 2
+  CBlock_HursExponentIsAboveLevel: 2
+  CBlock_HursExponentIsAboveLevel_3_2: 2
+  CBlock_HursExponentIsAboveLevel_2: 2
+  KERaboveLevel: 2
+  KERbelowLevel: 2
+  CBlock_EntropyLow: 2
+  CBlock_EntropyHigh: 2
+  EntropyMathBelowLevel: 2
+  EntropyMathAboveLevel: 2
+  CSSAMarketRegimeBelowLevel: 2
+  CSSAMarketRegimeAboveLevel: 2
+  CBlock_CSSARegimeBelow50: 2
+  CBlock_CSSARegimeAbove50: 2
+  SuperTrendInRange: 2
+  MARising: 2
+  LinRegRising: 2
+  HMARising: 2
+  KAMARising: 2
+  DEMARising: 2
+  CBlock_EMAMAIsRising_2_2: 2
+  MABarClosesAbove: 2
+  MABarOpensAbove: 2
+  LinRegBarClosesAbove: 2
+  FasterHMAIsAboveSlowerHMA: 2
+  FastKAMAAboveSlowKAMA: 2
+  DoubleDEMARising: 2
+  DidiIndexUp: 2
+  MACDMainHigherZero: 2
+  DIPlusHigher: 2
+  VortexUptrend: 2
+  IsUptrend: 2
+  SuperTrendUPTrend: 2
+  BarClosesAboveSuperTrend: 2
+  PSARBarHigher: 2
+  GannHiLoUPTrend: 2
+  ROCAboveLevel: 2
+  ROCRising: 2
+  MomHigher: 2
+  MomRising: 2
+  MACDMainHigherSignal: 2
+  MACDMainRising: 2
+  OSMAHigherZero: 2
+  OSMARising: 2
+  AWOHigher: 2
+  AWORising: 2
+  CBlock_WAEPosAboveExplosion: 2
+  CBlock_WAEPosAboveExplosion_2_2_2: 2
+  CBlock_SqueezeMomentumPos: 2
+  RVIAboveLevel: 2
+  RVIRising: 2
+  QQEValue1HigherValue2: 2
+  StochFastKUp: 2
+  WaveTrendMainHigherSignal: 2
+  DSSBressertRising: 2
+  BHErgodicUP: 2
+  CloseAboveAnchoredVWAP: 2
+  CloseBelowAnchoredVWAP: 2
+  AnchoredVWAPRising: 2
+  AnchoredVWAPFalling: 2
+  ATRPercentRankCrossUP: 1
+  ATRPercentRankCrossDown: 1
+  ATRPercentCrossUP: 1
+  ATRPercentCrossDown: 1
+  ATRChangesUp: 1
+  ATRChangesDown: 1
+  StdDevChangesUp: 1
+  StdDevChangesDown: 1
+  CBlock_ATRCrossMAATR: 1
+  ADXCrossUp: 1
+  ADXCrossDown: 1
+  ADXChangesUp: 1
+  ADXChangesDown: 1
+  ChoppinessIndexCrossesBelowLevel: 1
+  ChoppinessIndexCrossesAboveLevel: 1
+  EntropyMathCrossBelowLevel: 1
+  EntropyMathCrossAboveLevel: 1
+  ROCCrossesAboveLevel: 1
+  MomCrossUp: 1
+  MACDMainCrossAboveSignal: 1
+  OSMACrossZeroUp: 1
+  AWOCrossUp: 1
+  QQEValue1CrossAboveValue2: 1
+  CBlock_QQEModBuy: 1
+  WaveTrendMainCrossAboveSignal: 1
+  DSSBressertCrossUP: 1
+  BHErgodicCrossUP: 1
+  CBlock_TRSICrossUp: 1
+  CBlock_RMICrossUp: 1
+  CBlock_CrossAboveMA: 1
+  CBlock_CrossAboveMA_2: 1
+  CBlock_CrossAboveMA_3: 1
+  CBlock_EMAMAIsRising_2_2_2: 1
+  IchimokuTenkanKijunCrossBullish: 1
+  DidiIndexCrossUP: 1
+  MACDMainCrossAboveZero: 1
+  DICrossUp: 1
+  AroonCrossesAbove: 1
+  CBlock_PMaxFlipUp: 1
+  BBUpperRising: 1
+  BBUpperFalling: 1
+  BBLowerRising: 1
+  BBLowerFalling: 1
+  KCUpperRising: 1
+  KCUpperFalling: 1
+  KCLowerRising: 1
+  KCLowerFalling: 1

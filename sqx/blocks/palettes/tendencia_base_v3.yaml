@@ -1,0 +1,151 @@
+# Paleta «Tendencia — base (v3, 90-150)» — familia Tendencia.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `trend`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: tendencia_base_v3
+label: Tendencia — base (v3, 90-150)
+family: trend
+origin: propia
+based_on: tendencia_base_v2
+created: '2026-10-02'
+note: 'Paleta de familia v3 para poblaciones Simple Strategy (entrada 1..2, salida
+  1..2, todo a mercado, una dirección por build): de aquí salen la entrada Y la salida.
+  Peso 3 = todas las señales propias de la tendencia: pendiente de la media, precio
+  contra la media, rápida sobre lenta (estado) y su cruce (evento), movimiento direccional
+  y trailing por volatilidad; cada indicador entra una vez por lectura, no sus ocho
+  variantes. Peso 2 = su régimen: hay tendencia. Peso 1 = lo ortogonal: el retroceso
+  (reversión, la contraria: tendencia con contratendencia), la volatilidad, el apagado
+  de la tendencia como salida y cuatro velas. Unida a reversion_base_v3 forma la familia
+  «pullback»: sus pesos 1 de reversión son un subconjunto del peso 3 de aquella. Fuera:
+  ruptura y momentum como segunda condición (son iguales: nunca dos iguales), MACD
+  contra su señal, ROC, Momentum (momentum), reloj, calendario, VWAP anclado y perfil
+  de volumen (franja horaria), VWAP (volumen), niveles de sesión y del día, y niveles
+  stop/limit. No hay en el catálogo un bloque de contexto D1 sin reloj: el filtro
+  D1 se pone con un segundo gráfico, no desde la paleta. Lo medido: la tendencia en
+  un solo activo está en el azar o por debajo a M30-H1.'
+unlabelled: 'off'
+# 2026-10-02 (calibration pilot): the value blocks and the generic comparison operators were
+# taken out. SQX does not weigh them: in the pilot 69 % of entry conditions were a comparator
+# on one of two values, whatever the weights said. Named signal blocks only.
+overrides:
+  MARising: 3
+  MAFalling: 3
+  LinRegRising: 3
+  LinRegFalling: 3
+  HMARising: 3
+  HMAFalling: 3
+  KAMARising: 3
+  KAMAFalling: 3
+  DEMARising: 3
+  DEMAFalling: 3
+  CBlock_EMAMAIsRising_2_2: 3
+  CBlock_EMAMAIsRising_2_3: 3
+  MABarClosesAbove: 3
+  MABarClosesBelow: 3
+  MABarOpensAbove: 3
+  MABarOpensBelow: 3
+  LinRegBarClosesAbove: 3
+  LinRegBarClosesBelow: 3
+  FasterHMAIsAboveSlowerHMA: 3
+  FasterHMAIsBelowSlowerHMA: 3
+  FastKAMAAboveSlowKAMA: 3
+  FastKAMABelowSlowKAMA: 3
+  DoubleDEMARising: 3
+  DoubleDEMAFalling: 3
+  DidiIndexUp: 3
+  DidiIndexDown: 3
+  MACDMainHigherZero: 3
+  MACDMainLowerZero: 3
+  CBlock_CrossAboveMA: 3
+  CBlock_CrossAboveMA_4: 3
+  CBlock_CrossAboveMA_2: 3
+  CBlock_CrossAboveMA_6: 3
+  CBlock_CrossAboveMA_3: 3
+  CBlock_CrossAboveMA_7: 3
+  CBlock_EMAMAIsRising_2_2_2: 3
+  CBlock_EMAMAIsRising_2_2_2_2: 3
+  IchimokuTenkanKijunCrossBullish: 3
+  IchimokuTenkanKijunCrossBearish: 3
+  DidiIndexCrossUP: 3
+  DidiIndexCrossDown: 3
+  MACDMainCrossAboveZero: 3
+  MACDMainCrossBelowZero: 3
+  DIPlusHigher: 3
+  DIPlusLower: 3
+  DICrossUp: 3
+  DICrossDown: 3
+  VortexUptrend: 3
+  VortexDowntrend: 3
+  AroonCrossesAbove: 3
+  AroonCrossesBelow: 3
+  IsUptrend: 3
+  IsDowntrend: 3
+  SuperTrendUPTrend: 3
+  SuperTrendDownTrend: 3
+  BarClosesAboveSuperTrend: 3
+  BarClosesBelowSuperTrend: 3
+  PSARBarHigher: 3
+  PSARBarLower: 3
+  GannHiLoUPTrend: 3
+  GannHiLoDownTrend: 3
+  CBlock_PMaxFlipUp: 3
+  CBlock_PMaxFlipDown: 3
+  ADXHigher: 2
+  ADXRising: 2
+  ADXCrossUp: 2
+  ADXChangesUp: 2
+  CBlock_ChoppinessTrending: 2
+  ChoppinessIndexBelowLevel: 2
+  ChoppinessIndexCrossesBelowLevel: 2
+  ChoppinessIndexFalling: 2
+  CBlock_HursExponentIsAboveLevel_3: 2
+  CBlock_HursExponentIsAboveLevel: 2
+  KERaboveLevel: 2
+  CBlock_EntropyLow: 2
+  EntropyMathBelowLevel: 2
+  EntropyMathCrossBelowLevel: 2
+  CSSAMarketRegimeBelowLevel: 2
+  CBlock_CSSARegimeBelow50: 2
+  RSILower: 1
+  RSIHigher: 1
+  RSICrossUp: 1
+  RSICrossDown: 1
+  StochSlowDLower: 1
+  StochSlowDHigher: 1
+  CCILower: 1
+  CCIHigher: 1
+  WPRLower: 1
+  WPRHigher: 1
+  CBlock_ZScoreStretchedDown: 1
+  CBlock_ZScoreStretchedUp: 1
+  CBlock_IBSCloseLarger: 1
+  CBlock_IBSCloseLarger_2: 1
+  CBlock_CMMAIsAboveLevel: 1
+  CBlock_CMMAIsAboveLevel_2: 1
+  BBBarOpensAboveDownAfterOpenBelow: 1
+  BBBarOpensBelowUpAfterOpenAbove: 1
+  CBlock_ATRRankHighVol: 1
+  CBlock_ATRRankLowVol: 1
+  ATRRising: 1
+  ATRFalling: 1
+  ATRPercentRankAboveLevel: 1
+  ATRPercentRankBelowLevel: 1
+  CBlock_SqueezeOn: 1
+  CBlock_SqueezeOff: 1
+  ADXLower: 1
+  ADXFalling: 1
+  CBlock_ChoppinessChoppy: 1
+  BullishEngulfing: 1
+  BearishEngulfing: 1
+  Hammer: 1
+  ShootingStar: 1

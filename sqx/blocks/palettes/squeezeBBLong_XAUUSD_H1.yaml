@@ -1,0 +1,157 @@
+# Paleta «Squeeze de Bollinger — XAUUSD H1 largo» — familia Volatilidad.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `volatility`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: squeezeBBLong_XAUUSD_H1
+label: Squeeze de Bollinger — XAUUSD H1 largo
+family: volatility
+origin: propia
+based_on: null
+created: '2026-10-05'
+note: 'Hueco libre único de squeezeBBLong en XAUUSD H1, largo, en AND con la fija:
+  un contador de velas seguidas con el BB Width Ratio en la parte baja de su propia
+  historia (≥ 4-8 velas): un ESTADO de compresión, sin dirección; entra a mercado
+  y sale por SL/PT/barras de la plantilla. El papel del hueco lo fija assets/FAMILIAS.md
+  para una fija de volatilidad: dar la dirección desde las otras familias, y nunca
+  la propia. Solo el lado comprador de cada bloque (una dirección por build). Peso
+  3 = (a) ruptura al alza — Donchian, bandas de Bollinger y Keltner por arriba, vela
+  de ruptura en ATR, nube de Ichimoku, momentum del TTM: es la salida clásica de una
+  compresión y la familia medida a favor en esta celda (channel55_trail, nota C, 3,7×
+  el coste, no significativa tras corregir); (b) momentum positivo — ROC, Momentum,
+  MACD/OSMA, AWO, WAE, RVI, QQE, WaveTrend, DSS, ergódico: nota C en H1 largo (vela
+  > 2 ATR, 3,9×). Peso 2 = (c) tendencia alcista como contexto (medias, cruces, DI+,
+  Vortex, SuperTrend, PSAR), sin evidencia medida en XAUUSD; (d) el disparo de reversión
+  SOLO comprador (oscilador bajo o saliendo, estiramiento bajo la media, IBS bajo,
+  reentrada en banda desde abajo): comprar el retroceso dentro de la compresión; VR(8)
+  < 1 en 6 de 10 años en H1, pero la familia no paga el coste en M15/M30. Peso 1 =
+  ADX que arranca y KER alto. Fuera: toda la familia volatilidad (Squeeze, BBWR, ATR
+  y StdDev en cualquier lectura, KS, Wasserstein: nunca dos iguales junto a la fija),
+  el lado vendedor de todo, patrones de velas (medido en XAUUSD: no pagan el coste,
+  6 de 8 celdas), sesión (sin reloj solo se escribe con comparadores genéricos, cuyo
+  peso SQX no respeta; prev_day_break p 0,96 en H1), reloj y calendario (regla 15),
+  volumen y VWAP, régimen de rango (Choppiness, entropía, Hurst bajo: repite la compresión)
+  y los niveles stop/limit: entrada a mercado, ningún indicador ni nivel encendido.'
+unlabelled: 'off'
+overrides:
+  CBlock_BreakoutDonchianLong: 3
+  BarOpensAboveHighestAfterOpenBelow: 3
+  IchimokuKumoBreakoutBullish: 3
+  CBlock_BBBreakoutUp: 3
+  BBBarOpensAboveUpAfterOpenBelow: 3
+  BBBarClosesAboveUp: 3
+  BBBarOpensAboveUp: 3
+  KCBarOpensAboveUpperAfterOpenBelow: 3
+  KCBarClosesAboveUpper: 3
+  KCBarOpensAboveUpper: 3
+  CBlock_CandleBreakoutLong: 3
+  TTMSqueezeMomentumCrossLevelUP: 3
+  TTMSqueezeMomentumIsRising: 3
+  ROCAboveLevel: 3
+  ROCCrossesAboveLevel: 3
+  ROCRising: 3
+  MomHigher: 3
+  MomCrossUp: 3
+  MomRising: 3
+  MACDMainHigherSignal: 3
+  MACDMainCrossAboveSignal: 3
+  MACDMainRising: 3
+  OSMAHigherZero: 3
+  OSMACrossZeroUp: 3
+  OSMARising: 3
+  AWOHigher: 3
+  AWOCrossUp: 3
+  AWORising: 3
+  CBlock_WAEPosAboveExplosion: 3
+  CBlock_WAEPosAboveExplosion_2_2_2: 3
+  CBlock_SqueezeMomentumPos: 3
+  RVIAboveLevel: 3
+  RVIRising: 3
+  QQEValue1HigherValue2: 3
+  QQEValue1CrossAboveValue2: 3
+  CBlock_QQEModBuy: 3
+  StochFastKUp: 3
+  WaveTrendMainHigherSignal: 3
+  WaveTrendMainCrossAboveSignal: 3
+  DSSBressertRising: 3
+  DSSBressertCrossUP: 3
+  BHErgodicUP: 3
+  BHErgodicCrossUP: 3
+  CBlock_TRSICrossUp: 3
+  CBlock_RMICrossUp: 3
+  MARising: 2
+  LinRegRising: 2
+  HMARising: 2
+  KAMARising: 2
+  DEMARising: 2
+  CBlock_EMAMAIsRising_2_2: 2
+  MABarClosesAbove: 2
+  MABarOpensAbove: 2
+  LinRegBarClosesAbove: 2
+  FasterHMAIsAboveSlowerHMA: 2
+  FastKAMAAboveSlowKAMA: 2
+  DoubleDEMARising: 2
+  DidiIndexUp: 2
+  MACDMainHigherZero: 2
+  CBlock_CrossAboveMA: 2
+  CBlock_CrossAboveMA_2: 2
+  CBlock_CrossAboveMA_3: 2
+  CBlock_EMAMAIsRising_2_2_2: 2
+  IchimokuTenkanKijunCrossBullish: 2
+  DidiIndexCrossUP: 2
+  MACDMainCrossAboveZero: 2
+  DIPlusHigher: 2
+  DICrossUp: 2
+  VortexUptrend: 2
+  AroonCrossesAbove: 2
+  IsUptrend: 2
+  SuperTrendUPTrend: 2
+  BarClosesAboveSuperTrend: 2
+  PSARBarHigher: 2
+  GannHiLoUPTrend: 2
+  CBlock_PMaxFlipUp: 2
+  RSILower: 2
+  RSICrossUp: 2
+  StochSlowDLower: 2
+  StochSlowDCrossUp: 2
+  StochFastKCrossUp: 2
+  CCILower: 2
+  CCICrossUp: 2
+  WPRLower: 2
+  WPRCrossUp: 2
+  DEMLower: 2
+  DEMCrossUp: 2
+  DVOBelowLevel: 2
+  DVOCrossAboveLevel: 2
+  LaguerreRSICrossUP: 2
+  QQEValue1Lower: 2
+  QQEValue1CrossAbove: 2
+  WaveTrendMainLower: 2
+  WaveTrendMainCrossAbove: 2
+  SchaffTrendCycleBelowLevel: 2
+  BHErgodicBelowLevel: 2
+  CBlock_ZScoreStretchedDown: 2
+  CBlock_CMMAIsAboveLevel_2: 2
+  CBlock_CMMAIsAboveLevel_3: 2
+  DisparityIndexBelowLevel: 2
+  DisparityIndexCrossesAboveLevel: 2
+  CBlock_IBSCloseLarger_2: 2
+  CBlock_IBSCloseLarger_3: 2
+  BBBarOpensAboveDownAfterOpenBelow: 2
+  KCBarOpensAboveLowerAfterOpenBelow: 2
+  BarOpensAboveLowestAfterOpenBelow: 2
+  CBlock_StochWeightsUp: 2
+  CBlock_SmoothedRSIRising_3_3: 2
+  ADXRising: 1
+  ADXCrossUp: 1
+  ADXChangesUp: 1
+  KERaboveLevel: 1

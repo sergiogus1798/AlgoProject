@@ -1,0 +1,152 @@
+# Paleta «Reversión a la media — base (v3, 90-150)» — familia Reversión a la media.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `mean_reversion`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: reversion_base_v3
+label: Reversión a la media — base (v3, 90-150)
+family: mean_reversion
+origin: propia
+based_on: reversion_base_v2
+created: '2026-10-02'
+note: 'Paleta de familia v3 para poblaciones Simple Strategy (entrada 1..2, salida
+  1..2, todo a mercado, una dirección por build): de aquí salen la entrada Y la salida.
+  Peso 3 = todas las señales propias de la reversión: cada oscilador acotado en su
+  extremo (estado y cruce del nivel), el estiramiento respecto de la media (ZScore,
+  CMMA, Disparity; %B como valor), IBS, la reentrada en banda/canal tras salirse y
+  el giro desde la zona. Peso 2 = su régimen: sin tendencia, y la volatilidad (la
+  literatura: la reversión paga con volatilidad alta). Peso 1 = lo ortogonal: el filtro
+  de tendencia que la convierte en pullback, la vuelta a la media y el momentum girado
+  como salida, y cuatro velas de giro. Unida a tendencia_base_v3 forma la familia
+  «pullback»: sus pesos 1 de tendencia son un subconjunto del peso 3 de aquella. Fuera:
+  reloj, calendario, niveles de sesión y del día, volumen (MFI, VWAP), DPO contra
+  nivel en puntos, Woodies CCI y SR Percent Rank (sin verificar) y niveles stop/limit.
+  Lo medido: la reversión barra a barra es significativa y paga 0,2× el coste; sin
+  contexto no llega.'
+unlabelled: 'off'
+# 2026-10-02 (calibration pilot): the value blocks and the generic comparison operators were
+# taken out. SQX does not weigh them: in the pilot 69 % of entry conditions were a comparator
+# on one of two values, whatever the weights said. Named signal blocks only.
+overrides:
+  RSILower: 3
+  RSIHigher: 3
+  RSICrossUp: 3
+  RSICrossDown: 3
+  StochSlowDLower: 3
+  StochSlowDHigher: 3
+  StochSlowDCrossUp: 3
+  StochSlowDCrossDown: 3
+  StochFastKCrossUp: 3
+  StochFastKCrossDown: 3
+  CCILower: 3
+  CCIHigher: 3
+  CCICrossUp: 3
+  CCICrossDown: 3
+  WPRLower: 3
+  WPRHigher: 3
+  WPRCrossUp: 3
+  WPRCrossDown: 3
+  DEMLower: 3
+  DEMHigher: 3
+  DEMCrossUp: 3
+  DEMCrossDown: 3
+  DVOBelowLevel: 3
+  DVOAboveLevel: 3
+  DVOCrossAboveLevel: 3
+  DVOCrossBelowLevel: 3
+  LaguerreRSICrossUP: 3
+  LaguerreRSICrossDown: 3
+  QQEValue1Lower: 3
+  QQEValue1Higher: 3
+  QQEValue1CrossAbove: 3
+  QQEValue1CrossBelow: 3
+  WaveTrendMainLower: 3
+  WaveTrendMainHigher: 3
+  WaveTrendMainCrossAbove: 3
+  WaveTrendMainCrossBelow: 3
+  SchaffTrendCycleBelowLevel: 3
+  SchaffTrendCycleAboveLevel: 3
+  BHErgodicBelowLevel: 3
+  BHErgodicAboveLevel: 3
+  CBlock_ZScoreStretchedDown: 3
+  CBlock_ZScoreStretchedUp: 3
+  CBlock_CMMAIsAboveLevel: 3
+  CBlock_CMMAIsAboveLevel_2: 3
+  CBlock_CMMAIsAboveLevel_3: 3
+  CBlock_CMMAIsAboveLevel_3_2: 3
+  DisparityIndexBelowLevel: 3
+  DisparityIndexAboveLevel: 3
+  DisparityIndexCrossesAboveLevel: 3
+  DisparityIndexCrossesBelowLevel: 3
+  CBlock_IBSCloseLarger: 3
+  CBlock_IBSCloseLarger_2: 3
+  CBlock_IBSCloseLarger_3: 3
+  CBlock_IBSCloseLarger_4: 3
+  BBBarOpensAboveDownAfterOpenBelow: 3
+  BBBarOpensBelowUpAfterOpenAbove: 3
+  KCBarOpensAboveLowerAfterOpenBelow: 3
+  KCBarOpensBelowUpperAfterOpenAbove: 3
+  BarOpensAboveLowestAfterOpenBelow: 3
+  BarOpensBelowHighestAfterOpenAbove: 3
+  CBlock_StochWeightsUp: 3
+  CBlock_StochWeightsDown: 3
+  CBlock_SmoothedRSIRising_3_3: 3
+  CBlock_SmoothedRSIRising_3_3_2: 3
+  ADXLower: 2
+  ADXFalling: 2
+  ADXCrossDown: 2
+  ADXChangesDown: 2
+  CBlock_ChoppinessChoppy: 2
+  ChoppinessIndexAboveLevel: 2
+  ChoppinessIndexCrossesAboveLevel: 2
+  ChoppinessIndexRising: 2
+  CBlock_HursExponentIsAboveLevel_3_2: 2
+  CBlock_HursExponentIsAboveLevel_2: 2
+  KERbelowLevel: 2
+  CBlock_EntropyHigh: 2
+  EntropyMathAboveLevel: 2
+  EntropyMathCrossAboveLevel: 2
+  CSSAMarketRegimeAboveLevel: 2
+  CBlock_CSSARegimeAbove50: 2
+  SuperTrendInRange: 2
+  CBlock_ATRRankHighVol: 2
+  ATRPercentRankAboveLevel: 2
+  CBlock_ATRRankLowVol: 2
+  ATRPercentRankBelowLevel: 2
+  MARising: 1
+  MAFalling: 1
+  MABarClosesAbove: 1
+  MABarClosesBelow: 1
+  SuperTrendUPTrend: 1
+  SuperTrendDownTrend: 1
+  DIPlusHigher: 1
+  DIPlusLower: 1
+  LinRegRising: 1
+  LinRegFalling: 1
+  MACDMainHigherZero: 1
+  MACDMainLowerZero: 1
+  CBlock_DisparityAbove0: 1
+  CBlock_DisparityBelow0: 1
+  CBlock_DPOAbove0: 1
+  CBlock_DPOBelow0: 1
+  ROCAboveLevel: 1
+  ROCBelowLevel: 1
+  MACDMainHigherSignal: 1
+  MACDMainLowerSignal: 1
+  ATRRising: 1
+  ATRFalling: 1
+  CBlock_SqueezeOn: 1
+  CBlock_SqueezeOff: 1
+  BullishEngulfing: 1
+  BearishEngulfing: 1
+  Hammer: 1
+  ShootingStar: 1

@@ -1,0 +1,146 @@
+# Paleta «Doble ROC positivo — USDJPY M30 largo» — familia Momentum.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `momentum`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: doubleROCLong_USDJPY_M30
+label: Doble ROC positivo — USDJPY M30 largo
+family: momentum
+origin: propia
+based_on: null
+created: '2026-10-05'
+note: 'Hueco libre único de doubleROCLong en USDJPY M30, largo, en AND con la fija
+  gemela: ROC > 0 en dos periodos (10-30), un ESTADO de momentum positivo en dos horizontes;
+  entra a mercado y sale por SL/PT/barras de la plantilla. El papel del hueco lo fija
+  assets/FAMILIAS.md para momentum en USDJPY M30 long (prior Alta; medido nota C,
+  3,3× el coste, no significativa tras corregir): volatilidad (3) y reversión (2);
+  sesión y patrón quedan fuera. Peso 3 = régimen de volatilidad en sus dos lados,
+  estado y cambio (ATR contra su propia historia, StdDev, Squeeze, BBWR, cambio de
+  distribución): ortogonal a la fija y sin dirección; la medida líder de la celda
+  es una vela > 2 ATR. Peso 2 = (a) el disparo de reversión SOLO en su lado comprador
+  — oscilador en zona baja o saliendo de ella, estiramiento bajo la media, IBS bajo,
+  reentrada en banda desde abajo: comprar el retroceso dentro del momentum positivo,
+  y el VR(8) < 1 medido en 9 de 10 años lo apoya; (b) fuerza de tendencia o rango
+  en sus dos lados (ADX, Choppiness, Hurst, KER, entropía, CSSA), sin dirección. Peso
+  1 = los cruces de régimen (eventos raros) y la dirección de las bandas. Fuera: toda
+  la familia momentum (ROC, Momentum, MACD, OSMA, AWO, WAE positivo, RVI, QQE contra
+  su señal: nunca dos iguales junto a la fija), tendencia y ruptura (son lo mismo
+  que la fija), el lado alto de los osciladores (RSI alto con ROC > 0 repite la fija),
+  patrones de velas (medido en USDJPY: no pagan el coste, 5 de 8 celdas), sesión,
+  reloj y calendario (regla 15; medido: 8 de 8 celdas bajo medio coste), volumen y
+  VWAP, los comparadores con valores (SQX no respeta su peso) y los niveles stop/limit:
+  entrada a mercado, ningún indicador ni nivel encendido.'
+unlabelled: 'off'
+overrides:
+  CBlock_ATRRankHighVol: 3
+  CBlock_ATRRankLowVol: 3
+  ATRPercentRankAboveLevel: 3
+  ATRPercentRankBelowLevel: 3
+  ATRPercentAboveLevel: 3
+  ATRPercentBelowLevel: 3
+  ATRRising: 3
+  ATRFalling: 3
+  ATRPercentRankRising: 3
+  ATRPercentRankFalling: 3
+  StdDevRising: 3
+  StdDevFalling: 3
+  CBlock_SqueezeOn: 3
+  CBlock_SqueezeOff: 3
+  CBlock_BBWRPercent: 3
+  CBlock_ATRCrossMAATR: 3
+  ATRPercentRankCrossUP: 3
+  ATRPercentRankCrossDown: 3
+  ATRPercentCrossUP: 3
+  ATRPercentCrossDown: 3
+  ATRChangesUp: 3
+  ATRChangesDown: 3
+  StdDevChangesUp: 3
+  StdDevChangesDown: 3
+  CBlock_KSBreakOn: 3
+  CBlock_KSBreakOff: 3
+  CBlock_WassersteinShiftHigh: 3
+  CBlock_WassersteinShiftLow: 3
+  RSILower: 2
+  RSICrossUp: 2
+  StochSlowDLower: 2
+  StochSlowDCrossUp: 2
+  StochFastKCrossUp: 2
+  CCILower: 2
+  CCICrossUp: 2
+  WPRLower: 2
+  WPRCrossUp: 2
+  DEMLower: 2
+  DEMCrossUp: 2
+  DVOBelowLevel: 2
+  DVOCrossAboveLevel: 2
+  LaguerreRSICrossUP: 2
+  QQEValue1Lower: 2
+  QQEValue1CrossAbove: 2
+  WaveTrendMainLower: 2
+  WaveTrendMainCrossAbove: 2
+  SchaffTrendCycleBelowLevel: 2
+  BHErgodicBelowLevel: 2
+  CBlock_ZScoreStretchedDown: 2
+  CBlock_CMMAIsAboveLevel_2: 2
+  CBlock_CMMAIsAboveLevel_3: 2
+  DisparityIndexBelowLevel: 2
+  DisparityIndexCrossesAboveLevel: 2
+  CBlock_IBSCloseLarger_2: 2
+  CBlock_IBSCloseLarger_3: 2
+  BBBarOpensAboveDownAfterOpenBelow: 2
+  KCBarOpensAboveLowerAfterOpenBelow: 2
+  BarOpensAboveLowestAfterOpenBelow: 2
+  CBlock_StochWeightsUp: 2
+  CBlock_SmoothedRSIRising_3_3: 2
+  ADXHigher: 2
+  ADXRising: 2
+  ADXLower: 2
+  ADXFalling: 2
+  CBlock_ChoppinessTrending: 2
+  ChoppinessIndexBelowLevel: 2
+  ChoppinessIndexFalling: 2
+  CBlock_ChoppinessChoppy: 2
+  ChoppinessIndexAboveLevel: 2
+  ChoppinessIndexRising: 2
+  CBlock_HursExponentIsAboveLevel_3: 2
+  CBlock_HursExponentIsAboveLevel: 2
+  CBlock_HursExponentIsAboveLevel_3_2: 2
+  CBlock_HursExponentIsAboveLevel_2: 2
+  KERaboveLevel: 2
+  KERbelowLevel: 2
+  CBlock_EntropyLow: 2
+  CBlock_EntropyHigh: 2
+  EntropyMathBelowLevel: 2
+  EntropyMathAboveLevel: 2
+  CSSAMarketRegimeBelowLevel: 2
+  CSSAMarketRegimeAboveLevel: 2
+  CBlock_CSSARegimeBelow50: 2
+  CBlock_CSSARegimeAbove50: 2
+  SuperTrendInRange: 2
+  CBlock_WAEPosAboveExplosion_2_2_3: 2
+  CBlock_WAEPosAboveExplosion_2_2_3_2: 2
+  ADXCrossUp: 1
+  ADXCrossDown: 1
+  ADXChangesUp: 1
+  ADXChangesDown: 1
+  ChoppinessIndexCrossesBelowLevel: 1
+  ChoppinessIndexCrossesAboveLevel: 1
+  EntropyMathCrossBelowLevel: 1
+  EntropyMathCrossAboveLevel: 1
+  BBUpperRising: 1
+  BBUpperFalling: 1
+  BBLowerRising: 1
+  BBLowerFalling: 1
+  KCUpperRising: 1
+  KCUpperFalling: 1
+  KCLowerRising: 1
+  KCLowerFalling: 1
