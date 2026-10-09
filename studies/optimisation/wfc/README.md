@@ -19,7 +19,7 @@ two readings from `engines/weekly/panel.py`: **gross** (before the commission, s
 slippage `engines/market/reprice.py` charged each trade from the asset's card) for the **order**,
 **net** for the **level** and `R_sel`. Costs alone rank the variants alike on both sides — the ones
 that trade more pay more inside and outside — and a sign flip turns a cost into a gain, so the
-null cannot see it: hence the order before costs. One `estudios/wfc.{json,html,md}` per batch carries the
+null cannot see it: hence the order before costs. One `estudios/wfc.{json,html,md}` (and `distribuciones.parquet`: the sign-flip nulls behind `p_mas`, `p_nivel`, `p_mas_bloque` per composition) per batch carries the
 three, with `facts.c1`, `facts.c2`, `facts.c3`; only `facts.c1.estado` (`pasa` / `limbo` /
 `no_pasa`) is judged by the pilot, and **step 17 cuts nothing** (`cut: null`: it writes a verdict
 and a ledger row, it deletes no strategy). **Every read is a ledger row per segment** (step 17,

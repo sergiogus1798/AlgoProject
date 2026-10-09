@@ -1,19 +1,10 @@
-# parameterCloud/measure — the numbers, under the model above
+# cloud/measure — is the surface more than noise?
 
 | file | what it does | in → out |
 |---|---|---|
-| `stability.py` | B2: per-period metric, the profitable fraction, the rank persistence, the centroid and its drift | curves → per-period tables |
-| `ensemble.py` | C1: the plateau, K members spread across it, and the blended curve against the single point | curves → comparison |
+| `reference.py` | The adjusted R² of the same surface refitted on the metric shuffled among the variants, and `legible`: the real one against a percentile of those | cloud, fit → r2_adj, r2_ref, legible |
 
-Produces numbers and judges none of them.
+Produces the one comparison the ranking is read by; fits through `model/`, never its own surface.
 
-**The per-period metric is an annualised Sharpe off daily P&L**, not net profit: it is scale-free,
-so a period of 250 days and one of 120 are comparable, and a period where the family simply traded
-more does not read as a better one.
-
-**The ensemble picks members spread across the plateau, never the K best.** Greedy farthest-point in
-the normalised parameter space. Picking the best K would be selection wearing an ensemble's clothes,
-and the entire point is to stop depending on which point scored highest.
-
-**A member with no harvested curve is dropped and counted.** `blend` reports the K it actually had,
-because a blend of 6 when 8 were asked for is a different statement about risk.
+**A shuffle, not a formula.** It keeps the metric's own distribution, heavy tails included, and the
+exact design, so the reference is right for this many coefficients on these very points.

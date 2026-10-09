@@ -1,55 +1,57 @@
-# Every tunable of the market surfaces. The trade floor is shared with the WFC and the CSCV
-# and lives in engines/variants/config.yaml: a surface here and the WFC's cloud are two
-# readings of one set of points, so which points cannot live in two files.
+# Every tunable of the market surfaces (step 18.5; owner's proposal of 2026-10-07).
+# `ledger:<key>`: the number lives in ledger/thresholds.yaml, with who set it and when.
+# The two trade floors are the WFC's and live in engines/variants/config.yaml (`panel`):
+# `floor_oos_per_year` trades per year of the window on every market, and on the main one
+# `floor_is_per_param` x live parameters besides.
 
-# Which segments of the batch are read, one surface per market per segment.
-# `oos2` is reserved (assets/_policy.yaml) and this step is one it is reserved for (owner,
-# 2026-09-26: same group as the WFC and the WFM, read blind at step 20). `ledger.gate.allow`
-# is still asked before any file is opened, so a step without the claim is refused.
-segments: [build, oos1, oos2]
-
-# The metric each surface is made of. The WFC reads net profit per segment
-# (engines/variants/panel.columns), so the surfaces do too: a rho here and the WFC's rho
-# then speak about the same number. Ranks, so the account currency and the size of each
-# market's moves drop out.
-metric: NetProfit
-
-# The top share whose overlap the Jaccard measures: the top decile, as the encargo defines.
-# The same share is the plateau of the consensus map: a cell counts for a market when it is in
-# the top decile of that market's surface on the pair (owner, 2026-09-27, encargo 24 Q13).
-top_share: 0.10
-
-# The Spearman that the whole Fisher interval must clear to call two markets' rankings the
-# same. The WFC's floor, for the same reason: below 0.30 the ranks share under 9 % of
-# their variance, and a region "shared" at that level is not one a person would pick twice.
-rho_floor: "ledger:marketSurfaces.rho_floor"
-
-# The quantile of the Jaccard under independence (hypergeometric overlap) that the observed
-# one must exceed. ⚠️ Optimistic: the design clusters variants, so the true null is wider.
-j_quantile: "ledger:marketSurfaces.j_quantile"
-
-# The share of the declared markets that must pass, in EVERY segment read, for the region
-# to be called one that travels. Below it in every segment is a fail; mixed is watch.
-min_share: "ledger:marketSurfaces.min_share"
-
-# The workflow step the ledger records this at (owner, 2026-09-26: same level as the WFC
-# and the CSCV, read blind at step 20).
+# The workflow step the ledger records this at.
 step: 18.5
 
-# The plateau on the main asset (owner, 2026-09-30 §8.5): a point counts when it is within
-# `region_radius` level steps of the mother on EVERY parameter at once, and within
-# `region_delta` of the mother's own score there. Mirrors `cloud.config.neighbourhood`'s
-# `radius`/`delta` exactly, on purpose — it is meant to read as the same plateau, not a
-# second definition of one. Marked on every market's own heatmap; the table beside it
-# reads each market's performance inside this fixed region against outside it.
-region_radius: 2
-region_delta: 0.20
+# The joint sign-flip null: each WEEK of the other markets' window takes one random sign,
+# the same for every variant and every market that is not the main one. The main market is
+# never flipped. Quoted: YAML reads a bare `null` as the empty value.
+"null":
+  draws: ledger:marketSurfaces.null_draws              # sign vectors drawn
+  block_weeks: ledger:marketSurfaces.null_block_weeks  # consecutive weeks that share one sign
+  alpha: ledger:marketSurfaces.alpha                   # cut on p+ (positivo) and on p- (perverso)
+  seed: ledger:marketSurfaces.seed                     # root seed; every null is a child of it
+  chunk: 250                                           # draws flipped at a time: bounds the memory
+  # Share of the other markets' trades closed on a Monday or Tuesday after a weekend held
+  # from which the result warns and the order is classified again with two-week blocks.
+  straddle_max: ledger:marketSurfaces.straddle_max
 
-# The metrics a heatmap can show beside `metric` (Profit Factor, Sharpe, Ret/DD), switched with a
-# drop-down that needs no second run (CONTRACT §1 «selectors»): all are precomputed. Names are
-# SQX's columns of segments.parquet; `one.METRIC_LABEL` writes them on screen.
-extra_metrics: [ProfitFactor, SharpeRatio, ReturnDDRatio]
+# Which markets enter the joint mean.
+markets:
+  min_common: ledger:marketSurfaces.min_common   # variants usable on the main market AND on this one
+  max_ties: ledger:marketSurfaces.max_ties       # share of those variants tied with another there
+  # Under this SUM OF WEIGHTS in the mean (a group of near-identical markets shares 1) the
+  # order is «sin dato». The proposal's «menos de 5 mercados (con los pesos)» read as a sum
+  # of weights, not as a count of markets: open question for the owner.
+  min_weight: ledger:marketSurfaces.min_weight
 
-# Metrics only the overlaid densities of the «una superficie por mercado» tab add to those above
-# (owner, 2026-10-04 §19): a heatmap of a Sortino adds 4 MB per strategy and nobody asked for it.
-density_metrics: [SortinoRatio]
+# The top-20 % premium, on net excess.
+premium:
+  top_share: ledger:marketSurfaces.top_share     # the main market's top an optimiser would pick
+  percentile: ledger:marketSurfaces.premium_percentile   # at or under this percentile of its null: LIMBO
+
+# The main market against itself (build against oos1): the ratio rho / rho_auto is written
+# only when rho_auto is above this.
+reference:
+  min_rho: ledger:marketSurfaces.auto_min_rho
+
+# The planted-transmission power curve: for each true rho, `draws` flipped families with the
+# main market's order mixed in; the share read as a positive order is annotated.
+power:
+  rhos: [0.1, 0.2, 0.3]
+  draws: ledger:marketSurfaces.power_draws
+
+# The cost check: the repriced trades of a variant must add up to SQX's NetProfit on that
+# market and leg within `tolerance` (account currency) + `relative` x |NetProfit|; the result
+# warns when more than `max_share` of the variants of any market miss it.
+costs:
+  tolerance: 1.0
+  relative: 0.01
+  max_share: ledger:marketSurfaces.cost_max_share
+
+# Processes that reprice the markets in parallel (one market each, one BLAS thread).
+workers: 12

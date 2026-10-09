@@ -1,15 +1,13 @@
-# marketSurfaces/verdict — what does each pair mean, and what does the mother get?
+# marketSurfaces/verdict — what do the numbers mean?
 
 | file | what it does | in → out |
 |---|---|---|
-| `call.py` | A pair's state (rho interval over the floor AND J over the independence band), the main market against each declared one, and the mother-level call | pairs → states, call |
+| `call.py` | The class of a joint order (`positivo`, `neutro`, `perverso`, `sin_dato`) from its two tails and its weight, and the step's state from the deciding order, the premium and the oos2 order | numbers → words |
 
 Must never compute a statistic.
 
-**Both numbers are asked for because they fail differently.** A rho can be carried by the bottom of
-the surface — both markets hate the same corner — while the top deciles share nothing; that is not
-a shared good region, and `tests/test_marketsurfaces.py` builds exactly that case.
+**Only a perverse deciding order fails.** A neutral one passes («no descarta»): parameters that do
+not tell themselves apart elsewhere are not evidence against the mother. The premium and the oos2
+reading can only add LIMBO.
 
-**The denominator is the declared count, always.** Nine markets were fixed in `_markets.yaml` before
-anything was looked at; a market the batch lacks counts as not passing. Reading the three that
-worked out of nine is the data snooping the owner's PDF (§E) names.
+**No market decides alone.** The per-market rows are shown, never judged.

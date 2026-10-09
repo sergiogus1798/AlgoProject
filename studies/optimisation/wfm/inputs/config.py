@@ -4,6 +4,7 @@ from pathlib import Path
 
 from core.paths import DATA
 from core.study import config as study_config
+from ledger import thresholds
 
 HERE = Path(__file__).resolve().parent.parent
 
@@ -16,9 +17,11 @@ def load(overrides: list[str] | None = None) -> dict:
             (core.study.config).
 
     Returns:
-        The parsed `config.yaml`.
+        The parsed `config.yaml`, every `ledger:<key>` replaced by the number
+        ledger/thresholds.yaml declares.
     """
-    return study_config.load(HERE / "config.yaml", overrides or [])
+    cfg = thresholds.fill(study_config.load(HERE / "config.yaml", []))
+    return study_config.apply(cfg, overrides or [])
 
 
 def export(project: str, databank: str, day: str | None = None) -> Path:

@@ -1,20 +1,14 @@
-# walkForwardMatrix/measure — the numbers
+# wfm/measure — the numbers
 
 | file | what it does | in → out |
 |---|---|---|
-| `correlation.py` | Does the chosen configuration's in-sample result predict the out-of-sample one? Per cell, then pooled over cells | steps → rho per cell, pooled interval |
-| `drift.py` | How far the optimiser's tuple moves between steps, and which parameters it keeps re-deciding | chosen → drift, stability |
-| `gaterule.py` | SQX's own per-cell pass/fail rule and its area check — tie-break and recommended centre included — over every condition `export_wfm` checked per cell; `legacy` scores an export older than 2026-10-01 on its 2 `oos` conditions (encargo 37) | conditions.parquet → score per cell; pass grid → best rectangle, centre |
-| `equity.py` | Every cell's out-of-sample equity, resampled onto percent-of-trades-done so cells overlay; each cell's net profit, PF, daily Sharpe and DD, and their spread across cells | trades.parquet → one curve per cell, one row per cell, aggregate table |
-| `benchmark.py` | The original's trades marked to each D1 close (days sum exactly to the trades), and that daily return against the asset held at equal volatility: Sharpe gap and residual Sharpe with stationary paired-bootstrap intervals, beta, curves, years; `call` → pass (interval above 0) / watch (holds 0) / fail (below 0) | main.parquet + D1 → comparison |
-| `monkey.py` | The original's `oos2` trades against random traders with its footprint — `engines/nulls`, rung `timing`: same trades, holds, sizes and costs, only the entry time drawn — real value, monkeys' mean and p95, empirical p per statistic, and the engine's reconciliation | trades + bars → rows, p |
+| `excess.py` | Each trade's net excess — SQX's P/L, minus the oos2 re-charge where it closes in oos2, minus the market's drift — the weekly oos2 panel (unit = cell, whole trade in its closing week) and each unit's excess per year by segment | trades, asset → per trade, weeks x cells, cell x segment |
+| `levels.py` | L1 (median cell's excess per year against the shared-sign null), the reference series, L2 (reference − mother, same sign sets), effective cells from the correlation matrix's eigenvalues, and the weekly median's skewness | weeks x cells, signs → facts and null draws |
+| `gaterule.py` | SQX's per-cell pass/fail rule and its area check; `oos_only` first rescales every `score` value to the out-of-sample alone (x `oos_`/`all_` metric) and re-decides `met` | conditions, cells → score per cell; pass grid → best rectangle |
+| `drift.py` | How far the optimiser's tuple moves between steps over the mother's OWN parameters, and which it keeps re-deciding | chosen → drift, stability |
+| `equity.py` | Every cell's out-of-sample equity on percent-of-trades-done, each cell's figures and their spread, and each cell against the original over the same windows | trades → curves, rows |
 
-`per_cell` is the real measurement; `pooled` only summarises it. The interval comes from resampling
-**cells**, never steps — see `../model/README.md` for the measurement that forces that.
+Must never hold: a threshold (they are `ledger:` rows read by `run.py`), a state word, or Spanish.
 
-`drift.per_step` normalises each parameter's move by its own spread across the export, so a period
-moving by 3 and a shift moving by 3 are not treated as the same event.
-
-Drift and correlation are one finding, not two. A surface with no out-of-sample signal has nothing
-holding the optimiser in place, so it re-picks freely; high drift beside a near-zero correlation is
-the coherent picture rather than a second, independent result.
+The null flips one sign per WEEK for all cells alike: it removes the edge and keeps what the cells
+share. A count of cells would treat 2–4 effective curves as 30; the median does not.

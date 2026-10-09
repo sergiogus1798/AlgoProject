@@ -1,146 +1,161 @@
-"""One WFM export's whole reading: what the windows allow, the correlation, and the drift."""
+"""One WFM export's whole reading: each mother's L1, L2, redundancy, corrected area and drift."""
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
-from core import assetdata
+from engines.weekly import flip, panel
 from studies.optimisation.wfm.inputs import asset, export
-from core import barstore
-from studies.optimisation.wfm.measure import benchmark, correlation, drift, gaterule, monkey
+from studies.optimisation.wfm.measure import drift, excess, gaterule, levels
 from studies.optimisation.wfm.model import windows
 from studies.optimisation.wfm.verdict import call
 
+CELL = "WF: {runs} runs : {oos_pct} % OOS"      # SQX's own name for a cell
+OLD = ("este export es anterior al 2026-10-01: no guarda las operaciones de la madre ni las "
+       "diez condiciones. Vuelve a exportar con sqx.export.export_wfm")
 
-def read(directory: Path, settings: dict, only: str | None = None) -> dict:
+
+def covered(shapes: pd.DataFrame, spans: dict) -> pd.DataFrame:
+    """Years of each segment that each cell's out-of-sample runs cover.
+
+    Args:
+        shapes: `model.windows.shape` of one strategy: `result`, `covers_from`, `covers_to`.
+        spans: `inputs.asset.of`'s `windows`.
+
+    Returns:
+        Indexed by cell, one column per segment; zero where the runs do not reach it.
+    """
+    first, last = shapes["covers_from"].dt.normalize(), shapes["covers_to"].dt.normalize()
+    out = {name: ((last.clip(upper=pd.Timestamp(b) + pd.Timedelta(days=1))
+                   - first.clip(lower=pd.Timestamp(a))).dt.days.clip(lower=0) / 365.25)
+           for name, (a, b) in spans.items()}
+    return pd.DataFrame(out).set_index(shapes["result"].astype(str).to_numpy())
+
+
+def one(trades: pd.DataFrame, mother: pd.DataFrame, shapes: pd.DataFrame, the: dict,
+        cfg: dict, seed: np.random.SeedSequence) -> dict:
+    """Everything measured on one mother's cells in oos2.
+
+    Args:
+        trades: Its cells' walk-forward trades (`sample` OOS), `result` naming the cell.
+        mother: Its own trades with fixed parameters (`main.parquet`), `strategy` naming it.
+        shapes: Its rows of `model.windows.shape`, in matrix order.
+        the: `inputs.asset.of`.
+        cfg: The study's config.
+        seed: This mother's child of the run's root seed.
+
+    Returns:
+        `cells` (weeks x cells), `mother` and `ref` (weekly series), `per_year` (each
+        cell's oos2 excess per year), `l1`, `l2`, `l1_blocks` (L1 again in two-week blocks,
+        None unless too many trades straddle a weekend), `straddle`, `skew`, `effective`,
+        `positive`, `segments` (cell x segment excess per year), `recharged` (trades and
+        money re-charged) and `centre`.
+    """
+    null, window = cfg["null"], the["windows"][asset.CLEAN]
+    years = panel.years(window)
+    names = shapes["result"].astype(str).tolist()
+    per = excess.per_trade(trades, the, "result")
+    cells = excess.weekly(per, window, "result", names)
+    fixed = excess.per_trade(mother, the, "strategy")
+    alone = excess.weekly(fixed, window, "strategy", fixed["strategy"].unique())
+    signs = flip.signs(seed, null["draws"], len(cells))
+    centre = CELL.format(**cfg["centre"])
+    ref = levels.reference(cells, cfg["modo_real"], centre)
+    clean = per[per["segment"] == asset.CLEAN]
+    straddle = panel.straddle(clean["open"], clean["close"])
+    per_year = cells.sum() / years
+    return {"cells": cells, "mother": alone.iloc[:, 0], "ref": ref, "per_year": per_year,
+            "l1": levels.l1(cells, signs, years),
+            "l2": levels.l2(ref, alone.iloc[:, 0], signs, years),
+            "l1_blocks": levels.l1(cells, flip.signs(seed, null["draws"], len(cells), 2), years)
+            if straddle > null["straddle_max"] else None,
+            "straddle": straddle, "skew": levels.skewness(cells),
+            "effective": levels.effective(cells), "positive": float((per_year > 0).mean()),
+            "segments": excess.by_segment(per, "result", covered(shapes, the["windows"])),
+            "recharged": {"trades": int(len(clean)), "money": float(clean["charge"].sum()),
+                          "mother_money": float(fixed["charge"].sum())},
+            "centre": centre}
+
+
+def area(scored: pd.DataFrame, rule: dict) -> dict:
+    """SQX's area rule on one strategy's corrected scores: cells passing, best rectangle."""
+    score = scored.pivot(index="runs", columns="oos_pct", values="score_pct").to_numpy()
+    passed = score >= rule["threshold_pct"]
+    return gaterule.area(passed, score, rule["rows"], rule["cols"], rule["min_squares"]) | {
+        "cells": int(passed.sum())}
+
+
+def facts(got: dict, drifted: float, found: dict, mode: str) -> dict:
+    """The numbers the autopilot's rules and step 20 read, named as the plan froze them.
+
+    Args:
+        got: one()'s return.
+        drifted: The mother's median share of parameters changed per re-optimisation.
+        found: area()'s return.
+        mode: `fijo` or `reoptimizado`.
+
+    Returns:
+        `l1`, `l2`, `centro`, `celdas_efectivas`, `frac_celdas_positivas`, `deriva`, `area`;
+        and `reopt` ONLY in `reoptimizado`, so its rules do not exist in `fijo`.
+    """
+    def tails(level: dict, first: str) -> dict:
+        """One level's own number and its place in the null, without the draws."""
+        return {k: level[k] for k in (first, "p_mas", "p_menos", "nulo_p5", "nulo_p95")}
+    centre = float(got["per_year"][got["centre"]])
+    out = {"l1": tails(got["l1"], "mediana_exceso"), "l2": tails(got["l2"], "delta"),
+           "centro": {"exceso_oos2": centre}, "celdas_efectivas": got["effective"],
+           "frac_celdas_positivas": got["positive"], "deriva": drifted,
+           "area": {"celdas": found["cells"], "pasa": int(found["passed"])}}
+    if mode == call.REOPT:
+        out["reopt"] = {"centro_exceso": centre, "l2_p_menos": got["l2"]["p_menos"]}
+    return out
+
+
+def read(directory: Path, cfg: dict, only: str | None = None) -> dict:
     """Everything the study concludes about one export.
 
     Args:
         directory: The export's `wfm/` folder.
-        settings: The parsed `config.yaml`.
-        only: One strategy's name, to correlate, score and bootstrap that one alone.
+        cfg: The parsed `config.yaml`.
+        only: One strategy's name, to measure that one alone.
 
     Returns:
-        The window shapes, the per-cell correlations, the drift tables, and one verdict
-        per strategy. `render` formats it and recomputes nothing. With `only`, every
-        per-strategy number is the one the whole export gives it: the window shapes and
-        the drift's parameter spread stay the export's, because the population run reads
-        them across strategies.
+        `measured`, `facts`, `verdicts` and `area` per strategy, and what the tabs draw from:
+        `the` (the asset), `checked` and `scored` (the corrected conditions), `rules`,
+        `sqx_failed`, `objectives`, `drift`, `stability`, `trades`, `original`, `windows`.
+        With `only`, that strategy's numbers are the ones the whole export gives it: its
+        seed is its position among the export's strategies, and the drift's parameter
+        spread stays the export's.
     """
-    read_cfg, measure_cfg = settings["read"], settings["measure"]
-    metric = read_cfg["metric"]
-    correlation.MIN_STEPS = measure_cfg["min_steps"]
-
-    everything = export.steps(directory, read_cfg["drop_future"])
-    steps = everything[everything["strategy"] == only] if only else everything
-    chosen = export.chosen(directory)
-    shapes = windows.shape(everything)
-    cells = correlation.per_cell(steps, metric)
-    moves = drift.per_step(chosen)
-    drift_summary = drift.summary(moves, chosen).set_index("strategy")
-    warning = windows.length_warning(shapes, metric)
-
-    # The pass/fail matrix (feedback §8.3, encargo 37): every condition SQX judged each cell
-    # by, with the rule the strategy carries; an older export falls back to `_build.yaml`.
-    wfm_doctrine = assetdata.doctrine()["wfm"]
-    matrix = export.cells(directory)
-    checked = export.conditions(directory)
-    if checked is None:
-        checked = gaterule.legacy(matrix, wfm_doctrine["conditions"])
-    checked = checked[checked["strategy"] == only] if only else checked
-    rules = export.rules(directory)
-    if "threshold_pct" not in rules:
-        rules = rules.assign(threshold_pct=wfm_doctrine["threshold_pct"],
-                             rows=wfm_doctrine["grid_passing_size"],
-                             cols=wfm_doctrine["grid_passing_size"],
-                             min_squares=wfm_doctrine["min_squares"])
-    objectives = export.objectives(directory)
-
-    verdicts = {}
-    for strategy in cells["strategy"].unique():
-        got = correlation.pooled(cells[cells["strategy"] == strategy],
-                                 measure_cfg["confidence"], measure_cfg["n_resamples"],
-                                 measure_cfg["seed"])
-        verdicts[strategy] = call.call(got, drift_summary.loc[strategy].to_dict(),
-                                       settings["verdict"])
-
+    original, conditions = export.main(directory), export.conditions(directory)
+    if original is None or conditions is None:
+        raise SystemExit(OLD)
+    everything = export.steps(directory, cfg["read"]["drop_future"])
+    names = sorted(everything["strategy"].unique())
+    seeds = dict(zip(names, np.random.SeedSequence(cfg["null"]["seed"]).spawn(len(names))))
+    the = asset.of(original["Symbol"].iloc[0], original["timeframe"].iloc[0],
+                   cfg["recharge"]["charged"])
     trades = export.trades(directory)
-    original = export.main(directory)
-    return {"source": str(directory), "metric": metric,
-            "shapes": shapes, "independence": windows.independence(shapes),
-            "cells": cells, "verdicts": verdicts, "warning": warning,
-            "drift": drift_summary.reset_index(), "stability": drift.stability(chosen),
-            "by_runs": correlation.by_axis(cells, "runs"),
-            "by_oos": correlation.by_axis(cells, "oos_pct"),
-            "companions": companions(steps, cells, read_cfg, measure_cfg),
-            "checked": checked, "scored": gaterule.score(checked),
-            "rules": rules[["threshold_pct", "rows", "cols", "min_squares"]],
-            "sqx_failed": rules["sqx_failed"].to_dict() if "sqx_failed" in rules else {},
-            "objectives": objectives,
-            "trades": trades if not only else trades[trades["strategy"] == only],
-            "original": original, "windows": everything,
-            "benchmark": against(original, only, settings["benchmark"])}
-
-
-def against(main: pd.DataFrame | None, only: str | None, cfg: dict) -> dict:
-    """Each original strategy on `oos2` against its asset at equal risk and against chance.
-
-    Args:
-        main: `inputs.export.main()`, None for an export older than 2026-10-01.
-        only: One strategy's name, or None for all.
-        cfg: The `benchmark` block of `config.yaml`.
-
-    Returns:
-        Strategy to `measure.benchmark.compare` plus its `state`, the asset's `name` and
-        `monkey` (`measure.monkey.against`, None when `oos2` holds too few trades to price);
-        empty when the export holds no original trades. The original, not a matrix cell:
-        picking one of the 30 cells to stand for the strategy is a choice made after
-        seeing them, which is selection on the very sample being judged.
-    """
-    if main is None:
-        return {}
-    the = asset.of(main["Symbol"].iloc[0])
-    start, end = the["oos"]
-    out = {}
-    for name, g in main.groupby("strategy", observed=True):
-        if only and name != only:
-            continue
-        pnl = benchmark.daily_pnl(g, the["close"], the["point_value"])
-        days = (pnl.index >= start) & (pnl.index < end)
-        capital = float(g["Balance"].iloc[0] - g["Profit/Loss"].iloc[0])
-        got = benchmark.compare(pnl[days], the["close"][days], capital, cfg)
-        inside = g[(g["Open time"] >= start) & (g["Close time"] < end)]
-        frame = barstore.read(g["Symbol"].iloc[0], g["timeframe"].iloc[0])
-        out[name] = got | {"state": benchmark.call(got), "asset": the["name"],
-                           "monkey": monkey.against(inside, frame, cfg["monkey_draws"], name)
-                           if len(inside) >= cfg["monkey_min_trades"] else None}
-    return out
-
-
-def companions(steps: pd.DataFrame, cells: pd.DataFrame, read_cfg: dict,
-               measure_cfg: dict) -> pd.DataFrame:
-    """The same correlation on the other metrics, as a check that the verdict is not one.
-
-    Args:
-        steps: Output of `inputs.export.steps`.
-        cells: Output of `measure.correlation.per_cell` for the main metric.
-        read_cfg: The `read` block of `config.yaml`.
-        measure_cfg: The `measure` block.
-
-    Returns:
-        One row per (strategy, metric) with the pooled correlation and its interval.
-
-        A verdict that only holds on the metric it was read on is a property of that
-        metric. This is the cheapest way to find that out, and it costs one more groupby.
-    """
-    rows = []
-    for metric in [read_cfg["metric"]] + read_cfg["companion_metrics"]:
-        per = correlation.per_cell(steps, metric)
-        for strategy in cells["strategy"].unique():
-            got = correlation.pooled(per[per["strategy"] == strategy],
-                                     measure_cfg["confidence"],
-                                     measure_cfg["n_resamples"], measure_cfg["seed"])
-            rows.append({"strategy": strategy, "metric": metric, "rho": got["rho"],
-                         "low": got["low"], "high": got["high"],
-                         "share_negative": got["share_negative"]})
-    return pd.DataFrame(rows)
+    chosen = export.chosen(directory)
+    drifted = drift.summary(drift.per_step(chosen), chosen).set_index("strategy")
+    checked = gaterule.oos_only(conditions, export.cells(directory))
+    scored, rules = gaterule.score(checked), export.rules(directory)
+    shapes = windows.shape(everything).sort_values(["runs", "oos_pct"])
+    out = {"measured": {}, "facts": {}, "verdicts": {}, "area": {}}
+    for name in [only] if only else names:
+        mine = trades[(trades["strategy"] == name) & (trades["sample"] == "OOS")]
+        got = one(mine, original[original["strategy"] == name],
+                  shapes[shapes["strategy"] == name], the, cfg, seeds[name])
+        found = area(scored[scored["strategy"] == name], rules.loc[name].to_dict())
+        said = facts(got, float(drifted.loc[name, "share_changed_median"]), found,
+                     cfg["modo_real"])
+        out["measured"][name], out["area"][name], out["facts"][name] = got, found, said
+        out["verdicts"][name] = call.call(said, cfg["modo_real"], cfg["null"]["alpha"])
+    return out | {
+        "source": str(directory), "the": the, "checked": checked, "scored": scored,
+        "rules": rules[["threshold_pct", "rows", "cols", "min_squares"]],
+        "sqx_failed": rules["sqx_failed"].to_dict(), "objectives": export.objectives(directory),
+        "drift": drifted.reset_index(), "stability": drift.stability(chosen),
+        "trades": trades if not only else trades[trades["strategy"] == only],
+        "original": original, "windows": everything}

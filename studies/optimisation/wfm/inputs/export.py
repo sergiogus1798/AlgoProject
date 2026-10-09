@@ -64,12 +64,13 @@ def chosen(directory: Path) -> pd.DataFrame:
         directory: The export's `wfm/` folder.
 
     Returns:
-        Wide: one row per (strategy, result, step index), one column per parameter, as
-        the export wrote it. This is the only record of what the optimiser decided -- the thousands of combinations
-        it tried inside each step are not stored anywhere, so nothing here can say how
-        close the runner-up was.
+        Wide: one row per (strategy, result, step index), one column per parameter and
+        nothing else — the cell's `oos_pct` and `runs` are its coordinates, not parameters,
+        and are left out. This is the only record of what the optimiser decided -- the
+        thousands of combinations it tried inside each step are not stored anywhere, so
+        nothing here can say how close the runner-up was.
     """
-    return (pd.read_parquet(directory / "params.parquet")
+    return (pd.read_parquet(directory / "params.parquet").drop(columns=["oos_pct", "runs"])
             .set_index(["strategy", "result", "index"]))
 
 
@@ -139,9 +140,9 @@ def main(directory: Path) -> pd.DataFrame | None:
         directory: The export's `wfm/` folder.
 
     Returns:
-        tradestore's columns plus `Symbol` and `strategy`, or None for an export older than
-        2026-10-01. SQX tags every trade `IST`: the window's own segments say which days
-        were out of sample.
+        tradestore's columns plus `Symbol`, `strategy` and `timeframe`, or None for an
+        export older than 2026-10-01. SQX tags every trade `IST`: the window's own segments
+        say which days were out of sample. The task's costs charged them, as the cells'.
     """
     path = directory / "main.parquet"
     return pd.read_parquet(path) if path.exists() else None

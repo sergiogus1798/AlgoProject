@@ -83,7 +83,7 @@ with a perverse or unreadable oos2; else `pass` («la zona viaja» when positive
 
 `marketSurfaces.json` (small: envelope, summary, facts, four light tabs; `.html` and `.md` from the
 same dict), `marketSurfaces_detalle.json` (the grids, loaded by nobody who decides), `mercados.csv`,
-`verdict.csv`. `summary.segundos` is the run's time.
+`verdict.csv`, `distribuciones.parquet` (the joint order's and the premium's nulls per reading). `summary.segundos` is the run's time.
 
 ## Readings chosen where the proposal left room — open questions for the owner
 

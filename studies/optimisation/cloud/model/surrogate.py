@@ -1,7 +1,11 @@
-"""A3: a smooth model of the surface, its residual roughness, and its curvature."""
+"""The smooth model of the surface: a full quadratic over the live parameters, and how much it explains."""
 
 import numpy as np
-from scipy.spatial import distance
+
+
+def coefficients(k: int) -> int:
+    """How many coefficients the quadratic has over `k` parameters: 1 + 2k + k(k-1)/2."""
+    return 1 + 2 * k + k * (k - 1) // 2
 
 
 def terms(unit: np.ndarray) -> np.ndarray:
@@ -12,37 +16,45 @@ def terms(unit: np.ndarray) -> np.ndarray:
 
     Returns:
         Intercept, every linear term, every square and every pairwise product, in that
-        order. Quadratic and not a Gaussian process on purpose: with k parameters it has
-        1 + 2k + k(k-1)/2 coefficients against thousands of points, it needs no
-        hyperparameter fitted to the same data it is judged on, and its Hessian is exact
-        rather than estimated. What it cannot do is report prediction uncertainty.
+        order. Quadratic and not a Gaussian process on purpose: it needs no hyperparameter
+        fitted to the same data it is judged on.
     """
     n, k = unit.shape
     cross = [unit[:, i] * unit[:, j] for i in range(k) for j in range(i + 1, k)]
     return np.column_stack([np.ones(n), unit, unit ** 2] + cross)
 
 
+def solve(matrix: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray | float]:
+    """Least squares and the adjusted R² of the fit, for one metric or for many at once.
+
+    Args:
+        matrix: What `terms` returned.
+        y: The metric, one per row — or rows by draws, each column fitted on its own.
+
+    Returns:
+        (the coefficients, the adjusted R²: one per column of `y`). The degrees of freedom
+        are the matrix's rank, not its width: a parameter with two values makes its square a
+        copy of itself, and counting both would charge the fit a coefficient it does not have.
+    """
+    coef, _, rank, _ = np.linalg.lstsq(matrix, y, rcond=None)
+    n = len(y)
+    r2 = 1.0 - (y - matrix @ coef).var(axis=0) / y.var(axis=0)
+    return coef, 1.0 - (1.0 - r2) * (n - 1) / (n - rank)
+
+
 def fit(unit: np.ndarray, y: np.ndarray) -> dict:
-    """Least squares, and how much of the surface the smooth model failed to catch.
+    """The surface fitted to one metric.
 
     Args:
         unit: Rows by parameters, on [0, 1].
         y: The metric, one per row.
 
     Returns:
-        `coef`, `r2`, and `roughness` = 1 - r2, the share of the variance that is not a
-        smooth function of the parameters at all. High roughness is the diagnosis the
-        test exists for: a surface whose neighbouring tuples disagree is one where the
-        chosen point's score is mostly the draw, not the parameters.
+        `coef`, `k`, `n` and `r2_adj`, the share of the metric's variance that is a smooth
+        function of the parameters, charged for the coefficients spent on it.
     """
-    matrix = terms(unit)
-    coef = np.linalg.lstsq(matrix, y, rcond=None)[0]
-    resid = y - matrix @ coef
-    r2 = 1.0 - float(resid.var() / y.var())
-    dof = y.size - matrix.shape[1]
-    r2_adj = 1.0 - (1.0 - r2) * (y.size - 1) / dof if dof > 0 else float("nan")
-    return {"coef": coef, "k": unit.shape[1], "n": int(y.size), "r2": r2, "r2_adj": r2_adj,
-            "roughness": 1.0 - r2, "rmse": float(np.sqrt((resid ** 2).mean()))}
+    coef, r2_adj = solve(terms(unit), y)
+    return {"coef": coef, "k": unit.shape[1], "n": int(y.size), "r2_adj": float(r2_adj)}
 
 
 def predict(model: dict, unit: np.ndarray) -> np.ndarray:
@@ -56,49 +68,3 @@ def predict(model: dict, unit: np.ndarray) -> np.ndarray:
         One prediction per row.
     """
     return terms(unit) @ model["coef"]
-
-
-def curvature(model: dict, point: np.ndarray) -> dict:
-    """The gradient and the Hessian of the smooth model at one point.
-
-    Args:
-        model: What `fit` returned.
-        point: One tuple on [0, 1], the origin's.
-
-    Returns:
-        `slope` the gradient's norm, `eigenvalues` of the Hessian sorted ascending, and
-        `sharpest` the most negative one. All in metric units per unit of the parameter's
-        own explored range, so the eigenvalues compare across parameters.
-
-        A quadratic has **one** Hessian everywhere, so fitting the whole cloud gives the
-        shape of the bowl and fitting only the neighbourhood gives the shape at theta-zero.
-        A slope far from zero says the smooth optimum is not where the strategy sits.
-    """
-    k, coef = model["k"], model["coef"]
-    hess = np.diag(2 * coef[1 + k:1 + 2 * k])
-    pairs = [(i, j) for i in range(k) for j in range(i + 1, k)]
-    for (i, j), value in zip(pairs, coef[1 + 2 * k:]):
-        hess[i, j] = hess[j, i] = value
-    grad = coef[1:1 + k] + hess @ point
-    values = np.sort(np.linalg.eigvalsh(hess))
-    return {"slope": float(np.linalg.norm(grad)), "eigenvalues": values,
-            "sharpest": float(values[0]), "flattest": float(values[-1])}
-
-
-def local_roughness(unit: np.ndarray, y: np.ndarray, neighbours: int) -> float:
-    """How much neighbouring tuples disagree, without assuming any model.
-
-    Args:
-        unit: Rows by parameters, on [0, 1].
-        y: The metric, one per row.
-        neighbours: How many nearest tuples each point is compared against.
-
-    Returns:
-        The median gap between a tuple and the median of its nearest neighbours, in IQRs
-        of the metric. It answers the same question as `roughness` without a functional
-        form: a quadratic calls everything it cannot represent noise, including a real
-        ridge, and this does not.
-    """
-    order = np.argsort(distance.squareform(distance.pdist(unit)), axis=1)[:, 1:neighbours + 1]
-    gap = np.abs(y - np.median(y[order], axis=1))
-    return float(np.median(gap) / (np.quantile(y, 0.75) - np.quantile(y, 0.25)))

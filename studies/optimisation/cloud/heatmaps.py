@@ -1,12 +1,11 @@
-"""A2/A3 heat maps: the metric over every pair of the most sensitive parameters, theta-zero marked."""
+"""The heat maps: the metric over every pair of the most sensitive parameters, the mother marked."""
 
 from itertools import combinations
 
 import numpy as np
 import pandas as pd
 
-BINS = 6    # cells per axis: 458 variants over 36 cells is ~13 a cell; finer leaves most empty
-TOP = 4     # parameters paired, ranked by Sobol total: 4 give 6 grids, 5 would give 10
+BINS = 6    # cells per axis: 1,000 variants over 36 cells is ~28 a cell; finer leaves cells thin
 
 
 def _axis(values: pd.Series, origin: float) -> tuple[pd.Series, list[str], str]:
@@ -28,8 +27,8 @@ def _axis(values: pd.Series, origin: float) -> tuple[pd.Series, list[str], str]:
 
 
 def pairs(frame: pd.DataFrame, params: list[str], values: np.ndarray, total: np.ndarray,
-          metric: str) -> list[dict]:
-    """One grid per pair among the TOP parameters by Sobol total.
+          metric: str, top: int) -> list[dict]:
+    """One grid per pair among the `top` parameters by Sobol total; none with a single one.
 
     Args:
         frame: The cloud's metric panel, with `origin` and the `param_` columns.
@@ -37,12 +36,15 @@ def pairs(frame: pd.DataFrame, params: list[str], values: np.ndarray, total: np.
         values: The metric, one per row of `frame`.
         total: Sobol total index of each of `params`.
         metric: The metric's name as the owner reads it.
+        top: How many parameters are paired: 4 give 6 grids.
 
     Returns:
         `grid` blocks, red to green, sharing one colour range so they compare; each cell is
-        the median of the variants that fall in it and the chosen point is marked θ₀.
+        the median of the variants that fall in it and the mother is marked θ₀.
     """
-    top = [params[i] for i in np.argsort(total)[::-1][:TOP]]
+    top = [params[i] for i in np.argsort(total)[::-1][:top]]
+    if len(top) < 2:
+        return []
     origin = frame[frame["origin"]].iloc[0]
     axes = {p: _axis(frame[p], origin[p]) for p in top}
     cells = {}
@@ -58,5 +60,5 @@ def pairs(frame: pd.DataFrame, params: list[str], values: np.ndarray, total: np.
              "mark": {"row": axes[y][2], "col": axes[x][2], "label": "θ₀"}, "region": None,
              "note": f"Mediana de {metric} de las variantes de cada celda; gris, sin variantes. "
                      f"Los ejes se parten en {BINS} tramos iguales. Misma escala de color en "
-                     f"todos los mapas; θ₀ es el punto elegido."}
+                     f"todos los mapas; θ₀ es la madre."}
             for (x, y), c in cells.items()]

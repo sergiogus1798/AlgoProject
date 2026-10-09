@@ -1,8 +1,8 @@
-# cscv/inputs — what the study is run on
+# cscv/inputs — what the study reads
 
 | file | what it does | in → out |
 |---|---|---|
-| `config.py` | This study's `config.yaml` over the batch-reading knobs it shares with the WFC (`engines/variants/config.yaml`) | — → settings |
+| `config.py` | The study's `config.yaml` with the ledger's thresholds filled in and `--set` applied | overrides → cfg |
+| `batch.py` | The batch's `variant_trades.parquet` priced into weekly net and gross excess (cached as `cscv_weekly.parquet`, keyed by the trades file, costs, drift and window), each variant's trade count and fingerprint, and the screen that decides who enters | batch folder → cells; metrics, info → kept ids, counts |
 
-The panel, the split and the usable points are `engines/variants/panel.py`: the rho and the PBO are
-two statements about one set of points, so both studies read them from one place.
+The cache lives beside the batch, in the data root. **Must never hold**: a statistic of the panel.

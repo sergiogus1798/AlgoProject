@@ -1,111 +1,78 @@
-"""One batch read as a cloud around its origin, returned as the contract's data."""
+"""One batch read as a map of who moves the result, returned as the contract's data."""
 
-import json
 import time
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
-from core.study import result as envelope
+from core.study import blocks, draws, result as envelope
 from studies.optimisation.cloud import contract
 from studies.optimisation.cloud.inputs import cloud as inputs
-from studies.optimisation.cloud.measure import ensemble, stability
-from studies.optimisation.cloud.model import neighbourhood, sensitivity, space, surrogate
-from studies.optimisation.cloud.verdict import call
+from studies.optimisation.cloud.measure import reference
+from studies.optimisation.cloud.model import sensitivity, space, surrogate
 
 MODULE = "studies.optimisation.cloud"
 
 
-def read(work: Path, cfg: dict) -> dict:
-    """Every measurement of one batch, with nothing judged and nothing printed.
+def read(frame: pd.DataFrame, cfg: dict, name: str = "") -> dict:
+    """The surface, its indices and its shuffled reference on each leg, nothing rendered.
 
     Args:
-        work: The batch directory, holding contracts C3 and the harvested curves.
+        frame: What `inputs.measured` returned.
         cfg: What `config` returned.
+        name: The mother's batch name, kept in the recorded draws.
 
     Returns:
-        The cloud, the A1 reading, the surrogate and its indices, the per-period tables
-        and the ensemble comparison. `report` renders it; the verdict layer judges it.
+        `cloud` (the variants kept), `counts` (`inputs.screen`), `live` (the parameters
+        fitted), `coefficients`, and `legs`: per leg of `inputs.LEGS` the fitted `model`, its
+        Sobol `indices` and `r2_adj`, `r2_ref`, `legible`; `draws`, the shuffled references as
+        `core.study.draws` rows. `legs` is empty when the cloud has no more variants than the
+        surface has coefficients.
     """
-    data = inputs.cloud(work, cfg["run"])
-    frame, values = data["frame"], inputs.values(data)
-    origin_row = int(np.flatnonzero(frame["origin"].to_numpy())[0])
-    live = space.varying(frame, data["params"])
-    unit = space.unit(frame, live)
-    coords = pd.DataFrame(unit, index=frame["variant_id"], columns=live)
-
-    steps = space.steps(frame, data["params"])
-    gap = np.abs(steps - steps[origin_row]).max(axis=1)   # Chebyshev, in level steps
-    near = neighbourhood.near(steps, origin_row, cfg["neighbourhood"]["radius"])
-    reading = neighbourhood.reading(values, near, origin_row, cfg["neighbourhood"]["delta"])
-
-    s = cfg["surrogate"]
-    whole = surrogate.fit(unit, values)
-    local = surrogate.fit(unit[near], values[near])
-    indices = sensitivity.sobol(whole, s["sobol_power"], s["seed"])
-
-    harvested = inputs.curves(work, frame["variant_id"])
-    window = inputs.before_reserved(harvested, cfg["run"]["symbol"])
-    per = stability.periods(window["curves"], cfg["stability"]["period"])
-    keep = stability.usable(per, cfg["stability"]["min_active_days"])
-    centre, drift = stability.centroids(per, keep, coords, cfg["stability"]["top_share"])
-    table = pd.DataFrame({"f_y": stability.fractions(per, keep),
-                          "q_origen": stability.origin_rank(per, keep, data["origin"]),
-                          "días_activos": per["active"].loc[keep].median(axis=1)})
-
-    pool = ensemble.members(frame, values, near, origin_row, cfg["neighbourhood"]["delta"])
-    picked = ensemble.spread(coords, pool, cfg["ensemble"]["k"])
-
-    return {"data": data, "live": live, "collapsed": sorted(set(data["params"]) - set(live)),
-            "radius": cfg["neighbourhood"]["radius"], "nearest": int(np.delete(gap, origin_row).min()),
-            "reading": reading, "values": values, "near_mask": near,
-            "whole": whole, "local": local, "indices": indices,
-            "roughness": surrogate.local_roughness(unit, values, s["neighbours"]),
-            "curvature": surrogate.curvature(local, unit[origin_row]),
-            "window": window, "table": table, "rho": stability.persistence(per, keep),
-            "centre": centre, "drift": drift, "pool": pool,
-            "blend": ensemble.blend(window["curves"], picked, data["origin"])}
+    cloud, counts = inputs.screen(frame, cfg["floor_is_per_param"])
+    live = space.varying(cloud, [c for c in cloud.columns if c.startswith("param_")])
+    found = {"cloud": cloud, "counts": counts, "live": live,
+             "coefficients": surrogate.coefficients(len(live)), "legs": {}, "draws": []}
+    if len(cloud) <= found["coefficients"]:
+        return found
+    unit = space.unit(cloud, live)
+    for leg in inputs.LEGS:
+        y = cloud[f"{leg}_excess"].to_numpy(dtype=float)
+        model = surrogate.fit(unit, y)
+        shuffled = reference.shuffled(unit, y, cfg["shuffles"], cfg["seed"])
+        found["legs"][leg] = {
+            "model": model, "indices": sensitivity.sobol(model, cfg["sobol_power"], cfg["seed"]),
+            **reference.legible(model["r2_adj"], shuffled, cfg["shuffle_percentile"])}
+        found["draws"].append(draws.record(
+            "cloud", "r2_barajado", model["r2_adj"], shuffled, strategy=name, seed=cfg["seed"], leg=leg,
+            unit="R² ajustado de la superficie con la métrica barajada"))
+    return found
 
 
 def run(work: Path, cfg: dict) -> dict:
-    """Where the chosen point sits in its own cloud, and whether the cloud holds up.
+    """Which parameters move a mother's excess, and whether that ranking can be read.
 
     Args:
-        work: The batch directory, holding contracts C3 and the harvested curves.
+        work: The batch directory (`inputs.measured`).
         cfg: What `config` returned.
 
     Returns:
-        The contract dict: four tabs, each with its readings. No verdict on the strategy:
-        diagnosis, never selection — nothing here replaces the chosen point by a better
-        clone; that is the owner's decision, revalidated elsewhere.
+        The contract dict, plus `facts` and `draws` (the report pops it). No verdict on the
+        strategy: step 16.5 has no rule.
     """
     started = time.time()
-    found = read(work, cfg)
-    v = cfg["verdict"]
-    calls = {"point": call.point(found["reading"], v),
-             "surface": call.surface(found["local"], found["roughness"], found["curvature"], v),
-             "temporal": call.temporal(found["table"]["f_y"], found["rho"], found["drift"], v)}
-    data = found["data"]
-    warn = []
-    if found["collapsed"]:
-        warn.append({"code": "colapsados", "state": "watch",
-                     "text": "Colapsados por los filtros, fuera del modelo: "
-                             + ", ".join(c[6:] for c in found["collapsed"])
-                             + ". Un parámetro así elige entre operar y no operar."})
-    if found["window"]["cut"]:
-        warn.append({"code": "reservado", "state": "info",
-                     "text": f"{found['window']['cut']} días recortados: caen en el tramo "
-                             f"reservado oos2."})
-    return envelope.envelope(
-        MODULE, work.name.replace("_", " ", 1), None, cfg, started, contract.tabs(found, calls),
-        warnings=warn, glossary=contract.GLOSSARY,
-        summary={"point": calls["point"], "surface": calls["surface"],
-                 "temporal": calls["temporal"], "variants": len(data["frame"]),
-                 "dropped": data["dropped"], "r2": found["local"]["r2"],
-                 "gap": found["blend"]["gap"],
-                 "rho_median": float(np.median(found["rho"])),
-                 "drift_median": float(np.median(found["drift"])),
-                 "sobol": dict(zip(found["live"], found["indices"]["total"])),
-                 "reading": found["reading"], "roughness": found["roughness"],
-                 "periods": json.loads(found["table"].to_json(orient="index"))})
+    envelope.progress(5, "valorando las operaciones de build y de oos1")
+    frame = inputs.measured(work)
+    envelope.progress(60, "superficie, índices de Sobol y referencia barajada")
+    found = read(frame, cfg, work.name)
+    build = found["legs"].get("build", {})
+    result = envelope.envelope(
+        MODULE, work.name.replace("_", " ", 1), None, cfg, started, contract.tabs(found, cfg),
+        warnings=contract.warnings(found, cfg), glossary=contract.GLOSSARY,
+        summary={"variants": len(found["cloud"]), "live": len(found["live"]),
+                 "r2_adj": build.get("r2_adj"), "r2_ref": build.get("r2_ref"),
+                 "legible": build.get("legible")})
+    result["facts"] = blocks.plain(contract.facts(found))
+    result["draws"] = found["draws"]
+    envelope.progress(100, "hecho")
+    return result

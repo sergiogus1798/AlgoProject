@@ -1,79 +1,70 @@
-# studies/optimisation/cloud — is the chosen point a lucky spike, and does its cloud hold up?
+# studies/optimisation/cloud — which parameters move a mother's result across her variant batch?
 
-One study, one folder. It reads a batch of fabricated variants that has already been retested —
-contracts C3 (`metrics.parquet`) and the harvested `equity.parquet` — and asks four questions that
-`walkForwardCorrelation` does not: **where theta-zero sits among its own neighbours, who actually
-moves the result, whether the surface is a surface at all, and whether its shape survives being cut
-into periods.** It never talks to SQX and it never runs a backtest.
+Step 16.5's map. It reads one retested batch of the variant factory and says **who moves the
+excess** (Sobol indices of a quadratic surface over the live parameters) and **whether that ranking
+can be read at all** (the surface's adjusted R² against the same fit on a shuffled metric). It is a
+diagnosis: no rule (`criteria.yaml` "16.5", `rules: []`), nothing cut, no variant chosen. It never
+talks to SQX, and **it never reads oos2** — only the legs `build` and `oos1` are asked of
+`variant_trades.parquet`, filtered before a row is loaded, whoever launches it.
 
 ```
-config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ contract
- every knob    the cloud  the       the         what it    the
-               and the    geometry  per-period  means      panel
-               curves     and the   and the
-                          surrogate ensemble
+config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ contract
+ every knob    the cloud  surface   is it      tabs, warnings
+               and its    and its   more than  and facts
+               excess     indices   noise?
 ```
 
 | folder | the question it answers | read its README before |
 |---|---|---|
-| `inputs/` | which variants may be described, and over what history? | touching a filter or the reserved-segment cut |
-| `model/` | what shape is the cloud, and who gives it that shape? | changing the neighbourhood metric or the surrogate |
-| `measure/` | what are the per-period and per-ensemble numbers? | touching the period metric or how members are picked |
-| `verdict/` | what does each of them mean? | moving a threshold |
+| `inputs/` | which variants enter the map, and what each one earned over the drift? | touching a filter or the measure |
+| `model/` | what surface do the parameters draw, and how does its variance split? | changing the surface or the indices |
+| `measure/` | does the surface explain more than noise would? | touching the reference |
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `one.py` | Every measurement of one batch and its four readings, as the contract's data the window paints | imported — the window calls it | batch → result |
-| `contract.py` | The four tabs — A1, A2 and A3, B2, C1 — each with its readings | imported | numbers → tabs |
-| `heatmaps.py` | A2/A3 heat maps: the metric over every pair of the 4 parameters with the highest Sobol total, 6 equal-width bins per axis, median per cell, θ₀ marked, one shared colour range | imported | numbers → grids |
-| `report.py` | **The command**: prints the result and writes `cloud.json`, `cloud.html` and `cloud.md` into the batch; `--out` also writes the numbers alone | `python3 -m studies.optimisation.cloud.report --work <dir>` | batch → four readings |
+| `one.py` | `read`: the surface, its Sobol indices and its shuffled reference on build and on oos1; `run`: that as the contract's data plus the `facts` of step 16.5 | imported — the window and the autopilot call it | batch → result |
+| `contract.py` | The tabs (build's map with its heat maps, oos1 as a secondary reading, the filter counts), the warnings («Sin estructura distinguible del ruido», thin fit, floor not applied) and the facts | imported | numbers → tabs |
+| `heatmaps.py` | The median excess per cell over every pair of the `heatmap_pairs` parameters with the highest Sobol total, 6 equal-width bins per axis, the mother marked, one shared colour range | imported | numbers → grids |
+| `report.py` | **The command**: prints the result and writes `cloud.json`, `cloud.html` and `cloud.md` into the batch's `estudios/`, plus `distribuciones.parquet` (the shuffled R² per leg behind `r2_barajado`); `--out` also writes the summary alone | `python3 -m studies.optimisation.cloud.report --work <dir>` | batch → map |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
+| `config.yaml` | Every tunable; a `ledger:<key>` value is a number that lives in `ledger/thresholds.yaml` | edited, or `--set key=value` | — |
 
 Manual page, in Spanish: `docs/manual/09-optimizacion.pdf` (cap. 39-nube-de-parametros).
 
-🔬 **What it costs**, measured 2026-09-24 on `Strategy 17.9.39` (998 variants after filtering, 3,925
-days, 7 live parameters): **1.9 s wall, 410 MB peak RSS**. The whole batch is read into memory at
-once because it fits; the Sobol indices are 2¹² × (k+2) surrogate evaluations, which is arithmetic
-and rounds to nothing beside the parquet reads.
+## What it writes
 
-## Diagnosis, never selection
+Facts, in `cloud.json` under `facts` (`pipeline.autopilot.facts` flattens them with dots):
+`vivos`, `coeficientes`, `variantes.build` and `variantes.oos1` (variants in the map; of them, those
+with a trade in oos1), and per leg `build.*` / `oos1.*`: `r2_ajustado`, `r2_barajado`, `legible`,
+`sobol_primer.<parameter>`, `sobol_total.<parameter>`.
 
-**The cloning is itself a search.** Two thousand clones is a larger optimisation, not a free
-robustness check, and if any clone were kept *because it scored best* the result would be a more
-overfit strategy with a smaller effective sample. So nothing here returns a better variant. The
-readings measure rank, plateau size, sensitivity, smoothness, persistence and drift; moving
-theta-zero is the owner's decision, logged, and revalidated on data this study never touched.
+## What this module exists to get right
 
-## The four things this module exists to get right
+**The metric is the excess per year, step 14's exactly.** `engines.variants.excess` on each
+variant's own trades, with the drift block of `studies/screening/gate/config.yaml`. Build is the
+map; oos1 is the same surface refitted as a secondary reading.
 
-**The per-period heatmap covers `oos2` too, for a human.** Owner, 2026-09-28: a human may look at
-any segment. Only under `ALGO_AUTONOMOUS=1` (`core.assetdata.enforced`) does
-`inputs.cloud.before_reserved` cut the curves at oos2's first day, and the report say how many
-days it dropped.
+**The cloud is the WFC's on the inside.** Controls out (`canary`, `inert`), an inside floor of
+`15 × k` trades on build (`engines/variants/config.yaml#panel`; a mother under it warns and the
+floor is skipped), exact duplicates out — the same profit to the cent on build and on oos1, since
+the WFC's own duplicate test reads oos2 and this study may not.
 
-**Distance is measured in level steps, not per cent.** The cloud is discrete and was designed in
-levels (`sqx/variants/design/`), so "±20 %" means something different for a bar count of 3 and a
-period of 67, while "two steps" means the same thing for both.
+**`k` is read off the batch.** The factory holds frozen parameters and shifts at the mother's value
+in every `lhs` row, so the parameters that vary once the controls are out are the live ones with a
+plateau wider than one value. A batch of the old stratified design moved frozen ones too; it has no
+`variant_trades.parquet` and cannot be read here.
 
-**A filter can flatten a parameter, and that is a finding.** 🔬 Measured 2026-09-24 on
-`Strategy 17.9.39`: dropping the canaries and every variant under 30 trades leaves `DICrossShift1`
-with a single value. Everything but shift 1 barely trades, so that parameter does not choose between
-good and bad — it chooses between trading and not. It is named in the report and left out of the
-fit, where it would otherwise be handed a sensitivity index of zero it did not earn.
+**The ranking is read only above its shuffled reference.** Sobol indices are indices of the fitted
+surface: a surface that explains nothing still hands out a ranking. So the adjusted R² is printed
+beside the percentile of `shuffles` refits on the metric dealt at random, and under it the report
+says «Sin estructura distinguible del ruido». Pure noise is called legible at about the nominal
+rate (`tests/test_cloud_map.py`).
 
-**The Sobol indices are computed on the surrogate, and they inherit its roughness.** The design this
-project fabricates is stratified, not a Saltelli design, so estimating indices directly would cost
-N(k+2) fresh backtests. On the surrogate they cost arithmetic — and an index read off a model with a
-low r² describes a shape the data only half supports, which is why the r² is printed beside them.
+**Fewer variants than coefficients is no map**, said in the report, not a crash: the autopilot
+launches this for every mother.
 
 ## What it does not tell you
 
-- **Nothing about a market it was not run on.** The multi-market surfaces (A4) and the cross-market
-  transfer of the optimal region (B3) need a variant retest carrying the cross-checks of
-  `assets/_markets.yaml`. `sqx.variants.equity` already writes `equity_markets.parquet` when they
-  are there, and `studies/optimisation/marketSurfaces/` reads them (step 18.5).
-- **Nothing about rules**, only about parameter values. Ablation and inversion need the strategy's
-  logic edited, not its variables: `sqx/structural/` and `studies/readings/structure/` (step 23).
-- **`active` is days, not trades.** A per-period trade count needs the trade export, ninety minutes
-  against this file's 1.5 seconds. Periods below `min_active_days` are dropped rather than read.
+- **Whether the mother is a peak**: step 14's T1 judges that, with paired neighbours around her.
+- **Whether choosing by the past works**: the WFC (17). **Stability in time**: the WFM (19).
+- **Anything about another market**: `studies/optimisation/marketSurfaces/` (18.5).

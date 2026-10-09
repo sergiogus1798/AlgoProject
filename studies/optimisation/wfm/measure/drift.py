@@ -42,11 +42,11 @@ def summary(steps: pd.DataFrame, chosen: pd.DataFrame) -> pd.DataFrame:
 
     Args:
         steps: Output of `per_step`.
-        chosen: The frame it was computed from, for the parameter count.
+        chosen: The frame it was computed from, for each strategy's own parameter count.
 
     Returns:
-        One row per strategy: parameters, median and mean share changed per step, and the
-        median normalised move.
+        One row per strategy: its own parameters (the columns it has a value in, not the
+        export's), median and mean share changed per step, and the median normalised move.
 
         A share near 1 means the optimiser picks a substantially different strategy every
         time it re-optimises. That is the same thing the variant study measures as
@@ -56,7 +56,7 @@ def summary(steps: pd.DataFrame, chosen: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for strategy, block in steps.groupby("strategy"):
         rows.append({"strategy": strategy,
-                     "parameters": int(chosen.shape[1]),
+                     "parameters": int(chosen.loc[[strategy]].notna().any().sum()),
                      "pairs": int(len(block)),
                      "share_changed_median": float(block["share_changed"].median()),
                      "share_changed_mean": float(block["share_changed"].mean()),

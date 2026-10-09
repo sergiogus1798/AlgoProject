@@ -2,21 +2,16 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `pairs.py` | rho (Spearman) and J (Jaccard of the top decile) between two surfaces over the variants both keep, each distinct backtest once, with the Fisher interval and the hypergeometric band under independence; and every pair of one segment | surfaces → one row per pair |
-| `lift.py` | The criteria metrics (owner, 2026-10-04: computed and shown, no threshold): the Jaccard's lift over J by chance, where chance is the other market under zero edge — each day's profit at a random sign, shared by every variant and every market, so both stay as dependent as they are — and whether the mother is in each market's top share, with the same null; read together as the median lift and the excess share of markets | imported | tops + daily profit → lift, excess, null percentiles |
-| `verify.py` | The encargo's §3: every market's daily curve summed against SQX's net profit (and against the next market's, as the control), the main market's curve and the WFC's C3 column, and the diagonal | batch + cells → checks |
-| `region.py` | The plateau detected on the main asset — θ₀'s own level-step box and score band, mirroring `cloud.config.neighbourhood` — its 2D projection for a heatmap outline, and each market's performance inside it against outside and overall (2026-09-30 §8.5) | params + cells → plateau, box, table |
+| `order.py` | The share of tied variants, the weight of each market (1, or 1 shared by a group), and the weighted joint mean, NaN-aware, of one row or of every draw | per-market values → joint |
+| `premium.py` | The main market's top by net excess, and a market's premium: (median of the top − median of all) / IQR, of one row or of every draw | net excess → premium |
+| `power.py` | Normal scores, the planted transmission (a no-edge draw mixed with the main market's order to an exact Spearman) and the share of planted draws read positive | draws → power |
+| `reading.py` | One whole reading: per market rho, tails, ties, premium and the mother's place; the joint order and premium with their nulls; the same per category; the power curve | panels → numbers |
 
-Must never hold a threshold that judges a pair; that is `verdict/`.
+Must never hold a threshold that judges; that is `verdict/`. The cuts used here (`min_common`,
+`max_ties`) say which markets enter a mean, not what the mean is worth.
 
-**Distinct, not independent.** Two tuples that ran the same backtest count once (`core.surface.dedupe`):
-🔬 2026-09-26, on the 23-1-53 batch only 2,245 of 4,999 variants carry a distinct result on
-USDJPY `build`. The design still clusters the distinct ones, so the Fisher interval and the
-hypergeometric band are narrower than the truth — which is why the call leans on magnitudes
-(the rho floor) and not on p-values.
+**One sign vector per draw, for every market.** `reading.measure` draws the signs once and applies
+them to each market's gross and net panels; the main market's vector goes into `flip.spearman` as
+the fixed side. `tests/test_marketsurfaces.py` checks both.
 
-**J under independence is not zero.** Two random top deciles share a tenth of themselves:
-J = k²/n / (2k − k²/n) ≈ 0.053. Read J against `j0` and `j_hi`, never against 0.
-
-**The dollars of a curve and of SQX's net profit do not have to agree**, the ranks do.
-`verify.against` says why; the card is `knowhow/sqx-format/daily-equity-bin.md`.
+**The null of a market is drawn on its common set**, the same variants as its observed rho.

@@ -1,21 +1,18 @@
-# cscv/measure — the numbers
+# cscv/measure — the numbers, and nothing that judges them
 
 | file | what it does | in → out |
 |---|---|---|
-| `rules.py` | The three ways a person picks one parameter set off a surface, behind one signature | scores, grid → a choice |
-| `cscv.py` | The partitions, the per-period score, the block sums each half is scored from, and the choose-then-score loop | panel → one row per partition |
+| `cscv.py` | Block sums, the 6,435 halves and their complements, the best Sharpe inside scored outside, the histogram of every variant's Sharpe outside | panel → one record per partition |
+| `outputs.py` | PBO, degradation line, probability of loss, haircut, dominance, selection frequency, the mother's reading | records → numbers |
+| `null.py` | The equalised panel, one stationary-bootstrap draw of it (planted or not) and its CSCV | shared panel, seed, draw → summary |
+| `queue.py` | The one work queue over mothers × kinds × chunks of draws, through `core.fanout` | panels, cfg → records, draws, perf |
 
-**The score is pluggable and the plug is narrow.** `SCORES` holds `sharpe` and `sortino`, both
-rates per period, and `run` uses whichever it is given on *both* halves of every partition. Ret/DD
-is deliberately absent: it grows with elapsed time, so it cannot compare windows of different
-lengths. The deflated Sharpe in `../verdict/trials.py` stays a Sharpe regardless — ranking picks
-the variant, the DSR judges it.
+**No row is ever concatenated.** A partition's Sharpe comes from the sums of its blocks (count,
+sum, sum of squares); the complement comes from the totals. A redrawn panel's block sums are a
+counts matrix (blocks × weeks) times the standardised panel, so a draw never builds its panel.
 
-**Every rule has the same signature — `(score, grid, rng) → position`** — because the study's whole
-subject is the difference between rules. The grid arrives in the panel's column order: a rule
-answers with a position, so a grid ordered differently would silently name a different variant.
+**Every draw seeds its own stream**: `SeedSequence(seed, spawn_key=(kind, draw))`. The result is
+the same for any number of processes, any chunking and any set of mothers in the queue.
 
-`cscv.carry` fits the out-of-sample Sharpe on the in-sample one across **every** variant of a
-partition, never on the chosen one. Regressing the winner alone measures a seesaw — the two halves
-are complementary — and reads *more* negative where the edge is real. See
-`../../wfc/POSSIBLE_IMPROVEMENTS.md`.
+**Must never hold**: a threshold, a state, a word the owner reads.
+

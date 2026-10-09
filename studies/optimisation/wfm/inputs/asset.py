@@ -1,26 +1,40 @@
-"""The asset a WFM export traded: its daily close, its point value, its untouched `oos2` days."""
+"""The asset a WFM export traded: its bars, its three segments, the two cost cards and the drift term."""
 
-import pandas as pd
+from pathlib import Path
+
+import yaml
 
 from core import assetdata, barstore
+from engines.market import reprice
+
+SEGMENTS = ("build", "oos1", "oos2")
+CLEAN = "oos2"          # the only segment nobody used to choose anything
+# The excess is step 14's: the gate's drift block, never a copy of its values.
+GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 
 
-def of(feed: str) -> dict:
-    """Everything the benchmark needs about the asset behind one SQX feed.
+def of(feed: str, timeframe: str, charged: str) -> dict:
+    """Everything the measures need about the asset behind one SQX feed.
 
     Args:
-        feed: The trades' `Symbol`, e.g. "XAUUSD_M1".
+        feed: The trades' `Symbol`, e.g. "NIKKEI225_M1".
+        timeframe: The strategies' own, e.g. "M30".
+        charged: The segment whose costs the export's task was charged with.
 
     Returns:
-        `name`, `point_value`, `close` (D1, indexed by day) and `oos` — the first and last
-        day of `oos2` in `_policy.yaml`. Not `oos1` (owner, 2026-10-01): the population was
-        screened on it, and a window that chose the survivors cannot also judge them
-        (`knowhow/research/post-selection-bias.md`).
+        `name`, `feed`, `bars` (the whole file), `windows` (segment -> (first day, last day)
+        as full dates, both inside), `span` (the first day of `build` and the last of `oos2`,
+        the bars the drift is measured on), `charged` and `real` (`reprice.costs` of the
+        charged segment and of `oos2`) and `drift`, the gate's block.
     """
-    name = assetdata.symbol_for(feed)
-    data = assetdata.load(name)
-    close = barstore.read(feed, "D1")["Close"]
-    close.index = pd.DatetimeIndex(close.index).normalize()
-    start, end = assetdata.window(data, "oos2")
-    return {"name": name, "point_value": data["instrument"]["point_value"], "close": close,
-            "oos": (pd.to_datetime(start, unit="ms"), pd.to_datetime(end, unit="ms"))}
+    data = assetdata.load(assetdata.symbol_for(feed))
+    windows = {}
+    for name in SEGMENTS:
+        last = data["segments"][name]["to"]
+        windows[name] = (assetdata.segment_start(data, name),
+                         f"{last}-12-31" if isinstance(last, int) else str(last))
+    return {"name": assetdata.symbol_for(feed),
+            "feed": feed, "bars": barstore.read(feed, timeframe), "windows": windows,
+            "span": (windows[SEGMENTS[0]][0], windows[CLEAN][1]),
+            "charged": reprice.costs(feed, charged), "real": reprice.costs(feed, CLEAN),
+            "drift": yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]}

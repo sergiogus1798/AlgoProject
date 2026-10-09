@@ -4,8 +4,9 @@ Decoded from `SQTradingLib.jar` (`knowhow/conditions/wfm-acceptance.md`): a cell
 score is the percentage of *active* conditions it meets; it passes at `threshold_pct`. The
 strategy passes if some `rows x cols` rectangle of cells holds `min_squares` or more passes.
 Since 2026-10-01 `export_wfm.py` writes every condition per cell (`conditions.parquet`,
-`core.wfmobjectives`) with the rule the strategy ran with; an export older than that holds
-only the `oos` family, and `legacy` scores those against `_build.yaml`, saying so.
+`core.wfmobjectives`) with the rule the strategy ran with. The rule is annotated, never a
+judge: the cells are near copies of each other and most of their out-of-sample is data the
+selection already saw (`oos_only` removes the part that is plainly in-sample).
 """
 
 import numpy as np
@@ -30,23 +31,31 @@ def score(conditions: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def legacy(cells: pd.DataFrame, doctrine: list[dict]) -> pd.DataFrame:
-    """An export from before 2026-10-01: the `oos` conditions of `_build.yaml` only.
+def oos_only(conditions: pd.DataFrame, cells: pd.DataFrame) -> pd.DataFrame:
+    """The conditions with every `score` recomputed on the stitched out-of-sample runs alone.
 
     Args:
-        cells: `inputs.export.cells()`.
-        doctrine: The `wfm.conditions` list of `assets/_build.yaml`.
+        conditions: `inputs.export.conditions()`.
+        cells: `inputs.export.cells()`: `all_<metric>` and `oos_<metric>` per cell.
 
     Returns:
-        The shape `inputs.export.conditions()` has, holding 2 of the 10 conditions. With
-        fewer active conditions the same `threshold_pct` is easier to clear than in SQX:
-        the caller says so.
+        `conditions` with `value` and `met` replaced on the `score` family. SQX's score is
+        the cell's WHOLE result — its first optimisation window included — over the original
+        backtest's; the first window is in-sample by construction, so the score is rescaled
+        by oos / all of the same metric. 🔬 2026-10-07, 300 cells of the reference run: the
+        condition holds in 71 % of them as SQX computes it and in 34 % out of sample only.
     """
-    rows = [cells[KEYS].assign(condition=i, family="oos", metric=c["metric"], op=c["op"],
-                               threshold=c["value"], value=cells[f"oos_{c['metric']}"],
-                               met=OPS[c["op"]](cells[f"oos_{c['metric']}"], c["value"]))
-            for i, c in enumerate(doctrine) if c["read"] == "oos"]
-    return pd.concat(rows, ignore_index=True)
+    out = conditions.merge(cells, on=KEYS, how="left", suffixes=("", "_cell"))
+    score = (out["family"] == "score").to_numpy()
+    value = out["value"].to_numpy(float).copy()
+    for metric in out.loc[score, "metric"].unique():
+        rows = score & (out["metric"] == metric).to_numpy()
+        value[rows] *= (out.loc[rows, f"oos_{metric}"] / out.loc[rows, f"all_{metric}"]).to_numpy()
+    met = out["met"].to_numpy().copy()
+    for op in out.loc[score, "op"].unique():
+        rows = score & (out["op"] == op).to_numpy()
+        met[rows] = OPS[op](value[rows], out.loc[rows, "threshold"].to_numpy())
+    return conditions.assign(value=value, met=met)
 
 
 def area(passed: np.ndarray, scores: np.ndarray, rows: int, cols: int,
@@ -62,7 +71,8 @@ def area(passed: np.ndarray, scores: np.ndarray, rows: int, cols: int,
     Returns:
         `passed`, `count` (passes in the best rectangle), `corner` (its top-left (i, j),
         None when it does not fit) and `centre` ((i, j) of the recommended cell: the
-        rectangle's `(size - 1) // 2` offset — SQX's «recommended combination»). The first
+        rectangle's `(size - 1) // 2` offset — SQX's «recommended combination», which
+        nothing here shows: its parameters are optimised on oos2). The first
         best rectangle in row-major order wins a tie. When it does not fit, SQX takes the
         best-scoring single cell and counts it as one, passed or not.
     """

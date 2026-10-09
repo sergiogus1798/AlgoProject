@@ -1,63 +1,70 @@
-# studies/optimisation/wfm — does what optimises well predict what does well after?
+# studies/optimisation/wfm — re-optimised, does it win on the stretch nobody looked at?
 
-SQX's Walk-Forward Matrix re-optimises a strategy over a sliding window and runs each pick forward
-on the period that follows, for 30 combinations of *how many steps* and *how much of each step is
-out of sample*. The export already existed — `sqx/export/export_wfm.py`, `core/wfmatrix.py`,
-`core/wftrades.py`, `docs/manual/09-optimizacion.pdf` (cap. 09-wfm). **This is the analysis that did not.**
-
-It never talks to SQX. The owner runs the cross-check; this reads what came out.
+SQX's Walk-Forward Matrix re-optimises a mother over a sliding window and runs each pick forward,
+for 30 cells of *how many runs* x *what % of the optimisation window is out of sample*. Its window
+is `build..oos2`, so 67–79 % of each cell's out-of-sample is data the build and step 8 already
+used. **This study judges on the trades that CLOSE in `oos2` only**, re-charged at `oos2`'s costs
+(specification: the owner's «criterios paso 19», 2026-10-07). It never talks to SQX.
 
 ```
-config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ verdict ─▶ many
- every knob    cells,     what the  rho per    predicts/  the report
-               steps,     geometry  cell,      blind/
-               picks      allows    drift      perverse
+config.yaml ─▶ inputs ─▶ measure ─────────────────▶ verdict ─▶ tabs, many ─▶ report
+ every knob    export,    net excess per trade,     pasa /     the result,
+               asset,     weekly oos2 panel, L1,    limbo /    `facts` for
+               costs      L2, redundancy, area      no_pasa    the autopilot
 ```
 
 | folder | the question it answers | read its README before |
 |---|---|---|
-| `inputs/` | what did SQX actually store, and what is missing? | touching a column name |
-| `model/` | what may be pooled with what? | changing the unit of observation |
-| `measure/` | what are the numbers? | touching the correlation or the drift |
-| `verdict/` | what do they mean? | moving a threshold |
+| `inputs/` | what did SQX store, at whose costs, and what is missing? | touching a column name |
+| `model/` | when does each cell's out-of-sample run? | touching the windows |
+| `measure/` | what are the numbers? | touching the excess, the null or the area |
+| `verdict/` | what do they mean? | moving a rule |
 
 | file | what it does | run it |
 |---|---|---|
-| `run.py` | One export's whole reading, including the pass/fail matrix and each original strategy against its asset (`against`) | imported |
-| `many.py` | `one()`: one strategy alone (`run.read(only=…)` correlates, scores and bootstraps only it, the window shapes and the drift's parameter spread kept the export's), the same member the whole run gives it. `run()`: the export as one result — verdicts with each strategy's ρ grid, the window geometry, the drift, the two axes — and each strategy's own | imported — the window reads it |
-| `contract.py` | One strategy's pass/fail matrix as SQX paints it — met/active per cell, the conditions on hover, ▣ best rectangle, ◆ recommended cell, checked against SQX's own mark — which condition binds, the cells' equity with one aggregate table (encargo 37), and one chart per cell against the original over the same windows, picked by the `celda` selector (`equity.versus_original`) | imported |
-| `objectives.py` | The «Los objetivos» tab: one matrix per condition against its threshold, then stability, score, the WF specials and SQX's parameter stability without one | imported |
+| `run.py` | One export's whole reading: per mother `one()` (weekly panel, L1, L2, redundancy, per-segment excess, what was re-charged), `area()` (SQX's rule on the corrected score), `facts()` (the frozen fact names) and `read()` | imported |
+| `many.py` | `one()`: one mother alone, the same member the whole run gives it (its seed is its place among the export's names). `run()`: the export as one result and each mother's own. A member carries `facts` beside the contract's keys | imported — the window reads it |
+| `tabs.py` | The tabs of one mother: L1 against its null band with the cells' heat map and the annotations, L2, the drift, the per-segment table | imported |
+| `contract.py` | SQX's pass/fail matrix on the corrected score with the fixed «67–79 % seen» warning, the cells' equity, and one chart per cell against the original (`celda` selector) | imported |
+| `objectives.py` | The «Los objetivos» tab: one matrix per condition against its threshold, then stability, the WF specials and SQX's parameter stability | imported |
 | `labels.py` | The Spanish name and one-sentence meaning of every objective | imported |
-| `assetview.py` | The «Contra el activo y el azar» tab: the original strategy (fixed parameters) on `oos2` only — against holding its asset at the same volatility (Sharpe gap with a paired-bootstrap interval, the Sharpe left without the asset, both curves, year by year) and against 10,000 same-footprint random traders (p per statistic) | imported |
-| `report.py` | The command: `reports/<P>/<D>/<day>/wfm/` with `verdict.csv`, `cell_correlations.csv`, the page and one per strategy. `--strategy` writes only that strategy's `estrategias/` JSON and page (`many.one`), never the population's files | `python3 -m studies.optimisation.wfm.report --project XAUUSD --databank WFM [--strategy "Strategy 1.19.29"]` |
+| `report.py` | The command: `reports/<P>/<D>/<day>/wfm/` with `verdict.csv`, `cell_excess.csv`, `distribuciones.parquet` (the L1 and L2 nulls; a `--strategy` run merges its mother's rows in), the page and one per mother. `--strategy` writes only that mother's `estrategias/` files | `python3 -m studies.optimisation.wfm.report --project <P> --databank WFM [--strategy "Strategy 1.19.29"]` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
-| `config.yaml` | Every tunable | edited, or `--set section.key=value` |
+| `config.yaml` | Every tunable; the thresholds are `ledger:` rows under `wfm.` | edited, or `--set section.key=value` |
 
-## The three things this module exists to get right
+## What decides, and what is only written down
 
-**The cell is the unit of observation, and it is measured rather than assumed.** 🔬 Within a cell
-the run windows are disjoint (0 overlaps in 60 cells); the optimisation windows overlap by 79 %; and
-every cell re-splits the same history. Pooling the 660 steps into one correlation would report an
-interval several times narrower than the data supports. `model/README.md` carries the figures.
+- **L1 decides.** Median over the 30 cells of net excess per year in oos2, against a weekly
+  shared-sign flip null (`engines.weekly.flip`, B per mother, one sign per week for all cells).
+  `no_pasa` when p− <= alpha; `limbo` when the median is <= 0 without that; else `pasa`
+  («reoptimizar gana» when p+ <= alpha, «no descarta» otherwise).
+- **`modo_real: reoptimizado`** adds two rules that can only give `limbo` — the centre cell's excess
+  <= 0, L2's p− <= alpha — and the facts `reopt.*`. In `fijo` (default) they do not exist.
+- **Annotated, never judges:** L2, share of cells positive, effective cells, SQX's area on the
+  corrected score, parameter drift, each cell's excess per segment, the weekly skewness.
 
-**`Fitness` is zero on every step.** SQX stores it only per cell. A study that reached for the
-obvious column would have correlated zeros.
+## What a reader must know about the numbers
 
-**A third of the steps' honest-looking numbers are computed on data that does not exist.** 60 of
-720 steps run past the end of the history — one ends in **2027**. They are dropped, and
-`drop_future` exists only so the report can say so.
+- **Re-charge.** 🔬 The reference export reprices at **oos1**'s costs on build and on oos1 to 0.21
+  USD a trade, so the whole task was charged at oos1 (`recharge.charged`). Trades closing in oos2
+  pay on top lots x point value x (Δspread + 2 Δslippage) + Δcommission. First order: no stop or
+  target is moved, no tick rounding. build and oos1 in the per-segment table are NOT re-charged.
+- **Excess** = SQX's P/L − re-charge − `tradelevel.drift_term` under the gate's drift block (read
+  from `studies/screening/gate/config.yaml`). Not `engines.weekly.panel.per_trade`: `reprice.real`
+  refuses the cells' `EndTest` trades, closed off the bar grid.
+- **L2's reference in `fijo` is the weekly cross-cell median series**; its sum is not the median of
+  the cells' sums that L1 reads, so L1 − mother != L2's delta.
+- **Effective cells** read ~25, not 30, for truly independent cells on 143 weeks.
+- **`Fitness` is zero on every step**, and steps running past the end of the data are dropped
+  (`read.drop_future`).
 
-## What it found, first run (2026-09-21, XAUUSD/WFM 2026-09-10)
+## Open questions for the owner (`POSSIBLE_IMPROVEMENTS.md`)
 
-| strategy | verdict | rho (95 % over cells) | drift |
-|---|---|---|---|
-| `Strategy 1.19.29` | **blind** | +0.076 [−0.034, +0.193] | 70 % |
-| `Strategy 4.33.46` | **perverse** | −0.505 [−0.683, −0.339] | 78 % |
+L2's reference; the null's lower tail on skewed weeks (`null.skew_warn` is provisional); the drift
+definition inside the excess; re-charging without moving stops.
 
-Neither strategy's in-sample optimisation predicts its own out-of-sample result, and for `4.33.46`
-it predicts it **backwards**, on all four metrics read, with 93 % of its cells negative. Meanwhile
-the optimiser re-decides 70–78 % of the parameters at every step.
+## What it found (2026-10-07, Trade_NIKKEI225_M30_volatilidadL, 10 mothers, modo fijo)
 
-Those two facts are one finding: a surface with no out-of-sample signal has nothing holding the
-optimiser in place. Read `POSSIBLE_IMPROVEMENTS.md` before drawing a conclusion wider than this
-export supports — two strategies is two strategies.
+4 pasa (all «no descarta»), 5 limbo, 1 no_pasa (`Strategy 18.5.355`, L1 −6,505 USD/year, p− 0.004).
+Effective cells 1.4–4.1 of 30. Corrected area: 89 of 300 cells pass, 2 mothers find the 4x4.
+3 s per mother.

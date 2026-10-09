@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core.study import blocks, output, result as envelope
+from core.study import blocks, draws, output, result as envelope
 from core.study.config import fingerprint
 from engines.variants import look, panel
 from studies.optimisation.wfc import one
@@ -61,10 +61,11 @@ def main() -> None:
     metrics = pd.read_parquet(a.work / "metrics.parquet")
     got = batch.read(a.work, symbol, timeframe)
     envelope.progress(60, f"exceso de {len(metrics)} variantes en los tres tramos")
-    measured = one.run(metrics, got, symbol, cfg)
+    measured = one.run(metrics, got, symbol, cfg, a.work.name)
     found = result(a.work.name, measured, cfg, started)
     said = found["summary"]
     out = a.work / "estudios"
+    draws.save(out, [d for got_one in measured.values() for d in got_one.pop("draws", [])])
     output.population(out, "wfc", found, f"WFC — {a.work.name.replace('_', ' ')}",
                       "¿Elegir por el pasado sirve fuera?")
     # The old pipeline's own contract: pipeline/stages/verdict.py reads its scalars.

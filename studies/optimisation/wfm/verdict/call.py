@@ -1,75 +1,70 @@
-"""Given the correlation and the drift, does re-optimising this strategy buy anything?"""
+"""Step 19's state from its facts: L1 always, the centre cell and L2 only when re-optimising live."""
 
-PREDICTS, BLIND, PERVERSE = "predicts", "blind", "perverse"
-
-
-def call(pooled: dict, drift: dict, settings: dict) -> dict:
-    """The verdict on one strategy's walk-forward behaviour.
-
-    Args:
-        pooled: Output of `measure.correlation.pooled` for that strategy.
-        drift: That strategy's row of `measure.drift.summary`, as a dict.
-        settings: The `verdict` block of `config.yaml`.
-
-    Returns:
-        The call, the evidence behind it, and the warnings that qualify it.
-
-        Three outcomes, and the middle one is the common one:
-
-        - `predicts` -- the interval sits above zero. Re-optimising picks configurations
-          that go on to do better, which is what walk-forward optimisation assumes.
-        - `blind` -- the interval straddles zero. The in-sample ranking carries no
-          information about what follows. Re-optimising is not harmful, it is pointless,
-          and the cost of running it is real.
-        - `perverse` -- the interval sits **below** zero. What optimises better goes on to
-          do worse. This is the one that matters: it says the procedure is not merely
-          uninformative but actively selecting for what will fail, and no amount of extra
-          history fixes it.
-
-        High drift alongside `blind` or `perverse` is the coherent picture, not a second
-        finding: a surface with no out-of-sample signal has nothing to hold the optimiser
-        in place, so it re-picks freely.
-    """
-    low, high = pooled["low"], pooled["high"]
-    if low > settings["zero_band"]:
-        verdict = PREDICTS
-    elif high < -settings["zero_band"]:
-        verdict = PERVERSE
-    else:
-        verdict = BLIND
-    return {"verdict": verdict, "rho": pooled["rho"], "low": low, "high": high,
-            "cells": pooled["cells"], "steps": pooled["steps"],
-            "share_negative": pooled["share_negative"],
-            "share_changed": drift["share_changed_median"],
-            "drift_high": drift["share_changed_median"] >= settings["drift_high"]}
+PASA, LIMBO, NO_PASA = "pasa", "limbo", "no_pasa"
+STATE = {PASA: "pass", LIMBO: "watch", NO_PASA: "fail"}
+FIJO, REOPT = "fijo", "reoptimizado"
+WINS, HOLDS = "reoptimizar gana", "no descarta"
 
 
-def sentence(result: dict, warning: str) -> str:
-    """The verdict as one paragraph a human reads first.
+def call(facts: dict, mode: str, alpha: float) -> dict:
+    """The owner's table (proposal of step 19, section 5), the worst active rule winning.
 
     Args:
-        result: Output of `call`.
-        warning: Output of `model.windows.length_warning`, possibly empty.
+        facts: `l1` {`p_menos`, `p_mas`, `mediana_exceso`} and, when the mother's trades
+            exist, `l2` {`p_menos`}; `centro` {`exceso_oos2`}.
+        mode: `fijo` or `reoptimizado`.
+        alpha: The cut on each tail.
 
     Returns:
-        Spanish, because the manual's reader is the owner.
+        `verdict` (pasa | limbo | no_pasa), `label` and `why`, the rules that fired.
+        NO PASA only when L1 loses beyond noise (p- <= alpha): a loss without significance
+        is LIMBO, because the WFC already kills on the same 2.75 years. The two rules of
+        `reoptimizado` can only add LIMBO, and a fact that does not exist fires nothing.
     """
-    text = {
-        PREDICTS: "lo que optimiza mejor **sí** predice lo que va mejor después",
-        BLIND: "lo que optimiza mejor **no dice nada** sobre lo que va después",
-        PERVERSE: "lo que optimiza mejor va **peor** después — la reoptimización está "
-                  "seleccionando lo que va a fallar"}[result["verdict"]]
-    def n(x: float, f: str = "+.2f") -> str:
+    one = facts["l1"]
+    why = []
+    if one["p_menos"] <= alpha:
+        return {"verdict": NO_PASA, "label": "NO PASA", "why": ["l1_pierde"]}
+    if one["mediana_exceso"] <= 0:
+        why.append("l1_no_gana")
+    if mode == REOPT:
+        if facts["centro"]["exceso_oos2"] <= 0:
+            why.append("centro_no_gana")
+        if "l2" in facts and facts["l2"]["p_menos"] <= alpha:
+            why.append("reoptimizar_empeora")
+    if why:
+        return {"verdict": LIMBO, "label": "LIMBO", "why": why}
+    return {"verdict": PASA, "why": [],
+            "label": f"PASA · {WINS if one['p_mas'] <= alpha else HOLDS}"}
+
+
+MEANING = {
+    "l1_pierde": "la estrategia reoptimizada pierde en oos2 más de lo que explica el ruido",
+    "l1_no_gana": "reoptimizar no gana en oos2, pero con este tramo no se puede afirmar que pierda",
+    "centro_no_gana": "la celda que se va a operar no gana en oos2",
+    "reoptimizar_empeora": "reoptimizar empeora a congelar más de lo que explica el ruido: "
+                           "mejor operar la madre fija"}
+
+
+def sentence(got: dict, facts: dict, mode: str) -> str:
+    """The call as the paragraph the owner reads first.
+
+    Args:
+        got: call()'s return.
+        facts: The facts it was made from.
+        mode: `fijo` or `reoptimizado`.
+
+    Returns:
+        Spanish: the median excess, its two tails, what fired, and the mode it was judged in.
+    """
+    def n(x: float, f: str = ",.2f") -> str:
         """A figure with the decimal comma."""
-        return format(x, f).replace(".", ",")
-    lines = [f"ρ = {n(result['rho'])} (IC 95 % {n(result['low'])} a "
-             f"{n(result['high'])}, sobre {result['cells']} celdas y "
-             f"{result['steps']} tramos): {text}.",
-             f"El optimizador cambia el {n(result['share_changed'] * 100, '.1f')} % de los "
-             f"parámetros de un tramo al siguiente."]
-    if result["drift_high"]:
-        lines.append("Esa deriva es alta: cada reoptimización elige una estrategia "
-                     "sustancialmente distinta.")
-    if warning:
-        lines.append(warning)
-    return " ".join(lines)
+        return format(x, f).replace(",", " ").replace(".", ",")
+    one = facts["l1"]
+    said = ("; ".join(MEANING[w] for w in got["why"]) if got["why"] else
+            "gana en dato limpio más allá del ruido: cuenta como evidencia"
+            if got["label"].endswith(WINS) else
+            "gana en oos2 sin superar al ruido: no descarta, y no cuenta como evidencia")
+    return (f"Mediana de las celdas en oos2: {n(one['mediana_exceso'])} de exceso neto por año "
+            f"(p+ {n(one['p_mas'], '.3f')}, p− {n(one['p_menos'], '.3f')} en el nulo de volteo "
+            f"por semanas): {said}. Juzgado en modo «{mode}».")

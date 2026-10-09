@@ -2,12 +2,14 @@
 
 import numpy as np
 
+from core.study import draws
 from engines.weekly import flip
 from studies.optimisation.wfc.measure import level
 
 
 def measure(e_is: dict, e_oos: dict, weeks: dict, years: float, cfg: dict,
-            straddle: float = 0.0) -> dict:
+            straddle: float = 0.0, name: str = "", comp: str = "",
+            record: list | None = None) -> dict:
     """The order, the level and what is annotated beside them, for one composition.
 
     The order is read before costs: the variants that trade more pay more on both sides, which
@@ -24,6 +26,9 @@ def measure(e_is: dict, e_oos: dict, weeks: dict, years: float, cfg: dict,
         cfg: The study's config: `null`, `level` and `annotate`.
         straddle: Share of the out-of-sample trades closed on a Monday or Tuesday after a
             weekend (`engines.weekly.panel.straddle`).
+        name, comp: The mother's batch and the composition, kept in the recorded draws.
+        record: A list that receives the null behind `p_mas`, `p_nivel` and `p_mas_bloque` as
+            `core.study.draws` rows; None keeps nothing.
 
     Returns:
         `n`; `rho`, `p_mas`, `p_menos`, `nulo_p5`, `nulo_p95` (gross, the weekly sign-flip null
@@ -42,18 +47,30 @@ def measure(e_is: dict, e_oos: dict, weeks: dict, years: float, cfg: dict,
     size = len(weeks["gross"])
     signs = flip.signs(main, knobs["draws"], size, knobs["block_weeks"])
     rho = float(flip.spearman(e_is["gross"], e_oos["gross"]))
+    spread = flip.spearman(e_is["gross"], signs @ weeks["gross"])
+    where = {"strategy": name, "seed": knobs["seed"], "comp": comp}
+    recs = [draws.record("wfc", "p_mas", rho, spread, **where, p="flip.tails",
+                         unit="rho de Spearman en el nulo de signos semanal")]
     blocked = {"p_mas": None, "p_menos": None}
     if straddle > knobs["straddle_warn"]:
         again = flip.signs(wide, knobs["draws"], size, cfg["annotate"]["block_weeks"])
-        blocked = flip.tails(rho, flip.spearman(e_is["gross"], again @ weeks["gross"]))
+        wider = flip.spearman(e_is["gross"], again @ weeks["gross"])
+        blocked = flip.tails(rho, wider)
+        recs.append(draws.record("wfc", "p_mas_bloque", rho, wider, **where, p="flip.tails",
+                                 unit="rho de Spearman con bloques de semanas"))
     inside, outside, flat = e_is["net"], e_oos["net"], signs @ weeks["net"] / years
     best = level.top(inside, cfg["level"]["top_share"])
     kept, kept_null = (level.retention(inside, out, best, gap) for out in (outside, flat))
+    recs.append(draws.record("wfc", "p_nivel", float(np.median(outside[best])),
+                             np.median(flat[:, best], axis=1), **where, p="level.p_value",
+                             unit="mediana fuera del top, exceso por año"))
     low, high = (None, None) if kept is None else np.percentile(kept_null, [5, 95])
     win_in, win_out = inside > 0, outside > 0
+    if record is not None:
+        record.extend(recs)
     return {
         "n": int(inside.size), "rho": rho,
-        **flip.tails(rho, flip.spearman(e_is["gross"], signs @ weeks["gross"])),
+        **flip.tails(rho, spread),
         "fines_de_semana": float(straddle),
         "p_mas_bloque": blocked["p_mas"], "p_menos_bloque": blocked["p_menos"],
         "n_top": int(best.sum()),

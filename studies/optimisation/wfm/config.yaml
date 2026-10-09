@@ -1,30 +1,35 @@
-# Every tunable of the Walk-Forward Matrix study, in one place.
+# Every tunable of the Walk-Forward Matrix reading (step 19; owner's proposal of 2026-10-07).
+# `ledger:<key>`: the number lives in ledger/thresholds.yaml, with who set it and when.
+
+# How the strategy will be traded live, fixed BEFORE the run: `fijo` (the mother with its own
+# parameters; the WFM is indirect evidence) or `reoptimizado` (re-optimised periodically; the
+# WFM is the test of what is traded, and two more rules can add LIMBO).
+modo_real: fijo
+
+# The cell traded in `reoptimizado`, chosen before looking: never the best cell on oos2.
+centre:
+  runs: ledger:wfm.centre_runs
+  oos_pct: ledger:wfm.centre_oos_pct
+
+# The segment whose costs the EXPORT's task was charged with (`wfm.costs_segment` of
+# assets/_build.yaml when it ran). Trades closing in oos2 are re-charged from these to oos2's.
+# 🔬 2026-10-07, Trade_NIKKEI225_M30_volatilidadL: the mother's build and oos1 trades reprice
+# at oos1's costs to 0.21 USD at worst, at build's or oos2's they miss by 19 and 37 a trade.
+recharge:
+  charged: oos1
+
+# The weekly sign-flip null: each oos2 week takes one sign, the same for the 30 cells.
+# Quoted: YAML reads a bare `null` as the empty value.
+"null":
+  draws: ledger:wfm.null_draws          # sign vectors per mother, not per cell
+  alpha: ledger:wfm.alpha               # cut on p- (NO PASA) and on p+ («reoptimizar gana»)
+  seed: ledger:wfm.seed
+  # Share of trades closed on a Monday or Tuesday after a weekend above which the null is
+  # ALSO drawn in blocks of two weeks, and a warning raised. It never changes the state.
+  straddle_max: ledger:wfm.straddle_max
+  # Skewness of the weekly median-of-cells series above which the result warns that the
+  # null's lower tail over-rejects (engines/weekly/README.md). It never changes the state.
+  skew_warn: ledger:wfm.skew_warn
 
 read:
-  # Bare metric name; `is_` and `oos_` are prefixed when reading a step.
-  # NOT `Fitness`: SQX stores it as 0 on every step (the cell-level fitness_is/fitness_oos
-  # are the only real ones), so a study reading Fitness per step would correlate zeros.
-  metric: ReturnDDRatio
-  companion_metrics: [NetProfit, SharpeRatio, ProfitFactor]
   drop_future: true       # steps whose run window extends past the data. Never false.
-
-measure:
-  min_steps: 5            # a cell with fewer is not correlated at all
-  confidence: 0.95
-  n_resamples: 9999
-  seed: 0
-
-verdict:
-  zero_band: 0.0          # how far the interval must clear zero to be called either way
-  drift_high: 0.5         # share of parameters re-decided per step that counts as high
-
-benchmark:
-  # The original strategy over `oos2` only — `oos1` screened the population and is spent —
-  # against holding its asset at the same volatility (days resampled in pairs, stationary
-  # bootstrap) and against random traders with its own footprint (engines/nulls, rung timing).
-  n_resamples: 2000
-  block_days: 20          # mean block length, about a month of trading days
-  monkey_draws: 10000     # random traders; the smallest p observable is 1/10001
-  monkey_min_trades: 30   # fewer trades inside oos2 and the monkey is not run
-  confidence: 0.95
-  seed: 0

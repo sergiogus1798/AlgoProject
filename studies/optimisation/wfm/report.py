@@ -6,7 +6,7 @@ import sys
 from datetime import date
 
 from core.paths import report_dir
-from core.study import output, verdicts
+from core.study import draws, output, verdicts
 from core.study.render import markdown
 from ledger import steprows
 from studies.optimisation.wfm import many
@@ -29,22 +29,25 @@ def main() -> None:
     out = report_dir(args.project, args.databank, date.today().isoformat()) / "wfm"
     if args.strategy:
         # Only its own JSON and page, as crossTF's --strategy: verdict.csv, wfm.json and
-        # cell_correlations.csv are the population's, and one strategy must not replace them.
+        # cell_excess.csv are the population's, and one strategy must not replace them.
         got = many.one(directory, config.load(args.overrides), args.strategy)
+        draws.merge(out, got.pop("draws", []))
         print(markdown.render(got, f"Walk-Forward Matrix — {args.strategy}"))
         print(f"-> {output.member(out, got, f'Walk-Forward Matrix — {args.strategy}')}")
         return
     got = many.run(directory, config.load(args.overrides))
     title = f"Walk-Forward Matrix — {args.project} / {args.databank}"
     output.population(out, "wfm", got["population"], title,
-                      "¿Lo que optimiza bien predice lo que va bien después?")
+                      "¿Reoptimizada, gana en el tramo que nadie miró?")
     for m in got["members"]:
         output.member(out, m, f"Walk-Forward Matrix — {m['strategy']}")
-    got["cells"].to_csv(out / "cell_correlations.csv", index=False)
+    draws.save(out, got.get("draws", []))
+    got["cells"].to_csv(out / "cell_excess.csv", index=False)
     verdicts.write(out, got["table"], directory, " ".join(sys.argv), args.overrides)
     for r in got["table"].itertuples():
-        print(f"{r.strategy:22s} {r.verdict:9s} rho={r.rho:+.3f} [{r.low:+.3f}, "
-              f"{r.high:+.3f}]  celdas={r.cells:3d}  deriva={r.share_changed:.0%}")
+        print(f"{r.strategy:22s} {r.verdict:8s} L1={r.l1_mediana_exceso:+10.2f}/año  "
+              f"p+={r.l1_p_mas:.3f} p-={r.l1_p_menos:.3f}  L2={r.l2_delta:+10.2f}  "
+              f"efectivas={r.celdas_efectivas:4.1f}  area={r.area_celdas:2d}")
     print(steprows.log_wfm(args.project, directory, len(got["table"]), " ".join(sys.argv)))
     print(markdown.render(got["population"], title))
     print(f"\n-> {out}")

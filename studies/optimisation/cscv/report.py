@@ -1,202 +1,145 @@
 #!/usr/bin/env python3
-"""Is the way this grid's parameters get chosen prone to overfitting? The CSCV, by rule."""
+"""Step 18 over variant batches: the CSCV's four outputs against their null, the state, the ledger's looks."""
 
 import argparse
-import json
 import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from core import fanout
-from core.study import output, result as envelope
+from core.study import blocks, draws, output, result as envelope
 from core.study.config import fingerprint
-from core.surface import trials as counting
-from engines.variants import look, panel
-from studies.optimisation.cscv import contract
-from studies.optimisation.cscv.inputs import config
-from studies.optimisation.cscv.measure import cscv, rules
-from studies.optimisation.cscv.verdict import cost, summary, trials
+from engines.variants import look
+from engines.variants.panel import SEGMENTS
+from studies.optimisation.cscv import contract, many, words
+from studies.optimisation.cscv.inputs import batch, config
 
-PARAM = "param_"
+MODULE = "studies.optimisation.cscv"
 STEP = 18
-# The CSCV cuts the whole joined curve, so every look reads all three segments — oos2 included,
-# which `assets/_policy.yaml` grants it since 2026-09-27 (owner, encargo 24 Q11).
-READS = panel.SEGMENTS
-# Both scores run always, so the window's "Sharpe / Sortino" selector switches without a
-# second call to the study (owner, 2026-09-30 §8.4; CONTRACT §1 «selectors»). The verdict and
-# `cscv.json`'s flat keys stay on `cscv.score` alone — only the tabs carry the other one too.
-SCORE_KEYS = ("sharpe", "sortino")
-
-# What the rule workers read, set before the fork.
-_SHARED: dict = {}
+# The sixteen blocks cover the whole history, so every look reads the three segments, oos2
+# included: the step belongs to the blind block.
+READS = SEGMENTS
+SUMMARY = ("estado", "n", "p_perdida", "pbo", "pbo_p", "pbo_sobre_p95", "orden_estable", "beta",
+           "r2", "hc", "duplicados_pct")
+PARTITIONS, DRAWS = "cscv_particiones.parquet", "cscv_sorteos.parquet"
+NO_TRADES = ("{work}: no hay variant_trades.parquet. El paso 18 lee el exceso semanal de las "
+             "operaciones de cada variante; vuelve a recoger el lote con /variants (paso 16.5).")
 
 
-def grid_of(metrics: pd.DataFrame, columns: pd.Index) -> pd.DataFrame:
-    """Each variant's parameter tuple, in the panel's own column order.
+def result(name: str, got: dict, perf: dict, cells: dict, cfg: dict, started: float) -> dict:
+    """The contract's result of one mother, with the facts the autopilot judges.
 
     Args:
-        metrics: Contract C3.
-        columns: The panel's columns, which are variant identifiers.
+        name: The batch folder's name, the mother's with underscores.
+        got: One mother of `many.run`.
+        perf: The queue's own numbers.
+        cells: What `inputs.batch.read` returned: its wall time and whether it was the cache.
+        cfg: The study's config.
+        started: time.time() when the run began.
 
     Returns:
-        One row per panel column. The order is load-bearing: every rule receives scores
-        as a positional array and answers with a position, so a grid in a different order
-        would silently name a different variant.
+        The validated result plus `facts` (the plan's contract for step 18) and
+        `rendimiento`: wall and CPU seconds of each part, processes, draws and peak memory.
     """
-    named = [c for c in metrics.columns if c.startswith(PARAM)]
-    return metrics.set_index("variant_id")[named].reindex(columns)
+    facts = got["facts"]
+    cost = {"panel_s": cells["wall_s"], "panel_de_cache": cells["cached"], **perf,
+            "cpu_s": got.get("cpu_s", {}), "presupuesto_s": cfg["perf"]["budget_s"]}
+    out = envelope.envelope(
+        MODULE, name, None, cfg, started, contract.tabs(got, perf, cfg),
+        contract.verdict(facts, cfg), glossary=words.GLOSSARY,
+        warnings=[{"code": "cscv", "state": "watch", "text": note} for note in got["notes"]],
+        summary={k: facts.get(k) for k in SUMMARY} | facts.get("potencia", {}))
+    return out | {"facts": blocks.plain(facts), "rendimiento": blocks.plain(cost)}
 
 
-def flat(name: str, found: dict) -> dict:
-    """One rule's numbers under keys a threshold can name.
+def detail(out: Path, got: dict) -> None:
+    """The heavy detail nobody loads to decide: one row per partition, one per draw.
 
     Args:
-        name: The rule.
-        found: What `summary.everything` returned, plus the rule's measured cost.
-
-    Returns:
-        `pbo_argmax`, `slope_argmax` and so on. `pipeline/stages/verdict.py` reads
-        scalars out of this file by name, and a gate that has to walk into a sub-object
-        is a gate nobody adds the next one to.
+        out: The batch's `estudios/`.
+        got: One measured mother of `many.run`.
     """
-    return {f"{k}_{name}": v for k, v in found.items() if not isinstance(v, (dict, list))}
+    found = got["found"]
+    rows = {"variante": got["names"][found["pick"]], "sr_dentro": found["sr_in"] * contract.YEAR,
+            "sr_fuera": found["sr_out"] * contract.YEAR, "omega": found["omega"],
+            "lambda": np.log(found["omega"] / (1 - found["omega"]))}
+    if "track_out" in found:
+        rows |= {"madre_sr_fuera": found["track_out"] * contract.YEAR,
+                 "madre_omega": found["track_omega"]}
+    pd.DataFrame(rows).to_parquet(out / PARTITIONS)
+    pd.concat(got["draws"], names=["tipo", "sorteo"]).reset_index().to_parquet(out / DRAWS)
 
 
-def _rule(key: tuple[str, str]) -> tuple[pd.DataFrame, dict]:
-    """One selection rule's CSCV and its measured cost, under one score, in a worker of its own.
-
-    Args:
-        key: (`argmax` or `plateau_centre`, a key of `SCORE_KEYS`).
-
-    Returns:
-        (its partitions, what `summary.everything` and `cost.cost` found).
-    """
-    name, score_key = key
-    got = _SHARED
-    rule = rules.pick(name, got["knobs"]["plateau_radius"])
-    run = cscv.run(got["wide"], got["knobs"]["blocks"], rule, got["grid"],
-                   np.random.default_rng(got["knobs"]["seed"]), score_key)
-    return run, summary.everything(run) | cost.cost(
-        got["inside"], got["outside"], got["grid"], name, got["knobs"] | {"score": score_key})
+def record(name: str, got: dict, seed: int) -> list[dict]:
+    """The nulls behind `pbo_p`, `beta_p`, the gross `pbo_p` and `p_perdida_sobre_p95`."""
+    real, gross, null = got["read"]["real"], got["read"]["bruto"], got["draws"]
+    where = {"strategy": name, "seed": seed}
+    return [draws.record("cscv", metric, seen, null[kind][field], **where, p="flip.tails",
+                         unit=unit)
+            for metric, seen, kind, field, unit in (
+                ("pbo_p", real["pbo"], "nulo", "pbo", "PBO"),
+                ("beta_p", real["beta"], "nulo", "beta", "beta del logit de omega"),
+                ("pbo_bruto_p", gross["pbo"], "nulo_bruto", "pbo", "PBO en celdas brutas"),
+                ("p_perdida", real["p_perdida"], "nulo", "p_perdida", "probabilidad de pérdida"))]
 
 
 def main() -> None:
-    """Run the CSCV once per selection rule and write the verdict beside the batch."""
+    """Ask the door and the seal, build the panels, run the one queue, write each mother's result."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--work", required=True, type=Path,
-                    help="the batch directory: holds metrics.parquet and equity.parquet")
-    ap.add_argument("--blocks", type=int,
-                    help="blocks to cut the history into, overriding the ledger's 16 "
-                         "(C(16,8) = 12,870 partitions); 12 gives 924, 10 gives 252")
+    ap.add_argument("--work", required=True, type=Path, nargs="+",
+                    help="la carpeta del lote: metrics.parquet y variant_trades.parquet; varias "
+                         "carpetas comparten una sola cola de procesos")
     ap.add_argument("--family", required=True,
                     help="la familia de plantillas del lote: la tercera parte del estudio del "
                          "ledger, donde se apunta la mirada, un renglón por tramo")
     ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[])
     a = ap.parse_args()
-
     started = time.time()
     cfg = config.load(a.overrides)
-    knobs = cfg["cscv"]
-    if a.blocks:
-        knobs["blocks"] = a.blocks
-    score = cscv.SCORES[knobs["score"]]
-    comp = panel.SHORTCUTS[cfg["split_mode"]]
-    cols = panel.columns(comp)
-    # A batch collected before sqx.variants.collect wrote per-segment columns (issue 67, e.g.
-    # pipeline/XAUUSD/Strategy_17-9-39) has neither segments.parquet nor the "NetProfit
-    # (<segment>)" / "NumberOfTrades (<segment>)" columns cols names, and would otherwise die
-    # mid-run on a KeyError or a FileNotFoundError several calls deep in engines/variants. It
-    # is still good for the parameter cloud (studies/optimisation/cloud), so this only skips
-    # the CSCV -- never touches or re-harvests the batch.
-    if not (a.work / "segments.parquet").exists():
-        raise SystemExit(f"{a.work}: no segments.parquet -- predates the per-segment "
-                         f"collection, so the CSCV cannot read it; re-harvest it or retire it "
-                         f"(knowhow/research/cscv-always-reads-oos2.md)")
-    metrics = pd.read_parquet(a.work / "metrics.parquet")
-    absent = [cols[k] for k in ("is", "oos", "trades_is", "trades_oos")
-             if cols[k] not in metrics.columns]
-    if absent:
-        raise SystemExit(f"{a.work}: metrics.parquet has no {', '.join(absent)} -- predates "
-                         f"the per-segment collection, so '{cfg['split_mode']}' cannot be "
-                         f"measured; re-harvest it or retire it "
-                         f"(knowhow/research/cscv-always-reads-oos2.md)")
-    symbol, timeframe = look.market(a.work)
-    look.admit(STEP, READS, symbol)
-    print(f"PROGRESS 5 {symbol} {timeframe}: {', '.join(READS)} permitidos por el ledger",
-          flush=True)
-    print("PROGRESS 10 construyendo la matriz de rendimientos diarios", flush=True)
-    wide = panel.usable(panel.panel(a.work, knobs["period"]), metrics, cfg["min_trades"],
-                        cols)
-    grid = grid_of(metrics, wide.columns)
-    # The PBO itself ignores this boundary: `cscv.run` cuts the history its own way.
-    # It is the four chronological numbers below -- rule cost, deflated Sharpe, trial
-    # count, drift -- that are read at the split the config declares.
-    inside, outside = panel.windows(wide, panel.split(symbol, comp))
+    batches = {}
+    for work in a.work:
+        if not (work / batch.TRADES).exists():
+            raise SystemExit(NO_TRADES.format(work=work))
+        symbol, timeframe = look.market(work)
+        look.admit(STEP, READS, symbol)             # before anything of oos2 is opened
+        batches[work] = (pd.read_parquet(work / "metrics.parquet"),
+                         batch.read(work, symbol, timeframe, cfg["perf"]["workers"]))
+        envelope.progress(5, f"{symbol} {timeframe}: exceso semanal de {work.name}"
+                             + (" (de la caché)" if batches[work][1]["cached"] else ""))
+    step = {"at": 0}
 
-    print(f"PROGRESS 20 {', '.join(knobs['rules'])}: "
-          f"{len(cscv.partitions(knobs['blocks']))} particiones sobre {wide.shape[1]} "
-          "variantes", flush=True)
-    # The rules share nothing and each seeds its own generator, so they run side by side
-    # and give exactly what they gave one after another. Every rule runs under both scores
-    # (SCORE_KEYS) so the window's selector switches instantly; only `knobs["score"]`'s copy
-    # feeds the verdict and `cscv.json`'s flat keys, unchanged from before this ran twice.
-    _SHARED.update(wide=wide, grid=grid, inside=inside, outside=outside, knobs=knobs)
-    tasks = [(name, sk) for name in knobs["rules"] for sk in SCORE_KEYS]
-    done = dict(fanout.run(_rule, {t: 1 for t in tasks}, len(tasks)))
-    runs_by_score = {sk: {name: done[(name, sk)][0] for name in knobs["rules"]}
-                     for sk in SCORE_KEYS}
-    found_by_score = {sk: {name: done[(name, sk)][1] for name in knobs["rules"]}
-                      for sk in SCORE_KEYS}
-    found = found_by_score[knobs["score"]]
+    def progress(share: float) -> None:
+        """One PROGRESS line per twentieth of the queue."""
+        if int(share * 20) > step["at"]:
+            step["at"] = int(share * 20)
+            envelope.progress(10 + int(share * 80), "CSCV real, nulo y control positivo")
 
-    print("PROGRESS 80 contando cuantas pruebas independientes hay de verdad", flush=True)
-    independent = counting.independent(inside, knobs["cluster_k_max"])
-    best = rules.argmax(score(inside.to_numpy()), grid, None)
-    deflated = trials.deflated(inside, best, independent["n_clusters"])
-    moved = cost.drift(inside, outside, grid, score)
-
-    print("PROGRESS 90 dibujando", flush=True)
-    result = {"n": int(wide.shape[1]), "periods": int(wide.shape[0]),
-              "period": knobs["period"], "blocks": knobs["blocks"],
-              "score": knobs["score"], "partitions": len(cscv.partitions(knobs["blocks"])),
-              "dsr": deflated["dsr"], "sharpe_benchmark": deflated["benchmark"],
-              "n_clusters": independent["n_clusters"], "levels_max": moved["levels_max"],
-              "plateau_radius": knobs["plateau_radius"],
-              # The carry-over slope is fitted across every variant of a partition, so it
-              # is a property of the surface and identical for both rules. Stated
-              # once here; the per-rule copies below are the same number twice.
-              "slope": found[knobs["rules"][0]]["slope"],
-              "r2": found[knobs["rules"][0]]["r2"],
-              **{k: v for name in knobs["rules"] for k, v in flat(name, found[name]).items()},
-              "rules": found, "trials": independent, "sharpe": deflated, "drift": moved}
-    (a.work / "cscv.json").write_text(json.dumps(result, indent=2, ensure_ascii=False),
-                                      encoding="utf-8")
-    output.population(a.work / "estudios", "cscv", envelope.envelope(
-        "studies.optimisation.cscv.report", a.work.name.replace("_", " "), None, cfg, started,
-        contract.tabs(runs_by_score, found_by_score, result, knobs["score"]),
-        contract.verdict(found, result),
-        glossary=contract.GLOSSARY), f"CSCV — {a.work.name.replace('_', ' ')}")
-    head = knobs["rules"][0]
-    look.log(a.work, a.family, {
-        "step": STEP, "launched_by": "cscv", "config_hash": fingerprint(cfg),
-        "n_in": len(metrics), "n_out": len(metrics), "criterion": "cscv/pbo",
-        "thresholds": {"blocks": knobs["blocks"], "min_trades": cfg["min_trades"]},
-        "note": f"PBO {head} {found[head]['pbo']:.3f} DSR {deflated['dsr']:.3f} sobre "
-                f"{wide.shape[1]} variantes · {result['periods']} periodos {knobs['period']} · "
-                f"cronología {panel.label(comp)}"}, READS)
-
-    print(f"PROGRESS 100 PBO {found[head]['pbo']:.1%} con {head}, DSR {deflated['dsr']:.2f}",
-          flush=True)
-    for name in knobs["rules"]:
-        low, high = found[name]["ci95"]
-        print(f"  {name:20s} PBO {found[name]['pbo']:6.1%}  percentil OOS "
-              f"{found[name]['pct_oos']:5.1f} [{low:.0f}, {high:.0f}]  "
-              f"pierde {found[name]['prob_loss']:.1%}")
-    print(f"\n{wide.shape[1]} variantes que valen {independent['n_clusters']} pruebas "
-          f"independientes; el orden se conserva con pendiente {result['slope']:+.2f}")
-    print(f"-> {a.work / 'estudios' / 'cscv.html'}")
+    measured, perf = many.run(batches, cfg, progress)
+    for work, got in measured.items():
+        metrics, cells = batches[work]
+        found = result(work.name, got, perf, cells, cfg, started)
+        out = work / "estudios"
+        output.population(out, "cscv", found, f"CSCV — {work.name.replace('_', ' ')}",
+                          "¿Elegir la mejor variante del pasado sirve fuera?")
+        if "found" in got:
+            detail(out, got)
+            draws.save(out, record(work.name, got, cfg["cscv"]["seed"]))
+        facts = got["facts"]
+        said = (f"P pérdida {facts['p_perdida']:.3f} · PBO {facts['pbo']:.3f} (nulo p5 "
+                f"{facts['nulo']['pbo_p5']:.3f}, p95 {facts['nulo']['pbo_p95']:.3f})"
+                if "pbo" in facts else "sin dato")
+        look.log(work, a.family, {
+            "step": STEP, "launched_by": "cscv", "config_hash": fingerprint(cfg),
+            "n_in": len(metrics), "n_out": len(metrics), "criterion": "cscv/p_perdida+pbo_p95",
+            "thresholds": cfg["state"] | {"blocks": cfg["cscv"]["blocks"],
+                                          "draws": cfg["null"]["draws"]},
+            "note": f"{facts['estado']} · {said} sobre {facts['n']} variantes"}, READS)
+        print(f"{words.LABEL[facts['estado']]}: {said}, {facts['n']} variantes -> {out / 'cscv.html'}")
+        for note in got["notes"]:
+            print(f"  aviso: {note}")
+    envelope.progress(100, f"{len(measured)} madre(s), cola de {perf.get('wall_s', 0):.1f} s en "
+                           f"{perf.get('procesos', 0)} procesos")
 
 
 if __name__ == "__main__":

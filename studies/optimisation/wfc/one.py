@@ -50,7 +50,7 @@ def values(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict,
 
 
 def composition(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict, symbol: str,
-                k: int, cfg: dict, deciding: bool) -> dict:
+                k: int, cfg: dict, deciding: bool, name: str = "") -> dict:
     """One composition, from the batch to its facts.
 
     Args:
@@ -61,11 +61,13 @@ def composition(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict, sym
         k: Parameters that move in the batch (`inputs.batch.live`).
         cfg: The study's config.
         deciding: Whether this composition's state is the step's.
+        name: The mother's batch name, kept in the recorded draws.
 
     Returns:
         `facts` (numbers, plus the words `orden` and, when deciding, `estado`), `kept` (the
         measured variants: `variant_id`, `stratum`, net `e_is` and `e_oos`, `top`) and
-        `notes`. Raises PermissionError from the seal before any out-of-sample column is read.
+        `notes`, and `draws` (`core.study.draws` rows; absent when nothing was measured). Raises
+        PermissionError from the seal before any out-of-sample column is read.
     """
     asset, cols = assetdata.load(symbol), panel.columns(comp)
     span, e = batch.years(asset, comp[1]), values(comp, metrics, got, asset)
@@ -91,8 +93,10 @@ def composition(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict, sym
     weeks = weekly.weekly(per, batch.window(asset, comp[1]), units=ids)
     inside = {"net": kept["e_is"].to_numpy(float), "gross": e.loc[ids, "g_is"].to_numpy(float)}
     outside = {"net": kept["e_oos"].to_numpy(float), "gross": e.loc[ids, "g_oos"].to_numpy(float)}
+    rows = []
     found = reading.measure(inside, outside, {name: w.to_numpy() for name, w in weeks.items()},
-                            span, cfg, weekly.straddle(per["open"], per["close"]))
+                            span, cfg, weekly.straddle(per["open"], per["close"]), name,
+                            panel.label(comp), rows)
     said = state.judge(found, cfg)
     best = level.top(inside["net"], cfg["level"]["top_share"])
     facts |= found | {key: word for key, word in said.items() if key != "estado"}
@@ -112,10 +116,12 @@ def composition(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict, sym
         facts |= {"estado": said["estado"], "n_sin_suelos": len(loose),
                   "rho_sin_suelos": float(flip.spearman(loose["g_is"].to_numpy(float),
                                                         loose["g_oos"].to_numpy(float)))}
-    return {"facts": facts, "kept": kept.assign(top=best), "notes": notes}
+    return {"facts": facts, "kept": kept.assign(top=best), "notes": notes,
+            "draws": rows}
 
 
-def run(metrics: pd.DataFrame, got: dict, symbol: str, cfg: dict) -> dict[str, dict]:
+def run(metrics: pd.DataFrame, got: dict, symbol: str, cfg: dict,
+        name: str = "") -> dict[str, dict]:
     """The three compositions of one batch, and whether the trades add up to SQX's figures.
 
     Args:
@@ -123,6 +129,7 @@ def run(metrics: pd.DataFrame, got: dict, symbol: str, cfg: dict) -> dict[str, d
         got: What `inputs.batch.read` returned.
         symbol: The asset.
         cfg: The study's config.
+        name: The mother's batch name, kept in the recorded draws.
 
     Returns:
         `c1`, `c2`, `c3` -> what composition() returned, each with the fact `descuadre_sqx`:
@@ -131,7 +138,7 @@ def run(metrics: pd.DataFrame, got: dict, symbol: str, cfg: dict) -> dict[str, d
     """
     k, check = batch.live(metrics, filters.CONTROLS), cfg["check"]
     measured = {key: composition(comp, metrics, got, symbol, k, cfg,
-                                 panel.label(comp) == cfg["deciding"])
+                                 panel.label(comp) == cfg["deciding"], name)
                 for key, comp in panel.KEYS.items()}        # the seal is asked in here
     sqx = metrics.set_index("variant_id")
     off = max(weekly.sqx_gap(per, sqx[f"NetProfit ({leg})"], tolerance=check["sqx_tolerance"],

@@ -1,17 +1,15 @@
-# parameterCloud/inputs — what the study is run on
+# cloud/inputs — what the map is drawn with
 
 | file | what it does | in → out |
 |---|---|---|
-| `config.py` | Reads the module's `config.yaml`, the single place every knob lives | — → settings |
-| `cloud.py` | The metric panel narrowed to what may be described, and the per-day curves | `metrics.parquet`, `equity.parquet` → cloud, curves |
+| `config.py` | The module's `config.yaml` with its ledger numbers, plus the WFC's inside trade floor | — → settings |
+| `cloud.py` | `measured`: every returned variant with its parameters and its excess per year, profit and trades on build and on oos1. `screen`: controls out, the inside floor, exact duplicates out, each counted | `manifest.parquet`, `variant_trades.parquet` (legs build and oos1 only), `metrics.parquet` (`variant_id` only) → cloud, counts |
 
-Holds nothing computed.
+Fits nothing and judges nothing.
 
-**The canaries are dropped and the origin never is.** The four known-result canaries were placed at
-the extremes of the grid on purpose, to make a broken chain obvious; a study that leaves them in
-reads a rougher surface and a better origin rank than the design actually produced. The origin
-survives every filter including `min_trades`, because where it sits is the question.
+**oos2 is never asked for.** The trades are read with a filter on `leg` that pyarrow applies before a
+row is loaded, `manifest.parquet` holds no result at all, and of `metrics.parquet` only the
+`variant_id` column is read (which variants SQX returned).
 
-**Fewer curves than panel rows is normal.** 962 of 2,000 on `Strategy 17.9.39`: a batch is
-fabricated larger than what comes back off the custodian, and `equity.parquet` only holds what came
-back. Every per-period reading says how many columns it actually had.
+**The mother is never dropped.** She is not a control, a floor she fails is not applied, and of a
+group of exact duplicates she is the copy kept.

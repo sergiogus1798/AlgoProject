@@ -9,7 +9,7 @@ never confirms: PASA means «no descarta».
 python3 -m studies.optimisation.cscv.report --work <batch> [<batch> ...] --family <f> [--set k=v]
 ```
 
-Several batches share one queue of processes. Each writes, in its own `estudios/`: `cscv.json`
+Several batches share one queue of processes. Each writes, in its own `estudios/`: `distribuciones.parquet` (the nulls behind `pbo_p`, `beta_p`, the gross PBO and `p_perdida`), `cscv.json`
 (small: the contract, `facts`, `rendimiento`), `cscv.html`, `cscv.md`, and the detail nobody loads
 to decide — `cscv_particiones.parquet` (one row per partition) and `cscv_sorteos.parquet` (one
 per draw). A batch without `variant_trades.parquet` stops the command with what to do.

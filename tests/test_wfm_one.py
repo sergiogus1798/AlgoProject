@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Walk-Forward Matrix's «Run solo esta estrategia»: `--strategy` asks `many.one` for that
 strategy alone and writes only estrategias/<name>.json; wfm.json, verdict.csv,
-cell_correlations.csv, the manifest and every other strategy's JSON stay byte-identical."""
+cell_excess.csv, the manifest and every other strategy's JSON stay byte-identical."""
 
 import hashlib
 import json
@@ -25,7 +25,7 @@ def member(name: str) -> dict:
     """A contract result for one strategy."""
     return envelope.envelope("studies.optimisation.wfm", name, f"id-{name}", {}, time.time(),
                              [envelope.tab("m", "m", [blocks.table("t", pd.DataFrame(
-                                 {"x": [1]}))])], blocks.verdict("blind", "watch", "m"))
+                                 {"x": [1]}))])], blocks.verdict("LIMBO", "watch", "m"))
 
 
 def population(directory: Path, cfg: dict) -> dict:
@@ -33,10 +33,11 @@ def population(directory: Path, cfg: dict) -> dict:
     return {"population": envelope.envelope("m", None, None, {}, time.time(), []),
             "members": [member(n) for n in NAMES],
             "table": pd.DataFrame({"strategy": NAMES, "identity": NAMES,
-                                   "verdict": ["blind"] * 3, "rho": [0.0] * 3,
-                                   "low": [0.0] * 3, "high": [0.0] * 3, "cells": [30] * 3,
-                                   "share_changed": [0.5] * 3}),
-            "cells": pd.DataFrame({"strategy": NAMES, "rho": [0.1, 0.2, 0.3]})}
+                                   "verdict": ["limbo"] * 3, "l1_mediana_exceso": [0.0] * 3,
+                                   "l1_p_mas": [0.5] * 3, "l1_p_menos": [0.5] * 3,
+                                   "l2_delta": [0.0] * 3, "celdas_efectivas": [2.0] * 3,
+                                   "area_celdas": [4] * 3}),
+            "cells": pd.DataFrame({"strategy": NAMES, "oos2": [0.1, 0.2, 0.3]})}
 
 
 def one(directory: Path, cfg: dict, strategy: str) -> dict:
@@ -65,7 +66,7 @@ def test_one_strategy_leaves_the_population_alone() -> None:
         report.main()
         out = Path(tmp) / "reports" / "wfm"
         before = files(out)
-        assert {"wfm.json", "verdict.csv", "cell_correlations.csv"} <= set(before)
+        assert {"wfm.json", "verdict.csv", "cell_excess.csv"} <= set(before)
 
         (out / "estrategias" / "Strategy 1.1.2.json").unlink()
         sys.argv = base + ["--strategy", "Strategy 1.1.2"]

@@ -37,7 +37,8 @@ def _shown(objectives: pd.DataFrame, taken: set[tuple[str, str]]) -> list[tuple[
     out = []
     for column in objectives.columns.drop(["strategy", "result", "oos_pct", "runs"]):
         family, _, metric = column.partition("_")
-        if (family, metric) in taken or objectives[column].isna().all():
+        # SQX's scores count the first optimisation window: only the corrected condition shows.
+        if family == "score" or (family, metric) in taken or objectives[column].isna().all():
             continue
         own = column == "param_stability"
         label = "Estabilidad de parámetros (SQX)" if own else labels.name(family, metric)

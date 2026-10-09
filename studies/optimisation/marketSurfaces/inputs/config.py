@@ -1,4 +1,4 @@
-"""Read this study's config.yaml, beside the trade floor it shares with the WFC and the CSCV."""
+"""Read this study's config.yaml, beside the panel floors it shares with the WFC and the CSCV."""
 
 from pathlib import Path
 
@@ -10,17 +10,15 @@ SHARED = HERE.parents[2] / "engines" / "variants" / "config.yaml"
 
 
 def load(overrides: list[str] | None = None) -> dict:
-    """The study's tunables, the shared trade floor included.
+    """The study's tunables, the panel's floors included.
 
     Args:
-        overrides: "key=value" strings; each keeps the type of the value it replaces.
+        overrides: "section.key=value" strings; each keeps the type of the value it replaces.
 
     Returns:
-        One dict: `min_trades` from engines/variants/config.yaml, then this study's own
-        config.yaml over it, its thresholds filled from ledger/thresholds.yaml. The WFC's `split_mode` is left behind on purpose: a surface is
-        read per segment, never across a split.
+        One dict: the `panel` section of engines/variants/config.yaml, then this study's own
+        config.yaml, every `ledger:<key>` replaced by the number ledger/thresholds.yaml declares.
     """
-    shared = study_config.load(SHARED, [])
-    cfg = {"min_trades": shared["min_trades"],
-           **thresholds.fill(study_config.load(HERE / "config.yaml", []))}
+    cfg = thresholds.fill({"panel": study_config.load(SHARED, [])["panel"],
+                           **study_config.load(HERE / "config.yaml", [])})
     return study_config.apply(cfg, overrides or [])

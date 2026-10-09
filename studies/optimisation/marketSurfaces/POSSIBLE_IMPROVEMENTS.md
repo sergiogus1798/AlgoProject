@@ -1,29 +1,21 @@
 # marketSurfaces — possible improvements, argued before they are made
 
-## The null is too narrow, and the fix is not obvious
+The seven readings the README lists as open questions are the owner's to settle; each is one knob
+or one function away.
 
-The Fisher interval uses `n_eff` (distinct results) and the J band is hypergeometric. Both assume
-the distinct variants are exchangeable, and they are not: the design places them in a
-neighbourhood, a factorial and a coverage stratum, and neighbours share most of their trades. The
-honest null keeps the design's clustering and breaks only the pairing between markets — e.g. a
-block permutation of the variant labels within strata, or rotating one market's surface along the
-factorial grid. Until then the call leans on a magnitude (the rho floor) rather than on p.
+## Plant the transmission in the weeks, not in the scores
 
-## Call on `rho_neutral` instead of raw rho?
+The power curve mixes normal scores (README). Adding a weekly lean along the main market's order to
+each market's panel would also exercise the null's width under a real edge — the flips of a leaned
+panel are wider. It needs the lean that gives rho* on each market, solved per market; the score mix
+gives rho* exactly with no solving, which is why it was built first.
 
-Raw net-profit rho carries exposure × drift (README). The owner asked for the WFC's metric, so the
-call stays on raw and the table shows both. Switching the call is one line in `verdict/call.py`;
-it needs the owner's word, because it changes what "the same region" means — the same region net
-of how long it stays in the market.
+## A per-category call
 
-## A per-trade metric
+The categories of `_markets.yaml` are annotated with their own joint rho and tails. Deciding per
+category would multiply the looks by the number of categories; not built until the owner asks.
 
-`AvgTrade` or net profit per unit of exposure would remove the drift channel at the source and make
-the surfaces less sensitive to the zero-commission placeholder. It would stop speaking the WFC's
-number, which is the reason it is not the default.
+## The grids of the detail file
 
-## Cross-segment pairs
-
-Main `build` against market `oos1` asks whether the region chosen in sample on USDJPY is the good
-one later on another market — the strongest form of B3. It is the WFC's question crossed with this
-one, and it would double the table. Not built until the owner asks for it.
+`marketSurfaces_detalle.json` holds a median rank per pair of live parameters and market. It
+replaced the heatmaps of SQX metrics, whose JSON reached 299 MB. If nobody opens it, delete it.

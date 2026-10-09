@@ -18,8 +18,8 @@ def test_cell_selector_picks_one_chart() -> None:
         "Trade_NIKKEI225_M30_volatilidadL/WFM/*/wfm/estrategias/*.json"))
     if not files:
         return
-    tab = json.loads(files[-1].read_text())["tabs"][0]
-    sel = next(s for s in tab["selectors"] if s["key"] == "celda")
+    tab, sel = next((t, s) for t in json.loads(files[-1].read_text())["tabs"]
+                    for s in t.get("selectors", []) if s["key"] == "celda")
     a, b = shown(tab, {"celda": sel["options"][0]}), shown(tab, {"celda": sel["options"][5]})
     lines = lambda bl: [x for x in bl if x["kind"] == "lines"]            # noqa: E731
     assert len(lines(a)) == len(lines(b)) == 1 and lines(a) != lines(b)

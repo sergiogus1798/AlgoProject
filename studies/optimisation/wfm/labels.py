@@ -15,8 +15,9 @@ MEANING = {
     "stability": "Lo que la métrica dio fuera de muestra frente a lo que dio en la optimización, "
                  "×100, sin el último tramo; el beneficio, las operaciones y el DD en dinero se "
                  "dividen antes por días. 100 = rindió fuera igual que dentro.",
-    "score": "La métrica del walk-forward entero de la celda frente al backtest original con "
-             "parámetros fijos, ×100. Por encima de 100, reoptimizar mejoró a no tocar nada.",
+    "score": "La métrica de las pasadas fuera de muestra de la celda (sin la primera ventana "
+             "optimizada, que SQX sí cuenta) frente al backtest original con parámetros fijos, "
+             "×100. Por encima de 100, reoptimizar mejoró a no tocar nada.",
     "WFPctOfProfitableRuns": "Qué parte de las pasadas fuera de muestra cerró en positivo.",
     "WFMaxProfitByRunInPct": "Cuánto del beneficio total vino de la mejor pasada: alto = el "
                              "resultado depende de un solo tramo.",

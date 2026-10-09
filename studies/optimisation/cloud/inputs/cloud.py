@@ -1,84 +1,87 @@
-"""The cloud this study reads: the metric panel, the origin, and the per-day curves."""
+"""The cloud this study reads: each variant's parameters and its excess per year, on build and on oos1."""
 
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+import yaml
 
-TRADES = "NumberOfTrades (build)"
+from core import assetdata, barstore
+from core.paths import ROOT
+from engines.market import reprice
+from engines.variants import excess, filters, look
 
-
-def cloud(work: Path, cfg: dict) -> dict:
-    """Contract C3 narrowed to the variants this study is allowed to describe.
-
-    Args:
-        work: The batch directory, holding `metrics.parquet` from `sqx.variants.collect`.
-        cfg: The `run` block of config.yaml.
-
-    Returns:
-        `frame` one row per variant, `params` the parameter column names, `metric` the
-        column every reading is taken on, and `origin` the variant id of theta-zero.
-
-        The canaries are dropped: they were placed at the extremes of the grid on purpose
-        to catch a broken chain, so leaving them in would make the surface look rougher
-        and the origin's rank better than either is. **The origin itself is never dropped**,
-        whatever it traded -- the whole study is about where it sits.
-    """
-    frame = pd.read_parquet(work / "metrics.parquet")
-    params = sorted(c for c in frame.columns if c.startswith("param_"))
-    keep = (~frame["stratum"].isin(cfg["exclude_strata"])
-            & (frame[TRADES] >= cfg["min_trades"])) | frame["origin"]
-    kept = frame[keep].reset_index(drop=True)
-    return {"frame": kept, "params": params, "metric": cfg["metric"],
-            "origin": kept.loc[kept["origin"], "variant_id"].iloc[0],
-            "dropped": int(len(frame) - len(kept))}
+LEGS = ("build", "oos1")     # the only legs ever asked of the parquet: the map never reads oos2
+# The measure's parameters are the gate's, not a copy: the map's excess is step 14's.
+GATE = ROOT / "studies" / "screening" / "gate" / "config.yaml"
 
 
-def values(cloud_data: dict) -> np.ndarray:
-    """The metric of every variant of the cloud, as a plain array.
+def measured(work: Path) -> pd.DataFrame:
+    """Every returned variant of a batch with its excess on the main market, per leg.
 
     Args:
-        cloud_data: What `cloud` returned.
+        work: The batch directory: `manifest.parquet`, `metrics.parquet`, `segments.parquet`
+            and `variant_trades.parquet` (`sqx.variants.varianttrades`).
 
     Returns:
-        One float per row of `frame`, in its order.
+        One row per variant SQX returned: `variant_id`, `stratum`, `origin`, the `param_`
+        columns and, per leg of LEGS, `<leg>_excess` (account currency per year of the
+        window, `engines.variants.excess`), `<leg>_profit` and `<leg>_trades`. A variant
+        without a trade in a leg has zeros there. Of `metrics.parquet` only `variant_id` is
+        read, and of the trades only the two legs, filtered before a row is loaded.
     """
-    return cloud_data["frame"][cloud_data["metric"]].to_numpy(dtype=float)
+    symbol, timeframe = look.market(work)
+    asset = assetdata.load(symbol)
+    feed = asset["sqx_symbol"]
+    bars = barstore.read(feed, timeframe)
+    drift = yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
+    back = pd.read_parquet(work / "metrics.parquet", columns=["variant_id"])["variant_id"]
+    plan = pd.read_parquet(work / "manifest.parquet")
+    keep = ["variant_id", "stratum", "origin"] + [c for c in plan.columns if c.startswith("param_")]
+    frame = plan.loc[plan["variant_id"].isin(set(back)), keep].reset_index(drop=True)
+    for leg in LEGS:
+        trades = pd.read_parquet(work / "variant_trades.parquet",
+                                 filters=[("leg", "==", leg), ("market", "==", look.MAIN)])
+        trades["variant_id"] = trades["variant_id"].astype(str)
+        span = tuple(str(asset["segments"][leg][edge]) for edge in ("from", "to"))
+        first, end = pd.to_datetime(assetdata.window(asset, leg), unit="ms")
+        per = excess.per_trade(trades, bars, reprice.costs(feed, leg), span, drift, feed)
+        got = per.groupby("variant_id").agg(profit=("profit", "sum"), trades=("profit", "size"))
+        got["excess"] = excess.per_year(per, (first, end - pd.Timedelta(days=1)))
+        frame = frame.merge(got.add_prefix(f"{leg}_"), left_on="variant_id", right_index=True,
+                            how="left")
+    return frame.fillna({f"{leg}_{name}": 0.0 for leg in LEGS
+                         for name in ("excess", "profit", "trades")})
 
 
-def curves(work: Path, ids: pd.Series) -> pd.DataFrame:
-    """Every harvested variant's per-day P&L, narrowed to the cloud.
+def screen(frame: pd.DataFrame, floor_per_param: float) -> tuple[pd.DataFrame, dict]:
+    """The variants the map is drawn with: no controls, the inside floor, no exact duplicates.
 
     Args:
-        work: The batch directory, holding `equity.parquet` from `sqx.variants.equity`.
-        ids: The variant ids the metric panel kept.
+        frame: What `measured` returned.
+        floor_per_param: Trades on build a variant needs per live parameter.
 
     Returns:
-        Days down, `variant_id` across. Fewer columns than the panel has rows is normal
-        and not a fault: a batch is fabricated larger than what comes back off the
-        custodian, and only what came back has a curve.
+        (the surviving rows; counts = {lote, controles, suelo_dentro, duplicados, quedan,
+        vivos, suelo, avisos}). `suelo` is the trades asked for, `vivos` the parameters that
+        vary once the controls are out — the factory moves no other. A mother under the
+        floor warns and the floor is not applied.
+        A duplicate is the same profit to the cent on build AND on oos1; the mother is the
+        copy kept.
     """
-    daily = pd.read_parquet(work / "equity.parquet")
-    return daily[[c for c in daily.columns if c in set(ids)]]
-
-
-def before_reserved(daily: pd.DataFrame, symbol: str) -> dict:
-    """The curves cut short of the segment the protocol reserves.
-
-    Args:
-        daily: What `curves` returned.
-        symbol: The asset, to read its segments from `assets/_policy.yaml`.
-
-    Returns:
-        `curves` ending the day before `oos2` starts, and `cut` days removed -- only for an
-        autonomous agent (`core.assetdata.enforced`). For a human the whole history is
-        kept and `cut` is 0 (owner, 2026-09-28: a human may look at oos2 whenever).
-    """
-    from core import assetdata
-
-    if not assetdata.enforced():
-        return {"curves": daily, "cut": 0, "limit": None}
-    start = str(assetdata.load(symbol)["segments"]["oos2"]["from"])
-    limit = pd.Timestamp(start if "-" in start else f"{start}-01-01")
-    kept = daily[daily.index < limit]
-    return {"curves": kept, "cut": int(len(daily) - len(kept)), "limit": limit}
+    counts, notes = {"lote": len(frame)}, []
+    left = frame[~frame["stratum"].isin(filters.CONTROLS)]
+    counts["controles"] = len(frame) - len(left)
+    params = [c for c in frame.columns if c.startswith("param_")]
+    counts["vivos"] = int((left[params].nunique() > 1).sum())
+    need = counts["suelo"] = floor_per_param * counts["vivos"]
+    mother = left.loc[left["origin"], "build_trades"].iloc[0]
+    if mother < need:
+        notes.append(f"La madre hace {mother:.0f} operaciones en build y el suelo son "
+                     f"{need:.0f}: el suelo no se aplica.")
+    else:
+        left = left[left["build_trades"] >= need]
+    counts["suelo_dentro"] = len(frame) - counts["controles"] - len(left)
+    first = left.sort_values("origin", ascending=False, kind="stable")
+    same = first[["build_profit", "oos1_profit"]].round(2).duplicated().reindex(left.index)
+    counts |= {"duplicados": int(same.sum()), "quedan": int((~same).sum()), "avisos": notes}
+    return left[~same].reset_index(drop=True), counts
