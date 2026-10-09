@@ -1,7 +1,7 @@
 """The Flota tab: totals, one row per account, and the chosen account's curve, reasons, progress, positions and deals."""
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
 
 from mt5.fleet.app import chart, curve, fmt, progress, read, theme, widgets
 from mt5.fleet.app.widgets import cell, signed

@@ -1,7 +1,7 @@
 """The Salud tab: each terminal's connection, ping, build and errors, and the VPS they share."""
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
-from mt5.fleet.app import floors, fmt, health, history, read, theme, widgets
+from mt5.fleet.app import fmt, health, history, read, theme, widgets
 from mt5.fleet.app.widgets import cell
 
 COLUMNS = ["Cuenta", "Conectado", "Ping", "Build", "Desconexiones hoy", "Servicio activo", "Último error"]
