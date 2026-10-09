@@ -246,14 +246,14 @@ mc_retest:
     - title: MCR 2 Spread
       segment: build
       simulations: 200
-      precision: 2             # un minuto — lento y fino
+      precision: 1             # un minuto — lento y fino
       full_sample: false
       methods:
         RandomizeSpread: {}
     - title: MCR 3 Slippage
       segment: build
       simulations: 200
-      precision: 2
+      precision: 1
       full_sample: false
       methods:
         RandomizeSlippage: {}
@@ -263,7 +263,7 @@ mc_retest:
     - title: MCR 4 MinDist
       segment: build
       simulations: 100
-      precision: 2
+      precision: 1
       full_sample: false
       methods:
         RandomizeMinDistance: {}
@@ -277,7 +277,7 @@ mc_retest:
     - title: MCR 6 Exits
       segment: build
       simulations: 500
-      precision: 2
+      precision: 1
       full_sample: false
       methods:
         RandomizeExitParameters: {Probability: 100, MaxChange: 30, Symmetric: true}
@@ -286,7 +286,7 @@ mc_retest:
     - title: MCR 7 OHLC
       segment: build
       simulations: 500
-      precision: 2
+      precision: 1
       full_sample: false
       methods:
         RandomizeHistoryDataOHLC: {ProbabilityOpen: 30, ProbabilityHigh: 30, ProbabilityLow: 30, ProbabilityClose: 30, MaxChange: 15, ATRPeriod: 14, KeepConnected: true, ProbabilityGapChange: 30, MaxChangeOfGap: 15}
@@ -295,7 +295,7 @@ mc_retest:
     - title: MCR 8 Stress
       segment: build..oos1
       simulations: 500
-      precision: 2
+      precision: 1
       full_sample: true
       methods:
         RandomizeExitParameters: {Probability: 100, MaxChange: 15, Symmetric: true}
@@ -346,7 +346,7 @@ mc_retest:
 # descartada y una variante que perdió dinero son la misma cosa para el que cuenta, y
 # entonces el PBO deja de significar nada.
 wfc:
-  precision: 2
+  precision: 1
   conditions: []
   markets: true
   # ─── El suelo de operaciones, y es DURO ────────────────────────────────────────────
@@ -486,7 +486,9 @@ wfm:
   # `sqx/projects/wfm.py` lo deriva: maxSteps = round(2 * distribution_pct / step_pct) = 18.
   distribution_pct: 35
   step_pct: 4
-  oos_pct: {start: 20, stop: 40, step: 5}   # Param1: cuánto de cada pasada va fuera de muestra
+  # Param1, el «% OOS» de SQX: un porcentaje de la VENTANA DE OPTIMIZACIÓN de cada pasada (el
+  # tramo fuera de muestra mide ese % de su tramo de optimización), no del histórico entero.
+  oos_pct: {start: 20, stop: 40, step: 5}
   runs: {start: 6, stop: 16, step: 2}       # Param2: cuántas pasadas
 
   # ─── Cuándo aprueba una casilla, y cuándo aprueba la estrategia ──────────────────────
@@ -505,10 +507,12 @@ wfm:
   #      La celda central de ese rectángulo es la "Recommended combination" que enseña SQX:
   #      cada cuántos días reoptimizar y con cuánto histórico.
   #
-  # ⚠️ Esto ya NO es sólo evidencia: con condiciones activas, SQX DESCARTA la estrategia que
-  # no encuentre el área (`Cross Check filter in 'WF matrix'`) y no la escribe en el databank
-  # de salida. Para volver al modo mapa —puntuar cada casilla sin tirar nada— basta
-  # `min_squares: 0`: el rectángulo siempre cumple "0 o más" y no se descarta a nadie.
+  # ⚠️ SQX MARCA, no descarta: `wfm.py` fuerza `DeleteFailedStrategies=false`, así que la
+  # estrategia que no encuentra el área se queda en el databank de salida con el motivo
+  # (`Cross Check filter in 'Walk-Forward Matrix'`). El área NO es un juez: mira un 67–79 %
+  # de dato ya visto (build y oos1). Quien decide el paso 19 es el análisis en oos2
+  # (`studies/optimisation/wfm/`, L1), que anota el área corregida. Con `min_squares: 0`
+  # (modo mapa) el rectángulo siempre cumple "0 o más" y SQX no marca a nadie.
   #
   # Con 6 números de pasadas x 5 porcentajes, un rectángulo 4x4 cabe en 3 x 2 = 6 posiciones.
   # `grid_passing_size` no puede pasar de 5 (la matriz sólo tiene 5 columnas): si no cabe,
@@ -531,12 +535,15 @@ wfm:
   #              que dentro.
   #   score      la misma métrica de la WFM entera dividida por la del backtest original, x100
   #              (subresult 32). Responde a "¿reoptimizar cada cierto tiempo mejora o estropea
-  #              lo que ya había?".
+  #              lo que ya había?". ⚠️ SQX la calcula sobre la primera ventana optimizada MÁS
+  #              el fuera de muestra, y así la cumple el doble de casillas; el análisis la
+  #              recalcula sólo sobre el fuera de muestra (`measure/gaterule.oos_only`).
   #   special    las cuatro columnas que SQX calcula pasada a pasada (subresult 33). Son las
   #              únicas que miran la DISTRIBUCIÓN del resultado entre pasadas, no su total.
   #
   # Los umbrales están calibrados sobre las 150 casillas reales de las 5 estrategias del
-  # databank `WFM` del maestro (2026-09-24). El % que aparece en cada línea es cuántas de
+  # databank `WFM` del maestro (2026-09-24), que son del ORO: en otro activo esos % no valen
+  # y los umbrales no se han recalibrado. El % que aparece en cada línea es cuántas de
   # esas 150 casillas lo cumplen: un umbral que pasa el 100 % no separa nada y uno que pasa
   # el 5 % es un "no" disfrazado. Con este juego y `threshold_pct: 80`, 2 de esas 5
   # estrategias encuentran el área 4x4 con 12 y 3 no.
@@ -560,5 +567,6 @@ wfm:
     - {read: special, metric: WFMaxProfitByRunInPct, op: "<", value: 50}    # 11 % — la dura
     - {read: special, metric: WFMinTradesInRun, op: ">", value: 20}         # 55 %
     - {read: special, metric: WFMaxPctDDbyRun, op: "<=", value: 25}         # 100 % — red de
-    #   seguridad: sobre 5 años no la rompe nadie, pero `build..oos2` son 18,7 y las pasadas
-    #   son 3,7 veces más largas, así que ahí sí puede morder.
+    #   seguridad: sobre 5 años no la rompe nadie, pero `build..oos2` es varias veces más
+    #   largo (lo que dé cada activo en `_policy.yaml`) y las pasadas también, así que ahí
+    #   sí puede morder.

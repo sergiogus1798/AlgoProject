@@ -29,6 +29,14 @@
 #
 # Los segmentos (build / oos1 / oos2) NO se repiten aquí: salen de `_policy.yaml`.
 #
+# near_identical  (dueño, 2026-10-07, paso 18.5 §2.5) — clave opcional del bloque de un activo, al
+#             lado de `categories`: una lista de grupos, cada grupo una lista de feeds de ESE
+#             bloque que son casi el mismo mercado. Al promediar entre mercados (la rho conjunta
+#             de las superficies por mercado) un grupo reparte un peso total de 1 entre los suyos
+#             que entran en la media; un feed fuera de todo grupo pesa 1. Sólo lo lee
+#             `studies/optimisation/marketSurfaces`; el resto de lectores lo ignora. Hoy: el trío
+#             de EE. UU. (USA500, USATEC, DJ30) en cada activo que declara al menos dos de ellos.
+#
 # Dueño, 2026-09-29: todo activo con ficha en assets/symbols/ es un main, no solo los que
 # alguien ya había curado — el aviso "no es un main declarado" era ruido, no un hallazgo. Los
 # 16 mains de abajo hasta XAUUSD/USDJPY fueron declarados en bloque ese día (`core.assetwrite`):
@@ -56,6 +64,7 @@
 XAUUSD:
   main: XAUUSD_M1
   timeframe: M30
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: XAGUSD_M1, data_from: 2003-08-08}
@@ -297,6 +306,7 @@ CADJPY:
 USA500:
   main: USA500_M1
   timeframe: null
+  near_identical: [[USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: USATEC_M1, data_from: 2012-01-19}
@@ -314,6 +324,7 @@ USA500:
 USATEC:
   main: USATEC_M1
   timeframe: null
+  near_identical: [[USA500_M1, DJ30_M1]]
   categories:
     family:
       - {feed: USA500_M1, data_from: 2012-01-19}
@@ -331,6 +342,7 @@ USATEC:
 DJ30:
   main: DJ30_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1]]
   categories:
     family:
       - {feed: USA500_M1, data_from: 2012-01-19}
@@ -348,6 +360,7 @@ DJ30:
 DAX40:
   main: DAX40_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: USA500_M1, data_from: 2012-01-19}
@@ -365,6 +378,7 @@ DAX40:
 NIKKEI225:
   main: NIKKEI225_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: USA500_M1, data_from: 2012-01-19}
@@ -382,6 +396,7 @@ NIKKEI225:
 XAGUSD:
   main: XAGUSD_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: AUDUSD_M1, data_from: 2003-08-04}
@@ -403,6 +418,7 @@ XAGUSD:
 UKOIL:
   main: UKOIL.cash_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: CADJPY_M1, data_from: 2004-10-25}
@@ -513,6 +529,7 @@ AUDNZD:
 UK100:
   main: UK100_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: USA500_M1, data_from: 2012-01-19}
@@ -530,6 +547,7 @@ UK100:
 HK50:
   main: HK50_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: USA500_M1, data_from: 2012-01-19}
@@ -547,6 +565,7 @@ HK50:
 USOIL:
   main: USOIL.cash_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: UKOIL.cash_M1, data_from: 2013-01-01}
@@ -569,6 +588,7 @@ USOIL:
 AUS200:
   main: AUS200_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: USA500_M1, data_from: 2012-01-19}
@@ -586,6 +606,7 @@ AUS200:
 XCUUSD:
   main: XCUUSD_M1
   timeframe: null
+  near_identical: [[USA500_M1, USATEC_M1, DJ30_M1]]
   categories:
     family:
       - {feed: XAGUSD_M1, data_from: 2003-08-08}
