@@ -68,6 +68,15 @@ Both numbers come from what you measured on `build` or from the mechanism, and y
 
 ## Evidence — in-sample only, and counted
 
+What the published research says of the asset is one command, already read and anchored for you:
+`python3 -m studies.research.literature.report --for <SYMBOL> [--family <family>]` prints every
+entry of the literature file that applies — the 62 built by hand and the ones the `literatureScout`
+adds daily — with its rule, its source, the authors' sample and whether it overlaps `build`, what
+the paper itself reports out of sample, how many variants its authors say they tried, and what
+the market profile measured for it. An idea taken from there is a `libros` quarry: its section
+carries `Origen: bibliografía <entry id> — <authors, year>`, and it is a rule its authors
+selected, not a prior. An entry marked «pregunta al dueño» is not usable until he answers.
+
 Before choosing a family for a symbol, read its section of `assets/FAMILIAS.md`: the families the market profile grades as favourable there (A/B/C, with timeframe, direction and numbers) and its «ni lo intentes» line of families measured as bad — in-sample `build` only, so a prior and not evidence for an idea.
 
 You may measure on data, but **only on the `build` segment** of the asset (`core.assetdata.window(

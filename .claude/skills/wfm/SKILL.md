@@ -1,16 +1,19 @@
 ---
 name: wfm
-description: Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over a window that ends in oos2, and the ten per-cell conditions and the area rule that decide whether a strategy survives. Use when the owner asks to set up, configure or run the WFM or walk-forward matrix in SQX, or step 19 of the workflow.
+description: Configure and run the Walk Forward Matrix task of a custom SQX project — the 30-cell grid over the whole window build..oos2, with the ten per-cell conditions and the area rule SQX marks a strategy with (a mark, never a judge: the analysis judges in oos2). Use when the owner asks to set up, configure or run the WFM or walk-forward matrix in SQX, or step 19 of the workflow.
 ---
 
 # /wfm
 
 Step 19 of the workflow, and **the last step that looks at data**. It leaves the `WFM` task of a
-custom project configured and ready to run. Reading it is `studies/optimisation/wfm/`, when wanted.
+custom project configured and ready to run. Reading it is `studies/optimisation/wfm/`, which judges
+on the trades that close in `oos2` only (L1, the median cell's net excess against a weekly sign-flip
+null) and annotates everything else.
 
-## It ends in `oos2`
+## It reads `build..oos2`, not only `oos2`
 
-The window is `build..oos2` — the walk-forward needs history in front to optimise. On 2026-09-28 the
+The task's window is the whole of `build..oos2` — the walk-forward needs history in front to
+optimise — so 67–79 % of each cell's out-of-sample is data the build and step 8 already used. On 2026-09-28 the
 owner repealed the «do not burn oos2» rule for humans: it is run and read whenever he wants, without
 waiting for 17 and 18 to be done. Only an autonomous agent (`ALGO_AUTONOMOUS=1`) is still bound to the
 reserve in `assets/_policy.yaml` and to step 20's blind door (`ledger/gate.py`).
@@ -28,21 +31,27 @@ The split between the two knobs is deliberate (owner, 2026-09-24): `MaxTests` we
 changes what the number that is stored means.
 
 ⚠️ **It is charged at `oos1`'s costs, not the last segment's** (`wfm.costs_segment`, owner's decision
-2026-09-24): it is 18.7 years of which `oos2` is the 3.7 tail. It is the exception to the spans'
-convention, and the command announces it in its output. Today `oos1` and `oos2` share spread, so the
-number does not change.
+2026-09-24): `oos2` is only the tail of the window, and how long each is depends on the asset
+(`assets/_policy.yaml`, `segments:`). It is the exception to the spans' convention, and the command
+announces it in its output. The analysis then re-charges the trades that close in `oos2` at `oos2`'s
+own spread, slippage and commission (`recharge.charged` in the study's `config.yaml` says what the
+export was charged with).
 
-And the criterion, which is what the master's task lacked: **ten conditions per cell**, a cell passes
-with 80 % of them met, and the strategy passes if there is a 4x4-cell rectangle with 12 passing. They
-are in `assets/_build.yaml`, `wfm.conditions`, with the % of the master's 150 real cells that meets
-each threshold next to them; the dissection of SQX's formulas is in
+And SQX's own mark: **ten conditions per cell**, a cell passes with 80 % of them met, and SQX marks
+the strategy as failed unless there is a 4x4-cell rectangle with 12 passing. They are in
+`assets/_build.yaml`, `wfm.conditions`, with the % of the master's 150 real cells — gold's, not
+recalibrated for any other asset — that meets each threshold next to them. **The area is not a
+judge**: SQX's `score` condition counts the first optimisation window as a result, and the analysis
+recomputes it on the out-of-sample alone and only annotates the corrected area. SQX's «Recommended
+combination» is not used for anything: the cell that would be traded is fixed beforehand
+(`centre` in the study's `config.yaml`). The dissection of SQX's formulas is in
 `knowhow/conditions/wfm-acceptance.md`.
 
 **The criterion flags, it does not delete** (🔬 2026-09-26, owner). With `DeleteFailedStrategies=false`
 — the command forces it — a strategy that does not find the 12-cell area stays in the databank with
 `FiltersResultFailedReason = "Cross Check filter in 'Walk-Forward Matrix': Robustness score
 didn't pass."`. `export_wfm` saves it in `status.parquet` and in the manifest (`failed_in_sqx`), and
-the analysis puts it as a `failed_en_sqx` warning on the strategy's sheet. The verdict stays Python's.
+the analysis puts it as a `failed_en_sqx` warning on the strategy's sheet. The state is Python's (L1).
 Do not use map mode (`min_squares: 0`) unless the owner asks.
 
 Count the bill before launching: 5,000 backtests per step × 6–16 steps per cell × 30 cells × strategy,
@@ -81,9 +90,9 @@ bin/sqx-worker.sh --role custodian stop || exit 1   # exits 1 if the worker is s
 
 ## What to look at in the output
 
-- **The dates.** They must be `oos2`'s (in XAUUSD, 2023.01.01 → the `to` of `oos2` in `_policy.yaml`,
-  which advances by itself every first Saturday of the month). If 2018–2022 appears, the task is
-  re-reading the spent sample and is out-of-sample of nothing.
+- **The dates.** From the `from` of `build` to the `to` of `oos2` in `_policy.yaml` for that asset
+  (the `to` advances by itself every first Saturday of the month). If the window stops before
+  `oos2`, no trade closes in clean data and the analysis has nothing to judge.
 - **`30 celdas`.** Any other number means someone touched the axes in `_build.yaml`: not an error, a
   different study.
 - **`13 del donante apagadas y 10 propias escritas`** — the 13 is normal in a clone of the donor and a
@@ -94,9 +103,8 @@ bin/sqx-worker.sh --role custodian stop || exit 1   # exits 1 if the worker is s
 - **`⚠️ esta tarea corre ademas: …`** — that `.cfx` did not go through the doctrine and would run other
   crosschecks at the same time, each with its bill.
 
-⚠️ The whole window is 18.7 years in XAUUSD, of which `oos2` is the 3.7 tail. With 16 runs each
-out-of-sample segment is about a year; with 6, three and a half years. Look at it before reading a
-per-cell correlation. On an asset with `oos2: {from: null}` there is no window and the command blows
+⚠️ «% OOS» is a percentage of each run's OPTIMISATION window, not of the history: how long a run is
+depends on the asset's window and on the cell. On an asset with `oos2: {from: null}` there is no window and the command blows
 up, which is correct.
 
 ## Where each thing is changed
@@ -112,7 +120,7 @@ up, which is correct.
 Export from a worker: `python3 -m sqx.export.export_wfm --project <P> --databank WFM --role custodian`.
 
 Measured 2026-09-25 on 3 USDJPY H1 mothers (`knowhow/sqx-drive/wfm-end-to-end.md`): the matrix, ~4-5
-min per mother and a 45 GB JVM; export 20 s; analysis 2 s. **SQX gives no progress signal** while it
+min per mother and a 45 GB JVM; export 20 s. Analysis (2026-10-07, 10 NIKKEI225 M30 mothers): 3 s per mother. **SQX gives no progress signal** while it
 runs: `Running time 0 ms` and the databank still until each mother finishes.
 
 Manual: `docs/manual/09-optimizacion.pdf` (cap. 34-wfm). Exporting: `docs/manual/09-optimizacion.pdf`

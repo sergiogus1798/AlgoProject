@@ -1,14 +1,22 @@
 ---
 name: variants
-description: Run the variant factory in SQX — turn one mother's SPP design brief into a batch of parameter variants, load and retest them on the custodian, and harvest the metrics panel and the per-day equity the WFC and the CSCV read. Use when the owner asks to fabricate, run or retest variants, to prepare the walk-forward correlation, or about step 16.5 of the workflow.
+description: Run the variant factory in SQX — turn one mother's SPP design brief into a batch of parameter variants, load and retest them on the custodian, and harvest the metrics panel, the per-day equity and every variant's trades that the WFC, the parameter cloud and the CSCV read. Use when the owner asks to fabricate, run or retest variants, to prepare the walk-forward correlation, or about step 16.5 of the workflow.
 ---
 
 # /variants
 
-Step 16.5 of the workflow: **from one design to a measured population of variants**. Four commands
-in order, three of them without touching SQX and one that holds the custodian for hours. What comes
-out of here is what the WFC (step 17) and the CSCV (step 18) read — and those two are not looked at
-until step 19 is done too.
+Step 16.5 of the workflow: **from one design to a measured population of variants**. The autopilot
+(`pipeline/autopilot/variants.py`) runs it per mother: `make` → `execute` → `equity` → `collect` →
+`export_retest --batch variants` → `varianttrades` → `execute --clear`, then the mothers' trades
+(`mothertrades`) and, with SQX idle, **the parameter cloud** (`studies.optimisation.cloud.report`)
+for every batch. What comes out is what the WFC (step 17), the cloud and the CSCV (step 18) read.
+Step 16.5 **cuts nothing** (`criteria.yaml` `"16.5"`: `cut: null`, `rules: []`).
+
+**The batch is a Latin hypercube** (encargo 48 F, owner 2026-10-07): one hypercube over the live
+parameters inside the SPP IS plateau (`from`..`to`; frozen and shifted ones stay at the mother's value in
+every variant), `n = min(n_max, max(n_min, 8 × p))` with `p = 1 + 2k + k(k-1)/2` (ledger rows
+`variants.*`; 1,000..5,000). `stratum` is `lhs`, `origin`, `canary` or `inert`. The old three strata
+and `n_target`/`strata`/`minimum` no longer exist for the factory. → `sqx/variants/design/README.md`
 
 ## Why it exists
 
@@ -45,22 +53,23 @@ then stop — **after** `equity` and `collect`: the curves are read from the cus
 → `knowhow/sqx-drive/variant-chain-custom-project.md`. **The harvest now reads the three databanks**:
 `execute.py` exports one panel per segment, `equity.py` joins the three segments' daily curves (and
 keeps each additional market's apart) and `collect.py` leaves in C3 the metrics per segment, per
-market and the unions. From there come the two WFC readings — `build` vs `oos1+oos2`, and the strict
-`build+oos1` vs `oos2` — without running anything again.
+market and the unions. From there come the WFC's three compositions (`c1` build+oos1 → oos2, `c2`
+build → oos1+oos2, `c3` build → oos2) without running anything again.
 
-## The hard floor: 50 trades
+**Every variant's trades are exported too** (`variant_trades.parquet`, schema T plus `variant_id`,
+`leg`, `market`): the WFC and the cloud price each variant's own trades as step 14's excess
+(`engines/variants/excess.py`). It reverts the old «only the mother's trades» choice and costs about
+90 min per batch (reference run); `mothertrades.py` still serves step 20's curve of the mother.
 
-`wfc.min_trades_total` in `assets/_build.yaml` (owner, 2026-09-24). A backtest with fewer than 50
-trades summing `build`+`oos1`+`oos2` **enters no statistic**: `collect.py` does not write it to
-`metrics.parquet`. It is counted per variant **and per market**, the full evidence stays in
-`segments.parquet` with `usable=False`, and the count is announced on screen and in `collected.json`.
-When reporting, say how many fell: a batch where half does not reach the floor is not a batch with
-fewer points, it is a design that fabricated variants that do not trade.
+## No floor at harvest
 
-Not to be confused with `min_trades: 30` in the WFC's `config.yaml`, which looks at each side of the
-partition separately and acts afterwards.
+`collect.py` **drops no variant for trading little** (encargo 48 F; `usable` stays all true except
+without data, so `marketSurfaces` is not broken). Each study applies its own floors, counted per
+filter in its report: the WFC and the cloud take `15 × k` trades inside and, the WFC, `10` per year
+outside (`engines/variants/filters.py`; a mother under a floor warns and the floor is skipped).
+When reporting, say how many fell at each filter.
 
-## The four commands
+## The commands
 
 ```bash
 python3 -m sqx.variants.make --brief <design_brief_<Strategy>.json> --project <PROJECT> \
@@ -68,6 +77,9 @@ python3 -m sqx.variants.make --brief <design_brief_<Strategy>.json> --project <P
 python3 -m sqx.variants.execute --work <work> --project <PROJECT>   # ⏰ the only one that holds the custodian
 python3 -m sqx.variants.equity   --work <work>    # before collect: collect reads equity.parquet
 python3 -m sqx.variants.collect  --work <work>
+python3 -m sqx.export.export_retest --project <P> --role custodian --batch variants --databank <leg 1> --databank <leg 2> --databank <leg 3>   # SQX up
+python3 -m sqx.variants.varianttrades --work <work> --project <P>   # exports -> variant_trades.parquet
+python3 -m studies.optimisation.cloud.report --work <work>          # the map; reads build and oos1 only
 ```
 
 `execute` waits on the run itself (it polls `-project action=status`): launch it with
@@ -79,6 +91,8 @@ python3 -m sqx.variants.collect  --work <work>
 | `execute` | `retest.csv`, `ran.json`, the databank dumped to disk | **yes** |
 | `equity` | `equity.parquet` — each variant's P&L **per day** | no |
 | `collect` | `metrics.parquet` — the panel joined to the manifest | no |
+| `export_retest` + `varianttrades` | `variant_trades.parquet`, the three legs' exports deleted | **the export, yes** |
+| `cloud.report` | `estudios/cloud.{json,html,md}`: adjusted R², its shuffled reference, Sobol indices | no |
 
 ## The pilot, before fabricating the whole batch (OPEN.md #41, owner 2026-09-29)
 
@@ -99,15 +113,12 @@ pilot's median trades, how many points support it and whether it was dropped; `d
 the same cut in `pilot_dropped`. A batch fabricated with the pilot and one without it should never be
 compared as if they were the same design — look at `pilot_dropped` before reading a surface.
 
-**The variant space** (owner, 2026-09-26): every parameter covers at least ±30 %, integers with all
-their values, the *shift* ones fixed, and each mother has **at least 1,000 distinct variants**
-(`--min-variants`, `minimum:` in `sqx/variants/config.yaml`) — if they do not fit in ±30 %, the
-integers are widened to ±60 %. If `make` prints `⚠️ only N distinct tuples`, tell the owner before
-running.
+**The variant space**: the live parameters inside the SPP IS plateau (never outside it), the shifted
+ones fixed. If the hypercube cannot give `n` distinct tuples after rounding, `make` prints the
+shortfall and `design.json` carries `capped`/`shortfall`: tell the owner before running.
 
-`--sample N` fabricates N rows **spread** over the whole plan (the controls and then spaced picks from
-each stratum); `--limit N` takes the first N and biases the batch toward one stratum. For a smoke
-test, `--sample`.
+`--sample N` fabricates N rows **spread** over the whole plan (the controls and then spaced picks);
+`--limit N` takes the first N. For a smoke test, `--sample`.
 
 The brief comes from step 16: `studies/breakage/spp/report.py`. If its verdict is `noise`, the family
 is indistinguishable from chance and fabricating variants of it is measuring noise — the command does
@@ -150,9 +161,22 @@ window is the one the SPP ran.
 - `execute`: `n_loaded` against `n_returned` against `n_on_disk` in `ran.json`. If they drop, people
   are missing.
 - `collect`: the controls. If they fail, do not go on.
-- `equity`: 962 variants in 1.5 s and 5.9 MB of Parquet — against ~90 minutes if their trades were
-  exported. If it takes much longer, it is reading what it should not.
+- `equity`: 962 variants in 1.5 s and 5.9 MB of Parquet (the curves; the trades export is the ~90
+  minutes). If `equity` takes much longer, it is reading what it should not.
+- `cloud.report`: the line «Sin estructura distinguible del ruido» means the Sobol ranking must not
+  be read (adjusted R² under its shuffled reference). It is a map, not a verdict.
 
-Manual: `docs/manual/09-optimizacion.pdf` (cap. 18-variantes) (fabricating) and
-`docs/manual/09-optimizacion.pdf` (cap. 19-wfc) (running, collecting and step 17). The chainer of the
+## Step 17, which reads this batch (the WFC)
+
+`python3 -m studies.optimisation.wfc.report --work <work> --family <F>`: three compositions, one
+`estudios/wfc.*`; `facts.c1.estado` ∈ `pasa` / `limbo` / `no_pasa`, judged by the pilot with **no
+cut** (`cut: null`: it notes, never deletes). **oos2 is sealed**: `ledger.gate.seal` refuses it until
+`python3 -m studies.optimisation.wfc.calibrate` has written `AlgoData/ledger/wfc_calibration.json`
+with `abre: true` for the current `criteria.yaml` entry. Today it says `abre: false` (the owner
+chooses the level's null, `AlgoData/ledger/wfc_calibration.md`), so step 17 stops at the seal: say so,
+do not edit the criteria or the record. Step 20 translates the state (PASA = no failure, NO PASA =
+failure, LIMBO = undecided). → `studies/optimisation/wfc/README.md`
+
+Manual: `docs/manual/09-optimizacion.pdf` (cap. 18-variantes) (fabricating), (cap. 19-wfc) (running,
+collecting and step 17), (cap. 39-nube-de-parametros) and (cap. 107, the calibration). The chainer of the
 ~100 mothers is `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 17-pipeline).

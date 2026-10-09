@@ -9,6 +9,12 @@ Step 13 of the workflow, the SQX half. It leaves the eight MC Retest tasks of a 
 configured and ready to run. Reading what they produce is `studies/breakage/mcRetest/`
 (step 14), and the Monte Carlo that reorders trades is OUT of the workflow on purpose.
 
+> **Owner, 2026-10-07: the workflow's stage runs only `MCR 1 Bar`, `MCR 4 MinDist` and `MCR 7 OHLC`** (after
+> step 14's T1 neighbour batch, `sqx.variants.neighbourbatch`). `MCR 2, 3, 5, 6, 8` are out of the stage
+> (`sqx/projects/stages.yaml`); their definitions stay in `assets/_build.yaml` and the text below about
+> «the eight» describes the catalogue, not what the autopilot starts. Not live-tested: this configurator
+> on a project without the five tasks. Step 14 cuts on `MCR 7 OHLC`, which `SPP IS` reads.
+
 ## The one thing to understand first
 
 The eight tasks exist to **attribute**, not to filter. Each one perturbs a single thing, so when a
