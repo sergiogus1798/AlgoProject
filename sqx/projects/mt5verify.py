@@ -9,7 +9,7 @@ from xml.etree import ElementTree
 
 from core import assetdata
 from core.assetdata import doctrine
-from sqx.projects import cfxio
+from sqx.projects import cfxio, charts
 from sqx.projects.crosschecks import silence
 from sqx.projects.databanks import set_databank
 from sqx.projects.perturbations import OUT_OF_SAMPLE
@@ -146,7 +146,7 @@ def save_task(input_bank: str, dest: Path, generator: str, magic: int) -> str:
 
 
 def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, dict],
-              mq5_dir: Path, cfg: dict, sizing: dict) -> dict:
+              mq5_dir: Path, cfg: dict, sizing: dict, strategy: Path | None = None) -> dict:
     """Write one retest per firm, and the EA's export, into a project the builder just cloned.
 
     Args:
@@ -157,6 +157,7 @@ def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, di
         mq5_dir: Where SaveToFiles writes the EA.
         cfg: The `sqx` block of `mt5/verify/config.yaml`.
         sizing: `own_sizing()` of the strategy.
+        strategy: The .sqx under test; each retest gets the extra charts it reads.
 
     Returns:
         {"project", "input", "tasks": [{firm, title, member, output}], "export": title}.
@@ -169,11 +170,12 @@ def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, di
         raise SystemExit(f"{cfx.parent.name} tiene {len(retests)} retests del donante y hacen "
                          f"falta {len(firms)}: {', '.join(cfg['donor_members'])}")
     config = re.sub(r'(<Task\b[^>]*?)active="true"', r'\g<1>active="false"', config)
-    rows = []
+    rows, extra = [], charts.wanted(strategy) if strategy else []
     for (firm, costs), member in zip(firms.items(), retests):
         output = cfg["output_prefix"] + firm
-        members[member] = write_task(members[member].decode("utf-8"), feed, costs, window,
-                                     (cfg["input"], output), sizing).encode("utf-8")
+        task = write_task(members[member].decode("utf-8"), feed, costs, window,
+                          (cfg["input"], output), sizing)
+        members[member] = charts.ensure(task, extra)[0].encode("utf-8")
         title = cfg["task_title"].format(firm=firm.upper())
         config = retitle(config, member, title)
         rows.append({"firm": firm, "title": title, "member": member, "output": output})

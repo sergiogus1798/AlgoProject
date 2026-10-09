@@ -178,7 +178,7 @@ def main() -> None:
     cfx = Path(built["cfx"])
     try:
         done = mt5verify.configure(cfx, data["sqx_symbol"], window, costs, mq5_dir, cfg["sqx"],
-                                   sizing)
+                                   sizing, strategy)
         deposit = capital(cfx, done["tasks"][0]["member"])
         folders = sqxside.run(project, role, strategy, work,
                               {t["firm"]: t["output"] for t in done["tasks"]}, cfg["sqx"])

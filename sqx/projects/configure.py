@@ -9,7 +9,7 @@ from xml.etree import ElementTree
 
 from core.assetcheck import mc_pending, pending, provisional
 from core.assetdata import enforced, load, sqx_settings, window
-from sqx.projects import cfxio
+from sqx.projects import cfxio, charts
 from sqx.projects.doctrine import apply_doctrine, blockers, unify_sessions
 from sqx.projects.patch import NO_TEMPLATE
 from sqx.projects.ranges import set_ranges
@@ -124,15 +124,25 @@ def configure(cfx: Path, symbol: str, segment: str | None = None,
     per_task = segment_of(members)
     for line in ignored_templates(members):
         print(f"  ⚠️ TEMPLATE IGNORADA — {line}")
+    extra = charts.streams(members)
     out = {}
     for name, blob in members.items():
         if not name.endswith(".xml") or name == "config.xml":
             continue
         seg = segment or per_task.get(name, DEFAULT_SEGMENT)
         text, counts = apply(blob.decode("utf-8"), data, seg, timeframe)
+        # After apply, because set_timeframe rewrites the timeframe of every chart it finds
+        # and would flatten the extra one onto the main timeframe. Every task, not only the
+        # one that names the template: a retest tests the same two-chart strategies.
+        text, added = charts.ensure(text, extra)
+        if added:
+            counts["charts"] = added
         members[name] = text.encode("utf-8")
         if any(v for v in counts.values() if not isinstance(v, bool)):
             out[name] = (seg, counts)
+        short = charts.missing(text, extra)
+        if short:
+            raise SystemExit(f"{name}: " + " ".join(short))
     if timeframe:
         added = unify_sessions(members, data["session"])
         if added is None:

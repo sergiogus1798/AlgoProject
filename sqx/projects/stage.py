@@ -10,7 +10,7 @@ from pathlib import Path
 import yaml
 
 from core.assetdata import doctrine
-from sqx.projects import cfxio
+from sqx.projects import cfxio, charts
 
 STAGES = Path(__file__).with_name("stages.yaml")
 TASK = re.compile(r"<Task\b[^>]*/>")
@@ -93,6 +93,9 @@ def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tu
 
     Returns:
         One (title, active) row per task. SystemExit when one of `expected` is missing.
+        Every step passes through here on its way to `action=start`, so this is also where
+        a task left active gets the extra charts its project's strategies read
+        (`charts.ensure`) instead of aborting the run inside SQX.
     """
     held = cfxio.held(cfx)
     if held:
@@ -105,6 +108,14 @@ def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tu
     if missing:
         raise SystemExit(f"{cfx.parent.name} no lleva la(s) tarea(s) {', '.join(missing)}. "
                          "Un proyecto de workflow se crea con `sqx.projects.builder --workflow`.")
+    live = [re.search(r'taskXMLFile="([^"]*)"', tag).group(1)
+            for tag in TASK.findall(config) if 'active="true"' in tag]
+    # Several configurators (crossmarket, SPP, WFC) write their <Setups> from scratch, with
+    # one chart: the project's extra charts go back in here, where every one of them ends.
+    extra = charts.streams(members)
+    for name in live:
+        if name in members:
+            members[name] = charts.ensure(members[name].decode("utf-8"), extra)[0].encode("utf-8")
     members["config.xml"] = config.encode("utf-8")
     cfxio.write(cfx, members)
     return rows

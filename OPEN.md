@@ -124,6 +124,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 107 | 🟡 | Seven tests fail in the 2026-10-07 mechanical audit: four depend on data deleted by the 10-06 disk cleanup, one on cwd (`afterrun` stop path), two undiagnosed | OPEN.md |
 | 108 | 🟠 | Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one: waits for the first real run and the owner's «corta» | OPEN.md |
 | 109 | 🟠 | mcRetest «Estrategia a estrategia» table fails to draw in the window: 11 help entries for 8 columns | OPEN.md |
+| 110 | 🟡 | Two-chart strategies: steps 10, 13-18.5 not yet run in SQX on a two-chart mother (wired in `stage.just`, verified through step 8 and step 26) | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -915,4 +916,21 @@ so `ui/desktop/blocks/table.py:137` gets `horizontalHeaderItem(j) is None` and t
 Fix: build `help` from the columns actually present (or truncate to `len(columns)`), and make `table.py` skip a missing item.
 Also: `raw/<project>/T1_Neighbours/<day>/` (written by `studies/breakage/mcRetest/neighbours/t1.py:126`) carries no `manifest.json`.
 Also (audit 2026-10-09): `tools/checks.py` fails on `pipeline/autopilot/run.py` at 256 lines (max 250) after the 10-08 edit — split it; `test_export_manifests` fails its output-folder listing assert while `sqx/export` has uncommitted edits — rerun after the commit.
+
+## 110. 🟡 Two-chart strategies: steps 10 and 13 to 18.5 have not yet run in SQX on a two-chart mother
+
+`sqx.projects.charts` writes the second chart a multi-timeframe strategy reads into every task of
+its project (`configure`), into every task a step activates (`stage.just`, where the configurators
+that rebuild `<Setups>` from scratch — `crossmarket`, the SPP harness, WFC — all end) and into the
+step-26 retests (`mt5verify.configure`). → `knowhow/sqx-drive/mtf-template-needs-three-charts.md`
+
+Proved in SQX on 2026-10-09 (`filterMALong`, EURUSD M30, retired): build, OOS, the seven readers of
+step 8, the step-12 scaling on the built `.sqx`, and step 26 (EA compiled and backtested on FTMO).
+**Not proved:** steps 10 and 13 to 18.5 on a real run — all ten strategies of the 12-minute build
+lost out of sample and step 8 kept none, so the rail ended there. The wiring is unit-tested
+(`tests/test_charts.py`) but the first two-chart mother to pass step 8 is the first real run of
+those tasks: read its SQX log for `requires 2 charts` if one aborts.
+
+`tests/test_mt5verify.py` fails on its own since the feed rename of 2026-10-01: it asks the frozen
+donor for `XAUUSD_M1` and the donor still carries `XAUUSD_DukasM1_Infinox`. Unrelated to charts.
 

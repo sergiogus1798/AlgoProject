@@ -16,6 +16,7 @@
 - `mcp-server-limits` — What can SQX's MCP server on the master do, and why does a project that fails to load vanish silently?
 - `mcr-nullpointer-fastutil-transient` — Why does an MC Retest task crash SQX with a fastutil NullPointerException and leave the project hung?
 - `monitor-tail-trips-worker-holding-check` — Why did `worker.holding()` count a monitor tail process as holding a worker, and how is it fixed?
+- `mtf-template-needs-three-charts` — How does a task feed a template that reads a second timeframe, and why can the filter end up on the wrong chart?
 - `old-chain-spp-reads-mcr8` — Why does an old project's SPP IS read an empty MCR 8 Stress, and how do I repoint it?
 - `only-flag-wrong-databank` — After `builder --only`, why does a task read the wrong databank and how do I rethread each task's Input?
 - `owner-lock` — How does the real owner lock written by `bin/sqx-worker.sh` work, and what does `advance.busy` read?

@@ -10,10 +10,16 @@ from sqx.variants.build import rewrite
 TABLE = Path(__file__).with_name("lengths.yaml")
 PERIOD, SHIFT = "ParamTypePeriod", "ParamTypeShift"
 KIND = re.compile(r"<paramType>([^<]*)</paramType>")
-# A rule item opening, or a parameter of the item above it bound to a variable.
-BOUND = re.compile(r'<Item\b[^>]*\bkey="([^"]+)"|<Param key="#([^"#]+)#"[^>]*variable="true"[^>]*>'
-                   r"([^<]+)</Param>")
+# A rule item opening, or a parameter of the item above it bound to a variable. `key` is not
+# always the first attribute: a parameter the builder drew opens with `generated="random"`.
+BOUND = re.compile(r'<Item\b[^>]*\bkey="([^"]+)"'
+                   r'|<Param\b[^>]*\bkey="#([^"#]+)#"[^>]*variable="true"[^>]*>([^<]+)</Param>')
+# An item opening, the chart it reads, or a parameter of the item above bound to a variable.
+ON_CHART = re.compile(r'<Item\b[^>]*\bkey="[^"]+"'
+                      r'|<Param\b[^>]*\bkey="#Chart#"[^>]*>([^<]*)</Param>'
+                      r'|<Param\b[^>]*variable="true"[^>]*>([^<]+)</Param>')
 CUSTOM = "CBlock_"
+MAIN = ("0", "Any")
 
 
 def table() -> dict:
@@ -46,6 +52,27 @@ def owners(portfolio: str) -> dict[str, tuple[str, str]]:
     return found
 
 
+def off_main(portfolio: str) -> set[str]:
+    """Variables of blocks that read a chart other than the main one.
+
+    Args:
+        portfolio: Text of `strategy_Portfolio.xml`.
+
+    Returns:
+        Empty for a single-chart strategy. A multi-timeframe strategy reads part of itself
+        on another chart — a daily moving-average filter under an intraday signal — and that
+        block's periods are already in ITS bars: dividing them by the timeframe ratio would
+        move the filter, which is the one thing a scaled sister must keep (owner, 2026-10-09).
+    """
+    found, chart = {}, "0"
+    for on, name in ON_CHART.findall(portfolio):
+        if name:
+            found[name] = chart
+        else:
+            chart = on.strip() if on else "0"
+    return {n for n, c in found.items() if c not in MAIN}
+
+
 def split(portfolio: str, patterns: list[str], rulings: dict) -> tuple[list[str], list[str]]:
     """The variables to rescale, and the ones nobody could rule on.
 
@@ -63,13 +90,15 @@ def split(portfolio: str, patterns: list[str], rulings: dict) -> tuple[list[str]
     Returns:
         (lengths, unverified), each in declaration order. An unverified variable is an int of
         a custom block the table rules `unverified` or does not list: it is left alone and
-        its sibling must be read as not tested.
+        its sibling must be read as not tested. A variable read on another chart is in
+        neither list: `off_main` says why, and `unmatched` is where it shows up for review.
     """
     types, kind, owner = rewrite.declared(portfolio), kinds(portfolio), owners(portfolio)
+    elsewhere = off_main(portfolio)
     lengths, unverified = [], []
     for name, typed in types.items():
         block, param = owner.get(name, ("", ""))
-        if name[0].isdigit() or typed == "boolean":
+        if name[0].isdigit() or typed == "boolean" or name in elsewhere:
             continue
         if block.startswith(CUSTOM):
             listed = rulings.get(block)

@@ -132,8 +132,39 @@ def test_the_table_lists_every_custom_block_of_the_v3_palettes() -> None:
     assert drawn and drawn <= set(table)
 
 
+# Two blocks as SQX writes them in a BUILT strategy: the signal on the main chart and the
+# moving-average filter on the D1 subchart, each with its own #Chart# and its own period.
+TWO_CHARTS = """<StrategyFile><Strategy><Rules>
+  <Item key="AroonCrossesAbove">
+    <Param key="#Chart#" controlType="dataVar" type="data">0</Param>
+    <Param key="#Period#" controlType="jspinnerVar" type="int" variable="true">AroonPeriod1</Param>
+  </Item>
+  <Item key="MovingAverage">
+    <Param key="#Chart#" controlType="dataVar" type="data">1</Param>
+    <Param generated="random" randomId="MovingAverage1" key="#Period#" type="int" variable="true">MovingAverage1</Param>
+  </Item>
+</Rules><Variables>
+  <variable><name>AroonPeriod1</name><type>int</type><value>14</value>
+    <paramType>ParamTypePeriod</paramType></variable>
+  <variable><name>MovingAverage1</name><type>int</type><value>50</value>
+    <paramType>ParamTypePeriod</paramType></variable>
+</Variables></Strategy></StrategyFile>"""
+
+
+def test_a_filter_on_another_chart_is_not_rescaled() -> None:
+    """The D1 filter's period is already in its own bars: scaling it would move the filter.
+
+    The filter's parameter is spelt as the builder writes a period it drew, `generated=`
+    before `key=`: the first real build (2026-10-09) bound it that way and was missed."""
+    assert lengths.off_main(TWO_CHARTS) == {"MovingAverage1"}
+    scaled, unverified = lengths.split(TWO_CHARTS, [], lengths.table())
+    assert scaled == ["AroonPeriod1"], scaled
+    assert "MovingAverage1" not in scaled + unverified
+
+
 if __name__ == "__main__":
     test_every_length_moves_and_nothing_else()
     test_slower_rounds_clamps_and_flags_what_nobody_ruled()
     test_the_table_lists_every_custom_block_of_the_v3_palettes()
+    test_a_filter_on_another_chart_is_not_rescaled()
     print("ok")
