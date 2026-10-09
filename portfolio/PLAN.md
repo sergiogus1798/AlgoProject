@@ -1021,7 +1021,7 @@ risk settings, 4.0 s wall (46 s CPU), 670 MB.
   risk (edge E). They stay open for the real account.
 - **The real account** keeps the plan's §1-§12 path. Because the owner will trade real money at
   Darwinex and DarwinIA, its yardstick (Q10) should later mirror how Darwinex scores and risk-normalises
-  a strategy — 🤔 not researched here; a question for when the funded path works.
+  a strategy — 🤔 not researched here (published rules: `knowhow/research/darwinex-darwinia-published-rules.md`); a question for when the funded path works.
 
 ### 14.5 Order
 

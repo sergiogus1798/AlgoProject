@@ -74,7 +74,9 @@ def minute_path(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
     np.add.at(opens, open_idx, 1)
     np.add.at(realised, close_idx, pnl)
 
-    open_count = np.cumsum(opens)
+    held = opens.copy()
+    np.add.at(held, close_idx, -1)   # the exit bar is not exposed, as k is not
+    open_count = np.cumsum(held)
     k_long, k_short, off = np.cumsum(k_long), np.cumsum(k_short), np.cumsum(off)
     realised_cum = np.cumsum(realised)
 

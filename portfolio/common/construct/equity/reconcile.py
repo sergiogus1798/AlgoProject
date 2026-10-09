@@ -4,9 +4,15 @@ import pandas as pd
 
 
 def low_equity(days: pd.DataFrame) -> pd.Series:
-    """Each server day's lowest equity since the path started, from a `days.server_days` table."""
+    """Each server day's lowest equity as SQX's curve samples it, from a `days.server_days` table.
+
+    🔬 SQX marks the day's low only while a position is open: a day that ends flat after an
+    exit shows the worst wick before it, never the realised level after it (an H1 exit at the
+    second bar of the session, 10 of 10 gap days on USA500 H1, 2026-10-06). A flat day shows
+    the previous close. `days["low"]` is the economic low and stays for the funded rules.
+    """
     close = days["closed"].cumsum() + days["float_end"]
-    return close.shift(fill_value=0.0) + days["low"]
+    return close.shift(fill_value=0.0) + days["low_open"].fillna(0.0)
 
 
 def curve(rebuilt: pd.Series, sqx: pd.Series, tolerance: float, min_share: float) -> dict:

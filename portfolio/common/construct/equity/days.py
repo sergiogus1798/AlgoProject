@@ -51,7 +51,9 @@ def server_days(path: dict, feed_zone: str, day_zone: str) -> pd.DataFrame:
 
     Returns:
         DataFrame indexed by naive day label: `closed`, `float_end`, `low`, `high`,
-        `opened`, `open_end`. `attrs["n_nat"]` carries the minutes dropped for DST.
+        `low_open` (the low over the minutes a position was open, NaN on a flat day — what
+        SQX's daily curve samples), `opened`, `open_end`. `attrs["n_nat"]` carries the
+        minutes dropped for DST.
     """
     frame = _minute_frame(path, feed_zone, day_zone)
     frame["rel_worst"] = frame["worst"] - frame["e0"]
@@ -63,6 +65,7 @@ def server_days(path: dict, feed_zone: str, day_zone: str) -> pd.DataFrame:
         "float_end": grouped["close"].last() - grouped["realised"].last(),
         "low": grouped["rel_worst"].min(),
         "high": grouped["rel_best"].max(),
+        "low_open": frame["rel_worst"].where(frame["open"] > 0).groupby(frame["day"]).min(),
         "opened": grouped["opens"].sum().astype(int),
         "open_end": grouped["open"].last() > 0,
     })
